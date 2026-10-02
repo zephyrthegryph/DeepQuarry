@@ -43,18 +43,43 @@ CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, key = NO
 	var/mob/living/simple_mob/e0_fixture/wearer = A.holder
 	wearer.last_reflect_source = A.source
 
-/// CAPABILITIES(/datum/e0_cap/tk, provides(AFF_MANIPULATE, reach = 15, line_of_sight = TRUE)): telekinesis, a provider.
-CAPABILITY_TYPE(e0_tk, CAP_E0_TK, /datum/e0_cap/tk, key = NONE)
-/datum/e0_cap/tk
+MSG_DEF_SELF(phase/phased, "You are phased out: you can act only through your abilities.")
 
 /// The CAPABILITY_TYPE(phase_shift, CAP_PHASE_SHIFT, ...) of 16.9: an ability (menu() ops "phase_shift.shift" and "phase_shift.unshift")
-/// that grants the phased capability on its own holder (density, invisibility, acts_via, every(1 SECOND) energy drain).
-CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, key = NONE)
+/// that grants the phased capability on its own holder (density, invisibility, acts_via, every(1 SECOND) energy drain). The constructor is
+/// e0_phase_shift (the final name is the shadekin's, phase 2); prefix = keeps the op keys the doc's.
+CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, key = NONE, prefix = "phase_shift", cost = 50)
 /datum/e0_cap/phase_shift
 
+/datum/e0_cap/phase_shift/entries()
+	return list(
+		op("shift", label("Phase shift"), menu(button = "phase_shift", bind = "shift+f"), 			when(cond_not(CAP_PROC(is_phased))), 			costs(RES_DARK_ENERGY, cost), 			grants(/datum/e0_cap/phased, on = ON_HOLDER)), // the grant lands on the op's own holder, so its source is this activation: it ends with the ability
+		op("unshift", label("Phase back in"), menu(button = "phase_shift", bind = "shift+f"), 			when(CAP_PROC(is_phased)), 			then(CAP_PROC(shift_back))))
+
+/datum/e0_cap/phase_shift/proc/is_phased(datum/act/A)
+	return granted(A.holder, /datum/e0_cap/phased)
+
+/datum/e0_cap/phase_shift/proc/shift_back(datum/act/A)
+	revoke(A.holder, /datum/e0_cap/phased, source = A.activation) // the same source grants() used
+
 /// CAPABILITY_TYPE(phased, CAP_PHASED, /datum/capability/phased, key = NONE, drain = 1): density, invisibility, acts_via, every(1 SECOND).
-CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, key = NONE, drain = 1)
+CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, key = NONE, prefix = "phased", drain = 1)
 /datum/e0_cap/phased
+
+/datum/e0_cap/phased/entries()
+	return list(
+		contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE), // TOP: through walls and people
+		contributes(STAT_INVISIBILITY, INVISIBILITY_SHADEKIN), // MAX
+		contributes(STAT_ACTS_VIA, ORIGIN_VERB | ORIGIN_HOTKEY, reason = MSG(phase/phased)), // MASK_AND: abilities only, so the way back still works
+		every(1 SECOND, then(CAP_PROC(drain_energy))))
+
+/// A per-second drain that takes its energy in whole steps; when there is none it forces the unshift through the button's own op, whose
+/// revoke ends the activation that owns this handler (the handler finishes first, nothing of it runs again).
+/datum/e0_cap/phased/proc/drain_energy(datum/act/timer/A)
+	var/mob/living/simple_mob/e0_fixture/H = A.holder
+	var/wanted = ceil(drain * A.dt / (1 SECOND))
+	if(res_spend(H, RES_DARK_ENERGY, wanted) < wanted)
+		perform_op(H, H, "phase_shift.unshift", origin = ORIGIN_SYSTEM)
 
 /// SPECIES_CAPABILITIES for a test species (a species grants capabilities, including hands(), while a mob's species relation names it).
 /datum/e0_species
@@ -219,16 +244,21 @@ CAPABILITIES(/obj/e0_fixture/hopper, \
 
 // ---- Proof 7: the cabinet ----
 
-/// A machine with a cover and a cell slot, for reach, containment and capability changes under cached menus.
-/// CAPABILITIES(/obj/e0_fixture/cabinet,
-///   cover(),                          // "cover.open" toggles COVER_OPEN
-///   compartment(BAY_CABINET, door = CAP_COVER),
-///   cell_bay(nameof(cell), at = BAY_CABINET),   // "cell_bay.cell.insert", "cell_bay.cell.take"
-///   provides_none(),
-///   op("pry_panel", tool(TOOL_CROWBAR), wait(5 SECONDS), toggles(PANEL_OPEN)))
+/// A machine with a cover and a cell slot, for reach, containment and capability changes under cached menus. Its cover starts open and its bay
+/// starts with a cell (so the first read of the bay lists the take op), and a crowbar pries a panel over five seconds: that op sits just above the
+/// take op, which would otherwise take the cell for any click (take_out is the higher tier).
+#define BAY_CABINET "cabinet"
+
 /obj/e0_fixture/cabinet
 	name = "e0 cabinet"
 	var/obj/item/e0_fixture/cell/cell
+	var/panel_open = FALSE
+
+CAPABILITIES(/obj/e0_fixture/cabinet, \
+	cover(starts_open = TRUE), \
+	bay_compartment(BAY_CABINET, door = CAP_COVER), \
+	bay_cell(nameof(cell), bay = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell), \
+	op("pry_panel", tool(TOOL_CROWBAR), priority(above("cell_bay.cell.take")), wait(5 SECONDS), toggles(nameof(panel_open))))
 
 /obj/item/e0_fixture/cell
 	name = "e0 cell"
@@ -310,17 +340,30 @@ GLOBAL_VAR_INIT(e0_chain_handled, 0)
 
 // ---- Proof 9: the door assembly ----
 
-/// A test-only type with construction(GRAPH_DOOR_ASSEMBLY) (section 12).
-/// CAPABILITIES(/obj/e0_fixture/door_assembly, construction(GRAPH_DOOR_ASSEMBLY),
-///   extend("construction.build:door_wired", wait(0)))
+/// A test-only type with construction(GRAPH_DOOR_ASSEMBLY) (section 12): the graph is declared in e1_fixtures.dm (every edge instant, so a click is
+/// one step), and the board of the boarded stage goes into the assembly's construction slot.
 /obj/e0_fixture/door_assembly
 	name = "e0 door assembly"
 
+CAPABILITIES(/obj/e0_fixture/door_assembly, \
+	construction(GRAPH_DOOR_ASSEMBLY))
+
+/// The slot the boarded stage puts the board in (SLOT_CONSTRUCTION).
+/datum/om/relation/slot/e0_construction
+	holder = /obj/e0_fixture/door_assembly
+	slot_id = SLOT_CONSTRUCTION
+	name = "construction"
+	is_default = TRUE
+	capacity_model = SLOT_CAPACITY_COUNT
+	capacity = 4
+	drop_policy = SLOT_DROP_SPILL
+
 /// A subtype placed finished. Two paths lead from the frame to finished, so the type names which one the history is seeded along.
-/// CAPABILITIES(/obj/e0_fixture/door_assembly/finished,
-///   configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
 /obj/e0_fixture/door_assembly/finished
 	name = "e0 finished door assembly"
+
+CAPABILITIES(/obj/e0_fixture/door_assembly/finished, \
+	configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
 
 /// The board the boarded stage takes: item(/obj/item/e0_fixture/board) with put_in(SLOT_CONSTRUCTION).
 /obj/item/e0_fixture/board

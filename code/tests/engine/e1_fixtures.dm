@@ -178,11 +178,11 @@ SCHEMA(/obj/e1_schema, count, int(1, 9))
 
 STATE_GRAPH(GRAPH_DOOR_ASSEMBLY, \
 	start(STAGE_DOOR_FRAME), \
-	stage(STAGE_DOOR_WIRED, entry_of("part", "wire")), \
-	stage(STAGE_DOOR_BOARDED, entry_of("part", "board")), \
-	stage(STAGE_DOOR_FINISHED, entry_of("part", "screwdriver"), from = STAGE_DOOR_BOARDED), \
-	stage(STAGE_DOOR_FINISHED, entry_of("part", "kit"), from = STAGE_DOOR_WIRED, key = "kit", undo = list(entry_of("part", "crowbar"))), \
-	dismantle(entry_of("part", "welder")))
+	stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5)), \
+	stage(STAGE_DOOR_BOARDED, item(/obj/item/e0_fixture/board), put_in(SLOT_CONSTRUCTION)), \
+	stage(STAGE_DOOR_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), from = STAGE_DOOR_BOARDED), \
+	stage(STAGE_DOOR_FINISHED, item(/obj/item/e0_fixture/door_kit), consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(tool(TOOL_CROWBAR), wait(0))), \
+	dismantle(tool(TOOL_WELDER)))
 
 /obj/e1_assembly
 	name = "e1 assembly"

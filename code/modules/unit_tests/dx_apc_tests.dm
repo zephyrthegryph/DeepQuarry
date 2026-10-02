@@ -287,7 +287,7 @@
 	for(var/i in 1 to 200)
 		cap_set(A, CAP_COVER_OPEN | CAP_COVER_REMOVED, FALSE)
 		PUBLISH_LEGACY(A, /datum/notice/legacy_hit, H, bat)
-		if(cover_removed(A))
+		if(legacy_cover_removed(A))
 			knocked = TRUE
 			break
 	TEST_ASSERT(knocked, "a broken APC hit hard enough loses its cover")

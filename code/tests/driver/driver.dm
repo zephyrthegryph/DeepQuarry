@@ -110,6 +110,7 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /proc/test_driver_end()
 	kernel_test_end()
 	test_driver_reset()
+	GLOB.e0_night_service?.set_night(FALSE) // the night system of proof 8 is a lazy global: the next test finds it by day
 
 // ---- Input forms (drive E2's resolver through E6's inbox) ----
 

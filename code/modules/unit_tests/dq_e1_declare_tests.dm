@@ -395,7 +395,11 @@
 	test_record(H)
 	grant(H, e1_widget("r", power = 1), source = source)
 	revoke(H, e1_widget("r"), source = source)
-	var/list/recorded = test_recorded()
+	// The widget also brings a stat contribution, which the stat layer applies as a hold: its deltas are rows of their own kind.
+	var/list/recorded = list()
+	for(var/datum/test_event/row in test_recorded())
+		if(row.kind == TEST_EVENT_ATTACH || row.kind == TEST_EVENT_DETACH)
+			recorded += row
 	TEST_ASSERT_EQUAL(length(recorded), 2, "one attach and one detach row, got [length(recorded)]")
 	var/datum/test_event/first = recorded[1]
 	var/datum/test_event/second = recorded[2]

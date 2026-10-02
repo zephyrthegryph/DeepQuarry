@@ -316,22 +316,22 @@
 	into += entry_line(199)
 	into += list(global.extend("print", global.captures(nameof(selected_id), resume = CANCEL_IF_CHANGED)))
 
-/// CAPABILITIES(/obj/e0_fixture/p1_impure) at code/tests/engine/p1_fixtures.dm:43
+/// CAPABILITIES(/obj/e0_fixture/p1_impure) at code/tests/engine/p1_fixtures.dm:45
 /obj/e0_fixture/p1_impure/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p1_fixtures.dm", 43, /obj/e0_fixture/p1_impure)
-	into += entry_line(44)
-	into += list(global.op("writes", global.hand(), global.when(PROC_REF(writes_in_condition)), global.then(PROC_REF(ran))))
-	into += entry_line(45)
-	into += list(global.op("touches", global.menu(), global.needs(global.req(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), global.then(PROC_REF(ran))))
+	into += entry_block("code/tests/engine/p1_fixtures.dm", 45, /obj/e0_fixture/p1_impure)
 	into += entry_line(46)
+	into += list(global.op("writes", global.hand(), global.when(PROC_REF(writes_in_condition)), global.then(PROC_REF(ran))))
+	into += entry_line(47)
+	into += list(global.op("touches", global.menu(), global.needs(global.req(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), global.then(PROC_REF(ran))))
+	into += entry_line(48)
 	into += list(global.op("clean", global.item(/obj/item/e2_key), global.when(PROC_REF(reads_only)), global.then(PROC_REF(ran))))
 
-/// CAPABILITIES(/obj/e0_fixture/p1_waiter) at code/tests/engine/p1_fixtures.dm:73
+/// CAPABILITIES(/obj/e0_fixture/p1_waiter) at code/tests/engine/p1_fixtures.dm:75
 /obj/e0_fixture/p1_waiter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p1_fixtures.dm", 73, /obj/e0_fixture/p1_waiter)
-	into += entry_line(74)
+	into += entry_block("code/tests/engine/p1_fixtures.dm", 75, /obj/e0_fixture/p1_waiter)
+	into += entry_line(76)
 	into += list(global.op("press", global.hand(), global.needs(global.req_is(nameof(ready), because = MSG(p1/not_ready))), global.wait(5 SECONDS), global.then(PROC_REF(done))))
 
 /// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:384
@@ -642,13 +642,13 @@
 	into += entry_line(96)
 	into += list(global.while_slotted("e4_slot", global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 1)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/item/p1_telecube) at code/tests/engine/p1_fixtures.dm:87
+/// CAPABILITIES(/obj/item/p1_telecube) at code/tests/engine/p1_fixtures.dm:89
 /obj/item/p1_telecube/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p1_fixtures.dm", 87, /obj/item/p1_telecube)
-	into += entry_line(88)
+	into += entry_block("code/tests/engine/p1_fixtures.dm", 89, /obj/item/p1_telecube)
+	into += entry_line(90)
 	into += list(global.op("zap", global.hand(), global.cooldown(5 SECONDS), global.flash("p1"), global.says(MSG(p1/not_ready)), global.label("Zap")))
-	into += entry_line(89)
+	into += entry_line(91)
 	into += list(global.op("stash", global.item(/obj/item/e2_key), global.put_in("p1_slot"), global.menu()))
 
 #endif

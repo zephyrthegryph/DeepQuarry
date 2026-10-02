@@ -74,7 +74,7 @@
 	TEST_ASSERT_EQUAL(data["caps"]["locked"]?["locked"], FALSE, "the lock's data")
 	TEST_ASSERT_EQUAL(data["caps"][LOOK_COVER_OPEN]?["open"], TRUE, "the cover's data under its look name")
 
-/// A removable cover: removed, it stays open, can't be closed, and cover_removed() says so.
+/// A removable cover: removed, it stays open, can't be closed, and legacy_cover_removed() says so.
 /datum/unit_test/dx_cap_library_cover_removable/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -86,9 +86,9 @@
 	TEST_ASSERT_EQUAL(remove.tool, TOOL_CROWBAR, "pried off with a crowbar")
 	TEST_ASSERT_EQUAL(remove.stance, I_HURT, "on harm intent")
 	TEST_ASSERT_NULL(cap_test_entry(allocate(/obj/cap_fixture/cover_crowbar, T), "cover:remove"), "not removable by default")
-	TEST_ASSERT(!cover_removed(A), "starts in place")
+	TEST_ASSERT(!legacy_cover_removed(A), "starts in place")
 	TEST_ASSERT(dispatch_succeeded(cap_dispatch(new /datum/dispatch_context(H, A, crowbar, remove))), "removing runs")
-	TEST_ASSERT(cover_removed(A) && cover_is_open(A), "removed and open")
+	TEST_ASSERT(legacy_cover_removed(A) && cover_is_open(A), "removed and open")
 	TEST_ASSERT_EQUAL(toggle.why_not(H, A, null), "the cover has been removed", "a removed cover can't be closed")
 	TEST_ASSERT("Its cover has been removed." in caps_examine(A, H), "examine says so")
 

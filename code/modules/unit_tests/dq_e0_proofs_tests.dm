@@ -330,10 +330,10 @@
 	var/datum/op_result/prying = test_click(near, C, crowbar) // a wait for the pending op
 	var/outcome_while_waiting = prying?.outcome
 	// A provides capability (the provider set generation): telekinesis puts the far actor in reach, revoking it takes it away.
-	grant(far, new /datum/e0_cap/tk, source = src)
+	grant(far, telekinesis(), source = src)
 	test_drain()
 	var/far_with_tk = menu_keys(far, C, null)
-	revoke(far, new /datum/e0_cap/tk, source = src)
+	revoke(far, telekinesis(), source = src)
 	test_drain()
 	var/far_without_tk = menu_keys(far, C, null)
 	// A cover closing: the bay is no longer exposed, so the cell op leaves the menu.
@@ -426,9 +426,13 @@
 
 /datum/unit_test/dq_e0_proof/p09_two_predecessors_undo_to_the_actual_one
 
-/// A refunded item of `type` on `where`'s turf, tracked for cleanup.
-/datum/unit_test/dq_e0_proof/p09_two_predecessors_undo_to_the_actual_one/proc/find_refund(type, atom/where)
-	var/obj/item/found = locate(type) in get_turf(where)
+/// A refunded item of `type` on `where`'s turf, tracked for cleanup. `ignore` is an item the test itself put on the floor: it is no refund.
+/datum/unit_test/dq_e0_proof/p09_two_predecessors_undo_to_the_actual_one/proc/find_refund(type, atom/where, obj/item/ignore)
+	var/obj/item/found = null
+	for(var/obj/item/candidate in get_turf(where))
+		if(istype(candidate, type) && candidate != ignore)
+			found = candidate
+			break
 	if(found)
 		LAZYADD(allocated, found)
 	return found
@@ -452,7 +456,7 @@
 	var/boarded_after_undo = built(boarded_path, STAGE_DOOR_BOARDED)
 	var/finished_after_undo = built(boarded_path, STAGE_DOOR_FINISHED)
 	var/list/boarded_events = test_recorded()
-	var/obj/item/e0_fixture/door_kit/kit_from_board_path = find_refund(/obj/item/e0_fixture/door_kit, boarded_path)
+	var/obj/item/e0_fixture/door_kit/kit_from_board_path = find_refund(/obj/item/e0_fixture/door_kit, boarded_path, kit)
 	// The kit path: frame, wired, finished by the prefab kit, then back by the crowbar.
 	var/obj/e0_fixture/door_assembly/kit_path = allocate(/obj/e0_fixture/door_assembly)
 	test_record(actor, kit_path, kit)
