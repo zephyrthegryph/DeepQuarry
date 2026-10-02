@@ -386,10 +386,8 @@
 
 // ---- Do: chance and effects ----
 
-/// chance(p, else = parts): rolls after the last answer and the reservation; a failed roll plays its else feedback, commits the costs and stops.
-/// (`else` is a DM keyword, so the feedback of a failed roll is `otherwise =`.)
-/proc/chance(percent, list/otherwise = null)
-	return part_make(/datum/entry/part/chance, list("percent" = percent), entry_flatten(otherwise))
+/// chance(p, otherwise = parts) and then(PROC_REF(x), checks = ...) are E4's constructors (code/engine/actions/hooks.dm); an op folds their entries into the
+/// parts below (op_plan_fold). The failed roll's feedback is `otherwise`: parts that play when chance() fails.
 
 /datum/entry/part/chance
 	part_name = "chance"
@@ -399,10 +397,6 @@
 /datum/entry/part/effect
 	part_name = "effect"
 	stages = PART_STAGE_DO
-
-/// then(PROC_REF(x), checks = /datum/act/x): a custom effect. `handler` is a proc name on the holder, or "cap:name" on the capability.
-/proc/then(handler, checks = null)
-	return part_make(/datum/entry/part/effect/then, list("handler" = handler, "checks" = checks))
 
 /datum/entry/part/effect/then
 	part_name = "then"

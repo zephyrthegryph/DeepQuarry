@@ -377,7 +377,7 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	A.target = null
 	A.target_atom = null // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = null
-	A.held = null // ALLOW(ownership): a pooled transient: reset on release
+	A.held = null
 	A.provider = null
 	A.source = null // ALLOW(ownership): a pooled transient: reset on release
 	A.activation = null // ALLOW(ownership): a pooled transient: reset on release
@@ -393,7 +393,7 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
 	A.target = target
 	A.actor = actor
-	A.held = held // ALLOW(ownership): a pooled transient: reset on release
+	A.held = held
 	A.cap = cap
 	A.activation = activation // ALLOW(ownership): a pooled transient: reset on release
 	A.source = activation ? activation.source : holder // ALLOW(ownership): a pooled transient: reset on release
@@ -753,6 +753,16 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		return OP_OK
 	return report
 
+/// An effect part run from a hook (an instead or an on_notice): its report, a runtime logged as OP_FAILED. The context is the action's own.
+/proc/hook_effect_report(datum/act/A, datum/entry/part/effect/F)
+	var/report = OP_OK
+	try
+		report = F.run_effect(A)
+	catch(var/exception/fault)
+		log_world("HOOK EFFECT FAILED: [A.type] effect [F.part_name]: [fault.name] ([fault.file]:[fault.line])")
+		return OP_FAILED
+	return (isnull(report) || report == TRUE || report == FALSE) ? OP_OK : report
+
 /// Calls a resource adapter's proc, reporting a runtime as OP_FAILED.
 /proc/op_safe_call(datum/target, proc_name, ...)
 	var/list/rest = args.Copy(3)
@@ -795,8 +805,8 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	if(!committed)
 		op_tell(actor, reason)
 	op_log(A, actor, outcome, reason)
-	if(committed && A.rolled && P && !P.quiet)
-		op_publish_done(A)
+	if(P && !P.quiet && A.holder)
+		op_publish_done(A, committed ? (A.rolled ? ACT_COMMITTED : ACT_ROLL_FAILED) : outcome)
 	if(committed && A.rolled && P && length(P.delayed))
 		op_schedule_delayed(A)
 	A.release()
@@ -813,10 +823,10 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /datum/entry/part/says/proc/feedback(datum/act/op/A)
 	var/msg = src.args["msg"]
 	if(ispath(msg, /datum/msg) && A.actor)
-		act_message_t(A.actor, A.target_atom, msg, A.held)
+		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)
 
 /datum/entry/part/plays/proc/feedback(datum/act/op/A)
-	var/atom/where = A.target_atom || A.actor
+	var/atom/where = istype(A.target, /atom) ? A.target : A.actor
 	if(where && src.args["sfx"])
 		play_sfx(where, src.args["sfx"])
 
@@ -842,10 +852,15 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	if(P.log_type & LOG_GAME)
 		log_game(text)
 
-/// The op_done notice: only a committed op whose roll succeeded, unless quiet(). (E4's delivery replaces this seam: until then the notice is counted
-/// for the recorder.)
-/proc/op_publish_done(datum/act/op/A)
-	TEST_REC_NOTICE(/datum/notice/op_done, A.outcome, FALSE)
+/// The op_done notice (E4's delivery): published for the outcomes listeners asked for (on_op(key, ..., outcome =)), carrying the op key. A committed op
+/// whose roll succeeded is ACT_COMMITTED, a failed roll ACT_ROLL_FAILED; nothing is built when nobody listens.
+/proc/op_publish_done(datum/act/op/A, outcome)
+	var/datum/holder = A.holder
+	if(!holder || QDELETED(holder) || !notice_wanted(holder, /datum/notice/op_done, outcome))
+		return
+	var/datum/notice/op_done/N = notice_take(/datum/notice/op_done)
+	N.op_key = A.key
+	notice_publish(holder, N, outcome)
 
 /// delayed(t, parts...): schedules more parts on the holder's clock with only the holder and the snapshot names.
 /proc/op_schedule_delayed(datum/act/op/A)
@@ -1011,7 +1026,29 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	var/obj/item/thing = A.held
 	if(!thing)
 		return null
-	return slot_precheck(A.target, src.args["slot"], thing, A.actor)
+	var/why = slot_precheck(A.target, src.args["slot"], thing, A.actor)
+	return why || op_insert_precheck(A.target, thing, src.args["slot"])
+
+/// The pre-check of the insert action (E4): the needs hooks of the holder's table and activations asked about this insert, nothing started.
+/// A reason, or null. Allocates only when something hooks the action.
+/proc/op_insert_precheck(atom/holder, atom/movable/thing, slot_id)
+	if(!holder || !act_wanted(holder, /datum/act/insert))
+		return null
+	var/datum/act/insert/F = act_begin(/datum/act/insert, holder)
+	if(!F)
+		return null
+	F.item = thing // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	F.slot_id = slot_id
+	var/datum/act_plan/plan = act_plan_for(holder, /datum/act/insert)
+	var/reason = null
+	for(var/datum/hook/H as anything in plan.needs)
+		if(!hook_conditions_hold(H, holder))
+			continue
+		reason = act_needs_refusal(F, H)
+		if(reason)
+			break
+	F.release()
+	return reason
 
 /datum/entry/part/effect/put_in/run_effect(datum/act/op/A)
 	var/atom/holder = A.target
@@ -1036,8 +1073,16 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 		if(moving != thing)
 			op_merge_units(thing, moving)
 		return OP_REFUSED
+	// The insert is a world action: its hooks may refuse it or take it over, and its notice goes out when it lands.
+	var/datum/act/insert/F = ACT_TRY(holder, insert, moving, slot_id)
+	if(isnull(F))
+		if(moving != thing)
+			op_merge_units(thing, moving)
+		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
+		return (GLOB.act_last_outcome & ACT_REPLACED) ? OP_REPLACED : OP_REFUSED
 	var/atom/from = moving.loc
 	if(!moving.move_into(holder, slot_id, A.actor))
+		act_cancel(F)
 		if(moving != thing)
 			op_merge_units(thing, moving)
 		A.reason = /datum/msg/op/failed
@@ -1045,6 +1090,7 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 	TEST_REC_TRANSFER(moving, from, holder, slot_id)
 	if(stack_units)
 		stack_units.moved = TRUE
+	act_done(F)
 	return OP_OK
 
 /datum/entry/part/effect/take_out/precheck(datum/act/op/A)

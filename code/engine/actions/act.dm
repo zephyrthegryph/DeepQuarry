@@ -125,9 +125,16 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 		current += opts["by"]
 	walk.vars[field] = current // ALLOW(api): adjusts() names a typed field of the action by its declared path
 
+/// How the last action that ended (act_end) ended and why: ACT_TRY returns null for a refused action and a taken-over one alike, and the op engine's
+/// put_in() reports the two differently (OP_REFUSED, OP_REPLACED).
+GLOBAL_VAR(act_last_outcome)
+GLOBAL_VAR(act_last_reason)
+
 /// Ends the act with `outcome`, delivers its notice to the listeners that asked for that outcome, and releases it.
 /proc/act_end(datum/act/action/A, outcome)
 	A.outcome = outcome
+	GLOB.act_last_outcome = outcome
+	GLOB.act_last_reason = A.reason
 	var/notice_type = act_notice_type(A.type)
 	var/datum/holder = A.holder
 	if(notice_type && !QDELETED(holder) && notice_wanted(holder, notice_type, outcome))

@@ -249,6 +249,10 @@
 		if(istype(part, /datum/entry/part/effect) && !seen_effect)
 			var/datum/entry/part/effect/F = part
 			seen_effect = F.part_name
+		else if(istype(part, /datum/entry) && !istype(part, /datum/entry/part) && !seen_effect)
+			var/datum/entry/E = part
+			if(E.kind == ENTRY_THEN)
+				seen_effect = "then"
 		else if(istype(part, /datum/entry/part/asks) && seen_effect)
 			var/datum/entry/part/asks/Q = part
 			op_problem(T, P, report, RULE_OP_ORDER, "[seen_effect]() is written above [Q.part_name]()", "an effect runs after the last answer: write the asks() or confirms() first (nothing irreversible happens before it)")
@@ -263,7 +267,17 @@
 			Q.compile(P, level)
 		else if(istype(part, /datum/entry))
 			var/datum/entry/E = part
-			if(E.kind == ENTRY_WHEN)
+			if(E.kind == ENTRY_THEN)
+				// E4's then(): the op's custom effect.
+				var/datum/entry/part/effect/then/then_part = part_make(/datum/entry/part/effect/then, list("handler" = E.args["handler"], "checks" = E.args["checks"]))
+				LAZYADD(P.provenance, "[level] [then_part.describe()] @ [origin_text]")
+				then_part.compile(P, level)
+			else if(E.kind == ENTRY_CHANCE)
+				// E4's chance(): the roll after the last answer and the reservation, with the failed roll's feedback as its children.
+				var/datum/entry/part/chance/CH = part_make(/datum/entry/part/chance, list("percent" = E.args["percent"]), E.children)
+				LAZYADD(P.provenance, "[level] [CH.describe()] @ [origin_text]")
+				CH.compile(P, level)
+			else if(E.kind == ENTRY_WHEN)
 				if(length(E.children))
 					op_problem(T, P, report, RULE_OP_PART, "a when() that wraps parts inside an op is not supported", "give the op a when(cond) part, or wrap whole ops: when(cond, op(...))")
 				else

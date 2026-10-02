@@ -142,7 +142,7 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 	var/datum/act/op/A = take(/datum/act/op)
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = actor || (ismob(holder) ? holder : null)
-	A.held = held // ALLOW(ownership): a pooled transient: reset on release
+	A.held = held
 	A.target = target || holder
 	A.key = "res_spend"
 	var/datum/reservation/R = RS.reserve(A, n)

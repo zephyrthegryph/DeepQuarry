@@ -393,7 +393,7 @@
 	A.activation = C.activation // ALLOW(ownership): a pooled transient: reset on release
 	A.source = C.activation ? C.activation.source : C.holder // ALLOW(ownership): a pooled transient: reset on release
 	A.actor = actor
-	A.held = held // ALLOW(ownership): a pooled transient: reset on release
+	A.held = held
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	A.target = (C.side == CAND_ACTOR || isnull(target)) ? C.holder : target
 	if(istype(A.target, /atom))

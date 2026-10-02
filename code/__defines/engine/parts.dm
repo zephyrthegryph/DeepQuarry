@@ -67,7 +67,3 @@
 #define MENU_EVAL_BUDGET (0.2 SECONDS)
 /// How often a waiting op re-checks its keeps.
 #define WAIT_RECHECK_INTERVAL (0.5 SECONDS)
-
-/// A proc of the capability definition rather than of the holder: CAP_PROC(x) names x(datum/act/A), run on the capability datum with A.holder the
-/// entity. (PROC_REF(x) runs on the holder.) A handler text prefixed "cap:" is the engine's form.
-#define CAP_PROC(X) ("cap:[nameof(.proc/##X)]")
