@@ -494,6 +494,7 @@
 #include "code\controllers\kernel\loop.dm"
 #include "code\controllers\kernel\membership.dm"
 #include "code\controllers\kernel\native.dm"
+#include "code\controllers\kernel\sched_items.dm"
 #include "code\controllers\kernel\sequence.dm"
 #include "code\controllers\kernel\sequence_state.dm"
 #include "code\controllers\kernel\sequence_table.dm"

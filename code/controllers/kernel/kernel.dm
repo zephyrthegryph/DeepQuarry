@@ -127,6 +127,7 @@
 		Kernel.live_registered = TRUE
 		kernel_register_cadences(Kernel)
 		kernel_register_sequences(Kernel)
+		kernel_register_sched_pieces(Kernel)
 	return Kernel
 
 // ---------------------------------------------------------------- the tick
@@ -227,7 +228,6 @@
 		sched_ms_tick += TICK_USAGE_TO_MS(se_start)
 		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
 		note_behaviours(pass_ms, sched_ms_tick)
-		run_audits()
 
 	// G: whatever is left, with a floor once a second.
 	var/g_start = TICK_USAGE
@@ -294,42 +294,29 @@
 /datum/controller/kernel/proc/run_native(elapsed, budget)
 	native_frame(elapsed, budget)
 
-/// D: the deadline wheel, then deadline-phase work items in what is left of the deadline share.
+/// D: the deadline wheel (the scheduler's sched_deadlines item runs first), then deadline-phase work items in what is left of the
+/// deadline share.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_deadline_phase(tick_limit, now = world.time)
-	var/s_start = TICK_USAGE
-	sched.pass_deadlines(tick_limit)
-	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
 
-/// P: the borrow pass, then each lane: the scheduler's share of it, then that lane's work items.
+/// P: each lane, in order. A lane's items start with the scheduler's pieces: the borrow pass (lane 1 only), then the lane's
+/// share of the pass (sched_lane); that lane's other work items follow.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_lane_phase(tick_limit, now = world.time)
-	var/s_start = TICK_USAGE
-	sched.pass_borrow(tick_limit)
-	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	for(var/lane in 1 to OM_LANE_COUNT)
-		s_start = TICK_USAGE
-		sched.pass_lane(lane, tick_limit)
-		sched_ms_tick += TICK_USAGE_TO_MS(s_start)
-		// A lane with no work items (most of them) costs no admission check and no engine call.
-		if(!length(phase_lane_items?[lane]) && !work_dirty)
-			continue
 		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
 		if(latency.shedding && !latency.admit(kernel_lane_class(lane), "lane [lane]"))
 			continue
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)
 		work_run_phase(KERNEL_PHASE_P, lane_limit, lane, now)
 
-/// R: leftovers. The scheduler's leftovers, R's own items, then phase P items that ran out of their lane's share with
+/// R: leftovers. The scheduler's leftovers (its sched_leftovers item runs first), R's own items, then phase P items that ran out of their lane's share with
 /// work left (p_carry), in the order they stopped: a backlog (lighting after a power change, a long fire()) drains with
 /// whatever the tick has spare instead of one lane share per tick.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_leftover_phase(tick_limit, now = world.time)
-	var/s_start = TICK_USAGE
-	sched.pass_leftovers(tick_limit)
-	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	work_run_phase(KERNEL_PHASE_R, tick_limit, 0, now)
 	if(!length(p_carry))
 		return
@@ -365,15 +352,6 @@
 	SSbehaviours.times_fired++
 	// ALLOW(sys_world_time_write, system_boundary): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry; the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
 	SSbehaviours.last_fire = world.time
-
-/// The missed-wake audits on their interval: pipelines (pipeline.dm), sequences (sequence.dm) and sleepers.
-/datum/controller/kernel/proc/run_audits()
-	// ALLOW(system_boundary): the kernel is the scheduler core SSbehaviours delegates to: it reads and updates that subsystem own fire bookkeeping
-	if(!SSbehaviours || !SSbehaviours.audit_due())
-		return
-	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
-	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
-	om_sleeper_audit(64, TRUE)
 
 // ---------------------------------------------------------------- telemetry
 

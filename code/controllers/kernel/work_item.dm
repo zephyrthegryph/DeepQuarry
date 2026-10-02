@@ -41,6 +41,10 @@
 	var/lane = LANE_SIMULATION
 	/// TRUE when kernel_urgent() may pull one member's run forward.
 	var/urgent = FALSE
+	/// TRUE for an item that runs ahead of the rest of its phase (or lane) list: the OM scheduler's pieces (sched_items.dm).
+	var/first = FALSE
+	/// TRUE for an item that belongs to the live graph and to a test's alike (the scheduler's pieces: a test slot runs them on its own scheduler).
+	var/shared_graph = FALSE
 	/// TRUE when the item's owner is a /datum/system: each memberless run is reported to it (note_run()).
 	var/system_owned = FALSE
 	/// TRUE for an item its declarer runs itself (an on_notice handler, a non-urgent crossing): it is registered for

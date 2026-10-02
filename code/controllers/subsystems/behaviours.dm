@@ -15,8 +15,7 @@ SYSTEM_DEF(behaviours)
 	var/bench_ms = 0
 	// Its cost is charged to the systems whose behaviours it runs (the scheduler does that as work finishes), and
 	// what no behaviour owns lands on om_core, so it is never charged as one lump.
-	/// The pipeline missed-wake audit (pipeline.dm): next run, and the admin verb's switch.
-	EXPIRY_DECLARE(next_audit)
+	/// The pipeline missed-wake audit's admin switch (the audit itself is a kernel work item, controllers/kernel/sched_items.dm).
 	var/audit_forced = FALSE
 
 /datum/system/behaviours/initialize()
@@ -25,14 +24,7 @@ SYSTEM_DEF(behaviours)
 	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
 	_om_start_world_lanes() // ALLOW(om_internal): SSbehaviours is the scheduler core that boots the world lanes
 
-/// TRUE (and re-armed) when the pipeline audit is due and enabled: the kernel asks once per tick.
-/datum/system/behaviours/proc/audit_due()
-	if(!EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) || !audit_enabled())
-		return FALSE
-	EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)
-	return TRUE
-
-/// The audit (pipelines and sequences, kernel.dm run_audits()) runs in unit test and TESTING builds always; on
+/// The audit (pipelines and sequences, sched_items.dm audit_step()) runs in unit test and TESTING builds always; on
 /// servers only with the OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
 /datum/system/behaviours/proc/audit_enabled()
 #if defined(UNIT_TESTS) || defined(TESTING)

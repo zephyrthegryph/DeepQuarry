@@ -72,7 +72,7 @@
 	var/list/scheduled = list()
 	// The live graph holds the live items and a test's graph the test-owned ones (test_enter() builds that one).
 	for(var/datum/work_item/W as anything in work_all)
-		if(!W.event && W.test_owned == test_stepping)
+		if(!W.event && (W.test_owned == test_stepping || W.shared_graph))
 			scheduled += W
 	for(var/datum/work_item/W as anything in scheduled)
 		var/list/resolved = list()
@@ -103,6 +103,16 @@
 	var/list/ordered = G.order
 	var/list/leftover = scheduled - ordered
 	ordered += leftover
+	// The scheduler's pieces run ahead of the rest of their phase (stable: their own `after` order holds among themselves).
+	var/list/head = list()
+	var/list/rest = list()
+	for(var/datum/work_item/W as anything in ordered)
+		if(W.first)
+			head += W
+		else
+			rest += W
+	if(length(head))
+		ordered = head + rest
 	for(var/i in 1 to KERNEL_PHASE_COUNT)
 		phase_items[i] = list()
 	phase_lane_items = new /list(OM_LANE_COUNT)

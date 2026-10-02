@@ -1073,7 +1073,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 
 /// Audits a sample of every sequence's parked members and of its awake members with a sleeping step. A miss is
 /// logged, fails the unit test run and wakes the step. Returns the messages. Runs with the pipeline audit (same
-/// interval, config flag and admin verb: SSbehaviours.audit_due()).
+/// interval, config flag and admin verb: SSbehaviours.audit_step()).
 /proc/seq_audit(parked_sample = SEQ_AUDIT_PARKED_SAMPLE, awake_sample = SEQ_AUDIT_AWAKE_SAMPLE, expected = FALSE)
 	. = list()
 	for(var/datum/sequence/seq as anything in sequence_all())
