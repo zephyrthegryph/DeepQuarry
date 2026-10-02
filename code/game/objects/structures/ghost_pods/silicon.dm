@@ -29,7 +29,7 @@
 	from the pod is not a crewmember."))
 	R.ckey = M.ckey
 	visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
-	log_and_message_admins("successfully opened \a [src] and got a Lost Drone.")
+	log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
 	..()
 
 /obj/structure/ghost_pod/automatic/gravekeeper_drone
@@ -136,6 +136,6 @@
 		from the pod is not a crewmember."))
 		R.ckey = M.ckey
 		visible_message(span_warning("As \the [src] opens, the eyes of the robot flicker as it is activated."))
-		log_and_message_admins("successfully opened \a [src] and got a Lost Drone.")
+		log_and_message_admins("successfully opened \a [src] and got a Lost Drone.", opening_actor)
 		used = TRUE
 		return TRUE

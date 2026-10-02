@@ -530,6 +530,9 @@
 #include "interim_cap_projectile_lifecycle.dm"
 #include "interim_accessory_modifier_registry_deletion.dm"
 #include "interim_ghost_pod_opening_actor.dm"
+#include "interim_looking_glass_console_deletion.dm"
+#include "interim_manual_passenger_actor.dm"
+#include "interim_crossbow_rod_lifecycle.dm"
 #include "interim_iv_drip_dismantle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

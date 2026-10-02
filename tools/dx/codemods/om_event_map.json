@@ -1302,7 +1302,8 @@
   "reads_result": false,
   "target": "/datum/notice/ghost_query_complete",
   "tests": [
-   "code/modules/unit_tests/interim_ghost_pod_opening_actor.dm"
+   "code/modules/unit_tests/interim_ghost_pod_opening_actor.dm",
+   "code/modules/unit_tests/interim_manual_passenger_actor.dm"
   ]
  },
  "/datum/om/event/handle_disabilities": {
