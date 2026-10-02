@@ -21,6 +21,8 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	dq_give_zone_sel(actor)
+	dq_give_zone_sel(target)
 	var/obj/item/clothing/gloves/ring/buzzer/interim_touch_probe/ring = allocate(/obj/item/clothing/gloves/ring/buzzer/interim_touch_probe, T)
 	TEST_ASSERT(actor.equip_to_slot(ring, SLOT_ID_GLOVES), "the actor wears the actual buzzer ring")
 	TEST_ASSERT(ring.battery, "the ring has its initialized battery")
