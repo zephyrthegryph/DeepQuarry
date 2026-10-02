@@ -386,10 +386,7 @@ usr_outside_verb	code/game/objects/items/devices/radio/radiopack.dm	add_fingerpr
 usr_outside_verb	code/game/objects/items/ghost_hunting/weapons.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/toys/toys.dm	if(ishuman(usr))
 usr_outside_verb	code/game/objects/items/toys/toys.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/game/objects/items/toys/toys.dm	if(proximity && istype(usr, /mob/living/carbon/human))
-usr_outside_verb	code/game/objects/items/toys/toys.dm	return zap(usr, A, proximity, stance)
 usr_outside_verb	code/game/objects/items/toys/toys.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
-usr_outside_verb	code/game/objects/items/weapons/candle.dm	/obj/item/flame/candle/proc/light(flavor_text = span_notice("\The [usr] lights the [src]."))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
 usr_outside_verb	code/game/objects/items/weapons/implants/implant.dm	om_ask(usr, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
@@ -638,10 +635,6 @@ usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (!usr.unEquip(
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	usr.put_in_r_hand(src)
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	usr.put_in_l_hand(src)
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/modules/clothing/gloves/antagonist.dm	if(proximity && ishuman(usr) && ishuman(A))
-usr_outside_verb	code/modules/clothing/gloves/antagonist.dm	om_flow_start(/datum/om/flow/pickpocket, usr, A, stance = stance)
-usr_outside_verb	code/modules/clothing/gloves/antagonist.dm	if(proximity && istype(usr, /mob/living/carbon/human))
-usr_outside_verb	code/modules/clothing/gloves/antagonist.dm	return zap(usr, A, proximity, stance)
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The suit is not initialized."))
@@ -773,9 +766,6 @@ usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_ob
 usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
-usr_outside_verb	code/modules/pda/pda.dm	to_chat(usr, span_notice("You remove the ID from the [name]."))
-usr_outside_verb	code/modules/pda/pda.dm	to_chat(usr, span_notice("You remove \the [O] from \the [src]."))
-usr_outside_verb	code/modules/pda/pda.dm	to_chat(usr, span_notice("This PDA does not have a pen in it."))
 usr_outside_verb	code/modules/pda/radio.dm	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 usr_outside_verb	code/modules/projectiles/gun.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
 usr_outside_verb	code/modules/projectiles/gun.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?

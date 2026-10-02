@@ -239,8 +239,6 @@ qdel_src	code/game/objects/items/devices/megaphone.dm	qdel(src)
 qdel_src	code/game/objects/items/devices/powersink.dm	qdel(src)
 qdel_src	code/game/objects/items/falling_object_attack.dm	qdel(src)
 qdel_src	code/game/objects/items/sahoc.dm	qdel(src)
-qdel_src	code/game/objects/items/stacks/marker_beacons.dm	qdel(src) //otherwise delete us
-qdel_src	code/game/objects/items/stacks/marker_beacons.dm	qdel(src)
 qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src)
 qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
 qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src)
