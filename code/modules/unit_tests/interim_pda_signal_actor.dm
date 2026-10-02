@@ -52,10 +52,12 @@
 	sender.send_signal("BLOCKED", user)
 	TEST_ASSERT_EQUAL(receiver.received_count, 1, "cooldown blocks a second immediate transmission")
 	TEST_ASSERT_EQUAL(length(GLOB.lastsignalers), before_logs + 1, "blocked transmission adds no misleading audit entry")
-	test_time(0.5 SECONDS)
+	// Legacy radio cooldowns read world.time, not the injected entity clock.
+	wait_ticks(round((1 SECOND) / world.tick_lag) + 1)
+	TEST_ASSERT(COOLDOWN_FINISHED(sender, transmission_cooldown), "real world time exceeds the legacy radio cooldown")
 	sender.send_signal("SECOND", user)
 	own(receiver.last_signal)
-	TEST_ASSERT_EQUAL(receiver.received_count, 2, "actual clock advancement permits the next transmission")
+	TEST_ASSERT_EQUAL(receiver.received_count, 2, "real world clock advancement permits the next transmission")
 	TEST_ASSERT_EQUAL(receiver.message_seen, "SECOND", "the later packet carries its distinct message")
 	TEST_ASSERT_EQUAL(length(GLOB.lastsignalers), before_logs + 2, "the later real transmission is logged")
 

@@ -5,6 +5,7 @@
 	var/mob/living/silicon/pai/personality = allocate(/mob/living/silicon/pai, card)
 	card.setPersonality(personality)
 	personality.fold_out()
+	own_turf_contents(T)
 	TEST_ASSERT_EQUAL(personality.loc, T, "The real unfolding verb must place the personality on the floor")
 	TEST_ASSERT_EQUAL(card.loc, personality, "The unfolded personality must carry its actual card")
 	personality.close_up(TRUE)
@@ -14,22 +15,38 @@
 	TEST_ASSERT_EQUAL(card.pai, personality, "Normal folding must preserve the actual personality relation")
 	TEST_ASSERT_EQUAL(personality.stat, CONSCIOUS, "Normal folding must not kill the personality")
 
-/// Card deletion must kill its actual unfolded pAI without folding into a missing card.
+/// Record the real death event before the card's transaction removes its personality.
+/datum/unit_test/interim_pai_card_deletion
+	var/death_events = 0
+	var/death_stat
+	var/death_subject_ref
+
+/datum/unit_test/interim_pai_card_deletion/proc/personality_died(datum/source, datum/om/event/mob_death/event)
+	EVENT_HANDLER
+	var/mob/living/silicon/pai/personality = source
+	death_events++
+	death_stat = personality.stat
+	death_subject_ref = REF(personality)
+
+/// Card deletion must run the actual pAI death consequence before terminal personality removal.
 /datum/unit_test/interim_pai_card_deletion/Run()
 	var/turf/T = test_floor()
 	var/obj/item/paicard/card = allocate(/obj/item/paicard, T)
 	var/mob/living/silicon/pai/personality = allocate(/mob/living/silicon/pai, card)
 	card.setPersonality(personality)
 	personality.fold_out()
+	own_turf_contents(T)
 	TEST_ASSERT_EQUAL(personality.loc, T, "The actual unfolding verb must create the floor fixture")
 	TEST_ASSERT_EQUAL(card.loc, personality, "The actual unfolded card must be carried by its personality")
 	TEST_ASSERT_EQUAL(personality.stat, CONSCIOUS, "The personality must actually be alive before card deletion")
+	var/personality_ref = REF(personality)
+	var/personality_handle = om_handle(personality)
+	om_hook(personality, /datum/om/event/mob_death, src, PROC_REF(personality_died))
 	qdel(card)
+	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(card), "The actual card must be deleted")
-	TEST_ASSERT(!QDELETED(personality), "Card deletion must preserve the personality's dead body")
-	TEST_ASSERT_EQUAL(personality.stat, DEAD, "The card's declared deletion consequence must kill the actual pAI")
-	TEST_ASSERT_NULL(personality.card, "Card deletion must clear the incoming card relation")
-	TEST_ASSERT_EQUAL(personality.loc, T, "The dead unfolded personality must stay on the actual floor")
-	personality.close_up(TRUE)
-	TEST_ASSERT_EQUAL(personality.loc, T, "An explicit missing-card fold attempt must preserve the floor body")
-	TEST_ASSERT_EQUAL(personality.stat, DEAD, "A missing-card fold attempt must preserve the actual death state")
+	TEST_ASSERT_EQUAL(death_events, 1, "Card deletion must deliver the real personality death event exactly once")
+	TEST_ASSERT_EQUAL(death_subject_ref, personality_ref, "The actual registered personality must die")
+	TEST_ASSERT_EQUAL(death_stat, DEAD, "The real death event must observe the actual DEAD state")
+	TEST_ASSERT(QDELETED(personality), "The existing card destruction transaction must complete terminal personality removal")
+	TEST_ASSERT_NULL(om_resolve(personality_handle), "The terminal personality's actual handle must end")
