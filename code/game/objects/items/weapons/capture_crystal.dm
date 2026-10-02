@@ -124,7 +124,7 @@
 		var/self_message = msg_fill("%T% cracks and disintegrates in your hand.", M, src)
 		var/others_message = msg_fill("%U% crushes %T% into dust...", M, src)
 		if(consume(src, user))
-			M.visible_message(others_message, self_message)
+			act_message(M, null, MSG_SELF(self_message), MSG_OTHERS(others_message))
 
 //If you catch something/someone and want to give it to someone else though, that's fine.
 /obj/item/capture_crystal/proc/release_ownership_effect(mob/user, obj/item/held, datum/interaction/interaction)

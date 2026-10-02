@@ -16,7 +16,8 @@
 /proc/consume(atom/movable/item, mob/actor)
 	if(!item || QDELETED(item))
 		return FALSE
-	if(dq_ledger_removal_refusal(item, actor))
+	var/atom/source = item.loc
+	if(source?.release_refusal(item, actor))
 		return FALSE
 	// Held or worn: take it off the mob the way drop_from_inventory() did at
 	// the call sites this replaces, so dropped() hooks, hand HUD and slowdown
@@ -25,6 +26,8 @@
 	if(ismob(item.loc) && isitem(item))
 		var/mob/holder = item.loc
 		holder.drop_from_inventory(item)
+		if(item.loc == holder)
+			return FALSE
 	qdel(item)
 	return TRUE
 
