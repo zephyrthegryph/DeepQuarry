@@ -12,6 +12,7 @@ struct MetadataRecord {
     parent_identity: String,
     value: Option<Arc<ProcMetadata>>,
     identity: String,
+    semantic_identity:String,
 }
 struct Declaration<'a> { item: &'a Item, identity: String }
 /// Source-order publication overlays the frozen declaration index. A previously
@@ -63,14 +64,14 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
             MetadataRead::Parent(owner)=>crate::lower_cache::shared_binding_fingerprint(&self.parents.get(owner)),
             MetadataRead::Declaration(key)=>self.declarations.get(key).map(|d|d.identity.clone()).unwrap_or_else(||crate::lower_cache::shared_binding_fingerprint(&Option::<u8>::None)),
             MetadataRead::Native(key)=>crate::lower_cache::shared_binding_fingerprint(&self.native.get(key)),
-            MetadataRead::Resolved(key)=>self.published.get(key).or_else(||self.current.get(key)).map(|record|record.identity.clone()).unwrap_or_default(),
+            MetadataRead::Resolved(key)=>self.published.get(key).or_else(||self.current.get(key)).map(|record|record.semantic_identity.clone()).unwrap_or_default(),
         };
         if !matches!(key,MetadataRead::Resolved(_)){self.observations.insert(key.clone(),value.clone());}value
     }
     pub(crate) fn publish(&mut self,owner:&str,name:&str,verb:bool,metadata:&ProcMetadata,identity:&str) {
         let key=(owner.to_owned(),name.to_owned(),verb);
-        let record=Arc::new(MetadataRecord {reads:Vec::new(),parent_identity:String::new(),value:Some(Arc::new(metadata.clone())),identity:identity.to_owned()});
-        let changed=self.current.get(&key).is_some_and(|old|crate::lower_cache::shared_binding_fingerprint(&old.value)!=crate::lower_cache::shared_binding_fingerprint(&Some(metadata)));
+        let record=Arc::new(MetadataRecord {reads:Vec::new(),parent_identity:String::new(),value:Some(Arc::new(metadata.clone())),identity:identity.to_owned(),semantic_identity:crate::lower_cache::shared_binding_fingerprint(&Some(metadata))});
+        let changed=self.current.get(&key).is_some_and(|old|old.semantic_identity!=record.semantic_identity);
         self.published.insert(key.clone(),record);
         if changed {
             let mut queue=vec![key];let mut seen=HashSet::new();
@@ -94,12 +95,14 @@ pub(crate) struct InvocationQueries {
     store:Option<Store>, pending:Vec<Change>, pending_bytes:usize,
     pub hits:usize,pub misses:usize,
     pub metadata_restored:usize,pub metadata_reused:usize,pub metadata_derived:usize,
+    pub persistence_batches:usize,pub persistence_seconds:f64,
 }
 impl InvocationQueries {
     const LIMIT:usize=16*1024*1024;
+    const WRITE_BATCH:usize=8*1024*1024;
     fn namespace()->String {format!("invocation-templates-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
     pub(crate) fn open(root:&Path)->Self {Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()}}
-    pub(crate) fn reset_counters(&mut self){self.hits=0;self.misses=0;self.metadata_restored=0;self.metadata_reused=0;self.metadata_derived=0;}
+    pub(crate) fn reset_counters(&mut self){self.hits=0;self.misses=0;self.metadata_restored=0;self.metadata_reused=0;self.metadata_derived=0;self.persistence_batches=0;self.persistence_seconds=0.0;}
     pub(crate) fn clear(&mut self){self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.metadata_negative.clear();self.template_negative.clear();self.validity.clear();}
     pub(crate) fn release_decoded(&mut self) {
         self.flush();self.templates.clear();self.order.clear();self.bytes=0;
@@ -107,7 +110,7 @@ impl InvocationQueries {
         // Weak handles continue selecting templates retained by frozen plans.
     }
     pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.handles.len()*96+self.validity.bytes+self.requested_metadata_bytes+(self.metadata_negative.len()+self.template_negative.len())*48}
-    pub(crate) fn flush(&mut self){if self.pending.is_empty(){return;}if let Some(store)=&self.store{let _=store.commit(&[],&self.pending,None);}self.pending.clear();self.pending_bytes=0;}
+    pub(crate) fn flush(&mut self){if self.pending.is_empty(){return;}if let Some(store)=&self.store{let started=std::time::Instant::now();let _=store.commit(&[],&self.pending,None);self.persistence_seconds+=started.elapsed().as_secs_f64();self.persistence_batches+=1;}self.pending.clear();self.pending_bytes=0;}
     pub(crate) fn prefetch(&mut self,keys:&[String]) {
         // Old weak pointers are selectors, never a permanently growing history.
         if self.handles.len()>=72_000 {self.handles.retain(|_,template|template.strong_count()>0);}
@@ -118,8 +121,8 @@ impl InvocationQueries {
             else if self.template_negative.len()<72_000 {if let Some(digest)=InvocationFragments::digest_bytes(&key.name){self.template_negative.insert(digest);}}
         });
     }
-    fn metadata_namespace()->String {format!("invocation-metadata-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
-    fn metadata_addresses()->String {format!("invocation-metadata-addresses-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+    fn metadata_namespace()->String {format!("invocation-metadata-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
+    fn metadata_addresses()->String {format!("invocation-metadata-addresses-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
     /// Hydrate only named parent queries requested by this ordered window. Both
     /// locator and immutable record reads are grouped; no namespace scans or
     /// per-ancestor database opens occur during semantic resolution.
@@ -158,7 +161,7 @@ impl InvocationQueries {
                     // The portable witness/value checksum rejects damaged rows;
                     // consuming queries still validate every observed input.
                     let identity=crate::lower_cache::shared_binding_fingerprint(&(&record.reads,&record.parent_identity,record.value.as_ref()));
-                    if record.identity==key.name&&identity==key.name {
+                    if record.identity==key.name&&identity==key.name&&record.semantic_identity==crate::lower_cache::shared_binding_fingerprint(&record.value) {
                         if let Some(query)=records.get(&key.name){self.requested_metadata_bytes+=charge;self.metadata_restored+=1;self.requested_metadata.insert(query.clone(),Arc::new(record));}
                     }
                 }
@@ -183,7 +186,7 @@ impl InvocationQueries {
         let Ok(bytes)=rmp_serde::to_vec_named(template.as_ref())else{return;};
         self.admit(Arc::clone(&template),bytes.len());
         if bytes.len()>1024*1024{return;}
-        if self.pending_bytes+bytes.len()>1024*1024{self.flush();}
+        if self.pending_bytes+bytes.len()>Self::WRITE_BATCH{self.flush();}
         self.pending_bytes+=bytes.len();self.pending.push(Change::Put(Key::new(Self::namespace(),&template.declaration_identity),bytes));
     }
     pub(crate) fn authored_candidate(&self,key:&str)->Option<Arc<InvocationTemplate>> {
@@ -206,7 +209,7 @@ impl InvocationQueries {
             let key=MetadataRead::Native((owner.to_owned(),name.to_owned(),verb));let value=context.read(&key);crate::observed_dependencies::record(&mut reads,key,value);
         }
         let observations:Vec<_>=reads.into_iter().collect();
-        let identity=crate::lower_cache::shared_binding_fingerprint(&(observations,parent_record.as_ref().map(|r|&r.identity),value.as_ref()));
+        let identity=crate::lower_cache::shared_binding_fingerprint(&(observations,parent_record.as_ref().map(|r|&r.semantic_identity),value.as_ref()));
         Ok((value.as_ref().clone(),identity))
     }
     fn resolve(&mut self,context:&mut MetadataContext,key:Named,active:&mut HashSet<Named>)->Result<Arc<MetadataRecord>,String> {
@@ -225,11 +228,11 @@ impl InvocationQueries {
                 let parent_key=(owner,key.1.clone(),key.2);
                 context.dependents.entry(parent_key.clone()).or_default().insert(key.clone());
                 let parent=self.resolve(context,parent_key.clone(),active)?;
-                crate::observed_dependencies::record(&mut reads,MetadataRead::Resolved(parent_key),parent.identity.clone());
+                crate::observed_dependencies::record(&mut reads,MetadataRead::Resolved(parent_key),parent.semantic_identity.clone());
                 Some(parent)
             }else{None}
         }else{None};
-        let parent_identity=parent.as_ref().map(|p|p.identity.clone()).unwrap_or_default();
+        let parent_identity=parent.as_ref().map(|p|p.semantic_identity.clone()).unwrap_or_default();
         let old=self.metadata.get(&key).map(|(record,_)|Arc::clone(record)).or_else(||self.requested_metadata.get(&key).cloned());
         let old=old.filter(|old|old.parent_identity==parent_identity&&self.validity.validate(old,context));
         let record=if let Some(record)=old{self.metadata_reused+=1;record}else {
@@ -243,14 +246,16 @@ impl InvocationQueries {
             }else {native.or(base)};
             let reads:Vec<_>=reads.into_iter().collect();
             let identity=crate::lower_cache::shared_binding_fingerprint(&(&reads,&parent_identity,value.as_ref()));
-            let record=Arc::new(MetadataRecord {reads,parent_identity,value,identity});
-            let charge=rmp_serde::to_vec_named(record.as_ref()).map_or(0,|bytes|bytes.len()*3+192);
+            let semantic_identity=crate::lower_cache::shared_binding_fingerprint(&value);
+            let record=Arc::new(MetadataRecord {reads,parent_identity,value,identity,semantic_identity});
+            let encoded=rmp_serde::to_vec_named(record.as_ref()).ok();
+            let charge=encoded.as_ref().map_or(192,|bytes|bytes.len()*3+192);
             if self.metadata_bytes+charge>Self::LIMIT {self.metadata.clear();self.metadata_bytes=0;}
             if let Some((_,old_charge))=self.metadata.remove(&key){self.metadata_bytes=self.metadata_bytes.saturating_sub(old_charge);}
             self.metadata_bytes+=charge;self.metadata.insert(key.clone(),(Arc::clone(&record),charge));
-            if let Ok(bytes)=rmp_serde::to_vec_named(record.as_ref()) {
+            if let Some(bytes)=encoded {
                 if bytes.len()<=1024*1024 {
-                    if self.pending_bytes+bytes.len()>1024*1024 {self.flush();}
+                    if self.pending_bytes+bytes.len()+record.identity.len()>Self::WRITE_BATCH {self.flush();}
                     self.pending_bytes+=bytes.len()+record.identity.len();
                     self.pending.push(Change::Put(Key::new(Self::metadata_namespace(),&record.identity),bytes));
                     let address=crate::lower_cache::shared_binding_fingerprint(&key);

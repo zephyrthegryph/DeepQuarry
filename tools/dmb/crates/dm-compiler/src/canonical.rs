@@ -906,7 +906,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .map(|p| p.name.capacity() + p.expression.capacity())
             .sum::<usize>();
     for recipes in [&metadata.initializers,&metadata.modified_initializers] {
-        bytes+=vec_heap(recipes)+recipes.iter().map(|recipe|recipe.key.path.capacity()+recipe.descriptor.body_digest.capacity()+recipe.descriptor.frame_digest.capacity()+recipe.source.len()+64).sum::<usize>();
+        bytes+=vec_heap(recipes)+recipes.iter().map(|recipe|recipe.key.path.capacity()+recipe.descriptor.body_digest.capacity()+recipe.descriptor.frame_digest.capacity()+recipe.source.digest.capacity()+64).sum::<usize>();
     }
     let declaration_bytes=bytes-image_bytes;
     bytes += vec_heap(&metadata.invocations);
@@ -999,6 +999,7 @@ pub(crate) struct CanonicalSession {
     pub(super) procedure_fragments: super::procedure_fragments::ProcedureFragments,
     pub(super) invocation_fragments: InvocationFragments,
     pub(super) invocation_queries: InvocationQueries,
+    pub(super) initializer_sources:initializer_pipeline::InitializerSources,
     pub(super) owner_bindings:OwnerBindingQueries,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
     pub maps: crate::maps::MapInitializerSession,
@@ -1062,6 +1063,7 @@ impl CanonicalSession {
             ));
         self.invocation_fragments = InvocationFragments::open(&root);
         self.invocation_queries = InvocationQueries::open(&root);
+        self.initializer_sources=initializer_pipeline::InitializerSources::open(&root);
         self.owner_bindings.bind(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));
         const_eval::bind_cache(&root);

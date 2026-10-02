@@ -338,10 +338,39 @@ struct Record {
     descriptor_bytes: usize,
 }
 
+/// Canonical SHA identities occupy inline bytes; noncanonical public/test
+/// descriptors retain their exact spelling rather than being normalized.
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+enum CompactIdentity { Sha256([u8;32]), Literal(String) }
+impl CompactIdentity {
+    fn new(text: &str) -> Self {
+        if text.len()==64 && text.bytes().all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b)) {
+            let mut digest=[0;32];
+            for (index,pair) in text.as_bytes().chunks_exact(2).enumerate() {
+                let digit=|byte:u8| if byte<=b'9' {byte-b'0'} else {byte-b'a'+10};
+                digest[index]=(digit(pair[0])<<4)|digit(pair[1]);
+            }
+            Self::Sha256(digest)
+        } else {Self::Literal(text.to_owned())}
+    }
+    fn text(&self)->String {match self {
+        Self::Sha256(digest)=>digest.iter().map(|byte|format!("{byte:02x}")).collect(),
+        Self::Literal(text)=>text.clone(),
+    }}
+    fn heap_bytes(&self)->usize {match self {Self::Sha256(_)=>0,Self::Literal(text)=>text.capacity()}}
+}
+#[derive(Clone)]
+struct CompactDescriptor { body:CompactIdentity, frame:CompactIdentity }
+impl CompactDescriptor {
+    fn new(value:&ProcDescriptor)->Self {Self {body:CompactIdentity::new(&value.body_digest),frame:CompactIdentity::new(&value.frame_digest)}}
+    fn matches(&self,value:&ProcDescriptor)->bool {self.body==CompactIdentity::new(&value.body_digest)&&self.frame==CompactIdentity::new(&value.frame_digest)}
+    fn expanded(&self)->ProcDescriptor {ProcDescriptor {body_digest:self.body.text(),frame_digest:self.frame.text()}}
+    fn heap_bytes(&self)->usize {self.body.heap_bytes()+self.frame.heap_bytes()}
+}
 struct ValidatedCertificate {
     id: u32,
-    descriptor: ProcDescriptor,
-    disk: ProcedureMemoRef,
+    descriptor: CompactDescriptor,
+    disk: CompactIdentity,
     facts: Vec<FactId>,
     valid: bool,
 }
@@ -467,9 +496,8 @@ impl ProjectProcedureGraph {
         let mut seen = BTreeSet::new();
         for key in keys {
             if let Some(certificate) = self.certificates.get(key).filter(|c| c.valid) {
-                if seen.insert(certificate.disk.key.as_str()) {
-                    names.push(certificate.disk.key.clone());
-                }
+                let name=certificate.disk.text();
+                if seen.insert(name.clone()) { names.push(name); }
                 continue;
             }
             let Some(record) = self.records.get(key) else {
@@ -488,7 +516,7 @@ impl ProjectProcedureGraph {
             let Some(reference) = &candidate.disk else {
                 continue;
             };
-            if seen.insert(reference.key.as_str()) {
+            if seen.insert(reference.key.clone()) {
                 names.push(reference.key.clone());
             }
         }
@@ -692,7 +720,7 @@ impl ProjectProcedureGraph {
             let mut facts: Vec<_> = candidate.dependencies.iter().map(|w|w.fact).collect();
             facts.sort_unstable();
             self.certificates.insert(key.clone(), ValidatedCertificate {
-                id: record.id, descriptor: candidate.descriptor.clone(), disk,
+                id: record.id, descriptor: CompactDescriptor::new(&candidate.descriptor), disk:CompactIdentity::new(&disk.key),
                 facts, valid: true,
             });
         }
@@ -714,8 +742,7 @@ impl ProjectProcedureGraph {
         self.stats.facts = 0;
         self.stats.procedures = self.certificates.len();
         self.stats.metadata_bytes = self.certificates.iter().map(|(key,c)|
-            512 + key.path.capacity() + c.descriptor.body_digest.capacity()
-                + c.descriptor.frame_digest.capacity() + c.disk.key.capacity()
+            560 + key.path.capacity() + c.descriptor.heap_bytes() + c.disk.heap_bytes()
                 + c.facts.capacity()*std::mem::size_of::<FactId>()).sum::<usize>()
             + self.fact_names.iter().map(|fact| fact_heap(fact)+96).sum::<usize>()
             + self.compact_reverse.values().map(|readers| 96+readers.len()*4).sum::<usize>()
@@ -738,8 +765,8 @@ impl ProjectProcedureGraph {
                 let valid=record.active&&!self.dirty.contains(key)&&current_candidate(&self.db,record.input).is_some();
                 let mut facts:Vec<_>=candidate.dependencies.iter().map(|witness|witness.fact).collect();facts.sort_unstable();facts.dedup();
                 for &fact in &facts {edges.entry(fact).or_default().push(record.id);}
-                self.certificates.insert(key.clone(),ValidatedCertificate {id:record.id,descriptor:record.descriptor.clone(),
-                    disk:candidate.disk.clone().unwrap(),facts,valid});
+                self.certificates.insert(key.clone(),ValidatedCertificate {id:record.id,descriptor:CompactDescriptor::new(&record.descriptor),
+                    disk:CompactIdentity::new(&candidate.disk.as_ref().unwrap().key),facts,valid});
                 if !valid {self.dirty.insert(key.clone());if let Some(p)=&mut self.persistence {p.headers_seen.remove(key);}}
             } else {
                 // A descriptor without persisted witnesses is a miss, never a
@@ -757,8 +784,7 @@ impl ProjectProcedureGraph {
         self.db=Database::default();self.stats.resident_bytes=0;self.stats.facts=0;
         if let Some(p)=&mut self.persistence {p.fact_rows.clear();p.value_rows.clear();p.witness_memo_bytes=0;}
         self.stats.procedures=self.certificates.len();
-        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|512+key.path.capacity()+c.descriptor.body_digest.capacity()
-            +c.descriptor.frame_digest.capacity()+c.disk.key.capacity()+c.facts.capacity()*4).sum::<usize>()
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|560+key.path.capacity()+c.descriptor.heap_bytes()+c.disk.heap_bytes()+c.facts.capacity()*4).sum::<usize>()
             +self.fact_names.iter().map(|fact|fact_heap(fact)+96).sum::<usize>()
             +self.compact_reverse.values().map(|readers|96+readers.capacity()*4).sum::<usize>()
             +self.procedure_names.iter().map(|key|key.path.capacity()+96).sum::<usize>();
@@ -870,8 +896,7 @@ impl ProjectProcedureGraph {
         let id = if let Some(certificate) = self.certificates.remove(key) {
             self.stats.procedures = self.stats.procedures.saturating_sub(1);
             self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(
-                512 + key.path.capacity() + certificate.descriptor.body_digest.capacity()
-                    + certificate.descriptor.frame_digest.capacity() + certificate.disk.key.capacity()
+                560 + key.path.capacity() + certificate.descriptor.heap_bytes() + certificate.disk.heap_bytes()
                     + certificate.facts.capacity()*std::mem::size_of::<FactId>(),
             );
             for fact in certificate.facts {
@@ -906,7 +931,7 @@ impl ProjectProcedureGraph {
     }
 
     pub fn probe(&mut self, key: &ProcKey, descriptor: &ProcDescriptor) -> ProcedureProbe {
-        if let Some(disk) = self.certificates.get(key).filter(|c| c.valid && &c.descriptor == descriptor).map(|c| c.disk.clone()) {
+        if let Some(disk) = self.certificates.get(key).filter(|c| c.valid && c.descriptor.matches(descriptor)).map(|c| ProcedureMemoRef {key:c.disk.text()}) {
             if let Some(envelope) = self.load_payload(&disk) {
                 self.stats.disk_hits += 1;
                 return ProcedureProbe::Resident(ProcedureArtifact::Prepared(envelope));
@@ -1551,7 +1576,7 @@ impl ProjectProcedureGraph {
     /// Deletion immediately removes both resident and disk observations. Input
     /// handles remain bounded and stable if that authored proc later returns.
     pub fn remove(&mut self, key: &ProcKey) {
-        if let Some(descriptor) = self.certificates.get(key).map(|c| c.descriptor.clone()) {
+        if let Some(descriptor) = self.certificates.get(key).map(|c| c.descriptor.expanded()) {
             self.ensure_record(key, &descriptor);
         }
         if !self.records.contains_key(key) {

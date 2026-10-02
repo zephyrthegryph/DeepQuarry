@@ -199,8 +199,8 @@ impl ProjectProcedureGraph {
         result
     }
     fn probe_identity_inner(&mut self, key: &ProcKey, descriptor: &ProcDescriptor) -> Option<String> {
-        if let Some(certificate) = self.certificates.get(key).filter(|c| c.valid && &c.descriptor == descriptor) {
-            return Some(certificate.disk.key.clone());
+        if let Some(certificate) = self.certificates.get(key).filter(|c| c.valid && c.descriptor.matches(descriptor)) {
+            return Some(certificate.disk.text());
         }
         if !self.ensure_record(key, descriptor) { return None; }
         let candidate = current_candidate(&self.db, self.records[key].input).as_ref()?;

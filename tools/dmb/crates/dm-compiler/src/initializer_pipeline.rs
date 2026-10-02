@@ -5,18 +5,70 @@ use super::*;
 pub(super) struct InitializerRecipe {
     pub key:crate::ProcKey,
     pub descriptor:crate::ProcDescriptor,
-    pub source:Arc<str>,
+    pub source:InitializerSourceHandle,
+}
+/// Portable content identity; decoded text is optional and never needed on a
+/// prepared graph hit. Assignment groups remain the authoritative rebuild input.
+#[derive(Clone,serde::Serialize,serde::Deserialize)]
+pub(super) struct InitializerSourceHandle {
+    pub digest:String,
+    pub bytes:usize,
+    #[serde(skip)]
+    resident:Option<Arc<str>>,
+}
+#[derive(Default)]
+pub(super) struct InitializerSources {store:Option<dm_store::Store>}
+impl InitializerSources {
+    pub(super) fn open(root:&Path)->Self {Self {store:dm_store::Store::open(root.join("declaration-fragments.redb")).ok()}}
+    pub(super) fn archive(&self,recipes:&mut [InitializerRecipe]) {
+        let mut pending=Vec::new();let mut bytes=0usize;
+        for recipe in recipes {
+            if let Some(source)=recipe.source.resident.take() {
+                if self.store.is_some()&&source.len()<=8*1024*1024 {
+                    if bytes.saturating_add(source.len())>8*1024*1024 {
+                        if let Some(store)=&self.store {let _=store.commit(&[],&pending,None);}
+                        pending.clear();bytes=0;
+                    }
+                    bytes+=source.len();
+                    pending.push(dm_store::Change::Put(dm_store::Key::new("initializer-source-v1",&recipe.source.digest),source.as_bytes().to_vec()));
+                }
+            }
+        }
+        if !pending.is_empty() {if let Some(store)=&self.store {let _=store.commit(&[],&pending,None);}}
+    }
+    fn restore_batch(&self,plans:&[InitializerRecipe],start:usize,graph:&mut crate::ProjectProcedureGraph)->HashMap<usize,Arc<str>> {
+        let mut restored=HashMap::new();let Some(store)=&self.store else{return restored;};
+        let missing:Vec<_>=plans.iter().enumerate().filter(|(_,plan)|!matches!(graph.probe(&plan.key,&plan.descriptor),crate::ProcedureProbe::Resident(crate::ProcedureArtifact::Prepared(_)))).collect();
+        let keys:Vec<_>=missing.iter().map(|(_,plan)|dm_store::Key::new("initializer-source-v1",&plan.source.digest)).collect();
+        if keys.is_empty(){return restored;}
+        // A bounded window read is optional; oversized windows rebuild from the
+        // authoritative assignment rows instead of allocating an unbounded batch.
+        if let Ok(read)=store.read_many_bounded(&keys,8*1024*1024,8*1024*1024,None) {
+            for ((index,plan),bytes) in missing.into_iter().zip(read.values) {
+                if let Some(bytes)=bytes {
+                    if bytes.len()==plan.source.bytes&&crate::incremental::digest(&bytes)==plan.source.digest {
+                        if let Ok(source)=String::from_utf8(bytes) {restored.insert(start+index,Arc::from(source));}
+                    }
+                }
+            }
+        }
+        restored
+    }
+}
+fn initializer_source(assignments:&[PendingDynamic],global:bool,dmb:&impl dm_output::assembly::AssemblyImage,strings:&StringIndex)->String {
+    let mut assignments:Vec<_>=assignments.iter().collect();
+    if global {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
+    let mut source=String::from("/proc/__initializer()\n");
+    for assignment in assignments {source.push_str(&format!("    {} = {}\n",assignment.name,assignment.expression));}
+    source
 }
 pub(super) fn recipes(groups:&[(Option<u32>,Vec<PendingDynamic>)],dmb:&impl dm_output::assembly::AssemblyImage,strings:&StringIndex,attach:bool)->Vec<InitializerRecipe> {
     groups.iter().map(|(owner,assignments)| {
-        let mut assignments:Vec<_>=assignments.iter().collect();
-        if owner.is_none() {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
-        let mut source=String::from("/proc/__initializer()\n");
-        for assignment in assignments {source.push_str(&format!("    {} = {}\n",assignment.name,assignment.expression));}
+        let source=initializer_source(assignments,owner.is_none(),dmb,strings);
         let owner_path=owner.and_then(|id|dmb.string(dmb.classes()[id as usize].path_string_id())).map(|path|String::from_utf8_lossy(path)).unwrap_or_default();
         let digest=crate::incremental::digest(source.as_bytes());
         InitializerRecipe {key:crate::ProcKey {path:format!("@initializer|{owner_path}|{attach}|{digest}"),occurrence:0},
-            descriptor:crate::ProcDescriptor {body_digest:digest,frame_digest:"initializer-invocation-v2".into()},source:Arc::from(source)}
+            descriptor:crate::ProcDescriptor {body_digest:digest.clone(),frame_digest:"initializer-invocation-v2".into()},source:InitializerSourceHandle {digest:digest.clone(),bytes:source.len(),resident:Some(Arc::from(source))}}
     }).collect()
 }
 pub(super) fn group_assignments(pending:Vec<PendingDynamic>)->Vec<(Option<u32>,Vec<PendingDynamic>)> {
@@ -88,6 +140,9 @@ pub(super) fn emit_initializer_groups_with_pool(
     }
     let mut groups = groups.into_iter().enumerate().peekable();
     while groups.peek().is_some() {
+        let start=groups.peek().map(|(ordinal,_)|*ordinal).unwrap_or(0);
+        let end=(start+procedure_pipeline::LOWERING_WINDOW).min(plans.len());
+        let mut hydrated_sources=session.as_deref_mut().map(|session|session.initializer_sources.restore_batch(&plans[start..end],start,&mut session.graph)).unwrap_or_default();
         let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
         let mut serial_results = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
         let mut submitted = 0;
@@ -96,7 +151,6 @@ pub(super) fn emit_initializer_groups_with_pool(
                 break;
             };
             let plan=&plans[ordinal];
-            let source=&plan.source;
             let key=plan.key.clone();
             let descriptor=plan.descriptor.clone();
             let cached_envelope = session.as_deref_mut().and_then(|session| {
@@ -133,6 +187,8 @@ pub(super) fn emit_initializer_groups_with_pool(
                 continue;
             }
             lowered_groups += 1;
+            let source=plan.source.resident.clone().or_else(||hydrated_sources.remove(&ordinal)).unwrap_or_else(||Arc::from(initializer_source(&assignments,owner.is_none(),dmb,strings)));
+            if source.len()!=plan.source.bytes||crate::incremental::digest(source.as_bytes())!=plan.source.digest {return Err("initializer source identity mismatch".into());}
             let parse_started = std::time::Instant::now();
             let mut ast = parse(&source);
             if !ast.diagnostics.is_empty() {

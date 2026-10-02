@@ -79,6 +79,11 @@ impl CodeObjectStore {
     }
     /// One bounded ownership session, before serial composition consumes rows.
     pub fn prefetch(&self,handles:&[VerifiedCodeHandle])->io::Result<()> {
+        let next=self.read_owned(handles)?;
+        *self.window.lock().unwrap_or_else(|e|e.into_inner())=next;Ok(())
+    }
+    /// Owned exact read observation; independent of the synchronous replay cache.
+    fn read_owned(&self,handles:&[VerifiedCodeHandle])->io::Result<ReadWindow> {
         if handles.len()>WINDOW||handles.iter().any(|h|!h.valid()) {return Err(invalid("invalid wire list read window"));}
         let keys:Vec<_>=handles.iter().map(|h|dm_store::Key::new(Self::namespace(),&h.digest)).collect();
         let started=std::time::Instant::now();
@@ -93,7 +98,7 @@ impl CodeObjectStore {
             if !next.rows.contains_key(&handle.digest) {next.bytes+=bytes.len()+handle.digest.len()+128;next.rows.insert(handle.digest.clone(),bytes.into());}
         }
         if next.bytes>BUDGET+WINDOW*256 {return Err(invalid("wire list resident window exceeds bound"));}
-        *self.window.lock().unwrap_or_else(|e|e.into_inner())=next;Ok(())
+        Ok(next)
     }
     pub fn restore(&self,handle:&VerifiedCodeHandle)->io::Result<Arc<[u8]>> {
         if !handle.valid() {return Err(invalid("invalid wire list handle"));}
@@ -169,13 +174,53 @@ impl WireListSource for ListObjectTable {
         }
     }
     fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {
+        let end=self.window_end(start,max_rows)?;self.prepare_range(start..end)?;Ok(end)
+    }
+}
+impl ListObjectTable {
+    fn window_end(&self,start:usize,max_rows:usize)->io::Result<usize> {
+        if start>self.len()||max_rows==0 {return Err(invalid("invalid wire source window"));}
         let mut end=start;let mut bytes=0;let mut handles=0;
         while end<self.len()&&end-start<max_rows.min(ROW_WINDOW) {
             let (charge,addressed)=match &self.rows[end] {ListObject::Resident(_)=>(0,0),ListObject::Addressed(h)=>(2+h.words*h.width,1)};
             if end>start&&(bytes+charge>BUDGET||handles+addressed>WINDOW) {break;}
             bytes+=charge;handles+=addressed;end+=1;
         }
-        self.prepare_range(start..end)?;Ok(end)
+        Ok(end)
+    }
+}
+/// A rendezvous owns at most current + producer code windows. Disconnect
+/// drops the pending read and terminates the scoped producer on every error.
+struct PipelinedLists<'a> {
+    lists:&'a ListObjectTable,
+    receiver:Mutex<std::sync::mpsc::Receiver<io::Result<(usize,usize,ReadWindow)>>>,
+    current:Mutex<(usize,usize,ReadWindow)>,
+}
+impl WireListSource for PipelinedLists<'_> {
+    fn len(&self)->usize {self.lists.len()}
+    fn word_count(&self,index:usize)->io::Result<usize> {self.lists.word_count(index)}
+    fn resident_words(&self,index:usize)->Option<&ListWords> {self.lists.resident_words(index)}
+    fn read_wire(&self,index:usize,width:usize)->io::Result<Arc<[u8]>> {
+        match self.lists.rows.get(index).ok_or_else(||invalid("pipelined list index out of range"))? {
+            ListObject::Resident(words)=>Ok(encode(words,width)?.into()),
+            ListObject::Addressed(handle)=>{
+                if handle.width!=width {return Err(invalid("pipelined list width mismatch"));}
+                let current=self.current.lock().map_err(|_|invalid("pipelined source lock poisoned"))?;
+                if index<current.0||index>=current.1 {return Err(invalid("pipelined list outside current window"));}
+                let bytes=current.2.rows.get(handle.digest()).cloned().ok_or_else(||invalid("pipelined code object missing"))?;
+                validate_bytes(handle,&bytes)?;Ok(bytes)
+            }
+        }
+    }
+    fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {
+        let expected=self.lists.window_end(start,max_rows)?;
+        // The preceding window is fully consumed before accepting the next.
+        // Release it first so the producer cannot race into a third live page.
+        *self.current.lock().map_err(|_|invalid("pipelined source lock poisoned"))?=(0,0,ReadWindow::default());
+        let next=self.receiver.lock().map_err(|_|invalid("pipelined receiver lock poisoned"))?.recv()
+            .map_err(|_|io::Error::new(io::ErrorKind::BrokenPipe,"code source producer disconnected"))??;
+        if next.0!=start||next.1!=expected {return Err(invalid("pipelined source order mismatch"));}
+        *self.current.lock().map_err(|_|invalid("pipelined source lock poisoned"))?=next;Ok(expected)
     }
 }
 pub struct WireImage {metadata:Dmb,lists:ListObjectTable}
@@ -258,9 +303,26 @@ impl WireImage {
         let before=self.lists.store.as_ref().map(|store|store.io_stats()).unwrap_or_default();
         let builder=std::sync::Arc::new(std::sync::Mutex::new(crate::chunks::PageBuilder::new(root)));
         let sink=std::sync::Arc::clone(&builder);
-        let (len,spans)=self.metadata.encode_metadata_to_sink(&self.lists,cache,Box::new(move |bytes| {
-            sink.lock().map_err(|_|invalid("page sink lock poisoned"))?.append(bytes)
-        }))?;
+        let encode_sink=Box::new(move |bytes:&[u8]|sink.lock().map_err(|_|invalid("page sink lock poisoned"))?.append(bytes));
+        let (len,spans)=std::thread::scope(|scope| {
+            let (sender,receiver)=std::sync::mpsc::sync_channel(0);
+            let producer=scope.spawn(move || {
+                let mut start=0;
+                while start<self.lists.len() {
+                    let end=self.lists.window_end(start,ROW_WINDOW)?;
+                    let handles:Vec<_>=self.lists.rows[start..end].iter().filter_map(|row|match row {ListObject::Addressed(handle)=>Some(handle.clone()),_=>None}).collect();
+                    let window=if handles.is_empty() {Ok(ReadWindow::default())}else {self.lists.store.as_ref().ok_or_else(||invalid("pipelined code store missing"))?.read_owned(&handles)};
+                    let failed=window.is_err();
+                    if sender.send(window.map(|window|(start,end,window))).is_err()||failed {return Ok(());}
+                    start=end;
+                }Ok::<(),io::Error>(())
+            });
+            let source=PipelinedLists {lists:&self.lists,receiver:Mutex::new(receiver),current:Mutex::new((0,0,ReadWindow::default()))};
+            let encoded=self.metadata.encode_metadata_to_sink(&source,cache,encode_sink);
+            drop(source); // unblock a send before joining on encoder failure
+            let joined=producer.join().map_err(|_|invalid("code source producer panicked"))?;
+            let encoded=encoded?;joined?;Ok::<_,io::Error>(encoded)
+        })?;
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
             let after=self.lists.store.as_ref().map(|store|store.io_stats()).unwrap_or_default();
             eprintln!("DM_BUILD_TRACE physical code source: windows={} bytes={} read_seconds={:.3}",after.windows-before.windows,after.bytes-before.bytes,after.read_seconds-before.read_seconds);

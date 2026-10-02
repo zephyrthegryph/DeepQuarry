@@ -4288,7 +4288,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         invocation_plans.push(canonical::InvocationPlan {template,static_ids});
     }
         if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
-        trace(&format!("invocation templates: reused={} derived={} metadata_restored={} metadata_reused={} metadata_derived={} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.metadata_restored,session.invocation_queries.metadata_reused,session.invocation_queries.metadata_derived,session.invocation_queries.resident_bytes()));
+        trace(&format!("invocation templates: reused={} derived={} metadata_restored={} metadata_reused={} metadata_derived={} persistence_batches={} persistence_seconds={:.3} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.metadata_restored,session.invocation_queries.metadata_reused,session.invocation_queries.metadata_derived,session.invocation_queries.persistence_batches,session.invocation_queries.persistence_seconds,session.invocation_queries.resident_bytes()));
         drop(metadata_context);
         trace("invocation plans complete; wire metadata start");
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);
@@ -4297,7 +4297,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             eprintln!("DM_BUILD_TRACE declaration allocation {:.3}s, symbolic expressions {}, scoped default hits {}, misses {}",declaration_preparation_started.elapsed().as_secs_f64(),now.0-semantic_stats_before.0,now.1-semantic_stats_before.1,now.2-semantic_stats_before.2);
         }
         trace("initializer recipe planning start");
-        let initializer_recipes=initializer_pipeline::recipes(&initializer_pipeline::group_assignments(pending_dynamic.clone()),&dmb,&strings,true);
+        let mut initializer_recipes=initializer_pipeline::recipes(&initializer_pipeline::group_assignments(pending_dynamic.clone()),&dmb,&strings,true);
         let modified_groups:Vec<_>=modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).map(|declaration| {
             let owner=class_paths[&modified.parents[declaration.header.trim()]];
             let assignments=declaration.children.iter().map(|child| {
@@ -4305,7 +4305,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 PendingDynamic {owner:Some(owner),name:name.trim().into(),expression:expression.trim().into(),sized_array:false}
             }).collect();(Some(owner),assignments)
         }).collect();
-        let modified_initializer_recipes=initializer_pipeline::recipes(&modified_groups,&dmb,&strings,false);
+        let mut modified_initializer_recipes=initializer_pipeline::recipes(&modified_groups,&dmb,&strings,false);
+        trace(&format!("initializer source handles: primary={} modified={} addressed_bytes={}",initializer_recipes.len(),modified_initializer_recipes.len(),initializer_recipes.iter().chain(&modified_initializer_recipes).map(|recipe|recipe.source.bytes).sum::<usize>()));
+        session.initializer_sources.archive(&mut initializer_recipes);
+        session.initializer_sources.archive(&mut modified_initializer_recipes);
         trace("initializer recipe planning complete; frozen composition start");
         let frozen = canonical::FrozenSkeleton::new(dmb, canonical::SkeletonMetadata {
             strings:strings.into(), proc_paths, class_paths,
