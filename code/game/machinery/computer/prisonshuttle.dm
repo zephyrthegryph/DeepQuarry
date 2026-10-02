@@ -76,31 +76,31 @@ UI_DATA_REPLACE(/obj/machinery/computer/prison_shuttle, "merge:ui_data_obj_machi
 UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_dock", ui_act_send_to_dock)
 UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_dock)
 	if(!prison_can_move())
-		to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE
 	if(!GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_prison = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/prison_shuttle, "send_to_station", ui_act_send_to_station)
 UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 	if(!prison_can_move())
-		to_chat(usr, span_warning("The prison shuttle is unable to leave."))
+		to_chat(user, span_warning("The prison shuttle is unable to leave."))
 		return TRUE
 	if(GLOB.prison_shuttle_at_station || GLOB.prison_shuttle_moving_to_station || GLOB.prison_shuttle_moving_to_prison)
 		return TRUE
 	post_signal("prison")
-	to_chat(usr, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
+	to_chat(user, span_notice("The prison shuttle has been called and will arrive in [(PRISON_MOVETIME/10)] seconds."))
 	GLOB.prison_shuttle_moving_to_station = 1
 	GLOB.prison_shuttle_time = world.timeofday + PRISON_MOVETIME
 	set_in_flight(TRUE)
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 
