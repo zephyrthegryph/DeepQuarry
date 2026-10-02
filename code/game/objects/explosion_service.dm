@@ -176,10 +176,13 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 			return FALSE
 	record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
 
+	// Out of budget: yield (FALSE), so the lane resumes this phase next tick. Returning TRUE ended the
+	// step, and the next fresh step saw the run finished, called end_resolve() and went to sleep:
+	// the queued blast batches were never delivered and the epoch's deferred batches never closed.
 	if(resolve_explosions && !deliver_blast_batches())
-		return TRUE
+		return FALSE
 	if(resolve_explosions && !flush_deferred_turf_updates())
-		return TRUE
+		return FALSE
 
 	// Finalization is resumable too. A cascade can contain thousands of nested
 	// submissions; emitting every global signal in one call used to defeat the

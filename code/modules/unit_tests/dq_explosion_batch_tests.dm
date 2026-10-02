@@ -212,3 +212,23 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 			break
 		om_test_ticks(1)
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch went to sleep with its contract batch still open")
+
+/// A lane step whose blast delivery runs out of budget resumes it next tick: every queued atom
+/// gets its packet and the epoch ends, closing its contract batch.
+/datum/unit_test/dq_explosion_epoch_resumes_blast_delivery
+
+/datum/unit_test/dq_explosion_epoch_resumes_blast_delivery/Run()
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "a contract batch was already open")
+	set_var(GLOB.explosion_service, "blast_batch_budget", 2)
+	GLOB.dq_blast_probe_log.Cut()
+	var/turf/T = test_floor()
+	for(var/i in 1 to 6)
+		allocate(/obj/structure/dq_blast_probe/alpha, T)
+	explosion(T, 0, 0, 1)
+	for(var/i in 1 to 80)
+		if(!SScontracts.is_contract_batching())
+			break
+		om_test_ticks(1)
+	TEST_ASSERT_EQUAL(GLOB.explosion_service.pending_blast_count(), 0, "blasts were left queued after the epoch")
+	TEST_ASSERT(length(GLOB.dq_blast_probe_log) >= 6, "only [length(GLOB.dq_blast_probe_log)] of 6 probes got a packet")
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch ended with its contract batch still open")
