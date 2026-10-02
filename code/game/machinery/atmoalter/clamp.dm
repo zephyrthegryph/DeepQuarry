@@ -60,7 +60,7 @@
 			rel_set(src, nameof(network_node2), P2.network)
 
 // a closed clamp reopens its pipe.
-/obj/machinery/clamp/on_destroy(force)
+/obj/machinery/clamp/lifecycle_prerelease()
 	if(!open)
 		open()
 	..()
