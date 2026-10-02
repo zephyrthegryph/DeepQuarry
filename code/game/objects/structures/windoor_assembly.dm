@@ -180,7 +180,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 		windoor.req_access = electronics.conf_access
 	electronics.forceMove(windoor)
 	own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
-	qdel(src)
+	replace_with(src, windoor)
 	return OP_OK
 
 /// How far the assembly is built, as the number its picture is made from: 01 loose or bolted down, 02 wired or beyond.
