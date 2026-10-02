@@ -398,6 +398,7 @@
 #include "interim_power_reagents.dm"
 #include "interim_reagent_pour.dm"
 #include "interim_smokable_lifecycle.dm"
+#include "interim_storage_lifecycle.dm"
 #include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
