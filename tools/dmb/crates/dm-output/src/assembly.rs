@@ -16,6 +16,9 @@ macro_rules! native {($( $get:ident,$set:ident,$ty:ty; )*)=>{$(fn $get(&self)->&
 macro_rules! physical {($( $get:ident,$set:ident,$ty:ty; )*)=>{$(fn $get(&self)->&$ty {&self.metadata.$get}fn $set(&mut self)->&mut $ty {&mut self.metadata.$get})*};}
 pub trait AssemblyImage {
     sections!(declare);
+    fn supports_typed_segments(&self)->bool {false}
+    fn append_proc_source_segments(&mut self,_rows:Vec<crate::typed_table::TableSegment<Proc>>)->io::Result<std::ops::Range<usize>> {Err(io::Error::new(io::ErrorKind::Unsupported,"native typed segments"))}
+    fn append_variable_source_segments(&mut self,_rows:Vec<crate::typed_table::TableSegment<Variable>>)->io::Result<std::ops::Range<usize>> {Err(io::Error::new(io::ErrorKind::Unsupported,"native typed segments"))}
     fn proc_count(&self)->usize;
     fn proc(&self,index:usize)->io::Result<Proc>;
     fn append_proc(&mut self,row:Proc)->io::Result<u32>;
@@ -100,6 +103,10 @@ impl AssemblyImage for Dmb {
 }
 impl AssemblyImage for crate::wire_image::WireImageBuilder {
     sections!(physical);
+    fn supports_typed_segments(&self)->bool {true}
+    fn append_proc_source_segments(&mut self,rows:Vec<crate::typed_table::TableSegment<Proc>>)->io::Result<std::ops::Range<usize>> {self.append_proc_segments(rows)}
+    fn append_variable_source_segments(&mut self,rows:Vec<crate::typed_table::TableSegment<Variable>>)->io::Result<std::ops::Range<usize>> {self.append_variable_segments(rows)}
+
     fn proc_count(&self)->usize {self.procs.len()}
     fn proc(&self,index:usize)->io::Result<Proc> {self.procs.get(index)}
     fn append_proc(&mut self,row:Proc)->io::Result<u32> {let index=self.procs.append(row)?;self.promote_object_ids();Ok(index)}

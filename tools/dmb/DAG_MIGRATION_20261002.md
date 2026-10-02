@@ -360,3 +360,13 @@ Commit52d900ca6a plus initializer windows75e0a36f73; CLI and iteration example C
 Cold empty-cache build172.980094s; unchanged0.258507s; one body edit15.595985s (1 lowered/68410 reused); revert4.843415s. Fresh process unchanged0.258117s; fresh process with body edit25.085319s (1 lowered/68410 reused). Benchmark success means compiler publication, not semantic/runtime parity. Cold restart now preserves exact candidate reuse. Warm body reused frozen declaration skeleton in1.089s: shared allocation census prevented its prior eviction. Metadata read0.286s, decode1.537s, replay0.928s; body bytecode validation/serialization1.205s. Some output metadata recipes still rebuilt (242 built/68169 reused) despite semantic lowering reuse; targeted range composition remains required.
 
 Old Y recovery cache archive completed at D:/dmb-benchmark-archive/20261002-y-cache; E old cache path removed by content-preserving Move-Item. SSD free space after move9.9GB, after fresh AB cache roughly4.8GB. Archive never used as active benchmark storage.
+
+## Next integrated checkpoint (2026-10-02)
+
+- Generic packed indexes now use binary locator views and bounded exact-witness validated-index reuse. Transactional current-bucket reads remain required; this does not pretend that raw bucket IO is eliminated.
+- Invocation fragments and metadata/templates share the generic packed-record path, retaining optional legacy fallback.
+- Physical procedure/variable snapshots can compose exact unchanged addressed slices without rewriting table rows; relocated row fingerprints remain mandatory after semantic and debug witnesses authorize replay. Snapshot capture visits physical order to keep decoded page caches bounded and avoid lexical-order page thrashing.
+- Typed ranges and final serialization consume bounded 1024-row windows, with one hydration per overlapping page rather than one lock/read per row.
+- Iteration benchmark reports compiler-child peak private/working memory and cumulative Windows IO counters. Timing-only native compilation; no Rust tests or DreamDaemon.
+- AB cache preserved at D:/dmb-benchmark-archive/20261002-ab-cache; active timing caches remain on E SSD.
+- Remaining explicit gaps: full procedure metadata traversal/decode and cold declaration preparation, durable physical-row directory restoration, structural-edit target, and correctness gates. No completion claim.

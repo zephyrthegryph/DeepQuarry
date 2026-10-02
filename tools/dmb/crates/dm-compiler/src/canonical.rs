@@ -204,6 +204,7 @@ pub(super) struct InvocationFragments {
     pending: BTreeMap<String, Vec<u8>>,
     pending_bytes: usize,
     store: Option<Store>,
+    packed:Option<dm_store::PackedRecords>,
     bytes: usize,
     signature_misses: BTreeSet<String>,
     disk_syntax_ready: bool,
@@ -224,10 +225,35 @@ impl InvocationFragments {
     fn open(root: &Path) -> Self {
         let mut cache = Self::default();
         cache.store = Store::open(root.join("declaration-fragments.redb")).ok();
+        cache.packed=cache.store.clone().and_then(|store|dm_store::PackedRecords::new(store,format!("invocation-fragments-packed-v1-{}",env!("DM_EMISSION_FINGERPRINT"))).ok());
         cache.disk_syntax_ready = cache.store.as_ref().and_then(|store|
             store.read_many(&[Key::new("declaration-fragment-ready", Self::namespace())],None).ok())
             .is_some_and(|record|record.values.first().is_some_and(Option::is_some));
         cache
+    }
+    /// Restore only requested records, using generic packed pages with optional
+    /// legacy rows. Split oversized requests rather than widening memory bounds.
+    fn read_records(store:&Store,packed:Option<&dm_store::PackedRecords>,keys:&[Key],prefix:&str,max_record:usize,max_bytes:usize,visit:&mut impl FnMut(&Key,Option<Vec<u8>>)) {
+        if keys.is_empty(){return;}
+        let mut legacy=Vec::new();
+        if let Some(packed)=packed {
+            let names:Vec<_>=keys.iter().map(|key|format!("{prefix}{}",key.name)).collect();
+            match packed.read_many(&names,max_record,max_bytes,None) {
+                Ok(rows)=>for (key,row) in keys.iter().zip(rows) {if row.is_some(){visit(key,row);}else{legacy.push(key.clone());}},
+                Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&keys.len()>1=>{
+                    let middle=keys.len()/2;
+                    Self::read_records(store,Some(packed),&keys[..middle],prefix,max_record,max_bytes,visit);
+                    Self::read_records(store,Some(packed),&keys[middle..],prefix,max_record,max_bytes,visit);
+                    return;
+                }
+                Err(_)=>legacy.extend_from_slice(keys),
+            }
+        }else{legacy.extend_from_slice(keys);}
+        default_plans::read_stage_batch(store,&legacy,max_record,max_bytes,visit);
+    }
+    fn read_record(&self,key:Key,prefix:&str)->Option<Vec<u8>> {
+        let store=self.store.as_ref()?;let mut row=None;
+        Self::read_records(store,self.packed.as_ref(),&[key],prefix,1024*1024,1024*1024,&mut |_,bytes|row=bytes);row
     }
     fn signature_namespace() -> String {
         format!("invocation-signatures-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
@@ -273,6 +299,7 @@ impl InvocationFragments {
         self.window_declarations.clear();
         self.requested_signatures.clear();self.requested_signature_bytes=0;
         let Some(store)=self.store.clone() else {return;};
+        let packed=self.packed.clone();
         let mut handles=Vec::new();
         let mut payloads=BTreeSet::new();
         for (item,owner,verb) in inputs {
@@ -284,7 +311,7 @@ impl InvocationFragments {
             } else if !self.handle_misses.contains(&key) {handles.push(Key::new(Self::handles_namespace(),key));}
         }
         self.counters.batch_records+=handles.len();
-        default_plans::read_stage_batch(&store,&handles,128,1024*1024,&mut |key,bytes| {
+        Self::read_records(&store,packed.as_ref(),&handles,"handle:",128,1024*1024,&mut |key,bytes| {
             if let Some(identity)=bytes.and_then(|bytes|String::from_utf8(bytes).ok()).filter(|identity|identity.len()==64&&identity.bytes().all(|b|b.is_ascii_hexdigit())) {
                 self.remember_handle(&key.name,&identity);
                 if !self.entries.contains_key(&identity)&&!self.syntax_misses.contains(&identity) {payloads.insert(Key::new(Self::namespace(),identity));}
@@ -292,7 +319,7 @@ impl InvocationFragments {
         });
         let payloads:Vec<_>=payloads.into_iter().collect();
         self.counters.batch_records+=payloads.len();
-        default_plans::read_stage_batch(&store,&payloads,1024*1024,8*1024*1024,&mut |key,bytes| {
+        Self::read_records(&store,packed.as_ref(),&payloads,"",1024*1024,8*1024*1024,&mut |key,bytes| {
             if let Some(bytes)=bytes {
                 let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
                 if self.requested_bytes.saturating_add(charge)<=16*1024*1024 {
@@ -308,11 +335,12 @@ impl InvocationFragments {
     }
     pub(super) fn prefetch_signatures(&mut self, inputs:&[(&Item,&str,bool)]) {
         let Some(store)=self.store.clone() else {return;};
+        let packed=self.packed.clone();
         let keys:Vec<_>=inputs.iter().map(|(item,owner,verb)|crate::lower_cache::shared_binding_fingerprint(&(*owner,*verb,&item.header)))
             .collect::<BTreeSet<_>>().into_iter().filter(|key|!self.signatures.contains_key(key)&&!self.requested_signatures.contains_key(key)&&!self.signature_misses.contains(key)).map(|key|Key::new(Self::signature_namespace(),key)).collect();
         self.counters.batch_records+=keys.len();
         for keys in keys.chunks(4096) {
-            default_plans::read_stage_batch(&store,keys,1024*1024,8*1024*1024,&mut |key,bytes| {
+            Self::read_records(&store,packed.as_ref(),keys,"signature:",1024*1024,8*1024*1024,&mut |key,bytes| {
                 if let Some(bytes)=bytes {
                     if let Ok(value)=rmp_serde::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
                         let size=bytes.len()*3+key.name.len()+128;
@@ -342,7 +370,7 @@ impl InvocationFragments {
         self.counters.signature_misses+=1;
         if !self.signature_misses.contains(&key) {
             self.counters.point_reads+=1;
-            if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::signature_namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
+            if let Some(bytes)=self.read_record(Key::new(Self::signature_namespace(),&key),"signature:") {
                 if let Ok(value)=rmp_serde::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
                     let size=bytes.len()*3+key.len()+128;
                     if self.bytes.saturating_add(size)<=Self::LIMIT {self.bytes+=size;self.signatures.insert(key.clone(),Arc::new(value.clone()));}
@@ -408,7 +436,7 @@ impl InvocationFragments {
         self.counters.syntax_misses+=1;
         if self.disk_syntax_ready && !self.syntax_misses.contains(&key) {
             self.counters.point_reads+=1;
-            if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
+            if let Some(bytes)=self.read_record(Key::new(Self::namespace(),&key),"") {
                 if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {
                     let value=Arc::new(value);self.queue_pending(format!("handle:{declaration_key}"),key.as_bytes().to_vec());self.retain(key,Arc::clone(&value),bytes.len());return Ok(value);
                 }
@@ -483,6 +511,7 @@ impl InvocationFragments {
     }
     fn release_decoded(&mut self) {
         self.flush();
+        if let Some(packed)=&self.packed{packed.clear_index_cache();}
         self.entries.clear();self.signatures.clear();self.bytes=0;
         self.requested_syntax.clear();self.requested_bytes=0;
         self.requested_encoded.clear();self.requested_encoded_bytes=0;
@@ -497,6 +526,7 @@ impl InvocationFragments {
         }
     }
     fn queue_pending(&mut self,key:String,bytes:Vec<u8>) {
+        if self.pending.len()>=60_000 {self.flush();}
         if let Some(handle)=key.strip_prefix("handle:") {if let Ok(payload)=std::str::from_utf8(&bytes){self.remember_handle(handle,payload);}self.handle_misses.remove(handle);}
         else if let Some(signature)=key.strip_prefix("signature:") {self.signature_misses.remove(signature);}
         else {self.syntax_misses.remove(&key);}
@@ -510,27 +540,28 @@ impl InvocationFragments {
             self.pending.clear();self.pending_bytes=0;
             return;
         };
-        let mut updates: Vec<_> = self
-            .pending
-            .iter()
-            .map(|(key, bytes)| {
-                if let Some(key) = key.strip_prefix("signature:") {
-                    Change::Put(Key::new(Self::signature_namespace(), key), bytes.clone())
-                } else if let Some(key) = key.strip_prefix("handle:") {
-                    Change::Put(Key::new(Self::handles_namespace(), key), bytes.clone())
-                } else {
-                    Change::Put(Key::new(Self::namespace(), key), bytes.clone())
-                }
-            })
-            .collect();
-        updates.push(Change::Put(Key::new("declaration-fragment-ready",Self::namespace()),vec![1]));
-        if store.commit(&[], &updates, None).is_ok() {
-            self.pending.clear();self.pending_bytes=0;
+        let applied=if let Some(packed)=&self.packed {
+            let records:Vec<_>=std::mem::take(&mut self.pending).into_iter().collect();
+            packed.write_many(&records,None).is_ok_and(|commit|commit==dm_store::Commit::Applied)
+        }else {
+            let updates:Vec<_>=self.pending.iter().map(|(key,bytes)| {
+                if let Some(key)=key.strip_prefix("signature:"){Change::Put(Key::new(Self::signature_namespace(),key),bytes.clone())}
+                else if let Some(key)=key.strip_prefix("handle:"){Change::Put(Key::new(Self::handles_namespace(),key),bytes.clone())}
+                else {Change::Put(Key::new(Self::namespace(),key),bytes.clone())}
+            }).collect();
+            store.commit(&[],&updates,None).is_ok_and(|commit|commit==dm_store::Commit::Applied)
+        };
+        if applied&&!self.disk_syntax_ready {
+            if store.commit(&[],&[Change::Put(Key::new("declaration-fragment-ready",Self::namespace()),vec![1])],None).is_ok_and(|commit|commit==dm_store::Commit::Applied){self.disk_syntax_ready=true;}
         }
+        // These are rebuildable optional artifacts; persistent contention or I/O
+        // failure cannot grow a pending queue beyond its bounded publication.
+        self.pending.clear();self.pending_bytes=0;
         if started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation publication: records={records} bytes={bytes} {:.3}s",started.elapsed().as_secs_f64());}
     }
     fn resident_bytes(&self) -> usize {
         self.bytes
+            + self.packed.as_ref().map_or(0,dm_store::PackedRecords::retained_index_bytes)
             + self.handles.len()*112
             + self.requested_bytes + self.requested_encoded_bytes + self.requested_signature_bytes
             + (self.syntax_misses.len()+self.handle_misses.len())*128
@@ -1000,6 +1031,7 @@ pub(crate) struct CanonicalSession {
     pub(super) procedure_fragments: super::procedure_fragments::ProcedureFragments,
     pub(super) invocation_fragments: InvocationFragments,
     pub(super) invocation_queries: InvocationQueries,
+    pub(super) physical_rows:crate::physical_rows::PhysicalRowsDirectory,
     pub(super) initializer_sources:initializer_pipeline::InitializerSources,
     pub(super) owner_bindings:OwnerBindingQueries,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
@@ -1064,6 +1096,7 @@ impl CanonicalSession {
             ));
         self.invocation_fragments = InvocationFragments::open(&root);
         self.invocation_queries = InvocationQueries::open(&root);
+        self.physical_rows.clear();
         self.initializer_sources=initializer_pipeline::InitializerSources::open(&root);
         self.owner_bindings.bind(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));
@@ -1090,6 +1123,7 @@ impl CanonicalSession {
             .saturating_add(self.procedure_fragments.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
             .saturating_add(self.invocation_queries.resident_bytes())
+            .saturating_add(self.physical_rows.resident_bytes())
             .saturating_add(self.skeleton.as_ref().map_or_else(||self.owner_bindings.resident_bytes(),|(_,prefix)|self.owner_bindings.resident_bytes_excluding(&prefix.metadata.shared)))
             .saturating_add(
                 self.owner_frames
@@ -1164,6 +1198,7 @@ impl CanonicalSession {
         self.output_validation.clear();
         self.declaration_base = None;
         self.emission_plans.clear();
+        self.physical_rows.clear();
         self.procedure_fragments.clear_decoded();
         // These are optional duplicate decoded declaration fragments; frozen
         // plans and addressed disk handles retain the authoritative inputs.

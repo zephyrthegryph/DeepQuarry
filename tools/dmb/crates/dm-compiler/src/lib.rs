@@ -803,3 +803,5 @@ pub(crate) fn reserve_proc_sentinel(dmb: &mut byond_dmb::dmb::Dmb) {
         });
     }
 }
+
+mod physical_rows;

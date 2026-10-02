@@ -648,6 +648,14 @@ pub trait WireRecordSource {
     fn proc_row(&self,index:usize)->io::Result<Proc>;
     fn variable_count(&self)->usize;
     fn variable_row(&self,index:usize)->io::Result<Variable>;
+    fn proc_rows(&self,start:usize,end:usize)->io::Result<Vec<Proc>> {
+        if start>end||end>self.proc_count()||end-start>1024 {return Err(invalid("proc row window exceeds bound"));}
+        (start..end).map(|index|self.proc_row(index)).collect()
+    }
+    fn variable_rows(&self,start:usize,end:usize)->io::Result<Vec<Variable>> {
+        if start>end||end>self.variable_count()||end-start>1024 {return Err(invalid("variable row window exceeds bound"));}
+        (start..end).map(|index|self.variable_row(index)).collect()
+    }
 }
 pub trait WireListSource {
     fn len(&self)->usize;
@@ -2477,16 +2485,24 @@ impl Dmb {
             w.bounded_page();
         }
         w.object(u32::try_from(proc_count).map_err(|_|invalid("proc table count exceeds u32"))?);
-        for index in 0..proc_count {
-            let item=match records {Some(source)=>source.proc_row(index)?,None=>self.procs[index].clone()};
+        for start in (0..proc_count).step_by(1024) {
+          let end=(start+1024).min(proc_count);
+          let rows=match records {Some(source)=>source.proc_rows(start,end)?,None=>self.procs[start..end].to_vec()};
+          if rows.len()!=end-start {return Err(invalid("proc row window count mismatch"));}
+          for item in rows {
             if (item.flags&0x80!=0)!=item.extended_flags.is_some() {return Err(invalid("proc flag disagrees with data"));}
             if let Some(cache)=wire_cache.as_deref_mut() {cache.append(&mut w,4,WireRecord::Proc(item.clone()),|w|item.write(w));}else{item.write(&mut w);}w.bounded_page();
+          }
         }
         w.object(u32::try_from(variable_count).map_err(|_|invalid("variable table count exceeds u32"))?);
-        for index in 0..variable_count {
-            let item=match records {Some(source)=>source.variable_row(index)?,None=>self.variables[index].clone()};
+        for start in (0..variable_count).step_by(1024) {
+          let end=(start+1024).min(variable_count);
+          let rows=match records {Some(source)=>source.variable_rows(start,end)?,None=>self.variables[start..end].to_vec()};
+          if rows.len()!=end-start {return Err(invalid("variable row window count mismatch"));}
+          for item in rows {
             let encode=|w:&mut Writer| {w.u8(item.kind);w.u32(item.value);w.object(item.name);};
             if let Some(cache)=wire_cache.as_deref_mut() {cache.append(&mut w,5,WireRecord::Variable(item.clone()),encode);}else{encode(&mut w);}w.bounded_page();
+          }
         }
         w.u32(self.variable_footer);
         w.table(&self.proc_references, |w, value| {

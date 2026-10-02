@@ -128,18 +128,23 @@ impl InvocationQueries {
         Self {store,packed_metadata,..Default::default()}
     }
     pub(crate) fn reset_counters(&mut self){self.hits=0;self.misses=0;self.metadata_restored=0;self.metadata_reused=0;self.metadata_derived=0;self.persistence_batches=0;self.persistence_seconds=0.0;}
-    pub(crate) fn clear(&mut self){self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.metadata_negative.clear();self.template_negative.clear();self.validity.clear();}
+    pub(crate) fn clear(&mut self){if let Some(packed)=&self.packed_metadata{packed.clear_index_cache();}self.templates.clear();self.handles.clear();self.order.clear();self.bytes=0;self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.metadata_negative.clear();self.template_negative.clear();self.validity.clear();}
     pub(crate) fn release_decoded(&mut self) {
-        self.flush();self.templates.clear();self.order.clear();self.bytes=0;
+        self.flush();if let Some(packed)=&self.packed_metadata{packed.clear_index_cache();}self.templates.clear();self.order.clear();self.bytes=0;
         self.metadata.clear();self.metadata_bytes=0;self.requested_metadata.clear();self.requested_metadata_bytes=0;self.validity.clear();
         // Weak handles continue selecting templates retained by frozen plans.
     }
-    pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.handles.len()*96+self.validity.bytes+self.requested_metadata_bytes+(self.metadata_negative.len()+self.template_negative.len())*48}
+    pub(crate) fn resident_bytes(&self)->usize {self.bytes+self.metadata_bytes+self.pending_bytes+self.packed_metadata.as_ref().map_or(0,dm_store::PackedRecords::retained_index_bytes)+self.handles.len()*96+self.validity.bytes+self.requested_metadata_bytes+(self.metadata_negative.len()+self.template_negative.len())*48}
     pub(crate) fn flush(&mut self){
         if self.pending.is_empty()&&self.pending_metadata.is_empty(){return;}
         let started=std::time::Instant::now();
-        if !self.pending.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&self.pending,None);}}
-        if !self.pending_metadata.is_empty(){if let Some(packed)=&self.packed_metadata{let _=packed.write_many(&self.pending_metadata,None);}}
+        if let Some(packed)=&self.packed_metadata {
+            let mut records=std::mem::take(&mut self.pending_metadata);
+            for change in std::mem::take(&mut self.pending) {
+                if let Change::Put(key,bytes)=change {records.push((format!("template:{}",key.name),bytes));}
+            }
+            if !records.is_empty(){let _=packed.write_many(&records,None);}
+        }else if !self.pending.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&self.pending,None);}}
         self.persistence_seconds+=started.elapsed().as_secs_f64();self.persistence_batches+=1;
         self.pending.clear();self.pending_metadata.clear();self.pending_bytes=0;
     }
@@ -147,12 +152,24 @@ impl InvocationQueries {
         // Old weak pointers are selectors, never a permanently growing history.
         if self.handles.len()>=72_000 {self.handles.retain(|_,template|template.strong_count()>0);}
         let Some(store)=self.store.clone()else{return;};
-        let keys:Vec<_>=keys.iter().filter(|key|self.authored_candidate(key).is_none()&&!InvocationFragments::digest_bytes(key).is_some_and(|key|self.template_negative.contains(&key))).map(|key|Key::new(Self::namespace(),key)).collect();
+        let mut keys:Vec<_>=keys.iter().filter(|key|self.authored_candidate(key).is_none()&&!InvocationFragments::digest_bytes(key).is_some_and(|key|self.template_negative.contains(&key))).map(|key|Key::new(Self::namespace(),key)).collect();
+        if let Some(packed)=self.packed_metadata.clone() {
+            let mut restored=HashSet::new();
+            for chunk in keys.chunks(1024) {
+                let names:Vec<_>=chunk.iter().map(|key|format!("template:{}",key.name)).collect();
+                read_packed_requested(&packed,&names,&mut |name,bytes| {
+                    let key=name.strip_prefix("template:").unwrap_or(name);
+                    if let Some(bytes)=bytes {if let Ok(template)=rmp_serde::from_slice::<InvocationTemplate>(&bytes) {if template.declaration_identity==key {self.admit(Arc::new(template),bytes.len());restored.insert(key.to_owned());}}}
+                });
+            }
+            keys.retain(|key|!restored.contains(&key.name));
+        }
         default_plans::read_stage_batch(&store,&keys,1024*1024,8*1024*1024,&mut |key,bytes| {
             if let Some(bytes)=bytes {if let Ok(template)=rmp_serde::from_slice::<InvocationTemplate>(&bytes) {if template.declaration_identity==key.name {self.admit(Arc::new(template),bytes.len());}}}
             else if self.template_negative.len()<72_000 {if let Some(digest)=InvocationFragments::digest_bytes(&key.name){self.template_negative.insert(digest);}}
         });
     }
+
     fn metadata_namespace()->String {format!("invocation-metadata-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
     fn metadata_addresses()->String {format!("invocation-metadata-addresses-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
     /// Hydrate only named parent queries requested by this ordered window. Both
@@ -180,20 +197,20 @@ impl InvocationQueries {
         if let Some(packed)=self.packed_metadata.clone() {
             let addresses:Vec<_>=requested.keys().cloned().collect();
             for chunk in addresses.chunks(1024) {
-                if let Ok(rows)=packed.read_many(chunk,1024*1024,8*1024*1024,None) {
-                    for (address,bytes) in chunk.iter().zip(rows) {
-                        let Some(bytes)=bytes else{continue;};
-                        let Some(query)=requested.get(address) else{continue;};
-                        if let Some(record)=decode_metadata_record(&bytes,query) {
-                            let charge=bytes.len().saturating_mul(3)+192;
-                            if self.requested_metadata_bytes+charge<=Self::LIMIT {
-                                self.requested_metadata_bytes+=charge;self.metadata_restored+=1;
-                                self.requested_metadata.insert(query.clone(),Arc::new(record));
-                                requested.remove(address);
+                read_packed_requested(&packed,chunk,&mut |address,bytes| {
+                    if let Some(bytes)=bytes {
+                        if let Some(query)=requested.get(address) {
+                            if let Some(record)=decode_metadata_record(&bytes,query) {
+                                let charge=bytes.len().saturating_mul(3)+192;
+                                if self.requested_metadata_bytes+charge<=Self::LIMIT {
+                                    self.requested_metadata_bytes+=charge;self.metadata_restored+=1;
+                                    self.requested_metadata.insert(query.clone(),Arc::new(record));
+                                    requested.remove(address);
+                                }
                             }
                         }
                     }
-                }
+                });
             }
         }
         let addresses:Vec<_>=requested.keys().map(|key|Key::new(Self::metadata_addresses(),key)).collect();
@@ -237,7 +254,7 @@ impl InvocationQueries {
         let Ok(bytes)=rmp_serde::to_vec_named(template.as_ref())else{return;};
         self.admit(Arc::clone(&template),bytes.len());
         if bytes.len()>1024*1024{return;}
-        if self.pending_bytes+bytes.len()>Self::WRITE_BATCH{self.flush();}
+        if self.pending_bytes+bytes.len()>Self::WRITE_BATCH||self.pending.len()+self.pending_metadata.len()>=60_000{self.flush();}
         self.pending_bytes+=bytes.len();self.pending.push(Change::Put(Key::new(Self::namespace(),&template.declaration_identity),bytes));
     }
     pub(crate) fn authored_candidate(&self,key:&str)->Option<Arc<InvocationTemplate>> {
@@ -319,7 +336,7 @@ impl InvocationQueries {
             self.metadata_bytes+=charge;self.metadata.insert(key.clone(),(Arc::clone(&record),charge));
             if let Some(bytes)=encoded {
                 if bytes.len()<=1024*1024 {
-                    if self.pending_bytes+bytes.len()+record.identity.len()>Self::WRITE_BATCH {self.flush();}
+                    if self.pending_bytes+bytes.len()+record.identity.len()>Self::WRITE_BATCH||self.pending.len()+self.pending_metadata.len()>=60_000 {self.flush();}
                     let address=crate::lower_cache::shared_binding_fingerprint(&key);
                     if let Some(digest)=InvocationFragments::digest_bytes(&address){self.metadata_negative.remove(&digest);}
                     self.pending_bytes+=bytes.len()+address.len();
@@ -334,6 +351,19 @@ impl InvocationQueries {
             record
         };
         active.remove(&key);context.current.insert(key,Arc::clone(&record));Ok(record)
+    }
+}
+
+fn read_packed_requested(packed:&dm_store::PackedRecords,keys:&[String],visit:&mut impl FnMut(&str,Option<Vec<u8>>)) {
+    if keys.is_empty(){return;}
+    match packed.read_many(keys,1024*1024,8*1024*1024,None) {
+        Ok(rows)=>for (key,row) in keys.iter().zip(rows){visit(key,row);},
+        Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&keys.len()>1=>{
+            let middle=keys.len()/2;
+            read_packed_requested(packed,&keys[..middle],visit);
+            read_packed_requested(packed,&keys[middle..],visit);
+        }
+        Err(_)=>for key in keys {visit(key,None);},
     }
 }
 

@@ -931,6 +931,12 @@ pub fn compile_preprocessed_project_with_resource_catalog_physical(
         dmb.world_mut().hub_channel_skin[2]=skin_id;
     }
     crate::maps::emit_maps_with_catalog_cached(&mut dmb, maps, resources, &mut frontend.canonical.maps)?;
+    // Capture finalized rows after helper/constants/map finalization. The optional
+    // directory never authorizes semantic reuse; exact relocated row bytes gate it.
+    let physical_capture_started=std::time::Instant::now();
+    let physical_rows_reused=frontend.canonical.physical_rows.hits;
+    if let Err(_error)=frontend.canonical.physical_rows.capture(&mut dmb) {frontend.canonical.physical_rows.clear();}
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE physical row directory: reused={} capture_seconds={:.3} resident_bytes={}",physical_rows_reused,physical_capture_started.elapsed().as_secs_f64(),frontend.canonical.physical_rows.resident_bytes());}
     let dmb=dmb.finish(&mut frontend.canonical.output_validation).map_err(|error|error.to_string())?;
     Ok(PhysicalCompiledProject { dmb, emitted, rsc_bytes, resource_fingerprint: resources.fingerprint,
         resource_catalog: resources.clone(), map_fingerprint: maps.fingerprint,
@@ -1837,6 +1843,8 @@ struct ReplayScratch {
 fn replay_procedure_fragment<I:AssemblyImage>(
     fragment: &procedure_fragments::OutputFragment,
     semantic_identity:&str,
+    physical_rows:&mut crate::physical_rows::PhysicalRowsDirectory,
+    procedure_key:&crate::ProcKey,
     scratch: &mut ReplayScratch,
     pending: &PendingProc<'_>,
     plan: &canonical::InvocationPlan,
@@ -1969,9 +1977,8 @@ fn replay_procedure_fragment<I:AssemblyImage>(
             let width=if dmb.header().flags&0x4000_0000!=0 {4}else{2};
             if handle.object_width()!=width {return Ok(None);}
         } else if fragment.code_word_count.is_some_and(|count|count as usize!=fragment.words.len()) {return Ok(None);}
-        for variable in &fragment.variables {
-            let mut variable=variable.clone();variable.name=string_id(variable.name)?;dmb.append_variable(variable).map_err(|error|error.to_string())?;
-        }
+        let variable_start=dmb.variable_count();
+        let current_variables=fragment.variables.iter().map(|variable| {let mut variable=variable.clone();variable.name=string_id(variable.name)?;Ok(variable)}).collect::<Result<Vec<_>,String>>()?;
         let (code_id,words)=if let Some(handle)=selected_handle {
             (dmb.append_code_handle(handle.clone()).map_err(|error|error.to_string())?,None)
         } else {
@@ -1985,7 +1992,10 @@ fn replay_procedure_fragment<I:AssemblyImage>(
         dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
         let proc_index=dmb.proc_count();
         let mut record=fragment.record.clone();record.code_locals_args=expected_lists;
-        for id in &mut record.strings {*id=string_id(*id)?;}dmb.append_proc(record).map_err(|error|error.to_string())?;
+        for id in &mut record.strings {*id=string_id(*id)?;}
+        let reused=physical_rows.reuse(procedure_key,dmb,&record,&current_variables).map_err(|error|error.to_string())?;
+        if !reused {for variable in current_variables {dmb.append_variable(variable).map_err(|error|error.to_string())?;}dmb.append_proc(record).map_err(|error|error.to_string())?;}
+        physical_rows.observe(procedure_key,proc_index,variable_start,fragment.variables.len());
         attach_emitted_proc(dmb,pending.owner,&pending.owner_path,pending.verb,proc_index)?;
         return Ok(Some((proc_index,words,wire_projection.as_ref().is_some_and(|(_,relocated)|*relocated),true)));
     }
@@ -4366,6 +4376,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         &resource_ids.iter().collect::<BTreeMap<_, _>>());
     if let Some(report) = lowering_audit.as_deref_mut() { report.expected_procedures = procedure_count; }
     session.active_keys.clear();
+    session.physical_rows.begin();
     let mut dmb=dm_output::wire_image::WireImageBuilder::from_native(dmb,session.procedure_fragments.code_store());
     session.procedure_fragments.stats = Default::default();
     session.procedure_fragments.set_workers(workers);
@@ -4566,7 +4577,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             .or_else(||session.procedure_fragments.get(key,&descriptor,&candidate));
                         if let Some(fragment) = fragment {
                             let started = std::time::Instant::now();
-                            if let Some((proc_index, words, relocated, linked_rows)) = replay_procedure_fragment(&fragment, &candidate, &mut replay_scratch, next, plan,
+                            if let Some((proc_index, words, relocated, linked_rows)) = replay_procedure_fragment(&fragment, &candidate, &mut session.physical_rows, key, &mut replay_scratch, next, plan,
                                 &mut dmb, &mut strings, class_paths, &resource_ids, initializer_globals, global_proc_ids,
                                 source_debug, &mut session.graph, &mut session.active_keys,
                                 &mut argument_source_indices, &mut pending_argument_sources)? {
@@ -4941,6 +4952,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         .then_some((metadata.flags | 0x80, metadata.invisibility.unwrap_or(255))),
                         code_locals_args: [code_id, locals_id, args_id],
                     }).map_err(|error|error.to_string())?;
+                    session.physical_rows.observe(&key,proc_index,output_allocation_start.variables as usize,dmb.variable_count().saturating_sub(output_allocation_start.variables as usize));
                     parent_record_seconds += records_started.elapsed().as_secs_f64();
                     let fragment_started = std::time::Instant::now();
                     if reusable {

@@ -17,6 +17,7 @@ impl VerifiedCodeHandle {
     fn valid(&self)->bool {self.digest.len()==64&&self.digest.bytes().all(|c|c.is_ascii_hexdigit())
         &&self.words<=u16::MAX as usize&&matches!(self.width,2|4)}
 }
+#[derive(Clone)]
 pub enum ListObject {Resident(ListWords),Addressed(VerifiedCodeHandle)}
 #[derive(Default)]
 struct ReadWindow {rows:HashMap<String,Arc<[u8]>>,bytes:usize}
@@ -128,6 +129,12 @@ fn validate_bytes(handle:&VerifiedCodeHandle,bytes:&[u8])->io::Result<()> {
         return Err(invalid("wire list object shape mismatch"));
     } Ok(())
 }
+#[derive(Clone)]
+pub struct ListSourceSegment {rows:Arc<[ListObject]>,store:Option<Arc<CodeObjectStore>>}
+impl ListSourceSegment {
+ pub fn len(&self)->usize {self.rows.len()}
+ pub fn resident_bytes(&self)->usize {self.rows.len()*std::mem::size_of::<ListObject>()+self.rows.iter().map(|row|match row {ListObject::Resident(words)=>words.capacity()*4,ListObject::Addressed(handle)=>handle.digest.capacity()}).sum::<usize>()}
+}
 pub struct ListObjectTable {rows:Vec<ListObject>,store:Option<Arc<CodeObjectStore>>}
 impl ListObjectTable {
     pub fn new(store:Option<Arc<CodeObjectStore>>)->Self {Self {rows:Vec::new(),store}}
@@ -136,6 +143,21 @@ impl ListObjectTable {
     pub fn append_verified(&mut self,handle:VerifiedCodeHandle)->io::Result<usize> {
         if !handle.valid()||self.store.is_none() {return Err(invalid("wire list handle lacks store"));}
         let id=self.len();self.rows.push(ListObject::Addressed(handle));Ok(id)
+    }
+    pub fn source_segments(&mut self,start:usize,end:usize)->io::Result<Vec<ListSourceSegment>> {
+        if start>end||end>self.len() {return Err(invalid("list source range out of bounds"));}
+        for row in &mut self.rows[start..end] {if let ListObject::Resident(words)=row {if let ListWords::Owned(_)=words {let old=std::mem::take(words);if let ListWords::Owned(owned)=old {*words=ListWords::Shared(owned.into());}}}}
+        Ok(self.rows[start..end].chunks(256).map(|rows|ListSourceSegment {rows:rows.to_vec().into(),store:self.store.clone()}).collect())
+    }
+    pub fn append_source_segments(&mut self,segments:Vec<ListSourceSegment>)->io::Result<Range<usize>> {
+        let mut store=self.store.clone();let start=self.len();let count=segments.iter().try_fold(0usize,|count,segment|count.checked_add(segment.len())).ok_or_else(||invalid("list source count overflow"))?;
+        let end=start.checked_add(count).ok_or_else(||invalid("list source count overflow"))?;u32::try_from(end).map_err(io::Error::other)?;
+        for segment in &segments {if segment.rows.iter().any(|row|matches!(row,ListObject::Addressed(_))) {
+            let candidate=segment.store.as_ref().ok_or_else(||invalid("addressed list segment lacks store"))?;
+            if store.as_ref().is_some_and(|old|!Arc::ptr_eq(old,candidate)) {return Err(invalid("foreign addressed list segment"));}store=Some(candidate.clone());
+            if segment.rows.iter().any(|row|matches!(row,ListObject::Addressed(handle) if !handle.valid())) {return Err(invalid("invalid addressed list segment"));}
+        }}
+        self.store=store;for segment in segments {self.rows.extend(segment.rows.iter().cloned());}Ok(start..end)
     }
     pub fn prepare_range(&self,range:Range<usize>)->io::Result<()> {
         if range.end>self.len()||range.start>range.end||range.len()>ROW_WINDOW {return Err(invalid("wire list preparation range exceeds bound"));}
@@ -343,10 +365,14 @@ impl WireImage {
 impl WireRecordSource for WireImageBuilder {
  fn proc_count(&self)->usize {self.procs.len()} fn proc_row(&self,index:usize)->io::Result<Proc> {self.procs.get(index)}
  fn variable_count(&self)->usize {self.variables.len()} fn variable_row(&self,index:usize)->io::Result<Variable> {self.variables.get(index)}
+ fn proc_rows(&self,start:usize,end:usize)->io::Result<Vec<Proc>> {self.procs.range(start,end)}
+ fn variable_rows(&self,start:usize,end:usize)->io::Result<Vec<Variable>> {self.variables.range(start,end)}
 }
 impl WireRecordSource for WireImage {
  fn proc_count(&self)->usize {self.procs.len()} fn proc_row(&self,index:usize)->io::Result<Proc> {self.procs.get(index)}
  fn variable_count(&self)->usize {self.variables.len()} fn variable_row(&self,index:usize)->io::Result<Variable> {self.variables.get(index)}
+ fn proc_rows(&self,start:usize,end:usize)->io::Result<Vec<Proc>> {self.procs.range(start,end)}
+ fn variable_rows(&self,start:usize,end:usize)->io::Result<Vec<Variable>> {self.variables.range(start,end)}
 }
 impl WireImageBuilder {
  pub fn procedure_segments(&mut self)->io::Result<Vec<crate::typed_table::TableSegment<Proc>>> {self.procs.segments()}
@@ -355,5 +381,11 @@ impl WireImageBuilder {
  pub fn append_variable_segments(&mut self,segments:Vec<crate::typed_table::TableSegment<Variable>>)->io::Result<Range<usize>> {let range=self.variables.append_segments(segments)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
  pub fn append_proc_pages(&mut self,store:Arc<Mutex<crate::typed_pages::TypedPages<Proc>>>,pages:Vec<crate::typed_pages::PageHandle>)->io::Result<Range<usize>> {let range=self.procs.append_pages(store,pages)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
  pub fn append_variable_pages(&mut self,store:Arc<Mutex<crate::typed_pages::TypedPages<Variable>>>,pages:Vec<crate::typed_pages::PageHandle>)->io::Result<Range<usize>> {let range=self.variables.append_pages(store,pages)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
+ pub fn capture_proc_table(&mut self)->io::Result<crate::typed_table::TypedTable<Proc>> {self.procs.snapshot()}
+ pub fn capture_variable_table(&mut self)->io::Result<crate::typed_table::TypedTable<Variable>> {self.variables.snapshot()}
+ pub fn proc_segments_range(&self,start:usize,end:usize)->io::Result<Vec<crate::typed_table::TableSegment<Proc>>> {self.procs.slice_segments(start,end)}
+ pub fn variable_segments_range(&self,start:usize,end:usize)->io::Result<Vec<crate::typed_table::TableSegment<Variable>>> {self.variables.slice_segments(start,end)}
+ pub fn list_segments_range(&mut self,start:usize,end:usize)->io::Result<Vec<ListSourceSegment>> {self.lists.source_segments(start,end)}
+ pub fn append_list_segments(&mut self,segments:Vec<ListSourceSegment>)->io::Result<Range<usize>> {let range=self.lists.append_source_segments(segments)?;crate::assembly::AssemblyImage::promote_object_ids(self);Ok(range)}
  pub fn typed_resident_bytes(&self)->usize {self.procs.resident_bytes()+self.variables.resident_bytes()}
 }

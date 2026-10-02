@@ -173,7 +173,52 @@ struct Phase {
     measurements: Vec<Measurement>,
     stderr: PathBuf,
     error: Option<String>,
+    process_resources: ProcessResources,
 }
+/// OS counters describe the compiler child only, not other worktrees or Cargo.
+#[derive(Default, Serialize)]
+struct ProcessResources {
+    peak_private_bytes: u64,
+    peak_working_set_bytes: u64,
+    read_bytes: u64,
+    write_bytes: u64,
+}
+#[cfg(windows)]
+fn sample_process(process: &std::process::Child, totals: &mut ProcessResources) {
+    use std::os::windows::io::AsRawHandle;
+    #[repr(C)]
+    #[derive(Default)]
+    struct Memory {
+        cb: u32, faults: u32, peak_working: usize, working: usize,
+        peak_paged: usize, paged: usize, peak_nonpaged: usize, nonpaged: usize,
+        pagefile: usize, peak_pagefile: usize, private: usize,
+    }
+    #[repr(C)]
+    #[derive(Default)]
+    struct Io { reads: u64, writes: u64, other: u64, read_bytes: u64, write_bytes: u64, other_bytes: u64 }
+    #[link(name = "psapi")]
+    unsafe extern "system" { fn GetProcessMemoryInfo(handle: *mut std::ffi::c_void, counters: *mut Memory, size: u32) -> i32; }
+    #[link(name = "kernel32")]
+    unsafe extern "system" { fn GetProcessIoCounters(handle: *mut std::ffi::c_void, counters: *mut Io) -> i32; }
+    let mut memory = Memory::default();
+    memory.cb = std::mem::size_of::<Memory>() as u32;
+    let memory_size = memory.cb;
+    let mut io = Io::default();
+    // Child owns the live process handle throughout this call; both buffers have
+    // the exact Win32 layouts and remain valid for the duration of the calls.
+    unsafe {
+        if GetProcessMemoryInfo(process.as_raw_handle(), &mut memory, memory_size) != 0 {
+            totals.peak_private_bytes = totals.peak_private_bytes.max(memory.private as u64);
+            totals.peak_working_set_bytes = totals.peak_working_set_bytes.max(memory.peak_working as u64);
+        }
+        if GetProcessIoCounters(process.as_raw_handle(), &mut io) != 0 {
+            totals.read_bytes = totals.read_bytes.max(io.read_bytes);
+            totals.write_bytes = totals.write_bytes.max(io.write_bytes);
+        }
+    }
+}
+#[cfg(not(windows))]
+fn sample_process(_: &std::process::Child, _: &mut ProcessResources) {}
 #[derive(Serialize)]
 struct Report {
     format_version: u32,
@@ -363,7 +408,9 @@ fn run_phase(
     let started = Instant::now();
     let mut process = command.spawn()?;
     let mut phase_error = None;
+    let mut process_resources = ProcessResources::default();
     let status = loop {
+        sample_process(&process, &mut process_resources);
         match process.try_wait() {
             Ok(Some(status)) => break status,
             Ok(None) => {}
@@ -403,6 +450,7 @@ fn run_phase(
         measurements,
         stderr,
         error: phase_error,
+        process_resources,
     })
 }
 
@@ -564,6 +612,7 @@ fn run() -> io::Result<()> {
         report.phases.push(match result {
             Ok(value) => value,
             Err(error) => Phase {
+                process_resources: ProcessResources::default(),
                 name: phase.into(),
                 process_seconds: 0.0,
                 success: false,
