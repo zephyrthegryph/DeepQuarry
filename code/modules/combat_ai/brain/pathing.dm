@@ -97,9 +97,11 @@
 			return FALSE
 		if(path_pending)
 			return FALSE
-		// The answer lands in have_path(); until then the caller steps directly.
+		// The answer lands in have_path(): at once when the path system has the tick to search in (the request is already
+		// answered when it returns), else a few ticks later, and until then the caller steps directly.
 		request_path(target_turf, get_to)
-		return FALSE
+		if(path_pending || !length(planned_path))
+			return FALSE
 
 	// Strip any path entries we've already reached (mob moved by other means).
 	while(length(planned_path) && planned_path[1] == get_turf(holder))
