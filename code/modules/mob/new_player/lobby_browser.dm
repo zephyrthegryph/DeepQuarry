@@ -87,14 +87,14 @@ UI_ACT_PROC(/mob/new_player, ui_act_late_join)
 	if(client?.login_hold_refuses())
 		return TRUE
 	if(!SSticker || SSticker.current_state != GAME_STATE_PLAYING)
-		to_chat(usr, span_red("The round is either not ready, or has already finished..."))
+		to_chat(user, span_red("The round is either not ready, or has already finished..."))
 		return TRUE
 
 	var/time_till_respawn = time_till_respawn()
 	if(time_till_respawn == -1) // Special case, never allowed to respawn
-		to_chat(usr, span_warning("Respawning is not allowed!"))
+		to_chat(user, span_warning("Respawning is not allowed!"))
 	else if(time_till_respawn) // Nonzero time to respawn
-		to_chat(usr, span_warning("You can't respawn yet! You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
+		to_chat(user, span_warning("You can't respawn yet! You need to wait another [round(time_till_respawn/10/60, 0.1)] minutes."))
 		return TRUE
 	LateChoices()
 	return TRUE
@@ -145,7 +145,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 
 	SSticker.start_immediately = TRUE
 	if(SSticker.current_state == GAME_STATE_STARTUP)
-		to_chat(usr, span_admin("The server is still setting up, but the round will be started as soon as possible."))
+		to_chat(user, span_admin("The server is still setting up, but the round will be started as soon as possible."))
 
 /mob/new_player/proc/observe_confirmed(datum/om/prompt/confirm/ask)
 	if(!spawning)

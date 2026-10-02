@@ -13,7 +13,7 @@
 	flags = NOBLUDGEON
 
 /obj/item/mindbinder/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/mindbinder/proc/toggle_self_bind()
