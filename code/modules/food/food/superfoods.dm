@@ -200,7 +200,7 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 		if(edible == 1)
 			HasSliceMissing()
 			if(slices <= 0)
-				to_chat(usr, span_warning("The cake hums away quietly as the singulo powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
+				to_chat(user, span_warning("The cake hums away quietly as the singulo powered goodness slowly recovers the large amount of lost mass, best to give it a moment before cutting another slice."))
 				return INTERACTION_HANDLED_PASS
 			else
 				to_chat(user, span_notice("You cut a slice of the cake. The slice looks like the cake was just baked, and you can see before your eyes as the spot where you cut the slice slowly regenerates!"))
@@ -222,15 +222,15 @@ DECLARE_INTERACTIONS(/obj/structure/thecake, INTERACT_ITEM(null, PROC_REF(intera
 			edible = 1
 			name = "The Infinity Cake!"
 		else if(stage == maxstages)
-			to_chat(usr, span_warning("The cake is already done!"))
+			to_chat(user, span_warning("The cake is already done!"))
 		else if(stage == C.layer_stage)
-			to_chat(usr, span_warning("You add another layer to the cake, nice."))
+			to_chat(user, span_warning("You add another layer to the cake, nice."))
 			consume(W, user)
 			stage++
 			desc = desclist[stage]
 			icon_state = "thecake_stage-[stage]"
 		else
-			to_chat(usr, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
+			to_chat(user, span_warning("Hmm, doesnt seem like this layer is supposed to be added there?"))
 	return INTERACTION_HANDLED_PASS
 
 // Chaos cake

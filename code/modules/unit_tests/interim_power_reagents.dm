@@ -66,3 +66,21 @@
 	TEST_ASSERT(!source.reagents.trans_to_holder(target.reagents, -5), "negative transfer amounts refuse")
 	TEST_ASSERT_EQUAL(source.reagents.total_volume, 10, "negative transfer preserves source volume")
 	TEST_ASSERT_EQUAL(target.reagents.total_volume, 22, "negative transfer preserves target volume")
+
+/// Layers are consumed only when they fit the cake's current construction stage.
+/datum/unit_test/interim_cake_layer_progression/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/thecake/cake = allocate(/obj/structure/thecake, T)
+	var/obj/item/thecake_layer/first = allocate(/obj/item/thecake_layer, T)
+	var/obj/item/thecake_layer/five/wrong = allocate(/obj/item/thecake_layer/five, T)
+	TEST_ASSERT_EQUAL(cake.stage, 1, "a new cake starts at its first stage")
+	cake.interaction_item(user, wrong, null)
+	TEST_ASSERT_EQUAL(cake.stage, 1, "a wrong layer cannot advance the stage")
+	TEST_ASSERT(!QDELETED(wrong), "a rejected layer is not consumed")
+	TEST_ASSERT_EQUAL(wrong.loc, T, "a rejected layer stays where it was")
+	cake.interaction_item(user, first, null)
+	TEST_ASSERT_EQUAL(cake.stage, 2, "the matching layer advances the cake exactly once")
+	TEST_ASSERT(QDELETED(first), "the matching layer is consumed")
+	TEST_ASSERT_EQUAL(cake.icon_state, "thecake_stage-2", "the cake displays the next construction stage")
+	TEST_ASSERT(!cake.edible, "a partial cake remains inedible")

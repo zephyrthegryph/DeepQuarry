@@ -465,6 +465,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 /obj/item/reagent_containers/syringe/proc/dirty(mob/living/carbon/human/target, obj/item/organ/external/eo)
 	if(!ishuman(loc))
 		return //Avoid borg syringe problems.
+	var/mob/living/carbon/human/user = loc
 	LAZYINITLIST(targets)
 
 	//We can't keep a mob reference, that's a bad idea, so instead name+ref should suffice.
@@ -485,7 +486,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 		infect_chance = 0
 	infect_chance += (targets.len-1)*10    //Extra 10% per extra target
 	if(prob(infect_chance))
-		log_and_message_admins("[loc] infected [target]'s [eo.name] with \the [src].", usr)
+		log_and_message_admins("[loc] infected [target]'s [eo.name] with \the [src].", user)
 		infect_limb(eo)
 
 	//75% chance to spread a virus if we have one
