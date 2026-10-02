@@ -44,3 +44,20 @@ ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the m
 	SSbehaviours.audit_forced = !SSbehaviours.audit_forced
 	log_admin("[key_name(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")
 	message_admins("[key_name_admin(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")
+
+/// The pipeline and sequence missed-wake audits, on their interval while the audit is enabled.
+/datum/system/behaviours/reactions()
+	. = ..()
+	. += every(OM_AUDIT_INTERVAL, PROC_REF(audit_step), when = PROC_REF(audit_ready), phase = KERNEL_PHASE_G, lane = LANE_BACKGROUND)
+
+/datum/system/behaviours/proc/audit_ready()
+	return initialized && audit_enabled()
+
+/datum/system/behaviours/proc/audit_step(dt)
+	var/datum/om/scheduler/sched = Kernel?.sched
+	if(!sched)
+		return STEP_DONE
+	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
+	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
+	om_sleeper_audit(64, TRUE)
+	return STEP_DONE

@@ -2,7 +2,8 @@
 /// re-hosted as kernel items until phases 4 and 5 delete them).
 ///
 /// The kernel tick no longer calls the scheduler's passes itself. Each piece of a pass is a work item of SSbehaviours in the
-/// phase it ran in, first in that phase's list (`first`), so the phase walk runs it ahead of every other item:
+/// phase it ran in, first in that phase's list (`first`), so the phase walk runs it ahead of every other item (the missed-wake
+/// audit, SSbehaviours' own item, is in subsystems/behaviours.dm):
 ///
 ///   D   sched_deadlines   the deadline wheel, within OM_DEADLINE_SHARE of the pass
 ///   P   sched_borrow      the borrow pass for rings near their staleness bound (lane 1, before sched_lane)
@@ -10,7 +11,7 @@
 ///   R   sched_leftovers   what is left of the tick
 ///
 /// The pass's own bookends stay in the kernel tick: pass_begin() opens it before phase N (the native frame reads its budget)
-/// and pass_end() closes it after the last leftover. The missed-wake audit is a work item too (SSbehaviours, phase G).
+/// and pass_end() closes it after the last leftover.
 ///
 /// Pieces belong to the live graph and to a test's (`shared_graph`): the test clock lends the kernel its own scheduler for a
 /// slot, and a piece runs whichever scheduler the kernel holds (`K.sched`).
@@ -47,6 +48,7 @@
 	return LATENCY_L2
 
 /// A piece is due on every pass of its phase, on the live clock and on a test's injected one (its due date never moves).
+// ALLOW(sys_world_time_write): the kernel clock: the default is the pass's own timestamp, handed through; nothing stores it
 /datum/work_item/sched_piece/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
 	var/datum/om/scheduler/S = K.sched
 	next_run = 0
@@ -74,20 +76,3 @@
 		var/list/after = (lane == LANE_URGENT) ? list("[owner]:sched_borrow") : null
 		K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_LANE, KERNEL_PHASE_P, lane, after))
 	K.register_work(owner, new /datum/work_item/sched_piece(SCHED_PIECE_LEFTOVERS, KERNEL_PHASE_R))
-
-/// The pipeline and sequence missed-wake audits, on their interval while the audit is enabled.
-/datum/system/behaviours/reactions()
-	. = ..()
-	. += every(OM_AUDIT_INTERVAL, PROC_REF(audit_step), when = PROC_REF(audit_ready), phase = KERNEL_PHASE_G, lane = LANE_BACKGROUND)
-
-/datum/system/behaviours/proc/audit_ready()
-	return initialized && audit_enabled()
-
-/datum/system/behaviours/proc/audit_step(dt)
-	var/datum/om/scheduler/sched = Kernel?.sched
-	if(!sched)
-		return STEP_DONE
-	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
-	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
-	om_sleeper_audit(64, TRUE)
-	return STEP_DONE
