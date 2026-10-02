@@ -381,7 +381,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
-	if(entry.cooldown && A.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
+	if(entry.cooldown && cap_engine_state_of(A)?.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
 		return "it isn't ready yet"
 	if(entry.blocked_by & A.cap_state)
 		var/present = entry.blocked_by & A.cap_state
@@ -531,15 +531,40 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 /// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
 /datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
 	return ctx.target
-/atom
+/// The engine's lazy per-atom records, kept in the atom's cap_data under this datum's type so that an atom spends no
+/// base-type var on a feature it is not using: a capability entry's cooldowns and look_flash()'s transient visuals.
+/// Made on first write (cap_engine_state_make()), read without making one (cap_engine_state_of()); cap_data's teardown
+/// (caps_destroy()) deletes it with the atom.
+/datum/cap_engine_state
 	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
-	var/tmp/list/entry_cooldowns
+	var/list/entry_cooldowns
+	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
+	var/list/look_flashes
+	/// The base state look_flash(as_state = TRUE) is showing now, or null.
+	var/look_flash_state
+	/// state -> the token of the flash that owns it, so look_flash_end() ends only its own. Lazy.
+	var/list/look_flash_tokens
+
+/// A's engine record, or null when the engine has kept nothing for it.
+/proc/cap_engine_state_of(atom/A)
+	RETURN_TYPE(/datum/cap_engine_state)
+	return A.cap_data?[/datum/cap_engine_state]
+
+/// A's engine record, made when it has none.
+/proc/cap_engine_state_make(atom/A)
+	RETURN_TYPE(/datum/cap_engine_state)
+	var/datum/cap_engine_state/state = A.cap_data?[/datum/cap_engine_state]
+	if(!state)
+		state = new
+		LAZYSET(A.cap_data, /datum/cap_engine_state, state)
+	return state
 
 /// Starts entry E's cooldown on A (after a success).
 /proc/cap_entry_cooldown_start(atom/A, datum/interaction/capability/E)
 	if(!E?.cooldown || QDELETED(A))
 		return
-	LAZYSET(A.entry_cooldowns, E.id, world.time + E.cooldown)
+	var/datum/cap_engine_state/state = cap_engine_state_make(A)
+	LAZYSET(state.entry_cooldowns, E.id, world.time + E.cooldown)
 
 /// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
 /// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
