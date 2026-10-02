@@ -132,7 +132,11 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 			pending_explosions.Cut()
 			explosion_signals.Cut()
 	if(currentrun_index > LAZYLEN(currentrun_keys) && !resolve_explosions) // Wait till we're useful if we have nothing to do!
-		gotosleep()
+		// Sleeping ends the epoch, so it closes the batches wake_and_defer_subsystem_updates() opened.
+		// An epoch whose resolve finished in a step that then yielded (TICK_CHECK in the signal pass)
+		// lands here on its next step, not on the finish path below; a plain gotosleep() left the
+		// contract batch open, so every later contract fact stayed queued until the next explosion.
+		suspend_and_invoke_deferred_subsystems()
 		return TRUE
 
 	// The heavy lifting part...
