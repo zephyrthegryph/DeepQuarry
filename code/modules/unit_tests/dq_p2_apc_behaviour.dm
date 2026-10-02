@@ -15,31 +15,40 @@
 
 /// The cover is open.
 /proc/p2_apc_cover_open(obj/machinery/power/apc/A)
-	return !!cover_is_open(A)
+	return !!cover_open(A, null)
 
 /// The cover has been knocked off (a broken APC's cover, which also leaves it open).
 /proc/p2_apc_cover_removed(obj/machinery/power/apc/A)
-	return !!legacy_cover_removed(A)
+	return !!cover_removed(A, null)
 
 /// The wire panel is open.
 /proc/p2_apc_panel_open(obj/machinery/power/apc/A)
-	return !!panel_is_open(A)
+	return !!panel_open(A, null)
 
 /// The ID lock is engaged.
 /proc/p2_apc_locked(obj/machinery/power/apc/A)
-	return !!is_locked(A)
+	return !!lock_locked(A, null)
 
 /// The APC's interface was subverted by an emag.
 /proc/p2_apc_emagged(obj/machinery/power/apc/A)
-	return !!is_emagged(A)
+	return !!emag_emagged(A, null)
 
 /// How far the frame is built: "frame", "board", "wired" or "secured".
 /proc/p2_apc_stage(obj/machinery/power/apc/A)
-	return ladder_of(A)?.state_of(A)
+	switch(graph_current(A))
+		if(STAGE_APC_FRAME)
+			return "frame"
+		if(STAGE_APC_BOARD)
+			return "board"
+		if(STAGE_APC_WIRED)
+			return "wired"
+		if(STAGE_APC_SECURED)
+			return "secured"
+	return null
 
 /// The wire controller of the APC (a /datum/wires with cut(), pulse(), is_cut(), cut_all()).
 /proc/p2_apc_wires(obj/machinery/power/apc/A)
-	return wires_of(A)
+	return wire_set_of(A)
 
 /// The APC's interface is subverted, as an emag leaves it: subverted and unlocked.
 /proc/p2_apc_subvert(obj/machinery/power/apc/A)
@@ -97,24 +106,6 @@
 
 /obj/machinery/power/apc/p2_test/critical
 	is_critical = 1
-
-/obj/machinery/power/apc/p2_test/can_use(mob/user, loud = 0)
-	if(!user || user.stat || !operable() || !user.IsAdvancedToolUser() || user.restrained() || user.lying)
-		return 0
-	if(istype(user, /mob/living/silicon))
-		var/permit = 0
-		var/mob/living/silicon/ai/AI = user
-		var/mob/living/silicon/robot/robot = user
-		if(hacker)
-			if(hacker == AI)
-				permit = 1
-			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker)
-				permit = 1
-		if(aidisabled && !permit)
-			return 0
-	else if(!in_range(src, user) || !istype(loc, /turf))
-		return 0
-	return 1
 
 /obj/machinery/power/apc/p2_test/tgui_interact(mob/user, datum/tgui/ui, datum/tgui/parent_ui, custom_state)
 	LAZYADD(p2_opened, user)
@@ -198,6 +189,9 @@
 /// Time for any wait a tool or a window press may start.
 /datum/unit_test/dq_p2_apc/proc/p2_settle()
 	test_time(10 SECONDS)
+	if(GLOB.op_pure_depth)
+		Fail("ZDEBUG pure depth [GLOB.op_pure_depth] after settle")
+		GLOB.op_pure_depth = 0
 
 /// The actor puts `held` in the active hand (an empty hand when null), clicks the target and waits.
 /datum/unit_test/dq_p2_apc/proc/touch(mob/living/carbon/human/H, atom/target, obj/item/held)
@@ -205,6 +199,9 @@
 	if(held)
 		H.put_in_active_hand(held)
 	test_click(H, target, held)
+	if(GLOB.op_pure_depth)
+		Fail("ZDEBUG pure depth [GLOB.op_pure_depth] right after click on [target] with [held]")
+		GLOB.op_pure_depth = 0
 	p2_settle()
 
 /// The actor presses a window button and waits.

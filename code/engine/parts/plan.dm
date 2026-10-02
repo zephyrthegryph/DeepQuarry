@@ -517,6 +517,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 /proc/op_plans_clash(datum/op_plan/A, datum/op_plan/B)
 	if(A.tier != B.tier)
 		return null
+	// priority(above(key)) / priority(below(key)) orders two ops: the hint of the build error, so it must also silence it
+	if((A.priority_rel && A.priority_rel[2] == B.key) || (B.priority_rel && B.priority_rel[2] == A.key))
+		return null
 	if(op_conds_exclusive(A, B))
 		return null
 	for(var/datum/entry/part/bind/BA as anything in A.bindings)

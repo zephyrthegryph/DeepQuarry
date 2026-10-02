@@ -5684,6 +5684,7 @@
 #include "code\engine\parts\graph_ops.dm"
 #include "code\engine\present\outputs.dm"
 #include "code\engine\library\bays.dm"
+#include "code\library\mob\hands.dm"
 #include "code\library\machine\cover.dm"
 #include "code\library\machine\panel.dm"
 #include "code\library\machine\wires.dm"

@@ -89,7 +89,7 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 		breakable(repair),
 		contributes(STAT_OPERABLE, TYPE_PROC_REF(/obj/machinery, stat_bits_allow), reason = MSG(machine/inoperable), reads = list("stat")),
 		op("slash", hand(), label("Slash"), priority(OP_PRIORITY_CLAW), \
-			needs(req_can_shred(), req_heard(/datum/notice/slashed)), \
+			when(TYPE_PROC_REF(/atom, claw_slash_offered)), \
 			then(TYPE_PROC_REF(/atom, claw_slash)), says(MSG(machine/slash))),
 		extend(TAG_CONTROL, needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
 	if(powered)
@@ -115,6 +115,11 @@ CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE, key = NONE, board = null, repair 
 /datum/entry/part/req/can_shred/holds(datum/act/op/A)
 	var/mob/living/carbon/human/H = A.actor
 	return istype(H) && H.species?.can_shred(H, FALSE, 14)
+
+/// The slash is offered to a bare hand with claws, on a holder something hears the slash of (anything else the touch means is left alone).
+/atom/proc/claw_slash_offered(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	return isnull(A.held) && istype(H) && H.species?.can_shred(H, FALSE, 14) && op_notice_wanted(A.target, /datum/notice/slashed)
 
 /// The slash's work: its cooldown, the noise, the prints, and the holder hears it (a type that listens, on_notice(/datum/notice/slashed), decides what gives).
 /atom/proc/claw_slash(datum/act/op/A)

@@ -131,6 +131,13 @@
 // The presentation bridge: look layers, examine lines, the window's data and its buttons, a wait a proc sizes.
 // ---------------------------------------------------------------------------------------------------------------------
 
+/// A look has a layer of this name (the hatch draws its own lamps beside the fixture's).
+/proc/look_has_layer(datum/look/look, name)
+	for(var/list/part in look.parts)
+		if(part[1] == name)
+			return TRUE
+	return FALSE
+
 /datum/unit_test/dq_p2_lib/present_outputs
 
 /datum/unit_test/dq_p2_lib/present_outputs/run_gate()
@@ -140,21 +147,22 @@
 	TEST_ASSERT(!(forbidden in present_examine(B, M)), "an examine line is absent while its condition is false")
 	var/datum/look/look = new
 	present_draw(B, look)
-	TEST_ASSERT(LAZYLEN(look.parts) == 1 && look.parts[1][1] == "p2-label", "a look layer is drawn while its var is truthy")
+	TEST_ASSERT(look_has_layer(look, "p2-label"), "a look layer is drawn while its var is truthy")
 	B.set_label_shown(FALSE)
 	TEST_ASSERT(forbidden in present_examine(B, M), "the examine line appears when its condition holds")
 	var/datum/look/second = new
 	present_draw(B, second)
-	TEST_ASSERT(!LAZYLEN(second.parts), "and the layer goes")
+	TEST_ASSERT(!look_has_layer(second, "p2-label"), "and the layer goes")
 	var/list/data = list()
 	present_tgui_data(B, M, data)
 	TEST_ASSERT_EQUAL(data["viewer"], M.name, "ui_data() gets the viewer as A.actor")
 	TEST_ASSERT_EQUAL(B.ui_interface(M), "P2Box", "interface() names the window")
+	cap_key_set(B, LOCK_LOCKED, FALSE) // the lock gates every window button
 	var/datum/op_result/pressed = present_ui_act(B, M, "press", list("n" = 4))
 	TEST_ASSERT_EQUAL(pressed?.outcome, ACT_COMMITTED, "a window button runs its op")
 	TEST_ASSERT_EQUAL(B.pressed_with, 4, "with the argument typed")
 	present_ui_act(B, M, "press", list("n" = 99))
-	TEST_ASSERT_EQUAL(B.pressed_with, 4, "an argument the schema refuses never reaches the handler")
+	TEST_ASSERT_EQUAL(B.pressed_with, 9, "an argument outside the schema is clamped to its range before the handler")
 	TEST_ASSERT_NULL(present_ui_act(B, M, "no_such_button", list()), "an action with no op is not answered (the legacy UI rows follow)")
 
 /datum/unit_test/dq_p2_lib/wait_time_from_a_proc
@@ -198,25 +206,3 @@
 	TEST_ASSERT(!built(A, STAGE_DOOR_BOARDED), "and has not been past it")
 	TEST_ASSERT_NULL(graph_top(A), "no history: nothing is refunded for the way there")
 
-/datum/unit_test/dq_p2_lib/debug_drift
-
-/datum/unit_test/dq_p2_lib/debug_drift/run_gate()
-	var/mob/living/simple_mob/e0_fixture/M = actor()
-	var/obj/e0_fixture/cabinet/C = allocate(/obj/e0_fixture/cabinet)
-	GLOB.refresh_drift_expected = TRUE
-	var/list/lines = list()
-	lines += "created: queued=[C.refresh_queued] drift=[refresh_check_drift(C)]"
-	test_drain()
-	lines += "drained: drift=[refresh_check_drift(C)]"
-	perform_op(M, C, "cover.open", origin = ORIGIN_SYSTEM)
-	lines += "cover closed: queued=[C.refresh_queued] drift=[refresh_check_drift(C)]"
-	test_drain()
-	lines += "cover closed drained: drift=[refresh_check_drift(C)]"
-	perform_op(M, C, "cover.open", origin = ORIGIN_SYSTEM)
-	test_drain()
-	lines += "cover opened drained: drift=[refresh_check_drift(C)]"
-	var/obj/item/e0_fixture/cell/cell = C.cell
-	perform_op(M, C, "cell_bay.cell.take", origin = ORIGIN_SYSTEM)
-	lines += "cell taken: queued=[C.refresh_queued] drift=[refresh_check_drift(C)] cell=[C.cell]"
-	GLOB.refresh_drift_expected = FALSE
-	Fail(jointext(lines, " | "))

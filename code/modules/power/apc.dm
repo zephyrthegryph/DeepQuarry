@@ -188,10 +188,15 @@ CAPABILITIES(/obj/machinery/power/apc, \
 	op("reboot", ui_act(), then(PROC_REF(ui_reboot)), logs(LOG_GAME)), \
 	op("overload", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), then(PROC_REF(ui_overload)), logs(LOG_GAME)), \
 	op("lock", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), toggles(LOCK_LOCKED), logs(LOG_GAME)), \
-	op("open_wires", hand(), when(PANEL_OPEN), priority(above("interface.APC.open")), then(PROC_REF(open_wire_window))), \
-	extend("interface.APC.open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
+	op("open_wires", hand(), when(PANEL_OPEN), priority(above("ui_open")), then(PROC_REF(open_wire_window))), \
+	extend("ui_open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
 	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))), \
 	extend("nightshift", drop = "lock"), \
+	extend("construction.build:apc_secured", priority(above("panel.open"))), \
+	extend("construction.undo:apc_secured", priority(above("panel.open"))), \
+	extend("construction.undo:apc_board", priority(above("open_wires"))), \
+	extend("construction.undo:apc_wired", priority(above("open_wires"))), \
+	extend("subversion_reset.use", priority(above("wires.pulse"))), \
 	extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
 	extend("cover.remove", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
 	extend("cover.replace", needs(req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason)))), \
