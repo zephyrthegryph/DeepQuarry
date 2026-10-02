@@ -44,3 +44,15 @@ allowed = [
   "/obj/item/proc/attack_self",
   "/client/verb/attack_self",
 ]
+
+[lint.subsystem_fire.lists]
+# subsystem_fire_lint.py CORE: the kernel and the engines that own their own frame (completion_plan.md sec 3.6).
+core = [
+  "behaviours",    # the OM scheduler
+  "dbcore",        # async query pump
+  "garbage",
+  "input",         # player input must never wait on a lane budget
+  "profiler",      # MC profiling: reads subsystem diagnostics, config-driven interval
+  "tgui",
+  "verb_manager",  # and its speech_controller subtype
+]

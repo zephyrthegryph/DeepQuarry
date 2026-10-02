@@ -1,0 +1,10 @@
+fire	code/controllers/a/a.dm	1
+fire	code/controllers/a/a.dm	2
+fire	code/controllers/a/a.dm	3
+fire	code/controllers/a/a.dm	18
+fire	code/controllers/a/a.dm	25
+fire	code/controllers/a/a.dm	26
+fire	code/controllers/a/a.dm	27
+fire	code/controllers/a/a.dm	28
+fire	code/controllers/unit_tests/u.dm	1
+fire	code/sp ace/s.dm	1
