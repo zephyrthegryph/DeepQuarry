@@ -3,7 +3,8 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/structure/theonepizza/pizza = allocate(/obj/structure/theonepizza, T)
-	var/list/expected = pizza.slicelist.Copy()
+	var/list/configured = pizza.slicelist
+	var/list/expected = configured.Copy()
 	TEST_ASSERT_EQUAL(length(expected), 5, "the actual giant pizza configures five slice varieties")
 	for(var/slice_path in expected)
 		TEST_ASSERT_EQUAL(length(contents_of(T, slice_path)), 0, "the original turf contains no slice of the configured variety")
