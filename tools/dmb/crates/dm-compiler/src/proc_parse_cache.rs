@@ -56,8 +56,8 @@ pub struct ProcParseCache {
     stats: ParseCacheStats,
 }
 impl ProcParseCache {
-    pub fn open(lower_root: Option<&Path>) -> Self {
-        let root = lower_root.and_then(Path::parent).map(|root| {
+    pub fn open(cache_root: Option<&Path>) -> Self {
+        let root = cache_root.map(|root| {
             root.join("proc-parse-v1")
                 .join(env!("DM_PROC_PARSE_FINGERPRINT"))
         });
@@ -78,7 +78,7 @@ impl ProcParseCache {
             cache.root = None;
             return cache;
         }
-        if let Some(base) = lower_root.and_then(Path::parent) {
+        if let Some(base) = cache_root {
             if let Ok(store) = dm_store::Store::open(base.join("proc-parse.redb")) {
                 let started = Instant::now();
                 match store.snapshot_namespace(&Self::namespace(), 64_000, 128 * 1024 * 1024, None)
@@ -410,6 +410,28 @@ mod tests {
             actual,
             dm_syntax::parse_proc_at_span(&shifted, Span::new(start, shifted.len())).unwrap()
         );
+    }
+    #[test]
+    fn configured_sibling_roots_do_not_share_syntax_records() {
+        let parent = root("isolation");
+        let first_root = parent.join("first");
+        let second_root = parent.join("second");
+        let source = "/proc/test()\n    return 42\n";
+        {
+            let mut first = ProcParseCache::open(Some(&first_root));
+            first.parse(source, Span::new(0, source.len())).unwrap();
+            first.flush().unwrap();
+        }
+        let mut second = ProcParseCache::open(Some(&second_root));
+        second.parse(source, Span::new(0, source.len())).unwrap();
+        assert_eq!(second.stats().hits, 0);
+        assert_eq!(second.stats().misses, 1);
+        assert!(first_root.join("proc-parse.redb").is_file());
+        assert!(second_root.join("proc-parse.redb").is_file());
+        assert!(!parent.join("proc-parse.redb").exists());
+        let mut restarted = ProcParseCache::open(Some(&first_root));
+        restarted.parse(source, Span::new(0, source.len())).unwrap();
+        assert_eq!(restarted.stats().hits, 1);
     }
     #[test]
     fn corrupt_transactional_syntax_is_reparsed_and_repaired() {

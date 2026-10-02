@@ -25,6 +25,50 @@ Analysis exports report reference coverage as **unavailable** until a producer
 supplies actual resolved reference occurrences. Binding witnesses record facts
 read during lowering; they are not a substitute for reference locations.
 
+### Lint migration readiness
+
+The implemented public tooling surface is a detached declaration snapshot and
+versioned `dm-analysis` JSONL export (`dm-compile analysis-jsonl PROJECT.dme`).
+`DeclarationIndex` supplies local/inherited variable and procedure lookup,
+override lookup and ancestor iteration. This is sufficient to start migrating
+definition rules such as forbidden subsystem `fire()` definitions and content
+`Destroy()` overrides. No repository lints have been migrated in this pass.
+
+| Required lint facts | Current coverage |
+| --- | --- |
+| Canonical declarations, inheritance, source locations | Available, with coverage flags for partial inputs/origins |
+| Procedure signatures | Exact headers; normalized resolved types/defaults are incomplete |
+| Resolved calls, reads/writes, receiver types, body/control flow | Not exported |
+| Reference occurrences/reverse references | Unavailable; dependency witnesses do not provide occurrence coverage |
+| Authored comments, inactive branches, macro expansion provenance | Not a complete tooling model |
+
+Consumers must check the snapshot's schema and required coverage before reporting
+a clean lint run. Missing facts are an unsupported analysis result, not proof of
+zero violations. Initially retain the Python ALLOW-annotation and ratchet baseline
+adapters. Ownership/field-write/call-forwarding rules require the resolved-body
+model; macro/comment rules require authored tokens and expansion provenance.
+The JSONL export is not yet the planned public per-body query service.
+The export covers the selected manifest/configuration. Existing Python lints scan
+all authored `code/**/*.dm`, including inactive branches and files outside that
+build. A migration must preserve that scope through authored syntax coverage or
+an explicit configuration matrix; one successful project snapshot cannot certify
+the entire repository.
+
+DeepQuarry's actual `CBT,CIBUILDING,CITESTING` export was exercised: 147,733
+declaration records, 68,410 exact-header signatures and 46,681 inheritance
+records. Its snapshot reports complete declarations/inheritance/origins, partial
+signatures/diagnostics and unavailable references. The full JSONL is 372,793,924
+bytes because it includes the per-expanded-line origin stream; that is not yet a
+compact or paginated lint protocol. Receipt:
+`target/deepquarry-analysis-20261001.receipt.json`.
+
+`Coordinator::project_frontend_snapshot_bounded` accepts an explicit source
+budget through the same preparation/frontend path. `analysis-jsonl` defaults to
+64 MiB, honoring `DM_ANALYSIS_MAX_SOURCE_BYTES` first and an explicitly set
+`DM_CHECK_MAX_SOURCE_BYTES` second. Malformed/zero overrides fail rather than
+silently raising a caller's budget. Ordinary checking keeps its configured
+16 MiB default. The measured DeepQuarry expansion is about 49.6 MB.
+
 ## Semantic and physical identities
 
 `ProcKey { path, occurrence }` distinguishes repeated authored overrides in
@@ -144,12 +188,17 @@ returning one preserves the other. The same aggregate budget charges both plus
 session keys, resource proof records and known checked-out footprints. Active
 entries cannot be evicted until their checked-out components return.
 
-Immutable disk stages use the coordinator/frontend cache root consistently and remain shared. Successful check summaries are shared; diagnostic summaries are scoped to the current revision. When memory is constrained, lexical frames
-and prepared source/expansion frames are dropped first, then encoded startup
-snapshots, then whole idle entries in least-recently-used order. A trimmed discovery
-component retains small resource proof records and can restore its prepared pack
-from the common CAS. Pressure may therefore replace a retained preparation hit
-with a disk restoration; six-session retention is conditional on the byte budget.
+Immutable disk stages use the coordinator/frontend cache root consistently and
+remain shared. Successful check summaries are shared; diagnostic summaries are
+scoped to the current revision. Under memory pressure, the pool trims expansion
+values, duplicated body strings, encoded startup snapshots, decoded code values,
+expanded input snapshots, declaration prefixes, and finally full source state.
+It evicts a whole idle entry only after those component trims. Compact syntax and
+semantic query identities can therefore survive code-value eviction. Raw source
+Arcs, proof and context survive expanded-snapshot eviction, so the next edit can
+read only dirty source files instead of restoring the old whole input pack first.
+Trace output reports component charges and any final eviction reason. Six-session
+retention remains conditional on the aggregate byte budget.
 
 The authored/generated procedure graph and map initializer graph are separate
 mutable instances with different input identities. They share graph/store
@@ -165,7 +214,7 @@ canonical session and frontend pool.
 | Map structural spans | 16 MiB and 512 exact-content entries per map session |
 | One procedure graph's decoded artifacts | 96 MiB |
 | One graph's semantic/identity metadata | 256 MiB, 128,000 procedure inputs, 1,000,000 fact inputs |
-| Current prepared payload startup snapshot | 128 MiB |
+| Encoded prepared payload LRU | 128 MiB |
 | Current graph manifest startup read | 64 MiB |
 | Graph pending write batch | 32 MiB |
 | Individual persisted header / envelope | 4 MiB / 32 MiB |
@@ -176,6 +225,17 @@ the skeleton's conservative serialized-size charge among its live Arc owners.
 The graph charge includes decoded artifacts, semantic metadata, encoded startup
 payloads and pending writes. Input counts include handles ever allocated in the
 session: deletion cannot silently bypass the bounds.
+
+Decoded procedure code is owned by graph records outside Salsa, matched to an
+immutable candidate generation. Evicting/reloading identical code does not write
+semantic inputs or advance the query revision. Restored headers initialize facts
+as unavailable until the current skeleton refreshes them. Encoded payloads are
+loaded in bounded caller-supplied emission order through `prefetch`, with an
+8 MiB read-batch limit and a 128 MiB LRU; graph startup does not eagerly load the
+whole payload namespace. Authored procedures, argument-source helpers, generated
+initializers and map assignments all use this same refill API. Budget failures
+split batches, missing rows are cached, and general I/O failure suppresses a storm
+of individual reopen attempts until the next explicit refill.
 
 These are retained-state and stage budgets, not a hard bound on process RSS.
 Source/map/archive preparation and an active compilation have additional bounded
@@ -242,4 +302,131 @@ Later roots had 64 portable lowering hits and zero misses. The initial concurren
 pair can both miss before either publishes its cache batch. The benchmark now
 uses the configured common frontend/cache root; separate output directories do
 not silently create separate lowering caches. Real-project cold, structural edit
-and six-worktree timings remain to be measured.
+and six-worktree timings cannot be inferred from these fixtures.
+
+### Real DeepQuarry measurements
+
+The integrated compiler at `505f1f8e98` was measured against this worktree's
+DeepQuarry source and generated assets, with `CBT`, `CIBUILDING`, `CITESTING`, two
+procedure workers and one daemon compiler worker. An isolated adjacent manifest
+included a private one-procedure/one-variable overlay; game source was not edited.
+The test configuration emitted 68,411 procedures (68,412 after adding one), a
+67,384,779-byte DMB and a 222,851,714-byte RSC.
+No DreamDaemon or runtime suite was started.
+
+| Real project case | End-to-end elapsed |
+| --- | ---: |
+| Fresh daemon, unchanged output receipt | 0.215 s |
+| Fresh CLI, unchanged output receipt | 0.227 s |
+| Fresh daemon, one procedure edit with disk caches | 82.514 s |
+| Same daemon, second procedure edit | 81.157 s |
+| Add a procedure | 89.885 s |
+| Add a variable | 92.915 s |
+| Change a variable default | 85.945 s |
+| Final unchanged request | 0.208 s |
+
+Body edits lowered one authored procedure and reused 68,410. Variable/default
+edits lowered zero authored procedures. Semantic reuse therefore works, but
+large-project iteration is still slow: source preparation, table assembly and
+cache restoration remain substantial. The daemon returned to approximately
+23--47 MiB private memory after each build, indicating that the pool had evicted
+the large session rather than preserving a useful warm compiler state.
+
+A fully empty-cache run failed after 98.15 s at the default 2 GiB process cap,
+around authored procedure 55,000. The retry at a bounded 3 GiB cap succeeded in
+approximately 130.5 s and peaked at 2.15 GiB private memory. That retry had fresh
+lowering/prepared caches but a partially warm syntax cache; it is **not** a
+fully cold timing. Its approximate total is reconstructed from redirect-file
+creation/final response timestamps; edit totals use an external stopwatch.
+The compiler stage was 87.586 s and final input revalidation was 4.951 s.
+
+Receipts and stage logs are in `target/deepquarry-migration-20261001/`.
+Follow-up changes address granular pool trimming, duplicate prefix data/buffers,
+graph write/read bounds and syntax-cache root isolation. Their measurements below
+show why substantial iteration work remains. Six full-sized concurrent worktrees
+remain unmeasured.
+
+A follow-up production Coordinator measurement in
+`target/deepquarry-retention-retry-20261001/` still hit the default 2 GiB cap at
+dynamic initialization, after completing all authored procedures (104.59 s until
+process failure). At an explicit 3 GiB cap, the next run's initial build succeeded
+in 109.834 s with partially warm disk caches, and its unchanged request took
+0.186 s. Source preparation on the subsequent body edit took 11.784 s, but code
+restoration then regressed to 140 s for the first 5,000 procedures. That edit run
+was deliberately stopped; it is not a successful edit timing. Partial receipts
+remain in `target/deepquarry-retention-3gib-20261001/`.
+
+The traces show retained graph/proof state now survives session trimming, but
+the prefix is still evicted: its 308,435,588-byte **estimated charge** exceeds the
+remaining aggregate pool capacity. Graph metadata also reaches its 256 MiB cap
+at about 47,700 of the 68,411 authored procedures. An evicted decoded payload
+previously required both an individual store read and a Salsa input replacement
+when restored. Follow-up code separates decoded payload ownership from semantic
+candidate identity and uses ordered bulk prefetch for procedures, argument and
+initializer helpers, and map assignments. Its own complete real-project edit
+measurement was then run with the bulk-refill fix:
+
+| Bulk-refill follow-up, real DeepQuarry | Coordinator request elapsed |
+| --- | ---: |
+| Initial build with fresh lowering/parser stage, existing resource proofs | 206.019 s |
+| Unchanged request | 0.317 s |
+| One procedure body edit | 116.099 s |
+| Revert to cached baseline output | 48.383 s |
+| Add one procedure | 131.661 s |
+| Revert to cached baseline output | 27.480 s |
+
+All requests succeeded with two workers and an explicit 3 GiB process cap.
+The initial build lowered 68,405 authored procedures and reused six. The body
+edit lowered one and reused 68,410; adding a procedure lowered one and reused
+68,411. Both reverted DMB digests equal the original baseline digest. These
+requests use a retained production Coordinator; CLI transport/startup and
+post-request receipt hashing are outside the request timer. Full report:
+`target/deepquarry-bulk-refill-20261001/iteration.json`.
+
+The body edit reached 50,000 procedures in 31.987 s with 187 bulk reads and zero
+single-payload reads (rather than 140 s for the first 5,000 before the fix).
+The restore regression is resolved, but overall edit latency remains poor and
+does not show an improvement over the earlier 81--93 s run. Body-edit source
+preparation took 26.731 s, the compiler/materialization operation 75.026 s, and
+final proof revalidation 8.038 s. Add-procedure compiler/materialization took
+92.342 s. Even returning to a previously emitted generation still requires
+substantial source/proof work after an edit. The declaration prefix remains
+evicted at the pool limit; graph metadata cannot retain all authored candidates.
+The complete pipeline is not yet minimally incremental, and these measurements
+must not be presented as achieving the three-second structural-edit target.
+
+### Measuring the real production iteration path
+
+`dm-compile/examples/iteration_bench.rs` calls the actual
+`Coordinator::handle(Request::BuildProject)` path with canonical output. Supply a
+real project; the harness appends a unique, owned overlay to a copied manifest
+beside it so relative includes and generated assets resolve normally. It never
+changes the original manifest/game sources and removes the two owned source files
+on exit. Prepare the project's generated assets before running it.
+
+The default retained process measures the initial build, unchanged request, one
+procedure body edit, adding a procedure/variable, and changing a variable default.
+Each edit starts from the baseline; its revert is also recorded. A subsequent new
+process measures the cached baseline after the retained process exits. Optional
+`--cold-body-edit` uses a previously unseen body revision in another fresh process.
+An initial build can use existing disk caches; it is not labelled an empty-cache
+build. There is one heavy compiler process at a time, two compiler workers by
+default, a 2 GiB Windows process limit, and a configurable phase timeout.
+
+```powershell
+cargo build -j1 -p dm-compile --example iteration_bench
+E:/cargo-target/dmb-architecture/debug/examples/iteration_bench.exe `
+  --project C:/path/to/deepquarry.dme --output C:/path/to/NEW_REPORT_DIRECTORY `
+  --cache-root C:/path/to/shared-cache -DCBT -DCIBUILDING -DCITESTING
+```
+
+Use `--builtins` for a different supported schema, `--workers 1..4`,
+`--memory-mib 1..3072` (default 2048), `--timeout-seconds`, `--skip-cold`, or a reduced
+`--cases baseline,unchanged,body-edit` sequence. `iteration.json` records typed
+native responses, lowered/reused procedure counts, pair cache hits, streamed DMB
+and RSC digest receipts, process wall times, and per-case coordinator trace/stage
+times. Coordinator request time includes input preparation/proof validation,
+compilation or receipt reuse, and generation publication. Receipt hashing is
+outside that timer and has its own duration. Stage timings overlap/nest and must
+not be summed as a wall-time partition. Failed native responses and completed
+measurements remain in the report; there is no DreamMaker fallback or runtime.

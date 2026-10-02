@@ -32,7 +32,12 @@ pub struct FrontendPoolStats {
     pub discovery_misses: usize,
     pub source_trims: usize,
     pub discovery_trims: usize,
+    pub expansion_trims: usize,
+    pub body_compactions: usize,
     pub snapshot_trims: usize,
+    pub payload_trims: usize,
+    pub prepared_trims: usize,
+    pub skeleton_trims: usize,
     pub evictions: usize,
     pub sessions: usize,
     pub bytes: usize,
@@ -62,6 +67,7 @@ impl Entry {
                     .map_or(0, DiscoveryCache::resident_bytes),
             )
     }
+    #[cfg(test)]
     fn source_bytes(&self) -> usize {
         self.frontend
             .as_ref()
@@ -128,10 +134,11 @@ impl FrontendPool {
     }
     pub fn put(&mut self, key: SessionKey, frontend: OutlineSession) {
         self.clock = self.clock.wrapping_add(1);
-        let entry = self.entries.entry(key).or_default();
+        let entry = self.entries.entry(key.clone()).or_default();
         entry.frontend = Some(frontend);
         entry.active_frontend = None;
         entry.touched = self.clock;
+        self.trace_entry("frontend returned", &key);
         self.trim(0);
     }
     pub fn take_discovery(&mut self, key: &SessionKey, cache_root: PathBuf) -> DiscoveryCache {
@@ -153,10 +160,11 @@ impl FrontendPool {
     }
     pub fn put_discovery(&mut self, key: SessionKey, discovery: DiscoveryCache) {
         self.clock = self.clock.wrapping_add(1);
-        let entry = self.entries.entry(key).or_default();
+        let entry = self.entries.entry(key.clone()).or_default();
         entry.discovery = Some(discovery);
         entry.active_discovery = None;
         entry.touched = self.clock;
+        self.trace_entry("discovery returned", &key);
         self.trim(0);
     }
     pub fn stats(&self) -> FrontendPoolStats {
@@ -196,18 +204,122 @@ impl FrontendPool {
             .min_by_key(|(_, entry)| entry.touched)
             .map(|(key, _)| key.clone())
     }
+    fn trace_entry(&self, action: &str, key: &SessionKey) {
+        if std::env::var_os("DM_BUILD_TRACE").is_none() {
+            return;
+        }
+        if let Some(entry) = self.entries.get(key) {
+            eprintln!("DM_BUILD_TRACE frontend pool {action}: project {}, idle {} active {} limit {} bytes; frontend {:?}; discovery {:?}",
+                key.project.display(), self.bytes(), self.active_bytes(), self.limits.max_bytes,
+                entry.frontend.as_ref().map(OutlineSession::retention_footprint),
+                entry.discovery.as_ref().map(DiscoveryCache::retention_footprint));
+        }
+    }
     fn trim(&mut self, active_bytes: usize) {
         let budget = self
             .limits
             .max_bytes
             .saturating_sub(self.active_bytes().saturating_add(active_bytes));
-        // Keep semantic results/prefixes first; source frames can be reloaded
-        // from content-addressed lexical shards without invalidating queries.
-        while self.bytes() > budget {
-            let Some(key) = self.oldest(|e| e.source_bytes() != 0) else {
+        let mut ordered: Vec<_> = self
+            .entries
+            .iter()
+            .map(|(key, entry)| (entry.touched, key.clone()))
+            .collect();
+        ordered.sort_by_key(|(touched, _)| *touched);
+        // Reclaim disposable/duplicated values before discarding the inputs and
+        // identities needed for the next body edit. All steps preserve context.
+        for (_, key) in &ordered {
+            let excess = self.bytes().saturating_sub(budget);
+            if excess == 0 {
                 break;
-            };
-            let entry = self.entries.get_mut(&key).unwrap();
+            }
+            self.trace_entry("before expansion trim", key);
+            if let Some(discovery) = self.entries.get_mut(key).unwrap().discovery.as_mut() {
+                let target = discovery
+                    .retention_footprint()
+                    .expansions
+                    .saturating_sub(excess);
+                if discovery.trim_expansions_to(target) != 0 {
+                    self.stats.expansion_trims += 1;
+                }
+            }
+            self.trace_entry("after expansion trim", key);
+        }
+        for (_, key) in &ordered {
+            if self.bytes() <= budget {
+                break;
+            }
+            self.trace_entry("before body compaction", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                if frontend.compact_source_frames() != 0 {
+                    self.stats.body_compactions += 1;
+                }
+            }
+            self.trace_entry("after body compaction", key);
+        }
+        for (_, key) in &ordered {
+            if self.bytes() <= budget {
+                break;
+            }
+            self.trace_entry("before encoded snapshot trim", key);
+            let before = self.bytes();
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                frontend.release_encoded_snapshot();
+            }
+            if self.bytes() != before {
+                self.stats.snapshot_trims += 1;
+            }
+            self.trace_entry("after encoded snapshot trim", key);
+        }
+        for (_, key) in &ordered {
+            let excess = self.bytes().saturating_sub(budget);
+            if excess == 0 {
+                break;
+            }
+            self.trace_entry("before decoded payload trim", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                let target = frontend
+                    .retention_footprint()
+                    .graph_decoded
+                    .saturating_sub(excess);
+                if frontend.trim_decoded_to(target) != 0 {
+                    self.stats.payload_trims += 1;
+                }
+            }
+            self.trace_entry("after decoded payload trim", key);
+        }
+        for (_, key) in &ordered {
+            if self.bytes() <= budget {
+                break;
+            }
+            self.trace_entry("before expanded input trim", key);
+            if let Some(discovery) = self.entries.get_mut(key).unwrap().discovery.as_mut() {
+                if discovery.release_prepared_snapshot() != 0 {
+                    self.stats.prepared_trims += 1;
+                }
+            }
+            self.trace_entry("after expanded input trim", key);
+        }
+        for (_, key) in &ordered {
+            if self.bytes() <= budget {
+                break;
+            }
+            self.trace_entry("before skeleton trim", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                if frontend.release_skeleton() != 0 {
+                    self.stats.skeleton_trims += 1;
+                }
+            }
+            self.trace_entry("after skeleton trim", key);
+        }
+        // Last component fallback: source state can be replayed while the live
+        // semantic graph/configuration survives. Whole entry eviction is later.
+        for (_, key) in &ordered {
+            if self.bytes() <= budget {
+                break;
+            }
+            self.trace_entry("before source release", key);
+            let entry = self.entries.get_mut(key).unwrap();
             if let Some(frontend) = entry.frontend.as_mut().filter(|f| f.resident_bytes() != 0) {
                 frontend.release_source_frames();
                 self.stats.source_trims += 1;
@@ -220,29 +332,13 @@ impl FrontendPool {
                 discovery.release_source_frames();
                 self.stats.discovery_trims += 1;
             }
-        }
-        let mut snapshots: Vec<_> = self
-            .entries
-            .iter()
-            .map(|(key, entry)| (entry.touched, key.clone()))
-            .collect();
-        snapshots.sort_by_key(|(touched, _)| *touched);
-        for (_, key) in snapshots {
-            if self.bytes() <= budget {
-                break;
-            }
-            let before = self.bytes();
-            if let Some(frontend) = self.entries.get_mut(&key).unwrap().frontend.as_mut() {
-                frontend.release_encoded_snapshot();
-            }
-            if self.bytes() != before {
-                self.stats.snapshot_trims += 1;
-            }
+            self.trace_entry("after source release", key);
         }
         while self.entries.len() > self.limits.max_sessions || self.bytes() > budget {
             let Some(key) = self.oldest(|entry| !entry.active()) else {
                 break;
             };
+            self.trace_entry("whole idle entry eviction", &key);
             self.entries.remove(&key);
             self.stats.evictions += 1;
         }
@@ -509,6 +605,12 @@ mod tests {
     fn combined_budget_reserves_both_checkouts_and_trims_preparation_before_eviction() {
         let fixture = Fixture::new();
         let keys: Vec<_> = (0..6).map(|index| fixture.key(index)).collect();
+        // Include expansions are cached; a root containing only one procedure
+        // has no expansion entry to reclaim in this pressure scenario.
+        for key in &keys {
+            fs::write(key.project.parent().unwrap().join("body.dm"), SOURCE).unwrap();
+            fs::write(&key.project, "#include \"body.dm\"\n").unwrap();
+        }
         let mut pool = FrontendPool::new(FrontendPoolLimits {
             max_sessions: 6,
             max_bytes: 4 * 1024 * 1024,
@@ -536,26 +638,106 @@ mod tests {
         pool.put_discovery(keys[0].clone(), discovery);
         assert_eq!(pool.stats().active_bytes, 0);
 
-        let reclaimable = pool.entries[&keys[1]].source_bytes();
+        let original = pool
+            .entries
+            .get_mut(&keys[1])
+            .unwrap()
+            .discovery
+            .as_mut()
+            .unwrap()
+            .prepare(&keys[1].project, &Default::default())
+            .unwrap();
+        let reclaimable = pool.entries[&keys[1]]
+            .discovery
+            .as_ref()
+            .unwrap()
+            .retention_footprint()
+            .expansions;
         assert!(reclaimable > 0);
         pool.limits.max_bytes = pool.stats().bytes - reclaimable / 2;
         pool.trim(0);
         assert!(pool.stats().bytes <= pool.limits.max_bytes);
         assert_eq!(pool.stats().sessions, 6);
-        assert_eq!(pool.stats().source_trims, 1);
-        assert_eq!(pool.stats().discovery_trims, 1);
+        assert_eq!(pool.stats().source_trims, 0);
+        assert_eq!(pool.stats().discovery_trims, 0);
+        assert_eq!(pool.stats().expansion_trims, 1);
         assert_eq!(pool.stats().evictions, 0);
-        assert_eq!(pool.entries[&keys[1]].source_bytes(), 0);
+        assert!(pool.entries[&keys[1]].source_bytes() > 0);
 
         pool.limits.max_bytes = 4 * 1024 * 1024;
         let mut restored = pool.take_discovery(&keys[1], fixture.cache());
         let prepared = restored
             .prepare(&keys[1].project, &Default::default())
             .unwrap();
-        assert!(prepared.stats.disk_restored);
+        assert!(prepared.stats.retained_hit);
         assert!(!prepared.stats.preprocessed);
+        assert!(std::sync::Arc::ptr_eq(&original.project, &prepared.project));
         assert!(prepared.project.text.contains("return 1"));
         pool.put_discovery(keys[1].clone(), restored);
         assert_eq!(pool.stats().active_bytes, 0);
+    }
+
+    #[test]
+    fn oversized_latest_project_retains_preparation_and_compact_edit_layout() {
+        let fixture = Fixture::new();
+        let key = fixture.key(0);
+        let source = format!(
+            "/proc/answer()\n    return \"{}\"\n",
+            "x".repeat(128 * 1024)
+        );
+        fs::write(&key.project, &source).unwrap();
+        let mut pool = FrontendPool::new(FrontendPoolLimits {
+            max_sessions: 6,
+            max_bytes: 4 * 1024 * 1024,
+        });
+        let mut discovery = pool.take_discovery(&key, fixture.cache());
+        let prepared = discovery
+            .prepare(&key.project, &Default::default())
+            .unwrap();
+        let expansions = discovery.retention_footprint().expansions;
+        let mut frontend = pool.take_or_insert(&key, fixture.cache());
+        let original = frontend.update(&prepared.project).unwrap();
+        pool.put_discovery(key.clone(), discovery);
+        pool.put(key.clone(), frontend);
+        pool.limits.max_bytes = pool.stats().bytes - expansions - source.len() / 2;
+        pool.trim(0);
+        assert!(pool.stats().bytes <= pool.limits.max_bytes);
+        assert_eq!(pool.stats().sessions, 1);
+        assert_eq!(pool.stats().evictions, 0);
+        assert_eq!(pool.stats().body_compactions, 1);
+        assert_eq!(pool.stats().source_trims, 0);
+        assert_eq!(pool.stats().discovery_trims, 0);
+        let mut discovery = pool.take_discovery(&key, fixture.cache());
+        let retained = discovery
+            .prepare(&key.project, &Default::default())
+            .unwrap();
+        assert!(retained.stats.retained_hit);
+        assert!(std::sync::Arc::ptr_eq(&prepared.project, &retained.project));
+        let mut frontend = pool.take_or_insert(&key, fixture.cache());
+        let outline = frontend.update(&retained.project).unwrap();
+        assert_eq!(
+            outline.procedures["/proc/answer"].digest,
+            original.procedures["/proc/answer"].digest
+        );
+        assert_eq!(frontend.stats().parsed_chunks, 0);
+        let edited = source
+            .replace("return \"", "return list(\"")
+            .replace("\"\n", "\")\n");
+        let outline = frontend.update_source(&edited).unwrap();
+        assert_eq!(outline.abi_digest, original.abi_digest);
+        assert_ne!(
+            outline.procedures["/proc/answer"].digest,
+            original.procedures["/proc/answer"].digest
+        );
+        assert_eq!(
+            outline.procedures["/proc/answer"].digest,
+            OutlineSession::default()
+                .update_source(&edited)
+                .unwrap()
+                .procedures["/proc/answer"]
+                .digest
+        );
+        pool.put_discovery(key.clone(), discovery);
+        pool.put(key, frontend);
     }
 }

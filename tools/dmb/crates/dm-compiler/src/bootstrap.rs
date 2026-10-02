@@ -3807,7 +3807,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let frozen = canonical::FrozenSkeleton::new(dmb, canonical::SkeletonMetadata {
             strings, proc_paths, class_paths,
             pending: pending.iter().map(|proc| canonical::OwnedPendingProc {
-                item: proc.item.clone(), owner: proc.owner, owner_path: proc.owner_path.clone(), verb: proc.verb,
+                owner: proc.owner, owner_path: proc.owner_path.clone(), verb: proc.verb,
             }).collect(), dynamic: pending_dynamic, initializer_globals, global_proc_ids,
             shared: Arc::clone(&shared_bindings), invocations: invocation_plans,
         });
@@ -3906,7 +3906,30 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         &pool_cache,
         workers,
         |pool| -> Result<(), String> {
+            let mut prefetched_until = 0;
             while pending.peek().is_some() {
+                if reusable {
+                    let ordinal = pending.peek().unwrap().0;
+                    if ordinal >= prefetched_until {
+                        prefetched_until = ordinal.saturating_add(1024).min(procedure_keys.len());
+                        // Session pressure may discard all encoded/decoded
+                        // payloads while retaining valid semantic candidates.
+                        // Restore nearby code in bounded reads instead of
+                        // opening the shared store once for every procedure.
+                        let mut keys = procedure_keys[ordinal..prefetched_until].to_vec();
+                        for index in ordinal..prefetched_until {
+                            for (parameter, param) in invocations[index].params.iter().enumerate() {
+                                if param.source_expression.is_some() {
+                                    keys.push(crate::ProcKey {
+                                        path: format!("@argument|{}|{parameter}", procedure_keys[index].path),
+                                        occurrence: procedure_keys[index].occurrence,
+                                    });
+                                }
+                            }
+                        }
+                        let _ = session.graph.prefetch(&keys);
+                    }
+                }
                 // The fixed batch width is independent of worker count, so
                 // static-slot allocation and ordered linking produce identical
                 // table IDs regardless of worker count. AST jobs are bounded.

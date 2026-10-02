@@ -13,7 +13,6 @@ const MAX_SKELETON: usize = 96 * 1024 * 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct OwnedPendingProc {
-    pub item: Item,
     pub owner: Option<u32>,
     pub owner_path: String,
     pub verb: bool,
@@ -58,18 +57,23 @@ impl FrozenSkeleton {
         }
     }
     fn encode(&self) -> Option<Vec<u8>> {
-        let image = serde_json::to_vec(&self.image).ok()?;
-        let metadata = serde_json::to_vec(&self.metadata).ok()?;
-        let decoded_size = image.len().checked_add(metadata.len())?.checked_add(16)?;
+        // One serialization buffer: the prefix can be large, and two temporary
+        // JSON buffers followed by concatenation unnecessarily duplicate it.
+        let mut bytes = b"DMSKEL02".to_vec();
+        bytes.extend_from_slice(&0_u64.to_le_bytes());
+        serde_json::to_writer(&mut bytes, &self.image).ok()?;
+        let image_size = bytes.len().checked_sub(16)?;
+        bytes[8..16].copy_from_slice(&(image_size as u64).to_le_bytes());
+        serde_json::to_writer(&mut bytes, &self.metadata).ok()?;
+        let decoded_size = bytes.len();
         self.resident_charge
             .store(decoded_size.saturating_mul(2), Ordering::Relaxed);
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE declaration skeleton: image {} bytes, metadata {} bytes, retained charge {} bytes, persistence cap {} bytes", image_size, decoded_size - image_size - 16, decoded_size.saturating_mul(2), MAX_SKELETON);
+        }
         if decoded_size > MAX_SKELETON {
             return None;
         }
-        let mut bytes = b"DMSKEL01".to_vec();
-        bytes.extend_from_slice(&(image.len() as u64).to_le_bytes());
-        bytes.extend_from_slice(&image);
-        bytes.extend_from_slice(&metadata);
         Some(lz4_flex::compress_prepend_size(&bytes))
     }
 
@@ -85,7 +89,7 @@ impl FrozenSkeleton {
         if lz4_flex::decompress_into(&bytes[4..], &mut decoded).ok()? != size {
             return None;
         }
-        if decoded.len() < 16 || &decoded[..8] != b"DMSKEL01" {
+        if decoded.len() < 16 || &decoded[..8] != b"DMSKEL02" {
             return None;
         }
         let image_size =
@@ -161,6 +165,13 @@ impl CanonicalSession {
                     .load(Ordering::Relaxed)
                     .div_ceil(Arc::strong_count(prefix).max(1))
             }))
+    }
+    /// Final pool-pressure fallback drops only the immutable prefix. Procedure
+    /// identities, facts and prepared inputs survive its later reconstruction.
+    pub(crate) fn release_skeleton(&mut self) -> usize {
+        let before = self.resident_bytes();
+        self.skeleton = None;
+        before.saturating_sub(self.resident_bytes())
     }
     pub(crate) fn bind_project(&mut self, project: &Path, cache_root: &Path) {
         let identity = std::fs::canonicalize(project).unwrap_or_else(|_| project.to_owned());
@@ -254,7 +265,7 @@ pub(super) fn skeleton_key(
         }
     }
     let mut hash = Sha256::new();
-    hash.update(b"canonical-skeleton-v2\0");
+    hash.update(b"canonical-skeleton-v3\0");
     hash.update(env!("DM_EMISSION_FINGERPRINT").as_bytes());
     hash.update(Sha256::digest(builtins));
     hash.update(world.as_bytes());
@@ -392,6 +403,11 @@ mod tests {
             assert_eq!(frontend.canonical.skeleton_hits, 1);
             assert!(frontend.canonical.graph.stats().disk_hits > 0);
             let misses = frontend.canonical.skeleton_misses;
+            // Aggregate pool pressure can leave only semantic candidates and
+            // disk handles. The production path must refill code and preserve
+            // canonical output when resource content changes afterward.
+            frontend.canonical.graph.release_encoded_snapshot();
+            frontend.canonical.graph.trim_decoded_to(0);
             catalog.fingerprint = [2; 32];
             catalog.entries[0].id = 8;
             catalog.entries[0].content_digest = [2; 32];

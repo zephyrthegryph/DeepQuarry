@@ -59,9 +59,43 @@ fn parse_defines(
     Ok(defines)
 }
 
+fn analysis_source_budget(
+    analysis: Option<String>,
+    check: Option<String>,
+) -> Result<usize, String> {
+    let (name, value) = match (analysis, check) {
+        (Some(value), _) => ("DM_ANALYSIS_MAX_SOURCE_BYTES", value),
+        (None, Some(value)) => ("DM_CHECK_MAX_SOURCE_BYTES", value),
+        (None, None) => return Ok(64 * 1024 * 1024),
+    };
+    value
+        .parse::<usize>()
+        .ok()
+        .filter(|value| *value > 0)
+        .ok_or_else(|| format!("{name} must be a positive byte count"))
+}
+
 #[cfg(test)]
 mod tests {
-    use super::parse_defines;
+    use super::{analysis_source_budget, parse_defines};
+
+    #[test]
+    fn analysis_budget_defaults_and_explicit_limits_remain_distinct() {
+        assert_eq!(
+            analysis_source_budget(None, None).unwrap(),
+            64 * 1024 * 1024
+        );
+        assert_eq!(
+            analysis_source_budget(None, Some("1024".into())).unwrap(),
+            1024
+        );
+        assert_eq!(
+            analysis_source_budget(Some("2048".into()), Some("1024".into())).unwrap(),
+            2048
+        );
+        assert!(analysis_source_budget(Some("invalid".into()), None).is_err());
+        assert!(analysis_source_budget(None, Some("0".into())).is_err());
+    }
 
     #[test]
     fn parses_build_configurations_without_losing_values() {
@@ -116,7 +150,11 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let key = SessionKey::new(env::current_dir()?, &project, "516.1687",
                 defines.into_iter().collect(), "analysis")?;
             let mut coordinator = Coordinator::new(default_cache_root(&project))?;
-            let frontend = coordinator.project_frontend_snapshot(&key)?;
+            let max_source_bytes = analysis_source_budget(
+                env::var("DM_ANALYSIS_MAX_SOURCE_BYTES").ok(),
+                env::var("DM_CHECK_MAX_SOURCE_BYTES").ok(),
+            )?;
+            let frontend = coordinator.project_frontend_snapshot_bounded(&key, max_source_bytes)?;
             let prepared = &frontend.prepared;
             let expanded = &prepared.project;
             let (index, index_errors) = match frontend.declarations {

@@ -1901,12 +1901,19 @@ impl Coordinator {
         &mut self,
         key: &SessionKey,
     ) -> io::Result<ProjectFrontendSnapshot> {
+        self.project_frontend_snapshot_bounded(key, self.limits.max_check_source_bytes)
+    }
+
+    /// The same prepared-input/frontend pipeline with an explicit caller budget.
+    /// This does not change CheckProject's configured source limit.
+    pub fn project_frontend_snapshot_bounded(
+        &mut self,
+        key: &SessionKey,
+        max_source_bytes: usize,
+    ) -> io::Result<ProjectFrontendSnapshot> {
         let prepared = self.prepare_project(key)?;
-        dm_compiler::check_source_size(
-            prepared.project.text.len(),
-            self.limits.max_check_source_bytes,
-        )
-        .map_err(io::Error::other)?;
+        dm_compiler::check_source_size(prepared.project.text.len(), max_source_bytes)
+            .map_err(io::Error::other)?;
         Ok(self.frontend_from_prepared(key, prepared))
     }
 

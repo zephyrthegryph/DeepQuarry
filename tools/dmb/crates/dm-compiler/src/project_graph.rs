@@ -25,6 +25,22 @@ const MAX_HEADER: usize = 4 * 1024 * 1024;
 const MAX_PAYLOAD: usize = 32 * 1024 * 1024;
 const SNAPSHOT_BYTES: usize = 128 * 1024 * 1024;
 const PENDING_BYTES: usize = 32 * 1024 * 1024;
+// Limit the temporary raw + checksum-decoded read batch independently of the
+// retained startup snapshot. Larger individual records are read on demand.
+const PREFETCH_BATCH_BYTES: usize = 8 * 1024 * 1024;
+// Salsa 0.28 retains 8/12-byte dependency edges. Charge 16 bytes per edge,
+// including the three ProcedureInput fields, in addition to witness storage.
+const QUERY_EDGE_BYTES: usize = 16;
+// Include tree nodes and retained string/Vec allocations, not just wire bytes.
+const BUFFER_ENTRY_OVERHEAD: usize = 160;
+const MAX_PENDING_RECORDS: usize = 64_000;
+
+fn pending_record_bytes(key: &dm_store::Key, bytes: &Vec<u8>) -> usize {
+    BUFFER_ENTRY_OVERHEAD
+        .saturating_add(key.namespace.capacity())
+        .saturating_add(key.name.capacity())
+        .saturating_add(bytes.capacity())
+}
 
 /// Occurrences preserve authored override order; offsets and output IDs are not
 /// identities. The frontend adapter owns matching occurrences across revisions.
@@ -57,13 +73,6 @@ pub enum ProcedureArtifact {
     Prepared(Arc<PreparedProcedureEnvelope>),
 }
 impl ProcedureArtifact {
-    fn same_allocation(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Symbolic(a), Self::Symbolic(b)) => Arc::ptr_eq(a, b),
-            (Self::Prepared(a), Self::Prepared(b)) => Arc::ptr_eq(a, b),
-            _ => false,
-        }
-    }
     fn resident_bytes(&self) -> usize {
         match self {
             Self::Symbolic(memo) => memo_heap(memo),
@@ -153,6 +162,9 @@ pub struct ProjectGraphStats {
     pub restored_procedures: usize,
     pub snapshot_bytes: usize,
     pub snapshot_complete: bool,
+    pub prefetch_batches: usize,
+    pub prefetched_payloads: usize,
+    pub payload_single_reads: usize,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -166,10 +178,24 @@ struct Persistence {
     store: dm_store::Store,
     headers_namespace: String,
     payloads_namespace: String,
-    payloads: BTreeMap<String, Vec<u8>>,
-    complete: bool,
+    payloads: BTreeMap<String, EncodedPayload>,
+    payload_lru: BTreeSet<(u64, String)>,
+    payload_clock: u64,
+    bulk_read_failed: bool,
     pending: BTreeMap<dm_store::Key, Vec<u8>>,
     pending_bytes: usize,
+}
+struct EncodedPayload {
+    // A missing disk row is also a bounded cache observation. It does not
+    // authorize output reuse and avoids reopening the store for every miss.
+    bytes: Option<Vec<u8>>,
+    touched: u64,
+}
+fn encoded_payload_bytes(name: &str, bytes: &Option<Vec<u8>>) -> usize {
+    BUFFER_ENTRY_OVERHEAD
+        .saturating_mul(2)
+        .saturating_add(name.len().saturating_mul(2))
+        .saturating_add(bytes.as_ref().map_or(0, Vec::capacity))
 }
 
 #[salsa::input]
@@ -177,28 +203,18 @@ struct FactInput {
     #[returns(ref)]
     value: Option<FactValue>,
 }
-#[derive(Clone)]
+#[derive(Clone, Eq, PartialEq)]
 struct Candidate {
+    generation: u64,
     descriptor: ProcDescriptor,
     dependencies: Arc<[BindingWitness]>,
-    artifact: Option<ProcedureArtifact>,
     disk: Option<ProcedureMemoRef>,
 }
-// Allocation equality is conservative: installing equivalent code may reexecute
-// this cheap query, but can never hide a changed artifact behind equal stamps.
-impl PartialEq for Candidate {
-    fn eq(&self, other: &Self) -> bool {
-        self.descriptor == other.descriptor
-            && self.dependencies == other.dependencies
-            && self.disk == other.disk
-            && match (&self.artifact, &other.artifact) {
-                (Some(a), Some(b)) => a.same_allocation(b),
-                (None, None) => true,
-                _ => false,
-            }
-    }
+struct DecodedArtifact {
+    // Code is usable only after this exact candidate has been validated.
+    generation: u64,
+    artifact: ProcedureArtifact,
 }
-impl Eq for Candidate {}
 #[salsa::input]
 struct ProcedureInput {
     #[returns(ref)]
@@ -248,6 +264,7 @@ struct Record {
     facts: BTreeMap<BindingFact, ObservedFact>,
     witness_bytes: usize,
     resident_bytes: usize,
+    artifact: Option<DecodedArtifact>,
     touched: u64,
     active: bool,
     descriptor_bytes: usize,
@@ -309,7 +326,9 @@ impl ProjectProcedureGraph {
             headers_namespace,
             payloads_namespace,
             payloads: BTreeMap::new(),
-            complete: false,
+            payload_lru: BTreeSet::new(),
+            payload_clock: 0,
+            bulk_read_failed: false,
             pending: BTreeMap::new(),
             pending_bytes: 0,
         });
@@ -343,61 +362,155 @@ impl ProjectProcedureGraph {
         // Restored inputs deliberately start unavailable. The adapter must
         // refresh against its current skeleton before any cached result is used.
         graph.revision = None;
-        graph.prefetch_current_payloads();
+        // Payloads are fetched in bounded caller-supplied source order. Eager
+        // loading here would retain arbitrary manifest order before emission.
+        graph.trace_memory("startup");
         graph
     }
 
-    // Read only the current manifest's content handles. A broad namespace scan
-    // would fill the bounded snapshot with older versions from other worktrees.
-    fn prefetch_current_payloads(&mut self) {
-        let names: BTreeSet<_> = self
-            .records
-            .values()
-            .filter_map(|record| {
-                record
-                    .input
-                    .candidate(&self.db)
-                    .as_ref()?
-                    .disk
-                    .as_ref()
-                    .map(|r| r.key.clone())
-            })
-            .collect();
-        let Some(p) = self.persistence.as_mut() else {
-            return;
-        };
-        let keys: Vec<_> = names
-            .into_iter()
-            .map(|name| dm_store::Key::new(&p.payloads_namespace, name))
-            .collect();
-        let mut bytes = 0usize;
-        let mut complete = true;
-        for chunk in keys.chunks(256) {
-            if bytes >= SNAPSHOT_BYTES {
-                complete = false;
-                break;
-            }
-            let Ok(batch) = p.store.read_many(chunk, None) else {
-                complete = false;
+    pub fn known_keys(&self) -> impl Iterator<Item = &ProcKey> {
+        self.records.keys()
+    }
+
+    /// Read nearby portable payloads in caller-supplied emission order. This
+    /// fetches bytes only: probe still validates the current descriptor/facts.
+    /// Refills an encoded LRU after pressure trimming instead of reopening the
+    /// store for each procedure. Errors are optional cache misses at the caller.
+    pub fn prefetch(&mut self, keys: &[ProcKey]) -> io::Result<usize> {
+        let mut names = Vec::new();
+        let mut seen = BTreeSet::new();
+        for key in keys {
+            let Some(record) = self.records.get(key) else {
                 continue;
             };
-            for (key, value) in chunk.iter().zip(batch.values) {
-                let Some(value) = value else {
-                    continue;
-                };
-                if value.len() > MAX_PAYLOAD
-                    || bytes.saturating_add(value.len() + key.name.len()) > SNAPSHOT_BYTES
-                {
-                    complete = false;
-                    continue;
-                }
-                bytes += value.len() + key.name.len();
-                p.payloads.insert(key.name.clone(), value);
+            let Some(candidate) = record.input.candidate(&self.db).as_ref() else {
+                continue;
+            };
+            if record
+                .artifact
+                .as_ref()
+                .is_some_and(|a| a.generation == candidate.generation)
+            {
+                continue;
+            }
+            let Some(reference) = &candidate.disk else {
+                continue;
+            };
+            if seen.insert(reference.key.as_str()) {
+                names.push(reference.key.clone());
             }
         }
-        p.complete = complete;
-        self.stats.snapshot_bytes = bytes;
-        self.stats.snapshot_complete = complete;
+        drop(seen);
+        if self.persistence.is_none() || names.is_empty() {
+            return Ok(0);
+        }
+        let mut fetched = 0;
+        for chunk in names.chunks(256) {
+            let p = self.persistence.as_mut().unwrap();
+            let mut reads = Vec::new();
+            for name in chunk {
+                let key = dm_store::Key::new(&p.payloads_namespace, name);
+                if p.pending.contains_key(&key) {
+                    continue;
+                }
+                if p.payloads.contains_key(name) {
+                    Self::touch_encoded(p, name);
+                } else {
+                    reads.push(key);
+                }
+            }
+            if reads.is_empty() {
+                continue;
+            }
+            fetched += self.prefetch_batch(&reads)?;
+        }
+        self.stats.prefetched_payloads += fetched;
+        Ok(fetched)
+    }
+
+    fn prefetch_batch(&mut self, keys: &[dm_store::Key]) -> io::Result<usize> {
+        self.stats.prefetch_batches += 1;
+        let result = self.persistence.as_ref().unwrap().store.read_many_bounded(
+            keys,
+            MAX_PAYLOAD,
+            PREFETCH_BATCH_BYTES,
+            None,
+        );
+        match result {
+            Ok(batch) => {
+                self.persistence.as_mut().unwrap().bulk_read_failed = false;
+                let mut fetched = 0;
+                for (key, bytes) in keys.iter().zip(batch.values) {
+                    fetched += usize::from(bytes.is_some());
+                    self.retain_encoded(key.name.clone(), bytes);
+                }
+                Ok(fetched)
+            }
+            Err(error) if error.kind() == io::ErrorKind::InvalidInput => {
+                // A batch limit is not evidence of missing data. Split only
+                // typed budget failures; an unusually large individual payload
+                // remains available through the bounded on-demand reader.
+                if keys.len() == 1 {
+                    self.persistence.as_mut().unwrap().bulk_read_failed = false;
+                    return Ok(0);
+                }
+                let (left, right) = keys.split_at(keys.len() / 2);
+                Ok(self.prefetch_batch(left)? + self.prefetch_batch(right)?)
+            }
+            Err(error) => {
+                // Do not turn one optional failed batch into hundreds of
+                // individual opens. The next explicit refill retries I/O.
+                self.persistence.as_mut().unwrap().bulk_read_failed = true;
+                Err(error)
+            }
+        }
+    }
+
+    fn touch_encoded(p: &mut Persistence, name: &str) {
+        let Some(payload) = p.payloads.get_mut(name) else {
+            return;
+        };
+        p.payload_lru.remove(&(payload.touched, name.to_owned()));
+        p.payload_clock = p.payload_clock.wrapping_add(1);
+        payload.touched = p.payload_clock;
+        p.payload_lru.insert((payload.touched, name.to_owned()));
+    }
+
+    fn retain_encoded(&mut self, name: String, bytes: Option<Vec<u8>>) {
+        let charge = encoded_payload_bytes(&name, &bytes);
+        if charge > SNAPSHOT_BYTES {
+            return;
+        }
+        let p = self.persistence.as_mut().unwrap();
+        if let Some(old) = p.payloads.remove(&name) {
+            p.payload_lru.remove(&(old.touched, name.clone()));
+            self.stats.snapshot_bytes = self
+                .stats
+                .snapshot_bytes
+                .saturating_sub(encoded_payload_bytes(&name, &old.bytes));
+        }
+        while self.stats.snapshot_bytes.saturating_add(charge) > SNAPSHOT_BYTES {
+            let Some((_, old_name)) = p.payload_lru.pop_first() else {
+                break;
+            };
+            if let Some(old) = p.payloads.remove(&old_name) {
+                self.stats.snapshot_bytes = self
+                    .stats
+                    .snapshot_bytes
+                    .saturating_sub(encoded_payload_bytes(&old_name, &old.bytes));
+            }
+        }
+        p.payload_clock = p.payload_clock.wrapping_add(1);
+        p.payload_lru.insert((p.payload_clock, name.clone()));
+        p.payloads.insert(
+            name,
+            EncodedPayload {
+                bytes,
+                touched: p.payload_clock,
+            },
+        );
+        self.stats.snapshot_bytes += charge;
+        self.stats.snapshot_complete = false;
     }
 
     pub fn configure(&mut self, root: &Path, project_identity: &str) {
@@ -422,10 +535,21 @@ impl ProjectProcedureGraph {
         let _ = self.flush();
         if let Some(p) = self.persistence.as_mut() {
             p.payloads.clear();
-            p.complete = false;
+            p.payload_lru.clear();
+            p.bulk_read_failed = false;
         }
         self.stats.snapshot_bytes = 0;
         self.stats.snapshot_complete = false;
+    }
+
+    /// Release decoded code under aggregate session pressure without losing
+    /// procedure identities, fact observations or persisted payload handles.
+    /// Future installs still obey the graph's configured resident-byte limit.
+    /// Returns the charged decoded bytes released by this call.
+    pub fn trim_decoded_to(&mut self, limit: usize) -> usize {
+        let before = self.stats.resident_bytes;
+        self.trim_to(limit);
+        before.saturating_sub(self.stats.resident_bytes)
     }
 
     pub fn dependencies(&self, key: &ProcKey) -> Option<Arc<[BindingWitness]>> {
@@ -444,19 +568,17 @@ impl ProjectProcedureGraph {
         if persistence.pending.is_empty() {
             return Ok(());
         }
-        persistence.store.put_many(
-            persistence
-                .pending
-                .iter()
-                .map(|(key, bytes)| (key.clone(), bytes.clone()))
-                .collect(),
-            None,
-        )?;
-        persistence.pending.clear();
+        // Moving the batch avoids retaining a second full pending payload
+        // while dm-store creates its checksum-encoded transaction records.
+        // A failed optional cache write is discarded: resident code remains
+        // usable and missing persisted handles cause ordinary cache misses.
+        let pending = std::mem::take(&mut persistence.pending);
         persistence.pending_bytes = 0;
         // Snapshot is a bounded startup view. Successful writes not retained
         // there must remain discoverable if their resident artifact is evicted.
-        persistence.complete = false;
+        persistence
+            .store
+            .put_many(pending.into_iter().collect(), None)?;
         Ok(())
     }
 
@@ -505,6 +627,7 @@ impl ProjectProcedureGraph {
                 facts: BTreeMap::new(),
                 witness_bytes: 0,
                 resident_bytes: 0,
+                artifact: None,
                 touched: 0,
                 active: true,
                 descriptor_bytes: (descriptor.body_digest.len() + descriptor.frame_digest.len())
@@ -524,8 +647,12 @@ impl ProjectProcedureGraph {
         let input = self.records[key].input;
         let candidate = current_candidate(&self.db, input);
         if let Some(candidate) = candidate {
-            if let Some(artifact) = &candidate.artifact {
-                let artifact = artifact.clone();
+            if let Some(decoded) = self.records[key]
+                .artifact
+                .as_ref()
+                .filter(|decoded| decoded.generation == candidate.generation)
+            {
+                let artifact = decoded.artifact.clone();
                 self.touch(key);
                 self.stats.resident_hits += 1;
                 return ProcedureProbe::Resident(artifact);
@@ -672,6 +799,7 @@ impl ProjectProcedureGraph {
                         .saturating_add(value_heap(&w.value))
                 },
             )
+            .saturating_add(dependencies.len().saturating_add(3) * QUERY_EDGE_BYTES)
             .saturating_add(disk.as_ref().map_or(0, |r| r.key.len() + 64));
         let mut planned = self
             .stats
@@ -703,6 +831,9 @@ impl ProjectProcedureGraph {
                 }))
         {
             self.stats.refused_installs += 1;
+            if self.stats.refused_installs == 1 || self.stats.refused_installs % 5_000 == 0 {
+                self.trace_memory("refused install");
+            }
             return false;
         }
         let input = record.input;
@@ -742,20 +873,72 @@ impl ProjectProcedureGraph {
             .saturating_sub(old_bytes)
             .saturating_add(record.resident_bytes);
         self.lru.remove(&(old_touch, key.clone()));
-        input.set_facts(&mut self.db).to(inputs);
-        input
-            .set_candidate(&mut self.db)
-            .to(Some(Arc::new(Candidate {
+        // Re-decoding a valid disk payload changes residency only. Keep the
+        // tracked identity and fact inputs unchanged so other procedure queries
+        // do not need validation merely because code entered/left the LRU.
+        let old_candidate = input.candidate(&self.db).as_ref().cloned();
+        let candidate = if let Some(old) = old_candidate.as_ref().filter(|old| {
+            old.descriptor == descriptor
+                && old.dependencies.as_ref() == dependencies.as_ref()
+                && old.disk == disk
+        }) {
+            Arc::clone(old)
+        } else {
+            Arc::new(Candidate {
+                generation: old_candidate.as_ref().map_or(1, |old| {
+                    old.generation
+                        .checked_add(1)
+                        .expect("procedure candidate generation overflow")
+                }),
                 descriptor,
                 dependencies,
-                artifact,
                 disk,
-            })));
+            })
+        };
+        if input.facts(&self.db) != &inputs {
+            input.set_facts(&mut self.db).to(inputs);
+        }
+        if old_candidate
+            .as_ref()
+            .is_none_or(|old| !Arc::ptr_eq(old, &candidate))
+        {
+            input
+                .set_candidate(&mut self.db)
+                .to(Some(Arc::clone(&candidate)));
+        }
+        self.records.get_mut(&key).unwrap().artifact = artifact.map(|artifact| DecodedArtifact {
+            generation: candidate.generation,
+            artifact,
+        });
         let _ = current_candidate(&self.db, input);
         self.stats.installs += 1;
         self.touch(&key);
         self.trim();
+        if self.stats.installs % 5_000 == 0 {
+            self.trace_memory("install");
+        }
         true
+    }
+
+    fn trace_memory(&self, stage: &str) {
+        if std::env::var_os("DM_BUILD_TRACE").is_none() {
+            return;
+        }
+        let pending_bytes = self.persistence.as_ref().map_or(0, |p| p.pending_bytes);
+        eprintln!(
+            "DM_BUILD_TRACE procedure graph {stage}: {} procedures, {} facts, {} installs, {} refusals, {} evictions, {} resident bytes, {} metadata bytes, {} snapshot bytes, {} pending bytes, {} prefetch batches, {} single reads",
+            self.stats.procedures,
+            self.stats.facts,
+            self.stats.installs,
+            self.stats.refused_installs,
+            self.stats.evictions,
+            self.stats.resident_bytes,
+            self.stats.metadata_bytes,
+            self.stats.snapshot_bytes,
+            pending_bytes,
+            self.stats.prefetch_batches,
+            self.stats.payload_single_reads,
+        );
     }
 
     fn persist_prepared(
@@ -781,15 +964,23 @@ impl ProjectProcedureGraph {
         if header.len() > MAX_HEADER {
             return None;
         }
-        if payload.len().saturating_add(header.len()) > PENDING_BYTES {
+        let p = self.persistence.as_ref()?;
+        let header_name = format!("{:x}", Sha256::digest(serde_json::to_vec(key).ok()?));
+        let records = [
+            (dm_store::Key::new(&p.payloads_namespace, &name), payload),
+            (
+                dm_store::Key::new(&p.headers_namespace, header_name),
+                header,
+            ),
+        ];
+        let incoming_bytes = records.iter().fold(0usize, |total, (key, bytes)| {
+            total.saturating_add(pending_record_bytes(key, bytes))
+        });
+        if incoming_bytes > PENDING_BYTES {
             return None;
         }
-        if self
-            .persistence
-            .as_ref()?
-            .pending_bytes
-            .saturating_add(payload.len() + header.len())
-            > PENDING_BYTES
+        if p.pending_bytes.saturating_add(incoming_bytes) > PENDING_BYTES
+            || p.pending.len().saturating_add(records.len()) > MAX_PENDING_RECORDS
         {
             if self.flush().is_err() {
                 // Cache writes are optional. Drop the bounded pending batch if
@@ -801,18 +992,16 @@ impl ProjectProcedureGraph {
             }
         }
         let p = self.persistence.as_mut()?;
-        let header_name = format!("{:x}", Sha256::digest(serde_json::to_vec(key).ok()?));
-        for (key, bytes) in [
-            (dm_store::Key::new(&p.payloads_namespace, &name), payload),
-            (
-                dm_store::Key::new(&p.headers_namespace, header_name),
-                header,
-            ),
-        ] {
-            p.pending_bytes = p.pending_bytes.saturating_add(bytes.len());
+        for (key, bytes) in records {
+            let charge = pending_record_bytes(&key, &bytes);
+            let previous_charge = p
+                .pending
+                .get_key_value(&key)
+                .map_or(0, |(key, bytes)| pending_record_bytes(key, bytes));
+            p.pending_bytes = p.pending_bytes.saturating_add(charge);
             let previous = p.pending.insert(key, bytes);
-            if let Some(previous) = previous {
-                p.pending_bytes = p.pending_bytes.saturating_sub(previous.len());
+            if previous.is_some() {
+                p.pending_bytes = p.pending_bytes.saturating_sub(previous_charge);
             }
         }
         Some(ProcedureMemoRef { key: name })
@@ -822,22 +1011,37 @@ impl ProjectProcedureGraph {
         &mut self,
         reference: &ProcedureMemoRef,
     ) -> Option<Arc<PreparedProcedureEnvelope>> {
-        let p = self.persistence.as_ref()?;
+        let p = self.persistence.as_mut()?;
         let key = dm_store::Key::new(&p.payloads_namespace, &reference.key);
-        let borrowed = p
-            .pending
-            .get(&key)
-            .or_else(|| p.payloads.get(&reference.key));
-        let read;
-        let bytes = if let Some(bytes) = borrowed {
-            bytes.as_slice()
-        } else {
-            if p.complete {
+        if !p.pending.contains_key(&key) && !p.payloads.contains_key(&reference.key) {
+            if p.bulk_read_failed {
                 return None;
             }
-            read = p.store.read_many(&[key], None).ok()?.values.pop()??;
-            read.as_slice()
-        };
+            self.stats.payload_single_reads += 1;
+            let read =
+                match p
+                    .store
+                    .read_many_bounded(&[key.clone()], MAX_PAYLOAD, MAX_PAYLOAD + 32, None)
+                {
+                    Ok(mut batch) => batch.values.pop()?,
+                    Err(_) => {
+                        p.bulk_read_failed = true;
+                        return None;
+                    }
+                };
+            self.retain_encoded(reference.key.clone(), read);
+        }
+        let p = self.persistence.as_mut()?;
+        Self::touch_encoded(p, &reference.key);
+        let bytes = p
+            .pending
+            .get(&key)
+            .or_else(|| {
+                p.payloads
+                    .get(&reference.key)
+                    .and_then(|payload| payload.bytes.as_ref())
+            })?
+            .as_slice();
         if bytes.len() > MAX_PAYLOAD || format!("{:x}", Sha256::digest(bytes)) != reference.key {
             self.stats.corrupt_records += 1;
             return None;
@@ -915,7 +1119,10 @@ impl ProjectProcedureGraph {
         }
     }
     fn trim(&mut self) {
-        while self.stats.resident_bytes > self.limits.resident_bytes {
+        self.trim_to(self.limits.resident_bytes);
+    }
+    fn trim_to(&mut self, limit: usize) {
+        while self.stats.resident_bytes > limit {
             let Some((_, key)) = self.lru.pop_first() else {
                 break;
             };
@@ -924,23 +1131,13 @@ impl ProjectProcedureGraph {
     }
     fn evict_artifact(&mut self, key: &ProcKey) {
         let record = self.records.get_mut(key).unwrap();
-        let input = record.input;
         self.stats.resident_bytes = self
             .stats
             .resident_bytes
             .saturating_sub(record.resident_bytes);
         record.resident_bytes = 0;
         self.lru.remove(&(record.touched, key.clone()));
-        if let Some(candidate) = input.candidate(&self.db).as_ref() {
-            let mut replacement = (**candidate).clone();
-            replacement.artifact = None;
-            input
-                .set_candidate(&mut self.db)
-                .to(Some(Arc::new(replacement)));
-            // Replace the tracked query's old Arc result too, not only the
-            // input value. Witness and disk-reference state remains tracked.
-            let _ = current_candidate(&self.db, input);
-        }
+        record.artifact = None;
         self.stats.evictions += 1;
     }
 
@@ -974,14 +1171,30 @@ impl ProjectProcedureGraph {
             .saturating_sub(record.witness_bytes);
         record.witness_bytes = 0;
         record.active = false;
-        if let Some(p) = self.persistence.as_mut() {
-            if let Ok(bytes) = serde_json::to_vec(key) {
-                let name = format!("{:x}", Sha256::digest(bytes));
-                let key = dm_store::Key::new(&p.headers_namespace, name);
-                if let Some(previous) = p.pending.insert(key, Vec::new()) {
-                    p.pending_bytes = p.pending_bytes.saturating_sub(previous.len());
-                }
+        let tombstone = self.persistence.as_ref().and_then(|p| {
+            let bytes = serde_json::to_vec(key).ok()?;
+            let name = format!("{:x}", Sha256::digest(bytes));
+            Some(dm_store::Key::new(&p.headers_namespace, name))
+        });
+        if let Some(key) = tombstone {
+            let charge = pending_record_bytes(&key, &Vec::new());
+            let needs_flush = self.persistence.as_ref().is_some_and(|p| {
+                p.pending_bytes.saturating_add(charge) > PENDING_BYTES
+                    || p.pending.len().saturating_add(1) > MAX_PENDING_RECORDS
+            });
+            if needs_flush && self.flush().is_err() {
+                return;
             }
+            let p = self.persistence.as_mut().unwrap();
+            let previous_charge = p
+                .pending
+                .get_key_value(&key)
+                .map_or(0, |(key, bytes)| pending_record_bytes(key, bytes));
+            p.pending.insert(key, Vec::new());
+            p.pending_bytes = p
+                .pending_bytes
+                .saturating_sub(previous_charge)
+                .saturating_add(charge);
         }
     }
     pub fn retain_keys(&mut self, keys: &BTreeSet<ProcKey>) {
@@ -1005,6 +1218,161 @@ impl Drop for ProjectProcedureGraph {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn trim_decoded_releases_last_query_arc_without_erasing_fact_tracking() {
+        let mut graph = ProjectProcedureGraph::default();
+        let key = ProcKey {
+            path: "/proc/trim".into(),
+            occurrence: 0,
+        };
+        let descriptor = ProcDescriptor {
+            body_digest: "body".into(),
+            frame_digest: "frame".into(),
+        };
+        let envelope = Arc::new(
+            PreparedProcedureEnvelope::prepare(&dm_codegen_byond::SimpleProc::default()).unwrap(),
+        );
+        let weak = Arc::downgrade(&envelope);
+        let dependencies: Arc<[BindingWitness]> = vec![BindingWitness {
+            fact: BindingFact::SharedPresence,
+            value: FactValue::Boolean(true),
+        }]
+        .into();
+        graph.refresh_facts("initial", |_, _| FactValue::Boolean(true));
+        assert!(graph.install_prepared(key.clone(), descriptor, envelope, dependencies, None,));
+        let before = graph.stats().resident_bytes;
+        let revision = salsa::plumbing::current_revision(&graph.db);
+        let candidate = current_candidate(&graph.db, graph.records[&key].input).clone().unwrap();
+        assert!(before > 0);
+        assert!(weak.upgrade().is_some());
+        assert_eq!(graph.trim_decoded_to(0), before);
+        assert_eq!(graph.stats().resident_bytes, 0);
+        assert_eq!(
+            salsa::plumbing::current_revision(&graph.db),
+            revision,
+            "code eviction must not advance the semantic query revision"
+        );
+        assert!(Arc::ptr_eq(
+            &candidate,
+            current_candidate(&graph.db, graph.records[&key].input).as_ref().unwrap()
+        ));
+        assert!(
+            weak.upgrade().is_none(),
+            "the semantic query must not own the evicted code"
+        );
+        assert_eq!(graph.stats().procedures, 1);
+        assert_eq!(graph.stats().facts, 1);
+        assert_eq!(graph.dependencies(&key).unwrap().len(), 1);
+        assert_eq!(
+            graph.refresh_facts("changed", |_, _| FactValue::Boolean(false)),
+            1
+        );
+    }
+
+    #[test]
+    fn bulk_refill_after_pressure_trim_avoids_per_procedure_reads_and_query_writes() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-graph-bulk-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos(),
+        ));
+        let descriptor = ProcDescriptor {
+            body_digest: "body".into(),
+            frame_digest: "frame".into(),
+        };
+        let dependencies: Arc<[BindingWitness]> = vec![BindingWitness {
+            fact: BindingFact::SharedPresence,
+            value: FactValue::Boolean(true),
+        }]
+        .into();
+        let mut graph = ProjectProcedureGraph::open(&root, "bulk-test");
+        let keys: Vec<_> = (0..32)
+            .map(|i| ProcKey {
+                path: format!("/proc/p{i}"),
+                occurrence: 0,
+            })
+            .collect();
+        for (i, key) in keys.iter().enumerate() {
+            let simple = dm_codegen_byond::SimpleProc {
+                strings: vec![format!("payload-{i}")],
+                ..Default::default()
+            };
+            assert!(graph.install_prepared(
+                key.clone(),
+                descriptor.clone(),
+                Arc::new(PreparedProcedureEnvelope::prepare(&simple).unwrap()),
+                Arc::clone(&dependencies),
+                None
+            ));
+        }
+        graph.flush().unwrap();
+        graph.trim_decoded_to(0);
+        graph.release_encoded_snapshot();
+        assert_eq!(graph.stats().snapshot_bytes, 0);
+        let revision = salsa::plumbing::current_revision(&graph.db);
+        assert_eq!(graph.prefetch(&keys).unwrap(), keys.len());
+        assert_eq!(graph.stats().prefetch_batches, 1);
+        let charged = graph.stats().snapshot_bytes;
+        assert!(charged > 0 && charged <= SNAPSHOT_BYTES);
+        for (i, key) in keys.iter().enumerate() {
+            let ProcedureProbe::Resident(ProcedureArtifact::Prepared(envelope)) =
+                graph.probe(key, &descriptor)
+            else {
+                panic!("prefetched payload must restore without individual store reads");
+            };
+            assert_eq!(envelope.metadata.strings, [format!("payload-{i}")]);
+        }
+        assert_eq!(graph.stats().payload_single_reads, 0);
+        assert_eq!(
+            salsa::plumbing::current_revision(&graph.db),
+            revision,
+            "restoring identical code must not mutate semantic inputs"
+        );
+        graph.trim_decoded_to(0);
+        assert_eq!(
+            graph.prefetch(&keys).unwrap(),
+            0,
+            "existing encoded rows need no disk refill"
+        );
+        assert_eq!(graph.stats().prefetch_batches, 1);
+        assert_eq!(graph.stats().snapshot_bytes, charged);
+        let missing = ProcKey {
+            path: "/proc/missing-payload".into(),
+            occurrence: 0,
+        };
+        assert!(graph.restore_disk(
+            missing.clone(),
+            descriptor.clone(),
+            dependencies,
+            ProcedureMemoRef {
+                key: "0".repeat(64)
+            },
+            |_, _| FactValue::Boolean(true)
+        ));
+        assert_eq!(graph.prefetch(std::slice::from_ref(&missing)).unwrap(), 0);
+        for _ in 0..3 {
+            assert!(matches!(
+                graph.probe(&missing, &descriptor),
+                ProcedureProbe::Miss
+            ));
+        }
+        assert_eq!(
+            graph.stats().payload_single_reads,
+            0,
+            "a missing row in a successful bulk read must not reopen the store"
+        );
+        graph.refresh_facts("removed", |_, _| FactValue::Boolean(false));
+        assert!(
+            matches!(graph.probe(&keys[0], &descriptor), ProcedureProbe::Miss),
+            "prefetched bytes cannot bypass witness validation"
+        );
+        drop(graph);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn prepared_candidate_tracks_positive_and_negative_facts_and_rejects_stale_install() {

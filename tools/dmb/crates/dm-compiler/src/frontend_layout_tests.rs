@@ -14,7 +14,9 @@ fn procedure_digests_follow_current_spans_without_path_aliases() {
         for descriptor in descriptors {
             assert_eq!(
                 digests.get(&(descriptor.start, descriptor.end)),
-                Some(&crate::incremental::digest(source[descriptor.start..descriptor.end].as_bytes()))
+                Some(&crate::incremental::digest(
+                    source[descriptor.start..descriptor.end].as_bytes()
+                ))
             );
         }
     }

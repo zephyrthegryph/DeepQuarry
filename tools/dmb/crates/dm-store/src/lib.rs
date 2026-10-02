@@ -220,13 +220,19 @@ impl Store {
                 let stored = table.get(key.as_str()).map_err(error)?;
                 let size = stored.as_ref().map_or(0, |value| value.value().len());
                 if size.saturating_sub(32) > max_record_bytes.min(MAX_RECORD) {
-                    return Err(error("read record exceeds stage byte limit"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "read record exceeds stage byte limit",
+                    ));
                 }
                 bytes = bytes
                     .checked_add(size)
                     .ok_or_else(|| error("read batch size overflow"))?;
                 if bytes > max_batch_bytes.min(128 * 1024 * 1024) {
-                    return Err(error("read batch exceeds stage byte limit"));
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidInput,
+                        "read batch exceeds stage byte limit",
+                    ));
                 }
                 values.push(stored.map(|value| value.value().to_vec()));
             }
@@ -425,8 +431,14 @@ mod tests {
         let bounded = store.read_many_bounded(&keys, 64, 192, None).unwrap();
         assert_eq!(bounded.values, expected.values);
         assert_eq!(bounded.witnesses, expected.witnesses);
-        assert!(store.read_many_bounded(&keys, 63, 192, None).is_err());
-        assert!(store.read_many_bounded(&keys, 64, 191, None).is_err());
+        assert_eq!(
+            store.read_many_bounded(&keys, 63, 192, None).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput,
+        );
+        assert_eq!(
+            store.read_many_bounded(&keys, 64, 191, None).unwrap_err().kind(),
+            io::ErrorKind::InvalidInput,
+        );
         let missing = store
             .read_many_bounded(&[Key::new("stage", "missing")], 1, 1, None)
             .unwrap();

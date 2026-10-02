@@ -344,10 +344,17 @@ components together under the full `SessionKey`, with one six-entry/512 MiB aggr
 budget. It charges decoded sources, origins, expansion frames, resource proof
 records, semantic/lexical state and session keys. Both checked-out components reserve
 their known footprints; temporary active growth has separate compiler stage bounds.
-Pool pressure releases lexical and prepared source/expansion frames before encoded
-graph snapshots or whole idle entries. Switching among six worktrees within that
-budget preserves prepared source Arcs rather than repeatedly restoring packs. A
-trimmed input cache safely restores from the same CAS. Builds retain the same
+Pool pressure first trims resident expansions, duplicated lexical procedure bodies,
+encoded graph snapshots and decoded code values. These steps preserve the current
+source layout, source proofs, query identities, facts and dependency witnesses.
+If further trimming is required, it drops expanded input values while retaining
+decoded authored sources and their configuration/proof; the next edit replays from
+those inputs rather than first restoring a whole obsolete expanded pack. Frozen
+skeletons and full lexical/source state are later fallbacks, with whole idle entry
+eviction last. Switching among six worktrees within the aggregate budget preserves
+the reusable components that fit. Component traces record the before/after charge
+and any final entry eviction; charged retention is not an RSS or active-growth
+guarantee. Fully released input state safely restores from the same CAS. Builds retain the same
 expanded-project Arc instead of copying or dropping its origins. Check sessions
 retain summaries rather than redundant source-owning databases.
 

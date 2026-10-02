@@ -121,8 +121,13 @@ set. Some input-pack/output publication work still operates on whole packs.
 JSONL resolved-reference coverage remains explicitly unavailable where the
 compiler has no complete resolved-reference index.
 
-The integrated graph/prepared-section scheduler changes have not yet been
-benchmarked as a complete real-project pipeline. Earlier measurements describe
-the previous implementation and cannot establish current cold, warm or
-six-worktree performance. Further granularity and performance work should be
-guided by measurements of this integrated version.
+The integrated pipeline at `505f1f8e98` has real DeepQuarry measurements in
+`INCREMENTAL_CORE.md`: unchanged receipts take about 0.21--0.23 seconds, but body
+and structural edits still take 81--93 seconds despite procedure reuse. The
+default 2 GiB process cap failed on the first empty-cache build; a bounded 3 GiB
+retry with partially warm syntax succeeded. The bulk-refill follow-up measured
+0.317 seconds unchanged, 116.099 seconds for a body edit and 131.661 seconds for
+a new procedure under an explicit 3 GiB cap. The restore regression is fixed,
+but these measurements do not establish an overall iteration improvement.
+Six full-sized concurrent worktrees remain unmeasured. Use the supported
+`dm-compile` `iteration_bench` example for production Coordinator measurements.

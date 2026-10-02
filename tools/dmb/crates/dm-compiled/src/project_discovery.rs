@@ -143,8 +143,20 @@ pub struct DiscoveryCache {
     expansions: PreprocessCache,
     sources: BTreeMap<PathBuf, RetainedSource>,
     prepared: Option<Arc<PreparedProject>>,
+    prepared_bytes: usize,
+    released_context: Option<String>,
+    released_proof: Option<InputProof>,
     store: Option<crate::ContentStore>,
     resources: dm_resources::ResourceFingerprintCache,
+}
+
+#[derive(Clone, Copy, Debug, Default)]
+pub(crate) struct DiscoveryRetentionFootprint {
+    pub prepared: usize,
+    pub source_index: usize,
+    pub expansions: usize,
+    pub resources: usize,
+    pub released_proof: usize,
 }
 
 impl DiscoveryCache {
@@ -159,14 +171,67 @@ impl DiscoveryCache {
             path,
             sources: BTreeMap::new(),
             prepared: None,
+            prepared_bytes: 0,
+            released_context: None,
+            released_proof: None,
             resources: dm_resources::ResourceFingerprintCache::open(&cache_root),
             store: crate::ContentStore::new(cache_root).ok(),
         }
     }
 
     pub fn resident_bytes(&self) -> usize {
-        self.source_resident_bytes()
-            .saturating_add(self.resources.resident_bytes())
+        let footprint = self.retention_footprint();
+        footprint
+            .prepared
+            .saturating_add(footprint.source_index)
+            .saturating_add(footprint.expansions)
+            .saturating_add(footprint.resources)
+            .saturating_add(footprint.released_proof)
+    }
+
+    pub(crate) fn retention_footprint(&self) -> DiscoveryRetentionFootprint {
+        DiscoveryRetentionFootprint {
+            prepared: self.prepared_bytes,
+            source_index: self
+                .sources
+                .iter()
+                .map(|(path, source)| {
+                    path.as_os_str().len() * 2
+                        + 192
+                        + if self.prepared.is_none() {
+                            source.text.len()
+                        } else {
+                            0
+                        }
+                })
+                .sum(),
+            expansions: self.expansions.resident_bytes(),
+            resources: self.resources.resident_bytes(),
+            released_proof: self
+                .released_proof
+                .as_ref()
+                .map_or(0, InputProof::resident_bytes)
+                + self.released_context.as_ref().map_or(0, String::capacity),
+        }
+    }
+
+    pub(crate) fn trim_expansions_to(&mut self, limit: usize) -> usize {
+        let before = self.expansions.resident_bytes();
+        self.expansions.trim_to(limit);
+        before.saturating_sub(self.expansions.resident_bytes())
+    }
+
+    /// Drop expanded text/origins while keeping decoded source Arcs and their
+    /// proof/context. An edit replays from these sources, without reloading an
+    /// oversized old prepared pack before discovering the dirty include.
+    pub(crate) fn release_prepared_snapshot(&mut self) -> usize {
+        let before = self.resident_bytes();
+        if let Some(prepared) = self.prepared.take() {
+            self.released_context = Some(prepared.context.clone());
+            self.released_proof = prepared.proof.clone();
+            self.prepared_bytes = 0;
+        }
+        before.saturating_sub(self.resident_bytes())
     }
 
     /// Detached inputs and expansion frames can be restored from the same CAS
@@ -174,11 +239,7 @@ impl DiscoveryCache {
     pub(crate) fn source_resident_bytes(&self) -> usize {
         self.expansions
             .resident_bytes()
-            .saturating_add(
-                self.prepared
-                    .as_ref()
-                    .map_or(0, |value| value.resident_bytes()),
-            )
+            .saturating_add(self.prepared_bytes)
             .saturating_add(
                 self.sources
                     .iter()
@@ -195,12 +256,21 @@ impl DiscoveryCache {
                     })
                     .sum::<usize>(),
             )
+            .saturating_add(
+                self.released_proof
+                    .as_ref()
+                    .map_or(0, InputProof::resident_bytes),
+            )
+            .saturating_add(self.released_context.as_ref().map_or(0, String::capacity))
     }
 
     pub(crate) fn release_source_frames(&mut self) {
         self.prepared = None;
+        self.prepared_bytes = 0;
+        self.released_context = None;
+        self.released_proof = None;
         self.sources.clear();
-        self.expansions.clear();
+        self.expansions.trim_to(0);
     }
 
     /// One preparation path for CLI builds, retained daemon builds and tools.
@@ -253,10 +323,11 @@ impl DiscoveryCache {
             )
         );
         let mut disk_restored = false;
-        if self
-            .prepared
-            .as_ref()
-            .is_none_or(|snapshot| snapshot.context != context)
+        if self.released_context.as_deref() != Some(context.as_str())
+            && self
+                .prepared
+                .as_ref()
+                .is_none_or(|snapshot| snapshot.context != context)
         {
             if let Some(restored) = self.store.as_ref().and_then(|store| {
                 crate::prepared_persistence::load(store, &context)
@@ -265,7 +336,10 @@ impl DiscoveryCache {
             }) {
                 disk_restored = true;
                 self.sources = (*restored.sources).clone();
+                self.prepared_bytes = restored.resident_bytes();
                 self.prepared = Some(Arc::new(restored));
+                self.released_context = None;
+                self.released_proof = None;
             }
         }
         if let Some(snapshot) = self
@@ -286,8 +360,10 @@ impl DiscoveryCache {
             return Ok(snapshot);
         }
         let old = self.prepared.clone();
-        let previous =
-            previous.or_else(|| old.as_ref().and_then(|snapshot| snapshot.proof.as_ref()));
+        let released_proof = self.released_proof.clone();
+        let previous = previous
+            .or_else(|| old.as_ref().and_then(|snapshot| snapshot.proof.as_ref()))
+            .or(released_proof.as_ref());
         let mut unchanged = previous
             .map(InputProof::unchanged_paths)
             .unwrap_or_default();
@@ -312,8 +388,32 @@ impl DiscoveryCache {
                 (path, source)
             })
             .collect();
-        let changes =
+        let mut changes =
             crate::prepared_project::changes(old.as_deref(), &project, &sources, &context);
+        if old.is_none() && self.released_context.is_some() {
+            changes.configuration_changed = self.released_context.as_ref() != Some(&context);
+            changes.added_sources.clear();
+            changes.changed_sources.clear();
+            for (path, source) in &sources {
+                match self.sources.get(path) {
+                    None => {
+                        changes.added_sources.insert(path.clone());
+                    }
+                    Some(previous) if previous.digest != source.digest => {
+                        changes.changed_sources.insert(path.clone());
+                    }
+                    _ => {}
+                }
+            }
+            changes.removed_sources.extend(
+                self.sources
+                    .keys()
+                    .filter(|path| !sources.contains_key(*path))
+                    .cloned(),
+            );
+            // Expanded units conservatively remain changed: their old origins
+            // and span/digest summary were intentionally evicted with the pack.
+        }
         let project_digest = crate::prepared_project::project_digest(root, &sources);
         let expanded_digest = format!("{:x}", Sha256::digest(project.text.as_bytes()));
         let revision = format!(
@@ -339,15 +439,26 @@ impl DiscoveryCache {
             let _ = crate::prepared_persistence::save(store, &snapshot);
         }
         self.sources = (*snapshot.sources).clone();
+        self.released_context = None;
+        self.released_proof = None;
         // Account shared source texts once, then budget expansions alongside
         // the detached current snapshot rather than keeping three source copies.
+        let prepared_bytes = snapshot.resident_bytes();
         self.expansions.trim_to(
             (224usize * 1024 * 1024)
-                .saturating_sub(snapshot.resident_bytes())
+                .saturating_sub(prepared_bytes)
                 .saturating_sub(self.resources.resident_bytes()),
         );
-        self.prepared =
-            (snapshot.resident_bytes() <= 224 * 1024 * 1024).then(|| Arc::clone(&snapshot));
+        self.prepared = (prepared_bytes <= 224 * 1024 * 1024).then(|| Arc::clone(&snapshot));
+        self.prepared_bytes = if self.prepared.is_some() {
+            prepared_bytes
+        } else {
+            0
+        };
+        if self.prepared.is_none() {
+            self.released_context = Some(snapshot.context.clone());
+            self.released_proof = snapshot.proof.clone();
+        }
         Ok(snapshot)
     }
 
@@ -684,6 +795,37 @@ mod tests {
             restored.project.origins[1].path.as_ref(),
             &fixture.0.join("a.dm")
         );
+    }
+
+    #[test]
+    fn expanded_snapshot_eviction_keeps_raw_source_proofs_for_one_file_edits() {
+        let fixture = Fixture::new();
+        fixture.write("project.dme", "#include \"a.dm\"\n#include \"b.dm\"\n");
+        fixture.write("a.dm", "/proc/a()\n    return 1\n");
+        fixture.write("b.dm", "/proc/b()\n    return 2\n");
+        let mut cache =
+            DiscoveryCache::load_with_cache_root(&fixture.project(), fixture.0.join("cache"));
+        let original = cache.prepare(&fixture.project(), &BTreeMap::new()).unwrap();
+        assert!(cache.release_prepared_snapshot() > 0);
+        fixture.write("a.dm", "/proc/a()\n    return 30\n");
+        let changed = cache.prepare(&fixture.project(), &BTreeMap::new()).unwrap();
+        assert!(!changed.stats.disk_restored);
+        assert_eq!(changed.stats.source_files_read, 1);
+        assert!(changed.changes.added_sources.is_empty());
+        assert_eq!(
+            changed.changes.changed_sources,
+            [fixture.0.join("a.dm")].into()
+        );
+        assert!(Arc::ptr_eq(
+            &original.sources[&fixture.0.join("b.dm")].text,
+            &changed.sources[&fixture.0.join("b.dm")].text
+        ));
+        let fresh = dm_preprocess::preprocess_project(
+            &fixture.project(),
+            &dm_preprocess::FileSystem,
+            &BTreeMap::new(),
+        );
+        assert_eq!(changed.project.as_ref(), &fresh);
     }
 
     #[test]

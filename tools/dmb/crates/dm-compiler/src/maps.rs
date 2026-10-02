@@ -134,8 +134,11 @@ impl MapInitializerSession {
     }
     pub fn release_encoded_snapshot(&mut self) {
         self.graph.release_encoded_snapshot();
-        self.structures.clear();
-        self.structure_bytes = 0;
+    }
+    /// Drop decoded semantic payloads under pool pressure, retaining witnessed
+    /// queries, portable handles and the small exact-content map layout.
+    pub fn trim_decoded_to(&mut self, limit: usize) -> usize {
+        self.graph.trim_decoded_to(limit)
     }
     fn structure_key(digest: &[u8; 32]) -> dm_store::Key {
         dm_store::Key::new(
@@ -252,7 +255,14 @@ impl MapInitializerSession {
             });
         let mut result = HashMap::new();
         let mut missing = Vec::new();
-        for frame in &frames {
+        for (index, frame) in frames.iter().enumerate() {
+            if index % 1024 == 0 {
+                let keys: Vec<_> = frames[index..index.saturating_add(1024).min(frames.len())]
+                    .iter()
+                    .map(|frame| frame.1.clone())
+                    .collect();
+                let _ = self.graph.prefetch(&keys);
+            }
             match self.graph.probe(&frame.1, &frame.2) {
                 crate::ProcedureProbe::Resident(crate::ProcedureArtifact::Prepared(envelope)) => {
                     result.insert(frame.0.clone(), envelope);

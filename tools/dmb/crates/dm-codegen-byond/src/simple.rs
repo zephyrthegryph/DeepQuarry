@@ -87,29 +87,42 @@ pub struct OwnerLowerBindings {
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(default)]
 pub struct LowerBindings {
     /// Canonical path of the procedure being lowered, for compiler context values.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub current_proc_path: Option<String>,
     /// Canonical owner path, absent for global procedures.
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub current_type_path: Option<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub parameters: Vec<String>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub parameter_type_flags: Vec<u32>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub parameter_value_sources: Vec<u32>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
     pub parameter_defaults: Vec<Option<String>>,
     /// Declared parameter paths for type-inferred built-ins such as `istype(x)`.
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub parameter_types: HashMap<String, String>,
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub fields: BTreeSet<String>,
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub globals: BTreeSet<String>,
     /// Declared type paths used to resolve `new(args)` without an explicit path.
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub field_types: HashMap<String, String>,
     /// Immutable inherited owner frame shared by procedures on the same type.
-    #[serde(default)]
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub owner: Option<Arc<OwnerLowerBindings>>,
     /// Proc-local static names shadow owner fields without copying the owner set.
-    #[serde(default)]
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub hidden_owner_fields: BTreeSet<String>,
+    #[serde(skip_serializing_if = "HashMap::is_empty")]
     pub global_types: HashMap<String, String>,
     /// Global procedure names resolvable to ProcIDs at link time.
+    #[serde(skip_serializing_if = "BTreeSet::is_empty")]
     pub global_procs: BTreeSet<String>,
     /// Immutable project-wide names shared between procedure lowering jobs.
     #[serde(skip)]
@@ -118,6 +131,34 @@ pub struct LowerBindings {
     /// Opaque cache state is absent from serialization and semantic equality.
     #[serde(skip)]
     pub prepared_member_globals: crate::PreparedMemberGlobals,
+}
+
+#[cfg(test)]
+mod binding_codec_tests {
+    use super::*;
+
+    #[test]
+    fn compact_frames_preserve_parameters_and_static_shadowing() {
+        assert_eq!(serde_json::to_string(&LowerBindings::default()).unwrap(), "{}");
+        let bindings = LowerBindings {
+            current_proc_path: Some("/datum/holder/proc/test".into()),
+            current_type_path: Some("/datum/holder".into()),
+            parameters: vec!["actor".into()],
+            parameter_type_flags: vec![8],
+            parameter_value_sources: vec![0x7d01],
+            parameter_defaults: vec![None],
+            parameter_types: HashMap::from([("actor".into(), "/mob".into())]),
+            globals: BTreeSet::from(["value".into()]),
+            hidden_owner_fields: BTreeSet::from(["value".into()]),
+            owner: Some(Arc::new(OwnerLowerBindings {
+                fields: BTreeSet::from(["value".into()]),
+                field_types: HashMap::new(),
+            })),
+            ..LowerBindings::default()
+        };
+        let bytes = serde_json::to_vec(&bindings).unwrap();
+        assert_eq!(serde_json::from_slice::<LowerBindings>(&bytes).unwrap(), bindings);
+    }
 }
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]

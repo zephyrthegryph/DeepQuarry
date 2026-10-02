@@ -258,6 +258,18 @@ pub struct OutlineSession {
     last_limit: usize,
 }
 
+/// Conservative retained allocation charges, separate from process/private RSS.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FrontendRetentionFootprint {
+    pub lexical: usize,
+    pub graph_decoded: usize,
+    pub graph_metadata: usize,
+    pub graph_encoded: usize,
+    pub graph_other: usize,
+    pub maps: usize,
+    pub skeleton: usize,
+}
+
 impl Default for OutlineSession {
     fn default() -> Self {
         Self::new(None)
@@ -266,7 +278,8 @@ impl Default for OutlineSession {
 
 impl OutlineSession {
     pub fn set_project_configuration(&mut self, project: &Path, configuration: &str) {
-        self.canonical.bind_configuration(project, configuration, self.cache_root.as_deref());
+        self.canonical
+            .bind_configuration(project, configuration, self.cache_root.as_deref());
     }
 
     pub(crate) fn cache_root(&self) -> Option<&Path> {
@@ -276,7 +289,88 @@ impl OutlineSession {
     /// Full retained state, including the canonical graph and prefix. Syntax's
     /// local cache budget remains independent from the coordinator pool budget.
     pub fn retained_bytes(&self) -> usize {
-        self.resident_bytes().saturating_add(self.canonical.resident_bytes())
+        self.resident_bytes()
+            .saturating_add(self.canonical.resident_bytes())
+    }
+    pub fn retention_footprint(&self) -> FrontendRetentionFootprint {
+        let graph = self.canonical.graph.stats();
+        let graph_bytes = self.canonical.graph.resident_bytes();
+        let maps = self.canonical.maps.resident_bytes();
+        FrontendRetentionFootprint {
+            lexical: self.resident_bytes(),
+            graph_decoded: graph.resident_bytes,
+            graph_metadata: graph.metadata_bytes,
+            graph_encoded: graph.snapshot_bytes,
+            graph_other: graph_bytes
+                .saturating_sub(graph.resident_bytes)
+                .saturating_sub(graph.metadata_bytes)
+                .saturating_sub(graph.snapshot_bytes),
+            maps,
+            skeleton: self
+                .canonical
+                .resident_bytes()
+                .saturating_sub(graph_bytes)
+                .saturating_sub(maps),
+        }
+    }
+    /// Release duplicated procedure body strings, preserving the current text,
+    /// compact declaration AST, boundary layout and exact body identities.
+    pub fn compact_source_frames(&mut self) -> usize {
+        let before = self.resident_bytes();
+        let mut compact: HashMap<String, Arc<ParsedChunk>> = HashMap::new();
+        for (_, chunk) in &mut self.last_layout {
+            let value = compact.entry(chunk.digest.clone()).or_insert_with(|| {
+                if chunk
+                    .fragments
+                    .iter()
+                    .any(|fragment| fragment.source.is_some())
+                {
+                    Arc::new(chunk.without_bodies())
+                } else {
+                    Arc::clone(chunk)
+                }
+            });
+            *chunk = Arc::clone(value);
+        }
+        for cached in self.chunks.values_mut() {
+            let chunk = &cached.parsed;
+            let value = compact.entry(chunk.digest.clone()).or_insert_with(|| {
+                if chunk
+                    .fragments
+                    .iter()
+                    .any(|fragment| fragment.source.is_some())
+                {
+                    Arc::new(chunk.without_bodies())
+                } else {
+                    Arc::clone(chunk)
+                }
+            });
+            cached.parsed = Arc::clone(value);
+        }
+        self.resident_bytes = self
+            .chunks
+            .iter()
+            .map(|(digest, cached)| cached.parsed.resident_bytes + digest.len() + 256)
+            .sum();
+        self.db = crate::Database::default();
+        before.saturating_sub(self.resident_bytes())
+    }
+    /// Evict only decoded code values, keeping live query identities/witnesses
+    /// and the frozen skeleton so a small edit does not become a cold project.
+    pub fn trim_decoded_to(&mut self, limit: usize) -> usize {
+        let graph = self.canonical.graph.stats().resident_bytes;
+        let graph_limit = graph.min(limit);
+        self.canonical
+            .graph
+            .trim_decoded_to(graph_limit)
+            .saturating_add(
+                self.canonical
+                    .maps
+                    .trim_decoded_to(limit.saturating_sub(graph_limit)),
+            )
+    }
+    pub fn release_skeleton(&mut self) -> usize {
+        self.canonical.release_skeleton()
     }
     pub fn release_source_frames(&mut self) {
         self.db = crate::Database::default();
@@ -336,7 +430,10 @@ impl OutlineSession {
     /// Exact raw procedure digests for the current compact snapshot. Spans keep
     /// duplicate overrides distinct and follow rebased chunks after edits.
     /// Incomplete or released lexical layouts leave callers their hash fallback.
-    pub(crate) fn procedure_digests(&self, source: &str) -> Option<HashMap<(usize, usize), String>> {
+    pub(crate) fn procedure_digests(
+        &self,
+        source: &str,
+    ) -> Option<HashMap<(usize, usize), String>> {
         if self.last_source.as_deref() != Some(source) {
             return None;
         }
@@ -346,7 +443,9 @@ impl OutlineSession {
                 let start = offset.checked_add(fragment.descriptor.start)?;
                 let end = offset.checked_add(fragment.descriptor.end)?;
                 if source.get(start..end).is_none()
-                    || digests.insert((start, end), fragment.digest.clone()).is_some()
+                    || digests
+                        .insert((start, end), fragment.digest.clone())
+                        .is_some()
                 {
                     // A malformed or ambiguous cached boundary must not select
                     // another procedure's semantic candidate.

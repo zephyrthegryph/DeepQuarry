@@ -37,6 +37,15 @@ pub(super) fn emit_dynamic_initializers_with_pool(
         });
         groups[index].1.push(assignment);
     }
+    if let Some(session) = session.as_deref_mut() {
+        let keys: Vec<_> = session.graph.known_keys()
+            .filter(|key| key.path.starts_with("@initializer|"))
+            .cloned()
+            .collect();
+        for chunk in keys.chunks(1024) {
+            let _ = session.graph.prefetch(chunk);
+        }
+    }
     let mut groups = groups.into_iter().enumerate().peekable();
     while groups.peek().is_some() {
         let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
