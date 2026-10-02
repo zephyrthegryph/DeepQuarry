@@ -143,9 +143,14 @@ commit their last caller goes. Plan, phases and gates: doc §19.
 
 ### 3d. Ratchets and justified keeps
 
-`tools/ci/check_ratchets.sh` runs the rewrite lints. A ratcheted lint's `tools/ci/*_baseline.txt`
-lists legacy sites as fingerprints (rule, file, normalized line text). A failure prints only
-**new** sites. After a sweep run the lint's `--update`: it drops fixed sites and never adds one.
+`tools/ci/check_ratchets.sh` runs the rewrite lints, all in one process: the `analyze` engine
+(`tools/analyze/`, see its README; `tools/ci/check_grep.sh` is its `check_grep` lint). It loads the
+tree once and caches per file: about 5 s cold, under a second warm. `analyze check --lint NAME`
+runs one lint, `analyze check --changed-only` judges only the files you changed. A ratcheted lint's
+`tools/ci/*_baseline.txt` lists legacy sites as fingerprints (rule, file, normalized line text). A
+failure prints only **new** sites. After a sweep run `analyze baseline --update [--lint NAME]`: it
+drops fixed sites and never adds one. Path exemptions, per-rule ceilings and named lists live in
+`tools/ci/lint_scopes.toml`, not in the lints.
 
 There are no allowlist files. A site that is right as it is carries an inline annotation, on
 its line or a comment-only line above, with a required reason:
@@ -155,12 +160,11 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 ```
 
 Several lints go comma-separated; inside a multi-line macro use `/* ALLOW(x): reason */`.
-`tools/ci/allow_annotations.py` rejects a missing reason or unknown lint name, a reason under 20
-characters or 3 words, "see above", allowlist talk and plan-phase labels, and (run last by
-`check_ratchets.sh`) an annotation no lint used: when its site stops triggering the lint, delete
+The `allow_annotations` lint rejects a missing reason or unknown lint name, a reason under 20
+characters or 3 words, "see above", allowlist talk and plan-phase labels, and (on a full run) an annotation no lint used: when its site stops triggering the lint, delete
 it. Don't annotate new debt to get under a ceiling; use the form the lint points to. Unit tests, benchmarks and
-the vendored TGS DMAPI are exempt by path from the lints that call `exempt_path()` (instance_list,
-ownership, silent_catch, spatial, lifecycle, tracked, cache, scheduler): don't annotate there.
+the vendored TGS DMAPI are exempt by path from the lints whose `lint_scopes.toml` section lists them (instance_list,
+ownership, silent_catch, spatial, lifecycle_counts, tracked, cache, scheduler, ...): don't annotate there.
 
 No ratchet bans a §3b legacy form today. The old `dx_old_forms` sys rules were deleted because each
 named a replacement that has not landed on master (or that the design itself replaces), and

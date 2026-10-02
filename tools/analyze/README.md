@@ -140,3 +140,14 @@ Running the old script on Windows needs `rg` with PCRE2 on `PATH` and a shim for
 * The old scripts take minutes on the real tree (`sys_lint` ~140 s). Use `--fixtures-only` while
   iterating and run the full parity once at the end.
 * Never edit `tools/dm-health` (a different project) and do not depend on it.
+
+## After the legacy scripts
+
+The Python lints and the `check_grep.sh` pipelines were deleted once every lint had parity (commit
+before the deletion: `git log --diff-filter=D --format=%h -1 -- tools/ci/sys_lint.py`, then use its
+parent). `analyze parity` compares against those scripts, so to re-run it check that parent out in a
+worktree. What remains of them is `tools/analyze/fixtures/<lint>/expected.txt` (the old scripts'
+findings on each fixture tree), held by `cargo test` forever, and the ported selftests. The two
+generator checks (`tools/dx/gen_capability_varmap.py --check`, `tools/dx/gen_om_notices.py --check`)
+are still Python: they regenerate files rather than lint, take about 3 s each, and
+`check_ratchets.sh` runs them beside the engine.
