@@ -53,7 +53,7 @@ fn main() {
     // ---- module discovery -----------------------------------------------------------------
     let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
     let base = manifest.display().to_string().replace('\\', "/");
-    for (sub, with_register) in [("lints", true), ("dm", false)] {
+    for (sub, with_register, reg_ty) in [("lints", true, "crate::lint::Registry"), ("gens", true, "Vec<Box<dyn crate::sem::gen::Generator>>"), ("dm", false, "")] {
         let dir = src.join(sub);
         let mods = discover(&dir);
         let mut gen = String::new();
@@ -63,7 +63,7 @@ fn main() {
             let _ = writeln!(gen, "pub mod {};", m);
         }
         if with_register {
-            let _ = writeln!(gen, "pub fn register(reg: &mut crate::lint::Registry) {{");
+            let _ = writeln!(gen, "pub fn register(reg: &mut {}) {{", reg_ty);
             for m in &mods {
                 let _ = writeln!(gen, "    {}::register(reg);", m);
             }

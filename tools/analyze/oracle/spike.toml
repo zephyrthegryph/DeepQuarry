@@ -1,0 +1,74 @@
+# The E5 reads spike (doc/rewrite/final_api.html section 19): 20 real handlers whose hand-written
+# dependency lists (derived(): runs_while / drawn_from / ui_from / rust_push / derive, and the lists
+# the legacy lint generated into code/_generated/reads.dm) the generated reads must contain.
+# `cargo test` (tests/oracle.rs) and `analyze sem oracle` read this file.
+#
+# Invalidation tokens: a hand-written list may name a var that is not a read but a counter that
+# setters bump so the list has something to subscribe to. Generated reads subscribe to the vars
+# the body reads, so a token is reported separately and never counted as a missing read.
+[tokens]
+"rust_device_rev"    # /obj/machinery/atmospherics: bumped by set_use_power(), power_change(), port binds
+
+# <type> <kind> [var]      kind = condition | draw | ui | push | derive (derive takes the var)
+[handlers]
+# 4 UI data procs (tgui_data): real windows, hand lists from reads.dm
+"/datum/round_status_panel ui"
+"/obj/machinery/computer/supplycomp ui"
+"/obj/machinery/power/apc ui"
+"/obj/machinery/vending ui"
+# 5 condition procs: area and light derive_*() (hand-written derived()), one should_run()
+"/area derive lights_nightshift"
+"/area derive lights_emergency_off"
+"/obj/machinery/light derive nightshift_enabled"
+"/obj/machinery/light derive area_emergency_off"
+"/obj/cap_fixture/dx_deps_laser condition"
+# 5 draw procs
+"/obj/machinery/door/airlock draw"
+"/obj/machinery/power/apc draw"
+"/obj/cap_fixture/dx_deps_laser draw"
+"/obj/cap_fixture/dx_deps_watcher draw"
+"/obj/cap_fixture/dx_deps_derive draw"
+# 6 Rust-push procs (push_to_rust): five atmos devices with the token, and the APC
+"/obj/machinery/atmospherics/unary/vent_pump push"
+"/obj/machinery/atmospherics/unary/vent_scrubber push"
+"/obj/machinery/atmospherics/binary/passive_gate push"
+"/obj/machinery/atmospherics/binary/volume_pump push"
+"/obj/machinery/atmospherics/trinary/mixer push"
+"/obj/machinery/power/apc push"
+
+# Global procs the 20 handlers call without READS_FROM (the final design makes each an unannotated_global error
+# carrying the READS_FROM hint). A ratchet: the set may only shrink, as helpers are annotated (READS_FROM(arg) or
+# READS_FROM() for a pure one) or replaced by generated cap_keys accessors. Classes: capability-state accessors
+# (cover_is_open, is_bolted, is_emagged, is_locked, is_welded, is_lit, cover_removed, has_access: E1's cap_keys
+# generates these with their read registration), Rust sinks (native_write, vg_*, rust_*: effects, READS_FROM()),
+# pure lookups (get_material_by_name, add_zero, roundduration2text, time_left, tgui_modal_data, material_*:
+# READS_FROM()), state helpers that need READS_FROM(arg) (cell_charge_percent, get_account, panel_is_open,
+# material_service_of, is_admin).
+[unannotated]
+"add_zero"
+"cell_charge_percent"
+"cover_is_open"
+"cover_removed"
+"get_account"
+"get_material_by_name"
+"has_access"
+"is_admin"
+"is_bolted"
+"is_emagged"
+"is_lit"
+"is_locked"
+"is_welded"
+"material_build_view"
+"material_service_of"
+"material_template_singleton"
+"native_write"
+"panel_is_open"
+"roundduration2text"
+"rust_free_pipe_device"
+"rust_new_pipe_device"
+"tgui_modal_data"
+"time_left"
+"vg_bind_device_flow"
+"vg_component_get"
+"vg_entity_index"
+"vg_entity_unbind"

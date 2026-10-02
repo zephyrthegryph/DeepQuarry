@@ -27,6 +27,9 @@ USAGE
   analyze selftest [--lint NAME...]     Run each lint's fixture tests.
   analyze list                          The registered lints.
   analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
+  analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
+  analyze sem reads /type proc | oracle [--all]
+                                        Semantic queries: a handler's reads; the reads spike oracle.
 
 A lint is selected by its name or its group (`sys` selects every sys/* lint).";
 
@@ -266,6 +269,9 @@ fn main() -> ExitCode {
                 ExitCode::SUCCESS
             }
         }
+        "sem" => dq_analyze::sem::cli::run(&args.flags, &root),
+        "gen" => dq_analyze::sem::cli::gen(&args.flags, &root),
+        "fixture" => dq_analyze::sem::cli::fixture(&args.flags, &root),
         "frontend-diff" => {
             use dq_analyze::frontend::{self, Frontend};
             let mut o = options(&args, &root);

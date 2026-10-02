@@ -76,6 +76,16 @@ radial_impl_prefixes = ["code/_onclick/hud/radial"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+# E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
+# try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try.
+# The E0 proofs and the legacy op tests name op keys declared in comment form (the final syntax) or by DECLARE_INTERACTIONS;
+# E1 turns the comment declarations into real markers, then these exemptions go.
+[lint."sem/keys"]
+exempt_files = ["code/modules/unit_tests/dq_e0_proofs_tests.dm", "code/modules/unit_tests/dx_op_resolution_tests.dm"]
+
+[lint."sem/handlers".lists]
+try_calls = []
+
 [lint.scheduler]
 # scheduler_lints.py exempt_path()
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
@@ -93,8 +103,9 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
 # GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
-# not raise a ceiling).
-exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/"]
+# not raise a ceiling). code/engine/_generated/ is where `analyze gen system_accessors` writes each SYSTEM_ACCESSOR proc:
+# the generated accessor is the one place that reads the system's var.
+exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/", "code/engine/_generated/"]
 
 [lint.base_vars.lists]
 # base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit

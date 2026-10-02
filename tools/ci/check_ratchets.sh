@@ -36,6 +36,11 @@ if ! "$bin" check --ci --lint -check_grep "$@"; then
 	failed+=("analyze check")
 fi
 
+# The generated DM under code/engine/_generated/ must match its declarations (analyze gen writes it).
+if ! "$bin" gen --check; then
+	failed+=("analyze gen --check")
+fi
+
 wait
 for name in gen_capability_varmap_check gen_capability_varmap_selftest gen_om_notices_check; do
 	echo "::group::$name"
