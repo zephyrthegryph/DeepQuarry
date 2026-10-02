@@ -38,7 +38,7 @@
 	for(var/mob/O in viewers(src, null))
 		O.show_message(span_warning("[user] cuts the cable."), 1)
 
-	qdel(src)
+	replace_with(src, CC)
 
 EXTEND_INTERACTIONS(/obj/structure/cable/heavyduty, INTERACT_INSERT(/obj/item/stack/cable_coil, PROC_REF(heavyduty_interaction_item), "Connect cable", REQ_BECAUSE(REQ_TYPE(PRED_HELD, list(/obj/item/stack/cable_coil/heavyduty)), "you will need heavier cables to connect to these")))
 

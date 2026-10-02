@@ -481,6 +481,10 @@
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
 #include "interim_fax_actor.dm"
+#include "interim_crystal_consumption.dm"
+#include "interim_prerelease_consequences.dm"
+#include "interim_robobag_tag_spill.dm"
+#include "interim_heavy_cable_replacement.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
