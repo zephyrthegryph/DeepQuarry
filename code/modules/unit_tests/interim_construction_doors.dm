@@ -33,7 +33,7 @@
 	TEST_ASSERT(!door.can_close(TRUE), "Welding must prevent closing an open airlock")
 
 /datum/unit_test/interim_airlock_electronics_emag/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
 	TEST_ASSERT(!electronics.emagged, "Electronics must start with intact access restrictions")
 	TEST_ASSERT_EQUAL(emag_target(electronics, 1, actor), 1, "First emag must consume one use")
@@ -42,7 +42,7 @@
 	TEST_ASSERT(electronics.emagged, "Declined repeat emag must retain the bypass")
 
 /datum/unit_test/interim_girder_secure_displace/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/obj/structure/girder/girder = allocate(/obj/structure/girder)
 	var/full_integrity = girder.get_integrity()
 	var/full_cover = girder.cover
@@ -59,7 +59,7 @@
 	TEST_ASSERT_EQUAL(graph.state_of(girder), "anchored", "Secured girder must offer the anchored construction steps")
 
 /datum/unit_test/interim_machine_frame_board_and_wiring/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/obj/structure/frame/frame = allocate(/obj/structure/frame)
 	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe)
 	var/obj/item/stack/cable_coil/cable = allocate(/obj/item/stack/cable_coil, run_loc_floor_bottom_left, 6)
@@ -91,7 +91,7 @@
 	TEST_ASSERT_NULL(frame.req_components, "Removing the board must clear its component requirements")
 
 /datum/unit_test/interim_wall_reversible_construction/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/turf/simulated/wall/wall = run_loc_floor_bottom_left.ChangeTurf(/turf/simulated/wall)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	wall.set_material(steel, steel, steel)
@@ -110,7 +110,7 @@
 
 /// Dispatching a UI action directly has no ambient usr: it must use the supplied actor.
 /datum/unit_test/interim_airlock_electronics_login_actor/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	actor.real_name = "Explicit Electronics Configurator"
 	actor.name = actor.real_name
 	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
@@ -121,7 +121,7 @@
 	TEST_ASSERT_EQUAL(electronics.last_configurator, actor.name, "Login attribution must identify the supplied actor")
 
 /datum/unit_test/interim_airlock_wire_electrify_actor/Run()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human/consistent)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	actor.real_name = "Explicit Wire Operator"
 	actor.name = actor.real_name
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
