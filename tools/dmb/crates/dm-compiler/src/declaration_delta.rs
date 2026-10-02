@@ -16,18 +16,18 @@ fn changed_persistent_map<T:PartialEq+Clone>(old:&im::OrdMap<String,T>,new:&im::
     use im::ordmap::DiffItem;
     old.diff(new).map(|change|match change {DiffItem::Add(key,_)|DiffItem::Remove(key,_)=>key.clone(),DiffItem::Update {new:(key,_),..}=>key.clone()}).collect()
 }
-fn changed_members<T:PartialEq+Clone>(old:&im::OrdMap<String,im::OrdMap<String,T>>,new:&im::OrdMap<String,im::OrdMap<String,T>>)->BTreeSet<String> {
+fn changed_members<T:PartialEq+Clone>(old:&im::OrdMap<String,dm_codegen_byond::CompactMap<String,T>>,new:&im::OrdMap<String,dm_codegen_byond::CompactMap<String,T>>)->BTreeSet<String> {
     use im::ordmap::DiffItem;let mut names=BTreeSet::new();
     // Shared persistent subtrees are skipped by the diff iterator.
     for change in old.diff(new) {match change {
-        DiffItem::Update {old:(_,old),new:(_,new)}=>names.extend(changed_persistent_map(old,new)),
+        DiffItem::Update {old:(_,old),new:(_,new)}=>names.extend(old.keys().chain(new.keys()).filter(|key|old.get(*key)!=new.get(*key)).cloned()),
         DiffItem::Add(_,members)|DiffItem::Remove(_,members)=>names.extend(members.keys().cloned()),
     }}names
 }
-fn changed_inventories(old:&im::OrdMap<String,im::OrdSet<String>>,new:&im::OrdMap<String,im::OrdSet<String>>)->BTreeSet<String> {
+fn changed_inventories(old:&im::OrdMap<String,dm_codegen_byond::CompactSet<String>>,new:&im::OrdMap<String,dm_codegen_byond::CompactSet<String>>)->BTreeSet<String> {
     use im::ordmap::DiffItem;let mut names=BTreeSet::new();
     for change in old.diff(new) {match change {
-        DiffItem::Update {old:(_,old),new:(_,new)}=>for change in old.diff(new) {use im::ordset::DiffItem as SetDiff;match change {SetDiff::Add(name)|SetDiff::Remove(name)=>{names.insert(name.clone());},SetDiff::Update {new:name,..}=>{names.insert(name.clone());}}},
+        DiffItem::Update {old:(_,old),new:(_,new)}=>names.extend(old.symmetric_difference(new).cloned()),
         DiffItem::Add(_,members)|DiffItem::Remove(_,members)=>names.extend(members.iter().cloned()),
     }}names
 }

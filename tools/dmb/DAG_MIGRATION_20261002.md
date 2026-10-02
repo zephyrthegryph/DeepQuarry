@@ -313,3 +313,11 @@ T c6cfe4579f again exceeded the unchanged3GiB enforced budget before baseline pu
 
 The graph96MiB decoded budget evicts prepared envelopes, while Salsa inputs, tracked edges and witness/reverse metadata remain generation-wide. Next implementation bounds that validation frontier with persisted exact certificates and compact reverse edges, retiring Salsa epochs in bounded source-order windows. Dirty or untrusted records must retain invalid locators. Earlier stage memory samples will separately locate the pre-procedure2.2GiB live/transient peak.
 Bounded validation frontier plus early phase/live graph memory traces built successfully (-j1 CLI/example, 2m05s), pending U compiler benchmark. No tests/runtime validation.
+
+## U diagnosis and publication bug
+
+U a3d394a8b2 finished the full native procedure phase within3GiB after bounded Salsa retirement, then failed publication on src/dmb.rs2411 (streaming string encryption indexed a buffer already flushed by raw()). Native compiler phase160.320s is a nested diagnostic, not a successful end-to-end compile. The followup encrypts strings before streaming via reused64KiB scratch and preserves the key across chunks.
+
+U stage memory isolates the preparation regression: owner binding roots start863.2MiB and complete1983.5MiB (+1120.3MiB), although root accounting charged26.7MiB. im OrdMap/OrdSet nodes reserve64 slots even when empty; each owner had five maps and two sets (~22KiB×46693 owners). Compact Arc<BTreeMap/Set> owner-local payloads will replace those fixed-size inner containers; persistent outer indexes stay. No successful current cold/edit timings are available until a baseline artifact publishes.
+CompactMap/CompactSet owner-local copy-on-write B-tree wrappers are implemented beneath persistent im outer indexes; owner root schema advancesv3. Pending build and V benchmark. Obsolete compiler package variants were cleaned from isolated E Cargo target (2.3GiB recovered), with m-u benchmark executables preserved; inactive executable archives/caches compressed without deleting contents.
+Compact-owner collections and bounded encrypted-string streaming checkpoint built successfully (-j1 CLI/example, 3m08s). V captured executable is next; no tests/runtime validation.

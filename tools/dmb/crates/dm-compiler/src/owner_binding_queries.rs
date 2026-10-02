@@ -2,12 +2,13 @@
 //! Current allocation aliases compose separately from the immutable semantic roots.
 use super::*;
 use serde::{Serialize,Deserialize};
+use dm_codegen_byond::{CompactMap,CompactSet};
 use sha2::{Digest,Sha256};
 #[derive(Clone,Default,Serialize,Deserialize)]
 struct Root {
- types:im::OrdMap<String,String>,globals:im::OrdMap<String,String>,fields:im::OrdSet<String>,
- procs:im::OrdMap<String,String>,known_procs:im::OrdSet<String>,returns:im::OrdMap<String,String>,
- static_types:im::OrdMap<String,String>,parent:Option<String>,
+ types:CompactMap<String,String>,globals:CompactMap<String,String>,fields:CompactSet<String>,
+ procs:CompactMap<String,String>,known_procs:CompactSet<String>,returns:CompactMap<String,String>,
+ static_types:CompactMap<String,String>,parent:Option<String>,
 }
 #[derive(Default)]
 pub(crate) struct OwnerBindingQueries {
@@ -15,7 +16,7 @@ pub(crate) struct OwnerBindingQueries {
 }
 impl OwnerBindingQueries {
  const LIMIT:usize=32*1024*1024;
- fn namespace()->String {format!("owner-binding-roots-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
+ fn namespace()->String {format!("owner-binding-roots-v3-{}",env!("DM_EMISSION_FINGERPRINT"))}
  pub(super) fn bind(&mut self,root:&Path){*self=Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()};}
  pub(super) fn resident_bytes(&self)->usize{self.bytes}
  pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;}
@@ -86,7 +87,12 @@ impl OwnerBindingQueries {
   }
   if !writes.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&writes,None);}}
   // Charge each owner-local root once, including keys and persistent node overhead.
-  self.bytes=next.iter().map(|(owner,(key,root))|owner.len()+key.len()+256+root.types.iter().chain(root.globals.iter()).chain(root.procs.iter()).chain(root.returns.iter()).chain(root.static_types.iter()).map(|(a,b)|a.len()+b.len()+96).sum::<usize>()+root.fields.iter().chain(root.known_procs.iter()).map(|name|name.len()+64).sum::<usize>()+root.parent.as_ref().map_or(0,String::len)).sum();
+  self.bytes=next.iter().map(|(owner,(key,root))| {
+   owner.capacity()+key.capacity()+256
+    + [&root.types,&root.globals,&root.procs,&root.returns,&root.static_types].iter().map(|rows|rows.storage_bytes()+rows.iter().map(|(a,b)|a.capacity()+b.capacity()).sum::<usize>()).sum::<usize>()
+    + [&root.fields,&root.known_procs].iter().map(|rows|rows.storage_bytes()+rows.iter().map(String::capacity).sum::<usize>()).sum::<usize>()
+    + root.parent.as_ref().map_or(0,String::capacity)
+  }).sum();
   if self.bytes<=Self::LIMIT {
    self.roots=next;
    self.snapshot=SharedLowerBindings {member_types:shared.member_types.clone(),member_globals:shared.member_globals.clone(),known_member_fields:shared.known_member_fields.clone(),member_procs:shared.member_procs.clone(),known_member_procs:shared.known_member_procs.clone(),member_proc_return_types:shared.member_proc_return_types.clone(),parent_types:shared.parent_types.clone(),..Default::default()};

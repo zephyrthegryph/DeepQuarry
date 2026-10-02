@@ -2391,6 +2391,7 @@ impl Dmb {
         );
         let mut string_hash = u32::MAX;
         let string_origin = self.header.executor_line.as_ref().map_or(0, Vec::len);
+        let mut encrypted_string=Vec::with_capacity(64*1024);
         for string in &self.strings {
             let mut remaining = string.data.len();
             for _ in 0..string.long_chunks {
@@ -2406,9 +2407,15 @@ impl Dmb {
             let offset = w.at() - string_origin;
             w.u16((remaining as u16) ^ offset as u16);
             let offset = w.at() - string_origin;
-            let encrypted_start = w.bytes.len();
-            w.raw(&string.data);
-            crypt_string(&mut w.bytes[encrypted_start..], offset);
+            // Encrypt before handing bytes to the fallible streaming sink.
+            // No borrowed slice may span a Writer page flush.
+            let mut encrypted_offset=offset;
+            for chunk in string.data.chunks(64*1024) {
+                encrypted_string.clear();encrypted_string.extend_from_slice(chunk);
+                crypt_string(&mut encrypted_string,encrypted_offset);
+                w.raw(&encrypted_string);
+                encrypted_offset=encrypted_offset.wrapping_add(chunk.len().wrapping_mul(9));
+            }
             string_hash = nqcrc(string_hash, &string.data);
             string_hash = nqcrc(string_hash, &[0]);
             w.bounded_page();

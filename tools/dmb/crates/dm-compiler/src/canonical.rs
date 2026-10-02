@@ -835,18 +835,18 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .map(|s| s.capacity() + std::mem::size_of::<String>() + 32)
             .sum()
     }
-    fn nested_map(items: &im::OrdMap<String, im::OrdMap<String, String>>) -> usize {
+    fn nested_map(items: &im::OrdMap<String, dm_codegen_byond::CompactMap<String, String>>) -> usize {
         items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + members.len()*96 + members.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>())
+                .map(|(name, members)| name.capacity() + members.storage_bytes() + members.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>())
                 .sum::<usize>()
     }
-    fn nested_set(items: &im::OrdMap<String, im::OrdSet<String>>) -> usize {
+    fn nested_set(items: &im::OrdMap<String, dm_codegen_byond::CompactSet<String>>) -> usize {
         items.len()*96
             + items
                 .iter()
-                .map(|(name, members)| name.capacity() + members.iter().map(|value|value.capacity()+64).sum::<usize>())
+                .map(|(name, members)| name.capacity() + members.storage_bytes() + members.iter().map(|value|value.capacity()).sum::<usize>())
                 .sum::<usize>()
     }
     let mut bytes = std::mem::size_of::<FrozenSkeleton>()

@@ -1172,7 +1172,7 @@ mod tests {
         let mut shared = SharedLowerBindings::default();
         shared
             .known_member_procs
-            .insert("/datum/receiver".into(), (["method".into()]).into_iter().collect::<im::OrdSet<_>>());
+            .insert("/datum/receiver".into(), (["method".into()]).into_iter().collect());
         let bindings = |context| LowerBindings {
             current_type_path: Some("/datum/receiver".into()),
             shared: Some(Arc::new(context)),

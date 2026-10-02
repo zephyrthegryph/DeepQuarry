@@ -148,28 +148,28 @@ mod tests {
                         ("same_alias".into(), "alias_slot".into()),
                         ("different_alias".into(), "first_slot".into()),
                         ("collision".into(), "collision_slot".into()),
-                    ]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                    ]).into_iter().collect(),
                 ),
                 (
                     "/datum/other".into(),
                     ([
                         ("same_alias".into(), "alias_slot".into()),
                         ("different_alias".into(), "second_slot".into()),
-                    ]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                    ]).into_iter().collect(),
                 ),
-            ]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            ]).into_iter().collect(),
             known_member_fields: ([
-                ("/datum/child".into(), (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>()),
+                ("/datum/child".into(), (["inherited".into()]).into_iter().collect()),
                 (
                     "/datum/modified".into(),
-                    (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>(),
+                    (["inherited".into()]).into_iter().collect(),
                 ),
                 (
                     "/datum/instance".into(),
-                    (["collision".into(), "instance_only".into()]).into_iter().collect::<im::OrdSet<_>>(),
+                    (["collision".into(), "instance_only".into()]).into_iter().collect(),
                 ),
-            ]).into_iter().collect::<im::OrdMap<_ , _>>(),
-            parent_types: ([("/datum/child".into(), "/datum/base".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            ]).into_iter().collect(),
+            parent_types: ([("/datum/child".into(), "/datum/base".into())]).into_iter().collect(),
             modified_instances: HashMap::from([("/datum/modified".into(), "/datum/child".into())]),
             ..Default::default()
         })
@@ -259,7 +259,7 @@ mod tests {
             .known_member_fields
             .insert(
                 "/datum/new_instance".into(),
-                (["inherited".into()]).into_iter().collect::<im::OrdSet<_>>(),
+                (["inherited".into()]).into_iter().collect(),
             );
         assert_eq!(fact(&bindings, "inherited"), FactValue::Absent);
     }
@@ -275,8 +275,8 @@ mod tests {
         bindings.shared = Some(Arc::new(SharedLowerBindings {
             member_globals: ([(
                 "/datum/replacement".into(),
-                ([("inherited".into(), "replacement_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
-            )]).into_iter().collect::<im::OrdMap<_ , _>>(),
+                ([("inherited".into(), "replacement_slot".into())]).into_iter().collect(),
+            )]).into_iter().collect(),
             ..Default::default()
         }));
         assert_eq!(
@@ -325,11 +325,11 @@ mod tests {
         let mut shared = SharedLowerBindings::default();
         shared.member_globals.insert(
             "/datum/base".into(),
-            ([("bounded".into(), "bounded_slot".into())]).into_iter().collect::<im::OrdMap<_ , _>>(),
+            ([("bounded".into(), "bounded_slot".into())]).into_iter().collect(),
         );
         shared
             .known_member_fields
-            .insert("/datum/cycle".into(), (["bounded".into()]).into_iter().collect::<im::OrdSet<_>>());
+            .insert("/datum/cycle".into(), (["bounded".into()]).into_iter().collect());
         shared
             .parent_types
             .insert("/datum/cycle".into(), "/datum/cycle".into());
@@ -345,7 +345,7 @@ mod tests {
         }
         shared
             .known_member_fields
-            .insert("/datum/level0".into(), (["bounded".into()]).into_iter().collect::<im::OrdSet<_>>());
+            .insert("/datum/level0".into(), (["bounded".into()]).into_iter().collect());
         let shared = Arc::new(shared);
         let bindings = LowerBindings {
             shared: Some(Arc::clone(&shared)),

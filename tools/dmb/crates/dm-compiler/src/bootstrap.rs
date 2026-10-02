@@ -3080,7 +3080,7 @@ pub fn audit_lowering(
     }
     shared.member_types = fields
         .iter()
-        .map(|(path, scope)| (path.clone(), scope.field_types.iter().map(|(name,ty)|(name.clone(),ty.clone())).collect::<im::OrdMap<_,_>>()))
+        .map(|(path, scope)| (path.clone(), scope.field_types.iter().map(|(name,ty)|(name.clone(),ty.clone())).collect::<dm_codegen_byond::CompactMap<_,_>>()))
         .collect();
     shared.parent_types = parent_paths.iter().map(|(path,parent)|(path.clone(),parent.clone())).collect();
     for (owner, name) in return_annotations {
