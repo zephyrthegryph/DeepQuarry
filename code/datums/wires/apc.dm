@@ -38,20 +38,20 @@
 
 				om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
-/datum/wires/apc/on_cut(wire, mend)
+/datum/wires/apc/on_cut(wire, mend, mob/user)
 	var/obj/machinery/power/apc/A = holder
 
 	switch(wire)
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!mend)
-				if(isliving(usr))
-					A.shock(usr, 50)
+				if(isliving(user))
+					A.shock(user, 50)
 				A.set_shorted(TRUE)
 
 			else if(!is_cut(WIRE_MAIN_POWER1) && !is_cut(WIRE_MAIN_POWER2))
 				A.set_shorted(FALSE)
-				if(isliving(usr))
-					A.shock(usr, 50)
+				if(isliving(user))
+					A.shock(user, 50)
 
 		if(WIRE_AI_CONTROL)
 			A.aidisabled = !mend

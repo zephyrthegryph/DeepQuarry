@@ -1594,10 +1594,10 @@ EXTEND_INTERACTIONS(/obj/item/toy/plushie/teppi, \
 	icon_state = "seal-signet"
 	drop_sound = SFX_ITEMS_DROP_RING
 
-/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT)
-	if(proximity && istype(usr, /mob/living/carbon/human))
+/obj/item/clothing/gloves/ring/buzzer/toy/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+	if(proximity && istype(user, /mob/living/carbon/human))
 
-		return zap(usr, A, proximity, stance)
+		return zap(user, A, proximity, stance)
 	return 0
 
 /obj/item/clothing/gloves/ring/buzzer/toy/zap(mob/living/carbon/human/user, atom/movable/target, proximity, stance = I_HURT)

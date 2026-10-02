@@ -85,7 +85,7 @@
 	var/mob/living/M = hit_atom
 
 	if(!istype(M) || locate_within(M.loc, /obj/effect/energy_net))
-		qdel(src)
+		consume(src)
 		return 0
 
 	var/turf/T = get_turf(M)
@@ -93,7 +93,8 @@
 		var/obj/effect/energy_net/net = new net_type(T)
 		if(net.buckle_mob(M))
 			T.visible_message("[M] was caught in an energy net!")
-		qdel(src)
+		if(consume(src))
+			return
 
 	// If we miss or hit an obstacle, we still want to delete the net.
 	expire(1 SECOND)

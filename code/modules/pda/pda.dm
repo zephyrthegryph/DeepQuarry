@@ -70,7 +70,7 @@
 
 /obj/item/pda/item_ctrl_click(mob/user)
 	if(can_use(user) && !issilicon(user))
-		remove_pen()
+		remove_pen(user)
 		return
 	..()
 
@@ -81,7 +81,7 @@
 
 	if ( can_use(user) )
 		if(id)
-			remove_id()
+			remove_id(user)
 		else
 			to_chat(user, span_notice("This PDA does not have an ID in it."))
 	return TRUE
@@ -289,31 +289,31 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		message = span_warning("[message]")
 		M.show_message(message, 1)
 
-/obj/item/pda/proc/remove_id()
+/obj/item/pda/proc/remove_id(mob/user)
 	if (id)
 		if (ismob(loc))
 			var/mob/M = loc
 			M.put_in_hands(id)
-			to_chat(usr, span_notice("You remove the ID from the [name]."))
+			to_chat(user, span_notice("You remove the ID from the [name]."))
 			play_sfx(src, SFX_MACHINES_ID_SWIPE, 2)
 		else
 			id.forceMove(get_turf(src))
 		cut_overlay("pda-id")
 		own_take(src, nameof(id))
 
-/obj/item/pda/proc/remove_pen()
+/obj/item/pda/proc/remove_pen(mob/user)
 	var/obj/item/pen/O = locate_within(src, /obj/item/pen)
 	if(O)
 		if(istype(loc, /mob))
 			var/mob/M = loc
 			if(M.get_active_hand() == null)
 				M.put_in_hands(O)
-				to_chat(usr, span_notice("You remove \the [O] from \the [src]."))
+				to_chat(user, span_notice("You remove \the [O] from \the [src]."))
 				cut_overlay("pda-pen")
 				return
 		O.forceMove(get_turf(src))
 	else
-		to_chat(usr, span_notice("This PDA does not have a pen in it."))
+		to_chat(user, span_notice("This PDA does not have a pen in it."))
 
 /// Old Reset PDA verb.
 /obj/item/pda/proc/pda_verb_reset(mob/user, obj/item/held, datum/interaction/interaction)
@@ -335,7 +335,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 
 	if ( can_use(user) )
 		if(id)
-			remove_id()
+			remove_id(user)
 		else
 			to_chat(user, span_notice("This PDA does not have an ID in it."))
 	else
@@ -347,7 +347,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		return
 
 	if ( can_use(user) )
-		remove_pen()
+		remove_pen(user)
 	else
 		to_chat(user, span_notice("You cannot do this while restrained."))
 
@@ -381,7 +381,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 /obj/item/pda/proc/id_check(mob/user, choice)//To check for IDs; 1 for in-pda use, 2 for out of pda use.
 	if(choice == 1)
 		if (id)
-			remove_id()
+			remove_id(user)
 			return 1
 		else
 			var/obj/item/I = user.get_active_hand()

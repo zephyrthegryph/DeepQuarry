@@ -27,12 +27,12 @@
 	. += "The data light is [is_cut(WIRE_REVERSE) ? "hauntingly dark." : "glowing softly."]"
 
 // Give a hint as to what each wire does
-/datum/wires/jukebox/on_pulse(wire)
+/datum/wires/jukebox/on_pulse(wire, mob/user)
 	var/obj/machinery/media/jukebox/A = holder
 	switch(wire)
 		if(WIRE_MAIN_POWER1)
 			holder.visible_message(span_notice("[icon2html(A,viewers(holder))] The power light flickers."))
-			A.shock(usr, 90)
+			A.shock(user, 90)
 		if(WIRE_JUKEBOX_HACK)
 			holder.visible_message(span_notice("[icon2html(A,viewers(holder))] The parental guidance light flickers."))
 		if(WIRE_REVERSE)
@@ -50,15 +50,15 @@
 		if(WIRE_NEXT)
 			A.NextTrack()
 		else
-			A.shock(usr, 10) // The nothing wires give a chance to shock just for fun
+			A.shock(user, 10) // The nothing wires give a chance to shock just for fun
 
-/datum/wires/jukebox/on_cut(wire, mend)
+/datum/wires/jukebox/on_cut(wire, mend, mob/user)
 	var/obj/machinery/media/jukebox/A = holder
 
 	switch(wire)
 		if(WIRE_MAIN_POWER1)
 			// TODO - Actually make machine electrified or something.
-			A.shock(usr, 90)
+			A.shock(user, 90)
 
 		if(WIRE_JUKEBOX_HACK)
 			A.set_hacked(!mend)

@@ -12,7 +12,7 @@
 		return
 	var/voted = 0
 
-	var/list/privacy_rows = flow_select("SELECT * FROM erro_privacy WHERE ckey=:ckey", list("ckey" = src.ckey))
+	var/list/privacy_rows = flow_select("SELECT * FROM [format_table_name("erro_privacy")] WHERE ckey=:ckey", list("ckey" = src.ckey))
 	if(length(privacy_rows))
 		voted = 1
 	if(!voted)
@@ -60,7 +60,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM erro_poll_question WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
+		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype, multiplechoiceoptions FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 
 		var/validpoll = 0
 		var/multiplechoiceoptions = 0
@@ -76,7 +76,7 @@
 			to_chat(src, span_red("Poll is not valid."))
 			return
 
-		var/list/option_rows = flow_select("SELECT id FROM erro_poll_option WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
+		var/list/option_rows = flow_select("SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
 
 		var/validoption = 0
 
@@ -89,7 +89,7 @@
 
 		var/alreadyvoted = 0
 
-		var/list/voted_rows = flow_select("SELECT id FROM erro_poll_vote WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
+		var/list/voted_rows = flow_select("SELECT id FROM [format_table_name("erro_poll_vote")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		alreadyvoted = multichoice ? length(voted_rows) : min(length(voted_rows), 1)
 		if(!multichoice && alreadyvoted)
 			to_chat(src, span_red("You already voted in this poll."))
@@ -125,7 +125,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype FROM erro_poll_question WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
+		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 
 		var/validpoll = 0
 
@@ -140,7 +140,7 @@
 
 		var/alreadyvoted = 0
 
-		var/list/voted_rows = flow_select("SELECT id FROM erro_poll_textreply WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
+		var/list/voted_rows = flow_select("SELECT id FROM [format_table_name("erro_poll_textreply")] WHERE pollid = :pollid AND ckey = :ckey", list("pollid" = pollid, "ckey" = src.ckey))
 		if(length(voted_rows))
 			alreadyvoted = 1
 		if(alreadyvoted)
@@ -182,7 +182,7 @@
 		return
 	if(SSdbcore.IsConnected())
 
-		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype FROM erro_poll_question WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
+		var/list/question_rows = flow_select("SELECT starttime, endtime, question, polltype FROM [format_table_name("erro_poll_question")] WHERE id = :pollid AND Now() BETWEEN starttime AND endtime", list("pollid" = pollid))
 
 		var/validpoll = 0
 
@@ -195,7 +195,7 @@
 			to_chat(src, span_red("Poll is not valid."))
 			return
 
-		var/list/option_rows = flow_select("SELECT id FROM erro_poll_option WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
+		var/list/option_rows = flow_select("SELECT id FROM [format_table_name("erro_poll_option")] WHERE id = :optionid AND pollid = :pollid", list("optionid" = optionid, "pollid" = pollid))
 
 		var/validoption = 0
 
@@ -207,7 +207,7 @@
 
 		var/alreadyvoted = 0
 
-		var/list/voted_rows = flow_select("SELECT id FROM erro_poll_vote WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey))
+		var/list/voted_rows = flow_select("SELECT id FROM [format_table_name("erro_poll_vote")] WHERE optionid = :optionid AND ckey = :ckey", list("optionid" = optionid, "ckey" = src.ckey))
 		if(length(voted_rows))
 			alreadyvoted = 1
 		if(alreadyvoted)

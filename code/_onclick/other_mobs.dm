@@ -23,7 +23,7 @@
 	// If the gloves do anything, have them return 1 to stop
 	// normal attack_hand() here.
 	var/obj/item/clothing/gloves/G = get_equipped_item(SLOT_ID_GLOVES) // not typecast specifically enough in defines
-	if(istype(G) && G.Touch(A, 1, stance))
+	if(istype(G) && G.Touch(A, 1, stance, src))
 		return
 
 	A.attack_hand(src)
@@ -68,7 +68,7 @@
 	if((has_mutation(LASER_EYES)) && stance == I_HURT)
 		LaserEyes(A) // moved into a proc below
 
-	else if(istype(G) && G.Touch(A, 0, stance)) // for magic gloves
+	else if(istype(G) && G.Touch(A, 0, stance, src)) // for magic gloves
 		return
 
 	else if(has_telegrip())

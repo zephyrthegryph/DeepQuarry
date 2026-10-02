@@ -5,3 +5,4 @@ changes:
   - bugfix: "Cryo tubes correctly finish seating and buckling a newly inserted patient."
   - bugfix: "Ticket actions refuse invalid authorization levels and stale escalation requests."
   - bugfix: "Biopsy reports reach the scanner user after printing, and invalid beams stay stopped."
+  - bugfix: "Marker beacon pickup no longer duplicates beacons when both hands are full."

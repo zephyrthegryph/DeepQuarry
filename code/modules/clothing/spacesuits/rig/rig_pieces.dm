@@ -116,7 +116,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 /obj/item/clothing/head/helmet/space/rig/proc/prevent_track()
 	return 0
 
-/obj/item/clothing/gloves/gauntlets/rig/Touch(atom/A, proximity, stance = I_HURT)
+/obj/item/clothing/gloves/gauntlets/rig/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 
 	if(!A || !proximity)
 		return 0

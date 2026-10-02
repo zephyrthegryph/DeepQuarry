@@ -337,7 +337,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		M.update_inv_gloves()
 
 // Called just before an attack_hand(), in mob/UnarmedAttack()
-/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT)
+/obj/item/clothing/gloves/proc/Touch(atom/A, proximity, stance = I_HURT, mob/user)
 	return 0 // return 1 to cancel attack_hand()
 
 /obj/item/clothing/gloves/wash()

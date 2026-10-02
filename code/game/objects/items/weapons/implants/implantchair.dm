@@ -75,7 +75,7 @@
 		if(M.has_buckled_mobs())
 			to_chat(user, span_warning("\The [M] has other entities attached to them. Remove them first."))
 			return TRUE
-		if(put_mob(M))
+		if(put_mob(M, user))
 			consume(G, user)
 	src.updateUsrDialog(user)
 	return TRUE
@@ -98,18 +98,18 @@
 	return
 
 
-/obj/machinery/implantchair/proc/put_mob(mob/living/carbon/M)
+/obj/machinery/implantchair/proc/put_mob(mob/living/carbon/M, mob/user)
 	if(!iscarbon(M))
-		to_chat(usr, span_warning("\The [src] cannot hold this!"))
+		to_chat(user, span_warning("\The [src] cannot hold this!"))
 		return
 	if(src?.slot_item(OCCUPANT_SLOT_IMPLANT_CHAIR))
-		to_chat(usr, span_warning("\The [src] is already occupied!"))
+		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, usr))
-		to_chat(usr, span_warning("\The [src] won't take [M]!"))
+	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, user))
+		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
-	src.add_fingerprint(usr)
+	src.add_fingerprint(user)
 	icon_state = "implantchair_on"
 	return 1
 
@@ -158,7 +158,7 @@
 /obj/machinery/implantchair/proc/interaction_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat != 0 || !operable())
 		return TRUE
-	put_mob(user)
+	put_mob(user, user)
 	return TRUE
 
 /obj/machinery/implantchair/proc/replenished()
