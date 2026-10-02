@@ -404,9 +404,8 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					req_components[I] -= camt
 					update_desc()
 					break
-				user.drop_item()
-				P.forceMove(src)
-				own_add(src, nameof(components), P)
+				if(!own_add(src, nameof(components), P, user = user))
+					break
 				req_components[I]--
 				update_desc()
 				break
@@ -441,13 +440,9 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				req_components[I] -= camt
 				break
 
-		if(istype(P.loc,/obj/item/storage))
-			var/obj/item/storage/holder = P.loc
-			holder.remove_from_storage(P, src)
-		else
-			user.drop_item()
-			P.forceMove(src)
-		own_add(src, nameof(components), P)
+		if(!own_add(src, nameof(components), P, user = user))
+			installed_part = FALSE
+			break
 		req_components[I]--
 		break
 
