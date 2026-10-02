@@ -418,30 +418,6 @@ base_var	code/modules/lighting/lighting_atom.dm	var/blocks_emissive = EMISSIVE_B
 base_var	code/modules/lighting/lighting_atom.dm	var/tmp/atom/movable/emissive_blocker/em_block
 base_var	code/modules/maps/map_resolvers.dm	var/map_resolver
 base_var	code/modules/maps/map_resolvers.dm	var/map_resolver_vars
-base_var	code/modules/material_science/material_applications.dm	var/engineered_material_id
-base_var	code/modules/material_science/material_applications.dm	var/engineered_material_profile
-base_var	code/modules/material_science/material_applications.dm	var/material_surgery_cleanliness_bonus = 0
-base_var	code/modules/material_science/material_applications.dm	var/material_tool_quality_bonus = 0
-base_var	code/modules/material_science/material_applications.dm	var/material_effective_density = 0
-base_var	code/modules/material_science/material_applications.dm	var/material_effective_electrical_resistance = 0
-base_var	code/modules/material_science/material_applications.dm	var/material_accuracy_delta = 0
-base_var	code/modules/material_science/material_applications.dm	var/material_recoil_delta = 0
-base_var	code/modules/material_science/material_composites.dm	var/material_environment_liner_integrity = 100
-base_var	code/modules/material_science/material_composites.dm	var/material_environment_exterior_integrity = 100
-base_var	code/modules/material_science/material_composites.dm	var/material_environment_fatigue = 0
-base_var	code/modules/material_science/material_composites.dm	var/material_environment_leaking = FALSE
-base_var	code/modules/material_science/material_composites.dm	var/tmp/material_environment_last_process = 0
-base_var	code/modules/material_science/material_construction.dm	var/material_template
-base_var	code/modules/material_science/material_construction.dm	var/material_total = 0
-base_var	code/modules/material_science/material_construction.dm	var/material_bulk_material
-base_var	code/modules/material_science/material_construction.dm	var/list/material_overrides
-base_var	code/modules/material_science/material_construction.dm	var/list/material_mix
-base_var	code/modules/material_science/material_responses.dm	/obj/item/var/datum/material_response/material_response
-base_var	code/modules/material_science/material_service.dm	var/datum/material_service/material_service
-base_var	code/modules/material_science/material_service.dm	var/material_configuration_revision = 0
-base_var	code/modules/material_science/material_service.dm	var/material_assembly_id
-base_var	code/modules/material_science/material_service.dm	var/material_custom_assembly = FALSE
-base_var	code/modules/material_science/material_service.dm	var/tmp/material_last_service_event
 base_var	code/modules/materials/material_behaviors.dm	var/mat_luminescence = 0
 base_var	code/modules/materials/material_behaviors.dm	var/mat_radioactivity = 0
 base_var	code/modules/materials/material_behaviors.dm	var/mat_toxicity = 0
@@ -1016,9 +992,6 @@ base_var	code/modules/vore/resizing/resize.dm	var/holder_default
 base_var	code/modules/vore/resizing/resize.dm	var/pickup_active = TRUE // Toggle whether your help (combat mode off) touch picks up micros or pets them
 base_var	code/modules/xenoarcheaology/effect_master.dm	/atom/var/datum/artifact_master/artifact_master
 base_var	code/modules/xenoarcheaology/finds/talking.dm	/obj/var/datum/talking_atom/talking_atom // owned: xenoarch speech state
-list_init	code/ATMOSPHERICS/components/omni_devices/filter.dm	var/list/filtering_outputs = list() //maps gasids to gas_mixtures
-list_init	code/ATMOSPHERICS/components/omni_devices/mixer.dm	var/list/mixing_inputs = list() // ALLOW(instance_list): atmos area (M1a): omni mixer pipe device; listed in memory_lists_audit.md, not edited here
-list_init	code/ATMOSPHERICS/components/trinary_devices/filter.dm	var/list/filtered_out = list() // ALLOW(instance_list): atmos area (M1a): trinary filter pipe device; listed in memory_lists_audit.md, not edited here
 list_init	code/ATMOSPHERICS/datum_pipe_network.dm	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a/S1): listed in memory_lists_audit.md, not edited here
 list_init	code/ATMOSPHERICS/datum_pipeline.dm	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
 list_init	code/ATMOSPHERICS/tg_infra_compat.dm	var/list/z_list = list() // ALLOW(instance_list): d: subsystem singleton; one entry per z-level
@@ -1047,7 +1020,6 @@ list_init	code/datums/ai_laws.dm	var/list/datum/ai_law/ion/ion_laws = list() // 
 list_init	code/datums/ai_laws.dm	var/list/state_ion = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
 list_init	code/datums/ai_laws.dm	var/list/state_inherent = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
 list_init	code/datums/ai_laws.dm	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
-list_init	code/datums/capabilities/capability_ext.dm	var/list/members = list()
 list_init	code/datums/connect_range.dm	var/list/turfs = list() // ALLOW(instance_list): d: the tracked turf set; always populated while live
 list_init	code/datums/datacore.dm	var/list/medical = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 list_init	code/datums/datacore.dm	var/list/general = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
@@ -1247,7 +1219,6 @@ list_init	code/modules/economy/supply_service.dm	var/list/service_invoices = lis
 list_init	code/modules/economy/supply_service.dm	var/list/currency_sources = list()
 list_init	code/modules/economy/supply_service.dm	var/list/currency_sinks = list()
 list_init	code/modules/economy/supply_service.dm	var/list/shoppinglist = list() // Approved orders
-list_init	code/modules/economy/supply_service.dm	var/list/supply_pack = list() // All supply packs
 list_init	code/modules/economy/supply_service.dm	var/list/exported_crates = list() // Crates sent from the station
 list_init	code/modules/economy/supply_service.dm	var/list/order_history = list() // History of orders, showing edits made by users
 list_init	code/modules/economy/supply_service.dm	var/list/adm_order_history = list() // Complete history of all orders, for admin use
@@ -1308,7 +1279,6 @@ list_init	code/modules/maint_recycler/code/maint_vendor.dm	var/list/product_datu
 list_init	code/modules/maps/poi_service.dm	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
 list_init	code/modules/maps/reader.dm	var/list/grid_models = list() // ALLOW(instance_list): d: map parser state, filled on parse
 list_init	code/modules/maps/reader.dm	var/list/gridSets = list() // ALLOW(instance_list): d: map parser state, filled on parse
-list_init	code/modules/material_science/material_batch.dm	var/list/contributors = list() // ALLOW(instance_list): d: batch provenance, filled when the batch is made
 list_init	code/modules/medical/contagion/engineered/engineered.dm	var/list/symptoms = list() // ALLOW(instance_list): d: every engineered strain has traits
 list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/threshold_descs = list()
 list_init	code/modules/medical/contagion/engineered/viral_trait.dm	var/list/prefixes = list() // ALLOW(instance_list): d: reset with initial() in severityset(); few symptom datums
@@ -1471,24 +1441,10 @@ list_init	code/modules/tickets/tickets.dm	var/list/closed_tickets = list() // AL
 list_init	code/modules/tickets/tickets.dm	var/list/resolved_tickets = list() // ALLOW(instance_list): d: ticket singleton; ListInsert() writes through an alias
 list_init	code/modules/turbolift/turbolift.dm	var/list/floors = list() // All floors in this system.
 list_init	code/modules/unit_tests/dq_combat_mode_tests.dm	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
-list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
 list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/holders = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/things = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
-list_init	code/modules/unit_tests/dq_containment_tests.dm	var/list/log = list()
-list_init	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
-list_init	code/modules/unit_tests/dq_interaction_entry_tests.dm	var/list/done = list()
 list_init	code/modules/unit_tests/dq_interaction_tests.dm	var/list/done = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
-list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
-list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
-list_init	code/modules/unit_tests/dq_life_om_tests.dm	var/list/runs = list()
-list_init	code/modules/unit_tests/dq_om_core_tests.dm	var/list/dts = list()
-list_init	code/modules/unit_tests/dq_om_core_tests.dm	var/list/log = list()
-list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
-list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()
-list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/wakes = list()
-list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/log = list()
-list_init	code/modules/unit_tests/dq_om_pipeline_tests.dm	var/list/busy = list()
 list_init	code/modules/unit_tests/dq_om_wake_tests.dm	var/list/wakes = list() // ALLOW(instance_list): unit-test witness, always filled
 list_init	code/modules/unit_tests/dq_om_world_watch_tests.dm	var/list/wakes = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
 list_init	code/modules/unit_tests/dq_propagation_tests.dm	var/list/severities = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
