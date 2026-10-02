@@ -145,6 +145,8 @@
 	modifier.apply(clothing)
 
 	modifier.registry_key = "[REF(accessory)]:[REF(clothing)]"
+	if(isnull(active_modifiers))
+		own_set(src, nameof(active_modifiers), list())
 	own_move(modifier, src, nameof(active_modifiers))
 
 /*
