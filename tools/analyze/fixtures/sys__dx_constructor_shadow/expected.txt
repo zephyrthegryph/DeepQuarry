@@ -1,0 +1,14 @@
+dx_constructor_shadow	code/modules/x/edge.dm	1
+dx_constructor_shadow	code/modules/x/edge.dm	8
+dx_constructor_shadow	code/modules/x/edge.dm	12
+dx_constructor_shadow	code/modules/x/edge.dm	14
+dx_constructor_shadow	code/modules/x/edge.dm	19
+dx_constructor_shadow	code/modules/x/edge.dm	22
+dx_constructor_shadow	code/modules/x/edge.dm	24
+dx_constructor_shadow	code/modules/x/edge.dm	26
+dx_constructor_shadow	code/modules/x/edge.dm	30
+dx_constructor_shadow	code/modules/x/selftest.dm	6
+dx_constructor_shadow	code/modules/x/selftest.dm	8
+dx_constructor_shadow	code/modules/x/selftest.dm	18
+dx_constructor_shadow	code/modules/x/selftest.dm	20
+dx_constructor_shadow	maps/test/map.dm	1
