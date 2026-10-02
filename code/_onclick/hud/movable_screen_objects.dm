@@ -27,7 +27,7 @@
 /atom/movable/screen/movable/MouseDrop(over_object, src_location, over_location, src_control, over_control, params)
 	if(locked) // no! i am locked! begone!
 		return
-	var/position = mouse_params_to_position(params, usr?.client?.view)
+	var/position = mouse_params_to_position(params, usr?.client?.view) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
 	if(!position)
 		return
 

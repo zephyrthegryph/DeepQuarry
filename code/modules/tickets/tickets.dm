@@ -213,7 +213,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	. = ..()
 
 /obj/effect/statclick/ticket_list/Click()
-	GLOB.tickets.BrowseTickets(current_state, usr)
+	GLOB.tickets.BrowseTickets(current_state, usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
 
 //
 //TICKET DATUM
@@ -650,7 +650,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	return ..(ticket_datum().name)
 
 /obj/effect/statclick/ticket/Click()
-	ticket_datum().TicketPanel(usr)
+	ticket_datum().TicketPanel(usr) // ALLOW(sys_usr_outside_verb): Click/MouseDrop run in the clicker's usr context
 
 //
 // LOGGING

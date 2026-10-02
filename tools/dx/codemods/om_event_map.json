@@ -812,7 +812,8 @@
   "reads_result": true,
   "target": "review",
   "tests": [
-   "code/modules/unit_tests/dq_containment_tests.dm"
+   "code/modules/unit_tests/dq_containment_tests.dm",
+   "code/modules/unit_tests/interim_resleever_actor.dm"
   ]
  },
  "/datum/om/event/before/slot_pre_remove": {
