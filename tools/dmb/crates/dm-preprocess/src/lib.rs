@@ -4,7 +4,12 @@
 //! silently interpreted as false. The source provider makes this usable with Salsa inputs,
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
-use dm_syntax::{lex, lex_spans, quoted_end, Span, SpanToken, TokenKind};
+mod emission_identity;
+pub use emission_identity::{SourceSemanticIdentity, EmissionEdit};
+mod origin_map;
+pub use origin_map::{OriginMap, SourceMapBuilder};
+
+use dm_syntax::{lex, lex_spans, visit_tokens, quoted_end, Span, SpanToken, TokenKind};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::borrow::Cow;
@@ -51,9 +56,15 @@ pub struct Unit {
 pub struct PreprocessedProject {
     pub text: String,
     pub units: Vec<Unit>,
-    /// Exact expanded content identities, in the same order as `units`.
+    /// Flat expanded-content checksums; consult `unit_digest_validity` before use.
     pub unit_digests: Vec<[u8; 32]>,
+    /// False entries require the compatibility checksum accessor below.
+    pub unit_digest_validity: Vec<bool>,
+    pub unit_parents: Vec<Option<usize>>,
+    pub semantic_identity: Option<Arc<SourceSemanticIdentity>>,
     pub origins: Vec<Origin>,
+    /// Canonical source map; legacy callers may retain explicit origins.
+    pub origin_map: Option<Arc<OriginMap>>,
     pub dependencies: BTreeSet<PathBuf>,
     /// Active DMM includes in source order, after conditional evaluation.
     pub map_includes: Vec<PathBuf>,
@@ -64,6 +75,36 @@ pub struct PreprocessedProject {
     pub file_dirs: Vec<PathBuf>,
     pub diagnostics: Vec<Diagnostic>,
     pub final_macros: BTreeMap<String, Macro>,
+}
+
+impl PreprocessedProject {
+    pub fn flat_unit_digest(&self,index:usize,source:&dm_syntax::SegmentedSource)->Result<[u8;32],String> {
+        if self.unit_digest_validity.get(index).copied().unwrap_or(true) {
+            return self.unit_digests.get(index).copied().ok_or_else(||"unit checksum unavailable".into());
+        }
+        let unit=self.units.get(index).ok_or("unit checksum span unavailable")?;
+        let mut hash=Sha256::new();source.visit_range(unit.output_span,|text|hash.update(text.as_bytes()))?;Ok(hash.finalize().into())
+    }
+    pub fn origin_count(&self)->usize { self.origin_map.as_ref().map_or(self.origins.len(),|map|map.len()) }
+    pub fn origin_get(&self,index:usize)->Option<Origin> { self.origin_map.as_ref().map_or_else(||self.origins.get(index).cloned(),|map|map.get(index)) }
+    pub fn origin_at_line(&self,line:usize)->Option<Origin> {
+        self.origin_map.as_ref().map_or_else(|| {
+            let index=self.origins.partition_point(|origin|origin.output_line<=line).checked_sub(1)?;
+            self.origins.get(index).filter(|origin|origin.output_line==line).cloned()
+        },|map|map.at_line(line))
+    }
+    pub fn origin_iter(&self)->Box<dyn Iterator<Item=Origin>+'_> {
+        if let Some(map)=&self.origin_map {Box::new(map.iter())} else {Box::new(self.origins.iter().cloned())}
+    }
+    pub fn compact_origins(&mut self) {
+        if self.origin_map.is_none() {
+            self.origin_map=Some(Arc::new(OriginMap::from_origins(std::mem::take(&mut self.origins))));
+        }
+    }
+    pub fn origin_paths(&self)->Box<dyn Iterator<Item=&Arc<PathBuf>>+'_> {
+        if let Some(map)=&self.origin_map {Box::new(map.paths())} else {Box::new(self.origins.iter().map(|origin|&origin.path))}
+    }
+    pub fn origin_resident_bytes(&self)->usize { self.origin_map.as_ref().map_or(self.origins.capacity()*std::mem::size_of::<Origin>(),|map|map.resident_bytes()) }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
@@ -81,6 +122,13 @@ pub struct Macro {
 
 pub trait SourceProvider {
     fn read(&self, path: &Path) -> Result<String, String>;
+
+    /// Immutable source snapshots can share text with preprocessing without a
+    /// full file clone for every include occurrence. Existing providers retain
+    /// their ordinary read contract through this default adapter.
+    fn read_shared(&self, path: &Path) -> Result<Arc<str>, String> {
+        self.read(path).map(Arc::from)
+    }
 
     /// Identity of the exact text returned by the preceding read. Snapshot
     /// providers can reuse their recorded digest; ordinary providers hash bytes.
@@ -156,6 +204,8 @@ pub struct PreprocessCache {
     resident_bytes: usize,
     disk: Option<(PathBuf, BTreeMap<PathBuf, Vec<String>>)>,
     dirty: BTreeSet<PathBuf>,
+    raw_prefetch: BTreeMap<String, Option<Arc<[u8]>>>,
+    raw_prefetch_bytes: usize,
     pub hits: usize,
     pub misses: usize,
 }
@@ -170,15 +220,19 @@ struct CachedUnit {
     skin_includes: Vec<PathBuf>,
     manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
-    origins: Vec<DiskOrigin>,
+    origins: DiskOrigins,
     units: Vec<Unit>,
     unit_digests: Vec<[u8; 32]>,
+    unit_parents: Vec<Option<usize>>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
 }
 
-const CACHE_FORMAT_VERSION: u32 = 9;
+const CACHE_FORMAT_VERSION: u32 = 12;
+const PREFETCH_BYTES: usize = 4 * 1024 * 1024;
+const PUBLICATION_BYTES: usize = 2 * 1024 * 1024;
+const BLOB_NAMESPACE: &str = "preprocess-expansion-v12";
 const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 const MAX_CACHED_ORIGINS: usize = 8192;
 const MAX_CACHED_PATHS: usize = 8192;
@@ -219,6 +273,8 @@ fn cache_compiler_fingerprint() -> String {
         .get_or_init(|| {
             let mut hash = Sha256::new();
             hash.update(include_str!("lib.rs"));
+            hash.update(include_str!("emission_identity.rs"));
+            hash.update(include_str!("origin_map.rs"));
             hash.update(include_str!("../../dm-syntax/src/lib.rs"));
             format!("{:x}", hash.finalize())
         })
@@ -244,9 +300,10 @@ struct DiskEntry {
     skin_includes: Vec<PathBuf>,
     manifest_lines: Vec<(String, PathBuf, usize)>,
     output_text: String,
-    origins: Vec<DiskOrigin>,
+    origins: DiskOrigins,
     units: Vec<DiskUnit>,
     unit_digests: Vec<[u8; 32]>,
+    unit_parents: Vec<Option<usize>>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
@@ -257,6 +314,46 @@ struct DiskEntry {
 /// than its bounded resident size. The current path is restored on replay.
 #[derive(Clone, Serialize, Deserialize)]
 struct DiskOrigin(usize, usize, Option<PathBuf>);
+
+#[derive(Clone, Serialize, Deserialize)]
+struct DiskOriginRun { output:usize, source:usize, count:usize, stride:usize, path:Option<PathBuf> }
+#[derive(Clone, Default, Serialize, Deserialize)]
+struct DiskOrigins { runs:Vec<DiskOriginRun>, count:usize }
+impl DiskOrigins {
+    fn len(&self)->usize {self.count}
+    fn resident_bytes(&self)->usize {self.runs.capacity()*std::mem::size_of::<DiskOriginRun>() + self.runs.iter().filter_map(|run|run.path.as_ref()).map(|path|path.as_os_str().len()*2).sum::<usize>()}
+    fn valid(&self)->bool {
+        let mut count=0usize;let mut end=0usize;
+        for run in &self.runs {
+            if run.count==0 || run.stride>1 || run.output==0 || run.source==0 || run.output<end {return false;}
+            let Some(next)=count.checked_add(run.count) else {return false;};count=next;
+            if count>MAX_CACHED_ORIGINS {return false;}
+            let Some(next)=run.output.checked_add(run.count) else {return false;};end=next;
+            if run.source.checked_add(run.stride*(run.count-1)).is_none() {return false;}
+        }
+        count==self.count
+    }
+    fn iter(&self)->impl Iterator<Item=(usize,usize,Option<&PathBuf>)>+'_ {
+        self.runs.iter().flat_map(|run|(0..run.count).map(move |delta|(run.output+delta,run.source+run.stride*delta,run.path.as_ref())))
+    }
+}
+impl FromIterator<DiskOrigin> for DiskOrigins {
+    fn from_iter<T:IntoIterator<Item=DiskOrigin>>(values:T)->Self {
+        let mut result=Self::default();
+        for origin in values {
+            if let Some(last)=result.runs.last_mut() {
+                let stride=origin.1.checked_sub(last.source);
+                let compatible=if last.count==1 {stride.is_some_and(|delta|delta<=1)} else {last.source.checked_add(last.stride*last.count)==Some(origin.1)};
+                if last.output.checked_add(last.count)==Some(origin.0) && last.path==origin.2 && compatible {
+                    if last.count==1 {last.stride=stride.unwrap();}
+                    last.count+=1;result.count+=1;continue;
+                }
+            }
+            result.runs.push(DiskOriginRun{output:origin.0,source:origin.1,count:1,stride:0,path:origin.2});result.count+=1;
+        }
+        result
+    }
+}
 
 #[derive(Serialize, Deserialize)]
 struct DiskUnit {
@@ -280,6 +377,7 @@ impl From<&CachedUnit> for DiskEntry {
             output_text: entry.output_text.clone(),
             origins: entry.origins.clone(),
             unit_digests: entry.unit_digests.clone(),
+            unit_parents: entry.unit_parents.clone(),
             units: entry
                 .units
                 .iter()
@@ -311,6 +409,7 @@ impl From<DiskEntry> for CachedUnit {
             output_text: entry.output_text,
             origins: entry.origins,
             unit_digests: entry.unit_digests,
+            unit_parents: entry.unit_parents,
             units: entry
                 .units
                 .into_iter()
@@ -330,6 +429,8 @@ impl From<DiskEntry> for CachedUnit {
 impl CachedUnit {
     fn valid_digests(&self) -> bool {
         self.units.len() == self.unit_digests.len()
+            && self.unit_parents.len()==self.units.len()
+            && self.unit_parents.iter().enumerate().all(|(index,parent)|parent.is_none_or(|parent|parent>index&&parent<self.units.len()))
             && self
                 .units
                 .iter()
@@ -378,12 +479,7 @@ impl CachedUnit {
                 .chain(&self.skin_includes)
                 .map(|path| path.as_os_str().len() + 32)
                 .sum::<usize>()
-            + self
-                .origins
-                .iter()
-                .filter_map(|origin| origin.2.as_ref())
-                .map(|path| path.as_os_str().len())
-                .sum::<usize>()
+
             + self.macro_dependencies.as_ref().map_or(0, |names| {
                 names
                     .iter()
@@ -403,7 +499,7 @@ impl CachedUnit {
                     FileDirChange::Pop => 1,
                 })
                 .sum::<usize>()
-            + self.origins.len() * std::mem::size_of::<DiskOrigin>()
+            + self.origins.resident_bytes()
             + self.units.len() * (std::mem::size_of::<Unit>() + 32)
             + self.diagnostics.len() * std::mem::size_of::<Diagnostic>()
             + self
@@ -478,7 +574,7 @@ impl PreprocessCache {
             return Self::default();
         }
         Self {
-            disk: Some((path.with_extension("parts"), index.entries)),
+            disk: Some((path.with_extension("parts.redb"), index.entries)),
             ..Default::default()
         }
     }
@@ -487,25 +583,38 @@ impl PreprocessCache {
         if self.entries.contains_key(path) {
             return;
         }
-        let Some((directory, index)) = &self.disk else {
-            return;
-        };
-        let Some(keys) = index.get(path) else {
-            return;
-        };
-        let mut units = Vec::new();
-        for key in keys {
-            let chunk = directory.join(key);
-            if !fs::metadata(&chunk).is_ok_and(|metadata| metadata.len() <= 8 * 1024 * 1024) {
-                continue;
+        let Some((database, index)) = &self.disk else { return; };
+        let Some(keys) = index.get(path).cloned() else { return; };
+        if keys.iter().any(|key| !self.raw_prefetch.contains_key(key)) {
+            let mut requested = keys.clone();
+            for (_, neighbors) in index.range(path.to_path_buf()..) {
+                for key in neighbors {
+                    if requested.len() >= 32 { break; }
+                    if !requested.contains(key) { requested.push(key.clone()); }
+                }
+                if requested.len() >= 32 { break; }
             }
-            let Ok(bytes) = fs::read(&chunk) else {
-                continue;
+            let store = dm_store::Store::open(database);
+            let read = |names: &[String]| {
+                let query: Vec<_> = names.iter().map(|key| dm_store::Key::new(BLOB_NAMESPACE,key.clone())).collect();
+                store.as_ref().ok()?.read_prefix_bounded(&query, PUBLICATION_BYTES, PREFETCH_BYTES, None).ok()
             };
-            if bytes.len() > 8 * 1024 * 1024 || format!("{:x}", Sha256::digest(&bytes)) != *key {
-                continue;
+            let batch = read(&requested).or_else(|| { requested = keys.clone(); read(&requested) });
+            self.raw_prefetch.clear();
+            self.raw_prefetch_bytes = 0;
+            if let Some(batch) = batch {
+                for ((key, value), witness) in requested.into_iter().zip(batch.values).zip(batch.witnesses) {
+                    let value = value.filter(|_| witness.value_digest.as_deref() == Some(key.as_str())).map(Arc::<[u8]>::from);
+                    self.raw_prefetch_bytes += key.len() + value.as_ref().map_or(0, |bytes| bytes.len()) + 64;
+                    self.raw_prefetch.insert(key, value);
+                }
             }
+        }
+        let mut units = Vec::new();
+        for key in &keys {
+            let Some(Some(bytes)) = self.raw_prefetch.get(key) else { continue; };
             if let Ok(entry) = serde_json::from_slice::<DiskEntry>(&bytes) {
+                if !entry.origins.valid() {continue;}
                 let unit = CachedUnit::from(entry);
                 if unit.output_text.len() <= MAX_CACHED_LEAF_BYTES
                     && unit.origins.len() <= MAX_CACHED_ORIGINS
@@ -521,16 +630,19 @@ impl PreprocessCache {
             self.resident_bytes += path.as_os_str().len()
                 + units.iter().map(CachedUnit::resident_bytes).sum::<usize>();
             self.entries.insert(path.to_path_buf(), units);
-            self.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
         }
+        self.enforce_budget(MAX_CACHE_RESIDENT_BYTES);
     }
 
     /// Publish only changed file expansion chunks, followed by an atomic small
     /// index. A concurrent worktree can replace the index with its own valid
     /// version; source/environment fingerprints still gate every replay.
     pub fn save_incremental(&mut self, path: &Path) -> Result<(), String> {
-        let directory = path.with_extension("parts");
-        fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
+        let started=std::time::Instant::now();
+        let encoding_ns=AtomicU64::new(0);
+        let publication_ns=AtomicU64::new(0);
+        let directory = path.with_extension("parts.redb");
+        let store = dm_store::Store::open(&directory).map_err(|error| error.to_string())?;
         let mut index = self
             .disk
             .as_ref()
@@ -541,32 +653,49 @@ impl PreprocessCache {
         } else {
             self.entries.keys().cloned().collect()
         };
-        // Two bounded workers overlap immutable chunk encoding and filesystem
-        // publication. Each retains only one serialized expansion at a time;
+        // Two bounded workers encode immutable chunks and publish bounded
+        // database batches. Each retains at most two MiB of serialized values;
         // the deterministic index is committed after both workers succeed.
         let entries = &self.entries;
         let publish = |files: &[PathBuf]| -> Result<BTreeMap<PathBuf, Vec<String>>, String> {
             let mut published = BTreeMap::new();
+            let mut records = Vec::new();
+            let mut record_bytes = 0usize;
+            let flush = |records: &mut Vec<(dm_store::Key,Vec<u8>)>| -> Result<(),String> {
+                if !records.is_empty() { store.put_many(std::mem::take(records), None).map_err(|error|error.to_string())?; }
+                Ok(())
+            };
             for file in files {
                 let Some(units) = entries.get(file) else {
                     continue;
                 };
                 let mut keys = Vec::new();
                 for entry in units {
+                    let encoding_started=std::time::Instant::now();
                     let bytes = serde_json::to_vec(&DiskEntry::from(entry))
                         .map_err(|error| error.to_string())?;
-                    if bytes.len() > 8 * 1024 * 1024 {
+                    encoding_ns.fetch_add(encoding_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
+                    if bytes.len() > PUBLICATION_BYTES {
                         continue;
                     }
+                    let publication_started=std::time::Instant::now();
                     let key = format!("{:x}", Sha256::digest(&bytes));
-                    let chunk = directory.join(&key);
-                    if !fs::read(&chunk).is_ok_and(|old| old == bytes) {
-                        write_atomic(&chunk, &bytes, false)?;
+                    if record_bytes + bytes.len() > PUBLICATION_BYTES {
+                        let batch_started=std::time::Instant::now();
+                        flush(&mut records)?;
+                        publication_ns.fetch_add(batch_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
+                        record_bytes = 0;
                     }
+                    record_bytes += bytes.len();
+                    records.push((dm_store::Key::new(BLOB_NAMESPACE,key.clone()),bytes));
+                    publication_ns.fetch_add(publication_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
                     keys.push(key);
                 }
                 published.insert(file.clone(), keys);
             }
+            let publication_started=std::time::Instant::now();
+            flush(&mut records)?;
+            publication_ns.fetch_add(publication_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
             Ok(published)
         };
         if paths.len() < 32 {
@@ -596,13 +725,23 @@ impl PreprocessCache {
         write_atomic(&path.with_extension("index.json"), &bytes, true)?;
         self.disk = Some((directory, index));
         self.dirty.clear();
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE preprocessing persistence: {} paths, encode workers {:.3}s, hash/read/write workers {:.3}s, wall {:.3}s",paths.len(),encoding_ns.load(Ordering::Relaxed) as f64/1e9,publication_ns.load(Ordering::Relaxed) as f64/1e9,started.elapsed().as_secs_f64()); }
         Ok(())
     }
 
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes
+        self.resident_bytes + self.raw_prefetch_bytes
+    }
+    /// Release resident expansions while preserving the disk index for lazy
+    /// replay. Coordinators budget this cache together with prepared snapshots.
+    pub fn trim_to(&mut self, limit: usize) {
+        self.enforce_budget(limit);
     }
     fn enforce_budget(&mut self, limit: usize) {
+        if self.resident_bytes + self.raw_prefetch_bytes > limit {
+            self.raw_prefetch.clear();
+            self.raw_prefetch_bytes = 0;
+        }
         // Remove historical variants before evicting another current file.
         if self.resident_bytes > limit {
             for entries in self.entries.values_mut() {
@@ -672,6 +811,7 @@ impl PreprocessCache {
                         entries
                             .into_iter()
                             .take(2)
+                            .filter(|entry|entry.origins.valid())
                             .map(CachedUnit::from)
                             .filter(CachedUnit::valid_digests)
                             .collect(),
@@ -683,6 +823,8 @@ impl PreprocessCache {
             dirty: BTreeSet::new(),
             hits: 0,
             misses: 0,
+            raw_prefetch: BTreeMap::new(),
+            raw_prefetch_bytes: 0,
         };
         cache.resident_bytes = cache
             .entries
@@ -791,7 +933,7 @@ pub fn preprocess_project<P: SourceProvider>(
     provider: &P,
     defines: &BTreeMap<String, String>,
 ) -> PreprocessedProject {
-    preprocess_project_inner(project, provider, defines, None)
+    preprocess_project_inner(project, provider, defines, None, false).0
 }
 
 pub fn preprocess_project_cached<P: SourceProvider>(
@@ -800,7 +942,16 @@ pub fn preprocess_project_cached<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     cache: &mut PreprocessCache,
 ) -> PreprocessedProject {
-    preprocess_project_inner(project, provider, defines, Some(cache))
+    preprocess_project_inner(project, provider, defines, Some(cache), false).0
+}
+
+/// Production expansion never assembles a project-sized contiguous string.
+/// Legacy entry points explicitly materialize text after the same preprocessing.
+pub fn preprocess_project_cached_segmented<P: SourceProvider>(
+    project: &Path, provider: &P, defines: &BTreeMap<String, String>,
+    cache: &mut PreprocessCache,
+) -> (PreprocessedProject, Vec<Arc<str>>) {
+    preprocess_project_inner(project, provider, defines, Some(cache), true)
 }
 
 fn preprocess_project_inner<P: SourceProvider>(
@@ -808,11 +959,14 @@ fn preprocess_project_inner<P: SourceProvider>(
     provider: &P,
     defines: &BTreeMap<String, String>,
     cache: Option<&mut PreprocessCache>,
-) -> PreprocessedProject {
+    segmented: bool,
+) -> (PreprocessedProject, Vec<Arc<str>>) {
     let mut ctx = Context {
         provider,
         cache,
         output: PreprocessedProject::default(),
+        origin_builder: segmented.then(SourceMapBuilder::default),
+        expanded: ExpansionWriter::default(),
         stack: Vec::new(),
         output_line: 1,
         macro_digest: [0; 32],
@@ -865,16 +1019,29 @@ fn preprocess_project_inner<P: SourceProvider>(
     }
     ctx.visit(project.to_path_buf());
     for (text, path, source_line) in std::mem::take(&mut ctx.manifest_lines) {
-        ctx.output.text.push_str(&text);
-        ctx.output.text.push('\n');
-        ctx.output.origins.push(Origin {
+        ctx.expanded.push_str(&text);
+        ctx.expanded.push_str("\n");
+        ctx.push_origin(Origin {
             output_line: ctx.output_line,
             path,
             source_line,
         });
         ctx.output_line += 1;
     }
-    ctx.output
+    if let Some(builder)=ctx.origin_builder.take() { ctx.output.origin_map=Some(Arc::new(builder.finish())); }
+    let pieces = ctx.expanded.finish();
+    if !segmented {
+        ctx.output.text = pieces.iter().map(|piece| piece.as_ref()).collect();
+    }
+    ctx.output.unit_digest_validity=vec![true;ctx.output.units.len()];
+    if segmented {
+        let source=dm_syntax::SegmentedSource::new(pieces.clone());
+        match SourceSemanticIdentity::build(&ctx.output,&source,&ctx.project_dir) {
+            Ok(identity)=>ctx.output.semantic_identity=Some(Arc::new(identity)),
+            Err(error)=>ctx.output.diagnostics.push(Diagnostic{path:project.to_owned(),line:0,kind:DiagnosticKind::Io,message:error}),
+        }
+    }
+    (ctx.output, pieces)
 }
 
 #[derive(Clone, Copy)]
@@ -915,10 +1082,64 @@ struct ExpandLocation<'a> {
     line: usize,
 }
 
+/// Newline-anchored immutable pieces and one bounded unfinished output piece.
+#[derive(Default)]
+struct ExpansionWriter {
+    pieces: Vec<Arc<str>>,
+    offsets: Vec<usize>,
+    pending: String,
+    committed: usize,
+}
+impl ExpansionWriter {
+    fn len(&self) -> usize { self.committed + self.pending.len() }
+    fn push_str(&mut self, text: &str) {
+        for part in text.split_inclusive('\n') {
+            self.pending.push_str(part);
+            if part.ends_with('\n') && self.pending.len() >= 64*1024 {
+                self.commit();
+            }
+        }
+    }
+    fn commit(&mut self) {
+        if self.pending.is_empty() { return; }
+        let piece: Arc<str> = Arc::from(std::mem::take(&mut self.pending));
+        self.offsets.push(self.committed);
+        self.committed += piece.len();
+        self.pieces.push(piece);
+    }
+    fn visit_range(&self, start: usize, end: usize, mut visit: impl FnMut(&str)) {
+        assert!(start <= end && end <= self.len());
+        if start == end { return; }
+        let first = self.offsets.partition_point(|offset| *offset <= start).saturating_sub(1);
+        for (piece, offset) in self.pieces[first..].iter().zip(&self.offsets[first..]) {
+            if *offset >= end { break; }
+            let a = start.saturating_sub(*offset);
+            let b = (end-*offset).min(piece.len());
+            if a < b { visit(&piece[a..b]); }
+        }
+        if end > self.committed {
+            visit(&self.pending[start.saturating_sub(self.committed)..end-self.committed]);
+        }
+    }
+    fn digest(&self, start: usize, end: usize) -> [u8;32] {
+        let mut hash = Sha256::new();
+        self.visit_range(start,end,|text|hash.update(text.as_bytes()));
+        hash.finalize().into()
+    }
+    fn range(&self, start: usize, end: usize) -> String {
+        let mut text = String::with_capacity(end-start);
+        self.visit_range(start,end,|part|text.push_str(part));
+        text
+    }
+    fn finish(mut self) -> Vec<Arc<str>> { self.commit(); self.pieces }
+}
+
 struct Context<'a, P: SourceProvider> {
     provider: &'a P,
     cache: Option<&'a mut PreprocessCache>,
     output: PreprocessedProject,
+    origin_builder: Option<SourceMapBuilder>,
+    expanded: ExpansionWriter,
     stack: Vec<PathBuf>,
     output_line: usize,
     macro_digest: [u8; 32],
@@ -932,6 +1153,15 @@ struct Context<'a, P: SourceProvider> {
 }
 
 impl<P: SourceProvider> Context<'_, P> {
+    fn push_origin(&mut self,origin:Origin) {
+        if let Some(builder)=&mut self.origin_builder {builder.push(origin);} else {self.output.origins.push(origin);}
+    }
+    fn origin_count(&self)->usize {self.origin_builder.as_ref().map_or(self.output.origins.len(),SourceMapBuilder::len)}
+    fn origins_from(&self,first:usize)->Box<dyn Iterator<Item=Origin>+'_> {
+        if let Some(builder)=&self.origin_builder {Box::new(builder.iter_from(first))}
+        else {Box::new(self.output.origins[first..].iter().cloned())}
+    }
+
     fn change_file_dir(&mut self, change: FileDirChange) {
         match &change {
             FileDirChange::Push(path, definition) => {
@@ -998,7 +1228,7 @@ impl<P: SourceProvider> Context<'_, P> {
             return;
         }
         self.output.dependencies.insert(path.clone());
-        let source = match self.provider.read(&path) {
+        let source = match self.provider.read_shared(&path) {
             Ok(s) => s,
             Err(e) => {
                 self.error_as(
@@ -1068,7 +1298,7 @@ impl<P: SourceProvider> Context<'_, P> {
                 }) {
                     let macro_changes = entry.macro_changes.clone();
                     let file_dir_changes = entry.file_dir_changes.clone();
-                    let byte_start = self.output.text.len();
+                    let byte_start = self.expanded.len();
                     let line_start = self.output_line;
                     let origin_path = Arc::new(path.clone());
                     for (relative, digest) in &entry.dependencies {
@@ -1097,17 +1327,30 @@ impl<P: SourceProvider> Context<'_, P> {
                             )
                         },
                     ));
-                    self.output.text.push_str(&entry.output_text);
-                    self.output
-                        .origins
-                        .extend(entry.origins.iter().map(|origin| Origin {
+                    self.expanded.push_str(&entry.output_text);
+                    // Source paths are declaration identities, not per-line data.
+                    // A replayed subtree may contain hundreds of thousands of lines:
+                    // intern its few paths once rather than allocating an Arc and
+                    // joined PathBuf for each origin on every procedure edit.
+                    let mut origin_paths: BTreeMap<PathBuf, Arc<PathBuf>> = BTreeMap::new();
+                    for origin in entry.origins.iter() {
+                        let path = origin.2.map_or_else(
+                            || Arc::clone(&origin_path),
+                            |relative| {
+                                if let Some(path)=origin_paths.get(relative) {return Arc::clone(path);}
+                                let path=Arc::new(self.project_dir.join(relative));
+                                origin_paths.insert(relative.clone(),Arc::clone(&path));path
+                            },
+                        );
+                        let origin=Origin {
                             output_line: origin.0 + line_start - 1,
-                            path: origin.2.as_ref().map_or_else(
-                                || origin_path.clone(),
-                                |relative| Arc::new(self.project_dir.join(relative)),
-                            ),
+                            path,
                             source_line: origin.1,
-                        }));
+                        };
+                        if let Some(builder)=&mut self.origin_builder {builder.push(origin);} else {self.output.origins.push(origin);}
+                    }
+                    let base=self.output.units.len();
+                    self.output.unit_parents.extend(entry.unit_parents.iter().map(|parent|parent.map(|parent|parent+base)));
                     self.output
                         .units
                         .extend(entry.units.iter().cloned().map(|mut unit| {
@@ -1152,13 +1395,13 @@ impl<P: SourceProvider> Context<'_, P> {
         let map_start = self.output.map_includes.len();
         let skin_start = self.output.skin_includes.len();
         let manifest_start = self.manifest_lines.len();
-        let origin_start = self.output.origins.len();
+        let origin_start = self.origin_count();
         let unit_start_index = self.output.units.len();
         let diagnostic_start = self.output.diagnostics.len();
         let file_dir_change_start = self.file_dir_changes.len();
         let line_start = self.output_line;
         self.stack.push(path.clone());
-        let unit_start = self.output.text.len();
+        let unit_start = self.expanded.len();
         let origin_path = Arc::new(path.clone());
         let file_name = path
             .strip_prefix(&self.project_dir)
@@ -1311,13 +1554,13 @@ impl<P: SourceProvider> Context<'_, P> {
                                     .push(path.parent().unwrap_or(Path::new("")).join(rel));
                                 continue;
                             }
-                            let child = path.parent().unwrap_or(Path::new("")).join(rel);
+                            let child = normalize(path.parent().unwrap_or(Path::new("")).join(rel));
                             if child
                                 .extension()
                                 .is_some_and(|ext| ext.eq_ignore_ascii_case("dmf"))
                             {
                                 self.output.dependencies.insert(child.clone());
-                                match self.provider.read(&child) {
+                                match self.provider.read_shared(&child) {
                                     Ok(text) => {
                                         self.reads.push((
                                             child.clone(),
@@ -1326,12 +1569,30 @@ impl<P: SourceProvider> Context<'_, P> {
                                         self.output.skin_includes.push(child);
                                     }
                                     Err(error) => {
-                                        self.error_as(&child, 1, DiagnosticKind::Io, error)
+                                        self.error_as(&path, source_line, DiagnosticKind::Include,
+                                            format!("cannot include {}: {error}", child.display()))
                                     }
                                 }
                                 continue;
                             }
-                            self.visit(child);
+                            let first_diagnostic = self.output.diagnostics.len();
+                            self.visit(child.clone());
+                            // A missing include belongs to its directive; errors
+                            // inside a successfully opened child retain their own origin.
+                            for diagnostic in &mut self.output.diagnostics[first_diagnostic..] {
+                                if diagnostic.kind == DiagnosticKind::Io
+                                    && diagnostic.path == child && diagnostic.line == 1
+                                {
+                                    diagnostic.message = format!("cannot include {}: {}",
+                                        child.display(), diagnostic.message);
+                                    diagnostic.path = path.clone();
+                                    diagnostic.line = source_line;
+                                    // Attribution is now the include directive,
+                                    // not a failed read of this child. An ancestor
+                                    // must not remap it a second time at line one.
+                                    diagnostic.kind = DiagnosticKind::Include;
+                                }
+                            }
                         }
                         None => self.error_as(
                             &path,
@@ -1411,9 +1672,9 @@ impl<P: SourceProvider> Context<'_, P> {
                         ));
                         continue;
                     }
-                    self.output.text.push_str(segment);
-                    self.output.text.push('\n');
-                    self.output.origins.push(Origin {
+                    self.expanded.push_str(segment);
+                    self.expanded.push_str("\n");
+                    self.push_origin(Origin {
                         output_line: self.output_line,
                         path: origin_path.clone(),
                         source_line: source_line + offset,
@@ -1430,20 +1691,25 @@ impl<P: SourceProvider> Context<'_, P> {
                 "unterminated #if block",
             );
         }
-        let unit_end = self.output.text.len();
+        let unit_end = self.expanded.len();
         self.output
             .unit_digests
-            .push(Sha256::digest(self.output.text[unit_start..unit_end].as_bytes()).into());
+            .push(self.expanded.digest(unit_start, unit_end));
+        let parent=self.output.units.len();
+        for ancestor in &mut self.output.unit_parents[unit_start_index..] {
+            if ancestor.is_none() {*ancestor=Some(parent);}
+        }
+        self.output.unit_parents.push(None);
         self.output.units.push(Unit {
             path: path.clone(),
             output_span: Span::new(unit_start, unit_end),
             source_lines: line_number,
         });
         self.stack.pop();
-        if let Some(cache) = self.cache.as_deref_mut().filter(|_| cacheable) {
+        if cacheable && self.cache.is_some() {
             if (nested && self.output.diagnostics.len() != diagnostic_start)
                 || unit_end - unit_start > MAX_CACHED_LEAF_BYTES
-                || self.output.origins.len() - origin_start > MAX_CACHED_ORIGINS
+                || self.origin_count() - origin_start > MAX_CACHED_ORIGINS
                 || self.output.units.len() - unit_start_index > MAX_CACHED_ORIGINS
                 || self.reads.len() - read_start > MAX_CACHED_PATHS
             {
@@ -1493,10 +1759,10 @@ impl<P: SourceProvider> Context<'_, P> {
                         )
                     })
                     .collect(),
-                output_text: self.output.text[unit_start..unit_end].to_owned(),
+                output_text: self.expanded.range(unit_start, unit_end),
                 unit_digests: self.output.unit_digests[unit_start_index..].to_vec(),
-                origins: self.output.origins[origin_start..]
-                    .iter()
+                unit_parents: self.output.unit_parents[unit_start_index..].iter().map(|parent|parent.map(|parent|parent-unit_start_index)).collect(),
+                origins: self.origins_from(origin_start)
                     .map(|origin| {
                         DiskOrigin(
                             origin.output_line - line_start + 1,
@@ -1543,6 +1809,7 @@ impl<P: SourceProvider> Context<'_, P> {
                     .collect(),
                 file_dir_changes: self.file_dir_changes[file_dir_change_start..].to_vec(),
             };
+            let Some(cache)=self.cache.as_deref_mut() else {return;};
             let key_bytes = cache_key.as_os_str().len();
             let is_new_key = !cache.entries.contains_key(&cache_key);
             cache.dirty.insert(cache_key.clone());
@@ -1580,7 +1847,8 @@ fn macro_dependencies(source: &str, macros: &BTreeMap<String, Macro>) -> Option<
                         break;
                     }
                 }
-                names.insert(text[start..end].to_owned());
+                let name=&text[start..end];
+                if !names.contains(name) {names.insert(name.to_owned());}
             }
         }
         true
@@ -1666,105 +1934,58 @@ struct LogicalLine {
     source_lines: usize,
 }
 
+#[derive(Default)]
+struct LogicalState { open_literal: bool, open_block: bool, open_expression: bool }
+fn logical_state(source:&str)->LogicalState {
+    let mut last=None;
+    let mut depth=0isize;
+    let diagnostics=visit_tokens(source,|token| {
+        match token.text(source) {"("|"["=>depth+=1,")"|"]"=>depth-=1,_=>{}}
+        last=Some(token);
+    });
+    let open_literal=last.is_some_and(|token|token.kind==TokenKind::String && diagnostics.iter().any(|diagnostic|diagnostic.span.start==token.span.start));
+    let open_block=last.is_some_and(|token|token.kind==TokenKind::String && token.text(source).starts_with("{\"") && token.span.end==source.len() && !token.text(source).ends_with("\"}"));
+    LogicalState {open_literal,open_block,open_expression:depth>0}
+}
 fn logical_lines(source: &str) -> Vec<LogicalLine> {
     let mut lines = Vec::new();
     let mut joined = String::new();
     let mut source_lines = 0;
+    let mut state=LogicalState::default();
     for physical in source.split_inclusive('\n') {
-        if physical.trim_start().starts_with('#')
-            && !joined.trim_start().starts_with("#define ")
-            && !joined.is_empty()
-            && !has_open_literal(&joined)
-        {
-            lines.push(LogicalLine {
-                text: std::mem::take(&mut joined),
-                source_lines,
-            });
-            source_lines = 0;
+        if physical.trim_start().starts_with('#') && !joined.trim_start().starts_with("#define ") && !joined.is_empty() && !state.open_literal {
+            lines.push(LogicalLine {text:std::mem::take(&mut joined),source_lines});
+            source_lines=0;state=LogicalState::default();
         }
-        source_lines += 1;
-        let content = physical.trim_end_matches(['\r', '\n']);
-        if !has_open_block_string(&joined) {
-            if let Some(prefix) = content.trim_end().strip_suffix('\\') {
-                joined.push_str(prefix);
-                continue;
+        source_lines+=1;
+        let content=physical.trim_end_matches(['\r','\n']);
+        if !state.open_block {
+            if let Some(prefix)=content.trim_end().strip_suffix('\\') {
+                joined.push_str(prefix);state=logical_state(&joined);continue;
             }
         }
         joined.push_str(physical);
-        if has_open_literal(&joined)
-            || (!joined.trim_start().starts_with('#') && has_open_expression(&joined))
-        {
-            continue;
-        }
-        lines.push(LogicalLine {
-            text: std::mem::take(&mut joined),
-            source_lines,
-        });
-        source_lines = 0;
+        // One streaming lexical traversal answers all three continuation
+        // questions. Ordinary lines previously built up to three token Vecs.
+        state=logical_state(&joined);
+        if state.open_literal || (!joined.trim_start().starts_with('#') && state.open_expression) {continue;}
+        lines.push(LogicalLine {text:std::mem::take(&mut joined),source_lines});
+        source_lines=0;state=LogicalState::default();
     }
-    if !joined.is_empty() {
-        lines.push(LogicalLine {
-            text: joined,
-            source_lines,
-        });
-    }
+    if !joined.is_empty() {lines.push(LogicalLine {text:joined,source_lines});}
     lines
 }
 
-/// Remove comments before line-oriented preprocessing. Keep every newline and
-/// byte position so directives inside a block comment cannot become active.
+/// Remove comments with a span visitor; allocate a byte mask only when a
+/// comment exists, without retaining tokens for an entire source file.
 fn strip_source_comments(source: &str) -> Cow<'_, str> {
-    let lexed = lex_spans(source);
-    let comments: Vec<_> = lexed
-        .tokens
-        .into_iter()
-        .filter(|token| token.kind == TokenKind::Comment)
-        .collect();
-    if comments.is_empty() {
-        return Cow::Borrowed(source);
-    }
-    let mut bytes = source.as_bytes().to_vec();
-    for token in comments {
-        for byte in &mut bytes[token.span.range()] {
-            if !matches!(*byte, b'\r' | b'\n') {
-                *byte = b' ';
-            }
-        }
-    }
-    Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8"))
-}
-
-fn has_open_literal(source: &str) -> bool {
-    let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
-        token.kind == TokenKind::String
-            && lexed
-                .diagnostics
-                .iter()
-                .any(|diagnostic| diagnostic.span.start == token.span.start)
-    })
-}
-
-fn has_open_expression(source: &str) -> bool {
-    let mut depth = 0isize;
-    for token in lex_spans(source).tokens {
-        match token.text(source) {
-            "(" | "[" => depth += 1,
-            ")" | "]" => depth -= 1,
-            _ => {}
-        }
-    }
-    depth > 0
-}
-
-fn has_open_block_string(source: &str) -> bool {
-    let lexed = lex_spans(source);
-    lexed.tokens.last().is_some_and(|token| {
-        token.kind == TokenKind::String
-            && token.text(source).starts_with("{\"")
-            && token.span.end == source.len()
-            && !token.text(source).ends_with("\"}")
-    })
+    let mut bytes:Option<Vec<u8>>=None;
+    visit_tokens(source,|token| {
+        if token.kind!=TokenKind::Comment {return;}
+        let bytes=bytes.get_or_insert_with(||source.as_bytes().to_vec());
+        for byte in &mut bytes[token.span.range()] {if !matches!(*byte,b'\r'|b'\n') {*byte=b' ';}}
+    });
+    bytes.map_or(Cow::Borrowed(source),|bytes|Cow::Owned(String::from_utf8(bytes).expect("comment removal preserves UTF-8")))
 }
 
 fn split_word(input: &str) -> (&str, &str) {
@@ -3409,8 +3630,9 @@ mod tests {
         let first_index: CacheIndex =
             serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
         let b_key = first_index.entries[Path::new("b.dm")][0].clone();
-        let b_path = path.with_extension("parts").join(&b_key);
-        let b_time = fs::metadata(&b_path).unwrap().modified().unwrap();
+        let store = dm_store::Store::open(path.with_extension("parts.redb")).unwrap();
+        let b_record = dm_store::Key::new(BLOB_NAMESPACE, b_key);
+        let b_bytes = store.read_many(&[b_record.clone()], None).unwrap().values.remove(0).unwrap();
         let mut restored = PreprocessCache::load_incremental(&path);
         assert!(restored.entries.is_empty(), "load decodes only the index");
         files
@@ -3428,8 +3650,8 @@ mod tests {
         );
         assert_eq!(restored.hits, 1);
         restored.save_incremental(&path).unwrap();
-        assert_eq!(fs::metadata(&b_path).unwrap().modified().unwrap(), b_time);
-        fs::write(&b_path, b"corrupt").unwrap();
+        assert_eq!(store.read_many(&[b_record.clone()], None).unwrap().values[0].as_ref().unwrap(), &b_bytes);
+        store.put_many(vec![(b_record, b"corrupt".to_vec())], None).unwrap();
         let mut restarted = PreprocessCache::load_incremental(&path);
         let again = preprocess_project_cached(
             Path::new("game.dme"),
@@ -3442,14 +3664,13 @@ mod tests {
         restarted.save_incremental(&path).unwrap();
         let mut index: CacheIndex =
             serde_json::from_slice(&fs::read(path.with_extension("index.json")).unwrap()).unwrap();
-        let old = path
-            .with_extension("parts")
-            .join(&index.entries[Path::new("b.dm")][0]);
-        let mut chunk: serde_json::Value = serde_json::from_slice(&fs::read(old).unwrap()).unwrap();
+        let old = dm_store::Key::new(BLOB_NAMESPACE,index.entries[Path::new("b.dm")][0].clone());
+        let raw = store.read_many(&[old], None).unwrap().values.remove(0).unwrap();
+        let mut chunk: serde_json::Value = serde_json::from_slice(&raw).unwrap();
         chunk["unit_digests"][0] = serde_json::to_value([0u8; 32]).unwrap();
         let bytes = serde_json::to_vec(&chunk).unwrap();
         let changed_key = format!("{:x}", Sha256::digest(&bytes));
-        fs::write(path.with_extension("parts").join(&changed_key), bytes).unwrap();
+        store.put_many(vec![(dm_store::Key::new(BLOB_NAMESPACE,changed_key.clone()),bytes)],None).unwrap();
         index.entries.get_mut(Path::new("b.dm")).unwrap()[0] = changed_key;
         fs::write(
             path.with_extension("index.json"),
@@ -3723,7 +3944,21 @@ mod tests {
     }
 
     #[test]
-    fn diagnostic_kinds_distinguish_io_macros_and_conditions() {
+    fn nested_missing_include_keeps_its_authored_directive() {
+        let fs = fixture(&[("game.dme", "#include \"a.dm\"\n"),
+            ("a.dm", "#include \"b.dm\"\n"),
+            ("b.dm", "#include \"missing.dm\"\n")]);
+        let output = preprocess_project(Path::new("game.dme"), &fs, &BTreeMap::new());
+        assert_eq!(output.diagnostics.len(), 1);
+        assert_eq!(output.diagnostics[0].path, Path::new("b.dm"));
+        assert_eq!(output.diagnostics[0].line, 1);
+        assert_eq!(output.diagnostics[0].kind, DiagnosticKind::Include);
+        let missing_root = preprocess_project(Path::new("missing.dme"), &fs, &BTreeMap::new());
+        assert_eq!(missing_root.diagnostics[0].kind, DiagnosticKind::Io);
+    }
+
+    #[test]
+    fn diagnostic_kinds_distinguish_includes_macros_and_conditions() {
         let fs = fixture(&[(
             "game.dme",
             "#include \"missing.dm\"\n#define BAD(x..., y) x\n#if x ? y : z\n#endif\n",
@@ -3732,7 +3967,11 @@ mod tests {
         assert!(output
             .diagnostics
             .iter()
-            .any(|d| d.kind == DiagnosticKind::Io));
+            .any(|d| d.kind == DiagnosticKind::Include));
+        let missing = output.diagnostics.iter().find(|d| d.kind == DiagnosticKind::Include).unwrap();
+        assert_eq!(missing.path, Path::new("game.dme"));
+        assert_eq!(missing.line, 1);
+        assert!(missing.message.contains("missing.dm"));
         assert!(output
             .diagnostics
             .iter()

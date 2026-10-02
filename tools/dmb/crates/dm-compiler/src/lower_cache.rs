@@ -7,18 +7,21 @@ use dm_codegen_byond::{
 };
 use dm_syntax::Item;
 use sha2::{Digest, Sha256};
+use std::borrow::Cow;
 use std::collections::{BTreeMap, BTreeSet};
 use std::fs;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::{Duration, Instant};
 
 const VERSION: &str = env!("DM_LOWERING_FINGERPRINT");
 const MAX_ENTRY_BYTES: usize = 4 * 1024 * 1024;
 const MAX_MEMORY_BYTES: usize = 16 * 1024 * 1024;
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 const RECORD_MAGIC: &[u8; 8] = b"DMPRC02\0";
+const COMPRESSED_RECORD_MAGIC: &[u8; 8] = b"DMPRC03\0";
 const RECORD_HEADER_BYTES: usize = 8 + 64 + 64 + 8;
 
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -26,33 +29,149 @@ pub struct CacheStats {
     pub hits: usize,
     pub misses: usize,
     pub corrupt_entries: usize,
+    pub timing: CacheTiming,
+    pub query_timing: QueryTiming,
+    pub decoded_bytes: usize,
+    pub encoded_bytes: usize,
+}
+
+// Totals measure elapsed time inside operations, not a wall-time partition:
+// query/flush timings are nested and workers may overlap or be descheduled.
+macro_rules! duration_fields {
+    ($name:ident { $($field:ident),* $(,)? }) => {
+        #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
+        pub struct $name { $(pub $field: Duration,)* }
+        impl $name {
+            fn add(&mut self, other: Self) { $(self.$field += other.$field;)* }
+            fn since(self, before: Self) -> Self {
+                Self { $($field: self.$field.saturating_sub(before.$field),)* }
+            }
+        }
+    }
+}
+duration_fields!(CacheTiming {
+    compile,
+    identity,
+    record_decode,
+    memo_decode,
+    witness,
+    query,
+    loose_read,
+    memo_encode,
+    record_encode,
+    retain,
+    flush,
+});
+duration_fields!(QueryTiming {
+    total,
+    memory_accounting,
+    preparation,
+    fact_replay,
+    candidate_clone,
+    candidate_witness,
+    fresh_codegen,
+    input_body_clone,
+    result_clone,
+});
+impl CacheStats {
+    pub(crate) fn merge(&mut self, other: Self) {
+        self.hits += other.hits;
+        self.misses += other.misses;
+        self.corrupt_entries += other.corrupt_entries;
+        self.timing.add(other.timing);
+        self.query_timing.add(other.query_timing);
+        self.decoded_bytes += other.decoded_bytes;
+        self.encoded_bytes += other.encoded_bytes;
+    }
+    pub(crate) fn since(self, before: Self) -> Self {
+        Self {
+            hits: self.hits.saturating_sub(before.hits),
+            misses: self.misses.saturating_sub(before.misses),
+            corrupt_entries: self.corrupt_entries.saturating_sub(before.corrupt_entries),
+            timing: self.timing.since(before.timing),
+            query_timing: self.query_timing.since(before.query_timing),
+            decoded_bytes: self.decoded_bytes.saturating_sub(before.decoded_bytes),
+            encoded_bytes: self.encoded_bytes.saturating_sub(before.encoded_bytes),
+        }
+    }
+    pub(crate) fn trace(self, label: &str) {
+        eprintln!("DM_BUILD_TRACE {label}: {} hits {} misses {} corrupt; decoded {} encoded {} bytes; elapsed cache {:?}; nested query {:?}",
+            self.hits, self.misses, self.corrupt_entries, self.decoded_bytes, self.encoded_bytes, self.timing, self.query_timing);
+    }
+}
+#[derive(Clone, Copy)]
+pub(crate) struct StageTimer(Option<Instant>);
+impl StageTimer {
+    pub(crate) fn start(enabled: bool) -> Self {
+        Self(enabled.then(Instant::now))
+    }
+    pub(crate) fn elapsed(self) -> Duration {
+        self.0.map_or(Duration::ZERO, |start| start.elapsed())
+    }
+    pub(crate) fn record(self, total: &mut Duration) {
+        *total += self.elapsed();
+    }
+}
+impl QueryTiming {
+    #[cfg(test)]
+    pub(crate) fn accumulate(&mut self, other: Self) {
+        self.add(other);
+    }
 }
 
 // Keep the serialized procedure bytes directly in the record. Wrapping a
 // byte vector in JSON expands it into thousands of decimal integers.
 fn encode_record(key: &str, payload: &[u8]) -> Vec<u8> {
-    let mut bytes = Vec::with_capacity(RECORD_HEADER_BYTES + payload.len());
-    bytes.extend_from_slice(RECORD_MAGIC);
+    let compressed = lz4_flex::block::compress(payload);
+    let (magic, stored) = if compressed.len().saturating_add(64) < payload.len() {
+        (COMPRESSED_RECORD_MAGIC, compressed.as_slice())
+    } else {
+        (RECORD_MAGIC, payload)
+    };
+    let mut bytes = Vec::with_capacity(RECORD_HEADER_BYTES + stored.len());
+    bytes.extend_from_slice(magic);
     bytes.extend_from_slice(key.as_bytes());
     bytes.extend_from_slice(digest(payload).as_bytes());
     bytes.extend_from_slice(&(payload.len() as u64).to_le_bytes());
-    bytes.extend_from_slice(payload);
+    bytes.extend_from_slice(stored);
     bytes
 }
 
-fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<&'a [u8]> {
+fn decode_record<'a>(key: &str, bytes: &'a [u8]) -> Option<Cow<'a, [u8]>> {
     if bytes.len() < RECORD_HEADER_BYTES
-        || &bytes[..8] != RECORD_MAGIC
+        || (&bytes[..8] != RECORD_MAGIC && &bytes[..8] != COMPRESSED_RECORD_MAGIC)
         || &bytes[8..72] != key.as_bytes()
+        || bytes.len() - RECORD_HEADER_BYTES > MAX_ENTRY_BYTES
     {
         return None;
     }
     let length = u64::from_le_bytes(bytes[136..144].try_into().ok()?);
-    if length > MAX_ENTRY_BYTES as u64 || length != (bytes.len() - RECORD_HEADER_BYTES) as u64 {
+    if length > MAX_ENTRY_BYTES as u64 {
         return None;
     }
-    let payload = &bytes[RECORD_HEADER_BYTES..];
-    (&bytes[72..136] == digest(payload).as_bytes()).then_some(payload)
+    let stored = &bytes[RECORD_HEADER_BYTES..];
+    let payload = if &bytes[..8] == COMPRESSED_RECORD_MAGIC {
+        // The declared expansion size is checked before allocation; never trust
+        // a size prefix inside a corrupt compressed stream.
+        let mut decoded = vec![0; length as usize];
+        if lz4_flex::block::decompress_into(stored, &mut decoded).ok()? != decoded.len() {
+            return None;
+        }
+        Cow::Owned(decoded)
+    } else {
+        if stored.len() as u64 != length {
+            return None;
+        }
+        Cow::Borrowed(stored)
+    };
+    (&bytes[72..136] == digest(payload.as_ref()).as_bytes()).then_some(payload)
+}
+
+#[derive(Default)]
+struct SymbolicSnapshot {
+    records: BTreeMap<String, Vec<u8>>,
+    missing: std::collections::BTreeSet<String>,
+    bytes: usize,
 }
 
 pub struct ProcLoweringCache {
@@ -60,11 +179,21 @@ pub struct ProcLoweringCache {
     memory: BTreeMap<String, Vec<u8>>,
     memory_bytes: usize,
     stats: CacheStats,
+    store: Option<dm_store::Store>,
+    snapshot: std::sync::Arc<std::sync::OnceLock<std::sync::Mutex<SymbolicSnapshot>>>,
+    pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
+    profiling: bool,
+    legacy_loose: bool,
+    disk_ready: bool,
 }
 
 /// Put portable artifacts in Git's common directory so all worktrees share
 /// them. Standalone projects keep the cache beside their DME.
 pub fn project_cache_root(project: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("DM_COMPILER_CACHE_ROOT") {
+        return PathBuf::from(root);
+    }
     let absolute = fs::canonicalize(project).unwrap_or_else(|_| {
         if project.is_absolute() {
             project.to_path_buf()
@@ -112,15 +241,122 @@ impl ProcLoweringCache {
             memory: BTreeMap::new(),
             memory_bytes: 0,
             stats: CacheStats::default(),
+            store: None,
+            snapshot: Default::default(),
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
+            profiling: std::env::var_os("DM_BUILD_TRACE").is_some(),
+            legacy_loose: false,
+            disk_ready: false,
         }
     }
 
     pub fn open(root: PathBuf) -> Self {
         let root = fs::create_dir_all(&root).ok().map(|()| root);
-        Self {
-            root,
-            ..Self::disabled()
+        let mut cache = Self::disabled();
+        cache.legacy_loose = root.as_ref().is_some_and(|root| fs::read_dir(root).ok().is_some_and(|entries| entries.flatten().any(|entry| {
+            let name=entry.file_name();let name=name.to_string_lossy();
+            name.len()==2 && name.bytes().all(|byte|byte.is_ascii_hexdigit()) && entry.file_type().is_ok_and(|kind|kind.is_dir())
+        })));
+        cache.root = root;
+        if let Some(root) = &cache.root {
+            if let Ok(store) = dm_store::Store::open(root.join("symbolic.redb")) {
+                cache.disk_ready=store.read_many(&[dm_store::Key::new("symbolic-requested-ready",VERSION)],None).ok().is_some_and(|read|read.values.first().is_some_and(Option::is_some));
+                cache.store = Some(store);
+            }
         }
+        cache
+    }
+    fn namespace() -> String {
+        format!("symbolic-lowering-{VERSION}")
+    }
+    /// Worker-local portable overlays share one lazily loaded immutable stage
+    /// snapshot. Prepared graph hits do not touch the symbolic namespace.
+    pub fn fork(&self) -> Self {
+        let mut cache = Self::disabled();
+        cache.root = self.root.clone();
+        cache.store = self.store.clone();
+        cache.snapshot = std::sync::Arc::clone(&self.snapshot);
+        cache.profiling = self.profiling;
+        cache.legacy_loose = self.legacy_loose;
+        cache.disk_ready = self.disk_ready;
+        cache
+    }
+    /// Compatibility signal: reads now use requested-key snapshots only.
+    pub fn snapshot_complete(&self) -> bool {
+        self.snapshot.get_or_init(||std::sync::Mutex::new(SymbolicSnapshot::default()));
+        self.store.is_some()
+    }
+    pub(crate) fn prefetch_keys(&self, keys:&[String]) {
+        let Some(store)=&self.store else {return;};
+        if !self.disk_ready {return;}
+        let mut requested=self.snapshot.get_or_init(||std::sync::Mutex::new(SymbolicSnapshot::default()))
+            .lock().unwrap_or_else(|error|error.into_inner());
+        let keys:Vec<_>=keys.iter().filter(|key|!requested.records.contains_key(*key)&&!requested.missing.contains(*key))
+            .map(|key|dm_store::Key::new(Self::namespace(),key)).collect();
+        for keys in keys.chunks(4096) {
+            let Ok(read)=store.read_grouped_bounded(keys,128,MAX_ENTRY_BYTES+RECORD_HEADER_BYTES,16*1024*1024,64*1024*1024,None) else {continue;};
+            for (key,bytes) in keys.iter().zip(read.values) {
+                if let Some(bytes)=bytes {
+                    while requested.bytes.saturating_add(bytes.len())>64*1024*1024 {
+                        let Some(old)=requested.records.keys().next().cloned() else {break;};
+                        if let Some(bytes)=requested.records.remove(&old) {requested.bytes=requested.bytes.saturating_sub(bytes.len());}
+                    }
+                    if bytes.len()<=64*1024*1024 {requested.bytes+=bytes.len();requested.records.insert(key.name.clone(),bytes);}
+                } else if requested.missing.len()<128_000 {requested.missing.insert(key.name.clone());}
+            }
+        }
+    }
+    /// Persist one bounded accumulated batch. No database is opened by `compile`.
+    pub fn flush(&mut self) -> std::io::Result<()> {
+        let timer = StageTimer::start(self.profiling);
+        let result = self.flush_inner();
+        timer.record(&mut self.stats.timing.flush);
+        result
+    }
+    fn flush_inner(&mut self) -> std::io::Result<()> {
+        if self.pending.is_empty() {
+            return Ok(());
+        }
+        let Some(store) = &self.store else {
+            return Ok(());
+        };
+        let mut changes = self
+            .pending
+            .iter()
+            .map(|(key, bytes)| {
+                dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
+            })
+            .collect::<Vec<_>>();
+        changes.push(dm_store::Change::Put(dm_store::Key::new("symbolic-requested-ready",VERSION),vec![1]));
+        match store.commit(&[], &changes, None)? {
+            dm_store::Commit::Applied => {
+                self.pending.clear();
+                self.pending_bytes = 0;
+                Ok(())
+            }
+            dm_store::Commit::Conflict => Err(std::io::Error::other(
+                "unexpected unwitnessed cache conflict",
+            )),
+        }
+    }
+    fn buffer(&mut self, key: String, record: Vec<u8>) {
+        if record.len() > MAX_MEMORY_BYTES {
+            return;
+        }
+        let old = self.pending.get(&key).map_or(0, Vec::len);
+        if self.pending_bytes - old + record.len() > MAX_MEMORY_BYTES
+            || self.pending.len() >= 64_000
+        {
+            if self.flush().is_err() {
+                return;
+            }
+        }
+        let bytes = record.len();
+        if let Some(old) = self.pending.insert(key, record) {
+            self.pending_bytes -= old.len();
+        }
+        self.pending_bytes += bytes;
     }
 
     pub fn stats(&self) -> CacheStats {
@@ -128,9 +364,14 @@ impl ProcLoweringCache {
     }
 
     pub(crate) fn merge_stats(&mut self, stats: CacheStats) {
-        self.stats.hits += stats.hits;
-        self.stats.misses += stats.misses;
-        self.stats.corrupt_entries += stats.corrupt_entries;
+        self.stats.merge(stats);
+    }
+
+    pub(crate) fn profiling_enabled(&self) -> bool {
+        self.profiling
+    }
+    pub(crate) fn hits_count(&self) -> usize {
+        self.stats.hits
     }
 
     pub(crate) fn cache_root(&self) -> Option<&Path> {
@@ -142,52 +383,168 @@ impl ProcLoweringCache {
         body: &[Item],
         bindings: &LowerBindings,
     ) -> Result<SimpleProc, Vec<LowerError>> {
+        self.compile_memo(body, bindings).map(|memo| memo.procedure)
+    }
+
+    /// Keeps the actual positive and negative semantic reads for installation
+    /// into a long-lived project graph. Portable candidates are still validated
+    /// against the supplied immutable invocation frame before being returned.
+    pub fn compile_memo(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::ProcedureMemo, Vec<LowerError>> {
+        let timer = StageTimer::start(self.profiling);
+        let result = self.compile_inner(body, bindings);
+        timer.record(&mut self.stats.timing.compile);
+        result
+    }
+    fn compile_inner(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::ProcedureMemo, Vec<LowerError>> {
         if self.root.is_none() {
-            return compile_simple_proc_with_bindings(body, bindings);
+            self.stats.misses += 1;
+            return self.query(body, bindings);
         }
-        let key = cache_key(body, bindings);
+        let timer = StageTimer::start(self.profiling);
+        let key = identity_key(body, bindings);
+        timer.record(&mut self.stats.timing.identity);
         if let Some(payload) = self.memory.get(&key) {
-            if let Ok(proc) = serde_json::from_slice(payload) {
-                self.stats.hits += 1;
-                return Ok(proc);
+            let timer = StageTimer::start(self.profiling);
+            let memo = serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload);
+            self.stats.decoded_bytes += payload.len();
+            timer.record(&mut self.stats.timing.memo_decode);
+            if let Ok(memo) = memo {
+                if self.valid_memo(&memo, bindings) {
+                    self.stats.hits += 1;
+                    return Ok(memo);
+                }
+            }
+        }
+        self.prefetch_keys(std::slice::from_ref(&key));
+        let record=self.snapshot.get().and_then(|snapshot|snapshot.lock().ok())
+            .and_then(|snapshot|snapshot.records.get(&key).cloned());
+        if let Some(record) = record.as_ref() {
+            let timer = StageTimer::start(self.profiling);
+            let payload = decode_record(&key, record);
+            timer.record(&mut self.stats.timing.record_decode);
+            let timer = StageTimer::start(self.profiling);
+            let cached = payload.and_then(|payload| {
+                self.stats.decoded_bytes += payload.len();
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
+                    .ok()
+            });
+            timer.record(&mut self.stats.timing.memo_decode);
+            if let Some(memo) = cached {
+                if self.valid_memo(&memo, bindings) {
+                    self.stats.hits += 1;
+                    return Ok(memo);
+                }
+            } else {
+                self.stats.corrupt_entries += 1;
             }
         }
         let path = self.root.as_ref().unwrap().join(&key[..2]).join(&key);
-        if let Ok(file) = fs::File::open(&path) {
+        let timer = StageTimer::start(self.profiling);
+        let file = if self.legacy_loose {fs::File::open(&path)} else {Err(std::io::Error::from(std::io::ErrorKind::NotFound))};
+        if let Ok(file) = file {
             // Bound the read even for corrupt records. A separate metadata
             // request doubles filesystem operations across large projects.
             let mut bytes = Vec::new();
-            let cached = file
+            let read = file
                 .take((MAX_ENTRY_BYTES + RECORD_HEADER_BYTES + 1) as u64)
                 .read_to_end(&mut bytes)
                 .ok()
-                .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES)
-                .and_then(|_| {
-                    let payload = decode_record(&key, &bytes)?;
-                    serde_json::from_slice::<SimpleProc>(payload)
-                        .ok()
-                        .map(|proc| (proc, payload.to_vec()))
-                });
-            if let Some((proc, payload)) = cached {
-                self.remember(key, payload);
-                self.stats.hits += 1;
-                return Ok(proc);
+                .filter(|_| bytes.len() <= MAX_ENTRY_BYTES + RECORD_HEADER_BYTES);
+            timer.record(&mut self.stats.timing.loose_read);
+            let timer = StageTimer::start(self.profiling);
+            let payload = read.and_then(|_| decode_record(&key, &bytes));
+            timer.record(&mut self.stats.timing.record_decode);
+            let timer = StageTimer::start(self.profiling);
+            let cached = payload.and_then(|payload| {
+                self.stats.decoded_bytes += payload.len();
+                serde_json::from_slice::<crate::semantic_queries::SemanticMemo>(payload.as_ref())
+                    .ok()
+                    .map(|memo| (memo, payload.to_vec()))
+            });
+            timer.record(&mut self.stats.timing.memo_decode);
+            if let Some((memo, payload)) = cached {
+                if self.valid_memo(&memo, bindings) {
+                    if self.store.is_some() {
+                        let timer = StageTimer::start(self.profiling);
+                        let bytes = encode_record(&key, &payload);
+                        timer.record(&mut self.stats.timing.record_encode);
+                        self.buffer(key.clone(), bytes);
+                    }
+                    self.remember(key, payload);
+                    self.stats.hits += 1;
+                    return Ok(memo);
+                }
+            } else {
+                self.stats.corrupt_entries += 1;
             }
-            self.stats.corrupt_entries += 1;
+        } else {
+            timer.record(&mut self.stats.timing.loose_read);
         }
         self.stats.misses += 1;
-        let proc = compile_simple_proc_with_bindings(body, bindings)?;
-        if let Ok(payload) = serde_json::to_vec(&proc) {
+        let memo = self.query(body, bindings)?;
+        let timer = StageTimer::start(self.profiling);
+        let payload = serde_json::to_vec(&memo);
+        timer.record(&mut self.stats.timing.memo_encode);
+        if let Ok(payload) = payload {
+            self.stats.encoded_bytes += payload.len();
             if payload.len() <= MAX_ENTRY_BYTES {
+                let timer = StageTimer::start(self.profiling);
                 let bytes = encode_record(&key, &payload);
-                let _ = atomic_write(&path, &bytes);
+                timer.record(&mut self.stats.timing.record_encode);
+                if self.store.is_some() {
+                    self.buffer(key.clone(), bytes);
+                } else {
+                    let _ = atomic_write(&path, &bytes);
+                }
                 self.remember(key, payload);
             }
         }
-        Ok(proc)
+        Ok(memo)
+    }
+
+    fn valid_memo(
+        &mut self,
+        memo: &crate::semantic_queries::SemanticMemo,
+        bindings: &LowerBindings,
+    ) -> bool {
+        let timer = StageTimer::start(self.profiling);
+        let valid = memo.valid_for(bindings);
+        timer.record(&mut self.stats.timing.witness);
+        valid
+    }
+    /// Fresh portable production has no live dependency graph. The project
+    /// graph owns tracked inputs; this adapter returns only actual read facts.
+    fn query(
+        &mut self,
+        body: &[Item],
+        bindings: &LowerBindings,
+    ) -> Result<crate::semantic_queries::SemanticMemo, Vec<LowerError>> {
+        let timer = StageTimer::start(self.profiling);
+        let codegen = StageTimer::start(self.profiling);
+        let (result, dependencies) = dm_codegen_byond::capture_binding_reads(|| {
+            compile_simple_proc_with_bindings(body, bindings)
+        });
+        codegen.record(&mut self.stats.query_timing.fresh_codegen);
+        let result = result.map(|procedure| crate::ProcedureMemo {
+            procedure,
+            dependencies,
+        });
+        let elapsed = timer.elapsed();
+        self.stats.query_timing.total += elapsed;
+        self.stats.timing.query += elapsed;
+        result
     }
 
     fn remember(&mut self, key: String, payload: Vec<u8>) {
+        let timer = StageTimer::start(self.profiling);
         if payload.len() > MAX_MEMORY_BYTES {
             return;
         }
@@ -201,11 +558,49 @@ impl ProcLoweringCache {
         if let Some(old) = self.memory.insert(key, payload) {
             self.memory_bytes -= old.len();
         }
+        timer.record(&mut self.stats.timing.retain);
+    }
+}
+
+impl Drop for ProcLoweringCache {
+    fn drop(&mut self) {
+        if let Err(error) = self.flush() {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("symbolic store cache flush failed: {error}");
+            }
+        }
     }
 }
 
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", Sha256::digest(bytes))
+}
+
+/// Source and invocation frame identify a candidate, while actual recorded
+/// semantic reads determine whether that candidate is valid in this skeleton.
+fn identity_key(body: &[Item], bindings: &LowerBindings) -> String {
+    let mut hash = Sha256::new();
+    hash.update(b"dm-observed-symbolic-proc-v3\0");
+    hash.update(VERSION.as_bytes());
+    hash_items(&mut hash, body);
+    let spans = dm_codegen_byond::debug::relative_body_span_shape(body);
+    hash.update((spans.len() as u64).to_le_bytes());
+    for span in spans {
+        for offset in span {
+            hash.update(offset.to_le_bytes());
+        }
+    }
+    let value = serde_json::json!({
+        "current_proc_path": bindings.current_proc_path,
+        "current_type_path": bindings.current_type_path,
+        "parameters": bindings.parameters,
+        "parameter_type_flags": bindings.parameter_type_flags,
+        "parameter_value_sources": bindings.parameter_value_sources,
+        "parameter_defaults": bindings.parameter_defaults,
+        "parameter_types": bindings.parameter_types,
+    });
+    hash_json(&mut hash, &value);
+    format!("{:x}", hash.finalize())
 }
 
 /// Canonical shared-context identity computed once when building a project.
@@ -275,6 +670,7 @@ pub fn prepare_member_type_fingerprints(bindings: &mut SharedLowerBindings) {
         .collect();
 }
 
+#[cfg(test)]
 fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
     let mut hash = Sha256::new();
     hash.update(b"dm-symbolic-proc-v1\0");
@@ -383,7 +779,8 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         );
         hash.update([
             u8::from(
-                bindings.fields.contains(name) || shared.is_some_and(|s| s.fields.contains(name)),
+                bindings.binding_fact(&dm_codegen_byond::BindingFact::Field(name.to_owned()))
+                    == dm_codegen_byond::FactValue::Boolean(true),
             ),
             u8::from(
                 bindings.globals.contains(name) || shared.is_some_and(|s| s.globals.contains(name)),
@@ -393,13 +790,14 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
                     || shared.is_some_and(|s| s.global_procs.contains(name)),
             ),
         ]);
+        let field_type =
+            bindings.binding_fact(&dm_codegen_byond::BindingFact::FieldType(name.to_owned()));
         hash_optional_bytes(
             &mut hash,
-            bindings
-                .field_types
-                .get(name)
-                .or_else(|| shared?.field_types.get(name))
-                .map(|s| s.as_bytes()),
+            match &field_type {
+                dm_codegen_byond::FactValue::Text(value) => Some(value.as_bytes()),
+                _ => None,
+            },
         );
         hash_optional_bytes(
             &mut hash,
@@ -438,9 +836,12 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
         fields: _,
         globals: _,
         field_types: _,
+        owner: _,
+        hidden_owner_fields: _,
         global_types: _,
         global_procs: _,
         shared: _,
+        prepared_member_globals: _,
     } = bindings;
     let value = serde_json::json!({
         "current_proc_path": current_proc_path,
@@ -455,6 +856,7 @@ fn cache_key(body: &[Item], bindings: &LowerBindings) -> String {
     format!("{:x}", hash.finalize())
 }
 
+#[cfg(test)]
 fn hash_optional_bytes(hash: &mut Sha256, bytes: Option<&[u8]>) {
     hash.update([u8::from(bytes.is_some())]);
     if let Some(bytes) = bytes {
@@ -463,6 +865,7 @@ fn hash_optional_bytes(hash: &mut Sha256, bytes: Option<&[u8]>) {
     }
 }
 
+#[cfg(test)]
 fn collect_text_names<'a>(text: &'a str, names: &mut BTreeSet<&'a str>) {
     let mut start = None;
     for (offset, c) in text.char_indices() {
@@ -477,6 +880,7 @@ fn collect_text_names<'a>(text: &'a str, names: &mut BTreeSet<&'a str>) {
     }
 }
 
+#[cfg(test)]
 fn collect_names<'a>(body: &'a [Item], names: &mut BTreeSet<&'a str>) {
     for item in body {
         collect_text_names(&item.header, names);
@@ -553,6 +957,66 @@ mod tests {
     use dm_syntax::{parse, Span};
 
     #[test]
+    fn profiling_preserves_output_and_disabled_clocks_remain_zero() {
+        let body = parse("/proc/value()\n    var/list/items = list(1, 2)\n    return items[1]\n")
+            .items
+            .remove(0)
+            .children;
+        let bindings = LowerBindings::default();
+        let mut plain = ProcLoweringCache::disabled();
+        plain.profiling = false;
+        let expected = plain.compile(&body, &bindings).unwrap();
+        assert_eq!(plain.stats().timing, CacheTiming::default());
+        assert_eq!(plain.stats().query_timing, QueryTiming::default());
+        let mut traced = ProcLoweringCache::disabled();
+        traced.profiling = true;
+        assert_eq!(traced.compile(&body, &bindings).unwrap(), expected);
+        assert!(traced.stats().timing.compile > Duration::ZERO);
+        assert!(traced.stats().query_timing.fresh_codegen > Duration::ZERO);
+    }
+
+    #[test]
+    fn portable_memo_hits_return_validated_reads_without_secondary_query_clones() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-portable-only-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let body = parse("/proc/test()\n    return value\n")
+            .items
+            .remove(0)
+            .children;
+        let mut bindings = LowerBindings {
+            globals: ["value".into()].into(),
+            ..Default::default()
+        };
+        let mut cache = ProcLoweringCache::open(root.clone());
+        cache.profiling = true;
+        let first = cache.compile_memo(&body, &bindings).unwrap();
+        assert!(first.valid_for(&bindings));
+        let codegen = cache.stats().query_timing.fresh_codegen;
+        bindings.globals.insert("unrelated".into());
+        assert_eq!(cache.compile_memo(&body, &bindings).unwrap(), first);
+        assert_eq!(cache.stats().hits, 1);
+        assert_eq!(cache.stats().query_timing.fresh_codegen, codegen);
+        bindings.globals.remove("value");
+        bindings.fields.insert("value".into());
+        assert!(!first.valid_for(&bindings));
+        let changed = cache.compile_memo(&body, &bindings).unwrap();
+        assert!(changed.valid_for(&bindings));
+        assert_ne!(changed.procedure, first.procedure);
+        assert_eq!(cache.stats().misses, 2);
+        let timing = cache.stats().query_timing;
+        assert!(timing.fresh_codegen > codegen);
+        assert_eq!(timing.input_body_clone, Duration::ZERO);
+        assert_eq!(timing.result_clone, Duration::ZERO);
+        assert_eq!(timing.candidate_clone, Duration::ZERO);
+        assert_eq!(timing.fact_replay, Duration::ZERO);
+        drop(cache);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn borrowed_names_match_owned_identifier_classification_and_order() {
         fn owned_names(text: &str) -> BTreeSet<String> {
             let mut names = BTreeSet::new();
@@ -599,7 +1063,10 @@ mod tests {
         let payload = b"{\"value\":7}";
         let bytes = encode_record(&key, payload);
         assert_eq!(bytes.len(), RECORD_HEADER_BYTES + payload.len());
-        assert_eq!(decode_record(&key, &bytes), Some(payload.as_slice()));
+        assert_eq!(
+            decode_record(&key, &bytes).as_deref(),
+            Some(payload.as_slice())
+        );
         assert!(decode_record(&digest(b"another procedure"), &bytes).is_none());
         assert!(decode_record(&key, &bytes[..bytes.len() - 1]).is_none());
         let mut corrupt = bytes.clone();
@@ -608,6 +1075,30 @@ mod tests {
         let mut excessive = bytes;
         excessive[136..144].copy_from_slice(&u64::MAX.to_le_bytes());
         assert!(decode_record(&key, &excessive).is_none());
+    }
+
+    #[test]
+    fn compressed_memos_validate_identity_checksum_and_expansion_bound() {
+        let key = digest(b"large symbolic procedure");
+        let payload = b"{\"instruction\":\"PushNull\",\"arguments\":[],\"origin\":0}".repeat(2048);
+        let bytes = encode_record(&key, &payload);
+        assert_eq!(&bytes[..8], COMPRESSED_RECORD_MAGIC);
+        assert!(bytes.len() * 8 < payload.len());
+        assert_eq!(
+            decode_record(&key, &bytes).as_deref(),
+            Some(payload.as_slice())
+        );
+        assert!(decode_record(&digest(b"other"), &bytes).is_none());
+        let mut checksum = bytes.clone();
+        checksum[72] ^= 1;
+        assert!(decode_record(&key, &checksum).is_none());
+        let mut oversized = bytes.clone();
+        oversized[136..144].copy_from_slice(&((MAX_ENTRY_BYTES as u64) + 1).to_le_bytes());
+        assert!(decode_record(&key, &oversized).is_none());
+        let mut undersized = bytes.clone();
+        undersized[136..144].copy_from_slice(&1u64.to_le_bytes());
+        assert!(decode_record(&key, &undersized).is_none());
+        assert!(decode_record(&key, &bytes[..bytes.len() - 1]).is_none());
     }
 
     #[test]
@@ -681,7 +1172,7 @@ mod tests {
         let mut shared = SharedLowerBindings::default();
         shared
             .known_member_procs
-            .insert("/datum/receiver".into(), BTreeSet::from(["method".into()]));
+            .insert("/datum/receiver".into(), (["method".into()]).into_iter().collect());
         let bindings = |context| LowerBindings {
             current_type_path: Some("/datum/receiver".into()),
             shared: Some(Arc::new(context)),
@@ -965,8 +1456,15 @@ mod tests {
         assert_eq!(first.stats().misses, 1);
         drop(first);
         let mut shifted = body.clone();
-        shifted[0].span = Span::new(100, 200);
-        shifted[0].header_span = Span::new(100, 120);
+        fn shift(items: &mut [Item]) {
+            for item in items {
+                item.span = Span::new(item.span.start + 100, item.span.end + 100);
+                item.header_span =
+                    Span::new(item.header_span.start + 100, item.header_span.end + 100);
+                shift(&mut item.children);
+            }
+        }
+        shift(&mut shifted);
         let mut cold = ProcLoweringCache::open(root.clone());
         assert_eq!(cold.compile(&shifted, &args).unwrap(), original);
         assert_eq!(cold.stats().hits, 1);
@@ -976,6 +1474,7 @@ mod tests {
         };
         assert_ne!(cold.compile(&body, &globals).unwrap().code, original.code);
         assert_eq!(cold.stats().misses, 1);
+        drop(cold);
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -1032,6 +1531,54 @@ mod tests {
     }
 
     #[test]
+    fn internal_source_spacing_invalidates_relative_statement_anchors() {
+        let body = parse("/proc/test()\n    var/x = 1\n    return x\n")
+            .items
+            .remove(0)
+            .children;
+        let spaced = parse("/proc/test()\n    var/x = 1\n\n    return x\n")
+            .items
+            .remove(0)
+            .children;
+        assert_ne!(
+            identity_key(&body, &LowerBindings::default()),
+            identity_key(&spaced, &LowerBindings::default())
+        );
+    }
+    #[test]
+    fn worker_forks_share_stage_snapshot_and_flush_buffers_once() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-stage-cache-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        let body = parse("/proc/test()\n    return 3\n")
+            .items
+            .remove(0)
+            .children;
+        let bindings = LowerBindings::default();
+        let mut seed = ProcLoweringCache::open(root.clone());
+        seed.compile(&body, &bindings).unwrap();
+        assert!(!seed.pending.is_empty());
+        seed.flush().unwrap();
+        assert!(seed.pending.is_empty());
+        drop(seed);
+        let parent = ProcLoweringCache::open(root.clone());
+        assert!(parent.snapshot.get().is_none());
+        let mut worker = parent.fork();
+        assert!(std::sync::Arc::ptr_eq(&parent.snapshot, &worker.snapshot));
+        assert!(worker.snapshot.get().is_none());
+        assert!(worker.snapshot_complete());
+        assert!(parent.snapshot.get().is_some());
+        worker.compile(&body, &bindings).unwrap();
+        assert_eq!(worker.stats().hits, 1);
+        assert!(worker.pending.is_empty());
+        drop(worker);
+        drop(parent);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn corrupt_entry_is_recompiled_and_repaired() {
         let root = std::env::temp_dir().join(format!(
             "dm-proc-repair-{}-{}",
@@ -1043,11 +1590,21 @@ mod tests {
             .remove(0)
             .children;
         let bindings = LowerBindings::default();
-        let key = cache_key(&body, &bindings);
+        let key = identity_key(&body, &bindings);
         let mut first = ProcLoweringCache::open(root.clone());
         let expected = first.compile(&body, &bindings).unwrap();
-        let path = root.join(&key[..2]).join(&key);
-        fs::write(&path, b"torn").unwrap();
+        first.flush().unwrap();
+        drop(first);
+        dm_store::Store::open(root.join("symbolic.redb"))
+            .unwrap()
+            .put_many(
+                vec![(
+                    dm_store::Key::new(ProcLoweringCache::namespace(), key),
+                    b"torn".to_vec(),
+                )],
+                None,
+            )
+            .unwrap();
         let mut cold = ProcLoweringCache::open(root.clone());
         assert_eq!(cold.compile(&body, &bindings).unwrap(), expected);
         assert_eq!(cold.stats().corrupt_entries, 1);
@@ -1055,6 +1612,7 @@ mod tests {
         let mut repaired = ProcLoweringCache::open(root.clone());
         assert_eq!(repaired.compile(&body, &bindings).unwrap(), expected);
         assert_eq!(repaired.stats().hits, 1);
+        drop(repaired);
         fs::remove_dir_all(root).unwrap();
     }
 }

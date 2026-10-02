@@ -17,6 +17,8 @@ use std::sync::Arc;
 
 #[path = "frontend_layout.rs"]
 mod layout;
+#[path = "frontend_segmented.rs"]
+mod segmented;
 #[cfg(test)]
 #[path = "frontend_layout_tests.rs"]
 mod layout_tests;
@@ -67,11 +69,11 @@ struct ParsedChunk {
 
 #[salsa::tracked(no_eq)]
 fn parse_chunk(db: &dyn crate::Db, input: ChunkInput) -> Result<Arc<ParsedChunk>, String> {
-    let source = input.text(db);
-    let disk = input
-        .cache_root(db)
-        .as_ref()
-        .and_then(|root| read_shard(root, input.digest(db), source).ok().flatten());
+    parse_fragment(input.text(db), input.digest(db), input.cache_root(db).as_deref())
+}
+
+fn parse_fragment(source: &str, digest: &str, cache_root: Option<&Path>) -> Result<Arc<ParsedChunk>, String> {
+    let disk = cache_root.and_then(|root| read_shard(root, digest, source.len()).ok().flatten());
     let disk = disk.and_then(|mut stored| {
         if !valid_descriptors(source, &stored.descriptors)
             || !valid_resource_spans(source, &stored.resources)
@@ -82,34 +84,24 @@ fn parse_chunk(db: &dyn crate::Db, input: ChunkInput) -> Result<Arc<ParsedChunk>
             .ast()
             .ok()
             .filter(|ast| valid_ast(source, &ast.items))
-            .map(|ast| (ast, stored.descriptors, stored.resources))
+            .map(|ast| (ast, stored.descriptors, stored.resources, stored.fragments))
     });
     let disk_hit = disk.is_some();
-    let (ast, descriptors, resources) = if let Some(stored) = disk {
-        stored
+    let (ast, descriptors, resources, stored_fragments, sensitive_offsets) = if let Some(stored) = disk {
+        (stored.0,stored.1,stored.2,stored.3,Vec::new())
     } else {
-        let ast = crate::bootstrap::declaration_snapshot(source)?;
+        let (ast,sensitive_offsets) = crate::bootstrap::declaration_snapshot_fragment(source)?;
         let descriptors = outline_descriptors(&ast)?;
         let mut resources = Vec::new();
         crate::bootstrap::resource_scan::visit_resources(source, &mut |literal| {
             let start = literal.as_ptr() as usize - source.as_ptr() as usize;
             resources.push([start, start + literal.len()]);
         });
-        if let Some(root) = input.cache_root(db) {
-            let _ = write_shard(
-                root,
-                input.digest(db),
-                source.len(),
-                &ast,
-                &descriptors,
-                &resources,
-            );
-        }
-        (ast, descriptors, resources)
+        (ast, descriptors, resources, Vec::new(),sensitive_offsets)
     };
     let mut previous = 0;
     let mut fragments = Vec::with_capacity(descriptors.len());
-    for descriptor in descriptors {
+    for (index, descriptor) in descriptors.iter().cloned().enumerate() {
         if descriptor.start < previous
             || descriptor.start > descriptor.header_end
             || descriptor.header_end > descriptor.end
@@ -121,15 +113,23 @@ fn parse_chunk(db: &dyn crate::Db, input: ChunkInput) -> Result<Arc<ParsedChunk>
             return Err("invalid cached procedure boundary".into());
         }
         let raw = &source[descriptor.start..descriptor.end];
-        let locally_patchable = descriptor.safe_signature
-            && !crate::bootstrap::procedure_body_requires_full_emission(raw);
+        let cached = stored_fragments.get(index);
+        let locally_patchable = cached.map_or_else(|| {
+            let first=sensitive_offsets.partition_point(|offset|*offset<descriptor.start);
+            descriptor.safe_signature && !sensitive_offsets.get(first).is_some_and(|offset|*offset<descriptor.end)
+        }, |cached| cached.locally_patchable);
         fragments.push(Fragment {
-            source: Some(Arc::from(raw)),
-            digest: crate::incremental::digest(raw.as_bytes()),
+            source: None,
+            digest: cached.map_or_else(|| crate::incremental::digest(raw.as_bytes()), |cached| cached.digest.clone()),
             locally_patchable,
             descriptor,
         });
         previous = fragments.last().unwrap().descriptor.end;
+    }
+    if !disk_hit {
+        if let Some(root) = cache_root {
+            let _ = write_shard(root, digest, source.len(), &ast, &descriptors, &resources, &fragments);
+        }
     }
     let resources: Vec<Span> = resources
         .into_iter()
@@ -149,7 +149,7 @@ fn parse_chunk(db: &dyn crate::Db, input: ChunkInput) -> Result<Arc<ParsedChunk>
             .sum::<usize>();
     Ok(Arc::new(ParsedChunk {
         source_len: source.len(),
-        digest: input.digest(db).clone(),
+        digest: digest.to_owned(),
         ast: Arc::new(ast),
         fragments,
         resources,
@@ -186,6 +186,41 @@ impl ParsedChunk {
             resident_bytes,
         }
     }
+}
+
+/// Canonical disk restoration validates local coordinates against the exact
+/// expansion sidecar. Procedure source and compatibility resource strings are
+/// absent; neither requires hydrating an unchanged source chunk.
+fn restore_fragment_segmented(source: &dm_syntax::SegmentedSource, span: Span, digest: &str, root: &Path) -> Option<Arc<ParsedChunk>> {
+    let len = span.end.checked_sub(span.start)?;
+    let mut stored = read_shard(root,digest,len).ok().flatten()?;
+    let boundary = |at: usize| at <= len && source.is_char_boundary(span.start+at);
+    let mut previous = 0;
+    if !stored.descriptors.iter().all(|descriptor| {
+        let valid=descriptor.start>=previous && descriptor.start<=descriptor.header_end && descriptor.header_end<=descriptor.end
+            && [descriptor.start,descriptor.header_end,descriptor.end].into_iter().all(boundary);
+        previous=descriptor.end;
+        valid
+    }) { return None; }
+    let mut previous_resource=0;
+    if !stored.resources.iter().all(|&[start,end]| {
+        let valid=start>=previous_resource && start<end && boundary(start) && boundary(end);
+        previous_resource=end;
+        valid
+    }) {return None;}
+    let resources:Vec<_>=stored.resources.iter().map(|&[start,end]|Span::new(start,end)).collect();
+    let ast=stored.ast().ok()?;
+    fn valid_items(items:&[Item],boundary:&impl Fn(usize)->bool)->bool {
+        items.iter().all(|item| item.span.start<=item.header_span.start && item.header_span.end<=item.span.end
+            && [item.span.start,item.span.end,item.header_span.start,item.header_span.end].into_iter().all(boundary)
+            && valid_items(&item.children,boundary))
+    }
+    if !valid_items(&ast.items,&boundary) { return None; }
+    let fragments: Vec<_>=stored.descriptors.into_iter().zip(stored.fragments).map(|(descriptor,cached)|Fragment {
+        descriptor,source:None,digest:cached.digest,locally_patchable:cached.locally_patchable,
+    }).collect();
+    let resident_bytes=item_bytes(&ast.items)+resources.capacity()*std::mem::size_of::<Span>()+fragments.iter().map(|fragment|fragment.descriptor.path.len()+fragment.digest.len()+192).sum::<usize>();
+    Some(Arc::new(ParsedChunk {source_len:len,digest:digest.to_owned(),ast:Arc::new(ast),fragments,resources,disk_hit:true,resident_bytes}))
 }
 
 fn valid_descriptors(source: &str, descriptors: &[OutlineDescriptor]) -> bool {
@@ -246,6 +281,7 @@ struct CachedChunk {
 /// One bounded frontend session. Source order is reconstructed from the current
 /// snapshot; cache keys never contain worktree names or absolute source offsets.
 pub struct OutlineSession {
+    pub(crate) canonical: crate::bootstrap::canonical::CanonicalSession,
     db: crate::Database,
     cache_root: Option<PathBuf>,
     chunks: HashMap<String, CachedChunk>,
@@ -255,6 +291,22 @@ pub struct OutlineSession {
     last_source: Option<Arc<str>>,
     last_layout: Vec<(usize, Arc<ParsedChunk>)>,
     last_limit: usize,
+    segmented_source: Option<dm_syntax::SegmentedSource>,
+    segment_chunks: dm_syntax::SegmentedChunkSession,
+    last_resource_literals: Vec<String>,
+    resource_queries: segmented::ResourceLiteralQueries,
+}
+
+/// Conservative retained allocation charges, separate from process/private RSS.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct FrontendRetentionFootprint {
+    pub lexical: usize,
+    pub graph_decoded: usize,
+    pub graph_metadata: usize,
+    pub graph_encoded: usize,
+    pub graph_other: usize,
+    pub maps: usize,
+    pub skeleton: usize,
 }
 
 impl Default for OutlineSession {
@@ -264,9 +316,138 @@ impl Default for OutlineSession {
 }
 
 impl OutlineSession {
+    pub fn set_project_configuration(&mut self, project: &Path, configuration: &str) {
+        self.canonical
+            .bind_configuration(project, configuration, self.cache_root.as_deref());
+    }
+
+    pub(crate) fn cache_root(&self) -> Option<&Path> {
+        self.cache_root.as_deref()
+    }
+
+    /// Full retained state, including the canonical graph and prefix. Syntax's
+    /// local cache budget remains independent from the coordinator pool budget.
+    pub fn retained_bytes(&self) -> usize {
+        self.resident_bytes()
+            .saturating_add(self.canonical.resident_bytes())
+    }
+    pub fn retention_footprint(&self) -> FrontendRetentionFootprint {
+        let graph = self.canonical.graph.stats();
+        let graph_bytes = self.canonical.graph.resident_bytes();
+        let maps = self.canonical.maps.resident_bytes();
+        FrontendRetentionFootprint {
+            lexical: self.resident_bytes(),
+            graph_decoded: graph.resident_bytes,
+            graph_metadata: graph.metadata_bytes,
+            graph_encoded: graph.snapshot_bytes,
+            graph_other: graph_bytes
+                .saturating_sub(graph.resident_bytes)
+                .saturating_sub(graph.metadata_bytes)
+                .saturating_sub(graph.snapshot_bytes),
+            maps,
+            skeleton: self
+                .canonical
+                .resident_bytes()
+                .saturating_sub(graph_bytes)
+                .saturating_sub(maps),
+        }
+    }
+    /// Release duplicated procedure body strings, preserving the current text,
+    /// compact declaration AST, boundary layout and exact body identities.
+    pub fn compact_source_frames(&mut self) -> usize {
+        let before = self.resident_bytes();
+        let mut compact: HashMap<String, Arc<ParsedChunk>> = HashMap::new();
+        for (_, chunk) in &mut self.last_layout {
+            let value = compact.entry(chunk.digest.clone()).or_insert_with(|| {
+                if chunk
+                    .fragments
+                    .iter()
+                    .any(|fragment| fragment.source.is_some())
+                {
+                    Arc::new(chunk.without_bodies())
+                } else {
+                    Arc::clone(chunk)
+                }
+            });
+            *chunk = Arc::clone(value);
+        }
+        for cached in self.chunks.values_mut() {
+            let chunk = &cached.parsed;
+            let value = compact.entry(chunk.digest.clone()).or_insert_with(|| {
+                if chunk
+                    .fragments
+                    .iter()
+                    .any(|fragment| fragment.source.is_some())
+                {
+                    Arc::new(chunk.without_bodies())
+                } else {
+                    Arc::clone(chunk)
+                }
+            });
+            cached.parsed = Arc::clone(value);
+        }
+        self.resident_bytes = self
+            .chunks
+            .iter()
+            .map(|(digest, cached)| cached.parsed.resident_bytes + digest.len() + 256)
+            .sum();
+        self.db = crate::Database::default();
+        before.saturating_sub(self.resident_bytes())
+    }
+    /// Evict only decoded code values, keeping live query identities/witnesses
+    /// and the frozen skeleton so a small edit does not become a cold project.
+    pub fn trim_decoded_to(&mut self, limit: usize) -> usize {
+        let graph = self.canonical.graph.stats().resident_bytes;
+        let graph_limit = graph.min(limit);
+        self.canonical
+            .graph
+            .trim_decoded_to(graph_limit)
+            .saturating_add(
+                self.canonical
+                    .maps
+                    .trim_decoded_to(limit.saturating_sub(graph_limit)),
+            )
+    }
+    pub fn trim_metadata_accelerators(&mut self) -> usize {
+        self.canonical.graph.trim_metadata_accelerators()
+    }
+    pub fn compact_validated_candidates(&mut self) -> usize {
+        self.canonical.graph.compact_validated_candidates()
+    }
+    pub fn release_skeleton(&mut self) -> usize {
+        self.canonical.release_skeleton()
+    }
+    pub fn release_source_frames(&mut self) {
+        self.db = crate::Database::default();
+        self.last_source = None;
+        self.evict_segmented_payloads();
+        // Compact ASTs, chunk identities and lexical transitions are semantic
+        // indexes, not disposable body payloads. Keep them across pressure.
+    }
+    pub fn release_transient_output_buffers(&mut self) {
+        self.canonical.release_transient_output_buffers();
+        self.canonical.graph.release_encoded_snapshot();
+        self.canonical.maps.release_encoded_snapshot();
+    }
+    pub fn release_encoded_snapshot(&mut self) {
+        self.canonical.release_auxiliary_caches();
+        self.canonical.graph.release_encoded_snapshot();
+        self.canonical.maps.release_encoded_snapshot();
+    }
+    pub fn release_invocation_admissions(&mut self) -> usize {
+        self.canonical.release_invocation_admissions()
+    }
+    pub fn release_declaration_replay_buffer(&mut self) -> usize {
+        self.canonical.release_declaration_replay_buffer()
+    }
+    pub fn trim_output_recipe_bytes(&mut self, bytes: usize) -> usize {
+        self.canonical.trim_output_recipe_bytes(bytes)
+    }
     pub fn new(cache_root: Option<PathBuf>) -> Self {
         Self {
+            canonical: crate::bootstrap::canonical::CanonicalSession::default(),
             db: crate::Database::default(),
+            resource_queries: segmented::ResourceLiteralQueries::new(cache_root.as_deref()),
             cache_root,
             chunks: HashMap::new(),
             resident_bytes: 0,
@@ -275,11 +456,15 @@ impl OutlineSession {
             last_source: None,
             last_layout: Vec::new(),
             last_limit: 0,
+            segmented_source: None,
+            segment_chunks: dm_syntax::SegmentedChunkSession::default(),
+            last_resource_literals: Vec::new(),
         }
     }
 
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes
+        self.resident_bytes + self.segment_chunks.resident_bytes()+self.resource_queries.resident_bytes()
+            + self.last_resource_literals.iter().map(|literal| literal.capacity()+std::mem::size_of::<String>()).sum::<usize>()
             + self
                 .last_source
                 .as_ref()
@@ -302,8 +487,40 @@ impl OutlineSession {
     /// Assemble a compact declaration AST from the same cached chunks used for
     /// the outline. Procedure bodies remain in source fragments, not AST nodes.
     pub fn compact_snapshot(&mut self, source: &str) -> Result<(AstFile, SourceOutline), String> {
+        if let Some(segmented) = self.segmented_source.clone().filter(|value| value.len() == source.len()) {
+            return self.compact_snapshot_segmented(&segmented);
+        }
         self.update_source_with_snapshot(source, true)
             .map(|(ast, outline)| (ast.expect("snapshot requested"), outline))
+    }
+
+    /// Exact raw procedure digests for the current compact snapshot. Spans keep
+    /// duplicate overrides distinct and follow rebased chunks after edits.
+    /// Incomplete or released lexical layouts leave callers their hash fallback.
+    pub(crate) fn procedure_digests(
+        &self,
+        source: &str,
+    ) -> Option<HashMap<(usize, usize), String>> {
+        if self.last_source.as_deref() != Some(source) {
+            return None;
+        }
+        let mut digests = HashMap::new();
+        for (offset, chunk) in &self.last_layout {
+            for fragment in &chunk.fragments {
+                let start = offset.checked_add(fragment.descriptor.start)?;
+                let end = offset.checked_add(fragment.descriptor.end)?;
+                if source.get(start..end).is_none()
+                    || digests
+                        .insert((start, end), fragment.digest.clone())
+                        .is_some()
+                {
+                    // A malformed or ambiguous cached boundary must not select
+                    // another procedure's semantic candidate.
+                    return None;
+                }
+            }
+        }
+        Some(digests)
     }
 
     /// Resource literals in exact source order, including nested interpolation.
@@ -333,10 +550,9 @@ impl OutlineSession {
     ) -> Result<(Option<AstFile>, SourceOutline), String> {
         // Replacing the database releases old Salsa inputs as well as map entries.
         if self.resident_bytes() > self.cache_budget || self.chunks.len() > 8192 {
-            let root = self.cache_root.clone();
-            let budget = self.cache_budget;
-            *self = Self::new(root);
-            self.cache_budget = budget;
+            // Releasing lexical state must preserve the long-lived semantic
+            // graph and declaration prefix belonging to this worktree.
+            self.release_source_frames();
         }
         // Retained parsed chunks are owned by the content cache. Resetting this
         // query database releases old input text and query revisions, while its
@@ -661,7 +877,10 @@ struct StoredChunk {
     nodes: Vec<StoredNode>,
     descriptors: Vec<OutlineDescriptor>,
     resources: Vec<[usize; 2]>,
+    fragments: Vec<StoredFragment>,
 }
+#[derive(Serialize, Deserialize)]
+struct StoredFragment { digest: String, locally_patchable: bool }
 impl StoredChunk {
     fn ast(&mut self) -> Result<AstFile, String> {
         let mut count = 0;
@@ -678,19 +897,22 @@ impl StoredChunk {
 
 fn shard_path(root: &Path, digest: &str) -> PathBuf {
     root.join("frontend-outline-v1")
-        .join(env!("DM_LOWERING_FINGERPRINT"))
+        .join(env!("DM_EMISSION_FINGERPRINT"))
         .join(format!("{digest}.json"))
 }
 
-fn read_shard(root: &Path, digest: &str, source: &str) -> Result<Option<StoredChunk>, String> {
+fn read_shard(root: &Path, digest: &str, source_len: usize) -> Result<Option<StoredChunk>, String> {
     let path = shard_path(root, digest);
-    if fs::metadata(&path).map_or(true, |metadata| metadata.len() > MAX_SHARD_BYTES) {
-        return Ok(None);
-    }
-    let bytes = fs::read(path).map_err(|error| error.to_string())?;
-    if bytes.len() as u64 > MAX_SHARD_BYTES {
-        return Ok(None);
-    }
+    use std::io::Read;
+    let mut file=match fs::File::open(&path) {
+        Ok(file)=>file,
+        Err(error) if error.kind()==std::io::ErrorKind::NotFound=>return Ok(None),
+        Err(error)=>return Err(error.to_string()),
+    };
+    if file.metadata().map_err(|error|error.to_string())?.len()>MAX_SHARD_BYTES {return Ok(None);}
+    let mut bytes=Vec::new();
+    file.by_ref().take(MAX_SHARD_BYTES+1).read_to_end(&mut bytes).map_err(|error|error.to_string())?;
+    if bytes.len() as u64>MAX_SHARD_BYTES {return Ok(None);}
     let Some(newline) = bytes.iter().position(|byte| *byte == b'\n') else {
         return Ok(None);
     };
@@ -700,10 +922,12 @@ fn read_shard(root: &Path, digest: &str, source: &str) -> Result<Option<StoredCh
         return Ok(None);
     }
     let stored: StoredChunk = serde_json::from_slice(payload).map_err(|error| error.to_string())?;
-    if stored.version != 2
-        || stored.compiler != env!("DM_LOWERING_FINGERPRINT")
+    if stored.version != 3
+        || stored.compiler != env!("DM_EMISSION_FINGERPRINT")
         || stored.source_digest != digest
-        || stored.source_len != source.len()
+        || stored.source_len != source_len
+        || stored.fragments.len() != stored.descriptors.len()
+        || stored.fragments.iter().any(|fragment| fragment.digest.len()!=64 || !fragment.digest.bytes().all(|byte| byte.is_ascii_hexdigit()))
     {
         return Ok(None);
     }
@@ -717,18 +941,20 @@ fn write_shard(
     ast: &AstFile,
     descriptors: &[OutlineDescriptor],
     resources: &[[usize; 2]],
+    fragments: &[Fragment],
 ) -> std::io::Result<()> {
     let path = shard_path(root, digest);
     let parent = path.parent().unwrap();
     fs::create_dir_all(parent)?;
     let stored = StoredChunk {
-        version: 2,
-        compiler: env!("DM_LOWERING_FINGERPRINT").into(),
+        version: 3,
+        compiler: env!("DM_EMISSION_FINGERPRINT").into(),
         source_digest: digest.into(),
         source_len,
         nodes: ast.items.iter().map(StoredNode::capture).collect(),
         descriptors: descriptors.to_vec(),
         resources: resources.to_vec(),
+        fragments: fragments.iter().map(|fragment| StoredFragment { digest: fragment.digest.clone(), locally_patchable:fragment.locally_patchable }).collect(),
     };
     let payload = serde_json::to_vec(&stored).map_err(std::io::Error::other)?;
     if payload.len() as u64 > MAX_SHARD_BYTES {

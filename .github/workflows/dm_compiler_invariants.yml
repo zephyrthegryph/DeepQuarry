@@ -1,0 +1,58 @@
+name: DM compiler invariants
+
+on:
+  push:
+    paths:
+      - 'tools/dmb/**'
+      - 'tools/build/lib/byond.ts'
+      - '.github/workflows/dm_compiler_invariants.yml'
+  pull_request:
+    paths:
+      - 'tools/dmb/**'
+      - 'tools/build/lib/byond.ts'
+      - '.github/workflows/dm_compiler_invariants.yml'
+  workflow_dispatch:
+
+jobs:
+  portable-and-salsa-agreement:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    env:
+      CARGO_BUILD_JOBS: '1'
+      DQ_COMPILER_STRICT: '1'
+      DM_COMPILER_WORKERS: '2'
+    steps:
+      - uses: actions/checkout@v6.0.2
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/dmb -> target
+      - name: Recorder and Salsa agree on positive and negative dependency reads
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-compiler --lib semantic_queries -- --test-threads=1
+      - name: Portable memos, source anchors and disk restart preserve dependencies
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-compiler --lib lower_cache -- --test-threads=1
+      - name: Debug anchors preserve current source locations
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-codegen-byond --lib debug -- --test-threads=1
+      - name: Frozen lookup accelerators agree with the semantic oracle
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-codegen-byond --lib binding_index -- --test-threads=1
+      - name: Offline coverage audit visits every procedure and publishes nothing
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-compiler --lib canonical_audit -- --test-threads=1
+      - name: Authored syntax diagnostics retain include locations
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-compiler --lib lexical_failure_is_reported_at_authored_include_location -- --test-threads=1
+      - name: Canonical structural edits and independent fresh builds agree
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-compiler --test correctness_gates --test fingerprint_stages -- --test-threads=1
+      - name: Transactional sharing and tooling export contracts
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-store -p dm-analysis -- --test-threads=1
+      - name: Immutable generations, conventional outputs and integration policy
+        working-directory: tools/dmb
+        run: cargo test -j1 -p dm-output -p dm-compile -- --test-threads=1
+      - name: Runtime and compiler diagnostic comparison rejects incomplete evidence
+        working-directory: tools/dmb/dev-scripts
+        run: python -m unittest test_correctness_reports.py

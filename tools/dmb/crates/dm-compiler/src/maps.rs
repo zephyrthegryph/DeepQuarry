@@ -1,16 +1,330 @@
 //! Small, strict DMM reader. Map files are separate compilation inputs, not DM source.
 #[cfg(test)]
 use byond_dmb::bytecode::opcode;
-use byond_dmb::dmb::{DmString, Dmb, GridRun, Instance, MapObject, Proc};
-use dm_codegen_byond::{
-    compile_simple_proc_with_bindings, link_proc, Ledger, LowerBindings, Symbol, Table,
-};
+use byond_dmb::dmb::{DmString, GridRun, Instance, MapObject, Proc};
+#[cfg(test)]
+use byond_dmb::dmb::Dmb;
+use dm_codegen_byond::prepared_cache::PreparedProcedureEnvelope;
+use dm_codegen_byond::{compile_simple_proc_with_bindings, Ledger, LowerBindings, Symbol, Table};
 use dm_resources::ResourceSet;
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 #[cfg(test)]
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
+
+/// A map stage uses exact assignment text and its derived field overlay as the
+/// semantic frame. Output class/resource IDs remain relocations.
+#[derive(Default)]
+pub struct MapInitializerSession {
+    graph: crate::ProjectProcedureGraph,
+    structures: HashMap<[u8; 32], Arc<MapStructure>>,
+    structure_bytes: usize,
+    structure_store: Option<dm_store::Store>,
+}
+
+#[derive(Default, serde::Serialize, serde::Deserialize)]
+struct MapStructure {
+    templates: Vec<[usize; 4]>,
+    blocks: Vec<([usize; 3], [usize; 2])>,
+}
+type ParsedMap<'a> = (Vec<(&'a str, &'a str)>, Vec<([usize; 3], &'a str)>);
+impl MapStructure {
+    fn encode(&self, digest: &[u8; 32]) -> Option<Vec<u8>> {
+        let body = serde_json::to_vec(self).ok()?;
+        if body.len() > 512 * 1024 - 40 {
+            return None;
+        }
+        let mut bytes = b"DMMAP001".to_vec();
+        bytes.extend_from_slice(digest);
+        bytes.extend(body);
+        Some(bytes)
+    }
+    fn decode(bytes: &[u8], source: &str, digest: &[u8; 32]) -> Option<Self> {
+        if bytes.len() > 512 * 1024 || bytes.get(..8)? != b"DMMAP001" || bytes.get(8..40)? != digest
+        {
+            return None;
+        }
+        if Sha256::digest(source.as_bytes()).as_slice() != digest {
+            return None;
+        }
+        let value: Self = serde_json::from_slice(bytes.get(40..)?).ok()?;
+        if value.templates.len() > 32768 || value.blocks.len() > 32768 {
+            return None;
+        }
+        for span in &value.templates {
+            let key = source.get(span[0]..span[1])?;
+            source.get(span[2]..span[3])?;
+            if key.is_empty()
+                || source.as_bytes().get(span[0].checked_sub(1)?)? != &b'"'
+                || source.as_bytes().get(span[1])? != &b'"'
+                || source.as_bytes().get(span[2].checked_sub(1)?)? != &b'('
+                || source.as_bytes().get(span[3])? != &b')'
+            {
+                return None;
+            }
+        }
+        for (axes, span) in &value.blocks {
+            source.get(span[0]..span[1])?;
+            if axes.contains(&0)
+                || source.get(span[0].checked_sub(2)?..span[0])? != "{\""
+                || source.get(span[1]..span[1].checked_add(2)?)? != "\"}"
+            {
+                return None;
+            }
+        }
+        Some(value)
+    }
+    fn parse(source: &str) -> Result<Self, String> {
+        let span = |value: &str| {
+            let start = value.as_ptr() as usize - source.as_ptr() as usize;
+            [start, start + value.len()]
+        };
+        Ok(Self {
+            templates: map_templates(source)?
+                .into_iter()
+                .map(|(key, payload)| {
+                    let k = span(key);
+                    let p = span(payload);
+                    [k[0], k[1], p[0], p[1]]
+                })
+                .collect(),
+            blocks: map_blocks(source)?
+                .into_iter()
+                .map(|(axes, text)| (axes, span(text)))
+                .collect(),
+        })
+    }
+    fn bytes(&self) -> usize {
+        std::mem::size_of::<Self>()
+            + self.templates.capacity() * std::mem::size_of::<[usize; 4]>()
+            + self.blocks.capacity() * std::mem::size_of::<([usize; 3], [usize; 2])>()
+    }
+    fn resolve<'a>(&self, source: &'a str) -> ParsedMap<'a> {
+        (
+            self.templates
+                .iter()
+                .map(|s| (&source[s[0]..s[1]], &source[s[2]..s[3]]))
+                .collect(),
+            self.blocks
+                .iter()
+                .map(|(axes, s)| (*axes, &source[s[0]..s[1]]))
+                .collect(),
+        )
+    }
+}
+impl MapInitializerSession {
+    pub fn open(cache_root: &Path, project_identity: &str) -> Self {
+        Self {
+            graph: crate::ProjectProcedureGraph::open(
+                cache_root,
+                &format!(
+                    "map-initializers/{project_identity}/{}",
+                    env!("DM_EMISSION_FINGERPRINT")
+                ),
+            ),
+            structures: HashMap::new(),
+            structure_bytes: 0,
+            structure_store: dm_store::Store::open(cache_root.join("map-structure.redb")).ok(),
+        }
+    }
+    pub fn resident_bytes(&self) -> usize {
+        self.graph
+            .resident_bytes()
+            .saturating_add(self.structure_bytes)
+    }
+    pub fn release_encoded_snapshot(&mut self) {
+        self.graph.release_encoded_snapshot();
+    }
+    /// Drop decoded semantic payloads under pool pressure, retaining witnessed
+    /// queries, portable handles and the small exact-content map layout.
+    pub fn trim_decoded_to(&mut self, limit: usize) -> usize {
+        self.graph.trim_decoded_to(limit)
+    }
+    fn structure_key(digest: &[u8; 32]) -> dm_store::Key {
+        dm_store::Key::new(
+            format!("map-spans-v1/{}", env!("DM_EMISSION_FINGERPRINT")),
+            digest
+                .iter()
+                .map(|byte| format!("{byte:02x}"))
+                .collect::<String>(),
+        )
+    }
+    fn restore_structures(
+        &self,
+        files: &[(PathBuf, String)],
+        digests: &[[u8; 32]],
+    ) -> HashMap<[u8; 32], Arc<MapStructure>> {
+        let mut restored = HashMap::new();
+        let Some(store) = &self.structure_store else {
+            return restored;
+        };
+        let missing: Vec<_> = files
+            .iter()
+            .zip(digests)
+            .filter(|(_, digest)| !self.structures.contains_key(*digest))
+            .collect();
+        let mut bytes = 0usize;
+        // Only current handles are requested, never a historical namespace scan.
+        for batch in missing.chunks(16) {
+            let keys: Vec<_> = batch
+                .iter()
+                .map(|(_, digest)| Self::structure_key(digest))
+                .collect();
+            let Ok(records) =
+                store.read_many_bounded(&keys, 512 * 1024, 8 * 1024 * 1024 + 16 * 32, None)
+            else {
+                continue;
+            };
+            for (input, record) in batch.iter().zip(records.values) {
+                let Some(record) = record else {
+                    continue;
+                };
+                if record.len() > 512 * 1024
+                    || bytes.saturating_add(record.len()) > 16 * 1024 * 1024
+                {
+                    continue;
+                }
+                if let Some(structure) = MapStructure::decode(&record, &input.0 .1, input.1) {
+                    bytes += structure.bytes();
+                    restored.insert(*input.1, Arc::new(structure));
+                }
+            }
+        }
+        restored
+    }
+    fn persist_structures(&self, structures: &HashMap<[u8; 32], Arc<MapStructure>>) {
+        let Some(store) = &self.structure_store else {
+            return;
+        };
+        let mut batch = Vec::new();
+        let mut bytes = 0usize;
+        for (digest, structure) in structures {
+            let Some(record) = structure.encode(digest) else {
+                continue;
+            };
+            if batch.len() == 16 || bytes + record.len() > 8 * 1024 * 1024 {
+                let _ = store.put_many(std::mem::take(&mut batch), None);
+                batch.clear();
+                bytes = 0;
+            }
+            bytes += record.len();
+            batch.push((Self::structure_key(digest), record));
+        }
+        if !batch.is_empty() {
+            let _ = store.put_many(std::mem::take(&mut batch), None);
+        }
+    }
+    fn prepare(
+        &mut self,
+        assignments: &[&str],
+    ) -> Result<HashMap<String, Arc<PreparedProcedureEnvelope>>, String> {
+        let mut unique = HashSet::new();
+        let mut frames = Vec::new();
+        for assignment in assignments {
+            if !unique.insert(*assignment) {
+                continue;
+            }
+            let (source, bindings) = map_initializer_source(assignment)?;
+            let digest = crate::incremental::digest(source.as_bytes());
+            let key = crate::ProcKey {
+                path: format!("@map|{digest}"),
+                occurrence: 0,
+            };
+            let descriptor = crate::ProcDescriptor {
+                body_digest: digest,
+                frame_digest: "assignment-fields-v1".into(),
+            };
+            frames.push(((*assignment).to_owned(), key, descriptor, source, bindings));
+        }
+        let by_key: HashMap<_, _> = frames
+            .iter()
+            .map(|(_, key, _, _, bindings)| (key, bindings))
+            .collect();
+        let mut revision = Sha256::new();
+        for (_, key, _, _, _) in &frames {
+            revision.update(key.path.as_bytes());
+            revision.update([0]);
+        }
+        self.graph
+            .refresh_facts(&format!("{:x}", revision.finalize()), |key, fact| {
+                by_key
+                    .get(key)
+                    .map_or(dm_codegen_byond::FactValue::Absent, |bindings| {
+                        bindings.binding_fact(fact)
+                    })
+            });
+        let mut result = HashMap::new();
+        let mut missing = Vec::new();
+        for (index, frame) in frames.iter().enumerate() {
+            if index % 1024 == 0 {
+                let keys: Vec<_> = frames[index..index.saturating_add(1024).min(frames.len())]
+                    .iter()
+                    .map(|frame| frame.1.clone())
+                    .collect();
+                let _ = self.graph.prefetch(&keys);
+            }
+            match self.graph.probe(&frame.1, &frame.2) {
+                crate::ProcedureProbe::Resident(crate::ProcedureArtifact::Prepared(envelope)) => {
+                    result.insert(frame.0.clone(), envelope);
+                }
+                _ => missing.push(frame),
+            }
+        }
+        let compile = |frame: &&(
+            String,
+            crate::ProcKey,
+            crate::ProcDescriptor,
+            String,
+            LowerBindings,
+        )| {
+            let ast = dm_syntax::parse(&frame.3);
+            if !ast.diagnostics.is_empty() {
+                return Err(format!("invalid map initializer: {:?}", ast.diagnostics));
+            }
+            let (compiled, dependencies) = dm_codegen_byond::capture_binding_reads(|| {
+                compile_simple_proc_with_bindings(&ast.items[0].children, &frame.4)
+            });
+            let compiled =
+                compiled.map_err(|errors| format!("unsupported map initializer: {errors:?}"))?;
+            let envelope = Arc::new(
+                PreparedProcedureEnvelope::prepare(&compiled).map_err(|error| error.to_string())?,
+            );
+            Ok((envelope, dependencies))
+        };
+        let limits = crate::work::WorkLimits::configured();
+        let compiled = if missing
+            .iter()
+            .any(|frame| frame.3.len().saturating_mul(8) > limits.max_active_bytes)
+        {
+            missing.iter().map(compile).collect::<Vec<_>>()
+        } else {
+            crate::work::map_ordered(
+                &missing,
+                limits,
+                |frame| frame.3.len().saturating_mul(8),
+                compile,
+            )
+            .map_err(|error| format!("map initializer worker: {error:?}"))?
+        };
+        for (frame, compiled) in missing.into_iter().zip(compiled) {
+            let (envelope, dependencies) = compiled?;
+            self.graph.install_prepared(
+                frame.1.clone(),
+                frame.2.clone(),
+                Arc::clone(&envelope),
+                dependencies.into(),
+                None,
+            );
+            result.insert(frame.0.clone(), envelope);
+        }
+        let keys = frames.iter().map(|frame| frame.1.clone()).collect();
+        self.graph.retain_keys(&keys);
+        let _ = self.graph.flush();
+        Ok(result)
+    }
+}
 
 pub struct MapSet {
     pub files: Vec<(PathBuf, String)>,
@@ -92,39 +406,49 @@ pub fn load_map_set_from_paths(dme_path: &Path, paths: &[PathBuf]) -> Result<Map
             .map_err(|_| format!("map lies outside project: {}", disk.display()))?;
         ordered_paths.push((disk.clone(), relative.to_path_buf()));
     }
-    // Keep reads bounded and commit in manifest order: map order determines z
-    // offsets and must remain independent of worker scheduling.
-    let workers = std::env::var("DM_COMPILER_WORKERS")
-        .ok()
-        .and_then(|value| value.parse::<usize>().ok())
-        .unwrap_or(2);
-    for batch in ordered_paths.chunks(workers.clamp(1, 2)) {
-        let loaded = std::thread::scope(|scope| {
-            let pending: Vec<_> = batch
-                .iter()
-                .map(|(disk, _)| {
-                    scope.spawn(move || {
-                        dm_preprocess::read_source_file(disk)
-                            .map_err(|error| format!("{}: {error}", disk.display()))
-                    })
+    // Independent reads share the compiler's scheduler. Hashing and manifest
+    // publication stay ordered because map order determines z offsets.
+    let limits = crate::work::WorkLimits::configured();
+    let workers = limits.workers;
+    let budget = limits.max_active_bytes;
+    let costs: Vec<_> = ordered_paths
+        .iter()
+        .map(|(disk, _)| {
+            std::fs::metadata(disk)
+                .map(|metadata| {
+                    usize::try_from(metadata.len())
+                        .unwrap_or(usize::MAX)
+                        .saturating_mul(2)
                 })
-                .collect();
-            pending
-                .into_iter()
-                .map(|worker| {
-                    worker
-                        .join()
-                        .map_err(|_| "map reader worker panicked".to_owned())?
-                })
-                .collect::<Result<Vec<_>, String>>()
-        })?;
-        for ((disk, relative), source) in batch.iter().zip(loaded) {
-            hash.update(relative.to_string_lossy().replace('\\', "/").as_bytes());
-            hash.update([0]);
-            hash.update(source.as_bytes());
-            hash.update([0]);
-            files.push((disk.clone(), source));
-        }
+                .unwrap_or(4096)
+        })
+        .collect();
+    let read = |(disk, _): &(PathBuf, PathBuf)| {
+        dm_preprocess::read_source_file(disk)
+            .map_err(|error| format!("{}: {error}", disk.display()))
+    };
+    let loaded = if costs.iter().any(|cost| *cost > budget) {
+        ordered_paths.iter().map(read).collect::<Vec<_>>()
+    } else {
+        let indexed: Vec<_> = ordered_paths.iter().enumerate().collect();
+        crate::work::map_ordered(
+            &indexed,
+            crate::work::WorkLimits {
+                workers,
+                max_active_bytes: budget,
+            },
+            |(index, _)| costs[*index],
+            |(_, path)| read(path),
+        )
+        .map_err(|error| format!("map reader: {error:?}"))?
+    };
+    for ((disk, relative), source) in ordered_paths.iter().zip(loaded) {
+        let source = source?;
+        hash.update(relative.to_string_lossy().replace('\\', "/").as_bytes());
+        hash.update([0]);
+        hash.update(source.as_bytes());
+        hash.update([0]);
+        files.push((disk.clone(), source));
     }
     Ok(MapSet {
         files,
@@ -132,28 +456,109 @@ pub fn load_map_set_from_paths(dme_path: &Path, paths: &[PathBuf]) -> Result<Map
     })
 }
 
-pub fn emit_maps(dmb: &mut Dmb, maps: &MapSet) -> Result<(), String> {
-    emit_maps_inner(dmb, maps, None)
+pub fn emit_maps(dmb: &mut impl dm_output::assembly::AssemblyImage, maps: &MapSet) -> Result<(), String> {
+    emit_maps_inner(dmb, maps, None, None)
 }
 
 pub fn emit_maps_with_resources(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
     resources: &ResourceSet,
 ) -> Result<(), String> {
-    emit_maps_inner(dmb, maps, Some(resources))
+    emit_maps_inner(
+        dmb,
+        maps,
+        Some(
+            resources
+                .inputs
+                .iter()
+                .map(|input| {
+                    (
+                        input.archive_name.as_str(),
+                        input.named.id,
+                        input.named.kind,
+                    )
+                })
+                .collect(),
+        ),
+        None,
+    )
+}
+
+pub fn emit_maps_with_catalog(
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
+    maps: &MapSet,
+    resources: &dm_resources::ResourceCatalog,
+) -> Result<(), String> {
+    emit_maps_inner(
+        dmb,
+        maps,
+        Some(
+            resources
+                .entries
+                .iter()
+                .map(|input| (input.archive_name.as_str(), input.id, input.kind))
+                .collect(),
+        ),
+        None,
+    )
+}
+
+pub fn emit_maps_with_catalog_cached(
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
+    maps: &MapSet,
+    resources: &dm_resources::ResourceCatalog,
+    session: &mut MapInitializerSession,
+) -> Result<(), String> {
+    emit_maps_inner(
+        dmb,
+        maps,
+        Some(
+            resources
+                .entries
+                .iter()
+                .map(|input| (input.archive_name.as_str(), input.id, input.kind))
+                .collect(),
+        ),
+        Some(session),
+    )
+}
+pub fn emit_maps_with_resources_cached(
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
+    maps: &MapSet,
+    resources: &ResourceSet,
+    session: &mut MapInitializerSession,
+) -> Result<(), String> {
+    emit_maps_inner(
+        dmb,
+        maps,
+        Some(
+            resources
+                .inputs
+                .iter()
+                .map(|input| {
+                    (
+                        input.archive_name.as_str(),
+                        input.named.id,
+                        input.named.kind,
+                    )
+                })
+                .collect(),
+        ),
+        Some(session),
+    )
 }
 
 fn emit_maps_inner(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     maps: &MapSet,
-    resources: Option<&ResourceSet>,
+    resources: Option<Vec<(&str, u32, u8)>>,
+    session: Option<&mut MapInitializerSession>,
 ) -> Result<(), String> {
     if maps.files.is_empty() {
         return Ok(());
     }
-    let class_ids: HashMap<String, u32> = dmb
-        .classes
+    let class_ids: HashMap<String, u32> = dmb.classes()
         .iter()
         .enumerate()
         .filter_map(|(id, class)| {
@@ -162,18 +567,22 @@ fn emit_maps_inner(
         })
         .collect();
     let mut resource_ids = HashMap::new();
+    let mut resource_table = HashMap::new();
+    for (index, entry) in dmb.resources().iter().enumerate() {
+        resource_table
+            .entry((entry.id, entry.kind))
+            .or_insert(index as u32);
+    }
     if let Some(resources) = resources {
-        for input in &resources.inputs {
-            let id = dmb
-                .resources
-                .iter()
-                .position(|entry| entry.id == input.named.id && entry.kind == input.named.kind)
-                .ok_or_else(|| format!("unattached map resource: {}", input.archive_name))?;
-            resource_ids.insert(input.archive_name.as_str(), id as u32);
+        for (name, resource_id, kind) in resources {
+            let id = *resource_table
+                .get(&(resource_id, kind))
+                .ok_or_else(|| format!("unattached map resource: {name}"))?;
+            resource_ids.insert(name, id);
         }
     }
     let mut instance_ids = HashMap::<(u8, u32, Option<String>), u32>::new();
-    for (id, instance) in dmb.instances.iter().enumerate() {
+    for (id, instance) in dmb.instances().iter().enumerate() {
         if instance.initializer == 0xffff {
             instance_ids
                 .entry((instance.kind, instance.class, None))
@@ -181,12 +590,99 @@ fn emit_maps_inner(
         }
     }
     let mut cells = HashMap::<(usize, usize, usize), (u32, u32, Vec<u32>)>::new();
-    for (path, source) in &maps.files {
+    let mut default_session = MapInitializerSession::default();
+    let session = session.unwrap_or(&mut default_session);
+    let digests: Vec<[u8; 32]> = maps
+        .files
+        .iter()
+        .map(|(_, source)| Sha256::digest(source.as_bytes()).into())
+        .collect();
+    let restored = session.restore_structures(&maps.files, &digests);
+    let missing: Vec<_> = maps
+        .files
+        .iter()
+        .zip(&digests)
+        .filter(|(_, digest)| {
+            !session.structures.contains_key(*digest) && !restored.contains_key(*digest)
+        })
+        .collect();
+    let limits = crate::work::WorkLimits::configured();
+    let parse = |input: &(&(PathBuf, String), &[u8; 32])| {
+        MapStructure::parse(&input.0 .1)
+            .map(|structure| Arc::new(structure))
+            .map_err(|error| format!("{}: {error}", input.0 .0.display()))
+    };
+    let newly_parsed = if missing
+        .iter()
+        .any(|input| input.0 .1.len().saturating_mul(4) > limits.max_active_bytes)
+    {
+        missing.iter().map(parse).collect::<Vec<_>>()
+    } else {
+        crate::work::map_ordered(
+            &missing,
+            limits,
+            |input| input.0 .1.len().saturating_mul(4),
+            parse,
+        )
+        .map_err(|error| format!("map parser: {error:?}"))?
+    };
+    let mut fresh: HashMap<_, _> = missing
+        .iter()
+        .zip(newly_parsed)
+        .map(|(input, structure)| Ok((*input.1, structure?)))
+        .collect::<Result<_, String>>()?;
+    session.persist_structures(&fresh);
+    fresh.extend(restored);
+    let current: Vec<_> = digests
+        .iter()
+        .map(|digest| {
+            fresh
+                .get(digest)
+                .or_else(|| session.structures.get(digest))
+                .unwrap()
+                .clone()
+        })
+        .collect();
+    // Retain spans only, never another copy of map source. Oversized maps still
+    // compile normally; their parse is simply not retained.
+    const STRUCTURE_BUDGET: usize = 16 * 1024 * 1024;
+    for (digest, structure) in &fresh {
+        let bytes = structure.bytes().saturating_add(128);
+        if bytes > STRUCTURE_BUDGET {
+            continue;
+        }
+        if session.structure_bytes.saturating_add(bytes) > STRUCTURE_BUDGET
+            || session.structures.len() >= 512
+        {
+            session.structures.clear();
+            session.structure_bytes = 0;
+        }
+        session.structure_bytes += bytes;
+        session.structures.insert(*digest, structure.clone());
+    }
+    let parsed: Vec<_> = maps
+        .files
+        .iter()
+        .zip(&current)
+        .map(|((_, source), structure)| structure.resolve(source))
+        .collect();
+    let assignments: Vec<_> = parsed
+        .iter()
+        .flat_map(|(templates, _)| templates.iter())
+        .flat_map(|(_, payload)| split_top_level(payload, ','))
+        .filter_map(|atom| {
+            atom.trim()
+                .split_once('{')
+                .and_then(|(_, tail)| tail.strip_suffix('}'))
+        })
+        .collect();
+    let envelopes = session.prepare(&assignments)?;
+    let mut string_index = MapStringIndex::new(dmb);
+    for ((path, _source), parsed) in maps.files.iter().zip(parsed) {
+        let (templates, blocks) = parsed;
         let z_offset = cells.keys().map(|cell| cell.2).max().unwrap_or(0);
         let mut keys = HashMap::<String, (u32, u32, Vec<u32>)>::new();
-        for (key, payload) in
-            map_templates(source).map_err(|error| format!("{}: {error}", path.display()))?
-        {
+        for (key, payload) in templates {
             let mut turf = None;
             let mut area = None;
             let mut objects = Vec::new();
@@ -207,7 +703,7 @@ fn emit_maps_inner(
                 let kind = map_instance_kind(dmb, class)
                     .ok_or_else(|| format!("{}: unsupported map type: {atom}", path.display()))?;
                 let instance_class = if kind == 8 {
-                    dmb.mobs
+                    dmb.mobs()
                         .iter()
                         .position(|mob| mob.class == class)
                         .ok_or_else(|| {
@@ -220,39 +716,34 @@ fn emit_maps_inner(
                 let id = if let Some(id) = instance_ids.get(&descriptor) {
                     *id
                 } else {
-                    let id = checked_map_instance_id(dmb.instances.len())?;
+                    let id = checked_map_instance_id(dmb.instances().len())?;
                     let initializer = if let Some(assignments) = assignments {
-                        let code = lower_complex_map_initializer(
+                        let envelope = envelopes
+                            .get(assignments)
+                            .ok_or("missing prepared map initializer")?;
+                        let code = materialize_map_initializer(
                             dmb,
-                            assignments,
+                            envelope,
                             &class_ids,
                             &resource_ids,
+                            &mut string_index,
                         )?;
-                        if dmb.lists.len() == 0xffff {
-                            dmb.lists.push(Vec::new());
-                        }
-                        let code_id = dmb.lists.len() as u32;
-                        dmb.lists.push(code);
-                        if dmb.lists.len() == 0xffff {
-                            dmb.lists.push(Vec::new());
-                        }
-                        let empty_id = dmb.lists.len() as u32;
-                        dmb.lists.push(Vec::new());
-                        crate::reserve_proc_sentinel(dmb);
-                        let proc_id = dmb.procs.len() as u32;
-                        dmb.procs.push(Proc {
+                        let code_id=dmb.append_list(code.into()).map_err(|error|error.to_string())?;
+                        let empty_id=dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
+                        dmb.reserve_proc_sentinel().map_err(|error|error.to_string())?;
+                        let proc_id = dmb.append_proc(Proc {
                             strings: [0xffff; 4],
                             source_parameter: 255,
                             source_kind: 0,
                             flags: 0,
                             extended_flags: None,
                             code_locals_args: [code_id, empty_id, empty_id],
-                        });
+                        }).map_err(|error|error.to_string())?;
                         proc_id
                     } else {
                         0xffff
                     };
-                    dmb.instances.push(Instance {
+                    dmb.instances_mut().push(Instance {
                         kind,
                         class: instance_class,
                         initializer,
@@ -279,19 +770,22 @@ fn emit_maps_inner(
                 ),
             );
         }
-        for (axes, text) in
-            map_blocks(source).map_err(|error| format!("{}: {error}", path.display()))?
-        {
+        let mut key_widths: Vec<_> = keys.keys().map(String::len).collect();
+        key_widths.sort_unstable_by(|a, b| b.cmp(a));
+        key_widths.dedup();
+        for (axes, text) in blocks {
             let rows: Vec<&str> = text.trim().lines().map(str::trim).collect();
             for (row, line) in rows.iter().enumerate() {
                 let mut x = axes[0];
                 let mut at = 0;
                 while at < line.len() {
-                    let key = keys
-                        .keys()
-                        .find(|key| line[at..].starts_with(key.as_str()))
-                        .ok_or_else(|| format!("{}: unknown map key", path.display()))?;
-                    let cell = keys[key].clone();
+                    // Fixed-width maps use one lookup. For mixed widths choose
+                    // the longest exact key deterministically, independent of hash order.
+                    let (width, cell) =
+                        grid_cell_at(&keys, &key_widths, line, at).ok_or_else(|| {
+                            format!("{}: unknown map key at byte {at}", path.display())
+                        })?;
+                    let cell = cell.clone();
                     if cells
                         .insert(
                             (
@@ -308,7 +802,7 @@ fn emit_maps_inner(
                         return Err(format!("{}: overlapping map cells", path.display()));
                     }
                     x += 1;
-                    at += key.len();
+                    at += width;
                 }
             }
         }
@@ -321,27 +815,27 @@ fn emit_maps_inner(
         .map(|cell| cell.0)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[0]));
+        .max(usize::from(dmb.dimensions()[0]));
     let maxy = cells
         .keys()
         .map(|cell| cell.1)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[1]));
+        .max(usize::from(dmb.dimensions()[1]));
     let maxz = cells
         .keys()
         .map(|cell| cell.2)
         .max()
         .unwrap()
-        .max(usize::from(dmb.dimensions[2]));
-    dmb.dimensions = [maxx, maxy, maxz]
+        .max(usize::from(dmb.dimensions()[2]));
+    *dmb.dimensions_mut() = [maxx, maxy, maxz]
         .map(|value| u16::try_from(value).map_err(|_| "map dimension exceeds 16 bits".to_owned()))
         .into_iter()
         .collect::<Result<Vec<_>, _>>()?
         .try_into()
         .unwrap();
-    dmb.grid.clear();
-    dmb.map_objects.clear();
+    dmb.grid_mut().clear();
+    dmb.map_objects_mut().clear();
     let mut offset = 0usize;
     let mut last_object_position = 0usize;
     let empty_cell = (
@@ -362,14 +856,14 @@ fn emit_maps_inner(
                         };
                         let object_offset =
                             u16::try_from(delta).map_err(|_| "map object gap exceeds 16 bits")?;
-                        dmb.map_objects.push(MapObject {
+                        dmb.map_objects_mut().push(MapObject {
                             offset: object_offset,
                             instance: *instance,
                         });
                     }
                     last_object_position = offset;
                 }
-                if let Some(last) = dmb.grid.last_mut() {
+                if let Some(last) = dmb.grid_mut().last_mut() {
                     if last.turf == *turf
                         && last.area == *area
                         && last.contents == 0xffff
@@ -380,7 +874,7 @@ fn emit_maps_inner(
                         continue;
                     }
                 }
-                dmb.grid.push(GridRun {
+                dmb.grid_mut().push(GridRun {
                     turf: *turf,
                     area: *area,
                     contents: 0xffff,
@@ -390,8 +884,21 @@ fn emit_maps_inner(
             }
         }
     }
-    crate::promote_object_ids(dmb);
-    dmb.validate_references().map_err(|error| error.to_string())
+    dmb.promote_object_ids();
+    dmb.validate_references_cached(&mut Default::default()).map_err(|error| error.to_string())
+}
+
+fn grid_cell_at<'a, T>(
+    keys: &'a HashMap<String, T>,
+    widths: &[usize],
+    line: &str,
+    at: usize,
+) -> Option<(usize, &'a T)> {
+    widths.iter().find_map(|&width| {
+        let end = at.checked_add(width)?;
+        let key = line.get(at..end)?;
+        keys.get(key).map(|cell| (width, cell))
+    })
 }
 
 fn map_blocks(source: &str) -> Result<Vec<([usize; 3], &str)>, String> {
@@ -542,12 +1049,27 @@ fn split_top_level(source: &str, separator: char) -> Vec<&str> {
     parts
 }
 
+#[cfg(test)]
 fn lower_complex_map_initializer(
-    dmb: &mut Dmb,
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
     assignments: &str,
     class_ids: &HashMap<String, u32>,
     resource_ids: &HashMap<&str, u32>,
 ) -> Result<Vec<u32>, String> {
+    let (source, bindings) = map_initializer_source(assignments)?;
+    let ast = dm_syntax::parse(&source);
+    if !ast.diagnostics.is_empty() {
+        return Err(format!("invalid map initializer: {:?}", ast.diagnostics));
+    }
+    let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings)
+        .map_err(|errors| format!("unsupported map initializer: {errors:?}"))?;
+    let envelope =
+        PreparedProcedureEnvelope::prepare(&compiled).map_err(|error| error.to_string())?;
+    let mut strings = MapStringIndex::new(dmb);
+    materialize_map_initializer(dmb, &envelope, class_ids, resource_ids, &mut strings)
+}
+
+fn map_initializer_source(assignments: &str) -> Result<(String, LowerBindings), String> {
     let mut source = String::from("/proc/__map_initializer()\n");
     let mut bindings = LowerBindings::default();
     for part in split_top_level(assignments, ';')
@@ -563,15 +1085,19 @@ fn lower_complex_map_initializer(
         source.push_str(part);
         source.push('\n');
     }
-    let ast = dm_syntax::parse(&source);
-    if !ast.diagnostics.is_empty() {
-        return Err(format!("invalid map initializer: {:?}", ast.diagnostics));
-    }
-    let compiled = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings)
-        .map_err(|errors| format!("unsupported map initializer: {errors:?}"))?;
+    Ok((source, bindings))
+}
+fn materialize_map_initializer(
+    dmb: &mut impl dm_output::assembly::AssemblyImage,
+    envelope: &PreparedProcedureEnvelope,
+    class_ids: &HashMap<String, u32>,
+    resource_ids: &HashMap<&str, u32>,
+    strings: &mut MapStringIndex,
+) -> Result<Vec<u32>, String> {
+    let compiled = &envelope.metadata;
     let mut ledger = Ledger::default();
     for key in &compiled.strings {
-        let id = intern_bytes(dmb, compiled.string_bytes(key));
+        let id = strings.intern(dmb, compiled.string_bytes(key));
         ledger
             .bind(Symbol::new(Table::String, key), id)
             .map_err(|error| error.to_string())?;
@@ -587,7 +1113,7 @@ fn lower_complex_map_initializer(
                 .get(path)
                 .ok_or_else(|| format!("unresolved map initializer type: {path}"))?;
             if map_instance_kind(dmb, class) == Some(8) {
-                dmb.mobs
+                dmb.mobs()
                     .iter()
                     .position(|mob| mob.class == class)
                     .ok_or_else(|| format!("missing map mob descriptor: {path}"))?
@@ -609,29 +1135,52 @@ fn lower_complex_map_initializer(
             .bind_alias(Symbol::new(Table::Resource, path), id)
             .map_err(|error| error.to_string())?;
     }
-    Ok(link_proc(&compiled.code, &ledger)
-        .map_err(|error| error.to_string())?
-        .words)
+    envelope
+        .section
+        .materialize(&ledger)
+        .map_err(|error| error.to_string())
 }
 
-fn intern_bytes(dmb: &mut Dmb, value: &[u8]) -> u32 {
-    if let Some(id) = dmb.strings.iter().enumerate().find_map(|(id, entry)| {
-        (!crate::native_reserved_string_id(id as u32) && entry.data == value).then_some(id)
-    }) {
-        return id as u32;
+struct MapStringIndex {
+    buckets: HashMap<[u8; 32], Vec<u32>>,
+}
+impl MapStringIndex {
+    fn new(dmb: &impl dm_output::assembly::AssemblyImage) -> Self {
+        let mut buckets = HashMap::<[u8; 32], Vec<u32>>::new();
+        for (id, string) in dmb.strings().iter().enumerate() {
+            if !crate::native_reserved_string_id(id as u32) {
+                buckets
+                    .entry(Sha256::digest(&string.data).into())
+                    .or_default()
+                    .push(id as u32);
+            }
+        }
+        Self { buckets }
     }
-    while crate::native_reserved_string_id(dmb.strings.len() as u32) {
-        dmb.strings.push(DmString {
-            data: Vec::new(),
-            long_chunks: 0,
+    fn intern(&mut self, dmb: &mut impl dm_output::assembly::AssemblyImage, value: &[u8]) -> u32 {
+        let digest: [u8; 32] = Sha256::digest(value).into();
+        if let Some(ids) = self.buckets.get(&digest) {
+            if let Some(id) = ids
+                .iter()
+                .find(|id| dmb.strings()[**id as usize].data == value)
+            {
+                return *id;
+            }
+        }
+        while crate::native_reserved_string_id(dmb.strings().len() as u32) {
+            dmb.strings_mut().push(DmString {
+                data: Vec::new(),
+                long_chunks: 0,
+            });
+        }
+        let id = dmb.strings().len() as u32;
+        dmb.strings_mut().push(DmString {
+            data: value.to_vec(),
+            long_chunks: u16::try_from(value.len() / u16::MAX as usize).unwrap_or(u16::MAX),
         });
+        self.buckets.entry(digest).or_default().push(id);
+        id
     }
-    let id = dmb.strings.len() as u32;
-    dmb.strings.push(DmString {
-        data: value.to_vec(),
-        long_chunks: u16::try_from(value.len() / u16::MAX as usize).unwrap_or(u16::MAX),
-    });
-    id
 }
 
 fn checked_map_instance_id(count: usize) -> Result<u32, String> {
@@ -641,19 +1190,19 @@ fn checked_map_instance_id(count: usize) -> Result<u32, String> {
     Ok(count as u32)
 }
 
-pub(crate) fn default_map_instance(dmb: &mut Dmb, kind: u8) -> Result<u32, String> {
+pub(crate) fn default_map_instance(dmb: &mut impl dm_output::assembly::AssemblyImage, kind: u8) -> Result<u32, String> {
     let class = if kind == 10 {
-        dmb.world.turf_class_id()
+        dmb.world().turf_class_id()
     } else {
-        dmb.world.area_class_id()
+        dmb.world().area_class_id()
     };
-    if let Some(id) = dmb.instances.iter().position(|instance| {
+    if let Some(id) = dmb.instances().iter().position(|instance| {
         instance.kind == kind && instance.class == class && instance.initializer == 0xffff
     }) {
         return Ok(id as u32);
     }
-    let id = checked_map_instance_id(dmb.instances.len())?;
-    dmb.instances.push(Instance {
+    let id = checked_map_instance_id(dmb.instances().len())?;
+    dmb.instances_mut().push(Instance {
         kind,
         class,
         initializer: 0xffff,
@@ -661,9 +1210,9 @@ pub(crate) fn default_map_instance(dmb: &mut Dmb, kind: u8) -> Result<u32, Strin
     Ok(id)
 }
 
-fn map_instance_kind(dmb: &Dmb, mut class: u32) -> Option<u8> {
+fn map_instance_kind(dmb: &impl dm_output::assembly::AssemblyImage, mut class: u32) -> Option<u8> {
     loop {
-        let record = dmb.classes.get(class as usize)?;
+        let record = dmb.classes().get(class as usize)?;
         match dmb.string(record.path_string_id())? {
             b"/turf" => return Some(10),
             b"/area" => return Some(11),
@@ -681,6 +1230,139 @@ fn map_instance_kind(dmb: &Dmb, mut class: u32) -> Option<u8> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn multichar_grid_keys_are_exact_and_longest_first() {
+        let keys = HashMap::from([
+            ("ab".to_owned(), 7),
+            ("cd".to_owned(), 9),
+            ("a".to_owned(), 3),
+        ]);
+        let widths = [2, 1];
+        assert_eq!(grid_cell_at(&keys, &widths, "abcd", 0), Some((2, &7)));
+        assert_eq!(grid_cell_at(&keys, &widths, "abcd", 2), Some((2, &9)));
+        assert_eq!(grid_cell_at(&keys, &widths, "abcd", 3), None);
+        assert_eq!(grid_cell_at(&keys, &widths, "\u{e9}", 0), None);
+    }
+
+    #[test]
+    fn map_structure_restart_and_corruption_fall_back() {
+        let root = std::env::temp_dir().join(format!(
+            "map-spans-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let source = "\"ab\" = (/turf,/area)\n(1,1,1) = {\"\nab\n\"}\n".to_owned();
+        let digest: [u8; 32] = Sha256::digest(source.as_bytes()).into();
+        let files = vec![(PathBuf::from("test.dmm"), source.clone())];
+        let first = MapInitializerSession::open(&root, "one");
+        first.persist_structures(&HashMap::from([(
+            digest,
+            Arc::new(MapStructure::parse(&source).unwrap()),
+        )]));
+        drop(first);
+        let restored = MapInitializerSession::open(&root, "two");
+        let values = restored.restore_structures(&files, &[digest]);
+        assert_eq!(
+            values[&digest].resolve(&source),
+            (
+                map_templates(&source).unwrap(),
+                map_blocks(&source).unwrap()
+            )
+        );
+        restored
+            .structure_store
+            .as_ref()
+            .unwrap()
+            .put_many(
+                vec![(
+                    MapInitializerSession::structure_key(&digest),
+                    b"invalid codec".to_vec(),
+                )],
+                None,
+            )
+            .unwrap();
+        assert!(restored.restore_structures(&files, &[digest]).is_empty());
+        let mut invalid = MapStructure::parse(&source).unwrap();
+        invalid.templates[0][1] = source.len() + 1;
+        assert!(
+            MapStructure::decode(&invalid.encode(&digest).unwrap(), &source, &digest).is_none()
+        );
+        drop(restored);
+        std::fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn map_structure_spans_resolve_identical_content() {
+        let source = "\"ab\" = (/turf,/area)\n(1,1,1) = {\"\nab\n\"}\n";
+        let structure = MapStructure::parse(source).unwrap();
+        let copied = source.to_owned();
+        let (templates, blocks) = structure.resolve(&copied);
+        assert_eq!(templates, map_templates(source).unwrap());
+        assert_eq!(blocks, map_blocks(source).unwrap());
+        assert_eq!(templates[0].0, "ab");
+        assert!(blocks[0].1.contains("ab"));
+    }
+
+    #[test]
+    fn persistent_map_initializers_replay_current_field_frame_and_relocate() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-map-graph-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let assignments = "label = \"hello\"; count = 7";
+        let mut session = MapInitializerSession::open(&root, "project-one");
+        let first = session
+            .prepare(&[assignments])
+            .unwrap()
+            .remove(assignments)
+            .unwrap();
+        let (source, bindings) = map_initializer_source(assignments).unwrap();
+        let ast = dm_syntax::parse(&source);
+        let fresh = compile_simple_proc_with_bindings(&ast.items[0].children, &bindings).unwrap();
+        let mut ledger = Ledger::default();
+        for (index, key) in fresh.strings.iter().enumerate() {
+            ledger
+                .bind(Symbol::new(Table::String, key), 0x10000 + index as u32)
+                .unwrap();
+        }
+        assert_eq!(
+            first.section.materialize(&ledger).unwrap(),
+            dm_codegen_byond::link_proc(&fresh.code, &ledger)
+                .unwrap()
+                .words
+        );
+        drop(session);
+        let mut restored = MapInitializerSession::open(&root, "project-one");
+        let second = restored
+            .prepare(&[assignments])
+            .unwrap()
+            .remove(assignments)
+            .unwrap();
+        assert_eq!(restored.graph.stats().disk_hits, 1);
+        assert_eq!(
+            second.section.materialize(&ledger).unwrap(),
+            first.section.materialize(&ledger).unwrap()
+        );
+        let changed = "different_field = \"hello\"; count = 8";
+        let changed = restored
+            .prepare(&[changed])
+            .unwrap()
+            .remove(changed)
+            .unwrap();
+        assert!(changed
+            .metadata
+            .strings
+            .contains(&"different_field".to_owned()));
+        drop(restored);
+        std::fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn repeated_map_atoms_share_descriptors_and_initializer_programs() {

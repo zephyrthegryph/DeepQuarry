@@ -50,6 +50,18 @@ pub fn for_each_source_chunk_with_limits(
     source: &str,
     target_chunk_bytes: usize,
     max_declaration_bytes: usize,
+    visit: impl FnMut(&str, usize),
+) -> ChunkReport {
+    let mut boundaries = Vec::new();
+    for_each_top_level_boundary(source, |at| boundaries.push(at));
+    source_chunks_from_boundaries(source, target_chunk_bytes, max_declaration_bytes, &boundaries, visit)
+}
+
+pub(crate) fn source_chunks_from_boundaries(
+    source: &str,
+    target_chunk_bytes: usize,
+    max_declaration_bytes: usize,
+    boundaries: &[usize],
     mut visit: impl FnMut(&str, usize),
 ) -> ChunkReport {
     let limit = max_declaration_bytes.max(1);
@@ -91,7 +103,7 @@ pub fn for_each_source_chunk_with_limits(
         }
         declaration_start = boundary;
     };
-    for_each_top_level_boundary(source, &mut on_boundary);
+    for &boundary in boundaries { on_boundary(boundary); }
     on_boundary(source.len());
     if chunk_end > chunk_start {
         parse_chunk(chunk_start, chunk_end, &mut report);
@@ -343,7 +355,7 @@ pub fn audit_source_streaming(
     result
 }
 
-fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
+pub(crate) fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
     let mut at_line_start = true;
     let mut indented = false;
     let mut delimiter_depth = 0usize;
@@ -374,6 +386,7 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
+        let literal_start = rest.starts_with("@{\"") || rest.starts_with("{\"") || rest.starts_with("@\"") || rest.starts_with('"');
         let string = if rest.starts_with("@{\"") {
             quoted_end(&rest[1..], true, true).map(|end| end + 1)
         } else if rest.starts_with("{\"") {
@@ -391,6 +404,9 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
+        // A piece can stop inside a literal. Its interior is never a genuine
+        // declaration boundary; the segmented scanner carries it forward.
+        if literal_start { break; }
         if rest.starts_with('\'') {
             let mut escaped = false;
             let mut end = rest.len();
@@ -516,6 +532,29 @@ mod tests {
         assert_eq!(reparsed.span, original.span);
         assert_eq!(reparsed.header, "run()");
         assert_eq!(reparsed.children[0].header, "return 7");
+    }
+
+    #[test]
+    fn raw_regex_brackets_preserve_following_declarations() {
+        let source = r#"/proc/om_is_handle(h)
+    var/static/regex/shape = regex(@"^(\d+:\d+|\[0x[0-9a-fA-F]+\](#\d+)?|@\w+)$")
+    return istext(h) && shape.Find(h)
+/proc/after()
+    return @"[not_var]"
+/proc/unbalanced()
+    return @"["
+"#;
+        let mut boundaries = Vec::new();
+        for_each_top_level_boundary(source, |at| boundaries.push(at));
+        assert!(boundaries.contains(&source.find("/proc/after()").unwrap()));
+        assert!(boundaries.contains(&source.find("/proc/unbalanced()").unwrap()));
+        let report = for_each_parsed_chunk(source, 200, |ast, _| {
+            assert!(ast.diagnostics.is_empty(), "{:?}", ast.diagnostics);
+        });
+        assert_eq!(report.skipped_declarations, 0);
+        assert!(report.parsed_chunks > 1);
+        let audit = audit_source_streaming(source, 200, 5);
+        assert_eq!(audit.procedures, 3);
     }
 
     #[test]

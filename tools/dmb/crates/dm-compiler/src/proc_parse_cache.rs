@@ -1,20 +1,21 @@
-//! Bounded immutable packs of relative procedure syntax, shared across worktrees.
+//! Bounded transactional procedure syntax, with read-only legacy pack migration.
 use dm_syntax::{Diagnostic, Item, ItemKind, Span};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, HashMap};
-use std::fs::{self, File, OpenOptions};
-use std::io::{Read, Seek, SeekFrom, Write};
+use std::fs::{self, File};
+use std::io::{Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
+#[cfg(test)]
+use std::time::{SystemTime, UNIX_EPOCH};
 
 const MAX_ENTRY: u64 = 2 * 1024 * 1024;
 const MAX_PACK: u64 = 256 * 1024 * 1024;
 const MAX_NODES: usize = 100_000;
 const MAX_INDEX: u64 = 16 * 1024 * 1024;
 const MAX_SEGMENTS: usize = 32;
-static SEGMENT_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+const MAX_PENDING: usize = 16 * 1024 * 1024;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 struct Entry {
@@ -44,27 +45,37 @@ pub struct ParseCacheStats {
     pub parse_time: Duration,
 }
 
+#[derive(Default)]
+struct RequestedSyntax {
+    records:BTreeMap<String,Vec<u8>>, missing:std::collections::BTreeSet<String>, bytes:usize,
+}
 pub struct ProcParseCache {
     root: Option<PathBuf>,
     entries: HashMap<String, Located>,
     readers: HashMap<PathBuf, File>,
-    writer: Option<(PathBuf, File, u64)>,
-    published: BTreeMap<String, Entry>,
+    store: Option<dm_store::Store>,
+    snapshot: std::sync::Arc<std::sync::Mutex<RequestedSyntax>>,
+    pending: BTreeMap<String, Vec<u8>>,
+    pending_bytes: usize,
     stats: ParseCacheStats,
+    disk_ready: bool,
 }
 impl ProcParseCache {
-    pub fn open(lower_root: Option<&Path>) -> Self {
-        let root = lower_root.and_then(Path::parent).map(|root| {
+    pub fn open(cache_root: Option<&Path>) -> Self {
+        let root = cache_root.map(|root| {
             root.join("proc-parse-v1")
-                .join(env!("DM_LOWERING_FINGERPRINT"))
+                .join(env!("DM_PROC_PARSE_FINGERPRINT"))
         });
         let mut cache = Self {
             root,
             entries: HashMap::new(),
             readers: HashMap::new(),
-            writer: None,
-            published: BTreeMap::new(),
+            store: None,
+            snapshot: Default::default(),
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
             stats: ParseCacheStats::default(),
+            disk_ready: false,
         };
         let Some(root) = cache.root.as_ref() else {
             return cache;
@@ -72,6 +83,13 @@ impl ProcParseCache {
         if fs::create_dir_all(root).is_err() {
             cache.root = None;
             return cache;
+        }
+        if let Some(base) = cache_root {
+            if let Ok(store) = dm_store::Store::open(base.join("proc-parse.redb")) {
+                cache.disk_ready=store.read_many(&[dm_store::Key::new("procedure-syntax-ready",Self::namespace())],None)
+                    .ok().is_some_and(|read|read.values.first().is_some_and(Option::is_some));
+                cache.store = Some(store);
+            }
         }
         let mut indices: Vec<_> = fs::read_dir(root)
             .into_iter()
@@ -130,8 +148,47 @@ impl ProcParseCache {
         }
         cache
     }
+    fn namespace() -> String {
+        format!("procedure-syntax-v1-{}", env!("DM_PROC_PARSE_FINGERPRINT"))
+    }
     pub fn stats(&self) -> ParseCacheStats {
         self.stats
+    }
+    /// Stage workers share one immutable startup snapshot, with private readers
+    /// and pending writes. No database opens occur during fork.
+    pub fn fork(&self) -> Self {
+        Self {
+            root: self.root.clone(),
+            entries: self.entries.clone(),
+            readers: HashMap::new(),
+            store: self.store.clone(),
+            snapshot: std::sync::Arc::clone(&self.snapshot),
+            disk_ready:self.disk_ready,
+            pending: BTreeMap::new(),
+            pending_bytes: 0,
+            stats: ParseCacheStats::default(),
+        }
+    }
+    /// Requested source identities share a bounded byte cache and negative
+    /// inventory across workers, without loading unrelated namespace rows.
+    pub(crate) fn prefetch_keys(&self,keys:&[String]) {
+        if !self.disk_ready {return;}
+        let Some(store)=&self.store else {return;};
+        let mut requested=self.snapshot.lock().unwrap_or_else(|error|error.into_inner());
+        let keys:Vec<_>=keys.iter().filter(|key|!requested.records.contains_key(*key)&&!requested.missing.contains(*key))
+            .map(|key|dm_store::Key::new(Self::namespace(),key)).collect();
+        for keys in keys.chunks(4096) {
+            let Ok(read)=store.read_grouped_bounded(keys,128,MAX_ENTRY as usize,8*1024*1024,64*1024*1024,None) else {continue;};
+            for (key,bytes) in keys.iter().zip(read.values) {
+                if let Some(bytes)=bytes {
+                    while requested.bytes.saturating_add(bytes.len())>64*1024*1024 {
+                        let Some(old)=requested.records.keys().next().cloned() else {break;};
+                        if let Some(bytes)=requested.records.remove(&old) {requested.bytes=requested.bytes.saturating_sub(bytes.len());}
+                    }
+                    requested.bytes+=bytes.len();requested.records.insert(key.name.clone(),bytes);
+                } else if requested.missing.len()<128_000 {requested.missing.insert(key.name.clone());}
+            }
+        }
     }
     pub fn parse(&mut self, source: &str, span: Span) -> Result<Item, Diagnostic> {
         if self.root.is_none() {
@@ -140,6 +197,17 @@ impl ProcParseCache {
         let raw = &source[span.range()];
         let key = format!("{:x}", Sha256::digest(raw.as_bytes()));
         let started = Instant::now();
+        self.prefetch_keys(std::slice::from_ref(&key));
+        let restored=self.snapshot.lock().ok().and_then(|snapshot|snapshot.records.get(&key).cloned());
+        if let Some(bytes) = self.pending.get(&key).or(restored.as_ref()) {
+            let result = decode(bytes, span.start, raw.len());
+            self.stats.read_time += started.elapsed();
+            if let Some(item) = result {
+                self.stats.hits += 1;
+                return Ok(item);
+            }
+            self.stats.corrupt += 1;
+        }
         if let Some(located) = self.entries.get(&key).cloned() {
             let result = (|| {
                 if !self.readers.contains_key(&located.pack) {
@@ -157,6 +225,9 @@ impl ProcParseCache {
             })();
             self.stats.read_time += started.elapsed();
             if let Some(item) = result {
+                if let Some(bytes) = encode(&item, span.start) {
+                    self.store(key.clone(), bytes);
+                }
                 self.stats.hits += 1;
                 return Ok(item);
             }
@@ -172,96 +243,59 @@ impl ProcParseCache {
         Ok(item)
     }
     fn store(&mut self, key: String, bytes: Vec<u8>) {
-        if bytes.len() as u64 > MAX_ENTRY || self.published.len() >= MAX_NODES {
+        if self.store.is_none() || bytes.len() as u64 > MAX_ENTRY {
             return;
         }
-        let Some(root) = self.root.as_ref() else {
-            return;
-        };
-        if self.writer.is_none() {
-            let nonce = SystemTime::now()
-                .duration_since(UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_nanos();
-            let sequence = SEGMENT_SEQUENCE.fetch_add(1, Ordering::Relaxed);
-            let path = root.join(format!(
-                "{nonce:040}-{}-{sequence}.pack",
-                std::process::id()
-            ));
-            let Ok(file) = OpenOptions::new().write(true).create_new(true).open(&path) else {
+        let old = self.pending.get(&key).map_or(0, Vec::len);
+        if self
+            .pending_bytes
+            .saturating_sub(old)
+            .saturating_add(bytes.len())
+            > MAX_PENDING
+            || self.pending.len() >= 64_000
+        {
+            if self.flush().is_err() {
                 return;
-            };
-            self.writer = Some((path, file, 0));
+            }
         }
-        let (pack, file, size) = self.writer.as_mut().unwrap();
-        if *size + bytes.len() as u64 > MAX_PACK {
-            return;
+        let len = bytes.len();
+        if let Some(old) = self.pending.insert(key, bytes) {
+            self.pending_bytes -= old.len();
         }
-        let entry = Entry {
-            offset: *size,
-            length: bytes.len() as u64,
-            checksum: format!("{:x}", Sha256::digest(&bytes)),
+        self.pending_bytes += len;
+    }
+    fn flush(&mut self) -> std::io::Result<()> {
+        if self.pending.is_empty() {
+            return Ok(());
+        }
+        let Some(store) = &self.store else {
+            return Ok(());
         };
-        if file.write_all(&bytes).is_err() {
-            return;
+        let mut changes = self
+            .pending
+            .iter()
+            .map(|(key, bytes)| {
+                dm_store::Change::Put(dm_store::Key::new(Self::namespace(), key), bytes.clone())
+            })
+            .collect::<Vec<_>>();
+        changes.push(dm_store::Change::Put(dm_store::Key::new("procedure-syntax-ready",Self::namespace()),vec![1]));
+        match store.commit(&[], &changes, None)? {
+            dm_store::Commit::Applied => {
+                self.pending.clear();
+                self.pending_bytes = 0;
+                Ok(())
+            }
+            dm_store::Commit::Conflict => Err(std::io::Error::other(
+                "unexpected unwitnessed parser cache conflict",
+            )),
         }
-        *size += entry.length;
-        self.entries.insert(
-            key.clone(),
-            Located {
-                pack: pack.clone(),
-                entry: entry.clone(),
-            },
-        );
-        self.published.insert(key, entry);
     }
 }
 impl Drop for ProcParseCache {
     fn drop(&mut self) {
-        let Some((pack, mut file, _)) = self.writer.take() else {
-            return;
-        };
-        if self.published.is_empty() || file.flush().is_err() {
-            return;
-        }
-        drop(file);
-        let Ok(bytes) = serde_json::to_vec(&self.published) else {
-            return;
-        };
-        if bytes.len() as u64 > MAX_INDEX {
-            return;
-        }
-        let temporary = pack.with_extension("idx.tmp");
-        // Every writer publishes a unique immutable segment. Readers never see
-        // its index before the completed pack; writers cannot clobber each other.
-        if fs::write(&temporary, bytes).is_ok()
-            && fs::rename(temporary, pack.with_extension("idx")).is_ok()
-        {
-            let Some(root) = self.root.as_ref() else {
-                return;
-            };
-            let mut indices: Vec<_> = fs::read_dir(root)
-                .into_iter()
-                .flatten()
-                .filter_map(Result::ok)
-                .filter(|entry| {
-                    entry
-                        .path()
-                        .extension()
-                        .is_some_and(|extension| extension == "idx")
-                })
-                .map(|entry| entry.path())
-                .collect();
-            indices.sort();
-            let mut total = 0u64;
-            for (ordinal, index) in indices.into_iter().rev().enumerate() {
-                let pack = index.with_extension("pack");
-                let size = fs::metadata(&pack).map_or(0, |metadata| metadata.len());
-                total = total.saturating_add(size);
-                if total > MAX_PACK || ordinal >= MAX_SEGMENTS {
-                    let _ = fs::remove_file(index);
-                    let _ = fs::remove_file(pack);
-                }
+        if let Err(error) = self.flush() {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE parser store flush: {error}");
             }
         }
     }
@@ -389,18 +423,110 @@ mod tests {
         );
     }
     #[test]
-    fn truncated_pack_falls_back_to_parser() {
-        let root = root("truncated");
-        let proc = "/proc/test()\n    return 42\n";
-        let mut cache = ProcParseCache::open(Some(&root));
-        cache.parse(proc, Span::new(0, proc.len())).unwrap();
+    fn configured_sibling_roots_do_not_share_syntax_records() {
+        let parent = root("isolation");
+        let first_root = parent.join("first");
+        let second_root = parent.join("second");
+        let source = "/proc/test()\n    return 42\n";
+        {
+            let mut first = ProcParseCache::open(Some(&first_root));
+            first.parse(source, Span::new(0, source.len())).unwrap();
+            first.flush().unwrap();
+        }
+        let mut second = ProcParseCache::open(Some(&second_root));
+        second.parse(source, Span::new(0, source.len())).unwrap();
+        assert_eq!(second.stats().hits, 0);
+        assert_eq!(second.stats().misses, 1);
+        assert!(first_root.join("proc-parse.redb").is_file());
+        assert!(second_root.join("proc-parse.redb").is_file());
+        assert!(!parent.join("proc-parse.redb").exists());
+        let mut restarted = ProcParseCache::open(Some(&first_root));
+        restarted.parse(source, Span::new(0, source.len())).unwrap();
+        assert_eq!(restarted.stats().hits, 1);
+    }
+    #[test]
+    fn corrupt_transactional_syntax_is_reparsed_and_repaired() {
+        let root = root("corrupt");
+        let source = "/proc/test()\n    return 42\n";
+        let key = format!("{:x}", Sha256::digest(source.as_bytes()));
+        let mut first = ProcParseCache::open(Some(&root));
+        let expected = first.parse(source, Span::new(0, source.len())).unwrap();
+        first.flush().unwrap();
+        first
+            .store
+            .as_ref()
+            .unwrap()
+            .put_many(
+                vec![(
+                    dm_store::Key::new(ProcParseCache::namespace(), &key),
+                    b"torn".to_vec(),
+                )],
+                None,
+            )
+            .unwrap();
+        drop(first);
+        let mut cold = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            cold.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(cold.stats().corrupt, 1);
+        assert_eq!(cold.stats().misses, 1);
+        drop(cold);
+        let mut repaired = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            repaired.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(repaired.stats().hits, 1);
+        assert!(fs::read_dir(repaired.root.as_ref().unwrap())
+            .unwrap()
+            .all(|entry| entry
+                .unwrap()
+                .path()
+                .extension()
+                .is_none_or(|e| e != "pack" && e != "idx")));
+    }
+    #[test]
+    fn legacy_pack_is_read_only_and_migrates_to_transactional_store() {
+        let root = root("legacy");
+        let source = "/proc/test()\n    return 42\n";
+        let expected = dm_syntax::parse_proc_at_span(source, Span::new(0, source.len())).unwrap();
+        let bytes = encode(&expected, 0).unwrap();
+        let key = format!("{:x}", Sha256::digest(source.as_bytes()));
+        let cache = ProcParseCache::open(Some(&root));
+        let directory = cache.root.as_ref().unwrap().clone();
+        let pack = directory.join("fixture.pack");
+        let index = directory.join("fixture.idx");
+        let metadata = serde_json::to_vec(&BTreeMap::from([(
+            key,
+            Entry {
+                offset: 0,
+                length: bytes.len() as u64,
+                checksum: format!("{:x}", Sha256::digest(&bytes)),
+            },
+        )]))
+        .unwrap();
+        fs::write(&pack, &bytes).unwrap();
+        fs::write(&index, &metadata).unwrap();
         drop(cache);
-        let mut cache = ProcParseCache::open(Some(&root));
-        let pack = cache.entries.values().next().unwrap().pack.clone();
-        fs::write(pack, b"torn").unwrap();
-        assert!(cache.parse(proc, Span::new(0, proc.len())).is_ok());
-        assert_eq!(cache.stats().corrupt, 1);
-        assert_eq!(cache.stats().misses, 1);
+        let mut legacy = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            legacy.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(legacy.stats().hits, 1);
+        drop(legacy);
+        assert_eq!(fs::read(&pack).unwrap(), bytes);
+        assert_eq!(fs::read(&index).unwrap(), metadata);
+        fs::remove_file(pack).unwrap();
+        fs::remove_file(index).unwrap();
+        let mut migrated = ProcParseCache::open(Some(&root));
+        assert_eq!(
+            migrated.parse(source, Span::new(0, source.len())).unwrap(),
+            expected
+        );
+        assert_eq!(migrated.stats().hits, 1);
     }
 
     #[test]
@@ -420,7 +546,7 @@ mod tests {
         assert_eq!(cache.stats().hits, 1);
     }
     #[test]
-    fn simultaneous_writers_publish_independent_immutable_segments() {
+    fn simultaneous_writers_commit_independent_syntax_records() {
         let root = root("writers");
         let a = "/proc/a()\n    return 1\n";
         let b = "/proc/b()\n    return 2\n";

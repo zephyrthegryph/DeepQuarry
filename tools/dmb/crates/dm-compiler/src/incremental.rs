@@ -1,5 +1,6 @@
-//! Guarded incremental emission from an immutable linked world checkpoint.
-//! Body edits preserve table IDs; declaration or semantic-context edits fall back.
+//! Legacy linked-checkpoint compatibility, selected by `legacy-history` only.
+//! Default canonical emission uses the project graph and relocatable sections.
+//! This adapter preserves table IDs for body edits; structural edits fall back.
 use dm_codegen_byond::{LowerBindings, SharedLowerBindings, Symbol};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -56,7 +57,8 @@ struct ProcedureInput {
     cache_root: Option<PathBuf>,
 }
 
-#[salsa::tracked(no_eq)]
+// The compatibility inputs select a body/frame. Portable memo validation uses
+// actual recorded witnesses; production semantic queries live in ProjectGraph.
 fn lower_changed(db: &dyn crate::Db, input: ProcedureInput) -> Result<SimpleProc, String> {
     let source = input.source(db);
     let item = dm_syntax::parse_proc_at_span(
@@ -153,7 +155,7 @@ impl IncrementalSession {
             input
         };
         self.bytes = self.bytes.saturating_add(bytes);
-        lower_changed(&self.db, input).clone()
+        lower_changed(&self.db, input)
     }
 }
 
@@ -171,7 +173,7 @@ pub fn encode_checkpoint(checkpoint: &EmissionCheckpoint) -> Result<Vec<u8>, Str
     }
     let envelope = CheckpointEnvelope {
         version: 1,
-        compiler: env!("DM_LOWERING_FINGERPRINT").into(),
+        compiler: env!("DM_EMISSION_FINGERPRINT").into(),
         checksum: digest(payload.as_bytes()),
         payload,
     };
@@ -187,15 +189,12 @@ pub fn decode_checkpoint(bytes: &[u8]) -> Option<EmissionCheckpoint> {
     }
     let envelope: CheckpointEnvelope = serde_json::from_slice(bytes).ok()?;
     if envelope.version != 1
-        || envelope.compiler != env!("DM_LOWERING_FINGERPRINT")
+        || envelope.compiler != env!("DM_EMISSION_FINGERPRINT")
         || digest(envelope.payload.as_bytes()) != envelope.checksum
     {
         return None;
     }
-    let mut checkpoint: EmissionCheckpoint = serde_json::from_str(&envelope.payload).ok()?;
-    crate::lower_cache::prepare_member_type_fingerprints(&mut checkpoint.shared);
-    checkpoint.shared.fingerprint =
-        crate::lower_cache::shared_binding_fingerprint(&checkpoint.shared);
+    let checkpoint: EmissionCheckpoint = serde_json::from_str(&envelope.payload).ok()?;
     Some(checkpoint)
 }
 pub fn digest(bytes: &[u8]) -> String {
@@ -293,12 +292,18 @@ pub fn try_emit_outline(
                 } else {
                     serial.push(crate::bootstrap::procedure_pipeline::LoweringResult {
                         ordinal,
+                        internal_panic: None,
+                        memo: None,
+                        lowering_cache_hit: false,
+                        body_base: None,
+                        source_error: None,
                         compiled: session
                             .compile(path, &source.source, bindings.clone(), Arc::clone(&shared))
                             .map_err(|reason| {
                                 vec![dm_codegen_byond::LowerError {
                                     statement: path.clone(),
                                     reason,
+                                    statement_origin: None,
                                 }]
                             }),
                         bindings,
@@ -377,7 +382,7 @@ pub fn try_emit_outline(
                 // The indexed output writer can splice this position-independent record.
                 let shared_code = references.get(old_code as usize).copied().unwrap_or(0) != 1;
                 let code = if !shared_code && dmb.lists.get(old_code as usize).is_some() {
-                    dmb.lists[old_code as usize] = linked.words;
+                    dmb.lists[old_code as usize] = (linked.words).into();
                     old_code
                 } else {
                     append_list(&mut dmb, linked.words)
@@ -520,6 +525,40 @@ fn intern(dmb: &mut Dmb, bytes: &[u8]) -> u32 {
 mod tests {
     use super::*;
 
+    #[test]
+    fn legacy_session_enters_only_the_portable_semantic_query_database() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-legacy-salsa-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let mut session = IncrementalSession::default();
+        session.set_cache_root(root.clone());
+        let shared = Arc::new(SharedLowerBindings::default());
+        let mut bindings = LowerBindings::default();
+        bindings.globals.insert("value".into());
+        let source = "/proc/f()\n    return value\n";
+        let first = session
+            .compile("/proc/f", source, bindings.clone(), shared.clone())
+            .unwrap();
+        assert_eq!(
+            session
+                .compile("/proc/f", source, bindings.clone(), shared.clone())
+                .unwrap(),
+            first
+        );
+        bindings.globals.clear();
+        bindings.fields.insert("value".into());
+        let changed = session
+            .compile("/proc/f", source, bindings, shared)
+            .unwrap();
+        assert_ne!(changed.code, first.code);
+        drop(session);
+        std::fs::remove_dir_all(root).unwrap();
+    }
     #[test]
     fn incremental_ledger_binds_only_referenced_baseline_symbols() {
         let ast = dm_syntax::parse("/proc/changed()\n    return answer()\n");

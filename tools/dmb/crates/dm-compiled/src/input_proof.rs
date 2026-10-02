@@ -13,6 +13,9 @@ pub(super) struct InputProof {
     namespace_covered: bool,
     #[serde(default)]
     namespace_digest: Option<String>,
+    /// None means the journal covers every file (legacy serialized proofs).
+    #[serde(default)]
+    journal_files: Option<std::collections::BTreeSet<PathBuf>>,
 }
 
 impl InputProof {
@@ -22,40 +25,70 @@ impl InputProof {
             journal: None,
             namespace_covered: false,
             namespace_digest: None,
+            journal_files: None,
         }
     }
     pub(super) fn capture(paths: impl IntoIterator<Item = PathBuf>) -> Option<Self> {
         if exact_inputs() {
             return None;
         }
-        let files = paths
+        let paths: Vec<_> = paths
             .into_iter()
-            .map(|path| capture(&path).map(|value| (path, value)))
-            .collect::<Option<BTreeMap<_, _>>>()?;
+            .collect::<std::collections::BTreeSet<_>>()
+            .into_iter()
+            .collect();
+        let files = dm_work::map_ordered(
+            &paths,
+            dm_work::WorkLimits::configured(),
+            |_| 1024,
+            |path| capture(path).map(|value| (path.clone(), value)),
+        )
+        .ok()?
+        .into_iter()
+        .collect::<Option<BTreeMap<_, _>>>()?;
         Some(Self {
             files,
             journal: None,
             namespace_covered: false,
             namespace_digest: None,
+            journal_files: None,
         })
     }
 
     pub(super) fn current(&self) -> bool {
-        if exact_inputs() {
-            return false;
-        }
-        if let Some(journal) = &self.journal {
+        let started=std::time::Instant::now();
+        if exact_inputs() {return false;}
+        let mut covered=false;let mut journal_status="absent";
+        if let Some(journal)=&self.journal {
             match journal.validate() {
-                dm_host::journal::Validation::Current => return true,
-                dm_host::journal::Validation::Changed => return false,
-                dm_host::journal::Validation::Unavailable => {}
+                dm_host::journal::Validation::Current=>{covered=true;journal_status="current";},
+                dm_host::journal::Validation::Changed=>{self.trace_validation("changed",0,started,false);return false;},
+                dm_host::journal::Validation::Unavailable=>{journal_status="unavailable";},
             }
         }
-        !self.files.is_empty()
-            && self
-                .files
-                .iter()
-                .all(|(path, expected)| capture(path).as_ref() == Some(expected))
+        let files:Vec<_>=self.files.iter().filter(|(path,_)|!covered || self.journal_files.as_ref().is_some_and(|files|!files.contains(*path))).collect();
+        let current=(covered || !self.files.is_empty()) && dm_work::map_ordered(&files,dm_work::WorkLimits::configured(),|_|1024,
+            |(path,expected)|capture(path).as_ref()==Some(*expected)).is_ok_and(|results|results.into_iter().all(|current|current));
+        self.trace_validation(journal_status,files.len(),started,current);current
+    }
+    fn trace_validation(&self,journal:&str,stamps:usize,started:std::time::Instant,current:bool) {
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE input proof validate: {} files, journal {journal}, {stamps} stamp observations, current {current}, {:.3}s",self.files.len(),started.elapsed().as_secs_f64());
+        }
+    }
+
+    /// Reuse one preparation observation only when it proves the exact same
+    /// expected objects/change clocks. Publication still observes independently.
+    pub(super) fn validated_by(
+        &self,
+        observed: &Self,
+        unchanged: &std::collections::BTreeSet<PathBuf>,
+    ) -> bool {
+        !exact_inputs()
+            && !self.files.is_empty()
+            && self.files.iter().all(|(path, stamp)| {
+                unchanged.contains(path) && observed.files.get(path) == Some(stamp)
+            })
     }
 
     pub(super) fn resident_bytes(&self) -> usize {
@@ -63,6 +96,7 @@ impl InputProof {
             .keys()
             .map(|path| path.as_os_str().len() * 2 + 128)
             .sum::<usize>()
+            + self.journal_files.as_ref().map_or(0,|files|files.iter().map(|path|path.as_os_str().len()*2+48).sum::<usize>())
             + self
                 .journal
                 .as_ref()
@@ -78,28 +112,35 @@ impl InputProof {
             .journal
             .as_ref()
             .and_then(|journal| journal.for_files(&files));
+        let journal_files=self.journal_files.as_ref().map(|covered|files.keys().filter(|path|covered.contains(*path)).cloned().collect());
         Some(Self {
             files,
             journal,
             namespace_covered: self.namespace_covered,
             namespace_digest: self.namespace_digest.clone(),
+            journal_files,
         })
     }
 
     pub(super) fn combined(mut self, other: &Self) -> Option<Self> {
-        let journal = self
-            .journal
-            .as_ref()
-            .zip(other.journal.as_ref())
-            .and_then(|(left, right)| left.merged(right));
-        self.namespace_covered &= other.namespace_covered;
-        self.namespace_digest = match (&self.namespace_digest, &other.namespace_digest) {
-            (Some(a), Some(b)) if a == b => Some(a.clone()),
-            (Some(a), None) => Some(a.clone()),
-            (None, Some(b)) => Some(b.clone()),
-            _ => None,
-        };
+        let left_coverage=self.journal_files.clone().unwrap_or_else(||self.files.keys().cloned().collect());
+        let right_coverage=other.journal_files.clone().unwrap_or_else(||other.files.keys().cloned().collect());
+        let merged=self.journal.as_ref().zip(other.journal.as_ref()).and_then(|(left,right)|left.merged(right));
+        // Namespace identity belongs to the journal selected below, never to
+        // an unrelated side of a failed merge. File-only proofs contribute no
+        // namespace identity; legacy empty-candidate hashes are normalized out.
+        let left_namespace=self.retained_namespace_digest();
+        let right_namespace=other.retained_namespace_digest();
+        let (journal,coverage,namespace)=if let Some(merged)=merged {
+            let mut coverage=left_coverage;coverage.extend(right_coverage);
+            (Some(merged),Some(coverage),left_namespace.or(right_namespace))
+        } else if let Some(left)=&self.journal {(Some(left.clone()),Some(left_coverage),left_namespace)}
+        else if let Some(right)=&other.journal {(Some(right.clone()),Some(right_coverage),right_namespace)}
+        else {(None,None,None)};
+        self.namespace_covered=namespace.is_some();
+        self.namespace_digest=namespace;
         self.journal = journal;
+        self.journal_files=coverage;
         for (path, stamp) in &other.files {
             if self
                 .files
@@ -110,6 +151,7 @@ impl InputProof {
             }
             self.files.insert(path.clone(), stamp.clone());
         }
+        if self.journal_files.as_ref().is_some_and(|covered|self.files.keys().any(|path|!covered.contains(path))) {self.namespace_covered=false;}
         Some(self)
     }
 
@@ -117,10 +159,9 @@ impl InputProof {
         if exact_inputs() {
             return;
         }
-        self.journal = previous
-            .journal
-            .as_ref()
-            .and_then(|journal| journal.refreshed(&previous.files, &self.files));
+        let covered: BTreeMap<_,_>=previous.files.iter().filter(|(path,_)|previous.journal_files.as_ref().map_or(true,|files|files.contains(*path))).map(|(path,stamp)|(path.clone(),stamp.clone())).collect();
+        self.journal = previous.journal.as_ref().and_then(|journal|journal.refreshed(&covered,&self.files));
+        self.journal_files=None;
         self.namespace_covered = false;
         // A refresh with no unchanged files establishes a new file-only proof;
         // it does not retain the previous namespace barriers.
@@ -144,20 +185,16 @@ impl InputProof {
         }
     }
     pub(super) fn unchanged_paths(&self) -> std::collections::BTreeSet<PathBuf> {
-        if !exact_inputs() {
-            if let Some(paths) = self
-                .journal
-                .as_ref()
-                .and_then(|journal| journal.unchanged_paths(&self.files))
-            {
-                return paths;
-            }
+        let started=std::time::Instant::now();
+        let covered:BTreeMap<_,_>=self.files.iter().filter(|(path,_)|self.journal_files.as_ref().map_or(true,|files|files.contains(*path))).map(|(path,stamp)|(path.clone(),stamp.clone())).collect();
+        let journal_paths=if exact_inputs(){None}else{self.journal.as_ref().and_then(|journal|journal.unchanged_paths(&covered))};
+        let files:Vec<_>=self.files.iter().filter(|(path,_)|journal_paths.as_ref().map_or(true,|_|!covered.contains_key(*path))).collect();
+        let mut paths=journal_paths.unwrap_or_default();
+        if let Ok(observed)=dm_work::map_ordered(&files,dm_work::WorkLimits::configured(),|_|1024,
+            |(path,stamp)|(capture(path).as_ref()==Some(*stamp)).then(||(*path).clone())) {
+            paths.extend(observed.into_iter().flatten());
         }
-        self.files
-            .iter()
-            .filter(|(path, stamp)| capture(path).as_ref() == Some(stamp))
-            .map(|(path, _)| path.clone())
-            .collect()
+        self.trace_validation("unchanged-paths",files.len(),started,paths.len()==self.files.len());paths
     }
     #[cfg(test)]
     pub(super) fn enable_journal(&mut self) {
@@ -179,21 +216,43 @@ impl InputProof {
     /// Reuse only an already-established proof for this exact search namespace.
     /// This does not establish a new cursor or perform filesystem discovery.
     pub(super) fn reuse_namespace(&mut self, candidates: &[PathBuf]) -> bool {
-        if !candidates.is_empty()
-            && !exact_inputs()
-            && self.namespace_digest.as_ref() == Some(&Self::namespace_digest(candidates))
-            && self
-                .journal
-                .as_ref()
-                .is_some_and(|journal| journal.current())
-        {
+        let eligible=!candidates.is_empty() && !exact_inputs();
+        let covered=self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path)));
+        let same_namespace=eligible && self.namespace_digest.as_ref()==Some(&Self::namespace_digest(candidates));
+        let observed=eligible && covered && same_namespace;
+        let current=observed && self.journal.as_ref().is_some_and(|journal|journal.current());
+        if current {
             self.namespace_covered = true;
             true
         } else {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                eprintln!("DM_BUILD_TRACE namespace reuse miss: files={} candidates={} eligible={eligible} file_coverage={covered} retained_namespace={} same_namespace={same_namespace} journal_present={} journal_observed={observed}",
+                    self.files.len(),candidates.len(),self.namespace_digest.is_some(),self.journal.is_some());
+            }
             false
         }
     }
+    fn retained_namespace_digest(&self)->Option<String> {
+        self.journal.as_ref()?;
+        self.namespace_digest.as_ref().filter(|digest|**digest!=Self::namespace_digest(&[])).cloned()
+    }
+
     pub(super) fn enable_namespace_journal(&mut self, candidates: &[PathBuf]) {
+        if candidates.is_empty() {
+            if exact_inputs() {
+                self.journal=None;self.journal_files=None;self.namespace_digest=None;self.namespace_covered=false;
+                return;
+            }
+            let coverage=self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path)));
+            let retained=self.journal.as_ref().filter(|_|coverage).filter(|journal|journal.current()).cloned();
+            let namespace=retained.as_ref().and_then(|_|self.retained_namespace_digest());
+            self.journal=retained.or_else(||dm_host::journal::JournalProof::establish(&self.files));
+            self.journal_files=None;
+            self.namespace_digest=self.journal.as_ref().and(namespace);
+            self.namespace_covered=self.namespace_digest.is_some();
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE input journal proof: {} files, enabled {}, retained namespace {}",self.files.len(),self.journal.is_some(),self.namespace_covered);}
+            return;
+        }
         let digest = Self::namespace_digest(candidates);
         if self.reuse_namespace(candidates) {
             return;
@@ -203,11 +262,13 @@ impl InputProof {
         } else {
             self.journal
                 .as_ref()
+                .filter(|_|self.journal_files.as_ref().map_or(true,|covered|self.files.keys().all(|path|covered.contains(path))))
                 .and_then(|journal| journal.with_namespaces(candidates))
                 .or_else(|| {
                     dm_host::journal::JournalProof::establish_namespaces(&self.files, candidates)
                 })
         };
+        self.journal_files=None;
         self.namespace_covered = self.journal.is_some() && !candidates.is_empty();
         self.namespace_digest = self.journal.as_ref().map(|_| digest);
         if std::env::var_os("DM_BUILD_TRACE").is_some() {

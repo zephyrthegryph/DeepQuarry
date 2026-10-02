@@ -29,6 +29,7 @@ fn main() {
         "dm-output",
         "dm-resources",
         "dm-host",
+        "dm-work",
     ];
     let mut files = vec![root.join("Cargo.toml"), root.join("Cargo.lock")];
     collect_rs(&root.join("src"), &mut files);

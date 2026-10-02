@@ -1,56 +1,54 @@
-use sha2::{Digest, Sha256};
-use std::fs;
-use std::path::{Path, PathBuf};
-
-fn collect_rs(directory: &Path, files: &mut Vec<PathBuf>) {
-    let Ok(entries) = fs::read_dir(directory) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let path = entry.path();
-        if path.is_dir() {
-            collect_rs(&path, files);
-        } else if path.extension().is_some_and(|extension| extension == "rs") {
-            files.push(path);
-        }
-    }
-}
+mod fingerprints;
+use std::{fs, path::PathBuf};
 
 fn main() {
     let root = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap()).join("../..");
-    let packages = [
-        "dm-compiler",
-        "dm-codegen-byond",
-        "dm-preprocess",
-        "dm-syntax",
-        "dm-semantics",
-        "dm-ir",
-        "dm-resources",
-    ];
-    let mut files = vec![root.join("Cargo.toml"), root.join("Cargo.lock")];
-    collect_rs(&root.join("src"), &mut files);
-    for package in packages {
-        let directory = root.join("crates").join(package);
-        files.push(directory.join("Cargo.toml"));
-        collect_rs(&directory.join("src"), &mut files);
-    }
-    files.push(root.join("crates/dm-compiler/build.rs"));
-    files.sort();
-    let mut hash = Sha256::new();
-    hash.update(b"dm-build-implementation-v1\0");
-    for path in files {
-        let bytes = fs::read(&path)
-            .unwrap_or_else(|error| panic!("cannot fingerprint {}: {error}", path.display()));
-        println!("cargo:rerun-if-changed={}", path.display());
-        let relative = path.strip_prefix(&root).unwrap_or(&path);
-        let name = relative.to_string_lossy();
-        hash.update((name.len() as u64).to_le_bytes());
-        hash.update(name.as_bytes());
-        hash.update((bytes.len() as u64).to_le_bytes());
-        hash.update(&bytes);
-    }
-    println!(
-        "cargo:rustc-env=DM_LOWERING_FINGERPRINT={:x}",
-        hash.finalize()
+    let inputs = fingerprints::inputs(&root);
+    let lock_path = root.join("Cargo.lock");
+    println!("cargo:rerun-if-changed={}", lock_path.display());
+    let lock = fs::read_to_string(lock_path).expect("read Cargo lockfile");
+    let parse_lock = fingerprints::lock_closure(
+        &lock,
+        &["dm-syntax", "dm-store", "serde", "serde_json", "sha2"],
     );
+    let lowering_lock = fingerprints::lock_closure(
+        &lock,
+        &[
+            "dm-codegen-byond",
+            "dm-syntax",
+            "dm-ir",
+            "dm-semantics",
+            "dm-store",
+            "dm-work",
+            "salsa",
+            "sha2",
+            "serde_json",
+            "lz4_flex",
+        ],
+    );
+    for (name, stage, files, lock) in [
+        (
+            "DM_PROC_PARSE_FINGERPRINT",
+            "procedure-syntax",
+            &inputs.parse,
+            parse_lock.as_slice(),
+        ),
+        (
+            "DM_LOWERING_FINGERPRINT",
+            "symbolic-lowering",
+            &inputs.lowering,
+            lowering_lock.as_slice(),
+        ),
+        (
+            "DM_EMISSION_FINGERPRINT",
+            "project-emission",
+            &inputs.emission,
+            lock.as_bytes(),
+        ),
+    ] {
+        println!(
+            "cargo:rustc-env={name}={}",
+            fingerprints::fingerprint(&root, stage, files, lock)
+        );
+    }
 }

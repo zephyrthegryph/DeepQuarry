@@ -28,7 +28,7 @@ impl Default for CompareOptions {
     }
 }
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
 pub struct Discrepancy {
     pub path: String,
     pub field: String,
@@ -542,6 +542,316 @@ struct NormalInstruction {
     operands: Vec<NormalOperand>,
 }
 
+/// A decoded instruction suitable for an offline correctness report. Wire offsets
+/// are diagnostic locations; `opcode` and `operands` form the comparison key.
+/// Established table references use their resolved identities. Unknown immediate
+/// words remain numeric, and this is not a proof of execution equivalence.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct ProcedureInstruction {
+    pub ordinal: usize,
+    pub wire_offset: usize,
+    pub opcode: u32,
+    pub operands: String,
+}
+
+/// An aligned region of changed code. These regions describe encoding changes,
+/// not independent semantic defects. Local slots and branch targets remain exact.
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct ProcedureCodeHunk {
+    pub expected_start: usize,
+    pub expected_end: usize,
+    pub actual_start: usize,
+    pub actual_end: usize,
+    pub paired_operand_changes: usize,
+    pub expected_unpaired: usize,
+    pub actual_unpaired: usize,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize)]
+pub struct ProcedureCodeAlignment {
+    pub algorithm: &'static str,
+    pub work_limit_exceeded: bool,
+    pub matched_opcodes: usize,
+    pub changed_regions: usize,
+    pub hunks: Vec<ProcedureCodeHunk>,
+    pub hunks_truncated: bool,
+}
+
+/// Align by opcode, preferring exact operands. Insertions no longer make every
+/// subsequent instruction appear changed. Equality and gate decisions must still
+/// use the original normalized instructions, not this diagnostic alignment.
+///
+/// The dynamic-programming matrix is capped at one million u32 cells (4 MB).
+/// Larger bodies use one prefix/suffix region instead of unbounded quadratic work.
+pub fn align_procedure_instructions(
+    expected: &[ProcedureInstruction],
+    actual: &[ProcedureInstruction],
+    max_hunks: usize,
+) -> ProcedureCodeAlignment {
+    let exact = |a: &ProcedureInstruction, b: &ProcedureInstruction| {
+        a.opcode == b.opcode && a.operands == b.operands
+    };
+    let mut result = ProcedureCodeAlignment {
+        algorithm: "weighted_opcode_sequence",
+        work_limit_exceeded: false,
+        matched_opcodes: 0,
+        changed_regions: 0,
+        hunks: Vec::new(),
+        hunks_truncated: false,
+    };
+    let cells = expected.len().checked_add(1).and_then(|rows| {
+        actual
+            .len()
+            .checked_add(1)
+            .and_then(|columns| rows.checked_mul(columns))
+    });
+    if cells.is_none_or(|cells| cells > 1_000_000) {
+        result.algorithm = "bounded_prefix_suffix";
+        result.work_limit_exceeded = true;
+        let prefix = expected
+            .iter()
+            .zip(actual)
+            .take_while(|(a, b)| exact(a, b))
+            .count();
+        let suffix = expected[prefix..]
+            .iter()
+            .rev()
+            .zip(actual[prefix..].iter().rev())
+            .take_while(|(a, b)| exact(a, b))
+            .count();
+        result.matched_opcodes = prefix + suffix;
+        if prefix + suffix < expected.len() || prefix + suffix < actual.len() {
+            result.changed_regions = 1;
+            if max_hunks > 0 {
+                result.hunks.push(ProcedureCodeHunk {
+                    expected_start: prefix,
+                    expected_end: expected.len() - suffix,
+                    actual_start: prefix,
+                    actual_end: actual.len() - suffix,
+                    paired_operand_changes: 0,
+                    expected_unpaired: expected.len() - prefix - suffix,
+                    actual_unpaired: actual.len() - prefix - suffix,
+                });
+            } else {
+                result.hunks_truncated = true;
+            }
+        }
+        return result;
+    }
+    let columns = actual.len() + 1;
+    let mut scores = vec![0_u32; cells.unwrap()];
+    let weight = |a: &ProcedureInstruction, b: &ProcedureInstruction| {
+        if a.opcode != b.opcode {
+            0
+        } else if exact(a, b) {
+            3
+        } else {
+            1
+        }
+    };
+    for i in (0..expected.len()).rev() {
+        for j in (0..actual.len()).rev() {
+            let diagonal = scores[(i + 1) * columns + j + 1] + weight(&expected[i], &actual[j]);
+            scores[i * columns + j] = diagonal
+                .max(scores[(i + 1) * columns + j])
+                .max(scores[i * columns + j + 1]);
+        }
+    }
+    let (mut i, mut j) = (0, 0);
+    let mut pending: Option<ProcedureCodeHunk> = None;
+    let flush = |pending: &mut Option<ProcedureCodeHunk>, result: &mut ProcedureCodeAlignment| {
+        if let Some(hunk) = pending.take() {
+            result.changed_regions += 1;
+            if result.hunks.len() < max_hunks {
+                result.hunks.push(hunk);
+            } else {
+                result.hunks_truncated = true;
+            }
+        }
+    };
+    while i < expected.len() || j < actual.len() {
+        let paired = i < expected.len()
+            && j < actual.len()
+            && expected[i].opcode == actual[j].opcode
+            && scores[i * columns + j]
+                == scores[(i + 1) * columns + j + 1] + weight(&expected[i], &actual[j]);
+        if paired && exact(&expected[i], &actual[j]) {
+            flush(&mut pending, &mut result);
+            result.matched_opcodes += 1;
+            i += 1;
+            j += 1;
+            continue;
+        }
+        let hunk = pending.get_or_insert_with(|| ProcedureCodeHunk {
+            expected_start: i,
+            expected_end: i,
+            actual_start: j,
+            actual_end: j,
+            paired_operand_changes: 0,
+            expected_unpaired: 0,
+            actual_unpaired: 0,
+        });
+        if paired {
+            hunk.paired_operand_changes += 1;
+            result.matched_opcodes += 1;
+            i += 1;
+            j += 1;
+        } else if i < expected.len()
+            && (j == actual.len() || scores[(i + 1) * columns + j] >= scores[i * columns + j + 1])
+        {
+            hunk.expected_unpaired += 1;
+            i += 1;
+        } else {
+            hunk.actual_unpaired += 1;
+            j += 1;
+        }
+        hunk.expected_end = i;
+        hunk.actual_end = j;
+    }
+    flush(&mut pending, &mut result);
+    result
+}
+
+/// Ordered procedure groups, paired by owning bindings rather than by body content.
+/// Paths are lossless bytes. Initializers and argument-source helpers get synthetic
+/// identities so they participate in the same offline gates as named procedures.
+pub fn procedure_groups(dmb: &Dmb, options: &CompareOptions) -> BTreeMap<Vec<u8>, Vec<usize>> {
+    let mut groups = proc_index(dmb, options);
+    for class in &dmb.classes {
+        let Some(owner) = dmb.string(class.path_string_id()) else {
+            continue;
+        };
+        if !selected(owner, options) || class.initializer_proc_id() == 0xffff {
+            continue;
+        }
+        let mut key = owner.to_vec();
+        key.extend_from_slice(b"::<class initializer>");
+        groups
+            .entry(key)
+            .or_default()
+            .push(class.initializer_proc_id() as usize);
+    }
+    if selected(b"/world", options) && dmb.world.global_initializer_proc_id() != 0xffff {
+        groups
+            .entry(b"/world::<global initializer>".to_vec())
+            .or_default()
+            .push(dmb.world.global_initializer_proc_id() as usize);
+    }
+    let mut helpers = Vec::new();
+    for (path, ids) in &groups {
+        for (occurrence, &id) in ids.iter().enumerate() {
+            for (argument, metadata) in dmb
+                .proc_arguments(id)
+                .unwrap_or_default()
+                .iter()
+                .enumerate()
+            {
+                if let Some(helper) = dmb.argument_source_proc_id(metadata) {
+                    let mut key = path.clone();
+                    key.extend_from_slice(
+                        format!("::<definition {occurrence} argument {argument} source>")
+                            .as_bytes(),
+                    );
+                    helpers.push((key, helper as usize));
+                }
+            }
+        }
+    }
+    for (key, id) in helpers {
+        groups.entry(key).or_default().push(id);
+    }
+    groups
+}
+
+fn normalize_instruction_targets(
+    normalized: &mut NormalInstruction,
+    targets: &BTreeMap<usize, usize>,
+) {
+    for operand in &mut normalized.operands {
+        match operand {
+            NormalOperand::Switch(cases, default) => {
+                for (_, target) in cases {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            NormalOperand::PickSwitch(cases, default) => {
+                for (_, target) in cases {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            NormalOperand::RangeSwitch(ranges, exact, default) => {
+                for (_, _, target) in ranges {
+                    normalize_target(target, targets);
+                }
+                for (_, target) in exact {
+                    normalize_target(target, targets);
+                }
+                normalize_target(default, targets);
+            }
+            _ => {}
+        }
+    }
+    if normalized.opcode == 0xb1 {
+        if let Some(NormalOperand::Offsets(offsets)) = normalized.operands.first() {
+            if let Some(branches) = offsets
+                .iter()
+                .map(|offset| targets.get(&(*offset as usize)).copied())
+                .collect::<Option<Vec<_>>>()
+            {
+                normalized.operands[0] = NormalOperand::Branches(branches);
+            }
+        }
+    }
+    if crate::bytecode::is_branch_opcode(normalized.opcode) {
+        if let Some(NormalOperand::Word(offset)) = normalized.operands.first() {
+            if let Some(&target) = targets.get(&(*offset as usize)) {
+                normalized.operands[0] = NormalOperand::Branch(target);
+            }
+        }
+    }
+}
+
+/// Normalize one procedure with the same operand/target rules as compare_proc_code.
+/// Reject missing bodies and undecodable operands instead of treating them as an
+/// empty procedure. Debug stripping preserves targets into/across debug markers.
+pub fn procedure_instructions(
+    dmb: &Dmb,
+    id: usize,
+    ignore_debug: bool,
+) -> Result<Vec<ProcedureInstruction>, String> {
+    let code = dmb
+        .proc_code_words(id)
+        .ok_or_else(|| format!("procedure {id} has no code list"))?;
+    let decoded = bytecode::decode(code).map_err(|error| format!("procedure {id}: {error:?}"))?;
+    let mut offsets = BTreeMap::new();
+    let mut ordinal = 0;
+    for item in &decoded {
+        offsets.insert(item.offset, ordinal);
+        if !ignore_debug || !matches!(item.opcode, 0x84 | 0x85) {
+            ordinal += 1;
+        }
+    }
+    offsets.insert(code.len(), ordinal);
+    decoded
+        .iter()
+        .filter(|item| !ignore_debug || !matches!(item.opcode, 0x84 | 0x85))
+        .enumerate()
+        .map(|(ordinal, item)| {
+            let mut normalized = instruction(dmb, item)
+                .map_err(|error| format!("procedure {id} at {}: {error:?}", item.offset))?;
+            normalize_instruction_targets(&mut normalized, &offsets);
+            Ok(ProcedureInstruction {
+                ordinal,
+                wire_offset: item.offset,
+                opcode: normalized.opcode,
+                operands: format!("{:?}", normalized.operands),
+            })
+        })
+        .collect()
+}
+
 fn operand(dmb: &Dmb, operand: Operand) -> NormalOperand {
     match operand {
         Operand::Word(word) => NormalOperand::Word(word),
@@ -690,50 +1000,7 @@ fn compare_code_options(
             (&mut a_instruction, &left_offsets),
             (&mut b_instruction, &right_offsets),
         ] {
-            for operand in &mut normalized.operands {
-                match operand {
-                    NormalOperand::Switch(cases, default) => {
-                        for (_, target) in cases {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    NormalOperand::PickSwitch(cases, default) => {
-                        for (_, target) in cases {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    NormalOperand::RangeSwitch(ranges, exact, default) => {
-                        for (_, _, target) in ranges {
-                            normalize_target(target, targets);
-                        }
-                        for (_, target) in exact {
-                            normalize_target(target, targets);
-                        }
-                        normalize_target(default, targets);
-                    }
-                    _ => {}
-                }
-            }
-            if normalized.opcode == 0xb1 {
-                if let Some(NormalOperand::Offsets(offsets)) = normalized.operands.first() {
-                    if let Some(branches) = offsets
-                        .iter()
-                        .map(|offset| targets.get(&(*offset as usize)).copied())
-                        .collect::<Option<Vec<_>>>()
-                    {
-                        normalized.operands[0] = NormalOperand::Branches(branches);
-                    }
-                }
-            }
-            if crate::bytecode::is_branch_opcode(normalized.opcode) {
-                if let Some(NormalOperand::Word(offset)) = normalized.operands.first() {
-                    if let Some(&target) = targets.get(&(*offset as usize)) {
-                        normalized.operands[0] = NormalOperand::Branch(target);
-                    }
-                }
-            }
+            normalize_instruction_targets(normalized, targets);
         }
         out.check(
             name,
@@ -1787,6 +2054,116 @@ pub fn compare_maps_semantic(
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn procedure_alignment_groups_insertions_and_keeps_operand_changes() {
+        let code = |items: &[(u32, &str)]| {
+            items
+                .iter()
+                .enumerate()
+                .map(|(ordinal, (opcode, operands))| ProcedureInstruction {
+                    ordinal,
+                    wire_offset: ordinal,
+                    opcode: *opcode,
+                    operands: (*operands).into(),
+                })
+                .collect::<Vec<_>>()
+        };
+        let expected = code(&[
+            (0x33, "events"),
+            (0x33, "at"),
+            (0x7b, ""),
+            (0x34, "Local10"),
+            (0x12, ""),
+        ]);
+        let actual = code(&[
+            (0x50, "selector"),
+            (0x34, "Local8"),
+            (0x33, "events"),
+            (0x33, "at"),
+            (0x7b, ""),
+            (0x34, "Local11"),
+            (0x12, ""),
+        ]);
+        let result = align_procedure_instructions(&expected, &actual, 8);
+        assert_eq!(result.changed_regions, 2);
+        assert_eq!(result.matched_opcodes, 5);
+        assert_eq!(result.hunks[0].expected_unpaired, 0);
+        assert_eq!(result.hunks[0].actual_unpaired, 2);
+        assert_eq!(result.hunks[1].paired_operand_changes, 1);
+        assert!(!result.hunks_truncated);
+        assert_eq!(
+            align_procedure_instructions(&expected, &actual, 1).changed_regions,
+            2
+        );
+        assert!(align_procedure_instructions(&expected, &actual, 1).hunks_truncated);
+    }
+
+    #[test]
+    fn procedure_alignment_bounds_quadratic_work() {
+        let mut expected = vec![
+            ProcedureInstruction {
+                ordinal: 0,
+                wire_offset: 0,
+                opcode: 0x33,
+                operands: "events".into()
+            };
+            1_100
+        ];
+        let mut actual = expected.clone();
+        expected[500].operands = "Local10".into();
+        actual[500].operands = "Local11".into();
+        let result = align_procedure_instructions(&expected, &actual, 8);
+        assert!(result.work_limit_exceeded);
+        assert_eq!(result.changed_regions, 1);
+        assert_eq!(result.hunks[0].expected_start, 500);
+        assert_eq!(result.hunks[0].expected_end, 501);
+        assert_eq!(result.matched_opcodes, 1_099);
+    }
+
+    #[test]
+    fn procedure_snapshot_normalizes_targets_and_rejects_missing_code() {
+        let mut expected = template();
+        let mut actual = expected.clone();
+        expected.procs[0].code_locals_args[0] = expected.lists.len() as u32;
+        expected.lists.push(vec![0x50, 2, 0xf, 6, 0x85, 7, 0x12]);
+        actual.procs[0].code_locals_args[0] = actual.lists.len() as u32;
+        actual.lists.push(vec![0x60, 42, 0x4000, 0, 0xf, 6, 0x12]);
+        let left = procedure_instructions(&expected, 0, true).unwrap();
+        let right = procedure_instructions(&actual, 0, true).unwrap();
+        assert_eq!(left.len(), right.len());
+        assert!(left
+            .iter()
+            .zip(&right)
+            .all(|(a, b)| a.opcode == b.opcode && a.operands == b.operands));
+        assert_ne!(left[1].wire_offset, right[1].wire_offset);
+        assert!(compare_proc_code(&expected, 0, &actual, 0, "/probe", 32, true).is_empty());
+        assert!(procedure_instructions(&actual, usize::MAX, true).is_err());
+        actual.procs[0].code_locals_args[0] = u32::MAX;
+        assert!(procedure_instructions(&actual, 0, true).is_err());
+    }
+
+    #[test]
+    fn procedure_snapshot_resolves_string_ids_and_keeps_index_arithmetic() {
+        let mut expected = template();
+        let name = expected.strings.len() as u32;
+        expected.strings.push(crate::dmb::DmString {
+            data: b"power_regions".to_vec(),
+            long_chunks: 0,
+        });
+        let code = expected.lists.len() as u32;
+        expected.procs[0].code_locals_args[0] = code;
+        expected
+            .lists
+            .push(vec![0x33, 0xffdc, 0xffce, name, 0x50, 3, 0x7b, 0x12]);
+        let mut actual = expected.clone();
+        actual.strings.push(actual.strings[name as usize].clone());
+        actual.lists[code as usize][3] = (actual.strings.len() - 1) as u32;
+        let left = procedure_instructions(&expected, 0, true).unwrap();
+        assert_eq!(left, procedure_instructions(&actual, 0, true).unwrap());
+        actual.lists[code as usize][5] = 4;
+        assert_ne!(left, procedure_instructions(&actual, 0, true).unwrap());
+    }
+
     #[test]
     fn duplicate_proc_pairing_uses_bindings_and_detects_body_swaps() {
         let native = Dmb::from_bytes(include_bytes!(
@@ -2860,15 +3237,15 @@ mod tests {
             copies: 1,
         });
         let mut actual = expected.clone();
-        actual.lists[code as usize] = vec![
+        actual.lists[code as usize] = (vec![
             0x50, 2, 0x34, 0xffdc, 0xffce, y, 0x50, 1, 0x34, 0xffdc, 0xffce, x, 0,
-        ];
+        ]).into();
         assert!(!compare_maps(&expected, &actual, 10).is_empty());
         assert!(compare_maps_semantic(&expected, &actual, 10).is_empty());
-        actual.lists[code as usize] = vec![
+        actual.lists[code as usize] = (vec![
             0x50, 2, 0x34, 0xffdc, 0xffce, 0xffdc, 0xffce, y, 0x50, 1, 0x34, 0xffdc, 0xffce,
             0xffdc, 0xffce, x, 0,
-        ];
+        ]).into();
         assert!(compare_maps_semantic(&expected, &actual, 10).is_empty());
         actual.lists[code as usize][6] = 0xffe5;
         assert!(constant_initializer_signature(&actual, initializer_id).is_none());

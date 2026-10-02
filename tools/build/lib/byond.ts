@@ -4,6 +4,7 @@ import path from 'node:path';
 import Bun from 'bun';
 import Juke from '../juke/index.js';
 import { regQuery } from './winreg';
+import { completeNativeFallback, nativeDreamMaker } from '../../dmb/integration/build';
 
 /** Cached path to DM compiler */
 let dmPath: string;
@@ -128,6 +129,8 @@ export async function DreamMaker(
     Juke.logger.info('Using named byond version:', options.namedDmVersion);
   }
   const dmPath = await getDmPath(options.namedDmVersion);
+  const native = await nativeDreamMaker(dmeFile, dmPath, options);
+  if (native.handled) return;
   // Get project basename
   const dmeBaseName = dmeFile.replace(/\.dme$/, '');
   // Make sure output files are writable
@@ -220,6 +223,7 @@ export async function DreamMaker(
     ...defines.map((def) => `-D${def}`),
     dmeFile,
   ]);
+  if (native.fallback) completeNativeFallback(dmeFile, native.fallback);
 }
 
 type DDOptions = {

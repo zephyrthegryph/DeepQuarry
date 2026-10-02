@@ -6,7 +6,14 @@
 //! provide that proof without materializing every unchanged record.
 
 pub mod generation;
+pub mod conventional;
 pub mod list_image;
+pub mod chunks;
+pub mod object_directory;
+pub mod typed_pages;
+pub mod wire_image;
+pub mod assembly;
+pub mod wire_relocation;
 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -1094,3 +1101,5 @@ mod tests {
         fs::remove_dir_all(directory).unwrap();
     }
 }
+
+pub mod typed_table;

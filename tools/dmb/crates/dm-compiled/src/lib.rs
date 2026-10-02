@@ -6,13 +6,14 @@
 #[cfg(test)]
 use dm_compiler::bootstrap::resolved_resource_requests;
 use dm_compiler::bootstrap::{
-    compile_preprocessed_project_with_resources_prepared, resolved_resource_disk_path,
+    compile_preprocessed_project_with_resources_prepared_mode, resolved_resource_disk_path,
     resolved_resource_requests_with_literals,
 };
-use dm_compiler::{load_map_set_from_paths, CompilerSession, ProjectSession};
+use dm_compiler::{load_map_set_from_paths, CompilerSession};
 use dm_output::generation::{
     current_generation, publish_generation_reusing_archive, publish_generation_with_archive,
-    verified_archive, verify_generation_digest, VerifiedArchive,
+    publish_generation_with_verified_bytecode, verified_archive, verify_generation_digest,
+    VerifiedArchive, VerifiedBytecode,
 };
 use dm_output::{
     apply_pair_in_place, plan_pair, recover_pair, validate_byond_pair, PairPlan, PatchPolicy,
@@ -33,8 +34,27 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-mod project_discovery;
-use project_discovery::discover_consistent_project;
+pub mod frontend_pool;
+mod prepared_persistence;
+pub mod prepared_project;
+pub mod project_discovery;
+
+/// Detached compiler declarations for lint/documentation producers. Procedure
+/// bodies remain in prepared source fragments; reference coverage is not implied.
+pub struct ProjectFrontendSnapshot {
+    pub prepared: Arc<prepared_project::PreparedProject>,
+    pub ast: Arc<AstFile>,
+    pub declarations: Result<dm_semantics::DeclarationIndex, Vec<String>>,
+    pub syntax_errors: Vec<String>,
+    pub syntax_complete: bool,
+}
+
+/// Shared native query model; AST fragments and semantic owner roots are
+/// immutable and remain valid after the coordinator session is returned.
+pub struct ProjectAnalysisView {
+    pub prepared: Arc<prepared_project::PreparedProject>,
+    pub view: dm_analysis::FrontendView,
+}
 
 static TEMP_SEQUENCE: AtomicU64 = AtomicU64::new(0);
 const BUILD_FINGERPRINT: &str =
@@ -44,6 +64,9 @@ const MAX_BUILD_RESULTS: usize = 256;
 /// The Git common directory is shared by all worktrees of one codebase. Use
 /// it for immutable artifacts, with a project-local fallback outside Git.
 pub fn default_cache_root(project_or_directory: &Path) -> PathBuf {
+    if let Some(root) = std::env::var_os("DM_COMPILER_CACHE_ROOT") {
+        return PathBuf::from(root);
+    }
     let directory = if project_or_directory.is_dir() {
         project_or_directory
     } else {
@@ -156,6 +179,18 @@ impl Sessions {
 /// compiler/target/dependency fingerprint in their key before calling `put`.
 pub struct ContentStore {
     root: PathBuf,
+    metadata: dm_store::Store,
+    verified_blobs: Mutex<BTreeMap<PathBuf, (dm_host::file_stamp::FileStamp, String)>>,
+}
+
+/// Verified byte range in an immutable rebuildable CAS pack. The source digest
+/// identifies bytes independently of pack grouping or publication order.
+#[derive(Clone, Serialize, Deserialize)]
+pub(crate) struct PackedBlob {
+    pub digest: [u8;32],
+    pub pack: Option<String>,
+    pub start: usize,
+    pub len: usize,
 }
 
 /// Portable key for a pure compiler stage. Every semantic dependency that can
@@ -183,6 +218,13 @@ struct CachedPairManifest {
     emitted_procs: usize,
     dmb_digest: String,
     rsc_digest: String,
+}
+
+#[derive(Serialize, Deserialize)]
+struct CachedBytecodeManifest {
+    version: u32,
+    pair: CachedPairManifest,
+    catalog: dm_resources::ResourceCatalog,
 }
 
 const PAIR_MANIFEST_VERSION: u32 = 1;
@@ -221,8 +263,20 @@ struct IncrementalRecord {
     rsc_digest: String,
     emitted_procs: usize,
 }
+enum PreparedImage {
+    Native(byond_dmb::dmb::Dmb),
+    Wire(dm_output::wire_image::WireImage),
+}
+impl PreparedImage {
+    fn resources(&self)->&[byond_dmb::dmb::ResourceRef] {match self {
+        Self::Native(image)=>&image.resources,Self::Wire(image)=>image.resources(),
+    }}
+    fn materialize(self)->io::Result<byond_dmb::dmb::Dmb> {match self {
+        Self::Native(image)=>Ok(image),Self::Wire(image)=>image.materialize(),
+    }}
+}
 struct PreparedBuild {
-    dmb: byond_dmb::dmb::Dmb,
+    dmb: PreparedImage,
     serialized_dmb: Option<Vec<u8>>,
     list_spans: Option<Vec<std::ops::Range<usize>>>,
     list_image: Option<dm_output::list_image::ListImage>,
@@ -231,7 +285,15 @@ struct PreparedBuild {
     emitted_procs: usize,
     lowered_procs: usize,
     reused_procs: usize,
+    artifact_reuse: dm_compiler::ArtifactReuseStats,
     checkpoint: Option<dm_compiler::incremental::EmissionCheckpoint>,
+}
+
+#[derive(Serialize, Deserialize)]
+struct ArchiveCatalogRecord {
+    version: u32,
+    archive_digest: String,
+    catalog: dm_resources::ResourceCatalog,
 }
 
 struct RetainedWorld {
@@ -247,7 +309,7 @@ fn world_resident_bytes(dmb: &byond_dmb::dmb::Dmb, image: &[u8], checkpoint_byte
     // their allocations. DMB records and list/string buffers are charged directly.
     checkpoint_bytes.saturating_mul(2)
         + image.len()
-        + dmb.lists.capacity() * std::mem::size_of::<Vec<u32>>()
+        + dmb.lists.capacity() * std::mem::size_of::<byond_dmb::list_words::ListWords>()
         + dmb
             .lists
             .iter()
@@ -270,11 +332,88 @@ fn world_resident_bytes(dmb: &byond_dmb::dmb::Dmb, image: &[u8], checkpoint_byte
         + dmb.lists.len() * std::mem::size_of::<std::ops::Range<usize>>()
 }
 
+/// Rename the exact invalid file opened by this handle. Denying writes and
+/// deletes closes the check/rename race: a concurrent valid publisher cannot
+/// replace this path between verification and quarantine.
+#[cfg(windows)]
+fn quarantine_corrupt_blob(path:&Path,digest:&str)->io::Result<bool> {
+    use std::os::windows::{fs::OpenOptionsExt,io::AsRawHandle,ffi::OsStrExt};
+    use std::io::Read;
+    let mut file=fs::OpenOptions::new().read(true).access_mode(0x8000_0000|0x0001_0000).share_mode(1).open(path)?;
+    let mut hasher=Sha256::new();let mut buffer=[0u8;64*1024];
+    loop {let read=file.read(&mut buffer)?;if read==0 {break;}hasher.update(&buffer[..read]);}
+    if format!("{:x}",hasher.finalize())==digest {return Ok(false);}
+    let parent=path.parent().ok_or_else(||io::Error::other("CAS quarantine path has no parent"))?;
+    let quarantine=parent.join(format!("{digest}.corrupt-{}-{}",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+    let absolute=std::path::absolute(&quarantine)?;
+    let name:Vec<u16>=absolute.as_os_str().encode_wide().collect();
+    let handle_offset=if std::mem::size_of::<usize>()==8 {8} else {4};
+    let length_offset=handle_offset+std::mem::size_of::<usize>();
+    let name_offset=length_offset+4;
+    let size=name_offset+name.len()*2;
+    let mut storage=vec![0u64;size.div_ceil(8)];
+    let bytes=unsafe {std::slice::from_raw_parts_mut(storage.as_mut_ptr().cast::<u8>(),storage.len()*8)};
+    bytes[length_offset..length_offset+4].copy_from_slice(&u32::try_from(name.len()*2).map_err(io::Error::other)?.to_le_bytes());
+    for (index,unit) in name.iter().enumerate() {bytes[name_offset+index*2..name_offset+index*2+2].copy_from_slice(&unit.to_le_bytes());}
+    #[link(name="Kernel32")]
+    unsafe extern "system" {fn SetFileInformationByHandle(handle:*mut std::ffi::c_void,class:u32,info:*const std::ffi::c_void,len:u32)->i32;}
+    if unsafe {SetFileInformationByHandle(file.as_raw_handle(),3,bytes.as_ptr().cast(),u32::try_from(size).map_err(io::Error::other)?)}==0 {return Err(io::Error::last_os_error());}
+    Ok(true)
+}
+
 impl ContentStore {
     pub fn new(root: impl Into<PathBuf>) -> io::Result<Self> {
         let root = root.into();
         fs::create_dir_all(&root)?;
-        Ok(Self { root })
+        let metadata = dm_store::Store::open(root.join("metadata.redb"))?;
+        Ok(Self {
+            root,
+            metadata,
+            verified_blobs: Mutex::new(BTreeMap::new()),
+        })
+    }
+
+    fn verify_blob(&self, path: &Path, digest: &str) -> io::Result<bool> {
+        let before = (!input_proof::exact_inputs())
+            .then(|| dm_host::file_stamp::capture(path))
+            .flatten();
+        if let Some(stamp) = &before {
+            if self
+                .verified_blobs
+                .lock()
+                .unwrap_or_else(|e| e.into_inner())
+                .get(path)
+                .is_some_and(|(expected, hash)| expected == stamp && hash == digest)
+            {
+                return Ok(true);
+            }
+        }
+        let valid = verify_file_digest(path, digest)?;
+        if valid && before.is_some() && dm_host::file_stamp::capture(path) == before {
+            let mut proofs = self
+                .verified_blobs
+                .lock()
+                .unwrap_or_else(|e| e.into_inner());
+            // Strong-stamp accelerator only. Missing stamps and exact-input
+            // mode always read/hash bytes. Limit metadata independently of CAS.
+            while proofs.len() >= 2048 && !proofs.contains_key(path) {
+                let Some(key) = proofs.keys().next().cloned() else {
+                    break;
+                };
+                proofs.remove(&key);
+            }
+            proofs.insert(path.to_owned(), (before.unwrap(), digest.to_owned()));
+        }
+        Ok(valid)
+    }
+
+    fn proof_resident_bytes(&self) -> usize {
+        self.verified_blobs
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .map(|(path, (_, digest))| path.as_os_str().len() * 2 + digest.capacity() + 256)
+            .sum()
     }
 
     pub fn put(&self, namespace: &str, bytes: &[u8]) -> io::Result<String> {
@@ -282,6 +421,58 @@ impl ContentStore {
     }
 
     fn put_parts(&self, namespace: &str, parts: &[&[u8]]) -> io::Result<String> {
+        self.put_parts_inner(namespace, parts, true)
+    }
+
+    /// Rebuildable input blobs are atomically installed and checksum checked on
+    /// restore. Their manifest is committed last; flushing each small file is
+    /// unnecessary for cache correctness and expensive on cold projects.
+    pub(crate) fn put_rebuildable(&self, namespace: &str, bytes: &[u8]) -> io::Result<String> {
+        self.put_parts_inner(namespace, &[bytes], false)
+    }
+
+    /// Publish one bounded immutable pack and then its transactional source
+    /// index. The caller publishes its generation head only after this returns.
+    pub(crate) fn put_rebuildable_batch(&self, namespace:&str, inputs:&[([u8;32],&[u8])]) -> io::Result<Vec<PackedBlob>> {
+        const BOUND:usize=2*1024*1024;
+        if !valid_namespace(namespace) {return Err(io::Error::other("invalid packed CAS namespace"));}
+        let total=inputs.iter().try_fold(0usize,|sum,(_,bytes)|sum.checked_add(bytes.len())).ok_or_else(||io::Error::other("CAS pack size overflow"))?;
+        if total>BOUND && inputs.len()!=1 {return Err(io::Error::other("CAS batch exceeds bounded pack size"));}
+        for (expected,bytes) in inputs {
+            if <[u8;32]>::from(Sha256::digest(bytes))!=*expected {return Err(io::Error::other("authored CAS input digest mismatch"));}
+        }
+        let pack = if total>BOUND {
+            self.put_rebuildable(namespace,inputs[0].1)?;
+            None
+        } else {
+            let parts:Vec<_>=inputs.iter().map(|(_,bytes)|*bytes).collect();
+            Some(self.put_parts_inner(&format!("{namespace}-packs-v1"),&parts,false)?)
+        };
+        let mut offset=0usize;
+        let mut locations=Vec::with_capacity(inputs.len());
+        let mut records=Vec::with_capacity(inputs.len());
+        for (digest,bytes) in inputs {
+            let location=PackedBlob {digest:*digest,pack:pack.clone(),start:offset,len:bytes.len()};
+            offset+=bytes.len();
+            records.push((dm_store::Key::new(format!("{namespace}-packed-index-v1"),digest.iter().map(|byte|format!("{byte:02x}")).collect::<String>()),serde_json::to_vec(&location).map_err(io::Error::other)?));
+            locations.push(location);
+        }
+        self.metadata.put_many(records,None)?;
+        Ok(locations)
+    }
+
+    pub(crate) fn packed_blob_path(&self,namespace:&str,location:&PackedBlob)->PathBuf {
+        let (namespace,digest)=if let Some(pack)=&location.pack {(format!("{namespace}-packs-v1"),pack.clone())}
+            else {(namespace.to_owned(),location.digest.iter().map(|byte|format!("{byte:02x}")).collect())};
+        self.root.join(namespace).join(&digest[..2]).join(digest)
+    }
+
+    fn put_parts_inner(
+        &self,
+        namespace: &str,
+        parts: &[&[u8]],
+        durable: bool,
+    ) -> io::Result<String> {
         if !valid_namespace(namespace) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
@@ -297,7 +488,7 @@ impl ContentStore {
         fs::create_dir_all(&directory)?;
         let destination = directory.join(&digest);
         if destination.exists() {
-            match verify_file_digest(&destination, &digest) {
+            match self.verify_blob(&destination, &digest) {
                 Ok(true) => return Ok(digest),
                 Ok(false) => {}
                 Err(error) if error.kind() == io::ErrorKind::InvalidData => {
@@ -317,27 +508,71 @@ impl ContentStore {
         for part in parts {
             file.write_all(part)?;
         }
-        file.sync_all()?;
-        match fs::rename(&temporary, &destination) {
-            Ok(()) => Ok(digest),
-            Err(_error) if destination.exists() => {
-                let _ = fs::remove_file(&temporary);
-                if verify_file_digest(&destination, &digest)? {
-                    Ok(digest)
-                } else {
-                    Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "CAS hash mismatch",
-                    ))
+        if durable {
+            file.sync_all()?;
+        }
+        drop(file);
+        let result=(|| {
+            for _ in 0..3 {
+                match fs::rename(&temporary,&destination) {
+                    Ok(())=>return Ok(digest.clone()),
+                    Err(_rename_error) if destination.exists()=>{
+                        #[cfg(windows)]
+                        {
+                            match quarantine_corrupt_blob(&destination,&digest) {
+                                Ok(false)=>return Ok(digest.clone()),
+                                Ok(true)=>continue,
+                                Err(error) if error.kind()==io::ErrorKind::NotFound=>continue,
+                                Err(error)=>return Err(error),
+                            }
+                        }
+                        #[cfg(not(windows))]
+                        {
+                            if self.verify_blob(&destination,&digest)? {return Ok(digest.clone());}
+                            return Err(_rename_error);
+                        }
+                    },
+                    Err(error)=>return Err(error),
                 }
             }
-            Err(error) => {
-                let _ = fs::remove_file(&temporary);
-                Err(error)
-            }
-        }
+            if self.verify_blob(&destination,&digest).unwrap_or(false) {Ok(digest.clone())}
+            else {Err(io::Error::other("CAS publication repair retry limit exceeded"))}
+        })();
+        let _=fs::remove_file(&temporary);
+        result
     }
 
+    fn put_dmb_pages(&self, image: &dm_output::chunks::StoredDmb) -> io::Result<dm_output::generation::VerifiedDmbFile> {
+        use dm_output::generation::VerifiedDmbFile;
+        let digest=image.digest().to_owned();
+        let directory=self.root.join("project-dmb-v1").join(&digest[..2]);
+        fs::create_dir_all(&directory)?;
+        let destination=directory.join(&digest);
+        if destination.exists() {
+            if let Ok(file)=VerifiedDmbFile::open(&destination,&digest,image.len() as u64) {return Ok(file);}
+            #[cfg(windows)]
+            match quarantine_corrupt_blob(&destination,&digest) {
+                Ok(false)=>return VerifiedDmbFile::open(&destination,&digest,image.len() as u64),
+                Ok(true)=>{},
+                Err(error) if error.kind()==io::ErrorKind::NotFound=>{},
+                Err(error)=>return Err(error),
+            }
+            #[cfg(not(windows))]
+            return Err(io::Error::new(io::ErrorKind::InvalidData,"existing DMB CAS file failed validation"));
+        }
+        let temporary=directory.join(format!("{digest}.{}.{}.tmp",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+        let result=(|| {
+            let file=VerifiedDmbFile::compose(&temporary,image)?;
+            match fs::rename(&temporary,&destination) {
+                Ok(())=>file.relocated(&destination),
+                Err(error)=>match VerifiedDmbFile::open(&destination,&digest,image.len() as u64) {
+                    Ok(winner)=>Ok(winner),Err(_)=>Err(error),
+                },
+            }
+        })();
+        let _=fs::remove_file(&temporary);
+        result
+    }
     pub fn get(&self, namespace: &str, digest: &str) -> io::Result<Vec<u8>> {
         if !valid_namespace(namespace)
             || digest.len() != 64
@@ -394,57 +629,63 @@ impl ContentStore {
     /// Store an artifact without joining its parts into a second allocation.
     /// The bytes, digest, and pointer format match `put_artifact` exactly.
     pub fn put_artifact_parts(&self, key: &ArtifactKey, parts: &[&[u8]]) -> io::Result<String> {
-        let key_digest = key.digest()?;
         let payload_digest = self.put_parts("artifact-payload-v1", parts)?;
-        let directory = self.root.join("artifact-index-v1").join(&key_digest[..2]);
-        fs::create_dir_all(&directory)?;
-        let destination = directory.join(&key_digest);
-        if let Some(existing) = self.get_artifact(key)? {
-            if !parts_equal(&existing, parts) {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "artifact key collision or incomplete dependencies",
-                ));
-            }
-            return Ok(payload_digest);
-        }
+        let record_key = dm_store::Key::new("artifact-index-v2", key.digest()?);
         let pointer = ArtifactPointer {
             key: key.clone(),
             payload_digest: payload_digest.clone(),
         };
-        let temporary = directory.join(format!(
-            "{}.{}.{}.tmp",
-            key_digest,
-            std::process::id(),
-            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-        ));
-        let mut file = fs::File::create(&temporary)?;
-        file.write_all(&serde_json::to_vec(&pointer).map_err(io::Error::other)?)?;
-        file.sync_all()?;
-        match fs::hard_link(&temporary, &destination) {
-            Ok(()) => {}
-            Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
-                let existing = self.get_artifact(key)?.ok_or_else(|| {
-                    io::Error::new(io::ErrorKind::NotFound, "artifact pointer disappeared")
-                })?;
-                if !parts_equal(&existing, parts) {
-                    fs::remove_file(&temporary)?;
+        let bytes = serde_json::to_vec(&pointer).map_err(io::Error::other)?;
+        for _ in 0..8 {
+            let read = self
+                .metadata
+                .read_many(std::slice::from_ref(&record_key), None)?;
+            if let Some(existing) = &read.values[0] {
+                let existing: ArtifactPointer = serde_json::from_slice(existing)
+                    .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+                if existing.key != *key || existing.payload_digest != payload_digest {
                     return Err(io::Error::new(
                         io::ErrorKind::InvalidData,
                         "artifact key collision or incomplete dependencies",
                     ));
                 }
+                return Ok(payload_digest);
             }
-            Err(error) => {
-                fs::remove_file(&temporary)?;
-                return Err(error);
+            if self.metadata.commit(
+                &read.witnesses,
+                &[dm_store::Change::Put(record_key.clone(), bytes.clone())],
+                None,
+            )? == dm_store::Commit::Applied
+            {
+                return Ok(payload_digest);
             }
         }
-        fs::remove_file(&temporary)?;
-        Ok(payload_digest)
+        Err(io::Error::new(
+            io::ErrorKind::WouldBlock,
+            "artifact metadata changed repeatedly; retry",
+        ))
     }
 
     pub fn get_artifact(&self, key: &ArtifactKey) -> io::Result<Option<Vec<u8>>> {
+        let record_key = dm_store::Key::new("artifact-index-v2", key.digest()?);
+        let read = self.metadata.read_many(&[record_key], None)?;
+        if let Some(bytes) = &read.values[0] {
+            let pointer: ArtifactPointer = serde_json::from_slice(bytes)
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if pointer.key != *key || !valid_digest(&pointer.payload_digest) {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "artifact pointer mismatch",
+                ));
+            }
+            return self
+                .get("artifact-payload-v1", &pointer.payload_digest)
+                .map(Some);
+        }
+        self.legacy_get_artifact(key)
+    }
+
+    fn legacy_get_artifact(&self, key: &ArtifactKey) -> io::Result<Option<Vec<u8>>> {
         let key_digest = key.digest()?;
         let path = self
             .root
@@ -497,6 +738,14 @@ impl ContentStore {
     /// Discard a damaged index entry so a pure stage can regenerate it. Blob
     /// bytes remain content-addressed and are replaced by `put` if damaged.
     fn discard_corrupt_artifact(&self, key: &ArtifactKey) -> io::Result<()> {
+        self.metadata.commit(
+            &[],
+            &[dm_store::Change::Delete(dm_store::Key::new(
+                "artifact-index-v2",
+                key.digest()?,
+            ))],
+            None,
+        )?;
         let digest = key.digest()?;
         let path = self
             .root
@@ -527,20 +776,6 @@ fn verify_file_digest(path: &Path, expected: &str) -> io::Result<bool> {
         hash.update(&buffer[..read]);
     }
     Ok(format!("{:x}", hash.finalize()) == expected)
-}
-
-fn parts_equal(bytes: &[u8], parts: &[&[u8]]) -> bool {
-    if parts.iter().map(|part| part.len()).sum::<usize>() != bytes.len() {
-        return false;
-    }
-    let mut offset = 0;
-    for part in parts {
-        if &bytes[offset..offset + part.len()] != *part {
-            return false;
-        }
-        offset += part.len();
-    }
-    true
 }
 
 fn valid_namespace(value: &str) -> bool {
@@ -596,6 +831,14 @@ pub struct BuildResult {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum FailureKind {
+    Source,
+    Internal,
+    Configuration,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Response {
     pub ok: bool,
     pub item_count: usize,
@@ -603,6 +846,8 @@ pub struct Response {
     pub source_digest: Option<String>,
     pub shared_syntax_hit: bool,
     pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_kind: Option<FailureKind>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub build: Option<BuildResult>,
 }
@@ -616,11 +861,13 @@ pub struct Coordinator {
     syntax_cache: HashMap<String, CachedSyntax>,
     build_cache: HashMap<BuildCacheKey, BuildResult>,
     build_inputs: HashMap<SessionKey, CachedBuildInputs>,
+    asset_inventory: HashMap<SessionKey, Arc<AssetInventory>>,
     incremental: dm_compiler::incremental::IncrementalSession,
     // One bounded discovery cache per worker; switching projects releases it.
-    discovery_cache: Option<(PathBuf, project_discovery::DiscoveryCache)>,
-    outline_cache: Option<(PathBuf, dm_compiler::frontend::OutlineSession)>,
+    frontend_pool: frontend_pool::FrontendPool,
     retained_world: Option<RetainedWorld>,
+    serialization_validation: byond_dmb::dmb::ReferenceValidationCache,
+    serialization_wire: byond_dmb::dmb::DmbWireCache,
     #[cfg(test)]
     retained_world_hits: usize,
     clock: u64,
@@ -666,6 +913,7 @@ thread_local! {
     static RESOURCE_RESOLUTIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
 }
 
+#[derive(Clone)]
 struct BuildInputSnapshot {
     project_digest: String,
     diagnostics: Vec<String>,
@@ -675,13 +923,53 @@ struct BuildInputSnapshot {
     source_digests: BTreeMap<PathBuf, [u8; 32]>,
     missing_dependencies: Vec<PathBuf>,
     resource_requests: Vec<ResourceRequest>,
+    resource_archive_inputs: Option<Arc<dm_resources::ResourceArchiveInputs>>,
     source_resource_literals: Vec<String>,
-    preprocessed: PreprocessedProject,
+    preprocessed: Arc<PreprocessedProject>,
+    expansion: Arc<prepared_project::SegmentedExpansion>,
     proof: std::cell::RefCell<Option<InputProof>>,
     asset_proof: std::cell::RefCell<Option<InputProof>>,
     source_proof: std::cell::RefCell<Option<InputProof>>,
 }
 
+/// Compact asset node survives eviction of large source/build snapshots.
+#[derive(Clone, Serialize, Deserialize)]
+struct AssetInventory {
+    proof: InputProof,
+    requests: Vec<ResourceRequest>,
+    literals: Vec<String>,
+    dirs: Vec<PathBuf>,
+    skins: Vec<PathBuf>,
+    maps: Vec<PathBuf>,
+    map_fingerprint: [u8; 32],
+    resource_digest: String,
+}
+impl AssetInventory {
+    fn resident_bytes(&self) -> usize {
+        self.proof
+            .resident_bytes()
+            .saturating_add(
+                self.requests
+                    .iter()
+                    .map(|x| x.archive_name.len() + x.disk_path.to_string_lossy().len() + 128)
+                    .sum::<usize>(),
+            )
+            .saturating_add(self.literals.iter().map(|x| x.len() + 32).sum::<usize>())
+            .saturating_add(
+                self.dirs
+                    .iter()
+                    .chain(&self.skins)
+                    .chain(&self.maps)
+                    .map(|x| x.to_string_lossy().len() + 32)
+                    .sum::<usize>(),
+            )
+    }
+}
+fn asset_inventory_key(key: &SessionKey) -> String {
+    dm_compiler::incremental::digest(&serde_json::to_vec(key).unwrap())
+}
+
+#[derive(Clone)]
 struct CachedBuildInputs {
     snapshot: BuildInputSnapshot,
     last_used: u64,
@@ -754,6 +1042,29 @@ fn proven_resource_resolution_current(
 
 impl ContentStore {
     fn load_receipt(&self, key: &ArtifactKey) -> io::Result<Option<BuildReceipt>> {
+        let read = self.metadata.read_many(
+            &[dm_store::Key::new("build-receipts-v2", key.digest()?)],
+            None,
+        )?;
+        if let Some(bytes) = &read.values[0] {
+            let pointer: ArtifactPointer = serde_json::from_slice(bytes)
+                .map_err(|error| io::Error::new(io::ErrorKind::InvalidData, error))?;
+            if pointer.key != *key || !valid_digest(&pointer.payload_digest) {
+                return Ok(None);
+            }
+            return match self.get_bounded(
+                "build-receipt-v1",
+                &pointer.payload_digest,
+                16 * 1024 * 1024,
+            ) {
+                Ok(bytes) => Ok(serde_json::from_slice(&bytes).ok()),
+                Err(_) => Ok(None),
+            };
+        }
+        self.legacy_load_receipt(key)
+    }
+
+    fn legacy_load_receipt(&self, key: &ArtifactKey) -> io::Result<Option<BuildReceipt>> {
         let directory = self.root.join("build-receipts-v1").join(key.digest()?);
         let mut paths = match fs::read_dir(directory) {
             Ok(entries) => entries
@@ -799,47 +1110,19 @@ impl ContentStore {
     fn store_receipt(&self, key: &ArtifactKey, receipt: &BuildReceipt) -> io::Result<()> {
         let bytes = serde_json::to_vec(receipt).map_err(io::Error::other)?;
         let payload_digest = self.put("build-receipt-v1", &bytes)?;
-        let directory = self.root.join("build-receipts-v1").join(key.digest()?);
-        fs::create_dir_all(&directory)?;
-        let stamp = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_nanos();
-        let name = format!(
-            "{stamp:040}-{}-{}.json",
-            std::process::id(),
-            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-        );
-        let temporary = directory.join(format!("{name}.tmp"));
-        let destination = directory.join(name);
-        let mut file = fs::OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&temporary)?;
-        file.write_all(
-            &serde_json::to_vec(&ArtifactPointer {
-                key: key.clone(),
-                payload_digest,
-            })
-            .map_err(io::Error::other)?,
-        )?;
-        file.sync_all()?;
-        drop(file);
-        fs::rename(temporary, destination)?;
-        let mut paths = fs::read_dir(&directory)?
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
-            .filter(|path| {
-                path.extension()
-                    .is_some_and(|extension| extension == "json")
-            })
-            .collect::<Vec<_>>();
-        paths.sort();
-        let excess = paths.len().saturating_sub(4);
-        for path in paths.into_iter().take(excess) {
-            let _ = fs::remove_file(path);
-        }
-        Ok(())
+        let pointer = ArtifactPointer {
+            key: key.clone(),
+            payload_digest,
+        };
+        self.metadata
+            .put_many(
+                vec![(
+                    dm_store::Key::new("build-receipts-v2", key.digest()?),
+                    serde_json::to_vec(&pointer).map_err(io::Error::other)?,
+                )],
+                None,
+            )
+            .map(|_| ())
     }
 }
 
@@ -849,13 +1132,33 @@ const MAX_BUILD_INPUT_BYTES: usize = 96 * 1024 * 1024;
 
 impl BuildInputSnapshot {
     fn resident_bytes(&self) -> usize {
-        self.source_resource_literals.capacity() * std::mem::size_of::<String>()
+        // Each output line retains an Origin, but lines from one include share
+        // their Arc<PathBuf>. Charge actual allocations once so this budget
+        // neither drops the source map nor counts the same file per line.
+        let mut origin_paths = std::collections::HashSet::new();
+        let origin_bytes = self.preprocessed.origin_resident_bytes()
+            + self.preprocessed.origin_paths()
+                .filter(|path| origin_paths.insert(Arc::as_ptr(path)))
+                .map(|path| path.capacity() * 2 + std::mem::size_of::<PathBuf>()
+                    + 2 * std::mem::size_of::<usize>())
+                .sum::<usize>();
+        self.resource_archive_inputs.as_ref().map_or(0, |inputs| inputs.resident_bytes())
+            + self.source_resource_literals.capacity() * std::mem::size_of::<String>()
             + self
                 .source_resource_literals
                 .iter()
                 .map(String::capacity)
                 .sum::<usize>()
             + self.preprocessed.text.capacity()
+            + self
+                .expansion
+                .segments
+                .iter()
+                .map(|piece| {
+                    piece.text.len() + piece.lines.len() * std::mem::size_of::<usize>() + 96
+                })
+                .sum::<usize>()
+            + origin_bytes
             + self
                 .map_set
                 .files
@@ -870,6 +1173,9 @@ impl BuildInputSnapshot {
                 .map(|unit| unit.path.as_os_str().len() * 2)
                 .sum::<usize>()
             + self.preprocessed.unit_digests.capacity() * 32
+            + self.preprocessed.unit_parents.capacity() * std::mem::size_of::<Option<usize>>()
+            + self.preprocessed.unit_digest_validity.capacity()
+            + self.preprocessed.semantic_identity.as_ref().map_or(0, |identity| identity.resident_bytes())
             + self
                 .resource_requests
                 .iter()
@@ -931,6 +1237,7 @@ impl BuildInputSnapshot {
         }
         // Capture before exact reads, then compare after them. Capturing only
         // afterwards could accidentally bless an edit made during verification.
+        let observation_started = std::time::Instant::now();
         let previous_assets = self.asset_proof.borrow().clone();
         let validated_sources = self.source_proof.borrow().clone();
         let proof = if let Some(sources) = &validated_sources {
@@ -960,6 +1267,8 @@ impl BuildInputSnapshot {
                     ),
             )
         };
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof observation/combine: {:.3}s", observation_started.elapsed().as_secs_f64()); }
+        let namespace_started = std::time::Instant::now();
         // An inherited namespace proof covers the same resource lookup candidates
         // and missing includes. Validate it before doing any per-path resolution walk.
         let mut proof = proof;
@@ -985,12 +1294,18 @@ impl BuildInputSnapshot {
                 return true;
             }
         }
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof namespace reuse: {:.3}s", namespace_started.elapsed().as_secs_f64()); }
         if (!(validated_sources.is_some() && proof.is_some())
-            && self.source_digests.iter().any(|(path, expected)| {
-                dm_preprocess::read_source_file(path)
-                    .map(|text| Sha256::digest(text.as_bytes()).as_slice() != expected)
-                    .unwrap_or(true)
-            }))
+            && !dm_work::map_ordered(
+                &self.source_digests.iter().collect::<Vec<_>>(),
+                dm_work::WorkLimits::configured(),
+                |_| 16 * 1024,
+                |(path, expected)| {
+                    project_discovery::read_prepared_source(path, dm_work::WorkLimits::configured())
+                        .is_ok_and(|source| source.digest == **expected)
+                },
+            )
+            .is_ok_and(|results| results.into_iter().all(|current| current)))
             || self.missing_dependencies.iter().any(|path| path.exists())
         {
             return false;
@@ -1011,9 +1326,11 @@ impl BuildInputSnapshot {
         if maps.is_some_and(|maps| hex_digest(&maps.fingerprint) != self.maps_digest) {
             return false;
         }
+        let resolution_started = std::time::Instant::now();
         if !self.resolutions_current(project, false) {
             return false;
         }
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof resolution: {:.3}s", resolution_started.elapsed().as_secs_f64()); }
         let valid = assets_current
             || ResourceSet::fingerprint_requests(self.resource_requests.clone())
                 .is_ok_and(|fingerprint| hex_digest(&fingerprint) == self.resources_digest);
@@ -1030,7 +1347,9 @@ impl BuildInputSnapshot {
                         namespace_candidates.push(root.join(directory).join(&request.archive_name));
                     }
                 }
+                let barrier_started = std::time::Instant::now();
                 proof.enable_namespace_journal(&namespace_candidates);
+                if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof barrier: {:.3}s", barrier_started.elapsed().as_secs_f64()); }
                 // Establishing a change cursor cannot bless a resolution change
                 // between the earlier resolution scan and that cursor.
                 if !self.resolutions_current(project, true) || !proof.current() {
@@ -1057,28 +1376,35 @@ impl BuildInputSnapshot {
         if self.missing_dependencies.iter().any(|path| path.exists()) {
             return false;
         }
+        // Resolution checks are independent observations. Keep the same bounded
+        // scheduler used for input stamps, rather than serially walking thousands
+        // of asset search paths during final publication.
         let mut resolved_names = BTreeSet::new();
-        if self.resource_requests.iter().any(|request| {
-            if !resolved_names.insert((&request.archive_name, &request.disk_path)) {
-                return false;
-            }
-            if proven {
-                return !proven_resource_resolution_current(
-                    project,
-                    &request.archive_name,
-                    &request.disk_path,
-                    &self.preprocessed.file_dirs,
-                );
-            }
-            resolved_resource_disk_path(
-                project,
-                &request.archive_name,
-                &self.preprocessed.file_dirs,
-            ) != request.disk_path
-        }) {
-            return false;
-        }
-        true
+        let requests: Vec<_> = self.resource_requests.iter().filter(|request| {
+            resolved_names.insert((&request.archive_name, &request.disk_path))
+        }).collect();
+        let file_dirs = &self.preprocessed.file_dirs;
+        dm_work::map_ordered(
+            &requests,
+            dm_work::WorkLimits::configured(),
+            |_| 1024,
+            |request| {
+                if proven {
+                    proven_resource_resolution_current(
+                        project,
+                        &request.archive_name,
+                        &request.disk_path,
+                        file_dirs,
+                    )
+                } else {
+                    resolved_resource_disk_path(
+                        project,
+                        &request.archive_name,
+                        file_dirs,
+                    ) == request.disk_path
+                }
+            },
+        ).is_ok_and(|results| results.into_iter().all(|current| current))
     }
 }
 
@@ -1092,13 +1418,12 @@ struct ActiveSession {
 }
 
 struct ActiveProject {
-    compiler: ProjectSession,
-    sources: BTreeSet<PathBuf>,
-    stamps: BTreeMap<PathBuf, Option<FileStamp>>,
+    prepared_revision: String,
     last_response: Option<Response>,
     last_used: u64,
 }
 
+#[cfg(test)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 struct FileStamp {
     len: u64,
@@ -1107,6 +1432,7 @@ struct FileStamp {
     changed: i64,
 }
 
+#[cfg(test)]
 fn file_stamp(path: &Path) -> Option<FileStamp> {
     let metadata = fs::metadata(path).ok()?;
     Some(FileStamp {
@@ -1117,7 +1443,7 @@ fn file_stamp(path: &Path) -> Option<FileStamp> {
     })
 }
 
-#[cfg(windows)]
+#[cfg(all(test, windows))]
 fn windows_change_time(path: &Path) -> Option<i64> {
     use std::os::windows::io::AsRawHandle;
 
@@ -1191,6 +1517,61 @@ impl Coordinator {
 
     fn prepare_native_build(
         &mut self,
+        session_key: &SessionKey,
+        artifact: &ArtifactKey,
+        project: &Path,
+        preprocessed: &PreprocessedProject,
+        expansion: &prepared_project::SegmentedExpansion,
+        builtins: &[u8],
+        world_name: &str,
+        resources: &str,
+        maps: &str,
+        archive_hint: Option<&VerifiedArchive>,
+        prepared_maps: &dm_compiler::maps::MapSet,
+        prepared_resources: &[ResourceRequest],
+        canonical: bool,
+    ) -> Result<PreparedBuild, String> {
+        let mut frontend = self
+            .frontend_pool
+            .take_or_insert(session_key, self.blobs.root.clone());
+        frontend.set_segmented_source(expansion.source());
+        let compatibility;
+        let preprocessed = if canonical {
+            preprocessed
+        } else {
+            let text = match expansion.materialize() {
+                Ok(text) => text,
+                Err(error) => {
+                    self.frontend_pool.put(session_key.clone(), frontend);
+                    return Err(error);
+                }
+            };
+            compatibility = PreprocessedProject {
+                text,
+                ..preprocessed.clone()
+            };
+            &compatibility
+        };
+        let result = self.prepare_native_build_with_frontend(
+            artifact,
+            project,
+            preprocessed,
+            builtins,
+            world_name,
+            resources,
+            maps,
+            archive_hint,
+            prepared_maps,
+            prepared_resources,
+            canonical,
+            &mut frontend,
+        );
+        self.frontend_pool.put(session_key.clone(), frontend);
+        result
+    }
+
+    fn prepare_native_build_with_frontend(
+        &mut self,
         artifact: &ArtifactKey,
         project: &Path,
         preprocessed: &PreprocessedProject,
@@ -1201,224 +1582,292 @@ impl Coordinator {
         archive_hint: Option<&VerifiedArchive>,
         prepared_maps: &dm_compiler::maps::MapSet,
         prepared_resources: &[ResourceRequest],
+        canonical: bool,
+        frontend: &mut dm_compiler::frontend::OutlineSession,
     ) -> Result<PreparedBuild, String> {
-        self.incremental
-            .set_cache_root(dm_compiler::lower_cache::default_cache_root(project));
-        let directory = self
-            .incremental_directory(artifact)
-            .map_err(|error| error.to_string())?;
-        let mut candidates = fs::read_dir(&directory)
-            .ok()
-            .into_iter()
-            .flatten()
-            .filter_map(Result::ok)
-            .filter(|entry| {
-                entry
-                    .path()
-                    .extension()
-                    .is_some_and(|extension| extension == "json")
-            })
-            .map(|entry| entry.path())
-            .collect::<Vec<_>>();
-        candidates.sort();
-        candidates.reverse();
-        candidates.truncate(32);
-        let retained = self
-            .retained_world
-            .take()
-            .filter(|world| world.family == directory);
-        if retained.is_some() || !candidates.is_empty() {
-            // Expanded-source chunks are pure content/compiler artifacts. Keep
-            // the same bounded frontend across worktrees and builtin families.
-            if self.outline_cache.is_none() {
-                self.outline_cache = Some((
-                    self.blobs.root.clone(),
-                    dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
-                ));
-            }
-            let frontend = &mut self.outline_cache.as_mut().unwrap().1;
-            let outline = frontend.update(preprocessed)?;
-            if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                eprintln!(
-                    "DM_BUILD_TRACE incremental frontend: {:?}, {} retained bytes",
-                    frontend.stats(),
-                    frontend.resident_bytes()
-                );
-            }
-            enum Candidate {
-                Live(RetainedWorld),
-                Disk(PathBuf),
-            }
-            let candidates = retained
+        if canonical {
+            // Canonical builds are owned by the retained frontend graph. Do
+            // not inspect linked checkpoints or initialize the legacy engine.
+            self.retained_world = None;
+        } else {
+            self.incremental
+                .set_cache_root(dm_compiler::lower_cache::default_cache_root(project));
+            let directory = self
+                .incremental_directory(artifact)
+                .map_err(|error| error.to_string())?;
+            let mut candidates = fs::read_dir(&directory)
+                .ok()
                 .into_iter()
-                .map(Candidate::Live)
-                .chain(candidates.into_iter().map(Candidate::Disk));
-            for candidate in candidates {
-                let live_candidate = matches!(&candidate, Candidate::Live(_));
-                let (record, checkpoint, dmb, mut indexed) = match candidate {
-                    Candidate::Live(world) => {
-                        if world.record.abi_digest != outline.abi_digest {
-                            continue;
-                        }
-                        let indexed = world.indexed;
-                        if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                            eprintln!("DM_BUILD_TRACE retained linked world hit");
-                        }
-                        (world.record, world.checkpoint, world.dmb, indexed)
-                    }
-                    Candidate::Disk(path) => {
-                        let Some(record) = fs::metadata(&path)
-                            .ok()
-                            .filter(|metadata| metadata.len() <= 4096)
-                            .and_then(|_| fs::read(&path).ok())
-                            .and_then(|bytes| {
-                                serde_json::from_slice::<IncrementalRecord>(&bytes).ok()
-                            })
-                        else {
-                            continue;
-                        };
-                        if record.version != 1 || record.abi_digest != outline.abi_digest {
-                            continue;
-                        }
-                        let Ok(bytes) = self.blobs.get_bounded(
-                            "native-checkpoint-v1",
-                            &record.checkpoint_digest,
-                            64 * 1024 * 1024,
-                        ) else {
-                            continue;
-                        };
-                        let Some(checkpoint) = dm_compiler::incremental::decode_checkpoint(&bytes)
-                        else {
-                            continue;
-                        };
-                        drop(bytes);
-                        let Ok(bytes) = self.blobs.get_bounded(
-                            "project-dmb-v1",
-                            &record.dmb_digest,
-                            256 * 1024 * 1024,
-                        ) else {
-                            continue;
-                        };
-                        let Ok((dmb, spans)) =
-                            byond_dmb::dmb::Dmb::from_bytes_with_list_spans(&bytes)
-                        else {
-                            continue;
-                        };
-                        let indexed = dm_output::list_image::ListImage::capture(bytes, &dmb, spans)
-                            .map_err(|error| error.to_string())?;
-                        (record, checkpoint, dmb, indexed)
-                    }
-                };
-                self.incremental
-                    .set_baseline_identity(record.dmb_digest.clone());
-                let result = dm_compiler::incremental::try_emit_outline(
-                    outline.clone(),
-                    dmb,
-                    checkpoint,
-                    &mut self.incremental,
-                );
-                let Ok(Some(emission)) = result else {
-                    continue;
-                };
-                let archive = archive_hint
-                    .filter(|archive| archive.digest() == record.rsc_digest)
-                    .cloned();
-                let rsc_bytes = if archive.is_some() {
-                    Vec::new()
-                } else {
-                    let Ok(bytes) = self.blobs.get_bounded(
-                        "project-rsc-v1",
-                        &record.rsc_digest,
-                        512 * 1024 * 1024,
-                    ) else {
-                        continue;
-                    };
-                    bytes
-                };
+                .flatten()
+                .filter_map(Result::ok)
+                .filter(|entry| {
+                    entry
+                        .path()
+                        .extension()
+                        .is_some_and(|extension| extension == "json")
+                })
+                .map(|entry| entry.path())
+                .collect::<Vec<_>>();
+            candidates.sort();
+            candidates.reverse();
+            candidates.truncate(32);
+            let retained = self
+                .retained_world
+                .take()
+                .filter(|world| world.family == directory);
+            if retained.is_some() || !candidates.is_empty() {
+                let outline = frontend.update(preprocessed)?;
                 if std::env::var_os("DM_BUILD_TRACE").is_some() {
                     eprintln!(
+                        "DM_BUILD_TRACE incremental frontend: {:?}, {} retained bytes",
+                        frontend.stats(),
+                        frontend.resident_bytes()
+                    );
+                }
+                enum Candidate {
+                    Live(RetainedWorld),
+                    Disk(PathBuf),
+                }
+                let candidates = retained
+                    .into_iter()
+                    .map(Candidate::Live)
+                    .chain(candidates.into_iter().map(Candidate::Disk));
+                for candidate in candidates {
+                    let live_candidate = matches!(&candidate, Candidate::Live(_));
+                    let (record, checkpoint, dmb, mut indexed) = match candidate {
+                        Candidate::Live(world) => {
+                            if world.record.abi_digest != outline.abi_digest {
+                                continue;
+                            }
+                            let indexed = world.indexed;
+                            if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                                eprintln!("DM_BUILD_TRACE retained linked world hit");
+                            }
+                            (world.record, world.checkpoint, world.dmb, indexed)
+                        }
+                        Candidate::Disk(path) => {
+                            let Some(record) = fs::metadata(&path)
+                                .ok()
+                                .filter(|metadata| metadata.len() <= 4096)
+                                .and_then(|_| fs::read(&path).ok())
+                                .and_then(|bytes| {
+                                    serde_json::from_slice::<IncrementalRecord>(&bytes).ok()
+                                })
+                            else {
+                                continue;
+                            };
+                            if record.version != 1 || record.abi_digest != outline.abi_digest {
+                                continue;
+                            }
+                            let Ok(bytes) = self.blobs.get_bounded(
+                                "native-checkpoint-v1",
+                                &record.checkpoint_digest,
+                                64 * 1024 * 1024,
+                            ) else {
+                                continue;
+                            };
+                            let Some(checkpoint) =
+                                dm_compiler::incremental::decode_checkpoint(&bytes)
+                            else {
+                                continue;
+                            };
+                            drop(bytes);
+                            let Ok(bytes) = self.blobs.get_bounded(
+                                "project-dmb-v1",
+                                &record.dmb_digest,
+                                256 * 1024 * 1024,
+                            ) else {
+                                continue;
+                            };
+                            let Ok((dmb, spans)) =
+                                byond_dmb::dmb::Dmb::from_bytes_with_list_spans(&bytes)
+                            else {
+                                continue;
+                            };
+                            let indexed =
+                                dm_output::list_image::ListImage::capture(bytes, &dmb, spans)
+                                    .map_err(|error| error.to_string())?;
+                            (record, checkpoint, dmb, indexed)
+                        }
+                    };
+                    self.incremental
+                        .set_baseline_identity(record.dmb_digest.clone());
+                    let result = dm_compiler::incremental::try_emit_outline(
+                        outline.clone(),
+                        dmb,
+                        checkpoint,
+                        &mut self.incremental,
+                    );
+                    let Ok(Some(emission)) = result else {
+                        continue;
+                    };
+                    let archive = archive_hint
+                        .filter(|archive| archive.digest() == record.rsc_digest)
+                        .cloned();
+                    let rsc_bytes = if archive.is_some() {
+                        Vec::new()
+                    } else {
+                        let Ok(bytes) = self.blobs.get_bounded(
+                            "project-rsc-v1",
+                            &record.rsc_digest,
+                            512 * 1024 * 1024,
+                        ) else {
+                            continue;
+                        };
+                        bytes
+                    };
+                    if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                        eprintln!(
                         "DM_BUILD_TRACE incremental emission: {} changed procedures, {} preserved",
                         emission.changed_procs,
                         record.emitted_procs.saturating_sub(emission.changed_procs)
                     );
+                    }
+                    #[cfg(test)]
+                    if live_candidate {
+                        self.retained_world_hits += 1;
+                    }
+                    #[cfg(not(test))]
+                    let _ = live_candidate;
+                    let serialized_dmb = indexed
+                        .serialize_changed(&emission.dmb, &emission.changed_lists)
+                        .map_err(|error| error.to_string())?;
+                    if std::env::var_os("DM_BUILD_TRACE").is_some() {
+                        eprintln!(
+                            "DM_BUILD_TRACE indexed DMB serialization: {}",
+                            serialized_dmb.is_some()
+                        );
+                    }
+                    let list_spans = if serialized_dmb.is_some() {
+                        Some(
+                            indexed
+                                .updated_spans(&emission.dmb)
+                                .map_err(|error| error.to_string())?,
+                        )
+                    } else {
+                        None
+                    };
+                    let list_image =
+                        if let (Some(bytes), Some(spans)) = (&serialized_dmb, &list_spans) {
+                            indexed.rebase(bytes.clone(), spans.clone());
+                            Some(indexed)
+                        } else {
+                            None
+                        };
+                    return Ok(PreparedBuild {
+                        serialized_dmb,
+                        list_spans,
+                        list_image,
+                        dmb: PreparedImage::Native(emission.dmb),
+                        rsc_bytes,
+                        archive,
+                        emitted_procs: record.emitted_procs,
+                        lowered_procs: emission.changed_procs,
+                        reused_procs: record.emitted_procs.saturating_sub(emission.changed_procs),
+                        artifact_reuse: dm_compiler::ArtifactReuseStats::default(),
+                        checkpoint: Some(emission.checkpoint),
+                    });
                 }
-                #[cfg(test)]
-                if live_candidate {
-                    self.retained_world_hits += 1;
-                }
-                #[cfg(not(test))]
-                let _ = live_candidate;
-                let serialized_dmb = indexed
-                    .serialize_changed(&emission.dmb, &emission.changed_lists)
-                    .map_err(|error| error.to_string())?;
-                if std::env::var_os("DM_BUILD_TRACE").is_some() {
-                    eprintln!(
-                        "DM_BUILD_TRACE indexed DMB serialization: {}",
-                        serialized_dmb.is_some()
-                    );
-                }
-                let list_spans = if serialized_dmb.is_some() {
-                    Some(
-                        indexed
-                            .updated_spans(&emission.dmb)
-                            .map_err(|error| error.to_string())?,
-                    )
-                } else {
-                    None
-                };
-                let list_image = if let (Some(bytes), Some(spans)) = (&serialized_dmb, &list_spans)
-                {
-                    indexed.rebase(bytes.clone(), spans.clone());
-                    Some(indexed)
-                } else {
-                    None
-                };
-                return Ok(PreparedBuild {
-                    serialized_dmb,
-                    list_spans,
-                    list_image,
-                    dmb: emission.dmb,
-                    rsc_bytes,
-                    archive,
-                    emitted_procs: record.emitted_procs,
-                    lowered_procs: emission.changed_procs,
-                    reused_procs: record.emitted_procs.saturating_sub(emission.changed_procs),
-                    checkpoint: Some(emission.checkpoint),
-                });
             }
         }
-        if self.outline_cache.is_none() {
-            self.outline_cache = Some((
-                self.blobs.root.clone(),
-                dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
-            ));
-        }
-        let compiled = compile_preprocessed_project_with_resources_prepared(
-            project,
-            preprocessed,
-            builtins,
-            world_name,
-            &mut self.outline_cache.as_mut().unwrap().1,
-            prepared_maps,
-            prepared_resources,
-        )?;
-        if hex_digest(&compiled.resource_fingerprint) != resources
-            || hex_digest(&compiled.map_fingerprint) != maps
+        let catalog_key = ArtifactKey {
+            stage: "resource-catalog-v1".into(),
+            format_version: 1,
+            compiler_version: artifact.compiler_version.clone(),
+            target: artifact.target.clone(),
+            input_digests: vec![resources.to_owned()],
+            dependency_digests: Vec::new(),
+        };
+        let catalog = if canonical {
+            archive_hint.and_then(|archive| {
+                let bytes = self.blobs.get_artifact(&catalog_key).ok().flatten()?;
+                let record: ArchiveCatalogRecord = serde_json::from_slice(&bytes).ok()?;
+                (record.version == 1
+                    && record.archive_digest == archive.digest()
+                    && hex_digest(&record.catalog.fingerprint) == resources
+                    && record.catalog.validate().is_ok())
+                .then_some(record.catalog)
+            })
+        } else {
+            None
+        };
+        let mut reused_archive = catalog.as_ref().and(archive_hint).cloned();
+        let prepared_archive = if canonical && catalog.is_none() {
+            Some(
+                dm_resources::prepare_archive(&self.blobs.root, prepared_resources)
+                    .map_err(|error| error.to_string())?,
+            )
+        } else {
+            None
+        };
+        let catalog = catalog.or_else(|| {
+            prepared_archive
+                .as_ref()
+                .map(|archive| archive.catalog().clone())
+        });
+        let (mut build,resource_fingerprint,map_fingerprint,resource_catalog) = if canonical {
+            let catalog=catalog.as_ref().ok_or("canonical resource catalog missing")?;
+            let compiled=dm_compiler::bootstrap::compile_preprocessed_project_with_resource_catalog_physical(
+                project,
+                preprocessed,
+                builtins,
+                world_name,
+                frontend,
+                prepared_maps,
+                catalog,
+            )?;
+            (PreparedBuild {
+                dmb:PreparedImage::Wire(compiled.dmb),serialized_dmb:None,list_spans:None,list_image:None,
+                rsc_bytes:compiled.rsc_bytes,archive:None,emitted_procs:compiled.emitted.len(),
+                lowered_procs:compiled.artifact_reuse.authored_lowered,
+                reused_procs:compiled.artifact_reuse.authored_reused(),artifact_reuse:compiled.artifact_reuse,checkpoint:None,
+            },compiled.resource_fingerprint,compiled.map_fingerprint,compiled.resource_catalog)
+        } else {
+            let compiled=compile_preprocessed_project_with_resources_prepared_mode(
+                project,
+                preprocessed,
+                builtins,
+                world_name,
+                frontend,
+                prepared_maps,
+                prepared_resources,
+                !canonical,
+            )?;
+            (PreparedBuild {
+                dmb:PreparedImage::Native(compiled.dmb),serialized_dmb:None,list_spans:None,list_image:None,
+                rsc_bytes:compiled.rsc_bytes,archive:None,emitted_procs:compiled.emitted.len(),
+                lowered_procs:compiled.artifact_reuse.authored_lowered,
+                reused_procs:compiled.artifact_reuse.authored_reused(),artifact_reuse:compiled.artifact_reuse,checkpoint:compiled.checkpoint,
+            },compiled.resource_fingerprint,compiled.map_fingerprint,compiled.resource_catalog)
+        };
+        if hex_digest(&resource_fingerprint) != resources
+            || hex_digest(&map_fingerprint) != maps
         {
             return Err("project map/resource inputs changed during build; retry".into());
         }
-        Ok(PreparedBuild {
-            serialized_dmb: None,
-            list_spans: None,
-            list_image: None,
-            emitted_procs: compiled.emitted.len(),
-            lowered_procs: compiled.lowering_cache_stats.misses,
-            reused_procs: compiled.lowering_cache_stats.hits,
-            dmb: compiled.dmb,
-            rsc_bytes: compiled.rsc_bytes,
-            archive: None,
-            checkpoint: compiled.checkpoint,
-        })
+        if let Some(archive) = &prepared_archive {
+            reused_archive = Some(
+                VerifiedArchive::from_prepared_archive_resources(archive, build.dmb.resources())
+                    .map_err(|error| error.to_string())?,
+            );
+        }
+        if prepared_archive.is_some() || reused_archive.is_none() {
+            // Store compact metadata only after the canonical archive is fully
+            // constructed. A subsequent build also requires its verified RSC.
+            let record = ArchiveCatalogRecord {
+                version: 1,
+                archive_digest: reused_archive
+                    .as_ref()
+                    .map(|archive| archive.digest().to_owned())
+                    .unwrap_or_else(|| format!("{:x}", Sha256::digest(&build.rsc_bytes))),
+                catalog: resource_catalog,
+            };
+            if let Ok(bytes) = serde_json::to_vec(&record) {
+                let _ = self.blobs.put_artifact(&catalog_key, &bytes);
+            }
+        }
+        build.archive=reused_archive;
+        Ok(build)
     }
 
     fn store_incremental_checkpoint(
@@ -1507,14 +1956,16 @@ impl Coordinator {
             projects: HashMap::new(),
             blobs: ContentStore::new(cache_root)?,
             incremental: Default::default(),
-            discovery_cache: None,
-            outline_cache: None,
+            frontend_pool: frontend_pool::FrontendPool::default(),
             retained_world: None,
+            serialization_validation: Default::default(),
+            serialization_wire: Default::default(),
             #[cfg(test)]
             retained_world_hits: 0,
             syntax_cache: HashMap::new(),
             build_cache: HashMap::new(),
             build_inputs: HashMap::new(),
+            asset_inventory: HashMap::new(),
             clock: 0,
             limits,
         })
@@ -1522,6 +1973,33 @@ impl Coordinator {
 
     pub fn handle(&mut self, request: Request) -> Response {
         self.clock = self.clock.saturating_add(1);
+        let external = self.serialization_wire.resident_bytes()
+            .saturating_add(self.serialization_validation.resident_bytes())
+            .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes())
+            .saturating_add(dm_compiler::shared_artifacts::resident_bytes())
+            .saturating_add(self.asset_inventory.values().map(|x|x.resident_bytes()).sum::<usize>());
+        if self.frontend_pool.stats().bytes.saturating_add(external) > self.frontend_pool.retention_budget() {
+            // Recreating physical encoding indexes is cheaper than reloading a
+            // worktree's dependency graph. Shared semantic nodes held by a session
+            // survive dropping optional global lookup ownership.
+            self.serialization_wire.clear();
+            self.serialization_validation.clear();
+            dm_compiler::bootstrap::trim_shared_declaration_cache(0);
+            dm_compiler::shared_artifacts::trim();
+        }
+        self.frontend_pool.set_external_bytes(
+            self.serialization_wire
+                .resident_bytes()
+                .saturating_add(self.serialization_validation.resident_bytes())
+                .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes())
+                .saturating_add(dm_compiler::shared_artifacts::resident_bytes())
+                .saturating_add(
+                    self.asset_inventory
+                        .values()
+                        .map(|x| x.resident_bytes())
+                        .sum::<usize>(),
+                ),
+        );
         self.evict_idle(self.limits.max_idle_requests);
         // Diagnostic sessions can retain Salsa syntax trees. Bound the number
         // of worktree configurations held in memory; their disk CAS survives.
@@ -1566,6 +2044,7 @@ impl Coordinator {
                 diagnostics: vec![],
                 source_digest: None,
                 shared_syntax_hit: false,
+                failure_kind: None,
                 error: None,
                 build: None,
             },
@@ -1584,6 +2063,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: None,
                             shared_syntax_hit: false,
+                            failure_kind: None,
                             error: Some(error.to_string()),
                             build: None,
                         }
@@ -1636,6 +2116,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: Some(digest),
                             shared_syntax_hit: false,
+                            failure_kind: None,
                             error: Some(error.to_string()),
                             build: None,
                         }
@@ -1647,6 +2128,7 @@ impl Coordinator {
                     diagnostics: summary.diagnostics,
                     source_digest: Some(digest),
                     shared_syntax_hit,
+                    failure_kind: None,
                     error: None,
                     build: None,
                 }
@@ -1747,13 +2229,110 @@ impl Coordinator {
         }
     }
 
+    /// Detached inputs for compilation, linting, documentation and syntax tools.
+    /// The result owns no live query database; all facts name its frozen revision.
+    pub fn prepare_project(
+        &mut self,
+        key: &SessionKey,
+    ) -> io::Result<Arc<prepared_project::PreparedProject>> {
+        let defines = dm_compiler::target_defines(key.defines.iter().cloned().collect());
+        let mut cache = self
+            .frontend_pool
+            .take_discovery(key, self.blobs.root.clone());
+        let result = cache.prepare(&key.project, &defines);
+        self.frontend_pool.put_discovery(key.clone(), cache);
+        result
+    }
+
+    pub fn project_frontend_snapshot(
+        &mut self,
+        key: &SessionKey,
+    ) -> io::Result<ProjectFrontendSnapshot> {
+        self.project_frontend_snapshot_bounded(key, self.limits.max_check_source_bytes)
+    }
+
+    /// The same prepared-input/frontend pipeline with an explicit caller budget.
+    /// This does not change CheckProject's configured source limit.
+    pub fn project_frontend_snapshot_bounded(
+        &mut self,
+        key: &SessionKey,
+        max_source_bytes: usize,
+    ) -> io::Result<ProjectFrontendSnapshot> {
+        let prepared = self.prepare_project(key)?;
+        dm_compiler::check_source_size(prepared.expansion.bytes, max_source_bytes)
+            .map_err(io::Error::other)?;
+        Ok(self.frontend_from_prepared(key, prepared))
+    }
+
+    /// Analysis uses native persisted local AST fragments and resolved owner
+    /// queries directly. No whole-project AST or output binary is required.
+    pub fn project_analysis_view(
+        &mut self,key:&SessionKey,max_source_bytes:usize,builtin_image:&[u8],
+    ) -> io::Result<ProjectAnalysisView> {
+        let prepared=self.prepare_project(key)?;
+        dm_compiler::check_source_size(prepared.expansion.bytes,max_source_bytes).map_err(io::Error::other)?;
+        let mut frontend=self.frontend_pool.take_or_insert(key,self.blobs.root.clone());
+        let view=frontend.analysis_view_segmented(&prepared.expansion.source(),builtin_image);
+        self.frontend_pool.put(key.clone(),frontend);
+        let view=view.map_err(|errors|io::Error::other(errors.join("\n")))?;
+        Ok(ProjectAnalysisView {prepared,view})
+    }
+
+    fn frontend_from_prepared(
+        &mut self,
+        key: &SessionKey,
+        prepared: Arc<prepared_project::PreparedProject>,
+    ) -> ProjectFrontendSnapshot {
+        let mut frontend = self
+            .frontend_pool
+            .take_or_insert(key, self.blobs.root.clone());
+        let parsed = frontend.compact_declarations_segmented(&prepared.expansion.source());
+        self.frontend_pool.put(key.clone(), frontend);
+        match parsed {
+            Ok((ast, _)) => {
+                let declarations = dm_compiler::index_ast(&ast);
+                ProjectFrontendSnapshot {
+                    prepared,
+                    ast: Arc::new(ast),
+                    declarations,
+                    syntax_errors: Vec::new(),
+                    syntax_complete: true,
+                }
+            }
+            Err(error) => {
+                let mut syntax_errors = dm_compiler::authored_syntax_errors_segmented(
+                    &prepared.project,
+                    key.project.parent().unwrap_or(Path::new(".")),
+                    &prepared.expansion.source(),
+                );
+                if syntax_errors.is_empty() {
+                    syntax_errors.push(error);
+                }
+                ProjectFrontendSnapshot {
+                    prepared,
+                    ast: Arc::new(AstFile::default()),
+                    declarations: Err(Vec::new()),
+                    syntax_errors,
+                    syntax_complete: false,
+                }
+            }
+        }
+    }
+
     fn check_project(&mut self, key: SessionKey) -> Response {
+        let prepared = match self.prepare_project(&key) {
+            Ok(value) => value,
+            Err(error) => return failed_project(error.to_string()),
+        };
+        let discovery = &prepared.project;
+        if let Err(error) = dm_compiler::check_source_size(
+            prepared.expansion.bytes,
+            self.limits.max_check_source_bytes,
+        ) {
+            return failed_project(error);
+        }
         if let Some(project) = self.projects.get_mut(&key) {
-            if project
-                .stamps
-                .iter()
-                .all(|(path, old)| file_stamp(path) == *old)
-            {
+            if project.prepared_revision == prepared.revision {
                 if let Some(mut response) = project.last_response.clone() {
                     project.last_used = self.clock;
                     response.shared_syntax_hit = true;
@@ -1761,51 +2340,6 @@ impl Coordinator {
                 }
             }
         }
-        let defines = dm_compiler::target_defines(key.defines.iter().cloned().collect());
-        let (discovery, sources) = match discover_consistent_project(&key.project, &defines) {
-            Ok(value) => value,
-            Err(error) => return failed_project(error.to_string()),
-        };
-        if let Err(error) =
-            dm_compiler::check_source_size(discovery.text.len(), self.limits.max_check_source_bytes)
-        {
-            return failed_project(error);
-        }
-        let paths: BTreeSet<PathBuf> = sources.keys().cloned().collect();
-        let stamps: BTreeMap<_, _> = std::iter::once(&key.project)
-            .chain(discovery.dependencies.iter())
-            .chain(paths.iter())
-            .map(|path| (path.clone(), file_stamp(path)))
-            .collect();
-        for text in sources.values() {
-            if let Err(error) = self.blobs.put("source-v1", text.as_bytes()) {
-                return failed_project(error.to_string());
-            }
-        }
-        let project = self
-            .projects
-            .entry(key.clone())
-            .or_insert_with(|| ActiveProject {
-                compiler: ProjectSession::new(
-                    key.project.clone(),
-                    sources.clone(),
-                    defines.clone(),
-                ),
-                sources: paths.clone(),
-                stamps: stamps.clone(),
-                last_response: None,
-                last_used: self.clock,
-            });
-        project.last_used = self.clock;
-        project.compiler.set_defines(defines);
-        for (path, text) in sources {
-            project.compiler.update_source(path, text);
-        }
-        for removed in project.sources.difference(&paths) {
-            project.compiler.remove_source(removed);
-        }
-        project.sources = paths;
-        project.stamps = stamps;
         let mut diagnostics: Vec<String> = discovery
             .diagnostics
             .iter()
@@ -1813,34 +2347,53 @@ impl Coordinator {
             .collect();
         // Include order and macros are represented by the exact expanded text.
         // Source blob hashes are retained above for reuse by other pure stages.
-        let digest = format!("{:x}", Sha256::digest(discovery.text.as_bytes()));
+        let digest = prepared.expanded_digest.clone();
         let artifact_key = ArtifactKey {
             stage: "project-summary".into(),
-            format_version: 1,
+            format_version: 3,
             compiler_version: BUILD_FINGERPRINT.into(),
             target: None,
             input_digests: vec![digest.clone()],
             dependency_digests: vec![],
         };
-        let summary = match self
+        // Successful summaries are pure content facts and can cross worktrees.
+        // Diagnostics have authored filenames/lines, so their presentation
+        // cache must additionally name the exact source/origin revision.
+        let presentation_key = ArtifactKey {
+            stage: "project-presentation-summary".into(),
+            dependency_digests: vec![prepared.revision.clone()],
+            ..artifact_key.clone()
+        };
+        let cached_summary = self
             .blobs
             .get_json_artifact::<ProjectSummary>(&artifact_key)
-        {
+            .and_then(|shared| match shared {
+                Some(summary) => Ok(Some(summary)),
+                None => self
+                    .blobs
+                    .get_json_artifact::<ProjectSummary>(&presentation_key),
+            });
+        let summary = match cached_summary {
             Ok(Some(summary)) => (summary, true),
             Ok(None) => {
-                let ast = dm_syntax::parse(&discovery.text);
+                let frontend = self.frontend_from_prepared(&key, Arc::clone(&prepared));
                 let mut summary = ProjectSummary {
-                    item_count: ast.items.len(),
-                    diagnostics: ast.diagnostics.iter().map(|d| format!("{d:?}")).collect(),
+                    item_count: frontend.ast.items.len(),
+                    diagnostics: frontend.syntax_errors,
                 };
-                if let Err(errors) = dm_compiler::index_ast(&ast) {
+                if let Err(errors) = frontend.declarations {
                     summary.diagnostics.extend(errors.iter().cloned());
                 }
                 let bytes = match serde_json::to_vec(&summary) {
                     Ok(bytes) => bytes,
                     Err(error) => return failed_project(error.to_string()),
                 };
-                if let Err(error) = self.blobs.put_artifact(&artifact_key, &bytes) {
+                let cache_key = if summary.diagnostics.is_empty() {
+                    &artifact_key
+                } else {
+                    &presentation_key
+                };
+                if let Err(error) = self.blobs.put_artifact(cache_key, &bytes) {
                     return failed_project(error.to_string());
                 }
                 (summary, false)
@@ -1854,10 +2407,18 @@ impl Coordinator {
             diagnostics,
             source_digest: Some(digest),
             shared_syntax_hit: summary.1,
+            failure_kind: None,
             error: None,
             build: None,
         };
-        project.last_response = Some(response.clone());
+        self.projects.insert(
+            key,
+            ActiveProject {
+                prepared_revision: prepared.revision.clone(),
+                last_response: Some(response.clone()),
+                last_used: self.clock,
+            },
+        );
         response
     }
 
@@ -1871,6 +2432,29 @@ impl Coordinator {
     }
 
     fn build_project_mode(
+        &mut self,
+        key: SessionKey,
+        builtins: PathBuf,
+        output_root: Option<PathBuf>,
+        pair_out: &mut Option<(Vec<u8>, Vec<u8>)>,
+    ) -> Response {
+        let response = self.build_project_mode_once(key.clone(), builtins.clone(), output_root.clone(), pair_out);
+        if !response.error.as_deref().is_some_and(|error| error.starts_with("expanded-cache:")) {
+            return response;
+        }
+        // Restart the whole transaction after repair: never mix a repaired source
+        // revision into a partially lowered build. The second attempt is final.
+        self.build_inputs.remove(&key);
+        let mut discovery = self.frontend_pool.take_discovery(&key, self.blobs.root.clone());
+        let defines = dm_compiler::target_defines(key.defines.iter().cloned().collect());
+        let repaired = discovery.rebuild_expansion(&key.project, &defines);
+        self.frontend_pool.put_discovery(key.clone(), discovery);
+        if let Err(error) = repaired { return failed_internal(error); }
+        *pair_out = None;
+        self.build_project_mode_once(key, builtins, output_root, pair_out)
+    }
+
+    fn build_project_mode_once(
         &mut self,
         key: SessionKey,
         builtins: PathBuf,
@@ -1898,7 +2482,7 @@ impl Coordinator {
             .transpose()
         {
             Ok(path) => path,
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
         // Verify the published generation before validating retained inputs. If
         // both match, the exact source/resource/shadow check is the final operation
@@ -1945,6 +2529,7 @@ impl Coordinator {
                             diagnostics: vec![],
                             source_digest: Some(source_digest),
                             shared_syntax_hit: true,
+                            failure_kind: None,
                             error: None,
                             build: Some(result),
                         };
@@ -1984,6 +2569,7 @@ impl Coordinator {
                         diagnostics: vec![],
                         source_digest: Some(receipt.source_digest),
                         shared_syntax_hit: true,
+                        failure_kind: None,
                         error: None,
                         build: Some(result),
                     };
@@ -1991,36 +2577,75 @@ impl Coordinator {
             }
         }
         let project_root = key.project.parent().unwrap_or(&key.worktree);
-        let previous_inventory = self.build_inputs.get(&key).map(|entry| {
-            (
-                entry.snapshot.source_resource_literals.clone(),
-                entry.snapshot.preprocessed.file_dirs.clone(),
-                entry.snapshot.preprocessed.skin_includes.clone(),
-                entry.snapshot.preprocessed.map_includes.clone(),
-                entry.snapshot.map_set.fingerprint,
-            )
+        let inventory_key = asset_inventory_key(&key);
+        let retained_assets = self.asset_inventory.get(&key).cloned().or_else(|| {
+            let store = dm_store::Store::open(self.blobs.root.join("asset-inventory.redb")).ok()?;
+            let record = store
+                .read_many(
+                    &[dm_store::Key::new("asset-inventory-v1", &inventory_key)],
+                    None,
+                )
+                .ok()?;
+            let bytes = record.values.into_iter().next().flatten()?;
+            if bytes.len() > 16 * 1024 * 1024 {
+                return None;
+            }
+            serde_json::from_slice::<AssetInventory>(&bytes)
+                .ok()
+                .map(Arc::new)
         });
-        let previous_assets = self.build_inputs.get(&key).and_then(|entry| {
-            let snapshot = &entry.snapshot;
-            let proof = snapshot.asset_proof.borrow().clone()?;
-            Some({
+        let previous_inventory = self
+            .build_inputs
+            .get(&key)
+            .map(|entry| {
                 (
-                    proof,
-                    snapshot.resource_requests.clone(),
-                    snapshot.resources_digest.clone(),
-                    snapshot.preprocessed.map_includes.clone(),
+                    entry.snapshot.source_resource_literals.clone(),
+                    entry.snapshot.preprocessed.file_dirs.clone(),
+                    entry.snapshot.preprocessed.skin_includes.clone(),
+                    entry.snapshot.preprocessed.map_includes.clone(),
+                    entry.snapshot.map_set.fingerprint,
                 )
             })
-        });
+            .or_else(|| {
+                retained_assets.as_ref().map(|assets| {
+                    (
+                        assets.literals.clone(),
+                        assets.dirs.clone(),
+                        assets.skins.clone(),
+                        assets.maps.clone(),
+                        assets.map_fingerprint,
+                    )
+                })
+            });
+        let previous_assets = self
+            .build_inputs
+            .get(&key)
+            .and_then(|entry| {
+                let snapshot = &entry.snapshot;
+                let proof = snapshot.asset_proof.borrow().clone()?;
+                Some({
+                    (
+                        proof,
+                        snapshot.resource_requests.clone(),
+                        snapshot.resources_digest.clone(),
+                        snapshot.preprocessed.map_includes.clone(),
+                    )
+                })
+            })
+            .or_else(|| {
+                retained_assets.as_ref().map(|assets| {
+                    (
+                        assets.proof.clone(),
+                        assets.requests.clone(),
+                        assets.resource_digest.clone(),
+                        assets.maps.clone(),
+                    )
+                })
+            });
         let previous_map_set = self
             .build_inputs
             .get(&key)
             .map(|entry| Arc::clone(&entry.snapshot.map_set));
-        let previous_source_digests = self
-            .build_inputs
-            .get(&key)
-            .map(|entry| entry.snapshot.source_digests.clone())
-            .unwrap_or_default();
         let previous_input_proof = self
             .build_inputs
             .get(&key)
@@ -2031,36 +2656,39 @@ impl Coordinator {
             .map(InputProof::unchanged_paths)
             .unwrap_or_default();
         let mut discovery_cache = self
-            .discovery_cache
-            .take()
-            .filter(|(project, _)| project == &key.project)
-            .map(|(_, cache)| cache)
-            .unwrap_or_else(|| project_discovery::DiscoveryCache::load(&key.project));
-        let mut frontend = self.outline_cache.take().unwrap_or_else(|| {
-            (
-                self.blobs.root.clone(),
-                dm_compiler::frontend::OutlineSession::new(Some(self.blobs.root.clone())),
-            )
-        });
+            .frontend_pool
+            .take_discovery(&key, self.blobs.root.clone());
+        let mut frontend = self
+            .frontend_pool
+            .take_or_insert(&key, self.blobs.root.clone());
         let mut source_snapshot = || -> io::Result<BuildInputSnapshot> {
             let discovery_started = Instant::now();
-            let (discovery, sources, source_proof) = discovery_cache.discover_with_previous(
+            let mut prepared = discovery_cache.prepare_with_previous(
                 &key.project,
                 &defines,
                 &unchanged_sources,
                 previous_input_proof.as_ref(),
             )?;
+            let requests_started = Instant::now();
+            let mut literal_result = frontend.resource_literals_segmented(&prepared.expansion.source());
+            if literal_result.as_ref().is_err_and(|error| error.starts_with("expanded-cache:")) {
+                prepared = discovery_cache.rebuild_expansion(&key.project, &defines)?;
+                literal_result = frontend.resource_literals_segmented(&prepared.expansion.source());
+            }
+            trace_build(trace, "resource literal query", requests_started);
+            let discovery = &prepared.project;
+            let source_proof = prepared.proof.clone();
             trace_build(trace, "project discovery/preprocessing", discovery_started);
             let limit = std::env::var("DM_BUILD_MAX_SOURCE_BYTES")
                 .ok()
                 .and_then(|value| value.parse::<usize>().ok())
                 .unwrap_or(64 * 1024 * 1024);
-            if discovery.text.len() > limit {
+            if prepared.expansion.bytes > limit {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!(
                         "preprocessed project is {} bytes, above the build limit of {limit}; set DM_BUILD_MAX_SOURCE_BYTES to raise it",
-                        discovery.text.len()
+                        prepared.expansion.bytes
                     ),
                 ));
             }
@@ -2069,41 +2697,47 @@ impl Coordinator {
                 .iter()
                 .map(|d| format!("{}:{}: {}", d.path.display(), d.line, d.message))
                 .collect();
-            let mut hash = Sha256::new();
             let missing_dependencies = discovery
                 .dependencies
                 .iter()
-                .filter(|path| !sources.contains_key(*path))
+                .filter(|path| !prepared.sources.contains_key(*path))
                 .cloned()
                 .collect();
-            let mut source_digests = BTreeMap::new();
             let hash_started = Instant::now();
-            hash.update(b"dm-project-inputs-v2\0");
-            for (path, text) in sources {
-                let relative = path.strip_prefix(project_root).unwrap_or(&path);
-                let name = relative.to_string_lossy();
-                hash.update((name.len() as u64).to_le_bytes());
-                hash.update(name.as_bytes());
-                hash.update((text.len() as u64).to_le_bytes());
-                let digest = if unchanged_sources.contains(&path) {
-                    previous_source_digests
-                        .get(&path)
-                        .copied()
-                        .unwrap_or_else(|| Sha256::digest(text.as_bytes()).into())
-                } else {
-                    Sha256::digest(text.as_bytes()).into()
-                };
-                hash.update(digest);
-                source_digests.insert(path, digest);
-            }
+            let source_digests = prepared
+                .sources
+                .iter()
+                .map(|(path, source)| (path.clone(), source.digest))
+                .collect();
             trace_build(trace, "source hashing", hash_started);
             let resources_started = Instant::now();
-            let maps = match previous_map_set.as_ref().filter(|_| {
+            // Observe the asset proof once for this preparation transaction.
+            // Final publication separately revalidates the combined input proof;
+            // repeated observations here neither extend its validity nor help
+            // detect a race, but each can walk thousands of files.
+            let previous_assets_current =
+                previous_assets.as_ref().is_some_and(|(proof, _, _, _)| {
+                    previous_input_proof
+                        .as_ref()
+                        .is_some_and(|observed| proof.validated_by(observed, &unchanged_sources))
+                        || proof.current()
+                });
+            // Map barriers precede their read/decode; resource barriers are
+            // produced by the shared input cache before its exact hash reads.
+            let map_proof = if previous_assets_current {
                 previous_assets
                     .as_ref()
-                    .is_some_and(|(proof, _, _, paths)| {
-                        *paths == discovery.map_includes && proof.current()
+                    .and_then(|(proof, _, _, _)| {
+                        proof.subset(discovery.map_includes.iter().cloned())
                     })
+                    .or_else(|| InputProof::capture(discovery.map_includes.iter().cloned()))
+            } else {
+                InputProof::capture(discovery.map_includes.iter().cloned())
+            };
+            let maps = match previous_map_set.as_ref().filter(|_| {
+                previous_assets.as_ref().is_some_and(|(_, _, _, paths)| {
+                    *paths == discovery.map_includes && previous_assets_current
+                })
             }) {
                 Some(maps) => Arc::clone(maps),
                 None => Arc::new(
@@ -2112,14 +2746,22 @@ impl Coordinator {
                 ),
             };
             trace_build(trace, "active map loading", resources_started);
-            let requests_started = Instant::now();
-            let verified_hints = previous_assets
-                .as_ref()
-                .filter(|(proof, _, _, _)| proof.current());
-            let literals = frontend
-                .1
-                .resource_literals(&discovery.text)
-                .map_err(io::Error::other)?;
+            let verified_hints = previous_assets.as_ref().filter(|_| previous_assets_current);
+            let literals = literal_result.map_err(|error| {
+                    // Resource discovery shares the structural lexer and may
+                    // reject source before a retained snapshot is assembled.
+                    let authored = dm_compiler::authored_syntax_errors_segmented(
+                        &discovery,
+                        project_root,
+                        &prepared.expansion.source(),
+                    );
+                    io::Error::other(if authored.is_empty() {
+                        error
+                    } else {
+                        authored.join("\n")
+                    })
+                })?;
+            let resolution_started = Instant::now();
             let reusable_inventory = previous_inventory.as_ref().is_some_and(
                 |(old_literals, dirs, skins, map_paths, map_fingerprint)| {
                     *old_literals == literals
@@ -2146,67 +2788,64 @@ impl Coordinator {
                 )
                 .map_err(io::Error::other)?
             };
+            trace_build(trace, "resource path resolution", resolution_started);
             trace_build(trace, "resource request scan", requests_started);
             let asset_hash_started = Instant::now();
             let reusable_assets =
                 previous_assets
                     .as_ref()
-                    .filter(|(proof, requests, _, map_includes)| {
+                    .filter(|(_, requests, _, map_includes)| {
                         *map_includes == discovery.map_includes
                             && requests.len() == resource_requests.len()
                             && requests.iter().zip(&resource_requests).all(|(old, new)| {
                                 old.archive_name == new.archive_name
                                     && old.disk_path == new.disk_path
                             })
-                            && proof.current()
+                            && previous_assets_current
                     });
-            let resources_digest = if let Some((_, _, digest, _)) = reusable_assets {
-                digest.clone()
-            } else {
-                hex_digest(&ResourceSet::fingerprint_requests(
-                    resource_requests.clone(),
-                )?)
-            };
+            let (resources_digest, prepared_asset_proof) =
+                if let Some((proof, _, digest, _)) = reusable_assets {
+                    (digest.clone(), Some(proof.clone()))
+                } else {
+                    let (fingerprint, resources_proof) =
+                        discovery_cache.fingerprint_resources(&resource_requests)?;
+                    let proof = map_proof
+                        .and_then(|maps| {
+                            resources_proof.and_then(|resources| maps.combined(&resources))
+                        })
+                        .filter(InputProof::current);
+                    (hex_digest(&fingerprint), proof)
+                };
             trace_build(trace, "resource byte hashing", asset_hash_started);
             let maps_digest = hex_digest(&maps.fingerprint);
             trace_build(trace, "map/resource fingerprinting", resources_started);
             Ok(BuildInputSnapshot {
                 proof: Default::default(),
                 source_proof: std::cell::RefCell::new(source_proof),
-                asset_proof: std::cell::RefCell::new(
-                    reusable_assets
-                        .map(|(proof, _, _, _)| proof.clone())
-                        .or_else(|| {
-                            previous_input_proof
-                                .as_ref()?
-                                .subset(
-                                    discovery.map_includes.iter().cloned().chain(
-                                        resource_requests
-                                            .iter()
-                                            .map(|request| request.disk_path.clone()),
-                                    ),
-                                )
-                                .filter(InputProof::current)
-                        }),
-                ),
-                project_digest: format!("{:x}", hash.finalize()),
+                asset_proof: std::cell::RefCell::new(prepared_asset_proof.or_else(|| {
+                    previous_input_proof
+                        .as_ref()?
+                        .subset(
+                            discovery.map_includes.iter().cloned().chain(
+                                resource_requests
+                                    .iter()
+                                    .map(|request| request.disk_path.clone()),
+                            ),
+                        )
+                        .filter(InputProof::current)
+                })),
+                project_digest: prepared.project_digest.clone(),
                 diagnostics: diagnostics.clone(),
                 resources_digest,
                 maps_digest,
                 map_set: maps,
                 source_digests,
                 missing_dependencies,
+                resource_archive_inputs: discovery_cache.resource_archive_inputs(&resource_requests),
                 resource_requests,
                 source_resource_literals: literals,
-                preprocessed: PreprocessedProject {
-                    text: discovery.text,
-                    units: discovery.units,
-                    unit_digests: discovery.unit_digests,
-                    map_includes: discovery.map_includes,
-                    skin_includes: discovery.skin_includes,
-                    file_dirs: discovery.file_dirs,
-                    ..Default::default()
-                },
+                preprocessed: Arc::clone(&prepared.project),
+                expansion: Arc::clone(&prepared.expansion),
             })
         };
         let retained = self.build_inputs.remove(&key);
@@ -2215,19 +2854,18 @@ impl Coordinator {
             retained.filter(|entry| entry.snapshot.still_current(&key.project))
         {
             trace_build(trace, "retained input validation", inputs_started);
-            retained.snapshot
+            Ok(retained.snapshot)
         } else {
-            match source_snapshot() {
-                Ok(snapshot) => snapshot,
-                Err(error) => return failed_project(error.to_string()),
-            }
+            source_snapshot()
         };
         drop(source_snapshot);
-        self.outline_cache = Some(frontend);
-        // DiscoveryCache bounds original-source and expansion data to 128 MiB.
-        if discovery_cache.resident_bytes() <= 224 * 1024 * 1024 {
-            self.discovery_cache = Some((key.project.clone(), discovery_cache));
-        }
+        self.frontend_pool.put(key.clone(), frontend);
+        self.frontend_pool
+            .put_discovery(key.clone(), discovery_cache);
+        let snapshot = match snapshot {
+            Ok(snapshot) => snapshot,
+            Err(error) => return failed_project(error.to_string()),
+        };
         let project_digest = &snapshot.project_digest;
         let resources_digest = &snapshot.resources_digest;
         let maps_digest = &snapshot.maps_digest;
@@ -2239,6 +2877,7 @@ impl Coordinator {
                 diagnostics: diagnostics.clone(),
                 source_digest: Some(project_digest.clone()),
                 shared_syntax_hit: false,
+                failure_kind: None,
                 error: None,
                 build: None,
             };
@@ -2283,6 +2922,7 @@ impl Coordinator {
                     diagnostics: vec![],
                     source_digest: Some(source_digest),
                     shared_syntax_hit: true,
+                    failure_kind: None,
                     error: None,
                     build: Some(result),
                 };
@@ -2296,7 +2936,7 @@ impl Coordinator {
             &key.compiler_version,
         )) {
             Ok(bytes) => format!("{:x}", Sha256::digest(bytes)),
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
         let artifact = ArtifactKey {
             stage: "project-pair".into(),
@@ -2321,15 +2961,27 @@ impl Coordinator {
                 ) =>
             {
                 if let Err(error) = self.blobs.discard_corrupt_artifact(&artifact) {
-                    return failed_project(error.to_string());
+                    return failed_internal(error);
                 }
                 None
             }
-            Err(error) => return failed_project(error.to_string()),
+            Err(error) => return failed_internal(error),
         };
-        let cached_pair = match cached_bytes {
-            Some(bytes) => match decode_cached_pair(&self.blobs, &bytes) {
-                Ok(pair) => Some(pair),
+        let cached_archive_hint = output_root.as_ref().and_then(|root| {
+            let generation = current_generation(root).ok().flatten()?;
+            verified_archive(root, &generation).ok()
+        });
+        let mut cached_pair_archive = None;
+        let mut cached_pair = match cached_bytes {
+            Some(bytes) => match decode_cached_pair_with_archive(
+                &self.blobs,
+                &bytes,
+                cached_archive_hint.as_ref(),
+            ) {
+                Ok((dmb, rsc, count, archive)) => {
+                    cached_pair_archive = archive;
+                    Some((dmb, rsc, count))
+                }
                 Err(error)
                     if matches!(
                         error.kind(),
@@ -2337,29 +2989,85 @@ impl Coordinator {
                     ) =>
                 {
                     if let Err(error) = self.blobs.discard_corrupt_artifact(&artifact) {
-                        return failed_project(error.to_string());
+                        return failed_internal(error);
                     }
                     None
                 }
-                Err(error) => return failed_project(error.to_string()),
+                Err(error) => return failed_internal(error),
             },
             None => None,
         };
         trace_build(trace, "artifact CAS lookup", cache_started);
-        let mut reused_archive = None;
-        let (dmb_bytes, rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
+        let mut bytecode_key = None;
+        let mut bytecode_catalog = None;
+        if cached_pair.is_none() && key.build_mode != "legacy-history" {
+            let archive_started = Instant::now();
+            let prepared_archive = snapshot.resource_archive_inputs.as_ref().map_or_else(
+                ||dm_resources::prepare_archive(&self.blobs.root,&snapshot.resource_requests),
+                |inputs|dm_resources::prepare_archive_with_inputs(&self.blobs.root,&snapshot.resource_requests,inputs));
+            let archive = match prepared_archive {
+                Ok(archive) => archive,
+                Err(error) => return failed_internal(error),
+            };
+            let mut independent = artifact.clone();
+            independent.stage = "project-bytecode-layout-v2".into();
+            independent.dependency_digests.push(format!("{:x}", Sha256::digest(world_name.as_bytes())));
+            independent.input_digests[2] = hex_digest(&archive.catalog().layout_fingerprint());
+            let candidate = self.blobs.get_artifact(&independent).ok().flatten()
+                .and_then(|bytes| serde_json::from_slice::<CachedBytecodeManifest>(&bytes).ok())
+                .filter(|record| record.version == 2 && record.pair.version == PAIR_MANIFEST_VERSION);
+            if let Some(record) = candidate {
+                let hit = self.blobs.get("project-dmb-v1", &record.pair.dmb_digest).ok()
+                    .and_then(|bytes| {
+                        let mut dmb = byond_dmb::dmb::Dmb::from_bytes(&bytes).ok()?;
+                        let previous: Vec<_> = dmb.resources.iter().map(|row|(row.id,row.kind)).collect();
+                        if !archive.catalog().remap_if_compatible(&record.catalog, &mut dmb) { return None; }
+                        let changed = dmb.resources.iter().map(|row|(row.id,row.kind)).ne(previous.into_iter());
+                        let bytes = if changed { dmb.to_bytes().ok()? } else { bytes };
+                        let verified = VerifiedArchive::from_prepared_archive(&archive, &dmb).ok()?;
+                        Some((bytes, verified))
+                    });
+                if let Some((bytes, verified)) = hit {
+                    let manifest = CachedPairManifest {version: PAIR_MANIFEST_VERSION,
+                        emitted_procs: record.pair.emitted_procs, dmb_digest: match self.blobs.put("project-dmb-v1", &bytes) {
+                            Ok(digest) => digest, Err(error) => return failed_internal(error),
+                        }, rsc_digest: archive.digest().to_owned()};
+                    if let Ok(encoded) = serde_json::to_vec(&manifest) { let _ = self.blobs.put_artifact(&artifact, &encoded); }
+                    cached_pair_archive = Some(verified);
+                    cached_pair = Some((bytes, Vec::new(), record.pair.emitted_procs));
+                }
+            }
+            // Persist catalog metadata; the addressed prepared archive cache lets
+            // native preparation reuse these bytes without composing them again.
+            if cached_pair.is_none() {
+                let catalog_key = ArtifactKey {stage: "resource-catalog-v1".into(), format_version: 1,
+                    compiler_version: artifact.compiler_version.clone(), target: artifact.target.clone(),
+                    input_digests: vec![resources_digest.clone()], dependency_digests: Vec::new()};
+                let record = ArchiveCatalogRecord {version: 1, archive_digest: archive.digest().to_owned(), catalog: archive.catalog().clone()};
+                if let Ok(bytes) = serde_json::to_vec(&record) { let _ = self.blobs.put_artifact(&catalog_key, &bytes); }
+                // Resource-only receipt requires a DMB; catalog reuse in native preparation
+                // remains available through its addressed prepared archive cache.
+            }
+            bytecode_key = Some(independent);
+            bytecode_catalog = Some(archive.catalog().clone());
+            trace_build(trace, "resource archive preparation/bytecode lookup", archive_started);
+        }
+        let mut reused_archive = cached_pair_archive;
+        let mut verified_bytecode = None;
+        let mut stored_bytecode = None;
+        let mut verified_bytecode_file = None;
+        let (dmb_bytes, mut rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
             } else {
                 let compile_started = Instant::now();
-                let archive_hint = output_root.as_ref().and_then(|root| {
-                    let generation = current_generation(root).ok().flatten()?;
-                    verified_archive(root, &generation).ok()
-                });
+                let archive_hint = cached_archive_hint;
                 let prepared = match self.prepare_native_build(
+                    &key,
                     &artifact,
                     &key.project,
                     &snapshot.preprocessed,
+                    &snapshot.expansion,
                     &builtins,
                     &world_name,
                     resources_digest,
@@ -2367,11 +3075,30 @@ impl Coordinator {
                     archive_hint.as_ref(),
                     &snapshot.map_set,
                     &snapshot.resource_requests,
+                    key.build_mode != "legacy-history",
                 ) {
                     Ok(prepared) => prepared,
-                    Err(error) => return failed_project(error),
+                    Err(error) => {
+                        if error.starts_with("expanded-cache:") { return failed_internal(error); }
+                        let authored = dm_compiler::authored_syntax_errors_segmented(
+                            &snapshot.preprocessed,
+                            key.project.parent().unwrap_or(Path::new(".")),
+                            &snapshot.expansion.source(),
+                        );
+                        return failed_project(if authored.is_empty() {
+                            error
+                        } else {
+                            authored.join("\n")
+                        });
+                    }
                 };
                 trace_build(trace, "compiler", compile_started);
+                if trace {
+                    eprintln!(
+                        "DM_BUILD_TRACE per-build semantic artifacts {:?}",
+                        prepared.artifact_reuse
+                    );
+                }
                 // CAS outputs describe the immutable input snapshot. Full emission
                 // checks its resource/map fingerprints; incremental emission uses
                 // that exact context's archive and linked world. Current disk input
@@ -2385,18 +3112,43 @@ impl Coordinator {
                 let dmb = prepared.dmb;
                 let rsc_bytes = prepared.rsc_bytes;
                 reused_archive = prepared.archive;
+                let wire_started = Instant::now();
                 let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
                     (Some(bytes), Some(spans)) => (bytes, spans),
-                    _ => match dmb.to_bytes_with_list_spans() {
-                        Ok(pair) => pair,
-                        Err(error) => return failed_project(error.to_string()),
+                    _ if output_root.is_some() && key.build_mode != "legacy-history" && pending_checkpoint.is_none() && reused_archive.is_some() => {
+                        let serialization=match &dmb {
+                            PreparedImage::Native(image)=>image.reference_validated(&mut self.serialization_validation)
+                                .and_then(|image|VerifiedBytecode::serialize_chunks(&image,&mut self.serialization_wire,&self.blobs.root)),
+                            PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_stored(image,&mut self.serialization_wire,&self.blobs.root),
+                        };
+                        let (stored, receipt) = match serialization {
+                            Ok(value) => value, Err(error) => return failed_internal(error),
+                        };
+                        let spans = stored.manifest().list_spans.clone();
+                        verified_bytecode = Some(receipt);
+                        stored_bytecode = Some(stored);
+                        (Vec::new(), spans)
+                    }
+                    _ => match match &dmb {
+                        PreparedImage::Native(image)=>image.reference_validated(&mut self.serialization_validation)
+                            .and_then(|image|VerifiedBytecode::serialize_cached(&image,&mut self.serialization_wire)),
+                        PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_cached(image,&mut self.serialization_wire),
+                    } {
+                        Ok((bytes, spans, receipt)) => {
+                            verified_bytecode = Some(receipt);
+                            (bytes, spans)
+                        }
+                        Err(error) => return failed_internal(error),
                     },
                 };
+                trace_build(trace, "bytecode validation/serialization", wire_started);
                 let cache_write_started = Instant::now();
                 let mut retained_record = None;
                 let mut checkpoint_size = None;
                 let mut write_pair = || -> io::Result<()> {
-                    let dmb_digest = self.blobs.put("project-dmb-v1", &dmb_bytes)?;
+                    let dmb_digest = if let Some(stored) = &stored_bytecode {
+                        {let file=self.blobs.put_dmb_pages(stored)?;let digest=file.digest().to_owned();verified_bytecode_file=Some(file);digest}
+                    } else { self.blobs.put("project-dmb-v1", &dmb_bytes)? };
                     let rsc_digest = if let Some(archive) = &reused_archive {
                         archive.digest().to_owned()
                     } else {
@@ -2437,19 +3189,24 @@ impl Coordinator {
                         dmb_digest,
                         rsc_digest,
                     };
-                    self.blobs.put_artifact(
-                        &artifact,
-                        &serde_json::to_vec(&manifest).map_err(io::Error::other)?,
-                    )?;
+                    let encoded_manifest = serde_json::to_vec(&manifest).map_err(io::Error::other)?;
+                    self.blobs.put_artifact(&artifact, &encoded_manifest)?;
+                    if let (Some(bytecode_key), Some(catalog)) = (&bytecode_key, &bytecode_catalog) {
+                        let record = CachedBytecodeManifest { version: 2, pair: manifest, catalog: catalog.clone() };
+                        self.blobs.put_artifact(bytecode_key, &serde_json::to_vec(&record).map_err(io::Error::other)?)?;
+                    }
                     Ok(())
                 };
                 if let Err(error) = write_pair() {
-                    return failed_project(error.to_string());
+                    return failed_internal(error);
                 }
                 trace_build(trace, "artifact CAS write", cache_write_started);
                 if let (Some(checkpoint), Some(record), Some(checkpoint_size)) =
                     (pending_checkpoint, retained_record, checkpoint_size)
                 {
+                    // Legacy history/index consumers require actual logical
+                    // words; their compatibility boundary is explicitly fallible.
+                    let dmb=match dmb.materialize() {Ok(image)=>image,Err(error)=>return failed_internal(error)};
                     let indexed = match prepared.list_image {
                         Some(indexed) => indexed,
                         None => {
@@ -2459,7 +3216,7 @@ impl Coordinator {
                                 list_spans,
                             ) {
                                 Ok(indexed) => indexed,
-                                Err(error) => return failed_project(error.to_string()),
+                                Err(error) => return failed_internal(error),
                             }
                         }
                     };
@@ -2469,7 +3226,7 @@ impl Coordinator {
                         self.retained_world = Some(RetainedWorld {
                             family: match self.incremental_directory(&artifact) {
                                 Ok(path) => path,
-                                Err(error) => return failed_project(error.to_string()),
+                                Err(error) => return failed_internal(error),
                             },
                             record,
                             checkpoint,
@@ -2506,8 +3263,17 @@ impl Coordinator {
                 .map(|generation| generation.rsc);
             let publish_started = Instant::now();
             let published = if let Some(archive) = &reused_archive {
-                match publish_generation_with_archive(&root, &dmb_bytes, archive) {
+                let publication = match (&verified_bytecode_file, &stored_bytecode, &verified_bytecode) {
+                    (Some(file), _, Some(receipt)) => dm_output::generation::publish_generation_with_verified_dmb_file(&root,file,archive,receipt),
+                    (None, Some(stored), Some(receipt)) => dm_output::generation::publish_generation_with_chunked_bytecode(&root, stored, archive, receipt),
+                    (None, None, Some(receipt)) => publish_generation_with_verified_bytecode(
+                        &root, &dmb_bytes, archive, receipt,
+                    ),
+                    _ => publish_generation_with_archive(&root, &dmb_bytes, archive),
+                };
+                match publication {
                     Ok(generation) => Ok(generation),
+                    Err(error) if stored_bytecode.is_some() => Err(error),
                     Err(_) => self
                         .blobs
                         .get_bounded("project-rsc-v1", archive.digest(), 512 * 1024 * 1024)
@@ -2525,11 +3291,23 @@ impl Coordinator {
             };
             let generation = match published {
                 Ok(generation) => generation,
-                Err(error) => return failed_project(error.to_string()),
+                Err(error) => return failed_internal(error),
             };
             trace_build(trace, "generation publication", publish_started);
             (generation.id, generation.dmb, generation.rsc)
         } else {
+            if let Some(archive) = &reused_archive {
+                if !archive.is_current() {
+                    return failed_internal("resource archive changed before byte export");
+                }
+                rsc_bytes = match fs::read(archive.path()) {
+                    Ok(bytes) => bytes,
+                    Err(error) => return failed_internal(error),
+                };
+                if !archive.is_current() {
+                    return failed_internal("resource archive changed during byte export");
+                }
+            }
             let id = pair_generation_id(&dmb_bytes, &rsc_bytes);
             *pair_out = Some((dmb_bytes, rsc_bytes));
             (id, PathBuf::new(), PathBuf::new())
@@ -2578,13 +3356,58 @@ impl Coordinator {
             diagnostics: vec![],
             source_digest: Some(source_digest),
             shared_syntax_hit: cache_hit,
+            failure_kind: None,
             error: None,
             build: Some(result),
         }
     }
 
-    fn remember_build_inputs(&mut self, key: SessionKey, mut snapshot: BuildInputSnapshot) {
-        snapshot.preprocessed.text.shrink_to_fit();
+    fn remember_build_inputs(&mut self, key: SessionKey, snapshot: BuildInputSnapshot) {
+        if let Some(proof) = snapshot.asset_proof.borrow().clone() {
+            let assets = Arc::new(AssetInventory {
+                proof,
+                requests: snapshot.resource_requests.clone(),
+                literals: snapshot.source_resource_literals.clone(),
+                dirs: snapshot.preprocessed.file_dirs.clone(),
+                skins: snapshot.preprocessed.skin_includes.clone(),
+                maps: snapshot.preprocessed.map_includes.clone(),
+                map_fingerprint: snapshot.map_set.fingerprint,
+                resource_digest: snapshot.resources_digest.clone(),
+            });
+            if let Ok(bytes) = serde_json::to_vec(assets.as_ref()) {
+                if bytes.len() <= 16 * 1024 * 1024 {
+                    if let Ok(store) =
+                        dm_store::Store::open(self.blobs.root.join("asset-inventory.redb"))
+                    {
+                        let _ = store.commit(
+                            &[],
+                            &[dm_store::Change::Put(
+                                dm_store::Key::new("asset-inventory-v1", asset_inventory_key(&key)),
+                                bytes,
+                            )],
+                            None,
+                        );
+                    }
+                    while self.asset_inventory.len() >= self.limits.max_diagnostic_sessions
+                        || self
+                            .asset_inventory
+                            .values()
+                            .map(|x| x.resident_bytes())
+                            .sum::<usize>()
+                            .saturating_add(assets.resident_bytes())
+                            > 32 * 1024 * 1024
+                    {
+                        if self.asset_inventory.is_empty() {
+                            break;
+                        }
+                        if let Some(old) = self.asset_inventory.keys().next().cloned() {
+                            self.asset_inventory.remove(&old);
+                        }
+                    }
+                    self.asset_inventory.insert(key.clone(), assets);
+                }
+            }
+        }
         let size = snapshot.resident_bytes();
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
             eprintln!(
@@ -2655,12 +3478,28 @@ fn failed_project(error: String) -> Response {
         diagnostics: vec![],
         source_digest: None,
         shared_syntax_hit: false,
+        failure_kind: Some(FailureKind::Source),
         error: Some(error),
         build: None,
     }
 }
 
+fn failed_internal(error: impl ToString) -> Response {
+    let mut response = failed_project(error.to_string());
+    response.failure_kind = Some(FailureKind::Internal);
+    response
+}
+
+#[cfg(test)]
 fn decode_cached_pair(store: &ContentStore, bytes: &[u8]) -> io::Result<(Vec<u8>, Vec<u8>, usize)> {
+    decode_cached_pair_with_archive(store, bytes, None)
+        .map(|(dmb, rsc, count, _)| (dmb, rsc, count))
+}
+fn decode_cached_pair_with_archive(
+    store: &ContentStore,
+    bytes: &[u8],
+    archive: Option<&VerifiedArchive>,
+) -> io::Result<(Vec<u8>, Vec<u8>, usize, Option<VerifiedArchive>)> {
     let manifest: CachedPairManifest = serde_json::from_slice(bytes).map_err(|error| {
         io::Error::new(
             io::ErrorKind::InvalidData,
@@ -2677,8 +3516,15 @@ fn decode_cached_pair(store: &ContentStore, bytes: &[u8]) -> io::Result<(Vec<u8>
         ));
     }
     let dmb = store.get("project-dmb-v1", &manifest.dmb_digest)?;
-    let rsc = store.get("project-rsc-v1", &manifest.rsc_digest)?;
-    Ok((dmb, rsc, manifest.emitted_procs))
+    let reusable = archive
+        .filter(|archive| archive.digest() == manifest.rsc_digest)
+        .cloned();
+    let rsc = if reusable.is_some() {
+        Vec::new()
+    } else {
+        store.get("project-rsc-v1", &manifest.rsc_digest)?
+    };
+    Ok((dmb, rsc, manifest.emitted_procs, reusable))
 }
 
 fn pair_generation_id(dmb: &[u8], rsc: &[u8]) -> String {
@@ -2799,6 +3645,67 @@ mod tests {
     }
 
     #[test]
+    fn coordinator_errors_keep_included_authored_source_origins() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-coordinator-origins-{}-{}",
+            std::process::id(),
+            TEMP_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let builtins = root.join("builtins.dmb");
+        fs::write(
+            &builtins,
+            include_bytes!("../../../fixtures/native_template.bin"),
+        )
+        .unwrap();
+        let mut coordinator = Coordinator::new(root.join("cache")).unwrap();
+        for (name, source, reason) in [
+            (
+                "unknown-procedure",
+                "/proc/probe()\n    return definitely_absent_probe()\n",
+                "definitely_absent_probe",
+            ),
+            (
+                "unknown-type",
+                "/proc/probe()\n    var/datum/definitely_absent_probe/value = new\n    return value\n",
+                "definitely_absent_probe",
+            ),
+            (
+                "lexical-error",
+                "/proc/probe()\n    return \"unterminated\n",
+                "unterminated",
+            ),
+        ] {
+            let directory = root.join(name);
+            fs::create_dir_all(&directory).unwrap();
+            let manifest = directory.join("world.dme");
+            fs::write(&manifest, "#include \"code.dm\"\n").unwrap();
+            fs::write(directory.join("code.dm"), source).unwrap();
+            let response = coordinator.handle(Request::BuildProject {
+                key: SessionKey::new(&directory, &manifest, "516.1687", vec![], "canonical")
+                    .unwrap(),
+                builtins: builtins.clone(),
+                output_root: directory.join("output"),
+            });
+            assert!(!response.ok, "{name}: {response:?}");
+            assert!(
+                response
+                    .diagnostics
+                    .iter()
+                    .chain(response.error.iter())
+                    .any(|message| message.contains("code.dm:2:") && message.contains(reason)),
+                "{name}: expected authored code.dm:2 error: {response:?}"
+            );
+        }
+        drop(coordinator);
+        assert!(root
+            .canonicalize()
+            .unwrap()
+            .starts_with(std::env::temp_dir().canonicalize().unwrap()));
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
     fn cold_build_receipt_bypasses_discovery_and_rejects_edits_and_corruption() {
         let root = std::env::temp_dir().join(format!(
             "dm-cold-receipt-{}-{}",
@@ -2897,14 +3804,20 @@ mod tests {
             &root.join("output").canonicalize().unwrap(),
         )
         .unwrap();
-        let receipt_directory = cache.join("build-receipts-v1").join(key.digest().unwrap());
-        for path in fs::read_dir(receipt_directory)
-            .unwrap()
-            .filter_map(Result::ok)
-            .map(|entry| entry.path())
         {
+            let read = restarted
+                .blobs
+                .metadata
+                .read_many(
+                    &[dm_store::Key::new(
+                        "build-receipts-v2",
+                        key.digest().unwrap(),
+                    )],
+                    None,
+                )
+                .unwrap();
             let pointer: ArtifactPointer =
-                serde_json::from_slice(&fs::read(path).unwrap()).unwrap();
+                serde_json::from_slice(read.values[0].as_ref().unwrap()).unwrap();
             fs::write(
                 cache
                     .join("build-receipt-v1")
@@ -2965,12 +3878,14 @@ mod tests {
             )]
             .into(),
             missing_dependencies: vec![],
+            resource_archive_inputs: None,
             resource_requests: requests,
             source_resource_literals: vec![],
-            preprocessed: PreprocessedProject {
+            expansion: Arc::new(prepared_project::SegmentedExpansion::default()),
+            preprocessed: Arc::new(PreprocessedProject {
                 file_dirs: vec![PathBuf::from("assets")],
                 ..Default::default()
-            },
+            }),
         };
         assert!(snapshot.still_current(&project));
         fs::write(&source, "/proc/a() return 8\n").unwrap();
@@ -3238,7 +4153,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: root.join("output"),
         };
@@ -3313,7 +4228,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: output.clone(),
         };
@@ -3384,7 +4299,7 @@ mod tests {
         )
         .unwrap();
         let request = || Request::BuildProject {
-            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "build").unwrap(),
+            key: SessionKey::new(&root, &manifest, "516.1687", vec![], "legacy-history").unwrap(),
             builtins: schema.clone(),
             output_root: root.join("output"),
         };
@@ -3832,12 +4747,12 @@ mod tests {
             dependency_digests: vec![],
         };
         let digest = artifact_key.digest().unwrap();
-        let pointer_path = root
-            .join("artifact-index-v1")
-            .join(&digest[..2])
-            .join(&digest);
+        let metadata = dm_store::Store::open(root.join("metadata.redb")).unwrap();
+        let read = metadata
+            .read_many(&[dm_store::Key::new("artifact-index-v2", &digest)], None)
+            .unwrap();
         let pointer: ArtifactPointer =
-            serde_json::from_slice(&fs::read(&pointer_path).unwrap()).unwrap();
+            serde_json::from_slice(read.values[0].as_ref().unwrap()).unwrap();
         let payload = root
             .join("artifact-payload-v1")
             .join(&pointer.payload_digest[..2])
@@ -3931,6 +4846,67 @@ mod tests {
         let still_unchanged = coordinator.handle(Request::CheckProject { key: second_key });
         assert_eq!(still_unchanged.source_digest, b.source_digest);
         assert_eq!(coordinator.session_count(), 2);
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn project_diagnostics_rebind_identical_expansion_to_current_authored_file() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-project-diagnostic-origins-{}-{}",
+            std::process::id(),
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        fs::create_dir_all(&root).unwrap();
+        let invalid = "/proc/broken()\n    return \"unterminated\n";
+        let make = |name: &str| {
+            let directory = root.join(name);
+            fs::create_dir_all(&directory).unwrap();
+            fs::write(
+                directory.join("world.dme"),
+                format!("#include \"{name}.dm\"\n"),
+            )
+            .unwrap();
+            fs::write(directory.join(format!("{name}.dm")), invalid).unwrap();
+            SessionKey::new(
+                &directory,
+                directory.join("world.dme"),
+                "516.1687",
+                vec![],
+                "check",
+            )
+            .unwrap()
+        };
+        let first = make("first");
+        let second = make("second");
+        let cache = root.join("cache");
+        let mut coordinator = Coordinator::new(&cache).unwrap();
+        let a = coordinator.handle(Request::CheckProject { key: first });
+        let b = coordinator.handle(Request::CheckProject {
+            key: second.clone(),
+        });
+        assert!(!a.ok && !b.ok, "{a:?} {b:?}");
+        assert_eq!(a.source_digest, b.source_digest);
+        assert!(a
+            .diagnostics
+            .iter()
+            .any(|error| error.contains("first.dm:")));
+        assert!(b
+            .diagnostics
+            .iter()
+            .any(|error| error.contains("second.dm:")));
+        assert!(!b
+            .diagnostics
+            .iter()
+            .any(|error| error.contains("first.dm:")));
+        drop(coordinator);
+        let mut restarted = Coordinator::new(&cache).unwrap();
+        let restored = restarted.handle(Request::CheckProject { key: second });
+        assert!(restored.shared_syntax_hit);
+        assert_eq!(restored.diagnostics, b.diagnostics);
+        drop(restarted);
         fs::remove_dir_all(root).unwrap();
     }
 
@@ -4545,15 +5521,19 @@ mod tests {
 
         // A torn or altered disk payload must cause a recompile, not leave
         // every subsequent build of this source permanently failing.
-        let index_root = cache.join("artifact-index-v1");
-        let shard = fs::read_dir(&index_root)
-            .unwrap()
-            .next()
-            .unwrap()
-            .unwrap()
-            .path();
-        let index = fs::read_dir(shard).unwrap().next().unwrap().unwrap().path();
-        let pointer: ArtifactPointer = serde_json::from_slice(&fs::read(&index).unwrap()).unwrap();
+        let records = restarted
+            .blobs
+            .metadata
+            .snapshot_namespace("artifact-index-v2", 64_000, 16 * 1024 * 1024, None)
+            .unwrap();
+        let (index, pointer) = records
+            .records
+            .into_iter()
+            .find_map(|(key, bytes)| {
+                let pointer: ArtifactPointer = serde_json::from_slice(&bytes).unwrap();
+                (pointer.key.stage == "project-pair").then_some((key, pointer))
+            })
+            .unwrap();
         let payload_path = cache
             .join("artifact-payload-v1")
             .join(&pointer.payload_digest[..2])
@@ -4575,11 +5555,18 @@ mod tests {
         assert!(!missing_payload.build.unwrap().cache_hit);
         assert!(payload_path.is_file());
 
-        fs::write(&index, b"{").unwrap();
+        restarted
+            .blobs
+            .metadata
+            .put_many(vec![(index.clone(), b"{".to_vec())], None)
+            .unwrap();
         let malformed_pointer = restarted.handle(request(root.join("malformed-pointer-output")));
         assert!(malformed_pointer.ok, "{malformed_pointer:?}");
         assert!(!malformed_pointer.build.unwrap().cache_hit);
-        assert!(serde_json::from_slice::<ArtifactPointer>(&fs::read(&index).unwrap()).is_ok());
+        let read = restarted.blobs.metadata.read_many(&[index], None).unwrap();
+        assert!(
+            serde_json::from_slice::<ArtifactPointer>(read.values[0].as_ref().unwrap()).is_ok()
+        );
 
         let other_worktree = root.join("other-worktree");
         fs::create_dir_all(&other_worktree).unwrap();

@@ -21,7 +21,7 @@ fn tables(d: &Dmb) -> Dmb {
         classes: d.classes.clone(),
         mobs: d.mobs.clone(),
         strings: d.strings.clone(),
-        lists: Vec::new(),
+        lists: Default::default(),
         procs: d.procs.clone(),
         variables: d.variables.clone(),
         variable_footer: d.variable_footer,

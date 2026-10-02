@@ -21,6 +21,9 @@ opt-level = 2
 [profile.dev.package.serde_json]
 opt-level = 2
 
+[profile.dev.package.lz4_flex]
+opt-level = 3
+
 # Full projects parse and lower tens of thousands of procedure bodies.
 [profile.dev.package.dm-syntax]
 opt-level = 2
@@ -51,9 +54,43 @@ opt-level = 2
 [profile.dev.package.dm-ir]
 opt-level = 2
 
+# Query storage and persistent-map operations are production hot paths too.
+# Keep prototype executable measurements representative without optimizing tests.
+[profile.dev.package.redb]
+opt-level = 2
+
+[profile.dev.package.salsa]
+opt-level = 2
+
+[profile.dev.package.im]
+opt-level = 2
+
+[profile.dev.package.rmp-serde]
+opt-level = 2
+
+[profile.dev.package.dm-store]
+opt-level = 2
+
+[profile.dev.package.dm-work]
+opt-level = 2
+
+[profile.dev.package.dm-host]
+opt-level = 2
+
+[profile.dev.package.dm-analysis]
+opt-level = 2
+
 # Optimizing the large fixture test harness costs gigabytes and minutes in LLVM.
 # Production compiler binaries keep the optimized binary-format dependency.
 [profile.test.package.byond-dmb]
+opt-level = 0
+
+# Keep the large compiler/daemon fixture harnesses cheap to rebuild. Compiler
+# binaries retain the optimized development settings above.
+[profile.test.package.dm-compiler]
+opt-level = 0
+
+[profile.test.package.dm-compiled]
 opt-level = 0
 
 [dependencies]

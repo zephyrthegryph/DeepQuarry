@@ -22,6 +22,20 @@ fn invalid(message: &'static str) -> io::Error {
     io::Error::new(io::ErrorKind::InvalidData, message)
 }
 
+fn file_matches_bytes(path: &Path, expected: &[u8]) -> io::Result<bool> {
+    let mut file = File::open(path)?;
+    if file.metadata()?.len() != expected.len() as u64 { return Ok(false); }
+    let mut offset = 0;
+    let mut buffer = [0u8; 64 * 1024];
+    loop {
+        let count = file.read(&mut buffer)?;
+        if count == 0 { return Ok(offset == expected.len()); }
+        let Some(bytes) = expected.get(offset..offset + count) else { return Ok(false); };
+        if buffer[..count] != *bytes { return Ok(false); }
+        offset += count;
+    }
+}
+
 fn generation(root: &Path, id: String) -> Generation {
     let directory = root.join("generations").join(&id);
     Generation {
@@ -32,13 +46,12 @@ fn generation(root: &Path, id: String) -> Generation {
 }
 
 fn generation_id(dmb: &[u8], rsc: &[u8]) -> String {
-    let mut hash = Sha256::new();
-    hash.update(b"dm-output-generation-v1\0");
-    hash.update((dmb.len() as u64).to_le_bytes());
-    hash.update(dmb);
-    hash.update((rsc.len() as u64).to_le_bytes());
-    hash.update(rsc);
-    format!("{:x}", hash.finalize())
+    generation_id_from_digests(
+        dmb.len() as u64,
+        &format!("{:x}", Sha256::digest(dmb)),
+        rsc.len() as u64,
+        &format!("{:x}", Sha256::digest(rsc)),
+    )
 }
 
 /// Framed content digests make unchanged archives reusable without hashing
@@ -76,6 +89,7 @@ pub struct VerifiedArchive {
     path: PathBuf,
     stamp: FileStamp,
     content: ContentDigests,
+    receipt_artifact: Option<dm_resources::PreparedArchive>,
 }
 impl VerifiedArchive {
     pub fn path(&self) -> &Path {
@@ -84,6 +98,46 @@ impl VerifiedArchive {
     pub fn digest(&self) -> &str {
         &self.content.rsc_digest
     }
+    pub fn is_current(&self) -> bool {
+        capture(&self.path).as_ref()==Some(&self.stamp)
+    }
+    /// Digest of the bytecode paired with this archive's verified generation.
+    /// Conventional publication can reuse this proof instead of rehashing it.
+    pub fn paired_bytecode_digest(&self) -> Option<&str> {
+        valid_id(&self.content.dmb_digest).then_some(self.content.dmb_digest.as_str())
+    }
+    /// Bind a resource builder's immutable archive proof to this world's actual
+    /// resource table. No resource payload is read or decoded in this adapter.
+    pub fn from_prepared_archive(
+        artifact: &dm_resources::PreparedArchive,
+        dmb: &byond_dmb::dmb::Dmb,
+    ) -> io::Result<Self> {
+        Self::from_prepared_archive_resources(artifact,&dmb.resources)
+    }
+    /// Resource membership needs only the sealed image's resource section;
+    /// addressed procedure code stays on disk during archive publication.
+    pub fn from_prepared_archive_resources(
+        artifact:&dm_resources::PreparedArchive,
+        resources:&[byond_dmb::dmb::ResourceRef],
+    )->io::Result<Self> {
+        artifact.catalog().validate()?;
+        let lease=artifact.guarded_lease()?;
+        if fs::metadata(artifact.path())?.len() != artifact.len() || lease.as_ref().map_or_else(||capture(artifact.path()),|lease|lease.current_stamp()).as_ref() != Some(artifact.stamp()) {
+            return Err(invalid("prepared archive changed before publication"));
+        }
+        let entries: std::collections::HashSet<_> = artifact.catalog().entries.iter()
+            .map(|resource| (resource.id, resource.kind)).collect();
+        if resources.iter().any(|resource| !entries.contains(&(resource.id, resource.kind))) {
+            return Err(invalid("prepared archive does not contain the world's resources"));
+        }
+        Ok(Self {
+            path: artifact.path().to_owned(), stamp: artifact.stamp().clone(), receipt_artifact:Some(artifact.clone()),
+            content: ContentDigests { dmb_len: 0, dmb_digest: String::new(),
+                rsc_len: artifact.len(), rsc_digest: artifact.digest().to_owned(),
+                resources: resource_slice_digest(resources), pair_validated: true },
+        })
+    }
+
     pub fn len(&self) -> u64 {
         self.content.rsc_len
     }
@@ -92,9 +146,78 @@ impl VerifiedArchive {
     }
 }
 
+/// A serialization receipt issued only from an immutable validated image.
+/// It is process-local: persisted receipts must be independently verified.
+pub struct VerifiedBytecode {
+    digest: String,
+    len: usize,
+    resources: String,
+}
+impl VerifiedBytecode {
+    pub fn serialize_wire_stored(image:&crate::wire_image::WireImage,cache:&mut byond_dmb::dmb::DmbWireCache,root:&Path)
+        ->io::Result<(crate::chunks::StoredDmb,Self)> {
+        let stored=image.serialize_stored(root,cache)?;
+        let receipt=Self {digest:stored.digest().to_owned(),len:stored.len(),resources:resource_slice_digest(image.resources())};
+        Ok((stored,receipt))
+    }
+    pub fn serialize_wire_chunks(
+        image:&crate::wire_image::WireImage,
+        cache:&mut byond_dmb::dmb::DmbWireCache,
+        root:&Path,
+    )->io::Result<(crate::chunks::StoredDmb,Self)> {
+        let stored=crate::chunks::persist(root,&image.serialize_chunks(cache)?)?;
+        let receipt=Self {digest:stored.digest().to_owned(),len:stored.len(),resources:resource_slice_digest(image.resources())};
+        Ok((stored,receipt))
+    }
+    pub fn serialize_wire_cached(image:&crate::wire_image::WireImage,cache:&mut byond_dmb::dmb::DmbWireCache)
+        ->io::Result<(Vec<u8>,Vec<std::ops::Range<usize>>,Self)> {
+        let (bytes,spans)=image.serialize_chunks(cache)?.into_bytes();
+        let receipt=Self {digest:format!("{:x}",Sha256::digest(&bytes)),len:bytes.len(),resources:resource_slice_digest(image.resources())};
+        Ok((bytes,spans,receipt))
+    }
+    pub fn serialize_chunks(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+        cache: &mut byond_dmb::dmb::DmbWireCache,
+        root: &Path,
+    ) -> io::Result<(crate::chunks::StoredDmb, Self)> {
+        let pages = image.to_chunks_cached(cache)?;
+        let stored = crate::chunks::persist(root, &pages)?;
+        let receipt = Self { digest: stored.digest().to_owned(), len: stored.len(),
+            resources: resource_digest(image.image()) };
+        Ok((stored, receipt))
+    }
+    pub fn serialize_cached(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+        cache: &mut byond_dmb::dmb::DmbWireCache,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>, Self)> {
+        let (bytes, spans) = image.to_bytes_with_list_spans_cached(cache)?;
+        let receipt = Self {
+            digest: format!("{:x}", Sha256::digest(&bytes)),
+            len: bytes.len(),
+            resources: resource_digest(image.image()),
+        };
+        Ok((bytes, spans, receipt))
+    }
+    pub fn serialize(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>, Self)> {
+        let (bytes, spans) = image.to_bytes_with_list_spans()?;
+        let image = image.image();
+        let receipt = Self {
+            digest: format!("{:x}", Sha256::digest(&bytes)),
+            len: bytes.len(),
+            resources: resource_digest(image),
+        };
+        Ok((bytes, spans, receipt))
+    }
+}
+
 fn resource_digest(dmb: &byond_dmb::dmb::Dmb) -> String {
+    resource_slice_digest(&dmb.resources)
+}
+fn resource_slice_digest(resources:&[byond_dmb::dmb::ResourceRef])->String {
     let mut hash = Sha256::new();
-    for resource in &dmb.resources {
+    for resource in resources {
         hash.update(resource.id.to_le_bytes());
         hash.update([resource.kind]);
     }
@@ -138,6 +261,116 @@ pub fn current_generation(root: &Path) -> io::Result<Option<Generation>> {
 /// rollback or collect them after no reader references them.
 pub fn publish_generation(root: &Path, dmb: &[u8], rsc: &[u8]) -> io::Result<Generation> {
     publish_generation_reusing_archive(root, dmb, rsc, None)
+}
+
+/// Import conventional compiler outputs without loading the archive into RAM.
+/// The private copied pair is validated before its immutable HEAD is advanced.
+pub fn publish_generation_from_files(
+    root: &Path,
+    dmb: &Path,
+    rsc: &Path,
+) -> io::Result<Generation> {
+    fn file_digest(path: &Path) -> io::Result<(u64, String)> {
+        let mut reader = File::open(path)?;
+        let mut hash = Sha256::new();
+        let mut length = 0u64;
+        let mut buffer = [0u8; 64 * 1024];
+        loop {
+            let count = reader.read(&mut buffer)?;
+            if count == 0 {
+                return Ok((length, format!("{:x}", hash.finalize())));
+            }
+            hash.update(&buffer[..count]);
+            length += count as u64;
+        }
+    }
+    fs::create_dir_all(root.join("generations"))?;
+    let temp = root.join("generations").join(format!(
+        ".pending-import-{}-{}",
+        std::process::id(),
+        NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::create_dir(&temp)?;
+    let result = (|| {
+        let before = (capture(dmb), capture(rsc));
+        for (source, name) in [(dmb, "world.dmb"), (rsc, "world.rsc")] {
+            fs::copy(source, temp.join(name))?;
+            OpenOptions::new()
+                .write(true)
+                .open(temp.join(name))?
+                .sync_all()?;
+        }
+        let (dmb_len, dmb_digest) = file_digest(&temp.join("world.dmb"))?;
+        let (rsc_len, rsc_digest) = file_digest(&temp.join("world.rsc"))?;
+        let unchanged = if let (Some(left), Some(right)) = (&before.0, &before.1) {
+            capture(dmb).as_ref() == Some(left) && capture(rsc).as_ref() == Some(right)
+        } else {
+            file_digest(dmb)? == (dmb_len, dmb_digest.clone())
+                && file_digest(rsc)? == (rsc_len, rsc_digest.clone())
+        };
+        if !unchanged {
+            return Err(invalid("compiler outputs changed during generation import"));
+        }
+        let id = generation_id_from_digests(dmb_len, &dmb_digest, rsc_len, &rsc_digest);
+        let published = generation(root, id.clone());
+        let lock = OpenOptions::new()
+            .create(true)
+            .read(true)
+            .write(true)
+            .open(root.join("HEAD.lock"))?;
+        lock.lock()?;
+        let directory = published
+            .dmb
+            .parent()
+            .ok_or_else(|| invalid("generation has no directory"))?;
+        if directory.exists() && verify_generation_digest(root, &published).is_err() {
+            fs::rename(
+                directory,
+                root.join("generations").join(format!(
+                    ".corrupt-{}-{}-{}",
+                    id,
+                    std::process::id(),
+                    NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+                )),
+            )?;
+        }
+        if !directory.exists() {
+            fs::rename(&temp, directory)?;
+        }
+        let stamps = generation_stamps(&published);
+        let content = verify_generation_inner(root, &published, true)?;
+        if let Some(stamps) =
+            stamps.filter(|stamps| generation_stamps(&published).as_ref() == Some(stamps))
+        {
+            save_verification_receipt(&published, stamps, Some(content))?;
+        }
+        let head_path = root.join("HEAD");
+        if let Ok(bytes) = fs::read(&head_path) {
+            if !bytes.is_empty() && !bytes.ends_with(b"\n") {
+                let complete = bytes
+                    .iter()
+                    .rposition(|byte| *byte == b'\n')
+                    .map_or(0, |index| index + 1);
+                OpenOptions::new()
+                    .write(true)
+                    .open(&head_path)?
+                    .set_len(complete as u64)?;
+            }
+        }
+        if head_id(root)?.as_deref() != Some(id.as_str()) {
+            let mut head = OpenOptions::new()
+                .create(true)
+                .append(true)
+                .open(head_path)?;
+            writeln!(head, "{id}")?;
+            head.sync_all()?;
+        }
+        Ok(published)
+    })();
+    if temp.exists() {
+        let _ = fs::remove_dir_all(&temp);
+    }
+    result
 }
 
 /// Reuse the unchanged immutable archive through a hard link when available.
@@ -328,6 +561,7 @@ pub fn verified_archive(root: &Path, generation: &Generation) -> io::Result<Veri
         path: generation.rsc.clone(),
         stamp: stamps.rsc,
         content: content.unwrap(),
+        receipt_artifact: None,
     })
 }
 
@@ -339,15 +573,77 @@ pub fn publish_generation_with_archive(
     dmb: &[u8],
     archive: &VerifiedArchive,
 ) -> io::Result<Generation> {
-    use dm_host::file_stamp::{capture_file, open_verified};
     let decoded = byond_dmb::dmb::Dmb::from_bytes(dmb)?;
     decoded.validate_references()?;
-    if resource_digest(&decoded) != archive.content.resources {
+    publish_verified_archive_inner(root, dmb, archive, &resource_digest(&decoded), None)
+}
+
+/// Publication of compiler-owned serialization without decoding it again.
+/// Digest binding prevents a caller from pairing a receipt with different bytes.
+pub fn publish_generation_with_verified_bytecode(
+    root: &Path,
+    dmb: &[u8],
+    archive: &VerifiedArchive,
+    receipt: &VerifiedBytecode,
+) -> io::Result<Generation> {
+    if receipt.len != dmb.len() || receipt.digest != format!("{:x}", Sha256::digest(dmb)) {
+        return Err(invalid("bytecode differs from its validation receipt"));
+    }
+    publish_verified_archive_inner(
+        root,
+        dmb,
+        archive,
+        &receipt.resources,
+        Some(&receipt.digest),
+    )
+}
+
+fn publish_verified_archive_inner(
+    root: &Path,
+    dmb: &[u8],
+    archive: &VerifiedArchive,
+    resources: &str,
+    digest: Option<&str>,
+) -> io::Result<Generation> {
+    let digest = digest.map(str::to_owned).unwrap_or_else(||format!("{:x}",Sha256::digest(dmb)));
+    publish_verified_archive_source(root, archive, resources, &digest, dmb.len(),None,
+        |output|output.write_all(dmb), |path|file_matches_bytes(path,dmb))
+}
+
+/// Publish directly from immutable disk object pages; no full DMB Vec or
+/// decoding is needed after the immutable image issued its receipt.
+pub fn publish_generation_with_chunked_bytecode(
+    root: &Path,
+    dmb: &crate::chunks::StoredDmb,
+    archive: &VerifiedArchive,
+    receipt: &VerifiedBytecode,
+) -> io::Result<Generation> {
+    if dmb.len() != receipt.len || dmb.digest() != receipt.digest {
+        return Err(invalid("chunked bytecode differs from its validation receipt"));
+    }
+    publish_verified_archive_source(root, archive, &receipt.resources, &receipt.digest,receipt.len,None,
+        |output|dmb.write_to(output), |path| {
+            let mut input = File::open(path)?; let mut hash = Sha256::new(); let mut len=0usize;
+            let mut buffer=[0u8;64*1024];
+            loop { let count=input.read(&mut buffer)?; if count==0 {break;}
+                len+=count; hash.update(&buffer[..count]); }
+            Ok(len==receipt.len && format!("{:x}",hash.finalize())==receipt.digest)
+        })
+}
+
+fn publish_verified_archive_source(
+    root: &Path, archive: &VerifiedArchive, resources: &str, digest: &str, len: usize,
+    dmb_file:Option<&VerifiedDmbFile>,
+    write: impl FnOnce(&mut File)->io::Result<()>,
+    matches: impl Fn(&Path)->io::Result<bool>,
+) -> io::Result<Generation> {
+    use dm_host::file_stamp::{capture_file, open_verified};
+    if resources != archive.content.resources {
         return Err(invalid("changed DMB resource table requires a new archive"));
     }
     let content = ContentDigests {
-        dmb_len: dmb.len() as u64,
-        dmb_digest: format!("{:x}", Sha256::digest(dmb)),
+        dmb_len: len as u64,
+        dmb_digest: digest.to_owned(),
         rsc_len: archive.len(),
         rsc_digest: archive.digest().into(),
         resources: archive.content.resources.clone(),
@@ -379,13 +675,25 @@ pub fn publish_generation_with_archive(
             )),
         )?;
     }
+    let lease=archive.receipt_artifact.as_ref().map(|artifact|artifact.guarded_lease()).transpose()?.flatten();
     let mut protected = None;
     let mut copied_stamp = None;
     let created = !directory.exists();
     if !directory.exists() {
         protected = Some(
-            open_verified(&archive.path, &archive.stamp)
-                .ok_or_else(|| invalid("verified archive unavailable or changed"))?,
+            if let Some(lease)=&lease {
+                // Existing lease excludes all content writes; a fresh reader
+                // can copy if a cross-volume hardlink is unavailable.
+                #[cfg(windows)] {
+                    use std::os::windows::fs::OpenOptionsExt;
+                    let file=OpenOptions::new().read(true).share_mode(1|4).open(&archive.path)?;
+                    if capture_file(&file)!=lease.current_stamp() {return Err(invalid("guarded archive path changed"));}
+                    file
+                }
+                #[cfg(not(windows))] {return Err(invalid("archive lease unavailable on this platform"));}
+            } else {
+                open_verified(&archive.path, &archive.stamp).ok_or_else(||invalid("verified archive unavailable or changed"))?
+            },
         );
         let temp = root.join("generations").join(format!(
             ".pending-{}-{}",
@@ -394,10 +702,12 @@ pub fn publish_generation_with_archive(
         ));
         fs::create_dir(&temp)?;
         let result = (|| {
-            let mut output = File::create(temp.join("world.dmb"))?;
-            output.write_all(dmb)?;
-            output.sync_all()?;
-            drop(output);
+            let destination=temp.join("world.dmb");
+            #[cfg(windows)]
+            let linked=if let Some(file)=dmb_file {file.matches_guarded(file.path())?&&fs::hard_link(file.path(),&destination).is_ok()}else{false};
+            #[cfg(not(windows))]
+            let linked=false;
+            if !linked {let mut output=File::create(&destination)?;write(&mut output)?;output.sync_all()?;drop(output);}
             if fs::hard_link(&archive.path, temp.join("world.rsc")).is_err() {
                 let mut copy = File::create(temp.join("world.rsc"))?;
                 let copied = io::copy(protected.as_mut().unwrap(), &mut copy)?;
@@ -419,13 +729,14 @@ pub fn publish_generation_with_archive(
             return Err(error);
         }
     }
+    if let Some(lease)=&lease {lease.refresh_after_publication()?;}
     if created {
         let dmb_stamp =
-            capture(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
-        if fs::read(&published.dmb)? != dmb {
+            dmb_stamp(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
+        if !matches(&published.dmb)? {
             return Err(invalid("published DMB bytes changed"));
         }
-        if capture(&published.dmb).as_ref() != Some(&dmb_stamp) {
+        if self::dmb_stamp(&published.dmb).as_ref() != Some(&dmb_stamp) {
             return Err(invalid("published DMB changed during validation"));
         }
         let rsc_stamp = copied_stamp
@@ -629,6 +940,65 @@ impl<R: Read> Read for HashingReader<R> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn publication_route_does_not_change_generation_identity() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-generation-route-{}-{}",
+            std::process::id(),
+            NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut world = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        world.resources.clear();
+        let bytes = world.to_bytes().unwrap();
+        let normal = publish_generation(&root, &bytes, &[]).unwrap();
+        let archive = verified_archive(&root, &normal).unwrap();
+        let reused = publish_generation_with_archive(&root, &bytes, &archive).unwrap();
+        assert_eq!(normal, reused);
+        let imported = publish_generation_from_files(&root, &normal.dmb, &normal.rsc).unwrap();
+        assert_eq!(normal, imported);
+        assert_eq!(
+            normal.id,
+            generation_id_from_digests(
+                bytes.len() as u64,
+                &format!("{:x}", Sha256::digest(&bytes)),
+                0,
+                &format!("{:x}", Sha256::digest([]))
+            )
+        );
+        fs::remove_dir_all(root).unwrap();
+    }
+
+    #[test]
+    fn legacy_generation_ids_remain_readable() {
+        let root = std::env::temp_dir().join(format!(
+            "dm-generation-legacy-{}-{}",
+            std::process::id(),
+            NEXT_TEMP.fetch_add(1, Ordering::Relaxed)
+        ));
+        let mut world = byond_dmb::dmb::Dmb::from_bytes(include_bytes!(
+            "../../../fixtures/native_template.bin"
+        ))
+        .unwrap();
+        world.resources.clear();
+        let bytes = world.to_bytes().unwrap();
+        let mut hash = Sha256::new();
+        hash.update(b"dm-output-generation-v1\0");
+        hash.update((bytes.len() as u64).to_le_bytes());
+        hash.update(&bytes);
+        hash.update(0u64.to_le_bytes());
+        let legacy = generation(&root, format!("{:x}", hash.finalize()));
+        fs::create_dir_all(legacy.dmb.parent().unwrap()).unwrap();
+        fs::write(&legacy.dmb, bytes).unwrap();
+        fs::write(&legacy.rsc, []).unwrap();
+        fs::write(root.join("HEAD"), format!("{}\n", legacy.id)).unwrap();
+        assert_eq!(current_generation(&root).unwrap(), Some(legacy.clone()));
+        verify_generation(&root, &legacy).unwrap();
+        fs::remove_dir_all(root).unwrap();
+    }
 
     #[test]
     fn verification_receipt_detects_same_length_corruption_with_restored_mtime() {
@@ -902,4 +1272,64 @@ mod tests {
         verify_generation(&root, &first).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
+}
+
+/// Protected, verified bytecode file. On Windows the private live handle
+/// permits reads/renames while excluding every other writer until publication.
+pub struct VerifiedDmbFile {path:PathBuf,file:File,digest:String,len:usize,stamp:FileStamp}
+fn dmb_read(path:&Path)->io::Result<File> {
+    let mut options=OpenOptions::new();options.read(true);
+    #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
+    options.open(path)
+}
+// Compatible observers must share the private composer's existing WRITE
+// access. The composer's original READ|DELETE sharing still excludes every
+// external writer for the complete receipt lifetime.
+fn dmb_observer(path:&Path)->io::Result<File> {
+    let mut options=OpenOptions::new();options.read(true);
+    #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|2|4);}
+    options.open(path)
+}
+fn dmb_stamp(path:&Path)->Option<FileStamp> {dm_host::file_stamp::capture_file(&dmb_observer(path).ok()?)}
+impl VerifiedDmbFile {
+    pub fn path(&self)->&Path {&self.path}
+    pub fn digest(&self)->&str {&self.digest}
+    pub fn len(&self)->usize {self.len}
+    pub fn is_empty(&self)->bool {self.len==0}
+    pub fn open(path:&Path,digest:&str,len:u64)->io::Result<Self> {
+        let len=usize::try_from(len).map_err(io::Error::other)?;
+        let mut file=dmb_read(path)?;let before=dm_host::file_stamp::capture_file(&file).ok_or_else(||invalid("DMB stamp unavailable"))?;
+        let mut hash=Sha256::new();let mut actual=0usize;let mut buffer=[0u8;64*1024];
+        loop {let count=file.read(&mut buffer)?;if count==0 {break;}actual=actual.checked_add(count).ok_or_else(||invalid("DMB length overflow"))?;hash.update(&buffer[..count]);}
+        if actual!=len||format!("{:x}",hash.finalize())!=digest||dm_host::file_stamp::capture_file(&file).as_ref()!=Some(&before) {return Err(invalid("DMB file proof mismatch"));}
+        Ok(Self {path:path.to_owned(),file,digest:digest.to_owned(),len,stamp:before})
+    }
+    pub fn compose(path:&Path,image:&crate::chunks::StoredDmb)->io::Result<Self> {
+        let mut options=OpenOptions::new();options.create_new(true).read(true).write(true);
+        #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
+        let mut file=options.open(path)?;image.write_to(&mut file)?;file.sync_all()?;
+        let stamp=dm_host::file_stamp::capture_file(&file).ok_or_else(||invalid("composed DMB stamp unavailable"))?;
+        Ok(Self {path:path.to_owned(),file,digest:image.digest().to_owned(),len:image.len(),stamp})
+    }
+    pub fn relocated(mut self,path:&Path)->io::Result<Self> {
+        let stamp=dm_host::file_stamp::capture_file(&self.file).ok_or_else(||invalid("DMB file handle unavailable"))?;
+        if dmb_stamp(path).as_ref()!=Some(&stamp) {return Err(invalid("relocated DMB is another file"));}
+        self.path=path.to_owned();self.stamp=stamp;Ok(self)
+    }
+    fn matches_guarded(&self,path:&Path)->io::Result<bool> {
+        #[cfg(windows)] {let stamp=dm_host::file_stamp::capture_file(&self.file).ok_or_else(||invalid("DMB guard unavailable"))?;
+            Ok(dmb_stamp(path).as_ref()==Some(&stamp))}
+        #[cfg(not(windows))] {Self::open(path,&self.digest,self.len as u64).map(|_|true)}
+    }
+    fn write_to(&self,output:&mut File)->io::Result<()> {
+        let mut input=dmb_observer(&self.path)?;let mut hash=Sha256::new();let mut total=0usize;let mut buffer=[0u8;64*1024];
+        loop {let count=input.read(&mut buffer)?;if count==0 {break;}total=total.checked_add(count).ok_or_else(||invalid("DMB copy overflow"))?;
+            hash.update(&buffer[..count]);output.write_all(&buffer[..count])?;}
+        if total!=self.len||format!("{:x}",hash.finalize())!=self.digest {return Err(invalid("DMB copy changed"));}Ok(())
+    }
+}
+pub fn publish_generation_with_verified_dmb_file(root:&Path,dmb:&VerifiedDmbFile,archive:&VerifiedArchive,receipt:&VerifiedBytecode)->io::Result<Generation> {
+    if dmb.len()!=receipt.len||dmb.digest()!=receipt.digest||!dmb.matches_guarded(dmb.path())? {return Err(invalid("DMB file differs from its serialization receipt"));}
+    publish_verified_archive_source(root,archive,&receipt.resources,&receipt.digest,receipt.len,Some(dmb),
+        |output|dmb.write_to(output),|path| {if dmb.matches_guarded(path)? {Ok(true)}else{VerifiedDmbFile::open(path,dmb.digest(),dmb.len() as u64).map(|_|true)}})
 }

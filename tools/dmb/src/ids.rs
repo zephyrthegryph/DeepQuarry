@@ -65,7 +65,7 @@ impl Dmb {
     }
 
     pub fn list_by_id(&self, id: ListId) -> Option<&[u32]> {
-        self.lists.get(id.index()).map(Vec::as_slice)
+        self.lists.get(id.index()).map(|words|words.as_slice())
     }
 }
 

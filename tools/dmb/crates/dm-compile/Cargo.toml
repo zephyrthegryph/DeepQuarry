@@ -14,3 +14,6 @@ dm-output = { path = "../dm-output" }
 dm-syntax = { path = "../dm-syntax" }
 dm-host = { path = "../dm-host" }
 dm-preprocess = { path = "../dm-preprocess" }
+serde = { version = "1", features = ["derive"] }
+sha2 = "0.10"
+dm-analysis = { path = "../dm-analysis" }
