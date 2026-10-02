@@ -42,6 +42,12 @@
 	/// Phase P items that ran out of their lane's share this tick with work left (a yielded fire(), an open sweep):
 	/// phase R gives them what is left of the tick, as the scheduler's leftovers pass does for its rings.
 	var/list/p_carry = list()
+	/// The loop's init stage this tick: during boot the carry is off (run_leftover_phase()), so the leftovers of a tick
+	/// go to the initializing subsystems sleeping in CHECK_TICK, not to a presentation backlog.
+	var/tick_init_stage = INITSTAGE_MAX
+	/// kernel_latency(), held so the per-item gate is a var read. Taken on first use: the live kernel can be built during
+	/// global init, before kernel_latency()'s static is.
+	var/datum/kernel_latency/latency_state
 	/// Problems the last graph validation found (a missing target, a cycle, an edge into a later phase).
 	var/list/work_errors = list()
 	/// Capability types some item names in `members`: their holders join the membership store in caps_init().
@@ -102,6 +108,9 @@
 
 // ---------------------------------------------------------------- the tick
 
+/// phase_note() inlined for the tick's own seven phases (one proc call each per tick saved).
+#define KERNEL_PHASE_NOTE(phase, started) var/ms_##started = TICK_USAGE_TO_MS(started); phase_ms_last[phase] = ms_##started; phase_ms_total[phase] += ms_##started
+
 /// One kernel tick. `tick_limit` is the absolute tick usage the kernel's phases must stay under (K and U may pass
 /// it by their own rules); `init_stage` is the MC loop's stage: a hosted subsystem of a later stage does not run yet.
 /datum/controller/kernel/proc/tick(tick_limit, init_stage = INITSTAGE_MAX, light = FALSE)
@@ -110,6 +119,7 @@
 	// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 	last_tick = world.time
 	ticks++
+	tick_init_stage = init_stage
 	if(!sched)
 		sched = GLOB.om_live_sched
 	if(!hosted_k)
@@ -133,7 +143,7 @@
 			phase_fault(KERNEL_PHASE_K, k_e)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
-	phase_note(KERNEL_PHASE_K, k_start)
+	KERNEL_PHASE_NOTE(KERNEL_PHASE_K, k_start)
 
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		var/sb_start = TICK_USAGE
@@ -150,7 +160,7 @@
 				work_run_phase(KERNEL_PHASE_N, tick_limit)
 		catch(var/exception/n_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_N, n_e)
-		phase_note(KERNEL_PHASE_N, n_start)
+		KERNEL_PHASE_NOTE(KERNEL_PHASE_N, n_start)
 		// U
 		var/u_start = TICK_USAGE
 		if(length(urgent_queue))
@@ -158,28 +168,28 @@
 				run_urgent(min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE))
 			catch(var/exception/u_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 				phase_fault(KERNEL_PHASE_U, u_e)
-		phase_note(KERNEL_PHASE_U, u_start)
+		KERNEL_PHASE_NOTE(KERNEL_PHASE_U, u_start)
 		// D
 		var/d_start = TICK_USAGE
 		try
 			run_deadline_phase(tick_limit)
 		catch(var/exception/d_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_D, d_e)
-		phase_note(KERNEL_PHASE_D, d_start)
+		KERNEL_PHASE_NOTE(KERNEL_PHASE_D, d_start)
 		// P
 		var/p_start = TICK_USAGE
 		try
 			run_lane_phase(tick_limit)
 		catch(var/exception/p_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_P, p_e)
-		phase_note(KERNEL_PHASE_P, p_start)
+		KERNEL_PHASE_NOTE(KERNEL_PHASE_P, p_start)
 		// R
 		var/r_start = TICK_USAGE
 		try
 			run_leftover_phase(tick_limit)
 		catch(var/exception/r_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_R, r_e)
-		phase_note(KERNEL_PHASE_R, r_start)
+		KERNEL_PHASE_NOTE(KERNEL_PHASE_R, r_start)
 		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
 		var/se_start = TICK_USAGE
 		sched.pass_end()
@@ -202,10 +212,12 @@
 			work_run_phase(KERNEL_PHASE_G, g_limit)
 		catch(var/exception/g_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_G, g_e)
-	phase_note(KERNEL_PHASE_G, g_start)
+	KERNEL_PHASE_NOTE(KERNEL_PHASE_G, g_start)
 
 	last_tick_ms = TICK_USAGE_TO_MS(tick_start)
 	Master.current_ticklimit = saved_limit
+
+#undef KERNEL_PHASE_NOTE
 
 /// TRUE when the scheduler passes run this tick: SSbehaviours (the scheduler's boot) has initialized for the loop's
 /// stage, and the runlevel is one it ran in. The rule SSbehaviours' own MC entry had.
@@ -264,7 +276,7 @@
 	var/s_start = TICK_USAGE
 	sched.pass_borrow(tick_limit)
 	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
-	var/datum/kernel_latency/latency = kernel_latency()
+	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	for(var/lane in 1 to OM_LANE_COUNT)
 		s_start = TICK_USAGE
 		sched.pass_lane(lane, tick_limit)
@@ -287,6 +299,10 @@
 	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
 	work_run_phase(KERNEL_PHASE_R, tick_limit)
 	if(!length(p_carry))
+		return
+	if(tick_init_stage < INITSTAGE_MAX)
+		// Boot: the rest of the tick belongs to the subsystems still initializing (they sleep in CHECK_TICK).
+		p_carry.Cut()
 		return
 	var/list/carry = p_carry
 	p_carry = list()

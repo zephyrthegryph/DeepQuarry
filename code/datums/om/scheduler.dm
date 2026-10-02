@@ -385,8 +385,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		cap = 0
 		if(!run_deadlines(pass_t))
 			pass_done = FALSE
+		var/datum/kernel_latency/latency = kernel_latency()
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(kernel_latency().sheds_lane(lane))
+			if(latency.shedding && latency.sheds_lane(lane))
 				continue
 			if(!run_lane_guarded(lane, pass_t))
 				pass_done = FALSE

@@ -153,7 +153,7 @@
 		// Not in this item's run levels: it is due again next pass, and its sweep (if one was open) resumes then.
 		return TRUE
 	// The latency gate refuses only while shedding: one var read most ticks instead of three calls.
-	var/datum/kernel_latency/latency = kernel_latency()
+	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	if(latency.shedding && !latency.admit(W.latency_class(), W.key))
 		return TRUE
 	if(TICK_USAGE >= limit_abs)
