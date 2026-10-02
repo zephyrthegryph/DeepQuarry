@@ -25,13 +25,13 @@
 
 /obj/item/arrow/energy/throw_impact(atom/hit_atom)
 	. = ..()
-	qdel(src)
+	consume(src)
 
 /obj/item/arrow/energy/equipped()
 	if(isliving(loc))
 		var/mob/living/L = loc
 		L.drop_from_inventory(src)
-	qdel(src) // noh
+	consume(src) // An equipped hardlight arrow dissipates after its compulsory drop.
 
 /obj/item/gun/launcher/crossbow/bow
 	name = "shortbow"
