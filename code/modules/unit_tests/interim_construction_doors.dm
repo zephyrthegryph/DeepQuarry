@@ -131,7 +131,11 @@
 	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
 	wires.pulse(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(door.isElectrified(), "Pulsing the electrify wire must electrify the door")
-	TEST_ASSERT(findtext(door.shockedby, actor.name), "Electrification history must credit the explicit wire operator")
+	var/attributed = FALSE
+	for(var/entry in door.shockedby)
+		if(findtext(entry, actor.name))
+			attributed = TRUE
+	TEST_ASSERT(attributed, "Electrification history must credit the explicit wire operator")
 	wires.cut(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(wires.is_cut(WIRE_ELECTRIFY), "Cutting must sever the electrify wire")
 	TEST_ASSERT_EQUAL(door.electrified_until, -1, "Cut wire must leave permanent electrification")
