@@ -397,6 +397,7 @@
 #include "interim_food_consumption.dm"
 #include "interim_power_reagents.dm"
 #include "interim_reagent_pour.dm"
+#include "interim_smokable_lifecycle.dm"
 #include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

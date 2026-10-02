@@ -11,6 +11,7 @@
 	TEST_ASSERT(H.equip_to_slot_if_possible(cig, SLOT_ID_MASK, disable_warning = TRUE), "the cigarette is worn before burning out")
 	var/handle = om_handle(cig)
 	cig.die(TRUE)
+	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(cig), "burning out deletes the original cigarette")
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "burning out clears the worn mask slot")
 	var/obj/item/trash/cigbutt/butt = om_resolve(handle)
@@ -32,11 +33,12 @@
 	pipe.smoketime = 5
 	var/handle = om_handle(pipe)
 	pipe.die(FALSE)
+	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(pipe), "emptying keeps the reusable pipe")
 	TEST_ASSERT_EQUAL(om_resolve(handle), pipe, "the pipe retains its original handle")
 	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_MASK), pipe, "the empty pipe remains worn")
 	TEST_ASSERT_EQUAL(pipe.smoketime, 0, "the worn pipe's fuel time is exhausted")
 	TEST_ASSERT_EQUAL(pipe.reagents.total_volume, 0, "emptying clears the pipe's reagent payload")
-	var/obj/effect/decal/cleanable/ash/ash = locate() in T
+	var/obj/effect/decal/cleanable/ash/ash = locate_within(T, /obj/effect/decal/cleanable/ash)
 	TEST_ASSERT(ash, "emptying creates an ash deposit")
 	qdel(ash)
