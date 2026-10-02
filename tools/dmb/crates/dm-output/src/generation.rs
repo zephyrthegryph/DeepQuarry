@@ -89,6 +89,7 @@ pub struct VerifiedArchive {
     path: PathBuf,
     stamp: FileStamp,
     content: ContentDigests,
+    receipt_artifact: Option<dm_resources::PreparedArchive>,
 }
 impl VerifiedArchive {
     pub fn path(&self) -> &Path {
@@ -98,7 +99,7 @@ impl VerifiedArchive {
         &self.content.rsc_digest
     }
     pub fn is_current(&self) -> bool {
-        capture(&self.path).as_ref() == Some(&self.stamp)
+        capture(&self.path).as_ref()==Some(&self.stamp)
     }
     /// Digest of the bytecode paired with this archive's verified generation.
     /// Conventional publication can reuse this proof instead of rehashing it.
@@ -112,7 +113,8 @@ impl VerifiedArchive {
         dmb: &byond_dmb::dmb::Dmb,
     ) -> io::Result<Self> {
         artifact.catalog().validate()?;
-        if fs::metadata(artifact.path())?.len() != artifact.len() || capture(artifact.path()).as_ref() != Some(artifact.stamp()) {
+        let lease=artifact.guarded_lease()?;
+        if fs::metadata(artifact.path())?.len() != artifact.len() || lease.as_ref().map_or_else(||capture(artifact.path()),|lease|lease.current_stamp()).as_ref() != Some(artifact.stamp()) {
             return Err(invalid("prepared archive changed before publication"));
         }
         let entries: std::collections::HashSet<_> = artifact.catalog().entries.iter()
@@ -121,7 +123,7 @@ impl VerifiedArchive {
             return Err(invalid("prepared archive does not contain the world's resources"));
         }
         Ok(Self {
-            path: artifact.path().to_owned(), stamp: artifact.stamp().clone(),
+            path: artifact.path().to_owned(), stamp: artifact.stamp().clone(), receipt_artifact:Some(artifact.clone()),
             content: ContentDigests { dmb_len: 0, dmb_digest: String::new(),
                 rsc_len: artifact.len(), rsc_digest: artifact.digest().to_owned(),
                 resources: resource_digest(dmb), pair_validated: true },
@@ -527,6 +529,7 @@ pub fn verified_archive(root: &Path, generation: &Generation) -> io::Result<Veri
         path: generation.rsc.clone(),
         stamp: stamps.rsc,
         content: content.unwrap(),
+        receipt_artifact: None,
     })
 }
 
@@ -639,13 +642,25 @@ fn publish_verified_archive_source(
             )),
         )?;
     }
+    let lease=archive.receipt_artifact.as_ref().map(|artifact|artifact.guarded_lease()).transpose()?.flatten();
     let mut protected = None;
     let mut copied_stamp = None;
     let created = !directory.exists();
     if !directory.exists() {
         protected = Some(
-            open_verified(&archive.path, &archive.stamp)
-                .ok_or_else(|| invalid("verified archive unavailable or changed"))?,
+            if let Some(lease)=&lease {
+                // Existing lease excludes all content writes; a fresh reader
+                // can copy if a cross-volume hardlink is unavailable.
+                #[cfg(windows)] {
+                    use std::os::windows::fs::OpenOptionsExt;
+                    let file=OpenOptions::new().read(true).share_mode(1|4).open(&archive.path)?;
+                    if capture_file(&file)!=lease.current_stamp() {return Err(invalid("guarded archive path changed"));}
+                    file
+                }
+                #[cfg(not(windows))] {return Err(invalid("archive lease unavailable on this platform"));}
+            } else {
+                open_verified(&archive.path, &archive.stamp).ok_or_else(||invalid("verified archive unavailable or changed"))?
+            },
         );
         let temp = root.join("generations").join(format!(
             ".pending-{}-{}",
@@ -679,6 +694,7 @@ fn publish_verified_archive_source(
             return Err(error);
         }
     }
+    if let Some(lease)=&lease {lease.refresh_after_publication()?;}
     if created {
         let dmb_stamp =
             capture(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;

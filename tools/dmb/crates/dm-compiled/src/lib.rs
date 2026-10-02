@@ -1134,6 +1134,7 @@ impl BuildInputSnapshot {
         }
         // Capture before exact reads, then compare after them. Capturing only
         // afterwards could accidentally bless an edit made during verification.
+        let observation_started = std::time::Instant::now();
         let previous_assets = self.asset_proof.borrow().clone();
         let validated_sources = self.source_proof.borrow().clone();
         let proof = if let Some(sources) = &validated_sources {
@@ -1163,6 +1164,8 @@ impl BuildInputSnapshot {
                     ),
             )
         };
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof observation/combine: {:.3}s", observation_started.elapsed().as_secs_f64()); }
+        let namespace_started = std::time::Instant::now();
         // An inherited namespace proof covers the same resource lookup candidates
         // and missing includes. Validate it before doing any per-path resolution walk.
         let mut proof = proof;
@@ -1188,6 +1191,7 @@ impl BuildInputSnapshot {
                 return true;
             }
         }
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof namespace reuse: {:.3}s", namespace_started.elapsed().as_secs_f64()); }
         if (!(validated_sources.is_some() && proof.is_some())
             && !dm_work::map_ordered(
                 &self.source_digests.iter().collect::<Vec<_>>(),
@@ -1219,9 +1223,11 @@ impl BuildInputSnapshot {
         if maps.is_some_and(|maps| hex_digest(&maps.fingerprint) != self.maps_digest) {
             return false;
         }
+        let resolution_started = std::time::Instant::now();
         if !self.resolutions_current(project, false) {
             return false;
         }
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof resolution: {:.3}s", resolution_started.elapsed().as_secs_f64()); }
         let valid = assets_current
             || ResourceSet::fingerprint_requests(self.resource_requests.clone())
                 .is_ok_and(|fingerprint| hex_digest(&fingerprint) == self.resources_digest);
@@ -1238,7 +1244,9 @@ impl BuildInputSnapshot {
                         namespace_candidates.push(root.join(directory).join(&request.archive_name));
                     }
                 }
+                let barrier_started = std::time::Instant::now();
                 proof.enable_namespace_journal(&namespace_candidates);
+                if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE final proof barrier: {:.3}s", barrier_started.elapsed().as_secs_f64()); }
                 // Establishing a change cursor cannot bless a resolution change
                 // between the earlier resolution scan and that cursor.
                 if !self.resolutions_current(project, true) || !proof.current() {

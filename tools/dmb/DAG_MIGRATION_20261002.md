@@ -178,3 +178,21 @@ reuse frozen initializer recipes, target semantic hydration by changedowner,
 and avoid repeated per-literal lazy CAS reads during declaration preparation.
 The typed outputpage/linkdirectory APIs are foundations and are not yet an
 integrated license to skip semantic linking.
+
+## Run J ongoing
+
+Commit26bec4e4be builds benchmark and CLI. J first results: cold180.809s,
+unchanged0.429s, body21.207s. Cold prepared manifest publication succeeded;
+body requested exactly one211-byte authored source, persistence0.492s.
+Body compiler8.873s; archivechecks2.090s; finalproof3.010s. Structural and
+freshprocess results pending. Following work separates declaration base from
+procedureoverlay and batches/compactly stores exact restored certificates;
+those changes are not included in J. No tests or runtime runs.
+
+J completed: cold180.809s; unchanged0.429s; body21.207s; newproc60.879s;
+newvar60.944s; default53.434s; asset14.821s; newresource64.191s;
+freshcachedprocess0.163s; freshbody40.091s. Every compilerrequest succeeded;
+no runtimecorrectness claim. Nextprototype implements compressed declarationbase
+reuse, bounded packed dependencycertificate pages in productionrestoration,
+and Windows denywrite archiveleases during hardlinkpublication. Their build
+and timing are pending; perowner declarationmutation recorder stillunfinished.

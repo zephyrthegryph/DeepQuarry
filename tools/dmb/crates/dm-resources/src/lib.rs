@@ -13,7 +13,7 @@ use std::path::{Component, Path, PathBuf};
 
 mod archive;
 mod input_cache;
-pub use archive::{prepare_archive, PreparedArchive};
+pub use archive::{prepare_archive, PreparedArchive, ArchiveLease};
 pub use input_cache::{ResourceFingerprintCache, ResourceFingerprintStats};
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

@@ -25,7 +25,6 @@ mod emission_plans;
 pub(crate) mod canonical;
 #[path = "initializer_pipeline.rs"]
 mod initializer_pipeline;
-use initializer_pipeline::emit_dynamic_initializers_with_pool;
 
 use byond_dmb::bytecode::opcode;
 use byond_dmb::dmb::{DmString, Dmb, Instance, MobType, Proc, Variable};
@@ -62,7 +61,7 @@ pub(crate) fn analysis_resolved_model(
     }
     let builtin=Dmb::from_bytes(builtin_image).map_err(|error|error.to_string())?;
     let model=semantic_declarations::analysis_model::build_fragments(&normalized,&modified.declarations,&builtin,builtin_image,session.semantic_declarations.as_ref(),dm_work::WorkLimits::configured().workers);
-    session.semantic_declarations=Some(Arc::clone(&model));semantic_declarations::flush_cache();
+    session.semantic_declarations=Some(Arc::clone(&model));session.semantic_base_revision=None;semantic_declarations::flush_cache();
     Ok(model)
 }
 
@@ -232,6 +231,7 @@ fn collect_owner_fields(
     }
 }
 
+#[derive(Clone, serde::Serialize, serde::Deserialize)]
 struct TypeMetadataState {
     first_generated_class: usize,
     emitted: HashSet<u32>,
@@ -3395,14 +3395,42 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     let declaration_preparation_started=std::time::Instant::now();
     let semantic_stats_before=semantic_declarations::stats();
-    trace("default plan prefetch start");
-    default_plans::prefetch(&ast.items, workers);
-    trace("default plan prefetch complete");
-    let semantic_declarations = semantic_declarations::SemanticDeclarations::build(
-        &ast.items, &modified.declarations, &dmb, builtin_image, session.semantic_declarations.as_ref(), workers);
+    let base_key=canonical::declaration_base_key(&ast.items,&modified,builtin_image,world_name,&resource_ids,source_debug.is_some());
+    let base=if reusable {session.declaration_base(&base_key,lowering_cache.cache_root())} else {None};
+    let semantic_declarations=if base.is_some()&&session.semantic_declarations.is_some()&&session.semantic_base_revision.as_deref()==Some(base_key.as_str()) {
+        trace("symbolic declaration model reused with allocation base");
+        Arc::clone(session.semantic_declarations.as_ref().unwrap())
+    } else {
+        trace("default plan prefetch start");
+        default_plans::prefetch(&ast.items, workers);
+        trace("default plan prefetch complete");
+        semantic_declarations::SemanticDeclarations::build(&ast.items,&modified.declarations,&dmb,builtin_image,session.semantic_declarations.as_ref(),workers)
+    };
     session.semantic_declarations = Some(Arc::clone(&semantic_declarations));
+    session.semantic_base_revision = Some(base_key.clone());
     let _semantic_model = semantic_declarations::activate(semantic_declarations);
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE symbolic declaration model prepared in {:.3}s",declaration_preparation_started.elapsed().as_secs_f64());}
+    let is_global_const = |item: &Item| {
+        item.kind == ItemKind::Var
+            && item
+                .header
+                .split('=')
+                .next()
+                .is_some_and(|h| h.split('/').any(|part| part.trim() == "const"))
+    };
+    let (mut strings,mut proc_paths,mut class_paths,mut type_metadata,mut pending,mut pending_dynamic,mut globals,global_types,class_field_types)=if let Some(base)=base {
+        trace("declaration allocation base reused");
+        dmb=base.image;
+        dmb.resources=current_resource_refs.clone();
+        let mut source_types=Vec::new();collect_type_items(&ast.items,&mut source_types);
+        let mut pending=Vec::new();
+        for index in &base.type_order {
+            let item=source_types.get(*index).ok_or("invalid declaration base owner handle")?;
+            let path=item.header.trim();let class=*base.class_paths.get(path).ok_or("invalid declaration base class handle")?;
+            for child in &item.children {if matches!(child.kind,ItemKind::Proc|ItemKind::Verb) {pending.push(PendingProc {source_offset:0,item:child,owner:Some(class),owner_path:path.to_owned(),verb:child.kind==ItemKind::Verb});}}
+        }
+        (base.strings.decode()?,base.proc_paths,base.class_paths,base.metadata,pending,base.dynamic,base.globals,base.global_types,base.field_types)
+    } else {
     let mut strings = StringIndex::new(&dmb);
     dmb.world.ids[6] = strings.intern(&mut dmb, world_name);
     let mut proc_paths: HashSet<Vec<u8>> = dmb
@@ -3410,7 +3438,6 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         .iter()
         .filter_map(|proc| dmb.string(proc.strings[0]).map(|bytes| bytes.to_vec()))
         .collect();
-    let mut generated_proc_paths = HashSet::new();
     let mut class_paths: HashMap<String, u32> = dmb
         .classes
         .iter()
@@ -3422,6 +3449,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         .collect();
     let mut type_items = Vec::new();
     collect_type_items(&ast.items, &mut type_items);
+    let source_types=type_items.clone();
     let mut type_metadata = TypeMetadataState {
         first_generated_class: dmb.classes.len(),
         emitted: HashSet::new(),
@@ -3530,14 +3558,6 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     // Constants can refer to globals declared later. Resolve their dependency
     // graph before emitting runtime initializers or type settings.
-    let is_global_const = |item: &Item| {
-        item.kind == ItemKind::Var
-            && item
-                .header
-                .split('=')
-                .next()
-                .is_some_and(|h| h.split('/').any(|part| part.trim() == "const"))
-    };
     let mut unresolved_consts: Vec<_> = ast
         .items
         .iter()
@@ -3614,6 +3634,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     trace(&format!("type default stages: ownerplans={:.3}s semanticplans={:.3}s wire={:.3}s",owner_plan_time.as_secs_f64(),default_plan_time.as_secs_f64(),default_wire_time.as_secs_f64()));
     trace("type defaults complete");
+    let source_handles:HashMap<usize,usize>=source_types.iter().enumerate().map(|(index,item)|(*item as *const Item as usize,index)).collect();
+    let type_order=type_items.iter().map(|item|source_handles[&(*item as *const Item as usize)]).collect::<Vec<_>>();
+    if reusable {
+        let base=canonical::DeclarationBase {image:dmb.clone(), strings:strings.clone().into(),proc_paths:proc_paths.clone(),class_paths:class_paths.clone(),metadata:type_metadata.clone(),dynamic:pending_dynamic.clone(),globals:globals.clone(),global_types:global_types.clone(),field_types:class_field_types.clone(),type_order};
+        session.store_declaration_base(base_key.clone(),&base,lowering_cache.cache_root());
+    }
+    (strings,proc_paths,class_paths,type_metadata,pending,pending_dynamic,globals,global_types,class_field_types)
+    };
+    let mut generated_proc_paths=HashSet::new();
     trace("procedure declaration collection start");
     let mut verb_owners: HashMap<String, Vec<String>> = HashMap::new();
     let mut indexed_pending = 0;

@@ -4,13 +4,21 @@ use super::*;
 
 fn read_nodes(p: &Persistence, keys: &[dm_store::Key], content_addressed: bool) -> io::Result<BTreeMap<dm_store::Key, Vec<u8>>> {
     let mut result = BTreeMap::new();
+    let mut retained_bytes = 0usize;
     for group in keys.chunks(4096) {
         let batch = p.store.read_grouped_bounded(group,128,MAX_HEADER,PREFETCH_BATCH_BYTES,PREFETCH_BATCH_BYTES,None);
         let batch = match batch {
             Ok(batch) => batch,
             Err(error) if error.kind() == io::ErrorKind::InvalidInput && group.len()>1 => {
-                result.extend(read_nodes(p, &group[..group.len()/2], content_addressed)?);
-                result.extend(read_nodes(p, &group[group.len()/2..], content_addressed)?);
+                for part in [&group[..group.len()/2], &group[group.len()/2..]] {
+                    for (key, bytes) in read_nodes(p, part, content_addressed)? {
+                        retained_bytes = retained_bytes.saturating_add(bytes.len()).saturating_add(key.namespace.len()+key.name.len()+160);
+                        if content_addressed && retained_bytes > PREFETCH_BATCH_BYTES {
+                            return Err(io::Error::new(io::ErrorKind::InvalidInput, "graph witness window exceeds byte budget"));
+                        }
+                        result.insert(key, bytes);
+                    }
+                }
                 continue;
             }
             Err(error) => return Err(error),
@@ -18,6 +26,10 @@ fn read_nodes(p: &Persistence, keys: &[dm_store::Key], content_addressed: bool) 
         for (key, bytes) in group.iter().zip(batch.values) {
             let Some(bytes) = bytes else { continue; };
             if content_addressed && format!("{:x}", Sha256::digest(&bytes)) != key.name { continue; }
+            retained_bytes = retained_bytes.saturating_add(bytes.len()).saturating_add(key.namespace.len()+key.name.len()+160);
+            if content_addressed && retained_bytes > PREFETCH_BATCH_BYTES {
+                return Err(io::Error::new(io::ErrorKind::InvalidInput, "graph witness window exceeds byte budget"));
+            }
             result.insert(key.clone(), bytes);
         }
     }
@@ -31,9 +43,20 @@ impl ProjectProcedureGraph {
     pub fn prepare_keys(&mut self, keys: &[ProcKey]) -> io::Result<usize> {
         let started = std::time::Instant::now();
         let Some(p) = self.persistence.as_ref() else { return Ok(0); };
-        let requested: Vec<_> = keys.iter().filter(|key| !p.headers_seen.contains(*key) && !self.records.contains_key(*key)
+        let mut requested: Vec<_> = keys.iter().filter(|key| !p.headers_seen.contains(*key) && !self.records.contains_key(*key)
             && !self.certificates.get(*key).is_some_and(|certificate| certificate.valid)).cloned().collect();
-        let mut restored = 0;
+        let packed_started=std::time::Instant::now();
+        let mut packed_restored=BTreeSet::new();
+        for window in requested.chunks(1024) {
+            // Missing or malformed optional pages retain legacy restoration.
+            if let Ok(keys)=self.restore_packed_window(window) { packed_restored.extend(keys); }
+        }
+        let packed_count=packed_restored.len();
+        requested.retain(|key|!packed_restored.contains(key));
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE packed procedure certificates: {packed_count} restored in {:.3}s; {} legacy requested",packed_started.elapsed().as_secs_f64(),requested.len());
+        }
+        let mut restored = packed_count;
         let mut read_seconds = 0.0f64;
         let mut decode_seconds = 0.0f64;
         let mut install_seconds = 0.0f64;
@@ -47,7 +70,44 @@ impl ProjectProcedureGraph {
             let read_started = std::time::Instant::now();
             let rows = read_nodes(p, &names, false)?;
             read_seconds += read_started.elapsed().as_secs_f64();
-            for (group, names) in window.chunks(256).zip(names.chunks(256)) {
+            for (group, names) in window.chunks(1024).zip(names.chunks(1024)) {
+                let (count, timings) = self.restore_header_window(group, names, &rows)?;
+                restored += count;
+                read_seconds += timings.0;
+                decode_seconds += timings.1;
+                install_seconds += timings.2;
+            }
+            if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE procedure headers: {restored} restored of {} requested in {:.3}s; read={read_seconds:.3}s decode={decode_seconds:.3}s install={install_seconds:.3}s",requested.len(),started.elapsed().as_secs_f64()); }
+        }
+        self.stats.restored_procedures += restored;
+        // Newly loaded facts require the next resolver replay even if its
+        // declaration revision otherwise equals the previous page's revision.
+        if restored>0 { self.revision = None; }
+        self.stats.prepared_header_seconds += started.elapsed().as_secs_f64();
+        Ok(restored)
+    }
+
+    fn restore_header_window(&mut self, group: &[ProcKey], names: &[dm_store::Key], rows: &BTreeMap<dm_store::Key, Vec<u8>>) -> io::Result<(usize, (f64, f64, f64))> {
+        match self.restore_header_window_inner(group, names, rows) {
+            Err(error) if error.kind() == io::ErrorKind::InvalidInput && group.len() > 1 => {
+                let middle = group.len()/2;
+                let (left, a) = self.restore_header_window(&group[..middle], &names[..middle], rows)?;
+                let (right, b) = self.restore_header_window(&group[middle..], &names[middle..], rows)?;
+                Ok((left+right, (a.0+b.0, a.1+b.1, a.2+b.2)))
+            }
+            Err(error) if error.kind() == io::ErrorKind::InvalidInput => {
+                // An oversized witness closure is an optional cache miss.
+                // Fresh lowering remains valid and does not retain its pages.
+                if let Some(p) = self.persistence.as_mut() { p.headers_seen.extend(group.iter().cloned()); }
+                Ok((0, (0.0, 0.0, 0.0)))
+            }
+            result => result,
+        }
+    }
+
+    fn restore_header_window_inner(&mut self, group: &[ProcKey], names: &[dm_store::Key], rows: &BTreeMap<dm_store::Key, Vec<u8>>) -> io::Result<(usize, (f64, f64, f64))> {
+        let mut restored = 0;
+        let mut timings = (0.0, 0.0, 0.0);
             // Leave room for one bounded raw-node page. Never discard decoded
             // rows during its reconstruction: requested keys may intentionally
             // have skipped reads because they were already cached.
@@ -66,7 +126,7 @@ impl ProjectProcedureGraph {
             let readset_keys: Vec<_> = headers.iter().filter_map(|header| header.readset.as_ref()).map(|name| dm_store::Key::new(&p.readsets_namespace, name)).collect::<BTreeSet<_>>().into_iter().collect();
             let read_started = std::time::Instant::now();
             let readset_rows = read_nodes(p, &readset_keys, true)?;
-            read_seconds += read_started.elapsed().as_secs_f64();
+            timings.0 += read_started.elapsed().as_secs_f64();
             let readsets: BTreeMap<_,_> = readset_rows.into_iter().filter_map(|(key, bytes)| serde_json::from_slice::<DiskReadSet>(&bytes).ok().map(|set| (key.name, set))).collect();
             let node_keys: Vec<_> = readsets.values().flat_map(|set| set.witnesses.iter()).flat_map(|(fact, value)| {
                 [(!self.decoded_nodes.facts.contains_key(fact)).then(|| dm_store::Key::new(&p.facts_namespace, fact)),
@@ -74,7 +134,7 @@ impl ProjectProcedureGraph {
             }).collect::<BTreeSet<_>>().into_iter().collect();
             let read_started = std::time::Instant::now();
             let nodes = read_nodes(p, &node_keys, true)?;
-            read_seconds += read_started.elapsed().as_secs_f64();
+            timings.0 += read_started.elapsed().as_secs_f64();
             let decode_started = std::time::Instant::now();
             let facts_namespace = p.facts_namespace.clone();
             let values_namespace = p.values_namespace.clone();
@@ -106,7 +166,7 @@ impl ProjectProcedureGraph {
             self.stats.header_read_batches += 1;
             self.stats.metadata_bytes += group.iter().map(|key| key.path.len()+96).sum::<usize>();
             self.persistence.as_mut().unwrap().headers_seen.extend(group.iter().cloned());
-            decode_seconds += decode_started.elapsed().as_secs_f64();
+            timings.1 += decode_started.elapsed().as_secs_f64();
             let install_started = std::time::Instant::now();
             for mut header in headers {
                 if let Some(readset) = &header.readset {
@@ -124,16 +184,8 @@ impl ProjectProcedureGraph {
                     restored += 1;
                 }
             }
-            install_seconds += install_started.elapsed().as_secs_f64();
-            }
-            if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE procedure headers: {restored} restored of {} requested in {:.3}s; read={read_seconds:.3}s decode={decode_seconds:.3}s install={install_seconds:.3}s",requested.len(),started.elapsed().as_secs_f64()); }
-        }
-        self.stats.restored_procedures += restored;
-        // Newly loaded facts require the next resolver replay even if its
-        // declaration revision otherwise equals the previous page's revision.
-        if restored>0 { self.revision = None; }
-        self.stats.prepared_header_seconds += started.elapsed().as_secs_f64();
-        Ok(restored)
+            timings.2 += install_started.elapsed().as_secs_f64();
+        Ok((restored, timings))
     }
 
     /// Validates Salsa witnesses without reading or decoding body payloads.

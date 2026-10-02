@@ -11,6 +11,9 @@ use std::sync::{
 
 #[path = "skeleton_fragments.rs"]
 mod skeleton_fragments;
+#[path = "declaration_base.rs"]
+mod declaration_base;
+pub(super) use declaration_base::{DeclarationBase, declaration_base_key};
 #[path = "declaration_delta.rs"]
 mod declaration_delta;
 pub(super) use declaration_delta::DeclarationInputs;
@@ -906,8 +909,10 @@ pub(crate) struct CanonicalSession {
     project: Option<std::path::PathBuf>,
     configuration: Option<String>,
     skeleton: Option<(String, Arc<FrozenSkeleton>)>,
+    declaration_base: Option<(String, Arc<Vec<u8>>)>,
     pub(super) declaration_inputs: Option<DeclarationInputs>,
     pub(super) semantic_declarations: Option<Arc<semantic_declarations::SemanticDeclarations>>,
+    pub(super) semantic_base_revision: Option<String>,
     pub skeleton_revision: String,
     pub skeleton_hits: usize,
     pub skeleton_misses: usize,
@@ -915,6 +920,18 @@ pub(crate) struct CanonicalSession {
 }
 
 impl CanonicalSession {
+    pub(super) fn declaration_base(&mut self,key:&str,root:Option<&Path>)->Option<DeclarationBase> {
+        let bytes=if let Some((cached,bytes))=&self.declaration_base { if cached==key {Some(Arc::clone(bytes))} else {None} } else {None};
+        let bytes=bytes.or_else(||declaration_base::load(root?,key).map(Arc::new))?;
+        let base=declaration_base::decode(&bytes)?;
+        self.declaration_base=Some((key.to_owned(),bytes));Some(base)
+    }
+    pub(super) fn store_declaration_base(&mut self,key:String,base:&DeclarationBase,root:Option<&Path>) {
+        if let Some(bytes)=declaration_base::encode(base) {
+            if let Some(root)=root {declaration_base::store(root,&key,&bytes);}
+            self.declaration_base=Some((key,Arc::new(bytes)));
+        }
+    }
     pub(crate) fn bind_configuration(
         &mut self,
         project: &Path,
@@ -934,8 +951,10 @@ impl CanonicalSession {
         self.graph = crate::ProjectProcedureGraph::open(&root, &project_identity);
         self.declaration_inputs = None;
         self.semantic_declarations = None;
+        self.semantic_base_revision = None;
         self.maps = crate::maps::MapInitializerSession::open(&root, &project_identity);
         self.skeleton = None;
+        self.declaration_base = None;
         self.output_validation = Default::default();
         self.emission_plans = super::emission_plans::EmissionPlans::open(&root, &project_identity);
         self.procedure_fragments = super::procedure_fragments::ProcedureFragments::open(&root, &project_identity);
@@ -958,6 +977,7 @@ impl CanonicalSession {
         // across sessions. Divide its conservative charge among live Arc owners.
         self.graph
             .resident_bytes()
+            .saturating_add(self.declaration_base.as_ref().map_or(0,|(_,bytes)|bytes.capacity()))
             .saturating_add(self.maps.resident_bytes())
             .saturating_add(self.declaration_inputs.as_ref().map_or(0,DeclarationInputs::resident_bytes))
             .saturating_add(self.semantic_declarations.as_ref().map_or(0,|model|model.resident_bytes().div_ceil(Arc::strong_count(model).max(1))))
@@ -1008,6 +1028,7 @@ impl CanonicalSession {
         let _ = self.output_projections.flush();
         self.output_projections.clear();
         self.output_validation.clear();
+        self.declaration_base = None;
         self.emission_plans.clear();
         self.procedure_fragments.clear_decoded();
         // These are optional duplicate decoded declaration fragments; frozen
@@ -1020,6 +1041,7 @@ impl CanonicalSession {
     pub(crate) fn release_skeleton(&mut self) -> usize {
         let before = self.resident_bytes();
         self.skeleton = None;
+        self.declaration_base = None;
         before.saturating_sub(self.resident_bytes())
     }
     pub(crate) fn bind_project(&mut self, project: &Path, cache_root: &Path) {
@@ -1030,9 +1052,11 @@ impl CanonicalSession {
         self.graph = crate::ProjectProcedureGraph::open(cache_root, &identity.to_string_lossy());
         self.declaration_inputs = None;
         self.semantic_declarations = None;
+        self.semantic_base_revision = None;
         self.maps =
             crate::maps::MapInitializerSession::open(cache_root, &identity.to_string_lossy());
         self.skeleton = None;
+        self.declaration_base = None;
         self.output_validation = Default::default();
         self.emission_plans = super::emission_plans::EmissionPlans::open(cache_root, &identity.to_string_lossy());
         self.procedure_fragments = super::procedure_fragments::ProcedureFragments::open(cache_root, &identity.to_string_lossy());
@@ -1064,6 +1088,7 @@ impl CanonicalSession {
         // physical image before composing a structural generation. Otherwise
         // old and new declaration table buffers coexist until store() replaces it.
         self.skeleton = None;
+        self.declaration_base = None;
         if let Some(value) = shared_skeletons()
             .lock()
             .unwrap_or_else(|e| e.into_inner())

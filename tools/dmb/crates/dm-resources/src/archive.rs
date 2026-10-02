@@ -15,6 +15,8 @@ pub struct PreparedArchive {
     len: u64,
     stamp: FileStamp,
     catalog: ResourceCatalog,
+    receipt_store: Store,
+    receipt_key: Key,
 }
 impl PreparedArchive {
     pub fn path(&self) -> &Path {
@@ -36,6 +38,47 @@ impl PreparedArchive {
         &self.catalog
     }
 }
+/// A Windows kernel-enforced denial of writes to the archive file identity.
+/// The receipt can be refreshed only while this guard excludes content writes.
+#[derive(Debug)]
+pub struct ArchiveLease {
+    file: std::fs::File, path: PathBuf, digest:String, len:u64,
+    store:Store, key:Key,
+}
+impl PreparedArchive {
+    pub fn guarded_lease(&self)->io::Result<Option<std::sync::Arc<ArchiveLease>>> {
+        #[cfg(windows)] {
+            use std::os::windows::fs::OpenOptionsExt;
+            // Allow readers and link metadata operations, deny existing/new
+            // write handles through every hardlink to this file identity.
+            let file=std::fs::OpenOptions::new().read(true).share_mode(1|4).open(&self.path)?;
+            if dm_host::file_stamp::capture_file(&file).as_ref()!=Some(&self.stamp) {
+                return Err(io::Error::other("archive changed before guarded publication"));
+            }
+            Ok(Some(std::sync::Arc::new(ArchiveLease{file,path:self.path.clone(),digest:self.digest.clone(),len:self.len,store:self.receipt_store.clone(),key:self.receipt_key.clone()})))
+        }
+        #[cfg(not(windows))] {Ok(None)}
+    }
+}
+impl ArchiveLease {
+    pub fn current_stamp(&self)->Option<FileStamp> {dm_host::file_stamp::capture_file(&self.file)}
+    /// Refresh only our immutable source's receipt after metadata mutation.
+    /// A replaced path must still refer to the protected file identity.
+    pub fn refresh_after_publication(&self)->io::Result<()> {
+        #[cfg(windows)] {
+            use std::os::windows::fs::OpenOptionsExt;
+            let current=self.current_stamp().ok_or_else(||io::Error::other("guarded archive stamp unavailable"))?;
+            let path_file=std::fs::OpenOptions::new().read(true).share_mode(1|4).open(&self.path)?;
+            if dm_host::file_stamp::capture_file(&path_file).as_ref()!=Some(&current) || path_file.metadata()?.len()!=self.len {
+                return Err(io::Error::other("guarded archive path replaced"));
+            }
+            let record=ArchiveRecord{digest:self.digest.clone(),len:self.len,stamp:current};
+            self.store.commit(&[],&[Change::Put(self.key.clone(),serde_json::to_vec(&record).map_err(io::Error::other)?)],None)?;
+        }
+        Ok(())
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 struct EntryRecord {
     digest: String,
@@ -256,6 +299,7 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
                 len: record.len,
                 stamp: record.stamp,
                 catalog,
+                receipt_store: store.clone(), receipt_key: archive_key.clone(),
             });
         }
         // Adding a hardlink changes Windows change clocks without changing bytes.
@@ -265,7 +309,7 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
                 && capture(&path).as_ref() == Some(&stamp) {
                 let refreshed = ArchiveRecord {digest: record.digest.clone(), len: record.len, stamp: stamp.clone()};
                 store.commit(&[], &[Change::Put(archive_key.clone(), serde_json::to_vec(&refreshed).map_err(io::Error::other)?)], None)?;
-                return Ok(PreparedArchive {path, digest: record.digest, len: record.len, stamp, catalog});
+                return Ok(PreparedArchive {path, digest: record.digest, len: record.len, stamp, catalog, receipt_store:store.clone(), receipt_key:archive_key.clone()});
             }
         }
     }
@@ -360,7 +404,7 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
         }
     }
     changes.push(Change::Put(
-        archive_key,
+        archive_key.clone(),
         serde_json::to_vec(&ArchiveRecord {
             digest: digest.clone(),
             len,
@@ -384,5 +428,6 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
         len,
         stamp,
         catalog,
+        receipt_store:store.clone(), receipt_key:archive_key,
     })
 }

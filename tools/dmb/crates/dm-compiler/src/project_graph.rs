@@ -61,6 +61,8 @@ impl WitnessRow {
 
 #[path = "project_graph_dag.rs"]
 mod dag;
+#[path = "project_graph_pages.rs"]
+mod pages;
 
 fn pending_record_bytes(key: &dm_store::Key, bytes: &Vec<u8>) -> usize {
     BUFFER_ENTRY_OVERHEAD
@@ -204,7 +206,7 @@ pub struct ProjectGraphStats {
     pub payload_single_reads: usize,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 struct DiskHeader {
     key: ProcKey,
     descriptor: ProcDescriptor,
@@ -242,6 +244,10 @@ struct Persistence {
     value_rows: BTreeMap<WitnessValueKey, WitnessRow>,
     witness_memo_bytes: usize,
     committed_witnesses: BTreeSet<dm_store::Key>,
+    certificate_heads_namespace: String,
+    certificate_pages_namespace: String,
+    pending_certificates: Vec<pages::PendingCertificate>,
+    pending_certificate_bytes: usize,
 }
 struct EncodedPayload {
     // A missing disk row is also a bounded cache observation. It does not
@@ -426,6 +432,10 @@ impl ProjectProcedureGraph {
             value_rows: BTreeMap::new(),
             witness_memo_bytes: 0,
             committed_witnesses: BTreeSet::new(),
+            certificate_heads_namespace: format!("graph-certificate-heads-v1-{DISK_STAGE}-{identity}"),
+            certificate_pages_namespace: format!("graph-certificate-pages-v1-{DISK_STAGE}"),
+            pending_certificates: Vec::new(),
+            pending_certificate_bytes: 0,
         });
         // Restored inputs deliberately start unavailable. The adapter must
         // refresh against its current skeleton before any cached result is used.
@@ -611,7 +621,7 @@ impl ProjectProcedureGraph {
             .resident_bytes
             .saturating_add(self.stats.metadata_bytes)
             .saturating_add(self.stats.snapshot_bytes)
-            .saturating_add(self.persistence.as_ref().map_or(0, |p| p.pending_bytes.saturating_add(p.witness_memo_bytes).saturating_add(p.committed_witnesses.len().saturating_mul(512))))
+            .saturating_add(self.persistence.as_ref().map_or(0, |p| p.pending_bytes.saturating_add(p.pending_certificate_bytes).saturating_add(p.witness_memo_bytes).saturating_add(p.committed_witnesses.len().saturating_mul(512))))
             .saturating_add((self.pending_shared.len()+self.pending_private.len()).saturating_mul(64))
     }
     pub fn release_encoded_snapshot(&mut self) {
@@ -746,6 +756,7 @@ impl ProjectProcedureGraph {
         let Some(persistence) = self.persistence.as_mut() else {
             return Ok(());
         };
+        pages::seal(persistence);
         if persistence.pending.is_empty() {
             return Ok(());
         }
@@ -1146,6 +1157,8 @@ impl ProjectProcedureGraph {
         let name = format!("{:x}", Sha256::digest(&payload));
         let mut records = Vec::new();
         let mut witnesses = Vec::with_capacity(dependencies.len());
+        let mut packed_witnesses = Vec::with_capacity(dependencies.len());
+        let mut certificate_charge = key.path.len()+descriptor.body_digest.len()+descriptor.frame_digest.len()+512;
         for witness in dependencies {
             let fact_id = self.intern_fact(&witness.fact);
             let p = self.persistence.as_mut()?;
@@ -1183,20 +1196,19 @@ impl ProjectProcedureGraph {
                     records.push((key, row.bytes.to_vec()));
                 }
             }
+            certificate_charge = certificate_charge.saturating_add(fact.charge()+value.charge()+128);
+            packed_witnesses.push((fact.clone(),value.clone()));
             witnesses.push((fact.name, value.name));
         }
         let p = self.persistence.as_ref()?;
         let readset = serde_json::to_vec(&DiskReadSet { witnesses }).ok()?;
         let readset_name = format!("{:x}", Sha256::digest(&readset));
         records.push((dm_store::Key::new(&p.readsets_namespace, &readset_name), readset));
-        let header = serde_json::to_vec(&DiskHeader {
-            key: key.clone(),
-            descriptor: descriptor.clone(),
-            dependencies: Vec::new(),
-            readset: Some(readset_name),
-            payload: name.clone(),
-        })
-        .ok()?;
+        let disk_header = DiskHeader {
+            key: key.clone(), descriptor: descriptor.clone(),
+            dependencies: Vec::new(), readset: Some(readset_name), payload: name.clone(),
+        };
+        let header = serde_json::to_vec(&disk_header).ok()?;
         if header.len() > MAX_HEADER {
             return None;
         }
@@ -1222,8 +1234,8 @@ impl ProjectProcedureGraph {
         if record_bytes > PENDING_BYTES || records.len() > MAX_PENDING_RECORDS {
             return None;
         }
-        if p.pending_bytes.saturating_add(incoming_bytes) > PENDING_BYTES
-            || p.pending.len().saturating_add(incoming_records) > MAX_PENDING_RECORDS
+        if p.pending_bytes.saturating_add(p.pending_certificate_bytes).saturating_add(incoming_bytes).saturating_add(certificate_charge.min(8*1024*1024)) > PENDING_BYTES
+            || p.pending.len().saturating_add(incoming_records) > MAX_PENDING_RECORDS.saturating_sub(1025)
         {
             if self.flush().is_err() {
                 // Cache writes are optional. Drop the bounded pending batch if
@@ -1246,6 +1258,17 @@ impl ProjectProcedureGraph {
             if previous.is_some() {
                 p.pending_bytes = p.pending_bytes.saturating_sub(previous_charge);
             }
+        }
+        // A bounded pending certificate arena shares encoded fact/value rows.
+        // Page and addressed locator publication use the very same transaction
+        // as the compatibility header and prepared procedure payload.
+        if certificate_charge <= 8*1024*1024 {
+            if p.pending_certificate_bytes.saturating_add(certificate_charge)>8*1024*1024
+                || p.pending_certificates.len()>=1024 { pages::seal(p); }
+            p.pending_certificate_bytes += certificate_charge;
+            p.pending_certificates.push(pages::PendingCertificate {
+                header: disk_header, witnesses: packed_witnesses,
+            });
         }
         Some(ProcedureMemoRef { key: name })
     }
