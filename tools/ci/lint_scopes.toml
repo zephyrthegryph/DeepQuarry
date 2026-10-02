@@ -11,6 +11,23 @@ known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets"
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 
+# A sys module with an own section of path exemptions replaces [lint.sys] for that module (the section is found
+# by lint name first), so it repeats the sys_lint.py EXEMPT prefixes above and adds the module's own.
+[lint."sys/sync_sql"]
+# sync_sql.py EXEMPT_FILES: the database layer itself (boot and shutdown queries, the flow wrapper, the local
+# SQLite database, world/IsBanned) may block.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_files = [
+  "code/controllers/subsystems/dbcore.dm",
+  "code/controllers/subsystems/sqlite.dm",
+  "code/datums/om/flow_io.dm",
+  "code/modules/admin/IsBanned.dm",
+]
+
+[lint."sys/usr_use"]
+# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/"]
+
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
@@ -56,6 +73,32 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums
 [lint.system_boundary]
 # system_boundary_lint.py SKIP_DIRS: unit tests read private state through system_debug().
 exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.base_vars.lists]
+# base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
+# tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
+# verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_files = ["code/__defines/tgs.dm"]
+
+[lint.decl]
+# decl_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose. (No TGS exemption here:
+# decl_lint.py never read exempt_path().) owned_vars() still reads these files (cx.all_files()).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.init]
+# init_lint.py EXEMPT_PREFIXES: unit tests and benchmarks build worlds on purpose. This only exempts the
+# per-file rules (initialize, late_initialize, world_reads, turf_on_materialize): table_init_overrides
+# reads every file (cx.all_files()), as init_lint.py's table pass did. (No TGS exemption: init_lint.py never
+# read exempt_path().)
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.instance_list]
+# instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
+# benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
+# The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
 
 [lint.latent]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
