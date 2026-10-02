@@ -27,6 +27,14 @@ pub fn shutdown() {
     }
 }
 
+/// Forgets the last round's jobs, keys and results (a soft reboot; see
+/// [`JobRegistry::reset`]).
+pub fn reset() {
+    if let Some(r) = JOBS.get() {
+        r.reset();
+    }
+}
+
 /// Restarts the job threads after [`shutdown`] (a soft reboot).
 ///
 /// # Errors

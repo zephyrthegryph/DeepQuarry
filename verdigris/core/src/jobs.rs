@@ -158,9 +158,26 @@ impl JobRegistry {
             .shutdown();
     }
 
+    /// Forgets every job of the round that is ending (a soft reboot keeps the
+    /// library, and so this registry, loaded): running jobs are cancelled,
+    /// and the job table, the key table and the completed queue are cleared,
+    /// so the next round sees none of the last one's ids, results or keys.
+    /// Ids keep counting up and are never reused; a cancelled job that is
+    /// still running finds its entry gone and drops its result.
+    pub fn reset(&self) {
+        let mut inner = lock(&self.inner);
+        for entry in inner.jobs.values() {
+            entry.cancel.store(true, Ordering::Relaxed);
+        }
+        inner.jobs.clear();
+        inner.by_key.clear();
+        inner.completed.clear();
+    }
+
     /// Starts fresh job threads after [`JobRegistry::shutdown`] (a soft reboot
     /// keeps the library loaded and shuts it down from `world/Del()`). Jobs
-    /// from before the shutdown stay as they were. A no-op while running.
+    /// from before the shutdown stay as they were ([`JobRegistry::reset`]
+    /// forgets them). A no-op while running.
     ///
     /// # Errors
     /// If the new pool cannot be created.
@@ -214,6 +231,11 @@ impl JobRegistry {
     {
         let cancel = Arc::new(AtomicBool::new(false));
         let progress = Arc::new(AtomicU32::new(0));
+        let running = self
+            .pool
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .is_running();
         let id = {
             let mut inner = lock(&self.inner);
             let id = JobId(inner.next);
@@ -230,11 +252,19 @@ impl JobRegistry {
                 Entry {
                     name: name.to_owned(),
                     key: key.map(str::to_owned),
-                    state: State::Pending,
+                    state: if running {
+                        State::Pending
+                    } else {
+                        State::Failed("job pool is shut down".to_owned())
+                    },
                     cancel: Arc::clone(&cancel),
                     progress: Arc::clone(&progress),
                 },
             );
+            if !running {
+                // Nothing would ever run it: report the failure now instead of pending forever.
+                inner.completed.push(id);
+            }
             id
         };
         let metric = |what: &str| {
@@ -244,6 +274,12 @@ impl JobRegistry {
         };
         if let Some(c) = metric("submitted") {
             c.inc();
+        }
+        if !running {
+            if let Some(c) = metric("failed") {
+                c.inc();
+            }
+            return id;
         }
         let done = [metric("completed"), metric("failed"), metric("cancelled")];
         let timing = self
@@ -438,8 +474,8 @@ mod tests {
         reg.shutdown();
         let lost = reg.submit("lost", None, |_| Ok(1u32));
         assert!(
-            matches!(reg.poll(lost), JobStatus::Pending { .. }),
-            "a shut-down pool runs nothing"
+            matches!(reg.poll(lost), JobStatus::Failed(_)),
+            "a submit while shut down fails instead of waiting forever"
         );
         reg.restart(1).unwrap();
         let id = reg.submit("after", None, |_| Ok(2u32));
@@ -448,6 +484,34 @@ mod tests {
             JobStatus::Ready,
             "a restarted pool runs jobs"
         );
+        reg.shutdown();
+    }
+
+    #[test]
+    fn reset_forgets_the_last_round_and_keeps_counting() {
+        let reg = JobRegistry::new(1).unwrap();
+        let (tx, rx) = mpsc::channel::<()>();
+        let running = reg.submit("slow", Some("k"), move |ctx| {
+            rx.recv().unwrap();
+            ctx.checkpoint().map_err(|e| e.to_string())?;
+            Ok(1u8)
+        });
+        let done = reg.submit("done", None, |_| Ok(2u8));
+        // The single job thread is busy with `slow`, so `done` is still queued behind it.
+        reg.reset();
+        assert_eq!(reg.poll(running), JobStatus::Unknown);
+        assert_eq!(reg.poll(done), JobStatus::Unknown);
+        assert!(reg.list().is_empty());
+        assert!(reg.drain_completed().is_empty());
+        tx.send(()).unwrap();
+        let next = reg.submit("next", Some("k"), |_| Ok(3u8));
+        assert!(next > done, "ids are never reused");
+        assert_eq!(wait(&reg, next), JobStatus::Ready);
+        let start = Instant::now();
+        while reg.drain_completed() != vec![next] {
+            assert!(start.elapsed() < Duration::from_secs(10), "a job from the last round completed into this one");
+            std::thread::yield_now();
+        }
         reg.shutdown();
     }
 

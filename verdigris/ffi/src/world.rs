@@ -753,6 +753,7 @@ pub fn shutdown() {
 /// If the job threads cannot be restarted.
 pub fn revive() -> Result<()> {
     SHUT_DOWN.with(|s| s.set(false));
+    crate::jobs::reset();
     crate::jobs::restart()
 }
 
