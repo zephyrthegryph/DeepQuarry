@@ -1286,7 +1286,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	//Added a message here since people assume their first click failed or something./N
 //	to_chat(user, "Installing MMI, please stand by.")
 
-	act_message(usr, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
+	act_message(user, null, others = span_notice("%U% starts to insert a brain into [src.name]"))
 
 	var/started = om_task_start(/datum/om/task/timed/mecha_mmi_install, user, src, receiver = src, mmi_as_oc = mmi_as_oc)
 	return !istext(started)
@@ -1596,7 +1596,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	else if(src.operation_allowed(user))
 		passed = 1
 	if(!passed)
-		to_chat(usr, span_warning("Access denied"))
+		to_chat(user, span_warning("Access denied"))
 		src.log_append_to_last("Permission denied.")
 		return
 	if(isliving(user))
