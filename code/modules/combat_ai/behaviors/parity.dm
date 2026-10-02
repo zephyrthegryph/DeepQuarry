@@ -35,15 +35,10 @@
 		return DQAI_RESULT(50, L)
 	return null
 
+/// The strike itself is a plain melee attack (which also records it in last_attack_at).
 /datum/ai_behavior/maul_unconscious/start(datum/ai_brain/brain, atom/target, atom/source)
-	. = ..()
-	if(. == DQ_BEHAVIOR_FAILED)
-		return
-	var/mob/living/simple_mob/SM = brain.get_owner()
-	if(!istype(SM))
-		return DQ_BEHAVIOR_FAILED
-	SM.attack_target(target, SM.input_stance())
-	return DQ_BEHAVIOR_DONE
+	var/datum/ai_behavior/melee_attack/strike = dq_get_behavior(/datum/ai_behavior/melee_attack)
+	return strike.start(brain, target, source)
 
 // --- Idle speak -------------------------------------------------------------
 // Random barks from the mob's say_list while not in combat. Used to be

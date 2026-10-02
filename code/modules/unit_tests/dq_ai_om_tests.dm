@@ -103,4 +103,25 @@
 	TEST_ASSERT(closest < start_dist, "the brain did not move toward its target (distance stayed [start_dist])")
 	TEST_ASSERT(B.last_attack_at, "the brain reached its target but never attacked (diag: dist=[get_dist(hunter, target)] closest=[closest] adjacent=[hunter.Adjacent(target)] threat=[B.primary_threat] target_stat=[target.stat] cooldown_ok=[hunter.checkClickCooldown()] hunter=[AREACOORD(hunter)] target=[AREACOORD(target)] behaviour=[B.active_behavior_type])")
 
+/// Mauling a downed target is an attack too: it stamps last_attack_at like a plain strike.
+/// (A slam can knock the target out, and then maul outscores melee_attack.)
+/datum/unit_test/dq_ai_om_maul_counts_as_attack
+
+/datum/unit_test/dq_ai_om_maul_counts_as_attack/Run()
+	var/turf/start = run_loc_floor_bottom_left
+	var/turf/next = locate(start.x + 1, start.y, start.z)
+	TEST_ASSERT(next && !next.density, "no open floor next to the test origin")
+	var/mob/living/simple_mob/combat_ai_test_subject/hunter = allocate(/mob/living/simple_mob/combat_ai_test_subject, start)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, next)
+	target.status_at_least(EFFECT_PARALYZED, 5)
+	target.set_stat(UNCONSCIOUS)
+	TEST_ASSERT_EQUAL(target.stat, UNCONSCIOUS, "the target should be unconscious")
+	var/datum/ai_brain/B = hunter.ai_brain
+	B.give_target(target, TRUE)
+	hunter.next_click = 0
+	om_tick_now(hunter, /datum/om/behaviour/ai_brain/strategic, 2)
+	om_tick_now(hunter, /datum/om/behaviour/ai_brain/tactical, 0.25)
+	TEST_ASSERT(!hunter.checkClickCooldown(), "the brain did not attack its downed target")
+	TEST_ASSERT(B.last_attack_at, "mauling a downed target did not record an attack")
+
 #endif
