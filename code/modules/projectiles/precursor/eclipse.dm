@@ -60,7 +60,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/grenade/chem_grenade/frost, "detonator", /obj/it
 	hud_state = "plasma_sphere"
 
 /obj/item/projectile/bullet/frostshotgun/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/frostsphere
 	name = "frost sphere"
