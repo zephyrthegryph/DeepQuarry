@@ -59,12 +59,12 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	GLOB.state_schemas[D.type] = schema
 	return schema
 
-/// Canonical form: assoc keys sorted, numbers normalized, recursively.
+/// Canonical form: assoc keys sorted, recursively. Numbers are left alone: state_canonical()
+/// prints them with json_encode(), whose six significant digits are the normal form (the
+/// same precision a blob keeps through JSON). Rounding them here first would round twice,
+/// so a value near a digit boundary (1.7266451 -> 1.726645 -> "1.72664") would canonicalize
+/// differently from its own JSON round trip ("1.72665").
 /proc/state_canonicalize(value)
-	if(isnum(value))
-		if(value == round(value))
-			return value
-		return round(value, 0.000001)
 	if(!islist(value))
 		return value
 	var/list/L = value
