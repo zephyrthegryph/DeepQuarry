@@ -106,7 +106,7 @@ GLOBAL_VAR_INIT(capability_infos_built, FALSE)
 	return cap_build(def, info, ctor)
 
 /// Vars of /datum/capability that are the engine's or the legacy form's, never a param.
-GLOBAL_LIST_INIT(cap_reserved_vars, list("cap_id", "selector", "params", "ctor", "key", "type", "vars", "parent_type", "tag", "datum_flags", "gc_destroyed", "rx", "om_rec", "own_holder_ref", "own_slot", "own_key_text", "own_holder_type", "built_entries", "behind", "locked_by", "needs", "else_say", "works_broken", "works_unpowered", "log", "at", "blocked_by", "layer_name", "layer_order", "examine_order", "draws_var", "joins", "data_type", "cadence", "destroy_phase", "holder_hooks"))
+GLOBAL_LIST_INIT(cap_reserved_vars, list("cap_id", "selector", "params", "ctor", "key", "type", "vars", "parent_type", "tag", "datum_flags", "gc_destroyed", "rx", "om_rec", "own_holder_ref", "own_slot", "own_key_text", "own_holder_type", "built_entries", "behind", "locked_by", "needs", "else_say", "works_broken", "works_unpowered", "log", "bay_at", "blocked_by", "layer_name", "layer_order", "examine_order", "draws_var", "joins", "data_type", "cadence", "destroy_phase", "holder_hooks"))
 
 /// Applies the params of `ctor` to a fresh definition, fixes its selector and key, and interns it.
 /proc/cap_build(datum/capability/def, datum/capability_info/info, list/ctor)

@@ -234,6 +234,7 @@ GLOBAL_PROTECT(href_token)
  * Declare rights once at the entry point (ADMIN_VERB, ADMIN_STATE, TOPIC_RIGHTS) instead of re-checking inside.
  */
 /proc/admin_can(client/subject, rights)
+	READS_FROM()
 	if(subject?.holder)
 		return subject.holder.check_for_rights(rights)
 	return FALSE
@@ -276,6 +277,7 @@ GLOBAL_PROTECT(href_token)
 
 /// Alias of admin_can(): whether subject has at least ONE of the rights specified in rights_required.
 /proc/check_rights_for(client/subject, rights_required)
+	READS_FROM()
 	return admin_can(subject, rights_required)
 
 /proc/GenerateToken()

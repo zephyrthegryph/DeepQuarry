@@ -319,7 +319,7 @@
 
 // ---- Wait: wait(t), asks(), confirms(), captures() ----
 
-/// wait(t, keeps = WAIT_KEEPS_DEFAULT): a timed wait, scaled by the held tool's speed.
+/// wait(t, keeps = WAIT_KEEPS_DEFAULT): a timed wait, scaled by the held tool's speed. `t` is a number of deciseconds, or a PROC_REF(x) that returns one.
 /proc/wait(t, keeps = WAIT_KEEPS_DEFAULT)
 	return part_make(/datum/entry/part/wait, list("t" = t, "keeps" = keeps))
 
@@ -330,6 +330,8 @@
 /// How long the wait lasts (the held tool's speed scales the profile's base: tool_quality(Q, speed = 1.5) makes it shorter).
 /datum/entry/part/wait/wait_time(datum/act/op/A)
 	var/t = src.args["t"]
+	if(istext(t)) // wait(PROC_REF(x)) / wait(CAP_PROC(x)): x(datum/act/A) returns the time in deciseconds, read when the op starts (a repair that takes as long as the damage)
+		t = op_call(A, t) || 0
 	var/speed = op_var(A.held, "tool_speed")
 	return (isnum(speed) && speed > 0 && A.binding?.bind_kind == BIND_TOOL) ? t / speed : t
 

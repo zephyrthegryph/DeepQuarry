@@ -241,7 +241,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	if(!isnull(known))
 		return known
 	. = TYPE_DERIVES_PENDING
-	if(length(caps_of(A)))
+	if(length(caps_of(A)) || present_declares_look(A))
 		. |= TYPE_DERIVES_CAPS
 	if(length(type_list(A, TYPE_PROC_REF(/atom, type_verbs))))
 		. |= TYPE_DERIVES_TYPE_VERBS

@@ -10,7 +10,7 @@
 /datum/capdef_decl/c_breakable/spec()
 	return list(CAP_BREAKABLE, /datum/capability/lib/breakable, NONE, STACK, "breakable", "repair")
 
-/// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/bays.dm:74
+/// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/bays.dm:70
 /datum/capability/lib/cell_bay
 	var/slot_var = null
 	var/at = null
@@ -22,7 +22,7 @@
 /datum/capdef_decl/c_cell_bay/spec()
 	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts")
 
-/// CAPABILITY_TYPE(compartment, CAP_COMPARTMENT) at code/engine/library/bays.dm:42
+/// CAPABILITY_TYPE(compartment, CAP_COMPARTMENT) at code/engine/library/bays.dm:38
 /datum/capability/lib/compartment
 	var/bay = null
 	var/door = null
@@ -149,7 +149,7 @@
 /datum/capdef_decl/c_subversion_reset/spec()
 	return list(CAP_SUBVERSION_RESET, /datum/capability/lib/subversion_reset, NONE, STACK, "subversion_reset", "parts, done")
 
-/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/bays.dm:185
+/// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/bays.dm:181
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
 	return cap_construct(CAP_TELEKINESIS, /datum/capability/def/telekinesis, list(), "")
@@ -323,7 +323,7 @@
 	into += entry_line(199)
 	into += list(global.extend("cell_bay.cell.insert", global.needs(global.req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), global.req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason)))))
 	into += entry_line(200)
-	into += list(global.extend("construction.undo:apc_secured", global.needs(global.req_empty(nameof(cell), because = MSG(apc/cell_first)))))
+	into += list(global.extend("construction.undo:apc_secured", global.needs(global.req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first)))))
 	into += entry_line(201)
 	into += list(global.extend(CAP_LOCK, global.needs(req_not_subverted(), req_wire(WIRE_IDSCAN), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
 	into += entry_line(202)
@@ -502,11 +502,11 @@
 	..(into)
 	into += entry_block("code/tests/engine/fixtures.dm", 257, /obj/e0_fixture/cabinet)
 	into += entry_line(258)
-	into += list(global.cover(starts_open = TRUE))
+	into += list(global.cover(open = global.hand(), starts_open = TRUE))
 	into += entry_line(259)
-	into += list(bay_compartment(BAY_CABINET, door = CAP_COVER))
+	into += list(global.compartment(BAY_CABINET, door = CAP_COVER))
 	into += entry_line(260)
-	into += list(bay_cell(nameof(cell), bay = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell))
+	into += list(global.cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell))
 	into += entry_line(261)
 	into += list(global.op("pry_panel", global.tool(TOOL_CROWBAR), global.priority(global.above("cell_bay.cell.take")), global.wait(5 SECONDS), global.toggles(nameof(panel_open))))
 
@@ -899,6 +899,36 @@
 	into += list(global.op("zap", global.hand(), global.cooldown(5 SECONDS), global.flash("p1"), global.says(MSG(p1/not_ready)), global.label("Zap")))
 	into += entry_line(91)
 	into += list(global.op("stash", global.item(/obj/item/e2_key), global.put_in("p1_slot"), global.menu()))
+
+/// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:128
+/obj/machinery/p2_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 128, /obj/machinery/p2_box)
+	into += entry_line(128)
+	into += list(global.machine_basics(null, repair = NONE, frame = NONE, powered = FALSE))
+	into += entry_line(128)
+	into += list(global.maintenance_hatch( cover = global.cover(open = global.tool(TOOL_CROWBAR)), wires = /datum/wires/p2_box, emag = list(global.then(PROC_REF(emag_effect))), panel_needs_cover_closed = TRUE, starts_locked = nameof(lock_at_start)))
+	into += entry_line(128)
+	into += list(global.owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(128)
+	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
+	into += entry_line(128)
+	into += list(global.interface("P2Box"))
+	into += entry_line(128)
+	into += list(global.look_layer("p2-label", when = nameof(label_shown)))
+	into += entry_line(128)
+	into += list(global.examine_line(MSG(p2/ui_forbidden), when = global.cond_not(nameof(label_shown))))
+	into += entry_line(128)
+	into += list(global.op("press", global.ui_act(global.arg("n", global.int(0, 9))), global.then(PROC_REF(pressed))))
+	into += entry_line(128)
+	into += list(global.op("fit", global.tool(TOOL_WRENCH), global.wait(PROC_REF(fit_wait)), global.then(PROC_REF(fitted_now))))
+
+/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:152
+/obj/machinery/p2_box/slasher/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 152, /obj/machinery/p2_box/slasher)
+	into += entry_line(152)
+	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91
 /obj/p2_frame/declared_entries(list/into)

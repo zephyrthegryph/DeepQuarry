@@ -272,3 +272,15 @@
 /// The holder vars this capability's on_draw() (OUTPUT_HOOK_DRAW) or on_ui_data() (OUTPUT_HOOK_UI) read, besides capability state keys.
 /datum/capability/proc/output_reads(hook)
 	return list()
+
+/// Does the type's table draw anything: a look_layer entry, or a capability that overrides on_draw()? (type_derive_flags(): such a type is redrawn.)
+/proc/present_declares_look(atom/A)
+	var/datum/type_table/T = table_of(A)
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && E.kind == ENTRY_LOOK_LAYER)
+			return TRUE
+		var/datum/capability/def = C.item
+		if(istype(def) && (def.output_hooks & OUTPUT_HOOK_DRAW))
+			return TRUE
+	return FALSE

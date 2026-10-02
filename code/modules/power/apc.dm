@@ -192,7 +192,8 @@ CAPABILITIES(/obj/machinery/power/apc, \
 	extend("interface.APC.open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
 	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))), \
 	extend("nightshift", drop = "lock"), \
-	extend(list("cover.open", "cover.remove"), needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
+	extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
+	extend("cover.remove", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
 	extend("cover.replace", needs(req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason)))), \
 	extend("cover.replace", then(PROC_REF(cover_replaced))), \
 	extend("cell_bay.cell.take", when(COVER_OPEN)), \

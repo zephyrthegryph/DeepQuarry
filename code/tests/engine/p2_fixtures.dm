@@ -94,4 +94,64 @@ CAPABILITIES(/obj/p2_frame, \
 		dismantle(tool(TOOL_CROWBAR), wait(0), becomes(/obj/item/p2_frame_item), \
 			ruined(TYPE_PROC_REF(/obj/p2_frame, frame_ruined), becomes(/obj/item/p2_scrap)))))
 
+// ---- the machine library: a box with a hatch (code/library/machine, code/library/access, code/engine/present) ----
+
+/datum/wires/p2_box
+	holder_type = /obj/machinery/p2_box
+	wire_count = 2
+	proper_name = "p2 box"
+
+/datum/wires/p2_box/New(atom/_holder)
+	wires = list(WIRE_IDSCAN, WIRE_AI_CONTROL)
+	return ..()
+
+/datum/wires/p2_box/interactable(mob/user)
+	return TRUE
+
+MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
+
+/// A machine with a cover, a panel, wires, an ID lock, an emag and a cell bay behind the cover, a window with one button, a wait whose length a
+/// proc says, and a build graph placed finished.
+/obj/machinery/p2_box
+	name = "p2 box"
+	req_access = list(ACCESS_ENGINE_EQUIP)
+	var/obj/item/cell/cell
+	var/lock_at_start = TRUE
+	var/emag_ran = 0
+	var/pressed_with = null
+	var/fitting_time = 20
+	var/fitted = 0
+	var/label_shown = TRUE
+
+TRACKED(/obj/machinery/p2_box, label_shown)
+
+CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), then(PROC_REF(fitted_now))))
+
+/obj/machinery/p2_box/proc/emag_effect(datum/act/op/A)
+	emag_ran++
+	return OP_OK
+
+/obj/machinery/p2_box/proc/pressed(datum/act/op/A, n)
+	pressed_with = n
+	return OP_OK
+
+/obj/machinery/p2_box/proc/fit_wait(datum/act/A)
+	return fitting_time
+
+/obj/machinery/p2_box/proc/fitted_now(datum/act/op/A)
+	fitted++
+	return OP_OK
+
+/obj/machinery/p2_box/ui_data(datum/act/eval/A)
+	return list("pressed_with" = pressed_with, "viewer" = A.actor ? A.actor.name : null)
+
+/// The same box, listening for a slash.
+/obj/machinery/p2_box/slasher
+	var/slashed = 0
+
+CAPABILITIES(/obj/machinery/p2_box/slasher, on_notice(/datum/notice/slashed, then(PROC_REF(heard_slash))))
+
+/obj/machinery/p2_box/slasher/proc/heard_slash(datum/act/A)
+	slashed++
+
 #endif

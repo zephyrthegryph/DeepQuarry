@@ -347,9 +347,11 @@
 	var/menu_empty_bay = menu_keys(near, C, cell)
 	cell.forceMove(C)
 	C.cell = cell
+	changed(C, CHANGE_CAPABILITY)
 	test_drain()
 	var/menu_filled_bay = menu_keys(near, C, null)
 	C.cell = null
+	changed(C, CHANGE_CAPABILITY)
 	cell.forceMove(get_turf(C))
 	test_time(5 SECONDS)
 	var/outcome_after_wait = prying?.outcome

@@ -10936,7 +10936,7 @@
 /area/expoutpost/washroom)
 "jmy" = (
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	pixel_y = -24
 	},
@@ -17827,7 +17827,7 @@
 /obj/machinery/mech_recharger,
 /obj/effect/floor_decal/industrial/warning/full,
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;
@@ -19007,7 +19007,7 @@
 /area/expoutpost/portbowhallway)
 "pJe" = (
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;
@@ -21213,7 +21213,7 @@
 /area/expoutpost/commanderroom)
 "rrP" = (
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	dir = 4;
 	environ = 1;
@@ -28125,7 +28125,7 @@
 "wQf" = (
 /obj/effect/floor_decal/industrial/warning/cee,
 /obj/machinery/power/apc/hyper{
-	cap_state = 0;
+	lock_at_start = 0;
 	coverlocked = 0;
 	environ = 1;
 	equipment = 1;

@@ -255,9 +255,9 @@ CAPABILITIES(/obj/e0_fixture/hopper, \
 	var/panel_open = FALSE
 
 CAPABILITIES(/obj/e0_fixture/cabinet, \
-	cover(starts_open = TRUE), \
-	bay_compartment(BAY_CABINET, door = CAP_COVER), \
-	bay_cell(nameof(cell), bay = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell), \
+	cover(open = hand(), starts_open = TRUE), \
+	compartment(BAY_CABINET, door = CAP_COVER), \
+	cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell), \
 	op("pry_panel", tool(TOOL_CROWBAR), priority(above("cell_bay.cell.take")), wait(5 SECONDS), toggles(nameof(panel_open))))
 
 /obj/item/e0_fixture/cell

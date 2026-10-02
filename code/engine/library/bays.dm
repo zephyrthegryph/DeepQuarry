@@ -1,20 +1,16 @@
 // The library capabilities of bays (doc/rewrite/final_api.html, section 11 "The library", section 8 "Compartments"; section 19 "E2" and the E0 proof 7):
-// cover(), a compartment and a cell bay, with telekinesis as the provider that reaches them.
+// a compartment, a cell bay and a telekinesis provider. The cover that closes a bay is code/library/machine/cover.dm.
 //
-//   cover(name, tool, removable, starts_open)    ops cover.open (toggles COVER_OPEN, by hand or with `tool`) and, when removable, cover.remove
-//                                                (a crowbar on harm intent: open for good, COVER_REMOVED). State keys COVER_OPEN, COVER_REMOVED.
-//   bay_compartment(bay, door, applies_to)       a bay of the holder whose DOOR is another capability (CAP_COVER): the bay is exposed only while the
+//   compartment(bay, door, applies_to)           a bay of the holder whose DOOR is another capability (CAP_COVER): the bay is exposed only while the
 //                                                door's bay_exposed() says so, for the authorities in `applies_to` (default AUTH_PHYSICAL, so a hand and
 //                                                telekinesis stop at a closed cover and a remote-access reach never sees physical bays).
-//   bay_cell(slot_var, bay, accepts, starts)     a one-item slot over a holder var, behind `bay`: cell_bay.<var>.insert (item(accepts) + put_in) and
+//   cell_bay(slot_var, at, accepts, starts)      a one-item slot over a holder var, behind the bay `at`: cell_bay.<var>.insert (item(accepts) + put_in) and
 //                                                cell_bay.<var>.take (hand + when(var) + take_out), each refused with the compartment's reason while the
 //                                                bay is closed. `starts` (a type, or nameof(var) holding one) fills the bay when the holder initializes.
 //   telekinesis()                                a provider: AFF_MANIPULATE at TK_RANGE with line_of_sight. Granted at runtime, so the actor's provider
 //                                                set generation bumps and cached menus follow.
 //
-// bay_compartment() and bay_cell() are the final cell_bay() and compartment() of section 11 under working names: the live names belong to the
-// legacy library (code/datums/operations/routes.dm, code/datums/capabilities/library/cell_bay.dm) until phase 2 deletes it; `prefix =` keeps the op
-// keys the doc's, so nothing that names an op changes when the constructors are renamed. A bay's door is a capability that answers bay_exposed().
+// A bay's door is a capability that answers bay_exposed().
 
 /// Today's TK_MAXRANGE, in tiles (section 8).
 #define TK_RANGE TK_MAXRANGE
@@ -133,7 +129,7 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 
 // ---- slots over a holder var ----
 
-/// Is `slot_id` a one-item slot over a var of the holder (a bay_cell()), rather than a slot of the containment ledger?
+/// Is `slot_id` a one-item slot over a var of the holder (a cell_bay()), rather than a slot of the containment ledger?
 /proc/op_var_slot(atom/holder, slot_id)
 	if(!istext(slot_id) || !(slot_id in holder.vars))
 		return FALSE

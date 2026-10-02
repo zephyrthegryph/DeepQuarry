@@ -30,11 +30,7 @@ type Data = {
   totalLoad: number;
   coverLocked: BooleanLike;
   emergencyLights: boolean;
-  // The power_channels() capability's data: channels, breaker, night shift.
-  caps?: { power?: PowerData };
-};
-
-type PowerData = {
+  // The APC's ui_data(): channels, breaker, night shift.
   powerChannels: {
     title: string;
     powerLoad: number;
@@ -136,10 +132,7 @@ const ApcContent = (props) => {
     coverLocked,
     emergencyLights,
   } = data;
-  const power = data.caps?.power;
-  const powerChannels = power?.powerChannels;
-  const isOperating = power?.isOperating;
-  const nightshiftSetting = power?.nightshiftSetting;
+  const { powerChannels, isOperating, nightshiftSetting } = data;
 
   const is_locked: BooleanLike = locked && !siliconUser;
   const externalPowerStatus: powerStatus =
