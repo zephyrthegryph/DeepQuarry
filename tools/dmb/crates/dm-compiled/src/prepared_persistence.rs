@@ -5,19 +5,20 @@ use crate::{input_proof::InputProof, prepared_project::*, ContentStore};
 use dm_preprocess::{Diagnostic, Macro, PreprocessedProject, Unit};
 use dm_syntax::Span;
 use serde::{Deserialize, Serialize};
+use sha2::{Digest,Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 7;
+const VERSION: u32 = 8;
 const MAX_PACK: usize = 128 * 1024 * 1024;
 const MAX_EXPANDED_BYTES: usize = 1024 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
 
 #[derive(Serialize, Deserialize)]
 struct Source {
-    path: usize,
+    path: PathBuf,
     start: usize,
     end: usize,
     digest: [u8; 32],
@@ -36,7 +37,7 @@ struct Manifest {
     expanded_digest: String,
     revision: String,
     paths: Vec<PathBuf>,
-    sources: Vec<Source>,
+    source_pages: Vec<Option<String>>,
     origins: String,
     origin_count: usize,
     units: Vec<(usize, usize, usize, usize)>,
@@ -60,7 +61,43 @@ struct Head {
     manifest: String,
 }
 
-pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Result<BTreeMap<[u8;32],crate::PackedBlob>> {
+#[derive(Clone)]
+pub(crate) struct SourceInventory {
+    pages: Vec<Option<String>>,
+    dirty: BTreeSet<usize>,
+    expanded: BTreeSet<String>,
+    origins: String,
+}
+impl SourceInventory {
+    pub(crate) fn updated(&self,previous:&BTreeMap<PathBuf,PreparedSource>,current:&BTreeMap<PathBuf,PreparedSource>)->Self {
+        let mut next=self.clone();
+        for (path,source) in current {
+            if previous.get(path).is_none_or(|old|old.digest!=source.digest || old.stamp!=source.stamp) {next.dirty.insert(source_bucket(path));}
+        }
+        for path in previous.keys().filter(|path|!current.contains_key(*path)) {next.dirty.insert(source_bucket(path));}
+        next
+    }
+    pub(crate) fn resident_bytes(&self)->usize {
+        self.pages.iter().map(|id|id.as_ref().map_or(0,String::capacity)+std::mem::size_of::<Option<String>>()).sum::<usize>()
+            +self.expanded.iter().map(|digest|digest.capacity()+48).sum::<usize>()+self.dirty.len()*32+self.origins.capacity()+128
+    }
+}
+pub(super) struct PublishedInputs {
+    pub backings:BTreeMap<[u8;32],crate::PackedBlob>,
+    pub inventory:SourceInventory,
+}
+fn source_bucket(path:&std::path::Path)->usize {
+    // Authored filesystem identity belongs to this project-context cache only;
+    // bucket membership never enters semantic compiler/output identity.
+    Sha256::digest(path.as_os_str().as_encoded_bytes())[0] as usize
+}
+fn source_backing(source:&PreparedSource)->Option<crate::PackedBlob> {
+    if !source.blob_published {return None;}
+    let pack=if source.blob_packed {Some(source.blob.as_ref()?.file_name()?.to_str()?.to_owned())} else {None};
+    Some(crate::PackedBlob {digest:source.digest,pack,start:source.blob_offset,len:source.content_len})
+}
+
+pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Result<PublishedInputs> {
     let persist_started = std::time::Instant::now();
     let mut paths = BTreeMap::new();
     fn path_id(paths: &mut BTreeMap<PathBuf, usize>, path: &std::path::Path) -> usize {
@@ -72,25 +109,14 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     // source as one new CAS blob. Keep immutable expansion pieces and bounded
     // source groups so a changed generation writes only changed chunks.
     let inventory_started=std::time::Instant::now();
-    let previous = match load_manifest(store,&snapshot.context) {
+    let previous = if snapshot.source_inventory.is_some() {None} else {match load_manifest(store,&snapshot.context) {
         Ok(previous)=>previous,
-        Err(error)=>{
-            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared inventory miss: {error}");}
-            None
-        }
-    };
+        Err(error)=>{if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared inventory miss: {error}");}None}
+    }};
     trace_persistence("previous manifest inventory",inventory_started);
-    let known: BTreeSet<_> = previous
-        .as_ref()
-        .into_iter()
-        .flat_map(|manifest| {
-            manifest
-                .pack
-                .iter()
-                .map(|(digest, _)| digest.clone())
-                .chain(std::iter::once(manifest.origins.clone()))
-        })
-        .collect();
+    let known:BTreeSet<_>=if let Some(inventory)=&snapshot.source_inventory {
+        inventory.expanded.iter().cloned().chain(std::iter::once(inventory.origins.clone())).collect()
+    } else {previous.as_ref().into_iter().flat_map(|manifest|manifest.pack.iter().map(|(digest,_)|digest.clone()).chain(std::iter::once(manifest.origins.clone()))).collect()};
     let pack: Vec<_> = snapshot
         .expansion
         .segments
@@ -130,25 +156,12 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     for write in chunk_writes {
         write?;
     }
-    let known_sources: BTreeSet<_> = previous
-        .as_ref()
-        .into_iter()
-        .flat_map(|manifest| manifest.sources.iter().map(|source| source.digest))
-        .collect();
     let mut scheduled_sources=BTreeSet::new();
-    let missing: Vec<_> = snapshot
-        .sources
-        .values()
-        .filter(|source| !known_sources.contains(&source.digest) && scheduled_sources.insert(source.digest))
-        .collect();
+    let missing:Vec<_>=snapshot.sources.values().filter(|source|!source.blob_published && scheduled_sources.insert(source.digest)).collect();
     trace_persistence("expanded CAS writes", expanded_started);
-    let authored_started = std::time::Instant::now();
-    if std::env::var_os("DM_BUILD_TRACE").is_some() {
-        eprintln!("DM_BUILD_TRACE authored publication inventory: known={} requested={} bytes={} previous={}",known_sources.len(),missing.len(),missing.iter().map(|source|source.content_len).sum::<usize>(),previous.is_some());
-    }
-    let mut backings:BTreeMap<_,_>=previous.as_ref().into_iter().flat_map(|manifest|manifest.sources.iter()).map(|source| {
-        (source.digest,crate::PackedBlob {digest:source.digest,pack:source.pack.clone(),start:source.start,len:source.end-source.start})
-    }).collect();
+    let authored_started=std::time::Instant::now();
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE authored publication inventory: known={} requested={} bytes={} previous={}",snapshot.sources.len()-missing.len(),missing.len(),missing.iter().map(|source|source.content_len).sum::<usize>(),snapshot.source_inventory.is_some());}
+    let mut backings:BTreeMap<_,_>=snapshot.sources.values().filter_map(source_backing).map(|backing|(backing.digest,backing)).collect();
     let mut groups:Vec<Vec<&PreparedSource>>=Vec::new();
     let mut group=Vec::new();let mut bytes=0usize;
     for source in missing {
@@ -169,18 +182,27 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     for write in writes {for backing in write? {backings.insert(backing.digest,backing);}}
     trace_persistence("authored CAS writes", authored_started);
     let manifest_started = std::time::Instant::now();
-    let mut sources = Vec::with_capacity(snapshot.sources.len());
-    for (path, source) in snapshot.sources.iter() {
-        let backing=backings.get(&source.digest).ok_or_else(||io::Error::other("authored source backing missing after publication"))?;
-        sources.push(Source {
-            path: path_id(&mut paths, path),
-            start: backing.start,
-            end: backing.start+backing.len,
-            digest: source.digest,
-            pack:backing.pack.clone(),
-            stamp: source.stamp.clone(),
-        });
+    let mut inventory=snapshot.source_inventory.as_ref().map(|inventory|inventory.as_ref().clone()).unwrap_or_else(||SourceInventory {
+        pages:previous.as_ref().map_or_else(||vec![None;256],|manifest|manifest.source_pages.clone()),
+        dirty:(0..256).collect(),expanded:BTreeSet::new(),origins:String::new(),
+    });
+    let mut buckets:BTreeMap<usize,Vec<Source>>=inventory.dirty.iter().map(|bucket|(*bucket,Vec::new())).collect();
+    for (path,source) in snapshot.sources.iter() {
+        let bucket=source_bucket(path);
+        if let Some(rows)=buckets.get_mut(&bucket) {
+            let backing=backings.get(&source.digest).ok_or_else(||io::Error::other("authored source backing missing after publication"))?;
+            rows.push(Source {path:path.clone(),start:backing.start,end:backing.start+backing.len,digest:source.digest,pack:backing.pack.clone(),stamp:source.stamp.clone()});
+        }
     }
+    for (bucket,rows) in buckets {
+        inventory.pages[bucket]=if rows.is_empty() {None} else {
+            let bytes=encode_snapshot(&rows)?;
+            if bytes.len()>4*1024*1024 || snapshot_decoded_size(&bytes)?>4*1024*1024 {return Err(io::Error::other("source inventory page exceeds limit"));}
+            Some(store.put_rebuildable("prepared-source-inventory-v1",&bytes)?)
+        };
+    }
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE source inventory publication: {} dirty buckets",inventory.dirty.len());}
+    inventory.dirty.clear();
     let origin_started=std::time::Instant::now();
     let map = snapshot.project.origin_map.clone().unwrap_or_else(||Arc::new(dm_preprocess::OriginMap::from_origins(project.origin_iter())));
     let origin_bytes=encode_snapshot(map.as_ref())?;
@@ -223,6 +245,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     for (path, index) in paths {
         ordered_paths[index] = path;
     }
+    inventory.expanded=pack.iter().map(|(digest,_)|digest.clone()).collect();
+    inventory.origins=origins.clone();
     let manifest = Manifest {
         version: VERSION,
         context: snapshot.context.clone(),
@@ -234,8 +258,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         expanded_digest: snapshot.expanded_digest.clone(),
         revision: snapshot.revision.clone(),
         paths: ordered_paths,
-        sources,
-        origins,
+        source_pages:inventory.pages.clone(),
+        origins:origins.clone(),
         origin_count: project.origin_count(),
         units,
         unit_digests: project.unit_digests.clone(),
@@ -255,7 +279,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     let bytes = encode_snapshot(&manifest)?;
     trace_persistence("manifest encoding", encode_started);
     if bytes.len() > MAX_MANIFEST {
-        return Ok(backings);
+        return Ok(PublishedInputs {backings,inventory});
     }
     let digest = store.put("prepared-input-manifest-v2", &bytes)?;
     let head = Head {
@@ -275,7 +299,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .map(|_| ());
     trace_persistence("origin and manifest publication", manifest_started);
     trace_persistence("total", persist_started);
-    result.map(|()|backings)
+    result.map(|()|PublishedInputs {backings,inventory})
 }
 
 fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manifest>> {
@@ -293,7 +317,7 @@ fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manif
     let manifest:Manifest = decode_snapshot(&store.get_bounded(
         "prepared-input-manifest-v2", &head.manifest, MAX_MANIFEST,
     )?)?;
-    if manifest.sources.len()>64_000 || manifest.sources.iter().any(|source|!valid_source_range(source)) {
+    if manifest.source_pages.len()!=256 || manifest.source_pages.iter().flatten().any(|digest|digest.len()!=64 || !digest.bytes().all(|byte|byte.is_ascii_hexdigit())) {
         return Err(io::Error::other("invalid prepared source range metadata"));
     }
     Ok(Some(manifest))
@@ -313,7 +337,6 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if manifest.version != VERSION
         || manifest.context != context
         || manifest.paths.len() > 64_000
-        || manifest.sources.len() > 64_000
         || manifest.origin_count > 4_000_000
         || manifest.units.len() > 128_000
         || manifest.units.len() != manifest.unit_digests.len()
@@ -359,12 +382,19 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             .ok_or_else(|| io::Error::other("invalid prepared path index"))
     };
     let mut sources = BTreeMap::new();
-    for source in &manifest.sources {
+    for (bucket,page) in manifest.source_pages.iter().enumerate() {
+        let Some(page)=page else {continue;};
+        let bytes=store.get_bounded("prepared-source-inventory-v1",page,4*1024*1024)?;
+        if snapshot_decoded_size(&bytes)?>4*1024*1024 {return Err(io::Error::other("source inventory page exceeds decoded limit"));}
+        let rows:Vec<Source>=decode_snapshot(&bytes)?;
+        if rows.len()>64_000 || sources.len()+rows.len()>64_000 {return Err(io::Error::other("too many authored inventory rows"));}
+        for source in &rows {
+        if source_bucket(&source.path)!=bucket {return Err(io::Error::other("source inventory bucket mismatch"));}
         if !valid_source_range(source) {return Err(io::Error::other("invalid source artifact range"));}
         let location=crate::PackedBlob {digest:source.digest,pack:source.pack.clone(),start:source.start,len:source.end-source.start};
         let blob=store.packed_blob_path("prepared-source-v3",&location);
         if !fs_metadata_has_range(&blob,source.end) {return Ok(None);}
-        let key = (*path(source.path)?).clone();
+        let key = source.path.clone();
         if sources
             .insert(
                 key,
@@ -374,6 +404,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
                     blob: Some(blob),
                     blob_offset:source.start,
                     blob_packed:source.pack.is_some(),
+                    blob_published:true,
                     digest: source.digest,
                     stamp: source.stamp.clone(),
                 },
@@ -382,6 +413,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         {
             return Err(io::Error::other("duplicate prepared source"));
         }
+    }
     }
     let origin_bytes =
         store.get_bounded("prepared-input-chunk-v2", &manifest.origins, MAX_MANIFEST)?;
@@ -435,7 +467,9 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if !project.semantic_identity.as_ref().is_some_and(|identity|identity.validate(&project,expanded.len())) {
         return Err(io::Error::other("invalid prepared emission identity"));
     }
+    let source_inventory=Some(Arc::new(SourceInventory {pages:manifest.source_pages.clone(),dirty:BTreeSet::new(),expanded:manifest.pack.iter().map(|(digest,_)|digest.clone()).collect(),origins:manifest.origins.clone()}));
     Ok(Some(PreparedProject {
+        source_inventory,
         project: Arc::new(project),
         macro_names: Arc::new(manifest.macro_names),
         expansion,
@@ -452,7 +486,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         },
     }))
 }
-use sha2::{Digest, Sha256};
+
 
 fn trace_persistence(stage:&str,started:std::time::Instant) {
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared persistence {stage}: {:.3}s",started.elapsed().as_secs_f64());}
@@ -472,3 +506,5 @@ fn decode_snapshot<T:serde::de::DeserializeOwned>(bytes:&[u8])->io::Result<T> {
 }
 
 fn fs_metadata_has_range(path:&std::path::Path,end:usize)->bool {std::fs::metadata(path).is_ok_and(|metadata|metadata.is_file() && metadata.len()>=end as u64)}
+
+fn snapshot_decoded_size(bytes:&[u8])->io::Result<usize> {Ok(u32::from_le_bytes(bytes.get(..4).and_then(|prefix|prefix.try_into().ok()).ok_or_else(||io::Error::other("truncated inventory page"))?) as usize)}

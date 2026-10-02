@@ -21,6 +21,7 @@ pub struct PreparedSource {
     pub(crate) blob: Option<PathBuf>,
     pub(crate) blob_offset: usize,
     pub(crate) blob_packed: bool,
+    pub(crate) blob_published: bool,
     /// Content identity after the compiler's UTF-8/Windows-1252 decoding.
     pub digest: [u8; 32],
     pub(crate) stamp: Option<FileStamp>,
@@ -92,6 +93,7 @@ pub struct PreparationStats {
 /// Holding this Arc pins only detached data, never a Salsa database/session.
 #[derive(Clone)]
 pub struct PreparedProject {
+    pub(crate) source_inventory: Option<Arc<crate::prepared_persistence::SourceInventory>>,
     pub project: Arc<PreprocessedProject>,
     /// Persistent pieces shared across edited expansion generations.
     pub expansion: Arc<SegmentedExpansion>,
@@ -182,7 +184,7 @@ impl PreparedProject {
 
     pub fn resident_bytes(&self) -> usize {
         let mut paths = BTreeSet::new();
-        self.macro_names
+        self.source_inventory.as_ref().map_or(0,|inventory|inventory.resident_bytes()) + self.macro_names
             .iter()
             .map(|name| name.len() + 48)
             .sum::<usize>()

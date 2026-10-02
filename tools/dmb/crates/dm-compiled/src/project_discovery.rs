@@ -139,6 +139,7 @@ pub(crate) fn read_prepared_source(
             blob: None,
             blob_offset: 0,
             blob_packed: false,
+            blob_published: false,
             text,
             digest,
             stamp,
@@ -510,6 +511,7 @@ impl DiscoveryCache {
                         blob: None,
                         blob_offset: 0,
                         blob_packed: false,
+                        blob_published: false,
                         text,
                         digest: digests[&path],
                         stamp: stamps.get(&path).cloned(),
@@ -593,7 +595,9 @@ impl DiscoveryCache {
         macro_names.extend(defines.keys().cloned());
         let macro_names = Arc::new(macro_names);
         trace_preparation_stage("macro namespace", macros_started);
+        let source_inventory=old.as_ref().and_then(|old|old.source_inventory.as_ref().map(|inventory|Arc::new(inventory.updated(&old.sources,&sources))));
         let mut snapshot = Arc::new(PreparedProject {
+            source_inventory,
             project: Arc::new(project),
             macro_names,
             expansion,
@@ -612,14 +616,17 @@ impl DiscoveryCache {
         }
         if let Some(store) = &self.store {
             match crate::prepared_persistence::save(store,&snapshot) {
-                Ok(backings)=>{
+                Ok(published)=>{
                     let snapshot=Arc::make_mut(&mut snapshot);
+                    snapshot.source_inventory=Some(Arc::new(published.inventory));
+                    let backings=published.backings;
                     Arc::make_mut(&mut snapshot.expansion).attach_backings(&store.root);
                     for source in Arc::make_mut(&mut snapshot.sources).values_mut() {
                         if let Some(backing)=backings.get(&source.digest) {
                             source.blob=Some(store.packed_blob_path("prepared-source-v3",backing));
                             source.blob_offset=backing.start;
                             source.blob_packed=backing.pack.is_some();
+                            source.blob_published=true;
                         }
                     }
                 },

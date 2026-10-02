@@ -15,7 +15,7 @@ pub(crate) struct OwnerBindingQueries {
 }
 impl OwnerBindingQueries {
  const LIMIT:usize=32*1024*1024;
- fn namespace()->String {format!("owner-binding-roots-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+ fn namespace()->String {format!("owner-binding-roots-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
  pub(super) fn bind(&mut self,root:&Path){*self=Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()};}
  pub(super) fn resident_bytes(&self)->usize{self.bytes}
  pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;}
@@ -41,7 +41,17 @@ impl OwnerBindingQueries {
    for slot in 0..2 {hash.update([slot as u8]);if let Some(ids)=dmb.lists.get(class.lists_and_procs[slot] as usize){for id in ids {if let Some(proc)=dmb.procs.get(*id as usize){text(&mut hash,dmb.string(proc.strings[0]).unwrap_or(&[]));text(&mut hash,dmb.string(proc.strings[1]).unwrap_or(&[]));}}}}
    hash.update(b"authored-procs");
    if let Some(procedures)=authored.get(owner){for procedure in procedures {text(&mut hash,procedure.item.header.as_bytes());hash.update([procedure.verb as u8,has_proc_name_setting(&procedure.item.children) as u8]);}}
-   inputs.push((class_id,owner,format!("{:x}",hash.finalize())));
+   inputs.push((Some(class_id),owner,format!("{:x}",hash.finalize())));
+  }
+  // Pseudo owners such as /world have authored member procedures but no
+  // physical class row. Their semantic namespace still needs an owner root.
+  let physical:HashSet<_>=inputs.iter().map(|(_,owner,_)|*owner).collect();
+  let synthetic:BTreeSet<_>=authored.keys().copied().filter(|owner|!physical.contains(owner)).collect();
+  for owner in synthetic {
+   let mut hash=Sha256::new();hash.update(b"synthetic-owner-binding-v1");hash.update((owner.len() as u64).to_le_bytes());hash.update(owner.as_bytes());
+   if let Some(fields)=types.get(owner){let mut fields:Vec<_>=fields.iter().collect();fields.sort();for(name,ty)in fields{hash.update((name.len() as u64).to_le_bytes());hash.update(name.as_bytes());hash.update((ty.len() as u64).to_le_bytes());hash.update(ty.as_bytes());}}
+   for procedure in &authored[owner] {hash.update((procedure.item.header.len() as u64).to_le_bytes());hash.update(procedure.item.header.as_bytes());hash.update([procedure.verb as u8,has_proc_name_setting(&procedure.item.children) as u8]);}
+   inputs.push((None,owner,format!("{:x}",hash.finalize())));
   }
   let input_seconds=started.elapsed().as_secs_f64();
   let mut next=self.roots.clone();let present:HashSet<_>=inputs.iter().map(|(_,owner,_)|*owner).collect();
@@ -71,7 +81,7 @@ impl OwnerBindingQueries {
     if let Some(parent)=root.parent{shared.parent_types.insert(owner.to_owned(),parent);}else{shared.parent_types.remove(owner);}
    }
    shared.global_types.extend(root.static_types);
-   for (variable,flags) in declaration_rows(dmb,class_id){if flags&1!=0 {if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){let symbol=static_symbol("__dm_class_static_",owner,name);shared.globals.insert(symbol.clone());aliases.insert(symbol,variable);}}}
+   for (variable,flags) in class_id.into_iter().flat_map(|class_id|declaration_rows(dmb,class_id)){if flags&1!=0 {if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){let symbol=static_symbol("__dm_class_static_",owner,name);shared.globals.insert(symbol.clone());aliases.insert(symbol,variable);}}}
   }
   }
   if !writes.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&writes,None);}}
@@ -85,16 +95,16 @@ impl OwnerBindingQueries {
   Ok(aliases)
  }
 }
-fn derive(dmb:&Dmb,class_id:usize,owner:&str,types:Option<HashMap<String,String>>,authored:&[&PendingProc<'_>],source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<Root,String>{
+fn derive(dmb:&Dmb,class_id:Option<usize>,owner:&str,types:Option<HashMap<String,String>>,authored:&[&PendingProc<'_>],source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<Root,String>{
  let mut root=Root::default();if let Some(types)=types{root.types=types.into_iter().collect();}
  let declared_types=root.types.clone();
  let mut builtin=LowerBindings::default();seed_builtin_fields(owner,&mut builtin);
  root.fields.extend(builtin.fields);for(name,ty)in builtin.field_types{root.types.entry(name).or_insert(ty);}
- let class=&dmb.classes[class_id];root.parent=dmb.classes.get(class.parent_class_id() as usize).and_then(|parent|dmb.string(parent.path_string_id())).and_then(|bytes|std::str::from_utf8(bytes).ok()).filter(|parent|*parent!=owner).map(str::to_owned);
- for (variable,flags) in declaration_rows(dmb,class_id){if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){
+ let class=class_id.and_then(|id|dmb.classes.get(id));root.parent=class.and_then(|class|dmb.classes.get(class.parent_class_id() as usize)).and_then(|parent|dmb.string(parent.path_string_id())).and_then(|bytes|std::str::from_utf8(bytes).ok()).filter(|parent|*parent!=owner).map(str::to_owned);
+ for (variable,flags) in class_id.into_iter().flat_map(|class_id|declaration_rows(dmb,class_id)){if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){
   root.fields.insert(name.to_owned());if flags&1!=0 {let symbol=static_symbol("__dm_class_static_",owner,name);root.globals.insert(name.to_owned(),symbol.clone());if let Some(ty)=declared_types.get(name){root.static_types.insert(symbol,ty.clone());}}
  }}
- for slot in 0..2 {if let Some(ids)=dmb.lists.get(class.lists_and_procs[slot] as usize){for id in ids{if let Some(proc)=dmb.procs.get(*id as usize){if let Some(path)=dmb.string(proc.strings[0]).and_then(|bytes|std::str::from_utf8(bytes).ok()){if let Some(name)=path.rsplit('/').next(){root.known_procs.insert(name.to_owned());if dmb.string(proc.strings[1])!=Some(name.replace('_'," ").as_bytes()){root.procs.insert(name.to_owned(),path.to_owned());}}}}}}}
+ for slot in 0..2 {if let Some(ids)=class.and_then(|class|dmb.lists.get(class.lists_and_procs[slot] as usize)){for id in ids{if let Some(proc)=dmb.procs.get(*id as usize){if let Some(path)=dmb.string(proc.strings[0]).and_then(|bytes|std::str::from_utf8(bytes).ok()){if let Some(name)=path.rsplit('/').next(){root.known_procs.insert(name.to_owned());if dmb.string(proc.strings[1])!=Some(name.replace('_'," ").as_bytes()){root.procs.insert(name.to_owned(),path.to_owned());}}}}}}}
  for procedure in authored {let path=InvocationFragments::declaration_path(procedure.item,owner,procedure.verb)?;let name=path.rsplit('/').next().unwrap_or("").to_owned();root.known_procs.insert(name.clone());if let Some(Some(ty))=declared_proc_return_type(&procedure.item.header).map_err(|reason|source_error(source_debug,procedure.span().start,&procedure.item.header,&reason))?{root.returns.insert(name.clone(),ty);}if has_proc_name_setting(&procedure.item.children){root.procs.insert(name,path);}}
  Ok(root)
 }

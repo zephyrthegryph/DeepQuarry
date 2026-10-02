@@ -245,6 +245,15 @@ impl WireImage {
         }
         native.lists=words.into();Ok(native)
     }
+    pub fn serialize_stored(&self,root:&std::path::Path,cache:&mut DmbWireCache)->io::Result<crate::chunks::StoredDmb> {
+        let builder=std::sync::Arc::new(std::sync::Mutex::new(crate::chunks::PageBuilder::new(root)));
+        let sink=std::sync::Arc::clone(&builder);
+        let (len,spans)=self.metadata.encode_metadata_to_sink(&self.lists,cache,Box::new(move |bytes| {
+            sink.lock().map_err(|_|invalid("page sink lock poisoned"))?.append(bytes)
+        }))?;
+        std::sync::Arc::try_unwrap(builder).map_err(|_|invalid("page sink still retained"))?
+            .into_inner().map_err(|_|invalid("page sink lock poisoned"))?.finish(len,spans)
+    }
     pub fn serialize_chunks(&self,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
         self.metadata.encode_metadata_with_lists(&self.lists,cache)
     }

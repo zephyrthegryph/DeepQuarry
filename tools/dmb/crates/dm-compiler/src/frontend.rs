@@ -900,13 +900,16 @@ fn shard_path(root: &Path, digest: &str) -> PathBuf {
 
 fn read_shard(root: &Path, digest: &str, source_len: usize) -> Result<Option<StoredChunk>, String> {
     let path = shard_path(root, digest);
-    if fs::metadata(&path).map_or(true, |metadata| metadata.len() > MAX_SHARD_BYTES) {
-        return Ok(None);
-    }
-    let bytes = fs::read(path).map_err(|error| error.to_string())?;
-    if bytes.len() as u64 > MAX_SHARD_BYTES {
-        return Ok(None);
-    }
+    use std::io::Read;
+    let mut file=match fs::File::open(&path) {
+        Ok(file)=>file,
+        Err(error) if error.kind()==std::io::ErrorKind::NotFound=>return Ok(None),
+        Err(error)=>return Err(error.to_string()),
+    };
+    if file.metadata().map_err(|error|error.to_string())?.len()>MAX_SHARD_BYTES {return Ok(None);}
+    let mut bytes=Vec::new();
+    file.by_ref().take(MAX_SHARD_BYTES+1).read_to_end(&mut bytes).map_err(|error|error.to_string())?;
+    if bytes.len() as u64>MAX_SHARD_BYTES {return Ok(None);}
     let Some(newline) = bytes.iter().position(|byte| *byte == b'\n') else {
         return Ok(None);
     };

@@ -136,3 +136,53 @@ pub fn load(root: &Path, manifest_digest: &str) -> io::Result<StoredDmb> {
     }
     Ok(StoredDmb {root,manifest,manifest_digest:manifest_digest.to_owned()})
 }
+
+/// Incremental immutable-page sink. Only one bounded physical encoder page is
+/// borrowed at a time; retained state contains identities and offsets only.
+pub struct PageBuilder {
+    root:PathBuf, whole:Sha256, pages:Vec<PageRef>, total:usize, pending:Vec<u8>,
+}
+impl PageBuilder {
+    pub fn new(root:&Path)->Self {Self {root:root.join("dmb-object-pages-v1"),whole:Sha256::new(),pages:Vec::new(),total:0,pending:Vec::with_capacity(256*1024)}}
+    pub fn append(&mut self,mut bytes:&[u8])->io::Result<()> {
+        self.total=self.total.checked_add(bytes.len()).ok_or_else(||invalid("object size overflow"))?;
+        self.whole.update(bytes);
+        while !bytes.is_empty() {
+            let count=(256*1024-self.pending.len()).min(bytes.len());
+            self.pending.extend_from_slice(&bytes[..count]);bytes=&bytes[count..];
+            if self.pending.len()==256*1024 {self.flush_page()?;}
+        }
+        Ok(())
+    }
+    fn flush_page(&mut self)->io::Result<()> {
+        if self.pending.is_empty() {return Ok(());}
+        let bytes=self.pending.as_slice();
+            let digest=format!("{:x}",Sha256::digest(bytes));let path=page_path(&self.root,&digest);
+            if !matches(&path,bytes) {
+                fs::create_dir_all(path.parent().unwrap())?;
+                let temp=path.with_extension(format!("pending-{}-{}",std::process::id(),NEXT.fetch_add(1,Ordering::Relaxed)));
+                let result=(|| {let mut output=OpenOptions::new().create_new(true).write(true).open(&temp)?;
+                    output.write_all(bytes)?;drop(output);
+                    if path.exists()&&!matches(&path,bytes) {fs::remove_file(&path)?;}
+                    match fs::rename(&temp,&path) {Ok(())=>Ok(()),Err(_) if matches(&path,bytes)=>Ok(()),Err(error)=>Err(error)}
+                })();let _=fs::remove_file(&temp);result?;
+            }
+            self.pages.push(PageRef {digest,len:bytes.len()});
+            self.pending.clear();Ok(())
+    }
+    pub fn finish(mut self,len:usize,list_spans:Vec<std::ops::Range<usize>>)->io::Result<StoredDmb> {
+        self.flush_page()?;
+        if self.total!=len||list_spans.iter().any(|span|span.start>span.end||span.end>len) {return Err(invalid("streamed image manifest mismatch"));}
+        let manifest=ObjectManifest {version:1,pages:self.pages,len,digest:format!("{:x}",self.whole.finalize()),list_spans};
+        let encoded=serde_json::to_vec(&manifest).map_err(io::Error::other)?;let manifest_digest=format!("{:x}",Sha256::digest(&encoded));
+        let directory=self.root.join("manifests");fs::create_dir_all(&directory)?;let path=directory.join(&manifest_digest);
+        if !matches(&path,&encoded) {
+            let temp=path.with_extension(format!("pending-{}-{}",std::process::id(),NEXT.fetch_add(1,Ordering::Relaxed)));
+            let result=(|| {let mut output=OpenOptions::new().create_new(true).write(true).open(&temp)?;output.write_all(&encoded)?;drop(output);
+                if path.exists()&&!matches(&path,&encoded) {fs::remove_file(&path)?;}
+                match fs::rename(&temp,&path) {Ok(())=>Ok(()),Err(_) if matches(&path,&encoded)=>Ok(()),Err(error)=>Err(error)}
+            })();let _=fs::remove_file(&temp);result?;
+        }
+        Ok(StoredDmb {root:self.root,manifest,manifest_digest})
+    }
+}

@@ -154,6 +154,12 @@ pub struct VerifiedBytecode {
     resources: String,
 }
 impl VerifiedBytecode {
+    pub fn serialize_wire_stored(image:&crate::wire_image::WireImage,cache:&mut byond_dmb::dmb::DmbWireCache,root:&Path)
+        ->io::Result<(crate::chunks::StoredDmb,Self)> {
+        let stored=image.serialize_stored(root,cache)?;
+        let receipt=Self {digest:stored.digest().to_owned(),len:stored.len(),resources:resource_slice_digest(image.resources())};
+        Ok((stored,receipt))
+    }
     pub fn serialize_wire_chunks(
         image:&crate::wire_image::WireImage,
         cache:&mut byond_dmb::dmb::DmbWireCache,
@@ -600,7 +606,7 @@ fn publish_verified_archive_inner(
     digest: Option<&str>,
 ) -> io::Result<Generation> {
     let digest = digest.map(str::to_owned).unwrap_or_else(||format!("{:x}",Sha256::digest(dmb)));
-    publish_verified_archive_source(root, archive, resources, &digest, dmb.len(),
+    publish_verified_archive_source(root, archive, resources, &digest, dmb.len(),None,
         |output|output.write_all(dmb), |path|file_matches_bytes(path,dmb))
 }
 
@@ -615,7 +621,7 @@ pub fn publish_generation_with_chunked_bytecode(
     if dmb.len() != receipt.len || dmb.digest() != receipt.digest {
         return Err(invalid("chunked bytecode differs from its validation receipt"));
     }
-    publish_verified_archive_source(root, archive, &receipt.resources, &receipt.digest,receipt.len,
+    publish_verified_archive_source(root, archive, &receipt.resources, &receipt.digest,receipt.len,None,
         |output|dmb.write_to(output), |path| {
             let mut input = File::open(path)?; let mut hash = Sha256::new(); let mut len=0usize;
             let mut buffer=[0u8;64*1024];
@@ -627,6 +633,7 @@ pub fn publish_generation_with_chunked_bytecode(
 
 fn publish_verified_archive_source(
     root: &Path, archive: &VerifiedArchive, resources: &str, digest: &str, len: usize,
+    dmb_file:Option<&VerifiedDmbFile>,
     write: impl FnOnce(&mut File)->io::Result<()>,
     matches: impl Fn(&Path)->io::Result<bool>,
 ) -> io::Result<Generation> {
@@ -695,10 +702,12 @@ fn publish_verified_archive_source(
         ));
         fs::create_dir(&temp)?;
         let result = (|| {
-            let mut output = File::create(temp.join("world.dmb"))?;
-            write(&mut output)?;
-            output.sync_all()?;
-            drop(output);
+            let destination=temp.join("world.dmb");
+            #[cfg(windows)]
+            let linked=if let Some(file)=dmb_file {file.matches_guarded(file.path())?&&fs::hard_link(file.path(),&destination).is_ok()}else{false};
+            #[cfg(not(windows))]
+            let linked=false;
+            if !linked {let mut output=File::create(&destination)?;write(&mut output)?;output.sync_all()?;drop(output);}
             if fs::hard_link(&archive.path, temp.join("world.rsc")).is_err() {
                 let mut copy = File::create(temp.join("world.rsc"))?;
                 let copied = io::copy(protected.as_mut().unwrap(), &mut copy)?;
@@ -723,11 +732,11 @@ fn publish_verified_archive_source(
     if let Some(lease)=&lease {lease.refresh_after_publication()?;}
     if created {
         let dmb_stamp =
-            capture(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
+            dmb_stamp(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
         if !matches(&published.dmb)? {
             return Err(invalid("published DMB bytes changed"));
         }
-        if capture(&published.dmb).as_ref() != Some(&dmb_stamp) {
+        if self::dmb_stamp(&published.dmb).as_ref() != Some(&dmb_stamp) {
             return Err(invalid("published DMB changed during validation"));
         }
         let rsc_stamp = copied_stamp
@@ -1263,4 +1272,58 @@ mod tests {
         verify_generation(&root, &first).unwrap();
         fs::remove_dir_all(root).unwrap();
     }
+}
+
+/// Protected, verified bytecode file. On Windows the private live handle
+/// permits reads/renames while excluding every other writer until publication.
+pub struct VerifiedDmbFile {path:PathBuf,file:File,digest:String,len:usize,stamp:FileStamp}
+fn dmb_read(path:&Path)->io::Result<File> {
+    let mut options=OpenOptions::new();options.read(true);
+    #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
+    options.open(path)
+}
+fn dmb_stamp(path:&Path)->Option<FileStamp> {dm_host::file_stamp::capture_file(&dmb_read(path).ok()?)}
+impl VerifiedDmbFile {
+    pub fn path(&self)->&Path {&self.path}
+    pub fn digest(&self)->&str {&self.digest}
+    pub fn len(&self)->usize {self.len}
+    pub fn is_empty(&self)->bool {self.len==0}
+    pub fn open(path:&Path,digest:&str,len:u64)->io::Result<Self> {
+        let len=usize::try_from(len).map_err(io::Error::other)?;
+        let mut file=dmb_read(path)?;let before=dm_host::file_stamp::capture_file(&file).ok_or_else(||invalid("DMB stamp unavailable"))?;
+        let mut hash=Sha256::new();let mut actual=0usize;let mut buffer=[0u8;64*1024];
+        loop {let count=file.read(&mut buffer)?;if count==0 {break;}actual=actual.checked_add(count).ok_or_else(||invalid("DMB length overflow"))?;hash.update(&buffer[..count]);}
+        if actual!=len||format!("{:x}",hash.finalize())!=digest||dm_host::file_stamp::capture_file(&file).as_ref()!=Some(&before) {return Err(invalid("DMB file proof mismatch"));}
+        Ok(Self {path:path.to_owned(),file,digest:digest.to_owned(),len,stamp:before})
+    }
+    pub fn compose(path:&Path,image:&crate::chunks::StoredDmb)->io::Result<Self> {
+        let mut options=OpenOptions::new();options.create_new(true).read(true).write(true);
+        #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
+        let mut file=options.open(path)?;image.write_to(&mut file)?;file.sync_all()?;
+        let stamp=dm_host::file_stamp::capture_file(&file).ok_or_else(||invalid("composed DMB stamp unavailable"))?;
+        drop(file);let file=dmb_read(path)?;
+        if dm_host::file_stamp::capture_file(&file).as_ref()!=Some(&stamp) {return Err(invalid("composed DMB changed before guard acquisition"));}
+        Ok(Self {path:path.to_owned(),file,digest:image.digest().to_owned(),len:image.len(),stamp})
+    }
+    pub fn relocated(mut self,path:&Path)->io::Result<Self> {
+        let stamp=dm_host::file_stamp::capture_file(&self.file).ok_or_else(||invalid("DMB file handle unavailable"))?;
+        if dmb_stamp(path).as_ref()!=Some(&stamp) {return Err(invalid("relocated DMB is another file"));}
+        self.path=path.to_owned();self.stamp=stamp;Ok(self)
+    }
+    fn matches_guarded(&self,path:&Path)->io::Result<bool> {
+        #[cfg(windows)] {let stamp=dm_host::file_stamp::capture_file(&self.file).ok_or_else(||invalid("DMB guard unavailable"))?;
+            Ok(dmb_stamp(path).as_ref()==Some(&stamp))}
+        #[cfg(not(windows))] {Self::open(path,&self.digest,self.len as u64).map(|_|true)}
+    }
+    fn write_to(&self,output:&mut File)->io::Result<()> {
+        let mut input=dmb_read(&self.path)?;let mut hash=Sha256::new();let mut total=0usize;let mut buffer=[0u8;64*1024];
+        loop {let count=input.read(&mut buffer)?;if count==0 {break;}total=total.checked_add(count).ok_or_else(||invalid("DMB copy overflow"))?;
+            hash.update(&buffer[..count]);output.write_all(&buffer[..count])?;}
+        if total!=self.len||format!("{:x}",hash.finalize())!=self.digest {return Err(invalid("DMB copy changed"));}Ok(())
+    }
+}
+pub fn publish_generation_with_verified_dmb_file(root:&Path,dmb:&VerifiedDmbFile,archive:&VerifiedArchive,receipt:&VerifiedBytecode)->io::Result<Generation> {
+    if dmb.len()!=receipt.len||dmb.digest()!=receipt.digest||!dmb.matches_guarded(dmb.path())? {return Err(invalid("DMB file differs from its serialization receipt"));}
+    publish_verified_archive_source(root,archive,&receipt.resources,&receipt.digest,receipt.len,Some(dmb),
+        |output|dmb.write_to(output),|path| {if dmb.matches_guarded(path)? {Ok(true)}else{VerifiedDmbFile::open(path,dmb.digest(),dmb.len() as u64).map(|_|true)}})
 }

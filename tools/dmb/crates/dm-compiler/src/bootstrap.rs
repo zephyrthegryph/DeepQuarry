@@ -3607,12 +3607,6 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         .filter_map(|item| declared_variable_type(&item.header))
         .collect();
     let mut class_field_types: HashMap<String, HashMap<String, String>> = HashMap::new();
-    for item in &type_items {
-        let fields = class_field_types
-            .entry(item.header.trim().to_owned())
-            .or_default();
-        fields.extend(default_plans::owner(item).field_types.iter().map(|(name, ty)| (name.clone(), ty.clone())));
-    }
     // Constants can refer to globals declared later. Resolve their dependency
     // graph before emitting runtime initializers or type settings.
     let mut unresolved_consts: Vec<_> = ast
@@ -3672,6 +3666,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     operation_prefetch_time+=started.elapsed();
     let wire_started=std::time::Instant::now();
     for (item,owner_plan) in window.iter().zip(&owner_plans) {
+        // One requested owner fragment supplies both analysis annotations and
+        // ordered emission; retain only this bounded source window.
+        class_field_types.entry(item.header.trim().to_owned()).or_default()
+            .extend(owner_plan.field_types.iter().map(|(name,ty)|(name.clone(),ty.clone())));
         let result = emit_type(
             item,
             &mut dmb,

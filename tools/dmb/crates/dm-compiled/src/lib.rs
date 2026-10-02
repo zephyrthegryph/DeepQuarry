@@ -542,36 +542,37 @@ impl ContentStore {
         result
     }
 
-    fn put_dmb_pages(&self, image: &dm_output::chunks::StoredDmb) -> io::Result<String> {
-        let digest = image.digest().to_owned();
-        let directory = self.root.join("project-dmb-v1").join(&digest[..2]);
+    fn put_dmb_pages(&self, image: &dm_output::chunks::StoredDmb) -> io::Result<dm_output::generation::VerifiedDmbFile> {
+        use dm_output::generation::VerifiedDmbFile;
+        let digest=image.digest().to_owned();
+        let directory=self.root.join("project-dmb-v1").join(&digest[..2]);
         fs::create_dir_all(&directory)?;
-        let destination = directory.join(&digest);
-        if self.verify_blob(&destination, &digest).unwrap_or(false) { return Ok(digest); }
+        let destination=directory.join(&digest);
         if destination.exists() {
-            let quarantine = directory.join(format!("{digest}.corrupt-{}-{}", std::process::id(), TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
-            match fs::rename(&destination, &quarantine) {
-                Ok(()) => { let _ = fs::remove_file(&quarantine); }
-                Err(_) if self.verify_blob(&destination, &digest).unwrap_or(false) => return Ok(digest),
-                Err(error) if error.kind() == io::ErrorKind::NotFound => {},
-                Err(error) => return Err(error),
+            if let Ok(file)=VerifiedDmbFile::open(&destination,&digest,image.len() as u64) {return Ok(file);}
+            #[cfg(windows)]
+            match quarantine_corrupt_blob(&destination,&digest) {
+                Ok(false)=>return VerifiedDmbFile::open(&destination,&digest,image.len() as u64),
+                Ok(true)=>{},
+                Err(error) if error.kind()==io::ErrorKind::NotFound=>{},
+                Err(error)=>return Err(error),
             }
+            #[cfg(not(windows))]
+            return Err(io::Error::new(io::ErrorKind::InvalidData,"existing DMB CAS file failed validation"));
         }
-        let temporary = directory.join(format!("{digest}.{}.{}.tmp",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
-        let result = (|| {
-            let mut output = fs::OpenOptions::new().create_new(true).write(true).open(&temporary)?;
-            image.write_to(&mut output)?;
-            output.sync_all()?; drop(output);
+        let temporary=directory.join(format!("{digest}.{}.{}.tmp",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+        let result=(|| {
+            let file=VerifiedDmbFile::compose(&temporary,image)?;
             match fs::rename(&temporary,&destination) {
-                Ok(()) => Ok(digest.clone()),
-                Err(_) if self.verify_blob(&destination,&digest).unwrap_or(false) => Ok(digest.clone()),
-                Err(error) => Err(error),
+                Ok(())=>file.relocated(&destination),
+                Err(error)=>match VerifiedDmbFile::open(&destination,&digest,image.len() as u64) {
+                    Ok(winner)=>Ok(winner),Err(_)=>Err(error),
+                },
             }
         })();
-        let _ = fs::remove_file(&temporary);
+        let _=fs::remove_file(&temporary);
         result
     }
-
     pub fn get(&self, namespace: &str, digest: &str) -> io::Result<Vec<u8>> {
         if !valid_namespace(namespace)
             || digest.len() != 64
@@ -3054,6 +3055,7 @@ impl Coordinator {
         let mut reused_archive = cached_pair_archive;
         let mut verified_bytecode = None;
         let mut stored_bytecode = None;
+        let mut verified_bytecode_file = None;
         let (dmb_bytes, mut rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
@@ -3117,7 +3119,7 @@ impl Coordinator {
                         let serialization=match &dmb {
                             PreparedImage::Native(image)=>image.reference_validated(&mut self.serialization_validation)
                                 .and_then(|image|VerifiedBytecode::serialize_chunks(&image,&mut self.serialization_wire,&self.blobs.root)),
-                            PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_chunks(image,&mut self.serialization_wire,&self.blobs.root),
+                            PreparedImage::Wire(image)=>VerifiedBytecode::serialize_wire_stored(image,&mut self.serialization_wire,&self.blobs.root),
                         };
                         let (stored, receipt) = match serialization {
                             Ok(value) => value, Err(error) => return failed_internal(error),
@@ -3145,7 +3147,7 @@ impl Coordinator {
                 let mut checkpoint_size = None;
                 let mut write_pair = || -> io::Result<()> {
                     let dmb_digest = if let Some(stored) = &stored_bytecode {
-                        self.blobs.put_dmb_pages(stored)?
+                        {let file=self.blobs.put_dmb_pages(stored)?;let digest=file.digest().to_owned();verified_bytecode_file=Some(file);digest}
                     } else { self.blobs.put("project-dmb-v1", &dmb_bytes)? };
                     let rsc_digest = if let Some(archive) = &reused_archive {
                         archive.digest().to_owned()
@@ -3261,9 +3263,10 @@ impl Coordinator {
                 .map(|generation| generation.rsc);
             let publish_started = Instant::now();
             let published = if let Some(archive) = &reused_archive {
-                let publication = match (&stored_bytecode, &verified_bytecode) {
-                    (Some(stored), Some(receipt)) => dm_output::generation::publish_generation_with_chunked_bytecode(&root, stored, archive, receipt),
-                    (None, Some(receipt)) => publish_generation_with_verified_bytecode(
+                let publication = match (&verified_bytecode_file, &stored_bytecode, &verified_bytecode) {
+                    (Some(file), _, Some(receipt)) => dm_output::generation::publish_generation_with_verified_dmb_file(&root,file,archive,receipt),
+                    (None, Some(stored), Some(receipt)) => dm_output::generation::publish_generation_with_chunked_bytecode(&root, stored, archive, receipt),
+                    (None, None, Some(receipt)) => publish_generation_with_verified_bytecode(
                         &root, &dmb_bytes, archive, receipt,
                     ),
                     _ => publish_generation_with_archive(&root, &dmb_bytes, archive),

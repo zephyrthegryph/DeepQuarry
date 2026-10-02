@@ -79,6 +79,8 @@ impl<'a> Reader<'a> {
 struct Writer {
     bytes: Vec<u8>,
     pages: Vec<Arc<[u8]>>,
+    sink: Option<Box<dyn FnMut(&[u8])->io::Result<()>>>,
+    sink_error: Option<io::Error>,
     sealed: usize,
     segmented: bool,
     object_size: usize,
@@ -89,7 +91,7 @@ impl Writer {
     fn new(object_size: usize, compatibility_version: u16) -> Self {
         Self {
             bytes: Vec::new(),
-            pages: Vec::new(), sealed: 0, segmented: false,
+            pages: Vec::new(), sink:None, sink_error:None, sealed: 0, segmented: false,
             object_size,
             object_overflow: false,
             compatibility_version,
@@ -99,17 +101,23 @@ impl Writer {
         self.sealed + self.bytes.len()
     }
     fn raw(&mut self, bytes: &[u8]) {
+        if self.sink_error.is_some() {return;}
         self.bytes.extend_from_slice(bytes);
+        if self.sink.is_some() {self.bounded_page();}
     }
     fn seal(&mut self) {
         if self.segmented && !self.bytes.is_empty() {
             self.sealed += self.bytes.len();
-            self.pages.push(std::mem::take(&mut self.bytes).into());
+            let bytes=std::mem::take(&mut self.bytes);
+            if let Some(sink)=&mut self.sink {if self.sink_error.is_none() {if let Err(error)=sink(&bytes) {self.sink_error=Some(error);}}}
+            else {self.pages.push(bytes.into());}
         }
     }
     fn shared(&mut self, bytes: &Arc<[u8]>) {
         if self.segmented && bytes.len() >= 4096 {
-            self.seal(); self.sealed += bytes.len(); self.pages.push(Arc::clone(bytes));
+            self.seal(); self.sealed += bytes.len();
+            if let Some(sink)=&mut self.sink {if self.sink_error.is_none() {if let Err(error)=sink(bytes) {self.sink_error=Some(error);}}}
+            else {self.pages.push(Arc::clone(bytes));}
         } else { self.raw(bytes); }
     }
     fn bounded_page(&mut self) {
@@ -2213,16 +2221,23 @@ impl Dmb {
         self.serialize_chunks(references_proven, wire_cache.take()).map(ChunkedDmb::into_bytes)
     }
     fn serialize_chunks(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<ChunkedDmb> {
-        self.serialize_chunks_source(references_proven,wire_cache.take(),None)
+        self.serialize_chunks_source(references_proven,wire_cache.take(),None,None)
     }
     /// Physical encoder boundary for a separately certified list-object table.
     /// The caller must validate the metadata together with this exact source.
     /// Logical readers continue using Dmb; disk-backed images use a distinct
     /// owner with explicit fallible materialization.
     pub fn encode_metadata_with_lists(&self,lists:&dyn WireListSource,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
-        self.serialize_chunks_source(true,Some(cache),Some(lists))
+        self.serialize_chunks_source(true,Some(cache),Some(lists),None)
     }
-    fn serialize_chunks_source(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>, lists:Option<&dyn WireListSource>) -> io::Result<ChunkedDmb> {
+    /// Bounded streaming encoding; sink errors abort publication. No page bytes
+    /// are retained after the sink consumes them.
+    pub fn encode_metadata_to_sink(&self,lists:&dyn WireListSource,cache:&mut DmbWireCache,
+        sink:Box<dyn FnMut(&[u8])->io::Result<()>>)->io::Result<(usize,Vec<std::ops::Range<usize>>)> {
+        let encoded=self.serialize_chunks_source(true,Some(cache),Some(lists),Some(sink))?;
+        Ok((encoded.len,encoded.list_spans))
+    }
+    fn serialize_chunks_source(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>, lists:Option<&dyn WireListSource>,sink:Option<Box<dyn FnMut(&[u8])->io::Result<()>>>) -> io::Result<ChunkedDmb> {
         let list_count=lists.map_or(self.lists.len(),|source|source.len());
         let list_len=|id:usize|->io::Result<usize> {match lists {Some(source)=>source.word_count(id),None=>Ok(self.lists[id].len())}};
         if self.header.version_line != b"world bin v516\n"
@@ -2304,6 +2319,7 @@ impl Dmb {
             compatibility_version(&self.header.compatibility_line)?,
         );
         w.segmented = true;
+        w.sink=sink;
         // Reserve once for the mandatory new dense generation. The upper bound
         // avoids geometric reallocations/copies while remaining close to the
         // actual image (only optional fixed-size record fields are overestimated).
@@ -2461,6 +2477,7 @@ impl Dmb {
         if let Some(cache) = wire_cache.as_deref_mut() { cache.finish_generation(); }
         let len = w.at();
         w.seal();
+        if let Some(error)=w.sink_error {return Err(error);}
         Ok(ChunkedDmb { pages: w.pages, list_spans, len })
     }
 }

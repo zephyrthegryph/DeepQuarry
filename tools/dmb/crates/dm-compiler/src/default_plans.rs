@@ -292,7 +292,7 @@ pub(super) struct OwnerDeclarationPlan {
 }
 #[derive(Default)]
 struct OwnerCache {
-    entries: BTreeMap<String, Arc<OwnerDeclarationPlan>>,
+    entries: BTreeMap<String, (Arc<OwnerDeclarationPlan>,usize)>,
     bytes: usize,
     root: Option<std::path::PathBuf>,
     store: Option<dm_store::Store>,
@@ -326,7 +326,7 @@ fn owner_key(item:&Item)->String {
 }
 pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
     let key=owner_key(item);
-    if let Some(plan) = owner_cache().lock().unwrap_or_else(|e|e.into_inner()).entries.get(&key).cloned() { return plan; }
+    if let Some(plan) = owner_cache().lock().unwrap_or_else(|e|e.into_inner()).entries.get(&key).map(|(plan,_)|Arc::clone(plan)) { return plan; }
     if let Some(plan)=restore_owner(&key) {return plan;}
     let mut plan = OwnerDeclarationPlan { identity:key.clone(), semantic_identity:String::new(), expressions:Vec::new(), explicit_parent: None, const_indexes: Vec::new(), mutable_names: HashSet::new(), field_types: HashMap::new() };
     for (index, child) in item.children.iter().enumerate() {
@@ -360,16 +360,9 @@ pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
     plan.semantic_identity=format!("{:x}",semantic.finalize());
     let plan = Arc::new(plan);
     if let Ok(bytes) = serde_json::to_vec(plan.as_ref()) {
-        let charge = bytes.len().saturating_mul(3) + key.len() + 128;
         let mut cache = owner_cache().lock().unwrap_or_else(|e|e.into_inner());
-        if charge <= 16*1024*1024 {
-            while cache.bytes.saturating_add(charge) > 16*1024*1024 {
-                let Some(old) = cache.entries.keys().next().cloned() else {break};
-                if let Some(value) = cache.entries.remove(&old) {
-                    cache.bytes = cache.bytes.saturating_sub(serde_json::to_vec(value.as_ref()).map_or(0,|b|b.len()*3)+old.len()+128);
-                }
-            }
-            if cache.entries.insert(key.clone(), Arc::clone(&plan)).is_none() {cache.bytes+=charge;}
+        retain_owner(&mut cache,key.clone(),Arc::clone(&plan),bytes.len());
+        if bytes.len()<=1024*1024 {
             cache.pending_bytes+=bytes.len();
             if let Some(old)=cache.pending.insert(key, bytes) {cache.pending_bytes=cache.pending_bytes.saturating_sub(old.len());}
         }
@@ -505,13 +498,14 @@ fn restore_default(key:&str)->Option<Arc<DeclarationDefaultPlan>> {
     retain_default(&mut cache,key.to_owned(),Arc::clone(&plan));Some(plan)
 }
 fn retain_owner(cache:&mut OwnerCache,key:String,plan:Arc<OwnerDeclarationPlan>,wire_size:usize) {
-    let size=wire_size*3+key.len()+128;if size>16*1024*1024 {return;}
-    if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(serde_json::to_vec(old.as_ref()).map_or(0,|bytes|bytes.len()*3)+key.len()+128);}
+    let size=wire_size.saturating_mul(3).saturating_add(key.len()+128);
+    if size>16*1024*1024 {return;}
+    if let Some((_,old_charge))=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(old_charge);}
     while cache.bytes.saturating_add(size)>16*1024*1024 {
         let Some(key)=cache.entries.keys().next().cloned() else {break;};
-        if let Some(old)=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(serde_json::to_vec(old.as_ref()).map_or(0,|bytes|bytes.len()*3)+key.len()+128);}
+        if let Some((_,old_charge))=cache.entries.remove(&key) {cache.bytes=cache.bytes.saturating_sub(old_charge);}
     }
-    cache.bytes+=size;cache.entries.insert(key,plan);
+    cache.bytes+=size;cache.entries.insert(key,(plan,size));
 }
 fn hydrate_owners(items:&[&Item]) {
     let mut cache=owner_cache().lock().unwrap_or_else(|error|error.into_inner());
