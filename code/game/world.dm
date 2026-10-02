@@ -373,8 +373,11 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	TGS_TOPIC
 	log_topic("\"[T]\", from:[addr], master:[master], key:[key]")
 
+	// The localhost diagnostic probes below answer only to 127.0.0.1, and also need key=<DIAG_TOPIC_KEY> when that's set.
+	var/diag = diag_topic_command(T, addr)
+
 	// Opt-in MC liveness probe for hung-server triage; localhost only.
-	if (T == "mcdiag" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "mcdiag")
 		var/list/d = list(
 			"world_time" = world.time, "tick_usage" = world.tick_usage, "cpu" = world.cpu, "sleep_offline" = world.sleep_offline, // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 			"kernel_ticks" = kernel().ticks, "kernel_last_tick" = kernel().last_tick, "kernel_phase_faults" = kernel().phase_faults,
@@ -386,7 +389,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		return json_encode(d)
 	// Localhost-only census of machines with step work on the machine pipeline, by type, with how
 	// many of them the step stage's idle rule would settle (watch armed / no work).
-	if (T == "omsteps" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "omsteps")
 		var/list/active_by_type = list()
 		var/list/settleable_by_type = list()
 		var/active = 0
@@ -402,7 +405,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 	// Localhost-only census of the OM deadline wheel: entries per bucket, how many are still live
 	// (their generation matches the rec's armed deadline) and which owner types/behaviours hold them.
-	if (T == "omdeadlines" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "omdeadlines")
 		var/datum/om/scheduler/sched = om_scheduler()
 		var/datum/om/registry/reg = om_registry()
 		var/total = 0
@@ -436,7 +439,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 
 	// Localhost-only census of light source updates by source atom type since the last call
 	// (SSlighting.fire()), top 40; the call resets the counts.
-	if (T == "lightcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "lightcensus")
 		var/list/census = GLOB.lighting_update_census.Copy()
 		GLOB.lighting_update_census.Cut()
 		var/list/rows = list()
@@ -448,7 +451,7 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 		return json_encode(list("world_time" = world.time, "queued" = length(SSlighting.sources_queue), "by_type" = rows)) // ALLOW(sys_world_time_write): reports the current clock in a diagnostic reply, not a stored time
 
 	// Localhost-only census of qdel() by type since boot (SSgarbage's per-type stats), top 40.
-	if (T == "qdelcensus" && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
+	if (diag == "qdelcensus")
 		var/list/rows = list()
 		for(var/path in SSgarbage.items)
 			var/datum/qdel_item/item = SSgarbage.items[path]
@@ -461,15 +464,15 @@ GLOBAL_VAR_INIT(world_topic_spam_protect_time, world.timeofday)
 	// Localhost-only on-demand proc profiling for live triage: mcprof_start begins a BYOND proc +
 	// sendmaps profile; mcprof_dump writes both as JSON into the round log dir (logged with their
 	// paths) and returns the top 40 procs by real time as JSON; mcprof_stop ends collection.
-	if ((T == "mcprof_start" || T == "mcprof_dump" || T == "mcprof_stop") && (addr == "127.0.0.1" || findtext(addr, "127.0.0.1:") == 1))
-		if(T == "mcprof_start")
+	if (diag == "mcprof_start" || diag == "mcprof_dump" || diag == "mcprof_stop")
+		if(diag == "mcprof_start")
 			world.Profile(PROFILE_CLEAR)
 			world.Profile(PROFILE_CLEAR, type = "sendmaps")
 			world.Profile(PROFILE_START)
 			world.Profile(PROFILE_START, type = "sendmaps")
 			log_runtime("MCPROF: started at [world.time]")
 			return "started"
-		if(T == "mcprof_stop")
+		if(diag == "mcprof_stop")
 			world.Profile(PROFILE_STOP)
 			world.Profile(PROFILE_STOP, type = "sendmaps")
 			log_runtime("MCPROF: stopped at [world.time]")
@@ -697,13 +700,22 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 /proc/world_next_tick(list/spec)
 	GLOB.world_next_tick_callbacks += list(spec)
 
+/// The last DM code of every tick: the MC and every sleeping proc due this tick have run, the map send
+/// has not. The tick frame (metrics_capture.dm) splits the tick's time at the MC here.
 /world/Tick()
-	if(!GLOB || !length(GLOB.world_next_tick_callbacks))
+	if(!GLOB)
 		return
+	var/datum/tick_frame/frame = GLOB.tick_frame
+	frame?.frame_end(TICK_USAGE)
+	if(!length(GLOB.world_next_tick_callbacks))
+		return
+	var/started = TICK_USAGE
 	var/list/due = GLOB.world_next_tick_callbacks
 	GLOB.world_next_tick_callbacks = list()
 	for(var/list/spec as anything in due)
 		om_run_async(spec)
+	if(frame)
+		frame.callbacks += max(TICK_USAGE - started, 0)
 
 /world/Reboot(reason = 0, fast_track = FALSE)
 	if (reason || fast_track) //special reboot, do none of the normal stuff
@@ -919,3 +931,16 @@ GLOBAL_LIST_EMPTY(world_next_tick_callbacks)
 
 /proc/cmp_mcprof_real(list/a, list/b)
 	return b["real"] - a["real"]
+
+/// The diagnostic probe a world/Topic call asks for ("mcdiag", "omsteps", ...), or null unless it
+/// comes from localhost and, when DIAG_TOPIC_KEY is set, carries key=<it>.
+/proc/diag_topic_command(T, addr)
+	if(addr != "127.0.0.1" && findtext(addr, "127.0.0.1:") != 1)
+		return null
+	var/list/topic_params = params2list(T)
+	if(!length(topic_params))
+		return null
+	var/required_key = config?.entries ? CONFIG_GET(string/diag_topic_key) : null
+	if(required_key && topic_params["key"] != required_key)
+		return null
+	return topic_params[1]

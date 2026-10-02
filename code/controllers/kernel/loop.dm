@@ -116,6 +116,7 @@
 		Master.perf_tick_top_name = "None"
 		Master.perf_tick_top_usage = 0
 		Master.perf_tick_peak_usage = starting_tick_usage
+		Master.perf_tick_start_usage = starting_tick_usage
 		LAZYCLEARLIST(Master.perf_tick_breakdown)
 
 		if (init_stage != Master.init_stage_completed)

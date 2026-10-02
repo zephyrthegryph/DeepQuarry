@@ -2975,10 +2975,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/list/old_breakdown = Master.perf_tick_breakdown
 	Master.perf_outliers = list()
 	Master.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
+	var/old_start_usage = Master.perf_tick_start_usage
+	Master.perf_tick_start_usage = 5
 	Master.record_performance_tick(125)
+	Master.perf_tick_start_usage = old_start_usage
 	var/list/outlier = Master.perf_outliers[1]
 	TEST_ASSERT_EQUAL(outlier["overrun"], 25, "MC outlier recorded an incorrect overrun")
-	TEST_ASSERT_EQUAL(length(outlier["breakdown"]), 3, "MC outlier omitted attributed or external tick usage")
+	var/breakdown_total = 0
+	for(var/list/part as anything in outlier["breakdown"])
+		breakdown_total += part["usage"]
+	TEST_ASSERT(abs(breakdown_total - 125) < 0.01, "MC outlier's breakdown does not add up to its usage: [json_encode(outlier["breakdown"])]")
 	Master.perf_tick_usage = old_usage
 	Master.perf_tick_realtime = old_realtime
 	Master.perf_outliers = old_outliers

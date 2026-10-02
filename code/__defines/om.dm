@@ -375,6 +375,10 @@
 /// The entity is being destroyed (destroy transaction phase 4, before links clear).
 #define OM_HOOK_DESTROY 9
 
+/// One entity's step taking more than this (percent of a tick) is noted as the tick's slow step
+/// (/datum/om/scheduler/proc/note_slow_step()), named in the MC's overrun record.
+#define OM_SLOW_STEP_USAGE 100
+
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
 // #define OM_PROFILE_CALLS
 // Uncomment (or pass -DOM_DERIVED_AUDIT) to recompute aggregates on every read and compare.

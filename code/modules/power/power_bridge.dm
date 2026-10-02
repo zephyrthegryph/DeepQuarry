@@ -35,6 +35,10 @@
 	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
 	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	/// The APCs and SMES the current power step still has to poll, while a budgeted step is yielded between
+	/// ticks; null when no poll is in progress (poll_power_storage()).
+	var/list/power_poll_queue
+	var/power_poll_index = 1
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
@@ -62,24 +66,8 @@
 /// publishes its results to DM's cache (`power_grids`) and drives the
 /// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
 /// itself simulated in Rust.
-/datum/world_service/machines/proc/process_power()
-	power_flush_areas()
-	vg_power_commit()
-	for(var/id in power_grids)
-		if(!power_grid_refresh(id))
-			power_grids -= id
-			continue
-		power_grid_sync_problem(id)
-	// Every power machine's `power_region` is polled here, not pushed --
-	// a deferred `connect_to_network(FALSE)` (map load, and every
-	// `power_autoconnect()`) relies on this to eventually resolve.
-	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
-		if(!QDELETED(machine))
-			machine.power_refresh_network()
-	for(var/obj/machinery/power/apc/apc as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		apc.power_poll()
-	for(var/obj/machinery/power/smes/storage as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		storage.power_poll()
+/// The rest of the power step: the engineered-conductor overlays.
+/datum/world_service/machines/proc/process_power_finish()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
 		if(QDELETED(cable))
 			power_material_cables -= cable

@@ -15,3 +15,5 @@
 	var/start = TICK_USAGE_REAL
 	native_system().kernel_frame(elapsed, budget)
 	sched.world_last_ms = TICK_DELTA_TO_MS(TICK_USAGE_REAL - start)
+	// The tick meter's om_native system is the Rust world step: charge the frame to it.
+	km_meter().charge(KM_SYS_OM_NATIVE, sched.world_last_ms)

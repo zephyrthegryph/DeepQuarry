@@ -1,0 +1,22 @@
+{
+	"name": "dq-admin-viewer",
+	"private": true,
+	"type": "module",
+	"scripts": {
+		"start": "bun src/server.ts",
+		"ingest": "bun src/ingest.ts",
+		"mint": "bun src/mint.ts",
+		"maintain": "bun src/maintenance.ts",
+		"typecheck": "tsc --noEmit -p ."
+	},
+	"dependencies": {
+		"react": "^19.2.6",
+		"react-dom": "^19.2.6"
+	},
+	"devDependencies": {
+		"@types/bun": "latest",
+		"@types/react": "^19.2.2",
+		"@types/react-dom": "^19.2.2",
+		"typescript": "^6.0.3"
+	}
+}

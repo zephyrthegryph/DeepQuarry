@@ -267,6 +267,13 @@ Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`
 - **Loot and map resolvers.** Spawn tables are `DECLARE_LOOT` rolled by `loot_spawn()`; load-time
   map atoms use `MAP_RESOLVER`. Both are slated to move under capability entries; don't add new
   hand-rolled spawn code in the meantime.
+- **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
+  every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
+  (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through
+  `METRICS_EVENT()`; overruns are attributed to the tick meter's systems and to time outside the MC,
+  and tick spikes capture a short profile. To measure something new, add a `/datum/metrics_source`;
+  don't write metrics SQL elsewhere. `tools/admin-viewer/` (Bun + React) is the staff UI, opened with
+  the signed-link **Admin Viewer** verbs; see its README.
 - **Hardening already landed.** Parameterized SQL, panic-safe declared Verdigris binds, tgui
   Rules-of-Hooks/XSS fixes, and a falsifiable unit-test suite.
 

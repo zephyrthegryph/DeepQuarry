@@ -207,6 +207,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	//otherwise round_start_time would be 0 for the signals
 	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
+	GLOB.metrics_service.round_started()
 
 	// Spawn randomized items
 	spawn_multi_point_items()
