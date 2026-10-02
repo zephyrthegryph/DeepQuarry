@@ -30,7 +30,7 @@
 			return
 		var/obj/item/smallDelivery/P = new /obj/item/smallDelivery(get_turf(O.loc))	//Aaannd wrap it up!
 		if(!own_set(P, nameof(P.wrapped), O, user = user, into = TRUE)) // out of a hand or bag: its HUD clears
-			qdel(P)
+			qdel(P) // ALLOW(lifecycle): discards the just-built package after own_set() refused the item: it never held anything and has no holder to take it out of
 			return
 		P.w_class = O.w_class
 		var/i = round(O.w_class)

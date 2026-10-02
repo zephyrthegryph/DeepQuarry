@@ -102,7 +102,6 @@ init_reagents	code/modules/food/kitchen/microwave.dm	create_reagents(100)
 init_reagents	code/modules/hydroponics/grown.dm	reagents.add_reagent(rid,max(1,rtotal),data)
 init_reagents	code/modules/hydroponics/grown_inedible.dm	reagents.add_reagent(rid,max(1,rtotal))
 init_reagents	code/modules/integrated_electronics/subtypes/reagents.dm	create_reagents(volume)
-init_reagents	code/modules/material_science/material_machines.dm	create_reagents(200)
 init_reagents	code/modules/mob/living/carbon/brain/brain.dm	create_reagents(1000)
 init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	create_reagents(reagent_amount)
 init_reagents	code/modules/projectiles/guns/projectile/dartgun.dm	B.reagents.add_reagent(chem, 60)
@@ -285,7 +284,6 @@ init_visuals	code/modules/food/food/snacks.dm	icon_state = pick(color_options)
 init_visuals	code/modules/food/food/snacks.dm	icon_state = pick(color_options)
 init_visuals	code/modules/food/food/superfoods.dm	icon_state = "chaoscake_slice-[i]"
 init_visuals	code/modules/food/glass/bottle.dm	icon_state = "bottle-[rand(1,4)]"
-init_visuals	code/modules/food/kitchen/gibber.dm	add_overlay("grjam")
 init_visuals	code/modules/games/dice.dm	icon_state = "[name][rand(1,sides)]"
 init_visuals	code/modules/generated_station/generated_station_utility_topology.dm	icon_state = generated_icon_state
 init_visuals	code/modules/holodeck/HolodeckObjects.dm	add_overlay("asteroid[rand(0,9)]")
@@ -373,8 +371,6 @@ init_new_child	code/game/machinery/camera/camera.dm	own_set(src, nameof(assembly
 init_new_child	code/game/machinery/computer/ai_core.dm	own_set(src, nameof(laws), new using_map.default_law_type)
 init_new_child	code/game/machinery/computer/camera.dm	own_set(src, nameof(camera), new camera_datum_type(src, network))
 init_new_child	code/game/machinery/computer/station_alert.dm	own_set(src, nameof(alarm_monitor), new monitor_type(src))
-init_new_child	code/game/machinery/doors/airlock.dm	own_set(src, nameof(wires), new/datum/wires/airlock/secure(src))
-init_new_child	code/game/machinery/doors/airlock.dm	own_set(src, nameof(wires), new/datum/wires/airlock(src))
 init_new_child	code/game/machinery/embedded_controller/airlock_docking_controller.dm	own_set(src, nameof(program), new/datum/embedded_program/docking/airlock(src, airlock_program))
 init_new_child	code/game/machinery/embedded_controller/embedded_controller_base.dm	own_set(src, nameof(program), new program(src))
 init_new_child	code/game/machinery/exonet_node.dm	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
@@ -489,7 +485,6 @@ init_new_child	code/modules/modular_computers/NTNet/NTNet_relay.dm	own_set(src, 
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	own_set(src, nameof(battery), new cell_type(src))
 init_new_child	code/modules/modular_computers/hardware/battery_module.dm	own_set(src, nameof(battery), new/obj/item/cell(src))
 init_new_child	code/modules/multiz/hoist.dm	own_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
-init_new_child	code/modules/nifsoft/nif_softshop.dm	own_set(src, nameof(wires), new /datum/wires/vending/no_contraband(src)) //These wires can't be hacked for contraband.
 init_new_child	code/modules/nifsoft/nif_softshop.dm	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 init_new_child	code/modules/organs/internal/augment/armmounted.dm	own_add(src, nameof(synths), new datumpath)
 init_new_child	code/modules/organs/internal/augment/bio.dm	own_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer/advanced)
@@ -497,7 +492,6 @@ init_new_child	code/modules/organs/subtypes/machine.dm	own_set(src, nameof(store
 init_new_child	code/modules/overmap/overmap_object.dm	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 init_new_child	code/modules/overmap/overmap_object.dm	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
 init_new_child	code/modules/paperwork/paperplane.dm	own_set(src, nameof(internalPaper), new /obj/item/paper(src))
-init_new_child	code/modules/power/apc.dm	own_set(src, nameof(icon_renderer), new /datum/apc_icon_renderer())
 init_new_child	code/modules/power/generator.dm	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 init_new_child	code/modules/power/smes.dm	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 init_new_child	code/modules/power/smes_construction.dm	own_add(src, nameof(component_parts), new /obj/item/smes_coil/weak(src))

@@ -48,8 +48,7 @@
 	if (trait_prefs?["pass_table"] || !trait_prefs)
 		H.pass_flags |= PASSTABLE
 
-/datum/trait/neutral/xenomorph_hunter/granted_verbs()
-	return list(/mob/living/proc/toggle_pass_table) // TGPanel
+TYPE_TABLE(/datum/trait/neutral/xenomorph_hunter, granted_verb_list, list(/mob/living/proc/toggle_pass_table)) // TGPanel
 
 /datum/trait/neutral/xenomorph_queen
 	sort = TRAIT_SORT_SPECIES

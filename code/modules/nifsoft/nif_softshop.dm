@@ -25,7 +25,7 @@
 	. = replace(., /datum/capability/wires, cap_wires(/datum/wires/vending/no_contraband)) //These wires can't be hacked for contraband.
 	. = replace(., /datum/capability/emag, cap_emag(say = "You short out %T%'s access lock & stock restrictions.", effect = PROC_REF(on_emag), mode = EMAG_REPEATABLE)) //Yeees, YEEES! Give me that black market tech.
 
-/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	. = ..()
 	.["chargesMoney"] = TRUE
 

@@ -77,7 +77,7 @@
 	if(latency_class < LATENCY_L3 || !enabled || !shedding)
 		return TRUE
 	if(world.time - (floor_pass[key] || -1e9) >= KERNEL_SHED_FLOOR)
-		floor_pass[key] = world.time
+		floor_pass[key] = world.time // ALLOW(sys_world_time_write): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 		return TRUE
 	shed_by_class[latency_class + 1]++
 	return FALSE

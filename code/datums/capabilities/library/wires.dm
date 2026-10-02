@@ -54,7 +54,7 @@
 	var/datum/wires/W = holder.cap_data?[key]
 	if(W)
 		LAZYREMOVE(holder.cap_data, key)
-		qdel(W)
+		qdel(W) // ALLOW(lifecycle): a wires datum is a plain datum held by the capability, not an atom; the lifecycle verbs only take atoms
 
 /proc/cap_wires_open(atom/holder, mob/user, obj/item/held)
 	var/datum/wires/W = wires_of(holder)

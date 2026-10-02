@@ -68,7 +68,7 @@
 /datum/capability/proc/adopt_entry(datum/capability/entry/wrapper, id, category, empty_handed = FALSE, pass_cap = FALSE)
 	var/datum/interaction/capability/E = wrapper.entry
 	E.cap = src
-	wrapper.entry = null
+	wrapper.entry = null // ALLOW(ownership): adopt_entry unwraps the wrapper's entry exactly once at construction; the wrapper is a throwaway holder, not an owner
 	if(id)
 		E.id = id
 	if(category)

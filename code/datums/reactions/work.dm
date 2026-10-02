@@ -191,7 +191,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	return flags
 
 /// type -> whether an atom of that type is enrolled at init (cache; cleared by rx_boot_register()).
-GLOBAL_LIST_EMPTY(rx_enrol_cache)
+GLOBAL_LIST_EMPTY(rx_enrol_cache) // ALLOW(cache): a per-type enrolment flag memo, filled on first use, written in place and cleared by rx_boot_register()
 
 /// Adds `type` to the boot list (a type whose reactions() the generator did not see, e.g. a test fixture).
 /proc/rx_boot_register(type, kinds = RXB_EVERY)

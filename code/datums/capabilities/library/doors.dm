@@ -161,9 +161,11 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
 		. += E
 
+GLOBAL_LIST_INIT(cap_examine_welded, list("It has been welded shut."))
+
 /datum/capability/weld_shut/examine(atom/holder, mob/user)
 	if(is_welded(holder))
-		return list("It has been welded shut.")
+		return GLOB.cap_examine_welded
 	return null
 
 /datum/capability/weld_shut/draw(atom/holder, datum/look/look)
@@ -273,9 +275,11 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/set_emergency_access(atom/A, on)
 	return cap_set(A, CAP_EMERGENCY_ACCESS, on)
 
+GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engaged."))
+
 /datum/capability/emergency_access/examine(atom/holder, mob/user)
 	if(emergency_access_on(holder))
-		return list("Its emergency access mode is engaged.")
+		return GLOB.cap_examine_emergency
 	return null
 
 /datum/capability/emergency_access/draw(atom/holder, datum/look/look)
@@ -332,7 +336,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/dealt = isnull(amount) ? damage : amount
 	. = FALSE
 	for(var/turf/T in holder.locs)
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(AM.airlock_crush(dealt))
 				holder.take_damage(dealt, BRUTE, MELEE)
 				. = TRUE
@@ -443,16 +447,13 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/cap_ai_control()
 	return new /datum/capability/ai_control
 
-/// The AiAirlock actions that are logged (cap_ai_control()'s ui_logged()).
-GLOBAL_LIST_INIT(cap_ai_control_logged, list(
+/// The AiAirlock actions that are logged (read through ui_logged()).
+TYPE_TABLE(/datum/capability/ai_control, ui_logged_actions, list(
 	"shock_temp" = LOG_GAME,
 	"shock_perm" = LOG_GAME,
 	"bolt_toggle" = LOG_GAME,
 	"emergency_toggle" = LOG_GAME,
 ))
-
-/datum/capability/ai_control/ui_logged()
-	return GLOB.cap_ai_control_logged
 
 /datum/capability/ai_control/proc/act_disrupt_main(mob/user, obj/machinery/door/airlock/holder)
 	if(holder.main_power_lost_until)

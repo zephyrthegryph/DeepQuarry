@@ -20,9 +20,11 @@
 /datum/capability/panel/interactions(atom/holder)
 	return list(adopt_entry(lib_op("Open maintenance panel", GLOBAL_PROC_REF(cap_panel_toggle), OP_SHAPE_TOOL, using = tool_quality, key = "open_maintenance_panel", delay = delay, priority = OP_PRIORITY_PART, name_proc = GLOBAL_PROC_REF(cap_panel_name)), id = "panel:[tool_quality]"))
 
+GLOBAL_LIST_INIT(cap_examine_panel_open, list("The maintenance panel is open."))
+
 /datum/capability/panel/examine(atom/holder, mob/user)
 	if(panel_is_open(holder))
-		return list("The maintenance panel is open.")
+		return GLOB.cap_examine_panel_open
 	return null
 
 /datum/capability/panel/draw(atom/holder, datum/look/look)

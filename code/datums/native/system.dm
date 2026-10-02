@@ -320,3 +320,27 @@ GLOBAL_LIST_EMPTY(native_key_names)
 	var/datum/system/native/N = native_system()
 	if(entity && N.read_cache)
 		N.read_cache -= num2text(entity, 12)
+
+// ---- the step length (GRANT_CADENCE grants reach Rust here; the grant holder is code/datums/om/cadence.dm) ----
+
+/// The step length last handed to Rust (vg_world_set_dt), seconds.
+/datum/system/native/var/current_dt = CADENCE_BASE_DT
+/// Holds the GRANT_CADENCE grants for the gas step, created on first use.
+/datum/system/native/var/datum/step_cadence/native/step_cadence
+
+/// The cadence datum to hold GRANT_CADENCE grants on.
+/datum/system/native/proc/get_step_cadence()
+	RETURN_TYPE(/datum/step_cadence)
+	if(!step_cadence)
+		step_cadence = new // ALLOW(ownership): the native system makes its grant holder lazily and keeps it for the whole run; it is a helper the system never hands out
+	return step_cadence
+
+/// Runs the world at the shortest step any cadence grant names.
+/datum/system/native/proc/apply_step_cadence()
+	set_step_dt(get_step_cadence().dt_seconds())
+
+/// Sets the step length: Rust integrates it from the next step (the native frame runs every tick either way).
+/datum/system/native/proc/set_step_dt(dt)
+	if(dt == current_dt)
+		return
+	current_dt = vg_world_set_dt(dt)

@@ -101,11 +101,11 @@
 	var/id = mixture ? mixture.arena_id() : null
 	if(id == armed_id && (watch || isnull(id)))
 		return
-	own_clear(src, "watch", OWN_DELETE)
+	own_clear(src, nameof(watch), OWN_DELETE)
 	armed_id = id
 	if(!mixture)
 		return
-	own_set(src, "watch", om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
+	own_set(src, nameof(watch), om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
 
 /datum/capability/watches_gas/on_holder_init(atom/holder, mapload)
 	var/datum/gas_watch_state/state = cap_data(holder, src)
@@ -114,7 +114,7 @@
 /datum/capability/watches_gas/on_holder_destroy(atom/holder)
 	var/datum/gas_watch_state/state = holder.cap_data?[key]
 	if(state)
-		own_clear(state, "watch", OWN_DELETE)
+		own_clear(state, nameof(/datum/gas_watch_state::watch), OWN_DELETE)
 		state.armed_id = null
 
 /// A holder's gas ports were pointed at other mixtures (atmos_air_set): re-arm each of its gas watches.

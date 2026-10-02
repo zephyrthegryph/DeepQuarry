@@ -48,11 +48,10 @@
 /datum/capability/proc/draw(atom/holder, datum/look/look)
 	return
 
-/// Action -> LOG_GAME / LOG_ADMIN for this capability's own act_<action> procs. A capability owns
-/// UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
-/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself.
-/datum/capability/ui_logged()
-	return null
+/// A capability owns UI actions by defining `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)`:
+/// the dispatcher finds it on the holder's capabilities when the holder has no act_<action> itself. The
+/// actions it logs (action -> LOG_GAME / LOG_ADMIN) are its type table, read through ui_logged():
+/// TYPE_TABLE(/datum/capability/<x>, ui_logged_actions, list("<action>" = LOG_GAME)).
 
 /// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
 /// data["caps"][ui_key()] (caps_ui_data()).

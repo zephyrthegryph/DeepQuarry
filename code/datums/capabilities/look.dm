@@ -208,7 +208,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
 /proc/look_image(icon, name)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): images shared by icon file and name, built once on first use and never written after
 	var/key = "[icon]:[name]"
 	var/image/I = cache[key]
 	if(!I)
@@ -252,7 +252,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	touched = TRUE
 	if(!when || !thing)
 		return
-	LAZYADD(vis, thing)
+	LAZYADD(vis, thing) // ALLOW(ownership): vis is the look's per-draw scratch list of shown atoms, rebuilt on every draw; it is not a relation
 
 /// The atom's light while this look holds (the APC's screen glow, a lit airlock). A look that stops
 /// setting it turns the light off: draw() never calls set_light() itself (that would be a side effect).

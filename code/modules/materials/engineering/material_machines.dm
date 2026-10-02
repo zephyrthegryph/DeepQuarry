@@ -39,7 +39,7 @@
 		return null
 	var/amount = old_stock.get_amount()
 	var/obj/item/stack/material/processed_alloy/replacement = processed_spawn_stack(get_turf(location || old_stock), new_batch, amount)
-	qdel(old_stock)
+	qdel(old_stock) // ALLOW(lifecycle): the replaced stack is deleted once its successor stack is built and placed; replace_with() would build a second successor
 	return replacement
 
 /obj/machinery/material_furnace
@@ -155,7 +155,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 			chamber_air.merge(charge)
 		else
 			tank.air_contents.merge(charge)
-		qdel(charge)
+		qdel(charge) // ALLOW(lifecycle): a gas mixture is a plain arena-handle datum with no holder slot; the lifecycle verbs only take atoms
 		act_message(user, src, others = span_notice("%U% transfers gas [from_tank ? "from [tank] into" : "from %T% into"] the furnace chamber."))
 	return TRUE
 
@@ -259,7 +259,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		if(istype(existing_stock) && istype(existing_stock.material, /datum/material/processed_alloy))
 			heat_treatment = TRUE
 			batch = existing_stock.physical_batch().copy_batch()
-			qdel(existing_stock)
+			qdel(existing_stock) // ALLOW(lifecycle): the stock stack is deleted once its batch was copied for heat treatment; the batch carries what mattered
 	if(!batch)
 		batch = new
 	for(var/obj/item/stack/material/stock as anything in feedstock)
@@ -275,10 +275,10 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 	own_take_all(src, nameof(feedstock))
 	for(var/obj/item/ore/coal in carbon_feed)
 		batch.add_additive("carbon", 4, 0.5, MATERIAL_COST_CHEMICALS)
-		qdel(coal)
+		qdel(coal) // ALLOW(lifecycle): the ore burns up as furnace fuel; it leaves the owned feed list right after
 	own_take_all(src, nameof(carbon_feed))
 	if(!batch.amount)
-		qdel(batch)
+		qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		return
 	process_chemistry(batch)
 	apply_real_atmosphere(batch)
@@ -294,19 +294,19 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		if(!batch.apply_process(MATERIAL_PROCESS_SOLUTION_TREAT))
 			visible_message(span_warning("[src] could not complete the heat treatment. The stock remains recoverable."))
 			rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, batch.amount))
-			qdel(batch)
+			qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 			return
 	else
 		if(!batch.apply_process(MATERIAL_PROCESS_MELT) || !batch.apply_process(MATERIAL_PROCESS_HOMOGENIZE) || !batch.apply_process(MATERIAL_PROCESS_CAST))
 			visible_message(span_warning("[src] could not fully melt and combine the charge. The material remains recoverable."))
 			rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, batch.amount))
-			qdel(batch)
+			qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 			return
 	rel_set(src, nameof(output_stock), processed_spawn_stack(get_turf(src), batch, max(1, round(batch.amount * batch.yield_fraction))))
 	if(output_stock())
 		output_stock().forceMove(src)
 	visible_message(span_notice("[src] finishes firing. The completed alloy is ready to collect."))
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 
 /obj/machinery/material_furnace/proc/process_chemistry(datum/material_batch/batch)
 	if(!reagents?.total_volume)
@@ -390,12 +390,12 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		var/datum/material_batch/batch = stock().physical_batch().copy_batch()
 		if(!batch.apply_process(MATERIAL_PROCESS_FORGE))
 			to_chat(user, span_warning("The stock is outside its forging range; heat it in the alloy furnace first."))
-			qdel(batch)
+			qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock(), batch, src)
 		rel_set(src, nameof(stock), replacement)
 		stock().forceMove(src)
-		qdel(batch)
+		qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		act_message(user, null, others = span_notice("%U% works the alloy under the hammer, refining its shape and internal structure."))
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -434,7 +434,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 	var/required_medium = max(2, stock.get_amount() * 2)
 	if(reagents.total_volume < required_medium)
 		to_chat(user, span_warning("Treating [stock.get_amount()] sheets requires at least [required_medium] units of medium."))
-		qdel(batch)
+		qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		return INTERACTION_HANDLED_PASS
 	var/acid = reagents.get_reagent_amount(REAGENT_ID_SACID) + reagents.get_reagent_amount(REAGENT_ID_PACID)
 	var/process_succeeded
@@ -452,12 +452,12 @@ EXTEND_INTERACTIONS(/obj/structure/bed/bath/material_treatment, INTERACT_INSERT(
 		process_description = "[quench_option]-quenches"
 	if(!process_succeeded)
 		to_chat(user, span_warning("The stock is not hot and solution-treated enough to quench. Heat-treat it in the alloy furnace first."))
-		qdel(batch)
+		qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 		return INTERACTION_HANDLED_PASS
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, user.drop_location())
 	user.put_in_hands(replacement)
 	reagents.remove_any(required_medium)
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	act_message(user, src, others = span_notice("%U% [process_description] [stock] in %T%."))
 	return INTERACTION_HANDLED_PASS
 
@@ -472,7 +472,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	if(istype(item, /obj/item/slime_extract))
 		var/obj/item/slime_extract/extract = item
 		if(!extract.uses)
-			qdel(batch)
+			qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 			return FALSE
 		var/layer
 		if(istype(extract, /obj/item/slime_extract/blue))
@@ -491,7 +491,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 			layer = MATERIAL_SURFACE_SLIME_BLUESPACE
 		else
 			to_chat(user, span_warning("[extract] cannot form a stable engineering surface on this stock."))
-			qdel(batch)
+			qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 			return FALSE
 		batch.add_surface_layer(layer, 35, "[extract.name] matrix", 4)
 		extract.uses--
@@ -514,7 +514,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	if(changed)
 		var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(src, batch, user.drop_location())
 		user.put_in_hands(replacement)
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	if(changed)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
@@ -544,7 +544,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	if(replacement)
 		replacement.pixel_x = old_pixel_x
 		replacement.pixel_y = old_pixel_y
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return 0
 
 /obj/machinery/particle_smasher/proc/try_material_stock_conditioning()
@@ -565,7 +565,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	batch.recalculate()
 	own_set(src, nameof(target), replace_processed_stack(stock, batch, src))
 	set_energy(max(0, energy - 300))
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return TRUE
 
 /obj/item/circuitboard/machine/material_furnace
@@ -637,7 +637,7 @@ ADMIN_VERB(debug_apply_material_treatment, R_DEBUG, "Apply Material Treatment", 
 	else
 		batch.add_surface_layer(treatment, 100, "debug treatment", 0)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(stock, batch, operator.drop_location())
-	qdel(batch)
+	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	if(replacement)
 		operator.put_in_hands(replacement)
 		to_chat(operator, span_notice("Applied [lowertext(selection)] to [replacement]."))

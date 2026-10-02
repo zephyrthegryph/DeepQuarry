@@ -73,7 +73,7 @@
 			var/datum/data = A.cap_data?[C.key]
 			LAZYREMOVE(A.cap_data, C.key)
 			if(isdatum(data))
-				qdel(data)
+				qdel(data) // ALLOW(lifecycle): capability data is a plain datum in the holder's cap_data table with no slot of its own; the lifecycle verbs only take atoms
 			changed(A, CHANGE_CAPABILITY)
 			return TRUE
 	return FALSE
@@ -102,7 +102,7 @@
 		GLOB.caps_order_cache[key] = ordered
 	return A.cap_extras ? ordered + caps_sort(A.cap_extras, which) : ordered
 
-GLOBAL_LIST_EMPTY(caps_order_cache)
+GLOBAL_LIST_EMPTY(caps_order_cache) // ALLOW(cache): a per-(type, order) memo of sorted capability lists, filled on first use and never invalidated
 
 /proc/caps_sort(list/caps, which)
 	var/any = FALSE

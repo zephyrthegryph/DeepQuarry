@@ -21,12 +21,12 @@
 	var/had_target = FALSE
 
 /datum/dispatch_context/New(mob/user, datum/target, obj/item/held, datum/interaction/entry, datum/tgui/ui)
-	src.user = user
-	src.target = target
+	src.user = user // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
+	src.target = target // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 	had_target = !isnull(target)
-	src.held = held
-	src.entry = entry
-	src.ui = ui
+	src.held = held // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
+	src.entry = entry // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
+	src.ui = ui // ALLOW(ownership): a dispatch context is a short-lived record of one dispatch: its fields are plain references that die with the call
 
 /// Null when the action is still valid for its user, else the reason (told to the player by ask_*()).
 /datum/dispatch_context/proc/invalid_reason()

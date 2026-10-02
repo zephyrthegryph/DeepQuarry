@@ -355,7 +355,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	tgui_id = "Vending"
 
 /// The computed window data: products of the shown categories, the coin, the panel and the customer.
-/obj/machinery/vending/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/vending/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	. = ..()
 	var/list/data = .
 	var/list/listed_products = list()
@@ -416,8 +416,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		return FALSE
 	return operable() && !user.stat && !user.restrained()
 
-/obj/machinery/vending/ui_logged()
-	return list("vend" = LOG_GAME)
+TYPE_TABLE(/obj/machinery/vending, ui_logged_actions, list("vend" = LOG_GAME))
 
 /obj/machinery/vending/proc/act_remove_coin(mob/user)
 	if(issilicon(user))

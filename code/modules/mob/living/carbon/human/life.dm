@@ -2292,7 +2292,7 @@
 	holder2.icon_state = "hudblank"
 	holder3.icon_state = "hudblank"
 
-	for(var/obj/item/implant/I in src)
+	for(var/obj/item/implant/I in contents_of(src, /obj/item/implant))
 		if(I.implanted)
 			if(!I.malfunction)
 				if(istype(I,/obj/item/implant/tracking))

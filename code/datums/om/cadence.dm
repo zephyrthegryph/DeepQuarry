@@ -51,29 +51,7 @@
 	if(istype(C))
 		C.cadence_changed()
 
-// ---- the native system's step (was on SSvg, now /datum/system/native) ----
-
-/// The step length last handed to Rust (vg_world_set_dt), seconds.
-/datum/system/native/var/current_dt = CADENCE_BASE_DT
-/// Holds the GRANT_CADENCE grants for the gas step, created on first use.
-/datum/system/native/var/datum/step_cadence/native/step_cadence
-
-/// The cadence datum to hold GRANT_CADENCE grants on.
-/datum/system/native/proc/get_step_cadence()
-	RETURN_TYPE(/datum/step_cadence)
-	if(!step_cadence)
-		step_cadence = new
-	return step_cadence
-
-/// Runs the world at the shortest step any cadence grant names.
-/datum/system/native/proc/apply_step_cadence()
-	set_step_dt(get_step_cadence().dt_seconds())
-
-/// Sets the step length: Rust integrates it from the next step (the native frame runs every tick either way).
-/datum/system/native/proc/set_step_dt(dt)
-	if(dt == current_dt)
-		return
-	current_dt = vg_world_set_dt(dt)
+// ---- the native system's step: the system's own procs are in code/datums/native/system.dm ----
 
 /// The native system's grant holder: a step change reaches Rust.
 /datum/step_cadence/native

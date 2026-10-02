@@ -13,6 +13,12 @@ GLOBAL_DATUM_INIT(poi_service, /datum/world_service/pois, new)
 	var/list/obj/effect/landmark/poi_loader/poi_queue = list()
 	/// TRUE while drain_queue() is loading the queue.
 	var/loading = FALSE
+	/// The items spawned for allocated gamma loot (code/datums/loot/loot.dm; a relation list: a deleted item leaves it).
+	var/list/obj/item/allocated_gamma_items
+
+/datum/world_service/pois/relations()
+	. = ..()
+	. += rel_many(nameof(allocated_gamma_items))
 
 /// Queued loader landmarks: each qdels itself once placed.
 /datum/world_service/pois/declared_cache_vars()
