@@ -5,6 +5,7 @@ use serde::{Serialize,Deserialize};
 use sha2::{Digest,Sha256};
 use std::{collections::HashMap,io,ops::Range,path::Path,sync::{Arc,Mutex}};
 const WINDOW:usize=1024;
+const ROW_WINDOW:usize=4096;
 const BUDGET:usize=8*1024*1024;
 fn invalid(message:&'static str)->io::Error {io::Error::new(io::ErrorKind::InvalidData,message)}
 #[derive(Clone,Serialize,Deserialize)]
@@ -21,10 +22,13 @@ pub enum ListObject {Resident(ListWords),Addressed(VerifiedCodeHandle)}
 struct ReadWindow {rows:HashMap<String,Arc<[u8]>>,bytes:usize}
 #[derive(Default)]
 struct PendingWrites {rows:Vec<dm_store::Change>,bytes:usize}
-pub struct CodeObjectStore {store:dm_store::Store,window:Mutex<ReadWindow>,pending:Mutex<PendingWrites>,lookahead:Mutex<Vec<VerifiedCodeHandle>>}
+#[derive(Default,Clone,Copy)]
+pub struct CodeIoStats {pub windows:usize,pub bytes:usize,pub read_seconds:f64}
+pub struct CodeObjectStore {io_stats:Mutex<CodeIoStats>,store:dm_store::Store,window:Mutex<ReadWindow>,pending:Mutex<PendingWrites>,lookahead:Mutex<Vec<VerifiedCodeHandle>>}
 impl CodeObjectStore {
     pub fn open(root:&Path)->io::Result<Arc<Self>> {Ok(Arc::new(Self {
-        store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default()),pending:Mutex::new(PendingWrites::default()),lookahead:Mutex::new(Vec::new())}))}
+        io_stats:Mutex::new(CodeIoStats::default()),store:dm_store::Store::open(root.join("wire-list-objects.redb"))?,window:Mutex::new(ReadWindow::default()),pending:Mutex::new(PendingWrites::default()),lookahead:Mutex::new(Vec::new())}))}
+    pub fn io_stats(&self)->CodeIoStats {*self.io_stats.lock().unwrap_or_else(|error|error.into_inner())}
     fn namespace()->&'static str {"wire-list-object-v1"}
     pub fn resident_bytes(&self)->usize {self.window.lock().unwrap_or_else(|e|e.into_inner()).bytes
         +self.pending.lock().unwrap_or_else(|e|e.into_inner()).bytes
@@ -77,7 +81,10 @@ impl CodeObjectStore {
     pub fn prefetch(&self,handles:&[VerifiedCodeHandle])->io::Result<()> {
         if handles.len()>WINDOW||handles.iter().any(|h|!h.valid()) {return Err(invalid("invalid wire list read window"));}
         let keys:Vec<_>=handles.iter().map(|h|dm_store::Key::new(Self::namespace(),&h.digest)).collect();
+        let started=std::time::Instant::now();
         let batch=self.store.read_many_bounded(&keys,2+u16::MAX as usize*4,BUDGET,None)?;
+        {let mut stats=self.io_stats.lock().unwrap_or_else(|error|error.into_inner());stats.windows+=1;
+            stats.bytes+=batch.values.iter().filter_map(|value|value.as_ref()).map(Vec::len).sum::<usize>();stats.read_seconds+=started.elapsed().as_secs_f64();}
         let mut next=ReadWindow::default();
         for ((handle,bytes),witness) in handles.iter().zip(batch.values).zip(batch.witnesses) {
             let bytes=bytes.ok_or_else(||invalid("missing wire list object"))?;
@@ -126,9 +133,10 @@ impl ListObjectTable {
         let id=self.len();self.rows.push(ListObject::Addressed(handle));Ok(id)
     }
     pub fn prepare_range(&self,range:Range<usize>)->io::Result<()> {
-        if range.end>self.len()||range.start>range.end||range.len()>WINDOW {return Err(invalid("wire list preparation range exceeds bound"));}
+        if range.end>self.len()||range.start>range.end||range.len()>ROW_WINDOW {return Err(invalid("wire list preparation range exceeds bound"));}
         let handles:Vec<_>=self.rows[range].iter().filter_map(|row|match row {ListObject::Addressed(h)=>Some(h.clone()),_=>None}).collect();
         if handles.is_empty() {return Ok(());}
+        if handles.len()>WINDOW {return Err(invalid("wire code handle count exceeds bound"));}
         let store=self.store.as_ref().ok_or_else(||invalid("wire list store missing"))?;
         if handles.iter().map(|h|2+h.words*h.width).sum::<usize>()>BUDGET {return Err(invalid("wire list preparation byte bound exceeded"));}
         store.prefetch(&handles)
@@ -161,10 +169,11 @@ impl WireListSource for ListObjectTable {
         }
     }
     fn prepare_window(&self,start:usize,max_rows:usize)->io::Result<usize> {
-        let mut end=start;let mut bytes=0;
-        while end<self.len()&&end-start<max_rows.min(WINDOW) {
-            let charge=match &self.rows[end] {ListObject::Resident(_)=>0,ListObject::Addressed(h)=>2+h.words*h.width};
-            if end>start&&bytes+charge>BUDGET {break;} bytes+=charge;end+=1;
+        let mut end=start;let mut bytes=0;let mut handles=0;
+        while end<self.len()&&end-start<max_rows.min(ROW_WINDOW) {
+            let (charge,addressed)=match &self.rows[end] {ListObject::Resident(_)=>(0,0),ListObject::Addressed(h)=>(2+h.words*h.width,1)};
+            if end>start&&(bytes+charge>BUDGET||handles+addressed>WINDOW) {break;}
+            bytes+=charge;handles+=addressed;end+=1;
         }
         self.prepare_range(start..end)?;Ok(end)
     }
@@ -246,11 +255,16 @@ impl WireImage {
         native.lists=words.into();Ok(native)
     }
     pub fn serialize_stored(&self,root:&std::path::Path,cache:&mut DmbWireCache)->io::Result<crate::chunks::StoredDmb> {
+        let before=self.lists.store.as_ref().map(|store|store.io_stats()).unwrap_or_default();
         let builder=std::sync::Arc::new(std::sync::Mutex::new(crate::chunks::PageBuilder::new(root)));
         let sink=std::sync::Arc::clone(&builder);
         let (len,spans)=self.metadata.encode_metadata_to_sink(&self.lists,cache,Box::new(move |bytes| {
             sink.lock().map_err(|_|invalid("page sink lock poisoned"))?.append(bytes)
         }))?;
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            let after=self.lists.store.as_ref().map(|store|store.io_stats()).unwrap_or_default();
+            eprintln!("DM_BUILD_TRACE physical code source: windows={} bytes={} read_seconds={:.3}",after.windows-before.windows,after.bytes-before.bytes,after.read_seconds-before.read_seconds);
+        }
         std::sync::Arc::try_unwrap(builder).map_err(|_|invalid("page sink still retained"))?
             .into_inner().map_err(|_|invalid("page sink lock poisoned"))?.finish(len,spans)
     }

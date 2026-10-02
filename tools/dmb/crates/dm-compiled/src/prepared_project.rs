@@ -296,6 +296,40 @@ pub(crate) fn changes(
                 .cloned(),
         );
     }
+    // Body and local structural edits retain include occurrence order. Compare
+    // canonical unit identities in place rather than cloning every path into
+    // two ordered maps and then cloning their union a third time. Spans may
+    // move without invalidating semantic units; changed results retain the
+    // general path's occurrence ordering below.
+    if let Some(previous) = previous.filter(|old| {
+        old.project.units.len() == project.units.len()
+            && old.project.units.iter().zip(&project.units)
+                .all(|(before, after)| before.path == after.path)
+    }) {
+        fn identity(project: &PreprocessedProject, index: usize) -> Option<[u8; 32]> {
+            project.semantic_identity.as_ref().and_then(|ids| ids.units.get(index).copied())
+                .or_else(|| project.unit_digest_validity.get(index).copied().unwrap_or(true)
+                    .then(|| project.unit_digests.get(index).copied()).flatten())
+        }
+        let mut ordinals = BTreeMap::<&Path, usize>::new();
+        for (index, (before, after)) in previous.project.units.iter().zip(&project.units).enumerate() {
+            let ordinal = ordinals.entry(after.path.as_path()).or_default();
+            let before_id = identity(&previous.project, index);
+            let after_id = identity(project, index);
+            if result.configuration_changed || before_id != after_id
+                || before_id.is_none() || after_id.is_none()
+            {
+                result.changed_units.push(UnitChange {
+                    occurrence: IncludeOccurrence { path: after.path.clone(), ordinal: *ordinal },
+                    previous_span: Some(before.output_span),
+                    current_span: Some(after.output_span),
+                });
+            }
+            *ordinal += 1;
+        }
+        result.changed_units.sort_by(|left, right| left.occurrence.cmp(&right.occurrence));
+        return result;
+    }
     fn units(
         project: &PreprocessedProject,
     ) -> BTreeMap<IncludeOccurrence, (Span, Option<[u8; 32]>)> {

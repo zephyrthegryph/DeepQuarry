@@ -2427,7 +2427,7 @@ impl Dmb {
         for id in 0..list_count {
             if let Some(source)=lists {
                 if id>=prepared_until {
-                    prepared_until=source.prepare_window(id,1024)?;
+                    prepared_until=source.prepare_window(id,4096)?;
                     if prepared_until<=id||prepared_until>list_count {return Err(invalid("wire list preparation made no progress"));}
                 }
                 if let (Some(cache),Some(words))=(wire_cache.as_deref_mut(),source.resident_words(id)) {
