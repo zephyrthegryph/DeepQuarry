@@ -18,7 +18,7 @@
 
 /obj/item/refill_cartridge/multitype
 	refill_type = list()
-	var/refill_exceptions = list()
+	var/list/refill_exceptions
 
 /obj/item/refill_cartridge/multitype/can_refill(obj/machinery/vending/V as obj)
 	for(var/entry in refill_type)
