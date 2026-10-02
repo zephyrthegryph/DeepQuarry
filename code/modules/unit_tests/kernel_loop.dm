@@ -61,12 +61,13 @@
 		var/want = (lane == LANE_URGENT) ? "[owner]:sched_borrow" : "[owner]:sched_lane_[lane]"
 		TEST_ASSERT_EQUAL(first_of_lane.key, want, "lane [lane] starts with its scheduler piece")
 	var/datum/work_item/borrow = K.work_by_key["[owner]:sched_borrow"]
+	var/datum/work_item/lane_piece = K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]
 	var/runs_before = K.sched.runs
-	var/lane_runs_before = (K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]).runs
+	var/lane_runs_before = lane_piece.runs
 	sleep(1 SECONDS)
 	TEST_ASSERT(borrow.runs > 0, "the borrow piece runs from the kernel")
 	TEST_ASSERT(K.sched.runs > runs_before, "scheduler passes keep running")
-	TEST_ASSERT((K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]).runs > lane_runs_before, "a lane piece runs each pass")
+	TEST_ASSERT(lane_piece.runs > lane_runs_before, "a lane piece runs each pass")
 
 /// The watchdog watches kernel.last_tick, and Recreate_kernel() replaces the loop without doubling it.
 /datum/unit_test/kernel_watchdog_watches_kernel
