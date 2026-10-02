@@ -34,9 +34,10 @@
 GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/admins/proc/edit_admin_permissions(action, log_target, log_actor, log_operation, log_page)
-	if(!check_rights(R_PERMISSIONS))
+	var/client/panel_owner = owner()
+	if(!admin_require(panel_owner, R_PERMISSIONS, "permissions.panel"))
 		return
-	if(!owner()?.mob)
+	if(!panel_owner?.mob)
 		return
 	dq_perms_page = action || PERMISSIONS_PAGE_PERMISSIONS
 	if(dq_perms_page == PERMISSIONS_PAGE_LOGGING)
