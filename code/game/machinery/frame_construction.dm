@@ -427,7 +427,7 @@
 
 	new_machine.pixel_x = pixel_x
 	new_machine.pixel_y = pixel_y
-	qdel(src)
+	replace_with(src, new_machine)
 
 /// Builds an alarm (facing the frame's way first) or a display from the board.
 /obj/structure/frame/proc/finish_simple(alarm)
