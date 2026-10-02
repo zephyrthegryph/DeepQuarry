@@ -75,9 +75,9 @@ GLOBAL_REAL(Master, /datum/controller/master)
 	var/rolling_usage_length = 5 SECONDS
 
 	/// Bounded per-MC-tick history used by the admin performance dashboard.
-	var/list/perf_tick_usage = list() // ALLOW(instance_list): d: MC singleton, filled every tick
-	var/list/perf_tick_realtime = list() // ALLOW(instance_list): d: MC singleton, filled every tick
-	var/list/perf_outliers = list() // ALLOW(instance_list): d: MC singleton, filled every tick
+	var/list/perf_tick_usage = list() // MC singleton, filled every tick
+	var/list/perf_tick_realtime = list() // MC singleton, filled every tick
+	var/list/perf_outliers = list() // MC singleton, filled every tick
 	/// Breakdown for the highest-usage tick since the last explicit reset.
 	var/list/perf_worst_tick
 	var/perf_history_limit = 12000

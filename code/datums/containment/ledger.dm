@@ -18,7 +18,7 @@
 // writes skip all of this, which is why tools/ci/containment_lint.py forbids
 // them outside its allowlist.
 
-// ALLOW(scheduler): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
+// The containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.

@@ -65,7 +65,7 @@
 	if(QDELETED(target))
 		return
 	var/list/waiter_args = waiter[3]
-	call(target, waiter[2])(arglist(waiter_args || list())) // ALLOW(scheduler): the continuation of an asset flush, run from the ack topic or the timeout
+	call(target, waiter[2])(arglist(waiter_args || list())) // the continuation of an asset flush, run from the ack topic or the timeout
 
 /// Process asset cache client topic calls for `"asset_cache_confirm_arrival=[INT]"`.
 /// Returns null for a valid arrival (handled), else the job id (or TRUE) for the caller to reject.

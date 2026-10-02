@@ -3,7 +3,7 @@
 // For the record: these should never ever ever be deleted, even if the turf doesn't have dynamic lighting.
 
 /datum/lighting_corner
-	// ALLOW(scheduler, ownership): lighting hot path; strong many-to-many list kept in step by both sides (light_source remove_lum/update_corners and corner/turf teardown). A relation write per entry would cost index work on every lighting update.
+	// ALLOW(ownership): lighting hot path; strong many-to-many list kept in step by both sides (light_source remove_lum/update_corners and corner/turf teardown). A relation write per entry would cost index work on every lighting update.
 	var/list/datum/light_source/affecting // Light sources affecting us.
 
 	var/sunlight = SUNLIGHT_NONE

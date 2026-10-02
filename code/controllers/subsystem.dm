@@ -96,7 +96,7 @@
 	var/tick_overrun = 0
 
 	/// Flat list of usage and time, every odd index is a log time, every even index is a usage
-	var/list/rolling_usage = list() // ALLOW(instance_list): d: one per subsystem; the usage ring buffer is always in use
+	var/list/rolling_usage = list() // one per subsystem; the usage ring buffer is always in use
 
 	/// How much of a tick (in percents of a tick) were we allocated last fire.
 	var/tick_allocation_last = 0

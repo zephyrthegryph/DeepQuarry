@@ -639,7 +639,7 @@ SYSTEM_DEF(job)
 		var/obj/item/wheelchair/used_wheelchair
 		if(storage_bag)
 			storage_bag.latent_materialize_all() // a walk needs real things (C5)
-			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair) // ALLOW(latent): materialized above
+			used_wheelchair = locate_within(storage_bag, /obj/item/wheelchair)
 		if(!l_foot || !r_foot || used_wheelchair)
 			var/wheelchair_type = used_wheelchair?.unfolded_type || /obj/structure/bed/chair/wheelchair
 			var/obj/structure/bed/chair/wheelchair/active_wheelchair = new wheelchair_type(human_mob.loc)

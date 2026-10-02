@@ -232,7 +232,6 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(time_to_wait > 0)
 		to_chat(src, span_red("Error: AllowUpload(): Spam prevention. Please wait [round(time_to_wait/10)] seconds."))
 		return 0
-	// ALLOW(sys_world_time_write): inside a commented-out block, not compiled
 	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY	*/
 	return 1
 
