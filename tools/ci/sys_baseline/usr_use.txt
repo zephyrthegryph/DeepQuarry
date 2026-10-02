@@ -288,7 +288,6 @@ usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // UI_ACT handlers
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/topic/topic_dispatch.dm	return topic_dispatch(src, usr, href_list)
 usr_outside_verb	code/datums/wires/alarm.dm	A.shock(usr, 50)
-usr_outside_verb	code/datums/wires/camera.dm	C.deactivate(usr, 1)
 usr_outside_verb	code/datums/wires/particle_accelerator.dm	C.add_strength(usr)
 usr_outside_verb	code/defines/procs/announce.dm	log_game("[key_name(usr)] has made \a [announcement_type]: [message_title] - [message] - [announcer]")
 usr_outside_verb	code/defines/procs/announce.dm	message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
