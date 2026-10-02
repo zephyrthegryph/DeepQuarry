@@ -55,3 +55,35 @@
 	source.reagents.trans_to_obj(book, 5, user = user)
 	TEST_ASSERT_NULL(book.dat, "trans_to_obj's temporary holder forwards exposure to real ethanol")
 	TEST_ASSERT_EQUAL(source.reagents.total_volume, 5, "the temporary exposure transfer debits only its requested amount")
+
+/datum/reagents/interim_ethanol_actor_probe/splash(atom/target, amount = 1, multiplier = 1, copy = 0, min_spill = 0, max_spill = 60, mob/user = null)
+	last_actor_ref = user ? REF(user) : null
+	return ..()
+
+/datum/unit_test/interim_ethanol_standard_splash_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/obj/item/reagent_containers/glass/beaker/container = allocate(/obj/item/reagent_containers/glass/beaker, T)
+	var/datum/reagents/interim_ethanol_actor_probe/source = allocate(/datum/reagents/interim_ethanol_actor_probe)
+	own_clear(container, nameof(container.reagents))
+	own_set(container, nameof(container.reagents), source)
+	rel_set(source, nameof(source.my_atom), container)
+	source.add_reagent(REAGENT_ID_ETHANOL, 10)
+	TEST_ASSERT_EQUAL(container.standard_splash_mob(user, target), 1, "the standard splash handles a real target")
+	TEST_ASSERT_EQUAL(source.last_actor_ref, REF(user), "the standard splash preserves its actor through recursive spill calls")
+	TEST_ASSERT(target.touching.get_reagent_amount(REAGENT_ID_ETHANOL) > 0, "the splash actually exposes its target to ethanol")
+
+/datum/unit_test/interim_ethanol_spray_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/effect/effect/water/chempuff/puff = allocate(/obj/effect/effect/water/chempuff, T)
+	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
+	paper.info = "Sprayed paper ink"
+	puff.create_reagents(10)
+	puff.reagents.add_reagent(REAGENT_ID_ETHANOL, 10)
+	puff.set_up(T, user = user)
+	TEST_ASSERT_EQUAL(puff.spray_actor, user, "the traveling spray retains the explicit actor as a relation")
+	TEST_ASSERT(!paper.info, "the spray's real exposure erases ink along its path")
+	qdel(user)
+	TEST_ASSERT_NULL(puff.spray_actor, "deleting the actor clears the spray relation")

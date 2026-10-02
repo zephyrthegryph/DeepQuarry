@@ -127,7 +127,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 		var/list/the_targets = list(T,T1,T2)
 
 		for(var/a = 1 to spray_particles)
-			spray_particle(a, the_targets)
+			spray_particle(a, the_targets, user)
 
 		if((istype(user.loc, /turf/space)) || (user.lastarea.get_gravity() == 0))
 			user.inertia_dir = get_dir(target, user)
@@ -136,7 +136,7 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 		return ..()
 	return
 
-/obj/item/extinguisher/proc/spray_particle(a, list/the_targets)
+/obj/item/extinguisher/proc/spray_particle(a, list/the_targets, mob/user = null)
 	if(!src || !reagents.total_volume) return
 
 	var/obj/effect/effect/water/W = new /obj/effect/effect/water(get_turf(src))
@@ -146,6 +146,6 @@ DECLARE_INTERACTIONS(/obj/item/extinguisher, INTERACT_USE(null, PROC_REF(interac
 	else
 		my_target = pick(the_targets)
 	W.create_reagents(spray_amount)
-	reagents.trans_to_obj(W, spray_amount)
+	reagents.trans_to_obj(W, spray_amount, user = user)
 	W.set_color()
-	W.set_up(my_target)
+	W.set_up(my_target, user = user)
