@@ -13,13 +13,14 @@ struct Root {
 #[derive(Default)]
 pub(crate) struct OwnerBindingQueries {
  roots:im::OrdMap<String,(String,Root)>,snapshot:SharedLowerBindings,store:Option<Store>,bytes:usize,
+ snapshot_ready:bool,recency:HashMap<String,u64>,clock:u64,
 }
 impl OwnerBindingQueries {
  const LIMIT:usize=32*1024*1024;
  fn namespace()->String {format!("owner-binding-roots-v3-{}",env!("DM_EMISSION_FINGERPRINT"))}
  pub(super) fn bind(&mut self,root:&Path){*self=Self {store:Store::open(root.join("declaration-fragments.redb")).ok(),..Default::default()};}
  pub(super) fn resident_bytes(&self)->usize{self.bytes}
- pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;}
+ pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;self.snapshot_ready=false;self.recency.clear();}
  pub(crate) fn build(&mut self,dmb:&Dmb,mut types:HashMap<String,HashMap<String,String>>,pending:&[PendingProc<'_>],shared:&mut SharedLowerBindings,source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<HashMap<String,u32>,String> {
   let started=std::time::Instant::now();let mut restore_seconds=0.0;
   shared.member_types=self.snapshot.member_types.clone();shared.member_globals=self.snapshot.member_globals.clone();
@@ -69,7 +70,9 @@ impl OwnerBindingQueries {
   restore_seconds+=restore_started.elapsed().as_secs_f64();
   for (class_id,owner,key) in window {
 
-   let unchanged=self.roots.get(owner).is_some_and(|(old,_)|old==&key);
+   self.clock=self.clock.wrapping_add(1);
+   if let Some(recency)=self.recency.get_mut(owner){*recency=self.clock;}else{self.recency.insert(owner.to_owned(),self.clock);}
+   let unchanged=self.snapshot_ready&&self.roots.get(owner).is_some_and(|(old,_)|old==&key);
    let root=if let Some((old,root))=self.roots.get(owner).filter(|(old,_)|old==&key){let _=old;hits+=1;root.clone()}
     else if let Some(root)=restored.remove(&key){hits+=1;next.insert(owner.to_owned(),(key.clone(),root.clone()));root}
     else {misses+=1;let root=derive(dmb,class_id,owner,types.remove(owner),authored.get(owner).map(Vec::as_slice).unwrap_or(&[]),source_debug)?;
@@ -86,17 +89,23 @@ impl OwnerBindingQueries {
   }
   }
   if !writes.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&writes,None);}}
-  // Charge each owner-local root once, including keys and persistent node overhead.
-  self.bytes=next.iter().map(|(owner,(key,root))| {
-   owner.capacity()+key.capacity()+256
-    + [&root.types,&root.globals,&root.procs,&root.returns,&root.static_types].iter().map(|rows|rows.storage_bytes()+rows.iter().map(|(a,b)|a.capacity()+b.capacity()).sum::<usize>()).sum::<usize>()
-    + [&root.fields,&root.known_procs].iter().map(|rows|rows.storage_bytes()+rows.iter().map(String::capacity).sum::<usize>()).sum::<usize>()
-    + root.parent.as_ref().map_or(0,String::capacity)
-  }).sum();
-  if self.bytes<=Self::LIMIT {
-   self.roots=next;
-   self.snapshot=SharedLowerBindings {member_types:shared.member_types.clone(),member_globals:shared.member_globals.clone(),known_member_fields:shared.known_member_fields.clone(),member_procs:shared.member_procs.clone(),known_member_procs:shared.known_member_procs.clone(),member_proc_return_types:shared.member_proc_return_types.clone(),parent_types:shared.parent_types.clone(),..Default::default()};
-  }else{self.clear();}
+  // Optional owner recipes use bounded LRU admission, rather than discarding
+  // the complete inventory when one owner pushes it over budget.
+  let mut charges:Vec<_>=next.iter().map(|(owner,(key,root))|(self.recency.get(owner).copied().unwrap_or(0),owner.clone(),root_charge(owner,key,root))).collect();
+  let mut recipe_bytes=charges.iter().map(|(_,_,bytes)|*bytes).sum::<usize>();
+  if recipe_bytes>Self::LIMIT {
+   charges.sort_by_key(|(recency,_,_)|*recency);
+   for (_,owner,charge) in charges {if recipe_bytes<=Self::LIMIT{break;}next.remove(&owner);self.recency.remove(&owner);recipe_bytes=recipe_bytes.saturating_sub(charge);}
+  }
+  self.recency.retain(|owner,_|next.contains_key(owner));
+  self.roots=next;
+  self.snapshot=SharedLowerBindings {member_types:shared.member_types.clone(),member_globals:shared.member_globals.clone(),known_member_fields:shared.known_member_fields.clone(),member_procs:shared.member_procs.clone(),known_member_procs:shared.known_member_procs.clone(),member_proc_return_types:shared.member_proc_return_types.clone(),parent_types:shared.parent_types.clone(),..Default::default()};
+  // The aggregate is a shared semantic model, separately bounded from decoded
+  // recipe admission. Container allocation identities prevent double charging
+  // the same Arc through both recipe rows and the aggregate indexes.
+  self.snapshot_ready=true;
+  if snapshot_charge(&self.snapshot)>64*1024*1024 {self.snapshot=SharedLowerBindings::default();self.snapshot_ready=false;}
+  self.bytes=resident_charge(&self.roots,&self.snapshot);
   if std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE owner binding roots: reused={hits} derived={misses} retained_bytes={} inputs_seconds={input_seconds:.3} restore_seconds={restore_seconds:.3} total_seconds={:.3}",self.bytes,started.elapsed().as_secs_f64());}
   Ok(aliases)
  }
@@ -113,4 +122,39 @@ fn derive(dmb:&Dmb,class_id:Option<usize>,owner:&str,types:Option<HashMap<String
  for slot in 0..2 {if let Some(ids)=class.and_then(|class|dmb.lists.get(class.lists_and_procs[slot] as usize)){for id in ids{if let Some(proc)=dmb.procs.get(*id as usize){if let Some(path)=dmb.string(proc.strings[0]).and_then(|bytes|std::str::from_utf8(bytes).ok()){if let Some(name)=path.rsplit('/').next(){root.known_procs.insert(name.to_owned());if dmb.string(proc.strings[1])!=Some(name.replace('_'," ").as_bytes()){root.procs.insert(name.to_owned(),path.to_owned());}}}}}}}
  for procedure in authored {let path=InvocationFragments::declaration_path(procedure.item,owner,procedure.verb)?;let name=path.rsplit('/').next().unwrap_or("").to_owned();root.known_procs.insert(name.clone());if let Some(Some(ty))=declared_proc_return_type(&procedure.item.header).map_err(|reason|source_error(source_debug,procedure.span().start,&procedure.item.header,&reason))?{root.returns.insert(name.clone(),ty);}if has_proc_name_setting(&procedure.item.children){root.procs.insert(name,path);}}
  Ok(root)
+}
+
+fn map_charge(rows:&CompactMap<String,String>)->usize {
+ rows.storage_bytes()+rows.iter().map(|(key,value)|key.capacity()+value.capacity()).sum::<usize>()
+}
+fn set_charge(rows:&CompactSet<String>)->usize {
+ rows.storage_bytes()+rows.iter().map(String::capacity).sum::<usize>()
+}
+fn root_charge(owner:&str,key:&str,root:&Root)->usize {
+ owner.len()+key.len()+256
+ +[&root.types,&root.globals,&root.procs,&root.returns,&root.static_types].iter().map(|rows|map_charge(rows)).sum::<usize>()
+ +[&root.fields,&root.known_procs].iter().map(|rows|set_charge(rows)).sum::<usize>()
+ +root.parent.as_ref().map_or(0,String::capacity)
+}
+fn snapshot_charge(snapshot:&SharedLowerBindings)->usize {
+ let mut seen=HashSet::new();aggregate_charge(snapshot,&mut seen)
+}
+fn aggregate_charge(snapshot:&SharedLowerBindings,seen:&mut HashSet<usize>)->usize {
+ let mut bytes=std::mem::size_of::<SharedLowerBindings>();
+ for map in [&snapshot.member_types,&snapshot.member_globals,&snapshot.member_procs,&snapshot.member_proc_return_types] {
+  for (owner,rows) in map {bytes+=owner.capacity()+96;if seen.insert(rows.allocation_id()){bytes+=map_charge(rows);}}
+ }
+ for map in [&snapshot.known_member_fields,&snapshot.known_member_procs] {
+  for (owner,rows) in map {bytes+=owner.capacity()+96;if seen.insert(rows.allocation_id()){bytes+=set_charge(rows);}}
+ }
+ bytes+snapshot.parent_types.iter().map(|(key,value)|key.capacity()+value.capacity()+96).sum::<usize>()
+}
+fn resident_charge(roots:&im::OrdMap<String,(String,Root)>,snapshot:&SharedLowerBindings)->usize {
+ let mut seen=HashSet::new();let mut bytes=aggregate_charge(snapshot,&mut seen);
+ for (owner,(key,root)) in roots {
+  bytes+=owner.capacity()+key.capacity()+256+root.parent.as_ref().map_or(0,String::capacity);
+  for rows in [&root.types,&root.globals,&root.procs,&root.returns,&root.static_types] {if seen.insert(rows.allocation_id()){bytes+=map_charge(rows);}}
+  for rows in [&root.fields,&root.known_procs] {if seen.insert(rows.allocation_id()){bytes+=set_charge(rows);}}
+ }
+ bytes
 }

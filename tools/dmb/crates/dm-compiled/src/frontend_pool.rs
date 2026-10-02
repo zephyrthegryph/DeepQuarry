@@ -35,6 +35,7 @@ pub struct FrontendPoolStats {
     pub expansion_trims: usize,
     pub body_compactions: usize,
     pub snapshot_trims: usize,
+    pub invocation_trims: usize,
     pub payload_trims: usize,
     pub prepared_trims: usize,
     pub skeleton_trims: usize,
@@ -324,6 +325,19 @@ impl FrontendPool {
             }
             if self.bytes() != before { self.stats.snapshot_trims += 1; }
             self.trace_entry("after auxiliary cache trim", key);
+        }
+        // Invocation templates remain reachable from frozen plans through weak
+        // indexes. Reclaim optional strong admissions before discarding the
+        // declaration prefix or the semantic inputs needed for the next edit.
+        for (_, key) in &ordered {
+            if self.bytes() <= budget { break; }
+            self.trace_entry("before invocation admission trim", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                if frontend.release_invocation_admissions() != 0 {
+                    self.stats.invocation_trims += 1;
+                }
+            }
+            self.trace_entry("after invocation admission trim", key);
         }
         for (_, key) in &ordered {
             if self.bytes() <= budget {

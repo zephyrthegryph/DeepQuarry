@@ -3345,7 +3345,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
     source: &str, builtin_image: &[u8], world_name: &str, resources: Option<&ResourceSet>,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache, audit: Option<&mut InitializerAudit>,
     capture: Option<&mut Option<crate::incremental::EmissionCheckpoint>>, workers: usize,
-    mut frontend: Option<&mut crate::frontend::OutlineSession>, catalog: Option<&dm_resources::ResourceCatalog>,
+    frontend: Option<&mut crate::frontend::OutlineSession>, catalog: Option<&dm_resources::ResourceCatalog>,
     source_debug: Option<&crate::source_debug::SourceDebugIndex<'_>>,
     lowering_audit: Option<&mut CanonicalLoweringAudit>,
 ) -> Result<(Dmb, Vec<EmittedProc>, Vec<u8>), String> {
@@ -4024,9 +4024,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     trace("procedure binding index complete; invocation plans start");
     let mut invocation_plans = Vec::with_capacity(pending.len());
-    let metadata_sources: HashMap<_, _> = pending.iter().filter_map(|procedure| procedure.owner.map(|owner| (
-        (owner, procedure.item.header.split('(').next().unwrap_or("").trim_end_matches('/').rsplit('/').next().unwrap_or("").to_owned(), procedure.verb), procedure.item))).collect();
-    let mut resolved_metadata = HashMap::new();
+    let mut metadata_context = canonical::MetadataContext::new(&dmb,&pending)?;
     let mut dynamic_by_name: HashMap<String, Vec<usize>> = HashMap::new();
     for (index, assignment) in pending_dynamic.iter().enumerate() {
         dynamic_by_name.entry(assignment.name.clone()).or_default().push(index);
@@ -4039,8 +4037,12 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     if invocation_ordinal%1024==0 {
                         let window_end=invocation_ordinal.saturating_add(1024).min(invocation_total);
                         let hydration_started=std::time::Instant::now();
-                        session.invocation_fragments.prefetch_syntax(&authored_pending[invocation_ordinal..window_end].iter()
-                            .map(|procedure|(procedure.item,procedure.owner_path.as_str(),procedure.verb)).collect::<Vec<_>>());
+                        let window=&authored_pending[invocation_ordinal..window_end];
+                        let keys:Vec<_>=window.iter().map(|procedure|metadata_context.descriptor(procedure.item).1.clone()).collect();
+                        session.invocation_queries.prefetch(&keys);
+                        let misses:Vec<_>=window.iter().filter(|procedure|session.invocation_queries.authored_candidate(&metadata_context.descriptor(procedure.item).1).is_none())
+                            .map(|procedure|(procedure.item,procedure.owner_path.as_str(),procedure.verb)).collect();
+                        session.invocation_fragments.prefetch_syntax(&misses);
                         if hydration_started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation hydration: window={} {:.3}s",invocation_ordinal,hydration_started.elapsed().as_secs_f64());}
                     }
                     if invocation_ordinal%1024==0 && std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -4048,58 +4050,49 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     }
                     let query_started=std::time::Instant::now();
                     let item = pending.item;
-                    let (path, params) = session.invocation_fragments.signature(item, &pending.owner_path, pending.verb)?;
+                    let (path,declaration_identity)=metadata_context.descriptor(item).clone();
                     let repeated = !proc_paths.insert(path.as_bytes().to_vec());
-                    let explicit_definition =
-                        item.header.split_once('(').is_some_and(|(header, _)| {
-                            header.contains("/proc/") || header.contains("/verb/")
-                        });
+                    let explicit_definition = item.header.split_once('(').is_some_and(|(header,_)|header.contains("/proc/")||header.contains("/verb/"));
                     if repeated && (explicit_definition || !generated_proc_paths.contains(&path)) {
                         return Err(format!("duplicate procedure definition: {path}"));
                     }
                     generated_proc_paths.insert(path.clone());
-                    let inherited = pending.owner.and_then(|owner| {
-                        find_inherited_proc(
-                            &dmb,
-                            owner,
-                            path.rsplit('/').next().unwrap(),
-                            pending.verb,
-                        )
-                    });
-                    let inherited_metadata = if let Some(owner) = pending.owner {
-                        resolve_pending_parent_metadata(
-                            &dmb,
-                            owner,
-                            path.rsplit('/').next().unwrap(),
-                            pending.verb,
-                            &metadata_sources,
-                            &mut resolved_metadata,
-                            &mut session.invocation_fragments,
-                        )?
-                    } else {
-                        None
-                    };
-                    let base_metadata = if let Some(base) = inherited_metadata { base }
-                        else { proc_metadata(&[], inherited.map(|proc| (&dmb, proc)))?.0 };
-                    let syntax = session.invocation_fragments.syntax(item, &path, &params, base_metadata)?;
-                    let metadata = syntax.metadata.clone();
-                    if let Some(owner) = pending.owner {
-                        resolved_metadata.insert(
-                            (
-                                owner,
-                                path.rsplit('/').next().unwrap().to_owned(),
-                                pending.verb,
-                            ),
-                            metadata.clone(),
-                        );
+                    let name=path.rsplit('/').next().unwrap_or("");
+                    let (base_metadata,inherited_identity)=session.invocation_queries.base(&mut metadata_context,pending.owner.map(|_|pending.owner_path.as_str()),name,pending.verb)?;
+                    if let Some(template)=session.invocation_queries.candidate(&declaration_identity,&inherited_identity) {
+                        if template.statics.is_empty() {
+                            metadata_context.publish(&pending.owner_path,name,pending.verb,&template.metadata,
+                                &crate::lower_cache::shared_binding_fingerprint(&(&declaration_identity,&inherited_identity,&template.metadata)));
+                            invocation_plans.push(canonical::InvocationPlan {template,static_ids:HashMap::new()});
+                            continue;
+                        }
                     }
+                    // Authored syntax survives inherited metadata changes. Its
+                    // allocation-free parameter/static/frame fragments are shared.
+                    let syntax=if let Some(template)=session.invocation_queries.authored_candidate(&declaration_identity) {
+                        let declarations=canonical::invocation_declaration_projection(&item.children);
+                        Arc::new(canonical::InvocationSyntax {path:path.clone(),params:template.params.clone(),
+                            metadata:proc_metadata_from_base(&declarations,base_metadata)?.0,
+                            statics:template.statics.clone(),frame:Some((Arc::clone(&template.bindings),template.frame_digest.clone())),
+                            key:crate::lower_cache::shared_binding_fingerprint(&(&declaration_identity,&inherited_identity))})
+                    }else {
+                        let (_,params)=session.invocation_fragments.signature(item,&pending.owner_path,pending.verb)?;
+                        session.invocation_fragments.syntax(item,&path,&params,base_metadata)?
+                    };
+                    let params=syntax.params.clone();
+                    let metadata=syntax.metadata.clone();
+                    metadata_context.publish(&pending.owner_path,name,pending.verb,&metadata,
+                        &crate::lower_cache::shared_binding_fingerprint(&(&declaration_identity,&inherited_identity,&metadata)));
                     // The syntax candidate key certifies authored declarations and
                     // exact current inherited metadata. A static-free overlay has
                     // no allocation effects and can be reused directly.
                     if syntax.statics.is_empty() {
                         if let Some((frame,digest))=&syntax.frame {
                             session.invocation_fragments.counters.frame_hits+=1;
-                            invocation_plans.push(canonical::InvocationPlan {path,params,metadata,static_ids:HashMap::new(),bindings:Arc::clone(frame),frame_digest:digest.clone()});
+                            let template=Arc::new(canonical::InvocationTemplate {path,params,metadata,bindings:Arc::clone(frame),frame_digest:digest.clone(),
+                                statics:syntax.statics.clone(),declaration_identity,inherited_identity});
+                            session.invocation_queries.remember(Arc::clone(&template));
+                            invocation_plans.push(canonical::InvocationPlan {template,static_ids:HashMap::new()});
                             continue;
                         }
                     }
@@ -4283,9 +4276,14 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         bindings.owner = None;
         let (bindings, frame_digest) = session.invocation_fragments.frame(&syntax, bindings.into());
         if query_started.elapsed().as_millis()>100&&std::env::var_os("DM_BUILD_TRACE").is_some(){eprintln!("DM_BUILD_TRACE slow invocation query: ordinal={} path={} statics={} {:.3}s",invocation_ordinal,path,syntax.statics.len(),query_started.elapsed().as_secs_f64());}
-        invocation_plans.push(canonical::InvocationPlan { path, params, metadata, static_ids, bindings, frame_digest });
+        let template=Arc::new(canonical::InvocationTemplate {path,params,metadata,bindings,frame_digest,
+            statics:syntax.statics.clone(),declaration_identity,inherited_identity});
+        session.invocation_queries.remember(Arc::clone(&template));
+        invocation_plans.push(canonical::InvocationPlan {template,static_ids});
     }
         if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
+        trace(&format!("invocation templates: reused={} derived={} resident_bytes={}",session.invocation_queries.hits,session.invocation_queries.misses,session.invocation_queries.resident_bytes()));
+        drop(metadata_context);
         trace("invocation plans complete; wire metadata start");
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -5219,92 +5217,6 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         });
     }
     Ok((dmb, emitted, rsc_bytes))
-}
-
-fn resolve_pending_parent_metadata(
-    dmb: &Dmb,
-    owner: u32,
-    name: &str,
-    verb: bool,
-    declarations: &HashMap<(u32, String, bool), &Item>,
-    resolved: &mut HashMap<(u32, String, bool), ProcMetadata>,
-    fragments: &mut canonical::InvocationFragments,
-) -> Result<Option<ProcMetadata>, String> {
-    let mut parent = dmb.classes[owner as usize].parent_class_id();
-    let mut chain = Vec::new();
-    let mut visited = HashSet::new();
-    let mut base = None;
-    while parent != 0xffff {
-        if !visited.insert(parent) {
-            return Err("cyclic procedure metadata ancestry".into());
-        }
-        let key = (parent, name.to_owned(), verb);
-        if let Some(metadata) = resolved.get(&key) {
-            base = Some(metadata.clone());
-            break;
-        }
-        if let Some(item) = declarations.get(&key) {
-            chain.push((key, *item));
-        } else if let Some(procedure) = dmb
-            .lists
-            .get(dmb.classes[parent as usize].lists_and_procs[usize::from(!verb)] as usize)
-            .and_then(|ids| {
-                ids.iter()
-                    .rev()
-                    .filter_map(|id| dmb.procs.get(*id as usize))
-                    .find(|procedure| {
-                        dmb.string(procedure.strings[0]).is_some_and(|path| {
-                            path.rsplit(|byte| *byte == b'/').next() == Some(name.as_bytes())
-                        })
-                    })
-            })
-        {
-            base = Some(proc_metadata(&[], Some((dmb, procedure)))?.0);
-            break;
-        }
-        parent = dmb.classes[parent as usize].parent_class_id();
-    }
-    for (key, item) in chain.into_iter().rev() {
-        let owner_path = dmb.string(dmb.classes[key.0 as usize].path_string_id())
-            .and_then(|bytes| std::str::from_utf8(bytes).ok()).unwrap_or("");
-        let (path, params) = fragments.signature(item, owner_path, verb)?;
-        let inherited = match base {
-            Some(previous) => previous,
-            None => proc_metadata(&[], None)?.0,
-        };
-        let metadata = fragments.syntax(item, &path, &params, inherited)?.metadata.clone();
-        resolved.insert(key, metadata.clone());
-        base = Some(metadata);
-    }
-    Ok(base)
-}
-
-fn find_inherited_proc<'a>(
-    dmb: &'a Dmb,
-    mut owner: u32,
-    name: &str,
-    verb: bool,
-) -> Option<&'a Proc> {
-    let slot = if verb { 0 } else { 1 };
-    loop {
-        let class = dmb.classes.get(owner as usize)?;
-        let list_id = class.lists_and_procs[slot];
-        if list_id != 0xffff {
-            for id in dmb.lists.get(list_id as usize)?.iter().rev() {
-                let proc = dmb.procs.get(*id as usize)?;
-                if dmb.string(proc.strings[0]).is_some_and(|path| {
-                    path.rsplit(|byte| *byte == b'/').next() == Some(name.as_bytes())
-                }) {
-                    return Some(proc);
-                }
-            }
-        }
-        let parent = class.parent_class_id();
-        if parent == 0xffff {
-            return None;
-        }
-        owner = parent;
-    }
 }
 
 fn reorder_member_override_lists<I:AssemblyImage>(dmb: &mut I) -> Result<(),String> {

@@ -434,6 +434,9 @@ impl OutlineSession {
         self.canonical.graph.release_encoded_snapshot();
         self.canonical.maps.release_encoded_snapshot();
     }
+    pub fn release_invocation_admissions(&mut self) -> usize {
+        self.canonical.release_invocation_admissions()
+    }
     pub fn release_declaration_replay_buffer(&mut self) -> usize {
         self.canonical.release_declaration_replay_buffer()
     }

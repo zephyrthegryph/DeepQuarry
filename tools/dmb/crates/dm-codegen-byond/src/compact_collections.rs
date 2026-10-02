@@ -16,6 +16,8 @@ impl<K: Ord, V> Default for CompactMap<K, V> {
     fn default() -> Self { Self(Arc::new(BTreeMap::new())) }
 }
 impl<K: Ord, V> CompactMap<K, V> {
+    /// Allocation identity for accounting shared immutable inventories once.
+    pub fn allocation_id(&self) -> usize { Arc::as_ptr(&self.0) as usize }
     /// Conservative standard B-tree node reservation, excluding key/value heaps.
     pub fn storage_bytes(&self) -> usize {
         16 + std::mem::size_of::<BTreeMap<K, V>>()
@@ -60,6 +62,8 @@ impl<T: Ord> Default for CompactSet<T> {
     fn default() -> Self { Self(Arc::new(BTreeSet::new())) }
 }
 impl<T: Ord> CompactSet<T> {
+    /// Allocation identity for accounting shared immutable inventories once.
+    pub fn allocation_id(&self) -> usize { Arc::as_ptr(&self.0) as usize }
     /// Conservative standard B-tree node reservation, excluding element heaps.
     pub fn storage_bytes(&self) -> usize {
         16 + std::mem::size_of::<BTreeSet<T>>()

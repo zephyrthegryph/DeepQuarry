@@ -18,6 +18,9 @@ pub(super) use declaration_base::{DeclarationBase, declaration_base_key};
 mod declaration_delta;
 #[path = "owner_binding_queries.rs"]
 mod owner_binding_queries;
+#[path = "invocation_queries.rs"]
+mod invocation_queries;
+pub(super) use invocation_queries::{InvocationQueries, MetadataContext};
 pub(super) use owner_binding_queries::OwnerBindingQueries;
 pub(super) use declaration_delta::DeclarationInputs;
 
@@ -82,14 +85,26 @@ pub(super) struct SkeletonMetadata {
 }
 
 #[derive(Clone, Serialize, Deserialize)]
-pub(super) struct InvocationPlan {
+pub(super) struct InvocationTemplate {
     pub path: String,
     pub params: Vec<ParsedParameter>,
     pub metadata: ProcMetadata,
-    pub static_ids: HashMap<String, u32>,
     pub bindings: Arc<InvocationOverlay>,
-    /// Source-independent invocation semantics, hashed once with the prefix.
     pub frame_digest: String,
+    pub statics: Vec<String>,
+    pub declaration_identity: String,
+    pub inherited_identity: String,
+}
+
+/// Only allocation-dependent static slots belong to a physical invocation.
+#[derive(Clone, Serialize, Deserialize)]
+pub(super) struct InvocationPlan {
+    pub template: Arc<InvocationTemplate>,
+    pub static_ids: HashMap<String, u32>,
+}
+impl std::ops::Deref for InvocationPlan {
+    type Target = InvocationTemplate;
+    fn deref(&self) -> &Self::Target { &self.template }
 }
 
 /// Retained frames contain only authored invocation overlays. Parameter semantics
@@ -239,7 +254,7 @@ impl InvocationFragments {
         let payload=Self::digest_text(self.handles.get(&Self::digest_bytes(declaration)?)?);
         self.entries.get(&payload).or_else(||self.requested_syntax.get(&payload)).cloned()
     }
-    fn declaration_key(item:&Item,path:&str)->String {
+    pub(super) fn declaration_key(item:&Item,path:&str)->String {
         fn relevant(node:&Item)->bool {let header=node.header.trim();header.starts_with("set ")||["var/static/","var/global/","var/const/"].iter().any(|prefix|header.starts_with(prefix))||node.children.iter().any(relevant)}
         fn items(hash:&mut Sha256,nodes:&[Item]) {
             hash.update((nodes.iter().filter(|node|relevant(node)).count() as u64).to_le_bytes());
@@ -785,7 +800,8 @@ impl FrozenSkeleton {
         // an owner. Hash by value while retaining one immutable allocation.
         let mut overlays=HashMap::<Arc<InvocationOverlay>,Arc<InvocationOverlay>>::new();
         for plan in &mut metadata.invocations {
-            plan.bindings=Arc::clone(overlays.entry(Arc::clone(&plan.bindings)).or_insert_with(||Arc::clone(&plan.bindings)));
+            let shared=Arc::clone(overlays.entry(Arc::clone(&plan.bindings)).or_insert_with(||Arc::clone(&plan.bindings)));
+            if !Arc::ptr_eq(&shared,&plan.bindings) { Arc::make_mut(&mut plan.template).bindings=shared; }
         }
         let charge = skeleton_heap(&image, &metadata);
         Self {
@@ -870,6 +886,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
         .map(|s| s.data.capacity())
         .sum::<usize>();
     bytes += image.lists.iter().map(|words| words.capacity() * std::mem::size_of::<u32>()).sum::<usize>();
+    let image_bytes=bytes;
     bytes += metadata.strings.resident_bytes();
     bytes += metadata.proc_paths.capacity() * (std::mem::size_of::<Vec<u8>>() + 16)
         + metadata.proc_paths.iter().map(Vec::capacity).sum::<usize>();
@@ -891,13 +908,19 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
     for recipes in [&metadata.initializers,&metadata.modified_initializers] {
         bytes+=vec_heap(recipes)+recipes.iter().map(|recipe|recipe.key.path.capacity()+recipe.descriptor.body_digest.capacity()+recipe.descriptor.frame_digest.capacity()+recipe.source.len()+64).sum::<usize>();
     }
+    let declaration_bytes=bytes-image_bytes;
     bytes += vec_heap(&metadata.invocations);
     let mut overlay_seen=HashSet::new();
+    let mut template_seen=HashSet::new();
     for plan in &metadata.invocations {
-        bytes += plan.path.capacity()
+        bytes += id_map(&plan.static_ids);
+        if !template_seen.insert(Arc::as_ptr(&plan.template) as usize) { continue; }
+        bytes += std::mem::size_of::<InvocationTemplate>()
+            + plan.declaration_identity.capacity() + plan.inherited_identity.capacity()
+            + vec_heap(&plan.statics) + plan.statics.iter().map(String::capacity).sum::<usize>()
+            + plan.path.capacity()
             + plan.frame_digest.capacity()
-            + vec_heap(&plan.params)
-            + id_map(&plan.static_ids);
+            + vec_heap(&plan.params);
         for param in &plan.params {
             bytes += param.name.capacity()
                 + param.type_path.as_ref().map_or(0, String::capacity)
@@ -924,6 +947,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             + pairs(&overlay.field_types)
             + pairs(&overlay.global_types);
     }
+    let invocation_bytes=bytes-image_bytes-declaration_bytes;
     let shared = &metadata.shared;
     bytes += std::mem::size_of::<SharedLowerBindings>();
     for map in [
@@ -952,6 +976,10 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
     }
     bytes += shared.parent_types.iter().map(|(key,value)|key.capacity()+value.capacity()+96).sum::<usize>();
     bytes += id_map(&shared.numeric_constants) + shared.fingerprint.capacity();
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {
+        eprintln!("DM_BUILD_TRACE skeleton heap components: image={} declaration_metadata={} invocation_templates={} shared_bindings={} total={}",
+            image_bytes,declaration_bytes,invocation_bytes,bytes-image_bytes-declaration_bytes-invocation_bytes,bytes);
+    }
     bytes
 }
 
@@ -970,6 +998,7 @@ pub(crate) struct CanonicalSession {
     pub(super) emission_plans: super::emission_plans::EmissionPlans,
     pub(super) procedure_fragments: super::procedure_fragments::ProcedureFragments,
     pub(super) invocation_fragments: InvocationFragments,
+    pub(super) invocation_queries: InvocationQueries,
     pub(super) owner_bindings:OwnerBindingQueries,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
     pub maps: crate::maps::MapInitializerSession,
@@ -1032,6 +1061,7 @@ impl CanonicalSession {
                 env!("DM_EMISSION_FINGERPRINT"),
             ));
         self.invocation_fragments = InvocationFragments::open(&root);
+        self.invocation_queries = InvocationQueries::open(&root);
         self.owner_bindings.bind(&root);
         self.owner_frames = Arc::new(Mutex::new(OwnerFrameQueries::open(&root)));
         const_eval::bind_cache(&root);
@@ -1056,6 +1086,7 @@ impl CanonicalSession {
             .saturating_add(self.emission_plans.resident_bytes())
             .saturating_add(self.procedure_fragments.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
+            .saturating_add(self.invocation_queries.resident_bytes())
             .saturating_add(self.owner_bindings.resident_bytes())
             .saturating_add(
                 self.owner_frames
@@ -1074,6 +1105,7 @@ impl CanonicalSession {
         self.emission_plans.flush();
         self.procedure_fragments.flush();
         self.invocation_fragments.flush();
+        self.invocation_queries.flush();
         self.invocation_fragments.release_requested();
         {
             let mut owners = self.owner_frames.lock().unwrap_or_else(|e| e.into_inner());
@@ -1107,6 +1139,12 @@ impl CanonicalSession {
     }
     /// This compressed replay image is also durable on disk. It is needed only
     /// when declarations change, while admitted procedure rows serve every edit.
+    pub(crate) fn release_invocation_admissions(&mut self) -> usize {
+        let before=self.resident_bytes();
+        self.invocation_fragments.release_decoded();
+        self.invocation_queries.release_decoded();
+        before.saturating_sub(self.resident_bytes())
+    }
     pub(crate) fn release_declaration_replay_buffer(&mut self) -> usize {
         self.declaration_base.take().map_or(0, |(_, bytes)| bytes.capacity())
     }
@@ -1127,6 +1165,7 @@ impl CanonicalSession {
         // These are optional duplicate decoded declaration fragments; frozen
         // plans and addressed disk handles retain the authoritative inputs.
         self.invocation_fragments.release_decoded();
+        self.invocation_queries.clear();
         // Compact handles are optional candidate selectors too. Release them
         // under pressure before sacrificing the frontend dependency graph.
         self.invocation_fragments.handles.clear();
