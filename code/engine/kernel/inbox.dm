@@ -260,6 +260,9 @@ SYSTEM_DEF(input)
 	/// The deepest any inbox got.
 	var/queue_high_water = 0
 	var/last_drop_log = 0
+	/// TRUE while the drain item is parked (the drain found nothing queued): the enqueue that ends the idle wakes it, and every other
+	/// enqueue reads this flag instead of looking the item up.
+	var/drain_parked = FALSE
 
 /datum/system/input/reactions()
 	. = ..()
@@ -281,12 +284,13 @@ SYSTEM_DEF(input)
 	E.arrived_usage = TICK_USAGE
 	var/source = E.lane_key()
 	var/list/queue = inboxes[source]
-	if(!length(queue) && has_room(E))
+	// has_room() inlined: this is the stretch between an input's arrival stamp and its dispatch stamp, which the wait metrics count.
+	if(!length(queue) && (isnull(room_override) ? input_room(E) : room_override))
 		resolved_in_place++
-		var/datum/kernel_latency/latency = kernel_latency()
+		var/datum/kernel_latency/latency = Kernel.latency_state || kernel_latency()
 		latency.input_immediate++
-		latency.record_input(0)
-		run_event(E, FALSE)
+		latency.input_bins[1]++ // record_input(0): an input that ran on arrival waited no ticks
+		run_event(E, FALSE, latency)
 		return TRUE
 	enqueue(E, source, queue)
 	return FALSE
@@ -295,6 +299,10 @@ SYSTEM_DEF(input)
 /datum/system/input/proc/has_room(datum/input_event/E)
 	if(!isnull(room_override))
 		return room_override
+	return input_room(E)
+
+/// The tick's own answer (no override).
+/datum/system/input/proc/input_room(datum/input_event/E)
 #ifdef UNIT_TESTS
 	// A test world boots through ticks that run far past 100%: only room_override decides there (as shedding is off in tests).
 	return TRUE
@@ -309,6 +317,7 @@ SYSTEM_DEF(input)
 		queue = list()
 		inboxes[source] = queue
 		ready += source
+		wake_work_item(PROC_REF(drain_step))
 	var/key = E.coalesce_key()
 	if(key)
 		for(var/i in length(queue) to 1 step -1)
@@ -346,8 +355,8 @@ SYSTEM_DEF(input)
 		log_world("Input: dropped a [E.type] from [E.actor ? key_name(E.actor) : "nobody"]: [why] (inbox cap [INPUT_CLIENT_MAX], [dropped_cap] dropped so far).")
 
 /// Resolves one event now (from its arrival, or from the drain). `waited` events were queued: their wait is recorded.
-/datum/system/input/proc/run_event(datum/input_event/E, waited = TRUE)
-	var/datum/kernel_latency/latency = kernel_latency()
+/datum/system/input/proc/run_event(datum/input_event/E, waited = TRUE, datum/kernel_latency/latency = null)
+	latency ||= kernel_latency()
 	if(waited)
 		latency.record_input((world.time - E.arrived_time) / world.tick_lag)
 		km_meter().verb_run(E.arrived_time, E.arrived_usage)
@@ -380,7 +389,9 @@ SYSTEM_DEF(input)
 /// Phase K: serves the queues round-robin, each client's oldest first, under the input budget (one event at least).
 /datum/system/input/proc/drain_step(dt, unlimited = FALSE)
 	if(!length(ready))
-		return STEP_DONE
+		// Nothing queued: the item parks and the next enqueue() wakes it (no per-tick poll of an empty inbox).
+		drain_parked = TRUE
+		return STEP_PARK
 	var/started = TICK_USAGE
 	// `unlimited`, or a test owning the kernel clock: no budget, so a loaded test machine cannot change how many events a drain serves.
 	var/limit = (unlimited || !isnull(kernel().test_now)) ? WORK_TEST_LIMIT : min(Kernel.current_ticklimit, started + KERNEL_INPUT_CAP)
@@ -434,6 +445,9 @@ SYSTEM_DEF(input)
 /datum/system/input/proc/key_step(dt)
 	SHOULD_NOT_SLEEP(TRUE)
 	var/list/clients = GLOB.clients
+	if(!length(clients))
+		// No one is connected: parked until a client joins (client/New wakes it).
+		return STEP_PARK
 	for(var/i in 1 to length(clients))
 		var/client/C = clients[i]
 		C?.keyLoop()

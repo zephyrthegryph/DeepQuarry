@@ -258,6 +258,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
 	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, key_step))
 
 	if(persistent_client_for(ckey))
 		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly

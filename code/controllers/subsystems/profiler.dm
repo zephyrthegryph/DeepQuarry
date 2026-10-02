@@ -4,9 +4,7 @@ SYSTEM_DEF(profiler)
 	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_FIRST
 	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
-	wait = 30 SECONDS
-	/// Deciseconds since the last sample: the sample interval is config (`wait`), the work item ticks once a second.
-	var/since_sample = 0
+	wait = 1 MINUTES
 	var/fetch_cost = 0
 	var/write_cost = 0
 	/// Monotonic identifier for compact diagnostic snapshots. This profiler is
@@ -30,7 +28,7 @@ SYSTEM_DEF(profiler)
 		StartProfiling()
 	else
 		StopProfiling() //Stop the early start profiler
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 	// AUTO_PROFILE controls full world.Profile collection only. Compact subsystem
 	// diagnostics are cheap, bounded, and must continue even when it is disabled.
 	can_fire = TRUE
@@ -42,18 +40,20 @@ SYSTEM_DEF(profiler)
 	else
 		StopProfiling()
 	can_fire = TRUE
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 
-/// The compact diagnostics record (phase K, once a second, sampling every `wait`).
+/// The compact diagnostics record (phase K, one run per `wait`: the item is declared at the default and takes the configured
+/// interval at boot and on a config reload).
 /datum/system/profiler/reactions()
 	. = ..()
-	. += every(1 SECONDS, PROC_REF(sample), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+	. += every(1 MINUTES, PROC_REF(sample), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+
+/// Applies the configured sample interval to the work item.
+/datum/system/profiler/proc/apply_interval()
+	wait = CONFIG_GET(number/profiler_interval)
+	set_work_interval(PROC_REF(sample), wait)
 
 /datum/system/profiler/proc/sample(dt)
-	since_sample += dt
-	if(since_sample < wait)
-		return
-	since_sample = 0
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.

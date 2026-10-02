@@ -396,6 +396,8 @@
 	var/ticks_before = K.ticks
 	var/datum/work_item/input_drain = K.work_by_key["[/datum/system/input]:drain_step"]
 	var/input_before = input_drain.runs
+	// The drain parks while nothing is queued: a wake is what makes it run once more.
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, drain_step))
 	var/bench_before = SSbehaviours.bench_ms
 	var/runs_before = K.sched?.runs
 	// Phase G runs on leftovers with a floor once a second: the window has to span one.

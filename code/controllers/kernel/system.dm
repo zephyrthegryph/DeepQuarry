@@ -170,6 +170,23 @@
 /datum/system/proc/work_ready()
 	return can_fire && initialized && periodic_runlevel_ok()
 
+/// Wakes the system's parked work item for `handler` (a PROC_REF): work that returned STEP_PARK for lack of anything to do
+/// runs again at the next pass. Cheap when the item is not parked.
+/datum/system/proc/wake_work_item(handler)
+	var/datum/work_item/W = kernel().work_by_key["[type]:[handler]"]
+	if(W?.parked)
+		W.wake()
+
+/// Sets the interval of the system's work item for `handler` (a PROC_REF): a cadence read from config at boot. The item is
+/// due again one new interval after its last run.
+/datum/system/proc/set_work_interval(handler, interval)
+	var/datum/work_item/W = kernel().work_by_key["[type]:[handler]"]
+	if(!W || W.interval == interval)
+		return
+	W.interval = interval
+	W.next_run = min(W.next_run, world.time + interval)
+	kernel().work_due_reset()
+
 /// Skips the next `cycles` runs of the system's work items: a pass that cost a lot buys the tick a rest.
 /datum/system/proc/postpone(cycles = 1)
 	if(!can_fire || cycles < 1)
