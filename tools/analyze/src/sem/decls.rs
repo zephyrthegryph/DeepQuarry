@@ -13,8 +13,6 @@
 use std::collections::{BTreeMap, HashMap, HashSet};
 use std::sync::Arc;
 
-use rayon::prelude::*;
-
 use crate::tree::{SourceFile, Tree, CODE_DM};
 use crate::{pat, pat_match};
 
@@ -110,7 +108,7 @@ impl Decls {
     pub fn get(tree: &Tree) -> Arc<Decls> {
         tree.memo("sem/decls", || {
             let files = tree.select(&CODE_DM);
-            let parts: Vec<FileDecls> = files.par_iter().map(|f| scan_file(f)).collect();
+            let parts: Vec<FileDecls> = super::par_map(&files, |f| scan_file(f));
             let mut d = Decls::default();
             for p in parts {
                 d.markers.extend(p.markers);

@@ -282,6 +282,9 @@ runtime. `system_accessors.dm` (`analyze gen system_accessors`): one `/proc/<nam
 
 ## Tooling gotchas
 
+* A `Tree::memo` init must not use rayon (`par_iter`, `join`): the initializing worker steals another lint's task while it waits,
+  and a stolen task that needs the same cell blocks on the init this thread is running, a deadlock. Use `sem::par_map` (plain scoped
+  threads, which never steal engine work). A cold-cache run hung about one time in six before the semantic layer did this.
 * Edit Rust with the Write/Edit tools. Shell heredocs and `python -` snippets through the Bash tool have
   been seen to halve backslashes (`'\\'` becomes `'\'`), which silently corrupts regexes.
 * Python text-mode writes CRLF on Windows; sources here are LF (`* text=auto`).

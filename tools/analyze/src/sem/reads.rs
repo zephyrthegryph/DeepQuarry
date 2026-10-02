@@ -407,20 +407,17 @@ impl WriteIndex {
     }
 
     pub fn build(sem: &Sem) -> WriteIndex {
-        use rayon::prelude::*;
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
-        let sets: Vec<HashSet<String>> = procs
-            .par_iter()
-            .map(|p| {
-                let mut s = HashSet::new();
-                let name = p.name();
-                let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
-                if let Some(code) = &p.get().code {
-                    collect_writes(code, ctor, &mut s);
-                }
-                s
-            })
-            .collect();
+        // Plain threads, not rayon: this runs under a memo init (see `par_map`).
+        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| {
+            let mut s = HashSet::new();
+            let name = p.name();
+            let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
+            if let Some(code) = &p.get().code {
+                collect_writes(code, ctor, &mut s);
+            }
+            s
+        });
         let mut w = WriteIndex::default();
         for s in sets {
             w.written.extend(s);

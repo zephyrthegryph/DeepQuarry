@@ -354,3 +354,57 @@ impl Sem {
         Some((defs[idx - 1].1.clone(), defs[idx - 1].2.clone()))
     }
 }
+
+/// `items.iter().map(f).collect()` on plain OS threads, in order.
+///
+/// The semantic layer's memoized values (`Decls`, the write index, ...) are built inside `Tree::memo`, i.e. under a
+/// `OnceLock` init. A rayon `par_iter` there lets the initializing worker steal another lint's task while it waits,
+/// and a stolen task that needs the same cell blocks on the init this very thread is running (or two inits wait on
+/// each other): a deadlock the stress run hit about one cold run in six. Scoped threads never steal engine work.
+pub fn par_map<T: Sync, R: Send>(items: &[T], f: impl Fn(&T) -> R + Sync) -> Vec<R> {
+    let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(items.len().max(1));
+    if n <= 1 || items.len() < 64 {
+        return items.iter().map(f).collect();
+    }
+    let next = std::sync::atomic::AtomicUsize::new(0);
+    let chunk = 32;
+    let mut parts: Vec<Vec<(usize, R)>> = Vec::new();
+    std::thread::scope(|s| {
+        let handles: Vec<_> = (0..n)
+            .map(|_| {
+                s.spawn(|| {
+                    let mut local: Vec<(usize, R)> = Vec::new();
+                    loop {
+                        let start = next.fetch_add(chunk, std::sync::atomic::Ordering::Relaxed);
+                        if start >= items.len() {
+                            break;
+                        }
+                        for i in start..(start + chunk).min(items.len()) {
+                            local.push((i, f(&items[i])));
+                        }
+                    }
+                    local
+                })
+            })
+            .collect();
+        for h in handles {
+            parts.push(h.join().expect("par_map worker panicked"));
+        }
+    });
+    let mut all: Vec<(usize, R)> = parts.into_iter().flatten().collect();
+    all.sort_by_key(|(i, _)| *i);
+    all.into_iter().map(|(_, r)| r).collect()
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn par_map_keeps_order_and_covers_every_item() {
+        let items: Vec<u32> = (0..1000).collect();
+        let out = super::par_map(&items, |x| x * 2);
+        assert_eq!(out.len(), 1000);
+        assert!(out.iter().enumerate().all(|(i, v)| *v == (i as u32) * 2));
+        // Small inputs take the serial path.
+        assert_eq!(super::par_map(&[1u32, 2, 3], |x| x + 1), vec![2, 3, 4]);
+    }
+}
