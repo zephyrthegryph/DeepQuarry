@@ -563,7 +563,9 @@ impl DiscoveryCache {
             expanded_hash.update((piece.content_len as u64).to_le_bytes());
             expanded_hash.update(piece.digest);
         }
-        let expanded_digest = format!("{:x}", expanded_hash.finalize());
+        let expanded_digest = project.semantic_identity.as_ref().map_or_else(
+            ||format!("{:x}",expanded_hash.finalize()),
+            |identity|identity.root.iter().map(|byte|format!("{byte:02x}")).collect());
         let revision = format!(
             "{:x}",
             Sha256::digest(format!("{context}:{project_digest}"))

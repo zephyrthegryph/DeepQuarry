@@ -1075,6 +1075,9 @@ impl BuildInputSnapshot {
                 .map(|unit| unit.path.as_os_str().len() * 2)
                 .sum::<usize>()
             + self.preprocessed.unit_digests.capacity() * 32
+            + self.preprocessed.unit_parents.capacity() * std::mem::size_of::<Option<usize>>()
+            + self.preprocessed.unit_digest_validity.capacity()
+            + self.preprocessed.semantic_identity.as_ref().map_or(0, |identity| identity.resident_bytes())
             + self
                 .resource_requests
                 .iter()

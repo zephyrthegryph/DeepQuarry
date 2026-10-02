@@ -144,6 +144,8 @@ impl PreparedProject {
             project.origins.shrink_to_fit();
             project.units.shrink_to_fit();
             project.unit_digests.shrink_to_fit();
+            project.unit_parents.shrink_to_fit();
+            project.unit_digest_validity.shrink_to_fit();
             project.map_includes.shrink_to_fit();
             project.skin_includes.shrink_to_fit();
             project.file_dirs.shrink_to_fit();
@@ -203,6 +205,9 @@ impl PreparedProject {
                 .map(|unit| unit.path.as_os_str().len() * 2)
                 .sum::<usize>()
             + self.project.unit_digests.capacity() * 32
+            + self.project.unit_parents.capacity()*std::mem::size_of::<Option<usize>>()
+            + self.project.unit_digest_validity.capacity()
+            + self.project.semantic_identity.as_ref().map_or(0,|identity|identity.resident_bytes())
             + self
                 .sources
                 .iter()
@@ -300,7 +305,8 @@ pub(crate) fn changes(
                 *ordinal += 1;
                 (
                     occurrence,
-                    (unit.output_span, project.unit_digests.get(index).copied()),
+                    (unit.output_span, project.semantic_identity.as_ref().and_then(|identity|identity.units.get(index).copied())
+                        .or_else(||project.unit_digest_validity.get(index).copied().unwrap_or(true).then(||project.unit_digests.get(index).copied()).flatten())),
                 )
             })
             .collect()

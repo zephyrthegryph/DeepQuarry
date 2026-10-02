@@ -1835,16 +1835,32 @@ fn replay_procedure_fragment(
         }),scratch.strings.iter().map(|(_,current)|*current),scratch.debug_ids.iter().copied())
     });
     if linked_reusable {
+        let (locals,arguments,expected_lists)=if let Some(layout)=&fragment.allocated_rows {
+            let base=linked_start.as_ref().ok_or("linked output allocation base exceeds u32")?;
+            let locals=fragment.locals.iter().enumerate().map(|(index,&relative)|
+                layout.resolve(procedure_fragments::SiteKind::LocalVariable(index as u32),relative,base)
+                    .ok_or("linked local allocation reference missing")).collect::<Result<Vec<_>,_>>()?;
+            let mut arguments=fragment.arguments.to_vec();
+            for (index,argument) in arguments.chunks_exact_mut(4).enumerate() {
+                argument[2]=layout.resolve(procedure_fragments::SiteKind::ArgumentVariable(index as u32),argument[2],base)
+                    .ok_or("linked argument allocation reference missing")?;
+            }
+            let expected=[layout.resolve(procedure_fragments::SiteKind::ProcedureCode,0,base),
+                layout.resolve(procedure_fragments::SiteKind::ProcedureLocals,1,base),
+                layout.resolve(procedure_fragments::SiteKind::ProcedureArguments,2,base)];
+            let [Some(code),Some(local),Some(args)]=expected else {return Err("linked list allocation overflow".into());};
+            (Arc::<[u32]>::from(locals),Arc::<[u32]>::from(arguments),[code,local,args])
+        } else {(Arc::clone(&fragment.locals),Arc::clone(&fragment.arguments),fragment.record.code_locals_args)};
         dmb.variables.extend(fragment.variables.iter().cloned());
         let code_id=dmb.append_shared_list(Arc::clone(&fragment.words)).map_err(|error|error.to_string())?;
-        let locals_id=dmb.append_shared_list(Arc::clone(&fragment.locals)).map_err(|error|error.to_string())?;
-        let args_id=dmb.append_shared_list(Arc::clone(&fragment.arguments)).map_err(|error|error.to_string())?;
-        if fragment.record.code_locals_args!=[code_id,locals_id,args_id] {
+        let locals_id=dmb.append_shared_list(locals).map_err(|error|error.to_string())?;
+        let args_id=dmb.append_shared_list(arguments).map_err(|error|error.to_string())?;
+        if expected_lists!=[code_id,locals_id,args_id] {
             return Err("linked output rows disagree with allocation witness".into());
         }
         crate::reserve_proc_sentinel(dmb);
         let proc_index=dmb.procs.len();
-        dmb.procs.push(fragment.record.clone());
+        let mut record=fragment.record.clone();record.code_locals_args=expected_lists;dmb.procs.push(record);
         attach_emitted_proc(dmb,pending.owner,&pending.owner_path,pending.verb,proc_index);
         return Ok(Some((proc_index,Arc::clone(&fragment.words),false,true)));
     }
@@ -1877,15 +1893,19 @@ fn replay_procedure_fragment(
         let mut variable = variable.clone(); variable.name = string_id(variable.name)?;
         dmb.variables.push(variable);
     }
-    let variable_id = |old: u32| -> Result<u32, String> {
+    let variable_id = |site:procedure_fragments::SiteKind,old: u32| -> Result<u32, String> {
+        if let Some(layout)=&fragment.allocated_rows {
+            return layout.resolve(site,old,linked_start.as_ref().ok_or("output allocation base exceeds u32")?)
+                .ok_or_else(||"output DAG relative variable dependency missing".into());
+        }
         old.checked_sub(fragment.old_variable_base).filter(|offset| (*offset as usize) < fragment.variables.len())
             .and_then(|offset| variable_base.checked_add(offset)).ok_or_else(|| "output DAG local variable dependency missing".into())
     };
     let code_id = dmb.append_shared_list(Arc::clone(&words)).map_err(|error|error.to_string())?;
-    let locals = fragment.locals.iter().map(|&id| variable_id(id)).collect::<Result<Vec<_>, _>>()?;
+    let locals = fragment.locals.iter().enumerate().map(|(index,&id)| variable_id(procedure_fragments::SiteKind::LocalVariable(index as u32),id)).collect::<Result<Vec<_>, _>>()?;
     let locals_id = append_list(dmb, locals);
     let mut arguments = fragment.arguments.to_vec();
-    for argument in arguments.chunks_exact_mut(4) { argument[2] = variable_id(argument[2])?; }
+    for (index,argument) in arguments.chunks_exact_mut(4).enumerate() { argument[2] = variable_id(procedure_fragments::SiteKind::ArgumentVariable(index as u32),argument[2])?; }
     for (helper, envelope) in helpers {
         active.insert(helper.key.clone());
         let current_statics: BTreeMap<_, _> = helper.statics.keys()
@@ -4030,6 +4050,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     for (index, assignment) in pending_dynamic.iter().enumerate() {
         dynamic_by_name.entry(assignment.name.clone()).or_default().push(index);
     }
+    session.invocation_fragments.counters=Default::default();
     let invocation_preparation_started=std::time::Instant::now();
     let invocation_total = pending.len();
     let authored_pending=&pending;
@@ -4269,6 +4290,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let (bindings, frame_digest) = session.invocation_fragments.frame(&syntax, bindings.into());
         invocation_plans.push(canonical::InvocationPlan { path, params, metadata, static_ids, bindings, frame_digest });
     }
+        if std::env::var_os("DM_BUILD_TRACE").is_some(){let c=session.invocation_fragments.counters;eprintln!("DM_BUILD_TRACE invocation queries: signature_hits={} signature_misses={} syntax_hits={} syntax_misses={} frame_hits={} frame_misses={} point_reads={} batch_records={}",c.signature_hits,c.signature_misses,c.syntax_hits,c.syntax_misses,c.frame_hits,c.frame_misses,c.point_reads,c.batch_records);}
         trace("invocation plans complete; wire metadata start");
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
@@ -4900,8 +4922,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     .map_err(|error| format!("{path}: output dependency slots: {error}"))?;
                                 let linked=output_helpers.is_empty().then(||procedure_fragments::ObjectWitness {
                                     semantic_identity:candidate.clone(),recipe_identity:String::new(),start:output_allocation_start,
-                                    allocation_mask:procedure_fragments::AllocationMask::VARIABLES.union(procedure_fragments::AllocationMask::LISTS)
-                                        .union(procedure_fragments::AllocationMask::PROCEDURES).union(procedure_fragments::AllocationMask::REFERENCES),
+                                    allocation_mask:procedure_fragments::AllocationMask::NONE,
                                     read_identities:Vec::new(),scalar_reads:Vec::new(),
                                     unresolved_debug:if source_debug.is_some() {simple.statement_origins.iter()
                                         .filter(|mark|source_debug.and_then(|source|source.resolve(body_base+mark.start)).is_none())
@@ -4915,6 +4936,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     }).collect(),
                                     debug_ids:debug.iter().map(|mark|(linked_words[mark.file_offset as usize],linked_words[mark.line_offset as usize])).collect(),
                                 });
+                                let variable_count=dmb.variables.len().saturating_sub(output_variable_base);
+                                let allocated_rows=procedure_fragments::ProcedureRowLayout::new(u32::try_from(variable_count)
+                                    .map_err(|_|"procedure variable allocation count exceeds u32")?);
+                                let local_offsets=dmb.lists[locals_id as usize].iter().map(|id|id.checked_sub(output_variable_base as u32)
+                                    .ok_or("procedure local allocation reference precedes object")).collect::<Result<Vec<_>,_>>()?;
+                                let mut argument_offsets=dmb.lists[args_id as usize].to_vec();
+                                for argument in argument_offsets.chunks_exact_mut(4) {argument[2]=argument[2].checked_sub(output_variable_base as u32)
+                                    .ok_or("procedure argument allocation reference precedes object")?;}
+                                let mut relative_record=dmb.procs[proc_index].clone();relative_record.code_locals_args=[0,1,2];
                                 let fragment = procedure_fragments::OutputFragment {
                                     body_base_relative: body_base.saturating_sub(pending.span().start),
                                     debug_enabled: source_debug.is_some(),
@@ -4924,10 +4954,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     strings: recipes,
                                     variables: dmb.variables[output_variable_base..].to_vec(),
                                     old_variable_base: output_variable_base as u32,
-                                    locals: dmb.lists[locals_id as usize].to_vec().into(),
-                                    arguments: dmb.lists[args_id as usize].to_vec().into(),
-                                    record: dmb.procs[proc_index].clone(), relocations, debug,
-                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, words: Arc::clone(&linked_words),
+                                    locals: local_offsets.into(), arguments: argument_offsets.into(),
+                                    record: relative_record, relocations, debug,
+                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, allocated_rows:Some(allocated_rows), words: Arc::clone(&linked_words),
                                 };
                                 session.procedure_fragments.retain(key.clone(), descriptor.clone(), candidate, fragment);
                             }

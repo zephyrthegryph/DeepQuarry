@@ -4,6 +4,8 @@
 //! silently interpreted as false. The source provider makes this usable with Salsa inputs,
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
+mod emission_identity;
+pub use emission_identity::SourceSemanticIdentity;
 mod origin_map;
 pub use origin_map::{OriginMap, SourceMapBuilder};
 
@@ -54,8 +56,12 @@ pub struct Unit {
 pub struct PreprocessedProject {
     pub text: String,
     pub units: Vec<Unit>,
-    /// Exact expanded content identities, in the same order as `units`.
+    /// Flat expanded-content checksums; consult `unit_digest_validity` before use.
     pub unit_digests: Vec<[u8; 32]>,
+    /// False entries require the compatibility checksum accessor below.
+    pub unit_digest_validity: Vec<bool>,
+    pub unit_parents: Vec<Option<usize>>,
+    pub semantic_identity: Option<Arc<SourceSemanticIdentity>>,
     pub origins: Vec<Origin>,
     /// Canonical source map; legacy callers may retain explicit origins.
     pub origin_map: Option<Arc<OriginMap>>,
@@ -72,6 +78,13 @@ pub struct PreprocessedProject {
 }
 
 impl PreprocessedProject {
+    pub fn flat_unit_digest(&self,index:usize,source:&dm_syntax::SegmentedSource)->Result<[u8;32],String> {
+        if self.unit_digest_validity.get(index).copied().unwrap_or(true) {
+            return self.unit_digests.get(index).copied().ok_or_else(||"unit checksum unavailable".into());
+        }
+        let unit=self.units.get(index).ok_or("unit checksum span unavailable")?;
+        let mut hash=Sha256::new();source.visit_range(unit.output_span,|text|hash.update(text.as_bytes()))?;Ok(hash.finalize().into())
+    }
     pub fn origin_count(&self)->usize { self.origin_map.as_ref().map_or(self.origins.len(),|map|map.len()) }
     pub fn origin_get(&self,index:usize)->Option<Origin> { self.origin_map.as_ref().map_or_else(||self.origins.get(index).cloned(),|map|map.get(index)) }
     pub fn origin_at_line(&self,line:usize)->Option<Origin> {
@@ -208,12 +221,13 @@ struct CachedUnit {
     origins: DiskOrigins,
     units: Vec<Unit>,
     unit_digests: Vec<[u8; 32]>,
+    unit_parents: Vec<Option<usize>>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
 }
 
-const CACHE_FORMAT_VERSION: u32 = 10;
+const CACHE_FORMAT_VERSION: u32 = 11;
 const MAX_CACHED_LEAF_BYTES: usize = 512 * 1024;
 const MAX_CACHED_ORIGINS: usize = 8192;
 const MAX_CACHED_PATHS: usize = 8192;
@@ -254,6 +268,8 @@ fn cache_compiler_fingerprint() -> String {
         .get_or_init(|| {
             let mut hash = Sha256::new();
             hash.update(include_str!("lib.rs"));
+            hash.update(include_str!("emission_identity.rs"));
+            hash.update(include_str!("origin_map.rs"));
             hash.update(include_str!("../../dm-syntax/src/lib.rs"));
             format!("{:x}", hash.finalize())
         })
@@ -282,6 +298,7 @@ struct DiskEntry {
     origins: DiskOrigins,
     units: Vec<DiskUnit>,
     unit_digests: Vec<[u8; 32]>,
+    unit_parents: Vec<Option<usize>>,
     diagnostics: Vec<Diagnostic>,
     macro_changes: BTreeMap<String, Option<Macro>>,
     file_dir_changes: Vec<FileDirChange>,
@@ -355,6 +372,7 @@ impl From<&CachedUnit> for DiskEntry {
             output_text: entry.output_text.clone(),
             origins: entry.origins.clone(),
             unit_digests: entry.unit_digests.clone(),
+            unit_parents: entry.unit_parents.clone(),
             units: entry
                 .units
                 .iter()
@@ -386,6 +404,7 @@ impl From<DiskEntry> for CachedUnit {
             output_text: entry.output_text,
             origins: entry.origins,
             unit_digests: entry.unit_digests,
+            unit_parents: entry.unit_parents,
             units: entry
                 .units
                 .into_iter()
@@ -405,6 +424,8 @@ impl From<DiskEntry> for CachedUnit {
 impl CachedUnit {
     fn valid_digests(&self) -> bool {
         self.units.len() == self.unit_digests.len()
+            && self.unit_parents.len()==self.units.len()
+            && self.unit_parents.iter().enumerate().all(|(index,parent)|parent.is_none_or(|parent|parent>index&&parent<self.units.len()))
             && self
                 .units
                 .iter()
@@ -976,6 +997,14 @@ fn preprocess_project_inner<P: SourceProvider>(
     if !segmented {
         ctx.output.text = pieces.iter().map(|piece| piece.as_ref()).collect();
     }
+    ctx.output.unit_digest_validity=vec![true;ctx.output.units.len()];
+    if segmented {
+        let source=dm_syntax::SegmentedSource::new(pieces.clone());
+        match SourceSemanticIdentity::build(&ctx.output,&source,&ctx.project_dir) {
+            Ok(identity)=>ctx.output.semantic_identity=Some(Arc::new(identity)),
+            Err(error)=>ctx.output.diagnostics.push(Diagnostic{path:project.to_owned(),line:0,kind:DiagnosticKind::Io,message:error}),
+        }
+    }
     (ctx.output, pieces)
 }
 
@@ -1284,6 +1313,8 @@ impl<P: SourceProvider> Context<'_, P> {
                         };
                         if let Some(builder)=&mut self.origin_builder {builder.push(origin);} else {self.output.origins.push(origin);}
                     }
+                    let base=self.output.units.len();
+                    self.output.unit_parents.extend(entry.unit_parents.iter().map(|parent|parent.map(|parent|parent+base)));
                     self.output
                         .units
                         .extend(entry.units.iter().cloned().map(|mut unit| {
@@ -1628,6 +1659,11 @@ impl<P: SourceProvider> Context<'_, P> {
         self.output
             .unit_digests
             .push(self.expanded.digest(unit_start, unit_end));
+        let parent=self.output.units.len();
+        for ancestor in &mut self.output.unit_parents[unit_start_index..] {
+            if ancestor.is_none() {*ancestor=Some(parent);}
+        }
+        self.output.unit_parents.push(None);
         self.output.units.push(Unit {
             path: path.clone(),
             output_span: Span::new(unit_start, unit_end),
@@ -1689,6 +1725,7 @@ impl<P: SourceProvider> Context<'_, P> {
                     .collect(),
                 output_text: self.expanded.range(unit_start, unit_end),
                 unit_digests: self.output.unit_digests[unit_start_index..].to_vec(),
+                unit_parents: self.output.unit_parents[unit_start_index..].iter().map(|parent|parent.map(|parent|parent-unit_start_index)).collect(),
                 origins: self.origins_from(origin_start)
                     .map(|origin| {
                         DiskOrigin(

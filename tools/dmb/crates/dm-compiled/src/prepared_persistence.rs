@@ -10,7 +10,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 5;
+const VERSION: u32 = 6;
 const MAX_PACK: usize = 128 * 1024 * 1024;
 const MAX_EXPANDED_BYTES: usize = 1024 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
@@ -40,6 +40,9 @@ struct Manifest {
     origin_count: usize,
     units: Vec<(usize, usize, usize, usize)>,
     unit_digests: Vec<[u8; 32]>,
+    unit_digest_validity:Vec<bool>,
+    unit_parents:Vec<Option<usize>>,
+    semantic_identity:Option<Arc<dm_preprocess::SourceSemanticIdentity>>,
     dependencies: Vec<usize>,
     maps: Vec<usize>,
     skins: Vec<usize>,
@@ -229,6 +232,9 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         origin_count: project.origin_count(),
         units,
         unit_digests: project.unit_digests.clone(),
+        unit_digest_validity:project.unit_digest_validity.clone(),
+        unit_parents:project.unit_parents.clone(),
+        semantic_identity:project.semantic_identity.clone(),
         dependencies,
         maps,
         skins,
@@ -294,6 +300,8 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         || manifest.origin_count > 4_000_000
         || manifest.units.len() > 128_000
         || manifest.units.len() != manifest.unit_digests.len()
+        || manifest.units.len()!=manifest.unit_parents.len()
+        || manifest.units.len()!=manifest.unit_digest_validity.len()
     {
         return Ok(None);
     }
@@ -404,6 +412,9 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         origin_map: Some(Arc::new(origins)),
         units,
         unit_digests: manifest.unit_digests,
+        unit_digest_validity:manifest.unit_digest_validity,
+        unit_parents:manifest.unit_parents,
+        semantic_identity:manifest.semantic_identity,
         dependencies: resolve(manifest.dependencies)?
             .into_iter()
             .collect::<BTreeSet<_>>(),
@@ -414,6 +425,9 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         final_macros: manifest.macros,
     };
     project.compact_origins();
+    if !project.semantic_identity.as_ref().is_some_and(|identity|identity.validate(&project,expanded.len())) {
+        return Err(io::Error::other("invalid prepared emission identity"));
+    }
     Ok(Some(PreparedProject {
         project: Arc::new(project),
         macro_names: Arc::new(manifest.macro_names),

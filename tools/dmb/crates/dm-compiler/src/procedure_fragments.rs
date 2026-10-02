@@ -23,7 +23,7 @@ pub(super) struct HelperRecipe {
     pub dedup: String,
     pub statics: std::collections::BTreeMap<String, u32>,
 }
-pub(super) use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation};
+pub(super) use dm_output::object_directory::{AllocationCounts,AllocationMask,ObjectWitness,WitnessObservation,ProcedureRowLayout,SiteKind};
 #[derive(Serialize, Deserialize)]
 pub(super) struct OutputFragment {
     pub body_base_relative: usize,
@@ -41,6 +41,7 @@ pub(super) struct OutputFragment {
     #[serde(default)] pub linked: Option<ObjectWitness>,
     #[serde(default)] pub code_digest: Option<String>,
     #[serde(default)] pub code_word_count: Option<u32>,
+    #[serde(default)] pub allocated_rows: Option<ProcedureRowLayout>,
     #[serde(skip)]
     pub words: Arc<[u32]>,
 }
@@ -96,8 +97,10 @@ impl OutputFragment {
     fn validate(&self) -> bool {
         let fragment=self;
         if fragment.code_word_count.is_some_and(|words|words as usize!=fragment.words.len()) {return false;}
-        let valid_variable = |id: u32| id.checked_sub(fragment.old_variable_base)
-            .is_some_and(|offset| (offset as usize) < fragment.variables.len());
+        if fragment.allocated_rows.as_ref().is_some_and(|layout|!layout.valid() || layout.variable_count as usize!=fragment.variables.len()
+            || fragment.record.code_locals_args!=[0,1,2]) {return false;}
+        let valid_variable = |id: u32| if fragment.allocated_rows.is_some() {(id as usize)<fragment.variables.len()}
+            else {id.checked_sub(fragment.old_variable_base).is_some_and(|offset| (offset as usize)<fragment.variables.len())};
         if fragment.locals.len() > u16::MAX as usize || fragment.arguments.len() > u16::MAX as usize
             || fragment.locals.iter().any(|&id| !valid_variable(id))
             || fragment.arguments.chunks_exact(4).any(|argument| !valid_variable(argument[2]))
@@ -127,10 +130,11 @@ impl OutputFragment {
                 StringRecipe::Bytes{old_id,..}=>Some(*old_id),StringRecipe::Debug{..}=>None,
             }).collect(); expected_strings.sort_unstable();
             if linked.string_ids!=expected_strings || linked.unresolved_debug!=fragment.unresolved_debug { return false; }
-            let required=AllocationMask::VARIABLES.union(AllocationMask::LISTS).union(AllocationMask::PROCEDURES).union(AllocationMask::REFERENCES);
+            let required=if fragment.allocated_rows.is_some() {AllocationMask::NONE} else {
+                AllocationMask::VARIABLES.union(AllocationMask::LISTS).union(AllocationMask::PROCEDURES).union(AllocationMask::REFERENCES)};
             if linked.allocation_mask!=required { return false; }
             let mut next=linked.start.lists;
-            for actual in fragment.record.code_locals_args {
+            for actual in fragment.record.code_locals_args.into_iter().filter(|_|fragment.allocated_rows.is_none()) {
                 if next==0xffff { next+=1; }
                 if actual!=next { return false; }
                 let Some(value)=next.checked_add(1) else {return false;}; next=value;
@@ -143,7 +147,7 @@ impl OutputFragment {
         // addressed code content contribute. Dense IDs are part of the recipe.
         let bytes=rmp_serde::to_vec(&(self.body_base_relative,self.debug_enabled,&self.unresolved_debug,&self.strings,
             &self.variables,self.old_variable_base,&self.locals,&self.arguments,&self.record,&self.relocations,
-            &self.debug,&self.helpers,&self.code_digest,&self.code_word_count)).ok()?;
+            &self.debug,&self.helpers,&self.code_digest,&self.code_word_count,&self.allocated_rows)).ok()?;
         let mut hash=Sha256::new();hash.update(b"procedure-output-recipe-v1");hash.update(bytes);
         Some(format!("{:x}",hash.finalize()))
     }
@@ -158,6 +162,7 @@ impl OutputFragment {
             + self.linked.as_ref().map_or(0,|linked|linked.symbol_ids.capacity()*4+linked.string_ids.capacity()*4+linked.debug_ids.capacity()*8
                 +linked.semantic_identity.capacity()+linked.recipe_identity.capacity()+linked.unresolved_debug.capacity()*std::mem::size_of::<usize>()+256)
             + self.code_digest.as_ref().map_or(0,|digest|digest.capacity())
+            + self.allocated_rows.as_ref().map_or(0,|_|64)
             + self.helpers.iter().map(|h| h.key.path.capacity() + h.identity.capacity() + h.dedup.capacity()
                 + h.descriptor.body_digest.capacity() + h.descriptor.frame_digest.capacity()
                 + h.statics.keys().map(|key| key.capacity() + 64).sum::<usize>() + 160).sum::<usize>() + 256

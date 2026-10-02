@@ -277,6 +277,9 @@ pub(crate) fn splice_source_edits(
         text: String::new(),
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
+        unit_digest_validity: previous.unit_digest_validity.clone(),
+        unit_parents: previous.unit_parents.clone(),
+        semantic_identity: None,
         origins: previous.origins.clone(),
         origin_map: previous.origin_map.clone(),
         dependencies: previous.dependencies.clone(),
@@ -307,10 +310,16 @@ pub(crate) fn splice_source_edits(
             changed_hashes.push((index, unit.output_span));
         }
     }
-    for (index, digest) in pieces.digest_ranges(&changed_hashes)? {
-        *project.unit_digests.get_mut(index)? = digest;
+    if let Some(previous_identity)=&previous.semantic_identity {
+        if project.unit_digest_validity.len()!=project.units.len() {project.unit_digest_validity=vec![true;project.units.len()];}
+        for &(index,_) in &changed_hashes {project.unit_digest_validity[index]=false;project.unit_digests[index]=[0;32];}
+        let directory=previous.units.last()?.path.parent()?;
+        let edits:Vec<_>=replacements.iter().map(|replacement|replacement.0).collect();
+        project.semantic_identity=Some(Arc::new(dm_preprocess::SourceSemanticIdentity::rebuild(&project,&pieces.source(),directory,Some(previous_identity),&edits).ok()?));
+    } else {
+        for (index,digest) in pieces.digest_ranges(&changed_hashes)? {*project.unit_digests.get_mut(index)?=digest;}
     }
-    Some((project, pieces))
+    Some((project,pieces))
 }
 
 /// Line-count and structural changes can bypass ordered expansion when an entire
@@ -382,6 +391,9 @@ fn splice_raw_units(
         text: String::new(),
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
+        unit_digest_validity: previous.unit_digest_validity.clone(),
+        unit_parents: previous.unit_parents.clone(),
+        semantic_identity: None,
         origins: Vec::new(),
         origin_map: None,
         dependencies: previous.dependencies.clone(),
@@ -461,8 +473,14 @@ fn splice_raw_units(
             changed_hashes.push((index, unit.output_span));
         }
     }
-    for (index, digest) in pieces.digest_ranges(&changed_hashes)? {
-        *project.unit_digests.get_mut(index)? = digest;
+    if let Some(previous_identity)=&previous.semantic_identity {
+        if project.unit_digest_validity.len()!=project.units.len() {project.unit_digest_validity=vec![true;project.units.len()];}
+        for &(index,_) in &changed_hashes {project.unit_digest_validity[index]=false;project.unit_digests[index]=[0;32];}
+        let directory=previous.units.last()?.path.parent()?;
+        let edits:Vec<_>=replacements.iter().map(|replacement|replacement.0).collect();
+        project.semantic_identity=Some(Arc::new(dm_preprocess::SourceSemanticIdentity::rebuild(&project,&pieces.source(),directory,Some(previous_identity),&edits).ok()?));
+    } else {
+        for (index,digest) in pieces.digest_ranges(&changed_hashes)? {*project.unit_digests.get_mut(index)?=digest;}
     }
-    Some((project, pieces))
+    Some((project,pieces))
 }

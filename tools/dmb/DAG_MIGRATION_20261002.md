@@ -224,3 +224,15 @@ job weights causing four hydration sessions pernormalwindow. Nextprototype
 uses FIFO, typedfieldwrite projection, exactcodeword-count scheduling,
 compressedcodeobjects and one sharedObjectWitness core. Archive snapshot
 metadata reuse with freshstamp verification is implemented awaitingbuild.
+
+M completed from 3a6de7dc83, with a fresh uncompressed C: cache:
+cold 220.718s; unchanged 0.426s; body 22.662s; new proc 49.662s;
+new var 109.126s; default 69.159s; asset 21.479s; new resource 80.935s;
+fresh cached process 0.157s; fresh body 33.740s. All compiler requests
+succeeded. No Rust tests, DM tests, or runtime validation were run.
+New-var invocation preparation alone took 48.608s despite reusing all
+68,411 authored bodies. The following prototype retains compact invocation
+handles, rebases procedure-owned typed rows, and uses canonical source
+emission recipes. Its first Cargo build passed; timings remain pending.
+Packed certificates now use one publication representation, with legacy
+reads and oversized-candidate fallback retained. That change awaits build.

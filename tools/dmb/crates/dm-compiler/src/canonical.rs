@@ -177,6 +177,8 @@ pub(super) fn invocation_declaration_projection(items: &[Item]) -> Vec<Item> {
 /// Content-addressed declaration fragments survive whole-prefix allocation
 /// replay. A new declaration changes only its own signature/settings/static
 /// syntax; inherited metadata is an explicit fragment input.
+#[derive(Clone,Copy,Default)]
+pub(super) struct InvocationCounters {pub signature_hits:usize,pub signature_misses:usize,pub syntax_hits:usize,pub syntax_misses:usize,pub frame_hits:usize,pub frame_misses:usize,pub point_reads:usize,pub batch_records:usize}
 #[derive(Default)]
 pub(super) struct InvocationFragments {
     entries: BTreeMap<String, Arc<InvocationSyntax>>,
@@ -194,6 +196,8 @@ pub(super) struct InvocationFragments {
     syntax_misses: BTreeSet<String>,
     handle_misses: BTreeSet<String>,
     window_declarations: HashMap<usize,(String,String)>,
+    pub(super) counters: InvocationCounters,
+    handles: BTreeMap<[u8;32],[u8;32]>,
 }
 impl InvocationFragments {
     const LIMIT: usize = 32 * 1024 * 1024;
@@ -206,19 +210,23 @@ impl InvocationFragments {
         cache
     }
     fn signature_namespace() -> String {
-        format!("invocation-signatures-v1-{}", env!("DM_EMISSION_FINGERPRINT"))
+        format!("invocation-signatures-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
     }
     fn namespace() -> String {
-        format!("invocation-syntax-v3-{}", env!("DM_EMISSION_FINGERPRINT"))
+        format!("invocation-syntax-v4-{}", env!("DM_EMISSION_FINGERPRINT"))
     }
-    fn handles_namespace() -> String { format!("invocation-syntax-handles-v2-{}",env!("DM_EMISSION_FINGERPRINT")) }
+    fn handles_namespace() -> String { format!("invocation-syntax-handles-v3-{}",env!("DM_EMISSION_FINGERPRINT")) }
+    fn digest_bytes(value:&str)->Option<[u8;32]> {if value.len()!=64{return None;}let mut bytes=[0u8;32];for(index,pair)in value.as_bytes().chunks_exact(2).enumerate(){let digit=|byte:u8|match byte {b'0'..=b'9'=>Some(byte-b'0'),b'a'..=b'f'=>Some(byte-b'a'+10),b'A'..=b'F'=>Some(byte-b'A'+10),_=>None};bytes[index]=(digit(pair[0])?<<4)|digit(pair[1])?;}Some(bytes)}
+    fn digest_text(value:&[u8;32])->String {use std::fmt::Write;let mut result=String::with_capacity(64);for byte in value {let _=write!(result,"{byte:02x}");}result}
+    fn remember_handle(&mut self,declaration:&str,payload:&str){if let Some((declaration,payload))=Self::digest_bytes(declaration).zip(Self::digest_bytes(payload)){if self.handles.contains_key(&declaration)||self.handles.len()<72_000 {self.handles.insert(declaration,payload);}}}
     fn declaration_key(item:&Item,path:&str)->String {
+        fn relevant(node:&Item)->bool {let header=node.header.trim();header.starts_with("set ")||["var/static/","var/global/","var/const/"].iter().any(|prefix|header.starts_with(prefix))||node.children.iter().any(relevant)}
         fn items(hash:&mut Sha256,nodes:&[Item]) {
-            hash.update((nodes.len() as u64).to_le_bytes());
-            for item in nodes {hash.update([item.kind as u8]);hash.update((item.header.len() as u64).to_le_bytes());hash.update(item.header.as_bytes());items(hash,&item.children);}
+            hash.update((nodes.iter().filter(|node|relevant(node)).count() as u64).to_le_bytes());
+            for item in nodes.iter().filter(|node|relevant(node)) {hash.update([item.kind as u8]);hash.update((item.header.len() as u64).to_le_bytes());hash.update(item.header.as_bytes());items(hash,&item.children);}
         }
         let mut hash=Sha256::new();hash.update(path.as_bytes());hash.update(item.header.as_bytes());
-        items(&mut hash,&invocation_declaration_projection(&item.children));
+        items(&mut hash,&item.children);
         format!("{:x}",hash.finalize())
     }
     /// A declaration handle selects a candidate, never certifies inherited
@@ -231,22 +239,27 @@ impl InvocationFragments {
         self.prefetch_signatures(inputs);
         let Some(store)=self.store.clone() else {return;};
         let mut handles=Vec::new();
+        let mut payloads=BTreeSet::new();
         for (item,owner,verb) in inputs {
             let Ok((path,_))=self.signature(item,owner,*verb) else {continue;};
             let key=Self::declaration_key(item,&path);
             self.window_declarations.insert(*item as *const Item as usize,(path,key.clone()));
-            if !self.handle_misses.contains(&key) {handles.push(Key::new(Self::handles_namespace(),key));}
+            if let Some(identity)=Self::digest_bytes(&key).and_then(|key|self.handles.get(&key)).map(Self::digest_text) {
+                if !self.entries.contains_key(&identity)&&!self.syntax_misses.contains(&identity){payloads.insert(Key::new(Self::namespace(),identity));}
+            } else if !self.handle_misses.contains(&key) {handles.push(Key::new(Self::handles_namespace(),key));}
         }
-        let mut payloads=BTreeSet::new();
+        self.counters.batch_records+=handles.len();
         default_plans::read_stage_batch(&store,&handles,128,1024*1024,&mut |key,bytes| {
             if let Some(identity)=bytes.and_then(|bytes|String::from_utf8(bytes).ok()).filter(|identity|identity.len()==64&&identity.bytes().all(|b|b.is_ascii_hexdigit())) {
+                self.remember_handle(&key.name,&identity);
                 if !self.entries.contains_key(&identity)&&!self.syntax_misses.contains(&identity) {payloads.insert(Key::new(Self::namespace(),identity));}
             } else if self.handle_misses.len()<128_000 {self.handle_misses.insert(key.name.clone());}
         });
         let payloads:Vec<_>=payloads.into_iter().collect();
+        self.counters.batch_records+=payloads.len();
         default_plans::read_stage_batch(&store,&payloads,1024*1024,8*1024*1024,&mut |key,bytes| {
             if let Some(bytes)=bytes {
-                if let Ok(value)=serde_json::from_slice::<InvocationSyntax>(&bytes) {
+                if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {
                     let charge=bytes.len().saturating_mul(3)+key.name.len()+128;
                     if value.key==key.name && self.requested_bytes.saturating_add(charge)<=16*1024*1024 {
                         self.requested_bytes+=charge;self.requested_syntax.insert(key.name.clone(),Arc::new(value));
@@ -259,10 +272,11 @@ impl InvocationFragments {
         let Some(store)=self.store.clone() else {return;};
         let keys:Vec<_>=inputs.iter().map(|(item,owner,verb)|crate::lower_cache::shared_binding_fingerprint(&(*owner,*verb,&item.header)))
             .collect::<BTreeSet<_>>().into_iter().filter(|key|!self.signatures.contains_key(key)&&!self.requested_signatures.contains_key(key)&&!self.signature_misses.contains(key)).map(|key|Key::new(Self::signature_namespace(),key)).collect();
+        self.counters.batch_records+=keys.len();
         for keys in keys.chunks(4096) {
             default_plans::read_stage_batch(&store,keys,1024*1024,8*1024*1024,&mut |key,bytes| {
                 if let Some(bytes)=bytes {
-                    if let Ok(value)=serde_json::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
+                    if let Ok(value)=rmp_serde::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
                         let size=bytes.len()*3+key.name.len()+128;
                         if self.bytes.saturating_add(size)<=Self::LIMIT {self.bytes+=size;self.signatures.insert(key.name.clone(),Arc::new(value));}
                         else if self.requested_signature_bytes.saturating_add(size)<=16*1024*1024 {
@@ -281,12 +295,14 @@ impl InvocationFragments {
     ) -> Result<(String, Vec<ParsedParameter>), String> {
         let key = crate::lower_cache::shared_binding_fingerprint(&(owner, verb, &item.header));
         if let Some(value) = self.signatures.get(&key) {
-            return Ok(value.as_ref().clone());
+            self.counters.signature_hits+=1;return Ok(value.as_ref().clone());
         }
-        if let Some(value)=self.requested_signatures.get(&key) {return Ok(value.as_ref().clone());}
+        if let Some(value)=self.requested_signatures.get(&key) {self.counters.signature_hits+=1;return Ok(value.as_ref().clone());}
+        self.counters.signature_misses+=1;
         if !self.signature_misses.contains(&key) {
+            self.counters.point_reads+=1;
             if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::signature_namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
-                if let Ok(value)=serde_json::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
+                if let Ok(value)=rmp_serde::from_slice::<(String,Vec<ParsedParameter>)>(&bytes) {
                     let size=bytes.len()*3+key.len()+128;
                     if self.bytes.saturating_add(size)<=Self::LIMIT {self.bytes+=size;self.signatures.insert(key.clone(),Arc::new(value.clone()));}
                     return Ok(value);
@@ -318,7 +334,7 @@ impl InvocationFragments {
         }
         // Persistence is independent of whether the optional decoded cache has
         // room. Large projects must not repeatedly derive the uncached suffix.
-        if let Ok(bytes) = serde_json::to_vec(&value) {
+        if let Ok(bytes) = rmp_serde::to_vec_named(&value) {
             self.queue_pending(format!("signature:{key}"), bytes);
             if self.pending_bytes>4*1024*1024 {self.flush();}
         }
@@ -341,12 +357,14 @@ impl InvocationFragments {
         hash.update(serde_json::to_vec(&base).map_err(|e|e.to_string())?);
         let key=format!("{:x}",hash.finalize());
         if let Some(value) = self.entries.get(&key) {
-            return Ok(Arc::clone(value));
+            self.counters.syntax_hits+=1;return Ok(Arc::clone(value));
         }
-        if let Some(value)=self.requested_syntax.get(&key) {return Ok(Arc::clone(value));}
+        if let Some(value)=self.requested_syntax.get(&key) {self.counters.syntax_hits+=1;return Ok(Arc::clone(value));}
+        self.counters.syntax_misses+=1;
         if self.disk_syntax_ready && !self.syntax_misses.contains(&key) {
+            self.counters.point_reads+=1;
             if let Some(bytes)=self.store.as_ref().and_then(|store|store.read_many_bounded(&[Key::new(Self::namespace(),&key)],1024*1024,1024*1024,None).ok()).and_then(|read|read.values.into_iter().next().flatten()) {
-                if let Ok(value)=serde_json::from_slice::<InvocationSyntax>(&bytes) {
+                if let Ok(value)=rmp_serde::from_slice::<InvocationSyntax>(&bytes) {
                     let value=Arc::new(value);self.queue_pending(format!("handle:{declaration_key}"),key.as_bytes().to_vec());self.retain(key,Arc::clone(&value),bytes.len());return Ok(value);
                 }
             }
@@ -363,7 +381,7 @@ impl InvocationFragments {
             frame: None,
             key: key.clone(),
         });
-        if let Ok(bytes) = serde_json::to_vec(value.as_ref()) {
+        if let Ok(bytes) = rmp_serde::to_vec_named(value.as_ref()) {
             let size = bytes.len();
             if size <= 1024 * 1024 {
                 self.queue_pending(key.clone(), bytes);
@@ -383,9 +401,10 @@ impl InvocationFragments {
     ) -> (Arc<InvocationOverlay>, String) {
         if let Some((cached, digest)) = &syntax.frame {
             if cached.as_ref() == &overlay {
-                return (Arc::clone(cached), digest.clone());
+                self.counters.frame_hits+=1;return (Arc::clone(cached), digest.clone());
             }
         }
+        self.counters.frame_misses+=1;
         let overlay = Arc::new(overlay);
         // Hash the immutable semantic fragment directly, without constructing
         // and cloning a complete LowerBindings solely for serialization.
@@ -393,13 +412,12 @@ impl InvocationFragments {
         if self.entries.contains_key(&syntax.key)||self.requested_syntax.contains_key(&syntax.key) {
             let mut updated = syntax.as_ref().clone();
             updated.frame = Some((Arc::clone(&overlay), digest.clone()));
-            if let Ok(bytes) = serde_json::to_vec(&updated) {
-                let extra = bytes
-                    .len()
-                    .saturating_sub(
-                        serde_json::to_vec(syntax.as_ref()).map_or(bytes.len(), |old| old.len()),
-                    )
-                    .saturating_mul(2);
+            if let Ok(bytes) = rmp_serde::to_vec_named(&updated) {
+                // The added immutable frame has a known typed footprint; do
+                // not serialize the original syntax a second time to measure it.
+                let strings=|values:&[String]|values.iter().map(|value|value.capacity()+std::mem::size_of::<String>()).sum::<usize>();
+                let pairs=|values:&[(String,String)]|values.iter().map(|(name,value)|name.capacity()+value.capacity()+std::mem::size_of::<(String,String)>()).sum::<usize>();
+                let extra=digest.capacity()+std::mem::size_of::<InvocationOverlay>()+overlay.current_type_path.as_ref().map_or(0,String::capacity)+strings(&overlay.fields)+strings(&overlay.globals)+strings(&overlay.global_procs)+strings(&overlay.hidden_owner_fields)+pairs(&overlay.field_types)+pairs(&overlay.global_types);
                 let retained=self.entries.contains_key(&syntax.key);
                 if (retained&&self.bytes.saturating_add(extra)<=Self::LIMIT)
                     || (!retained&&self.requested_bytes.saturating_add(extra)<=16*1024*1024) {
@@ -429,7 +447,7 @@ impl InvocationFragments {
         }
     }
     fn queue_pending(&mut self,key:String,bytes:Vec<u8>) {
-        if let Some(handle)=key.strip_prefix("handle:") {self.handle_misses.remove(handle);}
+        if let Some(handle)=key.strip_prefix("handle:") {if let Ok(payload)=std::str::from_utf8(&bytes){self.remember_handle(handle,payload);}self.handle_misses.remove(handle);}
         else if let Some(signature)=key.strip_prefix("signature:") {self.signature_misses.remove(signature);}
         else {self.syntax_misses.remove(&key);}
         self.pending_bytes=self.pending_bytes.saturating_add(bytes.len());
@@ -460,6 +478,7 @@ impl InvocationFragments {
     }
     fn resident_bytes(&self) -> usize {
         self.bytes
+            + self.handles.len()*112
             + self.requested_bytes + self.requested_signature_bytes
             + (self.syntax_misses.len()+self.handle_misses.len())*128
             + self

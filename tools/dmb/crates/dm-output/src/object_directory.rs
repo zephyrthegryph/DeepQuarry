@@ -111,6 +111,44 @@ impl ObjectWitness {
         },current.symbol_ids.iter().copied(),current.string_ids.iter().copied(),current.debug_ids.iter().copied())
     }
 }
+/// Typed references to rows allocated by this object. Allocation ordinals are
+/// parameters to composition; moving an object's prefix is not a semantic edit.
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub enum OwnedTable {Variable,List,Procedure,ProcedureReference,Instance}
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct OwnedReference {pub table:OwnedTable,pub ordinal:u32}
+impl OwnedReference {
+    pub fn resolve(self,base:&AllocationCounts)->Option<u32> {
+        let start=match self.table {OwnedTable::Variable=>base.variables,OwnedTable::List=>base.lists,
+            OwnedTable::Procedure=>base.procedures,OwnedTable::ProcedureReference=>base.references,OwnedTable::Instance=>base.instances};
+        let id=start.checked_add(self.ordinal)?;
+        if matches!(self.table,OwnedTable::List|OwnedTable::Procedure) && start<=0xffff && id>=0xffff {
+            id.checked_add(1)
+        } else {Some(id)}
+    }
+}
+/// Every writable ID site is identified by its schema, not by scanning words.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SiteKind {LocalVariable(u32),ArgumentVariable(u32),ProcedureCode,ProcedureLocals,ProcedureArguments}
+#[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
+pub struct ProcedureRowLayout {pub version:u8,pub variable_count:u32,pub lists:[OwnedReference;3]}
+impl ProcedureRowLayout {
+    pub fn new(variable_count:u32)->Self {Self {version:1,variable_count,lists:[
+        OwnedReference{table:OwnedTable::List,ordinal:0},OwnedReference{table:OwnedTable::List,ordinal:1},OwnedReference{table:OwnedTable::List,ordinal:2}]}}
+    pub fn valid(&self)->bool {self.version==1 && self.lists.iter().enumerate().all(|(slot,reference)|
+        reference.table==OwnedTable::List && reference.ordinal==slot as u32)}
+    pub fn resolve(&self,site:SiteKind,relative:u32,base:&AllocationCounts)->Option<u32> {
+        if !self.valid() {return None;}
+        match site {
+            SiteKind::LocalVariable(_)|SiteKind::ArgumentVariable(_) if relative<self.variable_count=>
+                OwnedReference {table:OwnedTable::Variable,ordinal:relative}.resolve(base),
+            SiteKind::ProcedureCode if relative==0=>self.lists[0].resolve(base),
+            SiteKind::ProcedureLocals if relative==1=>self.lists[1].resolve(base),
+            SiteKind::ProcedureArguments if relative==2=>self.lists[2].resolve(base),
+            _=>None,
+        }
+    }
+}
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
 pub struct ObjectRange { pub section: u8, pub start: u32, pub count: u32 }
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]
