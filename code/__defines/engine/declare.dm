@@ -1,60 +1,21 @@
 // Declaration forms of the engine (doc/rewrite/final_api.html, section 1 "Declarations"; section 19 "E1, declarations").
 //
-// These are the DM-compilable spellings of the final forms. The design writes a declaration over several lines and lets a
-// generator read it from source (E5); DM cannot continue a macro call across lines, so a multi-line list ends each line but
-// the last with a backslash, exactly as DECLARE_LOOT and DECLARE_INTERACTIONS already do. The generator, when it lands,
-// replaces the macros below with generated tables and leaves the call sites unchanged.
+// The declaration markers (CAPABILITIES, CAPABILITY_TYPE, CAPABILITY_DEF, cap_keys, STAGE_DEF, SOURCE_DEF, STATE_GRAPH, STAT) expand to nothing in
+// DM (markers.dm): an author writes them over as many lines as they need, with no backslash and no id of their own, and `analyze gen` reads
+// them from source and writes the DM they stand for into code/engine/_generated/: ids.dm (the ids they declare, included early) and declare.dm
+// (constructors, registration rows, accessors, and each type's declared_entries()). tools/analyze/src/gens/declare.rs is the generator.
 //
-//	CAPABILITIES(/obj/machinery/power/apc,
-//		powered_by(/datum/system/power, role = POWER_ROLE_LOAD),
-//		owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type)),
-//		extend("cover.open", wait(4 SECONDS)))
-// (each line but the last of a real declaration ends in a backslash; it is left out of this example because a backslash at the end of a
-// line comment continues the comment)
-//
-// Everything a declaration names is an entry (code/engine/declare/entries.dm): a flyweight datum interned by signature.
-// A type's entries are one list, built once per type from its parent's compiled table plus its own list
-// (code/engine/declare/table.dm).
+// What stays a macro here is what DM expresses itself: the stacking vocabulary a CAPABILITY marker's stacks = names, the id arithmetic of a
+// capability state key, the schema forms (the setter of a tracked var with a schema is DM code), LIST_STATE, MSG and the constants the engine
+// files share.
 
-/**
- * One composition root per type. T's entry list: capability constructors, relation entries, extend/configure/without,
- * when(), while_slotted(), contributes() and every other entry. A second CAPABILITIES line for the same type is a DM
- * "duplicate definition" error naming the file and line (the macro defines T's declared_entries()), which is the build error
- * the design asks for. `__FILE__:__LINE__` of the closing line is kept as the origin of every entry of the list.
- */
-#define CAPABILITIES(T, entries...) ##T/declared_entries(list/into) { ..(into); into += entry_block(__FILE__, __LINE__, T); into += list(entries); }
-
-/**
- * The paired relation of the design, `link(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)`, spelled link_pair():
- * `link` is a BYOND keyword (the output method `usr << link(url)`), so it can be neither a proc nor a macro. DM evaluates a bare
- * `/type::var` to the var's initial value, so the macro keeps each end as the text it was written as ("/type::var") and the table
- * builder resolves the type and the var. An end that is a list var says so: link_pair(A::a, B::b, b_many = TRUE).
- */
-#define link_pair(A, B, args...) entry_link(#A, #B, args)
-
-/// The id of state key `bit` (1 to 24) of capability `cap_id`: what a cap_keys() constant is, `#define COVER_OPEN CAPKEY_ID(CAP_COVER, 1)`.
-#define CAPKEY_ID(cap_id, bit) (((cap_id) << 8) | (bit))
+/// Capability state key ids are CAPKEY_ID_BASE + (capability id * 32 + bit), so a bare key id in a condition is told from a value by its range.
+#define CAPKEY_ID_BASE 200000
+/// The id of state key `bit` (1 to 24) of capability `cap_id`: what the generated `#define COVER_OPEN CAPKEY_ID(CAP_COVER, 1)` is.
+#define CAPKEY_ID(cap_id, bit) (CAPKEY_ID_BASE + ((cap_id) << 5) + (bit))
 /// The capability id and the bit of a state key id.
-#define CAPKEY_CAP(key_id) ((key_id) >> 8)
-#define CAPKEY_BIT(key_id) ((key_id) & 255)
-
-// ---- Capability definitions (section 11) ----
-
-/**
- * A capability with code of its own: its params are vars on its /datum/capability subtype (the defaults), and `name` becomes the global
- * constructor whose parameters are the params, so `name("a", power = 45)` is checked by DM itself: the first parameter is the one `key`
- * names (the selector), a param left out keeps the datum's default. DM gives a proc named arguments only when it declares them, which is why
- * the parameter list is written here once, as bare names, and everything else (the key, the stacking policy, the op prefix) is data.
- *
- *	CAPABILITY_TYPE(mirror_plating, CAP_MIRROR_PLATING, /datum/capability/mirror_plating, NONE, BEST(reflect_chance), reflect_chance)
- *	/datum/capability/mirror_plating
- *		var/reflect_chance = 30
- *
- * `key` is the name of the param that is the selector (a text), or NONE. `stacks` is STACK, UNIQUE or BEST(param).
- */
-#define CAPABILITY_TYPE(name, cap_id, cap_type, key, stacks, params...) /proc/##name(params) { RETURN_TYPE(cap_type); return cap_construct(cap_id, cap_type, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, cap_type, key, stacks, #name, #params); }
-/// A capability whose body returns entries: the same declaration; the entries are the definition's `/datum/capability/def/<name>/entries()`.
-#define CAPABILITY_DEF(name, cap_id, key, stacks, params...) /proc/##name(params) { RETURN_TYPE(/datum/capability/def/##name); return cap_construct(cap_id, /datum/capability/def/##name, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, /datum/capability/def/##name, key, stacks, #name, #params); }
+#define CAPKEY_CAP(key_id) (((key_id) - CAPKEY_ID_BASE) >> 5)
+#define CAPKEY_BIT(key_id) (((key_id) - CAPKEY_ID_BASE) & 31)
 
 /// stacks = STACK (default): every activation runs.
 #define STACK list("stack")
@@ -113,14 +74,6 @@
 /// requirement's because = and a stage's text name messages this way.
 #define MSG(path) /datum/msg/##path
 
-// ---- State graphs (section 12) ----
-/// A named, reusable state graph of stages: STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(...), dismantle(...)).
-#define STATE_GRAPH(graph, entries...) /datum/graph_decl/g_##graph/spec() { return list(graph, entries); }
-/// A build stage id and its text key: STAGE_DEF(door, frame, STAGE_DOOR_FRAME) (the id is the third argument until the
-/// generator derives it from the first two).
-#define STAGE_DEF(group, name, id) /datum/stage_def/##group##_##name/spec() { return list(id, #group, #name); }
-/// A flyweight source: SOURCE_DEF(ai_control, SRC_AI_CONTROL).
-#define SOURCE_DEF(name, id) /datum/source_def/##name/spec() { return list(id, #name); }
 
 // ---- constants and small macros the engine files share (they must precede every user of a declaration form) ----
 // Rule names a report carries. Tests assert on them.
@@ -174,11 +127,6 @@
 
 /// A graph edge that leaves from any stage.
 #define ANY_STAGE (-1)
-
-/// Capability state keys (section 4 "Capability state: cap_keys", section 11): cap_keys(CAP_X, OPEN = MSG(cover/closed), ...) registers the keys of one
-/// capability in order, bit 1 first, at most 24. The id of a key is CAPKEY_ID(cap, bit), written as a #define beside the declaration until the
-/// generator emits it.
-#define cap_keys(cap_id, keys...) /datum/cap_keys_decl/k_##cap_id/spec() { return list(cap_id, list(keys)); }
 
 // Entry kinds owned by E1. A kind is a text so explain_type() dumps read as the declaration does.
 #define ENTRY_BLOCK "block"

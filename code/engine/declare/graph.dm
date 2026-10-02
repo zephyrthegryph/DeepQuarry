@@ -214,8 +214,8 @@ GLOBAL_VAR_INIT(state_graphs_built, FALSE)
 
 // ---- the construction and deployment capabilities ----
 
-CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION, /datum/capability/construction, NONE, STACK, start, via)
-CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction/deployment, NONE, STACK, start, via)
+CAPABILITY_TYPE(construction_graph, CAP_CONSTRUCTION, /datum/capability/construction, key = NONE, start, via)
+CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction/deployment, key = NONE, start, via)
 
 /// A graph capability: the graph its type declares (a GRAPH_X id or inline entries), the stage it starts at and, for a type placed part-built
 /// with several ways to that stage, the stages passed on the way (via).

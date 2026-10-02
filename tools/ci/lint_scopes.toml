@@ -8,8 +8,8 @@
 known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "om_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
 
 [lint.sys]
-# sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
-exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+# sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose; code/engine/_generated/ is written by `analyze gen`.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/engine/_generated/"]
 
 # A sys module with an own section of path exemptions replaces [lint.sys] for that module (the section is found
 # by lint name first), so it repeats the sys_lint.py EXEMPT prefixes above and adds the module's own.
@@ -80,8 +80,11 @@ exempt_files = ["code/__defines/tgs.dm"]
 # try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try.
 # The E0 proofs and the legacy op tests name op keys declared in comment form (the final syntax) or by DECLARE_INTERACTIONS;
 # E1 turns the comment declarations into real markers, then these exemptions go.
+# E1's tests name unknown keys and text sources on purpose (the build errors they prove), its fixtures stand in for op() with entry_of("op", ...),
+# and code/engine/_generated/ holds copies of declarations the lints already read at their source.
 [lint."sem/keys"]
-exempt_files = ["code/modules/unit_tests/dq_e0_proofs_tests.dm", "code/modules/unit_tests/dx_op_resolution_tests.dm"]
+exempt_files = ["code/modules/unit_tests/dq_e0_proofs_tests.dm", "code/modules/unit_tests/dx_op_resolution_tests.dm", "code/modules/unit_tests/dq_e1_declare_tests.dm", "code/tests/engine/e1_fixtures.dm"]
+exempt_prefixes = ["code/engine/_generated/"]
 
 [lint."sem/handlers".lists]
 try_calls = []

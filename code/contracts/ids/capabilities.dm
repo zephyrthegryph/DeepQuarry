@@ -19,8 +19,3 @@
 #define CAP_E0_PUMP 105
 #define CAP_E0_LAMP 106
 #define CAP_E0_TK 107
-/// The test-only capabilities of the E1 gate fixture (code/tests/engine/e1_fixtures.dm).
-#define CAP_E1_WIDGET 110
-#define CAP_E1_SOLO 111
-#define CAP_E1_BEACON 112
-#define CAP_E1_NESTED 113

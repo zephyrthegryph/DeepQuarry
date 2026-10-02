@@ -533,7 +533,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 	return jointext(lines, "\n")
 
 /proc/activation_def_text(datum/capability/def)
-	return "[def.cap_id ? "CAP [def.cap_id]" : def.key][def.selector ? " \"[def.selector]\"" : ""]"
+	return "[capability_label(def)][def.selector ? " \"[def.selector]\"" : ""]"
 
 /proc/activation_line(datum/activation/A)
 	var/scope_text

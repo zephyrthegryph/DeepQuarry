@@ -31,23 +31,21 @@
 	parent_type = /datum/capability
 
 /// CAPABILITY_TYPE(mirror_plating, CAP_E0_MIRROR, /datum/capability/mirror, key = NONE, stacks = BEST(reflect_chance), reflect_chance = 30)
-CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, NONE, BEST(reflect_chance), reflect_chance)
+CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, key = NONE, stacks = BEST(reflect_chance), reflect_chance = 30)
 /datum/e0_cap/mirror
-	var/reflect_chance = 30
 
 /// CAPABILITIES(/datum/e0_cap/tk, provides(AFF_MANIPULATE, reach = 15, line_of_sight = TRUE)): telekinesis, a provider.
-CAPABILITY_TYPE(e0_tk, CAP_E0_TK, /datum/e0_cap/tk, NONE, STACK)
+CAPABILITY_TYPE(e0_tk, CAP_E0_TK, /datum/e0_cap/tk, key = NONE)
 /datum/e0_cap/tk
 
 /// The CAPABILITY_TYPE(phase_shift, CAP_PHASE_SHIFT, ...) of 16.9: an ability (menu() ops "phase_shift.shift" and "phase_shift.unshift")
 /// that grants the phased capability on its own holder (density, invisibility, acts_via, every(1 SECOND) energy drain).
-CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, NONE, STACK)
+CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, key = NONE)
 /datum/e0_cap/phase_shift
 
 /// CAPABILITY_TYPE(phased, CAP_PHASED, /datum/capability/phased, key = NONE, drain = 1): density, invisibility, acts_via, every(1 SECOND).
-CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, NONE, STACK, drain)
+CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, key = NONE, drain = 1)
 /datum/e0_cap/phased
-	var/drain = 1
 
 /// SPECIES_CAPABILITIES for a test species (a species grants capabilities, including hands(), while a mob's species relation names it).
 /datum/e0_species

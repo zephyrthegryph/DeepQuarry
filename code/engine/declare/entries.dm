@@ -86,6 +86,17 @@
 	B.sig = "block:[type]:[file]:[line]"
 	return B
 
+/// In a generated declared_entries() chain, the source line of the entry that follows: the generator writes one before each entry of a
+/// CAPABILITIES list, so every compiled entry keeps its own file:line.
+/datum/entry/line
+	kind = "line"
+	var/line
+
+/proc/entry_line(line)
+	var/datum/entry/line/L = new
+	L.line = line
+	return L
+
 /// Where an entry was declared: "file:line" of its CAPABILITIES list, or "?" when unknown.
 /proc/entry_origin_text(file, line)
 	return file ? "[file]:[line]" : "?"

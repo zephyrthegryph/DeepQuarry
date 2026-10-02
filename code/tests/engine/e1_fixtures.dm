@@ -6,10 +6,8 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// A capability with a selector (key = "label"): two widgets on one type are e1_widget("a") and e1_widget("b"); stacking keeps only the strongest.
-CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, "label", BEST(power), label, power)
+CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, key = label, stacks = BEST(power), label = "main", power = 1)
 /datum/capability/e1_widget
-	var/label = "main"
-	var/power = 1
 
 /datum/capability/e1_widget/entries()
 	return list(entry_of("op", "poke"), entry_of("contributes", "glow", stat = "light_range", value = 2))
@@ -21,9 +19,8 @@ CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, "label", 
 	GLOB.e1_log += "deactivate:[label]"
 
 /// One use per holder (key = NONE), with typed state and capability keys.
-CAPABILITY_TYPE(e1_solo, CAP_E1_SOLO, /datum/capability/e1_solo, NONE, STACK)
+CAPABILITY_TYPE(e1_solo, CAP_E1_SOLO, /datum/capability/e1_solo, key = NONE, note = "plain")
 /datum/capability/e1_solo
-	var/note = "plain"
 	holder_hooks = HOLDER_HOOK_PREINIT | HOLDER_HOOK_INIT | HOLDER_HOOK_DESTROY
 
 /datum/capability/e1_solo/cap_data_type()
@@ -41,17 +38,15 @@ CAPABILITY_TYPE(e1_solo, CAP_E1_SOLO, /datum/capability/e1_solo, NONE, STACK)
 /datum/capability/e1_solo/on_holder_destroy_ctx(datum/act/eval/A)
 	GLOB.e1_log += "holder_destroy:[A.holder.type]"
 
-#define E1_SOLO_ARMED CAPKEY_ID(CAP_E1_SOLO, 1)
-#define E1_SOLO_LIT CAPKEY_ID(CAP_E1_SOLO, 2)
 cap_keys(CAP_E1_SOLO, ARMED = null, LIT = null)
 
 /// A capability whose entries include another capability: the child activation is owned by the parent and ends with it.
-CAPABILITY_TYPE(e1_nested, CAP_E1_NESTED, /datum/capability/e1_nested, NONE, STACK)
+CAPABILITY_TYPE(e1_nested, CAP_E1_NESTED, /datum/capability/e1_nested, key = NONE)
 /datum/capability/e1_nested/entries()
 	return list(e1_widget("inner", power = 3))
 
 /// A capability brought by the beacon: sourced by a flyweight in the lifetime tests.
-CAPABILITY_TYPE(e1_beacon, CAP_E1_BEACON, /datum/capability/e1_beacon, NONE, STACK)
+CAPABILITY_TYPE(e1_beacon, CAP_E1_BEACON, /datum/capability/e1_beacon, key = NONE)
 /datum/capability/e1_beacon
 
 GLOBAL_LIST_EMPTY(e1_log)
@@ -103,7 +98,7 @@ CAPABILITIES(/obj/e1_fixture, \
 	owns_one(nameof(gizmo), /obj/item/e1_part, starts = /obj/item/e1_part), \
 	owns_many(nameof(gizmos), /obj/item/e1_part), \
 	ref_many(nameof(watchers), /mob), \
-	link_pair(/obj/e1_fixture::partner, /obj/e1_fixture::partner), \
+	link(/obj/e1_fixture::partner, /obj/e1_fixture::partner), \
 	slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1), \
 	while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER), \
 	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = "light_range", value = 4)), \
@@ -118,7 +113,7 @@ LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)
 
 CAPABILITIES(/obj/e1_fixture/changed, \
 	extend("toggle", entry_of("part", "needs")), \
-	configure(e1_widget("a", power = 9)), \
+	configure(CAP_E1_WIDGET, "a", power = 9), \
 	without(CAP_E1_SOLO))
 
 /// A subtype that adds nothing: it shares its parent's compiled table.
@@ -145,7 +140,13 @@ CAPABILITIES(/obj/e1_fixture/changed, \
 	var/flag = TRUE
 	var/off_flag = FALSE
 
-CAPABILITIES(/obj/e1_starts, 	owns_one(nameof(picked), /obj/item/e1_part, starts = pick_one(list(/obj/item/e1_part/tarnished = 1))), 	owns_one(nameof(conditional), /obj/item/e1_part, starts = when(nameof(flag), /obj/item/e1_part/tarnished)), 	owns_one(nameof(skipped), /obj/item/e1_part, starts = when(nameof(off_flag), /obj/item/e1_part/tarnished)), 	owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2)), 	owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")), 	owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
+CAPABILITIES(/obj/e1_starts, \
+	owns_one(nameof(picked), /obj/item/e1_part, starts = pick_one(list(/obj/item/e1_part/tarnished = 1))), \
+	owns_one(nameof(conditional), /obj/item/e1_part, starts = when(nameof(flag), /obj/item/e1_part/tarnished)), \
+	owns_one(nameof(skipped), /obj/item/e1_part, starts = when(nameof(off_flag), /obj/item/e1_part/tarnished)), \
+	owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2)), \
+	owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")), \
+	owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
 
 /obj/e1_starts/proc/make_computed(datum/act/A)
 	return /obj/item/e1_part/tarnished
@@ -192,7 +193,7 @@ CAPABILITIES(/obj/e1_assembly, construction(GRAPH_DOOR_ASSEMBLY))
 /obj/e1_assembly/finished
 	name = "e1 finished assembly"
 
-CAPABILITIES(/obj/e1_assembly/finished, configure(construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))))
+CAPABILITIES(/obj/e1_assembly/finished, configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
 
 /// An entity with no graph, for the negative reads.
 /obj/e1_assembly/bare

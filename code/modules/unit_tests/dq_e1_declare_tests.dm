@@ -37,10 +37,10 @@
 
 /// The compiled table of the fixture, as explain_type() prints it with the origins removed: the golden of the E1 gate.
 #define E1_GOLDEN_FIXTURE {"/obj/e1_fixture
-  capability CAP 111 ()
-  capability CAP 110 "a" (label=a, power=2)
-  op "e1_widget.a.poke" () from 110:a
-  contributes "glow" (stat=light_range, value=2) from 110:a
+  capability e1_solo ()
+  capability e1_widget "a" (label=a, power=2)
+  op "e1_widget.a.poke" () from e1_widget:a
+  contributes "glow" (stat=light_range, value=2) from e1_widget:a
   ref_one (var=species, type=/datum/e1_species, on_other_deleted=1)
   rel_grants (var=species)
   owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1)
@@ -53,9 +53,9 @@
   op "toggle" ()"}
 
 #define E1_GOLDEN_CHANGED {"/obj/e1_fixture/changed
-  capability CAP 110 "a" (label=a, power=9)
-  op "e1_widget.a.poke" () from 110:a
-  contributes "glow" (stat=light_range, value=2) from 110:a
+  capability e1_widget "a" (label=a, power=9)
+  op "e1_widget.a.poke" () from e1_widget:a
+  contributes "glow" (stat=light_range, value=2) from e1_widget:a
   ref_one (var=species, type=/datum/e1_species, on_other_deleted=1)
   rel_grants (var=species)
   owns_one (var=gizmo, type=/obj/item/e1_part, starts=/obj/item/e1_part, on_destroy=1)
@@ -82,7 +82,7 @@
 	// One of every entry kind E1 owns is in the dump.
 	for(var/kind in list(ENTRY_REF_ONE, ENTRY_REF_MANY, ENTRY_OWNS_ONE, ENTRY_OWNS_MANY, ENTRY_LINK, ENTRY_SLOT, ENTRY_WHILE_SLOTTED, ENTRY_REL_GRANTS))
 		TEST_ASSERT(findtext(text, "  [kind] ("), "the fixture declares a [kind]")
-	TEST_ASSERT(findtext(text, "capability CAP"), "and capabilities")
+	TEST_ASSERT(findtext(text, "capability e1_"), "and capabilities")
 	TEST_ASSERT(findtext(text, ") when("), "and a when() block")
 
 /datum/unit_test/dq_e1/table_inherits_extend_configure_without

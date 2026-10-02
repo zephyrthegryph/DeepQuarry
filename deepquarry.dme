@@ -326,6 +326,8 @@
 #include "code\__defines\engine\vocabulary.dm"
 #include "code\__defines\engine\declare.dm"
 #include "code\__defines\engine\test_hooks.dm"
+// The ids the declaration markers declare, written by `analyze gen declare_ids` (code/engine/_generated/ids.dm): before everything that names one.
+#include "code\engine\_generated\ids.dm"
 // The contracts layer (doc/rewrite/final_api.html section 22): ids, act types and accessor declarations, no procs.
 #include "code\contracts\ids\capabilities.dm"
 #include "code\contracts\ids\resources.dm"
@@ -5664,6 +5666,7 @@
 #include "code\engine\stats\stubs.dm"
 #include "code\engine\_generated\reads.dm"
 #include "code\engine\_generated\system_accessors.dm"
+#include "code\engine\_generated\declare.dm"
 #include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES

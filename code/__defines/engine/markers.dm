@@ -11,9 +11,23 @@
 // those is written inside a comment until its engine replaces the legacy macro (doc/rewrite/engine_contracts.md,
 // "Name clashes").
 //
-// E1 made CAPABILITIES, CAPABILITY_DEF/TYPE, cap_keys, SCHEMA, STAGE_DEF, STATE_GRAPH and SOURCE_DEF real macros
-// (code/__defines/engine/declare.dm); the ones below still wait for their engine.
+// `analyze gen` reads these from source and writes the DM they stand for into code/engine/_generated/ (E1: ids.dm and declare.dm; E5:
+// reads.dm and system_accessors.dm). SCHEMA is a real macro (code/__defines/engine/declare.dm): a tracked var's setter is DM code.
 
+/// One composition root per type: registers T's entry list with the table builder. `analyze gen declare` writes T's declared_entries().
+#define CAPABILITIES(T, entries...)
+/// A capability whose body returns entries: CAPABILITY_DEF(name, CAP_X, key =, stacks =, param = default, ...).
+#define CAPABILITY_DEF(name, cap_id, params...)
+/// A capability with code of its own: CAPABILITY_TYPE(name, CAP_X, /datum/capability/x, key =, stacks =, param = default, ...).
+#define CAPABILITY_TYPE(name, cap_id, cap_type, params...)
+/// A capability's state keys: ids, accessors, reasons and read registration.
+#define cap_keys(cap_id, keys...)
+/// A build stage id (section 12): STAGE_DEF(group, name) is STAGE_<GROUP>_<NAME>.
+#define STAGE_DEF(group, name)
+/// A named, reusable state graph of stages (section 12): STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(...), dismantle(...)).
+#define STATE_GRAPH(graph, entries...)
+/// A flyweight source (section 5): SOURCE_DEF(ai_control) is SRC_AI_CONTROL.
+#define SOURCE_DEF(name)
 /// A world action: generates /datum/act/<name>, act_<name>() and the past-tense notice (section 8).
 #define ACTION(name, fields...)
 /// A composed stat: declares the var, its base and the id STAT_<NAME> (section 5).

@@ -105,7 +105,7 @@ GLOBAL_VAR(declare_report_capture)
 		var/datum/entry/block/B = block[1]
 		var/datum/type_table/built = GLOB.type_tables[B.block_type]
 		if(!built)
-			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line))
+			built = table_compile(B.block_type, T, block[2], entry_origin_text(B.file, B.line), B.file)
 			GLOB.type_tables[B.block_type] = built
 		T = built
 	if(!T)
@@ -124,16 +124,23 @@ GLOBAL_VAR(declare_report_capture)
 		else if(current)
 			current[2] += list(entry)
 
-/// A table from `parent` (null: empty) plus `entries`, all declared at `origin`. Builds, applies, validates.
-/proc/table_compile(type, datum/type_table/parent, list/entries, origin)
+/// A table from `parent` (null: empty) plus `entries`, all declared at `origin` (or, when the list carries entry_line() markers and `file` is
+/// given, each at file:line of its own marker). Builds, applies, validates.
+/proc/table_compile(type, datum/type_table/parent, list/entries, origin, file = null)
 	RETURN_TYPE(/datum/type_table)
 	var/datum/type_table/T = new
 	T.owner_type = type
 	T.items = parent ? parent.items.Copy() : list()
 	T.caps = parent ? parent.caps.Copy() : list()
 	T.errors = parent?.errors ? parent.errors.Copy() : null
+	var/origin_now = origin
 	for(var/item in entry_flatten(entries))
-		table_apply(T, item, origin, null, null)
+		if(istype(item, /datum/entry/line))
+			var/datum/entry/line/L = item
+			if(file)
+				origin_now = "[file]:[L.line]"
+			continue
+		table_apply(T, item, origin_now, null, null)
 	table_validate(T)
 	T.rel_grant_vars = null
 	for(var/datum/centry/C as anything in T.items)
@@ -437,24 +444,33 @@ GLOBAL_VAR(declare_report_capture)
 /proc/table_dump(datum/type_table/T)
 	var/list/lines = list("[T.owner_type]")
 	for(var/datum/centry/C as anything in T.items)
-		lines += table_dump_line(C)
+		lines += table_dump_line(T, C)
 	return jointext(lines, "\n")
 
-/proc/table_dump_line(datum/centry/C)
+/proc/table_dump_line(datum/type_table/T, datum/centry/C)
 	var/indent = "  "
 	for(var/i in 1 to length(C.whens))
 		indent += "  "
 	var/body
 	if(istype(C.item, /datum/capability))
 		var/datum/capability/def = C.item
-		body = "capability [def.cap_id ? "CAP [def.cap_id]" : def.key][def.selector ? " \"[def.selector]\"" : ""] ([cap_params_text(def)])"
+		body = "capability [capability_label(def)][def.selector ? " \"[def.selector]\"" : ""] ([cap_params_text(def)])"
 	else
 		var/datum/entry/E = C.item
 		body = "[E.kind][C.eff_key ? " \"[C.eff_key]\"" : ""] ([entry_args_text(E)])"
 	var/when_text = ""
 	for(var/datum/entry/W as anything in C.whens)
 		when_text += " when([W.args["cond"]])"
-	return "[indent][body][when_text][C.owner ? " from [C.owner]" : ""] @ [C.origin]"
+	var/owner_text = ""
+	if(C.owner)
+		var/datum/capability/owner_def = T.caps[C.owner]
+		owner_text = " from [owner_def ? "[capability_label(owner_def)][owner_def.selector ? ":[owner_def.selector]" : ""]" : C.owner]"
+	return "[indent][body][when_text][owner_text] @ [C.origin]"
+
+/// What a capability is called in a dump: its constructor's name, or its key for a legacy one.
+/proc/capability_label(datum/capability/def)
+	var/datum/capability_info/info = def.cap_id ? capability_info(def.cap_id) : null
+	return info?.name || (def.cap_id ? "CAP [def.cap_id]" : "[def.key]")
 
 /proc/entry_args_text(datum/entry/E)
 	var/list/parts = list()
