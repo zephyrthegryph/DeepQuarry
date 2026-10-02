@@ -15,16 +15,12 @@ use crate::entity::EntityId;
 use crate::outbox::{Lane, Subscriber, Wake, WatchId, reason};
 use crate::rate::RateModel;
 use crate::reactor::{ModelId, Reactor, ReactorMetrics};
-use crate::timer::{Tick, TimerId};
+use crate::timer::Tick;
 use crate::watch::Cmp;
 
 /// What one subscription entity holds.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Subscription {
-    /// A one-shot timer.
-    Timer(TimerId),
-    /// A DM-owned key.
-    Key(u64),
     /// A watch on a rate model.
     Rate { model: ModelId, token: u32 },
     /// A watch on port `port` of watchable `code` (the caller's).
@@ -40,7 +36,6 @@ pub struct Subscriptions {
     by_sub: HashMap<Subscriber, Vec<EntityId>>,
     /// Rate model index -> its entity.
     models: HashMap<u32, EntityId>,
-    fired: Vec<(Subscriber, u32)>,
 }
 
 impl Default for Subscriptions {
@@ -50,7 +45,6 @@ impl Default for Subscriptions {
             records: HashMap::new(),
             by_sub: HashMap::new(),
             models: HashMap::new(),
-            fired: Vec::new(),
         }
     }
 }
@@ -95,12 +89,6 @@ impl World {
         self.subs.reactor.metrics()
     }
 
-    /// Keys with a subscriber.
-    #[must_use]
-    pub fn sched_keys(&self) -> usize {
-        self.subs.reactor.keys()
-    }
-
     /// `(received, merged, delivered, deferred, backlog)` of the wake lanes.
     #[must_use]
     pub fn sched_lanes(&self) -> (u64, u64, u64, u64, [usize; 3]) {
@@ -115,45 +103,6 @@ impl World {
             Some(s) => self.subs.by_sub.get(&s).map_or(0, Vec::len),
             None => self.subs.records.values().filter(|r| r.1 != 0).count(),
         }
-    }
-
-    /// A one-shot timer: wakes `sub` at tick `at` (reason `TIMER`, source:
-    /// the subscription's slot index).
-    ///
-    /// # Errors
-    /// The entity table is full.
-    pub fn sched_at(
-        &mut self,
-        sub: Subscriber,
-        lane: Lane,
-        at: Tick,
-    ) -> Result<EntityId, WorldError> {
-        let e = self.record(sub, Subscription::Key(0))?;
-        let id = self.subs.reactor.at(sub, lane, at, e.index());
-        self.subs
-            .records
-            .insert(e.index(), (e, sub, Subscription::Timer(id)));
-        Ok(e)
-    }
-
-    /// Wakes `sub` when DM publishes key `key` with any bit of `mask`.
-    ///
-    /// # Errors
-    /// The entity table is full.
-    pub fn sched_on_key(
-        &mut self,
-        sub: Subscriber,
-        key: u64,
-        mask: u32,
-        lane: Lane,
-    ) -> Result<EntityId, WorldError> {
-        self.subs.reactor.subscribe_key(sub, key, mask, lane);
-        self.record(sub, Subscription::Key(key))
-    }
-
-    /// DM-owned state under `key` changed.
-    pub fn sched_publish(&mut self, key: u64, mask: u32) {
-        self.subs.reactor.publish(key, mask);
     }
 
     /// Records a watch the caller registered on its own port, so cancelling
@@ -257,19 +206,6 @@ impl World {
     pub fn unsubscribe(&mut self, e: EntityId) -> Option<Subscription> {
         let (sub, what) = self.sub_record(e)?;
         match what {
-            Subscription::Timer(id) => {
-                self.subs.reactor.cancel_timer(id);
-            }
-            Subscription::Key(key) => {
-                // Other subscriptions of `sub` on the same key share the
-                // reactor's one entry: drop it with the last.
-                let others = self.subs.by_sub.get(&sub).is_some_and(|l| {
-                    l.iter().any(|&o| o != e && matches!(self.sub_record(o), Some((_, Subscription::Key(k))) if k == key))
-                });
-                if !others {
-                    self.subs.reactor.unsubscribe_key(sub, key);
-                }
-            }
             Subscription::Rate { model, token } => {
                 self.subs.reactor.unwatch_model(model, token);
             }
@@ -300,11 +236,9 @@ impl World {
         watches
     }
 
-    /// One DM tick at `now`: fires due timers and rate crossings, dispatches
-    /// key publications, takes `watch_wakes`, and returns up to `budget`
+    /// One DM tick at `now`: fires due rate crossings, takes `watch_wakes`, and returns up to `budget`
     /// normal/background wakes (urgent ones always), each with the source
-    /// DM knows: a timer's or rate wake's subscription/model entity, a
-    /// key's id, a watch's cell.
+    /// DM knows: a rate wake's model entity, a watch's cell.
     pub fn sched_step(
         &mut self,
         now: Tick,
@@ -312,24 +246,12 @@ impl World {
         watch_wakes: &[Wake],
     ) -> Vec<(Wake, Option<EntityId>)> {
         self.subs.reactor.tick(now);
-        let mut fired = std::mem::take(&mut self.subs.fired);
-        self.subs.reactor.take_fired_timers(&mut fired);
-        let mut spent: HashMap<u32, EntityId> = HashMap::new();
-        for (_, index) in fired.drain(..) {
-            if let Some(&(e, _, Subscription::Timer(_))) = self.subs.records.get(&index) {
-                spent.insert(index, e);
-                self.forget(e);
-            }
-        }
-        self.subs.fired = fired;
         self.subs.reactor.ingest(watch_wakes);
         let mut out = Vec::new();
         self.subs.reactor.drain(budget, &mut out);
         out.into_iter()
             .map(|w| {
-                let e = if w.reason & reason::TIMER != 0 {
-                    spent.get(&w.source).copied()
-                } else if w.reason & reason::RATE != 0 {
+                let e = if w.reason & reason::RATE != 0 {
                     self.subs.models.get(&w.source).copied()
                 } else {
                     None

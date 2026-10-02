@@ -256,7 +256,7 @@
 		dq_rx_test_advance(rule.hold_for + 1 SECONDS)
 	if(dq_rule_fire_count(thing, rule) != 1)
 		var/datum/rule_binding/diag = dq_rule_binding_of(thing)
-		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] key=[diag?.key_id] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
+		TEST_FAIL("[label]: fired [dq_rule_fire_count(thing, rule)] times at [across], expected once (diag binding=[diag] holding=[diag?.holding] live=[diag?.live] keys=[diag?.key_subs ? json_encode(diag.key_subs) : "-"] kinds=[diag ? jointext(diag.table.key_kinds, ",") : "-"] ratio=[PROPERTY(thing, PROP_INTEGRITY_RATIO)])")
 		return FALSE
 	if(!QDELETED(thing))
 		// dq_rule_test_write() flushes deterministically itself now.

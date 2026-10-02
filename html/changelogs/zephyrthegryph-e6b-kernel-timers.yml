@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "DM timers and DM-owned keys no longer exist in the Rust world: om_world_at, om_world_on_key and om_world_publish are deleted, rule key triggers are a DM merge per tick, and the reactor keeps only rate models and watches"

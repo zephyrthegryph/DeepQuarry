@@ -64,8 +64,8 @@
 /// A DM-owned property of `thing` changed: publish its key if anything subscribed.
 /proc/dq_rules_publish(datum/thing, key_kind)
 	var/datum/rule_binding/binding = dq_rule_binding_of(thing)
-	if(binding?.key_id && (key_kind in binding.table.key_kinds))
-		dq_rx_publish(key_kind, binding.key_id, 1)
+	if(binding?.key_subs && (key_kind in binding.table.key_kinds))
+		dq_rx_publish(binding, key_kind)
 
 /// The node handle for (thing, property), created by `provider` when given.
 /proc/dq_rule_node(datum/thing, property, datum/property_provider/domain/provider)
@@ -138,8 +138,10 @@
 	var/list/hold_tokens
 	/// property -> heat node handle (the owner's heat body, while it has one).
 	var/list/nodes
-	/// The id of the owner's DM-owned keys (om_world_key_id()).
-	var/key_id
+	/// DM-owned key kind (text) -> live subscriptions of this binding's rules to it, or null: dq_rx_on_key() and dq_rx_cancel() keep it.
+	var/list/key_subs
+	/// TRUE while a merged key wake is waiting for its tick.
+	var/key_wake_pending = FALSE
 	/// Every world watch made for this binding (dq_rx_*), deleted with it.
 	/// Deleted by Destroy() (dq_rx_clear()), not by the lifecycle's owned-var pass: it is a
 	/// plain list, and qdel() refuses lists.
@@ -223,9 +225,7 @@
 				if(trigger.is_threshold() && isnull(trigger.level_for(owner)))
 					cancel_all(out)
 					return FALSE
-				if(!key_id)
-					key_id = dq_rx_id()
-				out += dq_rx_on_key(src, trigger.key_kind, key_id, 1)
+				out += dq_rx_on_key(src, trigger.key_kind)
 	// A subscribed rule is live even when a watch came back null, as before.
 	for(var/token in out)
 		if(!tokens)
@@ -264,6 +264,17 @@
 		qdel(src)
 		return FALSE
 	return TRUE
+
+/// A DM-owned key of this binding was published: one merged re-evaluation on the next tick.
+/datum/rule_binding/proc/key_published(kind)
+	if(key_wake_pending || !key_subs?["[kind]"])
+		return
+	key_wake_pending = TRUE
+	after(src, 1 TICK, TYPE_PROC_REF(/datum/rule_binding, key_wake))
+
+/datum/rule_binding/proc/key_wake()
+	key_wake_pending = FALSE
+	rule_wake(DQ_RX_REASON_KEY, null)
 
 /datum/rule_binding/rule_wake(reason, source)
 	if(!resolve())

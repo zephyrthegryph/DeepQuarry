@@ -1,7 +1,8 @@
 // Rust world subscriptions on the OM scheduler (doc/rewrite/object_model_core.md §4.8).
 //
-// The Rust world (verdigris/ffi/src/sched.rs) holds the timer wheel, DM-owned
-// keys, rate models and the watches on Rust-owned state (gas, probe cells).
+// The Rust world (verdigris/ffi/src/sched.rs) holds the rate models and the watches on Rust-owned state (gas, heat, probe
+// cells). It holds no DM timers and no DM-owned keys: a DM timer is the kernel's after(), and a DM-owned fact is an OM change
+// channel (or a rule key, code/datums/rules/world_adapter.dm).
 // The kernel steps it once per tick (phase N: native_frame() -> the native system's frame);
 // each wake it returns names a subscriber, which is a /datum/native_watch/world:
 // one subscription, its own SSvg handle. The wake is queued on the watch's
@@ -16,10 +17,8 @@
 // count wakes. Cancel with qdel(watch) (or watch.cancel()). A watch holds its
 // owner weakly, so an owner that forgets to cancel costs one dropped wake (the
 // watch is cancelled then); owners that keep watches (rule bindings) delete
-// them in Destroy(). A fired one-shot cancels itself.
+// them in Destroy().
 //
-//   om_world_at(owner, time, proc, lane)              one-shot, first tick at or after `time`
-//   om_world_on_key(owner, kind, id, mask, proc, lane) a DM-owned key (om_world_publish())
 //   om_world_on_change(owner, handle, mask, proc, lane) a channel change on a Rust entity
 //   om_world_when(owner, condition, proc, lane)       a COND_* condition
 //   om_world_on_rate(owner, model, cmp, level, proc, lane) a rate model crossing a level
@@ -45,20 +44,12 @@
 /proc/om_world_tick_of(time)
 	return CEILING(time / world.tick_lag, 1)
 
-/// A fresh key id for a DM-owned key (kind, id): numeric, never a string.
-/proc/om_world_key_id()
-	var/static/serial = 0
-	serial = (serial % 0xFFFFFF) + 1
-	return serial
-
 /datum/native_watch/world
 	delivery_source = NATIVE_SRC_WORLD_WATCH
 	/// OM lane the owner's proc runs on.
 	var/lane = LANE_SIMULATION
-	/// The Rust subscription token (a timer, key, watch or rate watch).
+	/// The Rust subscription token (a watch or rate watch).
 	var/token
-	/// A timer: done once it fires (the wake releases the watch).
-	var/one_shot = FALSE
 
 /datum/native_watch/world/New(datum/owner, callback, lane = LANE_SIMULATION)
 	..(owner, callback)
@@ -86,23 +77,6 @@
 	if(!owner || !callback)
 		CRASH("om_world watch needs an owner and a proc")
 	return new /datum/native_watch/world(owner, callback, isnull(lane) ? LANE_SIMULATION : lane)
-
-/// One-shot: `proc` runs on `owner` at the first tick at or after world.time `time`.
-/proc/om_world_at(datum/owner, time, callback, lane)
-	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
-	W.one_shot = TRUE
-	W.token = vg_world_at(W.handle, om_world_rust_lane(W.lane), om_world_tick_of(time))
-	return W
-
-/// `proc` runs when key (kind, id) is published with any bit of `mask`.
-/proc/om_world_on_key(datum/owner, kind, id, mask, callback, lane)
-	var/datum/native_watch/world/W = om_world_new_watch(owner, callback, lane)
-	W.token = vg_world_on_key(W.handle, kind, id, mask, om_world_rust_lane(W.lane))
-	return W
-
-/// DM-owned state under key (kind, id) changed; `mask` says which parts. Merged per tick.
-/proc/om_world_publish(kind, id, mask)
-	vg_world_publish(kind, id, mask)
 
 /// `proc` runs when any channel in `mask` of the Rust entity `handle` (WORLD_HANDLE) changes.
 /proc/om_world_on_change(datum/owner, list/handle, mask, callback, lane)
@@ -273,8 +247,6 @@
 			W.fire(arguments)
 		catch(var/exception/e)
 			report_caught(e, "world wake [owner.type] [W.callback]: [e] ([e.file]:[e.line])")
-		if(W.one_shot)
-			W.cancel()
 		// Urgent wakes drain in full, like Rust's urgent lane. The rest yield to the budget, but
 		// only after OM_WORLD_MIN_PER_PASS wakes: a lane whose share is already spent when it
 		// starts (a pass behind on other work) still moves, so its wakes can't starve. The floor
@@ -298,7 +270,7 @@
 /// Rust-side counters (vg_world_sched_stats) by name.
 /proc/om_world_rust_stats()
 	var/list/v = vg_world_sched_stats()
-	var/static/list/names = list("timers_pending", "timers_fired", "crossings_fired", "publications", "models", "keys", "subscriptions", "wakes_received", "wakes_merged", "wakes_delivered", "wakes_deferred", "watch_wakes", "backlog_urgent", "backlog_normal", "backlog_background", "step_us")
+	var/static/list/names = list("timers_pending", "crossings_fired", "models", "subscriptions", "wakes_received", "wakes_merged", "wakes_delivered", "wakes_deferred", "watch_wakes", "backlog_urgent", "backlog_normal", "backlog_background", "step_us")
 	. = list()
 	for(var/i in 1 to min(length(v), length(names)))
 		.[names[i]] = v[i]

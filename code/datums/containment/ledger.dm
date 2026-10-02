@@ -612,7 +612,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
 /// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert
 /// in doMove() checks `loc` didn't change out from under it. May call
-/// om_world_at()/qdel(watch) and clock procs.
+/// after()/qdel(watch) and clock procs.
 /atom/movable/proc/move_hook_before()
 	return
 

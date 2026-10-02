@@ -47,9 +47,7 @@ pub fn snapshot_json() -> String {
         #[allow(clippy::cast_precision_loss)]
         for (name, v) in [
             ("world_sched.timers_pending", r.timers_pending as f64),
-            ("world_sched.timers_fired", r.timers_fired as f64),
             ("world_sched.crossings_fired", r.crossings_fired as f64),
-            ("world_sched.publications", r.publications as f64),
             ("world_sched.models", r.models as f64),
             ("world_sched.subscriptions", w.subscriptions(None) as f64),
             ("world_sched.wakes_received", received as f64),

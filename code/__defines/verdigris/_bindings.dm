@@ -25,7 +25,7 @@
 #endif
 
 /// Bind-set hash shared with verdigris/ffi/src/abi.rs; checked by verdigris_init().
-#define VERDIGRIS_ABI "57759af855de3189"
+#define VERDIGRIS_ABI "bc10d05a700cfdd7"
 
 // Numeric registry (@dm-define constants in the Rust sources).
 
@@ -354,17 +354,9 @@
 // verdigris/ffi/src/sched.rs
 #define WORLD_REASON_DETAIL 0x0FFFFF
 
-/// Reason class: a DM-owned key was published.
-// verdigris/ffi/src/sched.rs
-#define WORLD_REASON_KEY 0x400000
-
 /// Reason class: a rate model crossed a watched level.
 // verdigris/ffi/src/sched.rs
 #define WORLD_REASON_RATE 0x800000
-
-/// Reason class: a `om_world_at` timer fired.
-// verdigris/ffi/src/sched.rs
-#define WORLD_REASON_TIMER 0x200000
 
 /// Numbers per wake returned by `vg_world_step`:
 /// `subscriber, lane, reason, source, source_kind`.
@@ -1786,14 +1778,6 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(id, handle, interest_mask)
 
-/// `om_world_at`: wakes `subscriber` on `lane` at tick `tick` (a past tick fires
-/// at the next step). Returns the token.
-// /proc/world_at (verdigris/ffi/src/sched.rs)
-/proc/vg_world_at(sub, lane_v, tick)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_at_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(sub, lane_v, tick)
-
 /// `qdel(watch)`: drops one subscription. Returns 1 if the token was live.
 // /proc/world_cancel (verdigris/ffi/src/sched.rs)
 /proc/vg_world_cancel(token_v)
@@ -1822,22 +1806,6 @@
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_laws_ffi")
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)()
-
-/// `om_world_on_key`: wakes `subscriber` when key (`kind`, `id`) is published
-/// with any bit of `mask`. Returns the token.
-// /proc/world_on_key (verdigris/ffi/src/sched.rs)
-/proc/vg_world_on_key(sub, kind, id, mask, lane_v)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_on_key_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(sub, kind, id, mask, lane_v)
-
-/// `om_world_publish`: DM-owned state under key (`kind`, `id`) changed. Merged
-/// per tick; a key nobody subscribes to costs a lookup and is not stored.
-// /proc/world_publish (verdigris/ffi/src/sched.rs)
-/proc/vg_world_publish(kind, id, mask)
-	var/static/__f = load_ext(VERDIGRIS, "byond:world_publish_ffi")
-	VG_COUNT_FFI_CALL
-	return call_ext(__f)(kind, id, mask)
 
 /// A linear model starting at `v0` now, changing by `rate` per tick,
 /// clamped to [`min`, `max`] (null for unbounded). Returns the model id.
@@ -1914,10 +1882,9 @@
 	VG_COUNT_FFI_CALL
 	return call_ext(__f)(steps)
 
-/// Scheduler counters as a flat list: timers pending, timers fired, rate
-/// crossings fired, key publications, rate models, keys with subscribers,
-/// live subscriptions, wakes received, merged, delivered, deferred, 0,
-/// backlog urgent/normal/background, 0.
+/// Scheduler counters as a flat list: timers pending (rate crossings), rate
+/// crossings fired, rate models, live subscriptions, wakes received, merged,
+/// delivered, deferred, 0, backlog urgent/normal/background, 0.
 // /proc/world_sched_stats (verdigris/ffi/src/sched.rs)
 /proc/vg_world_sched_stats()
 	var/static/__f = load_ext(VERDIGRIS, "byond:world_sched_stats_ffi")

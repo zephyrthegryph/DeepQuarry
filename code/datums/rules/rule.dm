@@ -15,7 +15,7 @@
 //   channel-backed vs a static property Threshold watch, level read per instance
 //   channel-backed band                 Band watch        (native heat watch)
 //   channel-backed vs channel-backed    change watches on both (native heat watch)
-//   DM-owned property (dm_key_kind)     key subscription  (om_world_on_key)
+//   DM-owned property (dm_key_kind)     key subscription  (dq_rx_on_key)
 // Static clauses (tags, per-type measures) are only evaluated. A rule with no
 // trigger is a compile error: nothing could ever change its answer.
 //
