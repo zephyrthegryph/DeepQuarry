@@ -120,7 +120,7 @@ UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
 
 UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
 UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
-	switch(act_ask(usr, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
+	switch(act_ask(user, action, params, ui, "send", /datum/om/prompt/choice/alert, message = "Are you sure you want to send the fax as is?", title = "Send Fax", choices = list("Yes", "No")))
 		if("Yes")
 			if(headerOn)
 				info = header + info

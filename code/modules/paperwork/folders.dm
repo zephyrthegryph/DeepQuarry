@@ -139,9 +139,9 @@ UI_DATA_REPLACE(/obj/item/folder, "folder_name=name:text", "merge:ui_data_obj_it
 /obj/item/folder/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat || usr.restrained())
+	if(user.stat || user.restrained())
 		return FALSE
-	if(loc != usr)
+	if(loc != user)
 		return FALSE
 	return TRUE
 
@@ -150,8 +150,8 @@ UI_ACT_PROC(/obj/item/folder, ui_act_remove)
 	var/obj/item/O = params["ref"]
 	if(!O || O.loc != src)
 		return FALSE
-	if(slot_remove(O, usr.loc, usr))
-		usr.put_in_hands(O)
+	if(slot_remove(O, user.loc, user))
+		user.put_in_hands(O)
 	return TRUE
 
 UI_ACT(/obj/item/folder, "rename", ui_act_rename, UI_ARG_REF("ref", null, /obj/item))
@@ -161,13 +161,13 @@ UI_ACT_PROC(/obj/item/folder, ui_act_rename)
 		return FALSE
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/p = O
-		p.paper_verb_rename(usr)
+		p.paper_verb_rename(user)
 	else if(istype(O, /obj/item/photo))
 		var/obj/item/photo/ph = O
-		ph.photo_verb_rename(usr)
+		ph.photo_verb_rename(user)
 	else if(istype(O, /obj/item/paper_bundle))
 		var/obj/item/paper_bundle/pb = O
-		pb.paper_bundle_verb_rename(usr)
+		pb.paper_bundle_verb_rename(user)
 	return TRUE
 
 UI_ACT(/obj/item/folder, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
@@ -178,11 +178,11 @@ UI_ACT_PROC(/obj/item/folder, ui_act_open)
 	switch(params["kind"])
 		if("paper")
 			var/obj/item/paper/p = O
-			p.show_content(usr)
+			p.show_content(user)
 		if("photo")
 			var/obj/item/photo/ph = O
-			ph.show(usr)
+			ph.show(user)
 		if("bundle")
 			var/obj/item/paper_bundle/pb = O
-			pb.attack_self(usr)
+			pb.attack_self(user)
 	return TRUE

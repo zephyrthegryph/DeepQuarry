@@ -123,15 +123,15 @@ UI_DATA_REPLACE(/obj/item/clipboard, "merge:ui_data_obj_item_clipboard{has_pen:b
 /obj/item/clipboard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat || usr.restrained() || loc != usr)
+	if(user.stat || user.restrained() || loc != user)
 		return FALSE
 	return TRUE
 
 UI_ACT(/obj/item/clipboard, "remove_pen", ui_act_remove_pen)
 UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
 	if(haspen() && haspen().loc == src)
-		haspen().forceMove(usr.loc)
-		usr.put_in_hands(haspen())
+		haspen().forceMove(user.loc)
+		user.put_in_hands(haspen())
 		rel_clear(src, nameof(/obj/item/clipboard::haspen))
 		update_icon()
 	return TRUE
@@ -139,12 +139,12 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove_pen)
 UI_ACT(/obj/item/clipboard, "add_pen", ui_act_add_pen)
 UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
 	if(!haspen())
-		var/obj/item/pen/W = usr.get_active_hand()
+		var/obj/item/pen/W = user.get_active_hand()
 		if(istype(W, /obj/item/pen))
-			usr.drop_item()
+			user.drop_item()
 			W.forceMove(src)
 			rel_set(src, nameof(/obj/item/clipboard::haspen), W)
-			to_chat(usr, span_notice("You slot the pen into \the [src]."))
+			to_chat(user, span_notice("You slot the pen into \the [src]."))
 			update_icon()
 	return TRUE
 
@@ -154,9 +154,9 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_write)
 	if(!O || O.loc != src)
 		return TRUE
 	if(O == toppaper() && istype(O, /obj/item/paper))
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/pen))
-			O.attackby(I, usr)
+			O.attackby(I, user)
 	return TRUE
 
 UI_ACT(/obj/item/clipboard, "remove", ui_act_remove, UI_ARG_REF("ref", null, /obj/item))
@@ -165,8 +165,8 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_remove)
 	if(!O || O.loc != src)
 		return TRUE
 	if(istype(O, /obj/item/paper) || istype(O, /obj/item/photo))
-		O.forceMove(usr.loc)
-		usr.put_in_hands(O)
+		O.forceMove(user.loc)
+		user.put_in_hands(O)
 		if(O == toppaper())
 			rel_set(src, nameof(/obj/item/clipboard::toppaper), locate_within(src, /obj/item/paper))
 		update_icon()
@@ -179,10 +179,10 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_rename)
 		return TRUE
 	if(istype(O, /obj/item/paper))
 		var/obj/item/paper/p = O
-		p.paper_verb_rename(usr)
+		p.paper_verb_rename(user)
 	else if(istype(O, /obj/item/photo))
 		var/obj/item/photo/ph = O
-		ph.photo_verb_rename(usr)
+		ph.photo_verb_rename(user)
 	return TRUE
 
 UI_ACT(/obj/item/clipboard, "open", ui_act_open, UI_ARG_TEXT("kind"), UI_ARG_REF("ref", null, /obj/item))
@@ -193,10 +193,10 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_open)
 	switch(params["kind"])
 		if("paper")
 			var/obj/item/paper/p = O
-			p.show_content(usr)
+			p.show_content(user)
 		if("photo")
 			var/obj/item/photo/ph = O
-			ph.show(usr)
+			ph.show(user)
 	return TRUE
 
 /// The stored pen. (a relation view: null once that is deleted).

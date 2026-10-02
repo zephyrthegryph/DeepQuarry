@@ -131,10 +131,10 @@ UI_DATA_REPLACE(/obj/machinery/keycard_auth, "screen:num", "event", "merge:ui_da
 	if(!..())
 		return FALSE
 	if(om_busy(src))
-		to_chat(usr, "This device is busy.")
+		to_chat(user, "This device is busy.")
 		return FALSE
-	if(usr.stat || !operable())
-		to_chat(usr, "This device is without power.")
+	if(user.stat || !operable())
+		to_chat(user, "This device is without power.")
 		return FALSE
 	return TRUE
 
@@ -142,13 +142,13 @@ UI_ACT(/obj/machinery/keycard_auth, "triggerevent", ui_act_triggerevent, UI_ARG_
 UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_triggerevent)
 	event = params["event"]
 	screen = 2
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/machinery/keycard_auth, "reset", ui_act_reset)
 UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 	reset()
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 /obj/machinery/keycard_auth/proc/reset()
