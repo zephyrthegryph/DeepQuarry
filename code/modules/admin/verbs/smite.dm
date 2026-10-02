@@ -76,9 +76,7 @@
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
-				if(shadekin)
-					shadekin.death()
+			om_after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
 		if(SMITE_SHADEKIN_NOMF)
 			var/static/list/kin_types = list(
@@ -339,11 +337,15 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader
 
-	spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
-		if(target)
-			to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
-			if(target.client)
-				target.client.screen -= loader
+	om_after(target, 10 SECONDS, GLOBAL_PROC_REF(smite_autosave_complete), target, loader)
+
+/// The autosave smite's second half: tell the victim it finished and take the disc off their screen.
+/proc/smite_autosave_complete(mob/target, atom/movable/screen/loader)
+	if(!target)
+		return
+	to_chat(target, "<span class='notice' style='font: small-caps bold large monospace!important'>Autosave complete!</span>")
+	if(target.client)
+		target.client.screen -= loader
 
 /// The shadekin smite's show, a step per timer: turn, turn, turn, belch, then phase back in and
 /// either hand the shadekin to `controller_ckey` or take both away.

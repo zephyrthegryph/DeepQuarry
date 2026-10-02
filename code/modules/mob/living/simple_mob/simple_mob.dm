@@ -757,8 +757,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
-		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
+		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after(); no timer or task form can wait on it until ops land (wait())
 			animal_nom(tmob)
+			// The nom took seconds: the pred may have been deleted (or died into a belly) meanwhile.
+			if(QDELETED(src))
+				return
 			update_icon()
 			ai_busy_end()
 		return TRUE

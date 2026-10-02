@@ -418,6 +418,11 @@ ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mo
 	outfit.equip(H)
 	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].")
 
+/// "Setup supermatter" brings the crystal up to a working power shortly after the rest of the engine room is set.
+/proc/admin_boost_supermatter(obj/machinery/power/supermatter/SM)
+	if(SM)
+		SM.power = 320
+
 ADMIN_VERB(startSinglo, R_DEBUG|R_ADMIN, "Start Singularity", "Sets up the singularity and all machines to get power flowing through the station.", ADMIN_CATEGORY_DEBUG_GAME)
 	var/_answer_a5 = verb_ask(user, "a5", args, /datum/om/prompt/choice/alert, message = "Are you sure? This will start up the engine. Should only be used during debug!", title = "Start Singularity", choices = list("Yes","No"))
 	if(isnull(_answer_a5))
@@ -477,8 +482,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
-				spawn(50) // ALLOW(scheduler): admin verb (allowlist)
-					SM.power = 320
+				om_after(SM, 5 SECONDS, GLOBAL_PROC_REF(admin_boost_supermatter), SM)
 
 			else if(istype(M,/obj/machinery/power/smes))	//This is the SMES inside the engine room.  We don't need much power.
 				var/obj/machinery/power/smes/SMES = M
@@ -608,8 +612,7 @@ ADMIN_VERB(change_time, R_DEBUG|R_EVENT, "Change Planet Time", "Changes the time
 	new_time = new_time.add_hours(new_hour)
 	new_time = new_time.add_minutes(new_minute)
 	planet.current_time = new_time
-	spawn(1) // ALLOW(scheduler): admin verb (allowlist)
-		planet.update_sun()
+	planet.update_sun()
 
 	var/log = "[key_name(user)] changed [planet.name]'s time to [planet.current_time.show_time("hh:mm")]."
 	message_admins(log)

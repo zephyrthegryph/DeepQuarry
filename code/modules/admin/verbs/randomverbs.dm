@@ -656,20 +656,25 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new /obj/structure/drop_pod(target_turf, new_character)
 		to_chat(new_character, span_boldnotice("Please wait for your arrival."))
 	else if(showy == "Fall")
-		spawn(1) // ALLOW(scheduler): admin verb (allowlist)
-			var/initial_x = new_character.pixel_x
-			var/initial_y = new_character.pixel_y
-			new_character.plane = 1
-			new_character.pixel_x = rand(-150, 150)
-			new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
-			new_character.set_density(FALSE)
-			new_character.set_opacity(FALSE)
-			animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 7)
-			spawn(7) // ALLOW(scheduler): admin verb (allowlist)
-				new_character.end_fall()
+		om_after(new_character, 1 TICK, GLOBAL_PROC_REF(admin_spawn_fall), new_character)
 		to_chat(new_character, span_boldnotice("You have been fully spawned. Enjoy the game."))
 
 	return new_character
+
+/// The "Fall" arrival of a spawned character: lifted off the top of the screen, then dropped in and landed
+/// 0.7 seconds later (the animation's length).
+/proc/admin_spawn_fall(mob/living/carbon/human/new_character)
+	if(!new_character)
+		return
+	var/initial_x = new_character.pixel_x
+	var/initial_y = new_character.pixel_y
+	new_character.plane = 1
+	new_character.pixel_x = rand(-150, 150)
+	new_character.pixel_y = 500 // When you think that pixel_z is height but you are wrong
+	new_character.set_density(FALSE)
+	new_character.set_opacity(FALSE)
+	animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 0.7 SECONDS)
+	om_after(new_character, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable, end_fall))
 
 ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a custom law to a silicon.", ADMIN_CATEGORY_FUN_SILICON)
 	om_ask(user, /datum/om/prompt/text, PROC_REF(law_entered), title = "What?", message = "Please enter anything you want the AI to do. Anything. Serious.", max_length = MAX_MESSAGE_LEN, requires = PROMPT_ADMIN(permissions))
