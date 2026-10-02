@@ -122,13 +122,19 @@
 	TEST_ASSERT_EQUAL(SStgui.times_fired, before, "an idle tgui system does not fire")
 
 /// An autoupdate window still refreshes, and the work parks again once it closes.
+/// A pass-counting window that stays interactive: a test mob has no client, whose real status is CLOSE the moment any event
+/// re-checks it, and this test is about the autoupdate cadence, not the status.
+/datum/tgui/dq_test_probe/interactive/process_status()
+	status = STATUS_INTERACTIVE
+	return FALSE
+
 /datum/unit_test/tgui_autoupdate_still_refreshes
 
 /datum/unit_test/tgui_autoupdate_still_refreshes/Run()
 	var/datum/work_item/W = kernel().work_by_key["[/datum/system/tgui]:refresh_autoupdating"]
 	var/mob/user = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/host = allocate(/obj/item, run_loc_floor_bottom_left)
-	var/datum/tgui/dq_test_probe/ui = new(user, host, "Probe")
+	var/datum/tgui/dq_test_probe/interactive/ui = new(user, host, "Probe")
 	SStgui.on_open(ui)
 	ui.set_autoupdate(TRUE)
 	TEST_ASSERT(ui in SStgui.autoupdating, "an open autoupdate window joins the pass")
