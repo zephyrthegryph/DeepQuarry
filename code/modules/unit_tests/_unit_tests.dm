@@ -393,6 +393,7 @@
 #include "interim_actor_propagation.dm"
 #include "interim_construction_doors.dm"
 #include "interim_economy_actor.dm"
+#include "interim_food_consumption.dm"
 #include "interim_power_reagents.dm"
 #include "interim_reagent_pour.dm"
 #include "dq_kernel_measure_tests.dm"

@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 				feeder.put_in_hands(TrashItem)
 			else if(istype(trash,/obj/item))
 				feeder.put_in_hands(trash)
-			qdel(src)
+			consume(src, feeder)
 	return
 
 /obj/item/reagent_containers/food/drinks/on_rag_wipe(obj/item/reagent_containers/glass/rag/R)

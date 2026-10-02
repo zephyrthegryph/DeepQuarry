@@ -123,7 +123,7 @@
 			for(var/mob/living/voice/V in possessed_voice)
 				own_take_member(src, nameof(possessed_voice), V)
 				qdel(V)
-		qdel(src)
+		consume(src, feeder || eater)
 
 /// Old attack_self. Subtypes with special_handling do their own self-use (their candidates run first).
 /obj/item/reagent_containers/food/snacks/proc/snacks_self(mob/user, obj/item/held, datum/interaction/interaction)
@@ -4860,7 +4860,7 @@ MAP_RESOLVER(/obj/item/reagent_containers/food/snacks/bageltwo, GLOBAL_PROC_REF(
 				feeder.put_in_hands(TrashItem)
 			else if(istype(trash,/obj/item))
 				feeder.put_in_hands(trash)
-		qdel(src)
+		consume(src, feeder)
 	return
 
 ////////////////////////////////////////////////////////////////////////////////
