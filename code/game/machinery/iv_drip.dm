@@ -81,11 +81,11 @@ EXTEND_INTERACTIONS(/obj/machinery/iv_drip, \
 
 /obj/machinery/iv_drip/proc/screwdriver_act_timed_done(mob/user)
 	to_chat(user, span_notice("You dismantle the IV drip."))
-	new /obj/item/stack/rods(loc, 6)
+	var/obj/item/stack/rods/rods = new(loc, 6)
 	if(beaker)
 		beaker.forceMove(get_turf(src))
 		own_take(src, nameof(beaker))
-	qdel(src)
+	replace_with(src, rods)
 
 /obj/machinery/iv_drip/machine_step()
 	set background = 1
