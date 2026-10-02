@@ -48,7 +48,7 @@ UI_ACT(/obj/machinery/computer/pandemic, "create_culture_bottle", ui_act_create_
 UI_ACT_PROC(/obj/machinery/computer/pandemic, ui_act_create_culture_bottle)
 	if(wait)
 		return FALSE
-	create_culture_bottle(params["index"])
+	create_culture_bottle(params["index"], user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/pandemic, "create_vaccine_bottle", ui_act_create_vaccine_bottle, UI_ARG_TEXT("index"))
@@ -329,16 +329,16 @@ UI_DATA_REPLACE(/obj/machinery/computer/pandemic, "merge:ui_data_obj_machinery_c
 	om_after(src, 20 SECONDS, PROC_REF(reset_replicator_cooldown))
 	return TRUE
 
-/obj/machinery/computer/pandemic/proc/create_culture_bottle(index)
+/obj/machinery/computer/pandemic/proc/create_culture_bottle(index, mob/user)
 	var/id = get_virus_id_by_index(text2num(index))
 	var/datum/affliction/contagion/engineered/adv_disease = GLOB.archive_diseases[id]
 
 	if(!istype(adv_disease))
-		to_chat(usr, span_warning("ERROR: Cannot replicate virus strain."))
+		to_chat(user, span_warning("ERROR: Cannot replicate virus strain."))
 		return FALSE
 
 	if(!beaker.reagents.has_reagent(REAGENT_ID_BLOOD, 10))
-		to_chat(usr, span_warning("ERROR: Not enough blood in the sample."))
+		to_chat(user, span_warning("ERROR: Not enough blood in the sample."))
 		return
 
 	var/old_name = adv_disease.name

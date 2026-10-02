@@ -119,7 +119,7 @@
 	link = "MOBSPAWNSECOND"
 
 /obj/machinery/button/remote/noemag/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(usr, span_warning("The cryptographic sequencer seems to do nothing."))
+	to_chat(user, span_warning("The cryptographic sequencer seems to do nothing."))
 	return 0
 
 /// mobspawned (a relation view: it reads null once the target is deleted).

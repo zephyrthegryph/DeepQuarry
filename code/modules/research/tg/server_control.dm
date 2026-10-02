@@ -80,8 +80,8 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdservercontrol, "merge:ui_data_obj_mach
 /obj/machinery/computer/rdservercontrol/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!allowed(usr) && !emagged)
-		balloon_alert(usr, "access denied!")
+	if(!allowed(user) && !emagged)
+		balloon_alert(user, "access denied!")
 		play_sfx(src, SFX_MACHINES_CLICK, 0.4)
 		return FALSE
 	return TRUE
@@ -91,7 +91,7 @@ UI_ACT_PROC(/obj/machinery/computer/rdservercontrol, ui_act_lockdown_server)
 	var/obj/machinery/rnd/server/server_selected = params["selected_server"]
 	if(!server_selected)
 		return FALSE
-	server_selected.toggle_disable(usr)
+	server_selected.toggle_disable(user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/rdservercontrol, "lock_console", ui_act_lock_console, UI_ARG_REF("selected_console", "proc:ui_source_stored_research_consoles_accessing", /obj/machinery/computer/rdconsole_tg))

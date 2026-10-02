@@ -84,3 +84,20 @@
 	TEST_ASSERT(QDELETED(first), "the matching layer is consumed")
 	TEST_ASSERT_EQUAL(cake.icon_state, "thecake_stage-2", "the cake displays the next construction stage")
 	TEST_ASSERT(!cake.edible, "a partial cake remains inedible")
+
+/// Direct UI dispatch must authorize the supplied actor, including when usr is absent.
+/datum/unit_test/interim_research_console_lock_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/computer/rdconsole_tg/console = allocate(/obj/machinery/computer/rdconsole_tg, T)
+	TEST_ASSERT(!console.locked, "the research console starts unlocked")
+	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	TEST_ASSERT(!console.locked, "a user without research access cannot lock it")
+	var/obj/item/card/id/id = allocate(/obj/item/card/id, T)
+	id.access = list(ACCESS_RESEARCH)
+	TEST_ASSERT(user.put_in_active_hand(id), "the user holds the research-access ID")
+	TEST_ASSERT(console.allowed(user), "the held ID grants the console's required access")
+	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	TEST_ASSERT(console.locked, "the supplied authorized actor can lock the console")
+	console.ui_act_togglelock(user, list(), null, null, "toggleLock")
+	TEST_ASSERT(!console.locked, "the same actor can unlock it again")
