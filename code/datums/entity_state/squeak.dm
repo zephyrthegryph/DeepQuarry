@@ -47,7 +47,7 @@
 	om_hook(owner, /datum/om/event/before/attack_self, src, PROC_REF(on_attack_self))
 	om_hook(owner, /datum/om/event/item_equipped, src, PROC_REF(on_equip))
 	om_hook(owner, /datum/om/event/item_dropped, src, PROC_REF(on_drop))
-	om_hook(owner, /datum/om/event/before/shoes_step_action, src, PROC_REF(on_step))
+	observe(owner, on_notice(/datum/notice/shoes_step), src, PROC_REF(on_step))
 
 	override_squeak_sounds = custom_sounds
 	if(chance_override)
@@ -72,9 +72,9 @@
 		else
 			playsound(owner, pick_weight(override_squeak_sounds), volume * volume_mod, TRUE, sound_extra_range)
 
-/datum/squeak/proc/on_step(obj/item/clothing/shoes/source, datum/om/event/before/shoes_step_action/event)
-	EVENT_HANDLER
-	return step_squeak(source, event.m_intent)
+/// observe() handler: (source, notice).
+/datum/squeak/proc/on_step(obj/item/clothing/shoes/source, datum/notice/shoes_step/N)
+	step_squeak(source, N.m_intent)
 
 /datum/squeak/proc/step_squeak(obj/item/clothing/shoes/source, running)
 	if(running == I_WALK)

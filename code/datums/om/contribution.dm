@@ -327,13 +327,18 @@
 			om_timers_rate_changed(rec)
 	eff.on_changed(E, old, new_value)
 	var/bits = eff.channel | CHANGE_EFFECTS
+	var/list/keys = eff.publishes ? list(eff.publishes) : null
 	if(eff.dependents)
 		var/list/effects = om_registry().effects
 		for(var/dep_idx in eff.dependents)
 			var/datum/om/effect/dep = effects[dep_idx]
 			bits |= dep.channel
+			if(dep.publishes)
+				LAZYOR(keys, dep.publishes)
 	if(E)
 		changed(E, bits)
+		for(var/key in keys)
+			PUBLISH_CHANGE(E, key)
 
 // ---------------------------------------------------------------- expiry
 

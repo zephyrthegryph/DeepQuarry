@@ -1097,8 +1097,6 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 		return
 	process_power_change()
 
-OWN_TIMER(/obj/machinery/alarm, power_settle)
-
 /obj/machinery/alarm/proc/process_power_change()
 	update_icon()
 	if(!soundloop)

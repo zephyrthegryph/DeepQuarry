@@ -9,8 +9,8 @@
 	var/bench_a = 0
 	var/bench_noise = 0
 
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_a, CHANGE_MACHINE_SETTINGS)
-TRACKED(/obj/machinery/dx_deps_bench_legacy, bench_noise, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/dx_deps_bench_legacy, bench_a, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/dx_deps_bench_legacy, bench_noise, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/dx_deps_bench_legacy/draw(datum/look/look)
 	..()

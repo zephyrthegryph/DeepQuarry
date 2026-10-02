@@ -17,8 +17,6 @@
 	Look at radio.dm for the prequel to this code.
 */
 
-OWN_TIMER(/obj/machinery/telecomms, thermal_timer)
-
 /obj/machinery/telecomms
 	// Any power or break change (power_change(), EMP, EMP recovery) runs one step to reconcile.
 	step_on_power_change = TRUE
@@ -234,7 +232,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 /obj/machinery/telecomms/proc/thermal_check_due()
 	MACHINE_WAKE(src)
 
-EMP_DISABLE(/obj/machinery/telecomms, 300 SECONDS, "emp_until")
+CAPABILITY(/obj/machinery/telecomms, emp_disable(300 SECONDS))
 
 /// Weaker pulses only sometimes knock a telecomms machine out.
 /obj/machinery/telecomms/emp_disable_react(datum/damage_packet/packet)

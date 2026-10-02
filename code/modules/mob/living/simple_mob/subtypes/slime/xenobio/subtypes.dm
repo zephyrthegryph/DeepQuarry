@@ -293,7 +293,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/slime/xenobio/dark_purple, INTERACT_I
 			/mob/living/simple_mob/slime/xenobio/amber
 		)
 
-REFLECTS(/mob/living/simple_mob/slime/xenobio/silver, list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100)
+CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/projectile/beam, /obj/item/projectile/energy), 100))
 
 
 // Tier 3

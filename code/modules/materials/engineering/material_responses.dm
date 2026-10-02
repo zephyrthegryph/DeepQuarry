@@ -37,8 +37,6 @@
 /obj/item/var/datum/material_response/material_response
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
-OWN_TIMER(/datum/material_response, scintillation_timer)
-
 /datum/material_response
 	/// The item this state belongs to.
 	var/obj/item/parent

@@ -45,7 +45,7 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	//control
 	var/ordernum = 0						// Start at zero, it's per-shift tracking
 	var/list/shoppinglist = list()			// Approved orders
-	var/list/supply_pack = list()			// All supply packs
+	var/list/datum/supply_pack/supply_pack = list()			// All supply packs
 	var/list/exported_crates = list()		// Crates sent from the station
 	var/list/order_history = list()			// History of orders, showing edits made by users
 	var/list/adm_order_history = list() 	// Complete history of all orders, for admin use
@@ -1054,11 +1054,6 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 
 /// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
 /// clears by itself when that shuttle is deleted).
-/datum/world_service/supply/ownership()
-	. = ..()
-	/// supply_pack maps name -> the registered supply_pack singleton (registry_supply_pack reads it).
-	. += shares(nameof(supply_pack))
-
 /datum/world_service/supply/relations()
 	. = ..()
 	. += rel_one(nameof(shuttle))

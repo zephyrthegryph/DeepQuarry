@@ -7,8 +7,6 @@
 	cost = 150
 	obj_path = /obj/item/clothing/suit/armor/tesla
 
-OWN_TIMER(/obj/item/clothing/suit/armor/tesla, recharge_timer)
-
 /obj/item/clothing/suit/armor/tesla
 	name = "tesla armor"
 	desc = "This rather dangerous looking armor will hopefully shock your enemies, and not you in the process."

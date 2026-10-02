@@ -41,4 +41,4 @@
 // owns. proto_set() deletes the private copy it replaces; teardown deletes it with the mob.
 /mob/living/carbon/ownership()
 	. = ..()
-	. += proto(nameof(species))
+	. += rel_one(nameof(species), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

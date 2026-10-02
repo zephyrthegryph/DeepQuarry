@@ -224,7 +224,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 /// (Re)starts the emission's run: it ends `duration` from now (emission_timer_fired()).
 /obj/item/anodevice/proc/arm_emission_timer()
 	EXPIRY_SET(src, time_end, duration, CLOCK_WORLD)
-	rx_after(src, duration + 1, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
+	after(src, duration + 0.1 SECONDS, PROC_REF(emission_timer_fired), key = "emission") // replaces a pending one
 
 /// The keyed timer: the set duration has run out.
 /obj/item/anodevice/proc/emission_timer_fired()

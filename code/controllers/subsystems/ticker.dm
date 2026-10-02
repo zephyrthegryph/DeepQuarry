@@ -516,5 +516,3 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 		om_cancel_timer_slot(src, "reboot_timer")
 	else
 		Reboot("World reboot after administrative delay.")
-
-OWN_TIMER(/datum/system/ticker, reboot_timer)

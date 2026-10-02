@@ -124,7 +124,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/supply_beacon, MACHINE_PIPELINE,
 		deactivate()
 		return
 	if(!after_pending(src, "drop"))
-		rx_after(src, drop_delay, PROC_REF(drop_timer_fired), key = "drop")
+		after(src, drop_delay, PROC_REF(drop_timer_fired), key = "drop")
 
 /// The keyed timer: the beacon stayed powered for drop_delay, so the pod is sent.
 /obj/machinery/power/supply_beacon/proc/drop_timer_fired()

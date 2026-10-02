@@ -15,10 +15,27 @@
 	RETURN_TYPE(/list)
 	return list()
 
+/// The one-line declarations of this type (CAPABILITY(T, entry), code/__defines/capabilities.dm): each line adds
+/// one entry after ..(). Collected after capabilities() when the type's table is built (caps_build()), so a
+/// data-only subtype stays one line and never collides with a capabilities() override in the same file.
+/atom/proc/declared_capabilities(list/into)
+	SHOULD_CALL_PARENT(TRUE)
+	SHOULD_NOT_SLEEP(TRUE)
+	return
+
+/// The type's capability declarations: capabilities() (parents first), then its CAPABILITY() lines (parents first).
+/// type_list()'s builder: built once per type, interned by caps_intern_list().
+/proc/caps_build(atom/A)
+	. = A.capabilities()
+	var/list/declared = list()
+	A.declared_capabilities(declared)
+	if(length(declared))
+		. += declared
+
 /// The cached capability list of A's type. Shared: never write into it.
 /proc/caps_of(atom/A)
 	RETURN_TYPE(/list)
-	return type_list(A, TYPE_PROC_REF(/atom, capabilities), GLOBAL_PROC_REF(caps_intern_list))
+	return type_list(A, GLOBAL_PROC_REF(caps_build), GLOBAL_PROC_REF(caps_intern_list))
 
 /// Interns every capability of a freshly built list: identical constructor calls anywhere in the tree
 /// (a type and each subtype that calls ..(), or two types with the same settings) share ONE datum, so

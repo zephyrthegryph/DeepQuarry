@@ -1,5 +1,4 @@
 //Helper object for picking dionaea (and other creatures) up.
-OWN_TIMER(/obj/item/holder, cleanup_timer)
 
 /obj/item/holder
 	name = "holder"

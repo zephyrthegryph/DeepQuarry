@@ -1,4 +1,3 @@
-OWN_TIMER(/datum/tgs_event_handler/impl, reattach_timer)
 
 /datum/tgs_event_handler/impl
 

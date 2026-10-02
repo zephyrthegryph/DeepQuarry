@@ -410,4 +410,4 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 
 /obj/item/reagent_containers/food/snacks/grown/ownership()
 	. = ..()
-	. += proto(nameof(seed_static))
+	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

@@ -118,7 +118,7 @@
 // The omni device owns its ports (own_add in omni/Initialize()); a port names its device back.
 /datum/omni_port/ownership()
 	. = ..()
-	. += proto(nameof(air))
+	. += rel_one(nameof(air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /datum/omni_port/relations()
 	. = ..()

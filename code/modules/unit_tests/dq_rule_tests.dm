@@ -145,7 +145,7 @@
 	)
 
 /datum/unit_test/dq_rule_thresholds/Run()
-	GLOB.dq_rule_recording = TRUE
+	set_global("dq_rule_recording", TRUE)
 	GLOB.dq_rule_fire_log.Cut()
 	var/declared = 0
 	var/passed = 0
@@ -165,7 +165,7 @@
 						passed++
 		// Per-rule cost, to see which rules dominate this sweep.
 		log_test("RULE THRESHOLDS: [rule_path]: [rule_cases] case(s) in [(REALTIMEOFDAY - rule_started) / 10]s")
-	GLOB.dq_rule_recording = FALSE
+	set_global("dq_rule_recording", FALSE)
 	TEST_NOTICE(src, "[passed]/[declared] generated rule threshold tests passed")
 	TEST_ASSERT(declared > 0, "some thresholds are declared")
 	TEST_ASSERT_EQUAL(passed, declared, "every declared threshold passes its generated test")
@@ -342,7 +342,7 @@
 /datum/unit_test/dq_rule_hold_and_band
 
 /datum/unit_test/dq_rule_hold_and_band/Run()
-	GLOB.dq_rule_recording = TRUE
+	set_global("dq_rule_recording", TRUE)
 	var/datum/rule/hold = dq_rule_fixture(/datum/rule/dq_test_hold)
 	var/obj/item/dq_rule_test/item = allocate(/obj/item/dq_rule_test)
 	var/datum/rule_binding/binding = new(item, list(hold))
@@ -379,7 +379,7 @@
 	dq_rx_node_write(band_handle, DQ_RX_CH_TEMPERATURE, 320)
 	TEST_ASSERT_EQUAL(dq_rule_fire_count(banded, band), 1, "entering the band fires")
 	TEST_ASSERT_EQUAL(banded.w_class, ITEMSIZE_TINY, "band transform applied")
-	GLOB.dq_rule_recording = FALSE
+	set_global("dq_rule_recording", FALSE)
 
 // ---- Parity: paper ignition ----
 

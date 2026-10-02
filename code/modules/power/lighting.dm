@@ -189,7 +189,6 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/small, "stage", list("1" = lis
 DECLARE_APPEARANCE(/obj/machinery/light_construct/flamp, "stage", list("1" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "flamp-empty")))
 
 // the standard tube light fixture
-OWN_TIMER(/obj/machinery/light, light_timer_token)
 
 /obj/machinery/light
 	name = "light fixture"
@@ -275,7 +274,7 @@ OWN_TIMER(/obj/machinery/light, light_timer_token)
 	. = ..()
 	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
 
-TRACKED(/obj/machinery/light, nightshift_allowed, CHANGE_MACHINE_SETTINGS)
+TRACKED_BRIDGED(/obj/machinery/light, nightshift_allowed, CHANGE_MACHINE_SETTINGS)
 
 /obj/machinery/light/relations()
 	. = ..()

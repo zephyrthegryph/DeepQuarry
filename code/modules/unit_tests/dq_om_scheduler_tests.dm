@@ -181,13 +181,13 @@
 /datum/unit_test/om/timer_arg_deleted_if_alive_drops/run_om(list/made)
 	var/datum/om_test_entity/E = entity(made)
 	var/datum/om_test_entity/arg = entity(made)
-	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "weak", arg)
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("weak", arg))
 	var/dropped = sched.timers_dropped
 	qdel(arg)
 	scheduler_advance(2)
 	TEST_ASSERT(!("weak" in E.log), "an after_if_alive() call whose argument was deleted does not run")
 	TEST_ASSERT_EQUAL(sched.timers_dropped, dropped + 1, "the dropped call is counted")
-	TEST_ASSERT(!after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, "x", arg), "a deleted argument is refused up front")
+	TEST_ASSERT(!after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("x", arg)), "a deleted argument is refused up front")
 
 /datum/om_test_entity/proc/timer_hit_list(tag, list/others)
 	log += tag
@@ -206,9 +206,9 @@
 	var/datum/om_test_entity/keyed = entity(made)
 	var/datum/om_test_entity/kept = entity(made)
 	var/datum/om_test_entity/nulled = entity(made)
-	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "listed", list(member))
-	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "keyed", list("who" = keyed))
-	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "kept", list(kept))
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("listed", list(member)))
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("keyed", list("who" = keyed)))
+	after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, with = list("kept", list(kept)))
 	om_after(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit_list, "defaulted", list(nulled, kept))
 	var/list/T = E.om_rec.timers
 	for(var/i in 1 to length(T) step OM_TIMER_STRIDE)
@@ -362,7 +362,7 @@
 	E.log.Cut()
 	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps_sleepy, E)
 	scheduler_advance(1.5)
-	GLOB.om_expect_sleep = FALSE
+	set_global("om_expect_sleep", FALSE)
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 2, "the sleeping step is counted")
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "a sleeping step fails its task")
 	TEST_ASSERT_EQUAL(T.reason, "slept", "with the reason 'slept'")

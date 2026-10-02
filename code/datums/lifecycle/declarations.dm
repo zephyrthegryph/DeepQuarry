@@ -247,7 +247,6 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		work |= DECL_WORK_MATERIALIZE
 	if(binders)
 		work |= DECL_WORK_UNBIND
-	finish_damage_reactions(D)
 
 /// A declared value that may be a var name: the instance's value for a string.
 /proc/lifecycle_decl_value(datum/D, value)

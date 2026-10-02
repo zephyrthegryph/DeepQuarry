@@ -19,7 +19,7 @@
 		return
 
 	//Stumblevore occurs here. Look at the 'stumblevore' element for more information.
-	if(om_wants(src, /datum/om/event/before/stumbled_into) && om_emit(src, new /datum/om/event/before/stumbled_into(M)) == EVENT_VETO)
+	if(guard(src, GUARD_STUMBLED_INTO, M))
 		return
 
 	play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)

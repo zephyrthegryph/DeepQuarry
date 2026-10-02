@@ -36,6 +36,23 @@
 	var/static/datum/kernel_membership/store = new
 	return store
 
+/// The store's member list for `key`, created (empty) if no member joined yet. The store keeps this one list for
+/// the key for good, so a caller may hold it (a work item checks it for an empty sweep without a call).
+/proc/member_list_for(key)
+	RETURN_TYPE(/list)
+	key = member_key(key)
+	if(!key)
+		return null
+	var/datum/kernel_membership/M = kernel_membership()
+	if(!istype(M)) // global init: the store's static is not built yet (the engine resolves the list on first run)
+		return null
+	if(!M.index_by_key[key])
+		M.index_by_key[key] = list()
+		M.members_by_key[key] = list()
+		M.sources_by_key[key] = list()
+		M.role_by_key[key] = list()
+	return M.members_by_key[key]
+
 /// Adds `member` to `key` held by `source` (null: an anonymous source). Returns TRUE when the member was not
 /// in `key` before, so on_join() should run. A second source on an existing member only records the source.
 /// `role` (optional) indexes the member for members_of(key, role); a later join may change it.

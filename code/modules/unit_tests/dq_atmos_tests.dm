@@ -1185,6 +1185,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Capture a turf's authoritative gas before a test mutates it. The first
 /// snapshot wins so multiple helpers within one test still restore the true
 /// pre-test state.
+/// Gives a test floor standard air at `temperature`. The clear floors the helpers above find are
+/// shared with every earlier atmos test, and one that vents or drains the floor leaves it a vacuum.
+/// A turf cell's temperature is its energy over its heat capacity, so an empty cell has none to set:
+/// temperature writes to it change nothing and wake no watch. Snapshot the air first
+/// (dq_atmos_test_snapshot_air()) so restore_atmos() puts it back.
+/proc/dq_atmos_test_fill_standard_air(turf/open/T, temperature = T20C)
+	T.air.clear()
+	T.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+	T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	T.air.set_temperature(temperature)
+
 /proc/dq_atmos_test_snapshot_air(turf/open/T)
 	if(!istype(T) || !T.air || (T in GLOB.dq_atmos_test_air_snapshots))
 		return
@@ -4266,10 +4277,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	// Start from room temperature. Earlier tests can leave this turf warm, and
-	// +10 K from there may cross the firedoor's hot threshold, which is a real
-	// alarm rather than harmless drift.
-	T.air.set_temperature(T20C)
+	// Start from standard air at room temperature. Earlier tests can leave this turf warm (+10 K
+	// from there may cross the firedoor's hot threshold, a real alarm rather than harmless drift)
+	// or a vacuum, whose temperature can't be written at all.
+	dq_atmos_test_fill_standard_air(T)
 	dq_atmos_test_drain_dependency_queue()
 	native_system().drain()
 	native_system().take_gas_changes()
@@ -4554,8 +4565,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_turret_wakes_for_nearby_mob
 
 /datum/unit_test/dq_idle_turret_wakes_for_nearby_mob/Run()
-	var/turf/T = locate(1, 1, 1)
-	TEST_ASSERT_NOTNULL(T, "no isolated turf for turret hibernation test")
+	var/turf/T = run_loc_floor_bottom_left
+	TEST_ASSERT_NOTNULL(T, "the test block has no floor")
 	var/obj/machinery/porta_turret/turret = new(T)
 	turret.set_stat(0)
 	turret.enabled = TRUE
@@ -7582,7 +7593,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	T.air.set_temperature(T20C)
+	dq_atmos_test_fill_standard_air(T)
+	TEST_ASSERT(abs(T.air.return_temperature() - T20C) < 0.01, "the test floor's air did not take its starting temperature")
 	dq_atmos_test_drain_dependency_queue()
 
 	var/obj/machinery/power/thermoregulator/R = new(T)
@@ -7596,7 +7608,9 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
+	TEST_ASSERT(om_watch_armed(R, "gas"), "the thermoregulator woke by another path before its watch was tested")
 	T.air.set_temperature(T20C + 5)
+	TEST_ASSERT(abs(T.air.return_temperature() - (T20C + 5)) < 0.01, "the test floor's air did not take the out-of-deadband temperature")
 	for(var/i in 1 to 65536)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(R.gas_dependency_wake_count > regulator_wakes)
@@ -7619,6 +7633,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	while(!GLOB.machine_service.wake_dirty_gas_subscribers())
 		stoplag()
 	TEST_ASSERT_EQUAL(O.gas_dependency_wake_count, outlet_wakes, "a trace of gas below the pumping minimum woke an outlet injector")
+	TEST_ASSERT(om_watch_armed(O, "gas"), "the outlet injector woke by another path before its watch was tested")
 	O.air_contents.adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 65536)
 		GLOB.machine_service.wake_dirty_gas_subscribers()

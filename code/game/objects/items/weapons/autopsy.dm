@@ -179,8 +179,6 @@
 	act_message(user, M, others = span_infoplain(span_bold("%U%") + " scans the wounds on %T%'s [S.name] with [src]"))
 
 	src.add_data(S)
-	OM_EMIT(src, /datum/om/event/autopsy_performed, user, M)
-	OM_EMIT_WORLD(/datum/om/event/world_autopsy_performed, user, M)
 
 	return 1
 

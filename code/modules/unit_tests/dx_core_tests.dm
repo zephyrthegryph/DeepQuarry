@@ -39,7 +39,7 @@
 /datum/dx_core_child
 	var/level = 0
 
-TRACKED(/datum/dx_core_child, level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/datum/dx_core_child, level, CHANGE_EFFECTS)
 
 /obj/cap_fixture
 	name = "capability fixture"
@@ -58,7 +58,7 @@ TRACKED(/datum/dx_core_child, level, CHANGE_EFFECTS)
 	. = ..()
 	. += owns(nameof(child), policy = OWN_DELETE)
 
-TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_core/capabilities()
 	. = ..()
@@ -137,7 +137,7 @@ TRACKED(/obj/cap_fixture/dx_core, power_level, CHANGE_EFFECTS)
 	periodic_cadence = PERIODIC_SLOW
 	var/gating = FALSE
 
-TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
+TRACKED_BRIDGED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 
 /obj/cap_fixture/dx_periodic/should_run()
 	return gating
@@ -271,17 +271,17 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT(!refresh_check_drift(F), "no drift right after a refresh")
 	F.drift_state = TRUE // deliberately unmarked
 	var/before = length(GLOB.refresh_drift)
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	var/found = refresh_check_drift(F)
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 	TEST_ASSERT(found, "the sweep check found the unmarked write")
 	TEST_ASSERT_EQUAL(length(GLOB.refresh_drift) - before, 1, "one REFRESH DRIFT report")
 	TEST_ASSERT(findtext(GLOB.refresh_drift[length(GLOB.refresh_drift)], "REFRESH DRIFT"), "the report names the drift")
 	TEST_ASSERT(findtext(F.look_key, "drift"), "the drift was corrected")
 	TEST_ASSERT(!refresh_check_drift(F), "and is gone after the correction")
-	GLOB.refresh_drift_expected = TRUE
+	set_global("refresh_drift_expected", TRUE)
 	refresh_sweep_step(length(GLOB.refresh_sweep_list))
-	GLOB.refresh_drift_expected = FALSE
+	set_global("refresh_drift_expected", FALSE)
 
 // ---------------------------------------------------------------- 6. periodic gating
 
@@ -319,9 +319,9 @@ TRACKED(/obj/cap_fixture/dx_periodic, gating, CHANGE_EFFECTS)
 	TEST_ASSERT(!H.tgui_act("set_value", list("value" = "lots"), ui), "a validator refusal is refused")
 	TEST_ASSERT_EQUAL(H.value, 42, "unchanged after a refusal")
 	var/fails = length(GLOB.dispatch_failures)
-	GLOB.dispatch_failure_expected = TRUE
+	set_global("dispatch_failure_expected", TRUE)
 	var/result = H.tgui_act("set_value", list("value" = 3, "bogus" = 1), ui)
-	GLOB.dispatch_failure_expected = FALSE
+	set_global("dispatch_failure_expected", FALSE)
 	TEST_ASSERT(!result, "an unknown argument name is refused")
 	TEST_ASSERT_EQUAL(length(GLOB.dispatch_failures) - fails, 1, "and logged")
 	H.allow = FALSE

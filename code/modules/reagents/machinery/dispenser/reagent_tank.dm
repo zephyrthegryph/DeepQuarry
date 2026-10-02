@@ -29,7 +29,7 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 /obj/structure/reagent_dispensers/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	return INTERACTION_HANDLED_PASS
 
-/// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, starts =) adds to what it inherits).
+/// The tank's reagents: 5000 units, filled by each kind of tank (refine(CAP_REAGENTS, add =) adds to what it inherits).
 /obj/structure/reagent_dispensers/capabilities()
 	. = ..()
 	. += reagents(5000)
@@ -93,7 +93,7 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 
 /obj/structure/reagent_dispensers/watertank/capabilities()
 	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 1000))
+	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 1000))
 
 /obj/structure/reagent_dispensers/watertank/Initialize(mapload)
 	. = ..()
@@ -106,7 +106,7 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 
 /obj/structure/reagent_dispensers/watertank/high/capabilities()
 	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 4000))
+	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 4000))
 
 /obj/structure/reagent_dispensers/watertank/barrel
 	name = "water barrel"
@@ -124,7 +124,7 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 
 /obj/structure/reagent_dispensers/fueltank/capabilities()
 	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FUEL = 1000))
+	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_FUEL = 1000))
 
 /obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
 	. = ..()

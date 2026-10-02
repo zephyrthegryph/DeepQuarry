@@ -1,7 +1,7 @@
 GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 
 /datum/uplink
-	var/list/items_assoc
+	var/list/datum/uplink_item/items_assoc
 	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/uplink_category/categories
 
@@ -208,7 +208,3 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	return bought_items
 
 
-/// items_assoc maps type -> the registered uplink_item singleton (registry_uplink_item reads it).
-/datum/uplink/ownership()
-	. = ..()
-	. += shares(nameof(items_assoc))

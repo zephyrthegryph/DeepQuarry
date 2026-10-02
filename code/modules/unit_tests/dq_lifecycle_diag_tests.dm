@@ -66,13 +66,13 @@
 
 	set_global("om_expect_sleep", TRUE)
 	om_guarded_call(null, /proc/dq_diag_sleep_then_throw, list())
-	GLOB.om_expect_sleep = FALSE
+	set_global("om_expect_sleep", FALSE)
 	for(var/i in 1 to 20)
 		if(dq_diag_capture_has(GLOB.dq_caught_capture, "OM trampoline"))
 			break
 		sleep(world.tick_lag)
 	var/list/capture = GLOB.dq_caught_capture
-	GLOB.dq_caught_capture = null
+	set_global("dq_caught_capture", null)
 	TEST_ASSERT(dq_diag_capture_has(capture, "dq_diag direct catch: dq_diag direct"), "dq_report_caught() reported the direct catch: [json_encode(capture)]")
 	TEST_ASSERT(dq_diag_capture_has(capture, "dq_diag scheduler catch"), "scheduler report_caught() went through dq_report_caught(): [json_encode(capture)]")
 	TEST_ASSERT(dq_diag_capture_has(capture, "OM trampoline (after sleep)"), "the trampoline reported a runtime raised after its callee slept: [json_encode(capture)]")
@@ -114,8 +114,8 @@
 	qdel(clean)
 
 	var/list/capture = GLOB.dq_lifecycle_report_capture
-	GLOB.dq_lifecycle_report_capture = null
-	GLOB.dq_lifecycle_leak_check = old_level
+	set_global("dq_lifecycle_report_capture", null)
+	set_global("dq_lifecycle_leak_check", old_level)
 	var/list/gc_lines = dq_lifecycle_leak_lines(leaker)
 
 	// Break the cycle by hand so the fixtures themselves collect.
@@ -165,10 +165,10 @@
 	TEST_ASSERT(isnull(clean.loc), "it left its turf")
 	TEST_ASSERT(!(locate_within(T, /obj/item/dq_diag_init_refuser)), "nothing of it is left on the turf")
 
-	GLOB.dq_caught_capture = list()
+	set_global("dq_caught_capture", list())
 	var/obj/item/dq_diag_init_refuser/fragile/fragile = new(T)
 	var/list/capture = GLOB.dq_caught_capture
-	GLOB.dq_caught_capture = null
+	set_global("dq_caught_capture", null)
 	TEST_ASSERT(QDELETED(fragile), "one whose Destroy() runtimes is still deleted")
 	TEST_ASSERT(isnull(fragile.loc), "and still leaves its turf")
 	TEST_ASSERT(fragile.gc_destroyed != GC_CURRENTLY_BEING_QDELETED, "and is handed to the GC, not left mid-destroy")
@@ -192,16 +192,16 @@ GLOBAL_VAR_INIT(dq_diag_aborted_timer_fired, FALSE)
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown
 
 /datum/unit_test/dq_lifecycle_diag_aborted_plain_teardown/Run()
-	GLOB.dq_diag_aborted_timer_fired = FALSE
+	set_global("dq_diag_aborted_timer_fired", FALSE)
 	var/datum/dq_diag_aborted_plain/D = new
 	var/id = om_after(D, 1 SECONDS, TYPE_PROC_REF(/datum/dq_diag_aborted_plain, never_fires))
 	TEST_ASSERT(id, "the fixture has an OM timer")
 	var/datum/om/rec/rec = D.om_rec
 	TEST_ASSERT(rec && length(rec.timers), "the timer lives on the datum's record")
-	GLOB.dq_caught_capture = list()
+	set_global("dq_caught_capture", list())
 	qdel(D)
 	var/list/capture = GLOB.dq_caught_capture
-	GLOB.dq_caught_capture = null
+	set_global("dq_caught_capture", null)
 	TEST_ASSERT(dq_diag_capture_has(capture, "destroy transaction of /datum/dq_diag_aborted_plain"), "the runtime aborted the transaction: [json_encode(capture)]")
 	TEST_ASSERT(QDELETED(D), "the datum is still deleted")
 	TEST_ASSERT_NULL(D.om_rec, "its OM record was torn down")

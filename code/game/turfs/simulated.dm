@@ -4,7 +4,6 @@
 // turf graph so gases stay where vents push them and never render. Floors
 // get air via /turf/open/Initialize (because blocks_air defaults FALSE);
 // walls keep their existing blocks_air=1 and remain inert.
-OWN_TIMER(/turf/simulated, wet_cleanup_timer)
 
 /turf/simulated
 	parent_type = /turf/open

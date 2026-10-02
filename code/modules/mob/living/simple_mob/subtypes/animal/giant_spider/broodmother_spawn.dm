@@ -162,8 +162,6 @@
 		qdel(src)
 	return TRUE
 
-OWN_TIMER(/mob/living/simple_mob/animal/giant_spider/broodling, deathtimer)
-
 /mob/living/simple_mob/animal/giant_spider/broodling
 	endurance = 60
 

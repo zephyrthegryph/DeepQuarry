@@ -167,9 +167,6 @@
 /datum/contract_definition/proc/finalize_contract_authoring(datum/contract/contract, list/context)
 	return
 
-OWN_TIMER(/datum/contract, deadline_timer)
-OWN_TIMER(/datum/contract, offer_timer)
-
 /datum/contract
 	var/id
 	var/definition_id

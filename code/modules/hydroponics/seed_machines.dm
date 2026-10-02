@@ -394,4 +394,4 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 
 /obj/machinery/botany/extractor/ownership()
 	. = ..()
-	. += proto(nameof(genetics_static))
+	. += rel_one(nameof(genetics_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

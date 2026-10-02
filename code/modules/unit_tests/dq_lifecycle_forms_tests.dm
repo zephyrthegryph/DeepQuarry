@@ -46,11 +46,27 @@ REGISTRY_DECLARE_CONDITIONAL(dq_forms_cond, REGISTRY_DQ_FORMS_COND)
 
 /obj/item/dq_forms_flask/capabilities()
 	. = ..()
-	. += reagents(nameof(volume), starts = list(REAGENT_ID_WATER = 10))
+	. += reagents(PROC_REF(flask_volume), starts = list(REAGENT_ID_WATER = 10))
+
+/// The volume per instance: a holder proc (reagents(volume = PROC_REF(...))), never a var name read.
+/obj/item/dq_forms_flask/proc/flask_volume()
+	return volume
 
 /obj/item/dq_forms_flask/spiked/capabilities()
 	. = ..()
-	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5), volume = 60)
+	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 5, REAGENT_ID_ETHANOL = 5), volume = 60)
+
+/// The one-line form, on a data-only subtype: starts = replaces the inherited contents.
+/obj/item/dq_forms_flask/replaced
+CAPABILITY(/obj/item/dq_forms_flask/replaced, refine(CAP_REAGENTS, starts = list(REAGENT_ID_ETHANOL = 3)))
+
+/// One-line declarations accumulate down the tree and sit beside a capabilities() override on the same type.
+/obj/item/dq_forms_flask/replaced/topped
+CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 2)))
+
+/obj/item/dq_forms_flask/replaced/topped/capabilities()
+	. = ..()
+	. += refine(CAP_REAGENTS, volume = 25)
 
 /obj/item/dq_forms_flask/dry/capabilities()
 	. = ..()
@@ -174,16 +190,24 @@ REGISTRY_DECLARE_CONDITIONAL(dq_forms_cond, REGISTRY_DQ_FORMS_COND)
 	TEST_ASSERT(istype(probe.part, /obj/item/dq_decl_part), "and the child is made")
 	TEST_ASSERT(istype(probe.mapped_part, /obj/item/dq_decl_part/better), "a path held in the var still wins")
 
-/// reagents(): a holder filled at init; refine(CAP_REAGENTS) adds to the inherited contents; without() drops it.
+/// reagents(): a holder filled at init; refine(CAP_REAGENTS, add =) merges, starts = replaces; without() drops it;
+/// CAPABILITY(T, entry) declares one line.
 /datum/unit_test/dq_forms_reagents/Run()
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_forms_flask/F = allocate(/obj/item/dq_forms_flask, T)
-	TEST_ASSERT_EQUAL(F.reagents?.maximum_volume, 40, "volume read from the holder var")
+	TEST_ASSERT_EQUAL(F.reagents?.maximum_volume, 40, "volume answered by the holder proc")
 	TEST_ASSERT_EQUAL(F.reagents.get_reagent_amount(REAGENT_ID_WATER), 10, "starting contents")
 	var/obj/item/dq_forms_flask/spiked/S = allocate(/obj/item/dq_forms_flask/spiked, T)
 	TEST_ASSERT_EQUAL(S.reagents.maximum_volume, 60, "refine(volume =) replaces the volume")
-	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "refine(starts =) adds to the inherited contents")
+	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_WATER), 15, "refine(add =) merges into the inherited contents")
 	TEST_ASSERT_EQUAL(S.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 5, "and brings its own")
+	var/obj/item/dq_forms_flask/replaced/R = allocate(/obj/item/dq_forms_flask/replaced, T)
+	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_WATER), 0, "refine(starts =) replaces the inherited contents")
+	TEST_ASSERT_EQUAL(R.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "with its own (CAPABILITY one-line form)")
+	var/obj/item/dq_forms_flask/replaced/topped/top = allocate(/obj/item/dq_forms_flask/replaced/topped, T)
+	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "an inherited CAPABILITY line still applies")
+	TEST_ASSERT_EQUAL(top.reagents.get_reagent_amount(REAGENT_ID_WATER), 2, "and the subtype's line adds after it")
+	TEST_ASSERT_EQUAL(top.reagents.maximum_volume, 25, "capabilities() entries apply before the CAPABILITY lines, which keep them")
 	var/obj/item/dq_forms_flask/dry/D = allocate(/obj/item/dq_forms_flask/dry, T)
 	TEST_ASSERT_NULL(D.reagents, "without(., CAP_REAGENTS) drops the holder")
 	var/obj/item/dq_forms_flask/tinted/tint = allocate(/obj/item/dq_forms_flask/tinted, T)

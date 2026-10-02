@@ -36,8 +36,6 @@
 /// DECLARE_REPEAT delay): runs every interval while should_run() holds. A type var.
 /datum/var/periodic_interval = null
 
-OWN_TIMER(/datum, periodic_interval)
-
 /// Starts or stops D's custom-interval step to match should_run().
 /proc/periodic_interval_update(datum/D)
 	DERIVED_EVAL_BEGIN

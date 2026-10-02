@@ -140,7 +140,7 @@
 	TEST_ASSERT(!V.vend_ready, "the machine is busy until it finishes")
 	TEST_ASSERT(!V.tgui_act("vend", list("vend" = 1), ui), "a second request while busy is refused")
 	var/list/refusals = GLOB.refuse_capture
-	GLOB.refuse_capture = null
+	set_global("refuse_capture", null)
 	var/found_busy = FALSE
 	for(var/list/entry in refusals)
 		if(findtext(entry[2], "busy"))

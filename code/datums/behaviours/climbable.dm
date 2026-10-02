@@ -38,11 +38,11 @@
 	rel_clear(src, nameof(climbers))
 
 /datum/om/behaviour/climbable/on_start(obj/O)
-	om_grant(O, GRANT_VERB, /obj/proc/climb_on, O)
+	grant(O, /obj/proc/climb_on, O)
 	add_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
 
 /datum/om/behaviour/climbable/on_stop(obj/O)
-	om_revoke(O, GRANT_VERB, /obj/proc/climb_on, O)
+	revoke(O, /obj/proc/climb_on, O)
 	remove_trait(O, TRAIT_CLIMBABLE, CLIMBABLE_TRAIT_SOURCE)
 	rel_clear(O, nameof(/obj::climbers))
 

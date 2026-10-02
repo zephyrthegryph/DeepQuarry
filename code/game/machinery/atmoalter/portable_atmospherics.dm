@@ -265,4 +265,4 @@ DAMAGE_REACTION(/obj/machinery/portable_atmospherics, DAMAGE_BLOB, TYPE_PROC_REF
 // air_contents is a private mixture, or a connected port network's mixture while connected (set_port_network_air()): PROTO.
 /obj/machinery/portable_atmospherics/ownership()
 	. = ..()
-	. += proto(nameof(air_contents))
+	. += rel_one(nameof(air_contents), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

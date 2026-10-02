@@ -305,4 +305,4 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 
 /obj/item/analyzer/plant_analyzer/ownership()
 	. = ..()
-	. += proto(nameof(last_seed))
+	. += rel_one(nameof(last_seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

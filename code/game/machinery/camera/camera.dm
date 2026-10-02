@@ -1,4 +1,3 @@
-OWN_TIMER(/obj/machinery/camera, camera_timer_token)
 
 /obj/machinery/camera
 	name = "security camera"

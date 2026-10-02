@@ -62,6 +62,12 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		return TRUE
 	return !!E.rx?.observed?[key]
 
+/// The tracked var `var_name` of E changed (TRACKED setters, a hand-written SETTER): its key is published when
+/// someone reads it (READERS) and the outputs that read it re-derive (changed(), refresh.dm). No OM channel is raised:
+/// TRACKED_BRIDGED() raises one for a var an OM stage or om_watch() still reads by channel.
+/proc/tracked_changed(datum/E, var_name)
+	changed(E, 0, var_name)
+
 /// A pending operation watching (E, key) counts as a dynamic reader of it while it waits (delta +1 / -1), so
 /// publish_change() is called for it and reaches op_reads_changed(). Same table observe() counts in.
 /proc/rx_watch_adjust(datum/E, key, delta)
@@ -93,6 +99,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	if(T)
 		var/list/hits = T.by_key[key]
 		for(var/datum/reaction/R as anything in hits)
+			if(R.when && !rx_when_holds(E, R.when))
+				continue // its gate excludes this holder now: nothing is queued
 			rx_pend(E, R, key)
 		var/list/crossing = T.crosses[key]
 		for(var/datum/reaction/R as anything in crossing)
@@ -111,6 +119,12 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	// Sequence steps that read the key wake (code/controllers/kernel/sequence.dm).
 	if(E.seq_states)
 		seq_publish(E, key)
+
+/// An on_change(when =) gate: a var name truthy on `E`, or a PROC_REF on it answering TRUE.
+/proc/rx_when_holds(datum/E, when)
+	if(istext(when) && (when in E.vars))
+		return !!E.vars[when]
+	return !!call(E, when)()
 
 // ---------------------------------------------------------------- the relation ledger
 
@@ -226,17 +240,52 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
  * holds it. Returns TRUE when it was not present before.
  */
 /proc/grant(datum/target, what, source = "grant", duration)
-	if(!target || QDELING(target))
+	if(!target || (isdatum(target) && QDELING(target)))
 		return FALSE
+	var/kind = grant_kind(what)
+	if(kind)
+		// An effect grant (a verb, a hidden verb, a capability) goes to the store that applies it; its source's
+		// deletion drops the hold there (a text source is a shared verb_source()).
+		var/datum/held_by = isdatum(source) ? source : verb_source("[source]")
+		var/id = grant_id(what)
+		return duration ? om_grant_for(target, kind, id, held_by, duration) : om_grant(target, kind, id, held_by)
 	. = rx_ledger_add(target, RELK_GRANT, what, source)
 	if(duration)
-		rx_after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), "grant:[what]:[source]", CLOCK_OWN, list(target, what, source))
+		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source))
 
 /// Withdraws `source`'s hold on `what`. Returns TRUE when the grant is gone (no source left).
 /proc/revoke(datum/target, what, source = "grant")
 	if(!target)
 		return FALSE
+	var/kind = grant_kind(what)
+	if(kind)
+		return om_revoke(target, kind, grant_id(what), isdatum(source) ? source : verb_source("[source]"))
 	return rx_ledger_remove(target, RELK_GRANT, what, source)
+
+/// grant(M, hidden_verb(/mob/verb/observe), source): hides the verb while the source holds it (GRANT_VERB_HIDE).
+/proc/hidden_verb(verb_path)
+	return "[GRANT_HIDDEN_PREFIX][verb_path]"
+
+/// The om grant kind that applies `what` (a verb path -> GRANT_VERB, hidden_verb() -> GRANT_VERB_HIDE, a capability
+/// type -> GRANT_CAPABILITY), or null for a plain ledger grant (a bit name, a permission).
+/proc/grant_kind(what)
+	if(ispath(what, /datum/capability))
+		return GRANT_CAPABILITY
+	var/text = "[what]"
+	if(copytext(text, 1, length(GRANT_HIDDEN_PREFIX) + 1) == GRANT_HIDDEN_PREFIX)
+		return GRANT_VERB_HIDE
+	if(!istext(what) && (findtext(text, "/proc/") || findtext(text, "/verb/")) && copytext(text, 1, 7) != "/proc/")
+		return GRANT_VERB
+	if(istext(what) && findtext(text, "\n")) // VERB_NAMED(path, name, desc)
+		return GRANT_VERB
+	return null
+
+/// The id the om store keys `what` by.
+/proc/grant_id(what)
+	var/text = "[what]"
+	if(copytext(text, 1, length(GRANT_HIDDEN_PREFIX) + 1) == GRANT_HIDDEN_PREFIX)
+		return text2path(copytext(text, length(GRANT_HIDDEN_PREFIX) + 1))
+	return what
 
 /proc/rx_grant_expire(datum/target, what, source)
 	if(target && !QDELETED(target))
@@ -244,6 +293,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 /// TRUE while `what` is granted to `target` by any source.
 /proc/granted(datum/target, what)
+	var/kind = grant_kind(what)
+	if(kind)
+		return om_has_grant(target, kind, grant_id(what))
 	return rx_ledger_has(target, RELK_GRANT, what)
 
 // ---------------------------------------------------------------- membership

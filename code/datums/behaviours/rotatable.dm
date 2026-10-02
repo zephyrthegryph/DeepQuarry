@@ -1,14 +1,14 @@
 /// Rotation verbs (was /datum/element/rotatable). The atom grants the verbs to itself.
 /atom/movable/proc/make_rotatable(only_flip = FALSE)
 	if(!only_flip)
-		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
-		om_grant(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
-	om_grant(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
+		grant(src, /atom/movable/proc/rotate_clockwise, src)
+		grant(src, /atom/movable/proc/rotate_counterclockwise, src)
+	grant(src, /atom/movable/proc/turn_around, src)
 
 /atom/movable/proc/unmake_rotatable()
-	om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_clockwise, src)
-	om_revoke(src, GRANT_VERB, /atom/movable/proc/rotate_counterclockwise, src)
-	om_revoke(src, GRANT_VERB, /atom/movable/proc/turn_around, src)
+	revoke(src, /atom/movable/proc/rotate_clockwise, src)
+	revoke(src, /atom/movable/proc/rotate_counterclockwise, src)
+	revoke(src, /atom/movable/proc/turn_around, src)
 
 // Core rotation proc, override me to add conditions to object rotations or update_icons/state after!
 /atom/movable/proc/handle_rotation_verbs(angle, mob/user)

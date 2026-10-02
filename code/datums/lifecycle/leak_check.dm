@@ -83,7 +83,7 @@ DECLARE_SHARED_CACHE(lifecycle_leak_candidates, GLOBAL_PROC_REF(build_lifecycle_
 /// datum that still reaches D back is a cycle between deleted objects (never
 /// freed, invisible to a reference search); strict also reports any held datum.
 /proc/dq_lifecycle_leak_datum(datum/D, datum/thing, strict)
-	if(is_registered(thing))
+	if(is_registered(thing) || is_flyweight(thing))
 		return null
 	if(QDELETED(thing))
 		var/back = dq_lifecycle_leak_backref(thing, D)

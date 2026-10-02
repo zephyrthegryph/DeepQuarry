@@ -110,11 +110,20 @@
 		hosted_g = hosts_of(KERNEL_PHASE_G)
 
 	phase_begin()
+	// The phase lists, rebuilt here when the graph changed, so the phases read them without a call each.
+	if(work_dirty || !phase_items)
+		rebuild_work_graph()
+	var/list/items_by_phase = phase_items
+	// Each phase runs inside its own try (not through a call() wrapper, which cost an arglist copy and a dynamic
+	// call per phase per tick): a runtime in one phase is reported by phase_fault() and the tick goes on.
 	// K
 	var/k_start = TICK_USAGE
 	run_hosted_phase(hosted_k, tick_limit, init_stage)
-	if(length(items_of_phase(KERNEL_PHASE_K)))
-		guarded(KERNEL_PHASE_K, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_K, tick_limit)
+	if(length(items_by_phase[KERNEL_PHASE_K]))
+		try
+			work_run_phase(KERNEL_PHASE_K, tick_limit)
+		catch(var/exception/k_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_K, k_e)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
 	phase_note(KERNEL_PHASE_K, k_start)
@@ -126,25 +135,41 @@
 		var/elapsed = last_native ? min(world.time - last_native, KERNEL_NATIVE_MAX_CATCHUP * world.tick_lag) : world.tick_lag
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_native = world.time
-		guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_native), elapsed, sched.world_budget)
-		if(length(items_of_phase(KERNEL_PHASE_N)))
-			guarded(KERNEL_PHASE_N, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_N, tick_limit)
+		try
+			run_native(elapsed, sched.world_budget)
+			if(length(items_by_phase[KERNEL_PHASE_N]))
+				work_run_phase(KERNEL_PHASE_N, tick_limit)
+		catch(var/exception/n_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_N, n_e)
 		phase_note(KERNEL_PHASE_N, n_start)
 		// U
 		var/u_start = TICK_USAGE
-		guarded(KERNEL_PHASE_U, TYPE_PROC_REF(/datum/controller/kernel, run_urgent), min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE))
+		if(length(urgent_queue))
+			try
+				run_urgent(min(tick_limit, TICK_USAGE + sched.pass_avail * KERNEL_URGENT_SHARE))
+			catch(var/exception/u_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+				phase_fault(KERNEL_PHASE_U, u_e)
 		phase_note(KERNEL_PHASE_U, u_start)
 		// D
 		var/d_start = TICK_USAGE
-		guarded(KERNEL_PHASE_D, TYPE_PROC_REF(/datum/controller/kernel, run_deadline_phase), tick_limit)
+		try
+			run_deadline_phase(tick_limit)
+		catch(var/exception/d_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_D, d_e)
 		phase_note(KERNEL_PHASE_D, d_start)
 		// P
 		var/p_start = TICK_USAGE
-		guarded(KERNEL_PHASE_P, TYPE_PROC_REF(/datum/controller/kernel, run_lane_phase), tick_limit)
+		try
+			run_lane_phase(tick_limit)
+		catch(var/exception/p_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_P, p_e)
 		phase_note(KERNEL_PHASE_P, p_start)
 		// R
 		var/r_start = TICK_USAGE
-		guarded(KERNEL_PHASE_R, TYPE_PROC_REF(/datum/controller/kernel, run_leftover_phase), tick_limit)
+		try
+			run_leftover_phase(tick_limit)
+		catch(var/exception/r_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_R, r_e)
 		phase_note(KERNEL_PHASE_R, r_start)
 		// The scheduler pass is N through R: phase K's host services (input, verbs, tgui, ...) are not part of it.
 		var/pass_ms = TICK_USAGE_TO_MS(sched.pass_start)
@@ -161,8 +186,11 @@
 		// ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
 		last_g_floor = world.time
 	run_hosted_phase(hosted_g, g_limit, init_stage)
-	if(length(items_of_phase(KERNEL_PHASE_G)))
-		guarded(KERNEL_PHASE_G, TYPE_PROC_REF(/datum/controller/kernel, run_work_phase), KERNEL_PHASE_G, g_limit)
+	if(length(items_by_phase[KERNEL_PHASE_G]))
+		try
+			work_run_phase(KERNEL_PHASE_G, g_limit)
+		catch(var/exception/g_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_G, g_e)
 	phase_note(KERNEL_PHASE_G, g_start)
 
 	last_tick_ms = TICK_USAGE_TO_MS(tick_start)
@@ -197,13 +225,10 @@
 	if(!expect_errors)
 		dq_report_caught(e, "kernel: [msg]")
 
-/// Runs one phase proc behind a guard: a runtime in a phase is logged and counted, and the tick goes on.
-/datum/controller/kernel/proc/guarded(phase, proc_ref, ...)
-	try
-		call(src, proc_ref)(arglist(args.Copy(3)))
-	catch(var/exception/e) // ALLOW(silent_catch): report_fault() reports it through dq_report_caught() unless a test expects errors
-		phase_faults++
-		report_fault(e, "kernel phase [phase_letter(phase)] aborted: [e] ([e.file]:[e.line])")
+/// A runtime escaped phase `phase`: it is logged and counted, and the tick goes on.
+/datum/controller/kernel/proc/phase_fault(phase, exception/e)
+	phase_faults++
+	report_fault(e, "kernel phase [phase_letter(phase)] aborted: [e] ([e.file]:[e.line])")
 
 /// The letter of a KERNEL_PHASE_*.
 /proc/phase_letter(phase)
@@ -224,12 +249,14 @@
 /// P: the borrow pass, then each lane: the scheduler's share of it, then that lane's work items.
 /datum/controller/kernel/proc/run_lane_phase(tick_limit)
 	sched.pass_borrow(tick_limit)
+	var/datum/kernel_latency/latency = kernel_latency()
 	for(var/lane in 1 to OM_LANE_COUNT)
 		sched.pass_lane(lane, tick_limit)
 		// A lane with no work items (most of them) costs no admission check and no engine call.
 		if(!length(phase_lane_items?[lane]) && !work_dirty)
 			continue
-		if(!kernel_admit_lane(lane))
+		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
+		if(latency.shedding && !latency.admit(kernel_lane_class(lane), lane))
 			continue
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)
 		work_run_phase(KERNEL_PHASE_P, lane_limit, lane)

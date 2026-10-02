@@ -21,9 +21,6 @@
 // timer per var. When it fires the hook runs only if the var has really lapsed; EXPIRY_CLEAR also
 // counts as lapsed. Hooks should still be idempotent (a materialize re-arm can re-run one).
 
-/// The lapse timers live in keyed slots "expiry_lapse:<var>" on whatever holder declares a hook.
-OWN_TIMER(/datum, expiry_lapse)
-
 /// Called by EXPIRY_SET / EXPIRY_EXTEND with the value being written; returns it unchanged.
 /proc/expiry_written(datum/D, var_name, value)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
