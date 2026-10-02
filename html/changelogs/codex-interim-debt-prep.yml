@@ -18,3 +18,5 @@ changes:
   - bugfix: "Corporate tags survive destruction of synthmorph body bags."
   - bugfix: "Destroyed stasis cages and reversible gargoyle statues release their occupants and restore normal movement and biological time."
   - admin: "Goo trap reports identify the creature that actually triggered the trap."
+  - bugfix: "Deleted closed clamps restore pipe flow, and closed storage displays release their item labels and pins."
+  - bugfix: "Hailer mask assemblies and selection kits preserve ingredients on refusal without dropping unrelated held items."

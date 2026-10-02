@@ -606,7 +606,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 
 // shown items lose their count text; the global hud count drops.
-/datum/storage_hud/on_destroy(force)
+/datum/storage_hud/lifecycle_prerelease()
 	GLOB.storage_hud_count--
 	for(var/obj/item/I as anything in shown)
 		I.maptext = ""

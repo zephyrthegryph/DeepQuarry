@@ -32,14 +32,14 @@
 	if(istype(mover))
 		if(mover.aiming && mover.aiming.aiming_at)
 			mover.aiming.update_aiming()
-		if(mover.aimed.len)
+		if(LAZYLEN(mover.aimed))
 			mover.trigger_aiming(TARGET_CAN_MOVE)
 
 /mob/living/forceMove(atom/destination, direction, movetime)
 	. = ..()
 	if(aiming && aiming.aiming_at)
 		aiming.update_aiming()
-	if(aimed.len)
+	if(LAZYLEN(aimed))
 		trigger_aiming(TARGET_CAN_MOVE)
 
 /mob/living/proc/set_m_intent(intent)
