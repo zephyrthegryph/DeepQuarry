@@ -161,6 +161,8 @@ GLOBAL_VAR(declare_report_capture)
 			var/datum/entry/E = C.item
 			if(istype(E) && E.kind == ENTRY_REL_GRANTS)
 				. |= ENGINE_HOOK_INIT
+	if(stat_table_needs_init(T))
+		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
 
 
 
@@ -478,7 +480,7 @@ GLOBAL_VAR(declare_report_capture)
 		var/value = E.args[name]
 		if(isnull(value) || value == FALSE)
 			continue
-		parts += "[name]=[islist(value) ? "list" : "[value]"]"
+		parts += "[name]=[islist(value) ? "list" : ((name == "stat" && isnum(value) && stat_def_of(value)) ? stat_label(value) : "[value]")]"
 	for(var/child in E.children)
 		var/datum/entry/CE = child
 		parts += istype(CE) ? CE.kind : "[child]"

@@ -12,6 +12,8 @@
 
 /// Every interned name a read uses (a var, a relation hop, an accessor key). Id = index in this list.
 GLOBAL_LIST_INIT(generated_read_names, list(
+	"apc",
+	"channel_on"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -24,4 +26,7 @@ GLOBAL_LIST_INIT(generated_read_roots, list(
 
 /// "<type>::<proc>" = list(rank, list(root id, kind, name id, hop name ids...), ...). Never edited by hand.
 GLOBAL_LIST_INIT(generated_reads_table, list(
+	"/obj/e3_load::apc_channel" = list(0,
+		list(1, 0, 1),
+		list(1, 0, 2, 1))
 ))

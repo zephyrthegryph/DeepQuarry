@@ -188,7 +188,7 @@
 	into += entry_line(103)
 	into += list(while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER))
 	into += entry_line(104)
-	into += list(when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = "light_range", value = 4)))
+	into += list(when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4)))
 	into += entry_line(105)
 	into += list(entry_of("op", "toggle"))
 
@@ -219,5 +219,52 @@
 	into += list(owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")))
 	into += entry_line(149)
 	into += list(owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
+
+/// CAPABILITIES(/obj/e3_apc) at code/tests/engine/e3_fixtures.dm:69
+/obj/e3_apc/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e3_fixtures.dm", 69, /obj/e3_apc)
+	into += entry_line(70)
+	into += list(ref_many(nameof(loads), /obj/e3_load))
+
+/// CAPABILITIES(/obj/e3_load) at code/tests/engine/e3_fixtures.dm:78
+/obj/e3_load/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e3_fixtures.dm", 78, /obj/e3_load)
+	into += entry_line(79)
+	into += list(ref_one(nameof(apc), /obj/e3_apc))
+	into += entry_line(80)
+	into += list(contributes(STAT_E3_POWERED, PROC_REF(apc_channel), reads = list("apc.channel_on")))
+
+/// CAPABILITIES(/obj/e3_machine) at code/tests/engine/e3_fixtures.dm:43
+/obj/e3_machine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e3_fixtures.dm", 43, /obj/e3_machine)
+	into += entry_line(44)
+	into += list(contributes(STAT_E3_OPERABLE, cond_not(nameof(broken))))
+	into += entry_line(45)
+	into += list(contributes(STAT_E3_DRAW, 2))
+	into += entry_line(46)
+	into += list(when(nameof(e3_on), contributes(STAT_E3_DRAW, 10)))
+	into += entry_line(47)
+	into += list(contributes(STAT_E3_CAN_RUN, STAT_E3_OPERABLE))
+	into += entry_line(48)
+	into += list(immune_to(STATUS_E3_STUN, when = nameof(broken)))
+
+/// CAPABILITIES(/obj/e3_machine/stoic) at code/tests/engine/e3_fixtures.dm:54
+/obj/e3_machine/stoic/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e3_fixtures.dm", 54, /obj/e3_machine/stoic)
+	into += entry_line(55)
+	into += list(immune_to(STATUS_E3_STUN))
+
+/// CAPABILITIES(/obj/e3_wire) at code/tests/engine/e3_fixtures.dm:93
+/obj/e3_wire/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e3_fixtures.dm", 93, /obj/e3_wire)
+	into += entry_line(94)
+	into += list(ref_one(nameof(plugged), /obj/e3_machine))
+	into += entry_line(95)
+	into += list(when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7)))
 
 #endif

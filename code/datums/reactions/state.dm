@@ -380,6 +380,8 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			engine_holder_destroy(D)
 	if(D.rx?.activations || D.rx?.sourced)
 		activations_teardown(D)
+	if(D.rx?.stats)
+		stat_sources_teardown(D)
 	if(D.seq_states)
 		seq_teardown(D) // its sequence states go first: they leave their sweeps themselves
 	member_teardown(D) // a member with no reaction state still leaves what it joined

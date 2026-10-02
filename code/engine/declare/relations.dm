@@ -111,6 +111,8 @@
 
 /// A numeric condition id: a capability state key (CAPKEY_ID) or, once E3 lands, a stat id. The default reads the key on the holder.
 /proc/condition_id_holds(datum/holder, id)
+	if(id >= STAT_ID_BASE && id < CAPKEY_ID_BASE)
+		return !!stat_value(holder, id)
 	if(id > 255)
 		return cap_key_get(holder, id)
 	return FALSE

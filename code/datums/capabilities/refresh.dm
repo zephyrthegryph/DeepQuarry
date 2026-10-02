@@ -64,6 +64,9 @@
 /proc/changed(datum/E, channel = CHANGE_EXPLICIT, var_name)
 	if(!E || QDELING(E))
 		return
+	// The stat layer: a var some stat reads recomputes it before this write's next line (code/engine/stats/recompute.dm).
+	if(var_name && GLOB.stat_input_keys[var_name] && var_name != GLOB.stat_writing)
+		stat_inputs_changed(E, var_name)
 	// OM observers only: om_raise_change()'s own refresh hook would mark every output, undoing the mask below.
 	if(E.om_listen & channel)
 		om_dispatch_change(E, channel)

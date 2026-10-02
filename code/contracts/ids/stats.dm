@@ -2,17 +2,17 @@
 // id, STAT_<NAME>, into code/engine/_generated/ids.dm, so nothing here carries a number. These are the base stats of section 5 ("Base stats,
 // declared once"); they belong in code/base/<type>/ (section 22) once E3 lands.
 
-STAT(/obj/machinery, operable, ALL)
-STAT(/obj/machinery, power_draw, SUM)
+STAT(/obj/machinery, operable, ALL, virtual = TRUE)
+STAT(/obj/machinery, power_draw, SUM, virtual = TRUE)
 STAT(/mob/living, can_act, ALL)
 STAT(/mob/living, can_move, ALL)
 STAT(/mob/living, acts_via, MASK_AND, base = ORIGIN_ALL)
 STAT(/atom, density, TOP)
 STAT(/atom, opacity, ANY)
 STAT(/atom, invisibility, MAX)
-STAT(/atom, light_range, MAX)
-STAT(/atom/movable, suspended, ANY)
-STAT(/atom, clock_rate, MIN, base = 1)
+STAT(/atom, light_range, MAX, virtual = TRUE)
+STAT(/atom/movable, suspended, ANY, virtual = TRUE)
+STAT(/atom, clock_rate, MIN, base = 1, virtual = TRUE)
 STAT(/mob/living, clock_rate_bio, MIN, base = 1)
 STAT(/area, lights_nightshift, ANY)
 

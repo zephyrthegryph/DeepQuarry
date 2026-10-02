@@ -9,4 +9,5 @@
 #include "driver\kernel_clock.dm"
 #include "engine\fixtures.dm"
 #include "engine\e1_fixtures.dm"
+#include "engine\e3_fixtures.dm"
 #endif

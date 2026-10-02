@@ -381,6 +381,10 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 	// A type that declares reading this var (or hopping over it) re-derives what reads it (derived.dm).
 	if(GLOB?.derived_read_vars?[var_name])
 		derived_var_touched(holder, var_name)
+	// A relation var some stat reads through, or contributes to a stat across: the stat layer follows it.
+	if(holder && GLOB?.stat_input_keys?[var_name])
+		stat_inputs_changed(holder, var_name)
+		stat_relation_changed(holder, var_name)
 	// A relation write publishes each end it touches (both ends of a paired view call this).
 	if(holder && READERS(holder, var_name))
 		publish_change(holder, var_name)

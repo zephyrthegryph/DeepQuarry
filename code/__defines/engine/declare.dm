@@ -93,6 +93,8 @@
 #define ENGINE_HOOK_PREINIT HOLDER_HOOK_PREINIT
 #define ENGINE_HOOK_INIT HOLDER_HOOK_INIT
 #define ENGINE_HOOK_DESTROY HOLDER_HOOK_DESTROY
+/// The type has contributions, contributes_to entries or a formula stat: its stats compute at init (stat_holder_init).
+#define ENGINE_HOOK_STATS (1<<3)
 
 
 #define ALLOC_LAZY 1

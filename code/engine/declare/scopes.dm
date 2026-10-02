@@ -14,6 +14,8 @@
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_REL_GRANTS))
 		var/datum/entry/E = C.item
 		activations_relation_changed(holder, E.args["var"], TRUE)
+	if(T.hook_flags & ENGINE_HOOK_STATS)
+		stat_holder_init(holder, mapload)
 
 /// Before the base body of Initialize runs: for work the parent's init reads (a part made in nullspace).
 /proc/engine_holder_preinit(datum/holder, mapload)

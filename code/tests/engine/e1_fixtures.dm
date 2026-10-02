@@ -10,7 +10,7 @@ CAPABILITY_TYPE(e1_widget, CAP_E1_WIDGET, /datum/capability/e1_widget, key = lab
 /datum/capability/e1_widget
 
 /datum/capability/e1_widget/entries()
-	return list(entry_of("op", "poke"), entry_of("contributes", "glow", stat = "light_range", value = 2))
+	return list(entry_of("op", "poke"), entry_of("contributes", "glow", stat = STAT_LIGHT_RANGE, value = 2))
 
 /datum/capability/e1_widget/on_activate(datum/activation/A)
 	GLOB.e1_log += "activate:[label]:[A.holder.type]"
@@ -101,7 +101,7 @@ CAPABILITIES(/obj/e1_fixture, \
 	link(/obj/e1_fixture::partner, /obj/e1_fixture::partner), \
 	slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1), \
 	while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER), \
-	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = "light_range", value = 4)), \
+	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4)), \
 	entry_of("op", "toggle"))
 
 LIST_STATE(/obj/e1_fixture, e1_notes)
