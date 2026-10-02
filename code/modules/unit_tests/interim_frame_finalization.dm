@@ -20,7 +20,7 @@
 			finish = edge
 	TEST_ASSERT(finish, "The real frame graph must contain machine finalization")
 	TEST_ASSERT_NOTNULL(finish.why_not(actor, frame, tool), "Missing parts must refuse finalization through its requirement")
-	TEST_ASSERT(!finish.traverse(frame, actor, tool), "Completion must independently reject missing parts")
+	TEST_ASSERT(!finish.perform(actor, frame, tool), "The real interaction boundary rejects missing parts")
 	TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "Refused completion must preserve the wired frame")
 	TEST_ASSERT_EQUAL(frame.circuit, board, "Refused completion must preserve board ownership")
 	TEST_ASSERT_EQUAL(board.loc, frame, "Refused completion must preserve physical board containment")
