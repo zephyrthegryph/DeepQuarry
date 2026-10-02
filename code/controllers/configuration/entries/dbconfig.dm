@@ -86,6 +86,21 @@
 	min_val = 0
 	protection = CONFIG_ENTRY_LOCKED
 
+/// Seconds of BYOND proc profiling the metrics service records in steady play: first
+/// METRICS_PROFILE_STEADY_FIRST after the round start (the round-start work is over by then), then every
+/// METRICS_PROFILE_STEADY_EVERY minutes. It shows what a running server spends its idle time on, which
+/// the spike and round-start captures don't. 0 turns it off.
+/datum/config_entry/number/metrics_profile_steady
+	default = 30
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
+/// Minutes between steady-play profiles (METRICS_PROFILE_STEADY). 0: only the first one.
+/datum/config_entry/number/metrics_profile_steady_every
+	default = 30
+	min_val = 0
+	protection = CONFIG_ENTRY_LOCKED
+
 /// Base URL of the admin viewer (tools/admin-viewer), e.g. http://127.0.0.1:8090.
 /// Empty hides the "Admin Viewer" verb's link.
 /datum/config_entry/string/metrics_viewer_url

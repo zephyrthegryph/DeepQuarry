@@ -192,6 +192,7 @@ type Profile = {
     calls: number;
   }[];
   spike?: { t: number; usage: number; cause: string };
+  om_types?: { behaviour: string; type: string; ms: number }[];
 };
 
 export function OverrunsPage({ params }: PageProps) {
@@ -301,7 +302,7 @@ export function OverrunsPage({ params }: PageProps) {
           </Card>
           <Card
             title="Profiles"
-            sub="BYOND proc profiles the server took: the first minute of each round, and a few seconds after a tick far over budget. Procs by self time."
+            sub="BYOND proc profiles the server took: the first minute of each round, 30 s of steady play, and a few seconds after a tick far over budget. Procs by self time, then the object-model work by behaviour and entity type."
           >
             {!data.data.profiles.length ? (
               <div className="empty">No profiles in this period.</div>
@@ -345,6 +346,28 @@ export function OverrunsPage({ params }: PageProps) {
                       </table>
                     </div>
                   )}
+                  {openProfile === i && p.om_types?.length ? (
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Behaviour</th>
+                            <th>Entity type</th>
+                            <th className="num">Time</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {p.om_types.map((r) => (
+                            <tr key={`${r.behaviour}|${r.type}`}>
+                              <td>{r.behaviour}</td>
+                              <td className="mono">{r.type}</td>
+                              <td className="num">{fmt(r.ms, 'ms')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : null}
                 </div>
               ))
             )}

@@ -270,6 +270,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 		if(!pending)
 			continue // a stale duplicate: an earlier entry already ran its outputs
 		done[D] = TRUE
+		CHURN_COUNT(draws, D.type)
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
 		GLOB.refresh_bench_drained++

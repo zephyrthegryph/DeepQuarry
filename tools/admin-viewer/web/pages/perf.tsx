@@ -406,6 +406,8 @@ const CATEGORIES = [
   { id: 'service', label: 'World services', metrics: ['ms_per_s'] },
   { id: 'lane', label: 'OM lanes', metrics: ['ms_per_s', 'backlog'] },
   { id: 'behaviour', label: 'Behaviours', metrics: ['ms_per_s'] },
+  { id: 'churn', label: 'Churn', metrics: ['per_s'] },
+  { id: 'io', label: 'Metrics & I/O', metrics: ['ms', 'events'] },
 ];
 
 export function PerformancePage({ params }: PageProps) {

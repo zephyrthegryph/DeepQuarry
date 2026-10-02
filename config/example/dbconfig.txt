@@ -51,6 +51,10 @@ MAX_CONCURRENT_QUERIES 25
 #METRICS_PROFILE_ROUND_START 60
 # Seconds of proc profiling recorded after a tick over 300% (0 = off), at most once per 5 minutes.
 #METRICS_SPIKE_PROFILE 10
+# Seconds of proc profiling recorded in steady play (0 = off): 5 minutes after the round start,
+# then every METRICS_PROFILE_STEADY_EVERY minutes (0 = only once). Shows where idle time goes.
+#METRICS_PROFILE_STEADY 30
+#METRICS_PROFILE_STEADY_EVERY 30
 
 # Admin viewer (tools/admin-viewer). The URL staff are sent to, and the secret both sides use
 # to sign/verify viewer links (set VIEWER_SECRET in the viewer's environment to the same value).

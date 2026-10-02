@@ -125,7 +125,10 @@
 	set_var(M, "recording", TRUE)
 	var/key = "test/shutdown_flush_[world.time]"
 	M.gauge(key, 7, METRICS_CAT_SERVER, "test", "")
+	// As SSdbcore.Shutdown() calls it: after the database stopped taking new queries.
+	SSdbcore.shutting_down = TRUE
 	M.final_flush()
+	SSdbcore.shutting_down = FALSE
 	TEST_ASSERT(!length(M.pending_samples) && !length(M.pending_events), "the flush emptied the buffers")
 	var/datum/db_query/samples = SSdbcore.NewQuery(
 		"SELECT s.value FROM metric_sample s JOIN metric_key k ON k.id = s.key_id WHERE s.round_id = :round AND k.name = :name",
@@ -161,3 +164,4 @@
 	TEST_ASSERT_EQUAL(length(top), 2, "the profile keeps the top procs only")
 	TEST_ASSERT_EQUAL(top[1]["name"], "b", "the profile is most self time first")
 	TEST_ASSERT_EQUAL(top[1]["self"], 500, "profile times are ms")
+	TEST_ASSERT_EQUAL(top[2]["name"], "c", "a later proc displaces a smaller kept one (rows are seconds, kept entries ms)")

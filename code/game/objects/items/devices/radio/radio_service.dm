@@ -121,6 +121,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 	var/list/list/obj/devices = list() // ALLOW(instance_list): d: frequencies exist because devices joined them
 
 /datum/radio_frequency/proc/post_signal(obj/source as obj|null, datum/signal/signal, radio_filter = null as text|null, range = null as num|null)
+	CHURN_COUNT(signals, "[frequency] [source?.type]")
 	var/turf/start_point
 	if(range)
 		start_point = get_turf(source)

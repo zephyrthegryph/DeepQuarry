@@ -53,6 +53,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler
 	/// The slowest single entity step of a recent tick: list(behaviour, entity, name, usage, ms, world_time).
 	var/list/slow_step
+	/// While a metrics profile capture runs: "behaviour|entity type" -> tick usage spent in its steps, wakes and
+	/// deadlines (note_type_cost()), so a busy behaviour's cost can be traced to the entities behind it. Null
+	/// otherwise, which costs each step one var read.
+	var/list/type_costs
 	/// Null: world.time. A number: injected time (deciseconds).
 	var/manual_time
 	var/deterministic = FALSE
@@ -571,6 +575,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 #endif
 						ran++
 						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
 						if(now - prev > OM_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
@@ -613,6 +619,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 								break
 						ran++
 						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
 						if(now - prev > OM_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
@@ -627,6 +635,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 						tick_slow(B, E, dt)
 						ran++
 						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
 						if(now - prev > OM_SLOW_STEP_USAGE)
 							note_slow_step(B, E, now - prev)
 						prev = now
@@ -813,6 +823,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			call_hook(rec, B, OM_HOOK_WAKE, bits)
 			var/wake_usage = TICK_USAGE - wake_start
 			meter.charge(B.system_idx, TICK_DELTA_TO_MS(wake_usage))
+			if(type_costs)
+				note_type_cost(B, rec.owner, wake_usage)
 			if(wake_usage > OM_SLOW_STEP_USAGE)
 				note_slow_step(B, rec.owner, wake_usage, "wake")
 			if(rec.torn_down)
@@ -986,6 +998,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			call_hook(rec, B, OM_HOOK_KEYED, sub)
 	var/deadline_usage = TICK_USAGE - deadline_start
 	meter.charge(B.system_idx, TICK_DELTA_TO_MS(deadline_usage))
+	if(type_costs)
+		note_type_cost(B, rec.owner, deadline_usage)
 	if(deadline_usage > OM_SLOW_STEP_USAGE)
 		note_slow_step(B, rec.owner, deadline_usage, "deadline")
 
@@ -1087,6 +1101,10 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 
 /// One entity's step (or wake, or deadline: `kind`) took `usage` percent of a tick (over OM_SLOW_STEP_USAGE): kept as the tick's slowest step,
 /// which the MC's overrun record reports (Master.record_performance_tick()). Rare, so it may allocate.
+/// Adds `usage` (tick usage) to `B`'s cost for entities of E's type, while a profile capture collects type_costs.
+/datum/om/scheduler/proc/note_type_cost(datum/om/behaviour/B, datum/E, usage)
+	type_costs["[B.name || B.type]|[E?.type]"] += usage
+
 /datum/om/scheduler/proc/note_slow_step(datum/om/behaviour/B, datum/E, usage, kind = "step")
 	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
 		return

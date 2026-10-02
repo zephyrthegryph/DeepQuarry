@@ -26,6 +26,9 @@
 	var/list/profile_capture
 	/// REALTIMEOFDAY the last spike capture started, for METRICS_PROFILE_COOLDOWN.
 	var/last_spike_capture = -INFINITY
+	/// REALTIMEOFDAY the next steady-play capture is due (maybe_profile_steady()); 0 before the round starts or once
+	/// none is due again.
+	var/next_steady_profile = 0
 
 /// A tick went far over budget (note_overrun()): unless a capture is running or one ran recently, profile
 /// the next few seconds, so a recurring cause is stored with the procs behind it.
@@ -49,6 +52,19 @@
 	var/seconds = CONFIG_GET(number/metrics_profile_round_start)
 	if(seconds)
 		start_profile_capture("round start", seconds SECONDS)
+	next_steady_profile = REALTIMEOFDAY + METRICS_PROFILE_STEADY_FIRST
+
+/// Each sample: once the round has run METRICS_PROFILE_STEADY_FIRST, and then every metrics_profile_steady_every
+/// minutes, profile metrics_profile_steady seconds of ordinary play. Idle cost spread thinly over many procs never
+/// starts a spike capture; this stores it anyway. Waits for a running capture to finish.
+/datum/world_service/server_metrics/proc/maybe_profile_steady()
+	if(!next_steady_profile || REALTIMEOFDAY < next_steady_profile || profile_capture)
+		return
+	var/seconds = CONFIG_GET(number/metrics_profile_steady)
+	var/every = CONFIG_GET(number/metrics_profile_steady_every)
+	next_steady_profile = (seconds && every) ? REALTIMEOFDAY + every MINUTES : 0
+	if(seconds)
+		start_profile_capture("steady", seconds SECONDS)
 
 /// Clears and starts BYOND's proc profiler for `duration`, then finish_profile_capture() records the procs
 /// that took the most time as a METRICS_EVENT_PROFILE event. Does nothing while AUTO_PROFILE owns the
@@ -61,6 +77,9 @@
 	profile_capture = list("reason" = reason, "from_t" = now_t(), "spike" = spike)
 	world.Profile(PROFILE_CLEAR)
 	world.Profile(PROFILE_START)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	if(sched)
+		sched.type_costs = list()
 	om_after(null, duration, GLOBAL_PROC_REF(metrics_finish_profile_capture))
 	return TRUE
 
@@ -76,6 +95,10 @@
 	if(!CONFIG_GET(flag/auto_profile))
 		world.Profile(PROFILE_STOP)
 	var/list/top = metrics_profile_top(rows, METRICS_PROFILE_TOP)
+	var/datum/om/scheduler/sched = GLOB.om_live_sched
+	var/list/type_costs = sched?.type_costs
+	if(sched)
+		sched.type_costs = null
 	var/self_total = 0
 	for(var/list/row as anything in rows)
 		self_total += row["self"]
@@ -88,12 +111,27 @@
 		"self_total" = round(self_total * 1000, 0.1),
 		"procs" = length(rows),
 		"top" = top,
+		// The object-model steps, wakes and deadlines behind those procs: behaviour and entity type, by time.
+		"om_types" = metrics_type_costs_top(type_costs, METRICS_PROFILE_TOP),
 	)
 	var/message = "[capture["reason"]] profile, [now_t() - capture["from_t"]] s"
 	if(spike)
 		payload["spike"] = list("t" = spike["t"], "usage" = spike["usage"], "cause" = spike["cause"], "top_systems" = spike["top_systems"])
 		message += ", worst tick [round(spike["usage"])]% ([spike["cause"]])"
 	METRICS_EVENT(METRICS_EVENT_PROFILE, capture["reason"], "", "", message, payload)
+
+/// The `count` costliest entries of a scheduler type_costs table ("behaviour|type" -> tick usage), as
+/// list(list("behaviour", "type", "ms")), most first.
+/proc/metrics_type_costs_top(list/type_costs, count)
+	. = list()
+	if(!length(type_costs))
+		return
+	var/list/sorted = sortTim(type_costs.Copy(), GLOBAL_PROC_REF(cmp_numeric_desc), associative = TRUE)
+	for(var/key in sorted)
+		var/at = findtext(key, "|")
+		. += list(list("behaviour" = copytext(key, 1, at), "type" = copytext(key, at + 1), "ms" = round(TICK_DELTA_TO_MS(sorted[key]), 0.01)))
+		if(length(.) >= count)
+			return
 
 /// The `count` procs of a world.Profile() JSON table with the most self time, as list(list("name", "self",
 /// "total", "real", "calls")) with times in ms, most first.
@@ -103,12 +141,14 @@
 		var/self = row["self"]
 		if(!self)
 			continue
+		// The kept entries are in ms; the profiler's rows are in seconds.
+		var/self_ms = round(self * 1000, 0.01)
 		if(length(top) >= count)
 			var/list/least = top[length(top)]
-			if(self <= least["self"])
+			if(self_ms <= least["self"])
 				continue
 			top.Cut(length(top))
-		var/list/entry = list("name" = row["name"], "self" = round(self * 1000, 0.01), "total" = round(row["total"] * 1000, 0.01), "real" = round(row["real"] * 1000, 0.01), "calls" = row["calls"])
+		var/list/entry = list("name" = row["name"], "self" = self_ms, "total" = round(row["total"] * 1000, 0.01), "real" = round(row["real"] * 1000, 0.01), "calls" = row["calls"])
 		var/at = length(top) + 1
 		for(var/i in 1 to length(top))
 			var/list/other = top[i]
