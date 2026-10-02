@@ -1391,8 +1391,15 @@ impl Coordinator {
         let preprocessed = if canonical {
             preprocessed
         } else {
+            let text = match expansion.materialize() {
+                Ok(text) => text,
+                Err(error) => {
+                    self.frontend_pool.put(session_key.clone(), frontend);
+                    return Err(error);
+                }
+            };
             compatibility = PreprocessedProject {
-                text: expansion.materialize()?,
+                text,
                 ..preprocessed.clone()
             };
             &compatibility
@@ -2266,6 +2273,29 @@ impl Coordinator {
         output_root: Option<PathBuf>,
         pair_out: &mut Option<(Vec<u8>, Vec<u8>)>,
     ) -> Response {
+        let response = self.build_project_mode_once(key.clone(), builtins.clone(), output_root.clone(), pair_out);
+        if !response.error.as_deref().is_some_and(|error| error.starts_with("expanded-cache:")) {
+            return response;
+        }
+        // Restart the whole transaction after repair: never mix a repaired source
+        // revision into a partially lowered build. The second attempt is final.
+        self.build_inputs.remove(&key);
+        let mut discovery = self.frontend_pool.take_discovery(&key, self.blobs.root.clone());
+        let defines = dm_compiler::target_defines(key.defines.iter().cloned().collect());
+        let repaired = discovery.rebuild_expansion(&key.project, &defines);
+        self.frontend_pool.put_discovery(key.clone(), discovery);
+        if let Err(error) = repaired { return failed_internal(error); }
+        *pair_out = None;
+        self.build_project_mode_once(key, builtins, output_root, pair_out)
+    }
+
+    fn build_project_mode_once(
+        &mut self,
+        key: SessionKey,
+        builtins: PathBuf,
+        output_root: Option<PathBuf>,
+        pair_out: &mut Option<(Vec<u8>, Vec<u8>)>,
+    ) -> Response {
         let trace = std::env::var("DM_BUILD_TRACE").is_ok_and(|value| value != "0");
         if key.compiler_version != BUILD_FINGERPRINT {
             return failed_project(
@@ -2776,7 +2806,7 @@ impl Coordinator {
             verified_archive(root, &generation).ok()
         });
         let mut cached_pair_archive = None;
-        let cached_pair = match cached_bytes {
+        let mut cached_pair = match cached_bytes {
             Some(bytes) => match decode_cached_pair_with_archive(
                 &self.blobs,
                 &bytes,
@@ -2801,10 +2831,52 @@ impl Coordinator {
             },
             None => None,
         };
+        let mut bytecode_key = None;
+        if cached_pair.is_none() && key.build_mode != "legacy-history" {
+            let archive = match dm_resources::prepare_archive(&self.blobs.root, &snapshot.resource_requests) {
+                Ok(archive) => archive,
+                Err(error) => return failed_internal(error),
+            };
+            let mut independent = artifact.clone();
+            independent.stage = "project-bytecode-catalog-v1".into();
+            independent.dependency_digests.push(world_name.clone());
+            independent.input_digests[2] = hex_digest(&archive.catalog().bytecode_fingerprint());
+            let candidate = self.blobs.get_artifact(&independent).ok().flatten()
+                .and_then(|bytes| serde_json::from_slice::<CachedPairManifest>(&bytes).ok())
+                .filter(|record| record.version == PAIR_MANIFEST_VERSION);
+            if let Some(record) = candidate {
+                let hit = self.blobs.get("project-dmb-v1", &record.dmb_digest).ok()
+                    .and_then(|bytes| {
+                        let dmb = byond_dmb::dmb::Dmb::from_bytes(&bytes).ok()?;
+                        let verified = VerifiedArchive::from_prepared_archive(&archive, &dmb).ok()?;
+                        Some((bytes, verified))
+                    });
+                if let Some((bytes, verified)) = hit {
+                    let manifest = CachedPairManifest {version: PAIR_MANIFEST_VERSION,
+                        emitted_procs: record.emitted_procs, dmb_digest: record.dmb_digest,
+                        rsc_digest: archive.digest().to_owned()};
+                    if let Ok(encoded) = serde_json::to_vec(&manifest) { let _ = self.blobs.put_artifact(&artifact, &encoded); }
+                    cached_pair_archive = Some(verified);
+                    cached_pair = Some((bytes, Vec::new(), record.emitted_procs));
+                }
+            }
+            // Persist catalog metadata; the addressed prepared archive cache lets
+            // native preparation reuse these bytes without composing them again.
+            if cached_pair.is_none() {
+                let catalog_key = ArtifactKey {stage: "resource-catalog-v1".into(), format_version: 1,
+                    compiler_version: artifact.compiler_version.clone(), target: artifact.target.clone(),
+                    input_digests: vec![resources_digest.clone()], dependency_digests: Vec::new()};
+                let record = ArchiveCatalogRecord {version: 1, archive_digest: archive.digest().to_owned(), catalog: archive.catalog().clone()};
+                if let Ok(bytes) = serde_json::to_vec(&record) { let _ = self.blobs.put_artifact(&catalog_key, &bytes); }
+                // Resource-only receipt requires a DMB; catalog reuse in native preparation
+                // remains available through its addressed prepared archive cache.
+            }
+            bytecode_key = Some(independent);
+        }
         trace_build(trace, "artifact CAS lookup", cache_started);
         let mut reused_archive = cached_pair_archive;
         let mut verified_bytecode = None;
-        let (dmb_bytes, rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
+        let (dmb_bytes, mut rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
             } else {
@@ -2827,6 +2899,7 @@ impl Coordinator {
                 ) {
                     Ok(prepared) => prepared,
                     Err(error) => {
+                        if error.starts_with("expanded-cache:") { return failed_internal(error); }
                         let authored = dm_compiler::authored_syntax_errors_segmented(
                             &snapshot.preprocessed,
                             key.project.parent().unwrap_or(Path::new(".")),
@@ -2920,10 +2993,11 @@ impl Coordinator {
                         dmb_digest,
                         rsc_digest,
                     };
-                    self.blobs.put_artifact(
-                        &artifact,
-                        &serde_json::to_vec(&manifest).map_err(io::Error::other)?,
-                    )?;
+                    let encoded_manifest = serde_json::to_vec(&manifest).map_err(io::Error::other)?;
+                    self.blobs.put_artifact(&artifact, &encoded_manifest)?;
+                    if let Some(bytecode_key) = &bytecode_key {
+                        self.blobs.put_artifact(bytecode_key, &encoded_manifest)?;
+                    }
                     Ok(())
                 };
                 if let Err(error) = write_pair() {
@@ -3019,6 +3093,18 @@ impl Coordinator {
             trace_build(trace, "generation publication", publish_started);
             (generation.id, generation.dmb, generation.rsc)
         } else {
+            if let Some(archive) = &reused_archive {
+                if !archive.is_current() {
+                    return failed_internal("resource archive changed before byte export");
+                }
+                rsc_bytes = match fs::read(archive.path()) {
+                    Ok(bytes) => bytes,
+                    Err(error) => return failed_internal(error),
+                };
+                if !archive.is_current() {
+                    return failed_internal("resource archive changed during byte export");
+                }
+            }
             let id = pair_generation_id(&dmb_bytes, &rsc_bytes);
             *pair_out = Some((dmb_bytes, rsc_bytes));
             (id, PathBuf::new(), PathBuf::new())

@@ -31,7 +31,8 @@ impl ProjectProcedureGraph {
     pub fn prepare_keys(&mut self, keys: &[ProcKey]) -> io::Result<usize> {
         let started = std::time::Instant::now();
         let Some(p) = self.persistence.as_ref() else { return Ok(0); };
-        let requested: Vec<_> = keys.iter().filter(|key| !p.headers_seen.contains(*key) && !self.records.contains_key(*key)).cloned().collect();
+        let requested: Vec<_> = keys.iter().filter(|key| !p.headers_seen.contains(*key) && !self.records.contains_key(*key)
+            && !self.certificates.get(*key).is_some_and(|certificate| certificate.valid)).cloned().collect();
         let mut restored = 0;
         let mut read_seconds = 0.0f64;
         let mut decode_seconds = 0.0f64;
@@ -146,6 +147,9 @@ impl ProjectProcedureGraph {
         result
     }
     fn probe_identity_inner(&mut self, key: &ProcKey, descriptor: &ProcDescriptor) -> Option<String> {
+        if let Some(certificate) = self.certificates.get(key).filter(|c| c.valid && &c.descriptor == descriptor) {
+            return Some(certificate.disk.key.clone());
+        }
         if !self.ensure_record(key, descriptor) { return None; }
         let candidate = current_candidate(&self.db, self.records[key].input).as_ref()?;
         if let Some(disk) = &candidate.disk { return Some(disk.key.clone()); }

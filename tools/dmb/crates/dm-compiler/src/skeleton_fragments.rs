@@ -5,8 +5,8 @@ use std::io::{self, Read, Write};
 const CHUNK: usize = 4 * 1024 * 1024;
 const MAX_COMPONENT: usize = 512 * 1024 * 1024;
 const MAX_ITEMS: usize = 2_000_000;
-const NAMESPACE: &str = "declaration-snapshot-fragments-v2";
-const MANIFESTS: &str = "declaration-snapshot-manifest-v2";
+const NAMESPACE: &str = "declaration-snapshot-fragments-v3";
+const MANIFESTS: &str = "declaration-snapshot-manifest-v3";
 #[derive(Serialize, Deserialize)]
 struct Manifest {
     image: Vec<String>, strings: Vec<String>, proc_paths: Vec<String>, class_paths: Vec<String>,
@@ -69,6 +69,7 @@ fn put_invocations(writes:&mut Writes,rows:&[InvocationPlan])->Option<Vec<Vec<St
         for row in *rows {
             hash.update((row.path.len() as u64).to_le_bytes());hash.update(row.path.as_bytes());hash.update(row.frame_digest.as_bytes());
             hash.update(serde_json::to_vec(&row.metadata).unwrap_or_default());
+            hash.update((row.static_ids.len() as u64).to_le_bytes());
             let ordered:BTreeMap<_,_>=row.static_ids.iter().collect();
             for (name,id) in ordered {hash.update((name.len() as u64).to_le_bytes());hash.update(name.as_bytes());hash.update(id.to_le_bytes());}
         }
@@ -96,14 +97,19 @@ fn put_invocations(writes:&mut Writes,rows:&[InvocationPlan])->Option<Vec<Vec<St
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE declaration invocation groups: {reused} reused, {} encoded",result.len()-reused);}
     Some(result)
 }
-struct FragmentReader<'a> { store:&'a Store, keys:&'a [String], next:usize, bytes:Vec<u8>, position:usize, total:usize }
+struct FragmentReader<'a> { store:&'a Store, records:Option<&'a BTreeMap<String,Vec<u8>>>, keys:&'a [String], next:usize, bytes:Vec<u8>, position:usize, total:usize }
 impl Read for FragmentReader<'_> {
     fn read(&mut self, output:&mut [u8])->io::Result<usize> {
         if output.is_empty() {return Ok(0);}
         if self.position==self.bytes.len() {
             let Some(key)=self.keys.get(self.next) else {return Ok(0)};
-            let record=self.store.read_many_bounded(&[Key::new(NAMESPACE,key)],CHUNK+64*1024,CHUNK+64*1024,None)?;
-            let bytes=record.values.first().and_then(Option::as_deref).ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"snapshot fragment missing"))?;
+            let loaded;
+            let bytes=if let Some(records)=self.records {
+                records.get(key).map(Vec::as_slice)
+            } else {
+                loaded=self.store.read_many_bounded(&[Key::new(NAMESPACE,key)],CHUNK+64*1024,CHUNK+64*1024,None)?;
+                loaded.values.first().and_then(Option::as_deref)
+            }.ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"snapshot fragment missing"))?;
             if bytes.len()<4 {return Err(io::Error::new(io::ErrorKind::InvalidData,"snapshot fragment header"));}
             let size=u32::from_le_bytes(bytes[..4].try_into().unwrap()) as usize;
             if size==0||size>CHUNK {return Err(io::Error::new(io::ErrorKind::InvalidData,"snapshot fragment size"));}
@@ -118,17 +124,30 @@ impl Read for FragmentReader<'_> {
     }
 }
 fn get<T:serde::de::DeserializeOwned>(store:&Store,keys:&[String])->Option<T> {
+    let records=read_fragments(store,keys);
+    get_from(store,keys,records.as_ref())
+}
+fn read_fragments(store:&Store,keys:&[String])->Option<BTreeMap<String,Vec<u8>>> {
+    let keys:Vec<_>=keys.iter().map(|key|Key::new(NAMESPACE,key)).collect();
+    let read=store.read_grouped_bounded(&keys,16,CHUNK+64*1024,64*1024*1024,64*1024*1024,None).ok()?;
+    keys.into_iter().zip(read.values).map(|(key,bytes)|Some((key.name,bytes?))).collect()
+}
+fn get_from<T:serde::de::DeserializeOwned>(store:&Store,keys:&[String],records:Option<&BTreeMap<String,Vec<u8>>>)->Option<T> {
     if keys.is_empty()||keys.len()>MAX_COMPONENT/CHUNK+1 {return None;}
-    let reader=FragmentReader {store,keys,next:0,bytes:Vec::new(),position:0,total:0};
+    let reader=FragmentReader {store,records,keys,next:0,bytes:Vec::new(),position:0,total:0};
     rmp_serde::from_read(std::io::BufReader::with_capacity(64*1024,reader)).ok()
 }
 fn get_rows<T:serde::de::DeserializeOwned>(store:&Store,groups:&[Vec<String>])->Option<Vec<T>> {
     if groups.len()>MAX_ITEMS/1024+1 {return None;}
     let mut result=Vec::new();
-    for keys in groups {
-        let mut rows:Vec<T>=get(store,keys)?;
+    for groups in groups.chunks(64) {
+        let keys:Vec<_>=groups.iter().flatten().cloned().collect();
+        let records=read_fragments(store,&keys);
+        for keys in groups {
+        let mut rows:Vec<T>=get_from(store,keys,records.as_ref())?;
         if rows.len()>1024||result.len().saturating_add(rows.len())>MAX_ITEMS {return None;}
         result.append(&mut rows);
+        }
     }
     Some(result)
 }

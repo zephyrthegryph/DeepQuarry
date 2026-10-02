@@ -107,26 +107,35 @@ impl SegmentedSource {
     }
     pub fn resident_pieces(&self) -> &[Arc<str>] { &self.pieces }
     pub fn piece_offsets(&self) -> &[usize] { &self.offsets }
+    /// Compatibility range lookup. Fallible consumers must use `try_slice` so
+    /// missing or corrupt cache chunks are not mistaken for invalid spans.
     pub fn slice(&self, span: Span) -> Option<Cow<'_, str>> {
-        if span.start > span.end || !self.is_char_boundary(span.start) || !self.is_char_boundary(span.end) { return None; }
-        if span.start == span.end { return Some(Cow::Borrowed("")); }
-        let index = self.offsets.partition_point(|offset| *offset <= span.start).checked_sub(1)?;
+        self.try_slice(span).ok()
+    }
+    pub fn try_slice(&self, span: Span) -> Result<Cow<'_, str>, String> {
+        let invalid = || "source span outside segmented expansion".to_owned();
+        if span.start > span.end || !self.is_char_boundary(span.start) || !self.is_char_boundary(span.end) { return Err(invalid()); }
+        if span.start == span.end { return Ok(Cow::Borrowed("")); }
+        let index = self.offsets.partition_point(|offset| *offset <= span.start).checked_sub(1).ok_or_else(invalid)?;
         let first = self.offsets[index];
         if span.end <= first+self.lengths[index] && self.pieces[index].len()==self.lengths[index] {
-            return self.pieces[index].get(span.start-first..span.end-first).map(Cow::Borrowed);
+            return self.pieces[index].get(span.start-first..span.end-first).map(Cow::Borrowed).ok_or_else(invalid);
         }
         let mut result=String::with_capacity(span.end-span.start);
         for index in index..self.pieces.len() {
             let offset=self.offsets[index];if offset>=span.end {break;}
-            let piece=self.content(index).ok()?;
-            let a=span.start.saturating_sub(offset);let b=(span.end-offset).min(piece.len());result.push_str(piece.get(a..b)?);
+            let piece=self.content(index)?;
+            let a=span.start.saturating_sub(offset);let b=(span.end-offset).min(piece.len());
+            result.push_str(piece.get(a..b).ok_or_else(invalid)?);
         }
-        Some(Cow::Owned(result))
+        Ok(Cow::Owned(result))
     }
-    /// Explicit compatibility bridge. Production consumers should request only
-    /// the declaration/procedure range they are processing.
-    pub fn materialize(&self) -> String {
-        self.slice(Span::new(0, self.bytes)).unwrap_or_default().into_owned()
+    /// Explicit compatibility bridge; never substitutes empty text on failure.
+    pub fn try_materialize(&self) -> Result<String, String> {
+        self.try_slice(Span::new(0, self.bytes)).map(Cow::into_owned)
+    }
+    pub fn materialize(&self) -> Result<String, String> {
+        self.try_materialize()
     }
     pub fn line_starts(&self) -> Vec<usize> {
         let mut starts = vec![0];

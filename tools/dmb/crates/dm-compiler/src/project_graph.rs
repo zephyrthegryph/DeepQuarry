@@ -301,11 +301,20 @@ struct Record {
     descriptor_bytes: usize,
 }
 
+struct ValidatedCertificate {
+    id: u32,
+    descriptor: ProcDescriptor,
+    disk: ProcedureMemoRef,
+    facts: Vec<FactId>,
+    valid: bool,
+}
+
 /// One graph per project/worktree session. The shared disk cache remains
 /// content addressed; this live graph tracks the worktree's current facts.
 pub struct ProjectProcedureGraph {
     db: Database,
     records: BTreeMap<ProcKey, Record>,
+    certificates: BTreeMap<ProcKey, ValidatedCertificate>,
     /// Declaration-scoped observations have one Salsa input across all procedures.
     shared_facts: BTreeMap<FactId, ObservedFact>,
     fact_ids: BTreeMap<Arc<BindingFact>, FactId>,
@@ -336,6 +345,7 @@ impl ProjectProcedureGraph {
         Self {
             db: Database::default(),
             records: BTreeMap::new(),
+            certificates: BTreeMap::new(),
             shared_facts: BTreeMap::new(),
             fact_ids: BTreeMap::new(), fact_names: Vec::new(), values: BTreeMap::new(),
             reverse: BTreeMap::new(), dirty: BTreeSet::new(), procedure_names: Vec::new(), readsets: BTreeMap::new(), decoded_nodes: DecodedDagNodes::default(),
@@ -390,11 +400,13 @@ impl ProjectProcedureGraph {
     }
 
     pub fn known_keys(&self) -> impl Iterator<Item = &ProcKey> {
-        self.records.keys()
+        self.records.keys().chain(self.certificates.keys())
     }
     pub fn observed_facts(&self) -> impl Iterator<Item = &BindingFact> {
         self.reverse.iter().filter(|(_, readers)| readers.iter().any(|id| {
-            self.records.get(&self.procedure_names[*id as usize]).is_some_and(|record| record.active)
+            let key = &self.procedure_names[*id as usize];
+            self.records.get(key).is_some_and(|record| record.active)
+                || self.certificates.contains_key(key)
         })).map(|(id, _)| self.fact_names[*id as usize].as_ref())
     }
 
@@ -406,6 +418,12 @@ impl ProjectProcedureGraph {
         let mut names = Vec::new();
         let mut seen = BTreeSet::new();
         for key in keys {
+            if let Some(certificate) = self.certificates.get(key).filter(|c| c.valid) {
+                if seen.insert(certificate.disk.key.as_str()) {
+                    names.push(certificate.disk.key.clone());
+                }
+                continue;
+            }
             let Some(record) = self.records.get(key) else {
                 continue;
             };
@@ -579,6 +597,83 @@ impl ProjectProcedureGraph {
         before.saturating_sub(self.stats.resident_bytes)
     }
 
+    /// Drop optional interning/restore indexes without dropping live query
+    /// witnesses. Candidates and Salsa inputs retain their immutable payloads;
+    /// subsequent installs can rebuild these acceleration indexes on demand.
+    pub fn trim_metadata_accelerators(&mut self) -> usize {
+        let before = self.stats.metadata_bytes;
+        let mut freed = self.decoded_nodes.bytes;
+        self.decoded_nodes = DecodedDagNodes::default();
+        for (key, value) in &self.values {
+            freed = freed.saturating_add(key.capacity() + 96);
+            if Arc::strong_count(value) == 1 {
+                freed = freed.saturating_add(value_heap(value));
+            }
+        }
+        self.values.clear();
+        for (key, value) in &self.readsets {
+            freed = freed.saturating_add(
+                key.capacity() * std::mem::size_of::<(FactId, usize)>() + 96,
+            );
+            if value.strong_count() == 0 {
+                freed = freed.saturating_add(
+                    key.len() * std::mem::size_of::<CompactWitness>(),
+                );
+            }
+        }
+        self.readsets.clear();
+        self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(freed);
+        before.saturating_sub(self.stats.metadata_bytes)
+    }
+
+    /// Publication pressure tier: retain validated disk identities and compact
+    /// dependency edges, restoring exact witness pages only for affected readers.
+    pub fn compact_validated_candidates(&mut self) -> usize {
+        if self.persistence.is_none() || self.flush().is_err() { return 0; }
+        let before = self.resident_bytes();
+        for (key, record) in &self.records {
+            if !record.active { continue; }
+            let Some(candidate) = current_candidate(&self.db, record.input) else { continue; };
+            let Some(disk) = candidate.disk.clone() else { continue; };
+            self.certificates.insert(key.clone(), ValidatedCertificate {
+                id: record.id, descriptor: candidate.descriptor.clone(), disk,
+                facts: candidate.dependencies.iter().map(|w| w.fact).collect(), valid: true,
+            });
+        }
+        let live: BTreeSet<_> = self.certificates.values().map(|c| c.id).collect();
+        self.reverse.retain(|_, readers| { readers.retain(|id| live.contains(id)); !readers.is_empty() });
+        self.records.clear(); self.shared_facts.clear(); self.values.clear(); self.readsets.clear();
+        self.decoded_nodes = DecodedDagNodes::default();
+        self.pending_shared.clear(); self.pending_private.clear(); self.lru.clear(); self.dirty.clear();
+        self.db = Database::default();
+        self.stats.resident_bytes = 0;
+        self.stats.facts = 0;
+        self.stats.procedures = self.certificates.len();
+        self.stats.metadata_bytes = self.certificates.iter().map(|(key,c)|
+            512 + key.path.capacity() + c.descriptor.body_digest.capacity()
+                + c.descriptor.frame_digest.capacity() + c.disk.key.capacity()
+                + c.facts.capacity()*std::mem::size_of::<FactId>()).sum::<usize>()
+            + self.fact_names.iter().map(|fact| fact_heap(fact)+96).sum::<usize>()
+            + self.reverse.values().map(|readers| 96+readers.len()*64).sum::<usize>()
+            + self.procedure_names.iter().map(|key| key.path.capacity()+96).sum::<usize>();
+        before.saturating_sub(self.resident_bytes())
+    }
+
+    fn restore_certificate_readers(&mut self, ids: &BTreeSet<FactId>) {
+        let readers: BTreeSet<_> = ids.iter().flat_map(|id| self.reverse.get(id).into_iter().flatten()).copied().collect();
+        let keys: Vec<_> = readers.into_iter().filter_map(|id| {
+            let key = self.procedure_names[id as usize].clone();
+            let certificate = self.certificates.get_mut(&key)?;
+            certificate.valid = false;
+            Some(key)
+        }).collect();
+        if let Some(p) = self.persistence.as_mut() {
+            for key in &keys { p.headers_seen.remove(key); }
+        }
+        // Failed or corrupt reads leave revoked certificates, forcing lowering.
+        let _ = self.prepare_keys(&keys);
+    }
+
     pub fn dependencies(&self, key: &ProcKey) -> Option<Arc<[BindingWitness]>> {
         let record = self.records.get(key)?;
         record
@@ -646,8 +741,21 @@ impl ProjectProcedureGraph {
             return false;
         }
         let input = ProcedureInput::new(&self.db, descriptor.clone(), None, Vec::new());
-        let id = u32::try_from(self.procedure_names.len()).expect("procedure index exceeds address space");
-        self.procedure_names.push(key.clone());
+        let id = if let Some(certificate) = self.certificates.remove(key) {
+            self.stats.procedures = self.stats.procedures.saturating_sub(1);
+            self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(
+                512 + key.path.capacity() + certificate.descriptor.body_digest.capacity()
+                    + certificate.descriptor.frame_digest.capacity() + certificate.disk.key.capacity()
+                    + certificate.facts.capacity()*std::mem::size_of::<FactId>(),
+            );
+            for fact in certificate.facts {
+                if let Some(readers) = self.reverse.get_mut(&fact) { readers.remove(&certificate.id); }
+            }
+            certificate.id
+        } else {
+            let id = u32::try_from(self.procedure_names.len()).expect("procedure index exceeds address space");
+            self.procedure_names.push(key.clone()); id
+        };
         self.records.insert(
             key.clone(),
             Record {
@@ -672,6 +780,15 @@ impl ProjectProcedureGraph {
     }
 
     pub fn probe(&mut self, key: &ProcKey, descriptor: &ProcDescriptor) -> ProcedureProbe {
+        if let Some(disk) = self.certificates.get(key).filter(|c| c.valid && &c.descriptor == descriptor).map(|c| c.disk.clone()) {
+            if let Some(envelope) = self.load_payload(&disk) {
+                self.stats.disk_hits += 1;
+                return ProcedureProbe::Resident(ProcedureArtifact::Prepared(envelope));
+            }
+            if let Some(certificate) = self.certificates.get_mut(key) { certificate.valid = false; }
+            self.stats.misses += 1;
+            return ProcedureProbe::Miss;
+        }
         if !self.ensure_record(key, descriptor) {
             self.stats.misses += 1;
             return ProcedureProbe::Miss;
@@ -1086,6 +1203,7 @@ impl ProjectProcedureGraph {
     pub fn refresh_facts(&mut self, revision: &str, mut resolve: impl FnMut(&ProcKey, &BindingFact) -> FactValue) -> usize {
         if self.revision.as_deref() == Some(revision) { return self.refresh_pending(&mut resolve); }
         let ids: BTreeSet<_> = self.reverse.keys().copied().collect();
+        self.restore_certificate_readers(&ids);
         let changed = self.refresh_fact_ids(&ids, &mut resolve);
         self.pending_shared.clear(); self.pending_private.clear();
         self.revision = Some(revision.to_owned());
@@ -1096,6 +1214,7 @@ impl ProjectProcedureGraph {
     /// names that became present. Only readers of these keys enter the closure.
     pub fn refresh_changed_facts(&mut self, revision: &str, facts: &BTreeSet<BindingFact>, mut resolve: impl FnMut(&ProcKey, &BindingFact)->FactValue) -> BTreeSet<ProcKey> {
         let ids: BTreeSet<_> = facts.iter().filter_map(|fact| self.fact_ids.get(fact).copied()).collect();
+        self.restore_certificate_readers(&ids);
         self.refresh_fact_ids(&ids, &mut resolve);
         self.refresh_pending(&mut resolve);
         self.revision = Some(revision.to_owned());
@@ -1208,6 +1327,9 @@ impl ProjectProcedureGraph {
     /// Deletion immediately removes both resident and disk observations. Input
     /// handles remain bounded and stable if that authored proc later returns.
     pub fn remove(&mut self, key: &ProcKey) {
+        if let Some(descriptor) = self.certificates.get(key).map(|c| c.descriptor.clone()) {
+            self.ensure_record(key, &descriptor);
+        }
         if !self.records.contains_key(key) {
             return;
         }

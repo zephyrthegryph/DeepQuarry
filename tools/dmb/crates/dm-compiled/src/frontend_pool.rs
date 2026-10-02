@@ -300,6 +300,14 @@ impl FrontendPool {
             if self.bytes() <= budget {
                 break;
             }
+            self.trace_entry("before metadata index trim", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                frontend.trim_metadata_accelerators();
+            }
+            self.trace_entry("after metadata index trim", key);
+            if self.bytes() <= budget {
+                break;
+            }
             self.trace_entry("before authored payload trim", key);
             if let Some(discovery) = self.entries.get_mut(key).unwrap().discovery.as_mut() {
                 discovery.trim_authored_payloads();
@@ -321,6 +329,12 @@ impl FrontendPool {
             if self.bytes() <= budget {
                 break;
             }
+            self.trace_entry("before graph certificate compaction", key);
+            if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
+                frontend.compact_validated_candidates();
+            }
+            self.trace_entry("after graph certificate compaction", key);
+            if self.bytes() <= budget { break; }
             self.trace_entry("before skeleton trim", key);
             if let Some(frontend) = self.entries.get_mut(key).unwrap().frontend.as_mut() {
                 if frontend.release_skeleton() != 0 {

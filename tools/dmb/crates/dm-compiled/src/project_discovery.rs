@@ -259,6 +259,8 @@ impl DiscoveryCache {
         let before=self.resident_bytes();
         if let Some(prepared)=self.prepared.as_mut() {
             let prepared=Arc::make_mut(prepared);Arc::make_mut(&mut prepared.expansion).evict_payloads();
+            prepared.compact_metadata();
+            prepared.trace_resident_components();
             self.prepared_bytes=prepared.resident_bytes();
         }
         before.saturating_sub(self.resident_bytes())
@@ -551,7 +553,16 @@ impl DiscoveryCache {
             Sha256::digest(format!("{context}:{project_digest}"))
         );
         stats.disk_restored = disk_restored;
-        let mut macro_names = crate::prepared_project::macro_namespace(&project, &sources);
+        let mut macro_names = if let Some(old) = &old {
+            // The namespace is deliberately conservative across generations.
+            // Previously scanned unchanged files contribute through old names;
+            // inspect only added/changed authored content for new definitions.
+            crate::prepared_project::macro_namespace_sources(&project, sources.iter()
+                .filter(|(path, source)| old.sources.get(*path).is_none_or(|before| before.digest != source.digest))
+                .map(|(_, source)| source))
+        } else {
+            crate::prepared_project::macro_namespace(&project, &sources)
+        };
         if let Some(old) = &old {
             macro_names.extend(old.macro_names.iter().cloned());
         }
@@ -727,16 +738,16 @@ fn discover_with_cache_with_proof(
         &BTreeSet::new(),
         None,
     )
-    .map(|(mut project, sources, proof, _, _, _, pieces)| {
-        project.text = dm_syntax::SegmentedSource::new(pieces).materialize();
-        (
+    .and_then(|(mut project, sources, proof, _, _, _, pieces)| {
+        project.text = dm_syntax::SegmentedSource::new(pieces).try_materialize().map_err(io::Error::other)?;
+        Ok((
             project,
             sources
                 .into_iter()
                 .map(|(path, text)| (path, text.to_string()))
                 .collect(),
             proof,
-        )
+        ))
     })
 }
 

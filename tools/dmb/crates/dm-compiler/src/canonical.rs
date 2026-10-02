@@ -23,9 +23,46 @@ pub(super) struct OwnedPendingProc {
     pub verb: bool,
 }
 
+/// Immutable wire lookup recipe. The decoded maps duplicate DMB text and are
+/// only needed while allocating a generation, not while retaining a frontend.
+#[derive(Clone,Serialize,Deserialize)]
+pub(super) enum StringIndexRecipe {
+    Packed(Arc<Vec<u8>>),
+    Decoded(Arc<StringIndex>),
+}
+impl From<StringIndex> for StringIndexRecipe {
+    fn from(index:StringIndex)->Self {
+        if let Ok(bytes)=rmp_serde::to_vec_named(&index) {
+            if bytes.len()<=256*1024*1024 {
+                let packed=lz4_flex::compress_prepend_size(&bytes);
+                if packed.len()<bytes.len() {return Self::Packed(Arc::new(packed));}
+            }
+        }
+        Self::Decoded(Arc::new(index))
+    }
+}
+impl StringIndexRecipe {
+    pub(super) fn decode(&self)->Result<StringIndex,String> {
+        match self {
+            Self::Decoded(index)=>Ok(index.as_ref().clone()),
+            Self::Packed(bytes)=>{
+                if bytes.len()<4||u32::from_le_bytes(bytes[..4].try_into().unwrap()) as usize>256*1024*1024 {return Err("invalid string-index recipe size".into());}
+                let decoded=lz4_flex::decompress_size_prepended(bytes).map_err(|error|error.to_string())?;
+                rmp_serde::from_slice(&decoded).map_err(|error|error.to_string())
+            }
+        }
+    }
+    fn resident_bytes(&self)->usize {
+        match self {
+            Self::Packed(bytes)=>bytes.capacity()+64,
+            Self::Decoded(index)=>rmp_serde::to_vec_named(index.as_ref()).map_or(0,|bytes|bytes.len()*3),
+        }
+    }
+}
+
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) struct SkeletonMetadata {
-    pub strings: StringIndex,
+    pub strings: StringIndexRecipe,
     pub proc_paths: HashSet<Vec<u8>>,
     pub class_paths: HashMap<String, u32>,
     pub pending: Vec<OwnedPendingProc>,
@@ -49,7 +86,7 @@ pub(super) struct InvocationPlan {
 
 /// Retained frames contain only authored invocation overlays. Parameter semantics
 /// already live in `params`; empty lowering maps are created only on cache misses.
-#[derive(Clone, Default, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub(super) struct InvocationOverlay {
     #[serde(skip_serializing_if = "Option::is_none")]
     current_type_path: Option<String>,
@@ -151,6 +188,7 @@ pub(super) struct InvocationFragments {
     requested_signature_bytes: usize,
     syntax_misses: BTreeSet<String>,
     handle_misses: BTreeSet<String>,
+    window_declarations: HashMap<usize,(String,String)>,
 }
 impl InvocationFragments {
     const LIMIT: usize = 32 * 1024 * 1024;
@@ -166,9 +204,9 @@ impl InvocationFragments {
         format!("invocation-signatures-v1-{}", env!("DM_EMISSION_FINGERPRINT"))
     }
     fn namespace() -> String {
-        format!("invocation-syntax-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
+        format!("invocation-syntax-v3-{}", env!("DM_EMISSION_FINGERPRINT"))
     }
-    fn handles_namespace() -> String { format!("invocation-syntax-handles-v1-{}",env!("DM_EMISSION_FINGERPRINT")) }
+    fn handles_namespace() -> String { format!("invocation-syntax-handles-v2-{}",env!("DM_EMISSION_FINGERPRINT")) }
     fn declaration_key(item:&Item,path:&str)->String {
         fn items(hash:&mut Sha256,nodes:&[Item]) {
             hash.update((nodes.len() as u64).to_le_bytes());
@@ -183,6 +221,7 @@ impl InvocationFragments {
     /// The bounded window is consumed immediately by the ordered allocator.
     pub(super) fn prefetch_syntax(&mut self,inputs:&[(&Item,&str,bool)]) {
         self.requested_syntax.clear(); self.requested_bytes=0;
+        self.window_declarations.clear();
         self.requested_signatures.clear();self.requested_signature_bytes=0;
         self.prefetch_signatures(inputs);
         let Some(store)=self.store.clone() else {return;};
@@ -190,6 +229,7 @@ impl InvocationFragments {
         for (item,owner,verb) in inputs {
             let Ok((path,_))=self.signature(item,owner,*verb) else {continue;};
             let key=Self::declaration_key(item,&path);
+            self.window_declarations.insert(*item as *const Item as usize,(path,key.clone()));
             if !self.handle_misses.contains(&key) {handles.push(Key::new(Self::handles_namespace(),key));}
         }
         let mut payloads=BTreeSet::new();
@@ -286,26 +326,15 @@ impl InvocationFragments {
         params: &[ParsedParameter],
         base: ProcMetadata,
     ) -> Result<Arc<InvocationSyntax>, String> {
-        fn hash_items(hash: &mut Sha256, items: &[Item]) {
-            hash.update((items.len() as u64).to_le_bytes());
-            for item in items {
-                hash.update([item.kind as u8]);
-                hash.update((item.header.len() as u64).to_le_bytes());
-                hash.update(item.header.as_bytes());
-                hash_items(hash, &item.children);
-            }
-        }
-        // Invocation declarations have no dependency on executable statements.
-        // Preserve only settings/static declarations and their control ancestors:
-        // constant-false ancestors affect setting reachability.
-        let declarations = invocation_declaration_projection(&item.children);
-        let mut hash = Sha256::new();
-        hash.update(path.as_bytes());
-        hash.update(item.header.as_bytes());
-        hash_items(&mut hash, &declarations);
-        hash.update(serde_json::to_vec(&base).map_err(|e| e.to_string())?);
-        let key = format!("{:x}", hash.finalize());
-        let declaration_key=Self::declaration_key(item,path);
+        // The requested declaration window already hashed settings/statics.
+        // Include inherited metadata in the final identity, and only build the
+        // projected AST if semantic derivation is actually necessary.
+        let declaration_key=self.window_declarations.get(&(item as *const Item as usize))
+            .filter(|(cached,_)|cached==path).map(|(_,key)|key.clone())
+            .unwrap_or_else(||Self::declaration_key(item,path));
+        let mut hash=Sha256::new();hash.update(declaration_key.as_bytes());
+        hash.update(serde_json::to_vec(&base).map_err(|e|e.to_string())?);
+        let key=format!("{:x}",hash.finalize());
         if let Some(value) = self.entries.get(&key) {
             return Ok(Arc::clone(value));
         }
@@ -317,6 +346,7 @@ impl InvocationFragments {
                 }
             }
         }
+        let declarations=invocation_declaration_projection(&item.children);
         let (metadata, mut body) = proc_metadata_from_base(&declarations, base)?;
         let mut statics = Vec::new();
         extract_static_declarations(&mut body, &mut statics);
@@ -352,16 +382,10 @@ impl InvocationFragments {
             }
         }
         let overlay = Arc::new(overlay);
-        let plan = InvocationPlan {
-            path: syntax.path.clone(),
-            params: syntax.params.clone(),
-            metadata: syntax.metadata.clone(),
-            static_ids: HashMap::new(),
-            bindings: Arc::clone(&overlay),
-            frame_digest: String::new(),
-        };
-        let digest = crate::lower_cache::shared_binding_fingerprint(&plan.lower_bindings());
-        if self.entries.contains_key(&syntax.key) {
+        // Hash the immutable semantic fragment directly, without constructing
+        // and cloning a complete LowerBindings solely for serialization.
+        let digest=crate::lower_cache::shared_binding_fingerprint(&(&syntax.path,&syntax.params,&overlay));
+        if self.entries.contains_key(&syntax.key)||self.requested_syntax.contains_key(&syntax.key) {
             let mut updated = syntax.as_ref().clone();
             updated.frame = Some((Arc::clone(&overlay), digest.clone()));
             if let Ok(bytes) = serde_json::to_vec(&updated) {
@@ -371,9 +395,11 @@ impl InvocationFragments {
                         serde_json::to_vec(syntax.as_ref()).map_or(bytes.len(), |old| old.len()),
                     )
                     .saturating_mul(2);
-                if self.bytes.saturating_add(extra) <= Self::LIMIT {
-                    self.bytes += extra;
-                    self.entries.insert(syntax.key.clone(), Arc::new(updated));
+                let retained=self.entries.contains_key(&syntax.key);
+                if (retained&&self.bytes.saturating_add(extra)<=Self::LIMIT)
+                    || (!retained&&self.requested_bytes.saturating_add(extra)<=16*1024*1024) {
+                    if retained {self.bytes+=extra;self.entries.insert(syntax.key.clone(),Arc::new(updated));}
+                    else {self.requested_bytes+=extra;self.requested_syntax.insert(syntax.key.clone(),Arc::new(updated));}
                     self.queue_pending(syntax.key.clone(), bytes);
                     if self.pending_bytes > 4 * 1024 * 1024 {
                         self.flush();
@@ -675,7 +701,13 @@ pub(super) struct FrozenSkeleton {
 }
 
 impl FrozenSkeleton {
-    pub(super) fn new(image: Dmb, metadata: SkeletonMetadata) -> Self {
+    pub(super) fn new(image: Dmb, mut metadata: SkeletonMetadata) -> Self {
+        // Invocation-local overlays are often identical for every procedure on
+        // an owner. Hash by value while retaining one immutable allocation.
+        let mut overlays=HashMap::<Arc<InvocationOverlay>,Arc<InvocationOverlay>>::new();
+        for plan in &mut metadata.invocations {
+            plan.bindings=Arc::clone(overlays.entry(Arc::clone(&plan.bindings)).or_insert_with(||Arc::clone(&plan.bindings)));
+        }
         let charge = skeleton_heap(&image, &metadata);
         Self {
             image,
@@ -759,16 +791,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
         .map(|s| s.data.capacity())
         .sum::<usize>();
     bytes += image.lists.iter().map(vec_heap).sum::<usize>();
-    bytes +=
-        map_heap(&metadata.strings.0) + metadata.strings.0.keys().map(Vec::capacity).sum::<usize>();
-    for map in [
-        &metadata.strings.1,
-        &metadata.strings.2,
-        &metadata.strings.3,
-        &metadata.strings.4,
-    ] {
-        bytes += id_map(map);
-    }
+    bytes += metadata.strings.resident_bytes();
     bytes += metadata.proc_paths.capacity() * (std::mem::size_of::<Vec<u8>>() + 16)
         + metadata.proc_paths.iter().map(Vec::capacity).sum::<usize>();
     bytes += id_map(&metadata.class_paths)
@@ -787,6 +810,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             .map(|p| p.name.capacity() + p.expression.capacity())
             .sum::<usize>();
     bytes += vec_heap(&metadata.invocations);
+    let mut overlay_seen=HashSet::new();
     for plan in &metadata.invocations {
         bytes += plan.path.capacity()
             + plan.frame_digest.capacity()
@@ -806,7 +830,8 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
             bytes += value.as_ref().map_or(0, Vec::capacity);
         }
         let overlay = &plan.bindings;
-        bytes += overlay
+        if !overlay_seen.insert(Arc::as_ptr(overlay) as usize) {continue;}
+        bytes += std::mem::size_of::<InvocationOverlay>()+overlay
             .current_type_path
             .as_ref()
             .map_or(0, String::capacity)

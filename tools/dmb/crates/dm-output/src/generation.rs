@@ -97,6 +97,9 @@ impl VerifiedArchive {
     pub fn digest(&self) -> &str {
         &self.content.rsc_digest
     }
+    pub fn is_current(&self) -> bool {
+        capture(&self.path).as_ref() == Some(&self.stamp)
+    }
     /// Digest of the bytecode paired with this archive's verified generation.
     /// Conventional publication can reuse this proof instead of rehashing it.
     pub fn paired_bytecode_digest(&self) -> Option<&str> {

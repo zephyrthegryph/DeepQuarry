@@ -115,7 +115,7 @@ impl OutlineSession {
             |job| if job.3.is_some() { 1 } else { job.1.saturating_mul(16).saturating_add(4096) },
             |job| {
                 if let Some(cached) = &job.3 { return Ok(Arc::clone(cached)); }
-                let text = source.slice(Span::new(job.0, job.0+job.1)).ok_or_else(|| "invalid frontend fragment range".to_owned())?;
+                let text = source.try_slice(Span::new(job.0, job.0+job.1))?;
                 parse_fragment(&text, &job.2, cache_root)
             },
         ).map_err(|error| format!("frontend worker failure: {error:?}"))?;
@@ -132,8 +132,7 @@ impl OutlineSession {
                 self.stats.scanned_procedures += parsed.fragments.len();
             }
             for span in &parsed.resources {
-                literals.push(source.slice(Span::new(job.0+span.start, job.0+span.end))
-                    .ok_or("invalid resource fragment range")?.into_owned());
+                literals.push(source.try_slice(Span::new(job.0+span.start, job.0+span.end))?.into_owned());
             }
             ordered.push((job.0, parsed));
         }
@@ -228,12 +227,10 @@ fn assemble_segmented_outline(
     let mut previous_chunk = 0;
     for (offset, chunk) in chunks {
         let gap = source
-            .slice(Span::new(previous_chunk, *offset))
-            .ok_or("invalid segmented chunk gap")?;
+            .try_slice(Span::new(previous_chunk, *offset))?;
         abi.update(gap.as_bytes());
         let text = source
-            .slice(Span::new(*offset, *offset + chunk.source_len))
-            .ok_or("invalid segmented chunk range")?;
+            .try_slice(Span::new(*offset, *offset + chunk.source_len))?;
         let mut previous = 0;
         for fragment in &chunk.fragments {
             let descriptor = &fragment.descriptor;
@@ -263,8 +260,7 @@ fn assemble_segmented_outline(
     }
     abi.update(
         source
-            .slice(Span::new(previous_chunk, source.len()))
-            .ok_or("invalid segmented tail")?
+            .try_slice(Span::new(previous_chunk, source.len()))?
             .as_bytes(),
     );
     Ok(SourceOutline {
@@ -325,7 +321,7 @@ impl ResourceLiteralQueries {
             |(job, cached)| if cached.is_some() { 1 } else { job.1.saturating_mul(2).saturating_add(1024) },
             |(job, cached)| {
                 if let Some(values) = cached { return Ok((Arc::clone(values), false)); }
-                let text = source.slice(Span::new(job.0, job.0+job.1)).ok_or("invalid resource query range")?;
+                let text = source.try_slice(Span::new(job.0, job.0+job.1))?;
                 let mut values = Vec::new();
                 crate::bootstrap::resource_scan::visit_resources(&text, &mut |value| values.push(value.to_owned()));
                 Ok::<_, String>((Arc::<[String]>::from(values), true))

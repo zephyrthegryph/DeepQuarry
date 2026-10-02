@@ -137,6 +137,42 @@ impl PreparedProject {
             .is_ok_and(|results| results.into_iter().all(|current| current))
     }
 
+    /// Compact allocation slack without dropping semantic source-map entries.
+    pub(crate) fn compact_metadata(&mut self) {
+        if let Some(project) = Arc::get_mut(&mut self.project) {
+            project.text.shrink_to_fit();
+            project.origins.shrink_to_fit();
+            project.units.shrink_to_fit();
+            project.unit_digests.shrink_to_fit();
+            project.map_includes.shrink_to_fit();
+            project.skin_includes.shrink_to_fit();
+            project.file_dirs.shrink_to_fit();
+            project.diagnostics.shrink_to_fit();
+            for value in project.final_macros.values_mut() {
+                value.replacement.shrink_to_fit();
+                if let Some(parameters) = &mut value.parameters {
+                    parameters.shrink_to_fit();
+                    for parameter in parameters { parameter.shrink_to_fit(); }
+                }
+            }
+        }
+        if let Some(expansion) = Arc::get_mut(&mut self.expansion) {
+            expansion.segments.shrink_to_fit();
+        }
+        self.changes.changed_units.shrink_to_fit();
+    }
+
+    pub(crate) fn trace_resident_components(&self) {
+        if std::env::var_os("DM_BUILD_TRACE").is_none() { return; }
+        let origins = self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>();
+        let units = self.project.units.capacity() * std::mem::size_of::<dm_preprocess::Unit>() + self.project.unit_digests.capacity()*32;
+        let expanded_text: usize = self.expansion.segments.iter().map(|piece| piece.text.len()).sum();
+        let expanded_indexes: usize = self.expansion.segments.iter().map(|piece| (piece.lines.len()+piece.non_boundaries.len())*std::mem::size_of::<usize>()).sum();
+        let authored_text: usize = self.sources.values().map(|source| source.text.len()).sum();
+        let macro_text: usize = self.project.final_macros.iter().map(|(name,value)| name.capacity()+value.replacement.capacity()+128).sum();
+        eprintln!("DM_BUILD_TRACE prepared resident components: origins={origins} origin_count={} units={units} expanded_text={expanded_text} expanded_indexes={expanded_indexes} authored_text={authored_text} macros={macro_text} total={}", self.project.origins.len(), self.resident_bytes());
+    }
+
     pub fn resident_bytes(&self) -> usize {
         let mut paths = BTreeSet::new();
         self.macro_names
@@ -298,6 +334,13 @@ pub(crate) fn macro_namespace(
     project: &PreprocessedProject,
     sources: &BTreeMap<PathBuf, PreparedSource>,
 ) -> BTreeSet<String> {
+    macro_namespace_sources(project, sources.values())
+}
+
+pub(crate) fn macro_namespace_sources<'a>(
+    project: &PreprocessedProject,
+    sources: impl IntoIterator<Item = &'a PreparedSource>,
+) -> BTreeSet<String> {
     let mut names: BTreeSet<_> = project.final_macros.keys().cloned().collect();
     names.extend([
         "__FILE__".into(),
@@ -306,7 +349,7 @@ pub(crate) fn macro_namespace(
         "REGEX_QUOTE".into(),
         "REGEX_QUOTE_REPLACEMENT".into(),
     ]);
-    for source in sources.values() {
+    for source in sources {
         let logical = if source.text.contains("\\\n") || source.text.contains("\\\r\n") {
             std::borrow::Cow::Owned(source.text.replace("\\\r\n", "").replace("\\\n", ""))
         } else {

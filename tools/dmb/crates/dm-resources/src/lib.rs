@@ -54,6 +54,23 @@ pub struct ResourceCatalog {
     pub entries: Vec<ResourceDescriptor>,
 }
 impl ResourceCatalog {
+    /// Exact resource assignment projection consumed by bytecode generation.
+    /// Asset bytes belong to the separately verified RSC identity. Entry order
+    /// matters because attachment assigns dense resource table indices in order.
+    /// Callers must still validate this catalog and independently verify the RSC.
+    pub fn bytecode_fingerprint(&self) -> [u8; 32] {
+        let mut digest = Sha256::new();
+        digest.update(b"dm-resource-bytecode-projection-v1\0");
+        digest.update((self.entries.len() as u64).to_le_bytes());
+        for entry in &self.entries {
+            digest.update((entry.archive_name.len() as u64).to_le_bytes());
+            digest.update(entry.archive_name.as_bytes());
+            digest.update(entry.id.to_le_bytes());
+            digest.update([entry.kind]);
+        }
+        digest.finalize().into()
+    }
+
     pub fn validate(&self) -> io::Result<()> {
         let mut names = HashMap::new();
         let mut identities = HashMap::new();

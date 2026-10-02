@@ -113,8 +113,52 @@ impl ExpandedSegment {
     }
 }
 impl SegmentedExpansion {
-    fn digest_range(&self,span:Span)->Option<[u8;32]> {
-        let mut hash=Sha256::new();self.source().visit_range(span,|text|hash.update(text.as_bytes())).ok()?;Some(hash.finalize().into())
+    /// Hash overlapping include intervals in a single verified chunk traversal.
+    /// Each active hasher sees exactly its original flat byte stream. Decoded
+    /// chunks live only for this iteration, never in a process-wide memo.
+    fn digest_ranges(&self, ranges: &[(usize, Span)]) -> Option<Vec<(usize, [u8; 32])>> {
+        let mut events = BTreeMap::<usize, (Vec<usize>, Vec<usize>)>::new();
+        let mut result = Vec::with_capacity(ranges.len());
+        for &(id, span) in ranges {
+            if span.start > span.end || span.end > self.bytes { return None; }
+            if span.start == span.end {
+                result.push((id, Sha256::digest([]).into()));
+            } else {
+                events.entry(span.start).or_default().0.push(id);
+                events.entry(span.end).or_default().1.push(id);
+            }
+        }
+        let mut events = events.into_iter().peekable();
+        let mut active = BTreeMap::<usize, Sha256>::new();
+        let mut offset = 0;
+        for piece in &self.segments {
+            let end = offset + piece.content_len;
+            // Only load a chunk when an active interval or a start inside it
+            // requires bytes. Metadata-only gaps do not touch the CAS.
+            let needed = !active.is_empty() || events.peek().is_some_and(|(at, _)| *at < end);
+            let text = if needed { Some(piece.content().ok()?) } else { None };
+            let mut cursor = offset;
+            while let Some((at, _)) = events.peek() {
+                if *at > end { break; }
+                let (at, (starts, finishes)) = events.next()?;
+                if at < cursor { return None; }
+                if !active.is_empty() && at > cursor {
+                    let bytes = text.as_ref()?.as_bytes().get(cursor-offset..at-offset)?;
+                    for hash in active.values_mut() { hash.update(bytes); }
+                }
+                for id in finishes { result.push((id, active.remove(&id)?.finalize().into())); }
+                for id in starts { active.insert(id, Sha256::new()); }
+                cursor = at;
+            }
+            if !active.is_empty() && cursor < end {
+                let bytes = text.as_ref()?.as_bytes().get(cursor-offset..)?;
+                for hash in active.values_mut() { hash.update(bytes); }
+            }
+            offset = end;
+            if events.peek().is_none() && active.is_empty() { break; }
+        }
+        if events.peek().is_some() || !active.is_empty() { return None; }
+        Some(result)
     }
     pub(crate) fn attach_backings(&mut self,root:&std::path::Path) {
         for piece in &mut self.segments {
@@ -249,6 +293,7 @@ pub(crate) fn splice_source_edits(
         }
         usize::try_from((offset as i64).checked_add(delta)?).ok()
     };
+    let mut changed_hashes = Vec::new();
     for (index, unit) in project.units.iter_mut().enumerate() {
         let old = unit.output_span;
         unit.output_span = Span::new(translate(old.start)?, translate(old.end)?);
@@ -256,9 +301,11 @@ pub(crate) fn splice_source_edits(
             .iter()
             .any(|(span, _)| span.start < old.end && span.end > old.start)
         {
-            *project.unit_digests.get_mut(index)? =
-                pieces.digest_range(unit.output_span)?;
+            changed_hashes.push((index, unit.output_span));
         }
+    }
+    for (index, digest) in pieces.digest_ranges(&changed_hashes)? {
+        *project.unit_digests.get_mut(index)? = digest;
     }
     Some((project, pieces))
 }
@@ -394,6 +441,7 @@ fn splice_raw_units(
         }
         usize::try_from(offset as i64 + delta).ok()
     };
+    let mut changed_hashes = Vec::new();
     for (index, unit) in project.units.iter_mut().enumerate() {
         let old = unit.output_span;
         unit.output_span = Span::new(translate(old.start)?, translate(old.end)?);
@@ -404,9 +452,11 @@ fn splice_raw_units(
             .iter()
             .any(|(span, _, _)| span.start < old.end && span.end > old.start)
         {
-            *project.unit_digests.get_mut(index)? =
-                pieces.digest_range(unit.output_span)?;
+            changed_hashes.push((index, unit.output_span));
         }
+    }
+    for (index, digest) in pieces.digest_ranges(&changed_hashes)? {
+        *project.unit_digests.get_mut(index)? = digest;
     }
     Some((project, pieces))
 }

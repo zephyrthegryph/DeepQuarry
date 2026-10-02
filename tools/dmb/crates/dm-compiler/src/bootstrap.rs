@@ -3300,7 +3300,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let segmented_source = frontend.as_ref().and_then(|frontend| frontend.segmented_source()).cloned();
     let source_range = |span: dm_syntax::Span| -> Result<std::borrow::Cow<'_, str>, String> {
         if let Some(segmented) = &segmented_source {
-            segmented.slice(span).ok_or_else(|| "source span outside segmented expansion".to_owned())
+            segmented.try_slice(span)
         } else {
             source.get(span.range()).map(std::borrow::Cow::Borrowed)
                 .ok_or_else(|| "source span outside expansion".to_owned())
@@ -4192,7 +4192,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             eprintln!("DM_BUILD_TRACE declaration allocation {:.3}s, symbolic expressions {}, scoped default hits {}, misses {}",declaration_preparation_started.elapsed().as_secs_f64(),now.0-semantic_stats_before.0,now.1-semantic_stats_before.1,now.2-semantic_stats_before.2);
         }
         let frozen = canonical::FrozenSkeleton::new(dmb, canonical::SkeletonMetadata {
-            strings, proc_paths, class_paths,
+            strings:strings.into(), proc_paths, class_paths,
             pending: pending.iter().map(|proc| canonical::OwnedPendingProc {
                 owner: proc.owner, owner_path: proc.owner_path.clone(), verb: proc.verb,
             }).collect(), dynamic: pending_dynamic, initializer_globals, global_proc_ids,
@@ -4205,7 +4205,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let mut dmb = frozen.image.clone();
     dmb.resources = current_resource_refs;
     let state = &frozen.metadata;
-    let mut strings = state.strings.clone();
+    let mut strings = state.strings.decode()?;
     let class_paths = &state.class_paths;
     let initializer_globals = &state.initializer_globals;
     let global_proc_ids = &state.global_proc_ids;

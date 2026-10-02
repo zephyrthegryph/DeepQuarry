@@ -262,8 +262,15 @@ impl Store {
             let value = raw.as_deref().map(decode_record).transpose()?;
             // decode_record already verified the stored SHA. Reuse it for the
             // transaction witness instead of hashing each payload a second time.
-            let value_digest = raw.as_ref().map(|bytes| bytes[..32].iter()
-                .map(|byte| format!("{byte:02x}")).collect());
+            let value_digest = raw.as_ref().map(|bytes| {
+                const HEX: &[u8; 16] = b"0123456789abcdef";
+                let mut digest = String::with_capacity(64);
+                for byte in &bytes[..32] {
+                    digest.push(HEX[(byte >> 4) as usize] as char);
+                    digest.push(HEX[(byte & 15) as usize] as char);
+                }
+                digest
+            });
             witnesses.push(ReadWitness {
                 key: key.clone(),
                 value_digest,

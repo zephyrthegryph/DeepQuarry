@@ -84,3 +84,22 @@ Initial resource discovery repairs damaged expansion caches once and retries.
 
 These subsequent changes still require a rebuilt benchmark. No Rust or DM
 correctness tests were run. The overnight continuation remains active.
+
+## Run E interim measurements
+
+Rebuilt prototype: cold 250.837 s; unchanged 0.270 s; one procedure edit
+86.147 s (68,410 authored procedures reused, one lowered; 13,921 generated
+initializers reused with none lowered). The run is still in progress, so these
+are interim successful cases. Cold compiler stage: 210.378 s. Edit compiler
+stage: 72.347 s. Edit header restoration: 24.720 s for 82,438 headers, including
+19.302 s requested disk reads. Metadata retention remains above the 512 MiB
+pool budget and evicts the frontend; compact retention is the next target.
+No runtime correctness tests were run.
+
+Run E completed successfully as a compiler benchmark (not runtime tests):
+new proc 179.523 s; new var 181.604 s; default edit 130.399 s;
+asset edit 104.383 s; add resource 152.177 s; fresh cached process 0.235 s;
+fresh process with body edit 87.479 s. All cases reported successful native
+compilation. Compact certificates, compressed skeleton indexes, one-pass
+unit hashing, and independent bytecode catalog caching were implemented after
+this executable and remain unmeasured until the next build.

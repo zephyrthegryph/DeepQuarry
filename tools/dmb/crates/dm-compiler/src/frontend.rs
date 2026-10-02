@@ -373,6 +373,12 @@ impl OutlineSession {
                     .trim_decoded_to(limit.saturating_sub(graph_limit)),
             )
     }
+    pub fn trim_metadata_accelerators(&mut self) -> usize {
+        self.canonical.graph.trim_metadata_accelerators()
+    }
+    pub fn compact_validated_candidates(&mut self) -> usize {
+        self.canonical.graph.compact_validated_candidates()
+    }
     pub fn release_skeleton(&mut self) -> usize {
         self.canonical.release_skeleton()
     }
