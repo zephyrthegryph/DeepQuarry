@@ -691,7 +691,22 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 /// TRUE while machine_step() has work: set by MACHINE_WAKE(), cleared when machine_step() returns
 /// PROCESS_KILL or by MACHINE_SLEEP(). The step stage idles while it is FALSE.
-OM_FIELD_TYPED(/obj/machinery, tmp, step_active, FALSE, CHANGE_EXPLICIT)
+// ALLOW(base_vars): the existing step_active field (it was OM_FIELD_TYPED), now with a hand-written setter
+/obj/machinery/var/tmp/step_active = FALSE
+/// Registered on CHANGE_EXPLICIT, the channel that starts the step work: machine_wake() is the
+/// writer that gives work, and it wakes the pipeline itself (om_wake()). The setter raises nothing on
+/// the machine's own pipeline: its other writers are the step stages, mid-frame, and MACHINE_SLEEP(),
+/// and neither gives any stage work. Raising it there woke the machine again after every frame that
+/// ended its work (a sleeping machine woke once more for nothing).
+OM_FIELD_SETTER(/obj/machinery, step_active, CHANGE_EXPLICIT)
+
+/obj/machinery/proc/set_step_active(value)
+	if(step_active == value)
+		return FALSE
+	step_active = value
+	changed(src, 0)
+	PUBLISH_CHANGE(src, "step_active")
+	return TRUE
 /// Set by sleep_until_powered(): power_change()/atom_fix() restart the step work.
 OM_FIELD_TYPED(/obj/machinery, tmp, step_waiting_power, FALSE, CHANGE_MACHINE_POWER)
 /// TRUE: machine_step() runs every 0.2 s on the fast periodic pipeline instead of the machine
