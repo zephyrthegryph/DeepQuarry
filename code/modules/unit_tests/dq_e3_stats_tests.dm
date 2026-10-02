@@ -337,3 +337,38 @@
 	TEST_ASSERT_EQUAL(L.e3_powered, FALSE, "naming another APC recomputes the reader on the entity itself (inline)")
 	rel_set(L, "apc", A)
 	TEST_ASSERT_EQUAL(L.e3_powered, TRUE, "and back")
+
+/// The stat half of E0 proof 8 (the notice chain waits on E4): sixty lamps read the night system through its accessor, a flip marks them all, and
+/// a 20-evaluation budget settles them over several drain points with none lost.
+/datum/unit_test/dq_e3/settle_night_cascade_under_budget
+
+/datum/unit_test/dq_e3/settle_night_cascade_under_budget/run_e3()
+	var/list/lamps = list()
+	for(var/i in 1 to 60)
+		lamps += allocate(/obj/e0_fixture/lamp)
+	var/obj/e0_fixture/lamp/sample = lamps[1]
+	TEST_ASSERT_EQUAL(sample.e0_lamp_range, E0_LAMP_DAY_RANGE, "a lamp reads the day range at init")
+	test_budget(LANE_SIMULATION, 20 * TEST_EVAL_COST)
+	test_counters_reset()
+	e0_flip_night(TRUE)
+	TEST_ASSERT_EQUAL(stat_marked_count(), 60, "the flip marks every reader of the accessor (a system edge is never inline)")
+	var/ticks = 0
+	var/settled = FALSE
+	for(var/i in 1 to 30)
+		test_time(world.tick_lag)
+		test_drain()
+		ticks++
+		settled = TRUE
+		for(var/obj/e0_fixture/lamp/L as anything in lamps)
+			if(L.e0_lamp_range != E0_LAMP_NIGHT_RANGE)
+				settled = FALSE
+				break
+		if(settled)
+			break
+	test_budget(LANE_SIMULATION, null)
+	e0_flip_night(FALSE)
+	stat_drain_marked(LANE_SIMULATION)
+	TEST_ASSERT(test_spill_count() > 0, "60 lamps against a 20-evaluation budget spill")
+	TEST_ASSERT(ticks > 1, "so the cascade took more than one drain point")
+	TEST_ASSERT(settled, "and it settled: no effect was lost")
+	TEST_ASSERT_EQUAL(sample.e0_lamp_range, E0_LAMP_DAY_RANGE, "and the day returns")

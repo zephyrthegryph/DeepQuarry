@@ -44,11 +44,22 @@ impl Generator for SystemAccessors {
             }
         }
         rows.dedup_by(|a, b| a.0 == b.0);
-        for (name, system, var, rel, line) in rows {
-            out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
-            out.line(format!("/proc/{}()", name));
-            out.line(format!("\treturn {}.{}", SYSTEM_INSTANCE.replace("{system}", &system), var));
+        // An accessor declared in a test fixture (code/tests/) exists only in a test build.
+        let (tests, content): (Vec<_>, Vec<_>) = rows.into_iter().partition(|r| r.3.starts_with("code/tests/"));
+        let emit = |out: &mut GenOut, rows: Vec<(String, String, String, String, u32)>| {
+            for (name, system, var, rel, line) in rows {
+                out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
+                out.line(format!("/proc/{}()", name));
+                out.line(format!("\treturn {}.{}", SYSTEM_INSTANCE.replace("{system}", &system), var));
+                out.blank();
+            }
+        };
+        emit(out, content);
+        if !tests.is_empty() {
+            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
             out.blank();
+            emit(out, tests);
+            out.line("#endif");
         }
     }
 }

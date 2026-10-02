@@ -179,6 +179,7 @@
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		var/sb_start = TICK_USAGE
 		sched.pass_begin(tick_limit)
+		stat_tick_begin()
 		sched_ms_tick = TICK_USAGE_TO_MS(sb_start)
 		// N
 		var/n_start = TICK_USAGE
@@ -298,12 +299,14 @@
 /// deadline share.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_deadline_phase(tick_limit, now = world.time)
+	stat_drain_point()
 	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
 
 /// P: each lane, in order. A lane's items start with the scheduler's pieces: the borrow pass (lane 1 only), then the lane's
 /// share of the pass (sched_lane); that lane's other work items follow.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_lane_phase(tick_limit, now = world.time)
+	stat_drain_point()
 	var/datum/kernel_latency/latency = latency_state || (latency_state = kernel_latency())
 	for(var/lane in 1 to OM_LANE_COUNT)
 		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
@@ -317,6 +320,7 @@
 /// whatever the tick has spare instead of one lane share per tick.
 // ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_leftover_phase(tick_limit, now = world.time)
+	stat_drain_point()
 	work_run_phase(KERNEL_PHASE_R, tick_limit, 0, now)
 	if(!length(p_carry))
 		return

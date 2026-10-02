@@ -44,24 +44,28 @@
 	return list(/atom/movable, /atom/movable/proc/__stat_suspended)
 
 /// STAT(/mob/living, acts_via, MASK_AND) at code/contracts/ids/stats.dm:9
+/mob/living/var/acts_via = ORIGIN_ALL // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /mob/living/proc/__stat_acts_via()
 	return list("acts_via", "MASK_AND", list(id = STAT_ACTS_VIA, base = ORIGIN_ALL))
 /datum/stat_decl/mob/living/__acts_via/spec()
 	return list(/mob/living, /mob/living/proc/__stat_acts_via)
 
 /// STAT(/mob/living, can_act, ALL) at code/contracts/ids/stats.dm:7
+/mob/living/var/can_act = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /mob/living/proc/__stat_can_act()
 	return list("can_act", "ALL", list(id = STAT_CAN_ACT))
 /datum/stat_decl/mob/living/__can_act/spec()
 	return list(/mob/living, /mob/living/proc/__stat_can_act)
 
 /// STAT(/mob/living, can_move, ALL) at code/contracts/ids/stats.dm:8
+/mob/living/var/can_move = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /mob/living/proc/__stat_can_move()
 	return list("can_move", "ALL", list(id = STAT_CAN_MOVE))
 /datum/stat_decl/mob/living/__can_move/spec()
 	return list(/mob/living, /mob/living/proc/__stat_can_move)
 
 /// STAT(/mob/living, clock_rate_bio, MIN) at code/contracts/ids/stats.dm:16
+/mob/living/var/clock_rate_bio = 1 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /mob/living/proc/__stat_clock_rate_bio()
 	return list("clock_rate_bio", "MIN", list(id = STAT_CLOCK_RATE_BIO, base = 1))
 /datum/stat_decl/mob/living/__clock_rate_bio/spec()
@@ -81,113 +85,120 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
+/// STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX) at code/tests/engine/fixtures.dm:202
+/obj/e0_fixture/lamp/var/e0_lamp_range = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/e0_fixture/lamp/proc/__stat_e0_lamp_range()
+	return list("e0_lamp_range", "MAX", list(id = STAT_E0_LAMP_RANGE))
+/datum/stat_decl/obj/e0_fixture/lamp/__e0_lamp_range/spec()
+	return list(/obj/e0_fixture/lamp, /obj/e0_fixture/lamp/proc/__stat_e0_lamp_range)
+
 /// STAT(/obj/e3_load, e3_powered, ALL) at code/tests/engine/e3_fixtures.dm:76
-/obj/e3_load/var/e3_powered = TRUE
+/obj/e3_load/var/e3_powered = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_load/proc/__stat_e3_powered()
 	return list("e3_powered", "ALL", list(id = STAT_E3_POWERED))
 /datum/stat_decl/obj/e3_load/__e3_powered/spec()
 	return list(/obj/e3_load, /obj/e3_load/proc/__stat_e3_powered)
 
 /// STAT(/obj/e3_machine, e3_can_run, ALL) at code/tests/engine/e3_fixtures.dm:37
-/obj/e3_machine/var/e3_can_run = TRUE
+/obj/e3_machine/var/e3_can_run = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_machine/proc/__stat_e3_can_run()
 	return list("e3_can_run", "ALL", list(id = STAT_E3_CAN_RUN))
 /datum/stat_decl/obj/e3_machine/__e3_can_run/spec()
 	return list(/obj/e3_machine, /obj/e3_machine/proc/__stat_e3_can_run)
 
 /// STAT(/obj/e3_machine, e3_draw, SUM) at code/tests/engine/e3_fixtures.dm:36
-/obj/e3_machine/var/e3_draw = 0
+/obj/e3_machine/var/e3_draw = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_machine/proc/__stat_e3_draw()
 	return list("e3_draw", "SUM", list(id = STAT_E3_DRAW))
 /datum/stat_decl/obj/e3_machine/__e3_draw/spec()
 	return list(/obj/e3_machine, /obj/e3_machine/proc/__stat_e3_draw)
 
 /// STAT(/obj/e3_machine, e3_operable, ALL) at code/tests/engine/e3_fixtures.dm:35
-/obj/e3_machine/var/e3_operable = TRUE
+/obj/e3_machine/var/e3_operable = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_machine/proc/__stat_e3_operable()
 	return list("e3_operable", "ALL", list(id = STAT_E3_OPERABLE))
 /datum/stat_decl/obj/e3_machine/__e3_operable/spec()
 	return list(/obj/e3_machine, /obj/e3_machine/proc/__stat_e3_operable)
 
 /// STAT(/obj/e3_machine, e3_stun, MAX) at code/tests/engine/e3_fixtures.dm:38
-/obj/e3_machine/var/e3_stun = 0
+/obj/e3_machine/var/e3_stun = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_machine/proc/__stat_e3_stun()
 	return list("e3_stun", "MAX", list(id = STAT_E3_STUN, base = 0, units = LIFE_CYCLE, reapply = REAPPLY_MAX))
 /datum/stat_decl/obj/e3_machine/__e3_stun/spec()
 	return list(/obj/e3_machine, /obj/e3_machine/proc/__stat_e3_stun)
 
 /// STAT(/obj/e3_rules, e3_all, ALL) at code/tests/engine/e3_fixtures.dm:12
-/obj/e3_rules/var/e3_all = TRUE
+/obj/e3_rules/var/e3_all = TRUE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_all()
 	return list("e3_all", "ALL", list(id = STAT_E3_ALL))
 /datum/stat_decl/obj/e3_rules/__e3_all/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_all)
 
 /// STAT(/obj/e3_rules, e3_any, ANY) at code/tests/engine/e3_fixtures.dm:13
-/obj/e3_rules/var/e3_any = FALSE
+/obj/e3_rules/var/e3_any = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_any()
 	return list("e3_any", "ANY", list(id = STAT_E3_ANY))
 /datum/stat_decl/obj/e3_rules/__e3_any/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_any)
 
 /// STAT(/obj/e3_rules, e3_formula, FORMULA) at code/tests/engine/e3_fixtures.dm:22
-/obj/e3_rules/var/e3_formula = null
+/obj/e3_rules/var/e3_formula = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_formula()
 	return list("e3_formula", "FORMULA", list(id = STAT_E3_FORMULA, formula = PROC_REF(compute_formula), reads = list("e3_seed", "e3_sum")))
 /datum/stat_decl/obj/e3_rules/__e3_formula/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_formula)
 
 /// STAT(/obj/e3_rules, e3_mask_and, MASK_AND) at code/tests/engine/e3_fixtures.dm:20
-/obj/e3_rules/var/e3_mask_and = 15
+/obj/e3_rules/var/e3_mask_and = 15 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_mask_and()
 	return list("e3_mask_and", "MASK_AND", list(id = STAT_E3_MASK_AND, base = 15))
 /datum/stat_decl/obj/e3_rules/__e3_mask_and/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_mask_and)
 
 /// STAT(/obj/e3_rules, e3_mask_or, MASK_OR) at code/tests/engine/e3_fixtures.dm:21
-/obj/e3_rules/var/e3_mask_or = 0
+/obj/e3_rules/var/e3_mask_or = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_mask_or()
 	return list("e3_mask_or", "MASK_OR", list(id = STAT_E3_MASK_OR))
 /datum/stat_decl/obj/e3_rules/__e3_mask_or/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_mask_or)
 
 /// STAT(/obj/e3_rules, e3_max, MAX) at code/tests/engine/e3_fixtures.dm:16
-/obj/e3_rules/var/e3_max = null
+/obj/e3_rules/var/e3_max = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_max()
 	return list("e3_max", "MAX", list(id = STAT_E3_MAX))
 /datum/stat_decl/obj/e3_rules/__e3_max/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_max)
 
 /// STAT(/obj/e3_rules, e3_min, MIN) at code/tests/engine/e3_fixtures.dm:17
-/obj/e3_rules/var/e3_min = null
+/obj/e3_rules/var/e3_min = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_min()
 	return list("e3_min", "MIN", list(id = STAT_E3_MIN))
 /datum/stat_decl/obj/e3_rules/__e3_min/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_min)
 
 /// STAT(/obj/e3_rules, e3_product, PRODUCT) at code/tests/engine/e3_fixtures.dm:15
-/obj/e3_rules/var/e3_product = 1
+/obj/e3_rules/var/e3_product = 1 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_product()
 	return list("e3_product", "PRODUCT", list(id = STAT_E3_PRODUCT))
 /datum/stat_decl/obj/e3_rules/__e3_product/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_product)
 
 /// STAT(/obj/e3_rules, e3_set, SET) at code/tests/engine/e3_fixtures.dm:19
-/obj/e3_rules/var/e3_set = null
+/obj/e3_rules/var/e3_set = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_set()
 	return list("e3_set", "SET", list(id = STAT_E3_SET))
 /datum/stat_decl/obj/e3_rules/__e3_set/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_set)
 
 /// STAT(/obj/e3_rules, e3_sum, SUM) at code/tests/engine/e3_fixtures.dm:14
-/obj/e3_rules/var/e3_sum = 0
+/obj/e3_rules/var/e3_sum = 0 // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_sum()
 	return list("e3_sum", "SUM", list(id = STAT_E3_SUM))
 /datum/stat_decl/obj/e3_rules/__e3_sum/spec()
 	return list(/obj/e3_rules, /obj/e3_rules/proc/__stat_e3_sum)
 
 /// STAT(/obj/e3_rules, e3_top, TOP) at code/tests/engine/e3_fixtures.dm:18
-/obj/e3_rules/var/e3_top = null
+/obj/e3_rules/var/e3_top = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e3_rules/proc/__stat_e3_top()
 	return list("e3_top", "TOP", list(id = STAT_E3_TOP))
 /datum/stat_decl/obj/e3_rules/__e3_top/spec()

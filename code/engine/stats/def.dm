@@ -16,8 +16,18 @@
 /// One declared stat. Immutable once built.
 /datum/stat_def
 	var/id
+	/// "[id]": the text key of every per-stat list (built once; a text of a number costs an allocation each time it is written).
+	var/skey
+	/// "stat:[id]": the key this stat publishes under and other stats read it by.
+	var/stat_key
 	var/name
 	var/rule
+	/// TRUE for a boolean (ALL, ANY) stat.
+	var/boolean = FALSE
+	/// TRUE for a FORMULA stat.
+	var/is_formula = FALSE
+	/// TRUE for the rules stat_compute_fast() folds without a row list (ALL, ANY, SUM).
+	var/fast = FALSE
 	/// What the stat is with nothing contributing: the rule's own, or base =.
 	var/base
 	var/reapply = REAPPLY_MAX
@@ -97,15 +107,20 @@ GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 		return
 	var/datum/stat_def/def = new
 	def.id = id
+	def.skey = "[id]"
+	def.stat_key = "stat:[id]"
 	def.name = name
 	def.rule = rule
+	def.boolean = stat_rule_is_boolean(rule)
+	def.is_formula = (rule == STAT_RULE_FORMULA)
+	def.fast = (rule == STAT_RULE_ALL || rule == STAT_RULE_ANY || rule == STAT_RULE_SUM)
 	def.base = base
 	if(!isnull(opts["reapply"]))
 		def.reapply = opts["reapply"]
 	def.units = opts["units"]
 	def.formula = opts["formula"]
 	def.formula_reads = opts["reads"]
-	def.schema = opts["schema"]
+	def.schema = opts["schema"] // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 	def.types = list(type)
 	if(rule == STAT_RULE_FORMULA && !def.formula)
 		declare_report("STAT([type], [name]): a FORMULA stat needs formula = PROC_REF(x)")
@@ -117,8 +132,11 @@ GLOBAL_LIST_EMPTY(stat_type_index) // type -> /datum/stat_type_info
 	if(def.units)
 		var/datum/stat_def/immune = new
 		immune.id = STAT_IMMUNE(id)
+		immune.skey = "[immune.id]"
+		immune.stat_key = "stat:[immune.id]"
 		immune.name = "[name]_immune"
 		immune.rule = STAT_RULE_ANY
+		immune.boolean = TRUE
 		immune.base = FALSE
 		immune.types = list(type)
 		immune.immune_of = def

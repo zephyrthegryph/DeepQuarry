@@ -30,13 +30,17 @@
 	/// TRUE once the entity's stats have been computed silently at init.
 	var/inited = FALSE
 	/// contributes_to entries: "[serial]" -> the entity currently holding this entity's contribution.
-	var/list/ct_targets // ALLOW(ownership): weak by teardown: the target's own teardown clears its rows and this entry (stat_record_teardown)
+	var/list/ct_targets
 	/// The entities holding rows that name this datum as their source (so its deletion can release them).
-	var/list/held_on // ALLOW(ownership): ended by stat_sources_teardown() in this datum's destroy transaction
+	var/list/held_on
+	/// Hop readers naming this datum through a single-valued relation: rel var -> the readers (the reverse of what the readers' relation vars name).
+	var/list/hop_in
+	/// What this datum's own hop relations name now: rel var -> target, so a change finds the list to leave.
+	var/list/hop_targets
 
 /datum/rx_state
 	/// The stat layer's record, or null.
-	var/datum/stat_record/stats // ALLOW(ownership): the stat layer's bookkeeping, dropped with the reaction state
+	var/datum/stat_record/stats
 
 /// D's stat record, made when first needed.
 /proc/stat_record_of(datum/D)
@@ -134,7 +138,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 	if(expires)
 		stat_expiry_reschedule(E)
 	TEST_REC_DELTA(E, "hold:[def.name]", null, value)
-	stat_settle(E, list(def))
+	stat_settle_def(E, def)
 	return TRUE
 
 /// Re-applying from the same source follows the stat's reapply rule: REAPPLY_MAX keeps the stronger value for the rule and the later expiry (never
@@ -196,7 +200,7 @@ GLOBAL_VAR(stat_dead_source) // never set: a hold whose datum source is gone kee
 			removed = TRUE
 	if(removed)
 		stat_expiry_reschedule(E)
-		stat_settle(E, list(def))
+		stat_settle_def(E, def)
 	return removed
 
 /// Releases everything one source holds on E. A source holding more than HOLD_RELEASE_BATCH holds releases in slices (stat_release_slice, phase G).
@@ -389,6 +393,7 @@ GLOBAL_LIST_EMPTY(stat_release_queue) // list(entity, source) rows waiting for t
 		if(length(gone))
 			stat_release_rows(target, trec, gone)
 	rec.held_on = null
+	stat_hop_teardown(D, rec)
 	// As a holder.
 	for(var/list/row as anything in rec.holds)
 		var/source = row[H_SOURCE]

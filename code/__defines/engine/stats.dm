@@ -82,3 +82,11 @@
 #define SREAD_ROOT_HOLDER 1
 #define SREAD_KIND_VAR 0
 #define SREAD_KIND_SYSTEM 3
+
+/// What the next marked evaluation is expected to cost, for the budget check before it runs: a fixed charge in test builds (TEST_EVAL_COST), an estimate in
+/// microseconds otherwise.
+#if defined(UNIT_TESTS)
+#define STAT_EVAL_CHARGE TEST_EVAL_COST
+#else
+#define STAT_EVAL_CHARGE 20
+#endif

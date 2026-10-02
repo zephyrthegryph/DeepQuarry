@@ -433,6 +433,7 @@
 #include "../benchmarks/life_sequence.dm"
 #include "../benchmarks/dx_refresh.dm"
 #include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif

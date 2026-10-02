@@ -52,6 +52,10 @@
 	var/settle = SETTLE_MARKED
 	/// For a system read: the system name and var.
 	var/system
+	/// The stat's text key, or null for a contributes_to reader.
+	var/skey
+	/// TRUE for a one-relation hop: the reverse index on the target (stat_record.hop_in) finds its readers.
+	var/fast = FALSE
 	/// The relation vars to walk from the written entity back to the reader, nearest the reader first: one for "rel.var", more for "a.b.var".
 	var/list/path
 
@@ -72,8 +76,12 @@
 	var/list/hops
 	/// A stat id -> TRUE when the instance has a var of the stat's name.
 	var/list/has_var
+	/// A stat key -> the type's own default of that var (the type-level constant), for the stats that have a var.
+	var/list/consts
 	/// TRUE when instances need their stats computed at init (any static contribution or gating).
 	var/init_needed = FALSE
+	/// The relation vars of this type's one-relation hops, whose targets the stat layer indexes (stat_hop_attach).
+	var/list/hop_rels
 	/// "[stat id]" -> its rank: one above the highest rank of any stat it reads on the entity (0 when it reads none).
 	var/list/ranks
 
@@ -116,12 +124,15 @@
 	I.ct_entries = list()
 	I.hops = list()
 	I.has_var = list()
+	I.consts = list()
 	for(var/id in GLOB.stat_defs)
 		var/datum/stat_def/def = GLOB.stat_defs[id]
 		if(!stat_declared_on(E.type, def))
 			continue
-		I.defs += def
-		I.has_var["[def.id]"] = (def.name in E.vars) ? TRUE : FALSE
+		I.defs += def // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
+		I.has_var[def.skey] = (def.name in E.vars) ? TRUE : FALSE
+		if(I.has_var[def.skey])
+			I.consts[def.skey] = initial(E.vars[def.name])
 	var/serial = 0
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/entry = C.item
@@ -134,7 +145,7 @@
 			continue
 		contrib.serial = --serial
 		if(entry.kind == "contributes_to")
-			I.ct_entries += contrib
+			I.ct_entries += contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 			stat_index_inputs(E, I, contrib, null)
 			continue
 		var/list/for_stat = I.contribs["[contrib.stat_id]"]
@@ -301,7 +312,8 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 		var/datum/stat_hop/sys = new
 		sys.system = copytext(key, 5)
 		sys.stat_id = stat_id
-		sys.ct = stat_id ? null : contrib
+		sys.skey = stat_id ? "[stat_id]" : null
+		sys.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		sys.settle = SETTLE_MARKED
 		var/list/sys_list = I.hops["sys"]
 		if(!sys_list)
@@ -322,7 +334,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 			readers |= list(stat_id)
 		else
 			var/datum/stat_dep/ct_dep = new
-			ct_dep.ct = contrib
+			ct_dep.ct = contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 			var/list/ct_readers = I.inputs[key]
 			if(!ct_readers)
 				ct_readers = list()
@@ -335,9 +347,13 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 		hop.remote_var = segments[length(segments)]
 		segments.len--
 		hop.path = segments
+		hop.fast = (length(segments) == 1)
 		hop.rel_var = segments[1]
+		if(hop.fast)
+			LAZYOR(I.hop_rels, hop.rel_var)
 		hop.stat_id = stat_id
-		hop.ct = stat_id ? null : contrib
+		hop.skey = stat_id ? "[stat_id]" : null
+		hop.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 		hop.settle = length(segments) == 1 ? stat_hop_settle(E, hop.rel_var, hop.remote_var) : SETTLE_MARKED
 		var/list/hop_list = I.hops[hop.remote_var]
 		if(!hop_list)
@@ -356,7 +372,7 @@ GLOBAL_LIST_EMPTY(stat_input_keys) // var name -> TRUE: some type's stats read i
 	// A plain var of this entity (or a capkey): the stat (or ct entry) recomputes when it changes.
 	var/datum/stat_dep/dep = new
 	dep.stat_id = stat_id
-	dep.ct = stat_id ? null : contrib
+	dep.ct = stat_id ? null : contrib // ALLOW(ownership): a flyweight the declaration engine builds once per type and never mutates
 	var/list/deps = I.inputs[key]
 	if(!deps)
 		deps = list()

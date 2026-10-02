@@ -106,7 +106,7 @@ fn emit(cx: &GenCx, out: &mut GenOut, rows: &[Row], vars: &HashMap<String, HashS
         let is_virtual = r.opts.iter().any(|(k, v)| k == "virtual" && v == "TRUE");
         if !is_virtual && !BUILTIN_VARS.contains(&r.name.as_str()) && !declares_var(vars, &r.ty, &r.name) {
             let base = base_opt.clone().unwrap_or_else(|| rule_base(&r.rule).to_string());
-            out.line(format!("{}/var/{} = {}", r.ty, r.name, base));
+            out.line(format!("{}/var/{} = {} // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)", r.ty, r.name, base));
         }
         let mut opts = vec![format!("id = STAT_{}", up(&r.name))];
         for (k, v) in r.opts.iter().filter(|(k, _)| k != "virtual") {
@@ -132,7 +132,8 @@ impl Generator for Stats {
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
         let rows = rows(cx, out);
-        let files = cx.tree.select(&crate::tree::CODE_DM);
+        // The generator's own previous output declares the vars it wrote: it must not count them as the types' own.
+        let files: Vec<_> = cx.tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| !f.rel.ends_with("_generated/stats.dm")).collect();
         let vars = crate::dm::dx::type_vars(&files);
         // Every type a marker names must be a type the tree defines somewhere (a typo is a DM error otherwise).
         let _ = split_args;
@@ -172,10 +173,10 @@ mod tests {
             "code/a.dm",
             "STAT(/obj/machinery, operable, ALL)\nSTAT(/mob/living, acts_via, MASK_AND, base = ORIGIN_ALL)\nSTAT(/atom, density, TOP)\nSTAT(/mob/living, stun, MAX, units = LIFE_CYCLE, reapply = REAPPLY_MAX)\n",
         )]);
-        assert!(text.contains("/obj/machinery/var/operable = TRUE\n"), "{}", text);
-        assert!(text.contains("/mob/living/var/acts_via = ORIGIN_ALL\n"), "{}", text);
+        assert!(text.contains("/obj/machinery/var/operable = TRUE //"), "{}", text);
+        assert!(text.contains("/mob/living/var/acts_via = ORIGIN_ALL //"), "{}", text);
         assert!(!text.contains("/atom/var/density"), "BYOND's own vars are never declared: {}", text);
-        assert!(text.contains("/mob/living/var/stun = null\n"), "{}", text);
+        assert!(text.contains("/mob/living/var/stun = null //"), "{}", text);
         assert!(text.contains("/obj/machinery/proc/__stat_operable()\n\treturn list(\"operable\", \"ALL\", list(id = STAT_OPERABLE))"), "{}", text);
         assert!(text.contains("list(id = STAT_STUN, units = LIFE_CYCLE, reapply = REAPPLY_MAX)"), "{}", text);
         assert!(text.contains("/datum/stat_decl/obj/machinery/__operable/spec()\n\treturn list(/obj/machinery, /obj/machinery/proc/__stat_operable)"), "{}", text);

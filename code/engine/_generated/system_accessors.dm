@@ -5,3 +5,10 @@
 /proc/night_shift_active()
 	return GLOB.nightshift_service.nightshift_active
 
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// SYSTEM_ACCESSOR(e0_night, e0_night_active, nameof(night)) at code/tests/engine/fixtures.dm:221: the e0_night system's `night`, read as a plain var.
+/proc/e0_night_active()
+	return GLOB.e0_night_service.night
+
+#endif

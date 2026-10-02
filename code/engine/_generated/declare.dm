@@ -149,6 +149,13 @@
 	into += entry_line(78)
 	into += list(rel_grants(nameof(species)))
 
+/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:204
+/obj/e0_fixture/lamp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 204, /obj/e0_fixture/lamp)
+	into += entry_line(205)
+	into += list(contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
+
 /// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:190
 /obj/e1_assembly/declared_entries(list/into)
 	..(into)

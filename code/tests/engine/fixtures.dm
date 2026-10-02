@@ -196,20 +196,33 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/
 #define E0_LAMP_DAY_RANGE 4
 
 /// A lamp whose light range is a stat read through the night-shift accessor (16.11), charged to LANE_SIMULATION.
-/// STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX)
-/// CAPABILITIES(/obj/e0_fixture/lamp,
-///   contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))   // lit_range(): night_shift_active() ? nightshift_range : brightness_range
 /obj/e0_fixture/lamp
 	name = "e0 lamp"
-	var/e0_lamp_range = 4
 
-/// The test-only system of proof 8 and the flag it owns.
-/// SYSTEM_DEF(e0_night)  /datum/system/e0_night: lane = LANE_WORLD, TRACKED(.., night, schema = bool)
-/// SYSTEM_ACCESSOR(e0_night, e0_night_active, nameof(night))
-/// CAPABILITIES(/datum/system/e0_night, on_change(nameof(night), then(PROC_REF(announce))))
+STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX)
+
+CAPABILITIES(/obj/e0_fixture/lamp, \
+	contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
+
+/// What the lamp reads: the night range while the night system says night, the day range otherwise.
+/obj/e0_fixture/lamp/proc/lit_range(datum/act/A)
+	return e0_night_active() ? E0_LAMP_NIGHT_RANGE : E0_LAMP_DAY_RANGE
+
+/// The test-only system of proof 8 and the flag it owns (a lazy system: the kernel does not boot it).
+/datum/system/e0_night
+	name = "e0 night"
+	lazy_only = TRUE
+	var/night = FALSE
+
+TRACKED(/datum/system/e0_night, night)
+
+GLOBAL_DATUM_INIT(e0_night_service, /datum/system/e0_night, new)
+
+SYSTEM_ACCESSOR(e0_night, e0_night_active, nameof(night))
+
 /// Flips the night flag (set_night(TRUE)): the marked cascade starts.
 /proc/e0_flip_night(night = TRUE)
-	ENGINE_STUB(ENGINE_E3, "test SYSTEM_DEF e0_night: set_night() flipping a tracked var that SYSTEM_ACCESSOR readers recompute (marked fan-out)")
+	GLOB.e0_night_service.set_night(night)
 
 /// The notice chain of proof 8: an on_notice handler publishes the next notice and counts itself. Starts a chain of `length` notices.
 /// ACTION-free: the notice is published with PUBLISH-equivalent act_done() on a test action.

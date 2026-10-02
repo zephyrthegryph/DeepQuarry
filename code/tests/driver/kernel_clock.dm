@@ -165,6 +165,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 	test_run_phase(KERNEL_PHASE_K, now)
 	test_run_phase(KERNEL_PHASE_S, now)
 	S.pass_begin(WORK_TEST_LIMIT)
+	stat_tick_begin()
 	for(var/phase in KERNEL_PHASE_N to KERNEL_PHASE_R)
 		test_run_phase(phase, now)
 	S.pass_end()
@@ -209,6 +210,7 @@ GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/re
 /// Runs one marked drain now: the change reactions, then the queued refreshes and appearances (E3 replaces the body with its
 /// budgeted marked drain; this is the drain point the kernel's phases call).
 /proc/kernel_drain_now()
+	stat_drain_point()
 	appearance_flush()
 
 #endif
