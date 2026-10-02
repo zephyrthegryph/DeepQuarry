@@ -172,6 +172,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 				SSair.rust_apply_pipe_commit()
 	if(length(batch.unbind_power_nodes))
 		vg_power_unbind_node_list(batch.unbind_power_nodes)
+		power_topology_edited(/datum/destroy_batch)
 	if(length(batch.release_heat_bodies))
 		vg_heat_body_release_list(batch.release_heat_bodies)
 	if(length(batch.unbind_movers))
@@ -218,6 +219,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		batch.unbind_power_nodes += entity
 		return
 	vg_power_unbind_node(entity)
+	power_topology_edited(owner)
 
 /// Removes pipe port `port` of `owner` (its gas to `mixture_handle`, 0:
 /// discarded) and frees the port datum. Returns TRUE when the batch queued

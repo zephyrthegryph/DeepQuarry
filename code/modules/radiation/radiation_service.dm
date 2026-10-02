@@ -36,7 +36,9 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/list/profile_source_targets = list()
 
 /datum/world_service/radiation/service_step(resumed)
-	flush_shielding()
+	// The first flush after a map load carries every insulating turf; it goes over several ticks.
+	if(!flush_shielding(budgeted = TRUE))
+		return FALSE
 	profile_max_queue = max(profile_max_queue, length(processing))
 	while (length(processing))
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
@@ -90,11 +92,17 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /// Sends every dirty turf's combined transmission (the turf's rad_insulation
 /// times that of everything directly on it) to the Rust insulation layer.
-/datum/world_service/radiation/proc/flush_shielding()
+/// Sends the dirty turfs' shielding to the Rust insulation layer. `budgeted` stops at the tick limit and returns
+/// FALSE with the rest still dirty (the lane carries on next tick); TRUE once nothing is left. A pulse's trace()
+/// flushes everything first, unbudgeted.
+/datum/world_service/radiation/proc/flush_shielding(budgeted = FALSE)
 	if(!length(dirty_turfs) && synced_maxz == world.maxz)
-		return
+		return TRUE
 	var/list/cells = list()
-	for(var/turf/T as anything in dirty_turfs)
+	var/list/turfs = dirty_turfs
+	var/done = 0
+	for(var/turf/T as anything in turfs)
+		done++
 		var/transmission = T.rad_insulation
 		for(var/atom/movable/on_turf as anything in contents_of(T))
 			transmission *= on_turf.rad_insulation
@@ -102,11 +110,15 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		cells += T.y
 		cells += T.z
 		cells += transmission
-	dirty_turfs = list()
+		if(budgeted && done < length(turfs) && TICK_CHECK)
+			break
+	// Turfs marked while this ran are past `done` and stay dirty with the unsent rest.
+	dirty_turfs = done < length(turfs) ? turfs.Copy(done + 1) : list()
 	synced_maxz = world.maxz
 	profile_shielding_flushes++
 	profile_shielding_cells += length(cells) / 4
 	vg_radiation_set_cells(world.maxx, world.maxy, cells)
+	return !length(dirty_turfs)
 
 /// Collects the pulse's targets on the source's z-level and computes the
 /// shielding to all of them in one Rust call (rays through the insulation layer).

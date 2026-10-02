@@ -4329,6 +4329,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!om_task_periodic_running(L), "ordinary emergency light retained SSobj polling")
+	// The drain is settled when the light must change, not every few seconds: a full cell keeps its first
+	// brightness step for two minutes, a cell about to run out wakes again soon.
+	var/obj/item/cell/C = L.emergency_cell()
+	C.charge = C.maxcharge
+	TEST_ASSERT(L.emergency_discharge_wait() >= 1 MINUTES, "a full emergency cell settles its drain every [L.emergency_discharge_wait()] ds")
+	C.charge = 0.5
+	TEST_ASSERT(L.emergency_discharge_wait() <= 10 SECONDS, "a nearly empty emergency cell waits [L.emergency_discharge_wait()] ds to run out")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates
@@ -4601,6 +4608,40 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_timer_slot_pending(A, "door_timer_token"), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
+
+/// A docking controller's "secure_open" ends with the door open and bolted, and the command done. The bolts dropped
+/// before the door had finished opening (operating) used to fail, leaving the command pending: the door retried it
+/// every second and autoclosed in between, cycling forever on every docked shuttle.
+/datum/unit_test/dq_airlock_secure_open_completes
+
+/datum/unit_test/dq_airlock_secure_open_completes/Run()
+	var/obj/machinery/door/airlock/external/A = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
+	A.set_density(TRUE)
+	A.operating = FALSE
+	cap_set(A, CAP_BOLTED, FALSE)
+	A.frozen = FALSE
+	A.id_tag = "dq_secure_open_test"
+	TEST_ASSERT(A.arePowerSystemsOn(), "the test airlock has no power")
+	var/datum/signal/S = new
+	S.data["tag"] = A.id_tag
+	S.data["command"] = "secure_open"
+	A.receive_signal(S)
+	var/waited = 0
+	while((A.cur_command || A.operating) && waited < 5 SECONDS)
+		om_test_ticks(1)
+		waited += world.tick_lag
+	TEST_ASSERT(!A.density, "secure_open left the door closed")
+	TEST_ASSERT(is_bolted(A), "secure_open left the door unbolted (it would autoclose and retry forever)")
+	TEST_ASSERT_NULL(A.cur_command, "secure_open never completed")
+	// Already open and unbolted (bolts raised by hand): the command only bolts it.
+	cap_set(A, CAP_BOLTED, FALSE)
+	A.receive_signal(S)
+	waited = 0
+	while((A.cur_command || A.operating) && waited < 5 SECONDS)
+		om_test_ticks(1)
+		waited += world.tick_lag
+	TEST_ASSERT(!A.density && is_bolted(A), "secure_open on an open door left it [A.density ? "closed" : "open"] and [is_bolted(A) ? "bolted" : "unbolted"]")
+	TEST_ASSERT_NULL(A.cur_command, "secure_open on an open door never completed")
 
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose
 

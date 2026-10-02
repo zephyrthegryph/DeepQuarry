@@ -721,6 +721,7 @@ GLOBAL_VAR_INIT(om_expect_sleep, FALSE)
 			log_qdel("OM: timer [proc_ref] on [E] ([E.type]) runs with [GLOB.om_resolve_nulled] deleted argument(s) passed as null")
 		if(timer_flags & OM_TIMER_OWNER_FIRST)
 			captured = captured ? list(E) + captured : list(E)
+		CHURN_COUNT(timers, "[E.type] [proc_ref]")
 		try
 			om_guarded_call(E, proc_ref, captured, is_global)
 		catch(var/exception/e)

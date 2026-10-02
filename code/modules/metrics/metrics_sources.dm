@@ -8,6 +8,16 @@
 	abstract_type = /datum/metrics_source
 	/// rate()'s memory: the last total seen for each counter key.
 	var/list/last_totals
+	/// What collect() cost since the service last reported it, ms.
+	var/cost_ms = 0
+	/// The source's name in its own cost metric (metrics/source/<name>/ms), from its type.
+	var/name
+
+/// The name the service reports this source's cost under: the type's path after /datum/metrics_source/.
+/datum/metrics_source/proc/metric_name()
+	if(!name)
+		name = replacetext("[type]", "/datum/metrics_source/", "")
+	return name
 
 /// Reports this source's values for the sample. `dt` is the seconds since the last sample.
 /datum/metrics_source/proc/collect(datum/world_service/server_metrics/M, dt)
@@ -86,6 +96,11 @@
 /// Each OM lane's cost and wake backlog, and each behaviour busy enough to matter
 /// (METRICS_BEHAVIOUR_MIN_MS_PER_S), filed under its lane.
 /datum/metrics_source/om
+	/// Each behaviour's last OM_STAT_MS total, by behaviour id (a flat list: this runs over every behaviour
+	/// each sample, so no string keys).
+	var/list/last_behaviour_ms
+	/// Each behaviour's metric name, by behaviour id, built once.
+	var/list/behaviour_metric
 
 /datum/metrics_source/om/collect(datum/world_service/server_metrics/M, dt)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
@@ -96,19 +111,37 @@
 	var/list/lane_ms = new /list(OM_LANE_COUNT)
 	for(var/i in 1 to OM_LANE_COUNT)
 		lane_ms[i] = 0
+	var/list/stats = sched.stats
+	var/stat_count = length(stats)
+	if(length(last_behaviour_ms) < stat_count)
+		LAZYINITLIST(last_behaviour_ms)
+		LAZYINITLIST(behaviour_metric)
+		last_behaviour_ms.len = stat_count
+		behaviour_metric.len = stat_count
 	for(var/datum/om/behaviour/B as anything in reg.behaviours)
-		if(!B?.id || B.id > length(sched.stats))
+		var/id = B?.id
+		if(!id || id > stat_count)
 			continue
-		var/list/S = sched.stats[min(B.id, OM_MAX_STAT_TYPES)]
+		var/list/S = stats[min(id, OM_MAX_STAT_TYPES)]
 		if(!S)
 			continue
 		var/lane = clamp(B.lane || LANE_SIMULATION, 1, OM_LANE_COUNT)
-		lane_ms[lane] += S[OM_STAT_MS]
-		var/ms_per_s = rate("b:[B.type]", S[OM_STAT_MS], dt)
-		if(ms_per_s >= METRICS_BEHAVIOUR_MIN_MS_PER_S)
-			M.gauge("behaviour/[B.name || B.type]/ms_per_s", ms_per_s, METRICS_CAT_BEHAVIOUR, lane_names[lane], "ms/s")
+		var/total = S[OM_STAT_MS]
+		lane_ms[lane] += total
+		var/previous = last_behaviour_ms[id]
+		last_behaviour_ms[id] = total
+		if(isnull(previous) || total == previous)
+			continue
+		var/ms_per_s = (total >= previous ? total - previous : total) / dt
+		if(ms_per_s < METRICS_BEHAVIOUR_MIN_MS_PER_S)
+			continue
+		var/metric = behaviour_metric[id]
+		if(!metric)
+			metric = "behaviour/[B.name || B.type]/ms_per_s"
+			behaviour_metric[id] = metric
+		M.gauge(metric, ms_per_s, METRICS_CAT_BEHAVIOUR, lane_names[lane], "ms/s")
 	for(var/i in 1 to OM_LANE_COUNT)
-		var/ms_per_s = rate("lane:[i]", lane_ms[i], dt)
+		var/ms_per_s = rate(lane_names[i], lane_ms[i], dt)
 		if(!isnull(ms_per_s))
 			M.gauge("lane/[lane_names[i]]/ms_per_s", ms_per_s, METRICS_CAT_LANE, lane_names[i], "ms/s")
 		M.gauge("lane/[lane_names[i]]/backlog", length(sched.wake_q?[i]), METRICS_CAT_LANE, lane_names[i], "wakes")

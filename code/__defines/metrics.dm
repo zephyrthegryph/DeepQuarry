@@ -28,6 +28,12 @@
 #define METRICS_CAT_STAFF "staff"
 #define METRICS_CAT_ERRORS "errors"
 #define METRICS_CAT_IO "io"
+/// What keeps an idle server busy (code/modules/metrics/metrics_churn.dm).
+#define METRICS_CAT_CHURN "churn"
+/// Keys of each churn kind reported per sample, busiest first.
+#define METRICS_CHURN_TOP 8
+/// Counts one `kind` event (draws, timers, signals, lights, power_edits) under `key` for the churn metrics.
+#define CHURN_COUNT(kind, key) GLOB.churn_census.kind[key] += 1
 
 /// Records an event if metrics are running; safe to call from anywhere, at any point of boot.
 #define METRICS_EVENT(kind, category, signature, ckey, message, payload) GLOB?.metrics_service?.event(kind, category, signature, ckey, message, payload)
@@ -45,8 +51,10 @@
 #define METRICS_SPIKE_USAGE 300
 /// Least time between two spike captures.
 #define METRICS_PROFILE_COOLDOWN (5 MINUTES)
+/// The first steady-play profile starts this long after the round start (metrics_profile_steady).
+#define METRICS_PROFILE_STEADY_FIRST (5 MINUTES)
 /// Procs kept in a profile capture's event, by self time.
-#define METRICS_PROFILE_TOP 25
+#define METRICS_PROFILE_TOP 40
 /// Call stack lines kept with a runtime.
 #define METRICS_RUNTIME_STACK_LINES 12
 #define METRICS_EVENT_PROFILE "profile"

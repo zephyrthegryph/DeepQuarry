@@ -21,6 +21,9 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	/// In-flight machinery and power stage accumulators. They deliberately survive yields.
 	var/current_cost_machinery = 0
 	var/current_cost_powernets = 0
+	/// Re-read every power machine's region on the next power step even if the cable topology held still (boot,
+	/// and anything that resets the grid lists by hand).
+	var/power_regions_stale = TRUE
 
 	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
 	/// one publication lock after the pipeline devices have calculated their requested flow.
@@ -106,10 +109,16 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 		power_grid_sync_problem(id)
 	// Every power machine's `power_region` is polled here, not pushed --
 	// a deferred `connect_to_network(FALSE)` (map load, and every
-	// `power_autoconnect()`) relies on this to eventually resolve.
-	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
-		if(!QDELETED(machine))
-			machine.power_refresh_network()
+	// `power_autoconnect()`) relies on this to eventually resolve. Region ids
+	// only change with the cable topology, so the poll runs only after it was
+	// edited (power_topology_edited(), committed above or by a Rust frame): an
+	// idle station's grid holds still, and two FFI calls per power machine every
+	// step added up.
+	if(power_regions_stale)
+		power_regions_stale = FALSE
+		for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
+			if(!QDELETED(machine))
+				machine.power_refresh_network()
 	power_poll_queue = REGISTRY_MEMBERS(REGISTRY_APCS) + REGISTRY_MEMBERS(REGISTRY_SMES)
 	power_poll_index = 1
 

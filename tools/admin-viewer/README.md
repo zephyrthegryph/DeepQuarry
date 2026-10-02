@@ -65,8 +65,12 @@ loaded yet. Run it after `dm-test`, `test-repeat` or `bench`, or as the last CI 
   breakdown and a cause: a subsystem, an object-model system, or "Outside MC" when time before or after the
   MC's own run dominates, with the slowest single entity step when one took over a tick). The tick is
   also split at the MC every tick from `/world/Tick` (`frame/*` metrics), and the server profiles the
-  first minute of each round and a few seconds after any tick over 300% (`profile` events, on the
-  Overruns page). Events (`METRICS_EVENT`)
+  first minute of each round, 30 s of steady play five minutes in and every 30 minutes after, and a few
+  seconds after any tick over 300% (`profile` events, on the Overruns page). Idle cost spread over many
+  small repeats is counted by kind (`churn/*`: redraws by type, OM timers by owner and proc, radio signals
+  by frequency and sender, light updates by source), and the sampler reports its own cost per source
+  (`metrics/*`, the "Metrics & I/O" category); it yields between sources and between flush statements, so
+  it never makes a tick run over. Events (`METRICS_EVENT`)
   come from single framework points: the admin verb dispatcher, the ticket list, the ticker, world/Error
   and the MC tick record. To measure something new, add a `/datum/metrics_source` subtype.
 * **Rollups and retention** (`src/maintenance.ts`): when a round ends, its per-metric distribution

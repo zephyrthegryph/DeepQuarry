@@ -13,6 +13,9 @@
 	/// The Rust power region this machine's node is on (polled, not pushed;
 	/// power_grid.dm), or 0.
 	var/power_region = 0
+	/// "entity@x,y,z" of the node last sent to Rust (power_send_node()), or null when it has none: a node already
+	/// there is not sent again.
+	var/tmp/power_node_at
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 	active_power_usage = 0
@@ -128,13 +131,21 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 /// `power_autoconnect()` after `vg_bind()` regardless, so every anchored
 /// machine still gets its node sent once `vg_entity` is real -- an early
 /// call here just has nothing to do yet.
-/obj/machinery/power/proc/power_send_node()
+/// `force` sends it even when this very node is already there (the admin re-register); otherwise a node already
+/// sent from this turf is not sent again: a machine with no cable under it retries connect_to_network() on every
+/// step, and each resend was a topology edit that made the power step re-read every machine's region.
+/obj/machinery/power/proc/power_send_node(force = FALSE)
 	var/turf/T = power_turf()
 	if(!istype(T))
 		return FALSE
 	if(!vg_entity)
 		return FALSE
+	var/at = "[vg_entity]@[T.x],[T.y],[T.z]"
+	if(at == power_node_at && !force)
+		return TRUE
 	vg_power_bind_machine(vg_entity, T.x, T.y, T.z)
+	power_node_at = at
+	power_topology_edited(src)
 	power_node_sent()
 	return TRUE
 
@@ -155,9 +166,11 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 		bound += M
 		entities += M.vg_entity
 		coords += list(T.x, T.y, T.z)
+		M.power_node_at = "[M.vg_entity]@[T.x],[T.y],[T.z]"
 	if(!length(bound))
 		return 0
 	vg_power_bind_machine_list(entities, coords)
+	power_topology_edited(/obj/machinery/power)
 	for(var/obj/machinery/power/M as anything in bound)
 		M.power_node_sent()
 	return length(bound)
@@ -197,6 +210,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power, REGISTRY_POWER_MACHINES)
 	if(!vg_entity)
 		return FALSE
 	vg_power_unbind_node(vg_entity)
+	power_node_at = null
+	power_topology_edited(src)
 	var/was = !!power_region
 	power_bind(0)
 	return was
