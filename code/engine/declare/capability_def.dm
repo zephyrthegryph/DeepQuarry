@@ -46,6 +46,7 @@ GLOBAL_VAR_INIT(capability_infos_built, FALSE)
 
 /// The info record of the definition type `cap_type` (granted(E, /datum/e0_cap/phased) names a type, not an id).
 /proc/capability_info_of_type(cap_type)
+	RETURN_TYPE(/datum/capability_info)
 	if(!GLOB.capability_infos_built)
 		capability_infos_build()
 	for(var/id in GLOB.capability_infos)

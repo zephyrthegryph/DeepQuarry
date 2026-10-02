@@ -129,7 +129,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		var/datum/capability/def = what
 		return def.cap_id
 	if(ispath(what, /datum/capability))
-		return capability_info_of_type(what)?.cap_id
+		var/datum/capability_info/info = capability_info_of_type(what)
+		return info?.cap_id
 	return null
 
 // ---- the attach path ----
@@ -340,7 +341,8 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 		var/datum/activation/base = activation_attach(holder, type_def, holder, null, SCOPE_TYPE, null, null)
 		if(base)
 			return // the attach restacked
-	var/list/stacks = cap_stacks(set_of[1].def)
+	var/datum/activation/first_activation = set_of[1]
+	var/list/stacks = cap_stacks(first_activation.def)
 	switch(stacks[1])
 		if(STACKS_UNIQUE)
 			var/first = TRUE
@@ -371,6 +373,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 
 /// The winning activation of a BEST or UNIQUE capability (the first running one), or null.
 /proc/winning_activation(datum/holder, cap_id, selector)
+	RETURN_TYPE(/datum/activation)
 	var/list/running = running_activations(holder, cap_id, selector)
 	return length(running) ? running[1] : null
 

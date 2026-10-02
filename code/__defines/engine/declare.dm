@@ -5,10 +5,12 @@
 // the last with a backslash, exactly as DECLARE_LOOT and DECLARE_INTERACTIONS already do. The generator, when it lands,
 // replaces the macros below with generated tables and leaves the call sites unchanged.
 //
-//	CAPABILITIES(/obj/machinery/power/apc, \
-//		powered_by(/datum/system/power, role = POWER_ROLE_LOAD), \
-//		owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type)), \
+//	CAPABILITIES(/obj/machinery/power/apc,
+//		powered_by(/datum/system/power, role = POWER_ROLE_LOAD),
+//		owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type)),
 //		extend("cover.open", wait(4 SECONDS)))
+// (each line but the last of a real declaration ends in a backslash; it is left out of this example because a backslash at the end of a
+// line comment continues the comment)
 //
 // Everything a declaration names is an entry (code/engine/declare/entries.dm): a flyweight datum interned by signature.
 // A type's entries are one list, built once per type from its parent's compiled table plus its own list
@@ -50,9 +52,9 @@
  *
  * `key` is the name of the param that is the selector (a text), or NONE. `stacks` is STACK, UNIQUE or BEST(param).
  */
-#define CAPABILITY_TYPE(name, cap_id, cap_type, key, stacks, params...) /proc/##name(params) { return cap_construct(cap_id, cap_type, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, cap_type, key, stacks, #name, #params); }
+#define CAPABILITY_TYPE(name, cap_id, cap_type, key, stacks, params...) /proc/##name(params) { RETURN_TYPE(cap_type); return cap_construct(cap_id, cap_type, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, cap_type, key, stacks, #name, #params); }
 /// A capability whose body returns entries: the same declaration; the entries are the definition's `/datum/capability/def/<name>/entries()`.
-#define CAPABILITY_DEF(name, cap_id, key, stacks, params...) /proc/##name(params) { return cap_construct(cap_id, /datum/capability/def/##name, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, /datum/capability/def/##name, key, stacks, #name, #params); }
+#define CAPABILITY_DEF(name, cap_id, key, stacks, params...) /proc/##name(params) { RETURN_TYPE(/datum/capability/def/##name); return cap_construct(cap_id, /datum/capability/def/##name, list(params), #params); };/datum/capdef_decl/c_##name/spec() { return list(cap_id, /datum/capability/def/##name, key, stacks, #name, #params); }
 
 /// stacks = STACK (default): every activation runs.
 #define STACK list("stack")
@@ -105,6 +107,11 @@
 
 /// A write the schema refused (the setter's value after schema_write()).
 #define SCHEMA_REJECT "\[schema rejected]"
+
+// ---- Messages (section 13) ----
+/// A declared message: MSG(cover/closed) is the /datum/msg/cover/closed type that MSG_DEF(cover/closed, ...) declares. A cap_keys() reason, a
+/// requirement's because = and a stage's text name messages this way.
+#define MSG(path) /datum/msg/##path
 
 // ---- State graphs (section 12) ----
 /// A named, reusable state graph of stages: STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(...), dismantle(...)).
