@@ -537,6 +537,13 @@
 #include "interim_frost_carrier_lifecycle.dm"
 #include "interim_artifact_blade_deletion.dm"
 #include "interim_iv_drip_dismantle.dm"
+#include "interim_flight_assignment_deletion.dm"
+#include "interim_fake_death_reagent_removal.dm"
+#include "interim_one_pizza_lifecycle.dm"
+#include "interim_bookcase_lifecycle.dm"
+#include "interim_camera_wire_actor.dm"
+#include "interim_machine_salvage_lifecycle.dm"
+#include "interim_containment_field_deletion.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -563,3 +570,4 @@
 #undef TEST_ASSERT_NOTEQUAL
 //#undef TEST_FOCUS - This define is used by vscode unit test extension to pick specific unit tests to run and appended later so needs to be used out of scope here
 #endif
+

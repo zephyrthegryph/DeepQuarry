@@ -38,3 +38,6 @@ changes:
   - bugfix: "Accessory registries retain all registered modifiers, and deleted looking-glass consoles stop their display programs."
   - bugfix: "Magic staves check the actual shooter's null rod before spending ammunition."
   - bugfix: "Charged artifact blades apply their destruction consequence to their recorded wielder."
+  - bugfix: "Deleted flight plans release unfinished expedition assignments, and removed fake-death reagents release their recipients."
+  - bugfix: "Containment beams collapse completely when a generator or beam tile is deleted."
+  - bugfix: "Camera wire cutting and mending retain the initiating operator."
