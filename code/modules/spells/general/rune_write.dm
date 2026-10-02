@@ -35,7 +35,7 @@
 	picked_beacon = beacon
 	return list(user)
 
-/datum/spell/rune_write/cast(null, mob/user = usr)
+/datum/spell/rune_write/cast(null, mob/user)
 	if(!GLOB.cultwords["travel"])
 		runerandom()
 	var/r = picked_rune

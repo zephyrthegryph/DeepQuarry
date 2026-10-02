@@ -44,3 +44,37 @@
 	TEST_ASSERT_EQUAL(spell.before_actor_ref, REF(user), "perform_cast passes the caster to the real range wrapper")
 	TEST_ASSERT_EQUAL(spell.cast_actor_ref, REF(user), "the same caster reaches the spell effect")
 	TEST_ASSERT_EQUAL(spell.cast_target_count, 2, "actor plumbing preserves the existing unfiltered effect target list")
+
+/// Proximity selection excludes the supplied caster until INCLUDEUSER is enabled.
+/datum/unit_test/interim_spell_proximity_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/caster = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/origin = allocate(/obj/item/pen, T)
+	var/datum/spell/targeted/projectile/spell = allocate(/datum/spell/targeted/projectile)
+	spell.cast_prox_range = 0
+	spell.spell_flags = NONE
+	var/list/targets = spell.choose_prox_targets(caster, origin)
+	TEST_ASSERT(!(caster in targets), "the explicit caster is excluded from proximity targets")
+	TEST_ASSERT(other in targets, "another living target in range remains eligible")
+	spell.spell_flags |= INCLUDEUSER
+	targets = spell.choose_prox_targets(caster, origin)
+	TEST_ASSERT(caster in targets, "INCLUDEUSER permits the explicit caster")
+	TEST_ASSERT(other in targets, "INCLUDEUSER preserves the other target")
+
+/// Charging a holder-var spell adjusts only the explicitly supplied actor's real status.
+/datum/unit_test/interim_spell_charge_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
+	var/datum/spell/spell = allocate(/datum/spell)
+	spell.charge_type = Sp_HOLDVAR
+	spell.holder_var_type = "stunned"
+	spell.holder_var_amount = 2 SECONDS
+	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "the supplied actor starts unstunned")
+	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "the bystander starts unstunned")
+	TEST_ASSERT(spell.take_charge(target, FALSE), "the real holder-var charge path succeeds")
+	TEST_ASSERT(target.has_status(EFFECT_STUNNED), "charging applies real stun to the supplied actor")
+	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "charging leaves the bystander unaffected")
+	spell.adjust_var(target, "stunned", -2 SECONDS)
+	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "signed adjustment removes the supplied actor's stun")

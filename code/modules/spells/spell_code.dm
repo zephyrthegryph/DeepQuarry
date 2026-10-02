@@ -138,7 +138,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 	else if(amount < 0)
 		target.mend(TREAT_OXYGENATION, -amount)
 
-/datum/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
+/datum/spell/proc/adjust_var(mob/living/target, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 	switch(type)
 		if("trauma")
 			spell_injure(target, INJURY_BLUNT, amount, list(TREAT_TISSUE_REPAIR, TREAT_PLATING_REPAIR))
