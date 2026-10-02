@@ -280,6 +280,22 @@ index), `generated_read_roots` (`READ_ROOT_HOLDER` 1, `ACTOR` 2, `HELD` 3, `TARG
 runtime. `system_accessors.dm` (`analyze gen system_accessors`): one `/proc/<name>()` per `SYSTEM_ACCESSOR`, returning
 `GLOB.<system>_service.<var>` (`SYSTEM_INSTANCE` in `sem/gen.rs`).
 
+`ids.dm` (`analyze gen declare_ids`, E1; included early in `deepquarry.dme`, before everything that names an id): the ids the markers
+declare, as `#define`s, sorted by name within each family: `STAT_<NAME>` (from 100001; a status, `units =`, also gets `STATUS_<NAME>` and
+`STAT_<NAME>_IMMUNE`), `CAP_X` (from 300, for a `CAPABILITY_TYPE/DEF` whose id no hand-written define gives), `SRC_<NAME>`,
+`STAGE_<GROUP>_<NAME>`, `GRAPH_X` and the capability-state ids of `cap_keys` (`COVER_OPEN`, as `CAPKEY_ID(CAP_COVER, 1)`). An id a
+hand-written `#define` already gives is left alone, so the contracts' hand ids keep working. `declare.dm` (`analyze gen declare`): for
+each `CAPABILITY_TYPE/DEF(name, CAP_X, [/datum/capability/x,] key =, stacks =, param = default, ...)` the datum's param vars with their
+defaults, the constructor `name(params)` (a real proc, so DM checks a call's named arguments) and the registration row the engine reads
+at boot; a registration row for each `cap_keys`, `STAGE_DEF`, `SOURCE_DEF` and `STATE_GRAPH`, with the `<cap>_<key>(holder)` accessor of
+each state key; and, for each `CAPABILITIES(T, entries...)`, `T/declared_entries(list/into)`: the entries copied as written (so
+`nameof(var)` and `PROC_REF(x)` resolve against `T`), each preceded by `entry_line(n)` so the explain tools say where it came from. Two
+rewrites: `link(A::a, B::b)` (`link` is a BYOND keyword) becomes `entry_link("A::a", "B::b")`, and `configure(CAP_X, "selector", param =
+value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`. Declarations in files under `code/tests/` go in an
+`#if defined(UNIT_TESTS)` block. A second `CAPABILITIES` list for one type is a diagnostic. DM cannot continue a macro call across lines,
+so a marker that spans lines ends each line but the last with a backslash (`DECLARE_LOOT` and `DECLARE_INTERACTIONS` already do); the
+generator drops the backslashes.
+
 ## Tooling gotchas
 
 * A `Tree::memo` init must not use rayon (`par_iter`, `join`): the initializing worker steals another lint's task while it waits,
