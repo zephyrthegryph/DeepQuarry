@@ -93,3 +93,7 @@ TRACKED(/obj/e3_wire, live)
 CAPABILITIES(/obj/e3_wire, \
 	ref_one(nameof(plugged), /obj/e3_machine), \
 	when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7)))
+
+/// A real machine, for the base stats declared on /obj/machinery.
+/obj/machinery/e3_probe
+	name = "e3 probe"

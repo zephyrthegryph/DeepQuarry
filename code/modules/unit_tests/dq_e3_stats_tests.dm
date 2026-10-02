@@ -372,3 +372,48 @@
 	TEST_ASSERT(ticks > 1, "so the cascade took more than one drain point")
 	TEST_ASSERT(settled, "and it settled: no effect was lost")
 	TEST_ASSERT_EQUAL(sample.e0_lamp_range, E0_LAMP_DAY_RANGE, "and the day returns")
+
+/datum/unit_test/dq_e3/settle_hop_index_follows_deletions
+
+/datum/unit_test/dq_e3/settle_hop_index_follows_deletions/run_e3()
+	var/list/fan = make_fan(3)
+	var/obj/e3_apc/A = fan[1]
+	var/list/loads = fan[2]
+	var/obj/e3_load/gone = loads[1]
+	var/obj/e3_load/kept = loads[2]
+	qdel(gone)
+	A.set_channel_on(FALSE)
+	TEST_ASSERT_EQUAL(stat_marked_count(), 2, "a deleted reader is no longer marked by the flip")
+	stat_drain_marked(LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(kept.e3_powered, FALSE, "the others settle")
+	// The target going: its readers lose the relation and read the default again.
+	qdel(A)
+	stat_drain_marked(LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(kept.e3_powered, TRUE, "with the APC gone a reader reads what an unnamed APC gives (powered)")
+	TEST_ASSERT_EQUAL(stat_marked_count(), 0, "nothing is left marked")
+
+/datum/unit_test/dq_e3/init_is_silent
+
+/datum/unit_test/dq_e3/init_is_silent/run_e3()
+	var/obj/e3_machine/watched = allocate(/obj/e3_machine)
+	test_record(watched)
+	var/obj/e3_machine/M = allocate(/obj/e3_machine)
+	var/list/events = test_recorded()
+	TEST_ASSERT_EQUAL(length(events), 0, "creating a machine whose stats have contributions publishes no delta")
+	TEST_ASSERT_EQUAL(M.e3_draw, 2, "though its stats are computed")
+	TEST_ASSERT_EQUAL(stat_marked_count(), 0, "and nothing is marked")
+
+/datum/unit_test/dq_e3/base_stat_vars_and_virtual_stats
+
+/datum/unit_test/dq_e3/base_stat_vars_and_virtual_stats/run_e3()
+	var/obj/machinery/e3_probe/M = allocate(/obj/machinery/e3_probe)
+	TEST_ASSERT_EQUAL(stat_value(M, STAT_OPERABLE), TRUE, "a virtual base stat (no var) reads its base through stat_value")
+	hold(M, STAT_OPERABLE, null, source())
+	TEST_ASSERT_EQUAL(stat_value(M, STAT_OPERABLE), FALSE, "and a hold on it vetoes")
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	TEST_ASSERT_EQUAL(H.can_act, TRUE, "can_act is a var on a living mob")
+	hold(H, STAT_CAN_ACT, null, source())
+	TEST_ASSERT_EQUAL(H.can_act, FALSE, "a veto from any source clears it")
+	TEST_ASSERT_EQUAL(H.acts_via, ORIGIN_ALL, "acts_via starts as every origin")
+	hold(H, STAT_ACTS_VIA, ORIGIN_CLICK | ORIGIN_UI, source())
+	TEST_ASSERT_EQUAL(H.acts_via, ORIGIN_CLICK | ORIGIN_UI, "MASK_AND narrows it")
