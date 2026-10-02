@@ -281,7 +281,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	data["homeScreen"] = modules_ui
 	data["weather"] = weather
 	data["aircontents"] = src.analyze_air()
-	data["feeds"] = compile_news()
+	data["feeds"] = compile_news(user)
 	data["latest_news"] = get_recent_news()
 	if(newsfeed_channel)
 		data["target_feed"] = data["feeds"][newsfeed_channel]
