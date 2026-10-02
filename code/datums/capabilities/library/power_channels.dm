@@ -2,15 +2,16 @@
 // breaker and night-shift lighting (doc/rewrite/dx_conventions.md §2). It owns their UI data
 // (data["caps"]["power"]), the channel indicator glows (the part "channel-<channel>-<mode>", emissive, while the holder
 // says power_channels_lit()) and the UI actions act_channel / act_breaker / act_nightshift, so the holder
-// writes none of them. State stays on the holder, behind a small interface of well-known procs:
-//	power_channel_mode(channel) / set_power_channel_mode(channel, mode)   POWER_CHANNEL_* / POWERCHAN_*
-//	power_channel_load(channel)                                           watts
-//	power_breaker() / set_power_breaker(on)
-//	power_nightshift() / set_power_nightshift(mode)                         NIGHTSHIFT_*
-//	power_nightshift_lit()
-//	power_channels_lit()                                                  draw the glows now
+// writes none of them. State stays on the holder, behind the capability's holder interface: procs of the capability
+// that take the holder (no proc is added to /atom; a holder with channels declares a capability subtype overriding them):
+//	channel_mode(holder, channel) / set_channel_mode(holder, channel, mode)   POWER_CHANNEL_* / POWERCHAN_*
+//	channel_load(holder, channel)                                             watts
+//	breaker(holder) / set_breaker(holder, on)
+//	nightshift(holder) / set_nightshift(holder, mode)                         NIGHTSHIFT_*
+//	nightshift_lit(holder)
+//	channels_lit(holder)                                                      draw the glows now
 //
-//	. += power_channels()
+//	. += power_channels(/datum/capability/power_channels/apc)
 
 /datum/capability/power_channels
 	layer_name = "power"
@@ -20,26 +21,27 @@
 	/// The night lighting breaker cycles for a second after each switch.
 	COOLDOWN_DECLARE(nightshift_cooldown)
 
-/proc/power_channels()
-	return list(new /datum/capability/power_channels)
+/// The channels; `type`: the holder's subtype implementing the holder interface.
+/proc/power_channels(type = /datum/capability/power_channels)
+	return list(new type)
 
 /// Channel titles, by POWER_CHANNEL_* + 1.
 GLOBAL_LIST_INIT(power_channel_titles, list("Equipment", "Lighting", "Environment"))
 
 /datum/capability/power_channels/draw(atom/holder, datum/look/look)
-	if(!holder.power_channels_lit())
+	if(!channels_lit(holder))
 		return
 	for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
-		look.part("channel-[channel]", "[holder.power_channel_mode(channel)]") // a text value: mode 0 is a state too
-		look.glow("channel-[channel]", "[holder.power_channel_mode(channel)]")
+		look.part("channel-[channel]", "[channel_mode(holder, channel)]") // a text value: mode 0 is a state too
+		look.glow("channel-[channel]", "[channel_mode(holder, channel)]")
 
 /datum/capability/power_channels/ui_data(atom/holder, mob/user, list/data)
 	var/list/channels = list()
 	for(var/channel in POWER_CHANNEL_EQUIPMENT to POWER_CHANNEL_ENVIRON)
 		channels += list(list(
 			"title" = GLOB.power_channel_titles[channel + 1],
-			"powerLoad" = round(holder.power_channel_load(channel)),
-			"status" = holder.power_channel_mode(channel),
+			"powerLoad" = round(channel_load(holder, channel)),
+			"status" = channel_mode(holder, channel),
 			"topicParams" = list(
 				"auto" = list("channel" = channel, "mode" = POWERCHAN_ON_AUTO),
 				"on" = list("channel" = channel, "mode" = POWERCHAN_ON),
@@ -47,9 +49,9 @@ GLOBAL_LIST_INIT(power_channel_titles, list("Equipment", "Lighting", "Environmen
 			),
 		))
 	data["powerChannels"] = channels
-	data["isOperating"] = holder.power_breaker()
-	data["nightshiftLights"] = holder.power_nightshift_lit()
-	data["nightshiftSetting"] = holder.power_nightshift()
+	data["isOperating"] = breaker(holder)
+	data["nightshiftLights"] = nightshift_lit(holder)
+	data["nightshiftSetting"] = nightshift(holder)
 
 /datum/capability/power_channels/ui_logged()
 	return GLOB.power_channels_logged
@@ -62,40 +64,40 @@ GLOBAL_LIST_INIT(power_channels_logged, list("channel" = LOG_GAME, "breaker" = L
 	mode = ui_number(mode, POWERCHAN_OFF_AUTO, POWERCHAN_ON_AUTO, round_to = 1)
 	if(isnull(channel) || isnull(mode))
 		return refuse(user, null)
-	holder.set_power_channel_mode(channel, mode)
+	set_channel_mode(holder, channel, mode)
 	return TRUE
 
 /datum/capability/power_channels/proc/act_breaker(mob/user, atom/holder)
-	holder.set_power_breaker(!holder.power_breaker())
+	set_breaker(holder, !breaker(holder))
 	return TRUE
 
 /datum/capability/power_channels/proc/act_nightshift(mob/user, atom/holder, nightshift)
 	nightshift = ui_number(nightshift, NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS, round_to = 1)
-	if(isnull(nightshift) || nightshift == holder.power_nightshift())
+	if(isnull(nightshift) || nightshift == nightshift(holder))
 		return refuse(user, null)
 	var/datum/power_channels_data/D = cap_data(holder, src)
 	if(!COOLDOWN_FINISHED(D, nightshift_cooldown))
 		return refuse(user, "[holder]'s night lighting circuit breaker is still cycling!")
 	COOLDOWN_START(D, nightshift_cooldown, 1 SECOND)
-	holder.set_power_nightshift(nightshift)
+	set_nightshift(holder, nightshift)
 	return TRUE
 
-// ---- the holder interface (defaults: no channels) ----
-/atom/proc/power_channel_mode(channel)
+// ---- the holder interface (defaults: no channels; a holder's subtype overrides them) ----
+/datum/capability/power_channels/proc/channel_mode(atom/holder, channel)
 	return POWERCHAN_OFF
-/atom/proc/set_power_channel_mode(channel, mode)
+/datum/capability/power_channels/proc/set_channel_mode(atom/holder, channel, mode)
 	return FALSE
-/atom/proc/power_channel_load(channel)
+/datum/capability/power_channels/proc/channel_load(atom/holder, channel)
 	return 0
-/atom/proc/power_breaker()
+/datum/capability/power_channels/proc/breaker(atom/holder)
 	return FALSE
-/atom/proc/set_power_breaker(on)
+/datum/capability/power_channels/proc/set_breaker(atom/holder, on)
 	return FALSE
-/atom/proc/power_nightshift()
+/datum/capability/power_channels/proc/nightshift(atom/holder)
 	return NIGHTSHIFT_AUTO
-/atom/proc/set_power_nightshift(mode)
+/datum/capability/power_channels/proc/set_nightshift(atom/holder, mode)
 	return FALSE
-/atom/proc/power_nightshift_lit()
+/datum/capability/power_channels/proc/nightshift_lit(atom/holder)
 	return FALSE
-/atom/proc/power_channels_lit()
+/datum/capability/power_channels/proc/channels_lit(atom/holder)
 	return FALSE

@@ -14,7 +14,8 @@
 // at another mixture (a pipe network rebuilt, a device joining one) atmos_air_set() re-arms it. A
 // port with no mixture yet has no watch until it gets one. Holder deletion cancels it.
 //
-// A type gives a device's ports through gas_at_port() (below).
+// The capability finds a device's ports itself (mixture_at(): a binary or unary pipe device's air, else the holder's own
+// return_air()); a holder with other ports declares a subtype overriding mixture_at().
 
 /// `when` values for watches_gas().
 #define PRESSURE_ABOVE 1
@@ -22,24 +23,6 @@
 #define TEMPERATURE_ABOVE 3
 #define TEMPERATURE_BELOW 4
 
-/// The gas mixture at pipe port `port` (a direction) of this atom, or null. With no port: the
-/// atom's own air. Devices with ports override it.
-/atom/proc/gas_at_port(port)
-	return return_air()
-
-/obj/machinery/atmospherics/binary/gas_at_port(port)
-	if(isnull(port))
-		return air1
-	if(port == dir)
-		return air2
-	if(port == turn(dir, 180))
-		return air1
-	return null
-
-/obj/machinery/atmospherics/unary/gas_at_port(port)
-	if(isnull(port) || port == dir)
-		return air_contents
-	return null
 
 /datum/capability/watches_gas
 	data_type = /datum/gas_watch_state
@@ -87,6 +70,19 @@
 	C.key = "watches_gas:[isnull(port) ? "air" : port]:[when]:[level]"
 	return C
 
+/// The gas mixture at pipe port `port` (a direction) of holder, or null. With no port: a pipe device's own air, else the
+/// holder's return_air().
+/datum/capability/watches_gas/proc/mixture_at(atom/holder, port)
+	var/obj/machinery/atmospherics/binary/B = holder
+	if(istype(B))
+		if(isnull(port) || port == turn(B.dir, 180))
+			return B.air1
+		return port == B.dir ? B.air2 : null
+	var/obj/machinery/atmospherics/unary/U = holder
+	if(istype(U))
+		return (isnull(port) || port == U.dir) ? U.air_contents : null
+	return holder.return_air()
+
 /// The per-holder watch: its Rust subscription and the mixture it is armed on.
 /datum/gas_watch_state
 	/// The world watch on the port's mixture, or null while the port has none.
@@ -101,7 +97,7 @@
 /// Points the watch at the mixture at the port now: nothing changes when it is the one already
 /// watched. A port that lost its mixture drops the watch.
 /datum/gas_watch_state/proc/rearm(atom/holder, datum/capability/watches_gas/C)
-	var/datum/gas_mixture/mixture = holder.gas_at_port(C.port)
+	var/datum/gas_mixture/mixture = C.mixture_at(holder, C.port)
 	var/id = mixture ? mixture.arena_id() : null
 	if(id == armed_id && (watch || isnull(id)))
 		return

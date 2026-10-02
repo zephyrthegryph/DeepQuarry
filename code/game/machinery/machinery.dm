@@ -468,8 +468,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 	return ..()
 
-/obj/machinery/proc/RefreshParts() //Placeholder proc for machines that are built using frames.
-	return
+/// The parts changed: a machine with cap_parts() re-derives its part stats (library/parts.dm). Legacy machines still
+/// override it to recompute ratings by hand; a converted machine declares part_stat()s and overrides nothing.
+/obj/machinery/proc/RefreshParts()
+	parts_refresh(src)
 
 /// Finalize the physical machine from its real installed parts. Individual
 /// machines still calculate functional ratings in RefreshParts(); this common

@@ -132,7 +132,7 @@
 /obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
 	test_air = mixture // ALLOW(ownership): a test fixture pointing at a mixture the test owns and deletes
 
-/obj/test_gas_holder/gas_at_port(port)
+/obj/test_gas_holder/return_air()
 	return test_air
 
 /obj/test_gas_holder/proc/on_cross(datum/native_watch/world/watch, reason, source, source_kind)

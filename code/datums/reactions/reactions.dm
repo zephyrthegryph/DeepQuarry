@@ -41,6 +41,8 @@
 	var/list/reads
 	/// PROC_REF on the holder, or a /proc path.
 	var/handler
+	/// A capability's own reaction (cap_rx()): the handler is a proc of this capability, called as handler(holder, ...).
+	var/datum/capability/cap
 	/// on_cross: ascending thresholds.
 	var/list/bands
 	var/urgent = FALSE
@@ -65,6 +67,25 @@
 	var/sig
 	/// True for a read folded in from derived() / generated_reads(): it feeds READERS, nothing runs.
 	var/implicit = FALSE
+
+/**
+ * Makes R a reaction of capability C: its handler is a PROC_REF on C, called as handler(holder, ...args) (the holder
+ * first, then what the reaction's contract passes). A capability's reactions() uses it so its handlers live on the
+ * capability, not as procs on every holder type: `. += cap_rx(src, after_op(CAP_EMAG, PROC_REF(committed)))`.
+ */
+/proc/cap_rx(datum/capability/C, datum/reaction/R)
+	R.cap = C
+	R.sig = "[R.sig]|cap:[C.type]:[C.key]"
+	return R
+
+/// Calls reaction R's handler on holder E with the contract's args: on the capability for a cap_rx() reaction.
+/proc/rx_call_reaction(datum/E, datum/reaction/R, ...)
+	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
+	if(R.cap)
+		return call(R.cap, R.handler)(arglist(list(E) + rest))
+	if(om_proc_is_global(R.handler))
+		return call(R.handler)(arglist(rest))
+	return call(E, R.handler)(arglist(rest))
 
 /proc/rx_reads_of(reads)
 	var/list/out = list()

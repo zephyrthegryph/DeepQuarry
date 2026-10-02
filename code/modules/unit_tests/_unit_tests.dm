@@ -119,6 +119,7 @@
 #include "dx_cap_panel_tests.dm"
 #include "dx_cap_powered_tests.dm"
 #include "dx_cap_wires_tests.dm"
+#include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_doors_tests.dm"
 #include "dx_cap_library_api_tests.dm"

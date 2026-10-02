@@ -41,7 +41,7 @@
 
 /datum/capability/writable/interactions(atom/holder)
 	// "write": a click with a pen or crayon, ahead of a rename by the same pen (WRITABLE_PRIORITY); a full page refuses.
-	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", TYPE_PROC_REF(/atom, cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = GLOBAL_PROC_REF(cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
+	var/datum/interaction/capability/write = adopt_entry(lib_op("Write", GLOBAL_PROC_REF(cap_writable_write), OP_SHAPE_USE_ON, using = pen_types, key = "write", needs = GLOBAL_PROC_REF(cap_writable_has_space), else_say = "there's no room left to write on it", works_broken = TRUE, works_unpowered = TRUE, priority = WRITABLE_PRIORITY))
 	return list(write)
 
 /datum/capability/writable/examine(atom/holder, mob/user)
@@ -105,23 +105,29 @@
 /proc/cap_writable_has_space(mob/user, atom/holder, obj/item/held)
 	return cap_writable_space(holder) > 0
 
-/atom/proc/cap_writable_write(mob/user, obj/item/held)
-	var/text = ask_text(user, "What would you like to write?", "Write", max_length = cap_writable_space(src), multiline = TRUE)
+/// Writes on holder: asks the text and adds it. Paper keeps its own window: the pen opens it in the write view (its
+/// fields and signatures). A holder that writes another way declares a subtype overriding it.
+/datum/capability/writable/proc/write(atom/holder, mob/user, obj/item/held)
+	var/obj/item/paper/P = holder
+	if(istype(P))
+		if(P.icon_state == "scrap")
+			return refuse(user, "\The [P] is too crumpled to write on.")
+		P.can_read_view = TRUE
+		P.tgui_view = "write"
+		P.tgui_interact(user)
+		return TRUE
+	var/text = ask_text(user, "What would you like to write?", "Write", max_length = cap_writable_space(holder), multiline = TRUE)
 	if(!text)
 		return UI_REFUSED
-	if(!cap_writable_add(src, text, held, user))
-		return refuse(user, "There's no room left to write on \the [src].")
-	play_sfx(src, SFX_BUREAUCRACY_PEN, 0.5)
-	act_message(user, src, self = span_notice("You write on %T%."), others = span_notice("%U% writes something on %T%."), item = held)
+	if(!cap_writable_add(holder, text, held, user))
+		return refuse(user, "There's no room left to write on \the [holder].")
+	play_sfx(holder, SFX_BUREAUCRACY_PEN, 0.5)
+	act_message(user, holder, self = span_notice("You write on %T%."), others = span_notice("%U% writes something on %T%."), item = held)
 	return TRUE
 
-/// Paper keeps its own window: the pen opens it in the write view (its fields and signatures).
-/obj/item/paper/cap_writable_write(mob/user, obj/item/held)
-	if(icon_state == "scrap")
-		return refuse(user, "\The [src] is too crumpled to write on.")
-	can_read_view = TRUE
-	tgui_view = "write"
-	tgui_interact(user)
-	return TRUE
+/// The write op's handler: its capability's write().
+/proc/cap_writable_write(atom/holder, mob/user, obj/item/held)
+	var/datum/capability/writable/C = cap_of(holder, /datum/capability/writable)
+	return C ? C.write(holder, user, held) : FALSE
 
 #undef WRITABLE_PRIORITY
