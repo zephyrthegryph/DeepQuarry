@@ -1,4 +1,5 @@
 author: "Codex"
 delete-after: true
 changes:
-  - bugfix: "Chemical synthesizer actions, reagent pour feedback, assembly prompts and microwave disposal now use the acting player consistently."
+  - bugfix: "Machine actions, item prompts, paperwork, library terminals and payment devices now use the acting player consistently."
+  - bugfix: "Cryo tubes correctly finish seating and buckling a newly inserted patient."
