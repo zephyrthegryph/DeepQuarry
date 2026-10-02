@@ -524,6 +524,9 @@
 #include "interim_reagent_scaled_capacity.dm"
 #include "interim_entopic_deletion.dm"
 #include "interim_appearance_callback_actor.dm"
+#include "interim_energy_arrow_lifecycle.dm"
+#include "interim_clown_egg_actor.dm"
+#include "interim_suspension_generator_deletion.dm"
 #include "interim_iv_drip_dismantle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
