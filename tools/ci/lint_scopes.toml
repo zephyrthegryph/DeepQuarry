@@ -57,6 +57,13 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums
 # system_boundary_lint.py SKIP_DIRS: unit tests read private state through system_debug().
 exempt_prefixes = ["code/modules/unit_tests/"]
 
+[lint.base_vars.lists]
+# base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
+# tests and benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept
+# verbatim). `base_var` counts every path, so these are lists the rule reads, not whole-lint exemptions.
+list_init_exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+list_init_exempt_files = ["code/__defines/tgs.dm"]
+
 [lint.latent]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
 exempt_contains = ["/unit_tests/"]
