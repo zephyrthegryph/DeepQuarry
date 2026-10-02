@@ -373,7 +373,9 @@ impl ProcedureFragments {
                 if !fragment.words.is_empty()||!fragment.validate_metadata() {continue;}
                 self.stats.decode_seconds+=started.elapsed().as_secs_f64();
                 let charge=fragment.charge();if retained.saturating_add(charge)>32*1024*1024 {continue;}
-                *retained+=charge;decoded.insert(payload.clone(),Arc::new(fragment));
+                *retained+=charge;
+                let fragment=Arc::new(fragment);self.retain_metadata(payload.clone(),Arc::clone(&fragment));
+                decoded.insert(payload.clone(),fragment);
             }},
             Err(error) if error.kind()==std::io::ErrorKind::InvalidInput&&payloads.len()>1=>{
                 let middle=payloads.len()/2;self.read_metadata_payloads(store,&payloads[..middle],decoded,retained);
@@ -550,6 +552,14 @@ impl ProcedureFragments {
             _=>{}
         }
     }
+    /// The retained physical projection owns metadata only. Its verified leaf
+    /// remains the authority for code; logical hydration is an explicit fallback.
+    fn retain_metadata(&mut self,payload:String,mut fragment:Arc<OutputFragment>) {
+        if fragment.wire_code.is_some() {
+            if let Some(fragment)=Arc::get_mut(&mut fragment) {fragment.words=Arc::from([]);}
+        }
+        self.retain_decoded(payload,fragment);
+    }
     fn retain_decoded(&mut self, payload: String, fragment: Arc<OutputFragment>) {
         if self.resident.contains_key(&payload) { return; }
         let charge = fragment.charge();
@@ -570,7 +580,8 @@ impl ProcedureFragments {
         self.tick += 1; self.resident_bytes += charge;
         if admitted { self.admitted_bytes += charge; }
         else { self.recency.push_back((payload.clone(), self.tick)); }
-        let fragment=crate::shared_artifacts::intern("output-fragment",&payload,fragment);
+        let stage=if fragment.words.is_empty()&&fragment.wire_code.is_some() {"output-metadata-fragment"}else{"output-fragment"};
+        let fragment=crate::shared_artifacts::intern(stage,&payload,fragment);
         self.resident.insert(payload, Resident { fragment, charge, used: self.tick, admitted, revision: self.revision });
     }
     pub fn get(&mut self, key: &crate::ProcKey, descriptor: &crate::ProcDescriptor, candidate: &str) -> Option<Arc<OutputFragment>> {
@@ -609,7 +620,7 @@ impl ProcedureFragments {
         self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.namespace,
             crate::lower_cache::shared_binding_fingerprint(&key)), handle_bytes));
         self.install_handle(key, handle);
-        self.retain_decoded(payload, Arc::new(fragment)); self.stats.built += 1;
+        self.retain_metadata(payload, Arc::new(fragment)); self.stats.built += 1;
         // Keep the byte bound unchanged; tiny immutable fragments can share
         // larger transactions instead of paying a synchronous commit per 1024
         // procedures. Source-order emission and atomicity remain unchanged.
