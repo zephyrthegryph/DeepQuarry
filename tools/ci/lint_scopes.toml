@@ -109,6 +109,15 @@ exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore
 # file (the exempt ones above included) is checked.
 step_exempt_prefixes = ["code/modules/unit_tests/"]
 
+[lint.silent_catch]
+# silent_catch_lint.py: exempt_path() (unit tests catch on purpose; benchmarks; the vendored TGS DMAPI).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.silent_catch.lists]
+# silent_catch_lint.py STRICT_DIRS: the object-model core, lifecycle, the controllers and the error handler (everything
+# that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
+strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/modules/error_handler/"]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
