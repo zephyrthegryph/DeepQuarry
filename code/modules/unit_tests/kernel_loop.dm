@@ -1,46 +1,85 @@
-// The kernel as the host loop (code/controllers/kernel/loop.dm): there is no MC queue, the failsafe watches the kernel,
-// the loop can be restarted, and the gameplay systems that used to be subsystems run as kernel work.
+// The kernel as the host loop (code/controllers/kernel/loop.dm): there is no Master Controller and no subsystem queue, the
+// watchdog watches the kernel, the loop can be restarted, and the systems that used to be subsystems run as kernel work.
 
-/// The kernel owns the loop: every subsystem that fires is a kernel host service, Master's values keep their meaning,
-/// and the host lists hold the phases K and G services.
+/// The kernel owns the loop: the host systems' work runs as work items in phases K and G, and the kernel's values keep their
+/// meaning.
 /datum/unit_test/kernel_loop_is_host
 
 /datum/unit_test/kernel_loop_is_host/Run()
 	var/datum/controller/kernel/K = kernel()
 	TEST_ASSERT(K.loop_gen > 0, "a kernel loop generation is running")
-	TEST_ASSERT_EQUAL(Master.init_stage_completed, INITSTAGE_MAX, "the loop runs at the last init stage")
-	TEST_ASSERT(Master.current_runlevel >= 1, "Master keeps the run level the kernel reads")
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		if(S.flags & SS_NO_FIRE)
-			continue
-		TEST_ASSERT(S.flags & SS_KERNEL_HOSTED, "[S.type] fires, so the kernel must host it (there is no MC queue)")
-		TEST_ASSERT(S.state != SS_QUEUED, "[S.type] is not in a queue")
-	TEST_ASSERT(SSinput in K.hosted_k, "input is a phase K host")
-	TEST_ASSERT(SSverb_manager in K.hosted_k, "verb_manager is a phase K host")
-	TEST_ASSERT(SStgui in K.hosted_k, "the tgui transport is a phase K host")
-	TEST_ASSERT(SSdbcore in K.hosted_k, "dbcore is a phase K host")
-	TEST_ASSERT(SSprofiler in K.hosted_k, "the profiler is a phase K host")
-	TEST_ASSERT(SSgarbage in K.hosted_g, "garbage is the phase G host")
-	TEST_ASSERT(!(SSgarbage in K.hosted_k), "garbage is not also a phase K host")
-	// Master.x is the loop's value, written by the kernel.
-	var/iteration_before = Master.iteration
+	TEST_ASSERT_EQUAL(Kernel.init_stage_completed, INITSTAGE_MAX, "the loop runs at the last init stage")
+	TEST_ASSERT(Kernel.current_runlevel >= 1, "the kernel keeps the run level")
+	var/list/key_phase = list(
+		"[/datum/system/tgui]:refresh_autoupdating" = KERNEL_PHASE_K,
+		"[/datum/system/profiler]:sample" = KERNEL_PHASE_K,
+		"[/datum/system/garbage]:collect" = KERNEL_PHASE_G,
+		"[/datum/system/input]:drain_step" = KERNEL_PHASE_K,
+	)
+	for(var/key in key_phase)
+		var/datum/work_item/W = K.work_by_key[key]
+		TEST_ASSERT(W, "[key] is a registered work item")
+		TEST_ASSERT_EQUAL(W.phase, key_phase[key], "[key] runs in phase [phase_letter(key_phase[key])]")
+	// Kernel.x is the loop's value, written by the kernel.
+	var/iteration_before = Kernel.iteration
 	var/ticks_before = K.ticks
-	var/tgui_before = SStgui.times_fired
-	sleep(2 SECONDS)
+	var/host_before = SSgarbage.times_fired
+	sleep(3 SECONDS)
 	TEST_ASSERT(K.ticks > ticks_before, "the kernel loop ticks")
-	TEST_ASSERT_EQUAL(Master.iteration - iteration_before, K.ticks - ticks_before, "Master.iteration counts the kernel's ticks")
-	TEST_ASSERT_EQUAL(Master.last_run, K.last_tick, "Master.last_run is the kernel heartbeat")
-	TEST_ASSERT(SStgui.times_fired > tgui_before, "a host service on a longer wait fires from the kernel")
+	TEST_ASSERT_EQUAL(Kernel.iteration - iteration_before, K.ticks - ticks_before, "Kernel.iteration counts the kernel's ticks")
+	TEST_ASSERT_EQUAL(Kernel.last_run, K.last_tick, "Kernel.last_run is the kernel heartbeat")
+	TEST_ASSERT(SSgarbage.times_fired > host_before, "a host system on a longer wait runs from the kernel")
 
-/// The failsafe watches kernel.last_tick, and Recreate_kernel() replaces the loop without doubling it.
-/datum/unit_test/kernel_failsafe_watches_kernel
+/// The OM scheduler's pass is made of kernel work items: one per piece, first in their phase (and lane) lists, and the audit.
+/datum/unit_test/kernel_scheduler_is_work_items
 
-/datum/unit_test/kernel_failsafe_watches_kernel/Run()
+/datum/unit_test/kernel_scheduler_is_work_items/Run()
 	var/datum/controller/kernel/K = kernel()
-	sleep(Failsafe.processing_interval + 2)
-	TEST_ASSERT(Failsafe.kernel_tick_seen > 0, "the failsafe has read the kernel heartbeat")
-	TEST_ASSERT(K.last_tick - Failsafe.kernel_tick_seen <= Failsafe.processing_interval * 2, "it reads a recent one: [Failsafe.kernel_tick_seen] vs [K.last_tick]")
-	TEST_ASSERT_EQUAL(Failsafe.defcon, 5, "a ticking kernel keeps the failsafe at defcon 5")
+	var/owner = /datum/system/behaviours
+	var/list/keys = list(
+		"[owner]:sched_deadlines" = KERNEL_PHASE_D,
+		"[owner]:sched_borrow" = KERNEL_PHASE_P,
+		"[owner]:sched_leftovers" = KERNEL_PHASE_R,
+		"[owner]:audit_step" = KERNEL_PHASE_G,
+	)
+	for(var/lane in 1 to OM_LANE_COUNT)
+		keys["[owner]:sched_lane_[lane]"] = KERNEL_PHASE_P
+	for(var/key in keys)
+		var/datum/work_item/W = K.work_by_key[key]
+		TEST_ASSERT(W, "[key] is a registered work item")
+		if(W)
+			TEST_ASSERT_EQUAL(W.phase, keys[key], "[key] runs in phase [phase_letter(keys[key])]")
+	var/list/deadlines = K.items_of_phase(KERNEL_PHASE_D)
+	var/datum/work_item/head = deadlines[1]
+	TEST_ASSERT_EQUAL(head.key, "[owner]:sched_deadlines", "the deadline wheel runs ahead of the phase's other items")
+	var/list/leftovers = K.items_of_phase(KERNEL_PHASE_R)
+	var/datum/work_item/tail_head = leftovers[1]
+	TEST_ASSERT_EQUAL(tail_head.key, "[owner]:sched_leftovers", "the leftover pass runs ahead of the phase's other items")
+	for(var/lane in 1 to OM_LANE_COUNT)
+		var/list/lane_items = K.phase_lane_items[lane]
+		var/datum/work_item/first_of_lane = lane_items[1]
+		var/want = (lane == LANE_URGENT) ? "[owner]:sched_borrow" : "[owner]:sched_lane_[lane]"
+		TEST_ASSERT_EQUAL(first_of_lane.key, want, "lane [lane] starts with its scheduler piece")
+	var/datum/work_item/borrow = K.work_by_key["[owner]:sched_borrow"]
+	var/datum/work_item/lane_piece = K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]
+	var/runs_before = K.sched.runs
+	var/lane_runs_before = lane_piece.runs
+	sleep(1 SECONDS)
+	TEST_ASSERT(borrow.runs > 0, "the borrow piece runs from the kernel")
+	TEST_ASSERT(K.sched.runs > runs_before, "scheduler passes keep running")
+	TEST_ASSERT(lane_piece.runs > lane_runs_before, "a lane piece runs each pass")
+
+/// The watchdog watches kernel.last_tick, and Recreate_kernel() replaces the loop without doubling it.
+/datum/unit_test/kernel_watchdog_watches_kernel
+
+/datum/unit_test/kernel_watchdog_watches_kernel/Run()
+	var/datum/controller/kernel/K = kernel()
+	var/datum/kernel_watchdog/watchdog = K.watchdog
+	TEST_ASSERT_NOTNULL(watchdog, "the kernel started its watchdog")
+	sleep(watchdog.processing_interval + 2)
+	TEST_ASSERT(watchdog.kernel_tick_seen > 0, "the watchdog has read the kernel heartbeat")
+	TEST_ASSERT(K.last_tick - watchdog.kernel_tick_seen <= watchdog.processing_interval * 2, "it reads a recent one: [watchdog.kernel_tick_seen] vs [K.last_tick]")
+	TEST_ASSERT_EQUAL(watchdog.defcon, 5, "a ticking kernel keeps the watchdog at defcon 5")
 	TEST_ASSERT(K.stack_end_detector?.check(), "the kernel's stack detector is alive")
 
 	var/generation = K.loop_gen
@@ -59,38 +98,24 @@
 	TEST_ASSERT(ticks > 0, "the restarted kernel ticks")
 	TEST_ASSERT(ticks <= elapsed + 1, "one loop runs (not two): [ticks] kernel ticks in [elapsed] world ticks")
 
-/// A hosted run that runtimes is caught: the tick goes on and the fault is counted.
-/datum/unit_test/kernel_host_fault_is_contained
+/// reset_work() drops every in-flight run, so the next loop starts the items clean.
+/datum/unit_test/kernel_reset_work
 
-/datum/unit_test/kernel_host_fault_is_contained/Run()
-	var/datum/controller/kernel/K = kernel()
-	var/faults_before = K.phase_faults
-	var/expected_before = K.expect_errors
-	K.expect_errors = TRUE
-	var/datum/controller/subsystem/test_host/host
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		if(istype(S, /datum/controller/subsystem/test_host))
-			host = S
-	TEST_ASSERT(host, "the fixture host exists")
-	K.run_hosted(host, TICK_LIMIT_RUNNING, FALSE)
-	K.expect_errors = expected_before
-	TEST_ASSERT_EQUAL(K.phase_faults, faults_before + 1, "the runtime was counted as a kernel fault")
-	TEST_ASSERT_EQUAL(host.state, SS_IDLE, "the host is idle again, not left running")
-	TEST_ASSERT(host.next_fire > world.time, "the host is scheduled for its next run")
+/datum/unit_test/kernel_reset_work/Run()
+	var/datum/controller/kernel/K = new
+	var/datum/test_work_owner/O = new
+	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner, test_work_item(O, interval = 100))
+	W.cursor = 5
+	W.yielded = TRUE
+	W.next_run = 1000
+	K.reset_work()
+	TEST_ASSERT_EQUAL(W.cursor, 0, "an open sweep is closed")
+	TEST_ASSERT(!W.yielded, "a yield is forgotten")
+	TEST_ASSERT_EQUAL(W.next_run, 0, "and the item is due")
 
-/// A host service that always runtimes when run by hand (fixture: SS_NO_FIRE keeps the kernel from ever hosting it).
-/datum/controller/subsystem/test_host
-	name = "test host"
-	flags = SS_NO_FIRE | SS_NO_INIT
-	wait = 10 SECONDS
+// ---------------------------------------------------------------- the systems
 
-// ALLOW(subsystem_fire): test fixture, only ever run by hand
-/datum/controller/subsystem/test_host/fire(resumed = FALSE)
-	CRASH("test host fault")
-
-// ---------------------------------------------------------------- the converted systems
-
-/// SSx is the system instance (GLOBAL_REAL alias), booted in the DAG, and Master.subsystems no longer lists it.
+/// SSx is the system instance (GLOBAL_REAL alias), booted in the DAG.
 /datum/unit_test/system_converted_aliases
 
 /datum/unit_test/system_converted_aliases/Run()
@@ -100,7 +125,10 @@
 		/datum/system/job = SSjob, /datum/system/lighting = SSlighting, /datum/system/mapping = SSmapping,
 		/datum/system/media_tracks = SSmedia_tracks, /datum/system/nerdle = SSnerdle, /datum/system/persistence = SSpersistence,
 		/datum/system/robot_sprites = SSrobot_sprites, /datum/system/shuttles = SSshuttles, /datum/system/ticker = SSticker,
-		/datum/system/speech_controller = SSspeech_controller, /datum/system/native = SSvg,
+		/datum/system/input = SSinput, /datum/system/native = SSvg, /datum/system/assets = SSassets, /datum/system/atoms = SSatoms,
+		/datum/system/behaviours = SSbehaviours, /datum/system/dbcore = SSdbcore, /datum/system/early_assets = SSearly_assets,
+		/datum/system/garbage = SSgarbage, /datum/system/overlays = SSoverlays, /datum/system/profiler = SSprofiler,
+		/datum/system/sqlite = SSsqlite, /datum/system/tgui = SStgui,
 	)
 	var/list/table = system_table()
 	for(var/path in converted)
@@ -109,72 +137,60 @@
 		TEST_ASSERT_EQUAL(table[path], S, "[path]: the SS global is the registered instance")
 		TEST_ASSERT(S.initialized, "[path] booted in the DAG")
 		TEST_ASSERT(S in kernel_boot_systems(), "[path] is a boot node")
-		for(var/datum/controller/subsystem/SS as anything in Master.subsystems)
-			TEST_ASSERT(SS.type != path, "[path] is no longer a subsystem")
 	TEST_ASSERT_EQUAL(SSvg, native_system(), "SSvg is the native system")
 	TEST_ASSERT(SSvg.entity_census()["dm_bound"] >= 0, "the entity table lives on the native system")
 	// The boot order still holds: each needs its needs.
 	for(var/path in converted)
 		var/datum/system/S = converted[path]
 		for(var/need in S.needs)
-			if(ispath(need, /datum/system))
-				var/datum/system/dep = table[need]
-				TEST_ASSERT(dep?.initialized, "[path] needs [need], which booted")
-				TEST_ASSERT(dep.init_time_ms >= 0, "[need] recorded its boot time")
+			var/datum/system/dep = table[need]
+			TEST_ASSERT(dep?.initialized, "[path] needs [need], which booted")
+			TEST_ASSERT(dep.init_time_ms >= 0, "[need] recorded its boot time")
 
-/// The fire() shim: a system with a fire(resumed) body runs it as a kernel work item, with MC_TICK_CHECK pauses
-/// turned into yields and resumes.
-/datum/unit_test/system_fire_shim
+/// A system's periodic work: ready() is its gate, and the kernel reports each run of its items to note_run().
+/datum/unit_test/system_note_run
 
-/datum/unit_test/system_fire_shim/Run()
-	var/datum/system/test_fire/S = new
+/datum/unit_test/system_note_run/Run()
+	var/datum/system/test_runs/S = new
 	S.initialized = TRUE
-	TEST_ASSERT(S.fire_ready(), "a booted system that may fire is ready")
+	TEST_ASSERT(S.work_ready(), "a booted system that may run is ready")
 	S.can_fire = FALSE
-	TEST_ASSERT(!S.fire_ready(), "can_fire = FALSE parks the work")
+	TEST_ASSERT(!S.work_ready(), "can_fire = FALSE parks the work")
 	S.can_fire = TRUE
-	// First slice: the body pauses once.
-	S.pause_next = TRUE
-	TEST_ASSERT_EQUAL(S.fire_step(0), STEP_YIELD, "a paused body yields")
-	TEST_ASSERT(S.fire_resumed, "the next slice is a resume")
-	TEST_ASSERT_EQUAL(S.times_fired, 0, "a yield is not a completed run")
-	TEST_ASSERT_EQUAL(S.fire_step(0), STEP_DONE, "the resumed slice completes")
-	TEST_ASSERT_EQUAL(length(S.calls), 2, "fire() ran twice")
-	TEST_ASSERT_EQUAL(S.calls[1], FALSE, "the first call was not a resume")
-	TEST_ASSERT_EQUAL(S.calls[2], TRUE, "the second call was the resume")
-	TEST_ASSERT_EQUAL(S.times_fired, 1, "one run completed")
-	TEST_ASSERT(!S.fire_resumed, "and the state is clean")
-	TEST_ASSERT_EQUAL(S.state, SS_IDLE, "the system is idle between runs")
-	// A body that finishes in one slice.
-	TEST_ASSERT_EQUAL(S.fire_step(0), STEP_DONE, "a body that does not pause completes")
+	S.note_run(4, TRUE)
+	TEST_ASSERT_EQUAL(S.times_fired, 0, "a yielded run is not a completed one")
+	TEST_ASSERT_EQUAL(S.run_ms, 4, "but its cost is recorded")
+	S.note_run(6, FALSE)
+	TEST_ASSERT_EQUAL(S.times_fired, 1, "a finished run counts")
+	TEST_ASSERT_EQUAL(S.fire_cost, 6, "its cost is the first average")
+	S.note_run(2, FALSE)
 	TEST_ASSERT_EQUAL(S.times_fired, 2, "two runs completed")
+	TEST_ASSERT(S.fire_cost < 6 && S.fire_cost > 2, "the cost is a running average")
 
-/datum/system/test_fire
-	abstract_type = /datum/system/test_fire
-	var/pause_next = FALSE
-	// ALLOW(instance_list): test fixture, one instance per test run
-	var/list/calls = list()
+/datum/system/test_runs
+	abstract_type = /datum/system/test_runs
 
-/datum/system/test_fire/fire(resumed = FALSE)
-	calls += resumed
-	if(pause_next)
-		pause_next = FALSE
-		pause()
+/// air, lighting, the ticker and the other former subsystems run from the kernel's work items, in the phases the host table gives.
+/datum/unit_test/system_work_items
 
-/// air, lighting and the ticker run their fire() bodies from the kernel's work items.
-/datum/unit_test/system_fire_work_items
-
-/datum/unit_test/system_fire_work_items/Run()
+/datum/unit_test/system_work_items/Run()
 	var/datum/controller/kernel/K = kernel()
-	for(var/datum/system/S as anything in list(SSair, SSlighting, SSticker))
-		var/datum/work_item/W = K.work_by_key["[S.type]:fire_step"]
-		TEST_ASSERT(W, "[S.type] registered its fire work item")
-		TEST_ASSERT(!W.parked, "[S.type]'s work item is not parked")
-		TEST_ASSERT_EQUAL(W.owner(), S, "the item runs on the system")
-	var/datum/work_item/air = K.work_by_key["[/datum/system/air]:fire_step"]
+	var/list/expected = list(
+		"[/datum/system/air]:atmos_step" = KERNEL_PHASE_N,
+		"[/datum/system/lighting]:light_step" = KERNEL_PHASE_K,
+		"[/datum/system/ticker]:round_step" = KERNEL_PHASE_K,
+	)
+	for(var/key in expected)
+		var/datum/work_item/W = K.work_by_key[key]
+		TEST_ASSERT(W, "[key] is a registered work item")
+		TEST_ASSERT(!W.parked, "[key] is not parked")
+		TEST_ASSERT(W.system_owned, "[key] reports its runs to its system")
+		TEST_ASSERT_EQUAL(W.phase, expected[key], "[key] runs in phase [phase_letter(expected[key])]")
+	var/datum/work_item/air = K.work_by_key["[/datum/system/air]:atmos_step"]
 	TEST_ASSERT_EQUAL(air.interval, SSair.wait, "air's every() is its old wait")
 	TEST_ASSERT_EQUAL(air.lane, LANE_SIMULATION, "air runs on the simulation lane")
-	var/datum/work_item/light = K.work_by_key["[/datum/system/lighting]:fire_step"]
+	TEST_ASSERT_EQUAL(air.owner(), SSair, "the item runs on the system")
+	var/datum/work_item/light = K.work_by_key["[/datum/system/lighting]:light_step"]
 	TEST_ASSERT_EQUAL(light.interval, WORK_EVERY_TICK, "lighting runs every tick (it was a ticker)")
 	TEST_ASSERT_EQUAL(light.lane, LANE_PRESENTATION, "lighting is presentation work (sheddable under overload)")
 	var/air_before = SSair.times_fired
@@ -186,35 +202,7 @@
 		sleep(1 SECONDS)
 		if(SSair.times_fired > air_before && SSlighting.times_fired > light_before && SSticker.times_fired > ticker_before)
 			break
-	TEST_ASSERT(SSair.times_fired > air_before, "air fires from the kernel")
-	TEST_ASSERT(SSlighting.times_fired > light_before, "lighting fires from the kernel")
-	TEST_ASSERT(SSticker.times_fired > ticker_before, "the ticker fires from the kernel")
+	TEST_ASSERT(SSair.times_fired > air_before, "air runs from the kernel")
+	TEST_ASSERT(SSlighting.times_fired > light_before, "lighting runs from the kernel")
+	TEST_ASSERT(SSticker.times_fired > ticker_before, "the ticker runs from the kernel")
 	TEST_ASSERT_EQUAL(length(K.work_errors), 0, "the work graph has no errors")
-
-/// The speech controller is a system with its own verb lane: queued verbs run from its phase K work item, and it is
-/// not SSverb_manager's lane.
-/datum/unit_test/system_speech_controller
-
-/// Counts the verbs the speech lane ran.
-/datum/speech_probe
-	var/hits = 0
-
-/datum/speech_probe/proc/hit()
-	hits++
-
-/datum/unit_test/system_speech_controller/Run()
-	var/datum/controller/kernel/K = kernel()
-	var/datum/verb_lane/lane = verb_lane_of(SSspeech_controller)
-	TEST_ASSERT(lane, "the speech controller owns a verb lane")
-	TEST_ASSERT_EQUAL(lane, SSspeech_controller.lane, "verb_lane_of() finds it")
-	TEST_ASSERT(lane != verb_lane_of(SSverb_manager), "the speech lane is not SSverb_manager's")
-	TEST_ASSERT_EQUAL(verb_lane_of(SSverb_manager), SSverb_manager.lane, "verb_lane_of() finds SSverb_manager's lane")
-	var/datum/work_item/W = K.work_by_key["[/datum/system/speech_controller]:run_queue"]
-	TEST_ASSERT(W, "the speech lane's work item is registered")
-	TEST_ASSERT_EQUAL(W.phase, KERNEL_PHASE_K, "it runs in phase K, with the other input services")
-	var/datum/speech_probe/P = new
-	lane.queue_verb(VERB_CALLBACK(P, TYPE_PROC_REF(/datum/speech_probe, hit)))
-	TEST_ASSERT_EQUAL(length(lane.verb_queue), 1, "the verb is queued")
-	sleep(2)
-	TEST_ASSERT_EQUAL(P.hits, 1, "the kernel ran the queued verb")
-	TEST_ASSERT_EQUAL(length(lane.verb_queue), 0, "and emptied the queue")

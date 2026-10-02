@@ -7,7 +7,7 @@ SYSTEM_DEF(internal_wiki)
 	name = "Wiki"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/atoms
+		/datum/system/atoms
 		// Supply packs come from GLOB.supply_service, which boots after SSmapping (before atoms).
 	)
 

@@ -156,7 +156,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 	return GLOB.solar_gen_rate * sunfrac
 
 /obj/machinery/power/solar/proc/broken()
-	stat_add(BROKEN)
 	unset_control()
 	update_icon()
 	om_emit(src, new /datum/om/event/climb_shake(null))
@@ -464,7 +463,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		new /obj/item/material/shard(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
+		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		own_set(A, nameof(A.circuit), M)
 		A.state = 3
@@ -476,7 +475,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		var/obj/structure/frame/A = new /obj/structure/frame/computer(src.loc)
 		var/obj/item/circuitboard/solar_control/M = new /obj/item/circuitboard/solar_control(A)
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/C in contents_of(src)) // ALLOW(latent): materialized above
+		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
 		own_set(A, nameof(A.circuit), M)
 		A.state = 4

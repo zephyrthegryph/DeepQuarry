@@ -1,0 +1,20 @@
+// Flyweight sources and tags (doc/rewrite/final_api.html, sections 5 and 9). SOURCE_DEF(name) declares a flyweight source: no instance, no
+// strings; `analyze gen declare_ids` writes SRC_<NAME>. SRC_STATUS: calls without source = use it (the ~700 existing status callers share one hold
+// per status); SRC_VV: the admin's edit of a var in VV; SRC_AI_CONTROL: a bolt held through the AI's interface; SRC_HELD_ITEM: "the item owns it
+// while it is in that hand or slot"; SRC_ALL: a wildcard release() and status_end() accept.
+
+
+SOURCE_DEF(status)
+SOURCE_DEF(vv)
+SOURCE_DEF(ai_control)
+SOURCE_DEF(held_item)
+SOURCE_DEF(all)
+
+/// Tags and capability ids share the numbers a bare id can be, so tags start at TAG_BASE and extend() tells the two apart.
+#define TAG_BASE 1000
+/// Every ui_act() op gets TAG_UI automatically.
+#define TAG_UI 1001
+/// Every topic() op gets TAG_TOPIC automatically.
+#define TAG_TOPIC 1002
+/// Ops that operate the thing (gated by a lock and by operability): extend(TAG_CONTROL, needs(...)).
+#define TAG_CONTROL 1003

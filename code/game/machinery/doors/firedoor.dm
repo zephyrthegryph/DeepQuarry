@@ -443,6 +443,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door/firedoor, MACHINE_PIPELINE, "density"
 		dependency_turfs += get_step(src, direction)
 	var/list/getter = om_callable(src, PROC_REF(firedoor_atmos_signature))
 	var/list/wake = om_callable(src, PROC_REF(wake_from_air))
+	// One signature for all five watches: it reads the same five turfs' air whichever mixture woke it.
+	var/signature = firedoor_atmos_signature()
 	for(var/index in 1 to length(dependency_turfs))
 		var/turf/T = dependency_turfs[index]
 		var/datum/gas_mixture/air = T?.return_air()
@@ -450,7 +452,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door/firedoor, MACHINE_PIPELINE, "density"
 		if(isnull(mixture_id))
 			continue
 		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
-		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake)
+		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake, current_value = signature)
 	// machine_step() returns PROCESS_KILL right after; while open the declaration keeps it parked.
 
 // Gas subscriptions are keyed by the mixtures of the turf we sat on and its

@@ -2,7 +2,7 @@ SYSTEM_DEF(robot_sprites)
 	name = "Robot Sprites"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/garbage
+		/datum/system/garbage
 	)
 	var/list/all_cyborg_sprites = list()
 	var/list/cyborg_sprites_by_module = list()

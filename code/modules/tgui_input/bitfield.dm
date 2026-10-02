@@ -68,7 +68,7 @@
 
 /datum/tgui_bitfield_input/proc/wait()
 	while(!submitted && !closed && !QDELETED(src))
-		stoplag(1) // ALLOW(scheduler): tgui_input waits on the player (prompts, S10)
+		stoplag(1) // ALLOW(scheduler): tgui_input is the blocking prompt API itself: it waits on the player by design
 
 DECLARE_UI_STATE(/datum/tgui_bitfield_input, GLOB.tgui_always_state)
 

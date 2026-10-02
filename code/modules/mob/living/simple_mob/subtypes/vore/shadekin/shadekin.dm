@@ -97,7 +97,7 @@ DECLARE_VERB(/mob/living/simple_mob/shadekin, /mob/proc/adjust_hive_range)
 	set_eye_energy()
 
 	if(icon_state == "map_example")
-		icon_state = pick("white","dark","brown") // ALLOW(decl): random pick
+		icon_state = pick("white","dark","brown") // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 	icon_living = icon_state
 

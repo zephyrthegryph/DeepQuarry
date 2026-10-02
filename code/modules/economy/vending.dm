@@ -49,7 +49,7 @@
 	var/refillable = TRUE
 
 	// List of vending_product items available.
-	var/list/product_records = list() // ALLOW(instance_list): d: the vendor's live stock records (C9 turns these into slots)
+	var/list/product_records = list() // ALLOW(instance_list): the vendor's live stock records: edited in place per machine and always filled
 
 	// Variables used to initialize advertising
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons
@@ -208,9 +208,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	. = ..()
 	// The panel, wires, broken and dark parts are drawn by draw() in this vendor's own states ("[base]-panel",
 	// "[base]-broken", "[base]-off"), which hides the standard parts the capabilities name.
-	. += cap_panel()
-	. += cap_wires(/datum/wires/vending)
-	. += cap_emag(say = "You short out %T%'s product lock.", mode = EMAG_REPEATABLE)
+	. += service_panel(/datum/wires/vending, emag_say = "You short out %T%'s product lock.", emag_mode = EMAG_REPEATABLE)
 	. += cap_anchor(delay = 2 SECONDS, needs_floor = FALSE, needs = req_clear(PANEL))
 	. += cap_breakable(repair_tool = NONE)
 	. += cap_power()
@@ -218,7 +216,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	. += cap_use_on("Use", /obj/item, PROC_REF(open_window), needs = PROC_REF(wants_hand_dispatch), works_broken = TRUE, works_unpowered = TRUE)
 	. += cap_use_on("Refill", /obj/item/refill_cartridge, PROC_REF(refill_from), needs = PROC_REF(refill_ok), blocked_by = PANEL)
 	. += cap_use_on("Insert coin", /obj/item/fake_coin, PROC_REF(reject_fake_coin), needs = PROC_REF(has_premium_slot), else_say = "it has no coin slot", works_broken = TRUE, works_unpowered = TRUE)
-	. += cap_slot(nameof(coin), /obj/item/coin, needs = PROC_REF(has_premium_slot), else_say = "it has no coin slot", eject_via = SLOT_VIA_NONE, ui_key = null)
+	. += cap_slot(nameof(coin), /obj/item/coin, needs = PROC_REF(has_premium_slot), else_say = "it has no coin slot", eject_via = SLOT_VIA_NONE, ui_key = null, slot_type = /datum/capability/slot/vending_coin)
 	. += cap_insert("Stock", /obj/item, PROC_REF(stock_item), works_broken = TRUE)
 	. += cap_hand("Use", PROC_REF(open_window), works_broken = TRUE, works_unpowered = TRUE)
 	. += cap_hand("Check vending logs", PROC_REF(check_logs), works_broken = TRUE, works_unpowered = TRUE)
@@ -253,13 +251,13 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	return refuse(user, null)
 
 /// The coin slot's hooks: a coin unlocks the premium products.
-/obj/machinery/vending/slot_inserted(slot, obj/item/item, mob/user)
-	if(slot == nameof(coin))
-		categories |= CAT_COIN
+/datum/capability/slot/vending_coin
 
-/obj/machinery/vending/slot_ejected(slot, obj/item/item, mob/user)
-	if(slot == nameof(coin))
-		categories &= ~CAT_COIN
+/datum/capability/slot/vending_coin/inserted(obj/machinery/vending/holder, obj/item/item, mob/user)
+	holder.categories |= CAT_COIN
+
+/datum/capability/slot/vending_coin/ejected(obj/machinery/vending/holder, obj/item/item, mob/user)
+	holder.categories &= ~CAT_COIN
 
 /// The final "anything else" branch: restock a matching product, else decline so the click falls on.
 /obj/machinery/vending/proc/stock_item(mob/user, obj/item/held)
@@ -357,7 +355,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 	tgui_id = "Vending"
 
 /// The computed window data: products of the shown categories, the coin, the panel and the customer.
-/obj/machinery/vending/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/vending/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	. = ..()
 	var/list/data = .
 	var/list/listed_products = list()
@@ -418,8 +416,7 @@ DAMAGE_REACTION(/obj/machinery/vending, DAMAGE_EXPLOSION, PROC_REF(vending_blast
 		return FALSE
 	return operable() && !user.stat && !user.restrained()
 
-/obj/machinery/vending/ui_logged()
-	return list("vend" = LOG_GAME)
+TYPE_TABLE(/obj/machinery/vending, ui_logged_actions, list("vend" = LOG_GAME))
 
 /obj/machinery/vending/proc/act_remove_coin(mob/user)
 	if(issilicon(user))

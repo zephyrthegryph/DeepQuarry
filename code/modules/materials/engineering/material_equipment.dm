@@ -6,10 +6,8 @@
 /obj/machinery/proc/ensure_pump_materials(notify = TRUE)
 	if(material_template == /datum/material_template/pump)
 		return
-	var/list/kept_overrides = material_overrides
 	material_total = get_material_total() + 3 * SHEET_MATERIAL_AMOUNT
 	material_template = /datum/material_template/pump
-	material_overrides = kept_overrides
 	if(notify)
 		material_service_changed()
 
@@ -31,7 +29,8 @@
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	var/motor = conductor ? conductor.conductivity / max(copper.conductivity, 1) : 1
 	var/impeller = working ? working.yield_strength / max(steel.yield_strength, 1) : 1
-	var/thermal = material_service ? clamp((0.95 - material_service.last_stress) / 0.15, 0, 1) : 1
+	var/datum/material_service/service = material_service_of(src)
+	var/thermal = service ? clamp((0.95 - service.last_stress) / 0.15, 0, 1) : 1
 	var/available = rated_power * clamp(min(motor, impeller), 0.1, 2.5) * thermal
 	if(istype(src, /obj/machinery/portable_atmospherics/powered))
 		var/obj/machinery/portable_atmospherics/powered/portable = src
@@ -49,8 +48,9 @@
 	var/paid = cell ? cell.use(max(pump_energy, power_losses) * CELLRATE) / CELLRATE : 0
 	// Compression and its motor losses were accounted at the gas transfer.
 	// The remaining idle-drive draw becomes heat, never additional gas work.
-	if(paid > pump_energy && material_service)
-		material_service.record_work(paid - pump_energy, 0)
+	var/datum/material_service/service = material_service_of(src)
+	if(paid > pump_energy && service)
+		service.record_work(paid - pump_energy, 0)
 	return paid
 
 /obj/machinery/proc/record_material_pumping(input_energy, datum/gas_mixture/destination, actual_moles)
@@ -63,17 +63,18 @@
 	var/datum/gas_mixture/environment = environment_turf ? environment_turf.return_air() : null
 	for(var/datum/gas_mixture/air as anything in material_service_gases())
 		material_observe_gases(air, environment)
-	if(!material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(!service)
 		return
 	// Transferring gas preserves its existing thermal energy, but compression
 	// work is new energy supplied by the motor. Deposit useful shaft work into
 	// the destination gas and motor losses into the shell so the complete
 	// machine + gas ledger conserves exactly the power paid by the pump.
 	destination.add_thermal_energy(useful)
-	material_service.record_work(input_energy, useful)
-	material_service.delivered_moles += actual_moles
-	material_service.last_delivery_pressure = destination.return_pressure()
-	material_service.last_delivery_temperature = destination.return_temperature()
+	service.record_work(input_energy, useful)
+	service.delivered_moles += actual_moles
+	service.last_delivery_pressure = destination.return_pressure()
+	service.last_delivery_temperature = destination.return_temperature()
 
 /datum/material_service
 	var/delivered_moles = 0
@@ -122,7 +123,8 @@
 	var/datum/material/copper = get_material_by_name(MAT_COPPER)
 	var/optical_limit = element ? element.melting_point / max(reference.melting_point, 1) : 1
 	var/electrical_limit = conductor ? conductor.conductivity / max(copper.conductivity, 1) : 1
-	var/thermal_limit = material_service ? clamp((0.95 - material_service.last_stress) / 0.15, 0, 1) : 1
+	var/datum/material_service/service = material_service_of(src)
+	var/thermal_limit = service ? clamp((0.95 - service.last_stress) / 0.15, 0, 1) : 1
 	return clamp(min(optical_limit, electrical_limit), 0.1, 3) * thermal_limit
 
 /obj/machinery/power/emitter/proc/charge_emitter()
@@ -139,13 +141,14 @@
 	// A live accelerator beam is intrinsically high-energy work, independent of
 	// the concrete machine type or whether its component materials are standard.
 	material_service_event(MATERIAL_EVENT_WORK, actual > 0 ? 1.25 : 0)
-	if(!material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(!service)
 		return
-	material_service.input_joules += input_energy
-	material_service.loss_joules += input_energy - stored
-	material_service.last_input_watts = actual
-	material_service.add_heat(input_energy - stored)
+	service.input_joules += input_energy
+	service.loss_joules += input_energy - stored
+	service.last_input_watts = actual
+	service.add_heat(input_energy - stored)
 	if(limit < material_output_setting)
-		material_service.limiting_role = "Emitter temperature or installed electrical/optical parts"
+		service.limiting_role = "Emitter temperature or installed electrical/optical parts"
 	else
-		material_service.limiting_role = null
+		service.limiting_role = null

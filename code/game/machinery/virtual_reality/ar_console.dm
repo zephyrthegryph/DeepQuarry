@@ -90,7 +90,7 @@
 	rel_clear(occupant, nameof(occupant.vr_link)) //The machine remembers the avatar. 1 avatar per machine. So the vr_link isn't needed anymore.
 	occupant = null
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): materialized above
+	for(var/atom/movable/A in contents_of(src)) // In case an object was dropped inside or something // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(A == circuit)
 			continue
 		if(component_parts && (A in component_parts))

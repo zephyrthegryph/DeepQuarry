@@ -27,7 +27,7 @@
 /// The running-total accumulators flush this many ms into their high part (BYOND numbers are single precision:
 /// a total above ~1e6 ms can no longer take a 0.05 ms increment).
 #define KM_FLUSH_MS 1000
-/// A tick over this percentage of a tick is an overrun (the same definition as Master.record_performance_tick).
+/// A tick over this percentage of a tick is an overrun (the same definition as Kernel.record_performance_tick).
 #define KM_OVERRUN_USAGE 100
 /// Overrun log lines: every overrun of a streak up to this long is logged, then at most one per KM_LOG_MIN_GAP.
 #define KM_LOG_FULL_STREAK 10
@@ -45,7 +45,10 @@
 #define KM_SYS_INPUT 3
 /// Work charged to a behaviour or subsystem with no system bound, and overflow past KM_MAX_SYSTEMS.
 #define KM_SYS_OTHER 4
-#define KM_SYS_PSEUDO_COUNT 4
+/// The presentation lane's declared-appearance and refresh drain, change reactions included, and the
+/// refresh drift audit (strict on every frame in test builds).
+#define KM_SYS_OM_APPEARANCE 5
+#define KM_SYS_PSEUDO_COUNT 5
 /// A subsystem whose own cost is decomposed into other systems (SSbehaviours) and so is not charged as one.
 #define KM_SYS_DECOMPOSED -1
 
@@ -53,6 +56,7 @@
 #define KM_KEY_OM_NATIVE "om_native"
 #define KM_KEY_INPUT "input"
 #define KM_KEY_OTHER "other"
+#define KM_KEY_OM_APPEARANCE "om_appearance"
 
 /// What a system is.
 #define KM_KIND_PSEUDO 0

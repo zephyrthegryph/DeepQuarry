@@ -29,7 +29,7 @@
 #define RULE_TRIGGER_BAND "Band"
 /// Change watches on both channel-backed sides of a comparison.
 #define RULE_TRIGGER_DIFFERENCE "Difference"
-/// A DM-owned key (om_world_on_key): re-evaluate when the key is published.
+/// A DM-owned key (dq_rx_on_key): re-evaluate when the key is published.
 #define RULE_TRIGGER_KEY "Key"
 
 // ---- Legacy paths a rule replaces. The old code checks these and stands down. ----
@@ -62,8 +62,8 @@
 // ---- World adapter (code/datums/rules/world_adapter.dm) ----
 // Wake reasons passed to rule_wake(): the Rust world's reason classes.
 #define DQ_RX_REASON_CONDITION WORLD_REASON_CONDITION
-#define DQ_RX_REASON_TIMER WORLD_REASON_TIMER
-#define DQ_RX_REASON_KEY WORLD_REASON_KEY
+/// A DM-owned key was published (DM-side only: Rust has no key wakes).
+#define DQ_RX_REASON_KEY (1 << 22)
 #define DQ_RX_REASON_RATE WORLD_REASON_RATE
 
 /// Channel ids on a heat node.

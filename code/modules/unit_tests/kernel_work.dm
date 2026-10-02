@@ -3,11 +3,8 @@
 
 /// The handler target for every work-item test: records its calls and answers as told.
 /datum/test_work_owner
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/calls = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/dts = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/members_seen = list()
 	var/gate = TRUE
 	var/result
@@ -58,7 +55,6 @@
 /// Makes a fixture item; `handler` defaults to record().
 /proc/test_work_item(datum/test_work_owner/O, handler = null, interval = 10, when = null, members = null, phase = KERNEL_PHASE_P, list/after = null, lane = LANE_SIMULATION, urgent = FALSE)
 	var/datum/work_item/test_fixture/W = new(handler || TYPE_PROC_REF(/datum/test_work_owner, record), interval, when, members, phase, after, 0, lane, urgent)
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	W.fixture = O
 	return W
 
@@ -243,13 +239,13 @@
 	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key, urgent = TRUE))
 	var/datum/work_item/test_fixture/plain = K.register_work(/datum/test_work_owner/a, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key))
 
-	TEST_ASSERT_NULL(K.request_urgent(M, plain, 500), "an item not declared urgent refuses requests")
-	var/datum/urgent_request/R = K.request_urgent(M, W, 500)
+	TEST_ASSERT_NULL(K.kernel_urgent(M, plain, 500), "an item not declared urgent refuses requests")
+	var/datum/urgent_request/R = K.kernel_urgent(M, W, 500)
 	TEST_ASSERT(R, "an urgent item takes a request")
-	TEST_ASSERT_EQUAL(K.request_urgent(M, W, 700), R, "a second request for the same member and work is the same request")
+	TEST_ASSERT_EQUAL(K.kernel_urgent(M, W, 700), R, "a second request for the same member and work is the same request")
 	TEST_ASSERT_EQUAL(K.urgent_deduped, 1, "and is counted as deduped")
 	TEST_ASSERT_EQUAL(R.deadline, 500, "it keeps the earlier deadline")
-	K.request_urgent(M, W, 300)
+	K.kernel_urgent(M, W, 300)
 	TEST_ASSERT_EQUAL(R.deadline, 300, "an earlier deadline tightens it")
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "one pending request")
 
@@ -268,17 +264,17 @@
 	// Breach metric: overdue requests are counted once, late runs sum their lateness.
 	var/datum/test_work_owner/O2 = new
 	var/datum/work_item/test_fixture/W2 = K.register_work(/datum/test_work_owner/b, test_work_item(O2, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key, urgent = TRUE))
-	K.request_urgent(M, W2, 150)
+	K.kernel_urgent(M, W2, 150)
 	K.run_urgent(WORK_TEST_LIMIT, 200)
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 1, "a run after its deadline is a breach")
 	TEST_ASSERT_EQUAL(K.urgent_lateness_ds, 50, "with its lateness")
-	K.request_urgent(M, W2, 400)
+	K.kernel_urgent(M, W2, 400)
 	K.run_urgent(WORK_TEST_LIMIT, 300)
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 1, "a run before its deadline is not")
 
 	// The reserved slice: over budget, one request still runs and the rest wait; overdue ones count.
-	K.request_urgent(M, W2, 310)
-	K.request_urgent(N, W2, 320)
+	K.kernel_urgent(M, W2, 310)
+	K.kernel_urgent(N, W2, 320)
 	K.run_urgent(-1, 400)
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "a spent slice still runs the earliest request, and leaves the rest")
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 3, "both overdue requests were counted")
@@ -288,7 +284,7 @@
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 3, "an already-counted breach is not counted twice")
 
 	// A deleted member's request is dropped.
-	K.request_urgent(N, W2, 900)
+	K.kernel_urgent(N, W2, 900)
 	member_purge(N)
 	qdel(N)
 	K.run_urgent(WORK_TEST_LIMIT, 500)
@@ -361,11 +357,13 @@
 	TEST_ASSERT(base.should_step(null), "a stage that is never idle should always run")
 
 /datum/test_work_owner/phases
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/phase_log = list()
 
 /datum/test_work_owner/phases/proc/note_k(dt)
 	phase_log += "[world.time]:K"
+
+/datum/test_work_owner/phases/proc/note_s(dt)
+	phase_log += "[world.time]:S"
 
 /datum/test_work_owner/phases/proc/note_n(dt)
 	phase_log += "[world.time]:N"
@@ -386,40 +384,34 @@
 
 /datum/unit_test/kernel_tick_phases/Run()
 	var/datum/controller/kernel/K = kernel()
-	TEST_ASSERT(SSbehaviours.flags & SS_NO_FIRE, "SSbehaviours dissolved: it no longer fires")
-	for(var/datum/controller/subsystem/hosted as anything in list(SSinput, SSverb_manager, SSgarbage, SStgui, SSdbcore, SSprofiler))
-		TEST_ASSERT(hosted.flags & SS_KERNEL_HOSTED, "[hosted.name] is hosted by the kernel")
-		TEST_ASSERT(hosted.state != SS_QUEUED, "[hosted.name] is not in a queue")
-	// There is no MC queue: every subsystem that fires is a kernel host service.
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		if(S.flags & SS_NO_FIRE)
-			continue
-		TEST_ASSERT(S.flags & SS_KERNEL_HOSTED, "[S.type] fires but is not hosted by the kernel")
+	TEST_ASSERT(SSbehaviours.initialized, "SSbehaviours is a system: it booted, and the scheduler pass runs from the kernel")
 	var/datum/test_work_owner/phases/O = new
-	var/list/handlers = list("note_k", "note_n", "note_d", "note_p", "note_r", "note_g")
-	var/list/phase_of = list(KERNEL_PHASE_K, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)
+	var/list/handlers = list("note_k", "note_s", "note_n", "note_d", "note_p", "note_r", "note_g")
+	var/list/phase_of = list(KERNEL_PHASE_K, KERNEL_PHASE_S, KERNEL_PHASE_N, KERNEL_PHASE_D, KERNEL_PHASE_P, KERNEL_PHASE_R, KERNEL_PHASE_G)
 	for(var/i in 1 to length(handlers))
 		var/datum/work_item/test_fixture/W = new(handlers[i], WORK_EVERY_TICK)
 		W.phase = phase_of[i]
-		// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 		W.fixture = O
 		K.register_work(/datum/test_work_owner/phases, W)
 	var/ticks_before = K.ticks
-	var/input_before = SSinput.times_fired
+	var/datum/work_item/input_drain = K.work_by_key["[/datum/system/input]:drain_step"]
+	var/input_before = input_drain.runs
+	// The drain parks while nothing is queued: a wake is what makes it run once more.
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, drain_step))
 	var/bench_before = SSbehaviours.bench_ms
 	var/runs_before = K.sched?.runs
 	// Phase G runs on leftovers with a floor once a second: the window has to span one.
 	sleep(1 SECONDS + 4)
 	K.unregister_work(/datum/test_work_owner/phases)
 	TEST_ASSERT(K.ticks > ticks_before, "the kernel loop runs the kernel tick every tick")
-	TEST_ASSERT(SSinput.times_fired > input_before, "phase K fires the hosted input subsystem")
+	TEST_ASSERT(input_drain.runs > input_before, "phase K runs the input inbox's drain")
 	TEST_ASSERT(SSbehaviours.bench_ms > bench_before, "the scheduler pass runs from the kernel and is counted")
 	TEST_ASSERT(K.sched.runs > runs_before, "phases D, P and R are scheduler passes")
 	TEST_ASSERT_EQUAL(length(K.work_errors), 0, "the live work graph has no errors")
 	var/list/log = O.phase_log
-	TEST_ASSERT(length(log) >= 6, "work items ran")
-	// Group by tick: inside a tick the phases that ran are in K N D P R G order, and every phase ran at some tick.
-	var/order = "KNDPRG"
+	TEST_ASSERT(length(log) >= 7, "work items ran")
+	// Group by tick: inside a tick the phases that ran are in K S N D P R G order, and every phase ran at some tick.
+	var/order = "KSNDPRG"
 	var/last_time
 	var/last_index = 0
 	var/seen = ""
@@ -433,7 +425,7 @@
 		if(!findtext(seen, parts[2]))
 			seen += parts[2]
 	// R is leftovers: it runs only when the lanes left budget, which a busy test tick may not. G has its floor.
-	for(var/letter in list("K", "N", "D", "P", "G"))
+	for(var/letter in list("K", "S", "N", "D", "P", "G"))
 		TEST_ASSERT(findtext(seen, letter), "phase [letter] ran: [json_encode(log)]")
 	TEST_ASSERT(K.phase_ms_total[KERNEL_PHASE_P] >= 0, "phase cost is accounted")
 	var/list/metrics = K.metrics()

@@ -1,0 +1,49 @@
+// Engine declaration markers (doc/rewrite/final_api.html, section 1 "Declarations"; section 22 "Base declarations").
+//
+// These are GENERATOR MARKERS, not working macros: each expands to nothing, so a declaration written in the final
+// syntax compiles (and is skipped) today. E1 (the table builder), E3 (stats), E4 (actions) and E5 (the generators on the
+// analysis engine) read these lines from source and emit the real vars, ids and types into code/engine/_generated/.
+// Until an engine lands, the declaration is documentation that the test-only capabilities under code/tests/engine/ and
+// the contracts under code/contracts/ already carry in the final form.
+//
+// Only markers whose names are free on master are defined here. TRACKED(), SYSTEM_DEF() and MSG_DEF() already exist as
+// legacy forms with other shapes (code/__defines/capabilities.dm, MC.dm, messages.dm); a final-form line that uses one of
+// those is written inside a comment until its engine replaces the legacy macro (doc/rewrite/engine_contracts.md,
+// "Name clashes").
+//
+// `analyze gen` reads these from source and writes the DM they stand for into code/engine/_generated/ (E1: ids.dm and declare.dm; E5:
+// reads.dm and system_accessors.dm). SCHEMA is a real macro (code/__defines/engine/declare.dm): a tracked var's setter is DM code.
+
+/// One composition root per type: registers T's entry list with the table builder. `analyze gen declare` writes T's declared_entries().
+#define CAPABILITIES(T, entries...)
+/// A capability whose body returns entries: CAPABILITY_DEF(name, CAP_X, key =, stacks =, param = default, ...).
+#define CAPABILITY_DEF(name, cap_id, params...)
+/// A capability with code of its own: CAPABILITY_TYPE(name, CAP_X, /datum/capability/x, key =, stacks =, param = default, ...).
+#define CAPABILITY_TYPE(name, cap_id, cap_type, params...)
+/// A capability's state keys: ids, accessors, reasons and read registration.
+#define cap_keys(cap_id, keys...)
+/// A build stage id (section 12): STAGE_DEF(group, name) is STAGE_<GROUP>_<NAME>.
+#define STAGE_DEF(group, name)
+/// A named, reusable state graph of stages (section 12): STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(...), dismantle(...)).
+#define STATE_GRAPH(graph, entries...)
+/// A flyweight source (section 5): SOURCE_DEF(ai_control) is SRC_AI_CONTROL.
+#define SOURCE_DEF(name)
+/// A world action: generates /datum/act/<name>, act_<name>() and the past-tense notice (section 8).
+#define ACTION(name, fields...)
+/// A composed stat: declares the var, its base and the id STAT_<NAME> (section 5).
+#define STAT(T, name, rule, params...)
+/// A reactive read of private system state, declared in code/contracts/accessors (section 7).
+#define SYSTEM_ACCESSOR(system, name, key)
+/// A resource and its adapter (section 9, X2).
+#define RESOURCE_DEF(res, params...)
+/// A list of entries or parts under a name, kept in its own file (section 11).
+#define BUNDLE(name, entries...)
+
+/// An accessor proc that stands for a producer key rather than a var: READS_AS(proc, KEY) or, through a relation,
+/// READS_AS(pad_occupied, OCCUPANTS_KEY, via = nameof(pad)). Generated reads do not follow the proc; readers subscribe to KEY
+/// (published with PUBLISH_CHANGE(E, KEY)). The analysis engine (tools/analyze, sem/reads) checks the accessor's own reads are covered.
+#define READS_AS(proc, key, args...)
+/// First line of a global helper that a condition, requirement or output calls: the helper is followed through the arguments
+/// it names. READS_FROM(C) follows C; READS_FROM() says the helper reads no entity state. An unannotated global call in a handler
+/// is a build error (sem/reads, unannotated_global).
+#define READS_FROM(args...)

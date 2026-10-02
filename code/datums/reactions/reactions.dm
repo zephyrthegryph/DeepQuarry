@@ -13,7 +13,8 @@
 // reads (code/_generated/reads.dm, written by tools/ci/derived_reads_lint.py --fix-generated) + its derived()
 // entries, built once per type. It answers READERS(): a key nothing reads publishes nothing.
 //
-// Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF):
+// Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF; a global handler is called with the
+// holder as its first argument, then the arguments listed here: x(holder, keys), x(holder, ctx), x(holder, dt)):
 //   on_change(reads, handler)   handler(list/keys): once per drain (rx_drain) however many reads changed.
 //               at_most = N     ... and at most once per N deciseconds per holder: changes inside the window are held
 //                               and delivered once, with every key they named, when it ends (rx_at_most_admit()).
@@ -23,7 +24,7 @@
 //   before_op(key|type, handler) handler(ctx): synchronous before commit; a non-null return vetoes (a reason).
 //   after_op(key|type, handler)  handler(ctx): synchronous after commit; the return is ignored.
 //   on_cross(read, bands, handler, urgent) handler(band, previous_band): when the read moves to another band
-//                               (band 0 is below the first threshold). urgent: a request_urgent() work item (the
+//                               (band 0 is below the first threshold). urgent: a kernel_urgent() work item (the
 //                               kernel's U phase, deduped per holder, carrying the latest band); else at the drain.
 //   every(interval, handler, ...) declared work: a /datum/work_item/reaction on the kernel (work.dm). The handler runs on
 //                               each live instance of the declaring type as handler(dt), on each member of `members`
@@ -41,6 +42,10 @@
 	var/list/reads
 	/// PROC_REF on the holder, or a /proc path.
 	var/handler
+	/// TRUE when `handler` is a /proc path (decided once, in rx_make()); such a handler is called with the holder first.
+	var/global_handler = FALSE
+	/// A capability's own reaction (cap_rx()): the handler is a proc of this capability, called as handler(holder, ...).
+	var/datum/capability/cap
 	/// on_cross: ascending thresholds.
 	var/list/bands
 	var/urgent = FALSE
@@ -48,6 +53,9 @@
 	var/members
 	/// every(): the var (text) that must be truthy for it to run.
 	var/when
+	/// on_change(): TRUE when `when` names a var of the declaring type (decided once, when its table is built): the var
+	/// is an implicit read, and its rising edge delivers one catch-up call.
+	var/when_var = FALSE
 	var/interval
 	var/phase
 	/// every(): the reaction key or name it must follow in its phase.
@@ -65,6 +73,25 @@
 	var/sig
 	/// True for a read folded in from derived() / generated_reads(): it feeds READERS, nothing runs.
 	var/implicit = FALSE
+
+/**
+ * Makes R a reaction of capability C: its handler is a PROC_REF on C, called as handler(holder, ...args) (the holder
+ * first, then what the reaction's contract passes). A capability's reactions() uses it so its handlers live on the
+ * capability, not as procs on every holder type: `. += cap_rx(src, after_op(CAP_EMAG, PROC_REF(committed)))`.
+ */
+/proc/cap_rx(datum/capability/C, datum/reaction/R)
+	R.cap = C
+	R.sig = "[R.sig]|cap:[C.type]:[C.key]"
+	return R
+
+/// Calls reaction R's handler on holder E with the contract's args: on the capability for a cap_rx() reaction.
+/proc/rx_call_reaction(datum/E, datum/reaction/R, ...)
+	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
+	if(R.cap)
+		return call(R.cap, R.handler)(arglist(list(E) + rest))
+	if(R.global_handler)
+		return call(R.handler)(arglist(list(E) + rest)) // a global handler gets the holder first, like every other handler form
+	return call(E, R.handler)(arglist(rest))
 
 /proc/rx_reads_of(reads)
 	var/list/out = list()
@@ -84,6 +111,7 @@
 	R.key = key
 	R.reads = reads
 	R.handler = handler
+	R.global_handler = om_proc_is_global(handler)
 	R.sig = "[kind]|[key]|[reads ? jointext(reads, ",") : ""]|[handler]"
 	return R
 
@@ -104,7 +132,9 @@
 /// (deciseconds) coalesces further: after a delivery, changes within that window wait and arrive together, once,
 /// when it ends (a HUD refresh needs the latest state, not every step of a walk). `when` (a var name truthy on the
 /// holder, or a PROC_REF answering TRUE) is asked when a read is published: a holder it excludes queues nothing and
-/// costs one test. A static reaction only: observe() delivers every drain whatever its trigger says.
+/// costs one test. A var gate is also an implicit read: when it is published and holds (its rising edge), one delivery
+/// carrying the gate's key catches the reaction up on what it skipped; a PROC_REF gate must be covered by the reaction's
+/// reads (or generated ones). A static reaction only: observe() delivers every drain whatever its trigger says.
 /proc/on_change(list/reads, handler, at_most = 0, when = null)
 	var/datum/reaction/R = rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
 	if(at_most > 0)
@@ -257,11 +287,33 @@ GLOBAL_LIST_EMPTY(rx_tables)
 	for(var/datum/reaction/R in own)
 		if(R.kind == RXN_EVERY && last_every[R.handler] != R)
 			continue
+		if(R.kind == RXN_CHANGE && istext(R.when))
+			R.when_var = (R.when in D.vars)
 		rx_table_add(T, R)
 	for(var/datum/derived_entry/E in generated + derived)
-		rx_table_add_reads(T, E)
+		if(E.kind == DKIND_REACTION)
+			rx_table_add_reaction_reads(T, own, E)
+		else
+			rx_table_add_reads(T, E)
 	GLOB.rx_tables[D.type] = T
 	return T
+
+/// reaction_reads(handler, ...): each read also runs the type's on_change() reactions with that handler (the same
+/// reaction datum, so the reads coalesce with its declared ones: one pend per drain).
+/proc/rx_table_add_reaction_reads(datum/rx_table/T, list/own, datum/derived_entry/E)
+	var/found = FALSE
+	for(var/datum/reaction/R in own)
+		if(R.kind != RXN_CHANGE || R.handler != E.name)
+			continue
+		found = TRUE
+		for(var/read in E.reads)
+			if(!istext(read))
+				continue
+			LAZYINITLIST(T.by_key[read])
+			T.by_key[read] |= R
+			T.read_keys[read] = TRUE
+	if(!found)
+		stack_trace("reaction_reads([E.name]) on [T.owner_type]: no on_change() reaction of the type has that handler")
 
 /proc/rx_table_add_reads(datum/rx_table/T, datum/derived_entry/E)
 	for(var/read in E.reads)
@@ -278,8 +330,13 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				LAZYINITLIST(T.by_key[read])
 				T.by_key[read] += R
 				T.read_keys[read] = TRUE
+			if(R.when_var)
+				// A var gate is a read: when it turns true the reaction is owed a catch-up delivery (publish_change()).
+				LAZYINITLIST(T.by_key[R.when])
+				T.by_key[R.when] |= R
+				T.read_keys[R.when] = TRUE
 			if(R.at_most)
-				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+				// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 				LAZYSET(T.at_most_by_sig, R.sig, R)
 		if(RXN_BEFORE_OP)
 			rx_table_add_op(T.before_keyed, T.before_typed, R)
@@ -288,7 +345,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 			rx_table_add_op(T.after_keyed, T.after_typed, R)
 			rx_table_add_damage(T, R)
 		if(RXN_NOTICE)
-			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+			// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.notices += R
 			rx_register_work(T, R)
 		if(RXN_CROSS)
@@ -298,7 +355,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				T.read_keys[read] = TRUE
 			rx_register_work(T, R)
 		if(RXN_EVERY)
-			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+			// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.everys += R
 			rx_register_work(T, R)
 			if(R.when)

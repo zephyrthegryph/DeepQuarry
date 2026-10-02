@@ -318,7 +318,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/otie, \
 
 /mob/living/simple_mob/vore/otie/on_death(gibbed)
 	.=..()
-	resting = 0
+	set_resting(0)
 	icon_state = icon_dead
 
 DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/otie, /mob/living/simple_mob/proc/animal_mount)

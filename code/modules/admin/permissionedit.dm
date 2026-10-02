@@ -128,18 +128,16 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(!use_db)
 		return
 	//if an admin exists without a datum they won't be caught by the above
-	var/datum/db_query/query_admin_in_db = SSdbcore.NewQuery(
+	var/list/admin_in_db_rows = flow_select(
 		"SELECT 1 FROM [format_table_name("admin")] WHERE ckey = :ckey",
-		list("ckey" = .)
+		list("ckey" = .),
+		warn = TRUE
 	)
-	if(!query_admin_in_db.warn_execute())
-		qdel(query_admin_in_db)
+	if(isnull(admin_in_db_rows))
 		return FALSE
-	if(query_admin_in_db.NextRow())
-		qdel(query_admin_in_db)
+	if(length(admin_in_db_rows))
 		to_chat(usr, span_danger("[admin_key] already listed in admin database. Check the Housekeeping tab if they don't appear in the list of admins."), confidential = TRUE)
 		return FALSE
-	QDEL_NULL(query_admin_in_db)
 	// The row is written by change_admin_rank(), which the add always runs next, with the picked
 	// rank: a separate insert here would race that proc's read of the admin table.
 
@@ -166,13 +164,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write(
+	sql_write(
 		"DELETE FROM [format_table_name("admin")] WHERE ckey = :ckey",
 		list("ckey" = admin_ckey)
 	)
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_REMOVED]', :admin_ckey, CONCAT('Admin removed: ', :admin_ckey))
 	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_ckey" = admin_ckey))
@@ -294,28 +292,27 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	var/list/custom_names_in_db = list()
 	if(use_db)
 		//if a player was tempminned before having a permanent change made to their rank they won't yet be in the db
-		var/datum/db_query/query_admin_in_db = SSdbcore.NewQuery(
+		var/list/admin_in_db_rows = flow_select(
 			"SELECT `rank` FROM [format_table_name("admin")] WHERE ckey = :admin_ckey",
-			list("admin_ckey" = admin_ckey)
+			list("admin_ckey" = admin_ckey),
+			warn = TRUE
 		)
-		if(!query_admin_in_db.warn_execute())
-			qdel(query_admin_in_db)
+		if(isnull(admin_in_db_rows))
 			return
-		if(query_admin_in_db.NextRow())
-			old_rank = query_admin_in_db.item[1]
-		QDEL_NULL(query_admin_in_db)
+		if(length(admin_in_db_rows))
+			var/list/admin_in_db_row = admin_in_db_rows[1]
+			old_rank = admin_in_db_row[1]
 		for(var/new_rank_name in picked["custom"])
 			//similarly if a temp rank is created it won't be in the db if someone is permanently changed to it
-			var/datum/db_query/query_rank_in_db = SSdbcore.NewQuery(
+			var/list/rank_in_db_rows = flow_select(
 				"SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank",
-				list("new_rank" = new_rank_name)
+				list("new_rank" = new_rank_name),
+				warn = TRUE
 			)
-			if(!query_rank_in_db.warn_execute())
-				qdel(query_rank_in_db)
+			if(isnull(rank_in_db_rows))
 				return
-			if(query_rank_in_db.NextRow())
+			if(length(rank_in_db_rows))
 				custom_names_in_db[new_rank_name] = TRUE
-			QDEL_NULL(query_rank_in_db)
 
 	var/list/picked_names = picked["names"]
 	var/list/new_rank_names = picked_names.Copy()
@@ -350,33 +347,33 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		for (var/datum/admin_rank/custom_rank in custom_ranks)
 			if(custom_names_in_db[custom_rank.name])
 				continue
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_ranks")] (`rank`, flags, exclude_flags, can_edit_flags)
 				VALUES (:new_rank, '0', '0', '0')
 			"}, list("new_rank" = custom_rank.name))
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank, CONCAT('New rank added: ', :new_rank))
 			"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "new_rank" = custom_rank.name))
 		if(isnull(old_rank))
 			// Not in the admin table yet (a new or temporary admin): one insert, with the rank.
 			old_rank = "NEW ADMIN"
-			om_sql_write(
+			sql_write(
 				"INSERT INTO [format_table_name("admin")] (ckey, `rank`) VALUES (:ckey, :new_rank)",
 				list("ckey" = admin_ckey, "new_rank" = joined_rank)
 			)
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_ADDED]', :target, CONCAT('New admin added: ', :target))
 			"}, list("round_id" = "[GLOB.round_id]",  "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey))
 		else
-			om_sql_write(
+			sql_write(
 				"UPDATE [format_table_name("admin")] SET `rank` = :new_rank WHERE ckey = :admin_ckey",
 				list("new_rank" = joined_rank, "admin_ckey" = admin_ckey)
 			)
 		message_admins(m1)
 		log_admin(m2)
-		om_sql_write({"
+		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_RANK_CHANGED]', :target, CONCAT('Rank of ', :target, ' changed from ', :old_rank, ' to ', :new_rank))
 		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey, "old_rank" = old_rank, "new_rank" = joined_rank))
@@ -492,18 +489,16 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		return
 	if(use_db)
 		// Shit check for conflicts, before anything is made (a read: the flow re-runs on its answer)
-		var/datum/db_query/query_rank_in_db = SSdbcore.NewQuery(
+		var/list/rank_in_db_rows = flow_select(
 			"SELECT 1 FROM [format_table_name("admin_ranks")] WHERE `rank` = :new_rank",
-			list("new_rank" = new_rank_name)
+			list("new_rank" = new_rank_name),
+			warn = TRUE
 		)
-		if(!query_rank_in_db.warn_execute())
-			qdel(query_rank_in_db)
+		if(isnull(rank_in_db_rows))
 			return
-		if(query_rank_in_db.NextRow())
-			qdel(query_rank_in_db)
+		if(length(rank_in_db_rows))
 			to_chat(usr, span_adminprefix("A rank by this name already exists in the database."), confidential = TRUE)
 			return
-		QDEL_NULL(query_rank_in_db)
 	var/datum/admin_rank/custom_rank
 	if(use_db)
 		custom_rank = new(new_rank_name, RANK_SOURCE_DB, rights, excluded_rights, edit_rights)
@@ -522,13 +517,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_ranks")] (`rank`, flags, exclude_flags, can_edit_flags)
 		VALUES (:new_rank, :rights, :excluded_rights, :edit_rights)
 	"}, list("new_rank" = custom_rank.name, "rights" = rights, "excluded_rights" = excluded_rights, "edit_rights" = edit_rights))
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank,
 		CONCAT('New rank added: ', :new_rank, ' (', :rights, ')', ' (', :excluded_rights, ')', ' (', :edit_rights, ')'))
@@ -580,18 +575,16 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		local_only_deletion = TRUE
 
 	if(!local_only_deletion)
-		var/datum/db_query/query_admins_with_rank = SSdbcore.NewQuery(
+		var/list/admins_with_rank_rows = flow_select(
 			"SELECT 1 FROM [format_table_name("admin")] WHERE `rank` = :admin_rank",
-			list("admin_rank" = admin_rank)
+			list("admin_rank" = admin_rank),
+			warn = TRUE
 		)
-		if(!query_admins_with_rank.warn_execute())
-			qdel(query_admins_with_rank)
+		if(isnull(admins_with_rank_rows))
 			return
-		if(query_admins_with_rank.NextRow())
-			qdel(query_admins_with_rank)
+		if(length(admins_with_rank_rows))
 			to_chat(usr, span_danger("Error: Rank deletion attempted while db rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
 			return
-		QDEL_NULL(query_admins_with_rank)
 
 	for(var/admin_name in GLOB.admin_datums)
 		var/datum/admins/existing_min = GLOB.admin_datums[admin_name]
@@ -612,13 +605,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write(
+	sql_write(
 		"DELETE FROM [format_table_name("admin_ranks")] WHERE `rank` = :admin_rank",
 		list("admin_rank" = admin_rank)
 	)
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_REMOVED]', :admin_rank, CONCAT('Rank removed: ', :admin_rank))
 	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))
@@ -696,21 +689,18 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	// Not allowed to permenantly edit a rank if it isn't IN the db already
 	// This is a real shitcheck but just to be sure
 	if(use_db)
-		var/datum/db_query/query_db_rank_info = SSdbcore.NewQuery({"
+		var/list/db_rank_info_rows = flow_select({"
 			SELECT flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]
 			WHERE rank = :rank_name
-		"}, list("rank_name" = admin_rank))
-		if(!query_db_rank_info.warn_execute())
-			qdel(query_db_rank_info)
-		if(query_db_rank_info.NextRow())
-			working_rights = query_db_rank_info.item[1]
-			working_exclude_rights = query_db_rank_info.item[2]
-			working_can_edit_rights = query_db_rank_info.item[3]
+		"}, list("rank_name" = admin_rank), warn = TRUE)
+		if(length(db_rank_info_rows))
+			var/list/db_rank_info = db_rank_info_rows[1]
+			working_rights = db_rank_info[1]
+			working_exclude_rights = db_rank_info[2]
+			working_can_edit_rights = db_rank_info[3]
 		else // Couldn't find anything, no db memes then
 			to_chat(usr, span_adminprefix("Rank does not exist in database, exiting."), confidential = TRUE)
-			qdel(query_db_rank_info)
 			return
-		QDEL_NULL(query_db_rank_info)
 	else
 		working_rights = target_rank.include_rights
 		working_exclude_rights = target_rank.exclude_rights
@@ -773,26 +763,26 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		// Doing it as we are does technically mean conflicts can occur, but that's rare enough I'm ok with it
 		switch(what_to_edit)
 			if("Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET flags = :flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "flags" = new_flags))
 			if("Excluded Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET exclude_flags = :exclude_flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "exclude_flags" = new_flags))
 			if("Edit Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET can_edit_flags = :can_edit_flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "can_edit_flags" = new_flags))
 
 
-		om_sql_write({"
+		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_CHANGED]', :admin_rank, CONCAT('Rank changed: ', :admin_rank))
 		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))

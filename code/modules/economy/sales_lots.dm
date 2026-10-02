@@ -325,7 +325,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_price)
 		return FALSE
 	var/old_price = stock_prices[item_ref]
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/matching_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/matching_ref = REF(matching_item)
 		if(matching_item.type == item.type && stock_prices[matching_ref] == old_price)
 			stock_prices[matching_ref] = round(new_price)
@@ -340,7 +340,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 		return FALSE
 	markup_percent = round(new_markup)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/stock_item as anything in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		var/stock_ref = REF(stock_item)
 		stock_prices[stock_ref] = max(1, round(stock_suggested_prices[stock_ref] * (100 + markup_percent) / 100))
 	return TRUE

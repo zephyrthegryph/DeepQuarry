@@ -401,7 +401,7 @@ DECLARE_SHARED_CACHE_EX(fruit_icon, GLOBAL_PROC_REF(build_fruit_icon), SC_NEVER,
 	if(!flesh_colour) flesh_colour = rind_colour
 	// ALLOW(decl): the colours are the seed's traits, per instance, not a declarable state var
 	add_overlay(CACHED_KEY(fruit_icon, "rind-[rind_colour]", icon, "fruit_rind", rind_colour))
-	// ALLOW(decl): as above
+	// ALLOW(decl): the colours are the seed's traits, per instance, like the overlay above
 	add_overlay(CACHED_KEY(fruit_icon, "slice-[rind_colour]", icon, "fruit_slice", flesh_colour))
 
 /// The seed (PROTO): a registered line, or this holder's own private copy.

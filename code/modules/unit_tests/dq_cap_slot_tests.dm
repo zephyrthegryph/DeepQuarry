@@ -10,22 +10,25 @@
 
 /obj/item/cap_slot_probe/capabilities()
 	. = ..()
-	. += cap_slot(nameof(cell), /obj/item/cell, needs = PROC_REF(is_steady), else_say = "hold it steady", eject_via = SLOT_VIA_ALT|SLOT_VIA_USE, examine_held = "It holds %I%.", examine_empty = "It has no cell.")
+	. += cap_slot(nameof(cell), /obj/item/cell, needs = PROC_REF(is_steady), else_say = "hold it steady", eject_via = SLOT_VIA_ALT|SLOT_VIA_USE, examine_held = "It holds %I%.", examine_empty = "It has no cell.", slot_type = /datum/capability/slot/probe_cell)
 	. += cap_slot(nameof(driver), /obj/item/tool/screwdriver, name = "Stow driver", eject_via = SLOT_VIA_NONE)
 
 /obj/item/cap_slot_probe/proc/is_steady(mob/user, obj/item/held)
 	return steady
 
-/obj/item/cap_slot_probe/slot_refusal(slot, obj/item/item, mob/user)
-	if(slot == nameof(cell) && istype(item, /obj/item/cell/device))
+/// The probe's cell slot: its hooks are procs of a slot subtype taking the holder (no proc on /atom).
+/datum/capability/slot/probe_cell
+
+/datum/capability/slot/probe_cell/refusal(obj/item/cap_slot_probe/holder, obj/item/item, mob/user)
+	if(istype(item, /obj/item/cell/device))
 		return "Too small."
 	return ..()
 
-/obj/item/cap_slot_probe/slot_inserted(slot, obj/item/item, mob/user)
-	inserted_count++
+/datum/capability/slot/probe_cell/inserted(obj/item/cap_slot_probe/holder, obj/item/item, mob/user)
+	holder.inserted_count++
 
-/obj/item/cap_slot_probe/slot_ejected(slot, obj/item/item, mob/user)
-	ejected_count++
+/datum/capability/slot/probe_cell/ejected(obj/item/cap_slot_probe/holder, obj/item/item, mob/user)
+	holder.ejected_count++
 
 /obj/item/cap_slot_probe/examine_lines(mob/user)
 	. = ..()

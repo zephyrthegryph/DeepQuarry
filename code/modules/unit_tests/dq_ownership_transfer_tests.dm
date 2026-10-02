@@ -13,6 +13,11 @@
 	. = ..()
 	. += owns(nameof(kept), policy = OWN_CONTAINED)
 
+/// It has a look (as a holder that shows what it holds does), so a write to its owned vars has an output to refresh:
+/// an atom whose type derives nothing is never queued (refresh_wanted()), and these tests read refresh_queued.
+/obj/own_transfer_test_holder/draw(datum/look/look)
+	..()
+
 /// Counts dropped() calls.
 /obj/item/own_transfer_test_widget
 	name = "test widget"

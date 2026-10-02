@@ -71,7 +71,7 @@
  * `refine(CAP_EMAG, delay = ..., effect = PROC_REF(on_emag))` swaps the wait and the effect and
  * `cap_require(CAP_EMAG, needs = ...)` adds contracts. What every emag shares runs around it: the card must be
  * usable and (EMAG_ONCE) the holder not yet emagged before, and after a successful commit CAP_EMAGGED is set, `say`
- * told and one use spent (emag_committed(), an after_op reaction of the capability).
+ * told and one use spent (committed(), the capability's own after_op reaction, cap_rx()).
  */
 /proc/emag_op(say, effect, mode = EMAG_ONCE, already_say = "It is already emagged.", delay = 0, needs, else_say, log = LOG_ADMIN)
 	var/datum/capability/emag/C = new
@@ -92,7 +92,7 @@
 /datum/capability/emag/reactions()
 	. = ..()
 	if(as_op)
-		. += after_op(CAP_EMAG, TYPE_PROC_REF(/atom, emag_committed))
+		. += cap_rx(src, after_op(CAP_EMAG, PROC_REF(committed)))
 
 /// The default effect of an emag op: nothing beyond the shared commit.
 /proc/emag_default_effect(atom/holder, mob/user, obj/item/card/emag/card)
@@ -108,22 +108,18 @@
 		return C.already_say
 	return TRUE
 
-/// What the user is told when an emag declared as an op goes through: the type's `emag_msg` (machinery), else the capability's `say`.
-/atom/proc/emag_message()
-	return null
-
-/obj/machinery/emag_message()
-	return emag_msg
+/// What the user is told when an emag declared as an op goes through on holder: `say`.
+/datum/capability/emag/proc/commit_message(atom/holder)
+	return say
 
 /// after_op(CAP_EMAG): the emag went through. Sets the bit, tells the user, spends one use as
 /// /obj/item/card/emag/proc/spend() does (the dispatcher writes the log line).
-/atom/proc/emag_committed(datum/op_ctx/ctx)
-	var/datum/capability/emag/C = cap_of_all(src, /datum/capability/emag)
+/datum/capability/emag/proc/committed(atom/holder, datum/op_ctx/ctx)
 	var/obj/item/card/emag/card = ctx.held
-	cap_set(src, CAP_EMAGGED, TRUE)
-	var/say = emag_message() || C?.say
-	if(say)
-		act_message(ctx.actor, src, self = span_warning(say), item = card)
+	cap_set(holder, CAP_EMAGGED, TRUE)
+	var/say_now = commit_message(holder)
+	if(say_now)
+		act_message(ctx.actor, holder, self = span_warning(say_now), item = card)
 	if(istype(card))
 		card.uses--
 		if(card.uses < 1)

@@ -6,13 +6,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// None of the folded subsystems is still registered with the MC.
-/datum/unit_test/dq_world_lanes_no_subsystems
-
-/datum/unit_test/dq_world_lanes_no_subsystems/Run()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		TEST_ASSERT(!(S.name in list("Machines", "Mobs", "Plants")), "[S.type] still runs as a subsystem after the F1 fold")
-
 /// The machine and mob lanes are attached to the live scheduler's global owner at the old
 /// subsystems' cadence, and a real SSbehaviours pass runs them.
 /datum/unit_test/dq_world_lanes_attached_and_run
@@ -36,7 +29,7 @@
 	TEST_ASSERT_EQUAL(GLOB.mob_service.steps, mob_steps + 1, "a mob lane tick did not step the mob service")
 
 	// Outside a direct call, the scheduler must run them on its own, on cadence.
-	if(!(Master.current_runlevel & (RUNLEVEL_GAME | RUNLEVEL_POSTGAME)))
+	if(!(Kernel.current_runlevel & (RUNLEVEL_GAME | RUNLEVEL_POSTGAME)))
 		return
 	machine_steps = GLOB.machine_service.steps
 	mob_steps = GLOB.mob_service.steps

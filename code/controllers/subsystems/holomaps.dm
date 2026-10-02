@@ -6,7 +6,7 @@ SYSTEM_DEF(holomaps)
 	name = "HoloMiniMaps"
 	init_stage = INITSTAGE_MAIN
 	needs = list(
-		/datum/controller/subsystem/atoms
+		/datum/system/atoms
 	)
 	var/static/holomaps_initialized = FALSE
 	var/static/list/holoMiniMaps = list()
@@ -25,7 +25,9 @@ SYSTEM_DEF(holomaps)
 /datum/system/holomaps/proc/dump_nanomap_icons()
 	. = list()
 
-	for(var/z = 1 to world.maxz)
+	// Only the levels rendered at init: z-levels added since (an expedition's preallocated
+	// level) have no minimap.
+	for(var/z = 1 to length(holoMiniMaps))
 		var/icon/base = icon(HOLOMAP_ICON, "blank") // start at 480x480
 		base.Scale(world.maxx, world.maxy) // scale down to perfectly fit the map size
 

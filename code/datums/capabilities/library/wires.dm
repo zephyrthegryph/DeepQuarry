@@ -12,9 +12,10 @@
 	/// The /datum/wires subtype made for each holder.
 	var/wires_type
 
-/// Wires of `wires_type`, reachable while the maintenance panel is open (and whatever `needs` asks).
-/proc/cap_wires(wires_type, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/wires/C = new
+/// Wires of `wires_type`, reachable while the maintenance panel is open (and whatever `needs` asks). type: a subtype
+/// choosing the wires per instance (wires_type_for()).
+/proc/cap_wires(wires_type, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/wires)
+	var/datum/capability/wires/C = new type
 	C.wires_type = wires_type
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
@@ -26,19 +27,17 @@
 		return null
 	var/datum/wires/W = A.cap_data?[C.key]
 	if(!W)
-		var/wires_type = A.wires_type_for(C.wires_type)
+		var/wires_type = C.wires_type_for(A)
+		if(!wires_type)
+			return null
 		W = new wires_type(A)
 		LAZYSET(A.cap_data, C.key, W)
 	return W
 
-/// The /datum/wires subtype A's wires capability makes for A: the capability's type default, or a
-/// per-instance choice (design review H1: an airlock built with secure electronics).
-/atom/proc/wires_type_for(default_type)
-	return default_type
-
-/// A machine's wires default to its machine_wires type var (cap_wires() with no type).
-/obj/machinery/wires_type_for(default_type)
-	return default_type || machine_wires
+/// The /datum/wires subtype this capability makes for holder: the one cap_wires() was given. A per-instance choice
+/// (design review H1: an airlock built with secure electronics) is a subtype overriding this.
+/datum/capability/wires/proc/wires_type_for(atom/holder)
+	return wires_type
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(
@@ -53,7 +52,7 @@
 	var/datum/wires/W = holder.cap_data?[key]
 	if(W)
 		LAZYREMOVE(holder.cap_data, key)
-		qdel(W)
+		qdel(W) // ALLOW(lifecycle): a wires datum is a plain datum held by the capability, not an atom; the lifecycle verbs only take atoms
 
 /proc/cap_wires_open(atom/holder, mob/user, obj/item/held)
 	var/datum/wires/W = wires_of(holder)

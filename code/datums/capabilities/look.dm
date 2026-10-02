@@ -208,7 +208,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 /// The shared image for an overlay drawn from another icon file (look.overlay(icon =)).
 /proc/look_image(icon, name)
-	var/static/list/cache = list()
+	var/static/list/cache = list() // ALLOW(cache): images shared by icon file and name, built once on first use and never written after
 	var/key = "[icon]:[name]"
 	var/image/I = cache[key]
 	if(!I)
@@ -252,7 +252,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 	touched = TRUE
 	if(!when || !thing)
 		return
-	LAZYADD(vis, thing)
+	LAZYADD(vis, thing) // ALLOW(ownership): vis is the look's per-draw scratch list of shown atoms, rebuilt on every draw; it is not a relation
 
 /// The atom's light while this look holds (the APC's screen glow, a lit airlock). A look that stops
 /// setting it turns the light off: draw() never calls set_light() itself (that would be a side effect).
@@ -381,7 +381,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		A.set_light(0)
 	A.look_set_bits = now
 	if(A.look_overlays)
-		A.cut_overlay(A.look_overlays) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
+		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
 	var/list/added
 	for(var/name in overlays)
@@ -398,7 +398,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(entry[3])
 			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
-		A.add_overlay(added) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
+		A.add_overlay(added)
 		A.look_overlays = added
 	for(var/name in A.look_filters)
 		if(!filters || !(name in filters))
@@ -432,12 +432,6 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 
 // ---- transient visuals: look_flash() ----
 
-/atom
-	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
-	var/tmp/list/look_flashes
-	/// The base state look_flash(as_state = TRUE) is showing now, or null.
-	var/tmp/look_flash_state
-
 /**
  * Shows `state` on A for `duration` (an overlay, or the base icon_state with as_state = TRUE), then
  * takes it back: a transient visual needs no var and no draw() branch of its own. Re-flashing the same
@@ -447,26 +441,28 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 /proc/look_flash(atom/A, state, duration, as_state = FALSE)
 	if(QDELETED(A) || !state || duration <= 0)
 		return
+	var/datum/cap_engine_state/engine = cap_engine_state_make(A)
 	if(as_state)
-		A.look_flash_state = state
+		engine.look_flash_state = state
 	else
-		LAZYSET(A.look_flashes, state, TRUE)
+		LAZYSET(engine.look_flashes, state, TRUE)
 	changed(A)
 	var/token = "[state]:[++GLOB.look_flash_seq]"
-	LAZYSET(A.look_flash_tokens, state, token)
+	LAZYSET(engine.look_flash_tokens, state, token)
 	after(A, duration, GLOBAL_PROC_REF(look_flash_end), with = list(A, state, token, as_state))
 
 GLOBAL_VAR_INIT(look_flash_seq, 0)
 
-/atom/var/tmp/list/look_flash_tokens
-
 /proc/look_flash_end(atom/A, state, token, as_state)
-	if(QDELETED(A) || A.look_flash_tokens?[state] != token)
+	if(QDELETED(A))
 		return
-	LAZYREMOVE(A.look_flash_tokens, state)
+	var/datum/cap_engine_state/engine = cap_engine_state_of(A)
+	if(!engine || engine.look_flash_tokens?[state] != token)
+		return
+	LAZYREMOVE(engine.look_flash_tokens, state)
 	if(as_state)
-		if(A.look_flash_state == state)
-			A.look_flash_state = null
+		if(engine.look_flash_state == state)
+			engine.look_flash_state = null
 	else
-		LAZYREMOVE(A.look_flashes, state)
+		LAZYREMOVE(engine.look_flashes, state)
 	changed(A)

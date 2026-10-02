@@ -81,7 +81,7 @@ DECLARE_SHARED_CACHE_EX(wall_material_facts, GLOBAL_PROC_REF(build_wall_material
 	update_material()
 	check_radioactive()
 
-DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list())
+DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_overlays), list("thermite"))
 /turf/simulated/wall/appearance_overlays()
 	. = list()
 	if(!material)
@@ -99,6 +99,13 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/wall, TYPE_PROC_REF(/atom, appearance_ov
 		return .
 
 	. += wall_overlay_images()
+	if(thermite)
+		. += wall_thermite_coat()
+
+/// The dark coating a thermite-treated wall shows (effects.dmi "thermite"): one image shared by every coated wall.
+/proc/wall_thermite_coat()
+	var/static/image/coat = image('icons/effects/effects.dmi', icon_state = "thermite")
+	return coat
 
 /// The overlay images for this wall's state (doc/rewrite/init_and_turfs.md sec 3.5), built
 /// once per (masks, material, reinforcement, connections, construction stage, damage step) and

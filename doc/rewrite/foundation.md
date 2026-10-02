@@ -63,15 +63,12 @@ The excerpt is the real code, trimmed to the declarations:
 
 ```text
 /obj/machinery/power/apc
-    machine_board = /obj/item/module/power_control        // type vars: what it is
-    machine_wires = /datum/wires/apc
-    emag_msg = "You emag the APC interface."              // what the hatch's emag op tells the user
-    req_access = list(ACCESS_ENGINE_EQUIP)
+    req_access = list(ACCESS_ENGINE_EQUIP)                // a type var: its lock
 
 /obj/machinery/power/apc/capabilities()
     . = ..()
     . += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-    . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+    . += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, wires = /datum/wires/apc, emag_say = "You emag the APC interface.")
     . += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
     . += power_channels()
     . += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)

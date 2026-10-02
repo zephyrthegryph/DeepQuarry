@@ -153,7 +153,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /// The shared definition of sequence type `path` (built on first use; safe before the globals exist).
 /proc/sequence_def(path)
 	RETURN_TYPE(/datum/sequence)
-	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
+	// A memoized per-type table built once on first call
 	var/static/list/defs = list()
 	var/datum/sequence/S = defs[path]
 	if(S)
@@ -212,7 +212,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 	return src
 
 /datum/work_item/sequence/admitted_now()
-	var/level = test_runlevel || (Master.current_runlevel ? (1 << (Master.current_runlevel - 1)) : 0)
+	var/level = test_runlevel || (Kernel.current_runlevel ? (1 << (Kernel.current_runlevel - 1)) : 0)
 	if(!(def.runlevels & level))
 		dormant = TRUE
 		return FALSE
@@ -1073,7 +1073,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 
 /// Audits a sample of every sequence's parked members and of its awake members with a sleeping step. A miss is
 /// logged, fails the unit test run and wakes the step. Returns the messages. Runs with the pipeline audit (same
-/// interval, config flag and admin verb: SSbehaviours.audit_due()).
+/// interval, config flag and admin verb: SSbehaviours.audit_step()).
 /proc/seq_audit(parked_sample = SEQ_AUDIT_PARKED_SAMPLE, awake_sample = SEQ_AUDIT_AWAKE_SAMPLE, expected = FALSE)
 	. = list()
 	for(var/datum/sequence/seq as anything in sequence_all())

@@ -204,7 +204,7 @@
 			op.offered = list(using) + op.offered
 	if(op.start_msg)
 		E.start_feedback = op.start_msg
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	E.op = op
 	if(!legacy)
 		C.key = "op:[op.key]"

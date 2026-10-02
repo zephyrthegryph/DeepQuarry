@@ -100,7 +100,7 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_mass_apply)
 	var/filters_to_copy = target().filters
 	var/filter_data_to_copy = target().filter_data
 	var/count = 0
-	// ALLOW(spatial): world search
+	// ALLOW(spatial): a deliberate whole-world search: the target is not tied to any holder or z-level index
 	for(var/thing in world.contents)
 		if(istype(thing, target_path))
 			var/atom/thing_at = thing

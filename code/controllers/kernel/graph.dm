@@ -1,4 +1,4 @@
-/// The one ordering-graph validator. The boot DAG (systems and subsystems, `needs` / `dependencies`) and the
+/// The one ordering-graph validator. The boot DAG (systems and their `needs`) and the
 /// work-item graph (`after` edges inside a phase) both go through graph_validate(), so a missing edge target or
 /// a cycle is reported the same way in both, on the same sorter (boot_dependency_order(), boot_dependencies.dm).
 

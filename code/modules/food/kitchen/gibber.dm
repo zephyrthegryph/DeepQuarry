@@ -183,7 +183,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 	if(operating || !occupant)
 		return
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		O.forceMove(src.loc)
 	slot_remove(occupant, get_turf(src))
 	update_icon()
@@ -253,7 +253,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 				byproducts[path] -= 1
 
 	latent_materialize_all() // a walk needs real things (C5)
-	for (var/obj/thing in contents) // ALLOW(latent): materialized above
+	for (var/obj/thing in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		// There's a chance that the gibber will fail to destroy or butcher some evidence.
 		if(istype(thing,/obj/item/organ) && prob(80))
 			var/obj/item/organ/OR = thing

@@ -1,0 +1,7 @@
+/proc/tags_fx()
+	to_chat(x, "<span class='a'>fine</span>")
+	to_chat(x, "<span class='b'>unclosed")
+	to_chat(x, "closed only</b>")
+	to_chat(x, "<b>bold</b> <i>it</i>")
+	to_chat(x, "<font color='red'>red")
+	to_chat(x, "<center>c</center></center>")

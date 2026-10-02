@@ -109,9 +109,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_attack)
 		shadekin.ai_brain.mauling = TRUE
 	om_run_frame_now(shadekin, /datum/om/pipeline/life)
 	//Remove when done
-	spawn(10 SECONDS) // ALLOW(scheduler): admin verb (allowlist)
-		if(shadekin)
-			shadekin.death()
+	om_after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
 UI_ACT(/datum/eventkit/player_effects, "shadekin_vore", ui_act_shadekin_vore)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_vore)

@@ -54,7 +54,7 @@
 	E.default_action = INPUT_ACTION_SELF_USE
 	E.cap = C
 	op_attach(E, key || replacetext(lowertext("[name]"), " ", "_"), ACT_USE, priority || 0, offered = req_self_held())
-	C.entry = E
+	C.entry = E // ALLOW(ownership): C is the capability entry wrapper being built here: its entry is set once before the wrapper is shared, not an owned relation
 	C.key = E.id
 	C.behind = behind
 	C.locked_by = locked_by
@@ -94,7 +94,7 @@
 	E.passes_target = TRUE
 	E.category = INTERACTION_CAT_TOGGLE
 	E.cap = C
-	C.entry = E
+	C.entry = E // ALLOW(ownership): C is the capability entry wrapper being built here: its entry is set once before the wrapper is shared, not an owned relation
 	C.key = E.id
 	C.behind = behind
 	C.locked_by = locked_by

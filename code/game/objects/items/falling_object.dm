@@ -38,7 +38,7 @@ MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_ty
 	dropped.pixel_x = rand(-150, 150)
 	dropped.pixel_y = 500 // When you think that pixel_z is height but you are wrong
 	dropped.set_density(FALSE)
-	dropped.opacity = FALSE
+	dropped.set_opacity(FALSE)
 	if(admin_spawned)
 		dropped.flags |= ADMIN_SPAWNED
 	animate(dropped, pixel_y = initial_y, pixel_x = initial_x , time = 7)
@@ -62,7 +62,7 @@ MAP_RESOLVER_VARS(/obj/effect/falling_effect, "admin_spawned;crushing;falling_ty
 
 	play_sfx(src, SFX_EFFECTS_METEORIMPACT, 1.25)
 	set_density(initial(density))
-	opacity = initial(opacity)
+	set_opacity(initial(opacity))
 	plane = initial(plane)
 
 /obj/effect/falling_effect/singularity_act()

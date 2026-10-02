@@ -53,6 +53,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 			CRASH("Invalid ticket state: [new_ticket.state]")
 	if(!own_move(new_ticket, src, list_var))
 		return
+	new_ticket.metrics_state_event()
 	// own_move() appended it; slide it back to its sorted position.
 	var/list/ticket_list = vars[list_var]
 	var/num_tickets = length(ticket_list)
@@ -549,6 +550,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(ismob(user))
 		var/mob/our_handler_mob = user
 		handler_ckey = our_handler_mob.client?.ckey
+	metrics_state_event("handled")
 
 /datum/ticket/proc/Retitle()
 	var/new_title = rerun_ask(usr, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)

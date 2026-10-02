@@ -1,7 +1,7 @@
 // Kernel measurement: fixed log-spaced histograms.
 //
 // KM_HIST_BINS bins of milliseconds (KM_HIST_MIN_MS, KM_HIST_RATIO in code/__defines/kernel_measure.dm) give
-// p50 / p95 / p99 with no sort and no copy, by the same rank walk Master.performance_window() uses over its
+// p50 / p95 / p99 with no sort and no copy, by the same rank walk Kernel.performance_window() uses over its
 // 1%-wide tick histogram. Adding a sample is one bin lookup and no allocation.
 //
 // Within a bin the percentile is interpolated linearly and clamped to the exact min and max seen, so a bin
@@ -140,6 +140,6 @@
 /datum/system_stats/proc/ms_total()
 	return ms_hi + ms_lo
 
-/datum/system_stats/Destroy()
+/datum/system_stats/on_destroy(force)
 	QDEL_NULL(hist)
-	return ..()
+	..()

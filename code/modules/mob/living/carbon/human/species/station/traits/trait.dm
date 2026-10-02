@@ -88,9 +88,12 @@
 		om_attach(H, added_behaviour_path)
 	return
 
-/// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure.
+/// Verbs a mob has while its species carries this trait (read by human granted_verbs()). Pure. A trait
+/// sets its own with TYPE_TABLE(/datum/trait/x, granted_verb_list, list(/mob/living/proc/y)). Shared and read-only.
+TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
+
 /datum/trait/proc/granted_verbs()
-	return null
+	return TYPE_TABLE_GET(src, granted_verb_list)
 
 /mob/living/carbon/human/granted_verbs()
 	. = ..()

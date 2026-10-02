@@ -3,22 +3,22 @@
 /// behaviour; profiled pipeline frames time each stage). Opened by the admin verb
 /// "OM Profiler" (Debug); tgui interface OmProfiler.tsx.
 
-/datum/controller/subsystem/behaviours
+/datum/system/behaviours
 	/// world.time the profiler counters were last cleared (0: since boot).
 	EXPIRY_DECLARE(profile_reset_time)
 
-DECLARE_UI_STATE(/datum/controller/subsystem/behaviours, ADMIN_STATE(R_DEBUG))
+DECLARE_UI_STATE(/datum/system/behaviours, ADMIN_STATE(R_DEBUG))
 
-DECLARE_UI(/datum/controller/subsystem/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
+DECLARE_UI(/datum/system/behaviours, "OmProfiler", UI_TITLE("Object Model Profiler"))
 
-UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
+UI_DATA_REPLACE(/datum/system/behaviours, "merge:ui_data_datum_controller_subsystem_behaviours{elapsed_s:num,last_run_ms:num,error_count:num,behind:bool,behaviours:list,shared_bucket:bool,lanes:list,stages:list,services:list,caches:unknown,world_step:list}")
 
-/// The computed part of /datum/controller/subsystem/behaviours's window data (declared on its UI_DATA row).
-/datum/controller/subsystem/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of /datum/system/behaviours's window data (declared on its UI_DATA row).
+/datum/system/behaviours/proc/ui_data_datum_controller_subsystem_behaviours(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()
-	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background")
+	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
 	data["elapsed_s"] = round(elapsed, 0.1)
 	data["last_run_ms"] = sched ? round(sched.last_run_ms, 0.001) : 0
@@ -135,15 +135,15 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 		)
 	return data
 
-/datum/controller/subsystem/behaviours/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
+/datum/system/behaviours/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
 	if(!user || !check_rights_for(user.client, R_DEBUG))
 		return FALSE
 	return TRUE
 
-UI_ACT(/datum/controller/subsystem/behaviours, "reset", ui_act_reset)
-UI_ACT_PROC(/datum/controller/subsystem/behaviours, ui_act_reset)
+UI_ACT(/datum/system/behaviours, "reset", ui_act_reset)
+UI_ACT_PROC(/datum/system/behaviours, ui_act_reset)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.stats = list()

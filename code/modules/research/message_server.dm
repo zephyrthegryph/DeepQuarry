@@ -307,7 +307,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
-// ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
+// The blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 // it owns (an owned list): the replacement takes the list over.
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
 	var/turf/T = locate(1,1,2)
@@ -407,7 +407,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		round_id = text2num(round_id)
 	round_id++
 	for(var/list/row in rows)
-		om_sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
+		sql_write("INSERT INTO erro_feedback VALUES (null, Now(), :round_id, :fv_variable, :fv_value, :fv_details)", list("round_id" = round_id, "fv_variable" = row[1], "fv_value" = row[2], "fv_details" = row[3]))
 
 // Sanitize inputs to avoid SQL injection attacks. This is not secure. Basic filters like this are pretty easy to bypass. Use the format for arguments used in the above.
 /proc/sql_sanitize_text(text)

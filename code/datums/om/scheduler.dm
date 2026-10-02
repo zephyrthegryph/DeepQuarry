@@ -51,6 +51,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	om_scheduler().advance(seconds)
 
 /datum/om/scheduler
+	/// The slowest single entity step of a recent tick: list(behaviour, entity, name, usage, ms, world_time).
+	var/list/slow_step
+	/// While a metrics profile capture runs: "behaviour|entity type" -> tick usage spent in its steps, wakes and
+	/// deadlines (note_type_cost()), so a busy behaviour's cost can be traced to the entities behind it. Null
+	/// otherwise, which costs each step one var read.
+	var/list/type_costs
 	/// Null: world.time. A number: injected time (deciseconds).
 	var/manual_time
 	var/deterministic = FALSE
@@ -98,8 +104,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/ctx_bid = 0
 
 	/// Budget shares per lane (fractions of the run's budget).
-	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1)
-	/// Tests: max hook calls per lane per run (list of 5), and for deadlines.
+	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.05, 0.05) // ALLOW(instance_list): the scheduler is a singleton (one per live kernel, one per test)
+	/// Tests: max hook calls per lane per run (one per lane), and for deadlines.
 	var/list/harness_caps
 	var/harness_deadline_cap = 0
 	/// Current phase's absolute tick usage limit and call cap.
@@ -312,7 +318,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 // ---------------------------------------------------------------- run
 
 /// One scheduler pass. `tick_limit` is an absolute world.tick_usage (live:
-/// Master.current_ticklimit). Returns TRUE if all due work finished.
+/// Kernel.current_ticklimit). Returns TRUE if all due work finished.
 ///
 /// The pass is a sequence of pieces (pass_begin ... pass_end). run_pass() runs them all back to back; the
 /// kernel tick (controllers/kernel/kernel.dm) runs the same pieces itself, between its own phases.
@@ -331,7 +337,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	pass_t = now()
 	runs++
 	if(isnull(manual_time))
-		var/level = Master.current_runlevel
+		var/level = Kernel.current_runlevel
 		runlevel = level ? (1 << (level - 1)) : 0
 	pass_avail = max(tick_limit - pass_start, 0)
 	pass_done = TRUE
@@ -385,8 +391,9 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		cap = 0
 		if(!run_deadlines(pass_t))
 			pass_done = FALSE
+		var/datum/kernel_latency/latency = kernel_latency()
 		for(var/lane in 1 to OM_LANE_COUNT)
-			if(kernel_latency().sheds_lane(lane))
+			if(latency.shedding && latency.sheds_lane(lane))
 				continue
 			if(!run_lane_guarded(lane, pass_t))
 				pass_done = FALSE
@@ -445,9 +452,15 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			return FALSE
 	if(lane == LANE_PRESENTATION)
 		// Declared appearances whose watched fields changed (code/datums/sys/appearance.dm).
-		if(!appearance_drain(src))
+		var/appearance_start = TICK_USAGE
+		var/appearance_done = appearance_drain(src)
+		meter.charge(KM_SYS_OM_APPEARANCE, TICK_USAGE_TO_MS(appearance_start))
+		if(!appearance_done)
 			return FALSE
-	if(!run_world_wakes(lane))
+	var/world_start = TICK_USAGE
+	var/world_done = run_world_wakes(lane)
+	meter.charge(KM_SYS_OM_NATIVE, TICK_USAGE_TO_MS(world_start))
+	if(!world_done)
 		return FALSE
 	if(!run_wakes(lane))
 		return FALSE
@@ -518,6 +531,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// The index is a local: an entity leaving the slot mid-run leaves a null
 /// tombstone (ring.remove()), so positions never shift under the loop, and
 /// the per-entity cost is one list read, one proc call and one budget check.
+/// An entity whose step alone takes over OM_SLOW_STEP_USAGE is noted (note_slow_step()).
 ///
 /// Three loops: plain cadence (tick), fixed-step (the accumulator at the
 /// behaviour's step_idx, on_step called directly; hooks go through call_hook
@@ -538,6 +552,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/n_calls = calls
 	var/ran = 0
 	var/t0 = TICK_USAGE
+	var/prev = t0 // the budget check's own reading, reused to spot one entity's step taking far too long
 	var/out = FALSE
 	var/i = R.cur_i
 	while(TRUE)
@@ -560,7 +575,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 						PS[OM_STAT_CALL_MAX] = max(PS[OM_STAT_CALL_MAX], TICK_USAGE_TO_MS(c0))
 #endif
 						ran++
-						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
+						if(now - prev > OM_SLOW_STEP_USAGE)
+							note_slow_step(B, E, now - prev)
+						prev = now
+						if(now > lim || (cp && ++n_calls >= cp))
 							out = TRUE
 							break
 				if(OM_SLOT_STEP)
@@ -598,7 +619,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 							if(rec.torn_down)
 								break
 						ran++
-						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
+						if(now - prev > OM_SLOW_STEP_USAGE)
+							note_slow_step(B, E, now - prev)
+						prev = now
+						if(now > lim || (cp && ++n_calls >= cp))
 							out = TRUE
 							break
 				else
@@ -608,7 +635,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 							continue
 						tick_slow(B, E, dt)
 						ran++
-						if(TICK_USAGE > lim || (cp && ++n_calls >= cp))
+						var/now = TICK_USAGE
+						if(type_costs)
+							note_type_cost(B, E, now - prev)
+						if(now - prev > OM_SLOW_STEP_USAGE)
+							note_slow_step(B, E, now - prev)
+						prev = now
+						if(now > lim || (cp && ++n_calls >= cp))
 							out = TRUE
 							break
 			break
@@ -622,9 +655,13 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	calls = n_calls
 	var/list/S = stat_for(B.id)
 	S[OM_STAT_RUNS] += ran
-	var/spent = TICK_USAGE_TO_MS(t0)
+	var/slot_usage = TICK_USAGE - t0
+	var/spent = TICK_DELTA_TO_MS(slot_usage)
 	S[OM_STAT_MS] += spent
 	meter.charge(B.system_idx, spent)
+	// A pass that ran far over without any one entity being slow: name the pass and how many it ran.
+	if(slot_usage > OM_SLOW_STEP_USAGE * 4 && (!slow_step || slow_step["world_time"] != world.time))
+		note_slow_step(B, src, slot_usage, "pass of [ran] entities")
 	return !(out && i <= length(L))
 
 /// Clocked, substepped, or holding behaviours (fixed-step ones only when clocked).
@@ -785,7 +822,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			var/ver = rec.att_ver
 			var/wake_start = TICK_USAGE
 			call_hook(rec, B, OM_HOOK_WAKE, bits)
-			meter.charge(B.system_idx, TICK_USAGE_TO_MS(wake_start))
+			var/wake_usage = TICK_USAGE - wake_start
+			meter.charge(B.system_idx, TICK_DELTA_TO_MS(wake_usage))
+			if(type_costs)
+				note_type_cost(B, rec.owner, wake_usage)
+			if(wake_usage > OM_SLOW_STEP_USAGE)
+				note_slow_step(B, rec.owner, wake_usage, "wake")
 			if(rec.torn_down)
 				break
 			if(rec.att_ver != ver)
@@ -955,7 +997,12 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 			om_throttle_release(rec, B)
 		else
 			call_hook(rec, B, OM_HOOK_KEYED, sub)
-	meter.charge(B.system_idx, TICK_USAGE_TO_MS(deadline_start))
+	var/deadline_usage = TICK_USAGE - deadline_start
+	meter.charge(B.system_idx, TICK_DELTA_TO_MS(deadline_usage))
+	if(type_costs)
+		note_type_cost(B, rec.owner, deadline_usage)
+	if(deadline_usage > OM_SLOW_STEP_USAGE)
+		note_slow_step(B, rec.owner, deadline_usage, "deadline")
 
 // ---------------------------------------------------------------- min_interval throttle
 
@@ -1052,3 +1099,14 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /// The behaviour this ring runs.
 /datum/om/ring/proc/behaviour() as /datum/om/behaviour
 	return om_registry().behaviours[behaviour_id]
+
+/// One entity's step (or wake, or deadline: `kind`) took `usage` percent of a tick (over OM_SLOW_STEP_USAGE): kept as the tick's slowest step,
+/// which the MC's overrun record reports (Kernel.record_performance_tick()). Rare, so it may allocate.
+/// Adds `usage` (tick usage) to `B`'s cost for entities of E's type, while a profile capture collects type_costs.
+/datum/om/scheduler/proc/note_type_cost(datum/om/behaviour/B, datum/E, usage)
+	type_costs["[B.name || B.type]|[E?.type]"] += usage
+
+/datum/om/scheduler/proc/note_slow_step(datum/om/behaviour/B, datum/E, usage, kind = "step")
+	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
+		return
+	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = world.time)

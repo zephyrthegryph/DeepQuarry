@@ -486,7 +486,7 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_photo_side)
 			if(field == "criminal")
 				old_criminal_status = active2()?.fields?["criminal"]
 				for(var/mob/living/carbon/human/H in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-					BITSET(H.hud_updateflag, WANTED_HUD)
+					H.flag_hud_update(WANTED_HUD)
 
 			if(istype(active2(), /datum/data/record) && (field in active2().fields))
 				active2().fields[field] = answer

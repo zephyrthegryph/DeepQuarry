@@ -352,13 +352,13 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 		rel_clear(src, nameof(target))
 		om_release_busy(src, "emagged")
 		emagged = 1
-		on = 1
+		set_on(1)
 		update_icons()
 		. = 1
 	rel_add(src, nameof(ignore_list), user)
 
 /mob/living/bot/medbot/explode()
-	on = 0
+	set_on(0)
 	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 

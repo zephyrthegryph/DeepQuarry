@@ -155,12 +155,12 @@ dx_raw_overlays	code/game/objects/items/shooting_range.dm	cut_overlays()
 dx_raw_overlays	code/game/objects/items/shooting_range.dm	add_overlay(bmark) // add the decal
 dx_raw_overlays	code/game/objects/items/weapons/capture_crystal.dm	thing.overlays += coolanimation
 dx_raw_overlays	code/game/objects/items/weapons/capture_crystal.dm	thing.overlays -= coolanimation
-dx_raw_overlays	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I) // ALLOW(decl): random pick
+dx_raw_overlays	code/game/objects/items/weapons/cigs_lighters.dm	add_overlay(I) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 dx_raw_overlays	code/game/objects/items/weapons/cigs_lighters.dm	cut_overlays() // ALLOW(decl): removes the parent's random overlay. Prevents the Cheap Lighter overlay from appearing on this
 dx_raw_overlays	code/game/objects/items/weapons/explosives.dm	target.add_overlay(image_overlay)
 dx_raw_overlays	code/game/objects/items/weapons/explosives.dm	target_ref().cut_overlay(image_overlay)
 dx_raw_overlays	code/game/objects/items/weapons/explosives.dm	target_ref().cut_overlay(image_overlay)
-dx_raw_overlays	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_state]O[choice]") // ALLOW(decl): random overlay pick
+dx_raw_overlays	code/game/objects/items/weapons/extinguisher.dm	add_overlay("[item_state]O[choice]") // ALLOW(decl): Initialize rolls a random overlay per instance; a declaration has no random form
 dx_raw_overlays	code/game/objects/items/weapons/material/kitchen.dm	cut_overlays()
 dx_raw_overlays	code/game/objects/items/weapons/policetape.dm	F.cut_overlay(hazard_overlay)
 dx_raw_overlays	code/game/objects/items/weapons/policetape.dm	F.add_overlay(hazard_overlay)
@@ -494,7 +494,7 @@ dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/demon/demon_abi
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/demon/demon_abilities.dm	cut_overlays()
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/demon/demon_abilities.dm	cut_overlays()
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/demon/demon_abilities.dm	cut_overlays()
-dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/fennec.dm	add_overlay(bigshadow) // ALLOW(decl): per-instance image
+dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/fennec.dm	add_overlay(bigshadow) // ALLOW(decl): the overlay is an image built per instance, which a declaration cannot express
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/goia.dm	cut_overlays()
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	add_overlay(mane_overlay)
 dx_raw_overlays	code/modules/mob/living/simple_mob/subtypes/vore/lion.dm	cut_overlay(mane_overlay)
@@ -597,7 +597,6 @@ dx_raw_overlays	code/modules/projectiles/guns/projectile/revolver.dm	add_overlay
 dx_raw_overlays	code/modules/projectiles/guns/projectile/revolver.dm	add_overlay("inspector_on")
 dx_raw_overlays	code/modules/reagents/machinery/chem_master.dm	loaded_pill_bottle.cut_overlays()
 dx_raw_overlays	code/modules/reagents/machinery/dispenser/reagent_tank.dm	add_overlay(test)
-dx_raw_overlays	code/modules/reagents/reagents/other.dm	W.add_overlay(image('icons/effects/effects.dmi',icon_state = "#673910")) // What??
 dx_raw_overlays	code/modules/research/tg/machinery/mech_fabricator.dm	add_overlay("fab-active")
 dx_raw_overlays	code/modules/research/tg/machinery/mech_fabricator.dm	cut_overlay("fab-active")
 dx_raw_overlays	code/modules/research/tg/machinery/mech_fabricator.dm	add_overlay("fab-load-metal")

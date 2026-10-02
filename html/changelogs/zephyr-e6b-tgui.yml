@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The tgui transport no longer polls: window status is re-checked on change events, zombie windows close on a timer, and autoupdate work exists only while a window autoupdates."

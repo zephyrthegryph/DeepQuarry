@@ -45,7 +45,7 @@
 	grid[PGRID_PROBLEM_TIMED] = FALSE
 	grid[PGRID_MATERIAL_PROBLEM] = FALSE
 	grid[PGRID_PROBLEM_SHOWN] = FALSE
-	grid[PGRID_NODES] = list() // ALLOW(instance_list): one per live region; created because a machine joined
+	grid[PGRID_NODES] = list() // one per live region; created because a machine joined
 	GLOB.machine_service.power_grids[id] = grid
 	power_grid_refresh(id)
 	return grid

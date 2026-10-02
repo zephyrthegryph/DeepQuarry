@@ -36,7 +36,7 @@
 
 /obj/item/implant/backup/post_implant(mob/living/carbon/human/H)
 	if(istype(H))
-		BITSET(H.hud_updateflag, BACKUP_HUD)
+		H.flag_hud_update(BACKUP_HUD)
 		rel_add(our_db(), nameof(/datum/transcore_db::implants), src)
 
 		return 1

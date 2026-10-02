@@ -151,7 +151,7 @@
 		M.adjust_fire_stacks(removed * 10)
 		if(prob(10))
 			to_chat(M, span_critical("You feel something boiling within you!"))
-			om_after(M, rand(30, 60), TYPE_PROC_REF(/mob/living, ignite_mob))
+			om_after(M, rand(3, 6) SECONDS, TYPE_PROC_REF(/mob/living, ignite_mob))
 
 /datum/reagent/toxin/lead
 	name = REAGENT_LEAD
@@ -408,7 +408,7 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
+	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
@@ -416,7 +416,7 @@
 /datum/reagent/toxin/zombiepowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/lichpowder
@@ -440,7 +440,7 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
+	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
@@ -452,7 +452,7 @@
 /datum/reagent/lichpowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/toxin/fertilizer //Reagents used for plant fertilizers.
@@ -716,7 +716,7 @@
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME && prob(25))
 			var/color_shift = rand(-100, 100)
-			om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), color_shift)
+			om_after(H, 1 TICK, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), color_shift)
 		if(H.species.flags & NO_DNA)
 			return
 

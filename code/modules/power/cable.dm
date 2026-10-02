@@ -77,7 +77,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /obj/structure/cable/proc/set_engineered_material(material_id)
 	engineered_material_id = material_id
-	if(material_id && !material_overrides)
+	if(material_id && !material_build_view(src).overrides)
 		apply_material_construction(list(MATERIAL_ROLE_CONDUCTOR = material_id), /datum/material_template/cable, SHEET_MATERIAL_AMOUNT)
 	var/datum/material/material = engineered_material()
 	if(material?.icon_colour)
@@ -90,7 +90,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 
 /// Engineered conductors put their region on the material overlay.
 /obj/structure/cable/proc/power_material_changed()
-	if(!engineered_material_id && !material_custom_assembly)
+	if(!engineered_material_id && !material_assembly_view(src).custom)
 		return
 	GLOB.machine_service.power_material_cables[src] = TRUE
 	if(power_entity)
@@ -128,6 +128,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	SSvg.untrack_entity(src, power_entity)
 	power_entity = vg_power_bind_cable(power_entity, power_shape(T))
+	power_topology_edited(src)
 	SSvg.track_entity(src, power_entity)
 
 /// This piece as `vg_power_bind_cable` takes it: `x, y, z, d1, d2, up, down, link`.
@@ -158,6 +159,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!length(bound))
 		return
 	var/list/handles = vg_power_bind_cable_list(entities, shapes)
+	power_topology_edited(/obj/structure/cable)
 	for(var/i in 1 to length(bound))
 		var/obj/structure/cable/C = bound[i]
 		SSvg.untrack_entity(C, C.power_entity)
@@ -229,7 +231,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/cable, REGISTRY_CABLES)
 		. += span_warning("[avail > 0 ? "[DisplayPower(avail)] in power network." : "The cable is not powered."]")
 	if(engineered_material_id)
 		var/datum/material/material = engineered_material()
-		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
+		. += span_notice("Conductor: [material?.display_name || engineered_material_id], currently [round(material_service_of(src)?.temperature || T20C, 0.1)] K; [round(material_current, 0.1)] A.")
 		if(material?.critical_temperature)
 			. += span_notice("Superconducting envelope: below [round(material.critical_temperature, 0.1)] K and [round(material.critical_current_density)] relative current density.")
 
@@ -466,23 +468,24 @@ DECLARE_INTERACTIONS(/obj/structure/cable, INTERACT_ITEM(null, PROC_REF(interact
 	. = ..()
 	apply_blueprint_effects()
 	amount = length
-	engineered_material_id = material_id
+	material_engineered_id_set(src, material_id)
 	if (param_color) // It should be red by default, so only recolor it if parameter was specified.
 		color = param_color
 	pixel_x = rand(-2,2)
 	pixel_y = rand(-2,2)
 	update_icon()
 	update_wclass()
-	if(engineered_material_id)
-		var/datum/material/material = get_material_by_name(engineered_material_id)
+	if(material_engineered_id(src))
+		var/datum/material/material = get_material_by_name(material_engineered_id(src))
 		name = "[material?.display_name || "engineered"] cable coil"
 		desc = "A layered power conductor. Its core carries current while its functional layer and jacket govern thermal stability."
 
 /obj/item/stack/cable_coil/examine(mob/user)
 	. = ..()
-	if(engineered_material_id)
-		var/datum/material/material = get_material_by_name(engineered_material_id)
-		. += span_notice("Conductor construction: [material?.display_name || engineered_material_id].")
+	var/engineered_id = material_engineered_id(src)
+	if(engineered_id)
+		var/datum/material/material = get_material_by_name(engineered_id)
+		. += span_notice("Conductor construction: [material?.display_name || engineered_id].")
 
 ///////////////////////////////////
 // General procedures
@@ -589,7 +592,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 /obj/item/stack/cable_coil/transfer_to(obj/item/stack/cable_coil/S)
 	if(!istype(S))
 		return
-	if(engineered_material_id != S.engineered_material_id)
+	if(material_engineered_id(src) != material_engineered_id(S))
 		return
 	..()
 
@@ -656,7 +659,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 		C = new /obj/structure/cable/heavyduty(F)
 	else
 		C = new /obj/structure/cable(F)
-	C.set_engineered_material(engineered_material_id)
+	C.set_engineered_material(material_engineered_id(src))
 	C.copy_material_construction_from(src)
 	C.cableColor(color)
 	C.d1 = d1
@@ -674,7 +677,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 // called when cable_coil is click on an installed obj/cable
 // or click on a turf that already contains a "node" cable
 /obj/item/stack/cable_coil/proc/cable_join(obj/structure/cable/C, mob/user)
-	if(C.engineered_material_id && C.engineered_material_id != engineered_material_id)
+	if(C.engineered_material_id && C.engineered_material_id != material_engineered_id(src))
 		to_chat(user, span_warning("The two conductor constructions cannot be spliced without a transition terminal."))
 		return
 	var/turf/U = user.loc
@@ -733,7 +736,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil, \
 				return
 
 		C.cableColor(color)
-		C.set_engineered_material(engineered_material_id)
+		C.set_engineered_material(material_engineered_id(src))
 		C.copy_material_construction_from(src)
 
 		C.d1 = nd1

@@ -21,18 +21,18 @@
 /// children to report self time.
 /datum/benchmark_init_stats
 	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us, max_self_us)
-	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/by_type = list()
 	var/depth = 0
 	/// child microseconds accumulated per depth
-	var/list/child_us = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/child_us = list()
 	/// qdel frames: child ms per depth and child ms at the last phase boundary
 	var/qdel_depth = 0
-	var/list/qdel_child_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
-	var/list/qdel_phase_mark_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_child_ms = list()
+	var/list/qdel_phase_mark_ms = list()
 	/// LIFECYCLE_PHASE_* id -> exclusive ms (children's time subtracted)
-	var/list/phase_self_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/phase_self_ms = list()
 	/// type -> list(qdels, self ms)
-	var/list/qdel_by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_by_type = list()
 
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
@@ -47,8 +47,6 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /proc/benchmark_mark_seconds(seconds)
 	// Keyed by subsystem type text: a deferred call's arguments may not hold datum assoc keys.
 	var/list/fired = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		fired["[S.type]"] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		fired["[S.type]"] = S.times_fired
 	// A mark a second, on timers (nothing sleeps).
@@ -57,12 +55,6 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 /proc/benchmark_mark_second(list/fired_box, i, seconds)
 	var/list/fired = fired_box[1]
 	var/list/names = list()
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		var/key = "[S.type]"
-		var/delta = S.times_fired - fired[key]
-		if(delta > 0)
-			names += "[S.name] x[delta] ([round(S.cost, 0.1)] ms)"
-		fired[key] = S.times_fired
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		var/key = "[S.type]"
 		var/delta = S.times_fired - fired[key]
@@ -212,7 +204,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		return null
 	try
 		return json_decode(text)
-	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+	catch
 		return null
 
 /// Summarises a proc profile: the top procs by self and by total time.
@@ -255,7 +247,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		detail("boot_proc_profile", benchmark_profile_summary(benchmark_proc_profile(), 150))
 		SSprofiler.DumpFile(allow_yield = FALSE)
 		world.Profile(PROFILE_CLEAR)
-	metric("init_seconds", Master.initializations_seconds, "s")
+	metric("init_seconds", Kernel.initializations_seconds, "s")
 	var/list/subsystems = benchmark_subsystem_init_times()
 	for(var/name in subsystems)
 		metric("init_ms_[name]", subsystems[name], "ms")
@@ -387,12 +379,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	while(GLOB.explosion_service.awake || GLOB.explosion_service.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/resolved_at = REALTIMEOFDAY
 	while(length(SSlighting.sources_queue) || length(SSlighting.corners_queue) || length(SSlighting.objects_queue))
 		if(REALTIMEOFDAY > deadline)
 			fail("lighting did not settle within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/lit_at = REALTIMEOFDAY
 	wait_fires(SSair, 3)
 	var/list/profile

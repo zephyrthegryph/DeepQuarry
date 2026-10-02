@@ -16,7 +16,6 @@
 	icon_state = "energy_siphon"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_SHOCK
-	// ALLOW(instance_list): d: rebuilt in place every cast and passed to recursive_content_check() to fill
 	var/list/atom/movable/things_to_siphon //Things which are actually drained as a result of the above not being null (a relation list view, rebuilt each cycle).
 	var/flow_rate = 1000 // Limits how much electricity can be drained per second.  Measured by default in god knows what.
 

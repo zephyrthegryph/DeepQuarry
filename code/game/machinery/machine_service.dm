@@ -18,8 +18,12 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	var/cost_powernets     = 0
 	var/last_cost_machinery = 0
 	var/last_cost_powernets = 0
-	/// In-flight machinery stage accumulator. It deliberately survives yields.
+	/// In-flight machinery and power stage accumulators. They deliberately survive yields.
 	var/current_cost_machinery = 0
+	var/current_cost_powernets = 0
+	/// Re-read every power machine's region on the next power step even if the cable topology held still (boot,
+	/// and anything that resets the grid lists by hand).
+	var/power_regions_stale = TRUE
 
 	/// Machine gas transfers accumulated since the last commit. Rust commits this flat set under
 	/// one publication lock after the pipeline devices have calculated their requested flow.
@@ -54,25 +58,90 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	log_world("Machine service initialized: [length(power_grids)] power regions, [gas_dirty_last] gas observations.")
 
 /// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
-/// the power step. The gas wake may yield; the power step only runs once it has completed.
+/// the power step. The gas wake may yield; the power step only starts once it has completed, and its
+/// APC/SMES poll may yield too (a resumed step carries on with the poll).
 /datum/world_service/machines/service_step(resumed)
-	var/started = TICK_USAGE
-	if(!resumed)
-		current_cost_machinery = 0
-		current_gas_wake_scan_ms = 0
-		current_gas_wake_subscribers = 0
-	var/complete = wake_dirty_gas_subscribers(TRUE)
-	if(complete)
-		flush_pump_transfers()
-	current_cost_machinery += TICK_USAGE_TO_MS(started)
-	if(!complete)
-		return FALSE
-	last_cost_machinery = current_cost_machinery
-	cost_machinery = MC_AVERAGE(cost_machinery, last_cost_machinery)
+	if(!power_poll_queue)
+		var/started = TICK_USAGE
+		if(!resumed)
+			current_cost_machinery = 0
+			current_gas_wake_scan_ms = 0
+			current_gas_wake_subscribers = 0
+		var/complete = wake_dirty_gas_subscribers(TRUE)
+		if(complete)
+			flush_pump_transfers()
+		current_cost_machinery += TICK_USAGE_TO_MS(started)
+		if(!complete)
+			return FALSE
+		last_cost_machinery = current_cost_machinery
+		cost_machinery = KERNEL_AVERAGE(cost_machinery, last_cost_machinery)
+		current_cost_powernets = 0
+		var/begin_started = TICK_USAGE
+		process_power_begin()
+		current_cost_powernets += TICK_USAGE_TO_MS(begin_started)
 	var/power_started = TICK_USAGE
-	process_power()
-	last_cost_powernets = TICK_USAGE_TO_MS(power_started)
-	cost_powernets = MC_AVERAGE(cost_powernets, last_cost_powernets)
+	var/polled = poll_power_storage(TRUE)
+	if(polled)
+		process_power_finish()
+	current_cost_powernets += TICK_USAGE_TO_MS(power_started)
+	if(!polled)
+		return FALSE
+	last_cost_powernets = current_cost_powernets
+	cost_powernets = KERNEL_AVERAGE(cost_powernets, last_cost_powernets)
+	return TRUE
+
+/// The whole power step at once (boot and admin repair). The world lane runs it in parts instead
+/// (service_step()), so the APC poll can yield between ticks.
+/datum/world_service/machines/proc/process_power()
+	process_power_begin()
+	poll_power_storage(FALSE)
+	process_power_finish()
+
+/// The power step up to the APC/SMES poll: area loads, the Rust commit, grid state and every power
+/// machine's region. Queues the APCs and SMES for poll_power_storage().
+/datum/world_service/machines/proc/process_power_begin()
+	power_flush_areas()
+	vg_power_commit()
+	for(var/id in power_grids)
+		if(!power_grid_refresh(id))
+			power_grids -= id
+			continue
+		power_grid_sync_problem(id)
+	// Every power machine's `power_region` is polled here, not pushed --
+	// a deferred `connect_to_network(FALSE)` (map load, and every
+	// `power_autoconnect()`) relies on this to eventually resolve. Region ids
+	// only change with the cable topology, so the poll runs only after it was
+	// edited (power_topology_edited(), committed above or by a Rust frame): an
+	// idle station's grid holds still, and two FFI calls per power machine every
+	// step added up.
+	if(power_regions_stale)
+		power_regions_stale = FALSE
+		for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
+			if(!QDELETED(machine))
+				machine.power_refresh_network()
+	power_poll_queue = REGISTRY_MEMBERS(REGISTRY_APCS) + REGISTRY_MEMBERS(REGISTRY_SMES)
+	power_poll_index = 1
+
+/// Polls the queued APCs and SMES. A poll that finds an APC's channels changed repowers its area
+/// (apply_area_power(): every machine and light in it), so when every APC changes at once -- the first
+/// step of a round, or a grid coming back -- the poll is seconds of work. `budgeted` stops at the tick
+/// limit and returns FALSE (the next call carries on); otherwise it polls them all.
+/datum/world_service/machines/proc/poll_power_storage(budgeted)
+	var/list/queue = power_poll_queue
+	while(power_poll_index <= length(queue))
+		var/obj/machinery/power/machine = queue[power_poll_index++]
+		if(QDELETED(machine))
+			continue
+		if(istype(machine, /obj/machinery/power/apc))
+			var/obj/machinery/power/apc/apc = machine
+			apc.power_poll()
+		else
+			var/obj/machinery/power/smes/storage = machine
+			storage.power_poll()
+		if(budgeted && TICK_CHECK)
+			return FALSE
+	power_poll_queue = null
+	power_poll_index = 1
 	return TRUE
 
 /datum/world_service/machines/stat_line()
@@ -85,7 +154,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
 	if(!M || !source || !sink || requested_moles <= 0)
 		return FALSE
-	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume)) // ALLOW(ownership): transient per-tick work queue of (machine, mixture, number) tuples, drained and Cut() by flush_pump_transfers() in the same step
+	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
 	return TRUE
 
 /datum/world_service/machines/proc/flush_pump_transfers()

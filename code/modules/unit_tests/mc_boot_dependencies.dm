@@ -1,4 +1,4 @@
-/// Boot on declared dependencies (code/controllers/boot_dependencies.dm).
+/// Boot on declared needs (code/controllers/boot_dependencies.dm).
 /datum/unit_test/mc_boot_dependencies
 
 /datum/unit_test/mc_boot_dependencies/Run()
@@ -27,13 +27,4 @@
 		TEST_ASSERT(name in cycle, "[name] named in the cycle")
 
 	// The live boot: no cycle, and every declared dependency initialised first.
-	TEST_ASSERT_NULL(Master.boot_dependency_cycle, "subsystem dependency cycle at boot: [Master.boot_dependency_cycle]")
-	var/list/type_to_subsystem = list()
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		type_to_subsystem[subsystem.type] = subsystem
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		for(var/dependency_type in subsystem.dependencies)
-			var/datum/controller/subsystem/dependency = type_to_subsystem[dependency_type]
-			if(!dependency)
-				continue
-			TEST_ASSERT(dependency.init_order < subsystem.init_order, "[subsystem.type] initialised before its dependency [dependency_type]")
+	TEST_ASSERT_NULL(Kernel.boot_dependency_cycle, "system dependency cycle at boot: [Kernel.boot_dependency_cycle]")

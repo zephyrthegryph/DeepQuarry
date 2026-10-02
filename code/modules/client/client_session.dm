@@ -25,23 +25,23 @@
 	client = C
 
 /// Deletes every connection-scoped datum the client holds, then drops the waiters.
-/datum/client_session/Destroy(force)
+/datum/client_session/on_destroy(force)
 	if(client)
 		var/static/list/owned_vars = list("stat_panel", "tgui_say", "tgui_shocker", "tgui_panel", "loot_panel", "tooltips", "media", "interaction_menu", "keybind_editor", "volume_panel", "fakeConversations")
 		for(var/var_name in owned_vars)
 			var/datum/owned = client.vars[var_name]
 			if(owned)
-				qdel(owned)
+				qdel(owned) // ALLOW(lifecycle): a connection-scoped panel datum held on the /client, which is not a datum with owned vars
 			client.vars[var_name] = null // ALLOW(api): clears a fixed static list of client-owned panel vars on session teardown
 		for(var/window_id in client.tgui_windows)
 			var/datum/tgui_window/window = client.tgui_windows[window_id]
 			if(window)
-				qdel(window)
+				qdel(window) // ALLOW(lifecycle, decl): a tgui window datum in the client's window table, which is neither an atom nor a var this session could declare
 		client.tgui_windows = list()
 	asset_waiters = null
 	completed_asset_jobs = null
 	client = null
-	return ..()
+	..()
 
 /// Sends the verify page: the client's browse queue is FIFO, so its ack means every browse_rsc
 /// sent before it has arrived. With a `target`, `proc_ref` (with any extra args) runs when the
@@ -65,7 +65,7 @@
 	if(QDELETED(target))
 		return
 	var/list/waiter_args = waiter[3]
-	call(target, waiter[2])(arglist(waiter_args || list())) // ALLOW(scheduler): the continuation of an asset flush, run from the ack topic or the timeout
+	call(target, waiter[2])(arglist(waiter_args || list())) // the continuation of an asset flush, run from the ack topic or the timeout
 
 /// Process asset cache client topic calls for `"asset_cache_confirm_arrival=[INT]"`.
 /// Returns null for a valid arrival (handled), else the job id (or TRUE) for the caller to reject.

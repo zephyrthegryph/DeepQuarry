@@ -11,7 +11,7 @@
 //                           - once per live instance of the declaring type (instances join the membership store under
 //                             "rx:<declaring type>:<handler>" at init, rx_enrol(), and leave when they are destroyed),
 //                           - or once, on the system, for a memberless every() declared on a /datum/system.
-//   on_cross(urgent = TRUE) an urgent item: the crossing is requested with request_urgent(holder, item, deadline)
+//   on_cross(urgent = TRUE) an urgent item: the crossing is requested with kernel_urgent(holder, item, deadline)
 //                           (deduped per holder, run from the kernel's reserved slice, carrying the latest band in the
 //                           holder's rx state); the item's perform() calls handler(band, previous_band).
 //   on_notice, on_cross     an event item: the declarer still delivers synchronously, in order, and adds the handler's
@@ -33,12 +33,17 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	var/holder_run = FALSE
 	/// The membership key a holder of the declaring type joins (per-instance every()), or null.
 	var/enrol_key
+	/// Whether `run_when` names a var on the subject (TRUE), a proc (FALSE), or is not known yet (null). Decided on the
+	/// first ask: every subject is the declaring type or a subtype (or the one system), so the answer does not change,
+	/// and the `in vars` scan (linear in the type's var count) runs once per item instead of once per member per run.
+	var/when_is_var
 
 /// Builds the item for `R`, declared by `owner_type` (for an every() on a holder, the type whose reactions() declared it).
 /datum/work_item/reaction/New(datum/reaction/R, owner_type)
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	reaction = R
 	holder_run = !ispath(owner_type, /datum/system)
+	system_owned = !holder_run
 	var/member_key = R.members
 	var/run_every = WORK_EVERY_TICK
 	var/run_urgent = FALSE
@@ -63,7 +68,12 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 				event = TRUE
 		if(RXN_NOTICE)
 			event = TRUE
-	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || KERNEL_PHASE_P, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
+	// A system's every() that names no phase runs in the system's own (a host system's K or N).
+	var/default_phase = KERNEL_PHASE_P
+	if(!holder_run)
+		var/datum/system/system_proto = owner_type
+		default_phase = initial(system_proto.phase)
+	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
 	name = "[R.kind == RXN_EVERY ? "every" : (R.kind == RXN_CROSS ? "on_cross" : "on_notice")] [R.handler]"
 
 /datum/work_item/reaction/item_key(owner_type)
@@ -88,7 +98,9 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	var/datum/subject = holder_run ? member : owner
 	if(!subject)
 		return TRUE
-	if(istext(run_when) && (run_when in subject.vars))
+	if(isnull(when_is_var))
+		when_is_var = istext(run_when) && (run_when in subject.vars)
+	if(when_is_var)
 		return !!subject.vars[run_when]
 	if(holder_run || !member)
 		return !!call(subject, run_when)()
@@ -97,11 +109,14 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 /datum/work_item/reaction/perform(datum/owner, datum/member, dt)
 	if(reaction.kind == RXN_CROSS)
 		return perform_cross(member)
+	// rx_call() without its argument copy and arglist (the arity is fixed here); same calls: a global handler gets
+	// the holder first, as rx_call() passes it.
+	var/is_global = om_proc_is_global(handler)
 	if(holder_run)
-		return rx_call(member, handler, dt)
+		return is_global ? call(handler)(member, dt) : call(member, handler)(dt)
 	if(members)
-		return rx_call(owner, handler, member, dt)
-	return rx_call(owner, handler, dt)
+		return is_global ? call(handler)(owner, member, dt) : call(owner, handler)(member, dt)
+	return is_global ? call(handler)(owner, dt) : call(owner, handler)(dt)
 
 /// Delivers the crossing pending on `member`: handler(band, previous_band). A crossing that returned to where it
 /// started (its band equals the previous one) delivers nothing.
@@ -182,7 +197,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 	return flags
 
 /// type -> whether an atom of that type is enrolled at init (cache; cleared by rx_boot_register()).
-GLOBAL_LIST_EMPTY(rx_enrol_cache)
+GLOBAL_LIST_EMPTY(rx_enrol_cache) // ALLOW(cache): a per-type enrolment flag memo, filled on first use, written in place and cleared by rx_boot_register()
 
 /// Adds `type` to the boot list (a type whose reactions() the generator did not see, e.g. a test fixture).
 /proc/rx_boot_register(type, kinds = RXB_EVERY)
@@ -233,7 +248,7 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 // ---------------------------------------------------------------- urgent crossings
 
 /// Asks the kernel to deliver `E`'s crossing of the urgent reaction `R`. The holder's rx state carries the band (the
-/// latest band, the first previous one); request_urgent() dedups the request. Returns FALSE when the kernel refused
+/// latest band, the first previous one); kernel_urgent() dedups the request. Returns FALSE when the kernel refused
 /// (the item is parked): the caller delivers it at once.
 /proc/rx_request_cross(datum/E, datum/reaction/R, band, previous)
 	var/datum/rx_state/S = rx_of(E)
@@ -242,7 +257,7 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache)
 		pending[1] = band
 	else
 		LAZYSET(S.cross_pending, R.sig, list(band, previous))
-	if(!request_urgent(E, R.work, urgent_deadline(RX_URGENT_DEADLINE)))
+	if(!kernel_urgent(E, R.work, urgent_deadline(RX_URGENT_DEADLINE)))
 		S.cross_pending -= R.sig
 		if(!length(S.cross_pending))
 			S.cross_pending = null

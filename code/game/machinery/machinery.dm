@@ -117,12 +117,6 @@ Class Procs:
 	var/clickvol = 40		// volume
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
-	/// The circuit board type a bundle or ladder builds this machine from and dismantles it to (wall_machine(), the APC's ladder).
-	var/machine_board
-	/// The /datum/wires subtype of its maintenance wiring: maintenance_hatch() and cap_wires() read it.
-	var/machine_wires
-	/// What the user is told when an emag declared as an op (maintenance_hatch()) goes through.
-	var/emag_msg
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.
@@ -468,8 +462,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 	return ..()
 
-/obj/machinery/proc/RefreshParts() //Placeholder proc for machines that are built using frames.
-	return
+/// The parts changed: a machine with cap_parts() re-derives its part stats (library/parts.dm). Legacy machines still
+/// override it to recompute ratings by hand; a converted machine declares part_stat()s and overrides nothing.
+/obj/machinery/proc/RefreshParts()
+	parts_refresh(src)
 
 /// Finalize the physical machine from its real installed parts. Individual
 /// machines still calculate functional ratings in RefreshParts(); this common
@@ -614,7 +610,7 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	OM_EMIT(src, /datum/om/event/obj_deconstruct, FALSE)
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/I in contents) // ALLOW(latent): materialized above
+	for(var/obj/I in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(istype(I,/obj/item/card/id))
 			I.forceMove(src.loc)
 
@@ -687,25 +683,25 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	return ..()
 
 /**
- * The one machinery break (damage.md §6). Sets BROKEN, emits machinery_broken
- * and publishes KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
- * already broken. Subtypes with real behaviour call this first and act on the
- * result; an override that only sets flags is forbidden (tools/ci/check_breakpoints.sh).
+ * The one machinery break (damage.md §6), and the only writer of BROKEN: the integrity state (G8). Sets BROKEN,
+ * then the parent publishes INTEGRITY_KEY_BROKEN, then emits machinery_broken. Returns TRUE if the machine was not
+ * already broken. Subtypes with real behaviour call this first and act on the result; an override that only sets
+ * flags is forbidden (tools/ci/check_breakpoints.sh).
  */
 /obj/machinery/atom_break(damage_flag)
-	. = ..()
-	if(!stat_add(BROKEN)) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = stat_add(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	..()
+	if(!flipped)
 		return FALSE
 	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
 
-/// The inverse of atom_break(). Returns TRUE if the machine was broken.
+/// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
-	. = ..()
-	if(!stat_remove(BROKEN)) // raises CHANGE_MACHINE_BROKEN
-		return FALSE
-	return TRUE
+	var/flipped = stat_remove(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	..()
+	return flipped ? TRUE : FALSE
 
 // --- Sleeping until something changes (om_watch on change channels) ------------------------------
 

@@ -1221,7 +1221,7 @@ UI_ACT_PROC(/datum/vore_look, pick_from_inside)
 		to_chat(M,span_vwarning("[host] manages to [lowertext(TB.vore_verb)] you into their [lowertext(TB.name)]!"))
 		to_chat(owner,span_vwarning("Someone inside you has eaten someone else!"))
 		if(M.absorbed)
-			M.absorbed = FALSE
+			M.set_absorbed(FALSE)
 			handle_absorb_langs(M, owner)
 		TB.nom_atom(M)
 

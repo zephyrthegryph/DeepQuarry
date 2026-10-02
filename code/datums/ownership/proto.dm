@@ -24,7 +24,7 @@
 		OWN_REPORT("[value.type]/proto_copy() returned [copy]")
 		return value
 	own_stamp(copy, holder, var_name)
-	holder.vars[var_name] = copy // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = copy // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	return copy
 
@@ -40,7 +40,7 @@
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
-	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	if(old_private)
 		own_unstamp(old)
@@ -59,7 +59,7 @@
 	if(isdatum(value) && !is_registered(value))
 		if(!own_stamp(value, holder, var_name))
 			return null
-	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	if(!old_private)
 		return null
@@ -72,7 +72,7 @@
 	if(isnull(value))
 		return
 	var/private = proto_is_private(holder, var_name)
-	holder.vars[var_name] = null // ALLOW(api, ownership): lifecycle teardown
+	holder.vars[var_name] = null // ALLOW(api): destroy-time teardown clears the var; the lifecycle code is the accessor
 	own_field_changed(holder, var_name)
 	if(private)
 		own_unstamp(value)

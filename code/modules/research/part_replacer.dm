@@ -76,10 +76,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	* 10/8/21 edit - It's Time.
 	*/
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() < lowest_rating)
 			lowest_rating = B.rped_rating()
-	for(var/obj/item/B in contents) // ALLOW(latent): materialized above
+	for(var/obj/item/B in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if(B.rped_rating() > lowest_rating)
 			continue
 		remove_from_storage(B, T, user)

@@ -78,7 +78,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	target_species_static = species["No Change"]
 
 	if(!target_department() || !target_species())
-		stat_add(BROKEN)
+		atom_break()
 
 	set_wires(new /datum/wires/suit_storage_unit(src))
 

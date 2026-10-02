@@ -40,7 +40,7 @@
 	if(push_reinteract)
 		// An update_uis() request: re-run tgui_interact, as the old inline push did.
 		push_reinteract = FALSE
-		INVOKE_ASYNC(src, TYPE_PROC_REF(/datum/tgui, process), 0.9, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+		process(TRUE)
 		return
 	// A watched change: validate the status, then send data only.
 	if(process_status() && status <= STATUS_CLOSE)
@@ -67,6 +67,90 @@
 	var/datum/om/rec/rec = session.om_rec
 	rec.ui_last_push = rec.sched.now()
 	session.om_ui_push()
+
+// ---- the window's status: event-driven, never polled
+
+/// Minimum deciseconds between two status re-checks of one window (a walking user raises LOC every step).
+#define OM_UI_STATUS_THROTTLE (2)
+
+/// What can change a window's status on the USER: moving, hands, worn gear, consciousness, stuns,
+/// the client (logout/disconnect), body conditions and movement ability.
+#define UI_STATUS_USER_CHANNELS (CHANGE_MOB_LOC | CHANGE_MOB_HANDS | CHANGE_MOB_EQUIPMENT | CHANGE_MOB_STAT | CHANGE_MOB_STATUS | CHANGE_MOB_CLIENT | CHANGE_MOB_CONDITIONS | CHANGE_MOB_CAN_MOVE)
+
+/// The channel that announces a move of a window's host (the physical object `tgui_host()` names).
+/proc/om_ui_status_host_mask(datum/host)
+	if(ismob(host))
+		return CHANGE_MOB_LOC
+	if(isitem(host))
+		return CHANGE_ITEM_LOC
+	if(ismovable(host))
+		return CHANGE_EXPLICIT
+	return 0
+
+/// Binds window `ui`'s status check to its user and to its host where the host can move. Re-callable (a transfer to
+/// another mob): the old user's watch is dropped first.
+/proc/om_ui_status_bind(datum/tgui/ui)
+	var/mob/user = ui.user
+	if(QDELETED(ui) || QDELETED(user))
+		return
+	var/datum/om/behaviour/B = om_registry().behaviour(/datum/om/behaviour/internal/ui_status)
+	om_attach(ui, B)
+	for(var/datum/old as anything in ui.om_rec?.watching?.Copy())
+		om_unwatch(ui, old, B)
+	om_watch(ui, user, UI_STATUS_USER_CHANNELS, B)
+	var/datum/owner_obj = ui.src_object()
+	var/datum/host = QDELETED(owner_obj) ? null : owner_obj.tgui_host(user)
+	if(host && host != user)
+		var/mask = om_ui_status_host_mask(host)
+		if(mask)
+			om_watch(ui, host, mask, B)
+	log_tgui(user, "status bound to user[host ? " and host [host]" : ""]", context = "om_ui_status_bind")
+
+/proc/om_ui_status_unbind(datum/tgui/ui)
+	var/datum/om/behaviour/B = om_registry().behaviour(/datum/om/behaviour/internal/ui_status)
+	for(var/datum/target as anything in ui.om_rec?.watching?.Copy())
+		om_unwatch(ui, target, B)
+	om_detach(ui, B)
+
+/// Called on the window when something that decides its status changed (or its user/host/window was deleted).
+/datum/proc/om_ui_status()
+	return
+
+/datum/tgui/om_ui_status()
+	if(closing || QDELETED(src))
+		return
+	if(!ui_participants_alive())
+		return
+	var/was = status
+	if(process_status() && status <= STATUS_CLOSE)
+		log_tgui(user, "status [was] -> [status]: closing", context = "om_ui_status")
+		close()
+		return
+	if(status != was)
+		log_tgui(user, "status [was] -> [status]", context = "om_ui_status")
+		send_status_update()
+
+/datum/om/behaviour/internal/ui_status
+	name = "om: ui status"
+	lane = LANE_PRESENTATION
+
+/datum/om/behaviour/internal/ui_status/on_wake(datum/session, changes)
+	var/datum/om/rec/rec = session.om_rec
+	var/t = rec.sched.now()
+	var/wait = rec.ui_status_last + OM_UI_STATUS_THROTTLE - t
+	if(rec.ui_status_last && wait > 0)
+		if(!om_deadline_pending(session, src))
+			om_deadline(session, wait, src)
+		return
+	rec.ui_status_last = t
+	session.om_ui_status()
+
+/datum/om/behaviour/internal/ui_status/on_deadline(datum/session)
+	var/datum/om/rec/rec = session.om_rec
+	rec.ui_status_last = rec.sched.now()
+	session.om_ui_status()
+
+#undef OM_UI_STATUS_THROTTLE
 
 #undef OM_UI_THROTTLE
 

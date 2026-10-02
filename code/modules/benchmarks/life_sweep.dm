@@ -6,6 +6,8 @@
 //   life_bench_ms()      milliseconds spent so far in the subsystem that runs Life
 //   life_bench_scheduler() a label
 // One boot measures every configuration in turn: spawn, settle, measure a window, delete.
+// <cfg>_life_ms_per_s is the OM scheduler pass alone (what SSbehaviours.fire() measured before the kernel), so it
+// compares across that change; <cfg>_phase_ms_per_s is the kernel's whole N..R span (native frame and work items too).
 //   tools/build/build.sh bench --scenario=life_sweep -DOM_NO_STAGE_PROFILE [--arg=seconds=40] [--arg=configs=h32,mix]
 
 /datum/benchmark/life_sweep
@@ -68,16 +70,20 @@
 	wait_seconds(12)
 	var/frames_before = life_bench_frames(mobs)
 	var/ms_before = life_bench_ms()
+	var/pass_ms_before = life_bench_pass_ms()
 	begin_window()
 	wait_seconds(seconds)
 	var/list/tick = end_window(name)
 	var/frames = life_bench_frames(mobs) - frames_before
 	var/ms = life_bench_ms() - ms_before
+	var/pass_ms = life_bench_pass_ms() - pass_ms_before
 	var/elapsed = max(seconds, 1)
 	metric("[name]_life_frames", frames, "frames", "none")
 	metric("[name]_life_frames_per_mob_s", frames / living_count / elapsed, "frames", "none")
 	metric("[name]_life_ms", ms, "ms")
 	metric("[name]_life_ms_per_s", ms / elapsed, "ms/s")
+	// life_ms is the scheduler pass alone (comparable with pre-kernel builds); phase_ms is the whole N..R span.
+	metric("[name]_phase_ms_per_s", pass_ms / elapsed, "ms/s")
 	metric("[name]_life_us_per_frame", frames ? ms * 1000 / frames : 0, "us")
 	var/hibernating = 0
 	for(var/mob/living/L as anything in mobs)

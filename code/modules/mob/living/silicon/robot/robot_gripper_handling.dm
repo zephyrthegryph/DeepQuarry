@@ -292,7 +292,8 @@ DECLARE_INTERACTIONS(/obj/item/gripper, \
 			return TRUE
 
 		var/obj/item/cell/taken = own_take(A, nameof(A.cell))
-		A.slot_ejected(nameof(A.cell), taken, user)
+		var/datum/capability/slot/cell_slot = slot_capability(A, nameof(A.cell))
+		cell_slot?.ejected(A, taken, user)
 		A.update_icon()
 
 		act_message(user, A, MSG_SELF("You remove the power cell."), MSG_OTHERS(span_danger("%U% removes the power cell from %T%!")))

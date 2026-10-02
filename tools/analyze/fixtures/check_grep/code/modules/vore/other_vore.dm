@@ -1,0 +1,2 @@
+/obj/vore
+	x = health

@@ -252,7 +252,7 @@ TYPE_TABLE(/datum/reagent/nutriment/triglyceride/oil, get_data_schema, list("tem
 		data["temperature"] -= (6 * removed) / (1 + volume*0.1)//Cools off as it burns you
 		if (COOLDOWN_FINISHED(src, burn_message_cooldown)	)
 			to_chat(M, span_danger("Searing hot oil burns you, wash it off quick!"))
-			COOLDOWN_START(src, burn_message_cooldown, 100)
+			COOLDOWN_START(src, burn_message_cooldown, 10 SECONDS)
 
 /datum/reagent/nutriment/triglyceride/oil/cooking
 	name = REAGENT_COOKINGOIL

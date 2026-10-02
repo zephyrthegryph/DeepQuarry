@@ -64,8 +64,18 @@
 	return entry.Copy(1, 7)
 
 /datum/map_template/proc/initTemplateBounds(list/bounds)
-	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
+	var/list/ctx = init_bounds_begin(bounds)
+	if(!ctx)
 		return // let proper initialisation handle it later
+	SSatoms.InitializeAtoms(ctx["targets"])
+	init_bounds_end(ctx)
+
+/// The first half of initTemplateBounds(): gathers what the load made and holds the shuttle init queue. Returns a
+/// context list (its "targets" are the atoms to initialize, in order: areas, turfs, then movables) for
+/// init_bounds_end(), or null when SSatoms is still setting up (proper initialisation handles them later).
+/datum/map_template/proc/init_bounds_begin(list/bounds)
+	if(SSatoms.initialized == INITIALIZATION_INSSATOMS)
+		return null
 
 	var/prev_shuttle_queue_state = SSshuttles.block_init_queue
 	SSshuttles.block_init_queue = TRUE
@@ -91,8 +101,12 @@
 	var/list/initialization_targets = areas.Copy()
 	initialization_targets.Add(turfs)
 	initialization_targets.Add(atoms)
-	SSatoms.InitializeAtoms(initialization_targets)
+	return list("targets" = initialization_targets, "areas" = areas, "atmos" = atmos_machines, "shuttle_queue" = prev_shuttle_queue_state)
 
+/// The second half of initTemplateBounds(), once the atoms are initialized.
+/datum/map_template/proc/init_bounds_end(list/ctx)
+	var/list/area/areas = ctx["areas"]
+	var/list/obj/machinery/atmospherics/atmos_machines = ctx["atmos"]
 	admin_notice(span_danger("Initializing atmos pipenets and machinery in submap."), R_DEBUG)
 	// The old SSmachines.setup_atmos_machinery was stubbed by the LINDA
 	// migration. SSair now owns atmos-machine init; for submap loads (which
@@ -108,101 +122,52 @@
 	for(var/obj/machinery/atmospherics/atmos_to_reenable as anything in atmos_machines)
 		atmos_to_reenable.being_loaded = FALSE
 
-	SSshuttles.block_init_queue = prev_shuttle_queue_state
+	SSshuttles.block_init_queue = ctx["shuttle_queue"]
 	SSshuttles.process_init_queues() // We will flush the queue unless there were other blockers, in which case they will do it.
 
 	admin_notice(span_danger("Submap initializations finished."), R_DEBUG)
 
+/// Loads this template onto a brand new z-level and returns it (FALSE on failure), to completion without yielding:
+/// the boot, nested and test drive of the map load (map_load.dm). A load that runs while players are on is
+/// load_new_z_async().
 /datum/map_template/proc/load_new_z(centered = FALSE)
-	var/x = 1
-	var/y = 1
+	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, null)
+	return M.run_sync()
 
-	if(centered)
-		x = round((world.maxx - width)/2)
-		y = round((world.maxy - height)/2)
+/// load_new_z() as a job: `on_done` (an om_callable) is run with the new z, or FALSE, once it has loaded.
+/datum/map_template/proc/load_new_z_async(centered = FALSE, list/on_done = null)
+	var/datum/map_load/M = new(src, MAP_LOAD_NEW_Z, centered, null, on_done)
+	return M.submit()
 
-	// This would normally be handled by SSmapping. Capture the allocated z
-	// up front: load_map() yields, and re-reading world.maxz afterward
-	// would pick up any z allocated meanwhile, building this map onto the
-	// wrong (possibly occupied) z-level. Use new_z everywhere and return it.
-	var/t_start = REALTIMEOFDAY
-	var/old_top_z = world.maxz
-	// A freshly allocated template z is an independent level unless its own
-	// map_data landmarks explicitly describe a multiz stack. While old_top_z
-	// was the top of the world, HasAbove(old_top_z) masked any stale TRUE entry
-	// in GLOB.z_levels. Growing world.maxz would otherwise activate that latent
-	// edge and vertically join an unrelated shuttle/sector z to this template.
-	if(length(GLOB.z_levels) < old_top_z)
-		GLOB.z_levels.len = old_top_z
-	GLOB.z_levels[old_top_z] = FALSE
-	var/new_z = world.increment_max_z()
-	var/t_incz = REALTIMEOFDAY
-
-	on_map_preload(new_z)
-	var/datum/parsed_map/parsed = load_map(
-		file(mappath),
-		x,
-		y,
-		new_z,
-		no_changeturf = TRUE, // (SSatoms.initialized == INITIALIZATION_INSSATOMS),
-		place_on_top = FALSE, // should_place_on_top,
-		new_z = TRUE,
-	)
-	var/t_loadmap = REALTIMEOFDAY
-	var/list/bounds = parsed.bounds
-	if(!bounds)
-		return FALSE
-
-
-	//initialize things that are normally initialized after map load
-	initTemplateBounds(bounds)
-	// Phase timing (real seconds) — runtime z-loads are rare and were once
-	// pathologically slow; keep the breakdown in the log.
-	log_game("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
-	log_world("load_new_z timing: maxz++=[(t_incz - t_start) / 10]s load_map=[(t_loadmap - t_incz) / 10]s initTemplateBounds=[(REALTIMEOFDAY - t_loadmap) / 10]s")
-	log_game("Z-level [name] loaded at at [x],[y],[new_z]")
-	on_map_loaded(new_z)
-	return new_z
-
+/// Loads this template at `T`, to completion without yielding (boot, nested and test loads; see load_new_z()).
+/// Returns TRUE if it loaded. A load that runs while players are on is load_async().
 /datum/map_template/proc/load(turf/T, centered = FALSE)
-	var/old_T = T
-	if(centered)
-		T = locate(T.x - round((width)/2) , T.y - round((height)/2) , T.z) // %180 catches East/West (90,270) rotations on true, North/South (0,180) rotations on false
 	if(!T)
-		return
-	if(T.x+width > world.maxx)
-		return
-	if(T.y+height > world.maxy)
-		return
+		return FALSE
+	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, null)
+	return M.run_sync()
 
-	if(annihilate)
-		annihilate_bounds(old_T, centered)
+/// load() as a job: `on_done` (an om_callable) is run with TRUE or FALSE once the template has loaded.
+/datum/map_template/proc/load_async(turf/T, centered = FALSE, list/on_done = null)
+	if(!T)
+		om_run(on_done, FALSE)
+		return null
+	var/datum/map_load/M = new(src, MAP_LOAD_AT, centered, T, on_done)
+	return M.submit()
 
-	// Accept cached maps, but don't save them automatically - we don't want
-	// ruins clogging up memory for the whole round.
-	var/datum/parsed_map/parsed = parsed_map || new(file(mappath))
-	own_set(src, nameof(parsed_map), keep_cached_map ? parsed : null)
+/// An admin-placed template finished loading (load_async()'s completion).
+/datum/map_template/proc/admin_placed(mob/user, ok)
+	if(ok)
+		message_admins(span_adminnotice("[key_name_admin(user)] has placed a map template ([name])."))
+	else
+		to_chat(user, "Failed to place map")
 
-	if(!parsed.load(
-		T.x,
-		T.y,
-		T.z,
-		crop_map = TRUE,
-		no_changeturf = FALSE, // (SSatoms.initialized == INITIALIZATION_INSSATOMS), // otherwise space turfs break
-		place_on_top = FALSE, // should_place_on_top,
-	))
-		return
-
-	var/list/bounds = parsed.bounds
-	if(!bounds)
-		return
-
-	//initialize things that are normally initialized after map load
-	initTemplateBounds(bounds)
-
-	log_game("[name] loaded at at [T.x],[T.y],[T.z]")
-	loaded++
-	return TRUE
+/// An admin-placed template finished loading on a new z-level (load_new_z_async()'s completion).
+/datum/map_template/proc/admin_placed_z(mob/user, z)
+	if(z)
+		message_admins(span_adminnotice("[key_name_admin(user)] has placed a map template ([name]) on Z level [z]."))
+	else
+		to_chat(user, "Failed to place map")
 
 /datum/map_template/proc/get_affected_turfs(turf/T, centered = FALSE)
 	var/turf/placement = T

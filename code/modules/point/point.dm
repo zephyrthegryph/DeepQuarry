@@ -77,7 +77,7 @@
 	if(istype(A, /obj/effect/temp_visual/point))
 		return FALSE
 
-	DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(_pointed), A))
+	input_submit(new /datum/input_event/point(src, A))
 
 /mob/proc/_pointed(atom/pointing_at)
 	if(client && !(pointing_at in view(client.view, src)))

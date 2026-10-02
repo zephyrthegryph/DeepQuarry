@@ -1,9 +1,11 @@
 SYSTEM_DEF(air)
 	name = "Atmospherics"
+	phase = KERNEL_PHASE_N
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/mapping,
-		/datum/controller/subsystem/atoms,
+		/datum/system/atoms,
 		// The machine world service initializes at the top of initialize() (it was
 		// SSmachines, which depended on points_of_interest; POIs now load at the end of SSholomaps).
 		/datum/system/holomaps,
@@ -12,6 +14,8 @@ SYSTEM_DEF(air)
 	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
 	var/phase_cost = 0
+	/// The last run stopped for budget in the middle of `currentpart`: the next run resumes it.
+	var/resuming = FALSE
 
 	// cost_atoms / atom_process / process_atoms removed alongside
 	// /atom/proc/process_exposure. /tg/'s atom-exposure pipeline (paper
@@ -179,9 +183,11 @@ SYSTEM_DEF(air)
 /// The atmospherics pass runs every `wait` (it was SSair's SS_BACKGROUND fire()).
 /datum/system/air/reactions()
 	. = ..()
-	. += every(0.5 SECONDS, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_SIMULATION)
+	. += every(0.5 SECONDS, PROC_REF(atmos_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_N, lane = LANE_SIMULATION)
 
-/datum/system/air/fire(resumed = FALSE)
+/datum/system/air/proc/atmos_step(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	var/timer = TICK_USAGE_REAL
 #ifdef BENCHMARK
 	// The Rust heap peaks in the first frames after init (init_and_turfs.md sec 0.2a).
@@ -202,11 +208,12 @@ SYSTEM_DEF(air)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
 			phase_cost = 0
-		process_pipenets(resumed)
+		var/pipenets_paused = process_pipenets(resumed)
 		phase_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_pipenets = MC_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
+		if(pipenets_paused)
+			resuming = TRUE
+			return STEP_YIELD
+		cost_pipenets = KERNEL_AVERAGE(cost_pipenets, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_TURFS
 
@@ -225,7 +232,7 @@ SYSTEM_DEF(air)
 		// Dispatch no longer has a cost separate from the tick itself (both
 		// happen in this one non-resumable step now); tracked identically
 		// so the stat panel/profiler/benchmarks keep reading a real number.
-		cost_turfs = MC_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
+		cost_turfs = KERNEL_AVERAGE(cost_turfs, TICK_DELTA_TO_MS(phase_cost))
 		cost_gas_events = cost_turfs
 		resumed = FALSE
 		currentpart = SSAIR_HIGHPRESSURE
@@ -236,11 +243,12 @@ SYSTEM_DEF(air)
 		timer = TICK_USAGE_REAL
 		if(!resumed)
 			phase_cost = 0
-		process_high_pressure_delta(resumed)
+		var/highpressure_paused = process_high_pressure_delta(resumed)
 		phase_cost += TICK_USAGE_REAL - timer
-		if(state != SS_RUNNING)
-			return
-		cost_highpressure = MC_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
+		if(highpressure_paused)
+			resuming = TRUE
+			return STEP_YIELD
+		cost_highpressure = KERNEL_AVERAGE(cost_highpressure, TICK_DELTA_TO_MS(phase_cost))
 		resumed = FALSE
 		currentpart = SSAIR_SUPERCONDUCTIVITY
 
@@ -309,7 +317,7 @@ SYSTEM_DEF(air)
 	if (!resumed)
 		var/stage_timer = TICK_USAGE_REAL
 		rust_commit_pending_pipenets()
-		cost_pipe_commit = MC_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
+		cost_pipe_commit = KERNEL_AVERAGE(cost_pipe_commit, TICK_DELTA_TO_MS(TICK_USAGE_REAL - stage_timer))
 		// The pipe devices step inside the frame (a period on it), not here.
 		src.currentrun = networks.Copy()
 	//cache for sanic speed (lists are references anyways)
@@ -321,8 +329,9 @@ SYSTEM_DEF(air)
 			thing.reconcile()
 		else
 			networks.Remove(thing)
-		if(MC_TICK_CHECK)
-			return
+		if(KERNEL_OVER_BUDGET)
+			return TRUE
+	return FALSE
 
 // add_to_rebuild_queue / add_to_expansion / remove_from_expansion removed —
 // /tg/-style pipenet rebuild queues are unused under CHOMP's /datum/pipe_network
@@ -340,8 +349,9 @@ SYSTEM_DEF(air)
 		high_pressure_delta.len--
 		T.high_pressure_movements()
 		T.pressure_difference = 0
-		if(MC_TICK_CHECK)
-			return
+		if(KERNEL_OVER_BUDGET)
+			return TRUE
+	return FALSE
 
 // process_active_turfs / process_excited_groups removed — transactional turf FDM
 // sharing now lives in the Rust arena (process_turfs_auxtools, driven from fire()).

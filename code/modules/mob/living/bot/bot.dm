@@ -413,7 +413,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 /mob/living/bot/proc/turn_on()
 	if(stat)
 		return 0
-	on = 1
+	set_on(1)
 	set_light(light_strength)
 	update_icons()
 	resetTarget()
@@ -434,7 +434,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	update_icons()
 
 /mob/living/bot/proc/turn_off()
-	on = 0
+	set_on(0)
 	om_release_busy(src, "turned off") // If ever stuck... reboot!
 	set_light(0)
 	update_icons()
@@ -630,3 +630,6 @@ DECLARE_DEFAULT_CHILD(/mob/living/bot, "access_scanner", /obj)
 	. = ..()
 	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
 	. += rel_many(nameof(ignore_list))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/bot, on)

@@ -94,14 +94,14 @@
 GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
-/proc/cap_of(atom/A, key)
+/proc/legacy_cap_of(atom/A, key)
 	for(var/datum/capability/C as anything in caps_all(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			return C
 	return null
 
 /// L without the entries whose key is `key`, or which are of type `key`. Returns a new list.
-/proc/without(list/L, key)
+/proc/legacy_without(list/L, key)
 	. = list()
 	for(var/entry in L)
 		var/datum/capability/C = entry
@@ -137,7 +137,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return TRUE
 
 /// The per-instance data datum of capability C on A, created on first use (C.data_type).
-/proc/cap_data(atom/A, datum/capability/C)
+/proc/legacy_cap_data(atom/A, datum/capability/C)
 	var/datum/D = A.cap_data?[C.key]
 	if(D || !C.data_type)
 		return D
@@ -203,7 +203,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return TRUE
 
 /obj/machinery/cap_powered()
-	return !(stat & NOPOWER)
+	return !has_stat(NOPOWER)
 
 // ---- lifecycle hooks ----
 
@@ -212,6 +212,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /proc/caps_init(atom/holder, mapload)
+	if(own_table_of(holder).engine_hooks & ENGINE_HOOK_INIT)
+		engine_holder_init(holder, mapload)
 	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)
@@ -245,7 +247,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
-/proc/type_derive_record(atom/A, drew, hid)
+/proc/type_derive_record(atom/A, drew, hid, side = TRUE)
 	var/flags = GLOB.type_derives_cache[A.type]
 	if(isnull(flags) || !(flags & TYPE_DERIVES_PENDING))
 		return
@@ -254,6 +256,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		flags |= TYPE_DERIVES_LOOK
 	if(hid)
 		flags |= TYPE_DERIVES_VERBS
+	if(side)
+		flags |= TYPE_DERIVES_SIDE
 	GLOB.type_derives_cache[A.type] = flags
 
 /// Whether A's type derives anything the refresh engine keeps up (a look or hidden verbs; unknown yet
@@ -261,7 +265,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /proc/type_derives(atom/A)
 	return !!(type_derive_flags(A) & (TYPE_DERIVES_LOOK | TYPE_DERIVES_VERBS | TYPE_DERIVES_CAPS | TYPE_DERIVES_PENDING))
 
-GLOBAL_LIST_EMPTY(type_derives_cache)
+GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive flags, filled on first use and written in place as a type's capabilities change; shared caches hand out read-only values
 
 /// Runs every capability's on_destroy and drops the data. Called from /atom/Destroy().
 /proc/caps_destroy(atom/holder)
@@ -278,7 +282,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 	for(var/key in holder.cap_data)
 		var/datum/D = holder.cap_data[key]
 		if(isdatum(D))
-			qdel(D)
+			qdel(D) // ALLOW(lifecycle): capability data is a plain datum in the holder's cap_data table with no slot of its own; the lifecycle verbs only take atoms
 	holder.cap_data = null
 
 
@@ -379,7 +383,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 		if(missing & CAP_COVER_OPEN)
 			return "open the cover first"
 		return "open the maintenance panel first"
-	if(entry.cooldown && A.entry_cooldowns?[entry.id] > world.time)
+	if(entry.cooldown && cap_engine_state_of(A)?.entry_cooldowns?[entry.id] > world.time) // ALLOW(sys_world_time_expiry): a keyed per-entry cooldown table on the atom (entry id to end time): one var per entry would be dozens, and keyed cooldowns have no declared form
 		return "it isn't ready yet"
 	if(entry.blocked_by & A.cap_state)
 		var/present = entry.blocked_by & A.cap_state
@@ -529,15 +533,40 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 /// The atom whose capability this entry is, for a dispatch: the target, except a use_at entry (the held item).
 /datum/interaction/capability/proc/holder_of(datum/dispatch_context/ctx)
 	return ctx.target
-/atom
+/// The engine's lazy per-atom records, kept in the atom's cap_data under this datum's type so that an atom spends no
+/// base-type var on a feature it is not using: a capability entry's cooldowns and look_flash()'s transient visuals.
+/// Made on first write (cap_engine_state_make()), read without making one (cap_engine_state_of()); cap_data's teardown
+/// (caps_destroy()) deletes it with the atom.
+/datum/cap_engine_state
 	/// entry id -> world.time when a capability entry's cooldown ends (entry `cooldown =`). Lazy.
-	var/tmp/list/entry_cooldowns
+	var/list/entry_cooldowns
+	/// state -> TRUE for the overlays look_flash() is showing now. Lazy.
+	var/list/look_flashes
+	/// The base state look_flash(as_state = TRUE) is showing now, or null.
+	var/look_flash_state
+	/// state -> the token of the flash that owns it, so look_flash_end() ends only its own. Lazy.
+	var/list/look_flash_tokens
+
+/// A's engine record, or null when the engine has kept nothing for it.
+/proc/cap_engine_state_of(atom/A)
+	RETURN_TYPE(/datum/cap_engine_state)
+	return A.cap_data?[/datum/cap_engine_state]
+
+/// A's engine record, made when it has none.
+/proc/cap_engine_state_make(atom/A)
+	RETURN_TYPE(/datum/cap_engine_state)
+	var/datum/cap_engine_state/state = A.cap_data?[/datum/cap_engine_state]
+	if(!state)
+		state = new
+		LAZYSET(A.cap_data, /datum/cap_engine_state, state)
+	return state
 
 /// Starts entry E's cooldown on A (after a success).
 /proc/cap_entry_cooldown_start(atom/A, datum/interaction/capability/E)
 	if(!E?.cooldown || QDELETED(A))
 		return
-	LAZYSET(A.entry_cooldowns, E.id, world.time + E.cooldown)
+	var/datum/cap_engine_state/state = cap_engine_state_make(A)
+	LAZYSET(state.entry_cooldowns, E.id, world.time + E.cooldown)
 
 /// Holder-wide hook before any of its capability entries runs, with side effects allowed (the airlock
 /// shocks a non-silicon while electrified). FALSE stops the entry; the input is used up.
@@ -730,7 +759,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache)
 			E.default_action = INPUT_ACTION_USE
 	E.duration = delay || 0
 	E.apply_stance_tags()
-	C.entry = E
+	C.entry = E // ALLOW(ownership): C is the capability entry wrapper being built here: its entry is set once before the wrapper is shared, not an owned relation
 	C.key = E.id
 	C.behind = behind
 	C.locked_by = locked_by

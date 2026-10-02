@@ -4,7 +4,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 /datum/world_service/time_track
 	name = "Time Tracking"
 	lane = /datum/om/behaviour/world/time_track
-	needs = list(/datum/controller/subsystem/dbcore)
+	needs = list(/datum/system/dbcore)
 
 	var/time_dilation_current = 0
 
@@ -117,9 +117,9 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 
 		time_dilation_current = tick_drift / (current_tickcount - last_tick_tickcount) * 100
 
-		time_dilation_avg_fast = MC_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
-		time_dilation_avg = MC_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
-		time_dilation_avg_slow = MC_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
+		time_dilation_avg_fast = KERNEL_AVERAGE_FAST(time_dilation_avg_fast, time_dilation_current)
+		time_dilation_avg = KERNEL_AVERAGE(time_dilation_avg, time_dilation_avg_fast)
+		time_dilation_avg_slow = KERNEL_AVERAGE_SLOW(time_dilation_avg_slow, time_dilation_avg)
 		//GLOB.glide_size_multiplier = (current_byondtime - last_tick_byond_time) / (current_realtime - last_tick_realtime)
 	else
 		first_run = FALSE
@@ -131,7 +131,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 	var/list/send_maps_data = null
 	try
 		send_maps_data = json_decode(sendmaps_json)
-	catch // ALLOW(silent_catch): malformed profiler JSON is dumped to bad_sendmaps.json and tracking stops
+	catch
 		text2file(sendmaps_json,"bad_sendmaps.json")
 		disabled = TRUE
 		log_world("Time tracking stopped: malformed sendmaps profile JSON (bad_sendmaps.json).")
@@ -188,19 +188,18 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 			0, // tick overrun: the machine service runs inside SSbehaviours' budget
 			GLOB.machine_service.gas_dirty_last,
 			GLOB.machine_service.gas_woken_last,
-			SSbehaviours.cost,
+			SSbehaviours.fire_cost,
 			SSbehaviours.ticks,
 			SSbehaviours.tick_overrun,
 			REGISTRY_COUNT(REGISTRY_MOBS),
 			om_ai_brain_cost(),
 			0, // SStimer cost: gone
-			SSdbcore.all_queries_num,
-			SSdbcore.queries_active_num,
-			SSdbcore.queries_standby_num
+			0, // all_queries: the query pump is gone (I/O lane jobs are counted by SSdb)
+			0, // queries_active
+			0 // queries_standby
 		) + send_maps_values
 	)
 
-	SSdbcore.reset_tracking()
 	return TRUE
 
 /// time_track (was SStime_track).
@@ -211,3 +210,13 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 
 /datum/om/behaviour/world/time_track/service()
 	return GLOB.time_track_service
+
+/// Time dilation for the server metrics (code/modules/metrics/): how far game time falls behind real time.
+/datum/metrics_source/time_dilation
+
+/datum/metrics_source/time_dilation/collect(datum/world_service/server_metrics/M, dt)
+	var/datum/world_service/time_track/T = GLOB.time_track_service
+	if(!T)
+		return
+	M.gauge("server/time_dilation/current", T.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
+	M.gauge("server/time_dilation/avg", T.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")

@@ -147,7 +147,7 @@ kernel_tick():
   phase B  borrow: rings near max_interval                                 from the whole budget
   phase L  lanes URGENT 30 / SIMULATION 30 / DERIVED 15 / PRESENTATION 15 / BACKGROUND 10
            each lane: queued wakes -> system steps -> member rings -> (PRESENTATION) refresh drain
-  phase R  leftovers, lane order
+  phase R  leftovers, lane order; then phase-L work items that ran out of their lane share with work left (p_carry)
   phase G  garbage (kernel subsystem), whatever is left, with a floor per second
 ```
 
@@ -240,7 +240,7 @@ whether each mask earns its place.
 | `world_next_tick(spec)` (`/world/Tick`) | kept for world procs only | it has to run after the MC shuts down, so it cannot be a deadline |
 | `om_task_slices`, a yielding `service_step` | a system `periodic_step()` returning `STEP_YIELD` | the kernel resumes it on the next tick, as world lanes do today (`world_lanes.dm:170-186`) |
 | `INVOKE_ASYNC` / `set waitfor` in handlers | the dispatcher (DX) | already banned outside the allowlist |
-| `om_world_at` (Rust wheel) | kept for Rust-owned conditions | a DM time uses `om_after`; the Rust wheel is for rate crossings and keys |
+| `om_world_at` (Rust wheel) | deleted in E6 | a DM time is the kernel's `after()`; the Rust wheel keeps only rate crossings |
 
 That leaves exactly two wheels:
 - the DM deadline wheel, for DM work on entity clocks;
@@ -367,7 +367,7 @@ The unit tests also have about 60 raw `sleep()` calls. They become one harness h
 - A tgui modal calls `waiter_resolve(W, answer)` from its `ui_submit` action. An I/O job does the same from its `on_done`.
 - `UNTIL()` and `stoplag()` leave the public API. The `scheduler` lint allowlist shrinks to the kernel folder, `unit_tests/` and vendored TGS.
 
-```dm
+```dm before
 // Before (dbcore.dm:138-142): a sync wrapper that spins the caller
 /datum/controller/subsystem/dbcore/proc/run_query_sync(datum/db_query/query)
 	run_query(query)
@@ -637,7 +637,7 @@ are abridged with `...`, but the kept lines are unchanged. The "after" blocks ar
 			continue
 ```
 
-```dm
+```dm before
 // master.dm:936-966 — CheckQueue: a second cadence model (wait/next_fire/postponed/KEEP_TIMING)
 	for (var/thing in subsystemstocheck)
 		...
@@ -717,7 +717,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 
 **Before:**
 
-```dm
+```dm before
 // master.dm:428-448
 	for (var/current_init_stage in 1 to INITSTAGE_MAX)
 		for (var/datum/controller/subsystem/subsystem in stage_sorted_subsystems[current_init_stage])
@@ -741,7 +741,7 @@ Performance ring-buffer telemetry and `AttemptProfileDump` move over unchanged. 
 	boot_world_service(GLOB.planet_service)
 ```
 
-```dm
+```dm before
 // ATMOSPHERICS/SSair.dm:1-8, 124-128 — a dependency that is really on a side effect, plus a hand boot
 SUBSYSTEM_DEF(air)
 	name = "Atmospherics"
@@ -1472,7 +1472,7 @@ events (emitter -> handlers, no dependency):
 | Metric | Before (b17) | After (target) | Gate |
 |---|---|---|---|
 | Schedulers | MC + OM (+ 34 world lanes, 22 pipelines, 216 periodic decls) | kernel (OM engine) | `subsystem_fire_lint` CORE = kernel five |
-| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop`, `dx_old_forms` |
+| Ways to repeat | 13 | 1 (cadence + `should_run`) | `kernel_timer_loop` |
 | Rust drivers | 4 | 1 (`native`, phase N) | grep lint: `vg_world_tick\|vg_heat_tick\|vg_drain_events` only in `modules/native/` |
 | Ordering vocabularies | 6 + 3 hand boots + 36 guards | 2 (`needs`; `after` within a pass) + the Rust law `after` | `system_boot_dag` test |
 | Direct system→system edges | 63 (225 sites) | about 25 declared `uses` edges, all API | B2 + B4 |
@@ -1538,8 +1538,9 @@ events (emitter -> handlers, no dependency):
 - `system_boundary_lint.py` (B1–B7, baseline from the audit, shrink-only);
 - `subsystem_fire_lint.py`, whose CORE list shrinks to the kernel five;
 - `kernel_timer_loop` (a new rule in `scheduler_lints.py`);
-- the existing `dx_old_forms`, extended with `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`,
-  `MACHINE_WAKE`, `om_task_periodic`, `boot_after`, `order_after` and `GLOB.*_service`.
+- a ban on `DECLARE_PERIODIC_WHILE`, `DECLARE_REPEAT`, `MACHINE_WAKE`, `om_task_periodic`, `boot_after`,
+  `order_after` and `GLOB.*_service`, switched on by the commit that lands their replacement (the old
+  `dx_old_forms` ratchet was removed as premature).
 
 **Bench scenarios** (existing): `boot_profile`, `boot_memory`, `idle`, `idle_mobs`, `life_sweep`,
 `om_dispatch`, `atmos_idle`, `atmos_large`, `major_events`, `explosion_dense`, `radiation`,
@@ -1677,7 +1678,7 @@ Built on top of the notes above.
   is now `pass_begin / pass_deadlines / pass_borrow / pass_lanes / pass_leftovers / pass_end`; run_pass() still runs
   them all for the test harness, and the kernel runs the same pieces between its phases (`native_hosted` moves
   `world_step()` to phase N).
-- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass, pipeline audit (`audit_due()`), `bench_ms`, `cost` and `last_done`
+- **SSbehaviours dissolved**: `SS_NO_FIRE`; its pass (the scheduler's pieces are kernel work items, `controllers/kernel/sched_items.dm`), pipeline audit (SSbehaviours' `audit_step` work item), `bench_ms`, `cost` and `last_done`
   are fed by the kernel. It still boots the registry, scheduler and world lanes.
 - **native_frame** (`kernel/native.dm`) is a stub for the Rust owner: it steps the OM world wheel. `vg_world_tick`,
   `vg_entity_tick_all`, `vg_drain_events` (SSvg) and the gas phases + `vg_heat_tick` (SSair) still run where they did.

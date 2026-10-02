@@ -244,7 +244,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	var/atom/A = subject(ctx)
 	if(!istype(A))
 		return reason
-	for(var/atom/movable/M in A.contents)
+	for(var/atom/movable/M in contents_of(A))
 		if(istype(M, part_type))
 			return null
 	return reason

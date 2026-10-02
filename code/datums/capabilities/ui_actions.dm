@@ -20,9 +20,13 @@
 /datum/proc/ui_allowed(mob/user, action)
 	return TRUE
 
-/// Per-type list: action -> LOG_GAME / LOG_ADMIN, for the actions the dispatcher logs.
+/// Per-type table: action -> LOG_GAME / LOG_ADMIN, for the actions the dispatcher logs. A type sets its
+/// own with TYPE_TABLE(/type, ui_logged_actions, list("action" = LOG_GAME)); an empty table logs nothing. Shared and
+/// read-only.
+TYPE_TABLE_DECLARE(/datum, ui_logged_actions, list())
+
 /datum/proc/ui_logged()
-	return list()
+	return TYPE_TABLE_GET(src, ui_logged_actions)
 
 /// Runs `ui_<action>` if the host has one. Returns list(handled, result).
 /proc/ui_named_dispatch(datum/host, action, list/params, datum/tgui/ui)
@@ -130,7 +134,7 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 /proc/ui_ref(value, list/within, type)
 	if(!istext(value))
 		return null
-	var/datum/D = within ? locate(value) in within : locate(value)
+	var/datum/D = within ? locate(value) in within : locate(value) // ALLOW(spatial): a ref lookup in a list the caller passes (a UI's own table), not a walk of an atom's contents
 	if(!D || (type && !istype(D, type)))
 		return null
 	return D

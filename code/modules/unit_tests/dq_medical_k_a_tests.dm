@@ -156,7 +156,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/datum/om/stage/life/status/carbon/human/stage = om_stage_for(H, /datum/om/stage/life/status)
 	TEST_ASSERT(istype(stage), "the human status stage resolves")
-	H.fear = 50
+	H.set_fear(50)
 	TEST_ASSERT(!stage.idle(H), "fear counting down keeps the status stage awake")
-	H.fear = 0
+	H.set_fear(0)
 	TEST_ASSERT(stage.rewake_delay(H) > 0, "a living human's status stage has a rewake for raw writes")

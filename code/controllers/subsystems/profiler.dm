@@ -1,21 +1,22 @@
-SUBSYSTEM_DEF(profiler)
+SYSTEM_DEF(profiler)
 	name = "Profiler"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_FIRST
-	flags = SS_KERNEL_HOSTED
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
-	wait = 30 SECONDS
+	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	wait = 1 MINUTES
 	var/fetch_cost = 0
 	var/write_cost = 0
 	/// Monotonic identifier for compact diagnostic snapshots. This profiler is
 	/// intentionally independent of BYOND's expensive full proc serializer.
 	var/diagnostic_sequence = 0
 
-/datum/controller/subsystem/profiler/stat_entry(msg)
+/datum/system/profiler/stat_entry(msg)
 	msg += "F:[round(fetch_cost,1)]ms"
 	msg += "|W:[round(write_cost,1)]ms"
 	return msg
 
-/datum/controller/subsystem/profiler/Initialize()
+/datum/system/profiler/initialize()
 	#ifdef BENCHMARK
 	// `bench --profile`: profile the rest of boot too (Profiler initializes in
 	// INITSTAGE_FIRST, before map load); boot_profile dumps it.
@@ -27,21 +28,32 @@ SUBSYSTEM_DEF(profiler)
 		StartProfiling()
 	else
 		StopProfiling() //Stop the early start profiler
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 	// AUTO_PROFILE controls full world.Profile collection only. Compact subsystem
 	// diagnostics are cheap, bounded, and must continue even when it is disabled.
 	can_fire = TRUE
-	return SS_INIT_SUCCESS
+	return
 
-/datum/controller/subsystem/profiler/OnConfigLoad()
+/datum/system/profiler/OnConfigLoad()
 	if(CONFIG_GET(flag/auto_profile))
 		StartProfiling()
 	else
 		StopProfiling()
 	can_fire = TRUE
-	wait = CONFIG_GET(number/profiler_interval)
+	apply_interval()
 
-/datum/controller/subsystem/profiler/fire()
+/// The compact diagnostics record (phase K, one run per `wait`: the item is declared at the default and takes the configured
+/// interval at boot and on a config reload).
+/datum/system/profiler/reactions()
+	. = ..()
+	. += every(1 MINUTES, PROC_REF(sample), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+
+/// Applies the configured sample interval to the work item.
+/datum/system/profiler/proc/apply_interval()
+	wait = CONFIG_GET(number/profiler_interval)
+	set_work_interval(PROC_REF(sample), wait)
+
+/datum/system/profiler/proc/sample(dt)
 	// Full BYOND profile serialization is synchronous and can itself overrun a tick.
 	// Periodic collection therefore records only the inexpensive native diagnostics;
 	// profile dumps are requested explicitly or by the MC drift outlier detector.
@@ -53,7 +65,7 @@ SUBSYSTEM_DEF(profiler)
 		"atmos" = system_diagnostics(SSair),
 		"machines" = world_service_diagnostics(GLOB.machine_service),
 		"mobs" = world_service_diagnostics(GLOB.mob_service),
-		"garbage" = subsystem_diagnostics(SSgarbage),
+		"garbage" = system_diagnostics(SSgarbage),
 		"shuttles" = system_diagnostics(SSshuttles),
 		"radiation" = world_service_diagnostics(GLOB.radiation_service),
 		"explosions" = world_service_diagnostics(GLOB.explosion_service),
@@ -120,7 +132,7 @@ SUBSYSTEM_DEF(profiler)
 		"cpu" = world.cpu,
 		"tick_usage" = world.tick_usage,
 		"map_cpu" = world.map_cpu,
-		"initialized" = Master.initializations_seconds > 0,
+		"initialized" = Kernel.initializations_seconds > 0,
 		"sleep_offline" = world.sleep_offline,
 		"subsystems" = subsystems,
 		"atmos_arena" = atmos_arena,
@@ -136,7 +148,7 @@ SUBSYSTEM_DEF(profiler)
 GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 
 /// A world service's cost readout (it runs on the OM scheduler, not as a subsystem).
-/datum/controller/subsystem/profiler/proc/world_service_diagnostics(datum/world_service/target)
+/datum/system/profiler/proc/world_service_diagnostics(datum/world_service/target)
 	if(!target)
 		return GLOB.profiler_missing_diagnostics
 	var/list/stat = null
@@ -154,8 +166,8 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		"status" = target.stat_line(),
 	)
 
-/// The same readout for a system that runs a fire() body on a work item (the counters it keeps; the rest read 0).
-/datum/controller/subsystem/profiler/proc/system_diagnostics(datum/system/target)
+/// The readout of a system that runs periodic work (the counters the kernel keeps for it; the rest read 0).
+/datum/system/profiler/proc/system_diagnostics(datum/system/target)
 	if(!target)
 		return GLOB.profiler_missing_diagnostics
 	return list(
@@ -171,53 +183,31 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 		"allocation_last" = 0,
 		"allocation_average" = 0,
 		"completed_runs" = target.times_fired,
-		"paused_ticks" = target.run_slices,
+		"paused_ticks" = 0,
 		"slept_count" = 0,
 		"postponed_fires" = 0,
-		"state" = target.state,
+		"state" = null,
 	)
 
-/datum/controller/subsystem/profiler/proc/subsystem_diagnostics(datum/controller/subsystem/target)
-	if(!target)
-		return GLOB.profiler_missing_diagnostics
-	return list(
-		"name" = target.name,
-		"active_ema_ms" = target.cost,
-		"wall_ema_ms" = target.wall_cost,
-		"last_wall_ms" = target.wall_cost_last,
-		"last_active_ms" = target.active_cost_last,
-		"last_suspended_ms" = target.suspended_cost_last,
-		"last_slices" = target.run_slices_last,
-		"tick_usage" = target.tick_usage,
-		"tick_overrun" = target.tick_overrun,
-		"allocation_last" = target.tick_allocation_last,
-		"allocation_average" = target.tick_allocation_avg,
-		"completed_runs" = target.times_fired,
-		"paused_ticks" = target.paused_ticks,
-		"slept_count" = target.slept_count,
-		"postponed_fires" = target.postponed_fires,
-		"state" = target.state,
-	)
-
-/datum/controller/subsystem/profiler/Shutdown()
+/datum/system/profiler/on_shutdown()
 	if(CONFIG_GET(flag/auto_profile))
 		DumpFile(allow_yield = FALSE)
 		world.Profile(PROFILE_CLEAR, type = "sendmaps")
 	return ..()
 
-/datum/controller/subsystem/profiler/proc/StartProfiling()
+/datum/system/profiler/proc/StartProfiling()
 	world.Profile(PROFILE_START)
 	world.Profile(PROFILE_START, type = "sendmaps")
 
-/datum/controller/subsystem/profiler/proc/StopProfiling()
+/datum/system/profiler/proc/StopProfiling()
 	world.Profile(PROFILE_STOP)
 	world.Profile(PROFILE_STOP, type = "sendmaps")
 
-/datum/controller/subsystem/profiler/proc/DumpFile(allow_yield = TRUE)
+/datum/system/profiler/proc/DumpFile(allow_yield = TRUE)
 	var/timer = TICK_USAGE_REAL
 	var/current_profile_data = world.Profile(PROFILE_REFRESH, format = "json")
 	var/current_sendmaps_data = world.Profile(PROFILE_REFRESH, type = "sendmaps", format="json")
-	fetch_cost = MC_AVERAGE(fetch_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+	fetch_cost = KERNEL_AVERAGE(fetch_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
 	if(allow_yield)
 		CHECK_TICK
 
@@ -235,7 +225,7 @@ GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 	timer = TICK_USAGE_REAL
 	WRITE_FILE(prof_file, current_profile_data)
 	WRITE_FILE(sendmaps_file, current_sendmaps_data)
-	write_cost = MC_AVERAGE(write_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
+	write_cost = KERNEL_AVERAGE(write_cost, TICK_DELTA_TO_MS(TICK_USAGE_REAL - timer))
 
 /// Every Rust metric (counters, gauges, histograms; see verdigris/ffi/src/metrics.rs)
 /// from one verdigris call, decoded, or null if the library did not answer.

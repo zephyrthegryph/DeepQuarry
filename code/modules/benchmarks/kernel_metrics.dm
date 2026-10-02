@@ -42,7 +42,7 @@
 /// The scenario-level record: `stats_set` and the tick samples from `run_start_position` on cover the whole Run().
 /datum/benchmark/proc/record_scenario_kernel_metrics(datum/km_stats_set/stats_set, run_start_position, run_start_real)
 	var/elapsed_seconds = max((REALTIMEOFDAY - run_start_real) * 0.1, 0.1)
-	var/list/tick = Master.performance_window(elapsed_seconds, Master.perf_index_of(run_start_position))
+	var/list/tick = Kernel.performance_window(elapsed_seconds, Kernel.perf_index_of(run_start_position))
 	record_kernel_metrics(stats_set, tick)
 
 /// Waits `seconds` of wall clock like wait_seconds(), and every tick of it sends `clicks` real clicks from a ghost
@@ -56,7 +56,7 @@
 			km_synthetic_click(clicker, floor)
 		for(var/i in 1 to verbs)
 			km_synthetic_verb()
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	qdel(clicker)
 	count_metric("synthetic_verbs_run", GLOB.km_synthetic.verbs_run, "verbs", "none")
 

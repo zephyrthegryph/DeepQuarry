@@ -59,8 +59,10 @@
 	TEST_ASSERT_NOTNULL(compartment_of(A, BAY_HATCH), "the hatch's compartment")
 	TEST_ASSERT_NULL(cap_of(A, /datum/capability/deconstruct), "no machine-frame dismantling")
 	TEST_ASSERT_NULL(cap_of(A, /datum/capability/powered), "no dark layer")
-	TEST_ASSERT_EQUAL(A.machine_wires, /datum/wires/apc, "the wiring is a type var")
-	TEST_ASSERT_EQUAL(A.machine_board, /obj/item/module/power_control, "so is the board")
+	var/datum/capability/wires/apc_wires = cap_of(A, /datum/capability/wires)
+	TEST_ASSERT_EQUAL(apc_wires.wires_type, /datum/wires/apc, "the wiring is the hatch's wires argument")
+	var/datum/capability/emag/apc_emag = cap_of(A, /datum/capability/emag)
+	TEST_ASSERT_EQUAL(apc_emag.say, "You emag the APC interface.", "and what the emag says is its emag_say argument")
 	for(var/key in list(CAP_LOCK, CAP_EMAG, "open_interface", "replace_cover", "reset_apc"))
 		TEST_ASSERT_NOTNULL(dx_apc_op(A, key), "the op [key] is declared")
 	TEST_ASSERT_EQUAL(dx_apc_op(A, CAP_LOCK).op.action, ACT_LOCK, "the lock op answers ACT_LOCK (an alt-click), with no alt entry point")
@@ -155,10 +157,8 @@
 	cap_set(A, CAP_EMAGGED, TRUE)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "an emagged panel is unresponsive")
 	cap_set(A, CAP_EMAGGED, FALSE)
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = H // any datum will do for "someone else has it"
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "it doesn't respond", "an AI that took it over locks the crew out")
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = null
 	wires_of(A).cut(WIRE_IDSCAN)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "a cut ID scan wire refuses the swipe")
@@ -190,7 +190,8 @@
 	TEST_ASSERT(!is_locked(A), "and unlocked it")
 	var/datum/op_ctx/ctx = op_ctx_take(H, A, card, emag.op)
 	var/uses = card.uses
-	A.emag_committed(ctx)
+	var/datum/capability/emag/emag_cap = cap_of(A, /datum/capability/emag)
+	emag_cap.committed(A, ctx)
 	ctx.release()
 	TEST_ASSERT(is_emagged(A), "the commit sets the bit")
 	TEST_ASSERT_EQUAL(card.uses, uses - 1, "and spends one use")

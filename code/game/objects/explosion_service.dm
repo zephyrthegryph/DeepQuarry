@@ -132,7 +132,11 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 			pending_explosions.Cut()
 			explosion_signals.Cut()
 	if(currentrun_index > LAZYLEN(currentrun_keys) && !resolve_explosions) // Wait till we're useful if we have nothing to do!
-		gotosleep()
+		// Sleeping ends the epoch, so it closes the batches wake_and_defer_subsystem_updates() opened.
+		// An epoch whose resolve finished in a step that then yielded (TICK_CHECK in the signal pass)
+		// lands here on its next step, not on the finish path below; a plain gotosleep() left the
+		// contract batch open, so every later contract fact stayed queued until the next explosion.
+		suspend_and_invoke_deferred_subsystems()
 		return TRUE
 
 	// The heavy lifting part...
@@ -172,10 +176,13 @@ GLOBAL_DATUM_INIT(explosion_service, /datum/world_service/explosions, new)
 			return FALSE
 	record_turf_phase_cost(profile_resolve_phase, phase_profile_start)
 
+	// Out of budget: yield (FALSE), so the lane resumes this phase next tick. Returning TRUE ended the
+	// step, and the next fresh step saw the run finished, called end_resolve() and went to sleep:
+	// the queued blast batches were never delivered and the epoch's deferred batches never closed.
 	if(resolve_explosions && !deliver_blast_batches())
-		return TRUE
+		return FALSE
 	if(resolve_explosions && !flush_deferred_turf_updates())
-		return TRUE
+		return FALSE
 
 	// Finalization is resumable too. A cascade can contain thousands of nested
 	// submissions; emitting every global signal in one call used to defeat the

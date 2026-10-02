@@ -26,31 +26,37 @@
 #define KERNEL_SHED_FLOOR (1 SECONDS)
 /// Phase K (input) budget, percent of a tick. Use over it is counted as an overrun.
 #define KERNEL_INPUT_CAP 15
-/// Clicks the kernel queue holds; the oldest is dropped past it and counted.
-#define KERNEL_CLICK_QUEUE_MAX 64
+/// Events one client's input inbox holds before it drops its oldest coalescible input (code/engine/kernel/inbox.dm).
+#define INPUT_CLIENT_MAX 64
+/// Tick usage under which a click resolves on the spot; above it the click waits for phase K.
+#define INPUT_CLICK_THRESHOLD 95
+/// The same for every other input (a verb, a Topic, a tgui action, say).
+#define INPUT_VERB_THRESHOLD 85
 /// Input-latency histogram: bins of one tick each, the last bin holds everything slower.
 #define KERNEL_LATENCY_BINS 32
 /// A waiter with no timeout.
 #define WAITER_NO_TIMEOUT 0
 
 // ---- the kernel tick (code/controllers/kernel/kernel.dm): phases run in this order every tick.
-/// K: hosted input subsystems (input, verb_manager), capped at KERNEL_INPUT_CAP.
+/// K: host systems (the input inbox first), capped at KERNEL_INPUT_CAP.
 #define KERNEL_PHASE_K 1
+/// S: simulation sync. Everything Rust needs from DM, pushed right before the native step. Never shed.
+#define KERNEL_PHASE_S 2
 /// N: native. One Rust frame: native_frame(elapsed, budget).
-#define KERNEL_PHASE_N 2
-/// U: urgent requests, from a reserved slice of the tick (request_urgent()).
-#define KERNEL_PHASE_U 3
+#define KERNEL_PHASE_N 3
+/// U: urgent requests, from a reserved slice of the tick (kernel_urgent()).
+#define KERNEL_PHASE_U 4
 /// D: deadlines (timers, deadline wakes, timed_set reverts) and deadline-phase work items.
-#define KERNEL_PHASE_D 4
+#define KERNEL_PHASE_D 5
 /// P: the lanes: the borrow pass, then each lane's queued wakes, rings and work items, by lane share.
-#define KERNEL_PHASE_P 5
-/// R: leftovers, lane order.
-#define KERNEL_PHASE_R 6
-/// G: garbage (hosted), whatever is left, with a floor per second.
-#define KERNEL_PHASE_G 7
-#define KERNEL_PHASE_COUNT 7
+#define KERNEL_PHASE_P 6
+/// R: leftovers, lane order (presentation).
+#define KERNEL_PHASE_R 7
+/// G: garbage, whatever is left, with a floor per second.
+#define KERNEL_PHASE_G 8
+#define KERNEL_PHASE_COUNT 8
 /// Phase letters, indexed by KERNEL_PHASE_*.
-#define KERNEL_PHASE_LETTERS list("K", "N", "U", "D", "P", "R", "G")
+#define KERNEL_PHASE_LETTERS list("K", "S", "N", "U", "D", "P", "R", "G")
 
 /// The most of a tick one non-ticker host service (tgui, dbcore, profiler, garbage) may take in its phase, in percent.
 #define KERNEL_HOST_SLICE 10
@@ -63,6 +69,17 @@
 /// A spread member sweep (work_item.spread) that fell behind catches up by at most this many passes' share per pass,
 /// so a stall is paid back over several ticks instead of in one.
 #define KERNEL_SPREAD_CATCHUP 4
+
+/// Opens a request (code/engine/kernel/requests.dm): open_request(owner, /datum/prompt/x, PROC_REF(done), valid = PROC_REF(ok), field = v, ...).
+/// Not spelled request(): BYOND's preprocessor takes a function-like macro name at the end of a line (`var/datum/request/request`,
+/// `circuit = /obj/item/circuitboard/request`) for a call and eats the next line.
+#define open_request(owner, request_type, handler, fields...) request_open(owner, request_type, handler, list(fields))
+
+// ---- chunked jobs (code/engine/kernel/jobs.dm): what a job step returns.
+/// The step has more to do: it runs again, this tick if its budget allows, else the next.
+#define JOB_MORE 1
+/// The step is finished: the job's then() handler runs and the job ends.
+#define JOB_DONE 2
 
 // ---- work items: interval 0 runs every tick.
 #define WORK_EVERY_TICK 0

@@ -27,7 +27,7 @@
 /obj/item/reagent_containers/glass/paint/Initialize(mapload)
 	.=..()
 	if(paint_type)
-		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): data argument
+		reagents.add_reagent(REAGENT_ID_PAINT, volume, paint_type) // ALLOW(decl): the reagent's data argument (the paint type) differs per instance, which a declaration cannot carry
 
 /obj/item/reagent_containers/glass/paint/red
 	icon_state = "paint_red"

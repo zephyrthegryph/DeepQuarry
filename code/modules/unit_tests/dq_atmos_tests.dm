@@ -124,7 +124,6 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 
 	// An openspace tile IS a hole: it must pass air vertically both ways. Openspace
 	// isn't guaranteed on every map, so only assert if the type exists in the world.
-	// ALLOW(spatial): world search
 	var/turf/simulated/open/hole = locate(/turf/simulated/open) in world
 	if(hole)
 		TEST_ASSERT(hole.zAirOut(DOWN, hole), "openspace should let air fall DOWN through it — zAirOut(DOWN) should be TRUE")
@@ -950,7 +949,7 @@ GLOBAL_DATUM(dq_preboot_gas_probe, /datum/gas_mixture)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	// Let the real Master.Loop tick SSair so process_active_turfs walks A
+	// Let the real Kernel.Loop tick SSair so process_active_turfs walks A
 	// and shares to B naturally — no manual process_cell call.
 	dq_atmos_test_wait_real_ssair_ticks(5)
 
@@ -1185,6 +1184,17 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /// Capture a turf's authoritative gas before a test mutates it. The first
 /// snapshot wins so multiple helpers within one test still restore the true
 /// pre-test state.
+/// Gives a test floor standard air at `temperature`. The clear floors the helpers above find are
+/// shared with every earlier atmos test, and one that vents or drains the floor leaves it a vacuum.
+/// A turf cell's temperature is its energy over its heat capacity, so an empty cell has none to set:
+/// temperature writes to it change nothing and wake no watch. Snapshot the air first
+/// (dq_atmos_test_snapshot_air()) so restore_atmos() puts it back.
+/proc/dq_atmos_test_fill_standard_air(turf/open/T, temperature = T20C)
+	T.air.clear()
+	T.air.set_moles(/datum/gas/oxygen, MOLES_O2STANDARD)
+	T.air.set_moles(/datum/gas/nitrogen, MOLES_N2STANDARD)
+	T.air.set_temperature(temperature)
+
 /proc/dq_atmos_test_snapshot_air(turf/open/T)
 	if(!istype(T) || !T.air || (T in GLOB.dq_atmos_test_air_snapshots))
 		return
@@ -1912,7 +1922,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	var/initial_plasma = T.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(initial_plasma > 150, "test setup didn't load enough plasma: [initial_plasma]")
 
-	// Real Master.Loop ticks SSair, whose Rust turf-sharing pass
+	// Real Kernel.Loop ticks SSair, whose Rust turf-sharing pass
 	// (process_turfs_auxtools) blends the turf air toward planetary_mix
 	// when T.planetary_atmos is set. Poll and break as soon as the drain
 	// target (asserted below) is reached, instead of always waiting 20 ticks.
@@ -2946,32 +2956,38 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 /datum/unit_test/dq_mc_performance_window_statistics
 
 /datum/unit_test/dq_mc_performance_window_statistics/Run()
-	var/list/old_usage = Master.perf_tick_usage
-	var/list/old_realtime = Master.perf_tick_realtime
-	Master.perf_tick_usage = list()
-	Master.perf_tick_realtime = list()
+	var/list/old_usage = Kernel.perf_tick_usage
+	var/list/old_realtime = Kernel.perf_tick_realtime
+	Kernel.perf_tick_usage = list()
+	Kernel.perf_tick_realtime = list()
 	for(var/i in 1 to 100)
-		Master.perf_tick_usage += i
-		Master.perf_tick_realtime += i * world.tick_lag
-	var/list/window = Master.performance_window(30)
+		Kernel.perf_tick_usage += i
+		Kernel.perf_tick_realtime += i * world.tick_lag
+	var/list/window = Kernel.performance_window(30)
 	TEST_ASSERT_EQUAL(window["samples"], 100, "MC performance window lost samples")
 	TEST_ASSERT_EQUAL(window["p50"], 50, "MC performance window calculated the wrong median")
 	TEST_ASSERT_EQUAL(window["p95"], 95, "MC performance window calculated the wrong p95")
 	TEST_ASSERT_EQUAL(window["p99"], 99, "MC performance window calculated the wrong p99")
 	TEST_ASSERT_EQUAL(window["max"], 100, "MC performance window calculated the wrong maximum")
 	TEST_ASSERT(abs(window["tps"] - world.fps) < 0.01, "MC performance window calculated incorrect TPS")
-	var/list/old_outliers = Master.perf_outliers
-	var/list/old_breakdown = Master.perf_tick_breakdown
-	Master.perf_outliers = list()
-	Master.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
-	Master.record_performance_tick(125)
-	var/list/outlier = Master.perf_outliers[1]
+	var/list/old_outliers = Kernel.perf_outliers
+	var/list/old_breakdown = Kernel.perf_tick_breakdown
+	Kernel.perf_outliers = list()
+	Kernel.perf_tick_breakdown = list("Atmospherics" = 80, "Stat Panels" = 30)
+	var/old_start_usage = Kernel.perf_tick_start_usage
+	Kernel.perf_tick_start_usage = 5
+	Kernel.record_performance_tick(125)
+	Kernel.perf_tick_start_usage = old_start_usage
+	var/list/outlier = Kernel.perf_outliers[1]
 	TEST_ASSERT_EQUAL(outlier["overrun"], 25, "MC outlier recorded an incorrect overrun")
-	TEST_ASSERT_EQUAL(length(outlier["breakdown"]), 3, "MC outlier omitted attributed or external tick usage")
-	Master.perf_tick_usage = old_usage
-	Master.perf_tick_realtime = old_realtime
-	Master.perf_outliers = old_outliers
-	Master.perf_tick_breakdown = old_breakdown
+	var/breakdown_total = 0
+	for(var/list/part as anything in outlier["breakdown"])
+		breakdown_total += part["usage"]
+	TEST_ASSERT(abs(breakdown_total - 125) < 0.01, "MC outlier's breakdown does not add up to its usage: [json_encode(outlier["breakdown"])]")
+	Kernel.perf_tick_usage = old_usage
+	Kernel.perf_tick_realtime = old_realtime
+	Kernel.perf_outliers = old_outliers
+	Kernel.perf_tick_breakdown = old_breakdown
 
 
 // =====================================================================
@@ -3433,7 +3449,7 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	donor.set_temperature(T20C)
 	A.assume_air(donor)
 
-	// Let real SSair fire — Master.Loop ticks it on schedule.
+	// Let real SSair fire — Kernel.Loop ticks it on schedule.
 	dq_atmos_test_wait_real_ssair_ticks(5)
 
 	// We expect SOME spread to have happened. Don't assert exact equilibrium
@@ -4260,10 +4276,10 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	// Start from room temperature. Earlier tests can leave this turf warm, and
-	// +10 K from there may cross the firedoor's hot threshold, which is a real
-	// alarm rather than harmless drift.
-	T.air.set_temperature(T20C)
+	// Start from standard air at room temperature. Earlier tests can leave this turf warm (+10 K
+	// from there may cross the firedoor's hot threshold, a real alarm rather than harmless drift)
+	// or a vacuum, whose temperature can't be written at all.
+	dq_atmos_test_fill_standard_air(T)
 	dq_atmos_test_drain_dependency_queue()
 	native_system().drain()
 	native_system().take_gas_changes()
@@ -4313,6 +4329,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!om_task_periodic_running(L), "ordinary emergency light retained SSobj polling")
+	// The drain is settled when the light must change, not every few seconds: a full cell keeps its first
+	// brightness step for two minutes, a cell about to run out wakes again soon.
+	var/obj/item/cell/C = L.emergency_cell()
+	C.charge = C.maxcharge
+	TEST_ASSERT(L.emergency_discharge_wait() >= 1 MINUTES, "a full emergency cell settles its drain every [L.emergency_discharge_wait()] ds")
+	C.charge = 0.5
+	TEST_ASSERT(L.emergency_discharge_wait() <= 10 SECONDS, "a nearly empty emergency cell waits [L.emergency_discharge_wait()] ds to run out")
 	qdel(L)
 
 /datum/unit_test/dq_idle_cooker_hibernates
@@ -4369,7 +4392,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate
 
 /datum/unit_test/dq_idle_portables_connectors_and_displays_hibernate/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for idle machinery hibernation test")
 	// Pump and scrubber run the OM machine pipeline too (machine_pipeline.dm), not process():
@@ -4525,7 +4547,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// edge, stepped every gas tick from SSair regardless of state, so it is
 	// never a DM process() subscriber at all — there is nothing left to
 	// hibernate or wake in DM, in any state.
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for binary pump hibernation test")
 	var/obj/machinery/atmospherics/binary/pump/P = new(T)
@@ -4576,7 +4597,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.safe = TRUE
 	A.autoclose = TRUE
 	var/obj/blocker = new(T)
-	blocker.density = TRUE
+	blocker.set_density(TRUE)
 	A.close()
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
@@ -4587,6 +4608,40 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_timer_slot_pending(A, "door_timer_token"), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
+
+/// A docking controller's "secure_open" ends with the door open and bolted, and the command done. The bolts dropped
+/// before the door had finished opening (operating) used to fail, leaving the command pending: the door retried it
+/// every second and autoclosed in between, cycling forever on every docked shuttle.
+/datum/unit_test/dq_airlock_secure_open_completes
+
+/datum/unit_test/dq_airlock_secure_open_completes/Run()
+	var/obj/machinery/door/airlock/external/A = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
+	A.set_density(TRUE)
+	A.operating = FALSE
+	cap_set(A, CAP_BOLTED, FALSE)
+	A.frozen = FALSE
+	A.id_tag = "dq_secure_open_test"
+	TEST_ASSERT(A.arePowerSystemsOn(), "the test airlock has no power")
+	var/datum/signal/S = new
+	S.data["tag"] = A.id_tag
+	S.data["command"] = "secure_open"
+	A.receive_signal(S)
+	var/waited = 0
+	while((A.cur_command || A.operating) && waited < 5 SECONDS)
+		om_test_ticks(1)
+		waited += world.tick_lag
+	TEST_ASSERT(!A.density, "secure_open left the door closed")
+	TEST_ASSERT(is_bolted(A), "secure_open left the door unbolted (it would autoclose and retry forever)")
+	TEST_ASSERT_NULL(A.cur_command, "secure_open never completed")
+	// Already open and unbolted (bolts raised by hand): the command only bolts it.
+	cap_set(A, CAP_BOLTED, FALSE)
+	A.receive_signal(S)
+	waited = 0
+	while((A.cur_command || A.operating) && waited < 5 SECONDS)
+		om_test_ticks(1)
+		waited += world.tick_lag
+	TEST_ASSERT(!A.density && is_bolted(A), "secure_open on an open door left it [A.density ? "closed" : "open"] and [is_bolted(A) ? "bolted" : "unbolted"]")
+	TEST_ASSERT_NULL(A.cur_command, "secure_open on an open door never completed")
 
 /datum/unit_test/dq_closed_airlock_clears_stale_autoclose
 
@@ -4611,7 +4666,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_idle_recharger_hibernates
 
 /datum/unit_test/dq_idle_recharger_hibernates/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger hibernation test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4636,7 +4690,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_recharger_spill_refreshes_icon
 
 /datum/unit_test/dq_recharger_spill_refreshes_icon/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
@@ -4652,7 +4705,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning
 
 /datum/unit_test/dq_power_monitor_hibernates_until_grid_warning/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for power monitor hibernation test")
 	var/P = power_test_grid()
@@ -5631,7 +5683,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// The exposure heats the paper's heat body; its ignition rule
 	// (code/datums/rules/declarations.dm) runs on the next heat frame.
 	dq_rx_flush()
-	om_test_ticks(10)
+	// The ignition rule and its wake ride the kernel; wait for the flame (or the burn-through) itself.
+	for(var/flush in 1 to 20)
+		if(QDELETED(I) || (I.resistance_flags & ON_FIRE))
+			break
+		dq_rx_flush()
 
 	// Observable consequence: a flammable item exposed to ignition-temperature
 	// air must be alight. If fire_act stopped applying heat to floor items, the
@@ -6010,7 +6066,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	while(SSair.times_fired == cycle_at_start && world.time - wait_started < DQ_ATMOS_TEST_MAX_WAIT)
 		sleep(world.tick_lag)
 	TEST_ASSERT(SSair.times_fired > cycle_at_start, \
-		"Master.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
+		"Kernel.Loop didn't advance SSair.times_fired during sleep — engine not ticking")
 	var/direction = get_dir(A, B)
 	// Large pressure difference and low resistance → move_prob clamps high.
 	P.experience_pressure_difference(500, direction)
@@ -6954,7 +7010,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 /// Real-world integration: drop plasma onto a turf via the same path
 /// canister.process / atmos_spawn_air uses, then SLEEP and let the real
-/// Master.Loop tick SSair the same way it ticks for a connected player.
+/// Kernel.Loop tick SSair the same way it ticks for a connected player.
 /// Asserts that ticks actually advanced (so we know we're not just waiting
 /// for a frozen MC) and that plasma reached the adjacent turf.
 /datum/unit_test/dq_real_spread_via_ssair_fire
@@ -6990,7 +7046,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 		"A didn't accept the donor plasma after assume_air: [A.air.get_moles(/datum/gas/plasma)]")
 	// (turf activity is Rust-side now; the real proof is that B receives gas below.)
 
-	// Sleep to let the live Master.Loop fire SSair normally. No state hacking.
+	// Sleep to let the live Kernel.Loop fire SSair normally. No state hacking.
 	// Guard: SSair must be genuinely TICKING, not frozen/starved. The old
 	// through-floor vertical-vent bug pinned thousands of turfs perpetually active
 	// and starved background SSair down to 1-2 fires per 10s window; a healthy
@@ -7000,11 +7056,11 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	// (gas actually reaching B) is asserted below.
 	var/ticks_advanced = dq_atmos_test_wait_real_ssair_ticks(30)
 	TEST_ASSERT(ticks_advanced >= 5, \
-		"SSair only fired [ticks_advanced] times in ~10s — Master.Loop is barely ticking SSair (frozen/starved). Healthy is many fires; the perpetual-active-turf churn is back.")
+		"SSair only fired [ticks_advanced] times in ~10s — Kernel.Loop is barely ticking SSair (frozen/starved). Healthy is many fires; the perpetual-active-turf churn is back.")
 
 	var/final_b_plasma = B.air.get_moles(/datum/gas/plasma)
 	TEST_ASSERT(final_b_plasma > initial_b_plasma + 0.1, \
-		"plasma DID NOT SPREAD to adjacent turf B after [ticks_advanced] real SSair ticks: A=[A.air.get_moles(/datum/gas/plasma)] B=[final_b_plasma]. The atmos engine isn't moving gas under normal Master.Loop firing — THIS IS THE PRODUCTION BUG.")
+		"plasma DID NOT SPREAD to adjacent turf B after [ticks_advanced] real SSair ticks: A=[A.air.get_moles(/datum/gas/plasma)] B=[final_b_plasma]. The atmos engine isn't moving gas under normal Kernel.Loop firing — THIS IS THE PRODUCTION BUG.")
 
 	// Cleanup so other tests don't see leftover plasma.
 	for(var/datum/gas/g as anything in A.air.get_gases())
@@ -7014,7 +7070,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 
 
 /// True end-to-end production scenario: spawn a phoron canister on an open
-/// floor, set valve_open and a release pressure, sleep while Master.Loop
+/// floor, set valve_open and a release pressure, sleep while Kernel.Loop
 /// fires the canister's process() AND SSair's fire() naturally, and assert
 /// plasma reaches the neighboring tile. If a player opens a canister in
 /// game and gas doesn't spread, THIS test catches it.
@@ -7048,7 +7104,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/initial_a_plasma = A.air.get_moles(/datum/gas/plasma)
 	var/initial_b_plasma = B.air.get_moles(/datum/gas/plasma)
 
-	// Let the real game tick: Master.Loop runs SSbehaviours (the machine pipeline calls
+	// Let the real game tick: Kernel.Loop runs SSbehaviours (the machine pipeline calls
 	// the canister step) AND SSair (which steps the gas field). This is the one
 	// integration test that keeps the wall clock on purpose. Poll and break
 	// as soon as both conditions asserted below hold.
@@ -7576,7 +7632,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	dq_atmos_test_snapshot_air(T)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
-	T.air.set_temperature(T20C)
+	dq_atmos_test_fill_standard_air(T)
+	TEST_ASSERT(abs(T.air.return_temperature() - T20C) < 0.01, "the test floor's air did not take its starting temperature")
 	dq_atmos_test_drain_dependency_queue()
 
 	var/obj/machinery/power/thermoregulator/R = new(T)
@@ -7592,6 +7649,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_EQUAL(R.gas_dependency_wake_count, regulator_wakes, "sub-degree drift inside the deadband woke a thermoregulator")
 	TEST_ASSERT(om_watch_armed(R, "gas"), "the thermoregulator woke by another path before its watch was tested")
 	T.air.set_temperature(T20C + 5)
+	TEST_ASSERT(abs(T.air.return_temperature() - (T20C + 5)) < 0.01, "the test floor's air did not take the out-of-deadband temperature")
 	for(var/i in 1 to 65536)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
 		if(R.gas_dependency_wake_count > regulator_wakes)
@@ -7705,7 +7763,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 /datum/unit_test/dq_pipe_device_law_push_is_generated
 
 /datum/unit_test/dq_pipe_device_law_push_is_generated/Run()
-	// ALLOW(spatial): world search
 	var/turf/simulated/floor/T = locate() in world
 	TEST_ASSERT_NOTNULL(T, "no floor for the device push test")
 	var/obj/machinery/atmospherics/binary/passive_gate/G = allocate(/obj/machinery/atmospherics/binary/passive_gate, T)

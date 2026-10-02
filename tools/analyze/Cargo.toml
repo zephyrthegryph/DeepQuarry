@@ -1,0 +1,45 @@
+[package]
+name = "dq-analyze"
+version = "0.1.0"
+edition = "2021"
+publish = false
+description = "DeepQuarry's single lint/analysis engine: one tree load, every tools/ci lint, content-hash cache"
+build = "build.rs"
+
+[[bin]]
+name = "analyze"
+path = "src/main.rs"
+
+[lib]
+name = "dq_analyze"
+path = "src/lib.rs"
+
+[dependencies]
+# Parse-aware frontend (the DreamChecker parser), pinned to the suite the build uses (dependencies.sh).
+dreammaker = { git = "https://github.com/SpaceManiac/SpacemanDMM", tag = "suite-1.11" }
+regex = "1"
+fancy-regex = "0.14"
+rayon = "1"
+serde = { version = "1", features = ["derive"] }
+bincode = "1"
+blake3 = "1"
+toml = "0.8"
+walkdir = "2"
+md-5 = "0.10"
+sha1 = "0.10"
+
+[dev-dependencies]
+tempfile = "3"
+
+# One standalone crate, not a member of the verdigris workspace.
+[workspace]
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = "thin"
+codegen-units = 16
+incremental = false
+
+[profile.dev]
+opt-level = 1

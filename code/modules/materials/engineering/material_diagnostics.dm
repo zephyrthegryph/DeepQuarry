@@ -87,7 +87,7 @@
 	monitor_last_output = output_joules
 	monitor_last_moles = delivered_moles
 	EXPIRY_STAMP(src, monitor_last_time, CLOCK_WORLD)
-	monitor_configuration = owner().material_configuration_revision
+	monitor_configuration = material_assembly_view(owner()).configuration_revision
 	reset_observation()
 	schedule(0)
 	INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup
@@ -149,18 +149,19 @@
 	if(QDELETED(owner()))
 		return
 	owner().set_construction_material(role, material_id)
+	var/datum/material_assembly/wear = material_assembly(owner())
 	if(role == MATERIAL_ROLE_LINER)
-		owner().material_environment_liner_integrity = 100
+		wear.liner_integrity = 100
 	if(role == MATERIAL_ROLE_STRUCTURE)
-		owner().material_environment_exterior_integrity = 100
-		owner().material_environment_fatigue = 0
-	if(owner().material_environment_liner_integrity > 0 && owner().material_environment_exterior_integrity > 0 && owner().material_environment_fatigue < 100)
-		owner().material_environment_leaking = FALSE
+		wear.exterior_integrity = 100
+		wear.fatigue = 0
+	if(wear.liner_integrity > 0 && wear.exterior_integrity > 0 && wear.fatigue < 100)
+		wear.leaking = FALSE
 		owner().material_environment_repaired()
 	owner().material_service_changed()
 	if(isitem(owner()))
 		var/obj/item/item = owner()
-		item.apply_material_role_effects(item.engineered_material_profile)
+		item.apply_material_role_effects(material_build_view(item).profile)
 	if(istype(owner(), /obj/structure/cable))
 		var/obj/structure/cable/cable = owner()
 		cable.material_overlay?.invalidate_material_cache()
@@ -183,7 +184,8 @@ UI_DATA_REPLACE(/datum/material_service, "merge:ui_data_datum_material_service{s
 	for(var/role in owner().material_roles())
 		var/datum/material/material = owner().material_for_role(role)
 		parts += list(list("role" = role, "material" = material.display_name || material.name, "meltingPoint" = material.melting_point, "corrosion" = material.corrosion_resistance, "purpose" = describe_part(role, material)))
-	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = owner().material_configuration_revision, "liner" = owner().material_environment_liner_integrity, "shell" = owner().material_environment_exterior_integrity, "fatigue" = owner().material_environment_fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
+	var/datum/material_assembly/wear = material_assembly_view(owner())
+	var/list/data = list("status" = status, "temperature" = temperature, "buffer" = buffer_energy, "input" = last_input_watts, "output" = last_output_watts, "lossEnergy" = loss_joules, "parts" = parts, "limiting" = limiting_role, "configuration" = wear.configuration_revision, "liner" = wear.liner_integrity, "shell" = wear.exterior_integrity, "fatigue" = wear.fatigue, "monitoring" = !!monitor_tool, "reading" = last_reading)
 	if(istype(owner(), /obj/machinery/power/emitter))
 		var/obj/machinery/power/emitter/emitter = owner()
 		data["emitter"] = list("output" = emitter.material_output_setting, "cadence" = emitter.material_cadence_setting, "stored" = emitter.material_stored_energy, "active" = emitter.active)
@@ -257,8 +259,9 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 		rel_clear(src, nameof(monitor_tool))
 		rel_clear(src, nameof(monitor_user))
 		return FALSE
-	if(monitor_configuration != owner().material_configuration_revision)
-		monitor_configuration = owner().material_configuration_revision
+	var/datum/material_assembly/wear = material_assembly_view(owner())
+	if(monitor_configuration != wear.configuration_revision)
+		monitor_configuration = wear.configuration_revision
 		reset_observation()
 	monitor_maximum_temperature = max(monitor_maximum_temperature, temperature)
 	// The last delivery's destination, as recorded when the pump delivered (the mixture itself is
@@ -272,7 +275,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	var/input = input_joules - monitor_last_input
 	var/output = output_joules - monitor_last_output
 	var/flow = delivered_moles - monitor_last_moles
-	if(output <= 0 || input <= 0 || owner().material_environment_leaking || owner().material_environment_fatigue >= 100)
+	if(output <= 0 || input <= 0 || wear.leaking || wear.fatigue >= 100)
 		reset_observation()
 		last_input_watts = 0
 		last_output_watts = 0
@@ -290,7 +293,7 @@ UI_ACT_PROC(/datum/material_service, ui_act_emitter_setting)
 	var/duration = (world.time - monitor_started) / 10
 	var/consumed = input_joules - monitor_input + monitor_stored_energy - owner().material_operating_reservoir()
 	var/datum/money_account/observer_account = contract_account_for_mob(user)
-	last_reading = list("name" = owner().name, "assembly" = owner().material_assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
+	last_reading = list("name" = owner().name, "assembly" = wear.assembly_id, "configuration" = monitor_configuration, "started" = monitor_started, "ended" = EXPIRY_AT(null, CLOCK_WORLD, 0), "duration" = duration, "input_joules" = input_joules - monitor_input, "output_joules" = output_joules - monitor_output, "minimum_output_watts" = monitor_minimum_output, "minimum_flow_moles" = monitor_minimum_flow, "minimum_pressure_kpa" = monitor_minimum_pressure, "maximum_temperature_k" = monitor_maximum_temperature, "efficiency" = (output_joules - monitor_output) / max(consumed, 1), "kind" = owner().material_measurement_kind(), "observer_account" = observer_account?.account_number, "observer_name" = user.real_name)
 	tool.set_engineering_reading(last_reading)
 	return TRUE
 

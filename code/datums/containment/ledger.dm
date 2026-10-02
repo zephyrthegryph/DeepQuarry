@@ -18,7 +18,7 @@
 // writes skip all of this, which is why tools/ci/containment_lint.py forbids
 // them outside its allowlist.
 
-// ALLOW(scheduler): the containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
+// The containment engine's own per-atom ledger; made and torn down by ledger.dm / the destroy transaction
 /atom/var/tmp/datum/ledger/ledger
 
 /// The ledger for `holder`, made on first use, synced. Null if it has no slots.
@@ -612,7 +612,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 /// Called on `src` right before `loc =` (doMove()), if MOVE_HOOK_CLOCK or
 /// MOVE_HOOK_LATENCY is set. Must not move, qdel or sleep -- a debug assert
 /// in doMove() checks `loc` didn't change out from under it. May call
-/// om_world_at()/qdel(watch) and clock procs.
+/// after()/qdel(watch) and clock procs.
 /atom/movable/proc/move_hook_before()
 	return
 

@@ -100,7 +100,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/trinary/atmos_filter, TYPE_P
 	for(var/gas_id in filtered_gas_ids())
 		mask |= (1 << GAS_IDX(gas_id))
 	var/available_power = material_pump_power(power_rating) // ALLOW(derived_reads): fixed by the material
-	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8) // ALLOW(derived_reads): fixed by the material
+	var/efficiency = ATMOS_FILTER_EFFICIENCY * (material_pump_efficiency() / 0.8)
 	rust_set_budget_leg("filtered", 1, 2, RUST_FLOW_FILTER, mask, RUST_ROLE_OUTPUT, 0, set_flow_rate, available_power, efficiency)
 	rust_set_budget_leg("clean", 1, 3, RUST_FLOW_FILTER, 0, RUST_ROLE_CLEAN, 0, set_flow_rate, available_power, efficiency)
 

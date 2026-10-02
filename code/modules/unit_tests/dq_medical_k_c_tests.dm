@@ -38,13 +38,13 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/obj/item/organ/internal/brain/B = H.organ_in(O_BRAIN)
 	TEST_ASSERT(istype(B), "the test human has a brain")
-	H.status_flags |= FAKEDEATH
+	H.set_status_flags(H.status_flags | FAKEDEATH)
 	var/datum/diagnosis/D = H.diagnose(/datum/diagnostic_profile/body_scanner)
 	var/list/entry = dq_test_find_part(D, B.name, DIAG_PART_INTERNAL)
 	TEST_ASSERT_NOTNULL(entry, "the brain is an internal part")
 	TEST_ASSERT_EQUAL(entry["band"], DIAG_BAND_CRITICAL, "a feigned death shows a critical brain")
 	qdel(D)
-	H.status_flags &= ~FAKEDEATH
+	H.set_status_flags(H.status_flags & ~FAKEDEATH)
 
 /// P2-F6: transform_into_other_human takes an options datum; the defaults keep our name.
 /datum/unit_test/dq_k_c_f6_transform_options

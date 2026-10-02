@@ -57,10 +57,13 @@
 	if(icon_base)
 		look.state("[icon_base][cap_has(holder, CAP_WIELDED) ? 1 : 0]")
 
+GLOBAL_LIST_INIT(cap_examine_wielded, list("It is held in both hands."))
+GLOBAL_LIST_INIT(cap_examine_unwielded, list("It can be wielded in both hands."))
+
 /datum/capability/two_handed/examine(atom/holder, mob/user)
 	if(cap_has(holder, CAP_WIELDED))
-		return list("It is held in both hands.")
-	return list("It can be wielded in both hands.")
+		return GLOB.cap_examine_wielded
+	return GLOB.cap_examine_unwielded
 
 /datum/capability/two_handed/ui_data(atom/holder, mob/user, list/data)
 	data["wielded"] = cap_has(holder, CAP_WIELDED)

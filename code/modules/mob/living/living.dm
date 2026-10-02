@@ -238,9 +238,9 @@
 
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_HANDCUFFED))
 		C.drop_from_inventory(C.get_equipped_item(SLOT_ID_LEGCUFFED))
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 	if(ai_brain) // AI gets told to sleep when killed. Since they're not dead anymore, wake it up.
 		ai_brain.go_wake()
 
@@ -266,13 +266,13 @@
 	rejuvenate_physiology()
 	set_sdisabilities(0)
 	disabilities = 0
-	resting = FALSE
+	set_resting(FALSE)
 
 	for(var/datum/affliction/contagion/D as anything in get_contagions())
 		D.cure(FALSE)
 
 	// fix blindness and deafness
-	blinded = 0
+	set_blinded(0)
 	status_set(EFFECT_BLINDED, 0)
 	status_set(EFFECT_BLURRY, 0)
 	status_set(EFFECT_DEAFENED, 0)
@@ -290,9 +290,9 @@
 	// make the icons look correct
 	regenerate_icons()
 
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	failed_last_breath = 0 //So mobs that died of oxyloss don't revive and have perpetual out of breath.
 	reload_fullscreen()
@@ -392,7 +392,7 @@
 	set name = "Rest"
 	set category = VERB_CAT_IC_GAME
 
-	resting = !resting
+	set_resting(!resting)
 	to_chat(src, span_notice("You are now [resting ? "resting" : "getting up"]."))
 	update_canmove()
 
@@ -928,15 +928,30 @@
 /mob/living/proc/adjust_nutrition(amount)
 	if(!amount || !isnum(amount))
 		return 0
-	var/old = nutrition
-	nutrition = between(0, nutrition + amount, max_nutrition)
-	return nutrition - old
+	return set_nutrition(nutrition + amount)
 
-/// Set nutrition to `value`, clamped to [0, max_nutrition].
+/// Set nutrition to `value`, clamped to [0, max_nutrition]: nutrition's only writer (a tracked var the HUD reads).
+/// Returns the change.
 /mob/living/proc/set_nutrition(value)
 	if(!isnum(value))
 		return 0
-	return adjust_nutrition(value - nutrition)
+	value = between(0, value, max_nutrition)
+	var/old = nutrition
+	if(old == value)
+		return 0
+	nutrition = value
+	tracked_changed(src, nameof(nutrition))
+	return value - old
+SETTER(/mob/living, nutrition)
+
+/// Marks the HUD-list entry `index` (ID_HUD, HEALTH_HUD, ...) stale: the HUD reaction redraws it (MOB_KEY_HUD_FLAGS).
+/// The only producer of hud_updateflag bits (the HUD clears them as it draws).
+/mob/living/proc/flag_hud_update(index)
+	var/bit = 1 << index
+	if(hud_updateflag & bit)
+		return
+	hud_updateflag |= bit
+	PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /mob/living/proc/nutrition_percent()
 	return 100 * nutrition / max_nutrition
@@ -1037,7 +1052,7 @@
 // Tries to turn off things that let you see through walls, like mesons.
 // Each mob does vision a bit differently so this is just for inheritence and also so overrided procs can make the vision apply instantly if they call `..()`.
 /mob/living/proc/disable_spoiler_vision()
-	refresh_vision()
+	PUBLISH_CHANGE(src, MOB_KEY_VIEW) // the sight reaction re-reads it
 
 /**
  * Small helper datum to manage the character setup HUD icon (was

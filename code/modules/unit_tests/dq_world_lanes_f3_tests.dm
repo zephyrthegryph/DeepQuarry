@@ -6,16 +6,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// None of the folded subsystems is still registered with the MC.
-/datum/unit_test/dq_world_lanes_f3_no_subsystems
-
-/datum/unit_test/dq_world_lanes_f3_no_subsystems/Run()
-	var/list/gone = list("chemistry", "radiation", "instruments", "throwing", "sounds", "motiontracker", "reflector", "pai", "circuit", "xenoarch", "looting", "mail", "events")
-	for(var/datum/controller/subsystem/S as anything in Master.subsystems)
-		var/path = "[S.type]"
-		for(var/name in gone)
-			TEST_ASSERT(path != "/datum/controller/subsystem/[name]", "[path] still runs as a subsystem after the F3 fold")
-
 /// The four world lanes are on the global owner at the old subsystems' cadence.
 /datum/unit_test/dq_world_lanes_f3_attached
 

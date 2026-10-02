@@ -17,7 +17,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 
 /datum/world_service/xenoarch
 	name = "Xenoarch"
-	needs = list(/datum/controller/subsystem/atoms)
+	needs = list(/datum/system/atoms)
 	var/list/artifact_spawning_turfs = list()
 	var/list/digsite_spawning_turfs = list()
 

@@ -923,11 +923,8 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 	else
 		to_chat(src.owner(), span_warning("Message reply failed."))
 
-	spawn(100) // ALLOW(scheduler): admin verb (allowlist)
-		if(faxreply == P)
-			own_clear(src, nameof(faxreply), OWN_DELETE)
-		else
-			qdel(P)
+	// A sent reply goes away 10 seconds later; deleting it also empties the admin's owned faxreply var.
+	P.expire(10 SECONDS)
 	return
 
 ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up an uplink on a character. This will be required for a character to use telecrystals.", ADMIN_CATEGORY_DEBUG_EVENTS)

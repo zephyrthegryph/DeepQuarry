@@ -75,7 +75,8 @@
 	index_for(KM_KEY_OM_NATIVE, KM_KIND_PSEUDO)
 	index_for(KM_KEY_INPUT, KM_KIND_PSEUDO)
 	index_for(KM_KEY_OTHER, KM_KIND_PSEUDO)
-	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_OM_CORE] != KM_KEY_OM_CORE || keys[KM_SYS_OM_NATIVE] != KM_KEY_OM_NATIVE || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER)
+	index_for(KM_KEY_OM_APPEARANCE, KM_KIND_PSEUDO)
+	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_OM_CORE] != KM_KEY_OM_CORE || keys[KM_SYS_OM_NATIVE] != KM_KEY_OM_NATIVE || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER || keys[KM_SYS_OM_APPEARANCE] != KM_KEY_OM_APPEARANCE)
 		CRASH("km: the pseudo system indices no longer match their KM_SYS_* constants")
 
 /// The index of `key`, registering it first if it is new. Past KM_MAX_SYSTEMS the overflow is KM_SYS_OTHER.
@@ -107,7 +108,7 @@
 		return "mc"
 	if(kind == KM_KIND_PSEUDO)
 		return idx == KM_SYS_INPUT ? "input" : "om"
-	var/static/list/lane_names = list("urgent", "sim", "derived", "present", "bg")
+	var/static/list/lane_names = list("urgent", "sim", "derived", "present", "bg", "world")
 	var/list/parts = list()
 	var/mask = lane_masks[idx]
 	for(var/lane in 1 to OM_LANE_COUNT)
@@ -214,11 +215,3 @@
 	var/datum/km_systems/systems = km_systems()
 	for(var/datum/om/behaviour/B as anything in behaviours)
 		B.system_idx = systems.index_for(B.system_key || km_system_key_for_path(B.type), KM_KIND_OM, B.lane)
-
-/// Binds an MC subsystem to its system on first use and returns the index (KM_SYS_DECOMPOSED for none).
-/proc/km_bind_subsystem(datum/controller/subsystem/SS)
-	if(SS.system_idx)
-		return SS.system_idx
-	var/key = "mc_[replacetext(lowertext(SS.name), " ", "_")]"
-	SS.system_idx = km_systems().index_for(key, KM_KIND_MC)
-	return SS.system_idx

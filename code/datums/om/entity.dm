@@ -5,7 +5,7 @@
 // default (free) until the entity joins: `om_rec` and `om_listen`.
 
 /// The entity's record. Null until the entity first joins.
-// ALLOW(scheduler): the object-model core's own record for this entity; released by the core (entity.dm) on leave
+// The object-model core's own record for this entity; released by the core (entity.dm) on leave
 /datum/var/tmp/datum/om/rec/om_rec
 /// Union of every channel something listens to on this entity. A setter's
 /// changed() returns on `!(om_listen & bits)` without a proc call more.
@@ -68,6 +68,8 @@
 	var/list/hooks_out
 	/// UI sessions: time (ds) of the last push (ui.dm).
 	var/ui_last_push = 0
+	/// As ui_last_push, for the window's status re-check (ui_status).
+	var/ui_status_last = 0
 	/// Stride 5: derived idx, value, dirty, computed at, aggregate aux.
 	var/list/dv
 	/// Stride 4: clock idx, rate, local time (ds), settled at (ds).

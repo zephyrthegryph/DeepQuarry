@@ -48,9 +48,6 @@
 /obj/item/clothing/head/fishing/state_nondeterministic_list_vars()
 	return ..() + list("item_state_slots")
 
-/obj/item/trash/material/state_nondeterministic_list_vars()
-	return ..() + list("material_mix")
-
 /obj/machinery/state_codecs()
 	return ..() + list(
 		"circuit" = /datum/state_codec/child,
@@ -85,7 +82,6 @@
 	return ..() + list(
 		"mind_host" = /datum/state_codec/pinned,
 		"economic_adoption" = /datum/state_codec/pinned,
-		"material_response" = /datum/state_codec/pinned,
 		"carried_afflictions" = /datum/state_codec/pinned,
 	)
 

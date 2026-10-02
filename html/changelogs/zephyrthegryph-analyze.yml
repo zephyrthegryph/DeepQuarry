@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Added tools/analyze, one Rust lint engine that replaces the Python ratchet lints and check_grep.sh: a full lint run is about 5 seconds cold (was about 11 minutes) and about half a second when nothing changed."
+  - code_imp: "Path exemptions, per-rule ceilings and ALLOW reason codes now live in tools/ci/lint_scopes.toml."

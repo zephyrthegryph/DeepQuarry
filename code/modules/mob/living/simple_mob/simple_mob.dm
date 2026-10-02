@@ -757,8 +757,11 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 			tmob.status_at_least(EFFECT_WEAKENED, 5)
 		act_message(src, tmob, null, MSG_OTHERS(span_danger("%U% [vore_bump_emote] %T%!")))
 		ai_busy_begin()
-		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after() (S8)
+		spawn() // ALLOW(scheduler): animal_nom() sleeps in do_after(); no timer or task form can wait on it until ops land (wait())
 			animal_nom(tmob)
+			// The nom took seconds: the pred may have been deleted (or died into a belly) meanwhile.
+			if(QDELETED(src))
+				return
 			update_icon()
 			ai_busy_end()
 		return TRUE
@@ -909,7 +912,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		return
 
 	COOLDOWN_START(src, last_special, 10)
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
 	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
@@ -919,7 +922,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	om_after(src, 5, PROC_REF(leap_land), T)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
 	if(!Adjacent(T))
 		to_chat(src, span_warning("You miss!"))

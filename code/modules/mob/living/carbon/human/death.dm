@@ -1,5 +1,5 @@
 /mob/living/carbon/human/gib()
-	transforming = 1 //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
+	set_transforming(1) //Tells the gib system to NOT SEND MESSAGES FOR EVERYTHING when we gib.
 	// Organs and limbs the gib deletes go as one batched destroy (batch.dm).
 	dq_destroy_collect_begin()
 
@@ -67,9 +67,9 @@
 	var/obj/item/organ/internal/brain/brain = organ_in(O_BRAIN)
 	if(istype(brain))
 		brain.sync_defib_window()
-	BITSET(hud_updateflag, HEALTH_HUD)
-	BITSET(hud_updateflag, STATUS_HUD)
-	BITSET(hud_updateflag, LIFE_HUD)
+	flag_hud_update(HEALTH_HUD)
+	flag_hud_update(STATUS_HUD)
+	flag_hud_update(LIFE_HUD)
 
 	animate_tail_stop()
 	stop_flying()
@@ -156,7 +156,7 @@
 	update_hair(0)
 
 	add_mutation(HUSK)
-	status_flags |= DISFIGURED	//makes them unknown without fucking up other stuff like admintools
+	set_status_flags(status_flags | DISFIGURED) //makes them unknown without fucking up other stuff like admintools
 	remove_blood(560)
 	update_icons_body()
 	return
@@ -176,7 +176,7 @@
 	update_hair(0)
 
 	add_mutation(SKELETON)
-	status_flags |= DISFIGURED
+	set_status_flags(status_flags | DISFIGURED)
 	update_icons_body()
 	return
 

@@ -296,16 +296,20 @@ Every entry a library capability builds is a real op [built: a2-ops, G16]: it ha
 | `cap_frame_ladder()` | [built] (a proc on `/obj/structure/frame`) | the standard machine/computer frame ladder |
 | `cap_wall_mount(offset)` | [built] | faces a wall machine away from its wall and offsets it onto it |
 | `cap_atmos_unwrench(delay)` | [built] | unfasten an atmos device into its pipe item, refused while running or over-pressured |
-| **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)` (panel, breakable, power, anchor, deconstruct behind the panel; `dismantle = NONE` and `powered = FALSE` leave those out), `wall_machine(board, offset, repair, dismantle, powered)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(cover_holds, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_mode)` (cover + panel + wires behind it + lock + emag; declares the compartment `BAY_HATCH` whose door is the open cover; the wiring is the holder's `machine_wires`, the lock's access its `req_access`; `cover_holds` is a holder proc that says why the cover can't move, opening or closing; the lock and the emag are ops keyed `CAP_LOCK`, `CAP_LOCK_SWIPE`, `CAP_EMAG` that a holder adds `cap_require()` contracts to and `refine()`s) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
+| **Bundles** [built]: `machine_basics(board, anchored_by = TOOL_WRENCH, repair = TOOL_WELDER, dismantle = TRUE, powered = TRUE)` (panel, breakable, power, anchor, deconstruct behind the panel; `dismantle = NONE` and `powered = FALSE` leave those out), `wall_machine(board, offset, repair, dismantle, powered)` (basics without anchoring + wall mount), `console(board)`, `atmos_device(uses_power, unwrench_delay)`, `maintenance_hatch(cover_holds, panel_needs_cover_closed, cover_tool, removable_cover, emag_say, emag_mode, wires)` (cover + panel + wires behind it + lock + emag; declares the compartment `BAY_HATCH` whose door is the open cover; the wiring is `wires`, the lock's access the holder's `req_access`; `cover_holds` is a holder proc that says why the cover can't move, opening or closing; the lock and the emag are ops keyed `CAP_LOCK`, `CAP_LOCK_SWIPE`, `CAP_EMAG` that a holder adds `cap_require()` contracts to and `refine()`s) | [built] | a later capability with the same key replaces an earlier one in place, so a bundle can refine another's part (the hatch's panel replaces the basics' panel) |
 | **Bundles** [built]: `cell_bay(slot_var, accepts, at, needs, size)` (draws `LOOK_CELL`) (`at = BAY_HATCH` puts the bay behind a hatch's compartment), `power_channels()` (owns `act_channel`/`act_breaker`/`act_nightshift`; channel indicators are the parts `channel-<c>-<m>`), `powered_by(system, role)` and `powered_by(POWERED_BY_AREA, role)` (MEMBER of the holder's area: lights and consoles; read with `area_members(area, role)`); `door(...)` (rewrite/dx-doors) | [built] | the APC is the worked example: [foundation.md](foundation.md) |
 | Items: `cap_use_self(name, handler, ...gating, form =, log =, cooldown =, in_inventory = FALSE)`, `cap_use_at(name, handler, range = 1, target_types =, ...gating, form =, log =, cooldown =)` (replace `attack_self`/`afterattack`) | [built] | `cap_use_self`: item in hand used on itself, handler `(mob/user, ...form)`, runs from `attack_self`, answers `INPUT_ACTION_SELF_USE`, refused unless held when offered through the resolver/Menu (`needs cap_in_hand`; a direct `attack_self()` call, e.g. an action button, is trusted as before, since its callers decide reach; `in_inventory = TRUE` also accepts worn). It replaces the old `self_use()` helper. `cap_use_at`: the held item is the holder, the clicked atom the target, handler `(mob/user, atom/target, ...form)`; `range` 1 = adjacent, >1 also ranged; `target_types` filters. Click order: target `attackby` first, then the item's `use_at` entries (via `after_click()`), then legacy `afterattack`. The dispatch marks, fingerprints and logs the ITEM; mark the target yourself with `changed(target)` |
+| Machines [built, B2]: `cap_parts(list(part_stat(nameof(var), part_type, base, per, offset, mode, scale, derive)))` | [built] | component parts as the source of derived stats: each `part_stat()` var is written from the machine's owned `component_parts` relation (latent parts read without materializing), re-derived when the relation changes (an `on_change` reaction) and from every legacy `RefreshParts()` caller; `part_rating(holder, type, PART_RATING_SUM/AVG/MIN/MAX/COUNT)`; the RPED is its op `replace_parts`. Worked example: `cell_charger.dm` (its `RefreshParts()` override is deleted). The other 58 `RefreshParts` overrides convert to `part_stat()` rows |
+| `cap_occupant(slot_id, max, types, enter_delay, on_enter, on_exit)` | [built, B2] | a machine holding a mob in its sealed ledger occupant slot (the relation; the destroy spill is the slot's drop policy). Ops `enter_<slot>` (drag a mob onto it, ACT_DROP_ONTO), `enter_<slot>_self` and `eject_<slot>` (ACT_NONE); reads `occupants(holder)` (never null) and `occupant_of(holder)`; from code `occupant_enter(holder, M, user)` / `occupant_eject(holder, M, destination)`; every slot change by any path publishes `OCCUPANTS_KEY` and refreshes the holder. Worked example: `transportpod.dm` |
+| `cap_access(access, req_one_access, ops = OP_CONTROL, id_types)` | [built, B2] | access-gated ops without lock state: a `cap_require()` contract whose requirement is a credential provider (`access_credential()`: held card, then worn ID / PDA / silicon access); the holder's own `req_access` wins (`access_needs()`); `access_allowed(holder, user, held)` for code outside an op. The lock asks the same providers. Worked example: `drone_console.dm` |
+| `service_panel(wires, panel_tool, access, emag_say, emag_effect, emag_mode)` | [built, B2] | panel + wires behind it (+ access on opening the panel, waived when emagged, + an emag) as one bundle, no cover; each part keeps its capability type, so `replace()` still swaps one. Worked example: `vending.dm` |
 | Mobs: `cap_ai(targets)`, `cap_ai_behaviors(...)`, species `species_capabilities()` | [planned] | plan §2.3, §2.4 |
 | `cap_system(path)` membership (`systems()`) | [built] (O(1) join/leave) | used by `/datum/system` once it exists |
 
 **Capabilities may own UI actions** [built]: `/datum/capability/<x>/proc/act_<action>(mob/user, atom/holder, ...args)` plus `ui_logged()` on the capability; the dispatcher resolves it on the holder's capabilities when the holder has no `act_<action>` itself. Capability UI data arrives under `data["caps"][<key>]`.
 
 [planned] (archive/framework_fixes.md §9.5; don't invent them):
-- **Machines:** `machine_board`/`machine_wires` type vars read by `machine_basics()`; `refine(key, ...)` to adjust one part of a bundle; `service_panel(access)`; `cap_occupant(max, types, enter_delay, eject_on)` with `occupants(src)` and derived `occupant_count`; `cap_access(req_access)`; parts: `cap_parts(list(/obj/item/stock_parts/x = n))` with `derive_part_rating()` (replaces `RefreshParts`); `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`.
+- **Machines:** `refine(key, ...)` to adjust one part of a bundle; `look.loop(sound)`; `cap_slot(..., eject_tool = TOOL_X)`. (`service_panel`, `cap_occupant`, `cap_access` and `cap_parts` are built: the table above.)
 - **Derived values:** `derived()` with `runs_while`/`drawn_from`/`ui_from`/`derive(...)`, and `rust_push(reads...)` replacing hand `update_rust_device()` calls (§9.2).
 - **Vore:** `cap_interior(transmit, escape_delay, on_enter, on_exit)`; `settings()` rows (`setting_choice/number/text/bool/color`) with one `act_set_setting(user, key, value)`.
 
@@ -539,13 +543,32 @@ presets of `cap_op`). For new or reworked code:
 - **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
+- **Tracked base vars [built, B4/G8]:** `anchored`, `density` and `opacity` are tracked: write them only through
+  `set_anchored()` / `set_density()` / `set_opacity()` (type-level defaults stay plain). The setter publishes the var key to
+  its readers and, as a bridge until S4, raises the channel the type's declared field names (a machine's
+  `CHANGE_MACHINE_ANCHORED`, a mob's `CHANGE_MOB_CAN_MOVE`: `tracked_bridged_changed()`), so it has no `istype()`. Admin
+  edits go through the setter (`SETTER`). `tools/ci/tracked_lint.py` rejects a raw write in any proc.
+- **Machine power and integrity state [built, B4/G8]:** `NOPOWER` is the power capability's state, written only by
+  `set_powered(powered)` (`power_change()` and the few custom power rules call it) and published as `MACHINE_KEY_POWERED`;
+  `use_power` is its tracked draw mode (`set_use_power()` publishes `nameof(use_power)`); `BROKEN` is the integrity state,
+  written only by `atom_break()` / `atom_fix()`, which publish `INTEGRITY_KEY_BROKEN`. `has_stat()`, `operable()` and
+  `set_use_power()` stay the accessors. `sys/fields stat_owned` rejects `stat_add/stat_remove/set_stat` of either bit
+  anywhere else.
+
+  ```text
+  /obj/machinery/light_switch/power_change()
+      if(!otherarea)
+          set_powered(powered(LIGHT))
+  if(!turbine())
+      atom_break()        // was stat_add(BROKEN): "no partner" is the broken state, published
+  ```
 
 
 ---
 
 # Part B: the catalogue of old forms
 
-Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`) started at 18,363 sites, and each wave drives its rules to 0. **A converted folder may contain none of these.**
+Every form that goes away is listed here with its count on `integrate/b17` and the lint that tracks it. The `dx_old_forms` ratchet (`tools/ci/sys_rules/dx_old_forms.py`, started at 18,363 sites) was removed: every rule banned a form whose replacement has not landed on master (and `old_ui` contradicted the `ui` rule). The catalogue below stays as the inventory; a rule returns with the commit that lands its replacement and converts the callers. **A converted folder may contain none of these.**
 
 | # | Old form | Count | Lint rule | New form | Section |
 |---|---|---|---|---|---|
@@ -780,6 +803,24 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 **Power reads:** there is no `is_powered()`. The one read is the derived `power_state` (`POWER_BROKEN`/`POWER_UNPOWERED`/`POWER_OFF`/`POWER_IDLE`/`POWER_ACTIVE`) [planned, archive/framework_fixes.md §9.3]; until it lands, `cap_powered(src)` [built].
 
 ## B6. Manual refresh → delete
+
+**HUD, sight and canmove [built, B4].** There is no `refresh_hud()` / `refresh_vision()`: the passes are `on_change()`
+reactions on `/mob/living` (living_systems.dm) whose reads are declared by hand (published `MOB_KEY_*` facts) and
+generated from what `life_hud()` / `life_vision()` / `update_canmove()` and their `life_hud_*` / `life_vision_*` helpers
+read (`reaction_reads()` in `code/_generated/reads.dm`). Every such var is tracked (TRACKED / SETTER / an OM field), a
+relation or object var (the ownership accessors publish), or `PUBLISHED_BY(T, var, KEY)` (its producer publishes KEY:
+`hud_updateflag` via `flag_hud_update(index)`, `organs` and `body` via body invalidation). So a refresh call is replaced by
+the setter of what changed, or by publishing the key that covers it: `PUBLISH_CHANGE(M, MOB_KEY_VIEW)` for what the
+client looks through (remote view, zoom, vision gear: `recalculate_vis()` does it), `flag_hud_update(WANTED_HUD)` for a
+HUD-list entry. `derived_reads/reaction_read_untracked` rejects an untracked input; `sys/presentation presentation_call`
+rejects calling a pass from content.
+
+```text
+// was: user.refresh_hud()
+PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+// was: nutrition -= 5; refresh_hud()
+adjust_nutrition(-5)
+```
 
 Every `update_icon()` and `queue_icon_update()` call in a converted folder is deleted. If the write happened outside a dispatched call (a raw callback or FFI data), write `changed(src)` instead. The sweep fails in tests when a mark is missed, so a deletion that misses a case is caught.
 
@@ -1236,7 +1277,7 @@ Gating booleans become capabilities and numbers become factors, read through `fa
 ## C3. Verify
 
 - Compile with 0 errors.
-- `tools/build/build.sh lint`: DreamChecker 0, and the `dx_old_forms` counts for your folder at 0.
+- `tools/build/build.sh lint`: DreamChecker 0, and no Part B form left in your folder (`git grep` the form).
 - Focused tests for every type you touched: `bash tools/dq_focused_test.sh ...`. Add a test for each capability entry you wrote: that it works, that it refuses when it should, and that the look and UI change.
 - The refresh sweep in test builds fails on a missed change mark. **Don't silence it; find the write.**
 

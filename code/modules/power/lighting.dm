@@ -1127,11 +1127,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/light/proc/begin_emergency_discharge()
 	if(!emergency_mode || !has_cell() || emergency_discharge_at)
 		return
-	// Set the initial emergency appearance immediately, then account for charge
-	// in coarse time-based batches: one timer per fixture every 10 seconds.
+	// Set the initial emergency appearance immediately, then account for charge in one batch when the light
+	// next has to change (emergency_discharge_wait()).
 	use_emergency_power(0)
 	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
-	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
+	EXPIRY_SET(src, emergency_discharge_at, emergency_discharge_wait(), CLOCK_WORLD)
 	schedule_light_timer()
 
 /obj/machinery/light/proc/settle_emergency_discharge()
@@ -1154,7 +1154,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		emergency_discharge_started = 0
 		update(FALSE)
 		return
-	EXPIRY_SET(src, emergency_discharge_at, 10 SECONDS, CLOCK_WORLD)
+	EXPIRY_SET(src, emergency_discharge_at, emergency_discharge_wait(), CLOCK_WORLD)
+
+/// How long the emergency cell can discharge before the light must change: its emergency brightness steps down
+/// (use_emergency_power() rounds it to LIGHT_EMERGENCY_POWER_STEP) or the cell runs out. The drain is settled in
+/// one batch then: a fixture in an unpowered area wakes a handful of times over its cell's half hour, not every
+/// few seconds (each wake is a timer and a redraw, and a station has hundreds of such fixtures).
+/obj/machinery/light/proc/emergency_discharge_wait()
+	var/obj/item/cell/C = emergency_cell()
+	if(!C?.maxcharge)
+		return 2 SECONDS
+	var/level = round(max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (C.charge / C.maxcharge)), LIGHT_EMERGENCY_POWER_STEP)
+	// The charge at which it runs out, or the brightness rounds down to the next step if that comes first.
+	var/target = LIGHT_EMERGENCY_POWER_USE
+	var/boundary = level - LIGHT_EMERGENCY_POWER_STEP / 2
+	if(boundary > bulb_emergency_pow_min && bulb_emergency_pow_mul > 0)
+		target = max(target, boundary * C.maxcharge / bulb_emergency_pow_mul)
+	// LIGHT_EMERGENCY_POWER_USE every two seconds; one decisecond past the crossing, and never sooner than one drain step.
+	return max((C.charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
 	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_at)

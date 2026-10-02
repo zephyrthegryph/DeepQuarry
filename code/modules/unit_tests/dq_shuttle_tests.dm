@@ -218,7 +218,6 @@
 	TEST_ASSERT(shuttle.always_process, "arrivals shuttle is not configured for subsystem-owned idle automation")
 	TEST_ASSERT(shuttle in SSshuttles.process_shuttles, "arrivals shuttle is absent from the shuttle processing set")
 	TEST_ASSERT_EQUAL(shuttle.periodic_pipe, PERIODIC_SLOW, "always-processing arrivals shuttle is not on the slow lane")
-	// ALLOW(spatial): world search
 	var/obj/machinery/computer/shuttle_control/arrivals/console = locate() in world
 	TEST_ASSERT_NOTNULL(console, "Southern Cross arrivals control console was not mapped")
 	TEST_ASSERT(test_machine_idle(console), "arrivals console still performs idle polling instead of hibernating")

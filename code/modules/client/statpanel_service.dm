@@ -157,30 +157,18 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	))
 
 /datum/world_service/statpanels/proc/generate_mc_metrics()
-	var/list/history = Master.perf_tick_usage
+	var/list/history = Kernel.perf_tick_usage
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	var/history_start = max(1, history.len - 119)
 	var/list/graph = history.len ? history.Copy(history_start) : list()
 	var/list/subsystems = list()
-	for(var/datum/controller/subsystem/SS as anything in Master.subsystems)
-		if(!SS.can_fire || (SS.flags & SS_NO_FIRE))
-			continue
-		subsystems += list(list(
-			"name" = SS.name,
-			"state" = SS.state_letter(),
-			"usage" = SS.tick_usage,
-			"overrun" = SS.tick_overrun,
-			"cost" = SS.cost,
-			"fires" = SS.times_fired,
-			"ref" = REF(SS),
-		))
-	// Systems that run a fire() body on a work item (air, lighting, ticker ...) read like the subsystems they were.
+	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...).
 	for(var/datum/system/S as anything in kernel_pure_systems())
 		if(!S.times_fired && !S.fire_cost)
 			continue
 		subsystems += list(list(
 			"name" = S.name,
-			"state" = S.state == SS_PAUSED ? "P" : "  ",
+			"state" = "  ",
 			"usage" = 0,
 			"overrun" = S.tick_overrun,
 			"cost" = S.fire_cost,
@@ -196,19 +184,19 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		"tidi_fast" = GLOB.time_track_service.time_dilation_avg_fast,
 		"tidi_medium" = GLOB.time_track_service.time_dilation_avg,
 		"tidi_slow" = GLOB.time_track_service.time_dilation_avg_slow,
-		"window_5s" = Master.performance_window(5),
-		"window_30s" = Master.performance_window(30),
-		"window_5m" = Master.performance_window(300),
+		"window_5s" = Kernel.performance_window(5),
+		"window_30s" = Kernel.performance_window(30),
+		"window_5m" = Kernel.performance_window(300),
 		"graph" = graph,
-		"outliers" = Master.perf_outliers.Copy(),
+		"outliers" = Kernel.perf_outliers.Copy(),
 		"subsystems" = subsystems,
 		"kernel" = km_panel_data(),
 		"runtime" = list(
 			"cpu" = world.cpu,
 			"instances" = length(world.contents),
 			"clients" = length(GLOB.clients),
-			"tick_drift" = Master.tickdrift,
-			"sleep_delta" = Master.sleep_delta,
+			"tick_drift" = Kernel.tickdrift,
+			"sleep_delta" = Kernel.sleep_delta,
 			"queue_priority" = 0,
 			"queue_priority_background" = 0,
 			"kernel_ticks" = kernel().ticks,
@@ -289,9 +277,9 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		list("World Time:", "[world.time]"),
 		list("Globals:", GLOB.stat_entry(), text_ref(GLOB)),
 		list("[config]:", config.stat_entry(), text_ref(config)),
-		list("Byond:", "(FPS:[world.fps]) (TickCount:[world.time/world.tick_lag]) (TickDrift:[round(Master.tickdrift,1)]([round((Master.tickdrift/(world.time/world.tick_lag))*100,0.1)]%)) (Internal Tick Usage: [round(MAPTICK_LAST_INTERNAL_TICK_USAGE,0.1)]%)"),
-		list("Master Controller:", Master.stat_entry(), text_ref(Master)),
-		list("Failsafe Controller:", Failsafe.stat_entry(), text_ref(Failsafe)),
+		list("Byond:", "(FPS:[world.fps]) (TickCount:[world.time/world.tick_lag]) (TickDrift:[round(Kernel.tickdrift,1)]([round((Kernel.tickdrift/(world.time/world.tick_lag))*100,0.1)]%)) (Internal Tick Usage: [round(MAPTICK_LAST_INTERNAL_TICK_USAGE,0.1)]%)"),
+		list("Kernel Controller:", Kernel.stat_entry(), text_ref(Kernel)),
+		list("Watchdog:", Kernel.watchdog.stat_entry(), text_ref(Kernel.watchdog)),
 		list("","")
 	)
 #if defined(MC_TAB_TRACY_INFO) || defined(SPACEMAN_DMM)
@@ -312,8 +300,6 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	else
 		mc_data.Insert(2, list(list("byond-tracy:", "[tracy_dll] not present")))
 #endif
-	for(var/datum/controller/subsystem/sub_system as anything in Master.subsystems)
-		mc_data[++mc_data.len] = list("\[[sub_system.state_letter()]][sub_system.name]", sub_system.stat_entry(), "\ref[sub_system]")
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), "\ref[system]")
 	for(var/datum/world_service/service as anything in world_services())

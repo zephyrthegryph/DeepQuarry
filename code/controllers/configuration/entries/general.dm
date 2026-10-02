@@ -787,13 +787,13 @@
 /datum/config_entry/number/mc_tick_rate/ValidateAndSet(str_val)
 	. = ..()
 	if (.)
-		Master.UpdateTickRate()
+		Kernel.UpdateTickRate()
 
 /datum/config_entry/flag/resume_after_initializations
 
 /datum/config_entry/flag/resume_after_initializations/ValidateAndSet(str_val)
 	. = ..()
-	if(. && MC_RUNNING())
+	if(. && KERNEL_RUNNING())
 		world.sleep_offline = !config_entry_value
 
 /datum/config_entry/number/rounds_until_hard_restart

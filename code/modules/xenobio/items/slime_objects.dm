@@ -31,23 +31,24 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 				question(O.client)
 
 /obj/item/slime_cube/proc/question(client/C)
-	spawn(0) // ALLOW(scheduler): tgui_alert() sleeps (prompts, S10)
-		if(!C)
+	// rerun_ask() does not wait: it returns null at once and runs this proc again with the answer, so
+	// asking every ghost in turn here is fine and needs no detached thread per ghost.
+	if(!C)
+		return
+	var/response = rerun_ask(C, "k34", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Someone is requesting a soul for a promethean. Would you like to play as one?", title = "Promethean request", choices = list("Yes", "No", "Never for this round"))
+	if(isnull(response))
+		return
+	if(response == "Yes")
+		var/_answer_k36 = rerun_ask(C, "k36", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to play as a promethean?", title = "Promethean request", choices = list("Yes", "No"))
+		if(isnull(_answer_k36))
 			return
-		var/response = rerun_ask(C, "k34", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Someone is requesting a soul for a promethean. Would you like to play as one?", title = "Promethean request", choices = list("Yes", "No", "Never for this round"))
-		if(isnull(response))
-			return
-		if(response == "Yes")
-			var/_answer_k36 = rerun_ask(C, "k36", PROC_REF(question), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to play as a promethean?", title = "Promethean request", choices = list("Yes", "No"))
-			if(isnull(_answer_k36))
-				return
-			response = _answer_k36
-		if(!C || 2 == searching)
-			return //handle logouts that happen whilst the alert is waiting for a response, and responses issued after a brain has been located.
-		if(response == "Yes")
-			transfer_personality(C.mob)
-		else if(response == "Never for this round")
-			C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // migrated
+		response = _answer_k36
+	if(!C || 2 == searching)
+		return //handle logouts that happen whilst the alert is waiting for a response, and responses issued after a brain has been located.
+	if(response == "Yes")
+		transfer_personality(C.mob)
+	else if(response == "Never for this round")
+		C.prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, C.prefs.read_preference(/datum/preference/numeric/human/be_special) ^ BE_ALIEN) // migrated
 
 /obj/item/slime_cube/proc/reset_search() //We give the players sixty seconds to decide, then reset the timer.
 	icon_state = "slime cube"

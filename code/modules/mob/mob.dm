@@ -808,17 +808,17 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 
 /mob/proc/Resting(amount)
 	facing_dir = null
-	resting = max(max(resting,amount),0)
+	set_resting(max(max(resting,amount),0))
 	update_canmove()
 	return
 
 /mob/proc/SetResting(amount)
-	resting = max(amount,0)
+	set_resting(max(amount,0))
 	update_canmove()
 	return
 
 /mob/proc/AdjustResting(amount)
-	resting = max(resting + amount,0)
+	set_resting(max(resting + amount,0))
 	update_canmove()
 	return
 

@@ -1,0 +1,12 @@
+topic_override	code/x/a.dm	1
+topic_override	code/x/a.dm	2
+topic_override	code/x/a.dm	3
+topic_override	code/x/a.dm	6
+topic_raw_dispatch	code/x/a.dm	7
+topic_raw_dispatch	code/x/a.dm	8
+topic_raw_dispatch	code/x/a.dm	9
+topic_raw_dispatch	code/x/a.dm	10
+topic_raw_locate	code/x/a.dm	12
+topic_raw_locate	code/x/a.dm	13
+topic_raw_num	code/x/a.dm	15
+topic_raw_num	code/x/a.dm	19

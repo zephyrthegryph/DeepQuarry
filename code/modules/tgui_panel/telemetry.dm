@@ -115,7 +115,7 @@
 
 	// Only log them all at the end, since it's not as important as reporting an evader
 	for (var/list/one_query as anything in query_data)
-		var/datum/db_query/query = SSdbcore.NewQuery({"
+		sql_write({"
 			INSERT INTO [format_table_name("telemetry_connections")] (
 				ckey,
 				telemetry_ckey,
@@ -138,8 +138,6 @@
 			"computer_id" = one_query["computer_id"],
 			"round_id" = GLOB.round_id,
 		))
-		query.Execute()
-		qdel(query)
 	*/
 
 #undef TGUI_TELEMETRY_MAX_CONNECTIONS

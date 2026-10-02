@@ -56,7 +56,7 @@ POOL_DECLARE(/datum/pool_test_item)
 	var/crashed = FALSE
 	try
 		pool_release(item)
-	catch // ALLOW(silent_catch): the test expects this crash
+	catch
 		crashed = TRUE
 	TEST_ASSERT(crashed, "a second release should crash")
 	TEST_ASSERT_EQUAL(pool.double_releases, before + 1, "a double release is counted")
@@ -75,7 +75,7 @@ POOL_DECLARE(/datum/pool_test_item)
 	var/crashed = FALSE
 	try
 		item.touch()
-	catch // ALLOW(silent_catch): the test expects this crash
+	catch
 		crashed = TRUE
 	TEST_ASSERT(crashed, "using a poisoned object should crash")
 	var/datum/pool_test_item/fresh = pool_take(/datum/pool_test_item)

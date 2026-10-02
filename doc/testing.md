@@ -10,6 +10,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 |---|---|---|
 | Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
 | Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | 5–6 minutes plus compile, sharded |
+| The E0 proofs (pending the engines, so not in any other tier) | `tools/build/build.sh dm-test --tier=e0` · `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` | compile + about 25 s |
 | Profile each test's procs | add `--profile-tests` to `dm-test` or `dq_focused_test.sh` | about twice as slow |
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
@@ -141,6 +142,7 @@ Every test has a `tier` (`code/modules/unit_tests/_unit_tests.dm`):
 |---|---|---|
 | `TEST_TIER_NORMAL` (the default) | every integration merge: `tools/build/build.sh dm-test`, `bin/test.cmd` | every ordinary test, plus a small representative of each exhaustive sweep |
 | `TEST_TIER_EXHAUSTIVE` | CI (`run_integration_tests.yml`, including the weekly full-map run) and nightly: `dm-test --tier=all` | the whole-type sweeps (see below) |
+| `TEST_TIER_E0` | only `dm-test --tier=e0`, or a focused run by name | the ten E0 proofs, which cannot pass until engines E1-E6 land (see "The E0 proofs") |
 
 **Integration merges run the normal tier; CI and nightly run the exhaustive
 tier as well.** A plain `dm-test` runs the normal tier. `--tier=all` (or
@@ -178,6 +180,55 @@ The others override a small hook: `equip_species()`/`item_stride()` for equip,
 To add a sweep, write it exhaustive with a representative. Put it in the
 normal tier only if it is cheap: `dq_constraint_parity/holster` has seventeen
 holders and stays whole in the normal tier.
+
+### The E0 proofs
+
+Phase 1 of the rewrite (`doc/rewrite/final_api.html` section 19) starts with ten executable proofs of the
+semantic contracts that would be expensive to get wrong after content conversion begins. They live in
+`code/modules/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
+(`code/tests/driver/`) and the test-only fixtures (`code/tests/engine/`), and are all green only when engines E1-E6 have landed.
+Until then each one fails, on purpose, with `E1-E6 not implemented: <what>` naming every engine piece it reached.
+
+They have a tier of their own, `TEST_TIER_E0`, so the normal suite stays green:
+
+| Command | Runs the proofs? |
+|---|---|
+| `dm-test` (normal), `dm-test --tier=all`, `dm-test --tier=exhaustive` | no |
+| `dm-test --tier=e0` | yes, and only them |
+| `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` or `... dq_e0_proof/p05_refused_insert_loses_nothing` | yes (a focused run ignores the tier) |
+
+A tier-e0 run reports them separately from the rest of the run: each failing proof prints a `E0 PENDING` line with its reasons
+(when the failure is only a missing engine), and the log ends with `E0 proofs: N green, N pending an engine, N failed for another
+reason`. A proof that fails for any other reason, such as an assertion, counts as failed. The tier-e0 run exits non-zero until all ten
+are green, which is the gate: the ten must pass before any content conversion starts, and again before every phase 3 step.
+
+A proof reads what it needs into locals as it drives the fixture, then calls `E0_GATE` once and asserts. `E0_GATE` fails the
+proof with the "not implemented" message if a driver form or a stub it called reached an engine piece that does not exist yet, so a
+proof never asserts on a null. When an engine replaces its stubs the gate goes quiet for that piece and the assertions run unchanged.
+`doc/rewrite/engine_contracts.md` lists, per proof, which engine it waits for.
+
+### The kernel clock (test_time) and the input inbox
+
+A test that makes time pass or sends an input starts with `test_driver_begin()` (code/tests/driver/driver.dm) and ends with
+`test_driver_end()`. Begin gives the kernel an injected clock (`kernel().test_now`, in deciseconds, from 0) and makes a fresh test
+OM scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
+decisecond) at a time, running the phases K, S, N, D, P, R, G of each slot in order through the same phase procs the live tick
+calls, with a drain at the start of S, D, P and R; `test_phase(P)` runs one phase at the current time and moves nothing;
+`test_drain()` is one marked drain. Native frames and the host services (tgui transport, dbcore, assets) are not stepped.
+
+Which work a test steps: the items registered while the test owned the clock (a fixture system's `every()`, an entity type's first
+`every()` table) and the kernel's own plumbing (the input inbox, requests, jobs). Live items keep their world.time due dates and
+never run inside a test; test items never run on the live loop. An item no run has seen is armed one interval after the clock it
+first meets, so `every(1 SECOND)` runs exactly five times in `test_time(5 SECONDS)`. A fixture system that must not boot with the
+live kernel sets `lazy_only = TRUE` and is made by `system(path)`.
+
+`end_test_world()` calls `test_driver_end()`, so a failed assertion or a runtime cannot leave later tests on the injected clock.
+The recorder (`test_record` / `test_recorded`) stamps each row with its position (`seq`) and the kernel time (`at`) and holds at
+most `TEST_RECORD_MAX` rows.
+
+The input inbox (code/engine/kernel/inbox.dm) is tested with `/datum/input_event` fixtures: `SSinput.room_override` (TRUE or FALSE)
+decides whether an input resolves in place or queues, and `test_phase(KERNEL_PHASE_K)` drains. In a test build the tick always has
+room unless the override says otherwise (a test world boots through ticks far past 100%).
 
 ### Sharded runs
 
@@ -333,6 +384,14 @@ runtimes.
 `test-baseline` leaves its worktree in the system temp folder so the next run is
 fast; it prints the command to remove it.
 
+### History in the admin viewer
+
+`cd tools/admin-viewer && bun run ingest` loads every `data/test-runs/*.json` and
+`data/bench/runs/*.json` not loaded yet into the database the admin viewer reads, which
+shows suite pass rate and duration over time, flaky tests (passed and failed on one commit),
+per-test history and benchmark metrics per run. CI can run it as a last step with
+`DATABASE_URL` set. See `tools/admin-viewer/README.md`.
+
 ### Compile caching
 
 `dm-test`/`test-repeat` skip the DreamMaker compile when nothing that would
@@ -450,7 +509,8 @@ Juke options take `=`: write `--scenario=a,b`, not `--scenario a,b`.
 | Scenario | Measures | Options (`--arg=name=value`) |
 |---|---|---|
 | `boot_memory` (default) | Process and Rust heap memory after boot, gas mixtures, live instances by kind and top types, compiled type counts, init time. | `top` |
-| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS, per-subsystem cost, and input latency from a synthetic load of real clicks and queued verbs every tick. | `seconds` (60), `clicks` (2), `verbs` (2) |
+| `idle` (default) | Tick cost of a quiet round: average and p95/p99/max tick usage, overruns, TPS and per-subsystem cost. A pure wait (no synthetic input), so it compares like for like across builds. | `seconds` (60) |
+| `input` (default) | Input latency on a quiet round from a synthetic load of real clicks and queued verbs every tick (`input_p99`, click and verb waits). | `seconds` (30), `clicks` (2), `verbs` (2) |
 | `atmos_idle` | Atmos cost of the mapped station at rest, with Rust worker maxima. | `cycles` (120) |
 | `atmos_large` | Checkerboard gas equalization on a fresh floor. | `size` (48; 0 = whole level), `cycles` |
 | `major_events` | Explosion, supermatter, mass fire and decompression on fresh fixtures. | `events` (comma list) |
@@ -533,9 +593,10 @@ CI also runs these scripts, all from the repository root:
 
 | Check | Command |
 |---|---|
-| Code and map grep checks | `bash tools/ci/check_grep.sh` |
+| Code and map grep checks (the engine's `check_grep` lint) | `bash tools/ci/check_grep.sh` |
 | Committed test focus | `bash tools/ci/check_misc.sh` |
-| No `world.time` deadline polling in `process()` (use `om_after()`; allowlist in `tools/ci/deadline_polling_allowlist.txt`) | `python3 tools/ci/check_deadline_polling.py` |
+| Every rewrite lint (ratchets, ALLOW annotations, deadline polling, ...; `tools/analyze`) | `bash tools/ci/check_ratchets.sh` or `tools/build/build.sh analyze` |
+| The engine's own tests (per-lint fixtures) | `cargo test --manifest-path tools/analyze/Cargo.toml` |
 | Changelog stubs parse | `bash tools/ci/check_changelogs.sh` (compiles stubs; run on a scratch copy) |
 | Local `#define`s are `#undef`'d | `tools/bootstrap/python -m define_sanity.check` |
 | Maps are in TGM format and merge-clean | `tools/bootstrap/python -m mapmerge2.dmm_test` |
@@ -543,9 +604,8 @@ CI also runs these scripts, all from the repository root:
 | Every `.dmi` parses | `tools/bootstrap/python -m dmi.test` |
 | Rust format, lint and tests | `cd verdigris && cargo fmt --package verdigris --check && cargo clippy --package verdigris --all-targets -- -D warnings && cargo test --package verdigris` |
 
-`check_grep.sh` uses ripgrep when it is installed. Without it, it falls back to
-GNU grep in Perl-regex mode and skips the few multiline checks that need
-ripgrep; CI always runs the full set.
+`check_grep.sh` no longer needs ripgrep: its checks run inside the analyze engine
+(PCRE-style patterns included), so every part always runs.
 
 ## Continuous integration
 

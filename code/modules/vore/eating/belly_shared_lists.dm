@@ -169,11 +169,6 @@ GLOBAL_TABLE(belly_default_lists, GLOBAL_PROC_REF(build_belly_default_lists))
 	var/list/type_lists = GLOB.belly_type_shared_lists[type]
 	return type_lists?[var_name] || GLOBAL_TABLE_GET(belly_default_lists)[var_name]
 
-/// Runs before the atom's New(): the var initializers have just run, nothing else has.
-/obj/belly/New(loc, ...)
-	belly_share_lists()
-	return ..()
-
 /// Points every shared list var at its shared copy (see the file comment).
 /obj/belly/proc/belly_share_lists()
 	var/list/defaults = GLOBAL_TABLE_GET(belly_default_lists)

@@ -135,7 +135,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	EXPIRY_STAMP(src, material_discharge_updated, CLOCK_WORLD)
 
 /obj/item/cell/proc/material_delivery_efficiency(amount)
-	var/temperature = material_service?.temperature || T20C
+	var/temperature = material_service_of(src)?.temperature || T20C
 	var/current = max(amount / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE
 	var/resistance = construction_electrical_resistance(0.1, MATERIAL_CABLE_REFERENCE_AREA, temperature, current / MATERIAL_CABLE_REFERENCE_AREA) || 0
 	return 1 / (1 + resistance * current / MATERIAL_SERVICE_NOMINAL_VOLTAGE)
@@ -145,11 +145,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// physical quench/recovery cues emitted here.
 /obj/item/cell/proc/update_superconducting_state(requested_output = 0)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(!conductor?.critical_temperature || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(!conductor?.critical_temperature || !service)
 		material_superconducting = FALSE
 		material_quenched = FALSE
 		return FALSE
-	var/temperature = material_service.temperature
+	var/temperature = service.temperature
 	var/current_density = max(requested_output / CELLRATE, 0) / MATERIAL_SERVICE_NOMINAL_VOLTAGE / MATERIAL_CABLE_REFERENCE_AREA
 	var/within_current = current_density <= conductor.critical_current_density
 	if(material_quenched)
@@ -193,11 +194,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// the complete cell assembly. This is not conductor resistance; contacts,
 /// electrodes, and the powered device itself still produce heat.
 /obj/item/cell/proc/material_record_enhanced_output(base_cost, multiplier)
-	if(multiplier <= 1 || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(multiplier <= 1 || !service)
 		return
-	material_service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
+	service.add_heat((base_cost * (multiplier - 1) / CELLRATE) * MATERIAL_SUPERCONDUCTING_OVERDRIVE_HEAT)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
-	if(conductor?.critical_temperature && material_service.temperature >= conductor.critical_temperature)
+	if(conductor?.critical_temperature && service.temperature >= conductor.critical_temperature)
 		material_superconducting = FALSE
 		material_quenched = TRUE
 		material_phase_feedback(TRUE)
@@ -207,16 +209,17 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 /// for cryogenic/thermoelectric composites: it can hold a conductor below its
 /// critical temperature, while the insulation layer controls heat leaking back.
 /obj/item/cell/proc/run_material_heat_pump(delivered_charge)
-	if(delivered_charge <= 0 || !material_service)
+	var/datum/material_service/service = material_service_of(src)
+	if(delivered_charge <= 0 || !service)
 		return 0
 	var/datum/material/thermal = material_for_role(MATERIAL_ROLE_THERMAL)
 	var/datum/material/conductor = material_for_role(MATERIAL_ROLE_CONDUCTOR)
 	if(!thermal?.heat_pump_coefficient || !conductor?.critical_temperature)
 		return 0
 	var/target_temperature = conductor.critical_temperature - MATERIAL_SUPERCONDUCTING_RECOVERY_MARGIN
-	if(material_service.temperature <= target_temperature)
+	if(service.temperature <= target_temperature)
 		return 0
-	var/available_cooling = (material_service.temperature - target_temperature) * material_service.thermal_mass()
+	var/available_cooling = (service.temperature - target_temperature) * service.thermal_mass()
 	var/requested_cooling = min(available_cooling, delivered_charge / CELLRATE * thermal.heat_pump_coefficient * 6)
 	var/work_joules = requested_cooling / max(thermal.heat_pump_coefficient, 0.1)
 	var/work_charge = min(charge, work_joules * CELLRATE)
@@ -224,12 +227,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	if(moved_heat <= 0)
 		return 0
 	charge -= work_charge
-	material_service.add_heat(-moved_heat)
+	service.add_heat(-moved_heat)
 	var/turf/location = get_turf(src)
 	var/datum/gas_mixture/ambient = location?.return_air()
 	ambient?.add_thermal_energy(moved_heat + work_charge / CELLRATE)
-	material_service.input_joules += work_charge / CELLRATE
-	material_service.loss_joules += work_charge / CELLRATE
+	service.input_joules += work_charge / CELLRATE
+	service.loss_joules += work_charge / CELLRATE
 	return moved_heat
 
 /// A conservative preflight budget for consumers that perform physical work
@@ -251,7 +254,7 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 	refresh_material_discharge()
 	if(amount > 0)
 		material_service_event(MATERIAL_EVENT_ELECTRICAL, amount / max(material_discharge_limit, 1))
-	material_service?.advance()
+	material_service_of(src)?.advance()
 	if(QDELETED(src))
 		return 0
 	amount = material_cell_use_cost(amount)
@@ -272,11 +275,12 @@ APPEARANCE_LEVEL(/obj/item/cell, "appearance_charge_level", 4, "{initial(icon_st
 		debited = charge_before - charge
 	used = min(used, debited)
 	material_discharge_credit -= used
-	if(material_service)
-		material_service.input_joules += debited / CELLRATE
-		material_service.output_joules += used / CELLRATE
-		material_service.loss_joules += (debited - used) / CELLRATE
-		material_service.add_heat((debited - used) / CELLRATE)
+	var/datum/material_service/service = material_service_of(src)
+	if(service)
+		service.input_joules += debited / CELLRATE
+		service.output_joules += used / CELLRATE
+		service.loss_joules += (debited - used) / CELLRATE
+		service.add_heat((debited - used) / CELLRATE)
 		run_material_heat_pump(used)
 	update_superconducting_state(amount)
 	COOLDOWN_START(src, charge_cooldown, charge_delay)

@@ -10,9 +10,9 @@
 // reads changed), and power_poll() applies what Rust reports (channels, charging, status,
 // alarm, the cell charge).
 //
-// Foundation (doc/rewrite/foundation.md): the APC is declared, not scripted. Its type vars name what
-// it is built from (machine_board, machine_wires, req_access); capabilities() composes bundles (wall
-// machine, maintenance hatch, cell bay, power channels, power-system membership), a construction
+// Foundation (doc/rewrite/foundation.md): the APC is declared, not scripted. Its req_access is its lock;
+// capabilities() composes bundles (wall machine, maintenance hatch with its wires and emag message, cell
+// bay, power channels, power-system membership), a construction
 // ladder (board, cable, fastener) and a few ops; relations() its links; reactions() only what it hears
 // (a hit, a slash); draw() its look. Its Rust pushes, redraws and window refreshes are generated from what
 // push_to_rust(), draw() and tgui_data() read.
@@ -41,9 +41,16 @@
 /obj/machinery/power/apc/angled/hidden
 	alarms_hidden = TRUE
 
-/obj/machinery/power/apc/angled/wall_mount_orient(offset)
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 24 : -24)
-	pixel_y = (dir & 3) ? (dir == 1 ? 20 : -20) : 0
+/obj/machinery/power/apc/angled/capabilities()
+	. = ..()
+	. = replace(., /datum/capability/wall_mount, new /datum/capability/wall_mount/apc_angled)
+
+/// The angled APC's sprite sits closer to the wall.
+/datum/capability/wall_mount/apc_angled
+
+/datum/capability/wall_mount/apc_angled/orient(atom/holder)
+	holder.pixel_x = (holder.dir & 3) ? 0 : (holder.dir == 4 ? 24 : -24)
+	holder.pixel_y = (holder.dir & 3) ? (holder.dir == 1 ? 20 : -20) : 0
 
 /obj/machinery/power/apc/hyper/graveyard
 	req_access = list(ACCESS_LOST)
@@ -62,9 +69,6 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	clicksound = SFX_SWITCH
-	machine_board = /obj/item/module/power_control
-	machine_wires = /datum/wires/apc
-	emag_msg = "You emag the APC interface."
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
@@ -147,9 +151,9 @@ TRACKED(/obj/machinery/power/apc, emergency_lights)
 	// A wall machine that isn't dismantled into a machine frame (its ladder cuts it from the wall), has no
 	// repair step (a new cover does) and no dark sprite (draw() says its own).
 	. += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, wires = /datum/wires/apc, emag_say = "You emag the APC interface.")
 	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
-	. += power_channels()
+	. += power_channels(/datum/capability/power_channels/apc)
 	. += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
 	. += cap_construction(
 		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
@@ -372,6 +376,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 		terminal.connect_to_network(bind_now)
 		if(vg_entity)
 			vg_power_bind_machine(vg_entity, terminal.x, terminal.y, terminal.z)
+			power_node_at = null // bound at the terminal, not where power_send_node() would put it
+			power_topology_edited(src)
 			if(bind_now)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet
@@ -532,7 +538,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // APCs are pixel-shifted so they need a full refresh when dir changes.
 /obj/machinery/power/apc/set_dir(new_dir)
 	..()
-	wall_mount_orient()
+	wall_mount_reorient(src)
 	if(terminal)
 		terminal.disconnect_from_network()
 		terminal.set_dir(dir)       // Terminal has same dir as master.
@@ -542,7 +548,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 /// A power failure for `duration` machine service ticks (an EMP, an overload): the output stops until
 /// it runs out or someone reboots it. A longer failure already running is kept.
 /obj/machinery/power/apc/proc/energy_fail(duration)
-	timed_set(src, nameof(power_failed), TRUE, for_time = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1), keep_longer = TRUE)
+	timed_set(src, nameof(power_failed), TRUE, for_time = max(round(duration), 0) * max(MACHINE_SERVICE_INTERVAL, 1 TICK), keep_longer = TRUE)
 
 /// power_failed's setter (timed_set() writes and reverts through it): Rust and the area hear it.
 /obj/machinery/power/apc/proc/set_power_failed(value)
@@ -624,24 +630,50 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
 		look.light(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
 
-/obj/machinery/power/apc/power_channels_lit()
-	return is_lit(src) && operating
-
 // ─────────────────────────────────────────────────────────────────────────────
-// power_channels() holder interface
+// power_channels() holder interface: the APC's subtype of the capability (its procs take the APC as `holder`)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/power_channel_mode(channel)
+/datum/capability/power_channels/apc
+
+/datum/capability/power_channels/apc/channels_lit(obj/machinery/power/apc/holder)
+	return is_lit(holder) && holder.operating
+
+/datum/capability/power_channels/apc/channel_mode(obj/machinery/power/apc/holder, channel)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
-			return equipment
+			return holder.equipment
 		if(POWER_CHANNEL_LIGHTING)
-			return lighting
+			return holder.lighting
 		if(POWER_CHANNEL_ENVIRON)
-			return environ
+			return holder.environ
 	return POWERCHAN_OFF
 
-/obj/machinery/power/apc/set_power_channel_mode(channel, mode)
+/datum/capability/power_channels/apc/set_channel_mode(obj/machinery/power/apc/holder, channel, mode)
+	return holder.set_channel_mode(channel, mode)
+
+/datum/capability/power_channels/apc/channel_load(obj/machinery/power/apc/holder, channel)
+	return holder.channel_load(channel)
+
+/datum/capability/power_channels/apc/breaker(obj/machinery/power/apc/holder)
+	return holder.operating
+
+/datum/capability/power_channels/apc/set_breaker(obj/machinery/power/apc/holder, on)
+	holder.set_breaker(on)
+	return TRUE
+
+/datum/capability/power_channels/apc/nightshift(obj/machinery/power/apc/holder)
+	return holder.nightshift_setting
+
+/datum/capability/power_channels/apc/set_nightshift(obj/machinery/power/apc/holder, mode)
+	holder.set_nightshift_setting(mode)
+	return TRUE
+
+/datum/capability/power_channels/apc/nightshift_lit(obj/machinery/power/apc/holder)
+	return holder.nightshift_lights
+
+/// One channel's mode (POWERCHAN_*): the setting, the Rust copy and the area's power follow.
+/obj/machinery/power/apc/proc/set_channel_mode(channel, mode)
 	var/value = setsubsystem(mode)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
@@ -657,33 +689,17 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	update()
 	return TRUE
 
-/obj/machinery/power/apc/power_channel_load(channel)
-	return channel_load(channel)
-
-/obj/machinery/power/apc/power_breaker()
-	return operating
-
-/obj/machinery/power/apc/set_power_breaker(on)
+/// The main breaker.
+/obj/machinery/power/apc/proc/set_breaker(on)
 	set_operating(on ? 1 : 0)
 	update()
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift()
-	return nightshift_setting
-
-/obj/machinery/power/apc/set_power_nightshift(mode)
-	set_nightshift_setting(mode)
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift_lit()
-	return nightshift_lights
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TGUI (dx_conventions.md §5): tgui_id, tgui_data() and act_<action>; power_channels() owns
 // channel / breaker / nightshift and their data (data["caps"]["power"]).
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/machinery/power/apc/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
 	var/list/data = ..()
 	data["locked"] = is_locked(src)
 	data["normallyLocked"] = is_locked(src)
@@ -721,10 +737,7 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		return FALSE
 	return !is_locked(src) || lock_exempt(user) || action == "nightshift"
 
-/obj/machinery/power/apc/ui_logged()
-	return GLOB.apc_ui_logged
-
-GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
+TYPE_TABLE(/obj/machinery/power/apc, ui_logged_actions, list("lock" = LOG_GAME, "cover" = LOG_GAME, "charge" = LOG_GAME, "reboot" = LOG_GAME, "emergency_lighting" = LOG_GAME, "overload" = LOG_GAME))
 
 /obj/machinery/power/apc/proc/act_lock(mob/user)
 	if(!lock_exempt(user))
@@ -841,7 +854,7 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 	return 1
 
 /obj/machinery/power/apc/proc/toggle_breaker()
-	set_power_breaker(!operating)
+	set_breaker(!operating)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)

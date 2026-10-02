@@ -309,3 +309,10 @@
 /obj/item/relations()
 	. = ..()
 	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob, blinded)
+TRACKED(/mob, seedarkness)
+TRACKED(/mob, transforming)
+TRACKED(/mob, resting)
+TRACKED(/mob, status_flags)

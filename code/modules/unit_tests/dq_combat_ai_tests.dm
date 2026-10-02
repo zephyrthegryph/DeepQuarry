@@ -65,7 +65,7 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	TEST_ASSERT(!B.loop_running(DQAI_PROCESSING), "hibernating brain remained in strategic processing")
 	var/wakes = B.chunk_wakes
 	publish_mob_chunk(M)
-	om_test_ticks(4)
+	OM_TEST_WAIT_UNTIL(B.chunk_wakes > wakes, 60)
 	// Not loop_running(): a woken calm brain with nothing to do is due at once
 	// and may hibernate again before this line runs.
 	TEST_ASSERT(B.chunk_wakes > wakes, "movement publication did not wake nearby brain")
@@ -477,5 +477,30 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	victim2.ai_brain.holder = null  // Simulate partial Destroy / eaten state.
 	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
 	// If we reach here, no crash — test passes implicitly.
+
+// --- runtime: a brain's path is a /datum/io/path request ---------------
+// smart_step_toward() asks the path system and steps directly until the answer lands in have_path(): the caller never waits.
+
+/datum/unit_test/dq_combat_ai_path_is_a_request
+
+/datum/unit_test/dq_combat_ai_path_is_a_request/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/turf/start = get_turf(S)
+	var/turf/goal = locate(start.x + 4, start.y, start.z)
+	TEST_ASSERT(isturf(goal), "the test block is wide enough")
+	var/datum/ai_brain/brain = S.ai_brain
+	brain.smart_step_toward(goal)
+	// The path system answers inside the call when the tick has room, else a few ticks later: either way one request, never more.
+	if(brain.path_pending)
+		TEST_ASSERT(!brain.smart_step_toward(goal), "a second call while the request waits asks nothing more and steps nothing")
+	for(var/waited in 1 to 100)
+		if(!brain.path_pending)
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!brain.path_pending, "the path system answered")
+	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.next_path_attempt_at, "the answer is a cached path, or the failure backoff")
+	if(length(brain.planned_path))
+		TEST_ASSERT_EQUAL(brain.path_goal(), goal, "the path is to the asked goal")
+
 
 #endif

@@ -198,3 +198,37 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	var/obj/item/projectile/ion/bolt = allocate(/obj/item/projectile/ion)
 	var/mob/living/simple_mob/dq_damage_probe/victim = allocate(/mob/living/simple_mob/dq_damage_probe)
 	TEST_ASSERT_EQUAL(bolt.inflict_injury(victim, BP_TORSO), 0, "an ion bolt pulses instead of injuring")
+
+/// An epoch that ends with nothing left to run (here: woken with nothing queued; in a round, its
+/// resolve finished in a step that then yielded) closes the deferred batches it opened.
+/datum/unit_test/dq_explosion_idle_epoch_closes_batches
+
+/datum/unit_test/dq_explosion_idle_epoch_closes_batches/Run()
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "a contract batch was already open")
+	GLOB.explosion_service.wake_and_defer_subsystem_updates()
+	TEST_ASSERT(SScontracts.is_contract_batching(), "the epoch opens a contract batch")
+	for(var/i in 1 to 40)
+		if(!SScontracts.is_contract_batching())
+			break
+		om_test_ticks(1)
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch went to sleep with its contract batch still open")
+
+/// A lane step whose blast delivery runs out of budget resumes it next tick: every queued atom
+/// gets its packet and the epoch ends, closing its contract batch.
+/datum/unit_test/dq_explosion_epoch_resumes_blast_delivery
+
+/datum/unit_test/dq_explosion_epoch_resumes_blast_delivery/Run()
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "a contract batch was already open")
+	set_var(GLOB.explosion_service, "blast_batch_budget", 2)
+	GLOB.dq_blast_probe_log.Cut()
+	var/turf/T = test_floor()
+	for(var/i in 1 to 6)
+		allocate(/obj/structure/dq_blast_probe/alpha, T)
+	explosion(T, 0, 0, 1)
+	for(var/i in 1 to 80)
+		if(!SScontracts.is_contract_batching())
+			break
+		om_test_ticks(1)
+	TEST_ASSERT_EQUAL(GLOB.explosion_service.pending_blast_count(), 0, "blasts were left queued after the epoch")
+	TEST_ASSERT(length(GLOB.dq_blast_probe_log) >= 6, "only [length(GLOB.dq_blast_probe_log)] of 6 probes got a packet")
+	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch ended with its contract batch still open")

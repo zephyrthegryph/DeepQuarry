@@ -205,6 +205,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 		L = list()
 		GLOB.om_gas_watches_by_mixture[key] = L
 	L += W
+	om_watch_count_interest(key, W.interest_contribution(), 1)
 	om_watch_republish_mixture(mixture_id)
 
 /proc/om_watch_unindex_gas(datum/om_watch/W)
@@ -214,6 +215,7 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 		if(!L)
 			continue
 		L -= W
+		om_watch_count_interest(key, W.interest_contribution(), -1)
 		if(!length(L))
 			om_watch_drop_mixture(key)
 		else
@@ -223,13 +225,39 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 /// The last watch on mixture `key` left: its index entry and native watch go.
 /proc/om_watch_drop_mixture(key)
 	GLOB.om_gas_watches_by_mixture -= key
+	GLOB.om_gas_watch_interest_counts -= key
 	var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
 	GLOB.om_gas_native_watches -= key
 	qdel(native)
 
-/// Recomputes and (re)publishes the aggregate interest mask Rust should watch a mixture for,
-/// from the union of every watch currently armed on it. Cheap: the watch list per mixture is
-/// always small (a handful of nearby machines at most). One native gas watch per mixture
+/// The gas fields this watch needs its mixture's native watch to report: its bands' fields, or its interest mask.
+/datum/om_watch/proc/interest_contribution()
+	if(mode != OM_WATCH_BANDS)
+		return interest_mask
+	. = NONE
+	for(var/datum/om_watch_band/B as anything in bands)
+		. |= gas_field_mask(B.field)
+
+/// "[mixture_id]" -> how many of its watches want each gas field (pressure, temperature, composition), so
+/// the union of their interests is known without walking them: a pipeline's mixture carries a watch per
+/// pipe, and every pipe re-arming its watch rescanned all of them (quadratic over a whole map's pipes).
+GLOBAL_LIST_EMPTY(om_gas_watch_interest_counts)
+
+/// Adds `delta` to the counts of each gas field in `mask` on mixture `key`.
+/proc/om_watch_count_interest(key, mask, delta)
+	var/list/counts = GLOB.om_gas_watch_interest_counts[key]
+	if(!counts)
+		counts = list(0, 0, 0)
+		GLOB.om_gas_watch_interest_counts[key] = counts
+	if(mask & GAS_DEPENDENCY_PRESSURE)
+		counts[1] += delta
+	if(mask & GAS_DEPENDENCY_TEMPERATURE)
+		counts[2] += delta
+	if(mask & GAS_DEPENDENCY_COMPOSITION)
+		counts[3] += delta
+
+/// Recomputes and (re)publishes the aggregate interest mask Rust should watch a mixture for:
+/// the union of every watch currently armed on it, from om_gas_watch_interest_counts. One native gas watch per mixture
 /// (code/datums/om/native.dm) carries the aggregate; its wakes fan out through
 /// om_watch_dispatch_gas().
 /proc/om_watch_republish_mixture(mixture_id)
@@ -237,13 +265,15 @@ GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 	var/list/L = GLOB.om_gas_watches_by_mixture[key]
 	if(!length(L))
 		return
+	var/list/counts = GLOB.om_gas_watch_interest_counts[key]
 	var/aggregate_mask = NONE
-	for(var/datum/om_watch/W as anything in L)
-		if(W.mode == OM_WATCH_BANDS)
-			for(var/datum/om_watch_band/B as anything in W.bands)
-				aggregate_mask |= W.gas_field_mask(B.field)
-		else
-			aggregate_mask |= W.interest_mask
+	if(counts)
+		if(counts[1] > 0)
+			aggregate_mask |= GAS_DEPENDENCY_PRESSURE
+		if(counts[2] > 0)
+			aggregate_mask |= GAS_DEPENDENCY_TEMPERATURE
+		if(counts[3] > 0)
+			aggregate_mask |= GAS_DEPENDENCY_COMPOSITION
 	var/datum/native_watch/gas/native = GLOB.om_gas_native_watches[key]
 	if(native && !QDELETED(native))
 		if(native.mask == aggregate_mask)
@@ -324,7 +354,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 /// with no args whenever a matching gas notification arrives, and a crossing fires if the
 /// return value differs from what it returned last time (air_alarm's TLV-signature check
 /// generalized).
-/proc/om_watch_arm_value(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, list/getter, channel, list/wake_callback)
+/proc/om_watch_arm_value(datum/entity, watch_id, mixture_id, interest_mask = GAS_DEPENDENCY_ALL, list/getter, channel, list/wake_callback, current_value)
 	om_watch_disarm(entity, watch_id)
 	if(isnull(mixture_id))
 		return null
@@ -336,7 +366,8 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	W.mode = OM_WATCH_VALUE
 	W.interest_mask = interest_mask
 	W.value_getter = getter
-	W.last_value = om_run(getter)
+	// `current_value`: the getter's value now, when the caller has it (several watches sharing one getter).
+	W.last_value = isnull(current_value) ? om_run(getter) : current_value
 	om_watch_register(W)
 	om_watch_index_gas(W, mixture_id)
 	return W
@@ -466,6 +497,8 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 		if(!L)
 			continue
 		L -= by_mixture[mixture_key]
+		for(var/datum/om_watch/W as anything in by_mixture[mixture_key])
+			om_watch_count_interest(mixture_key, W.interest_contribution(), -1)
 		if(!length(L))
 			om_watch_drop_mixture(mixture_key)
 		else

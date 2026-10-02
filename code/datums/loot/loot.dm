@@ -480,9 +480,3 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 		if(I.type == w_type)
 			return I
 	return null
-
-/// The items spawned for allocated gamma loot (a relation list: a deleted item leaves it).
-/datum/world_service/pois/var/list/obj/item/allocated_gamma_items
-/datum/world_service/pois/relations()
-	. = ..()
-	. += rel_many(nameof(allocated_gamma_items))

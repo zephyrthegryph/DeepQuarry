@@ -11,16 +11,18 @@
 	//Used to enable or disable drone fabrication.
 	var/obj/machinery/drone_fabricator/dronefab
 
+/// An empty hand (or a silicon's interface, through attack_hand) opens the console; cap_access() makes the op need a
+/// credential for its req_access (the held card, a worn ID, a silicon's own access), so a refused click says why.
+/obj/machinery/computer/drone_control/capabilities()
+	. = ..()
+	. += cap_op("Open console", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint), using = EMPTY_HAND, key = "open_console", entry = INTERACTION_ENTRY_HAND)
+	. += cap_access(ops = "open_console")
+
+/// An open window closes when its user loses the credential (the same providers as the op).
 /obj/machinery/computer/drone_control/tgui_status(mob/user)
-	if(!allowed(user))
+	if(!access_allowed(src, user, user?.get_active_hand()))
 		return STATUS_CLOSE
 	return ..()
-
-/obj/machinery/computer/drone_control/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
 
 DECLARE_UI(/obj/machinery/computer/drone_control, "DroneConsole")
 

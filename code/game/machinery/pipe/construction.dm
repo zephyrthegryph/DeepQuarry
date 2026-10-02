@@ -64,7 +64,7 @@ Buildable meters
 		src.req_one_access = make_from.req_one_access
 	color = make_from.pipe_color
 	pipe_type = make_from.type
-	engineered_material_id = make_from.engineered_material_id
+	material_engineered_id_set(src, make_from.engineered_material_id)
 	material_liner_integrity = make_from.material_liner_integrity
 	copy_material_construction_from(make_from)
 
@@ -172,13 +172,13 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 /obj/item/pipe/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/stack/material))
 		var/obj/item/stack/material/stock = W
-		if(engineered_material_id)
+		if(material_engineered_id(src))
 			to_chat(user, span_warning("[src] already has a material liner and shell."))
 			return INTERACTION_HANDLED_PASS
 		if(stock.get_amount() < 1 || !stock.material)
 			return INTERACTION_HANDLED_PASS
 		var/datum/material/material = stock.material
-		engineered_material_id = material.name
+		material_engineered_id_set(src, material.name)
 		apply_material_construction(list(MATERIAL_ROLE_STRUCTURE = material.name, MATERIAL_ROLE_LINER = material.name), /datum/material_template/pressure, SHEET_MATERIAL_AMOUNT)
 		stock.use(1)
 		color = material.icon_colour
@@ -222,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/pipe, \
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/pipe/proc/build_pipe(obj/machinery/atmospherics/A)
-	A.engineered_material_id = engineered_material_id
+	A.engineered_material_id = material_engineered_id(src)
 	A.material_liner_integrity = material_liner_integrity
 	A.copy_material_construction_from(src)
 	A.set_dir(dir)

@@ -249,7 +249,7 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	om_after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
 
 /obj/machinery/food_replicator/proc/self_destruct_boom()
-	set_stat(BROKEN)
+	atom_break()
 	explosion(src, 0, 0, 2)
 
 /obj/machinery/food_replicator/ownership()

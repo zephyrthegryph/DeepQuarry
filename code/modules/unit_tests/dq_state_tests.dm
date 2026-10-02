@@ -137,6 +137,9 @@
 	var/unsorted = state_canonical(list("b" = 1, "a" = list("d" = 0.1000000001, "c" = 2)))
 	var/sorted = state_canonical(list("a" = list("c" = 2, "d" = 0.1), "b" = 1))
 	TEST_ASSERT_EQUAL(unsorted, sorted, "canonical text should sort keys and normalize numbers")
+	// A value next to a six-digit boundary canonicalizes the same as its own JSON round trip.
+	var/list/edge = list("m" = list(1.7266451))
+	TEST_ASSERT_EQUAL(state_canonical(edge), state_canonical(json_decode(json_encode(edge))), "a number's canonical form should survive a JSON round trip")
 	TEST_ASSERT(!("runtime_only" in state_saved_vars(new /datum/dq_state_probe)), "tmp vars are not part of the schema")
 
 /// Values the codecs must carry: paths, assoc lists with path and escaped keys,

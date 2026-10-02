@@ -75,38 +75,36 @@
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
 	var/waited = 0
 	while((length(GLOB.asset_loading_service.generate_queue) || GLOB.asset_loading_service.assets_generating || GLOB.asset_loading_service.last_queue_len) && waited++ < world.fps * timeout_seconds)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
 
 /// Sleeps until `subsystem` has fired `count` more times.
-/datum/benchmark/proc/wait_fires(datum/controller/subsystem/subsystem, count, timeout_seconds = 300)
+/datum/benchmark/proc/wait_fires(datum/system/subsystem, count, timeout_seconds = 300)
 	var/target = subsystem.times_fired + count
 	var/deadline = REALTIMEOFDAY + timeout_seconds * 10
 	while(subsystem.times_fired < target)
 		if(REALTIMEOFDAY > deadline)
 			fail("[subsystem.name] fired [count - (target - subsystem.times_fired)]/[count] times in [timeout_seconds]s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 
 /datum/benchmark/proc/wait_seconds(seconds)
 	var/until = REALTIMEOFDAY + seconds * 10
 	while(REALTIMEOFDAY < until)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 
 /// Starts a measurement window. Pair with end_window().
 /datum/benchmark/proc/begin_window()
-	stoplag() // start on a fresh tick so setup work isn't counted // ALLOW(scheduler): benchmark harness measures across real MC ticks
-	Master.perf_outliers.Cut()
-	Master.perf_worst_tick = list()
-	window_start_position = Master.perf_samples_total + 1
+	stoplag() // start on a fresh tick so setup work isn't counted
+	Kernel.perf_outliers.Cut()
+	Kernel.perf_worst_tick = list()
+	window_start_position = Kernel.perf_samples_total + 1
 	window_start_time = REALTIMEOFDAY
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_world_wakes = GLOB.om_live_sched?.world_wakes
 	window_machines_ms = GLOB.machine_service.total_ms
 	window_om_deadlines = benchmark_om_deadline_count()
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		window_subsystem_fires[subsystem] = subsystem.times_fired
 	window_system_fires = kernel_system_fire_counts()
 	if(profiling)
 		world.Profile(PROFILE_CLEAR) // each window's dump covers only that window
@@ -116,7 +114,7 @@
 /// Ends a window and records tick, overrun and subsystem statistics under `prefix`.
 /datum/benchmark/proc/end_window(prefix = "window")
 	var/elapsed_seconds = max((REALTIMEOFDAY - window_start_time) * 0.1, 0.1)
-	var/list/tick = Master.performance_window(elapsed_seconds, Master.perf_index_of(window_start_position))
+	var/list/tick = Kernel.performance_window(elapsed_seconds, Kernel.perf_index_of(window_start_position))
 	metric("[prefix]_seconds", elapsed_seconds, "s", "none")
 	metric("[prefix]_tick_avg", tick["avg"], "%")
 	metric("[prefix]_tick_p50", tick["p50"], "%")
@@ -131,25 +129,7 @@
 	count_metric("[prefix]_ffi_calls", __verdigris_ffi_calls - window_start_ffi_calls, "calls")
 	var/list/subsystems = list()
 	var/total_work_items = 0
-	for(var/datum/controller/subsystem/subsystem as anything in window_subsystem_fires)
-		var/fires = subsystem.times_fired - window_subsystem_fires[subsystem]
-		if(!fires)
-			continue
-		var/work_items = subsystem.processing_work_items() // -1 when the subsystem doesn't track one
-		if(work_items >= 0)
-			total_work_items += work_items
-		subsystems[subsystem.name] = list(
-			"fires" = fires,
-			"avg_cost_ms" = subsystem.cost,
-			"estimated_total_ms" = subsystem.cost * fires,
-			"tick_usage" = subsystem.tick_usage,
-			"tick_overrun" = subsystem.tick_overrun,
-			"work_items" = work_items,
-		)
-		count_metric("[prefix]_[subsystem.name]_fires", fires, "fires")
-		if(work_items >= 0)
-			count_metric("[prefix]_[subsystem.name]_work_items", work_items, "items")
-	// Systems that run a fire() body (air, lighting, ticker ...) are reported like the subsystems they were.
+	// Systems with periodic work (air, lighting, ticker, tgui, garbage ...), by name.
 	for(var/datum/system/system as anything in window_system_fires)
 		var/fires = system.times_fired - window_system_fires[system]
 		if(!fires)
@@ -185,8 +165,8 @@
 	count_metric("[prefix]_wheel_deadlines_start", window_om_deadlines, "entries")
 	count_metric("[prefix]_wheel_deadlines_end", benchmark_om_deadline_count(), "entries")
 	detail("[prefix]_world_step", world_step)
-	detail("[prefix]_outliers", Master.perf_outliers.Copy())
-	detail("[prefix]_worst_tick", LAZYCOPY(Master.perf_worst_tick))
+	detail("[prefix]_outliers", Kernel.perf_outliers.Copy())
+	detail("[prefix]_worst_tick", LAZYCOPY(Kernel.perf_worst_tick))
 	if(profiling)
 		SSprofiler.StopProfiling()
 		SSprofiler.DumpFile(allow_yield = FALSE)
@@ -239,7 +219,7 @@
 	var/list/decoded
 	try
 		decoded = json_decode(text)
-	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+	catch
 		return null
 	return decoded
 
@@ -346,9 +326,6 @@
 
 /proc/benchmark_subsystem_init_times()
 	var/list/times = list()
-	for(var/datum/controller/subsystem/subsystem as anything in Master.subsystems)
-		if(subsystem.init_time_ms)
-			times[subsystem.name] = subsystem.init_time_ms
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		if(system.init_time_ms)
 			times[system.name] = system.init_time_ms
@@ -401,7 +378,7 @@
 			log_test("Benchmark [scenario_id]: running")
 			// Every scenario reports the same kernel numbers over its whole run (kernel_metrics.dm).
 			var/datum/km_stats_set/kernel_run = km_meter().open_set(GLOB.om_live_sched)
-			var/kernel_start_position = Master.perf_samples_total + 1
+			var/kernel_start_position = Kernel.perf_samples_total + 1
 			try
 				scenario.Run()
 				result["status"] = "passed"
@@ -434,7 +411,7 @@
 		"byond_version" = "[world.byond_version].[world.byond_build]",
 		"map" = using_map?.name,
 		"world" = list("maxx" = world.maxx, "maxy" = world.maxy, "maxz" = world.maxz, "fps" = world.fps),
-		"init_seconds" = Master.initializations_seconds,
+		"init_seconds" = Kernel.initializations_seconds,
 		"subsystem_init_ms" = benchmark_subsystem_init_times(),
 		"total_runtimes" = GLOB.total_runtimes,
 		"scenarios" = results,

@@ -1,5 +1,5 @@
 // Reactions on the kernel (code/datums/reactions/work.dm): every() as scheduled work with `when`, members= and
-// per-instance enrolment, urgent crossings through request_urgent(), notice cost accounting, the pooled notice,
+// per-instance enrolment, urgent crossings through kernel_urgent(), notice cost accounting, the pooled notice,
 // typed relations and the event coalescing defaults.
 
 // ---------------------------------------------------------------- fixtures
@@ -7,9 +7,7 @@
 /// A holder with a per-instance every() gated by a var, and a second one ordered after the first.
 /datum/rxw_pump
 	var/on = FALSE
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/steps = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/late = list()
 
 /datum/rxw_pump/reactions()
@@ -26,7 +24,6 @@
 /// The proc form of `when`.
 /datum/rxw_gate
 	var/open = FALSE
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/steps = list()
 
 /datum/rxw_gate/reactions()
@@ -239,7 +236,7 @@
 
 // ---------------------------------------------------------------- on_cross(urgent = TRUE)
 
-/// An urgent crossing is requested with request_urgent(): deduped per holder, the latest band carried, delivered
+/// An urgent crossing is requested with kernel_urgent(): deduped per holder, the latest band carried, delivered
 /// by the kernel's U phase as handler(band, previous_band).
 /datum/unit_test/dx_work_cross_urgent
 
@@ -313,7 +310,6 @@
 	TEST_ASSERT(N.is_pooled(), "a notice is a /datum/pooled")
 	TEST_ASSERT_EQUAL(N.pool_state, POOL_STATE_TAKEN, "taken")
 	TEST_ASSERT_EQUAL(N.mark, 9, "filled by take_notice")
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	N.source = N
 	N.release()
 	TEST_ASSERT_NULL(N.mark, "the base reset the field")

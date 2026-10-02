@@ -40,8 +40,11 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 /obj/machinery/door/airlock/proc/check_completion(do_lock, delayed_status)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	// The command's own swing finishes this same moment (its last frame and this check are due together, and
+	// may run in either order), so the bolts drop even mid-swing: refused for `operating`, the command stayed
+	// pending, the door autoclosed and the command reopened it, forever.
 	if(do_lock)
-		lock()
+		lock(forced = TRUE)
 	if(delayed_status)
 		// ALLOW(sys_om_after_rearm): one-shot deferral, not a loop: the re-armed call passes no args, so delayed_status is FALSE there and it never re-arms.
 		om_after(src, 0.2 SECONDS, PROC_REF(check_completion))

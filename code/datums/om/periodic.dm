@@ -171,7 +171,7 @@
 /// The shared definition of a cadence type (one instance per type, never written).
 /proc/cadence_def(path)
 	RETURN_TYPE(/datum/cadence)
-	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
+	// A memoized per-type table built once on first call
 	var/static/list/defs = list()
 	var/datum/cadence/C = defs[path]
 	if(!C)
@@ -209,7 +209,7 @@
 
 /// The cadence sweeps only in its run levels.
 /datum/work_item/cadence/admitted_now()
-	return !!(def.runlevels & (1 << (Master.current_runlevel - 1)))
+	return !!(def.runlevels & (1 << (Kernel.current_runlevel - 1)))
 
 /// The old stage's idle rule, inverted: a member runs iff its entity is started on this cadence and no yielded step
 /// is waiting to resume (periodic_step_result()).

@@ -261,6 +261,6 @@ UI_ACT_PROC(/obj/machinery/computer/robotics, ui_act_hackbot)
 	var/mob/user = ask.answerer
 	log_game("[key_name(user)] emagged [key_name(R)] using robotic console!")
 	message_admins(span_notice("[key_name_admin(user)] emagged [key_name_admin(R)] using robotic console!"))
-	R.emagged = TRUE
+	R.set_emagged(TRUE)
 	to_chat(R, span_notice("Failsafe protocols overridden. New tools available."))
 	. = TRUE

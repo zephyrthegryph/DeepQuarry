@@ -21,14 +21,13 @@ Note that for any of these tools to work `TESTING` must be defined.
 By using these methods of finding references, you can make your life far, far easier when dealing with `qdel()` failures.
 */
 
-SUBSYSTEM_DEF(garbage)
+SYSTEM_DEF(garbage)
 	name = "Garbage"
-	priority = FIRE_PRIORITY_GARBAGE
+	phase = KERNEL_PHASE_G
+	latency_class = LATENCY_L0
 	wait = 2 SECONDS
-	flags = SS_POST_FIRE_TIMING|SS_BACKGROUND|SS_NO_INIT|SS_KERNEL_HOSTED
-	runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
+	periodic_runlevels = RUNLEVELS_DEFAULT | RUNLEVEL_LOBBY
 	init_stage = INITSTAGE_FIRST
-	host_phase = KERNEL_PHASE_G
 
 	var/list/collection_timeout = list(GC_FILTER_QUEUE, GC_CHECK_QUEUE, GC_DEL_QUEUE) // deciseconds to wait before moving something up in the queue to the next level
 
@@ -61,10 +60,10 @@ SUBSYSTEM_DEF(garbage)
 	#endif
 
 
-/datum/controller/subsystem/garbage/PreInit()
+/datum/system/garbage/preinit()
 	InitQueues()
 
-/datum/controller/subsystem/garbage/stat_entry(msg)
+/datum/system/garbage/stat_entry(msg)
 	var/list/counts = list()
 	for (var/list/L in queues)
 		counts += length(L)
@@ -87,7 +86,7 @@ SUBSYSTEM_DEF(garbage)
 /// Bounded snapshot for the lightweight performance logger. The qdel type table
 /// is normally small; only the ten worst failure and hard-delete entries are
 /// serialized so diagnostics cannot become the workload they measure.
-/datum/controller/subsystem/garbage/proc/performance_diagnostics()
+/datum/system/garbage/proc/performance_diagnostics()
 	var/list/queue_counts = list()
 	for(var/list/queue as anything in queues)
 		queue_counts += length(queue)
@@ -137,7 +136,7 @@ SUBSYSTEM_DEF(garbage)
 		"worst_hard_delete" = list("type" = highest_del_type_string, "ms" = highest_del_ms),
 	)
 
-/datum/controller/subsystem/garbage/Shutdown()
+/datum/system/garbage/on_shutdown()
 	//Adds the del() log to the qdel log file
 	var/list/del_log = list()
 
@@ -172,27 +171,22 @@ SUBSYSTEM_DEF(garbage)
 
 	log_qdel("", del_log)
 
-/datum/controller/subsystem/garbage/fire()
-	//the fact that this resets its processing each fire (rather then resume where it left off) is intentional.
-	var/queue = GC_QUEUE_FILTER
+/// The garbage run (phase G, every `wait`): the queues, filter to hard delete. It resets its processing each run (rather than
+/// resuming where it left off) on purpose.
+/datum/system/garbage/reactions()
+	. = ..()
+	. += every(2 SECONDS, PROC_REF(collect), phase = KERNEL_PHASE_G, when = PROC_REF(work_ready), lane = LANE_URGENT)
 
-	while (state == SS_RUNNING)
-		switch (queue)
-			if (GC_QUEUE_FILTER)
-				HandleQueue(GC_QUEUE_FILTER)
-				queue = GC_QUEUE_FILTER+1
-			if (GC_QUEUE_CHECK)
-				HandleQueue(GC_QUEUE_CHECK)
-				queue = GC_QUEUE_CHECK+1
-			if (GC_QUEUE_HARDDELETE)
-				HandleQueue(GC_QUEUE_HARDDELETE)
-				if (state == SS_PAUSED) //make us wait again before the next run.
-					state = SS_RUNNING
-				break
+/datum/system/garbage/proc/collect(dt)
+	HandleQueue(GC_QUEUE_FILTER)
+	if(KERNEL_OVER_BUDGET)
+		return
+	HandleQueue(GC_QUEUE_CHECK)
+	if(KERNEL_OVER_BUDGET)
+		return
+	HandleQueue(GC_QUEUE_HARDDELETE)
 
-
-
-/datum/controller/subsystem/garbage/proc/InitQueues()
+/datum/system/garbage/proc/InitQueues()
 	if (isnull(queues)) // Only init the queues if they don't already exist, prevents overriding of recovered lists
 		queues = new(GC_QUEUE_COUNT)
 		pass_counts = new(GC_QUEUE_COUNT)
@@ -203,7 +197,7 @@ SUBSYSTEM_DEF(garbage)
 			fail_counts[i] = 0
 
 
-/datum/controller/subsystem/garbage/proc/HandleQueue(level = GC_QUEUE_FILTER)
+/datum/system/garbage/proc/HandleQueue(level = GC_QUEUE_FILTER)
 	if (level == GC_QUEUE_FILTER)
 		delslasttick = 0
 		gcedlasttick = 0
@@ -228,7 +222,7 @@ SUBSYSTEM_DEF(garbage)
 		var/list/L = queue[i]
 		if (length(L) < GC_QUEUE_ITEM_INDEX_COUNT)
 			count++
-			if (MC_TICK_CHECK)
+			if(KERNEL_OVER_BUDGET)
 				return
 			continue
 
@@ -247,7 +241,7 @@ SUBSYSTEM_DEF(garbage)
 			#ifdef REFERENCE_TRACKING
 			reference_find_on_fail -= ref(D) //It's deleted we don't care anymore.
 			#endif
-			if (MC_TICK_CHECK)
+			if(KERNEL_OVER_BUDGET)
 				return
 			continue
 
@@ -306,7 +300,7 @@ SUBSYSTEM_DEF(garbage)
 					continue
 			if (GC_QUEUE_HARDDELETE)
 				HardDelete(D)
-				if (MC_TICK_CHECK)
+				if(KERNEL_OVER_BUDGET)
 					return
 				continue
 
@@ -317,7 +311,7 @@ SUBSYSTEM_DEF(garbage)
 			return
 		#endif
 
-		if (MC_TICK_CHECK)
+		if(KERNEL_OVER_BUDGET)
 			return
 	if (count)
 		queue.Cut(1,count+1)
@@ -325,7 +319,7 @@ SUBSYSTEM_DEF(garbage)
 
 #undef REFS_WE_EXPECT
 
-/datum/controller/subsystem/garbage/proc/Queue(datum/D, level = GC_QUEUE_FILTER)
+/datum/system/garbage/proc/Queue(datum/D, level = GC_QUEUE_FILTER)
 	if (isnull(D))
 		return
 	if (level > GC_QUEUE_COUNT)
@@ -340,7 +334,7 @@ SUBSYSTEM_DEF(garbage)
 	queue[++queue.len] = list(queue_time, D, D.gc_destroyed) // not += for byond reasons
 
 //this is mainly to separate things profile wise.
-/datum/controller/subsystem/garbage/proc/HardDelete(datum/D)
+/datum/system/garbage/proc/HardDelete(datum/D)
 	++delslasttick
 	++totaldels
 	var/type = D.type
@@ -377,11 +371,6 @@ SUBSYSTEM_DEF(garbage)
 		if (overrun_limit && type_info.hard_deletes_over_threshold >= overrun_limit)
 			type_info.qdel_flags |= QDEL_ITEM_SUSPENDED_FOR_LAG
 
-/datum/controller/subsystem/garbage/Recover()
-	InitQueues() //We first need to create the queues before recovering data
-	if (istype(SSgarbage.queues))
-		for (var/i in 1 to length(SSgarbage.queues))
-			queues[i] |= SSgarbage.queues[i]
 
 /// Qdel Item: Holds statistics on each type that passes thru qdel
 /datum/qdel_item

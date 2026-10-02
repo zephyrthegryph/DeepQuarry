@@ -1,0 +1,446 @@
+//! Declarations that expand to nothing in DM, read from source text.
+//!
+//! `CAPABILITIES(...)`, `STAT(...)`, `SOURCE_DEF(...)`, `READS_AS(...)`, `READS_FROM(...)` and the
+//! rest are generator markers (`code/__defines/engine/markers.dm`): the compiler discards their
+//! arguments, so the analysis engine reads them here, from comment-stripped text with balanced
+//! parentheses (a marker may span lines). Everything is per file and parallel; the merged
+//! [`Decls`] is memoized on the tree.
+//!
+//! Also collected here, because they too leave no AST: relation declarations
+//! (`REL/OWN/...(/type, var)`), tracked-var declarations (`TRACKED/SETTER/OM_FIELD...`),
+//! `#define` names (for id resolution) and `PUBLISH_CHANGE(E, KEY)` producers.
+
+use std::collections::{BTreeMap, HashMap, HashSet};
+use std::sync::Arc;
+
+use crate::tree::{SourceFile, Tree, CODE_DM};
+use crate::{pat, pat_match};
+
+/// Marker names the engine reads at the start of a statement.
+pub const MARKERS: &[&str] = &[
+    "CAPABILITIES",
+    "CAPABILITY_DEF",
+    "CAPABILITY_TYPE",
+    "cap_keys",
+    "ACTION",
+    "STAT",
+    "SCHEMA",
+    "SYSTEM_ACCESSOR",
+    "STAGE_DEF",
+    "STATE_GRAPH",
+    "RESOURCE_DEF",
+    "SOURCE_DEF",
+    "BUNDLE",
+    "READS_AS",
+    "READS_FROM",
+];
+
+/// One marker call: its name, raw argument text and top-level arguments, and where it starts.
+#[derive(Clone, Debug)]
+pub struct Marker {
+    pub name: String,
+    pub rel: String,
+    /// 1-based line of the marker name.
+    pub line: u32,
+    /// Text between the outer parentheses, comments stripped.
+    pub body: String,
+    /// `body` split at top-level commas, trimmed.
+    pub args: Vec<String>,
+    /// Absolute byte offset of `body` in the stripped file text (for line arithmetic).
+    pub body_offset: usize,
+    /// Line of each `\n` start inside the file, shared: `line_of(offset)` gives a 1-based line.
+    pub line_starts: Arc<Vec<u32>>,
+}
+
+impl Marker {
+    /// The 1-based file line of a byte offset into `body`.
+    pub fn line_at(&self, body_off: usize) -> u32 {
+        let abs = (self.body_offset + body_off) as u32;
+        match self.line_starts.binary_search(&abs) {
+            Ok(i) => i as u32 + 1,
+            Err(i) => i as u32,
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct Decls {
+    pub markers: Vec<Marker>,
+    /// type path -> relation vars declared with REL/OWN/... (and `relations()` bodies).
+    pub relations: HashMap<String, HashSet<String>>,
+    /// type path -> tracked vars (TRACKED / SETTER / OM_FIELD ...).
+    pub tracked: HashMap<String, HashSet<String>>,
+    /// Every `#define NAME` in the tree.
+    pub defines: HashSet<String>,
+    /// KEY text -> producer sites of `PUBLISH_CHANGE(E, KEY)`.
+    pub publishers: BTreeMap<String, Vec<(String, u32)>>,
+    /// String-literal key references in `extend/without/configure/perform_op/...` calls.
+    pub key_refs: Vec<KeyRef>,
+    /// `source = "text"` / `source = null` arguments of hold/grant/release calls.
+    pub bad_sources: Vec<(String, u32, String)>,
+}
+
+/// What a key literal names, by the call it sits in (doc/rewrite/final_api.html section 4,
+/// "Three kinds of key").
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub enum KeyKind {
+    Op,
+    Capability,
+}
+
+#[derive(Clone, Debug)]
+pub struct KeyRef {
+    pub kind: KeyKind,
+    pub key: String,
+    /// The call it sits in.
+    pub call: String,
+    pub rel: String,
+    pub line: u32,
+}
+
+/// Calls whose string-literal arguments are op keys, and those whose first literal is a capability key.
+pub const OP_KEY_CALLS: &[&str] = &["extend", "without", "on_op", "shares_effects", "above", "perform_op", "e0_perform_op"];
+pub const CAP_KEY_CALLS: &[&str] = &["configure"];
+/// Calls whose `source =` argument must be a datum or SRC_*, never text or null.
+pub const SOURCE_CALLS: &[&str] = &["hold", "hold_until", "hold_override", "grant", "release", "status_end"];
+
+impl Decls {
+    pub fn get(tree: &Tree) -> Arc<Decls> {
+        tree.memo("sem/decls", || {
+            let files = tree.select(&CODE_DM);
+            let parts: Vec<FileDecls> = super::par_map(&files, |f| scan_file(f));
+            let mut d = Decls::default();
+            for p in parts {
+                d.markers.extend(p.markers);
+                for (t, v) in p.relations {
+                    d.relations.entry(t).or_default().insert(v);
+                }
+                for (t, v) in p.tracked {
+                    d.tracked.entry(t).or_default().insert(v);
+                }
+                d.defines.extend(p.defines);
+                d.key_refs.extend(p.key_refs);
+                d.bad_sources.extend(p.bad_sources);
+                for (k, s) in p.publishers {
+                    d.publishers.entry(k).or_default().push(s);
+                }
+            }
+            d.markers.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
+            // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
+            // declares `a` on /A and `b` on /B.
+            let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
+            let link = regex::Regex::new(r"\blink\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
+            let mut found: Vec<(String, String)> = Vec::new();
+            for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
+                if let Some(ty) = m.args.first() {
+                    for c in own.captures_iter(&m.body) {
+                        found.push((ty.clone(), c[1].to_string()));
+                    }
+                }
+                for c in link.captures_iter(&m.body) {
+                    found.push((c[1].to_string(), c[2].to_string()));
+                    found.push((c[3].to_string(), c[4].to_string()));
+                }
+            }
+            for (t, v) in found {
+                d.relations.entry(t).or_default().insert(v);
+            }
+            d
+        })
+    }
+
+    pub fn markers_named<'a>(&'a self, name: &'a str) -> impl Iterator<Item = &'a Marker> + 'a {
+        self.markers.iter().filter(move |m| m.name == name)
+    }
+
+    pub fn is_relation(&self, ty: &str, var: &str) -> bool {
+        self.relations.get(ty).map(|s| s.contains(var)).unwrap_or(false)
+    }
+}
+
+struct FileDecls {
+    key_refs: Vec<KeyRef>,
+    bad_sources: Vec<(String, u32, String)>,
+    markers: Vec<Marker>,
+    relations: Vec<(String, String)>,
+    tracked: Vec<(String, String)>,
+    defines: Vec<String>,
+    publishers: Vec<(String, (String, u32))>,
+}
+
+/// `text` with comments blanked (same length, newlines kept); strings are kept intact.
+pub fn strip_comments_keep_strings(text: &str) -> String {
+    let b = text.as_bytes();
+    let mut out = b.to_vec();
+    let mut i = 0;
+    let n = b.len();
+    while i < n {
+        match b[i] {
+            b'"' => {
+                // A string: skip to the closing quote ("\\" escapes; `[ ]` interpolation is left alone).
+                i += 1;
+                while i < n && b[i] != b'"' && b[i] != b'\n' {
+                    if b[i] == b'\\' && i + 1 < n {
+                        i += 1;
+                    }
+                    i += 1;
+                }
+                i += 1;
+            }
+            b'\'' => {
+                i += 1;
+                while i < n && b[i] != b'\'' && b[i] != b'\n' {
+                    i += 1;
+                }
+                i += 1;
+            }
+            b'/' if i + 1 < n && b[i + 1] == b'/' => {
+                while i < n && b[i] != b'\n' {
+                    out[i] = b' ';
+                    i += 1;
+                }
+            }
+            b'/' if i + 1 < n && b[i + 1] == b'*' => {
+                let mut depth = 0;
+                while i < n {
+                    if i + 1 < n && b[i] == b'/' && b[i + 1] == b'*' {
+                        depth += 1;
+                        out[i] = b' ';
+                        out[i + 1] = b' ';
+                        i += 2;
+                    } else if i + 1 < n && b[i] == b'*' && b[i + 1] == b'/' {
+                        depth -= 1;
+                        out[i] = b' ';
+                        out[i + 1] = b' ';
+                        i += 2;
+                        if depth == 0 {
+                            break;
+                        }
+                    } else {
+                        if b[i] != b'\n' {
+                            out[i] = b' ';
+                        }
+                        i += 1;
+                    }
+                }
+            }
+            _ => i += 1,
+        }
+    }
+    String::from_utf8(out).unwrap_or_default()
+}
+
+/// Splits `s` at top-level commas (not inside (), [], {} or strings), trimming each piece.
+pub fn split_args(s: &str) -> Vec<String> {
+    let mut out = Vec::new();
+    let mut depth = 0i32;
+    let mut cur = String::new();
+    let mut in_str = false;
+    let mut prev = '\0';
+    for c in s.chars() {
+        if in_str {
+            cur.push(c);
+            if c == '"' && prev != '\\' {
+                in_str = false;
+            }
+            prev = c;
+            continue;
+        }
+        match c {
+            '"' => {
+                in_str = true;
+                cur.push(c);
+            }
+            '(' | '[' | '{' => {
+                depth += 1;
+                cur.push(c);
+            }
+            ')' | ']' | '}' => {
+                depth -= 1;
+                cur.push(c);
+            }
+            ',' if depth == 0 => {
+                out.push(cur.trim().to_string());
+                cur.clear();
+            }
+            _ => cur.push(c),
+        }
+        prev = c;
+    }
+    let last = cur.trim().to_string();
+    if !last.is_empty() || !out.is_empty() {
+        out.push(last);
+    }
+    out
+}
+
+/// Index of the `)` matching the `(` at `open` in `s`, or None.
+pub fn matching_paren(s: &str, open: usize) -> Option<usize> {
+    let b = s.as_bytes();
+    let mut depth = 0i32;
+    let mut in_str = false;
+    let mut i = open;
+    while i < b.len() {
+        let c = b[i];
+        if in_str {
+            if c == b'\\' {
+                i += 1;
+            } else if c == b'"' {
+                in_str = false;
+            }
+        } else {
+            match c {
+                b'"' => in_str = true,
+                b'(' => depth += 1,
+                b')' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        return Some(i);
+                    }
+                }
+                _ => {}
+            }
+        }
+        i += 1;
+    }
+    None
+}
+
+fn scan_file(f: &SourceFile) -> FileDecls {
+    let text = f.text();
+    let stripped = strip_comments_keep_strings(text);
+    let mut starts: Vec<u32> = vec![0];
+    for (i, b) in stripped.bytes().enumerate() {
+        if b == b'\n' {
+            starts.push((i + 1) as u32);
+        }
+    }
+    let starts = Arc::new(starts);
+    let mut fd = FileDecls { key_refs: Vec::new(), bad_sources: Vec::new(), markers: Vec::new(), relations: Vec::new(), tracked: Vec::new(), defines: Vec::new(), publishers: Vec::new() };
+    for (ln0, line) in stripped.split('\n').enumerate() {
+        let ln = ln0 as u32 + 1;
+        let t = line.trim_start();
+        if let Some(rest) = t.strip_prefix('#') {
+            if let Some(m) = pat_match!(r"\s*define\s+(\w+)").captures(rest) {
+                fd.defines.push(m.s(1).to_string());
+            }
+            continue;
+        }
+        if t.is_empty() {
+            continue;
+        }
+        // Marker at statement start.
+        let name_end = t.find(|c: char| !(c.is_alphanumeric() || c == '_')).unwrap_or(t.len());
+        let name = &t[..name_end];
+        if MARKERS.contains(&name) && t[name_end..].trim_start().starts_with('(') {
+            let line_off = starts[ln0] as usize;
+            let col = line.len() - t.len() + name_end;
+            let open = line_off + col + t[name_end..].find('(').unwrap();
+            if let Some(close) = matching_paren(&stripped, open) {
+                let body = stripped[open + 1..close].to_string();
+                fd.markers.push(Marker {
+                    name: name.to_string(),
+                    rel: f.rel.clone(),
+                    line: ln,
+                    args: split_args(&body),
+                    body,
+                    body_offset: open + 1,
+                    line_starts: starts.clone(),
+                });
+            }
+        }
+        if let Some(m) = pat_match!(r"(?:TRACKED|TRACKED_BRIDGED|SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+            fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
+        }
+        if let Some(m) = pat_match!(r"(?:OWN|OWN_POLICY|OWN_IF|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST)\(\s*(/[\w/]+)\s*,\s*(\w+)").captures(t) {
+            fd.relations.push((m.s(1).to_string(), m.s(2).to_string()));
+        }
+        let om = pat_match!(r"(?:OM_FIELD|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)")
+            .captures(t)
+            .or_else(|| pat_match!(r"OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)").captures(t));
+        if let Some(m) = om {
+            fd.tracked.push((m.s(1).to_string(), m.s(2).to_string()));
+        }
+        if t.contains("PUBLISH_CHANGE(") {
+            for m in pat!(r"PUBLISH_CHANGE\(\s*[^,()]+,\s*([\w#]+)\s*\)").captures_iter(t) {
+                fd.publishers.push((m.s(1).trim_start_matches('#').to_string(), (f.rel.clone(), ln)));
+            }
+        }
+    }
+    scan_calls(f, &stripped, &starts, &mut fd);
+    fd
+}
+
+/// Finds `name(...)` calls of the key/source families in comment-stripped text.
+fn scan_calls(f: &SourceFile, stripped: &str, starts: &[u32], fd: &mut FileDecls) {
+    static RE: std::sync::LazyLock<crate::pat::Pat> =
+        std::sync::LazyLock::new(|| crate::pat::Pat::new(r"(?<![\w./])(extend|without|on_op|shares_effects|above|perform_op|e0_perform_op|configure|hold|hold_until|hold_override|grant|release|status_end)\s*\("));
+    let line_of = |off: usize| -> u32 {
+        match starts.binary_search(&(off as u32)) {
+            Ok(i) => i as u32 + 1,
+            Err(i) => i as u32,
+        }
+    };
+    for m in RE.captures_iter(stripped) {
+        let name = m.s(1);
+        let open = m.end(0) - 1;
+        let Some(close) = matching_paren(stripped, open) else { continue };
+        let body = &stripped[open + 1..close];
+        let line = line_of(m.start(1));
+        let args = split_args(body);
+        if OP_KEY_CALLS.contains(&name) {
+            for a in &args {
+                if let Some(s) = a.strip_prefix('"').and_then(|s| s.strip_suffix('"')) {
+                    // `[x]` interpolation makes it a runtime value, not a key.
+                    if !s.is_empty() && !s.contains('[') && !s.contains(' ') {
+                        fd.key_refs.push(KeyRef { kind: KeyKind::Op, key: s.to_string(), call: name.to_string(), rel: f.rel.clone(), line });
+                    }
+                }
+            }
+        }
+        if CAP_KEY_CALLS.contains(&name) {
+            if let Some(s) = args.first().and_then(|a| a.strip_prefix('"')).and_then(|s| s.strip_suffix('"')) {
+                if !s.is_empty() && !s.contains('[') {
+                    fd.key_refs.push(KeyRef { kind: KeyKind::Capability, key: s.to_string(), call: name.to_string(), rel: f.rel.clone(), line });
+                }
+            }
+        }
+        if SOURCE_CALLS.contains(&name) {
+            for a in &args {
+                let compact = a.replace(' ', "");
+                if let Some(v) = compact.strip_prefix("source=") {
+                    if v == "null" || v.starts_with('"') {
+                        fd.bad_sources.push((f.rel.clone(), line, v.to_string()));
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn splits_top_level_commas_only() {
+        assert_eq!(split_args("a, f(b, c), \"x,y\", [1,2]"), vec!["a", "f(b, c)", "\"x,y\"", "[1,2]"]);
+    }
+
+    #[test]
+    fn strips_comments_but_keeps_strings_and_newlines() {
+        let s = strip_comments_keep_strings("a // x\nb \"//keep\" /* c\n d */ e\n");
+        assert_eq!(s.matches('\n').count(), 3);
+        assert!(s.contains("\"//keep\""));
+        assert!(!s.contains(" x"));
+    }
+
+    #[test]
+    fn a_marker_can_span_lines() {
+        let f = SourceFile::from_text("code/a.dm", "STAT(/obj, foo,\n\tALL,\n\tbase = 1)\n");
+        let d = scan_file(&f);
+        assert_eq!(d.markers.len(), 1);
+        assert_eq!(d.markers[0].args, vec!["/obj", "foo", "ALL", "base = 1"]);
+        assert_eq!(d.markers[0].line, 1);
+    }
+}

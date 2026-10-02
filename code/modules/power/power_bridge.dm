@@ -32,9 +32,13 @@
 	/// Last id handed to a detached test grid (counts down from 0).
 	var/power_test_grid_serial = 0
 	/// Areas whose static or one-off loads changed since the last step.
-	var/list/power_dirty_areas = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_dirty_areas = list() // SSmachines singleton (M3 power); one instance
 	/// Cables with an engineered conductor; their regions run the material overlay.
-	var/list/power_material_cables = list() // ALLOW(instance_list): d: SSmachines singleton (M3 power); one instance
+	var/list/power_material_cables = list() // SSmachines singleton (M3 power); one instance
+	/// The APCs and SMES the current power step still has to poll, while a budgeted step is yielded between
+	/// ticks; null when no poll is in progress (poll_power_storage()).
+	var/list/power_poll_queue
+	var/power_poll_index = 1
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
@@ -62,24 +66,8 @@
 /// publishes its results to DM's cache (`power_grids`) and drives the
 /// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
 /// itself simulated in Rust.
-/datum/world_service/machines/proc/process_power()
-	power_flush_areas()
-	vg_power_commit()
-	for(var/id in power_grids)
-		if(!power_grid_refresh(id))
-			power_grids -= id
-			continue
-		power_grid_sync_problem(id)
-	// Every power machine's `power_region` is polled here, not pushed --
-	// a deferred `connect_to_network(FALSE)` (map load, and every
-	// `power_autoconnect()`) relies on this to eventually resolve.
-	for(var/obj/machinery/power/machine as anything in REGISTRY_MEMBERS(REGISTRY_POWER_MACHINES))
-		if(!QDELETED(machine))
-			machine.power_refresh_network()
-	for(var/obj/machinery/power/apc/apc as anything in REGISTRY_MEMBERS(REGISTRY_APCS))
-		apc.power_poll()
-	for(var/obj/machinery/power/smes/storage as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		storage.power_poll()
+/// The rest of the power step: the engineered-conductor overlays.
+/datum/world_service/machines/proc/process_power_finish()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
 		if(QDELETED(cable))
 			power_material_cables -= cable
@@ -93,6 +81,17 @@
 			power_material_overlays -= id
 			qdel(overlay)
 
+/// The cable network's topology was edited (a node bound or unbound): regions may split, merge or gain members at
+/// the next commit, so the next power step re-reads every machine's region. Every vg_power_bind_* and
+/// vg_power_unbind_* call is followed by this; nothing else changes a region. `source` (the object or type that edited
+/// it) is counted for the churn metrics: an idle grid should make none.
+/proc/power_topology_edited(source)
+	var/datum/source_datum = source
+	CHURN_COUNT(power_edits, istype(source_datum) ? source_datum.type : source)
+	var/datum/world_service/machines/service = GLOB.machine_service
+	if(service)
+		service.power_regions_stale = TRUE
+
 /// Clears every DM-side power cache and re-registers every cable, power
 /// machine, APC and SMES (admin repair): unbinds and rebinds every
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
@@ -102,6 +101,7 @@
 		qdel(power_material_overlays[id])
 	power_material_overlays = alist()
 	power_grids = alist()
+	power_regions_stale = TRUE
 	for(var/obj/structure/cable/cable as anything in REGISTRY_MEMBERS(REGISTRY_CABLES))
 		cable.power_unregister()
 		cable.power_register()
@@ -109,9 +109,9 @@
 		if(istype(machine, /obj/machinery/power/apc))
 			continue
 		if(machine.vg_entity && isturf(machine.loc))
-			machine.power_send_node()
+			machine.power_send_node(force = TRUE)
 	for(var/obj/machinery/power/apc/apc in world)
-		apc.power_send_node()
+		apc.power_send_node(force = TRUE)
 	for(var/area/A in world)
 		A.power_loads_changed()
 	process_power()
@@ -124,4 +124,4 @@
 			cable.power_register()
 		for(var/obj/machinery/power/machine in contents_of(T))
 			if(!istype(machine, /obj/machinery/power/apc))
-				machine.power_send_node()
+				machine.power_send_node(force = TRUE)

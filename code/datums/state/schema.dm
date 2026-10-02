@@ -57,6 +57,13 @@
  *   state_post_apply(list/blob, flags)  after vars, contents and components are in place
  *   state_refusal()                a reason text to refuse serialization, or null; call ..()
  *
+ * Hooks on /obj (override per type, call ..()): state that lives in the object's cap_data records
+ * rather than in saved vars (a record cannot be a base-type var; base_vars_lint.py), so it is carried
+ * beside the delta under STATE_KEY_EXTRA:
+ *   state_extra()                  assoc of name = plain value (numbers, text, lists) to save, or null
+ *   state_apply_extra(list/extra)  the decoded assoc written by state_extra(), or null when the blob
+ *                                  carried none: restore it (and clear what the blob did not carry)
+ *
  * Migrations of renamed or removed types go in GLOB.state_type_migrations
  * ("/old/path" = /new/path, or = null to drop the entry).
  */
@@ -130,6 +137,14 @@ GLOBAL_LIST_INIT(state_legacy_component_vars, list(
 /// persistence saves running objects; it blocks collapse (collapse.dm).
 /datum/proc/state_refusal()
 	return null
+
+/// Per-instance state held outside saved vars (cap_data records), as name = plain value. Return ..() + yours.
+/obj/proc/state_extra()
+	return null
+
+/// Restores what state_extra() wrote. `extra` is null when the blob carried none: reset to the default.
+/obj/proc/state_apply_extra(list/extra)
+	return
 
 // ---------------------------------------------------------------------------
 // API

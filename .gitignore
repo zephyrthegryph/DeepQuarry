@@ -69,7 +69,9 @@ verdigris/target-wt/
 # From /tools/define_sanity/check.py - potential output file that we load onto the user's machine that we don't want to have committed.
 define_sanity_output.txt
 
-.claude/
+.claude/*
+!.claude/settings.json
+!.claude/hooks/
 /tools/_*.txt
 /tools/_*.py
 /tools/_*.json
@@ -93,3 +95,6 @@ define_sanity_output.txt
 
 # tools/ci/doc_snippets.py --write: the doc/rewrite dm blocks, compiled only with -DDOC_SNIPPETS
 /tools/ci/generated/
+
+# DQ analyze engine build output
+/tools/analyze/target/

@@ -36,6 +36,16 @@
 	} \
 } while (FALSE)
 
+/// Waits, a tick at a time and for at most `max_ticks`, until `cond` holds. A positive assertion waits for the
+/// condition itself (a loaded world skips kernel phases for several ticks); negative assertions keep a fixed wait.
+#define OM_TEST_WAIT_UNTIL(cond, max_ticks) \
+	for(var/om_wait_i in 1 to max_ticks) { \
+		if(cond) { \
+			break; \
+		} \
+		sleep(world.tick_lag); \
+	}
+
 /// *Only* run the test provided within the parentheses
 /// This is useful for debugging when you want to reduce noise, but should never be pushed
 /// Intended to be used in the manner of `TEST_FOCUS(/datum/unit_test/math)`
@@ -57,6 +67,9 @@
 /// A test named with --focus / dq_focused_test.sh runs whatever its tier.
 #define TEST_TIER_NORMAL 0
 #define TEST_TIER_EXHAUSTIVE 1
+/// The E0 proofs (doc/rewrite/final_api.html section 19): fixtures that cannot pass until E1-E6 land. A plain run and --tier=all skip them,
+/// so the normal suite stays green; `dm-test --tier=e0` or a focused run by name runs them (doc/testing.md "The E0 proofs").
+#define TEST_TIER_E0 2
 
 #define TEST_PRE 0
 #define TEST_DEFAULT 1
@@ -119,11 +132,13 @@
 #include "dx_cap_panel_tests.dm"
 #include "dx_cap_powered_tests.dm"
 #include "dx_cap_wires_tests.dm"
+#include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_doors_tests.dm"
 #include "dx_cap_library_api_tests.dm"
 #include "dx_vending_tests.dm"
 #include "dq_test_overrides_tests.dm"
+#include "dq_metrics_tests.dm"
 #include "focus_only_tests.dm"
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"
@@ -159,6 +174,10 @@
 #include "kernel_periodic.dm"
 #include "kernel_stages.dm"
 #include "kernel_work.dm"
+#include "kernel_test_clock.dm"
+#include "kernel_inbox.dm"
+#include "kernel_requests.dm"
+#include "kernel_io.dm"
 #include "kernel_sequence.dm"
 #include "techwebs.dm"
 #include "tgui_create_message.dm"
@@ -229,6 +248,7 @@
 #include "dq_propagation_tests.dm"
 #include "dq_matter_snapshot.dm"
 #include "dq_matter_tests.dm"
+#include "dq_material_state_tests.dm"
 #include "dq_property_tests.dm"
 #include "dq_predicate_tests.dm"
 #include "dq_constraint_tests.dm"
@@ -245,6 +265,7 @@
 #include "dq_boot_bind_tests.dm"
 #include "dq_h4_machine_heat_tests.dm"
 #include "dq_containment_path_tests.dm"
+#include "dq_pathfinder_tests.dm"
 #include "dq_vore_slot_tests.dm"
 #include "dq_c8a_occupant_slot_tests.dm"
 #include "dq_mecha_dispatch_tests.dm"
@@ -254,6 +275,7 @@
 #include "dq_damage_packet_tests.dm"
 #include "dq_explosion_batch_tests.dm"
 #include "dq_materialize_batch_tests.dm"
+#include "dq_map_load_job_tests.dm"
 #include "dq_turf_damage_tests.dm"
 #include "dq_integrity_pool_tests.dm"
 #include "dq_mech_body_tests.dm"
@@ -263,6 +285,8 @@
 #include "dq_pool_tests.dm"
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
+#include "dq_b4_tracking_tests.dm"
+#include "dq_phase0_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_medical_p0_tests.dm"
@@ -353,6 +377,7 @@
 #include "dq_w6_critical_tests.dm"
 #include "dq_om_core_tests.dm"
 #include "dq_tgui_client_tests.dm"
+#include "dq_tgui_status_tests.dm"
 #include "dq_shared_cache_tests.dm"
 #include "dq_material_tree_tests.dm"
 #include "dq_sys_hygiene_tests.dm"
@@ -391,6 +416,11 @@
 #include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
 #include "dq_kernel_measure_tests.dm"
+#include "dq_e0_aliases.dm"
+#include "dq_e0_proofs_tests.dm"
+#include "dq_e0_unalias.dm"
+#include "dq_e1_declare_tests.dm"
+#include "dq_e3_stats_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -403,6 +433,7 @@
 #include "../benchmarks/life_sequence.dm"
 #include "../benchmarks/dx_refresh.dm"
 #include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"
 #endif

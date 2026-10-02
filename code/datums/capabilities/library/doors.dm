@@ -9,9 +9,11 @@
 // The parts: cap_bolts(), cap_electrify(), cap_weld_shut(), cap_pry(), cap_emergency_access(),
 // cap_door_access(), cap_crush(), cap_door_timing(), cap_ai_control().
 // These own the door's state bits (CAP_BOLTED, CAP_WELDED, CAP_EMERGENCY_ACCESS), its tool entries, the
-// gating and the layers. The door's mechanism stays on the door: a capability moves it through the
-// holder hooks below (set_bolted(), is_electrified(), electric_shock(), cap_pry_force()), which a door
-// overrides with its own behaviour procs (airlock lock()/unlock(), shock(), open()/close()).
+// gating and the layers. The door's mechanism stays on the door: a capability moves it through its
+// holder interface, procs of the capability that take the holder (bolts set_bolted(), electrify is_electrified() /
+// shock(), pry reason() / force(), crush safeties_on()). A door with its own mechanism (the airlock's lock()/unlock(),
+// open()/close()) declares capability subtypes overriding them and hands them to door(subtypes = list(...)); nothing
+// is a proc on /atom.
 
 // ---- shared entry setup ----
 
@@ -47,9 +49,9 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/bolts
 	layer_name = LOOK_BOLTS
 
-/// Door bolts. Draws LOOK_BOLTS while bolted.
-/proc/cap_bolts(needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/bolts/C = new
+/// Door bolts. Draws LOOK_BOLTS while bolted. type: a subtype with the holder's own bolt mechanism.
+/proc/cap_bolts(needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/bolts)
+	var/datum/capability/bolts/C = new type
 	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
 
@@ -60,53 +62,67 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	data["bolted"] = is_bolted(holder)
 
 /// Drops (on) or raises the bolts through the holder's own mechanism. forced skips the mechanism's
-/// refusals (a door mid-swing, no power, a cut bolt wire). TRUE when they moved. A holder with no
-/// mechanism of its own just flips the bit.
-/atom/proc/set_bolted(on, forced = FALSE)
-	return cap_set(src, CAP_BOLTED, on)
+/// refusals (a door mid-swing, no power, a cut bolt wire). TRUE when they moved. The default has no
+/// mechanism of its own and just flips the bit; a subtype overrides it.
+/datum/capability/bolts/proc/set_bolted(atom/holder, on, forced = FALSE)
+	return cap_set(holder, CAP_BOLTED, on)
+
+/// Drops (on) or raises A's bolts through its bolts capability (just the bit without one).
+/proc/set_bolted(atom/A, on, forced = FALSE)
+	var/datum/capability/bolts/C = cap_of(A, /datum/capability/bolts)
+	return C ? C.set_bolted(A, on, forced) : cap_set(A, CAP_BOLTED, on)
 
 // ============================================================================
 // cap_electrify(): an electrified holder zaps whoever touches it. Every entry of the holder that
 // isn't `insulated` shocks a non-silicon user first: touch_chance for a bare hand, item_chance
 // through a held item; a shock stops the entry. The state is the holder's (is_electrified(), usually a
-// timed_set() var) and the shock is the holder's (electric_shock()). UI: electrified,
+// timed_set() var) and the shock is the holder's (a machine's shock()); a subtype answers both. UI: electrified,
 // electrified_left (seconds, -1 for permanent).
 
 /datum/capability/electrify
 	var/touch_chance = 100
 	var/item_chance = 75
 
-/// Zaps on touch while the holder is_electrified(): touch_chance by hand, item_chance with an item.
-/proc/cap_electrify(touch_chance = 100, item_chance = 75, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/electrify/C = new
+/// Zaps on touch while the holder is_electrified(): touch_chance by hand, item_chance with an item. type: a subtype
+/// answering is_electrified() / electrified_left() / shock() for the holder.
+/proc/cap_electrify(touch_chance = 100, item_chance = 75, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/electrify)
+	var/datum/capability/electrify/C = new type
 	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	C.touch_chance = touch_chance
 	C.item_chance = item_chance
 	return C
 
 /datum/capability/electrify/before_entry(atom/holder, mob/user, obj/item/held, datum/interaction/capability/entry)
-	if(entry.insulated || issilicon(user) || !holder.is_electrified())
+	if(entry.insulated || issilicon(user) || !is_electrified(holder))
 		return FALSE
-	return holder.electric_shock(user, held ? item_chance : touch_chance)
+	return shock(holder, user, held ? item_chance : touch_chance)
 
 /datum/capability/electrify/ui_data(atom/holder, mob/user, list/data)
-	data["electrified"] = holder.is_electrified()
-	data["electrified_left"] = holder.electrified_left()
+	data["electrified"] = is_electrified(holder)
+	data["electrified_left"] = electrified_left(holder)
 
-/// Whether touching the holder shocks now (cap_electrify()).
-/atom/proc/is_electrified()
+/// Whether touching the holder shocks now.
+/datum/capability/electrify/proc/is_electrified(atom/holder)
 	return FALSE
 
 /// Seconds until the holder stops being electrified: -1 while permanently, 0 while not.
-/atom/proc/electrified_left()
+/datum/capability/electrify/proc/electrified_left(atom/holder)
 	return 0
 
-/// Shocks user with `chance` percent. TRUE when it did (the entry stops).
-/atom/proc/electric_shock(mob/user, chance)
-	return FALSE
+/// Shocks user with `chance` percent. TRUE when it did (the entry stops). A machine shocks through its own shock().
+/datum/capability/electrify/proc/shock(atom/holder, mob/user, chance)
+	var/obj/machinery/M = holder
+	return istype(M) ? M.shock(user, chance) : FALSE
 
-/obj/machinery/electric_shock(mob/user, chance)
-	return shock(user, chance)
+/// Whether touching A shocks now (its cap_electrify()).
+/proc/is_electrified(atom/A)
+	var/datum/capability/electrify/C = cap_of(A, /datum/capability/electrify)
+	return C ? C.is_electrified(A) : FALSE
+
+/// Seconds until A stops being electrified (-1: permanently, 0: not).
+/proc/electrified_left(atom/A)
+	var/datum/capability/electrify/C = cap_of(A, /datum/capability/electrify)
+	return C ? C.electrified_left(A) : 0
 
 // ============================================================================
 // cap_weld_shut(): CAP_WELDED, toggled with a welder. One entry per stance, as the airlock's old ones
@@ -145,9 +161,11 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 		cap_entry_setup(E, stance = stance, applies = (stance == I_HELP && help_applies) ? help_applies : applies, tool_volume = 0)
 		. += E
 
+GLOBAL_LIST_INIT(cap_examine_welded, list("It has been welded shut."))
+
 /datum/capability/weld_shut/examine(atom/holder, mob/user)
 	if(is_welded(holder))
-		return list("It has been welded shut.")
+		return GLOB.cap_examine_welded
 	return null
 
 /datum/capability/weld_shut/draw(atom/holder, datum/look/look)
@@ -181,9 +199,10 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	/// A tool of this tier or better forces it even while powered (0: never).
 	var/strong_tier = 0
 
-/// Pry with `tool`, while unpowered (or with a tool of `strong_tier`), unbolted and unwelded.
-/proc/cap_pry(tool = TOOL_CROWBAR, strong_tier = 0, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/pry/C = new
+/// Pry with `tool`, while unpowered (or with a tool of `strong_tier`), unbolted and unwelded. type: a subtype with the
+/// holder's own reason() / name_for() / force().
+/proc/cap_pry(tool = TOOL_CROWBAR, strong_tier = 0, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/pry)
+	var/datum/capability/pry/C = new type
 	C.tool_quality = tool
 	C.strong_tier = strong_tier
 	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
@@ -194,36 +213,48 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/pry/interactions(atom/holder)
 	. = list()
 	for(var/stance in list(I_HELP, I_DISARM, I_GRAB))
-		var/datum/capability/entry/wrapper = lib_op("Force open or closed", TYPE_PROC_REF(/atom, cap_pry_force), OP_SHAPE_TOOL, using = tool_quality, key = "pry:[stance]", needs = TYPE_PROC_REF(/atom, cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = TYPE_PROC_REF(/atom, cap_pry_name))
+		var/datum/capability/entry/wrapper = lib_op("Force open or closed", GLOBAL_PROC_REF(cap_pry_force), OP_SHAPE_TOOL, using = tool_quality, key = "pry:[stance]", needs = GLOBAL_PROC_REF(cap_pry_reason), works_broken = TRUE, works_unpowered = TRUE, log = log, name_proc = GLOBAL_PROC_REF(cap_pry_name))
 		var/datum/interaction/capability/E = adopt_entry(wrapper, id = "pry:[tool_quality]:[stance]")
 		cap_entry_setup(E, stance = stance, tool_volume = 0)
 		. += E
 
-/// Why prying fails now (text), or TRUE. A holder with more to say overrides it.
-/atom/proc/cap_pry_reason(mob/user, obj/item/held)
-	if(is_welded(src))
+/// Why prying holder fails now (text), or TRUE. A holder with more to say declares a subtype.
+/datum/capability/pry/proc/reason(atom/holder, mob/user, obj/item/held)
+	if(is_welded(holder))
 		return "it's welded shut"
-	if(is_bolted(src))
+	if(is_bolted(holder))
 		return "its bolts prevent it from being forced"
-	if(cap_of(src, /datum/capability/powered) && cap_powered())
-		var/datum/capability/pry/C = cap_of(src, /datum/capability/pry)
-		if(!C?.strong_tier || !held || dq_tool_tier(held, C.tool_quality) < C.strong_tier)
+	if(cap_of(holder, /datum/capability/powered) && holder.cap_powered())
+		if(!strong_tier || !held || dq_tool_tier(held, tool_quality) < strong_tier)
 			return "its motors resist your efforts to force it"
 	return TRUE
 
-/atom/proc/cap_pry_name(mob/user)
+/datum/capability/pry/proc/name_for(atom/holder, mob/user)
 	return "Force open or closed"
 
-/// Forces the holder. A door opens or closes; anything else overrides it.
-/atom/proc/cap_pry_force(mob/user, obj/item/held)
+/// Forces the holder: a door opens or closes; anything else does nothing unless a subtype says.
+/datum/capability/pry/proc/force(atom/holder, mob/user, obj/item/held)
+	var/obj/machinery/door/D = holder
+	if(istype(D))
+		if(D.density)
+			D.open(TRUE)
+		else
+			D.close(TRUE)
 	return TRUE
 
-/obj/machinery/door/cap_pry_force(mob/user, obj/item/held)
-	if(density)
-		open(TRUE)
-	else
-		close(TRUE)
-	return TRUE
+/// The pry op's requirement, (user, holder, held): its capability's reason().
+/proc/cap_pry_reason(mob/user, atom/holder, obj/item/held)
+	var/datum/capability/pry/C = cap_of(holder, /datum/capability/pry)
+	return C ? C.reason(holder, user, held) : TRUE
+
+/proc/cap_pry_name(atom/holder, mob/user)
+	var/datum/capability/pry/C = cap_of(holder, /datum/capability/pry)
+	return C ? C.name_for(holder, user) : "Force open or closed"
+
+/// The pry op's handler: its capability's force().
+/proc/cap_pry_force(atom/holder, mob/user, obj/item/held)
+	var/datum/capability/pry/C = cap_of(holder, /datum/capability/pry)
+	return C ? C.force(holder, user, held) : TRUE
 
 // ============================================================================
 // cap_emergency_access(): CAP_EMERGENCY_ACCESS. While engaged the door lets anyone through (a door's access
@@ -244,9 +275,11 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/set_emergency_access(atom/A, on)
 	return cap_set(A, CAP_EMERGENCY_ACCESS, on)
 
+GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engaged."))
+
 /datum/capability/emergency_access/examine(atom/holder, mob/user)
 	if(emergency_access_on(holder))
-		return list("Its emergency access mode is engaged.")
+		return GLOB.cap_examine_emergency
 	return null
 
 /datum/capability/emergency_access/draw(atom/holder, datum/look/look)
@@ -290,9 +323,9 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/crush
 	var/damage = DOOR_CRUSH_DAMAGE
 
-/// A door that crushes what it closes on, for `damage` (the type default).
-/proc/cap_crush(damage = DOOR_CRUSH_DAMAGE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log)
-	var/datum/capability/crush/C = new
+/// A door that crushes what it closes on, for `damage` (the type default). type: a subtype with the holder's safeties_on().
+/proc/cap_crush(damage = DOOR_CRUSH_DAMAGE, needs, else_say, works_broken = TRUE, works_unpowered = TRUE, log, type = /datum/capability/crush)
+	var/datum/capability/crush/C = new type
 	C.damage = damage
 	cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 	return C
@@ -303,17 +336,22 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 	var/dealt = isnull(amount) ? damage : amount
 	. = FALSE
 	for(var/turf/T in holder.locs)
-		for(var/atom/movable/AM in T)
+		for(var/atom/movable/AM in contents_of(T))
 			if(AM.airlock_crush(dealt))
 				holder.take_damage(dealt, BRUTE, MELEE)
 				. = TRUE
 
 /datum/capability/crush/ui_data(atom/holder, mob/user, list/data)
-	data["safe"] = holder.door_safeties_on()
+	data["safe"] = safeties_on(holder)
 
-/// Whether the holder's safeties stop it closing on someone (cap_crush()).
-/atom/proc/door_safeties_on()
+/// Whether the holder's safeties stop it closing on someone.
+/datum/capability/crush/proc/safeties_on(atom/holder)
 	return TRUE
+
+/// Whether A's safeties stop it closing on someone (its cap_crush(); TRUE without one).
+/proc/door_safeties_on(atom/A)
+	var/datum/capability/crush/C = cap_of(A, /datum/capability/crush)
+	return C ? C.safeties_on(A) : TRUE
 
 /// Crushes what stands in A's tiles through its cap_crush() (nothing without one). amount: null for
 /// the capability's type default.
@@ -375,22 +413,24 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 //		. += door(wires = /datum/wires/airlock, electrify = TRUE, ai_control = TRUE)
 //		. += cap_frozen_shut()
 //
-// Named args pick the variations; `without()` / `replace()` edit the result like any list.
-/proc/door(wires, electrify = FALSE, ai_control = FALSE, panel_tool = TOOL_SCREWDRIVER, repair_tool = null, emag_effect, emag_mode = EMAG_REPEATABLE, emag_log = LOG_GAME, weld_applies, weld_help_applies, pry_strong_tier = 0, crush_damage = DOOR_CRUSH_DAMAGE, close_wait = 15 SECONDS)
-	. = list(cap_panel(tool = panel_tool))
+// Named args pick the variations; `without()` / `replace()` edit the result like any list. `subtypes`: base capability
+// type -> the holder's subtype implementing its holder interface (list(/datum/capability/bolts = /datum/capability/bolts/airlock)).
+/proc/door(wires, electrify = FALSE, ai_control = FALSE, panel_tool = TOOL_SCREWDRIVER, repair_tool = null, emag_effect, emag_mode = EMAG_REPEATABLE, emag_log = LOG_GAME, weld_applies, weld_help_applies, pry_strong_tier = 0, crush_damage = DOOR_CRUSH_DAMAGE, close_wait = 15 SECONDS, list/subtypes)
+	var/list/K = subtypes || list()
+	. = list(cap_panel(tool = panel_tool, type = K[/datum/capability/panel] || /datum/capability/panel))
 	if(wires)
-		. += cap_wires(wires)
+		. += cap_wires(wires, type = K[/datum/capability/wires] || /datum/capability/wires)
 	. += cap_door_access()
 	. += cap_breakable(repair_tool = repair_tool)
 	. += cap_power()
 	. += cap_emag(effect = emag_effect, mode = emag_mode, log = emag_log)
-	. += cap_bolts()
+	. += cap_bolts(type = K[/datum/capability/bolts] || /datum/capability/bolts)
 	if(electrify)
-		. += cap_electrify()
+		. += cap_electrify(type = K[/datum/capability/electrify] || /datum/capability/electrify)
 	. += cap_weld_shut(applies = weld_applies, help_applies = weld_help_applies)
-	. += cap_pry(strong_tier = pry_strong_tier)
+	. += cap_pry(strong_tier = pry_strong_tier, type = K[/datum/capability/pry] || /datum/capability/pry)
 	. += cap_emergency_access()
-	. += cap_crush(damage = crush_damage)
+	. += cap_crush(damage = crush_damage, type = K[/datum/capability/crush] || /datum/capability/crush)
 	. += cap_door_timing(close_wait = close_wait)
 	if(ai_control)
 		. += cap_ai_control()
@@ -407,16 +447,13 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /proc/cap_ai_control()
 	return new /datum/capability/ai_control
 
-/// The AiAirlock actions that are logged (cap_ai_control()'s ui_logged()).
-GLOBAL_LIST_INIT(cap_ai_control_logged, list(
+/// The AiAirlock actions that are logged (read through ui_logged()).
+TYPE_TABLE(/datum/capability/ai_control, ui_logged_actions, list(
 	"shock_temp" = LOG_GAME,
 	"shock_perm" = LOG_GAME,
 	"bolt_toggle" = LOG_GAME,
 	"emergency_toggle" = LOG_GAME,
 ))
-
-/datum/capability/ai_control/ui_logged()
-	return GLOB.cap_ai_control_logged
 
 /datum/capability/ai_control/proc/act_disrupt_main(mob/user, obj/machinery/door/airlock/holder)
 	if(holder.main_power_lost_until)

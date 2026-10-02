@@ -60,7 +60,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
 			rel_add(src, nameof(targets), C)
 
 	if(!LAZYLEN(targets) && !LAZYLEN(brig_doors) && !LAZYLEN(brig_flashers))
-		stat_add(BROKEN)
+		atom_break()
 	update_icon()
 
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.

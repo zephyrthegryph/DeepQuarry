@@ -83,6 +83,7 @@
 					V.set_stat(DEAD)
 					qdel(V)
 
+	material_records_teardown(src)
 	..()
 
 /// The tgui state an href action on this obj is checked against (topic_allowed()).

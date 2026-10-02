@@ -338,6 +338,9 @@
 	om_attach(quiet, /datum/om/behaviour/test/km_fake)
 	var/datum/om_test_entity/burner = entity(made)
 	om_attach(burner, /datum/om/behaviour/test/km_burner)
+	// The presentation lane also runs the refresh drift audit, strictly on every frame in a test
+	// build (a few ms each); pause it for this pass so the burner is measured against its peers.
+	set_global("refresh_sweep_list", list())
 	// One pass: the burner holds the tick over budget, the quiet behaviour costs almost nothing.
 	scheduler_advance(1)
 	var/usage = TICK_USAGE
@@ -346,7 +349,7 @@
 	TEST_ASSERT_EQUAL(meter.total_overruns, 1, "the tick counts as an overrun")
 	var/list/top = meter.last_overrun_top
 	TEST_ASSERT(length(top) >= 1, "the overrun has attribution")
-	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump")
+	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump: [json_encode(top)]")
 	TEST_ASSERT(top[1]["ms"] > 1, "and it is charged real time (got [top[1]["ms"]] ms)")
 	TEST_ASSERT(findtext(meter.last_overrun_line, "km_burner_system"), "the line names it: [meter.last_overrun_line]")
 	var/list/entry = meter.recorded_entries()[1]
@@ -454,24 +457,24 @@
 	qdel(M)
 	return
 
-/// The hooks in verb_manager and atom/Click reach the meter: swaps a fresh one in for the length of the test.
+/// The hooks in the input inbox and atom/Click reach the meter: swaps a fresh one in for the length of the test.
 /datum/unit_test/dq_km_input_hooks_record_real_paths
 
 /datum/unit_test/dq_km_input_hooks_record_real_paths/Run()
 	var/mob/observer/dead/clicker = allocate(/mob/observer/dead, run_loc_floor_bottom_left)
 	var/datum/tick_meter/live_meter = km_meter()
 	var/datum/tick_meter/probe = new(8)
-	var/queue_before = length(SSverb_manager.lane.verb_queue)
+	var/queue_before = length(SSinput.waiting(GLOB.km_synthetic))
 	var/synthetic_before = GLOB.km_synthetic.verbs_run
 	// Nothing below sleeps, so the MC cannot call end_tick() on the wrong meter meanwhile.
-	km_holder().meter = probe // ALLOW(ownership): the test swaps the live meter for a probe for these few statements
+	km_holder().meter = probe
 	for(var/i in 1 to 3)
 		km_synthetic_verb()
-	var/queued_now = length(SSverb_manager.lane.verb_queue) - queue_before
-	SSverb_manager.lane.run_verb_queue()
+	var/queued_now = length(SSinput.waiting(GLOB.km_synthetic)) - queue_before
+	SSinput.drain_step(1, TRUE)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	var/list/report = km_report_input(probe.live)
 
 	TEST_ASSERT_EQUAL(queued_now, 3, "three verbs sat in the verb queue")
@@ -488,31 +491,20 @@
 	qdel(probe)
 	return
 
-// ---------------------------------------------------------------- MC subsystems as systems
+// ---------------------------------------------------------------- the input cost
 
-/datum/unit_test/dq_km_subsystems_are_systems
+/// The input inbox's drain is charged to the input system, and counts as input cost in the tick record.
+/datum/unit_test/dq_km_inbox_drain_is_input_cost
 
-/datum/unit_test/dq_km_subsystems_are_systems/Run()
-	var/datum/tick_meter/M = new(8)
-	var/air_idx = km_bind_subsystem(SSgarbage)
-	TEST_ASSERT_EQUAL(km_systems().key_of(air_idx), "mc_[replacetext(lowertext(SSgarbage.name), " ", "_")]", "a subsystem's system is mc_<name in snake case>")
-	TEST_ASSERT_EQUAL(km_systems().kinds[air_idx], KM_KIND_MC, "of the MC kind")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSgarbage), air_idx, "binding is stable")
-	TEST_ASSERT_EQUAL(km_bind_subsystem(SSverb_manager), km_systems().index_by_key["mc_verb_manager"], "a name with a space is snake case")
-	// SSbehaviours is decomposed: the MC charging it adds nothing.
-	TEST_ASSERT_EQUAL(SSbehaviours.system_idx, KM_SYS_DECOMPOSED, "Behaviours is charged through the systems it runs")
-	M.charge_subsystem(SSbehaviours, 30)
-	TEST_ASSERT_EQUAL(M.n_touched, 0, "so the MC's own charge for it is dropped")
-	// Input subsystems also count toward the tick's input cost.
-	M.charge_subsystem(SSgarbage, 10)
-	TEST_ASSERT_EQUAL(M.input_ms, 0, "an ordinary subsystem is not input")
-	M.charge_subsystem(SSinput, 4)
-	M.charge_subsystem(SSverb_manager, 6)
-	TEST_ASSERT(abs(M.input_ms - TICK_DELTA_TO_MS(10)) < 0.001, "SSinput and SSverb_manager add up as input cost (got [M.input_ms])")
-	TEST_ASSERT(abs(M.tick_ms[air_idx] - TICK_DELTA_TO_MS(10)) < 0.001, "the subsystem's usage percent became ms on its system")
-	TEST_ASSERT(km_systems().lane_label(air_idx) == "mc", "and its lane label is mc")
-	qdel(M)
-	return
+/datum/unit_test/dq_km_inbox_drain_is_input_cost/Run()
+	var/datum/tick_meter/live_meter = km_meter()
+	var/datum/tick_meter/probe = new(8)
+	km_holder().meter = probe
+	SSinput.charge_drain(TICK_USAGE - 5)
+	km_holder().meter = live_meter
+	TEST_ASSERT(probe.input_ms > 0, "the drain's cost is input cost")
+	TEST_ASSERT(probe.tick_ms[KM_SYS_INPUT] > 0, "and it is charged to the input system")
+	qdel(probe)
 
 // ---------------------------------------------------------------- BYOND reserve, surfaces
 
@@ -549,10 +541,10 @@
 	M.charge(a, 20)
 	M.end_tick(120, 3)
 	var/datum/tick_meter/live_meter = km_meter()
-	km_holder().meter = M // ALLOW(ownership): the report reads the global meter; swapped for these two calls only
+	km_holder().meter = M
 	var/html = km_tick_report_html(FALSE)
 	var/html_over = km_tick_report_html(TRUE)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	TEST_ASSERT(findtext(html, "<table") && findtext(html, "km_test_a"), "the tick report is a table naming the top system")
 	TEST_ASSERT(findtext(html_over, "km_test_a"), "the overruns-only report includes the overrun")
 	qdel(M)

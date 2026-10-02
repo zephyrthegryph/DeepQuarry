@@ -167,7 +167,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 /proc/dq_part_cache(mob/living/M, obj/item/organ/part)
 	if(istype(part, /obj/item/organ/external))
 		if(!M.organs_by_name)
-			M.organs_by_name = list() // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
+			M.organs_by_name = list()
 		rel_add(M, nameof(M.organs), part)
 		M.organs_by_name[part.organ_tag] = part // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list; kept in step only here and in dq_part_uncache()
 	// Internal organs: nothing to cache, the limb's keyed organ slot is the record.
@@ -177,7 +177,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(istype(part, /obj/item/organ/external))
 		rel_remove(M, nameof(M.organs), part)
 		if(M.organs_by_name?[part.organ_tag] == part)
-			M.organs_by_name -= part.organ_tag // ALLOW(ownership): tag -> part lookup derived from the `organs` relation list
+			M.organs_by_name -= part.organ_tag
 		rel_remove(M, nameof(M.bad_external_organs), part)
 
 /// `part` and every part below it, parents before children, read from the

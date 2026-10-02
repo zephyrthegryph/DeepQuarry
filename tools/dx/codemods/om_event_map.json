@@ -921,7 +921,7 @@
  },
  "/datum/om/event/click": {
   "emits": [
-   "code/controllers/kernel/latency.dm"
+   "code/engine/kernel/inbox.dm"
   ],
   "fields": [
    "location",
@@ -1555,6 +1555,7 @@
   "reads_result": false,
   "target": "/datum/notice/machinery_power_lost",
   "tests": [
+   "code/modules/benchmarks/apc_flip.dm",
    "code/modules/unit_tests/dq_power_tests.dm"
   ]
  },
@@ -1569,6 +1570,7 @@
   "reads_result": false,
   "target": "/datum/notice/machinery_power_restored",
   "tests": [
+   "code/modules/benchmarks/apc_flip.dm",
    "code/modules/unit_tests/dq_power_tests.dm"
   ]
  },
@@ -1756,7 +1758,7 @@
  },
  "/datum/om/event/mob_handle_vision": {
   "emits": [
-   "code/modules/mob/living/life/life_om.dm",
+   "code/modules/mob/dead/observer/observer.dm",
    "code/modules/mob/living/life/living_systems.dm"
   ],
   "fields": [],

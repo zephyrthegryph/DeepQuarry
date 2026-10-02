@@ -193,6 +193,9 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 
 	om_after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
 
+/proc/ert_load_finished(z)
+	log_and_message_admins("Loaded the ERT shuttle just now.")
+
 /proc/close_armed_response_team()
 	GLOB.send_emergency_team = 0 // Can no longer join the ERT.
 
@@ -205,5 +208,4 @@ GLOBAL_VAR(ert_loaded)
 		if(!istype(MT))
 			log_mapping("ERT Area is not a valid map template!")
 		else
-			MT.load_new_z(centered = TRUE)
-			log_and_message_admins("Loaded the ERT shuttle just now.")
+			MT.load_new_z_async(TRUE, om_callable(null, GLOBAL_PROC_REF(ert_load_finished)))

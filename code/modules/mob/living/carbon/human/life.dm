@@ -40,7 +40,7 @@
 	//blinded get reset each cycle and then get activated later in the
 	//code. Very ugly. I dont care. Moving this stuff here so its easy
 	//to find it.
-	self.blinded = 0
+	self.set_blinded(0)
 
 	//TODO: seperate this out
 	// update the current life tick, can be used to e.g. only do something every 4 ticks
@@ -73,6 +73,7 @@
 	if(!BEFORE(src, hud_full_refresh_at, CLOCK_WORLD))
 		EXPIRY_SET(src, hud_full_refresh_at, 1 MINUTES, CLOCK_WORLD)
 		hud_updateflag = (1 << TOTAL_HUDS) - 1
+		PUBLISH_CHANGE(src, MOB_KEY_HUD_FLAGS)
 
 /// The voice others hear.
 /datum/om/stage/life/voice
@@ -1347,7 +1348,7 @@
 	return 1
 
 /datum/om/stage/life/status/carbon/human/proc/dead_senses(mob/living/carbon/human/self)
-	self.blinded = 1
+	self.set_blinded(1)
 	self.status_set(EFFECT_MUTED, 0)
 	self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 
@@ -1358,7 +1359,7 @@
 	self.status_at_least(EFFECT_PARALYZED, 3)
 	self.status_at_least(EFFECT_SLEEPING, 3)
 	self.set_stat(UNCONSCIOUS)
-	self.blinded = TRUE
+	self.set_blinded(TRUE)
 	if(!has_trait(self, TRAIT_CRITICAL_CONDITION))
 		add_trait(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 	return TRUE
@@ -1373,7 +1374,7 @@
 /datum/om/stage/life/status/carbon/human/proc/update_tiredness(mob/living/carbon/human/self)
 	if(!self.tiredness)
 		return
-	self.tiredness = (self.tiredness - 1)
+	self.set_tiredness((self.tiredness - 1))
 	if(self.tiredness >= 100)
 		self.status_at_least(EFFECT_SLEEPING, 5)
 
@@ -1381,7 +1382,7 @@
 /datum/om/stage/life/status/carbon/human/proc/update_fear(mob/living/carbon/human/self)
 	if(!self.fear)
 		return
-	self.fear = (self.fear - 1)
+	self.set_fear((self.fear - 1))
 	if(self.fear >= 80 && self.client?.prefs?.read_preference(/datum/preference/toggle/play_ambience))
 		if(COOLDOWN_FINISHED(self, fear_sound_cooldown))
 			self << sound('sound/effects/Heart Beat.ogg',0,0,0,25)
@@ -1412,7 +1413,7 @@
 			if(has_trait(self, TRAIT_CRITICAL_CONDITION))
 				remove_trait(self, TRAIT_CRITICAL_CONDITION, STAT_TRAIT)
 		return
-	self.blinded = TRUE
+	self.set_blinded(TRUE)
 	self.set_stat(UNCONSCIOUS)
 	self.animate_tail_reset()
 	self.mend(TREAT_ANALGESIC, 3) // Sleep eases pain on top of its natural fading.
@@ -1442,27 +1443,27 @@
 /datum/om/stage/life/status/carbon/human/proc/update_sight(mob/living/carbon/human/self)
 	//Check rig first because it's two-check and other checks will override it.
 	if(rig_visor_blinds(self))
-		self.blinded = 1
+		self.set_blinded(1)
 
 	if(!self.species.vision_organ) // Presumably if a species has no vision organs, they see via some other means.
 		self.status_set(EFFECT_BLINDED, 0)
-		self.blinded = 0
+		self.set_blinded(0)
 		self.status_set(EFFECT_BLURRY, 0)
 		self.clear_alert("blind")
 		return
 	var/obj/item/organ/vision = self.organ_in(self.species.vision_organ)
 	if(!vision || vision.is_broken())   // Vision organs cut out or broken? Permablind.
 		self.status_set(EFFECT_BLINDED, 1)
-		self.blinded = 1
+		self.set_blinded(1)
 		self.status_set(EFFECT_BLURRY, 1)
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
 		return
 	//You have the requisite organs
 	if(self.sdisabilities & BLIND) 	// Disabled-blind, doesn't get better on its own
-		self.blinded = 1
+		self.set_blinded(1)
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
 	else if(self.has_status(EFFECT_BLINDED) || self.wearing_blindfold())	// Blindness wears off on its own; a blindfold also heals blur faster (status_rate())
-		self.blinded = 1
+		self.set_blinded(1)
 		self.throw_alert("blind", /atom/movable/screen/alert/blind)
 	if(vision.is_bruised())   // Vision organs impaired? Permablurry.
 		self.status_at_least(EFFECT_BLURRY, 1)
@@ -2291,7 +2292,7 @@
 	holder2.icon_state = "hudblank"
 	holder3.icon_state = "hudblank"
 
-	for(var/obj/item/implant/I in src)
+	for(var/obj/item/implant/I in contents_of(src, /obj/item/implant))
 		if(I.implanted)
 			if(!I.malfunction)
 				if(istype(I,/obj/item/implant/tracking))

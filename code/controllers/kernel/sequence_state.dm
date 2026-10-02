@@ -1,7 +1,7 @@
 // Sequence frames and per-entity state (doc/rewrite/life_sequences.md). The runner is sequence.dm.
 
 /// Each sequence's state on this datum (a /datum/seq_state), indexed by the sequence's idx. Null until it joins one.
-// ALLOW(scheduler): the kernel's own per-entity sequence records; released by seq_stop()/seq_teardown() (sequence.dm)
+// The kernel's own per-entity sequence records; released by seq_stop()/seq_teardown() (sequence.dm)
 /datum/var/tmp/list/seq_states
 
 /// One entity's state in one sequence: what outlives a frame.

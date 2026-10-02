@@ -41,10 +41,10 @@ ADMIN_VERB(map_template_load, R_SPAWN, "Map template - Place At Loc", "Spawns a 
 	var/mob/user = actor
 	end_preview()
 	var/datum/map_template/template = SSmapping.map_templates[template_name]
-	if(template?.load(place_at, centered = TRUE))
-		message_admins(span_adminnotice("[key_name_admin(user)] has placed a map template ([template.name])."))
-	else
+	if(!template)
 		to_chat(user, "Failed to place map")
+		return
+	template.load_async(place_at, TRUE, om_callable(template, TYPE_PROC_REF(/datum/map_template, admin_placed), user))
 
 /datum/om/flow/map_template_place/proc/end_preview()
 	var/mob/user = actor
@@ -73,10 +73,7 @@ ADMIN_VERB(map_template_load_on_new_z, R_SPAWN, "Map template - New Z", "Spawns 
 	if(isnull(_answer_a3))
 		return
 	if(_answer_a3 == "Yes")
-		if(template.load_new_z())
-			message_admins(span_adminnotice("[key_name_admin(user)] has placed a map template ([template.name]) on Z level [world.maxz]."))
-		else
-			to_chat(user, "Failed to place map")
+		template.load_new_z_async(FALSE, om_callable(template, TYPE_PROC_REF(/datum/map_template, admin_placed_z), user))
 
 ADMIN_VERB(map_template_upload, R_SPAWN, "Map Template - Upload", "Uploads the selected map template to the template storage.", ADMIN_CATEGORY_DEBUG_EVENTS)
 	var/map = input(user, "Choose a Map Template to upload to template storage","Upload Map Template") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog

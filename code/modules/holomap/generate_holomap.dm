@@ -24,7 +24,10 @@
 					|| (locate_within(tile, /obj/structure/catwalk)))
 
 /// Where rendered holomaps are kept between boots.
-#define HOLOMAP_CACHE_DIRECTORY "data/holomaps/cache"
+/// Under SPRITESHEET_DIR, which is a directory per world in a sharded test run: shards in one worktree would otherwise
+/// write and delete the same scratch PNGs and the same cache.
+#define HOLOMAP_DIRECTORY "[SPRITESHEET_DIR]holomaps"
+#define HOLOMAP_CACHE_DIRECTORY "[HOLOMAP_DIRECTORY]/cache"
 
 /// Bump when the renderer's output changes for the same map.
 #define HOLOMAP_CACHE_VERSION 2
@@ -199,7 +202,7 @@
 		rows[row] = pixels.Join("") + right_padding
 		CHECK_TICK
 
-	var/png_path = "data/holomaps/[mode]_[zLevel].png"
+	var/png_path = "[HOLOMAP_DIRECTORY]/[mode]_[zLevel].png"
 	var/error = rustg_dmi_create_png(png_path, "[canvas_width]", "[canvas_height]", rows.Join(""))
 	if(error)
 		stack_trace("Failed to render holomap [png_path]: [error]")

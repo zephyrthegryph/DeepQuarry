@@ -67,15 +67,17 @@
 	// Were INTERACT_ITEM (an ID card goes in) and INTERACT_VERB "Eject ID Card": the ID slot. Its insert op answers a
 	// click with a card (a full slot passes the click on, to the computer's item fallback); its eject is the slot's
 	// ACT_NONE op, which the Menu, the radial and the command bar name.
-	. += cap_slot(nameof(scan), /obj/item/card/id, name = "Insert ID card", eject_name = "Eject ID Card", eject_via = SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, insert_msg = "You insert %I%.", eject_msg = "You remove %I% from %T%.", ui_key = null)
+	. += cap_slot(nameof(scan), /obj/item/card/id, name = "Insert ID card", eject_name = "Eject ID Card", eject_via = SLOT_VIA_VERB, when_full = SLOT_FULL_PASS, insert_msg = "You insert %I%.", eject_msg = "You remove %I% from %T%.", ui_key = null, slot_type = /datum/capability/slot/med_data_scan)
 	// Was INTERACT_HAND: an empty hand opens the records. `entry` keeps attack_hand() reaching it for its other callers
 	// (the AI's hand use through silicon_use, the computer's any-item fallback).
 	. += cap_op("Open records", TYPE_PROC_REF(/atom, interaction_open_ui_fingerprint), using = EMPTY_HAND, key = "open_records", entry = INTERACTION_ENTRY_HAND)
 
 /// A card in the slot opens the records, as the old insert did.
-/obj/machinery/computer/med_data/slot_inserted(slot, obj/item/item, mob/user)
-	if(slot == nameof(scan) && user)
-		tgui_interact(user)
+/datum/capability/slot/med_data_scan
+
+/datum/capability/slot/med_data_scan/inserted(obj/machinery/computer/med_data/holder, obj/item/item, mob/user)
+	if(user)
+		holder.tgui_interact(user)
 
 DECLARE_UI(/obj/machinery/computer/med_data, "MedicalRecords", UI_TITLE("Medical Records"))
 

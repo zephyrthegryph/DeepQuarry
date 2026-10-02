@@ -1,0 +1,6 @@
+/obj/item/late/ownership()
+	. += owns(nameof(late_var))
+/obj/item/late/capabilities()
+	. += cap_slot(nameof(late_var), /obj/item/y)
+/obj/item/late/sub/ownership()
+	. += owns(nameof(late_var))

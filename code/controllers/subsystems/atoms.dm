@@ -1,7 +1,9 @@
-SUBSYSTEM_DEF(atoms)
+SYSTEM_DEF(atoms)
 	name = "Atoms"
-	dependencies = list(
-		/datum/controller/subsystem/garbage,
+	needs = list(
+		/datum/system/garbage,
+		// The early assets load before the atoms (they set the tracked init state the atoms then read).
+		/datum/system/early_assets,
 		/datum/system/mapping,
 		/datum/system/job,
 		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
@@ -9,7 +11,6 @@ SUBSYSTEM_DEF(atoms)
 		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
 		/datum/world_service/planets,
 	)
-	flags = SS_NO_FIRE
 
 	/// A stack of list(source, desired initialized state)
 	/// We read the source of init changes from the last entry, and assert that all changes will come with a reset
@@ -47,25 +48,34 @@ SUBSYSTEM_DEF(atoms)
 
 	atom_initialized = INITIALIZATION_INSSATOMS
 
-/datum/controller/subsystem/atoms/Initialize()
+/datum/system/atoms/initialize()
 	EXPIRY_STAMP(src, init_start_time, CLOCK_WORLD)
 
 	atom_initialized = INITIALIZATION_INNEW_MAPLOAD
 	InitializeAtoms()
 	atom_initialized = INITIALIZATION_INNEW_REGULAR
 
-	// Services that set up on the initialized map declare needs = list(/datum/controller/subsystem/atoms) (pai, xenoarch,
+	// Services that set up on the initialized map declare needs = list(/datum/system/atoms) (pai, xenoarch,
 	// events, night shift, antagonists, radio, crew transfer); the boot DAG boots them next.
 	validate_property_registry()
 	// Map load and the initial materialize batch are done: validate the ownership table of every
 	// mapped and registered type now, not on first use (doc/rewrite/ownership.md sec 8).
 	own_validate_boot()
 
-	return SS_INIT_SUCCESS
-
-/datum/controller/subsystem/atoms/proc/InitializeAtoms(list/atoms, list/atoms_to_return)
-	if(atom_initialized == INITIALIZATION_INSSATOMS)
+/datum/system/atoms/proc/InitializeAtoms(list/atoms, list/atoms_to_return)
+	var/list/run = initialize_atoms_begin(atoms_to_return)
+	if(!run)
 		return
+	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
+	CreateAtoms(run[ATOM_RUN_BATCH], atoms)
+	initialize_atoms_finish(run, atoms_to_return)
+
+/// Opens the frame for one InitializeAtoms() run and returns its context list (ATOM_RUN_*), or null when
+/// atoms are not being initialized yet. The sync InitializeAtoms() and the chunked atom_init_job (below) share
+/// this, so a chunked run does exactly what the sync one does.
+/datum/system/atoms/proc/initialize_atoms_begin(list/atoms_to_return)
+	if(atom_initialized == INITIALIZATION_INSSATOMS)
+		return null
 
 	// Generate a unique mapload source for this run of InitializeAtoms
 	var/static/uid = 0
@@ -88,8 +98,22 @@ SUBSYSTEM_DEF(atoms)
 		deferred_decl_binds = list()
 	// Heat bodies created by the batch take pre-reserved handles and configure in one call (heat_bind_batch.dm).
 	dq_heat_bind_begin()
-	// This may look a bit odd, but if the actual atom creation runtimes for some reason, we absolutely need to set initialized BACK
-	CreateAtoms(batch, atoms)
+	var/list/run = new /list(ATOM_RUN_FIELDS)
+	run[ATOM_RUN_SOURCE] = source
+	run[ATOM_RUN_BATCH] = batch
+	run[ATOM_RUN_OUTER_CREATED] = outer_created
+	run[ATOM_RUN_MACHINE_OWNER] = machine_owner
+	run[ATOM_RUN_DECL_OWNER] = decl_bind_owner
+	return run
+
+/// Closes the frame `initialize_atoms_begin()` opened: deferred resolvers, the frame's deferred work, binds,
+/// late loaders and the queued deletions.
+/datum/system/atoms/proc/initialize_atoms_finish(list/run, list/atoms_to_return)
+	var/source = run[ATOM_RUN_SOURCE]
+	var/datum/materialize_batch/batch = run[ATOM_RUN_BATCH]
+	var/list/outer_created = run[ATOM_RUN_OUTER_CREATED]
+	var/machine_owner = run[ATOM_RUN_MACHINE_OWNER]
+	var/decl_bind_owner = run[ATOM_RUN_DECL_OWNER]
 	// Deferred map resolvers run once the outermost load's atoms exist, still inside its frame
 	// (what they create initializes as mapload and joins the batch).
 	if(initialize_depth == 1 && (deferred_resolvers || length(GLOB.map_resolve_scratch)))
@@ -141,7 +165,7 @@ SUBSYSTEM_DEF(atoms)
 
 /// Binds every power machine node the batch queued in one Rust call (after the cables, so the
 /// machines join the batch's knots).
-/datum/controller/subsystem/atoms/proc/flush_machine_binds()
+/datum/system/atoms/proc/flush_machine_binds()
 	var/list/queued = deferred_machine_binds
 	deferred_machine_binds = null
 	if(length(queued))
@@ -149,7 +173,7 @@ SUBSYSTEM_DEF(atoms)
 
 /// Initializes the frame's atoms (or every uninitialized atom in the world) chunk by chunk.
 /// Exists solely so a runtime in the creation logic doesn't cause initialized to totally break.
-/datum/controller/subsystem/atoms/proc/CreateAtoms(datum/materialize_batch/batch, list/atoms)
+/datum/system/atoms/proc/CreateAtoms(datum/materialize_batch/batch, list/atoms)
 	var/list/mapload_arg = list(TRUE)
 	#ifdef TESTING
 	var/count = 0
@@ -194,14 +218,14 @@ SUBSYSTEM_DEF(atoms)
 	testing("Initialized [count] atoms in [batch.chunks] chunks, [batch.yields] yields")
 	#endif
 
-/datum/controller/subsystem/atoms/proc/map_loader_begin(source)
+/datum/system/atoms/proc/map_loader_begin(source)
 	set_tracked_initalized(INITIALIZATION_INSSATOMS, source)
 
-/datum/controller/subsystem/atoms/proc/map_loader_stop(source)
+/datum/system/atoms/proc/map_loader_stop(source)
 	clear_tracked_initalize(source)
 
 /// Returns the source currently modifying SSatom's init behavior
-/datum/controller/subsystem/atoms/proc/get_initialized_source()
+/datum/system/atoms/proc/get_initialized_source()
 	var/state_length = length(initialized_state)
 	if(!state_length)
 		return null
@@ -209,13 +233,13 @@ SUBSYSTEM_DEF(atoms)
 
 /// Use this to set initialized to prevent error states where the old initialized is overridden, and we end up losing all context
 /// Accepts a state and a source, the most recent state is used, sources exist to prevent overriding old values accidentally
-/datum/controller/subsystem/atoms/proc/set_tracked_initalized(state, source)
+/datum/system/atoms/proc/set_tracked_initalized(state, source)
 	if(!length(initialized_state))
 		base_initialized = atom_initialized
 	initialized_state += list(list(source, state))
 	atom_initialized = state
 
-/datum/controller/subsystem/atoms/proc/clear_tracked_initalize(source)
+/datum/system/atoms/proc/clear_tracked_initalize(source)
 	if(!length(initialized_state))
 		return
 	for(var/i in length(initialized_state) to 1 step -1)
@@ -230,17 +254,11 @@ SUBSYSTEM_DEF(atoms)
 	atom_initialized = initialized_state[length(initialized_state)][2]
 
 /// Returns TRUE if anything is currently being initialized
-/datum/controller/subsystem/atoms/proc/initializing_something()
+/datum/system/atoms/proc/initializing_something()
 	return length(initialized_state) > 1
 
-/datum/controller/subsystem/atoms/Recover()
-	atom_initialized = SSatoms.atom_initialized
-	if(atom_initialized == INITIALIZATION_INNEW_MAPLOAD)
-		InitializeAtoms()
-	initialized_state = SSatoms.initialized_state
-	BadInitializeCalls = SSatoms.BadInitializeCalls
 
-/datum/controller/subsystem/atoms/proc/InitLog()
+/datum/system/atoms/proc/InitLog()
 	. = ""
 	for(var/path in BadInitializeCalls)
 		. += "Path : [path] \n"
@@ -255,21 +273,21 @@ SUBSYSTEM_DEF(atoms)
 			. += "- Slept during Initialize()\n"
 
 /// Prepares an atom to be deleted once the atoms SS is initialized.
-/datum/controller/subsystem/atoms/proc/prepare_deletion(atom/target)
+/datum/system/atoms/proc/prepare_deletion(atom/target)
 	if (atom_initialized == INITIALIZATION_INNEW_REGULAR)
 		// Atoms SS has already completed, just kill it now.
 		qdel(target)
 	else
 		rel_add(src, nameof(queued_deletions), target)
 
-/datum/controller/subsystem/atoms/Shutdown()
+/datum/system/atoms/on_shutdown()
 	var/initlog = InitLog()
 	if(initlog)
 		text2file(initlog, "[GLOB.log_directory]-initialize.log")
 
-/datum/controller/subsystem/atoms/relations()
+/datum/system/atoms/relations()
 	. = ..()
 	. += rel_many(nameof(queued_deletions))
 
 /// Atoms to delete once init finishes: a relation list view (a member deleted early leaves it).
-/datum/controller/subsystem/atoms/var/list/atom/queued_deletions
+/datum/system/atoms/var/list/atom/queued_deletions

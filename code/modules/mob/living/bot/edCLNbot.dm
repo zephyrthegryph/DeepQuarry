@@ -51,7 +51,7 @@
 		src.explode()
 
 /mob/living/bot/cleanbot/edCLN/explode()
-	on = 0
+	set_on(0)
 	act_message(src, null, others = span_danger("%U% blows apart!"))
 	var/turf/Tsec = get_turf(src)
 

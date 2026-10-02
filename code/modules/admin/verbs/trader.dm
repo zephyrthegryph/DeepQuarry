@@ -63,6 +63,9 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 
 	om_after(null, 300 SECONDS, GLOBAL_PROC_REF(close_trader_visit))
 
+/proc/trader_load_finished(z)
+	log_and_message_admins("Loaded the trade shuttle just now.")
+
 /proc/close_trader_visit()
 	GLOB.send_beruang = FALSE // Can no longer join the traders.
 
@@ -75,5 +78,4 @@ GLOBAL_VAR(trader_loaded)
 		if(!istype(MT))
 			log_mapping("Trader is not a valid map template!")
 		else
-			MT.load_new_z(centered = TRUE)
-			log_and_message_admins("Loaded the trade shuttle just now.")
+			MT.load_new_z_async(TRUE, om_callable(null, GLOBAL_PROC_REF(trader_load_finished)))

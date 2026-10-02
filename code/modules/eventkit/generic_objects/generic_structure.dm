@@ -92,7 +92,7 @@ DECLARE_INTERACTIONS(/obj/structure/generic_structure, INTERACT_HAND(null, PROC_
 
 					if(ishuman(O))
 						var/mob/living/carbon/human/H = O
-						H.fear = 200
+						H.set_fear(200)
 			if(sound_activated)
 				playsound(src, sound_activated, 50, 1)
 		else if(togglable)

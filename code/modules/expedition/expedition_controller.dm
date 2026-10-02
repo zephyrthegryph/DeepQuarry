@@ -72,6 +72,9 @@
 
 // The expedition world service (was GLOB.expedition_service). On demand: the lifecycle poll lane is parked
 // while no site is live and woken when a site is registered.
+/// acquire_z(): the new z-level is loading as a job.
+#define EXP_Z_PENDING -1
+
 GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 
 /datum/world_service/expedition
@@ -437,7 +440,15 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		difficulty = mission.difficulty
 	var/gen_started = REALTIMEOFDAY
 	var/list/needs_wipe = list()
-	var/z = acquire_z(needs_wipe)
+	// A fresh z-level loads as a job: generation carries on from generation_z_ready() when it has.
+	var/z = acquire_z(needs_wipe, om_callable(src, PROC_REF(generation_z_ready), mission, difficulty, assigned_shuttle, origin_console, flight_plan, on_done, gen_started))
+	if(z == EXP_Z_PENDING)
+		return
+	generation_z_ready(mission, difficulty, assigned_shuttle, origin_console, flight_plan, on_done, gen_started, z, needs_wipe)
+
+/// A z-level for a generation is ready (or `z` is not a level: none could be had). `needs_wipe` holds a pooled level
+/// that must be wiped first.
+/datum/world_service/expedition/proc/generation_z_ready(datum/expedition_mission/mission, difficulty, datum/shuttle/autodock/overmap/assigned_shuttle, obj/machinery/computer/shuttle_control/explore/origin_console, datum/flight_plan/flight_plan, list/on_done, gen_started, z, list/needs_wipe = null)
 	if(!isnum(z) || z < 1)
 		log_world("Expedition: failed to acquire a z-level for a new site.")
 		om_run(on_done, null)
@@ -624,8 +635,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 // Reuse a pooled z if available, else allocate a fresh one — capped so runaway
 // launches can't grow world.maxz without bound. Returns null on failure.
 /// `needs_wipe`: instead of wiping a pooled level that isn't vacuum, add it to this list (the
-/// caller wipes it as lane work).
-/datum/world_service/expedition/proc/acquire_z(list/needs_wipe)
+/// caller wipes it as lane work). `on_new_z`: a fresh level loads as a job instead and EXP_Z_PENDING is returned;
+/// the callback gets the new z (or FALSE).
+/datum/world_service/expedition/proc/acquire_z(list/needs_wipe, list/on_new_z = null)
 	while(length(free_z))
 		var/z = free_z[1]
 		free_z.Cut(1, 2)
@@ -643,6 +655,9 @@ GLOBAL_DATUM_INIT(expedition_service, /datum/world_service/expedition, new)
 		log_world("Expedition: at the [EXP_MAX_SITE_ZLEVELS]-z site cap with an empty reuse pool; refusing to allocate a new z-level.")
 		return null
 	var/datum/map_template/expedition_site/template = new()
+	if(on_new_z)
+		template.load_new_z_async(FALSE, on_new_z)
+		return EXP_Z_PENDING
 	return template.load_new_z()
 
 // Roll a biome for a new site. Missions may pin one via their biome_type var.

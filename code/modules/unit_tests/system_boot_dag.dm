@@ -3,7 +3,7 @@
 // Fixtures: abstract_type names each type itself, so the kernel never instantiates or registers them.
 /datum/system/test_boot_a
 	abstract_type = /datum/system/test_boot_a
-	needs = list(/datum/controller/subsystem/garbage)
+	needs = list(/datum/system/garbage)
 
 /datum/system/test_boot_b
 	abstract_type = /datum/system/test_boot_b
@@ -11,7 +11,7 @@
 
 /datum/system/test_boot_c
 	abstract_type = /datum/system/test_boot_c
-	needs = list(/datum/system/test_boot_b, /datum/controller/subsystem/garbage)
+	needs = list(/datum/system/test_boot_b, /datum/system/garbage)
 
 /datum/system/test_boot_missing
 	abstract_type = /datum/system/test_boot_missing
@@ -32,7 +32,7 @@
 /datum/unit_test/system_boot_dag
 
 /datum/unit_test/system_boot_dag/Run()
-	var/datum/controller/subsystem/garbage/ss = SSgarbage
+	var/datum/system/garbage/ss = SSgarbage
 	var/datum/system/a = new /datum/system/test_boot_a
 	var/datum/system/b = new /datum/system/test_boot_b
 	var/datum/system/c = new /datum/system/test_boot_c
@@ -40,7 +40,7 @@
 
 	// Mixed nodes: a subsystem and systems sort in one DAG, each after what it needs.
 	var/list/type_to_node = list(
-		/datum/controller/subsystem/garbage = ss,
+		/datum/system/garbage = ss,
 		/datum/system/test_boot_a = a,
 		/datum/system/test_boot_b = b,
 		/datum/system/test_boot_c = c,
@@ -56,7 +56,7 @@
 	TEST_ASSERT(order.Find(ss) < order.Find(a), "a system boots after the subsystem it needs")
 	TEST_ASSERT(order.Find(a) < order.Find(b), "b after a")
 	TEST_ASSERT(order.Find(b) < order.Find(c), "c after b")
-	TEST_ASSERT_EQUAL(kernel_system_stage(c, deps), ss.init_stage, "a system boots in the stage of its latest subsystem need")
+	TEST_ASSERT_EQUAL(kernel_system_stage(c, deps), ss.init_stage, "a system boots in the stage of its latest need")
 
 	// A need that names no node is a boot error, and the edge is dropped.
 	var/datum/system/missing = new /datum/system/test_boot_missing
@@ -79,8 +79,8 @@
 	TEST_ASSERT(length(cycle) >= 3, "the cycle is reported as a closed path")
 
 	// The live boot.
-	TEST_ASSERT_NULL(Master.boot_dependency_cycle, "boot dependency cycle: [Master.boot_dependency_cycle]")
-	TEST_ASSERT_EQUAL(length(Master.boot_errors), 0, "boot errors: [jointext(Master.boot_errors, "; ")]")
+	TEST_ASSERT_NULL(Kernel.boot_dependency_cycle, "boot dependency cycle: [Kernel.boot_dependency_cycle]")
+	TEST_ASSERT_EQUAL(length(Kernel.boot_errors), 0, "boot errors: [jointext(Kernel.boot_errors, "; ")]")
 	var/list/registered = kernel_systems()
 	TEST_ASSERT(length(registered) > 0, "the kernel registers the world services")
 	for(var/datum/system/S as anything in registered)
@@ -88,26 +88,12 @@
 			continue
 		TEST_ASSERT(S.initialized, "[S.type] boots in the DAG but never initialized")
 		for(var/need in S.needs)
-			if(ispath(need, /datum/controller/subsystem))
-				var/datum/controller/subsystem/needed
-				for(var/datum/controller/subsystem/candidate as anything in Master.subsystems)
-					if(candidate.type == need)
-						needed = candidate
-						break
-				TEST_ASSERT(needed, "[S.type] needs subsystem [need], which is not in the MC")
-				TEST_ASSERT(needed.initialized, "[S.type] initialized before its need [need]")
-			else
-				TEST_ASSERT(ispath(need, /datum/system), "[S.type] needs [need], which is not a system")
-				var/datum/system/dep = system_table()[need]
-				TEST_ASSERT(dep?.initialized, "[S.type] needs [need], which never initialized")
-	// A subsystem may depend on a system: SSatoms declares the two boots it used to do by hand.
-	TEST_ASSERT(/datum/world_service/planets in SSatoms.dependencies, "SSatoms declares the planet service as a dependency")
-	TEST_ASSERT(GLOB.planet_service.initialized && GLOB.transcore_service.initialized, "the services SSatoms depends on booted")
-	for(var/datum/controller/subsystem/dependent as anything in Master.subsystems)
-		for(var/dependency in dependent.dependencies)
-			if(ispath(dependency, /datum/system))
-				var/datum/system/booted = system_table()[dependency]
-				TEST_ASSERT(booted?.initialized, "[dependent.type] depends on [dependency], which never initialized")
+			TEST_ASSERT(ispath(need, /datum/system), "[S.type] needs [need], which is not a system")
+			var/datum/system/dep = system_table()[need]
+			TEST_ASSERT(dep?.initialized, "[S.type] needs [need], which never initialized")
+	// A system may need a world service: SSatoms declares the two boots it used to do by hand.
+	TEST_ASSERT(/datum/world_service/planets in SSatoms.needs, "SSatoms declares the planet service as a need")
+	TEST_ASSERT(GLOB.planet_service.initialized && GLOB.transcore_service.initialized, "the services SSatoms needs booted")
 	// world_services() is derived from the registry (no hand list): every service in it is the registered one, and
 	// the well-known ones are there.
 	var/list/services = world_services()

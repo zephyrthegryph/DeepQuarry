@@ -6,56 +6,58 @@
  * and the bench counter. What is left here is its boot (the registry, the scheduler, the world lanes), the audit
  * switch, and the counters the profiler and benchmarks read (`bench_ms`, `last_done`, `cost`), which the kernel feeds.
  */
-SUBSYSTEM_DEF(behaviours)
+SYSTEM_DEF(behaviours)
 	name = "Behaviours"
-	wait = 1
-	priority = FIRE_PRIORITY_BEHAVIOURS
-	flags = SS_NO_FIRE
-	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
+	init_stage = INITSTAGE_MAIN
+	periodic_runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
 	var/last_done = TRUE
 	/// Milliseconds the kernel spent in scheduler passes since boot (benchmarks: life_sweep).
 	var/bench_ms = 0
 	// Its cost is charged to the systems whose behaviours it runs (the scheduler does that as work finishes), and
-	// what no behaviour owns lands on om_core below, so the MC does not charge it as one lump.
-	system_idx = KM_SYS_DECOMPOSED
-	/// The pipeline missed-wake audit (pipeline.dm): next run, and the admin verb's switch.
-	EXPIRY_DECLARE(next_audit)
+	// what no behaviour owns lands on om_core, so it is never charged as one lump.
+	/// The pipeline missed-wake audit's admin switch (the audit itself is a kernel work item, controllers/kernel/sched_items.dm).
 	var/audit_forced = FALSE
 
-/datum/controller/subsystem/behaviours/Initialize()
+/datum/system/behaviours/initialize()
 	om_registry()
 	om_scheduler()
 	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
 	_om_start_world_lanes() // ALLOW(om_internal): SSbehaviours is the scheduler core that boots the world lanes
-	return SS_INIT_SUCCESS
 
-/// TRUE (and re-armed) when the pipeline audit is due and enabled: the kernel asks once per tick.
-/datum/controller/subsystem/behaviours/proc/audit_due()
-	// ALLOW(sys_old_expiry): a polled gate re-armed by EXPIRY_SET in the same proc, not a delayed set
-	if(!EXPIRY_EXPIRED(src, next_audit, CLOCK_WORLD) || !audit_enabled())
-		return FALSE
-	EXPIRY_SET(src, next_audit, OM_AUDIT_INTERVAL, CLOCK_WORLD)
-	return TRUE
-
-/// The audit (pipelines and sequences, kernel.dm run_audits()) runs in unit test and TESTING builds always; on
+/// The audit (pipelines and sequences, sched_items.dm audit_step()) runs in unit test and TESTING builds always; on
 /// servers only with the OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).
-/datum/controller/subsystem/behaviours/proc/audit_enabled()
+/datum/system/behaviours/proc/audit_enabled()
 #if defined(UNIT_TESTS) || defined(TESTING)
 	return TRUE
 #else
 	return audit_forced || CONFIG_GET(flag/om_pipeline_audit)
 #endif
 
-/datum/controller/subsystem/behaviours/stat_entry(msg)
+/datum/system/behaviours/stat_entry(msg)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		msg = "[round(sched.last_run_ms, 0.01)]ms[last_done ? "" : " (behind)"] E:[length(sched.errors)]"
 	return msg
 
-/datum/controller/subsystem/behaviours/Recover()
-	last_done = SSbehaviours.last_done
 
 ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the missed-wake audit of object-model pipelines and kernel sequences (mobs, machines) on or off for this round.", ADMIN_CATEGORY_DEBUG_MISC)
 	SSbehaviours.audit_forced = !SSbehaviours.audit_forced
 	log_admin("[key_name(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")
 	message_admins("[key_name_admin(user)] turned the pipeline audit [SSbehaviours.audit_forced ? "on" : "off"] for this round.")
+
+/// The pipeline and sequence missed-wake audits, on their interval while the audit is enabled.
+/datum/system/behaviours/reactions()
+	. = ..()
+	. += every(OM_AUDIT_INTERVAL, PROC_REF(audit_step), when = PROC_REF(audit_ready), phase = KERNEL_PHASE_G, lane = LANE_BACKGROUND)
+
+/datum/system/behaviours/proc/audit_ready()
+	return initialized && audit_enabled()
+
+/datum/system/behaviours/proc/audit_step(dt)
+	var/datum/om/scheduler/sched = Kernel?.sched
+	if(!sched)
+		return STEP_DONE
+	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
+	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
+	om_sleeper_audit(64, TRUE)
+	return STEP_DONE

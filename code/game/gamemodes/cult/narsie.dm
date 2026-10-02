@@ -136,7 +136,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	T.desc = "An opening has been made on that wall, but who can say if what you seek truly lies on the other side?"
 	T.icon = 'icons/turf/walls.dmi'
 	T.icon_state = "cult-narsie"
-	T.opacity = 0
+	T.set_opacity(0)
 	T.set_density(FALSE)
 	set_light(1)
 

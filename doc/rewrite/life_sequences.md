@@ -139,7 +139,7 @@ pipeline's `OM_ABORT_FRAME`; `OM_ABORT_REST` has no user and no equivalent). `ad
 - **Time.** A member's elapsed time is read on the sequence's clock (`work_clock_now()`): with `CLOCK_BIO` stasis
   stretches the frames (at rate 0.1 a frame every ten cycles, at 0 none). Outside its run levels nothing runs and
   nothing accumulates; resuming is not a catch-up.
-- **Missed-wake audit.** `seq_audit()` runs with the pipeline audit (`kernel.run_audits()`: same interval, the
+- **Missed-wake audit.** `seq_audit()` runs with the pipeline audit (SSbehaviours' `audit_step` work item: same interval, the
   `OM_PIPELINE_AUDIT` config flag, the "Toggle Pipeline Audit" verb, always on in test builds). A sleeping step whose
   `should_run()` holds, with its conditions passing and no rewake pending, is a missed wake: it logs
   `MOB_HIBERNATE_AUDIT: MISSED WAKE ...`, fails the unit test run, and wakes the step. Test builds snapshot a step's

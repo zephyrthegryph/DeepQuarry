@@ -241,7 +241,7 @@
 
 /datum/surgical_step/dehusk/perform(mob/living/user, mob/living/carbon/human/target, obj/item/organ/external/part, obj/item/tool, atom/work_target)
 	target.remove_mutation(HUSK)
-	target.status_flags &= ~DISFIGURED
+	target.set_status_flags(target.status_flags & ~DISFIGURED)
 	target.update_icons_body()
 	log_game("SURGERY: [key_name(user)] dehusked [key_name(target)]")
 

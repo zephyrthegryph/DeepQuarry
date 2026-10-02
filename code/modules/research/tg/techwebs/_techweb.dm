@@ -419,7 +419,7 @@
 	update_node_status(node)
 
 	// Avoid logging the same 300+ lines at the beginning of every round
-	if (!isnull(Master) && Master.current_runlevel == RUNLEVEL_GAME)
+	if (!isnull(Kernel) && Kernel.current_runlevel == RUNLEVEL_GAME)
 		log_research(log_message)
 
 	// Dequeue

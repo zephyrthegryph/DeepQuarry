@@ -514,12 +514,12 @@ UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
 
 /obj/machinery/porta_turret/power_change()
 	if(powered())
-		stat_remove(NOPOWER)
+		set_powered(TRUE)
 	else
 		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
-	stat_add(NOPOWER)
+	set_powered(FALSE)
 
 /datum/interaction/machine_item/porta_turret_lock
 	id = "porta_turret_lock"

@@ -86,6 +86,8 @@ BLIND     // can't see anything
 		away_planes = null
 	user.update_mob_action_buttons()
 	user.recalculate_vis()
+	// Tint, flash protection, sight flags and the worn overlay all changed: the sight and HUD reactions read MOB_KEY_VIEW.
+	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses, INTERACT_SELF(null, PROC_REF(glasses_toggle_self)))
 

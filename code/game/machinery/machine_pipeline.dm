@@ -217,12 +217,24 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 	rel_clear(owner, nameof(owner.machine_first_wakes))
 	var/start = REALTIMEOFDAY
 	var/ran = 0
+	// What each type's first wakes cost, so the log names what a slow pass spent its time on.
+	var/list/type_ms = list()
+	var/list/type_count = list()
 	for(var/obj/machinery/M as anything in queued)
 		if(QDELETED(M))
 			continue
+		var/started = TICK_USAGE
 		M.materialize_wakes()
+		type_ms[M.type] += TICK_USAGE_TO_MS(started)
+		type_count[M.type] += 1
 		ran++
-	log_world("Machine first wakes: [ran] of [length(queued)] armed in bulk in [(REALTIMEOFDAY - start) / 10] s")
+	sortTim(type_ms, /proc/cmp_numeric_desc, TRUE)
+	var/list/costliest = list()
+	for(var/path in type_ms)
+		costliest += "[path] x[type_count[path]] [round(type_ms[path], 0.1)] ms"
+		if(length(costliest) >= 5)
+			break
+	log_world("Machine first wakes: [ran] of [length(queued)] armed in bulk in [(REALTIMEOFDAY - start) / 10] s; costliest: [jointext(costliest, ", ")]")
 
 /// A machine's first wake is materialize_wakes(), queued by on_start(): it arms the machine's
 /// watches (arm_wakes()) and applies its start condition. After a large map load that queue can

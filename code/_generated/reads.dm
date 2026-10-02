@@ -19,6 +19,48 @@
 	. = ..()
 	. += runs_while(nameof(periodic_parked), nameof(system))
 
+/mob/living/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(resting), nameof(riding_datum), nameof(transforming))
+	. += reaction_reads(PROC_REF(life_hud_changed), nameof(seedarkness))
+
+/mob/living/bot/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(on))
+
+/mob/living/carbon/alien/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_hud_changed), nameof(blinded), nameof(stat))
+	. += reaction_reads(PROC_REF(life_vision_changed), nameof(stat))
+
+/mob/living/carbon/brain/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_hud_changed), nameof(blinded), nameof(stat))
+	. += reaction_reads(PROC_REF(life_vision_changed), nameof(stat))
+
+/mob/living/carbon/human/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_hud_changed), MOB_KEY_HEALTH, MOB_KEY_HUD_FLAGS, nameof(absorbed), nameof(blinded), nameof(block_hud), nameof(fear), nameof(mind), nameof(nif), nameof(nutrition), nameof(on_fire), nameof(previewing_belly), nameof(species), nameof(stat), nameof(status_flags), nameof(tiredness), nameof(vantag_pref))
+	. += reaction_reads(PROC_REF(life_vision_changed), nameof(nif), nameof(see_invisible_default), nameof(seedarkness), nameof(species), nameof(stat))
+
+/mob/living/silicon/robot/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(lockdown))
+	. += reaction_reads(PROC_REF(life_hud_changed), nameof(blinded), nameof(emagged), nameof(stat))
+	. += reaction_reads(PROC_REF(life_vision_changed), nameof(seedarkness), nameof(sight_mode), nameof(stat))
+
+/mob/living/simple_mob/animal/borer/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_hud_changed), nameof(chemicals))
+
+/mob/living/simple_mob/vore/demon/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
+
+/mob/living/simple_mob/vore/demonAI/generated_reads()
+	. = ..()
+	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
+
 /obj/machinery/atmospherics/binary/dp_vent_pump/generated_reads()
 	. = ..()
 	. += rust_push(nameof(external_pressure_bound), nameof(input_pressure_min), nameof(node1), nameof(node2), nameof(output_pressure_max), nameof(power_rating), nameof(pressure_checks), nameof(pump_direction), nameof(use_power))
@@ -91,8 +133,14 @@
 	if(!table)
 		table = list(
 			/datum/system/air = RXB_EVERY,
+			/datum/system/behaviours = RXB_EVERY,
+			/datum/system/garbage = RXB_EVERY,
+			/datum/system/input = RXB_EVERY,
+			/datum/system/kernel_jobs = RXB_EVERY,
 			/datum/system/lighting = RXB_EVERY,
-			/datum/system/speech_controller = RXB_EVERY,
+			/datum/system/profiler = RXB_EVERY,
+			/datum/system/requests = RXB_EVERY,
+			/datum/system/tgui = RXB_EVERY,
 			/datum/system/ticker = RXB_EVERY,
 			/datum/system/ui_push = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,

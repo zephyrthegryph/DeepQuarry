@@ -9,8 +9,8 @@
 //		. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 //		. += cell_bay(nameof(cell), at = BAY_HATCH)
 //
-// Bundles read the holder's TYPE vars where a type states a fact once: machine_board (the board it is
-// built from and dismantled to), machine_wires (its maintenance wiring), req_access (its lock).
+// A bundle takes what a type states once as arguments (board =, wires =, emag_say =) and reads the holder's
+// own TYPE vars only where the engine already has one (req_access, its lock).
 
 /**
  * What every buildable machine has: a wrench to anchor it, breakage with welder repair (and claws that tear at it), a maintenance
@@ -48,12 +48,13 @@
  *   is, null otherwise) refuses the cover's opening AND closing; the reason is the refusal;
  * - with panel_needs_cover_closed, the panel only opens with the cover closed (the APC's wire panel);
  * - the ID lock and the emag only work with the cover and the panel closed ("close the cover first").
- * The wiring is the holder's machine_wires, the lock's access its req_access, what the emag tells the user its emag_msg.
+ * The wiring is `wires` (a /datum/wires subtype), the lock's access the holder's req_access, what the emag tells the user
+ * `emag_say`.
  * The lock shows as a lamp and the emag as the emagged screen while the holder is closed up. The lock and the emag are ops
  * (lock_op(), emag_op()) keyed CAP_LOCK / CAP_EMAG: a holder adds contracts with cap_require()
  * and edits them with refine().
  */
-/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_mode = EMAG_ONCE)
+/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_mode = EMAG_ONCE, wires, emag_say)
 	var/datum/capability/maintenance_hatch/hatch = new
 	hatch.cover_holds = cover_holds
 	. = list(hatch, compartment(BAY_HATCH, door = CAP_COVER_OPEN))
@@ -61,10 +62,10 @@
 	if(cover_holds)
 		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(GLOBAL_PROC_REF(hatch_cover_free)))
 	. += cap_panel(needs = panel_needs_cover_closed ? req_clear(COVER) : null)
-	. += cap_wires(null)
+	. += cap_wires(wires)
 	. += cap_lock(needs = req_clear(COVER | PANEL), entries = FALSE, lamp = TRUE)
 	. += lock_op(needs = req_clear(COVER | PANEL))
-	. += emag_op(mode = emag_mode, needs = req_clear(COVER | PANEL))
+	. += emag_op(say = emag_say, mode = emag_mode, needs = req_clear(COVER | PANEL))
 
 /// The hatch's own settings (no entries): what locks the cover.
 /datum/capability/maintenance_hatch
@@ -112,7 +113,7 @@
 
 /// Why the device can't be unfastened now (running, or too much internal pressure), else TRUE.
 /obj/machinery/atmospherics/proc/unwrench_refusal(mob/user, obj/item/held)
-	if(use_power && !(stat & NOPOWER))
+	if(use_power && !has_stat(NOPOWER))
 		return "turn it off first"
 	if(!can_unwrench())
 		return "it's too exerted due to internal pressure"
@@ -149,14 +150,35 @@
 				break
 	// A holder the map placed by hand (pixel_x / pixel_y set) stays where it was put.
 	if(!holder.pixel_x && !holder.pixel_y)
-		holder.wall_mount_orient(offset)
+		orient(holder)
 
-/// Sits the holder `offset` pixels onto the wall behind it. Types with an odd sprite (the angled APC)
-/// override it.
-/atom/proc/wall_mount_orient(offset = 26)
-	wall_mount_offset(src, offset)
+/// Sits the holder `offset` pixels onto the wall behind it. A type with an odd sprite (the angled APC) declares a
+/// subtype overriding it.
+/datum/capability/wall_mount/proc/orient(atom/holder)
+	wall_mount_offset(holder, offset)
+
+/// Re-sits A onto its wall after its dir changed (its cap_wall_mount(); nothing without one).
+/proc/wall_mount_reorient(atom/A)
+	var/datum/capability/wall_mount/C = cap_of(A, /datum/capability/wall_mount)
+	C?.orient(A)
 
 /// Offsets holder onto the wall behind it (toward its dir).
 /proc/wall_mount_offset(atom/holder, offset)
 	holder.pixel_x = (holder.dir & (NORTH|SOUTH)) ? 0 : (holder.dir == EAST ? offset : -offset)
 	holder.pixel_y = (holder.dir & (NORTH|SOUTH)) ? (holder.dir == NORTH ? offset : -offset) : 0
+
+/**
+ * service_panel(): a maintenance panel and the wires behind it as one bundle, with no cover (archive/framework_fixes.md
+ * §9.5): a vendor, a fabricator, a door controller. `wires`: the /datum/wires subtype. `panel_tool`: what opens the panel. `access`: when given (or `access_from_holder`), opening the panel
+ * needs a credential for it (cap_access(): the holder's own req_access wins), unless the holder is emagged. `emag_say`:
+ * when given, an emag (cap_emag(), `emag_mode`, `emag_effect`) subverts it. Each part keeps its own capability type, so
+ * a subtype still replaces one (`replace(., /datum/capability/wires, cap_wires(...))`) or refines it by key.
+ *
+ *	. += service_panel(/datum/wires/vending, emag_say = "You short out %T%'s product lock.", emag_mode = EMAG_REPEATABLE)
+ */
+/proc/service_panel(wires, panel_tool = TOOL_SCREWDRIVER, list/access, access_from_holder = FALSE, emag_say, emag_effect, emag_mode = EMAG_ONCE, panel_needs)
+	. = list(cap_panel(tool = panel_tool, needs = panel_needs), cap_wires(wires))
+	if(length(access) || access_from_holder)
+		. += cap_require("open_maintenance_panel", needs = any_of(req_set(CAP_EMAGGED), req_credential(access)))
+	if(emag_say || emag_effect)
+		. += cap_emag(say = emag_say, effect = emag_effect, mode = emag_mode)

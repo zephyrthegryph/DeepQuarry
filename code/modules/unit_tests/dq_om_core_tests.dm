@@ -420,7 +420,7 @@
 /datum/unit_test/om/regression_lanes_do_not_starve
 
 /datum/unit_test/om/regression_lanes_do_not_starve/run_om(list/made)
-	sched.harness_caps = list(3, 3, 3, 3, 3)
+	sched.harness_caps = list(3, 3, 3, 3, 3, 3)
 	sched.harness_deadline_cap = 3
 	var/list/crowd = list()
 	for(var/i in 1 to 200)
@@ -1136,7 +1136,7 @@
 	var/datum/on_relation_cache
 
 /datum/om_test_entity/cached/declared_cache_vars()
-	var/static/list/caches = list( // ALLOW(cache): a constant per-type declaration table, not a keyed cache
+	var/static/list/caches = list(
 		"on_change_cache" = CACHE_ON_CHANGE(CHANGE_EXPLICIT),
 		"on_event_cache" = CACHE_ON_EVENT(/datum/om/event/test/sub),
 		"on_relation_cache" = CACHE_ON_RELATION(/datum/om/relation/test_link),

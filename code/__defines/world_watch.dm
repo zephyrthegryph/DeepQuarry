@@ -27,10 +27,7 @@
 /// The watch handle of a gas mixture (a turf's air, a tank, a canister).
 #define WORLD_GAS_HANDLE(mixture) list(VG_GAS_HANDLES, (mixture).arena_id())
 
-// --- DM-owned key kinds. A key is (kind, id); the id is a number (om_world_key_id()), never a string.
-/// Keys used only by the world-watch tests.
-#define WORLD_KEY_TEST 1
-// Game facts (areas, doors, powernets, chunks, ...) are OM change channels: CHANGE_* in om.dm.
+// --- DM-owned facts are not published into Rust. Game facts (areas, doors, powernets, chunks, ...) are OM change channels: CHANGE_* in om.dm.
 
 // --- Conditions for om_world_when(). Transient lists, consumed at registration; nothing is kept.
 #define WORLD_COND_THRESHOLD 1

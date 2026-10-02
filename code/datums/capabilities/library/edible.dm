@@ -122,7 +122,7 @@
 	if(C.trash)
 		var/obj/item/trash_item = new C.trash(eater.drop_location())
 		eater.put_in_hands(trash_item)
-	qdel(I)
+	consume(I, eater)
 
 // ---- handlers ----
 

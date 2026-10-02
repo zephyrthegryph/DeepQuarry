@@ -5,20 +5,15 @@
 //! ```text
 //! sim.begin_tick();
 //! for each domain: reactor.ingest(sim.drain(domain).wakes());
-//! reactor.tick(world.time);          // timers, rate crossings, key publications
+//! reactor.tick(world.time);          // rate crossings
 //! reactor.drain(budget, &mut wakes); // urgent first, then normal and background
 //! for each wake: subscriber.react(reason, source)
 //! ```
 //!
 //! S1 binds this through `#[auxmacros::bind]`, roughly (subscribers are the
-//! DM-side registry index; timer ids, model ids and tokens cross as exact
-//! `f32`s):
+//! DM-side registry index; model ids and tokens cross as exact `f32`s):
 //!
 //! ```text
-//! vg_react_at(subscriber, lane, tick, token)                -> timer id     om_world_at
-//! vg_react_cancel_timer(timer)                                               qdel(watch)
-//! vg_react_publish(key, mask)                                                om_world_publish
-//! vg_react_on_key(subscriber, key, mask, lane)                               om_world_on_key
 //! vg_react_clear(subscriber)                                                 watch Destroy()
 //! vg_rate_linear(v0, rate, min, max)                        -> model id
 //! vg_rate_relax(v0, target, k)                              -> model id
@@ -29,7 +24,7 @@
 //! vg_react_tick(now) ; vg_react_drain(budget)              -> flat [subscriber, lane, reason, source] list
 //! ```
 
-use std::collections::{BTreeMap, HashMap, HashSet, VecDeque};
+use std::collections::{HashMap, HashSet, VecDeque};
 use std::hash::BuildHasherDefault;
 
 use crate::overlay::{CellHasher, CellMap};
@@ -235,39 +230,19 @@ struct ModelSlot {
     watches: Vec<RateWatch>,
 }
 
-/// Something the wheel holds.
+/// Something the wheel holds: a rate model's predicted crossing.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Due {
-    /// A `om_world_at` timer.
-    Timer {
-        subscriber: Subscriber,
-        lane: Lane,
-        token: u32,
-    },
     /// A rate model's predicted crossing.
     Crossing { model: ModelId, token: u32 },
 }
-
-// --- DM-owned keys --------------------------------------------------------
-
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-struct KeySub {
-    subscriber: Subscriber,
-    mask: u32,
-    lane: Lane,
-}
-
-/// Mask bits a key publication may carry (below the reason class flags).
-pub const KEY_MASK: u32 = (1 << 20) - 1;
 
 // --- The reactor ------------------------------------------------------------
 
 /// Reactor counters (`reactor.md` §7). Bounded: no per-type tables here.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct ReactorMetrics {
-    pub timers_fired: u64,
     pub crossings_fired: u64,
-    pub publications: u64,
     pub timers_pending: usize,
     pub models: usize,
 }
@@ -275,8 +250,6 @@ pub struct ReactorMetrics {
 /// A handle DM keeps to cancel one subscription.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 pub enum Token {
-    Timer(TimerId),
-    Key { key: u64 },
     Rate { model: ModelId, token: u32 },
 }
 
@@ -287,12 +260,9 @@ pub struct Reactor {
     models: Vec<ModelSlot>,
     free_models: Vec<u32>,
     next_token: u32,
-    key_subs: HashMap<u64, Vec<KeySub>>,
-    published: BTreeMap<u64, u32>,
     by_subscriber: HashMap<Subscriber, Vec<Token>>,
     metrics: ReactorMetrics,
     fired: Vec<(TimerId, Due)>,
-    fired_timers: Vec<(Subscriber, u32)>,
 }
 
 impl Reactor {
@@ -304,12 +274,9 @@ impl Reactor {
             models: Vec::new(),
             free_models: Vec::new(),
             next_token: 1,
-            key_subs: HashMap::new(),
-            published: BTreeMap::new(),
             by_subscriber: HashMap::new(),
             metrics: ReactorMetrics::default(),
             fired: Vec::new(),
-            fired_timers: Vec::new(),
         }
     }
 
@@ -340,8 +307,7 @@ impl Reactor {
     }
 
     /// Forgets one owned token, so a long-lived subscriber's bookkeeping
-    /// stays bounded by its live subscriptions (not by every timer it ever
-    /// set).
+    /// stays bounded by its live subscriptions.
     fn disown(&mut self, sub: Subscriber, token: Token) {
         if let Some(owned) = self.by_subscriber.get_mut(&sub) {
             if let Some(i) = owned.iter().position(|t| *t == token) {
@@ -353,8 +319,7 @@ impl Reactor {
         }
     }
 
-    /// Live subscriptions (timers, key subscriptions, model watches) that
-    /// `sub` owns.
+    /// Live subscriptions (model watches) that `sub` owns.
     #[must_use]
     pub fn owned(&self, sub: Subscriber) -> usize {
         self.by_subscriber.get(&sub).map_or(0, Vec::len)
@@ -366,86 +331,10 @@ impl Reactor {
         self.by_subscriber.len()
     }
 
-    /// Timers that fired since the last call, as `(subscriber, token)`, so a
-    /// host that maps tokens to its own handles can release them.
-    pub fn take_fired_timers(&mut self, out: &mut Vec<(Subscriber, u32)>) {
-        out.append(&mut self.fired_timers);
-    }
-
     /// Queues watch wakes drained from a domain outbox.
     pub fn ingest(&mut self, wakes: &[Wake]) {
         for w in wakes {
             self.lanes.push_wake(w);
-        }
-    }
-
-    /// `om_world_at`: wakes `subscriber` at tick `at` with reason `TIMER` and
-    /// source `token`.
-    pub fn at(&mut self, subscriber: Subscriber, lane: Lane, at: Tick, token: u32) -> TimerId {
-        let id = self.wheel.insert(
-            at,
-            Due::Timer {
-                subscriber,
-                lane,
-                token,
-            },
-        );
-        self.own(subscriber, Token::Timer(id));
-        id
-    }
-
-    /// Cancels a timer; `false` if it already fired or was cancelled.
-    pub fn cancel_timer(&mut self, id: TimerId) -> bool {
-        match self.wheel.cancel(id) {
-            Some(Due::Timer { subscriber, .. }) => {
-                self.disown(subscriber, Token::Timer(id));
-                true
-            }
-            Some(_) => true,
-            None => false,
-        }
-    }
-
-    /// `om_world_on_key`.
-    pub fn subscribe_key(&mut self, subscriber: Subscriber, key: u64, mask: u32, lane: Lane) {
-        let subs = self.key_subs.entry(key).or_default();
-        match subs
-            .iter_mut()
-            .find(|s| s.subscriber == subscriber && s.lane == lane)
-        {
-            Some(s) => s.mask |= mask & KEY_MASK,
-            None => subs.push(KeySub {
-                subscriber,
-                mask: mask & KEY_MASK,
-                lane,
-            }),
-        }
-        self.own(subscriber, Token::Key { key });
-    }
-
-    /// Drops `subscriber`'s subscriptions to `key`.
-    pub fn unsubscribe_key(&mut self, subscriber: Subscriber, key: u64) {
-        if let Some(subs) = self.key_subs.get_mut(&key) {
-            subs.retain(|s| s.subscriber != subscriber);
-            if subs.is_empty() {
-                self.key_subs.remove(&key);
-            }
-        }
-        self.disown(subscriber, Token::Key { key });
-    }
-
-    /// Keys with at least one subscriber.
-    #[must_use]
-    pub fn keys(&self) -> usize {
-        self.key_subs.len()
-    }
-
-    /// `om_world_publish`: DM-owned state under `key` changed. Merged per tick
-    /// and dispatched at [`tick`](Self::tick); a key nobody subscribes to is
-    /// never stored.
-    pub fn publish(&mut self, key: u64, mask: u32) {
-        if self.key_subs.contains_key(&key) {
-            *self.published.entry(key).or_default() |= mask & KEY_MASK;
         }
     }
 
@@ -627,15 +516,10 @@ impl Reactor {
         }
     }
 
-    /// `watch Destroy()`: drops every timer, key subscription, model watch and
-    /// pending wake of `subscriber`.
+    /// `watch Destroy()`: drops every model watch and pending wake of `subscriber`.
     pub fn clear(&mut self, subscriber: Subscriber) {
         for token in self.by_subscriber.remove(&subscriber).unwrap_or_default() {
             match token {
-                Token::Timer(id) => {
-                    self.wheel.cancel(id);
-                }
-                Token::Key { key } => self.unsubscribe_key(subscriber, key),
                 Token::Rate { model, token } => {
                     self.unwatch_model(model, token);
                 }
@@ -644,8 +528,7 @@ impl Reactor {
         self.lanes.clear(subscriber);
     }
 
-    /// Start of a DM tick at `now`: fires due timers and rate crossings,
-    /// dispatches this tick's key publications, and opens the lanes for a
+    /// Start of a DM tick at `now`: fires due rate crossings and opens the lanes for a
     /// new round of deliveries.
     #[allow(clippy::cast_possible_truncation)]
     pub fn tick(&mut self, now: Tick) {
@@ -654,16 +537,6 @@ impl Reactor {
         self.wheel.advance(now, &mut fired);
         for (id, due) in fired.drain(..) {
             match due {
-                Due::Timer {
-                    subscriber,
-                    lane,
-                    token,
-                } => {
-                    self.metrics.timers_fired += 1;
-                    self.disown(subscriber, Token::Timer(id));
-                    self.fired_timers.push((subscriber, token));
-                    self.lanes.push(subscriber, lane, reason::TIMER, token);
-                }
                 Due::Crossing { model, token } => {
                     let i = self
                         .slot(model)
@@ -676,21 +549,6 @@ impl Reactor {
             }
         }
         self.fired = fired;
-        for (key, mask) in std::mem::take(&mut self.published) {
-            self.metrics.publications += 1;
-            if let Some(subs) = self.key_subs.get(&key) {
-                for s in subs {
-                    if s.mask & mask != 0 {
-                        self.lanes.push(
-                            s.subscriber,
-                            s.lane,
-                            reason::KEY | (s.mask & mask),
-                            key as u32,
-                        );
-                    }
-                }
-            }
-        }
     }
 
     /// Delivers this tick's wakes within `budget` (see [`WakeLanes::drain`]).
@@ -707,29 +565,21 @@ mod tests {
     #[test]
     fn owned_tokens_stay_bounded_by_live_subscriptions() {
         let mut r = Reactor::new(0);
+        let m = r.add_model(RateModel::linear(0.0, 1.0, 0.0));
         for round in 0..100u64 {
-            let t = r.at(9, Lane::Normal, round + 1, 1);
+            let tok = r
+                .watch_model(m, 9, Lane::Normal, Cmp::Above, 1000.0)
+                .unwrap();
             if round % 2 == 0 {
-                assert!(r.cancel_timer(t));
+                assert!(r.unwatch_model(m, tok));
             }
-            r.subscribe_key(9, 5, 1, Lane::Normal);
             r.tick(round + 1);
-            let mut fired = Vec::new();
-            r.take_fired_timers(&mut fired);
-            assert_eq!(fired.len(), usize::from(round % 2 == 1));
         }
-        // One key subscription, no timers left.
-        assert_eq!(r.owned(9), 1);
-        r.unsubscribe_key(9, 5);
+        // The odd rounds' watches are still live; the even rounds' are gone.
+        assert_eq!(r.owned(9), 50);
+        r.clear(9);
         assert_eq!(r.owned(9), 0);
         assert_eq!(r.subscribers(), 0);
-        let m = r.add_model(RateModel::linear(0.0, 1.0, 0.0));
-        let tok = r
-            .watch_model(m, 9, Lane::Normal, Cmp::Above, 1000.0)
-            .unwrap();
-        assert_eq!(r.owned(9), 1);
-        assert!(r.unwatch_model(m, tok));
-        assert_eq!(r.owned(9), 0);
     }
 
     #[test]
@@ -830,27 +680,18 @@ mod tests {
     }
 
     #[test]
-    fn timers_keys_and_clear() {
+    fn clear_drops_watches_and_pending_wakes() {
         let mut r = Reactor::new(0);
-        let t = r.at(1, Lane::Urgent, 10, 42);
-        r.at(2, Lane::Normal, 10, 43);
-        r.subscribe_key(3, 0xABCD, 0b11, Lane::Normal);
-        r.publish(0xABCD, 0b10);
-        r.publish(0xABCD, 0b100);
-        r.publish(0x9999, 1); // nobody listens: not stored
-        r.tick(1);
-        let w = drained(&mut r);
-        assert_eq!(w.len(), 1);
-        assert_eq!(w[0].reason, reason::KEY | 0b10);
-        assert!(r.cancel_timer(t));
+        let m = r.add_model(RateModel::linear(0.0, 1.0, 0.0));
+        r.watch_model(m, 2, Lane::Normal, Cmp::Above, 10.0).unwrap();
+        r.watch_model(m, 3, Lane::Normal, Cmp::Above, 10.0).unwrap();
         r.clear(2);
         r.tick(10);
-        assert!(drained(&mut r).is_empty());
-        r.publish(0xABCD, 1);
+        let w = drained(&mut r);
+        assert_eq!(w.len(), 1);
+        assert_eq!(w[0].subscriber, 3);
         r.clear(3);
-        r.tick(11);
-        assert!(drained(&mut r).is_empty());
-        assert_eq!(r.metrics().timers_fired, 0);
+        assert_eq!(r.subscribers(), 0);
     }
 
     proptest! {

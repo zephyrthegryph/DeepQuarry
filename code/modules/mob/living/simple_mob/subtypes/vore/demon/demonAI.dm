@@ -194,3 +194,6 @@ DAMAGE_REACTION_AFTER(/mob/living/simple_mob/vore/demonAI, DAMAGE_PROJECTILE, PR
 	if(dq_get_cloaked(src))
 		gibs(T)
 	return ..()
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/vore/demonAI, is_shifting)

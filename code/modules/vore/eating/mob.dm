@@ -122,3 +122,6 @@
 	. += rel_one(nameof(spont_belly_left))
 	. += rel_one(nameof(spont_belly_right))
 	. += rel_one(nameof(previewing_belly))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob, absorbed)

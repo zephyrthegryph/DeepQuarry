@@ -1,10 +1,8 @@
-SUBSYSTEM_DEF(dbcore)
+SYSTEM_DEF(dbcore)
 	name = "Database"
-	flags = SS_TICKER | SS_KERNEL_HOSTED
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_EARLY
-	wait = 10 // Not seconds because we're running on SS_TICKER
-	runlevels = RUNLEVEL_LOBBY|RUNLEVELS_DEFAULT
-	priority = FIRE_PRIORITY_DATABASE
 
 	EXPIRY_DECLARE(failed_connection_timeout)
 
@@ -17,206 +15,50 @@ SUBSYSTEM_DEF(dbcore)
 
 	var/max_concurrent_queries = 25
 
-	/// Number of all queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
-	var/all_queries_num = 0
-	/// Number of active queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
-	var/queries_active_num = 0
-	/// Number of standby queries, reset to 0 when logged in GLOB.time_track_service. Used by GLOB.time_track_service
-	var/queries_standby_num = 0
-
-	/// All the current queries that exist.
-	var/list/all_queries = list()
-	/// Queries being checked for timeouts.
-	var/list/processing_queries
-
-	/// Queries currently being handled by database driver
-	var/list/datum/db_query/queries_active = list()
-	/// Queries pending execution, mapped to complete arguments
-	var/list/datum/db_query/queries_standby = list()
-
-	/// We are in the process of shutting down and should not allow more DB connections
-	var/shutting_down = FALSE
-
-	/// Per-query execution timeout, in deciseconds. A query that has been in
-	/// queries_active for longer than this without completing is forcibly abandoned
-	/// (its slot freed, a stack trace emitted). Set to 0 to disable.
-	/// Sourced from config/game.txt slow_query_timeout_ms; defaults to 30 seconds.
-	var/slow_query_timeout_ds = 300
-
 	var/connection  // Arbitrary handle returned from rust_g.
 
 
-/datum/controller/subsystem/dbcore/Initialize()
-	// Load slow_query_timeout_ms from config and convert to deciseconds.
-	// CONFIG_GET returns 0 if the entry is missing, which disables the timeout.
-	var/cfg_ms = CONFIG_GET(number/slow_query_timeout_ms)
-	if(cfg_ms > 0)
-		slow_query_timeout_ds = round(cfg_ms / 100) // ms -> deciseconds
+/datum/system/dbcore/initialize()
 	Connect()
 	if(IsConnected() && CONFIG_GET(flag/database_logging))
-		var/datum/db_query/query_truncate = NewQuery("TRUNCATE erro_dialog")
-		if(!query_truncate.Execute(async = FALSE)) // boot (allowlisted)
-			log_sql("ERROR TRYING TO CLEAR erro_dialog: "+query_truncate.ErrorMsg())
-		qdel(query_truncate)
-	return SS_INIT_SUCCESS
+		// Boot only: nothing else is running yet.
+		if(isnull(db_query_now("TRUNCATE erro_dialog")))
+			log_sql("ERROR TRYING TO CLEAR erro_dialog: "+ErrorMsg())
+	return
 
-/datum/controller/subsystem/dbcore/stat_entry(msg)
-	msg = "P:[length(all_queries)]|Active:[length(queries_active)]|Standby:[length(queries_standby)]"
+/datum/system/dbcore/stat_entry(msg)
+	msg = "Connected: [IsConnected() ? "yes" : "no"]"
 	return ..()
 
-/// Resets the tracking numbers on the subsystem. Used by GLOB.time_track_service.
-/datum/controller/subsystem/dbcore/proc/reset_tracking()
-	all_queries_num = 0
-	queries_active_num = 0
-	queries_standby_num = 0
-
-/datum/controller/subsystem/dbcore/fire(resumed = FALSE)
-	if(!IsConnected())
-		return
-
-	if(!resumed)
-		if(!length(queries_active) && !length(queries_standby) && !length(all_queries))
-			processing_queries = null
-			return
-		processing_queries = all_queries.Copy()
-
-	// First handle the already running queries; abandon any that have
-	// exceeded slow_query_timeout_ds to prevent pool exhaustion.
-	for (var/datum/db_query/query in queries_active)
-		if(slow_query_timeout_ds > 0 && ELAPSED(query, last_activity_time, CLOCK_WORLD) > slow_query_timeout_ds)
-			// Query has been in-flight too long — mark broken and free the slot.
-			stack_trace("DB query exceeded slow_query_timeout ([slow_query_timeout_ds] ds); freeing slot. SQL: [query.sql]")
-			log_sql("Slow query timeout: \"[query.sql]\" active for [world.time - query.last_activity_time] ds")
-			query.status = DB_QUERY_BROKEN
-			query.last_error = "Slow query timeout"
-			queries_active -= query
-			continue
-		if(!process_query(query))
-			queries_active -= query
-
-	// Now lets pull in standby queries if we have room.
-	if (length(queries_standby) > 0 && length(queries_active) < max_concurrent_queries)
-		var/list/queries_to_activate = queries_standby.Copy(1, min(length(queries_standby), max_concurrent_queries) + 1)
-
-		for (var/datum/db_query/query in queries_to_activate)
-			queries_standby.Remove(query)
-			create_active_query(query)
-
-	// And finally, let check queries for undeleted queries, check ticking if there is a lot of work to do.
-	while(length(processing_queries))
-		var/datum/db_query/query = popleft(processing_queries)
-		if(ELAPSED(query, last_activity_time, CLOCK_WORLD) > (5 MINUTES))
-			stack_trace("Found undeleted query, check the sql.log for the undeleted query and add a delete call to the query datum.")
-			log_sql("Undeleted query: \"[query.sql]\" LA: [query.last_activity] LAT: [query.last_activity_time]")
-			qdel(query)
-		if(MC_TICK_CHECK)
-			return
-
-/// Helper proc for handling activating queued queries
-/datum/controller/subsystem/dbcore/proc/create_active_query(datum/db_query/query)
-	PRIVATE_PROC(TRUE)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(IsAdminAdvancedProcCall())
-		return FALSE
-	run_query(query)
-	queries_active_num++
-	queries_active += query
-	return query
-
-/datum/controller/subsystem/dbcore/proc/process_query(datum/db_query/query)
-	PRIVATE_PROC(TRUE)
-	SHOULD_NOT_SLEEP(TRUE)
-	if(IsAdminAdvancedProcCall())
-		return FALSE
-	if(QDELETED(query))
-		return FALSE
-	if(query.process((TICKS2DS(wait)) / 10))
-		queries_active -= query
-		return FALSE
-	return TRUE
-
-/datum/controller/subsystem/dbcore/proc/run_query_sync(datum/db_query/query)
-	if(IsAdminAdvancedProcCall())
-		return
-	run_query(query)
-	UNTIL(query.process())
-	return query
-
-/datum/controller/subsystem/dbcore/proc/run_query(datum/db_query/query)
-	if(IsAdminAdvancedProcCall())
-		return
-	query.job_id = rustg_sql_query_async(connection, query.sql, json_encode(query.arguments))
-
-/datum/controller/subsystem/dbcore/proc/queue_query(datum/db_query/query)
-	if(IsAdminAdvancedProcCall())
-		return
-
-	if (!length(queries_standby) && length(queries_active) < max_concurrent_queries)
-		create_active_query(query)
-		return
-
-	queries_standby_num++
-	queries_standby |= query
-
-/datum/controller/subsystem/dbcore/Recover()
-	connection = SSdbcore.connection
-
-/datum/controller/subsystem/dbcore/Shutdown()
-	shutting_down = TRUE
-	log_sql("Clearing DB queries standby:[length(queries_standby)] active: [length(queries_active)] all: [length(all_queries)]")
+/datum/system/dbcore/on_shutdown()
+	log_sql("Database shutting down")
 	//This is as close as we can get to the true round end before Disconnect() without changing where it's called, defeating the reason this is a subsystem
 	if(SSdbcore.Connect())
-		//Execute all waiting queries
-		for(var/datum/db_query/query in queries_standby)
-			run_query_sync(query)
-			queries_standby -= query
-		for(var/datum/db_query/query in queries_active)
-			//Finish any remaining active qeries
-			UNTIL(query.process())
-			queries_active -= query
-
-		var/datum/db_query/query_round_shutdown = SSdbcore.NewQuery(
+		// Last metrics before the disconnect (world services shut down after the subsystems).
+		GLOB.metrics_service?.final_flush()
+		if(isnull(db_query_now(
 			"UPDATE [format_table_name("round")] SET shutdown_datetime = Now(), end_state = :end_state WHERE id = :round_id",
 			//list("end_state" = SSticker.end_state, "round_id" = GLOB.round_id),
-			list("end_state" = "undefined", "round_id" = GLOB.round_id), // FIXME: end_state does not exist on ticker
-			TRUE
-		)
-		query_round_shutdown.Execute(FALSE)
-		qdel(query_round_shutdown)
+			list("end_state" = "undefined", "round_id" = GLOB.round_id) // FIXME: end_state does not exist on ticker
+		)))
+			log_sql("Round shutdown stamp failed: [ErrorMsg()]")
 
-	log_sql("Done clearing DB queries standby:[length(queries_standby)] active: [length(queries_active)] all: [length(all_queries)]")
+	log_sql("Done shutting down the database")
 	if(IsConnected())
 		Disconnect()
 
 //nu
-/datum/controller/subsystem/dbcore/can_vv_get(var_name)
+/datum/system/dbcore/can_vv_get(var_name)
 	if(var_name == NAMEOF(src, connection))
-		return FALSE
-	if(var_name == NAMEOF(src, all_queries))
-		return FALSE
-	if(var_name == NAMEOF(src, queries_active))
-		return FALSE
-	if(var_name == NAMEOF(src, queries_standby))
-		return FALSE
-	if(var_name == NAMEOF(src, processing_queries))
-		return FALSE
-
-	return ..()
-
-/datum/controller/subsystem/dbcore/vv_edit_var(var_name, var_value)
-	if(var_name == NAMEOF(src, connection))
-		return FALSE
-	if(var_name == NAMEOF(src, all_queries))
-		return FALSE
-	if(var_name == NAMEOF(src, queries_active))
-		return FALSE
-	if(var_name == NAMEOF(src, queries_standby))
-		return FALSE
-	if(var_name == NAMEOF(src, processing_queries))
 		return FALSE
 	return ..()
 
-/datum/controller/subsystem/dbcore/proc/Connect()
+/datum/system/dbcore/vv_edit_var(var_name, var_value)
+	if(var_name == NAMEOF(src, connection))
+		return FALSE
+	return ..()
+
+/datum/system/dbcore/proc/Connect()
 	if(IsConnected())
 		return TRUE
 
@@ -260,7 +102,7 @@ SUBSYSTEM_DEF(dbcore)
 		log_sql("Connect() failed | [last_error]")
 		++failed_connections
 
-/datum/controller/subsystem/dbcore/proc/CheckSchemaVersion()
+/datum/system/dbcore/proc/CheckSchemaVersion()
 	if(CONFIG_GET(flag/sql_enabled))
 		if(Connect())
 			log_world("Database connection established.")
@@ -269,66 +111,54 @@ SUBSYSTEM_DEF(dbcore)
 	else
 		log_sql("Database is not enabled in configuration.")
 
-/datum/controller/subsystem/dbcore/proc/InitializeRound()
+/datum/system/dbcore/proc/InitializeRound()
 	if(!Connect())
 		return
-	var/datum/db_query/query_round_initialize = SSdbcore.NewQuery(
+	// The round id is needed before anything else runs: a blocking write (boot only).
+	var/list/initialized = db_exec_now(
 		"INSERT INTO [format_table_name("round")] (initialize_datetime, server_ip, server_port) VALUES (Now(), INET_ATON(:internet_address), :port)",
 		list("internet_address" = world.internet_address || "0", "port" = "[world.port]")
 	)
-	query_round_initialize.Execute(async = FALSE)
-	GLOB.round_id = "[query_round_initialize.last_insert_id]"
-	qdel(query_round_initialize)
+	GLOB.round_id = "[initialized?["last_insert_id"]]"
 
 /// Stamps the round's start time: a write on the I/O lane (om_io), so the ticker never waits.
-/datum/controller/subsystem/dbcore/proc/SetRoundStart()
+/datum/system/dbcore/proc/SetRoundStart()
 	if(!Connect())
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("round")] SET start_datetime = Now() WHERE id = :round_id",
 		list("round_id" = GLOB.round_id)
 	)
 
 /// Stamps the round's end: a write on the I/O lane (om_io), so declare_completion never waits.
-/datum/controller/subsystem/dbcore/proc/SetRoundEnd()
+/datum/system/dbcore/proc/SetRoundEnd()
 	if(!Connect())
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = :game_mode_result, station_name = :station_name WHERE id = :round_id",
 		list("game_mode_result" = "extended", "station_name" = station_name(), "round_id" = GLOB.round_id) // FIXME: temporary solution as we only use extended so far
 	)
 
-/datum/controller/subsystem/dbcore/proc/Disconnect()
+/datum/system/dbcore/proc/Disconnect()
 	failed_connections = 0
 	if (connection)
 		rustg_sql_disconnect_pool(connection)
 	connection = null
 
-/datum/controller/subsystem/dbcore/proc/IsConnected()
+/datum/system/dbcore/proc/IsConnected()
 	if (!CONFIG_GET(flag/sql_enabled))
 		return FALSE
 	if (!connection)
 		return FALSE
 	return json_decode(rustg_sql_connected(connection))["status"] == "online"
 
-/datum/controller/subsystem/dbcore/proc/ErrorMsg()
+/datum/system/dbcore/proc/ErrorMsg()
 	if(!CONFIG_GET(flag/sql_enabled))
 		return "Database disabled by configuration"
 	return last_error
 
-/datum/controller/subsystem/dbcore/proc/ReportError(error)
+/datum/system/dbcore/proc/ReportError(error)
 	last_error = error
-
-/datum/controller/subsystem/dbcore/proc/NewQuery(sql_query, arguments, allow_during_shutdown=FALSE)
-	//If the subsystem is shutting down, disallow new queries
-	if(!allow_during_shutdown && shutting_down)
-		CRASH("Attempting to create a new db query during the world shutdown")
-
-	if(IsAdminAdvancedProcCall())
-		log_admin("ERROR: Advanced admin proc call led to sql query: [sql_query]. Query has been blocked")
-		message_admins("ERROR: Advanced admin proc call led to sql query. Query has been blocked")
-		return FALSE
-	return new /datum/db_query(connection, sql_query, arguments)
 
 /*
 Takes a list of rows (each row being an associated list of column => value) and inserts them via a
@@ -356,8 +186,6 @@ Arguments:
 	                 the rest are inserted. PARTIAL SUCCESS IS POSSIBLE: the proc returns TRUE even if
 	                 some rows were dropped. Callers that need per-row status must issue individual
 	                 queries instead.
-	warn           — If TRUE, calls warn_execute() which notifies the user on failure.
-	async          — If TRUE (default), the query is queued asynchronously. FALSE blocks until done.
 	special_columns — Assoc list of column => SQL-expression overrides (e.g. list("ts" = "NOW()")).
 	                 Expressions containing "?" are treated as placeholders; those without are
 	                 interpolated verbatim into the query.
@@ -365,7 +193,7 @@ Arguments:
 mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 */
 /// Builds a mass insert's statement: list(sql, arguments), or null for no rows.
-/datum/controller/subsystem/dbcore/proc/mass_insert_sql(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null)
+/datum/system/dbcore/proc/mass_insert_sql(table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null)
 	if (!table || !rows || !istype(rows))
 		return null
 
@@ -420,7 +248,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 
 /// A mass insert (mass_insert_sql()) on the I/O lane: returns at once. `on_done` (optional) runs on E as
 /// on_done(result, error, context...) like any om_io() callback; without it a failure is logged.
-/datum/controller/subsystem/dbcore/proc/mass_insert_io(datum/E, table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null, on_done = null, ...)
+/datum/system/dbcore/proc/mass_insert_io(datum/E, table, list/rows, duplicate_key = FALSE, ignore_errors = FALSE, special_columns = null, on_done = null, ...)
 	var/list/statement = mass_insert_sql(table, rows, duplicate_key, ignore_errors, special_columns)
 	if(!statement)
 		return 0
@@ -431,146 +259,6 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 		call_args += args.Copy(8)
 	return om_io(arglist(call_args))
 
-/datum/db_query
-	// Inputs
-	var/connection
-	var/sql
-	var/arguments
-
-
-	// Status information
-	/// Current status of the query.
-	var/status
-	/// Job ID of the query passed by rustg.
-	var/job_id
-	var/last_error
-	var/last_activity
-	EXPIRY_DECLARE(last_activity_time)
-
-	// Output
-	var/list/list/rows
-	var/next_row_to_take = 1
-	var/affected
-	var/last_insert_id
-
-	var/list/item  //list of data values populated by NextRow()
-
-/datum/db_query/New(connection, sql, arguments)
-	SSdbcore.all_queries += src
-	SSdbcore.all_queries_num++
-	Activity("Created")
-	item = list()
-
-	src.connection = connection
-	src.sql = sql
-	src.arguments = arguments
-
-/// Phase 1 (unbind): the rust-g query handle closes and SSdbcore's rosters let go.
-/datum/db_query/lifecycle_unbind()
-	. = ..()
-	Close()
-	SSdbcore.all_queries -= src
-	SSdbcore.queries_standby -= src
-	SSdbcore.queries_active -= src
-
-/datum/db_query/CanProcCall(proc_name)
-	return FALSE
-
-/datum/db_query/proc/Activity(activity)
-	last_activity = activity
-	EXPIRY_STAMP(src, last_activity_time, CLOCK_WORLD)
-
-/datum/db_query/proc/warn_execute(async = TRUE)
-	. = Execute(async)
-	if(!.)
-		to_chat(usr, span_danger("A SQL error occurred during this operation, check the server logs."))
-
-/// Runs the query. async = TRUE (the default) is for prompt flows only (flow_io.dm): inside a
-/// running flow it starts the query as an om_io job and unwinds the flow, and the flow's re-run
-/// returns the stored result. Before the MC runs (boot) it blocks. Anywhere else it is an
-/// error: use om_io(E, /datum/om/io/sql, ...) with a callback. async = FALSE blocks and is
-/// for boot and shutdown only.
-/datum/db_query/proc/Execute(async = TRUE, log_error = TRUE)
-	Activity("Execute")
-	if(status == DB_QUERY_STARTED)
-		CRASH("Attempted to start a new query while waiting on the old one")
-
-	if(async && GLOB.prompt_flow)
-		return flow_execute()
-
-	if(!SSdbcore.IsConnected())
-		last_error = "No connection!"
-		return FALSE
-
-	if(async)
-		if(MC_RUNNING(SSdbcore.init_stage))
-			last_error = "Execute(async) outside a prompt flow"
-			stack_trace("Execute(async = TRUE) outside a prompt flow: [sql]. Use om_io() or run the caller as a prompt_flow().")
-			return FALSE
-		async = FALSE // boot: nothing else is running yet
-
-	var/start_time = REALTIMEOFDAY
-	Close()
-	status = DB_QUERY_STARTED
-	var/job_result_str = rustg_sql_query_blocking(connection, sql, json_encode(arguments))
-	store_data(json_decode(job_result_str))
-
-	. = (status != DB_QUERY_BROKEN)
-	var/timed_out = !. && findtext(last_error, "Operation timed out")
-	if(!. && log_error)
-		log_sql("[last_error] | Query used: [sql] | Arguments: [json_encode(arguments)]")
-	if(timed_out)
-		log_sql("Query execution started at [start_time]")
-		log_sql("Query execution ended at [REALTIMEOFDAY]")
-		log_sql("Slow query timeout detected.")
-		log_sql("Query used: [sql]")
-		slow_query_check()
-
-/datum/db_query/process(seconds_per_tick)
-	if(status >= DB_QUERY_FINISHED)
-		return TRUE // we are done processing after all
-
-	status = DB_QUERY_STARTED
-	var/job_result = rustg_sql_check_query(job_id)
-	if(job_result == RUSTG_JOB_NO_RESULTS_YET)
-		return FALSE //no results yet
-
-	store_data(json_decode(job_result))
-	return TRUE
-
-/datum/db_query/proc/store_data(result)
-	switch(result["status"])
-		if("ok")
-			rows = result["rows"]
-			affected = result["affected"]
-			last_insert_id = result["last_insert_id"]
-			status = DB_QUERY_FINISHED
-			return
-		if("err")
-			last_error = result["data"]
-			status = DB_QUERY_BROKEN
-			return
-		if("offline")
-			last_error = "CONNECTION OFFLINE"
-			status = DB_QUERY_BROKEN
-			return
-
-/datum/db_query/proc/slow_query_check()
-	message_admins("HEY! A database query timed out. Did the server just hang? <a href='byond://?_src_=holder;[HrefToken()];slowquery=yes'>\[YES\]</a>|<a href='byond://?_src_=holder;[HrefToken()];slowquery=no'>\[NO\]</a>")
-
-/datum/db_query/proc/NextRow(async = TRUE)
-	Activity("NextRow")
-
-	if (rows && next_row_to_take <= length(rows))
-		item = rows[next_row_to_take]
-		next_row_to_take++
-		return !!item
-	else
-		return FALSE
-
-/datum/db_query/proc/ErrorMsg()
-	return last_error
-
-/datum/db_query/proc/Close()
-	rows = null
-	item = null
+/// Runs `query` on the connection and waits for the answer: the blocking call db_query_now() wraps. Returns rust_g's raw JSON.
+/datum/system/dbcore/proc/query_blocking(query, list/params)
+	return rustg_sql_query_blocking(connection, query, json_encode(params || list()))

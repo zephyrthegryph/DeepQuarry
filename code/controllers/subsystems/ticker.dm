@@ -1,5 +1,7 @@
 SYSTEM_DEF(ticker)
 	name = "Ticker"
+	phase = KERNEL_PHASE_K
+	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_MAIN
 	wait = 2 SECONDS
 	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVEL_SETUP | RUNLEVEL_GAME
@@ -83,12 +85,12 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	lifecycle_decls_init(src) // starts the reboot countdown declaration (a non-atom has no materialize)
 	EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 
-/// The round state machine runs every `wait` (it was SSticker's fire()).
+/// The round state machine runs every `wait` (phase K).
 /datum/system/ticker/reactions()
 	. = ..()
-	. += every(2 SECONDS, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_SIMULATION)
+	. += every(2 SECONDS, PROC_REF(round_step), when = PROC_REF(work_ready), phase = KERNEL_PHASE_K, lane = LANE_SIMULATION)
 
-/datum/system/ticker/fire(resumed = FALSE)
+/datum/system/ticker/proc/round_step(dt)
 	switch(current_state)
 		if(GAME_STATE_STARTUP)
 			EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
@@ -99,7 +101,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				send2chat(new /datum/tgs_message_content("New round starting on [using_map.full_name] ([using_map.name])!"), channel_tag)
 			current_state = GAME_STATE_PREGAME
 
-			fire()
+			round_step(0)
 		if(GAME_STATE_PREGAME)
 			//lobby stats for statpanels
 			if(isnull(timeLeft))
@@ -127,9 +129,9 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 			if(timeLeft <= 0)
 				current_state = GAME_STATE_SETTING_UP
-				Master.SetRunLevel(RUNLEVEL_SETUP)
+				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 				if(start_immediately)
-					fire()
+					round_step(0)
 
 		if(GAME_STATE_SETTING_UP)
 			if(!setup())
@@ -137,7 +139,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				current_state = GAME_STATE_STARTUP
 				EXPIRY_SET(src, start_at, (CONFIG_GET(number/lobby_countdown) * 10), CLOCK_WORLD)
 				timeLeft = null
-				Master.SetRunLevel(RUNLEVEL_LOBBY)
+				Kernel.SetRunLevel(RUNLEVEL_LOBBY)
 
 		if(GAME_STATE_PLAYING)
 			// The mode's own periodic work (latespawn, meteor waves) runs on the slow lane,
@@ -149,7 +151,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				current_state = GAME_STATE_FINISHED
 				om_task_periodic_stop(mode)
 				declare_completion(force_ending)
-				Master.SetRunLevel(RUNLEVEL_POSTGAME)
+				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 			else
 				// Calculate if game and/or mode are finished (Complicated by the continuous_rounds config option)
 				var/game_finished = FALSE
@@ -165,7 +167,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 					end_game_state = END_GAME_READY_TO_END
 					current_state = GAME_STATE_FINISHED
 					om_task_periodic_stop(mode)
-					Master.SetRunLevel(RUNLEVEL_POSTGAME)
+					Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 					declare_completion() // its SQL and TGS chat run off-thread (om_io, send2chat)
 				else if (mode_finished && (end_game_state < END_GAME_MODE_FINISHED))
 					end_game_state = END_GAME_MODE_FINISHED // Only do this cleanup once!
@@ -207,6 +209,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 	//otherwise round_start_time would be 0 for the signals
 	EXPIRY_STAMP(src, round_start_time, CLOCK_WORLD)
 	GLOB.round_start_time = REALTIMEOFDAY
+	GLOB.metrics_service.round_started()
 
 	// Spawn randomized items
 	spawn_multi_point_items()
@@ -233,7 +236,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 	current_state = GAME_STATE_PLAYING
 	om_task_periodic(mode, PERIODIC_SLOW)
-	Master.SetRunLevel(RUNLEVEL_GAME)
+	Kernel.SetRunLevel(RUNLEVEL_GAME)
 
 	//Holiday Round-start stuff	~Carn
 	Holiday_Game_Start()
@@ -432,14 +435,14 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 
 /// Puts the Master's run level back where the round state says it is (a recreated Master starts at the lobby's).
 /datum/system/ticker/proc/restore_runlevel()
-	if (Master)
+	if (Kernel)
 		switch (current_state)
 			if(GAME_STATE_SETTING_UP)
-				Master.SetRunLevel(RUNLEVEL_SETUP)
+				Kernel.SetRunLevel(RUNLEVEL_SETUP)
 			if(GAME_STATE_PLAYING)
-				Master.SetRunLevel(RUNLEVEL_GAME)
+				Kernel.SetRunLevel(RUNLEVEL_GAME)
 			if(GAME_STATE_FINISHED)
-				Master.SetRunLevel(RUNLEVEL_POSTGAME)
+				Kernel.SetRunLevel(RUNLEVEL_POSTGAME)
 
 /datum/system/ticker/proc/Reboot(reason, end_string, delay)
 	set waitfor = FALSE // ALLOW(scheduler): UNTIL waits on the round-end sound before arming the reboot timer

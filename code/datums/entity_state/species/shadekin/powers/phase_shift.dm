@@ -314,7 +314,7 @@
 /mob/living/proc/complete_phase_out(original_canmove, datum/shadekin/SK)
 	invisibility = INVISIBILITY_SHADEKIN
 	see_invisible = INVISIBILITY_SHADEKIN
-	see_invisible_default = INVISIBILITY_SHADEKIN // Allow seeing phased entities while phased.
+	set_see_invisible_default(INVISIBILITY_SHADEKIN) // Allow seeing phased entities while phased.
 	update_icon()
 	alpha = 127
 

@@ -16,7 +16,7 @@
 
 /datum/spell/targeted/ethereal_jaunt/cast(list/targets) //magnets, so mostly hardcoded
 	for(var/mob/living/target in targets)
-		target.transforming = 1 //protects the mob from being transformed (replaced) midjaunt and getting stuck in bluespace
+		target.set_transforming(1) //protects the mob from being transformed (replaced) midjaunt and getting stuck in bluespace
 		if(target?.buckled_to())
 			var/atom/movable/_tmp_buck_41 = target?.buckled_to()
 			_tmp_buck_41.unbuckle_mob( target, TRUE)
@@ -36,7 +36,7 @@
 			_tmp_buck_42.unbuckle_mob( target, TRUE)
 		jaunt_disappear(animation, target)
 		target.forceMove(holder)
-		target.transforming=0 //mob is safely inside holder now, no need for protection.
+		target.set_transforming(0) //mob is safely inside holder now, no need for protection.
 		jaunt_steam(mobloc)
 		om_after(src, duration, PROC_REF(jaunt_resurface), target, holder, animation)
 

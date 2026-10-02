@@ -131,9 +131,10 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 		if(QDELETED(real_src))
 			return
 
-	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So we have to queue it if the server is
-	//overloaded
-	if(hsrc && hsrc != holder && DEFAULT_TRY_QUEUE_VERB(VERB_CALLBACK(src, PROC_REF(_Topic), hsrc, href, href_list)))
+	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So it goes through the input
+	//inbox, which resolves it on the spot while the tick has room and queues it for phase K if the server is overloaded
+	if(hsrc && hsrc != holder)
+		input_submit(new /datum/input_event/topic(usr, hsrc, href, href_list)) // ALLOW(sys_usr_outside_verb): client/Topic is BYOND's entry point: usr is the sending mob here
 		return
 	..() //redirect to hsrc.Topic()
 
@@ -226,14 +227,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	if(filelength > UPLOAD_LIMIT)
 		to_chat(src, span_red("Error: AllowUpload(): File Upload too large. Upload Limit: [UPLOAD_LIMIT/1024]KiB."))
 		return 0
-/*	//Don't need this at the moment. But it's here if it's needed later.
-	//Helps prevent multiple files being uploaded at once. Or right after eachother.
-	var/time_to_wait = fileaccess_timer - world.time
-	if(time_to_wait > 0)
-		to_chat(src, span_red("Error: AllowUpload(): Spam prevention. Please wait [round(time_to_wait/10)] seconds."))
-		return 0
-	// ALLOW(sys_world_time_write): inside a commented-out block, not compiled
-	fileaccess_timer = EXPIRY_AT(null, CLOCK_WORLD, 0) + FTPDELAY	*/
+	// Upload spam prevention is not needed at the moment: code/_helpers/files.dm has the timer if it is.
 	return 1
 
 	///////////
@@ -264,6 +258,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 	GLOB.clients += src // ALLOW(registry): /client is not a datum: no qdel, no registry hooks
 	GLOB.directory[ckey] = src // ALLOW(registry): GLOB.directory maps ckey -> client; clients are not datums
+	SSinput.wake_work_item(TYPE_PROC_REF(/datum/system/input, key_step))
 
 	if(persistent_client_for(ckey))
 		persistent_client = persistent_client_for(ckey) // ALLOW(ownership): /client is not a datum; it holds these directly
@@ -409,7 +404,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		Destroy() //Clean up signals and timers.
 	return ..()
 
-// ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
+// A client logs out of the directory, admins and tickets.
 /client/Destroy()
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.
@@ -430,7 +425,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		fakeConversations = null // ALLOW(ownership): /client is not a datum; it holds these directly
 	// Every connection-scoped datum (panels, tgui windows, say/shock, tooltips, media, loot
 	// panel, interaction menu, keybind editor, ...) is owned by the session.
-	qdel(session)
+	qdel(session) // ALLOW(lifecycle): the connection-scoped session datum is deleted with its client; it is a plain datum, not an atom
 	session = null // ALLOW(ownership): /client is not a datum; it holds this directly
 	..()
 	return QDEL_HINT_HARDDEL_NOW
@@ -529,47 +524,40 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			disconnect_with_message("You have been banned.[ban["desc"]]")
 			return FALSE
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(!query.Execute())
-		qdel(query)
+	var/list/player_rows = flow_select("SELECT id, datediff(Now(),firstseen) as age FROM erro_player WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(isnull(player_rows))
 		return TRUE
 	var/sql_id = 0
 	player_age = 0	// New players won't have an entry so knowing we have a connection we set this to zero to be updated if their is a record.
-	while(query.NextRow())
-		sql_id = query.item[1]
-		player_age = text2num(query.item[2])
-		break
+	if(length(player_rows))
+		var/list/player_row = player_rows[1]
+		sql_id = player_row[1]
+		player_age = text2num(player_row[2])
 
-	qdel(query)
 	account_join_date = findJoinDate()
 	if(account_join_date)
-		var/datum/db_query/query_datediff = SSdbcore.NewQuery("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
-		if(!query_datediff.Execute())
-			qdel(query_datediff)
+		var/list/datediff_rows = flow_select("SELECT DATEDIFF(Now(), :join_date)", list("join_date" = account_join_date))
+		if(isnull(datediff_rows))
 			return TRUE
-		if(query_datediff.NextRow())
-			account_age = text2num(query_datediff.item[1])
-		qdel(query_datediff)
+		if(length(datediff_rows))
+			var/list/datediff_row = datediff_rows[1]
+			account_age = text2num(datediff_row[1])
 
-	var/datum/db_query/query_ip = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
-	if(!query_ip.Execute())
-		qdel(query_ip)
+	var/list/ip_rows = flow_select("SELECT ckey FROM erro_player WHERE ip = :ip", list("ip" = address))
+	if(isnull(ip_rows))
 		return TRUE
 	related_accounts_ip = ""
-	while(query_ip.NextRow())
-		related_accounts_ip += "[query_ip.item[1]], "
-		break
-	qdel(query_ip)
+	if(length(ip_rows))
+		var/list/ip_row = ip_rows[1]
+		related_accounts_ip += "[ip_row[1]], "
 
-	var/datum/db_query/query_cid = SSdbcore.NewQuery("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
-	if(!query_cid.Execute())
-		qdel(query_cid)
+	var/list/cid_rows = flow_select("SELECT ckey FROM erro_player WHERE computerid = :computerid", list("computerid" = computer_id))
+	if(isnull(cid_rows))
 		return TRUE
 	related_accounts_cid = ""
-	while(query_cid.NextRow())
-		related_accounts_cid += "[query_cid.item[1]], "
-		break
-	qdel(query_cid)
+	if(length(cid_rows))
+		var/list/cid_row = cid_rows[1]
+		related_accounts_cid += "[cid_row[1]], "
 
 	//Just the standard check to see if it's actually a number
 	if(sql_id)
@@ -619,28 +607,27 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		else
 			log_admin("Couldn't perform IP check on [key] with [address]")
 
-	var/datum/db_query/query_hours = SSdbcore.NewQuery("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
-	if(query_hours.Execute())
-		while(query_hours.NextRow())
-			department_hours[query_hours.item[1]] = text2num(query_hours.item[2])
-			play_hours[query_hours.item[1]] = text2num(query_hours.item[3])
+	var/list/hours_rows = flow_select("SELECT department, hours, total_hours FROM vr_player_hours WHERE ckey = :ckey", list("ckey" = sql_ckey))
+	if(!isnull(hours_rows))
+		for(var/list/hours_row as anything in hours_rows)
+			department_hours[hours_row[1]] = text2num(hours_row[2])
+			play_hours[hours_row[1]] = text2num(hours_row[3])
 	else
-		var/error_message = query_hours.ErrorMsg()
+		var/error_message = flow_sql_error()
 		log_sql("Error loading play hours for [ckey]: [error_message]")
 		tgui_alert_async(src, "The query to load your existing playtime failed. Screenshot this, give the screenshot to a developer, and reconnect, otherwise you may lose any recorded play hours (which may limit access to jobs). ERROR: [error_message]", "PROBLEMS!!")
-	qdel(query_hours)
 
 	// The writes: nothing reads them back, so they go out without holding the gate.
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		om_sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
+		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 	else
 		//New player!! Need to insert all the stuff
-		om_sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
+		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	om_sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
 	return TRUE
 
 /// The database ban check (moved here from world/IsBanned(), which can't wait on a query).
@@ -666,26 +653,23 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			log_world("Key [ckey] cid not checked. Non-Numeric: [computer_id]")
 			failedcid = 1
 
-	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
-	query.Execute()
+	var/list/ban_rows = flow_select("SELECT ckey, ip, computerid, a_ckey, reason, expiration_time, duration, bantime, bantype FROM erro_ban WHERE (ckey = :ckeytext [ipquery] [cidquery]) AND (bantype = 'PERMABAN'  OR (bantype = 'TEMPBAN' AND expiration_time > Now())) AND isnull(unbanned)", ban_params)
 
-	while(query.NextRow())
-		var/pckey = query.item[1]
-		var/ackey = query.item[4]
-		var/reason = query.item[5]
-		var/expiration = query.item[6]
-		var/duration = query.item[7]
-		var/bantime = query.item[8]
-		var/bantype = query.item[9]
+	for(var/list/ban_row as anything in ban_rows)
+		var/pckey = ban_row[1]
+		var/ackey = ban_row[4]
+		var/reason = ban_row[5]
+		var/expiration = ban_row[6]
+		var/duration = ban_row[7]
+		var/bantime = ban_row[8]
+		var/bantype = ban_row[9]
 
 		var/expires = ""
 		if(text2num(duration) > 0)
 			expires = " The ban is for [duration] minutes and expires on [expiration] (server time)."
 
 		var/desc = "\nReason: You, or another user of this computer or connection ([pckey]) is banned from playing here. The ban reason is:\n[reason]\nThis ban was applied by [ackey] on [bantime], [expires]"
-		qdel(query)
 		return list("reason" = "[bantype]", "desc" = "[desc]")
-	qdel(query)
 	if (failedcid)
 		message_admins("[key] has logged in with a blank computer id in the ban check.")
 	if (failedip)
@@ -738,7 +722,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 
 //send resources to the client. It's here in its own proc so we can move it around easiliy if need be
 /client/proc/send_resources()
-	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): client procs (asset delivery to the client)
+	spawn (10) //removing this spawn causes all clients to not get verbs. // ALLOW(scheduler): login-ordering hack: the delay lets the client's verb delivery finish first, and without it no client gets its verbs (a login hook replaces it)
 
 		//load info on what assets the client has
 		src << browse('code/modules/asset_cache/validate_assets.html', "window=asset_cache_browser")

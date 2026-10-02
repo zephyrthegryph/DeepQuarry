@@ -1,4 +1,4 @@
-// OM scheduler error isolation, one test per lane (LANE_URGENT .. LANE_BACKGROUND,
+// OM scheduler error isolation, one test per lane (LANE_URGENT .. LANE_WORLD,
 // code/__defines/om.dm). In the lane under test a failing behaviour runtimes in its
 // tick AND in its wake gate (wake_if); a healthy behaviour shares the lane and a
 // witness ticks in every other lane. Then the whole lane loop is made to runtime
@@ -30,6 +30,8 @@
 	lane = LANE_PRESENTATION
 /datum/om/behaviour/test/lane_iso/good_background
 	lane = LANE_BACKGROUND
+/datum/om/behaviour/test/lane_iso/good_world
+	lane = LANE_WORLD
 
 /datum/om/behaviour/test/lane_iso/bad/urgent
 	lane = LANE_URGENT
@@ -41,6 +43,8 @@
 	lane = LANE_PRESENTATION
 /datum/om/behaviour/test/lane_iso/bad/background
 	lane = LANE_BACKGROUND
+/datum/om/behaviour/test/lane_iso/bad/world
+	lane = LANE_WORLD
 
 /proc/om_lane_iso_good(lane)
 	var/static/list/paths = list(
@@ -49,6 +53,7 @@
 		/datum/om/behaviour/test/lane_iso/good_derived,
 		/datum/om/behaviour/test/lane_iso/good_presentation,
 		/datum/om/behaviour/test/lane_iso/good_background,
+		/datum/om/behaviour/test/lane_iso/good_world,
 	)
 	return paths[lane]
 
@@ -59,6 +64,7 @@
 		/datum/om/behaviour/test/lane_iso/bad/derived,
 		/datum/om/behaviour/test/lane_iso/bad/presentation,
 		/datum/om/behaviour/test/lane_iso/bad/background,
+		/datum/om/behaviour/test/lane_iso/bad/world,
 	)
 	return paths[lane]
 
@@ -139,3 +145,6 @@
 
 /datum/unit_test/om/lane_isolation/background
 	lane = LANE_BACKGROUND
+
+/datum/unit_test/om/lane_isolation/world
+	lane = LANE_WORLD

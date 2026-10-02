@@ -1,5 +1,5 @@
 /// Init this specific atom
-/datum/controller/subsystem/atoms/proc/InitAtom(atom/A, from_template = FALSE, list/arguments)
+/datum/system/atoms/proc/InitAtom(atom/A, from_template = FALSE, list/arguments)
 
 	var/the_type = A.type
 
@@ -98,7 +98,7 @@
  *
  * Not a lot happens here in SS13 code, as we offload most of the work to the
  * [Initialization][/atom/proc/Initialize] proc, mostly we run the preloader
- * if the preloader is being used and then call [InitAtom][/datum/controller/subsystem/atoms/proc/InitAtom] of which the ultimate
+ * if the preloader is being used and then call [InitAtom][/datum/system/atoms/proc/InitAtom] of which the ultimate
  * result is that the Initialize proc is called.
  *
  */

@@ -10,11 +10,14 @@
 //   dq_rx_when_threshold(D, node, ch, above, level, edges)  native heat watch
 //   dq_rx_when_band(D, node, ch, levels)                     native heat watch
 //   dq_rx_on_change(D, node, ch)                             native heat watch (body appears)
-//   dq_rx_on_key(D, kind, id, mask) / dq_rx_publish(...)     om_world_on_key / om_world_publish
-//   dq_rx_at(D, time)                                        om_world_at
+//   dq_rx_on_key(D, kind) / dq_rx_publish(thing, kind)       DM-owned keys: the binding hears dq_rules_publish()
 //   (rate models are om_rate_* directly)                     om_rate_*
 //   dq_rx_on_rate                                            om_world_on_rate
-//   dq_rx_cancel(D, token), dq_rx_clear(D), dq_rx_id()       qdel / every watch / om_world_key_id
+//   dq_rx_cancel(D, token), dq_rx_clear(D)                   qdel / every watch
+//
+// DM-owned keys and timers live in DM only (the kernel's after()): there is no om_world_at, no key published into Rust and no
+// Rust reactor key table. A key trigger is a text token ("key:<kind>") in the binding's key table; a publication re-evaluates
+// the binding once per tick (merged), as the Rust key wake did.
 //
 // Heat nodes (H3). An object's heat node is its heat body in the heat domain
 // (M4, code/modules/heat/heat.dm). A body exists only while the object
@@ -36,23 +39,31 @@
 		rel_add(src, nameof(world_watches), W)
 	return W
 
-/proc/dq_rx_id()
-	return om_world_key_id()
-
 /proc/dq_rx_now()
 	return world.time
 
-/proc/dq_rx_on_key(datum/rule_binding/D, kind, id, mask)
-	return D.keep_watch(om_world_on_key(D, kind, id, mask, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
+/// Subscribes `D` to DM-owned key `kind`. The token is text; dq_rx_cancel() gives it back.
+/proc/dq_rx_on_key(datum/rule_binding/D, kind)
+	LAZYINITLIST(D.key_subs)
+	D.key_subs["[kind]"]++
+	return "key:[kind]"
 
-/proc/dq_rx_publish(kind, id, mask)
-	om_world_publish(kind, id, mask)
+/// DM-owned state of `binding` under key `kind` changed: the binding re-evaluates once per tick.
+/proc/dq_rx_publish(datum/rule_binding/binding, kind)
+	binding.key_published(kind)
 
-/proc/dq_rx_at(datum/rule_binding/D, time)
-	return D.keep_watch(om_world_at(D, time, TYPE_PROC_REF(/datum/rule_binding, on_world_wake)))
-
-/// Every subscription is a watch: cancelling it is deleting it.
-/proc/dq_rx_cancel(datum/rule_binding/D, datum/native_watch/token)
+/// Every world subscription is a watch (cancelling it is deleting it); a key token is text.
+/proc/dq_rx_cancel(datum/rule_binding/D, held)
+	if(istext(held))
+		if(istype(D) && D.key_subs)
+			var/kind = copytext(held, 5)
+			if(D.key_subs[kind] > 1)
+				D.key_subs[kind]--
+			else
+				D.key_subs -= kind
+			UNSETEMPTY(D.key_subs)
+		return
+	var/datum/native_watch/token = held
 	if(istype(D))
 		rel_remove(D, nameof(D.world_watches), token)
 	if(istype(token) && !QDELETED(token))
@@ -62,6 +73,7 @@
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
 		dq_rx_cancel(D, W)
 	rel_clear(D, nameof(D.world_watches))
+	D.key_subs = null
 
 /// Wake D when `model` reaches `level` (above) or falls to it; at once if it already has.
 /proc/dq_rx_on_rate(datum/rule_binding/D, model, above, level)

@@ -12,13 +12,13 @@
 
 /datum/waiter/New(timeout = WAITER_NO_TIMEOUT)
 	..()
-	created_at = world.time
+	created_at = world.time // ALLOW(sys_world_time_write): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 	if(timeout > 0)
-		deadline = world.time + timeout
+		deadline = world.time + timeout // ALLOW(sys_world_time_write): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 
 /// The kernel's list of open waiters, in creation order.
 /proc/kernel_waiters()
-	var/static/list/open = list()
+	var/static/list/open = list() // ALLOW(sys_static_getter): the kernel's list of open waiters: a mutable registry, not a constant table
 	return open
 
 /// Resolves `W` with `result`. Returns TRUE when this call resolved it (a second resolve is ignored).
@@ -44,10 +44,10 @@
 	var/static/last_pass = -1
 	if(last_pass == world.time)
 		return
-	last_pass = world.time
+	last_pass = world.time // ALLOW(sys_world_time_write): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 	var/list/open = kernel_waiters()
 	for(var/datum/waiter/W as anything in open.Copy())
-		if(W.deadline && world.time >= W.deadline && !W.done)
+		if(W.deadline && world.time >= W.deadline && !W.done) // ALLOW(sys_world_time_expiry): the kernel clock: a scheduler timestamp of the kernel itself, not a per-entity expiry
 			W.timed_out = TRUE
 			waiter_resolve(W, null)
 

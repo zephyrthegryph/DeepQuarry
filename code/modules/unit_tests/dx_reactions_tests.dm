@@ -8,13 +8,9 @@
 	var/watched = 0
 	var/quiet = 0
 	var/level = 0
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/crossings = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/seen_ops = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/notes = list()
 	var/republish = FALSE
 
@@ -61,7 +57,6 @@ TRACKED(/datum/rx_fx, level)
 
 /// A listener for observe().
 /datum/rx_fx_listener
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/got = list()
 
 /datum/rx_fx_listener/proc/heard_quiet(datum/source, list/keys)
@@ -154,7 +149,7 @@ TRACKED(/datum/rx_fx, level)
 	TEST_ASSERT(isnull(rx_before_op(F, "another_op", null, "deny")), "another op key is not matched")
 
 /// A read moving to another band delivers (band, previous); the first sight is a baseline. The reaction is urgent:
-/// the kernel delivers it (request_urgent), so each crossing is run from the U phase here.
+/// the kernel delivers it (kernel_urgent), so each crossing is run from the U phase here.
 /datum/unit_test/dx_reactions_cross/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
 	F.set_level(5)

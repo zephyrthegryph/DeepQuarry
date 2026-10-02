@@ -369,7 +369,7 @@ GLOBAL_VAR_INIT(timed_actions_instant, FALSE)
  * slice runs at once. Deleting E drops the rest.
  */
 /proc/om_task_slices(datum/E, slice_proc, cursor, on_done, now = FALSE)
-	if(now || !SSbehaviours?.initialized || !Master?.processing)
+	if(now || !SSbehaviours?.initialized || !Kernel?.processing)
 		while(!isnull(cursor) && !QDELETED(E))
 			cursor = call(E, slice_proc)(cursor)
 		if(!QDELETED(E))

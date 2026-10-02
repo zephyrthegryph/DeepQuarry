@@ -1,0 +1,2 @@
+/obj/hiddendir
+	qdel(src)

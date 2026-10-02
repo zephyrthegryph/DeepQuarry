@@ -12,9 +12,11 @@
 	var/datum/capability/powered/C = new
 	return cap_gating(C, needs = needs, else_say = else_say, works_broken = works_broken, works_unpowered = works_unpowered, log = log)
 
+GLOBAL_LIST_INIT(cap_examine_unpowered, list("It is unpowered."))
+
 /datum/capability/powered/examine(atom/holder, mob/user)
 	if(!holder.cap_powered())
-		return list("It is unpowered.")
+		return GLOB.cap_examine_unpowered
 	return null
 
 /datum/capability/powered/draw(atom/holder, datum/look/look)

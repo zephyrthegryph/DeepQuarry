@@ -7,7 +7,9 @@
 #define LANE_DERIVED 3
 #define LANE_PRESENTATION 4
 #define LANE_BACKGROUND 5
-#define OM_LANE_COUNT 5
+/// World-level systems (section 2): their every() work is budgeted here, beside the OM lanes the old scheduler had.
+#define LANE_WORLD 6
+#define OM_LANE_COUNT 6
 
 // ---- Relevance levels (section A.8). ----
 #define RELEVANCE_NONE 0
@@ -375,6 +377,10 @@
 /// The entity is being destroyed (destroy transaction phase 4, before links clear).
 #define OM_HOOK_DESTROY 9
 
+/// One entity's step taking more than this (percent of a tick) is noted as the tick's slow step
+/// (/datum/om/scheduler/proc/note_slow_step()), named in the MC's overrun record.
+#define OM_SLOW_STEP_USAGE 100
+
 // Uncomment (or pass -DOM_PROFILE_CALLS) for per-call timing in the cadence loop.
 // #define OM_PROFILE_CALLS
 // Uncomment (or pass -DOM_DERIVED_AUDIT) to recompute aggregates on every read and compare.
@@ -505,7 +511,7 @@
 /// DM needs for numeric keys) and ALL is the union of those channels (the registered channel).
 /// A write raises only the channels of the bits that changed; a changed bit with no row raises
 /// ALL. The table is a proc-local static built once per type.
-#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/flipped = F ^ value; if(!flipped) { return FALSE } else { F = value; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/F##_add(bits) { var/flipped = bits & ~F; if(!flipped) { return FALSE } else { F |= bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/F##_remove(bits) { var/flipped = F & bits; if(!flipped) { return FALSE } else { F &= ~bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
+#define OM_FLAG_FIELD_BITS(T, F, D, ALL, BITS) T/var/F = D;T/proc/F##_bit_channels() { var/static/list/table = BITS; return table };T/proc/set_##F(value) { var/flipped = F ^ value; if(!flipped) { return FALSE } else { F = value; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_add(bits) { var/flipped = bits & ~F; if(!flipped) { return FALSE } else { F |= bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/F##_remove(bits) { var/flipped = F & bits; if(!flipped) { return FALSE } else { F &= ~bits; changed(src, om_flag_channels(F##_bit_channels(), flipped, ALL)); PUBLISH_CHANGE(src, #F); return TRUE } };T/proc/has_##F(bits) { return (F & bits) ? TRUE : FALSE };/datum/om/field_def##T/F { of = T; field = #F; channel = ALL }
 
 /// Registers an existing var F of T, with its existing hand-written setter `T/proc/set_F(value)`,
 /// as a declared field raising C (set_anchored, set_density). The setter must raise C on a real
@@ -621,6 +627,6 @@
 /// The common "someone offers you something" set: both alive, awake and adjacent.
 #define ASK_FACE_TO_FACE (ASK_CONSCIOUS | ASK_ADJACENT)
 
-/// Thrown by flow_execute() (flow_io.dm) to unwind a prompt flow whose query is in flight;
+/// Thrown by flow_io_answer() (flow_io.dm) to unwind a prompt flow whose query is in flight;
 /// prompt_flow() catches it.
 #define OM_FLOW_PENDING "om_flow_pending"

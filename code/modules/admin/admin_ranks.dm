@@ -166,10 +166,7 @@ GLOBAL_PROTECT(protected_ranks)
 			if(prefetched)
 				rank_rows = prefetched["ranks"]
 			else
-				var/datum/db_query/query_load_admin_ranks = SSdbcore.NewQuery("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-				if(query_load_admin_ranks.Execute(async = FALSE)) // boot only (allowlisted)
-					rank_rows = query_load_admin_ranks.rows || list()
-				qdel(query_load_admin_ranks)
+				rank_rows = db_query_now("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]") // boot only: the ranks load before the kernel ticks, so nothing can wait on an om_io query yet
 			if(isnull(rank_rows))
 				message_admins("Error loading admin ranks from database. Loading from backup.")
 				log_sql("Error loading admin ranks from database. Loading from backup.")
@@ -291,10 +288,7 @@ GLOBAL_PROTECT(protected_ranks)
 		if(prefetched)
 			admin_rows = prefetched["admins"]
 		else
-			var/datum/db_query/query_load_admins = SSdbcore.NewQuery("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`")
-			if(query_load_admins.Execute(async = FALSE)) // boot only (allowlisted)
-				admin_rows = query_load_admins.rows || list()
-			qdel(query_load_admins)
+			admin_rows = db_query_now("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`") // boot only: the admins load before the kernel ticks, so nothing can wait on an om_io query yet
 		if(isnull(admin_rows))
 			message_admins("Error loading admins from database. Loading from backup.")
 			log_sql("Error loading admins from database. Loading from backup.")
@@ -414,7 +408,7 @@ GLOBAL_PROTECT(protected_ranks)
 		return
 	if(!length(result["rows"])) //no row is returned if the rank already has the correct flag value
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("admin_ranks")] SET [flags_to_update] WHERE rank = :rank",
 		list("rank" = rank_name)
 	)
@@ -440,7 +434,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(error)
 		log_sql("Admin DB sync failed: [error]")
 		return
-	om_sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
+	sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
 
 /proc/save_admin_backup()
 	if(IsAdminAdvancedProcCall())

@@ -109,8 +109,8 @@ dx_raw_delay	code/game/objects/items/weapons/extinguisher.dm	COOLDOWN_START(src,
 dx_raw_delay	code/game/objects/items/weapons/flamethrower.dm	COOLDOWN_START(src, operating, 15)
 dx_raw_delay	code/game/objects/items/weapons/grenades/anti_photon_grenade.dm	om_after(src, 200 + extra_delay, PROC_REF(grenade_light), extra_delay)
 dx_raw_delay	code/game/objects/items/weapons/grenades/anti_photon_grenade.dm	om_after(src, 10, PROC_REF(grenade_blast))
-dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
-dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): random delay
+dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
+dx_raw_delay	code/game/objects/items/weapons/grenades/flashbang.dm	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 dx_raw_delay	code/game/objects/items/weapons/grenades/grenade.dm	om_after(src, 5, PROC_REF(detonate))
 dx_raw_delay	code/game/objects/items/weapons/handcuffs.dm	COOLDOWN_START(src, chew_cooldown, 26)
 dx_raw_delay	code/game/objects/items/weapons/implants/implant.dm	om_after(src, 25, PROC_REF(small_boom_goes))
@@ -310,9 +310,6 @@ dx_raw_delay	code/modules/projectiles/projectile/hook.dm	om_after(target, 2, TYP
 dx_raw_delay	code/modules/projectiles/projectile/hook.dm	om_after(src, 1, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 50, 1)
 dx_raw_delay	code/modules/projectiles/projectile/hook.dm	om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 60, 1)
 dx_raw_delay	code/modules/reagents/machinery/dispenser/chem_synthesizer.dm	om_after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), r_id, step)
-dx_raw_delay	code/modules/reagents/reagents/food_drinks.dm	COOLDOWN_START(src, burn_message_cooldown, 100)
-dx_raw_delay	code/modules/reagents/reagents/toxins.dm	om_after(M, rand(30, 60), TYPE_PROC_REF(/mob/living, ignite_mob))
-dx_raw_delay	code/modules/reagents/reagents/toxins.dm	om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), color_shift)
 dx_raw_delay	code/modules/recycling/conveyor2.dm	om_after(src, 1, PROC_REF(move_affecting)) // slight delay to prevent infinite propagation due to map order
 dx_raw_delay	code/modules/recycling/v_garbosystem.dm	om_after(src, 1, PROC_REF(grind_affecting))
 dx_raw_delay	code/modules/recycling/v_garbosystem.dm	om_after(src, 15, PROC_REF(crunch_item), A)
@@ -332,6 +329,5 @@ dx_raw_delay	code/modules/turbolift/turbolift_console.dm	om_after(src, 3, PROC_R
 dx_raw_delay	code/modules/ventcrawl/ventcrawl_atmospherics.dm	COOLDOWN_START(user, next_play_vent, 30)
 dx_raw_delay	code/modules/vore/resizing/holder.dm	om_after(src, 1, PROC_REF(delete_if_dropped))
 dx_raw_delay	code/modules/xenoarcheaology/finds/talking.dm	om_after(src, 2, PROC_REF(SaySomething), pick(seperate))
-dx_raw_delay	code/modules/xenoarcheaology/tools/ano_device_battery.dm	emission_timer = om_after(src, duration + 1, PROC_REF(emission_timer_fired))
 dx_raw_delay	code/modules/xenoarcheaology/tools/artifact_analyser.dm	om_after(src, scan_duration + 1, PROC_REF(scan_timer_fired))
 dx_raw_delay	code/modules/xenobio/machinery/processor.dm	om_after(src, 1, PROC_REF(begin_processing))

@@ -553,10 +553,10 @@
 	rel_clear(network, nameof(network.leaks))
 	// The region's gas lives in the Rust network; the datum is only a handle.
 	for(var/obj/machinery/atmospherics/member as anything in old_members)
-		member.material_service?.environment_changed()
+		material_service_of(member)?.environment_changed()
 	for(var/datum/pipeline/line as anything in old_lines)
 		for(var/obj/machinery/atmospherics/pipe/pipe as anything in line.members)
-			pipe.material_service?.environment_changed()
+			material_service_of(pipe)?.environment_changed()
 		// Likewise the line: no network to destroy, no gas to store back into its pipes.
 		rel_clear(line, nameof(line.network))
 		atmos_air_set(line, nameof(line.air), null)
@@ -589,7 +589,7 @@
 		machine.rust_bind_pipe_port(index, network, region_air)
 		// A region replacement can preserve pressure/composition, so gas-dirty
 		// publication alone cannot tell sleepers to subscribe to the new handle.
-		machine.material_service?.environment_changed()
+		material_service_of(machine)?.environment_changed()
 
 	if(length(region_pipes))
 		var/datum/pipeline/pipeline = new

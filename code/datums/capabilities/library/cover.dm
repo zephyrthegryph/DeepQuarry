@@ -38,11 +38,14 @@
 	if(removable)
 		. += adopt_entry(lib_op("Remove cover", GLOBAL_PROC_REF(cap_cover_remove), OP_SHAPE_TOOL, using = TOOL_CROWBAR, key = "remove_cover", action = ACT_ATTACK, delay = delay, needs = present, priority = OP_PRIORITY_PART * 2, stance = I_HURT), id = "cover:remove")
 
+GLOBAL_LIST_INIT(cap_examine_cover_removed, list("Its cover has been removed."))
+GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
+
 /datum/capability/cover/examine(atom/holder, mob/user)
 	if(cover_removed(holder))
-		return list("Its cover has been removed.")
+		return GLOB.cap_examine_cover_removed
 	if(cover_is_open(holder))
-		return list("Its cover is open.")
+		return GLOB.cap_examine_cover_open
 	return null
 
 /datum/capability/cover/draw(atom/holder, datum/look/look)
