@@ -5,6 +5,7 @@
 	var/obj/item/autopsy_scanner/scanner = allocate(/obj/item/autopsy_scanner, T)
 	scanner.target_name = "Report fixture"
 	scanner.print_report(actor, "Observed wound data")
+	own_turf_contents(T)
 	var/obj/item/paper/report = actor.get_active_hand()
 	TEST_ASSERT(istype(report), "The report callback gives a real paper to its explicit user")
 	own(report)
@@ -23,6 +24,7 @@
 	TEST_ASSERT(actor.put_in_r_hand(right), "The fixture occupies the right hand")
 	var/list/before = turf_contents_of_type(T, /obj/item/paper)
 	scanner.print_report(actor, "Full hands findings")
+	own_turf_contents(T)
 	var/list/after = turf_contents_of_type(T, /obj/item/paper)
 	var/list/created = after - before
 	TEST_ASSERT_EQUAL(length(created), 1, "The full-hands callback leaves exactly one report on the turf")
