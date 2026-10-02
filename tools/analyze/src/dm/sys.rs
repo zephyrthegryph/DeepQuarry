@@ -177,3 +177,24 @@ impl Lint for SysLint {
         })
     }
 }
+
+/// `line and not line[0].isspace()`: a non-empty line whose first character is not whitespace.
+pub fn col0(line: &str) -> bool {
+    line.chars().next().map(|c| !crate::util::is_py_space(c)).unwrap_or(false)
+}
+
+/// `_in_family` / `_resolvable`: `path` or one of its ancestors (cut at the last `/`, stopping at
+/// a cut index <= 0) is in `roots`.
+pub fn in_family(path: &str, roots: &std::collections::HashSet<String>) -> bool {
+    let mut path = path;
+    while !path.is_empty() {
+        if roots.contains(path) {
+            return true;
+        }
+        match path.rfind('/') {
+            Some(cut) if cut > 0 => path = &path[..cut],
+            _ => return false,
+        }
+    }
+    false
+}
