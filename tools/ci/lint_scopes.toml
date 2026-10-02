@@ -24,6 +24,10 @@ exempt_files = [
   "code/modules/admin/IsBanned.dm",
 ]
 
+[lint."sys/usr_use"]
+# usr_use.py SKIP_PREFIXES: a `#define` in the macro library is read in the caller's context.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/__defines/"]
+
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
