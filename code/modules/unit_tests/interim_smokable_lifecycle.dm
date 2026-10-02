@@ -31,7 +31,7 @@
 	var/obj/item/clothing/mask/smokable/pipe/pipe = allocate(/obj/item/clothing/mask/smokable/pipe, T)
 	TEST_ASSERT(H.equip_to_slot_if_possible(pipe, SLOT_ID_MASK, disable_warning = TRUE), "the pipe is worn before emptying")
 	pipe.reagents.add_reagent(REAGENT_ID_NICOTINE, 5)
-	pipe.smoketime = 5
+	pipe.smoketime = 5 SECONDS
 	var/handle = om_handle(pipe)
 	pipe.die(FALSE)
 	own_turf_contents(T)
