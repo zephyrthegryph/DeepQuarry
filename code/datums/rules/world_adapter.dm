@@ -53,21 +53,21 @@
 	binding.key_published(kind)
 
 /// Every world subscription is a watch (cancelling it is deleting it); a key token is text.
-/proc/dq_rx_cancel(datum/rule_binding/D, token)
-	if(istext(token))
+/proc/dq_rx_cancel(datum/rule_binding/D, held)
+	if(istext(held))
 		if(istype(D) && D.key_subs)
-			var/kind = copytext(token, 5)
+			var/kind = copytext(held, 5)
 			if(D.key_subs[kind] > 1)
 				D.key_subs[kind]--
 			else
 				D.key_subs -= kind
 			UNSETEMPTY(D.key_subs)
 		return
-	var/datum/native_watch/watch = token
+	var/datum/native_watch/token = held
 	if(istype(D))
-		rel_remove(D, nameof(D.world_watches), watch)
-	if(istype(watch) && !QDELETED(watch))
-		qdel(watch)
+		rel_remove(D, nameof(D.world_watches), token)
+	if(istype(token) && !QDELETED(token))
+		qdel(token)
 
 /proc/dq_rx_clear(datum/rule_binding/D)
 	for(var/datum/native_watch/W as anything in D.world_watches?.Copy())
