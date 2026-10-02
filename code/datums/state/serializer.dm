@@ -164,6 +164,14 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 	var/list/delta = encode_delta(D, schema)
 	if(length(delta))
 		blob[STATE_KEY_VARS] = delta
+	if(istype(D, /obj))
+		var/obj/holder = D
+		var/list/extra = holder.state_extra()
+		if(length(extra))
+			var/list/encoded_extra = list()
+			for(var/name in extra)
+				encoded_extra[name] = encode_value(extra[name], "[D.type].extra.[name]")
+			blob[STATE_KEY_EXTRA] = encoded_extra
 	if((flags & STATE_CONTENTS) && isatom(D))
 		var/atom/A = D
 		var/list/children = list()
@@ -545,6 +553,15 @@ GLOBAL_LIST_INIT(state_builtin_vars, list(
 			codec.decode(D, name, vars[name], src)
 		else
 			D.vars[name] = decode_value(vars[name]) // ALLOW(api): state serializer: restores saved vars
+	if(istype(D, /obj))
+		var/obj/holder = D
+		var/list/encoded_extra = blob[STATE_KEY_EXTRA]
+		var/list/extra
+		if(length(encoded_extra))
+			extra = list()
+			for(var/name in encoded_extra)
+				extra[name] = decode_value(encoded_extra[name])
+		holder.state_apply_extra(extra)
 
 /// Blobs written before components went away carried per-instance component
 /// state (STATE_KEY_COMPONENTS). Their saved vars now live on the holder itself
