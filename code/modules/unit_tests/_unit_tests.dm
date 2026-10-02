@@ -392,6 +392,7 @@
 #include "dx_cap_storage_tests.dm"
 #include "interim_actor_propagation.dm"
 #include "interim_construction_doors.dm"
+#include "interim_economy_actor.dm"
 #include "interim_power_reagents.dm"
 #include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
