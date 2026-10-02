@@ -112,6 +112,12 @@
 		return TRUE
 	return GLOB.type_derives_cache[E.type] != 0
 
+/// refresh_wanted() for an entity already in the queue (its refresh_queued is set, so it is not a reason to run).
+/proc/refresh_wanted_queued(datum/E)
+	if(!isatom(E) || ismob(E) || E.periodic_cadence || E.periodic_interval || LAZYLEN(E.open_tguis))
+		return TRUE
+	return GLOB.type_derives_cache[E.type] != 0
+
 /// E itself has nothing to refresh, but an owner whose capability draws it still redraws (refresh_mark()'s owner rule).
 /proc/refresh_mark_owner(datum/E, mask, channel)
 	if(mask != DEP_ALL && !(mask & DEP_DRAW))
@@ -301,6 +307,11 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 			continue
 		if(!pending)
 			continue // a stale duplicate: an earlier entry already ran its outputs
+		if(!refresh_wanted_queued(D))
+			// Every atom's first refresh is queued at init (caps_init()) before its type's verdict is in: the first
+			// instance probes the type, and the rest, queued behind it, skip here once it is known to derive nothing.
+			D.refresh_bits = 0
+			continue
 		done[D] = TRUE
 		var/bits = D.refresh_bits
 		D.refresh_bits = 0
