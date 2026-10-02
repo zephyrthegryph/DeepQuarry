@@ -258,7 +258,7 @@
 
 /// A stage. `build` / `undo`: cost entries (see the file header); `uses`: what a cap_use_on() build
 /// uses up; `sfx` / `done_sfx`: sound sets of the build step; `icon`: the state drawn on this stage.
-/proc/stage(name, datum/capability/entry/build, datum/capability/entry/undo, uses = 0, needs, else_say, undo_needs, undo_else_say, when, undo_when, say, undo_say, desc, icon, anchored, on_enter, on_leave, list/also, refund = TRUE, priority, quiet = FALSE, sfx, done_sfx)
+/proc/legacy_stage(name, datum/capability/entry/build, datum/capability/entry/undo, uses = 0, needs, else_say, undo_needs, undo_else_say, when, undo_when, say, undo_say, desc, icon, anchored, on_enter, on_leave, list/also, refund = TRUE, priority, quiet = FALSE, sfx, done_sfx)
 	var/datum/ladder_stage/made = new
 	made.name = name
 	made.build = ladder_cost_spec(build, uses)

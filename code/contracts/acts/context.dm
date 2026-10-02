@@ -103,14 +103,6 @@
 	var/datum/request/request
 	var/datum/request/answer
 
-/// An activation: one record applying a definition to a holder with a source and a scope (foundation X1, section 5).
-/// E1 owns its fields and behaviour; E0 declares the type so a context can name it.
-/datum/activation
-	/// The holder the definition is applied to.
-	var/datum/holder
-	/// The source that applied it (a datum or a SRC_* flyweight).
-	var/datum/source
-
 /// Anything that waits for an answer (foundation X3, section 13): prompts, backend queries, client round trips.
 /// E6 owns its fields (outcome, fields, timeout) and the request layer.
 /datum/request

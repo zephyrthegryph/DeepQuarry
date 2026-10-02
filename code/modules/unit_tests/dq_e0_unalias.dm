@@ -2,6 +2,3 @@
 #undef perform_op
 #undef action_options
 #undef screentip_for
-#undef grant
-#undef revoke
-#undef granted

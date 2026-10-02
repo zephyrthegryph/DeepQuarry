@@ -167,7 +167,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 
 /// Points source.var_name (a single REF view) at `target`, or clears it with null. A pair view
 /// sets the partner's side too; the old partner stops naming source. Returns the target.
-/proc/rel_set(datum/source, var_name, datum/target)
+/proc/rel_view_set(datum/source, var_name, datum/target)
 	// Nothing changes (e.g. New() linking null into an empty view): no table needed, which also
 	// keeps datums made during global init (before the shared caches exist) off the table.
 	if(source.vars[var_name] == target)
@@ -192,7 +192,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return target
 
 /// Adds `target` to source.var_name (a list REF view). A symmetric or pair view adds the other side.
-/proc/rel_add(datum/source, var_name, datum/target)
+/proc/rel_view_add(datum/source, var_name, datum/target)
 	var/list/entry = _rel_entry(source, var_name, TRUE)
 	if(!entry || !target)
 		return null
@@ -210,7 +210,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return target
 
 /// Removes `target` from source.var_name (list view), or clears a single view naming it.
-/proc/rel_remove(datum/source, var_name, datum/target)
+/proc/rel_view_remove(datum/source, var_name, datum/target)
 	if(!target)
 		return FALSE
 	var/value = source.vars[var_name]
@@ -243,7 +243,7 @@ GLOBAL_LIST_EMPTY(rel_dormant)
 	return rel_remove(source, var_name, target)
 
 /// Empties source.var_name: every target unlinked (partners too).
-/proc/rel_clear(datum/source, var_name)
+/proc/rel_view_clear(datum/source, var_name)
 	var/list/entry = own_table_of(source).entries[var_name]
 	var/value = source.vars[var_name]
 	if(isnull(value))

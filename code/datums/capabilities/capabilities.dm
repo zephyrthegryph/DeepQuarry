@@ -94,14 +94,14 @@
 GLOBAL_LIST_EMPTY(caps_interned)
 
 /// The capability of A with this key (a type, or an explicit key), or null.
-/proc/cap_of(atom/A, key)
+/proc/legacy_cap_of(atom/A, key)
 	for(var/datum/capability/C as anything in caps_all(A))
 		if(C.key == key || (ispath(key) && istype(C, key)))
 			return C
 	return null
 
 /// L without the entries whose key is `key`, or which are of type `key`. Returns a new list.
-/proc/without(list/L, key)
+/proc/legacy_without(list/L, key)
 	. = list()
 	for(var/entry in L)
 		var/datum/capability/C = entry
@@ -137,7 +137,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return TRUE
 
 /// The per-instance data datum of capability C on A, created on first use (C.data_type).
-/proc/cap_data(atom/A, datum/capability/C)
+/proc/legacy_cap_data(atom/A, datum/capability/C)
 	var/datum/D = A.cap_data?[C.key]
 	if(D || !C.data_type)
 		return D
@@ -212,6 +212,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /// probed here (review 2 H9: a draw() may read what the subtype's Initialize() sets up after ..()):
 /// the first instance of each type is always queued, and its refresh records what the type derives.
 /proc/caps_init(atom/holder, mapload)
+	if(own_table_of(holder).engine_hooks & ENGINE_HOOK_INIT)
+		engine_holder_init(holder, mapload)
 	var/flags = type_derive_flags(holder)
 	if(flags & TYPE_DERIVES_TYPE_VERBS)
 		verb_store_refresh(holder, type_verbs_always(holder)) // login entries wait for Login (type_verbs.dm)

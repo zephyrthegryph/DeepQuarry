@@ -263,6 +263,8 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	// Initialize() after `. = ..()` may read them. Every atom passes here (~500k at boot): the table read is the
 	// shared cache's fast path, inlined, and the proc runs only for a type that declares one.
 	var/datum/own_table/start_table = _CACHED_KEY_FAST(own_table, D.type, D)
+	if(start_table.engine_hooks & ENGINE_HOOK_PREINIT)
+		engine_holder_preinit(D, FALSE)
 	if(start_table.start_vars)
 		own_init_starts(D, start_table)
 	var/datum/lifecycle_decls/decls = lifecycle_decls_of(D)
@@ -295,12 +297,17 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	for(var/var_name in starts)
 		var/current = D.vars[var_name]
 		var/default = starts[var_name]
-		if(istext(default))
-			default = D.vars[default]
+		var/list/start_args = null
+		if(istype(default, /datum/entry)) // pick_one(), when(), a proc, or starts_args = (code/engine/declare/relations.dm)
+			var/list/resolved = starts_resolve(D, default)
+			default = resolved[1]
+			start_args = resolved[2]
+		else if(istext(default))
+			default = (default in D.vars) ? D.vars[default] : call(D, default)(null) // a var holding the type, or a PROC_REF that returns it
 		if(islist(current) || (isnull(current) && islist(default)))
 			var/list/spec = islist(current) ? current : default
 			D.vars[var_name] = null // ALLOW(api): starting-occupant plumbing replaces the spec with owned children
-			for(var/datum/child as anything in lifecycle_decl_child_list(D, spec))
+			for(var/datum/child as anything in lifecycle_decl_child_list(D, spec, start_args))
 				lifecycle_decl_adopt_child(D, var_name, child, TRUE)
 			continue
 		if(isdatum(current))
@@ -308,11 +315,11 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 		var/path = ispath(current) ? current : default
 		if(ispath(path))
 			D.vars[var_name] = null // ALLOW(api): the type path placeholder is replaced by the owned child
-			lifecycle_decl_adopt_child(D, var_name, new path(D), FALSE)
+			lifecycle_decl_adopt_child(D, var_name, start_args ? new path(arglist(list(D) + start_args)) : new path(D), FALSE)
 
 /// A list of children from `spec`: paths become new instances (a `path = count` entry makes
 /// count of them), instances already in it are kept.
-/proc/lifecycle_decl_child_list(datum/D, list/spec)
+/proc/lifecycle_decl_child_list(datum/D, list/spec, list/start_args = null)
 	var/list/made = list()
 	for(var/entry in spec)
 		if(ispath(entry))
@@ -320,7 +327,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 			if(!isnum(count) || count < 1)
 				count = 1
 			for(var/i in 1 to count)
-				made += new entry(D)
+				made += start_args ? new entry(arglist(list(D) + start_args)) : new entry(D)
 		else if(isdatum(entry))
 			made += entry
 	return made

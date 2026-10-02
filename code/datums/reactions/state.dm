@@ -246,7 +246,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
  * deciseconds of target's clock when given, else until revoke(). The grant is present while any source
  * holds it. Returns TRUE when it was not present before.
  */
-/proc/grant(datum/target, what, source = "grant", duration)
+/proc/legacy_grant(datum/target, what, source = "grant", duration)
 	if(!target || (isdatum(target) && QDELING(target)))
 		return FALSE
 	var/kind = grant_kind(what)
@@ -261,7 +261,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		after(target, duration, GLOBAL_PROC_REF(rx_grant_expire), key = "grant:[what]:[source]", with = list(target, what, source))
 
 /// Withdraws `source`'s hold on `what`. Returns TRUE when the grant is gone (no source left).
-/proc/revoke(datum/target, what, source = "grant")
+/proc/legacy_revoke(datum/target, what, source = "grant")
 	if(!target)
 		return FALSE
 	var/kind = grant_kind(what)
@@ -296,10 +296,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 
 /proc/rx_grant_expire(datum/target, what, source)
 	if(target && !QDELETED(target))
-		revoke(target, what, source)
+		legacy_revoke(target, what, source)
 
 /// TRUE while `what` is granted to `target` by any source.
-/proc/granted(datum/target, what)
+/proc/legacy_granted(datum/target, what)
 	var/kind = grant_kind(what)
 	if(kind)
 		return om_has_grant(target, kind, grant_id(what))
@@ -374,6 +374,12 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /// Phase 4 of a datum's destruction (own_teardown): every listener record it is an end of goes, it leaves
 /// every system it joined, and its ledger is dropped. Both ends are cleaned, so nothing keeps it alive.
 /proc/rx_teardown(datum/D)
+	if(islist(GLOB?.type_table_of_type))
+		var/datum/type_table/engine_table = GLOB.type_table_of_type[D.type]
+		if(engine_table?.hook_flags & ENGINE_HOOK_DESTROY)
+			engine_holder_destroy(D)
+	if(D.rx?.activations || D.rx?.sourced)
+		activations_teardown(D)
 	if(D.seq_states)
 		seq_teardown(D) // its sequence states go first: they leave their sweeps themselves
 	member_teardown(D) // a member with no reaction state still leaves what it joined

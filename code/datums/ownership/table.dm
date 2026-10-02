@@ -55,7 +55,7 @@
 /// entry list, not one per type. Entries are read-only after they are returned, so sharing them is safe.
 /proc/_own_entry(var_name, list/entry, keep_after_destroy, pool_reset, forward, starts)
 	var/static/list/interned = list()
-	var/list/parts = list("[var_name]", "[!!keep_after_destroy][!!pool_reset][!!forward]", "[starts]")
+	var/list/parts = list("[var_name]", "[!!keep_after_destroy][!!pool_reset][!!forward]", starts_signature(starts))
 	for(var/value in entry) // flat: numbers, text, paths, null, and flat lists (extra, watch)
 		parts += islist(value) ? "\[[jointext(value, ",")]\]" : "[value]"
 	// A list of starting occupants (list(path = count)) is not keyed here: such an entry is never shared.
@@ -274,6 +274,8 @@
 	var/list/watch_vars
 	/// var name -> starting occupant spec (owns(starts =)), made by own_init_starts() at init, or null.
 	var/list/start_vars
+	/// ENGINE_HOOK_*: the engine work the type's compiled declarations (code/engine/declare) ask for at init, or 0.
+	var/engine_hooks = 0
 
 /// D's ownership table (never null).
 /proc/own_table_of(datum/D)
@@ -298,6 +300,9 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 		decl.add(E)
 	for(var/datum/own_entry/E as anything in type_list(D, TYPE_PROC_REF(/datum, relations)))
 		decl.add(E)
+	// The engine's declarations: the relation entries of the type's CAPABILITIES lists (code/engine/declare/relations.dm).
+	for(var/datum/own_entry/E as anything in table_own_entries(table_of(D)))
+		decl.add(E)
 	for(var/line in decl.conflicts)
 		OWN_REPORT("[D.type]: one kind per var: [line]")
 	T.entries = decl.entries
@@ -319,6 +324,8 @@ DECLARE_SHARED_CACHE(own_table, GLOBAL_PROC_REF(build_own_table), SC_NEVER)
 				LAZYADD(T.proto_vars, var_name)
 			if(OWNK_SHARED)
 				LAZYADD(T.shared_vars, var_name)
+	link_entries_for(decl, D, T)
+	T.engine_hooks = table_hook_flags(table_of(D))
 	T.keep_vars = decl.keep
 	T.pool_reset_vars = decl.pool_reset
 	T.forward_vars = decl.forward

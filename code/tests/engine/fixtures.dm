@@ -25,34 +25,29 @@
 // ---- Capability specs: what a grant() names. Plain types, since a constructor call such as mirror_plating(reflect_chance = 45)
 // is not DM before E1: e0_mirror_plating(45) builds the spec the engine will intern. ----
 
-/// A test-only capability spec: the definition a grant() applies. E1 replaces these with CAPABILITY_TYPE definitions.
+/// The test-only capabilities: real CAPABILITY_TYPE definitions (E1), so grant(), revoke() and granted() work on them. A /datum/e0_cap is a
+/// capability definition datum; its params are its vars.
 /datum/e0_cap
-	/// The CAP_* id the real definition carries.
-	var/cap_id
+	parent_type = /datum/capability
 
-/// CAPABILITY_TYPE(mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, key = NONE, stacks = BEST(reflect_chance), reflect_chance = 30)
+/// CAPABILITY_TYPE(mirror_plating, CAP_E0_MIRROR, /datum/capability/mirror, key = NONE, stacks = BEST(reflect_chance), reflect_chance = 30)
+CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, NONE, BEST(reflect_chance), reflect_chance)
 /datum/e0_cap/mirror
-	cap_id = CAP_E0_MIRROR
 	var/reflect_chance = 30
 
-/// What a fixture writes for mirror_plating(reflect_chance = n).
-/proc/e0_mirror_plating(reflect_chance = 30)
-	var/datum/e0_cap/mirror/spec = new
-	spec.reflect_chance = reflect_chance
-	return spec
-
 /// CAPABILITIES(/datum/e0_cap/tk, provides(AFF_MANIPULATE, reach = 15, line_of_sight = TRUE)): telekinesis, a provider.
+CAPABILITY_TYPE(e0_tk, CAP_E0_TK, /datum/e0_cap/tk, NONE, STACK)
 /datum/e0_cap/tk
-	cap_id = CAP_E0_DOOR
 
 /// The CAPABILITY_TYPE(phase_shift, CAP_PHASE_SHIFT, ...) of 16.9: an ability (menu() ops "phase_shift.shift" and "phase_shift.unshift")
 /// that grants the phased capability on its own holder (density, invisibility, acts_via, every(1 SECOND) energy drain).
+CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, NONE, STACK)
 /datum/e0_cap/phase_shift
-	cap_id = CAP_PHASE_SHIFT
 
 /// CAPABILITY_TYPE(phased, CAP_PHASED, /datum/capability/phased, key = NONE, drain = 1): density, invisibility, acts_via, every(1 SECOND).
+CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, NONE, STACK, drain)
 /datum/e0_cap/phased
-	cap_id = CAP_PHASED
+	var/drain = 1
 
 /// SPECIES_CAPABILITIES for a test species (a species grants capabilities, including hands(), while a mob's species relation names it).
 /datum/e0_species
@@ -62,13 +57,16 @@
 /datum/e0_species/shifter
 	name = "e0 shifter"
 
+CAPABILITIES(/datum/e0_species/shifter, e0_phase_shift())
+
 /// SPECIES_CAPABILITIES(/datum/e0_species/plain, hands())
 /datum/e0_species/plain
 	name = "e0 plain"
 
 // ---- The actor and the wearer: a simple mob with the vars the proofs read ----
 
-/// A test mob. ref_one(nameof(species), /datum/e0_species) is declared on it (the legacy relation view learns the var), dark_energy
+/// A test mob. ref_one(nameof(species), /datum/e0_species) and rel_grants(nameof(species)) are declared on it (a species change is a relation
+/// write that grants and revokes what the new species declares), dark_energy
 /// is the resource of 16.9 (TRACKED schema int(0, 100), default 100), and last_reflect_source is what the test-only mirror's reflect
 /// handler writes its A.source into (proof 2).
 /mob/living/simple_mob/e0_fixture
@@ -78,6 +76,8 @@
 	var/dark_energy = 100
 	/// Written by the reflect handler of the test-only mirror capability: the winning activation source.
 	var/last_reflect_source
+
+CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/e0_species), rel_grants(nameof(species)))
 
 /// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
 /// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.

@@ -8,4 +8,5 @@
 #include "driver\recorder.dm"
 #include "driver\kernel_clock.dm"
 #include "engine\fixtures.dm"
+#include "engine\e1_fixtures.dm"
 #endif
