@@ -57,7 +57,12 @@ ADMIN_VERB(toggle_pipeline_audit, R_DEBUG, "Toggle Pipeline Audit", "Turns the m
 	var/datum/om/scheduler/sched = Kernel?.sched
 	if(!sched)
 		return STEP_DONE
+	// The audit is kernel work, outside every behaviour's slot, so nothing charged it: its cost (about 0.18 ms per
+	// sampled parked mob) was tick usage no system owned. It is charged to the OM core, where the scheduler's own
+	// bookkeeping lands, so a spike in the tick record names it instead of leaving it unexplained.
+	var/started = TICK_USAGE
 	om_pipeline_audit(sched, OM_AUDIT_PARKED_SAMPLE, OM_AUDIT_AWAKE_SAMPLE)
 	seq_audit(SEQ_AUDIT_PARKED_SAMPLE, SEQ_AUDIT_AWAKE_SAMPLE)
 	om_sleeper_audit(64, TRUE)
+	km_meter().charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(started))
 	return STEP_DONE
