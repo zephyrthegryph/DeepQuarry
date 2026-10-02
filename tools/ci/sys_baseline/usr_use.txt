@@ -344,8 +344,6 @@ usr_outside_verb	code/game/mecha/micro/micro.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)
 usr_outside_verb	code/game/memory_profiler.dm	om_ask_begin(null, usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), list(receiver = usr.client))
 usr_outside_verb	code/game/objects/effects/info.dm	to_chat(usr, info_text)
-usr_outside_verb	code/game/objects/items.dm	if(isliving(usr)) //Always prefer usr if set
-usr_outside_verb	code/game/objects/items.dm	M = usr
 usr_outside_verb	code/game/objects/items.dm	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
@@ -760,7 +758,6 @@ usr_outside_verb	code/modules/spells/aoe_turf/aoe_turf.dm	/datum/spell/aoe_turf/
 usr_outside_verb	code/modules/spells/general/rune_write.dm	/datum/spell/rune_write/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/choose_targets(mob/user = usr) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
-usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/cast_check(skipcharge = 0,mob/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/invocation(mob/user = usr, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
 usr_outside_verb	code/modules/spells/targeted/projectile/dumbfire.dm	/datum/spell/targeted/projectile/dumbfire/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/spells/targeted/targeted.dm	/datum/spell/targeted/choose_targets(mob/user = usr)
