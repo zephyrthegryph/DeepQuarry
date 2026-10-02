@@ -35,6 +35,7 @@
 	if(isatom(src))
 		var/atom/A = src
 		caps_ui_data(A, user, .) // capabilities add theirs (code/datums/capabilities/)
+	present_tgui_data(src, user, .) // the type's ui_data(A) output and its engine capabilities' data (code/engine/present/outputs.dm)
 
 /**
  * public
@@ -105,6 +106,10 @@
 	OM_EMIT(src, /datum/om/event/ui_act, ui.user, action)
 	// If UI is not interactive or usr calling Topic is not the UI user, bail.
 	if(!ui || ui.status != STATUS_INTERACTIVE)
+		return TRUE
+	// A window button is an op with a ui_act() binding: it runs first (code/engine/present/outputs.dm, present_ui_act()).
+	var/datum/op_result/button = present_ui_act(src, ui.user, action, params)
+	if(button)
 		return TRUE
 	// A named action proc, ui_<action>(mob/user, named args...) (code/datums/capabilities/ui_actions.dm).
 	var/list/named = ui_named_dispatch(src, action, params, ui)

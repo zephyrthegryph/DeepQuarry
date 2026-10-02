@@ -26,7 +26,7 @@ use crate::sem::graph::DepGraph;
 use crate::sem::reads::{Annotations, ReadKind, ReadsEngine};
 
 /// Engine-internal directories the walk does not enter.
-pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/"];
+pub const OPAQUE: &[&str] = &["code/datums/sys/", "code/datums/om/", "code/modules/tgui/", "code/datums/capabilities/", "code/datums/reactions/", "code/datums/ownership/", "code/engine/"];
 
 struct Reads;
 

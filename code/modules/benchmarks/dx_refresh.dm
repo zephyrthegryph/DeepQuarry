@@ -9,7 +9,7 @@
 
 /obj/machinery/dx_bench_drawer/capabilities()
 	. = ..()
-	. += machine_basics(board = null)
+	. += legacy_machine_basics(board = null)
 
 /obj/machinery/dx_bench_drawer/should_run()
 	return TRUE

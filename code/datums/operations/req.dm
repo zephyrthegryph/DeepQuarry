@@ -228,7 +228,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 		return reason
 	return null
 
-/proc/req_wire(wire)
+/proc/legacy_req_wire(wire)
 	var/datum/req/wire/R = new
 	R.wire = wire
 	return req_intern(R)
@@ -419,7 +419,7 @@ MSG_DEF_SELF(req_no_claws, "You can't tear into that.")
 	var/atom/A = subject(ctx)
 	return A ? list(list(A, OP_KEY_CAP_STATE)) : null
 
-/proc/req_not_subverted()
+/proc/legacy_req_not_subverted()
 	RETURN_TYPE(/datum/req)
 	return req_intern(new /datum/req/not_subverted)
 

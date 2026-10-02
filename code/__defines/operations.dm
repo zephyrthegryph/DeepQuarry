@@ -65,9 +65,9 @@
 
 // ---- op keys of the library's lock and emag ops (refine() and cap_require() name them) ----
 /// The emag op of a hatch: refine(CAP_EMAG, ...) edits its wait and effect.
-#define CAP_EMAG "emag"
+#define LEGACY_CAP_EMAG "emag"
 /// Toggling a lock with a credential (a held card, worn ID/PDA or a silicon's access): ACT_LOCK.
-#define CAP_LOCK "toggle_lock"
+#define LEGACY_CAP_LOCK "toggle_lock"
 /// The key of claw_op(): a shredder tearing at a breakable machine.
 #define CAP_CLAW "claw"
 

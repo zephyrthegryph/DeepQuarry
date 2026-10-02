@@ -231,3 +231,41 @@
 				for(var/atom/movable/thing as anything in holder.slot_contents(row["slot"]))
 					if(holder.slot_remove(thing, where, actor))
 						TEST_REC_TRANSFER(thing, holder, where, row["slot"])
+
+// ---- reading and placing the stage (phase 2) ----
+
+MSG_DEF_SELF(construction/not_built, "It isn't built that far.")
+
+/// req_built(STAGE_X, because =): the instance is at stage X or past it (built(E, X)): a requirement on the holder.
+/proc/req_built(stage, because = null, cap_id = CAP_CONSTRUCTION)
+	return part_make(/datum/entry/part/req/built, list("stage" = stage, "cap" = cap_id, "because" = because))
+
+/datum/entry/part/req/built
+	part_name = "req_built"
+	default_reason = /datum/msg/construction/not_built
+
+/datum/entry/part/req/built/holds(datum/act/A)
+	return built(A.holder, src.args["stage"])
+
+/datum/entry/part/req/built/read_keys(datum/act/op/A)
+	return A.holder ? list(list(A.holder, "graph:[src.args["cap"]]")) : list()
+
+/**
+ * Places E at `stage` of its graph as it stands: a thing created part-built by code (an APC made from its frame item starts at the frame, though
+ * its type is placed finished by a map). The history is empty and no longer seeded, so nothing is refunded for the way there and undoing stops
+ * at the graph's start. Returns TRUE, or FALSE when E has no such graph.
+ */
+/proc/graph_place(datum/E, stage, cap_id = CAP_CONSTRUCTION)
+	var/datum/cap_data/graph_state/S = graph_state(E, cap_id, TRUE)
+	var/datum/capability/construction/def = cap_of(E, cap_id)
+	if(!S || !def?.graph || !graph_declares(def.graph, stage))
+		declare_report("graph_place([E?.type]): it has no stage [stage_key(stage) || stage] in graph [cap_id]")
+		return FALSE
+	var/was = S.current
+	S.history = null
+	S.seeded = TRUE
+	S.current = stage
+	if(was != stage)
+		TEST_REC_DELTA(E, "stage:[cap_id]", was, stage)
+	engine_key_changed(E, "graph:[cap_id]")
+	return TRUE

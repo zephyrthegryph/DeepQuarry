@@ -14,7 +14,7 @@
 	var/of_area = FALSE
 
 /// `system`: a /datum/system type the holder joins, or POWERED_BY_AREA to be a member of its area.
-/proc/powered_by(system, role)
+/proc/legacy_powered_by(system, role)
 	var/datum/capability/powered_by/C = new
 	if(system == POWERED_BY_AREA)
 		C.of_area = TRUE

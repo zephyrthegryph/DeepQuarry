@@ -222,6 +222,7 @@ GLOBAL_LIST_EMPTY(refresh_traced)
 		GLOB.derive_probe_found |= TYPE_DERIVES_LOOK
 	for(var/datum/capability/C as anything in caps_ordered(src, CAP_ORDER_DRAW))
 		C.draw(src, look)
+	present_draw(src, look) // the layers and draws the engine's capabilities declare (code/engine/present/outputs.dm)
 
 /// TRUE while periodic_step(dt) should run on `periodic_cadence`. Re-evaluated on change.
 /datum/proc/should_run()

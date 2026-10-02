@@ -1,6 +1,4 @@
 // Flags for the obj_flags var on /obj
-/// Object has been affected by a cryptographic sequencer (EMAG) disabling it or causing other malicious effects
-#define EMAGGED (1<<0)
 /// Can this be bludgeoned by items
 #define CAN_BE_HIT (1<<1)
 /// Admin possession yes/no

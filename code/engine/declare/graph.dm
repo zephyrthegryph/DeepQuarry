@@ -440,6 +440,7 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 /// TRUE when `stage` is the current stage of E's graph, or appears in its history: "at or past" is reachability through the history, so a
 /// stage never passed (another branch was taken) is not built.
 /proc/built(datum/E, stage)
+	READS_FROM(E)
 	for(var/cap_id in list(CAP_CONSTRUCTION, CAP_DEPLOYMENT))
 		var/datum/capability/construction/def = cap_of(E, cap_id)
 		if(!def?.graph)

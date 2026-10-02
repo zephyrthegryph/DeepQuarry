@@ -272,7 +272,7 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/flamp, "stage", list("1" = lis
 /// through members_of(area, POWER_ROLE_LIGHTING), not by scanning the area.
 /obj/machinery/light/capabilities()
 	. = ..()
-	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
+	. += legacy_powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
 
 TRACKED_BRIDGED(/obj/machinery/light, nightshift_allowed, CHANGE_MACHINE_SETTINGS)
 

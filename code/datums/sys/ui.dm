@@ -213,7 +213,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	var/datum/ui_decl/decl = ui_decl_of(src)
 	if(decl?.interface_var)
 		return vars[decl.interface_var]
-	return decl?.interface || tgui_id
+	return decl?.interface || present_interface(src)?.args["window"] || tgui_id
 
 /// The tgui interface this type opens (a type var, dx_conventions.md §5), e.g. "SupplyConsole".
 /datum/var/tgui_id
@@ -233,6 +233,9 @@ GLOBAL_LIST_EMPTY(ui_decls)
 	var/datum/ui_decl/decl = ui_decl_of(src)
 	if(decl?.title)
 		return decl.title
+	var/datum/entry/declared = present_interface(src)
+	if(declared?.args["title"])
+		return declared.args["title"]
 	if("name" in vars)
 		return vars["name"]
 	return decl?.interface
@@ -279,7 +282,7 @@ GLOBAL_LIST_EMPTY(ui_decls)
 			ui = null
 		return redirect.tgui_interact(user, ui, parent_ui, custom_state)
 	var/datum/ui_decl/decl = ui_decl_of(host)
-	if(!decl?.interface && !decl?.interface_var && !host.tgui_id)
+	if(!decl?.interface && !decl?.interface_var && !host.tgui_id && !present_interface(host))
 		return FALSE
 	if(!host.ui_prepare(user, ui))
 		ui?.close()

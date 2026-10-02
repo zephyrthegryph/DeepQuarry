@@ -35,10 +35,8 @@
 	if(master())
 		master().overload(source)
 
-/// The APC that owns this terminal: paired with its `terminal`, and the terminal goes when it does.
-/obj/machinery/power/terminal/relations()
-	. = ..()
-	. += rel_one(nameof(master), /obj/machinery/power/apc, kind = RELK_PAIRED, back = nameof(/obj/machinery/power/apc::terminal), other_deleted = DELETE_ME)
+// The APC that owns this terminal: its `master` is paired with the APC's `terminal` (link() in the APC's CAPABILITIES), and the terminal goes when
+// the APC does (the APC's on_destroy()).
 
 /// the master this refers to: a relation view, null once that is deleted.
 /obj/machinery/power/terminal/proc/master() as /obj/machinery/power

@@ -159,9 +159,12 @@ GLOBAL_LIST_EMPTY(caps_interned)
 /proc/is_locked(atom/A)
 	return !!(A.cap_state & CAP_LOCKED)
 /proc/is_emagged(atom/A)
-	return !!(A.cap_state & CAP_EMAGGED)
+	return !!(A.cap_state & CAP_EMAGGED) || (cap_of(A, CAP_EMAG) && emag_emagged(A)) // a converted holder keeps it as a capability key
 /proc/is_broken(atom/A)
-	return !!(A.cap_state & CAP_BROKEN)
+	if(A.cap_state & CAP_BROKEN)
+		return TRUE
+	var/obj/machinery/M = A // a converted machine's breakable() reads the machine's own BROKEN bit
+	return istype(M) && (M.stat & BROKEN) && cap_of(A, CAP_BREAKABLE)
 /**
  * Whether A's screen or lamps show: it has power, isn't broken and nothing overrides its display
  * (screen_override()). What a lamp or glow draws behind, so every machine answers it the same way.
@@ -293,6 +296,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 		var/list/lines = C.examine(holder, user)
 		if(lines)
 			. += lines
+	. += present_examine(holder, user) // the lines the engine's capabilities declare (code/engine/present/outputs.dm)
 
 /// Adds every capability's UI data under data["caps"][C.ui_key()], one list per capability, so no
 /// capability key collides with the holder's own (M11). /datum/tgui_data() callers merge it through ..().
@@ -645,7 +649,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 	if(!C.works_unpowered)
 		E.works_unpowered = FALSE
 	E.log ||= C.log
-	E.at ||= C.at
+	E.at ||= C.bay_at
 
 /// Sets the standard gating arguments on capability C (every library constructor calls it with its
 /// own same-named arguments). Returns C. Library constructors take no `behind` / `blocked_by` / `locked_by`
@@ -663,7 +667,7 @@ GLOBAL_LIST_EMPTY(type_derives_cache) // ALLOW(cache): a per-type memo of derive
 	C.works_broken = works_broken
 	C.works_unpowered = works_unpowered
 	C.log = log
-	C.at = at
+	C.bay_at = at
 	return C
 
 /**

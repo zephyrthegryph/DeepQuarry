@@ -17,7 +17,16 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"touched",
 	"locked",
 	"apc",
-	"channel_on"
+	"channel_on",
+	"w_class",
+	"coverlocked",
+	"stat",
+	"cell",
+	"connected_ai",
+	"lying",
+	"aidisabled",
+	"hacker",
+	"loc"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -41,5 +50,21 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 4)),
 	"/obj/e3_load::apc_channel" = list(0,
 		list(1, 0, 5),
-		list(1, 0, 6, 5))
+		list(1, 0, 6, 5)),
+	"/obj/machinery/power/apc::actor_works_locked" = list(0),
+	"/obj/machinery/power/apc::cell_fits" = list(0,
+		list(3, 0, 7)),
+	"/obj/machinery/power/apc::cover_free" = list(0,
+		list(1, 0, 8),
+		list(1, 0, 9)),
+	"/obj/machinery/power/apc::cover_replaceable" = list(0,
+		list(1, 0, 10),
+		list(1, 0, 9)),
+	"/obj/machinery/power/apc::ui_usable" = list(0,
+		list(2, 0, 11),
+		list(2, 0, 12),
+		list(2, 0, 9),
+		list(1, 0, 13),
+		list(1, 0, 14),
+		list(1, 0, 15))
 ))

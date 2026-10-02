@@ -293,6 +293,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
  */
 /datum/wires/proc/repair()
 	cut_wires = null
+	state_changed()
 
 /**
  * Adds in dud wires, which do nothing when cut/pulsed.
@@ -368,6 +369,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 	if(is_cut(wire))
 		LAZYREMOVE(cut_wires, wire)
 		on_cut(wire, TRUE, user)
+		state_changed()
 	else
 		cut_wire(wire, user)
 
@@ -383,6 +385,7 @@ UI_ACT_PROC(/datum/wires, ui_act_attach)
 		return FALSE
 	LAZYADD(cut_wires, wire)
 	on_cut(wire, FALSE, user)
+	state_changed()
 	return TRUE
 
 /**

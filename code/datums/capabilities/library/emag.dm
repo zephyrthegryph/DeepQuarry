@@ -33,7 +33,7 @@
 		return null
 	// The op keyed CAP_EMAG, as emag_op()'s: cap_require(CAP_EMAG, ...) contracts it. A card beats any other use of it
 	// (OP_PRIORITY_SUBVERT). The wait is the op wait, before the handler runs.
-	return list(adopt_entry(lib_op("Emag", GLOBAL_PROC_REF(cap_emag_use), OP_SHAPE_USE_ON, using = /obj/item/card/emag, key = CAP_EMAG, kind = OP_STRUCTURAL, delay = delay, works_broken = FALSE, works_unpowered = TRUE, priority = OP_PRIORITY_SUBVERT), id = "emag"))
+	return list(adopt_entry(lib_op("Emag", GLOBAL_PROC_REF(cap_emag_use), OP_SHAPE_USE_ON, using = /obj/item/card/emag, key = LEGACY_CAP_EMAG, kind = OP_STRUCTURAL, delay = delay, works_broken = FALSE, works_unpowered = TRUE, priority = OP_PRIORITY_SUBVERT), id = "emag"))
 
 /datum/capability/emag/draw(atom/holder, datum/look/look)
 	if(as_op)
@@ -86,13 +86,13 @@
 	var/list/pre = list(GLOBAL_PROC_REF(emag_op_ok))
 	if(gate[4])
 		pre += islist(gate[4]) ? gate[4] : list(gate[4])
-	var/datum/capability/entry/op = cap_op("Emag", effect || GLOBAL_PROC_REF(emag_default_effect), using = /obj/item/card/emag, key = CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = OP_PRIORITY_SUBVERT, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
+	var/datum/capability/entry/op = cap_op("Emag", effect || GLOBAL_PROC_REF(emag_default_effect), using = /obj/item/card/emag, key = LEGACY_CAP_EMAG, action = ACT_USE, kind = OP_STRUCTURAL, delay = delay, priority = OP_PRIORITY_SUBVERT, needs = pre, else_say = else_say, behind = gate[1], blocked_by = gate[2], locked_by = gate[3], log = log)
 	return list(C, op)
 
 /datum/capability/emag/reactions()
 	. = ..()
 	if(as_op)
-		. += cap_rx(src, after_op(CAP_EMAG, PROC_REF(committed)))
+		. += cap_rx(src, after_op(LEGACY_CAP_EMAG, PROC_REF(committed)))
 
 /// The default effect of an emag op: nothing beyond the shared commit.
 /proc/emag_default_effect(atom/holder, mob/user, obj/item/card/emag/card)

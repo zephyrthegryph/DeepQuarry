@@ -29,35 +29,6 @@ MSG_DEF_SELF(cover/removed, "Its cover has been removed.")
 MSG_DEF_SELF(bay/closed, "It is closed.")
 MSG_DEF_SELF(bay/full, "There is already something in there.")
 
-// ---- cover ----
-
-CAPABILITY_TYPE(cover, CAP_COVER, /datum/capability/bay_cover, key = name, name = "cover", tool = BY_HAND, removable = FALSE, starts_open = FALSE)
-cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
-
-/datum/capability/bay_cover
-	holder_hooks = HOLDER_HOOK_INIT
-
-/datum/capability/bay_cover/entries()
-	var/list/entries = list()
-	var/opener = (tool == BY_HAND) ? hand() : tool(tool)
-	entries += op("open", opener, \
-		needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed))), \
-		toggles(COVER_OPEN))
-	if(removable)
-		entries += op("remove", tool(TOOL_CROWBAR), hostile(), \
-			needs(req_is(COVER_REMOVED, FALSE, because = MSG(cover/removed))), \
-			sets(COVER_OPEN, TRUE), sets(COVER_REMOVED, TRUE))
-	return entries
-
-/// A cover that starts open is open from the moment its holder initializes.
-/datum/capability/bay_cover/on_holder_init_ctx(datum/act/eval/A)
-	if(starts_open)
-		cap_key_set(A.holder, COVER_OPEN, TRUE, selector)
-
-/// An open or removed cover leaves its bay exposed.
-/datum/capability/bay_cover/bay_exposed(datum/holder)
-	return cover_open(holder, null) || cover_removed(holder, null)
-
 /// A capability that can be a bay's door answers whether the bay it closes is exposed now. The default is not a door: nothing is closed.
 /datum/capability/proc/bay_exposed(datum/holder)
 	return TRUE
@@ -66,14 +37,11 @@ cap_keys(CAP_COVER, OPEN = MSG(cover/closed), REMOVED = MSG(cover/still_on))
 /datum/capability/proc/bay_closed_reason()
 	return /datum/msg/bay/closed
 
-/datum/capability/bay_cover/bay_closed_reason()
-	return /datum/msg/cover/closed
-
 // ---- compartment ----
 
-CAPABILITY_TYPE(bay_compartment, CAP_COMPARTMENT, /datum/capability/bay_compartment, key = bay, prefix = "compartment", bay = null, door = null, applies_to = AUTH_PHYSICAL)
+CAPABILITY_TYPE(compartment, CAP_COMPARTMENT, /datum/capability/lib/compartment, key = bay, bay = null, door = null, applies_to = AUTH_PHYSICAL)
 
-/datum/capability/bay_compartment/entries()
+/datum/capability/lib/compartment/entries()
 	return list(entry_make(ENTRY_COMPARTMENT, null, list("bay" = bay, "door" = door, "applies_to" = applies_to)))
 
 /// The reason bay `bay` of `holder` is closed to `authority`, or null when it is exposed: each compartment of that bay whose applies_to takes the
@@ -103,23 +71,41 @@ CAPABILITY_TYPE(bay_compartment, CAP_COMPARTMENT, /datum/capability/bay_compartm
 
 // ---- cell bay ----
 
-CAPABILITY_TYPE(bay_cell, CAP_CELL_BAY, /datum/capability/bay_cell, key = slot_var, prefix = "cell_bay", slot_var = null, bay = null, accepts = /obj/item/cell, starts = null)
+CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY, /datum/capability/lib/cell_bay, key = slot_var, slot_var = null, at = null, accepts = /obj/item/cell, starts = null)
 
-/datum/capability/bay_cell
+/// A power cell slot over a holder var (`slot_var`, nameof(cell)), behind the bay `at` when given: cell_bay.<var>.insert (a cell in hand goes in) and
+/// cell_bay.<var>.take (an empty hand takes it out), each refused with the compartment's reason while the bay is closed. The cell shows through
+/// an open cover (a look layer), examine says what it holds, and cell_charge_percent() reads its charge through the bay. `starts` (a type, or
+/// nameof(var) of a holder var holding one) fills the bay when the holder initializes.
+/datum/capability/lib/cell_bay
 	holder_hooks = HOLDER_HOOK_INIT
 
-/datum/capability/bay_cell/entries()
+MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
+
+/datum/capability/lib/cell_bay/entries()
 	var/list/entries = list()
 	var/list/at_bay = list()
-	if(!isnull(bay))
-		entries += entry_make(ENTRY_BAY_SLOT, null, list("var" = slot_var, "bay" = bay))
-		at_bay += at(bay)
+	var/visible = slot_var
+	if(!isnull(at))
+		entries += entry_make(ENTRY_BAY_SLOT, null, list("var" = slot_var, "bay" = at))
+		at_bay += global.at(at)
+		if(at == BAY_HATCH)
+			visible = cond_all(slot_var, COVER_OPEN, cond_not(COVER_REMOVED))
 	entries += op("insert", item(accepts), put_in(slot_var), at_bay)
 	entries += op("take", hand(), when(slot_var), take_out(slot_var), at_bay)
+	entries += look_layer(LOOK_CELL, when = visible)
+	entries += examine_line(CAP_PROC(examine_cell), reads = list(slot_var))
 	return entries
 
+/// The charge meter (or the missing cell, when the bay can be seen into).
+/datum/capability/lib/cell_bay/proc/examine_cell(datum/act/A)
+	var/obj/item/cell/C = A.holder.vars[slot_var]
+	if(!istype(C))
+		return (at == BAY_HATCH && cover_open(A.holder, null)) ? "The power cell is missing." : null
+	return "The charge meter reads [round(C.percent())]%."
+
 /// The bay starts with a thing when its holder initializes: `starts` is a type, or nameof(var) of a holder var holding one.
-/datum/capability/bay_cell/on_holder_init_ctx(datum/act/eval/A)
+/datum/capability/lib/cell_bay/on_holder_init_ctx(datum/act/eval/A)
 	var/atom/holder = A.holder
 	if(isnull(starts) || !istype(holder) || !isnull(holder.vars[slot_var]))
 		return
@@ -130,6 +116,20 @@ CAPABILITY_TYPE(bay_cell, CAP_CELL_BAY, /datum/capability/bay_cell, key = slot_v
 		return
 	var/atom/movable/thing = new start_type(holder)
 	varslot_set(holder, slot_var, thing)
+
+/datum/capability/lib/cell_bay/output_reads(hook)
+	return list(slot_var)
+
+/// The charge of A's cell bay in percent: 0 with no cell (never null).
+/proc/cell_charge_percent(atom/A)
+	READS_FROM()
+	var/datum/type_table/T = table_of(A)
+	for(var/key in T.caps)
+		var/datum/capability/lib/cell_bay/bay = T.caps[key]
+		if(istype(bay) && bay.cap_id == CAP_CELL_BAY)
+			var/obj/item/cell/cell = A.vars[bay.slot_var]
+			return istype(cell) ? cell.percent() : 0
+	return 0
 
 // ---- slots over a holder var ----
 
@@ -144,6 +144,12 @@ CAPABILITY_TYPE(bay_cell, CAP_CELL_BAY, /datum/capability/bay_cell, key = slot_v
 
 /// Sets the var of a var-slot to `thing` (which is in the holder) or empties it.
 /proc/varslot_set(atom/holder, var_name, atom/movable/thing)
+	if(rel_kind(holder, var_name) == OWNK_OWN) // a declared owned var: the ownership accessors stamp it and dispose of what it displaces
+		if(isnull(thing))
+			rel_take(holder, var_name)
+		else
+			own_set(holder, var_name, thing, into = FALSE)
+		return
 	holder.vars[var_name] = thing // ALLOW(api): the one writer of a one-item slot over a var: the bay capability's own slot
 	changed(holder, CHANGE_EXPLICIT, var_name)
 

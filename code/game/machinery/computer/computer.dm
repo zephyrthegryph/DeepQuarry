@@ -23,7 +23,7 @@
 /// through area_members(area, POWER_ROLE_COMPUTER). The membership follows the console into another area.
 /obj/machinery/computer/capabilities()
 	. = ..()
-	. += powered_by(POWERED_BY_AREA, role = POWER_ROLE_COMPUTER)
+	. += legacy_powered_by(POWERED_BY_AREA, role = POWER_ROLE_COMPUTER)
 
 /obj/machinery/computer/Initialize(mapload)
 	. = ..()

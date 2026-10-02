@@ -136,6 +136,9 @@ pub struct Annotations {
     pub relations: HashMap<String, HashSet<String>>,
     /// `SYSTEM_ACCESSOR(system, proc, nameof(var))`: proc -> (system, var).
     pub accessors: HashMap<String, (String, String)>,
+    /// The accessor `cap_keys(CAP_X, KEY = ...)` generates for each state key (`cover_open`): proc -> the key's id name (`COVER_OPEN`).
+    /// A call stands for a read of that key on its first argument; the global proc behind it is not followed.
+    pub capkey_accessors: HashMap<String, String>,
 }
 
 impl Annotations {
@@ -164,6 +167,23 @@ impl Annotations {
                     a.reads_as.insert((ty, name), (key.clone(), via.clone()));
                     break;
                 }
+            }
+        }
+        let mut cap_names: HashMap<String, String> = HashMap::new();
+        for m in decls.markers_named("CAPABILITY_TYPE").chain(decls.markers_named("CAPABILITY_DEF")) {
+            if let (Some(name), Some(id)) = (m.args.first(), m.args.get(1)) {
+                cap_names.insert(id.clone(), name.clone());
+            }
+        }
+        for m in decls.markers_named("cap_keys") {
+            let Some(cap_id) = m.args.first() else { continue };
+            let Some(cap_name) = cap_names.get(cap_id) else { continue };
+            for arg in m.args.iter().skip(1) {
+                let key = arg.split('=').next().unwrap_or("").trim().to_string();
+                if key.is_empty() {
+                    continue;
+                }
+                a.capkey_accessors.insert(format!("{}_{}", cap_name, key.to_lowercase()), format!("{}_{}", cap_name.to_uppercase(), key));
             }
         }
         for m in decls.markers_named("SYSTEM_ACCESSOR") {
@@ -1006,6 +1026,14 @@ impl<'a, 'e> Walk<'a, 'e> {
                 if let Term::String(s) = &term.elem {
                     { let r = Read { root: this.root_name(), hops: this.hops.clone(), var: s.clone(), owner: String::new(), kind: ReadKind::Native, hop_ok: true }; self.add_read(r, &rel, line); }
                 }
+            }
+            return Val::local(None);
+        }
+        // A capability state key's accessor (cover_open(holder)): a read of the key on its first argument.
+        if let Some(key) = self.eng.ann.capkey_accessors.get(name) {
+            if let Some(v) = argv.first().filter(|v| v.tracked()) {
+                let r = Read { root: v.root_name(), hops: v.hops.clone(), var: key.clone(), owner: String::new(), kind: ReadKind::Accessor, hop_ok: v.hop_ok };
+                self.add_read(r, &rel, line);
             }
             return Val::local(None);
         }

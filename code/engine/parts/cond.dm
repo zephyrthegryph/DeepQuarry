@@ -506,9 +506,9 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 			return TRUE
 	return FALSE
 
-/// Does anything of `holder` listen for `notice_type`? (E4 owns hook indexes: until it lands every notice is wanted.)
+/// Does anything of `holder` listen for `notice_type`? (req_heard(): an op that only publishes a notice is offered only where a hook hears it.)
 /proc/op_notice_wanted(datum/D, notice_type)
-	return TRUE
+	return notice_wanted(D, notice_type)
 
 /// A requirement (new, or a legacy /datum/req that has a new-engine form) as a boolean in an op's context.
 /proc/op_req_holds(datum/act/op/A, requirement)

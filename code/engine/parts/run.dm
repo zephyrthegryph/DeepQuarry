@@ -903,6 +903,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 
 /datum/entry/part/says/proc/feedback(datum/act/op/A)
 	var/msg = src.args["msg"]
+	if(istext(msg)) // says(PROC_REF(x)) / says(CAP_PROC(x)): x(datum/act/A) returns the /datum/msg type this commit tells (a toggle says what it did)
+		msg = op_call(A, msg)
 	if(ispath(msg, /datum/msg) && A.actor)
 		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)
 

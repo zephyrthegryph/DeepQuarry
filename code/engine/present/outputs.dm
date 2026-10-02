@@ -1,0 +1,274 @@
+// Presentation entries and outputs (doc/rewrite/final_api.html, section 13 "Look, UI, verbs, prompts"; section 11 "Defining one";
+// doc/rewrite/engine_contracts.md "Phase 2 additions").
+//
+// What a CAPABILITIES list can say about how its holder looks, reads and talks to a window:
+//
+//   look_layer(name, when = cond)         a layer of the holder's look while `cond` holds (a capability state key, a stat, a tracked var,
+//                                         cond_not/cond_all/cond_any, a PROC_REF of the holder): look.part(name)
+//   examine_line(text | MSG | PROC_REF, when = cond)
+//                                         a line of the holder's examine text while `cond` holds. A text or a /datum/msg type is the
+//                                         line itself; a PROC_REF is a proc of the holder, x(datum/act/A), returning a text or a list
+//   interface(window, title =, ...)       (code/engine/parts/part.dm) the window the holder opens: ui_interface() and ui_title() read it
+//
+// and what a CAPABILITY_TYPE datum can contribute when it overrides one of the output procs below (each takes the pooled eval context, A.holder
+// and A.cap set):
+//
+//   on_draw(A, look)                      draws into the holder's look (after the capability's look_layer entries, before the type's own draw())
+//   on_examine(A, list/lines)             adds examine lines
+//   on_ui_data(A, list/data)              adds window data, merged by the engine under data["caps"][<capability name>]
+//
+// The legacy look builder, examine and tgui paths are the carriers: /atom/draw() calls present_draw(), examine_lines() calls present_examine(),
+// and tgui_data() merges present_ui_data() and the holder's own ui_data(A). What a draw or a window reads is found by the same read analysis
+// that finds the reads of a type's own draw() and tgui_data() (tools/analyze, derived_reads); a capability output reads state through its
+// accessors (cover_open(holder), ...), which publish a key when they change, so a redraw or a window refresh follows with nothing called by hand.
+// A window's buttons are ops with a ui_act() binding: tgui_act() routes a button to its op first (code/engine/parts/inputs.dm, op_ui_act()).
+
+/// The entry kinds of the presentation layer.
+#define ENTRY_LOOK_LAYER "look_layer"
+#define ENTRY_EXAMINE_LINE "examine_line"
+/// The kind interface() makes (code/engine/parts/part.dm).
+#define ENTRY_INTERFACE "interface"
+
+/// The output hooks a capability definition overrides (its `output_hooks` bits): the presentation skips a capability without them.
+#define OUTPUT_HOOK_DRAW (1<<0)
+#define OUTPUT_HOOK_EXAMINE (1<<1)
+#define OUTPUT_HOOK_UI (1<<2)
+
+/// look_layer(name, when =): a layer of the look while the condition holds. `under` draws it below the base (the final look.layer(under = TRUE)).
+/// `reads` names the holder vars a PROC_REF condition reads (a var or a capability key in the condition needs none).
+/proc/look_layer(layer_name, when = null, under = FALSE, list/reads = null)
+	if(!istext(layer_name) || !length(layer_name))
+		declare_report("look_layer(): the first argument is the layer's name (a LOOK_* text), got [isnull(layer_name) ? "null" : "[layer_name]"]")
+		return null
+	return entry_make(ENTRY_LOOK_LAYER, null, list("layer" = layer_name, "when" = when, "under" = under, "reads" = reads))
+
+/// examine_line(text | MSG(x) | PROC_REF(x), when =): a line of the holder's examine text while the condition holds.
+/proc/examine_line(line, when = null, list/reads = null)
+	if(isnull(line))
+		declare_report("examine_line(): give it a text, a MSG(x) or a PROC_REF")
+		return null
+	return entry_make(ENTRY_EXAMINE_LINE, null, list("line" = line, "when" = when, "reads" = reads))
+
+/datum/capability
+	/// OUTPUT_HOOK_* bits: which of on_draw(), on_examine() and on_ui_data() this definition overrides (the presentation skips it otherwise).
+	var/output_hooks = 0
+
+/// Draws the capability's own part of the holder's look (after its look_layer entries).
+/datum/capability/proc/on_draw(datum/act/eval/A, datum/look/look)
+	return
+
+/// Adds the capability's examine lines.
+/datum/capability/proc/on_examine(datum/act/eval/A, list/lines)
+	return
+
+/// Adds the capability's window data (merged under data["caps"][name] by present_ui_data()).
+/datum/capability/proc/on_ui_data(datum/act/eval/A, list/data)
+	return
+
+/// Do the when() blocks around a compiled entry and its own `when` hold on `holder` now?
+/proc/present_holds(datum/holder, datum/centry/C, datum/entry/E)
+	for(var/datum/entry/W as anything in C.whens)
+		if(!change_condition(holder, W.args["cond"]))
+			return FALSE
+	var/cond = E.args["when"]
+	return isnull(cond) || !!change_condition(holder, cond)
+
+/// The entries of `kind` that apply to `holder` now, with their enclosing conditions already checked, in effective order: the type's own, then those of
+/// the activations it carries (a granted capability's look layers and examine lines).
+/proc/present_entries(datum/holder, kind)
+	. = list()
+	var/datum/type_table/T = table_of(holder)
+	for(var/datum/centry/C as anything in compiled_entries(T, kind))
+		var/datum/entry/E = C.item
+		if(present_holds(holder, C, E))
+			. += E
+	var/datum/rx_state/rx = holder.rx
+	if(!rx?.activations)
+		return
+	for(var/datum/activation/A as anything in rx.activations)
+		if(A.dead || A.scope == SCOPE_TYPE)
+			continue
+		for(var/datum/centry/C as anything in compiled_entries(activation_table(A), kind))
+			var/datum/entry/E = C.item
+			if(present_holds(holder, C, E))
+				. += E
+
+/// A table of just the entries an activation's definition brings (the ones its attach applies), for the presentation to read.
+/proc/activation_table(datum/activation/A)
+	var/static/list/tables = list()
+	var/datum/type_table/T = tables[A.def]
+	if(T)
+		return T
+	T = new
+	T.owner_type = A.def.type
+	T.items = activation_plan(A.def)
+	T.caps = list()
+	tables[A.def] = T
+	return T
+
+/// The capabilities of the holder's table that override an output (type-level ones; a granted capability's outputs are not read).
+/proc/present_capabilities(datum/holder, hook)
+	. = list()
+	var/datum/type_table/T = table_of(holder)
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_CAPABILITY))
+		var/datum/capability/def = C.item
+		if(def.output_hooks & hook)
+			var/ok = TRUE
+			for(var/datum/entry/W as anything in C.whens)
+				if(!change_condition(holder, W.args["cond"]))
+					ok = FALSE
+					break
+			if(ok)
+				. += def
+
+/// The look: the layers and capability draws of the holder's table. Called from /atom/draw().
+/proc/present_draw(atom/holder, datum/look/look)
+	var/datum/type_table/T = table_of(holder)
+	if(!length(T.items))
+		return
+	for(var/datum/entry/E as anything in present_entries(holder, ENTRY_LOOK_LAYER))
+		look.part(E.args["layer"])
+	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_DRAW))
+		var/datum/act/eval/A = take(/datum/act/eval)
+		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		def.on_draw(A, look)
+		A.release()
+
+/// The examine lines of the holder's table: the examine_line entries, then the capabilities' own. Called from caps_examine().
+/proc/present_examine(atom/holder, mob/user)
+	. = list()
+	var/datum/type_table/T = table_of(holder)
+	if(!length(T.items))
+		return
+	for(var/datum/entry/E as anything in present_entries(holder, ENTRY_EXAMINE_LINE))
+		var/line = E.args["line"]
+		if(ispath(line, /datum/msg))
+			. += reason_text(line)
+		else if(istext(line) && !(line in holder.vars) && hascall(holder, line))
+			var/datum/act/eval/A = take(/datum/act/eval)
+			A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+			var/got = call(holder, line)(A)
+			A.release()
+			if(islist(got))
+				. += got
+			else if(istext(got))
+				. += got
+		else if(istext(line))
+			. += line
+	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_EXAMINE))
+		var/datum/act/eval/A = take(/datum/act/eval)
+		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		def.on_examine(A, .)
+		A.release()
+
+/// The window data of the holder's capabilities, merged under data["caps"][name]. Called from tgui_data().
+/proc/present_ui_data(datum/holder, list/data)
+	var/list/caps
+	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_UI))
+		var/datum/act/eval/A = take(/datum/act/eval)
+		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		var/list/mine = list()
+		def.on_ui_data(A, mine)
+		A.release()
+		if(!length(mine))
+			continue
+		caps ||= list()
+		caps[capability_label(def)] = mine
+	if(caps)
+		var/list/existing = data["caps"]
+		if(islist(existing))
+			existing += caps
+		else
+			data["caps"] = caps
+
+// ---- the window: interface() ----
+
+/// The interface entry of a holder's table (the window it opens), or null.
+/proc/present_interface(datum/holder)
+	RETURN_TYPE(/datum/entry)
+	var/datum/type_table/T = table_of(holder)
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_INTERFACE))
+		return C.item
+	return null
+
+/// A type's own window data: the output of the standard name ui_data(datum/act/A). A.actor is the viewer. Base: no data.
+/atom/proc/ui_data(datum/act/eval/A)
+	return list()
+
+/// The window data of a holder that declares an interface or overrides ui_data(): the type's ui_data(A) (A.holder the holder, A.actor the viewer)
+/// merged over `data`, and its capabilities' data under data["caps"]. A holder that declares neither adds nothing.
+/proc/present_tgui_data(datum/holder, mob/user, list/data)
+	var/datum/type_table/T = table_of(holder)
+	if(!length(T.items))
+		return
+	var/datum/act/eval/A = take(/datum/act/eval)
+	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.actor = user // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	var/atom/window_host = holder
+	var/list/own = istype(window_host) ? window_host.ui_data(A) : null
+	A.release()
+	if(islist(own))
+		for(var/key in own)
+			data[key] = own[key]
+	present_ui_data(holder, data)
+
+/// A window button the holder answers with an op that has a ui_act() binding: runs it as the player (origin ORIGIN_UI), its arguments through the
+/// schema boundary. Returns the op's /datum/op_result, or null when the holder has no op for the action (the legacy UI_ACT rows follow).
+/proc/present_ui_act(datum/holder, mob/user, action, list/params)
+	RETURN_TYPE(/datum/op_result)
+	if(!user || !op_has_ops(holder))
+		return null
+	return op_ui_act(user, holder, action, params)
+
+// ---- what the outputs read: the carrier's read analysis ----
+
+/// The var names a condition (a var, a tree, an id) reads on `holder`: what a change of must redraw or refresh. Ids (stat, capability key) are
+/// not vars: a capability key's change marks every output (capability_key_changed()), a stat's change is its own var's.
+/proc/present_condition_reads(datum/holder, cond, list/into)
+	if(islist(cond))
+		var/list/tree = cond
+		for(var/i in 2 to length(tree))
+			present_condition_reads(holder, tree[i], into)
+		return
+	if(istext(cond) && (cond in holder.vars))
+		into |= cond
+
+/// The implicit derived() entries of `holder`'s table: drawn_from() the vars its look_layer entries read (their `when` and `reads`), ui_from()
+/// the vars its capabilities' window data reads. They add reads and never make the holder exact (derived_entry_implicit).
+/proc/present_derived(atom/holder)
+	. = list()
+	var/datum/type_table/T = table_of(holder)
+	if(!length(T.items))
+		return
+	var/list/drawn = list()
+	var/list/shown = list()
+	for(var/datum/centry/C as anything in T.items)
+		var/datum/entry/E = C.item
+		if(istype(E) && (E.kind == ENTRY_LOOK_LAYER || E.kind == ENTRY_EXAMINE_LINE))
+			var/list/into = E.kind == ENTRY_LOOK_LAYER ? drawn : list()
+			present_condition_reads(holder, E.args["when"], into)
+			for(var/datum/entry/W as anything in C.whens)
+				present_condition_reads(holder, W.args["cond"], into)
+			for(var/read in E.args["reads"])
+				if(read in holder.vars)
+					into |= read
+			continue
+		var/datum/capability/def = C.item
+		if(istype(def) && def.output_hooks)
+			for(var/read in def.output_reads(OUTPUT_HOOK_DRAW))
+				if(read in holder.vars)
+					drawn |= read
+			for(var/read in def.output_reads(OUTPUT_HOOK_UI))
+				if(read in holder.vars)
+					shown |= read
+	if(length(drawn))
+		. += derived_entry(DKIND_DRAWN, null, drawn, TRUE)
+	if(length(shown))
+		. += derived_entry(DKIND_UI, null, shown, TRUE)
+
+/// The holder vars this capability's on_draw() (OUTPUT_HOOK_DRAW) or on_ui_data() (OUTPUT_HOOK_UI) read, besides capability state keys.
+/datum/capability/proc/output_reads(hook)
+	return list()

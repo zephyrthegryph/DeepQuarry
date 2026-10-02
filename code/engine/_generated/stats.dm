@@ -83,6 +83,13 @@
 /datum/stat_decl/obj/machinery/__power_draw/spec()
 	return list(/obj/machinery, /obj/machinery/proc/__stat_power_draw)
 
+/// STAT(/obj/machinery/power/apc, power_failed, ANY) at code/modules/power/apc.dm:134
+/obj/machinery/power/apc/var/power_failed = FALSE // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
+/obj/machinery/power/apc/proc/__stat_power_failed()
+	return list("power_failed", "ANY", list(id = STAT_POWER_FAILED))
+/datum/stat_decl/obj/machinery/power/apc/__power_failed/spec()
+	return list(/obj/machinery/power/apc, /obj/machinery/power/apc/proc/__stat_power_failed)
+
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
 /// STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX) at code/tests/engine/fixtures.dm:287

@@ -147,6 +147,7 @@
 		var/list/mine = C.derived_reads(src)
 		for(var/datum/derived_entry/E as anything in mine)
 			. += derived_entry_implicit(E)
+	. += present_derived(src) // the reads of the layers and window data the engine's capabilities declare (code/engine/present/outputs.dm)
 
 /// The entries a capability contributes to its holder's derived(): drawn_from / ui_from / runs_while
 /// of the holder vars its draw(), ui_data() and cap_should_run() read. Pure.

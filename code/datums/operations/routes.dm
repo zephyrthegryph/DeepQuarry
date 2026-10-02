@@ -73,7 +73,7 @@
 
 /// Declares bay `bay` of the holder. door / route_gate / blocked_routes decide what passes(); heat, damage,
 /// radiation and gas (TRUE/FALSE) what transmission() answers.
-/proc/compartment(bay, door, datum/req/route_gate, blocked_routes = NONE, heat = 1, damage = 1, radiation = 1, gas = TRUE)
+/proc/legacy_compartment(bay, door, datum/req/route_gate, blocked_routes = NONE, heat = 1, damage = 1, radiation = 1, gas = TRUE)
 	var/datum/capability/compartment/C = new
 	C.bay = bay
 	C.door = door

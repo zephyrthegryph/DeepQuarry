@@ -82,6 +82,8 @@
 /datum/act/eval
 	/// Elapsed time, for outputs.
 	var/dt
+	/// The viewer, for the outputs a person reads (ui_data, examine): set there and nowhere else.
+	var/mob/actor
 
 /// on_notice, on_op and on_change handlers. Fields set: holder, target, the notice's typed fields, outcome.
 /datum/act/notice

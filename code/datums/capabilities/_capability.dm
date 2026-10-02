@@ -32,7 +32,7 @@
 	/// LOG_GAME, LOG_ADMIN or null: the dispatcher logs each successful entry at this level.
 	var/log
 	/// The compartment (BAY_*) the capability's entries are used at, or null (see op_at_reason()).
-	var/at
+	var/bay_at
 
 /// The interactions this capability offers on holder: /datum/interaction flyweights, built once
 /// per (type, capability) and cached. Each carries its gating (behind/locked_by/needs/works_*).
