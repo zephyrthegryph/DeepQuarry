@@ -78,3 +78,36 @@ TRACKED(/datum/rx_fx_loop, calm)
 	TEST_ASSERT_EQUAL(looper.calm_runs, 1, "the same holder's other reaction still delivered")
 	TEST_ASSERT_EQUAL(bystander.calm_runs, 1, "another holder's queued change was not discarded")
 	TEST_ASSERT_EQUAL(length(GLOB.rx_pending), 0, "nothing is left queued")
+
+// ---------------------------------------------------------------- D5: a var gate is an implicit read
+
+/datum/rx_fx_gate
+	var/gate = FALSE
+	var/fact = 0
+	var/runs = 0
+	var/list/last_keys
+
+TRACKED(/datum/rx_fx_gate, gate)
+TRACKED(/datum/rx_fx_gate, fact)
+
+/datum/rx_fx_gate/reactions()
+	. = ..()
+	. += on_change(list(nameof(fact)), PROC_REF(on_fact), when = nameof(gate))
+
+/datum/rx_fx_gate/proc/on_fact(list/keys)
+	runs++
+	last_keys = keys.Copy()
+
+/datum/unit_test/dq_phase0_when_gate_catches_up/Run()
+	var/datum/rx_fx_gate/F = allocate(/datum/rx_fx_gate)
+	TEST_ASSERT(READERS(F, nameof(/datum/rx_fx_gate::gate)), "the gate var is a read")
+	F.set_fact(1)
+	rx_drain()
+	TEST_ASSERT_EQUAL(F.runs, 0, "gate closed: nothing queued")
+	F.set_gate(TRUE)
+	rx_drain()
+	TEST_ASSERT_EQUAL(F.runs, 1, "the rising edge delivers one catch-up call")
+	TEST_ASSERT(nameof(/datum/rx_fx_gate::gate) in F.last_keys, "naming the gate")
+	F.set_gate(FALSE)
+	rx_drain()
+	TEST_ASSERT_EQUAL(F.runs, 1, "closing the gate delivers nothing")

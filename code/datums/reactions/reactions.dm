@@ -53,6 +53,9 @@
 	var/members
 	/// every(): the var (text) that must be truthy for it to run.
 	var/when
+	/// on_change(): TRUE when `when` names a var of the declaring type (decided once, when its table is built): the var
+	/// is an implicit read, and its rising edge delivers one catch-up call.
+	var/when_var = FALSE
 	var/interval
 	var/phase
 	/// every(): the reaction key or name it must follow in its phase.
@@ -129,7 +132,9 @@
 /// (deciseconds) coalesces further: after a delivery, changes within that window wait and arrive together, once,
 /// when it ends (a HUD refresh needs the latest state, not every step of a walk). `when` (a var name truthy on the
 /// holder, or a PROC_REF answering TRUE) is asked when a read is published: a holder it excludes queues nothing and
-/// costs one test. A static reaction only: observe() delivers every drain whatever its trigger says.
+/// costs one test. A var gate is also an implicit read: when it is published and holds (its rising edge), one delivery
+/// carrying the gate's key catches the reaction up on what it skipped; a PROC_REF gate must be covered by the reaction's
+/// reads (or generated ones). A static reaction only: observe() delivers every drain whatever its trigger says.
 /proc/on_change(list/reads, handler, at_most = 0, when = null)
 	var/datum/reaction/R = rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
 	if(at_most > 0)
@@ -282,6 +287,8 @@ GLOBAL_LIST_EMPTY(rx_tables)
 	for(var/datum/reaction/R in own)
 		if(R.kind == RXN_EVERY && last_every[R.handler] != R)
 			continue
+		if(R.kind == RXN_CHANGE && istext(R.when))
+			R.when_var = (R.when in D.vars)
 		rx_table_add(T, R)
 	for(var/datum/derived_entry/E in generated + derived)
 		if(E.kind == DKIND_REACTION)
@@ -323,6 +330,11 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				LAZYINITLIST(T.by_key[read])
 				T.by_key[read] += R
 				T.read_keys[read] = TRUE
+			if(R.when_var)
+				// A var gate is a read: when it turns true the reaction is owed a catch-up delivery (publish_change()).
+				LAZYINITLIST(T.by_key[R.when])
+				T.by_key[R.when] |= R
+				T.read_keys[R.when] = TRUE
 			if(R.at_most)
 				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 				LAZYSET(T.at_most_by_sig, R.sig, R)

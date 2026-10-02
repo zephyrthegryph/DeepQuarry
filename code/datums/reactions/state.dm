@@ -106,7 +106,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	if(T)
 		var/list/hits = T.by_key[key]
 		for(var/datum/reaction/R as anything in hits)
-			if(R.when && !rx_when_holds(E, R.when))
+			if(R.when && !rx_when_holds(E, R))
 				continue // its gate excludes this holder now: nothing is queued
 			rx_pend(E, R, key)
 		var/list/crossing = T.crosses[key]
@@ -128,10 +128,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		seq_publish(E, key)
 
 /// An on_change(when =) gate: a var name truthy on `E`, or a PROC_REF on it answering TRUE.
-/proc/rx_when_holds(datum/E, when)
-	if(istext(when) && (when in E.vars))
-		return !!E.vars[when]
-	return !!call(E, when)()
+/proc/rx_when_holds(datum/E, datum/reaction/R)
+	if(R.when_var)
+		return !!E.vars[R.when]
+	return !!call(E, R.when)()
 
 // ---------------------------------------------------------------- the relation ledger
 
