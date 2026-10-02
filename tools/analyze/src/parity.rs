@@ -414,8 +414,15 @@ pub fn read_expected(path: &Path) -> Option<Vec<Finding>> {
 }
 
 /// The engine's raw findings on a fixture tree rooted at `root` (no cache).
-pub fn engine_on_fixture(root: &Path, lint_name: &str) -> Result<Vec<Finding>, String> {
-    let opts = Options { root: root.to_path_buf(), lints: vec![lint_name.to_string()], no_cache: true, raw: true, ..Default::default() };
+pub fn engine_on_fixture(root: &Path, scopes_from: Option<&Path>, lint_name: &str) -> Result<Vec<Finding>, String> {
+    let opts = Options {
+        root: root.to_path_buf(),
+        lints: vec![lint_name.to_string()],
+        no_cache: true,
+        raw: true,
+        scopes_from: scopes_from.map(|p| p.to_path_buf()),
+        ..Default::default()
+    };
     let engine = Engine::new(crate::run::registry(), opts)?;
     let lint = engine.reg.find(lint_name).ok_or_else(|| format!("no lint {}", lint_name))?;
     Ok(engine_raw_findings(&engine, lint))
@@ -447,7 +454,7 @@ pub fn check_fixtures(real_root: &Path, lint: &dyn Lint, spec: &Parity, bless: b
         return Some((false, format!("fixtures: cannot stage: {}", e)));
     }
     let old = old_raw_findings(&tmp, spec);
-    let new = match engine_on_fixture(&tmp, name) {
+    let new = match engine_on_fixture(&tmp, None, name) {
         Ok(v) => v,
         Err(e) => {
             let _ = std::fs::remove_dir_all(&tmp);

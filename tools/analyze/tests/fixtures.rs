@@ -21,7 +21,7 @@ fn every_fixture_matches_its_expected_findings() {
         let name = lint.meta().name;
         let dir = fixture_dir(&root, name);
         let Some(expected) = read_expected(&dir.join("expected.txt")) else { continue };
-        let got = match engine_on_fixture(&dir, name) {
+        let got = match engine_on_fixture(&dir, Some(&root), name) {
             Ok(g) => g,
             Err(e) => {
                 failures.push(format!("{}: engine error: {}", name, e));

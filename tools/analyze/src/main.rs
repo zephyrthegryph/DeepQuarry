@@ -97,6 +97,7 @@ fn options(args: &Args, root: &Path) -> Options {
         rehash: has("--rehash"),
         raw: has("--raw"),
         ci: has("--ci"),
+        scopes_from: None,
     }
 }
 

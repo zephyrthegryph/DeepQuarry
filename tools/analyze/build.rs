@@ -19,25 +19,19 @@ fn collect(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-fn main() {
-    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
-    let src = manifest.join("src");
-    let lints = src.join("lints");
-    println!("cargo:rerun-if-changed=src");
-    println!("cargo:rerun-if-changed=build.rs");
-
-    // ---- lint registry -------------------------------------------------------------------
+/// The module names under `dir`: `x.rs` files and `x/mod.rs` directories, except `mod` itself.
+fn discover(dir: &Path) -> Vec<String> {
     let mut mods: Vec<String> = Vec::new();
-    if let Ok(rd) = fs::read_dir(&lints) {
+    if let Ok(rd) = fs::read_dir(dir) {
         for e in rd.filter_map(|e| e.ok()) {
             let p = e.path();
             let name = p.file_stem().unwrap().to_string_lossy().to_string();
-            if name == "mod" || name.starts_with('_') {
+            if name == "mod" {
                 continue;
             }
             if p.is_dir() {
                 if p.join("mod.rs").exists() {
-                    mods.push(name);
+                    mods.push(e.file_name().to_string_lossy().to_string());
                 }
             } else if p.extension().map(|x| x == "rs").unwrap_or(false) {
                 mods.push(name);
@@ -46,20 +40,37 @@ fn main() {
     }
     mods.sort();
     mods.dedup();
-    let mut gen = String::new();
-    for m in &mods {
-        let base = manifest.display().to_string().replace('\\', "/");
-        let file = if lints.join(m).is_dir() { format!("{}/mod.rs", m) } else { format!("{}.rs", m) };
-        let _ = writeln!(gen, "#[path = \"{}/src/lints/{}\"]", base, file);
-        let _ = writeln!(gen, "pub mod {};", m);
+    mods
+}
+
+fn main() {
+    let manifest = PathBuf::from(std::env::var("CARGO_MANIFEST_DIR").unwrap());
+    let src = manifest.join("src");
+
+    println!("cargo:rerun-if-changed=src");
+    println!("cargo:rerun-if-changed=build.rs");
+
+    // ---- module discovery -----------------------------------------------------------------
+    let out_dir = PathBuf::from(std::env::var("OUT_DIR").unwrap());
+    let base = manifest.display().to_string().replace('\\', "/");
+    for (sub, with_register) in [("lints", true), ("dm", false)] {
+        let dir = src.join(sub);
+        let mods = discover(&dir);
+        let mut gen = String::new();
+        for m in &mods {
+            let file = if dir.join(m).is_dir() { format!("{}/mod.rs", m) } else { format!("{}.rs", m) };
+            let _ = writeln!(gen, "#[path = \"{}/src/{}/{}\"]", base, sub, file);
+            let _ = writeln!(gen, "pub mod {};", m);
+        }
+        if with_register {
+            let _ = writeln!(gen, "pub fn register(reg: &mut crate::lint::Registry) {{");
+            for m in &mods {
+                let _ = writeln!(gen, "    {}::register(reg);", m);
+            }
+            let _ = writeln!(gen, "}}");
+        }
+        fs::write(out_dir.join(format!("{}_gen.rs", sub)), gen).unwrap();
     }
-    let _ = writeln!(gen, "pub fn register(reg: &mut crate::lint::Registry) {{");
-    for m in &mods {
-        let _ = writeln!(gen, "    {}::register(reg);", m);
-    }
-    let _ = writeln!(gen, "}}");
-    let out = PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("lints_gen.rs");
-    fs::write(out, gen).unwrap();
 
     // ---- engine hash ---------------------------------------------------------------------
     let mut files = Vec::new();

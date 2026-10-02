@@ -27,6 +27,8 @@ pub struct Options {
     pub raw: bool,
     /// Emit `::group::` markers (CI logs).
     pub ci: bool,
+    /// Read `tools/ci/lint_scopes.toml` from this repo root instead of `root` (fixture trees).
+    pub scopes_from: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -77,7 +79,8 @@ pub fn selected<'a>(reg: &'a Registry, names: &[String]) -> Vec<&'a dyn Lint> {
 impl Engine {
     pub fn new(reg: Registry, opts: Options) -> Result<Engine, String> {
         let t0 = Instant::now();
-        let scopes = Scopes::load(&opts.root.join("tools").join("ci").join("lint_scopes.toml"))?;
+        let scopes_root = opts.scopes_from.clone().unwrap_or_else(|| opts.root.clone());
+        let scopes = Scopes::load(&scopes_root.join("tools").join("ci").join("lint_scopes.toml"))?;
         let cache = Cache::open(&opts.root, &scopes.hash, !opts.no_cache);
         let prior = cache.load_meta();
         let mut plan = Plan::default();
@@ -232,9 +235,39 @@ impl Engine {
             }
             None => run,
         };
-        let by_rule = run.by_rule(meta);
+        let mut by_rule = run.by_rule(meta);
         let hints = |rule: &str| meta.rule(rule).map(|r| r.hint.to_string()).unwrap_or_default();
-        let failed = match meta.policy {
+        // Rules with a configured ceiling (`[lint.<name>.ceilings]`) are judged by their count.
+        let mut ceiling_failed = false;
+        if !raw && matches!(meta.policy, Policy::Sites { .. } | Policy::Hard) && !scope.ceilings.is_empty() {
+            let (with, without): (Vec<_>, Vec<_>) = by_rule.into_iter().partition(|(r, _)| scope.ceilings.contains_key(*r));
+            by_rule = without;
+            for (rule, found) in &with {
+                let ceiling = scope.ceilings[*rule];
+                let count = found.len() as i64;
+                let status = if count > ceiling {
+                    ceiling_failed = true;
+                    format!("FAIL (rose above its ceiling {})", ceiling)
+                } else if count < ceiling {
+                    format!("below ceiling {}: lower it with `analyze baseline --update`", ceiling)
+                } else {
+                    "ok".to_string()
+                };
+                let _ = writeln!(text, "{} {:<19} {:>6}  (ceiling {})  {}", meta.label, rule, count, ceiling, status);
+                if count > ceiling {
+                    let hint = hints(rule);
+                    let suffix = if hint.is_empty() { String::new() } else { format!(" -- {}", hint) };
+                    for s in found.iter().take(60) {
+                        let body = if s.msg.is_empty() { self.tree.site_text(&s.rel, s.line as usize) } else { s.msg.clone() };
+                        let _ = writeln!(text, "{}:{}: [{}/{}] {}{}", s.rel, s.line, meta.label, rule, body, suffix);
+                    }
+                    if found.len() > 60 {
+                        let _ = writeln!(text, "... and {} more", found.len() - 60);
+                    }
+                }
+            }
+        }
+        let failed = ceiling_failed | match meta.policy {
             Policy::Sites { baseline, banned, .. } => {
                 let path = if raw { PathBuf::from("") } else { self.baseline_path(baseline) };
                 baseline::check_sites(meta.label, &self.tree, &by_rule, &hints, &path, banned, &mut text)
@@ -306,12 +339,38 @@ impl Engine {
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
         let by_rule = run.by_rule(meta);
+        // Per-rule ceilings live in lint_scopes.toml: lower them (--update) or set them (--seed).
+        let mut ceiling_note = String::new();
+        if matches!(meta.policy, Policy::Sites { .. } | Policy::Hard) {
+            let scopes_root = self.opts.scopes_from.clone().unwrap_or_else(|| self.opts.root.clone());
+            let scopes_path = scopes_root.join("tools").join("ci").join("lint_scopes.toml");
+            for (rule, found) in &by_rule {
+                let Some(&ceiling) = scope.ceilings.get(*rule) else { continue };
+                let count = found.len() as i64;
+                let new = match mode {
+                    Mode::Update => ceiling.min(count),
+                    Mode::Seed => count,
+                };
+                if new != ceiling {
+                    crate::scopes::write_ceiling(&scopes_path, meta.name, rule, new)?;
+                    ceiling_note.push_str(&format!(" ceiling {} {} -> {};", rule, ceiling, new));
+                }
+            }
+        }
+        let by_rule_for_baseline: Vec<(&str, Vec<&crate::lint::Site>)> =
+            by_rule.iter().filter(|(r, _)| !scope.ceilings.contains_key(*r)).map(|(r, s)| (*r, s.clone())).collect();
+        let by_rule = if matches!(meta.policy, Policy::Sites { .. }) { by_rule_for_baseline } else { by_rule };
         match meta.policy {
             Policy::Sites { baseline, header, banned } => {
-                let rules: Vec<&str> = meta.rules.iter().map(|r| r.name).filter(|r| !banned.contains(r)).collect();
+                let rules: Vec<&str> = meta
+                    .rules
+                    .iter()
+                    .map(|r| r.name)
+                    .filter(|r| !banned.contains(r) && !scope.ceilings.contains_key(*r))
+                    .collect();
                 let n = baseline::write_sites(&self.baseline_path(baseline), header, &self.tree, &by_rule, &rules, mode)?;
                 let counts: Vec<String> = by_rule.iter().map(|(r, s)| format!("{} {}", r, s.len())).collect();
-                Ok(format!("{}: baseline {} ({} rows; {})", meta.name, baseline, n, counts.join(", ")))
+                Ok(format!("{}: baseline {} ({} rows; {});{}", meta.name, baseline, n, counts.join(", "), ceiling_note))
             }
             Policy::Ceilings { baseline, header } => {
                 let path = self.baseline_path(baseline);
@@ -325,7 +384,7 @@ impl Engine {
                 };
                 Ok(format!("{}: baseline {} ({} entries)", meta.name, baseline, n))
             }
-            Policy::Hard => Ok(format!("{}: no baseline (hard ban)", meta.name)),
+            Policy::Hard => Ok(format!("{}: no baseline (hard ban);{}", meta.name, ceiling_note)),
             Policy::Custom => lint.update_baseline(&cx, &run, mode),
         }
     }

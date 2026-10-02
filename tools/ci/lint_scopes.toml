@@ -1,0 +1,12 @@
+# Where each engine lint's path exemptions and named lists live (tools/analyze, doc: tools/analyze/README.md).
+# A lint's section is found by its name (`[lint.scheduler]`), else by its group (`[lint.sys]` serves every sys/*).
+#   exempt_prefixes = rel path starts with     exempt_contains = rel path contains     exempt_files = exact path
+#   [lint.<name>.lists] = named lists a rule reads (declared in the lint's Meta::lists, validated at startup)
+
+[allow]
+# ALLOW names read by lints that are not (yet) engine lints; the engine's own lints declare theirs.
+known = []
+
+[lint.sys]
+# sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]

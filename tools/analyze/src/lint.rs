@@ -43,6 +43,8 @@ pub struct AllowUse {
     pub rel: String,
     pub line: u32,
     pub name: String,
+    /// The reason code written on the annotation (`ALLOW(name/CODE)`), "" when none.
+    pub code: String,
 }
 
 /// What a scan produces.
@@ -91,9 +93,9 @@ impl Sink {
     /// `allowed(raw_lines, number, lint)`: is line `number` of `f` kept by an annotation for
     /// `lint`? Records the annotation as used when it is.
     pub fn allowed(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
-        match crate::allow::kept_by(f, number, lint) {
-            Some(at) => {
-                self.use_allow(f, at, lint);
+        match crate::allow::kept(f, number, lint) {
+            Some(k) => {
+                self.use_allow(f, k.line, lint, k.code);
                 true
             }
             None => false,
@@ -103,21 +105,20 @@ impl Sink {
     /// Same-line only (`allowed_here`).
     pub fn allowed_here(&mut self, f: &SourceFile, number: usize, lint: &str) -> bool {
         match crate::allow::kept_here(f, number, lint) {
-            Some(at) => {
-                self.use_allow(f, at, lint);
+            Some(k) => {
+                self.use_allow(f, k.line, lint, k.code);
                 true
             }
             None => false,
         }
     }
 
-    fn use_allow(&mut self, f: &SourceFile, at: usize, lint: &str) {
-        let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string() };
+    fn use_allow(&mut self, f: &SourceFile, at: usize, lint: &str, code: Option<String>) {
+        let u = AllowUse { rel: f.rel.clone(), line: at as u32, name: lint.to_string(), code: code.unwrap_or_default() };
         if !self.allow_used.contains(&u) {
             self.allow_used.push(u);
         }
     }
-
 }
 
 /// A rule of a lint: its name (the `[lint/rule]` tag) and the fix hint printed with each new site.
