@@ -226,12 +226,12 @@
 			return op_req_refusal(A, requirement)
 	for(var/id in P.cost_order)
 		var/datum/resource/RS = resource_of(text2num(id))
-		var/n = op_cost_amount(P, B, text2num(id))
+		var/n = op_cost_amount(P, B, text2num(id), A)
 		if(RS && RS.available(A) - reserved_total(RS.holder_of(A), RS.res_id) < n)
 			return RS.refusal(A, n)
 	for(var/id in op_implied_costs(P, B))
 		var/datum/resource/RS = resource_of(id)
-		var/n = op_cost_amount(P, B, id)
+		var/n = op_cost_amount(P, B, id, A)
 		if(RS && RS.available(A) - reserved_total(RS.holder_of(A), RS.res_id) < n)
 			return RS.refusal(A, n)
 	for(var/datum/entry/part/effect/F as anything in P.effects)
@@ -240,9 +240,14 @@
 			return why
 	return null
 
-/// The cost an op declares for one resource (the explicit costs(), or what a binding implies).
-/proc/op_cost_amount(datum/op_plan/P, datum/entry/part/bind/B, res_id)
+/// The cost an op declares for one resource (the explicit costs(), or what a binding implies). A costs() amount that is a handler (PROC_REF or
+/// CAP_PROC, x(datum/act/A) returning a number) is asked in the act's context, so a cost can be what the holder's own state says (a transfer
+/// amount): a handler that returns no number costs 0, which no adapter can reserve.
+/proc/op_cost_amount(datum/op_plan/P, datum/entry/part/bind/B, res_id, datum/act/op/A = null)
 	var/declared = LAZYACCESS(P.costs, "[res_id]")
+	if(istext(declared))
+		var/amount = A ? op_call(A, declared) : null
+		return isnum(amount) ? amount : 0
 	if(!isnull(declared))
 		return declared
 	if(res_id == RES_STACK && B?.bind_kind == BIND_STACK)
@@ -755,7 +760,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
 	// chance(p): a failed roll plays its else feedback, commits the reserved costs (the attempt cost them), runs no effect and ends committed.
-	if(P.chance && !TEST_ROLL(P.chance.args["percent"]))
+	if(P.chance && !TEST_ROLL(op_chance_percent(A, P.chance.args["percent"])))
 		A.rolled = FALSE
 		op_feedback_parts(A, P.chance.children)
 		op_commit_reservations(A)
@@ -780,6 +785,16 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			return op_end(A, ACT_REFUSED, A.reason || /datum/msg/op/not_available)
 	return op_end(A, ACT_REFUSED, A.reason || /datum/msg/op/failed)
 
+/// The percent a chance() names: a number, the name of a var of the holder (escape_chance = nameof(escapechance)), or a handler.
+/proc/op_chance_percent(datum/act/op/A, percent)
+	if(!istext(percent))
+		return percent
+	var/datum/holder = A.holder
+	if(holder && (percent in holder.vars))
+		return holder.vars[percent]
+	var/answer = op_call(A, percent)
+	return isnum(answer) ? answer : 0
+
 /// Reserves every cost the op declares or implies. A reason when one cannot be made (the ones made are released).
 /proc/op_reserve(datum/act/op/A)
 	var/datum/op_plan/P = A.oplan
@@ -792,7 +807,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		var/datum/resource/RS = resource_of(id)
 		if(!RS)
 			continue
-		var/n = op_cost_amount(P, A.binding, id)
+		var/n = op_cost_amount(P, A.binding, id, A)
 		var/datum/reservation/R = RS.reserve(A, n)
 		if(!R)
 			op_release_reservations(A)
