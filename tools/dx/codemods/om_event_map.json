@@ -10,6 +10,10 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [
+   "affliction",
+   "old_severity"
+  ],
   "reads_result": false,
   "target": "/datum/notice/affliction_severity_changed",
   "tests": [
@@ -26,6 +30,9 @@
   "listeners": [
    "code/modules/research/tg/experisci/experiment/instances/physical.dm"
   ],
+  "notice_fields": [
+   "user"
+  ],
   "reads_result": false,
   "target": "/datum/notice/arcade_prizevend",
   "tests": []
@@ -41,6 +48,10 @@
   "listeners": [
    "code/datums/proximity_monitor/proximity_monitor.dm"
   ],
+  "notice_fields": [
+   "created",
+   "mapload"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_after_successful_initialized_on",
   "tests": []
@@ -54,6 +65,9 @@
   ],
   "listeners": [
    "code/modules/xenoarcheaology/effect_master.dm"
+  ],
+  "notice_fields": [
+   "bumped"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_bumped",
@@ -71,6 +85,10 @@
    "code/datums/entity_state/overlay_lighting.dm",
    "code/datums/entity_state/squeak.dm"
   ],
+  "notice_fields": [
+   "old_dir",
+   "new_dir"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_dir_change",
   "tests": []
@@ -85,6 +103,10 @@
   ],
   "listeners": [
    "code/modules/organs/internal/special/heart_anomalock.dm"
+  ],
+  "notice_fields": [
+   "severity",
+   "protection"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_emp_act",
@@ -105,6 +127,10 @@
    "code/modules/mining/machinery/machine_input_output_plates.dm",
    "code/modules/recycling/conveyor2.dm"
   ],
+  "notice_fields": [
+   "arrived",
+   "old_loc"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_entered",
   "tests": []
@@ -120,6 +146,10 @@
   "listeners": [
    "code/datums/recursive_move.dm",
    "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm"
+  ],
+  "notice_fields": [
+   "destination",
+   "old_loc"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_entering",
@@ -137,6 +167,10 @@
    "code/datums/proximity_monitor/proximity_monitor.dm",
    "code/datums/recursive_move.dm"
   ],
+  "notice_fields": [
+   "gone",
+   "new_loc"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_exited",
   "tests": []
@@ -152,6 +186,10 @@
   "listeners": [
    "code/game/atom/_atom.dm",
    "code/modules/materials/engineering/material_responses.dm"
+  ],
+  "notice_fields": [
+   "exposed_temperature",
+   "exposed_volume"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_fire_act",
@@ -169,6 +207,9 @@
    "code/game/turfs/simulated/wall_types.dm",
    "code/modules/materials/engineering/material_responses.dm"
   ],
+  "notice_fields": [
+   "pulse_source"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_propagate_rad_pulse",
   "tests": []
@@ -182,6 +223,9 @@
   ],
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
+  ],
+  "notice_fields": [
+   "old_color"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_update_light_color",
@@ -197,6 +241,9 @@
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
   ],
+  "notice_fields": [
+   "old_flags"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_update_light_flags",
   "tests": []
@@ -210,6 +257,9 @@
   ],
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
+  ],
+  "notice_fields": [
+   "old_value"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_update_light_on",
@@ -225,6 +275,9 @@
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
   ],
+  "notice_fields": [
+   "old_power"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_update_light_power",
   "tests": []
@@ -239,6 +292,9 @@
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
   ],
+  "notice_fields": [
+   "old_range"
+  ],
   "reads_result": false,
   "target": "/datum/notice/atom_update_light_range",
   "tests": []
@@ -252,6 +308,9 @@
   ],
   "listeners": [
    "code/datums/entity_state/overlay_lighting.dm"
+  ],
+  "notice_fields": [
+   "result_"
   ],
   "reads_result": false,
   "target": "/datum/notice/atom_used_in_craft",
@@ -870,6 +929,10 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [
+   "affliction",
+   "added"
+  ],
   "reads_result": false,
   "target": "/datum/notice/body_afflictions_changed",
   "tests": [
@@ -915,6 +978,10 @@
   "listeners": [
    "code/datums/behaviours/omen.dm"
   ],
+  "notice_fields": [
+   "slipped_on",
+   "stun_duration"
+  ],
   "reads_result": false,
   "target": "/datum/notice/carbon_slip",
   "tests": []
@@ -935,6 +1002,12 @@
    "code/modules/nifsoft/nif_tgui.dm",
    "code/modules/vore/eating/living.dm"
   ],
+  "notice_fields": [
+   "location",
+   "control",
+   "params",
+   "user"
+  ],
   "reads_result": false,
   "target": "/datum/notice/click",
   "tests": []
@@ -953,6 +1026,13 @@
   "listeners": [
    "code/_onclick/hud/action/action_screen_objects.dm"
   ],
+  "notice_fields": [
+   "target_",
+   "location",
+   "control",
+   "params",
+   "user"
+  ],
   "reads_result": false,
   "target": "/datum/notice/client_click",
   "tests": []
@@ -970,6 +1050,9 @@
   ],
   "listeners": [
    "code/datums/behaviours/climbable.dm"
+  ],
+  "notice_fields": [
+   "user"
   ],
   "reads_result": false,
   "target": "/datum/notice/climb_shake",
@@ -990,6 +1073,9 @@
   "listeners": [
    "code/datums/behaviours/climbable.dm"
   ],
+  "notice_fields": [
+   "user"
+  ],
   "reads_result": false,
   "target": "/datum/notice/climb_start",
   "tests": []
@@ -1002,6 +1088,7 @@
   "listeners": [
    "code/datums/behaviours/bluespace_connection.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/closet_closed",
   "tests": []
@@ -1017,6 +1104,9 @@
   ],
   "listeners": [
    "code/datums/entity_state/machinery/disposal_connection.dm"
+  ],
+  "notice_fields": [
+   "trunk"
   ],
   "reads_result": false,
   "target": "/datum/notice/disposal_link",
@@ -1035,6 +1125,10 @@
    "code/modules/recycling/disposal_machines.dm",
    "code/modules/recycling/disposal_outlet.dm"
   ],
+  "notice_fields": [
+   "items",
+   "gas"
+  ],
   "reads_result": false,
   "target": "/datum/notice/disposal_receive",
   "tests": []
@@ -1049,6 +1143,7 @@
   "listeners": [
    "code/datums/entity_state/machinery/disposal_connection.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/disposal_unlink",
   "tests": []
@@ -1061,6 +1156,7 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/robot_simple_items.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/do_after_began",
   "tests": []
@@ -1073,6 +1169,7 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/robot_simple_items.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/do_after_ended",
   "tests": []
@@ -1088,6 +1185,11 @@
   ],
   "listeners": [
    "code/modules/generated_station/generated_station_defenders.dm"
+  ],
+  "notice_fields": [
+   "amount",
+   "injury_kind",
+   "attacker"
   ],
   "reads_result": false,
   "target": "/datum/notice/dqai_damage_taken",
@@ -1138,6 +1240,10 @@
    "code/modules/materials/engineering/material_diagnostics.dm",
    "code/modules/materials/engineering/material_responses.dm"
   ],
+  "notice_fields": [
+   "user",
+   "texts"
+  ],
   "reads_result": false,
   "target": "/datum/notice/examine",
   "tests": [
@@ -1156,6 +1262,7 @@
    "code/modules/mob/living/carbon/brain/MMI.dm",
    "code/modules/mob/living/simple_mob/subtypes/animal/borer/borer_query.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/ghost_query_complete",
   "tests": []
@@ -1168,6 +1275,7 @@
   "listeners": [
    "code/datums/entity_state/disabilities/_disability.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/handle_disabilities",
   "tests": []
@@ -1182,6 +1290,10 @@
   ],
   "listeners": [
    "code/datums/behaviours/bluespace_connection.dm"
+  ],
+  "notice_fields": [
+   "source_",
+   "throwingdatum"
   ],
   "reads_result": false,
   "target": "/datum/notice/hitby",
@@ -1198,6 +1310,7 @@
   "listeners": [
    "code/datums/entity_state/reagent_hose/connector.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/hose_forcepump",
   "tests": []
@@ -1225,6 +1338,7 @@
    "code/datums/entity_state/species/xenochimera.dm",
    "code/datums/entity_state/traits/drippy.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/human_dna_finalized",
   "tests": []
@@ -1238,6 +1352,9 @@
   ],
   "listeners": [
    "code/modules/instruments/piano_synth.dm"
+  ],
+  "notice_fields": [
+   "finished"
   ],
   "reads_result": false,
   "target": "/datum/notice/instrument_end",
@@ -1253,6 +1370,10 @@
   ],
   "listeners": [
    "code/modules/instruments/piano_synth.dm"
+  ],
+  "notice_fields": [
+   "starting_song",
+   "player"
   ],
   "reads_result": false,
   "target": "/datum/notice/instrument_start",
@@ -1270,6 +1391,11 @@
   "listeners": [
    "code/modules/economy/service_invoices.dm"
   ],
+  "notice_fields": [
+   "target_",
+   "user",
+   "target_zone"
+  ],
   "reads_result": false,
   "target": "/datum/notice/item_attack",
   "tests": []
@@ -1285,6 +1411,9 @@
    "code/datums/capabilities/library/two_handed.dm",
    "code/datums/entity_state/remote_view.dm",
    "code/datums/entity_state/squeak.dm"
+  ],
+  "notice_fields": [
+   "user"
   ],
   "reads_result": false,
   "target": "/datum/notice/item_dropped",
@@ -1304,6 +1433,10 @@
    "code/datums/entity_state/squeak.dm",
    "code/datums/recursive_move.dm"
   ],
+  "notice_fields": [
+   "equipper",
+   "slot"
+  ],
   "reads_result": false,
   "target": "/datum/notice/item_equipped",
   "tests": []
@@ -1317,6 +1450,9 @@
   ],
   "listeners": [
    "code/modules/lootpanel/search_object.dm"
+  ],
+  "notice_fields": [
+   "taker"
   ],
   "reads_result": false,
   "target": "/datum/notice/item_pickup",
@@ -1347,6 +1483,7 @@
   "listeners": [
    "code/datums/status_effects/_status_effect.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/living_aheal",
   "tests": []
@@ -1380,6 +1517,13 @@
    "code/modules/combat_ai/brain/brain.dm",
    "code/modules/mob/living/bot/secbot.dm",
    "code/modules/mob/living/silicon/pai/pai.dm"
+  ],
+  "notice_fields": [
+   "kind",
+   "applied",
+   "zone",
+   "source_",
+   "flags"
   ],
   "reads_result": false,
   "target": "/datum/notice/living_injured",
@@ -1416,6 +1560,10 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [
+   "source_",
+   "reason"
+  ],
   "reads_result": false,
   "target": "/datum/notice/living_revived",
   "tests": [
@@ -1438,6 +1586,13 @@
    "code/modules/mob/_modifiers/modifiers.dm",
    "code/modules/mob/living/silicon/robot/robot.dm"
   ],
+  "notice_fields": [
+   "kind",
+   "amount_ref",
+   "zone",
+   "source_",
+   "flags"
+  ],
   "reads_result": false,
   "target": "/datum/notice/living_shield_injury",
   "tests": []
@@ -1450,6 +1605,9 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm"
+  ],
+  "notice_fields": [
+   "amount"
   ],
   "reads_result": false,
   "target": "/datum/notice/living_status_blind",
@@ -1464,6 +1622,9 @@
    "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm"
   ],
+  "notice_fields": [
+   "amount"
+  ],
   "reads_result": false,
   "target": "/datum/notice/living_status_paralyze",
   "tests": []
@@ -1476,6 +1637,9 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm"
+  ],
+  "notice_fields": [
+   "amount"
   ],
   "reads_result": false,
   "target": "/datum/notice/living_status_stun",
@@ -1491,6 +1655,9 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm",
    "code/datums/om/library.dm"
+  ],
+  "notice_fields": [
+   "amount"
   ],
   "reads_result": false,
   "target": "/datum/notice/living_status_weaken",
@@ -1522,6 +1689,9 @@
    "code/modules/mob/living/silicon/robot/dogborg/dog_sleeper.dm",
    "code/modules/research/tg/machinery/destructive_analyzer.dm"
   ],
+  "notice_fields": [
+   "scanned_atoms"
+  ],
   "reads_result": false,
   "target": "/datum/notice/machinery_destructive_scan",
   "tests": []
@@ -1540,6 +1710,13 @@
   "listeners": [
    "code/game/machinery/doppler_array.dm"
   ],
+  "notice_fields": [
+   "epicenter",
+   "devastation_range",
+   "heavy_impact_range",
+   "light_impact_range",
+   "seconds_taken"
+  ],
   "reads_result": false,
   "target": "/datum/notice/machinery_explosion_detected",
   "tests": []
@@ -1552,6 +1729,7 @@
   "listeners": [
    "code/game/machinery/camera/camera.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/machinery_power_lost",
   "tests": [
@@ -1567,6 +1745,7 @@
   "listeners": [
    "code/game/machinery/camera/camera.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/machinery_power_restored",
   "tests": [
@@ -1592,6 +1771,13 @@
    "code/modules/research/tg/machinery/_production.dm",
    "code/modules/research/tg/machinery/mech_fabricator.dm"
   ],
+  "notice_fields": [
+   "item",
+   "primary_mat",
+   "mats_consumed",
+   "material_amount",
+   "context"
+  ],
   "reads_result": false,
   "target": "/datum/notice/matcontainer_item_consumed",
   "tests": []
@@ -1608,6 +1794,10 @@
    "code/datums/entity_state/materials/material_container.dm",
    "code/modules/mining/machine_silo.dm"
   ],
+  "notice_fields": [
+   "new_stack",
+   "context"
+  ],
   "reads_result": false,
   "target": "/datum/notice/matcontainer_stack_retrieved",
   "tests": []
@@ -1621,6 +1811,7 @@
    "code/game/turfs/simulated/wall_icon.dm",
    "code/modules/materials/properties.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/material_facts_changed",
   "tests": []
@@ -1636,6 +1827,11 @@
   ],
   "listeners": [
    "code/modules/materials/engineering/material_responses.dm"
+  ],
+  "notice_fields": [
+   "patient",
+   "zone",
+   "success"
   ],
   "reads_result": false,
   "target": "/datum/notice/material_surgery",
@@ -1657,6 +1853,17 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/cloak.dm"
   ],
+  "notice_fields": [
+   "damage",
+   "damagetype",
+   "def_zone",
+   "blocked",
+   "wound_bonus",
+   "exposed_wound_bonus",
+   "sharpness",
+   "attack_direction",
+   "attacking_item"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_apply_damage",
   "tests": []
@@ -1674,6 +1881,9 @@
    "code/modules/mob/living/living.dm",
    "code/modules/nifsoft/nif_tgui.dm",
    "code/modules/vore/eating/living.dm"
+  ],
+  "notice_fields": [
+   "client"
   ],
   "reads_result": false,
   "target": "/datum/notice/mob_client_login",
@@ -1695,6 +1905,9 @@
    "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm",
    "code/modules/nifsoft/nif.dm"
   ],
+  "notice_fields": [
+   "gibbed"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_death",
   "tests": [
@@ -1709,6 +1922,7 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_dna_mutation",
   "tests": []
@@ -1726,6 +1940,10 @@
    "code/datums/capabilities/library/two_handed.dm",
    "code/modules/mob/living/carbon/human/species/station/prometheans.dm"
   ],
+  "notice_fields": [
+   "equipped_item",
+   "slot"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_equipped_item",
   "tests": []
@@ -1740,6 +1958,9 @@
   "listeners": [
    "code/_onclick/hud/action/action_screen_objects.dm"
   ],
+  "notice_fields": [
+   "action"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_granted_action",
   "tests": []
@@ -1752,6 +1973,7 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_handle_hud_darksight",
   "tests": []
@@ -1765,6 +1987,7 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_handle_vision",
   "tests": []
@@ -1780,6 +2003,7 @@
    "code/modules/combat_ai/brain/brain.dm",
    "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_login",
   "tests": []
@@ -1795,6 +2019,7 @@
    "code/datums/progressbar.dm",
    "code/modules/maint_recycler/code/vendor_goodies/remote_scene_tools/remote_scene_tools.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_logout",
   "tests": [
@@ -1809,6 +2034,7 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_medical_issues_changed",
   "tests": []
@@ -1822,6 +2048,9 @@
   ],
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
+  ],
+  "notice_fields": [
+   "old_character"
   ],
   "reads_result": false,
   "target": "/datum/notice/mob_mind_transferred_into",
@@ -1837,6 +2066,9 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [
+   "new_character"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_mind_transferred_out_of",
   "tests": []
@@ -1851,6 +2083,9 @@
   "listeners": [
    "code/_onclick/hud/action/action_screen_objects.dm"
   ],
+  "notice_fields": [
+   "action"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_removed_action",
   "tests": []
@@ -1863,6 +2098,7 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/mob_reset_perspective",
   "tests": []
@@ -1879,6 +2115,10 @@
    "code/game/machinery/camera/motion.dm",
    "code/modules/combat_ai/brain/brain.dm"
   ],
+  "notice_fields": [
+   "new_stat",
+   "old_stat"
+  ],
   "reads_result": false,
   "target": "/datum/notice/mob_statchange",
   "tests": []
@@ -1893,6 +2133,10 @@
   ],
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
+  ],
+  "notice_fields": [
+   "item",
+   "target_"
   ],
   "reads_result": false,
   "target": "/datum/notice/mob_unequipped_item",
@@ -1933,6 +2177,10 @@
    "code/modules/tgui/modules/appearance_changer.dm",
    "code/modules/tgui/modules/camera.dm"
   ],
+  "notice_fields": [
+   "old_loc",
+   "new_loc"
+  ],
   "reads_result": false,
   "target": "/datum/notice/movable_attempted_move",
   "tests": []
@@ -1947,6 +2195,10 @@
   ],
   "listeners": [
    "code/datums/entity_state/squeak.dm"
+  ],
+  "notice_fields": [
+   "hit_atom",
+   "throwingdatum"
   ],
   "reads_result": false,
   "target": "/datum/notice/movable_impact",
@@ -1964,6 +2216,10 @@
    "code/game/objects/items/devices/scanners/motion_tracker.dm",
    "code/game/objects/items/devices/scanners/motiontracker_service.dm",
    "code/modules/mob/motiontracker.dm"
+  ],
+  "notice_fields": [
+   "source_",
+   "echo_turf_location"
   ],
   "reads_result": false,
   "target": "/datum/notice/movable_motiontracker",
@@ -2014,6 +2270,11 @@
    "code/modules/mob/living/simple_mob/overmap_mob.dm",
    "code/modules/xenoarcheaology/effect_master.dm"
   ],
+  "notice_fields": [
+   "old_loc",
+   "direction",
+   "forced"
+  ],
   "reads_result": false,
   "target": "/datum/notice/moved",
   "tests": [
@@ -2031,6 +2292,9 @@
   "listeners": [
    "code/datums/behaviours/omen.dm"
   ],
+  "notice_fields": [
+   "old_loc"
+  ],
   "reads_result": false,
   "target": "/datum/notice/moved_down_stairs",
   "tests": []
@@ -2046,6 +2310,9 @@
   "listeners": [
    "code/datums/entity_state/materials/material_container.dm"
   ],
+  "notice_fields": [
+   "disassembled"
+  ],
   "reads_result": false,
   "target": "/datum/notice/obj_deconstruct",
   "tests": []
@@ -2058,6 +2325,7 @@
   "listeners": [
    "code/game/objects/items/devices/radio/intercom.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/observer_apc",
   "tests": []
@@ -2070,6 +2338,7 @@
   "listeners": [
    "code/modules/blob2/overmind/types/reactive_spines.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/observer_globalmoved",
   "tests": []
@@ -2083,6 +2352,9 @@
   ],
   "listeners": [
    "code/modules/shuttles/shuttles_web.dm"
+  ],
+  "notice_fields": [
+   "shuttle"
   ],
   "reads_result": false,
   "target": "/datum/notice/observer_shuttle_added",
@@ -2099,6 +2371,10 @@
   "listeners": [
    "code/modules/overmap/ships/landable.dm"
   ],
+  "notice_fields": [
+   "old_location",
+   "destination"
+  ],
   "reads_result": false,
   "target": "/datum/notice/observer_shuttle_moved",
   "tests": []
@@ -2113,6 +2389,10 @@
   ],
   "listeners": [
    "code/modules/overmap/ships/landable.dm"
+  ],
+  "notice_fields": [
+   "old_location",
+   "destination"
   ],
   "reads_result": false,
   "target": "/datum/notice/observer_shuttle_pre_move",
@@ -2130,6 +2410,10 @@
    "code/datums/topturfcrossed.dm",
    "code/game/atom/_atom.dm"
   ],
+  "notice_fields": [
+   "arrived",
+   "old_loc"
+  ],
   "reads_result": false,
   "target": "/datum/notice/observer_turf_entered",
   "tests": []
@@ -2144,6 +2428,9 @@
   "listeners": [
    "code/datums/behaviours/omen.dm"
   ],
+  "notice_fields": [
+   "item"
+  ],
   "reads_result": false,
   "target": "/datum/notice/picked_up_item",
   "tests": []
@@ -2157,6 +2444,9 @@
   ],
   "listeners": [
    "code/_onclick/hud/picture_in_picture.dm"
+  ],
+  "notice_fields": [
+   "window_id"
   ],
   "reads_result": false,
   "target": "/datum/notice/popup_cleared",
@@ -2212,6 +2502,9 @@
    "code/modules/tooltip/tooltip.dm"
   ],
   "note": "most hooks only clear a reference: declare the relation and delete the hook",
+  "notice_fields": [
+   "force"
+  ],
   "reads_result": false,
   "target": "/datum/notice/qdeleting",
   "tests": [
@@ -2230,6 +2523,10 @@
   ],
   "listeners": [
    "code/modules/xenoarcheaology/effect_master.dm"
+  ],
+  "notice_fields": [
+   "reagent",
+   "amount"
   ],
   "reads_result": false,
   "target": "/datum/notice/reagent_expose_obj",
@@ -2259,6 +2556,7 @@
   "listeners": [
    "code/datums/entity_state/remote_view.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/remote_view_clear",
   "tests": []
@@ -2274,6 +2572,10 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm"
   ],
+  "notice_fields": [
+   "belly_class",
+   "fullness_ref"
+  ],
   "reads_result": false,
   "target": "/datum/notice/robot_belly_fullness",
   "tests": []
@@ -2288,6 +2590,9 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/dogborg/robot_belly.dm"
   ],
+  "notice_fields": [
+   "item"
+  ],
   "reads_result": false,
   "target": "/datum/notice/robot_equipment_changed",
   "tests": []
@@ -2300,6 +2605,7 @@
   "listeners": [
    "code/modules/mob/living/silicon/robot/robot.dm"
   ],
+  "notice_fields": [],
   "reads_result": false,
   "target": "/datum/notice/silicon_laws_changed",
   "tests": []
@@ -2348,6 +2654,13 @@
   "listeners": [
    "code/datums/behaviours/omen.dm"
   ],
+  "notice_fields": [
+   "stun_amount",
+   "agony_amount",
+   "def_zone",
+   "used_weapon",
+   "electric"
+  ],
   "reads_result": false,
   "target": "/datum/notice/stun_effect",
   "tests": []
@@ -2363,6 +2676,10 @@
   "listeners": [
    "code/modules/research/tg/machinery/_production.dm",
    "code/modules/research/tg/machinery/mech_fabricator.dm"
+  ],
+  "notice_fields": [
+   "researched_design",
+   "custom"
   ],
   "reads_result": false,
   "target": "/datum/notice/techweb_add_design",
@@ -2380,6 +2697,10 @@
    "code/modules/research/tg/machinery/_production.dm",
    "code/modules/research/tg/machinery/mech_fabricator.dm"
   ],
+  "notice_fields": [
+   "removed_design",
+   "custom"
+  ],
   "reads_result": false,
   "target": "/datum/notice/techweb_remove_design",
   "tests": []
@@ -2396,6 +2717,11 @@
   "listeners": [
    "code/modules/research/tg/experisci/experiment/instances/teleporting.dm"
   ],
+  "notice_fields": [
+   "teleported_things",
+   "target_turf",
+   "sending"
+  ],
   "reads_result": false,
   "target": "/datum/notice/telesci_teleport",
   "tests": []
@@ -2409,6 +2735,9 @@
   ],
   "listeners": [
    "code/_onclick/hud/map_view.dm"
+  ],
+  "notice_fields": [
+   "client"
   ],
   "reads_result": false,
   "target": "/datum/notice/tgui_window_visible",
@@ -2443,6 +2772,9 @@
    "code/datums/status_effects/debuffs/fire_stacks.dm",
    "code/modules/organs/internal/special/heart_anomalock.dm"
   ],
+  "notice_fields": [
+   "trait"
+  ],
   "reads_result": false,
   "target": "/datum/notice/trait_gained",
   "tests": []
@@ -2456,6 +2788,9 @@
   ],
   "listeners": [
    "code/datums/status_effects/debuffs/fire_stacks.dm"
+  ],
+  "notice_fields": [
+   "trait"
   ],
   "reads_result": false,
   "target": "/datum/notice/trait_lost",
@@ -2475,6 +2810,12 @@
    "code/modules/lootpanel/search_object.dm",
    "code/modules/materials/engineering/material_service.dm"
   ],
+  "notice_fields": [
+   "path",
+   "new_baseturfs",
+   "flags",
+   "post_change_callbacks"
+  ],
   "reads_result": false,
   "target": "/datum/notice/turf_change",
   "tests": []
@@ -2489,6 +2830,10 @@
   ],
   "listeners": [
    "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+  ],
+  "notice_fields": [
+   "usr_",
+   "action"
   ],
   "reads_result": false,
   "target": "/datum/notice/ui_act",
@@ -2522,6 +2867,13 @@
   "listeners": [
    "code/game/machinery/doppler_array.dm"
   ],
+  "notice_fields": [
+   "epicenter",
+   "devastation_range",
+   "heavy_impact_range",
+   "light_impact_range",
+   "took"
+  ],
   "reads_result": false,
   "target": "/datum/notice/world_explosion",
   "tests": []
@@ -2537,6 +2889,9 @@
    "code/game/objects/items/ghost_hunting/trap.dm",
    "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
   ],
+  "notice_fields": [
+   "passing_entity"
+  ],
   "reads_result": false,
   "target": "/datum/notice/world_ghost_captured",
   "tests": []
@@ -2550,6 +2905,9 @@
   ],
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
+  ],
+  "notice_fields": [
+   "mob"
   ],
   "reads_result": false,
   "target": "/datum/notice/world_mob_created",
@@ -2566,6 +2924,10 @@
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
   ],
+  "notice_fields": [
+   "living",
+   "gibbed"
+  ],
   "reads_result": false,
   "target": "/datum/notice/world_mob_death",
   "tests": []
@@ -2579,6 +2941,9 @@
   ],
   "listeners": [
    "code/controllers/subsystems/contracts.dm"
+  ],
+  "notice_fields": [
+   "account"
   ],
   "reads_result": false,
   "target": "/datum/notice/world_payment_account_status",
@@ -2594,6 +2959,9 @@
   "listeners": [
    "code/modules/events/supply_demand.dm"
   ],
+  "notice_fields": [
+   "supply_shuttle_areas"
+  ],
   "reads_result": false,
   "target": "/datum/notice/world_supply_shuttle_depart",
   "tests": []
@@ -2608,6 +2976,9 @@
   "listeners": [
    "code/game/objects/items/ghost_hunting/trap.dm",
    "code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm"
+  ],
+  "notice_fields": [
+   "shadow_wight"
   ],
   "reads_result": false,
   "target": "/datum/notice/world_wight_captured",

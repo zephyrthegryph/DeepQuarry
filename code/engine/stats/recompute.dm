@@ -651,6 +651,7 @@ GLOBAL_VAR_INIT(stat_evals, 0)
 /// The kernel's drain point (the start of phases D, P and R): the marked stats recompute under the simulation lane's budget. Costs one list length
 /// when nothing is marked.
 /proc/stat_drain_point()
+	act_drain_point() // the notices queued past the depth cap and the marked on_change hooks (code/engine/actions)
 	if(length(GLOB.stat_marked))
 		stat_drain_marked(LANE_SIMULATION, FALSE)
 

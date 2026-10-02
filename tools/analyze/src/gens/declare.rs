@@ -14,7 +14,7 @@
 //!   `declared_entries()`: the entries of its `CAPABILITIES(T, ...)` list, copied as written. The proc is defined on `T`, so `nameof(var)`
 //!   and `PROC_REF(x)` resolve against the type, and each entry carries its own line for the explain tools.
 //!
-//! The entry text is copied except for two rewrites: `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
+//! The entry text is copied except for these rewrites (E4 adds `adjusts(a.b, ...)` and `on_change(nameof(a.b), ...)`, whose paths become text): `link(A::a, B::b)` (DM's `link` is a keyword) becomes `entry_link("A::a", "B::b")`,
 //! and `configure(CAP_X, "selector", param = value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`.
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -284,6 +284,24 @@ fn entry_text(raw: &str, caps: &[Cap]) -> String {
         let mut parts = vec![quote(a.first().map(|s| s.as_str()).unwrap_or("")), quote(a.get(1).map(|s| s.as_str()).unwrap_or(""))];
         parts.extend(a.iter().skip(2).cloned());
         format!("entry_link({})", parts.join(", "))
+    });
+    // adjusts(packet.amount, ...): the field path is text (DM has no value for `packet.amount` outside the action's own context).
+    t = rewrite_calls(&t, "adjusts", &|a| {
+        let Some(first) = a.first() else { return "adjusts()".to_string() };
+        let mut parts = vec![if first.starts_with('"') { first.clone() } else { quote(first) }];
+        parts.extend(a.iter().skip(1).cloned());
+        format!("adjusts({})", parts.join(", "))
+    });
+    // on_change(nameof(terminal.charge), ANY, ...): nameof() of a path gives only the last name, so the whole path is text.
+    t = rewrite_calls(&t, "on_change", &|a| {
+        let Some(first) = a.first() else { return "on_change()".to_string() };
+        let mut parts: Vec<String> = a.to_vec();
+        if let Some(inner) = first.strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')) {
+            if inner.contains('.') {
+                parts[0] = quote(inner.trim());
+            }
+        }
+        format!("on_change({})", parts.join(", "))
     });
     t = rewrite_calls(&t, "configure", &|a| {
         let Some(first) = a.first() else { return "configure()".to_string() };

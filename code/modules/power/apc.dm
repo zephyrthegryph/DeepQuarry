@@ -200,7 +200,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 /// push_to_rust(), draw() and tgui_data() read.)
 /obj/machinery/power/apc/reactions()
 	. = ..()
-	. += on_notice(/datum/notice/hit, PROC_REF(on_hit))
+	. += on_notice(/datum/notice/legacy_hit, PROC_REF(on_hit))
 	. += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
 	. += on_change(list(nameof(cell)), PROC_REF(cell_changed))
 	. += before_op(damage(DAMAGE_EMP), PROC_REF(apc_emp_fail))

@@ -16,6 +16,7 @@
 		activations_relation_changed(holder, E.args["var"], TRUE)
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(holder, mapload)
+	hooks_change_baseline(holder)
 
 /// Before the base body of Initialize runs: for work the parent's init reads (a part made in nullspace).
 /proc/engine_holder_preinit(datum/holder, mapload)

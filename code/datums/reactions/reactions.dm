@@ -125,7 +125,7 @@
 	return rx_make(RXN_AFTER_OP, key_or_type, null, handler)
 
 /// Every occurrence of a /datum/notice of `type` (or a subtype) published by the holder: handler(notice).
-/proc/on_notice(type, handler)
+/proc/legacy_on_notice(type, handler)
 	return rx_make(RXN_NOTICE, type, null, handler)
 
 /// One of `reads` (var names, change keys, or native() specs) changed: handler(list/keys), once per drain. `at_most`
@@ -135,7 +135,7 @@
 /// costs one test. A var gate is also an implicit read: when it is published and holds (its rising edge), one delivery
 /// carrying the gate's key catches the reaction up on what it skipped; a PROC_REF gate must be covered by the reaction's
 /// reads (or generated ones). A static reaction only: observe() delivers every drain whatever its trigger says.
-/proc/on_change(list/reads, handler, at_most = 0, when = null)
+/proc/legacy_on_change(list/reads, handler, at_most = 0, when = null)
 	var/datum/reaction/R = rx_make(RXN_CHANGE, null, rx_reads_of(reads), handler)
 	if(at_most > 0)
 		R.at_most = at_most

@@ -86,7 +86,7 @@
 		TEST_ASSERT(copytext(key, 1, length(DAMAGE_KEY_PREFIX) + 1) == DAMAGE_KEY_PREFIX, "[key] is a damage key")
 	TEST_ASSERT_EQUAL(length(damage_rows_of(A)), 3, "read by receive_damage() as damage rows")
 	TEST_ASSERT(T.after_keyed ~= list(CAP_EMAG = T.after_keyed[CAP_EMAG]), "the one after_op is the emag capability's, not the APC's")
-	TEST_ASSERT(WANTS(A, /datum/notice/hit) && WANTS(A, /datum/notice/slashed), "both are wanted")
+	TEST_ASSERT(WANTS(A, /datum/notice/legacy_hit) && WANTS(A, /datum/notice/slashed), "both are wanted")
 	TEST_ASSERT(!WANTS(A, /datum/notice/rx_fx), "and nothing else")
 	var/obj/machinery/power/terminal/term = allocate(/obj/machinery/power/terminal, run_loc_floor_bottom_left)
 	rel_set(A, nameof(A.terminal), term)
@@ -281,12 +281,12 @@
 	bat.w_class = ITEMSIZE_NORMAL
 	A.stat_add(BROKEN)
 	cap_set(A, CAP_BROKEN, TRUE)
-	PUBLISH(A, /datum/notice/hit, H, bat)
+	PUBLISH_LEGACY(A, /datum/notice/legacy_hit, H, bat)
 	TEST_ASSERT(A.stat & BROKEN, "a hit is heard and changes nothing on a whole-ish APC")
 	var/knocked = FALSE
 	for(var/i in 1 to 200)
 		cap_set(A, CAP_COVER_OPEN | CAP_COVER_REMOVED, FALSE)
-		PUBLISH(A, /datum/notice/hit, H, bat)
+		PUBLISH_LEGACY(A, /datum/notice/legacy_hit, H, bat)
 		if(cover_removed(A))
 			knocked = TRUE
 			break

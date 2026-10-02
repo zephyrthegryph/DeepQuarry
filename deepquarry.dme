@@ -326,6 +326,7 @@
 #include "code\__defines\engine\declare.dm"
 #include "code\__defines\engine\stats.dm"
 #include "code\__defines\engine\test_hooks.dm"
+#include "code\__defines\engine\actions.dm"
 // The ids the declaration markers declare, written by `analyze gen declare_ids` (code/engine/_generated/ids.dm): before everything that names one.
 #include "code\engine\_generated\ids.dm"
 // The contracts layer (doc/rewrite/final_api.html section 22): ids, act types and accessor declarations, no procs.
@@ -5649,7 +5650,11 @@
 #include "code\modules\combat_ai\ports\solargrub.dm"
 #include "code\modules\combat_ai\ports\three_phases.dm"
 #include "code\modules\combat_ai\ports\ysbryd.dm"
-#include "code\engine\actions\stubs.dm"
+#include "code\engine\actions\act.dm"
+#include "code\engine\actions\hooks.dm"
+#include "code\engine\actions\notices.dm"
+#include "code\engine\actions\change.dm"
+#include "code\engine\actions\twins.dm"
 #include "code\engine\declare\entries.dm"
 #include "code\engine\declare\capability_def.dm"
 #include "code\engine\declare\table.dm"
@@ -5677,6 +5682,9 @@
 #include "code\engine\_generated\system_accessors.dm"
 #include "code\engine\_generated\declare.dm"
 #include "code\engine\_generated\stats.dm"
+#include "code\engine\_generated\actions.dm"
+#include "code\engine\_generatedctions.dm"
+#include "code\engine\_generated\event_twins.dm"
 #include "code\_generated\om_notices.dm"
 #include "code\_generated\reads.dm"
 // END DQ MODULAR INCLUDES

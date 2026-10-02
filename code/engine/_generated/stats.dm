@@ -85,7 +85,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX) at code/tests/engine/fixtures.dm:202
+/// STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX) at code/tests/engine/fixtures.dm:211
 /obj/e0_fixture/lamp/var/e0_lamp_range = null // ALLOW(base_vars): a stat's var is its settled value (STAT, code/engine/stats)
 /obj/e0_fixture/lamp/proc/__stat_e0_lamp_range()
 	return list("e0_lamp_range", "MAX", list(id = STAT_E0_LAMP_RANGE))

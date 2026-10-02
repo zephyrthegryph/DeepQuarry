@@ -34,6 +34,15 @@
 CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR, /datum/e0_cap/mirror, key = NONE, stacks = BEST(reflect_chance), reflect_chance = 30)
 /datum/e0_cap/mirror
 
+/// The mirror's hooks: a projectile hit is taken over with probability reflect_chance (one roll, drawn by the winning activation only).
+/datum/e0_cap/mirror/entries()
+	return list(extend(/datum/act/hit/projectile, instead(chance(reflect_chance), then(CAP_PROC(reflect)))))
+
+/// The reflect handler: records the winning activation's source on the wearer (proof 2).
+/datum/e0_cap/mirror/proc/reflect(datum/act/A)
+	var/mob/living/simple_mob/e0_fixture/wearer = A.holder
+	wearer.last_reflect_source = A.source
+
 /// CAPABILITIES(/datum/e0_cap/tk, provides(AFF_MANIPULATE, reach = 15, line_of_sight = TRUE)): telekinesis, a provider.
 CAPABILITY_TYPE(e0_tk, CAP_E0_TK, /datum/e0_cap/tk, key = NONE)
 /datum/e0_cap/tk
@@ -80,7 +89,7 @@ CAPABILITIES(/mob/living/simple_mob/e0_fixture, ref_one(nameof(species), /datum/
 /// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
 /// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.
 /mob/living/simple_mob/e0_fixture/proc/e0_beam_hit()
-	var/datum/act/hit/projectile/H = e0_act_try(src, /datum/act/hit/projectile, null)
+	var/datum/act/hit/projectile/H = ACT_TRY(src, hit_projectile, null)
 	if(!H)
 		return null
 	if(H == ACT_PASS)
@@ -224,13 +233,31 @@ SYSTEM_ACCESSOR(e0_night, e0_night_active, nameof(night))
 /proc/e0_flip_night(night = TRUE)
 	GLOB.e0_night_service.set_night(night)
 
-/// The notice chain of proof 8: an on_notice handler publishes the next notice and counts itself. Starts a chain of `length` notices.
-/// ACTION-free: the notice is published with PUBLISH-equivalent act_done() on a test action.
-/datum/notice/e0_chain
-	var/hop = 0
+/// The notice chain of proof 8: a listener whose on_notice handler publishes the next notice and counts itself. A FIXED action, so PUBLISH sends it.
+ACTION(e0_chain, hop, FIXED, notice = /datum/notice/e0_chain)
 
+/// The listener of the chain: hears each hop and publishes the next until `length`.
+/datum/e0_chain_node
+	var/length = 0
+
+CAPABILITIES(/datum/e0_chain_node, 	on_notice(/datum/notice/e0_chain, then(PROC_REF(hear))))
+
+/datum/e0_chain_node/proc/hear(datum/act/A)
+	var/datum/notice/e0_chain/N = A
+	GLOB.e0_chain_handled++
+	if(N.hop < length)
+		PUBLISH(src, e0_chain, hop = N.hop + 1)
+	else
+		GLOB.e0_chain_node = null // the listener is let go with the end of the chain
+
+GLOBAL_VAR(e0_chain_node)
+
+/// Starts a chain of `length` notices: each handler publishes the next, synchronously, so the depth is the chain's own.
 /proc/e0_start_notice_chain(length)
-	ENGINE_STUB(ENGINE_E4, "hooks: a test on_notice(/datum/notice/e0_chain) handler that publishes the next notice (synchronous delivery, depth cap, the queue)")
+	var/datum/e0_chain_node/node = new
+	node.length = length
+	GLOB.e0_chain_node = node
+	PUBLISH(node, e0_chain, hop = 1)
 
 /// Notices the chain's handler counted: the proof compares it with test_notice_count().
 GLOBAL_VAR_INIT(e0_chain_handled, 0)
