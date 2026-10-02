@@ -7,3 +7,5 @@ changes:
   - bugfix: "Biopsy reports reach the scanner user after printing, and invalid beams stay stopped."
   - bugfix: "Marker beacon pickup no longer duplicates beacons when both hands are full."
   - bugfix: "Timed implant installation preserves the installer for configuration and size-control ownership."
+  - bugfix: "Completed machine and console frames correctly transfer their installed circuit board."
+  - bugfix: "Gun scopes and binoculars use the acting player and correct viewing parameters."
