@@ -227,7 +227,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 		GLOB.tick_frame.topic += max(TICK_USAGE - started, 0)
 
 /// Each tick-meter system's cost in ms per second (code/controllers/measure/): every OM behaviour group, the
-/// scheduler core (om_core), the Rust world step (om_native) and clicks (input). Unlike the lane and
+/// scheduler core (om_core), the appearance drain (om_appearance), the Rust world step (om_native) and clicks (input). Unlike the lane and
 /// behaviour sources this includes om_core and om_native, which no behaviour owns.
 /datum/metrics_source/systems
 

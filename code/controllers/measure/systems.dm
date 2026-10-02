@@ -75,7 +75,8 @@
 	index_for(KM_KEY_OM_NATIVE, KM_KIND_PSEUDO)
 	index_for(KM_KEY_INPUT, KM_KIND_PSEUDO)
 	index_for(KM_KEY_OTHER, KM_KIND_PSEUDO)
-	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_OM_CORE] != KM_KEY_OM_CORE || keys[KM_SYS_OM_NATIVE] != KM_KEY_OM_NATIVE || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER)
+	index_for(KM_KEY_OM_APPEARANCE, KM_KIND_PSEUDO)
+	if(length(keys) != KM_SYS_PSEUDO_COUNT || keys[KM_SYS_OM_CORE] != KM_KEY_OM_CORE || keys[KM_SYS_OM_NATIVE] != KM_KEY_OM_NATIVE || keys[KM_SYS_INPUT] != KM_KEY_INPUT || keys[KM_SYS_OTHER] != KM_KEY_OTHER || keys[KM_SYS_OM_APPEARANCE] != KM_KEY_OM_APPEARANCE)
 		CRASH("km: the pseudo system indices no longer match their KM_SYS_* constants")
 
 /// The index of `key`, registering it first if it is new. Past KM_MAX_SYSTEMS the overflow is KM_SYS_OTHER.

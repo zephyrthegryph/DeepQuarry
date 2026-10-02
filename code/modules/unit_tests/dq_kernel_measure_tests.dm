@@ -338,6 +338,9 @@
 	om_attach(quiet, /datum/om/behaviour/test/km_fake)
 	var/datum/om_test_entity/burner = entity(made)
 	om_attach(burner, /datum/om/behaviour/test/km_burner)
+	// The presentation lane also runs the refresh drift audit, strictly on every frame in a test
+	// build (a few ms each); pause it for this pass so the burner is measured against its peers.
+	set_global("refresh_sweep_list", list())
 	// One pass: the burner holds the tick over budget, the quiet behaviour costs almost nothing.
 	scheduler_advance(1)
 	var/usage = TICK_USAGE
@@ -346,7 +349,7 @@
 	TEST_ASSERT_EQUAL(meter.total_overruns, 1, "the tick counts as an overrun")
 	var/list/top = meter.last_overrun_top
 	TEST_ASSERT(length(top) >= 1, "the overrun has attribution")
-	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump")
+	TEST_ASSERT_EQUAL(top[1]["key"], "km_burner_system", "the burner is the top system, from inside the scheduler, not a lump: [json_encode(top)]")
 	TEST_ASSERT(top[1]["ms"] > 1, "and it is charged real time (got [top[1]["ms"]] ms)")
 	TEST_ASSERT(findtext(meter.last_overrun_line, "km_burner_system"), "the line names it: [meter.last_overrun_line]")
 	var/list/entry = meter.recorded_entries()[1]

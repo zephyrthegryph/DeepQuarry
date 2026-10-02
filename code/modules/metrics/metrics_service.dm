@@ -286,6 +286,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		var/datum/db_query/query = SSdbcore.NewQuery(statement[1], statement[2])
 		if(!query.Execute(async = FALSE))
 			log_sql("metrics: shutdown flush failed: [query.ErrorMsg()]")
+		// ALLOW(lifecycle): a db_query is a plain datum; no lifecycle verb applies
 		qdel(query)
 
 // ---------------------------------------------------------------- lane

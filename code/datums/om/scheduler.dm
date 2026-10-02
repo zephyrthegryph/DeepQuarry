@@ -449,7 +449,7 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 		// Declared appearances whose watched fields changed (code/datums/sys/appearance.dm).
 		var/appearance_start = TICK_USAGE
 		var/appearance_done = appearance_drain(src)
-		meter.charge(KM_SYS_OM_CORE, TICK_USAGE_TO_MS(appearance_start))
+		meter.charge(KM_SYS_OM_APPEARANCE, TICK_USAGE_TO_MS(appearance_start))
 		if(!appearance_done)
 			return FALSE
 	var/world_start = TICK_USAGE

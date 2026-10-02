@@ -26,6 +26,10 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// derived outputs, and the next drain empties it (skipping deleted entries). Scratch, not a
 	// registration, like the native system's per-frame lists below.
 	"refresh_queue",
+	// "[type]|[proc]" -> first instance, filled the first time a type's lists are checked (type_list.dm).
+	// Type-keyed caches are recognised by their keys (dq_lifecycle_grew_by_type_keys()); this one is
+	// keyed by text. A type whose contents pick at random (gum's flavour) meets a new type each time.
+	"type_list_purity",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on
@@ -138,6 +142,10 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 	var/list/var_keys = dq_lifecycle_snapshot_var_keys()
 	for(var/i in 1 to min(length(before_sizes), length(after_sizes)))
 		if(before_sizes[i] != after_sizes[i])
+			var/list/container_and_name = var_keys[var_keys[i]]
+			var/datum/container = container_and_name[1]
+			if(dq_lifecycle_grew_by_type_keys(container.vars[container_and_name[2]], before_sizes[i], after_sizes[i]))
+				continue
 			. += "[var_keys[i]] [before_sizes[i]] -> [after_sizes[i]]"
 	// Missing keys count as size 0, as before.
 	var/list/before_dynamic = before[2]
@@ -153,6 +161,18 @@ GLOBAL_VAR(dq_lifecycle_snapshot_var_keys)
 		var/new_size = after_dynamic[key] || 0
 		if(new_size)
 			. += "[key] 0 -> [new_size]"
+
+/// TRUE when `L` only grew, and every entry it gained (appended, so past `old_size`) is keyed by a
+/// type path: a per-type cache filled the first time a type is seen (a reaction table, a derived-value
+/// table). A type whose contents pick at random (a meal box, a flavoured gum) meets a new type on each
+/// instance. A registration holds instances, never types.
+/proc/dq_lifecycle_grew_by_type_keys(list/L, old_size, new_size)
+	if(!islist(L) || new_size <= old_size || length(L) != new_size)
+		return FALSE
+	for(var/i in old_size + 1 to new_size)
+		if(!ispath(L[i]))
+			return FALSE
+	return TRUE
 
 /// Running behaviour the object started on itself: timers and processing.
 /proc/dq_lifecycle_running(datum/D)
