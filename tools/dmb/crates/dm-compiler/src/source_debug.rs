@@ -67,12 +67,45 @@ impl<'a> SourceDebugIndex<'a> {
         }
         Self { line_starts: Vec::new(), origins, origin_map: project.origin_map.as_deref(), files, source_len: source.len(), segmented: Some(source.clone()), project_root, directory }
     }
+    /// Exact authored line mapping for a bounded declaration range. Byte
+    /// displacement outside these declarations does not enter the identity.
+    /// Equal body descriptors guarantee equal relative debug byte offsets;
+    /// this proof covers every line they can resolve, including missing origins.
+    pub(crate) fn range_identity(&self, spans:&[(dm_syntax::Span,dm_syntax::Span)])->Option<String> {
+        let mut digest=sha2::Sha256::new();
+        use sha2::Digest;
+        digest.update(b"dm-authored-range-lines-v1");
+        digest.update((spans.len() as u64).to_le_bytes());
+        for (header,body) in spans {
+            for span in [header,body] {
+                if span.start>span.end||span.end>self.source_len {return None;}
+                let first=self.line_number(span.start)?;
+                // Synthetic end-of-body marks can resolve the following line.
+                // Include that endpoint as well as every interior line.
+                let last=self.line_number(span.end.min(self.source_len.saturating_sub(1)).max(span.start))?;
+                digest.update((last.checked_sub(first)? as u64+1).to_le_bytes());
+                for line in first..=last {
+                    match self.resolve_line(line) {
+                        Some((file,line))=> {digest.update([1]);digest.update((file.len() as u64).to_le_bytes());digest.update(file.as_bytes());digest.update(line.to_le_bytes());},
+                        None=>digest.update([0]),
+                    }
+                }
+            }
+        }
+        Some(format!("{:x}",digest.finalize()))
+    }
+    fn line_number(&self,offset:usize)->Option<usize> {
+        if offset>=self.source_len {return None;}
+        self.segmented.as_ref().and_then(|source|source.line_number(offset))
+            .or_else(||Some(self.line_starts.partition_point(|start|*start<=offset)))
+    }
     pub fn resolve(&self, offset: usize) -> Option<(String, u32)> {
         if offset >= self.source_len {
             return None;
         }
-        let line = self.segmented.as_ref().and_then(|source| source.line_number(offset))
-            .unwrap_or_else(|| self.line_starts.partition_point(|start| *start <= offset));
+        self.resolve_line(self.line_number(offset)?)
+    }
+    fn resolve_line(&self,line:usize)->Option<(String,u32)> {
         let origin = if let Some(map) = self.origin_map {
             map.at_line(line)?
         } else {

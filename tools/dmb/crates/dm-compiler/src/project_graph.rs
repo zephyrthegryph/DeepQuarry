@@ -3,6 +3,9 @@
 //! A body-only edit changes one descriptor. Declaration changes refresh only
 //! previously observed semantic facts, including unsuccessful resolutions.
 //! Query hits require neither an AST nor reconstruction of LowerBindings.
+#[path="project_graph_context.rs"]
+mod context;
+pub use context::BindingContextProof;
 use crate::{
     semantic_queries::{fact_heap, memo_heap, value_heap},
     ProcedureMemo,
@@ -340,7 +343,7 @@ struct Record {
 
 /// Canonical SHA identities occupy inline bytes; noncanonical public/test
 /// descriptors retain their exact spelling rather than being normalized.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 enum CompactIdentity { Sha256([u8;32]), Literal(String) }
 impl CompactIdentity {
     fn new(text: &str) -> Self {
@@ -359,7 +362,7 @@ impl CompactIdentity {
     }}
     fn heap_bytes(&self)->usize {match self {Self::Sha256(_)=>0,Self::Literal(text)=>text.capacity()}}
 }
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct CompactDescriptor { body:CompactIdentity, frame:CompactIdentity }
 impl CompactDescriptor {
     fn new(value:&ProcDescriptor)->Self {Self {body:CompactIdentity::new(&value.body_digest),frame:CompactIdentity::new(&value.frame_digest)}}
@@ -373,6 +376,16 @@ struct ValidatedCertificate {
     disk: CompactIdentity,
     facts: Vec<FactId>,
     valid: bool,
+    active: bool,
+    context_only: bool,
+}
+
+fn certificate_heap(key:&ProcKey,certificate:&ValidatedCertificate)->usize {
+    // Account for the actual compact record and a conservative tree-node
+    // allowance; digest fields occupy the record, not separate string heaps.
+    std::mem::size_of::<(ProcKey,ValidatedCertificate)>()+96+key.path.capacity()
+        +certificate.descriptor.heap_bytes()+certificate.disk.heap_bytes()
+        +certificate.facts.capacity()*std::mem::size_of::<FactId>()
 }
 
 /// One graph per project/worktree session. The shared disk cache remains
@@ -401,6 +414,7 @@ pub struct ProjectProcedureGraph {
     stats: ProjectGraphStats,
     persistence: Option<Persistence>,
     configured_identity: Option<String>,
+    accepted_context: Option<BindingContextProof>,
 }
 impl Default for ProjectProcedureGraph {
     fn default() -> Self {
@@ -425,6 +439,7 @@ impl ProjectProcedureGraph {
             stats: ProjectGraphStats::default(),
             persistence: None,
             configured_identity: None,
+            accepted_context: None,
         }
     }
     pub fn stats(&self) -> ProjectGraphStats {
@@ -721,7 +736,7 @@ impl ProjectProcedureGraph {
             facts.sort_unstable();
             self.certificates.insert(key.clone(), ValidatedCertificate {
                 id: record.id, descriptor: CompactDescriptor::new(&candidate.descriptor), disk:CompactIdentity::new(&disk.key),
-                facts, valid: true,
+                facts, valid: true, active:true, context_only:false,
             });
         }
         let mut reverse: BTreeMap<FactId, Vec<u32>> = BTreeMap::new();
@@ -742,8 +757,7 @@ impl ProjectProcedureGraph {
         self.stats.facts = 0;
         self.stats.procedures = self.certificates.len();
         self.stats.metadata_bytes = self.certificates.iter().map(|(key,c)|
-            560 + key.path.capacity() + c.descriptor.heap_bytes() + c.disk.heap_bytes()
-                + c.facts.capacity()*std::mem::size_of::<FactId>()).sum::<usize>()
+            certificate_heap(key,c)).sum::<usize>()
             + self.fact_names.iter().map(|fact| fact_heap(fact)+96).sum::<usize>()
             + self.compact_reverse.values().map(|readers| 96+readers.len()*4).sum::<usize>()
             + self.procedure_names.iter().map(|key| key.path.capacity()+96).sum::<usize>();
@@ -766,7 +780,7 @@ impl ProjectProcedureGraph {
                 let mut facts:Vec<_>=candidate.dependencies.iter().map(|witness|witness.fact).collect();facts.sort_unstable();facts.dedup();
                 for &fact in &facts {edges.entry(fact).or_default().push(record.id);}
                 self.certificates.insert(key.clone(),ValidatedCertificate {id:record.id,descriptor:CompactDescriptor::new(&record.descriptor),
-                    disk:CompactIdentity::new(&candidate.disk.as_ref().unwrap().key),facts,valid});
+                    disk:CompactIdentity::new(&candidate.disk.as_ref().unwrap().key),facts,valid,active:record.active,context_only:false});
                 if !valid {self.dirty.insert(key.clone());if let Some(p)=&mut self.persistence {p.headers_seen.remove(key);}}
             } else {
                 // A descriptor without persisted witnesses is a miss, never a
@@ -784,7 +798,7 @@ impl ProjectProcedureGraph {
         self.db=Database::default();self.stats.resident_bytes=0;self.stats.facts=0;
         if let Some(p)=&mut self.persistence {p.fact_rows.clear();p.value_rows.clear();p.witness_memo_bytes=0;}
         self.stats.procedures=self.certificates.len();
-        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|560+key.path.capacity()+c.descriptor.heap_bytes()+c.disk.heap_bytes()+c.facts.capacity()*4).sum::<usize>()
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|certificate_heap(key,c)).sum::<usize>()
             +self.fact_names.iter().map(|fact|fact_heap(fact)+96).sum::<usize>()
             +self.compact_reverse.values().map(|readers|96+readers.capacity()*4).sum::<usize>()
             +self.procedure_names.iter().map(|key|key.path.capacity()+96).sum::<usize>();
@@ -896,8 +910,7 @@ impl ProjectProcedureGraph {
         let id = if let Some(certificate) = self.certificates.remove(key) {
             self.stats.procedures = self.stats.procedures.saturating_sub(1);
             self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(
-                560 + key.path.capacity() + certificate.descriptor.heap_bytes() + certificate.disk.heap_bytes()
-                    + certificate.facts.capacity()*std::mem::size_of::<FactId>(),
+                certificate_heap(key,&certificate),
             );
             for fact in certificate.facts {
                 if let Some(readers) = self.reverse.get_mut(&fact) { readers.remove(&certificate.id); }

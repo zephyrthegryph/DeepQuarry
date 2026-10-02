@@ -8,7 +8,7 @@ use sha2::{Digest,Sha256};
 struct Location {proc_index:usize,variable_start:usize,variables:usize,digest:[u8;32]}
 #[derive(Clone,Serialize,Deserialize)]
 struct Durable {version:u32,digest:[u8;32],procs:Vec<PageSliceRef>,variables:Vec<PageSliceRef>}
-struct Disk {records:dm_store::PackedRecords,procs:Arc<Mutex<TypedPages<Proc>>>,variables:Arc<Mutex<TypedPages<Variable>>>}
+struct Disk {records:dm_store::PackedRecords,store:dm_store::Store,base_namespace:String,selected_namespace:String,procs:Arc<Mutex<TypedPages<Proc>>>,variables:Arc<Mutex<TypedPages<Variable>>>}
 #[derive(Default)]
 struct Misses {unsupported:usize,noentry:usize,variables:usize,digest:usize,slices:usize}
 #[derive(Default)]
@@ -17,9 +17,25 @@ fn fingerprint(proc:&Proc,variables:&[Variable])->io::Result<[u8;32]> {crate::co
 impl PhysicalRowsDirectory {
  pub fn open(root:&Path,identity:&str)->Self {
   let disk=(||->io::Result<Disk> {let namespace=format!("physical-rows-v1-{:x}",Sha256::digest(format!("{}\0{}",identity,env!("DM_EMISSION_FINGERPRINT"))));
-   Ok(Disk {records:dm_store::PackedRecords::new(dm_store::Store::open(root.join("physical-row-directory.redb"))?,namespace)?,
+   let store=dm_store::Store::open(root.join("physical-row-directory.redb"))?;
+   Ok(Disk {records:dm_store::PackedRecords::new(store.clone(),namespace.clone())?,store,base_namespace:namespace.clone(),selected_namespace:namespace,
     procs:Arc::new(Mutex::new(TypedPages::open(root,"wire-proc-v1",1024*1024,|_|0)?)),variables:Arc::new(Mutex::new(TypedPages::open(root,"wire-variable-v1",1024*1024,|_|0)?))})})();
   Self {disk:disk.ok(),..Default::default()}
+ }
+ /// Retain directories for prior declaration layouts instead of overwriting
+ /// their row locations on every structural edit. This selects candidates;
+ /// the exact current physical-row fingerprint still authorizes every reuse.
+ pub fn select_context(&mut self,proof:Option<&crate::project_graph::BindingContextProof>)->io::Result<()> {
+  let Some(disk)=&self.disk else {return Ok(());};
+  let namespace=match proof {
+   Some(proof)=>format!("{}-{}",disk.base_namespace,crate::content_hash::text(crate::content_hash::compact(b"physical-layout-context-v1\0",proof).ok_or_else(||io::Error::other("physical layout context encoding failed"))?)),
+   None=>disk.base_namespace.clone(),
+  };
+  if namespace==disk.selected_namespace {return Ok(());}
+  let records=dm_store::PackedRecords::new(disk.store.clone(),namespace.clone())?;
+  self.clear();
+  if let Some(disk)=&mut self.disk {disk.records=records;disk.selected_namespace=namespace;}
+  Ok(())
  }
  pub fn clear(&mut self) {if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE physical rows pressure/reset clear: entries={} bytes={}",self.entries.len(),self.resident_bytes());}let disk=self.disk.take();if let Some(disk)=&disk {disk.records.clear_index_cache();disk.procs.lock().unwrap_or_else(|e|e.into_inner()).clear_decoded();disk.variables.lock().unwrap_or_else(|e|e.into_inner()).clear_decoded();}*self=Self {disk,..Default::default()};}
  fn name(key:&crate::ProcKey)->String {format!("{:x}",Sha256::digest(format!("{}\0{}",key.path,key.occurrence)))}
@@ -60,7 +76,7 @@ impl PhysicalRowsDirectory {
  pub fn capture(&mut self,image:&mut WireImageBuilder)->io::Result<()> {
   let started=std::time::Instant::now();let mut procs=image.capture_proc_table()?;let mut variables=image.capture_variable_table()?;
   if self.disk.is_some() {procs.address_resident_segments()?;variables.address_resident_segments()?;}
-  let mut changed=Vec::new();let mut published=0usize;let mut entries=BTreeMap::new();
+  let mut changed=Vec::new();let mut changed_bytes=0usize;let mut published=0usize;let mut entries=BTreeMap::new();
   // Walk physical order so bounded page caches decode each page once, rather
   // than thrashing them in the unrelated lexical declaration-key order.
   let mut ordered:Vec<_>=self.pending.iter().collect();ordered.sort_unstable_by_key(|(_,location)|location.0);
@@ -68,8 +84,12 @@ impl PhysicalRowsDirectory {
    let digest=fingerprint(&procs.get(*proc_index)?,&variables.range(*start,start+count)?)?;
    if self.disk.is_some()&&self.known.get(key)!=Some(&digest) {
     let saved=Durable {version:1,digest,procs:procs.export_page_slices(*proc_index,*proc_index+1)?,variables:variables.export_page_slices(*start,start+count)?};
-    changed.push((Self::name(key),rmp_serde::to_vec(&saved).map_err(io::Error::other)?));self.known.insert(key.clone(),digest);
-    if changed.len()>=1024 {if let Some(disk)=&self.disk {if !matches!(disk.records.write_many(&changed,None)?,dm_store::Commit::Applied) {return Err(io::Error::new(io::ErrorKind::WouldBlock,"physical directory publication conflict"));}}published+=changed.len();changed.clear();}
+    let bytes=rmp_serde::to_vec(&saved).map_err(io::Error::other)?;
+    if !changed.is_empty()&&(changed.len()>=16_384||changed_bytes.saturating_add(bytes.len()+80)>8*1024*1024) {
+        if let Some(disk)=&self.disk {if !matches!(disk.records.write_many(&changed,None)?,dm_store::Commit::Applied) {return Err(io::Error::new(io::ErrorKind::WouldBlock,"physical directory publication conflict"));}}
+        published+=changed.len();changed.clear();changed_bytes=0;
+    }
+    changed_bytes+=bytes.len()+80;changed.push((Self::name(key),bytes));self.known.insert(key.clone(),digest);
    }
    entries.insert(key.clone(),Location {proc_index:*proc_index,variable_start:*start,variables:*count,digest});
   }

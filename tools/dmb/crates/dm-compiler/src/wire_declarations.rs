@@ -9,9 +9,9 @@ thread_local! {static INDEX:RefCell<Index>=RefCell::new(Index::default());}
 pub(super) struct Generation;
 impl Drop for Generation {fn drop(&mut self) {INDEX.with(|index|*index.borrow_mut()=Index::default());}}
 pub(super) fn begin()->Generation {INDEX.with(|index|*index.borrow_mut()=Index::default());Generation}
-pub(super) fn local(dmb:&Dmb,class:u32,name:&str)->Option<(u32,u32)> {
-    let owner=dmb.classes.get(class as usize)?;
-    let list=owner.lists_and_procs[4];let words=dmb.lists.get(list as usize).map_or(0,|words| words.len());
+pub(super) fn local(dmb:&impl AssemblyImage,class:u32,name:&str)->Option<(u32,u32)> {
+    let owner=dmb.classes().get(class as usize)?;
+    let list=owner.lists_and_procs[4];let words=dmb.resident_list(list).map(|words|words.len()).or_else(||dmb.list_words(list).ok().map(|words|words.len())).unwrap_or(0);
     INDEX.with(|index| {
         let mut index=index.borrow_mut();
         if let Some(fields)=index.classes.get(&class) {
@@ -19,8 +19,8 @@ pub(super) fn local(dmb:&Dmb,class:u32,name:&str)->Option<(u32,u32)> {
         }
         if let Some(old)=index.classes.remove(&class) {index.bytes=index.bytes.saturating_sub(old.charge);}
         let mut fields=HashMap::new();let mut charge=128;
-        for (variable,flags) in dmb.class_variable_declarations(class as usize).unwrap_or_default() {
-            let Some(name)=dmb.string(dmb.variables[variable as usize].name).and_then(|name|std::str::from_utf8(name).ok()) else {continue;};
+        for (variable,flags) in dmb.class_variable_declarations(class as usize).ok()?? {
+            let Some(name)=dmb.string(dmb.variable(variable as usize).ok()?.name).and_then(|name|std::str::from_utf8(name).ok()) else {continue;};
             charge+=name.len()+80;fields.entry(name.to_owned()).or_insert((variable,flags));
         }
         let result=fields.get(name).copied();
@@ -31,18 +31,18 @@ pub(super) fn local(dmb:&Dmb,class:u32,name:&str)->Option<(u32,u32)> {
         result
     })
 }
-pub(super) fn inherited(dmb:&Dmb,mut class:u32,name:&str)->Option<(u32,u32)> {
+pub(super) fn inherited(dmb:&impl AssemblyImage,mut class:u32,name:&str)->Option<(u32,u32)> {
     let mut visited=HashSet::new();
     while class!=0xffff&&visited.insert(class) {
         if let Some(variable)=local(dmb,class,name) {return Some(variable);}
-        class=dmb.classes.get(class as usize)?.parent_class_id();
+        class=dmb.classes().get(class as usize)?.parent_class_id();
     }
     None
 }
-pub(super) fn builtin_field(dmb:&Dmb,mut class:u32,name:&str)->bool {
+pub(super) fn builtin_field(dmb:&impl AssemblyImage,mut class:u32,name:&str)->bool {
     let mut visited=HashSet::new();
     while class!=0xffff&&visited.insert(class) {
-        let Some(owner)=dmb.classes.get(class as usize) else {return false;};
+        let Some(owner)=dmb.classes().get(class as usize) else {return false;};
         if let Some(path)=dmb.string(owner.path_string_id()).and_then(|path|std::str::from_utf8(path).ok()) {
             if builtin_field_names(path).contains(&name) {return true;}
         }

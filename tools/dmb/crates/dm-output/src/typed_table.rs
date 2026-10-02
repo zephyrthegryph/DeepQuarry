@@ -92,12 +92,17 @@ impl<T:Clone+Serialize+DeserializeOwned> TypedTable<T> {
         }else {TableSegment::Resident(self.tail.clone().into())};
         self.starts.push(self.rows);self.rows+=self.tail.len();self.tail.clear();self.segments.push(segment);Ok(())
     }
-    pub fn append_segments(&mut self,segments:Vec<TableSegment<T>>)->io::Result<Range<usize>> {
+    pub fn backing_store(&self)->Option<Arc<Mutex<TypedPages<T>>>> {self.backing.clone()}
+    pub fn prepare_append_segments(&mut self,segments:&[TableSegment<T>])->io::Result<Range<usize>> {
         if segments.iter().any(|segment|!segment.valid()) {return Err(invalid("invalid typed segment slice"));}
         let added=segments.iter().try_fold(0usize,|sum,segment|sum.checked_add(segment.len())).ok_or_else(||invalid("typed table size overflow"))?;
         let start=self.len();let end=start.checked_add(added).ok_or_else(||invalid("typed table size overflow"))?;
         u32::try_from(end).map_err(io::Error::other)?;self.seal_tail()?;
-        for segment in segments {if segment.len()==0 {continue;}self.starts.push(self.rows);self.rows+=segment.len();self.segments.push(segment);}Ok(start..end)
+        Ok(start..end)
+    }
+    pub fn append_segments(&mut self,segments:Vec<TableSegment<T>>)->io::Result<Range<usize>> {
+        let range=self.prepare_append_segments(&segments)?;
+        for segment in segments {if segment.len()==0 {continue;}self.starts.push(self.rows);self.rows+=segment.len();self.segments.push(segment);}Ok(range)
     }
     pub fn append_page_slices(&mut self,store:Arc<Mutex<TypedPages<T>>>,pages:Vec<PageSliceRef>)->io::Result<Range<usize>> {
         store.lock().map_err(|_|invalid("typed store poisoned"))?.manifest(pages.iter().map(|slice|slice.page.clone()).collect())?;
@@ -147,6 +152,41 @@ impl<T:Clone+Serialize+DeserializeOwned> TypedTable<T> {
         }}
         store.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;Ok(pages)
     }
+    /// Prove an immutable prefix without decoding addressed pages. A layout
+    /// mismatch rejects the acceleration; callers can use their ordinary read
+    /// path. Existing overlays are compared exactly, never just by row count.
+    pub fn same_prefix_as(&self,prefix:&Self)->bool where T:PartialEq {
+        if self.len()<prefix.len()||self.overlays.range(..prefix.len()).ne(prefix.overlays.iter()) {return false;}
+        fn same<T:PartialEq>(left:&TableSegment<T>,left_at:usize,right:&TableSegment<T>,right_at:usize,len:usize)->bool {
+            fn resident<T>(segment:&TableSegment<T>)->Option<(&Arc<[T]>,usize)> {match segment {
+                TableSegment::Resident(rows)=>Some((rows,0)),TableSegment::ResidentRange {rows,start,..}=>Some((rows,*start)),_=>None,
+            }}
+            fn addressed<T>(segment:&TableSegment<T>)->Option<(&PageHandle,usize)> {match segment {
+                TableSegment::Addressed {page,..}=>Some((page,0)),TableSegment::AddressedRange {page,start,..}=>Some((page,*start)),_=>None,
+            }}
+            if let (Some((a,base_a)),Some((b,base_b)))=(resident(left),resident(right)) {
+                let a_at=base_a+left_at;let b_at=base_b+right_at;
+                return (Arc::ptr_eq(a,b)&&a_at==b_at)||matches!((a.get(a_at..a_at+len),b.get(b_at..b_at+len)),(Some(a),Some(b)) if a==b);
+            }
+            if let (Some((a,base_a)),Some((b,base_b)))=(addressed(left),addressed(right)) {
+                return a==b&&base_a+left_at==base_b+right_at;
+            }
+            false
+        }
+        let mut cursor=0;
+        while cursor<prefix.rows {
+            if cursor>=self.rows {return false;}
+            let a=self.starts.partition_point(|start|*start<=cursor)-1;
+            let b=prefix.starts.partition_point(|start|*start<=cursor)-1;
+            let left_at=cursor-self.starts[a];let right_at=cursor-prefix.starts[b];
+            let len=(self.segments[a].len()-left_at).min(prefix.segments[b].len()-right_at);
+            if !same(&self.segments[a],left_at,&prefix.segments[b],right_at,len) {return false;}cursor+=len;
+        }
+        // A mutable tail is bounded by the table's seal threshold. Snapshot
+        // composition can turn it into a resident segment; compare actual rows.
+        prefix.tail.len()<=1024&&prefix.tail.iter().enumerate().all(|(offset,row)|self.get(prefix.rows+offset).is_ok_and(|current|current==*row))
+    }
+    pub fn shared_snapshot(&self)->io::Result<Self> {let segments=self.slice_segments(0,self.len())?;let mut table=Self::default().with_backing(self.backing.clone());table.append_segments(segments)?;Ok(table)}
     pub fn snapshot(&mut self)->io::Result<Self> {let segments=self.segments()?;self.flush_backing()?;let mut result=Self::default().with_backing(self.backing.clone());result.append_segments(segments)?;Ok(result)}
     pub fn address_resident_segments(&mut self)->io::Result<()> {
         let Some(store)=self.backing.clone() else {return Err(io::Error::new(io::ErrorKind::Unsupported,"typed table backing missing"));};
@@ -158,6 +198,17 @@ impl<T:Clone+Serialize+DeserializeOwned> TypedTable<T> {
         }}
         store.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;
         self.segments=addressed;self.starts.clear();self.rows=0;self.overlays.clear();for segment in &self.segments {self.starts.push(self.rows);self.rows+=segment.len();}Ok(())
+    }
+    pub fn export_portable_slices(&self,start:usize,end:usize)->io::Result<Vec<PageSliceRef>> {
+        let backing=self.backing.clone().ok_or_else(||invalid("typed export backing missing"))?;
+        let mut result=Vec::new();
+        for segment in self.slice_segments(start,end)? {match segment {
+            TableSegment::Addressed {page,..}=>{let end=page.rows;result.push(PageSliceRef {page,start:0,end});},
+            TableSegment::AddressedRange {page,start,end,..}=>result.push(PageSliceRef {page,start,end}),
+            TableSegment::Resident(rows)=>{for chunk in rows.chunks(256) {let page=backing.lock().map_err(|_|invalid("typed store poisoned"))?.stage_page(chunk)?;let end=page.rows;result.push(PageSliceRef {page,start:0,end});}},
+            TableSegment::ResidentRange {rows,start,end}=>{for chunk in rows[start..end].chunks(256) {let page=backing.lock().map_err(|_|invalid("typed store poisoned"))?.stage_page(chunk)?;let end=page.rows;result.push(PageSliceRef {page,start:0,end});}},
+        }}
+        backing.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;Ok(result)
     }
     pub fn export_page_slices(&self,start:usize,end:usize)->io::Result<Vec<PageSliceRef>> {
         let mut result=Vec::new();
