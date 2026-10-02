@@ -34,6 +34,9 @@ pub struct SysModule {
     pub rules: &'static [RuleMeta],
     /// ALLOW names the module accepts besides `sys_<rule>` (`ALLOW_NAMES` in the Python).
     pub allow_extra: &'static [&'static str],
+    /// When non-empty, the `allow_extra` aliases keep only these rules (appearance: `sys_update_icon`
+    /// keeps `update_icon_override` and no other rule); empty means every rule.
+    pub allow_extra_rules: &'static [&'static str],
     /// Rules that take no ALLOW annotation (`NO_ALLOW`).
     pub no_allow: &'static [&'static str],
     pub file_scan: Option<FileScan>,
@@ -49,6 +52,7 @@ impl SysModule {
         name: "",
         rules: &[],
         allow_extra: &[],
+        allow_extra_rules: &[],
         no_allow: &[],
         file_scan: None,
         files_scan: None,
@@ -112,6 +116,9 @@ impl SysLint {
             return true;
         }
         // An aliased ALLOW name (appearance: `sys_update_icon` also keeps its sys_* rule).
+        if !self.module.allow_extra_rules.is_empty() && !self.module.allow_extra_rules.contains(&rule) {
+            return false;
+        }
         self.module.allow_extra.iter().any(|a| out.allowed(f, line, &format!("sys_{}", a)))
     }
 }
