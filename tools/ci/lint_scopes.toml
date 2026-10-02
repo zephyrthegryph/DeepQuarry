@@ -118,6 +118,11 @@ exempt_files = ["code/__defines/tgs.dm"]
 # that wraps other code's callbacks): a plain log is not enough there, the block must report, rethrow or trace.
 strict_dirs = ["code/datums/om/", "code/datums/lifecycle/", "code/controllers/", "code/modules/error_handler/"]
 
+[lint.cache]
+# cache_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) and the framework itself.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm", "code/__defines/shared_cache.dm", "code/datums/shared_cache/shared_cache.dm"]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
