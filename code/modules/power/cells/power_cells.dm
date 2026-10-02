@@ -137,7 +137,7 @@ APPEARANCE_NONE(/obj/item/cell/mech/lead)
 /obj/item/cell/infinite/check_charge()
 	return 1
 
-/obj/item/cell/infinite/use(amount, update_appearance = TRUE)
+/obj/item/cell/infinite/use(amount, update_appearance = TRUE, seconds = 0)
 	return max(amount, 0)
 
 /*

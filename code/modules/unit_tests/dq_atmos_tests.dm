@@ -4329,14 +4329,60 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.begin_emergency_discharge()
 	TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency light did not schedule its discharge timer")
 	TEST_ASSERT(!om_task_periodic_running(L), "ordinary emergency light retained SSobj polling")
-	// The drain is settled when the light must change, not every few seconds: a full cell keeps its first
-	// brightness step for two minutes, a cell about to run out wakes again soon.
+	// The drain is settled when the light must change, not every few seconds: a full cell keeps its emergency
+	// level until it dims, a cell about to run out wakes again soon.
 	var/obj/item/cell/C = L.emergency_cell()
 	C.charge = C.maxcharge
 	TEST_ASSERT(L.emergency_discharge_wait() >= 1 MINUTES, "a full emergency cell settles its drain every [L.emergency_discharge_wait()] ds")
 	C.charge = 0.5
 	TEST_ASSERT(L.emergency_discharge_wait() <= 10 SECONDS, "a nearly empty emergency cell waits [L.emergency_discharge_wait()] ds to run out")
 	qdel(L)
+
+/// An emergency light has two output levels, so a blackout changes every fixture's light twice (dim, then out)
+/// rather than every few minutes as a ramp did; the batched drain still takes the charge the elapsed time used.
+/datum/unit_test/dq_emergency_light_dims_once
+
+/datum/unit_test/dq_emergency_light_dims_once/Run()
+	var/obj/machinery/light/L = new(run_loc_floor_bottom_left)
+	L.auto_flicker = FALSE
+	var/obj/item/cell/C = L.emergency_cell()
+	TEST_ASSERT(C, "the fixture has an emergency cell")
+	C.charge = C.maxcharge
+	var/full = L.emergency_light_power(C)
+	TEST_ASSERT_EQUAL(full, L.bulb_emergency_pow_mul, "a charged cell drives the emergency level")
+	var/dim_at = L.emergency_dim_charge(C)
+	C.charge = dim_at + 1
+	TEST_ASSERT_EQUAL(L.emergency_light_power(C), full, "the level holds until the cell is down to the dimmed level's charge")
+	C.charge = dim_at - 1
+	TEST_ASSERT_EQUAL(L.emergency_light_power(C), L.bulb_emergency_pow_min, "below it the light runs dimmed")
+	C.charge = C.maxcharge
+	// LIGHT_EMERGENCY_POWER_USE (0.2) every 2 s: the wait reaches the dimming point in one go.
+	var/expected = (C.charge - dim_at) / 0.2 * (2 SECONDS)
+	TEST_ASSERT(abs(L.emergency_discharge_wait() - expected) <= 2, "a full cell waits [L.emergency_discharge_wait()] ds to dim, expected about [expected]")
+	L.stat_add(NOPOWER)
+	L.emergency_mode = TRUE
+	L.begin_emergency_discharge()
+	var/before = C.charge
+	// Ten minutes of drain, settled in one batch.
+	L.emergency_discharge_started -= 10 MINUTES
+	L.settle_emergency_discharge()
+	TEST_ASSERT(abs((before - C.charge) - 0.2 * (10 MINUTES) / (2 SECONDS)) < 0.5, "ten minutes drew [before - C.charge], expected [0.2 * (10 MINUTES) / (2 SECONDS)]")
+	qdel(L)
+
+/// A steady load settled in one batch is a rate, not a surge: the cell's discharge limit and efficiency see the rate.
+/datum/unit_test/dq_cell_sustained_draw_is_a_rate
+
+/datum/unit_test/dq_cell_sustained_draw_is_a_rate/Run()
+	var/obj/item/cell/C = new(run_loc_floor_bottom_left)
+	C.material_discharge_limit = 10
+	C.charge = C.maxcharge
+	var/used = C.use(100, seconds = 60)
+	TEST_ASSERT(abs(used - 100) < 0.5, "a minute's draw of 100 within a 10/s limit delivered [used]")
+	var/datum/material_service/service = material_service_of(C)
+	TEST_ASSERT(!service || service.last_admission_event != MATERIAL_EVENT_ELECTRICAL, "a draw within the limit's rate admitted electrical stress")
+	var/burst = C.use(100)
+	TEST_ASSERT(burst <= 10.5, "an instant draw is still held to the limit: [burst]")
+	qdel(C)
 
 /datum/unit_test/dq_idle_cooker_hibernates
 

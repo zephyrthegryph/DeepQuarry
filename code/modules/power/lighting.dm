@@ -6,7 +6,6 @@
 #define LIGHT_BULB_TEMPERATURE 400 //K - used value for a 60W bulb
 #define LIGHTING_POWER_FACTOR 2		//2W per luminosity * range
 #define LIGHT_EMERGENCY_POWER_USE 0.2 //How much power emergency lights will consume per tick
-#define LIGHT_EMERGENCY_POWER_STEP 0.05
 
 DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_instance), SC_NEVER)
 
@@ -585,6 +584,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		if(LIGHT_BROKEN)
 			. += "The [fitting] has been smashed."
 	if(has_cell())
+		// The discharge is settled in batches: bring the meter up to now before reading it.
+		settle_emergency_discharge()
 		var/obj/item/cell/C = emergency_cell()
 		. += "Its backup power charge meter reads [round((C.charge / C.maxcharge) * 100, 0.1)]%."
 
@@ -812,7 +813,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		return status == LIGHT_OK
 
 // attempts to use power from the installed emergency cell, returns true if it does and false if it doesn't
-/obj/machinery/light/proc/use_emergency_power(pwr = LIGHT_EMERGENCY_POWER_USE)
+/obj/machinery/light/proc/use_emergency_power(pwr = LIGHT_EMERGENCY_POWER_USE, drain_seconds = 0)
 	if(turned_off())
 		return FALSE
 	if(!has_emergency_power(pwr))
@@ -824,10 +825,22 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		if(installed_light)
 			installed_light.status = status
 		return FALSE
-	C.use(pwr)
-	var/emergency_power = max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (C.charge / C.maxcharge))
-	set_light(brightness_range * bulb_emergency_brightness_mul, round(emergency_power, LIGHT_EMERGENCY_POWER_STEP), bulb_emergency_colour)
+	C.use(pwr, seconds = drain_seconds)
+	set_light(brightness_range * bulb_emergency_brightness_mul, emergency_light_power(C), bulb_emergency_colour)
 	return TRUE
+
+/// The emergency output on cell `C`: the ballast holds the lamp at its emergency level until the cell is down to
+/// what the dimmed level needs (bulb_emergency_pow_min of bulb_emergency_pow_mul), then at that dimmed level until
+/// the cell runs out. Two levels, not a ramp: every station light that loses power at the same moment changes
+/// level at the same moment, and each level change is a lighting update of every fixture in the dark.
+/obj/machinery/light/proc/emergency_light_power(obj/item/cell/C)
+	if(!C?.maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
+		return bulb_emergency_pow_min
+	return C.charge > emergency_dim_charge(C) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
+
+/// The cell charge below which the emergency output drops to its dimmed level.
+/obj/machinery/light/proc/emergency_dim_charge(obj/item/cell/C)
+	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * C.maxcharge : 0
 
 /obj/machinery/light/proc/flicker(amount = rand(10, 20), flicker_color)
 	if(flickering) return
@@ -1141,7 +1154,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
 	var/amount = LIGHT_EMERGENCY_POWER_USE * (elapsed / (2 SECONDS))
 	if(amount > 0)
-		use_emergency_power(min(amount, emergency_cell().charge))
+		// A sustained draw over `elapsed`, settled in one batch: the cell sees its rate, not one surge.
+		use_emergency_power(min(amount, emergency_cell().charge), elapsed / (1 SECOND))
 
 /obj/machinery/light/proc/continue_emergency_discharge()
 	emergency_discharge_at = 0
@@ -1156,20 +1170,19 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		return
 	EXPIRY_SET(src, emergency_discharge_at, emergency_discharge_wait(), CLOCK_WORLD)
 
-/// How long the emergency cell can discharge before the light must change: its emergency brightness steps down
-/// (use_emergency_power() rounds it to LIGHT_EMERGENCY_POWER_STEP) or the cell runs out. The drain is settled in
-/// one batch then: a fixture in an unpowered area wakes a handful of times over its cell's half hour, not every
-/// few seconds (each wake is a timer and a redraw, and a station has hundreds of such fixtures).
+/// How long the emergency cell can discharge before the light must change: its output drops to the dimmed level
+/// (emergency_light_power()) or the cell runs out. The drain is settled in one batch then: a fixture in an unpowered
+/// area wakes twice over its cell's half hour, not every few seconds (each wake is a timer, a redraw and a lighting
+/// update, and a station has a thousand such fixtures that all lose power together).
 /obj/machinery/light/proc/emergency_discharge_wait()
 	var/obj/item/cell/C = emergency_cell()
 	if(!C?.maxcharge)
 		return 2 SECONDS
-	var/level = round(max(bulb_emergency_pow_min, bulb_emergency_pow_mul * (C.charge / C.maxcharge)), LIGHT_EMERGENCY_POWER_STEP)
-	// The charge at which it runs out, or the brightness rounds down to the next step if that comes first.
+	// The charge at which it runs out, or drops to the dimmed level if that comes first.
 	var/target = LIGHT_EMERGENCY_POWER_USE
-	var/boundary = level - LIGHT_EMERGENCY_POWER_STEP / 2
-	if(boundary > bulb_emergency_pow_min && bulb_emergency_pow_mul > 0)
-		target = max(target, boundary * C.maxcharge / bulb_emergency_pow_mul)
+	var/dim = emergency_dim_charge(C)
+	if(C.charge > dim && bulb_emergency_pow_mul > bulb_emergency_pow_min)
+		target = max(target, dim)
 	// LIGHT_EMERGENCY_POWER_USE every two seconds; one decisecond past the crossing, and never sooner than one drain step.
 	return max((C.charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
 
@@ -1506,7 +1519,6 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 #undef LIGHT_BULB_TEMPERATURE
 #undef LIGHTING_POWER_FACTOR
 #undef LIGHT_EMERGENCY_POWER_USE
-#undef LIGHT_EMERGENCY_POWER_STEP
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
 

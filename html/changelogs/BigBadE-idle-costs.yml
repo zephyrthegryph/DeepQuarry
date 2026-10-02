@@ -1,0 +1,5 @@
+author: "BigBadE"
+delete-after: true
+changes:
+  - balance: "Emergency lights hold their emergency level until the backup cell is low, then dim once, instead of stepping down every few minutes."
+  - code_imp: "Idle server costs: the gas watch re-reads only turfs whose gas changed, gas watches are keyed by entity handle, and emergency light discharge no longer bursts in lockstep."
