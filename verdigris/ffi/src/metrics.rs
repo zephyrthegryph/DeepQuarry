@@ -57,6 +57,35 @@ pub fn snapshot_json() -> String {
         ] {
             metrics.gauge(name).set(v);
         }
+        // Each law's awake items and the items its last run stepped: what the world step does at idle.
+        for s in w.law_stats() {
+            metrics
+                .gauge(&format!("world.awake.{}", s.name))
+                .set(f64::from(s.awake));
+            metrics
+                .gauge(&format!("world.stepped.{}", s.name))
+                .set(f64::from(s.stepped));
+        }
+        // Each per-turf field's awake chunks and live edges after its last step (a settled map steps none).
+        let gas = crate::gas::turf_key()
+            .ok()
+            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats()));
+        let heat = crate::heat::field()
+            .ok()
+            .and_then(|k| w.sim_mut().with_idle_world(|r| r.get_mut(k.state).stats()));
+        for (name, stats) in [("turf_gas", gas), ("solid_heat", heat)] {
+            if let Some(st) = stats {
+                metrics
+                    .gauge(&format!("world.awake.field_{name}_chunks"))
+                    .set(f64::from(st.active_chunks));
+                metrics
+                    .gauge(&format!("world.stepped.field_{name}_edges"))
+                    .set(f64::from(st.live_edges));
+                metrics
+                    .gauge(&format!("world.stepped.field_{name}_touched"))
+                    .set(f64::from(st.touched_chunks));
+            }
+        }
         Ok(())
     });
     metrics.to_json()

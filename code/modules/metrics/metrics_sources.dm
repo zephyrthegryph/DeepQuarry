@@ -157,3 +157,26 @@
 	M.gauge("staff/admins_afk", length(counts["afk"]), METRICS_CAT_STAFF, "admins", "admins")
 	if(GLOB.tickets)
 		M.gauge("staff/tickets_open", length(GLOB.tickets.active_tickets), METRICS_CAT_STAFF, "tickets", "tickets")
+
+// ---------------------------------------------------------------- native frame
+
+/// Where the Rust frame (vg_frame, charged to the om_native system) spends its time: each phase's
+/// microseconds per second (`frame.us.<phase>` counters, verdigris/ffi/src/frame.rs) and the world's
+/// awake law items, so a change in om_native names the phase and the law that moved.
+/datum/metrics_source/native
+
+/datum/metrics_source/native/collect(datum/world_service/server_metrics/M, dt)
+	var/list/rust = verdigris_metrics_list()
+	for(var/name in rust)
+		if(findtext(name, "frame.us.") != 1 && findtext(name, "world.awake.") != 1 && findtext(name, "world.stepped.") != 1)
+			continue
+		var/value = rust[name]
+		if(!isnum(value))
+			continue
+		var/what = copytext(name, findtext(name, ".", findtext(name, ".") + 1) + 1)
+		if(findtext(name, "frame.us.") == 1)
+			var/per_s = rate(name, value, dt)
+			if(!isnull(per_s))
+				M.gauge("native/frame/[what]/us_per_s", per_s, METRICS_CAT_SERVER, "native", "us/s")
+		else
+			M.gauge("native/[findtext(name, "world.awake.") == 1 ? "awake" : "stepped"]/[what]", value, METRICS_CAT_SERVER, "native", "count")
