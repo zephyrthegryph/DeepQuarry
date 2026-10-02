@@ -833,7 +833,7 @@ ADMIN_VERB(sendFax, R_ADMIN|R_MOD|R_EVENT, "Send Fax", "Sends a fax to this mach
 			P.origin = replyorigin
 			rel_set(P, nameof(/datum/ai_brain::destination), sendto)
 
-			P.adminbrowse()
+			P.adminbrowse(user.mob)
 
 
 /datum/admins/var/obj/item/paper/admin/faxreply // var to hold fax replies in (owned)

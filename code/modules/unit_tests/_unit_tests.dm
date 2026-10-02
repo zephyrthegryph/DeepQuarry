@@ -513,6 +513,8 @@
 #include "interim_turret_sensor_consumption.dm"
 #include "interim_shadekin_variant_grants.dm"
 #include "interim_dnaforensics_insertion.dm"
+#include "interim_circle_explicit_center.dm"
+#include "interim_adminpaper_actor.dm"
 #include "interim_iv_drip_dismantle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

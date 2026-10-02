@@ -76,11 +76,11 @@
 // full TGUI migration. AdminPaper.tsx renders the
 // segment-based body + structured admin controls; tgui_act handles
 // the admin actions. No more byond:// hrefs, no more admin_fax_links HTML.
-/obj/item/paper/admin/proc/adminbrowse()
+/obj/item/paper/admin/proc/adminbrowse(mob/user)
 	generateFooter()
 	tgui_view = "write"
 	// Closing the logo question opens the fax without a header.
-	om_ask(usr, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
 
 /obj/item/paper/admin/proc/header_logo_chosen(datum/om/prompt/choice/ask)
 	generateHeader(ask.choice)

@@ -1,8 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/usr_use.py (doc/rewrite/systems.md); shrink-only, target 0
-usr_outside_verb	code/_helpers/game.dm	/proc/circlerange(center=usr,radius=3)
-usr_outside_verb	code/_helpers/game.dm	/proc/circleview(center=usr,radius=3)
-usr_outside_verb	code/_helpers/game.dm	/proc/circlerangeturfs(center=usr,radius=3)
-usr_outside_verb	code/_helpers/game.dm	/proc/circleviewturfs(center=usr,radius=3) //Is there even a diffrence between this proc and circlerangeturfs()?
 usr_outside_verb	code/_helpers/icons.dm	usr << ftp(this_icon,"[A.name].png")
 usr_outside_verb	code/_helpers/icons.dm	user = usr
 usr_outside_verb	code/_helpers/mobs.dm	var/temp = usr
@@ -699,7 +695,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/ships/ship.dm	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
-usr_outside_verb	code/modules/paperwork/adminpaper.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(header_logo_chosen), title = "Fax Logo", message = "Do you want the header of your fax to have a NanoTrasen, SolGov, Talon or Trader logo?", choices = list("NanoTrasen", "SolGov", "Talon", "Trader"), cancel_answer = "", requires = PROMPT_ADMIN(R_ADMIN|R_EVENT))
 usr_outside_verb	code/modules/paperwork/adminpaper.dm	admin_write("[params["id"]]", usr)
 usr_outside_verb	code/modules/paperwork/adminpaper.dm	admin_write("end", usr)
 usr_outside_verb	code/modules/paperwork/clipboard.dm	if(ishuman(usr))
