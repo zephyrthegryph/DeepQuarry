@@ -10,13 +10,12 @@
 /obj/machinery/cap_fixture_wall_machine
 	name = "wall machine fixture"
 	req_access = list(ACCESS_ENGINE_EQUIP)
-	machine_wires = /datum/wires/smes
 	var/cover_held = TRUE
 
 /obj/machinery/cap_fixture_wall_machine/capabilities()
 	. = ..()
 	. += wall_machine(board = /obj/item/circuitboard)
-	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, wires = /datum/wires/smes)
 
 /obj/machinery/cap_fixture_wall_machine/proc/cover_holds()
 	return cover_held

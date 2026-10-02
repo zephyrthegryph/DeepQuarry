@@ -108,10 +108,9 @@
 		return C.already_say
 	return TRUE
 
-/// What the user is told when an emag declared as an op goes through on holder: a machine's `emag_msg`, else `say`.
+/// What the user is told when an emag declared as an op goes through on holder: `say`.
 /datum/capability/emag/proc/commit_message(atom/holder)
-	var/obj/machinery/M = holder
-	return (istype(M) && M.emag_msg) || say
+	return say
 
 /// after_op(CAP_EMAG): the emag went through. Sets the bit, tells the user, spends one use as
 /// /obj/item/card/emag/proc/spend() does (the dispatcher writes the log line).

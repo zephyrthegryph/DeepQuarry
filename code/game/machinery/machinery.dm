@@ -117,12 +117,6 @@ Class Procs:
 	var/clickvol = 40		// volume
 	var/interact_offline = 0 // Can the machine be interacted with while de-powered.
 	var/obj/item/circuitboard/circuit = null
-	/// The circuit board type a bundle or ladder builds this machine from and dismantles it to (wall_machine(), the APC's ladder).
-	var/machine_board
-	/// The /datum/wires subtype of its maintenance wiring: maintenance_hatch() and cap_wires() read it.
-	var/machine_wires
-	/// What the user is told when an emag declared as an op (maintenance_hatch()) goes through.
-	var/emag_msg
 	/// Bitfield of MACHINE_MAINT_*: which Maintainable interactions this machine offers (machinery_maintenance.dm).
 	var/maintenance_flags = NONE
 	/// Time spent securing or unsecuring this machine; zero is immediate.

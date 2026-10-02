@@ -28,18 +28,16 @@
 	var/datum/wires/W = A.cap_data?[C.key]
 	if(!W)
 		var/wires_type = C.wires_type_for(A)
+		if(!wires_type)
+			return null
 		W = new wires_type(A)
 		LAZYSET(A.cap_data, C.key, W)
 	return W
 
-/// The /datum/wires subtype this capability makes for holder: its type default, else a machine's machine_wires type
-/// var (cap_wires() with no type). A per-instance choice (design review H1: an airlock built with secure electronics)
-/// is a subtype.
+/// The /datum/wires subtype this capability makes for holder: the one cap_wires() was given. A per-instance choice
+/// (design review H1: an airlock built with secure electronics) is a subtype overriding this.
 /datum/capability/wires/proc/wires_type_for(atom/holder)
-	if(wires_type)
-		return wires_type
-	var/obj/machinery/M = holder
-	return istype(M) ? M.machine_wires : null
+	return wires_type
 
 /datum/capability/wires/interactions(atom/holder)
 	return list(

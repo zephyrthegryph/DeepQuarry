@@ -9,8 +9,8 @@
 //		. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 //		. += cell_bay(nameof(cell), at = BAY_HATCH)
 //
-// Bundles read the holder's TYPE vars where a type states a fact once: machine_board (the board it is
-// built from and dismantled to), machine_wires (its maintenance wiring), req_access (its lock).
+// A bundle takes what a type states once as arguments (board =, wires =, emag_say =) and reads the holder's
+// own TYPE vars only where the engine already has one (req_access, its lock).
 
 /**
  * What every buildable machine has: a wrench to anchor it, breakage with welder repair (and claws that tear at it), a maintenance
@@ -48,12 +48,13 @@
  *   is, null otherwise) refuses the cover's opening AND closing; the reason is the refusal;
  * - with panel_needs_cover_closed, the panel only opens with the cover closed (the APC's wire panel);
  * - the ID lock and the emag only work with the cover and the panel closed ("close the cover first").
- * The wiring is the holder's machine_wires, the lock's access its req_access, what the emag tells the user its emag_msg.
+ * The wiring is `wires` (a /datum/wires subtype), the lock's access the holder's req_access, what the emag tells the user
+ * `emag_say`.
  * The lock shows as a lamp and the emag as the emagged screen while the holder is closed up. The lock and the emag are ops
  * (lock_op(), emag_op()) keyed CAP_LOCK / CAP_EMAG: a holder adds contracts with cap_require()
  * and edits them with refine().
  */
-/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_mode = EMAG_ONCE)
+/proc/maintenance_hatch(cover_holds, panel_needs_cover_closed = FALSE, cover_tool = TOOL_CROWBAR, removable_cover = FALSE, emag_mode = EMAG_ONCE, wires, emag_say)
 	var/datum/capability/maintenance_hatch/hatch = new
 	hatch.cover_holds = cover_holds
 	. = list(hatch, compartment(BAY_HATCH, door = CAP_COVER_OPEN))
@@ -61,10 +62,10 @@
 	if(cover_holds)
 		. += cap_require(list("open_cover", "remove_cover"), needs = req_proc(GLOBAL_PROC_REF(hatch_cover_free)))
 	. += cap_panel(needs = panel_needs_cover_closed ? req_clear(COVER) : null)
-	. += cap_wires(null)
+	. += cap_wires(wires)
 	. += cap_lock(needs = req_clear(COVER | PANEL), entries = FALSE, lamp = TRUE)
 	. += lock_op(needs = req_clear(COVER | PANEL))
-	. += emag_op(mode = emag_mode, needs = req_clear(COVER | PANEL))
+	. += emag_op(say = emag_say, mode = emag_mode, needs = req_clear(COVER | PANEL))
 
 /// The hatch's own settings (no entries): what locks the cover.
 /datum/capability/maintenance_hatch
@@ -168,8 +169,7 @@
 
 /**
  * service_panel(): a maintenance panel and the wires behind it as one bundle, with no cover (archive/framework_fixes.md
- * §9.5): a vendor, a fabricator, a door controller. `wires`: the /datum/wires subtype (null: the machine's
- * machine_wires). `panel_tool`: what opens the panel. `access`: when given (or `access_from_holder`), opening the panel
+ * §9.5): a vendor, a fabricator, a door controller. `wires`: the /datum/wires subtype. `panel_tool`: what opens the panel. `access`: when given (or `access_from_holder`), opening the panel
  * needs a credential for it (cap_access(): the holder's own req_access wins), unless the holder is emagged. `emag_say`:
  * when given, an emag (cap_emag(), `emag_mode`, `emag_effect`) subverts it. Each part keeps its own capability type, so
  * a subtype still replaces one (`replace(., /datum/capability/wires, cap_wires(...))`) or refines it by key.
