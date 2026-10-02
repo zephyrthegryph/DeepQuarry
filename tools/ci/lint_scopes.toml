@@ -10,3 +10,43 @@ known = []
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.cap_bits.lists]
+# cap_bits_lint.py: REGISTRY, WRITERS and the unit-test prefix. These files are still scanned for bit
+# definitions; the lists only decide where a cap_state write is legal.
+registry = ["code/__defines/cap_bits.dm"]
+writers = ["code/datums/capabilities/capabilities.dm"]
+write_exempt_prefixes = ["code/modules/unit_tests/"]
+
+[lint.pool.lists]
+# pool_lint.py EXEMPT_PREFIX: `new` and unreleased take() are not counted here (the files still
+# declare pooled types and release).
+exempt_prefixes = ["code/modules/unit_tests/", "code/datums/lifecycle/pool.dm"]
+
+[lint.om_internal]
+# om_internal_lint.py SKIP: the scheduler core and the macros that map the public API onto it.
+exempt_prefixes = ["code/datums/om/", "code/__defines/om.dm"]
+
+[lint.stance_examine.lists]
+# stance_examine_lint.py INPUT_STANCE_READERS: the input layer, the only readers of a mob's stance
+# (prefixes).
+input_stance_readers = [
+    "code/modules/mob/combat_mode.dm",
+    "code/datums/interactions/",
+    "code/datums/operations/actions.dm",
+    "code/datums/operations/req.dm",
+    "code/modules/keybindings/",
+    "code/modules/mob/living/living_movement.dm",
+    "code/modules/vore/eating/belly_obj_resist.dm",
+    "code/modules/combat_ai/",
+    "code/modules/unit_tests/",
+]
+
+[lint.leftovers.lists]
+# leftovers_lints.py EXEMPT["radial"]: `^code/_onclick/hud/radial[^/]*\.dm$`, as a prefix; the rest of the
+# path must hold no `/` and end in `.dm`. Applies to the radial kind only.
+radial_impl_prefixes = ["code/_onclick/hud/radial"]
+
+[lint.cooldown]
+# cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
+exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
