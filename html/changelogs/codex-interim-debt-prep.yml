@@ -22,3 +22,4 @@ changes:
   - bugfix: "Hailer mask assemblies and selection kits preserve ingredients on refusal without dropping unrelated held items."
   - bugfix: "Gun boxes and folded body bags preserve their contents without creating duplicate products when removal is refused."
   - bugfix: "Stasis-bag injector loading and concealed-knife assembly respect stuck ingredients and preserve inventory bookkeeping."
+  - bugfix: "Locket and television assembly insertions respect stuck ingredients and preserve unrelated held items."

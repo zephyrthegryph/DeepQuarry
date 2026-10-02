@@ -501,6 +501,10 @@
 #include "interim_windoor_dismantle.dm"
 #include "interim_cryobag_injector.dm"
 #include "interim_butterfly_assembly.dm"
+#include "interim_turret_frame_completion.dm"
+#include "interim_airlock_dismantle.dm"
+#include "interim_locket_keepsake.dm"
+#include "interim_tvassembly_devices.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

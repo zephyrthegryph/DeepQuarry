@@ -248,7 +248,15 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/head, \
 	var/buildstep = 0
 	w_class = ITEMSIZE_LARGE
 
-DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/TVAssembly/proc/can_insert_device)))
+
+/// Matching construction ingredients must be removable before advancing the assembly.
+/obj/item/TVAssembly/proc/can_insert_device(mob/user, atom/target, obj/item/held)
+	if((buildstep == 0 && istype(held, /obj/item/robot_parts/robot_component/camera)) || (buildstep == 1 && istype(held, /obj/item/taperecorder)))
+		var/reason = held.loc?.release_refusal(held, user)
+		if(reason)
+			return reason
+	return TRUE
 
 /// Old attackby: a construction step machine. Faithfully preserved, including that a
 /// successful buildstep 0/1 match still falls through to ..() afterward (no early return there).
@@ -257,16 +265,16 @@ DECLARE_INTERACTIONS(/obj/item/TVAssembly, INTERACT_ITEM(null, PROC_REF(interact
 		if(0)
 			if(istype(W, /obj/item/robot_parts/robot_component/camera))
 				var/obj/item/robot_parts/robot_component/camera/CA = W
+				if(!consume(CA, user))
+					return FALSE
 				to_chat(user, span_notice("You add the camera module to [src]"))
-				user.drop_item()
-				consume(CA, user)
 				desc = "This TV camera assembly has a camera module."
 				buildstep++
 		if(1)
 			if(istype(W, /obj/item/taperecorder))
 				var/obj/item/taperecorder/T = W
-				user.drop_item()
-				consume(T, user)
+				if(!consume(T, user))
+					return FALSE
 				buildstep++
 				to_chat(user, span_notice("You add the tape recorder to [src]"))
 		if(2)

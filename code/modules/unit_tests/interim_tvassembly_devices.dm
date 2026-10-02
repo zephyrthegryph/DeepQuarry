@@ -1,0 +1,42 @@
+/// The actual camera and recorder advance construction only after consumption, without dropping another active item.
+/datum/unit_test/interim_tvassembly_devices/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/TVAssembly/assembly = allocate(/obj/item/TVAssembly, T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	TEST_ASSERT(user.put_in_active_hand(pen), "the unrelated pen occupies the active hand")
+	var/list/paths = list(/obj/item/robot_parts/robot_component/camera, /obj/item/taperecorder)
+	for(var/step in 1 to 2)
+		var/obj/item/ingredient = allocate(paths[step], T)
+		TEST_ASSERT(user.put_in_inactive_hand(ingredient), "the actual construction ingredient occupies the inactive hand")
+		TEST_ASSERT_EQUAL(assembly.buildstep, step - 1, "the assembly starts at the actual matching step")
+		assembly.interaction_item(user, ingredient, null)
+		TEST_ASSERT(QDELETED(ingredient), "the successful step consumes the actual device")
+		TEST_ASSERT_EQUAL(assembly.buildstep, step, "the actual assembly advances exactly one step")
+		TEST_ASSERT_NULL(user.get_inactive_hand(), "consumption correctly vacates the ingredient hand")
+		TEST_ASSERT_EQUAL(user.get_active_hand(), pen, "construction preserves the unrelated active item")
+
+/// NODROP camera and recorder ingredients leave actual construction state and both hands unchanged.
+/datum/unit_test/interim_tvassembly_devices_refusal/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/TVAssembly/assembly = allocate(/obj/item/TVAssembly, T)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
+	TEST_ASSERT(user.put_in_active_hand(pen), "the unrelated pen occupies the active hand")
+	var/list/paths = list(/obj/item/robot_parts/robot_component/camera, /obj/item/taperecorder)
+	for(var/step in 1 to 2)
+		assembly.buildstep = step - 1
+		var/initial_description = assembly.desc
+		var/obj/item/ingredient = allocate(paths[step], T)
+		TEST_ASSERT(user.put_in_inactive_hand(ingredient), "the actual construction ingredient occupies the inactive hand")
+		add_trait(ingredient, TRAIT_NODROP, "interim_tvassembly_devices")
+		TEST_ASSERT(ingredient.loc.release_refusal(ingredient, user), "the actual sticky device refuses release")
+		TEST_ASSERT(assembly.can_insert_device(user, assembly, ingredient) != TRUE, "the step requirement rejects the actual sticky ingredient")
+		assembly.interaction_item(user, ingredient, null)
+		TEST_ASSERT(!QDELETED(ingredient), "refusal preserves the actual device")
+		TEST_ASSERT_EQUAL(assembly.buildstep, step - 1, "refusal preserves the actual construction step")
+		TEST_ASSERT_EQUAL(assembly.desc, initial_description, "refusal preserves the actual assembly description")
+		TEST_ASSERT_EQUAL(user.get_inactive_hand(), ingredient, "refusal preserves the ingredient's hand")
+		TEST_ASSERT_EQUAL(user.get_active_hand(), pen, "refusal preserves the unrelated active item")
+		remove_trait(ingredient, TRAIT_NODROP, "interim_tvassembly_devices")
+		user.drop_from_inventory(ingredient)
