@@ -61,7 +61,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		else
 			return
 
-	GLOB.tickets.BrowseTickets(browse_to)
+	GLOB.tickets.BrowseTickets(browse_to, user.mob)
 
 /proc/message_mentors(msg)
 	msg = span_mentor_channel(span_prefix("Mentor: ") + span_message("[msg]"))
@@ -142,7 +142,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	set name = "Show Ticket List"
 	set category = VERB_CAT_ADMIN_MISC
 
-	if(!check_rights(R_ADMIN|R_MOD|R_DEBUG|R_EVENT, TRUE))
+	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "ticket.panel"))
 		return
 
 	var/browse_to
@@ -160,7 +160,7 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		else
 			return
 
-	GLOB.tickets.BrowseTickets(browse_to)
+	GLOB.tickets.BrowseTickets(browse_to, mob)
 
 
 /datum/ticket/proc/send2adminchatwebhook()

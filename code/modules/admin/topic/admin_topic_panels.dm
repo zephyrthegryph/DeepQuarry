@@ -26,10 +26,10 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 /datum/admins/proc/topic_ticket(mob/user, list/args)
 	var/datum/ticket/T = args["ticket"]
-	T.Action(args["ticket_action"])
+	T.Action(args["ticket_action"], user)
 
 /datum/admins/proc/topic_tickets(mob/user, list/args)
-	GLOB.tickets.BrowseTickets(args["tickets"])
+	GLOB.tickets.BrowseTickets(args["tickets"], user)
 
 /datum/admins/proc/topic_editrightsbrowser(mob/user, list/args)
 	edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)

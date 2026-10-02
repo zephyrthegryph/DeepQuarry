@@ -159,7 +159,7 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 			player.current_ticket().Close(ui.user)
 
 	// Create a new ticket and handle it. You created it afterall!
-	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level)
+	var/datum/ticket/T = new /datum/ticket(ticket_text, player, TRUE, level, user)
 	if(level == "Admin")
 		T.level = 1
 	else
@@ -174,13 +174,13 @@ UI_ACT_PROC(/datum/tickets, ui_act_new_ticket)
 
 UI_ACT(/datum/tickets, "pick_ticket", ui_act_pick_ticket, UI_ARG_NUM("ticket_id"))
 UI_ACT_PROC(/datum/tickets, ui_act_pick_ticket)
-	var/datum/ticket/T = ID2Ticket(params["ticket_id"])
+	var/datum/ticket/T = ID2Ticket(params["ticket_id"], user)
 	ui.user.client.selected_ticket_id = T?.id
 	. = TRUE
 
 UI_ACT(/datum/tickets, "retitle_ticket", ui_act_retitle_ticket)
 UI_ACT_PROC(/datum/tickets, ui_act_retitle_ticket)
-	ui.user.client.selected_ticket().Retitle()
+	ui.user.client.selected_ticket().Retitle(user)
 	. = TRUE
 
 UI_ACT(/datum/tickets, "reopen_ticket", ui_act_reopen_ticket)
@@ -262,7 +262,7 @@ UI_DATA_REPLACE(/datum/ticket, "id", "title=name:text", "level:num", "handler:te
 
 UI_ACT(/datum/ticket, "retitle", ui_act_retitle)
 UI_ACT_PROC(/datum/ticket, ui_act_retitle)
-	Retitle()
+	Retitle(user)
 	. = TRUE
 
 UI_ACT(/datum/ticket, "reopen", ui_act_reopen)

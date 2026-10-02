@@ -63,11 +63,11 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 			ticket_list.Cut(num_tickets + 1)
 			return
 
-/datum/tickets/proc/BrowseTickets(state)
-	tgui_interact(usr)
+/datum/tickets/proc/BrowseTickets(state, mob/user)
+	tgui_interact(user)
 
 //opens the ticket listings for one of the 3 states
-/datum/tickets/proc/BrowseTicketsLegacy(state)
+/datum/tickets/proc/BrowseTicketsLegacy(state, mob/user)
 	var/list/l2b
 	var/title
 	switch(state)
@@ -89,7 +89,7 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 	dat += "</html>"
 	// structured TGUI AdminReport (fallback path; primary tickets
 	// UI is the dedicated TGUI module).
-	dq_admin_report_html(usr, title, dat.Join(), src)
+	dq_admin_report_html(user, title, dat.Join(), src)
 
 //Tickets statpanel
 /datum/tickets/proc/stat_entry(client/target)
@@ -182,9 +182,9 @@ GLOBAL_DATUM_INIT(tickets, /datum/tickets, new)
 			return T
 
 //Get a ticket by ticket id
-/datum/tickets/proc/ID2Ticket(id)
-	if(!check_rights((R_ADMIN|R_SERVER|R_MOD|R_MENTOR), TRUE))
-		message_admins("[usr] has attempted to look up a ticket with ID [id] without sufficent privileges.")
+/datum/tickets/proc/ID2Ticket(id, mob/user)
+	if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.lookup"))
+		message_admins("[user] has attempted to look up a ticket with ID [id] without sufficent privileges.")
 		return
 
 	for(var/datum/ticket/T as anything in active_tickets)
@@ -212,7 +212,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	. = ..()
 
 /obj/effect/statclick/ticket_list/Click()
-	GLOB.tickets.BrowseTickets(current_state)
+	GLOB.tickets.BrowseTickets(current_state, usr)
 
 //
 //TICKET DATUM
@@ -252,7 +252,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
  * required is_bwoink boolean TRUE if this ticket was started by an admin PM
  * required level integer The level of the ticket. 0 = Admin, 1 = Mentor
  */
-/datum/ticket/New(raw_msg, client/C, is_bwoink, ticket_level)
+/datum/ticket/New(raw_msg, client/C, is_bwoink, ticket_level, mob/user)
 	//clean the input msg
 	var/msg = sanitize(copytext(raw_msg,1,MAX_MESSAGE_LEN))
 	if(!msg || !C || !C.mob)
@@ -272,7 +272,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	if(initiator().current_ticket())	//This is a bug
 		log_admin("Ticket erroneously left open by code, closing...")
 		initiator().current_ticket().AddInteraction("Ticket erroneously left open by code")
-		initiator().current_ticket().Close(usr)
+		initiator().current_ticket().Close(user || C.mob)
 	initiator().current_ticket_id = id
 
 	var/parsed_message = keywords_lookup(msg)
@@ -281,7 +281,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	_interactions = list()
 
 	if(is_bwoink)
-		AddInteraction(span_blue("[key_name_admin(usr)] PM'd [LinkedReplyName()]"))
+		AddInteraction(span_blue("[key_name_admin(user)] PM'd [LinkedReplyName()]"))
 		message_admins(span_blue("Ticket [TicketHref("#[id]")] created"))
 	else
 		MessageNoRecipient(parsed_message)
@@ -304,7 +304,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/list/activemins = adm["present"]
 	var/activeMins = activemins.len
 	if(is_bwoink)
-		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [key_name_admin(usr)] TO [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
+		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [key_name_admin(user)] TO [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 	else
 		ahelp_discord_message("[level == 0 ? "MENTORHELP" : "ADMINHELP"]: FROM: [initiator_ckey]/[initiator_key_name] - MSG: \n ```[raw_msg]``` \n Heard by [activeMins] NON-AFK staff members.")
 
@@ -323,8 +323,8 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		ahelp_discord_message("ADMINHELP: TICKETID: [id] [strip_html_properly(curinteraction)]")
 	_interactions += curinteraction
 
-/datum/ticket/proc/TicketPanel()
-	tgui_interact(usr.client.mob)
+/datum/ticket/proc/TicketPanel(mob/user)
+	tgui_interact(user)
 
 //private
 /datum/ticket/proc/FullMonty(ref_src, admin_commands = FALSE)
@@ -550,77 +550,82 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		var/mob/our_handler_mob = user
 		handler_ckey = our_handler_mob.client?.ckey
 
-/datum/ticket/proc/Retitle()
-	var/new_title = rerun_ask(usr, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
+/datum/ticket/proc/Retitle(mob/user)
+	if(!admin_require(user?.client, level == 0 ? (R_ADMIN|R_SERVER|R_MOD|R_MENTOR) : (R_ADMIN|R_SERVER|R_MOD), "ticket.retitle"))
+		return
+	var/new_title = rerun_ask(user, "k558", PROC_REF(Retitle), args, /datum/om/prompt/text, message = "Enter a title for the ticket", title = "Rename Ticket", default = name)
 	if(isnull(new_title))
 		return
 	if(new_title)
 		name = new_title
 		//not saying the original name cause it could be a long ass message
-		var/msg = "Ticket [TicketHref("#[id]")] titled [name] by [key_name_admin(usr)]"
+		var/msg = "Ticket [TicketHref("#[id]")] titled [name] by [key_name_admin(user)]"
 		message_admins(msg)
 		log_admin(msg)
-	//TicketPanel()	//we have to be here to do this
+	//TicketPanel(user)	//we have to be here to do this
 
 //Kick ticket to next level
-/datum/ticket/proc/Escalate()
-	var/_answer_k569 = rerun_ask(usr, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
+/datum/ticket/proc/Escalate(mob/user)
+	if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.escalate"))
+		return
+	var/_answer_k569 = rerun_ask(user, "k569", PROC_REF(Escalate), args, /datum/om/prompt/choice/alert, message = "Really escalate this ticket to admins? No mentors will ever be able to interact with it again if you do.", title = "Escalate", choices = list("Yes","No"))
 	if(isnull(_answer_k569))
 		return
 	if(_answer_k569 != "Yes")
 		return
 	if (src.initiator() == null) // You can't escalate a mentorhelp of someone who's logged out because it won't create the adminhelp properly
-		to_chat(usr, span_mentor_warning("Error: client not found, unable to escalate."))
+		to_chat(user, span_mentor_warning("Error: client not found, unable to escalate."))
 		return
 
 	SStgui.close_uis(src)
 	level = level + 1
 
-	AddInteraction("[key_name_admin(usr)] escalated Ticket.")
-	message_mentors("[usr.ckey] escalated Ticket [TicketHref("#[id]")]")
-	log_admin("[key_name(usr)] escalated ticket [src.name]")
-	to_chat(src.initiator(), span_mentor("[usr.ckey] escalated your ticket to admins."))
+	AddInteraction("[key_name_admin(user)] escalated Ticket.")
+	message_mentors("[user.ckey] escalated Ticket [TicketHref("#[id]")]")
+	log_admin("[key_name(user)] escalated ticket [src.name]")
+	to_chat(src.initiator(), span_mentor("[user.ckey] escalated your ticket to admins."))
 
 //Forwarded action from admin/Topic
-/datum/ticket/proc/Action(action)
+/datum/ticket/proc/Action(action, mob/user)
 
 	// Actions everyone can do
 	switch(level)
 		if(0)
-			if(!check_rights_for(usr.client, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR)))
+			if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD|R_MENTOR, "ticket.action"))
 				return
 		if(1)
-			if(!check_rights_for(usr.client, (R_ADMIN|R_SERVER|R_MOD)))
+			if(!admin_require(user?.client, R_ADMIN|R_SERVER|R_MOD, "ticket.action"))
 				return
 
-	perform_action(action)
+	perform_action(action, user)
 
-/datum/ticket/proc/perform_action(action)
+/datum/ticket/proc/perform_action(action, mob/user)
+	PRIVATE_PROC(TRUE)
 	switch(action)
 		if("ticket")
-			TicketPanel()
+			TicketPanel(user)
 		if("retitle")
-			Retitle()
+			Retitle(user)
 		if("reject")
-			Reject(usr)
+			Reject(user)
 		if("reply")
 			switch(level)
 				if(0)
-					usr.client.cmd_mhelp_reply(initiator())
+					user.client.cmd_mhelp_reply(initiator())
 				if(1)
-					usr.client.cmd_ahelp_reply(initiator())
+					user.client.cmd_ahelp_reply(initiator())
 		if("icissue")
-			ICIssue(usr)
+			ICIssue(user)
 		if("close")
-			Close(usr)
+			Close(user)
 		if("resolve")
-			Resolve(usr)
+			Resolve(user)
 		if("handleissue")
-			HandleIssue(usr)
+			HandleIssue(user)
 		if("reopen")
-			Reopen(usr)
+			Reopen(user)
 		if("escalate")
-			Escalate()
+			Escalate(user)
 
 //
 // TICKET STATCLICK
@@ -638,7 +643,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket)
 	return ..(ticket_datum().name)
 
 /obj/effect/statclick/ticket/Click()
-	ticket_datum().TicketPanel()
+	ticket_datum().TicketPanel(usr)
 
 //
 // LOGGING
