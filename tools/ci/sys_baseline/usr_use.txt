@@ -636,7 +636,6 @@ usr_outside_verb	code/modules/holodeck/HolodeckObjects.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/holodeck/HolodeckObjects.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(pin, usr)
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	debugger.write_data(pin, usr)
-usr_outside_verb	code/modules/integrated_electronics/subtypes/input.dm	O.show_message("[icon2html(src, usr.client)] *beep* *beep*", 3, "*beep* *beep*", 2)
 usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
@@ -739,7 +738,6 @@ usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "N
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No keys found.")
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	dq_admin_report_html(usr, "Admin Playernotes", dat, src)
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	dq_admin_report_html(usr, "Info on [key]", dat, src)
-usr_outside_verb	code/modules/tgui/modules/appearance_changer.dm	var/mob/living/O = usr
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
