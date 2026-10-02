@@ -48,7 +48,7 @@
 "add_zero"
 "cell_charge_percent"
 "cover_is_open"
-"cover_removed"
+"legacy_cover_removed"
 "get_account"
 "get_material_by_name"
 "has_access"

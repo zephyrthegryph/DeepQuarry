@@ -32,6 +32,8 @@ pub struct KeyIndex {
     pub cap_ids: BTreeSet<String>,
     pub cap_state_ids: BTreeSet<String>,
     pub ops: BTreeSet<String>,
+    /// "prefix|op" of the ops a capability with a selector declares: its keys read `prefix.selector.op` ("cell_bay.cell.insert").
+    pub sel_ops: BTreeSet<String>,
     /// Duplicates found while indexing: (kind, name, first site, second site).
     pub duplicates: Vec<(String, String, (String, u32), (String, u32))>,
 }
@@ -81,7 +83,22 @@ impl KeyIndex {
                         note(&mut k, "capability", n, m);
                         k.caps.insert(n.clone(), id.clone());
                         k.cap_ids.insert(id.clone());
-                        collect_ops(&m.body, Some(n), &mut k.ops);
+                        // prefix = "name" keeps the op keys of the final constructor name while the working one differs.
+                        let prefix = marker_option(m, "prefix").map(|p| p.trim_matches('"').to_string()).unwrap_or_else(|| n.clone());
+                        collect_ops(&m.body, Some(&prefix), &mut k.ops);
+                        // A CAPABILITY_TYPE's ops are written in the `entries()` of its datum.
+                        if m.name == "CAPABILITY_TYPE" {
+                            let selected = marker_option(m, "key").map(|v| v != "NONE").unwrap_or(false);
+                            if let Some(ty) = m.args.get(2) {
+                                for (t, op) in decls.entry_ops.iter().filter(|(t, _)| t == ty) {
+                                    let _ = t;
+                                    k.ops.insert(format!("{}.{}", prefix, op));
+                                    if selected {
+                                        k.sel_ops.insert(format!("{}|{}", prefix, op));
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
                 "CAPABILITIES" => collect_ops(&m.body, None, &mut k.ops),
@@ -145,7 +162,12 @@ impl KeyIndex {
     /// An op key resolves exactly, or by the part before a `:` stage chain (`construction.build:door_wired`).
     pub fn op_resolves(&self, key: &str) -> bool {
         let base = key.split(':').next().unwrap_or(key);
-        self.ops.contains(key) || self.ops.contains(base)
+        if self.ops.contains(key) || self.ops.contains(base) {
+            return true;
+        }
+        // "prefix.selector.op" of a capability with a selector ("cell_bay.cell.insert").
+        let parts: Vec<&str> = base.split('.').collect();
+        parts.len() == 3 && self.sel_ops.contains(&format!("{}|{}", parts[0], parts[2]))
     }
 
     pub fn suggest_op(&self, key: &str) -> Option<String> {
@@ -158,6 +180,14 @@ impl KeyIndex {
         }
         best.map(|(_, s)| s.clone())
     }
+}
+
+/// The value of `name = value` among a marker's arguments, or None.
+fn marker_option(m: &Marker, name: &str) -> Option<String> {
+    m.args.iter().find_map(|a| {
+        let (k, v) = a.split_once('=')?;
+        (k.trim() == name).then(|| v.trim().to_string())
+    })
 }
 
 /// Every `op("name", ...)` in a marker body: `cap.name` inside a capability marker, `name` otherwise.

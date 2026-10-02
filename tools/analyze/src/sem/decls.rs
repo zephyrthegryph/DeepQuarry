@@ -79,6 +79,8 @@ pub struct Decls {
     pub key_refs: Vec<KeyRef>,
     /// `source = "text"` / `source = null` arguments of hold/grant/release calls.
     pub bad_sources: Vec<(String, u32, String)>,
+    /// The ops a capability datum declares in its own `entries()` (type path, op name): a CAPABILITY_TYPE marker carries no entries.
+    pub entry_ops: Vec<(String, String)>,
 }
 
 /// What a key literal names, by the call it sits in (doc/rewrite/final_api.html section 4,
@@ -122,6 +124,7 @@ impl Decls {
                 d.defines.extend(p.defines);
                 d.key_refs.extend(p.key_refs);
                 d.bad_sources.extend(p.bad_sources);
+                d.entry_ops.extend(p.entry_ops);
                 for (k, s) in p.publishers {
                     d.publishers.entry(k).or_default().push(s);
                 }
@@ -167,6 +170,7 @@ struct FileDecls {
     tracked: Vec<(String, String)>,
     defines: Vec<String>,
     publishers: Vec<(String, (String, u32))>,
+    entry_ops: Vec<(String, String)>,
 }
 
 /// `text` with comments blanked (same length, newlines kept); strings are kept intact.
@@ -317,10 +321,19 @@ fn scan_file(f: &SourceFile) -> FileDecls {
         }
     }
     let starts = Arc::new(starts);
-    let mut fd = FileDecls { key_refs: Vec::new(), bad_sources: Vec::new(), markers: Vec::new(), relations: Vec::new(), tracked: Vec::new(), defines: Vec::new(), publishers: Vec::new() };
+    let mut fd = FileDecls { key_refs: Vec::new(), bad_sources: Vec::new(), markers: Vec::new(), relations: Vec::new(), tracked: Vec::new(), defines: Vec::new(), publishers: Vec::new(), entry_ops: Vec::new() };
+    // The datum whose `entries()` body the scan is inside (the proc is declared at column 0 as `/datum/x/entries()`).
+    let mut entries_of: Option<String> = None;
     for (ln0, line) in stripped.split('\n').enumerate() {
         let ln = ln0 as u32 + 1;
         let t = line.trim_start();
+        if !line.is_empty() && !line.starts_with(|c: char| c.is_whitespace()) {
+            entries_of = pat_match!(r"^(/datum/[\w/]+)/entries\(\)").captures(line).map(|m| m.s(1).to_string());
+        } else if let Some(ty) = &entries_of {
+            for m in pat!(r#"(?<![\w./])op\(\s*"([^"]+)""#).captures_iter(line) {
+                fd.entry_ops.push((ty.clone(), m.s(1).to_string()));
+            }
+        }
         if let Some(rest) = t.strip_prefix('#') {
             if let Some(m) = pat_match!(r"\s*define\s+(\w+)").captures(rest) {
                 fd.defines.push(m.s(1).to_string());

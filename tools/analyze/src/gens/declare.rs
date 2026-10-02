@@ -93,6 +93,8 @@ struct Cap {
     key: Option<String>,
     stacks: Option<String>,
     params: Vec<(String, Option<String>)>,
+    /// prefix = "name": the op key prefix, when it is not the constructor's name (a library constructor that cannot take the final name yet).
+    prefix: Option<String>,
     rel: String,
     line: u32,
     is_def: bool,
@@ -110,11 +112,12 @@ fn capabilities(cx: &GenCx, out: &mut GenOut) -> Vec<Cap> {
         let name = m.args[0].clone();
         let id = m.args[1].clone();
         let ty = if is_def { format!("/datum/capability/def/{}", name) } else { m.args[2].clone() };
-        let mut cap = Cap { name, id, ty, key: None, stacks: None, params: Vec::new(), rel: m.rel.clone(), line: m.line, is_def };
+        let mut cap = Cap { name, id, ty, key: None, stacks: None, params: Vec::new(), prefix: None, rel: m.rel.clone(), line: m.line, is_def };
         for a in &m.args[need..] {
             match split_opt(a) {
                 Some((k, v)) if k == "key" => cap.key = Some(v),
                 Some((k, v)) if k == "stacks" => cap.stacks = Some(v),
+                Some((k, v)) if k == "prefix" => cap.prefix = Some(v.trim().trim_matches('"').to_string()),
                 Some((k, v)) => cap.params.push((k, Some(v))),
                 None => {
                     if a.chars().all(|c| c.is_alphanumeric() || c == '_') && !a.is_empty() {
@@ -277,8 +280,76 @@ fn rewrite_calls(text: &str, name: &str, f: &dyn Fn(&[String]) -> String) -> Str
     out
 }
 
+
+/// Names of the global procs the declaration forms are: every `/proc/name(` of the engine (code/engine/), with the capability constructors
+/// the markers declare. A declaration is written in a type's own `declared_entries()`, where an unqualified `cooldown(...)` would resolve to
+/// the type's own `cooldown` proc (an `/obj/item/telecube/proc/cooldown()` captures the part constructor): the generator therefore writes
+/// each call as `global.name(...)`, which only the global proc can answer.
+fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
+    let mut set: BTreeSet<String> = caps.iter().map(|c| c.name.clone()).collect();
+    // `every` keeps its legacy body in code/datums/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
+    set.insert("every".to_string());
+    for f in cx.tree.select(&crate::tree::CODE_DM) {
+        if !f.rel.starts_with("code/engine/") {
+            continue;
+        }
+        for line in f.text().lines() {
+            if let Some(rest) = line.strip_prefix("/proc/") {
+                let name: String = rest.chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+                if !name.is_empty() && rest[name.len()..].trim_start().starts_with('(') {
+                    set.insert(name);
+                }
+            }
+        }
+    }
+    set
+}
+
+/// Writes every call of a global constructor in `text` as `global.name(...)` (not a member call, not a longer name, not inside a string).
+fn qualify_globals(text: &str, names: &BTreeSet<String>) -> String {
+    let b = text.as_bytes();
+    let mut out = String::with_capacity(text.len() + 16);
+    let mut i = 0;
+    while i < text.len() {
+        let c = b[i];
+        if c == b'"' {
+            // a string literal: copied whole, escapes included
+            let mut j = i + 1;
+            while j < text.len() && b[j] != b'"' {
+                if b[j] == b'\\' {
+                    j += 1;
+                }
+                j += 1;
+            }
+            let end = (j + 1).min(text.len());
+            out.push_str(&text[i..end]);
+            i = end;
+            continue;
+        }
+        if c.is_ascii_alphabetic() || c == b'_' {
+            let mut j = i;
+            while j < text.len() && (b[j].is_ascii_alphanumeric() || b[j] == b'_') {
+                j += 1;
+            }
+            let ident = &text[i..j];
+            let prev_ok = i == 0 || !(b[i - 1].is_ascii_alphanumeric() || b[i - 1] == b'_' || b[i - 1] == b'.' || b[i - 1] == b'/');
+            let called = text[j..].trim_start().starts_with('(');
+            if prev_ok && called && names.contains(ident) {
+                out.push_str("global.");
+            }
+            out.push_str(ident);
+            i = j;
+            continue;
+        }
+        let ch = text[i..].chars().next().unwrap();
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    out
+}
+
 /// One entry of a CAPABILITIES list, as DM.
-fn entry_text(raw: &str, caps: &[Cap]) -> String {
+fn entry_text(raw: &str, caps: &[Cap], globals: &BTreeSet<String>) -> String {
     let mut t = one_line(raw);
     t = rewrite_calls(&t, "link", &|a| {
         let mut parts = vec![quote(a.first().map(|s| s.as_str()).unwrap_or("")), quote(a.get(1).map(|s| s.as_str()).unwrap_or(""))];
@@ -310,7 +381,7 @@ fn entry_text(raw: &str, caps: &[Cap]) -> String {
             None => format!("configure({})", a.join(", ")),
         }
     });
-    t
+    qualify_globals(&t, globals)
 }
 
 /// Byte offset of each top-level argument of a marker body, in order (the args are `split_args(body)`).
@@ -343,10 +414,11 @@ impl Generator for Declare {
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
         let caps = capabilities(cx, out);
-        section(cx, out, &caps, false);
+        let globals = global_constructors(cx, &caps);
+        section(cx, out, &caps, &globals, false);
         // What the test fixtures declare (files under code/tests/) is compiled in test builds only.
         let mut tests = GenOut::default();
-        section(cx, &mut tests, &caps, true);
+        section(cx, &mut tests, &caps, &globals, true);
         if !tests.text().trim().is_empty() {
             out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
             out.blank();
@@ -361,7 +433,7 @@ impl Generator for Declare {
 }
 
 /// The declarations of the files in one half of the tree: the engine and the game (`test_only` false), or the test fixtures.
-fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], test_only: bool) {
+fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String>, test_only: bool) {
     let in_half = |rel: &str| rel.starts_with("code/tests/") == test_only;
         // Capabilities: the datum's param vars, the constructor, the registration row.
         for cap in caps.iter().filter(|c| in_half(&c.rel)) {
@@ -379,7 +451,7 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], test_only: bool) {
             out.line(format!("\tRETURN_TYPE({})", cap.ty));
             out.line(format!("\treturn cap_construct({}, {}, list({}), {})", cap.id, cap.ty, names.join(", "), quote(&names.join(", "))));
             out.line(format!("/datum/capdef_decl/c_{}/spec()", cap.name));
-            out.line(format!("\treturn list({}, {}, {}, {}, {}, {})", cap.id, cap.ty, key_expr(&cap.key), cap.stacks.clone().unwrap_or_else(|| "STACK".to_string()), quote(&cap.name), quote(&names.join(", "))));
+            out.line(format!("\treturn list({}, {}, {}, {}, {}, {})", cap.id, cap.ty, key_expr(&cap.key), cap.stacks.clone().unwrap_or_else(|| "STACK".to_string()), quote(cap.prefix.as_deref().unwrap_or(&cap.name)), quote(&names.join(", "))));
             out.blank();
         }
         // State keys.
@@ -420,7 +492,7 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], test_only: bool) {
         }
         for m in cx.markers("STATE_GRAPH").filter(|m| in_half(&m.rel)) {
             let Some(g) = m.args.first() else { continue };
-            let entries: Vec<String> = m.args.iter().skip(1).map(|a| one_line(a)).collect();
+            let entries: Vec<String> = m.args.iter().skip(1).map(|a| qualify_globals(&one_line(a), globals)).collect();
             out.doc(format!("STATE_GRAPH({}) at {}:{}", g, m.rel, m.line));
             out.line(format!("/datum/graph_decl/g_{}/spec()", g.to_lowercase()));
             out.line(format!("\treturn list({}, {})", g, entries.join(", ")));
@@ -449,7 +521,7 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], test_only: bool) {
                     continue;
                 }
                 out.line(format!("\tinto += entry_line({})", m.line_at(offsets[i])));
-                out.line(format!("\tinto += list({})", entry_text(a, caps)));
+                out.line(format!("\tinto += list({})", entry_text(a, caps, globals)));
             }
             out.blank();
         }
@@ -526,9 +598,9 @@ CAPABILITIES(/obj/thing, \
     fn a_capabilities_list_becomes_declared_entries_with_a_line_per_entry() {
         let (_, decl, _) = gen(vec![("code/a.dm", SRC)]);
         assert!(decl.contains("/obj/thing/declared_entries(list/into)\n\t..(into)\n\tinto += entry_block(\"code/a.dm\", 11, /obj/thing)"), "{}", decl);
-        assert!(decl.contains("into += entry_line(12)\n\tinto += list(widget(\"a\", power = 2))"), "{}", decl);
+        assert!(decl.contains("into += entry_line(12)\n\tinto += list(global.widget(\"a\", power = 2))"), "{}", decl);
         assert!(decl.contains("entry_link(\"/obj/thing::partner\", \"/obj/thing::partner\")"), "link is rewritten: {}", decl);
-        assert!(decl.contains("configure(widget(\"a\", power = 9))"), "configure(CAP_X, ...) is rewritten to the constructor: {}", decl);
+        assert!(decl.contains("configure(global.widget(\"a\", power = 9))"), "configure(CAP_X, ...) is rewritten to the constructor: {}", decl);
         assert!(decl.contains("when(nameof(armed), contributes(STAT_OPERABLE, FALSE))"));
         assert!(decl.contains("into += entry_line(13)
 	into += list(entry_link("), "every entry keeps its own line: {}", decl);

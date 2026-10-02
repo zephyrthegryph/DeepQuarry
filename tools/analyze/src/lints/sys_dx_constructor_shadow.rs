@@ -11,10 +11,16 @@ use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::{SourceFile, Tree};
 
-const RULES: &[RuleMeta] = &[RuleMeta {
-    name: "dx_constructor_shadow",
-    hint: "rename the type proc: it shadows a global capability constructor or bundle inside capabilities() (framework review 2, H7)",
-}];
+const RULES: &[RuleMeta] = &[
+    RuleMeta {
+        name: "dx_constructor_shadow",
+        hint: "rename the type proc: it shadows a global capability constructor or bundle inside capabilities() (framework review 2, H7)",
+    },
+    RuleMeta {
+        name: "part_constructor_shadow",
+        hint: "rename the proc: a capability datum's entries() calls the part constructors (cooldown(), flash(), put_in(), menu(), ...) bare, and its own proc of that name would answer instead of the engine's. A CAPABILITIES list is generated as `global.name(...)` and cannot clash; a hand-written entries() cannot be qualified for you",
+    },
+];
 
 const PRESET_FILES: &str = "code/datums/capabilities/library/preset";
 const CAPS_DIR: &str = "code/datums/capabilities/";
@@ -62,8 +68,43 @@ fn scan_procs(tree: &Tree, procs: &[Proc]) -> Vec<(&'static str, String, usize)>
         .collect()
 }
 
+/// The global procs of the engine (code/engine/): the part and declaration constructors a declaration is written with, generated capability
+/// constructors included.
+fn engine_constructors(procs: &[Proc]) -> HashSet<String> {
+    procs.iter().filter(|p| p.is_global() && p.rel.starts_with("code/engine/")).map(|p| p.name.clone()).collect()
+}
+
+/// `scan_part_shadows`: a proc defined on a capability definition datum (a `/datum/capability` subtype or the type of a CAPABILITY_TYPE) named
+/// like an engine constructor. The datum's `entries()` runs there and calls the constructors bare.
+fn scan_part_shadows(tree: &Tree, procs: &[Proc]) -> Vec<(&'static str, String, usize)> {
+    let names = engine_constructors(procs);
+    let decls = crate::sem::decls::Decls::get(tree);
+    // The capability definition datums of the engine: the type of each CAPABILITY_TYPE and the datum of each CAPABILITY_DEF. The legacy capability
+    // datums (cap_*(), `interactions()`) call no part constructors and may keep procs of any name.
+    let mut cap_types: HashSet<String> = HashSet::new();
+    for m in decls.markers_named("CAPABILITY_TYPE") {
+        if let Some(ty) = m.args.get(2) {
+            cap_types.insert(ty.trim().to_string());
+        }
+    }
+    for m in decls.markers_named("CAPABILITY_DEF") {
+        if let Some(n) = m.args.first() {
+            cap_types.insert(format!("/datum/capability/def/{}", n.trim()));
+        }
+    }
+    let is_cap = |path: &str| -> bool { cap_types.contains(path) || lineage(path).iter().any(|a| cap_types.contains(a)) };
+    procs
+        .iter()
+        .filter(|p| !p.is_global() && names.contains(&p.name) && is_cap(&p.path))
+        .map(|p| ("part_constructor_shadow", p.rel.clone(), p.line))
+        .collect()
+}
+
 fn scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    scan_procs(tree, &DxIndex::get(tree, files).procs)
+    let idx = DxIndex::get(tree, files);
+    let mut found = scan_procs(tree, &idx.procs);
+    found.extend(scan_part_shadows(tree, &idx.procs));
+    found
 }
 
 const FIXTURE: &str = include_str!("../../fixtures/sys__dx_constructor_shadow/code/modules/x/selftest.dm");
@@ -98,6 +139,19 @@ fn selftest() -> Result<String, String> {
     want.sort();
     if got != want {
         return Err(format!("dx_constructor_shadow selftest: got {:?}, want {:?}", got, want));
+    }
+    // part_constructor_shadow: a capability datum's own `cooldown` proc captures the engine's constructor; an unrelated type's does not, nor does a
+    // legacy capability datum's.
+    let part_src = "CAPABILITY_TYPE(widget, CAP_WIDGET, /datum/e0_cap/widget, key = NONE)\n/datum/e0_cap/widget/proc/cooldown()\n\treturn 1\n/datum/capability/other/proc/cooldown()\n\treturn 2\n/obj/item/telecube/proc/cooldown()\n\treturn 3\n/datum/e0_cap/widget/sub/proc/cooldown()\n\treturn 4\n";
+    let part_tree = Tree::from_files(vec![
+        SourceFile::from_text("code/engine/parts/part.dm", "/proc/cooldown(t)\n\treturn t\n"),
+        SourceFile::from_text("code/x.dm", part_src),
+    ]);
+    let part_files: Vec<&SourceFile> = ["code/engine/parts/part.dm", "code/x.dm"].iter().map(|r| part_tree.get(r).unwrap()).collect();
+    let part_idx = DxIndex::get(&part_tree, &part_files);
+    let part_got: Vec<usize> = scan_part_shadows(&part_tree, &part_idx.procs).into_iter().map(|(_, _, n)| n).collect();
+    if part_got != vec![2, 8] {
+        return Err(format!("part_constructor_shadow selftest: got {:?}, want [2, 8]", part_got));
     }
     Ok("dx_constructor_shadow".to_string())
 }
