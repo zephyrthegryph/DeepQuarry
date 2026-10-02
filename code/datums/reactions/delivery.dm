@@ -416,7 +416,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 /proc/publish(datum/E, datum/notice/N)
 	if(!E || !N)
 		return
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	N.source = E
 	if(GLOB.rx_notice_delivering)
 		GLOB.rx_notice_queue += list(list(E, N))

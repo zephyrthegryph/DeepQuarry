@@ -74,7 +74,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 
 /// Publishes notice `N` from `holder` with `outcome`: delivered now, or queued when nesting is at the cap. N is released after delivery.
 /proc/notice_publish(datum/holder, datum/notice/N, outcome = ACT_COMMITTED)
-	N.target = holder // ALLOW(ownership): a pooled notice holds its entities for one delivery and is reset on release
+	N.target = holder
 	var/at_cap = GLOB.act_depth >= ACT_MAX_DEPTH
 	TEST_REC_NOTICE(N.type, outcome, at_cap)
 	if(at_cap)
@@ -109,7 +109,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /proc/notice_deliver(datum/holder, datum/notice/N, outcome)
 	notice_deliver_hooks(holder, N, outcome)
 	if(outcome & ACT_COMMITTED)
-		N.source = holder // ALLOW(ownership): a pooled notice holds its entities for one delivery and is reset on release
+		N.source = holder
 		rx_deliver_notice_to(holder, N)
 		notice_to_event_twin(holder, N)
 
@@ -117,7 +117,7 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 /proc/notice_deliver_hooks(datum/holder, datum/notice/N, outcome)
 	if(QDELETED(holder) || !islist(GLOB?.notice_plans))
 		return
-	N.target = holder // ALLOW(ownership): a pooled notice holds its entities for one delivery and is reset on release
+	N.target = holder
 	N.outcome = (outcome == ACT_ROLL_FAILED) ? ACT_COMMITTED : outcome
 	for(var/datum/hook/H as anything in notice_plan_for(holder, N, outcome))
 		if(H.op_key && H.op_key != N.op_key)
@@ -125,10 +125,10 @@ GLOBAL_VAR_INIT(notice_draining_late, FALSE)
 		var/datum/run_on = H.on_listener ? H.activation?.source : holder
 		if(!isdatum(run_on) || QDELETED(run_on))
 			continue
-		N.holder = run_on // ALLOW(ownership): a pooled notice holds its entities for one delivery and is reset on release
+		N.holder = run_on
 		hook_context(N, H)
 		if(H.on_listener)
-			N.source = holder // ALLOW(ownership): a pooled notice holds its entities for one delivery and is reset on release
+			N.source = holder
 		var/depth = GLOB.act_depth
 		GLOB.act_chain += "[N.type]:[run_on.type]"
 		try

@@ -128,6 +128,7 @@ CAPABILITIES(/obj/e4_fixture/bed, \
 TRACKED(/obj/e4_fixture/switch, powered)
 TRACKED(/obj/e4_fixture/switch, charge_level)
 
+// ALLOW(keys): the op key is published by hand in the test; no op declares it
 CAPABILITIES(/obj/e4_fixture/switch, 	on_change(nameof(powered), ENTER, then(PROC_REF(power_on))), 	on_change(nameof(powered), EXIT, then(PROC_REF(power_off))), 	on_change(nameof(charge_level), ANY, then(PROC_REF(charge_level_changed))), 	on_op("e4.toggle", then(PROC_REF(op_heard))))
 
 /obj/e4_fixture/switch/proc/power_on(datum/act/A)

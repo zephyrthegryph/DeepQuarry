@@ -105,8 +105,15 @@ impl Lint for SemHandlers {
         let cands: Vec<String> = cx.files().iter().filter(|f| candidate_re().is_match(&f.code().text)).map(|f| f.rel.clone()).collect();
         if !cands.is_empty() {
             let extra: Vec<&str> = cx.list("try_calls").iter().map(|s| s.as_str()).collect();
+            // ACT_TRY(E, name, ...) expands to act_<name>(E, ...), generated for each non-FIXED ACTION(name, ...).
+            let generated: Vec<String> = crate::sem::decls::Decls::get(cx.tree)
+                .markers_named("ACTION")
+                .filter(|m| !m.args.iter().any(|a| a == "FIXED"))
+                .filter_map(|m| m.args.first().map(|n| format!("act_{}", n.replace('/', "_"))))
+                .collect();
             let mut try_calls: Vec<&str> = DEFAULT_TRY_CALLS.to_vec();
             try_calls.extend(extra);
+            try_calls.extend(generated.iter().map(|s| s.as_str()));
             match Sem::build_partial(&cx.tree.root, cx.tree, &cands) {
                 Ok(sem) => {
                     let set: BTreeSet<&str> = cands.iter().map(|s| s.as_str()).collect();

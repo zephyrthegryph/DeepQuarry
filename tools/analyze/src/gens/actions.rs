@@ -189,6 +189,15 @@ impl Generator for Actions {
     }
 }
 
+/// The ownership annotation of an assignment of a typed (entity) field into a pooled act or notice, which holds it for one trigger.
+fn owned(ty: &str) -> &'static str {
+    if ty.is_empty() {
+        ""
+    } else {
+        " // ALLOW(ownership): a pooled act or notice holds its entities for one trigger and is reset on release"
+    }
+}
+
 fn path_of(name: &str) -> String {
     format!("/datum/act/{}", name)
 }
@@ -241,8 +250,8 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
             out.line(format!("{}/make_notice()", path_of(&a.name)));
             out.line(format!("	RETURN_TYPE({})", a.notice));
             out.line(format!("	var/{}/N = notice_take({})", a.notice.trim_start_matches('/'), a.notice));
-            for (_, nm) in &a.fields {
-                out.line(format!("	N.{} = {}", nm, nm));
+            for (ty, nm) in &a.fields {
+                out.line(format!("	N.{} = {}{}", nm, nm, owned(ty)));
             }
             out.line("	return N");
             out.blank();
@@ -253,8 +262,8 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
             out.line(format!("	var/{}/A = act_begin({}, holder)", path_of(&a.name).trim_start_matches('/'), path_of(&a.name)));
             out.line("	if(!A)");
             out.line("		return null");
-            for (_, nm) in &a.fields {
-                out.line(format!("	A.{} = {}", nm, nm));
+            for (ty, nm) in &a.fields {
+                out.line(format!("	A.{} = {}{}", nm, nm, owned(ty)));
             }
             out.line("	return act_resolve(A)");
         } else if a.fixed {
@@ -263,8 +272,8 @@ fn emit(cx: &GenCx, out: &mut GenOut, list: &[&Action], all: &BTreeMap<String, A
             out.line(format!("	if(!notice_wanted(holder, {}, ACT_COMMITTED))", a.notice));
             out.line("		return");
             out.line(format!("	var/{}/N = notice_take({})", a.notice.trim_start_matches('/'), a.notice));
-            for (_, nm) in &a.fields {
-                out.line(format!("	N.{} = {}", nm, nm));
+            for (ty, nm) in &a.fields {
+                out.line(format!("	N.{} = {}{}", nm, nm, owned(ty)));
             }
             out.line("	notice_publish(holder, N, ACT_COMMITTED)");
         }
@@ -286,6 +295,64 @@ pub fn register(reg: &mut Vec<Box<dyn Generator>>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use crate::sem::gen::render;
+    use crate::tree::{SourceFile, Tree};
+    use std::path::Path;
+
+    fn gen(src: &str) -> (String, Vec<String>) {
+        let tree = Tree::from_files(vec![SourceFile::from_text("code/a.dm", src)]);
+        let cx = GenCx::new(&tree, Path::new("."));
+        let (text, diags) = render(&Actions, &cx);
+        (text, diags.into_iter().map(|d| d.msg).collect())
+    }
+
+    const SRC: &str = "ACTION(fall, turf/landing, mob/living/landed_on)
+ACTION(move, turf/origin, turf/destination)
+ACTION(hit, datum/damage_packet/packet)
+ACTION(hit/projectile)
+ACTION(slash, mob/living/slasher, FIXED)
+ACTION(body_status, notice = /datum/notice/body_status_changed)
+";
+
+    #[test]
+    fn an_action_gets_a_type_a_proc_and_a_notice() {
+        let (text, diags) = gen(SRC);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(text.contains("/datum/act/fall
+	parent_type = /datum/act/action
+	var/turf/landing
+	var/mob/living/landed_on"), "{}", text);
+        assert!(text.contains("/datum/notice/fell
+	var/turf/landing"), "the notice is the past tense: {}", text);
+        assert!(text.contains("/proc/act_fall(datum/holder, turf/landing, mob/living/landed_on)"), "{}", text);
+        assert!(text.contains("	return act_resolve(A)"), "{}", text);
+        assert!(text.contains("/datum/act/move
+	parent_type = /datum/act/action
+	var/turf/origin_turf"), "origin is the act's ORIGIN_*: {}", text);
+    }
+
+    #[test]
+    fn a_slash_name_inherits_and_a_fixed_action_has_no_act() {
+        let (text, _) = gen(SRC);
+        assert!(text.contains("/proc/act_hit_projectile(datum/holder, datum/damage_packet/packet)"), "{}", text);
+        assert!(text.contains("/datum/notice/hit/projectile"), "{}", text);
+        assert!(!text.contains("/datum/act/slash"), "a FIXED action has no act type: {}", text);
+        assert!(text.contains("/proc/publish_slash(datum/holder, mob/living/slasher)"), "{}", text);
+        assert!(text.contains("/datum/notice/slashed"), "{}", text);
+        assert!(text.contains("/datum/notice/body_status_changed"), "notice = overrides the name: {}", text);
+    }
+
+    #[test]
+    fn a_reserved_field_and_an_orphan_subtype_are_reported() {
+        let (_, diags) = gen("ACTION(poke, mob/actor)
+ACTION(nowhere/child)
+ACTION(poke, atom/x)
+");
+        assert!(diags.iter().any(|d| d.contains("every act carries")), "{:?}", diags);
+        assert!(diags.iter().any(|d| d.contains("parent action `nowhere`")), "{:?}", diags);
+        assert!(diags.iter().any(|d| d.contains("declared twice")), "{:?}", diags);
+    }
 
     #[test]
     fn past_tense_rules() {

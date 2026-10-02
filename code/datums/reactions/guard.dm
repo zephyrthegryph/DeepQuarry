@@ -53,9 +53,9 @@
 		return null
 	var/datum/guard_ctx/ctx = take(/datum/guard_ctx)
 	ctx.key = key
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	ctx.target = E
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	ctx.actor = actor
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.item = item

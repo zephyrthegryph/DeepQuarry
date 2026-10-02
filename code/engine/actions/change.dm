@@ -66,7 +66,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		if(findtext(cond, "."))
 			return change_walk(E, cond)
 		if(cond in E.vars)
-			return E.vars[cond] // ALLOW(api): on_change names a var of the holder by its declared key
+			return E.vars[cond]
 	return change_condition(E, cond)
 
 /// A condition (a var, an id, a tree, a proc of the holder) evaluated now. A proc gets a pooled eval context.
@@ -89,7 +89,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		if(!isdatum(walk))
 			return null
 		var/datum/D = walk
-		walk = D.vars[segment] // ALLOW(api): on_change names a path of relation vars by their declared keys
+		walk = D.vars[segment]
 	return walk
 
 // ---- registration ----
@@ -106,7 +106,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 	for(var/datum/hook/H as anything in hook_table_of(T))
 		if(H.kind != HOOK_CHANGE)
 			continue
-		H.reads = change_read_keys(E, H.entry.args["cond"]) // ALLOW(ownership): compiled once per type and never rewritten
+		H.reads = change_read_keys(E, H.entry.args["cond"])
 		for(var/key in H.reads)
 			LAZYADD(index[key], H)
 	GLOB.change_index_by_type[E.type] = length(index) ? index : FALSE
@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 /datum/entry_engine/hook_change/apply(datum/activation/A, datum/entry/E, datum/centry/C)
 	var/datum/hook/H = hook_change_make(A, E, C)
 	var/datum/rx_state/rx = rx_of(A.holder)
-	H.reads = change_read_keys(A.holder, E.args["cond"]) // ALLOW(ownership): compiled when the activation attaches
+	H.reads = change_read_keys(A.holder, E.args["cond"])
 	LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
 	for(var/key in H.reads)
 		rx_watch_adjust(A.holder, key, 1)
@@ -224,7 +224,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		for(var/key in H.reads)
 			rx_watch_adjust(holder, key, -1)
 		holder.rx.change_last?.Remove("[H.serial]")
-		H.activation = null
+		H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null
 

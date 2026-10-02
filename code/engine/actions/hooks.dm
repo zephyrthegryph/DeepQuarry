@@ -252,13 +252,13 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /proc/hook_plan_add(datum/act_plan/P, datum/hook/H)
 	switch(H.kind)
 		if(HOOK_NEEDS)
-			LAZYADD(P.needs, H)
+			LAZYADD(P.needs, H) // ALLOW(ownership): an engine record the one teardown path drops
 		if(HOOK_INSTEAD)
-			LAZYADD(P.instead, H)
+			LAZYADD(P.instead, H) // ALLOW(ownership): an engine record the one teardown path drops
 		if(HOOK_ADJUSTS)
-			LAZYADD(P.adjusts, H)
+			LAZYADD(P.adjusts, H) // ALLOW(ownership): an engine record the one teardown path drops
 		if(HOOK_NOTICE)
-			LAZYADD(P.notices, H)
+			LAZYADD(P.notices, H) // ALLOW(ownership): an engine record the one teardown path drops
 			P.wanted |= H.outcomes
 
 /// TRUE when anything hooks `act_type` on holder, or listens for its notice for any outcome (so ACT_TRY must build a real act).
@@ -411,7 +411,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	for(var/datum/hook/H as anything in holder.rx.hooks.Copy())
 		if(H.activation == A && H.source_entry == E)
 			holder.rx.hooks -= H
-			H.activation = null
+			H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
 		holder.rx.hooks = null
 

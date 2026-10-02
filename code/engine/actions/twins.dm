@@ -62,7 +62,7 @@ GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 	var/event_type = row[1]
 	var/list/values = list()
 	for(var/i in 2 to length(row))
-		values += list(N.vars[row[i]]) // ALLOW(api): the twin copies the notice's fields into the event's constructor by the generated map
+		values += list(N.vars[row[i]])
 	var/datum/om/event/event = new event_type(arglist(values))
 	GLOB.twin_in_flight = TRUE
 	om_emit(holder, event)

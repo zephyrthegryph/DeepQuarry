@@ -38,6 +38,8 @@
 	T.shield = TRUE
 	var/datum/act/e4_strike/taken = ACT_TRY(T, e4_strike, 10)
 	TEST_ASSERT_NULL(taken, "a takeover returns null")
+	if(taken)
+		act_cancel(taken)
 	TEST_ASSERT_EQUAL(T.absorbed, 1, "the instead handler ran")
 	TEST_ASSERT_EQUAL(T.heard_committed, 1, "a takeover is not announced as a strike that landed")
 	TEST_ASSERT_EQUAL(T.heard_replaced, 1, "the listener that asked for replaced strikes heard it")
@@ -106,6 +108,8 @@
 	test_record()
 	var/datum/act/e4_nest/F = ACT_TRY(N, e4_nest)
 	TEST_ASSERT_NULL(F, "the outermost action was taken over")
+	if(F)
+		act_cancel(F)
 	TEST_ASSERT_EQUAL(N.runs, ACT_MAX_DEPTH, "eight nested takeovers ran")
 	TEST_ASSERT_EQUAL(GLOB.act_too_deep, 1, "the ninth nested action was refused")
 	TEST_ASSERT_EQUAL(length(GLOB.act_report_capture), 1, "and reported, so a test build fails on it")

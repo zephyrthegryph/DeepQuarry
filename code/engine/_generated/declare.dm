@@ -147,11 +147,11 @@
 	into += entry_line(66)
 	into += list(e1_solo())
 
-/// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:150
+/// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:151
 /datum/om_test_entity/e4_twin/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e4_fixtures.dm", 150, /datum/om_test_entity/e4_twin)
-	into += entry_line(151)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 151, /datum/om_test_entity/e4_twin)
+	into += entry_line(152)
 	into += list(on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard))))
 
 /// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:87
@@ -309,17 +309,17 @@
 	into += entry_line(65)
 	into += list(on_notice(/datum/notice/e4_hushed, then(PROC_REF(heard))))
 
-/// CAPABILITIES(/obj/e4_fixture/switch) at code/tests/engine/e4_fixtures.dm:131
+/// CAPABILITIES(/obj/e4_fixture/switch) at code/tests/engine/e4_fixtures.dm:132
 /obj/e4_fixture/switch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e4_fixtures.dm", 131, /obj/e4_fixture/switch)
-	into += entry_line(131)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 132, /obj/e4_fixture/switch)
+	into += entry_line(132)
 	into += list(on_change(nameof(powered), ENTER, then(PROC_REF(power_on))))
-	into += entry_line(131)
+	into += entry_line(132)
 	into += list(on_change(nameof(powered), EXIT, then(PROC_REF(power_off))))
-	into += entry_line(131)
+	into += entry_line(132)
 	into += list(on_change(nameof(charge_level), ANY, then(PROC_REF(charge_level_changed))))
-	into += entry_line(131)
+	into += entry_line(132)
 	into += list(on_op("e4.toggle", then(PROC_REF(op_heard))))
 
 /// CAPABILITIES(/obj/e4_fixture/target) at code/tests/engine/e4_fixtures.dm:34

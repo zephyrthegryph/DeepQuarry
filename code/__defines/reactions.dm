@@ -99,8 +99,4 @@
 /// mob's equipment, its body re-deriving). A tracked var publishes itself through its setter.
 #define PUBLISH_CHANGE(E, KEY) if(READERS(E, KEY)) { publish_change(E, KEY) }
 
-/// TRUE when someone wants notices of `TYPE` from `E`.
-#define WANTS(E, TYPE) rx_wants_notice(E, TYPE)
-/// Announces an occurrence: `PUBLISH(src, /datum/notice/door_opened, user)`. Nothing is allocated unless
-/// something listens. Occurrences are ordered and never coalesced.
-#define PUBLISH(E, TYPE, ARGS...) if(WANTS(E, TYPE)) { publish(E, take_notice(TYPE, ARGS)) }
+/// WANTS(E, TYPE) and PUBLISH(E, token, ...) are the engine's (code/__defines/engine/actions.dm); the legacy PUBLISH is PUBLISH_LEGACY.

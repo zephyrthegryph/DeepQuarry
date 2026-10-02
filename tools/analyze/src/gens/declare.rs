@@ -542,6 +542,19 @@ CAPABILITIES(/obj/thing, \
     }
 
     #[test]
+    fn adjusts_and_on_change_paths_become_text() {
+        let (_, decl, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing, \
+	extend(/datum/act/hit, adjusts(packet.amount, scale = 0.5)), \
+	on_change(nameof(terminal.charge), ANY, then(PROC_REF(x))), \
+	on_change(nameof(on), ENTER, then(PROC_REF(y))))
+")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("adjusts(\"packet.amount\", scale = 0.5)"), "{}", decl);
+        assert!(decl.contains("on_change(\"terminal.charge\", ANY"), "{}", decl);
+        assert!(decl.contains("on_change(nameof(on), ENTER"), "a plain nameof stays: {}", decl);
+    }
+
+    #[test]
     fn option_splitting_and_key_forms() {
         assert_eq!(split_opt("key = name"), Some(("key".into(), "name".into())));
         assert_eq!(split_opt("a == b"), None);

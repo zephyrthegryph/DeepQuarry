@@ -81,19 +81,19 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 			continue
 		hook_context(A, H)
 		act_apply_adjust(A, H)
-	A.activation = null
+	A.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	A.cap = null
-	A.source = null
+	A.source = null // ALLOW(ownership): an engine record the one teardown path drops
 	return A
 
 /// Sets the entry-level fields of the context for hook H: the activation running it, its capability and its source.
 /proc/hook_context(datum/act/A, datum/hook/H)
 	A.activation = H.activation // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	if(H.activation)
-		A.cap = H.activation.def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = H.activation.def
 		A.source = H.activation.source // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	else
-		A.cap = H.cap_key ? table_of(A.holder).caps[H.cap_key] : null // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = H.cap_key ? table_of(A.holder).caps[H.cap_key] : null
 		A.source = A.holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 
 /// A static hook declared inside when() blocks applies while every one of them holds on the holder.
@@ -111,11 +111,11 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 	var/list/path = splittext(opts["field"], ".")
 	var/datum/walk = A
 	for(var/i in 1 to length(path) - 1)
-		walk = walk.vars[path[i]] // ALLOW(api): adjusts() names a typed field of the action by its declared path
+		walk = walk.vars[path[i]]
 		if(!walk)
 			return
 	var/field = path[length(path)]
-	var/current = walk.vars[field] // ALLOW(api): adjusts() names a typed field of the action by its declared path
+	var/current = walk.vars[field]
 	if(!isnum(current))
 		declare_report("adjusts([opts["field"]]) on [A.type]: the field is not a number ([current])")
 		return

@@ -2,6 +2,7 @@ act_try_unpaired	code/modules/lamps/lamp.dm	129
 act_try_unpaired	code/modules/lamps/lamp.dm	137
 act_try_unpaired	code/modules/lamps/lamp.dm	143
 act_try_unpaired	code/modules/lamps/lamp.dm	156
+act_try_unpaired	code/modules/lamps/lamp.dm	173
 context_escape	code/modules/lamps/escape.dm	10
 context_escape	code/modules/lamps/escape.dm	14
 context_escape	code/modules/lamps/escape.dm	19
@@ -9,6 +10,7 @@ context_escape	code/modules/lamps/escape.dm	23
 context_escape	code/modules/lamps/escape.dm	24
 context_field	code/modules/lamps/lamp.dm	38
 context_field	code/modules/lamps/lamp.dm	48
+context_field	code/modules/lamps/lamp.dm	194
 handler_unresolved	code/modules/lamps/lamp.dm	26
 impure	code/modules/lamps/lamp.dm	65
 impure	code/modules/lamps/lamp.dm	66

@@ -63,3 +63,5 @@
 
 /atom/proc/draw(datum/look/look)
 	return
+/datum/act/spark
+	parent_type = /datum/act/action
