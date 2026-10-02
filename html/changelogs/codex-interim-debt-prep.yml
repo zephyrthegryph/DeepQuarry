@@ -11,3 +11,8 @@ changes:
   - bugfix: "Gun scopes and binoculars use the acting player and correct viewing parameters."
   - bugfix: "Gun cleanup no longer fails when its holder has no active aim."
   - bugfix: "Machine frames keep all inserted stock parts in their owned component list."
+
+  - bugfix: "Fax requests and resizing feedback preserve the acting player through confirmation prompts."
+  - bugfix: "Destroyed capture crystals release their captured creatures and respect stuck items."
+  - bugfix: "Destroyed ghost traps release their occupants, and deleted shooting targets restore their stakes."
+  - bugfix: "Corporate tags survive destruction of synthmorph body bags."

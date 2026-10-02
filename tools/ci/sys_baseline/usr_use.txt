@@ -14,7 +14,6 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
 usr_outside_verb	code/_helpers/turfs.dm	/proc/spiral_range_turfs(dist = 0, center = usr, orange = FALSE, list/outlist = list(), tick_checked)
-usr_outside_verb	code/_helpers/unsorted.dm	/proc/view_or_range(distance = world.view , center = usr , type)
 usr_outside_verb	code/_helpers/unsorted.dm	/proc/urange(dist=0, atom/center=usr, orange=0, areas=0)
 usr_outside_verb	code/_helpers/unsorted.dm	value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 usr_outside_verb	code/_helpers/unsorted.dm	chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
@@ -419,8 +418,6 @@ usr_outside_verb	code/game/objects/structures/artstuff.dm	if(!check_rights_for(u
 usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_notice("The chosen painting is the following \n\n \
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
-usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
-usr_outside_verb	code/game/objects/structures/artstuff.dm	log_runtime("[usr] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
 usr_outside_verb	code/game/objects/structures/crates_lockers/crates.dm	var/mob/user = istype(usr, /mob) ? usr : null
 usr_outside_verb	code/game/objects/structures/ghost_pods/mysterious.dm	act_message(usr, null, others = span_warning("The blade shines brightly for a brief moment as %U% pulls it out of the stone!"))
 usr_outside_verb	code/game/objects/structures/medical_stand.dm	var/mob/user = usr
@@ -554,23 +551,6 @@ usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/pro
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	tgui_alert_async(usr, "The game hasn't started yet!")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_lines(usr, "Bombers", lines, "<b>Bombing List</b>")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	tgui_alert_async(usr, "The game hasn't started yet!")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_lines(usr, "Last Signalers", lines, "<b>Showing last [length(GLOB.lastsignalers)] signalers.</b>")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	tgui_alert_async(usr, "The game hasn't started yet!")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_lines(usr, "Law Changes", lines, "<b>Showing last [length(GLOB.lawchanges)] law changes.</b>")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_table(usr, "DNA Log", list("Name", "DNA", "Blood Type"), rows, "<b>Showing DNA from blood.</b>")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_table(usr, "Fingerprint Log", list("Name", "Fingerprints"), rows, "<b>Showing Fingerprints.</b>")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	tgui_alert_async(usr, "The game hasn't started yet!")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	dq_admin_report_html(usr, "Manifest", "<h4>Crew Manifest</h4>[GLOB.data_core.get_manifest()]")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, span_bold("AI [key_name(S, usr)]'s laws:"))
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, span_bold("CYBORG [key_name(S, usr)] [R.connected_ai?"(Slaved to: [R.connected_ai])":"(Independent)"]: laws:"))
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, span_bold("pAI [key_name(S, usr)]'s laws:"))
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, span_bold("SOMETHING SILICON [key_name(S, usr)]'s laws:"))
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, "[key_name(S, usr)]'s laws are null?? Contact a coder.")
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	S.laws.show_laws(usr)
-usr_outside_verb	code/modules/admin/verbs/list_exposer.dm	to_chat(usr, span_bold("No AIs located")) //Just so you know the thing is actually working and not just ignoring you.
 usr_outside_verb	code/modules/admin/verbs/secrets.dm	var/response = act_ask(usr, action, params, ui, "a13", /datum/om/prompt/choice/alert, message = "Delay by 40 seconds?", title = "There can, in fact, only be one", choices = list("Instant!", HIGHLANDER_DELAY_TEXT))
 usr_outside_verb	code/modules/admin/verbs/smite.dm	var/real_user = user ? user : usr
 usr_outside_verb	code/modules/admin/verbs/smite.dm	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
@@ -726,7 +706,6 @@ usr_outside_verb	code/modules/paperwork/adminpaper.dm	admin_write("end", usr)
 usr_outside_verb	code/modules/paperwork/clipboard.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/paperwork/clipboard.dm	var/mob/M = usr
 usr_outside_verb	code/modules/paperwork/clipboard.dm	add_fingerprint(usr)
-usr_outside_verb	code/modules/paperwork/faxmachine.dm	var/mob/living/L = usr
 usr_outside_verb	code/modules/paperwork/paper_sticky.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/paperwork/paperbin.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/paperwork/photography.dm	if(ishuman(usr))
@@ -762,15 +741,6 @@ usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/invocation(
 usr_outside_verb	code/modules/spells/targeted/projectile/dumbfire.dm	/datum/spell/targeted/projectile/dumbfire/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/spells/targeted/targeted.dm	/datum/spell/targeted/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
-usr_outside_verb	code/modules/tgui/external.dm	log_tgui(usr, href_list["message"],
-usr_outside_verb	code/modules/tgui/external.dm	if(usr.client.address != "127.0.0.1" && usr.client.address != "::1")
-usr_outside_verb	code/modules/tgui/external.dm	if(usr.client.tgui_cache_reloaded)
-usr_outside_verb	code/modules/tgui/external.dm	usr.client.tgui_cache_reloaded = TRUE
-usr_outside_verb	code/modules/tgui/external.dm	var/list/windows = usr.client.tgui_windows
-usr_outside_verb	code/modules/tgui/external.dm	window = usr.client.tgui_windows[window_id]
-usr_outside_verb	code/modules/tgui/external.dm	log_tgui(usr,
-usr_outside_verb	code/modules/tgui/external.dm	SStgui.force_close_window(usr, window_id)
-usr_outside_verb	code/modules/tgui/external.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No notes found.")
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No keys found.")
