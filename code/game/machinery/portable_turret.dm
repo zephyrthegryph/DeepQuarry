@@ -1260,7 +1260,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	Turret.enabled = FALSE
 	Turret.setup()
 
-	qdel(src) // qdel
+	replace_with(src, Turret)
 
 /obj/machinery/porta_turret_construct/screwdriver_act(mob/user, obj/item/tool)
 	switch(build_step)

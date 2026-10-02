@@ -164,7 +164,6 @@ qdel_src	code/game/machinery/computer/ai_core.dm	qdel(src)
 qdel_src	code/game/machinery/computer/arcade.dm	qdel(src)
 qdel_src	code/game/machinery/deployable.dm	qdel(src)
 qdel_src	code/game/machinery/deployable.dm	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
-qdel_src	code/game/machinery/doors/airlock.dm	qdel(src)
 qdel_src	code/game/machinery/doors/windowdoor.dm	qdel(src)
 qdel_src	code/game/machinery/feeder.dm	qdel(src)
 qdel_src	code/game/machinery/floor_light.dm	qdel(src)
@@ -172,7 +171,6 @@ qdel_src	code/game/machinery/iv_drip.dm	qdel(src)
 qdel_src	code/game/machinery/machinery.dm	qdel(src)
 qdel_src	code/game/machinery/nuclear_bomb.dm	qdel(src)
 qdel_src	code/game/machinery/pipe/construction.dm	qdel(src)
-qdel_src	code/game/machinery/portable_turret.dm	qdel(src) // qdel
 qdel_src	code/game/machinery/portable_turret.dm	qdel(src) // qdel
 qdel_src	code/game/machinery/portable_turret.dm	qdel(src)
 qdel_src	code/game/machinery/virtual_reality/vr_procs.dm	qdel(src)

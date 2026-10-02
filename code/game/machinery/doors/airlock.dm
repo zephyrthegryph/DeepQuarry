@@ -987,7 +987,7 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 
 		electronics.forceMove(get_turf(src))
 		own_take(src, nameof(electronics))
-	qdel(src)
+	replace_with(src, da)
 
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
 	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !arePowerSystemsOn() && density && (!bolts_bolted(src) || (has_stat(BROKEN)))))
