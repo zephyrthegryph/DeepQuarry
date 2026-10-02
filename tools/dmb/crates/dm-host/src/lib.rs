@@ -5,6 +5,8 @@ use std::io;
 
 pub mod file_stamp;
 pub mod journal;
+pub mod tool_path;
+pub use tool_path::legacy_tool_path;
 
 /// Windows' main-thread stack is too small for normal compiler expression trees.
 /// Use a fixed worker reservation while the process memory budget remains enforced.

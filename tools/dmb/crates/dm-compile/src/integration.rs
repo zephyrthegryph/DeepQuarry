@@ -417,16 +417,36 @@ fn byond_build(options: &Options) -> Result<(), Failure> {
             ));
         }
     }
-    let mut command = Command::new(&options.byond);
+    // Resolve an explicitly relative executable before changing the child cwd.
+    // Bare names continue to resolve through PATH.
+    let executable = if !options.byond.is_absolute()
+        && options
+            .byond
+            .parent()
+            .is_some_and(|parent| !parent.as_os_str().is_empty())
+    {
+        env::current_dir()
+            .map_err(|error| options.failure(FailureKind::Internal, error.to_string()))?
+            .join(&options.byond)
+    } else {
+        options.byond.clone()
+    };
+    let mut command = Command::new(dm_host::tool_path::legacy_tool_path(&executable));
+    if let Some(parent) = options.project.parent() {
+        command.current_dir(dm_host::tool_path::legacy_tool_path(parent));
+    }
     for (name, value) in &options.defines {
         command.arg(format!("-D{name}={value}"));
     }
-    let output = command.arg(&options.project).output().map_err(|error| {
-        options.failure(
-            FailureKind::Internal,
-            format!("starting BYOND compiler: {error}"),
-        )
-    })?;
+    let output = command
+        .arg(dm_host::tool_path::legacy_tool_path(&options.project))
+        .output()
+        .map_err(|error| {
+            options.failure(
+                FailureKind::Internal,
+                format!("starting BYOND compiler: {error}"),
+            )
+        })?;
     io::stdout()
         .write_all(&output.stdout)
         .map_err(|error| options.failure(FailureKind::Internal, error.to_string()))?;
