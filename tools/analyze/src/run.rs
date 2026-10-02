@@ -86,6 +86,14 @@ impl Engine {
         let t0 = Instant::now();
         let scopes_root = opts.scopes_from.clone().unwrap_or_else(|| opts.root.clone());
         let scopes = Scopes::load(&scopes_root.join("tools").join("ci").join("lint_scopes.toml"))?;
+        // Every ALLOW name some lint reads (the allow_annotations lint validates names against it).
+        let mut known: std::collections::BTreeSet<String> = scopes.known_allow.iter().cloned().collect();
+        for l in &reg.lints {
+            for a in l.meta().allow {
+                known.insert(a.to_string());
+            }
+        }
+        crate::lints::allow_annotations::set_known(known);
         let cache = Cache::open(&opts.root, &scopes.hash, !opts.no_cache);
         let prior = cache.load_meta();
         let mut plan = Plan::default();

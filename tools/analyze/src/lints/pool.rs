@@ -31,7 +31,7 @@ static META: Meta = Meta {
         RuleMeta { name: "new_pooled", hint: "take it with take(type) and give it back with .release()" },
         RuleMeta { name: "take_leak", hint: "release what the file takes (a leak by construction)" },
     ],
-    allow: &["pool"],
+    allow: &[], // the Python never lists `pool` in allow_annotations.LINTS, so ALLOW(pool) stays unknown
     lists: &["exempt_prefixes"],
 };
 

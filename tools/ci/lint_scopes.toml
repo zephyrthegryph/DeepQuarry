@@ -5,7 +5,7 @@
 
 [allow]
 # ALLOW names read by lints that are not (yet) engine lints; the engine's own lints declare theirs.
-known = []
+known = ["api", "cache", "check_grep", "containment", "cooldown", "doc_snippets", "decl", "derived_reads", "init", "instance_list", "interactions", "latent", "lifecycle", "om_internal", "ownership", "organ_slots", "pollers", "radial", "registry", "scheduler", "silent_catch", "spatial", "tracked", "system_boundary", "verb_category", "subsystem_fire", "ui_actions"]
 
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.

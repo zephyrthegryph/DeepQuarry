@@ -7,6 +7,10 @@ use std::time::Instant;
 use dq_analyze::baseline::Mode;
 use dq_analyze::run::{self, Engine, Options};
 
+/// Whether a full `analyze check` also runs the unused-ALLOW check on its own. Off while legacy Python
+/// lints remain (their usage is not visible to the engine); check_ratchets.sh handles it then.
+const NATIVE_UNUSED_DEFAULT: bool = false;
+
 const HELP: &str = "analyze: DeepQuarry's lint/analysis engine
 
 USAGE
@@ -154,6 +158,21 @@ fn main() -> ExitCode {
             failed.extend(lint_failed);
             print!("{}", text);
             write_allow_usage(&engine, &outcomes);
+            // The unused-ALLOW check needs every lint's usage: a full run only. While legacy Python
+            // lints remain, check_ratchets.sh keeps doing it (they record into DQ_ALLOW_USAGE).
+            let full_run = engine.opts.lints.is_empty();
+            if args.cmd == "check" && full_run && (has("--unused") || NATIVE_UNUSED_DEFAULT) && !has("--no-unused") && std::env::var("DQ_ALLOW_USAGE").is_err() {
+                use dq_analyze::lints::allow_annotations;
+                let used: Vec<dq_analyze::lint::AllowUse> = outcomes.iter().flat_map(|o| o.allow_used.iter().cloned()).collect();
+                let problems = allow_annotations::unused(&engine.tree, &used, &[], &|_| String::new());
+                for p in &problems {
+                    println!("{}", p);
+                }
+                println!("allow annotations: {} unused", problems.len());
+                if !problems.is_empty() {
+                    failed.push("allow_annotations --unused".to_string());
+                }
+            }
             if has("--timing") {
                 print_timing(&engine, &outcomes, t0.elapsed());
             }
