@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze: the semantic layer (type, proc and var resolution, generated reads, key resolution, handler signature, context field, context escape, ACT_TRY pairing and purity checks) and the generator API; analyze gen writes code/engine/_generated/ (reads.dm, system_accessors.dm)"
+  - bugfix: "The night-shift SYSTEM_ACCESSOR named a var the system does not have; it now names nightshift_active and the accessor proc is generated"

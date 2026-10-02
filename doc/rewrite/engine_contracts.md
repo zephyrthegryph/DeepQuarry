@@ -53,7 +53,7 @@ returns it with a null outcome and the same pending op fills the same record lat
 | E2 parts | `e0_perform_op`, `e0_action_options`, `e0_screentip_for`, `perform_intent`, `explain_click`, `assert_resolves`, `res_spend` |
 | E3 stats | `hold`, `hold_until`, `hold_override`, `release`, `release_all`, `held_by`, `held_by_source`, `hold_left` |
 | E4 actions | `e0_act_try`, `act_done`, `act_cancel`, `act_outcome_to_op` |
-| E5 | `night_shift_active` (the generated accessor) |
+| E5 | none left: `night_shift_active` is generated (`code/engine/_generated/system_accessors.dm`, `analyze gen system_accessors`) |
 | E6 kernel | `inbox_click`, `inbox_ui`, `inbox_menu`, `request_answer`, `kernel_drain_now`, `kernel_phase_run`, `kernel_time_advance` |
 
 ## Name clashes (what E0 chose)
@@ -97,3 +97,5 @@ returns it with a null outcome and the same pending op fills the same record lat
 - ids are hand-assigned integers until the generators exist.
 
 Not in E0 (named in section 19 but outside the task given): the compiled-table schema and entry struct, the `_generated` file formats, and the E5 query interface. They belong with E1 and E5, whose stubs above name the entry points.
+
+**E5 (landed).** The query interface is the semantic layer of the analysis engine, `tools/analyze/src/sem/` (README section "Semantic layer"): `analyze gen` writes `code/engine/_generated/` (`reads.dm`, `system_accessors.dm`), and the other engines add their generators as `tools/analyze/src/gens/<name>.rs` on the `Generator` API. The lints `sem/keys`, `sem/reads` and `sem/handlers` resolve the ids and keys inside declaration markers, check generated reads, handler signatures, context fields, context escape, ACT_TRY pairing and purity. `READS_AS` and `READS_FROM` are markers (`code/__defines/engine/markers.dm`). E4: `ACT_TRY` has to survive macro expansion as a call (`ACT_TRY`, `act_try`, `e0_act_try`) for the pairing check; add another expansion name to `[lint."sem/handlers".lists] try_calls` in `tools/ci/lint_scopes.toml`.
