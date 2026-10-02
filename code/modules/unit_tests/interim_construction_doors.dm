@@ -92,7 +92,9 @@
 
 /datum/unit_test/interim_wall_reversible_construction/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
+	var/restore_floor_type = run_loc_floor_bottom_left.type
 	var/turf/simulated/wall/wall = run_loc_floor_bottom_left.ChangeTurf(/turf/simulated/wall)
+	defer_cleanup(wall, TYPE_PROC_REF(/turf, ChangeTurf), restore_floor_type)
 	var/datum/material/steel = get_material_by_name(MAT_STEEL)
 	wall.set_material(steel, steel, steel)
 	TEST_ASSERT_EQUAL(wall.construction_stage, 6, "A reinforced wall must start with an intact outer grille")
