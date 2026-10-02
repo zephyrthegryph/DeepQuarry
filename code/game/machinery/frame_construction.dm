@@ -420,7 +420,7 @@
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
-	own_set(new_machine, nameof(new_machine.circuit), circuit)
+	own_transfer(src, nameof(circuit), new_machine, nameof(new_machine.circuit))
 
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
@@ -437,10 +437,10 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	own_set(B, nameof(B.circuit), circuit)
+	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	if(!alarm)
 		B.update_icon()
-	qdel(src)
+	replace_with(src, B)
 
 /// Builds a computer, and redraws the consoles beside it.
 /obj/structure/frame/proc/finish_computer()
@@ -450,11 +450,11 @@
 	B.set_dir(dir)
 	circuit.construct(B)
 	circuit.moveToNullspace()
-	own_set(B, nameof(B.circuit), circuit)
+	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
 	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)
 		LC.update_icon()
 	if(RC)
 		RC.update_icon()
-	qdel(src)
+	replace_with(src, B)
