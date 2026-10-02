@@ -29,3 +29,5 @@ changes:
   - bugfix: "Destroying an unfolded pAI card kills its personality without folding into a missing card."
   - bugfix: "Floor-light kits respect sticky-item refusal before creating fixtures."
   - bugfix: "PDA signaller transmissions retain actor-aware logging and their existing cooldown."
+  - bugfix: "Deleting a triggered pocket watch reveals its wearer, and deleting entopic displays unregisters their images."
+  - bugfix: "Automatic signaller beeps and delayed appearance feedback use their actual recipients."
