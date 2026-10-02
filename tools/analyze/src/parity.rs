@@ -84,9 +84,9 @@ pub struct Finding {
 }
 
 pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
-    let tagged = Pat::new(r"^([^\s:]+):(\d+): \[([\w/.\-]+)/(\w+)\]");
+    let tagged = Pat::new(r"^([^:]+):(\d+): \[([\w/.\-]+)/(\w+)\]");
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
-    let report = Pat::new(r"^([^\s:]+):(\d+): (\w+)\s*$");
+    let report = Pat::new(r"^([^:]+):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
     let mut out = Vec::new();
     for l in text.lines() {
