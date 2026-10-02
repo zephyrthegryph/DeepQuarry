@@ -25,11 +25,11 @@ DECLARE_INTERACTIONS(/obj/item/selectable_item, INTERACT_USE(null, PROC_REF(inte
 	var/mob/user = ask.answerer
 	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[ask.choice]
 	if(chosen_item)
-		user.drop_item()
+		if(!consume(src, user))
+			return
 		var/obj/item/result = new chosen_item(get_turf(user))
 		user.put_in_active_hand(result)
 		result.add_fingerprint(user)
-		consume(src, user)
 	return
 
 

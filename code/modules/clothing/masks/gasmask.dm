@@ -48,22 +48,35 @@ TYPE_TABLE_DECLARE(/obj/item/clothing/mask/gas, gasmask_filtered_gases, list(GAS
 	armor_spec = "melee=10;bullet=10;laser=10;bio=55"
 
 //Turn it into a hailer mask
-EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_REF(half_mask_add_hailer_item)))
+EXTEND_INTERACTIONS(/obj/item/clothing/mask/gas/half, INTERACT_ITEM(null, PROC_REF(half_mask_add_hailer_item), REQ_TARGET_STATE(/obj/item/clothing/mask/gas/half/proc/can_fit_hailer)))
 
-/// Old attackby: fit a hailer. Always fell through to ..() afterwards.
+/// Both ingredients must be releasable before fitting a hailer changes either one.
+/obj/item/clothing/mask/gas/half/proc/can_fit_hailer(mob/user, atom/target, obj/item/held)
+	if(!istype(held, /obj/item/hailer))
+		return TRUE
+	var/reason = loc?.release_refusal(src, user)
+	if(reason)
+		return reason
+	reason = held.loc?.release_refusal(held, user)
+	if(reason)
+		return reason
+	return TRUE
+
+/// Fit a hailer, retaining the original mask's slot and forensic evidence.
 /obj/item/clothing/mask/gas/half/proc/half_mask_add_hailer_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/hailer))
+		if(can_fit_hailer(user, src, I) != TRUE)
+			return FALSE
+		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(get_turf(src))
+		if(!I.loc.release_to(I, N, null, user))
+			consume(N, user)
+			return FALSE
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER)
-		user.drop_item(src)
-		var/obj/item/clothing/mask/gas/sechailer/N = new /obj/item/clothing/mask/gas/sechailer(src.loc)
 		transfer_blooddna_to(N)
 		transfer_fingerprints_to(N)
 		transfer_fibres_to(N)
 		rel_set(N, nameof(N.hailer), I)
-		I.forceMove(N)
-		if(!isturf(N.loc))
-			user.put_in_hands(N)
-		consume(src, user)
+		replace_with(src, N)
 	return FALSE
 
 //Plague Dr suit can be found in clothing/suits/bio.dm
