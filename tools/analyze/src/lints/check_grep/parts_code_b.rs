@@ -63,9 +63,7 @@ pub fn parts() -> Vec<Part> {
         )
         .flt(vec![
             Flt::DropLit("code/modules/admin/holder"),
-            // The engine's `.holder` is the part/action holder entity, not an admin holder.
-            Flt::DropLit("code/engine/"),
-            Flt::DropLit("code/tests/engine/"),
+            Flt::DropPaths("admin_holder_allow"),
             Flt::DropLit("proc/check_rights"),
             drop(r"ALLOW\([^)]*check_grep"),
             drop(r"nameof\([^)]*\.holder|\.holder\("),

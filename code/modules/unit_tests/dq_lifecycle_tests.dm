@@ -30,6 +30,9 @@ GLOBAL_LIST_INIT(dq_lifecycle_snapshot_ignored_globs, list(
 	// Type-keyed caches are recognised by their keys (dq_lifecycle_grew_by_type_keys()); this one is
 	// keyed by text. A type whose contents pick at random (gum's flavour) meets a new type each time.
 	"type_list_purity",
+	// /datum/type_table -> its hooks, built on first use (engine/actions/hooks.dm). Keyed by the type table of
+	// whatever the atom creates in Initialize(), so a randomised content type (an MRE's meal) is first seen after the warm-up.
+	"hook_tables",
 ))
 
 /// Cached (container, varname) pairs for every list-valued var on GLOB and on
