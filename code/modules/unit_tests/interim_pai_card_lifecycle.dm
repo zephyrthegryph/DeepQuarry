@@ -15,6 +15,9 @@
 	TEST_ASSERT_EQUAL(personality.card, card, "Normal folding must preserve the actual card relation")
 	TEST_ASSERT_EQUAL(card.pai, personality, "Normal folding must preserve the actual personality relation")
 	TEST_ASSERT_EQUAL(personality.stat, CONSCIOUS, "Normal folding must not kill the personality")
+	// Finish fixture teardown while its generated effects can still be registered.
+	qdel(card)
+	own_turf_contents(T)
 
 /// Record the real death event before the card's transaction removes its personality.
 /datum/unit_test/interim_pai_card_deletion
