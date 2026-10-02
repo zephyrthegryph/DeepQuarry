@@ -642,7 +642,7 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			// Only start pulling when nobody else has a grab on them
 			. = 1
 			for(var/obj/item/grab/G in M?.grabbed_by_list())
-				if(G?.grab_assailant() != usr)
+				if(G?.grab_assailant() != src)
 					. = 0
 				else
 					qdel(G)
@@ -651,9 +651,9 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 				return
 
 		if(!iscarbon(src))
-			M.LAssailant = null
+			rel_clear(M, nameof(M.LAssailant))
 		else
-			M.LAssailant = usr
+			rel_set(M, nameof(M.LAssailant), src)
 
 		if(M.no_pull_when_living && !(M.stat == DEAD)) //If it's now allowed to be pulled when living, and it's not dead yet, deny.
 			to_chat(src, span_warning("\The [M] won't let you just pull them!"))

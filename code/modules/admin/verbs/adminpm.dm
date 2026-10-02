@@ -176,7 +176,7 @@ ADMIN_VERB(cmd_admin_pm_panel, R_ADMIN|R_MOD|R_SERVER|R_EVENT, "Admin PM", "Dire
 	else
 		if(holder)	//sender is an admin but recipient is not. Do BIG RED TEXT
 			if(!recipient.current_ticket())
-				new /datum/ticket(msg, recipient, TRUE, 1)
+				new /datum/ticket(msg, recipient, TRUE, 1, mob)
 
 			to_chat(recipient, span_admin_pm_warning(span_huge(span_bold("-- Administrator private message --"))))
 			to_chat(recipient, span_admin_pm_warning("Admin PM from-" + span_bold("[key_name(src, recipient, 0)]") + ": [msg]"))

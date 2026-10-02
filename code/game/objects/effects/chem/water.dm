@@ -6,8 +6,10 @@
 	pass_flags = PASSTABLE | PASSGRILLE | PASSBLOB
 	/// Steps the spray still takes towards spray_target.
 	var/steps_left = 0
+	/// Actor responsible for player-directed chemical exposure.
+	var/mob/spray_actor
 	/// Deciseconds between steps.
-	var/step_delay = 5
+	var/step_delay = 0.5 SECONDS
 
 /// Where the spray is heading; while set, step_process() runs every step_delay.
 OM_FIELD_VIEW(/obj/effect/effect/water, turf, spray_target, CHANGE_EXPLICIT)
@@ -20,9 +22,10 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 /obj/effect/effect/water/proc/set_color() // Call it after you move reagents to it
 	icon += reagents.get_color()
 
-/obj/effect/effect/water/proc/set_up(turf/target, step_count = 5, delay = 5)
+/obj/effect/effect/water/proc/set_up(turf/target, step_count = 5, delay = 0.5 SECONDS, mob/user = null)
 	if(!target)
 		return
+	rel_set(src, nameof(spray_actor), user)
 	steps_left = step_count
 	step_delay = delay
 	rel_set(src, nameof(spray_target), target)
@@ -48,11 +51,11 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 		var/mob/M
 		for(var/atom/A in turf_contents_of_type(T, /atom))
 			if(!ismob(A) && A.simulated) // Mobs are handled differently
-				reagents.touch(A, reagents.total_volume)
+				reagents.touch(A, reagents.total_volume, spray_actor)
 			else if(ismob(A) && !M)
 				M = A
 		if(M)
-			reagents.splash(M, reagents.total_volume)
+			reagents.splash(M, reagents.total_volume, user = spray_actor)
 			expire(1 SECOND)
 			return stop_spray()
 		if(T == get_turf(target))
@@ -71,7 +74,7 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 
 /obj/effect/effect/water/Bump(atom/A)
 	if(reagents)
-		reagents.touch(A)
+		reagents.touch(A, user = spray_actor)
 	return ..()
 
 //Used by spraybottles.

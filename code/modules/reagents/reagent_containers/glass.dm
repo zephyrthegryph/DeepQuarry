@@ -128,7 +128,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 			return 1
 		if(reagents && reagents.total_volume)
 			balloon_alert(user, "splashed the solution onto [target]")
-			reagents.splash(target, reagents.total_volume)
+			reagents.splash(target, reagents.total_volume, user = user)
 			return 1
 	..()
 
@@ -152,7 +152,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	// Dipping is the Disarm/Grab/combat-mode declarations; outside combat mode it only labels.
 	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && (interaction.stance in list(I_DISARM, I_GRAB, I_HURT)))
 		balloon_alert(user, "[W] dipped into \the [src].")
-		reagents.touch_obj(W, reagents.total_volume)
+		reagents.touch_obj(W, reagents.total_volume, user)
 	attempt_changeling_test(W,user)
 	if(istype(W,/obj/item/storage/bag))
 		return FALSE
@@ -350,7 +350,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(nul
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is empty!"))
 		else
-			reagents.trans_to_obj(D, 5)
+			reagents.trans_to_obj(D, 5, user = user)
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 	else
@@ -408,7 +408,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 		if(reagents.total_volume < 1)
 			to_chat(user, span_warning("\The [src] is empty!"))
 		else
-			reagents.trans_to_obj(D, 5)
+			reagents.trans_to_obj(D, 5, user = user)
 			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
 			play_sfx(src, SFX_EFFECTS_SLOSH)
 		return INTERACTION_HANDLED_PASS

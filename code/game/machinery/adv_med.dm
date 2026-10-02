@@ -193,7 +193,7 @@ UI_DATA_REPLACE(/obj/machinery/bodyscanner, "merge:ui_data_obj_machinery_bodysca
 UI_ACT(/obj/machinery/bodyscanner, "ejectify", ui_act_ejectify)
 UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_ejectify)
 	. = TRUE
-	bodyscanner_eject(usr)
+	bodyscanner_eject(user)
 
 UI_ACT(/obj/machinery/bodyscanner, "print_p", ui_act_print_p)
 UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)

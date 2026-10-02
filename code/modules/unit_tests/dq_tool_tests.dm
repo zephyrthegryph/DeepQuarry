@@ -46,7 +46,7 @@
 	into += list(/datum/interaction/dq_tool_weld, /datum/interaction/dq_tool_dig)
 
 /obj/dq_tool_target/proc/note_tool(mob/actor, obj/item/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return TRUE
 
 /datum/unit_test/proc/dq_zero_speed(obj/item/tool)

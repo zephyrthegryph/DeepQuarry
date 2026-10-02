@@ -82,9 +82,9 @@ UI_DATA_REPLACE(/obj/item/implantpad, "merge:ui_data_obj_item_implantpad{has_cas
 /obj/item/implantpad/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat)
+	if(user.stat)
 		return FALSE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/item/implantpad, "tracking_id", ui_act_tracking_id, UI_ARG_NUM("delta"))

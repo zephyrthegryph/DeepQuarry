@@ -5,7 +5,7 @@ GLOBAL_VAR(bomb_set)
 	resistance_flags = INDESTRUCTIBLE
 	name = "\improper Nuclear Fission Explosive"
 	desc = "Uh oh. RUN!!!!"
-	icon = 'icons/obj/stationobjs.dmi' //chompedit, use the better one
+	icon = 'icons/obj/stationobjs.dmi'
 	icon_state = "nuclearbomb0"
 	density = TRUE
 	var/deployable = 0.0
@@ -53,7 +53,7 @@ GLOBAL_VAR(bomb_set)
 	if(timing)
 		GLOB.bomb_set = 1 //So long as there is one nuke timing, it means one nuke is armed.
 		timeleft--
-		play_sfx(src, SFX_ITEMS_TIMER) //chompedit... beep :)
+		play_sfx(src, SFX_ITEMS_TIMER)
 		if(timeleft <= 0)
 			explode()
 		for(var/mob/M in viewers(1, src))
@@ -260,11 +260,11 @@ UI_DATA_REPLACE(/obj/machinery/nuclearbomb, "timeleft:num", "merge:ui_data_obj_m
 /obj/machinery/nuclearbomb/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!usr.canmove || usr.stat || usr.restrained())
+	if(!user.canmove || user.stat || user.restrained())
 		return FALSE
-	if(get_dist(src, usr) > 1 && !isAI(usr))
+	if(get_dist(src, user) > 1 && !isAI(user))
 		return FALSE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/machinery/nuclearbomb, "auth", ui_act_auth)
@@ -274,9 +274,9 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
 		yes_code = 0
 		rel_clear(src, nameof(/obj/machinery/nuclearbomb::auth))
 	else
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/disk/nuclear))
-			usr.drop_item()
+			user.drop_item()
 			I.forceMove(src)
 			rel_set(src, nameof(/obj/machinery/nuclearbomb::auth), I)
 	return TRUE
@@ -315,7 +315,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_timer)
 	if(!auth() || !yes_code || timing == -1.0)
 		return TRUE
 	if(safety)
-		to_chat(usr, span_warning("The safety is still on."))
+		to_chat(user, span_warning("The safety is still on."))
 		return TRUE
 	timing = !timing
 	if(timing)
@@ -365,9 +365,9 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_wire)
 	var/wire = params["wire"]
 	if(!(wire in wires_list))
 		return TRUE
-	var/obj/item/I = usr.get_active_hand()
+	var/obj/item/I = user.get_active_hand()
 	if(!I?.has_tool_quality(TOOL_WIRECUTTER))
-		to_chat(usr, "You need wirecutters!")
+		to_chat(user, "You need wirecutters!")
 		return TRUE
 	LAZYSET(wires_list, wire, !LAZYACCESS(wires_list, wire))
 	if(safety_wire == wire && timing)
@@ -387,12 +387,12 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 	var/wire = params["wire"]
 	if(!(wire in wires_list))
 		return TRUE
-	var/obj/item/hand_item = usr.get_active_hand()
+	var/obj/item/hand_item = user.get_active_hand()
 	if(!hand_item?.has_tool_quality(TOOL_MULTITOOL))
-		to_chat(usr, "You need a multitool!")
+		to_chat(user, "You need a multitool!")
 		return TRUE
 	if(LAZYACCESS(wires_list, wire))
-		to_chat(usr, "You can't pulse a cut wire.")
+		to_chat(user, "You can't pulse a cut wire.")
 		return TRUE
 	if(light_wire == wire)
 		toggle_lighthack()
@@ -451,7 +451,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 	safety = 1
 	if(!lighthack)
 		icon_state = "nuclearbomb3"
-	world << sound('sound/machines/Alarm.ogg')//chompedit, nuke is big event, make it global
+	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
 	if(SSticker && SSticker.mode)
 		SSticker.mode.explosion_in_progress = 1
 	om_after(src, 10 SECONDS, PROC_REF(detonate))

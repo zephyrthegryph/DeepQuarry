@@ -55,7 +55,7 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 	for(var/mob/M in contents_of(src)) //Should only be one but whatever.
 		M.forceMove(src.loc)
 
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/item/a_gift, INTERACT_USE("Open", PROC_REF(interaction_open_gift)))

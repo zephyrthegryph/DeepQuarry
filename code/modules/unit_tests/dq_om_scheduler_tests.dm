@@ -8,36 +8,37 @@
 
 /// Timer target: logs on the entity, and on `other` when given.
 /datum/om_test_entity/proc/timer_hit(tag, datum/om_test_entity/other)
-	log += tag
-	other?.log += "[tag] via"
+	LAZYADD(log, tag)
+	if(other)
+		LAZYADD(other.log, "[tag] via")
 
 /proc/om_test_global_hit(datum/om_test_entity/L, tag)
-	L.log += tag
+	LAZYADD(L.log, tag)
 
 /datum/om_test_entity/var/step_calls = 0
 
 /datum/om_test_entity/proc/step_a(datum/om/task/T)
-	log += "a"
+	LAZYADD(log, "a")
 	return STEP_NEXT
 
 /datum/om_test_entity/proc/step_b(datum/om/task/T)
 	step_calls++
-	log += "b"
+	LAZYADD(log, "b")
 	return step_calls < 3 ? STEP_REPEAT(5) : STEP_NEXT
 
 /datum/om_test_entity/proc/step_fail(datum/om/task/T)
-	log += "f"
+	LAZYADD(log, "f")
 	return STEP_FAIL("nope")
 
 /datum/om_test_entity/proc/step_done(datum/om/task/T)
-	log += "d"
+	LAZYADD(log, "d")
 	return STEP_DONE
 
 /datum/om_test_entity/proc/task_completed(datum/om/task/T)
-	log += "complete"
+	LAZYADD(log, "complete")
 
 /datum/om_test_entity/proc/task_cancelled(datum/om/task/T)
-	log += "cancel:[T.reason]"
+	LAZYADD(log, "cancel:[T.reason]")
 
 /datum/om/task/test_steps
 	name = "test_steps"
@@ -71,10 +72,11 @@
 
 /datum/om/prompt/confirm/test_recheck/refused(reason)
 	var/datum/om_test_entity/E = subject
-	E?.log += "refused:[reason]"
+	if(E)
+		LAZYADD(E.log, "refused:[reason]")
 
 /datum/om_test_entity/proc/prompt_answered(datum/om/prompt/confirm/test_recheck/ask)
-	log += "answer:[ask.yes ? "Yes" : "No"]"
+	LAZYADD(log, "answer:[ask.yes ? "Yes" : "No"]")
 
 // ---------------------------------------------------------------- om_after
 
@@ -190,9 +192,9 @@
 	TEST_ASSERT(!after_if_alive(E, 1 SECONDS, /datum/om_test_entity/proc/timer_hit, with = list("x", arg)), "a deleted argument is refused up front")
 
 /datum/om_test_entity/proc/timer_hit_list(tag, list/others)
-	log += tag
+	LAZYADD(log, tag)
 	for(var/datum/om_test_entity/other in others)
-		other.log += "[tag] via"
+		LAZYADD(other.log, "[tag] via")
 
 /// A datum inside a list argument (one level deep, as a member or under a text
 /// key) is captured as a handle too: the pending record holds no reference to
@@ -240,43 +242,43 @@
 	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps, E)
 	TEST_ASSERT(istype(T), "the steps task starts: [T]")
 	scheduler_advance(1.1)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "a", "step a runs after its delay")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a", "step a runs after its delay")
 	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "a,b", "step b runs after its delay")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,b", "step b runs after its delay")
 	scheduler_advance(0.3)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "a,b", "STEP_REPEAT(5) waits")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,b", "STEP_REPEAT(5) waits")
 	scheduler_advance(1.2)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "a,b,b,b,complete", "repeats, then STEP_NEXT past the last step completes")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,b,b,b,complete", "repeats, then STEP_NEXT past the last step completes")
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "the task is done")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om/task/F = om_task_start(/datum/om/task/test_steps_fail, E)
 	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "a,f,cancel:nope", "STEP_FAIL cancels with its reason and later steps never run")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a,f,cancel:nope", "STEP_FAIL cancels with its reason and later steps never run")
 	TEST_ASSERT_EQUAL(F.reason, "nope", "the reason is kept")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	om_task_start(/datum/om/task/test_steps_done, E)
 	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "d,complete", "STEP_DONE completes early")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "d,complete", "STEP_DONE completes early")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om/task/C = om_task_start(/datum/om/task/test_steps, E)
 	scheduler_advance(0.5)
 	TEST_ASSERT(om_task_cancel(C, "stop"), "cancelling mid-task is safe")
 	scheduler_advance(3)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:stop", "no step runs after a cancel")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:stop", "no step runs after a cancel")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om_test_entity/thing = entity(made)
 	var/datum/om/task/W = om_task_start(/datum/om/task/test_steps, E, null, thing = thing)
 	var/datum/om/task/test_steps/WS = W
 	TEST_ASSERT_EQUAL(WS.thing, thing, "a datum param is task state")
 	qdel(thing)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:gone", "deleting a datum in the task's state cancels it at once")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:gone", "deleting a datum in the task's state cancels it at once")
 	TEST_ASSERT_NULL(WS.thing, "and clears the var, so on_cancel never sees a deleted datum")
 	scheduler_advance(1.5)
-	TEST_ASSERT_EQUAL(E.log.Join(","), "cancel:gone", "no step runs after")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "cancel:gone", "no step runs after")
 
 // ---------------------------------------------------------------- prompts
 
@@ -291,16 +293,16 @@
 	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the test scheduler collected it")
 	E.enabled = FALSE
 	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "disabled", "the requires are re-checked when the answer arrives")
-	TEST_ASSERT_EQUAL(E.log.Join(","), "refused:disabled", "on_answer did not run; on_refused did")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "refused:disabled", "on_answer did not run; on_refused did")
 	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "answered", "a prompt is answered once")
 
 	E.enabled = TRUE
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om/prompt/P2 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
 	TEST_ASSERT_NULL(om_prompt_answer(P2, "Yes"), "a passing re-check delivers the answer")
-	TEST_ASSERT_EQUAL(E.log.Join(","), "answer:Yes", "on_answer ran with the answer")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "answer:Yes", "on_answer ran with the answer")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om/prompt/P3 = om_ask_begin(E, user, /datum/om/prompt/confirm/test_recheck, /datum/om_test_entity/proc/prompt_answered, list("subject" = E))
 	qdel(user)
 	TEST_ASSERT_EQUAL(om_prompt_answer(P3, "Yes"), "gone", "an answer after the user is deleted does nothing")
@@ -332,7 +334,7 @@
 
 /datum/om_test_entity/proc/sleepy_hit(tag)
 	sleep(1)
-	log += "[tag] woke"
+	LAZYADD(log, "[tag] woke")
 
 /datum/om_test_entity/proc/step_sleepy(datum/om/task/T)
 	sleep(1)
@@ -359,7 +361,7 @@
 	TEST_ASSERT_EQUAL(sched.callees_slept, before + 1, "the sleeping timer callee is counted")
 	TEST_ASSERT("after" in E.log, "a timer due with the sleeping one still runs in the same pass")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/datum/om/task/T = om_task_start(/datum/om/task/test_steps_sleepy, E)
 	scheduler_advance(1.5)
 	set_global("om_expect_sleep", FALSE)

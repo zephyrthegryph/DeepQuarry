@@ -112,9 +112,9 @@ UI_DATA_REPLACE(/obj/item/radio/electropack, "merge:ui_data_obj_item_radio_elect
 /obj/item/radio/electropack/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!can_use(usr))
+	if(!can_use(user))
 		return FALSE
-	usr.set_machine(src)
+	user.set_machine(src)
 	return TRUE
 
 UI_ACT(/obj/item/radio/electropack, "power", ui_act_power)

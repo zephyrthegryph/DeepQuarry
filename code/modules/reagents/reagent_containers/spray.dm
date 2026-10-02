@@ -52,16 +52,16 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	play_sfx(src, SFX_EFFECTS_SPRAY2, 0.5)
 	if (A.density && proximity)
 		act_message(user, A, others = "%U% sprays %T% with [src].")
-		reagents.splash(A, amount_per_transfer_from_this)
+		reagents.splash(A, amount_per_transfer_from_this, user = user)
 	else
 		var/obj/effect/effect/water/chempuff/D = new/obj/effect/effect/water/chempuff(get_turf(src))
 		var/turf/my_target = get_turf(A)
 		D.create_reagents(amount_per_transfer_from_this)
 		if(!src)
 			return
-		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.set_color()
-		D.set_up(my_target, spray_size, 10)
+		D.set_up(my_target, spray_size, 1 SECOND, user)
 	return
 
 /obj/item/reagent_containers/spray/examine(mob/user)
@@ -80,7 +80,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray, INTERACT_VERB("Empty Spr
 		return
 	if(isturf(user.loc))
 		balloon_alert(user, "emptied \the [src] onto the floor.")
-		reagents.splash(user.loc, reagents.total_volume)
+		reagents.splash(user.loc, reagents.total_volume, user = user)
 
 //space cleaner
 /obj/item/reagent_containers/spray/cleaner
@@ -180,9 +180,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 		D.create_reagents(amount_per_transfer_from_this)
 		if(!src)
 			return
-		reagents.trans_to_obj(D, amount_per_transfer_from_this)
+		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.set_color()
-		D.set_up(my_target, rand(6, 8), 2)
+		D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 	return
 
 /obj/item/reagent_containers/spray/plantbgone
@@ -272,9 +272,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 			D.create_reagents(amount_per_transfer_from_this)
 			if(!src)
 				return
-			reagents.trans_to_obj(D, amount_per_transfer_from_this)
+			reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 			D.set_color()
-			D.set_up(my_target, rand(6, 8), 2)
+			D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 		return
 
 	else
@@ -290,9 +290,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 			else
 				my_target = pick(the_targets)
 			W.create_reagents(amount_per_transfer_from_this)
-			reagents.trans_to_obj(W, amount_per_transfer_from_this)
+			reagents.trans_to_obj(W, amount_per_transfer_from_this, user = user)
 			W.set_color()
-			W.set_up(my_target)
+			W.set_up(my_target, user = user)
 
 		return
 

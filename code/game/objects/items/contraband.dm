@@ -244,6 +244,6 @@ DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(inter
 		/obj/item/seeds/ambrosiavulgarisseed,
 		/obj/item/bodysnatcher)
 
-	user.put_in_hands(new contraband(usr.loc))
+	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, "You unwrap the package.")
 	consume(src, user)

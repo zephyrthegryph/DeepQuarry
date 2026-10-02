@@ -319,7 +319,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 /obj/machinery/computer/rdconsole_tg/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	// Check if the console is locked to block any actions occuring
 	if (locked && action != "toggleLock")
 		atom_say("Console is locked, cannot perform further actions.")
@@ -328,25 +328,25 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 
 UI_ACT(/obj/machinery/computer/rdconsole_tg, "toggleLock", ui_act_togglelock)
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_togglelock)
-	if(allowed(usr))
+	if(allowed(user))
 		set_locked(!locked)
 	else
-		to_chat(usr, span_boldwarning("Unauthorized Access."))
+		to_chat(user, span_boldwarning("Unauthorized Access."))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/rdconsole_tg, "researchNode", ui_act_researchnode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_researchnode)
-	research_node(params["node_id"], usr)
+	research_node(params["node_id"], user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/rdconsole_tg, "enqueueNode", ui_act_enqueuenode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_enqueuenode)
-	enqueue_node(params["node_id"], usr)
+	enqueue_node(params["node_id"], user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/rdconsole_tg, "dequeueNode", ui_act_dequeuenode, UI_ARG_TEXT("node_id"))
 UI_ACT_PROC(/obj/machinery/computer/rdconsole_tg, ui_act_dequeuenode)
-	dequeue_node(params["node_id"], usr)
+	dequeue_node(params["node_id"], user)
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/rdconsole_tg, "ejectDisk", ui_act_ejectdisk, UI_ARG_TEXT("type"))

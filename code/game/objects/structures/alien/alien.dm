@@ -73,9 +73,9 @@ DAMAGE_REACTION(/obj/structure/alien, DAMAGE_THROWN, PROC_REF(alien_thrown_at))
 					take_damage(get_integrity(), BRUTE, MELEE, sound_effect = FALSE)
 					return TRUE
 				if(locate_in_list(M.internal_organ_list(), /obj/item/organ/internal/xenos/resinspinner/replicant))
-					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(usr))
+					om_task_timed(M, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_hand_timed_done), done_args = list(user))
 					return TRUE
-			act_message(usr, null, others = span_warning("%U% claws at the [name]!"))
+			act_message(user, null, others = span_warning("%U% claws at the [name]!"))
 			take_damage(rand(5,10), BRUTE, MELEE, sound_effect = FALSE)
 	return TRUE
 

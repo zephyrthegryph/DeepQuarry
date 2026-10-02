@@ -32,8 +32,9 @@ GLOBAL_VAR_INIT(om_io_test_seq, 0)
 	return list(raw, null)
 
 /datum/om_test_entity/proc/io_done(result, error, tag, datum/om_test_entity/other)
-	log += "[tag]:[result]:[error]"
-	other?.log += "[tag] via"
+	LAZYADD(log, "[tag]:[result]:[error]")
+	if(other)
+		LAZYADD(other.log, "[tag] via")
 
 /datum/unit_test/om/io_job_delivers_and_parks
 

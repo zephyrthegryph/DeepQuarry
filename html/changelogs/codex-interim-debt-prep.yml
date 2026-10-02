@@ -1,0 +1,7 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Machine actions, item prompts, paperwork, library terminals and payment devices now use the acting player consistently."
+  - bugfix: "Cryo tubes correctly finish seating and buckling a newly inserted patient."
+  - bugfix: "Ticket actions refuse invalid authorization levels and stale escalation requests."
+  - bugfix: "Biopsy reports reach the scanner user after printing, and invalid beams stay stopped."

@@ -298,6 +298,8 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	return 1
 
 /proc/build_click(mob/user, buildmode, params, obj/object)
+	if(!user?.client)
+		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
 		if(H.cl() == user.client)
@@ -344,7 +346,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					T.flags |= ADMIN_SPAWNED
 					return
 				else if(istype(object,/obj))
-					log_admin("[key_name(usr)] qdel'd [object].")
+					log_admin("[key_name(user)] qdel'd [object].")
 					qdel(object)
 					return
 			else if(istype(object,/turf) && pa.Find("alt") && pa.Find("left"))
@@ -382,15 +384,15 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					var/obj/A = new holder.buildmode.objholder (get_turf(object))
 					A.set_dir(holder.builddir.dir)
 					A.flags |= ADMIN_SPAWNED
-					//log_admin("BUILDMODE: [key_name(usr)] spawned [A] at x:[object.x] y:[object.y] z:[object.z].") //Too spammy. We'll just log when they select the item initially.
+					//log_admin("BUILDMODE: [key_name(user)] spawned [A] at x:[object.x] y:[object.y] z:[object.z].") //Too spammy. We'll just log when they select the item initially.
 			else if(pa.Find("right") && !pa.Find("alt"))
 				if(isobj(object))
-					log_admin("BUILDMODE: [key_name(usr)] qdel'd [object].")
+					log_admin("BUILDMODE: [key_name(user)] qdel'd [object].")
 					qdel(object)
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type
 				to_chat(user, span_notice("[object]([object.type]) copied to buildmode."))
-				log_admin("BUILDMODE: [key_name(usr)] has copied [object.type] to buildmode.")
+				log_admin("BUILDMODE: [key_name(user)] has copied [object.type] to buildmode.")
 			else if(pa.Find("left") && pa.Find("alt"))
 				user.client.debug_variables(object)
 			else if(pa.Find("right") && pa.Find("alt"))
@@ -398,20 +400,20 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("middle"))
 				holder.buildmode.objholder = text2path("[object.type]")
 				if(holder.buildmode.objsay)
-					to_chat(usr, "[object.type]")
-					log_admin("BUILDMODE: [key_name(usr)] selected [object.type].")
+					to_chat(user, "[object.type]")
+					log_admin("BUILDMODE: [key_name(user)] selected [object.type].")
 
 		if(BUILDMODE_EDIT)
 			if(pa.Find("left")) //I cant believe this shit actually compiles.
 				if(object.vars.Find(holder.buildmode.varholder))
-					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to [holder.buildmode.valueholder]")
+					log_admin("[key_name(user)] modified [object.name]'s [holder.buildmode.varholder] to [holder.buildmode.valueholder]")
 					object.vars[holder.buildmode.varholder] = holder.buildmode.valueholder // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
 					to_chat(user, span_danger("[initial(object.name)] does not have a var called '[holder.buildmode.varholder]'"))
 			if(pa.Find("right"))
 				if(object.vars.Find(holder.buildmode.varholder))
-					log_admin("[key_name(usr)] modified [object.name]'s [holder.buildmode.varholder] to initial state.")
+					log_admin("[key_name(user)] modified [object.name]'s [holder.buildmode.varholder] to initial state.")
 					object.vars[holder.buildmode.varholder] = initial(object.vars[holder.buildmode.varholder]) // ALLOW(api): admin buildmode var edits
 					object.datum_flags |= DF_VAR_EDITED
 				else
@@ -421,7 +423,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("left"))
 				if(istype(object, /atom/movable))
 					rel_set(holder, nameof(holder.throw_atom), object)
-					log_admin("[key_name(usr)] selected [object] to throw.")
+					log_admin("[key_name(user)] selected [object] to throw.")
 			if(pa.Find("right"))
 				if(holder.throw_atom())
 					holder.throw_atom().throw_at(object, 10, 1) //No logging here since this gets spammed.
@@ -449,7 +451,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					holder.buildmode.floor_holder,
 					holder.buildmode.area_enabled,
 					holder.buildmode.area_name)
-				log_admin("BUILDMODE: [key_name(usr)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
+				log_admin("BUILDMODE: [key_name(user)] has created a room starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and ending at x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
@@ -471,7 +473,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 				B.flags |= ADMIN_SPAWNED
 				A.update_icon()
 				B.update_icon()
-				log_admin("BUILDMODE: [key_name(usr)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
+				log_admin("BUILDMODE: [key_name(user)] has created a ladder starting at x: [get_x(holder.buildmode.coordA())] y: [get_y(holder.buildmode.coordA())] z: [get_z(holder.buildmode.coordA())] and connecting to x: [get_x(holder.buildmode.coordB())] y: [get_y(holder.buildmode.coordB())] z: [get_z(holder.buildmode.coordB())].")
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordA))
 				rel_clear(holder.buildmode, nameof(/obj/effect/bmode/buildmode::coordB))
 
@@ -482,17 +484,17 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("right"))
 				if(holder.throw_atom() && istype(object, /atom/movable))
 					object.forceMove(holder.throw_atom())
-					log_admin("[key_name(usr)] moved [object] into [holder.throw_atom()].")
+					log_admin("[key_name(user)] moved [object] into [holder.throw_atom()].")
 
 		if(BUILDMODE_LIGHTS)
 			if(pa.Find("left"))
 				if(object)
 					object.set_light(holder.buildmode.new_light_range, holder.buildmode.new_light_intensity, holder.buildmode.new_light_color)
-					log_admin("[key_name(usr)] adjusted [object]'s L I C to [holder.buildmode.new_light_range], [holder.buildmode.new_light_intensity], [holder.buildmode.new_light_color].")
+					log_admin("[key_name(user)] adjusted [object]'s L I C to [holder.buildmode.new_light_range], [holder.buildmode.new_light_intensity], [holder.buildmode.new_light_color].")
 			if(pa.Find("right"))
 				if(object)
 					object.set_light(0, 0, "#FFFFFF")
-					log_admin("[key_name(usr)] adjusted [object]'s light to default.")
+					log_admin("[key_name(user)] adjusted [object]'s light to default.")
 
 		if(BUILDMODE_AI)
 			if(pa.Find("left"))
@@ -508,12 +510,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 								AI.go_wake()
 								L.datum_flags |= DF_VAR_EDITED //we'll consider messing with AI as varediting it.
 								to_chat(user, span_notice("\The [L]'s AI has been enabled."))
-								log_admin("[key_name(usr)] activated [L]'s AI.")
+								log_admin("[key_name(user)] activated [L]'s AI.")
 							else
 								AI.go_sleep()
 								L.datum_flags |= DF_VAR_EDITED
 								to_chat(user, span_notice("\The [L]'s AI has been disabled."))
-								log_admin("[key_name(usr)] deactivated [L]'s AI.")
+								log_admin("[key_name(user)] deactivated [L]'s AI.")
 							return
 						else
 							to_chat(user, span_warning("\The [L] is not AI controlled."))
@@ -526,7 +528,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.set_hostile(!AI.get_hostile())
 							L.datum_flags |= DF_VAR_EDITED
 							to_chat(user, span_notice("\The [L] is now [AI.get_hostile() ? "hostile" : "passive"]."))
-							log_admin("[key_name(usr)] made [L]'s AI hostile.")
+							log_admin("[key_name(user)] made [L]'s AI hostile.")
 						else
 							to_chat(user, span_warning("\The [L] is not AI controlled."))
 						return
@@ -556,7 +558,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("middle"))
 				if(pa.Find("shift"))
 					to_chat(user, span_notice("All selected mobs set to wander"))
-					log_admin("[key_name(usr)] told selected mobs to wander.")
+					log_admin("[key_name(user)] told selected mobs to wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
 						var/datum/ai_brain/AI = unit.ai_brain
 						if(AI)
@@ -564,7 +566,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("ctrl"))
 					to_chat(user, span_notice("Setting mobs set to NOT wander"))
-					log_admin("[key_name(usr)] told selected mobs to not wander.")
+					log_admin("[key_name(user)] told selected mobs to not wander.")
 					for(var/mob/living/unit in holder.selected_mobs)
 						var/datum/ai_brain/AI = unit.ai_brain
 						if(AI)
@@ -572,7 +574,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						unit.datum_flags |= DF_VAR_EDITED
 				if(pa.Find("alt") && isatom(object))
 					to_chat(user, span_notice("Adding [object] to Entity Narrate List!"))
-					log_admin("[key_name(usr)] added [object] to the entity narration list.")
+					log_admin("[key_name(user)] added [object] to the entity narration list.")
 					SSadmin_verbs.dynamic_invoke_verb(user.client, /datum/admin_verb/add_mob_for_narration, object)
 
 			if(pa.Find("right"))
@@ -583,7 +585,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 						return
 					else
 						var/mob/living/L = object
-						log_admin("[key_name(usr)] changed [L]'s faction from [L.faction] to [holder.copied_faction].")
+						log_admin("[key_name(user)] changed [L]'s faction from [L.faction] to [holder.copied_faction].")
 						L.faction = holder.copied_faction
 						L.datum_flags |= DF_VAR_EDITED
 						to_chat(user, span_notice("Pasted faction '[holder.copied_faction]'."))
@@ -599,7 +601,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.give_target(A)
 							i++
 						to_chat(user, span_notice("Commanded [i] mob\s to attack \the [A]."))
-						log_admin("[key_name(usr)] told selected mobs to attack [A].")
+						log_admin("[key_name(user)] told selected mobs to attack [A].")
 						var/image/orderimage = image(GLOB.buildmode_hud,A,"ai_targetorder")
 						orderimage.plane = PLANE_BUILDMODE
 						flick_overlay(orderimage, list(user.client), 8, TRUE)
@@ -626,7 +628,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							message += "."
 					if(j)
 						message += "[j] mob\s to follow \the [L]."
-					log_admin("[key_name(usr)] told selected mobs to attack/follow [L].")
+					log_admin("[key_name(user)] told selected mobs to attack/follow [L].")
 					to_chat(user, span_notice(message))
 					var/image/orderimage = image(GLOB.buildmode_hud,L,"ai_targetorder")
 					orderimage.plane = PLANE_BUILDMODE
@@ -651,7 +653,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 							AI.give_destination(T)
 							told++
 					to_chat(user, span_notice("Commanded [told] mob\s to move to \the [T], and manually placed [forced] of them."))
-					log_admin("[key_name(usr)] told selected mobs to move to [T].")
+					log_admin("[key_name(user)] told selected mobs to move to [T].")
 					var/image/orderimage = image(GLOB.buildmode_hud,T,"ai_turforder")
 					orderimage.plane = PLANE_BUILDMODE
 					flick_overlay(orderimage, list(user.client), 8, TRUE)
@@ -664,22 +666,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 			if(pa.Find("left") && !pa.Find("ctrl"))
 				if(ispath(holder.buildmode.objholder))
 					drop_from_sky(get_turf(object), holder.buildmode.objholder, FALSE, TRUE)
-					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] nonlethally.")
+					log_admin("[key_name(user)] dropped [holder.buildmode.objholder] onto [object] nonlethally.")
 			else if(pa.Find("right"))
 				if(ispath(holder.buildmode.objholder))
 					drop_from_sky(get_turf(object), holder.buildmode.objholder, TRUE, TRUE)
-					log_admin("[key_name(usr)] dropped [holder.buildmode.objholder] onto [object] lethally.")
+					log_admin("[key_name(user)] dropped [holder.buildmode.objholder] onto [object] lethally.")
 			else if(pa.Find("ctrl"))
 				holder.buildmode.objholder = object.type
 				to_chat(user, span_notice("[object]([object.type]) copied to buildmode."))
-				log_admin("[key_name(usr)] copied [object] ([object.type]) to buildmode.")
+				log_admin("[key_name(user)] copied [object] ([object.type]) to buildmode.")
 			if(pa.Find("middle"))
 				holder.buildmode.objholder = text2path("[object.type]")
-				log_admin("[key_name(usr)] selected [holder.buildmode.objholder].")
+				log_admin("[key_name(user)] selected [holder.buildmode.objholder].")
 				if(holder.buildmode.objsay)
-					to_chat(usr, "[object.type]")
+					to_chat(user, "[object.type]")
 
 /proc/build_drag(client/user, buildmode, atom/fromatom, atom/toatom, atom/fromloc, atom/toloc, fromcontrol, tocontrol, params)
+	if(!user)
+		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
 		if(H.cl() == user)
@@ -716,7 +720,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					i++
 
 			to_chat(user, span_notice("Band-selected [i] mobs."))
-			log_admin("[key_name(usr)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
+			log_admin("[key_name(user)] selected [i] mobs. x:[low_x] y:[low_y]- x:[hi_x] y:[hi_y] z:[z].")
 			return
 
 /// Buildmode's questions (title, message and choices set at each call); `step` carries the

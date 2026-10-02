@@ -75,7 +75,7 @@ UI_ACT_PROC(/datum/tgui_module/admin_shuttle_controller, ui_act_classicmove)
 			return
 		if(dest_key)
 			shuttle.set_destination(dest_key, ui.user)
-			shuttle.launch(src)
+			shuttle.launch(src, ui.user)
 	else if(istype(S, /datum/shuttle/autodock/overmap))
 		var/datum/shuttle/autodock/overmap/shuttle = S
 		var/list/possible_d = shuttle.get_possible_destinations()

@@ -56,17 +56,18 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob, INTERACT_OBSERVER("Inhabit", PROC_RE
 	if(!evaluate_ghost_join(user))
 		return FALSE
 
-	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), om_callable(src, PROC_REF(reply_ghost_join)), 20 SECONDS)
+	tgui_alert_async(user, "Would you like to become [src]? It is bound to [revivedby].", "Become Mob", list("Yes","No"), om_callable(src, PROC_REF(reply_ghost_join), user), 20 SECONDS)
 	return TRUE
 
 /// A reply to an async alert request was received
-/mob/living/simple_mob/proc/reply_ghost_join(response)
+/mob/living/simple_mob/proc/reply_ghost_join(mob/observer/dead/user, response)
 	if(response != "Yes")
 		return // ok
 
-	var/mob/observer/dead/D = usr
-	if(evaluate_ghost_join(D))
-		ghost_join(D)
+	if(!ghostjoin || !user?.client || can_ghost_join(user, src, null) != TRUE)
+		return
+	if(evaluate_ghost_join(user))
+		ghost_join(user)
 
 /// Inject a ghost into this mob. Assumes you've done all sanity before this point.
 /mob/living/simple_mob/proc/ghost_join(mob/observer/dead/D)

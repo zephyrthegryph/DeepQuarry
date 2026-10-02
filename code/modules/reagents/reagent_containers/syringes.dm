@@ -236,7 +236,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 					if(ishuman(T))
 						var/mob/living/carbon/human/H = T
 						if(H.species && !H.should_have_organ(O_HEART))
-							H.reagents.trans_to_obj(src, amount)
+							H.reagents.trans_to_obj(src, amount, user = user)
 							draw_blood_done(user, T, amount, FALSE)
 						else if(H != user)
 							om_task_start(/datum/om/task/timed/syringe_draw, user, T, duration = time, amount = amount)
@@ -256,7 +256,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 					to_chat(user, span_notice("You cannot directly remove reagents from this object."))
 					return
 
-				var/trans = target.reagents.trans_to_obj(src, amount_per_transfer_from_this)
+				var/trans = target.reagents.trans_to_obj(src, amount_per_transfer_from_this, user = user)
 				to_chat(user, span_notice("You fill the syringe with [trans] units of the solution."))
 				update_icon()
 
@@ -342,7 +342,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 				// Then 5u per cycle, each cycle a timed action.
 				om_task_start(/datum/om/task/timed/syringe_inject, user, target, warmup = warmup_time, cycle_time = cycle_time, contained = contained)
 				return
-			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
+			var/trans = reagents.trans_to_obj(target, amount_per_transfer_from_this, user = user)
 			inject_finish(user, target, trans, contained)
 
 	return
@@ -465,6 +465,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 /obj/item/reagent_containers/syringe/proc/dirty(mob/living/carbon/human/target, obj/item/organ/external/eo)
 	if(!ishuman(loc))
 		return //Avoid borg syringe problems.
+	var/mob/living/carbon/human/user = loc
 	LAZYINITLIST(targets)
 
 	//We can't keep a mob reference, that's a bad idea, so instead name+ref should suffice.
@@ -485,7 +486,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 		infect_chance = 0
 	infect_chance += (targets.len-1)*10    //Extra 10% per extra target
 	if(prob(infect_chance))
-		log_and_message_admins("[loc] infected [target]'s [eo.name] with \the [src].", usr)
+		log_and_message_admins("[loc] infected [target]'s [eo.name] with \the [src].", user)
 		infect_limb(eo)
 
 	//75% chance to spread a virus if we have one

@@ -7,7 +7,7 @@
 /// A probe whose parent and child types each declare entry interactions.
 /obj/dq_entry_probe
 	name = "entry probe"
-	var/list/done = list()
+	var/list/done
 	var/allow_second = TRUE
 	var/gate_stops = FALSE
 	var/gate_calls = 0
@@ -39,11 +39,11 @@
 	..()
 
 /obj/dq_entry_probe/proc/note_entry(mob/actor, atom/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return TRUE
 
 /obj/dq_entry_probe/proc/decline_entry(mob/actor, atom/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return FALSE
 
 /obj/dq_entry_probe/proc/second_allowed(mob/actor, atom/target, obj/item/held)
@@ -51,14 +51,14 @@
 
 /obj/item/dq_entry_probe_item
 	name = "entry probe item"
-	var/list/done = list()
+	var/list/done
 
 /obj/item/dq_entry_probe_item/declare_interactions(list/into)
 	into += list(/datum/interaction/dq_entry/self_use)
 	..()
 
 /obj/item/dq_entry_probe_item/proc/note_self(mob/actor, atom/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return TRUE
 
 /datum/interaction/dq_entry
@@ -137,16 +137,16 @@
 	var/obj/item/dq_entry_probe_item/other = allocate(/obj/item/dq_entry_probe_item, T)
 
 	TEST_ASSERT(probe.attackby(crowbar, H), "a crowbar is used up")
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_child_crowbar", "the child's crowbar handler answers, not the parent's any-item one")
-	probe.done.Cut()
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_child_crowbar", "the child's crowbar handler answers, not the parent's any-item one")
+	LAZYCLEARLIST(probe.done)
 	probe.attackby(wrench, H)
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_child_declines,dq_entry_parent_item", "a declining effect falls through to the parent, as ..() did")
-	probe.done.Cut()
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_child_declines,dq_entry_parent_item", "a declining effect falls through to the parent, as ..() did")
+	LAZYCLEARLIST(probe.done)
 	probe.allow_second = FALSE
 	TEST_ASSERT(probe.attackby(screwdriver, H), "a blocked handler still uses the input")
 	TEST_ASSERT_EQUAL(length(probe.done), 0, "a blocked handler stops there, as an early return did")
 	probe.attackby(other, H)
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_parent_item", "anything else reaches the parent's handler")
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_parent_item", "anything else reaches the parent's handler")
 	var/datum/interaction_resolution/resolution = interactions_for(H, probe, crowbar)
 	TEST_ASSERT_NULL(try_interaction(H, probe, crowbar, INPUT_ACTION_USE, null, TRUE), "the resolver's Use leaves entries to their entry procs")
 	TEST_ASSERT(INTERACTION(/datum/interaction/dq_entry/child_crowbar) in resolution.available, "but they are listed")
@@ -161,16 +161,16 @@
 
 	probe.gate_stops = TRUE
 	TEST_ASSERT(probe.attack_hand(H), "the ungated handler answers")
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_child_ungated_hand", "without the gate")
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_child_ungated_hand", "without the gate")
 	TEST_ASSERT_EQUAL(probe.gate_calls, 0, "the gate didn't run")
-	probe.done.Cut()
+	LAZYCLEARLIST(probe.done)
 	probe.allow_second = FALSE
 	TEST_ASSERT(probe.attack_hand(H), "the gate stopped the touch")
 	TEST_ASSERT_EQUAL(length(probe.done), 0, "so the parent's gated handler didn't run")
 	TEST_ASSERT_EQUAL(probe.gate_calls, 1, "the gate ran once")
 	probe.gate_stops = FALSE
 	TEST_ASSERT(probe.attack_hand(H), "the parent's handler answers")
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_parent_hand", "behind the gate")
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_parent_hand", "behind the gate")
 
 	var/obj/dq_entry_probe/far = allocate(/obj/dq_entry_probe, locate(T.x + 3, T.y, T.z))
 	var/datum/interaction/parent_hand = INTERACTION(/datum/interaction/dq_entry/parent_hand)
@@ -190,10 +190,10 @@
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
 
 	TEST_ASSERT(item.attack_self(H), "attack_self is answered")
-	TEST_ASSERT_EQUAL(jointext(item.done, ","), "dq_entry_self_use", "by the self-use interaction")
+	TEST_ASSERT_EQUAL(jointext(item.done || list(), ","), "dq_entry_self_use", "by the self-use interaction")
 	TEST_ASSERT_EQUAL(probe.click_alt(H), CLICK_ACTION_SUCCESS, "click_alt is answered")
 	probe.MouseDrop_T(wrench, H)
-	TEST_ASSERT_EQUAL(jointext(probe.done, ","), "dq_entry_child_alt,dq_entry_child_drag", "the alt and drag interactions ran")
+	TEST_ASSERT_EQUAL(jointext(probe.done || list(), ","), "dq_entry_child_alt,dq_entry_child_drag", "the alt and drag interactions ran")
 
 // ---- Snapshot harness ----
 

@@ -106,12 +106,12 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank))
 
 		to_chat(src, span_blue("Vote successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
 /// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
@@ -163,12 +163,12 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_textreply (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_textreply")] (id ,datetime ,pollid ,ckey ,ip ,replytext ,adminrank) VALUES (null, Now(), :pollid, :ckey, :ip, :replytext, :adminrank)",
 			list("pollid" = pollid, "ckey" = src.ckey, "ip" = client.address, "replytext" = replytext, "adminrank" = adminrank))
 
 		to_chat(src, span_blue("Feedback logging successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
 
 
 /// A prompt flow (flow_io.dm): each read re-runs it when it arrives; the write goes last.
@@ -221,10 +221,9 @@
 
 		if(!client)
 			return
-		flow_sql("INSERT INTO erro_poll_vote (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
+		flow_sql("INSERT INTO [format_table_name("erro_poll_vote")] (id ,datetime ,pollid ,optionid ,ckey ,ip ,adminrank, rating) VALUES (null, Now(), :pollid, :optionid, :ckey, :ip, :adminrank, :rating)",
 			list("pollid" = pollid, "optionid" = optionid, "ckey" = src.ckey, "ip" = client.address, "adminrank" = adminrank, "rating" = rating))
 
 		to_chat(src, span_blue("Vote successful."))
 		if(poll_browser_dialog)
-			om_after(poll_browser_dialog, 1, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)
-
+			om_after(poll_browser_dialog, 0.1 SECONDS, TYPE_PROC_REF(/datum/poll_browser_dialog, load_poll_detail), pollid)

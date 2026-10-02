@@ -188,7 +188,7 @@
 	"Public" procs
 */
 // Queue shuttle for undock and launch by shuttle subsystem.
-/datum/shuttle/autodock/proc/launch(user)
+/datum/shuttle/autodock/proc/launch(user, mob/actor)
 	if (!can_launch()) return
 
 	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
@@ -197,7 +197,7 @@
 	undock()
 
 // Queue shuttle for forced undock and launch by shuttle subsystem.
-/datum/shuttle/autodock/proc/force_launch(user)
+/datum/shuttle/autodock/proc/force_launch(user, mob/actor)
 	if (!can_force()) return
 
 	rel_set(src, nameof(in_use), user)	//obtain an exclusive lock on the shuttle
@@ -205,7 +205,7 @@
 	set_process_state(FORCE_LAUNCH)
 
 // Cancel queued launch.
-/datum/shuttle/autodock/cancel_launch(user)
+/datum/shuttle/autodock/cancel_launch(user, mob/actor)
 	if (!can_cancel()) return
 
 	moving_status = SHUTTLE_IDLE

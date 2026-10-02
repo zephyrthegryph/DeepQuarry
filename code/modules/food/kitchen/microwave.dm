@@ -382,7 +382,7 @@ UI_ACT_PROC(/obj/machinery/microwave, ui_act_cook)
 
 UI_ACT(/obj/machinery/microwave, "dispose", ui_act_dispose)
 UI_ACT_PROC(/obj/machinery/microwave, ui_act_dispose)
-	dispose()
+	dispose(user = user)
 	return TRUE
 
 /***********************************
@@ -537,14 +537,14 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 	post_state_change()
 	soundloop.stop()
 
-/obj/machinery/microwave/proc/dispose(message = TRUE)
+/obj/machinery/microwave/proc/dispose(message = TRUE, mob/user)
 	for (var/atom/movable/A in cookingContents())
 		A.forceMove(loc)
 	if (src.reagents.total_volume)
 		src.dirty++
 	src.reagents.clear_reagents()
 	if(message)
-		to_chat(usr, span_notice("You dispose of \the [src]'s contents."))
+		to_chat(user, span_notice("You dispose of \the [src]'s contents."))
 	SStgui.update_uis(src)
 
 /obj/machinery/microwave/proc/muck_finish()
@@ -593,7 +593,7 @@ DECLARE_REPEAT(/obj/machinery/microwave, "loop_wait", cook_loop, "loop_running")
 
 	act_message(user, src, MSG_SELF(span_notice("You have opened %T% and taken out [english_list(cookingContents())].")), \
 		MSG_OTHERS(span_notice("%U% opened %T% and has taken out [english_list(cookingContents())].")))
-	dispose()
+	dispose(user = user)
 
 /obj/machinery/microwave/CanPass(atom/movable/mover, turf/target, height=0, air_group=0)
 	if(!mover)

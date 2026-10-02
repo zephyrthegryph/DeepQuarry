@@ -13,21 +13,21 @@
 	flags = NOBLUDGEON
 
 /obj/item/mindbinder/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	usr.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
+	user.setClickCooldown(DEFAULT_ATTACK_COOLDOWN)
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/mindbinder/proc/toggle_self_bind()
+/obj/item/mindbinder/proc/toggle_self_bind(mob/user)
 	if(length(possessed_voice) == 1)
-		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
+		to_chat(user,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 	self_bind = !self_bind
 	if(self_bind)
-		to_chat(usr,span_notice("You prepare the device to use your own mind!"))
+		to_chat(user,span_notice("You prepare the device to use your own mind!"))
 	else
-		to_chat(usr,span_notice("You disable the device from using your mind."))
+		to_chat(user,span_notice("You disable the device from using your mind."))
 	update_icon()
 
-/obj/item/mindbinder/pre_attack(atom/A)
+/obj/item/mindbinder/pre_attack(atom/A, mob/user, params)
 	if(istype(A, /obj/structure/gargoyle))
 		var/obj/structure/gargoyle/G = A
 		A = G.WR_gargoyle
@@ -37,22 +37,22 @@
 	if(istype(A, /mob/living))
 		var/mob/living/M = A
 		if(!M.allow_mind_transfer)
-			to_chat(usr,span_danger("The target's mind is too complex to be affected!"))
+			to_chat(user,span_danger("The target's mind is too complex to be affected!"))
 			return
-		if(usr == M)
-			toggle_self_bind()
+		if(user == M)
+			toggle_self_bind(user)
 			return
 		if(length(possessed_voice) == 1 || self_bind)
-			bind_mob(M)
+			bind_mob(M, user)
 		else
-			store_mob(M)
+			store_mob(M, user)
 		return
 	if(istype(A, /obj/item))
 		var/obj/item/I = A
 		if(length(possessed_voice) == 1 || self_bind)
-			bind_item(I)
+			bind_item(I, user)
 		else
-			store_item(I)
+			store_item(I, user)
 		return
 	return
 
@@ -114,25 +114,25 @@
 	act_message(user, src, MSG_SELF(span_notice("You begin to download [target]'s mind!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]'s head. The device beginning to let out a series of beeps!")))
 	om_task_timed(user, 30 SECONDS, target = target, receiver = src, on_done = PROC_REF(store_mob_timed_done), done_args = list(target, user))
 
-/obj/item/mindbinder/proc/bind_mob(mob/living/target)
+/obj/item/mindbinder/proc/bind_mob(mob/living/target, mob/user)
 	if(length(possessed_voice) == 0 && !self_bind)
-		to_chat(usr,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
+		to_chat(user,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
 		return
 
 	if(target.ckey)
-		to_chat(usr,span_warning("The device beeps a warning that the target is already sentient!"))
+		to_chat(user,span_warning("The device beeps a warning that the target is already sentient!"))
 		return
 
 	if(self_bind)
-		om_ask(usr, /datum/om/prompt/confirm/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), subject = target)
+		om_ask(user, /datum/om/prompt/confirm/mindbinder/self_bind/mob, PROC_REF(self_bind_mob_confirmed), subject = target)
 		return
 
-	act_message(usr, src, MSG_SELF(span_notice("You begin to bind someone's mind into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
-	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [target] with a Mind Binder.")
+	act_message(user, src, MSG_SELF(span_notice("You begin to bind someone's mind into [target]!")), MSG_OTHERS(span_warning("%U% presses %T% against [target]. The device beginning to let out a series of beeps!")))
+	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [target] with a Mind Binder.", user)
 	var/doTime = 30 SECONDS
 	if(ishuman(target) || issilicon(target) || isanimal(target))
 		doTime = 5 SECONDS
-	om_task_timed(usr, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, usr))
+	om_task_timed(user, doTime, target = target, receiver = src, on_done = PROC_REF(bind_mob_timed_done2), done_args = list(target, user))
 
 	update_icon()
 
@@ -159,26 +159,26 @@
 		to_chat(usr_mob,span_notice("Mind bound to [target]."))
 
 // Handle placing a mind into an item
-/obj/item/mindbinder/proc/bind_item(obj/item/item)
+/obj/item/mindbinder/proc/bind_item(obj/item/item, mob/user)
 	if(length(possessed_voice) == 0 && !self_bind)
-		to_chat(usr,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
+		to_chat(user,span_warning("The device beeps a warning that it doesn't contain a mind to bind!"))
 		return
 
 	if(item.possessed_voice && length(item.possessed_voice))
-		to_chat(usr,span_warning("The device beeps a warning that the target is already sentient!"))
+		to_chat(user,span_warning("The device beeps a warning that the target is already sentient!"))
 		return
 
 	if(is_type_in_list(item, GLOB.item_vore_blacklist))
-		to_chat(usr,span_danger("The item resists your transfer attempt!"))
+		to_chat(user,span_danger("The item resists your transfer attempt!"))
 		return
 
 	if(self_bind)
-		om_ask(usr, /datum/om/prompt/confirm/mindbinder/self_bind/item, PROC_REF(self_bind_item_confirmed), subject = item)
+		om_ask(user, /datum/om/prompt/confirm/mindbinder/self_bind/item, PROC_REF(self_bind_item_confirmed), subject = item)
 		return
 
-	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.")
-	act_message(usr, src, MSG_SELF(span_notice("You begin to bind someone's mind into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
-	om_task_timed(usr, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, usr))
+	log_and_message_admins("attempted to bind [key_name(src.possessed_voice[1])] to \an [item] with a Mind Binder.", user)
+	act_message(user, src, MSG_SELF(span_notice("You begin to bind someone's mind into [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
+	om_task_timed(user, 5 SECONDS, target = item, receiver = src, on_done = PROC_REF(bind_item_timed_done2), done_args = list(item, user))
 
 	update_icon()
 
@@ -196,16 +196,16 @@
 		to_chat(usr_mob,span_notice("Mind bound to [item]."))
 
 // Handle taking a mind out of a mob
-/obj/item/mindbinder/proc/store_mob(mob/living/target)
+/obj/item/mindbinder/proc/store_mob(mob/living/target, mob/user)
 	if(length(possessed_voice) != 0)
-		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
+		to_chat(user,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 
 	if(!target.mind || (target.mind.name in GLOB.prevent_respawns))
-		to_chat(usr,span_warning("The device beeps a warning that the target isn't sentient."))
+		to_chat(user,span_warning("The device beeps a warning that the target isn't sentient."))
 		return
 
-	om_ask(usr, /datum/om/prompt/confirm/mindbinder/store_mob, PROC_REF(store_mob_confirmed), victim = target)
+	om_ask(user, /datum/om/prompt/confirm/mindbinder/store_mob, PROC_REF(store_mob_confirmed), victim = target)
 
 	update_icon()
 
@@ -215,9 +215,9 @@
 		to_chat(usr_mob,span_notice("Mind successfully stored!"))
 
 // Handle taking a mind out of an item
-/obj/item/mindbinder/proc/store_item(obj/item/item)
+/obj/item/mindbinder/proc/store_item(obj/item/item, mob/user)
 	if(length(possessed_voice) != 0)
-		to_chat(usr,span_warning("The device beeps a warning that there is already a mind loaded!"))
+		to_chat(user,span_warning("The device beeps a warning that there is already a mind loaded!"))
 		return
 
 	if(!(item.possessed_voice && length(item.possessed_voice)))
@@ -225,9 +225,9 @@
 
 	var/mob/living/voice/target = item.possessed_voice[1]
 
-	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.")
-	act_message(usr, src, MSG_SELF(span_notice("You begin to download someone's mind from [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
-	om_task_start(/datum/om/task/timed/mindbinder_store_item, usr, item, receiver = src, target_arg = target)
+	log_and_message_admins("attempted to take [key_name(target)]'s mind out of \an [item] with a Mind Binder.", user)
+	act_message(user, src, MSG_SELF(span_notice("You begin to download someone's mind from [item]!")), MSG_OTHERS(span_warning("%U% presses %T% against [item]. The device beginning to let out a series of beeps!")))
+	om_task_start(/datum/om/task/timed/mindbinder_store_item, user, item, receiver = src, target_arg = target)
 
 	update_icon()
 

@@ -185,7 +185,7 @@ ADMIN_VERB(announce, R_SERVER|R_ADMIN|R_EVENT, "Announce", "Announce your desire
 	if(!check_rights_for(user, R_SERVER))
 		message = sanitize(message, 500, extra = 0)
 	message = replacetext(message, "\n", "<br>") // required since we're putting it in a <p> tag
-	send_ooc_announcement(message, "From [user.holder.fakekey ? "Administrator" : usr.key]")
+	send_ooc_announcement(message, "From [user.holder.fakekey ? "Administrator" : user.key]")
 	log_admin("Announce: [key_name(user)] : [message]")
 	feedback_add_details("admin_verb","A") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -937,5 +937,4 @@ ADMIN_VERB(set_uplink, R_ADMIN|R_DEBUG, "Set Uplink", "Allows admins to set up a
 	GLOB.traitors.spawn_uplink(traitor_human)
 	traitor_human.mind.tcrystals = DEFAULT_TELECRYSTAL_AMOUNT
 	traitor_human.mind.accept_tcrystals = 1
-	message_admins("[key_name(usr)] has given [traitor_human.ckey] an uplink.")
-
+	message_admins("[key_name(user)] has given [traitor_human.ckey] an uplink.")

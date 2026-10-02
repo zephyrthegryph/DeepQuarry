@@ -271,7 +271,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 /datum/shuttle/proc/fuel_check()
 	return 1 //fuel check should always pass in non-overmap shuttles (they have magic engines)
 
-/datum/shuttle/proc/cancel_launch(user)
+/datum/shuttle/proc/cancel_launch(user, mob/actor)
 	// If we are past warming up its too late to cancel.
 	if (moving_status == SHUTTLE_WARMUP)
 		moving_status = SHUTTLE_IDLE

@@ -49,7 +49,7 @@
 	)
 
 /obj/dq_combat_probe/proc/note_interaction(mob/actor, obj/item/held, datum/interaction/interaction)
-	done += interaction.id
+	LAZYADD(done, interaction.id)
 	return TRUE
 
 /// Test mobs have no HUD; unarmed attacks read the targeted zone from one.

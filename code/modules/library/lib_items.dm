@@ -427,10 +427,10 @@ UI_DATA_REPLACE(/obj/item/book/bundle, "page:num", "merge:ui_data_obj_item_book_
 /obj/item/book/bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!((is_in_holder(src, usr)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, usr)))))
-		to_chat(usr, span_notice("You need to hold it in your hands!"))
+	if(!((is_in_holder(src, user)) || (istype(src.loc, /obj/item/folder) && (is_in_holder(src.loc, user)))))
+		to_chat(user, span_notice("You need to hold it in your hands!"))
 		return FALSE
-	usr.set_machine(src)
+	user.set_machine(src)
 	return TRUE
 
 UI_ACT(/obj/item/book/bundle, "next_page", ui_act_next_page)

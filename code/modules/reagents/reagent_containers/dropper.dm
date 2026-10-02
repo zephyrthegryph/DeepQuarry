@@ -46,7 +46,7 @@
 			return
 
 		else
-			trans = reagents.trans_to_obj(target, amount_per_transfer_from_this)
+			trans = reagents.trans_to_obj(target, amount_per_transfer_from_this, user = user)
 			to_chat(user, span_notice("You transfer [trans] units of the solution."))
 
 	else // Taking from something
@@ -59,7 +59,7 @@
 			to_chat(user, span_notice("[target] is empty."))
 			return
 
-		var/trans = target.reagents.trans_to_obj(src, amount_per_transfer_from_this)
+		var/trans = target.reagents.trans_to_obj(src, amount_per_transfer_from_this, user = user)
 
 		to_chat(user, span_notice("You fill the dropper with [trans] units of the solution."))
 
@@ -84,7 +84,7 @@
 				safe_thing = victim.get_equipped_item(SLOT_ID_EYES)
 
 		if(safe_thing)
-			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30)
+			trans = reagents.splash(safe_thing, min(amount_per_transfer_from_this, reagents.total_volume), max_spill=30, user = user)
 			act_message(user, target, MSG_SELF(span_notice("You transfer [trans] units of the solution.")), \
 				MSG_OTHERS(span_warning("%U% tries to squirt something into %T%'s eyes, but fails!")))
 			return

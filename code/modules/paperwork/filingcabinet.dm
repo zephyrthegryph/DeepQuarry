@@ -118,8 +118,8 @@ UI_DATA_REPLACE(/obj/structure/filingcabinet, "merge:ui_data_obj_structure_filin
 UI_ACT(/obj/structure/filingcabinet, "remove_object", ui_act_remove_object, UI_ARG_REF("ref", "contents", /obj/item))
 UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
 	var/obj/item/content = params["ref"]
-	if(istype(content) && (content.loc == src) && usr.Adjacent(src))
-		usr.put_in_hands(content)
+	if(istype(content) && (content.loc == src) && user.Adjacent(src))
+		user.put_in_hands(content)
 		open_animation()
 		SStgui.update_uis(src)
 

@@ -97,8 +97,8 @@ UI_DATA_REPLACE(/obj/machinery/ai_slipper, "uses:num", "cooldown_timeleft:num", 
 /obj/machinery/ai_slipper/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(locked && !istype(usr, /mob/living/silicon))
-		to_chat(usr, "Control panel is locked!")
+	if(locked && !istype(user, /mob/living/silicon))
+		to_chat(user, "Control panel is locked!")
 		return FALSE
 	return TRUE
 

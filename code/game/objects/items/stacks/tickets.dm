@@ -26,9 +26,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/stack/arcadeticket, TYPE_PROC_REF(/atom, appea
 			icon_state = "arcade-ticket"
 
 /obj/item/stack/arcadeticket/proc/pay_tickets()
-	amount -= 2
-	if(amount == 0)
-		qdel(src)
+	return use(ARCADE_TICKETS_PER_PRIZE)
 
 /obj/item/stack/arcadeticket/thirty
 	amount = 30

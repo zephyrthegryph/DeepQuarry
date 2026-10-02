@@ -3,9 +3,9 @@
 	return get_gas_mixture_default_scan_data(location?.return_air())
 
 // Proc - compile_news()
-// Parameters - none
+// Parameters - user: the newsfeed viewer receiving attached images
 // Description - Returns the list of newsfeeds, compiled for template processing
-/obj/item/communicator/proc/compile_news()
+/obj/item/communicator/proc/compile_news(mob/user)
 	var/list/feeds = list()
 	for(var/datum/feed_channel/channel in GLOB.news_network.network_channels)
 		var/list/messages = list()
@@ -14,7 +14,7 @@
 			for(var/datum/feed_message/FM in channel.messages)
 				index++
 				if(FM.img)
-					usr << browse_rsc(FM.img, "pda_news_tmp_photo_[feeds["channel"]]_[index].png")
+					user << browse_rsc(FM.img, "pda_news_tmp_photo_[feeds["channel"]]_[index].png")
 				// News stories are HTML-stripped but require newline replacement to be properly displayed in NanoUI
 				var/body = replacetext(FM.body, "\n", "<br>")
 				messages[++messages.len] = list(

@@ -18,20 +18,28 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 // edit_admin_permissions body relocated to code/modules/admin/permissions_panel.dm (structured TGUI).
 // The legacy 400-line HTML/asset-cache builder is gone; edit_rights_topic and topic.dm's editrightsbrowser* handlers still own the actions and call edit_admin_permissions() at the end to refresh — that now opens the structured panel.
 
+/// Prompt replays keep the original actor; changing owner or avatar cannot inherit an answer.
+/datum/admins/proc/permission_actor_valid(mob/user)
+	if(!user || QDELETED(user) || !user.client || owner() != user.client || user.client.holder != src)
+		return FALSE
+	return TRUE
+
 /// Runs as a prompt flow (flow_ask()): every question is asked before anything changes, and the
 /// answers re-run this proc, so the rights checks below run again when they arrive.
-/datum/admins/proc/edit_rights_topic(task, admin_key)
+/datum/admins/proc/edit_rights_topic(task, admin_key, mob/user)
+	if(!permission_actor_valid(user))
+		return
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(edit_rights_topic), args)
-	if(!check_rights(R_PERMISSIONS))
-		message_admins("[key_name_admin(usr)] attempted to edit admin permissions without sufficient rights.")
-		log_admin("[key_name(usr)] attempted to edit admin permissions without sufficient rights.")
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit"))
+		message_admins("[key_name_admin(user)] attempted to edit admin permissions without sufficient rights.")
+		log_admin("[key_name(user)] attempted to edit admin permissions without sufficient rights.")
 		return
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin Edit blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin Edit blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	var/datum/asset/permissions_assets = get_asset_datum(/datum/asset/simple/namespaced/common)
-	permissions_assets.send(usr.client)
+	permissions_assets.send(user.client)
 	var/admin_ckey = ckey(admin_key)
 
 	var/datum/admins/target_admin_datum = GLOB.admin_datums[admin_ckey]
@@ -46,75 +54,79 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		skip = TRUE
 	if(!CONFIG_GET(flag/admin_legacy_system) && CONFIG_GET(flag/protect_legacy_admins) && task == "rank")
 		if(admin_ckey in GLOB.protected_admins)
-			to_chat(usr, span_adminprefix("Editing the rank of this admin is blocked by server configuration."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Editing the rank of this admin is blocked by server configuration."), confidential = TRUE)
 			return
 	if(!CONFIG_GET(flag/admin_legacy_system) && CONFIG_GET(flag/protect_legacy_ranks) && task == "permissions")
 		if((target_admin_datum.ranks & GLOB.protected_ranks).len > 0)
-			to_chat(usr, span_adminprefix("Editing the flags of this rank is blocked by server configuration."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Editing the flags of this rank is blocked by server configuration."), confidential = TRUE)
 			return
 	if(CONFIG_GET(flag/load_legacy_ranks_only) && (task == "add" || task == "rank" || task == "permissions"))
-		to_chat(usr, span_adminprefix("Database rank loading is disabled, only temporary changes can be made to a rank's permissions and permanently creating a new rank is blocked."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Database rank loading is disabled, only temporary changes can be made to a rank's permissions and permanently creating a new rank is blocked."), confidential = TRUE)
 		legacy_only = TRUE
 
-	if(check_rights(R_DBRANKS, FALSE) && !skip)
+	if(check_rights_for(user.client, R_DBRANKS) && !skip)
 		if(!SSdbcore.Connect())
-			to_chat(usr, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
+			to_chat(user, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
 			use_db = FALSE
 		else
-			use_db = flow_ask(usr, "use_db", /datum/om/prompt/choice/alert, message = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", title = "Permanent or Temporary?", choices = list("Permanent", "Temporary", "Cancel"))
+			use_db = flow_ask(user, "use_db", /datum/om/prompt/choice/alert, message = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", title = "Permanent or Temporary?", choices = list("Permanent", "Temporary", "Cancel"))
 			if(isnull(use_db) || use_db == "Cancel")
 				return
 			if(use_db == "Permanent")
 				use_db = TRUE
 			else
 				use_db = FALSE
-		if(QDELETED(usr))
+		if(QDELETED(user))
 			return
 
 	if(target_admin_datum && (task != "sync" && task != "verify") && !check_if_greater_rights_than_holder(target_admin_datum))
-		message_admins("[key_name_admin(usr)] attempted to change the rank of [admin_key] without sufficient rights.")
-		log_admin("[key_name(usr)] attempted to change the rank of [admin_key] without sufficient rights.")
+		message_admins("[key_name_admin(user)] attempted to change the rank of [admin_key] without sufficient rights.")
+		log_admin("[key_name(user)] attempted to change the rank of [admin_key] without sufficient rights.")
 		return
 	switch(task)
 		if("add")
 			// Ask the key and the ranks first; nothing is added until both are answered.
 			if(!admin_ckey)
-				admin_key = flow_ask(usr, "admin_key", /datum/om/prompt/text, message = "New admin's key", title = "Admin key")
+				admin_key = flow_ask(user, "admin_key", /datum/om/prompt/text, message = "New admin's key", title = "Admin key")
 				if(!ckey(admin_key))
 					return
 				if(ckey(admin_key) in (GLOB.admin_datums + GLOB.deadmins))
-					to_chat(usr, span_danger("[admin_key] is already an admin."), confidential = TRUE)
+					to_chat(user, span_danger("[admin_key] is already an admin."), confidential = TRUE)
 					return
-			var/list/picked = pick_admin_ranks(use_db, null, legacy_only)
+			var/list/picked = pick_admin_ranks(use_db, null, legacy_only, user = user)
 			if(isnull(picked))
 				return
-			admin_ckey = add_admin(admin_ckey, admin_key, use_db)
+			admin_ckey = add_admin(admin_ckey, admin_key, use_db, user = user)
 			if(!admin_ckey)
 				return
 
 			if(!admin_key) // Prevents failures in logging admin rank changes.
 				admin_key = admin_ckey
 
-			change_admin_rank(admin_ckey, admin_key, use_db, null, legacy_only, picked)
+			change_admin_rank(admin_ckey, admin_key, use_db, null, legacy_only, picked, user = user)
 		if("remove")
-			remove_admin(admin_ckey, admin_key, use_db, target_admin_datum)
+			remove_admin(admin_ckey, admin_key, use_db, target_admin_datum, user = user)
 		if("rank")
-			change_admin_rank(admin_ckey, admin_key, use_db, target_admin_datum, legacy_only)
+			change_admin_rank(admin_ckey, admin_key, use_db, target_admin_datum, legacy_only, user = user)
 		if("permissions")
-			change_admin_flags(admin_ckey, admin_key, target_admin_datum)
+			change_admin_flags(admin_ckey, admin_key, target_admin_datum, user = user)
 		if("activate")
-			force_readmin(admin_key, target_admin_datum)
+			force_readmin(admin_key, target_admin_datum, user = user)
 		if("deactivate")
-			force_deadmin(admin_key, target_admin_datum)
+			force_deadmin(admin_key, target_admin_datum, user = user)
 		if("sync")
-			sync_lastadminrank(admin_ckey, admin_key, target_admin_datum)
+			sync_lastadminrank(admin_ckey, admin_key, target_admin_datum, user = user)
 	edit_admin_permissions(PERMISSIONS_PAGE_PERMISSIONS)
 
-/datum/admins/proc/add_admin(admin_ckey, admin_key, use_db)
-	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+/datum/admins/proc/add_admin(admin_ckey, admin_key, use_db, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.add_admin"))
+		return
+	if(use_db && !admin_require(user.client, R_DBRANKS, "permissionedit"))
 		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	if(admin_ckey)
 		. = admin_ckey
@@ -123,7 +135,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(!.)
 		return FALSE
 	if(!admin_ckey && (. in (GLOB.admin_datums+GLOB.deadmins)))
-		to_chat(usr, span_danger("[admin_key] is already an admin."), confidential = TRUE)
+		to_chat(user, span_danger("[admin_key] is already an admin."), confidential = TRUE)
 		return FALSE
 	if(!use_db)
 		return
@@ -136,20 +148,24 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	if(isnull(admin_in_db_rows))
 		return FALSE
 	if(length(admin_in_db_rows))
-		to_chat(usr, span_danger("[admin_key] already listed in admin database. Check the Housekeeping tab if they don't appear in the list of admins."), confidential = TRUE)
+		to_chat(user, span_danger("[admin_key] already listed in admin database. Check the Housekeeping tab if they don't appear in the list of admins."), confidential = TRUE)
 		return FALSE
 	// The row is written by change_admin_rank(), which the add always runs next, with the picked
 	// rank: a separate insert here would race that proc's read of the admin table.
 
-/datum/admins/proc/remove_admin(admin_ckey, admin_key, use_db, datum/admins/target_holder)
+/datum/admins/proc/remove_admin(admin_ckey, admin_key, use_db, datum/admins/target_holder, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.remove_admin"))
+		return
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(remove_admin), args)
-	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+	if(use_db && !admin_require(user.client, R_DBRANKS, "permissionedit"))
 		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Admin Removal blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	if(flow_ask(usr, "remove_admin", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel")) != "Do it")
+	if(flow_ask(user, "remove_admin", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove [admin_ckey]?", title = "Confirm Removal", choices = list("Do it", "Cancel")) != "Do it")
 		return
 	if(!(admin_ckey in (GLOB.admin_datums + GLOB.deadmins)) && !use_db)
 		return
@@ -157,8 +173,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	GLOB.deadmins -= admin_ckey
 	if(target_holder)
 		target_holder.disassociate()
-	var/m1 = "[key_name_admin(usr)] removed [admin_key] from the admins list [use_db ? "permanently" : "temporarily"]"
-	var/m2 = "[key_name(usr)] removed [admin_key] from the admins list [use_db ? "permanently" : "temporarily"]"
+	var/m1 = "[key_name_admin(user)] removed [admin_key] from the admins list [use_db ? "permanently" : "temporarily"]"
+	var/m2 = "[key_name(user)] removed [admin_key] from the admins list [use_db ? "permanently" : "temporarily"]"
 
 	if(!use_db)
 		message_admins(m1)
@@ -173,21 +189,29 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_REMOVED]', :admin_ckey, CONCAT('Admin removed: ', :admin_ckey))
-	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_ckey" = admin_ckey))
-	sync_lastadminrank(admin_ckey, admin_key)
+	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "admin_ckey" = admin_ckey))
+	sync_lastadminrank(admin_ckey, admin_key, user = user)
 
-/datum/admins/proc/force_readmin(admin_key, datum/admins/target_holder)
+/datum/admins/proc/force_readmin(admin_key, datum/admins/target_holder, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.force_readmin"))
+		return
 	if(!target_holder || !target_holder.deadmined)
 		return
 	target_holder.activate()
-	message_admins("[key_name_admin(usr)] forcefully readmined [admin_key]")
-	log_admin("[key_name(usr)] forcefully readmined [admin_key]")
+	message_admins("[key_name_admin(user)] forcefully readmined [admin_key]")
+	log_admin("[key_name(user)] forcefully readmined [admin_key]")
 
-/datum/admins/proc/force_deadmin(admin_key, datum/admins/target_holder)
+/datum/admins/proc/force_deadmin(admin_key, datum/admins/target_holder, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.force_deadmin"))
+		return
 	if(!target_holder || target_holder.deadmined)
 		return
-	message_admins("[key_name_admin(usr)] forcefully deadmined [admin_key]")
-	log_admin("[key_name(usr)] forcefully deadmined [admin_key]")
+	message_admins("[key_name_admin(user)] forcefully deadmined [admin_key]")
+	log_admin("[key_name(user)] forcefully deadmined [admin_key]")
 	target_holder.deactivate() //after logs so the deadmined admin can see the message.
 
 /datum/admins/proc/auto_deadmin()
@@ -206,12 +230,16 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 /// Asks (flow_ask()) which ranks an admin gets, one pick per question, until RANK_DONE.
 /// Returns list("names" = picked rank names, "custom" = new custom rank names), or null while
 /// unanswered or cancelled. Creates nothing: change_admin_rank() makes the custom ranks.
-/datum/admins/proc/pick_admin_ranks(use_db, datum/admins/target_holder, legacy_only)
+/datum/admins/proc/pick_admin_ranks(use_db, datum/admins/target_holder, legacy_only, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.pick_admin_ranks"))
+		return
 	var/list/rank_names = list()
 	if(!use_db || (use_db && !legacy_only))
 		rank_names += "*New Rank*"
 	for(var/datum/admin_rank/admin_rank as anything in GLOB.admin_ranks)
-		if((admin_rank.rights & usr.client.holder.can_edit_rights_flags()) != admin_rank.rights)
+		if((admin_rank.rights & user.client.holder.can_edit_rights_flags()) != admin_rank.rights)
 			continue
 		if(use_db && admin_rank.source != RANK_SOURCE_DB && admin_rank.source != RANK_SOURCE_TXT)
 			continue
@@ -236,7 +264,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				display_rank_names += rank_name
 
 		// Each pick is its own question: the flow replays the earlier picks from their answers.
-		var/next_rank = flow_ask(usr, "rank:[step]", /datum/om/prompt/choice, message = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
+		var/next_rank = flow_ask(user, "rank:[step]", /datum/om/prompt/choice, message = "Please select a rank, or select [RANK_DONE] if you are finished.", title = "Admin rank", choices = display_rank_names)
 
 		if (isnull(next_rank) || !(next_rank in display_rank_names))
 			return null
@@ -254,7 +282,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			continue
 
 		if (next_rank == "*New Rank*")
-			var/new_rank_name = flow_ask(usr, "new_rank:[step]", /datum/om/prompt/text, message = "Please input a new rank", title = "New custom rank")
+			var/new_rank_name = flow_ask(user, "new_rank:[step]", /datum/om/prompt/text, message = "Please input a new rank", title = "New custom rank")
 			if (!new_rank_name)
 				return null
 			if(!isnull(rank_names[new_rank_name]) || (new_rank_name in new_rank_names))
@@ -269,17 +297,21 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 /// Sets an admin's ranks. `picked` is pick_admin_ranks()'s answer when the caller asked already;
 /// otherwise this runs as a prompt flow and asks.
-/datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked)
+/datum/admins/proc/change_admin_rank(admin_ckey, admin_key, use_db, datum/admins/target_holder, legacy_only, list/picked, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.change_admin_rank"))
+		return
 	if(!picked && !GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(change_admin_rank), args)
-	if(use_db && !admin_require(owner(), R_DBRANKS, "permissionedit"))
+	if(use_db && !admin_require(user.client, R_DBRANKS, "permissionedit"))
 		return // R_PERMISSIONS is declared by the editrights* topics; only the database half varies
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 
 	if(!picked)
-		picked = pick_admin_ranks(use_db, target_holder, legacy_only)
+		picked = pick_admin_ranks(use_db, target_holder, legacy_only, user = user)
 		if(isnull(picked))
 			return
 
@@ -341,8 +373,8 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				break
 
 	var/joined_rank = join_admin_ranks(new_ranks)
-	var/m1 = "[key_name_admin(usr)] edited the admin rank of [admin_key] to [joined_rank] [use_db ? "permanently" : "temporarily"]"
-	var/m2 = "[key_name(usr)] edited the admin rank of [admin_key] to [joined_rank] [use_db ? "permanently" : "temporarily"]"
+	var/m1 = "[key_name_admin(user)] edited the admin rank of [admin_key] to [joined_rank] [use_db ? "permanently" : "temporarily"]"
+	var/m2 = "[key_name(user)] edited the admin rank of [admin_key] to [joined_rank] [use_db ? "permanently" : "temporarily"]"
 	if(use_db)
 		for (var/datum/admin_rank/custom_rank in custom_ranks)
 			if(custom_names_in_db[custom_rank.name])
@@ -354,7 +386,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank, CONCAT('New rank added: ', :new_rank))
-			"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "new_rank" = custom_rank.name))
+			"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "new_rank" = custom_rank.name))
 		if(isnull(old_rank))
 			// Not in the admin table yet (a new or temporary admin): one insert, with the rank.
 			old_rank = "NEW ADMIN"
@@ -365,7 +397,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_ADDED]', :target, CONCAT('New admin added: ', :target))
-			"}, list("round_id" = "[GLOB.round_id]",  "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey))
+			"}, list("round_id" = "[GLOB.round_id]",  "adminckey" = user.ckey, "adminip" = user.client.address, "target" = admin_ckey))
 		else
 			sql_write(
 				"UPDATE [format_table_name("admin")] SET `rank` = :new_rank WHERE ckey = :admin_ckey",
@@ -376,7 +408,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_RANK_CHANGED]', :target, CONCAT('Rank of ', :target, ' changed from ', :old_rank, ' to ', :new_rank))
-		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey, "old_rank" = old_rank, "new_rank" = joined_rank))
+		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "target" = admin_ckey, "old_rank" = old_rank, "new_rank" = joined_rank))
 	else
 		message_admins(m1)
 		log_admin(m2)
@@ -394,13 +426,15 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 #undef RANK_DONE
 
 /// Changes, for this round only, the flags a particular admin gets to use
-/datum/admins/proc/change_admin_flags(admin_ckey, admin_key, datum/admins/admin_holder)
-	if(!check_rights(R_PERMISSIONS))
+/datum/admins/proc/change_admin_flags(admin_ckey, admin_key, datum/admins/admin_holder, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit"))
 		return
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Rank Modification blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	var/new_flags = flow_ask(usr, "admin_flags", /datum/om/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = usr.client.holder.can_edit_rights_flags())
+	var/new_flags = flow_ask(user, "admin_flags", /datum/om/prompt/bitfield, title = "Admin rights of [admin_ckey] (this round only)", bitfield = "admin_flags", default = admin_holder.rank_flags(), editable = user.client.holder.can_edit_rights_flags())
 	if(isnull(new_flags))
 		return
 
@@ -428,64 +462,66 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		own_set(admin_holder, nameof(admin_holder.custom_rank), new_admin_rank)
 		admin_holder.set_ranks(list(new_admin_rank))
 
-	var/log = "[key_name(usr)] has updated the admin rights of [admin_ckey] into [rights2text(new_flags)]"
+	var/log = "[key_name(user)] has updated the admin rights of [admin_ckey] into [rights2text(new_flags)]"
 	message_admins(log)
 	log_admin(log)
 
 	var/client/admin_client = GLOB.directory[admin_ckey]
 	admin_holder.associate(admin_client)
 
-/// Polls usr for a new rank to add to either JUST this round, or the DB
-/datum/admins/proc/add_rank()
+/// Polls user for a new rank to add to either JUST this round, or the DB
+/datum/admins/proc/add_rank(mob/user)
+	if(!permission_actor_valid(user))
+		return
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(add_rank), args)
-	if(!check_rights(R_PERMISSIONS))
-		to_chat(usr, span_adminprefix("You don't have the permissions for this."), confidential = TRUE)
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit"))
+		to_chat(user, span_adminprefix("You don't have the permissions for this."), confidential = TRUE)
 		return
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Rank Addition blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
-	if(usr.client.holder.can_edit_rights_flags() == NONE)
-		to_chat(usr, span_adminprefix("You are not allowed to add any rights."), confidential = TRUE)
+	if(user.client.holder.can_edit_rights_flags() == NONE)
+		to_chat(user, span_adminprefix("You are not allowed to add any rights."), confidential = TRUE)
 		return
 
-	var/new_rank_name = flow_ask(usr, "rank_name", /datum/om/prompt/text, message = "Please input a new rank", title = "New custom rank")
+	var/new_rank_name = flow_ask(user, "rank_name", /datum/om/prompt/text, message = "Please input a new rank", title = "New custom rank")
 	if (!new_rank_name)
 		return
 
 	var/list/datum/admin_rank/existing_ranks = ranks_from_rank_name(new_rank_name)
 	if (length(existing_ranks))
-		to_chat(usr, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
+		to_chat(user, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
 		return
 
-	var/rights = flow_ask(usr, "rights", /datum/om/prompt/bitfield, title = "New rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = usr.client.holder.can_edit_rights_flags())
+	var/rights = flow_ask(user, "rights", /datum/om/prompt/bitfield, title = "New rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
 	if(isnull(rights))
 		return
-	var/excluded_rights = flow_ask(usr, "excluded_rights", /datum/om/prompt/bitfield, title = "New excluded rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = usr.client.holder.can_edit_rights_flags())
+	var/excluded_rights = flow_ask(user, "excluded_rights", /datum/om/prompt/bitfield, title = "New excluded rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
 	if(isnull(excluded_rights))
 		return
-	var/edit_rights = flow_ask(usr, "edit_rights", /datum/om/prompt/bitfield, title = "New editing rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = usr.client.holder.can_edit_rights_flags())
+	var/edit_rights = flow_ask(user, "edit_rights", /datum/om/prompt/bitfield, title = "New editing rights for [new_rank_name]", bitfield = "admin_flags", default = NONE, editable = user.client.holder.can_edit_rights_flags())
 	if(isnull(edit_rights))
 		return
 
 	var/use_db = FALSE
-	if(check_rights(R_DBRANKS, FALSE))
+	if(check_rights_for(user.client, R_DBRANKS))
 		if(!SSdbcore.Connect())
-			to_chat(usr, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
+			to_chat(user, span_danger("Unable to connect to database, changes are temporary only."), confidential = TRUE)
 			use_db = FALSE
 		else
-			var/use_db_response = flow_ask(usr, "use_db", /datum/om/prompt/choice/alert, message = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", title = "Permanent or Temporary?", choices = list("Permanent", "Temporary", "Cancel"))
+			var/use_db_response = flow_ask(user, "use_db", /datum/om/prompt/choice/alert, message = "Permanent changes are saved to the database for future rounds, temporary changes will affect only the current round", title = "Permanent or Temporary?", choices = list("Permanent", "Temporary", "Cancel"))
 			if(isnull(use_db_response) || use_db_response == "Cancel")
 				return
 			if(use_db_response == "Permanent")
 				use_db = TRUE
 			else
 				use_db = FALSE
-		if(QDELETED(usr))
+		if(QDELETED(user))
 			return
 
 	if(length(ranks_from_rank_name(new_rank_name))) // Made while we were asking.
-		to_chat(usr, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
+		to_chat(user, span_adminprefix("A rank by this name already exists, sorry!."), confidential = TRUE)
 		return
 	if(use_db)
 		// Shit check for conflicts, before anything is made (a read: the flow re-runs on its answer)
@@ -505,13 +541,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	else
 		custom_rank = new(new_rank_name, RANK_SOURCE_TEMPORARY, rights, excluded_rights, edit_rights)
 	if(QDELETED(custom_rank))
-		to_chat(usr, span_danger("Rank creation failed, check runtimes."), confidential = TRUE)
+		to_chat(user, span_danger("Rank creation failed, check runtimes."), confidential = TRUE)
 		return
 
 	GLOB.admin_ranks += custom_rank
 
-	var/m1 = "[key_name_admin(usr)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
-	var/m2 = "[key_name(usr)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
+	var/m1 = "[key_name_admin(user)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
+	var/m2 = "[key_name(user)] created the new [use_db ? "permanent" : "temporary"] rank [new_rank_name]"
 
 	if(!use_db)
 		message_admins(m1)
@@ -527,25 +563,27 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank,
 		CONCAT('New rank added: ', :new_rank, ' (', :rights, ')', ' (', :excluded_rights, ')', ' (', :edit_rights, ')'))
-	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "new_rank" = custom_rank.name,
+	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "new_rank" = custom_rank.name,
 		"rights" = rights, "excluded_rights" = excluded_rights, "edit_rights" = edit_rights))
 
 /// Removes a rank from the db/temp loading
-/datum/admins/proc/remove_rank(admin_rank)
+/datum/admins/proc/remove_rank(admin_rank, mob/user)
+	if(!permission_actor_valid(user))
+		return
 	if(!admin_rank)
 		return
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(remove_rank), args)
-	if(!check_rights(R_PERMISSIONS))
-		message_admins("[key_name_admin(usr)] attempted to remove a rank without sufficient rights.")
-		log_admin("[key_name(usr)] attempted to remove a rank without sufficient rights.")
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit"))
+		message_admins("[key_name_admin(user)] attempted to remove a rank without sufficient rights.")
+		log_admin("[key_name(user)] attempted to remove a rank without sufficient rights.")
 		return
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Deletion blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Rank Deletion blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	for(var/datum/admin_rank/R in GLOB.admin_ranks)
-		if(R.name == admin_rank && ((R.rights & usr.client.holder.can_edit_rights_flags()) != R.rights))
-			to_chat(usr, span_adminprefix("You don't have edit rights to all the rights this rank has, rank deletion not permitted."), confidential = TRUE)
+		if(R.name == admin_rank && ((R.rights & user.client.holder.can_edit_rights_flags()) != R.rights))
+			to_chat(user, span_adminprefix("You don't have edit rights to all the rights this rank has, rank deletion not permitted."), confidential = TRUE)
 			return
 
 	var/list/datum/admin_rank/target_ranks = ranks_from_rank_name(admin_rank)
@@ -556,14 +594,14 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	var/local_only_deletion
 	switch(target_rank.source)
 		if(RANK_SOURCE_LOCAL)
-			to_chat(usr, span_adminprefix("Localhost rank cannot be deleted."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Localhost rank cannot be deleted."), confidential = TRUE)
 			return
 		// This handles protected ranks on its own
 		if(RANK_SOURCE_TXT)
-			to_chat(usr, span_adminprefix("Text ranks cannot be meaningfully deleted, go modify admin_ranks.txt"), confidential = TRUE)
+			to_chat(user, span_adminprefix("Text ranks cannot be meaningfully deleted, go modify admin_ranks.txt"), confidential = TRUE)
 			return
 		if(RANK_SOURCE_BACKUP)
-			to_chat(usr, span_adminprefix("Backup ranks cannot usefully be deleted, as they are stored in a temp json, go uh... edit that? I guess?."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Backup ranks cannot usefully be deleted, as they are stored in a temp json, go uh... edit that? I guess?."), confidential = TRUE)
 			return
 		if(RANK_SOURCE_TEMPORARY)
 			local_only_deletion = TRUE
@@ -571,7 +609,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			local_only_deletion = FALSE
 
 	if(!local_only_deletion && CONFIG_GET(flag/load_legacy_ranks_only))
-		to_chat(usr, span_adminprefix("Database Rank deletion not permitted while database rank loading is disabled, deleting our local copy."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Database Rank deletion not permitted while database rank loading is disabled, deleting our local copy."), confidential = TRUE)
 		local_only_deletion = TRUE
 
 	if(!local_only_deletion)
@@ -589,15 +627,15 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	for(var/admin_name in GLOB.admin_datums)
 		var/datum/admins/existing_min = GLOB.admin_datums[admin_name]
 		if(target_rank in existing_min.ranks)
-			to_chat(usr, span_danger("Error: Rank deletion attempted while rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
+			to_chat(user, span_danger("Error: Rank deletion attempted while rank still used; Tell a coder, this shouldn't happen."), confidential = TRUE)
 			return
 
 	// Asked last, after every check above ran again on this answer's re-run.
-	if(flow_ask(usr, "remove_rank", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove [admin_rank]?", title = "Confirm Removal", choices = list("Do it", "Cancel")) != "Do it")
+	if(flow_ask(user, "remove_rank", /datum/om/prompt/choice/alert, message = "Are you sure you want to remove [admin_rank]?", title = "Confirm Removal", choices = list("Do it", "Cancel")) != "Do it")
 		return
 
-	var/m1 = "[key_name_admin(usr)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
-	var/m2 = "[key_name(usr)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
+	var/m1 = "[key_name_admin(user)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
+	var/m2 = "[key_name(user)] removed rank [admin_rank] [local_only_deletion ? "temporarially" : "permanently"]"
 	GLOB.admin_ranks -= target_rank
 	QDEL_NULL(target_rank)
 
@@ -614,56 +652,58 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_REMOVED]', :admin_rank, CONCAT('Rank removed: ', :admin_rank))
-	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))
+	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "admin_rank" = admin_rank))
 
 /// Changes the flags on either a DB or local rank
 /// Edits one of the rank's flag sets per use (a prompt flow: both questions are asked, and every
 /// check re-run, before anything changes).
-/datum/admins/proc/change_rank(admin_rank)
+/datum/admins/proc/change_rank(admin_rank, mob/user)
+	if(!permission_actor_valid(user))
+		return
 	if(!admin_rank)
 		return
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(change_rank), args)
-	if(!check_rights(R_PERMISSIONS))
-		message_admins("[key_name_admin(usr)] attempted to edit rank permissions without sufficient rights.")
-		log_admin("[key_name(usr)] attempted to edit rank permissions without sufficient rights.")
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit"))
+		message_admins("[key_name_admin(user)] attempted to edit rank permissions without sufficient rights.")
+		log_admin("[key_name(user)] attempted to edit rank permissions without sufficient rights.")
 		return
 	if(IsAdminAdvancedProcCall())
-		to_chat(usr, span_adminprefix("Rank Edit blocked: Advanced ProcCall detected."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Rank Edit blocked: Advanced ProcCall detected."), confidential = TRUE)
 		return
 	var/datum/asset/permissions_assets = get_asset_datum(/datum/asset/simple/namespaced/common)
-	permissions_assets.send(usr.client)
+	permissions_assets.send(user.client)
 
 	var/list/datum/admin_rank/target_ranks = ranks_from_rank_name(admin_rank)
 	if (!target_ranks || length(target_ranks) > 1)
 		return
 	var/datum/admin_rank/target_rank = target_ranks[1]
 	if(target_rank.name != admin_rank) // Somehow
-		to_chat(usr, span_adminprefix("Passed rank does not match target, somehow."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Passed rank does not match target, somehow."), confidential = TRUE)
 		return
-	if((target_rank.rights & usr.client.holder.can_edit_rights_flags()) != target_rank.rights)
-		to_chat(usr, span_adminprefix("You don't have edit rights to all the rights this rank has, you aren't allowed to modify it."), confidential = TRUE)
+	if((target_rank.rights & user.client.holder.can_edit_rights_flags()) != target_rank.rights)
+		to_chat(user, span_adminprefix("You don't have edit rights to all the rights this rank has, you aren't allowed to modify it."), confidential = TRUE)
 		return
 
 	var/attempt_db = FALSE
 	switch(target_rank.source)
 		if(RANK_SOURCE_LOCAL)
-			to_chat(usr, span_adminprefix("Localhost rank cannot be modified."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Localhost rank cannot be modified."), confidential = TRUE)
 			return
 		// This handles protected ranks on its own
 		if(RANK_SOURCE_TXT)
-			to_chat(usr, span_adminprefix("Text ranks cannot be meaningfully modified, go modify admin_ranks.txt"), confidential = TRUE)
+			to_chat(user, span_adminprefix("Text ranks cannot be meaningfully modified, go modify admin_ranks.txt"), confidential = TRUE)
 			return
 		if(RANK_SOURCE_BACKUP)
-			to_chat(usr, span_adminprefix("Backup ranks cannot usefully be modified, as they are stored in a temp json, go uh... edit that? I guess?."), confidential = TRUE)
+			to_chat(user, span_adminprefix("Backup ranks cannot usefully be modified, as they are stored in a temp json, go uh... edit that? I guess?."), confidential = TRUE)
 			return
 		// For completeness
 		if(RANK_SOURCE_TEMPORARY)
 			attempt_db = FALSE
 		if(RANK_SOURCE_DB)
-			if(!check_rights(R_DBRANKS, FALSE))
-				message_admins("[key_name_admin(usr)] attempted to edit db rank permissions without sufficient rights.")
-				log_admin("[key_name(usr)] attempted to edit db rank permissions without sufficient rights.")
+			if(!check_rights_for(user.client, R_DBRANKS))
+				message_admins("[key_name_admin(user)] attempted to edit db rank permissions without sufficient rights.")
+				log_admin("[key_name(user)] attempted to edit db rank permissions without sufficient rights.")
 				return
 			attempt_db = TRUE
 
@@ -671,13 +711,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 	// This means an admin could in theory bypass protections if they modified a linked rank (such as game admin) which is not also protected
 	// It might be wise to make the permissions afforded by protected ranks inviolable. I'm unsure.
 	if(CONFIG_GET(flag/load_legacy_ranks_only))
-		to_chat(usr, span_adminprefix("Database rank loading is disabled, only temporary changes can be made to a rank's permissions."), confidential = TRUE)
+		to_chat(user, span_adminprefix("Database rank loading is disabled, only temporary changes can be made to a rank's permissions."), confidential = TRUE)
 		attempt_db = FALSE
 
 	var/use_db = FALSE
 	if(attempt_db)
 		if(!SSdbcore.Connect())
-			to_chat(usr, span_danger("Unable to connect to database, canceling."), confidential = TRUE)
+			to_chat(user, span_danger("Unable to connect to database, canceling."), confidential = TRUE)
 			return
 		use_db = TRUE
 
@@ -708,7 +748,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 
 	// One edit per use: the flow re-runs this proc for each answer, so a loop would replay edits.
 	for(var/pass in 1 to 1)
-		var/what_to_edit = flow_ask(usr, "what", /datum/om/prompt/choice, message = "What do you want to edit", title = "Rank Editing", choices = list("Rights", "Excluded Rights", "Edit Rights", "Finished"))
+		var/what_to_edit = flow_ask(user, "what", /datum/om/prompt/choice, message = "What do you want to edit", title = "Rank Editing", choices = list("Rights", "Excluded Rights", "Edit Rights", "Finished"))
 		var/existing_flags = NONE
 		var/pretty_name
 		switch(what_to_edit)
@@ -723,7 +763,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				pretty_name = "editing rights"
 			else
 				return
-		var/new_flags = flow_ask(usr, "flags:[what_to_edit]", /datum/om/prompt/bitfield, title = "Editing [target_rank.name] [what_to_edit]", bitfield = "admin_flags", default = existing_flags, editable = usr.client.holder.can_edit_rights_flags())
+		var/new_flags = flow_ask(user, "flags:[what_to_edit]", /datum/om/prompt/bitfield, title = "Editing [target_rank.name] [what_to_edit]", bitfield = "admin_flags", default = existing_flags, editable = user.client.holder.can_edit_rights_flags())
 		if(isnull(new_flags))
 			return
 
@@ -749,7 +789,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 				target_rank.can_edit_rights = new_flags
 				working_can_edit_rights = new_flags
 
-		var/log = "[key_name(usr)] has [use_db ? "permenantly" : "temporarially"] updated the [pretty_name] of the [admin_rank] rank to [rights2text(new_flags)]"
+		var/log = "[key_name(user)] has [use_db ? "permenantly" : "temporarially"] updated the [pretty_name] of the [admin_rank] rank to [rights2text(new_flags)]"
 		message_admins(log)
 		log_admin(log)
 
@@ -785,16 +825,20 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_CHANGED]', :admin_rank, CONCAT('Rank changed: ', :admin_rank))
-		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))
+		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = user.ckey, "adminip" = user.client.address, "admin_rank" = admin_rank))
 
-/datum/admins/proc/sync_lastadminrank(admin_ckey, admin_key, datum/admins/target_holder)
+/datum/admins/proc/sync_lastadminrank(admin_ckey, admin_key, datum/admins/target_holder, mob/user)
+	if(!permission_actor_valid(user))
+		return
+	if(!admin_require(user.client, R_PERMISSIONS, "permissionedit.sync_lastadminrank"))
+		return
 	var/sqlrank = "Player"
 	if (target_holder)
 		sqlrank = target_holder.rank_names()
 	om_io(null, /datum/om/io/sql,
 		"UPDATE [format_table_name("erro_player")] SET lastadminrank = :rank WHERE ckey = :ckey",
 		list("rank" = sqlrank, "ckey" = admin_ckey),
-		/proc/sync_lastadminrank_done, usr?.ckey, admin_key)
+		/proc/sync_lastadminrank_done, user?.ckey, admin_key)
 
 /// om_io() callback: tells the admin who asked how the sync went.
 /proc/sync_lastadminrank_done(list/result, error, asker_ckey, admin_key)

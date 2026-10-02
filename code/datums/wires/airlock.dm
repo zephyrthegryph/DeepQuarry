@@ -59,7 +59,7 @@ UI_DATA(/datum/wires/airlock, "merge:ui_data_datum_wires_airlock{id_tag:text,fre
 UI_ACT(/datum/wires/airlock, "set_id_tag", ui_act_set_id_tag)
 UI_ACT_PROC(/datum/wires/airlock, ui_act_set_id_tag)
 	var/obj/machinery/door/airlock/A = holder
-	var/new_id = act_ask(usr, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
+	var/new_id = act_ask(user, action, params, ui, "k65", /datum/om/prompt/text, message = "Enter a new ID tag for [A]", title = "[A] ID Tag", default = A.id_tag, max_length = 60)
 	if(isnull(new_id))
 		return
 	if(new_id)
@@ -78,7 +78,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 	A.set_frequency(null)
 	return TRUE
 
-/datum/wires/airlock/on_cut(wire, mend)
+/datum/wires/airlock/on_cut(wire, mend, mob/user)
 	var/obj/machinery/door/airlock/A = holder
 	changed(A) // the wires window is its own host: the door's look and panel follow the wire
 	switch(wire)
@@ -88,19 +88,19 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 			if(!mend)
 				//Cutting either one disables the main door power, but unless backup power is also cut, the backup power re-powers the door in 10 seconds. While unpowered, the door may be crowbarred open, but bolts-raising will not work. Cutting these wires may electocute the user.
 				A.loseMainPower()
-				A.shock(usr, 50)
+				A.shock(user, 50)
 			else
 				A.regainMainPower()
-				A.shock(usr, 50)
+				A.shock(user, 50)
 
 		if(WIRE_BACKUP_POWER1, WIRE_BACKUP_POWER2)
 			if(!mend)
 				//Cutting either one disables the backup door power (allowing it to be crowbarred open, but disabling bolts-raising), but may electocute the user.
 				A.loseBackupPower()
-				A.shock(usr, 50)
+				A.shock(user, 50)
 			else
 				A.regainBackupPower()
-				A.shock(usr, 50)
+				A.shock(user, 50)
 
 		if(WIRE_DOOR_BOLTS)
 			if(!mend)
@@ -124,9 +124,9 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 		if(WIRE_ELECTRIFY)
 			if(!mend)
 				//Cutting this wire electrifies the door, so that the next person to touch the door without insulated gloves gets electrocuted.
-				A.electrify(-1)
+				A.electrify(-1, user = user)
 			else
-				A.electrify(0)
+				A.electrify(0, user = user)
 			return // Don't update the dialog.
 
 		if (WIRE_SAFETY)
@@ -142,7 +142,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 			A.lights = mend
 
 
-/datum/wires/airlock/on_pulse(wire)
+/datum/wires/airlock/on_pulse(wire, mob/user)
 	var/obj/machinery/door/airlock/A = holder
 	changed(A) // the wires window is its own host: the door's look and panel follow the wire
 	switch(wire)
@@ -177,7 +177,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 
 		if(WIRE_ELECTRIFY)
 			//one wire for electrifying the door. Sending a pulse through this electrifies the door for 30 seconds.
-			A.electrify(30)
+			A.electrify(30, user = user)
 
 		if(WIRE_OPEN_DOOR)
 			//tries to open the door without ID

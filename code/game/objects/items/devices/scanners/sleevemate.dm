@@ -430,10 +430,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 		L.unEquip(src)
 	src.forceMove(get_turf(src))
 	if(choice == "Body Snatcher")
-		new /obj/item/bodysnatcher(src.loc)
+		replace_with(src, /obj/item/bodysnatcher)
 	if(choice == "Mind Binder")
-		new /obj/item/mindbinder(src.loc)
-	qdel(src)
+		replace_with(src, /obj/item/mindbinder)
 	return 1
 
 /// The transcore database this uses, looked up by db_key (the databases are a registry).

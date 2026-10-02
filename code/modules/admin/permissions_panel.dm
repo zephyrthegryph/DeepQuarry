@@ -34,9 +34,10 @@
 GLOBAL_LIST_EMPTY(dq_permissions_panels)
 
 /datum/admins/proc/edit_admin_permissions(action, log_target, log_actor, log_operation, log_page)
-	if(!check_rights(R_PERMISSIONS))
+	var/client/panel_owner = owner()
+	if(!admin_require(panel_owner, R_PERMISSIONS, "permissions.panel"))
 		return
-	if(!owner()?.mob)
+	if(!panel_owner?.mob)
 		return
 	dq_perms_page = action || PERMISSIONS_PAGE_PERMISSIONS
 	if(dq_perms_page == PERMISSIONS_PAGE_LOGGING)
@@ -49,11 +50,8 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		dq_perms_log_page = text2num(log_page) || 0
 	if(!dq_permissions_panel)
 		own_set(src, nameof(dq_permissions_panel), new /datum/permissions_panel(src))
-	if(QDELETED(usr) || usr.client != owner())
-		dq_permissions_panel.tgui_interact(owner().mob)
-	else
-		dq_permissions_panel.tgui_interact(usr)
-		SStgui.update_uis(dq_permissions_panel)
+	dq_permissions_panel.tgui_interact(panel_owner.mob)
+	SStgui.update_uis(dq_permissions_panel)
 	dq_permissions_panel.refresh_db()
 
 /datum/permissions_panel

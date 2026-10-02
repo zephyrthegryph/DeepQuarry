@@ -97,7 +97,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 /client/proc/callproc_blocking(list/get_retval, key = "call")
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(callproc_blocking), args)
-	if(!check_rights(R_DEBUG))
+	if(!admin_require(src, R_DEBUG, "callproc.blocking"))
 		return
 
 	var/datum/target
@@ -112,7 +112,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 				return
 			target = value["value"]
 			if(!istype(target))
-				to_chat(usr, span_danger("Invalid target."), confidential = TRUE)
+				to_chat(src, span_danger("Invalid target."), confidential = TRUE)
 				return
 		if("No")
 			target = null
@@ -134,12 +134,12 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 
 	if(targetselected)
 		if(!hascall(target, procname))
-			to_chat(usr, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
 			return
 	else
 		procpath = "/[proctype]/[procname]"
 		if(!text2path(procpath))
-			to_chat(usr, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): [procpath] does not exist."), confidential = TRUE)
 			return
 
 	var/list/lst = get_callproc_args("[key]:args")
@@ -150,10 +150,10 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		// The tgui prompts above sleep; the target may have been qdel'd or had its
 		// type swapped out from under us. Re-validate before calling into it.
 		if(!target || QDELETED(target) || !istype(target) || !is_valid_src(target))
-			to_chat(usr, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
+			to_chat(src, span_red("Error: callproc(): owner of proc no longer exists."), confidential = TRUE)
 			return
 		if(!hascall(target, procname))
-			to_chat(usr, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
+			to_chat(src, span_warning("Error: callproc(): type [target.type] has no [proctype] named [procpath]."), confidential = TRUE)
 			return
 		var/msg = "[key_name(src)] called [target]'s [procname]() with [lst.len ? "the arguments [list2params(lst)]":"no arguments"]."
 		log_admin(msg)
@@ -170,7 +170,7 @@ ADMIN_VERB(advanced_proc_call, R_DEBUG, "Advanced ProcCall", "Call a proc on any
 		get_retval += returnval
 	. = get_callproc_returnval(returnval, procname)
 	if(.)
-		to_chat(usr, ., confidential = TRUE)
+		to_chat(src, ., confidential = TRUE)
 
 GLOBAL_VAR(AdminProcCaller)
 GLOBAL_PROTECT(AdminProcCaller)
@@ -241,7 +241,7 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(call_proc_datum, R_DEBUG, "Atom ProcCall", datum/th
 /client/proc/callproc_datum(datum/thing)
 	if(!GLOB.prompt_flow) // its questions re-run it (prompt_flow(), prompt_helpers.dm)
 		return prompt_flow(src, PROC_REF(callproc_datum), args)
-	if(!check_rights(R_DEBUG))
+	if(!admin_require(src, R_DEBUG, "callproc.datum"))
 		return
 	var/procname = flow_ask(mob, "datumcall:name", /datum/om/prompt/text, message = "Proc name, eg: fake_blood", title = "Proc:")
 	if(!procname)

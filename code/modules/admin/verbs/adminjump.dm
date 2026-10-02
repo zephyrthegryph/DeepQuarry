@@ -57,12 +57,14 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 
 /// Performs the jumps, also called from admin Topic() for JMP links
 /client/proc/do_jumptomob(mob/M)
+	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "adminjump.do_jumptomob"))
+		return
 	if(!CONFIG_GET(flag/allow_admin_jump))
-		tgui_alert_async(usr, "Admin jumping disabled")
+		tgui_alert_async(src, "Admin jumping disabled")
 		return
 
 	if(!M)
-		om_ask(usr, /datum/om/prompt/choice/admin_jump, PROC_REF(jump_mob_picked), title = "Jump to Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+		om_ask(mob, /datum/om/prompt/choice/admin_jump, PROC_REF(jump_mob_picked), title = "Jump to Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
 		return
 
 	var/mob/A = src.mob // Impossible to be unset, enforced by byond
@@ -71,8 +73,8 @@ ADMIN_VERB_AND_CONTEXT_MENU(jumptomob, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Jump to M
 		A.on_mob_jump()
 		A.reset_perspective(A)
 		A.forceMove(T)
-		log_admin("[key_name(usr)] jumped to [key_name(M)]")
-		message_admins("[key_name_admin(usr)] jumped to [key_name_admin(M)]", 1)
+		log_admin("[key_name(src)] jumped to [key_name(M)]")
+		message_admins("[key_name_admin(src)] jumped to [key_name_admin(M)]", 1)
 		feedback_add_details("admin_verb","JM") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	else
 		to_chat(A, span_filter_adminlog("This mob is not located in the game world."))
@@ -191,6 +193,8 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 	om_ask(ask.answerer, /datum/om/prompt/choice/admin_jump, PROC_REF(sendmob_answered), title = "Send Mob", message = "Pick a mob:", choices = REGISTRY_MEMBERS(REGISTRY_MOBS), area = ask.choice)
 
 /client/proc/sendmob_answered(datum/om/prompt/choice/admin_jump/ask)
+	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "adminjump.sendmob_answered"))
+		return
 	var/area/A = ask.area
 	var/mob/M = ask.choice
 	if(CONFIG_GET(flag/allow_admin_jump))
@@ -199,12 +203,12 @@ ADMIN_VERB(Getkey, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "Get Key",  "Key to teleport."
 		M.forceMove(pick(get_area_turfs(A)))
 		feedback_add_details("admin_verb","SMOB") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
-		log_admin("[key_name(usr)] teleported [key_name(M)]")
-		var/msg = "[key_name_admin(usr)] teleported [ADMIN_LOOKUPFLW(M)]"
+		log_admin("[key_name(src)] teleported [key_name(M)]")
+		var/msg = "[key_name_admin(src)] teleported [ADMIN_LOOKUPFLW(M)]"
 		message_admins(msg)
 		admin_ticket_log(M, msg)
 	else
-		tgui_alert_async(usr, "Admin jumping disabled")
+		tgui_alert_async(src, "Admin jumping disabled")
 
 /// One missing coordinate for Move Atom; the answer re-enters cmd_admin_move_atom(), which asks for the next.
 /datum/om/prompt/number/move_atom_coord

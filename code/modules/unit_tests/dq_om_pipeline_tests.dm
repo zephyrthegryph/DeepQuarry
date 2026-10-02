@@ -10,13 +10,13 @@
 	var/on = TRUE
 	var/lit = TRUE
 	/// Stage names in the order they ran.
-	var/list/log = list()
+	var/list/log
 	/// Stage names that keep work (their idle() is FALSE).
-	var/list/busy = list()
+	var/list/busy
 	var/abort_now = 0
 	var/nested = 0
 	/// test_throttle's wakes.
-	var/list/wakes = list()
+	var/list/wakes
 	/// Stage "slow": start slow work (0 none, 1 started, 2 finished after its sleep).
 	var/slow_work = FALSE
 	var/slow_state = 0
@@ -24,8 +24,8 @@
 /datum/pipe_test_entity/deep
 /datum/pipe_test_entity/deep/deeper
 /datum/pipe_test_other
-	var/list/log = list()
-	var/list/busy = list()
+	var/list/log
+	var/list/busy
 
 /// One decl for two unrelated types (multi-type decls).
 /datum/om/decl/pipe_test
@@ -69,7 +69,7 @@
 	of = /datum/pipe_test_entity
 
 /datum/om/stage/test/perform(datum/pipe_test_entity/E, datum/om/frame/test/F)
-	E.log += name
+	LAZYADD(E.log, name)
 
 /datum/om/stage/test/idle(datum/pipe_test_entity/E)
 	return !(name in E.busy)
@@ -185,7 +185,7 @@
 	min_interval = 1 SECONDS
 
 /datum/om/stage/test_reactive/show/perform(datum/pipe_test_entity/E, datum/om/frame/F)
-	E.log += "show"
+	LAZYADD(E.log, "show")
 	return STAGE_IDLE
 
 /// A behaviour with min_interval: wakes coalesce and arrive by deadline.
@@ -195,7 +195,7 @@
 	min_interval = 1 SECONDS
 
 /datum/om/behaviour/test_throttle/on_wake(datum/pipe_test_entity/E, changes)
-	E.wakes += "wake:[changes]"
+	LAZYADD(E.wakes, "wake:[changes]")
 
 /proc/pipe_test_new(path = /datum/pipe_test_entity)
 	var/datum/pipe_test_entity/E = new path
@@ -230,8 +230,8 @@
 /datum/unit_test/om_pipeline/order_and_run_if/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
 	om_run_frame_now(E, /datum/om/pipeline/test)
-	TEST_ASSERT_EQUAL(jointext(E.log, ","), "c,a,b,d,e,f,g,h", "stage order")
-	E.log.Cut()
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "c,a,b,d,e,f,g,h", "stage order")
+	LAZYCLEARLIST(E.log)
 	var/datum/om/frame/S = pipe_test_state(E)
 	om_pipe_set_all(S, FALSE)
 	E.on = FALSE
@@ -275,11 +275,11 @@
 	E.busy = list("a")
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(S.asleep, S.plan.n - 1, "every stage but the busy one idles")
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	om_run_frame_now(E, /datum/om/pipeline/test)
-	TEST_ASSERT_EQUAL(jointext(E.log, ","), "a", "idle stages are skipped")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "a", "idle stages are skipped")
 	TEST_ASSERT_EQUAL(S.idle_frames, 0, "a frame with a busy stage isn't idle")
-	E.busy.Cut()
+	LAZYCLEARLIST(E.busy)
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(S.idle_frames, 1, "all idle: one idle frame")
 	TEST_ASSERT(!S.parked, "one idle frame doesn't park (hysteresis)")
@@ -313,7 +313,7 @@
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT(S.parked, "parked")
 	TEST_ASSERT(om_deadline_pending(E, /datum/om/pipeline/test, OM_DL_STAGE - 1 + T.pos), "e's rewake is pending")
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	var/waited = 0
 	var/unparked_at = 0
 	while(!length(E.log) && waited < 60)
@@ -324,7 +324,7 @@
 			unparked_at = waited
 	TEST_ASSERT(unparked_at || length(E.log), "the rewake unparked it")
 	TEST_ASSERT(waited >= 30, "not before its delay ([waited])")
-	TEST_ASSERT_EQUAL(jointext(E.log, ","), "e", "only e ran")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "e", "only e ran")
 	TEST_ASSERT(S.parked, "and, a rewake counting as one idle frame already, it parked again at once")
 
 /// F.abort(OM_ABORT_FRAME) stops the frame and idles nothing; OM_ABORT_REST keeps the idles made.
@@ -380,7 +380,7 @@
 	var/datum/pipe_test_entity/E = pipe_test_new()
 	E.nested = 1
 	om_run_frame_now(E, /datum/om/pipeline/test)
-	TEST_ASSERT_EQUAL(jointext(E.log, ","), "c,a,b,d,e,f,g,a,h", "the nested run ran inside g, and the frame went on")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "c,a,b,d,e,f,g,a,h", "the nested run ran inside g, and the frame went on")
 	var/datum/om/pipeline/P = om_registry().behaviour(/datum/om/pipeline/test)
 	TEST_ASSERT_NOTNULL(sched.free_frames[P.pipe_idx], "the frame went back to the free slot")
 
@@ -393,7 +393,7 @@
 	E.slow_work = TRUE
 	om_run_frame_now(E, /datum/om/pipeline/test)
 	TEST_ASSERT_EQUAL(E.slow_state, 1, "the slow work started inside the frame")
-	TEST_ASSERT(E.log.Find("h") > 0, "and the stages after it ran without waiting")
+	TEST_ASSERT(E.log?.Find("h") > 0, "and the stages after it ran without waiting")
 	var/waited = 0
 	while(E.slow_state != 2 && waited++ < 20)
 		sleep(1)
@@ -441,7 +441,7 @@
 		sched.run_pass(1e9)
 	TEST_ASSERT_EQUAL(length(E.wakes), 1, "wakes inside the interval wait")
 	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(length(E.wakes), 2, "and arrive once when it ends: [jointext(E.wakes, ",")]")
+	TEST_ASSERT_EQUAL(length(E.wakes), 2, "and arrive once when it ends: [jointext(E.wakes || list(), ",")]")
 	TEST_ASSERT(findtext(E.wakes[2], "wake:[CHANGE_DATUM_B | CHANGE_DATUM_D]"), "with the union of their bits: [E.wakes[2]]")
 
 /// A reactive pipeline runs its stages when woken; a stage's min_interval defers it by rewake.
@@ -450,17 +450,17 @@
 /datum/unit_test/om_pipeline/stage_throttle/run_pipeline()
 	var/datum/pipe_test_entity/E = pipe_test_new()
 	sched.run_pass(1e9)
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	changed(E, CHANGE_DATUM_C)
 	sched.run_pass(1e9)
-	TEST_ASSERT_EQUAL(E.log.Find("show"), 0, "the pass on start ran it already; within its interval it waits")
+	TEST_ASSERT_EQUAL(E.log?.Find("show") || 0, 0, "the pass on start ran it already; within its interval it waits")
 	scheduler_advance(1.1)
-	TEST_ASSERT(E.log.Find("show"), "and runs by rewake when the interval ends")
+	TEST_ASSERT(E.log?.Find("show"), "and runs by rewake when the interval ends")
 	scheduler_advance(1.1)
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	changed(E, CHANGE_DATUM_C)
 	sched.run_pass(1e9)
-	TEST_ASSERT(E.log.Find("show"), "after the interval a wake runs at once")
+	TEST_ASSERT(E.log?.Find("show"), "after the interval a wake runs at once")
 
 // --- Runlevels ------------------------------------------------------------------------
 

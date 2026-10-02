@@ -64,9 +64,9 @@ UI_DATA_REPLACE(/obj/item/soulstone, "merge:ui_data_obj_item_soulstone{has_shade
 /obj/item/soulstone/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!in_range(src, usr))
+	if(!in_range(src, user))
 		return FALSE
-	add_fingerprint(usr)
+	add_fingerprint(user)
 	return TRUE
 
 UI_ACT(/obj/item/soulstone, "summon", ui_act_summon)
@@ -74,8 +74,8 @@ UI_ACT_PROC(/obj/item/soulstone, ui_act_summon)
 	for(var/mob/living/simple_mob/construct/shade/A in contents_of(src))
 		A.disable_godmode()
 		A.canmove = 1
-		to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [usr.name]'s will. Help them suceed in their goals at all costs.")))
-		A.forceMove(usr.loc)
+		to_chat(A, span_infoplain(span_bold("You have been released from your prison, but you are still bound to [user.name]'s will. Help them suceed in their goals at all costs.")))
+		A.forceMove(user.loc)
 		A.cancel_camera()
 		icon_state = "soulstone"
 	return TRUE

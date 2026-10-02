@@ -86,7 +86,7 @@
 
 		add_attack_logs(user,target,"Spiked [target.name] with a pill containing [reagentlist()]")
 
-		reagents.trans_to(target, reagents.total_volume)
+		reagents.trans_to(target, reagents.total_volume, user = user)
 		/* for(var/mob/O in viewers(2, user)) // balloon_alert_visible handles this
 			O.show_message(span_warning("[user] puts something in \the [target]."), 1)
 		*/
@@ -104,7 +104,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC
 		play_sfx(src.loc, SFX_EFFECTS_CHOP)
 
 		if(reagents)
-			reagents.trans_to_obj(J, reagents.total_volume)
+			reagents.trans_to_obj(J, reagents.total_volume, user = user)
 		J.get_appearance()
 		consume(src, user)
 
@@ -114,7 +114,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC
 		play_sfx(src.loc, SFX_EFFECTS_CHOP)
 
 		if(reagents)
-			reagents.trans_to_obj(J, reagents.total_volume)
+			reagents.trans_to_obj(J, reagents.total_volume, user = user)
 		J.get_appearance()
 		consume(src, user)
 

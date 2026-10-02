@@ -105,7 +105,7 @@ UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transa
 
 	if(I)
 		if(linked_account())
-			scan_card(I, O)
+			scan_card(I, O, user)
 		else
 			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to connect to linked account."))
 	else if (istype(O, /obj/item/spacecash/ewallet))
@@ -136,57 +136,57 @@ UI_DATA_REPLACE(/obj/item/eftpos, "eftpos_name:text", "machine_id:text", "transa
 // Topic switch lifted into tgui_act with stable action names.
 UI_ACT(/obj/item/eftpos, "change_code", ui_act_change_code)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_change_code)
-	var/attempt_code = act_ask(usr, action, params, ui, "k147", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm old EFTPOS code")
+	var/attempt_code = act_ask(user, action, params, ui, "k147", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm old EFTPOS code")
 	if(isnull(attempt_code))
 		return
 	if(attempt_code == access_code)
-		var/trycode = act_ask(usr, action, params, ui, "k149", /datum/om/prompt/number, message = "Enter a new access code for this device (4-6 digits, numbers only)", title = "Enter new EFTPOS code", max = 999999, min = 1000)
+		var/trycode = act_ask(user, action, params, ui, "k149", /datum/om/prompt/number, message = "Enter a new access code for this device (4-6 digits, numbers only)", title = "Enter new EFTPOS code", max = 999999, min = 1000)
 		if(isnull(trycode))
 			return
 		if(trycode >= 1000 && trycode <= 999999)
 			access_code = trycode
 		else
-			tgui_alert_async(usr, "That is not a valid code!")
+			tgui_alert_async(user, "That is not a valid code!")
 		print_reference()
 	else
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect code entered."))
 	return TRUE
 
 UI_ACT(/obj/item/eftpos, "change_id", ui_act_change_id)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_change_id)
-	var/attempt_code = act_ask(usr, action, params, ui, "k159", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm EFTPOS code")
+	var/attempt_code = act_ask(user, action, params, ui, "k159", /datum/om/prompt/number, message = "Re-enter the current EFTPOS access code", title = "Confirm EFTPOS code")
 	if(isnull(attempt_code))
 		return
 	if(attempt_code == access_code)
-		var/_answer_k161 = act_ask(usr, action, params, ui, "k161", /datum/om/prompt/text, message = "Enter a new terminal ID for this device", title = "Enter new EFTPOS ID", max_length = MAX_NAME_LEN)
+		var/_answer_k161 = act_ask(user, action, params, ui, "k161", /datum/om/prompt/text, message = "Enter a new terminal ID for this device", title = "Enter new EFTPOS ID", max_length = MAX_NAME_LEN)
 		if(isnull(_answer_k161))
 			return
 		eftpos_name = _answer_k161 + " EFTPOS scanner"
 		print_reference()
 	else
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Incorrect code entered."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Incorrect code entered."))
 	return TRUE
 
 UI_ACT(/obj/item/eftpos, "link_account", ui_act_link_account)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_link_account)
-	var/attempt_account_num = act_ask(usr, action, params, ui, "k167", /datum/om/prompt/number, message = "Enter account number to pay EFTPOS charges into", title = "New account number")
+	var/attempt_account_num = act_ask(user, action, params, ui, "k167", /datum/om/prompt/number, message = "Enter account number to pay EFTPOS charges into", title = "New account number")
 	if(isnull(attempt_account_num))
 		return
-	var/attempt_pin = act_ask(usr, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
+	var/attempt_pin = act_ask(user, action, params, ui, "k168", /datum/om/prompt/number, message = "Enter pin code", title = "Account pin")
 	if(isnull(attempt_pin))
 		return
 	rel_set(src, nameof(/obj/item/eftpos::linked_account), attempt_account_access(attempt_account_num, attempt_pin, 1))
 	if(linked_account())
 		if(linked_account().suspended)
 			rel_clear(src, nameof(/obj/item/eftpos::linked_account))
-			to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account has been suspended."))
+			to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account has been suspended."))
 	else
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Account not found."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Account not found."))
 	return TRUE
 
 UI_ACT(/obj/item/eftpos, "trans_purpose", ui_act_trans_purpose)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
-	var/choice = act_ask(usr, action, params, ui, "k178", /datum/om/prompt/text, message = "Enter reason for EFTPOS transaction", title = "Transaction purpose")
+	var/choice = act_ask(user, action, params, ui, "k178", /datum/om/prompt/text, message = "Enter reason for EFTPOS transaction", title = "Transaction purpose")
 	if(isnull(choice))
 		return
 	if(choice)
@@ -195,11 +195,11 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_purpose)
 
 UI_ACT(/obj/item/eftpos, "trans_value", ui_act_trans_value)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_trans_value)
-	var/try_num = act_ask(usr, action, params, ui, "k183", /datum/om/prompt/number, message = "Enter amount for EFTPOS transaction", title = "Transaction amount")
+	var/try_num = act_ask(user, action, params, ui, "k183", /datum/om/prompt/number, message = "Enter amount for EFTPOS transaction", title = "Transaction amount")
 	if(isnull(try_num))
 		return
 	if(!isnum(try_num) || try_num <= 0 || try_num > EFTPOS_MAX_TRANSACTION)
-		tgui_alert_async(usr, "That is not a valid amount!")
+		tgui_alert_async(user, "That is not a valid amount!")
 	else
 		transaction_amount = round(try_num)
 	return TRUE
@@ -211,7 +211,7 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_toggle_lock)
 			transaction_locked = 0
 			transaction_paid = 0
 		else
-			var/attempt_code = act_ask(usr, action, params, ui, "k195", /datum/om/prompt/number, message = "Enter EFTPOS access code", title = "Reset Transaction")
+			var/attempt_code = act_ask(user, action, params, ui, "k195", /datum/om/prompt/number, message = "Enter EFTPOS access code", title = "Reset Transaction")
 			if(isnull(attempt_code))
 				return
 			if(attempt_code == access_code)
@@ -220,39 +220,39 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_toggle_lock)
 	else if(linked_account())
 		transaction_locked = 1
 	else
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("No account connected to send transactions to."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("No account connected to send transactions to."))
 	return TRUE
 
 UI_ACT(/obj/item/eftpos, "scan_card", ui_act_scan_card)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_scan_card)
 	if(linked_account())
-		var/obj/item/I = usr.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card))
-			scan_card(I)
+			scan_card(I, user = user)
 	else
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Unable to link accounts."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to link accounts."))
 	return TRUE
 
 UI_ACT(/obj/item/eftpos, "reset", ui_act_reset)
 UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
-	var/obj/item/I = usr.get_active_hand()
+	var/obj/item/I = user.get_active_hand()
 	if(istype(I, /obj/item/card))
 		var/obj/item/card/id/C = I
 		if((ACCESS_CENT_CAPTAIN in C.access) || (ACCESS_HOP in C.access) || (ACCESS_CAPTAIN in C.access))
 			access_code = 0
-			to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
+			to_chat(user, "[icon2html(src, user.client)]" + span_info("Access code reset to 0."))
 	else if(istype(I, /obj/item/card/emag))
 		access_code = 0
-		to_chat(usr, "[icon2html(src, usr.client)]" + span_info("Access code reset to 0."))
+		to_chat(user, "[icon2html(src, user.client)]" + span_info("Access code reset to 0."))
 	return TRUE
 
-/obj/item/eftpos/proc/scan_card(obj/item/card/I, obj/item/ID_container)
+/obj/item/eftpos/proc/scan_card(obj/item/card/I, obj/item/ID_container, mob/user)
 	if (istype(I, /obj/item/card/id))
 		var/obj/item/card/id/C = I
 		if(I==ID_container || ID_container == null)
-			act_message(usr, src, others = span_info("%U% swipes a card through %T%."))
+			act_message(user, src, others = span_info("%U% swipes a card through %T%."))
 		else
-			act_message(usr, src, others = span_info("%U% swipes %I% through %T%."), item = ID_container)
+			act_message(user, src, others = span_info("%U% swipes %I% through %T%."), item = ID_container)
 		if(transaction_locked && !transaction_paid)
 			if(linked_account())
 				if(!linked_account().suspended)
@@ -260,13 +260,13 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
 					// transaction can't be silently re-priced while the PIN dialog is open.
 					var/charge_amount = transaction_amount
 					if(charge_amount <= 0 || charge_amount > EFTPOS_MAX_TRANSACTION)
-						to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Invalid transaction amount."))
+						to_chat(user, "[icon2html(src, user.client)]" + span_warning("Invalid transaction amount."))
 						return
-					var/mob/swiper = usr
+					var/mob/swiper = user
 					var/attempt_pin = ""
 					var/datum/money_account/D = get_account(C.associated_account_number)
 					if(D.security_level)
-						var/_answer_k244 = rerun_ask(usr, "k244", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter pin code", title = "EFTPOS transaction")
+						var/_answer_k244 = rerun_ask(user, "k244", PROC_REF(scan_card), args, /datum/om/prompt/number, message = "Enter pin code", title = "EFTPOS transaction")
 						if(isnull(_answer_k244))
 							return
 						attempt_pin = _answer_k244
@@ -288,23 +288,23 @@ UI_ACT_PROC(/obj/item/eftpos, ui_act_reset)
 									transaction_paid = 0
 									return
 							else
-								to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("You don't have that much money!"))
+								to_chat(user, "[icon2html(src, user.client)]" + span_warning("You don't have that much money!"))
 						else
-							to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Your account has been suspended."))
+							to_chat(user, "[icon2html(src, user.client)]" + span_warning("Your account has been suspended."))
 					else
-						to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Unable to access account. Check security settings and try again."))
+						to_chat(user, "[icon2html(src, user.client)]" + span_warning("Unable to access account. Check security settings and try again."))
 				else
-					to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("Connected account has been suspended."))
+					to_chat(user, "[icon2html(src, user.client)]" + span_warning("Connected account has been suspended."))
 			else
-				to_chat(usr, "[icon2html(src, usr.client)]" + span_warning("EFTPOS is not connected to an account."))
+				to_chat(user, "[icon2html(src, user.client)]" + span_warning("EFTPOS is not connected to an account."))
 	else if (istype(I, /obj/item/card/emag))
 		if(transaction_locked)
 			if(transaction_paid)
-				to_chat(usr, "[icon2html(src, usr.client)]" + span_info("You stealthily swipe \the [I] through \the [src]."))
+				to_chat(user, "[icon2html(src, user.client)]" + span_info("You stealthily swipe \the [I] through \the [src]."))
 				transaction_locked = 0
 				transaction_paid = 0
 			else
-				act_message(usr, src, others = span_info("%U% swipes a card through %T%."))
+				act_message(user, src, others = span_info("%U% swipes a card through %T%."))
 				play_sfx(src, SFX_MACHINES_CHIME)
 				src.visible_message("[icon2html(src,viewers(src))] \The [src] chimes.")
 				transaction_paid = 1

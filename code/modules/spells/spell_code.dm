@@ -241,7 +241,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 
 	if(!(spell_flags & GHOSTCAST) && holder() == user)
 		if(user.stat && !(spell_flags & STATALLOWED))
-			to_chat(usr, "Not when you're incapacitated.")
+			to_chat(user, "Not when you're incapacitated.")
 			return 0
 
 		if(ishuman(user) && !(invocation_type in list(SpI_EMOTE, SpI_NONE)))

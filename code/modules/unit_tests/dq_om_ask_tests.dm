@@ -17,14 +17,16 @@
 
 /datum/om/prompt/confirm/test_offer/refused(reason)
 	var/datum/om_test_entity/E = subject
-	E?.log += "refused:[reason]"
+	if(E)
+		LAZYADD(E.log, "refused:[reason]")
 
 /datum/om/prompt/confirm/test_offer/declined()
 	var/datum/om_test_entity/E = subject
-	E?.log += "declined"
+	if(E)
+		LAZYADD(E.log, "declined")
 
 /datum/om_test_entity/proc/offer_taken(datum/om/prompt/confirm/test_offer/ask)
-	log += "taken"
+	LAZYADD(log, "taken")
 	rel_set(src, nameof(answered_holder), ask.holder)
 	answered_yes = ask.yes
 
@@ -40,21 +42,21 @@
 	TEST_ASSERT_EQUAL(P.message, "Take it from [holder]?", "prepare() built the message from the typed state")
 	TEST_ASSERT_NULL(P.holder, "a datum in the state is held as a handle while the window is open")
 	TEST_ASSERT_NULL(om_prompt_answer(P, "Yes"), "a yes passes and is delivered")
-	TEST_ASSERT_EQUAL(E.log.Join(","), "taken", "the answer proc ran on the receiver")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "taken", "the answer proc ran on the receiver")
 	TEST_ASSERT_EQUAL(E.answered_holder, holder, "the answer proc reads the typed state, resolved")
 	TEST_ASSERT(E.answered_yes, "ask.yes is TRUE")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_offer, /datum/om_test_entity/proc/offer_taken, list("holder" = holder, "subject" = E))
 	TEST_ASSERT_EQUAL(om_prompt_answer(P, "No"), "declined", "a no is declined")
-	TEST_ASSERT_EQUAL(E.log.Join(","), "declined", "declined() ran; the answer proc did not")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "declined", "declined() ran; the answer proc did not")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_offer, /datum/om_test_entity/proc/offer_taken, list("holder" = holder, "subject" = E, "refuse_with" = "busy"))
 	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "busy", "valid() is re-checked when the answer arrives")
-	TEST_ASSERT_EQUAL(E.log.Join(","), "refused:busy", "refused() ran with the reason; the answer proc did not")
+	TEST_ASSERT_EQUAL(jointext(E.log || list(), ","), "refused:busy", "refused() ran with the reason; the answer proc did not")
 
-	E.log.Cut()
+	LAZYCLEARLIST(E.log)
 	P = om_ask_begin(E, user, /datum/om/prompt/confirm/test_offer, /datum/om_test_entity/proc/offer_taken, list("holder" = holder, "subject" = E))
 	qdel(holder)
 	TEST_ASSERT_EQUAL(om_prompt_answer(P, "Yes"), "gone", "an answer after a datum in the state is deleted is dropped")
@@ -85,10 +87,10 @@
 
 /datum/om/task/test_named/own/proc/done()
 	var/datum/om_test_entity/E = actor
-	E.log += "own:[amount]"
+	LAZYADD(E.log, "own:[amount]")
 
 /datum/om_test_entity/proc/named_done(datum/om/task/test_named/task)
-	log += "done:[task.amount]"
+	LAZYADD(log, "done:[task.amount]")
 
 /datum/unit_test/om/task_named_args
 
@@ -105,7 +107,7 @@
 
 	var/datum/om/task/test_named/own/O = om_task_start(/datum/om/task/test_named/own, actor, null, amount = 5)
 	om_task_complete(O)
-	TEST_ASSERT_EQUAL(actor.log.Join(","), "own:5", "a complete_proc of the task's own type runs on the task, reading its vars")
+	TEST_ASSERT_EQUAL(jointext(actor.log || list(), ","), "own:5", "a complete_proc of the task's own type runs on the task, reading its vars")
 
 // ---------------------------------------------------------------- flows
 
@@ -141,25 +143,25 @@
 	TEST_ASSERT_NULL(F.witness, "its state is held as handles while it waits")
 	var/datum/om/prompt/TP1 = sched.test_prompts[1]
 	om_prompt_answer(TP1, "Yes")
-	TEST_ASSERT_EQUAL(F.log.Join(","), "start,agreed:1:witness", "the next step ran with the typed prompt; asker = actor; state restored")
+	TEST_ASSERT_EQUAL(jointext(F.log || list(), ","), "start,agreed:1:witness", "the next step ran with the typed prompt; asker = actor; state restored")
 	TEST_ASSERT(F.done, "a step that goes on to nothing finishes the flow")
 
 	sched.test_prompts = list()
 	F = om_flow_start(/datum/om/flow/test_consent, actor, other, witness = witness)
 	var/datum/om/prompt/TP2 = sched.test_prompts[1]
 	om_prompt_answer(TP2, "No")
-	TEST_ASSERT_EQUAL(F.log.Join(","), "start,ended:declined", "a no ends the flow through ended()")
+	TEST_ASSERT_EQUAL(jointext(F.log || list(), ","), "start,ended:declined", "a no ends the flow through ended()")
 
 	sched.test_prompts = list()
 	F = om_flow_start(/datum/om/flow/test_consent, actor, other, witness = witness)
 	F.refuse_with = "changed mind"
 	var/datum/om/prompt/TP3 = sched.test_prompts[1]
 	om_prompt_answer(TP3, "Yes")
-	TEST_ASSERT_EQUAL(F.log.Join(","), "start,ended:changed mind", "the flow's valid() is re-checked before the next step")
+	TEST_ASSERT_EQUAL(jointext(F.log || list(), ","), "start,ended:changed mind", "the flow's valid() is re-checked before the next step")
 
 	sched.test_prompts = list()
 	F = om_flow_start(/datum/om/flow/test_consent, actor, other, witness = witness)
 	qdel(witness)
 	var/datum/om/prompt/TP4 = sched.test_prompts[1]
 	om_prompt_answer(TP4, "Yes")
-	TEST_ASSERT(!F.log.Find("agreed:1:witness") && F.done, "a datum in the state deleted between steps stops the flow")
+	TEST_ASSERT(!F.log?.Find("agreed:1:witness") && F.done, "a datum in the state deleted between steps stops the flow")

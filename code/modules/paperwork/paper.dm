@@ -236,12 +236,12 @@ UI_DATA_REPLACE(/obj/item/paper, "title=name:text", "view=tgui_view:text", "merg
 
 UI_ACT(/obj/item/paper, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/item/paper, ui_act_write_field)
-	do_write_action("[params["id"]]", usr)
+	do_write_action("[params["id"]]", user)
 	return TRUE
 
 UI_ACT(/obj/item/paper, "write_end", ui_act_write_end)
 UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
-	do_write_action("end", usr)
+	do_write_action("end", user)
 	return TRUE
 
 // Shared write-prompt + pencode-parse + commit. Same checks the legacy

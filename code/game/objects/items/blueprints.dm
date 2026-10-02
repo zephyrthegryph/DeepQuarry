@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/areaeditor, \
 	add_fingerprint(user)
 	. = "<BODY><HTML><head><title>[src]</title></head> \
 				<h2>[station_name()] [src.name]</h2>"
-	switch(get_area_type())
+	switch(get_area_type(get_area(user)))
 		if(AREA_SPACE)
 			. += "<p>According to the [src.name], you are now in an unclaimed territory.</p>"
 		if(AREA_SPECIAL)
@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor/blueprints, INTERACT_USE("Read", PROC_R
 	. = areaeditor_text(user, held, interaction)
 	var/area/A = get_area(user)
 	if(!legend)
-		if(get_area_type() == AREA_STATION)
+		if(get_area_type(get_area(user)) == AREA_STATION)
 			. += "<p>According to \the [src], you are now in <b>\"[html_encode(A.name)]\"</b>.</p>"
 			. += "<p><a href='byond://?src=[REF(src)];edit_area=1'>Change area name</a></p>" //You can change the name without charges.
 		if(wire_schematics)
@@ -241,12 +241,12 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_legend", PROC_REF(topic_view
 TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_view_wireset), TOPIC_TEXT("view_wireset", MAX_NAME_LEN))
 
 /obj/item/areaeditor/blueprints/proc/topic_edit_area(mob/user, list/args)
-	if(get_area_type()!=AREA_STATION)
+	if(get_area_type(get_area(user))!=AREA_STATION)
 		return
 	if(in_use)
 		return
 	in_use = TRUE
-	edit_area()
+	edit_area(user)
 	in_use = FALSE
 	attack_self(user)
 	return TRUE
@@ -281,7 +281,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /obj/item/areaeditor/proc/get_area_type(area/A)
 	if(!A)
-		A = get_area(usr)
+		return 0
 	if(A.outdoors)
 		return AREA_SPACE
 
@@ -337,9 +337,9 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 /obj/item/areaeditor/proc/charges_not_added(mob/user)
 	to_chat(user, span_notice("You decide not to add any more material to the [src]"))
 
-/obj/item/areaeditor/proc/edit_area()
-	var/area/A = get_area(usr)
-	om_ask(usr, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
+/obj/item/areaeditor/proc/edit_area(mob/user)
+	var/area/A = get_area(user)
+	om_ask(user, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
 
 /// Re-checked on the answer: the blueprint is still in hand.
 /datum/om/prompt/text/blueprint_rename_area
@@ -363,9 +363,9 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	rename_area(A, str)
 
 	to_chat(user, span_notice("You rename the '[prevname]' to '[str]'."))
-	log_and_message_admins("has changed the area '[prevname]' title to '[str]'.")
+	log_and_message_admins("has changed the area '[prevname]' title to '[str]'.", user)
 	A.update_areasize()
-	interact()
+	interact(user)
 	return TRUE
 
 //Blueprint Subtypes
@@ -728,7 +728,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 /obj/item/areaeditor/proc/seeRoomColors_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	// If standing somewhere we can expand from, use expand perms, otherwise create
-	var/canOverwrite = (get_area_type() & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
+	var/canOverwrite = (get_area_type(get_area(user)) & can_expand_areas_in) ? can_expand_areas_into : can_create_areas_into
 	var/res = detect_room_ex(get_turf(user), canOverwrite, visual = 1)
 	if(!istype(res, /list))
 		switch(res)
@@ -797,7 +797,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /proc/get_new_area_type(area/A) //1 = can build in. 0 = can not build in.
 	if (!A)
-		A = get_area(usr)
+		return 0
 	if(A.outdoors) //ALWAYS able to build outdoors. This means if it's missed in GLOB.BUILDABLE_AREA_TYPES it's fine.
 		return 1
 
@@ -812,7 +812,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /proc/detect_new_area(turf/first, user) //Heavily simplified version for creating an area yourself.
 	if(!istype(first)) //Not on a turf.
-		to_chat(usr, span_warning("You can not create a room here."))
+		to_chat(user, span_warning("You can not create a room here."))
 		return
 	if(get_new_area_type(first.loc) == 1) //Are they in an area they can build? I tried to do this BUILDABLE_AREA_TYPES[first.loc.type] but it refused.
 		var/list/turf/found = list()

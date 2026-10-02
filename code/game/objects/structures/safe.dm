@@ -102,13 +102,13 @@ UI_DATA_REPLACE(/obj/structure/safe, "dial:num", "merge:ui_data_obj_structure_sa
 /obj/structure/safe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!ishuman(usr))
+	if(!ishuman(user))
 		return FALSE
 	return TRUE
 
 UI_ACT(/obj/structure/safe, "open", ui_act_open)
 UI_ACT_PROC(/obj/structure/safe, ui_act_open)
-	var/mob/living/carbon/human/human_user = usr
+	var/mob/living/carbon/human/human_user = user
 	if(check_unlocked())
 		to_chat(human_user, span_notice("You [open ? "close" : "open"] [src]."))
 		open = !open
@@ -119,7 +119,7 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_open)
 
 UI_ACT(/obj/structure/safe, "decrement", ui_act_decrement)
 UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
-	var/mob/living/carbon/human/human_user = usr
+	var/mob/living/carbon/human/human_user = user
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -138,7 +138,7 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_decrement)
 
 UI_ACT(/obj/structure/safe, "increment", ui_act_increment)
 UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
-	var/mob/living/carbon/human/human_user = usr
+	var/mob/living/carbon/human/human_user = user
 	var/canhear = 0
 	if(human_user.get_type_in_hands(/obj/item/clothing/accessory/stethoscope))
 		canhear = 1
@@ -157,7 +157,7 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_increment)
 
 UI_ACT(/obj/structure/safe, "retrieve", ui_act_retrieve, UI_ARG_REF("ref", "contents", /obj/item))
 UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
-	var/mob/living/carbon/human/human_user = usr
+	var/mob/living/carbon/human/human_user = user
 	var/obj/item/P = params["ref"]
 	if(open && P && in_range(src, human_user))
 		human_user.put_in_hands(P)

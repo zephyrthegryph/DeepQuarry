@@ -19,12 +19,12 @@
 	scheduler_advance(0.5)
 	TEST_ASSERT(!length(witness.log), "nothing runs before the deadline")
 	scheduler_advance(1)
-	TEST_ASSERT_EQUAL(witness.log.Join(","), "done", "on_done runs once at the deadline")
+	TEST_ASSERT_EQUAL(jointext(witness.log || list(), ","), "done", "on_done runs once at the deadline")
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_DONE, "the task is done")
 	TEST_ASSERT(!LAZYACCESS(user.do_afters, "\ref[target]"), "the interaction key is released")
-	witness.log.Cut()
+	LAZYCLEARLIST(witness.log)
 	TEST_ASSERT_NULL(om_task_timed(user, 0, target, witness, /datum/om_test_entity/proc/timer_hit, list("now")), "a zero delay runs at once")
-	TEST_ASSERT_EQUAL(witness.log.Join(","), "now", "and calls on_done synchronously")
+	TEST_ASSERT_EQUAL(jointext(witness.log || list(), ","), "now", "and calls on_done synchronously")
 
 /datum/unit_test/om/timed_action_cancel_on_move
 
@@ -41,15 +41,15 @@
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "moving cancels")
 	TEST_ASSERT_EQUAL(T.reason, "moved", "with the reason")
 	scheduler_advance(2)
-	TEST_ASSERT_EQUAL(witness.log.Join(","), "fail", "on_fail ran, on_done never")
+	TEST_ASSERT_EQUAL(jointext(witness.log || list(), ","), "fail", "on_fail ran, on_done never")
 
-	witness.log.Cut()
+	LAZYCLEARLIST(witness.log)
 	var/datum/om/task/timed/F = om_task_timed(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("done"), IGNORE_USER_LOC_CHANGE | IGNORE_TARGET_LOC_CHANGE)
 	user.forceMove(get_step(next, WEST))
 	scheduler_advance(1.5)
 	TEST_ASSERT_EQUAL(F.state, OM_TASK_DONE, "IGNORE_USER_LOC_CHANGE keeps it running")
 
-	witness.log.Cut()
+	LAZYCLEARLIST(witness.log)
 	var/obj/item/held = allocate(/obj/item/tool/wrench)
 	user.put_in_active_hand(held)
 	var/datum/om/task/timed/H = om_task_timed(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("done"))
@@ -67,10 +67,10 @@
 	var/datum/om/task/timed/T = om_task_timed(user, 1 SECONDS, target, witness, /datum/om_test_entity/proc/timer_hit, list("done"), on_fail = /datum/om_test_entity/proc/timer_hit, fail_args = list("fail"))
 	qdel(target)
 	TEST_ASSERT_EQUAL(T.state, OM_TASK_CANCELLED, "deleting the target cancels at once")
-	TEST_ASSERT_EQUAL(witness.log.Join(","), "fail", "on_fail ran")
+	TEST_ASSERT_EQUAL(jointext(witness.log || list(), ","), "fail", "on_fail ran")
 	TEST_ASSERT(!LAZYLEN(user.do_afters), "the interaction key is released")
 
-	witness.log.Cut()
+	LAZYCLEARLIST(witness.log)
 	var/obj/item/other = allocate(/obj/item/stack/material/steel, get_turf(user))
 	var/datum/om_test_entity/arg = entity(made)
 	om_task_timed(user, 1 SECONDS, other, witness, /datum/om_test_entity/proc/timer_hit, list("done", arg))

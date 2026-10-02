@@ -361,7 +361,7 @@ About the new airlock wires panel:
 /// Electrifies the door for `duration` seconds (-1: until fixed, 0: stops). feedback tells `user`.
 /obj/machinery/door/airlock/proc/electrify(duration, feedback = FALSE, mob/user)
 	var/message = ""
-	var/mob/actor = user || usr // the wires window still calls this without a user
+	var/mob/actor = user
 	if(wire_cut(WIRE_ELECTRIFY) && arePowerSystemsOn())
 		message = "The electrification wire is cut - Door permanently electrified."
 		timed_cancel(src, nameof(electrified_until))

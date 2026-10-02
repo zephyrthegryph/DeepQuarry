@@ -63,11 +63,11 @@ UI_DATA_REPLACE(/obj/item/locator, "merge:ui_data_obj_item_locator{frequency:tex
 /obj/item/locator/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	var/turf/current_location = get_turf(usr)
-	if(usr.stat || usr.restrained())
+	var/turf/current_location = get_turf(user)
+	if(user.stat || user.restrained())
 		return FALSE
 	if(!current_location || current_location.z == 3)
-		to_chat(usr, "The [src] is malfunctioning.")
+		to_chat(user, "The [src] is malfunctioning.")
 		return FALSE
 	return TRUE
 

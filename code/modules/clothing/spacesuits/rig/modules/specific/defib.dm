@@ -25,5 +25,5 @@ DECLARE_INTERACTIONS(/obj/item/shockpaddles/standalone/rig, INTERACT_USE(null, P
 /// Old attack_self.
 /obj/item/shockpaddles/standalone/rig/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	use_on_synthetic = !use_on_synthetic
-	to_chat(usr, span_notice("You switch the [src] to [use_on_synthetic ? "FBP" : "organic"] compatibility."))
+	to_chat(user, span_notice("You switch the [src] to [use_on_synthetic ? "FBP" : "organic"] compatibility."))
 	return TRUE

@@ -153,17 +153,17 @@ UI_DATA_REPLACE(/obj/item/paper_bundle, "page:num", "merge:ui_data_obj_item_pape
 /obj/item/paper_bundle/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!((src?.loc == usr) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == usr))))
-		to_chat(usr, span_notice("You need to hold it in hands!"))
+	if(!((src?.loc == user) || (istype(src.loc, /obj/item/folder) && (src.loc.loc == user))))
+		to_chat(user, span_notice("You need to hold it in hands!"))
 		return FALSE
-	usr.set_machine(src)
+	user.set_machine(src)
 	return TRUE
 
 UI_ACT(/obj/item/paper_bundle, "next_page", ui_act_next_page)
 UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
-	var/obj/item/in_hand = usr.get_active_hand()
+	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-		insert_sheet_at(usr, page + 1, in_hand)
+		insert_sheet_at(user, page + 1, in_hand)
 	else if(page != length(pages))
 		page++
 		play_sfx(src, SFX_PAGETURN)
@@ -171,9 +171,9 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_next_page)
 
 UI_ACT(/obj/item/paper_bundle, "prev_page", ui_act_prev_page)
 UI_ACT_PROC(/obj/item/paper_bundle, ui_act_prev_page)
-	var/obj/item/in_hand = usr.get_active_hand()
+	var/obj/item/in_hand = user.get_active_hand()
 	if(in_hand && (istype(in_hand, /obj/item/paper) || istype(in_hand, /obj/item/photo)))
-		insert_sheet_at(usr, page, in_hand)
+		insert_sheet_at(user, page, in_hand)
 	else if(page > 1)
 		page--
 		play_sfx(src, SFX_PAGETURN)
@@ -184,13 +184,13 @@ UI_ACT_PROC(/obj/item/paper_bundle, ui_act_remove)
 	if(!length(pages))
 		return TRUE
 	var/obj/item/W = pages[page]
-	usr.put_in_hands(W)
+	user.put_in_hands(W)
 	rel_remove(src, nameof(/datum/radial_menu::pages), pages[page])
-	to_chat(usr, span_notice("You remove the [W.name] from the bundle."))
+	to_chat(user, span_notice("You remove the [W.name] from the bundle."))
 	if(length(pages) <= 1)
 		var/obj/item/paper/P = pages[1]
-		usr.drop_from_inventory(src)
-		usr.put_in_hands(P)
+		user.drop_from_inventory(src)
+		user.put_in_hands(P)
 		qdel(src)
 		return TRUE
 	if(page > length(pages))

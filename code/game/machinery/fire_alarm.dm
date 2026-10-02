@@ -309,7 +309,7 @@ UI_DATA_REPLACE(/obj/machinery/partyalarm, "time:num", "merge:ui_data_obj_machin
 /obj/machinery/partyalarm/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat || !operable())
+	if(user.stat || !operable())
 		return FALSE
 	return TRUE
 

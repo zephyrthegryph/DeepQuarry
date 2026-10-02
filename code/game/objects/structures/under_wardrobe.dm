@@ -113,13 +113,13 @@ UI_DATA_REPLACE(/obj/structure/undies_wardrobe, "merge:ui_data_obj_structure_und
 /obj/structure/undies_wardrobe/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(!ishuman(usr))
+	if(!ishuman(user))
 		return FALSE
 	return TRUE
 
 UI_ACT(/obj/structure/undies_wardrobe, "remove_underwear", ui_act_remove_underwear, UI_ARG_TEXT("category"))
 UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_remove_underwear)
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 	var/changed = FALSE
 	if(params["category"] in H.all_underwear)
 		LAZYREMOVE(H.all_underwear, params["category"])
@@ -130,7 +130,7 @@ UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_remove_underwear)
 
 UI_ACT(/obj/structure/undies_wardrobe, "change_underwear", ui_act_change_underwear, UI_ARG_TEXT("category"))
 UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_change_underwear)
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 	var/changed = FALSE
 	var/datum/category_group/underwear/UWC = GLOB.global_underwear.categories_by_name[params["category"]]
 	if(!UWC)
@@ -142,7 +142,7 @@ UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_change_underwear)
 
 UI_ACT(/obj/structure/undies_wardrobe, "tweak", ui_act_tweak, UI_ARG_TEXT("category"), UI_ARG_REF("tweak", null, /datum/gear_tweak))
 UI_ACT_PROC(/obj/structure/undies_wardrobe, ui_act_tweak)
-	var/mob/living/carbon/human/H = usr
+	var/mob/living/carbon/human/H = user
 	var/changed = FALSE
 	var/underwear = params["category"]
 	if(!(underwear in H.all_underwear))

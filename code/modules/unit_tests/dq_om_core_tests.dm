@@ -6,7 +6,7 @@
 
 /datum/om_test_entity
 	var/ticks = 0
-	var/list/dts = list()
+	var/list/dts
 	var/wakes = 0
 	var/last_changes = 0
 	var/deadlines = 0
@@ -14,7 +14,7 @@
 	var/starts = 0
 	var/stops = 0
 	var/events = 0
-	var/list/log = list()
+	var/list/log
 	var/value = 1
 	var/weight = 0
 	var/enabled = TRUE
@@ -33,7 +33,7 @@
 
 /datum/om_test_entity/proc/inline_tick(dt)
 	ticks++
-	dts += dt
+	LAZYADD(dts, dt)
 
 /datum/om_test_entity/proc/inline_react(changes)
 	wakes++
@@ -46,8 +46,8 @@
 
 /datum/om/behaviour/test/tick(datum/om_test_entity/E, dt)
 	E.ticks++
-	E.dts += dt
-	E.log += "[type]"
+	LAZYADD(E.dts, dt)
+	LAZYADD(E.log, "[type]")
 	if(E.crash_on_tick)
 		CRASH("deliberate test runtime")
 
@@ -178,8 +178,8 @@
 	name = "test hooked"
 
 /datum/om/relation/test_hooked/on_unlink(datum/om_test_entity/source, datum/om_test_entity/target, datum/om/edge/edge)
-	source.log += "unlink:[!isnull(source)]:[!isnull(target)]:[!!QDELETED(source)]"
-	target.log += "unlink:[!isnull(source)]:[!isnull(target)]"
+	LAZYADD(source.log, "unlink:[!isnull(source)]:[!isnull(target)]:[!!QDELETED(source)]")
+	LAZYADD(target.log, "unlink:[!isnull(source)]:[!isnull(target)]")
 
 /datum/om/event/test
 	var/payload
@@ -192,12 +192,12 @@
 
 /datum/om/behaviour/test/handler/on_test_event(datum/om_test_entity/E, datum/om/event/test/event)
 	E.events++
-	E.log += "event:[event.type]:[event.payload]"
+	LAZYADD(E.log, "event:[event.type]:[event.payload]")
 	if(event.payload == "reenter")
 		var/datum/om/event/test/sub/inner = new
 		inner.payload = "inner"
 		om_emit(E, inner)
-		E.log += "after inner emit"
+		LAZYADD(E.log, "after inner emit")
 	if(event.payload == "crash")
 		CRASH("deliberate handler runtime")
 
@@ -339,7 +339,7 @@
 	om_attach(E, /datum/om/behaviour/test/every_second)
 	scheduler_advance(5)
 	TEST_ASSERT(E.ticks >= 4 && E.ticks <= 5, "expected 4-5 ticks in 5 s, got [E.ticks]")
-	for(var/dt in E.dts.Copy(2))
+	for(var/dt in E.dts?.Copy(2))
 		TEST_ASSERT(abs(dt - 1) < 0.01, "dt should be 1 s, got [dt]")
 	TEST_ASSERT_EQUAL(E.starts, 1, "on_start once")
 	om_detach(E, /datum/om/behaviour/test/every_second)
@@ -842,7 +842,7 @@
 	var/datum/om_test_entity/B = entity(made)
 	om_link(A, B, /datum/om/relation/test_hooked)
 	qdel(A)
-	TEST_ASSERT_EQUAL(A.log.len, 1, "on_unlink ran on delete")
+	TEST_ASSERT_EQUAL(length(A.log), 1, "on_unlink ran on delete")
 	TEST_ASSERT_EQUAL(A.log[1], "unlink:1:1:1", "both ends non-null, deleting end QDELETED")
 	TEST_ASSERT_EQUAL(A.edges_at_destroy, 1, "on_destroy() still sees its edges (it runs at the start of phase 4, before the links clear)")
 	TEST_ASSERT_EQUAL(length(A.om_rec?.edges), 0, "the deleted end has no edges left")

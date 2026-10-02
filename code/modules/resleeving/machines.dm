@@ -407,7 +407,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 		if(!ismob(G?.grab_target()))
 			return INTERACTION_HANDLED_PASS
 		var/mob/M = G?.grab_target()
-		if(put_mob(M))
+		if(put_mob(M, user))
 			consume(G, user)
 			return INTERACTION_HANDLED_PASS //Don't call up else we'll get attack messsages
 	if(istype(W, /obj/item/paicard/sleevecard))
@@ -445,7 +445,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	if(O?.buckled_to())
 		return 0
 
-	if(put_mob(O))
+	if(put_mob(O, user))
 		if(O == user)
 			act_message(user, src, others = "%U% climbs into %T%.")
 		else
@@ -543,19 +543,19 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	icon_state = "implantchair"
 	return
 
-/obj/machinery/transhuman/resleever/proc/put_mob(mob/living/carbon/human/M)
+/obj/machinery/transhuman/resleever/proc/put_mob(mob/living/carbon/human/M, mob/user)
 	if(!ishuman(M))
-		to_chat(usr, span_warning("\The [src] cannot hold this!"))
+		to_chat(user, span_warning("\The [src] cannot hold this!"))
 		return
 	if(get_occupant())
-		to_chat(usr, span_warning("\The [src] is already occupied!"))
+		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_RESLEEVER, usr))
-		to_chat(usr, span_warning("\The [src] won't take [M]!"))
+	if(!M.move_into(src, OCCUPANT_SLOT_RESLEEVER, user))
+		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
 	set_occupant(M)
-	src.add_fingerprint(usr)
+	src.add_fingerprint(user)
 	icon_state = "implantchair_on"
 	return 1
 
@@ -571,7 +571,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 /obj/machinery/transhuman/resleever/proc/resleever_verb_move_inside(mob/user, obj/item/held, datum/interaction/interaction)
 	if(user.stat != 0 || !operable())
 		return
-	put_mob(user)
+	put_mob(user, user)
 	return
 
 /// The fresh clone may be ejected now.

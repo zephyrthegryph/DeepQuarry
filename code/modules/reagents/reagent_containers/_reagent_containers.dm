@@ -46,7 +46,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 		balloon_alert(user, "[src] is full.")
 		return 1
 
-	var/trans = target.reagents.trans_to_obj(src, target:amount_per_transfer_from_this)
+	var/trans = target.reagents.trans_to_obj(src, target.amount_per_transfer_from_this, user = user)
 	balloon_alert(user, "[trans] units transfered to \the [src]")
 	return 1
 
@@ -65,7 +65,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 	var/contained = reagentlist()
 	add_attack_logs(user,target,"Splashed with [src.name] containing [contained]")
 	balloon_alert_visible("[target] is splashed with something by [user]!", "splashed the solution onto [target]")
-	reagents.splash(target, reagents.total_volume)
+	reagents.splash(target, reagents.total_volume, user = user)
 	return 1
 
 /obj/item/reagent_containers/proc/self_feed_message(mob/user)
@@ -147,14 +147,14 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 		return 0
 
 	if(!reagents || !reagents.total_volume)
-		balloon_alert(usr, "[src] is empty!")
+		balloon_alert(user, "[src] is empty!")
 		return 1
 
 	if(!target.reagents.get_free_space())
-		balloon_alert(usr, "[target] is full!")
+		balloon_alert(user, "[target] is full!")
 		return 1
 
-	var/trans = reagents.trans_to(target, amount_per_transfer_from_this)
+	var/trans = reagents.trans_to(target, amount_per_transfer_from_this, user = user)
 	balloon_alert(user, "transfered [trans] units to [target]")
 	return 1
 

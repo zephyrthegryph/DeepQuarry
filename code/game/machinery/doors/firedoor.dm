@@ -225,7 +225,7 @@
 		if(istype(X.species, /datum/species/xenos))
 			if(src.blocked)
 				act_message(user, src, others = span_alium("%U% begins digging into %T% internals!"))
-				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list())
+				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user))
 			else if(src.density)
 				act_message(user, src, others = span_alium("%U% begins forcing %T% open!"))
 				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
@@ -237,15 +237,15 @@
 			return
 	..()
 
-/obj/machinery/door/firedoor/proc/attack_alien_timed_done()
+/obj/machinery/door/firedoor/proc/attack_alien_timed_done(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	src.blocked = 0
 	update_icon()
-	open(1)
+	force_open_by(user)
 /obj/machinery/door/firedoor/proc/attack_alien_timed_done2(mob/user)
 	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	act_message(user, src, others = span_danger("%U% forces %T% open!"))
-	open(1)
+	force_open_by(user)
 
 /obj/machinery/door/firedoor/attack_generic(mob/living/user, damage)
 	if(!operable())
@@ -266,7 +266,7 @@
 /obj/machinery/door/firedoor/proc/attack_generic_timed_done(mob/living/user)
 	act_message(user, src, others = span_danger("%U% forces %T% open!"))
 	src.blocked = 0
-	open(1)
+	force_open_by(user)
 /obj/machinery/door/firedoor/proc/attack_generic_timed_done2(mob/living/user)
 	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
 	close(1)
@@ -320,7 +320,7 @@
 		MSG_BLIND("You hear metal strain and groan, and a door [density ? "opening" : "closing"]."), \
 		item = C)
 	if(density)
-		open(1)
+		force_open_by(user)
 	else
 		close()
 
@@ -396,7 +396,7 @@
 		MSG_BLIND("You hear metal strain, and a door [density ? "open" : "close"]."), \
 		item = tool)
 	if(density)
-		open(TRUE)
+		force_open_by(user)
 	else
 		close()
 
@@ -520,6 +520,13 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door/firedoor, MACHINE_PIPELINE, "density"
 		clear_gas_dependencies()
 		MACHINE_WAKE(src)
 
+/// Actor-driven force opens keep attribution even when a timed action finishes later.
+/obj/machinery/door/firedoor/proc/force_open_by(mob/user)
+	if(user && user.ckey)
+		log_admin("[user]([user.ckey]) has forced open an emergency shutter.")
+		message_admins("[user]([user.ckey]) has forced open an emergency shutter.")
+	return open(TRUE)
+
 /obj/machinery/door/firedoor/open(forced = 0)
 	clear_gas_dependencies()
 	if(hatch_open)
@@ -532,10 +539,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door/firedoor, MACHINE_PIPELINE, "density"
 			return //needs power to open unless it was forced
 		else
 			use_power(360)
-	else
-		if(usr && usr.ckey)
-			log_admin("[usr]([usr.ckey]) has forced open an emergency shutter.")
-			message_admins("[usr]([usr.ckey]) has forced open an emergency shutter.")
 	latetoggle()
 	return ..()
 

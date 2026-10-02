@@ -250,7 +250,7 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_launch_shuttle_forced)
 
 	var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
 	if (S.can_force())
-		S.force_launch(holder())
+		S.force_launch(holder(), user)
 		log_and_message_admins("forced the [shuttle_tag] shuttle", holder())
 	else
 		tgui_alert_async(holder(), "The [shuttle_tag] shuttle launch cannot be forced at this time. It's busy, or hasn't been launched yet.")
@@ -272,7 +272,7 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_launch_shuttle)
 
 	var/datum/shuttle/autodock/S = SSshuttles.shuttles[shuttle_tag]
 	if (S.can_launch())
-		S.launch(holder())
+		S.launch(holder(), user)
 		log_and_message_admins("launched the [shuttle_tag] shuttle", holder())
 	else
 		tgui_alert_async(holder(), "The [shuttle_tag] shuttle cannot be launched at this time. It's probably busy.")

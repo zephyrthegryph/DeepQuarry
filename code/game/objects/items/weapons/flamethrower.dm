@@ -187,7 +187,7 @@ UI_DATA_REPLACE(/obj/item/flamethrower, "lit:num", "constructed=status:num", "th
 /obj/item/flamethrower/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
 		return FALSE
-	if(usr.stat || usr.restrained() || usr.lying)
+	if(user.stat || user.restrained() || user.lying)
 		return FALSE
 	return TRUE
 
@@ -213,7 +213,7 @@ UI_ACT(/obj/item/flamethrower, "remove", ui_act_remove)
 UI_ACT_PROC(/obj/item/flamethrower, ui_act_remove)
 	if(!ptank)
 		return FALSE
-	usr.put_in_hands(ptank)
+	user.put_in_hands(ptank)
 	own_take(src, nameof(/obj/item/flamethrower::ptank))
 	set_lit(0)
 	update_icon()
