@@ -10,7 +10,7 @@
 	TEST_ASSERT(registered_image in GLOB.entopic_images, "The exact constructed image must enter the global image list")
 	TEST_ASSERT_EQUAL(length(GLOB.entopic_images), before_count + 1, "Construction must add exactly one global image")
 	qdel(entopic)
-	var/still_registered = registered_image in GLOB.entopic_images
+	var/still_registered = (registered_image in GLOB.entopic_images)
 	var/after_count = length(GLOB.entopic_images)
 	// Preserve global isolation even when a regression leaves this exact fixture image behind.
 	GLOB.entopic_images -= registered_image

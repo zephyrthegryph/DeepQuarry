@@ -1,7 +1,7 @@
 /// Intentional shattering retains compulsory hand release, exact prepared destination, fingerprints, and rag spill.
 /datum/unit_test/interim_bottle_smash_lifecycle/Run()
 	var/turf/T = run_loc_floor_bottom_left
-	var/turf/destination = run_loc_floor_bottom_right
+	var/turf/destination = run_loc_floor_top_right
 	TEST_ASSERT(T != destination, "the prepared successor destination is distinct from the original holder's turf")
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	for(var/sticky in list(FALSE, TRUE))

@@ -6,7 +6,7 @@
 	TEST_ASSERT(actor.put_in_active_hand(watch), "The actual wearer must hold the watch")
 	watch.interaction_self(actor, watch, null)
 	TEST_ASSERT(watch.activated, "The actual self interaction must arm the watch")
-	actor.injure(INJURY_BLUNT, 10, BP_CHEST, null)
+	actor.injure(INJURY_BLUNT, 10, BP_TORSO, null)
 	watch.periodic_step()
 	// The real injury reaction creates a decoy body; register it before any assertion stops the test.
 	own_turf_contents(T)

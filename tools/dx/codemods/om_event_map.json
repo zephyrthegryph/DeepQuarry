@@ -1976,7 +1976,8 @@
   "reads_result": false,
   "target": "/datum/notice/mob_death",
   "tests": [
-   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm"
+   "code/modules/unit_tests/dq_vital_lifecycle_tests.dm",
+   "code/modules/unit_tests/interim_pai_card_lifecycle.dm"
   ]
  },
  "/datum/om/event/mob_dna_mutation": {

@@ -1,3 +1,5 @@
+#include "../integrated_electronics/_defines.dm"
+
 /// Observe actual audible delivery while retaining the real mob message implementation.
 /mob/living/carbon/human/interim_ic_beep_listener
 	var/beeps_heard = 0
@@ -25,3 +27,5 @@
 	rel_set(packet, nameof(packet.source), circuit)
 	circuit.receive_signal(packet)
 	TEST_ASSERT_EQUAL(listener.beeps_heard, 1, "the circuit ignores its own signal without another beep")
+
+#include "../integrated_electronics/~defines/~defines.dm"
