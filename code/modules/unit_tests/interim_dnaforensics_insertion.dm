@@ -5,6 +5,7 @@
 	var/obj/machinery/dnaforensics/analyzer = allocate(/obj/machinery/dnaforensics, T)
 	var/obj/item/forensics/swab/swab = allocate(/obj/item/forensics/swab, T)
 	TEST_ASSERT(user.put_in_active_hand(swab), "the real sampling swab is held")
+	dq_give_zone_sel(user)
 	user.zone_sel.selecting = O_MOUTH
 	TEST_ASSERT_EQUAL(swab.attack(user, user), ITEM_INTERACT_SUCCESS, "the actual saliva sampling action succeeds")
 	TEST_ASSERT(swab.is_used(), "the actual swab records its used state")
@@ -26,6 +27,7 @@
 	analyzer.interaction_insert_swab(user, swab, null)
 	TEST_ASSERT_NULL(analyzer.bloodsamp(), "an unused swab is still rejected")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), swab, "unused rejection preserves the actual hand")
+	dq_give_zone_sel(user)
 	user.zone_sel.selecting = O_MOUTH
 	TEST_ASSERT_EQUAL(swab.attack(user, user), ITEM_INTERACT_SUCCESS, "the actual saliva sampling action succeeds")
 	add_trait(swab, TRAIT_NODROP, "interim_dnaforensics_swab")

@@ -360,15 +360,10 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 	. = ..()
 	. += rel_many(nameof(active_dark_maws))
 
-/// Constant ability ids shared by every instance of the same variant.
+/// Constant ability ids shared by every instance of the same concrete type.
+TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))
+TYPE_TABLE(/datum/shadekin/phase_only, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT))
+TYPE_TABLE(/datum/shadekin/full, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS))
+
 /datum/shadekin/proc/granted_ability_ids()
-	var/static/list/ids = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
-	return ids
-
-/datum/shadekin/phase_only/granted_ability_ids()
-	var/static/list/ids = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT)
-	return ids
-
-/datum/shadekin/full/granted_ability_ids()
-	var/static/list/ids = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS)
-	return ids
+	return TYPE_TABLE_GET(src, shadekin_ability_ids)
