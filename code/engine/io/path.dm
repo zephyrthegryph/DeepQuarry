@@ -6,8 +6,8 @@
 // takes a mutex and never spin-waits, and a bot's AI can be a non-sleeping every() step that reads A.request.path in its handler.
 // The path system runs one search at a time on a detached worker (a search yields inside CHECK_TICK; only the kernel and the
 // request layer may suspend, and this is that layer), oldest request first, dropping any whose owner has gone. A search that
-// finds nothing ends REQ_NO_RESULT. The answer is the path, a list of turfs. The legacy dq_pathfind() (one site, the combat AI's
-// brain) still searches synchronously through the same pathfinder until phase 5 moves that AI onto this kind.
+// finds nothing ends REQ_NO_RESULT. The answer is the path, a list of turfs. The combat AI's brain asks for its paths this way
+// (code/modules/combat_ai/brain/pathing.dm) and steps directly until the answer arrives.
 
 /datum/io/path
 	/// Where the search starts and what it wants to reach.

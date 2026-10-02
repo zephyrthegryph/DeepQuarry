@@ -1,8 +1,8 @@
 // A* pathfinding integration for the brain.
 //
 // The legacy ai_holder stores the cached path on itself; we do the same on
-// the brain. The pathfinder service (om_pathfinder()) is reused via dq_pathfind(), which wraps the same
-// /datum/pathfinding/astar instance the legacy holder used. ID-card access is
+// the brain. A search is a /datum/io/path request served by the path system (code/engine/io/path.dm), which runs the same
+// /datum/pathfinding/astar the legacy holder used; the brain never waits for it. ID-card access is
 // honoured so doors a mob can open are walked through instead of avoided.
 //
 // Behaviors that want smart movement call brain.smart_step_toward(target).
@@ -30,20 +30,42 @@
 	EXPIRY_DECLARE(next_path_attempt_at)
 	/// Current failure backoff (deciseconds); grows with consecutive failures.
 	var/path_fail_backoff = 0
+	/// TRUE while a /datum/io/path request for this brain is open: only one is, and the brain steps directly meanwhile.
+	var/path_pending = FALSE
 
 /datum/ai_brain/proc/clear_path()
 	planned_path = null
 	rel_clear(src, nameof(path_goal))
 	failed_steps = 0
 
-/proc/dq_pathfind(mob/living/actor, turf/goal, min_dist = 1, max_path = 128)
-	if(!actor || !goal)
-		return null
-	var/datum/pathfinding/astar/instance = new(actor, get_turf(actor), goal, min_dist, max_path * 2)
-	var/obj/item/card/id/potential_id = actor.GetIdCard()
-	if(!isnull(potential_id))
-		instance.ss13_with_access = potential_id.access?.Copy()
-	return om_pathfinder().run_pathfinding(instance)
+/// Asks the path system for a path from the holder to `goal`. The answer arrives in have_path().
+/datum/ai_brain/proc/request_path(turf/goal, min_dist = 1, max_path = 128)
+	var/turf/start = get_turf(holder)
+	if(!start || !goal)
+		return FALSE
+	var/obj/item/card/id/potential_id = holder.GetIdCard()
+	path_pending = TRUE
+	open_request(src, /datum/io/path, PROC_REF(have_path), start = start, goal = goal, mover = holder, target_distance = min_dist, max_path_length = max_path * 2, access = potential_id?.access?.Copy())
+	return TRUE
+
+/// The path system's answer (or its refusal): the cached path, or the failure backoff.
+/datum/ai_brain/proc/have_path(datum/act/request/A)
+	path_pending = FALSE
+	var/datum/io/path/R = A.request
+	var/turf/target_turf = R.goal
+	if(!holder || QDELETED(holder))
+		return
+	planned_path = A.answer ? R.path : null
+	rel_set(src, nameof(path_goal), target_turf)
+	path_navigation_revision = GLOB.ai_navigation_revision
+	failed_steps = 0
+	if(!length(planned_path))
+		path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
+		EXPIRY_SET(src, next_path_attempt_at, path_fail_backoff, CLOCK_WORLD)
+		dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
+		return
+	path_fail_backoff = 0
+	next_path_attempt_at = 0
 
 /// One smart step toward an atom. Re-uses a cached path when the goal is
 /// close to the previous goal; recomputes otherwise. Returns TRUE if the mob
@@ -73,17 +95,11 @@
 			&& path_goal() && get_dist(path_goal(), target_turf) <= path_recompute_tolerance \
 			&& path_navigation_revision == GLOB.ai_navigation_revision)
 			return FALSE
-		planned_path = dq_pathfind(holder, target_turf, get_to)
-		rel_set(src, nameof(path_goal), target_turf)
-		path_navigation_revision = GLOB.ai_navigation_revision
-		failed_steps = 0
-		if(!length(planned_path))
-			path_fail_backoff = path_fail_backoff ? min(path_fail_backoff * 2, DQ_PATH_BACKOFF_MAX) : DQ_PATH_BACKOFF_MIN
-			EXPIRY_SET(src, next_path_attempt_at, path_fail_backoff, CLOCK_WORLD)
-			dqai_log("[holder] brain: A* to [target_turf] failed, backing off [path_fail_backoff]ds")
+		if(path_pending)
 			return FALSE
-		path_fail_backoff = 0
-		next_path_attempt_at = 0
+		// The answer lands in have_path(); until then the caller steps directly.
+		request_path(target_turf, get_to)
+		return FALSE
 
 	// Strip any path entries we've already reached (mob moved by other means).
 	while(length(planned_path) && planned_path[1] == get_turf(holder))

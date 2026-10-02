@@ -478,4 +478,28 @@ TYPE_TABLE(/mob/living/simple_mob/combat_ai_test_subject, get_ai_target_selector
 	victim2.ai_brain.react_to_attack(attacker)  // Must not runtime.
 	// If we reach here, no crash — test passes implicitly.
 
+// --- runtime: a brain's path is a /datum/io/path request ---------------
+// smart_step_toward() asks the path system and steps directly until the answer lands in have_path(): the caller never waits.
+
+/datum/unit_test/dq_combat_ai_path_is_a_request
+
+/datum/unit_test/dq_combat_ai_path_is_a_request/Run()
+	var/mob/living/simple_mob/combat_ai_test_subject/S = allocate(/mob/living/simple_mob/combat_ai_test_subject)
+	var/turf/start = get_turf(S)
+	var/turf/goal = locate(start.x + 4, start.y, start.z)
+	TEST_ASSERT(isturf(goal), "the test block is wide enough")
+	var/datum/ai_brain/brain = S.ai_brain
+	TEST_ASSERT(!brain.smart_step_toward(goal), "the first call has no path yet: it asks and returns")
+	TEST_ASSERT(brain.path_pending, "the brain holds one open path request")
+	TEST_ASSERT(!brain.smart_step_toward(goal), "a second call while it waits asks nothing more")
+	for(var/waited in 1 to 100)
+		if(!brain.path_pending)
+			break
+		wait_ticks(1)
+	TEST_ASSERT(!brain.path_pending, "the path system answered")
+	TEST_ASSERT(length(brain.planned_path) >= 1 || brain.next_path_attempt_at, "the answer is a cached path, or the failure backoff")
+	if(length(brain.planned_path))
+		TEST_ASSERT_EQUAL(brain.path_goal(), goal, "the path is to the asked goal")
+
+
 #endif
