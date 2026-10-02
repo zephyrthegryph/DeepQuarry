@@ -291,7 +291,6 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     if matches!(kind, ParseKind::CheckGrep) {
         return parse_check_grep(text);
     }
-    let tagged = Pat::new(r"^([^\s:]+):(\d+): \[([\w/.\-]+)/(\w+)\]");
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
     let report = Pat::new(r"^([^:]+?):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
