@@ -894,3 +894,57 @@
 	for(var/obj/machinery/door/airlock/door as anything in doors)
 		qdel(door)
 	mark("after_airlock_cleanup")
+
+/// Actual living mobs and real incoming aim relationships, before/after lazy-list changes.
+/datum/benchmark/aimed_relation_lists
+	id = "aimed_relation_lists"
+	description = "Living mobs: untouched incoming-aim lists and actual aim/cancel relationships"
+
+/datum/benchmark/aimed_relation_lists/Run()
+	var/mobs_n = max(1, param("mobs", 200))
+	var/list/mobs = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_mobs")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		mobs += new /mob/living/carbon/human(T)
+	metric("mob_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("mob_allocation")
+	mark("untouched_mobs")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		if(islist(M.aimed))
+			untouched_lists++
+		untouched_entries += length(M.aimed)
+	count_metric("untouched_aimed_lists", untouched_lists, "lists")
+	count_metric("untouched_aimed_entries", untouched_entries, "entries")
+	var/mob/living/carbon/human/actor = new(T)
+	var/obj/item/binoculars/tool = new(T)
+	var/relationship_errors = 0
+	if(!actor.put_in_active_hand(tool))
+		relationship_errors++
+	own_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
+	var/obj/aiming_overlay/aim = actor.aiming
+	begin_window()
+	start = REALTIMEOFDAY
+	var/populated_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		aim.aim_at(M, tool)
+		populated_entries += length(M.aimed)
+		if(aim.aiming_at != M || !(aim in M.aimed))
+			relationship_errors++
+		actor.stop_aiming(tool, TRUE)
+		if(length(M.aimed) || aim.aiming_at || aim.aiming_with())
+			relationship_errors++
+	metric("aim_cancel_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("aim_cancel")
+	count_metric("observed_aim_entries", populated_entries, "entries")
+	count_metric("expected_aim_entries", mobs_n, "entries")
+	count_metric("relationship_errors", relationship_errors, "errors")
+	mark("after_aim_cancel")
+	qdel(actor)
+	for(var/mob/living/M as anything in mobs)
+		qdel(M)
+	mark("after_mob_cleanup")
