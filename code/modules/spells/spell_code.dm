@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		invocation(user, targets)
 		take_charge(user, skipcharge)
 
-		before_cast(targets) //applies any overlays and effects
+		before_cast(targets, user) //applies any overlays and effects
 		add_attack_logs(user, targets, "casted the spell [name]")
 		if(prob(critfailchance))
 			critfail(targets, user)
@@ -162,11 +162,11 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 /////CASTING WRAPPERS//////
 ///////////////////////////
 
-/datum/spell/proc/before_cast(list/targets)
+/datum/spell/proc/before_cast(list/targets, mob/user)
 	var/valid_targets[0]
 	for(var/atom/target in targets)
 		// Check range again (fixes long-range EI NATH)
-		if(!(target in view_or_range(range,usr,selection_type)))
+		if(!(target in view_or_range(range,user,selection_type)))
 			continue
 
 		valid_targets += target

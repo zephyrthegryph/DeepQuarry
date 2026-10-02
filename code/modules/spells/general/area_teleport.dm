@@ -19,7 +19,7 @@
 
 	hud_state = "wiz_tele"
 
-/datum/spell/area_teleport/before_cast()
+/datum/spell/area_teleport/before_cast(list/targets, mob/user)
 	return
 
 /datum/spell/area_teleport/choose_targets(mob/user)
