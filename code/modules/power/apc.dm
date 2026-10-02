@@ -372,6 +372,8 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 		terminal.connect_to_network(bind_now)
 		if(vg_entity)
 			vg_power_bind_machine(vg_entity, terminal.x, terminal.y, terminal.z)
+			power_node_at = null // bound at the terminal, not where power_send_node() would put it
+			power_topology_edited(src)
 			if(bind_now)
 				power_bind_now()
 	push_to_rust() // the first push after the bind: the frame's refresh may not have run yet

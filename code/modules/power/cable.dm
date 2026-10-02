@@ -128,6 +128,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 		return
 	SSvg.untrack_entity(src, power_entity)
 	power_entity = vg_power_bind_cable(power_entity, power_shape(T))
+	power_topology_edited(src)
 	SSvg.track_entity(src, power_entity)
 
 /// This piece as `vg_power_bind_cable` takes it: `x, y, z, d1, d2, up, down, link`.
@@ -158,6 +159,7 @@ GLOBAL_LIST_INIT(possible_cable_coil_colours, list(
 	if(!length(bound))
 		return
 	var/list/handles = vg_power_bind_cable_list(entities, shapes)
+	power_topology_edited(/obj/structure/cable)
 	for(var/i in 1 to length(bound))
 		var/obj/structure/cable/C = bound[i]
 		SSvg.untrack_entity(C, C.power_entity)
