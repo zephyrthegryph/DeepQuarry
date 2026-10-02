@@ -70,14 +70,13 @@
 
 /// Requirement: a prize costs two tickets.
 /obj/machinery/computer/arcade/proc/can_redeem_tickets(mob/user, atom/target, obj/item/stack/arcadeticket/T)
-	if(istype(T) && T.get_amount() < 2)
-		return "you need 2 tickets to claim a prize"
+	if(istype(T) && T.get_amount() < ARCADE_TICKETS_PER_PRIZE)
+		return "you need [ARCADE_TICKETS_PER_PRIZE] tickets to claim a prize"
 	return TRUE
 
 /obj/machinery/computer/arcade/proc/interaction_redeem_tickets(mob/user, obj/item/stack/arcadeticket/T, datum/interaction/interaction)
 	prizevend(user)
 	T.pay_tickets()
-	T.update_icon()
 	to_chat(user, span_notice("You turn in 2 tickets to the [src] and claim a prize!"))
 	return TRUE
 

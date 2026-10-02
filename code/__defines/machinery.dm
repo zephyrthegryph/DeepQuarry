@@ -6,6 +6,9 @@
 #define MEGAWATTS *1000000
 #define GIGAWATTS *1000000000
 
+// Arcade ticket redemption.
+#define ARCADE_TICKETS_PER_PRIZE 2
+
 // Doors!
 #define DOOR_CRUSH_DAMAGE 20
 #define ALIEN_SELECT_AFK_BUFFER  1    // How many minutes that a person can be AFK before not being allowed to be an alien.
