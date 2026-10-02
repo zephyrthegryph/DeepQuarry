@@ -410,13 +410,12 @@
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so
 	// RefreshParts() and get_part_rating() see them straight away.
-	for(var/obj/O in components.Copy())
+	for(var/obj/O in own_take_all(src, nameof(components)))
 		if(circuit.contain_parts)
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.moveToNullspace()
-		own_transfer(src, nameof(components), new_machine, nameof(new_machine.component_parts), O)
-	own_take_all(src, nameof(components)) // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
+		own_add(new_machine, nameof(new_machine.component_parts), O)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
