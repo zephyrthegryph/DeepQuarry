@@ -138,14 +138,14 @@ html { scroll-behavior: smooth; }
   <div class="prose"><p>Six ideas cover the whole API. Everything else in this document is a constructor for one of them, or a library built from them.</p></div>
   <div class="concepts">
     <div><h3>Entries</h3><p>What a type declares, in one inheriting list per type: <code>CAPABILITIES(T, ...)</code>. Capabilities, ops, stats, relations, triggers, outputs, look parts. Built once per type and interned.</p></div>
-    <div><h3>Parts</h3><p>The unit of behaviour inside a trigger: how it's reached, what it requires, what it costs, what it does, what it says. Interned values that nest into bundles.</p></div>
+    <div><h3>Parts</h3><p>The unit of behaviour inside a trigger. Each part acts in one or more of four stages: Match, Require, Wait and Do. Interned values that nest into bundles.</p></div>
     <div><h3>Stats</h3><p>A value composed from contributions by one rule. Its effective value lives in a plain var that only the engine writes. Built on the existing OM contribution store.</p></div>
     <div><h3>Sources</h3><p>Whoever holds a runtime contribution: a capability, an item, a spell, an admin, a timer. One source holds once. Releasing, expiring or deleting it takes back everything it held.</p></div>
     <div><h3>Triggers</h3><p>Things that run parts. Ops (chosen by an actor), actions (refusable world events), notices (it happened), changes, timers and periodic work. Every trigger has a typed context.</p></div>
     <div><h3>Systems</h3><p>World-level owners of global state and periodic work, scheduled by the kernel with boot order, budgets and membership. They replace subsystems, world services, world lanes and the OM scheduler.</p></div>
   </div>
   <div class="flow" aria-label="How a click becomes an effect">
-    <span>input</span><i>→</i><span>gesture</span><i>→</i><span>bind profile + stance</span><i>→</i><span>action (ACT_*)</span><i>→</i><span>candidates: target, held item, actor</span><i>→</i><span>offered</span><i>→</i><span>priority</span><i>→</i><span>route + provider</span><i>→</i><span>check</span><i>→</i><span>pay (wait cancels early)</span><i>→</i><span>commit</span><i>→</i><span>feedback</span><i>→</i><span>notice</span>
+    <span>input</span><i>→</i><span>gesture</span><i>→</i><span>bind profile + stance</span><i>→</i><span>intent (INTENT_*)</span><i>→</i><span>candidates: target, held item, actor</span><i>→</i><span>Match (gates, route, provider, when)</span><i>→</i><span>priority</span><i>→</i><span>Require</span><i>→</i><span>Wait (cancels early)</span><i>→</i><span>Do</span><i>→</i><span>notice</span>
   </div>
   <div class="flow" aria-label="How a state change reaches its readers">
     <span>setter / stat / hold / relation write</span><i>→</i><span>publish key (only if read)</span><i>→</i><span>hooks: on_change</span><i>+</i><span>conditions re-evaluate: stats, every(when), requirements, steps</span><i>+</i><span>outputs queue: look, UI, Rust, HUD, derived</span><i>→</i><span>presentation phase, once per frame</span>
@@ -367,7 +367,8 @@ CAPABILITIES(/obj/machinery/porta_turret,
 contributes(nameof(operable), PROC_REF(has_power))      <span class="c">// a condition: reads generated, re-evaluated by itself</span>
 contributes(nameof(operable), not(nameof(broken)))
 contributes(nameof(operable), req_built_final())         <span class="c">// a requirement datum is a condition too</span>
-contributes(nameof(light_range), 4)                      <span class="c">// a fixed value</span></code></pre>
+contributes(nameof(light_range), 4)                      <span class="c">// a fixed value</span>
+contributes(nameof(acts_via), ROUTE_NONE, reason = MSG(vore/absorbed))   <span class="c">// a reason, shown by the actor gate (section 8)</span></code></pre>
   <div class="tbl"><table>
     <thead><tr><th>Rule</th><th>Effective value</th><th>Typical stats</th></tr></thead>
     <tbody>
@@ -380,7 +381,7 @@ contributes(nameof(light_range), 4)                      <span class="c">// a fi
     </tbody>
   </table></div>
   <h3>Holds: runtime contributions</h3>
-  <div class="sig">hold(E, nameof(stat), value, source, lasts = null, priority = 0, clock = CLOCK_OWN)
+  <div class="sig">hold(E, nameof(stat), value, source, lasts = null, priority = 0, clock = CLOCK_OWN, reason = null)
 release(E, nameof(stat), source)
 release_all(E, source)                          <span class="c">// everything one source holds on E</span>
 held_by(E, nameof(stat))                         <span class="c">// the sources (a fresh list)</span>
@@ -389,6 +390,8 @@ hold_left(E, nameof(stat), source)               <span class="c">// deciseconds 
     <ul>
       <li><strong>One source holds once.</strong> Holding again replaces the value and keeps the later expiry, so a second EMP extends; it never leaks (review D2).</li>
       <li><strong>Expiry</strong> is one deadline per entity, on the chosen clock. Deleting a datum source releases everything it holds, everywhere.</li>
+      <li><strong>A slot entry is a source.</strong> A hold or grant placed with <code>source = slot_entry(holder, item)</code> ends automatically when the item leaves that slot, however it leaves: removed, transferred, spilled or deleted.</li>
+      <li><strong>Reasons.</strong> A hold or contribution on <code>acts_via</code> takes <code>reason =</code>, a message type. When the actor gate drops every candidate, the strongest hold's reason is shown (<a href="#actions">section 8</a>).</li>
       <li><strong>Admin edits</strong> of a stat var become a hold by the admin, visible in VV and removable. They're never a raw write the engine would overwrite.</li>
       <li><strong>Cost.</strong> A boolean stat keeps one bit per static contribution per instance, and re-evaluates only the contribution whose reads changed. The hold list exists only while something is held. Generated reads see the stat var like any other var.</li>
     </ul>
@@ -402,11 +405,13 @@ granted(E, what)</div>
       <li><strong>Capabilities.</strong> Granting a capability attaches its entries to that one instance (ops, triggers, contributions, look parts). Revoke or expiry detaches all of them.</li>
       <li><strong>Verbs.</strong> Granted verbs and hidden verbs are members of the instance's verb set, and the verb store applies them. A hide beats a grant.</li>
       <li><strong>Traits.</strong> <code>has_trait(E, X)</code> is <code>granted(E, X)</code>.</li>
+      <li><strong>Effects on another entity.</strong> A lasting effect one entity puts on another is a granted capability, not a set of loose holds. The capability's entries carry everything the effect does, and revoking it, its expiry or the end of its source takes all of it back at once. A belly absorbing prey is the model: <code>grant(prey, /datum/capability/absorbed, source = slot_entry(src, prey))</code> (<a href="#examples">16.6</a>).</li>
     </ul>
   </div>
   <h3>Conditional entries</h3>
   <div class="sig">when(condition, entries...)        <span class="c">// an automatic grant whose source is the condition</span></div>
-  <div class="prose"><p>The condition's reads are generated, so the framework attaches and detaches the entries itself. No code calls a "changed" proc. Species, preferences, worn items and modes all use this: <code>when(PROC_REF(spont_vore_on), spontaneous_vore())</code>, <code>when(nameof(emagged), emagged_menu())</code>.</p></div>
+  <div class="prose"><p>The condition's reads are generated, so the framework attaches and detaches the entries itself. No code calls a "changed" proc. Species, preferences, worn items and modes all use this: <code>when(PROC_REF(spont_vore_on), spontaneous_vore())</code>, <code>when(nameof(emagged), emagged_menu())</code>.</p>
+    <p>Wrapping only ops, <code>when(cond, op(...), op(...))</code> means the same as putting <code>when(cond)</code> on each op: they exist only while the condition holds. Both compile to one resolution-time applicability check, so nothing is attached or detached at runtime (<a href="#parts">section 9</a>).</p></div>
   <h3>Statuses, effects, factors</h3>
   <div class="tbl"><table>
     <thead><tr><th>Domain API (kept as named sugar)</th><th>Underneath</th></tr></thead>
@@ -468,6 +473,7 @@ contents_of(A, type) · locate_within(A, type) · locate_on(turf, type) · is_in
     <ul>
       <li><strong>Slots</strong> are entries backed by the containment ledger. Storage, equipment, cell bays, occupants, belly interiors and mech hardpoints are all library capabilities built on <code>slot()</code>.</li>
       <li><strong>Equipping and inserting</strong> are actions (<code>/datum/act/insert</code>, <code>/datum/act/equip</code>), so constraints such as "takes only cells" or "fits these body types" are requirement parts: <code>extend(/datum/act/insert, needs(...))</code>, or <code>accepts =</code> on the slot.</li>
+      <li><strong>A slot entry is a source.</strong> A hold or grant placed with <code>source = slot_entry(holder, item)</code> ends automatically when the item leaves the slot (<a href="#stats">section 5</a>).</li>
       <li><strong>No raw reads.</strong> Raw <code>contents</code> and <code>loc</code> scans are banned; use the spatial read API.</li>
     </ul>
   </div>
@@ -506,7 +512,7 @@ contents_of(A, type) · locate_within(A, type) · locate_on(turf, type) · is_in
     <thead><tr><th>Role</th><th>What it is</th><th>Forms</th><th>Re-runs</th></tr></thead>
     <tbody>
       <tr><td><strong>Output</strong></td><td>Computes something from state and applies it. Must not write tracked state (test builds fail if it does).</td><td><code>draw(look)</code>, <code>ui_data(user)</code>, <code>push_to_rust()</code>, <code>derive_&lt;v&gt;()</code>, <code>examine(user)</code> (on demand), <code>output(PROC_REF(x), at_most =, when =)</code></td><td>Once per frame in phase <code>R</code> after any read changed</td></tr>
-      <tr><td><strong>Condition</strong></td><td>A pure predicate that gates something.</td><td>Stat contributions, <code>when()</code>, <code>every(when =)</code>, <code>seq_step(should_run =)</code>, requirement procs, <code>offered</code>, look-part <code>when</code></td><td>When a read changes. A flip recomputes a stat, starts or stops work, wakes a step, cancels a wait, or redraws</td></tr>
+      <tr><td><strong>Condition</strong></td><td>A pure predicate that gates something.</td><td>Stat contributions, <code>when()</code> (entry-level or on one op), <code>every(when =)</code>, <code>seq_step(should_run =)</code>, requirement procs, look-part <code>when</code></td><td>When a read changes. A flip recomputes a stat, starts or stops work, wakes a step, cancels a wait, or redraws</td></tr>
       <tr><td><strong>Hook</strong></td><td>"This particular thing changed: do this once."</td><td><code>on_change(nameof(cell), parts...)</code></td><td>On that key. The only hand-written key, usually one</td></tr>
     </tbody>
   </table></div>
@@ -561,6 +567,7 @@ contents_of(A, type) · locate_within(A, type) · locate_on(turf, type) · is_in
       <li><strong>key:</strong> a stable id: a capability (<code>CAP_X</code>) or an op (<code>"op_key"</code>).</li>
       <li><strong>tag:</strong> a group label on ops (<code>TAG_*</code>).</li>
       <li><strong><code>ON_*</code>:</strong> where an effect lands (<code>ON_TARGET</code>, <code>ON_ACTOR</code>, <code>ON_SELF</code>).</li>
+      <li><strong>stage:</strong> one of the four steps an op runs through: Match, Require, Wait, Do (<a href="#parts">section 9</a>). A construction stage is a different thing: a rung of a build ladder.</li>
     </ul>
   </div>
   <h3>Contexts</h3>
@@ -595,7 +602,7 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
     <thead><tr><th>Input</th><th>Path</th></tr></thead>
     <tbody>
       <tr><td>Click, ctrl/alt/shift/middle click, drag-drop, clicking the held item, keybindings</td><td>A gesture (<code>GESTURE_CLICK</code>, <code>_ALT</code>, <code>_CTRL</code>, <code>_DRAG</code>, <code>_SELF</code>, ...). The actor's bind profile and current stance map it to an ordered list of intents (<code>INTENT_USE</code>, <code>INTENT_ATTACK</code>, <code>INTENT_TOGGLE</code>, <code>INTENT_EJECT</code>, <code>INTENT_OPEN</code>, <code>INTENT_DROP_ONTO</code>, <code>INTENT_EXAMINE</code>, ...).</td></tr>
-      <tr><td>Context menu, radial, command bar, screentips</td><td>The offered ops, by key, with refused ones shown with their reason (<code>action_options()</code>, <code>screentip_for()</code>)</td></tr>
+      <tr><td>Context menu, radial, command bar, screentips</td><td>The ops that match, by key. Ones that fail Require are shown greyed, with their reason (<code>action_options()</code>, <code>screentip_for()</code>)</td></tr>
       <tr><td>UI button</td><td>An op with a <code>ui_act("name", args...)</code> input, over <code>ROUTE_UI</code></td></tr>
       <tr><td>Topic link</td><td>An op with a <code>topic("key", args...)</code> input, over <code>ROUTE_TOPIC</code></td></tr>
       <tr><td>Verb</td><td>An op with <code>menu()</code> input is listed in the verb panel's "Act" verb. Client and admin commands stay native verbs and <code>ADMIN_VERB</code>.</td></tr>
@@ -607,11 +614,11 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
   </table></div>
   <h3>Who may act, and what they can reach</h3>
   <div class="prose">
-    <p>Two gates run before any op is offered or performed. They apply the same way to players, AI controllers and <code>perform_op()</code>.</p>
+    <p>Two gates run before any op can match or run. They apply the same way to players, AI controllers and <code>perform_op()</code>.</p>
     <p><strong>Actor gate.</strong> Every actor has a stat <code>acts_via</code> (rule: AND of route masks; base <code>ROUTE_ALL</code>) beside the existing <code>can_act</code> (ALL). Resolution first drops every candidate whose route is not in the actor's <code>acts_via</code>. An op with a physical input (<code>hand()</code>, <code>tool()</code>, <code>item()</code>, <code>in_hand()</code>, <code>at_target()</code>) also gets an implicit <code>req_capable()</code>, unless it declares <code>req_capable(ignoring = ...)</code> (struggling ignores restraints).</p>
     <p>Conditions hold these stats, so nothing in content checks "is absorbed":</p>
     <ul>
-      <li>absorbed: <code>acts_via = ROUTE_NONE</code>. Prey cannot click, use a UI, use verbs or speak commands.</li>
+      <li>absorbed: <code>acts_via = ROUTE_NONE</code>, held with a reason. Prey cannot click, use a UI, use verbs or speak commands.</li>
       <li>stunned or paralysed: hold <code>can_act</code> FALSE.</li>
       <li>buckled or handcuffed: hold <code>acts_via</code> minus <code>ROUTE_PHYSICAL</code>. <code>ROUTE_INSIDE</code> and <code>ROUTE_UI</code> stay as their sources choose.</li>
       <li>dead: <code>ROUTE_NONE</code>, except the ghost routes.</li>
@@ -622,22 +629,24 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
       <li><code>SLOT_EXPOSURE_EXTERNAL</code> is always exposed.</li>
       <li>A slot with <code>at = BAY_X</code> is exposed only while that bay's compartment gate passes for this route. <code>compartment(BAY_X, door =, route_gate =)</code>: the door capability (for example <code>cover()</code>) closes the bay, and <code>route_gate</code> is a requirement deciding which routes pass. Default: physical routes need the door open, <code>ROUTE_TK</code> obeys it, and <code>ROUTE_INTERFACE</code> ignores physical bays.</li>
     </ul>
-    <p>An unreachable target is not a candidate, so a closed hatch stops every op on the enclosed cell: <code>take_out</code>, the cell's own ops, using a tool on it and drag-drop. World actions <code>insert</code> and <code>remove</code> into that slot are refused with the compartment's reason. Reach applies to the held item's <code>at_target</code> ops too. Examining an unreachable thing shows only what the bay exposes. See <a href="#ex-reach">16.1a</a>.</p>
+    <p><strong>Reaching the target is Match, so it is silent.</strong> An unreachable target is not a candidate, so a closed hatch stops every op aimed at the enclosed cell: its own ops, using a tool on it and drag-drop. Reach applies to the held item's <code>at_target</code> ops too. Examining an unreachable thing shows only what the bay exposes.</p>
+    <p><strong>Reaching a slot is Require, so it is loud.</strong> An op that moves something into or out of a slot declared <code>at = BAY_X</code> (<code>put_in</code>, <code>take_out</code>, or an <code>insert</code> into it) gets an implicit <code>needs(...)</code> that the bay is open, with the compartment's reason. The world actions <code>insert</code> and <code>remove</code> on that slot are refused the same way. An author who wants such an op silent instead adds <code>when(...)</code>. The APC's <code>take_cell</code> has <code>when(req_set(COVER_OPEN), req_full(nameof(cell)))</code>, so on a closed APC an empty-hand click does not match it and falls through to opening the window. See <a href="#ex-reach">16.1a</a>.</p>
+    <p><strong>Gate feedback.</strong> Both gates filter silently, so that input can fall through to another candidate. But if no candidate survives and a gate dropped something, the engine shows that gate's reason, rate-limited, so a click never just does nothing. The actor gate's reason comes from the holds on <code>acts_via</code>, which take one: <code>hold(prey, nameof(acts_via), ROUTE_NONE, source, reason = MSG(vore/absorbed))</code>. When several holds apply, the strongest hold's reason is shown. The reach gate's reason is the compartment's, which comes from its door capability ("The cover is closed.").</p>
   </div>
   <h3>Resolution</h3>
   <ol class="prose">
     <li><strong>Candidates</strong> come from three places: the target's ops that answer the action, the held item's <code>at_target</code> ops, and the actor's own ops (abilities and <code>in_hand</code> self-uses).</li>
-    <li><strong>Filters</strong>, in order:
+    <li><strong>Filters</strong>, in order. These are the Match stage (<a href="#parts">section 9</a>), so a candidate that fails one is dropped silently:
       <ul>
         <li><strong>step 0, actor gate:</strong> candidates whose route is not in the actor's <code>acts_via</code> are dropped (see "Who may act, and what they can reach");</li>
-        <li><strong>step 0.5, reach gate:</strong> for physical routes, a target that is not reachable offers nothing;</li>
+        <li><strong>step 0.5, reach gate:</strong> for physical routes, a target that is not reachable is not a candidate;</li>
         <li>the route is accepted;</li>
         <li>a provider (a hand, a cyborg module, a mech arm, a mob's natural weapon) gives the op's affordance (<code>AFF_MANIPULATE</code>, <code>AFF_HOLD</code>, <code>AFF_CONTROL</code>, <code>AFF_INTERFACE</code>, <code>AFF_TELEKINESIS</code>);</li>
-        <li>its <code>offered</code> parts hold.</li>
+        <li>its <code>when</code> parts hold.</li>
       </ul>
     </li>
     <li><strong>Order:</strong> the profile's action list, then priority, then declaration order. Priority defaults come from the parts: <code>TAKE_OUT</code> > <code>SUBVERT</code> > <code>CLAW</code> > <code>PART</code> > <code>NORMAL</code> > <code>DEFAULT</code>. A target op that names this held item's type outranks the item's own generic use.</li>
-    <li><strong>Run:</strong> the first candidate runs. If its requirements refuse, the player sees the reason; the input never silently falls through. Only <code>offered</code> failures fall through. An op with a <code>passes()</code> part lets the next candidate run after it commits.</li>
+    <li><strong>Run:</strong> the first candidate runs through Require, Wait and Do. If Require refuses, the player sees the reason; the input never silently falls through. Only Match failures fall through. An op with a <code>passes()</code> part lets the next candidate run after its Do. If no candidate survives and a gate dropped something, the engine shows the gate's reason (see "Gate feedback").</li>
   </ol>
   <div class="note"><p><strong>Replaces:</strong> <code>incapacitated()</code>/<code>can_act</code> checks in handlers, <code>INCAPACITATED_IGNORING</code>, manual "is absorbed" checks, manual "panel open?" guards before reaching contents; <code>attackby</code>, <code>attack_hand</code>, <code>attack_self</code>, <code>afterattack</code>, <code>attack_generic</code>, <code>*_act</code> tool procs and <code>click_alt</code> overrides as entry points; <code>INTERACTION_ENTRY_*</code>; <code>INTERACTION_HANDLED_PASS</code> (now <code>passes()</code>); the legacy interaction resolver; <code>cap_use_at</code>'s separate pass; <code>use_tool</code>; <code>/datum/ability</code> (an ability is an actor op granted to the actor); <code>guard_ctx</code>; and <code>op_ctx</code> as a separate type.</p></div>
 </section>
@@ -647,23 +656,58 @@ act_done(F)                     <span class="c">// publishes /datum/notice/fall 
   <div class="sig">op(key, name, parts...)           <span class="c">// key: stable id. name: menu text (null: the name comes from a part, e.g. toggles()). Nested lists flatten.</span>
 extend(key | list(keys) | CAP_KEY | TAG_X | /datum/act/x, parts...)
 without(key)</div>
-  <div class="prose"><p>Every behaviour is a part. A part type declares the slot it fills, its combine rule, and the phase procs it implements. The engine knows nothing else. Waits, fuel, messages and effects are ordinary library parts, written the same way you'd add a new one.</p></div>
+  <div class="prose"><p>Every behaviour is a part. A part type declares how its values combine and implements any of the four stage hooks. The engine knows nothing else. Waits, fuel, messages and effects are ordinary library parts, written the same way you'd add a new one.</p></div>
+  <h3>Four stages</h3>
+  <div class="prose"><p>An op runs through four engine stages, always in this order.</p></div>
   <div class="tbl"><table>
-    <thead><tr><th>Phase</th><th>Parts</th><th>Combine</th></tr></thead>
+    <thead><tr><th>Stage</th><th>Question</th><th>What acts in it</th><th>On failure</th></tr></thead>
     <tbody>
-      <tr><td><strong>input</strong>: how it's reached</td><td><code>hand()</code> · <code>tool(Q)</code> · <code>any_of_tools(Q...)</code> · <code>item(T)</code> · <code>stack(T, n)</code> · <code>insert(T)</code> (construction) · <code>in_hand()</code> · <code>at_target(filter, range =)</code> · <code>menu()</code> · <code>ui_act("name", args...)</code> · <code>topic("key", args...)</code>. UI/topic args: <code>arg_num(name, min, max)</code> · <code>arg_int</code> · <code>arg_text(name, max)</code> · <code>arg_bool</code> · <code>arg_choice(name, list | PROC_REF)</code> · <code>arg_ref(name, type, from =)</code> · <code>arg_path</code> · <code>arg_list</code></td><td>exactly one input</td></tr>
-      <tr><td><strong>select</strong>: which wins</td><td><code>gesture(G)</code> · <code>answers(INTENT_X...)</code> · <code>hostile()</code> · <code>stance(S...)</code> · <code>via(ROUTE...)</code> · <code>by(AFF)</code> · <code>priority(P)</code> · <code>presents(T)</code> (the held item is a credential, not "used") · <code>tag(T)</code></td><td>replace; tags accumulate</td></tr>
-      <tr><td><strong>offered</strong>: is it meant</td><td><code>offered(req...)</code></td><td>all</td></tr>
-      <tr><td><strong>check</strong>: can it happen</td><td><code>needs(req | PROC_REF ...)</code> · <code>at(BAY)</code></td><td>all, always accumulates</td></tr>
-      <tr><td><strong>pay</strong>: what it costs</td><td><code>wait(t)</code> (scaled by the held item's speed) · <code>fuel(n)</code> · <code>uses(n)</code> · <code>consumes()</code> · <code>uses_charge(n)</code> · <code>cooldown(t)</code> · <code>chance(p)</code></td><td>wait/cooldown replace; costs add</td></tr>
-      <tr><td><strong>commit</strong>: what it does</td><td><code>then(PROC_REF)</code> · <code>toggles(state)</code> · <code>sets(state, v)</code> · <code>holds(nameof(stat), v, lasts =, on =)</code> · <code>releases(nameof(stat), on =)</code> · <code>grants(what, lasts =, on =)</code> · <code>cuts_all_wires()</code> (wires library). <code>on =</code> is <code>ON_TARGET</code> (default), <code>ON_ACTOR</code> or <code>ON_SELF</code>. · <code>put_in(slot)</code> · <code>take_out(slot)</code> · <code>fixes()</code> · <code>becomes(T)</code> · <code>spawns(T, n)</code> · <code>opens_ui()</code> · <code>asks(/datum/prompt/x, parts...)</code> · <code>performs(op_key)</code> · <code>passes()</code></td><td>append, in order</td></tr>
-      <tr><td><strong>feedback</strong></td><td><code>says(msg_type | self, others =, blind =)</code> · <code>sound(SFX)</code> · <code>flash(look_part)</code> · <code>logs(LOG_GAME | LOG_ADMIN)</code></td><td>replace</td></tr>
-      <tr><td><strong>after</strong></td><td><code>then_later(delay, parts...)</code> · <code>quiet()</code> (no notice)</td><td>append</td></tr>
+      <tr><td><strong>Match</strong></td><td>Is this what the actor is doing?</td><td>The input part, <code>answers</code>, <code>hostile</code>, <code>via</code>, <code>by</code>, <code>gesture</code>, <code>stance</code>, <code>presents</code>, <code>when(req...)</code>, and the engine's actor gate and reach gate</td><td>Silent. The op is not a candidate, the input falls through to the next candidate, and menus hide it.</td></tr>
+      <tr><td><strong>Require</strong></td><td>Is it allowed now?</td><td><code>needs(req...)</code>, <code>at(BAY)</code>, and the require half of costs (<code>fuel</code>, <code>uses</code>, <code>uses_charge</code>, <code>cooldown</code>)</td><td>The reason is shown, menus grey the op out, and the input does not fall through. Re-checked after the wait and right before Do.</td></tr>
+      <tr><td><strong>Wait</strong></td><td>How long does it take?</td><td><code>wait(t)</code>, scaled by the held item's speed</td><td>Cancelled early when a requirement's read changes. An actor has one wait at a time.</td></tr>
+      <tr><td><strong>Do</strong></td><td>What happens?</td><td>Cost spending, <code>chance</code>, effects, feedback, <code>then_later</code>, <code>quiet</code></td><td>A failed <code>chance()</code> plays its else feedback and stops the rest.</td></tr>
     </tbody>
   </table></div>
+  <div class="prose">
+    <p><strong>Do runs in this order:</strong></p>
+    <ol>
+      <li><strong>Cost spending:</strong> the do half of <code>fuel</code>, <code>uses</code>, <code>consumes</code>, <code>uses_charge</code> and <code>cooldown</code>.</li>
+      <li><strong><code>chance(p, else = parts)</code>:</strong> a failed roll plays its else feedback and stops everything after it. The costs are already spent.</li>
+      <li><strong>Effects:</strong> <code>then</code>, <code>toggles</code>, <code>sets</code>, <code>holds</code>, <code>releases</code>, <code>grants</code>, <code>put_in</code>, <code>take_out</code>, <code>fixes</code>, <code>becomes</code>, <code>spawns</code>, <code>opens_ui</code>, <code>asks</code>, <code>performs</code>, <code>passes</code>, <code>cuts_all_wires</code>, in declaration order. They never sleep.</li>
+      <li><strong>Feedback:</strong> <code>says</code>, <code>sound</code>, <code>flash</code>, <code>logs</code>.</li>
+      <li><strong>Later and quiet:</strong> <code>then_later(delay, parts...)</code> schedules more parts, and <code>quiet()</code> suppresses the notice.</li>
+    </ol>
+    <p><strong>Metadata, not stages.</strong> The op name, <code>priority(P)</code> and <code>tag(T)</code> say how an op is listed and ordered. They never run.</p>
+    <p><strong>Combine rules</strong> stay per part. Requirements accumulate. Single values (input, wait, cooldown, priority, <code>says</code>, <code>sound</code>) replace, and the most specific declaration wins. Effects append, tags accumulate and costs add.</p>
+  </div>
+  <h3>Parts</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Part</th><th>Stage(s) it acts in</th><th>Combine</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Input:</strong> <code>hand()</code> · <code>tool(Q)</code> · <code>any_of_tools(Q...)</code> · <code>item(T)</code> · <code>stack(T, n)</code> · <code>insert(T)</code> (construction) · <code>in_hand()</code> · <code>at_target(filter, range =)</code> · <code>menu()</code> · <code>ui_act("name", args...)</code> · <code>topic("key", args...)</code>. UI/topic args: <code>arg_num(name, min, max)</code> · <code>arg_int</code> · <code>arg_text(name, max)</code> · <code>arg_bool</code> · <code>arg_choice(name, list | PROC_REF)</code> · <code>arg_ref(name, type, from =)</code> · <code>arg_path</code> · <code>arg_list</code></td><td>Match</td><td>exactly one input; a more specific one replaces it</td></tr>
+      <tr><td><code>answers(INTENT_X...)</code> · <code>hostile()</code> · <code>via(ROUTE...)</code> · <code>by(AFF)</code> · <code>gesture(G)</code> · <code>stance(S...)</code> · <code>presents(T)</code> (the held item is a credential, not "used")</td><td>Match</td><td>replace</td></tr>
+      <tr><td><code>when(req...)</code></td><td>Match</td><td>accumulates; all must hold</td></tr>
+      <tr><td><code>needs(req | PROC_REF ...)</code> · <code>at(BAY)</code></td><td>Require</td><td>accumulates</td></tr>
+      <tr><td><code>fuel(n)</code> · <code>uses(n)</code> · <code>uses_charge(n)</code> · <code>cooldown(t)</code></td><td>Require (can it be afforded), then Do (spend it)</td><td>costs add; <code>cooldown</code> replaces</td></tr>
+      <tr><td><code>consumes()</code></td><td>Do</td><td>costs add</td></tr>
+      <tr><td><code>wait(t)</code></td><td>Wait</td><td>replace</td></tr>
+      <tr><td><code>chance(p, else = parts)</code></td><td>Do</td><td>replace</td></tr>
+      <tr><td><strong>Effects:</strong> <code>then(PROC_REF)</code> · <code>toggles(state)</code> · <code>sets(state, v)</code> · <code>holds(nameof(stat), v, lasts =, on =)</code> · <code>releases(nameof(stat), on =)</code> · <code>grants(what, lasts =, on =)</code> · <code>cuts_all_wires()</code> (wires library) · <code>fixes()</code> · <code>becomes(T)</code> · <code>spawns(T, n)</code> · <code>opens_ui()</code> · <code>asks(/datum/prompt/x, parts...)</code> · <code>performs(op_key)</code> · <code>passes()</code>. <code>on =</code> is <code>ON_TARGET</code> (default), <code>ON_ACTOR</code> or <code>ON_SELF</code>.</td><td>Do</td><td>append, in order</td></tr>
+      <tr><td><code>put_in(slot)</code> · <code>take_out(slot)</code></td><td>Do; and Require, implicitly, when the slot is declared <code>at = BAY_X</code></td><td>append, in order</td></tr>
+      <tr><td><strong>Feedback:</strong> <code>says(msg_type | self, others =, blind =)</code> · <code>sound(SFX)</code> · <code>flash(look_part)</code> · <code>logs(LOG_GAME | LOG_ADMIN)</code></td><td>Do</td><td>replace</td></tr>
+      <tr><td><code>then_later(delay, parts...)</code> · <code>quiet()</code> (no notice)</td><td>Do</td><td>append</td></tr>
+      <tr><td><strong>Metadata:</strong> the op name · <code>priority(P)</code> · <code>tag(T)</code></td><td>none; they never run</td><td><code>priority</code> replaces; tags accumulate</td></tr>
+    </tbody>
+  </table></div>
+  <h3>When or needs</h3>
+  <div class="prose">
+    <p>Both take the same requirements (below). They differ in what a failure means. A failed <code>when(req...)</code> is a Match failure: the op is not what the actor is doing, so it is silently not a candidate and the input falls through. A failed <code>needs(req...)</code> is a Require failure: the actor is refused, with a reason.</p>
+    <p><code>when</code> means "exists only while". It has two spellings with one meaning. On one op it is a part: <code>op("x", null, hand(), when(req_set(COVER_OPEN)), ...)</code>. Around several ops it is the entry-level wrapper <code>when(cond, op(...), op(...))</code>, the same <code>when</code> as in <a href="#stats">section 5</a>. Both compile to the same resolution-time applicability check. Nothing is added to or removed from the op table at runtime.</p>
+  </div>
+  <div class="note"><p><strong>Rule of thumb.</strong> If the op shouldn't exist in that state, so it should be hidden, use <code>when</code>. If a player would ask "why can't I?", use <code>needs</code>.</p></div>
   <h3>Requirements</h3>
   <div class="prose">
-    <p>A requirement answers null to allow, or a reason: a <code>/datum/msg</code> type, or text. Booleans are rejected by the lint. Requirements are flyweight datums or procs taking the context.</p>
+    <p>A requirement answers null to allow, or a reason: a <code>/datum/msg</code> type, or text. Booleans are rejected by the lint. Requirements are flyweight datums or procs taking the context. <code>when()</code> and <code>needs()</code> take the same ones; <code>when()</code> uses only the pass or fail, since it never shows the reason.</p>
   </div>
   <div class="tbl"><table>
     <thead><tr><th>Group</th><th>Constructors</th></tr></thead>
@@ -701,18 +745,32 @@ TOOL_PROFILE(TOOL_WELDER,      wait(3 SECONDS), sound(SFX_WELDER),      verbs("w
 /proc/part_swap(part_type, delay = 5 SECONDS)
 	return list(item(part_type), consumes(), wait(delay), fixes())</code></pre>
   <h3>A new kind of part</h3>
-  <pre><code>/datum/part/both_hands
-	slot = PART_SLOT_CHECK
-	rule = PART_ALL
-/datum/part/both_hands/check(datum/act/A)
-	return A.actor.hands_free() &lt; 2 ? /datum/msg/req_two_hands : null</code></pre>
+  <pre><code><span class="c">// A part type declares how it combines and implements any of the stage hooks:
+//   match(A)        Match: whether the op matches (silent on failure)
+//   require(A)      Require: null to allow, or a reason
+//   wait_time(A)    Wait: how long
+//   do(A)           Do: the work</span>
+/datum/part/both_hands
+	combine = PART_ALL
+/datum/part/both_hands/require(datum/act/A)
+	return A.actor.hands_free() &lt; 2 ? /datum/msg/req_two_hands : null
+
+<span class="c">// Acts in two stages: it refuses when there isn't enough, and spends it in Do.</span>
+/datum/part/fuel
+	combine = PART_SUM
+	var/amount
+/datum/part/fuel/require(datum/act/A)
+	return fuel_left(A.held) &lt; amount ? /datum/msg/req_fuel : null
+/datum/part/fuel/do(datum/act/A)
+	use_fuel(A.held, amount)</code></pre>
   <h3>The pipeline, every time</h3>
   <ol class="phase-list">
-    <li><div><strong>Offered and check.</strong> These run when the menu is built, when the op is chosen, after every wait and right before commit. A wait cancels early when a requirement's read publishes. An actor has one wait at a time.</div></li>
-    <li><div><strong>Pay.</strong> Fuel, charges and consumption are spent only at commit. A <code>chance()</code> that fails ends the op with feedback.</div></li>
-    <li><div><strong>Commit.</strong> Effects run in order and never sleep. An <code>asks()</code> part suspends the op: the answer re-runs offered and check, then the rest of the parts.</div></li>
-    <li><div><strong>Feedback and after.</strong> Messages and sounds play, the log line is written, fingerprints are added, the holder is published as changed, and the op's notice goes to whoever wants it.</div></li>
+    <li><div><strong>Match.</strong> The actor gate, the reach gate, then the input, intent, route, affordance, stance and every <code>when</code> part. It runs when the action is resolved. A failure is silent: the op is not a candidate, the input falls through, and menus hide it.</div></li>
+    <li><div><strong>Require.</strong> Every <code>needs</code>, <code>at</code> and the require half of costs. These run when the menu is built (a failing op is greyed with its reason), when the op is chosen, after the wait and right before Do. A failure shows the reason, and the input does not fall through.</div></li>
+    <li><div><strong>Wait.</strong> <code>wait(t)</code>, scaled by the held item's speed. It cancels early when a requirement's read changes. An actor has one wait at a time.</div></li>
+    <li><div><strong>Do.</strong> Costs are spent, <code>chance()</code> rolls (a failure plays its else feedback and stops here), effects run in order and never sleep, feedback plays, and <code>then_later()</code> work is scheduled. An <code>asks()</code> part suspends the op: the answer re-checks the op's <code>when</code> and Require parts, then runs the rest.</div></li>
   </ol>
+  <div class="prose"><p>Then the notice, unless the op is <code>quiet()</code>: fingerprints are added, the log line is written, the holder is marked changed, and <code>/datum/notice/op</code> is published to whoever wants it.</p></div>
   <div class="note"><p><strong>Replaces:</strong></p><ul>
       <li>Constructors: <code>cap_op</code> and its 35 keywords, <code>cap_hand</code>/<code>cap_tool</code>/<code>cap_use_on</code>/<code>cap_insert</code>/<code>cap_control</code>/<code>cap_use_self</code>/<code>cap_use_at</code>, <code>lib_op</code>, <code>adopt_entry</code>, <code>op_attach</code>.</li>
       <li>Changing ops: <code>refine()</code>, <code>cap_require()</code>, <code>replace()</code>.</li>
@@ -754,9 +812,9 @@ TOOL_PROFILE(TOOL_WELDER,      wait(3 SECONDS), sound(SFX_WELDER),      verbs("w
   <pre><code><span class="c">/// A cover over the holder's insides (the door of BAY_HATCH).</span>
 /proc/cover(open = tool(TOOL_CROWBAR), remove, replace)
 	return capability(CAP_COVER,
-		op("open_cover", null, open, toggles(COVER_OPEN), offered(req_clear(COVER_REMOVED))),
+		op("open_cover", null, open, toggles(COVER_OPEN), when(req_clear(COVER_REMOVED))),
 		remove ? op("remove_cover", "Remove cover", remove, needs(req_clear(COVER_REMOVED)), sets(COVER_REMOVED | COVER_OPEN, TRUE)) : null,
-		replace ? op("replace_cover", "Replace cover", replace, offered(any_of(req_set(COVER_REMOVED), not(req_stat(nameof(operable))))), sets(COVER_REMOVED, FALSE)) : null,
+		replace ? op("replace_cover", "Replace cover", replace, when(any_of(req_set(COVER_REMOVED), not(req_stat(nameof(operable))))), sets(COVER_REMOVED, FALSE)) : null,
 		look_part(LOOK_COVER_OPEN, when = PROC_REF(cover_shown_open)),
 		examine_line(PROC_REF(cover_examine)),
 		settings = list("open" = open, "remove" = remove, "replace" = replace))
@@ -792,7 +850,7 @@ TOOL_PROFILE(TOOL_WELDER,      wait(3 SECONDS), sound(SFX_WELDER),      verbs("w
     <tbody>
       <tr><td>Machine basics</td><td><code>powered(channel)</code> · <code>powered_by(system | POWERED_BY_AREA, role)</code> · <code>power_channels()</code> · <code>breakable(repair =)</code> · <code>anchor(tool =)</code> · <code>wall_mount(offset)</code> · <code>interface()</code> (the touch opens the window) · <code>deconstruct(board)</code> · <code>parts(slots)</code> (stats derived from installed parts; replaces <code>RefreshParts</code>) · <code>emp_disable(lasts, resist)</code> · <code>reflects(kinds, chance)</code> · <code>subversion_reset(parts)</code> · <code>popup_cover(raised_while =)</code> (a cover whose open state follows a condition, with timed transitions)</td></tr>
       <tr><td>Access and security</td><td><code>cover(open, remove, replace)</code> · <code>panel()</code> · <code>wires(type)</code> · <code>service_panel(wires)</code> · <code>lock(credentials)</code> · <code>access(req_access)</code> · <code>emag(parts, disables_for =)</code> · <code>compartment(BAY_X, door =, route_gate =)</code></td></tr>
-      <tr><td>Containers and slots</td><td><code>slot(...)</code> · <code>storage(holds, capacity)</code> · <code>cell_bay(var, at =)</code> · <code>cell_holder()</code> · <code>occupant(slot)</code> · <code>interior(settings)</code> (bellies) · <code>gas_store(var, volume, temp, gases)</code></td></tr>
+      <tr><td>Containers and slots</td><td><code>slot(...)</code> · <code>storage(holds, capacity)</code> · <code>cell_bay(var, at =)</code> (ops <code>insert_cell</code> and <code>take_cell</code>) · <code>cell_holder()</code> · <code>occupant(slot)</code> · <code>interior(settings)</code> (bellies) · <code>gas_store(var, volume, temp, gases)</code></td></tr>
       <tr><td>Reagents and food</td><td><code>reagents(volume, starts =, add =, tint =, holder =)</code> · <code>reagent_container(volume, transfer, lid)</code> (pour, fill, splash, drink, inject, spray, transfer amount, fill look) · <code>edible(bites)</code> · <code>drinkable()</code> · <code>smokable()</code></td></tr>
       <tr><td>Items</td><td><code>tool_quality(Q)</code> · <code>sharp()</code> · <code>embed()</code> · <code>two_handed()</code> · <code>block(chance)</code> · <code>reach(range)</code> · <code>writable()</code> · <code>label()</code> · <code>stamp_target()</code> · <code>signaler()</code> · <code>assembly()</code> · <code>toggle_state(nameof(v), name)</code> · <code>toggle_setting(nameof(v), name, parts...)</code></td></tr>
       <tr><td>Structures</td><td><code>doors(...)</code> (open, close, bolts, crush, autoclose, emergency, deny) · <code>climb()</code> · <code>buckle(slots)</code> · <code>rotate()</code> · <code>flip()</code> · <code>construction(...)</code></td></tr>
@@ -903,7 +961,7 @@ CAPABILITIES(/obj/machinery/light,
     </ul>
   </div>
   <h3>Prompts</h3>
-  <pre><code><span class="c">// Inside any trigger: the answer re-runs the op's offered and check parts, then the rest.</span>
+  <pre><code><span class="c">// Inside any trigger: the answer re-checks the op's when and Require parts, then the rest.</span>
 op("rename", "Rename", in_hand(), asks(/datum/prompt/text/rename, then(PROC_REF(apply_name))))
 /datum/prompt/text/rename
 	question = "What do you want to call it?"
@@ -1104,12 +1162,26 @@ CAPABILITIES(/obj/machinery/power/apc/critical,
     </ul>
   </div>
 
-  <h3 id="ex-reach">16.1a Reach: a closed cover hides the cell</h3>
-  <pre><code><span class="c">// The APC above declares maintenance_hatch(...) and cell_bay(nameof(cell), at = BAY_HATCH). Nothing else:</span>
-<span class="c">// closed cover:  click the cell (from the APC's contents view)  -> no candidates, nothing offered</span>
-<span class="c">// open cover:    click the cell                                  -> "take_out" is offered</span>
-<span class="c">// The cell's slot is at = BAY_HATCH, and compartment(BAY_HATCH, door = cover) closes that bay.</span></code></pre>
-  <div class="prose"><p>The reach gate walks the containment ledger from the cell up to the APC. The cell's slot is at <code>BAY_HATCH</code>, whose compartment gate fails while the cover is closed, so the cell is not reachable and offers nothing: not <code>take_out</code>, not its own ops, not a tool used on it, not drag-drop. An <code>insert</code> into that slot is refused with the cover's reason. The APC has no code for any of this and no "is the panel open?" guard in a handler.</p></div>
+  <h3 id="ex-reach">16.1a Reach: a closed cover and the cell</h3>
+  <pre><code><span class="c">// The APC above declares maintenance_hatch(...) and cell_bay(nameof(cell), at = BAY_HATCH). Nothing else.
+// compartment(BAY_HATCH, door = cover) closes that bay, and cell_bay supplies two ops over its slot:
+//   op("take_cell", null, hand(), when(req_set(COVER_OPEN), req_full(nameof(cell))), take_out(nameof(cell)))   // take_out() defaults it to priority TAKE_OUT
+//   op("insert_cell", null, item(/obj/item/cell), put_in(nameof(cell)))
+//
+// 1. Empty hand on a closed APC
+//      take_cell: not matched (its when fails, silently), so the input falls through and open_ui runs.
+// 2. Empty hand on an open APC
+//      take_cell: matched, and wins on priority TAKE_OUT.
+//      Require: nothing refuses. Wait: none.
+//      Do: take_out runs the world action /datum/act/remove on the slot, the notice is published,
+//      and the APC's stats and look follow through generated reads.
+// 3. A cell in hand, closed APC
+//      insert_cell: matched. Require: the implicit bay requirement refuses, "The cover is closed."
+// 4. Target the cell itself (contents view, drag), cover closed
+//      The reach gate drops every candidate. None survives, so the gate's reason is shown.
+//
+// No APC code does any of this.</span></code></pre>
+  <div class="prose"><p>Each case is a different part of the pipeline. Cases 1 and 2 are Match: <code>take_cell</code> exists only while the cover is open and there is a cell, so on a closed APC it silently is not a candidate and the click opens the window instead. Case 3 is Require: the cell is going into a slot at <code>BAY_HATCH</code>, whose compartment gate fails while the cover is closed, so the implicit requirement refuses with the cover's reason. Case 4 is the reach gate: the walk up the containment ledger from the cell to the APC fails at that slot, so the cell offers nothing: not <code>take_cell</code>, not its own ops, not a tool used on it, not drag-drop. Because the gate dropped candidates and none survived, the engine shows the compartment's reason rather than doing nothing. The APC has no code for any of this and no "is the panel open?" guard in a handler.</p></div>
 
   <h3>16.2 Airlock: bolts, electrification, AI control, wires, access, emag</h3>
   <pre><code>/obj/machinery/door/airlock
@@ -1143,7 +1215,7 @@ CAPABILITIES(/obj/machinery/door/airlock,
 	op("weld", null, tool(TOOL_WELDER), toggles(nameof(welded))),
 
 	<span class="c">// Touching a live door shocks you instead of doing what you meant.</span>
-	intercept(/datum/act/op, offered(req_on_route(ROUTE_PHYSICAL, req_stat(nameof(electrified)))),
+	intercept(/datum/act/op, when(req_on_route(ROUTE_PHYSICAL, req_stat(nameof(electrified)))),
 		then(PROC_REF(shock_toucher))),
 )
 
@@ -1249,10 +1321,22 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
 	on_notice(/datum/notice/inserted, then(PROC_REF(prey_entered))),
 	extend(/datum/act/insert, needs(PROC_REF(consent_blocks))),        <span class="c">// consent clauses are requirements</span>
 )
-<span class="c">// Prey are owned contents of the interior slot. Per-prey state ("absorbed") is two holds on the prey:
-// hold(prey, nameof(suspended), TRUE, source = src)
-// hold(prey, nameof(acts_via), ROUTE_NONE, source = src)     // the actor gate: absorbed prey cannot act at all
-// Releasing the belly releases everything it holds. No content checks "is absorbed".</span></code></pre>
+
+<span class="c">// Absorbing prey grants the prey a capability. The slot entry is its source, so when the prey leave the belly
+// (digested, released, escaped, deleted) everything below ends by itself. There is no release code.</span>
+grant(prey, /datum/capability/absorbed, source = slot_entry(src, prey))
+
+/datum/capability/absorbed
+	key = CAP_ABSORBED
+/datum/capability/absorbed/entries()
+	return list(
+		contributes(nameof(acts_via), ROUTE_NONE, reason = MSG(vore/absorbed)),   <span class="c">// the actor gate: absorbed prey cannot act at all</span>
+		contributes(nameof(suspended), TRUE),
+		intercept(/datum/act/speak, then(CAP_PROC(speak_to_pred))),               <span class="c">// absorbed prey speak only to the predator</span>
+		examine_line(MSG(vore/absorbed_examine)),
+		<span class="c">// look_part(...) here, if absorbed prey are drawn differently</span>
+	)</code></pre>
+  <div class="prose"><p>Prey are owned contents of the interior slot. "Absorbed" is one granted capability whose source is the prey's slot entry. It holds the actor gate and the suspension, sends speech to the predator, and adds the examine line. No content checks "is absorbed", and letting the prey out needs no code.</p></div>
 
   <h3>16.7 Simple mob AI: the same ops a player uses</h3>
   <pre><code>CAPABILITIES(/mob/living/simple_mob/animal/space/carp,
@@ -1272,7 +1356,7 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
 )
 <span class="c">// The APC's insert_cell op takes by(AFF_MANIPULATE) by default. A borg holding a gripper with a cell reaches it;
 // a borg with a welder module doesn't. No borg-specific code anywhere in the APC.
-// A borg-only op:  op("dock", null, hand(), offered(req(/mob/living/silicon/robot, of = OP_ACTOR)), ...)</span></code></pre>
+// A borg-only op:  op("dock", null, hand(), when(req(/mob/living/silicon/robot, of = OP_ACTOR)), ...)</span></code></pre>
 
   <h3>16.9 An ability, a timed capability, an admin override</h3>
   <pre><code><span class="c">// Shadekin phase shift: an actor op granted by the species.</span>
@@ -1916,11 +2000,11 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>INTERACT_USE_AS</code></td><td class="n">28</td><td>replaced</td><td><code>op(key, name, in_hand(), ...)</code> with <code>stance(I_X)</code></td></tr>
     <tr><td><code>INTERACT_DRAG</code></td><td class="n">27</td><td>replaced</td><td><code>gesture(GESTURE_DRAG)</code> + <code>item(T)</code></td></tr>
     <tr><td><code>INTERACT_SELF_AS</code></td><td class="n">25</td><td>replaced</td><td><code>op(key, name, in_hand(), ...)</code> with <code>stance(I_X)</code></td></tr>
-    <tr><td><code>applies_to</code></td><td class="n">24</td><td>replaced</td><td><code>offered()</code></td></tr>
+    <tr><td><code>applies_to</code></td><td class="n">24</td><td>replaced</td><td><code>when()</code></td></tr>
     <tr><td><code>refine</code></td><td class="n">23</td><td>replaced</td><td><code>extend(key, parts...)</code> for ops, <code>configure(KEY, ...)</code> for capabilities</td></tr>
     <tr><td><code>HAS_TAG</code></td><td class="n">21</td><td>kept</td><td>per-type properties (kept; readable in requirements)</td></tr>
     <tr><td><code>REQ_TAG</code></td><td class="n">21</td><td>replaced</td><td><code>req_tag(TAG)</code></td></tr>
-    <tr><td><code>INTERACT_ROBOT</code></td><td class="n">20</td><td>replaced</td><td><code>offered(req(/mob/living/silicon/robot, of = OP_ACTOR))</code></td></tr>
+    <tr><td><code>INTERACT_ROBOT</code></td><td class="n">20</td><td>replaced</td><td><code>when(req(/mob/living/silicon/robot, of = OP_ACTOR))</code></td></tr>
     <tr><td><code>INTERACT_HAND_AS</code></td><td class="n">19</td><td>replaced</td><td><code>op(key, name, hand(), ...)</code> with <code>stance(I_X)</code></td></tr>
     <tr><td><code>test</code></td><td class="n">17</td><td>kept</td><td>requirement datum hook</td></tr>
     <tr><td><code>INTERACT_HAND_DEFAULT</code></td><td class="n">16</td><td>replaced</td><td><code>op(key, name, hand(), ...)</code> with <code>priority(OP_PRIORITY_DEFAULT)</code></td></tr>
@@ -1928,7 +2012,7 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>PROPERTY</code></td><td class="n">13</td><td>kept</td><td>per-type properties (kept; readable in requirements)</td></tr>
     <tr><td><code>REQ_REACH</code></td><td class="n">13</td><td>replaced</td><td>the route's reach check</td></tr>
     <tr><td><code>INTERACT_TK</code></td><td class="n">12</td><td>replaced</td><td><code>via(ROUTE_TK)</code></td></tr>
-    <tr><td><code>available_on</code></td><td class="n">11</td><td>replaced</td><td>step <code>offered()</code></td></tr>
+    <tr><td><code>available_on</code></td><td class="n">11</td><td>replaced</td><td>step <code>when()</code></td></tr>
     <tr><td><code>build</code></td><td class="n">11</td><td>replaced</td><td>a <code>step()</code></td></tr>
     <tr><td><code>REQ_TYPE</code></td><td class="n">10</td><td>replaced</td><td><code>req(type)</code></td></tr>
     <tr><td><code>cap_op</code></td><td class="n">10</td><td>replaced</td><td><code>op(key, name, parts...)</code></td></tr>
@@ -1957,11 +2041,11 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
     <tr><td><code>INTERACTION</code></td><td class="n">3</td><td>replaced</td><td><code>op()</code></td></tr>
     <tr><td><code>REQ_AT_MOST</code></td><td class="n">3</td><td>replaced</td><td><code>req_property_at_most()</code></td></tr>
     <tr><td><code>REQ_NO_TAG</code></td><td class="n">3</td><td>replaced</td><td><code>not(req_tag(TAG))</code></td></tr>
-    <tr><td><code>REQ_RESOURCE</code></td><td class="n">3</td><td>replaced</td><td>an ability op's pay parts</td></tr>
+    <tr><td><code>REQ_RESOURCE</code></td><td class="n">3</td><td>replaced</td><td>an ability op's cost parts (Require and Do)</td></tr>
     <tr><td><code>SIZE_CLASS</code></td><td class="n">3</td><td>kept</td><td>size units (kept)</td></tr>
     <tr><td><code>interaction_examine_lines</code></td><td class="n">3</td><td>replaced</td><td><code>examine_line()</code> entries</td></tr>
     <tr><td><code>interaction_ran</code></td><td class="n">3</td><td>replaced</td><td>the op's notice</td></tr>
-    <tr><td><code>pay_cost</code></td><td class="n">3</td><td>replaced</td><td>pay parts</td></tr>
+    <tr><td><code>pay_cost</code></td><td class="n">3</td><td>replaced</td><td>cost parts (Require and Do)</td></tr>
     <tr><td><code>req_working</code></td><td class="n">3</td><td>replaced</td><td><code>req_stat(nameof(operable))</code></td></tr>
     <tr><td><code>ABILITY_BY_ID</code></td><td class="n">2</td><td>replaced</td><td>op keys</td></tr>
     <tr><td><code>INTERACT_INSERT_AS</code></td><td class="n">2</td><td>replaced</td><td><code>op(key, name, put_in(slot), ...)</code> with <code>stance(I_X)</code></td></tr>
@@ -2853,6 +2937,10 @@ CAPABILITIES(/area, stat(nameof(lights_nightshift), ANY))     <span class="c">//
       <tr><td>DM timers and keys in Rust</td><td>Kernel only. The Rust world scheduler keeps native watches and rate models.</td><td><code>om_world_at</code>, DM-owned keys published into Rust, the reactor</td></tr>
       <tr><td>Slot declarations</td><td><code>slot(...)</code> entries over the containment ledger</td><td><code>/datum/slot_def</code>, <code>/datum/om/relation/slot</code>, <code>SLOT_DROP_HOLDER</code></td></tr>
       <tr><td>Requirement language</td><td>One: <code>/datum/req</code> constructors and <code>PROC_REF</code>s returning null or a reason</td><td><code>REQ_*</code>/<code>PRED_*</code>/<code>REQ_ON</code>/<code>REQ_BECAUSE</code>/<code>HOLD_*</code> macros, <code>/datum/predicate</code>, <code>REQ_FIELD*</code>, <code>else_say</code>, boolean requirement procs</td></tr>
+      <tr><td>Op grammar</td><td>Four stages: Match (silent, <code>when</code>), Require (loud, <code>needs</code>), Wait, Do. <code>when</code> and <code>needs</code> take the same requirements.</td><td>Hand-written guards that decide between hiding and refusing (<code>applies_to</code>, <code>available_on</code>, <code>else_say</code>, <code>works_*</code>)</td></tr>
+      <tr><td>Why a gate refused</td><td>The actor and reach gates filter silently so input can fall through. If nothing survives, the engine shows the gate's reason, rate-limited. Holds on <code>acts_via</code> take a <code>reason</code>.</td><td>Per-handler "you can't do that" messages for being absorbed, restrained or out of reach</td></tr>
+      <tr><td>Reaching a slot</td><td>Reaching the target is Match (silent). A slot declared <code>at = BAY_X</code> adds an implicit <code>needs(bay open)</code> to <code>put_in</code>, <code>take_out</code> and <code>insert</code>; add <code>when(...)</code> to make one silent.</td><td>Manual "is the panel open?" guards before reaching contents</td></tr>
+      <tr><td>Lasting effects on another entity</td><td>A granted capability, with <code>slot_entry(holder, item)</code> as the source when it should end with the slot</td><td>Loose per-stat holds placed by the effect's owner and released by hand (the belly's two prey holds)</td></tr>
       <tr><td>Abilities</td><td>Actor ops in granted capabilities</td><td><code>/datum/ability</code> (rules.md section 5)</td></tr>
       <tr><td>UI form</td><td><code>ui_window()</code>, <code>ui_data(user)</code> output, ops with <code>ui_act()</code></td><td><code>DECLARE_UI</code>/<code>UI_ACT</code>/<code>UI_DATA</code> (AGENTS.md), the <code>act_&lt;x&gt;()</code> naming convention (migration guide A7)</td></tr>
       <tr><td>Prompts</td><td><code>asks()</code> part and <code>ask()</code>, with <code>/datum/prompt</code> kinds</td><td>Eight <code>*_ask</code> variants, <code>ask_text</code>/<code>ask_number</code> as separate procs (they become prompt kinds)</td></tr>
