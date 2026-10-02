@@ -1,0 +1,4 @@
+"a" = (/turf/space,/area/space)
+	tag = "icon-hidden"
+<b>hidden
+step_x = 9

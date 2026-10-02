@@ -185,6 +185,17 @@ impl Engine {
             for f in &files {
                 h.update(&f.fkey.to_le_bytes());
             }
+            for rel in lint.extra_inputs(&self.tree) {
+                h.update(rel.as_bytes());
+                match std::fs::read(self.tree.root.join(&rel)) {
+                    Ok(bytes) => {
+                        h.update(blake3::hash(&bytes).as_bytes());
+                    }
+                    Err(_) => {
+                        h.update(b"\0missing");
+                    }
+                }
+            }
             let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
             let sink = match &lc.tree {
                 Some((k, s)) if *k == key => {
