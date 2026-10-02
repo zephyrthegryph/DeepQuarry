@@ -19,7 +19,8 @@
 
 /proc/om_emit(datum/E, datum/om/event/event)
 	// The event's twin notice reaches the on_notice listeners (code/engine/actions/twins.dm).
-	if(GLOB.event_twin_notice[event.type])
+	var/list/twins = GLOB.event_twin_notice // not built yet while the globals initialize
+	if(twins && twins[event.type])
 		event_to_notice_twin(E, event)
 	// Shared caches (code/datums/shared_cache) clear on world events of their policy type.
 	if(shared_cache_event_types && E == GLOB.om_world && shared_cache_event_types[event.type])
@@ -159,8 +160,10 @@
 /// with no interested behaviour pay a lookup.
 /proc/om_wants(datum/E, path)
 	. = om_wants_direct(E, path)
-	if(!. && GLOB.event_twin_notice[path])
-		. = event_twin_wanted(E, path)
+	if(!.)
+		var/list/twins = GLOB.event_twin_notice // not built yet while the globals initialize
+		if(twins && twins[path])
+			. = event_twin_wanted(E, path)
 
 /// om_wants() without the notice twin: does an om_hook, a behaviour or a task interrupt of E take this event?
 /proc/om_wants_direct(datum/E, path)
