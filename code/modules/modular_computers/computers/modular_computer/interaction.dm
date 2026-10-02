@@ -29,7 +29,7 @@
 
 /obj/item/modular_computer/proc/proc_eject_id(mob/user)
 	if(!user)
-		user = usr
+		return
 
 	if(!card_slot)
 		to_chat(user, "\The [src] does not have an ID card slot")
@@ -49,7 +49,7 @@
 
 /obj/item/modular_computer/proc/proc_eject_usb(mob/user)
 	if(!user)
-		user = usr
+		return
 
 	if(!portable_drive)
 		to_chat(user, "There is no portable device connected to \the [src].")

@@ -49,7 +49,7 @@
 	)
 	..()
 
-/// The old click_alt() had no mob/user param at all and relied on `usr`; start() still does.
+/// Both player entry points pass their actor into the cycle starter.
 /datum/interaction/machine_alt/washing_machine_start
 	id = "washing_machine_start"
 	name = "Start"
@@ -57,7 +57,7 @@
 	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_start(mob/user, obj/item/held, datum/interaction/interaction)
-	start()
+	start(user = user)
 	return TRUE
 
 /datum/interaction/machine_verb/washing_machine_start_washing
@@ -66,12 +66,12 @@
 	effect = /obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing
 
 /obj/machinery/washing_machine/proc/interaction_washing_machine_start_washing(mob/user, obj/item/held, datum/interaction/interaction)
-	start()
+	start(user = user)
 	return TRUE
 
-/obj/machinery/washing_machine/proc/start(force, damage_modifier)
+/obj/machinery/washing_machine/proc/start(force, damage_modifier, mob/user)
 
-	if(!isliving(usr) && !force) //ew ew ew usr, but it's the only way to check.
+	if(!isliving(user) && !force)
 		return
 	if(!damage_modifier)
 		damage_modifier = 0.5
