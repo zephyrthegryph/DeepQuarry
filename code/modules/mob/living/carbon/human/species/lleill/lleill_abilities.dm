@@ -25,15 +25,15 @@
 			to_chat(src, span_warning("You do not have enough energy to do that! You currently have [species.lleill_energy] energy."))
 			return
 		cloak()
-		block_hud = 1
-		hud_updateflag = 1
+		set_block_hud(1)
+		flag_hud_update(0)
 		to_chat(src, span_warning("Your fur shimmers and shifts around you, hiding you from the naked eye."))
 		proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 		species.lleill_energy -= energy_cost
 	else
 		uncloak()
-		block_hud = 0
-		hud_updateflag = 1
+		set_block_hud(0)
+		flag_hud_update(0)
 		to_chat(src, span_warning("The brustling of your fur settles down and you become visible once again."))
 	species.update_lleill_hud(src)
 
@@ -417,7 +417,7 @@
 	species.lleill_energy = species.lleill_energy_max
 	adjust_nutrition((chosen_target.nutrition / 2))
 	to_chat(src, span_warning("You feel revitalised."))
-	chosen_target.tiredness += 70
+	chosen_target.set_tiredness(chosen_target.tiredness + 70)
 	chosen_target.set_nutrition(max((chosen_target.nutrition / 2),75))
 	chosen_target.remove_blood(40) //removes enough blood to make them feel a bit woozy, mostly just for flavour
 	chosen_target.status_adjust(EFFECT_BLURRY, 20)

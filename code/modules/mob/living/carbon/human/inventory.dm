@@ -81,8 +81,8 @@ This saves us from having to call add_fingerprint() any time something is put in
 					internals.icon_state = "internal0"
 				rel_clear(src, nameof(internal))
 		if(SLOT_ID_ID)
-			BITSET(hud_updateflag, ID_HUD)
-			BITSET(hud_updateflag, WANTED_HUD)
+			flag_hud_update(ID_HUD)
+			flag_hud_update(WANTED_HUD)
 
 /mob/living/carbon/human/equipped_to_slot(obj/item/W, slot)
 	..()

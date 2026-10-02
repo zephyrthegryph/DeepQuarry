@@ -111,7 +111,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	rel_set(src, nameof(inturf), get_step(src, dir))
 	locate_machinery()
 	if(!turbine())
-		stat_add(BROKEN)
+		atom_break()
 
 // When anchored, don't let air past us.
 /obj/machinery/compressor/CanZASPass(turf/T, is_zone)
@@ -168,10 +168,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 			locate_machinery()
 			if(turbine())
 				to_chat(user, span_notice("Turbine connected."))
-				stat_remove(BROKEN)
+				atom_fix()
 			else
 				to_chat(user, span_warning("Turbine not connected."))
-				stat_add(BROKEN)
+				atom_break()
 
 /// Starts or stops the compressor; the compressor and its turbine run only while it is started.
 /// The compressor's own work is declared on `starter`; its turbine reads it, so it is woken here.
@@ -186,7 +186,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 
 /obj/machinery/compressor/machine_step()
 	if(!turbine())
-		set_stat(BROKEN)
+		atom_break()
 		return
 	if(panel_open)
 		return
@@ -240,7 +240,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 	rel_set(src, nameof(outturf), get_step(src, dir))
 	locate_machinery()
 	if(!compressor())
-		stat_add(BROKEN)
+		atom_break()
 
 /obj/machinery/power/turbine/RefreshParts()
 	var/P = get_part_rating(/obj/item/stock_parts/capacitor)
@@ -268,14 +268,14 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 			locate_machinery()
 			if(compressor())
 				to_chat(user, span_notice("Compressor connected."))
-				stat_remove(BROKEN)
+				atom_fix()
 			else
 				to_chat(user, span_warning("Compressor not connected."))
-				stat_add(BROKEN)
+				atom_break()
 
 /obj/machinery/power/turbine/machine_step()
 	if(!compressor())
-		set_stat(BROKEN)
+		atom_break()
 		return
 	if(!compressor().starter)
 		return PROCESS_KILL

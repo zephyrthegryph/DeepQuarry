@@ -37,8 +37,7 @@
 // Returns TRUE if NOPOWER stat flag changed.
 // can override if needed
 /obj/machinery/proc/power_change()
-	var/flipped = powered(power_channel) ? stat_remove(NOPOWER) : stat_add(NOPOWER)
-	if(!flipped) // the setter raised CHANGE_MACHINE_POWER
+	if(!set_powered(powered(power_channel)))
 		return FALSE
 	changed(src) // a power change is a dispatched call: the powered capability's layer follows
 	if(has_stat(NOPOWER))
@@ -46,6 +45,17 @@
 	else
 		OM_EMIT(src, /datum/om/event/machinery_power_restored)
 	update_heat_output()
+	return TRUE
+
+/**
+ * The power capability's "powered" state (G8): the one writer of NOPOWER. A change raises CHANGE_MACHINE_POWER (the
+ * stat bit's bridge channel) and publishes MACHINE_KEY_POWERED to its readers. has_stat(NOPOWER) and operable() read
+ * it. Returns TRUE when the state changed.
+ */
+/obj/machinery/proc/set_powered(powered)
+	if(!(powered ? stat_remove(NOPOWER) : stat_add(NOPOWER)))
+		return FALSE
+	PUBLISH_CHANGE(src, MACHINE_KEY_POWERED)
 	return TRUE
 
 // Get the amount of power this machine will consume each cycle.  Override by experts only!
@@ -158,8 +168,9 @@
 		var/new_power = POWER_CONSUMPTION
 		REPORT_POWER_CONSUMPTION_CHANGE(old_power, new_power)
 	// A power-mode change is a settings change for a machine on a pipeline (machine_pipeline.dm).
-	// Raised after the write: watchers (declared periodic work) read the new value.
-	changed(src, CHANGE_MACHINE_SETTINGS)
+	// Raised after the write: watchers (declared periodic work) read the new value. use_power is the power
+	// capability's tracked draw mode (G8): the change publishes nameof(use_power) to its readers.
+	changed(src, CHANGE_MACHINE_SETTINGS, nameof(use_power))
 	return TRUE
 
 // Sets the power_channel var and then forces an area power update.

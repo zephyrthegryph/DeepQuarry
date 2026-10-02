@@ -14,6 +14,9 @@ returns a list. A var that other code depends on is **tracked**.
 | `TRACKED_BRIDGED(type, var, CHANNEL)` | Bridge: TRACKED that also raises an OM channel, only for a var an OM stage `wake_on` or `om_watch()` still reads (the machine pipeline's CHANGE_MACHINE_SETTINGS). Removed with S4. | [built, A1] |
 | `PUBLISH_CHANGE(E, key)` | Publishes a change key that is not one var (a mob's `MOB_KEY_STATUS`, `MOB_KEY_HEALTH`, ...: the Life presentation reactions read them) when someone reads it. `OM_FIELD` setters publish their var key the same way. | [built, A1] |
 | `SETTER(type, var)` | Registers a hand-written setter with side effects. | [built] |
+| Tracked base vars | `anchored`, `density`, `opacity` (`set_anchored` / `set_density` / `set_opacity`, hand-written SETTERs). A change publishes the var key; `tracked_bridged_changed()` also raises the channel the type's declared field names (machine / mob) until S4. | [built, B4] |
+| `PUBLISHED_BY(type, var, KEY)` | Names the key a var's producers publish (a bit field set through a helper: `hud_updateflag` via `flag_hud_update()`); generated reads use KEY for it and the lints accept it as published. | [built, B4] |
+| Machine state keys | `MACHINE_KEY_POWERED` (NOPOWER, written by `set_powered()`), `nameof(use_power)` (`set_use_power()`), `INTEGRITY_KEY_BROKEN` (BROKEN, written by `atom_break()` / `atom_fix()`). | [built, B4] |
 | `publish_change(datum/E, key)` | For the rare write outside a setter (raw FFI data, engine callback). Relation writes publish both ends. | [built] |
 | `READERS(src, key)` | Union of the static per-type reader mask (composed from `reactions()`) and the instance's dynamic readers (`observe()`). | [in progress] |
 | Generated reads | `code/_generated/reads.dm`, written by `tools/ci/derived_reads_lint.py --fix-generated`; CI checks freshness. The reads of `draw()`, `tgui_data()`, `should_run` and `push_to_rust` bodies become `reactions()` entries. | [in progress] |

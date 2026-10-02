@@ -539,6 +539,25 @@ presets of `cap_op`). For new or reworked code:
 - **Null policy (library and framework code):** accessors never return null (a count is 0, a list is empty, a state is FALSE); use a null object or a sentinel where "nothing" must be represented; relations, timers (`after`, `after_slot`, `timed_set`) and dispatch drop dead targets, so a handler never receives a null or deleted target.
 - **Accessors never return null.** Use a null object (`/datum/thermal_profile/default`) or a defined sentinel (`NIGHTSHIFT_AUTO`), not null.
 - **No defensive guards in converted code:** no `?.` chains or `if(!x) return` on values the framework guarantees (owned vars, relation targets inside their hooks, timer and callback args). `QDELETED()` checks belong only at edges: I/O callbacks and user input.
+- **Tracked base vars [built, B4/G8]:** `anchored`, `density` and `opacity` are tracked: write them only through
+  `set_anchored()` / `set_density()` / `set_opacity()` (type-level defaults stay plain). The setter publishes the var key to
+  its readers and, as a bridge until S4, raises the channel the type's declared field names (a machine's
+  `CHANGE_MACHINE_ANCHORED`, a mob's `CHANGE_MOB_CAN_MOVE`: `tracked_bridged_changed()`), so it has no `istype()`. Admin
+  edits go through the setter (`SETTER`). `tools/ci/tracked_lint.py` rejects a raw write in any proc.
+- **Machine power and integrity state [built, B4/G8]:** `NOPOWER` is the power capability's state, written only by
+  `set_powered(powered)` (`power_change()` and the few custom power rules call it) and published as `MACHINE_KEY_POWERED`;
+  `use_power` is its tracked draw mode (`set_use_power()` publishes `nameof(use_power)`); `BROKEN` is the integrity state,
+  written only by `atom_break()` / `atom_fix()`, which publish `INTEGRITY_KEY_BROKEN`. `has_stat()`, `operable()` and
+  `set_use_power()` stay the accessors. `sys/fields stat_owned` rejects `stat_add/stat_remove/set_stat` of either bit
+  anywhere else.
+
+  ```text
+  /obj/machinery/light_switch/power_change()
+      if(!otherarea)
+          set_powered(powered(LIGHT))
+  if(!turbine())
+      atom_break()        // was stat_add(BROKEN): "no partner" is the broken state, published
+  ```
 
 
 ---
@@ -780,6 +799,24 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 **Power reads:** there is no `is_powered()`. The one read is the derived `power_state` (`POWER_BROKEN`/`POWER_UNPOWERED`/`POWER_OFF`/`POWER_IDLE`/`POWER_ACTIVE`) [planned, archive/framework_fixes.md §9.3]; until it lands, `cap_powered(src)` [built].
 
 ## B6. Manual refresh → delete
+
+**HUD, sight and canmove [built, B4].** There is no `refresh_hud()` / `refresh_vision()`: the passes are `on_change()`
+reactions on `/mob/living` (living_systems.dm) whose reads are declared by hand (published `MOB_KEY_*` facts) and
+generated from what `life_hud()` / `life_vision()` / `update_canmove()` and their `life_hud_*` / `life_vision_*` helpers
+read (`reaction_reads()` in `code/_generated/reads.dm`). Every such var is tracked (TRACKED / SETTER / an OM field), a
+relation or object var (the ownership accessors publish), or `PUBLISHED_BY(T, var, KEY)` (its producer publishes KEY:
+`hud_updateflag` via `flag_hud_update(index)`, `organs` and `body` via body invalidation). So a refresh call is replaced by
+the setter of what changed, or by publishing the key that covers it: `PUBLISH_CHANGE(M, MOB_KEY_VIEW)` for what the
+client looks through (remote view, zoom, vision gear: `recalculate_vis()` does it), `flag_hud_update(WANTED_HUD)` for a
+HUD-list entry. `derived_reads/reaction_read_untracked` rejects an untracked input; `sys/presentation presentation_call`
+rejects calling a pass from content.
+
+```text
+// was: user.refresh_hud()
+PUBLISH_CHANGE(user, MOB_KEY_VIEW)
+// was: nutrition -= 5; refresh_hud()
+adjust_nutrition(-5)
+```
 
 Every `update_icon()` and `queue_icon_update()` call in a converted folder is deleted. If the write happened outside a dispatched call (a raw callback or FFI data), write `changed(src)` instead. The sweep fails in tests when a mark is missed, so a deletion that misses a case is caught.
 

@@ -700,7 +700,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 /datum/species/proc/npc_behaviour(mob/living/carbon/human/H)
 	if(H.stat == CONSCIOUS && H.ai_brain)
 		if(H.resting)
-			H.resting = FALSE
+			H.set_resting(FALSE)
 			H.update_canmove()
 	return
 

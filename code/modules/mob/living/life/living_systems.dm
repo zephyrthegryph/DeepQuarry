@@ -484,15 +484,16 @@
 // LIFE_PRESENT_MIN_INTERVAL (a walking player raises a location change most ticks and the HUD needs only
 // the latest state). The HUD reaction's `when` is life_hud_wanted(): a mob without a client queues
 // nothing. Rewakes (darksight re-adapting, a fading overlay, a remote-view listener) are keyed after()
-// timers. refresh_hud() / refresh_vision() call life_hud() / life_vision() directly.
+// timers. There is no manual refresh: each reaction declares the facts below by hand (published keys), and
+// tools/ci/derived_reads_lint.py generates the rest from what its procs and their helpers read
+// (reaction_reads() in code/_generated/reads.dm: every such var is tracked, a relation, or PUBLISHED_BY a key).
 
-/// The Life sets that derive canmove / draw a HUD and sight (the decoy and delisted mobs do neither;
-/// a robot's HUD and sight run from its robot_interface step).
+/// The Life sets that derive canmove / draw a HUD and sight (the decoy and delisted mobs do neither).
 #define LIFE_CANMOVE_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT)
-#define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_AI | LIFE_SET_PAI)
+#define LIFE_PRESENT_SETS (LIFE_SET_LIVING | LIFE_SET_ROBOT | LIFE_SET_AI | LIFE_SET_PAI)
 // What each reaction reads: the facts its old stages woke on (their wake_on channels plus their pipeline's
-// wake_all), as change keys. The catch-all CHANGE_EXPLICIT is gone: a hand change that should redraw calls
-// refresh_hud() / refresh_vision(), or its producer publishes the fact.
+// wake_all), as change keys. The catch-all CHANGE_EXPLICIT is gone: a hand change that should redraw writes its
+// var through a setter or publishes the fact (MOB_KEY_VIEW for what the client looks through).
 /// after() keys of the rewakes.
 #define LIFE_HUD_REWAKE "life_hud"
 #define LIFE_VISION_REWAKE "life_vision"
@@ -500,10 +501,10 @@
 /mob/living/reactions()
 	. = ..()
 	. += on_change(list(MOB_KEY_STATUS, nameof(stat)), PROC_REF(life_canmove_changed), when = PROC_REF(life_canmove_wanted))
-	. += on_change(list(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, nameof(stat), \
-		nameof(sdisabilities), nameof(ear_damage)), \
+	. += on_change(list(MOB_KEY_HEALTH, MOB_KEY_STATUS, MOB_KEY_LOC, MOB_KEY_EQUIPMENT, MOB_KEY_CLIENT, MOB_KEY_VIEW, \
+		MOB_KEY_HUD_FLAGS, nameof(stat), nameof(sdisabilities), nameof(ear_damage)), \
 		PROC_REF(life_hud_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_hud_wanted))
-	. += on_change(list(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, nameof(stat), \
+	. += on_change(list(MOB_KEY_STATUS, MOB_KEY_EQUIPMENT, MOB_KEY_CONDITIONS, MOB_KEY_HEALTH, MOB_KEY_CLIENT, MOB_KEY_VIEW, nameof(stat), \
 		nameof(sdisabilities), nameof(cameraFollow), nameof(tf_mob_holder), nameof(virtual_reality_mob)), \
 		PROC_REF(life_vision_changed), at_most = LIFE_PRESENT_MIN_INTERVAL, when = PROC_REF(life_vision_wanted))
 
@@ -571,7 +572,7 @@
 		return
 	life_vision_pass()
 
-/// The player HUD. Returns FALSE when there is no HUD to update. Also run by refresh_hud().
+/// The player HUD. Returns FALSE when there is no HUD to update. Only the HUD reaction runs it (life_hud_pass()).
 /mob/living/proc/life_hud()
 	SHOULD_CALL_PARENT(TRUE)
 	if(!hud_available())
@@ -659,7 +660,7 @@
 
 	animate(src.dsoverlay, alpha = (adjust_to*255), time = (distance*10 SECONDS))
 
-/// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Also run by refresh_vision().
+/// Sight flags: SEE_TURFS, see_in_dark, see_invisible, vision planes. Only the sight reaction runs it (life_vision_pass()).
 
 /// Variants set their sight, then call ..() last to send the vision signal.
 /mob/living/proc/life_vision()

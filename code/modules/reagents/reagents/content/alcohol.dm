@@ -2904,7 +2904,7 @@
 
 /datum/reagent/drink/coffee/nukie/mega/nega/affect_ingest(mob/living/carbon/human/M, alien, removed)
 	if(M.tiredness < 105)
-		M.tiredness = (M.tiredness + adj_tiredness)
+		M.set_tiredness((M.tiredness + adj_tiredness))
 	..()
 
 /datum/reagent/drink/coffee/nukie/mega/shock //Rapidly fills you up and even repairs your NIF, unless you don't have one in which case you'll be confused.

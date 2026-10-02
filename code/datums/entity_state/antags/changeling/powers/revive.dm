@@ -45,7 +45,7 @@
 		H.restore_all_organs(ignore_prosthetic_prefs=1) //Covers things like fractures and other things not covered by the above.
 		H.restore_blood()
 		H.remove_mutation(HUSK)
-		H.status_flags &= ~DISFIGURED
+		H.set_status_flags(H.status_flags & ~DISFIGURED)
 		H.update_icons_body()
 		for(var/limb in H.organs_by_name)
 			var/obj/item/organ/external/current_limb = H.organs_by_name[limb]
@@ -53,9 +53,9 @@
 				current_limb.relocate()
 				current_limb.open = 0
 
-		BITSET(H.hud_updateflag, HEALTH_HUD)
-		BITSET(H.hud_updateflag, STATUS_HUD)
-		BITSET(H.hud_updateflag, LIFE_HUD)
+		H.flag_hud_update(HEALTH_HUD)
+		H.flag_hud_update(STATUS_HUD)
+		H.flag_hud_update(LIFE_HUD)
 
 		if(H.get_equipped_item(SLOT_ID_HANDCUFFED))
 			H.drop_from_inventory(H.get_equipped_item(SLOT_ID_HANDCUFFED), H.loc)

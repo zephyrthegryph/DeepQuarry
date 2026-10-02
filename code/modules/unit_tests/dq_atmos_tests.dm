@@ -4587,7 +4587,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.safe = TRUE
 	A.autoclose = TRUE
 	var/obj/blocker = new(T)
-	blocker.density = TRUE
+	blocker.set_density(TRUE)
 	A.close()
 	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")

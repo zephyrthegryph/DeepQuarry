@@ -156,7 +156,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 	return GLOB.solar_gen_rate * sunfrac
 
 /obj/machinery/power/solar/proc/broken()
-	stat_add(BROKEN)
 	unset_control()
 	update_icon()
 	om_emit(src, new /datum/om/event/climb_shake(null))

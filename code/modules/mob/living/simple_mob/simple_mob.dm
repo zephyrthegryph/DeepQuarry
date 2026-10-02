@@ -909,7 +909,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		return
 
 	COOLDOWN_START(src, last_special, 10)
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
 	act_message(src, T, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
@@ -919,7 +919,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	om_after(src, 5, PROC_REF(leap_land), T)
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
 	if(!Adjacent(T))
 		to_chat(src, span_warning("You miss!"))

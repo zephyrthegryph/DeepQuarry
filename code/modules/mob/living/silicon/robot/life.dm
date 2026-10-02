@@ -51,20 +51,6 @@
 /datum/om/stage/life/robot_body/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
 	self.body?.life_tick()
 
-/// Client readouts: HUD and vision. Module items go on screen from after_equip() and Login;
-/// camera, radio and lights change on events.
-/datum/om/stage/life/robot_interface
-	order = LIFE_PHASE_OUTPUT + 10
-	name = "robot interface"
-	wake_on = CHANGE_MOB_HEALTH | CHANGE_MOB_STATUS | CHANGE_MOB_LOC | CHANGE_MOB_EQUIPMENT
-	life_sets = LIFE_SET_ROBOT
-	of = /mob/living/silicon/robot
-
-/datum/om/stage/life/robot_interface/perform(mob/living/silicon/robot/self, datum/om/frame/life/ctx)
-	if(self.client)
-		self.refresh_hud()
-		self.refresh_vision()
-
 /// Queued alarms reach the robot.
 /datum/om/stage/life/robot_alarms
 	order = LIFE_PHASE_OUTPUT + 20

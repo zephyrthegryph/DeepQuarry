@@ -87,7 +87,7 @@
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
 
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
@@ -97,7 +97,7 @@
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 
 	var/turf/T = get_turf(src)
 

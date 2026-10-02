@@ -337,13 +337,12 @@
 		/datum/om/stage/life/instability/silicon/robot,
 		/datum/om/stage/life/robot_power,
 		/datum/om/stage/life/robot_body,
-		/datum/om/stage/life/robot_interface,
 		/datum/om/stage/life/robot_alarms,
 	)
 	TEST_ASSERT(life_test_in_order(types, expected), "robot stages are missing or out of order: [jointext(types, ", ")]")
 	TEST_ASSERT_EQUAL(length(types), length(expected), "a robot should run only the robot set: [jointext(types, ", ")]")
 	TEST_ASSERT(R.life_canmove_wanted(), "a robot derives canmove reactively")
-	TEST_ASSERT(!R.life_vision_wanted(), "its sight and HUD run from its robot_interface step, not the reactions")
+	TEST_ASSERT(R.life_vision_wanted(), "a robot's sight and HUD are the presentation reactions")
 
 /// A simple mob's subtype code runs as its own variant after the simple mob core.
 /datum/unit_test/dq_life_simple_mob_variants
@@ -386,12 +385,12 @@
 	om_pipe_set_all(S, FALSE)
 	var/life_tick_before = H.life_tick
 	var/cycle_before = H.breath_cycle
-	H.transforming = TRUE
+	H.set_transforming(TRUE)
 	om_run_frame_now(H, /datum/om/pipeline/life)
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before, "a transforming human must not tick")
 	TEST_ASSERT_EQUAL(H.breath_cycle, cycle_before, "a transforming human must not breathe")
 	TEST_ASSERT(!S.asleep, "an aborted frame idles nothing")
-	H.transforming = FALSE
+	H.set_transforming(FALSE)
 	life_test_place(H)
 	om_run_frame_now(H, /datum/om/pipeline/life)
 	TEST_ASSERT_EQUAL(H.life_tick, life_tick_before + 1, "the human should tick again once the transformation ends")
@@ -405,11 +404,11 @@
 	TEST_ASSERT(life_test_place(M), "no floor to place the test mouse on")
 	om_stage_add(M, /datum/om/stage/life/trait/test_counter)
 	var/datum/om/stage/life/trait/test_counter/counter = om_registry().stage_by_type[/datum/om/stage/life/trait/test_counter]
-	M.transforming = TRUE
+	M.set_transforming(TRUE)
 	om_run_frame_now(M, /datum/om/pipeline/life)
 	TEST_ASSERT_EQUAL(counter.runs["[REF(M)]"], 1, "trait stages (before the living core) run while transforming")
 	TEST_ASSERT(!om_value_of(M, EFFECT_SUSPENDED), "transforming is not a suspension")
-	M.transforming = FALSE
+	M.set_transforming(FALSE)
 
 /// A component-provided trait stage joins the plan while the component is attached.
 /datum/unit_test/dq_life_trait_stage_follows_component
@@ -948,12 +947,12 @@
 	H.status_set(EFFECT_DIZZY, 30)
 	scheduler_advance(LIFE_CYCLE_SECONDS + 0.1)
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 27, "dizziness: 3 points per cycle")
-	H.resting = TRUE
+	H.set_resting(TRUE)
 	H.status_rate_check(EFFECT_DIZZY)
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 27, "a rate change keeps the points left")
 	scheduler_advance(LIFE_CYCLE_SECONDS)
 	TEST_ASSERT_EQUAL(H.status_units(EFFECT_DIZZY), 12, "dizziness: 15 points per cycle while resting")
-	H.resting = FALSE
+	H.set_resting(FALSE)
 	H.status_end(EFFECT_DIZZY)
 	TEST_ASSERT(!om_attached(H, /datum/om/behaviour/dizzy_shake), "the shake ends with the status (its on_end hook)")
 

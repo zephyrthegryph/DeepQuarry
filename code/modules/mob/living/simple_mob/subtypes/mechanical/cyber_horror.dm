@@ -146,7 +146,7 @@
 
 	// Do the actual leap.
 	// Lets us pass over everything.
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
@@ -157,7 +157,7 @@
 
 	// Revert special passage ability.
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 	// Where we landed. This might be different than A's turf.
 	var/turf/T = get_turf(src)
 

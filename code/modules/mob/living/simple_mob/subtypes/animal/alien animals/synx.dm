@@ -401,7 +401,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 	if(speak.len>=memorysize)
 		speak -= (pick(speak))//making the list more dynamic
 	if(resting)
-		resting = !resting
+		set_resting(!resting)
 	if(message=="Honk!")
 		bikehorn()
 
@@ -445,11 +445,11 @@ DECLARE_VERB(/mob/living/simple_mob/animal/synx, /mob/living/simple_mob/animal/s
 		return
 
 	if(status_flags & HIDING)
-		status_flags &= ~HIDING
+		set_status_flags(status_flags & ~HIDING)
 		reset_plane_and_layer()
 		to_chat(src,span_notice("You have stopped hiding."))
 	else
-		status_flags |= HIDING
+		set_status_flags(status_flags | HIDING)
 		layer = HIDING_LAYER //Just above cables with their 2.44
 		plane = OBJ_PLANE
 		to_chat(src,span_notice("You are now hiding."))

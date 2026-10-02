@@ -216,7 +216,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 
 /obj/structure/inflatable/door/proc/open_finish()
 	set_density(FALSE)
-	opacity = 0
+	set_opacity(0)
 	state = 1
 	update_icon()
 	isSwitchingStates = 0
@@ -228,7 +228,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 
 /obj/structure/inflatable/door/proc/close_finish()
 	set_density(TRUE)
-	opacity = 0
+	set_opacity(0)
 	state = 0
 	update_icon()
 	isSwitchingStates = 0

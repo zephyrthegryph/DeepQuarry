@@ -408,7 +408,7 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
+	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
@@ -416,7 +416,7 @@
 /datum/reagent/toxin/zombiepowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/lichpowder
@@ -440,7 +440,7 @@
 		M.emote("deathgasp")
 		M.tod = stationtime2text()
 		EXPIRY_STAMP(M, timeofdeath, CLOCK_WORLD)
-	M.status_flags |= FAKEDEATH
+	M.set_status_flags(M.status_flags | FAKEDEATH)
 	M.status_at_least(EFFECT_MUTED, 10)
 	M.status_set(EFFECT_PARALYZED, max(M.status_units(EFFECT_PARALYZED), 10))
 
@@ -452,7 +452,7 @@
 /datum/reagent/lichpowder/on_destroy(force)
 	if(holder && holder.my_atom && ismob(holder.my_atom))
 		var/mob/M = holder.my_atom
-		M.status_flags &= ~FAKEDEATH
+		M.set_status_flags(M.status_flags & ~FAKEDEATH)
 	..()
 
 /datum/reagent/toxin/fertilizer //Reagents used for plant fertilizers.

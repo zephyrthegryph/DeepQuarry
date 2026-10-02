@@ -51,7 +51,7 @@
 		self.body?.life_tick() // tissue-less views (souls) keep a simple body
 
 	if(self.stat == DEAD)
-		self.blinded = 1
+		self.set_blinded(1)
 		self.status_set(EFFECT_MUTED, 0)
 		self.deaf_loop.stop()
 		return 1
@@ -73,7 +73,7 @@
 			emp_damage = 30//Let's not overdo it
 		if(21 to 30)//High level of EMP damage, unable to see, hear, or speak
 			status_set(EFFECT_BLINDED, 1)
-			blinded = 1
+			set_blinded(1)
 			status_set(EFFECT_DEAFENED, 1)
 			status_set(EFFECT_MUTED, 1)
 			if(!alert)//Sounds an alarm, but only once per 'level'
@@ -84,7 +84,7 @@
 				emp_damage -= 1
 		if(20)
 			alert = 0
-			blinded = 0
+			set_blinded(0)
 			status_set(EFFECT_BLINDED, 0)
 			status_set(EFFECT_DEAFENED, 0)
 			status_set(EFFECT_MUTED, 0)

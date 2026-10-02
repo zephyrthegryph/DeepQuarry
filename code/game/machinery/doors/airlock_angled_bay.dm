@@ -96,15 +96,15 @@
 		if(FILL_METAL)
 			fill_icon = metal_fill_icon
 			glass = FALSE
-			opacity = TRUE
+			set_opacity(TRUE)
 		if(FILL_GLASS)
 			fill_icon = glass_fill_icon
 			glass = TRUE
-			opacity = FALSE
+			set_opacity(FALSE)
 		if(FILL_COLOR)
 			fill_icon = color_fill_icon
 			glass = FALSE
-			opacity = TRUE
+			set_opacity(TRUE)
 
 	// don't care about lights since those will be the same for every base, and panel and welded
 	var/cache_key = "[base_icon]:[fill_type]:[stripe_color]:[door_color]:[fill_color]"

@@ -102,4 +102,4 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot/platform, \
 	status_set(EFFECT_SLEEPING, 0)
 	status_set(EFFECT_WEAKENED, 0)
 	status_set(EFFECT_PARALYZED, 0)
-	resting = FALSE
+	set_resting(FALSE)

@@ -93,7 +93,7 @@ GLOBAL_DATUM_INIT(transcore_service, /datum/world_service/transcore, new)
 			continue
 
 		//In a human
-		BITSET(H.hud_updateflag, BACKUP_HUD)
+		H.flag_hud_update(BACKUP_HUD)
 
 		if(H == imp.imp_in() && H.stat < DEAD)
 			if(H.mind)

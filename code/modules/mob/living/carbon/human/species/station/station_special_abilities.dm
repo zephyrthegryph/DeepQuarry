@@ -1121,7 +1121,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 		return FALSE
 
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_critical("\The [src] leaps at \the [target]!"))
 	throw_at(get_step(target, get_turf(src)), 7, 1, src)
 	playsound(src, leap_sound, 75, 1)
@@ -1129,7 +1129,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 
 /mob/living/proc/target_lunge_land(mob/living/target)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	if(Adjacent(target))	//We leapt at them but we didn't manage to hit them, let's see if we're next to them
 		target.status_at_least(EFFECT_WEAKENED, 2)	//get knocked down, idiot

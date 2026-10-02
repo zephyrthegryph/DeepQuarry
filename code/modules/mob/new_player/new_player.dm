@@ -278,12 +278,12 @@
 		tele.start()
 		character.forceMove(get_turf(prey))
 		if(start_absorbed)
-			prey.absorbed = 1
+			prey.set_absorbed(1)
 		prey.forceMove(gut_to_enter)
 	else
 		if(gut)
 			if(start_absorbed)
-				character.absorbed = 1
+				character.set_absorbed(1)
 			character.forceMove(gut)
 
 	character.client.init_verbs()

@@ -165,7 +165,7 @@
 
 			else if(prob(1))
 				play_sfx(M, SFX_VORE_SCHLORP, 0.5, vary = TRUE)
-				P.absorbed = 0
+				P.set_absorbed(0)
 				act_message(M, null, others = span_infoplain(span_green(span_bold("Something spills into %U%'s [lowertext(B.name)]!"))))
 
 ////////////////////////// Misc Drugs //////////////////////////

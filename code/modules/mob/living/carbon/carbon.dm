@@ -279,7 +279,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 			else if(lying || src.has_status(EFFECT_SLEEPING))
 				status_adjust(EFFECT_SLEEPING, -5)
 				if(!src.has_status(EFFECT_SLEEPING))
-					src.resting = 0
+					set_resting(0)
 				act_message(M, src, MSG_SELF(span_notice("You shake %T% trying to wake [H.p_them()] up!")), \
 					MSG_OTHERS(span_notice("%U% shakes %T% trying to wake [H.p_them()] up!")))
 			else
@@ -292,7 +292,7 @@ DAMAGE_REACTION(/mob/living/carbon, DAMAGE_EMP, PROC_REF(species_emp_effects))
 						M.adjust_fire_stacks(-1)
 					if(M.on_fire)
 						src.ignite_mob()
-					M.resting = 0 //Hoist yourself up up off the ground. No para/stunned/weakened removal.
+					M.set_resting(0) //Hoist yourself up up off the ground. No para/stunned/weakened removal.
 					update_canmove()
 				else if(istype(hugger))
 					hugger.species.hug(hugger,src)

@@ -263,6 +263,7 @@
 #include "dq_pool_tests.dm"
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
+#include "dq_b4_tracking_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_medical_p0_tests.dm"

@@ -23,6 +23,6 @@
 /// CANPUSH follows EFFECT_UNPUSHABLE.
 /mob/living/proc/sync_push_flag()
 	if(om_has(src, EFFECT_UNPUSHABLE))
-		status_flags &= ~CANPUSH
+		set_status_flags(status_flags & ~CANPUSH)
 	else
-		status_flags |= CANPUSH
+		set_status_flags(status_flags | CANPUSH)

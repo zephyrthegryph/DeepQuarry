@@ -322,7 +322,7 @@
 		return
 
 	COOLDOWN_START(src, last_special, 75)
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
 	src.throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
@@ -331,7 +331,7 @@
 
 /mob/living/carbon/human/proc/leap_land(mob/living/T)
 
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
 	if(!src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))
