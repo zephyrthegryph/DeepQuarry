@@ -905,6 +905,7 @@ pub(super) struct FrozenSkeleton {
     pub image: dm_output::wire_image::WireImageBuilder,
     pub metadata: SkeletonMetadata,
     resident_charge: AtomicUsize,
+    pub(super) binding_artifact_identity: OnceLock<[u8;32]>,
 }
 
 impl FrozenSkeleton {
@@ -922,6 +923,7 @@ impl FrozenSkeleton {
             image,
             metadata,
             resident_charge: AtomicUsize::new(charge),
+            binding_artifact_identity: OnceLock::new(),
         }
     }
 

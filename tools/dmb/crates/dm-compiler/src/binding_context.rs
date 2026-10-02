@@ -59,3 +59,29 @@ pub(crate) fn prepare(
         initializers,modified,
     )).ok()
 }
+
+/// Authenticate the complete immutable declaration graph once, then only its
+/// exact post-prefix changes. The manifest digest is an encoding certificate:
+/// all referenced fragments are checksum-validated on restoration. Harmless
+/// representation changes may invalidate this certificate conservatively.
+pub(crate) fn prepare_frozen(
+    image:&WireImageBuilder,frozen:&super::canonical::FrozenSkeleton,
+    builtin_vars:Option<u32>,
+)->Option<crate::project_graph::BindingContextProof> {
+    let state=&frozen.metadata;
+    if let Some(identity)=frozen.binding_artifact_identity.get() {
+        if let Some(delta)=image.append_only_context_delta_from(&frozen.image).ok()? {
+            return crate::project_graph::BindingContextProof::from_components(&(
+                "authenticated-declaration-context-v2",env!("DM_EMISSION_FINGERPRINT"),
+                identity,delta,builtin_vars,
+            )).ok();
+        }
+        // A non-append mutation requires the complete current image certificate.
+        return crate::project_graph::BindingContextProof::from_components(&(
+            "authenticated-declaration-context-full-v2",env!("DM_EMISSION_FINGERPRINT"),
+            identity,image_identity(image)?,builtin_vars,
+        )).ok();
+    }
+    prepare(image,&state.shared,&state.invocations,&state.initializer_globals,
+        &state.global_proc_ids,&state.class_paths,&state.initializers,&state.modified_initializers)
+}

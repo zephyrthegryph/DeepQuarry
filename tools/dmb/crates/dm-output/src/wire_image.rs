@@ -150,15 +150,20 @@ impl ListObjectTable {
         for row in &mut self.rows[start..end] {if let ListObject::Resident(words)=row {if let ListWords::Owned(_)=words {let old=std::mem::take(words);if let ListWords::Owned(owned)=old {*words=ListWords::Shared(owned.into());}}}}
         Ok(self.rows[start..end].chunks(256).map(|rows|ListSourceSegment {rows:rows.to_vec().into(),store:self.store.clone()}).collect())
     }
-    pub fn append_source_segments(&mut self,segments:Vec<ListSourceSegment>)->io::Result<Range<usize>> {
+    pub fn prepare_append_source_segments(&self,segments:&[ListSourceSegment])->io::Result<Range<usize>> {
         let mut store=self.store.clone();let start=self.len();let count=segments.iter().try_fold(0usize,|count,segment|count.checked_add(segment.len())).ok_or_else(||invalid("list source count overflow"))?;
         let end=start.checked_add(count).ok_or_else(||invalid("list source count overflow"))?;u32::try_from(end).map_err(io::Error::other)?;
-        for segment in &segments {if segment.rows.iter().any(|row|matches!(row,ListObject::Addressed(_))) {
+        for segment in segments {if segment.rows.iter().any(|row|matches!(row,ListObject::Addressed(_))) {
             let candidate=segment.store.as_ref().ok_or_else(||invalid("addressed list segment lacks store"))?;
             if store.as_ref().is_some_and(|old|!Arc::ptr_eq(old,candidate)) {return Err(invalid("foreign addressed list segment"));}store=Some(candidate.clone());
             if segment.rows.iter().any(|row|matches!(row,ListObject::Addressed(handle) if !handle.valid())) {return Err(invalid("invalid addressed list segment"));}
         }}
-        self.store=store;for segment in segments {self.rows.extend(segment.rows.iter().cloned());}Ok(start..end)
+        Ok(start..end)
+    }
+    pub fn append_source_segments(&mut self,segments:Vec<ListSourceSegment>)->io::Result<Range<usize>> {
+        let range=self.prepare_append_source_segments(&segments)?;
+        if self.store.is_none() {self.store=segments.iter().find_map(|segment|segment.store.clone());}
+        for segment in segments {self.rows.extend(segment.rows.iter().cloned());}Ok(range)
     }
     pub fn prepare_range(&self,range:Range<usize>)->io::Result<()> {
         if range.end>self.len()||range.start>range.end||range.len()>ROW_WINDOW {return Err(invalid("wire list preparation range exceeds bound"));}
@@ -250,7 +255,21 @@ impl WireListSource for PipelinedLists<'_> {
 pub struct PhysicalSnapshot {version:u32,metadata:Dmb,lists:Vec<SnapshotList>,procs:Vec<crate::typed_table::PageSliceRef>,variables:Vec<crate::typed_table::PageSliceRef>}
 #[derive(Serialize,Deserialize)]
 enum SnapshotList {Resident(ListWords),Addressed(VerifiedCodeHandle)}
+#[derive(Clone,Copy,Serialize,Deserialize,PartialEq,Eq)]
+pub struct PhysicalRangeCursor {pub header_flags:u32,pub procs:usize,pub variables:usize,pub lists:usize,pub strings:usize,pub references:usize,pub instances:usize}
+#[derive(Serialize,Deserialize)]
+pub struct PhysicalRange {start:PhysicalRangeCursor,end:PhysicalRangeCursor,procs:Vec<crate::typed_table::PageSliceRef>,variables:Vec<crate::typed_table::PageSliceRef>,lists:Vec<SnapshotList>,strings:Vec<byond_dmb::dmb::DmString>,references:Vec<u32>,instances:Vec<byond_dmb::dmb::Instance>}
+impl PhysicalRange {pub fn end(&self)->PhysicalRangeCursor {self.end} pub fn strings(&self)->&[byond_dmb::dmb::DmString] {&self.strings} pub fn start(&self)->PhysicalRangeCursor {self.start}}
 pub struct WireImage {metadata:Dmb,lists:ListObjectTable,procs:crate::typed_table::TypedTable<Proc>,variables:crate::typed_table::TypedTable<Variable>}
+/// Exact live suffix of an immutable declaration prefix. The guard checks
+/// every other physical input; matching dense lengths alone is insufficient.
+#[derive(Serialize)]
+pub struct BindingAppendDelta<'a> {
+    resources:&'a [byond_dmb::dmb::ResourceRef],
+    strings:&'a [byond_dmb::dmb::DmString],
+    base_strings:usize,base_variables:usize,base_procedures:usize,
+    variables:Vec<Variable>,procedures:Vec<Proc>,
+}
 /// Mutable physical assembly. Actual list objects occupy every table slot;
 /// code handles never masquerade as empty logical lists.
 pub struct WireImageBuilder {pub(crate) metadata:Dmb,pub(crate) lists:ListObjectTable,pub(crate) procs:crate::typed_table::TypedTable<Proc>,pub(crate) variables:crate::typed_table::TypedTable<Variable>}
@@ -263,6 +282,44 @@ impl WireImageBuilder {
         let procs=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.procs)).with_backing(store.as_ref().and_then(|store|crate::typed_pages::TypedPages::open(&store.root,"wire-proc-v1",1024*1024,|_|0).ok()).map(|pages|Arc::new(Mutex::new(pages))));
         let variables=crate::typed_table::TypedTable::from_rows(std::mem::take(&mut image.variables)).with_backing(store.as_ref().and_then(|store|crate::typed_pages::TypedPages::open(&store.root,"wire-variable-v1",1024*1024,|_|0).ok()).map(|pages|Arc::new(Mutex::new(pages))));
         Self {metadata:image,procs,variables,lists:ListObjectTable {rows:lists.into_iter().map(ListObject::Resident).collect(),store}}
+    }
+    pub fn range_cursor(&self)->PhysicalRangeCursor {PhysicalRangeCursor {header_flags:self.metadata.header.flags,procs:self.procs.len(),variables:self.variables.len(),lists:self.lists.len(),strings:self.metadata.strings.len(),references:self.metadata.proc_references.len(),instances:self.metadata.instances.len()}}
+    pub fn export_range(&mut self,start:PhysicalRangeCursor)->io::Result<PhysicalRange> {
+        let end=self.range_cursor();
+        if end.header_flags&!0x4000_0000!=start.header_flags&!0x4000_0000 {return Err(invalid("physical range changes unsupported header flags"));}
+        if start.procs>end.procs||start.variables>end.variables||start.lists>end.lists||start.strings>end.strings||start.references>end.references||start.instances>end.instances {return Err(invalid("invalid physical range cursor"));}
+        let procs=self.procs.export_portable_slices(start.procs,end.procs)?;let variables=self.variables.export_portable_slices(start.variables,end.variables)?;
+        let mut lists=Vec::with_capacity(end.lists-start.lists);
+        let width=if self.metadata.header.flags&0x4000_0000!=0 {4}else {2};
+        for row in &self.lists.rows[start.lists..] {lists.push(match row {ListObject::Addressed(handle)=>SnapshotList::Addressed(handle.clone()),ListObject::Resident(words)=>match &self.lists.store {Some(store)=>SnapshotList::Addressed(store.stage_words(words,width)?),None=>SnapshotList::Resident(words.clone())}});}
+        if let Some(store)=&self.lists.store {store.flush()?;}
+        Ok(PhysicalRange {start,end,procs,variables,lists,strings:self.metadata.strings[start.strings..].to_vec(),references:self.metadata.proc_references[start.references..].to_vec(),instances:self.metadata.instances[start.instances..].to_vec()})
+    }
+    pub fn append_range(&mut self,range:&PhysicalRange)->io::Result<()> {
+        if self.range_cursor()!=range.start {return Err(invalid("physical range allocation mismatch"));}
+        if range.end.header_flags&!0x4000_0000!=range.start.header_flags&!0x4000_0000 {return Err(invalid("unsupported physical range header flags"));}
+        let proc_count=range.procs.iter().try_fold(0usize,|n,p|n.checked_add(p.end.checked_sub(p.start)?)).ok_or_else(||invalid("invalid proc page range"))?;
+        let variable_count=range.variables.iter().try_fold(0usize,|n,p|n.checked_add(p.end.checked_sub(p.start)?)).ok_or_else(||invalid("invalid variable page range"))?;
+        for (start,added,end) in [(range.start.procs,proc_count,range.end.procs),(range.start.variables,variable_count,range.end.variables),(range.start.lists,range.lists.len(),range.end.lists),(range.start.strings,range.strings.len(),range.end.strings),(range.start.references,range.references.len(),range.end.references),(range.start.instances,range.instances.len(),range.end.instances)] {if start.checked_add(added)!=Some(end) {return Err(invalid("physical range shape mismatch"));}}
+        let promotes=[self.metadata.classes.len(),self.metadata.mobs.len(),self.metadata.map_objects.len(),self.metadata.resources.len(),range.end.procs,range.end.variables,range.end.lists,range.end.strings,range.end.references,range.end.instances].into_iter().any(|count|count>u16::MAX as usize);
+        let expected_flags=range.start.header_flags|if promotes {0x4000_0000}else {0};
+        if range.end.header_flags!=expected_flags {return Err(invalid("physical range header promotion mismatch"));}
+        let store=self.lists.store.clone().ok_or_else(||invalid("physical range requires addressed store"))?;
+        // Construct and validate all source slices before mutating the target.
+        let proc_store=self.procs.backing_store().ok_or_else(||invalid("physical range proc backing missing"))?;
+        let variable_store=self.variables.backing_store().ok_or_else(||invalid("physical range variable backing missing"))?;
+        let mut procs=crate::typed_table::TypedTable::default().with_backing(Some(proc_store.clone()));procs.append_page_slices(proc_store,range.procs.clone())?;
+        let mut variables=crate::typed_table::TypedTable::default().with_backing(Some(variable_store.clone()));variables.append_page_slices(variable_store,range.variables.clone())?;
+        let mut lists=ListObjectTable::new(Some(store));for row in &range.lists {match row {SnapshotList::Resident(words)=>{lists.append_resident(words.clone());},SnapshotList::Addressed(handle)=>{lists.append_verified(handle.clone())?;}}}
+        let proc_segments=procs.segments()?;let variable_segments=variables.segments()?;let list_segments=lists.source_segments(0,lists.len())?;
+        // Preparation may change tail representation but never logical rows.
+        // All backing IO and bounds checks finish before any target append.
+        self.procs.prepare_append_segments(&proc_segments)?;self.variables.prepare_append_segments(&variable_segments)?;self.lists.prepare_append_source_segments(&list_segments)?;
+        for (current,added) in [(self.metadata.strings.len(),range.strings.len()),(self.metadata.proc_references.len(),range.references.len()),(self.metadata.instances.len(),range.instances.len())] {u32::try_from(current.checked_add(added).ok_or_else(||invalid("physical range count overflow"))?).map_err(io::Error::other)?;}
+        self.procs.append_segments(proc_segments)?;self.variables.append_segments(variable_segments)?;self.lists.append_source_segments(list_segments)?;
+        self.metadata.strings.extend_from_slice(&range.strings);self.metadata.proc_references.extend_from_slice(&range.references);self.metadata.instances.extend_from_slice(&range.instances);
+        crate::assembly::AssemblyImage::promote_object_ids(self);
+        Ok(())
     }
     pub fn encode_prefix_to_sink(&self,sink:Box<dyn FnMut(&[u8])->io::Result<()>>)->io::Result<()> {
         self.metadata.encode_physical_to_sink(&self.lists,self,&mut DmbWireCache::default(),sink).map(|_|())
@@ -405,6 +462,31 @@ impl WireImage {
         std::sync::Arc::try_unwrap(builder).map_err(|_|invalid("page sink still retained"))?
             .into_inner().map_err(|_|invalid("page sink lock poisoned"))?.finish(len,spans)
     }
+}
+impl WireImageBuilder {
+    pub fn append_only_context_delta_from<'a>(&'a self,prefix:&Self)->io::Result<Option<BindingAppendDelta<'a>>> {
+        let a=&self.metadata;let b=&prefix.metadata;
+        if a.header!=b.header||a.dimensions!=b.dimensions||a.grid!=b.grid||a.classes!=b.classes||a.mobs!=b.mobs
+            ||a.variable_footer!=b.variable_footer||a.proc_references!=b.proc_references||a.instances!=b.instances
+            ||a.map_objects!=b.map_objects||a.world!=b.world||a.strings.len()<b.strings.len()
+            ||a.strings[..b.strings.len()]!=b.strings||self.lists.rows.len()!=prefix.lists.rows.len()
+            ||!self.procs.same_prefix_as(&prefix.procs)||!self.variables.same_prefix_as(&prefix.variables) {return Ok(None);}
+        for (a,b) in self.lists.rows.iter().zip(&prefix.lists.rows) {
+            let same=match (a,b) {
+                (ListObject::Resident(a),ListObject::Resident(b))=>a==b,
+                (ListObject::Addressed(a),ListObject::Addressed(b))=>a.digest==b.digest&&a.width==b.width&&a.words==b.words,
+                _=>false,
+            };
+            if !same {return Ok(None);}
+        }
+        let base_variables=prefix.variables.len();let base_procedures=prefix.procs.len();
+        if self.variables.len()-base_variables>1024||self.procs.len()-base_procedures>1024 {return Ok(None);}
+        Ok(Some(BindingAppendDelta {resources:&a.resources,strings:&a.strings[b.strings.len()..],base_strings:b.strings.len(),
+            base_variables,base_procedures,variables:self.variables.range(base_variables,self.variables.len())?,
+            procedures:self.procs.range(base_procedures,self.procs.len())?}))
+    }
+}
+impl WireImage {
     pub fn serialize_chunks(&self,cache:&mut DmbWireCache)->io::Result<ChunkedDmb> {
         self.metadata.encode_physical_chunks(&self.lists,self,cache)
     }

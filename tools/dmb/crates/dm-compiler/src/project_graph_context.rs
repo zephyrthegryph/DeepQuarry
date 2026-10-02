@@ -22,6 +22,15 @@ fn keys_digest(keys:&[ProcKey])->io::Result<String> {
         .ok_or_else(||io::Error::other("context key serialization failed"))
 }
 impl ProjectProcedureGraph {
+    /// A source-ordered range proof is derived from the same validated positive
+    /// and negative readsets as individual output probes. It contains no decoded
+    /// procedure artifact; changing any descriptor or candidate changes the root.
+    pub fn validated_range_identity(&mut self, keys:&[ProcKey], descriptors:&[ProcDescriptor])->Option<String> {
+        if keys.is_empty()||keys.len()>1024||keys.len()!=descriptors.len() {return None;}
+        let rows:Option<Vec<_>>=keys.iter().zip(descriptors).map(|(key,descriptor)|
+            self.probe_validity(key,descriptor).map(|identity|(key,descriptor,identity))).collect();
+        crate::content_hash::compact(b"dm-validated-procedure-range-v1",&rows?).map(crate::content_hash::text)
+    }
     /// Revoked context-only certificates have no live dependency inputs yet.
     /// The adapter must prepare their exact persisted readsets and resolver
     /// index even if its declaration revision string otherwise stayed equal.
@@ -75,7 +84,7 @@ impl ProjectProcedureGraph {
         }
         self.accepted_context=Some(proof.clone());
         self.stats.procedures=self.records.len()+self.certificates.len();
-        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|560+key.path.capacity()+c.descriptor.heap_bytes()+c.disk.heap_bytes()+c.facts.capacity()*4).sum::<usize>()
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|certificate_heap(key,c)).sum::<usize>()
             +self.procedure_names.iter().map(|key|key.path.capacity()+96).sum::<usize>()
             +self.fact_names.iter().map(|fact|fact_heap(fact)+96).sum::<usize>()
             +self.compact_reverse.values().map(|ids|96+ids.capacity()*4).sum::<usize>();
@@ -115,6 +124,30 @@ impl ProjectProcedureGraph {
         }
         let head=ContextHead {version:1,proof:proof.clone(),keys:keys_digest(keys)?,pages,count:rows.len()};
         writes.push((dm_store::Key::new(namespace,&proof.identity),rmp_serde::to_vec(&head).map_err(io::Error::other)?));
-        p.store.put_many(writes,None)?;self.accepted_context=Some(proof.clone());Ok(true)
+        p.store.put_many(writes,None)?;
+        // The durable complete-context proof now licenses these descriptors
+        // directly. Keep compact candidate identities, not a second resident
+        // copy of every unchanged dependency and Salsa input. A context change
+        // revokes these rows and restores their persisted exact readsets.
+        let mut certificates=BTreeMap::new();
+        let mut names=Vec::with_capacity(rows.len());
+        for row in rows {
+            let id=u32::try_from(names.len()).map_err(io::Error::other)?;
+            names.push(row.key.clone());
+            certificates.insert(row.key,ValidatedCertificate {id,descriptor:row.descriptor,disk:row.disk,
+                facts:Vec::new(),valid:true,active:true,context_only:true});
+        }
+        self.certificates=certificates;self.procedure_names=names;
+        self.records.clear();self.shared_facts.clear();self.fact_ids.clear();self.fact_names=Vec::new();
+        self.values.clear();self.reverse.clear();self.compact_reverse.clear();self.readsets.clear();
+        self.decoded_nodes=DecodedDagNodes::default();self.dirty.clear();self.pending_shared.clear();
+        self.pending_private.clear();self.lru.clear();self.db=Database::default();
+        if let Some(p)=&mut self.persistence {p.fact_rows.clear();p.value_rows.clear();p.witness_memo_bytes=0;}
+        self.stats.resident_bytes=0;self.stats.facts=0;self.stats.procedures=self.certificates.len();
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|certificate_heap(key,c)).sum::<usize>()
+            +self.procedure_names.iter().map(|key|key.path.capacity()+std::mem::size_of::<ProcKey>()).sum::<usize>();
+        self.accepted_context=Some(proof.clone());
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE sealed graph context retained: procedures={} metadata_bytes={}",self.certificates.len(),self.stats.metadata_bytes);}
+        Ok(true)
     }
 }

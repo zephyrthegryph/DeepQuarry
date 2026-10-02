@@ -380,6 +380,14 @@ struct ValidatedCertificate {
     context_only: bool,
 }
 
+fn certificate_heap(key:&ProcKey,certificate:&ValidatedCertificate)->usize {
+    // Account for the actual compact record and a conservative tree-node
+    // allowance; digest fields occupy the record, not separate string heaps.
+    std::mem::size_of::<(ProcKey,ValidatedCertificate)>()+96+key.path.capacity()
+        +certificate.descriptor.heap_bytes()+certificate.disk.heap_bytes()
+        +certificate.facts.capacity()*std::mem::size_of::<FactId>()
+}
+
 /// One graph per project/worktree session. The shared disk cache remains
 /// content addressed; this live graph tracks the worktree's current facts.
 pub struct ProjectProcedureGraph {
@@ -749,8 +757,7 @@ impl ProjectProcedureGraph {
         self.stats.facts = 0;
         self.stats.procedures = self.certificates.len();
         self.stats.metadata_bytes = self.certificates.iter().map(|(key,c)|
-            560 + key.path.capacity() + c.descriptor.heap_bytes() + c.disk.heap_bytes()
-                + c.facts.capacity()*std::mem::size_of::<FactId>()).sum::<usize>()
+            certificate_heap(key,c)).sum::<usize>()
             + self.fact_names.iter().map(|fact| fact_heap(fact)+96).sum::<usize>()
             + self.compact_reverse.values().map(|readers| 96+readers.len()*4).sum::<usize>()
             + self.procedure_names.iter().map(|key| key.path.capacity()+96).sum::<usize>();
@@ -791,7 +798,7 @@ impl ProjectProcedureGraph {
         self.db=Database::default();self.stats.resident_bytes=0;self.stats.facts=0;
         if let Some(p)=&mut self.persistence {p.fact_rows.clear();p.value_rows.clear();p.witness_memo_bytes=0;}
         self.stats.procedures=self.certificates.len();
-        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|560+key.path.capacity()+c.descriptor.heap_bytes()+c.disk.heap_bytes()+c.facts.capacity()*4).sum::<usize>()
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|certificate_heap(key,c)).sum::<usize>()
             +self.fact_names.iter().map(|fact|fact_heap(fact)+96).sum::<usize>()
             +self.compact_reverse.values().map(|readers|96+readers.capacity()*4).sum::<usize>()
             +self.procedure_names.iter().map(|key|key.path.capacity()+96).sum::<usize>();
@@ -903,8 +910,7 @@ impl ProjectProcedureGraph {
         let id = if let Some(certificate) = self.certificates.remove(key) {
             self.stats.procedures = self.stats.procedures.saturating_sub(1);
             self.stats.metadata_bytes = self.stats.metadata_bytes.saturating_sub(
-                560 + key.path.capacity() + certificate.descriptor.heap_bytes() + certificate.disk.heap_bytes()
-                    + certificate.facts.capacity()*std::mem::size_of::<FactId>(),
+                certificate_heap(key,&certificate),
             );
             for fact in certificate.facts {
                 if let Some(readers) = self.reverse.get_mut(&fact) { readers.remove(&certificate.id); }

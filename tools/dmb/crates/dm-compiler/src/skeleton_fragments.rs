@@ -166,8 +166,10 @@ pub(super) fn store(root:&Path,key:&str,value:&FrozenSkeleton)->Option<()> {
         shared:put(&mut writes,&metadata.shared)?,invocations:put_invocations(&mut writes,&metadata.invocations)?,
     };
     let bytes=serde_json::to_vec(&manifest).ok()?;
+    let binding_identity:[u8;32]=Sha256::digest(&bytes).into();
     writes.flush().ok()?;
     writes.store.commit(&[],&[Change::Put(Key::new(MANIFESTS,key),bytes)],None).ok()?;
+    let _=value.binding_artifact_identity.set(binding_identity);
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE declaration snapshot persisted {} bytes in {:.3}s",writes.written,started.elapsed().as_secs_f64());}
     Some(())
 }
@@ -175,7 +177,9 @@ pub(super) fn load(root:&Path,key:&str,code_store:Arc<dm_output::wire_image::Cod
     let started=std::time::Instant::now();
     let store=Store::open(root.join("skeleton.redb")).ok()?;
     let record=store.read_many_bounded(&[Key::new(MANIFESTS,key)],2*1024*1024,2*1024*1024,None).ok()?;
-    let manifest:Manifest=serde_json::from_slice(record.values.first()?.as_deref()?).ok()?;
+    let manifest_bytes=record.values.first()?.as_deref()?;
+    let binding_identity:[u8;32]=Sha256::digest(manifest_bytes).into();
+    let manifest:Manifest=serde_json::from_slice(manifest_bytes).ok()?;
     let image=dm_output::wire_image::WireImageBuilder::restore_snapshot(get(&store,&manifest.image)?,code_store).ok()?;
     let metadata=SkeletonMetadata {
         strings:get(&store,&manifest.strings)?,proc_paths:get(&store,&manifest.proc_paths)?,class_paths:get(&store,&manifest.class_paths)?,
@@ -188,5 +192,7 @@ pub(super) fn load(root:&Path,key:&str,code_store:Arc<dm_output::wire_image::Cod
         let fragments=manifest.image.len()+manifest.strings.len()+manifest.proc_paths.len()+manifest.class_paths.len()+manifest.pending.iter().map(Vec::len).sum::<usize>()+manifest.dynamic.iter().map(Vec::len).sum::<usize>()+manifest.initializer_globals.len()+manifest.global_proc_ids.len()+manifest.shared.len()+manifest.invocations.iter().map(Vec::len).sum::<usize>();
         eprintln!("DM_BUILD_TRACE declaration snapshot restored {fragments} binary fragments in {:.3}s",started.elapsed().as_secs_f64());
     }
-    Some(FrozenSkeleton::new(image,metadata))
+    let frozen=FrozenSkeleton::new(image,metadata);
+    let _=frozen.binding_artifact_identity.set(binding_identity);
+    Some(frozen)
 }

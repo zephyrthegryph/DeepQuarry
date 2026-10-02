@@ -224,6 +224,29 @@ fn handle_charge(key: &crate::ProcKey, handle: &Handle) -> usize {
         + handle.descriptor.frame_digest.capacity() + handle.candidate.capacity()
         + handle.payload.capacity() + handle.page.as_ref().map_or(0,|locator|locator.page.capacity()+32) + 192
 }
+/// Serialization fails before extending beyond the transient range budget.
+struct RangeWriter(Vec<u8>);
+impl std::io::Write for RangeWriter {
+    fn write(&mut self,bytes:&[u8])->std::io::Result<usize> {
+        if self.0.len().saturating_add(bytes.len())>16*1024*1024 {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"physical range exceeds 16 MiB"));
+        }
+        let needed=self.0.len()+bytes.len();
+        if needed>self.0.capacity() {
+            let capacity=self.0.capacity().saturating_mul(2).max(4096).max(needed).min(16*1024*1024);
+            self.0.try_reserve_exact(capacity-self.0.len()).map_err(std::io::Error::other)?;
+        }
+        self.0.extend_from_slice(bytes);Ok(bytes.len())
+    }
+    fn flush(&mut self)->std::io::Result<()> {Ok(())}
+}
+#[derive(Serialize,Deserialize)]
+pub(super) struct ProcedureRange {
+    pub version:u8,
+    pub proof:String,
+    pub physical:dm_output::wire_image::PhysicalRange,
+    pub emitted:Vec<usize>,
+}
 #[derive(Default)]
 pub(super) struct FragmentStats {
     pub reused: usize,
@@ -233,6 +256,8 @@ pub(super) struct FragmentStats {
     pub shared_projection_hits: usize,
     pub metadata_only_reused:usize,
     pub wire_relinked:usize,
+    pub ranges_reused:usize,
+    pub range_procedures_reused:usize,
     pub code_read_bytes: usize,
     pub code_hydration_seconds: f64,
     pub built: usize,
@@ -257,6 +282,7 @@ pub(super) struct ProcedureFragments {
     pending_metadata:Vec<PendingMetadata>,
     pending_metadata_bytes:usize,
     pages:String,
+    ranges:String,
     resident_bytes: usize,
     admitted_bytes: usize,
     metadata_bytes: usize,
@@ -281,6 +307,7 @@ impl ProcedureFragments {
             crate::incremental::digest(identity.as_bytes())),
             blobs: format!("output-blobs-v3-{}", env!("DM_EMISSION_FINGERPRINT")),
             pages:format!("output-metadata-pages-v1-{}",env!("DM_EMISSION_FINGERPRINT")),
+            ranges:format!("output-ranges-v1-{}-{}",env!("DM_EMISSION_FINGERPRINT"),crate::incremental::digest(identity.as_bytes())),
             code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
     pub fn set_workers(&mut self, workers: usize) {
@@ -333,6 +360,36 @@ impl ProcedureFragments {
         self.recency.retain(|(key,tick)|self.resident.get(key).is_some_and(|entry|entry.used==*tick));
         self.recency.shrink_to_fit();
         before.saturating_sub(self.resident_bytes())
+    }
+    /// Range records are the physical composition query result. A current
+    /// complete link/allocation/debug/semantic proof selects them directly;
+    /// individual recipes are hydrated only on the normal miss route.
+    pub fn read_range<T:serde::de::DeserializeOwned>(&mut self,proof:&str)->Option<T> {
+        if proof.len()!=64||!proof.bytes().all(|byte|byte.is_ascii_hexdigit()) {return None;}
+        let store=self.store.as_ref()?;let started=std::time::Instant::now();
+        let batch=store.read_many_bounded(&[dm_store::Key::new(&self.ranges,proof)],8*1024*1024,8*1024*1024,None).ok()?;
+        self.stats.read_seconds+=started.elapsed().as_secs_f64();
+        let bytes=batch.values.into_iter().next()??;
+        self.stats.disk_bytes+=bytes.len();self.stats.batches+=1;
+        if bytes.get(..8)!=Some(b"DMORNG01".as_slice()) {return None;}
+        let expanded=u32::from_le_bytes(bytes.get(8..12)?.try_into().ok()?) as usize;
+        if expanded>16*1024*1024 {return None;}
+        let started=std::time::Instant::now();
+        let raw=lz4_flex::decompress_size_prepended(bytes.get(8..)?).ok()?;
+        let row=rmp_serde::from_slice(&raw).ok();
+        self.stats.decode_seconds+=started.elapsed().as_secs_f64();row
+    }
+    pub fn retain_range<T:serde::Serialize>(&mut self,proof:String,value:&T) {
+        if proof.len()!=64||!proof.bytes().all(|byte|byte.is_ascii_hexdigit()) {return;}
+        let started=std::time::Instant::now();
+        let mut writer=RangeWriter(Vec::new());
+        if value.serialize(&mut rmp_serde::Serializer::new(&mut writer)).is_err() {return;}
+        let raw=writer.0;
+        let mut bytes=b"DMORNG01".to_vec();bytes.extend(lz4_flex::compress_prepend_size(&raw));
+        if bytes.len()>8*1024*1024 {return;}
+        self.stats.encode_seconds+=started.elapsed().as_secs_f64();
+        self.pending_bytes+=bytes.len();self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.ranges,proof),bytes));
+        if self.pending_bytes.saturating_add(self.pending_metadata_bytes)>=8*1024*1024 {self.flush();}
     }
     pub fn has_handle(&self, key: &crate::ProcKey) -> bool { self.handles.contains_key(key) }
     /// Addressed metadata-only window for the physical object composer. The

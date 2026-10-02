@@ -1875,6 +1875,36 @@ struct ReplayScratch {
     debug_ids: Vec<(u32, u32)>,
     assignments: Vec<Option<u32>>,
 }
+struct ProcedureRangeCapture {
+    start:usize,end:usize,
+    cursor:dm_output::wire_image::PhysicalRangeCursor,
+    incoming_strings:[u8;32],
+    debug:String,
+    descriptors:Vec<crate::ProcDescriptor>,
+    emitted_start:usize,
+    argument_sources:usize,
+}
+fn procedure_range_proof(
+    graph:&mut crate::ProjectProcedureGraph,keys:&[crate::ProcKey],capture:&ProcedureRangeCapture,
+    link_context:&str,
+)->Option<String> {
+    let semantic=graph.validated_range_identity(&keys[capture.start..capture.end],&capture.descriptors)?;
+    crate::content_hash::compact(b"dm-physical-procedure-range-v1",&(
+        link_context,semantic,&capture.debug,capture.cursor,capture.incoming_strings,
+    )).map(crate::content_hash::text)
+}
+fn persist_procedure_range(
+    capture:ProcedureRangeCapture,link_context:&str,keys:&[crate::ProcKey],
+    graph:&mut crate::ProjectProcedureGraph,fragments:&mut procedure_fragments::ProcedureFragments,
+    image:&mut dm_output::wire_image::WireImageBuilder,emitted:&[PhysicalEmittedProc],argument_sources:usize,
+) {
+    if argument_sources!=capture.argument_sources||emitted.len().checked_sub(capture.emitted_start)!=Some(capture.end-capture.start) {return;}
+    let Some(proof)=procedure_range_proof(graph,keys,&capture,link_context) else {return;};
+    let Ok(physical)=image.export_range(capture.cursor) else {return;};
+    let row=procedure_fragments::ProcedureRange {version:1,proof:proof.clone(),physical,
+        emitted:emitted[capture.emitted_start..].iter().map(|row|row.proc_index).collect()};
+    fragments.retain_range(proof,&row);
+}
 /// Recompose a cached authored node using only its explicit output dependencies.
 /// No signature parsing, lower frame, symbolic body, or metadata reconstruction
 /// enters this path. Dense IDs patch flat external slots and small record fields.
@@ -4406,8 +4436,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     if let Some(report) = lowering_audit.as_deref_mut() { report.expected_procedures = procedure_count; }
     session.active_keys.clear();
     let context_started=std::time::Instant::now();
-    let binding_context=if reusable {binding_context::prepare(&dmb,&shared_bindings,invocations,
-        initializer_globals,&global_proc_ids,class_paths,&state.initializers,&state.modified_initializers)}else{None};
+    let binding_context=if reusable {binding_context::prepare_frozen(&dmb,&frozen,strings.5)}else{None};
     if let Err(error)=session.physical_rows.select_context(binding_context.as_ref()) {
         session.physical_rows.clear();
         if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE physical layout context selection failed: {error}");}
@@ -4518,6 +4547,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     // Compact coordinates permit source-order parser prefetch without retaining
     // procedure text or duplicating declaration nodes.
     let parser_spans: Vec<_> = pending.iter().map(PendingProc::span).collect();
+    let range_headers:Vec<_>=pending.iter().map(PendingProc::header_span).collect();
+    // Complete lowering context plus physical resource assignments licenses
+    // range composition. String membership and authored mapping remain separate
+    // current query inputs, rather than being inferred from table lengths.
+    let range_link_context=binding_context.as_ref().and_then(|proof|
+        crate::content_hash::compact(b"dm-complete-link-range-context-v1",&(proof,&resource_assignment_identity,dmb.header()))
+            .map(crate::content_hash::text));
+    if range_link_context.is_some() {strings.begin_range_tracking();}
+
     let mut pending = pending.into_iter().enumerate().peekable();
     let mut owner_bindings = OwnerBindingCache::with_queries(4 * 1024 * 1024, 64, Arc::clone(&session.owner_frames));
     let pool_cache = lowering_cache.fork();
@@ -4528,6 +4566,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             let mut prefetched_until = 0;
             let mut metadata_start=0usize;
             let mut metadata_window=Vec::new();
+            let mut range_capture:Option<ProcedureRangeCapture>=None;
             let mut parser_prefetched_until = 0;
             let mut replay_scratch = ReplayScratch::default();
             let output_started = std::time::Instant::now();
@@ -4540,6 +4579,67 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             let mut next_progress = 0usize;
             while pending.peek().is_some() {
                 let progress_ordinal = pending.peek().unwrap().0;
+                if range_capture.as_ref().is_some_and(|capture|progress_ordinal>=capture.end) {
+                    let capture=range_capture.take().unwrap();
+                    if progress_ordinal==capture.end {
+                        if let Some(context)=&range_link_context {persist_procedure_range(capture,context,&procedure_keys,
+                            &mut session.graph,&mut session.procedure_fragments,&mut dmb,&emitted,pending_argument_sources.len());}
+                    }
+                }
+                // A manifest hit composes a complete immutable physical range;
+                // it never loads per-procedure recipes or computes physical-row
+                // fingerprints. Argument-source helpers retain normal replay
+                // because they also update the deferred helper work queue.
+                if range_capture.is_none()&&reusable&&lowering_audit.is_none()&&outline.is_none() {
+                    if let (Some(context),Some(incoming_strings))=(&range_link_context,strings.range_identity()) {
+                        let start=progress_ordinal;
+                        let mut end=start;
+                        while end<procedure_count&&end-start<1024&&invocations[end].params.iter().all(|parameter|parameter.source_expression.is_none()) {end+=1;}
+                        if end-start>=8 {
+                            let mut descriptors=Vec::with_capacity(end-start);
+                            for index in start..end {
+                                let span=parser_spans[index];
+                                let body_digest=frontend.as_ref().and_then(|frontend|frontend.procedure_digest_at(span)).map(str::to_owned)
+                                    .or_else(||procedure_digests.as_ref().and_then(|digests|digests.get(&(span.start,span.end))).cloned())
+                                    .map(Ok).unwrap_or_else(||source_range(span).map(|raw|crate::incremental::digest(raw.as_bytes())))?;
+                                descriptors.push(crate::ProcDescriptor {body_digest,frame_digest:invocations[index].frame_digest.clone()});
+                            }
+                            let spans:Vec<_>=(start..end).map(|index|(range_headers[index],parser_spans[index])).collect();
+                            let debug=match source_debug {Some(index)=>index.range_identity(&spans),None=>Some("debug-disabled".into())};
+                            if let Some(debug)=debug {
+                                let capture=ProcedureRangeCapture {start,end,cursor:dmb.range_cursor(),incoming_strings,debug,descriptors,
+                                    emitted_start:emitted.len(),argument_sources:pending_argument_sources.len()};
+                                let proof=procedure_range_proof(&mut session.graph,&procedure_keys,&capture,context);
+                                let saved=proof.as_ref().and_then(|proof|session.procedure_fragments.read_range::<procedure_fragments::ProcedureRange>(proof));
+                                let valid=saved.as_ref().is_some_and(|saved|saved.version==1&&Some(&saved.proof)==proof.as_ref()
+                                    &&saved.physical.start()==capture.cursor&&saved.emitted.len()==end-start
+                                    &&saved.emitted.windows(2).all(|pair|pair[0]<pair[1])
+                                    &&saved.emitted.first().is_some_and(|index|*index>=capture.cursor.procs)
+                                    &&saved.emitted.last().is_some_and(|index|*index<saved.physical.end().procs)
+                                    &&strings.validate_range_strings(&saved.physical).is_ok());
+                                if valid {
+                                    let saved=saved.unwrap();
+                                    // String membership validates before any image mutation.
+                                    strings.validate_range_strings(&saved.physical)?;
+                                    dmb.append_range(&saved.physical).map_err(|error|error.to_string())?;
+                                    strings.replay_range_strings(&saved.physical)?;
+                                    for (index,proc_index) in (start..end).zip(saved.emitted) {
+                                        session.active_keys.insert(procedure_keys[index].clone());
+                                        emitted.push(PhysicalEmittedProc {path:invocations[index].path.clone(),proc_index});
+                                        pending.next();
+                                    }
+                                    session.procedure_fragments.stats.ranges_reused+=1;
+                                    session.procedure_fragments.stats.range_procedures_reused+=end-start;
+                                    session.procedure_fragments.stats.reused+=end-start;
+                                    session.emission_stats.authored_prepared_reused+=end-start;
+                                    continue;
+                                }
+                                range_capture=Some(capture);
+                            }
+                        }
+                    }
+                }
+
                 if progress_ordinal >= next_progress {
                     let released=session.graph.finish_validation_window();
                     if released!=0 {trace(&format!("procedure validation frontier compacted: released_bytes={released}"));}
@@ -4558,7 +4658,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 if reusable {
                     let ordinal = pending.peek().unwrap().0;
                     if ordinal >= prefetched_until {
-                        prefetched_until = ordinal.saturating_add(1024).min(procedure_keys.len());
+                        prefetched_until = range_capture.as_ref().map_or(
+                            ordinal.saturating_add(procedure_pipeline::LOWERING_WINDOW).min(procedure_keys.len()),|capture|capture.end);
                         // Session pressure may discard all encoded/decoded
                         // payloads while retaining valid semantic candidates.
                         // Restore nearby code in bounded reads instead of
@@ -4583,7 +4684,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 }
                 let ordinal = pending.peek().unwrap().0;
                 if ordinal >= parser_prefetched_until {
-                    parser_prefetched_until = ordinal.saturating_add(1024).min(procedure_keys.len());
+                    parser_prefetched_until = range_capture.as_ref().map_or(
+                        ordinal.saturating_add(procedure_pipeline::LOWERING_WINDOW).min(procedure_keys.len()),|capture|capture.end);
                     let mut parse_keys = Vec::new();
                     for index in ordinal..parser_prefetched_until {
                         // Existing output handles take the validated replay
@@ -4652,7 +4754,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 let mut cached_results = Vec::new();
                 let mut submitted = 0;
                 let prepare_started = std::time::Instant::now();
-                for _ in 0..procedure_pipeline::LOWERING_WINDOW {
+                let lowering_window=range_capture.as_ref().map_or(procedure_pipeline::LOWERING_WINDOW,
+                    |capture|procedure_pipeline::LOWERING_WINDOW.min(capture.end-ordinal));
+                for _ in 0..lowering_window {
                     let Some((ordinal, pending)) = pending.next() else {
                         break;
                     };
@@ -5088,6 +5192,11 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     });
                 }
             }
+            if let (Some(capture),Some(context))=(range_capture.take(),range_link_context.as_ref()) {
+                if capture.end==procedure_count {persist_procedure_range(capture,context,&procedure_keys,
+                    &mut session.graph,&mut session.procedure_fragments,&mut dmb,&emitted,pending_argument_sources.len());}
+            }
+            trace(&format!("procedure physical ranges: ranges={} procedures={}",session.procedure_fragments.stats.ranges_reused,session.procedure_fragments.stats.range_procedures_reused));
             if lowering_audit.is_some() {
                 trace("canonical procedure audit complete; no dynamic initializers or output");
                 return Ok(());
@@ -7356,6 +7465,7 @@ pub(super) struct StringIndex(
     HashMap<String, u32>,
     Option<u32>,
     #[serde(skip)] Option<StringTrace>,
+    #[serde(skip)] Option<[u8;32]>,
 );
 #[derive(Clone, Default)]
 struct StringTrace {
@@ -7385,6 +7495,34 @@ mod byte_string_index {
 }
 
 impl StringIndex {
+    pub(super) fn begin_range_tracking(&mut self)->[u8;32] {
+        use sha2::{Digest,Sha256};
+        let mut hash=Sha256::new();hash.update(b"canonical-string-index-v1");
+        let mut bytes:Vec<_>=self.0.iter().collect();bytes.sort_by(|a,b|a.0.cmp(b.0));
+        for (bytes,id) in bytes {hash.update((bytes.len() as u64).to_le_bytes());hash.update(bytes);hash.update(id.to_le_bytes());}
+        for map in [&self.1,&self.2,&self.3,&self.4] {hash.update((map.len() as u64).to_le_bytes());let mut entries:Vec<_>=map.iter().collect();entries.sort_by(|a,b|a.0.cmp(b.0));for (name,id) in entries {hash.update((name.len() as u64).to_le_bytes());hash.update(name.as_bytes());hash.update(id.to_le_bytes());}}
+        hash.update(self.5.unwrap_or(u32::MAX).to_le_bytes());let root=hash.finalize().into();self.7=Some(root);root
+    }
+    pub(super) fn range_identity(&self)->Option<[u8;32]> {self.7}
+    fn record_range_intern(&mut self,bytes:&[u8],id:u32) {
+        use sha2::{Digest,Sha256};
+        if let Some(previous)=self.7 {let mut hash=Sha256::new();hash.update(b"canonical-string-append-v1");hash.update(previous);hash.update((bytes.len() as u64).to_le_bytes());hash.update(bytes);hash.update(id.to_le_bytes());self.7=Some(hash.finalize().into());}
+    }
+    pub(super) fn validate_range_strings(&self,range:&dm_output::wire_image::PhysicalRange)->Result<(),String> {
+        let mut additions=HashMap::<&[u8],u32>::new();
+        for (offset,value) in range.strings().iter().enumerate() {
+            let id=u32::try_from(range.start().strings.checked_add(offset).ok_or("range string ID overflow")?).map_err(|_|"range string ID overflow")?;
+            if crate::native_reserved_string_id(id) {if !value.data.is_empty() {return Err("range reserved string is nonempty".into());}continue;}
+            if self.0.contains_key(&value.data)||additions.insert(&value.data,id).is_some() {return Err("range appended string already interned".into());}
+        }Ok(())
+    }
+    pub(super) fn replay_range_strings(&mut self,range:&dm_output::wire_image::PhysicalRange)->Result<(),String> {
+        self.validate_range_strings(range)?;
+        for (offset,value) in range.strings().iter().enumerate() {let id=u32::try_from(range.start().strings+offset).map_err(|_|"range string ID overflow")?;
+            if crate::native_reserved_string_id(id) {continue;}
+            if !self.0.contains_key(&value.data) {self.record_range_intern(&value.data,id);self.0.insert(value.data.clone(),id);}
+        }Ok(())
+    }
     fn new(dmb: &impl AssemblyImage) -> Self {
         let mut index = HashMap::with_capacity(dmb.strings().len());
         for (id, value) in dmb.strings().iter().enumerate() {
@@ -7412,6 +7550,7 @@ impl StringIndex {
             classes,
             HashMap::new(),
             builtin_vars,
+            None,
             None,
         )
     }
@@ -7445,6 +7584,7 @@ impl StringIndex {
                 long_chunks: u16::try_from(bytes.len() / u16::MAX as usize).unwrap_or(u16::MAX),
                 data: bytes.clone(),
             });
+            self.record_range_intern(&bytes,id);
             self.0.insert(bytes, id);
             id
         };
