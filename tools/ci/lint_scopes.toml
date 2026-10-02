@@ -98,6 +98,17 @@ exempt_files = ["code/__defines/tgs.dm"]
 api_prefixes = ["code/datums/containment/"]
 api_files = ["code/__defines/containment.dm"]
 
+[lint.pollers]
+# pollers_lint.py EXEMPT_PREFIXES / EXEMPT_FILES: the MC and subsystem framework, the object-model core, the
+# defines, the unit tests, and the external-I/O datums whose process() is not gameplay polling (tgui, dbcore).
+# This script does not call exempt_path(): benchmarks and the TGS DMAPI are counted.
+exempt_prefixes = ["code/controllers/", "code/datums/om/", "code/__defines/", "code/modules/unit_tests/"]
+exempt_files = ["code/modules/tgui/tgui.dm", "code/controllers/subsystems/dbcore.dm"]
+[lint.pollers.lists]
+# check_step_coverage(): unit-test probes join the machine pipeline lazily through MACHINE_WAKE(); every other
+# file (the exempt ones above included) is checked.
+step_exempt_prefixes = ["code/modules/unit_tests/"]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
