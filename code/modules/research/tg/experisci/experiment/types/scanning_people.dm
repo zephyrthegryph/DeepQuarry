@@ -12,20 +12,20 @@
 	required_atoms = list(/mob/living/carbon/human = required_count)
 	return ..()
 
-/datum/experiment/scanning/people/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath)
+/datum/experiment/scanning/people/final_contributing_index_checks(datum/experiment_handler/experiment_handler, atom/target, typepath, mob/user)
 	. = ..()
 	if(!.)
 		return FALSE
 	if(!ishuman(target))
 		return FALSE
-	return is_valid_scan_target(target, experiment_handler)
+	return is_valid_scan_target(target, experiment_handler, user)
 
 /// Checks that the passed mob is valid human to scan
-/datum/experiment/scanning/people/proc/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler)
+/datum/experiment/scanning/people/proc/is_valid_scan_target(mob/living/carbon/human/check, datum/experiment_handler/experiment_handler, mob/user)
 	SHOULD_CALL_PARENT(TRUE)
 	if(!mind_required || !isnull(check.mind))
 		return TRUE
-	if(isliving(usr))
+	if(isliving(user))
 		experiment_handler.announce_message("Subject is mindless!")
 	return FALSE
 

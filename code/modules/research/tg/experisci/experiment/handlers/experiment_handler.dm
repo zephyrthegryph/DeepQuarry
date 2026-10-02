@@ -140,7 +140,7 @@ REGISTRY_MEMBERSHIP(/datum/experiment_handler, REGISTRY_EXPERIMENT_HANDLERS)
 	var/datum/source = task.scanner
 	var/atom/target = task.target
 	var/mob/user = task.actor
-	if(action_experiment(source, target))
+	if(action_experiment(source, target, user))
 		play_sfx(user, SFX_MACHINES_PING, 0.5)
 		to_chat(user, span_notice("You scan [target]."))
 	else if(!(config_flags & EXPERIMENT_CONFIG_SILENT_FAIL))
