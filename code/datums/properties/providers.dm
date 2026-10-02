@@ -80,7 +80,6 @@
 /datum/property_provider/material
 	source = PROP_SOURCE_MATERIAL
 	applies_to = /obj/item
-	state_var = "material_overrides"
 
 /datum/property_provider/material/type_value(path, list/variant_vars)
 	return from_matter(dq_property_type_matter(path))

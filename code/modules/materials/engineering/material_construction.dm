@@ -55,15 +55,20 @@
 	/// Blueprint of this object's composition (a /datum/material_template path).
 	/// Declared per type; an instance only changes it when it is rebuilt to a
 	/// different blueprint (a lathe or crafting recipe).
-	var/material_template
+	var/material_template // ALLOW(base_vars): the type default that about 460 type bodies set (material_template =, MATERIAL_BULK()); DM can only assign a type var an ancestor declares, and designs and recipes read it with initial() on a type path
 	/// Total material units in this object; the template splits it between roles.
-	var/material_total = 0
+	var/material_total = 0 // ALLOW(base_vars): the type default beside material_template, set in the same type bodies and read with initial() by designs and recipes
 	/// Material of the single-role bulk template (MATERIAL_BULK).
-	var/material_bulk_material
-	/// Role -> material id for the roles that differ from the template default.
-	/// Null for an unmodified object. Interned and shared: write through
-	/// set_construction_material(), never in place.
-	var/list/material_overrides
+	var/material_bulk_material // ALLOW(base_vars): set by MATERIAL_BULK() in the same type bodies as material_template and read with initial() by dq_type_material_totals()
+	// The roles that differ from the template default are this object's /datum/material_build overrides
+	// (material_state.dm): interned and shared, written through set_construction_material() only.
+
+/// Stores `overrides` (a list, or null for none) as O's interned role overrides. An object that has no
+/// build record and no overrides to store keeps none.
+/proc/material_overrides_set(obj/O, list/overrides)
+	var/list/interned = material_overrides_intern(overrides)
+	if(interned || material_build_of(O))
+		material_build(O).overrides = interned
 
 /// Interned override lists keyed by their contents. Thousands of pipes, cables and
 /// machines carry identical overrides, so they share one list. Shared lists are read-only.
@@ -100,7 +105,7 @@
 
 /// Material id filling `role`: this object's override, else the template default.
 /obj/proc/material_id_for_role(role)
-	var/material_id = material_overrides?[role]
+	var/material_id = material_build_view(src).overrides?[role]
 	if(material_id)
 		return material_id
 	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
@@ -147,7 +152,8 @@
 /// The only supported way to change one functional part after construction.
 /// Copy-on-write: the object's interned overrides are replaced, never edited.
 /obj/proc/set_construction_material(role, material_id)
-	var/list/overrides = material_overrides ? material_overrides.Copy() : list()
+	var/list/stored = material_build_view(src).overrides
+	var/list/overrides = stored ? stored.Copy() : list()
 	var/datum/material_template/template = get_material_template()
 	var/default_id
 	if(role == MATERIAL_ROLE_BULK && material_template == /datum/material_template/bulk)
@@ -158,7 +164,7 @@
 		overrides -= role
 	else
 		overrides[role] = material_id
-	material_overrides = material_overrides_intern(overrides)
+	material_overrides_set(src, overrides)
 
 /// Rebuild this object to another blueprint: template, total and chosen materials.
 /obj/proc/set_material_blueprint(template_path, total, list/materials_by_role)
@@ -170,14 +176,14 @@
 		var/material_id = materials_by_role[role]
 		if(material_id && material_id != template?.default_material(role))
 			overrides[role] = material_id
-	material_overrides = material_overrides_intern(overrides)
+	material_overrides_set(src, overrides)
 
 /// Make this object of one plain material, or of nothing with a null material.
 /obj/proc/set_bulk_material(material_id, total)
 	material_template = material_id ? /datum/material_template/bulk : null
 	material_bulk_material = material_id
 	material_total = material_id ? total : 0
-	material_overrides = null
+	material_overrides_set(src, null)
 
 /obj/proc/primary_construction_material() as /datum/material
 	var/static/list/primary_roles = list(MATERIAL_ROLE_WORKING, MATERIAL_ROLE_CONDUCTOR, MATERIAL_ROLE_STRUCTURE, MATERIAL_ROLE_FRAME, MATERIAL_ROLE_EMITTER, MATERIAL_ROLE_FABRIC, MATERIAL_ROLE_BODY, MATERIAL_ROLE_JACKET)
@@ -193,7 +199,7 @@
 	var/list/resolved = template?.resolve(materials_by_role)
 	if(!length(resolved))
 		return FALSE
-	material_custom_assembly = customized
+	material_assembly(src).custom = customized
 	set_material_blueprint(template_path, total, resolved)
 	if(isitem(src))
 		var/obj/item/item = src
@@ -222,18 +228,23 @@
 		material_template = source.material_template
 		material_total = source.material_total
 		material_bulk_material = source.material_bulk_material
-		material_overrides = source.material_overrides
-	material_environment_liner_integrity = source.material_environment_liner_integrity
-	material_environment_exterior_integrity = source.material_environment_exterior_integrity
-	material_environment_fatigue = source.material_environment_fatigue
-	material_environment_leaking = source.material_environment_leaking
-	material_custom_assembly = source.material_custom_assembly
-	if(!istype(source, /obj/item/stack) && source.material_assembly_id)
-		material_assembly_id = source.material_assembly_id
+		material_overrides_set(src, material_build_view(source).overrides)
+	if(material_assembly_of(source) || material_assembly_of(src))
+		var/datum/material_assembly/from = material_assembly_view(source)
+		var/datum/material_assembly/wear = material_assembly(src)
+		wear.liner_integrity = from.liner_integrity
+		wear.exterior_integrity = from.exterior_integrity
+		wear.fatigue = from.fatigue
+		wear.leaking = from.leaking
+		wear.custom = from.custom
+		if(!istype(source, /obj/item/stack) && from.assembly_id)
+			wear.assembly_id = from.assembly_id
 	material_service_changed()
-	if(source.material_service && material_service)
-		material_service.temperature = source.material_service.temperature
-		material_service.buffer_energy = source.material_service.buffer_energy
+	var/datum/material_service/source_service = material_service_of(source)
+	var/datum/material_service/service = material_service_of(src)
+	if(source_service && service)
+		service.temperature = source_service.temperature
+		service.buffer_energy = source_service.buffer_energy
 	return has_functional_construction()
 
 /obj/proc/construction_summary()
@@ -279,35 +290,35 @@
 
 // ---- Bulk material holders ----
 // Debris from recyclers and digestion, random scrap and custom-material objects hold
-// an arbitrary mix. That mix is genuine per-instance state, kept as one real list.
-
-/obj/item
-	/// Material id -> units for an object whose mix is arbitrary. Null for everything
-	/// else, whose composition is its blueprint. Private to this instance.
-	var/list/material_mix
+// an arbitrary mix. That mix is genuine per-instance state, kept as one real list in the
+// item's build record (material_build_view(item).mix).
 
 /obj/item/material_totals()
-	if(material_mix)
-		return material_mix.Copy()
+	var/list/mix = material_build_view(src).mix
+	if(mix)
+		return mix.Copy()
 	return ..()
 
 /// Replace this item's composition with an arbitrary mix (material id -> units).
 /// Takes ownership of the list; an empty or null mix means made of nothing.
 /obj/item/proc/set_material_mix(list/mix)
 	material_template = null
-	material_overrides = null
-	material_mix = length(mix) ? mix : null
+	material_overrides_set(src, null)
+	var/list/stored = length(mix) ? mix : null
+	if(stored || material_build_of(src))
+		material_build(src).mix = stored
 
 /// Add units of materials to this item's mix, starting from its current composition.
 /obj/item/proc/add_materials(list/added)
-	if(!material_mix)
-		material_mix = material_totals()
+	var/datum/material_build/build = material_build(src)
+	if(!build.mix)
+		build.mix = material_totals()
 	for(var/material_id in added)
-		material_mix[material_id] = (material_mix[material_id] || 0) + added[material_id]
+		build.mix[material_id] = (build.mix[material_id] || 0) + added[material_id]
 
 /// Scale every amount in this item's composition (lathe efficiency).
 /obj/item/proc/scale_materials(factor)
-	if(material_mix || material_template == /datum/material_template/mix)
+	if(material_build_view(src).mix || material_template == /datum/material_template/mix)
 		var/list/scaled = material_totals()
 		for(var/material_id in scaled)
 			scaled[material_id] = CEILING(scaled[material_id] * factor, 1)
@@ -348,7 +359,9 @@
 /// Make this item of `amount` units of one material (a stack recipe's product). A
 /// functional blueprint keeps its parts and takes the new total.
 /obj/item/proc/set_single_material(material_id, amount)
-	material_mix = null
+	var/datum/material_build/build = material_build_of(src)
+	if(build)
+		build.mix = null
 	if(has_functional_construction())
 		material_total = amount
 		return

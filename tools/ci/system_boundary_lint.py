@@ -47,6 +47,9 @@ EMIT = re.compile(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)")
 WRITE = re.compile(r"\s*(?:[-+*/|&^]|<<|>>)?=(?!=)")
 
 SKIP_DIRS = ("code/modules/unit_tests/",)
+# Generated source is outside the boundary: its procs are emitted for every system in the generator's
+# input (tools/build/lib/verdigris_bindings.ts), so a new binding must not raise a ceiling.
+GENERATED_DIRS = ("code/__defines/verdigris/",)
 
 
 def folder_of(rel):
@@ -60,7 +63,7 @@ def inside(rel, owner_dir):
 def load_files():
     files = {}
     for path, rel in dm_files():
-        if rel.startswith(SKIP_DIRS):
+        if rel.startswith(SKIP_DIRS + GENERATED_DIRS):
             continue
         with open(path, encoding="utf-8", errors="replace") as handle:
             raw = handle.read()

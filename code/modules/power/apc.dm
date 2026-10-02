@@ -10,9 +10,9 @@
 // reads changed), and power_poll() applies what Rust reports (channels, charging, status,
 // alarm, the cell charge).
 //
-// Foundation (doc/rewrite/foundation.md): the APC is declared, not scripted. Its type vars name what
-// it is built from (machine_board, machine_wires, req_access); capabilities() composes bundles (wall
-// machine, maintenance hatch, cell bay, power channels, power-system membership), a construction
+// Foundation (doc/rewrite/foundation.md): the APC is declared, not scripted. Its req_access is its lock;
+// capabilities() composes bundles (wall machine, maintenance hatch with its wires and emag message, cell
+// bay, power channels, power-system membership), a construction
 // ladder (board, cable, fastener) and a few ops; relations() its links; reactions() only what it hears
 // (a hit, a slash); draw() its look. Its Rust pushes, redraws and window refreshes are generated from what
 // push_to_rust(), draw() and tgui_data() read.
@@ -69,9 +69,6 @@
 	unacidable = TRUE
 	use_power = USE_POWER_OFF
 	clicksound = SFX_SWITCH
-	machine_board = /obj/item/module/power_control
-	machine_wires = /datum/wires/apc
-	emag_msg = "You emag the APC interface."
 	req_access = list(ACCESS_ENGINE_EQUIP)
 	blocks_emissive = EMISSIVE_BLOCK_NONE
 	vis_flags = VIS_HIDE // They have an emissive that looks bad in openspace due to their wall-mounted nature
@@ -154,7 +151,7 @@ TRACKED(/obj/machinery/power/apc, emergency_lights)
 	// A wall machine that isn't dismantled into a machine frame (its ladder cuts it from the wall), has no
 	// repair step (a new cover does) and no dark sprite (draw() says its own).
 	. += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
-	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
+	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE, wires = /datum/wires/apc, emag_say = "You emag the APC interface.")
 	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
 	. += power_channels(/datum/capability/power_channels/apc)
 	. += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)

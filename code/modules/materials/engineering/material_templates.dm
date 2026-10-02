@@ -6,7 +6,7 @@
 // composition is its template plus a total amount, both declared on its type:
 //     material_template = /datum/material_template/cell
 //     material_total = 2 * SHEET_MATERIAL_AMOUNT
-// Instances store only the roles whose material differs (material_overrides).
+// Instances store only the roles whose material differs (the build record's overrides, material_state.dm).
 // Amounts are derived on demand: fraction x total, with the last role taking the
 // remainder so every blueprint conserves its total exactly.
 //

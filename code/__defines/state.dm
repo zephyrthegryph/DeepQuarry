@@ -10,6 +10,8 @@
 #define STATE_KEY_SLOT "slot"
 /// Latent entries of a holder (C5): list(list("type", "count", "slot", "state"), ...).
 #define STATE_KEY_LATENT "latent"
+/// An /obj's state that is not a saved var (its cap_data records): name = encoded value, from /obj/state_extra().
+#define STATE_KEY_EXTRA "extra"
 
 /// Wrapper keys for encoded values that JSON cannot hold as they are.
 /// A single-key list with one of these keys is a wrapped value; keys of

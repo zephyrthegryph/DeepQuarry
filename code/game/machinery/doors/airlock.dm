@@ -437,7 +437,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 /// Bridge while door.dm's other doors still draw through update_icon(): its shared procs (and the
 /// declared appearance watch on stat and density) call update_icon(), which marks the airlock changed
 /// so draw() runs.
-// ALLOW(sys_update_icon, sys_old_appearance): bridge only; it draws nothing, it marks the airlock so draw() runs
+// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the airlock so draw() runs
 /obj/machinery/door/airlock/update_icon()
 	changed(src)
 

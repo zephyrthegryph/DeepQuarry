@@ -28,7 +28,7 @@
 	/// The verbs hidden by the last refresh.
 	var/tmp/list/refresh_hidden_verbs
 	/// The verbs granted_verbs() gave by the last refresh.
-	var/tmp/list/refresh_granted_verbs
+	var/tmp/list/refresh_granted_verbs // ALLOW(base_vars): the refresh pass's memo of what it granted, beside refresh_hidden_verbs; its gate and drift check read it on every atom refresh
 
 /// The periodic pipeline should_run() gates, or null for no periodic work. A type var.
 /datum/var/periodic_cadence = null
@@ -466,10 +466,12 @@ GLOBAL_VAR_INIT(derive_side_base_reached, FALSE)
 	A.draw(L)
 	DERIVED_EVAL_END
 	// Transient flashes (look_flash()) sit on top of whatever draw() described.
-	if(A.look_flash_state)
-		L.state(A.look_flash_state)
-	for(var/state in A.look_flashes)
-		L.overlay(state)
+	var/datum/cap_engine_state/engine = A.cap_data?[/datum/cap_engine_state] // inline cap_engine_state_of(): every look refresh passes here
+	if(engine)
+		if(engine.look_flash_state)
+			L.state(engine.look_flash_state)
+		for(var/state in engine.look_flashes)
+			L.overlay(state)
 	if(!L.touched)
 		if(apply && !isnull(A.look_key))
 			// It drew before and draws nothing now: applying the empty look takes back everything the
