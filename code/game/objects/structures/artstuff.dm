@@ -668,8 +668,8 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	var/persistence_id = painting["persistence_id"]
 	var/png = "data/persistent/paintings/[persistence_id]/[painting["md5"]].png"
 	if(!fexists("data/persistent/paintings/[persistence_id]/[painting["md5"]].png"))
-		to_chat(usr, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
-		log_runtime("[usr] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
+		to_chat(ask.answerer, span_warning("Chosen painting could not be loaded! Incident was logged, but no action taken at this time"))
+		log_runtime("[ask.answerer] tried to spawn painting of list id [which_painting] in all_paintings list and associated file could not be found. \n \
 		Painting was titled [title] by [author_ckey] of [persistence_id]")
 		return 0
 

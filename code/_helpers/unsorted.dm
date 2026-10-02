@@ -940,7 +940,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	var/dy = abs(B.y - A.y)
 	return get_dir(A, B) & (rand() * (dx+dy) < dy ? 3 : 12)
 
-/proc/view_or_range(distance = world.view , center = usr , type)
+/proc/view_or_range(distance = world.view , center , type)
 	switch(type)
 		if("view")
 			. = view(distance,center)
