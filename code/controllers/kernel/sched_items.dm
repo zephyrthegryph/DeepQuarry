@@ -46,10 +46,10 @@
 /datum/work_item/sched_piece/latency_class()
 	return LATENCY_L2
 
-// ALLOW(sys_world_time_write): the kernel clock: a per-tick due date of the scheduler itself, not a per-entity expiry
+/// A piece is due on every pass of its phase, on the live clock and on a test's injected one (its due date never moves).
 /datum/work_item/sched_piece/sweep(datum/controller/kernel/K, datum/owner, limit_abs, now = world.time)
 	var/datum/om/scheduler/S = K.sched
-	next_run = now
+	next_run = 0
 	if(!S)
 		return TRUE
 	var/started = TICK_USAGE
