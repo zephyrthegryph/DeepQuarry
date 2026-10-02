@@ -283,6 +283,7 @@
 DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellies
 
 /obj/belly/Initialize(mapload)
+	belly_share_lists() // before anything reads the list vars
 	. = ..()
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
