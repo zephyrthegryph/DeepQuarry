@@ -16,7 +16,7 @@ import re
 import sys
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, exempt_path  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
 PATTERNS = [
@@ -36,7 +36,7 @@ def scan():
     found = []
     for path in sorted((ROOT / 'code').rglob('*.dm')):
         rel = path.relative_to(ROOT).as_posix()
-        if rel in EXEMPT_FILES:
+        if rel in EXEMPT_FILES or exempt_path(rel):
             continue
         raw = path.read_text(encoding='utf-8', errors='ignore').splitlines()
         for n, line in enumerate(raw, 1):

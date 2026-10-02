@@ -22,7 +22,7 @@
 	var/threw = FALSE
 	try
 		service.run_pathfinding(crasher)
-	catch // ALLOW(silent_catch): the test asserts the crashing search is rethrown to the caller
+	catch
 		threw = TRUE
 	TEST_ASSERT(threw, "a runtime in search() reaches the caller")
 	TEST_ASSERT(!service.pathfinding_mutex, "the mutex is released after search() runtimed")

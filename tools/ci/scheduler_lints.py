@@ -39,7 +39,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import REF_ROOTS, code_only, under  # noqa: E402
-from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
+from allow_annotations import allowed, check_sites, exempt_path, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "scheduler_lints_baseline.txt")
@@ -68,7 +68,7 @@ def scan():
     sites = {name: [] for name in NAMES}
     for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
         rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-        if "/unit_tests/" in rel:
+        if exempt_path(rel):
             continue
         with open(path, encoding="utf-8", errors="replace") as handle:
             raw_text = handle.read()

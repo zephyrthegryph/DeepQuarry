@@ -75,7 +75,7 @@
 /datum/benchmark/proc/wait_for_assets(timeout_seconds = 120)
 	var/waited = 0
 	while((length(GLOB.asset_loading_service.generate_queue) || GLOB.asset_loading_service.assets_generating || GLOB.asset_loading_service.last_queue_len) && waited++ < world.fps * timeout_seconds)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	if(waited >= world.fps * timeout_seconds)
 		fail("deferred assets did not settle within [timeout_seconds]s")
 
@@ -86,16 +86,16 @@
 	while(subsystem.times_fired < target)
 		if(REALTIMEOFDAY > deadline)
 			fail("[subsystem.name] fired [count - (target - subsystem.times_fired)]/[count] times in [timeout_seconds]s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 
 /datum/benchmark/proc/wait_seconds(seconds)
 	var/until = REALTIMEOFDAY + seconds * 10
 	while(REALTIMEOFDAY < until)
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 
 /// Starts a measurement window. Pair with end_window().
 /datum/benchmark/proc/begin_window()
-	stoplag() // start on a fresh tick so setup work isn't counted // ALLOW(scheduler): benchmark harness measures across real MC ticks
+	stoplag() // start on a fresh tick so setup work isn't counted
 	Master.perf_outliers.Cut()
 	Master.perf_worst_tick = list()
 	window_start_position = Master.perf_samples_total + 1
@@ -239,7 +239,7 @@
 	var/list/decoded
 	try
 		decoded = json_decode(text)
-	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+	catch
 		return null
 	return decoded
 

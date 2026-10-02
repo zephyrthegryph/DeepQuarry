@@ -17,9 +17,7 @@
 	/// The "on" condition's evaluations.
 	var/on_reads = 0
 	var/plan_key
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/log = list()
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/busy = list()
 
 TRACKED_BRIDGED(/datum/seq_test_entity, heat, CHANGE_DATUM_B)
@@ -171,7 +169,6 @@ SEQ_TEST_STEP(cy)
 	var/datum/work_item/sequence/W = new(S)
 	W.test_runlevel = RUNLEVEL_GAME
 	W.spread = spread
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	S.work = W
 	K.register_work(path, W)
 	return list(K, W)
@@ -179,7 +176,6 @@ SEQ_TEST_STEP(cy)
 /// An atom whose capability contributes a step.
 /obj/seq_test_atom
 	name = "sequence test atom"
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/log = list()
 
 /obj/seq_test_atom/capabilities()
@@ -266,7 +262,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(READERS(E, "heat"), "a step's read is a reader on the type")
 	TEST_ASSERT(READERS(E, "on"), "and so is a condition's read")
 	TEST_ASSERT(!READERS(E, "lit"), "a condition without reads reads nothing")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 5
 	publish_change(E, "heat")
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "publishing a key wakes the step that reads it")
@@ -284,7 +279,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and not the others")
 	E.set_heat(2)
 	TEST_ASSERT(!seq_step_asleep(E, SEQ_TEST, "heat"), "a TRACKED setter publishes the read (READERS)")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 0
 	E.log.Cut()
 	seq_run_frame_now(E, SEQ_TEST)
@@ -306,7 +300,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_EQUAL(length(E.log), 0, "its should_run() is FALSE: it did not run")
 	TEST_ASSERT(seq_step_asleep(E, SEQ_TEST, "heat"), "and went back to sleep")
 	TEST_ASSERT_NULL(S.woken, "no woken bits are left")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 3
 	publish_change(E, "heat")
 	seq_run_frame_now(E, SEQ_TEST)
@@ -345,9 +338,7 @@ SEQ_TEST_STEP(cy)
 
 	// The frame API: cached per frame, forget() evaluates again.
 	var/datum/seq_frame/test/F = take(/datum/seq_frame/test)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	F.seq = sequence_def(SEQ_TEST)
-	// ALLOW(ownership): test/bench fixture setup writes the framework var directly to build the state under test
 	F.entity = E
 	E.on_reads = 0
 	F.cond("on")
@@ -414,7 +405,6 @@ SEQ_TEST_STEP(cy)
 	for(var/now in list(130, 140, 150, 160))
 		K.run_item(W, WORK_TEST_LIMIT, now)
 	TEST_ASSERT_EQUAL(S.frames, before, "a parked member runs no frames")
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 1
 	publish_change(E, "heat")
 	TEST_ASSERT(!S.parked, "a wake unparks it")
@@ -599,7 +589,6 @@ SEQ_TEST_STEP(cy)
 	TEST_ASSERT_NULL(def.missed_wake(E), "a step its conditions block is not a miss")
 	E.busy.Cut()
 	E.on = TRUE
-	// ALLOW(tracked): a raw write on purpose: the test needs a change nothing publishes, or sets up state
 	E.heat = 7 // a raw write: nothing publishes "heat"
 	var/datum/seq_step/missed = def.missed_wake(E)
 	TEST_ASSERT_EQUAL(missed?.key, "heat", "the step whose read changed without a publish is the miss")
@@ -688,7 +677,6 @@ SEQ_TEST_STEP(cy)
 /datum/seq_rx_fixture
 	var/level = 0
 	var/mode = 0
-	// ALLOW(instance_list): test fixture, a handful of instances per test run
 	var/list/heard = list()
 
 TRACKED(/datum/seq_rx_fixture, level)

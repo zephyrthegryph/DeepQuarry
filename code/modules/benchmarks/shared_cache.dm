@@ -12,7 +12,7 @@ DECLARE_SHARED_CACHE(sc_bench, GLOBAL_PROC_REF(sc_bench_build), SC_NEVER)
 DECLARE_SHARED_CACHE_EX(sc_bench_int, GLOBAL_PROC_REF(sc_bench_build_int), SC_NEVER, 0, SC_INT_KEYS)
 
 /proc/sc_bench_static(key)
-	var/static/list/cache = list() // ALLOW(cache): the hand-rolled baseline the benchmark compares against
+	var/static/list/cache = list()
 	var/value = cache[key]
 	if(!value)
 		value = cache[key] = sc_bench_build(key)

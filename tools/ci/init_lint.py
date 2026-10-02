@@ -4,13 +4,13 @@ Initialize() should only set the instance's own state: what differs between two
 instances of a type. Type-level facts belong in the type table
 (code/game/atom/atom_type_table.dm), world registration in on_materialize()
 (code/game/atom/atom_materialize.dm), and interaction-only setup behind a
-first-use accessor. This lint ratchets four counts:
+first-use accessor. This lint ratchets these counts:
 
-    initialize          `/type/Initialize(` overrides
-    late_initialize     `/type/LateInitialize(` overrides
-    unreasoned          overrides with no `// INIT: <reason>` naming the
-                        per-instance state they set, on the header line or the
-                        comment line directly above it
+    initialize          `/type/Initialize(` overrides, except one with an
+                        `// INIT: <reason>` naming the per-instance state it
+                        sets, on the header line or the comment line directly
+                        above it (or an ALLOW(init) keep)
+    late_initialize     the same for `/type/LateInitialize(` overrides
     world_reads         lines inside an Initialize() body that reach outside
                         the instance: range(, orange(, view(, GetAbove,
                         GetBelow, GLOB., START_PROCESSING
@@ -103,7 +103,7 @@ def table_init_violations(files):
 
 
 def scan(lines):
-    sites = {"initialize": [], "late_initialize": [], "unreasoned": [], "world_reads": [], "turf_on_materialize": []}
+    sites = {"initialize": [], "late_initialize": [], "world_reads": [], "turf_on_materialize": []}
     in_init = False
     for number, line in enumerate(lines, 1):
         if TURF_MATERIALIZE.match(line):
@@ -112,12 +112,12 @@ def scan(lines):
         late = LATE_HEADER.match(line)
         if init or late:
             in_init = bool(init)
+            above = lines[number - 2] if number > 1 else ""
+            if REASON.search(line) or (above.lstrip().startswith("//") and REASON.search(above)):
+                continue  # an `// INIT:` reason keeps it (one count, not two: no separate "unreasoned" rule)
             if allowed(lines, number, "init"):
                 continue
             sites["initialize" if init else "late_initialize"].append(number)
-            above = lines[number - 2] if number > 1 else ""
-            if not REASON.search(line) and not (above.lstrip().startswith("//") and REASON.search(above)):
-                sites["unreasoned"].append(number)
             continue
         if line and not line[0].isspace() and not line.startswith("//"):
             in_init = False
@@ -130,7 +130,7 @@ def scan(lines):
 
 
 def main():
-    totals = {"initialize": 0, "late_initialize": 0, "unreasoned": 0, "world_reads": 0, "turf_on_materialize": 0}
+    totals = {"initialize": 0, "late_initialize": 0, "world_reads": 0, "turf_on_materialize": 0}
     where = []
     files = []
     for path in dm_files():
@@ -159,9 +159,8 @@ def main():
         for rel, n, kind in sorted(where):
             print("%s:%d: %s" % (rel, n, kind))
     failed = check_sites("init", sites, BASELINE, {
-        "initialize": "move type facts to the type table and registration to on_materialize()",
+        "initialize": "move type facts to the type table and registration to on_materialize(); an override that sets per-instance state says which with `// INIT: <state it sets>` on or above the header",
         "late_initialize": "use on_materialize() or a first-use accessor instead of LateInitialize()",
-        "unreasoned": "add `// INIT: <per-instance state it sets>` on or above the header",
         "world_reads": "don't reach outside the instance in Initialize(); do it in on_materialize()",
         "turf_on_materialize": "turf on_materialize() overrides are skipped by SSatoms; use the type table",
         "table_init_overrides": "set init_from_table = FALSE on a type that overrides Initialize()",

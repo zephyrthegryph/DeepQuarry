@@ -108,13 +108,13 @@
 	var/threw = FALSE
 	try
 		must_be(null, /datum/unit_test)
-	catch // ALLOW(silent_catch): the test asserts that must_be(null) throws
+	catch
 		threw = TRUE
 	TEST_ASSERT(threw, "must_be() asserts on null")
 	threw = FALSE
 	try
 		must_be(none, /obj)
-	catch // ALLOW(silent_catch): the test asserts that must_be() on the wrong type throws
+	catch
 		threw = TRUE
 	TEST_ASSERT(threw, "and on the wrong type")
 	TEST_ASSERT_EQUAL(z_of(null), NO_Z, "an atom that is nowhere is on NO_Z")
@@ -130,7 +130,7 @@
 	. += watches_gas(port = null, when = PRESSURE_ABOVE, level = 600, hysteresis = 50, callback = PROC_REF(on_cross))
 
 /obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
-	test_air = mixture // ALLOW(ownership): a test fixture pointing at a mixture the test owns and deletes
+	test_air = mixture
 
 /obj/test_gas_holder/return_air()
 	return test_air

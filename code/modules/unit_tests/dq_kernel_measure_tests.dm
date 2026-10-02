@@ -467,14 +467,14 @@
 	var/queue_before = length(SSverb_manager.lane.verb_queue)
 	var/synthetic_before = GLOB.km_synthetic.verbs_run
 	// Nothing below sleeps, so the MC cannot call end_tick() on the wrong meter meanwhile.
-	km_holder().meter = probe // ALLOW(ownership): the test swaps the live meter for a probe for these few statements
+	km_holder().meter = probe
 	for(var/i in 1 to 3)
 		km_synthetic_verb()
 	var/queued_now = length(SSverb_manager.lane.verb_queue) - queue_before
 	SSverb_manager.lane.run_verb_queue()
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
 	km_synthetic_click(clicker, run_loc_floor_bottom_left)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	var/list/report = km_report_input(probe.live)
 
 	TEST_ASSERT_EQUAL(queued_now, 3, "three verbs sat in the verb queue")
@@ -552,10 +552,10 @@
 	M.charge(a, 20)
 	M.end_tick(120, 3)
 	var/datum/tick_meter/live_meter = km_meter()
-	km_holder().meter = M // ALLOW(ownership): the report reads the global meter; swapped for these two calls only
+	km_holder().meter = M
 	var/html = km_tick_report_html(FALSE)
 	var/html_over = km_tick_report_html(TRUE)
-	km_holder().meter = live_meter // ALLOW(ownership): put back before anything is asserted
+	km_holder().meter = live_meter
 	TEST_ASSERT(findtext(html, "<table") && findtext(html, "km_test_a"), "the tick report is a table naming the top system")
 	TEST_ASSERT(findtext(html_over, "km_test_a"), "the overruns-only report includes the overrun")
 	qdel(M)

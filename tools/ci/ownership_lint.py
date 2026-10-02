@@ -53,7 +53,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, exempt_path  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -388,6 +388,8 @@ def main(argv=None):
         report("unknown_var", r, no, msg)
 
     for r, (raw, code) in idx.files.items():
+        if exempt_path(r):
+            continue
         for no, line in enumerate(code, 1):
             # code_only() blanks string contents, so match the raw line where the code line has a call
             if "(" not in line:
@@ -496,6 +498,8 @@ def main(argv=None):
         return ambiguous[name]
 
     for r, (raw, code) in idx.files.items():
+        if exempt_path(r):
+            continue
         in_core = r.startswith(CORE_DIRS)
         for no, line in enumerate(raw, 1):
             c = code[no - 1] if no - 1 < len(code) else ""

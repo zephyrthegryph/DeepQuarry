@@ -10,9 +10,10 @@ A thing that deletes itself is saying *why* through a verb, not through the engi
 
 `qdel(src)` stays only where the reason is genuinely "destroy this now"; such a site
 carries `// ALLOW(lifecycle): <reason>` (tools/ci/allow_annotations.py) and doesn't count.
-This lint is the `qdel(src)` slice of tools/ci/lifecycle_counts_lint.py (which counts every
-`qdel(` site): it has its own shrink-only baseline so the slice's size is visible on its own
-and a self-deleting site can't be added while the old ones are still being converted.
+This lint is the `qdel(src)` slice of the qdel( ratchet: tools/ci/lifecycle_counts_lint.py counts
+every other `qdel(` site and leaves `qdel(src)` to this lint, so a site is in one baseline and the
+slice's size is visible on its own; a self-deleting site can't be added while the old ones are
+still being converted.
 
 The baseline holds each site as (file, line text); a file's count can only fall.
 
@@ -30,7 +31,7 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed, check_sites, write_sites  # noqa: E402
+from allow_annotations import allowed, check_sites, exempt_path, write_sites  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 BASELINE = os.path.join(ROOT, "tools", "ci", "qdel_src_baseline.txt")
@@ -50,7 +51,7 @@ EXEMPT_DIRS = ("code/__defines/",)
 
 def scan_file(path):
     rel = os.path.relpath(path, ROOT).replace(os.sep, "/")
-    if "/unit_tests/" in rel or rel in EXEMPT_FILES or rel.startswith(EXEMPT_DIRS):
+    if exempt_path(rel) or rel in EXEMPT_FILES or rel.startswith(EXEMPT_DIRS):
         return rel, []
     with open(path, encoding="utf-8", errors="replace") as handle:
         raw = handle.read()

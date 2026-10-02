@@ -25,7 +25,7 @@
 // ---- Vending: vend, restock, deconstruct ----
 
 /datum/unit_test/dq_stock_vending
-	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/made = list()
 
 
 /datum/unit_test/dq_stock_vending/Run()
@@ -100,7 +100,7 @@
 // ---- Smartfridge: insert, stack, vend, deconstruct ----
 
 /datum/unit_test/dq_stock_smartfridge
-	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/made = list()
 
 
 /datum/unit_test/dq_stock_smartfridge/Run()
@@ -159,7 +159,7 @@
 // ---- Stacks: sheets fold regardless of amount ----
 
 /datum/unit_test/dq_stock_sheets
-	var/list/made = list() // ALLOW(instance_list): d: unit-test fixture; a handful of instances per test run
+	var/list/made = list()
 
 
 /datum/unit_test/dq_stock_sheets/Run()

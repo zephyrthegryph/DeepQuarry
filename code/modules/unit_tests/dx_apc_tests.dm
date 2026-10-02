@@ -155,10 +155,8 @@
 	cap_set(A, CAP_EMAGGED, TRUE)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "an emagged panel is unresponsive")
 	cap_set(A, CAP_EMAGGED, FALSE)
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = H // any datum will do for "someone else has it"
 	TEST_ASSERT_EQUAL(dx_apc_why(A, H, card, swipe), "it doesn't respond", "an AI that took it over locks the crew out")
-	// ALLOW(ownership): test fixture setup writes the framework var directly to build the state under test
 	A.hacker = null
 	wires_of(A).cut(WIRE_IDSCAN)
 	TEST_ASSERT(dx_apc_why(A, H, card, swipe), "a cut ID scan wire refuses the swipe")

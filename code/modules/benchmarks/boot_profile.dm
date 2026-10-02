@@ -21,18 +21,18 @@
 /// children to report self time.
 /datum/benchmark_init_stats
 	/// type -> list(count, init_self_us, materialize_self_us, late_count, late_self_us, inclusive_us, max_self_us)
-	var/list/by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/by_type = list()
 	var/depth = 0
 	/// child microseconds accumulated per depth
-	var/list/child_us = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/child_us = list()
 	/// qdel frames: child ms per depth and child ms at the last phase boundary
 	var/qdel_depth = 0
-	var/list/qdel_child_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
-	var/list/qdel_phase_mark_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_child_ms = list()
+	var/list/qdel_phase_mark_ms = list()
 	/// LIFECYCLE_PHASE_* id -> exclusive ms (children's time subtracted)
-	var/list/phase_self_ms = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/phase_self_ms = list()
 	/// type -> list(qdels, self ms)
-	var/list/qdel_by_type = list() // ALLOW(instance_list): benchmark singleton (one per bench run), always filled
+	var/list/qdel_by_type = list()
 
 GLOBAL_DATUM_INIT(bench_init_stats, /datum/benchmark_init_stats, new)
 
@@ -212,7 +212,7 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 		return null
 	try
 		return json_decode(text)
-	catch // ALLOW(silent_catch): malformed input is the expected failure; the caller handles null
+	catch
 		return null
 
 /// Summarises a proc profile: the top procs by self and by total time.
@@ -387,12 +387,12 @@ GLOBAL_LIST_EMPTY(benchmark_rust_marks)
 	while(GLOB.explosion_service.awake || GLOB.explosion_service.pending_blast_count())
 		if(REALTIMEOFDAY > deadline)
 			fail("explosion did not resolve within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/resolved_at = REALTIMEOFDAY
 	while(length(SSlighting.sources_queue) || length(SSlighting.corners_queue) || length(SSlighting.objects_queue))
 		if(REALTIMEOFDAY > deadline)
 			fail("lighting did not settle within 300s")
-		stoplag() // ALLOW(scheduler): benchmark harness measures across real MC ticks
+		stoplag()
 	var/lit_at = REALTIMEOFDAY
 	wait_fires(SSair, 3)
 	var/list/profile

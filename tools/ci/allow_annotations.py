@@ -81,6 +81,18 @@ def _sys_rules():
 
 LINTS.update(_sys_rules())
 
+# Paths no ratchet lint counts (the lints that import exempt_path()): unit tests and benchmarks build
+# the forbidden things on purpose to test or measure them, and the vendored tgstation-server DMAPI is
+# kept verbatim. A site there needs no annotation.
+EXEMPT_DIRS = ("code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/")
+EXEMPT_FILES = ("code/__defines/tgs.dm",)
+
+
+def exempt_path(rel):
+    """True for a repo-relative path under EXEMPT_DIRS or EXEMPT_FILES."""
+    return rel.startswith(EXEMPT_DIRS) or rel in EXEMPT_FILES
+
+
 # `// ALLOW(a, b): reason`; the reason is checked separately so a bare one is an error.
 ALLOW = re.compile(r"(?://+|/\*)\s*ALLOW\(\s*([\w\s,]*?)\s*\)\s*(:?)\s*(.*?)\s*(?:\*/.*)?$")
 
@@ -112,6 +124,12 @@ def allowed(raw_lines, number, lint):
         if above.lstrip().startswith("//") and lint in names_on(above):
             return True
     return False
+
+
+def allowed_here(raw_lines, number, lint):
+    """True if 1-based line `number` itself carries an annotation for `lint` (a lint that also
+    accepts an annotation on a neighbouring line, such as the first line of a catch block)."""
+    return 1 <= number <= len(raw_lines) and lint in names_on(raw_lines[number - 1])
 
 
 def read_baseline(path):

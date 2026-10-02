@@ -35,7 +35,7 @@
 	refresh_flush()
 	begin_window()
 	var/drains_before = GLOB.refresh_bench_drained
-	sleep(20 SECONDS) // ALLOW(scheduler): a benchmark's fixed steady-state measurement window
+	sleep(20 SECONDS)
 	end_window("steady")
 	count_metric("refreshes_per_second", (GLOB.refresh_bench_drained - drains_before) / 20, "refreshes/s", "none")
 	begin_window()

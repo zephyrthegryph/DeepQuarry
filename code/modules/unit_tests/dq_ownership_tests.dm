@@ -107,7 +107,7 @@
 	own_set(H, nameof(H.child), new /datum/own_test_child)
 	dq_lifecycle_clear_links(H) // phase 4
 	var/datum/own_test_child/late = new
-	H.child = late // ALLOW(ownership): the test re-sets an owned var after phase 4
+	H.child = late
 	own_scrub(H) // phase 8
 	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(QDELETED(late), "phase 8 deletes a value re-set during teardown")
@@ -120,7 +120,7 @@
 	var/datum/own_test_holder/H = new
 	var/datum/own_test_child/A = new
 	own_set(H, nameof(H.child), A)
-	H.child = null // ALLOW(ownership): the test drops an owned value without the accessors
+	H.child = null
 	var/list/lines = own_audit(quiet = TRUE)
 	var/found = FALSE
 	for(var/line in lines)
@@ -240,7 +240,7 @@
 	shared_set(H, nameof(H.view), copy)
 	set_global("dq_lifecycle_report_capture", null)
 	TEST_ASSERT(length(capture) && findtext(capture[1], "not a registered instance"), "shared_set refuses an unregistered value: [json_encode(capture)]")
-	H.view = null // ALLOW(ownership): test cleanup of a deliberately wrong write
+	H.view = null
 	qdel(copy)
 	qdel(H)
 

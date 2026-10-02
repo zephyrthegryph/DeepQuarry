@@ -152,7 +152,6 @@
 /datum/system/test_fire
 	abstract_type = /datum/system/test_fire
 	var/pause_next = FALSE
-	// ALLOW(instance_list): test fixture, one instance per test run
 	var/list/calls = list()
 
 /datum/system/test_fire/fire(resumed = FALSE)

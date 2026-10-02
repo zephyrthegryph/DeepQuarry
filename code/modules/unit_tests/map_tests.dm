@@ -147,7 +147,7 @@
 
 /// Test template no-ops on all maps
 /datum/unit_test/template_noops
-	var/list/log = list() // ALLOW(instance_list): d: unit-test state
+	var/list/log = list()
 	var/turf_noop_count = 0
 
 /datum/unit_test/template_noops/Run()

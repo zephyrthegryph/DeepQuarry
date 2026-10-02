@@ -33,7 +33,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
 from state_schema_lint import code_only  # noqa: E402
-from allow_annotations import allowed  # noqa: E402
+from allow_annotations import allowed, exempt_path  # noqa: E402
 
 ROOT = os.path.normpath(os.path.join(os.path.dirname(__file__), "..", ".."))
 
@@ -81,11 +81,11 @@ def scan_file(path):
     text = code_only(raw)
     sites = []
     for number, line in enumerate(text.split("\n"), 1):
-        if allowed(raw_lines, number, "spatial"):
+        found = [(kind, match.group(0).strip()) for kind, pattern in PATTERNS for match in pattern.finditer(line)]
+        # Asked only about a line that would otherwise count.
+        if not found or allowed(raw_lines, number, "spatial"):
             continue
-        for kind, pattern in PATTERNS:
-            for match in pattern.finditer(line):
-                sites.append((rel, number, kind, match.group(0).strip()))
+        sites.extend((rel, number, kind, snippet) for kind, snippet in found)
     return rel, sites
 
 
@@ -93,6 +93,8 @@ def scan():
     counts = {}
     all_sites = []
     for path in glob.glob(os.path.join(ROOT, "code", "**", "*.dm"), recursive=True):
+        if exempt_path(os.path.relpath(path, ROOT).replace(os.sep, "/")):
+            continue
         rel, sites = scan_file(path)
         if is_api_file(rel) or not sites:
             continue

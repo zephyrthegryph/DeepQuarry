@@ -187,7 +187,6 @@
 	return ri
 
 /datum/tgs_api/v3210/EndProcess()
-	// ALLOW(scheduler): vendored TGS
 	sleep(world.tick_lag) //flush the buffers
 	ExportService(SERVICE_REQUEST_KILL_PROCESS)
 
