@@ -166,7 +166,7 @@
 		own_remove(src, nameof(active_modifiers), mod)
 
 // remaining stat modifiers are reverted.
-/datum/accessory_slot_registry/on_destroy(force)
+/datum/accessory_slot_registry/lifecycle_prerelease()
 	// Revert all remaining modifiers to leave the world consistent.
 	// The modifiers themselves are owned and disposed of by the framework in phase 4.
 	for(var/datum/accessory_stat_modifier/mod as anything in active_modifiers)
