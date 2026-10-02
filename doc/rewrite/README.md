@@ -1,5 +1,11 @@
 # DeepQuarry rewrite: index and reading order
 
+**Primary design: [final_api.html](final_api.html)** (open in a browser). It is the approved final
+API and migration plan (1 October 2026) and supersedes every document below where they disagree.
+Section 17 maps each old form to its replacement, section 19 is the migration plan, section 22 the
+source layout. `../../AGENTS.md` summarises it for day-to-day work. The rest of this folder is
+background and detail: the foundation design that fed into it, and the archived OM docs.
+
 This folder describes the architecture DeepQuarry is moving to and the plan for getting there.
 The current design is the **foundation design**: three table procs per type (`capabilities()`,
 `relations()`, `reactions()`), one reactive change graph, operations and actions for player input,

@@ -1,26 +1,18 @@
 # AGENTS.md — Working on DeepQuarry
 
-DeepQuarry is a BYOND/DM Space Station 13 codebase. Its lineage is:
+DeepQuarry is a BYOND/DM Space Station 13 codebase. Lineage:
 
 ```
 Baystation12 → Polaris → VOREStation (Virgo) → Yawn-wider → CHOMPStation2 → DeepQuarry
 ```
 
-DeepQuarry is a **hard fork**: it no longer tracks or merges from any upstream.
-The old merge-survival scaffolding **no longer applies** and has been removed:
+It is a **hard fork**: no upstream is tracked or merged. There are no edit markers
+(`// CHOMPEdit`, `// DQEdit`, ...) and no modular folders; a stray one is a leftover, so
+treat it as ordinary code and remove it when you touch the file. Edit or delete any file
+freely. When you remove a file, delete it and its `#include` in `deepquarry.dme` (never
+comment an include out); git history is the record.
 
-- The modular folders (`modular_chomp/`, `modular_dq/`) were dissolved into one
-  unified tree.
-- The origin/edit markers (`// CHOMPEdit`, `// DQEdit`, `// CHOMPAdd`, `// DQRemoved:`,
-  `// VOREStation Edit`, …) were stripped — they only existed to help a merge
-  engineer locate fork edits, and there are no more merges.
-
-Just put code where it belongs and **edit/delete any file freely**. When you remove
-a file, delete it and drop its `#include` from `deepquarry.dme` — don't comment the
-include out "in case." Git history is the record of what was removed.
-
-> If you still find a stray `// CHOMPEdit` / `// DQEdit` / `modular_*` reference, it's
-> a leftover; treat it as ordinary code/comment and remove it when you touch the file.
+**The codebase is mid-migration to the final design.** Read §3 before writing code.
 
 ---
 
@@ -28,651 +20,266 @@ include out "in case." Git history is the record of what was removed.
 
 | Path | Purpose |
 |---|---|
-| `code/` | All DM game code (the entire codebase — base + everything the fork added). |
-| `maps/` | Maps. The live map is `maps/southern_cross/` — **station-only**: 3 station decks (z1-3) + CentCom (z4) + Transit (z5); the empty/surface/misc z-levels were trimmed (see §9). `maps/virgo_minitest/` is the **unit-test map** selected under `-DCITESTING` (tiny → fast test boots; see `maps/~map_system/_map_selection.dm`). `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamically-loaded submaps/turfpacks/overmap content. `maps/expedition/` holds the blank substrate the on-demand expedition generator carves. Other top-level map dirs are dormant upstream maps not in the build. |
-| `icons/` | Art. Editable sources are `*.png` + `*.dmi.toml`; the build repacks them into `icons/gen/` (see §4). Never hand-edit files under `icons/gen/`. |
-| `sound/`, `interface/`, `html/`, `strings/` | Assets, BYOND skin, browser assets, lookup text. |
-| `tgui/` | React/TypeScript front-end (TypeScript only, Biome + Bun). |
-| `verdigris/` | In-tree Rust extension (cave-gen + vendored auxmos atmos), loaded via FFI. Builds to `verdigris.dll` / `libverdigris.so` (see §4). |
-| `config/`, `SQL/` | Server config template and DB schema. |
-| `html/changelogs/` | One YAML changelog stub per PR (see §7). |
-| `tools/`, `bin/` | Build/lint/map tooling and Windows entry points. |
-| `deepquarry.dme` | The compile manifest — every `.dm` in the build is `#include`d here. |
-| `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm` | DM linter / DreamChecker config. |
+| `code/` | All DM code. Being reorganised into a new tree (§3c); the old directories are the remaining work. |
+| `maps/` | `maps/southern_cross/` is the live map (station only: 3 decks, CentCom, Transit). `maps/virgo_minitest/` is the unit-test map (`-DCITESTING`). `maps/submaps/`, `maps/common*/`, `maps/overmap/`, `maps/~turfpacks/` hold dynamic content; `maps/expedition/` is the blank substrate the expedition generator carves. Other map dirs are dormant. |
+| `icons/` | Edit `*.png` + `*.dmi.toml`; the build repacks into `icons/gen/`. Never hand-edit `icons/gen/`. |
+| `sound/`, `interface/`, `html/`, `strings/` | Assets, skin, browser assets, lookup text. |
+| `tgui/` | React/TypeScript front end (TypeScript only, Biome + Bun). |
+| `verdigris/` | In-tree Rust extension (cave-gen, atmos, native kernel work) loaded over FFI. |
+| `config/`, `SQL/` | Server config template, DB schema. |
+| `doc/rewrite/` | The design. Start at `README.md`; the primary design is `final_api.html`. |
+| `html/changelogs/` | One YAML stub per PR (§6). |
+| `tools/`, `bin/` | Build, lint, map tooling, Windows entry points. |
+| `deepquarry.dme` | Compile manifest. Every `.dm` is `#include`d here (§2). |
+| `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm` | DreamChecker config. |
 
-New code goes in the matching `code/` subfolder (mirrors the usual SS13 layout:
-`code/modules/…`, `code/game/…`, `code/datums/…`, `code/__defines/…`). New art
-goes in `icons/` as `png` + `dmi.toml`. New maps go in `maps/`.
+## 2. Wiring files into the build
 
----
-
-## 2. Wiring new files into the build (`deepquarry.dme`)
-
-DM has no auto-discovery — every `.dm` the compiler should see must be `#include`d
-in `deepquarry.dme`. One line per file, Windows path separators:
-
-```
-#include "code\modules\myfeature\myfile.dm"
-```
-
-Order matters when files depend on `#define`s — keep `__defines/` includes near the
-top. For proc/var override chains, the last-compiled definition wins; keep that in
-mind when choosing where a file is included. Maps register through the glue in
-`maps/~map_system/` (`_map_selection.dm`, `maps.dm`) — model new maps on those.
-
-When you remove a feature, **delete the file and its `#include` outright** — there's
-no upstream to merge against, so there's no reason to keep a disabled include around.
+DM has no auto-discovery. Add one line per file to `deepquarry.dme`, Windows separators:
+`#include "code\modules\myfeature\myfile.dm"`. Keep `__defines/` includes near the top;
+later definitions win in override chains. The design plans to generate the `.dme` from the
+tree (defines, engine, library, domains, content, world); until that lands, edit it by hand.
 
 ---
 
-## 3. DM coding standards (enforced by SpacemanDMM / DreamChecker)
+## 3. Writing code: the migration
 
-- **Absolute type/proc paths only** — `/obj/item/clothing/shoes/jackboots`, never
-  relative. (`disallow_relative_type_definitions` / `disallow_relative_proc_definitions`.)
-- **Use defined constants**, not string literals — job/faction/access/channel names,
-  sounds. Defines live under `code/__defines/`.
-- **Sounds are sets, sparks are pooled.** Play `play_sfx(atom, SFX_ID)` with a `SOUND_SET` row
-  (ids in `code/__defines/sfx.dm`, rows in `code/game/sound_sets.dm`); sound vars and lists hold
-  `SFX_*` ids, never literal files. Sparks are `fx_sparks(atom, amount)`. `tools/ci/sys_rules/sfx.py`
-  enforces both.
-- **Avoid `usr`** outside verb procs — plumb `user` through args, or use `src`.
-- **Always chain `..()`** in lifecycle overrides (`Initialize`, `on_destroy`,
-  `lifecycle_prerelease`, …) unless you specifically need to suppress the parent.
-- **Start at `doc/rewrite/README.md`** (index and reading order; the foundation design is
-  `doc/rewrite/foundation.md`). Its forms are in progress; the object-model docs below are archived
-  but still describe the code as built.
-- **New to the object model?** Read `doc/rewrite/archive/om_in_10_minutes.md` first, then
-  `doc/rewrite/archive/time_mechanisms.md` for any delay, cadence or timer choice.
-- **Override via vars/subtypes**, not by editing an unrelated base — re-open the
-  type and set `icon` / `name` / `desc`, or subtype it.
-- **Run DreamChecker before pushing.** Upstream-style red builds get rejected.
+The approved design is `doc/rewrite/final_api.html` ("the doc"). It replaces the object model
+(OM), the `sys` layer, interactions and every legacy declaration form. Section numbers below
+are the doc's. Section 17 maps **every** old form to its replacement; look there first when
+you meet something unfamiliar.
 
-### 3a. List allocation (`code/__defines/_lists.dm`)
+### 3a. New forms (write these)
 
-| Use case | Pattern |
+Forms marked **new** are phase-1 forms that may not exist on master yet; check with `git grep`
+before using one. If it is absent, follow the doc's §17 for what to write meanwhile and expect
+a codemod later. Don't invent forms the doc doesn't define.
+
+| Need | New form | Doc |
+|---|---|---|
+| Declare a type | One inheriting list: `CAPABILITIES(T, entries...)` (**new**) | §1 |
+| Reusable behaviour | A capability (`cover()`, `powered()`, bundles) | §11 |
+| Player/AI/admin choice | `op(key, name, parts...)` built from parts: input, select, `needs()`, `wait()`, `then()`, ... (**new**) | §9 |
+| Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 |
+| Typed world events | `/datum/act` contexts from `ACTION()`; `intercept()` to take over (**new**) | §8, §10 |
+| React after | `on_notice(/datum/notice/x, ...)`; announce with `PUBLISH()`; typed notices via `NOTICE()` (**new**; master's `NOTICE()` is an unrelated log macro) | §10 |
+| React to a state key | `on_change(nameof(v), ...)` | §7, §10 |
+| State | `TRACKED(T, var)` (two arguments); writes only through setters; reads are generated by the build, never typed by hand | §4, §7 |
+| Numbers/flags composed from sources | `stat(...)`, `contributes(...)`, `hold(E, stat, value, source, lasts =)`, `release()`, `grant()`/`revoke()` (**new**) | §5 |
+| Delays and repeats | `after(owner, delay, then(...))`, `every(interval, parts..., when =)`, `STAMP`/`ELAPSED` (**new**), `COOLDOWN_*` for rate limits, `wait()` on an op | §3 |
+| Links and ownership | Relations declared in `CAPABILITIES`; lifecycle is declared, never hand-torn-down | §6 |
+| World-level state/work | `SYSTEM_DEF(x)` plus `/datum/system/x` with `needs`, `lane`, `every()`; other folders call only its `api.dm` | §2 |
+| Construction ladders | `construction(start(...), step(...), dismantle(...))` | §12 |
+| Appearance, UI, verbs, prompts | look parts, `ui_window()`/`ui_data(user)` outputs, granted verbs, `asks()` | §13 |
+
+Rules that hold under both old and new forms:
+
+- Effects never sleep. No `spawn`, gameplay `sleep`, `INVOKE_ASYNC`, `do_after`; waiting is a
+  `wait()` part, a timer or an await.
+- A refusal is a requirement, not a message-and-return at the head of an effect proc.
+- Avoid `usr` outside verb procs; absolute type and proc paths only; `istype()` then cast, never `:`.
+- Use defined constants, not string literals; time defines (`1.5 SECONDS`), never raw deciseconds.
+- Pass procs with `PROC_REF()` / `TYPE_PROC_REF()` / `GLOBAL_PROC_REF()`.
+- Don't override `Destroy()`; use `qdel()` and put consequences in `on_destroy(force)`. Never `del()`.
+- Prefer `Initialize(mapload, ...)`; always chain `..()` in lifecycle overrides.
+- Lists: constant shared tables are `var/static/list`; per-instance mutable lists are lazylists
+  (`LAZYADD`/`LAZYLEN`), not `var/list/foo = list()` (`code/__defines/_lists.dm`).
+- Sounds are sets: `play_sfx(atom, SFX_ID)`; sparks are `fx_sparks(atom, amount)`.
+- SQL is parameterized only; ask players with typed prompts, not raw `input()`/`alert()`.
+- Cache appearances, not raw `/icon`. Don't add an `/atom` proc for something only one capability uses.
+- Run DreamChecker before pushing.
+
+### 3b. Legacy forms (don't add new uses)
+
+Everything built on the OM and the sys layer is legacy and is being removed: `om_after`,
+`om_hook`, `om_ask`, `om_grant`, `OM_EMIT`, `EVENT_HANDLER`, `OM_FIELD` and its relatives,
+`DECLARE_UI` / `UI_ACT` / `UI_DATA`, `TOPIC_ACTION`, `DECLARE_PERIODIC_WHILE`,
+`DECLARE_REPEAT`, `DECLARE_VERB`, `DECLARE_EMAG`, `DAMAGE_REACTION`, `REQ_*`, the `OWN`/`REL`
+macros, `capabilities()`/`reactions()`/`relations()` table procs, `PERIODIC_*` lanes,
+`world_service` and the `CHANGE_*` channels with `changed(E, channel)`. Don't write a new use
+of any of them. Ratchet lints enforce this: baselines only shrink, and a form's lint becomes a
+hard ban the commit its last caller converts. If you must touch a file that still uses them,
+leave them in place unless you are converting that file in a wave (§3c). The docs under
+`doc/rewrite/archive/` describe the old forms and are not guidance.
+
+Corrections to older notes: there is no `om_changed()`; the real procs are `changed()` and
+`om_raise_change()` (both legacy, replaced by tracked setters and generated reads). `SSbehaviours`
+no longer fires; its work was folded into the kernel (`code/controllers/kernel/kernel.dm`).
+
+### 3c. Source layout and the migration rule
+
+Target tree (doc §22):
+
+| Path | Holds |
 |---|---|
-| Constant table shared across all instances of a type | `var/static/list/foo = list(...)` |
-| Per-instance mutable, often empty | `var/list/foo` + `LAZYADD`/`LAZYLEN`/`LAZYREMOVE` |
-| Per-instance mutable, always non-empty | `var/list/foo = list(...)` (rare) |
-| Local working list inside a proc | `var/list/foo = list()` |
+| `code/engine/{kernel,time,state,stats,refs,change,actions,parts,hooks,present,io,_generated}` | The framework, one folder per doc section. `_generated` is build output, never hand-edited. |
+| `code/library/` | Shared capabilities and bundles (machine, access, containers, reagents, items, structures, construction, providers, mobs). |
+| `code/domains/{body,damage,atmos,power,life,ai,verdigris}` | Large systems with their own model. |
+| `code/content/<domain>/` | Ordinary content: one type, one file (its capabilities, procs, messages, tests beside it). |
+| `code/world/` | Systems, map glue, round flow. |
+| `code/defines/` | Defines, split per module; replaces `__defines/`. |
 
-Anti-pattern: `var/list/foo = list()` on an *instance* var — allocates one list per
-instance even when empty, and subtype overrides inherit the empty alloc. Use a
-lazylist instead. For per-subtype constant tables (which DM can't express as a
-`static` var), use a getter proc that returns a proc-local `var/static/list`.
+Layering: engine may not reference library or content; library may not reference content;
+nothing in the new tree may use an old form.
 
-### 3b. Type safety
+**A file moves into the new tree only when it is fully migrated** (zero old forms). The old
+directories (`code/game`, `code/modules`, `code/datums`, ...) are the remaining-work list.
+Each wave: convert the files, prove them (per-file ratchet, tests, construction round-trip,
+bench), move them in a pure `git mv` commit with no edits, merge. Old APIs are deleted in the
+commit their last caller goes. Plan, phases and gates: doc §19.
 
-- `istype()` to narrow before reading a subtype member is fine. **Never** use the
-  `:` operator to reach a subtype member — `istype()` → cast → access.
-- In a typed `for(var/obj/item/foo/F in list)` the `istype` is implicit; use
-  `as anything` when the list is known-clean so stray nulls surface as runtimes.
-- Never use type paths as strings.
+### 3d. Ratchets and justified keeps
 
-### 3c. Lifecycle / hard-delete prevention
+`tools/ci/check_ratchets.sh` runs the rewrite lints. A ratcheted lint's `tools/ci/*_baseline.txt`
+lists legacy sites as fingerprints (rule, file, normalized line text). A failure prints only
+**new** sites. After a sweep run the lint's `--update`: it drops fixed sites and never adds one.
 
-- Prefer `Initialize(mapload, ...)` over `New()` for atoms; `return ..()`.
-- **Don't override `Destroy()`** (banned outside the core chain by
-  `lifecycle_counts_lint.py`). `qdel()` runs the destroy transaction
-  (`doc/rewrite/lifecycle.md`): declared references are cleared, owned children deleted,
-  OM timers/tasks/hooks/UIs torn down for you. Put consequences in `on_destroy(force)`
-  (calls `..()`), teardown that must still read declared vars in
-  `lifecycle_prerelease()`, behaviour-side work in `on_entity_destroy(E)`. The GC hint is
-  the `destroy_hint` var; refusal is `lifecycle_keep(force)`.
-- **Every object-typed var is own / shared / proto / relation** (`doc/rewrite/archive/ownership.md`):
-  write owned vars with `own_set`/`own_take`/`own_add`/`own_transfer`/`own_clear`, relation
-  views with `rel_set`/`rel_add`/`rel_remove`, copy-on-write vars with `proto_*`; registry-typed
-  vars are shared. Declare only exceptions (`OWN(..., OWN_SPILL/OWN_CONTAINED)`, `PROTO`,
-  `REL_PAIR`, `REL_KEYED`, ...). No `CALLBACK` in content: `om_callable()` + `om_run()`.
-  `tools/ci/ownership_lint.py` enforces it; see the table in `doc/rewrite/archive/om_in_10_minutes.md` §3.
-- Delete with a lifecycle verb (`consume()`, `replace_with()`, `expire()`, `slot_clear()`)
-  when one fits, else `qdel()`; never `del()`.
-- **Don't unhook, cancel timers or null declared vars by hand on deletion**: the transaction
-  tears down OM timers (`om_after`), tasks, hooks and UIs, and clears declared refs.
-
-### 3d. Events & callbacks (OM events; the DCS is gone)
-
-There are no signals, components or elements (`RegisterSignal`, `SEND_SIGNAL`,
-`AddComponent`, `AddElement`, `COMSIG_*` are deleted and `tools/ci/dcs_lints.py`
-bans them). See `doc/rewrite/archive/object_model_core.md` §10:
-- An event is a typed `/datum/om/event/x` (payload in vars). Send it with
-  `OM_EMIT(entity, /datum/om/event/x, args...)`, which allocates nothing when no one
-  listens and returns the ORed handler results. World-wide events go to `OM_WORLD`.
-- A refusable or result-returning event is a `/datum/om/event/before/x`.
-- Logic on an entity is a behaviour (`/datum/om/behaviour/x`, `handles = list(...)`,
-  `om_attach()`), with its state on the entity; big or plural state is an owned datum
-  in a declared var.
-- A datum reacting to another entity's event hooks it:
-  `om_hook(source, /datum/om/event/x, src, PROC_REF(on_x))`; `om_unhook()` removes it,
-  and deleting either end drops it.
-- Every event handler's first line is `EVENT_HANDLER`; it must not sleep.
-- Deferred or state-driven reactions use a channel, a watch or `om_after()`.
-- **Delays**: `om_after(entity, 2 SECONDS, PROC_REF(x), args...)` returns a timer id for
-  `om_cancel_timer(entity, id)`; the timer runs on the entity's clock and dies with it. A
-  repeating job is a behaviour cadence (`every`) or `PERIODIC_START`; a rate limit is
-  `COOLDOWN_START`/`COOLDOWN_FINISHED`. There is no `addtimer`, `spawn`, gameplay `sleep`,
-  `INVOKE_ASYNC` or `do_after` (`om_task_start()` for timed actions).
-- **Global state and world-level work** live in a `/datum/world_service` singleton
-  (`GLOB.<x>_service` or a lazy `<x>_service()` accessor), with periodic work on a world lane
-  (`code/datums/om/world_lanes.dm`). Don't add a subsystem or a `fire()`
-  (`subsystem_fire_lint.py`); see §9 "World services".
-- Pass procs via `PROC_REF()` / `TYPE_PROC_REF()` / `GLOBAL_PROC_REF()`, never a
-  bare string proc name.
-
-### 3e. Performance
-
-- Cache appearances (`/image` / `/mutable_appearance`), not raw `/icon` objects.
-- Prefer flat lists indexed by `#define`d ints over assoc lists keyed by strings
-  when the keys are a fixed enum (~8 B vs ~24 B/entry).
-- Scale cadence work by the `dt` the scheduler passes (`tick(E, dt)`, stage frames); there
-  is no `process()`/`START_PROCESSING` (use a behaviour cadence or `PERIODIC_START`).
-
-### 3f. Magic numbers, input, SQL
-
-- Use the time defines (`1.5 SECONDS`, `5 MINUTES`) — never raw deciseconds.
-- `#define` flag/ID/threshold constants.
-- Ask players with a typed prompt, `om_ask(answerer, /datum/om/prompt/<kind>/x,
-  PROC_REF(cb), var = value...)`; its `requires`/`valid()` re-check state before `cb` runs
-  (raw `input()`/`alert()`/`tgui_input_*` are banned). Sanitize free text.
-- Never override `Topic()` or read `href_list` yourself: declare
-  `TOPIC_ACTION(type, "key", PROC_REF(handler), TOPIC_REF/TOPIC_NUM/TOPIC_TEXT/TOPIC_RIGHTS...)`
-  rows; the core dispatcher validates every ref against its declared source
-  (doc/rewrite/archive/systems.md §20, lint `tools/ci/sys_rules/topic.py`).
-- Parameterized SQL only, through `om_io()` / `om_sql_write()` (nothing waits on I/O);
-  `format_table_name()` for table names.
-
-### 3g. Ratchet lints and justified keeps
-
-`tools/ci/check_ratchets.sh` runs the rewrite lints (scheduler, cooldown, DCS, API,
-declared refs, containment, spatial, latent, lifecycle counts, registry, instance lists,
-state refs, base procs, ...). A ratcheted lint's `tools/ci/*_baseline.txt` lists each
-legacy site as a fingerprint (rule, file, whitespace-normalized line text; no line number,
-so unrelated edits don't disturb it). A failure prints only the **new** sites as
-`file:line: [lint/rule] text -- fix hint`. Baselines only shrink: after a sweep run the
-lint's `--update`, which drops fixed sites and never adds one (`--seed` exists only to
-create a baseline). World-service and singleton types are exempt from
-`instance_list_lint.py` automatically.
-
-There are **no allowlist files**. A site that is right as it is carries one inline
-annotation, read by every lint, on its own line or a comment-only line directly above:
+There are no allowlist files. A site that is right as it is carries an inline annotation, on
+its line or a comment-only line above, with a required reason:
 
 ```dm
 spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 ```
 
-The reason is required; several lints go comma-separated (`ALLOW(lifecycle, dcs): ...`);
-inside a multi-line macro use `/* ALLOW(x): reason */`. `tools/ci/allow_annotations.py`
-lists the lint names and rejects a missing reason or an unknown name. Don't annotate new
-debt to get under a ceiling: use the mechanism the lint points to
-(`doc/rewrite/archive/object_model_core.md` §16).
+Several lints go comma-separated; inside a multi-line macro use `/* ALLOW(x): reason */`.
+`tools/ci/allow_annotations.py` rejects a missing reason or unknown lint name. Don't annotate
+new debt to get under a ceiling; use the form the lint points to.
 
-### 3h. Verbs
+### 3e. Debugging and tracing
 
-The verb store (`code/datums/om/grant_verbs.dm`) is the **only** writer of a `verbs` list:
-never `verbs +=`/`-=`/`=`, `verbs.Cut()`, or `new /x/proc/y(target, ...)`. There is no
-`add_verb()`/`remove_verb()`.
-
-- A type's own verbs are `DECLARE_VERB` / `DECLARE_VERB_IF` / `DECLARE_LOGIN_VERB` /
-  `DECLARE_VERB_HIDE` lines.
-- Runtime verbs are `om_grant(target, GRANT_VERB, verb, source)`. The verb goes when the source
-  revokes it or is deleted.
-- Take a verb away with `GRANT_VERB_HIDE` from a source. Timed: `om_grant_for`.
-- Clients take grants too (`om_grant(client, ...)`).
-- Lint `sys_verb_write` is at 0 and accepts no ALLOW. See doc/rewrite/archive/systems.md §19.
+Never remove existing debug or AI tracing without explicit permission, and add thorough
+logging when you add behaviour that is hard to observe.
 
 ---
 
 ## 4. Build pipeline
 
-Windows is the supported dev OS. Entry points (`bin/`):
+Windows is the supported dev OS. Entry points in `bin/`: `build.cmd` (DM + TGUI),
+`server.cmd` (build and host on 1337), `test.cmd` (unit-test world), `tgui-build.cmd`,
+`tgui-dev.cmd`, `tgui-fix.cmd`, `bench.cmd`, `clean.cmd`. `tools/build/build.ts` (Juke)
+orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
 
-- `bin/build.cmd` — DM + TGUI build → `deepquarry.dmb` + `deepquarry.rsc`.
-- `bin/server.cmd` — build then host on port 1337.
-- `bin/test.cmd` — build and boot the unit-test world (see §4a).
-- `bin/tgui-build.cmd` / `bin/tgui-dev.cmd` / `bin/tgui-fix.cmd`.
-- `bin/clean.cmd`.
+- **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
+  Runtime DMI reads resolve the `icons/gen/` copy automatically.
+- **verdigris** (`VerdigrisTarget`): builds `verdigris.dll` / `libverdigris.so` when source is
+  stale; or run `verdigris/build-windows.sh` / `build-linux.sh`. It is a gitignored
+  per-platform artifact; DM calls it through generated `vg_*` procs
+  (`code/__defines/verdigris/_bindings.dm`, regenerate with
+  `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
+  it, and atmospherics and cave-gen then fail at runtime.
+- **Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing
+  `verdigris.dll` instead of rebuilding Rust per worktree. Rust work should set
+  `RUSTC_WRAPPER=sccache`; `CARGO_TARGET_DIR` is honoured.
+- Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
+  `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 
-`tools/build/build.ts` (Juke) orchestrates the DM build. Two fork-specific steps:
+### 4a. Testing (full reference: `doc/testing.md`)
 
-- **Icon repack** (`tools/dq_icons/`): regenerates `.dmi` from `png` + `dmi.toml`
-  into `icons/gen/` before the DM compile (dirty-checked; no-ops when clean).
-- **verdigris** (`tools/build/build.ts` `VerdigrisTarget`): builds the Rust FFI
-  library (`verdigris.dll` on Windows, `libverdigris.so` on Linux) when its source
-  is stale. You can also build it directly with `verdigris/build-windows.sh` /
-  `verdigris/build-linux.sh`. The compiled library is a gitignored per-platform
-  artifact; the DM game calls it through the generated `vg_*` procs in
-  `code/__defines/verdigris/_bindings.dm` (`tools/build/build.sh verdigris-bindings`
-  regenerates them; see `verdigris/README.md`).
-
-**Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing `verdigris.dll` instead of compiling the Rust workspace (each fresh worktree otherwise rebuilds it from scratch). Rust work should set `RUSTC_WRAPPER=sccache` so worktrees share compiled dependencies. The build also honours `CARGO_TARGET_DIR`.
-
-Runtime DMI note: because repacked `.dmi` live only in `icons/gen/`, code that reads
-DMI metadata at runtime via rust-g resolves the `icons/gen/` copy automatically
-(`icon_metadata()`, `universal_icon.to_list()`).
-
-The DM linter (`SpacemanDMM`) runs as part of the build and in CI — heed every
-warning.
-
-### 4a. Testing
-
-`doc/testing.md` is the full reference. The short version:
-
-- **While developing, run only the tests you touch**, with
-  `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]`. It works from
-  a git worktree. It costs the compile plus about 25 seconds.
-- **Run the full suite only at integration** (before merging, or when asked).
-  `dm-test` runs the **normal tier**, sharded across up to 4 worlds, in about
-  two to three minutes plus the compile (about five in one world).
-- **Integration merges run the normal tier; CI and nightly run the exhaustive
-  tier too** (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps
-  (`tier = TEST_TIER_EXHAUSTIVE`); each one has a small normal-tier
-  `.../representative`. A focused run names any test, exhaustive or not. See
-  `doc/testing.md` "Tiers".
-
-| What | Command |
-|---|---|
-| Unit-test suite, normal tier (test map) | `bin/test.cmd` or `tools/build/build.sh dm-test` (`--shards=1` for one world) |
-| Every tier, as CI runs it | `tools/build/build.sh dm-test --tier=all` |
-| Only some tests | `bash tools/dq_focused_test.sh <name> [...]` (bare names, quoted `*` globs, `--repeat=N`; other `--flags` go to dm-test) |
-| Same, on Southern Cross | `bash tools/dq_focused_test.sh --full-map /datum/unit_test/<name>` |
-| DM and TGUI lint | `tools/build/build.sh lint` (other CI checks: `doc/testing.md`) |
-| TGUI tests | `tools/build/build.sh tgui-test` |
-| Rust | `cd verdigris && cargo test --package verdigris` |
-| Flaky, or caused by my change? | `tools/build/build.sh test-repeat --runs=5` · `tools/build/build.sh test-baseline` |
-| Memory, tick cost, overruns | `bin/bench.cmd` or `tools/build/build.sh bench [--scenario=a,b] [--runs=3]`, then `bench-compare` |
-
-Measure before and after any performance or memory change with `bench`; don't write
-one-off profiling tests or scripts. For a slow unit test, `--profile-tests` writes
-BYOND's proc profile per test (`doc/testing.md` "Profiling a slow test"). Add a scenario under `code/modules/benchmarks/`
-instead. Results and history live in `data/bench/` and `data/test-runs/`. If another
-agent's unfinished work breaks the build, `DQ_WIP_TREE=1` lets test and bench builds
-skip their dangling includes.
-
-Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`;
-CI rejects it.
-
----
+- **While developing, run only the tests you touch:**
+  `bash tools/dq_focused_test.sh /datum/unit_test/<name> [...]` (works from a worktree; the
+  compile plus about 25 s). `--full-map` runs on Southern Cross.
+- **Run the full suite only at integration** or when asked: `tools/build/build.sh dm-test`
+  (normal tier, sharded; `--shards=1` for one world). CI and nightly add the exhaustive tier
+  (`dm-test --tier=all`). Exhaustive tests are whole-type sweeps with a small normal-tier
+  `.../representative`.
+- Lint: `tools/build/build.sh lint`. TGUI tests: `tools/build/build.sh tgui-test`. Rust:
+  `cd verdigris && cargo test --package verdigris`.
+- Flaky or caused by me: `tools/build/build.sh test-repeat --runs=5`, `test-baseline`.
+- Performance and memory: measure with `bin/bench.cmd` / `build.sh bench` then `bench-compare`;
+  add scenarios under `code/modules/benchmarks/`, not one-off profiling. `--profile-tests`
+  gives per-test proc profiles.
+- The design replaces `om_test_begin`/`om_test_end` with `kernel_test_begin()`/`kernel_test_end()`
+  (**new**, doc §15). Never commit a `TEST_FOCUS(...)` line in `code/modules/unit_tests/dq_focus.dm`.
 
 ## 5. TGUI
 
-- `tgui/` is TypeScript-only with Biome (formatter/linter) and Bun (runtime).
-- `bin/tgui-fix.cmd` (or `bun run tgui:fix` at the repo root) auto-fixes;
-  `tools/build/build.sh lint` checks Biome and TypeScript.
-- Interfaces live in `tgui/packages/tgui/interfaces/`. New fork UIs go there.
-
----
+`tgui/` is TypeScript-only with Biome and Bun. `bin/tgui-fix.cmd` auto-fixes;
+`tools/build/build.sh lint` checks Biome and TypeScript. Interfaces live in
+`tgui/packages/tgui/interfaces/`. Under the final design a UI is an `ui_window()` plus a
+`ui_data(user)` output and ops with `ui_act()`; each op keeps its old action name so TSX does
+not change (doc §13, §19).
 
 ## 6. Changelogs
 
-Every user-visible PR drops one YAML in `html/changelogs/` (`<author>-<branch>.yml`):
+Every user-visible PR adds one `html/changelogs/<author>-<branch>.yml`:
 
 ```yaml
 author: "yourkey"
 delete-after: true
 changes:
   - rscadd: "Added X"
-  - bugfix: "Fixed Y"
-  - balance: "Tuned Z"
 ```
 
-Valid prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`,
-`sounddel`, `imageadd`, `imagedel`, `maptweak`, `spellcheck`, `experiment`,
-`refactor`, `code_imp`, `config`, `admin`, `server`, `wip`. The nightly
-`compile_changelogs` workflow rolls the stubs into `html/changelogs/archive/`
-(which the in-game changelog reads) and deletes them.
-
----
+Prefixes: `rscadd`, `rscdel`, `bugfix`, `qol`, `balance`, `soundadd`, `sounddel`, `imageadd`,
+`imagedel`, `maptweak`, `spellcheck`, `experiment`, `refactor`, `code_imp`, `config`, `admin`,
+`server`, `wip`. The nightly workflow rolls stubs into `html/changelogs/archive/`.
 
 ## 7. PR checklist
 
-- [ ] New `.dm` files `#include`d in `deepquarry.dme`.
-- [ ] Absolute type/proc paths only; no `:` operator on subtype access.
-- [ ] No `Destroy()` overrides; object vars written through the ownership accessors (`ownership_lint.py` clean); consequences in `on_destroy()`.
-- [ ] Event handlers start with `EVENT_HANDLER`; callbacks use the `*_PROC_REF` macros.
-- [ ] Time args use `SECONDS`/`MINUTES`/`HOURS`.
-- [ ] DreamChecker (`SpacemanDMM`) passes locally.
-- [ ] `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
-- [ ] TGUI (if changed): `tools/build/build.sh lint tgui-test` clean.
-- [ ] Unit tests pass (`bin/test.cmd`), and `dq_focus.dm` is empty.
-- [ ] One YAML changelog stub.
-- [ ] Squash-able history; commit subject ≤ 72 chars.
+- [ ] New `.dm` files are in `deepquarry.dme`.
+- [ ] No new use of a legacy form (§3b); new code uses the new forms (§3a).
+- [ ] Absolute paths; no `:` subtype access; no `Destroy()`; time defines used.
+- [ ] DreamChecker passes; `bash tools/ci/check_ratchets.sh` passes; any kept site has `// ALLOW(<lint>): <reason>`.
+- [ ] Touched tests pass; `dq_focus.dm` is empty.
+- [ ] TGUI, if changed: `tools/build/build.sh lint tgui-test` clean.
+- [ ] One changelog stub; squash-able history; commit subject at most 72 characters.
+
+## 8. Where to look
+
+- `doc/rewrite/final_api.html`: the design (forms §1-§16, old to new §17, kept forms §18, migration §19, decisions §21, layout §22).
+- `doc/rewrite/README.md`: index of the rest of the rewrite docs; `doc/rewrite/archive/`: old OM docs (history only).
+- `doc/testing.md`, `doc/body_architecture.md`, `code/ATMOSPHERICS/README.md`, `verdigris/README.md`.
+- Linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`. Icons: `tools/dq_icons/`. Changelog format: `html/changelogs/example.yml`.
 
 ---
 
-## 8. Where to look when stuck
+## 9. Current state (deployment-independent)
 
-- Rewrite docs: `doc/rewrite/README.md` (index), `doc/rewrite/migration_guide.md` Part F (old form → new form).
-- Object model (archived, as built): `doc/rewrite/archive/om_in_10_minutes.md` (onboarding),
-  `doc/rewrite/archive/time_mechanisms.md` (which timer/cadence/lane), then
-  `doc/rewrite/archive/object_model_core.md` (§16 "one way to do X").
-- OM cost at runtime: admin verb "OM Profiler" (Debug > Investigate).
-- DM linter rules: `SpacemanDMM.toml`, `code/__odlint.dm`, `code/__pragmas.dm`.
-- Build entry: `bin/build.cmd` → `tools/build/build.ts`.
-- Icon pipeline: `tools/dq_icons/`.
-- verdigris (Rust FFI): `verdigris/README.md`.
-- Changelog format: `html/changelogs/example.yml`.
-- PR template: `.github/PULL_REQUEST_TEMPLATE.md`.
-
----
-
-## 9. Current status / known state
-
-Things that are deliberately mid-flight or disabled, so you don't "fix" them by
-accident or assume they work:
-
-- **Object model (OM) — the architecture everything runs on.** Game objects are entities
-  with declared behaviours, pipelines, events, fields and references, scheduled by one
-  budgeted scheduler (SSbehaviours) in five lanes. There are no DCS signals/components,
-  no SStimer/`addtimer`/`spawn`/gameplay `sleep`, no `do_after`, no raw `input()`, no
-  weakrefs, no `/datum/modifier`, no per-type `Destroy()`, and most subsystems are now
-  world services. Onboarding: `doc/rewrite/archive/om_in_10_minutes.md`; time choices:
-  `doc/rewrite/archive/time_mechanisms.md`; reference: `doc/rewrite/archive/object_model_core.md`.
-- **Atmospherics — LINDA on a Rust backend.** LINDA (the vendored /tg/ atmos under
-  `code/ATMOSPHERICS/`) is the only engine; ZAS/XGM are gone. Gas math, turf diffusion,
-  decompression and heat conduction (superconductivity) run in the auxmos arena inside
-  Verdigris, driven from `SSair.fire()`. `code/ATMOSPHERICS/README.md` is the reference.
-  **`/datum/gas_mixture` is an opaque handle.** There is no public `temperature`/`volume`
-  var: read with `return_temperature()`/`return_volume()`, write with
-  `set_temperature()`/`set_volume()`, and cache reads in hot loops because each call crosses
-  the FFI. Atoms (turfs included) have one temperature API in `code/modules/heat/heat.dm`:
-  `get_temperature()` / `get_interior_temperature()` to read, `add_heat()` to heat,
-  `/turf/proc/set_temperature()` for map/admin authority. `return_temperature()` is the gas
-  mixture accessor only, and shared thermal constants (`T0C`, `BODYTEMP_NORMAL`,
-  `HUMAN_HEAT_CAPACITY`, …) are generated from `verdigris/domains/heat/src/consts.rs`. The `check_grep.sh` "gas mixture mirror writes" lint backs this up.
-  The FFI routes are the generated `vg_*` procs; the DM wrappers with real logic live in
-  `gas_mixture.dm`, `auxmos_init_bridge.dm` and `dq_linda_turf_air.dm`.
-  Verdigris builds on byondapi 0.6.x and **requires BYOND 516.1682+** (older builds crash at
-  atmos init on a missing `ByondValue_DecTempRef`). Gas **reactions** deliberately stay in DM.
-  `xgm_compat.dm` and `tg_infra_compat.dm` are the fork's stable compatibility API, not
-  temporary shims: they carry real ZAS→LINDA semantics (`assume_gas` temperature mixing,
-  `c_airblock` bitfields), and `CanZASPass` is a hook many atoms override.
-  The **`.air`-on-unsimulated-turf** family (Southern Cross has ~1188 `/turf/unsimulated/floor` that
-  inherit `init_air` but are NOT `/turf/open`, so have no `air` var) is now guarded at all three sites:
-  `setup_allturfs` append, the difference-pass neighbour loop, AND `add_to_active` (`SSair.dm` — the last
-  was reached via **vents** `pipeline/mingle_with_turf` and threw a runtime EVERY vent tick, flooding logs).
-  The SSair admin debug panel works again: verb "Debug Atmospherics" (Debug→Investigate) →
-  `SSair.tgui_interact` → `AtmosControlPanel.tsx` (was dead: nonexistent interface + `ui_*` names when this
-  fork's tgui calls `tgui_*`).
-- **Expeditions and Flight Operations.** The old quarry mode is gone. `GLOB.expedition_service`
-  (`code/modules/expedition/`) generates sites on demand: it allocates or recycles a
-  z-level (`load_new_z()`), carves it with the `cave_system` automata or builds a generated
-  station, bridges it into multi-z atmos, and populates POIs, loot and a
-  `/datum/expedition_mission` objective. Sites are released and wiped when the crew leaves;
-  z-levels go back into a `free_z` pool. Crews reach sites by flying: `GLOB.flight_service`
-  (`code/modules/flight_operations/`) owns vessels, destinations, berths and flight plans,
-  and the Flight Operations console plots expedition contracts as short-jump destinations.
-  Admin debug verbs ("Generate Expedition Site" / "Generate Expedition Mission") jump
-  straight to a site. Lifecycle risks are tracked in `doc/generated_site_lifecycle_audit.md`.
-- **Material science and engineering.** The science core is physical material work
-  (`code/modules/material_science/`): crucibles, alloys with measurable structure,
-  layered composites, reagent baths, slime coatings, and exotic feedstocks from
-  expeditions. Engineered materials change how assemblies behave (cable heating, pipe
-  pressure and corrosion, heat exchange, power cells, emitters, armour, ammunition).
-  `doc/material_engineering_implementation.md` describes the model and
-  `doc/material_engineering_playtest.md` how to exercise it in game. The earlier
-  "substance" system was removed in favour of this.
-- **Loot and map-time resolvers.** Random spawn tables are `DECLARE_LOOT` lines
-  (`code/__defines/loot.dm`), rolled by `loot_spawn()` / `loot_search()` with a per-round seed; there
-  is no `item_to_spawn()` and no `/datum/loot_table`. A map atom that only does work at load (decals,
-  spawners, coordinate landmarks, map helpers) declares `MAP_RESOLVER(path, proc)`
-  (`code/__defines/map_resolvers.dm`) instead of an Initialize that ends in `INITIALIZE_HINT_QDEL` or
-  deletes itself; resolved atoms are never initialized. `tools/ci/sys_rules/loot.py` and
-  `resolvers.py` reject the old shapes. See `doc/rewrite/archive/systems.md` §8-9.
-- **Interaction refusals are requirements.** An interaction effect proc does the work only; a
-  guard that tells the actor no ("it's locked", "the panel is open", "already has a cell") is a
-  requirement clause on the interaction, so the resolver refuses it and the Menu shows why:
-  `REQ_FIELD` / `REQ_FIELD_NOT` / `REQ_FIELD_EQ` (a target var or derived field),
-  `REQ_ACCESS`, `REQ_NOT_EMAGGED`, `REQ_ANCHORED`, `REQ_PANEL(open)`, or
-  `REQ_TARGET_STATE(/type/proc/can_x)` (side-effect free, returns TRUE or the reason). Full-form
-  subtypes add theirs with `also_requires`. `code/__defines/sys_requirements.dm`,
-  doc/rewrite/archive/systems.md Â§6; the `sys_inline_refusal` lint (baseline empty) rejects a
-  message-and-return guard at the head of an effect proc.
-- **Appearance is declared (systems.md §1).** There are no `update_icon()` overrides: a type
-  declares how its state is drawn (`APPEARANCE_TEMPLATE(T, "x{field}")`, `DECLARE_APPEARANCE`,
-  `APPEARANCE_LEVEL/EMISSIVE/SLOT`) or, for computed overlays, a provider
-  `DECLARE_APPEARANCE_PROC(T, TYPE_PROC_REF(/atom, appearance_overlays), list(fields...))` whose
-  `appearance_overlays()` *returns* overlays (the runtime cuts/adds them; never add_overlay or
-  change state there). Declared fields a declaration reads refresh it automatically, once per
-  frame, on the presentation lane; machines watch their core fields. So never follow a setter with
-  `update_icon()`; `tools/ci/sys_rules/appearance.py` rejects it. Template tokens are `{ }`.
-- **Emag is a declared interaction.** There is no `emag_act()`. A type that reacts to a
-  cryptographic sequencer writes `DECLARE_EMAG(/type, PROC_REF(on_emag), msg, already)` (gated on
-  `REQ_NOT_EMAGGED`, sets `emagged`, no "already" guard in the effect) or `DECLARE_EMAG_REPEATABLE(...)` next to
-  `/type/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)`, returning uses consumed
-  or `EMAG_DECLINED`; subtypes override `on_emag()`. Emagging without a card goes through
-  `emag_target(target, charges, user, source)`. `tools/ci/sys_rules/emag.py` rejects the old
-  pattern. See `doc/rewrite/archive/systems.md` §13.
-- **Periodic work is declared by state** (`code/__defines/sys_periodic.dm`, doc/rewrite/archive/systems.md §5).
-  Work that runs while some state holds is `DECLARE_PERIODIC_WHILE(T, cadence, "field")` /
-  `DECLARE_PERIODIC_WHILE_ALL(T, cadence, list("a", "!b"))` (cadence a `PERIODIC_*` lane for
-  `periodic_step()`, or `MACHINE_PIPELINE` for `machine_step()`), and a timer loop is
-  `DECLARE_REPEAT(T, delay, proc, "field")`. The fields are declared fields (`OM_FIELD`, …, `operable`);
-  their setters start and stop the work. Don't guard a body with `if(!on) return PROCESS_KILL`, don't
-  `om_task_periodic()`/`MACHINE_WAKE()` next to a state write, don't re-arm `om_after()` from inside the
-  proc it calls: `tools/ci/sys_rules/periodic.py` rejects all three (baseline empty).
-- **Variants.** Families of subtypes that differ only in data are collapsed into one type
-  plus a registry to save memory. See `code/datums/variants/README.md`.
-- **Material behaviour system — rewritten; material synergies removed.** A material's three active
-  behaviours are plain vars on `/datum/material` (`luminescence`/`radioactivity`/`toxicity`), read via
-  `dq_material_*()` and applied to items by `dq_apply_material_behaviors()`: the shared `material_emission`
-  OM behaviour (`material_behaviors.dm`) ticks while an item irradiates or poisons — replacing the old
-  half-wired magnitude-only component layer
-  (`material_components.dm`) and `material_traits.dm`, both deleted. `material_synergies.dm` is deleted, and
-  the `dq_apply_material_synergies()`/`dq_synergy_value()` no-op shims plus all 53 `RefreshParts` call sites
-  and 2 value-reads are **now fully removed** (zero residual refs). Structures/walls keep self-processing for
-  radiation via `products_need_process()` + the read API.
-- **Material-selectable lathe designs (BOTH lathes).** A `/datum/design_techweb` can set
-  `material_selectable = TRUE` + `selectable_amount` (+ optional `selectable_class`); the lathe UI then
-  shows a material picker (loaded materials via `lathe_material_choice_list(container)` in `_production.dm`)
-  and the chosen material is consumed and passed to `create_item(target, chosen)` → the product's
-  `set_material`. This is how engineered and exotic materials become lathe-buildable without one techweb
-  entry per material. Design backend: `effective_materials()`/`material_choice_valid()` (`designs.dm`). Both build
-  paths thread `chosen_material`: protolathe family `_production.dm` (`build`/`do_make_item`) AND autolathe
-  `autolathe.dm` (`make`/`do_make_item`). UI: one shared `Fabrication/SelectableRecipe.tsx` (native row +
-  dropdown + x1/x5/x10/max), used by both `Fabricator.tsx` and `Autolathe.tsx` via an `onBuild` callback;
-  `materialChoices` in `Types.ts`. Sample designs + node: `designs/material_selectable.dm` (Material
-  Knife/Sword, `build_type = AUTOLATHE | PROTOLATHE`, starting node). The lathe material container allows
-  any `/datum/material` subtype. Biome lint/format clean (root
-  `npm install` provides Biome); tsc **is** run clean (bun at `~/.bun/bin`; `bun install` in `tgui/` provides
-  the workspace) — sample design now also includes `material_rounds_9mm`.
-- **Overmap — subsystem on, station map ground-only.** `code/modules/overmap/` compiles and
-  runs; the live `maps/southern_cross/` is station-only and does not use overmap sectors.
-  Expedition sites are still multi-z at runtime (each is its own `load_new_z()` z-level, so
-  vertical multi-z atmos applies). The overmap proper is exercised by `virgo_minitest`.
-- **Dynamic overmap POI system — deleted.** The spawn hook in `code/modules/overmap/sectors.dm`
-  and the POI templates/loot were removed. Reviving requires restoring that content from git
-  history. Leave it removed unless explicitly asked to revive it.
-- **ATC (Air Traffic Control) — removed.** The `SSatc` subsystem and its radio-chatter module
-  (`busy_space/atc_chatter*`, `chatter_*`) are deleted. The `loremaster`/`organizations` lore
-  datums that lived alongside it in `busy_space/` are kept (used codebase-wide).
-- **Damage model — unified on TG obj_integrity.** Every damageable `/obj` (structures,
-  machinery, doors, vehicles, mechs) now takes damage through the TG integrity system in
-  `code/game/atom/atom_defense.dm`: `take_damage(amount, damage_type, damage_flag, …)`,
-  `get_integrity()`, `repair_damage()`, and the `atom_break()`/`atom_fix()`/`atom_destruction()`
-  hooks. Hits reach it through one path: an entry point (`bullet_act`, `hitby`, `ex_act`, `emp_act`,
-  `fire_act`, `blob_act`, `attack_generic`, weapon `attackby`, `electrocute_act`) builds a pooled damage
-  packet and calls `receive_damage(packet)` (`code/game/atom/damage_packet.dm`, doc/rewrite/damage.md);
-  use the `receive_*`/`deal_damage` helpers there instead of calling `take_damage()` from an entry point.
-  `receive_damage()` is fixed (`SHOULD_NOT_OVERRIDE`): it runs the type's **declared damage reactions**
-  and then the sink, `damage_sink()` (override that to change where damage lands). A fixed thing a type
-  does when hit is declared, never an entry override: `DAMAGE_REACTION(type, DAMAGE_EMP|DAMAGE_PROJECTILE|
-  DAMAGE_EXPLOSION|…|DAMAGE_<kind>, PROC_REF(x))` (proc takes the packet; `packet.severity`; return
-  `DAMAGE_REACTION_BLOCK` to stop the hit), `DAMAGE_REACTION_AFTER`, `REFLECTS(type, kinds, chance)`,
-  `EMP_DISABLE(type, duration, "expiry_field")` (doc/rewrite/archive/systems.md §12). Lint `sys_entry_override`
-  (`tools/ci/sys_rules/damage_reactions.py`) is 0 with an empty baseline.
-  The old parallel `var/health`/`var/maxhealth` + `healthcheck()`/`CheckHealth()` model is
-  **gone** — don't reintroduce it; set `max_integrity` (and `integrity_failure` for a "broken
-  but not destroyed" state) and route damage through `take_damage()`. Turfs/walls keep their own
-  `damage`-var model (as upstream TG does). A few entities run self-contained damage backed by
-  obj_integrity but with their own combat logic on top: `/obj/mecha` (component armor/deflect)
-  and `/obj/item/uav`. Mob/plant/blob health is a separate system and untouched.
-- **Machine core state is declared fields.** `on`, `active`, `state`, `mode`, `locked`, `emagged`
-  and the `stat` bits are OM fields on `/obj/machinery` (`code/game/machinery/machinery_fields.dm`);
-  `anchored`, `density` and `use_power` are registered with their setters. Write through
-  `set_<field>()` (`stat_add()`/`stat_remove()` for bits, `set_use_power()` for power mode), read
-  "powered and working" with `operable()` and single bits with `has_stat()`; there is no
-  `inoperable()`/`update_use_power()`. `tools/ci/sys_rules/fields.py` rejects raw `stat` bit use and
-  direct field writes.
-- **Health model — body & afflictions, no health pools on ANY mob.** Read
-  `doc/body_architecture.md`. Every `/mob/living` has a `/datum/body` (plans: humanoid,
-  simple, simple/machine, simple/machine/robot) in `code/modules/body/`. There is no
-  `health`/`maxHealth`/`*loss`, `adjust*Loss`, `apply_damage`, `updatehealth`, `getMaxHealth` —
-  those are deleted. Harm = `L.injure(INJURY_*, amount, zone, source, armor, affliction)`;
-  healing = `L.mend(TREAT_*, amount, zone)` / `fully_heal()`; questions = `vitality()`,
-  `is_critical()`, `get_endurance()`, `injury_load(INJURY_CATEGORY_*)`. Mob toughness is
-  `endurance`. Everything harmful is a `/datum/affliction` (limb wounds too; limb integrity is
-  `E.get_trauma()`/`get_burn()`, derived). Afflictions declare `biology` and `body_plans`;
-  treatment tags declare biology — never branch on `isSynthetic()` for damage/heal. Reagents
-  heal only via `treatment_tags` (`code/modules/body/treatment.dm`). Triggers
-  (`/datum/affliction_trigger`) create afflictions; symptoms are singletons that ACCUMULATE.
-  Vital systems (airway / breathing / cardiac rhythm, `medical/conditions/vital_systems.dm`)
-  are afflictions too; see the doc. Also BUILT (all in the doc):
-  - **Physiology / oxygen debt** (`code/modules/body/physiology.dm`): ventilation,
-    oxygenation, perfusion and an oxygen debt; there is no `INJURY_ASPHYXIA` — express a
-    cause as a factor, support/restriction or breath quality, else `add_oxygen_debt()`.
-  - **Stabilisation** (`code/modules/medical/stabilisation/`): tourniquets
-    (`flow_occluded()`), field items, and stasis on the biology clock (stasis sources hold
-    `EFFECT_CLOCK_BIO_INHIBIT`), read once per frame by `body.advance_stasis()`; systems check
-    `ctx.in_stasis()` / `inStasisNow()`.
-  - **Surgery as treatments** (`code/modules/surgery/`): steps deliver `TREAT_*` through
-    `mend()`; access state is the `surgical_incision` affliction (no `op_stage`); organs
-    past saving answer `is_beyond_repair()`.
-  - **Diagnosis** (`code/modules/medical/diagnosis/`): readouts go through
-    `diagnose(profile)` and renderers; no four-number damage readouts.
-  - **Hibernation**: life systems sleep by rule and wake on events (see the Mob life entry).
-  - **Contagions** (`code/modules/medical/contagion/`): diseases are `/datum/affliction/contagion`
-    (stages, cures, host immunity, carriers); spread is `/datum/affliction_trigger/contagion` on a
-    parkable periodic lane. There is no `/datum/disease`, `viruses` or `resistances` on mobs.
-- **Body factors — every numeric mob stat.** `code/modules/body/factors.dm`, defines in
-  `code/__defines/body_factors.dm`. Slowdown, accuracy, evasion, attack speed, incoming
-  injury per category, stun duration, healing received, metabolism, bleeding, analgesia,
-  vitals readouts, armour, conductivity, action blocks, … are `BF_*` factors with one combine
-  rule each. Read them with `L.factor(BF_X)`. Sources declare static `alist` tables:
-  affliction `factors` (scaled by severity; a stage's `"factors"` applies at full value),
-  reagent `factors` / `species_factors` (scaled by dose), body effect `factors`, species
-  `factor_baseline`, trait/perk `factors`, form `factors`, item `worn_factors`. The body
-  caches one flat list (null at baseline) and recomputes on `BODY_DIRTY_FACTORS`. There is
-  no `chem_effects`/`add_chemical_effect`, no `mechanical_effects`/`vital_effects`/`od_boost`
-  and no numeric modifier fields; `tools/ci/check_grep.sh` rejects them. Brief non-reagent
-  effects are body effects (`/datum/body_effect/numbness`, `withdrawal_strain`, …).
-- **Body effects replace modifiers.** There is no `/datum/modifier` and no `add_modifier()`.
-  A named condition on a mob (a timed buff, a trait, a shield, an aura, berserk, a
-  technomancer mend) is a flyweight `/datum/body_effect` definition applied as an OM
-  contribution on the mob: `L.apply_body_effect(type, duration, origin)`,
-  `remove_body_effect()`, `has_body_effect()`. Per-tick work is `tick_interval` + `on_tick(L)`
-  (an `om_after` cadence on the mob's clock); per-application state lives on the mob
-  (`body_effect_state()`, `body_effect_origin()`, `set_body_effect_factors()`), never on the
-  shared definition. Stasis is per source: `set_stasis(level, source)`.
-  `code/modules/body/body_effects.dm` is the reference.
-- **World services (fold wave F1).** `SSmachines`, `SSmobs` and `SSplants` are gone. Their global
-  state is a `/datum/world_service` singleton (`GLOB.machine_service`, `GLOB.mob_service`,
-  `GLOB.plant_service`) and their world-level periodic work is a cadence behaviour on the OM
-  global owner (`code/datums/om/world_lanes.dm`), run by SSbehaviours: gas wakes, pump commit and
-  the power step every `MACHINE_SERVICE_INTERVAL`, death reports and the Life profile every 2 s.
-  Growing plants are `REGISTRY_GROWING_PLANTS`. A new world-level periodic is a world service with
-  a lane, not a subsystem with `fire()`.
-  **Fold wave F3** removed `SSchemistry`, `SSradiation`, `SSinstruments`, `SSthrowing`, `SSsounds`,
-  `SSmotiontracker`, `SSreflector`, `SSpai`, `SScircuit`, `SSxenoarch`, `SSlooting`, `SSmail`,
-  `SSevents`. World lanes: radiation (0.5 s), motion tracker (1 s), pAI candidates (4 s), mail
-  (60 s). Lazy data services, built on first use through typed accessors (`LAZY_SERVICE()`):
-  `chemistry_service()`, `sound_service()`, `instrument_service()`, `circuit_service()`. SSatoms sets
-  up `GLOB.pai_service`, `GLOB.xenoarch_service` and `GLOB.event_service` once the map is loaded.
-  Per-object work is periodic: throws on `PERIODIC_THROWING` (every tick), reflectors on
-  `PERIODIC_REFLECTORS` (machine clock, started when they catch a beam), loot panels on
-  `PERIODIC_LOOT_ICONS`. Songs are `REGISTRY_SONGS`; running events are `REGISTRY_ACTIVE_EVENTS`.
-  **Fold wave F4** removed `SSsun`, `SSsolars`, `SSnightshift`, `SSplanets`, `SSskybox`,
-  `SSstarmover`, `SSturf_cascade`, `SSexplosions`, `SSradio`, `SSpoints_of_interest`,
-  `SSinactivity`, `SSantag_job`, `SStransfer`, `SSproperties`. They are `GLOB.<x>_service`
-  (`GLOB.sun` is the sun; `skybox_service()` is lazy). An **on-demand** service (`on_demand`,
-  `has_work()`, `demand()`) parks its lane while idle: POIs, star movement, turf cascade,
-  explosions, planet lighting. The former feature and client-plumbing subsystems are world
-  services too (`GLOB.vote_service`, `GLOB.supply_service`, `GLOB.research_service`,
-  `GLOB.chat_service`, `GLOB.statpanels_service`, …). A service that needs setup declares
-  `boot_after = <subsystem type>` (and `order_after = list(<service types>)`); the MC initializes
-  it right after that subsystem and calls `on_shutdown()` at server shutdown.
-  `tools/ci/subsystem_fire_lint.py` (K4) allows `fire()` only on air, behaviours, dbcore, garbage,
-  input, profiler, tgui, ticker, verb_manager and vg (lighting keeps an ALLOW until F5).
-- **Mob Life runs on object-model pipelines.** Read `doc/rewrite/archive/life_on_om.md` and
-  `doc/rewrite/archive/object_model_core.md` §4.10. Every `/mob/living` carries three pipelines
-  (`code/modules/mob/living/life/life_om.dm`): `life` (one frame per `LIFE_CYCLE`, 6 s, fixed
-  steps, catch-up capped at 2), `life_derive` (canmove) and `life_present` (HUD and vision,
-  clients only). Their stages are `/datum/om/stage/life` flyweights; a mob's plan is built once
-  per type. There is no `Life()` proc, no frame loop in Life and no SSmobs (see World services). Don't add
-  `handle_*` hooks on mobs: add a stage, or a variant whose path mirrors the mob path
-  (`breathing/carbon/human`, `of = /mob/living/carbon/human`). Code outside Life uses
-  `refresh_hud()`, `refresh_vision()`, `refresh_glow()` or `om_stage_run_now()`; other features add
-  their stage with `om_stage_add()`. Observers (ghosts, AI eyes, blob) run `upkeep()` on their
-  own behaviour. Life content is written per frame, so `LIFE_CYCLE` sets its per-second balance.
-  **Mobs are event-driven and park, players included** (doc §5); the core runner owns it:
-  - A stage idles when it returns `STAGE_IDLE` or its `idle(self)` holds after it runs, and
-    wakes when a `CHANGE_MOB_*` channel in its `wake_on` is raised (`LIFE_WAKE_ALL` wakes every
-    stage). `rewake_delay()` sets a slow rewake for work that still drifts; `woken_by`
-    documents the producers. The default `idle()` is FALSE, so a new stage stays awake until
-    you give it a rule. Stages must not sleep (`SHOULD_NOT_SLEEP`): slow work is `om_after()`, a task or
-    `om_lane_work()` (`INVOKE_ASYNC` is banned).
-  - The old early returns are frame facts in `run_if` (`LIFE_RUN_IF_PLACED`,
-    `LIFE_RUN_IF_PLACED_ALIVE`, ...); `ctx.fact("alive")`, `ctx.fact("environment")`,
-    `ctx.fact("in_stasis")` read them; `return ctx.abort()` ends the frame.
-  - A mob whose stages are all idle for two frames parks (off the ring) until a change or a
-    rewake. A low-priority mob on a z-level without living players is parked by relevance.
-  - Anything that changes what a stage reads must raise the channel:
-    `om_changed(L, CHANGE_MOB_HEALTH|STATUS|LOC|EQUIPMENT|CONDITIONS|STAT|CLIENT)`, or go through
-    a producer that does: `injure`/`mend`, `body.invalidate()`, the status API, `Moved`,
-    equip/unequip, `set_stat`, Login, body effects.
-  - Every status (stun, weaken, paralysis, sleep, confusion, blindness, blur, deafness, stutter,
-    mute, drugged, slurring, drowsy, hallucination, dizziness, jitters) is a core timed status
-    (a row in `om_library_effects()`, `code/datums/om/status.dm`): set it with
-    `status_at_least()`/`status_set()`/`status_adjust()`/`status_end()` (units of `LIFE_CYCLE`),
-    read it with `has_status()`/`status_units()`/`status_remaining()` (timed doses only: a hold
-    has no duration). Nothing counts them down. Immunity is `EFFECT_IMMUNE_*` held by a source
-    (type decls, mutations), and godmode is `EFFECT_GODMODE` (`om_has(M, EFFECT_GODMODE)`), not
-    `status_flags`. Something that keeps a status on while a condition lasts holds it with its
-    own key (voluntary sleep).
-  - Stasis holds `EFFECT_CLOCK_BIO_INHIBIT` (the biology clock); absorbed prey and bodies kept
-    for reforming are suspended (`om_suspend(M, M)`/`om_unsuspend(M, M)`).
-  - A 30 s audit logs `OM_AUDIT: MISSED WAKE` and wakes the entity when a producer was
-    forgotten. It always runs in test builds and fails the run on a miss. On servers it's off
-    unless the `OM_PIPELINE_AUDIT` config flag or the "Toggle Pipeline Audit" verb turns it on.
-  - Transition tracing is `GLOB.om_pipeline_trace`; `GLOB.om_parking_enabled` switches parking.
-- **Machines on pipelines.** Rechargers, cell chargers, APCs and SMES don't poll: they run the
-  machine pipeline (`code/game/machinery/machine_pipeline.dm`, `polls = FALSE`) and park when
-  settled. Their producers raise `CHANGE_MACHINE_*` (`power_change()`, `atom_break()` and
-  `atom_fix()` do it for every machine).
-- **tgui windows and actions are declared** (`doc/rewrite/archive/systems.md` section 3). Never override
-  `tgui_interact()` or `tgui_act()` and never parse `params` yourself: `DECLARE_UI(type, "Interface",
-  opts)` plus the `ui_prepare`/`ui_redirect`/`ui_opening`/`ui_opened`/`ui_title`/`ui_interface`/
-  `ui_window` hooks open the window; `UI_ACT(type, "action", handler, UI_ARG_NUM/INT/TEXT/BOOL/CHOICE/
-  REF/PATH/LIST/VALUE(...))` rows with `UI_ACT_PROC` handlers take its actions, which receive only
-  the declared args, typed and validated; `ui_act_allowed()` is the type-wide guard.
-  `UI_ACT_FORWARD`, `UI_ACT_FALLBACK`, `UI_ACT_NESTED`/`UI_SUBACT` and `DECLARE_UI_MODAL` cover
-  forwarding, data-driven actions, nested actions and modals. `UI_DATA` declares the window's data
-  (var fields, `"proc:x"`/`"merge:x{key:type}"` getters; never a `tgui_data()` override) and
-  `DECLARE_UI_STATE` its shared state. `tools/ci/sys_rules/ui.py` keeps all of this at 0;
-  `tools/build/build.sh ui-types` regenerates `tgui/packages/tgui/interfaces/generated/*.d.ts`.
+- **Scheduling.** One kernel (`code/controllers/kernel/`) runs the tick; `SSbehaviours` no longer
+  fires. Most former subsystems are world services, which the design folds into systems
+  (doc §2). A new world-level periodic is a system, not a subsystem with `fire()`.
+- **Atmospherics: LINDA on a Rust backend.** `code/ATMOSPHERICS/` is the only engine (ZAS/XGM
+  are gone); gas math, diffusion, decompression and heat conduction run in the auxmos arena in
+  Verdigris, driven from `SSair.fire()`. `/datum/gas_mixture` is an opaque handle: read with
+  `return_temperature()`/`return_volume()`, write with `set_temperature()`/`set_volume()`, and
+  cache reads in hot loops (each call crosses the FFI). Atoms use `get_temperature()` /
+  `add_heat()` (`code/modules/heat/heat.dm`). Requires BYOND 516.1682+. Gas reactions stay in
+  DM. `xgm_compat.dm` and `tg_infra_compat.dm` are stable compatibility API, not temporary shims.
+- **Expeditions and Flight Operations.** `GLOB.expedition_service` generates sites on demand
+  (`load_new_z()`, cave automata or generated stations, POIs, loot, missions) and recycles
+  z-levels; `GLOB.flight_service` owns vessels, destinations and flight plans. The old quarry
+  mode is gone. Risks: `doc/generated_site_lifecycle_audit.md`.
+- **Material science.** `code/modules/material_science/`: crucibles, alloys, composites,
+  baths, coatings and exotic feedstocks; engineered materials change assembly behaviour.
+  See `doc/material_engineering_implementation.md`. Lathe designs can set
+  `material_selectable` for a material picker.
+- **Damage.** Damageable `/obj` use the TG integrity model (`code/game/atom/atom_defense.dm`,
+  `damage_packet.dm`): set `max_integrity`, route hits through `receive_damage()`/`take_damage()`.
+  The old `health`/`maxhealth` model is gone. Final shape: doc §14.
+- **Health.** Every `/mob/living` has a `/datum/body`; there are no health pools. Harm is
+  `injure()`, healing `mend()`, numeric mob stats are `BF_*` body factors read with `L.factor()`.
+  Read `doc/body_architecture.md`.
+- **Overmap and POIs.** The overmap subsystem compiles and is exercised by `virgo_minitest`;
+  the live map does not use sectors. The dynamic overmap POI system and the ATC subsystem are
+  deleted; restore from git only if asked.
+- **Variants.** Subtypes that differ only in data are collapsed into one type plus a registry
+  (`code/datums/variants/README.md`).
+- **Loot and map resolvers.** Spawn tables are `DECLARE_LOOT` rolled by `loot_spawn()`; load-time
+  map atoms use `MAP_RESOLVER`. Both are slated to move under capability entries; don't add new
+  hand-rolled spawn code in the meantime.
 - **Server metrics and the admin viewer.** `GLOB.metrics_service` (`code/modules/metrics/`) samples
-  every `/datum/metrics_source` every 10 s and flushes once a minute through `om_io` into the `metric_*`
-  tables (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points
-  through `METRICS_EVENT()`: the admin verb dispatcher, the ticket list (`ListInsert`), the ticker,
-  `world/Error` (`note_runtime`) and the MC tick record (`note_overrun`). To measure something new, add
-  a `/datum/metrics_source` subtype; don't write metrics SQL elsewhere. `tools/admin-viewer/` (Bun +
-  React, no other services) is the staff UI: it rolls finished rounds into `metric_round`, prunes old
-  samples, and shows test/bench history loaded by `bun run ingest`. Staff open it with the signed-link
-  **Admin Viewer** verbs; see its README.
-- **verdigris (Rust FFI)** is a build artifact, gitignored per-platform. If `cargo` is absent
-  the build warns and skips it, and **both** subsystems that depend on it fail at runtime:
-  cave-gen (expedition) and — since the auxmos cutover — **atmospherics** (gas math + turf
-  processing + superconductivity all run in the Rust arena now, not pure DM). It builds on
-  **byondapi 0.6.x** for BYOND 516.1682+. (The whole library is one FFI framework: cave-gen was
-  migrated off `meowtonin` onto byondapi so `verdigris` links a single BYOND API.)
-
-Recent hardening (already landed): ban/admin/stats SQL is fully parameterized; every
-Verdigris bind is declared with `#[auxmacros::bind]` (panic-safe, generated DM binding); the tgui Rules-of-Hooks / XSS audit
-findings are fixed; the unit-test suite was audited for fake-passes and made genuinely
-falsifiable.
+  every `/datum/metrics_source` every 10 s and flushes through `om_io` into the `metric_*` tables
+  (`SQL/metrics_schema.sql`, `METRICS_ENABLED`). Events come from single framework points through
+  `METRICS_EVENT()`; overruns are attributed to the tick meter's systems and to time outside the MC,
+  and tick spikes capture a short profile. To measure something new, add a `/datum/metrics_source`;
+  don't write metrics SQL elsewhere. `tools/admin-viewer/` (Bun + React) is the staff UI, opened with
+  the signed-link **Admin Viewer** verbs; see its README.
+- **Hardening already landed.** Parameterized SQL, panic-safe declared Verdigris binds, tgui
+  Rules-of-Hooks/XSS fixes, and a falsifiable unit-test suite.
 
 ## TL;DR
 
-> One unified tree — put code in the matching `code/`/`maps/`/`icons/` location and
-> edit any file freely (no modular folders, no edit markers, no upstream merges).
-> Register every new `.dm` in `deepquarry.dme`, use absolute type paths, follow the
-> DM standards in §3, drop a changelog YAML, and squash before merge.
+> The codebase is mid-migration to the design in `doc/rewrite/final_api.html`. Write new code
+> in the new forms, never add a legacy form (ratchets enforce it), and move a file into the new
+> tree only when it is fully migrated. Register every `.dm` in `deepquarry.dme`, run only the
+> tests you touch, keep debug tracing, drop a changelog, and squash before merge.
