@@ -298,7 +298,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	return 1
 
 /proc/build_click(mob/user, buildmode, params, obj/object)
-	if(!user?.client || !admin_require(user.client, R_BUILDMODE, "buildmode.click"))
+	if(!user?.client)
 		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
@@ -682,7 +682,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 					to_chat(user, "[object.type]")
 
 /proc/build_drag(client/user, buildmode, atom/fromatom, atom/toatom, atom/fromloc, atom/toloc, fromcontrol, tocontrol, params)
-	if(!admin_require(user, R_BUILDMODE, "buildmode.drag"))
+	if(!user)
 		return
 	var/obj/effect/bmode/buildholder/holder = null
 	for(var/obj/effect/bmode/buildholder/H)
