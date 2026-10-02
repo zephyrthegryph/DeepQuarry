@@ -66,7 +66,7 @@ SYSTEM_DEF(requests)
 	latency_class = LATENCY_L1
 	init_stage = INITSTAGE_FIRST
 	/// Every open request, oldest first.
-	var/list/open = list() // ALLOW(instance_list): a singleton system's own table
+	var/list/open = list()
 	/// Counters since boot: opened, ended by each outcome.
 	var/opened = 0
 	var/answered = 0
@@ -137,13 +137,13 @@ SYSTEM_DEF(requests)
 		if(name == "outcome")
 			CRASH("open_request(): outcome is the engine's to set")
 		R.vars[name] = value // ALLOW(api): open_request() named arguments: typed request fields by name
-	R.owner = owner
+	R.owner = owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 	R.handler = handler
 	R.valid = valid
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry
 	R.answerer_expected = !isnull(R.answerer)
 	var/datum/system/requests/registry = SSrequests
-	registry.open += R // ALLOW(ownership): the registry holds the open requests until they end
+	registry.open += R
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
@@ -173,14 +173,14 @@ SYSTEM_DEF(requests)
 	cancel_after(R, "request_timeout")
 	if(R.owner && !QDELETED(R.owner) && R.handler)
 		var/datum/act/request/A = take(/datum/act/request)
-		A.holder = R.owner
-		A.request = R
-		A.answer = (outcome == REQ_ANSWERED) ? R : null
+		A.holder = R.owner // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
+		A.request = R // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
+		A.answer = (outcome == REQ_ANSWERED) ? R : null // ALLOW(ownership): a transient reference: the request is deleted when it ends, and the act is pooled and reset on release
 		call(R.owner, R.handler)(A)
 		A.release()
 	request_op_resume(R)
 	// Ended: the request and its timer are done with; what a caller kept (R.outcome, R.answer_value) stays readable.
-	qdel(R)
+	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
 	return TRUE
 
 /// E2's op engine resumes the op that was waiting on `R` here, and fills its /datum/op_result. Until then there is no op.

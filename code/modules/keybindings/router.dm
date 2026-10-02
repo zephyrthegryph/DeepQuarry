@@ -96,7 +96,7 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 	if(src)
 		// The input inbox (code/engine/kernel/inbox.dm): the click resolves on the spot while the tick has room, and
 		// otherwise waits for phase K's drain, in arrival order, behind the clicker's own earlier inputs.
-		input_submit(new /datum/input_event/click(usr, src, location, control, params))
+		input_submit(new /datum/input_event/click(usr, src, location, control, params)) // ALLOW(sys_usr_outside_verb): atom/Click is BYOND's entry point: usr is the clicking mob here
 
 /atom/DblClick(location, control, params)
 	if(src)

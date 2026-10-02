@@ -134,7 +134,7 @@ GLOBAL_LIST_INIT(blacklisted_builds, list(
 	//fun fact: Topic() acts like a verb and is executed at the end of the tick like other verbs. So it goes through the input
 	//inbox, which resolves it on the spot while the tick has room and queues it for phase K if the server is overloaded
 	if(hsrc && hsrc != holder)
-		input_submit(new /datum/input_event/topic(usr, hsrc, href, href_list))
+		input_submit(new /datum/input_event/topic(usr, hsrc, href, href_list)) // ALLOW(sys_usr_outside_verb): client/Topic is BYOND's entry point: usr is the sending mob here
 		return
 	..() //redirect to hsrc.Topic()
 

@@ -31,7 +31,7 @@
 	if(!owner || QDELETED(owner))
 		return null
 	var/datum/kernel_job/J = new
-	J.owner = owner
+	J.owner = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
 	J.step = step
 	J.then = then
 	J.budget = clamp(budget, 1, 100)
@@ -45,7 +45,7 @@ SYSTEM_DEF(kernel_jobs)
 	latency_class = LATENCY_L2
 	init_stage = INITSTAGE_FIRST
 	/// The jobs, oldest first.
-	var/list/jobs = list() // ALLOW(instance_list): a singleton system's own table
+	var/list/jobs = list()
 	var/started = 0
 	var/finished = 0
 	var/dropped = 0
@@ -60,7 +60,7 @@ SYSTEM_DEF(kernel_jobs)
 	return length(jobs) > 0
 
 /datum/system/kernel_jobs/proc/start(datum/kernel_job/J)
-	jobs += J // ALLOW(ownership): the system holds a job until it is done or its owner is gone
+	jobs += J
 	started++
 
 /// One kernel pass: every job runs steps inside its own budget, until the pass's limit is reached.
@@ -92,7 +92,7 @@ SYSTEM_DEF(kernel_jobs)
 	var/result = JOB_MORE
 	while(result == JOB_MORE)
 		var/datum/act/timer/A = take(/datum/act/timer)
-		A.holder = owner
+		A.holder = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
 		A.dt = world.time - J.last_step
 		J.last_step = world.time // ALLOW(sys_world_time_write): the job's own step stamp, read for dt, not an entity expiry
 		var/step_start = TICK_USAGE
@@ -118,7 +118,7 @@ SYSTEM_DEF(kernel_jobs)
 		finished++
 		if(J.then && !QDELETED(owner))
 			var/datum/act/timer/D = take(/datum/act/timer)
-			D.holder = owner
+			D.holder = owner // ALLOW(ownership): a transient reference: the job is dropped when its owner is deleted, and the act is pooled and reset on release
 			call(owner, J.then)(D)
 			D.release()
 

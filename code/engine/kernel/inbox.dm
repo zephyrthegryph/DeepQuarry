@@ -51,7 +51,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/New(mob/user)
 	..()
 	if(user)
-		actor = user
+		actor = user // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 		sender = user.client
 
 /// What the inbox files this event's queue under: the client, or the actor for an input with no client (a driver-built event).
@@ -100,7 +100,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/click/New(mob/user, atom/clicked, location, control, params)
 	..(user)
 	if(clicked)
-		target = clicked
+		target = clicked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	src.location = location
 	src.control = control
 	src.params = params
@@ -129,10 +129,10 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/menu/New(mob/user, atom/picked, key, obj/item/in_hand)
 	..(user)
 	if(picked)
-		target = picked
+		target = picked // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	op_key = key
 	if(in_hand)
-		held = in_hand
+		held = in_hand // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 
 /datum/input_event/menu/subject()
 	return target
@@ -157,7 +157,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/ui_act/New(mob/user, datum/tgui/window_ui, act_type, list/act_payload, datum/tgui_state/act_state)
 	..(user)
 	if(window_ui)
-		ui = window_ui
+		ui = window_ui // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	action = act_type
 	payload = act_payload
 	state = act_state
@@ -183,7 +183,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/topic/New(mob/user, datum/source, link, list/link_list)
 	..(user)
 	if(source)
-		hsrc = source
+		hsrc = source // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	href = link
 	href_list = link_list
 
@@ -219,7 +219,7 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/point/New(mob/user, atom/target)
 	..(user)
 	if(target)
-		pointing_at = target
+		pointing_at = target // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 
 /datum/input_event/point/coalesce_key()
 	return "point"
@@ -242,9 +242,9 @@ SYSTEM_DEF(input)
 	latency_class = LATENCY_L0
 	init_stage = INITSTAGE_EARLY
 	/// lane key (a client, or a mob with none) -> its queue: /datum/input_event, oldest first.
-	var/list/inboxes = list() // ALLOW(instance_list): a singleton system's own table
+	var/list/inboxes = list()
 	/// The lane keys that have a queue, in the order the drain serves them (round-robin).
-	var/list/ready = list() // ALLOW(instance_list): a singleton system's own table
+	var/list/ready = list()
 	/// The lane key the next drain starts with (set when a drain ran out of budget in the middle of a round).
 	var/next_source
 	/// TRUE/FALSE forces the "does the tick have room" answer (test builds); null asks the tick.
@@ -265,6 +265,11 @@ SYSTEM_DEF(input)
 	. = ..()
 	. += every(WORK_EVERY_TICK, PROC_REF(drain_step), phase = KERNEL_PHASE_K, lane = LANE_URGENT)
 	. += every(WORK_EVERY_TICK, PROC_REF(key_step), phase = KERNEL_PHASE_K, lane = LANE_URGENT, after = list("[/datum/system/input]:drain_step"))
+
+/// Forces the "does the tick have room" answer (TRUE: inputs resolve on the spot, FALSE: they queue), or null to ask the tick again.
+/// For tests and the benchmarks' synthetic input.
+/proc/input_force_room(room)
+	SSinput.room_override = room
 
 /// Hands an event to the inbox. Returns TRUE when it resolved on the spot (E.result holds what it reported), FALSE when it
 /// was queued or dropped.
@@ -325,7 +330,7 @@ SYSTEM_DEF(input)
 			// Nothing in the inbox can be shed and this one could be: it goes.
 			note_drop(E, "the inbox is full of inputs that cannot be dropped")
 			return
-	queue += E // ALLOW(ownership): a queue of input records the inbox owns until it resolves them
+	queue += E
 	queued++
 	kernel_latency().input_queued++
 	if(length(queue) > queue_high_water)
@@ -357,7 +362,7 @@ SYSTEM_DEF(input)
 	var/entry_time = world.time
 	var/dispatch_usage = E.metered_as_click ? meter.click_dispatched(E.arrived_time, E.arrived_usage) : 0
 	try
-		E.result = world.input_run(E.actor, E)
+		E.result = world.input_run(E.actor, E) // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	catch(var/exception/fault) // ALLOW(silent_catch): the inbox is the kernel's own isolation point: one input's runtime must not stop the drain
 		faults++
 		kernel().report_fault(fault, "input event [E.type] runtime: [fault] ([fault.file]:[fault.line])")
@@ -367,10 +372,10 @@ SYSTEM_DEF(input)
 /// Runs `E.resolve()` as `user_mob` (usr), and puts usr back.
 /world/proc/input_run(mob/user_mob, datum/input_event/E)
 	set waitfor = FALSE // ALLOW(scheduler): kernel code: an input that sleeps (a legacy Topic) detaches here instead of holding phase K
-	var/temp = usr
-	usr = user_mob
+	var/temp = usr // ALLOW(sys_usr_outside_verb): the inbox runs an input as its actor: this is the one place usr is set for a resolved input
+	usr = user_mob // ALLOW(sys_usr_outside_verb): the same actor-as-usr swap, set for the one resolved input
 	. = E.resolve()
-	usr = temp
+	usr = temp // ALLOW(sys_usr_outside_verb): the same actor-as-usr swap, undone after the input
 
 /// Phase K: serves the queues round-robin, each client's oldest first, under the input budget (one event at least).
 /datum/system/input/proc/drain_step(dt, unlimited = FALSE)
@@ -514,7 +519,7 @@ SYSTEM_DEF(input)
 	E.driven = TRUE
 	E.origin = origin || ORIGIN_CLICK
 	E.gesture = gesture
-	E.held = held
+	E.held = held // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	input_submit(E)
 	return E.result
 
@@ -523,7 +528,7 @@ SYSTEM_DEF(input)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/input_event/ui_act/E = new(actor, null, action, args)
 	E.driven = TRUE
-	E.window = window
+	E.window = window // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
 	input_submit(E)
 	return E.result
 

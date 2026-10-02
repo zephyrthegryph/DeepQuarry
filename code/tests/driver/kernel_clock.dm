@@ -43,7 +43,7 @@
 	K.test_slots = 0
 	// The kernel's own infrastructure systems (the inbox, requests, jobs) run in the test graph while the test owns the clock.
 	for(var/datum/work_item/W as anything in K.work_all)
-		if(W.owner_type in kernel_test_systems())
+		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = TRUE
 	// Each test meets its fixtures' items fresh: their schedule state from an earlier test is dropped.
 	for(var/datum/work_item/W as anything in K.work_all)
@@ -53,10 +53,7 @@
 	K.work_dirty = TRUE
 	return sched
 
-/// The systems whose work a test steps although the live kernel registered it at boot: the kernel's own plumbing.
-/proc/kernel_test_systems()
-	var/static/list/systems = list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs)
-	return systems
+GLOBAL_LIST_INIT(kernel_test_systems, list(/datum/system/input, /datum/system/requests, /datum/system/kernel_jobs))
 
 /// Hands the clock back: the live scheduler is current again, and the infrastructure systems' items return to the live graph.
 /proc/kernel_test_end()
@@ -66,7 +63,7 @@
 	K.test_now = null
 	om_test_end()
 	for(var/datum/work_item/W as anything in K.work_all)
-		if(W.owner_type in kernel_test_systems())
+		if(W.owner_type in GLOB.kernel_test_systems)
 			W.test_owned = FALSE
 			W.test_reset()
 	K.work_dirty = TRUE

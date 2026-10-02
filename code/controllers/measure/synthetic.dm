@@ -37,8 +37,8 @@ GLOBAL_DATUM_INIT(km_synthetic, /datum/km_synthetic, new)
 
 /// Queues a no-op input in the inbox the way one sent while the tick is busy is, whatever the usage now.
 /proc/km_synthetic_verb()
-	SSinput.room_override = FALSE
+	input_force_room(FALSE)
 	input_submit(new /datum/input_event/synthetic)
-	SSinput.room_override = null
+	input_force_room(null)
 
 #endif
