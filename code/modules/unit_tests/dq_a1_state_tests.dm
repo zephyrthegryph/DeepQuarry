@@ -104,5 +104,5 @@
 	var/turf/simulated/T = get_turf(G)
 	if(istype(T))
 		T.wet_floor(1)
-		PUBLISH(G, /datum/notice/shoes_step, null, I_WALK)
+		PUBLISH_LEGACY(G, /datum/notice/shoes_step, null, I_WALK)
 		TEST_ASSERT(!T.wet, "a step dries the floor")

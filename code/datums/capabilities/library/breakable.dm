@@ -67,5 +67,5 @@ GLOBAL_LIST_INIT(cap_examine_broken, list("It is broken."))
 	act_message(user, holder, self = span_notice("You slash at %T%!"), others = span_warning("%U% slashes at %T%!"))
 	play_sfx(holder, SFX_WEAPONS_SLASH, 2)
 	holder.add_hiddenprint(user)
-	PUBLISH(holder, /datum/notice/slashed, user)
+	PUBLISH(holder, slash, slasher = user)
 	return TRUE

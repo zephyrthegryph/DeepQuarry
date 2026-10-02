@@ -8,11 +8,13 @@
 //! `PROC_REF(x)`, `TYPE_PROC_REF(/type, x)` or `CAP_PROC(x)`. The hook form decides which context
 //! type the handler is called with, and so which fields it may read (section 8, "Contexts").
 
-use super::decls::{matching_paren, Decls, Marker};
+use super::decls::{matching_paren, split_args, Decls, Marker};
 
 /// The five context types of section 8.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum Ctx {
+    /// The context of a world action's own hooks (instead, adjusts): its typed act, which carries the action's fields.
+    Action,
     Eval,
     Op,
     Timer,
@@ -27,6 +29,7 @@ impl Ctx {
             Ctx::Op => "/datum/act/op",
             Ctx::Timer => "/datum/act/timer",
             Ctx::Notice => "/datum/act/notice",
+            Ctx::Action => "/datum/act/action",
             Ctx::Request => "/datum/act/request",
         }
     }
@@ -81,6 +84,8 @@ pub const HOOK_FORMS: &[HookForm] = &[
     HookForm { kw: "every", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "after", ctx: Ctx::Timer, role: Role::Work },
     HookForm { kw: "delayed", ctx: Ctx::Timer, role: Role::Work },
+    HookForm { kw: "instead", ctx: Ctx::Action, role: Role::Effect },
+    HookForm { kw: "adjusts", ctx: Ctx::Action, role: Role::Contribution },
     HookForm { kw: "on_notice", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_op", ctx: Ctx::Notice, role: Role::Reaction },
     HookForm { kw: "on_change", ctx: Ctx::Notice, role: Role::Reaction },
@@ -104,6 +109,8 @@ pub struct HandlerRef {
     pub role: Role,
     pub rel: String,
     pub line: u32,
+    /// The notice type of the enclosing `on_notice(/datum/notice/x, ...)` (`/datum/notice/op_done` for `on_op`), whose typed fields the handler may read.
+    pub notice: String,
 }
 
 fn is_word(b: u8) -> bool {
@@ -228,7 +235,28 @@ fn marker_handlers(m: &Marker, out: &mut Vec<HandlerRef>) {
         }
         let Some(&(idx, _, _)) = best else { continue };
         let f = &HOOK_FORMS[idx];
-        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx: f.ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start) });
+        // A then() or when() inside a hook that carries its own context (instead, adjusts, on_notice, on_op, on_change) runs in that context.
+        let mut ctx = f.ctx;
+        let mut notice = String::new();
+        if matches!(f.kw, "then" | "when") {
+            let mut outer: Option<&(usize, usize, usize)> = None;
+            for r in &ranges {
+                let (oidx, s, e) = *r;
+                let kw = HOOK_FORMS[oidx].kw;
+                if matches!(kw, "instead" | "adjusts" | "on_notice" | "on_op" | "on_change") && s != e && start >= s && start < e && outer.map(|o| s <= o.1).unwrap_or(true) {
+                    outer = Some(r);
+                }
+            }
+            if let Some(&(oidx, s, e)) = outer {
+                ctx = HOOK_FORMS[oidx].ctx;
+                match HOOK_FORMS[oidx].kw {
+                    "on_notice" => notice = split_args(&body[s..e]).first().cloned().unwrap_or_default(),
+                    "on_op" => notice = "/datum/notice/op_done".to_string(),
+                    _ => {}
+                }
+            }
+        }
+        out.push(HandlerRef { owner: ty, cap_proc, cap_type: cap_type.clone(), proc, form: f.kw, ctx, role: f.role, rel: m.rel.clone(), line: m.line_at(start), notice });
     }
 }
 

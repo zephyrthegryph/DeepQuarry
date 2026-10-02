@@ -200,7 +200,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 /// push_to_rust(), draw() and tgui_data() read.)
 /obj/machinery/power/apc/reactions()
 	. = ..()
-	. += on_notice(/datum/notice/hit, PROC_REF(on_hit))
+	. += on_notice(/datum/notice/legacy_hit, PROC_REF(on_hit))
 	. += on_notice(/datum/notice/slashed, PROC_REF(on_slashed))
 	. += on_change(list(nameof(cell)), PROC_REF(cell_changed))
 	. += before_op(damage(DAMAGE_EMP), PROC_REF(apc_emp_fail))
@@ -331,7 +331,7 @@ MSG_DEF(start/apc/reset, "You begin resetting the APC...", "%U% connects %I% to 
 
 /// A swing at it that nothing declared answered. A silicon's touch or a hand on the open wire panel with a
 /// signaller is the interface; a heavy hit on a broken APC may knock its cover off.
-/obj/machinery/power/apc/proc/on_hit(datum/notice/hit/N)
+/obj/machinery/power/apc/proc/on_hit(datum/notice/legacy_hit/N)
 	var/mob/user = N.attacker
 	var/obj/item/held = N.item
 	if(issilicon(user) || (panel_is_open(src) && !cover_is_open(src) && istype(held, /obj/item/assembly/signaler)))

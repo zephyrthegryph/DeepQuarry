@@ -42,7 +42,7 @@ GUARDS = {
 # After-facts whose listeners mostly only clear references: relations do that now (delete the hook).
 RELATION_CLEARED = {"qdeleting"}
 # Base /datum/notice fields an event field may not shadow.
-RESERVED = {"source", "data", "type", "parent_type", "vars", "tag", "pool_state", "pool_max_free"}
+RESERVED = {"source", "data", "type", "parent_type", "vars", "tag", "pool_state", "pool_max_free", "holder", "target", "outcome", "cap", "activation", "op_key"}
 
 
 def dm_files():
@@ -141,6 +141,7 @@ def build():
         else:
             notice = "/datum/notice/" + name.replace("/", "_")
             row["target"] = notice
+            row["notice_fields"] = [f if f not in RESERVED else f + "_" for f in fields]
             if name in RELATION_CLEARED:
                 row["note"] = "most hooks only clear a reference: declare the relation and delete the hook"
             if row["reads_result"]:

@@ -47,14 +47,14 @@
 /datum/capdef_decl/c_e0_mirror_plating/spec()
 	return list(CAP_E0_MIRROR, /datum/e0_cap/mirror, NONE, BEST(reflect_chance), "e0_mirror_plating", "reflect_chance")
 
-/// CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT) at code/tests/engine/fixtures.dm:43
+/// CAPABILITY_TYPE(e0_phase_shift, CAP_PHASE_SHIFT) at code/tests/engine/fixtures.dm:52
 /proc/e0_phase_shift()
 	RETURN_TYPE(/datum/e0_cap/phase_shift)
 	return cap_construct(CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, list(), "")
 /datum/capdef_decl/c_e0_phase_shift/spec()
 	return list(CAP_PHASE_SHIFT, /datum/e0_cap/phase_shift, NONE, STACK, "e0_phase_shift", "")
 
-/// CAPABILITY_TYPE(e0_phased, CAP_PHASED) at code/tests/engine/fixtures.dm:47
+/// CAPABILITY_TYPE(e0_phased, CAP_PHASED) at code/tests/engine/fixtures.dm:56
 /datum/e0_cap/phased
 	var/drain = 1
 /proc/e0_phased(drain)
@@ -63,7 +63,7 @@
 /datum/capdef_decl/c_e0_phased/spec()
 	return list(CAP_PHASED, /datum/e0_cap/phased, NONE, STACK, "e0_phased", "drain")
 
-/// CAPABILITY_TYPE(e0_tk, CAP_E0_TK) at code/tests/engine/fixtures.dm:38
+/// CAPABILITY_TYPE(e0_tk, CAP_E0_TK) at code/tests/engine/fixtures.dm:47
 /proc/e0_tk()
 	RETURN_TYPE(/datum/e0_cap/tk)
 	return cap_construct(CAP_E0_TK, /datum/e0_cap/tk, list(), "")
@@ -117,11 +117,18 @@
 /datum/graph_decl/g_graph_door_assembly/spec()
 	return list(GRAPH_DOOR_ASSEMBLY, start(STAGE_DOOR_FRAME), stage(STAGE_DOOR_WIRED, entry_of("part", "wire")), stage(STAGE_DOOR_BOARDED, entry_of("part", "board")), stage(STAGE_DOOR_FINISHED, entry_of("part", "screwdriver"), from = STAGE_DOOR_BOARDED), stage(STAGE_DOOR_FINISHED, entry_of("part", "kit"), from = STAGE_DOOR_WIRED, key = "kit", undo = list(entry_of("part", "crowbar"))), dismantle(entry_of("part", "welder")))
 
-/// CAPABILITIES(/datum/e0_species/shifter) at code/tests/engine/fixtures.dm:58
+/// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:243
+/datum/e0_chain_node/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 243, /datum/e0_chain_node)
+	into += entry_line(243)
+	into += list(on_notice(/datum/notice/e0_chain, then(PROC_REF(hear))))
+
+/// CAPABILITIES(/datum/e0_species/shifter) at code/tests/engine/fixtures.dm:67
 /datum/e0_species/shifter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 58, /datum/e0_species/shifter)
-	into += entry_line(58)
+	into += entry_block("code/tests/engine/fixtures.dm", 67, /datum/e0_species/shifter)
+	into += entry_line(67)
 	into += list(e0_phase_shift())
 
 /// CAPABILITIES(/datum/e1_species/alpha) at code/tests/engine/e1_fixtures.dm:61
@@ -140,20 +147,27 @@
 	into += entry_line(66)
 	into += list(e1_solo())
 
-/// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:78
+/// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:151
+/datum/om_test_entity/e4_twin/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 151, /datum/om_test_entity/e4_twin)
+	into += entry_line(152)
+	into += list(on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard))))
+
+/// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:87
 /mob/living/simple_mob/e0_fixture/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 78, /mob/living/simple_mob/e0_fixture)
-	into += entry_line(78)
+	into += entry_block("code/tests/engine/fixtures.dm", 87, /mob/living/simple_mob/e0_fixture)
+	into += entry_line(87)
 	into += list(ref_one(nameof(species), /datum/e0_species))
-	into += entry_line(78)
+	into += entry_line(87)
 	into += list(rel_grants(nameof(species)))
 
-/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:204
+/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:213
 /obj/e0_fixture/lamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 204, /obj/e0_fixture/lamp)
-	into += entry_line(205)
+	into += entry_block("code/tests/engine/fixtures.dm", 213, /obj/e0_fixture/lamp)
+	into += entry_line(214)
 	into += list(contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
 
 /// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:190
@@ -273,5 +287,61 @@
 	into += list(ref_one(nameof(plugged), /obj/e3_machine))
 	into += entry_line(95)
 	into += list(when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7)))
+
+/// CAPABILITIES(/obj/e4_fixture/bed) at code/tests/engine/e4_fixtures.dm:101
+/obj/e4_fixture/bed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 101, /obj/e4_fixture/bed)
+	into += entry_line(102)
+	into += list(while_slotted("e4_bed", extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_CONTENTS))
+
+/// CAPABILITIES(/obj/e4_fixture/nester) at code/tests/engine/e4_fixtures.dm:75
+/obj/e4_fixture/nester/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 75, /obj/e4_fixture/nester)
+	into += entry_line(76)
+	into += list(extend(/datum/act/e4_nest, instead(then(PROC_REF(again)))))
+
+/// CAPABILITIES(/obj/e4_fixture/quiet) at code/tests/engine/e4_fixtures.dm:64
+/obj/e4_fixture/quiet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 64, /obj/e4_fixture/quiet)
+	into += entry_line(65)
+	into += list(on_notice(/datum/notice/e4_hushed, then(PROC_REF(heard))))
+
+/// CAPABILITIES(/obj/e4_fixture/switch) at code/tests/engine/e4_fixtures.dm:132
+/obj/e4_fixture/switch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 132, /obj/e4_fixture/switch)
+	into += entry_line(132)
+	into += list(on_change(nameof(powered), ENTER, then(PROC_REF(power_on))))
+	into += entry_line(132)
+	into += list(on_change(nameof(powered), EXIT, then(PROC_REF(power_off))))
+	into += entry_line(132)
+	into += list(on_change(nameof(charge_level), ANY, then(PROC_REF(charge_level_changed))))
+	into += entry_line(132)
+	into += list(on_op("e4.toggle", then(PROC_REF(op_heard))))
+
+/// CAPABILITIES(/obj/e4_fixture/target) at code/tests/engine/e4_fixtures.dm:34
+/obj/e4_fixture/target/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 34, /obj/e4_fixture/target)
+	into += entry_line(35)
+	into += list(extend(/datum/act/e4_strike, adjusts("amount", scale = 0.5)))
+	into += entry_line(36)
+	into += list(extend(/datum/act/e4_strike, instead(when(nameof(shield)), then(PROC_REF(absorb)))))
+	into += entry_line(37)
+	into += list(on_notice(/datum/notice/e4_struck, then(PROC_REF(heard))))
+	into += entry_line(38)
+	into += list(on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED))
+	into += entry_line(39)
+	into += list(on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
+
+/// CAPABILITIES(/obj/item/e4_fixture/amulet) at code/tests/engine/e4_fixtures.dm:95
+/obj/item/e4_fixture/amulet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 95, /obj/item/e4_fixture/amulet)
+	into += entry_line(96)
+	into += list(while_slotted("e4_slot", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER))
 
 #endif

@@ -196,6 +196,7 @@ decides the context type the handler is called with and its role (`sem/hooks.rs`
 | `because =` | `/datum/act/op` | reason (pure) |
 | `every`, `after`, `delayed` | `/datum/act/timer` | work |
 | `on_notice`, `on_op`, `on_change` | `/datum/act/notice` | reaction |
+| `instead`, `adjusts` | `/datum/act/action` | take-over, modifier |
 | `asks`, `request` | `/datum/act/request` | request callback |
 
 ### Generated reads
@@ -241,8 +242,10 @@ E1's `cap_keys` generates, Rust sinks and pure lookups that take `READS_FROM()`,
 | `context_escape` | a pooled `datum/act` stored in a var, a list, or passed with `=` |
 | `output_signature` | an override of `draw/ui_data/push_to_rust/examine` whose params differ from the base declared under `code/engine/` |
 
-`ACT_TRY` must survive macro expansion as a call the pairing check can see (`ACT_TRY`, `act_try`, `e0_act_try`; E4: if the macro
-expands to another proc, add its name to `[lint."sem/handlers".lists] try_calls`). Exemptions are `lint_scopes.toml` and
+`ACT_TRY` must survive macro expansion as a call the pairing check can see: `ACT_TRY(E, name, ...)` expands to `act_<name>(E, ...)`, and
+the lint adds `act_<name>` for every non-FIXED `ACTION(name, ...)` marker itself (`ACT_TRY`, `act_try` and `e0_act_try` stay; any other expansion
+name goes in `[lint."sem/handlers".lists] try_calls`). A `then()` or `when()` inside `instead`, `adjusts`, `on_notice`, `on_op` or `on_change`
+runs in that hook's context: an action's handler may read the typed fields of any `ACTION()`, a notice handler those of the notice type named in its `on_notice`. Exemptions are `lint_scopes.toml` and
 `// ALLOW(keys|reads|handlers): reason`, as for every lint. Every rule has a seeded violation and a clean case in
 `fixtures/sem__keys`, `sem__reads`, `sem__handlers` (held by `cargo test`).
 
@@ -324,3 +327,12 @@ findings on each fixture tree), held by `cargo test` forever, and the ported sel
 generator checks (`tools/dx/gen_capability_varmap.py --check`, `tools/dx/gen_om_notices.py --check`)
 are still Python: they regenerate files rather than lint, take about 3 s each, and
 `check_ratchets.sh` runs them beside the engine.
+
+`actions.dm` (`analyze gen actions`, E4): for each `ACTION(name, typed fields..., FIXED, notice = /datum/notice/x)` the act type `/datum/act/<name>` (parent
+`/datum/act/action`, or the parent action for a `hit/projectile` name) with its typed fields, `act_<name>(holder, fields...)`, the past-tense notice with
+the same fields (a var the tree already declares on that notice type is not declared twice), `make_notice()` on the act, and the registry
+`action_notice_types`; for a FIXED action no act type and `publish_<name>(holder, fields...)`. Past tense: `fall` -> `fell`, `insert` -> `inserted`,
+`equip` -> `equipped`; a name that already reads as past tense (`hit`, `stumbled_into`, `round_started`) is kept. A field named `origin` is declared
+`origin_turf`; any other field every act carries is a diagnostic; the `op` action keeps the op context as its act. `event_twins.dm`
+(`analyze gen event_twins`): the rows of `GLOB.event_twin_notice` from `tools/dx/codemods/om_event_map.json` (the PUBLISH / OM_EMIT twins,
+code/engine/actions/twins.dm). The declare generator also rewrites `adjusts(packet.amount, ...)` and `on_change(nameof(a.b), ...)` so the path is text.

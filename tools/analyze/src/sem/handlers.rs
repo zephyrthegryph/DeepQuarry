@@ -80,6 +80,11 @@ fn compute(tree: &Tree) -> Analysis {
     let eng = ReadsEngine::new(&sem, &decls, &ann).with_opaque(OPAQUE_DIRS);
     let written = super::reads::WriteIndex::build(&sem);
     let mut seen = std::collections::HashSet::new();
+    // The typed fields every ACTION() declares.
+    let action_fields: std::collections::HashSet<String> = decls
+        .markers_named("ACTION")
+        .flat_map(|m| m.args.iter().skip(1).filter(|a| a.as_str() != "FIXED" && !a.contains('=')).map(|a| a.rsplit('/').next().unwrap_or(a).trim().to_string()).collect::<Vec<_>>())
+        .collect();
     for h in refs {
         let on = if h.cap_proc { h.cap_type.clone() } else { h.owner.clone() };
         if on.is_empty() {
@@ -136,7 +141,10 @@ fn compute(tree: &Tree) -> Analysis {
         let mut bad_ctx = Vec::new();
         if let Some(set) = &set {
             for (field, (rel, line)) in &set.ctx_fields {
-                if sem.var_decl(h.ctx.type_path(), field).is_none() && sem.proc_ref(h.ctx.type_path(), field).is_none() {
+                // A world action's hooks read the action's typed fields, a notice handler the notice's.
+                let action_field = h.ctx == hooks::Ctx::Action && action_fields.contains(field);
+                let notice_field = !h.notice.is_empty() && sem.var_decl(&h.notice, field).is_some();
+                if !action_field && !notice_field && sem.var_decl(h.ctx.type_path(), field).is_none() && sem.proc_ref(h.ctx.type_path(), field).is_none() {
                     bad_ctx.push((field.clone(), rel.clone(), *line));
                 }
             }

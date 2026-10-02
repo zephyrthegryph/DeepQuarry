@@ -170,14 +170,14 @@
 
 /// From /datum/om/event/client_click.
 /datum/notice/client_click
-	var/target
+	var/target_
 	var/location
 	var/control
 	var/params
 	var/user
 
-/datum/notice/client_click/fill(target, location, control, params, user)
-	src.target = target
+/datum/notice/client_click/fill(target_, location, control, params, user)
+	src.target_ = target_
 	src.location = location
 	src.control = control
 	src.params = params
@@ -284,12 +284,12 @@
 
 /// From /datum/om/event/item_attack.
 /datum/notice/item_attack
-	var/target
+	var/target_
 	var/user
 	var/target_zone
 
-/datum/notice/item_attack/fill(target, user, target_zone)
-	src.target = target
+/datum/notice/item_attack/fill(target_, user, target_zone)
+	src.target_ = target_
 	src.user = user
 	src.target_zone = target_zone
 
@@ -559,11 +559,11 @@
 /// From /datum/om/event/mob_unequipped_item.
 /datum/notice/mob_unequipped_item
 	var/item
-	var/target
+	var/target_
 
-/datum/notice/mob_unequipped_item/fill(item, target)
+/datum/notice/mob_unequipped_item/fill(item, target_)
 	src.item = item
-	src.target = target
+	src.target_ = target_
 
 /// From /datum/om/event/movable_attempted_move.
 /datum/notice/movable_attempted_move

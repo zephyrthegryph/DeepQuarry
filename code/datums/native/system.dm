@@ -224,7 +224,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /proc/native_publish_notice(datum/E, kind, list/args)
 	if(QDELETED(E))
 		return FALSE
-	PUBLISH(E, /datum/notice/native, kind, args)
+	PUBLISH_LEGACY(E, /datum/notice/native, kind, args)
 	return TRUE
 
 /// A native watch crossed `band` with `detail` (the record's numbers). A watch declared by a reaction

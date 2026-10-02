@@ -60,7 +60,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		T = rx_table_build(E)
 	if(T && T.read_keys[key])
 		return TRUE
-	return !!E.rx?.observed?[key]
+	if(E.rx?.observed?[key])
+		return TRUE
+	return hooks_watching(E, key) // an on_change() hook of the engine (code/engine/actions/change.dm)
 
 /// The tracked var `var_name` of E changed (TRACKED setters, a hand-written SETTER): its key is published when
 /// someone reads it (READERS) and the outputs that read it re-derive (changed(), refresh.dm). No OM channel is raised:
@@ -120,6 +122,9 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 				rx_pend(E, L, key)
 			else if(R.kind == RXN_CROSS && R.key == key)
 				rx_cross_check(E, R, L)
+	// The on_change() hooks of the engine that read the key are marked for the next drain point.
+	if(islist(GLOB?.change_index_by_type) && (GLOB.change_index_by_type[E.type] || E.rx?.hooks))
+		hooks_change_published(E, key)
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))
 		op_reads_changed(E, key)

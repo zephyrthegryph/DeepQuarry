@@ -11,3 +11,4 @@
 #define ACT_PASS (-1)
 // ACT_TRY must survive expansion as a call the pairing check can see.
 #define ACT_TRY(holder, act, args...) act_try(holder, /datum/act/##act, args)
+#define ACTION(name, fields...)

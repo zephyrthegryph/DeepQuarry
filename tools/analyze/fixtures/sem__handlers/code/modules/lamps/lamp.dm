@@ -159,3 +159,36 @@ CAPABILITIES(/obj/machinery/lamp,
 	for(var/x in many)
 		if(x)
 			act_done(F)
+
+// ACT_TRY of a declared ACTION expands to act_<name>(): the pairing check follows the generated call too.
+ACTION(spark, atom/target)
+
+/obj/machinery/lamp/proc/spark_clean(turf/T)
+	var/datum/act/spark/S = act_spark(src, T)
+	if(!S)
+		return
+	act_done(S)
+
+/obj/machinery/lamp/proc/spark_leaks(turf/T, quick)
+	var/datum/act/spark/S = act_spark(src, T)
+	if(!S)
+		return
+	if(quick)
+		return
+	act_done(S)
+
+// then() inside instead() runs in the action's context (its typed fields); inside on_notice() in the notice's (and its typed fields).
+/datum/notice/sparked
+	var/atom/target_thing
+
+/obj/machinery/lamp_b
+
+CAPABILITIES(/obj/machinery/lamp_b, 	extend(/datum/act/spark, instead(then(PROC_REF(takes_over)))), 	on_notice(/datum/notice/sparked, then(PROC_REF(heard_spark))))
+
+/obj/machinery/lamp_b/proc/takes_over(datum/act/A)
+	var/datum/act/spark/S = A
+	return S.target
+
+/obj/machinery/lamp_b/proc/heard_spark(datum/act/A)
+	var/datum/notice/sparked/N = A
+	return N.target_thing + A.dt

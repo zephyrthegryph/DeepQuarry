@@ -77,7 +77,8 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code
 exempt_files = ["code/__defines/tgs.dm"]
 
 # E5 semantic lints (tools/analyze/src/lints/sem_*.rs; tools/analyze/README.md, "Semantic layer").
-# try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try.
+# try_calls: extra calls that survive macro expansion as a world-action start (ACT_TRY pairing), besides ACT_TRY, act_try, e0_act_try and the
+# act_<name> of every non-FIXED ACTION() (which ACT_TRY expands to, added by the lint itself).
 # The E0 proofs and the legacy op tests name op keys declared in comment form (the final syntax) or by DECLARE_INTERACTIONS;
 # E1 turns the comment declarations into real markers, then these exemptions go.
 # E1's tests name unknown keys and text sources on purpose (the build errors they prove), its fixtures stand in for op() with entry_of("op", ...),

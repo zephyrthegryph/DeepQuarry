@@ -240,7 +240,7 @@
 /mob/living/carbon/human/handle_footstep(turf/T)
 	if(get_equipped_item(SLOT_ID_SHOES) && loc == T && get_gravity(loc) && !flying)
 		var/obj/item/shoes = get_equipped_item(SLOT_ID_SHOES)
-		PUBLISH(shoes, /datum/notice/shoes_step, src, m_intent)
+		PUBLISH_LEGACY(shoes, /datum/notice/shoes_step, src, m_intent)
 	return
 
 /mob/living/carbon/human/set_dir(new_dir)

@@ -19,15 +19,12 @@
 // holder first, then the context (x(holder, ctx)). Handlers do not sleep. Nothing is allocated unless something guards the
 // key on that holder (guarded()).
 
-/// What a guard handler sees. Pooled: released when guard() returns, so handlers never keep it.
+/// What a guard handler sees: an act context (code/contracts/acts/context.dm), pooled and released when guard() returns, so handlers never
+/// keep it. `target` (the holder being asked, the one that may refuse) and `actor` (who does it) are the act's own fields.
 /datum/guard_ctx
-	parent_type = /datum/pooled
+	parent_type = /datum/act/action
 	/// The GUARD_* key being asked.
 	var/key
-	/// The holder being asked (the one that may refuse).
-	var/datum/target
-	/// Who does it (the mob moving, falling, throwing ...), when there is one.
-	var/datum/actor
 	/// What it is done with (the thrown item, the crossing movable ...), when there is one.
 	var/datum/item
 	/// Anything else the call site passes (a list or a value).
@@ -56,9 +53,9 @@
 		return null
 	var/datum/guard_ctx/ctx = take(/datum/guard_ctx)
 	ctx.key = key
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	ctx.target = E
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	ctx.actor = actor
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	ctx.item = item

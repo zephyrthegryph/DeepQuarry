@@ -293,8 +293,8 @@
 	TEST_ASSERT(W.event, "a notice reaction registers an event item")
 	TEST_ASSERT(!(W in K.items_of_phase(KERNEL_PHASE_P)), "which the kernel never schedules")
 	var/runs = W.runs
-	PUBLISH(F, /datum/notice/rx_fx, 1)
-	PUBLISH(F, /datum/notice/rx_fx, 2)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 1)
+	PUBLISH_LEGACY(F, /datum/notice/rx_fx, 2)
 	TEST_ASSERT_EQUAL(jointext(F.notes, ","), "1,2", "delivered in publish order")
 	TEST_ASSERT_EQUAL(W.runs, runs + 2, "each delivery is counted on the item")
 	TEST_ASSERT(W.total_ms >= 0 && !isnull(W.cost), "with its cost")

@@ -68,7 +68,7 @@
  * arguments after the source. Stored as a LISTENER relation on the source; both ends drop it when either
  * dies. Returns the record (the same one if it already exists).
  */
-/proc/observe(datum/source, datum/reaction/trigger, datum/listener, handler)
+/proc/legacy_observe(datum/source, datum/reaction/trigger, datum/listener, handler)
 	if(!source || !listener || !istype(trigger) || QDELING(source) || QDELING(listener))
 		return null
 	for(var/datum/rx_listener/known as anything in source.rx?.listeners)
@@ -98,7 +98,7 @@
 
 /// Removes the observations matching `trigger` (null: any trigger) and `listener` (null: any listener) on
 /// `source`. Returns how many were removed.
-/proc/unobserve(datum/source, datum/reaction/trigger, datum/listener)
+/proc/legacy_unobserve(datum/source, datum/reaction/trigger, datum/listener)
 	. = 0
 	for(var/datum/rx_listener/L as anything in source?.rx?.listeners?.Copy())
 		if(listener && L.listener != listener)
@@ -365,10 +365,8 @@ GLOBAL_LIST_EMPTY(rx_cross_jobs)
  * subtypes name their fields and override fill() (and reset() for what a field cannot express).
  */
 /datum/notice
-	parent_type = /datum/pooled
-	/// Who published it.
-	var/datum/source
-	/// The arguments PUBLISH passed (the default fill()).
+	/// The arguments PUBLISH passed (the default fill()). A notice is an act context (code/engine/actions/notices.dm), whose `source` is the
+	/// publisher for the legacy handlers and the activation's source for the hooks.
 	var/list/data
 
 /// Sets the notice up from PUBLISH's arguments.
@@ -418,7 +416,7 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 /proc/publish(datum/E, datum/notice/N)
 	if(!E || !N)
 		return
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+
 	N.source = E
 	if(GLOB.rx_notice_delivering)
 		GLOB.rx_notice_queue += list(list(E, N))
@@ -442,6 +440,12 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 	GLOB.rx_notice_delivering = FALSE
 
 /proc/rx_deliver_notice(datum/E, datum/notice/N)
+	rx_deliver_notice_to(E, N)
+	notice_deliver_hooks(E, N, ACT_COMMITTED) // the hooks of the engine (code/engine/actions) hear a legacy publish too
+	N.release()
+
+/// The legacy half of a delivery: E's on_notice() reactions and observers, without releasing N.
+/proc/rx_deliver_notice_to(datum/E, datum/notice/N)
 	if(!QDELETED(E))
 		var/datum/rx_table/T = rx_table_of(E)
 		if(T)
@@ -464,4 +468,3 @@ GLOBAL_VAR_INIT(rx_notice_delivering, FALSE)
 				rx_call(L.listener, L.handler, E, N)
 			catch(var/exception/e2)
 				stack_trace("notice [N.type] observer [L.handler] on [L.listener.type]: [e2] ([e2.file]:[e2.line])")
-	N.release()

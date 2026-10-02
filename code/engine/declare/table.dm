@@ -161,6 +161,8 @@ GLOBAL_VAR(declare_report_capture)
 			var/datum/entry/E = C.item
 			if(istype(E) && E.kind == ENTRY_REL_GRANTS)
 				. |= ENGINE_HOOK_INIT
+			else if(istype(E) && E.kind == ENTRY_ON_CHANGE)
+				. |= ENGINE_HOOK_INIT // the baseline of an on_change hook is taken when the holder initializes
 	if(stat_table_needs_init(T))
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
 
@@ -191,7 +193,7 @@ GLOBAL_VAR(declare_report_capture)
 				table_apply(T, child, origin, owner, inner)
 			return
 		if(ENTRY_EXTEND)
-			table_apply_extend(T, E, origin)
+			table_apply_extend(T, E, origin, owner, whens)
 			return
 		if(ENTRY_CONFIGURE)
 			table_apply_configure(T, E, origin)
@@ -318,12 +320,12 @@ GLOBAL_VAR(declare_report_capture)
 			return TRUE
 	return FALSE
 
-/proc/table_apply_extend(datum/type_table/T, datum/entry/E, origin)
+/proc/table_apply_extend(datum/type_table/T, datum/entry/E, origin, owner, list/whens)
 	var/target = E.args["target"]
 	if(!table_resolves(T, target))
 		table_error(T, origin, declare_rule(RULE_UNKNOWN_KEY), "extend([target]) names a key nothing in the table has", "spell an op key as the declaration does (\"cover.open\"), or use CAP_X, TAG_X or an action type")
 		return
-	table_add_item(T, E, origin, null, null, null)
+	table_add_item(T, E, origin, owner, whens, null)
 
 /proc/table_cap_defs(datum/type_table/T, cap_id, selector)
 	. = list()
