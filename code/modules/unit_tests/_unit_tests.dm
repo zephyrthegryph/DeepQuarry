@@ -67,6 +67,9 @@
 /// A test named with --focus / dq_focused_test.sh runs whatever its tier.
 #define TEST_TIER_NORMAL 0
 #define TEST_TIER_EXHAUSTIVE 1
+/// The E0 proofs (doc/rewrite/final_api.html section 19): fixtures that cannot pass until E1-E6 land. A plain run and --tier=all skip them,
+/// so the normal suite stays green; `dm-test --tier=e0` or a focused run by name runs them (doc/testing.md "The E0 proofs").
+#define TEST_TIER_E0 2
 
 #define TEST_PRE 0
 #define TEST_DEFAULT 1
@@ -407,6 +410,9 @@
 #include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
 #include "dq_kernel_measure_tests.dm"
+#include "dq_e0_aliases.dm"
+#include "dq_e0_proofs_tests.dm"
+#include "dq_e0_unalias.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

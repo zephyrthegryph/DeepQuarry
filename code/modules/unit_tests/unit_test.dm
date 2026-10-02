@@ -13,6 +13,10 @@ You can use the run_loc_floor_bottom_left and run_loc_floor_top_right to get tur
 
 GLOBAL_DATUM(current_test, /datum/unit_test)
 GLOBAL_VAR_INIT(failed_any_test, FALSE)
+/// The E0 proofs' tally for the run (TEST_TIER_E0, doc/testing.md "The E0 proofs"): green, failed only because an engine is missing, failed otherwise.
+GLOBAL_VAR_INIT(e0_proofs_passed, 0)
+GLOBAL_VAR_INIT(e0_proofs_pending, 0)
+GLOBAL_VAR_INIT(e0_proofs_failed, 0)
 /// When unit testing, all logs sent to log_mapping are stored here and retrieved in log_mapping unit test.
 GLOBAL_LIST_EMPTY(unit_test_mapping_logs)
 /// Global assoc list of required mapping items, [item typepath] to [required item datum].
@@ -428,6 +432,9 @@ GLOBAL_VAR(dq_test_select_names)
 	/// the test-tier world param set to "all"/"exhaustive" (dm-test --tier=all),
 	/// or when named by a focused run.
 	var/tier = TEST_TIER_NORMAL
+	/// Set by an E0 proof's gate when it failed because an engine piece (E1-E6) does not exist yet: the run reports it as pending,
+	/// separately from a proof that failed for any other reason (doc/testing.md "The E0 proofs").
+	var/pending_engine = FALSE
 	/// Curated entries sweep_types() actually found (see curated_types()).
 	var/list/curated_matched
 	//internal shit
@@ -619,6 +626,12 @@ GLOBAL_VAR(dq_test_select_names)
 
 /datum/unit_test/proc/Run()
 	TEST_FAIL("[type]/Run() called parent or not implemented")
+
+/// The reasons an E0 proof failed with, for the pending report (the "E1-E6 not implemented: ..." text).
+/datum/unit_test/proc/pending_reasons()
+	. = list()
+	for(var/list/entry in fail_reasons)
+		. += entry[1]
 
 /datum/unit_test/proc/Fail(reason = "No reason", file = "OUTDATED_TEST", line = 1)
 	succeeded = FALSE
@@ -924,6 +937,15 @@ GLOBAL_VAR(dq_test_select_names)
 		log_world("::error::[TEST_OUTPUT_RED("FAIL")] [test_output_desc]")
 
 	var/final_status = skip_test ? UNIT_TEST_SKIPPED : (test.succeeded ? UNIT_TEST_PASSED : UNIT_TEST_FAILED)
+	if(initial(test.tier) == TEST_TIER_E0 && !skip_test)
+		// An E0 proof is reported three ways, separately from the rest of the run: green, pending an engine, or failed.
+		if(test.succeeded)
+			GLOB.e0_proofs_passed++
+		else if(test.pending_engine)
+			GLOB.e0_proofs_pending++
+			log_world("E0 PENDING [test_output_desc]: [jointext(test.pending_reasons(), "; ")]")
+		else
+			GLOB.e0_proofs_failed++
 
 	var/datum/unit_test_block/block = test.test_block
 	qdel(test)
@@ -1138,12 +1160,15 @@ GLOBAL_VAR(dq_test_select_names)
 	// "exhaustive" runs only those. A focused run runs exactly what it named.
 	if(!length(focused_tests))
 		var/tier_param = world.params?[TEST_TIER_PARAMETER] || "normal"
-		var/want_normal = tier_param != "exhaustive"
+		var/want_normal = tier_param != "exhaustive" && tier_param != "e0"
 		var/want_exhaustive = tier_param == "all" || tier_param == "exhaustive"
+		// The E0 proofs (TEST_TIER_E0) run only on `--tier=e0`: not in a plain run, not in `all`, so the normal suite stays green.
+		var/want_e0 = tier_param == "e0"
 		var/list/tiered = list()
 		for(var/_test_to_run in tests_to_run)
 			var/datum/unit_test/test_to_run = _test_to_run
-			if(initial(test_to_run.tier) == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal)
+			var/test_tier = initial(test_to_run.tier)
+			if(test_tier == TEST_TIER_E0 ? want_e0 : (test_tier == TEST_TIER_EXHAUSTIVE ? want_exhaustive : want_normal))
 				tiered += test_to_run
 		log_test("Unit-test tier '[tier_param]': [length(tiered)] of [length(tests_to_run)] test types.")
 		tests_to_run = tiered
@@ -1204,6 +1229,8 @@ GLOBAL_VAR(dq_test_select_names)
 		for(var/type in GLOB.dq_refsearch_type_counts)
 			searched += "[type] x[GLOB.dq_refsearch_type_counts[type]][GLOB.dq_refsearch_skipped[type] ? " (+[GLOB.dq_refsearch_skipped[type]] skipped)" : ""]"
 		log_test("Reference searches this run ([GLOB.dq_refsearch_spent_ds / 10]s): [jointext(searched, ", ")]")
+	if(GLOB.e0_proofs_passed + GLOB.e0_proofs_pending + GLOB.e0_proofs_failed)
+		log_test("E0 proofs: [GLOB.e0_proofs_passed] green, [GLOB.e0_proofs_pending] pending an engine (E1-E6 not implemented), [GLOB.e0_proofs_failed] failed for another reason.")
 	log_test("Unit-test suite finished: [total_tests] test types, failures: [GLOB.failed_any_test ? "yes" : "no"].")
 
 	// A sharded run gives each world its own results file (shard-tests-file's

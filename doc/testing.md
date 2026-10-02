@@ -10,6 +10,7 @@ points or `tools\build\build.bat`; on Linux (and in Git Bash) use
 |---|---|---|
 | Unit-test suite, normal tier (every merge) | `bin/test.cmd` · `tools/build/build.sh dm-test` (sharded; `--shards=1` for one world) | 2–3 minutes plus compile (about 5 in one world) |
 | Every tier, as CI and nightly run it | `tools/build/build.sh dm-test --tier=all` | 5–6 minutes plus compile, sharded |
+| The E0 proofs (pending the engines, so not in any other tier) | `tools/build/build.sh dm-test --tier=e0` · `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` | compile + about 25 s |
 | Profile each test's procs | add `--profile-tests` to `dm-test` or `dq_focused_test.sh` | about twice as slow |
 | A few tests only (use this while developing) | `bash tools/dq_focused_test.sh <name> [...]` (bare names, `/datum/unit_test/` paths or quoted `*` globs; `--repeat=N`) | compile + about 25 s |
 | Unit tests on Southern Cross | `tools/build/build.sh dm-test -DCITESTING_FULL_MAP` | much longer |
@@ -141,6 +142,7 @@ Every test has a `tier` (`code/modules/unit_tests/_unit_tests.dm`):
 |---|---|---|
 | `TEST_TIER_NORMAL` (the default) | every integration merge: `tools/build/build.sh dm-test`, `bin/test.cmd` | every ordinary test, plus a small representative of each exhaustive sweep |
 | `TEST_TIER_EXHAUSTIVE` | CI (`run_integration_tests.yml`, including the weekly full-map run) and nightly: `dm-test --tier=all` | the whole-type sweeps (see below) |
+| `TEST_TIER_E0` | only `dm-test --tier=e0`, or a focused run by name | the ten E0 proofs, which cannot pass until engines E1-E6 land (see "The E0 proofs") |
 
 **Integration merges run the normal tier; CI and nightly run the exhaustive
 tier as well.** A plain `dm-test` runs the normal tier. `--tier=all` (or
@@ -178,6 +180,32 @@ The others override a small hook: `equip_species()`/`item_stride()` for equip,
 To add a sweep, write it exhaustive with a representative. Put it in the
 normal tier only if it is cheap: `dq_constraint_parity/holster` has seventeen
 holders and stays whole in the normal tier.
+
+### The E0 proofs
+
+Phase 1 of the rewrite (`doc/rewrite/final_api.html` section 19) starts with ten executable proofs of the
+semantic contracts that would be expensive to get wrong after content conversion begins. They live in
+`code/modules/unit_tests/dq_e0_proofs_tests.dm` as `/datum/unit_test/dq_e0_proof/p01_...` to `p10_...`, are written with the test driver
+(`code/tests/driver/`) and the test-only fixtures (`code/tests/engine/`), and are all green only when engines E1-E6 have landed.
+Until then each one fails, on purpose, with `E1-E6 not implemented: <what>` naming every engine piece it reached.
+
+They have a tier of their own, `TEST_TIER_E0`, so the normal suite stays green:
+
+| Command | Runs the proofs? |
+|---|---|
+| `dm-test` (normal), `dm-test --tier=all`, `dm-test --tier=exhaustive` | no |
+| `dm-test --tier=e0` | yes, and only them |
+| `bash tools/dq_focused_test.sh 'dq_e0_proof/*'` or `... dq_e0_proof/p05_refused_insert_loses_nothing` | yes (a focused run ignores the tier) |
+
+A tier-e0 run reports them separately from the rest of the run: each failing proof prints a `E0 PENDING` line with its reasons
+(when the failure is only a missing engine), and the log ends with `E0 proofs: N green, N pending an engine, N failed for another
+reason`. A proof that fails for any other reason, such as an assertion, counts as failed. The tier-e0 run exits non-zero until all ten
+are green, which is the gate: the ten must pass before any content conversion starts, and again before every phase 3 step.
+
+A proof reads what it needs into locals as it drives the fixture, then calls `E0_GATE` once and asserts. `E0_GATE` fails the
+proof with the "not implemented" message if a driver form or a stub it called reached an engine piece that does not exist yet, so a
+proof never asserts on a null. When an engine replaces its stubs the gate goes quiet for that piece and the assertions run unchanged.
+`doc/rewrite/engine_contracts.md` lists, per proof, which engine it waits for.
 
 ### Sharded runs
 
