@@ -1091,4 +1091,4 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 /datum/om/scheduler/proc/note_slow_step(datum/om/behaviour/B, datum/E, usage, kind = "step")
 	if(slow_step && slow_step["world_time"] == world.time && slow_step["usage"] >= usage)
 		return
-	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = world.time) // ALLOW(sys_world_time_write): stamps a diagnostic record, not a stored expiry
+	slow_step = list("kind" = kind, "behaviour" = "[B.name || B.type]", "entity" = (E ? "[E.type]" : "none"), "name" = "[E]", "usage" = usage, "ms" = round(TICK_DELTA_TO_MS(usage), 0.1), "world_time" = world.time)

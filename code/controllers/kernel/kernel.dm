@@ -332,7 +332,7 @@
 	for(var/datum/controller/subsystem/SS as anything in subsystems)
 		// Not due (most hosts most ticks: they run on waits of seconds) is the first and cheapest refusal.
 		var/paused = (SS?.state == SS_PAUSED)
-		// ALLOW(sys_world_time_expiry): the kernel clock: compares the scheduler own timestamps, not an entity expiry
+		// The kernel clock: compares the scheduler own timestamps, not an entity expiry
 		if(!paused && SS?.next_fire > now)
 			continue
 		if(!SS || !SS.can_fire || SS.init_stage > init_stage)

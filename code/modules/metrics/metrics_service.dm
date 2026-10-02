@@ -284,7 +284,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 /proc/metrics_write_statements_now(list/statements)
 	for(var/list/statement as anything in statements)
 		var/datum/db_query/query = SSdbcore.NewQuery(statement[1], statement[2])
-		if(!query.Execute(async = FALSE))
+		if(!query.Execute(async = FALSE)) // ALLOW(sys_sync_sql): the shutdown flush only: the I/O lane has stopped, so nothing can wait on an om_io query
 			log_sql("metrics: shutdown flush failed: [query.ErrorMsg()]")
 		// ALLOW(lifecycle): a db_query is a plain datum; no lifecycle verb applies
 		qdel(query)

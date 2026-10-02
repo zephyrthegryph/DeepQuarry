@@ -274,7 +274,7 @@ GLOBAL_VAR_INIT(derive_probe_found, 0)
 /datum/proc/on_state_changed(bits)
 	SHOULD_NOT_SLEEP(TRUE)
 	if(GLOB.derive_side_probing && !derive_called_by_override(callee.caller, "on_state_changed"))
-		// ALLOW(sys_dx_reactive_write): the derive probe notes the base was reached directly; it runs only while probing
+		// The derive probe notes the base was reached directly; it runs only while probing
 		GLOB.derive_side_base_reached = TRUE
 	return
 
