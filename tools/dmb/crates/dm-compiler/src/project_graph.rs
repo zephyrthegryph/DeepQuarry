@@ -275,6 +275,8 @@ struct Record {
 pub struct ProjectProcedureGraph {
     db: Database,
     records: BTreeMap<ProcKey, Record>,
+    /// Declaration-scoped observations have one Salsa input across all procedures.
+    shared_facts: BTreeMap<BindingFact, ObservedFact>,
     lru: BTreeSet<(u64, ProcKey)>,
     revision: Option<String>,
     clock: u64,
@@ -293,6 +295,7 @@ impl ProjectProcedureGraph {
         Self {
             db: Database::default(),
             records: BTreeMap::new(),
+            shared_facts: BTreeMap::new(),
             lru: BTreeSet::new(),
             revision: None,
             clock: 0,
@@ -783,11 +786,17 @@ impl ProjectProcedureGraph {
         let record = &self.records[&key];
         let new_facts: Vec<_> = dependencies
             .iter()
-            .filter(|w| !record.facts.contains_key(&w.fact))
+            .filter(|w| {
+                !(if w.fact.is_shared() {
+                    self.shared_facts.contains_key(&w.fact)
+                } else {
+                    record.facts.contains_key(&w.fact)
+                })
+            })
             .collect();
         let fact_bytes = new_facts.iter().fold(0usize, |n, w| {
             n.saturating_add(192)
-                .saturating_add(fact_heap(&w.fact) * 2)
+                .saturating_add(fact_heap(&w.fact))
                 .saturating_add(if untrusted { 0 } else { value_heap(&w.value) })
         });
         let witness_bytes = dependencies
@@ -809,7 +818,11 @@ impl ProjectProcedureGraph {
             .saturating_add(witness_bytes);
         if !untrusted {
             for w in dependencies.iter() {
-                if let Some(fact) = record.facts.get(&w.fact) {
+                if let Some(fact) = if w.fact.is_shared() {
+                    self.shared_facts.get(&w.fact)
+                } else {
+                    record.facts.get(&w.fact)
+                } {
                     if fact.input.value(&self.db).is_none() {
                         planned = planned
                             .saturating_sub(fact.value_bytes)
@@ -822,7 +835,12 @@ impl ProjectProcedureGraph {
             || planned > self.limits.metadata_bytes
             || (!untrusted
                 && dependencies.iter().any(|w| {
-                    record.facts.get(&w.fact).is_some_and(|f| {
+                    (if w.fact.is_shared() {
+                        self.shared_facts.get(&w.fact)
+                    } else {
+                        record.facts.get(&w.fact)
+                    })
+                    .is_some_and(|f| {
                         f.input
                             .value(&self.db)
                             .as_ref()
@@ -844,17 +862,20 @@ impl ProjectProcedureGraph {
         let record = self.records.get_mut(&key).unwrap();
         let mut inputs = Vec::with_capacity(dependencies.len());
         for witness in dependencies.iter() {
-            let fact = record
-                .facts
-                .entry(witness.fact.clone())
-                .or_insert_with(|| ObservedFact {
-                    input: FactInput::new(&self.db, (!untrusted).then(|| witness.value.clone())),
-                    value_bytes: if untrusted {
-                        0
-                    } else {
-                        value_heap(&witness.value)
-                    },
-                });
+            let fact = if witness.fact.is_shared() {
+                &mut self.shared_facts
+            } else {
+                &mut record.facts
+            }
+            .entry(witness.fact.clone())
+            .or_insert_with(|| ObservedFact {
+                input: FactInput::new(&self.db, (!untrusted).then(|| witness.value.clone())),
+                value_bytes: if untrusted {
+                    0
+                } else {
+                    value_heap(&witness.value)
+                },
+            });
             if !untrusted && fact.input.value(&self.db).is_none() {
                 fact.input
                     .set_value(&mut self.db)
@@ -1070,6 +1091,52 @@ impl ProjectProcedureGraph {
             return 0;
         }
         let mut changed = 0;
+        // Choose an active invocation merely as the adapter's route to the shared
+        // snapshot. The fact itself is explicitly declaration-scoped; no local
+        // parameter/static overlay may affect these resolutions.
+        let mut representatives = BTreeMap::new();
+        for (key, record) in &self.records {
+            if !record.active {
+                continue;
+            }
+            if let Some(candidate) = record.input.candidate(&self.db).as_ref() {
+                for witness in candidate.dependencies.iter().filter(|w| w.fact.is_shared()) {
+                    representatives
+                        .entry(witness.fact.clone())
+                        .or_insert_with(|| key.clone());
+                }
+            }
+        }
+        for (fact, observed) in &mut self.shared_facts {
+            let Some(key) = representatives.get(fact) else {
+                continue;
+            };
+            self.stats.fact_refreshes += 1;
+            let value = resolve(key, fact);
+            if observed.input.value(&self.db).as_ref() == Some(&value) {
+                continue;
+            }
+            let bytes = value_heap(&value);
+            let total = self
+                .stats
+                .metadata_bytes
+                .saturating_sub(observed.value_bytes)
+                .saturating_add(bytes);
+            let value = if total <= self.limits.metadata_bytes {
+                self.stats.metadata_bytes = total;
+                observed.value_bytes = bytes;
+                Some(value)
+            } else {
+                self.stats.metadata_bytes = self
+                    .stats
+                    .metadata_bytes
+                    .saturating_sub(observed.value_bytes);
+                observed.value_bytes = 0;
+                None
+            };
+            observed.input.set_value(&mut self.db).to(value);
+            changed += 1;
+        }
         for (key, record) in &mut self.records {
             if !record.active {
                 continue;
@@ -1243,7 +1310,9 @@ mod tests {
         assert!(graph.install_prepared(key.clone(), descriptor, envelope, dependencies, None,));
         let before = graph.stats().resident_bytes;
         let revision = salsa::plumbing::current_revision(&graph.db);
-        let candidate = current_candidate(&graph.db, graph.records[&key].input).clone().unwrap();
+        let candidate = current_candidate(&graph.db, graph.records[&key].input)
+            .clone()
+            .unwrap();
         assert!(before > 0);
         assert!(weak.upgrade().is_some());
         assert_eq!(graph.trim_decoded_to(0), before);
@@ -1255,7 +1324,9 @@ mod tests {
         );
         assert!(Arc::ptr_eq(
             &candidate,
-            current_candidate(&graph.db, graph.records[&key].input).as_ref().unwrap()
+            current_candidate(&graph.db, graph.records[&key].input)
+                .as_ref()
+                .unwrap()
         ));
         assert!(
             weak.upgrade().is_none(),

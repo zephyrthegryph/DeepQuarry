@@ -381,6 +381,7 @@ impl OutlineSession {
         self.last_limit = 0;
     }
     pub fn release_encoded_snapshot(&mut self) {
+        self.canonical.release_auxiliary_caches();
         self.canonical.graph.release_encoded_snapshot();
         self.canonical.maps.release_encoded_snapshot();
     }

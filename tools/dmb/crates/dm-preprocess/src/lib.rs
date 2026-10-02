@@ -1110,16 +1110,23 @@ impl<P: SourceProvider> Context<'_, P> {
                         },
                     ));
                     self.output.text.push_str(&entry.output_text);
-                    self.output
-                        .origins
-                        .extend(entry.origins.iter().map(|origin| Origin {
+                    // Source paths are declaration identities, not per-line data.
+                    // A replayed subtree may contain hundreds of thousands of lines:
+                    // intern its few paths once rather than allocating an Arc and
+                    // joined PathBuf for each origin on every procedure edit.
+                    let mut origin_paths: BTreeMap<&PathBuf, Arc<PathBuf>> = BTreeMap::new();
+                    self.output.origins.extend(entry.origins.iter().map(|origin| {
+                        let path = origin.2.as_ref().map_or_else(
+                            || Arc::clone(&origin_path),
+                            |relative| Arc::clone(origin_paths.entry(relative)
+                                .or_insert_with(|| Arc::new(self.project_dir.join(relative)))),
+                        );
+                        Origin {
                             output_line: origin.0 + line_start - 1,
-                            path: origin.2.as_ref().map_or_else(
-                                || origin_path.clone(),
-                                |relative| Arc::new(self.project_dir.join(relative)),
-                            ),
+                            path,
                             source_line: origin.1,
-                        }));
+                        }
+                    }));
                     self.output
                         .units
                         .extend(entry.units.iter().cloned().map(|mut unit| {

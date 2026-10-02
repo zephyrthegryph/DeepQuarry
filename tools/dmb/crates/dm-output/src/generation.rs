@@ -91,6 +91,28 @@ impl VerifiedArchive {
     }
 }
 
+/// A serialization receipt issued only from an immutable validated image.
+/// It is process-local: persisted receipts must be independently verified.
+pub struct VerifiedBytecode {
+    digest: String,
+    len: usize,
+    resources: String,
+}
+impl VerifiedBytecode {
+    pub fn serialize(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>, Self)> {
+        let (bytes, spans) = image.to_bytes_with_list_spans()?;
+        let image = image.image();
+        let receipt = Self {
+            digest: format!("{:x}", Sha256::digest(&bytes)),
+            len: bytes.len(),
+            resources: resource_digest(image),
+        };
+        Ok((bytes, spans, receipt))
+    }
+}
+
 fn resource_digest(dmb: &byond_dmb::dmb::Dmb) -> String {
     let mut hash = Sha256::new();
     for resource in &dmb.resources {
@@ -448,15 +470,47 @@ pub fn publish_generation_with_archive(
     dmb: &[u8],
     archive: &VerifiedArchive,
 ) -> io::Result<Generation> {
-    use dm_host::file_stamp::{capture_file, open_verified};
     let decoded = byond_dmb::dmb::Dmb::from_bytes(dmb)?;
     decoded.validate_references()?;
-    if resource_digest(&decoded) != archive.content.resources {
+    publish_verified_archive_inner(root, dmb, archive, &resource_digest(&decoded), None)
+}
+
+/// Publication of compiler-owned serialization without decoding it again.
+/// Digest binding prevents a caller from pairing a receipt with different bytes.
+pub fn publish_generation_with_verified_bytecode(
+    root: &Path,
+    dmb: &[u8],
+    archive: &VerifiedArchive,
+    receipt: &VerifiedBytecode,
+) -> io::Result<Generation> {
+    if receipt.len != dmb.len() || receipt.digest != format!("{:x}", Sha256::digest(dmb)) {
+        return Err(invalid("bytecode differs from its validation receipt"));
+    }
+    publish_verified_archive_inner(
+        root,
+        dmb,
+        archive,
+        &receipt.resources,
+        Some(&receipt.digest),
+    )
+}
+
+fn publish_verified_archive_inner(
+    root: &Path,
+    dmb: &[u8],
+    archive: &VerifiedArchive,
+    resources: &str,
+    digest: Option<&str>,
+) -> io::Result<Generation> {
+    use dm_host::file_stamp::{capture_file, open_verified};
+    if resources != archive.content.resources {
         return Err(invalid("changed DMB resource table requires a new archive"));
     }
     let content = ContentDigests {
         dmb_len: dmb.len() as u64,
-        dmb_digest: format!("{:x}", Sha256::digest(dmb)),
+        dmb_digest: digest
+            .map(str::to_owned)
+            .unwrap_or_else(|| format!("{:x}", Sha256::digest(dmb))),
         rsc_len: archive.len(),
         rsc_digest: archive.digest().into(),
         resources: archive.content.resources.clone(),

@@ -395,6 +395,57 @@ evicted at the pool limit; graph metadata cannot retain all authored candidates.
 The complete pipeline is not yet minimally incremental, and these measurements
 must not be presented as achieving the three-second structural-edit target.
 
+### Follow-up source, declaration and output prototype (unmeasured)
+
+The next coding pass addresses each remaining boundary in production paths:
+
+* `PreparedProject.expansion` owns immutable content-identified expansion pieces.
+  Source edits proven independent of the temporal macro namespace splice pieces;
+  other edits replay contextual preprocessing. Repeated include occurrences and
+  missing include namespaces remain part of the proof. Consumers currently still
+  receive a contiguous expanded-text/origin bridge.
+* Prepared inputs use segmented CAS records and compact origin blobs rather than
+  rewriting one pack containing all expanded and authored source bytes. Cached
+  subtree origin replay interns path allocations.
+* Invocation syntax/settings/static fragments and inherited owner field/type
+  frames have separate persistent identities. A structural prefix rebuild reuses
+  matching fragments. Retained invocation overlays no longer duplicate parameter
+  names, flags, defaults and types in full lowering frames.
+* Symbolic declaration default plans cache parsed variable flags/types, normalized
+  constructors and literal list shapes. Physical resource/path slots are supplied
+  from the current generation. Cold syntax preparation uses the existing bounded
+  ordered worker pool; inherited frames memoize each owner once per prefix revision.
+* Declaration-scoped semantic observations share one Salsa input and one refresh;
+  invocation-scoped facts remain distinct. Skeleton accounting measures decoded
+  owned data rather than multiplying the JSON size by two.
+* Constant queries reuse parsed expressions and results after checking the exact
+  positive/negative resolver values they observed. Their bounded disk namespace
+  restores in bulk and writes batches. Nonfinite JSON values are persistence
+  misses. Recursive resolution never occurs under the cache lock.
+* Prepared code uses exact assigned-ID/debug-origin output projections, including
+  a persistent bounded projection namespace salted by the emission implementation
+  fingerprint. Immutable `OutputWords` lets authored procedure results share a
+  fragment rather than copy it twice. Final wire lists still need a copy.
+* Reference validation caches successful class/procedure records with exact
+  dependent-list witnesses and table extent bounds. A borrowed immutable validated
+  image can serialize without another reference scan. A digest-bound bytecode
+  receipt lets archive-reusing publication avoid reparsing that serialization.
+* Resource preparation observes an existing asset proof once per transaction;
+  publication still independently revalidates the combined input proof.
+  Existing CAS blobs can reuse a digest verification only when a strong file stamp
+  still matches a bounded process-local proof. Unsupported stamps/exact-input mode
+  continue to read and hash bytes.
+
+These are prototypes, not new timing or correctness evidence. No tests or
+benchmarks were run for this coding pass. `cargo check --workspace -j1` passed;
+it does not verify runtime behavior or incremental/fresh equivalence.
+Full deterministic table allocation,
+the contiguous frontend bridge, unsupported preprocessing changes and scalar
+output checks still perform program-wide work. New generation publication writes
+the complete DMB and links a verified unchanged RSC. Cache capacity can still
+cause safe recomputation. These changes do not establish a guarantee that every
+edit recomputes only a minimal closure or meets the real-project latency target.
+
 ### Measuring the real production iteration path
 
 `dm-compile/examples/iteration_bench.rs` calls the actual

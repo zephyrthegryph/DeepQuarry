@@ -7,6 +7,8 @@
 mod const_eval;
 #[path = "native_constants.rs"]
 mod native_constants;
+#[path = "default_plans.rs"]
+mod default_plans;
 #[path = "procedure_pipeline.rs"]
 pub(crate) mod procedure_pipeline;
 #[path = "resource_scan.rs"]
@@ -32,11 +34,35 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
+/// Immutable linked fragments shared by emission reports and output caches.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct OutputWords(Arc<[u32]>);
+impl OutputWords { pub fn as_slice(&self) -> &[u32] { &self.0 } }
+impl std::ops::Deref for OutputWords {
+    type Target = [u32];
+    fn deref(&self) -> &[u32] { &self.0 }
+}
+impl From<Vec<u32>> for OutputWords {
+    fn from(words: Vec<u32>) -> Self { Self(words.into()) }
+}
+impl From<Arc<[u32]>> for OutputWords {
+    fn from(words: Arc<[u32]>) -> Self { Self(words) }
+}
+impl PartialEq<Vec<u32>> for OutputWords {
+    fn eq(&self, words: &Vec<u32>) -> bool { self.as_slice() == words.as_slice() }
+}
+impl PartialEq<OutputWords> for Vec<u32> {
+    fn eq(&self, words: &OutputWords) -> bool { self.as_slice() == words.as_slice() }
+}
+impl PartialEq<&[u32]> for OutputWords {
+    fn eq(&self, words: &&[u32]) -> bool { self.as_slice() == *words }
+}
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct EmittedProc {
     pub path: String,
     pub proc_index: usize,
-    pub words: Vec<u32>,
+    pub words: OutputWords,
 }
 
 struct PendingProc<'a> {
@@ -50,6 +76,7 @@ struct PendingProc<'a> {
 /// declarations and shared member types are immutable during proc emission.
 /// Retain at most 64 owner frames and 4 MiB of conservative resident estimates.
 struct OwnerBindingCache {
+    queries: Option<Arc<std::sync::Mutex<canonical::OwnerFrameQueries>>>,
     frames: HashMap<u32, Arc<dm_codegen_byond::OwnerLowerBindings>>,
     bytes: usize,
     byte_limit: usize,
@@ -59,11 +86,16 @@ struct OwnerBindingCache {
 impl OwnerBindingCache {
     fn new(byte_limit: usize, entry_limit: usize) -> Self {
         Self {
+            queries: None,
             frames: HashMap::new(),
             bytes: 0,
             byte_limit,
             entry_limit,
         }
+    }
+
+    fn with_queries(byte_limit: usize, entry_limit: usize, queries: Arc<std::sync::Mutex<canonical::OwnerFrameQueries>>) -> Self {
+        let mut cache=Self::new(byte_limit,entry_limit);cache.queries=Some(queries);cache
     }
 
     fn populate(
@@ -78,6 +110,18 @@ impl OwnerBindingCache {
             return;
         }
         let mut frame = LowerBindings::default();
+        if let Some(queries)=&self.queries {
+            let resolved=queries.lock().unwrap_or_else(|e|e.into_inner()).resolve(owner,dmb,shared);
+            // This request-local owner cache holds Arc values; inherited sets
+            // are re-derived only when a declaration query's inputs change.
+            let bytes=resolved.fields.iter().map(|name|name.len()+64).sum::<usize>()+
+                resolved.field_types.iter().map(|(name,ty)|name.len()+ty.len()+96).sum::<usize>()+512;
+            if bytes<=self.byte_limit && self.entry_limit>0 {
+                if self.frames.len()>=self.entry_limit || self.bytes.saturating_add(bytes)>self.byte_limit {self.frames.clear();self.bytes=0;}
+                self.bytes+=bytes;self.frames.insert(owner,Arc::clone(&resolved));
+            }
+            bindings.owner=Some(resolved);return;
+        }
         collect_owner_fields(owner, dmb, shared, &mut frame);
         let bytes = frame
             .fields
@@ -226,6 +270,7 @@ struct PendingDynamic {
 }
 
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(into = "ParameterWire", from = "ParameterWire")]
 struct ParsedParameter {
     name: String,
     type_flags: u32,
@@ -235,7 +280,16 @@ struct ParsedParameter {
     default: Option<String>,
 }
 
+type ParameterWire = (String, u32, Option<String>, u32, Option<String>, Option<String>);
+impl From<ParsedParameter> for ParameterWire {
+    fn from(p: ParsedParameter) -> Self { (p.name,p.type_flags,p.type_path,p.value_source,p.source_expression,p.default) }
+}
+impl From<ParameterWire> for ParsedParameter {
+    fn from(p: ParameterWire) -> Self { Self { name:p.0,type_flags:p.1,type_path:p.2,value_source:p.3,source_expression:p.4,default:p.5 } }
+}
+
 #[derive(Clone, serde::Serialize, serde::Deserialize)]
+#[serde(into = "ProcMetadataWire", from = "ProcMetadataWire")]
 struct ProcMetadata {
     name: Option<Vec<u8>>,
     description: Option<Vec<u8>>,
@@ -244,6 +298,14 @@ struct ProcMetadata {
     source_kind: u8,
     flags: u32,
     invisibility: Option<u8>,
+}
+
+type ProcMetadataWire = (Option<Vec<u8>>, Option<Vec<u8>>, Option<Vec<u8>>, u8, u8, u32, Option<u8>);
+impl From<ProcMetadata> for ProcMetadataWire {
+    fn from(p: ProcMetadata) -> Self { (p.name,p.description,p.category,p.source_parameter,p.source_kind,p.flags,p.invisibility) }
+}
+impl From<ProcMetadataWire> for ProcMetadata {
+    fn from(p: ProcMetadataWire) -> Self { Self { name:p.0,description:p.1,category:p.2,source_parameter:p.3,source_kind:p.4,flags:p.5,invisibility:p.6 } }
 }
 
 fn proc_metadata(
@@ -1253,7 +1315,7 @@ pub fn replace_existing_procs(
         emitted.push(EmittedProc {
             path,
             proc_index,
-            words,
+            words: words.into(),
         });
     }
     crate::promote_object_ids(&mut dmb);
@@ -2908,6 +2970,7 @@ fn emit_global_procs_mode_with_frontend_catalog(
     let result = emit_global_procs_mode_with_frontend_catalog_inner(source, builtin_image, world_name,
         resources, lowering_cache, audit, capture, workers, frontend.as_deref_mut(), catalog,
         source_debug, lowering_audit, &mut session);
+    if result.is_ok() { session.flush_derived(); }
     if let Some(frontend) = frontend { frontend.canonical = session; }
     result
 }
@@ -2991,6 +3054,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         trace("frozen declaration skeleton reused");
         frozen
     } else {
+    default_plans::prefetch(&ast.items, workers);
     let mut strings = StringIndex::new(&dmb);
     dmb.world.ids[6] = strings.intern(&mut dmb, world_name);
     let mut proc_paths: HashSet<Vec<u8>> = dmb
@@ -3529,7 +3593,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }
     for pending in &pending {
                     let item = pending.item;
-                    let (path, params) = member_signature(item, &pending.owner_path, pending.verb)?;
+                    let (path, params) = session.invocation_fragments.signature(item, &pending.owner_path, pending.verb)?;
                     let repeated = !proc_paths.insert(path.as_bytes().to_vec());
                     let explicit_definition =
                         item.header.split_once('(').is_some_and(|(header, _)| {
@@ -3541,27 +3605,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     generated_proc_paths.insert(path.clone());
                     let mut bindings = LowerBindings {
                         current_proc_path: Some(path.clone()),
-                        current_type_path: (!pending.owner_path.is_empty())
-                            .then(|| pending.owner_path.clone()),
-                        parameters: params.iter().map(|param| param.name.clone()).collect(),
-                        parameter_type_flags: params.iter().map(|param| param.type_flags).collect(),
-                        parameter_types: params
-                            .iter()
-                            .filter_map(|param| {
-                                param
-                                    .type_path
-                                    .as_ref()
-                                    .map(|path| (param.name.clone(), path.clone()))
-                            })
-                            .collect(),
-                        parameter_value_sources: params
-                            .iter()
-                            .map(|param| param.value_source)
-                            .collect(),
-                        parameter_defaults: params
-                            .iter()
-                            .map(|param| param.default.clone())
-                            .collect(),
+                        current_type_path: (!pending.owner_path.is_empty()).then(||pending.owner_path.clone()),
                         shared: Some(Arc::clone(&shared_bindings)),
                         prepared_member_globals: prepared_member_globals.clone(),
                         ..LowerBindings::default()
@@ -3589,11 +3633,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     } else {
                         None
                     };
-                    let (metadata, mut body) = if let Some(base) = inherited_metadata {
-                        proc_metadata_from_base(&item.children, base)?
-                    } else {
-                        proc_metadata(&item.children, inherited.map(|proc| (&dmb, proc)))?
-                    };
+                    let base_metadata = if let Some(base) = inherited_metadata { base }
+                        else { proc_metadata(&[], inherited.map(|proc| (&dmb, proc)))?.0 };
+                    let syntax = session.invocation_fragments.syntax(item, &path, &params, base_metadata)?;
+                    let metadata = syntax.metadata.clone();
                     if let Some(owner) = pending.owner {
                         resolved_metadata.insert(
                             (
@@ -3604,10 +3647,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             metadata.clone(),
                         );
                     }
-                    let mut static_declarations = Vec::new();
+                    let static_declarations = syntax.statics.clone();
                     let mut static_ids = HashMap::new();
                     let mut local_const_ids = HashMap::new();
-                    extract_static_declarations(&mut body, &mut static_declarations);
                     let local_names: HashSet<String> = static_declarations
                         .iter()
                         .filter_map(|declaration| {
@@ -3649,21 +3691,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             } else {
                                 declaration
                             };
-                        let raw = declaration.strip_prefix("var/").unwrap();
-                        let (raw_name, initial) = raw
-                            .split_once('=')
-                            .map_or((raw.trim(), None), |(name, value)| {
-                                (name.trim(), Some(value.trim()))
-                            });
-                        let mut parts = raw_name.trim().split('/').collect::<Vec<_>>();
-                        let name = parts.pop().unwrap_or("");
-                        if name.is_empty() || static_ids.contains_key(name) {
-                            return Err(format!(
-                                "{path}: duplicate or unsupported static local: {declaration}"
-                            ));
+                        let default_plan=default_plans::declaration(&declaration)?;
+                        let name=default_plan.name.as_str();
+                        let initial=default_plan.initial.as_deref();
+                        if static_ids.contains_key(name) {
+                            return Err(format!("{path}: duplicate or unsupported static local: {declaration}"));
                         }
-                        let is_const =
-                            parts.contains(&"const") || declaration.starts_with("var/const/");
+                        let is_const=default_plan.is_const;
                         let folded = initial.and_then(|expression| {
                             const_eval::evaluate(expression, |name| {
                                 if let Some(id) = local_const_ids.get(name) {
@@ -3696,11 +3730,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                 ))
                             }
                             Err(_) if initial.is_some() => {
-                                let expression = normalize_dynamic_expression(
-                                    initial.unwrap(),
-                                    &parts,
-                                    &declaration,
-                                )?;
+                                let expression = default_plan.dynamic.clone()?;
                                 let global_constructor_count = pending_dynamic
                                     .iter()
                                     .filter(|entry| {
@@ -3800,7 +3830,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     }
         bindings.shared = None;
         bindings.owner = None;
-        let frame_digest = crate::lower_cache::shared_binding_fingerprint(&bindings);
+        let (bindings, frame_digest) = session.invocation_fragments.frame(&syntax, bindings.into());
         invocation_plans.push(canonical::InvocationPlan { path, params, metadata, static_ids, bindings, frame_digest });
     }
         apply_mouse_proc_flags(&mut dmb, &pending, &invocation_plans);
@@ -3814,6 +3844,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         if reusable { session.store(skeleton_key.clone(), frozen, lowering_cache.cache_root()) }
         else { Arc::new(frozen) }
     };
+    session.owner_frames.lock().unwrap_or_else(|e|e.into_inner()).bind_revision(&skeleton_key);
     let mut dmb = frozen.image.clone();
     dmb.resources = current_resource_refs;
     let state = &frozen.metadata;
@@ -3855,7 +3886,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     }).collect();
     let invocation_indices: HashMap<_, _> = procedure_keys.iter().cloned().enumerate()
         .map(|(index, key)| (key, index)).collect();
-    let mut fact_frames = OwnerBindingCache::new(4 * 1024 * 1024, 64);
+    let mut fact_frames = OwnerBindingCache::with_queries(4 * 1024 * 1024, 64, Arc::clone(&session.owner_frames));
     let mut resolved_frame: Option<(crate::ProcKey, LowerBindings)> = None;
     let shared_fact_frame = LowerBindings {
         shared: Some(Arc::clone(&shared_bindings)),
@@ -3878,13 +3909,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             let mut bindings;
             let owner;
             if let Some(&index) = invocation_indices.get(key) {
-                bindings = invocations[index].bindings.clone();
+                bindings = invocations[index].lower_bindings();
                 owner = pending[index].owner;
             } else if let Some(raw) = key.path.strip_prefix("@argument|") {
                 let Some(parent) = raw.rsplit_once('|').map(|(parent, _)| parent) else { return dm_codegen_byond::FactValue::Absent; };
                 let parent = crate::ProcKey { path: parent.to_owned(), occurrence: key.occurrence };
                 let Some(&index) = invocation_indices.get(&parent) else { return dm_codegen_byond::FactValue::Absent; };
-                bindings = invocations[index].bindings.clone();
+                bindings = invocations[index].lower_bindings();
                 bindings.parameter_defaults.clear(); bindings.parameter_value_sources.clear();
                 owner = pending[index].owner;
             } else if let Some(raw) = key.path.strip_prefix("@initializer|") {
@@ -3900,7 +3931,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         resolved_frame.as_ref().unwrap().1.binding_fact(fact)
     });
     let mut pending = pending.into_iter().enumerate().peekable();
-    let mut owner_bindings = OwnerBindingCache::new(4 * 1024 * 1024, 64);
+    let mut owner_bindings = OwnerBindingCache::with_queries(4 * 1024 * 1024, 64, Arc::clone(&session.owner_frames));
     let pool_cache = lowering_cache.fork();
     let (lowering_result, worker_stats) = procedure_pipeline::with_lowering_cache(
         &pool_cache,
@@ -3970,7 +4001,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     let needs_bindings = envelope.is_none()
                         || params.iter().any(|param| param.source_expression.is_some());
                     let bindings = if needs_bindings {
-                        let mut bindings = plan.bindings.clone();
+                        let mut bindings = plan.lower_bindings();
                         bindings.shared = Some(Arc::clone(&shared_bindings));
                         bindings.prepared_member_globals = prepared_member_globals.clone();
                         if let Some(owner) = pending.owner {
@@ -4063,7 +4094,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     bind_prepared_references(&envelope.section, &strings, &mut ledger,
                         &initializer_globals, Some(&static_ids), &global_proc_ids)
                         .map_err(|error| format!("{path}: {error}"))?;
-                    let linked_words = envelope.section.materialize_with_debug(&ledger, &simple.statement_origins, |relative| {
+                    envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
+                    let linked_words = envelope.section.materialize_with_debug_shared(&ledger, &simple.statement_origins, |relative| {
                         let (file, line) = source_debug?.resolve(body_base.checked_add(relative)?)?;
                         Some((strings.intern(&mut dmb, &file), line))
                     }).map_err(|error| format!("{path}: {error}"))?;
@@ -4084,7 +4116,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         .category
                         .as_ref()
                         .map_or(0xffff, |category| strings.intern_bytes(&mut dmb, category));
-                    let code_id = append_list(&mut dmb, linked_words.clone());
+                    let code_id = append_list(&mut dmb, linked_words.to_vec());
                     let local_ids = simple
                         .local_names
                         .iter()
@@ -4260,7 +4292,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                     emitted.push(EmittedProc {
                         path,
                         proc_index,
-                        words: linked_words,
+                        words: linked_words.into(),
                     });
                 }
             }
@@ -4326,6 +4358,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     if reusable {
         session.graph.retain_keys(&session.active_keys);
         let _ = session.graph.flush();
+        let _ = session.output_projections.flush();
     }
     lowering_result?;
     if lowering_audit.is_some() { return Ok((dmb, Vec::new(), Vec::new())); }
@@ -4361,6 +4394,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
         bind_prepared_references(&envelope.section, &strings, &mut ledger,
             &initializer_globals, Some(&static_ids), &global_proc_ids)?;
+        envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
         let words = envelope.section.materialize(&ledger).map_err(|error| error.to_string())?;
         let code_id = append_list(&mut dmb, words);
         let empty_id = append_list(&mut dmb, vec![]);
@@ -4420,8 +4454,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
     }
     crate::promote_object_ids(&mut dmb);
-    dmb.validate_references()
+    dmb.validate_references_incremental(&mut session.output_validation)
         .map_err(|error| error.to_string())?;
+    let _ = session.output_projections.flush();
     trace("reference validation complete; resource archive serialization start");
     let rsc_bytes = if catalog.is_some() { Vec::new() } else {
         byond_dmb::rsc::named_archive_bytes(&archive).map_err(|error| error.to_string())?
@@ -4707,12 +4742,7 @@ fn literal_initializer(expression: &str, dmb: &Dmb, strings: &StringIndex) -> bo
             _ => false,
         }
     }
-    let parsed = dm_syntax::parse_expression(expression);
-    parsed.diagnostics.is_empty()
-        && parsed
-            .expr
-            .as_ref()
-            .is_some_and(|expr| literal(expr, dmb, strings))
+    const_eval::parsed_expression(expression).as_ref().is_some_and(|expr|literal(expr,dmb,strings))
 }
 
 
@@ -5468,12 +5498,12 @@ fn emit_type<'a>(
                             let parent = dmb.classes[id as usize].parent_class_id();
                             ancestor = (parent != 0xffff).then_some(parent);
                         }
-                        let parsed = dm_syntax::parse_expression(expression);
-                        let allocated_list = parsed.diagnostics.is_empty() && parsed.expr.is_some_and(|expr| {
-                        match expr.kind {
+                        let parsed = const_eval::parsed_expression(expression);
+                        let allocated_list = parsed.as_ref().is_some_and(|expr| {
+                        match &expr.kind {
                             dm_syntax::ExprKind::Ident(name) => name == "new",
                             dm_syntax::ExprKind::Unary { op, .. } => op == "new",
-                            dm_syntax::ExprKind::Call { callee, .. } => matches!(callee.kind, dm_syntax::ExprKind::Ident(ref name) if matches!(name.as_str(), "new" | "newlist" | "list" | "alist" | "icon" | "sound" | "matrix" | "regex" | "image" | "mutable_appearance" | "generator" | "rgb")),
+                            dm_syntax::ExprKind::Call { callee, .. } => matches!(&callee.kind, dm_syntax::ExprKind::Ident(name) if matches!(name.as_str(), "new" | "newlist" | "list" | "alist" | "icon" | "sound" | "matrix" | "regex" | "image" | "mutable_appearance" | "generator" | "rgb")),
                             _ => false,
                         }
                     });
@@ -6009,24 +6039,13 @@ fn emit_class_var(
 ) -> Result<(), String> {
     let normalized = normalize_array_declaration(&item.header, dmb, Some(class_id), strings)?;
     let declaration = normalized.as_deref().unwrap_or(item.header.trim());
-    let raw = declaration
-        .strip_prefix("var/")
-        .ok_or_else(|| format!("unsupported class variable: {declaration}"))?;
-    let (name, initial) = raw
-        .split_once('=')
-        .map_or((raw.trim(), None), |(name, value)| {
-            (name.trim(), Some(value.trim()))
-        });
-    let mut parts = name.split('/').collect::<Vec<_>>();
-    let name = parts.pop().unwrap_or("");
-    let is_tmp = parts.iter().any(|part| *part == "tmp");
-    let is_const = parts.iter().any(|part| *part == "const");
-    let is_static = parts
-        .iter()
-        .any(|part| matches!(*part, "static" | "global"));
-    if name.is_empty() {
-        return Err(format!("unsupported class variable: {declaration}"));
-    }
+    if !declaration.starts_with("var/") { return Err(format!("unsupported class variable: {declaration}")); }
+    let plan=default_plans::declaration(declaration)?;
+    let name=plan.name.as_str();
+    let initial=plan.initial.as_deref();
+    let is_tmp=plan.is_tmp;
+    let is_const=plan.is_const;
+    let is_static=plan.is_static;
     let (kind, value) = match constant_variable_value_scoped(
         initial,
         declaration,
@@ -6046,7 +6065,7 @@ fn emit_class_var(
                 } else {
                     name.into()
                 },
-                expression: normalize_dynamic_expression(initial.unwrap(), &parts, declaration)?,
+                expression: plan.dynamic.clone()?,
                 sized_array: is_sized_array_declaration(&item.header),
             });
             if is_static {
@@ -6101,23 +6120,11 @@ fn emit_global_var(
 ) -> Result<(), String> {
     let normalized = normalize_array_declaration(&item.header, dmb, None, strings)?;
     let declaration = normalized.as_deref().unwrap_or(item.header.trim());
-    let raw = declaration
-        .strip_prefix("/var/")
-        .or_else(|| declaration.strip_prefix("var/"))
-        .ok_or_else(|| format!("unsupported global variable: {declaration}"))?;
-    let (raw_name, initial) = raw
-        .split_once('=')
-        .map_or((raw.trim(), None), |(name, value)| {
-            (name.trim(), Some(value.trim()))
-        });
-    let mut parts = raw_name.split('/').collect::<Vec<_>>();
-    let name = parts.pop().unwrap_or("");
-    let is_const = parts.iter().any(|part| *part == "const");
-    if name.is_empty() || globals.contains_key(name) {
-        return Err(format!(
-            "unsupported or duplicate global variable: {declaration}"
-        ));
-    }
+    let plan=default_plans::declaration(declaration)?;
+    let name=plan.name.as_str();
+    let initial=plan.initial.as_deref();
+    let is_const=plan.is_const;
+    if globals.contains_key(name) {return Err(format!("unsupported or duplicate global variable: {declaration}"));}
     let (kind, value) = match constant_variable_value(initial, declaration, dmb, strings, resources)
     {
         Ok(value) => value,
@@ -6127,7 +6134,7 @@ fn emit_global_var(
                     "dynamic const initializer is unsupported: {declaration}"
                 ));
             }
-            let expression = normalize_dynamic_expression(initial.unwrap(), &parts, declaration)?;
+            let expression = plan.dynamic.clone()?;
             let ordinal = pending_dynamic
                 .iter()
                 .filter(|entry| entry.owner.is_none() && entry.expression.starts_with("new "))
@@ -6198,6 +6205,21 @@ fn constant_variable_value_scoped(
         initial.and_then(|v| fold_constant_scoped(v, dmb, owner, blocked_constants, strings))
     {
         return encode_constant(value, dmb, strings);
+    }
+    // Authored default plans carry symbolic resources/paths, never stale slot
+    // IDs. Only the current-generation encoding reads the resource assignment.
+    if declaration.starts_with("var/") || declaration.starts_with("/var/") {
+        if let Ok(plan)=default_plans::declaration(declaration) {
+            if plan.initial.as_deref()==initial {
+                match &plan.shape {
+                    default_plans::DefaultShape::Missing | default_plans::DefaultShape::Null => return Ok((0,0)),
+                    default_plans::DefaultShape::Number(bits) => return Ok((42,*bits)),
+                    default_plans::DefaultShape::Text(text) => return Ok((6,strings.intern(dmb,text))),
+                    default_plans::DefaultShape::Resource(name) => return resources.get(name).copied().map(|id|(12,id)).ok_or_else(||format!("resource was not loaded: {name}")),
+                    default_plans::DefaultShape::Path(_) | default_plans::DefaultShape::Runtime(_) => {}
+                }
+            }
+        }
     }
     match initial {
         None | Some("null") => Ok((0, 0)),

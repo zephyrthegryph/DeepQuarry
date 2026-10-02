@@ -10,7 +10,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 1;
+const VERSION: u32 = 2;
 const MAX_PACK: usize = 128 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
 
@@ -26,14 +26,15 @@ struct Source {
 struct Manifest {
     version: u32,
     context: String,
-    pack: String,
+    pack: Vec<(String, usize)>,
     expanded_end: usize,
     project_digest: String,
     expanded_digest: String,
     revision: String,
     paths: Vec<PathBuf>,
     sources: Vec<Source>,
-    origins: Vec<(usize, usize, usize)>,
+    origins: String,
+    origin_count: usize,
     units: Vec<(usize, usize, usize, usize)>,
     unit_digests: Vec<[u8; 32]>,
     dependencies: Vec<usize>,
@@ -42,6 +43,7 @@ struct Manifest {
     file_dirs: Vec<usize>,
     diagnostics: Vec<Diagnostic>,
     macros: BTreeMap<String, Macro>,
+    macro_names: BTreeSet<String>,
     proof: Option<InputProof>,
 }
 #[derive(Serialize, Deserialize)]
@@ -58,7 +60,31 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         *paths.entry(path.to_path_buf()).or_insert(next)
     }
     let project = &snapshot.project;
-    let mut parts = vec![project.text.as_bytes()];
+    // Previously every body edit published expanded text plus every authored
+    // source as one new CAS blob. Keep immutable expansion pieces and bounded
+    // source groups so a changed generation writes only changed chunks.
+    let previous = load_manifest(store, &snapshot.context).ok().flatten();
+    let known: BTreeSet<_> = previous
+        .as_ref()
+        .into_iter()
+        .flat_map(|manifest| {
+            manifest
+                .pack
+                .iter()
+                .map(|(digest, _)| digest.clone())
+                .chain(std::iter::once(manifest.origins.clone()))
+        })
+        .collect();
+    let mut pack = Vec::new();
+    for piece in &snapshot.expansion.segments {
+        let digest = format!("{:x}", Sha256::digest(piece.text.as_bytes()));
+        if !known.contains(&digest) {
+            store.put("prepared-input-chunk-v2", piece.text.as_bytes())?;
+        }
+        pack.push((digest, piece.text.len()));
+    }
+    let mut parts = Vec::new();
+    let mut source_group_bytes = 0;
     let mut end = project.text.len();
     let mut sources = Vec::with_capacity(snapshot.sources.len());
     for (path, source) in snapshot.sources.iter() {
@@ -70,6 +96,11 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
             return Ok(());
         }
         parts.push(source.text.as_bytes());
+        source_group_bytes += source.text.len();
+        if source_group_bytes >= 1024 * 1024 {
+            publish_group(store, &mut pack, &mut parts, &known)?;
+            source_group_bytes = 0;
+        }
         sources.push(Source {
             path: path_id(&mut paths, path),
             start,
@@ -78,17 +109,17 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
             stamp: source.stamp.clone(),
         });
     }
-    let origins = project
-        .origins
-        .iter()
-        .map(|origin| {
-            (
-                origin.output_line,
-                path_id(&mut paths, &origin.path),
-                origin.source_line,
-            )
-        })
-        .collect();
+    publish_group(store, &mut pack, &mut parts, &known)?;
+    let mut origin_bytes = Vec::with_capacity(project.origins.len() * 5);
+    for origin in &project.origins {
+        write_varint(&mut origin_bytes, origin.output_line);
+        write_varint(&mut origin_bytes, path_id(&mut paths, &origin.path));
+        write_varint(&mut origin_bytes, origin.source_line);
+    }
+    let origins = format!("{:x}", Sha256::digest(&origin_bytes));
+    if !known.contains(&origins) {
+        store.put("prepared-input-chunk-v2", &origin_bytes)?;
+    }
     let units = project
         .units
         .iter()
@@ -125,7 +156,6 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     for (path, index) in paths {
         ordered_paths[index] = path;
     }
-    let pack = store.put_parts("prepared-input-pack-v1", &parts)?;
     let manifest = Manifest {
         version: VERSION,
         context: snapshot.context.clone(),
@@ -137,6 +167,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         paths: ordered_paths,
         sources,
         origins,
+        origin_count: project.origins.len(),
         units,
         unit_digests: project.unit_digests.clone(),
         dependencies,
@@ -145,13 +176,14 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         file_dirs,
         diagnostics: project.diagnostics.clone(),
         macros: project.final_macros.clone(),
+        macro_names: snapshot.macro_names.as_ref().clone(),
         proof: snapshot.proof.clone(),
     };
     let bytes = serde_json::to_vec(&manifest).map_err(io::Error::other)?;
     if bytes.len() > MAX_MANIFEST {
         return Ok(());
     }
-    let digest = store.put("prepared-input-manifest-v1", &bytes)?;
+    let digest = store.put("prepared-input-manifest-v2", &bytes)?;
     let head = Head {
         version: VERSION,
         context: snapshot.context.clone(),
@@ -161,7 +193,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .metadata
         .put_many(
             vec![(
-                dm_store::Key::new("prepared-project-head-v1", &snapshot.context),
+                dm_store::Key::new("prepared-project-head-v2", &snapshot.context),
                 serde_json::to_vec(&head).map_err(io::Error::other)?,
             )],
             None,
@@ -169,9 +201,9 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .map(|_| ())
 }
 
-pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<PreparedProject>> {
+fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manifest>> {
     let read = store.metadata.read_many(
-        &[dm_store::Key::new("prepared-project-head-v1", context)],
+        &[dm_store::Key::new("prepared-project-head-v2", context)],
         None,
     )?;
     let Some(bytes) = &read.values[0] else {
@@ -181,23 +213,63 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if head.version != VERSION || head.context != context {
         return Ok(None);
     }
-    let manifest: Manifest = serde_json::from_slice(&store.get_bounded(
-        "prepared-input-manifest-v1",
+    let manifest = serde_json::from_slice(&store.get_bounded(
+        "prepared-input-manifest-v2",
         &head.manifest,
         MAX_MANIFEST,
     )?)
     .map_err(io::Error::other)?;
+    Ok(Some(manifest))
+}
+
+pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<PreparedProject>> {
+    let Some(manifest) = load_manifest(store, context)? else {
+        return Ok(None);
+    };
     if manifest.version != VERSION
         || manifest.context != context
         || manifest.paths.len() > 64_000
         || manifest.sources.len() > 64_000
-        || manifest.origins.len() > 4_000_000
+        || manifest.origin_count > 4_000_000
         || manifest.units.len() > 128_000
         || manifest.units.len() != manifest.unit_digests.len()
     {
         return Ok(None);
     }
-    let pack = store.get_bounded("prepared-input-pack-v1", &manifest.pack, MAX_PACK)?;
+    let total = manifest
+        .pack
+        .iter()
+        .try_fold(0usize, |total, (_, len)| total.checked_add(*len))
+        .filter(|total| *total <= MAX_PACK)
+        .ok_or_else(|| io::Error::other("prepared chunk pack exceeds limit"))?;
+    if manifest.pack.len() > 16_384 {
+        return Err(io::Error::other("too many prepared chunks"));
+    }
+    let mut pack = Vec::with_capacity(total);
+    let mut expansion_segments = Vec::new();
+    for (digest, len) in &manifest.pack {
+        let bytes = store.get_bounded("prepared-input-chunk-v2", digest, *len)?;
+        if bytes.len() != *len {
+            return Err(io::Error::other("prepared chunk length mismatch"));
+        }
+        if pack.len() < manifest.expanded_end {
+            if pack.len() + bytes.len() > manifest.expanded_end {
+                return Err(io::Error::other(
+                    "prepared chunk crosses expansion boundary",
+                ));
+            }
+            let text = std::str::from_utf8(&bytes).map_err(io::Error::other)?;
+            expansion_segments.push(Arc::new(ExpandedSegment {
+                text: Arc::from(text),
+                digest: Sha256::digest(&bytes).into(),
+            }));
+        }
+        pack.extend_from_slice(&bytes);
+    }
+    let expansion = Arc::new(SegmentedExpansion {
+        segments: expansion_segments,
+        bytes: manifest.expanded_end,
+    });
     let text = std::str::from_utf8(&pack).map_err(io::Error::other)?;
     let expanded = text
         .get(..manifest.expanded_end)
@@ -259,17 +331,20 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if cursor != text.len() {
         return Err(io::Error::other("trailing prepared input bytes"));
     }
-    let origins = manifest
-        .origins
-        .into_iter()
-        .map(|(output_line, index, source_line)| {
-            Ok(Origin {
-                output_line,
-                path: path(index)?,
-                source_line,
-            })
-        })
-        .collect::<io::Result<_>>()?;
+    let origin_bytes =
+        store.get_bounded("prepared-input-chunk-v2", &manifest.origins, MAX_MANIFEST)?;
+    let mut reader = origin_bytes.as_slice();
+    let mut origins = Vec::with_capacity(manifest.origin_count);
+    for _ in 0..manifest.origin_count {
+        origins.push(Origin {
+            output_line: read_varint(&mut reader)?,
+            path: path(read_varint(&mut reader)?)?,
+            source_line: read_varint(&mut reader)?,
+        });
+    }
+    if !reader.is_empty() {
+        return Err(io::Error::other("trailing prepared origin bytes"));
+    }
     let units = manifest
         .units
         .into_iter()
@@ -310,6 +385,8 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     };
     Ok(Some(PreparedProject {
         project: Arc::new(project),
+        macro_names: Arc::new(manifest.macro_names),
+        expansion,
         sources: Arc::new(sources),
         project_digest: manifest.project_digest,
         expanded_digest: manifest.expanded_digest,
@@ -323,4 +400,53 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         },
     }))
 }
-use sha2::Digest;
+use sha2::{Digest, Sha256};
+
+fn publish_group(
+    store: &ContentStore,
+    pack: &mut Vec<(String, usize)>,
+    parts: &mut Vec<&[u8]>,
+    known: &BTreeSet<String>,
+) -> io::Result<()> {
+    if parts.is_empty() {
+        return Ok(());
+    }
+    let mut hash = Sha256::new();
+    let mut bytes = 0;
+    for part in parts.iter() {
+        hash.update(part);
+        bytes += part.len();
+    }
+    let digest = format!("{:x}", hash.finalize());
+    if !known.contains(&digest) {
+        store.put_parts("prepared-input-chunk-v2", parts)?;
+    }
+    pack.push((digest, bytes));
+    parts.clear();
+    Ok(())
+}
+fn write_varint(bytes: &mut Vec<u8>, mut value: usize) {
+    while value >= 128 {
+        bytes.push((value as u8 & 127) | 128);
+        value >>= 7;
+    }
+    bytes.push(value as u8);
+}
+fn read_varint(bytes: &mut &[u8]) -> io::Result<usize> {
+    let mut value = 0usize;
+    for shift in (0..usize::BITS).step_by(7) {
+        let (&byte, rest) = bytes
+            .split_first()
+            .ok_or_else(|| io::Error::other("truncated origin varint"))?;
+        *bytes = rest;
+        let part = usize::from(byte & 127);
+        if part > (usize::MAX >> shift) {
+            return Err(io::Error::other("origin varint overflow"));
+        }
+        value |= part << shift;
+        if byte & 128 == 0 {
+            return Ok(value);
+        }
+    }
+    Err(io::Error::other("origin varint overflow"))
+}

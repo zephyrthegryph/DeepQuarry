@@ -1,10 +1,14 @@
 //! Detached, immutable project inputs shared by compilation and source tools.
 //! Digests identify decoded DM text; filesystem proofs are an acceleration,
 //! never a replacement for the content identities or authored source origins.
+#[path = "expanded_segments.rs"]
+mod expanded_segments;
 use crate::input_proof::InputProof;
 use dm_host::file_stamp::FileStamp;
 use dm_preprocess::PreprocessedProject;
 use dm_syntax::Span;
+pub(crate) use expanded_segments::splice_source_edits;
+pub use expanded_segments::{ExpandedSegment, SegmentedExpansion};
 use sha2::{Digest, Sha256};
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
@@ -58,6 +62,10 @@ pub struct PreparationStats {
 #[derive(Clone)]
 pub struct PreparedProject {
     pub project: Arc<PreprocessedProject>,
+    /// Persistent pieces shared across edited expansion generations.
+    pub expansion: Arc<SegmentedExpansion>,
+    /// Conservative temporal macro namespace, including later #undefs.
+    pub macro_names: Arc<BTreeSet<String>>,
     pub sources: Arc<BTreeMap<PathBuf, PreparedSource>>,
     pub project_digest: String,
     pub expanded_digest: String,
@@ -105,7 +113,17 @@ impl PreparedProject {
 
     pub fn resident_bytes(&self) -> usize {
         let mut paths = BTreeSet::new();
-        self.project.text.capacity()
+        self.macro_names
+            .iter()
+            .map(|name| name.len() + 48)
+            .sum::<usize>()
+            + self
+                .expansion
+                .segments
+                .iter()
+                .map(|piece| piece.text.len() + 96)
+                .sum::<usize>()
+            + self.project.text.capacity()
             + self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>()
             + self
                 .project
@@ -237,4 +255,51 @@ pub(crate) fn changes(
         }
     }
     result
+}
+
+/// A conservative namespace is sufficient to prove absence of expansion on a
+/// changed line. Scan every #define spelling, including inactive branches and
+/// continuations; false positives only disable a splice. This is computed once
+/// for a preprocessed generation and persisted with it.
+pub(crate) fn macro_namespace(
+    project: &PreprocessedProject,
+    sources: &BTreeMap<PathBuf, PreparedSource>,
+) -> BTreeSet<String> {
+    let mut names: BTreeSet<_> = project.final_macros.keys().cloned().collect();
+    names.extend([
+        "__FILE__".into(),
+        "__LINE__".into(),
+        "EXCEPTION".into(),
+        "REGEX_QUOTE".into(),
+        "REGEX_QUOTE_REPLACEMENT".into(),
+    ]);
+    for source in sources.values() {
+        let logical = if source.text.contains("\\\n") || source.text.contains("\\\r\n") {
+            std::borrow::Cow::Owned(source.text.replace("\\\r\n", "").replace("\\\n", ""))
+        } else {
+            std::borrow::Cow::Borrowed(source.text.as_ref())
+        };
+        for tail in logical.split('#').skip(1) {
+            let tail = tail.trim_start_matches(|c: char| c.is_whitespace() || c == char::from(92));
+            let Some(tail) = tail.strip_prefix("define") else {
+                continue;
+            };
+            if tail
+                .chars()
+                .next()
+                .is_some_and(|c| !c.is_whitespace() && c != char::from(92))
+            {
+                continue;
+            }
+            let tail = tail.trim_start_matches(|c: char| c.is_whitespace() || c == char::from(92));
+            let name: String = tail
+                .chars()
+                .take_while(|c| *c == '_' || c.is_alphanumeric())
+                .collect();
+            if !name.is_empty() {
+                names.insert(name);
+            }
+        }
+    }
+    names
 }

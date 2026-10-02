@@ -157,6 +157,7 @@ pub(crate) struct DiscoveryRetentionFootprint {
     pub expansions: usize,
     pub resources: usize,
     pub released_proof: usize,
+    pub cas_proofs: usize,
 }
 
 impl DiscoveryCache {
@@ -187,6 +188,7 @@ impl DiscoveryCache {
             .saturating_add(footprint.expansions)
             .saturating_add(footprint.resources)
             .saturating_add(footprint.released_proof)
+            .saturating_add(footprint.cas_proofs)
     }
 
     pub(crate) fn retention_footprint(&self) -> DiscoveryRetentionFootprint {
@@ -207,6 +209,10 @@ impl DiscoveryCache {
                 .sum(),
             expansions: self.expansions.resident_bytes(),
             resources: self.resources.resident_bytes(),
+            cas_proofs: self
+                .store
+                .as_ref()
+                .map_or(0, crate::ContentStore::proof_resident_bytes),
             released_proof: self
                 .released_proof
                 .as_ref()
@@ -342,11 +348,31 @@ impl DiscoveryCache {
                 self.released_proof = None;
             }
         }
-        if let Some(snapshot) = self
+        // Observe source stamps once. A failed whole-snapshot check followed
+        // by unchanged_paths used to open the entire source set twice per edit
+        // on filesystems where the journal is unavailable.
+        let observed_unchanged = self
             .prepared
             .as_ref()
-            .filter(|snapshot| snapshot.context == context && snapshot.current())
-        {
+            .filter(|snapshot| snapshot.context == context)
+            .and_then(|snapshot| snapshot.proof.as_ref())
+            .filter(|_| !crate::input_proof::exact_inputs())
+            .map(InputProof::unchanged_paths);
+        if let Some(snapshot) = self.prepared.as_ref().filter(|snapshot| {
+            snapshot.context == context
+                && observed_unchanged.as_ref().map_or_else(
+                    || snapshot.current(),
+                    |unchanged| {
+                        snapshot.sources.keys().all(|path| unchanged.contains(path))
+                            && snapshot
+                                .project
+                                .dependencies
+                                .iter()
+                                .filter(|path| !snapshot.sources.contains_key(*path))
+                                .all(|path| !path.exists())
+                    },
+                )
+        }) {
             let snapshot = Arc::new(PreparedProject {
                 stats: PreparationStats {
                     retained_hit: !disk_restored,
@@ -364,19 +390,36 @@ impl DiscoveryCache {
         let previous = previous
             .or_else(|| old.as_ref().and_then(|snapshot| snapshot.proof.as_ref()))
             .or(released_proof.as_ref());
-        let mut unchanged = previous
-            .map(InputProof::unchanged_paths)
-            .unwrap_or_default();
+        let mut unchanged = observed_unchanged.unwrap_or_else(|| {
+            previous
+                .map(InputProof::unchanged_paths)
+                .unwrap_or_default()
+        });
         unchanged.extend(supplied_unchanged.iter().cloned());
         let misses = self.expansions.misses;
-        let (project, sources, proof, digests, stamps, mut stats) = discover_with_retained(
-            root,
-            defines,
-            &mut self.expansions,
-            &self.sources,
-            &unchanged,
-            previous,
-        )?;
+        let spliced = old
+            .as_ref()
+            .filter(|snapshot| snapshot.context == context)
+            .and_then(|snapshot| try_splice_sources(snapshot, &unchanged).ok().flatten());
+        let (discovered, expansion) = if let Some((discovered, expansion)) = spliced {
+            (discovered, Some(expansion))
+        } else {
+            (
+                discover_with_retained(
+                    root,
+                    defines,
+                    &mut self.expansions,
+                    &self.sources,
+                    &unchanged,
+                    previous,
+                )?,
+                None,
+            )
+        };
+        let (project, sources, proof, digests, stamps, mut stats) = discovered;
+        let expansion = Arc::new(expansion.unwrap_or_else(|| {
+            crate::prepared_project::SegmentedExpansion::from_text(&project.text)
+        }));
         let sources: BTreeMap<_, _> = sources
             .into_iter()
             .map(|(path, text)| {
@@ -421,8 +464,13 @@ impl DiscoveryCache {
             Sha256::digest(format!("{context}:{project_digest}"))
         );
         stats.disk_restored = disk_restored;
+        let mut macro_names = crate::prepared_project::macro_namespace(&project, &sources);
+        macro_names.extend(defines.keys().cloned());
+        let macro_names = Arc::new(macro_names);
         let snapshot = Arc::new(PreparedProject {
             project: Arc::new(project),
+            macro_names,
+            expansion,
             sources: Arc::new(sources),
             project_digest,
             expanded_digest,
@@ -596,6 +644,120 @@ fn discover_with_cache_with_proof(
             proof,
         )
     })
+}
+
+type DiscoveredSources = (
+    PreprocessedProject,
+    BTreeMap<PathBuf, Arc<str>>,
+    Option<InputProof>,
+    BTreeMap<PathBuf, [u8; 32]>,
+    BTreeMap<PathBuf, FileStamp>,
+    PreparationStats,
+);
+
+/// Source deltas enter the same detached revision contract as full preprocessing.
+/// The splice path never blesses a caller's unchanged claim: a final strong
+/// proof must validate every source and the missing-include namespace.
+fn try_splice_sources(
+    previous: &PreparedProject,
+    unchanged: &BTreeSet<PathBuf>,
+) -> io::Result<
+    Option<(
+        DiscoveredSources,
+        crate::prepared_project::SegmentedExpansion,
+    )>,
+> {
+    if crate::input_proof::exact_inputs() || previous.proof.is_none() {
+        return Ok(None);
+    }
+    let dirty: Vec<_> = previous
+        .sources
+        .keys()
+        .filter(|path| !unchanged.contains(*path))
+        .cloned()
+        .collect();
+    if dirty.is_empty() || dirty.len() > 32 {
+        return Ok(None);
+    }
+    let limits = dm_work::WorkLimits::configured();
+    let previous_sources = previous.sources.as_ref();
+    let read = dm_work::map_ordered(
+        &dirty,
+        limits,
+        |path| {
+            previous_sources.get(path).map_or(16 * 1024, |source| {
+                source
+                    .text
+                    .len()
+                    .saturating_mul(8)
+                    .saturating_add(16 * 1024)
+            })
+        },
+        |path| read_prepared_source(path, limits),
+    )
+    .map_err(|error| io::Error::other(format!("source splice work limits: {error:?}")))?;
+    let mut sources = previous.sources.as_ref().clone();
+    let mut changed = BTreeMap::new();
+    let mut bytes = 0;
+    for (path, source) in dirty.iter().zip(read) {
+        let Ok(source) = source else {
+            return Ok(None);
+        };
+        bytes += source.text.len();
+        let before = &sources[path];
+        if before.digest != source.digest {
+            changed.insert(
+                path.clone(),
+                (Arc::clone(&before.text), Arc::clone(&source.text)),
+            );
+        }
+        sources.insert(path.clone(), source);
+    }
+    let Some((project, pieces)) = crate::prepared_project::splice_source_edits(
+        &previous.project,
+        &previous.expansion,
+        &changed,
+        &previous.macro_names,
+    ) else {
+        return Ok(None);
+    };
+    let Some(stamps) = sources
+        .iter()
+        .map(|(path, source)| source.stamp.clone().map(|stamp| (path.clone(), stamp)))
+        .collect::<Option<BTreeMap<_, _>>>()
+    else {
+        return Ok(None);
+    };
+    let mut proof = InputProof::from_stamps(stamps.clone());
+    proof.inherit_unchanged(previous.proof.as_ref().unwrap());
+    let missing: Vec<_> = project
+        .dependencies
+        .iter()
+        .filter(|path| !sources.contains_key(*path))
+        .cloned()
+        .collect();
+    proof.enable_namespace_journal(&missing);
+    if !proof.current() || missing.iter().any(|path| path.exists()) {
+        return Ok(None);
+    }
+    let digests = sources
+        .iter()
+        .map(|(path, source)| (path.clone(), source.digest))
+        .collect();
+    let texts = sources
+        .into_iter()
+        .map(|(path, source)| (path, source.text))
+        .collect();
+    let stats = PreparationStats {
+        source_files_read: dirty.len(),
+        source_bytes_read: bytes,
+        sources_reused: previous.sources.len().saturating_sub(dirty.len()),
+        ..Default::default()
+    };
+    Ok(Some((
+        (project, texts, Some(proof), digests, stamps, stats),
+        pieces,
+    )))
 }
 
 fn discover_with_retained(

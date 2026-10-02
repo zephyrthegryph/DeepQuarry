@@ -334,6 +334,9 @@ pub(super) fn emit_dynamic_initializers_with_pool(
                 None,
                 global_procs,
             )?;
+            if let Some(session) = session.as_deref_mut() {
+                envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
+            }
             let words = envelope.section.materialize(&ledger).map_err(|error| {
                 format!(
                     "dynamic initializer {owner:?} ({} of {} assignments): {error}",

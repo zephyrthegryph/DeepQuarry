@@ -12,7 +12,8 @@ use dm_compiler::bootstrap::{
 use dm_compiler::{load_map_set_from_paths, CompilerSession};
 use dm_output::generation::{
     current_generation, publish_generation_reusing_archive, publish_generation_with_archive,
-    verified_archive, verify_generation_digest, VerifiedArchive,
+    publish_generation_with_verified_bytecode, verified_archive, verify_generation_digest,
+    VerifiedArchive, VerifiedBytecode,
 };
 use dm_output::{
     apply_pair_in_place, plan_pair, recover_pair, validate_byond_pair, PairPlan, PatchPolicy,
@@ -172,6 +173,7 @@ impl Sessions {
 pub struct ContentStore {
     root: PathBuf,
     metadata: dm_store::Store,
+    verified_blobs: Mutex<BTreeMap<PathBuf, (dm_host::file_stamp::FileStamp, String)>>,
 }
 
 /// Portable key for a pure compiler stage. Every semantic dependency that can
@@ -299,7 +301,39 @@ impl ContentStore {
         let root = root.into();
         fs::create_dir_all(&root)?;
         let metadata = dm_store::Store::open(root.join("metadata.redb"))?;
-        Ok(Self { root, metadata })
+        Ok(Self { root, metadata, verified_blobs: Mutex::new(BTreeMap::new()) })
+    }
+
+    fn verify_blob(&self, path: &Path, digest: &str) -> io::Result<bool> {
+        let before = (!input_proof::exact_inputs())
+            .then(|| dm_host::file_stamp::capture(path)).flatten();
+        if let Some(stamp) = &before {
+            if self.verified_blobs.lock().unwrap_or_else(|e| e.into_inner())
+                .get(path).is_some_and(|(expected, hash)| expected == stamp && hash == digest)
+            {
+                return Ok(true);
+            }
+        }
+        let valid = verify_file_digest(path, digest)?;
+        if valid && before.is_some()
+            && dm_host::file_stamp::capture(path) == before
+        {
+            let mut proofs = self.verified_blobs.lock().unwrap_or_else(|e| e.into_inner());
+            // Strong-stamp accelerator only. Missing stamps and exact-input
+            // mode always read/hash bytes. Limit metadata independently of CAS.
+            while proofs.len() >= 2048 && !proofs.contains_key(path) {
+                let Some(key) = proofs.keys().next().cloned() else { break; };
+                proofs.remove(&key);
+            }
+            proofs.insert(path.to_owned(), (before.unwrap(), digest.to_owned()));
+        }
+        Ok(valid)
+    }
+
+    fn proof_resident_bytes(&self) -> usize {
+        self.verified_blobs.lock().unwrap_or_else(|e| e.into_inner())
+            .iter().map(|(path, (_, digest))| path.as_os_str().len() * 2 + digest.capacity() + 256)
+            .sum()
     }
 
     pub fn put(&self, namespace: &str, bytes: &[u8]) -> io::Result<String> {
@@ -322,7 +356,7 @@ impl ContentStore {
         fs::create_dir_all(&directory)?;
         let destination = directory.join(&digest);
         if destination.exists() {
-            match verify_file_digest(&destination, &digest) {
+            match self.verify_blob(&destination, &digest) {
                 Ok(true) => return Ok(digest),
                 Ok(false) => {}
                 Err(error) if error.kind() == io::ErrorKind::InvalidData => {
@@ -347,7 +381,7 @@ impl ContentStore {
             Ok(()) => Ok(digest),
             Err(_error) if destination.exists() => {
                 let _ = fs::remove_file(&temporary);
-                if verify_file_digest(&destination, &digest)? {
+                if self.verify_blob(&destination, &digest)? {
                     Ok(digest)
                 } else {
                     Err(io::Error::new(
@@ -655,6 +689,7 @@ pub struct Coordinator {
     // One bounded discovery cache per worker; switching projects releases it.
     frontend_pool: frontend_pool::FrontendPool,
     retained_world: Option<RetainedWorld>,
+    serialization_validation: byond_dmb::dmb::ReferenceValidationCache,
     #[cfg(test)]
     retained_world_hits: usize,
     clock: u64,
@@ -1641,6 +1676,7 @@ impl Coordinator {
             incremental: Default::default(),
             frontend_pool: frontend_pool::FrontendPool::default(),
             retained_world: None,
+            serialization_validation: Default::default(),
             #[cfg(test)]
             retained_world_hits: 0,
             syntax_cache: HashMap::new(),
@@ -2274,14 +2310,27 @@ impl Coordinator {
                 .collect();
             trace_build(trace, "source hashing", hash_started);
             let resources_started = Instant::now();
+            // Observe the asset proof once for this preparation transaction.
+            // Final publication separately revalidates the combined input proof;
+            // repeated observations here neither extend its validity nor help
+            // detect a race, but each can walk thousands of files.
+            let previous_assets_current = previous_assets
+                .as_ref()
+                .is_some_and(|(proof, _, _, _)| proof.current());
             // Map barriers precede their read/decode; resource barriers are
             // produced by the shared input cache before its exact hash reads.
-            let map_proof = InputProof::capture(discovery.map_includes.iter().cloned());
+            let map_proof = if previous_assets_current {
+                previous_assets.as_ref().and_then(|(proof, _, _, _)| {
+                    proof.subset(discovery.map_includes.iter().cloned())
+                }).or_else(|| InputProof::capture(discovery.map_includes.iter().cloned()))
+            } else {
+                InputProof::capture(discovery.map_includes.iter().cloned())
+            };
             let maps = match previous_map_set.as_ref().filter(|_| {
                 previous_assets
                     .as_ref()
-                    .is_some_and(|(proof, _, _, paths)| {
-                        *paths == discovery.map_includes && proof.current()
+                    .is_some_and(|(_, _, _, paths)| {
+                        *paths == discovery.map_includes && previous_assets_current
                     })
             }) {
                 Some(maps) => Arc::clone(maps),
@@ -2294,7 +2343,7 @@ impl Coordinator {
             let requests_started = Instant::now();
             let verified_hints = previous_assets
                 .as_ref()
-                .filter(|(proof, _, _, _)| proof.current());
+                .filter(|_| previous_assets_current);
             let literals = frontend
                 .resource_literals(&discovery.text)
                 .map_err(|error| {
@@ -2338,14 +2387,14 @@ impl Coordinator {
             let reusable_assets =
                 previous_assets
                     .as_ref()
-                    .filter(|(proof, requests, _, map_includes)| {
+                    .filter(|(_, requests, _, map_includes)| {
                         *map_includes == discovery.map_includes
                             && requests.len() == resource_requests.len()
                             && requests.iter().zip(&resource_requests).all(|(old, new)| {
                                 old.archive_name == new.archive_name
                                     && old.disk_path == new.disk_path
                             })
-                            && proof.current()
+                            && previous_assets_current
                     });
             let (resources_digest, prepared_asset_proof) =
                 if let Some((proof, _, digest, _)) = reusable_assets {
@@ -2529,6 +2578,7 @@ impl Coordinator {
         };
         trace_build(trace, "artifact CAS lookup", cache_started);
         let mut reused_archive = None;
+        let mut verified_bytecode = None;
         let (dmb_bytes, rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
@@ -2587,8 +2637,12 @@ impl Coordinator {
                 reused_archive = prepared.archive;
                 let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
                     (Some(bytes), Some(spans)) => (bytes, spans),
-                    _ => match dmb.to_bytes_with_list_spans() {
-                        Ok(pair) => pair,
+                    _ => match dmb.reference_validated(&mut self.serialization_validation)
+                        .and_then(|image| VerifiedBytecode::serialize(&image)) {
+                        Ok((bytes, spans, receipt)) => {
+                            verified_bytecode = Some(receipt);
+                            (bytes, spans)
+                        },
                         Err(error) => return failed_internal(error),
                     },
                 };
@@ -2706,7 +2760,12 @@ impl Coordinator {
                 .map(|generation| generation.rsc);
             let publish_started = Instant::now();
             let published = if let Some(archive) = &reused_archive {
-                match publish_generation_with_archive(&root, &dmb_bytes, archive) {
+                let publication = match &verified_bytecode {
+                    Some(receipt) => publish_generation_with_verified_bytecode(
+                        &root, &dmb_bytes, archive, receipt),
+                    None => publish_generation_with_archive(&root, &dmb_bytes, archive),
+                };
+                match publication {
                     Ok(generation) => Ok(generation),
                     Err(_) => self
                         .blobs

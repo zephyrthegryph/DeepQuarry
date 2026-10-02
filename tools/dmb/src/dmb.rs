@@ -584,6 +584,73 @@ fn crypt_string(data: &mut [u8], offset: usize) {
     }
 }
 
+/// An immutable borrow of the exact image whose references were checked.
+/// Only Dmb's validator can construct this proof; mutation requires ending the
+/// borrow, so serializers cannot accidentally apply it to another generation.
+pub struct ReferenceValidatedImage<'a> { image: &'a Dmb }
+impl<'a> ReferenceValidatedImage<'a> {
+    pub fn image(&self) -> &'a Dmb { self.image }
+    pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        self.image.serialize_with_list_spans(true)
+    }
+}
+
+/// Session-local successful procedure-reference proofs. Derived state is never
+/// serialized into a DMB and cannot change the emitted generation.
+#[derive(Default)]
+pub struct ReferenceValidationCache {
+    procedures: HashMap<usize, ProcedureReferenceProof>,
+    classes: HashMap<usize, ClassReferenceProof>,
+    bytes: usize,
+}
+struct ClassReferenceProof {
+    record: Class,
+    lists: Vec<(u32, Vec<u32>)>,
+    bounds: [usize; 6],
+}
+impl ClassReferenceProof {
+    fn charge(&self) -> usize {
+        std::mem::size_of::<Self>() + 64 + self.lists.capacity() * std::mem::size_of::<(u32, Vec<u32>)>()
+            + self.lists.iter().map(|(_, words)| words.capacity() * 4).sum::<usize>()
+    }
+}
+struct ProcedureReferenceProof {
+    record: Proc,
+    locals: Vec<u32>,
+    arguments: Vec<u32>,
+    bounds: [usize; 4],
+}
+impl ReferenceValidationCache {
+    pub fn resident_bytes(&self) -> usize { self.bytes }
+    pub fn clear(&mut self) { self.procedures.clear(); self.classes.clear(); self.bytes = 0; }
+    fn remember_class(&mut self, index: usize, record: &Class, image: &Dmb, bounds: [usize; 6]) {
+        if let Some(old) = self.classes.remove(&index) { self.bytes = self.bytes.saturating_sub(old.charge()); }
+        let mut ids = vec![record.lists_and_procs[0], record.lists_and_procs[1],
+            record.lists_and_procs[3], record.lists_and_procs[4], record.overrides];
+        ids.sort_unstable(); ids.dedup();
+        let lists: Vec<_> = ids.into_iter().filter(|id| *id != NONE)
+            .filter_map(|id| image.lists.get(id as usize).map(|words| (id, words.clone()))).collect();
+        let proof = ClassReferenceProof { record: record.clone(), lists, bounds };
+        let charge = proof.charge();
+        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
+        self.bytes += charge;
+        self.classes.insert(index, proof);
+    }
+    fn remember(&mut self, index: usize, record: &Proc, locals: &[u32], arguments: &[u32], bounds: [usize; 4]) {
+        let charge = std::mem::size_of::<ProcedureReferenceProof>() + 64
+            + 4 * (locals.len() + arguments.len());
+        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
+        if let Some(old) = self.procedures.remove(&index) {
+            self.bytes = self.bytes.saturating_sub(std::mem::size_of::<ProcedureReferenceProof>() + 64
+                + 4 * (old.locals.len() + old.arguments.len()));
+        }
+        self.procedures.insert(index, ProcedureReferenceProof {
+            record: record.clone(), locals: locals.to_vec(), arguments: arguments.to_vec(), bounds,
+        });
+        self.bytes += charge;
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Proc {
     pub strings: [u32; 4],
@@ -1337,10 +1404,37 @@ impl Dmb {
     }
 
     pub fn validate_references(&self) -> io::Result<()> {
+        self.validate_references_impl(None)
+    }
+    /// Reuse successful proofs only for byte-identical records and dependent
+    /// lists. Growth of referenced tables preserves an in-range proof; shrinking
+    /// any referenced table revalidates the record. Other sections use the same
+    /// validation path as a fresh image.
+    pub fn reference_validated<'a>(&'a self, cache: &mut ReferenceValidationCache) -> io::Result<ReferenceValidatedImage<'a>> {
+        self.validate_references_incremental(cache)?;
+        Ok(ReferenceValidatedImage { image: self })
+    }
+    pub fn validate_references_incremental(&self, cache: &mut ReferenceValidationCache) -> io::Result<()> {
+        cache.procedures.retain(|index, _| *index < self.procs.len());
+        cache.classes.retain(|index, _| *index < self.classes.len());
+        cache.bytes = cache.procedures.values().map(|proof| std::mem::size_of::<ProcedureReferenceProof>() + 64
+            + 4 * (proof.locals.len() + proof.arguments.len())).sum::<usize>()
+            + cache.classes.values().map(ClassReferenceProof::charge).sum::<usize>();
+        self.validate_references_impl(Some(cache))
+    }
+    fn validate_references_impl(&self, mut cache: Option<&mut ReferenceValidationCache>) -> io::Result<()> {
         fn in_table(id: u32, len: usize) -> bool {
             id == NONE || (id as usize) < len
         }
         for (class_index, class) in self.classes.iter().enumerate() {
+            let bounds = [self.strings.len(), self.classes.len(), self.resources.len(), self.lists.len(),
+                self.procs.len(), self.variables.len()];
+            if cache.as_ref().and_then(|cache| cache.classes.get(&class_index)).is_some_and(|proof|
+                proof.record == *class
+                && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
+                && proof.lists.iter().all(|(id, words)| self.lists.get(*id as usize) == Some(words))) {
+                continue;
+            }
             if !in_table(class.path_string_id(), self.strings.len())
                 || !in_table(class.parent_class_id(), self.classes.len())
                 || !in_table(class.name_string_id(), self.strings.len())
@@ -1398,6 +1492,9 @@ impl Dmb {
                     return Err(invalid("class builtin override has invalid StringID"));
                 }
             }
+            if let Some(cache) = cache.as_deref_mut() {
+                cache.remember_class(class_index, class, self, bounds);
+            }
         }
         for mob in &self.mobs {
             if !in_table(mob.class, self.classes.len()) || !in_table(mob.key, self.strings.len()) {
@@ -1408,6 +1505,16 @@ impl Dmb {
             // Native wide tables reserve the nullable ProcID at FFFF as an
             // empty record. Its list references are absent by construction.
             if self.is_reserved_proc_slot(proc_index) {
+                continue;
+            }
+            let bounds = [self.strings.len(), self.lists.len(), self.variables.len(), self.proc_references.len()];
+            let locals_words = self.lists.get(proc.code_locals_args[1] as usize);
+            let argument_words = self.lists.get(proc.code_locals_args[2] as usize);
+            if cache.as_ref().and_then(|cache| cache.procedures.get(&proc_index)).is_some_and(|proof|
+                proof.record == *proc
+                && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
+                && locals_words.is_some_and(|words| words == &proof.locals)
+                && argument_words.is_some_and(|words| words == &proof.arguments)) {
                 continue;
             }
             if proc_index == NONE as usize
@@ -1447,6 +1554,9 @@ impl Dmb {
                     .is_some_and(|index| usize::from(index) >= self.proc_references.len())
             }) {
                 return Err(invalid("proc argument expression reference out of range"));
+            }
+            if let (Some(cache), Some(argument_words)) = (cache.as_deref_mut(), argument_words) {
+                cache.remember(proc_index, proc, locals, argument_words, bounds);
             }
         }
         for variable in &self.variables {
@@ -1887,6 +1997,11 @@ impl Dmb {
 
     /// Serialize and produce the exact list-record index in the same pass.
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        self.serialize_with_list_spans(false)
+    }
+    // The only true caller is the immutable validator token above. Wire-width,
+    // header and grid checks remain mandatory for both entry points.
+    fn serialize_with_list_spans(&self, references_proven: bool) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
         if self.header.version_line != b"world bin v516\n"
             || !self
                 .header
@@ -1904,7 +2019,7 @@ impl Dmb {
         {
             return Err(invalid("unsupported DMB header"));
         }
-        self.validate_references()?;
+        if !references_proven { self.validate_references()?; }
         let cells = self
             .dimensions
             .iter()
