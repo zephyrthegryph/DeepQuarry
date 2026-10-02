@@ -122,6 +122,8 @@ pub(super) fn emit_initializer_groups_with_pool(
     let mut binding_time = std::time::Duration::ZERO;
     let mut lowering_time = std::time::Duration::ZERO;
     let mut linking_time = std::time::Duration::ZERO;
+    let mut graph_prefetch_time = std::time::Duration::ZERO;
+    let mut source_restore_time = std::time::Duration::ZERO;
     let mut prepared_hits = 0;
     let mut lowered_groups = 0;
     let shared = Arc::clone(project_bindings);
@@ -130,19 +132,21 @@ pub(super) fn emit_initializer_groups_with_pool(
         derived=recipes(&groups,dmb,strings,attach);&derived
     };
     if plans.len()!=groups.len() {return Err("initializer recipe inventory mismatch".into());}
-    if let Some(session) = session.as_deref_mut() {
-        // Headers were restored before declaration fact refresh. Fetch payloads
-        // only for this requested group set; no stale helper inventory scan.
-        let keys:Vec<_>=plans.iter().map(|plan|plan.key.clone()).collect();
-        for chunk in keys.chunks(1024) {
-            let _ = session.graph.prefetch(chunk);
-        }
-    }
     let mut groups = groups.into_iter().enumerate().peekable();
     while groups.peek().is_some() {
         let start=groups.peek().map(|(ordinal,_)|*ordinal).unwrap_or(0);
         let end=(start+procedure_pipeline::LOWERING_WINDOW).min(plans.len());
+        if let Some(session) = session.as_deref_mut() {
+            let started = std::time::Instant::now();
+            // Hydrate only the window being consumed. Loading every generated
+            // body first can evict early payloads before their owner is emitted.
+            let keys:Vec<_>=plans[start..end].iter().map(|plan|plan.key.clone()).collect();
+            let _ = session.graph.prefetch(&keys);
+            graph_prefetch_time += started.elapsed();
+        }
+        let source_restore_started = std::time::Instant::now();
         let mut hydrated_sources=session.as_deref_mut().map(|session|session.initializer_sources.restore_batch(&plans[start..end],start,&mut session.graph)).unwrap_or_default();
+        source_restore_time += source_restore_started.elapsed();
         let mut prepared = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
         let mut serial_results = Vec::with_capacity(procedure_pipeline::LOWERING_WINDOW);
         let mut submitted = 0;
@@ -450,7 +454,7 @@ pub(super) fn emit_initializer_groups_with_pool(
         }
     }
     if attach && std::env::var_os("DM_BUILD_TRACE").is_some() {
-        eprintln!("DM_BUILD_TRACE dynamic initializer phases: {} groups ({} prepared hits, {} lowered), parse {:.3}s, bindings {:.3}s, lowering/cache {:.3}s, linking/emission {:.3}s, total {:.3}s", generated.len(), prepared_hits, lowered_groups, parse_time.as_secs_f64(), binding_time.as_secs_f64(), lowering_time.as_secs_f64(), linking_time.as_secs_f64(), phase_started.elapsed().as_secs_f64());
+        eprintln!("DM_BUILD_TRACE dynamic initializer phases: {} groups ({} prepared hits, {} lowered), graph prefetch {:.3}s, source restore {:.3}s, parse {:.3}s, bindings {:.3}s, lowering/cache {:.3}s, linking/emission {:.3}s, total {:.3}s", generated.len(), prepared_hits, lowered_groups, graph_prefetch_time.as_secs_f64(), source_restore_time.as_secs_f64(), parse_time.as_secs_f64(), binding_time.as_secs_f64(), lowering_time.as_secs_f64(), linking_time.as_secs_f64(), phase_started.elapsed().as_secs_f64());
     }
     Ok(generated)
 }
