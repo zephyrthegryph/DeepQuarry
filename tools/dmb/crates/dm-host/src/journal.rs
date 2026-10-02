@@ -139,6 +139,15 @@ impl JournalProof {
                     old.directory_ids.extend(volume.directory_ids);
                     old.directory_ids.sort();
                     old.directory_ids.dedup();
+                    let mut names=std::collections::BTreeMap::<[u64;2],Vec<String>>::new();
+                    for id in old.namespace_ids.iter().chain(&volume.namespace_ids) {
+                        let left=old.namespace_names.iter().find(|(key,_)|key==id).map(|(_,names)|names);
+                        let right=volume.namespace_names.iter().find(|(key,_)|key==id).map(|(_,names)|names);
+                        if (old.namespace_ids.binary_search(id).is_ok() && left.is_none()) || (volume.namespace_ids.binary_search(id).is_ok() && right.is_none()) {continue;}
+                        let values=names.entry(*id).or_default();
+                        values.extend(left.into_iter().chain(right).flat_map(|names|names.iter().cloned()));values.sort();values.dedup();
+                    }
+                    old.namespace_names=names.into_iter().collect();
                     old.namespace_ids.extend(volume.namespace_ids);
                     old.namespace_ids.sort();
                     old.namespace_ids.dedup();
@@ -207,6 +216,7 @@ impl JournalProof {
                             + volume.directory_ids.capacity()
                             + volume.namespace_ids.capacity())
                             * 16
+                        + volume.namespace_names.iter().map(|(_,names)|48+names.iter().map(|name|name.len()+24).sum::<usize>()).sum::<usize>()
                         + 128
                 })
                 .sum::<usize>()
@@ -305,6 +315,8 @@ struct VolumeProof {
     directory_ids: Vec<[u64; 2]>,
     #[serde(default)]
     namespace_ids: Vec<[u64; 2]>,
+    #[serde(default)]
+    namespace_names: Vec<([u64; 2], Vec<String>)>,
 }
 
 fn read_u16(bytes: &[u8], offset: usize) -> Option<u16> {
@@ -328,12 +340,19 @@ fn read_u64(bytes: &[u8], offset: usize) -> Option<u64> {
 fn scan_records(bytes: &[u8], watched: &[[u64; 2]]) -> Option<(i64, bool)> {
     scan_records_batched(bytes, watched, &[], &[])
 }
+#[cfg(test)]
 fn scan_records_batched(
     bytes: &[u8],
     watched: &[[u64; 2]],
     directories: &[[u64; 2]],
     namespaces: &[[u64; 2]],
 ) -> Option<(i64, bool)> {
+    scan_records_filtered(bytes,watched,directories,namespaces,&[])
+}
+fn scan_records_filtered(bytes:&[u8],watched:&[[u64;2]],directories:&[[u64;2]],namespaces:&[[u64;2]],names:&[([u64;2],Vec<String>)])->Option<(i64,bool)> {
+    if !names.windows(2).all(|pair|pair[0].0<pair[1].0) || names.iter().any(|(_,values)| {
+        !values.windows(2).all(|pair|pair[0]<pair[1]) || values.iter().any(|name|!name.is_ascii() || name.contains(['~',':']) || name.ends_with(['.',' ']))
+    }) {return None;}
     let next = read_u64(bytes, 0)? as i64;
     let mut offset = 8;
     let mut changed = false;
@@ -377,13 +396,26 @@ fn scan_records_batched(
         // resolution candidates. Ordinary writes to unrelated siblings do not.
         if watched.binary_search(&id).is_ok()
             || (reason & 0x0011_3300 != 0 && directories.binary_search(&id).is_ok())
-            || (reason & 0x0001_3300 != 0 && namespaces.binary_search(&parent).is_ok())
+            || (reason & 0x0001_3300 != 0 && namespaces.binary_search(&parent).is_ok() && namespace_name_matches(record,name_offset,name_length,parent,names))
         {
             changed = true;
         }
         offset += length;
     }
     Some((next, changed))
+}
+
+fn namespace_name_matches(record:&[u8],offset:usize,length:usize,parent:[u64;2],watches:&[([u64;2],Vec<String>)])->bool {
+    let Ok(index)=watches.binary_search_by_key(&parent,|(id,_)|*id) else {return true;};
+    let Some(bytes)=record.get(offset..offset+length) else {return true;};
+    let mut name=String::with_capacity(length/2);
+    for pair in bytes.chunks_exact(2) {
+        let character=u16::from_le_bytes([pair[0],pair[1]]);
+        if character>127 {return true;}
+        name.push((character as u8).to_ascii_lowercase() as char);
+    }
+    if name.contains(['~',':']) || name.ends_with(['.',' ']) {return true;}
+    watches[index].1.binary_search(&name).is_ok()
 }
 
 #[cfg(windows)]
@@ -532,25 +564,24 @@ mod windows {
             }
         }
         let mut namespace_paths = BTreeSet::new();
-        let candidate_parents = candidates
-            .iter()
-            .map(|candidate| candidate.parent())
-            .collect::<Option<BTreeSet<_>>>()?;
-        // Resource alternatives often share the same absent directory. Inspect
-        // each lexical directory once during this establishment; the later
-        // cursor/barriers and resolution check still guard concurrent changes.
+        let mut parent_names=BTreeMap::<PathBuf,Option<BTreeSet<String>>>::new();
         let mut directory_exists = BTreeMap::new();
-        for candidate_parent in candidate_parents {
-            let parent = candidate_parent.ancestors().find(|path| {
-                *directory_exists
-                    .entry(path.to_path_buf())
-                    .or_insert_with(|| path.is_dir())
+        for candidate in candidates {
+            let candidate_parent=candidate.parent()?;
+            let parent=candidate_parent.ancestors().find(|path| {
+                *directory_exists.entry(path.to_path_buf()).or_insert_with(||path.is_dir())
             })?;
             namespace_paths.insert(parent.to_path_buf());
+            // Watch the first unresolved component, or the final candidate name
+            // if all of its directories already exist.
+            let child=candidate.strip_prefix(parent).ok()?.components().next()?;
+            let name=child.as_os_str().to_str().filter(|name| {
+                name.is_ascii() && !name.contains(['~',':']) && !name.ends_with(['.',' ']) && *name!="." && *name!=".."
+            }).map(str::to_ascii_lowercase);
+            let names=parent_names.entry(parent.to_path_buf()).or_insert_with(||Some(BTreeSet::new()));
+            match (names.as_mut(),name) { (Some(names),Some(name))=>{names.insert(name);},(_,None)=>*names=None,_=>{} }
             for ancestor in parent.ancestors() {
-                if !ancestor.as_os_str().is_empty() {
-                    ancestors.insert(ancestor.to_path_buf());
-                }
+                if !ancestor.as_os_str().is_empty() {ancestors.insert(ancestor.to_path_buf());}
             }
         }
         // Find lexical and followed ancestor volumes before taking cursors;
@@ -588,6 +619,7 @@ mod windows {
                 ids,
                 directory_ids: Vec::new(),
                 namespace_ids: Vec::new(),
+                namespace_names: Vec::new(),
             });
         }
         let directories: BTreeMap<PathBuf, DirectoryProof> = ancestors
@@ -610,6 +642,7 @@ mod windows {
                 ))
             })
             .collect::<Option<BTreeMap<_, _>>>()?;
+        let mut broad_namespace_ids=BTreeSet::new();
         for (path, stamps) in &directories {
             for stamp in [&stamps.lexical, &stamps.followed] {
                 let device = devices.get(&stamp.volume_id()?)?;
@@ -617,12 +650,13 @@ mod windows {
                 volume.directory_ids.push(stamp.file_id()?);
             }
             if namespace_paths.contains(path) {
-                let device = devices.get(&stamps.followed.volume_id()?)?;
-                volumes
-                    .iter_mut()
-                    .find(|v| &v.device == device)?
-                    .namespace_ids
-                    .push(stamps.followed.file_id()?);
+                let device=devices.get(&stamps.followed.volume_id()?)?;
+                let volume=volumes.iter_mut().find(|v|&v.device==device)?;
+                let id=stamps.followed.file_id()?;
+                volume.namespace_ids.push(id);
+                if let Some(Some(names))=parent_names.get(path) {
+                    volume.namespace_names.push((id,names.iter().cloned().collect()));
+                } else {broad_namespace_ids.insert((device.clone(),id));}
             }
         }
         for volume in &mut volumes {
@@ -630,6 +664,11 @@ mod windows {
             volume.directory_ids.dedup();
             volume.namespace_ids.sort();
             volume.namespace_ids.dedup();
+            let mut names=BTreeMap::<[u64;2],BTreeSet<String>>::new();
+            for (id,values) in std::mem::take(&mut volume.namespace_names) {
+                if !broad_namespace_ids.contains(&(volume.device.clone(),id)) {names.entry(id).or_default().extend(values);}
+            }
+            volume.namespace_names=names.into_iter().map(|(id,names)|(id,names.into_iter().collect())).collect();
         }
         for (path, expected) in paths {
             if !crate::file_stamp::exclusive_barrier(path, expected) {
@@ -689,7 +728,7 @@ mod windows {
                 .or_else(|| control(&file, 0x903ab, &request, &mut buffer))?;
             let bytes = &buffer[..length];
             let (next, namespace_changed) =
-                scan_records_batched(bytes, &[], &proof.directory_ids, &proof.namespace_ids)?;
+                scan_records_filtered(bytes, &[], &proof.directory_ids, &proof.namespace_ids, &proof.namespace_names)?;
             if namespace_changed || next <= cursor {
                 return None;
             }
@@ -747,11 +786,12 @@ mod windows {
             let Some(length) = length else {
                 return Validation::Unavailable;
             };
-            let Some((next, changed)) = scan_records_batched(
+            let Some((next, changed)) = scan_records_filtered(
                 &buffer[..length],
                 &proof.ids,
                 &proof.directory_ids,
                 &proof.namespace_ids,
+                &proof.namespace_names,
             ) else {
                 return Validation::Unavailable;
             };

@@ -196,3 +196,20 @@ no runtimecorrectness claim. Nextprototype implements compressed declarationbase
 reuse, bounded packed dependencycertificate pages in productionrestoration,
 and Windows denywrite archiveleases during hardlinkpublication. Their build
 and timing are pending; perowner declarationmutation recorder stillunfinished.
+
+K executable built successfully from9367a4e017; new benchmark K is running.
+No tests/runtime. Windows ArchiveLease private-field compile issue fixed using
+the protected file metadata length. Next implementation records declaration
+mutations and splits immutable procedurecode from linkedtypedprojections.
+Current ListWords is Owned/Shared; code hydration remains necessary for existing
+semantic readers and is not claimed eliminated by directory metadata alone.
+
+K completed: cold190.294s; unchanged0.441s; body20.928s; newproc64.278s;
+newvar60.393s; default56.948s; asset15.032s; newresource68.321s;
+freshcachedprocess0.180s; freshbody33.954s. Packed82438certificates
+restored5.223s, nolegacyreads (previouslegacy16.571s). Coldregression
+approximately9.5s; investigate packedpublication overhead. Declarationbase
+missed addproc because ordinaryclass-qualified constants conservatively
+observedallprocdeclarations; nextcode uses exactabsolute target dependencies.
+Following literaldeclarationoperation replay and filename-precise journal
+namespace watches awaitbuild. No tests or runtime validation.

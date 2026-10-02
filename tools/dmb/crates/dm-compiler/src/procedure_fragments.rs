@@ -23,6 +23,15 @@ pub(super) struct HelperRecipe {
     pub dedup: String,
     pub statics: std::collections::BTreeMap<String, u32>,
 }
+#[derive(Clone, Serialize, Deserialize)]
+pub(super) struct LinkedRows {
+    pub variables: usize,
+    pub lists: usize,
+    pub procs: usize,
+    pub references: usize,
+    pub assignments: Vec<u32>,
+    pub debug_ids: Vec<(u32,u32)>,
+}
 #[derive(Serialize, Deserialize)]
 pub(super) struct OutputFragment {
     pub body_base_relative: usize,
@@ -31,12 +40,14 @@ pub(super) struct OutputFragment {
     pub strings: Vec<StringRecipe>,
     pub variables: Vec<Variable>,
     pub old_variable_base: u32,
-    pub locals: Vec<u32>,
-    pub arguments: Vec<u32>,
+    pub locals: Arc<[u32]>,
+    pub arguments: Arc<[u32]>,
     pub record: Proc,
     pub relocations: Vec<OutputRelocation>,
     pub debug: Vec<OutputDebugRelocation>,
     pub helpers: Vec<HelperRecipe>,
+    #[serde(default)] pub linked: Option<LinkedRows>,
+    #[serde(default)] pub code_digest: Option<String>,
     #[serde(skip)]
     pub words: Arc<[u32]>,
 }
@@ -44,10 +55,10 @@ impl OutputFragment {
     fn encode(&self) -> Option<Vec<u8>> {
         let metadata = rmp_serde::to_vec(self).ok()?;
         let mut result = Vec::with_capacity(12 + metadata.len() + self.words.len() * 4);
-        result.extend_from_slice(b"DMOUTF02");
+        result.extend_from_slice(if self.code_digest.is_some() { b"DMOUTF03" } else { b"DMOUTF02" });
         result.extend_from_slice(&u32::try_from(metadata.len()).ok()?.to_le_bytes());
         result.extend_from_slice(&metadata);
-        for word in self.words.iter() { result.extend_from_slice(&word.to_le_bytes()); }
+        if self.code_digest.is_none() { for word in self.words.iter() { result.extend_from_slice(&word.to_le_bytes()); } }
         if result.len() > 16 * 1024 * 1024 { return None; }
         let compressed = lz4_flex::compress_prepend_size(&result);
         let mut encoded = Vec::with_capacity(8 + compressed.len());
@@ -61,10 +72,10 @@ impl OutputFragment {
         let expanded = lz4_flex::decompress_size_prepended(encoded.get(8..)?).ok()?;
         let bytes = expanded.as_slice();
         let version = bytes.get(..8)?;
-        if version != b"DMOUTF01" && version != b"DMOUTF02" { return None; }
+        if version != b"DMOUTF01" && version != b"DMOUTF02" && version != b"DMOUTF03" { return None; }
         let length = u32::from_le_bytes(bytes.get(8..12)?.try_into().ok()?) as usize;
         let split = 12usize.checked_add(length)?;
-        let mut fragment: Self = if version == b"DMOUTF02" {
+        let mut fragment: Self = if version != b"DMOUTF01" {
             rmp_serde::from_slice(bytes.get(12..split)?).ok()?
         } else {
             serde_json::from_slice(bytes.get(12..split)?).ok()?
@@ -73,6 +84,15 @@ impl OutputFragment {
         if words.len() % 4 != 0 || words.len() / 4 > u16::MAX as usize { return None; }
         fragment.words = words.chunks_exact(4).map(|word| u32::from_le_bytes(word.try_into().unwrap()))
             .collect::<Vec<_>>().into();
+        if version == b"DMOUTF03" {
+            if !words.is_empty() || !fragment.code_digest.as_ref().is_some_and(|digest|digest.len()==64) { return None; }
+            return Some(fragment);
+        }
+        if !fragment.validate() { return None; }
+        Some(fragment)
+    }
+    fn validate(&self) -> bool {
+        let fragment=self;
         let valid_variable = |id: u32| id.checked_sub(fragment.old_variable_base)
             .is_some_and(|offset| (offset as usize) < fragment.variables.len());
         if fragment.locals.len() > u16::MAX as usize || fragment.arguments.len() > u16::MAX as usize
@@ -84,17 +104,40 @@ impl OutputFragment {
                 || (relocation.packed_tag.is_some() && relocation.offset as usize + 1 >= fragment.words.len()))
             || fragment.strings.iter().any(|recipe| matches!(recipe, StringRecipe::Debug { index } if *index >= fragment.debug.len()))
             || fragment.debug.iter().any(|debug| debug.file_offset as usize >= fragment.words.len()
-                || debug.line_offset as usize >= fragment.words.len()) { return None; }
-        Some(fragment)
+                || debug.line_offset as usize >= fragment.words.len()) { return false; }
+        if let Some(linked)=&fragment.linked {
+            if linked.variables!=fragment.old_variable_base as usize || linked.lists>u32::MAX as usize
+                || linked.assignments.len()!=fragment.relocations.len() || linked.debug_ids.len()!=fragment.debug.len()
+                || !fragment.helpers.is_empty() { return false; }
+            if fragment.relocations.iter().zip(&linked.assignments).any(|(relocation,assigned)| {
+                let at=relocation.offset as usize;
+                let actual=match relocation.packed_tag { None=>fragment.words[at],Some(_)=>((fragment.words[at]>>8)<<16)|fragment.words[at+1] };
+                actual!=*assigned
+            }) || fragment.debug.iter().zip(&linked.debug_ids).any(|(mark,(file,line))|
+                fragment.words[mark.file_offset as usize]!=*file || fragment.words[mark.line_offset as usize]!=*line) { return false; }
+            let mapped_string=|id:u32|id==0xffff || fragment.strings.iter().any(|recipe|
+                matches!(recipe,StringRecipe::Bytes{old_id,..} if *old_id==id));
+            if fragment.variables.iter().any(|variable|!mapped_string(variable.name))
+                || fragment.record.strings.iter().any(|id|!mapped_string(*id)) { return false; }
+            let mut next=linked.lists as u32;
+            for actual in fragment.record.code_locals_args {
+                if next==0xffff { next+=1; }
+                if actual!=next { return false; }
+                let Some(value)=next.checked_add(1) else {return false;}; next=value;
+            }
+        }
+        true
     }
     fn charge(&self) -> usize {
         self.words.len() * 4 + self.variables.capacity() * std::mem::size_of::<Variable>()
-            + (self.locals.capacity() + self.arguments.capacity()) * 4
+            + (self.locals.len() + self.arguments.len()) * 4
             + self.strings.iter().map(|recipe| match recipe { StringRecipe::Bytes { bytes, .. } => bytes.len() + 64,
                 StringRecipe::Debug { .. } => 64 }).sum::<usize>()
             + self.relocations.iter().map(|r| r.symbol.key.capacity() + 96).sum::<usize>()
             + self.debug.capacity() * std::mem::size_of::<OutputDebugRelocation>()
             + self.unresolved_debug.capacity() * std::mem::size_of::<usize>()
+            + self.linked.as_ref().map_or(0,|linked|linked.assignments.capacity()*4+linked.debug_ids.capacity()*8+128)
+            + self.code_digest.as_ref().map_or(0,|digest|digest.capacity())
             + self.helpers.iter().map(|h| h.key.path.capacity() + h.identity.capacity() + h.dedup.capacity()
                 + h.descriptor.body_digest.capacity() + h.descriptor.frame_digest.capacity()
                 + h.statics.keys().map(|key| key.capacity() + 64).sum::<usize>() + 160).sum::<usize>() + 256
@@ -115,6 +158,9 @@ fn handle_charge(key: &crate::ProcKey, handle: &Handle) -> usize {
 pub(super) struct FragmentStats {
     pub reused: usize,
     pub relocated: usize,
+    pub linked_rows_reused: usize,
+    pub code_read_bytes: usize,
+    pub code_hydration_seconds: f64,
     pub built: usize,
     pub batches: usize,
     pub disk_bytes: usize,
@@ -141,6 +187,7 @@ pub(super) struct ProcedureFragments {
     store: Option<dm_store::Store>,
     namespace: String,
     blobs: String,
+    code_blobs: String,
     pub stats: FragmentStats,
 }
 impl ProcedureFragments {
@@ -148,7 +195,8 @@ impl ProcedureFragments {
         let store = dm_store::Store::open(root.join("output-fragments.redb")).ok();
         Self { store, namespace: format!("output-handles-v2-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes())),
-            blobs: format!("output-blobs-v2-{}", env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
+            blobs: format!("output-blobs-v2-{}", env!("DM_EMISSION_FINGERPRINT")),
+            code_blobs: format!("output-code-v1-{}",env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
     pub fn set_workers(&mut self, workers: usize) { self.workers = workers.clamp(1, 4); }
     pub fn resident_bytes(&self) -> usize {
@@ -216,6 +264,7 @@ impl ProcedureFragments {
                     bytes.as_deref().and_then(|bytes| bytes.get(8..12))
                         .map(|bytes| u32::from_le_bytes(bytes.try_into().unwrap()) as usize)
                         .unwrap_or(0).min(16 * 1024 * 1024).saturating_mul(3)
+                        .saturating_add(8+u16::MAX as usize*4)
                 };
                 // Compressed byte budgets do not bound decoded result retention.
                 // Drain bounded output windows as well as bounded active jobs.
@@ -232,7 +281,8 @@ impl ProcedureFragments {
                     let decoded = dm_work::map_ordered(group,
                         dm_work::WorkLimits { workers: self.workers.max(1), max_active_bytes: 64 * 1024 * 1024 },
                         estimate, decode).unwrap_or_else(|_| group.iter().map(decode).collect());
-                    for (payload, fragment) in decoded.into_iter().flatten() { self.retain_decoded(payload, fragment); }
+                    let decoded: Vec<_> = decoded.into_iter().flatten().collect();
+                    self.hydrate_code(store, decoded);
                     start = end;
                 }
                 self.stats.decode_seconds += decode_start.elapsed().as_secs_f64();
@@ -242,6 +292,49 @@ impl ProcedureFragments {
                 self.refill(store, &payloads[..middle]); self.refill(store, &payloads[middle..]);
             }
             _ => {}
+        }
+    }
+    fn hydrate_code(&mut self, store: &dm_store::Store, fragments: Vec<(String, Arc<OutputFragment>)>) {
+        let hydration_started=std::time::Instant::now();
+        let names: Vec<_>=fragments.iter().filter_map(|(_,fragment)|fragment.code_digest.clone())
+            .collect::<std::collections::BTreeSet<_>>().into_iter().collect();
+        let mut words=HashMap::new();
+        self.read_code_window(store,&names,&mut words);
+        for (payload,mut fragment) in fragments {
+            if let Some(name)=&fragment.code_digest {
+                let Some(code)=words.get(name) else { continue; };
+                let Some(fragment)=Arc::get_mut(&mut fragment) else { continue; };
+                fragment.words=Arc::clone(code);
+            }
+            if fragment.validate() { self.retain_decoded(payload,fragment); }
+        }
+        self.stats.code_hydration_seconds+=hydration_started.elapsed().as_secs_f64();
+    }
+    fn read_code_window(&mut self, store: &dm_store::Store, names: &[String], words: &mut HashMap<String,Arc<[u32]>>) {
+        if names.is_empty() { return; }
+        let keys: Vec<_>=names.iter().map(|name|dm_store::Key::new(&self.code_blobs,name)).collect();
+        let started=std::time::Instant::now();
+        let result=store.read_many_bounded(&keys,8+u16::MAX as usize*4,8*1024*1024,None);
+        self.stats.read_seconds+=started.elapsed().as_secs_f64();
+        match result {
+            Ok(batch)=>{
+                self.stats.batches+=1;
+                for (name,bytes) in names.iter().zip(batch.values) {
+                    let Some(bytes)=bytes else { continue; };
+                    self.stats.disk_bytes+=bytes.len();
+                    self.stats.code_read_bytes+=bytes.len();
+                    if bytes.get(..8)!=Some(b"DMWORD01".as_slice()) || (bytes.len()-8)%4!=0
+                        || format!("{:x}",Sha256::digest(&bytes))!=*name { continue; }
+                    let code=bytes[8..].chunks_exact(4).map(|bytes|u32::from_le_bytes(bytes.try_into().unwrap())).collect::<Vec<_>>();
+                    words.insert(name.clone(),code.into());
+                }
+            }
+            Err(error) if error.kind()==std::io::ErrorKind::InvalidInput && names.len()>1 => {
+                let middle=names.len()/2;
+                self.read_code_window(store,&names[..middle],words);
+                self.read_code_window(store,&names[middle..],words);
+            }
+            _=>{}
         }
     }
     fn retain_decoded(&mut self, payload: String, fragment: Arc<OutputFragment>) {
@@ -265,14 +358,20 @@ impl ProcedureFragments {
         self.recency.push_back((handle.payload.clone(), self.tick));
         Some(Arc::clone(&entry.fragment))
     }
-    pub fn retain(&mut self, key: crate::ProcKey, descriptor: crate::ProcDescriptor, candidate: String, fragment: OutputFragment) {
+    pub fn retain(&mut self, key: crate::ProcKey, descriptor: crate::ProcDescriptor, candidate: String, mut fragment: OutputFragment) {
         let encode_start = std::time::Instant::now();
+        let mut code = Vec::with_capacity(8+fragment.words.len()*4);
+        code.extend_from_slice(b"DMWORD01");
+        for word in fragment.words.iter() { code.extend_from_slice(&word.to_le_bytes()); }
+        let code_digest = format!("{:x}",Sha256::digest(&code));
+        fragment.code_digest=Some(code_digest.clone());
         let Some(bytes) = fragment.encode() else { return; };
         self.stats.encode_seconds += encode_start.elapsed().as_secs_f64();
         let payload = format!("{:x}", Sha256::digest(&bytes));
         let handle = Handle { descriptor, candidate, payload: payload.clone() };
         let Ok(handle_bytes) = serde_json::to_vec(&handle) else { return; };
-        self.pending_bytes += bytes.len() + handle_bytes.len();
+        self.pending_bytes += bytes.len() + code.len() + handle_bytes.len();
+        self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.code_blobs,code_digest),code));
         self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.blobs, &payload), bytes));
         self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.namespace,
             crate::lower_cache::shared_binding_fingerprint(&key)), handle_bytes));

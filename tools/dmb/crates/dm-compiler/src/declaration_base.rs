@@ -58,27 +58,26 @@ pub(crate) fn declaration_base_key(items:&[Item],modified:&ModifiedTypes,builtin
  // provisional proc recipes do not embed final IDs; their targets are resolved
  // by the procedure overlay. Changes to the referenced target are conservative
  // invalidations, unrelated new procedures are not.
- let mut referenced=HashSet::<String>::new();let mut qualified=false;
+ let mut referenced=HashSet::<String>::new();
  for value in &references {
-  qualified|=value.contains("::");
   let bytes=value.as_bytes();let mut i=0;
   while i<bytes.len(){if bytes[i]!=b'/'{i+=1;continue;}let start=i;i+=1;
    while i<bytes.len()&&(bytes[i].is_ascii_alphanumeric()||matches!(bytes[i],b'/'|b'_')){i+=1;}
    referenced.insert(value[start..i].to_owned());
   }
  }
- if !referenced.is_empty()||qualified {
-  fn observed(items:&[Item],owner:&str,referenced:&HashSet<String>,qualified:bool,hash:&mut Sha256){
+ if !referenced.is_empty() {
+  fn observed(items:&[Item],owner:&str,referenced:&HashSet<String>,hash:&mut Sha256){
    for item in items {
     if matches!(item.kind,ItemKind::Proc|ItemKind::Verb){
      let raw=item.header.split('(').next().unwrap_or("").trim();
      let path=if raw.starts_with('/') {raw.to_owned()} else {format!("{owner}/{}",raw.trim_start_matches('/'))};
      let explicit=if raw.starts_with('/') {path.clone()} else {format!("{owner}/{}/{}",if item.kind==ItemKind::Verb{"verb"}else{"proc"},raw.trim_start_matches("proc/").trim_start_matches("verb/"))};
-     if qualified||referenced.contains(&path)||referenced.contains(&explicit){field(hash,&item.header);let mut ignored=Vec::new();rows(hash,&item.children,&mut ignored);}
-    }else{observed(&item.children,if item.kind==ItemKind::Type{item.header.trim()}else{owner},referenced,qualified,hash);}
+     if referenced.contains(&path)||referenced.contains(&explicit){field(hash,&item.header);let mut ignored=Vec::new();rows(hash,&item.children,&mut ignored);}
+    }else{observed(&item.children,if item.kind==ItemKind::Type{item.header.trim()}else{owner},referenced,hash);}
    }
   }
-  observed(items,"",&referenced,qualified,&mut hash);
+  observed(items,"",&referenced,&mut hash);
  }
  let mut resources:Vec<_>=resources.iter().collect();resources.sort_by(|a,b|a.0.cmp(b.0));
  for(name,id)in resources{field(&mut hash,name);hash.update(id.to_le_bytes());}

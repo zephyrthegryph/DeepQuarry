@@ -968,6 +968,7 @@ impl CanonicalSession {
         const_eval::bind_cache(&root);
         semantic_declarations::bind_cache(&root);
         default_plans::bind_cache(&root);
+        declaration_operations::bind(&root);
         self.project = Some(identity);
         self.configuration = Some(configuration.to_owned());
     }
@@ -1012,6 +1013,7 @@ impl CanonicalSession {
         const_eval::flush_cache();
         semantic_declarations::flush_cache();
         default_plans::flush_cache();
+        declaration_operations::flush();
         if std::env::var_os("DM_BUILD_TRACE").is_some() {
             eprintln!("DM_BUILD_TRACE canonical retained: frozen={} invocation={} owner={} semantic={} declarations={} maps={}",
                 self.skeleton.as_ref().map_or(0,|(_,skeleton)|skeleton.resident_charge.load(Ordering::Relaxed)),
@@ -1070,6 +1072,7 @@ impl CanonicalSession {
         const_eval::bind_cache(cache_root);
         semantic_declarations::bind_cache(cache_root);
         default_plans::bind_cache(cache_root);
+        declaration_operations::bind(cache_root);
         self.project = Some(identity);
         self.configuration = None;
     }
@@ -1124,6 +1127,7 @@ impl CanonicalSession {
         const_eval::flush_cache();
         semantic_declarations::flush_cache();
         default_plans::flush_cache();
+        declaration_operations::flush();
         if let Some(root) = root { let _ = skeleton_fragments::store(root, &key, &value); }
         let value = shared_skeletons()
             .lock()

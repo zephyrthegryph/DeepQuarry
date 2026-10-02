@@ -257,12 +257,13 @@ fn lexical_parent(path:&str)->Option<&str> {
 
 pub(super) fn resident_bytes()->usize {
     let values = value_cache().lock().unwrap_or_else(|error|error.into_inner());
-    values.bytes + values.pending_bytes + owner_dag::resident_bytes() + default_queries::resident_bytes()
+    values.bytes + values.pending_bytes + owner_dag::resident_bytes() + default_queries::resident_bytes() + declaration_operations::resident_bytes()
 }
 /// Auxiliary process cache trimming drops indexes only; active requests retain
 /// their immutable owner Arcs until completion.
 pub(super) fn trim_to(max_bytes:usize) {
     owner_dag::trim_to(max_bytes/3);
+    if declaration_operations::resident_bytes()>max_bytes/16 {declaration_operations::trim();}
     if default_queries::resident_bytes()>max_bytes/6 { default_queries::reset(); }
     let mut values=value_cache().lock().unwrap_or_else(|error|error.into_inner());
     flush_values(&mut values);

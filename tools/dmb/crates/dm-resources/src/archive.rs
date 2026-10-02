@@ -266,6 +266,8 @@ fn prepare_entry(
 pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<PreparedArchive> {
     let started = std::time::Instant::now();
     let (catalog, inputs) = ResourceFingerprintCache::open(root).archive_inputs(requests)?;
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE archive fingerprint inputs: {} requests, {:.3}s",requests.len(),started.elapsed().as_secs_f64());}
+    let lookup_started=std::time::Instant::now();
     let identity = catalog
         .fingerprint
         .iter()
@@ -293,6 +295,7 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
             .join(&record.digest);
         let before = capture(&path);
         if before.as_ref() == Some(&record.stamp) {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE archive receipt hit: lookup {:.3}s, total {:.3}s",lookup_started.elapsed().as_secs_f64(),started.elapsed().as_secs_f64());}
             return Ok(PreparedArchive {
                 path,
                 digest: record.digest,
@@ -305,6 +308,7 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
         // Adding a hardlink changes Windows change clocks without changing bytes.
         // Refresh a verified identity instead of recomposing the unchanged archive.
         if let Some(stamp) = before {
+            if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE archive strong stamp miss: hashing {} bytes",record.len);}
             if identical(&path, &record.digest, record.len).unwrap_or(false)
                 && capture(&path).as_ref() == Some(&stamp) {
                 let refreshed = ArchiveRecord {digest: record.digest.clone(), len: record.len, stamp: stamp.clone()};
