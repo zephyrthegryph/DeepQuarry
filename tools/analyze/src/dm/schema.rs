@@ -207,8 +207,8 @@ pub fn parse_file(rel: &str, code: &View, decls: &mut HashMap<String, Vec<Var>>,
 /// `parse_codec_keys` for one file: `state_codecs()` keys are string literals, which `code_only`
 /// blanks, so they are read from the raw text of each `state_codecs()` proc.
 pub fn parse_codec_keys_file(text: &str, codecs: &mut HashMap<String, HashSet<String>>) {
-    let head = Pat::new(r"(?m)^(/[\w/]+)/state_codecs\(\)");
-    let first_nonspace_line = Pat::new(r"(?m)^\S");
+    let head = pat!(r"(?m)^(/[\w/]+)/state_codecs\(\)");
+    let first_nonspace_line = pat!(r"(?m)^\S");
     let key = pat!(r#""(\w+)"\s*=\s*/datum/state_codec"#);
     for m in head.captures_iter(text) {
         let owner = m.s(1).replace("/proc", "");

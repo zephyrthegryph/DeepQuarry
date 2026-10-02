@@ -402,7 +402,7 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                     }
                 }
                 for alias in &aliases {
-                    if Pat::new(&format!(r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*{}\s*\)", alias)).is_match(text) {
+                    if Pat::cached(&format!(r"\b(?:text2num|locate|text2path|json_decode)\s*\(\s*{}\s*\)", alias)).is_match(text) {
                         flagged = true;
                     }
                 }

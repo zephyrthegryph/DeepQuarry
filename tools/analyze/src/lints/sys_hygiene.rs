@@ -229,7 +229,7 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
         let rel = f.rel.as_str();
         let lines = f.raw().lines_vec();
         for (index, name) in entries {
-            let write = Pat::new(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$", regex::escape(name)));
+            let write = Pat::cached(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$", regex::escape(name)));
             if !declared.contains(name) {
                 out.push(("cached_var", rel.to_string(), index + 1));
             }
@@ -270,10 +270,10 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                 }
             }
         }
-        let mut cache: HashMap<&str, Pat> = HashMap::new();
+        let mut cache: HashMap<&str, &Pat> = HashMap::new();
         for ident in &idents {
             let store = cache.entry(ident.as_str()).or_insert_with(|| {
-                Pat::new(&format!(r"(?<![\w]){}\s*(?:=(?!=)|\+=)[^=]*world\.time", regex::escape(ident)))
+                Pat::cached(&format!(r"(?<![\w]){}\s*(?:=(?!=)|\+=)[^=]*world\.time", regex::escape(ident)))
             });
             for (idx, line) in lines.iter().enumerate() {
                 if store.is_match(strip_comment(line)) {

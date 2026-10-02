@@ -230,6 +230,7 @@ pub struct Tree {
     index: HashMap<String, usize>,
     extra: Mutex<HashMap<String, Option<std::sync::Arc<String>>>>,
     memo_cells: Mutex<HashMap<String, std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>>>>,
+    prewarm_once: OnceLock<()>,
 }
 
 fn mtime_ns(meta: &std::fs::Metadata) -> i128 {
@@ -313,7 +314,7 @@ impl Tree {
             .collect();
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
         let meta = files.iter().map(|f| (f.rel.clone(), FileMeta { size: f.size, mtime_ns: f.mtime_ns, hash: f.hash })).collect();
-        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()) }, meta)
+        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }, meta)
     }
 
     /// A tree over in-memory files (tests and fixtures).
@@ -321,7 +322,7 @@ impl Tree {
         let mut files = files;
         files.sort_by(|a, b| a.rel.cmp(&b.rel));
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
-        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()) }
+        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }
     }
 
     /// A value built once per run and shared by every lint that asks for the same `key` (a parsed
@@ -336,6 +337,19 @@ impl Tree {
         };
         let any = cell.get_or_init(|| std::sync::Arc::new(init()) as std::sync::Arc<dyn std::any::Any + Send + Sync>).clone();
         any.downcast::<T>().expect("memo key reused with a different type")
+    }
+
+    /// Reads every file and builds its code/clean views in parallel, once. A whole-tree lint walks
+    /// the files sequentially; without this its first touch of each file would load, strip and
+    /// sanitize it on that one thread (seconds), while every other lint waited on the same cells.
+    pub fn prewarm(&self) {
+        self.prewarm_once.get_or_init(|| {
+            self.files.par_iter().for_each(|f| {
+                let _ = f.raw();
+                let _ = f.code();
+                let _ = f.clean();
+            });
+        });
     }
 
     pub fn get(&self, rel: &str) -> Option<&SourceFile> {

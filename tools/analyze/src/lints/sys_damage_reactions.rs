@@ -101,13 +101,13 @@ fn strip_parent_args(code: &str) -> String {
 fn is_reflect_boilerplate(body: &[String], name: &str) -> bool {
     let text = body.join("\n");
     let esc = regex::escape(name);
-    if !Pat::new(&format!(r"\b{}\s*\.\s*redirect\s*\(", esc)).is_match(&text) {
+    if !Pat::cached(&format!(r"\b{}\s*\.\s*redirect\s*\(", esc)).is_match(&text) {
         return false;
     }
-    if !Pat::new(&format!(r"\b{}\s*\.\s*starting\b", esc)).is_match(&text) {
+    if !Pat::cached(&format!(r"\b{}\s*\.\s*starting\b", esc)).is_match(&text) {
         return false;
     }
-    for m in Pat::new(&format!(r"\b{}\b(\s*\.\s*(\w+))?", esc)).captures_iter(&text) {
+    for m in Pat::cached(&format!(r"\b{}\b(\s*\.\s*(\w+))?", esc)).captures_iter(&text) {
         if !m.matched(2) {
             let start = m.start(0);
             // text[max(0, start - 40):start] counted in characters
@@ -136,7 +136,7 @@ fn is_reflect_boilerplate(body: &[String], name: &str) -> bool {
 fn changes_hit(raw_lines: &[String], params: &[String]) -> bool {
     for line in raw_lines {
         for name in params {
-            if Pat::new(&format!(r"(?<![\w.]){}\s*(?:=(?!=)|\+\+|--|[-+*/]=)", regex::escape(name))).is_match(line) {
+            if Pat::cached(&format!(r"(?<![\w.]){}\s*(?:=(?!=)|\+\+|--|[-+*/]=)", regex::escape(name))).is_match(line) {
                 return true;
             }
         }
@@ -173,7 +173,7 @@ fn procedural(body: &[&str], params: &[String]) -> bool {
         return true;
     }
     for name in &reads {
-        let pattern = Pat::new(&format!(r"(?<![\w.]){}\b", regex::escape(name)));
+        let pattern = Pat::cached(&format!(r"(?<![\w.]){}\b", regex::escape(name)));
         if lines.iter().any(|l| pattern.is_match(l)) {
             if is_reflect_boilerplate(&lines, name) {
                 continue;

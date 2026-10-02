@@ -201,6 +201,12 @@ impl Engine {
                 }
                 _ => {
                     let mut sink = Sink::new();
+                    // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
+                    // re-enters this call and waits on the cell this thread is initializing. run_all
+                    // prewarms from the main thread (`prepare`) before it fans out.
+                    if rayon::current_thread_index().is_none() {
+                        self.tree.prewarm();
+                    }
                     lint.scan_tree(&cx, &mut sink);
                     lc.tree = Some((key, sink.clone()));
                     dirty = true;
@@ -338,7 +344,37 @@ impl Engine {
     /// Runs every selected lint in parallel; outcomes come back in registry order.
     pub fn run_all(&self) -> Vec<Outcome> {
         let chosen = selected(&self.reg, &self.opts.lints);
+        self.prepare(&chosen);
         chosen.par_iter().map(|l| self.run_one(*l)).collect()
+    }
+
+    /// On the main thread, before the parallel run: when some whole-tree lint will have to scan
+    /// (its memo missed), load every file once in parallel so the sequential lints don't each wait
+    /// on a single thread reading and stripping the tree.
+    pub fn prepare(&self, lints: &[&dyn Lint]) {
+        let mut miss = false;
+        for lint in lints {
+            let meta = lint.meta();
+            if !matches!(meta.scan, ScanKind::Tree | ScanKind::Both) {
+                continue;
+            }
+            let scope = self.scopes.for_lint(meta.name, meta.group);
+            let cx = Cx { tree: &self.tree, meta, scope: &scope };
+            let lc = self.cache.load_lint(meta.name);
+            let mut h = blake3::Hasher::new();
+            h.update(meta.name.as_bytes());
+            for f in cx.all_files() {
+                h.update(&f.fkey.to_le_bytes());
+            }
+            let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
+            if !matches!(&lc.tree, Some((k, _)) if *k == key) {
+                miss = true;
+                break;
+            }
+        }
+        if miss {
+            self.tree.prewarm();
+        }
     }
 
     /// `baseline --update|--seed` for one lint. Returns a one-line report.

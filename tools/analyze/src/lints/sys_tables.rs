@@ -237,7 +237,7 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                     continue;
                 }
                 let name = m.s(2);
-                let touched = Pat::new(&format!(
+                let touched = Pat::cached(&format!(
                     r"\b{n}{w}|return\s+{n}\b|[(,]\s*{n}\s*[,)]|=\s*{n}\s*$",
                     n = name,
                     w = WRITE

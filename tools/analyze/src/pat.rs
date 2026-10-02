@@ -21,7 +21,8 @@ enum Kind {
     Plain(Regex),
     /// `(?<!CLASS)REST` (negative) or `(?<=CLASS)REST` (positive): `re` is REST, `class` the one-char test.
     Behind { re: Regex, class: Regex, negative: bool },
-    Fancy(Fancy),
+    /// `pre` is the pattern with its look-arounds removed: a superset, run first as a cheap filter.
+    Fancy(Fancy, Option<Regex>),
 }
 
 #[derive(Debug)]
@@ -143,6 +144,69 @@ fn has_top_level_alt(p: &str) -> bool {
     false
 }
 
+/// The pattern with every `(?<!..)`, `(?<=..)`, `(?!..)` and `(?=..)` group removed, or None when it
+/// has a backreference (removing look-arounds only widens the match, so the result is a superset
+/// filter; a backreference cannot be widened this way).
+fn strip_lookarounds(p: &str) -> Option<String> {
+    if has_backref(p) {
+        return None;
+    }
+    let b = p.as_bytes();
+    let mut out = String::new();
+    let mut i = 0;
+    let mut in_class = false;
+    while i < b.len() {
+        let c = b[i];
+        if c == b'\\' {
+            out.push_str(&p[i..(i + 2).min(p.len())]);
+            i += 2;
+            continue;
+        }
+        if in_class {
+            if c == b']' {
+                in_class = false;
+            }
+            out.push(c as char);
+            i += 1;
+            continue;
+        }
+        if c == b'[' {
+            in_class = true;
+            out.push('[');
+            i += 1;
+            continue;
+        }
+        if p[i..].starts_with("(?<!") || p[i..].starts_with("(?<=") || p[i..].starts_with("(?!") || p[i..].starts_with("(?=") {
+            // skip to the matching close paren
+            let mut depth = 0i32;
+            let mut j = i;
+            let mut cls = false;
+            while j < b.len() {
+                match b[j] {
+                    b'\\' => j += 1,
+                    b'[' if !cls => cls = true,
+                    b']' if cls => cls = false,
+                    b'(' if !cls => depth += 1,
+                    b')' if !cls => {
+                        depth -= 1;
+                        if depth == 0 {
+                            break;
+                        }
+                    }
+                    _ => {}
+                }
+                j += 1;
+            }
+            i = j + 1;
+            continue;
+        }
+        let ch = p[i..].chars().next().unwrap();
+        out.push(ch);
+        i += ch.len_utf8();
+    }
+    Some(out)
+}
+
 fn has_backref(p: &str) -> bool {
     let b = p.as_bytes();
     let mut i = 0;
@@ -165,6 +229,19 @@ impl Pat {
         Self::try_new(pattern).unwrap_or_else(|e| panic!("bad pattern {:?}: {}", pattern, e))
     }
 
+    /// A compiled pattern kept for the life of the process, keyed by its source. For patterns built
+    /// at run time (`format!` with a var name) inside a loop: compiling per call dominated the
+    /// profile of several lints.
+    pub fn cached(pattern: &str) -> &'static Pat {
+        static CACHE: std::sync::LazyLock<std::sync::RwLock<std::collections::HashMap<String, &'static Pat>>> =
+            std::sync::LazyLock::new(Default::default);
+        if let Some(p) = CACHE.read().unwrap().get(pattern) {
+            return p;
+        }
+        let compiled: &'static Pat = Box::leak(Box::new(Pat::new(pattern)));
+        CACHE.write().unwrap().entry(pattern.to_string()).or_insert(compiled)
+    }
+
     pub fn try_new(pattern: &str) -> Result<Pat, String> {
         if let Some((class, negative, rest)) = split_leading_lookbehind(pattern) {
             if let (Ok(re), Ok(cls)) = (Regex::new(&rest), Regex::new(&format!("^(?:{})$", class))) {
@@ -177,7 +254,7 @@ impl Pat {
                 let mut builder = fancy_regex::RegexBuilder::new(pattern);
                 builder.backtrack_limit(50_000_000);
                 match builder.build() {
-                    Ok(re) => Ok(Pat { src: pattern.to_string(), kind: Kind::Fancy(re) }),
+                    Ok(re) => Ok(Pat { src: pattern.to_string(), kind: Kind::Fancy(re, strip_lookarounds(pattern).and_then(|p| Regex::new(&p).ok())) }),
                     Err(e) => Err(format!("{} / {}", plain_err, e)),
                 }
             }
@@ -225,7 +302,7 @@ impl Pat {
                 }
                 None
             }
-            Kind::Fancy(re) => match re.find_from_pos(hay, pos) {
+            Kind::Fancy(re, pre) => match (if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.find_from_pos(hay, pos) }) {
                 Ok(Some(m)) => Some(M { start: m.start(), end: m.end(), hay }),
                 _ => None,
             },
@@ -279,7 +356,7 @@ impl Pat {
                 }
                 None
             }
-            Kind::Fancy(re) => match re.captures_from_pos(hay, pos) {
+            Kind::Fancy(re, pre) => match (if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.captures_from_pos(hay, pos) }) {
                 Ok(Some(c)) => Some(Caps { hay, groups: c.iter().map(|g| g.map(|m| (m.start(), m.end()))).collect() }),
                 _ => None,
             },

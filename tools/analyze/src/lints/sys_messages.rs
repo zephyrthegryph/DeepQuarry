@@ -80,7 +80,7 @@ fn named(arg: &str, name: &str) -> bool {
         "src" => pat!(r"\[\s*src(?:\.(?:name|real_name))?\s*\]").is_match(arg),
         "user" => pat!(r"\[\s*user(?:\.(?:name|real_name))?\s*\]").is_match(arg),
         "usr" => pat!(r"\[\s*usr(?:\.(?:name|real_name))?\s*\]").is_match(arg),
-        _ => Pat::new(&format!(r"\[\s*{}(?:\.(?:name|real_name))?\s*\]", regex::escape(name))).is_match(arg),
+        _ => Pat::cached(&format!(r"\[\s*{}(?:\.(?:name|real_name))?\s*\]", regex::escape(name))).is_match(arg),
     }
 }
 
@@ -166,7 +166,7 @@ fn scan(f: &SourceFile, out: &mut Vec<(&'static str, usize)>) {
                     recv_is_mob = true;
                 } else {
                     let head = lines[proc_start[line_of]..=line_of].join("\n");
-                    recv_is_mob = Pat::new(&format!(r"\bmob/[\w/]*\b{}\b", regex::escape(r))).is_match(&head);
+                    recv_is_mob = Pat::cached(&format!(r"\bmob/[\w/]*\b{}\b", regex::escape(r))).is_match(&head);
                 }
             }
             None => {
