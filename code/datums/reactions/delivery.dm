@@ -5,7 +5,7 @@
 /proc/rx_call(datum/holder, handler, ...)
 	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
 	if(om_proc_is_global(handler))
-		return call(handler)(arglist(rest))
+		return call(handler)(arglist(list(holder) + rest)) // globals get the holder first (see reactions.dm)
 	return call(holder, handler)(arglist(rest))
 
 /// A runtime subscription made by observe().

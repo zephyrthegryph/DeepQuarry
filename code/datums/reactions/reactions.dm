@@ -13,7 +13,8 @@
 // reads (code/_generated/reads.dm, written by tools/ci/derived_reads_lint.py --fix-generated) + its derived()
 // entries, built once per type. It answers READERS(): a key nothing reads publishes nothing.
 //
-// Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF):
+// Delivery contracts (handler is a PROC_REF on the holder, or a GLOBAL_PROC_REF; a global handler is called with the
+// holder as its first argument, then the arguments listed here: x(holder, keys), x(holder, ctx), x(holder, dt)):
 //   on_change(reads, handler)   handler(list/keys): once per drain (rx_drain) however many reads changed.
 //               at_most = N     ... and at most once per N deciseconds per holder: changes inside the window are held
 //                               and delivered once, with every key they named, when it ends (rx_at_most_admit()).
@@ -41,6 +42,8 @@
 	var/list/reads
 	/// PROC_REF on the holder, or a /proc path.
 	var/handler
+	/// TRUE when `handler` is a /proc path (decided once, in rx_make()); such a handler is called with the holder first.
+	var/global_handler = FALSE
 	/// A capability's own reaction (cap_rx()): the handler is a proc of this capability, called as handler(holder, ...).
 	var/datum/capability/cap
 	/// on_cross: ascending thresholds.
@@ -83,8 +86,8 @@
 	var/list/rest = length(args) > 2 ? args.Copy(3) : list()
 	if(R.cap)
 		return call(R.cap, R.handler)(arglist(list(E) + rest))
-	if(om_proc_is_global(R.handler))
-		return call(R.handler)(arglist(rest))
+	if(R.global_handler)
+		return call(R.handler)(arglist(list(E) + rest)) // a global handler gets the holder first, like every other handler form
 	return call(E, R.handler)(arglist(rest))
 
 /proc/rx_reads_of(reads)
@@ -105,6 +108,7 @@
 	R.key = key
 	R.reads = reads
 	R.handler = handler
+	R.global_handler = om_proc_is_global(handler)
 	R.sig = "[kind]|[key]|[reads ? jointext(reads, ",") : ""]|[handler]"
 	return R
 

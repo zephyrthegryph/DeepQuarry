@@ -16,7 +16,7 @@
 //
 // A handler gets the guard context (/datum/guard_ctx: key, target, actor, item, data; pooled, never kept) and returns
 // null to let it proceed or a reason (a /datum/msg type, text, or TRUE) to refuse. A GLOBAL_PROC_REF handler gets the
-// context only (ctx.target is the holder). Handlers do not sleep. Nothing is allocated unless something guards the
+// holder first, then the context (x(holder, ctx)). Handlers do not sleep. Nothing is allocated unless something guards the
 // key on that holder (guarded()).
 
 /// What a guard handler sees. Pooled: released when guard() returns, so handlers never keep it.
