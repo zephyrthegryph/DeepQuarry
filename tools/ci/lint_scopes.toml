@@ -88,6 +88,16 @@ exempt_files = [
     "code/datums/containment/lifecycle.dm",
 ]
 
+[lint.spatial]
+# spatial_lint.py: exempt_path() (unit tests, benchmarks, the vendored TGS DMAPI) is skipped before the scan.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+[lint.spatial.lists]
+# spatial_lint.py API_DIRS / API_FILES: the files that implement the ledger and spatial API. They are scanned
+# (an ALLOW there still records as used) but their sites are not counted.
+api_prefixes = ["code/datums/containment/"]
+api_files = ["code/__defines/containment.dm"]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
