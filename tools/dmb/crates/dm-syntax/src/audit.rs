@@ -343,7 +343,7 @@ pub fn audit_source_streaming(
     result
 }
 
-fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
+pub(crate) fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
     let mut at_line_start = true;
     let mut indented = false;
     let mut delimiter_depth = 0usize;
@@ -374,6 +374,7 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
+        let literal_start = rest.starts_with("@{\"") || rest.starts_with("{\"") || rest.starts_with("@\"") || rest.starts_with('"');
         let string = if rest.starts_with("@{\"") {
             quoted_end(&rest[1..], true, true).map(|end| end + 1)
         } else if rest.starts_with("{\"") {
@@ -391,6 +392,9 @@ fn for_each_top_level_boundary(source: &str, mut visit: impl FnMut(usize)) {
             pos += end;
             continue;
         }
+        // A piece can stop inside a literal. Its interior is never a genuine
+        // declaration boundary; the segmented scanner carries it forward.
+        if literal_start { break; }
         if rest.starts_with('\'') {
             let mut escaped = false;
             let mut end = rest.len();

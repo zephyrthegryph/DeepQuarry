@@ -446,6 +446,55 @@ the complete DMB and links a verified unchanged RSC. Cache capacity can still
 cause safe recomputation. These changes do not establish a guarantee that every
 edit recomputes only a minimal closure or meets the real-project latency target.
 
+### Production boundary migration (2026-10-02, unmeasured)
+
+The production canonical path now consumes the new boundaries throughout:
+
+* `dm-preprocess::preprocess_project_cached_segmented` writes newline-anchored
+  immutable pieces. Unit digests stream piece ranges; bounded subtree cache
+  records materialize their own ranges only. Legacy preprocess entry points
+  explicitly assemble their returned `text` for compatibility.
+* `PreparedProject.expansion` is the source authority. Production prepared
+  metadata has empty `project.text`; disk restore and direct splices retain
+  pieces without assembling a project-sized buffer. Build snapshots retain the
+  expansion and install its view on the frontend before compilation.
+* `dm-syntax::SegmentedSource` supplies checked ranges, shared line indexes and
+  memoized lexical piece transitions. Canonical declaration parsing does not
+  create an all-procedure body-text outline. Body lowering requests only the
+  changed procedure range. Modified-type discovery caches chunk-local facts and
+  rebases their presentation spans. Resources, diagnostics and JSONL analysis
+  consume the same source view.
+* Owner declaration plans persist symbolic field expressions, flags, parent
+  relationships and signatures. `semantic_declarations` resolves constants and
+  qualified defaults against immutable owner/global nodes, independently of
+  allocated DMB values. It imports the builtin schema, handles shadowing and
+  cycles, and delegates expression dependencies to exact-observation constant
+  queries. Worker jobs receive the same immutable semantic model.
+* Persistent `EmissionPlans` retain immutable procedure binding ledgers.
+  Unchanged plans replay deterministic string allocation and reuse bindings;
+  structural edits check the section's actual referenced assignments. Numeric
+  allocation remains a separate current-generation projection.
+* `Ledger` exposes canonical table assignment fingerprints and assignment deltas.
+  Prepared sections reuse binding-ID projections and immutable output words.
+  `DmbWireCache` reuses exact wire fragments across offset-independent sections;
+  offset-dependent strings are encoded for the current generation. Scoped
+  validation covers class/procedure dependent lists and the other large record
+  tables. Verified serialization receipts reach generation publication.
+* Retained output caches contribute to the coordinator's aggregate frontend
+  budget; shared semantic nodes are charged once. Cache misses and eviction
+  remain safe recomputation paths. Disk caches use the existing shared project
+  cache root and implementation/configuration identities.
+
+This is a code migration, not performance or correctness evidence. The final
+`cargo check --workspace -j1` passed without warnings. No tests, benchmarks or
+DreamDaemon runs were performed for it. Deterministic dense-table
+allocation still traverses records, mutable output vectors require exact-content
+fragment checks, and publication writes a complete new DMB generation. Flat
+origin/unit metadata and final filesystem proofs can still require linear work.
+Changed macro context falls back to contextual preprocessing replay. None of
+these operations is evidence that semantic bodies were re-lowered; neither does
+cache reuse guarantee a minimal invalidation closure or a three-second build.
+
 ### Measuring the real production iteration path
 
 `dm-compile/examples/iteration_bench.rs` calls the actual

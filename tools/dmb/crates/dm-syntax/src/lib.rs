@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use std::ops::Range;
 
 mod audit;
+mod segmented;
+pub use segmented::{SegmentedSource, SegmentedChunkSession};
 mod statements;
 pub use audit::{
     audit_source_streaming, for_each_parsed_chunk, for_each_source_chunk,

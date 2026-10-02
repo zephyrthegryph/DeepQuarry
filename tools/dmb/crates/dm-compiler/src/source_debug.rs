@@ -6,9 +6,12 @@ use std::path::{Path, PathBuf};
 
 pub(crate) struct SourceDebugIndex<'a> {
     line_starts: Vec<usize>,
-    origins: Vec<&'a Origin>,
+    origins: std::borrow::Cow<'a, [Origin]>,
     files: HashMap<&'a Path, String>,
     source_len: usize,
+    segmented: Option<dm_syntax::SegmentedSource>,
+    project_root: PathBuf,
+    directory: PathBuf,
 }
 impl<'a> SourceDebugIndex<'a> {
     pub fn new(project: &'a PreprocessedProject, project_root: &Path) -> Self {
@@ -20,7 +23,7 @@ impl<'a> SourceDebugIndex<'a> {
                 .enumerate()
                 .filter_map(|(at, byte)| (byte == b'\n').then_some(at + 1)),
         );
-        let mut origins: Vec<_> = project.origins.iter().collect();
+        let mut origins = project.origins.clone();
         origins.sort_by_key(|origin| origin.output_line);
         let directory = std::env::current_dir().unwrap_or_default();
         let project_root = absolute_lexical(project_root, &directory);
@@ -39,27 +42,49 @@ impl<'a> SourceDebugIndex<'a> {
         }
         Self {
             line_starts,
-            origins,
+            origins: std::borrow::Cow::Owned(origins),
             files,
             source_len: project.text.len(),
+            segmented: None,
+            project_root,
+            directory,
         }
+    }
+    pub fn new_segmented(project: &'a PreprocessedProject, project_root: &Path, source: &dm_syntax::SegmentedSource) -> Self {
+        // Build only origin/file metadata; avoid scanning or allocating a global
+        // expanded line-start vector. Shared piece indexes resolve current spans.
+        let directory = std::env::current_dir().unwrap_or_default();
+        let project_root = absolute_lexical(project_root, &directory);
+        let origins = std::borrow::Cow::Borrowed(project.origins.as_slice());
+        let mut files = HashMap::new();
+        for authored in project.dependencies.iter().chain(project.units.iter().map(|unit| &unit.path)) {
+            files.entry(authored.as_path()).or_insert_with(|| {
+                let path = absolute_lexical(authored, &directory);
+                path.strip_prefix(&project_root).unwrap_or(&path).to_string_lossy().replace('\\', "/")
+            });
+        }
+        Self { line_starts: Vec::new(), origins, files, source_len: source.len(), segmented: Some(source.clone()), project_root, directory }
     }
     pub fn resolve(&self, offset: usize) -> Option<(String, u32)> {
         if offset >= self.source_len {
             return None;
         }
-        let line = self.line_starts.partition_point(|start| *start <= offset);
+        let line = self.segmented.as_ref().and_then(|source| source.line_number(offset))
+            .unwrap_or_else(|| self.line_starts.partition_point(|start| *start <= offset));
         let index = self
             .origins
             .partition_point(|origin| origin.output_line <= line)
             .checked_sub(1)?;
-        let origin = self.origins[index];
+        let origin = &self.origins[index];
         if origin.output_line != line {
             return None;
         }
         // A macro expansion may produce several output lines from one authored
         // line. The producer's exact origin wins; adding an output delta is false.
-        let file = self.files.get(origin.path.as_path())?.clone();
+        let file = self.files.get(origin.path.as_path()).cloned().unwrap_or_else(|| {
+            let path = absolute_lexical(&origin.path, &self.directory);
+            path.strip_prefix(&self.project_root).unwrap_or(&path).to_string_lossy().replace('\\', "/")
+        });
         Some((file, u32::try_from(origin.source_line).ok()?))
     }
 }

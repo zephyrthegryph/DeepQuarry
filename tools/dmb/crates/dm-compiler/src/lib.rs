@@ -43,6 +43,21 @@ pub fn authored_syntax_errors(project: &PreprocessedProject, project_root: &Path
     errors
 }
 
+pub fn authored_syntax_errors_segmented(project: &PreprocessedProject, project_root: &Path, source: &dm_syntax::SegmentedSource) -> Vec<String> {
+    let origins = source_debug::SourceDebugIndex::new_segmented(project, project_root, source);
+    let mut errors = Vec::new();
+    let _ = source.for_each_chunk(1024*1024, 8*1024*1024, |text, base| {
+        if errors.len() >= 64 { return; }
+        for error in dm_syntax::lex_spans(text).diagnostics {
+            if errors.len() >= 64 { break; }
+            if let Some((file, line)) = origins.resolve(base+error.span.start) {
+                errors.push(format!("{file}:{line}: error: {}", error.message));
+            }
+        }
+    });
+    errors
+}
+
 /// Native compiler macros must be present even in configurations with no
 /// user-supplied defines. They also select version compatibility branches.
 pub fn target_defines(mut defines: BTreeMap<String, String>) -> BTreeMap<String, String> {

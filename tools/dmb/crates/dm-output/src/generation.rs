@@ -99,6 +99,18 @@ pub struct VerifiedBytecode {
     resources: String,
 }
 impl VerifiedBytecode {
+    pub fn serialize_cached(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+        cache: &mut byond_dmb::dmb::DmbWireCache,
+    ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>, Self)> {
+        let (bytes, spans) = image.to_bytes_with_list_spans_cached(cache)?;
+        let receipt = Self {
+            digest: format!("{:x}", Sha256::digest(&bytes)),
+            len: bytes.len(),
+            resources: resource_digest(image.image()),
+        };
+        Ok((bytes, spans, receipt))
+    }
     pub fn serialize(
         image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
     ) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>, Self)> {

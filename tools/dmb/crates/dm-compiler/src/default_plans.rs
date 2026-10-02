@@ -84,6 +84,7 @@ fn charge(key: &str, plan: &DeclarationDefaultPlan) -> usize {
         }
 }
 pub(super) fn bind_cache(root: &std::path::Path) {
+    bind_owner_cache(root);
     let mut cache = cache().lock().unwrap_or_else(|e| e.into_inner());
     if cache.root.as_deref() == Some(root) {
         return;
@@ -112,6 +113,7 @@ pub(super) fn bind_cache(root: &std::path::Path) {
     *cache = next;
 }
 pub(super) fn flush_cache() {
+    flush_owner_cache();
     let mut cache = cache().lock().unwrap_or_else(|e| e.into_inner());
     let Some(store) = &cache.store else {
         cache.pending.clear();
@@ -272,4 +274,171 @@ pub(super) fn declaration(source: &str) -> Result<Arc<DeclarationDefaultPlan>, S
         flush_cache();
     }
     Ok(plan)
+}
+
+/// Owner-local declaration derivation, independent of output allocation. Child
+/// indexes preserve author order without retaining procedure bodies or offsets.
+/// Parent identity is symbolic; inherited constant observations are recorded by
+/// the existing constant query when the allocator resolves each initializer.
+#[derive(Clone, Serialize, Deserialize)]
+pub(super) struct OwnerFieldExpression {
+    pub name: String,
+    pub expression: Option<String>,
+    pub constant: bool,
+    pub override_only: bool,
+}
+#[derive(Clone, Serialize, Deserialize)]
+pub(super) struct OwnerDeclarationPlan {
+    pub identity: String,
+    pub expressions: Vec<OwnerFieldExpression>,
+    pub explicit_parent: Option<String>,
+    pub const_indexes: Vec<usize>,
+    pub mutable_names: HashSet<String>,
+    pub field_types: HashMap<String, String>,
+}
+#[derive(Default)]
+struct OwnerCache {
+    entries: BTreeMap<String, Arc<OwnerDeclarationPlan>>,
+    bytes: usize,
+    root: Option<std::path::PathBuf>,
+    store: Option<dm_store::Store>,
+    pending: BTreeMap<String, Vec<u8>>,
+}
+fn owner_cache() -> &'static Mutex<OwnerCache> {
+    static CACHE: OnceLock<Mutex<OwnerCache>> = OnceLock::new();
+    CACHE.get_or_init(|| Mutex::new(OwnerCache::default()))
+}
+fn owner_namespace() -> String {
+    format!("owner-declarations-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
+}
+pub(super) fn owner(item: &Item) -> Arc<OwnerDeclarationPlan> {
+    let mut hash = Sha256::new();
+    hash.update(item.header.as_bytes());
+    // Index is part of the fragment: edits which move declarations must update
+    // the allocation projection, even if their symbolic meaning is unchanged.
+    for (index, child) in item.children.iter().enumerate() {
+        if matches!(child.kind, ItemKind::Var | ItemKind::Unknown | ItemKind::Statement) {
+            hash.update((index as u64).to_le_bytes());
+            hash.update([child.kind as u8]);
+            hash.update((child.header.len() as u64).to_le_bytes());
+            hash.update(child.header.as_bytes());
+        }
+    }
+    let key = format!("{:x}", hash.finalize());
+    if let Some(plan) = owner_cache().lock().unwrap_or_else(|e|e.into_inner()).entries.get(&key).cloned() { return plan; }
+    let mut plan = OwnerDeclarationPlan { identity:key.clone(), expressions:Vec::new(), explicit_parent: None, const_indexes: Vec::new(), mutable_names: HashSet::new(), field_types: HashMap::new() };
+    for (index, child) in item.children.iter().enumerate() {
+        if plan.explicit_parent.is_none() {
+            plan.explicit_parent = child.header.trim().strip_prefix("parent_type")
+                .and_then(|tail|tail.trim().strip_prefix('=').map(|value|value.trim().to_owned()));
+        }
+        if child.kind != ItemKind::Var {
+            if matches!(child.kind, ItemKind::Statement | ItemKind::Unknown) {
+                if let Some((name, value)) = child.header.split_once('=') {
+                    if name.trim() != "parent_type" {
+                        plan.expressions.push(OwnerFieldExpression { name:name.trim().to_owned(), expression:Some(value.trim().to_owned()), constant:false, override_only:true });
+                    }
+                }
+            }
+            continue;
+        }
+        if let Ok(declaration) = declaration(child.header.trim()) {
+            let name = declaration.name.split('[').next().unwrap_or(&declaration.name).to_owned();
+            let expression = if declaration.name.contains('[') { "list()".to_owned() }
+                else { declaration.initial.clone().unwrap_or_else(||"null".to_owned()) };
+            plan.expressions.push(OwnerFieldExpression {name, expression:Some(expression), constant:declaration.is_const, override_only:false});
+        }
+        if let Some((name, ty)) = declared_variable_type(&child.header) { plan.field_types.insert(name, ty); }
+        let is_const = child.header.split('=').next().is_some_and(|header|header.split('/').any(|part|part.trim()=="const"));
+        if is_const { plan.const_indexes.push(index); }
+        else if let Some(name) = child.header.split('=').next().and_then(|header|header.trim().rsplit('/').next()) { plan.mutable_names.insert(name.to_owned()); }
+    }
+    let plan = Arc::new(plan);
+    if let Ok(bytes) = serde_json::to_vec(plan.as_ref()) {
+        let charge = bytes.len().saturating_mul(3) + key.len() + 128;
+        let mut cache = owner_cache().lock().unwrap_or_else(|e|e.into_inner());
+        if charge <= 16*1024*1024 {
+            while cache.bytes.saturating_add(charge) > 16*1024*1024 {
+                let Some(old) = cache.entries.keys().next().cloned() else {break};
+                if let Some(value) = cache.entries.remove(&old) {
+                    cache.bytes = cache.bytes.saturating_sub(serde_json::to_vec(value.as_ref()).map_or(0,|b|b.len()*3)+old.len()+128);
+                }
+            }
+            if cache.entries.insert(key.clone(), Arc::clone(&plan)).is_none() {cache.bytes+=charge;}
+            cache.pending.insert(key, bytes);
+        }
+        let flush = cache.pending.values().map(Vec::len).sum::<usize>() > 1024 * 1024;
+        drop(cache);
+        if flush { flush_owner_cache(); }
+    }
+    plan
+}
+pub(super) fn bind_owner_cache(root: &std::path::Path) {
+    let mut cache = owner_cache().lock().unwrap_or_else(|e|e.into_inner());
+    if cache.root.as_deref()==Some(root) {return;}
+    let mut next = OwnerCache { root:Some(root.to_owned()), store:dm_store::Store::open(root.join("declaration-fragments.redb")).ok(), ..Default::default() };
+    if let Some(snapshot) = next.store.as_ref().and_then(|store|store.snapshot_namespace(&owner_namespace(),128_000,4*1024*1024,None).ok()) {
+        for (key,bytes) in snapshot.records {
+            if let Ok(plan)=serde_json::from_slice::<OwnerDeclarationPlan>(&bytes) {
+                let charge=bytes.len()*3+key.name.len()+128;
+                if next.bytes+charge<=16*1024*1024 {next.bytes+=charge;next.entries.insert(key.name,Arc::new(plan));}
+            }
+        }
+    }
+    *cache=next;
+}
+pub(super) fn flush_owner_cache() {
+    let mut cache=owner_cache().lock().unwrap_or_else(|e|e.into_inner());
+    let Some(store)=cache.store.as_ref() else {cache.pending.clear();return};
+    let changes:Vec<_>=cache.pending.iter().map(|(key,bytes)|dm_store::Change::Put(dm_store::Key::new(owner_namespace(),key),bytes.clone())).collect();
+    if store.commit(&[],&changes,None).is_ok() {cache.pending.clear();}
+}
+pub(super) fn prefetch_owners(items: &[&Item], workers:usize) {
+    let limits=dm_work::WorkLimits {workers:workers.clamp(1,4),max_active_bytes:8*1024*1024};
+    let _=dm_work::map_ordered(items,limits,|item|item.header.len()+item.children.iter().map(|child|child.header.len()+128).sum::<usize>(),|item|{let _=owner(item);});
+}
+
+/// Semantic defaults contain no generation-local IDs. Constant query witnesses
+/// cover inherited/global names (including failed lookups); resource identity
+/// is encoded by the current generation only after semantic planning finishes.
+#[derive(Clone, Serialize, Deserialize)]
+pub(super) enum SymbolicDefaultValue {
+    Constant(const_eval::Constant),
+    Resource(String),
+}
+pub(super) fn resolve_value(
+    initial: Option<&str>,
+    declaration: &str,
+    dmb: &Dmb,
+    strings: &StringIndex,
+    owner: Option<u32>,
+    blocked: &HashSet<String>,
+) -> Result<SymbolicDefaultValue, String> {
+    if let Some(value) = initial.and_then(|source|fold_constant_scoped(source,dmb,owner,blocked,strings)) {
+        return Ok(SymbolicDefaultValue::Constant(value));
+    }
+    let shape = if declaration.starts_with("var/") || declaration.starts_with("/var/") {
+        declaration_plan_shape(initial, declaration)
+    } else { None };
+    if let Some(value)=shape {
+        return Ok(value);
+    }
+    match initial {
+        None | Some("null") => Ok(SymbolicDefaultValue::Constant(const_eval::Constant::Null)),
+        Some(number) if number.parse::<f32>().is_ok() => Ok(SymbolicDefaultValue::Constant(const_eval::Constant::Number(number.parse().unwrap()))),
+        Some(text) if text.starts_with('"') && text.ends_with('"') && text.len()>=2 => Ok(SymbolicDefaultValue::Constant(const_eval::Constant::Text(text[1..text.len()-1].to_owned()))),
+        Some(text) if text.starts_with('\'') && text.ends_with('\'') && text.len()>=2 => Ok(SymbolicDefaultValue::Resource(text[1..text.len()-1].replace('\\',"/"))),
+        _ => Err(format!("unsupported initial value: {declaration}")),
+    }
+}
+fn declaration_plan_shape(initial: Option<&str>, source: &str) -> Option<SymbolicDefaultValue> {
+    let plan=declaration(source).ok()?;
+    if plan.initial.as_deref()!=initial {return None;}
+    Some(match &plan.shape {
+        DefaultShape::Missing | DefaultShape::Null => SymbolicDefaultValue::Constant(const_eval::Constant::Null),
+        DefaultShape::Number(bits) => SymbolicDefaultValue::Constant(const_eval::Constant::Number(f32::from_bits(*bits))),
+        DefaultShape::Text(text) => SymbolicDefaultValue::Constant(const_eval::Constant::Text(text.clone())),
+        DefaultShape::Resource(name) => SymbolicDefaultValue::Resource(name.clone()),
+        DefaultShape::Path(_) | DefaultShape::Runtime(_) => return None,
+    })
 }

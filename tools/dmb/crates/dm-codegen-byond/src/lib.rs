@@ -196,19 +196,80 @@ impl SymbolicProc {
     }
 }
 
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default)]
+struct AssignmentFingerprints(std::sync::Arc<std::sync::Mutex<BTreeMap<Table, [u8; 32]>>>);
+impl PartialEq for AssignmentFingerprints { fn eq(&self, _: &Self) -> bool { true } }
+impl Eq for AssignmentFingerprints {}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 pub struct Ledger {
     ids: BTreeMap<Symbol, u32>,
     occupied_ids: BTreeSet<(Table, u32)>,
+    #[serde(skip)]
+    fingerprints: AssignmentFingerprints,
+}
+
+/// Exact changes in a frozen assignment generation. This is suitable for a
+/// reverse dependency index: only output records referencing these symbols
+/// need their assignment projection reconsidered after structural edits.
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
+pub struct AssignmentDelta {
+    pub symbols: BTreeSet<Symbol>,
+    pub tables: BTreeSet<Table>,
+}
+impl AssignmentDelta {
+    pub fn is_empty(&self) -> bool { self.symbols.is_empty() }
+    pub fn affects(&self, symbol: &Symbol) -> bool { self.symbols.contains(symbol) }
 }
 
 impl Ledger {
+    pub fn changes_since(&self, previous: &Self) -> AssignmentDelta {
+        let mut delta = AssignmentDelta::default();
+        for (symbol, id) in &self.ids {
+            if previous.ids.get(symbol) != Some(id) {
+                delta.symbols.insert(symbol.clone());
+                delta.tables.insert(symbol.table);
+            }
+        }
+        for symbol in previous.ids.keys() {
+            if !self.ids.contains_key(symbol) {
+                delta.symbols.insert(symbol.clone());
+                delta.tables.insert(symbol.table);
+            }
+        }
+        delta
+    }
+    fn invalidate_fingerprints(&mut self) {
+        if let Some(cache) = std::sync::Arc::get_mut(&mut self.fingerprints.0) {
+            cache.get_mut().unwrap_or_else(|p| p.into_inner()).clear();
+        } else {
+            self.fingerprints = AssignmentFingerprints::default();
+        }
+    }
+    /// Canonical table assignment identity, independent of allocation history.
+    /// Computed once per frozen ledger/table; dependent sections can avoid every
+    /// symbol lookup when their referenced tables retain identical assignments.
+    pub fn table_fingerprint(&self, table: Table) -> [u8; 32] {
+        use sha2::{Digest, Sha256};
+        let mut fingerprints = self.fingerprints.0.lock().unwrap_or_else(|p| p.into_inner());
+        *fingerprints.entry(table).or_insert_with(|| {
+            let mut hash = Sha256::new();
+            hash.update(b"dm-table-assignment-v1");
+            for (symbol, id) in self.ids.iter().filter(|(symbol, _)| symbol.table == table) {
+                hash.update((symbol.key.len() as u64).to_le_bytes());
+                hash.update(symbol.key.as_bytes());
+                hash.update(id.to_le_bytes());
+            }
+            hash.finalize().into()
+        })
+    }
     /// Bind another spelling for an already allocated table payload. Callers
     /// must explicitly identify aliases; ordinary allocations use `bind`.
     pub fn bind_alias(&mut self, symbol: Symbol, id: u32) -> Result<(), LinkError> {
         if self.ids.contains_key(&symbol) {
             return Err(LinkError::DuplicateSymbol(symbol));
         }
+        self.invalidate_fingerprints();
         self.ids.insert(symbol, id);
         Ok(())
     }
@@ -225,6 +286,7 @@ impl Ledger {
             });
         }
         self.occupied_ids.insert((symbol.table, id));
+        self.invalidate_fingerprints();
         self.ids.insert(symbol, id);
         Ok(())
     }
@@ -253,6 +315,7 @@ impl Ledger {
         for key in keys {
             let id = u32::try_from(next).map_err(|_| LinkError::TooManyRecords(table))?;
             let symbol = Symbol::new(table, key);
+            self.invalidate_fingerprints();
             self.ids.insert(symbol, id);
             self.occupied_ids.insert((table, id));
             next += 1;
@@ -260,6 +323,11 @@ impl Ledger {
         Ok(())
     }
 
+    pub fn resident_bytes(&self) -> usize {
+        self.ids.keys().map(|symbol| symbol.key.capacity() + 128).sum::<usize>()
+            + self.occupied_ids.len() * 48
+            + std::mem::size_of::<Self>()
+    }
     pub fn id(&self, symbol: &Symbol) -> Option<u32> {
         self.ids.get(symbol).copied()
     }

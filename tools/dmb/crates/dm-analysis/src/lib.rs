@@ -2,7 +2,7 @@
 use dm_ir::Span;
 use dm_preprocess::PreprocessedProject;
 use dm_semantics::{DeclarationIndex, ProcKind};
-use dm_syntax::{AstFile, Item, ItemKind};
+use dm_syntax::{AstFile, Item, ItemKind, SegmentedSource};
 use serde::{Deserialize, Serialize};
 use std::{
     collections::BTreeMap,
@@ -104,6 +104,7 @@ struct Locations<'a> {
     project: &'a PreprocessedProject,
     line_starts: Vec<usize>,
     origins: Vec<usize>,
+    source: Option<&'a SegmentedSource>,
 }
 impl<'a> Locations<'a> {
     fn new(project: &'a PreprocessedProject) -> Self {
@@ -121,19 +122,24 @@ impl<'a> Locations<'a> {
             project,
             line_starts,
             origins,
+            source: None,
         }
+    }
+    fn segmented(project: &'a PreprocessedProject, source: &'a SegmentedSource) -> Self {
+        let mut origins: Vec<_> = (0..project.origins.len()).collect();
+        origins.sort_by_key(|&i| project.origins[i].output_line);
+        Self { project, line_starts: vec![], origins, source: Some(source) }
     }
     fn get(&self, span: Span) -> Option<Location> {
         if span.file.0 != 0
             || span.start > span.end
-            || span.end as usize > self.project.text.len()
-            || !self.project.text.is_char_boundary(span.start as usize)
+            || span.end as usize > self.source.map_or(self.project.text.len(), SegmentedSource::len)
+            || !self.source.map_or_else(|| self.project.text.is_char_boundary(span.start as usize), |source| source.is_char_boundary(span.start as usize))
         {
             return None;
         }
-        let line = self
-            .line_starts
-            .partition_point(|&start| start <= span.start as usize);
+        let line = self.source.and_then(|source| source.line_number(span.start as usize))
+            .unwrap_or_else(|| self.line_starts.partition_point(|&start| start <= span.start as usize));
         let pos = self
             .origins
             .partition_point(|&i| self.project.origins[i].output_line <= line);
@@ -204,28 +210,50 @@ impl Snapshot {
         ast: &AstFile,
         project: &PreprocessedProject,
     ) -> Self {
-        let locations = Locations::new(project);
+        Self::from_frontend_source(input_digest, index, ast, project, None)
+    }
+    /// Analyze the same shared expansion pieces consumed by native compilation.
+    pub fn from_frontend_segmented(
+        input_digest: impl Into<String>, index: &DeclarationIndex, ast: &AstFile,
+        project: &PreprocessedProject, source: &SegmentedSource,
+    ) -> Self {
+        Self::from_frontend_source(input_digest, index, ast, project, Some(source))
+    }
+    fn from_frontend_source(
+        input_digest: impl Into<String>, index: &DeclarationIndex, ast: &AstFile,
+        project: &PreprocessedProject, source: Option<&SegmentedSource>,
+    ) -> Self {
+        let locations = source.map_or_else(|| Locations::new(project), |source| Locations::segmented(project, source));
         let mut origin_cursor = 0;
-        let origin_coverage = if project.origins.is_empty() {
-            Coverage::Unavailable
-        } else if project.text.lines().enumerate().all(|(line, text)| {
-            if text.trim().is_empty() {
-                return true;
-            }
+        let mut line_number = 0;
+        let mut line_present = |text: &str| {
+            line_number += 1;
+            if text.trim().is_empty() { return true; }
             while origin_cursor < locations.origins.len()
-                && project.origins[locations.origins[origin_cursor]].output_line < line + 1
-            {
+                && project.origins[locations.origins[origin_cursor]].output_line < line_number {
                 origin_cursor += 1;
             }
-            locations
-                .origins
-                .get(origin_cursor)
-                .is_some_and(|&i| project.origins[i].output_line == line + 1)
-        }) {
-            Coverage::Complete
-        } else {
-            Coverage::Partial
+            locations.origins.get(origin_cursor)
+                .is_some_and(|&i| project.origins[i].output_line == line_number)
         };
+        let complete = if let Some(source) = source {
+            // Expansion pieces end at newlines; retain a carry for general callers.
+            let mut carry = String::new();
+            let mut complete = true;
+            for piece in source.pieces() {
+                for part in piece.split_inclusive('\n') {
+                    carry.push_str(part);
+                    if part.ends_with('\n') {
+                        complete &= line_present(&carry);
+                        carry.clear();
+                    }
+                }
+            }
+            if !carry.is_empty() { complete &= line_present(&carry); }
+            complete
+        } else { project.text.lines().all(&mut line_present) };
+        let origin_coverage = if project.origins.is_empty() { Coverage::Unavailable }
+            else if complete { Coverage::Complete } else { Coverage::Partial };
         let mut result = Self {
             input_digest: input_digest.into(),
             coverage: CoverageReport {

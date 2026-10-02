@@ -803,7 +803,7 @@ pub fn preprocess_project<P: SourceProvider>(
     provider: &P,
     defines: &BTreeMap<String, String>,
 ) -> PreprocessedProject {
-    preprocess_project_inner(project, provider, defines, None)
+    preprocess_project_inner(project, provider, defines, None, false).0
 }
 
 pub fn preprocess_project_cached<P: SourceProvider>(
@@ -812,7 +812,16 @@ pub fn preprocess_project_cached<P: SourceProvider>(
     defines: &BTreeMap<String, String>,
     cache: &mut PreprocessCache,
 ) -> PreprocessedProject {
-    preprocess_project_inner(project, provider, defines, Some(cache))
+    preprocess_project_inner(project, provider, defines, Some(cache), false).0
+}
+
+/// Production expansion never assembles a project-sized contiguous string.
+/// Legacy entry points explicitly materialize text after the same preprocessing.
+pub fn preprocess_project_cached_segmented<P: SourceProvider>(
+    project: &Path, provider: &P, defines: &BTreeMap<String, String>,
+    cache: &mut PreprocessCache,
+) -> (PreprocessedProject, Vec<Arc<str>>) {
+    preprocess_project_inner(project, provider, defines, Some(cache), true)
 }
 
 fn preprocess_project_inner<P: SourceProvider>(
@@ -820,11 +829,13 @@ fn preprocess_project_inner<P: SourceProvider>(
     provider: &P,
     defines: &BTreeMap<String, String>,
     cache: Option<&mut PreprocessCache>,
-) -> PreprocessedProject {
+    segmented: bool,
+) -> (PreprocessedProject, Vec<Arc<str>>) {
     let mut ctx = Context {
         provider,
         cache,
         output: PreprocessedProject::default(),
+        expanded: ExpansionWriter::default(),
         stack: Vec::new(),
         output_line: 1,
         macro_digest: [0; 32],
@@ -877,8 +888,8 @@ fn preprocess_project_inner<P: SourceProvider>(
     }
     ctx.visit(project.to_path_buf());
     for (text, path, source_line) in std::mem::take(&mut ctx.manifest_lines) {
-        ctx.output.text.push_str(&text);
-        ctx.output.text.push('\n');
+        ctx.expanded.push_str(&text);
+        ctx.expanded.push_str("\n");
         ctx.output.origins.push(Origin {
             output_line: ctx.output_line,
             path,
@@ -886,7 +897,11 @@ fn preprocess_project_inner<P: SourceProvider>(
         });
         ctx.output_line += 1;
     }
-    ctx.output
+    let pieces = ctx.expanded.finish();
+    if !segmented {
+        ctx.output.text = pieces.iter().map(|piece| piece.as_ref()).collect();
+    }
+    (ctx.output, pieces)
 }
 
 #[derive(Clone, Copy)]
@@ -927,10 +942,63 @@ struct ExpandLocation<'a> {
     line: usize,
 }
 
+/// Newline-anchored immutable pieces and one bounded unfinished output piece.
+#[derive(Default)]
+struct ExpansionWriter {
+    pieces: Vec<Arc<str>>,
+    offsets: Vec<usize>,
+    pending: String,
+    committed: usize,
+}
+impl ExpansionWriter {
+    fn len(&self) -> usize { self.committed + self.pending.len() }
+    fn push_str(&mut self, text: &str) {
+        for part in text.split_inclusive('\n') {
+            self.pending.push_str(part);
+            if part.ends_with('\n') && self.pending.len() >= 64*1024 {
+                self.commit();
+            }
+        }
+    }
+    fn commit(&mut self) {
+        if self.pending.is_empty() { return; }
+        let piece: Arc<str> = Arc::from(std::mem::take(&mut self.pending));
+        self.offsets.push(self.committed);
+        self.committed += piece.len();
+        self.pieces.push(piece);
+    }
+    fn visit_range(&self, start: usize, end: usize, mut visit: impl FnMut(&str)) {
+        assert!(start <= end && end <= self.len());
+        if start == end { return; }
+        let first = self.offsets.partition_point(|offset| *offset <= start).saturating_sub(1);
+        for (piece, offset) in self.pieces[first..].iter().zip(&self.offsets[first..]) {
+            if *offset >= end { break; }
+            let a = start.saturating_sub(*offset);
+            let b = (end-*offset).min(piece.len());
+            if a < b { visit(&piece[a..b]); }
+        }
+        if end > self.committed {
+            visit(&self.pending[start.saturating_sub(self.committed)..end-self.committed]);
+        }
+    }
+    fn digest(&self, start: usize, end: usize) -> [u8;32] {
+        let mut hash = Sha256::new();
+        self.visit_range(start,end,|text|hash.update(text.as_bytes()));
+        hash.finalize().into()
+    }
+    fn range(&self, start: usize, end: usize) -> String {
+        let mut text = String::with_capacity(end-start);
+        self.visit_range(start,end,|part|text.push_str(part));
+        text
+    }
+    fn finish(mut self) -> Vec<Arc<str>> { self.commit(); self.pieces }
+}
+
 struct Context<'a, P: SourceProvider> {
     provider: &'a P,
     cache: Option<&'a mut PreprocessCache>,
     output: PreprocessedProject,
+    expanded: ExpansionWriter,
     stack: Vec<PathBuf>,
     output_line: usize,
     macro_digest: [u8; 32],
@@ -1080,7 +1148,7 @@ impl<P: SourceProvider> Context<'_, P> {
                 }) {
                     let macro_changes = entry.macro_changes.clone();
                     let file_dir_changes = entry.file_dir_changes.clone();
-                    let byte_start = self.output.text.len();
+                    let byte_start = self.expanded.len();
                     let line_start = self.output_line;
                     let origin_path = Arc::new(path.clone());
                     for (relative, digest) in &entry.dependencies {
@@ -1109,7 +1177,7 @@ impl<P: SourceProvider> Context<'_, P> {
                             )
                         },
                     ));
-                    self.output.text.push_str(&entry.output_text);
+                    self.expanded.push_str(&entry.output_text);
                     // Source paths are declaration identities, not per-line data.
                     // A replayed subtree may contain hundreds of thousands of lines:
                     // intern its few paths once rather than allocating an Arc and
@@ -1177,7 +1245,7 @@ impl<P: SourceProvider> Context<'_, P> {
         let file_dir_change_start = self.file_dir_changes.len();
         let line_start = self.output_line;
         self.stack.push(path.clone());
-        let unit_start = self.output.text.len();
+        let unit_start = self.expanded.len();
         let origin_path = Arc::new(path.clone());
         let file_name = path
             .strip_prefix(&self.project_dir)
@@ -1448,8 +1516,8 @@ impl<P: SourceProvider> Context<'_, P> {
                         ));
                         continue;
                     }
-                    self.output.text.push_str(segment);
-                    self.output.text.push('\n');
+                    self.expanded.push_str(segment);
+                    self.expanded.push_str("\n");
                     self.output.origins.push(Origin {
                         output_line: self.output_line,
                         path: origin_path.clone(),
@@ -1467,10 +1535,10 @@ impl<P: SourceProvider> Context<'_, P> {
                 "unterminated #if block",
             );
         }
-        let unit_end = self.output.text.len();
+        let unit_end = self.expanded.len();
         self.output
             .unit_digests
-            .push(Sha256::digest(self.output.text[unit_start..unit_end].as_bytes()).into());
+            .push(self.expanded.digest(unit_start, unit_end));
         self.output.units.push(Unit {
             path: path.clone(),
             output_span: Span::new(unit_start, unit_end),
@@ -1530,7 +1598,7 @@ impl<P: SourceProvider> Context<'_, P> {
                         )
                     })
                     .collect(),
-                output_text: self.output.text[unit_start..unit_end].to_owned(),
+                output_text: self.expanded.range(unit_start, unit_end),
                 unit_digests: self.output.unit_digests[unit_start_index..].to_vec(),
                 origins: self.output.origins[origin_start..]
                     .iter()

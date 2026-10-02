@@ -15,6 +15,12 @@ struct ProjectionSlot {
     local: Mutex<Option<Projection>>,
     cache: Mutex<Option<Arc<OutputProjectionCache>>>,
     identity: OnceLock<[u8; 32]>,
+    assignments: Mutex<Option<BindingProjection>>,
+}
+#[derive(Debug)]
+struct BindingProjection {
+    tables: Vec<(Table, [u8; 32])>,
+    ids: Vec<u32>,
 }
 impl PartialEq for ProjectionSlot {
     fn eq(&self, _: &Self) -> bool {
@@ -443,6 +449,9 @@ impl PreparedProc {
         self.retain_projection(ids, witness, &result);
         Ok(result.into())
     }
+    pub fn references_changed(&self, delta: &crate::AssignmentDelta) -> bool {
+        self.symbols.iter().any(|symbol| delta.affects(symbol))
+    }
     pub fn for_each_reference(&self, mut visit: impl FnMut(Table, &str)) {
         for symbol in &self.symbols {
             visit(symbol.table, &symbol.key);
@@ -460,14 +469,18 @@ impl PreparedProc {
     }
 
     fn binding_ids(&self, ledger: &Ledger) -> Result<Vec<u32>, LinkError> {
-        self.symbols
-            .iter()
-            .map(|symbol| {
-                ledger
-                    .id(symbol)
-                    .ok_or_else(|| LinkError::MissingSymbol(symbol.clone()))
-            })
-            .collect()
+        let tables: Vec<_> = self.symbols.iter().map(|symbol| symbol.table)
+            .collect::<BTreeSet<_>>().into_iter()
+            .map(|table| (table, ledger.table_fingerprint(table))).collect();
+        let mut projection = self.projection.assignments.lock().unwrap_or_else(|p| p.into_inner());
+        if let Some(old) = projection.as_ref().filter(|old| old.tables == tables) {
+            return Ok(old.ids.clone());
+        }
+        let ids = self.symbols.iter().map(|symbol| ledger.id(symbol)
+            .ok_or_else(|| LinkError::MissingSymbol(symbol.clone())))
+            .collect::<Result<Vec<_>, _>>()?;
+        *projection = Some(BindingProjection { tables, ids: ids.clone() });
+        Ok(ids)
     }
 
     fn cached_projection(&self, ids: &[u32], debug: &[(usize, u32, u32)]) -> Option<Arc<[u32]>> {

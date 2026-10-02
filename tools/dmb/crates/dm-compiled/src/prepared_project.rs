@@ -121,7 +121,7 @@ impl PreparedProject {
                 .expansion
                 .segments
                 .iter()
-                .map(|piece| piece.text.len() + 96)
+                .map(|piece| piece.text.len() + piece.lines.len()*std::mem::size_of::<usize>() + 96)
                 .sum::<usize>()
             + self.project.text.capacity()
             + self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>()

@@ -690,6 +690,7 @@ pub struct Coordinator {
     frontend_pool: frontend_pool::FrontendPool,
     retained_world: Option<RetainedWorld>,
     serialization_validation: byond_dmb::dmb::ReferenceValidationCache,
+    serialization_wire: byond_dmb::dmb::DmbWireCache,
     #[cfg(test)]
     retained_world_hits: usize,
     clock: u64,
@@ -746,6 +747,7 @@ struct BuildInputSnapshot {
     resource_requests: Vec<ResourceRequest>,
     source_resource_literals: Vec<String>,
     preprocessed: Arc<PreprocessedProject>,
+    expansion: Arc<prepared_project::SegmentedExpansion>,
     proof: std::cell::RefCell<Option<InputProof>>,
     asset_proof: std::cell::RefCell<Option<InputProof>>,
     source_proof: std::cell::RefCell<Option<InputProof>>,
@@ -937,6 +939,7 @@ impl BuildInputSnapshot {
                 .map(String::capacity)
                 .sum::<usize>()
             + self.preprocessed.text.capacity()
+            + self.expansion.segments.iter().map(|piece| piece.text.len()+piece.lines.len()*std::mem::size_of::<usize>()+96).sum::<usize>()
             + origin_bytes
             + self
                 .map_set
@@ -1282,6 +1285,7 @@ impl Coordinator {
         artifact: &ArtifactKey,
         project: &Path,
         preprocessed: &PreprocessedProject,
+        expansion: &prepared_project::SegmentedExpansion,
         builtins: &[u8],
         world_name: &str,
         resources: &str,
@@ -1294,6 +1298,12 @@ impl Coordinator {
         let mut frontend = self
             .frontend_pool
             .take_or_insert(session_key, self.blobs.root.clone());
+        frontend.set_segmented_source(expansion.source());
+        let compatibility;
+        let preprocessed = if canonical { preprocessed } else {
+            compatibility = PreprocessedProject { text: expansion.materialize(), ..preprocessed.clone() };
+            &compatibility
+        };
         let result = self.prepare_native_build_with_frontend(
             artifact,
             project,
@@ -1677,6 +1687,7 @@ impl Coordinator {
             frontend_pool: frontend_pool::FrontendPool::default(),
             retained_world: None,
             serialization_validation: Default::default(),
+            serialization_wire: Default::default(),
             #[cfg(test)]
             retained_world_hits: 0,
             syntax_cache: HashMap::new(),
@@ -1689,6 +1700,9 @@ impl Coordinator {
 
     pub fn handle(&mut self, request: Request) -> Response {
         self.clock = self.clock.saturating_add(1);
+        self.frontend_pool.set_external_bytes(
+            self.serialization_wire.resident_bytes().saturating_add(self.serialization_validation.resident_bytes())
+                .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes()));
         self.evict_idle(self.limits.max_idle_requests);
         // Diagnostic sessions can retain Salsa syntax trees. Bound the number
         // of worktree configurations held in memory; their disk CAS survives.
@@ -1948,7 +1962,7 @@ impl Coordinator {
         max_source_bytes: usize,
     ) -> io::Result<ProjectFrontendSnapshot> {
         let prepared = self.prepare_project(key)?;
-        dm_compiler::check_source_size(prepared.project.text.len(), max_source_bytes)
+        dm_compiler::check_source_size(prepared.expansion.bytes, max_source_bytes)
             .map_err(io::Error::other)?;
         Ok(self.frontend_from_prepared(key, prepared))
     }
@@ -1961,7 +1975,7 @@ impl Coordinator {
         let mut frontend = self
             .frontend_pool
             .take_or_insert(key, self.blobs.root.clone());
-        let parsed = frontend.compact_snapshot(&prepared.project.text);
+        let parsed = frontend.compact_declarations_segmented(&prepared.expansion.source());
         self.frontend_pool.put(key.clone(), frontend);
         match parsed {
             Ok((ast, _)) => {
@@ -1975,9 +1989,10 @@ impl Coordinator {
                 }
             }
             Err(error) => {
-                let mut syntax_errors = dm_compiler::authored_syntax_errors(
+                let mut syntax_errors = dm_compiler::authored_syntax_errors_segmented(
                     &prepared.project,
                     key.project.parent().unwrap_or(Path::new(".")),
+                    &prepared.expansion.source(),
                 );
                 if syntax_errors.is_empty() {
                     syntax_errors.push(error);
@@ -2000,7 +2015,7 @@ impl Coordinator {
         };
         let discovery = &prepared.project;
         if let Err(error) =
-            dm_compiler::check_source_size(discovery.text.len(), self.limits.max_check_source_bytes)
+            dm_compiler::check_source_size(prepared.expansion.bytes, self.limits.max_check_source_bytes)
         {
             return failed_project(error);
         }
@@ -2282,12 +2297,12 @@ impl Coordinator {
                 .ok()
                 .and_then(|value| value.parse::<usize>().ok())
                 .unwrap_or(64 * 1024 * 1024);
-            if discovery.text.len() > limit {
+            if prepared.expansion.bytes > limit {
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidData,
                     format!(
                         "preprocessed project is {} bytes, above the build limit of {limit}; set DM_BUILD_MAX_SOURCE_BYTES to raise it",
-                        discovery.text.len()
+                        prepared.expansion.bytes
                     ),
                 ));
             }
@@ -2345,11 +2360,11 @@ impl Coordinator {
                 .as_ref()
                 .filter(|_| previous_assets_current);
             let literals = frontend
-                .resource_literals(&discovery.text)
+                .resource_literals_segmented(&prepared.expansion.source())
                 .map_err(|error| {
                     // Resource discovery shares the structural lexer and may
                     // reject source before a retained snapshot is assembled.
-                    let authored = dm_compiler::authored_syntax_errors(&discovery, project_root);
+                    let authored = dm_compiler::authored_syntax_errors_segmented(&discovery, project_root, &prepared.expansion.source());
                     io::Error::other(if authored.is_empty() {
                         error
                     } else {
@@ -2437,6 +2452,7 @@ impl Coordinator {
                 resource_requests,
                 source_resource_literals: literals,
                 preprocessed: Arc::clone(&prepared.project),
+                expansion: Arc::clone(&prepared.expansion),
             })
         };
         let retained = self.build_inputs.remove(&key);
@@ -2593,6 +2609,7 @@ impl Coordinator {
                     &artifact,
                     &key.project,
                     &snapshot.preprocessed,
+                    &snapshot.expansion,
                     &builtins,
                     &world_name,
                     resources_digest,
@@ -2604,9 +2621,10 @@ impl Coordinator {
                 ) {
                     Ok(prepared) => prepared,
                     Err(error) => {
-                        let authored = dm_compiler::authored_syntax_errors(
+                        let authored = dm_compiler::authored_syntax_errors_segmented(
                             &snapshot.preprocessed,
                             key.project.parent().unwrap_or(Path::new(".")),
+                            &snapshot.expansion.source(),
                         );
                         return failed_project(if authored.is_empty() {
                             error
@@ -2638,7 +2656,7 @@ impl Coordinator {
                 let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
                     (Some(bytes), Some(spans)) => (bytes, spans),
                     _ => match dmb.reference_validated(&mut self.serialization_validation)
-                        .and_then(|image| VerifiedBytecode::serialize(&image)) {
+                        .and_then(|image| VerifiedBytecode::serialize_cached(&image, &mut self.serialization_wire)) {
                         Ok((bytes, spans, receipt)) => {
                             verified_bytecode = Some(receipt);
                             (bytes, spans)
@@ -3300,6 +3318,7 @@ mod tests {
             missing_dependencies: vec![],
             resource_requests: requests,
             source_resource_literals: vec![],
+            expansion: Arc::new(prepared_project::SegmentedExpansion::default()),
             preprocessed: Arc::new(PreprocessedProject {
                 file_dirs: vec![PathBuf::from("assets")],
                 ..Default::default()

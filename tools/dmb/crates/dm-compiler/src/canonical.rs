@@ -114,6 +114,19 @@ pub(super) struct InvocationSyntax {
     pub key: String,
 }
 
+/// Source offsets and executable body syntax do not participate in declaration
+/// identity. A retained ancestor is significant only to reachability of settings.
+pub(super) fn invocation_declaration_projection(items: &[Item]) -> Vec<Item> {
+    items.iter().filter_map(|item| {
+        let header = item.header.trim();
+        let declaration = header.starts_with("set ") ||
+            ["var/static/", "var/global/", "var/const/"].iter().any(|prefix| header.starts_with(prefix));
+        let children = invocation_declaration_projection(&item.children);
+        if !declaration && children.is_empty() { return None; }
+        Some(Item { kind: item.kind, header: item.header.clone(), span: item.span, header_span: item.header_span, indent: item.indent, children })
+    }).collect()
+}
+
 /// Content-addressed declaration fragments survive whole-prefix allocation
 /// replay. A new declaration changes only its own signature/settings/static
 /// syntax; inherited metadata is an explicit fragment input.
@@ -144,10 +157,26 @@ impl InvocationFragments {
                 }
             }
         }
+        if let Some(snapshot) = cache.store.as_ref().and_then(|store| {
+            store.snapshot_namespace(&Self::signature_namespace(), 128_000, Self::LIMIT / 4, None).ok()
+        }) {
+            for (key, bytes) in snapshot.records {
+                if let Ok(value) = serde_json::from_slice::<(String, Vec<ParsedParameter>)>(&bytes) {
+                    let size = bytes.len().saturating_mul(3) + key.name.len() + 128;
+                    if cache.bytes.saturating_add(size) <= Self::LIMIT {
+                        cache.bytes += size;
+                        cache.signatures.insert(key.name, Arc::new(value));
+                    }
+                }
+            }
+        }
         cache
     }
+    fn signature_namespace() -> String {
+        format!("invocation-signatures-v1-{}", env!("DM_EMISSION_FINGERPRINT"))
+    }
     fn namespace() -> String {
-        format!("invocation-syntax-v1-{}", env!("DM_EMISSION_FINGERPRINT"))
+        format!("invocation-syntax-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
     }
     pub(super) fn signature(
         &mut self,
@@ -176,7 +205,11 @@ impl InvocationFragments {
             + 128;
         if self.bytes + size <= Self::LIMIT {
             self.bytes += size;
-            self.signatures.insert(key, Arc::new(value.clone()));
+            self.signatures.insert(key.clone(), Arc::new(value.clone()));
+            if let Ok(bytes) = serde_json::to_vec(&value) {
+                // Prefix separates wire shapes within one bounded pending queue.
+                self.pending.insert(format!("signature:{key}"), bytes);
+            }
         }
         Ok(value)
     }
@@ -196,16 +229,20 @@ impl InvocationFragments {
                 hash_items(hash, &item.children);
             }
         }
+        // Invocation declarations have no dependency on executable statements.
+        // Preserve only settings/static declarations and their control ancestors:
+        // constant-false ancestors affect setting reachability.
+        let declarations = invocation_declaration_projection(&item.children);
         let mut hash = Sha256::new();
         hash.update(path.as_bytes());
         hash.update(item.header.as_bytes());
-        hash_items(&mut hash, &item.children);
+        hash_items(&mut hash, &declarations);
         hash.update(serde_json::to_vec(&base).map_err(|e| e.to_string())?);
         let key = format!("{:x}", hash.finalize());
         if let Some(value) = self.entries.get(&key) {
             return Ok(Arc::clone(value));
         }
-        let (metadata, mut body) = proc_metadata_from_base(&item.children, base)?;
+        let (metadata, mut body) = proc_metadata_from_base(&declarations, base)?;
         let mut statics = Vec::new();
         extract_static_declarations(&mut body, &mut statics);
         let value = Arc::new(InvocationSyntax {
@@ -285,7 +322,13 @@ impl InvocationFragments {
         let updates: Vec<_> = self
             .pending
             .iter()
-            .map(|(key, bytes)| Change::Put(Key::new(Self::namespace(), key), bytes.clone()))
+            .map(|(key, bytes)| {
+                if let Some(key) = key.strip_prefix("signature:") {
+                    Change::Put(Key::new(Self::signature_namespace(), key), bytes.clone())
+                } else {
+                    Change::Put(Key::new(Self::namespace(), key), bytes.clone())
+                }
+            })
             .collect();
         if store.commit(&[], &updates, None).is_ok() {
             self.pending.clear();
@@ -760,6 +803,7 @@ pub(crate) struct CanonicalSession {
     pub graph: crate::ProjectProcedureGraph,
     pub output_validation: byond_dmb::dmb::ReferenceValidationCache,
     pub output_projections: Arc<dm_codegen_byond::relocatable::OutputProjectionCache>,
+    pub(super) emission_plans: super::emission_plans::EmissionPlans,
     pub(super) invocation_fragments: InvocationFragments,
     pub(super) owner_frames: Arc<Mutex<OwnerFrameQueries>>,
     pub maps: crate::maps::MapInitializerSession,
@@ -794,6 +838,7 @@ impl CanonicalSession {
         self.maps = crate::maps::MapInitializerSession::open(&root, &project_identity);
         self.skeleton = None;
         self.output_validation = Default::default();
+        self.emission_plans = super::emission_plans::EmissionPlans::open(&root, &project_identity);
         self.output_projections =
             Arc::new(dm_codegen_byond::relocatable::OutputProjectionCache::open(
                 &root,
@@ -815,6 +860,7 @@ impl CanonicalSession {
             .saturating_add(self.maps.resident_bytes())
             .saturating_add(self.output_validation.resident_bytes())
             .saturating_add(self.output_projections.resident_bytes())
+            .saturating_add(self.emission_plans.resident_bytes())
             .saturating_add(self.invocation_fragments.resident_bytes())
             .saturating_add(
                 self.owner_frames
@@ -830,6 +876,7 @@ impl CanonicalSession {
             }))
     }
     pub(crate) fn flush_derived(&mut self) {
+        self.emission_plans.flush();
         self.invocation_fragments.flush();
         self.owner_frames
             .lock()
@@ -845,6 +892,7 @@ impl CanonicalSession {
         let _ = self.output_projections.flush();
         self.output_projections.clear();
         self.output_validation.clear();
+        self.emission_plans.clear();
         before.saturating_sub(self.resident_bytes())
     }
     /// Final pool-pressure fallback drops only the immutable prefix. Procedure
@@ -864,6 +912,7 @@ impl CanonicalSession {
             crate::maps::MapInitializerSession::open(cache_root, &identity.to_string_lossy());
         self.skeleton = None;
         self.output_validation = Default::default();
+        self.emission_plans = super::emission_plans::EmissionPlans::open(cache_root, &identity.to_string_lossy());
         self.output_projections =
             Arc::new(dm_codegen_byond::relocatable::OutputProjectionCache::open(
                 cache_root,

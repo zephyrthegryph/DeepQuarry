@@ -17,6 +17,8 @@ use std::sync::Arc;
 
 #[path = "frontend_layout.rs"]
 mod layout;
+#[path = "frontend_segmented.rs"]
+mod segmented;
 #[cfg(test)]
 #[path = "frontend_layout_tests.rs"]
 mod layout_tests;
@@ -256,6 +258,9 @@ pub struct OutlineSession {
     last_source: Option<Arc<str>>,
     last_layout: Vec<(usize, Arc<ParsedChunk>)>,
     last_limit: usize,
+    segmented_source: Option<dm_syntax::SegmentedSource>,
+    segment_chunks: dm_syntax::SegmentedChunkSession,
+    last_resource_literals: Vec<String>,
 }
 
 /// Conservative retained allocation charges, separate from process/private RSS.
@@ -379,6 +384,9 @@ impl OutlineSession {
         self.last_source = None;
         self.last_layout = Vec::new();
         self.last_limit = 0;
+        self.segmented_source = None;
+        self.segment_chunks.clear();
+        self.last_resource_literals.clear();
     }
     pub fn release_encoded_snapshot(&mut self) {
         self.canonical.release_auxiliary_caches();
@@ -397,11 +405,15 @@ impl OutlineSession {
             last_source: None,
             last_layout: Vec::new(),
             last_limit: 0,
+            segmented_source: None,
+            segment_chunks: dm_syntax::SegmentedChunkSession::default(),
+            last_resource_literals: Vec::new(),
         }
     }
 
     pub fn resident_bytes(&self) -> usize {
-        self.resident_bytes
+        self.resident_bytes + self.segment_chunks.resident_bytes()
+            + self.last_resource_literals.iter().map(|literal| literal.capacity()+std::mem::size_of::<String>()).sum::<usize>()
             + self
                 .last_source
                 .as_ref()
@@ -424,6 +436,9 @@ impl OutlineSession {
     /// Assemble a compact declaration AST from the same cached chunks used for
     /// the outline. Procedure bodies remain in source fragments, not AST nodes.
     pub fn compact_snapshot(&mut self, source: &str) -> Result<(AstFile, SourceOutline), String> {
+        if let Some(segmented) = self.segmented_source.clone().filter(|value| value.len() == source.len()) {
+            return self.compact_snapshot_segmented(&segmented);
+        }
         self.update_source_with_snapshot(source, true)
             .map(|(ast, outline)| (ast.expect("snapshot requested"), outline))
     }

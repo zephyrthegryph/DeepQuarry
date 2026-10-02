@@ -1,5 +1,5 @@
-//! Immutable expansion pieces. An edited generation shares untouched pieces;
-//! the current parser bridge materializes one contiguous view when requested.
+//! Immutable expansion pieces consumed directly by the production frontend.
+//! An edited generation shares untouched pieces and per-piece line indexes.
 use dm_preprocess::PreprocessedProject;
 use dm_syntax::{Span, TokenKind};
 use sha2::{Digest, Sha256};
@@ -9,6 +9,7 @@ use std::{collections::BTreeMap, path::PathBuf, sync::Arc};
 pub struct ExpandedSegment {
     pub text: Arc<str>,
     pub digest: [u8; 32],
+    pub lines: Arc<[usize]>,
 }
 #[derive(Clone, Debug, Default)]
 pub struct SegmentedExpansion {
@@ -16,6 +17,17 @@ pub struct SegmentedExpansion {
     pub bytes: usize,
 }
 impl SegmentedExpansion {
+    pub fn from_pieces(pieces: Vec<Arc<str>>) -> Self {
+        let bytes = pieces.iter().map(|piece| piece.len()).sum();
+        Self { segments: pieces.into_iter().map(|text| {
+            let digest = Sha256::digest(text.as_bytes()).into();
+            let lines = text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into();
+            Arc::new(ExpandedSegment { text, digest, lines })
+        }).collect(), bytes }
+    }
+    pub fn source(&self) -> dm_syntax::SegmentedSource {
+        dm_syntax::SegmentedSource::with_lines(self.segments.iter().map(|piece| (Arc::clone(&piece.text), Arc::clone(&piece.lines))))
+    }
     pub fn from_text(text: &str) -> Self {
         let mut segments = Vec::new();
         let mut start = 0;
@@ -92,6 +104,7 @@ fn segment(text: &str) -> Arc<ExpandedSegment> {
     Arc::new(ExpandedSegment {
         text: Arc::from(text),
         digest: Sha256::digest(text.as_bytes()).into(),
+        lines: text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into(),
     })
 }
 
@@ -156,14 +169,8 @@ pub(crate) fn splice_source_edits(
     if lines.is_empty() {
         return None;
     }
-    let offsets: Vec<_> = std::iter::once(0)
-        .chain(
-            previous
-                .text
-                .match_indices('\n')
-                .map(|(offset, _)| offset + 1),
-        )
-        .collect();
+    let source = pieces.source();
+    let offsets = source.line_starts();
     let mut replacements = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
     for origin in &previous.origins {
@@ -175,8 +182,8 @@ pub(crate) fn splice_source_edits(
         let end = offsets
             .get(origin.output_line)
             .copied()
-            .unwrap_or(previous.text.len());
-        if previous.text.get(start..end)? != before {
+            .unwrap_or(pieces.bytes);
+        if source.slice(Span::new(start, end))?.as_ref() != before {
             return None;
         }
         replacements.push((Span::new(start, end), after.clone()));
@@ -194,7 +201,7 @@ pub(crate) fn splice_source_edits(
     }
     let pieces = pieces.splice(&replacements)?;
     let mut project = PreprocessedProject {
-        text: pieces.materialize(),
+        text: String::new(),
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
         origins: previous.origins.clone(),
@@ -223,7 +230,7 @@ pub(crate) fn splice_source_edits(
             .any(|(span, _)| span.start < old.end && span.end > old.start)
         {
             *project.unit_digests.get_mut(index)? =
-                Sha256::digest(project.text.get(unit.output_span.range())?.as_bytes()).into();
+                Sha256::digest(pieces.source().slice(unit.output_span)?.as_bytes()).into();
         }
     }
     Some((project, pieces))
@@ -237,6 +244,7 @@ fn splice_raw_units(
     changed: &BTreeMap<PathBuf, (Arc<str>, Arc<str>)>,
     macro_names: &std::collections::BTreeSet<String>,
 ) -> Option<(PreprocessedProject, SegmentedExpansion)> {
+    let old_source = pieces.source();
     let mut replacements = Vec::new();
     let mut matched = std::collections::BTreeSet::new();
     for (path, (before, after)) in changed {
@@ -271,7 +279,7 @@ fn splice_raw_units(
         let before = normalize(before);
         let after = normalize(after);
         for unit in previous.units.iter().filter(|unit| &unit.path == path) {
-            if previous.text.get(unit.output_span.range())? != before {
+            if pieces.source().slice(unit.output_span)?.as_ref() != before {
                 return None;
             }
             replacements.push((unit.output_span, after.clone(), Arc::new(path.clone())));
@@ -294,7 +302,7 @@ fn splice_raw_units(
         .collect();
     let pieces = pieces.splice(&edits)?;
     let mut project = PreprocessedProject {
-        text: pieces.materialize(),
+        text: String::new(),
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
         origins: Vec::new(),
@@ -305,14 +313,8 @@ fn splice_raw_units(
         diagnostics: previous.diagnostics.clone(),
         final_macros: previous.final_macros.clone(),
     };
-    let offsets: Vec<_> = std::iter::once(0)
-        .chain(
-            previous
-                .text
-                .match_indices('\n')
-                .map(|(offset, _)| offset + 1),
-        )
-        .collect();
+    // Origins before the edit use the previous generation's shared line table.
+    let offsets = old_source.line_starts();
     let mut origin_index = 0;
     let mut line_delta: i64 = 0;
     for (span, text, path) in &replacements {
@@ -376,7 +378,7 @@ fn splice_raw_units(
             .any(|(span, _, _)| span.start < old.end && span.end > old.start)
         {
             *project.unit_digests.get_mut(index)? =
-                Sha256::digest(project.text.get(unit.output_span.range())?.as_bytes()).into();
+                Sha256::digest(pieces.source().slice(unit.output_span)?.as_bytes()).into();
         }
     }
     Some((project, pieces))

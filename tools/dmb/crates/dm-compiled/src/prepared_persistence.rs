@@ -85,7 +85,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     }
     let mut parts = Vec::new();
     let mut source_group_bytes = 0;
-    let mut end = project.text.len();
+    let mut end = snapshot.expansion.bytes;
     let mut sources = Vec::with_capacity(snapshot.sources.len());
     for (path, source) in snapshot.sources.iter() {
         let start = end;
@@ -160,7 +160,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         version: VERSION,
         context: snapshot.context.clone(),
         pack,
-        expanded_end: project.text.len(),
+        expanded_end: snapshot.expansion.bytes,
         project_digest: snapshot.project_digest.clone(),
         expanded_digest: snapshot.expanded_digest.clone(),
         revision: snapshot.revision.clone(),
@@ -245,15 +245,16 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if manifest.pack.len() > 16_384 {
         return Err(io::Error::other("too many prepared chunks"));
     }
-    let mut pack = Vec::with_capacity(total);
+    let mut pack = Vec::with_capacity(total.saturating_sub(manifest.expanded_end));
+    let mut position = 0;
     let mut expansion_segments = Vec::new();
     for (digest, len) in &manifest.pack {
         let bytes = store.get_bounded("prepared-input-chunk-v2", digest, *len)?;
         if bytes.len() != *len {
             return Err(io::Error::other("prepared chunk length mismatch"));
         }
-        if pack.len() < manifest.expanded_end {
-            if pack.len() + bytes.len() > manifest.expanded_end {
+        if position < manifest.expanded_end {
+            if position + bytes.len() > manifest.expanded_end {
                 return Err(io::Error::other(
                     "prepared chunk crosses expansion boundary",
                 ));
@@ -262,18 +263,18 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             expansion_segments.push(Arc::new(ExpandedSegment {
                 text: Arc::from(text),
                 digest: Sha256::digest(&bytes).into(),
+                lines: text.match_indices('\n').map(|(at, _)| at+1).collect::<Vec<_>>().into(),
             }));
-        }
-        pack.extend_from_slice(&bytes);
+        } else { pack.extend_from_slice(&bytes); }
+        position += bytes.len();
     }
     let expansion = Arc::new(SegmentedExpansion {
         segments: expansion_segments,
         bytes: manifest.expanded_end,
     });
     let text = std::str::from_utf8(&pack).map_err(io::Error::other)?;
-    let expanded = text
-        .get(..manifest.expanded_end)
-        .ok_or_else(|| io::Error::other("invalid prepared expansion boundary"))?;
+    if position != total || expansion.bytes > total { return Err(io::Error::other("invalid prepared expansion boundary")); }
+    let expanded = expansion.source();
     let paths: Vec<Arc<PathBuf>> = manifest.paths.into_iter().map(Arc::new).collect();
     let path = |index: usize| {
         paths
@@ -301,7 +302,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         },
         |source| {
             let content = text
-                .get(source.start..source.end)
+                .get(source.start.checked_sub(manifest.expanded_end).ok_or_else(|| io::Error::other("invalid prepared source start"))?..source.end.checked_sub(manifest.expanded_end).ok_or_else(|| io::Error::other("invalid prepared source end"))?)
                 .ok_or_else(|| io::Error::other("invalid prepared source boundary"))?;
             if <[u8; 32]>::from(sha2::Sha256::digest(content.as_bytes())) != source.digest {
                 return Err(io::Error::other("prepared source digest mismatch"));
@@ -328,7 +329,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             return Err(io::Error::other("duplicate prepared source"));
         }
     }
-    if cursor != text.len() {
+    if cursor != text.len()+manifest.expanded_end {
         return Err(io::Error::other("trailing prepared input bytes"));
     }
     let origin_bytes =
@@ -370,7 +371,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             .collect::<io::Result<Vec<_>>>()
     };
     let project = PreprocessedProject {
-        text: expanded.to_owned(),
+        text: String::new(),
         origins,
         units,
         unit_digests: manifest.unit_digests,

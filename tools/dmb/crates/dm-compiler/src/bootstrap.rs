@@ -9,10 +9,14 @@ mod const_eval;
 mod native_constants;
 #[path = "default_plans.rs"]
 mod default_plans;
+#[path = "semantic_declarations.rs"]
+mod semantic_declarations;
 #[path = "procedure_pipeline.rs"]
 pub(crate) mod procedure_pipeline;
 #[path = "resource_scan.rs"]
 pub(crate) mod resource_scan;
+#[path = "emission_plans.rs"]
+mod emission_plans;
 #[path = "canonical.rs"]
 pub(crate) mod canonical;
 #[path = "initializer_pipeline.rs"]
@@ -711,8 +715,10 @@ fn compile_preprocessed_project_with_loaded_resources(
         );
     }
     let mut checkpoint = None;
+    let segmented = frontend.segmented_source().cloned();
     let source_debug = (!capture_checkpoint && !preprocessed.origins.is_empty()).then(||
-        crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
+        if let Some(source) = &segmented { crate::source_debug::SourceDebugIndex::new_segmented(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new(".")), source) }
+        else { crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))) });
     let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
         &preprocessed.text,
         builtin_image,
@@ -777,8 +783,10 @@ pub fn compile_preprocessed_project_with_resource_catalog(
     if !preprocessed.diagnostics.is_empty() { return Err("preprocessing diagnostics prevent emission".into()); }
     resources.validate().map_err(|error| error.to_string())?;
     let mut lowering_cache = crate::lower_cache::ProcLoweringCache::open(cache_root);
+    let segmented = frontend.segmented_source().cloned();
     let source_debug = (!preprocessed.origins.is_empty()).then(||
-        crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
+        if let Some(source) = &segmented { crate::source_debug::SourceDebugIndex::new_segmented(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new(".")), source) }
+        else { crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))) });
     let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
         &preprocessed.text, builtin_image, world_name, None, &mut lowering_cache, None, None,
         procedure_pipeline::worker_count(), Some(&mut *frontend), Some(resources), source_debug.as_ref(), None)?;
@@ -1802,7 +1810,7 @@ fn builtin_constant(name: &str) -> Option<const_eval::Constant> {
                 .map(|(_, value)| const_eval::Constant::Text((*value).to_owned()))
         })
 }
-#[derive(Default)]
+#[derive(Default, Clone)]
 struct ModifiedTypes {
     aliases: HashMap<String, String>,
     declarations: Vec<Item>,
@@ -1913,6 +1921,81 @@ fn collect_modified_types(source: &str) -> Result<ModifiedTypes, String> {
         modified.aliases.insert(key, path);
     }
     Ok(modified)
+}
+
+/// Shared immutable declaration nodes are charged once by the coordinator,
+/// rather than once for each worktree that borrows them.
+pub fn shared_declaration_cache_bytes() -> usize {
+    semantic_declarations::resident_bytes()+modified_memos().lock().unwrap_or_else(|e| e.into_inner()).bytes
+        +modified_layout().lock().unwrap_or_else(|e| e.into_inner()).resident_bytes()
+}
+pub fn trim_shared_declaration_cache(max_bytes: usize) {
+    if shared_declaration_cache_bytes() > max_bytes {
+        *modified_memos().lock().unwrap_or_else(|e| e.into_inner()) = ModifiedMemoCache::default();
+        modified_layout().lock().unwrap_or_else(|e| e.into_inner()).clear();
+    }
+    semantic_declarations::trim_to(max_bytes);
+}
+
+#[derive(Default)]
+struct ModifiedMemoCache { entries: HashMap<String, Arc<ModifiedTypes>>, bytes: usize }
+fn modified_memos() -> &'static std::sync::Mutex<ModifiedMemoCache> {
+    static MEMOS: std::sync::OnceLock<std::sync::Mutex<ModifiedMemoCache>> = std::sync::OnceLock::new();
+    MEMOS.get_or_init(Default::default)
+}
+fn modified_layout() -> &'static std::sync::Mutex<dm_syntax::SegmentedChunkSession> {
+    static LAYOUT: std::sync::OnceLock<std::sync::Mutex<dm_syntax::SegmentedChunkSession>> = std::sync::OnceLock::new();
+    LAYOUT.get_or_init(Default::default)
+}
+fn modified_bytes(value: &ModifiedTypes) -> usize {
+    fn item(value: &Item) -> usize { value.header.capacity()+std::mem::size_of::<Item>()+value.children.iter().map(item).sum::<usize>() }
+    value.aliases.iter().chain(&value.parents).map(|(a,b)| a.capacity()+b.capacity()+96).sum::<usize>()
+        +value.declarations.iter().map(item).sum::<usize>()+192
+}
+
+fn collect_modified_types_segmented(source: &dm_syntax::SegmentedSource) -> Result<ModifiedTypes, String> {
+    let memos = modified_memos();
+    let mut layout = std::mem::take(&mut *modified_layout().lock().unwrap_or_else(|e| e.into_inner()));
+    let limit = std::env::var("DM_BUILD_MAX_PARSE_CHUNK_BYTES").ok().and_then(|v| v.parse().ok()).unwrap_or(1024*1024);
+    let mut result = ModifiedTypes::default();
+    let mut failure = None;
+    let scanned = source.for_each_chunk_cached(&mut layout, 32*1024, limit, |text, base| {
+        if failure.is_some() { return; }
+        let key = crate::incremental::digest(text.as_bytes());
+        let cached = memos.lock().unwrap_or_else(|error| error.into_inner()).entries.get(&key).cloned();
+        let collected = if let Some(cached) = cached { Ok((*cached).clone()) }
+            else { collect_modified_types(text).map(|found| {
+                let mut cache = memos.lock().unwrap_or_else(|error| error.into_inner());
+                let bytes = modified_bytes(&found)+key.len();
+                if cache.entries.len() >= 8192 || cache.bytes+bytes > 32*1024*1024 { *cache = ModifiedMemoCache::default(); }
+                if bytes <= 32*1024*1024 {
+                    cache.bytes += bytes;
+                    cache.entries.insert(key, Arc::new(found.clone()));
+                }
+                found
+            }) };
+        match collected {
+            Ok(mut found) => {
+                fn rebase(item: &mut Item, base: usize) {
+                    item.span.start += base; item.span.end += base;
+                    item.header_span.start += base; item.header_span.end += base;
+                    for child in &mut item.children { rebase(child, base); }
+                }
+                for mut declaration in found.declarations.drain(..) {
+                    if result.parents.contains_key(&declaration.header) { continue; }
+                    rebase(&mut declaration, base);
+                    result.declarations.push(declaration);
+                }
+                result.parents.extend(found.parents);
+                result.aliases.extend(found.aliases);
+            }
+            Err(error) => failure = Some(error),
+        }
+    });
+    *modified_layout().lock().unwrap_or_else(|e| e.into_inner()) = layout;
+    scanned?;
+    if let Some(error) = failure { return Err(error); }
+    Ok(result)
 }
 
 fn rewrite_modified_items(items: &mut [Item], modified: &ModifiedTypes) {
@@ -2994,10 +3077,29 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
     };
     trace("declaration snapshot start");
+    let segmented_source = frontend.as_ref().and_then(|frontend| frontend.segmented_source()).cloned();
+    let source_range = |span: dm_syntax::Span| -> Result<std::borrow::Cow<'_, str>, String> {
+        if let Some(segmented) = &segmented_source {
+            segmented.slice(span).ok_or_else(|| "source span outside segmented expansion".to_owned())
+        } else {
+            source.get(span.range()).map(std::borrow::Cow::Borrowed)
+                .ok_or_else(|| "source span outside expansion".to_owned())
+        }
+    };
     let (mut ast, cached_outline, procedure_digests) = if let Some(frontend) = frontend {
-        let (ast, outline) = frontend.compact_snapshot(source)?;
-        let digests = frontend.procedure_digests(source);
-        (ast, Some(outline), digests)
+        if let Some(segmented) = &segmented_source {
+            if capture.is_none() {
+                let (ast, digests) = frontend.compact_declarations_segmented(segmented)?;
+                (ast, None, Some(digests))
+            } else {
+                let (ast, outline) = frontend.compact_snapshot_segmented(segmented)?;
+                (ast, Some(outline), None)
+            }
+        } else {
+            let (ast, outline) = frontend.compact_snapshot(source)?;
+            let digests = frontend.procedure_digests(source);
+            (ast, Some(outline), digests)
+        }
     } else {
         (declaration_snapshot(source)?, None, None)
     };
@@ -3012,11 +3114,15 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     };
     let mut captured_procedures = BTreeMap::new();
     trace("declaration snapshot complete");
-    let modified = collect_modified_types(source)?;
+    let modified = if let Some(segmented) = &segmented_source {
+        collect_modified_types_segmented(segmented)?
+    } else { collect_modified_types(source)? };
     rewrite_modified_items(&mut ast.items, &modified);
 
     let mut dmb = Dmb::from_bytes(builtin_image).map_err(|error| error.to_string())?;
     if source_debug.is_some() { dmb.header.flags |= 0x0002_0000; }
+    let semantic_declarations = semantic_declarations::SemanticDeclarations::build(&ast.items, &modified.declarations, &dmb);
+    let _semantic_model = semantic_declarations::activate(semantic_declarations);
     let mut resource_ids = HashMap::new();
     let mut archive = Vec::new();
     if let Some(catalog) = catalog {
@@ -3074,6 +3180,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         .collect();
     let mut type_items = Vec::new();
     collect_type_items(&ast.items, &mut type_items);
+    default_plans::prefetch_owners(&type_items, workers);
     let mut type_metadata = TypeMetadataState {
         first_generated_class: dmb.classes.len(),
         emitted: HashSet::new(),
@@ -3126,17 +3233,25 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             }
         }
     }
+    // Derive each ancestry edge once. The old per-owner full parent walk made
+    // declaration allocation proportional to owner count times ancestry depth.
     let mut depths = HashMap::new();
+    let mut depth_by_class = HashMap::<u32, usize>::new();
     for item in &type_items {
         let mut class = class_paths[item.header.trim()];
+        let mut chain = Vec::new();
         let mut visited = HashSet::new();
+        let mut depth = 0;
         while class != 0xffff {
+            if let Some(cached) = depth_by_class.get(&class) { depth = *cached; break; }
             if !visited.insert(class) {
                 return Err(format!("cyclic type ancestry: {}", item.header));
             }
+            chain.push(class);
             class = dmb.classes[class as usize].parent_class_id();
         }
-        depths.insert(item.header.trim().to_owned(), visited.len());
+        for class in chain.into_iter().rev() { depth += 1; depth_by_class.insert(class, depth); }
+        depths.insert(item.header.trim().to_owned(), depth_by_class[&class_paths[item.header.trim()]]);
     }
     type_items.sort_by_key(|item| depths[item.header.trim()]);
     type_items = order_type_initializers(type_items, &dmb, &class_paths)?;
@@ -3170,12 +3285,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         let fields = class_field_types
             .entry(item.header.trim().to_owned())
             .or_default();
-        fields.extend(
-            item.children
-                .iter()
-                .filter(|child| child.kind == ItemKind::Var)
-                .filter_map(|child| declared_variable_type(&child.header)),
-        );
+        fields.extend(default_plans::owner(item).field_types.iter().map(|(name, ty)| (name.clone(), ty.clone())));
     }
     // Constants can refer to globals declared later. Resolve their dependency
     // graph before emitting runtime initializers or type settings.
@@ -3629,6 +3739,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                             pending.verb,
                             &metadata_sources,
                             &mut resolved_metadata,
+                            &mut session.invocation_fragments,
                         )?
                     } else {
                         None
@@ -3875,6 +3986,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let mut argument_source_indices: HashMap<String, usize> = HashMap::new();
     let worker_modified=Arc::new(ModifiedTypes { aliases:modified.aliases.clone(),declarations:Vec::new(),parents:HashMap::new() });
     let procedure_count = pending.len();
+    // Preserve the original first-procedure allocation order for builtin vars.
+    // The immutable binding plan can then reuse that exact concrete slot.
+    if procedure_count != 0 {
+        bind_builtin_global_vars(&mut dmb, &mut strings, &mut Ledger::default())?;
+    }
+    let resource_assignment_identity = crate::lower_cache::shared_binding_fingerprint(
+        &resource_ids.iter().collect::<BTreeMap<_, _>>());
     if let Some(report) = lowering_audit.as_deref_mut() { report.expected_procedures = procedure_count; }
     session.active_keys.clear();
     let mut occurrences = HashMap::<String, u32>::new();
@@ -3988,7 +4106,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         body_digest: procedure_digests.as_ref()
                             .and_then(|digests| digests.get(&(pending.item.span.start, pending.item.span.end)))
                             .cloned()
-                            .unwrap_or_else(|| crate::incremental::digest(source[pending.item.span.start..pending.item.span.end].as_bytes())),
+                            .map(Ok).unwrap_or_else(|| source_range(pending.item.span).map(|raw| crate::incremental::digest(raw.as_bytes())))?,
                         frame_digest: plan.frame_digest.clone(),
                     };
                     let cached = if reusable { session.graph.probe(&key, &descriptor) } else { crate::ProcedureProbe::Miss };
@@ -4019,7 +4137,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         });
                     } else {
                         body_base = pending.item.span.start;
-                        pool.submit_source(ordinal,Arc::from(&source[pending.item.span.start..pending.item.span.end]),
+                        pool.submit_source(ordinal,Arc::from(source_range(pending.item.span)?.as_ref()),
                             pending.item.span.start,metadata.clone(),Arc::clone(&worker_modified),bindings);
                         submitted += 1;
                     }
@@ -4057,43 +4175,84 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         let envelope = Arc::new(envelope);
                         if reusable {
                             if let Some(memo) = &result.memo {
-                                session.graph.install_prepared(key.clone(), descriptor, Arc::clone(&envelope),
+                                session.graph.install_prepared(key.clone(), descriptor.clone(), Arc::clone(&envelope),
                                     memo.dependencies.clone().into(), None);
                             }
                         }
                         envelope
                     };
                     if prepared_reused { session.emission_stats.authored_prepared_reused += 1; }
-                    let mut ledger = Ledger::default();
-                    for class_path in &simple.class_paths {
-                        let id = class_link_id(&dmb, &class_paths, class_path).ok_or_else(|| {
-                            let offset = envelope.reference_origin(Table::Class, class_path)
-                                .and_then(|span| body_base.checked_add(span.start))
-                                .unwrap_or(pending.item.header_span.start);
-                            source_error(source_debug, offset, &path, &format!("unresolved constructor type: {class_path}"))
-                        })?;
-                        bind_class_link(&mut ledger, class_path, id)?;
-                    }
-                    bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)
-                        .map_err(|error| format!("{path}: {error}"))?;
-                    for value in &simple.strings {
-                        let id = strings.intern_bytes(&mut dmb, simple.string_bytes(value));
-                        let symbol = Symbol::new(Table::String, value);
-                        if ledger.id(&symbol).is_none() {
-                            ledger.bind(symbol, id).map_err(|error| error.to_string())?;
+                    let literal_ids: Vec<_> = simple.strings.iter()
+                        .map(|value| strings.intern_bytes(&mut dmb, simple.string_bytes(value))).collect();
+                    let cached_ledger = if reusable {
+                        session.emission_plans.get(&key, &descriptor, &skeleton_key,
+                            &resource_assignment_identity, &literal_ids)
+                    } else { None };
+                    let fully_cached_ledger = cached_ledger.is_some();
+                    // Structural changes reconsider only this section's actual
+                    // assignment dependencies. Unrelated declarations retain
+                    // their concrete immutable ledger without rebinding.
+                    let cached_ledger = cached_ledger.or_else(|| {
+                        if !reusable { return None; }
+                        let prior = session.emission_plans.candidate(&key, &descriptor, &literal_ids)?;
+                        let mut matches = true;
+                        envelope.section.for_each_reference(|table, name| {
+                            if !matches { return; }
+                            let current = match table {
+                                Table::String => simple.strings.iter().zip(&literal_ids)
+                                    .find(|(value, _)| value.as_str() == name).map(|(_, id)| *id),
+                                Table::Class => class_link_id(&dmb, class_paths, name),
+                                Table::Variable if name == dm_codegen_byond::BUILTIN_GLOBAL_VARS_SYMBOL => strings.5,
+                                Table::Variable => static_ids.get(name).or_else(|| initializer_globals.get(name)).copied(),
+                                Table::Proc => global_proc_ids.get(name).copied(),
+                                Table::Instance => strings.4.get(name).copied(),
+                                Table::Resource => resource_ids.get(name).copied(),
+                                _ => None,
+                            };
+                            matches = current.is_some() && current == prior.id(&Symbol::new(table, name));
+                        });
+                        matches.then_some(prior)
+                    });
+                    let ledger = if let Some(ledger) = cached_ledger { ledger } else {
+                        let mut ledger = Ledger::default();
+                        for class_path in &simple.class_paths {
+                            let id = class_link_id(&dmb, &class_paths, class_path).ok_or_else(|| {
+                                let offset = envelope.reference_origin(Table::Class, class_path)
+                                    .and_then(|span| body_base.checked_add(span.start))
+                                    .unwrap_or(pending.item.header_span.start);
+                                source_error(source_debug, offset, &path, &format!("unresolved constructor type: {class_path}"))
+                            })?;
+                            bind_class_link(&mut ledger, class_path, id)?;
                         }
-                    }
-                    for path in &simple.resources {
-                        let id = resource_ids
-                            .get(path)
-                            .ok_or_else(|| format!("{path}: resource literal was not loaded"))?;
+                        bind_builtin_global_vars(&mut dmb, &mut strings, &mut ledger)
+                            .map_err(|error| format!("{path}: {error}"))?;
+                        for (value, &id) in simple.strings.iter().zip(&literal_ids) {
+                            let symbol = Symbol::new(Table::String, value);
+                            if ledger.id(&symbol).is_none() {
+                                ledger.bind(symbol, id).map_err(|error| error.to_string())?;
+                            }
+                        }
+                        for path in &simple.resources {
+                            let id = resource_ids
+                                .get(path)
+                                .ok_or_else(|| format!("{path}: resource literal was not loaded"))?;
+                            ledger
+                                .bind_alias(Symbol::new(Table::Resource, path), *id)
+                                .map_err(|error| format!("procedure resource {path}: {error}"))?;
+                        }
+                        bind_prepared_references(&envelope.section, &strings, &mut ledger,
+                            &initializer_globals, Some(&static_ids), &global_proc_ids)
+                            .map_err(|error| format!("{path}: {error}"))?;
+                        let ledger = if let Some(prior) = session.emission_plans.candidate(&key, &descriptor, &literal_ids) {
+                            let delta = ledger.changes_since(&prior);
+                            if !envelope.section.references_changed(&delta) { prior } else { Arc::new(ledger) }
+                        } else { Arc::new(ledger) };
                         ledger
-                            .bind_alias(Symbol::new(Table::Resource, path), *id)
-                            .map_err(|error| format!("procedure resource {path}: {error}"))?;
+                    };
+                    if reusable && !fully_cached_ledger {
+                        session.emission_plans.retain(key.clone(), descriptor.clone(), &skeleton_key,
+                            &resource_assignment_identity, literal_ids, Arc::clone(&ledger));
                     }
-                    bind_prepared_references(&envelope.section, &strings, &mut ledger,
-                        &initializer_globals, Some(&static_ids), &global_proc_ids)
-                        .map_err(|error| format!("{path}: {error}"))?;
                     envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
                     let linked_words = envelope.section.materialize_with_debug_shared(&ledger, &simple.statement_origins, |relative| {
                         let (file, line) = source_debug?.resolve(body_base.checked_add(relative)?)?;
@@ -4300,6 +4459,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 trace("canonical procedure audit complete; no dynamic initializers or output");
                 return Ok(());
             }
+            session.emission_plans.finish(&session.active_keys);
             trace("procedure lowering complete; dynamic initializers start");
             emit_dynamic_initializers_with_pool(
                 &mut dmb,
@@ -4502,6 +4662,7 @@ fn resolve_pending_parent_metadata(
     verb: bool,
     declarations: &HashMap<(u32, String, bool), &Item>,
     resolved: &mut HashMap<(u32, String, bool), ProcMetadata>,
+    fragments: &mut canonical::InvocationFragments,
 ) -> Result<Option<ProcMetadata>, String> {
     let mut parent = dmb.classes[owner as usize].parent_class_id();
     let mut chain = Vec::new();
@@ -4538,11 +4699,14 @@ fn resolve_pending_parent_metadata(
         parent = dmb.classes[parent as usize].parent_class_id();
     }
     for (key, item) in chain.into_iter().rev() {
-        let metadata = if let Some(previous) = base {
-            proc_metadata_from_base(&item.children, previous)?.0
-        } else {
-            proc_metadata(&item.children, None)?.0
+        let owner_path = dmb.string(dmb.classes[key.0 as usize].path_string_id())
+            .and_then(|bytes| std::str::from_utf8(bytes).ok()).unwrap_or("");
+        let (path, params) = fragments.signature(item, owner_path, verb)?;
+        let inherited = match base {
+            Some(previous) => previous,
+            None => proc_metadata(&[], None)?.0,
         };
+        let metadata = fragments.syntax(item, &path, &params, inherited)?.metadata.clone();
         resolved.insert(key, metadata.clone());
         base = Some(metadata);
     }
@@ -5323,13 +5487,8 @@ fn emit_type<'a>(
     } else {
         parent_path
     };
-    let explicit_parent = item.children.iter().find_map(|child| {
-        child
-            .header
-            .trim()
-            .strip_prefix("parent_type")
-            .and_then(|tail| tail.trim().strip_prefix('=').map(str::trim))
-    });
+    let owner_plan = default_plans::owner(item);
+    let explicit_parent = owner_plan.explicit_parent.as_deref();
     let parent_path = explicit_parent.unwrap_or(lexical_parent);
     let parent = *classes
         .get(parent_path)
@@ -5382,33 +5541,12 @@ fn emit_type<'a>(
         dmb.classes[class_id as usize].initial_ids[1] = parent;
     }
     let is_const = |child: &Item| {
-        child.kind == ItemKind::Var
-            && child
-                .header
-                .split('=')
-                .next()
-                .is_some_and(|h| h.split('/').any(|part| part.trim() == "const"))
+        child.kind == ItemKind::Var && child.header.split('=').next()
+            .is_some_and(|header| header.split('/').any(|part| part.trim() == "const"))
     };
-    let mutable_names: HashSet<String> = item
-        .children
-        .iter()
-        .filter(|child| child.kind == ItemKind::Var && !is_const(child))
-        .filter_map(|child| {
-            child
-                .header
-                .split('=')
-                .next()?
-                .trim()
-                .rsplit('/')
-                .next()
-                .map(str::to_owned)
-        })
-        .collect();
-    let mut unresolved: Vec<_> = item
-        .children
-        .iter()
-        .filter(|child| is_const(child))
-        .collect();
+    let mutable_names = &owner_plan.mutable_names;
+    let mut unresolved: Vec<_> = owner_plan.const_indexes.iter()
+        .map(|index| &item.children[*index]).collect();
     while !unresolved.is_empty() {
         let before = unresolved.len();
         let mut last_error = String::new();
@@ -6201,44 +6339,11 @@ fn constant_variable_value_scoped(
     owner: Option<u32>,
     blocked_constants: &HashSet<String>,
 ) -> Result<(u8, u32), String> {
-    if let Some(value) =
-        initial.and_then(|v| fold_constant_scoped(v, dmb, owner, blocked_constants, strings))
-    {
-        return encode_constant(value, dmb, strings);
-    }
-    // Authored default plans carry symbolic resources/paths, never stale slot
-    // IDs. Only the current-generation encoding reads the resource assignment.
-    if declaration.starts_with("var/") || declaration.starts_with("/var/") {
-        if let Ok(plan)=default_plans::declaration(declaration) {
-            if plan.initial.as_deref()==initial {
-                match &plan.shape {
-                    default_plans::DefaultShape::Missing | default_plans::DefaultShape::Null => return Ok((0,0)),
-                    default_plans::DefaultShape::Number(bits) => return Ok((42,*bits)),
-                    default_plans::DefaultShape::Text(text) => return Ok((6,strings.intern(dmb,text))),
-                    default_plans::DefaultShape::Resource(name) => return resources.get(name).copied().map(|id|(12,id)).ok_or_else(||format!("resource was not loaded: {name}")),
-                    default_plans::DefaultShape::Path(_) | default_plans::DefaultShape::Runtime(_) => {}
-                }
-            }
-        }
-    }
-    match initial {
-        None | Some("null") => Ok((0, 0)),
-        Some(number) if number.parse::<f32>().is_ok() => {
-            Ok((42, number.parse::<f32>().unwrap().to_bits()))
-        }
-        Some(text) if text.starts_with('"') && text.ends_with('"') && text.len() >= 2 => {
-            Ok((6, strings.intern(dmb, &text[1..text.len() - 1])))
-        }
-        Some(text) if text.starts_with('\'') && text.ends_with('\'') && text.len() >= 2 => {
-            let name = text[1..text.len() - 1].replace('\\', "/");
-            Ok((
-                12,
-                *resources
-                    .get(&name)
-                    .ok_or_else(|| format!("resource was not loaded: {name}"))?,
-            ))
-        }
-        Some(_) => Err(format!("unsupported initial value: {declaration}")),
+    let plan = default_plans::resolve_value(initial, declaration, dmb, strings, owner, blocked_constants)?;
+    match plan {
+        default_plans::SymbolicDefaultValue::Constant(value) => encode_constant(value, dmb, strings),
+        default_plans::SymbolicDefaultValue::Resource(name) => resources.get(&name).copied()
+            .map(|id| (12, id)).ok_or_else(|| format!("resource was not loaded: {name}")),
     }
 }
 
@@ -6285,6 +6390,12 @@ fn fold_constant_scoped(
     blocked: &HashSet<String>,
     strings: &StringIndex,
 ) -> Option<const_eval::Constant> {
+    let owner_path = owner.and_then(|id|dmb.classes.get(id as usize))
+        .and_then(|class|dmb.string(class.path_string_id()))
+        .and_then(|path|std::str::from_utf8(path).ok());
+    if let Some(value) = semantic_declarations::evaluate(source, owner_path, blocked) { return value; }
+    // Legacy isolated helpers import their own DMB. Production declaration
+    // resolution always uses the active symbolic owner model above.
     const_eval::evaluate(source, |name| {
         if let Some((path, field)) = name.split_once("::") {
             let mut class = *strings.3.get(path)?;

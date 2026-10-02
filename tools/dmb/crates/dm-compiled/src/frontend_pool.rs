@@ -89,6 +89,7 @@ pub struct FrontendPool {
     limits: FrontendPoolLimits,
     clock: u64,
     stats: FrontendPoolStats,
+    external_bytes: usize,
 }
 impl Default for FrontendPool {
     fn default() -> Self {
@@ -102,7 +103,13 @@ impl FrontendPool {
             limits,
             clock: 0,
             stats: FrontendPoolStats::default(),
+            external_bytes: 0,
         }
+    }
+    /// Account for coordinator-owned derived output caches in the same retention budget.
+    pub fn set_external_bytes(&mut self, bytes: usize) {
+        self.external_bytes = bytes;
+        self.trim(0);
     }
     pub fn configuration_identity(key: &SessionKey) -> String {
         let encoded = serde_json::to_vec(&(
@@ -219,7 +226,7 @@ impl FrontendPool {
         let budget = self
             .limits
             .max_bytes
-            .saturating_sub(self.active_bytes().saturating_add(active_bytes));
+            .saturating_sub(self.active_bytes().saturating_add(active_bytes).saturating_add(self.external_bytes));
         let mut ordered: Vec<_> = self
             .entries
             .iter()

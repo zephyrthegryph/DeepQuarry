@@ -404,17 +404,15 @@ impl DiscoveryCache {
         let (discovered, expansion) = if let Some((discovered, expansion)) = spliced {
             (discovered, Some(expansion))
         } else {
-            (
-                discover_with_retained(
+            let (project, sources, proof, digests, stamps, stats, pieces) = discover_with_retained(
                     root,
                     defines,
                     &mut self.expansions,
                     &self.sources,
                     &unchanged,
                     previous,
-                )?,
-                None,
-            )
+                )?;
+            ((project, sources, proof, digests, stamps, stats), Some(crate::prepared_project::SegmentedExpansion::from_pieces(pieces)))
         };
         let (project, sources, proof, digests, stamps, mut stats) = discovered;
         let expansion = Arc::new(expansion.unwrap_or_else(|| {
@@ -458,7 +456,9 @@ impl DiscoveryCache {
             // and span/digest summary were intentionally evicted with the pack.
         }
         let project_digest = crate::prepared_project::project_digest(root, &sources);
-        let expanded_digest = format!("{:x}", Sha256::digest(project.text.as_bytes()));
+        let mut expanded_hash = Sha256::new();
+        for piece in &expansion.segments { expanded_hash.update(piece.text.as_bytes()); }
+        let expanded_digest = format!("{:x}", expanded_hash.finalize());
         let revision = format!(
             "{:x}",
             Sha256::digest(format!("{context}:{project_digest}"))
@@ -634,7 +634,8 @@ fn discover_with_cache_with_proof(
         &BTreeSet::new(),
         None,
     )
-    .map(|(project, sources, proof, _, _, _)| {
+    .map(|(mut project, sources, proof, _, _, _, pieces)| {
+        project.text = dm_syntax::SegmentedSource::new(pieces).materialize();
         (
             project,
             sources
@@ -774,6 +775,7 @@ fn discover_with_retained(
     BTreeMap<PathBuf, [u8; 32]>,
     BTreeMap<PathBuf, FileStamp>,
     PreparationStats,
+    Vec<Arc<str>>,
 )> {
     for attempt in 0..3 {
         let mut paths: BTreeSet<_> = retained
@@ -832,7 +834,7 @@ fn discover_with_retained(
             bytes_read: std::cell::Cell::new(prefetched_bytes),
             ..Default::default()
         };
-        let discovery = dm_preprocess::preprocess_project_cached(root, &provider, defines, cache);
+        let (discovery, pieces) = dm_preprocess::preprocess_project_cached_segmented(root, &provider, defines, cache);
         let stats = PreparationStats {
             preprocessed: true,
             source_files_read: provider.files_read.get(),
@@ -882,7 +884,7 @@ fn discover_with_retained(
                     continue;
                 }
             }
-            return Ok((discovery, sources, proof, digests, stamps, stats));
+            return Ok((discovery, sources, proof, digests, stamps, stats, pieces));
         }
     }
     Err(io::Error::other(

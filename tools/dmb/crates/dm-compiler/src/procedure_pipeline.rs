@@ -224,6 +224,7 @@ pub(crate) fn with_lowering_cache<R>(
     workers: usize,
     consume: impl FnOnce(&mut LoweringPool) -> R,
 ) -> (R, CacheStats) {
+    let semantic_model = super::semantic_declarations::capture_active();
     let parser = std::sync::OnceLock::<ProcParseCache>::new();
     let parse_root = parent.cache_root().map(Path::to_path_buf);
     let (result, workers) = crate::work::with_ordered_pool(
@@ -241,6 +242,7 @@ pub(crate) fn with_lowering_cache<R>(
             phase_samples: [0; 3],
         },
         |worker, job: LoweringJob| {
+            let _semantic_model = super::semantic_declarations::activate_optional(semantic_model.clone());
             let profiling = worker.cache.profiling_enabled();
             let before = profiling.then(|| worker.cache.stats());
             let cpu = profiling.then(thread_cpu).flatten();

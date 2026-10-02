@@ -8,6 +8,8 @@ use serde::{Deserialize, Serialize};
 use crate::ids::{ResourceId, NONE};
 use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
+use std::hash::{Hash, Hasher};
+use std::sync::Arc;
 
 fn invalid(message: &'static str) -> io::Error {
     io::Error::new(ErrorKind::InvalidData, message)
@@ -194,7 +196,7 @@ impl Header {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct GridRun {
     pub turf: u32,
     pub area: u32,
@@ -202,7 +204,7 @@ pub struct GridRun {
     pub copies: u8,
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Class {
     pub initial_ids: [u32; 6],
     pub direction: u8,
@@ -508,7 +510,7 @@ impl Class {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MobType {
     pub class: u32,
     pub key: u32,
@@ -590,8 +592,103 @@ fn crypt_string(data: &mut [u8], offset: usize) {
 pub struct ReferenceValidatedImage<'a> { image: &'a Dmb }
 impl<'a> ReferenceValidatedImage<'a> {
     pub fn image(&self) -> &'a Dmb { self.image }
+    pub fn to_bytes_with_list_spans_cached(&self, cache: &mut DmbWireCache) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        self.image.serialize_with_list_spans(true, Some(cache))
+    }
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.image.serialize_with_list_spans(true)
+        self.image.serialize_with_list_spans(true, None)
+    }
+}
+
+/// Bounded content-addressed wire records. Hashes select collision buckets only;
+/// exact record equality is mandatory before reuse. Physical table positions are
+/// deliberately absent, so inserting a declaration does not discard unrelated
+/// record encodings. Offset-dependent string encryption is never cached here.
+#[derive(Default)]
+pub struct DmbWireCache {
+    records: HashMap<(u8, usize, u16, u64), Vec<(WireRecord, Arc<[u8]>)>>,
+    active: HashSet<(u8, usize, u16, u64)>,
+    bytes: usize,
+    pub hits: u64,
+    pub misses: u64,
+}
+#[derive(Clone, Eq, PartialEq, Hash)]
+enum WireRecord {
+    Class(Class), Mob(MobType), List(Vec<u32>), Proc(Proc), Variable(Variable),
+    Reference(u32), Instance(Instance), MapObject(MapObject), World(World),
+    Resource(ResourceRef), Grid(GridRun),
+}
+impl DmbWireCache {
+    pub fn resident_bytes(&self) -> usize { self.bytes }
+    pub fn clear(&mut self) { self.records.clear(); self.active.clear(); self.bytes = 0; }
+    fn finish_generation(&mut self) {
+        self.records.retain(|key, _| self.active.contains(key));
+        self.bytes = self.records.values().flat_map(|bucket| bucket.iter()).map(|(record, bytes)| {
+            let dynamic = match record {
+                WireRecord::List(words) => words.capacity() * 4,
+                WireRecord::World(world) => world.client_script_files.capacity() * 4,
+                _ => 0,
+            };
+            bytes.len() + dynamic + std::mem::size_of::<WireRecord>() + 96
+        }).sum();
+        self.active.clear();
+    }
+    fn append_list(&mut self, writer: &mut Writer, words: &[u32]) {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        words.hash(&mut hash);
+        let key = (3, writer.object_size, writer.compatibility_version, hash.finish());
+        self.active.insert(key);
+        if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket| bucket.iter()
+            .find(|(old, _)| matches!(old, WireRecord::List(prior) if prior.as_slice() == words))) {
+            writer.raw(bytes);
+            self.hits += 1;
+            return;
+        }
+        self.append(writer, 3, WireRecord::List(words.to_vec()), |writer| {
+            writer.u16(words.len() as u16);
+            for &word in words { writer.object(word); }
+        });
+    }
+    fn append(&mut self, writer: &mut Writer, section: u8, record: WireRecord,
+        encode: impl FnOnce(&mut Writer)) {
+        let mut hash = std::collections::hash_map::DefaultHasher::new();
+        match &record {
+            WireRecord::Class(value) => value.hash(&mut hash),
+            WireRecord::Mob(value) => value.hash(&mut hash),
+            WireRecord::List(value) => value.hash(&mut hash),
+            WireRecord::Proc(value) => value.hash(&mut hash),
+            WireRecord::Variable(value) => value.hash(&mut hash),
+            WireRecord::Reference(value) => value.hash(&mut hash),
+            WireRecord::Instance(value) => value.hash(&mut hash),
+            WireRecord::MapObject(value) => value.hash(&mut hash),
+            WireRecord::World(value) => value.hash(&mut hash),
+            WireRecord::Resource(value) => value.hash(&mut hash),
+            WireRecord::Grid(value) => value.hash(&mut hash),
+        }
+        let key = (section, writer.object_size, writer.compatibility_version, hash.finish());
+        self.active.insert(key);
+        if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket|
+            bucket.iter().find(|(old, _)| *old == record)) {
+            writer.raw(bytes);
+            self.hits += 1;
+            return;
+        }
+        self.misses += 1;
+        let mut fragment = Writer::new(writer.object_size, writer.compatibility_version);
+        encode(&mut fragment);
+        writer.object_overflow |= fragment.object_overflow;
+        writer.raw(&fragment.bytes);
+        // Overflowed records are never proofs of valid wire data.
+        if fragment.object_overflow { return; }
+        let dynamic = match &record {
+            WireRecord::List(words) => words.capacity() * 4,
+            WireRecord::World(world) => world.client_script_files.capacity() * 4,
+            _ => 0,
+        };
+        let charge = fragment.bytes.len() + dynamic + std::mem::size_of::<WireRecord>() + 96;
+        if self.bytes.saturating_add(charge) > 64 * 1024 * 1024 { return; }
+        self.bytes += charge;
+        self.records.entry(key).or_default().push((record, fragment.bytes.into()));
     }
 }
 
@@ -601,6 +698,7 @@ impl<'a> ReferenceValidatedImage<'a> {
 pub struct ReferenceValidationCache {
     procedures: HashMap<usize, ProcedureReferenceProof>,
     classes: HashMap<usize, ClassReferenceProof>,
+    other: HashMap<WireRecord, [usize; 7]>,
     bytes: usize,
 }
 struct ClassReferenceProof {
@@ -621,8 +719,19 @@ struct ProcedureReferenceProof {
     bounds: [usize; 4],
 }
 impl ReferenceValidationCache {
+    fn accepts_record(&self, record: &WireRecord, bounds: [usize; 7]) -> bool {
+        self.other.get(record).is_some_and(|previous|
+            previous.iter().zip(bounds).all(|(old, current)| *old <= current))
+    }
+    fn remember_record(&mut self, record: WireRecord, bounds: [usize; 7]) {
+        if self.other.contains_key(&record) { return; }
+        let charge = std::mem::size_of::<WireRecord>() + 128;
+        if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
+        self.bytes += charge;
+        self.other.insert(record, bounds);
+    }
     pub fn resident_bytes(&self) -> usize { self.bytes }
-    pub fn clear(&mut self) { self.procedures.clear(); self.classes.clear(); self.bytes = 0; }
+    pub fn clear(&mut self) { self.procedures.clear(); self.classes.clear(); self.other.clear(); self.bytes = 0; }
     fn remember_class(&mut self, index: usize, record: &Class, image: &Dmb, bounds: [usize; 6]) {
         if let Some(old) = self.classes.remove(&index) { self.bytes = self.bytes.saturating_sub(old.charge()); }
         let mut ids = vec![record.lists_and_procs[0], record.lists_and_procs[1],
@@ -651,7 +760,7 @@ impl ReferenceValidationCache {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Proc {
     pub strings: [u32; 4],
     pub source_parameter: u8,
@@ -769,7 +878,7 @@ impl Proc {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Variable {
     pub kind: u8,
     pub value: u32,
@@ -788,7 +897,7 @@ impl Variable {
         (self.kind == 62).then_some(self.value)
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct Instance {
     pub kind: u8,
     pub class: u32,
@@ -799,12 +908,12 @@ impl Instance {
         crate::operands::ValueKind::from_tag(self.kind)
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct MapObject {
     pub offset: u16,
     pub instance: u32,
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct ResourceRef {
     pub id: u32,
     pub kind: u8,
@@ -828,7 +937,7 @@ impl WorldViewEncoding {
         }
     }
 }
-#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Clone, Debug, Eq, PartialEq, Hash, Serialize, Deserialize)]
 pub struct World {
     pub ids: [u32; 7],
     /// `world.tick_lag` expressed in integer milliseconds by Dream Maker.
@@ -1419,13 +1528,16 @@ impl Dmb {
         cache.classes.retain(|index, _| *index < self.classes.len());
         cache.bytes = cache.procedures.values().map(|proof| std::mem::size_of::<ProcedureReferenceProof>() + 64
             + 4 * (proof.locals.len() + proof.arguments.len())).sum::<usize>()
-            + cache.classes.values().map(ClassReferenceProof::charge).sum::<usize>();
+            + cache.classes.values().map(ClassReferenceProof::charge).sum::<usize>()
+            + cache.other.len() * (std::mem::size_of::<WireRecord>() + 128);
         self.validate_references_impl(Some(cache))
     }
     fn validate_references_impl(&self, mut cache: Option<&mut ReferenceValidationCache>) -> io::Result<()> {
         fn in_table(id: u32, len: usize) -> bool {
             id == NONE || (id as usize) < len
         }
+        let other_bounds = [self.strings.len(), self.classes.len(), self.mobs.len(), self.lists.len(),
+            self.procs.len(), self.instances.len(), self.resources.len()];
         for (class_index, class) in self.classes.iter().enumerate() {
             let bounds = [self.strings.len(), self.classes.len(), self.resources.len(), self.lists.len(),
                 self.procs.len(), self.variables.len()];
@@ -1497,9 +1609,12 @@ impl Dmb {
             }
         }
         for mob in &self.mobs {
+            let proof_record = WireRecord::Mob(mob.clone());
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(mob.class, self.classes.len()) || !in_table(mob.key, self.strings.len()) {
                 return Err(invalid("mob cross-table reference out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for (proc_index, proc) in self.procs.iter().enumerate() {
             // Native wide tables reserve the nullable ProcID at FFFF as an
@@ -1560,11 +1675,16 @@ impl Dmb {
             }
         }
         for variable in &self.variables {
+            let proof_record = WireRecord::Variable(variable.clone());
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(variable.name, self.strings.len()) {
                 return Err(invalid("variable name out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for instance in &self.instances {
+            let proof_record = WireRecord::Instance(instance.clone());
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             let descriptors = if instance.kind == 8 {
                 self.mobs.len()
             } else {
@@ -1575,24 +1695,34 @@ impl Dmb {
             {
                 return Err(invalid("instance cross-table reference out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for run in &self.grid {
+            let proof_record = WireRecord::Grid(run.clone());
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(run.turf, self.instances.len())
                 || !in_table(run.area, self.instances.len())
                 || !in_table(run.contents, self.lists.len())
             {
                 return Err(invalid("grid cross-table reference out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for object in &self.map_objects {
+            let proof_record = WireRecord::MapObject(object.clone());
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(object.instance, self.instances.len()) {
                 return Err(invalid("map object instance out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         for &id in &self.proc_references {
+            let proof_record = WireRecord::Reference(id);
+            if cache.as_ref().is_some_and(|cache| cache.accepts_record(&proof_record, other_bounds)) { continue; }
             if !in_table(id, self.procs.len()) {
                 return Err(invalid("procedure reference out of range"));
             }
+            if let Some(cache) = cache.as_deref_mut() { cache.remember_record(proof_record, other_bounds); }
         }
         if !in_table(self.variable_footer, self.lists.len()) {
             return Err(invalid("global declaration list out of range"));
@@ -1997,11 +2127,11 @@ impl Dmb {
 
     /// Serialize and produce the exact list-record index in the same pass.
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
-        self.serialize_with_list_spans(false)
+        self.serialize_with_list_spans(false, None)
     }
     // The only true caller is the immutable validator token above. Wire-width,
     // header and grid checks remain mandatory for both entry points.
-    fn serialize_with_list_spans(&self, references_proven: bool) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+    fn serialize_with_list_spans(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
         if self.header.version_line != b"world bin v516\n"
             || !self
                 .header
@@ -2106,18 +2236,20 @@ impl Dmb {
             w.u16(value);
         }
         for run in &self.grid {
-            w.object(run.turf);
-            w.object(run.area);
-            w.object(run.contents);
-            w.u8(run.copies);
+            let encode = |w: &mut Writer| { w.object(run.turf); w.object(run.area); w.object(run.contents); w.u8(run.copies); };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 11, WireRecord::Grid(run.clone()), encode); } else { encode(&mut w); }
         }
         let total_string_bytes = self.strings.iter().try_fold(0usize, |sum, string| {
             sum.checked_add(string.data.len() + 1)
                 .ok_or_else(|| invalid("string total overflow"))
         })?;
         w.u32(u32::try_from(total_string_bytes).map_err(|_| invalid("string total exceeds u32"))?);
-        w.table(&self.classes, |w, item| item.write(w))?;
-        w.table(&self.mobs, |w, item| item.write(w))?;
+        w.table(&self.classes, |w, item| {
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 1, WireRecord::Class(item.clone()), |w| item.write(w)); } else { item.write(w); }
+        })?;
+        w.table(&self.mobs, |w, item| {
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 2, WireRecord::Mob(item.clone()), |w| item.write(w)); } else { item.write(w); }
+        })?;
         w.object(
             u32::try_from(self.strings.len()).map_err(|_| invalid("string count exceeds u32"))?,
         );
@@ -2148,41 +2280,45 @@ impl Dmb {
         let mut list_spans = Vec::with_capacity(self.lists.len());
         w.table(&self.lists, |w, list| {
             let start = w.at();
-            w.u16(list.len() as u16);
-            for &value in list {
-                w.object(value);
-            }
+            let encode = |w: &mut Writer| {
+                w.u16(list.len() as u16);
+                for &value in list { w.object(value); }
+            };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append_list(w, list); } else { encode(w); }
             list_spans.push(start..w.at());
         })?;
-        w.table(&self.procs, |w, item| item.write(w))?;
+        w.table(&self.procs, |w, item| {
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 4, WireRecord::Proc(item.clone()), |w| item.write(w)); } else { item.write(w); }
+        })?;
         w.table(&self.variables, |w, item| {
-            w.u8(item.kind);
-            w.u32(item.value);
-            w.object(item.name);
+            let encode = |w: &mut Writer| { w.u8(item.kind); w.u32(item.value); w.object(item.name); };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 5, WireRecord::Variable(item.clone()), encode); } else { encode(w); }
         })?;
         w.u32(self.variable_footer);
-        w.table(&self.proc_references, |w, value| w.object(*value))?;
+        w.table(&self.proc_references, |w, value| {
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 6, WireRecord::Reference(*value), |w| w.object(*value)); } else { w.object(*value); }
+        })?;
         w.table(&self.instances, |w, item| {
-            w.u8(item.kind);
-            w.u32(item.class);
-            w.object(item.initializer);
+            let encode = |w: &mut Writer| { w.u8(item.kind); w.u32(item.class); w.object(item.initializer); };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 7, WireRecord::Instance(item.clone()), encode); } else { encode(w); }
         })?;
         w.u32(
             u32::try_from(self.map_objects.len())
                 .map_err(|_| invalid("map object count exceeds u32"))?,
         );
         for item in &self.map_objects {
-            w.u16(item.offset);
-            w.object(item.instance);
+            let encode = |w: &mut Writer| { w.u16(item.offset); w.object(item.instance); };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 8, WireRecord::MapObject(item.clone()), encode); } else { encode(&mut w); }
         }
-        self.world.write(&mut w);
+        if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 9, WireRecord::World(self.world.clone()), |w| self.world.write(w)); } else { self.world.write(&mut w); }
         w.table(&self.resources, |w, item| {
-            w.u32(item.id);
-            w.u8(item.kind);
+            let encode = |w: &mut Writer| { w.u32(item.id); w.u8(item.kind); };
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 10, WireRecord::Resource(item.clone()), encode); } else { encode(w); }
         })?;
         if w.object_overflow {
             return Err(invalid("object ID exceeds selected 16-bit width"));
         }
+        if let Some(cache) = wire_cache.as_deref_mut() { cache.finish_generation(); }
         Ok((w.bytes, list_spans))
     }
 }

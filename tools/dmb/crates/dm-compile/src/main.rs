@@ -161,8 +161,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 Ok(index) => (index, vec![]),
                 Err(errors) => (Default::default(), errors),
             };
-            let mut snapshot = dm_analysis::Snapshot::from_frontend(
-                prepared.revision.clone(), &index, &frontend.ast, expanded,
+            let mut snapshot = dm_analysis::Snapshot::from_frontend_segmented(
+                prepared.revision.clone(), &index, &frontend.ast, expanded, &prepared.expansion.source(),
             );
             if !frontend.syntax_complete || !index_errors.is_empty() {
                 snapshot.coverage.declarations = dm_analysis::Coverage::Partial;
