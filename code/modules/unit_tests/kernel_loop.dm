@@ -30,6 +30,44 @@
 	TEST_ASSERT_EQUAL(Kernel.last_run, K.last_tick, "Kernel.last_run is the kernel heartbeat")
 	TEST_ASSERT(SSgarbage.times_fired > host_before, "a host system on a longer wait runs from the kernel")
 
+/// The OM scheduler's pass is made of kernel work items: one per piece, first in their phase (and lane) lists, and the audit.
+/datum/unit_test/kernel_scheduler_is_work_items
+
+/datum/unit_test/kernel_scheduler_is_work_items/Run()
+	var/datum/controller/kernel/K = kernel()
+	var/owner = /datum/system/behaviours
+	var/list/keys = list(
+		"[owner]:sched_deadlines" = KERNEL_PHASE_D,
+		"[owner]:sched_borrow" = KERNEL_PHASE_P,
+		"[owner]:sched_leftovers" = KERNEL_PHASE_R,
+		"[owner]:audit_step" = KERNEL_PHASE_G,
+	)
+	for(var/lane in 1 to OM_LANE_COUNT)
+		keys["[owner]:sched_lane_[lane]"] = KERNEL_PHASE_P
+	for(var/key in keys)
+		var/datum/work_item/W = K.work_by_key[key]
+		TEST_ASSERT(W, "[key] is a registered work item")
+		if(W)
+			TEST_ASSERT_EQUAL(W.phase, keys[key], "[key] runs in phase [phase_letter(keys[key])]")
+	var/list/deadlines = K.items_of_phase(KERNEL_PHASE_D)
+	var/datum/work_item/head = deadlines[1]
+	TEST_ASSERT_EQUAL(head.key, "[owner]:sched_deadlines", "the deadline wheel runs ahead of the phase's other items")
+	var/list/leftovers = K.items_of_phase(KERNEL_PHASE_R)
+	var/datum/work_item/tail_head = leftovers[1]
+	TEST_ASSERT_EQUAL(tail_head.key, "[owner]:sched_leftovers", "the leftover pass runs ahead of the phase's other items")
+	for(var/lane in 1 to OM_LANE_COUNT)
+		var/list/lane_items = K.phase_lane_items[lane]
+		var/datum/work_item/first_of_lane = lane_items[1]
+		var/want = (lane == LANE_URGENT) ? "[owner]:sched_borrow" : "[owner]:sched_lane_[lane]"
+		TEST_ASSERT_EQUAL(first_of_lane.key, want, "lane [lane] starts with its scheduler piece")
+	var/datum/work_item/borrow = K.work_by_key["[owner]:sched_borrow"]
+	var/runs_before = K.sched.runs
+	var/lane_runs_before = (K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]).runs
+	sleep(1 SECONDS)
+	TEST_ASSERT(borrow.runs > 0, "the borrow piece runs from the kernel")
+	TEST_ASSERT(K.sched.runs > runs_before, "scheduler passes keep running")
+	TEST_ASSERT((K.work_by_key["[owner]:sched_lane_[LANE_SIMULATION]"]).runs > lane_runs_before, "a lane piece runs each pass")
+
 /// The watchdog watches kernel.last_tick, and Recreate_kernel() replaces the loop without doubling it.
 /datum/unit_test/kernel_watchdog_watches_kernel
 
