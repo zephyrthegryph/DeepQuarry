@@ -302,14 +302,16 @@
 	OM_EMIT(src, /datum/om/event/atom_dir_change, dir, new_dir)
 	dir = new_dir
 
-// Called to set the atom's density and used to add behavior to density changes.
+/// Density is a tracked base var (G8): this is its only writer. A change publishes nameof(density) to its readers
+/// and, as a bridge, raises the channel the type's declared field names (machinery_fields.dm).
 /atom/proc/set_density(new_density)
+	new_density = !!new_density // Sanitize to be strictly 0 or 1
 	if(density == new_density)
 		return FALSE
-	density = !!new_density // Sanitize to be strictly 0 or 1
-	if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_SETTINGS) // the declared field's channel (machinery_fields.dm)
+	density = new_density
+	tracked_bridged_changed(src, nameof(density))
 	return TRUE
+SETTER(/atom, density)
 
 // Called to set the atom's invisibility and usd to add behavior to invisibility changes.
 /atom/proc/set_invisibility(new_invisibility)

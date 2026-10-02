@@ -1507,7 +1507,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 				H.b_facial = round((H.b_facial + 50)/2)
 	// Rezadone's regeneration is its treatment_tags profile.
 	if(dose > 3)
-		M.status_flags &= ~DISFIGURED
+		M.set_status_flags(M.status_flags & ~DISFIGURED)
 	if(dose > 10)
 		M.status_adjust(EFFECT_DIZZY, 5)
 		M.status_adjust(EFFECT_JITTERY, 5)

@@ -998,7 +998,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/ai, TYPE_PROC_REF(/atom, appearance_
 	set name = "Rest"
 	set category = VERB_CAT_IC_GAME
 
-	resting = 0
+	set_resting(0)
 	var/obj/item/rig/rig = src.get_rig()
 	if(rig)
 		rig.force_rest(src)

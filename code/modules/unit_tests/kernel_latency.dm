@@ -89,3 +89,18 @@
 	TEST_ASSERT_EQUAL(ran, 0, "clicks on a deleted target do not run")
 	TEST_ASSERT_EQUAL(Q.input_dropped, 3 + KERNEL_CLICK_QUEUE_MAX, "each was dropped and counted")
 	TEST_ASSERT_NULL(Q.click_queue, "the drain empties the queue")
+
+/// kernel_admit_lane() keys each shed lane's floor by name. A bare lane number indexed
+/// floor_pass by position and runtimed the first time live shedding started.
+/datum/unit_test/kernel_admit_lane_while_shedding
+
+/datum/unit_test/kernel_admit_lane_while_shedding/Run()
+	var/datum/kernel_latency/live = kernel_latency()
+	set_var(live, "enabled", TRUE)
+	set_var(live, "shedding", TRUE)
+	set_var(live, "floor_pass", list())
+	set_var(live, "shed_by_class", list(0, 0, 0, 0))
+	TEST_ASSERT(kernel_admit_lane(LANE_PRESENTATION), "a shed lane's first pass is its floor")
+	TEST_ASSERT(!kernel_admit_lane(LANE_PRESENTATION), "a second pass inside the floor is shed")
+	TEST_ASSERT(kernel_admit_lane(LANE_BACKGROUND), "each lane has its own floor")
+	TEST_ASSERT(kernel_admit_lane(LANE_SIMULATION), "a deferrable lane is never shed")

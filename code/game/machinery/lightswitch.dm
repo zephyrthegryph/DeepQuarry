@@ -86,10 +86,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, TYPE_PROC_REF(/atom, appear
 /obj/machinery/light_switch/power_change()
 
 	if(!otherarea)
-		if(powered(LIGHT))
-			stat_remove(NOPOWER)
-		else
-			stat_add(NOPOWER)
+		set_powered(powered(LIGHT))
 
 
 DAMAGE_REACTION(/obj/machinery/light_switch, DAMAGE_EMP, PROC_REF(light_switch_emp))

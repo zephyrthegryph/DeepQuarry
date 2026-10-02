@@ -40,7 +40,7 @@
 // leaves its generator's deployed shields (the generator is a handle).
 
 /obj/machinery/shield/on_destroy(force)
-	opacity = 0
+	set_opacity(0)
 	set_density(FALSE)
 	update_nearby_tiles()
 	..()

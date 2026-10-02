@@ -33,6 +33,8 @@
 #define DKIND_UI 3
 #define DKIND_DERIVE 4
 #define DKIND_PUSH 5
+/// reaction_reads(handler, ...): more reads of the on_change() reaction with that handler (generated reads).
+#define DKIND_REACTION 6
 
 // Outputs must not write state: in test builds a tracked write while an output runs is reported.
 #if defined(UNIT_TESTS)

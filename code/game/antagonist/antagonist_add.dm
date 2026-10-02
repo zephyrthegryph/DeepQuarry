@@ -58,7 +58,7 @@
 		rel_remove(src, nameof(faction_members), player)
 		player.special_role = null
 		update_icons_removed(player)
-		BITSET(player.current.hud_updateflag, SPECIALROLE_HUD)
+		player.current.flag_hud_update(SPECIALROLE_HUD)
 		if(!is_special_character(player))
 			om_revoke(player.current, GRANT_VERB, /mob/living/proc/write_ambition, src)
 			if(player.current.client)

@@ -17,7 +17,7 @@
 
 	if(istype(src,/mob/living/carbon))
 		var/mob/living/carbon/C = src
-		C.seedarkness = !C.seedarkness
+		C.set_seedarkness(!C.seedarkness)
 		if(C.seedarkness)
 			to_chat(C, span_notice("We allow the shadows to return."))
 		else

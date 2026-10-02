@@ -2,9 +2,9 @@
 // (code/game/machinery/doors/airlock.dm).
 
 /obj/cap_fixture/door_caps
-	/// Whether touching it shocks (cap_electrify() reads is_electrified()).
+	/// Whether touching it shocks (its electrify subtype's is_electrified() reads it).
 	var/live = FALSE
-	/// How many shocks electric_shock() delivered.
+	/// How many shocks its electrify subtype's shock() delivered.
 	var/shocks = 0
 
 /obj/cap_fixture/door_caps/capabilities()
@@ -13,17 +13,20 @@
 	. += cap_weld_shut()
 	. += cap_pry()
 	. += cap_emergency_access()
-	. += cap_electrify()
+	. += cap_electrify(type = /datum/capability/electrify/door_caps_fixture)
 	. += cap_hand("Poke", PROC_REF(poke))
 
 /obj/cap_fixture/door_caps/proc/poke(mob/user)
 	return TRUE
 
-/obj/cap_fixture/door_caps/is_electrified()
-	return live
+/// The fixture's electrification: a holder-interface subtype (nothing on /atom).
+/datum/capability/electrify/door_caps_fixture
 
-/obj/cap_fixture/door_caps/electric_shock(mob/user, chance)
-	shocks++
+/datum/capability/electrify/door_caps_fixture/is_electrified(obj/cap_fixture/door_caps/holder)
+	return holder.live
+
+/datum/capability/electrify/door_caps_fixture/shock(obj/cap_fixture/door_caps/holder, mob/user, chance)
+	holder.shocks++
 	return TRUE
 
 /// Every capability's UI data flattened into one list (as AiAirlock.tsx reads data.caps).
@@ -43,11 +46,11 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
 	var/obj/cap_fixture/door_caps/A = allocate(/obj/cap_fixture/door_caps, T)
 	TEST_ASSERT(!is_bolted(A), "starts unbolted")
-	TEST_ASSERT(A.set_bolted(TRUE), "set_bolted drops the bolts")
+	TEST_ASSERT(set_bolted(A, TRUE), "set_bolted drops the bolts")
 	TEST_ASSERT(A.cap_state & CAP_BOLTED, "the bit is set")
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, "bolts"), "the bolts layer is drawn")
-	TEST_ASSERT(A.set_bolted(FALSE) && !is_bolted(A), "set_bolted raises them")
+	TEST_ASSERT(set_bolted(A, FALSE) && !is_bolted(A), "set_bolted raises them")
 	refresh_flush()
 	TEST_ASSERT(!cap_test_has_layer(A, "bolts"), "the layer is gone")
 
@@ -83,7 +86,7 @@
 	TEST_ASSERT_EQUAL(pry.why_not(H, A, bar), "it's welded shut", "prying a welded fixture is refused")
 
 	cap_weld_toggle(A, H, null)
-	A.set_bolted(TRUE)
+	set_bolted(A, TRUE)
 	TEST_ASSERT_EQUAL(pry.why_not(H, A, bar), "its bolts prevent it from being forced", "prying a bolted fixture is refused")
 
 /// cap_electrify(): every entry zaps first through the holder's before_entry(); a shock stops it, a
@@ -117,7 +120,7 @@
 /obj/machinery/door/airlock/dx_test/user_allowed(mob/user)
 	return TRUE
 
-/obj/machinery/door/airlock/dx_test/electric_shock(mob/user, chance)
+/obj/machinery/door/airlock/dx_test/shock(mob/user, prb)
 	shocks++
 	return TRUE
 
@@ -149,7 +152,7 @@
 	var/datum/interaction/capability/pry = cap_test_entry(A, "pry:[TOOL_CROWBAR]:[I_HELP]")
 	TEST_ASSERT_NOTNULL(pry, "the airlock has a pry entry")
 	TEST_ASSERT_NOTNULL(pry.why_not(H, A, bar), "prying a bolted airlock is refused")
-	var/reason = A.cap_pry_reason(H, bar)
+	var/reason = cap_pry_reason(H, A, bar)
 	TEST_ASSERT(istext(reason), "the airlock gives a reason ([reason])")
 	if(!A.arePowerSystemsOn())
 		TEST_ASSERT_EQUAL(reason, "the airlock's bolts prevent it from being forced", "unpowered, the bolts refuse")
@@ -163,7 +166,7 @@
 	TEST_ASSERT(A.before_entry(H, pry, null), "not electrified: no shock")
 	timed_set(A, nameof(A.electrified_until), 1, for_time = 30 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
 	TEST_ASSERT(A.isElectrified(), "electrified")
-	TEST_ASSERT(A.electrified_left() > 0, "with time left ([A.electrified_left()])")
+	TEST_ASSERT(electrified_left(A) > 0, "with time left ([electrified_left(A)])")
 	TEST_ASSERT(!A.before_entry(H, pry, null), "touching it shocks and stops the entry")
 	TEST_ASSERT_EQUAL(A.shocks, 1, "one shock")
 	var/list/pending = A.timed_until[nameof(A.electrified_until)]
@@ -255,7 +258,7 @@
 	TEST_ASSERT(H.status_units(EFFECT_STUNNED) > 0, "and stunned")
 	for(var/obj/effect/decal/cleanable/mess in T)
 		qdel(mess)
-	TEST_ASSERT_EQUAL(A.door_safeties_on(), TRUE, "the safeties start on")
+	TEST_ASSERT_EQUAL(door_safeties_on(A), TRUE, "the safeties start on")
 	var/list/data = dx_flat_caps_data(A, H)
 	TEST_ASSERT_EQUAL(data["safe"], TRUE, "the window sees the safeties")
 

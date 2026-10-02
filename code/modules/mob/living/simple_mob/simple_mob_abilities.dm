@@ -133,7 +133,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 				var/turf/T = get_turf(A)
 				//handle delay spam
 				COOLDOWN_START(src, pounce_last, pounce_delay)
-				status_flags |= LEAPING
+				set_status_flags(status_flags | LEAPING)
 
 				//deal with passflag - give flags if don't have, mark for removal. Prevent removal if already has flags.
 				var/foundpt = 0
@@ -156,7 +156,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 				// throw_at returns FALSE if it will not call it's callback - useful to prevent state jamming
 				if(!throw_at(T, 10, pounce_speed, callback = om_callable(src, PROC_REF(pouncefinish), foundpt, foundpm, T)))
 					if(status_flags & LEAPING)
-						status_flags &= ~LEAPING
+						set_status_flags(status_flags & ~LEAPING)
 						flying = 0
 						dq_set_hovering(src, 0)
 						if(!foundpt)
@@ -169,7 +169,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 			to_chat(src, span_warning("You can't do that right now!"))
 			// some sanity incase the callback didn't fire for some reason
 			if(status_flags & LEAPING)
-				status_flags &= ~LEAPING
+				set_status_flags(status_flags & ~LEAPING)
 				flying = 0
 				dq_set_hovering(src, 0)
 			pouncing = 0
@@ -180,7 +180,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 // callback to terminate leap mode. Reset passflag if passflag = 0 (Mob doesn't already have it)
 /mob/living/simple_mob/proc/pouncefinish(pt, pm, atom/T)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING
+		set_status_flags(status_flags & ~LEAPING)
 		flying = 0
 		dq_set_hovering(src, 0)
 

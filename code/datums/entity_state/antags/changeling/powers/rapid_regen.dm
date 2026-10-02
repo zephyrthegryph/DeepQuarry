@@ -34,7 +34,7 @@
 		C.restore_blood()
 		C.species.create_organs(C)
 		C.restore_all_organs()
-		C.blinded = 0
+		C.set_blinded(0)
 		C.status_set(EFFECT_BLINDED, 0)
 		C.status_set(EFFECT_BLURRY, 0)
 		C.status_set(EFFECT_DEAFENED, 0)

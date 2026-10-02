@@ -19,7 +19,7 @@
 		// GROW!
 		self.update_progression()
 
-	self.blinded = null
+	self.set_blinded(null)
 
 	//Status updates, death etc.
 	self.update_icons()
@@ -60,19 +60,19 @@
 		self.body?.life_tick()
 
 	if(self.stat == DEAD)
-		self.blinded = 1
+		self.set_blinded(1)
 		self.status_set(EFFECT_MUTED, 0)
 		self.deaf_loop.stop() // Ear Ringing/Deafness - Not sure if we need this, but, safety.
 	else
 		if(self.has_status(EFFECT_PARALYZED))
-			self.blinded = 1
+			self.set_blinded(1)
 			self.set_stat(UNCONSCIOUS)
 
 		if(self.has_status(EFFECT_SLEEPING))
 			// Sleep wears off only while a player is home; an empty body stays asleep.
 			if(!self.mind?.active || !self.client)
 				self.status_at_least(EFFECT_SLEEPING, 1)
-			self.blinded = 1
+			self.set_blinded(1)
 			self.set_stat(UNCONSCIOUS)
 		else if(!self.resting)
 			self.set_stat(CONSCIOUS)
@@ -80,10 +80,10 @@
 		// Eyes and blindness. Temporary blindness and blur wear off on their own.
 		if(!self.has_eyes())
 			self.status_set(EFFECT_BLINDED, 1)
-			self.blinded =    1
+			self.set_blinded(1)
 			self.status_set(EFFECT_BLURRY, 1)
 		else if(self.has_status(EFFECT_BLINDED))
-			self.blinded =    1
+			self.set_blinded(1)
 
 		self.update_icons()
 

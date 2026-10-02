@@ -379,7 +379,7 @@
 			to_chat(pred, span_danger("You pass over [tmob.name]."))
 			to_chat(prey, span_danger("[src.name] passes over you."))
 			return FALSE
-		tmob.resting = 1
+		tmob.set_resting(1)
 		tmob.status_at_least(EFFECT_WEAKENED, 3) // do both regardless of stance, dummy
 		if(nofetish)
 			to_chat(pred, span_danger("You casually knock [tmob.name] over."))

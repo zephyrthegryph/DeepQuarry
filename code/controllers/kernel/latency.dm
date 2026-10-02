@@ -92,7 +92,8 @@
 	// Every lane is admitted unless shedding: one var read on the scheduler's per-lane path, not two more calls.
 	if(!latency.shedding)
 		return TRUE
-	return latency.admit(kernel_lane_class(lane), lane)
+	// A text key: a bare lane number would index floor_pass by position.
+	return latency.admit(kernel_lane_class(lane), "lane [lane]")
 
 /// TRUE when this system's work may run now: its own latency class, and its own floor when shedding.
 /datum/system/proc/admitted()

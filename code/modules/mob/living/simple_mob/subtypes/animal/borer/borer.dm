@@ -124,9 +124,9 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 
 	var/chem_before = chemicals
 	if(controlling)
-		chemicals += 0.25
+		set_chemicals(chemicals + 0.25)
 	else
-		chemicals += 0.1
+		set_chemicals(chemicals + 0.1)
 	var/new_chem = FLOOR(chemicals/10,1)
 	if(new_chem > FLOOR(chem_before/10,1))
 		to_chat(host, span_alien("Your chemicals have increased to [new_chem * 10]"))
@@ -207,7 +207,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 	if(chemicals < amount)
 		to_chat(controlling ? host : src, span_warning("You don't have enough chemicals, requires [amount]! Currently you have [FLOOR(chemicals,1)]."))
 		return FALSE
-	chemicals -= amount
+	set_chemicals(chemicals - amount)
 	to_chat(controlling ? host : src, span_info("You use [amount] chemicals, [FLOOR(chemicals,1)] remain."))
 	return TRUE
 
@@ -423,3 +423,5 @@ DECLARE_VERB(/mob/living/simple_mob/animal/borer, /mob/living/proc/hide)
 /datum/decl/mob_organ_names/borer
 TYPE_TABLE(/datum/decl/mob_organ_names/borer, mob_organ_hit_zones, list("head", "central segment", "tail segment"))
 
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/animal/borer, chemicals)

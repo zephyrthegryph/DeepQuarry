@@ -73,6 +73,20 @@ Write it the way DM already works:
 - **Capabilities own UI actions** (`act_<action>`), data under `data["caps"][key]`, and may
   contribute `reactions()` and `relations()`.
 - **Runtime:** `add_capability()` / `remove_capability()`, or `grant(target, what, source, duration=)`.
+- **The holder interface lives on the capability** [built, B2]. A capability never adds an overridable proc to `/atom`
+  (each one costs every atom type a proc-table slot: ~0.55 MB of booted memory per proc). What a holder answers for a
+  capability is a proc of the capability that takes the holder (`/datum/capability/bolts/proc/set_bolted(atom/holder, on,
+  forced)`), with the library default in it; a holder that needs different behaviour declares a capability subtype
+  overriding it and passes it to the constructor or bundle (`cap_bolts(type = /datum/capability/bolts/airlock)`,
+  `door(subtypes = list(...))`, `power_channels(/datum/capability/power_channels/apc)`,
+  `cap_slot(..., slot_type = /datum/capability/slot/vending_coin)`, or `replace(., /datum/capability/wall_mount, new
+  /datum/capability/wall_mount/apc_angled)`). Callers outside go through `cap_of(holder, /datum/capability/x)` or the
+  library's global accessor (`set_bolted(A, on)`, `is_electrified(A)`, `door_safeties_on(A)`, `wall_mount_reorient(A)`).
+  An op handler of the library is a global proc that finds its capability (`cap_panel_toggle(holder, user, held)`), and a
+  capability's own reaction is `cap_rx(src, after_op(...))`, whose handler is a proc of the capability called as
+  `handler(holder, ...)`. Only type-level hooks stay on `/atom`: `capabilities()`, `relations()`, `reactions()`,
+  `draw()`, `type_verbs()`, `hidden_verbs()`, `granted_verbs()`, `examine_lines()`, `cap_powered()`, `before_entry()`,
+  `look_lacks()`, `screen_override()`, `is_subverted()`.
 
 ## Reactions
 

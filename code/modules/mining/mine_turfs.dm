@@ -109,7 +109,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(!density && !opacity)
 		return FALSE
 	set_density(FALSE)
-	opacity = 0
+	set_opacity(0)
 	blocks_air = 0
 	can_build_into_floor = TRUE
 	// under LINDA, a turf with blocks_air=0 but air=null trips
@@ -128,7 +128,7 @@ GLOBAL_LIST_EMPTY(mining_overlay_cache) // ALLOW(cache): also read/written in co
 	if(density && opacity)
 		return FALSE
 	set_density(TRUE)
-	opacity = 1
+	set_opacity(1)
 	blocks_air = 1
 	can_build_into_floor = FALSE
 	// re-walling a carved mineral: drop the air mixture so we don't

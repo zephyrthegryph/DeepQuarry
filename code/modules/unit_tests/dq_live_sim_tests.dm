@@ -132,7 +132,7 @@
 /obj/test_gas_holder/proc/set_air(datum/gas_mixture/mixture)
 	test_air = mixture // ALLOW(ownership): a test fixture pointing at a mixture the test owns and deletes
 
-/obj/test_gas_holder/gas_at_port(port)
+/obj/test_gas_holder/return_air()
 	return test_air
 
 /obj/test_gas_holder/proc/on_cross(datum/native_watch/world/watch, reason, source, source_kind)
@@ -164,7 +164,7 @@
 	TEST_ASSERT_EQUAL(holder.crossings, 0, "quiet while the pressure is below the level")
 	first.adjust_gas(/datum/gas/nitrogen, 200)
 	SSair.run_gas_frames(1)
-	om_test_ticks(6)
+	OM_TEST_WAIT_UNTIL(holder.crossings >= 1, 60)
 	TEST_ASSERT(holder.crossings >= 1, "the crossing called the holder ([first.return_pressure()] kPa, watch [state.watch] live [state.watch?.is_live()], armed [state.armed_id])")
 	holder.set_air(second)
 	gas_watch_rearm(holder)

@@ -110,7 +110,7 @@
 	stop_pulling()
 
 	//stop resting
-	resting = 0
+	set_resting(0)
 
 	// If we are being held, handle removing our holder from their inv.
 	var/obj/item/holder/our_holder = loc
@@ -137,7 +137,7 @@
 		src.forceMove(card)
 
 	canmove = 1
-	resting = 0
+	set_resting(0)
 	icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
 	if(isopenspace(card.loc))
 		fall()

@@ -162,8 +162,7 @@ Works together with spawning an observer, noted above.
 	if(!loc || !client)
 		return
 
-	refresh_hud()
-	refresh_vision()
+	OM_EMIT(src, /datum/om/event/mob_handle_vision) // a ghost's sight listeners (remote view) follow its upkeep
 	check_area()	//RS Port #658
 
 //RS Port #658 Start
@@ -234,7 +233,7 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 		SSadmin_verbs.dynamic_invoke_verb(client, /datum/admin_verb/admin_ghost)
 	if(response != "Ghost")
 		return
-	resting = 1
+	set_resting(1)
 	var/turf/location = get_turf(src)
 	var/special_role = check_special_role()
 	if(!istype(loc,/obj/machinery/cryopod))

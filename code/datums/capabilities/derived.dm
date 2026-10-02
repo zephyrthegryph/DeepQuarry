@@ -99,6 +99,13 @@
 /proc/rust_push(...)
 	return derived_entry(DKIND_PUSH, null, args.Copy())
 
+/// More reads of the type's on_change() reaction whose handler is `handler` (a PROC_REF): a change of any of them runs
+/// that reaction, coalesced with its declared reads. Written by tools/ci/derived_reads_lint.py into
+/// code/_generated/reads.dm for the presentation reactions (the HUD, sight and canmove passes of /mob/living), from what
+/// their handler procs and helpers read; rx_table_build() merges them into the reaction.
+/proc/reaction_reads(handler, ...)
+	return derived_entry(DKIND_REACTION, handler, args.Copy(2))
+
 /// A cached var `var_name` (nameof(var)), recomputed by derive_<var_name>() (pure) only when one of
 /// `reads` changed. Only the framework writes it; other entries may read it.
 /proc/derive(var_name, ...)

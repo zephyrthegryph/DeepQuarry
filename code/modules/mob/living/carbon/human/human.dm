@@ -627,14 +627,9 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 /mob/living/carbon/human/proc/hud_still_usable(mob/user, hud_type)
 	return !user.stat && !user.restrained() && hasHUD(user, hud_type)
 
-/// Refreshes the HUD of whoever changed a record through theirs.
+/// Whoever changed a record through their HUD sees it change: their HUD re-reads what it shows (MOB_KEY_VIEW).
 /mob/living/carbon/human/proc/hud_record_changed(mob/user)
-	if(ishuman(user))
-		var/mob/living/carbon/human/U = user
-		U.refresh_hud()
-	if(istype(user,/mob/living/silicon/robot))
-		var/mob/living/silicon/robot/U = user
-		U.refresh_hud()
+	PUBLISH_CHANGE(user, MOB_KEY_VIEW)
 
 /// A record status picked through a HUD on the subject. Re-checked on the answer: the HUD still works.
 /datum/om/prompt/choice/hud_status
@@ -663,12 +658,8 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		return
 	var/datum/data/record/R = ask.record
 	R.fields["criminal"] = setcriminal
-	BITSET(hud_updateflag, WANTED_HUD)
-	if(ishuman(user))
-		var/mob/living/carbon/human/U = user
-		U.life_hud_list()
-	else
-		hud_record_changed(user)
+	flag_hud_update(WANTED_HUD)
+	hud_record_changed(user)
 
 /mob/living/carbon/human/proc/hud_medical_status_chosen(datum/om/prompt/choice/hud_status/ask)
 	var/setmedical = ask.choice

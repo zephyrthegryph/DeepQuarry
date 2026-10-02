@@ -260,7 +260,7 @@
 		O.screen_loc = slot_screen?.screen_loc
 		if(istype(O, /obj/item/borg/sight))
 			var/obj/item/borg/sight/S = O
-			sight_mode |= S.sight_mode
+			set_sight_mode(sight_mode | S.sight_mode)
 		update_icon()
 		after_equip(O)
 		on_equipment_changed()
@@ -316,7 +316,7 @@
 		module_active = null
 	if(istype(thing, /obj/item/borg/sight))
 		var/obj/item/borg/sight/S = thing
-		sight_mode &= ~S.sight_mode
+		set_sight_mode(sight_mode & ~S.sight_mode)
 	var/atom/movable/screen/slot_screen = get_module_slot_screen(slot)
 	if(slot_screen)
 		slot_screen.icon_state = "inv[slot]"

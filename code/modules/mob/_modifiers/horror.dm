@@ -83,7 +83,7 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 		unfortunate_soul.endurance = max(10, unfortunate_soul.endurance - 1) //Endurance is reduced by 1, but never below 10. This is PERMANENT for the rest of the round or until resleeving.
 
 	//The mental effects.
-	unfortunate_soul.fear = min(100, unfortunate_soul.fear + 2) //Fear is increased by 1, but never above 100. You're in a scary place.
+	unfortunate_soul.set_fear(min(100, unfortunate_soul.fear + 2)) //Fear is increased by 1, but never above 100. You're in a scary place.
 	if(unfortunate_soul.life_tick % 20 == 0)
 		var/obj/item/organ/O = (length(unfortunate_soul.internal_organ_list()) ? pick(unfortunate_soul.internal_organ_list()) : null)
 		if(O) //If you don't have any internal organs, you know what? No spooky messages for you, freak.
@@ -300,12 +300,12 @@ GLOBAL_LIST_INIT(redspace_areas, list(
 
 /datum/body_effect/redsight/on_start(mob/living/L)
 	L.see_invisible = 60
-	L.see_invisible_default = 60
+	L.set_see_invisible_default(60)
 	L.vis_enabled += VIS_GHOSTS
 	L.recalculate_vis()
 
 /datum/body_effect/redsight/on_end(mob/living/L, expired)
-	L.see_invisible_default = initial(L.see_invisible_default)
+	L.set_see_invisible_default(initial(L.see_invisible_default))
 	L.see_invisible = L.see_invisible_default
 	L.vis_enabled -= VIS_GHOSTS
 	L.recalculate_vis()

@@ -144,3 +144,13 @@
 // The mob owns its panel; the panel's host points back, so leaving it set would keep both alive.
 /// The mob an AI's follow-camera mode is tracking (camera/tracking.dm declares the follow loop on it).
 OM_FIELD_VIEW(/mob/living, mob/living, cameraFollow, CHANGE_MOB_CONDITIONS)
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living, tiredness)
+TRACKED(/mob/living, fear)
+TRACKED(/mob/living, on_fire)
+TRACKED(/mob/living, see_invisible_default)
+/// The HUD-list bits (who sees what above this mob's head): flag_hud_update() sets them and publishes MOB_KEY_HUD_FLAGS.
+PUBLISHED_BY(/mob/living, hud_updateflag, MOB_KEY_HUD_FLAGS)
+/// The body's derived state (injury, pain, factors) changes through body.invalidate(), which publishes MOB_KEY_HEALTH.
+PUBLISHED_BY(/mob/living, body, MOB_KEY_HEALTH)

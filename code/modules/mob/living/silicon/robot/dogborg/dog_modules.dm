@@ -420,7 +420,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 		return
 
 	COOLDOWN_START(src, last_special, 10)
-	status_flags |= LEAPING
+	set_status_flags(status_flags | LEAPING)
 	pixel_y = pixel_y + 10
 
 	act_message(src, T, others = span_danger("%U% leaps at %T%!"))
@@ -441,7 +441,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	leap_land(T)
 
 /mob/living/silicon/robot/proc/leap_land(mob/living/T)
-	if(status_flags & LEAPING) status_flags &= ~LEAPING
+	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)
 
 	if(!src.Adjacent(T))
 		to_chat(src, span_warning("You miss!"))

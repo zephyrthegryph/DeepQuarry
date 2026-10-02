@@ -166,6 +166,8 @@ SUBSYSTEM_DEF(dbcore)
 	log_sql("Clearing DB queries standby:[length(queries_standby)] active: [length(queries_active)] all: [length(all_queries)]")
 	//This is as close as we can get to the true round end before Disconnect() without changing where it's called, defeating the reason this is a subsystem
 	if(SSdbcore.Connect())
+		// Last metrics before the disconnect (world services shut down after the subsystems).
+		GLOB.metrics_service?.final_flush()
 		//Execute all waiting queries
 		for(var/datum/db_query/query in queries_standby)
 			run_query_sync(query)

@@ -88,7 +88,7 @@
 		chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 		set_ready_state(FALSE)
 		chassis.use_power(energy_drain)
-		O.anchored = TRUE
+		O.set_anchored(TRUE)
 		var/T = chassis.loc
 		if(do_after_cooldown(target))
 			if(T == chassis.loc && src == chassis.selected)
@@ -96,12 +96,12 @@
 				LAZYADD(holder.cargo, O)
 				if(!O.move_into(holder, MECHA_SLOT_CARGO))
 					O.forceMove(holder)
-				O.anchored = FALSE
+				O.set_anchored(FALSE)
 				occupant_message(span_notice("[target] succesfully loaded."))
 				src.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 			else
 				occupant_message(span_warning("You must hold still while handling objects."))
-				O.anchored = initial(O.anchored)
+				O.set_anchored(initial(O.anchored))
 
 	//attacking
 	else if(isliving(target))
@@ -149,7 +149,7 @@
 				chassis.visible_message("[chassis] lifts [target] and starts to load it into cargo compartment.")
 				set_ready_state(FALSE)
 				chassis.use_power(energy_drain)
-				O.anchored = TRUE
+				O.set_anchored(TRUE)
 				var/T = chassis.loc
 				if(do_after_cooldown(target))
 					if(T == chassis.loc && src == chassis.selected)
@@ -157,12 +157,12 @@
 						LAZYADD(holder.cargo, O)
 						if(!O.move_into(holder, MECHA_SLOT_CARGO))
 							O.forceMove(holder)
-						O.anchored = FALSE
+						O.set_anchored(FALSE)
 						chassis.occupant_message(span_notice("[target] succesfully loaded."))
 						chassis.mecha_log_message("Loaded [O]. Cargo compartment capacity: [cargo_holder().cargo_capacity - length(cargo_holder().cargo)]")
 					else
 						chassis.occupant_message(span_warning("You must hold still while handling objects."))
-						O.anchored = initial(O.anchored)
+						O.set_anchored(initial(O.anchored))
 			else
 				chassis.occupant_message(span_warning("Not enough room in cargo compartment."))
 		else

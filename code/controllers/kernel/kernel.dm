@@ -292,7 +292,7 @@
 		if(!length(phase_lane_items?[lane]) && !work_dirty)
 			continue
 		// kernel_admit_lane(), asked only while shedding (it admits everything otherwise).
-		if(latency.shedding && !latency.admit(kernel_lane_class(lane), lane))
+		if(latency.shedding && !latency.admit(kernel_lane_class(lane), "lane [lane]"))
 			continue
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)
 		work_run_phase(KERNEL_PHASE_P, lane_limit, lane)

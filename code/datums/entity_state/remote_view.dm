@@ -107,9 +107,8 @@
 
 /// Called once the view is the mob's remote_view (was RegisterWithParent).
 /datum/remote_view/proc/attach()
-	// Update the mob's vision after we attach.
-	host_mob.refresh_vision()
-	host_mob.refresh_hud()
+	// The mob's sight and HUD re-read its view (the presentation reactions read MOB_KEY_VIEW).
+	PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 	settings.attached_to_mob(src, host_mob)
 
 // Runs in destroy phase 1, before phase 4 nulls the declared refs: the viewer's eye,
@@ -128,8 +127,7 @@
 	if(!QDELETED(host_mob))
 		settings?.detatch_from_mob(src, host_mob)
 		settings?.handle_remove_visuals(src, host_mob)
-		host_mob.refresh_vision()
-		host_mob.refresh_hud()
+		PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 	rel_clear(src, nameof(host_mob))
 	rel_clear(src, nameof(remote_view_target))
 
@@ -371,7 +369,7 @@
 	show_message = show_visible_messages
 	if(show_message)
 		host_mob.visible_message(span_filter_notice("[host_mob] peers through the [host_item.zoomdevicename ? "[host_item.zoomdevicename] of the [host_item.name]" : "[host_item.name]"]."))
-	host_mob.refresh_vision()
+	PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 
 // The zooming item un-zooms and the viewer's client offset resets.
 /datum/remote_view/item_zoom/lifecycle_unbind()
@@ -383,7 +381,7 @@
 		if(host_mob.client)
 			host_mob.client.pixel_x = 0
 			host_mob.client.pixel_y = 0
-		host_mob.refresh_vision()
+		PUBLISH_CHANGE(host_mob, MOB_KEY_VIEW)
 	rel_clear(src, nameof(host_item))
 	. = ..()
 

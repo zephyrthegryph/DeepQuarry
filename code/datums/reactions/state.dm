@@ -68,6 +68,13 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 /proc/tracked_changed(datum/E, var_name)
 	changed(E, 0, var_name)
 
+/// BRIDGE (removed with S4): tracked_changed() for a hand-written setter of a var an OM stage still reads by channel.
+/// The channel is the one E's type declares for the var (OM_FIELD_SETTER in machinery_fields.dm: a machine's anchored
+/// raises CHANGE_MACHINE_ANCHORED, a mob's CHANGE_MOB_CAN_MOVE, any other atom none), so the setter needs no istype().
+/proc/tracked_bridged_changed(datum/E, var_name)
+	var/list/fields = om_registry().fields_of(E.type)
+	changed(E, fields[var_name] || 0, var_name)
+
 /// A pending operation watching (E, key) counts as a dynamic reader of it while it waits (delta +1 / -1), so
 /// publish_change() is called for it and reaches op_reads_changed(). Same table observe() counts in.
 /proc/rx_watch_adjust(datum/E, key, delta)
@@ -99,7 +106,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	if(T)
 		var/list/hits = T.by_key[key]
 		for(var/datum/reaction/R as anything in hits)
-			if(R.when && !rx_when_holds(E, R.when))
+			if(R.when && !rx_when_holds(E, R))
 				continue // its gate excludes this holder now: nothing is queued
 			rx_pend(E, R, key)
 		var/list/crossing = T.crosses[key]
@@ -121,10 +128,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 		seq_publish(E, key)
 
 /// An on_change(when =) gate: a var name truthy on `E`, or a PROC_REF on it answering TRUE.
-/proc/rx_when_holds(datum/E, when)
-	if(istext(when) && (when in E.vars))
-		return !!E.vars[when]
-	return !!call(E, when)()
+/proc/rx_when_holds(datum/E, datum/reaction/R)
+	if(R.when_var)
+		return !!E.vars[R.when]
+	return !!call(E, R.when)()
 
 // ---------------------------------------------------------------- the relation ledger
 

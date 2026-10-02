@@ -190,7 +190,8 @@
 	TEST_ASSERT(!is_locked(A), "and unlocked it")
 	var/datum/op_ctx/ctx = op_ctx_take(H, A, card, emag.op)
 	var/uses = card.uses
-	A.emag_committed(ctx)
+	var/datum/capability/emag/emag_cap = cap_of(A, /datum/capability/emag)
+	emag_cap.committed(A, ctx)
 	ctx.release()
 	TEST_ASSERT(is_emagged(A), "the commit sets the bit")
 	TEST_ASSERT_EQUAL(card.uses, uses - 1, "and spends one use")

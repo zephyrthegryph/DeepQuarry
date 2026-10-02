@@ -25,9 +25,9 @@
 /datum/unit_test/dq_med8_d10_health_band/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	TEST_ASSERT_EQUAL(vitality_health_band(H), "health0", "an unhurt mob reads full health")
-	H.status_flags |= FAKEDEATH
+	H.set_status_flags(H.status_flags | FAKEDEATH)
 	TEST_ASSERT_EQUAL(vitality_health_band(H), "health7", "feigned death reads as dead")
-	H.status_flags &= ~FAKEDEATH
+	H.set_status_flags(H.status_flags & ~FAKEDEATH)
 	var/mob/living/simple_mob/S = allocate(/mob/living/simple_mob/animal/passive/mouse)
 	S.death()
 	TEST_ASSERT_EQUAL(vitality_health_band(S), "health7", "a dead mob reads as dead")

@@ -100,6 +100,8 @@
 		return
 	. = opacity
 	opacity = new_opacity
+	tracked_changed(src, nameof(opacity))
+SETTER(/atom, opacity)
 
 
 /atom/movable/set_opacity(new_opacity)

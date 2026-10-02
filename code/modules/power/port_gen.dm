@@ -84,19 +84,19 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/port_gen, "{initial(icon_state)}{active
 /obj/machinery/power/port_gen/proc/port_gen_emp_fault(datum/damage_packet/packet)
 	switch(packet.severity)
 		if(EMP_HEAVY)
-			stat_add(BROKEN)
+			atom_break()
 			if(prob(75))
 				explode()
 				return DAMAGE_REACTION_BLOCK
 		if(EMP_MEDIUM)
-			if(prob(50)) stat_add(BROKEN)
+			if(prob(50)) atom_break()
 			if(prob(10))
 				explode()
 				return DAMAGE_REACTION_BLOCK
 		if(EMP_LIGHT)
-			if(prob(25)) stat_add(BROKEN)
+			if(prob(25)) atom_break()
 		if(EMP_HARMLESS)
-			if(prob(10)) stat_add(BROKEN)
+			if(prob(10)) atom_break()
 
 /obj/machinery/power/port_gen/proc/explode()
 	explosion(src.loc, -1, 3, 5, -1)

@@ -265,7 +265,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/cryopod, MACHINE_PIPELINE, "cryopod_occupi
 /obj/machinery/cryopod/lifecycle_dematerialize()
 	var/mob/occupant = slot_item(OCCUPANT_SLOT_CRYOPOD)
 	if(occupant)
-		occupant.resting = 1
+		occupant.set_resting(1)
 	..()
 
 /// Sealed: cryosleep is its own environment, same as before (a mob whose loc

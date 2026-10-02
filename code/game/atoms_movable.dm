@@ -516,15 +516,16 @@
 /atom/movable/proc/reset_glide_size()
 	glide_size = initial(glide_size)
 
-/// Anchors or frees it: a machine hears CHANGE_MACHINE_ANCHORED, a mob CHANGE_MOB_CAN_MOVE.
+/// Anchors or frees it. Anchored is a tracked base var (G8): this is its only writer. A change publishes
+/// nameof(anchored) and, as a bridge, raises the channel of the type's declared field (a machine
+/// CHANGE_MACHINE_ANCHORED, a mob CHANGE_MOB_CAN_MOVE; machinery_fields.dm).
 /atom/movable/proc/set_anchored(state)
 	if(anchored == state)
-		return
+		return FALSE
 	anchored = state
-	if(ismob(src))
-		changed(src, CHANGE_MOB_CAN_MOVE)
-	else if(istype(src, /obj/machinery))
-		changed(src, CHANGE_MACHINE_ANCHORED)
+	tracked_bridged_changed(src, nameof(anchored))
+	return TRUE
+SETTER(/atom/movable, anchored)
 
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)

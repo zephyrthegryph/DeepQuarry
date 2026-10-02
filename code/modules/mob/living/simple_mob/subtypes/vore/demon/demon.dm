@@ -212,3 +212,6 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/demon, \
 			icon_dead = "[alternate_selection]_dead"
 			icon = 'icons/mob/demon_alt.dmi'
 	update_icon()
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/simple_mob/vore/demon, is_shifting)

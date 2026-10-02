@@ -46,7 +46,7 @@ APPEARANCE_NONE(/obj/singularity/narsie/large/exit)
 		var/turf/T = A
 		var/dist = get_dist(T, src)
 		if (dist <= consume_range && T.density)
-			T.density = FALSE
+			T.set_density(FALSE)
 
 		for (var/atom/movable/AM in turf_contents_of_type(T, /atom/movable))
 			if (AM == src) // This is the snowflake.

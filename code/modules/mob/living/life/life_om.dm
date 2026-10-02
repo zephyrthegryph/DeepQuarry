@@ -131,14 +131,10 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 	if(low_priority)
 		life_update_relevance()
 
-// --- Public refresh entry points --------------------------------------------------------------
-// Code outside Life asks for an immediate HUD or vision refresh through these. Living mobs run
-// life_hud() / life_vision() (the handlers of their HUD and sight reactions, living_systems.dm) now;
-// other mobs keep the base behaviour.
-
-/// Refreshes the player HUD now. Returns FALSE when there is no HUD to refresh.
-/mob/proc/refresh_hud()
-	return hud_available()
+// There is no manual HUD or sight refresh: the HUD, sight and canmove passes are on_change() reactions
+// (living_systems.dm) whose reads are generated from what their procs read (code/_generated/reads.dm), so a change to
+// any input runs them. Code that changes something they show writes it through its setter or publishes the key that
+// covers it (MOB_KEY_*). tools/ci/sys_rules/presentation.py rejects a direct call of the passes from content.
 
 /// TRUE when this mob has a client HUD that no component has taken over.
 /mob/proc/hud_available()
@@ -148,16 +144,6 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 		return FALSE
 	return TRUE
 
-/mob/living/refresh_hud()
-	return life_hud()
-
-/// Recomputes sight flags (SEE_TURFS, see_in_dark, ...) now.
-/mob/proc/refresh_vision()
-	OM_EMIT(src, /datum/om/event/mob_handle_vision)
-
-/mob/living/refresh_vision()
-	life_vision()
-
 // --- Producers ----------------------------------------------------------------------------
 // Hooks on /mob that the generic mob code calls; living mobs raise the matching channel.
 
@@ -165,6 +151,13 @@ GLOBAL_LIST_EMPTY(life_z_presence)
 /mob/living/proc/on_client_changed(reason)
 	changed(src, CHANGE_MOB_CLIENT)
 	PUBLISH_CHANGE(src, MOB_KEY_CLIENT)
+
+/// An admin edit of a plain var (one with no setter) announces nothing, so the canmove, HUD and sight reactions
+/// would keep their stale result: status is the key all three read.
+/mob/living/vv_edit_var(var_name, var_value)
+	. = ..()
+	if(.)
+		PUBLISH_CHANGE(src, MOB_KEY_STATUS)
 
 /// Something was equipped or unequipped.
 /mob/proc/on_equipment_changed()

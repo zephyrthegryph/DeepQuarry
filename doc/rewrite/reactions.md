@@ -26,6 +26,23 @@ cached value computed by `derive_<var>()`), `rust_push(...)` (push to Rust once 
 `runs_while(...)` (`should_run`). `members = <capability type>` makes an `every` or `on_cross` run
 once per member of that capability.
 
+## 1c. Presentation reactions: generated reads [built, B4]
+
+A reaction whose handler is a presentation pass declares its reads like a derived output. The mob HUD, sight and canmove
+passes are hand-declared `on_change()` reactions on `/mob/living` listing the published facts (`MOB_KEY_*`);
+`tools/ci/derived_reads_lint.py --fix-generated` adds, per type, `reaction_reads(PROC_REF(handler), reads...)` for every
+src var the pass procs (`life_hud`, `life_vision`, `update_canmove`, ...) and their helpers (`life_hud_*`, `life_vision_*`,
+`process_glasses`, ...) read. `rx_table_build()` merges those reads into the hand-declared reaction with the same handler,
+so they share its coalescing (`at_most`) and its `when` gate. A read var must be tracked, a relation or object var, or
+`PUBLISHED_BY` a key (`reaction_read_untracked`); vars the pass writes itself (its overlays, caches) are listed as its
+outputs in the lint. Nothing calls a pass by hand (`sys/presentation`).
+
+```text
+/mob/living/carbon/human/generated_reads()      // code/_generated/reads.dm
+    . = ..()
+    . += reaction_reads(PROC_REF(life_hud_changed), MOB_KEY_HEALTH, MOB_KEY_HUD_FLAGS, nameof(nutrition), nameof(fear))
+```
+
 ## 1b. Damage reactions [built on master, A1]
 
 A damage reaction is a reaction on the damage operation: `before_op(damage(DAMAGE_EMP), PROC_REF(x))` may block the hit

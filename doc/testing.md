@@ -333,6 +333,14 @@ runtimes.
 `test-baseline` leaves its worktree in the system temp folder so the next run is
 fast; it prints the command to remove it.
 
+### History in the admin viewer
+
+`cd tools/admin-viewer && bun run ingest` loads every `data/test-runs/*.json` and
+`data/bench/runs/*.json` not loaded yet into the database the admin viewer reads, which
+shows suite pass rate and duration over time, flaky tests (passed and failed on one commit),
+per-test history and benchmark metrics per run. CI can run it as a last step with
+`DATABASE_URL` set. See `tools/admin-viewer/README.md`.
+
 ### Compile caching
 
 `dm-test`/`test-repeat` skip the DreamMaker compile when nothing that would

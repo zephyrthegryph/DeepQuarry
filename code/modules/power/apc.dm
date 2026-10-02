@@ -41,9 +41,16 @@
 /obj/machinery/power/apc/angled/hidden
 	alarms_hidden = TRUE
 
-/obj/machinery/power/apc/angled/wall_mount_orient(offset)
-	pixel_x = (dir & 3) ? 0 : (dir == 4 ? 24 : -24)
-	pixel_y = (dir & 3) ? (dir == 1 ? 20 : -20) : 0
+/obj/machinery/power/apc/angled/capabilities()
+	. = ..()
+	. = replace(., /datum/capability/wall_mount, new /datum/capability/wall_mount/apc_angled)
+
+/// The angled APC's sprite sits closer to the wall.
+/datum/capability/wall_mount/apc_angled
+
+/datum/capability/wall_mount/apc_angled/orient(atom/holder)
+	holder.pixel_x = (holder.dir & 3) ? 0 : (holder.dir == 4 ? 24 : -24)
+	holder.pixel_y = (holder.dir & 3) ? (holder.dir == 1 ? 20 : -20) : 0
 
 /obj/machinery/power/apc/hyper/graveyard
 	req_access = list(ACCESS_LOST)
@@ -149,7 +156,7 @@ TRACKED(/obj/machinery/power/apc, emergency_lights)
 	. += wall_machine(dismantle = NONE, repair = NONE, powered = FALSE)
 	. += maintenance_hatch(cover_holds = PROC_REF(cover_holds), panel_needs_cover_closed = TRUE)
 	. += cell_bay(nameof(cell), at = BAY_HATCH, needs = PROC_REF(cell_bay_ready), size = ITEMSIZE_NORMAL)
-	. += power_channels()
+	. += power_channels(/datum/capability/power_channels/apc)
 	. += powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
 	. += cap_construction(
 		ladder_options(at = BAY_HATCH, undo_delay = 5 SECONDS, dismantle = ladder_dismantle(tool = TOOL_WELDER, becomes = /obj/item/frame/apc, amount = 1, when_ruined = PROC_REF(frame_ruined), ruined_becomes = /obj/item/stack/material/steel)),
@@ -532,7 +539,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 // APCs are pixel-shifted so they need a full refresh when dir changes.
 /obj/machinery/power/apc/set_dir(new_dir)
 	..()
-	wall_mount_orient()
+	wall_mount_reorient(src)
 	if(terminal)
 		terminal.disconnect_from_network()
 		terminal.set_dir(dir)       // Terminal has same dir as master.
@@ -624,24 +631,50 @@ SETTER(/obj/machinery/power/apc, power_failed)
 		var/static/list/charge_colors = list("#F86060", "#A8B0F8", "#82FF4C")
 		look.light(2, 0.25, charge_colors[clamp(charging, 0, 2) + 1])
 
-/obj/machinery/power/apc/power_channels_lit()
-	return is_lit(src) && operating
-
 // ─────────────────────────────────────────────────────────────────────────────
-// power_channels() holder interface
+// power_channels() holder interface: the APC's subtype of the capability (its procs take the APC as `holder`)
 // ─────────────────────────────────────────────────────────────────────────────
 
-/obj/machinery/power/apc/power_channel_mode(channel)
+/datum/capability/power_channels/apc
+
+/datum/capability/power_channels/apc/channels_lit(obj/machinery/power/apc/holder)
+	return is_lit(holder) && holder.operating
+
+/datum/capability/power_channels/apc/channel_mode(obj/machinery/power/apc/holder, channel)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
-			return equipment
+			return holder.equipment
 		if(POWER_CHANNEL_LIGHTING)
-			return lighting
+			return holder.lighting
 		if(POWER_CHANNEL_ENVIRON)
-			return environ
+			return holder.environ
 	return POWERCHAN_OFF
 
-/obj/machinery/power/apc/set_power_channel_mode(channel, mode)
+/datum/capability/power_channels/apc/set_channel_mode(obj/machinery/power/apc/holder, channel, mode)
+	return holder.set_channel_mode(channel, mode)
+
+/datum/capability/power_channels/apc/channel_load(obj/machinery/power/apc/holder, channel)
+	return holder.channel_load(channel)
+
+/datum/capability/power_channels/apc/breaker(obj/machinery/power/apc/holder)
+	return holder.operating
+
+/datum/capability/power_channels/apc/set_breaker(obj/machinery/power/apc/holder, on)
+	holder.set_breaker(on)
+	return TRUE
+
+/datum/capability/power_channels/apc/nightshift(obj/machinery/power/apc/holder)
+	return holder.nightshift_setting
+
+/datum/capability/power_channels/apc/set_nightshift(obj/machinery/power/apc/holder, mode)
+	holder.set_nightshift_setting(mode)
+	return TRUE
+
+/datum/capability/power_channels/apc/nightshift_lit(obj/machinery/power/apc/holder)
+	return holder.nightshift_lights
+
+/// One channel's mode (POWERCHAN_*): the setting, the Rust copy and the area's power follow.
+/obj/machinery/power/apc/proc/set_channel_mode(channel, mode)
 	var/value = setsubsystem(mode)
 	switch(channel)
 		if(POWER_CHANNEL_EQUIPMENT)
@@ -657,26 +690,10 @@ SETTER(/obj/machinery/power/apc, power_failed)
 	update()
 	return TRUE
 
-/obj/machinery/power/apc/power_channel_load(channel)
-	return channel_load(channel)
-
-/obj/machinery/power/apc/power_breaker()
-	return operating
-
-/obj/machinery/power/apc/set_power_breaker(on)
+/// The main breaker.
+/obj/machinery/power/apc/proc/set_breaker(on)
 	set_operating(on ? 1 : 0)
 	update()
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift()
-	return nightshift_setting
-
-/obj/machinery/power/apc/set_power_nightshift(mode)
-	set_nightshift_setting(mode)
-	return TRUE
-
-/obj/machinery/power/apc/power_nightshift_lit()
-	return nightshift_lights
 
 // ─────────────────────────────────────────────────────────────────────────────
 // TGUI (dx_conventions.md §5): tgui_id, tgui_data() and act_<action>; power_channels() owns
@@ -841,7 +858,7 @@ GLOBAL_LIST_INIT(apc_ui_logged, list("lock" = LOG_GAME, "cover" = LOG_GAME, "cha
 	return 1
 
 /obj/machinery/power/apc/proc/toggle_breaker()
-	set_power_breaker(!operating)
+	set_breaker(!operating)
 
 /obj/machinery/power/apc/surplus()
 	if(terminal)

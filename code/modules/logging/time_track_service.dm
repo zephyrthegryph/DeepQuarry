@@ -211,3 +211,13 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 
 /datum/om/behaviour/world/time_track/service()
 	return GLOB.time_track_service
+
+/// Time dilation for the server metrics (code/modules/metrics/): how far game time falls behind real time.
+/datum/metrics_source/time_dilation
+
+/datum/metrics_source/time_dilation/collect(datum/world_service/server_metrics/M, dt)
+	var/datum/world_service/time_track/T = GLOB.time_track_service
+	if(!T)
+		return
+	M.gauge("server/time_dilation/current", T.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
+	M.gauge("server/time_dilation/avg", T.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")

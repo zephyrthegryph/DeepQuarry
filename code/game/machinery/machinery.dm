@@ -468,8 +468,10 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 	return ..()
 
-/obj/machinery/proc/RefreshParts() //Placeholder proc for machines that are built using frames.
-	return
+/// The parts changed: a machine with cap_parts() re-derives its part stats (library/parts.dm). Legacy machines still
+/// override it to recompute ratings by hand; a converted machine declares part_stat()s and overrides nothing.
+/obj/machinery/proc/RefreshParts()
+	parts_refresh(src)
 
 /// Finalize the physical machine from its real installed parts. Individual
 /// machines still calculate functional ratings in RefreshParts(); this common
@@ -687,25 +689,25 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 	return ..()
 
 /**
- * The one machinery break (damage.md §6). Sets BROKEN, emits machinery_broken
- * and publishes KEY_MACHINE_BROKEN. Returns TRUE if the machine was not
- * already broken. Subtypes with real behaviour call this first and act on the
- * result; an override that only sets flags is forbidden (tools/ci/check_breakpoints.sh).
+ * The one machinery break (damage.md §6), and the only writer of BROKEN: the integrity state (G8). Sets BROKEN,
+ * then the parent publishes INTEGRITY_KEY_BROKEN, then emits machinery_broken. Returns TRUE if the machine was not
+ * already broken. Subtypes with real behaviour call this first and act on the result; an override that only sets
+ * flags is forbidden (tools/ci/check_breakpoints.sh).
  */
 /obj/machinery/atom_break(damage_flag)
-	. = ..()
-	if(!stat_add(BROKEN)) // raises CHANGE_MACHINE_BROKEN
+	var/flipped = stat_add(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	..()
+	if(!flipped)
 		return FALSE
 	OM_EMIT(src, /datum/om/event/machinery_broken, damage_flag)
 	update_icon()
 	return TRUE
 
-/// The inverse of atom_break(). Returns TRUE if the machine was broken.
+/// The inverse of atom_break(), the other writer of BROKEN. Returns TRUE if the machine was broken.
 /obj/machinery/atom_fix()
-	. = ..()
-	if(!stat_remove(BROKEN)) // raises CHANGE_MACHINE_BROKEN
-		return FALSE
-	return TRUE
+	var/flipped = stat_remove(BROKEN) // raises CHANGE_MACHINE_BROKEN
+	..()
+	return flipped ? TRUE : FALSE
 
 // --- Sleeping until something changes (om_watch on change channels) ------------------------------
 

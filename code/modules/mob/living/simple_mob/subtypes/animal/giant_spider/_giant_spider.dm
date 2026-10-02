@@ -173,7 +173,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_leap(mob/living/A)
 	// Do the actual leap.
-	status_flags |= LEAPING // Lets us pass over everything.
+	set_status_flags(status_flags | LEAPING) // Lets us pass over everything.
 	visible_message(span_danger("\The [src] leaps at \the [A]!"))
 	throw_at(get_step(get_turf(A), get_turf(src)), 4, 1, src)
 	playsound(src, warning_sound, 75, 1)
@@ -182,7 +182,7 @@
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_finish(mob/living/A)
 	if(status_flags & LEAPING)
-		status_flags &= ~LEAPING // Revert special passage ability.
+		set_status_flags(status_flags & ~LEAPING) // Revert special passage ability.
 
 	. = FALSE
 

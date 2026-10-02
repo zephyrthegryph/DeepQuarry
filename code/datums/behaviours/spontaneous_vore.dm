@@ -10,19 +10,19 @@
 	. += before_op(GUARD_CROSS, GLOBAL_PROC_REF(spont_vore_cross))
 
 /// GUARD_STUMBLED_INTO: ctx.actor stumbles into ctx.target.
-/proc/spont_vore_stumble(datum/guard_ctx/ctx)
+/proc/spont_vore_stumble(datum/holder, datum/guard_ctx/ctx)
 	return spont_vore_stumble_eat(ctx.target, ctx.actor) ? TRUE : null
 
 /// GUARD_FALL: ctx.target lands on ctx.data (a turf), on ctx.actor (the mob there) if any.
-/proc/spont_vore_fall(datum/guard_ctx/ctx)
+/proc/spont_vore_fall(datum/holder, datum/guard_ctx/ctx)
 	return spont_vore_fall_eat(ctx.target, ctx.data, ctx.actor) ? TRUE : null
 
 /// GUARD_THROWN_HIT: ctx.item (thrown by ctx.actor, at speed ctx.data) hits ctx.target.
-/proc/spont_vore_hitby(datum/guard_ctx/ctx)
+/proc/spont_vore_hitby(datum/holder, datum/guard_ctx/ctx)
 	return spont_vore_hitby_eat(ctx.target, ctx.item, ctx.actor, ctx.data) ? TRUE : null
 
 /// GUARD_CROSS: ctx.actor crosses into ctx.target.
-/proc/spont_vore_cross(datum/guard_ctx/ctx)
+/proc/spont_vore_cross(datum/holder, datum/guard_ctx/ctx)
 	return spont_vore_cross_eat(ctx.target, ctx.actor) ? TRUE : null
 
 ///Source is the one being bumped into (Owner of this component)

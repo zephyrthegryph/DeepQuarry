@@ -95,6 +95,13 @@
 #define SETTER(T, V) ##T/proc/__setter_##V() { return TRUE }
 
 /**
+ * Names the change key that covers V: V is written only by producers that publish KEY (a bit field set through a
+ * helper, a value a subsystem rewrites). tools/ci/derived_reads_lint.py generates KEY for a presentation reaction
+ * that reads V, and accepts V as published. `__published_<V>()` returns the key (tests check producers with it).
+ */
+#define PUBLISHED_BY(T, V, KEY) ##T/proc/__published_##V() { return KEY }
+
+/**
  * One-line capability declaration: `CAPABILITY(/obj/item/reagent_containers/food/snacks/donut, reagents(20, starts =
  * list(REAGENT_ID_NUTRIMENT = 3)))`. Expands to a declared_capabilities() override that adds ENTRY after ..(),
  * collected into the type's capabilities table after its capabilities() list (caps_build()). Any capability
@@ -173,6 +180,11 @@
 #define POWER_ROLE_COMPUTER "computer"
 /// powered_by(POWERED_BY_AREA, ...): the holder is a MEMBER relation of the area it stands in, not of a system.
 #define POWERED_BY_AREA "area"
+/// The power capability's tracked "powered" state (G8): a machine's NOPOWER, written only by set_powered()
+/// (power_change()); published to its readers on a change. The draw mode is the tracked var nameof(use_power).
+#define MACHINE_KEY_POWERED "machine_powered"
+/// The integrity state (G8): published by atom_break() / atom_fix(), the only writers of a machine's BROKEN.
+#define INTEGRITY_KEY_BROKEN "integrity_broken"
 /// cell_bay(): at or below this charge (percent) cap_cell_charged() refuses.
 #define CELL_BAY_LOW_PERCENT 15
 /// cap_wall_mount(): pixels from the turf centre into the wall.

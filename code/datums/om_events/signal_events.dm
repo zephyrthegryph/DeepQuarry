@@ -890,7 +890,7 @@
 /datum/om/event/before/mob_handle_hud_health_icon
 	accumulate = TRUE
 
-/// From the vision life system (/mob/proc/refresh_vision() for mobs without one).
+/// From the vision life system (the sight reaction, life_vision(); a ghost's upkeep).
 /datum/om/event/mob_handle_vision
 	sync = TRUE
 

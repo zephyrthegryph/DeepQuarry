@@ -48,20 +48,18 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 /obj/machinery/cell_charger/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/cell_charger_insert,
-		/datum/interaction/machine_item/cell_charger_part_replacement,
 		/datum/interaction/machine_hand/ungated/cell_charger_take,
 	)
 	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take cell", PROC_REF(cell_charger_silicon_take)))
 	..()
 
-/// Old attackby's `if(stat & BROKEN) return` guarded both branches: part_replacement too.
-/datum/interaction/machine_item/cell_charger_part_replacement
-	id = "cell_charger_part_replacement"
-	name = "Replace parts"
-	category = INTERACTION_CAT_MAINTAIN
-	held_type = /obj/item/storage/part_replacer
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"))
-	effect = /obj/machinery/proc/interaction_part_replacement
+/// Its charge rate follows its capacitors (cap_parts(): efficiency is derived from the parts, never written by hand),
+/// and the RPED upgrades them through the parts capability's "replace_parts" op.
+/obj/machinery/cell_charger/capabilities()
+	. = ..()
+	. += cap_parts(list(
+		part_stat(nameof(efficiency), /obj/item/stock_parts/capacitor, base = 1, per = 0.5, scale = nameof(active_power_usage)),
+	))
 
 /// Insert a cell to charge it.
 /datum/interaction/machine_item/cell_charger_insert
@@ -146,7 +144,4 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appear
 			update_icon()
 	return TRUE
 
-/obj/machinery/cell_charger/RefreshParts()
-	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
-	efficiency = active_power_usage * (1+ (E - 1)*0.5)
 

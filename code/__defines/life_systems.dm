@@ -42,6 +42,11 @@
 #define MOB_KEY_CONDITIONS "mob_conditions"
 /// A client logged in or out.
 #define MOB_KEY_CLIENT "mob_client"
+/// What the client looks through changed: its eye, a remote view starting or ending, the view range (remote_view.dm,
+/// reset_perspective()).
+#define MOB_KEY_VIEW "mob_view"
+/// HUD-list bits were marked stale (flag_hud_update()).
+#define MOB_KEY_HUD_FLAGS "mob_hud_flags"
 
 // --- run_if: the old early returns and `if` blocks, as frame facts --------------------------
 /// The /mob/living core after `if(transforming) return` and `if(!loc) return`.

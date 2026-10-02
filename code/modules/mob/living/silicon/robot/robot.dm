@@ -505,7 +505,7 @@
 	if(radio)
 		radio.on = is_component_functioning(ROBOT_SLOT_RADIO) ? 1 : 0
 	var/sees = stat != DEAD && !has_status(EFFECT_PARALYZED) && !has_status(EFFECT_BLINDED) && !(sdisabilities & BLIND) && is_component_functioning(ROBOT_SLOT_CAMERA)
-	blinded = !sees
+	set_blinded(!sees)
 	if(stat == DEAD)
 		return
 	if(blinded)
@@ -1475,7 +1475,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	disconnect_from_ai()
 	lawupdate = FALSE
 	lockcharge = 0
-	lockdown = 0
+	set_lockdown(0)
 	canmove = 1
 	scrambledcodes = TRUE
 	//Disconnect it's camera so it's not so easily tracked.
@@ -1498,7 +1498,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 		throw_alert("locked", /atom/movable/screen/alert/locked)
 	else
 		clear_alert("locked")
-	lockdown = state
+	set_lockdown(state)
 	lockcharge = state
 	update_canmove()
 
@@ -1612,7 +1612,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 /// Shared law override for robot and drone emags: sever the AI link and
 /// install the syndicate override with `user` as operator.
 /mob/living/silicon/robot/proc/subvert_laws(mob/user)
-	emagged = TRUE
+	set_emagged(TRUE)
 	robotact?.update_static_data_for_all_viewers()
 	lawupdate = FALSE
 	disconnect_from_ai(TRUE)
@@ -1918,3 +1918,8 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/robot, "robotact", /datum/tgui_module/
 	. = ..()
 	// The power mount (components[ROBOT_SLOT_POWER].wrapped) owns the cell; `cell` is its alias.
 	. += rel_one(nameof(cell))
+
+// Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
+TRACKED(/mob/living/silicon/robot, sight_mode)
+TRACKED(/mob/living/silicon/robot, emagged)
+TRACKED(/mob/living/silicon/robot, lockdown)

@@ -36,6 +36,16 @@
 	} \
 } while (FALSE)
 
+/// Waits, a tick at a time and for at most `max_ticks`, until `cond` holds. A positive assertion waits for the
+/// condition itself (a loaded world skips kernel phases for several ticks); negative assertions keep a fixed wait.
+#define OM_TEST_WAIT_UNTIL(cond, max_ticks) \
+	for(var/om_wait_i in 1 to max_ticks) { \
+		if(cond) { \
+			break; \
+		} \
+		sleep(world.tick_lag); \
+	}
+
 /// *Only* run the test provided within the parentheses
 /// This is useful for debugging when you want to reduce noise, but should never be pushed
 /// Intended to be used in the manner of `TEST_FOCUS(/datum/unit_test/math)`
@@ -119,11 +129,13 @@
 #include "dx_cap_panel_tests.dm"
 #include "dx_cap_powered_tests.dm"
 #include "dx_cap_wires_tests.dm"
+#include "dx_cap_b2_library_tests.dm"
 #include "dx_cap_checks_tests.dm"
 #include "dx_cap_doors_tests.dm"
 #include "dx_cap_library_api_tests.dm"
 #include "dx_vending_tests.dm"
 #include "dq_test_overrides_tests.dm"
+#include "dq_metrics_tests.dm"
 #include "focus_only_tests.dm"
 #include "font_awesome_icons.dm"
 #include "genetics_tests.dm"
@@ -263,6 +275,8 @@
 #include "dq_pool_tests.dm"
 #include "dq_foundation_look_tests.dm"
 #include "dq_robot_machine_tests.dm"
+#include "dq_b4_tracking_tests.dm"
+#include "dq_phase0_tests.dm"
 #include "dq_life_om_tests.dm"
 #include "dq_medical_damage_model_tests.dm"
 #include "dq_medical_p0_tests.dm"

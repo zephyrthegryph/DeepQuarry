@@ -82,7 +82,7 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 				var/obj/machinery/artifact/X = O
 				if(X.artifact_master)
 					X.artifact_master.artifact_id = artifact_find().artifact_id
-			O.anchored = FALSE	// Anchored finds are lame.
+			O.set_anchored(FALSE)	// Anchored finds are lame.
 			src.visible_message(span_warning("\The [src] suddenly crumbles away."))
 		else
 			act_message(user, src, MSG_SELF(span_notice("%T% has been whittled away under your careful excavation, but there was nothing of interest inside.")), \
