@@ -1,8 +1,9 @@
 //! `analyze gen declare_ids` and `analyze gen declare` (E1, declarations): what the DM compiler cannot do with a marker.
 //!
 //! Every declaration marker (`CAPABILITIES`, `CAPABILITY_TYPE`, `CAPABILITY_DEF`, `cap_keys`, `STAGE_DEF`, `SOURCE_DEF`,
-//! `STATE_GRAPH`, `STAT`) expands to nothing in DM, so an author writes the declaration over as many lines as it needs, with no
-//! backslash and no id of its own. These two generators read the markers from source and write the DM the engine runs:
+//! `STATE_GRAPH`, `STAT`) expands to nothing in DM, so an author gives it no id and no constructor of its own (a marker that spans lines
+//! ends each line but the last with DM's backslash, which the generator drops). These two generators read the markers from source and
+//! write the DM the engine runs:
 //!
 //! * `declare_ids` -> `code/engine/_generated/ids.dm`: the ids a marker declares (`STAT_X`, `CAP_X`, `SRC_X`, `STAGE_G_N`, `GRAPH_X`) and
 //!   the capability-state ids `cap_keys` declares (`COVER_OPEN`). An id that a hand-written `#define` already gives is left alone. The file

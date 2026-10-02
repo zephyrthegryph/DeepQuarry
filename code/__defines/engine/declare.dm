@@ -1,7 +1,7 @@
 // Declaration forms of the engine (doc/rewrite/final_api.html, section 1 "Declarations"; section 19 "E1, declarations").
 //
 // The declaration markers (CAPABILITIES, CAPABILITY_TYPE, CAPABILITY_DEF, cap_keys, STAGE_DEF, SOURCE_DEF, STATE_GRAPH, STAT) expand to nothing in
-// DM (markers.dm): an author writes them over as many lines as they need, with no backslash and no id of their own, and `analyze gen` reads
+// DM (markers.dm): an author gives them no id and no constructor of their own (a marker that spans lines ends each line but the last with a backslash), and `analyze gen` reads
 // them from source and writes the DM they stand for into code/engine/_generated/: ids.dm (the ids they declare, included early) and declare.dm
 // (constructors, registration rows, accessors, and each type's declared_entries()). tools/analyze/src/gens/declare.rs is the generator.
 //
