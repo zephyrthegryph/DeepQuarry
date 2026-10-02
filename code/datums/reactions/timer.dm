@@ -24,7 +24,8 @@ GLOBAL_VAR_INIT(rx_timer_seq, 0)
 	if(clock == CLOCK_WORLD)
 		id = om_after_list(null, delay, GLOBAL_PROC_REF(rx_timer_fire_ref), list(REF(holder), handler, key, token, handler_args), FALSE)
 	else
-		id = om_after_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(holder, handler, key, token, handler_args), nulls_for_gone)
+		// The holder is the timer's owner: passed first when it fires (OM_TIMER_OWNER_FIRST), not captured as an argument.
+		id = om_after_list(holder, delay, GLOBAL_PROC_REF(rx_timer_fire), list(handler, key, token, handler_args), nulls_for_gone, owner_first = TRUE)
 	if(id && !isnull(key))
 		rx_ledger_add(holder, RELK_TIMER, key, token)
 		var/list/ids = rx_of(holder).timer_ids
