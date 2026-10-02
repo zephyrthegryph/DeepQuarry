@@ -167,7 +167,7 @@ GLOBAL_PROTECT(protected_ranks)
 				rank_rows = prefetched["ranks"]
 			else
 				var/datum/db_query/query_load_admin_ranks = SSdbcore.NewQuery("SELECT `rank`, flags, exclude_flags, can_edit_flags FROM [format_table_name("admin_ranks")]")
-				if(query_load_admin_ranks.Execute(async = FALSE)) // boot only (allowlisted)
+				if(query_load_admin_ranks.Execute(async = FALSE)) // ALLOW(sys_sync_sql): boot only: the ranks load before the kernel ticks, so nothing can wait on an om_io query yet
 					rank_rows = query_load_admin_ranks.rows || list()
 				qdel(query_load_admin_ranks)
 			if(isnull(rank_rows))
@@ -292,7 +292,7 @@ GLOBAL_PROTECT(protected_ranks)
 			admin_rows = prefetched["admins"]
 		else
 			var/datum/db_query/query_load_admins = SSdbcore.NewQuery("SELECT ckey, `rank`, feedback FROM [format_table_name("admin")] ORDER BY `rank`")
-			if(query_load_admins.Execute(async = FALSE)) // boot only (allowlisted)
+			if(query_load_admins.Execute(async = FALSE)) // ALLOW(sys_sync_sql): boot only: the admins load before the kernel ticks, so nothing can wait on an om_io query yet
 				admin_rows = query_load_admins.rows || list()
 			qdel(query_load_admins)
 		if(isnull(admin_rows))

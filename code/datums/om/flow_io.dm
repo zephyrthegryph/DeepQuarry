@@ -27,7 +27,8 @@
 //   that logged out, or (with `rights`) a user who lost the rights drops the answer.
 // Execute(async = TRUE) outside a flow is an error (the legacy wait, db_query/sync(), is gone):
 // use om_io(E, /datum/om/io/sql, ...) with a callback, or run the caller as a flow.
-// Execute(async = FALSE) blocks, and is kept for boot and shutdown (allowlisted).
+// Execute(async = FALSE) blocks, and is kept for boot and shutdown (dbcore.dm is exempt from the sync_sql
+// lint by path; any other boot-only caller carries a justified-keep annotation for sys_sync_sql).
 
 /// The stored answers (prompts and queries) of the flow re-run in progress, or null.
 /proc/om_flow_answers()
