@@ -441,12 +441,11 @@
 #include "interim_storage_lifecycle.dm"
 #include "interim_wrapped_present_lifecycle.dm"
 #include "dq_kernel_measure_tests.dm"
-#include "dq_e0_aliases.dm"
 #include "dq_e0_proofs_tests.dm"
-#include "dq_e0_unalias.dm"
 #include "dq_e1_declare_tests.dm"
 #include "dq_e3_stats_tests.dm"
 #include "dq_e4_actions_tests.dm"
+#include "dq_e2_parts_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -459,6 +458,7 @@
 #include "../benchmarks/life_sequence.dm"
 #include "../benchmarks/dx_refresh.dm"
 #include "../benchmarks/dx_deps.dm"
+#include "../benchmarks/op_resolve.dm"
 #include "../benchmarks/apc_flip.dm"
 #include "../benchmarks/kernel_metrics.dm"
 #include "../balance/balance_benchmark.dm"

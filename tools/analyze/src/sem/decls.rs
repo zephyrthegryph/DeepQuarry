@@ -25,6 +25,7 @@ pub const MARKERS: &[&str] = &[
     "ACTION",
     "STAT",
     "SCHEMA",
+    "TRACKED_SCHEMA",
     "SYSTEM_ACCESSOR",
     "STAGE_DEF",
     "STATE_GRAPH",

@@ -70,13 +70,15 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 /proc/adjusts(field, by = null, scale = null, when = null)
 	return entry_make(ENTRY_ADJUSTS, null, list("field" = field, "by" = by, "scale" = scale, "when" = when))
 
-/// then(PROC_REF(x)): calls x(datum/act/A). CAP_PROC(x) names a proc of the capability datum.
-/proc/then(handler)
-	return entry_make(ENTRY_THEN, null, list("handler" = handler))
+/// then(PROC_REF(x), checks = /datum/act/y): calls x(datum/act/A). CAP_PROC(x) names a proc of the capability datum. `checks` is an op effect's declaration of the
+/// world action it starts (the op engine pre-checks it; a hook ignores it).
+/proc/then(handler, checks = null)
+	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks))
 
-/// chance(p): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held).
-/proc/chance(percent)
-	return entry_make(ENTRY_CHANCE, null, list("percent" = percent))
+/// chance(p, otherwise = parts): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held). In an
+/// op the failed roll plays `otherwise` (feedback parts) and commits the op's costs.
+/proc/chance(percent, list/otherwise = null)
+	return entry_make(ENTRY_CHANCE, null, list("percent" = percent), entry_flatten(otherwise))
 
 /// on_notice(/datum/notice/x, parts..., outcome = ACT_COMMITTED): reacts when the notice is delivered. The legacy form takes a handler:
 /// on_notice(/datum/notice/x, PROC_REF(y)).
@@ -365,12 +367,30 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 				act_run_part(A, H, part)
 	return TRUE
 
-/// A part kind E2 owns (sets, toggles, holds, says, ...): the op engine replaces this body when it lands.
+/// A part kind E2 owns (sets, toggles, holds, releases, grants, fixes, says, plays, ...) inside an instead or an on_notice: the op engine's effect
+/// and feedback parts, run on the action's context (the fields they read, holder, target, actor and held, are on every act).
 /proc/act_run_part(datum/act/A, datum/hook/H, datum/entry/part)
-	declare_report("hook on [A.holder?.type]: part [part.kind] has no engine yet (the part engine is E2's)")
+	if(istype(part, /datum/entry/part/effect))
+		var/datum/entry/part/effect/F = part
+		hook_effect_report(A, F)
+		return
+	if(istype(part, /datum/entry/part/says))
+		var/datum/entry/part/says/S = part
+		S.feedback(A)
+		return
+	if(istype(part, /datum/entry/part/plays))
+		var/datum/entry/part/plays/P = part
+		P.feedback(A)
+		return
+	declare_report("hook on [A.holder?.type]: part [part.kind] cannot run in a hook (an effect, says() or plays() can)")
 
-/// A needs hook's verdict: null to let the action go on, else the refusal reason. The requirement language is E2's.
+/// A needs hook's verdict: null to let the action go on, else the refusal reason. The hook's children are requirements (the part engine's
+/// req_* constructors, or a legacy requirement with a form in the new engine), asked in the action's own context.
 /proc/act_needs_refusal(datum/act/A, datum/hook/H)
+	for(var/child in H.entry.children)
+		if(istype(child, /datum/entry/part/req) || istype(child, /datum/req))
+			if(!op_req_holds(A, child))
+				return op_req_refusal(A, child)
 	return null
 
 // ---- the entry engines ----

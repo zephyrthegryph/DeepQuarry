@@ -38,6 +38,9 @@ use super::SemHandle;
 
 pub const OUT_DIR: &str = "code/engine/_generated";
 
+/// The placeholder path of a file-only generator that wrote nothing but has findings to report.
+const UI_NO_FILE: &str = "tgui/packages/tgui/interfaces/generated";
+
 /// The template `system_accessors` uses to name a system's singleton: `{system}` is the SYSTEM_ACCESSOR's first argument.
 pub const SYSTEM_INSTANCE: &str = "GLOB.{system}_service";
 
@@ -146,9 +149,14 @@ impl<'a> GenCx<'a> {
 pub trait Generator: Send + Sync {
     /// The name `analyze gen NAME` takes (and the `[gen/NAME]` tag on its diagnostics).
     fn name(&self) -> &'static str;
-    /// The file written, relative to `code/engine/_generated/`.
+    /// The file written, relative to `code/engine/_generated/`; empty for a generator that writes only `files()`.
     fn output(&self) -> &'static str;
     fn generate(&self, cx: &GenCx, out: &mut GenOut);
+    /// Files written outside `code/engine/_generated/` (TypeScript types): `(path relative to the repo root, text)`. They are compared byte
+    /// for byte like the DM file and are not `#include`d, so the check does not look for them in `deepquarry.dme`. Findings go to `out`.
+    fn files(&self, _cx: &GenCx, _out: &mut GenOut) -> Vec<(String, String)> {
+        Vec::new()
+    }
 }
 
 pub fn registry() -> Vec<Box<dyn Generator>> {
@@ -202,6 +210,33 @@ pub fn run(root: &Path, tree: &Tree, names: &[String], check: bool) -> Vec<GenRe
             continue;
         }
         let (text, diags) = render(g.as_ref(), &cx);
+        let mut file_out = GenOut::default();
+        let files = g.files(&cx, &mut file_out);
+        let mut diags = diags;
+        diags.extend(file_out.diags);
+        for (rel, file_text) in files {
+            let file_path = root.join(&rel);
+            let current = std::fs::read_to_string(&file_path).map(|t| norm(&t));
+            let fresh = current.as_ref().map(|c| c == &file_text).unwrap_or(false);
+            let mut state = if fresh { State::Fresh } else { State::Stale };
+            if !check && !fresh {
+                if let Some(dir) = file_path.parent() {
+                    let _ = std::fs::create_dir_all(dir);
+                }
+                if std::fs::write(&file_path, &file_text).is_ok() {
+                    state = State::Written;
+                }
+            }
+            out.push(GenResult { name: g.name(), path: file_path, state, diags: Vec::new() });
+        }
+        if g.output().is_empty() {
+            if let Some(first) = out.iter_mut().rev().find(|r| r.name == g.name()) {
+                first.diags = diags;
+            } else if !diags.is_empty() {
+                out.push(GenResult { name: g.name(), path: root.join(UI_NO_FILE), state: State::Fresh, diags });
+            }
+            continue;
+        }
         let path = root.join(OUT_DIR).join(g.output());
         let current = std::fs::read_to_string(&path).map(|t| norm(&t));
         let fresh = current.as_ref().map(|c| c == &text).unwrap_or(false);

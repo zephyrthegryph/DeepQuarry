@@ -55,6 +55,7 @@ input_stance_readers = [
     "code/datums/interactions/",
     "code/datums/operations/actions.dm",
     "code/datums/operations/req.dm",
+    "code/engine/parts/",
     "code/modules/keybindings/",
     "code/modules/mob/living/living_movement.dm",
     "code/modules/vore/eating/belly_obj_resist.dm",

@@ -38,6 +38,8 @@
 	var/datum/target
 	/// The acting mob; null for a world action without one.
 	var/mob/actor
+	/// The item the actor holds (an op's held item; null on a world action that has none): requirements read it in any context.
+	var/obj/item/held
 	/// ORIGIN_*: where the input arrived.
 	var/origin
 	/// What performs the op: a hand, a held tool, a module (a datum so a granted power can be one).
@@ -62,7 +64,6 @@
 	var/key
 	/// The same entity as target, as an atom, set when the op declares target_type = /atom.
 	var/atom/target_atom
-	var/obj/item/held
 	/// The latest request, whatever its outcome (section 13).
 	var/datum/request/request
 	/// The answered request, after asks() (section 13).

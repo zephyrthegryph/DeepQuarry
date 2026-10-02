@@ -427,6 +427,7 @@ GLOBAL_VAR(declare_report_capture)
 		var/datum/capability/def = C.item
 		if(istype(def))
 			def.validate_in(T, C.origin)
+	op_validate_table(T)
 
 /// Table-level checks a capability definition makes of its own params (a construction graph's start and via).
 /datum/capability/proc/validate_in(datum/type_table/T, origin)
@@ -485,5 +486,9 @@ GLOBAL_VAR(declare_report_capture)
 		parts += "[name]=[islist(value) ? "list" : ((name == "stat" && isnum(value) && stat_def_of(value)) ? stat_label(value) : "[value]")]"
 	for(var/child in E.children)
 		var/datum/entry/CE = child
-		parts += istype(CE) ? CE.kind : "[child]"
+		if(istype(CE, /datum/entry/part))
+			var/datum/entry/part/part_child = CE
+			parts += part_child.describe()
+		else
+			parts += istype(CE) ? CE.kind : "[child]"
 	return jointext(parts, ", ")

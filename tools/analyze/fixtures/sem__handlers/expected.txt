@@ -22,3 +22,4 @@ requirement_return	code/modules/lamps/lamp.dm	54
 signature	code/modules/lamps/lamp.dm	77
 signature	code/modules/lamps/lamp.dm	80
 signature	code/modules/lamps/lamp.dm	83
+signature	code/modules/lamps/ui_op.dm	17

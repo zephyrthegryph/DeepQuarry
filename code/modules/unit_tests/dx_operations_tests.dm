@@ -74,7 +74,7 @@
 
 	TEST_ASSERT(req_set(CAP_LOCKED) == req_set(CAP_LOCKED), "the same declaration is one shared flyweight")
 	TEST_ASSERT(req_set(CAP_LOCKED) != req_clear(CAP_LOCKED), "set and clear are different flyweights")
-	TEST_ASSERT(all_of(req_set(CAP_PANEL_OPEN), req_clear(CAP_LOCKED)) == all_of(req_set(CAP_PANEL_OPEN), req_clear(CAP_LOCKED)), "composites intern too")
+	TEST_ASSERT(legacy_all_of(req_set(CAP_PANEL_OPEN), req_clear(CAP_LOCKED)) == legacy_all_of(req_set(CAP_PANEL_OPEN), req_clear(CAP_LOCKED)), "composites intern too")
 
 	TEST_ASSERT_NULL(req_clear(CAP_LOCKED).test(ctx), "not locked: holds")
 	TEST_ASSERT_EQUAL(req_set(CAP_LOCKED).test(ctx), /datum/msg/req_wrong_state, "not locked: req_set fails with the state reason")
@@ -86,9 +86,9 @@
 	TEST_ASSERT_EQUAL(reads[1][1], F, "it reads the target")
 	TEST_ASSERT_EQUAL(reads[1][2], OP_KEY_CAP_STATE, "its cap_state")
 
-	TEST_ASSERT_NULL(any_of(req_set(CAP_LOCKED), req_set(CAP_EMAGGED)).test(ctx), "any_of: one part holds")
-	TEST_ASSERT_EQUAL(any_of(req_set(CAP_EMAGGED), req_set(CAP_BROKEN)).test(ctx), /datum/msg/req_wrong_state, "any_of: none holds, the first reason")
-	TEST_ASSERT_EQUAL(all_of(req_set(CAP_LOCKED), req_set(CAP_EMAGGED)).test(ctx), /datum/msg/req_wrong_state, "all_of: one fails")
+	TEST_ASSERT_NULL(legacy_any_of(req_set(CAP_LOCKED), req_set(CAP_EMAGGED)).test(ctx), "any_of: one part holds")
+	TEST_ASSERT_EQUAL(legacy_any_of(req_set(CAP_EMAGGED), req_set(CAP_BROKEN)).test(ctx), /datum/msg/req_wrong_state, "any_of: none holds, the first reason")
+	TEST_ASSERT_EQUAL(legacy_all_of(req_set(CAP_LOCKED), req_set(CAP_EMAGGED)).test(ctx), /datum/msg/req_wrong_state, "all_of: one fails")
 	TEST_ASSERT_EQUAL(none_of(req_set(CAP_LOCKED)).test(ctx), /datum/msg/req_forbidden, "none_of: a part holds")
 	TEST_ASSERT_NULL(none_of(req_set(CAP_EMAGGED)).test(ctx), "none_of: no part holds")
 
@@ -97,10 +97,10 @@
 	TEST_ASSERT_NULL(req_access().test(ctx), "authority route passes the access requirement")
 	ctx.route = ROUTE_PHYSICAL
 
-	TEST_ASSERT_EQUAL(req(/obj/item/pen).test(ctx), /datum/msg/req_wrong_item, "no held item: not a pen")
+	TEST_ASSERT_EQUAL(legacy_req(/obj/item/pen).test(ctx), /datum/msg/req_wrong_item, "no held item: not a pen")
 	ctx.held = allocate(/obj/item/pen, T)
-	TEST_ASSERT_NULL(req(/obj/item/pen).test(ctx), "holding a pen")
-	TEST_ASSERT_NULL(req(list(/obj/item/paper, /obj/item/pen)).test(ctx), "a list of types")
+	TEST_ASSERT_NULL(legacy_req(/obj/item/pen).test(ctx), "holding a pen")
+	TEST_ASSERT_NULL(legacy_req(list(/obj/item/paper, /obj/item/pen)).test(ctx), "a list of types")
 	TEST_ASSERT_EQUAL(req_part(/obj/item/cell).test(ctx), /datum/msg/req_no_part, "no cell inside")
 	var/obj/item/cell/C = allocate(/obj/item/cell, F)
 	TEST_ASSERT_NULL(req_part(/obj/item/cell).test(ctx), "a cell inside")

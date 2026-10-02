@@ -515,7 +515,7 @@
 	var/ts_comment
 	var/ts_type_is_number = FALSE
 	if(ts_text)
-		var/regex/doc_comment = regex(@"/\*\* ([^*]+?) \*/\s*target_pressure\??: ([a-z]+)")
+		var/regex/doc_comment = regex(@"(?:/)\*\* ([^*]+?) \*/[\r\n\t ]*target_pressure\??: ([a-z]+)") // not opening with a slash: DM would read that as a delimited /pattern/flags
 		if(doc_comment.Find(ts_text))
 			ts_comment = doc_comment.group[1]
 			ts_type_is_number = doc_comment.group[2] == "number"

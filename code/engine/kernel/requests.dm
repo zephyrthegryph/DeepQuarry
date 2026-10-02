@@ -200,10 +200,9 @@ SYSTEM_DEF(requests)
 	qdel(R) // ALLOW(lifecycle): a request is a plain datum with no lifecycle verb: ending it is its deletion
 	return TRUE
 
-/// E2's op engine resumes the op that was waiting on `R` here, and fills its /datum/op_result. Until then there is no op.
+/// The op engine resumes the op that was waiting on `R` through the handler it opened the request with (code/engine/parts/run.dm,
+/// /datum/pending_op/request_done), which runs before this seam: nothing is left to do here.
 /proc/request_op_resume(datum/request/R)
-	if(R.waiting)
-		ENGINE_STUB(ENGINE_E2, "op engine: resuming the op that was waiting on a request (Wait workflow resume, captured fields, re-check)")
 	return
 
 /// Answers `actor`'s oldest open request with `value`, or ends it with `outcome` (REQ_CANCELLED, REQ_TIMED_OUT). Returns the

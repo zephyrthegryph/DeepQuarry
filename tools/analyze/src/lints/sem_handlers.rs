@@ -182,8 +182,10 @@ impl Lint for SemHandlers {
             }
             let (drel, dline) = a.def.clone().unwrap_or((h.rel.clone(), h.line));
             let is_act = |p: &Vec<String>| p.len() >= 2 && p[0] == "datum" && p[1] == "act";
-            if a.params.len() != 1 || !is_act(&a.params[0]) {
-                put(out, "signature", &drel, dline, format!("{} takes {} parameter(s); a handler is x(datum/act/A)", who, a.params.len()));
+            // A UI or topic op's handler also takes the op's declared args, typed, after A.
+            let expected = 1 + h.ui_args.as_ref().map(|v| v.len()).unwrap_or(0);
+            if a.params.len() != expected || a.params.is_empty() || !is_act(&a.params[0]) {
+                put(out, "signature", &drel, dline, format!("{} takes {} parameter(s); a handler is x(datum/act/A){}", who, a.params.len(), if expected > 1 { " plus one parameter per declared arg()" } else { "" }));
             }
             for (field, rel, line) in &a.bad_ctx {
                 put(out, "context_field", rel, *line, format!("{} reads A.{}, which a {} context does not carry", who, field, h.ctx.type_path()));

@@ -125,7 +125,7 @@ GLOBAL_LIST_EMPTY(inbox_probe_log)
 	test_driver_begin()
 	GLOB.inbox_probe_log = list()
 	SSinput.room_override = FALSE
-	var/obj/item/pen/target = allocate(/obj/item/pen)
+	var/obj/e2_vault/target = allocate(/obj/e2_vault)
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/datum/input_event/probe/stale = inbox_probe("stale", "client_a", null, target)
 	stale.actor = actor
@@ -160,13 +160,13 @@ GLOBAL_LIST_EMPTY(inbox_probe_log)
 	TEST_ASSERT_EQUAL(jointext(GLOB.inbox_probe_log, ","), "good", "and the drain goes on to the next input")
 	test_driver_end()
 
-/// The driver's input forms enter the inbox as typed events; the resolver behind them is E2's, and says so until it lands.
+/// The driver's input forms enter the inbox as typed events; the resolver behind them is E2's.
 /datum/unit_test/kernel_inbox_driver_forms
 
 /datum/unit_test/kernel_inbox_driver_forms/Run()
 	test_driver_begin()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
-	var/obj/item/pen/target = allocate(/obj/item/pen)
+	var/obj/e2_vault/target = allocate(/obj/e2_vault)
 	SSinput.room_override = FALSE
 	test_click(actor, target, null)
 	test_ui(actor, target, "toggle", list())
@@ -180,6 +180,7 @@ GLOBAL_LIST_EMPTY(inbox_probe_log)
 	TEST_ASSERT_EQUAL(picked.origin, ORIGIN_MENU, "a menu pick as ORIGIN_MENU")
 	TEST_ASSERT_EQUAL(picked.op_key, "x.y", "carrying the op key")
 	test_phase(KERNEL_PHASE_K)
-	TEST_ASSERT(e0_pending_any(), "the resolver behind the inbox (E2) reports that it is not there yet")
+	TEST_ASSERT(!e0_pending_any(), "the resolver behind the inbox is E2's: it is there, and reports nothing missing")
+	TEST_ASSERT_EQUAL(picked.result?.outcome, ACT_REFUSED, "a pick of a key nothing has is refused")
 	TEST_ASSERT_EQUAL(length(SSinput.waiting(actor)), 0, "and the inbox is drained")
 	test_driver_end()

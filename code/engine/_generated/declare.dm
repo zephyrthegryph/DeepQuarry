@@ -36,7 +36,27 @@
 /datum/source_def/all/spec()
 	return list(SRC_ALL, "all")
 
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:309
+/datum/pending_op/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/parts/run.dm", 309, /datum/pending_op)
+	into += entry_line(310)
+	into += list(ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(311)
+	into += list(ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(312)
+	into += list(ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(313)
+	into += list(ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+/// CAPABILITY_TYPE(e0_door, CAP_E0_DOOR) at code/tests/engine/fixtures.dm:119
+/proc/e0_door()
+	RETURN_TYPE(/datum/capability/e0_door)
+	return cap_construct(CAP_E0_DOOR, /datum/capability/e0_door, list(), "")
+/datum/capdef_decl/c_e0_door/spec()
+	return list(CAP_E0_DOOR, /datum/capability/e0_door, NONE, STACK, "e0_door", "")
 
 /// CAPABILITY_TYPE(e0_mirror_plating, CAP_E0_MIRROR) at code/tests/engine/fixtures.dm:34
 /datum/e0_cap/mirror
@@ -113,15 +133,22 @@
 /proc/e1_solo_lit(datum/holder, selector)
 	return cap_key_get(holder, E1_SOLO_LIT, selector)
 
+/// cap_keys(CAP_E0_DOOR) at code/tests/engine/fixtures.dm:120
+/datum/cap_keys_decl/k_e0_door/spec()
+	return list(CAP_E0_DOOR, list(OPEN = null))
+/// The state key OPEN of e0_door, read on a holder (a granted capability with several selectors names the selector).
+/proc/e0_door_open(datum/holder, selector)
+	return cap_key_get(holder, E0_DOOR_OPEN, selector)
+
 /// STATE_GRAPH(GRAPH_DOOR_ASSEMBLY) at code/tests/engine/e1_fixtures.dm:179
 /datum/graph_decl/g_graph_door_assembly/spec()
 	return list(GRAPH_DOOR_ASSEMBLY, start(STAGE_DOOR_FRAME), stage(STAGE_DOOR_WIRED, entry_of("part", "wire")), stage(STAGE_DOOR_BOARDED, entry_of("part", "board")), stage(STAGE_DOOR_FINISHED, entry_of("part", "screwdriver"), from = STAGE_DOOR_BOARDED), stage(STAGE_DOOR_FINISHED, entry_of("part", "kit"), from = STAGE_DOOR_WIRED, key = "kit", undo = list(entry_of("part", "crowbar"))), dismantle(entry_of("part", "welder")))
 
-/// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:243
+/// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:289
 /datum/e0_chain_node/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 243, /datum/e0_chain_node)
-	into += entry_line(243)
+	into += entry_block("code/tests/engine/fixtures.dm", 289, /datum/e0_chain_node)
+	into += entry_line(289)
 	into += list(on_notice(/datum/notice/e0_chain, then(PROC_REF(hear))))
 
 /// CAPABILITIES(/datum/e0_species/shifter) at code/tests/engine/fixtures.dm:67
@@ -158,17 +185,64 @@
 /mob/living/simple_mob/e0_fixture/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/fixtures.dm", 87, /mob/living/simple_mob/e0_fixture)
-	into += entry_line(87)
+	into += entry_line(88)
 	into += list(ref_one(nameof(species), /datum/e0_species))
-	into += entry_line(87)
+	into += entry_line(89)
 	into += list(rel_grants(nameof(species)))
+	into += entry_line(90)
+	into += list(hands())
 
-/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:213
+/// CAPABILITIES(/obj/e0_fixture/door) at code/tests/engine/fixtures.dm:135
+/obj/e0_fixture/door/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 135, /obj/e0_fixture/door)
+	into += entry_line(136)
+	into += list(e0_door())
+	into += entry_line(137)
+	into += list(when(E0_DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))
+
+/// CAPABILITIES(/obj/e0_fixture/hopper) at code/tests/engine/fixtures.dm:191
+/obj/e0_fixture/hopper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 191, /obj/e0_fixture/hopper)
+	into += entry_line(192)
+	into += list(slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY))
+	into += entry_line(193)
+	into += list(op("load", stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), wait(2 SECONDS), put_in(SLOT_HOPPER), says(MSG(fab/loaded)), logs(LOG_GAME)))
+
+/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:259
 /obj/e0_fixture/lamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 213, /obj/e0_fixture/lamp)
-	into += entry_line(214)
+	into += entry_block("code/tests/engine/fixtures.dm", 259, /obj/e0_fixture/lamp)
+	into += entry_line(260)
 	into += list(contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
+
+/// CAPABILITIES(/obj/e0_fixture/library) at code/tests/engine/fixtures.dm:152
+/obj/e0_fixture/library/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 152, /obj/e0_fixture/library)
+	into += entry_line(153)
+	into += list(op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row))))
+	into += entry_line(154)
+	into += list(op("print", ui_act(), needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))), confirms("Print the selected book?"), captures(nameof(selected_id)), then(PROC_REF(print_book)), logs(LOG_GAME)))
+
+/// CAPABILITIES(/obj/e0_fixture/library/strict) at code/tests/engine/fixtures.dm:173
+/obj/e0_fixture/library/strict/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 173, /obj/e0_fixture/library/strict)
+	into += entry_line(174)
+	into += list(extend("print", captures(nameof(selected_id), resume = CANCEL_IF_CHANGED)))
+
+/// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:341
+/obj/e0_fixture/pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/fixtures.dm", 341, /obj/e0_fixture/pump)
+	into += entry_line(342)
+	into += list(interface("E0Pump", title = "Gas Pump"))
+	into += entry_line(343)
+	into += list(ui_shape(target_pressure))
+	into += entry_line(344)
+	into += list(op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure))))
 
 /// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:190
 /obj/e1_assembly/declared_entries(list/into)
@@ -240,6 +314,122 @@
 	into += list(owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")))
 	into += entry_line(149)
 	into += list(owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
+
+/// CAPABILITIES(/obj/e2_bench_stack) at code/tests/engine/e2_bench_fixtures.dm:41
+/obj/e2_bench_stack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_bench_fixtures.dm", 41, /obj/e2_bench_stack)
+	into += entry_line(42)
+	into += list(op("hand_use", hand(), then(PROC_REF(note_use))))
+	into += entry_line(43)
+	into += list(op("key1", item(/obj/item/e2_bench_key1), then(PROC_REF(note_use))))
+	into += entry_line(44)
+	into += list(op("key2", item(/obj/item/e2_bench_key2), then(PROC_REF(note_use))))
+	into += entry_line(45)
+	into += list(op("key3", item(/obj/item/e2_bench_key3), then(PROC_REF(note_use))))
+	into += entry_line(46)
+	into += list(op("key4", item(/obj/item/e2_bench_key4), then(PROC_REF(note_use))))
+	into += entry_line(47)
+	into += list(op("key5", item(/obj/item/e2_bench_key5), then(PROC_REF(note_use))))
+	into += entry_line(48)
+	into += list(op("key6", item(/obj/item/e2_bench_key6), then(PROC_REF(note_use))))
+	into += entry_line(49)
+	into += list(op("key7", item(/obj/item/e2_bench_key7), then(PROC_REF(note_use))))
+	into += entry_line(50)
+	into += list(op("key8", item(/obj/item/e2_bench_key8), then(PROC_REF(note_use))))
+	into += entry_line(51)
+	into += list(op("key9", item(/obj/item/e2_bench_key9), then(PROC_REF(note_use))))
+	into += entry_line(52)
+	into += list(op("key10", item(/obj/item/e2_bench_key10), then(PROC_REF(note_use))))
+	into += entry_line(53)
+	into += list(op("key11", item(/obj/item/e2_bench_key11), then(PROC_REF(note_use))))
+	into += entry_line(54)
+	into += list(op("key12", item(/obj/item/e2_bench_key12), then(PROC_REF(note_use))))
+	into += entry_line(55)
+	into += list(op("key13", item(/obj/item/e2_bench_key13), then(PROC_REF(note_use))))
+	into += entry_line(56)
+	into += list(op("key14", item(/obj/item/e2_bench_key14), then(PROC_REF(note_use))))
+	into += entry_line(57)
+	into += list(op("key15", item(/obj/item/e2_bench_key15), then(PROC_REF(note_use))))
+	into += entry_line(58)
+	into += list(op("key16", item(/obj/item/e2_bench_key16), then(PROC_REF(note_use))))
+	into += entry_line(59)
+	into += list(op("key17", item(/obj/item/e2_bench_key17), then(PROC_REF(note_use))))
+	into += entry_line(60)
+	into += list(op("key18", item(/obj/item/e2_bench_key18), then(PROC_REF(note_use))))
+	into += entry_line(61)
+	into += list(op("key19", item(/obj/item/e2_bench_key19), then(PROC_REF(note_use))))
+	into += entry_line(62)
+	into += list(op("key20", item(/obj/item/e2_bench_key20), then(PROC_REF(note_use))))
+	into += entry_line(63)
+	into += list(op("key21", item(/obj/item/e2_bench_key21), then(PROC_REF(note_use))))
+	into += entry_line(64)
+	into += list(op("key22", item(/obj/item/e2_bench_key22), then(PROC_REF(note_use))))
+	into += entry_line(65)
+	into += list(op("key23", item(/obj/item/e2_bench_key23), then(PROC_REF(note_use))))
+	into += entry_line(66)
+	into += list(op("key24", item(/obj/item/e2_bench_key24), then(PROC_REF(note_use))))
+	into += entry_line(67)
+	into += list(op("key25", item(/obj/item/e2_bench_key25), then(PROC_REF(note_use))))
+	into += entry_line(68)
+	into += list(op("key26", item(/obj/item/e2_bench_key26), then(PROC_REF(note_use))))
+	into += entry_line(69)
+	into += list(op("key27", item(/obj/item/e2_bench_key27), then(PROC_REF(note_use))))
+	into += entry_line(70)
+	into += list(op("key28", item(/obj/item/e2_bench_key28), then(PROC_REF(note_use))))
+	into += entry_line(71)
+	into += list(op("key29", item(/obj/item/e2_bench_key29), then(PROC_REF(note_use))))
+	into += entry_line(72)
+	into += list(op("key30", item(/obj/item/e2_bench_key30), then(PROC_REF(note_use))))
+
+/// CAPABILITIES(/obj/e2_box) at code/tests/engine/e2_fixtures.dm:45
+/obj/e2_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 45, /obj/e2_box)
+	into += entry_line(46)
+	into += list(op("open", hand(), toggles(nameof(opened)), logs(LOG_GAME)))
+	into += entry_line(47)
+	into += list(op("pry", tool(TOOL_CROWBAR), then(PROC_REF(note_pry))))
+	into += entry_line(48)
+	into += list(op("insert_key", item(/obj/item/e2_key), consumes(), then(PROC_REF(note_key))))
+	into += entry_line(49)
+	into += list(op("slide_in", item(/obj/item/e2_cloth), answers(INTENT_DROP_ONTO), then(PROC_REF(note_slide))))
+	into += entry_line(50)
+	into += list(op("peek", menu(), then(PROC_REF(note_peek))))
+	into += entry_line(51)
+	into += list(op("set_label", ui_act("set_label", arg("text", schema_text(8))), then(PROC_REF(apply_label))))
+	into += entry_line(52)
+	into += list(op("ping", topic("ping", arg("n", int(0, 9))), then(PROC_REF(note_ping))))
+	into += entry_line(53)
+	into += list(op("escape", inside(), priority(above("open")), then(PROC_REF(note_escape))))
+
+/// CAPABILITIES(/obj/e2_lever) at code/tests/engine/e2_fixtures.dm:115
+/obj/e2_lever/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 115, /obj/e2_lever)
+	into += entry_line(116)
+	into += list(op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME)))
+
+/// CAPABILITIES(/obj/e2_machine) at code/tests/engine/e2_fixtures.dm:100
+/obj/e2_machine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 100, /obj/e2_machine)
+	into += entry_line(101)
+	into += list(op("rename", ui_act("rename"), costs(RES_DARK_ENERGY, 5), asks(/datum/prompt/text, fields = list("question" = "What is it called?")), then(PROC_REF(apply_name)), logs(LOG_GAME)))
+
+/// CAPABILITIES(/obj/e2_mixed) at code/tests/engine/e2_fixtures.dm:125
+/obj/e2_mixed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 125, /obj/e2_mixed)
+	into += entry_line(126)
+	into += list(op("wave", hand(), then(PROC_REF(note_wave))))
+
+/// CAPABILITIES(/obj/e2_vault) at code/tests/engine/e2_fixtures.dm:92
+/obj/e2_vault/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 92, /obj/e2_vault)
+	into += entry_line(93)
+	into += list(op("open", hand(), needs(req_is(nameof(locked), FALSE, because = MSG(e2/locked))), toggles(nameof(opened))))
 
 /// CAPABILITIES(/obj/e3_apc) at code/tests/engine/e3_fixtures.dm:69
 /obj/e3_apc/declared_entries(list/into)
@@ -336,6 +526,13 @@
 	into += list(on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED))
 	into += entry_line(39)
 	into += list(on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
+
+/// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
+/obj/item/e2_cloth/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/e2_fixtures.dm", 28, /obj/item/e2_cloth)
+	into += entry_line(29)
+	into += list(op("polish", in_hand(), then(PROC_REF(note_polish))))
 
 /// CAPABILITIES(/obj/item/e4_fixture/amulet) at code/tests/engine/e4_fixtures.dm:95
 /obj/item/e4_fixture/amulet/declared_entries(list/into)

@@ -113,7 +113,7 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 	return reason
 
 /// The subject (the held item by default) is of `type` (a path, or a list of paths).
-/proc/req(type, of = OP_HELD)
+/proc/legacy_req(type, of = OP_HELD)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/of_type/R = new
 	R.types = type
@@ -351,14 +351,14 @@ GLOBAL_LIST_EMPTY(reqs_interned)
 			. += mine
 
 /// Holds when every part does. Takes requirements or lists of them.
-/proc/all_of(...)
+/proc/legacy_all_of(...)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/all/R = new
 	R.parts = req_list(args)
 	return req_intern(R)
 
 /// Holds when any part does; the first reason otherwise.
-/proc/any_of(...)
+/proc/legacy_any_of(...)
 	RETURN_TYPE(/datum/req)
 	var/datum/req/any/R = new
 	R.parts = req_list(args)

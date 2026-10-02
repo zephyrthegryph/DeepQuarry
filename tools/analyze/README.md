@@ -305,6 +305,15 @@ name is one of BYOND's own, or with `virtual = TRUE`; the line carries `// ALLOW
 the registration the stat layer reads at boot. A row declared under `code/tests/` is written inside `#if defined(UNIT_TESTS)`. The generator ignores its
 own previous output when it decides which vars a type already has. `system_accessors.dm` does the same for accessors declared under `code/tests/`.
 
+`ui_types` (`analyze gen ui_types`, E2/E5): for each `CAPABILITIES(T, ...)` that names `interface("Window", ...)`, one TypeScript file
+`tgui/packages/tgui/interfaces/generated/<Window>.d.ts` (not a DM file: `Generator::files()` returns `(path, text)` pairs, compared byte for byte
+by `--check` and not looked for in `deepquarry.dme`). `ui_shape(var, ...)` lists the data fields, each typed from the tracked var's schema
+(`TRACKED_SCHEMA(T, var, schema)` or `SCHEMA(T, var, schema)`), and the `ui_act()` ops of the same list give the actions type with their `arg()`s
+(`arg("pressure", from = nameof(target_pressure))` takes the var's schema). The doc comment on every field is the schema's range text, the
+text `schema_range_text()` returns at runtime (`/** num 0..MAX_PUMP_PRESSURE step 1 */`), so E0 proof 10 can compare the two; the TypeScript type
+of a numeric field stays `number`. `tools/build/lib/ui_types.ts` (the legacy UI-table dump) leaves a file with this generator's header alone.
+A `handlers/signature` note: the handler of an op with a `ui_act()` or `topic()` binding takes the op's declared `arg()`s after `A`.
+
 ## Tooling gotchas
 
 * A `Tree::memo` init must not use rayon (`par_iter`, `join`): the initializing worker steals another lint's task while it waits,
