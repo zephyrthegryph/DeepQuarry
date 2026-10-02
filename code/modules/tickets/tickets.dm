@@ -397,11 +397,11 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 //Reopen a closed ticket
 /datum/ticket/proc/Reopen(user)
 	if(state == AHELP_ACTIVE)
-		to_chat(usr, span_warning("This ticket is already open."))
+		to_chat(user, span_warning("This ticket is already open."))
 		return
 
 	if(GLOB.tickets.CKey2ActiveTicket(initiator_ckey))
-		to_chat(usr, span_warning("This user already has an active ticket, cannot reopen this one."))
+		to_chat(user, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
 	own_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
@@ -419,7 +419,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/admin_reopener_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_purple("Reopened by [admin_reopener_name]"))
 	if(initiator())
-		to_chat(initiator(), span_filter_adminlog("[span_purple("Ticket [TicketHref("#[id]")] was reopened by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+		to_chat(initiator(), span_filter_adminlog("[span_purple("Ticket [TicketHref("#[id]")] was reopened by [ismob(user) ? key_name(user,FALSE,FALSE) : user].")]"))
 	var/msg = span_adminhelp("Ticket [TicketHref("#[id]")] reopened by [admin_reopener_name].")
 	message_admins(msg)
 	log_admin(msg)
@@ -447,7 +447,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/admin_closer_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_filter_adminlog(span_red("Closed by [admin_closer_name].")))
 	if(initiator())
-		to_chat(initiator(), span_filter_adminlog("[span_red("Ticket [TicketHref("#[id]")] was closed by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+		to_chat(initiator(), span_filter_adminlog("[span_red("Ticket [TicketHref("#[id]")] was closed by [ismob(user) ? key_name(user,FALSE,FALSE) : user].")]"))
 	if(!silent)
 		feedback_inc("ahelp_close")
 		var/msg = "Ticket [TicketHref("#[id]")] closed by [admin_closer_name]."
@@ -466,7 +466,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 	var/admin_resolver_name = ismob(user) ? key_name_admin(user) : user
 	AddInteraction(span_filter_adminlog(span_green("Resolved by [admin_resolver_name].")))
 	if(initiator())
-		to_chat(initiator(), span_filter_adminlog("[span_green("Ticket [TicketHref("#[id]")] was marked resolved by [ismob(user) ? key_name(usr,FALSE,FALSE) : user].")]"))
+		to_chat(initiator(), span_filter_adminlog("[span_green("Ticket [TicketHref("#[id]")] was marked resolved by [ismob(user) ? key_name(user,FALSE,FALSE) : user].")]"))
 	if(!silent)
 		feedback_inc("ticket_resolve")
 		var/msg = "Ticket [TicketHref("#[id]")] resolved by [admin_resolver_name]"
