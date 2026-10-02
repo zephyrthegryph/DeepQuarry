@@ -44,8 +44,8 @@
 		else
 			actor.forceMove(away)
 			TEST_ASSERT_EQUAL(actor.loc, away, "The actor interruption must actually move the actor")
-		stage = "11: scheduler_advance((3 SECONDS) / SECONDS)"
-		scheduler_advance((3 SECONDS) / SECONDS)
+		stage = "11: advance past the canceled wiring deadline"
+		scheduler_advance((3 SECONDS) / (1 SECOND))
 		stage = "11a: fixture survival after cancelled action"
 		TEST_ASSERT(!QDELETED(frame), "Cancellation must preserve the frame fixture")
 		TEST_ASSERT(!QDELETED(actor), "Cancellation must preserve the actor fixture")
@@ -70,14 +70,14 @@
 			actor.forceMove(T)
 		stage = "13: TEST_ASSERT(wire.perform(actor, frame, cable), \"Retrying the interrupted edge must start a fresh timed action\")"
 		TEST_ASSERT(wire.perform(actor, frame, cable), "Retrying the interrupted edge must start a fresh timed action")
-		stage = "14: scheduler_advance((0.5 SECONDS) / SECONDS)"
-		scheduler_advance((0.5 SECONDS) / SECONDS)
+		stage = "14: advance within the retry delay"
+		scheduler_advance((0.5 SECONDS) / (1 SECOND))
 		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_FASTENED, "The retry must still wait for the real wiring delay")
 		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 6"
 		TEST_ASSERT_EQUAL(cable.get_amount(), 6, "The pending retry must preserve its cable")
-		stage = "15: scheduler_advance((2 SECONDS) / SECONDS)"
-		scheduler_advance((2 SECONDS) / SECONDS)
+		stage = "15: advance past the retry deadline"
+		scheduler_advance((2 SECONDS) / (1 SECOND))
 		stage = "checking TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED"
 		TEST_ASSERT_EQUAL(frame.state, FRAME_WIRED, "An uninterrupted retry must finish wiring")
 		stage = "checking TEST_ASSERT_EQUAL(cable.get_amount(), 1"
