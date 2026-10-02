@@ -16,7 +16,7 @@
 	return ..()
 
 // the stake it was pinned to forgets it and blocks again.
-/obj/item/target/on_destroy(force)
+/obj/item/target/lifecycle_prerelease()
 	// if a target is deleted and associated with a stake, force stake to forget
 	for(var/obj/structure/target_stake/T in view(3,src))
 		if(T.pinned_target == src)
