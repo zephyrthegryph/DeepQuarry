@@ -1,11 +1,11 @@
 //! Port of the structure index in `tools/ci/ownership_lint.py` (lines 40-330): `class Index`,
 //! `parents()`, the regexes, `proc_scopes`, `receiver_type`, `creates_entity`, `puts_object`.
 //!
-//! Shared by `state_schema` (its `ownership_kind` asks the index which kind a var is) and, later,
-//! by the ownership lint's checks. Only the index and its helpers live here: the checks
-//! (`main()`) are not ported yet. The Python `Index` also carried the `usage` map that `main()`
-//! fills with accessor writes before checking; it is not part of the shared (immutable, memoized)
-//! index here: the checks port builds it locally, the way `state_schema::OwnershipKinds` does.
+//! Shared by `state_schema` (its `ownership_kind` asks the index which kind a var is) and by the
+//! ownership lint's checks (`lints/ownership.rs`, the port of `main()`). Only the index and its
+//! helpers live here. The Python `Index` also carried the `usage` map that `main()` fills with
+//! accessor writes before checking; it is not part of the shared (immutable, memoized) index here:
+//! the lint builds it locally, the way `state_schema::OwnershipKinds` does.
 //!
 //! Python's dicts keep insertion order and some checks report in that order, so `decls` is an
 //! [`OrdMap`]. Files are indexed in path order (the Python walked `glob.glob` order); the only
@@ -114,7 +114,8 @@ re!(
     STRING_NAME,
     r#"\b(own_set|own_take|own_add|own_remove|own_put|own_take_member|own_take_all|own_clear|own_values|own_transfer|rel_set|rel_add|rel_remove|rel_clear|rel_link|rel_unlink|rel_targets|rel_names|proto_set|proto_private|proto_replace|proto_is_private|shared_set|keyed_set_id)\((?:[^,()"]|\([^()]*\))*,\s*"\w+"|\b(own_move)\((?:[^,()"]|\([^()]*\))*,(?:[^,()"]|\([^()]*\))*,\s*"\w+""#
 );
-re!(WRITE_ASSIGN, r"(?<![\w.])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)");
+// A name after a `/` is a path component (`/datum/capability/wires = /datum/...` is an assoc key), not a var.
+re!(WRITE_ASSIGN, r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)");
 re!(WRITE_INDEX, r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)");
 re!(WRITE_METHOD, r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\(");
 re!(
