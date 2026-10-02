@@ -299,8 +299,9 @@ impl Engine {
                 }
                 failed
             }
-            Policy::Custom => lint.finish(&cx, run, &mut text),
+            Policy::Custom => lint.finish_raw(&cx, run, &mut text, raw),
         };
+        let failed = if matches!(meta.policy, Policy::Custom) { failed } else { lint.post_judge(&cx, run, &mut text) | failed };
         (failed, text)
     }
 
