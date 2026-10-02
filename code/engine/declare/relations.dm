@@ -186,6 +186,9 @@ GLOBAL_LIST_EMPTY(keyed_targets) // target type -> the id var holders key on
 
 /// Stores `value` (or null). Accepts ref_one, owns_one, a single link end and a registry-typed var.
 /proc/rel_set(datum/E, var_name, datum/value)
+	// Nothing changes (a New() linking null into an empty view): no table needed, which also keeps datums made during global init off it.
+	if(E.vars[var_name] == value)
+		return value
 	switch(rel_kind(E, var_name))
 		if(OWNK_OWN)
 			return own_set(E, var_name, value)
