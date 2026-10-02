@@ -1,0 +1,6 @@
+if(world.time > data)
+if(world.time > mydata)
+if(world.time > x.data)
+if(world.time > data_x)
+if(world.time > a[1])
+if(world.time > 10)
