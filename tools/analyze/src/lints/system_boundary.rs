@@ -267,7 +267,7 @@ impl SystemBoundary {
         let system_access = crate::pat!(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?");
         let proc_def = crate::pat_match!(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\(");
 
-        let mut hit = |out: &mut Sink, rule: &str, name: String, rel: &str, line: usize, text: String| {
+        let hit = |out: &mut Sink, rule: &str, name: String, rel: &str, line: usize, text: String| {
             let key = name.replace(' ', "%20");
             out.site_keyed(rule, rel, line, text, key);
         };

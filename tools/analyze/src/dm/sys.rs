@@ -107,6 +107,39 @@ pub fn register_module(reg: &mut Registry, module: SysModule) {
     reg.add(SysLint { module, meta });
 }
 
+thread_local! {
+    static EXTRA_USED: std::cell::RefCell<Vec<crate::lint::AllowUse>> = const { std::cell::RefCell::new(Vec::new()) };
+}
+
+/// `allow::kept` for a module that asks an ALLOW question inside its own scan (outside the
+/// wrapper's `sys_<rule>` check, e.g. `ALLOW(cooldown)`): records the annotation as used, so the
+/// unused-ALLOW check sees it. The wrapper moves the records into the scan's `Sink`.
+pub fn kept_recorded(f: &SourceFile, number: usize, name: &str) -> bool {
+    match crate::allow::kept(f, number, name) {
+        Some(k) => {
+            EXTRA_USED.with(|e| {
+                let u = crate::lint::AllowUse { rel: f.rel.clone(), line: k.line as u32, name: name.to_string(), code: k.code.unwrap_or_default() };
+                let mut e = e.borrow_mut();
+                if !e.contains(&u) {
+                    e.push(u);
+                }
+            });
+            true
+        }
+        None => false,
+    }
+}
+
+fn drain_extra(out: &mut Sink) {
+    EXTRA_USED.with(|e| {
+        for u in e.borrow_mut().drain(..) {
+            if !out.allow_used.contains(&u) {
+                out.allow_used.push(u);
+            }
+        }
+    });
+}
+
 impl SysLint {
     fn kept(&self, out: &mut Sink, f: &SourceFile, rule: &str, line: usize) -> bool {
         if self.module.no_allow.contains(&rule) {
@@ -132,6 +165,7 @@ impl Lint for SysLint {
         let Some(scan) = self.module.file_scan else { return };
         let mut found = Vec::new();
         scan(f, &mut found);
+        drain_extra(out);
         for (rule, line) in found {
             if !self.kept(out, f, rule, line) {
                 out.site(rule, line);
@@ -142,7 +176,9 @@ impl Lint for SysLint {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let Some(scan) = self.module.files_scan else { return };
         let files = cx.files();
-        for (rule, rel, line) in scan(cx.tree, &files) {
+        let found = scan(cx.tree, &files);
+        drain_extra(out);
+        for (rule, rel, line) in found {
             match cx.tree.get(&rel) {
                 Some(f) => {
                     if !self.kept(out, f, rule, line) {

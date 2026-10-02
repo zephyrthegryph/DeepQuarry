@@ -76,6 +76,32 @@ impl Cache {
         }
     }
 
+    /// How long each lint took the last time it really scanned (scheduling hint only).
+    pub fn load_durations(&self) -> HashMap<String, u64> {
+        let mut m = HashMap::new();
+        if let Ok(t) = std::fs::read_to_string(self.dir.join("durations.txt")) {
+            for l in t.lines() {
+                if let Some((n, us)) = l.split_once('\t') {
+                    if let Ok(us) = us.parse() {
+                        m.insert(n.to_string(), us);
+                    }
+                }
+            }
+        }
+        m
+    }
+
+    pub fn save_durations(&self, d: &HashMap<String, u64>) {
+        if !self.enabled {
+            return;
+        }
+        let mut rows: Vec<(&String, &u64)> = d.iter().collect();
+        rows.sort();
+        let text: String = rows.iter().map(|(n, us)| format!("{}\t{}\n", n, us)).collect();
+        let _ = std::fs::create_dir_all(&self.dir);
+        atomic_write(&self.dir.join("durations.txt"), text.as_bytes());
+    }
+
     fn lint_path(&self, name: &str) -> PathBuf {
         let safe: String = name.chars().map(|c| if c.is_ascii_alphanumeric() || c == '_' || c == '-' { c } else { '_' }).collect();
         self.dir.join(format!("lint-{}.bin", safe))

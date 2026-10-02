@@ -17,7 +17,6 @@ use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
 use crate::dm::ownership_index::{self as oi, Index};
-use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree, View};
 use crate::util::{py_lstrip, py_rstrip, py_strip, under};
 use crate::{pat, pat_match};

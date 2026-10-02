@@ -20,7 +20,6 @@ use std::collections::BTreeSet;
 
 use rayon::prelude::*;
 
-use crate::allow;
 use crate::dm::sys::{register_module, SysModule};
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
@@ -132,7 +131,7 @@ fn pass_compares(f: &SourceFile, stamp: Option<&Pat>) -> Vec<usize> {
         if compare().is_match(code) && !const_cmp().is_match(py_strip(code)) {
             // A compare cooldown_lint counts (not a recorded time) belongs to that lint.
             if not_a_cooldown(rel, code, stamp) || !rel.starts_with("code/") {
-                hit = allow::kept(f, number, "cooldown").is_none();
+                hit = !crate::dm::sys::kept_recorded(f, number, "cooldown");
             } else if COOLDOWN_SKIP_DIRS.iter().any(|p| rel.starts_with(p)) {
                 hit = true;
             }

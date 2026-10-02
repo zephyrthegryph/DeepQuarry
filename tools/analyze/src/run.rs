@@ -9,7 +9,7 @@ use std::time::{Duration, Instant};
 use rayon::prelude::*;
 
 use crate::baseline::{self, Mode};
-use crate::cache::{Cache, LintCache};
+use crate::cache::Cache;
 use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, Run, ScanKind, Sink};
 use crate::scopes::Scopes;
 use crate::tree::{Plan, Tree};
@@ -369,7 +369,23 @@ impl Engine {
     pub fn run_all(&self) -> Vec<Outcome> {
         let chosen = selected(&self.reg, &self.opts.lints);
         self.prepare(&chosen);
-        chosen.par_iter().map(|l| self.run_one(*l)).collect()
+        // Longest first: with ~50 lints on 16 cores the slowest whole-tree lints are the critical
+        // path, so start them before the quick ones (durations remembered from the last real run).
+        let durations = self.cache.load_durations();
+        let mut order: Vec<(usize, &dyn Lint)> = chosen.iter().copied().enumerate().collect();
+        order.sort_by_key(|(_, l)| std::cmp::Reverse(durations.get(l.meta().name).copied().unwrap_or(u64::MAX)));
+        let mut outcomes: Vec<(usize, Outcome)> = order.par_iter().map(|(i, l)| (*i, self.run_one(*l))).collect();
+        outcomes.sort_by_key(|(i, _)| *i);
+        let outcomes: Vec<Outcome> = outcomes.into_iter().map(|(_, o)| o).collect();
+        // Remember how long each lint took when it actually scanned (a memo hit says nothing).
+        let mut merged = durations;
+        for o in &outcomes {
+            if o.timing.rescanned > 0 || (!o.timing.tree_memo_hit && o.timing.total.as_millis() > 20) {
+                merged.insert(o.name.clone(), o.timing.total.as_micros() as u64);
+            }
+        }
+        self.cache.save_durations(&merged);
+        outcomes
     }
 
     /// On the main thread, before the parallel run: when some whole-tree lint will have to scan

@@ -258,7 +258,7 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
         }
         let mut idents: BTreeSet<String> = BTreeSet::new();
         for number in hits {
-            if crate::allow::kept(f, number, "sys_deadline_poll").is_some() {
+            if crate::dm::sys::kept_recorded(f, number, "sys_deadline_poll") {
                 continue;
             }
             out.push(("deadline_poll", rel.to_string(), number));

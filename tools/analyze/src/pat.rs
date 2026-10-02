@@ -302,7 +302,7 @@ impl Pat {
                 }
                 None
             }
-            Kind::Fancy(re, pre) => match (if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.find_from_pos(hay, pos) }) {
+            Kind::Fancy(re, pre) => match if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.find_from_pos(hay, pos) } {
                 Ok(Some(m)) => Some(M { start: m.start(), end: m.end(), hay }),
                 _ => None,
             },
@@ -356,7 +356,7 @@ impl Pat {
                 }
                 None
             }
-            Kind::Fancy(re, pre) => match (if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.captures_from_pos(hay, pos) }) {
+            Kind::Fancy(re, pre) => match if pre.as_ref().map(|p| !p.is_match(&hay[pos..])).unwrap_or(false) { Ok(None) } else { re.captures_from_pos(hay, pos) } {
                 Ok(Some(c)) => Some(Caps { hay, groups: c.iter().map(|g| g.map(|m| (m.start(), m.end()))).collect() }),
                 _ => None,
             },
