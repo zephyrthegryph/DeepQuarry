@@ -10,3 +10,4 @@ changes:
   - bugfix: "Completed machine and console frames correctly transfer their installed circuit board."
   - bugfix: "Gun scopes and binoculars use the acting player and correct viewing parameters."
   - bugfix: "Gun cleanup no longer fails when its holder has no active aim."
+  - bugfix: "Machine frames keep all inserted stock parts in their owned component list."
