@@ -91,8 +91,10 @@ exempt_files = ["code/__defines/tgs.dm"]
 # cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
 [lint.system_boundary]
-# system_boundary_lint.py SKIP_DIRS: unit tests read private state through system_debug().
-exempt_prefixes = ["code/modules/unit_tests/"]
+# system_boundary_lint.py SKIP_DIRS (unit tests read private state through system_debug()) and
+# GENERATED_DIRS (the generated verdigris bindings are emitted for every system, so a new binding must
+# not raise a ceiling).
+exempt_prefixes = ["code/modules/unit_tests/", "code/__defines/verdigris/"]
 
 [lint.base_vars.lists]
 # base_vars_lint.py: `list_init` takes allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES: unit
