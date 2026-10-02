@@ -3398,6 +3398,12 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 "DM_BUILD_TRACE {:.3}s {stage}",
                 build_started.elapsed().as_secs_f64()
             );
+            if let Some(memory) = dm_host::process_memory_snapshot() {
+                eprintln!("DM_BUILD_TRACE stage memory: stage={stage} private_mib={:.1} working_mib={:.1} peak_commit_mib={:.1}",
+                    memory.private_bytes as f64 / 1048576.0,
+                    memory.working_set_bytes as f64 / 1048576.0,
+                    memory.peak_commit_bytes as f64 / 1048576.0);
+            }
         }
     };
     let _wire_declarations = wire_declarations::begin();
@@ -3748,8 +3754,13 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
     let source_handles:HashMap<usize,usize>=source_types.iter().enumerate().map(|(index,item)|(*item as *const Item as usize,index)).collect();
     let type_order=type_items.iter().map(|item|source_handles[&(*item as *const Item as usize)]).collect::<Vec<_>>();
     if reusable {
+        trace("declaration base capture start");
         let base=canonical::DeclarationBase {image:dmb.clone(), strings:strings.clone().into(),proc_paths:proc_paths.clone(),class_paths:class_paths.clone(),metadata:type_metadata.clone(),dynamic:pending_dynamic.clone(),globals:globals.clone(),global_types:global_types.clone(),field_types:class_field_types.clone(),type_order};
+        trace("declaration base capture composed");
         session.store_declaration_base(base_key.clone(),&base,lowering_cache.cache_root());
+        trace("declaration base capture stored");
+        drop(base);
+        trace("declaration base capture released");
     }
     (strings,proc_paths,class_paths,type_metadata,pending,pending_dynamic,globals,global_types,class_field_types)
     };
@@ -3984,7 +3995,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         ..SharedLowerBindings::default()
     };
     shared_bindings.modified_instances = modified.parents.clone();
+    trace("owner binding roots start");
     initializer_globals.extend(session.owner_bindings.build(&dmb,class_field_types,&pending,&mut shared_bindings,source_debug)?);
+    trace("owner binding roots complete");
     let mut return_annotations=Vec::new();
     // Owner-local annotations are cached in immutable roots. Only diagnostics'
     // current locations and global declarations belong to this publication.
@@ -4464,8 +4477,11 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             while pending.peek().is_some() {
                 let progress_ordinal = pending.peek().unwrap().0;
                 if progress_ordinal >= next_progress {
+                    let released=session.graph.finish_validation_window();
+                    if released!=0 {trace(&format!("procedure validation frontier compacted: released_bytes={released}"));}
                     let stats = &session.procedure_fragments.stats;
                     let graph_stats = session.graph.stats();
+                    trace(&format!("procedure graph memory: resident_mib={:.1} metadata_mib={:.1} encoded_mib={:.1} procedures={} facts={} refused={}",graph_stats.resident_bytes as f64/1048576.0,graph_stats.metadata_bytes as f64/1048576.0,graph_stats.snapshot_bytes as f64/1048576.0,graph_stats.procedures,graph_stats.facts,graph_stats.refused_installs));
                     if let Some(memory)=dm_host::process_memory_snapshot(){trace(&format!("procedure memory: private_mib={:.1} working_mib={:.1} peak_commit_mib={:.1}",memory.private_bytes as f64/1048576.0,memory.working_set_bytes as f64/1048576.0,memory.peak_commit_bytes as f64/1048576.0));}
                     let (constant_entries,constant_evictions)=const_eval::cache_stats();
                     trace(&format!("procedure output {progress_ordinal}/{procedure_count}: elapsed={:.3}s reused={} built={} encode={:.3}s flush={:.3}s read={:.3}s decode={:.3}s graph_persist={:.3}s graph_install={:.3}s constant_entries={} constant_evictions={}",

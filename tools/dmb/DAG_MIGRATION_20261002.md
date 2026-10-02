@@ -306,3 +306,10 @@ S (e57c770193, fresh uncompressed E cache/output) passed the former Genesis fail
 
 Followup normal code persistence removes duplicate compressed word blobs when a verified wire leaf exists. Fresh main procedure/helper code now stages immediately into addressed output slots and reuses that same leaf in fragment metadata; resident words are a fallback only when optional disk staging is unavailable. Added Windows private/working/peak-commit phase observations to diagnose remaining memory growth. Name inheritance now uses a generation-local parent-chain memo and native-child adjacency. Source inventory buckets are computed once and Arc-identical origin maps reuse published origin SHA via weak provenance. No Rust tests or DM/runtime tests were run.
 Memory-focused followup CLI/example build passed (-j1, 2m02s). T reruns the same3GiB cap with private/working/peak-commit procedure-phase traces; no tests/runtime validation.
+
+## T memory diagnosis
+
+T c6cfe4579f again exceeded the unchanged3GiB enforced budget before baseline publication. The first procedure-phase sample was already2195.1MiB private; at4096 procedures2317.3MiB, at31744 about2820MiB, and at54272 3062.6MiB. Native stage reached107.829s at54272, but this remains a failed build, not a cold-build result. There are still no successful new iteration timings to report.
+
+The graph96MiB decoded budget evicts prepared envelopes, while Salsa inputs, tracked edges and witness/reverse metadata remain generation-wide. Next implementation bounds that validation frontier with persisted exact certificates and compact reverse edges, retiring Salsa epochs in bounded source-order windows. Dirty or untrusted records must retain invalid locators. Earlier stage memory samples will separately locate the pre-procedure2.2GiB live/transient peak.
+Bounded validation frontier plus early phase/live graph memory traces built successfully (-j1 CLI/example, 2m05s), pending U compiler benchmark. No tests/runtime validation.

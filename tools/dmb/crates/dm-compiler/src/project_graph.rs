@@ -358,7 +358,7 @@ pub struct ProjectProcedureGraph {
     fact_names: Vec<Arc<BindingFact>>,
     values: BTreeMap<Vec<u8>, Arc<FactValue>>,
     reverse: BTreeMap<FactId, BTreeSet<u32>>,
-    compact_reverse: BTreeMap<FactId, Arc<[u32]>>,
+    compact_reverse: BTreeMap<FactId, Vec<u32>>,
     procedure_names: Vec<ProcKey>,
     readsets: BTreeMap<Vec<(FactId, usize)>, std::sync::Weak<[CompactWitness]>>,
     decoded_nodes: DecodedDagNodes,
@@ -723,6 +723,55 @@ impl ProjectProcedureGraph {
         before.saturating_sub(self.resident_bytes())
     }
 
+    /// Bound the live Salsa validation frontier independently of the decoded
+    /// artifact budget. Immutable exact witnesses remain in packed disk pages;
+    /// compact certificates authorize only already validated current candidates.
+    pub fn finish_validation_window(&mut self)->usize {
+        let frontier_bytes:usize=self.records.values().map(|record|record.witness_bytes+record.descriptor_bytes+512).sum();
+        if self.records.len()<4096&&frontier_bytes<32*1024*1024 {return 0;}
+        if self.persistence.is_none()||self.flush().is_err() {return 0;}
+        let before=self.resident_bytes();
+        let mut misses=Vec::new();let mut edges:BTreeMap<FactId,Vec<u32>>=BTreeMap::new();
+        for (key,record) in &self.records {
+            let candidate=record.input.candidate(&self.db).as_ref();
+            if let Some(candidate)=candidate.filter(|candidate|candidate.disk.is_some()) {
+                let valid=record.active&&!self.dirty.contains(key)&&current_candidate(&self.db,record.input).is_some();
+                let mut facts:Vec<_>=candidate.dependencies.iter().map(|witness|witness.fact).collect();facts.sort_unstable();facts.dedup();
+                for &fact in &facts {edges.entry(fact).or_default().push(record.id);}
+                self.certificates.insert(key.clone(),ValidatedCertificate {id:record.id,descriptor:record.descriptor.clone(),
+                    disk:candidate.disk.clone().unwrap(),facts,valid});
+                if !valid {self.dirty.insert(key.clone());if let Some(p)=&mut self.persistence {p.headers_seen.remove(key);}}
+            } else {
+                // A descriptor without persisted witnesses is a miss, never a
+                // reusable certificate. Preserve it across the epoch boundary.
+                misses.push((key.clone(),record.descriptor.clone(),record.active,record.id));
+            }
+        }
+        for (fact,mut added) in edges {
+            added.sort_unstable();added.dedup();let readers=self.compact_reverse.entry(fact).or_default();
+            if readers.last().zip(added.first()).is_none_or(|(old,new)|old<new) {readers.extend(added);}
+            else {for id in added {if let Err(at)=readers.binary_search(&id) {readers.insert(at,id);}}}
+        }
+        self.records.clear();self.shared_facts.clear();self.reverse.clear();self.values.clear();self.readsets.clear();
+        self.decoded_nodes=DecodedDagNodes::default();self.pending_shared.clear();self.pending_private.clear();self.lru.clear();
+        self.db=Database::default();self.stats.resident_bytes=0;self.stats.facts=0;
+        if let Some(p)=&mut self.persistence {p.fact_rows.clear();p.value_rows.clear();p.witness_memo_bytes=0;}
+        self.stats.procedures=self.certificates.len();
+        self.stats.metadata_bytes=self.certificates.iter().map(|(key,c)|512+key.path.capacity()+c.descriptor.body_digest.capacity()
+            +c.descriptor.frame_digest.capacity()+c.disk.key.capacity()+c.facts.capacity()*4).sum::<usize>()
+            +self.fact_names.iter().map(|fact|fact_heap(fact)+96).sum::<usize>()
+            +self.compact_reverse.values().map(|readers|96+readers.capacity()*4).sum::<usize>()
+            +self.procedure_names.iter().map(|key|key.path.capacity()+96).sum::<usize>();
+        for (key,descriptor,active,id) in misses {
+            let input=ProcedureInput::new(&self.db,descriptor.clone(),None,Vec::new());
+            let descriptor_bytes=(descriptor.body_digest.len()+descriptor.frame_digest.len())*4;
+            self.stats.metadata_bytes+=512+key.path.capacity()*2+descriptor_bytes;self.stats.procedures+=1;
+            self.records.insert(key,Record {id,input,descriptor,facts:BTreeMap::new(),witness_bytes:0,resident_bytes:0,
+                artifact:None,touched:0,active,descriptor_bytes});
+        }
+        before.saturating_sub(self.resident_bytes())
+    }
+
     fn restore_certificate_readers(&mut self, ids: &BTreeSet<FactId>) {
         let readers: BTreeSet<_> = ids.iter().flat_map(|id|
             self.compact_reverse.get(id).into_iter().flat_map(|readers|readers.iter()))
@@ -730,6 +779,7 @@ impl ProjectProcedureGraph {
         let keys: Vec<_> = readers.into_iter().filter_map(|id| {
             let key = self.procedure_names[id as usize].clone();
             let certificate = self.certificates.get_mut(&key)?;
+            if !certificate.facts.iter().any(|fact|ids.contains(fact)) {return None;}
             certificate.valid = false;
             Some(key)
         }).collect();

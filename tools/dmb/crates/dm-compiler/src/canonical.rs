@@ -557,8 +557,16 @@ impl OwnerFrameQueries {
     }
     fn compose(parent:Option<&Arc<dm_codegen_byond::OwnerLowerBindings>>,local:&dm_codegen_byond::OwnerLowerBindings)->Arc<dm_codegen_byond::OwnerLowerBindings> {
         let mut frame=parent.map(|frame|frame.as_ref().clone()).unwrap_or_default();
-        for name in &local.fields {frame.fields.insert(name.clone());}
-        for (name,ty) in &local.field_types {frame.field_types.insert(name.clone(),ty.clone());}
+        // im inserts can copy a shared tree path even for equal entries. Keep
+        // inherited roots intact when local recipes repeat builtin inventories.
+        for name in &local.fields {
+            if !frame.fields.contains(name) { frame.fields.insert(name.clone()); }
+        }
+        for (name,ty) in &local.field_types {
+            if frame.field_types.get(name) != Some(ty) {
+                frame.field_types.insert(name.clone(),ty.clone());
+            }
+        }
         Arc::new(frame)
     }
     fn charge(path: &str, identity: &str, frame: &dm_codegen_byond::OwnerLowerBindings) -> usize {
