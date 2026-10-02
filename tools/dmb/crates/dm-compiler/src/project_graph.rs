@@ -1066,15 +1066,32 @@ impl ProjectProcedureGraph {
     ) -> bool {
         let coherent = dependencies.iter().any(|w| w.fact == BindingFact::SharedPresence)
             && dependencies.windows(2).all(|p| p[0].fact < p[1].fact);
-        if !coherent || disk.as_ref().is_some_and(|r| r.key.is_empty() || r.key.len()>1024)
-            || self.records.get(&key).is_some_and(|r| r.descriptor != descriptor)
-            || !self.ensure_record(&key, &descriptor) {
+        if !coherent {
             self.stats.refused_installs += 1;
             return false;
         }
         let compact: Vec<CompactWitness> = dependencies.iter().map(|w| {
             CompactWitness { fact: self.intern_fact(&w.fact), value: self.intern_value(&w.value) }
         }).collect();
+        self.install_compact_candidate(key, descriptor, compact, artifact, disk, untrusted)
+    }
+
+    // Packed certificate arenas already own canonical facts and values. Admit
+    // their compact edges through exactly the same validation and Salsa path as
+    // fresh lowering, without cloning/serializing descriptors for every reader.
+    fn install_compact_candidate(
+        &mut self, key: ProcKey, descriptor: ProcDescriptor,
+        compact: Vec<CompactWitness>, artifact: Option<ProcedureArtifact>,
+        disk: Option<ProcedureMemoRef>, untrusted: bool,
+    ) -> bool {
+        let coherent = compact.iter().any(|w| self.fact_names[w.fact as usize].as_ref() == &BindingFact::SharedPresence)
+            && compact.windows(2).all(|p| self.fact_names[p[0].fact as usize] < self.fact_names[p[1].fact as usize]);
+        if !coherent || disk.as_ref().is_some_and(|r| r.key.is_empty() || r.key.len()>1024)
+            || self.records.get(&key).is_some_and(|r| r.descriptor != descriptor)
+            || !self.ensure_record(&key, &descriptor) {
+            self.stats.refused_installs += 1;
+            return false;
+        }
         let readset_key: Vec<_> = compact.iter().map(|w| (w.fact, Arc::as_ptr(&w.value) as usize)).collect();
         let dependencies: Arc<[CompactWitness]> = if let Some(shared) = self.readsets.get(&readset_key).and_then(std::sync::Weak::upgrade) { shared }
             else {

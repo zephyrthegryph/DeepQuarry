@@ -127,6 +127,11 @@ impl ProjectProcedureGraph {
         let charge=facts.iter().map(fact_heap).sum::<usize>().saturating_add(values.iter().map(value_heap).sum::<usize>())
             .saturating_add(page.headers.iter().map(|header|header.witnesses.len().saturating_mul(16)+header.header.key.path.len()+512).sum::<usize>());
         if charge>PAGE_DECODED_BYTES { return; }
+        // One interner lookup per arena entry, rather than one clone and JSON
+        // encoding per procedure edge. These handles are bounded by this page;
+        // the existing graph collection/epoch mechanism owns their retention.
+        let fact_ids: Vec<_> = facts.iter().map(|fact| self.intern_fact(fact)).collect();
+        let value_refs: Vec<_> = values.iter().map(|value| self.intern_value(value)).collect();
         for (key,slot) in &requests[&name.name] {
             let Some(header)=page.headers.get(*slot as usize).filter(|header|header.header.key==*key) else { continue; };
             if header.witnesses.len()>64_000 || header.header.payload.len()!=64 { continue; }
@@ -134,11 +139,11 @@ impl ProjectProcedureGraph {
                 Some(total.saturating_add(fact_heap(facts.get(*fact as usize)?)).saturating_add(value_heap(values.get(*value as usize)?)).saturating_add(64))
             });
             if !dependency_charge.is_some_and(|bytes|bytes<=PAGE_DECODED_BYTES) { continue; }
-            let dependencies: Option<Vec<BindingWitness>>=header.witnesses.iter().map(|(fact,value)|Some(BindingWitness {
-                fact:facts.get(*fact as usize)?.clone(),value:values.get(*value as usize)?.clone(),
+            let dependencies: Option<Vec<CompactWitness>>=header.witnesses.iter().map(|(fact,value)|Some(CompactWitness {
+                fact:*fact_ids.get(*fact as usize)?,value:Arc::clone(value_refs.get(*value as usize)?),
             })).collect();
             let Some(dependencies)=dependencies else { continue; };
-            if self.install_candidate(key.clone(),header.header.descriptor.clone(),dependencies.into(),None,
+            if self.install_compact_candidate(key.clone(),header.header.descriptor.clone(),dependencies,None,
                 Some(ProcedureMemoRef{key:header.header.payload.clone()}),true) {
                 self.persistence.as_mut().unwrap().headers_seen.insert(key.clone());
                 self.stats.metadata_bytes+=key.path.len()+96;
