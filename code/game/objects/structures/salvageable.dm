@@ -23,7 +23,7 @@
 /obj/structure/salvageable/proc/crowbar_act_timed_done(mob/user)
 	act_message(user, src, MSG_SELF(span_notice("You salvage %T%.")), MSG_OTHERS(span_notice("%U% has salvaged %T%.")))
 	dismantle()
-	qdel(src)
+	consume(src, user)
 
 //Types themself, use them, but not the parent object
 

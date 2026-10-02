@@ -555,7 +555,7 @@ DECLARE_INTERACTIONS(/obj/structure/chaoscake, INTERACT_ITEM(null, PROC_REF(inte
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " successfully cuts The One Pizza.")))
 	for(var/slicetype in slicelist)
 		new slicetype(src.loc)
-	qdel(src)
+	consume(src, user)
 
 DECLARE_INTERACTIONS(/obj/structure/theonepizza, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

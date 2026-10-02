@@ -62,7 +62,7 @@
 	new /obj/item/stack/material/wood(get_turf(src), 3)
 	for(var/obj/item/book/book in contents)
 		book.forceMove(get_turf(src))
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/structure/bookcase, \
