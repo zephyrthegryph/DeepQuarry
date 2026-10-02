@@ -22,7 +22,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
 	return activated || timer
 
 // an invisible wearer is revealed.
-/obj/item/deadringer/on_destroy(force) //just in case some smartass tries to stay invisible by destroying the watch
+/obj/item/deadringer/lifecycle_prerelease() //just in case some smartass tries to stay invisible by destroying the watch
 	reveal()
 	..()
 
