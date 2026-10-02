@@ -10,3 +10,7 @@ known = []
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.system_boundary]
+# system_boundary_lint.py SKIP_DIRS: unit tests read private state through system_debug().
+exempt_prefixes = ["code/modules/unit_tests/"]

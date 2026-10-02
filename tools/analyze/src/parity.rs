@@ -37,6 +37,10 @@ pub enum ParseKind {
     Report,
     /// `file:line` alone on a line (a bare site listing): compared on file and line.
     Bare,
+    /// `B1  file.dm:line: text`, `B6  file.dm:line emits X` or `B5  free text` (a `--report` listing
+    /// whose lines start with the rule name): rule, file and line; a line with no file is compared
+    /// by its text (the file field), line 0.
+    RulePrefixed,
 }
 
 /// How to compare one lint with its legacy script. Paths are relative to the repo root.
@@ -88,6 +92,8 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     let plain = Pat::new(r"^([^\s:]+\.[A-Za-z]+):(\d+):");
     let report = Pat::new(r"^([^\s:]+):(\d+): (\w+)\s*$");
     let bare = Pat::new(r"^\s*([^\s:]+\.[A-Za-z]+):(\d+)\s*$");
+    let prefixed = Pat::new(r"^(\w+)  (.*)$");
+    let prefixed_site = Pat::new(r"^(.+?\.dm):(\d+)(?::|\s+emits)");
     let mut out = Vec::new();
     for l in text.lines() {
         let l = l.trim_end();
@@ -106,6 +112,14 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
             ParseKind::Report => {
                 if let Some(c) = report.captures(l) {
                     out.push(mk(c.s(3), c.s(1), c.s(2)));
+                }
+            }
+            ParseKind::RulePrefixed => {
+                if let Some(c) = prefixed.captures(l) {
+                    match prefixed_site.captures(c.s(2)) {
+                        Some(p) => out.push(mk(c.s(1), p.s(1), p.s(2))),
+                        None => out.push(Finding { rule: c.s(1).to_string(), rel: c.s(2).to_string(), line: 0 }),
+                    }
                 }
             }
             ParseKind::Bare => {

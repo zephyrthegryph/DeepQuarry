@@ -1,0 +1,25 @@
+B1	code/modules/consumer/use.dm	1
+B1	code/modules/consumer/use.dm	12
+B1	code/modules/consumer/use.dm	14
+B1	code/modules/consumer/use.dm	16
+B1	code/modules/consumer/use.dm	16
+B1	code/modules/with space/ws.dm	1
+B1	code/modules/with space/ws.dm	2
+B1	code/modules/with space/ws.dm	3
+B1	maps/m/m.dm	1
+B2	code/modules/consumer/use.dm	15
+B3	code/modules/consumer/use.dm	17
+B3	code/modules/consumer/use.dm	18
+B3	code/modules/consumer/use.dm	19
+B3	code/modules/consumer/use.dm	20
+B4	code/modules/beta/beta.dm	6
+B5	/datum/system/gamma needs /datum/system/nowhere, which no file declares	0
+B5	needs cycle: /datum/system/alpha -> /datum/system/beta	0
+B5	needs cycle: /datum/system/c1 -> /datum/system/c2 -> /datum/system/c3	0
+B5	needs cycle: /datum/system/gamma	0
+B6	code/modules/alpha/alpha.dm	10
+B6	code/modules/alpha/alpha.dm	11
+B6	code/modules/alpha/alpha.dm	18
+B6	code/modules/beta/beta.dm	5
+B7	/datum/system/delta: api.dm missing but called from outside	0
+B7	/datum/system/gamma: api.dm present but never called from outside	0
