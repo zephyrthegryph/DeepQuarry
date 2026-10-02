@@ -61,6 +61,20 @@ exempt_prefixes = ["code/modules/unit_tests/"]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
 exempt_contains = ["/unit_tests/"]
 
+[lint.lifecycle_counts.lists]
+# lifecycle_counts_lint.py: a path listed here has its qdel( sites uncounted but is still checked for
+# Destroy() overrides (banned everywhere), so these are lists, not exempt_* keys. exempt_path() (unit tests,
+# benchmarks, the vendored TGS DMAPI), the lifecycle engine itself, and the macro definitions.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/", "code/__defines/"]
+exempt_files = [
+    "code/__defines/tgs.dm",
+    "code/controllers/subsystems/garbage.dm",
+    "code/datums/lifecycle/transaction.dm",
+    "code/datums/lifecycle/links.dm",
+    "code/datums/lifecycle/verbs.dm",
+    "code/datums/containment/lifecycle.dm",
+]
+
 [lint.registry]
 # registry_lint.py: the boilerplate macro's own definition.
 exempt_prefixes = ["code/__defines/"]
