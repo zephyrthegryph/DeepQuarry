@@ -61,7 +61,7 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 			return
 		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.set_color()
-		D.set_up(my_target, spray_size, 10, user)
+		D.set_up(my_target, spray_size, 1 SECOND, user)
 	return
 
 /obj/item/reagent_containers/spray/examine(mob/user)
@@ -182,7 +182,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/spray/waterflower, null, list(REAG
 			return
 		reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 		D.set_color()
-		D.set_up(my_target, rand(6, 8), 2, user)
+		D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 	return
 
 /obj/item/reagent_containers/spray/plantbgone
@@ -274,7 +274,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/spray/chemsprayer/hosed, INTERA
 				return
 			reagents.trans_to_obj(D, amount_per_transfer_from_this, user = user)
 			D.set_color()
-			D.set_up(my_target, rand(6, 8), 2, user)
+			D.set_up(my_target, rand(6, 8), 0.2 SECONDS, user)
 		return
 
 	else

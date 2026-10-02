@@ -9,7 +9,7 @@
 	/// Actor responsible for player-directed chemical exposure.
 	var/mob/spray_actor
 	/// Deciseconds between steps.
-	var/step_delay = 5
+	var/step_delay = 0.5 SECONDS
 
 /// Where the spray is heading; while set, step_process() runs every step_delay.
 OM_FIELD_VIEW(/obj/effect/effect/water, turf, spray_target, CHANGE_EXPLICIT)
@@ -22,7 +22,7 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 /obj/effect/effect/water/proc/set_color() // Call it after you move reagents to it
 	icon += reagents.get_color()
 
-/obj/effect/effect/water/proc/set_up(turf/target, step_count = 5, delay = 5, mob/user = null)
+/obj/effect/effect/water/proc/set_up(turf/target, step_count = 5, delay = 0.5 SECONDS, mob/user = null)
 	if(!target)
 		return
 	rel_set(src, nameof(spray_actor), user)
