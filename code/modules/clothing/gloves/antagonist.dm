@@ -111,9 +111,9 @@
 	if(gave && victim)
 		victim.equip_to_slot(mine, slot)
 
-/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT)
-	if(proximity && ishuman(usr) && ishuman(A))
-		om_flow_start(/datum/om/flow/pickpocket, usr, A, stance = stance)
+/obj/item/clothing/gloves/sterile/thieves/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+	if(proximity && ishuman(user) && ishuman(A))
+		om_flow_start(/datum/om/flow/pickpocket, user, A, stance = stance)
 		return 1
 	return 0
 
@@ -134,9 +134,9 @@
 
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/gloves/ring/buzzer, "battery", "battery_type")
 
-/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT)
-	if(proximity && istype(usr, /mob/living/carbon/human))
-		return zap(usr, A, proximity, stance)
+/obj/item/clothing/gloves/ring/buzzer/Touch(atom/A, proximity, stance = I_HURT, mob/user)
+	if(proximity && istype(user, /mob/living/carbon/human))
+		return zap(user, A, proximity, stance)
 	return 0
 
 /obj/item/clothing/gloves/ring/buzzer/proc/zap(mob/living/carbon/human/user, atom/movable/target, proximity, stance = I_HURT)
