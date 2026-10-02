@@ -91,7 +91,7 @@ pub fn parse_findings(text: &str, kind: ParseKind) -> Vec<Finding> {
     let mut out = Vec::new();
     for l in text.lines() {
         let l = l.trim_end();
-        let mk = |rule: &str, rel: &str, line: &str| Finding { rule: rule.to_string(), rel: rel.to_string(), line: line.parse().unwrap_or(0) };
+        let mk = |rule: &str, rel: &str, line: &str| Finding { rule: rule.to_string(), rel: rel.replace('\\', "/"), line: line.parse().unwrap_or(0) };
         if let Some(c) = tagged.captures(l) {
             out.push(mk(c.s(4), c.s(1), c.s(2)));
             continue;
