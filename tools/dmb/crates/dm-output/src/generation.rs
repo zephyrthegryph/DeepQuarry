@@ -1282,7 +1282,15 @@ fn dmb_read(path:&Path)->io::Result<File> {
     #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
     options.open(path)
 }
-fn dmb_stamp(path:&Path)->Option<FileStamp> {dm_host::file_stamp::capture_file(&dmb_read(path).ok()?)}
+// Compatible observers must share the private composer's existing WRITE
+// access. The composer's original READ|DELETE sharing still excludes every
+// external writer for the complete receipt lifetime.
+fn dmb_observer(path:&Path)->io::Result<File> {
+    let mut options=OpenOptions::new();options.read(true);
+    #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|2|4);}
+    options.open(path)
+}
+fn dmb_stamp(path:&Path)->Option<FileStamp> {dm_host::file_stamp::capture_file(&dmb_observer(path).ok()?)}
 impl VerifiedDmbFile {
     pub fn path(&self)->&Path {&self.path}
     pub fn digest(&self)->&str {&self.digest}
@@ -1301,8 +1309,6 @@ impl VerifiedDmbFile {
         #[cfg(windows)] {use std::os::windows::fs::OpenOptionsExt;options.share_mode(1|4);}
         let mut file=options.open(path)?;image.write_to(&mut file)?;file.sync_all()?;
         let stamp=dm_host::file_stamp::capture_file(&file).ok_or_else(||invalid("composed DMB stamp unavailable"))?;
-        drop(file);let file=dmb_read(path)?;
-        if dm_host::file_stamp::capture_file(&file).as_ref()!=Some(&stamp) {return Err(invalid("composed DMB changed before guard acquisition"));}
         Ok(Self {path:path.to_owned(),file,digest:image.digest().to_owned(),len:image.len(),stamp})
     }
     pub fn relocated(mut self,path:&Path)->io::Result<Self> {
@@ -1316,7 +1322,7 @@ impl VerifiedDmbFile {
         #[cfg(not(windows))] {Self::open(path,&self.digest,self.len as u64).map(|_|true)}
     }
     fn write_to(&self,output:&mut File)->io::Result<()> {
-        let mut input=dmb_read(&self.path)?;let mut hash=Sha256::new();let mut total=0usize;let mut buffer=[0u8;64*1024];
+        let mut input=dmb_observer(&self.path)?;let mut hash=Sha256::new();let mut total=0usize;let mut buffer=[0u8;64*1024];
         loop {let count=input.read(&mut buffer)?;if count==0 {break;}total=total.checked_add(count).ok_or_else(||invalid("DMB copy overflow"))?;
             hash.update(&buffer[..count]);output.write_all(&buffer[..count])?;}
         if total!=self.len||format!("{:x}",hash.finalize())!=self.digest {return Err(invalid("DMB copy changed"));}Ok(())
