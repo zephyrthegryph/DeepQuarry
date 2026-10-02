@@ -393,6 +393,7 @@
 #include "interim_actor_propagation.dm"
 #include "interim_apc_behavior.dm"
 #include "interim_armor_lifecycle.dm"
+#include "interim_autopsy_actor.dm"
 #include "interim_beam_lifecycle.dm"
 #include "interim_charger_feed.dm"
 #include "interim_construction_doors.dm"
@@ -412,6 +413,7 @@
 #include "interim_resleever_actor.dm"
 #include "interim_smokable_lifecycle.dm"
 #include "interim_storage_lifecycle.dm"
+#include "interim_wrapped_present_lifecycle.dm"
 #include "dq_kernel_measure_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
