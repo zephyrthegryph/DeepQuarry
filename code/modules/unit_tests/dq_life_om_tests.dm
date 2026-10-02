@@ -135,22 +135,22 @@
 	order = LIFE_PHASE_TAIL + 900
 	name = "test counter"
 	/// Runs of this stage, per mob.
-	var/list/runs = list()
+	var/list/runs
 	/// dt of the last frame it ran in.
 	var/last_dt = 0
 
 /datum/om/stage/life/trait/test_counter/perform(mob/living/self, datum/om/frame/life/ctx)
-	runs["[REF(self)]"] = (runs["[REF(self)]"] || 0) + 1
+	LAZYSET(runs, "[REF(self)]", (LAZYACCESS(runs, "[REF(self)]") || 0) + 1)
 	last_dt = ctx.dt
 
 /// Idle after every run, with a rewake.
 /datum/om/stage/life/trait/test_timer
 	order = LIFE_PHASE_TAIL + 901
 	name = "test timer"
-	var/list/runs = list()
+	var/list/runs
 
 /datum/om/stage/life/trait/test_timer/perform(mob/living/self, datum/om/frame/life/ctx)
-	runs["[REF(self)]"] = (runs["[REF(self)]"] || 0) + 1
+	LAZYSET(runs, "[REF(self)]", (LAZYACCESS(runs, "[REF(self)]") || 0) + 1)
 
 /datum/om/stage/life/trait/test_timer/idle(mob/living/self)
 	return TRUE
@@ -174,10 +174,10 @@
 	order = LIFE_PHASE_TAIL + 902
 	name = "test sleeper"
 	wake_on = CHANGE_MOB_HEALTH
-	var/list/runs = list()
+	var/list/runs
 
 /datum/om/stage/life/trait/test_sleeper/perform(mob/living/self, datum/om/frame/life/ctx)
-	runs["[REF(self)]"] = (runs["[REF(self)]"] || 0) + 1
+	LAZYSET(runs, "[REF(self)]", (LAZYACCESS(runs, "[REF(self)]") || 0) + 1)
 
 /datum/om/stage/life/trait/test_sleeper/idle(mob/living/self)
 	return TRUE
@@ -595,7 +595,7 @@
 	om_deadline(H, 1 SECONDS, /datum/om/pipeline/life, life_test_rewake_key(/datum/om/stage/life/trait/test_timer))
 	om_run_frame_now(H, /datum/om/pipeline/life)
 	TEST_ASSERT(QDELETED(H), "the deleter stage deleted the mob")
-	TEST_ASSERT(!counter.runs["[REF(H)]"], "no stage runs on a deleted mob")
+	TEST_ASSERT(!LAZYACCESS(counter.runs, "[REF(H)]"), "no stage runs on a deleted mob")
 	scheduler_advance(2)
 	TEST_ASSERT_EQUAL(length(sched.errors), 0, "no scheduler errors after deleting a mob with a pending deadline: [jointext(sched.errors, "; ")]")
 

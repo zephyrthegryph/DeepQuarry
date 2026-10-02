@@ -52,7 +52,7 @@
 /datum/dq_containment_listener
 	var/block_insert = FALSE
 	var/block_remove = FALSE
-	var/list/events = list() // ALLOW(instance_list): containment (C1/C4): landed on master unlisted; not edited here
+	var/list/events
 
 /datum/dq_containment_listener/proc/watch(atom/holder)
 	om_hook(holder, /datum/om/event/before/slot_pre_insert, src, PROC_REF(on_pre_insert))
@@ -70,11 +70,11 @@
 
 /datum/dq_containment_listener/proc/on_inserted(atom/source, datum/om/event/slot_inserted/event)
 	EVENT_HANDLER
-	events += "in:[event.slot_id]"
+	LAZYADD(events, "in:[event.slot_id]")
 
 /datum/dq_containment_listener/proc/on_removed(atom/source, datum/om/event/slot_removed/event)
 	EVENT_HANDLER
-	events += "out:[event.slot_id]"
+	LAZYADD(events, "out:[event.slot_id]")
 
 /// An open floor turf with open floor to its east (the test map has no
 /// run_loc landmarks).
@@ -439,7 +439,7 @@
 	TEST_ASSERT(!three.move_into(crate), "and the move fails")
 	listener.block_insert = FALSE
 	TEST_ASSERT(three.move_into(crate), "room again")
-	TEST_ASSERT_EQUAL(jointext(listener.events, ","), "out:[CONTAINER_SLOT_INTERIOR],in:[CONTAINER_SLOT_INTERIOR]", "inserted and removed signals")
+	TEST_ASSERT_EQUAL(jointext(listener.events || list(), ","), "out:[CONTAINER_SLOT_INTERIOR],in:[CONTAINER_SLOT_INTERIOR]", "inserted and removed signals")
 
 	// Legacy moves are still accounted for, in the default slot.
 	var/obj/item/dq_containment_test/legacy = allocate(/obj/item/dq_containment_test, T)
@@ -541,7 +541,7 @@
 	qdel(closet)
 	TEST_ASSERT(QDELETED(closet), "closet with a blocking listener still deletes")
 	TEST_ASSERT_EQUAL(steel.loc, T, "steel spilled to the drop location despite the blocks")
-	TEST_ASSERT_EQUAL(jointext(listener.events, ","), "out:[CONTAINER_SLOT_INTERIOR]", "the forced move still fires the commit signals")
+	TEST_ASSERT_EQUAL(jointext(listener.events || list(), ","), "out:[CONTAINER_SLOT_INTERIOR]", "the forced move still fires the commit signals")
 
 /datum/unit_test/dq_containment_j2_forced_transfer
 
@@ -615,13 +615,13 @@
 	name = "hooked test item"
 	has_slot_hooks = TRUE
 	sharp = TRUE // so it can enter the box's sharp-only "main" slot too
-	var/list/log = list()
+	var/list/log
 
 /obj/item/dq_containment_test/hooked/on_slotted(atom/holder, slot_id)
-	log += "on:[holder]:[slot_id]"
+	LAZYADD(log, "on:[holder]:[slot_id]")
 
 /obj/item/dq_containment_test/hooked/on_unslotted(atom/holder, slot_id)
-	log += "off:[holder]:[slot_id]"
+	LAZYADD(log, "off:[holder]:[slot_id]")
 
 /datum/unit_test/dq_containment_j6_commit_hooks
 
@@ -632,15 +632,15 @@
 	var/obj/item/dq_containment_test/plain = allocate(/obj/item/dq_containment_test, T)
 
 	TEST_ASSERT(thing.move_into(box, "pocket"), "into the pocket")
-	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "on:[box]:pocket", "on_slotted fires on insert")
+	TEST_ASSERT_EQUAL(jointext(thing.log || list(), ","), "on:[box]:pocket", "on_slotted fires on insert")
 
-	thing.log.Cut()
+	LAZYCLEARLIST(thing.log)
 	TEST_ASSERT(thing.move_into(box, "main"), "reslot from pocket to the sharp-only main slot")
-	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "off:[box]:pocket,on:[box]:main", "reslot fires leave-then-enter, on the same move")
+	TEST_ASSERT_EQUAL(jointext(thing.log || list(), ","), "off:[box]:pocket,on:[box]:main", "reslot fires leave-then-enter, on the same move")
 
-	thing.log.Cut()
+	LAZYCLEARLIST(thing.log)
 	TEST_ASSERT(box.slot_remove(thing, T), "out of the box entirely")
-	TEST_ASSERT_EQUAL(jointext(thing.log, ","), "off:[box]:main", "on_unslotted fires on removal")
+	TEST_ASSERT_EQUAL(jointext(thing.log || list(), ","), "off:[box]:main", "on_unslotted fires on removal")
 
 	// A type that never overrides the hooks (has_slot_hooks stays FALSE)
 	// pays no proc call: nothing to observe, but this must not runtime.
