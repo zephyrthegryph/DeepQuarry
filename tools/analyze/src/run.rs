@@ -293,6 +293,7 @@ impl Engine {
             }
             Policy::Custom => lint.finish(&cx, run, &mut text),
         };
+        let failed = if matches!(meta.policy, Policy::Custom) { failed } else { lint.post_judge(&cx, run, &mut text) | failed };
         (failed, text)
     }
 

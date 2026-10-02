@@ -243,6 +243,12 @@ pub trait Lint: Send + Sync {
         false
     }
 
+    /// An extra check after the policy judged (a stale generated file, say): print into `text`,
+    /// return true to fail. Runs for every policy except [`Policy::Custom`].
+    fn post_judge(&self, _cx: &Cx, _run: &Run, _text: &mut String) -> bool {
+        false
+    }
+
     /// Custom baseline rewrite for [`Policy::Custom`].
     fn update_baseline(&self, _cx: &Cx, _run: &Run, _mode: crate::baseline::Mode) -> std::io::Result<String> {
         Ok(String::new())
