@@ -144,8 +144,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
             stamp: source.stamp.clone(),
         });
     }
-    let mut origin_bytes = Vec::with_capacity(project.origins.len() * 5);
-    for origin in &project.origins {
+    let mut origin_bytes = Vec::with_capacity(project.origin_count() * 5);
+    for origin in project.origin_iter() {
         write_varint(&mut origin_bytes, origin.output_line);
         write_varint(&mut origin_bytes, path_id(&mut paths, &origin.path));
         write_varint(&mut origin_bytes, origin.source_line);
@@ -203,7 +203,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         paths: ordered_paths,
         sources,
         origins,
-        origin_count: project.origins.len(),
+        origin_count: project.origin_count(),
         units,
         unit_digests: project.unit_digests.clone(),
         dependencies,
@@ -381,9 +381,10 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
             .map(|index| path(index).map(|path| (*path).clone()))
             .collect::<io::Result<Vec<_>>>()
     };
-    let project = PreprocessedProject {
+    let mut project = PreprocessedProject {
         text: String::new(),
         origins,
+        origin_map: None,
         units,
         unit_digests: manifest.unit_digests,
         dependencies: resolve(manifest.dependencies)?
@@ -395,6 +396,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
         diagnostics: manifest.diagnostics,
         final_macros: manifest.macros,
     };
+    project.compact_origins();
     Ok(Some(PreparedProject {
         project: Arc::new(project),
         macro_names: Arc::new(manifest.macro_names),

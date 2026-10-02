@@ -760,7 +760,7 @@ fn compile_preprocessed_project_with_loaded_resources(
     }
     let mut checkpoint = None;
     let segmented = frontend.segmented_source().cloned();
-    let source_debug = (!capture_checkpoint && !preprocessed.origins.is_empty()).then(||
+    let source_debug = (!capture_checkpoint && preprocessed.origin_count() != 0).then(||
         if let Some(source) = &segmented { crate::source_debug::SourceDebugIndex::new_segmented(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new(".")), source) }
         else { crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))) });
     let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
@@ -828,7 +828,7 @@ pub fn compile_preprocessed_project_with_resource_catalog(
     resources.validate().map_err(|error| error.to_string())?;
     let mut lowering_cache = crate::lower_cache::ProcLoweringCache::open(cache_root);
     let segmented = frontend.segmented_source().cloned();
-    let source_debug = (!preprocessed.origins.is_empty()).then(||
+    let source_debug = (preprocessed.origin_count() != 0).then(||
         if let Some(source) = &segmented { crate::source_debug::SourceDebugIndex::new_segmented(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new(".")), source) }
         else { crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))) });
     let (mut dmb, emitted, rsc_bytes) = emit_global_procs_mode_with_frontend_catalog(
@@ -2799,7 +2799,7 @@ pub fn audit_canonical_lowering(dme_path: &Path, preprocessed: &PreprocessedProj
     }
     let mut report = CanonicalLoweringAudit::default();
     let mut cache = crate::lower_cache::ProcLoweringCache::open(crate::lower_cache::default_cache_root(dme_path));
-    let source_debug = (!preprocessed.origins.is_empty()).then(||
+    let source_debug = (preprocessed.origin_count() != 0).then(||
         crate::source_debug::SourceDebugIndex::new(preprocessed, dme_path.parent().unwrap_or_else(|| Path::new("."))));
     let discarded = emit_global_procs_mode_with_frontend_catalog(&preprocessed.text, builtin_image,
         "audit", None, &mut cache, None, None, workers.clamp(1, 2), Some(frontend), None,
@@ -3578,7 +3578,10 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
     }
     trace("type defaults start");
-    for item in &type_items {
+    for window in type_items.chunks(64) {
+    let owner_plans=default_plans::owner_batch(window,workers);
+    semantic_declarations::prefetch_owner_defaults(window,&owner_plans,workers);
+    for (item,owner_plan) in window.iter().zip(&owner_plans) {
         let result = emit_type(
             item,
             &mut dmb,
@@ -3588,6 +3591,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             &mut pending,
             &mut pending_dynamic,
             &mut type_metadata,
+            owner_plan,
             audit.as_deref_mut(),
         );
         if let Err(error) = result {
@@ -3597,6 +3601,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 return Err(error);
             }
         }
+    }
     }
     trace("type defaults complete");
     let mut verb_owners: HashMap<String, Vec<String>> = HashMap::new();
@@ -5895,6 +5900,7 @@ fn emit_type<'a>(
     pending: &mut Vec<PendingProc<'a>>,
     pending_dynamic: &mut Vec<PendingDynamic>,
     metadata: &mut TypeMetadataState,
+    owner_plan: &default_plans::OwnerDeclarationPlan,
     mut audit: Option<&mut InitializerAudit>,
 ) -> Result<(), String> {
     let path = item.header.trim();
@@ -5910,7 +5916,6 @@ fn emit_type<'a>(
     } else {
         parent_path
     };
-    let owner_plan = default_plans::owner(item);
     let explicit_parent = owner_plan.explicit_parent.as_deref();
     let parent_path = explicit_parent.unwrap_or(lexical_parent);
     let parent = *classes

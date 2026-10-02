@@ -101,6 +101,26 @@ fn literal_number(source:&str)->Option<f32> {
         byte.is_ascii_digit() || matches!(byte,b'.'|b'+'|b'-'|b'e'|b'E')) { return None; }
     source.parse().ok()
 }
+/// Plan only the next physical allocation window. Workers share immutable
+/// declaration roots and publish portable witnessed values; no wire IDs or
+/// mutable DMB state enter this stage.
+pub(super) fn prefetch_owner_defaults(items:&[&Item],plans:&[Arc<default_plans::OwnerDeclarationPlan>],workers:usize) {
+    let Some(model)=capture_active() else {return;};
+    let empty_set=HashSet::new();
+    let empty=&empty_set;
+    let jobs:Vec<_>=items.iter().zip(plans).flat_map(|(item,plan)| {
+        plan.expressions.iter().filter_map(move |field|field.expression.as_deref()
+            .filter(|source|!dependency_free_literal(source))
+            .map(move |source|(item.header.trim(),source,if field.override_only {empty} else {&plan.mutable_names})))
+    }).collect();
+    let configured=dm_work::WorkLimits::configured();
+    let limits=dm_work::WorkLimits {workers:workers.min(configured.workers).clamp(1,4),max_active_bytes:configured.max_active_bytes.min(8*1024*1024)};
+    let _=dm_work::map_ordered(&jobs,limits,|(_,source,blocked)|source.len()+blocked.len()*64+256,|(owner,source,blocked)| {
+        let _active=activate(Arc::clone(&model));
+        let _=evaluate(source,Some(owner),blocked);
+    });
+}
+
 fn dependency_free_literal(source:&str)->bool {
     source=="null" || literal_number(source).is_some()
         || (source.starts_with('/')&&source.bytes().all(|byte|byte.is_ascii_alphanumeric()||matches!(byte,b'/'|b'_')))

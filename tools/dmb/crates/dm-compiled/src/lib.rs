@@ -1000,18 +1000,11 @@ impl BuildInputSnapshot {
         // their Arc<PathBuf>. Charge actual allocations once so this budget
         // neither drops the source map nor counts the same file per line.
         let mut origin_paths = std::collections::HashSet::new();
-        let origin_bytes = self.preprocessed.origins.capacity()
-            * std::mem::size_of::<dm_preprocess::Origin>()
-            + self
-                .preprocessed
-                .origins
-                .iter()
-                .filter(|origin| origin_paths.insert(Arc::as_ptr(&origin.path)))
-                .map(|origin| {
-                    origin.path.capacity() * 2
-                        + std::mem::size_of::<PathBuf>()
-                        + 2 * std::mem::size_of::<usize>()
-                })
+        let origin_bytes = self.preprocessed.origin_resident_bytes()
+            + self.preprocessed.origin_paths()
+                .filter(|path| origin_paths.insert(Arc::as_ptr(path)))
+                .map(|path| path.capacity() * 2 + std::mem::size_of::<PathBuf>()
+                    + 2 * std::mem::size_of::<usize>())
                 .sum::<usize>();
         self.source_resource_literals.capacity() * std::mem::size_of::<String>()
             + self
@@ -2831,15 +2824,17 @@ impl Coordinator {
             },
             None => None,
         };
+        trace_build(trace, "artifact CAS lookup", cache_started);
         let mut bytecode_key = None;
         if cached_pair.is_none() && key.build_mode != "legacy-history" {
+            let archive_started = Instant::now();
             let archive = match dm_resources::prepare_archive(&self.blobs.root, &snapshot.resource_requests) {
                 Ok(archive) => archive,
                 Err(error) => return failed_internal(error),
             };
             let mut independent = artifact.clone();
             independent.stage = "project-bytecode-catalog-v1".into();
-            independent.dependency_digests.push(world_name.clone());
+            independent.dependency_digests.push(format!("{:x}", Sha256::digest(world_name.as_bytes())));
             independent.input_digests[2] = hex_digest(&archive.catalog().bytecode_fingerprint());
             let candidate = self.blobs.get_artifact(&independent).ok().flatten()
                 .and_then(|bytes| serde_json::from_slice::<CachedPairManifest>(&bytes).ok())
@@ -2872,8 +2867,8 @@ impl Coordinator {
                 // remains available through its addressed prepared archive cache.
             }
             bytecode_key = Some(independent);
+            trace_build(trace, "resource archive preparation/bytecode lookup", archive_started);
         }
-        trace_build(trace, "artifact CAS lookup", cache_started);
         let mut reused_archive = cached_pair_archive;
         let mut verified_bytecode = None;
         let (dmb_bytes, mut rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =

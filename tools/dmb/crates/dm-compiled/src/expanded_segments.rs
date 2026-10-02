@@ -244,7 +244,7 @@ pub(crate) fn splice_source_edits(
     let offsets = source.line_starts();
     let mut replacements = Vec::new();
     let mut seen = std::collections::BTreeSet::new();
-    for origin in &previous.origins {
+    for origin in previous.origin_iter() {
         let key = (origin.path.as_ref().clone(), origin.source_line);
         let Some((before, after)) = lines.get(&key) else {
             continue;
@@ -276,6 +276,7 @@ pub(crate) fn splice_source_edits(
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
         origins: previous.origins.clone(),
+        origin_map: previous.origin_map.clone(),
         dependencies: previous.dependencies.clone(),
         map_includes: previous.map_includes.clone(),
         skin_includes: previous.skin_includes.clone(),
@@ -380,6 +381,7 @@ fn splice_raw_units(
         units: previous.units.clone(),
         unit_digests: previous.unit_digests.clone(),
         origins: Vec::new(),
+        origin_map: None,
         dependencies: previous.dependencies.clone(),
         map_includes: previous.map_includes.clone(),
         skin_includes: previous.skin_includes.clone(),
@@ -392,7 +394,7 @@ fn splice_raw_units(
     let mut origin_index = 0;
     let mut line_delta: i64 = 0;
     for (span, text, path) in &replacements {
-        while let Some(origin) = previous.origins.get(origin_index) {
+        while let Some(origin) = previous.origin_get(origin_index) {
             let offset = *offsets.get(origin.output_line.checked_sub(1)?)?;
             if offset >= span.start {
                 break;
@@ -402,9 +404,9 @@ fn splice_raw_units(
             project.origins.push(origin);
             origin_index += 1;
         }
-        let first_line = previous.origins.get(origin_index)?.output_line;
+        let first_line = previous.origin_get(origin_index)?.output_line;
         let mut old_count = 0;
-        while let Some(origin) = previous.origins.get(origin_index) {
+        while let Some(origin) = previous.origin_get(origin_index) {
             let offset = *offsets.get(origin.output_line.checked_sub(1)?)?;
             if offset >= span.end {
                 break;
@@ -426,7 +428,7 @@ fn splice_raw_units(
         }
         line_delta += new_count as i64 - old_count as i64;
     }
-    for origin in &previous.origins[origin_index..] {
+    for origin in previous.origin_iter().skip(origin_index) {
         let mut origin = origin.clone();
         origin.output_line = usize::try_from(origin.output_line as i64 + line_delta).ok()?;
         project.origins.push(origin);

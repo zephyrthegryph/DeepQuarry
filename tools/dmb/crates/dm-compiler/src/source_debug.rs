@@ -7,6 +7,7 @@ use std::path::{Path, PathBuf};
 pub(crate) struct SourceDebugIndex<'a> {
     line_starts: Vec<usize>,
     origins: std::borrow::Cow<'a, [Origin]>,
+    origin_map: Option<&'a dm_preprocess::OriginMap>,
     files: HashMap<&'a Path, String>,
     source_len: usize,
     segmented: Option<dm_syntax::SegmentedSource>,
@@ -23,7 +24,7 @@ impl<'a> SourceDebugIndex<'a> {
                 .enumerate()
                 .filter_map(|(at, byte)| (byte == b'\n').then_some(at + 1)),
         );
-        let mut origins = project.origins.clone();
+        let mut origins: Vec<_> = project.origin_iter().collect();
         origins.sort_by_key(|origin| origin.output_line);
         let directory = std::env::current_dir().unwrap_or_default();
         let project_root = absolute_lexical(project_root, &directory);
@@ -43,6 +44,7 @@ impl<'a> SourceDebugIndex<'a> {
         Self {
             line_starts,
             origins: std::borrow::Cow::Owned(origins),
+            origin_map: None,
             files,
             source_len: project.text.len(),
             segmented: None,
@@ -63,7 +65,7 @@ impl<'a> SourceDebugIndex<'a> {
                 path.strip_prefix(&project_root).unwrap_or(&path).to_string_lossy().replace('\\', "/")
             });
         }
-        Self { line_starts: Vec::new(), origins, files, source_len: source.len(), segmented: Some(source.clone()), project_root, directory }
+        Self { line_starts: Vec::new(), origins, origin_map: project.origin_map.as_deref(), files, source_len: source.len(), segmented: Some(source.clone()), project_root, directory }
     }
     pub fn resolve(&self, offset: usize) -> Option<(String, u32)> {
         if offset >= self.source_len {
@@ -71,14 +73,14 @@ impl<'a> SourceDebugIndex<'a> {
         }
         let line = self.segmented.as_ref().and_then(|source| source.line_number(offset))
             .unwrap_or_else(|| self.line_starts.partition_point(|start| *start <= offset));
-        let index = self
-            .origins
-            .partition_point(|origin| origin.output_line <= line)
-            .checked_sub(1)?;
-        let origin = &self.origins[index];
-        if origin.output_line != line {
-            return None;
-        }
+        let origin = if let Some(map) = self.origin_map {
+            map.at_line(line)?
+        } else {
+            let index=self.origins.partition_point(|origin|origin.output_line<=line).checked_sub(1)?;
+            let origin=self.origins.get(index)?;
+            if origin.output_line!=line {return None;}
+            origin.clone()
+        };
         // A macro expansion may produce several output lines from one authored
         // line. The producer's exact origin wins; adding an output delta is false.
         let file = self.files.get(origin.path.as_path()).cloned().unwrap_or_else(|| {

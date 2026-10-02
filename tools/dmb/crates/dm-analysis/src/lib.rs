@@ -221,15 +221,14 @@ impl<'a> Locations<'a> {
         }
         let line = self.source.and_then(|source| source.line_number(span.start as usize))
             .unwrap_or_else(|| self.line_starts.partition_point(|&start| start <= span.start as usize));
-        let pos = self
-            .origins
-            .partition_point(|&i| self.project.origins[i].output_line <= line);
-        let origin = &self.project.origins[*self.origins.get(pos.checked_sub(1)?)?];
-        // Expansion can insert, remove or repeat authored lines. An earlier
-        // origin is not a range from which a source line can be extrapolated.
-        if origin.output_line != line {
-            return None;
-        }
+        let origin = if self.project.origin_map.is_some() {
+            self.project.origin_at_line(line)?
+        } else {
+            let pos=self.origins.partition_point(|&i|self.project.origins[i].output_line<=line);
+            let origin=&self.project.origins[*self.origins.get(pos.checked_sub(1)?)?];
+            if origin.output_line!=line {return None;}
+            origin.clone()
+        };
         Some(Location {
             file: origin.path.to_string_lossy().into_owned(),
             line: origin.source_line,
@@ -332,17 +331,11 @@ impl Snapshot {
     }
     fn from_fragment_sources(input_digest:impl Into<String>,index:&DeclarationIndex,fragments:&[(usize,&AstFile)],project:&PreprocessedProject,source:Option<&SegmentedSource>) -> Self {
         let locations = source.map_or_else(|| Locations::new(project), |source| Locations::segmented(project, source));
-        let mut origin_cursor = 0;
         let mut line_number = 0;
         let mut line_present = |text: &str| {
             line_number += 1;
             if text.trim().is_empty() { return true; }
-            while origin_cursor < locations.origins.len()
-                && project.origins[locations.origins[origin_cursor]].output_line < line_number {
-                origin_cursor += 1;
-            }
-            locations.origins.get(origin_cursor)
-                .is_some_and(|&i| project.origins[i].output_line == line_number)
+            project.origin_at_line(line_number).is_some()
         };
         let complete = if let Some(source) = source {
             // Expansion pieces end at newlines; retain a carry for general callers.
@@ -360,7 +353,7 @@ impl Snapshot {
             if !carry.is_empty() { complete &= line_present(&carry); }
             complete && scanned.is_ok()
         } else { project.text.lines().all(&mut line_present) };
-        let origin_coverage = if project.origins.is_empty() { Coverage::Unavailable }
+        let origin_coverage = if project.origin_count() == 0 { Coverage::Unavailable }
             else if complete { Coverage::Complete } else { Coverage::Partial };
         let mut result = Self {
             input_digest: input_digest.into(),
@@ -453,7 +446,7 @@ impl Snapshot {
                 });
             }
         }
-        for origin in &project.origins {
+        for origin in project.origin_iter() {
             result.facts.push(Fact::Origin {
                 expanded_line: origin.output_line,
                 file: origin.path.to_string_lossy().into_owned(),

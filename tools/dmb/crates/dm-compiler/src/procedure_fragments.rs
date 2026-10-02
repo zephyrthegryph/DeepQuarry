@@ -41,28 +41,33 @@ pub(super) struct OutputFragment {
 }
 impl OutputFragment {
     fn encode(&self) -> Option<Vec<u8>> {
-        let metadata = serde_json::to_vec(self).ok()?;
+        let metadata = rmp_serde::to_vec(self).ok()?;
         let mut result = Vec::with_capacity(12 + metadata.len() + self.words.len() * 4);
-        result.extend_from_slice(b"DMOUTF01");
+        result.extend_from_slice(b"DMOUTF02");
         result.extend_from_slice(&u32::try_from(metadata.len()).ok()?.to_le_bytes());
         result.extend_from_slice(&metadata);
         for word in self.words.iter() { result.extend_from_slice(&word.to_le_bytes()); }
         if result.len() > 16 * 1024 * 1024 { return None; }
         let compressed = lz4_flex::compress_prepend_size(&result);
         let mut encoded = Vec::with_capacity(8 + compressed.len());
-        encoded.extend_from_slice(b"DMOCMP02"); encoded.extend_from_slice(&compressed);
+        encoded.extend_from_slice(b"DMOCMP03"); encoded.extend_from_slice(&compressed);
         Some(encoded)
     }
     fn decode(encoded: &[u8]) -> Option<Self> {
-        if encoded.get(..8)? != b"DMOCMP02" { return None; }
+        if encoded.get(..8)? != b"DMOCMP02" && encoded.get(..8)? != b"DMOCMP03" { return None; }
         let length = u32::from_le_bytes(encoded.get(8..12)?.try_into().ok()?) as usize;
         if length > 16 * 1024 * 1024 { return None; }
         let expanded = lz4_flex::decompress_size_prepended(encoded.get(8..)?).ok()?;
         let bytes = expanded.as_slice();
-        if bytes.get(..8)? != b"DMOUTF01" { return None; }
+        let version = bytes.get(..8)?;
+        if version != b"DMOUTF01" && version != b"DMOUTF02" { return None; }
         let length = u32::from_le_bytes(bytes.get(8..12)?.try_into().ok()?) as usize;
         let split = 12usize.checked_add(length)?;
-        let mut fragment: Self = serde_json::from_slice(bytes.get(12..split)?).ok()?;
+        let mut fragment: Self = if version == b"DMOUTF02" {
+            rmp_serde::from_slice(bytes.get(12..split)?).ok()?
+        } else {
+            serde_json::from_slice(bytes.get(12..split)?).ok()?
+        };
         let words = bytes.get(split..)?;
         if words.len() % 4 != 0 || words.len() / 4 > u16::MAX as usize { return None; }
         fragment.words = words.chunks_exact(4).map(|word| u32::from_le_bytes(word.try_into().unwrap()))
@@ -140,9 +145,9 @@ pub(super) struct ProcedureFragments {
 impl ProcedureFragments {
     pub fn open(root: &std::path::Path, identity: &str) -> Self {
         let store = dm_store::Store::open(root.join("output-fragments.redb")).ok();
-        Self { store, namespace: format!("output-handles-v1-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
+        Self { store, namespace: format!("output-handles-v2-{}-{}", env!("DM_EMISSION_FINGERPRINT"),
             crate::incremental::digest(identity.as_bytes())),
-            blobs: format!("output-blobs-v1-{}", env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
+            blobs: format!("output-blobs-v2-{}", env!("DM_EMISSION_FINGERPRINT")), ..Self::default() }
     }
     pub fn set_workers(&mut self, workers: usize) { self.workers = workers.clamp(1, 4); }
     pub fn resident_bytes(&self) -> usize {
@@ -269,7 +274,10 @@ impl ProcedureFragments {
             crate::lower_cache::shared_binding_fingerprint(&key)), handle_bytes));
         self.install_handle(key, handle);
         self.retain_decoded(payload, Arc::new(fragment)); self.stats.built += 1;
-        if self.pending_bytes >= 8 * 1024 * 1024 || self.pending.len() >= 2048 { self.flush(); }
+        // Keep the byte bound unchanged; tiny immutable fragments can share
+        // larger transactions instead of paying a synchronous commit per 1024
+        // procedures. Source-order emission and atomicity remain unchanged.
+        if self.pending_bytes >= 8 * 1024 * 1024 || self.pending.len() >= 8192 { self.flush(); }
     }
     pub fn flush(&mut self) {
         if self.pending.is_empty() { return; }

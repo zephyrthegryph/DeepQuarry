@@ -164,13 +164,13 @@ impl PreparedProject {
 
     pub(crate) fn trace_resident_components(&self) {
         if std::env::var_os("DM_BUILD_TRACE").is_none() { return; }
-        let origins = self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>();
+        let origins = self.project.origin_resident_bytes();
         let units = self.project.units.capacity() * std::mem::size_of::<dm_preprocess::Unit>() + self.project.unit_digests.capacity()*32;
         let expanded_text: usize = self.expansion.segments.iter().map(|piece| piece.text.len()).sum();
         let expanded_indexes: usize = self.expansion.segments.iter().map(|piece| (piece.lines.len()+piece.non_boundaries.len())*std::mem::size_of::<usize>()).sum();
         let authored_text: usize = self.sources.values().map(|source| source.text.len()).sum();
         let macro_text: usize = self.project.final_macros.iter().map(|(name,value)| name.capacity()+value.replacement.capacity()+128).sum();
-        eprintln!("DM_BUILD_TRACE prepared resident components: origins={origins} origin_count={} units={units} expanded_text={expanded_text} expanded_indexes={expanded_indexes} authored_text={authored_text} macros={macro_text} total={}", self.project.origins.len(), self.resident_bytes());
+        eprintln!("DM_BUILD_TRACE prepared resident components: origins={origins} origin_count={} units={units} expanded_text={expanded_text} expanded_indexes={expanded_indexes} authored_text={authored_text} macros={macro_text} total={}", self.project.origin_count(), self.resident_bytes());
     }
 
     pub fn resident_bytes(&self) -> usize {
@@ -188,13 +188,12 @@ impl PreparedProject {
                 })
                 .sum::<usize>()
             + self.project.text.capacity()
-            + self.project.origins.capacity() * std::mem::size_of::<dm_preprocess::Origin>()
+            + self.project.origin_resident_bytes()
             + self
                 .project
-                .origins
-                .iter()
-                .filter(|origin| paths.insert(Arc::as_ptr(&origin.path) as usize))
-                .map(|origin| origin.path.as_os_str().len() * 2 + 64)
+                .origin_paths()
+                .filter(|path| paths.insert(Arc::as_ptr(path) as usize))
+                .map(|path| path.as_os_str().len() * 2 + 64)
                 .sum::<usize>()
             + self.project.units.capacity() * std::mem::size_of::<dm_preprocess::Unit>()
             + self

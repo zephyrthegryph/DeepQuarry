@@ -475,7 +475,8 @@ impl DiscoveryCache {
                 )),
             )
         };
-        let (project, sources, proof, digests, stamps, mut stats) = discovered;
+        let (mut project, sources, proof, digests, stamps, mut stats) = discovered;
+        project.compact_origins();
         let expansion = Arc::new(expansion.unwrap_or_else(|| {
             crate::prepared_project::SegmentedExpansion::from_text(&project.text)
         }));

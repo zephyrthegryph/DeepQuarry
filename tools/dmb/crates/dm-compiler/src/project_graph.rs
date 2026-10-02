@@ -321,6 +321,7 @@ pub struct ProjectProcedureGraph {
     fact_names: Vec<Arc<BindingFact>>,
     values: BTreeMap<Vec<u8>, Arc<FactValue>>,
     reverse: BTreeMap<FactId, BTreeSet<u32>>,
+    compact_reverse: BTreeMap<FactId, Arc<[u32]>>,
     procedure_names: Vec<ProcKey>,
     readsets: BTreeMap<Vec<(FactId, usize)>, std::sync::Weak<[CompactWitness]>>,
     decoded_nodes: DecodedDagNodes,
@@ -349,6 +350,7 @@ impl ProjectProcedureGraph {
             shared_facts: BTreeMap::new(),
             fact_ids: BTreeMap::new(), fact_names: Vec::new(), values: BTreeMap::new(),
             reverse: BTreeMap::new(), dirty: BTreeSet::new(), procedure_names: Vec::new(), readsets: BTreeMap::new(), decoded_nodes: DecodedDagNodes::default(),
+            compact_reverse: BTreeMap::new(),
             pending_shared: BTreeSet::new(), pending_private: BTreeSet::new(),
             lru: BTreeSet::new(),
             revision: None,
@@ -403,11 +405,12 @@ impl ProjectProcedureGraph {
         self.records.keys().chain(self.certificates.keys())
     }
     pub fn observed_facts(&self) -> impl Iterator<Item = &BindingFact> {
-        self.reverse.iter().filter(|(_, readers)| readers.iter().any(|id| {
-            let key = &self.procedure_names[*id as usize];
-            self.records.get(key).is_some_and(|record| record.active)
-                || self.certificates.contains_key(key)
-        })).map(|(id, _)| self.fact_names[*id as usize].as_ref())
+        self.fact_names.iter().enumerate().filter(|(id, _)| {
+            self.reverse.get(&(*id as FactId)).is_some_and(|readers| readers.iter().any(|id|
+                self.records.get(&self.procedure_names[*id as usize]).is_some_and(|record|record.active)))
+                || self.compact_reverse.get(&(*id as FactId)).is_some_and(|readers|readers.iter().any(|reader|
+                    self.certificates.get(&self.procedure_names[*reader as usize]).is_some_and(|c|c.facts.binary_search(&(*id as FactId)).is_ok())))
+        }).map(|(_, fact)| fact.as_ref())
     }
 
     /// Read nearby portable payloads in caller-supplied emission order. This
@@ -635,13 +638,23 @@ impl ProjectProcedureGraph {
             if !record.active { continue; }
             let Some(candidate) = current_candidate(&self.db, record.input) else { continue; };
             let Some(disk) = candidate.disk.clone() else { continue; };
+            let mut facts: Vec<_> = candidate.dependencies.iter().map(|w|w.fact).collect();
+            facts.sort_unstable();
             self.certificates.insert(key.clone(), ValidatedCertificate {
                 id: record.id, descriptor: candidate.descriptor.clone(), disk,
-                facts: candidate.dependencies.iter().map(|w| w.fact).collect(), valid: true,
+                facts, valid: true,
             });
         }
-        let live: BTreeSet<_> = self.certificates.values().map(|c| c.id).collect();
-        self.reverse.retain(|_, readers| { readers.retain(|id| live.contains(id)); !readers.is_empty() });
+        let mut reverse: BTreeMap<FactId, Vec<u32>> = BTreeMap::new();
+        // Source IDs are monotonic: vector edges need neither a node per reader
+        // nor sorting, and can be shared while only affected witnesses restore.
+        let mut certificates: Vec<_> = self.certificates.values().collect();
+        certificates.sort_unstable_by_key(|certificate| certificate.id);
+        for certificate in certificates {
+            for fact in &certificate.facts { reverse.entry(*fact).or_default().push(certificate.id); }
+        }
+        self.compact_reverse = reverse.into_iter().map(|(fact,readers)|(fact,readers.into())).collect();
+        self.reverse.clear();
         self.records.clear(); self.shared_facts.clear(); self.values.clear(); self.readsets.clear();
         self.decoded_nodes = DecodedDagNodes::default();
         self.pending_shared.clear(); self.pending_private.clear(); self.lru.clear(); self.dirty.clear();
@@ -654,13 +667,15 @@ impl ProjectProcedureGraph {
                 + c.descriptor.frame_digest.capacity() + c.disk.key.capacity()
                 + c.facts.capacity()*std::mem::size_of::<FactId>()).sum::<usize>()
             + self.fact_names.iter().map(|fact| fact_heap(fact)+96).sum::<usize>()
-            + self.reverse.values().map(|readers| 96+readers.len()*64).sum::<usize>()
+            + self.compact_reverse.values().map(|readers| 96+readers.len()*4).sum::<usize>()
             + self.procedure_names.iter().map(|key| key.path.capacity()+96).sum::<usize>();
         before.saturating_sub(self.resident_bytes())
     }
 
     fn restore_certificate_readers(&mut self, ids: &BTreeSet<FactId>) {
-        let readers: BTreeSet<_> = ids.iter().flat_map(|id| self.reverse.get(id).into_iter().flatten()).copied().collect();
+        let readers: BTreeSet<_> = ids.iter().flat_map(|id|
+            self.compact_reverse.get(id).into_iter().flat_map(|readers|readers.iter()))
+            .copied().collect();
         let keys: Vec<_> = readers.into_iter().filter_map(|id| {
             let key = self.procedure_names[id as usize].clone();
             let certificate = self.certificates.get_mut(&key)?;
@@ -1112,14 +1127,23 @@ impl ProjectProcedureGraph {
                 dm_store::Key::new(&p.headers_namespace, header_name),
                 header,
             ));
+        // Shared witness rows commonly recur across thousands of procedures.
+        // Budget their actual unique pending growth, rather than repeatedly
+        // flushing because duplicate rows were charged as additional storage.
+        let records: BTreeMap<_, _> = records.into_iter().collect();
+        let record_bytes = records.iter().fold(0usize, |total, (key, bytes)|
+            total.saturating_add(pending_record_bytes(key, bytes)));
         let incoming_bytes = records.iter().fold(0usize, |total, (key, bytes)| {
-            total.saturating_add(pending_record_bytes(key, bytes))
+            let old = p.pending.get_key_value(key)
+                .map_or(0, |(key, bytes)| pending_record_bytes(key, bytes));
+            total.saturating_add(pending_record_bytes(key, bytes).saturating_sub(old))
         });
-        if incoming_bytes > PENDING_BYTES {
+        let incoming_records = records.keys().filter(|key| !p.pending.contains_key(*key)).count();
+        if record_bytes > PENDING_BYTES || records.len() > MAX_PENDING_RECORDS {
             return None;
         }
         if p.pending_bytes.saturating_add(incoming_bytes) > PENDING_BYTES
-            || p.pending.len().saturating_add(records.len()) > MAX_PENDING_RECORDS
+            || p.pending.len().saturating_add(incoming_records) > MAX_PENDING_RECORDS
         {
             if self.flush().is_err() {
                 // Cache writes are optional. Drop the bounded pending batch if
@@ -1202,7 +1226,7 @@ impl ProjectProcedureGraph {
     /// The resolver must include each procedure's owner/static overlays.
     pub fn refresh_facts(&mut self, revision: &str, mut resolve: impl FnMut(&ProcKey, &BindingFact) -> FactValue) -> usize {
         if self.revision.as_deref() == Some(revision) { return self.refresh_pending(&mut resolve); }
-        let ids: BTreeSet<_> = self.reverse.keys().copied().collect();
+        let ids: BTreeSet<_> = self.reverse.keys().chain(self.compact_reverse.keys()).copied().collect();
         self.restore_certificate_readers(&ids);
         let changed = self.refresh_fact_ids(&ids, &mut resolve);
         self.pending_shared.clear(); self.pending_private.clear();

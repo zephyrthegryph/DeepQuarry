@@ -409,6 +409,13 @@ impl InvocationFragments {
         }
         (overlay, digest)
     }
+    fn release_decoded(&mut self) {
+        self.flush();
+        self.entries.clear();self.signatures.clear();self.bytes=0;
+        self.requested_syntax.clear();self.requested_bytes=0;
+        self.requested_signatures.clear();self.requested_signature_bytes=0;
+        self.window_declarations.clear();
+    }
     fn retain(&mut self, key: String, value: Arc<InvocationSyntax>, wire_bytes: usize) {
         let size = wire_bytes.saturating_mul(2) + key.len() + 128;
         if self.bytes.saturating_add(size) <= Self::LIMIT {
@@ -990,6 +997,9 @@ impl CanonicalSession {
         self.output_validation.clear();
         self.emission_plans.clear();
         self.procedure_fragments.clear_decoded();
+        // These are optional duplicate decoded declaration fragments; frozen
+        // plans and addressed disk handles retain the authoritative inputs.
+        self.invocation_fragments.release_decoded();
         before.saturating_sub(self.resident_bytes())
     }
     /// Final pool-pressure fallback drops only the immutable prefix. Procedure

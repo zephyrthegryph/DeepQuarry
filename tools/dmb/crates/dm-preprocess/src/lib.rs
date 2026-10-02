@@ -4,6 +4,9 @@
 //! silently interpreted as false. The source provider makes this usable with Salsa inputs,
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
+mod origin_map;
+pub use origin_map::OriginMap;
+
 use dm_syntax::{lex, lex_spans, visit_tokens, quoted_end, Span, SpanToken, TokenKind};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -54,6 +57,8 @@ pub struct PreprocessedProject {
     /// Exact expanded content identities, in the same order as `units`.
     pub unit_digests: Vec<[u8; 32]>,
     pub origins: Vec<Origin>,
+    /// Canonical source map; legacy callers may retain explicit origins.
+    pub origin_map: Option<Arc<OriginMap>>,
     pub dependencies: BTreeSet<PathBuf>,
     /// Active DMM includes in source order, after conditional evaluation.
     pub map_includes: Vec<PathBuf>,
@@ -64,6 +69,29 @@ pub struct PreprocessedProject {
     pub file_dirs: Vec<PathBuf>,
     pub diagnostics: Vec<Diagnostic>,
     pub final_macros: BTreeMap<String, Macro>,
+}
+
+impl PreprocessedProject {
+    pub fn origin_count(&self)->usize { self.origin_map.as_ref().map_or(self.origins.len(),|map|map.len()) }
+    pub fn origin_get(&self,index:usize)->Option<Origin> { self.origin_map.as_ref().map_or_else(||self.origins.get(index).cloned(),|map|map.get(index)) }
+    pub fn origin_at_line(&self,line:usize)->Option<Origin> {
+        self.origin_map.as_ref().map_or_else(|| {
+            let index=self.origins.partition_point(|origin|origin.output_line<=line).checked_sub(1)?;
+            self.origins.get(index).filter(|origin|origin.output_line==line).cloned()
+        },|map|map.at_line(line))
+    }
+    pub fn origin_iter(&self)->Box<dyn Iterator<Item=Origin>+'_> {
+        if let Some(map)=&self.origin_map {Box::new(map.iter())} else {Box::new(self.origins.iter().cloned())}
+    }
+    pub fn compact_origins(&mut self) {
+        if self.origin_map.is_none() {
+            self.origin_map=Some(Arc::new(OriginMap::from_origins(std::mem::take(&mut self.origins))));
+        }
+    }
+    pub fn origin_paths(&self)->Box<dyn Iterator<Item=&Arc<PathBuf>>+'_> {
+        if let Some(map)=&self.origin_map {Box::new(map.paths())} else {Box::new(self.origins.iter().map(|origin|&origin.path))}
+    }
+    pub fn origin_resident_bytes(&self)->usize { self.origin_map.as_ref().map_or(self.origins.capacity()*std::mem::size_of::<Origin>(),|map|map.resident_bytes()) }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq, Serialize, Deserialize)]

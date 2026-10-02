@@ -103,3 +103,19 @@ fresh process with body edit 87.479 s. All cases reported successful native
 compilation. Compact certificates, compressed skeleton indexes, one-pass
 unit hashing, and independent bytecode catalog caching were implemented after
 this executable and remain unmeasured until the next build.
+
+## Failed run F and following migration
+
+Run F failed at cache publication with `invalid artifact key`; its 210.348 s
+request is not a successful cold compilation measurement. The new independent
+bytecode key incorrectly appended a plaintext world name to digest fields;
+this now uses SHA-256. Its compiler stage completed in 172.902 s and showed
+compact graph metadata at192.0MB versus278.4MB in E, still slightly over the
+retention budget. Subsequent code replaces reverse-edge tree nodes with u32
+pages, releases duplicate invocation caches, compresses source origins into
+immutable affine runs, and uses MessagePack fragment metadata. Default plans
+now run in bounded parallel owner windows, respecting configured worker limits.
+The byte export API now materializes an archive when callers request bytes
+instead of a generation, including after independent bytecode reuse.
+
+No correctness tests were run. These following changes require run G.
