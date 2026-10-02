@@ -355,6 +355,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 	M.stop_pulling()
 	if(!M.move_into(src, OCCUPANT_SLOT_CRYO))
 		return
+	occupant = M
 	M.extinguish_mob()
 	if(M.stat != DEAD && (M.is_critical() || M.has_status(EFFECT_SLEEPING)))
 		to_chat(M, span_boldnotice("You feel a cold liquid surround you. Your skin starts to freeze up."))
