@@ -64,6 +64,12 @@ exempt_files = ["code/__defines/tgs.dm"]
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
 exempt_files = ["code/__defines/tgs.dm"]
 
+[lint.tracked]
+# tracked_lint.py exempt_path(): the TRACKED/SETTER/derive() index still reads these files; writes in them
+# are not counted.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
 [lint.cooldown]
 # cooldown_lint.py SKIP_DIRS. The EXPIRY_DECLARE name index still reads these files.
 exempt_prefixes = ["code/modules/unit_tests/", "code/controllers/", "code/datums/om/"]
