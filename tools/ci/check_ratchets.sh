@@ -38,20 +38,8 @@ fi
 
 # Lints still on their legacy Python scripts (ported ones run in the engine above).
 LEGACY=(
-	allow_annotations.py
 	scheduler_lints.py
 	ownership_lint.py
-	lifecycle_counts_lint.py
-	qdel_src_lint.py
-	base_vars_lint.py
-	containment_lint.py
-	spatial_lint.py
-	pollers_lint.py
-	instance_list_lint.py
-	silent_catch_lint.py
-	init_lint.py
-	decl_lint.py
-	cache_lint.py
 	tracked_lint.py
 )
 for lint in "${LEGACY[@]}"; do
