@@ -296,6 +296,12 @@ value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`. 
 so a marker that spans lines ends each line but the last with a backslash (`DECLARE_LOOT` and `DECLARE_INTERACTIONS` already do); the
 generator drops the backslashes.
 
+`stats.dm` (`analyze gen stats`, E3): for each `STAT(T, name, RULE, base =, reapply =, units =, formula = PROC_REF(x), reads = list(...), schema =,
+virtual = TRUE)` the stat's var on `T` with the rule's base as its default (not when `T` or an ancestor already declares a var of that name, when the
+name is one of BYOND's own, or with `virtual = TRUE`; the line carries `// ALLOW(base_vars)`), a `__stat_<name>()` proc returning the stat's row, and
+the registration the stat layer reads at boot. A row declared under `code/tests/` is written inside `#if defined(UNIT_TESTS)`. The generator ignores its
+own previous output when it decides which vars a type already has. `system_accessors.dm` does the same for accessors declared under `code/tests/`.
+
 ## Tooling gotchas
 
 * A `Tree::memo` init must not use rayon (`par_iter`, `join`): the initializing worker steals another lint's task while it waits,
