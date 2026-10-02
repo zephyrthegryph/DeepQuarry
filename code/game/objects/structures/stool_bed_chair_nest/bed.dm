@@ -158,7 +158,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_over
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
 	dismantle()
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/structure/bed/wirecutter_act(mob/user, obj/item/W)

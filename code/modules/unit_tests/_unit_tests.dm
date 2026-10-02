@@ -544,6 +544,10 @@
 #include "interim_camera_wire_actor.dm"
 #include "interim_machine_salvage_lifecycle.dm"
 #include "interim_containment_field_deletion.dm"
+#include "interim_air_alarm_wire_actor.dm"
+#include "interim_range_explicit_center.dm"
+#include "interim_snowman_lifecycle.dm"
+#include "interim_bed_lifecycle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
