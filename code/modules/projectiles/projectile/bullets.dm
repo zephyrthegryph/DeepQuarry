@@ -374,7 +374,7 @@
 
 /obj/item/projectile/bullet/pistol/cap/periodic_step()
 	moveToNullspace()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/blank
 	name = "blank"
@@ -426,7 +426,7 @@
 
 /obj/item/projectile/bullet/cap/periodic_step()
 	moveToNullspace()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/foam_dart
 	name = "foam dart"
