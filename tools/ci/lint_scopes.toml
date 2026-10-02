@@ -10,3 +10,7 @@ known = []
 [lint.sys]
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+
+[lint.ui_actions]
+# ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
