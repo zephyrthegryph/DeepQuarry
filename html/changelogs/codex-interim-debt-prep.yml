@@ -33,3 +33,5 @@ changes:
   - bugfix: "Automatic signaller beeps and delayed appearance feedback use their actual recipients."
   - bugfix: "Clown eggs preserve the operator warning and administrative attribution when triggered."
   - bugfix: "Deleted suspension generators restore the movement of released moving anomalies."
+  - bugfix: "Removing accessory modifier registries restores their applied clothing stats."
+  - admin: "Ghost-pod completion feedback retains the original opener across volunteer selection."

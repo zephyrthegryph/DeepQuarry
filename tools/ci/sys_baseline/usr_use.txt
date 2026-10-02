@@ -415,7 +415,6 @@ usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_noti
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
 usr_outside_verb	code/game/objects/structures/crates_lockers/crates.dm	var/mob/user = istype(usr, /mob) ? usr : null
-usr_outside_verb	code/game/objects/structures/ghost_pods/mysterious.dm	act_message(usr, null, others = span_warning("The blade shines brightly for a brief moment as %U% pulls it out of the stone!"))
 usr_outside_verb	code/game/objects/structures/medical_stand.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stasis_cage.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
