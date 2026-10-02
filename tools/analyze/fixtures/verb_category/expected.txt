@@ -1,0 +1,12 @@
+duplicate_define	code/__defines/verb_categories.dm	3
+duplicate_define	code/__defines/verb_categories.dm	5
+duplicate_define	code/__defines/verb_categories.dm	7
+raw_category	code/modules/a/a.dm	4
+raw_category	code/modules/a/a.dm	6
+raw_category	code/modules/a/a.dm	16
+raw_category	code/modules/a/a.dm	18
+raw_category	code/modules/a/a.dm	19
+raw_category	code/modules/a/a.dm	20
+raw_category	code/modules/a/a.dm	22
+raw_category	code/modules/sp ace/s.dm	1
+raw_category	interface/i.dm	1

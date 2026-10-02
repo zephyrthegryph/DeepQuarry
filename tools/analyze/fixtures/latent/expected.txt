@@ -1,0 +1,18 @@
+raw_walks	code/modules/lat/.dot.dm	2
+raw_walks	code/modules/lat/.hid/h.dm	2
+raw_walks	code/modules/lat/ff.dm	2
+raw_walks	code/modules/lat/ff.dm	5
+raw_walks	code/modules/lat/holder.dm	5
+raw_walks	code/modules/lat/holder.dm	6
+raw_walks	code/modules/lat/holder.dm	7
+raw_walks	code/modules/lat/holder.dm	8
+raw_walks	code/modules/lat/holder.dm	9
+raw_walks	code/modules/lat/holder.dm	10
+raw_walks	code/modules/lat/holder.dm	17
+raw_walks	code/modules/lat/holder.dm	19
+raw_walks	code/modules/lat/holder.dm	24
+raw_walks	code/modules/lat/holder.dm	35
+raw_walks	code/modules/lat/holder.dm	38
+raw_walks	code/modules/lat/holder.dm	39
+raw_walks	code/modules/lat/holder.dm	49
+raw_walks	code/modules/sp ace/s.dm	2
