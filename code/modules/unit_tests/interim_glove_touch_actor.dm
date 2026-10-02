@@ -24,7 +24,7 @@
 	var/obj/item/clothing/gloves/ring/buzzer/interim_touch_probe/ring = allocate(/obj/item/clothing/gloves/ring/buzzer/interim_touch_probe, T)
 	TEST_ASSERT(actor.equip_to_slot(ring, SLOT_ID_GLOVES), "the actor wears the actual buzzer ring")
 	TEST_ASSERT(ring.battery, "the ring has its initialized battery")
-	ring.battery.charge = ring.battery.maxcharge
+	TEST_ASSERT(ring.battery.fully_charged(), "the initialized ring battery starts fully charged")
 	var/charge_before = ring.battery.charge
 	actor.UnarmedAttack(target, TRUE, I_HELP)
 	TEST_ASSERT_EQUAL(ring.zap_count, 1, "the real unarmed attack invokes the glove")
