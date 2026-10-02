@@ -52,7 +52,7 @@
 	SStgui.close_uis(src)
 	qdel(src)
 
-// ALLOW(sys_tgui_data_override): the foundation UI form (migration_guide A7), as the APC's and the vendor's
+// ALLOW(sys_tgui_data_override): the foundation UI form: a tgui_data override on purpose, like the APC and the vendor
 /datum/round_status_panel/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	. = ..()
 	.["mode_name"] = SSticker?.mode?.name || "(none)"

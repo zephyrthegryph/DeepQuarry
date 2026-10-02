@@ -332,7 +332,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				var/obj/item/storage/target_storage = output_atom
 				var/total_storage_space = ITEMSIZE_COST_SMALL
 				target_storage.latent_materialize_all() // a walk needs real things (C5)
-				for(var/obj/item/thing in contents_of(target_storage)) // ALLOW(latent): materialized above
+				for(var/obj/item/thing in contents_of(target_storage)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 					total_storage_space += thing.get_storage_cost()
 				if(total_storage_space > target_storage.max_storage_space)
 					return FALSE

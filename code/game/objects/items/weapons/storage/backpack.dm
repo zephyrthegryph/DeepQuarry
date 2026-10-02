@@ -68,7 +68,7 @@ TYPE_TABLE(/obj/item/storage/backpack/holding, hold_spec, list(HOLD_NOT(list(/ob
 /obj/item/storage/backpack/holding/duffle/Initialize(mapload)
 	. = ..()
 	if(prob(50))
-		icon_state = "[icon_state]_tilted" // ALLOW(decl): random pick
+		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		tilted = 1
 
 /obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
@@ -178,7 +178,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 /obj/item/storage/backpack/dufflebag/Initialize(mapload)
 	. = ..()
 	if(prob(50))
-		icon_state = "[icon_state]_tilted" // ALLOW(decl): random pick
+		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		tilted = 1
 
 /// Requirement: only some duffelbags tilt.

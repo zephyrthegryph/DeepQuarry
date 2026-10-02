@@ -23,7 +23,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/secure_closet/guncabinet, TYPE_PRO
 		var/lazors = 0
 		var/shottas = 0
 		latent_materialize_all() // a walk needs real things (C5)
-		for (var/obj/item/gun/G in contents) // ALLOW(latent): materialized above
+		for (var/obj/item/gun/G in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			if (istype(G, /obj/item/gun/energy))
 				lazors++
 			if (istype(G, /obj/item/gun/projectile))

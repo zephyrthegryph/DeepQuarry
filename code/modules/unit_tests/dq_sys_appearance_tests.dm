@@ -36,7 +36,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/dq_appearance_provider, TYPE_PROC_REF(/at
 /obj/structure/dq_appearance_procedural
 	var/redraws = 0
 
-// ALLOW(sys_update_icon): test probe counting procedural redraws
+// Test probe counting procedural redraws
 /obj/structure/dq_appearance_procedural/update_icon()
 	redraws++
 

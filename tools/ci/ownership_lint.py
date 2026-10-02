@@ -93,7 +93,8 @@ OWN_FUNCS = {"own_set", "own_take", "own_add", "own_remove", "own_put", "own_tak
 REL_FUNCS = {"rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"}
 PROTO_FUNCS = {"proto_set", "proto_private"}
 
-WRITE_ASSIGN = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
+# A name after a `/` is a path component (`/datum/capability/wires = /datum/...` is an assoc key), not a var.
+WRITE_ASSIGN = re.compile(r"(?<![\w./])((?:\w+\??\.)*)(\w+)\s*(=(?!=)|\+=|-=|\|=|&=|\^=)")
 WRITE_INDEX = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\[[^\]\n]*\]\s*=(?!=)")
 WRITE_METHOD = re.compile(r"(?<![\w.])((?:\w+\??\.)*)(\w+)\??\.(Cut|Add|Remove|Insert|Swap|RemoveAll)\(")
 WRITE_MACRO = re.compile(r"\b(QDEL_NULL|QDEL_LIST|QDEL_LIST_ASSOC|QDEL_LIST_ASSOC_VAL|QDEL_LAZYLIST|LAZYADD|LAZYREMOVE|LAZYSET|LAZYOR|LAZYINITLIST|LAZYCLEARLIST|LAZYNULL|UNSETEMPTY|LAZYADDASSOC|LAZYREMOVEASSOC|LAZYADDASSOCLIST|LAZYDISTINCTADD|LAZYINSERT)\(\s*((?:\w+\??\.)*)(\w+)\b")

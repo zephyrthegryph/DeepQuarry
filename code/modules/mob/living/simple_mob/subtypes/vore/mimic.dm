@@ -53,7 +53,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 /// A blast makes the mimic swallow what it held and vanish (its subtypes store the contents for later).
 /obj/structure/closet/crate/mimic/proc/blast_consume(datum/damage_packet/packet)
 	latent_discard()
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 		consume(O)
 	qdel(src)
 	return DAMAGE_REACTION_BLOCK
@@ -62,7 +62,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("[src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 
@@ -191,7 +191,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/mimic, DAMAGE_EXPLOSION, PROC_REF(bl
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] let's out an enraged screach!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 
@@ -278,7 +278,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/crate/mimic/closet, TYPE_PROC_REF(
 	if(contents_count(src) || has_latent()) // ALLOW(latent): walk reviewed: reads what is materialized on purpose
 		visible_message(span_bolddanger("The [src] makes out a crunchy noise as its contents are destroyed!"))
 		latent_discard()
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): discarded above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 			consume(O)
 	return ..()
 

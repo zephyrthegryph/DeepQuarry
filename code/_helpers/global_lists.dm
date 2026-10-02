@@ -642,7 +642,7 @@ GLOBAL_LIST_INIT(all_technomancer_gambit_spells, typesof(/obj/item/spell) - list
 
 
 // color-dir-dry
-GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): hot overlay pooling
+GLOBAL_LIST_EMPTY_TYPED(fluidtrack_cache, /image) // ALLOW(cache): a pool of fluid-track overlays reused on every step, too hot to rebuild each time
 
 GLOBAL_LIST_INIT_TYPED(sandbag_recipes, /datum/stack_recipe, list( \
 	new/datum/stack_recipe("barricade", /obj/structure/barricade/sandbag, 3, time = 5 SECONDS, one_per_turf = 1, on_floor = 1, pass_stack_color = TRUE)))

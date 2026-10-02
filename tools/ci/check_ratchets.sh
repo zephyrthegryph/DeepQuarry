@@ -8,6 +8,12 @@ set -uo pipefail
 cd "$(dirname "$0")/../.."
 PY="${PYTHON:-python3}"
 failed=()
+# Every lint appends the ALLOW annotations that kept a site to this file (allow_annotations.py,
+# "Usage recording"); the unused-ALLOW check below reads it once all of them have run.
+allow_usage="data/allow_usage.tsv"
+mkdir -p data
+: > "$allow_usage"
+export DQ_ALLOW_USAGE="$allow_usage"
 # Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
 for lint in ui_actions_lint.py sys_lint.py cap_bits_lint.py doc_snippets.py pool_lint.py; do
 	if ! "$PY" "tools/ci/$lint" --selftest; then
@@ -86,6 +92,13 @@ if ! "$PY" tools/dx/gen_om_notices.py --check; then
 	failed+=("gen_om_notices.py --check")
 fi
 echo "::endgroup::"
+unset DQ_ALLOW_USAGE
+echo "::group::allow_annotations.py --unused"
+if ! "$PY" tools/ci/allow_annotations.py --unused "$allow_usage"; then
+	failed+=("allow_annotations.py --unused")
+fi
+echo "::endgroup::"
+rm -f "$allow_usage"
 if [ ${#failed[@]} -gt 0 ]; then
 	echo "Ratchet lints failed: ${failed[*]}"
 	exit 1

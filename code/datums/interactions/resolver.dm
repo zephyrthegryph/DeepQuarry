@@ -11,11 +11,11 @@
 	var/atom/target
 	var/obj/item/held
 	/// Available interactions, highest priority first.
-	var/list/available = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+	var/list/available = list() // ALLOW(instance_list): the resolver's result list: built and edited in place on every resolution, always in use
 	/// Blocked interactions -> reason, highest priority first.
-	var/list/blocked = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; listed in memory_lists_audit.md, not edited here
+	var/list/blocked = list() // ALLOW(instance_list): the resolver's result list: built and edited in place on every resolution, always in use
 	/// Interaction -> its priority for this actor (combat mode shifts hostile ones).
-	var/list/priorities = list() // ALLOW(instance_list): interaction area (I3/I4/I6): resolver result lists; not edited here
+	var/list/priorities = list() // ALLOW(instance_list): the resolver's priority table: built and edited in place on every resolution, always in use
 
 /datum/interaction_resolution/New(mob/actor, atom/target, obj/item/held)
 	rel_set(src, nameof(actor), actor)

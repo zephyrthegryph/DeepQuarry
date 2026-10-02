@@ -49,7 +49,7 @@
 	var/refillable = TRUE
 
 	// List of vending_product items available.
-	var/list/product_records = list() // ALLOW(instance_list): d: the vendor's live stock records (C9 turns these into slots)
+	var/list/product_records = list() // ALLOW(instance_list): the vendor's live stock records: edited in place per machine and always filled
 
 	// Variables used to initialize advertising
 	var/product_slogans = "" //String of slogans spoken out loud, separated by semicolons

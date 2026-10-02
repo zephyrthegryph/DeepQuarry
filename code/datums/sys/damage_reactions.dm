@@ -31,7 +31,7 @@
 	for(var/list/row as anything in T.damage_rows)
 		if(row[1] == trigger && row[2] == R.handler && row[3] == phase)
 			return
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	LAZYADD(T.damage_rows, list(list(trigger, R.handler, phase)))
 	if(phase == DAMAGE_REACTION_PHASE_AFTER)
 		T.damage_after = TRUE

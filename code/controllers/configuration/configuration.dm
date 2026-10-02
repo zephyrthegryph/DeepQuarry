@@ -125,7 +125,7 @@
 	entries = null
 	configuration_errors?.Cut()
 
-// ALLOW(lifecycle): engine: wipes every config entry and the global config ref.
+// Engine: wipes every config entry and the global config ref.
 /datum/controller/configuration/Destroy()
 	full_wipe()
 	config = null

@@ -286,7 +286,7 @@
  * (a stalled tick, a budget cut) catches up by at most KERNEL_SPREAD_CATCHUP passes' share per pass. Returns FALSE only
  * when it ran out of budget; a pass that ran its share leaves the sweep open (W.cursor) for the next pass.
  */
-// ALLOW(sys_world_time_write): the kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
+// The kernel clock: a per-sweep timestamp of the scheduler itself, not a per-entity expiry
 /datum/controller/kernel/proc/run_item_spread(datum/work_item/W, datum/owner, limit_abs, now)
 	var/list/members = members_of(W.members)
 	var/count = length(members)

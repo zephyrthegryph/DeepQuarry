@@ -336,7 +336,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				T.by_key[R.when] |= R
 				T.read_keys[R.when] = TRUE
 			if(R.at_most)
-				// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+				// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 				LAZYSET(T.at_most_by_sig, R.sig, R)
 		if(RXN_BEFORE_OP)
 			rx_table_add_op(T.before_keyed, T.before_typed, R)
@@ -345,7 +345,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 			rx_table_add_op(T.after_keyed, T.after_typed, R)
 			rx_table_add_damage(T, R)
 		if(RXN_NOTICE)
-			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+			// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.notices += R
 			rx_register_work(T, R)
 		if(RXN_CROSS)
@@ -355,7 +355,7 @@ GLOBAL_LIST_EMPTY(rx_tables)
 				T.read_keys[read] = TRUE
 			rx_register_work(T, R)
 		if(RXN_EVERY)
-			// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+			// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 			T.everys += R
 			rx_register_work(T, R)
 			if(R.when)

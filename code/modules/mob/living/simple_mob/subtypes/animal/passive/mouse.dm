@@ -67,7 +67,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/passive/mouse, /mob/living/proc/hide)
 
 	if(!body_color)
 		body_color = pick( list("brown","gray","white","black") )
-	icon_state = "mouse_[body_color]" // ALLOW(decl): random colour pick
+	icon_state = "mouse_[body_color]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
 	item_state = "mouse_[body_color]"
 	icon_living = "mouse_[body_color]"
 	icon_dead = "mouse_[body_color]_dead"

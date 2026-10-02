@@ -153,7 +153,7 @@ GLOBAL_VAR_INIT(seq_trace, FALSE)
 /// The shared definition of sequence type `path` (built on first use; safe before the globals exist).
 /proc/sequence_def(path)
 	RETURN_TYPE(/datum/sequence)
-	// ALLOW(sys_static_getter): a memoized per-type table built once on first call
+	// A memoized per-type table built once on first call
 	var/static/list/defs = list()
 	var/datum/sequence/S = defs[path]
 	if(S)

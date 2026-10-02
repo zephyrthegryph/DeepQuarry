@@ -95,14 +95,17 @@ def count_file(path):
             in_block_comment = True
             continue
         code = strip_comment(line)
-        kept = allowed(raw_lines, number, "pollers")
-        if (TOP_LEVEL.match(code) or (in_type and NESTED.match(code))) and not kept:
+        is_process = bool(TOP_LEVEL.match(code) or (in_type and NESTED.match(code)))
+        is_start = bool(not DEFINE.match(code) and START.search(code))
+        # Asked only about a line that would otherwise count.
+        kept = (is_process or is_start) and allowed(raw_lines, number, "pollers")
+        if is_process and not kept:
             process.append(number)
         if TYPE_BLOCK.match(code):
             in_type = True
         elif code and not code[0].isspace():
             in_type = False
-        if not DEFINE.match(code) and not kept and START.search(code):
+        if is_start and not kept:
             start.append(number)
     return process, start
 

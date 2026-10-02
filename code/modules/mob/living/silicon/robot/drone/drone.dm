@@ -123,7 +123,7 @@ DECLARE_VERB(/mob/living/silicon/robot/drone, /mob/living/proc/hide)
 
 	if(can_pick_shell)
 		var/random = pick(shell_types)
-		icon_state = shell_types[random] // ALLOW(decl): random pick
+		icon_state = shell_types[random] // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		shell_accessories = list("[icon_state]-eyes-blue")
 
 	update_icon()

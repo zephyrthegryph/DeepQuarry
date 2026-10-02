@@ -150,7 +150,7 @@
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost/Initialize(mapload)
 	. = ..()
 	icon_living = "spookyghost-[rand(1,2)]"
-	icon_state = icon_living // ALLOW(decl): random pick
+	icon_state = icon_living // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 	update_icon()
 
 /mob/living/simple_mob/vore/alienanimals/spooky_ghost

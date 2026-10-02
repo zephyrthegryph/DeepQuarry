@@ -118,26 +118,25 @@ def scan(files, refs):
             if not proc or not line.strip():
                 continue
             code = line.split("//", 1)[0]
-            if not code.strip() or allowed(lines, number, "decl"):
+            if not code.strip():
                 continue
+            hit = []
             if proc == "Initialize":
-                for rule, rx in INIT_RULES:
-                    if rx.search(code):
-                        sites[rule].append((rel, number))
+                hit.extend(rule for rule, rx in INIT_RULES if rx.search(code))
                 if NEW_INTO.match(code):
-                    sites["init_new_child"].append((rel, number))
+                    hit.append("init_new_child")
             elif proc == "on_materialize":
-                for rule, rx in MATERIALIZE_RULES:
-                    if rx.search(code):
-                        sites[rule].append((rel, number))
+                hit.extend(rule for rule, rx in MATERIALIZE_RULES if rx.search(code))
             else:
-                for rule, rx in DESTROY_RULES:
-                    if rx.search(code):
-                        sites[rule].append((rel, number))
+                hit.extend(rule for rule, rx in DESTROY_RULES if rx.search(code))
                 for qm in QDEL_VAR.finditer(code):
                     if qm.group(1) or qm.group(2) in refs:
-                        sites["destroy_qdel_owned"].append((rel, number))
+                        hit.append("destroy_qdel_owned")
                         break
+            # Asked only about a line that would otherwise count.
+            if hit and not allowed(lines, number, "decl"):
+                for rule in hit:
+                    sites[rule].append((rel, number))
     return sites
 
 

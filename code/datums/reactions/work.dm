@@ -40,7 +40,7 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 
 /// Builds the item for `R`, declared by `owner_type` (for an every() on a holder, the type whose reactions() declared it).
 /datum/work_item/reaction/New(datum/reaction/R, owner_type)
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	reaction = R
 	holder_run = !ispath(owner_type, /datum/system)
 	var/member_key = R.members

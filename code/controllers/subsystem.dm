@@ -185,7 +185,7 @@
 	flags |= SS_NO_FIRE
 	CRASH("Subsystem [src]([type]) does not fire() but did not set the SS_NO_FIRE flag. Please add the SS_NO_FIRE flag to any subsystem that doesn't fire so it doesn't get added to the processing list and waste cpu.")
 
-// ALLOW(lifecycle): engine: a subsystem leaves the MC's queue and roster.
+// Engine: a subsystem leaves the MC's queue and roster.
 /datum/controller/subsystem/Destroy()
 	can_fire = 0
 	flags |= SS_NO_FIRE

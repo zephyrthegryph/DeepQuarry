@@ -131,7 +131,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 	var/list/send_maps_data = null
 	try
 		send_maps_data = json_decode(sendmaps_json)
-	catch // ALLOW(silent_catch): malformed profiler JSON is dumped to bad_sendmaps.json and tracking stops
+	catch
 		text2file(sendmaps_json,"bad_sendmaps.json")
 		disabled = TRUE
 		log_world("Time tracking stopped: malformed sendmaps profile JSON (bad_sendmaps.json).")

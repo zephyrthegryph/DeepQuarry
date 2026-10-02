@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/snake/python/noodle, I
 	. = ..()
 	if(!snack_colour)
 		snack_colour = pick( list("yellow","green","pink","blue") )
-	icon_state = "snack_[snack_colour]" // ALLOW(decl): random colour pick
+	icon_state = "snack_[snack_colour]" // ALLOW(decl): Initialize rolls a random colour per instance; a declaration has no random form
 	desc = "A little mouse treat made of coloured sugar. Noodle loves these! This one is [snack_colour]."
 
 /obj/item/storage/box/snakesnackbox

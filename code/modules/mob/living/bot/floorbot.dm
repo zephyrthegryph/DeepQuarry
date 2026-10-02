@@ -289,7 +289,7 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 
 	var/obj/item/storage/toolbox/mechanical/N = new /obj/item/storage/toolbox/mechanical(Tsec)
 	N.latent_discard()
-	QDEL_LIST(N.contents) // ALLOW(latent): discarded above
+	QDEL_LIST(N.contents) // ALLOW(latent): the contents are being thrown away, so a latent entry that never materializes does not matter
 	new /obj/item/assembly/prox_sensor(Tsec)
 	if(prob(50))
 		new /obj/item/robot_parts/l_arm(Tsec)

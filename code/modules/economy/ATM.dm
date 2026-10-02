@@ -59,7 +59,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atm, MACHINE_PIPELINE, "has_mains_power")
 			number_incorrect_tries = 0
 
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/spacecash/S in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/item/spacecash/S in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		S.forceMove(src.loc)
 		if(prob(50))
 			play_sfx(src, SFX_ITEMS_POLAROID1)

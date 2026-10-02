@@ -307,7 +307,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		return INITIALIZE_HINT_QDEL
 	GLOB.blackbox = src
 
-// ALLOW(lifecycle): the blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
+// The blackbox respawns with its logs. Phase 1, before phase 4 deletes the feedback
 // it owns (an owned list): the replacement takes the list over.
 /obj/machinery/blackbox_recorder/lifecycle_unbind()
 	var/turf/T = locate(1,1,2)

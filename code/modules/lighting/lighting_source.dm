@@ -294,7 +294,7 @@
 
 	var/list/datum/lighting_corner/gone_corners = effect_str - corners
 	for (var/datum/lighting_corner/corner as anything in gone_corners)
-		LAZYREMOVE(corner.affecting, src) // ALLOW(ownership): lighting engine corner<->source links, kept symmetric by hand (remove_lum / corner on_destroy) on the hottest path
+		LAZYREMOVE(corner.affecting, src)
 		REMOVE_CORNER(corner)
 	effect_str -= gone_corners
 

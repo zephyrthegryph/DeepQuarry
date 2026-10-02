@@ -283,7 +283,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/pill/zoom, null, list(REAGENT_ID_E
 /obj/item/reagent_containers/pill/zoom/Initialize(mapload)
 	. = ..()
 	if(prob(50)) // Zoom pill: chance to be more dangerous
-		reagents.add_reagent(REAGENT_ID_MOLD, 2) // ALLOW(decl): random roll
+		reagents.add_reagent(REAGENT_ID_MOLD, 2) // ALLOW(decl): Initialize rolls a random amount per instance; a declaration has no random form
 	color = reagents.get_color()
 
 /obj/item/reagent_containers/pill/diet

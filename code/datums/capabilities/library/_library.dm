@@ -56,7 +56,7 @@
 	E.priority = priority
 	if(action == ACT_NONE)
 		E.default_action = null
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	E.op = op
 	return E
 

@@ -91,7 +91,7 @@
 			if(!signal.data["original"])
 				copy.data["original"] = signal // ALLOW(ownership): signal payload data, transient message dict
 			else
-				copy.data["original"] = signal.data["original"] // ALLOW(ownership): signal payload data, transient message dict
+				copy.data["original"] = signal.data["original"]
 
 		send_count++
 		if(machine.is_freq_listening(signal))

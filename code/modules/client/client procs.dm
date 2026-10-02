@@ -408,7 +408,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		Destroy() //Clean up signals and timers.
 	return ..()
 
-// ALLOW(lifecycle): a client logs out of the directory, admins and tickets.
+// A client logs out of the directory, admins and tickets.
 /client/Destroy()
 	// A client is not a datum: it is the one owner of its panels, windows and screens by design,
 	// so they are plain vars, deleted here by hand.

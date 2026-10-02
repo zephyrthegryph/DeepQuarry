@@ -155,8 +155,10 @@ spawn(0) // ALLOW(scheduler): world.Export() is a blocking external call
 ```
 
 Several lints go comma-separated; inside a multi-line macro use `/* ALLOW(x): reason */`.
-`tools/ci/allow_annotations.py` rejects a missing reason or unknown lint name. Don't annotate
-new debt to get under a ceiling; use the form the lint points to. Unit tests, benchmarks and
+`tools/ci/allow_annotations.py` rejects a missing reason or unknown lint name, a reason under 20
+characters or 3 words, "see above", allowlist talk and plan-phase labels, and (run last by
+`check_ratchets.sh`) an annotation no lint used: when its site stops triggering the lint, delete
+it. Don't annotate new debt to get under a ceiling; use the form the lint points to. Unit tests, benchmarks and
 the vendored TGS DMAPI are exempt by path from the lints that call `exempt_path()` (instance_list,
 ownership, silent_catch, spatial, lifecycle, tracked, cache, scheduler): don't annotate there.
 

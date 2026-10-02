@@ -146,7 +146,7 @@
 	var/mob/living/carbon/WC = get_occupant()
 	go_out()
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		if((!istype(O,/obj/item/reagent_containers)) && (!istype(O,/obj/item/circuitboard/clonescanner)) && (!istype(O,/obj/item/stock_parts)) && (!istype(O,/obj/item/stack/cable_coil)))
 			O.forceMove(get_turf(src)) //Ejects items that manage to get in there (exluding the components)
 	if(!WC)
@@ -297,7 +297,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 		return
 	if(istype(WC,/mob/living/carbon/brain))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/O in contents_of(src)) // ALLOW(latent): materialized above
+		for(var/obj/O in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			if(istype(O,/obj/item/organ/internal/brain))
 				O.forceMove(get_turf(src))
 				slot_remove(WC, O)

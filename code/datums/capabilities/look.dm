@@ -381,7 +381,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		A.set_light(0)
 	A.look_set_bits = now
 	if(A.look_overlays)
-		A.cut_overlay(A.look_overlays) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
+		A.cut_overlay(A.look_overlays)
 		A.look_overlays = null
 	var/list/added
 	for(var/name in overlays)
@@ -398,7 +398,7 @@ GLOBAL_LIST_EMPTY(look_missing_parts)
 		if(entry[3])
 			LAZYADD(added, emissive_appearance(A.icon, state))
 	if(added)
-		A.add_overlay(added) // ALLOW(sys_dx_raw_overlays): the look builder owns its overlays
+		A.add_overlay(added)
 		A.look_overlays = added
 	for(var/name in A.look_filters)
 		if(!filters || !(name in filters))

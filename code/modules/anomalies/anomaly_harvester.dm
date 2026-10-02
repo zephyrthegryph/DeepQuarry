@@ -198,7 +198,7 @@ UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_sample)
 UI_ACT(/obj/machinery/anomaly_harvester, "release_all", ui_act_release_all)
 UI_ACT_PROC(/obj/machinery/anomaly_harvester, ui_act_release_all)
 	latent_materialize_all() // a walk needs real things (C5)
-	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): materialized above
+	for(var/obj/item/research_sample/sample in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		sample.forceMove(get_turf(src))
 	return TRUE
 

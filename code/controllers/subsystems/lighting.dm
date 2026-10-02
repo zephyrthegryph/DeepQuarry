@@ -42,7 +42,7 @@ SYSTEM_DEF(lighting)
 	. = ..()
 	. += every(WORK_EVERY_TICK, PROC_REF(fire_step), when = PROC_REF(fire_ready), lane = LANE_PRESENTATION)
 
-// ALLOW(subsystem_fire): lighting folds in wave F5, after phase 4f makes it a Rust field
+// Lighting folds in wave F5, after phase 4f makes it a Rust field
 /datum/system/lighting/fire(resumed, init_tick_checks)
 	MC_SPLIT_TICK_INIT(4)
 	if(!init_tick_checks)

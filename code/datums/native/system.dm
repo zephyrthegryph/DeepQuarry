@@ -249,7 +249,7 @@ GLOBAL_LIST_EMPTY(native_key_names)
 /// Marks `watch` as the Rust side of the on_cross reaction `R` (and the observer `L`, when dynamic) on its
 /// owner: its crossings deliver through rx_crossed().
 /proc/native_watch_for_reaction(datum/native_watch/watch, datum/reaction/R, datum/rx_listener/L)
-	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
+	// Flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_reaction = R
 	// ALLOW(ownership): flyweight or pooled framework bookkeeping: the framework is the accessor, not a holder of a relation
 	watch.rx_listener = L

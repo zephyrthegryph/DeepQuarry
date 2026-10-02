@@ -400,7 +400,7 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 									"radio_broken")
 
 /obj/item/broken_device/random/Initialize(mapload)
-	icon_state = pick(possible_icons) // ALLOW(decl): random pick
+	icon_state = pick(possible_icons) // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 	. = ..()
 
 /obj/item/robot_parts/robot_component

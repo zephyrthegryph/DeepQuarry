@@ -14,7 +14,7 @@ TRACKED_BRIDGED(/obj/machinery/dx_deps_bench_legacy, bench_noise, CHANGE_MACHINE
 
 /obj/machinery/dx_deps_bench_legacy/draw(datum/look/look)
 	..()
-	// ALLOW(derived_reads): the undeclared type is the baseline this scenario measures
+	// The undeclared type is the baseline this scenario measures
 	look.state("deps_[bench_a % 4]")
 
 /// The same draw(), with its read declared.

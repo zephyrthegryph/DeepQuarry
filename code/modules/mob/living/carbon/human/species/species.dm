@@ -975,7 +975,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 			if(species_list_holds_owned(L))
 				continue
 			value = L.Copy()
-		copy.vars[var_name] = value // ALLOW(api): species copy
+		copy.vars[var_name] = value // ALLOW(api): a species copy writes every species var by name, which is what copying one means
 	return copy
 
 /datum/species/proc/copy_variables(datum/species/S, list/whitelist)

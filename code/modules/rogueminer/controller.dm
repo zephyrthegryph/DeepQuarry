@@ -197,7 +197,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 
 	if(length(clean_zones) <= 1) //Need to clean the oldest one, too.
 		GLOB.rm_controller.dbg("RMC(pnz): Cleaning up oldest zone.")
-		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions (long loop: a lane with a budget, S10)
+		spawn(0) //Detatch it so we can return the new zone for now. // ALLOW(scheduler): clean_zone() sleeps between deletions: a long loop that has to yield to the tick
 			var/datum/rogue/zonemaster/ZM_oldest = get_oldest_zone()
 			if(ZM_oldest) ZM_oldest.clean_zone()
 

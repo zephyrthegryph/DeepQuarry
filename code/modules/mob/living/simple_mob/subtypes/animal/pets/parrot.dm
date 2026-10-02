@@ -139,7 +139,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/animal/passive/bird/parrot, "my_hea
 /mob/living/simple_mob/animal/passive/bird/parrot/eclectus/Initialize(mapload)
 	gender = pick(MALE, FEMALE)
 	if(gender == FEMALE)
-		icon_state = "eclectusf" // ALLOW(decl): random gender
+		icon_state = "eclectusf" // ALLOW(decl): Initialize picks the parrot's icon from a random gender; a declaration has no random form
 		icon_rest = "eclectusf-held"
 		icon_dead = "eclectusf-dead"
 	return ..()

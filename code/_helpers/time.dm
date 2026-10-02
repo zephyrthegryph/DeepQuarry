@@ -115,7 +115,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 /proc/stoplag(initial_delay)
 	if (!Master || Master.init_stage_completed < INITSTAGE_MAX)
 		// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
-		sleep(world.tick_lag) // ALLOW(scheduler): stoplag() itself
+		sleep(world.tick_lag) // ALLOW(scheduler): stoplag() is the tick-aware yield primitive; this sleep is its implementation
 		return 1
 	if (!initial_delay)
 		initial_delay = world.tick_lag
@@ -123,7 +123,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 // We don't want spurious hard deletes off this, so let's only sleep for the requested period of time here yeah?
 #ifdef UNIT_TESTS
 	// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
-	sleep(initial_delay) // ALLOW(scheduler): stoplag() itself
+	sleep(initial_delay) // ALLOW(scheduler): stoplag() is the tick-aware yield primitive; this sleep is its implementation
 	return CEILING(DS2TICKS(initial_delay), 1)
 #else
 	. = 0
@@ -131,7 +131,7 @@ GLOBAL_VAR_INIT(rollover_safety_date, 0) // set in world/New to the server start
 	do
 		. += CEILING(i * DELTA_CALC, 1)
 		// S8 allowlist: stoplag() primitive (the MC-aware yield itself).
-		sleep(i * world.tick_lag * DELTA_CALC) // ALLOW(scheduler): stoplag() itself
+		sleep(i * world.tick_lag * DELTA_CALC) // ALLOW(scheduler): stoplag() is the tick-aware yield primitive; this sleep is its implementation
 		i *= 2
 	while (TICK_USAGE > min(TICK_LIMIT_TO_RUN, Master.current_ticklimit))
 #endif

@@ -178,8 +178,8 @@
 /datum/rule_compiler
 	var/datum/rule/rule_static
 	var/datum/property_registry/registry_static
-	var/list/triggers = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
-	var/list/errors = list() // ALLOW(instance_list): constraints (P3): compiler state; landed on master unlisted, not edited here
+	var/list/triggers = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
+	var/list/errors = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
 
 /datum/rule_compiler/New(datum/rule/rule)
 	..()

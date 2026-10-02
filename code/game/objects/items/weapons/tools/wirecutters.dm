@@ -32,13 +32,13 @@
 	if(random_color)
 		switch(pick("red","blue","yellow"))
 			if ("red")
-				icon_state = "cutters" // ALLOW(decl): random pick
+				icon_state = "cutters" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 				item_state = "cutters"
 			if ("blue")
-				icon_state = "cutters-b" // ALLOW(decl): random pick
+				icon_state = "cutters-b" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 				item_state = "cutters_blue"
 			if ("yellow")
-				icon_state = "cutters-y" // ALLOW(decl): random pick
+				icon_state = "cutters-y" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 				item_state = "cutters_yellow"
 
 	if (prob(75))

@@ -9,7 +9,7 @@
 	var/list/obj/machinery/atmospherics/pipe/edges
 
 	// Nodes that are leaking. Used for A.S. Valves.
-	var/list/leaks = list() // ALLOW(instance_list): atmos area (M1a): pipeline leaks; listed in memory_lists_audit.md, not edited here
+	var/list/leaks = list() // ALLOW(instance_list): the pipeline's leaking nodes: filled and cleared in place while the pipeline runs
 
 
 	var/datum/pipe_network/network

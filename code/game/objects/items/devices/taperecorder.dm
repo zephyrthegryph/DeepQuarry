@@ -442,7 +442,7 @@ DECLARE_INTERACTIONS(/obj/item/rectape, \
 //Random colour tapes
 /obj/item/rectape/random/Initialize(mapload)
 	. = ..()
-	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): random pick
+	icon_state = "tape_[pick("white", "blue", "red", "yellow", "purple")]" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/taperecorder, \

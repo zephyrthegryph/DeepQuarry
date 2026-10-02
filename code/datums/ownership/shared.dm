@@ -28,7 +28,7 @@
 		return null
 	if(!isnull(value) && !is_registered(value))
 		OWN_REPORT("[holder.type].[var_name] is SHARED but [value.type] is not a registered instance (own it, or make the var PROTO)")
-	holder.vars[var_name] = value // ALLOW(api, ownership): the accessor
+	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
 	return value
 

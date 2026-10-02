@@ -151,7 +151,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 		visible_message(span_warning("[H] tears off [src]!"),
 		span_notice("We remove [src]."))
 		latent_materialize_all() // a walk needs real things (C5)
-		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): materialized above
+		for(var/atom/movable/AM in contents_of(src)) //Dump whatever's in the bag before deleting. // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			AM.forceMove(get_turf(loc))
 		qdel(src)
 

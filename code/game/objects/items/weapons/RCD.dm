@@ -181,7 +181,7 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		own_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): only when make_cell
+		own_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): the cell is made only when make_cell is set, which a declaration cannot condition
 	return ..()
 
 

@@ -20,7 +20,7 @@ DECLARE_REAGENTS(/obj/item/soap, 5, null)
 
 /obj/item/soap/Initialize(mapload)
 	if(randomize && prob(square_chance))
-		icon_state = "[icon_state]-alt" // ALLOW(decl): random pick
+		icon_state = "[icon_state]-alt" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 	. = ..()
 
 /obj/item/soap/proc/wet(cleaner = FALSE)
