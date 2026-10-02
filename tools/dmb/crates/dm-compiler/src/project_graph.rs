@@ -3,6 +3,9 @@
 //! A body-only edit changes one descriptor. Declaration changes refresh only
 //! previously observed semantic facts, including unsuccessful resolutions.
 //! Query hits require neither an AST nor reconstruction of LowerBindings.
+#[path="project_graph_context.rs"]
+mod context;
+pub use context::BindingContextProof;
 use crate::{
     semantic_queries::{fact_heap, memo_heap, value_heap},
     ProcedureMemo,
@@ -340,7 +343,7 @@ struct Record {
 
 /// Canonical SHA identities occupy inline bytes; noncanonical public/test
 /// descriptors retain their exact spelling rather than being normalized.
-#[derive(Clone, Eq, PartialEq, Ord, PartialOrd)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Serialize, Deserialize)]
 enum CompactIdentity { Sha256([u8;32]), Literal(String) }
 impl CompactIdentity {
     fn new(text: &str) -> Self {
@@ -359,7 +362,7 @@ impl CompactIdentity {
     }}
     fn heap_bytes(&self)->usize {match self {Self::Sha256(_)=>0,Self::Literal(text)=>text.capacity()}}
 }
-#[derive(Clone)]
+#[derive(Clone, Serialize, Deserialize)]
 struct CompactDescriptor { body:CompactIdentity, frame:CompactIdentity }
 impl CompactDescriptor {
     fn new(value:&ProcDescriptor)->Self {Self {body:CompactIdentity::new(&value.body_digest),frame:CompactIdentity::new(&value.frame_digest)}}
@@ -373,6 +376,8 @@ struct ValidatedCertificate {
     disk: CompactIdentity,
     facts: Vec<FactId>,
     valid: bool,
+    active: bool,
+    context_only: bool,
 }
 
 /// One graph per project/worktree session. The shared disk cache remains
@@ -401,6 +406,7 @@ pub struct ProjectProcedureGraph {
     stats: ProjectGraphStats,
     persistence: Option<Persistence>,
     configured_identity: Option<String>,
+    accepted_context: Option<BindingContextProof>,
 }
 impl Default for ProjectProcedureGraph {
     fn default() -> Self {
@@ -425,6 +431,7 @@ impl ProjectProcedureGraph {
             stats: ProjectGraphStats::default(),
             persistence: None,
             configured_identity: None,
+            accepted_context: None,
         }
     }
     pub fn stats(&self) -> ProjectGraphStats {
@@ -721,7 +728,7 @@ impl ProjectProcedureGraph {
             facts.sort_unstable();
             self.certificates.insert(key.clone(), ValidatedCertificate {
                 id: record.id, descriptor: CompactDescriptor::new(&candidate.descriptor), disk:CompactIdentity::new(&disk.key),
-                facts, valid: true,
+                facts, valid: true, active:true, context_only:false,
             });
         }
         let mut reverse: BTreeMap<FactId, Vec<u32>> = BTreeMap::new();
@@ -766,7 +773,7 @@ impl ProjectProcedureGraph {
                 let mut facts:Vec<_>=candidate.dependencies.iter().map(|witness|witness.fact).collect();facts.sort_unstable();facts.dedup();
                 for &fact in &facts {edges.entry(fact).or_default().push(record.id);}
                 self.certificates.insert(key.clone(),ValidatedCertificate {id:record.id,descriptor:CompactDescriptor::new(&record.descriptor),
-                    disk:CompactIdentity::new(&candidate.disk.as_ref().unwrap().key),facts,valid});
+                    disk:CompactIdentity::new(&candidate.disk.as_ref().unwrap().key),facts,valid,active:record.active,context_only:false});
                 if !valid {self.dirty.insert(key.clone());if let Some(p)=&mut self.persistence {p.headers_seen.remove(key);}}
             } else {
                 // A descriptor without persisted witnesses is a miss, never a

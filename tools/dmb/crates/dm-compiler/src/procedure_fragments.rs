@@ -342,13 +342,6 @@ impl ProcedureFragments {
     pub fn read_metadata_batch(&mut self,keys:&[crate::ProcKey])->Vec<Option<(crate::ProcDescriptor,String,Arc<OutputFragment>)>> {
         if keys.len()>OBJECT_WINDOW {return keys.iter().map(|_|None).collect();}
         let Some(store)=self.store.clone() else {return keys.iter().map(|_|None).collect();};
-        let missing:Vec<_>=keys.iter().filter(|key|!self.handles.contains_key(*key)&&!self.known_missing.contains(*key)).cloned().collect();
-        let rows:Vec<_>=missing.iter().map(|key|dm_store::Key::new(&self.namespace,crate::lower_cache::shared_binding_fingerprint(key))).collect();
-        if let Ok(batch)=store.read_many_bounded(&rows,64*1024,1024*1024,None) {
-            for (key,bytes) in missing.into_iter().zip(batch.values) {
-                if let Some(handle)=bytes.as_deref().and_then(|bytes|serde_json::from_slice::<Handle>(bytes).ok()) {self.install_handle(key,handle);}
-            }
-        }
         let payloads:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key).map(|handle|handle.payload.clone())).collect();
         let mut decoded=HashMap::new();let mut retained=0usize;
         for payload in &payloads {if let Some(entry)=self.resident.get(payload) {
@@ -358,10 +351,29 @@ impl ProcedureFragments {
             }
         }}
         self.read_packed_metadata(keys,&mut decoded,&mut retained);
+        // Current packed rows carry their own selector. Probe them before the
+        // legacy addressed handles: new caches never publish those rows, and
+        // looking up all legacy names on every cold window duplicates a full
+        // procedure-directory walk for no useful data.
+        let missing:Vec<_>=keys.iter().filter(|key|!self.handles.contains_key(*key)&&!self.known_missing.contains(*key)).cloned().collect();
+        if !missing.is_empty() {
+            let rows:Vec<_>=missing.iter().map(|key|dm_store::Key::new(&self.namespace,crate::lower_cache::shared_binding_fingerprint(key))).collect();
+            if let Ok(batch)=store.read_many_bounded(&rows,64*1024,1024*1024,None) {
+                for (key,bytes) in missing.into_iter().zip(batch.values) {
+                    if let Some(handle)=bytes.as_deref().and_then(|bytes|serde_json::from_slice::<Handle>(bytes).ok()) {self.install_handle(key,handle);}
+                    else {
+                        let charge=key.path.capacity()+64;
+                        if self.known_missing.insert(key) {self.metadata_bytes+=charge;}
+                    }
+                }
+            }
+        }
+
         let packed:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key)).filter(|handle|!decoded.contains_key(&handle.payload))
             .filter_map(|handle|handle.page.as_ref().map(|locator|(handle.payload.clone(),locator.clone()))).collect();
         self.read_metadata_pages(&store,&packed,&mut decoded,&mut retained);
-        let missing:Vec<_>=payloads.into_iter().filter(|payload|!decoded.contains_key(payload)).collect();
+        let missing:Vec<_>=keys.iter().filter_map(|key|self.handles.get(key).map(|handle|handle.payload.clone()))
+            .filter(|payload|!decoded.contains_key(payload)).collect();
         self.read_metadata_payloads(&store,&missing,&mut decoded,&mut retained);
         let output:Vec<_>=keys.iter().map(|key| {let handle=self.handles.get(key)?;
             Some((handle.descriptor.clone(),handle.candidate.clone(),Arc::clone(decoded.get(&handle.payload)?)))

@@ -122,7 +122,8 @@ pub(super) fn flush_cache() {
 }
 /// Warm pure authored fragments using the workspace's one bounded scheduler.
 /// Wire allocation and dependent constant resolution retain deterministic order.
-pub(super) fn prefetch(items: &[Item], workers: usize) {
+pub(super) fn prefetch(items: &[Item], workers: usize) {prefetch_roots(&[items],workers);}
+pub(super) fn prefetch_roots(roots:&[&[Item]],workers:usize) {
     fn collect<'a>(items: &'a [Item], output: &mut BTreeSet<&'a str>) {
         for item in items {
             if item.kind == ItemKind::Var {
@@ -132,7 +133,7 @@ pub(super) fn prefetch(items: &[Item], workers: usize) {
         }
     }
     let mut unique = BTreeSet::new();
-    collect(items, &mut unique);
+    for items in roots {collect(items, &mut unique);}
     let inputs: Vec<_> = unique
         .into_iter()
         .filter(|source| source.len().saturating_mul(8) + 512 <= 8 * 1024 * 1024)
@@ -308,7 +309,7 @@ fn owner_cache() -> &'static Mutex<OwnerCache> {
 fn owner_namespace() -> String {
     format!("owner-declarations-v2-{}", env!("DM_EMISSION_FINGERPRINT"))
 }
-fn owner_key(item:&Item)->String {
+pub(super) fn owner_key(item:&Item)->String {
     let mut hash = Sha256::new();
     hash.update(item.header.as_bytes());
     // Index is part of the fragment: edits which move declarations must update
@@ -427,7 +428,7 @@ pub(super) enum SymbolicDefaultValue {
 pub(super) fn resolve_value(
     initial: Option<&str>,
     declaration: &str,
-    dmb: &Dmb,
+    dmb: &impl AssemblyImage,
     strings: &StringIndex,
     owner: Option<u32>,
     blocked: &HashSet<String>,

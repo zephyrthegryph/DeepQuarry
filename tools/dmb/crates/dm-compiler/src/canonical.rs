@@ -13,7 +13,7 @@ use std::sync::{
 mod skeleton_fragments;
 #[path = "declaration_base.rs"]
 mod declaration_base;
-pub(super) use declaration_base::{DeclarationBase, declaration_base_key};
+pub(super) use declaration_base::{DeclarationBase, declaration_base_key, declaration_base_key_fragments};
 #[path = "declaration_delta.rs"]
 mod declaration_delta;
 #[path = "owner_binding_queries.rs"]
@@ -902,13 +902,14 @@ impl OwnerFrameQueries {
 }
 
 pub(super) struct FrozenSkeleton {
-    pub image: Dmb,
+    pub image: dm_output::wire_image::WireImageBuilder,
     pub metadata: SkeletonMetadata,
     resident_charge: AtomicUsize,
 }
 
 impl FrozenSkeleton {
-    pub(super) fn new(image: Dmb, mut metadata: SkeletonMetadata) -> Self {
+    pub(super) fn new(mut image: dm_output::wire_image::WireImageBuilder, mut metadata: SkeletonMetadata) -> Self {
+        image.freeze_resident_lists();
         // Invocation-local overlays are often identical for every procedure on
         // an owner. Hash by value while retaining one immutable allocation.
         let mut overlays=HashMap::<Arc<InvocationOverlay>,Arc<InvocationOverlay>>::new();
@@ -929,7 +930,7 @@ impl FrozenSkeleton {
 /// Estimate owned heap allocations from decoded structures. JSON duplicates
 /// parameter names and decimal encodings; using twice its size caused the pool
 /// to evict an otherwise retainable prefix on every edited request.
-fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
+fn skeleton_heap(image: &dm_output::wire_image::WireImageBuilder, metadata: &SkeletonMetadata) -> usize {
     fn vec_heap<T>(items: &Vec<T>) -> usize {
         items.capacity().saturating_mul(std::mem::size_of::<T>())
     }
@@ -978,27 +979,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
                 .map(|(name, members)| name.capacity() + census.claim(members.allocation_id(),members.storage_bytes() + members.iter().map(|value|value.capacity()).sum::<usize>()))
                 .sum::<usize>()
     }
-    let mut bytes = std::mem::size_of::<FrozenSkeleton>()
-        + vec_heap(&image.grid)
-        + vec_heap(&image.classes)
-        + vec_heap(&image.mobs)
-        + vec_heap(&image.strings)
-        + vec_heap(&image.lists)
-        + vec_heap(&image.procs)
-        + vec_heap(&image.variables)
-        + vec_heap(&image.proc_references)
-        + vec_heap(&image.instances)
-        + vec_heap(&image.map_objects)
-        + vec_heap(&image.resources)
-        + image.header.version_line.capacity()
-        + image.header.compatibility_line.capacity()
-        + image.header.executor_line.as_ref().map_or(0, Vec::capacity);
-    bytes += image
-        .strings
-        .iter()
-        .map(|s| s.data.capacity())
-        .sum::<usize>();
-    bytes += image.lists.iter().map(|words| words.capacity() * std::mem::size_of::<u32>()).sum::<usize>();
+    let mut bytes=std::mem::size_of::<FrozenSkeleton>()+image.resident_bytes();
     let image_bytes=bytes;
     bytes += metadata.strings.resident_bytes();
     bytes += metadata.proc_paths.capacity() * (std::mem::size_of::<Vec<u8>>() + 16)
@@ -1136,10 +1117,10 @@ impl CanonicalSession {
     pub(super) fn declaration_base(&mut self,key:&str,root:Option<&Path>)->Option<DeclarationBase> {
         let bytes=if let Some((cached,bytes))=&self.declaration_base { if cached==key {Some(Arc::clone(bytes))} else {None} } else {None};
         let bytes=bytes.or_else(||declaration_base::load(root?,key).map(Arc::new))?;
-        let base=declaration_base::decode(&bytes)?;
+        let base=declaration_base::decode(&bytes,self.procedure_fragments.code_store()?)?;
         self.declaration_base=Some((key.to_owned(),bytes));Some(base)
     }
-    pub(super) fn store_declaration_base(&mut self,key:String,base:&DeclarationBase,root:Option<&Path>) {
+    pub(super) fn store_declaration_base(&mut self,key:String,base:&mut DeclarationBase,root:Option<&Path>) {
         if let Some(bytes)=declaration_base::encode(base) {
             if let Some(root)=root {declaration_base::store(root,&key,&bytes);}
             self.declaration_base=Some((key,Arc::new(bytes)));
@@ -1357,7 +1338,7 @@ impl CanonicalSession {
             self.skeleton_hits += 1;
             return Some(value);
         }
-        let value = skeleton_fragments::load(root?, key)?;
+        let value = skeleton_fragments::load(root?, key,self.procedure_fragments.code_store()?)?;
         let value = shared_skeletons()
             .lock()
             .unwrap_or_else(|e| e.into_inner())

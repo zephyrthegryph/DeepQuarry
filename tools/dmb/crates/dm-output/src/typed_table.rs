@@ -147,6 +147,7 @@ impl<T:Clone+Serialize+DeserializeOwned> TypedTable<T> {
         }}
         store.lock().map_err(|_|invalid("typed store poisoned"))?.flush()?;Ok(pages)
     }
+    pub fn shared_snapshot(&self)->io::Result<Self> {let segments=self.slice_segments(0,self.len())?;let mut table=Self::default().with_backing(self.backing.clone());table.append_segments(segments)?;Ok(table)}
     pub fn snapshot(&mut self)->io::Result<Self> {let segments=self.segments()?;self.flush_backing()?;let mut result=Self::default().with_backing(self.backing.clone());result.append_segments(segments)?;Ok(result)}
     pub fn address_resident_segments(&mut self)->io::Result<()> {
         let Some(store)=self.backing.clone() else {return Err(io::Error::new(io::ErrorKind::Unsupported,"typed table backing missing"));};

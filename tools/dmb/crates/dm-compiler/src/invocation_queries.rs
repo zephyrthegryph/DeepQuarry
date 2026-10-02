@@ -14,7 +14,7 @@ struct MetadataRecord {
     identity: String,
     semantic_identity:String,
 }
-struct Declaration<'a> { item: &'a Item, identity: String }
+struct Declaration<'a> { item: &'a Item, identity: String, source_offset:usize }
 /// Source-order publication overlays the frozen declaration index. A previously
 /// published override has the same precedence as the original ordered resolver.
 pub(crate) struct MetadataContext<'a,'debug> {
@@ -34,20 +34,23 @@ pub(crate) struct MetadataContext<'a,'debug> {
     absent_identity:String,
 }
 impl<'a,'debug> MetadataContext<'a,'debug> {
-    pub(crate) fn new(dmb:&Dmb,pending:&[PendingProc<'a>],source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>)->Result<Self,String> {
+    pub(crate) fn new(dmb:&impl AssemblyImage,pending:&[PendingProc<'a>],source_debug:Option<&'debug crate::source_debug::SourceDebugIndex<'debug>>)->Result<Self,String> {
         let mut parents=HashMap::new();let mut native=HashMap::new();
-        for class in &dmb.classes {
+        for class in dmb.classes() {
             let Some(owner)=dmb.string(class.path_string_id()).and_then(|s|std::str::from_utf8(s).ok())else{continue;};
-            let parent=dmb.classes.get(class.parent_class_id() as usize).and_then(|p|dmb.string(p.path_string_id())).and_then(|s|std::str::from_utf8(s).ok()).map(str::to_owned);
+            let parent=dmb.classes().get(class.parent_class_id() as usize).and_then(|p|dmb.string(p.path_string_id())).and_then(|s|std::str::from_utf8(s).ok()).map(str::to_owned);
             parents.insert(owner.to_owned(),parent);
             for (slot,verb) in [(0,true),(1,false)] {
-                if let Some(ids)=dmb.lists.get(class.lists_and_procs[slot] as usize) {
+                let list=class.lists_and_procs[slot];
+                if list!=0xffff {
+                    let ids=dmb.list_words(list).map_err(|error|error.to_string())?;
                     // Reverse lookup selects the last native same-name row.
-                    for id in ids {if let Some(proc)=dmb.procs.get(*id as usize) {
+                    for id in &ids {
+                        let proc=dmb.proc(*id as usize).map_err(|error|error.to_string())?;
                         if let Some(path)=dmb.string(proc.strings[0]).and_then(|s|std::str::from_utf8(s).ok()) {
-                            native.insert((owner.to_owned(),path.rsplit('/').next().unwrap_or("").to_owned(),verb),Arc::new(proc_metadata(&[],Some((dmb,proc)))?.0));
+                            native.insert((owner.to_owned(),path.rsplit('/').next().unwrap_or("").to_owned(),verb),Arc::new(proc_metadata(&[],Some((dmb,&proc)))?.0));
                         }
-                    }}
+                    }
                 }
             }
         }
@@ -58,7 +61,7 @@ impl<'a,'debug> MetadataContext<'a,'debug> {
             let identity=InvocationFragments::declaration_key(proc.item,&path);
             descriptors.insert(proc.item as *const Item as usize,(path.clone(),identity.clone()));
             if proc.owner.is_none(){continue;}
-            declarations.insert((proc.owner_path.clone(),path.rsplit('/').next().unwrap_or("").to_owned(),proc.verb),Declaration {item:proc.item,identity});
+            declarations.insert((proc.owner_path.clone(),path.rsplit('/').next().unwrap_or("").to_owned(),proc.verb),Declaration {item:proc.item,identity,source_offset:proc.source_offset});
         }
         let default_metadata=Arc::new(proc_metadata(&[],None)?.0);
         let default_identity=crate::lower_cache::shared_binding_fingerprint(default_metadata.as_ref());
@@ -289,6 +292,7 @@ impl InvocationQueries {
         if !active.insert(key.clone()){return Err("cyclic procedure metadata ancestry".into());}
         let mut reads=BTreeMap::new();
         let declaration=context.declarations.get(&key).map(|d|d.item);
+        let declaration_offset=context.declarations.get(&key).map_or(0,|d|d.source_offset);
         let read=MetadataRead::Declaration(key.clone());let value=context.read(&read);crate::observed_dependencies::record(&mut reads,read,value);
         let native=if declaration.is_none(){
             let read=MetadataRead::Native(key.clone());let value=context.read(&read);crate::observed_dependencies::record(&mut reads,read,value);
@@ -319,7 +323,7 @@ impl InvocationQueries {
                     (Some(base),semantic)
                 }else {
                     let value=Some(Arc::new(proc_metadata_from_base(&declarations,base.as_ref().clone())
-                        .map_err(|reason|source_error(context.source_debug,item.header_span.start,&item.header,&reason))?.0));
+                        .map_err(|reason|source_error(context.source_debug,declaration_offset+item.header_span.start,&item.header,&reason))?.0));
                     let semantic=crate::lower_cache::shared_binding_fingerprint(&value);
                     (value,semantic)
                 }

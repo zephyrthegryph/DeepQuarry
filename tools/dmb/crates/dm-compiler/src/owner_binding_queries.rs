@@ -29,26 +29,26 @@ impl OwnerBindingQueries {
   *cached=Some((Arc::downgrade(shared),bytes));bytes
  }
  pub(super) fn clear(&mut self){self.roots.clear();self.snapshot=SharedLowerBindings::default();self.bytes=0;self.snapshot_ready=false;self.recency.clear();*self.overlap_cache.lock().unwrap_or_else(|error|error.into_inner())=None;}
- pub(crate) fn build(&mut self,dmb:&Dmb,mut types:HashMap<String,HashMap<String,String>>,pending:&[PendingProc<'_>],shared:&mut SharedLowerBindings,source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<HashMap<String,u32>,String> {
+ pub(crate) fn build(&mut self,dmb:&impl AssemblyImage,mut types:HashMap<String,HashMap<String,String>>,pending:&[PendingProc<'_>],shared:&mut SharedLowerBindings,source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<HashMap<String,u32>,String> {
   let started=std::time::Instant::now();let mut restore_seconds=0.0;
   shared.member_types=self.snapshot.member_types.clone();shared.member_globals=self.snapshot.member_globals.clone();
   shared.known_member_fields=self.snapshot.known_member_fields.clone();shared.member_procs=self.snapshot.member_procs.clone();
   shared.known_member_procs=self.snapshot.known_member_procs.clone();shared.member_proc_return_types=self.snapshot.member_proc_return_types.clone();shared.parent_types=self.snapshot.parent_types.clone();
   let mut authored:HashMap<&str,Vec<&PendingProc<'_>>>=HashMap::new();
   for procedure in pending {if !procedure.owner_path.is_empty(){authored.entry(&procedure.owner_path).or_default().push(procedure);}}
-  let mut inputs=Vec::with_capacity(dmb.classes.len());
-  for (class_id,class) in dmb.classes.iter().enumerate(){
+  let mut inputs=Vec::with_capacity(dmb.classes().len());
+  for (class_id,class) in dmb.classes().iter().enumerate(){
    let Some(owner)=dmb.string(class.path_string_id()).and_then(|bytes|std::str::from_utf8(bytes).ok())else{continue;};
    let mut hash=Sha256::new();
    fn text(hash:&mut Sha256,value:&[u8]){hash.update((value.len() as u64).to_le_bytes());hash.update(value);}
    text(&mut hash,owner.as_bytes());
-   text(&mut hash,dmb.classes.get(class.parent_class_id() as usize).and_then(|parent|dmb.string(parent.path_string_id())).unwrap_or(&[]));
+   text(&mut hash,dmb.classes().get(class.parent_class_id() as usize).and_then(|parent|dmb.string(parent.path_string_id())).unwrap_or(&[]));
    hash.update(b"fields");
-   for (variable,flags) in declaration_rows(dmb,class_id){text(&mut hash,dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).unwrap_or(&[]));hash.update(flags.to_le_bytes());}
+   for (variable,flags) in dmb.class_variable_declarations(class_id).map_err(|error|error.to_string())?.unwrap_or_default(){text(&mut hash,owner_variable_name(dmb,variable)?.unwrap_or(&[]));hash.update(flags.to_le_bytes());}
    hash.update(b"types");
    if let Some(fields)=types.get(owner){let mut fields:Vec<_>=fields.iter().collect();fields.sort();for(name,ty)in fields{text(&mut hash,name.as_bytes());text(&mut hash,ty.as_bytes());}}
    hash.update(b"native-procs");
-   for slot in 0..2 {hash.update([slot as u8]);if let Some(ids)=dmb.lists.get(class.lists_and_procs[slot] as usize){for id in ids {if let Some(proc)=dmb.procs.get(*id as usize){text(&mut hash,dmb.string(proc.strings[0]).unwrap_or(&[]));text(&mut hash,dmb.string(proc.strings[1]).unwrap_or(&[]));}}}}
+   for slot in 0..2 {hash.update([slot as u8]);let list=class.lists_and_procs[slot];if list!=0xffff {let ids=dmb.list_words(list).map_err(|error|error.to_string())?;for id in &ids {let proc=dmb.proc(*id as usize).map_err(|error|error.to_string())?;text(&mut hash,dmb.string(proc.strings[0]).unwrap_or(&[]));text(&mut hash,dmb.string(proc.strings[1]).unwrap_or(&[]));}}}
    hash.update(b"authored-procs");
    if let Some(procedures)=authored.get(owner){for procedure in procedures {text(&mut hash,procedure.item.header.as_bytes());hash.update([procedure.verb as u8,has_proc_name_setting(&procedure.item.children) as u8]);}}
    inputs.push((Some(class_id),owner,format!("{:x}",hash.finalize())));
@@ -93,7 +93,7 @@ impl OwnerBindingQueries {
     if let Some(parent)=root.parent{shared.parent_types.insert(owner.to_owned(),parent);}else{shared.parent_types.remove(owner);}
    }
    shared.global_types.extend(root.static_types);
-   for (variable,flags) in class_id.into_iter().flat_map(|class_id|declaration_rows(dmb,class_id)){if flags&1!=0 {if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){let symbol=static_symbol("__dm_class_static_",owner,name);shared.globals.insert(symbol.clone());aliases.insert(symbol,variable);}}}
+   for (variable,flags) in if let Some(class_id)=class_id {dmb.class_variable_declarations(class_id).map_err(|error|error.to_string())?.unwrap_or_default()}else{Vec::new()}{if flags&1!=0 {if let Some(name)=owner_variable_name(dmb,variable)?.and_then(|bytes|std::str::from_utf8(bytes).ok()){let symbol=static_symbol("__dm_class_static_",owner,name);shared.globals.insert(symbol.clone());aliases.insert(symbol,variable);}}}
   }
   }
   if !writes.is_empty(){if let Some(store)=&self.store{let _=store.commit(&[],&writes,None);}}
@@ -119,16 +119,20 @@ impl OwnerBindingQueries {
   Ok(aliases)
  }
 }
-fn derive(dmb:&Dmb,class_id:Option<usize>,owner:&str,types:Option<HashMap<String,String>>,authored:&[&PendingProc<'_>],source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<Root,String>{
+fn owner_variable_name(dmb:&impl AssemblyImage,id:u32)->Result<Option<&[u8]>,String> {
+ let row=dmb.variable(id as usize).map_err(|error|error.to_string())?;Ok(dmb.string(row.name))
+}
+
+fn derive(dmb:&impl AssemblyImage,class_id:Option<usize>,owner:&str,types:Option<HashMap<String,String>>,authored:&[&PendingProc<'_>],source_debug:Option<&crate::source_debug::SourceDebugIndex<'_>>)->Result<Root,String>{
  let mut root=Root::default();if let Some(types)=types{root.types=types.into_iter().collect();}
  let declared_types=root.types.clone();
  let mut builtin=LowerBindings::default();seed_builtin_fields(owner,&mut builtin);
  root.fields.extend(builtin.fields);for(name,ty)in builtin.field_types{root.types.entry(name).or_insert(ty);}
- let class=class_id.and_then(|id|dmb.classes.get(id));root.parent=class.and_then(|class|dmb.classes.get(class.parent_class_id() as usize)).and_then(|parent|dmb.string(parent.path_string_id())).and_then(|bytes|std::str::from_utf8(bytes).ok()).filter(|parent|*parent!=owner).map(str::to_owned);
- for (variable,flags) in class_id.into_iter().flat_map(|class_id|declaration_rows(dmb,class_id)){if let Some(name)=dmb.variables.get(variable as usize).and_then(|row|dmb.string(row.name)).and_then(|bytes|std::str::from_utf8(bytes).ok()){
+ let class=class_id.and_then(|id|dmb.classes().get(id));root.parent=class.and_then(|class|dmb.classes().get(class.parent_class_id() as usize)).and_then(|parent|dmb.string(parent.path_string_id())).and_then(|bytes|std::str::from_utf8(bytes).ok()).filter(|parent|*parent!=owner).map(str::to_owned);
+ for (variable,flags) in if let Some(class_id)=class_id {dmb.class_variable_declarations(class_id).map_err(|error|error.to_string())?.unwrap_or_default()}else{Vec::new()}{if let Some(name)=owner_variable_name(dmb,variable)?.and_then(|bytes|std::str::from_utf8(bytes).ok()){
   root.fields.insert(name.to_owned());if flags&1!=0 {let symbol=static_symbol("__dm_class_static_",owner,name);root.globals.insert(name.to_owned(),symbol.clone());if let Some(ty)=declared_types.get(name){root.static_types.insert(symbol,ty.clone());}}
  }}
- for slot in 0..2 {if let Some(ids)=class.and_then(|class|dmb.lists.get(class.lists_and_procs[slot] as usize)){for id in ids{if let Some(proc)=dmb.procs.get(*id as usize){if let Some(path)=dmb.string(proc.strings[0]).and_then(|bytes|std::str::from_utf8(bytes).ok()){if let Some(name)=path.rsplit('/').next(){root.known_procs.insert(name.to_owned());if dmb.string(proc.strings[1])!=Some(name.replace('_'," ").as_bytes()){root.procs.insert(name.to_owned(),path.to_owned());}}}}}}}
+ for slot in 0..2 {if let Some(list)=class.map(|class|class.lists_and_procs[slot]).filter(|list|*list!=0xffff){let ids=dmb.list_words(list).map_err(|error|error.to_string())?;for id in &ids{let proc=dmb.proc(*id as usize).map_err(|error|error.to_string())?;if let Some(path)=dmb.string(proc.strings[0]).and_then(|bytes|std::str::from_utf8(bytes).ok()){if let Some(name)=path.rsplit('/').next(){root.known_procs.insert(name.to_owned());if dmb.string(proc.strings[1])!=Some(name.replace('_'," ").as_bytes()){root.procs.insert(name.to_owned(),path.to_owned());}}}}}}
  for procedure in authored {let path=InvocationFragments::declaration_path(procedure.item,owner,procedure.verb)?;let name=path.rsplit('/').next().unwrap_or("").to_owned();root.known_procs.insert(name.clone());if let Some(Some(ty))=declared_proc_return_type(&procedure.item.header).map_err(|reason|source_error(source_debug,procedure.span().start,&procedure.item.header,&reason))?{root.returns.insert(name.clone(),ty);}if has_proc_name_setting(&procedure.item.children){root.procs.insert(name,path);}}
  Ok(root)
 }

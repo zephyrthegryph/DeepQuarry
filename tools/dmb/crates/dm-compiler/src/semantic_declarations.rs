@@ -28,6 +28,11 @@ struct Owner {
     parent: Option<String>,
     fields: BTreeMap<String, Field>,
 }
+#[derive(Default,Clone)]
+pub(super) struct DeclarationChanges {
+    pub owners:BTreeSet<String>,
+    pub globals:BTreeSet<String>,
+}
 #[derive(Default)]
 pub(super) struct SemanticDeclarations {
     generation:u64,
@@ -36,6 +41,9 @@ pub(super) struct SemanticDeclarations {
     recipes: im::HashMap<String, String>,
     builtin_identity: String,
     builtins: Arc<BuiltinModel>,
+    source_index:Option<Arc<owner_dag::SourceDeclarationIndex>>,
+    previous_generation:Option<u64>,
+    changes:DeclarationChanges,
 }
 #[path = "semantic_owner_dag.rs"]
 mod owner_dag;
@@ -145,11 +153,32 @@ impl SemanticDeclarations {
     pub(super) fn build(items:&[Item],modified:&[Item],builtin:&Dmb,builtin_image:&[u8],previous:Option<&Arc<Self>>,workers:usize)->Arc<Self> {
         owner_dag::build(items,modified,builtin,builtin_image,previous,workers)
     }
+    pub(super) fn build_local_fragments(fragments:&[(usize,Arc<dm_syntax::AstFile>)],modified:&[Item],builtin:&Dmb,builtin_image:&[u8],previous:Option<&Arc<Self>>,workers:usize)->Arc<Self> {
+        owner_dag::build_local_fragments(fragments,modified,builtin,builtin_image,previous,workers)
+    }
+    pub(super) fn authored_owner_plans(&self,items:&[&Item],workers:usize)->Vec<Arc<default_plans::OwnerDeclarationPlan>> {
+        let mut plans:Vec<_>=items.iter().map(|item|self.source_index.as_ref().and_then(|index|index.owner_plan(item))).collect();
+        let missing:Vec<_>=items.iter().zip(&plans).filter_map(|(item,plan)|plan.is_none().then_some(*item)).collect();
+        let mut derived=default_plans::owner_batch(&missing,workers).into_iter();
+        plans.iter_mut().map(|plan|plan.take().unwrap_or_else(||derived.next().expect("missing ordered authored owner plan"))).collect()
+    }
+    pub(super) fn owner_recipe_identity(&self,path:&str)->Option<&str> {self.recipes.get(path).map(String::as_str)}
+    pub(super) fn changes_from(&self,previous:Option<&Self>)->DeclarationChanges {
+        if previous.is_some_and(|model|model.generation==self.generation) {return DeclarationChanges::default();}
+        if previous.map(|model|model.generation)==self.previous_generation {return self.changes.clone();}
+        // A caller which skipped generations cannot use a narrow certificate.
+        // Exact symbolic recipe comparison supplies the conservative fallback.
+        let owners=self.recipes.keys().chain(previous.into_iter().flat_map(|model|model.recipes.keys()))
+            .filter(|path|self.recipes.get(*path)!=previous.and_then(|model|model.recipes.get(*path))).cloned().collect();
+        let globals=self.globals.keys().chain(previous.into_iter().flat_map(|model|model.globals.keys()))
+            .filter(|name|field_identity(self.globals.get(*name))!=field_identity(previous.and_then(|model|model.globals.get(*name)))).cloned().collect();
+        DeclarationChanges {owners,globals}
+    }
     pub(super) fn resident_bytes(&self)->usize {
         let map_charge=self.owners.len()*96+self.globals.len()*96+self.recipes.len()*160+self.builtin_identity.capacity();
         let owners=self.owners.values().map(|owner|owner.fields.iter().map(|(name,field)|
             name.capacity()+field.expression.as_ref().map_or(0,String::capacity)+128).sum::<usize>() / Arc::strong_count(owner).max(1)).sum::<usize>();
-        map_charge+owners
+        map_charge+owners+self.changes.owners.iter().chain(&self.changes.globals).map(|name|name.capacity()+64).sum::<usize>()+self.source_index.as_ref().map_or(0,|index|index.resident_bytes())
     }
     fn resolve(&self,owner:&str,name:&str,blocked:&HashSet<String>,active:&mut HashSet<(String,String)>,reads:&RefCell<BTreeMap<SemanticRead,String>>) -> Option<const_eval::Constant> {
         if let Some((path,field))=name.split_once("::") {return self.field(path,field,true,active,reads);}
