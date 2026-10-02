@@ -15,7 +15,6 @@
 	var/turf_resource_types
 	var/list/resources
 
-	var/thermite = 0
 	oxygen = MOLES_O2STANDARD
 	nitrogen = MOLES_N2STANDARD
 	var/max_fire_temperature_sustained = 0 //The max temperature of the fire which it was subjected to
