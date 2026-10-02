@@ -69,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 ////////////// Dragunov Sniper Rifle //////////////
 
@@ -101,4 +101,4 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PRO
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)

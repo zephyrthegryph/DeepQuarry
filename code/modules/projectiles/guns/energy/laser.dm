@@ -237,7 +237,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope",
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /*
  * Laser Scattergun (proof of concept)
@@ -336,7 +336,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sigh
 
 /// Old Aim Down Sights verb.
 /obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(scope_multiplier)
+	toggle_scope(scope_multiplier, user)
 
 /obj/item/gun/energy/monorifle/combat
 	name = "combat mono-rifle"

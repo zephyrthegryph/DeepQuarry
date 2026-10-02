@@ -218,7 +218,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 // AR Variants
 
@@ -462,7 +462,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/type901
 	name = "Type 901 Assault rifle"
@@ -528,7 +528,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
 	name = "Hectate II"
@@ -564,7 +564,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_V
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/memegun
 	name = "Hardbass Special"

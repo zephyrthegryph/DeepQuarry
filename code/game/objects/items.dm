@@ -715,9 +715,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 /// For zooming with scope or binoculars. Uses the /datum/remote_view/item_zoom view for disabling when you move or drop the item
 /obj/item/proc/zoom(mob/living/M, tileoffset = 14,viewsize = 9) //tileoffset is client view offset in the direction the user is facing. viewsize is how far out this thing zooms. 7 is normal view
 	SHOULD_NOT_SLEEP(TRUE)
-	if(isliving(usr)) //Always prefer usr if set
-		M = usr
-	if(!M.client)
+	if(!M?.client)
 		return FALSE
 	if(!isliving(M))
 		return FALSE

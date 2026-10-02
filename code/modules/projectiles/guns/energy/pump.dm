@@ -246,7 +246,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("U
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/rifle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/locked/frontier/rifle/appearance_overlays()
