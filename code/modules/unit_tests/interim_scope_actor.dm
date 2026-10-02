@@ -28,8 +28,12 @@
 	TEST_ASSERT(!device.zoom && !actor.is_remote_viewing(), "clientless refusal leaves real remote view inactive")
 	TEST_ASSERT_EQUAL(device.accuracy, accuracy_before, "refusal preserves gun accuracy")
 	TEST_ASSERT_EQUAL(device.recoil, recoil_before, "refusal preserves gun recoil")
+	device.ui_action_click(actor, null)
+	TEST_ASSERT_EQUAL(device.zoom_calls, 2, "the real UI shortcut uses the declared interaction resolver")
+	TEST_ASSERT_EQUAL(device.zoom_actor_ref, REF(actor), "the resolved UI shortcut forwards its actor")
+	TEST_ASSERT(!device.zoom, "the resolved clientless UI shortcut preserves inactive zoom")
 	device.zoom(null)
-	TEST_ASSERT_EQUAL(device.zoom_calls, 2, "a missing actor reaches safe refusal")
+	TEST_ASSERT_EQUAL(device.zoom_calls, 3, "a missing actor reaches safe refusal")
 	TEST_ASSERT_NULL(device.zoom_actor_ref, "a missing actor does not inherit its previous operator")
 	TEST_ASSERT(!device.zoom, "missing actor preserves inactive zoom")
 
@@ -63,3 +67,11 @@
 	TEST_ASSERT_EQUAL(device.zoom_calls, 2, "a missing actor reaches safe refusal")
 	TEST_ASSERT_NULL(device.zoom_actor_ref, "a missing actor does not inherit its previous operator")
 	TEST_ASSERT(!device.zoom, "missing actor preserves inactive zoom")
+
+/// Canceling no aim must not create a child, especially while dropping a held gun.
+/datum/unit_test/interim_stop_aiming_idle/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	TEST_ASSERT_NULL(actor.aiming, "the idle fixture starts without an aiming overlay")
+	actor.stop_aiming()
+	TEST_ASSERT_NULL(actor.aiming, "canceling an idle aim does not allocate an overlay")

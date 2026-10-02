@@ -231,9 +231,9 @@
 	//End .
 
 /obj/item/gun/energy/sniperrifle/ui_action_click(mob/user, actiontype)
-	sniperrifle_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(sniperrifle_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope", PROC_REF(sniperrifle_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope", PROC_REF(sniperrifle_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/sniperrifle/proc/sniperrifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
@@ -330,9 +330,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/sniperrifle, INTERACT_VERB("Use Scope",
 	var/scope_multiplier = 1.5
 
 /obj/item/gun/energy/monorifle/ui_action_click(mob/user, actiontype)
-	monorifle_verb_sights(user)
+	perform_scope_interaction(user, PROC_REF(monorifle_verb_sights))
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sights", PROC_REF(monorifle_verb_sights), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/energy/monorifle, INTERACT_VERB("Aim Down Sights", PROC_REF(monorifle_verb_sights), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Aim Down Sights verb.
 /obj/item/gun/energy/monorifle/proc/monorifle_verb_sights(mob/user, obj/item/held, datum/interaction/interaction)

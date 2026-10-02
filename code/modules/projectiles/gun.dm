@@ -772,6 +772,13 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		mouthshoot = 0
 		return
 
+/// Use the same declared requirements and feedback for an action button as the interaction menu.
+/obj/item/gun/proc/perform_scope_interaction(mob/user, effect)
+	for(var/datum/interaction/candidate as anything in interaction_candidates(src))
+		if(candidate.effect == effect && candidate.applies_to(src))
+			return candidate.perform(user, src, user?.get_active_hand())
+	return FALSE
+
 /obj/item/gun/proc/toggle_scope(zoom_amount=2.0, mob/living/user)
 	//looking through a scope limits your periphereal vision
 	//still, increase the view size by a tiny amount so that sniping isn't too restricted to NSEW

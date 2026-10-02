@@ -712,6 +712,10 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 	if(I && !I.abstract)
 		I.showoff(src)
 
+/// The shared remote-view gate for optical device interactions.
+/obj/item/proc/zoom_view_allowed(mob/user, atom/target, obj/item/held)
+	return user?.is_remote_viewing() ? "You are too distracted to do that." : TRUE
+
 /// For zooming with scope or binoculars. Uses the /datum/remote_view/item_zoom view for disabling when you move or drop the item
 /obj/item/proc/zoom(mob/living/M, tileoffset = 14,viewsize = 9) //tileoffset is client view offset in the direction the user is facing. viewsize is how far out this thing zooms. 7 is normal view
 	SHOULD_NOT_SLEEP(TRUE)
@@ -721,8 +725,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return FALSE
 	if(isbelly(M.loc) || istype(M.loc,/obj/item/dogborg/sleeper))
 		return FALSE
-	if(M.is_remote_viewing())
-		to_chat(M, span_warning("You are too distracted to do that."))
+	if(zoom_view_allowed(M, src, null) != TRUE)
 		return FALSE
 
 	var/devicename
