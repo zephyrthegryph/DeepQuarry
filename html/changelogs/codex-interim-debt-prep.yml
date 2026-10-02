@@ -9,3 +9,4 @@ changes:
   - bugfix: "Timed implant installation preserves the installer for configuration and size-control ownership."
   - bugfix: "Completed machine and console frames correctly transfer their installed circuit board."
   - bugfix: "Gun scopes and binoculars use the acting player and correct viewing parameters."
+  - bugfix: "Gun cleanup no longer fails when its holder has no active aim."
