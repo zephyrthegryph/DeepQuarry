@@ -29,6 +29,7 @@
 	TEST_ASSERT(user.put_in_r_hand(right), "the right hand is occupied")
 	var/obj/structure/marker_beacon/beacon = allocate(/obj/structure/marker_beacon, T)
 	beacon.attack_hand_timed_done(user)
+	own_turf_contents(T)
 	TEST_ASSERT(!QDELETED(beacon), "failed hand placement retains the deployed beacon")
 	TEST_ASSERT_NULL(locate_within(T, /obj/item/stack/marker_beacon), "failed placement leaves no duplicate stack on the floor")
 	TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_L), left, "failed pickup preserves the left-hand item")

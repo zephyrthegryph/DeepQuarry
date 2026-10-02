@@ -146,9 +146,11 @@ DECLARE_INTERACTIONS(/obj/structure/marker_beacon, \
 	M.picked_color = picked_color
 	M.update_icon()
 	transfer_fingerprints_to(M)
-	if(user.put_in_hands(M, TRUE)) //delete the beacon if it fails
+	if(user.put_in_hands(M))
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
 		replace_with(src, M)
+	else
+		consume(M, user)
 
 /// Old attackby.
 /obj/structure/marker_beacon/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
