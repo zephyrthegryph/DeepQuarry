@@ -19,11 +19,11 @@
 	if(unblock)
 		FD.blocked = 0
 		FD.update_icon()
-		FD.open(1)
+		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 		FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))
 	else
 		FD.visible_message(span_danger("\The [chassis] forces \the [FD] open!"))
-		FD.open(1)
+		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_airlock(obj/machinery/door/airlock/AD)
 	if(!chassis?.Adjacent(AD))
