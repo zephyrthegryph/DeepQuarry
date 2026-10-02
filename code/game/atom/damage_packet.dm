@@ -221,14 +221,73 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 /// after_op(damage(...)) rows. Not overridable: a type changes where damage lands by overriding damage_sink().
 /atom/proc/receive_damage(datum/damage_packet/packet)
 	SHOULD_NOT_OVERRIDE(TRUE)
+	// The engine's hit action (the hit bridge): hooks of /datum/act/hit and its entry subtypes run first. A holder nothing hooks pays one act_wanted() check.
+	var/hit = hit_try(src, packet)
+	if(isnull(hit))
+		return 0
 	var/list/rows = damage_rows_of(src)
 	if(!rows)
-		return damage_sink(packet)
+		. = damage_sink(packet)
+		act_done(hit)
+		return
 	if(run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_BEFORE))
+		act_cancel(hit)
 		return 0
 	. = damage_sink(packet)
 	if(damage_rows_after(src) && !QDELETED(src))
 		run_damage_reactions(rows, packet, DAMAGE_REACTION_PHASE_AFTER)
+	act_done(hit)
+
+/// The hit action type an entry of a packet is, the most specific one (a hook of /datum/act/hit applies to every subtype of it): projectile, melee
+/// (a weapon or a generic attack), explosion, emp, blob, fire (an entry-less packet flagged FIRE), shock; thrown and direct deliveries are the generic hit.
+/proc/hit_act_type(datum/damage_packet/packet)
+	switch(packet.entry)
+		if(DAMAGE_ENTRY_PROJECTILE)
+			return /datum/act/hit/projectile
+		if(DAMAGE_ENTRY_EMP)
+			return /datum/act/hit/emp
+		if(DAMAGE_ENTRY_EXPLOSION)
+			return /datum/act/hit/explosion
+		if(DAMAGE_ENTRY_BLOB)
+			return /datum/act/hit/blob
+		if(DAMAGE_ENTRY_WEAPON, DAMAGE_ENTRY_GENERIC)
+			return /datum/act/hit/melee
+		if(DAMAGE_ENTRY_SHOCK)
+			return /datum/act/hit/shock
+	if(packet.armor_flag == FIRE)
+		return /datum/act/hit/fire
+	return /datum/act/hit
+
+/// Starts the hit action for a packet. ACT_PASS (a truthy no-op) when nothing hooks or listens for it (nothing allocated); null when a hook refused the
+/// hit or took it over (the caller lands nothing); else the act, which the caller ends with act_done() or act_cancel().
+/proc/hit_try(atom/holder, datum/damage_packet/packet)
+	var/act_type = hit_act_type(packet)
+	if(!act_wanted(holder, act_type))
+		return ACT_PASS
+	var/hit
+	switch(act_type)
+		if(/datum/act/hit/projectile)
+			// ALLOW(handlers): the act is returned to receive_damage(), which ends it with act_done() or act_cancel()
+			hit = ACT_TRY(holder, hit_projectile, packet)
+		if(/datum/act/hit/emp)
+			hit = ACT_TRY(holder, hit_emp, packet)
+		if(/datum/act/hit/explosion)
+			hit = ACT_TRY(holder, hit_explosion, packet)
+		if(/datum/act/hit/blob)
+			hit = ACT_TRY(holder, hit_blob, packet)
+		if(/datum/act/hit/melee)
+			hit = ACT_TRY(holder, hit_melee, packet)
+		if(/datum/act/hit/shock)
+			hit = ACT_TRY(holder, hit_shock, packet)
+		if(/datum/act/hit/fire)
+			hit = ACT_TRY(holder, hit_fire, packet)
+		else
+			hit = ACT_TRY(holder, hit, packet)
+	if(isnull(hit))
+		packet.flags |= DAMAGE_PACKET_BLOCKED
+		log_world("HIT: [holder.type] [act_type] refused or taken over by a hook (outcome [GLOB.act_last_outcome])")
+		return null
+	return hit
 
 /// Where a packet lands. The default sink is object integrity; /mob/living overrides it with injure().
 /atom/proc/damage_sink(datum/damage_packet/packet)
