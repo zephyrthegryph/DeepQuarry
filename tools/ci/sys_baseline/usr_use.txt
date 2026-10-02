@@ -371,13 +371,7 @@ usr_outside_verb	code/game/objects/items/toys/toys.dm	var/mob/living/carbon/huma
 usr_outside_verb	code/game/objects/items/toys/toys.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
-usr_outside_verb	code/game/objects/items/weapons/implants/implant.dm	om_ask(usr, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
-usr_outside_verb	code/game/objects/items/weapons/implants/implant.dm	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
-usr_outside_verb	code/game/objects/items/weapons/implants/implant.dm	/obj/item/implant/sizecontrol/post_implant(mob/source, mob/living/user = usr)
-usr_outside_verb	code/game/objects/items/weapons/implants/implant.dm	/obj/item/implant/compliance/post_implant(mob/source, mob/living/user = usr)
-usr_outside_verb	code/game/objects/items/weapons/implants/implantaugment.dm	om_ask(usr, /datum/om/prompt/choice/augment_location, PROC_REF(augment_location_chosen), choices = choices, patient = H)
 usr_outside_verb	code/game/objects/items/weapons/implants/implantreagent.dm	/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user = usr)
-usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	if(ishuman(usr))
@@ -764,17 +758,11 @@ usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user 
 usr_outside_verb	code/modules/research/tg/machinery/mech_fabricator.dm	var/mob/user = usr
 usr_outside_verb	code/modules/spells/aoe_turf/aoe_turf.dm	/datum/spell/aoe_turf/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/spells/general/rune_write.dm	/datum/spell/rune_write/choose_targets(mob/user = usr)
-usr_outside_verb	code/modules/spells/general/rune_write.dm	/datum/spell/rune_write/cast(null, mob/user = usr)
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/choose_targets(mob/user = usr) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
-usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/adjust_var(mob/living/target = usr, type, amount) //handles the adjustment of the var when the spell is used. has some hardcoded types
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/cast_check(skipcharge = 0,mob/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
 usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/invocation(mob/user = usr, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
-usr_outside_verb	code/modules/spells/targeted/equip/equip.dm	/datum/spell/targeted/equip_item/cast(list/targets, mob/user = usr)
-usr_outside_verb	code/modules/spells/targeted/equip/horsemask.dm	/datum/spell/targeted/equip_item/horsemask/cast(list/targets, mob/user = usr)
 usr_outside_verb	code/modules/spells/targeted/projectile/dumbfire.dm	/datum/spell/targeted/projectile/dumbfire/choose_targets(mob/user = usr)
-usr_outside_verb	code/modules/spells/targeted/projectile/projectile.dm	/datum/spell/targeted/projectile/cast(list/targets, mob/user = usr, target_zone)
-usr_outside_verb	code/modules/spells/targeted/projectile/projectile.dm	/datum/spell/targeted/projectile/proc/choose_prox_targets(mob/user = usr, atom/movable/spell_holder)
 usr_outside_verb	code/modules/spells/targeted/targeted.dm	/datum/spell/targeted/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/external.dm	log_tgui(usr, href_list["message"],
