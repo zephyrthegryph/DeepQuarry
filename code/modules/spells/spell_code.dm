@@ -207,7 +207,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 /////////////////////
 /*Checkers, cost takers, message makers, etc*/
 
-/datum/spell/proc/cast_check(skipcharge = 0,mob/user = usr) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
+/datum/spell/proc/cast_check(skipcharge = 0,mob/user) //checks if the spell can be cast based on its settings; skipcharge is used when an additional cast_check is called inside the spell
 
 	if(!(src in user.spell_list) && holder() == user)
 		log_world("## ERROR [user] utilized the spell '[src]' without having it.")

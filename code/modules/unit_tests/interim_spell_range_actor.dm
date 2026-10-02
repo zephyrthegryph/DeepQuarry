@@ -78,3 +78,34 @@
 	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "charging leaves the bystander unaffected")
 	spell.adjust_var(target, "stunned", -2 SECONDS)
 	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "signed adjustment removes the supplied actor's stun")
+
+/// Record validation's actor while retaining all real spell checks and rune construction.
+/datum/spell/rune_write/interim_actor_probe
+	spell_flags = NONE
+	var/check_actor_ref
+	var/check_count = 0
+
+/datum/spell/rune_write/interim_actor_probe/choose_targets(mob/user)
+	picked_rune = "Stun"
+	return list(user)
+
+/datum/spell/rune_write/interim_actor_probe/cast_check(skipcharge = 0, mob/user)
+	check_actor_ref = user ? REF(user) : null
+	check_count++
+	return ..(skipcharge, user)
+
+/datum/unit_test/interim_rune_validation_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/datum/spell/rune_write/interim_actor_probe/spell = allocate(/datum/spell/rune_write/interim_actor_probe)
+	spell.charge_counter = 42
+	spell.perform_cast(user, TRUE)
+	own_turf_contents(T)
+	TEST_ASSERT_EQUAL(spell.check_count, 1, "the selected rune runs its real secondary casting validation")
+	TEST_ASSERT_EQUAL(spell.check_actor_ref, REF(user), "secondary validation receives the explicitly supplied caster")
+	var/obj/effect/rune/rune = locate_within(T, /obj/effect/rune)
+	TEST_ASSERT(istype(rune), "the real spell creates a rune at the caster's location")
+	TEST_ASSERT_EQUAL(rune.word1, GLOB.cultwords["join"], "the rune receives the first Stun word")
+	TEST_ASSERT_EQUAL(rune.word2, GLOB.cultwords["hide"], "the rune receives the second Stun word")
+	TEST_ASSERT_EQUAL(rune.word3, GLOB.cultwords["technology"], "the rune receives the third Stun word")
+	TEST_ASSERT_EQUAL(spell.charge_counter, 42, "skip-charge validation preserves the existing spell charge")
