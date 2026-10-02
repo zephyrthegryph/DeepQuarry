@@ -1,0 +1,2 @@
+/proc/bench()
+	query.Execute()

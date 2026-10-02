@@ -11,6 +11,19 @@ known = []
 # sys_lint.py EXEMPT: tests and benchmarks build the forbidden things on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 
+# A sys module with an own section of path exemptions replaces [lint.sys] for that module (the section is found
+# by lint name first), so it repeats the sys_lint.py EXEMPT prefixes above and adds the module's own.
+[lint."sys/sync_sql"]
+# sync_sql.py EXEMPT_FILES: the database layer itself (boot and shutdown queries, the flow wrapper, the local
+# SQLite database, world/IsBanned) may block.
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
+exempt_files = [
+  "code/controllers/subsystems/dbcore.dm",
+  "code/controllers/subsystems/sqlite.dm",
+  "code/datums/om/flow_io.dm",
+  "code/modules/admin/IsBanned.dm",
+]
+
 [lint.ui_actions]
 # ui_actions_lint.py EXEMPT: tests and benchmarks build act_ procs without a TSX client on purpose.
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]

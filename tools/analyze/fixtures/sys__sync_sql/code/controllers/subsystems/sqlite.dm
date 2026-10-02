@@ -1,0 +1,2 @@
+/proc/boot()
+	query.Execute()
