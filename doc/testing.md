@@ -207,6 +207,29 @@ proof with the "not implemented" message if a driver form or a stub it called re
 proof never asserts on a null. When an engine replaces its stubs the gate goes quiet for that piece and the assertions run unchanged.
 `doc/rewrite/engine_contracts.md` lists, per proof, which engine it waits for.
 
+### The kernel clock (test_time) and the input inbox
+
+A test that makes time pass or sends an input starts with `test_driver_begin()` (code/tests/driver/driver.dm) and ends with
+`test_driver_end()`. Begin gives the kernel an injected clock (`kernel().test_now`, in deciseconds, from 0) and makes a fresh test
+OM scheduler current, so every entity the test creates afterwards reads that clock. `test_time(t)` then steps it one slot (one
+decisecond) at a time, running the phases K, S, N, D, P, R, G of each slot in order through the same phase procs the live tick
+calls, with a drain at the start of S, D, P and R; `test_phase(P)` runs one phase at the current time and moves nothing;
+`test_drain()` is one marked drain. Native frames and the host services (tgui transport, dbcore, assets) are not stepped.
+
+Which work a test steps: the items registered while the test owned the clock (a fixture system's `every()`, an entity type's first
+`every()` table) and the kernel's own plumbing (the input inbox, requests, jobs). Live items keep their world.time due dates and
+never run inside a test; test items never run on the live loop. An item no run has seen is armed one interval after the clock it
+first meets, so `every(1 SECOND)` runs exactly five times in `test_time(5 SECONDS)`. A fixture system that must not boot with the
+live kernel sets `lazy_only = TRUE` and is made by `system(path)`.
+
+`end_test_world()` calls `test_driver_end()`, so a failed assertion or a runtime cannot leave later tests on the injected clock.
+The recorder (`test_record` / `test_recorded`) stamps each row with its position (`seq`) and the kernel time (`at`) and holds at
+most `TEST_RECORD_MAX` rows.
+
+The input inbox (code/engine/kernel/inbox.dm) is tested with `/datum/input_event` fixtures: `SSinput.room_override` (TRUE or FALSE)
+decides whether an input resolves in place or queues, and `test_phase(KERNEL_PHASE_K)` drains. In a test build the tick always has
+room unless the override says otherwise (a test world boots through ticks far past 100%).
+
 ### Sharded runs
 
 `dm-test` runs sharded by default. It compiles once, then boots N DreamDaemon

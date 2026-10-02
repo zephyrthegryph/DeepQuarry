@@ -114,7 +114,7 @@
 	/// KM_SYS_DECOMPOSED: it charges the systems it runs itself instead (SSbehaviours).
 	var/system_idx = 0
 
-	/// Whether this subsystem's runs count as player-input cost in the tick record (SSinput, the verb managers).
+	/// Whether this subsystem's runs count as player-input cost in the tick record (none now: the input inbox charges its own cost).
 	var/counts_as_input = FALSE
 
 	/// Tracks how many fires the subsystem has consecutively paused on in the current run

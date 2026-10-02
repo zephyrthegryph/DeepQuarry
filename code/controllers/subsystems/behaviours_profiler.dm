@@ -18,7 +18,7 @@ UI_DATA_REPLACE(/datum/controller/subsystem/behaviours, "merge:ui_data_datum_con
 	var/list/data = list()
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()
-	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background")
+	var/static/list/lane_names = list("Urgent", "Simulation", "Derived", "Presentation", "Background", "World")
 	var/elapsed = max(world.time - profile_reset_time, 1) / (1 SECONDS)
 	data["elapsed_s"] = round(elapsed, 0.1)
 	data["last_run_ms"] = sched ? round(sched.last_run_ms, 0.001) : 0

@@ -561,6 +561,9 @@ GLOBAL_VAR(dq_test_select_names)
 	for(var/datum/thing as anything in allocated?.Copy())
 		if(!QDELETED(thing))
 			qdel(thing)
+	// A test that took the kernel clock (test_driver_begin) hands it back whatever way it ended: an early return from a failed
+	// assertion or a runtime would otherwise leave every later test running on an injected clock.
+	test_driver_end()
 
 /// Sets `target.vars[name]` for the rest of this test. The first change to each var records its
 /// original value, and on_destroy() puts it back (last change first). A failing TEST_ASSERT

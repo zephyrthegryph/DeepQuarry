@@ -149,7 +149,7 @@ TRACKED(/datum/rx_fx, level)
 	TEST_ASSERT(isnull(rx_before_op(F, "another_op", null, "deny")), "another op key is not matched")
 
 /// A read moving to another band delivers (band, previous); the first sight is a baseline. The reaction is urgent:
-/// the kernel delivers it (request_urgent), so each crossing is run from the U phase here.
+/// the kernel delivers it (kernel_urgent), so each crossing is run from the U phase here.
 /datum/unit_test/dx_reactions_cross/Run()
 	var/datum/rx_fx/F = allocate(/datum/rx_fx)
 	F.set_level(5)

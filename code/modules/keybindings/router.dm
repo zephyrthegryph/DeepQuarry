@@ -94,19 +94,9 @@ TYPE_TABLE_DECLARE(/datum/input_router, primary_table, list(list(list(LEFT_CLICK
 
 /atom/Click(location, control, params) // This is their reaction to being clicked on (standard proc)
 	if(src)
-		// L0 input (controllers/kernel/latency.dm): near overtime a player's click waits for the next tick's
-		// drain instead of pushing this one over; otherwise it runs on arrival, as it always did.
-		var/datum/kernel_latency/latency = kernel_latency()
-		if(latency.should_queue_click(usr) && latency.enqueue_click(usr, src, location, control, params))
-			return
-		latency.input_immediate++
-		latency.record_input(0)
-		// Input latency (code/controllers/measure/): stamp the click when it arrives and as it is dispatched.
-		var/datum/tick_meter/meter = km_meter()
-		var/entry_time = world.time
-		var/dispatch_usage = meter.click_dispatched(entry_time, TICK_USAGE)
-		kernel_click_run(src, usr, location, control, params)
-		meter.click_done(entry_time, dispatch_usage)
+		// The input inbox (code/engine/kernel/inbox.dm): the click resolves on the spot while the tick has room, and
+		// otherwise waits for phase K's drain, in arrival order, behind the clicker's own earlier inputs.
+		input_submit(new /datum/input_event/click(usr, src, location, control, params))
 
 /atom/DblClick(location, control, params)
 	if(src)

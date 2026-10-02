@@ -7,7 +7,9 @@
 #define LANE_DERIVED 3
 #define LANE_PRESENTATION 4
 #define LANE_BACKGROUND 5
-#define OM_LANE_COUNT 5
+/// World-level systems (section 2): their every() work is budgeted here, beside the OM lanes the old scheduler had.
+#define LANE_WORLD 6
+#define OM_LANE_COUNT 6
 
 // ---- Relevance levels (section A.8). ----
 #define RELEVANCE_NONE 0

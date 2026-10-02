@@ -24,7 +24,7 @@
 //   before_op(key|type, handler) handler(ctx): synchronous before commit; a non-null return vetoes (a reason).
 //   after_op(key|type, handler)  handler(ctx): synchronous after commit; the return is ignored.
 //   on_cross(read, bands, handler, urgent) handler(band, previous_band): when the read moves to another band
-//                               (band 0 is below the first threshold). urgent: a request_urgent() work item (the
+//                               (band 0 is below the first threshold). urgent: a kernel_urgent() work item (the
 //                               kernel's U phase, deduped per holder, carrying the latest band); else at the drain.
 //   every(interval, handler, ...) declared work: a /datum/work_item/reaction on the kernel (work.dm). The handler runs on
 //                               each live instance of the declaring type as handler(dt), on each member of `members`

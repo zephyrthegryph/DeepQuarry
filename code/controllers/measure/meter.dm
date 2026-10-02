@@ -478,9 +478,6 @@
 			out += list(list("key" = registry.keys[idx], "ms" = round(fr_top_ms[base + k], 0.01)))
 	return out
 
-/// Total length of every verb queue (SSverb_manager and its speech subtype).
+/// Total length of every input queue (the inbox: clicks, verbs, Topic, say, tgui actions).
 /proc/km_verb_queue_length()
-	. = 0
-	. += length(verb_lane_of(SSverb_manager)?.verb_queue)
-	var/datum/verb_lane/speech = verb_lane_of(system(/datum/system/speech_controller))
-	. += length(speech?.verb_queue)
+	return SSinput.queued_total()

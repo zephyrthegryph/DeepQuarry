@@ -6,5 +6,6 @@
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 #include "driver\driver.dm"
 #include "driver\recorder.dm"
+#include "driver\kernel_clock.dm"
 #include "engine\fixtures.dm"
 #endif

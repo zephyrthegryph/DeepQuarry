@@ -107,7 +107,7 @@
 	var/datum/om/registry/reg = om_registry()
 	if(!sched || !reg)
 		return
-	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background")
+	var/static/list/lane_names = list("urgent", "simulation", "derived", "presentation", "background", "world")
 	var/list/lane_ms = new /list(OM_LANE_COUNT)
 	for(var/i in 1 to OM_LANE_COUNT)
 		lane_ms[i] = 0

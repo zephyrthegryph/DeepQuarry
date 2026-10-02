@@ -109,9 +109,3 @@
 // ---- Kernel and drain constants (sections 2 and 7). ----
 /// Passes of one drain before the engine logs the key chain and spills the rest to the next drain point.
 #define DRAIN_MAX_PASSES 8
-/// The kernel's S phase (simulation sync). Master's KERNEL_PHASE_K..G run 1..7 without it; E6 renumbers all eight
-/// (K, S, N, U, D, P, R, G) in one table. A value outside 1..KERNEL_PHASE_COUNT, so no live loop reaches it.
-#define KERNEL_PHASE_S 8
-/// The lane the world-level systems run in (a lane budget is microseconds of tick time per server tick). Beyond
-/// OM_LANE_COUNT on purpose: master's scheduler does not know it until E6.
-#define LANE_WORLD 6

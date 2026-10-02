@@ -1,4 +1,4 @@
-/// Latency classes, overrun shedding and the kernel click queue (doc/rewrite/kernel.md sec 1.2 phase K, 1.6;
+/// Latency classes, overrun shedding and the input latency record (doc/rewrite/kernel.md sec 1.2 phase K, 1.6;
 /// see "Latency classes" in the implementation notes at the end of that document).
 ///
 ///   L0 input       runs first every tick, never deferred or shed, capped at KERNEL_INPUT_CAP and measured
@@ -22,14 +22,12 @@
 	/// Per class (index = LATENCY_L0 + 1): times L3 work was refused.
 	var/list/shed_by_class = list(0, 0, 0, 0) // ALLOW(instance_list): one kernel latency datum; a fixed per-class counter table mutated on every shed
 	var/shed_events = 0
-	/// Input latency: ticks a click waited before it ran. Bin i counts i ticks; the last bin is "or more".
+	/// Input latency: ticks an input waited before it ran (the inbox, code/engine/kernel/inbox.dm). Bin i counts i ticks; the last bin is "or more".
 	var/list/input_bins
 	var/input_immediate = 0
 	var/input_queued = 0
 	var/input_dropped = 0
 	var/input_over_cap = 0
-	/// The click queue: list(user, target, location, control, params, enqueue world.time).
-	var/list/click_queue
 
 /datum/kernel_latency/New()
 	..()
@@ -50,7 +48,7 @@
 	switch(lane)
 		if(LANE_URGENT)
 			return LATENCY_L1
-		if(LANE_SIMULATION, LANE_DERIVED)
+		if(LANE_SIMULATION, LANE_DERIVED, LANE_WORLD)
 			return LATENCY_L2
 	return LATENCY_L3
 
@@ -121,45 +119,6 @@
 			return i - 1
 	return KERNEL_LATENCY_BINS - 1
 
-/// TRUE when a click arriving now should wait for the next tick: the server is near overtime, the
-/// clicker is a real player, and the click is not already inside the queue drain.
-/datum/kernel_latency/proc/should_queue_click(mob/user)
-	if(!enabled || !user?.client)
-		return FALSE
-	return TICK_USAGE >= VERB_HIGH_PRIORITY_QUEUE_THRESHOLD
-
-/// Queues a click for the next tick's drain. Returns TRUE when it was queued.
-/datum/kernel_latency/proc/enqueue_click(mob/user, atom/target, location, control, params)
-	LAZYINITLIST(click_queue)
-	if(length(click_queue) >= KERNEL_CLICK_QUEUE_MAX)
-		click_queue.Cut(1, 2)
-		input_dropped++
-	click_queue += list(list(user, target, location, control, params, world.time))
-	input_queued++
-	return TRUE
-
-/// Runs every queued click as its own clicker, oldest first, and records how long each waited. Called first
-/// in the tick by SSinput (phase K). A clicker or target deleted meanwhile drops the click.
-/datum/kernel_latency/proc/drain_clicks()
-	if(!length(click_queue))
-		return 0
-	var/list/batch = click_queue
-	click_queue = null
-	var/started = TICK_USAGE
-	var/ran = 0
-	for(var/list/entry as anything in batch)
-		var/mob/user = entry[1]
-		var/atom/target = entry[2]
-		if(QDELETED(user) || QDELETED(target))
-			input_dropped++
-			continue
-		record_input((world.time - entry[6]) / world.tick_lag)
-		world.push_usr(user, CALLBACK(target, GLOBAL_PROC_REF(kernel_click_run), user, entry[3], entry[4], entry[5]))
-		ran++
-	if(TICK_USAGE - started > KERNEL_INPUT_CAP)
-		input_over_cap++
-	return ran
-
 /// Telemetry: shedding state, per-class refusals and the L0 latency percentiles.
 /datum/kernel_latency/proc/metrics()
 	return alist(
@@ -170,7 +129,3 @@
 		"input_over_cap" = input_over_cap,
 	)
 
-/// A click, as its clicker: the event, then the mob's click handling.
-/proc/kernel_click_run(atom/holder, mob/user, location, control, params)
-	OM_EMIT(holder, /datum/om/event/click, location, control, params, user)
-	user.ClickOn(holder, params)

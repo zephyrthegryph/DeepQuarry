@@ -1,11 +1,12 @@
 /// The kernel (doc/rewrite/kernel.md sec 1.2, 3.1): one host loop step per tick, in fixed phases. The host loop
 /// (loop.dm) is the kernel's own: it replaced the MC Loop, and there is no subsystem queue left behind it. What the MC
-/// queue used to run is either a host service the kernel fires in phase K or G (input, verb_manager, speech_controller,
-/// tgui transport, dbcore, profiler, garbage) or a system's work items (air, lighting, ticker, ...).
+/// queue used to run is either a host service the kernel fires in phase K or G (tgui transport, dbcore, profiler,
+/// garbage) or a system's work items (the input inbox, air, lighting, ticker, ...).
 ///
-///   K  host services (input, verb_manager, tgui transport, dbcore, sqlite, assets, atoms, overlays, profiler), capped and measured
+///   K  the input inbox, then the host services (tgui transport, dbcore, sqlite, assets, atoms, overlays, profiler), capped and measured
+///   S  simulation sync: what Rust needs from DM, pushed right before the native step (never shed)
 ///   N  native: native_frame(elapsed, budget), the one Rust frame
-///   U  urgent requests, from a reserved slice (request_urgent())
+///   U  urgent requests, from a reserved slice (kernel_urgent())
 ///   D  deadlines (the OM scheduler's deadline wheel) and deadline-phase work items
 ///   P  the borrow pass, then each lane by share: queued wakes, rings, work items
 ///   R  leftovers, lane order
@@ -46,6 +47,21 @@
 	/// P's lane lists), recorded by the last walk of that list: work_run_phase() skips the walk before it. 0: walk.
 	/// Reset by rebuild_work_graph() and by any wake (work_due_reset()).
 	var/list/phase_due
+	// ---- the test clock (code/tests/driver/kernel_clock.dm; all null/FALSE live)
+	/// The injected kernel clock, deciseconds, while a test owns it (kernel_test_begin()); null live.
+	var/test_now
+	/// TRUE while a test slot or phase runs: the phase lists below are the test-owned items' (test_enter()).
+	var/test_stepping = FALSE
+	/// A test graph's phase lists, due dates and dirt, and the live graph's while a test step runs (test_enter(), test_leave()).
+	var/list/test_items
+	var/list/test_lane_items
+	var/list/test_due
+	var/test_dirty = TRUE
+	var/list/live_items
+	var/list/live_lane_items
+	var/list/live_due
+	var/list/live_errors
+	var/live_dirty = TRUE
 	/// The loop's init stage this tick: during boot the carry is off (run_leftover_phase()), so the leftovers of a tick
 	/// go to the initializing subsystems sleeping in CHECK_TICK, not to a presentation backlog.
 	var/tick_init_stage = INITSTAGE_MAX
@@ -142,15 +158,26 @@
 	// call per phase per tick): a runtime in one phase is reported by phase_fault() and the tick goes on.
 	// K
 	var/k_start = TICK_USAGE
-	run_hosted_phase(hosted_k, tick_limit, init_stage)
+	// The phase's work items first (the input inbox drains here, ahead of every host service), then the host services.
 	if(length(items_by_phase[KERNEL_PHASE_K]))
 		try
 			work_run_phase(KERNEL_PHASE_K, tick_limit)
 		catch(var/exception/k_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
 			phase_fault(KERNEL_PHASE_K, k_e)
+	run_hosted_phase(hosted_k, tick_limit, init_stage)
 	if(TICK_USAGE - k_start > KERNEL_INPUT_CAP)
 		k_over_cap++
 	KERNEL_PHASE_NOTE(KERNEL_PHASE_K, k_start)
+
+	// S: simulation sync. Whatever is pushed to Rust is pushed now, so input resolved in K reaches this frame's native
+	// step. It has no scheduler piece and is never shed: the phase's own items, under the tick's limit.
+	var/s_start = TICK_USAGE
+	if(length(items_by_phase[KERNEL_PHASE_S]))
+		try
+			work_run_phase(KERNEL_PHASE_S, tick_limit)
+		catch(var/exception/s_e) // ALLOW(silent_catch): phase_fault() reports it through report_fault()
+			phase_fault(KERNEL_PHASE_S, s_e)
+	KERNEL_PHASE_NOTE(KERNEL_PHASE_S, s_start)
 
 	if(!light && sched && isnull(sched.manual_time) && sched_runs(init_stage))
 		var/sb_start = TICK_USAGE
@@ -272,14 +299,16 @@
 	native_frame(elapsed, budget)
 
 /// D: the deadline wheel, then deadline-phase work items in what is left of the deadline share.
-/datum/controller/kernel/proc/run_deadline_phase(tick_limit)
+// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
+/datum/controller/kernel/proc/run_deadline_phase(tick_limit, now = world.time)
 	var/s_start = TICK_USAGE
 	sched.pass_deadlines(tick_limit)
 	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
-	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE))
+	work_run_phase(KERNEL_PHASE_D, min(tick_limit, sched.pass_start + sched.pass_avail * OM_DEADLINE_SHARE + sched.pass_avail * KERNEL_URGENT_SHARE), 0, now)
 
 /// P: the borrow pass, then each lane: the scheduler's share of it, then that lane's work items.
-/datum/controller/kernel/proc/run_lane_phase(tick_limit)
+// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
+/datum/controller/kernel/proc/run_lane_phase(tick_limit, now = world.time)
 	var/s_start = TICK_USAGE
 	sched.pass_borrow(tick_limit)
 	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
@@ -295,16 +324,17 @@
 		if(latency.shedding && !latency.admit(kernel_lane_class(lane), "lane [lane]"))
 			continue
 		var/lane_limit = min(TICK_USAGE + sched.pass_avail * sched.lane_share[lane], tick_limit)
-		work_run_phase(KERNEL_PHASE_P, lane_limit, lane)
+		work_run_phase(KERNEL_PHASE_P, lane_limit, lane, now)
 
 /// R: leftovers. The scheduler's leftovers, R's own items, then phase P items that ran out of their lane's share with
 /// work left (p_carry), in the order they stopped: a backlog (lighting after a power change, a long fire()) drains with
 /// whatever the tick has spare instead of one lane share per tick.
-/datum/controller/kernel/proc/run_leftover_phase(tick_limit)
+// ALLOW(sys_world_time_write): the kernel clock: a phase default of the scheduler itself, not a per-entity expiry
+/datum/controller/kernel/proc/run_leftover_phase(tick_limit, now = world.time)
 	var/s_start = TICK_USAGE
 	sched.pass_leftovers(tick_limit)
 	sched_ms_tick += TICK_USAGE_TO_MS(s_start)
-	work_run_phase(KERNEL_PHASE_R, tick_limit)
+	work_run_phase(KERNEL_PHASE_R, tick_limit, 0, now)
 	if(!length(p_carry))
 		return
 	var/list/carry = p_carry
@@ -315,7 +345,7 @@
 	for(var/datum/work_item/W as anything in carry)
 		if(TICK_USAGE >= tick_limit)
 			break
-		run_item(W, tick_limit)
+		run_item(W, tick_limit, now)
 
 /// The work items of a phase that has no scheduler piece of its own (K, N, G).
 /datum/controller/kernel/proc/run_work_phase(phase, tick_limit)
@@ -324,7 +354,7 @@
 // ---------------------------------------------------------------- hosted subsystems
 
 /// Fires each host service that is due, in list order: its own runlevels, its own timing, a paused run resumed.
-/// A ticker (input, verb_manager) gets the whole phase limit; a service on a longer wait (tgui, dbcore, profiler,
+/// A ticker gets the whole phase limit; a service on a longer wait (tgui, dbcore, profiler,
 /// garbage) gets KERNEL_HOST_SLICE of a tick at most, so a slow host cannot starve the phases after it.
 /datum/controller/kernel/proc/run_hosted_phase(list/subsystems, tick_limit, init_stage)
 	var/now = world.time

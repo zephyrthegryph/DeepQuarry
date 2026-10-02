@@ -77,7 +77,7 @@
 /// It should not be used simply to silence CI.
 #define SS_OK_TO_FAIL_INIT 128
 
-/// Run by the kernel tick (kernel/kernel.dm phases K and G), not the MC queue: input, verb_manager, garbage.
+/// Run by the kernel tick (kernel/kernel.dm phases K and G), not the MC queue: garbage and the other host services (the input inbox is a phase K work item).
 /// The MC never queues it; the kernel fires it in its phase, in fixed order.
 #define SS_KERNEL_HOSTED 256
 

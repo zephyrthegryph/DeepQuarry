@@ -15,8 +15,6 @@
 			continue
 		TEST_ASSERT(S.flags & SS_KERNEL_HOSTED, "[S.type] fires, so the kernel must host it (there is no MC queue)")
 		TEST_ASSERT(S.state != SS_QUEUED, "[S.type] is not in a queue")
-	TEST_ASSERT(SSinput in K.hosted_k, "input is a phase K host")
-	TEST_ASSERT(SSverb_manager in K.hosted_k, "verb_manager is a phase K host")
 	TEST_ASSERT(SStgui in K.hosted_k, "the tgui transport is a phase K host")
 	TEST_ASSERT(SSdbcore in K.hosted_k, "dbcore is a phase K host")
 	TEST_ASSERT(SSprofiler in K.hosted_k, "the profiler is a phase K host")
@@ -100,7 +98,7 @@
 		/datum/system/job = SSjob, /datum/system/lighting = SSlighting, /datum/system/mapping = SSmapping,
 		/datum/system/media_tracks = SSmedia_tracks, /datum/system/nerdle = SSnerdle, /datum/system/persistence = SSpersistence,
 		/datum/system/robot_sprites = SSrobot_sprites, /datum/system/shuttles = SSshuttles, /datum/system/ticker = SSticker,
-		/datum/system/speech_controller = SSspeech_controller, /datum/system/native = SSvg,
+		/datum/system/input = SSinput, /datum/system/native = SSvg,
 	)
 	var/list/table = system_table()
 	for(var/path in converted)
@@ -189,31 +187,3 @@
 	TEST_ASSERT(SSlighting.times_fired > light_before, "lighting fires from the kernel")
 	TEST_ASSERT(SSticker.times_fired > ticker_before, "the ticker fires from the kernel")
 	TEST_ASSERT_EQUAL(length(K.work_errors), 0, "the work graph has no errors")
-
-/// The speech controller is a system with its own verb lane: queued verbs run from its phase K work item, and it is
-/// not SSverb_manager's lane.
-/datum/unit_test/system_speech_controller
-
-/// Counts the verbs the speech lane ran.
-/datum/speech_probe
-	var/hits = 0
-
-/datum/speech_probe/proc/hit()
-	hits++
-
-/datum/unit_test/system_speech_controller/Run()
-	var/datum/controller/kernel/K = kernel()
-	var/datum/verb_lane/lane = verb_lane_of(SSspeech_controller)
-	TEST_ASSERT(lane, "the speech controller owns a verb lane")
-	TEST_ASSERT_EQUAL(lane, SSspeech_controller.lane, "verb_lane_of() finds it")
-	TEST_ASSERT(lane != verb_lane_of(SSverb_manager), "the speech lane is not SSverb_manager's")
-	TEST_ASSERT_EQUAL(verb_lane_of(SSverb_manager), SSverb_manager.lane, "verb_lane_of() finds SSverb_manager's lane")
-	var/datum/work_item/W = K.work_by_key["[/datum/system/speech_controller]:run_queue"]
-	TEST_ASSERT(W, "the speech lane's work item is registered")
-	TEST_ASSERT_EQUAL(W.phase, KERNEL_PHASE_K, "it runs in phase K, with the other input services")
-	var/datum/speech_probe/P = new
-	lane.queue_verb(VERB_CALLBACK(P, TYPE_PROC_REF(/datum/speech_probe, hit)))
-	TEST_ASSERT_EQUAL(length(lane.verb_queue), 1, "the verb is queued")
-	sleep(2)
-	TEST_ASSERT_EQUAL(P.hits, 1, "the kernel ran the queued verb")
-	TEST_ASSERT_EQUAL(length(lane.verb_queue), 0, "and emptied the queue")

@@ -80,5 +80,5 @@
 /// (Master.New); creating a system twice is harmless, the registry keeps the first.
 /proc/kernel_create_systems()
 	for(var/path in subtypesof(/datum/system))
-		if(system_instantiable(path) && !ispath(path, /datum/world_service))
+		if(system_instantiable(path) && !ispath(path, /datum/world_service) && !system_lazy_only(path))
 			system(path)

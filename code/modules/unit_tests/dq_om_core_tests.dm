@@ -420,7 +420,7 @@
 /datum/unit_test/om/regression_lanes_do_not_starve
 
 /datum/unit_test/om/regression_lanes_do_not_starve/run_om(list/made)
-	sched.harness_caps = list(3, 3, 3, 3, 3)
+	sched.harness_caps = list(3, 3, 3, 3, 3, 3)
 	sched.harness_deadline_cap = 3
 	var/list/crowd = list()
 	for(var/i in 1 to 200)

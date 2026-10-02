@@ -9,9 +9,10 @@
 // engine verb that does one of these reports it through a TEST_REC_* macro (code/__defines/engine/test_hooks.dm), which
 // compiles out of production. The phase-2 behaviour snapshot harness is built on the same recorder.
 //
-// Who owns what. E0 fixes the API (test_record / test_recorded), the row shape and the report calls, and ships the placeholder
-// store below so the proofs compile and so a fixture can compare runs; the store itself belongs to E6 (round 5), which
-// replaces test_rec_event() and keeps the rest.
+// Who owns what. E0 fixed the API (test_record / test_recorded), the row shape and the report calls; the store is E6's:
+// test_rec_event() below stamps every row with its position in the record (`seq`) and the kernel time it was reported at
+// (`at`: the injected test clock, else world.time), and bounds the record at TEST_RECORD_MAX rows (the rest are counted in
+// test_recorded_dropped(), so a runaway loop in a fixture cannot eat the world).
 //
 // Comparing runs. A run on three identical fixtures touches three different entities, so a row also carries the `role`
 // of its entity: its position among the entities test_record() was given (null for any other entity). test_events_diff()
@@ -31,11 +32,27 @@
 	var/to_value
 	/// The 1-based position of `entity` among the entities test_record() named, or null. Set when the record is read.
 	var/role
+	/// The row's position in the record, 1-based, and the kernel time (deciseconds) it was reported at. Not part of a
+	/// comparison: two runs of one fixture differ in time by design.
+	var/seq
+	var/at
+
+/// Rows a record holds before it starts counting instead of keeping them.
+#define TEST_RECORD_MAX 20000
+
+/// TRUE while a record is open.
+/proc/test_recording()
+	return !isnull(GLOB.test_driver.recording)
+
+/// Rows the open (or last read) record refused past TEST_RECORD_MAX.
+/proc/test_recorded_dropped()
+	return GLOB.test_driver.recording_dropped
 
 /// Starts recording. The entities named here are the ones whose tracked deltas are kept, and the ones rows are compared by.
 /proc/test_record(...)
 	var/datum/test_driver/D = GLOB.test_driver
 	D.recording = list()
+	D.recording_dropped = 0
 	D.recorded_entities = args.Copy()
 
 /// Stops the recording and returns it, in order, as /datum/test_event rows. Clears it.
@@ -47,7 +64,7 @@
 	D.recording = null
 	D.recorded_entities = null
 
-/// The one store write. A placeholder: E6 replaces this proc (and nothing else in this file) with its recorder.
+/// The one store write.
 /proc/test_rec_event(kind, datum/entity, key, from_value, to_value)
 	var/datum/test_driver/D = GLOB.test_driver
 	if(isnull(D.recording))
@@ -55,7 +72,12 @@
 	// A delta is kept only for an entity the test named; every other kind is kept whatever it concerns.
 	if(kind == TEST_EVENT_DELTA && !(entity in D.recorded_entities))
 		return
+	if(length(D.recording) >= TEST_RECORD_MAX)
+		D.recording_dropped++
+		return
 	var/datum/test_event/event = new
+	event.seq = length(D.recording) + 1
+	event.at = isnull(kernel().test_now) ? world.time : kernel().test_now
 	event.kind = kind
 	event.entity = entity // ALLOW(ownership): a test-only row the test reads and drops
 	event.key = key

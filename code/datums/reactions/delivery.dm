@@ -288,7 +288,7 @@ GLOBAL_VAR_INIT(rx_drain_loop_expected, FALSE)
 		return
 	S.bands[bands_key] = band
 	if(R.urgent)
-		// A static urgent reaction is a work item: request_urgent() dedups it per holder and the kernel's U phase runs it.
+		// A static urgent reaction is a work item: kernel_urgent() dedups it per holder and the kernel's U phase runs it.
 		if(L || !rx_request_cross(E, R, band, previous))
 			rx_deliver_cross(E, R, band, previous, L)
 	else

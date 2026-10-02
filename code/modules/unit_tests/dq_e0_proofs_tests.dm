@@ -21,9 +21,9 @@
 	tier = TEST_TIER_E0
 
 /datum/unit_test/dq_e0_proof/Run()
-	test_driver_reset()
+	test_driver_begin()
 	run_proof()
-	test_driver_reset()
+	test_driver_end()
 
 /// The proof itself: drive, read into locals, E0_GATE, assert.
 /datum/unit_test/dq_e0_proof/proc/run_proof()

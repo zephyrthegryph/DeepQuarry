@@ -13,6 +13,16 @@
 	/// TRUE once initialize() has run. A lazy (data-only) service initializes on first use.
 	var/initialized = FALSE
 
+	/// The membership roles this system accepts (join(system, E, source, role)): empty accepts any. A role that is not in
+	/// a non-empty list is a CRASH in join().
+	var/list/roles
+	/// The kernel phase (KERNEL_PHASE_*) the system's every() items run in when the declaration names none: a host system
+	/// sets KERNEL_PHASE_K or KERNEL_PHASE_N, the rest keep phase P.
+	var/phase = KERNEL_PHASE_P
+	/// TRUE: the boot passes (kernel_create_systems(), kernel_systems()) never create it; only system(path), on demand, does.
+	/// A test fixture system sets it so it does not boot with the live kernel.
+	var/lazy_only = FALSE
+
 	// ---- time
 	// periodic_cadence (a CADENCE_* pipeline) and periodic_interval are /datum vars (capabilities/refresh.dm).
 	/// RUNLEVEL_* bits the periodic step runs in, or 0 for the cadence's own runlevels.
@@ -79,6 +89,11 @@
 		return FALSE
 	return !is_abstract(path)
 
+/// TRUE when `path` is a system the boot passes leave to system(path) (its `lazy_only`).
+/proc/system_lazy_only(path)
+	var/datum/system/proto = path
+	return initial(proto.lazy_only)
+
 /// The singleton of a system type. A non-abstract pure system that does not exist yet is created.
 /// Hot paths cache the result in a local.
 /proc/system(path)
@@ -95,6 +110,8 @@
 	var/list/table = system_table()
 	for(var/path in subtypesof(/datum/system))
 		if(!system_instantiable(path))
+			continue
+		if(!table[path] && system_lazy_only(path))
 			continue
 		if(ispath(path, /datum/world_service))
 			continue

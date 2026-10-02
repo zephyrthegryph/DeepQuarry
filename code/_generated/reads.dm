@@ -133,8 +133,8 @@
 	if(!table)
 		table = list(
 			/datum/system/air = RXB_EVERY,
+			/datum/system/input = RXB_EVERY,
 			/datum/system/lighting = RXB_EVERY,
-			/datum/system/speech_controller = RXB_EVERY,
 			/datum/system/ticker = RXB_EVERY,
 			/datum/system/ui_push = RXB_EVERY,
 			/obj/effect/hotspot = RXB_EVERY,

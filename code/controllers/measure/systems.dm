@@ -108,7 +108,7 @@
 		return "mc"
 	if(kind == KM_KIND_PSEUDO)
 		return idx == KM_SYS_INPUT ? "input" : "om"
-	var/static/list/lane_names = list("urgent", "sim", "derived", "present", "bg")
+	var/static/list/lane_names = list("urgent", "sim", "derived", "present", "bg", "world")
 	var/list/parts = list()
 	var/mask = lane_masks[idx]
 	for(var/lane in 1 to OM_LANE_COUNT)

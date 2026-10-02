@@ -3,6 +3,7 @@
 /// Adds `W` for `owner_type`. The same key again replaces the older item. Marks the phase graph stale.
 /datum/controller/kernel/proc/register_work(owner_type, datum/work_item/W)
 	W.owner_type = owner_type
+	W.test_owned = !isnull(test_now)
 	if(!W.handler && !istype(W, /datum/work_item/stage))
 		CRASH("kernel_register_work: a work item for [owner_type] has no handler")
 	W.name ||= "[W.handler]"
@@ -32,6 +33,7 @@
 		cap_wanted[W.members] = TRUE
 		kernel_backfill_members(W.members)
 	work_dirty = TRUE
+	test_dirty = TRUE
 	return W
 
 /// Drops every item `owner_type` registered.
@@ -43,6 +45,7 @@
 			work_by_members[W.members] -= W
 	work_by_owner -= owner_type
 	work_dirty = TRUE
+	test_dirty = TRUE
 
 /// The items of `phase` in dependency order. Rebuilds and revalidates the graph when items changed.
 /datum/controller/kernel/proc/items_of_phase(phase)
@@ -67,8 +70,9 @@
 	var/list/missing = list()
 	var/list/deps = list()
 	var/list/scheduled = list()
+	// The live graph holds the live items and a test's graph the test-owned ones (test_enter() builds that one).
 	for(var/datum/work_item/W as anything in work_all)
-		if(!W.event)
+		if(!W.event && W.test_owned == test_stepping)
 			scheduled += W
 	for(var/datum/work_item/W as anything in scheduled)
 		var/list/resolved = list()
@@ -165,9 +169,14 @@
 /// Forgets every phase list's earliest due date, so each is walked again on its next pass: an item was woken, added
 /// or rescheduled from outside the walk.
 /datum/controller/kernel/proc/work_due_reset()
-	phase_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+	// In place: the live graph and a test's graph each keep their list, and both forget.
+	if(length(phase_due) != KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+		phase_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+	if(length(test_due) != KERNEL_PHASE_COUNT + OM_LANE_COUNT)
+		test_due = new /list(KERNEL_PHASE_COUNT + OM_LANE_COUNT)
 	for(var/i in 1 to length(phase_due))
 		phase_due[i] = 0
+		test_due[i] = 0
 
 /// Runs one item if it is due and its latency class is admitted. Returns FALSE when it ran out of budget with work left.
 // ALLOW(sys_world_time_write): the kernel clock: a per-tick timestamp of the scheduler itself, not a per-entity expiry
@@ -224,7 +233,7 @@
 
 /// A memberless item: one call. Returns TRUE when done (a yield is not done).
 /datum/controller/kernel/proc/run_item_once(datum/work_item/W, datum/owner, now)
-	// Only an urgent-capable item can have been run ahead of its cadence (request_urgent()); the rest skip the token read.
+	// Only an urgent-capable item can have been run ahead of its cadence (kernel_urgent()); the rest skip the token read.
 	if(W.urgent && !W.yielded && W.token_current(null, now))
 		// An urgent run already covered this instant.
 		W.next_run = now + W.interval

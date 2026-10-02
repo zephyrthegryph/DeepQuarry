@@ -104,8 +104,8 @@ GLOBAL_DATUM(om_live_sched, /datum/om/scheduler)
 	var/ctx_bid = 0
 
 	/// Budget shares per lane (fractions of the run's budget).
-	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.1)
-	/// Tests: max hook calls per lane per run (list of 5), and for deadlines.
+	var/list/lane_share = list(0.3, 0.3, 0.15, 0.15, 0.05, 0.05) // ALLOW(instance_list): the scheduler is a singleton (one per live kernel, one per test)
+	/// Tests: max hook calls per lane per run (one per lane), and for deadlines.
 	var/list/harness_caps
 	var/harness_deadline_cap = 0
 	/// Current phase's absolute tick usage limit and call cap.

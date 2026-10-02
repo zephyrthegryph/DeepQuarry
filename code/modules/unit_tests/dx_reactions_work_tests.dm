@@ -1,5 +1,5 @@
 // Reactions on the kernel (code/datums/reactions/work.dm): every() as scheduled work with `when`, members= and
-// per-instance enrolment, urgent crossings through request_urgent(), notice cost accounting, the pooled notice,
+// per-instance enrolment, urgent crossings through kernel_urgent(), notice cost accounting, the pooled notice,
 // typed relations and the event coalescing defaults.
 
 // ---------------------------------------------------------------- fixtures
@@ -236,7 +236,7 @@
 
 // ---------------------------------------------------------------- on_cross(urgent = TRUE)
 
-/// An urgent crossing is requested with request_urgent(): deduped per holder, the latest band carried, delivered
+/// An urgent crossing is requested with kernel_urgent(): deduped per holder, the latest band carried, delivered
 /// by the kernel's U phase as handler(band, previous_band).
 /datum/unit_test/dx_work_cross_urgent
 

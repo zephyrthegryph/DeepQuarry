@@ -38,6 +38,8 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	var/list/recording
 	/// The entities test_record() was given, in order: their deltas are kept and rows are compared by position among them.
 	var/list/recorded_entities
+	/// Rows the record refused past TEST_RECORD_MAX since test_record() started it.
+	var/recording_dropped = 0
 
 /// One log line, as test_logs() returns it: the op key chain, how it ended, where it came from, who and what, and the text.
 /datum/test_log
@@ -87,7 +89,9 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	D.notice_queued = null
 	D.logs = null
 	D.recording = null
+	D.recording_dropped = 0
 	D.recorded_entities = null
+	SSinput.reset_for_test()
 
 /// Zeroes the notice and spill counters (and nothing else): "since the last reset".
 /proc/test_counters_reset()
@@ -95,6 +99,17 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 	D.spills = 0
 	D.notice_counts = null
 	D.notice_queued = null
+
+/// A clean driver and the kernel on its injected clock: the first thing a fixture that makes time pass calls, before it
+/// builds its entities (they join the test scheduler that is current when they are created).
+/proc/test_driver_begin()
+	test_driver_reset()
+	kernel_test_begin()
+
+/// The kernel back on the real clock, and a clean driver.
+/proc/test_driver_end()
+	kernel_test_end()
+	test_driver_reset()
 
 // ---- Input forms (drive E2's resolver through E6's inbox) ----
 

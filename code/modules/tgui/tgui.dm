@@ -568,7 +568,7 @@
 		log_tgui(user, "Action: [act_type] [href_list["payload"]], Window: [window().id], Source: [src_object()]")
 		#endif
 		process_status()
-		DEFAULT_QUEUE_OR_CALL_VERB(VERB_CALLBACK(src, PROC_REF(on_act_message), act_type, payload, state()))
+		input_submit(new /datum/input_event/ui_act(user, src, act_type, payload, state()))
 		return FALSE
 	switch(type)
 		if("ready")

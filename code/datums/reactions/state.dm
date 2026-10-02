@@ -328,6 +328,10 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 	var/datum/owner = rx_member_owner(system)
 	if(owner && QDELING(owner))
 		return FALSE
+	if(!isnull(role) && istype(owner, /datum/system))
+		var/datum/system/declared = owner
+		if(length(declared.roles) && !(role in declared.roles))
+			CRASH("join: [role] is not a role of [declared.type] (it declares [jointext(declared.roles, ", ")])")
 	. = member_join(system, E, source, role)
 	if(!.)
 		return

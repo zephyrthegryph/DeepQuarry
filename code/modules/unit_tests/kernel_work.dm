@@ -239,13 +239,13 @@
 	var/datum/work_item/test_fixture/W = K.register_work(/datum/test_work_owner, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key, urgent = TRUE))
 	var/datum/work_item/test_fixture/plain = K.register_work(/datum/test_work_owner/a, test_work_item(O, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key))
 
-	TEST_ASSERT_NULL(K.request_urgent(M, plain, 500), "an item not declared urgent refuses requests")
-	var/datum/urgent_request/R = K.request_urgent(M, W, 500)
+	TEST_ASSERT_NULL(K.kernel_urgent(M, plain, 500), "an item not declared urgent refuses requests")
+	var/datum/urgent_request/R = K.kernel_urgent(M, W, 500)
 	TEST_ASSERT(R, "an urgent item takes a request")
-	TEST_ASSERT_EQUAL(K.request_urgent(M, W, 700), R, "a second request for the same member and work is the same request")
+	TEST_ASSERT_EQUAL(K.kernel_urgent(M, W, 700), R, "a second request for the same member and work is the same request")
 	TEST_ASSERT_EQUAL(K.urgent_deduped, 1, "and is counted as deduped")
 	TEST_ASSERT_EQUAL(R.deadline, 500, "it keeps the earlier deadline")
-	K.request_urgent(M, W, 300)
+	K.kernel_urgent(M, W, 300)
 	TEST_ASSERT_EQUAL(R.deadline, 300, "an earlier deadline tightens it")
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "one pending request")
 
@@ -264,17 +264,17 @@
 	// Breach metric: overdue requests are counted once, late runs sum their lateness.
 	var/datum/test_work_owner/O2 = new
 	var/datum/work_item/test_fixture/W2 = K.register_work(/datum/test_work_owner/b, test_work_item(O2, TYPE_PROC_REF(/datum/test_work_owner, record_member), interval = 10, members = key, urgent = TRUE))
-	K.request_urgent(M, W2, 150)
+	K.kernel_urgent(M, W2, 150)
 	K.run_urgent(WORK_TEST_LIMIT, 200)
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 1, "a run after its deadline is a breach")
 	TEST_ASSERT_EQUAL(K.urgent_lateness_ds, 50, "with its lateness")
-	K.request_urgent(M, W2, 400)
+	K.kernel_urgent(M, W2, 400)
 	K.run_urgent(WORK_TEST_LIMIT, 300)
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 1, "a run before its deadline is not")
 
 	// The reserved slice: over budget, one request still runs and the rest wait; overdue ones count.
-	K.request_urgent(M, W2, 310)
-	K.request_urgent(N, W2, 320)
+	K.kernel_urgent(M, W2, 310)
+	K.kernel_urgent(N, W2, 320)
 	K.run_urgent(-1, 400)
 	TEST_ASSERT_EQUAL(length(K.urgent_queue), 1, "a spent slice still runs the earliest request, and leaves the rest")
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 3, "both overdue requests were counted")
@@ -284,7 +284,7 @@
 	TEST_ASSERT_EQUAL(K.urgent_breaches, 3, "an already-counted breach is not counted twice")
 
 	// A deleted member's request is dropped.
-	K.request_urgent(N, W2, 900)
+	K.kernel_urgent(N, W2, 900)
 	member_purge(N)
 	qdel(N)
 	K.run_urgent(WORK_TEST_LIMIT, 500)
@@ -382,7 +382,7 @@
 /datum/unit_test/kernel_tick_phases/Run()
 	var/datum/controller/kernel/K = kernel()
 	TEST_ASSERT(SSbehaviours.flags & SS_NO_FIRE, "SSbehaviours dissolved: it no longer fires")
-	for(var/datum/controller/subsystem/hosted as anything in list(SSinput, SSverb_manager, SSgarbage, SStgui, SSdbcore, SSprofiler))
+	for(var/datum/controller/subsystem/hosted as anything in list(SSgarbage, SStgui, SSdbcore, SSprofiler))
 		TEST_ASSERT(hosted.flags & SS_KERNEL_HOSTED, "[hosted.name] is hosted by the kernel")
 		TEST_ASSERT(hosted.state != SS_QUEUED, "[hosted.name] is not in a queue")
 	// There is no MC queue: every subsystem that fires is a kernel host service.
@@ -399,14 +399,15 @@
 		W.fixture = O
 		K.register_work(/datum/test_work_owner/phases, W)
 	var/ticks_before = K.ticks
-	var/input_before = SSinput.times_fired
+	var/datum/work_item/input_drain = K.work_by_key["[/datum/system/input]:drain_step"]
+	var/input_before = input_drain.runs
 	var/bench_before = SSbehaviours.bench_ms
 	var/runs_before = K.sched?.runs
 	// Phase G runs on leftovers with a floor once a second: the window has to span one.
 	sleep(1 SECONDS + 4)
 	K.unregister_work(/datum/test_work_owner/phases)
 	TEST_ASSERT(K.ticks > ticks_before, "the kernel loop runs the kernel tick every tick")
-	TEST_ASSERT(SSinput.times_fired > input_before, "phase K fires the hosted input subsystem")
+	TEST_ASSERT(input_drain.runs > input_before, "phase K runs the input inbox's drain")
 	TEST_ASSERT(SSbehaviours.bench_ms > bench_before, "the scheduler pass runs from the kernel and is counted")
 	TEST_ASSERT(K.sched.runs > runs_before, "phases D, P and R are scheduler passes")
 	TEST_ASSERT_EQUAL(length(K.work_errors), 0, "the live work graph has no errors")

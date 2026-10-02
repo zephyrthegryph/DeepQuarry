@@ -11,7 +11,7 @@
 //                           - once per live instance of the declaring type (instances join the membership store under
 //                             "rx:<declaring type>:<handler>" at init, rx_enrol(), and leave when they are destroyed),
 //                           - or once, on the system, for a memberless every() declared on a /datum/system.
-//   on_cross(urgent = TRUE) an urgent item: the crossing is requested with request_urgent(holder, item, deadline)
+//   on_cross(urgent = TRUE) an urgent item: the crossing is requested with kernel_urgent(holder, item, deadline)
 //                           (deduped per holder, run from the kernel's reserved slice, carrying the latest band in the
 //                           holder's rx state); the item's perform() calls handler(band, previous_band).
 //   on_notice, on_cross     an event item: the declarer still delivers synchronously, in order, and adds the handler's
@@ -67,7 +67,12 @@ GLOBAL_LIST_EMPTY(rx_work_by_sig)
 				event = TRUE
 		if(RXN_NOTICE)
 			event = TRUE
-	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || KERNEL_PHASE_P, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
+	// A system's every() that names no phase runs in the system's own (a host system's K or N).
+	var/default_phase = KERNEL_PHASE_P
+	if(!holder_run)
+		var/datum/system/system_proto = owner_type
+		default_phase = initial(system_proto.phase)
+	..(R.handler, run_every, R.kind == RXN_EVERY ? R.when : null, member_key, R.phase || default_phase, run_after, R.budget || 0, R.lane || LANE_SIMULATION, run_urgent)
 	name = "[R.kind == RXN_EVERY ? "every" : (R.kind == RXN_CROSS ? "on_cross" : "on_notice")] [R.handler]"
 
 /datum/work_item/reaction/item_key(owner_type)
@@ -242,7 +247,7 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache) // ALLOW(cache): a per-type enrolment flag mem
 // ---------------------------------------------------------------- urgent crossings
 
 /// Asks the kernel to deliver `E`'s crossing of the urgent reaction `R`. The holder's rx state carries the band (the
-/// latest band, the first previous one); request_urgent() dedups the request. Returns FALSE when the kernel refused
+/// latest band, the first previous one); kernel_urgent() dedups the request. Returns FALSE when the kernel refused
 /// (the item is parked): the caller delivers it at once.
 /proc/rx_request_cross(datum/E, datum/reaction/R, band, previous)
 	var/datum/rx_state/S = rx_of(E)
@@ -251,7 +256,7 @@ GLOBAL_LIST_EMPTY(rx_enrol_cache) // ALLOW(cache): a per-type enrolment flag mem
 		pending[1] = band
 	else
 		LAZYSET(S.cross_pending, R.sig, list(band, previous))
-	if(!request_urgent(E, R.work, urgent_deadline(RX_URGENT_DEADLINE)))
+	if(!kernel_urgent(E, R.work, urgent_deadline(RX_URGENT_DEADLINE)))
 		S.cross_pending -= R.sig
 		if(!length(S.cross_pending))
 			S.cross_pending = null
