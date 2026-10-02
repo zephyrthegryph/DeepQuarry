@@ -19,6 +19,12 @@ import path from 'node:path';
 
 export const BINDINGS_DM = 'code/__defines/verdigris/_bindings.dm';
 export const TYPES_DM = 'code/__defines/verdigris/_bindings_types.dm';
+export const COMPONENT_SCHEMAS_DM = 'code/__defines/verdigris/_component_schemas.dm';
+/** Object-model schema output (COMPONENT_SCHEMAS_DM, idempotent vg_bind). Off by
+ * default: it needs /datum/object_model/rust_component, om_emit() event datums and
+ * a vg_entity_component_kind() bind, none of which exist in the current tree.
+ * Set DQ_VG_OBJECT_MODEL_SCHEMAS=1 to generate it. */
+const OBJECT_MODEL_SCHEMAS = process.env.DQ_VG_OBJECT_MODEL_SCHEMAS === '1';
 export const ABI_RS = 'verdigris/ffi/src/abi.rs';
 const SCAN_ROOTS = [
   'verdigris/core',
@@ -219,6 +225,7 @@ type FieldRole = 'config' | 'state' | 'input' | 'computed';
 
 type ComponentField = {
   name: string;
+  valueType: string;
   role: FieldRole;
   unit: string | null;
   min: number | null;
@@ -374,7 +381,7 @@ function stripBrackets(s: string): string[] {
   return splitTopLevel(m[1]).map((x) => x.trim());
 }
 
-function parseFieldAttr(argsText: string, name: string, array: boolean, at: string): ComponentField {
+function parseFieldAttr(argsText: string, name: string, valueType: string, array: boolean, at: string): ComponentField {
   const args = splitTopLevel(argsText);
   const role = args.shift() as FieldRole | undefined;
   if (role !== 'config' && role !== 'state' && role !== 'input') {
@@ -390,6 +397,7 @@ function parseFieldAttr(argsText: string, name: string, array: boolean, at: stri
   }
   return {
     name,
+    valueType,
     role,
     unit: kv.unit ? stripQuotes(kv.unit) : null,
     min,
@@ -430,7 +438,7 @@ export function scanComponents(root: string): { components: Component[]; domainE
           if (!fm) continue;
           const dm = /^\s*(?:pub\s+)?(\w+)\s*:\s*([\w:<>]+|\[\s*[\w:<>]+\s*;\s*\w+\s*\])\s*,?\s*$/.exec(lines[k + 1] ?? '');
           if (!dm) throw new Error(`${rel}:${k + 2}: expected a field declaration after #[vg(...)]`);
-          fields.push(parseFieldAttr(fm[1], dm[1], dm[2].startsWith('['), `${rel}:${k + 1}`));
+          fields.push(parseFieldAttr(fm[1], dm[1], dm[2], dm[2].startsWith('['), `${rel}:${k + 1}`));
           k++;
         }
         for (const f of fields) {
@@ -443,6 +451,8 @@ export function scanComponents(root: string): { components: Component[]; domainE
           const [c, u] = entry.split(':').map((x) => x.trim());
           fields.push({
             name: c,
+            // Computed readouts declare no Rust field type.
+            valueType: 'computed',
             role: 'computed',
             unit: u ? u.replace(/^"|"$/g, '') : null,
             min: null,
@@ -842,11 +852,29 @@ function renderComponentsDm(root: string, components: Component[], domainEvents:
   dm += `// ---- One entry point per bound atom -------------------------------------\n\n`;
   dm += `/// Binds every component this atom's type declares (base on_materialize(), L2).\n`;
   dm += `/atom/movable/proc/vg_bind()\n`;
-  dm += `\tvar/entity = 0\n`;
-  for (const domain of byDomain.keys()) {
-    dm += `\tif(vg_${domain})\n\t\tentity = vg_bind_${domain}(entity)\n`;
+  if (OBJECT_MODEL_SCHEMAS) {
+    // Idempotent bind for object-model DEF adapters: reuse the entity, refuse a
+    // conflicting installed kind, and report failure. Needs a
+    // vg_entity_component_kind() bind, which the Rust side does not export yet.
+    dm += `\tvar/entity = vg_entity\n`;
+    for (const domain of byDomain.keys()) {
+      dm += `\tif(vg_${domain} && entity)\n`;
+      dm += `\t\tvar/installed_${domain} = vg_entity_component_kind(entity, VG_DOMAIN_${domain.toUpperCase()})\n`;
+      dm += `\t\tif(installed_${domain} < 0 || (installed_${domain} && installed_${domain} != vg_${domain}))\n\t\t\treturn FALSE\n`;
+    }
+    for (const domain of byDomain.keys()) {
+      dm += `\tif(vg_${domain} && (!entity || !vg_entity_component_kind(entity, VG_DOMAIN_${domain.toUpperCase()})))\n`;
+      dm += `\t\tentity = vg_bind_${domain}(entity)\n`;
+      dm += `\t\tif(!entity)\n\t\t\treturn FALSE\n`;
+    }
+    dm += `\tvg_entity = entity\n\treturn entity\n\n`;
+  } else {
+    dm += `\tvar/entity = 0\n`;
+    for (const domain of byDomain.keys()) {
+      dm += `\tif(vg_${domain})\n\t\tentity = vg_bind_${domain}(entity)\n`;
+    }
+    dm += `\tvg_entity = entity\n\n`;
   }
-  dm += `\tvg_entity = entity\n\n`;
   dm += `/// Every declared-input mismatch across every bound domain (§7). SSvg's\n`;
   dm += `/// sweep and the test sandbox teardown call this per atom.\n`;
   dm += `/atom/movable/proc/vg_reconcile()\n`;
@@ -922,7 +950,70 @@ function docBlock(docs: string[], indent = ''): string {
   return docs.map((d) => `${indent}/// ${d}`.trimEnd() + '\n').join('');
 }
 
-export function render(root: string): { dm: string; typesDm: string; rs: string; binds: number } {
+/** Object-model DEF metadata and opt-in binding adapters from the same Rust schema.
+ * Opt-in (OBJECT_MODEL_SCHEMAS): it targets /datum/object_model/rust_component and
+ * om_emit() event datums, which the current DM tree does not define. */
+function renderComponentSchemasDm(components: Component[]): string {
+  let dm = `// THIS FILE IS GENERATED by tools/build/lib/verdigris_bindings.ts.
+// Do not edit it by hand: run \`tools/build/build.sh verdigris-bindings\`.
+
+`;
+  for (const c of components) {
+    if (!c.dmType) continue;
+    const lower = snake(c.structName);
+    const defPath = `/datum/object_model/rust_component/${lower}`;
+    const configs = c.fields.filter((f) => f.role === 'config' && !f.array);
+    const inputs = c.fields.filter((f) => f.role === 'input');
+    dm += `${defPath}
+\tdomain = "${c.domain}"
+\tdomain_id = VG_DOMAIN_${c.domain.toUpperCase()}
+\tkind = ${c.kind}
+\tdm_type = ${c.dmType}
+`;
+    dm += '\tfields = list(\n';
+    for (const f of c.fields) {
+      const unit = f.unit ? `"${f.unit}"` : 'null';
+      const min = f.min === null ? 'null' : String(f.min);
+      const max = f.max === null ? 'null' : String(f.max);
+      const def = f.array || f.default === null ? 'null' : f.default === 'true' ? 'TRUE' : f.default === 'false' ? 'FALSE' : f.default;
+      dm += `\t\t"${f.name}" = list("role" = "${f.role}", "value_type" = "${f.array ? 'array' : f.valueType}", "array" = ${f.array ? 'TRUE' : 'FALSE'}, "unit" = ${unit}, "min" = ${min}, "max" = ${max}, "default" = ${def}, "on_invalid" = "${f.onInvalid}"),\n`;
+    }
+    dm += '\t)\n\n';
+    const bindArgs = [...configs.map((f) => `config["${f.name}"]`), ...inputs.map((f) => `target.${lower}_input_${f.name}()`)];
+    dm += `${defPath}/bind(atom/movable/entity, handle, list/config)
+\tif(!istype(entity, ${c.dmType}))
+\t\treturn 0
+`;
+    if (inputs.length) dm += `\tvar${c.dmType}/target = entity\n`;
+    dm += `\treturn vg_${lower}_bind(handle, ${bindArgs.join(', ')})\n\n`;
+    const events = c.events.flatMap((e) => e.variants);
+    if (events.length) {
+      dm += `${defPath}/dispatch_event(atom/movable/entity, event_id)
+\tswitch(event_id)
+`;
+      events.forEach((variant, id) => {
+        dm += `\t\tif(${id})
+\t\t\tom_emit(entity, /datum/object_model/event/rust/${lower}_${snake(variant.name)})
+`;
+      });
+      dm += '\n';
+      for (const variant of events) {
+        dm += `/datum/object_model/event/rust/${lower}_${snake(variant.name)}
+
+`;
+      }
+    }
+  }
+  return dm;
+}
+
+export function render(root: string): {
+  dm: string;
+  typesDm: string;
+  componentSchemasDm: string | null;
+  rs: string;
+  binds: number;
+} {
   const { binds, defines } = scan(root);
   const { components, domainEvents } = scanComponents(root);
   for (const c of components) {
@@ -965,7 +1056,12 @@ export function render(root: string): { dm: string; typesDm: string; rs: string;
   }
   dm += '\n// Binds.\n';
   for (const b of binds) {
-    dm += `\n${docBlock(b.docs)}// ${b.path} (${b.file})\n`;
+    const returnDocs = b.docs.filter((doc) => doc.startsWith('@dm-health returns '));
+    if (returnDocs.length > 1) throw new Error(`${b.file}: duplicate DM return metadata for ${b.name}`);
+    const returnType = returnDocs[0]?.slice('@dm-health returns '.length).trim();
+    if (returnDocs.length && !returnType) throw new Error(`${b.file}: empty DM return type for ${b.name}`);
+    dm += `\n${docBlock(b.docs.filter((doc) => !doc.startsWith('@dm-health returns ')))}// ${b.path} (${b.file})\n`;
+    if (returnType) dm += `// dm-health: returns ${returnType}\n`;
     if (b.args === null) {
       dm += `/proc/vg_${b.name}(...)
 	var/static/__f = load_ext(VERDIGRIS, "byond:${b.name}_ffi")
@@ -987,18 +1083,21 @@ export function render(root: string): { dm: string; typesDm: string; rs: string;
 pub const ABI: &str = "${abi}";
 `;
   const typesDm = renderComponentsDm(root, components, domainEvents);
-  return { dm, typesDm, rs, binds: binds.length };
+  const componentSchemasDm = OBJECT_MODEL_SCHEMAS ? renderComponentSchemasDm(components) : null;
+  return { dm, typesDm, componentSchemasDm, rs, binds: binds.length };
 }
 
 /** Returns the list of stale files; writes them unless check is set. */
 export function generateVerdigrisBindings(root: string, check: boolean): string[] {
-  const { dm, typesDm, rs } = render(root);
+  const { dm, typesDm, componentSchemasDm, rs } = render(root);
   const stale: string[] = [];
-  for (const [rel, content] of [
+  const outputs: [string, string][] = [
     [BINDINGS_DM, dm],
     [TYPES_DM, typesDm],
     [ABI_RS, rs],
-  ] as const) {
+  ];
+  if (componentSchemasDm !== null) outputs.splice(2, 0, [COMPONENT_SCHEMAS_DM, componentSchemasDm]);
+  for (const [rel, content] of outputs) {
     const full = path.join(root, rel);
     const current = fs.existsSync(full)
       ? fs.readFileSync(full, 'utf8').replace(/\r\n/g, '\n')

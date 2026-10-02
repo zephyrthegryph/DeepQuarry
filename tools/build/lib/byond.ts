@@ -328,6 +328,7 @@ export type DDResult = Juke.ExecReturn & {
    * file is likely missing or mid-write; callers should treat it as
    * unclean/incomplete, not just another failure. */
   killedByWatchdog?: boolean;
+  watchdogReason?: string;
 };
 
 function runDreamDaemonWithWatchdog(
@@ -371,19 +372,32 @@ function runDreamDaemonWithWatchdog(
       if (graceTimer) {
         clearTimeout(graceTimer);
       }
-      if (forceKill && child.pid && child.exitCode === null && child.signalCode === null) {
+      const wasRunning = forceKill && child.pid && child.exitCode === null && child.signalCode === null;
+      if (wasRunning && child.pid) {
         const log = isHardTimeout ? Juke.logger.error : Juke.logger.info;
         log(`DreamDaemon watchdog: force-killing daemon (${reason}).`);
         killProcessTree(child.pid);
       }
-      resolve({
-        code: child.exitCode ?? 0,
-        signal: null,
+      const result = {
+        code: child.exitCode ?? (reason === 'spawn error' ? 1 : 0),
+        signal: child.signalCode,
         stdout: '',
         stderr: '',
         combined: '',
         killedByWatchdog: isHardTimeout,
-      } as DDResult);
+        watchdogReason: reason,
+      } as DDResult;
+      if (wasRunning) {
+        // taskkill may return before Node observes process exit. Do not start
+        // the next benchmark world while this one can still write shared files.
+        const exitWait = setTimeout(() => resolve(result), 10_000);
+        child.once('exit', () => {
+          clearTimeout(exitWait);
+          resolve(result);
+        });
+      } else {
+        resolve(result);
+      }
     }
 
     function checkDone() {

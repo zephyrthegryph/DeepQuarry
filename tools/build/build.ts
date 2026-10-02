@@ -62,6 +62,11 @@ import { renderReport } from './lib/bench_report';
 import { checkVerdigrisAbi, DreamDaemon, DreamMaker, NamedVersionFile } from './lib/byond';
 import { prependDefines } from './lib/tgs';
 import { MAP_BOUNDS_FILE, writeMapBounds } from './lib/map_bounds';
+import {
+  checkVerdigrisProvenance,
+  installVerdigrisLibrary,
+  verdigrisInputHash,
+} from './lib/verdigris_provenance';
 
 export const TGS_MODE = process.env.CBT_BUILD_MODE === 'TGS';
 
@@ -291,6 +296,16 @@ const VERDIGRIS_RUST_TARGET =
   process.platform === 'win32'
     ? 'i686-pc-windows-msvc'
     : 'i686-unknown-linux-gnu';
+const VERDIGRIS_PROVENANCE = `${VERDIGRIS_LIB}.provenance.json`;
+// Provenance checking (lib/verdigris_provenance.ts) proves a library was built
+// from this checkout's Rust inputs. It needs the Rust build to embed
+// VERDIGRIS_SOURCE_HASH from DQ_VERDIGRIS_INPUT_HASH, which the crates do not do
+// yet, so it is opt-in: DQ_VERDIGRIS_PROVENANCE=1. Off, the target behaves as before.
+const VERDIGRIS_PROVENANCE_ENFORCED = process.env.DQ_VERDIGRIS_PROVENANCE === '1';
+const verdigrisProvenanceMismatch = (): string | null =>
+  VERDIGRIS_PROVENANCE_ENFORCED
+    ? checkVerdigrisProvenance(process.cwd(), VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, process.env.RUSTFLAGS || '')
+    : null;
 
 // DQAdd Start — generated DM bindings for verdigris (doc/rewrite/rust_core.md §9).
 // `verdigris-bindings` rewrites code/__defines/verdigris/_bindings.dm and
@@ -322,9 +337,17 @@ export const VerdigrisBindingsCheckTarget = new Juke.Target({
 export const VerdigrisTarget = new Juke.Target({
   dependsOn: [VerdigrisBindingsCheckTarget],
   onlyWhen: () => {
+    const mismatch = verdigrisProvenanceMismatch();
     // DM-only work (agents in worktrees, CI lint jobs) can reuse a prebuilt
     // library instead of compiling the whole Rust workspace.
     if (process.env.DQ_PREBUILT_VERDIGRIS === '1' && fs.existsSync(VERDIGRIS_LIB)) {
+      if (mismatch) {
+        Juke.logger.error(
+          `verdigris: prebuilt ${VERDIGRIS_LIB} is unsafe to reuse: ${mismatch}. `
+            + 'Copy its matching provenance sidecar or rebuild in this checkout.',
+        );
+        throw new Juke.ExitCode(1);
+      }
       Juke.logger.info(`verdigris: DQ_PREBUILT_VERDIGRIS=1 — using existing ${VERDIGRIS_LIB}`);
       // Warn now (before a long compile); DreamDaemon() refuses to boot on it.
       try {
@@ -340,6 +363,13 @@ export const VerdigrisTarget = new Juke.Target({
     });
     const cargoOk = !probe.error && probe.status === 0;
     if (!cargoOk) {
+      if (mismatch && fs.existsSync(VERDIGRIS_LIB)) {
+        Juke.logger.error(
+          `verdigris: cargo not found and ${VERDIGRIS_LIB} cannot be used: ${mismatch}. `
+            + 'Install Rust or copy a matching library and provenance sidecar.',
+        );
+        throw new Juke.ExitCode(1);
+      }
       if (fs.existsSync(VERDIGRIS_LIB)) {
         Juke.logger.info(
           `verdigris: cargo not found — using existing ${VERDIGRIS_LIB}`,
@@ -353,6 +383,7 @@ export const VerdigrisTarget = new Juke.Target({
       }
       return false;
     }
+    if (mismatch) Juke.logger.info(`verdigris: rebuilding ${VERDIGRIS_LIB} because ${mismatch}`);
     return true;
   },
   inputs: [
@@ -374,17 +405,50 @@ export const VerdigrisTarget = new Juke.Target({
     'verdigris/tools/**/build.rs',
     'verdigris/tools/**/*.rs',
   ],
-  outputs: [VERDIGRIS_LIB],
+  // With provenance enforced, a mismatched file can have a newer mtime than every
+  // source (for example a copied DLL), so force Juke to run even when its
+  // timestamp check would pass.
+  outputs: () =>
+    !VERDIGRIS_PROVENANCE_ENFORCED
+      ? [VERDIGRIS_LIB]
+      : verdigrisProvenanceMismatch()
+        ? []
+        : [VERDIGRIS_LIB, VERDIGRIS_PROVENANCE],
   executes: async () => {
-    await Juke.exec(
-      'cargo',
-      ['build', '--release', '--target', VERDIGRIS_RUST_TARGET],
-      { cwd: 'verdigris' },
-    );
-    fs.copyFileSync(
-      `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`,
-      VERDIGRIS_LIB,
-    );
+    const built = `${process.env.CARGO_TARGET_DIR || 'verdigris/target'}/${VERDIGRIS_RUST_TARGET}/release/${VERDIGRIS_LIB}`;
+    if (!VERDIGRIS_PROVENANCE_ENFORCED) {
+      await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], { cwd: 'verdigris' });
+      fs.copyFileSync(built, VERDIGRIS_LIB);
+      return;
+    }
+    const rustflags = process.env.RUSTFLAGS || '';
+    const cargoOptions = {
+      cwd: 'verdigris',
+      env: { ...process.env, DQ_VERDIGRIS_INPUT_HASH: verdigrisInputHash(process.cwd()) },
+    };
+    // Restored source files can retain old timestamps while Cargo keeps newer
+    // rlibs. Clean local crates when provenance is stale, preserving cached
+    // third-party dependencies.
+    if (verdigrisProvenanceMismatch()) {
+      const localCrates = ['vg-core', 'vg-gas', 'vg-heat', 'vg-layout', 'vg-power', 'vg-ffi', 'auxmacros', 'auxcallback', 'verdigris'];
+      await Juke.exec(
+        'cargo',
+        ['clean', '--release', '--target', VERDIGRIS_RUST_TARGET, ...localCrates.flatMap((c) => ['-p', c])],
+        cargoOptions,
+      );
+    }
+    await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+    try {
+      installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
+    } catch (error) {
+      if (!(error instanceof Error) || !error.message.includes('lacks generated exports')) throw error;
+      // Cargo can report a cached release artifact as fresh after source files
+      // are restored across worktrees. Rebuild the FFI crate once from scratch.
+      Juke.logger.warn(`verdigris: ${error.message}; rebuilding the FFI crate`);
+      await Juke.exec('cargo', ['clean', '-p', 'vg-ffi', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      await Juke.exec('cargo', ['build', '--release', '--target', VERDIGRIS_RUST_TARGET], cargoOptions);
+      installVerdigrisLibrary(process.cwd(), built, VERDIGRIS_LIB, VERDIGRIS_RUST_TARGET, rustflags);
+    }
   },
 });
 // DQAdd End
@@ -690,6 +754,10 @@ type WorldRun = {
    * results are likely missing or incomplete; always logged as an explicit
    * error rather than folded into an ordinary "not clean". */
   killedByWatchdog: boolean;
+  daemonExitCode: number | null;
+  daemonSignal: string | null;
+  daemonReason: string | null;
+  daemonError: string | null;
 };
 
 /**
@@ -712,6 +780,10 @@ async function runTestWorld(
   const params = new URLSearchParams({ 'log-directory': 'ci', ...worldParams }).toString();
   const started = Date.now();
   let killedByWatchdog = false;
+  let daemonExitCode: number | null = null;
+  let daemonSignal: string | null = null;
+  let daemonReason: string | null = null;
+  let daemonError: string | null = null;
   try {
     const result = await DreamDaemon(
       {
@@ -730,8 +802,13 @@ async function runTestWorld(
       params,
     );
     killedByWatchdog = !!result.killedByWatchdog;
-  } catch {
+    daemonExitCode = result.code;
+    daemonSignal = result.signal;
+    daemonReason = result.watchdogReason ?? null;
+  } catch (error) {
     // DreamDaemon exits non-zero even on clean runs; the files below decide.
+    // The error is kept for the benchmark diagnostics.
+    daemonError = String(error);
   }
   const processSummary = sampler ? sampler.stop() : null;
   let cleanText: string | null = null;
@@ -754,7 +831,39 @@ async function runTestWorld(
     process: processSummary,
     samples: sampler?.samples ?? [],
     killedByWatchdog,
+    daemonExitCode,
+    daemonSignal,
+    daemonReason,
+    daemonError,
   };
+}
+
+/** Keep every benchmark boot's outputs before the next boot clears shared paths. */
+function saveBenchIterationDiagnostics(runId: string, iteration: number, run: WorldRun): string {
+  const dest = `data/bench/iterations/${runId}/iteration${iteration}`;
+  fs.mkdirSync(dest, { recursive: true });
+  writeJson(`${dest}/runner.json`, {
+    duration_seconds: run.durationSeconds,
+    clean: run.clean,
+    killed_by_watchdog: run.killedByWatchdog,
+    daemon_exit_code: run.daemonExitCode,
+    daemon_signal: run.daemonSignal,
+    daemon_reason: run.daemonReason,
+    daemon_error: run.daemonError,
+    has_test_results: run.results !== null,
+    has_benchmark_results: fs.existsSync('data/bench/scenarios.json'),
+  });
+  for (const source of ['data/unit_tests.json', 'data/bench/scenarios.json', 'data/bench/process.json']) {
+    if (fs.existsSync(source)) fs.copyFileSync(source, `${dest}/${path.basename(source)}`);
+  }
+  const logSource = 'data/logs/ci';
+  if (fs.existsSync(logSource)) {
+    fs.cpSync(logSource, `${dest}/logs`, {
+      recursive: true,
+      filter: (source) => !path.relative(logSource, source).split(path.sep).includes('profiler'),
+    });
+  }
+  return dest;
 }
 
 // ---------------------------------------------------------------------------
@@ -908,6 +1017,10 @@ async function runIsolatedTestWorld(
     );
     const started = Date.now();
     let killedByWatchdog = false;
+    let daemonExitCode: number | null = null;
+    let daemonSignal: string | null = null;
+    let daemonReason: string | null = null;
+    let daemonError: string | null = null;
     try {
       const result = await DreamDaemon(
         {
@@ -925,8 +1038,12 @@ async function runIsolatedTestWorld(
         new URLSearchParams(params).toString(),
       );
       killedByWatchdog = !!result.killedByWatchdog;
-    } catch {
+      daemonExitCode = result.code;
+      daemonSignal = result.signal;
+      daemonReason = result.watchdogReason ?? null;
+    } catch (error) {
       // DreamDaemon exits non-zero even on clean runs; the files below decide.
+      daemonError = String(error);
     }
     let cleanText: string | null = null;
     try {
@@ -949,6 +1066,10 @@ async function runIsolatedTestWorld(
       process: processSummary,
       samples: options.sampler?.samples ?? [],
       killedByWatchdog,
+      daemonExitCode,
+      daemonSignal,
+      daemonReason,
+      daemonError,
       logDir,
     };
   } finally {
@@ -1938,16 +2059,26 @@ export const BenchTarget = new Juke.Target({
         // The world writes the flight recorder of each scenario here (code/modules/benchmarks/_benchmark.dm).
         fs.rmSync('data/bench/kernel_ticks', { recursive: true, force: true });
         const run = await runTestWorld(`${DME_NAME}.bench.dmb`, get(DmVersionParameter), worldParams, true);
+        const diagnostics = saveBenchIterationDiagnostics(identity.id, i, run);
         let world: WorldBenchDocument;
         try {
           world = readJson<WorldBenchDocument>('data/bench/scenarios.json');
         } catch {
           printLogTails();
-          failures.push(`iteration ${i}: the world wrote no benchmark results`);
+          failures.push(
+            `iteration ${i}: the world wrote no benchmark results `
+              + `(daemon ${run.daemonReason ?? 'unknown'}, exit ${run.daemonExitCode ?? 'unknown'}, `
+              + `watchdog ${run.killedByWatchdog ? 'timed out' : 'no'}; diagnostics: ${diagnostics})`,
+          );
           continue;
         }
+        if (run.killedByWatchdog || run.daemonError) {
+          failures.push(`iteration ${i}: DreamDaemon ${run.daemonError ?? run.daemonReason ?? 'failed'}; diagnostics: ${diagnostics}`);
+        }
         for (const scenario of Object.values(world.scenarios)) {
-          if (scenario.status !== 'passed') failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}`);
+          if (scenario.status !== 'passed') {
+            failures.push(`iteration ${i}: ${scenario.id} ${scenario.status}: ${scenario.error ?? ''}; diagnostics: ${diagnostics}`);
+          }
         }
         const profiles: string[] = [];
         if (fs.existsSync('data/logs/ci/profiler')) {
