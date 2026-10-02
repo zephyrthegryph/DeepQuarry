@@ -279,5 +279,5 @@
 		TEST_ASSERT_EQUAL(length(created), 1, "Crumbling must produce exactly one declared debris object")
 		var/atom/movable/debris = own(created[1])
 		TEST_ASSERT_EQUAL(debris.loc, floor, "Replacement debris must stay on the original floor")
-		TEST_ASSERT_NULL(om_resolve(old_handle), "A remains handle must end when replacement changes its type family")
+		TEST_ASSERT_EQUAL(om_resolve(old_handle), debris, "A remains handle must follow its replacement within the decal family")
 		TEST_ASSERT(!QDELETED(debris), "Destroying the original must preserve the replacement debris")
