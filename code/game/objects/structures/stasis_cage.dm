@@ -66,7 +66,7 @@
 	desc = initial(desc)
 
 // the caged creature is released.
-/obj/structure/stasis_cage/on_destroy(force)
+/obj/structure/stasis_cage/lifecycle_prerelease()
 	release()
 
 	..()

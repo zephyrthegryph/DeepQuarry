@@ -134,7 +134,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	can_revert = revert
 
 // the petrified gargoyle reverts, or crumbles.
-/obj/structure/gargoyle/on_destroy(force)
+/obj/structure/gargoyle/lifecycle_prerelease()
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		..()

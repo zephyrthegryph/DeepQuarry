@@ -1,0 +1,13 @@
+/// Cage destruction must release the actual animal and its biological stasis.
+/datum/unit_test/interim_stasis_cage_deletion/Run()
+	var/turf/T = test_floor()
+	var/obj/structure/stasis_cage/cage = allocate(/obj/structure/stasis_cage, T)
+	var/mob/living/simple_mob/animal/passive/mouse/animal = allocate(/mob/living/simple_mob/animal/passive/mouse, T)
+	cage.contain(animal)
+	TEST_ASSERT_EQUAL(cage.contained(), animal, "The real cage must record its contained animal")
+	TEST_ASSERT_EQUAL(animal.loc, cage, "The real capture operation must physically contain the animal")
+	TEST_ASSERT_EQUAL(om_clock_rate_of(animal, CLOCK_BIO), 0, "The occupied cage must stop the animal's biological clock")
+	qdel(cage)
+	TEST_ASSERT(!QDELETED(animal), "Destroying the cage must preserve its animal")
+	TEST_ASSERT_EQUAL(animal.loc, T, "Destroying the cage must release its animal onto the floor")
+	TEST_ASSERT_EQUAL(om_clock_rate_of(animal, CLOCK_BIO), 1, "Cage destruction must restore the animal's biological clock")

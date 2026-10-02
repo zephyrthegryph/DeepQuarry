@@ -16,3 +16,5 @@ changes:
   - bugfix: "Destroyed capture crystals release their captured creatures and respect stuck items."
   - bugfix: "Destroyed ghost traps release their occupants, and deleted shooting targets restore their stakes."
   - bugfix: "Corporate tags survive destruction of synthmorph body bags."
+  - bugfix: "Destroyed stasis cages and reversible gargoyle statues release their occupants and restore normal movement and biological time."
+  - admin: "Goo trap reports identify the creature that actually triggered the trap."
