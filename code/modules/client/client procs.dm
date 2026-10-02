@@ -627,14 +627,14 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	// The writes: nothing reads them back, so they go out without holding the gate.
 	if(sql_id)
 		//Player already identified previously, we need to just update the 'lastseen', 'ip' and 'computer_id' variables
-		om_sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
+		sql_write("UPDATE erro_player SET lastseen = Now(), ip = :ip, computerid = :computerid, lastadminrank = :admin_rank WHERE id = :id", list("ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank, "id" = sql_id))
 	else
 		//New player!! Need to insert all the stuff
-		om_sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
+		sql_write("INSERT INTO erro_player (id, ckey, firstseen, lastseen, ip, computerid, lastadminrank) VALUES (null, :ckey, Now(), Now(), :ip, :computerid, :admin_rank)", list("ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid, "admin_rank" = sql_admin_rank))
 
 	//Logging player access
 	var/serverip = "[world.internet_address]:[world.port]"
-	om_sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
+	sql_write("INSERT INTO `erro_connection_log`(`id`,`datetime`,`serverip`,`ckey`,`ip`,`computerid`) VALUES(null,Now(),:serverip,:ckey,:ip,:computerid)", list("serverip" = serverip, "ckey" = sql_ckey, "ip" = sql_ip, "computerid" = sql_computerid))
 	return TRUE
 
 /// The database ban check (moved here from world/IsBanned(), which can't wait on a query).

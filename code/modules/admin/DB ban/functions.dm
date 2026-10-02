@@ -100,7 +100,7 @@
 	var/ban_rounds_val = (rounds) ? rounds : 0
 	var/ban_interval = (duration > 0) ? duration : 0
 	var/sql = "INSERT INTO erro_ban (`id`,`bantime`,`serverip`,`bantype`,`reason`,`job`,`duration`,`rounds`,`expiration_time`,`ckey`,`computerid`,`ip`,`a_ckey`,`a_computerid`,`a_ip`,`who`,`adminwho`,`edits`,`unbanned`,`unbanned_datetime`,`unbanned_ckey`,`unbanned_computerid`,`unbanned_ip`) VALUES (null, Now(), :serverip, :bantype_str, :reason, :job, :ban_duration_val, :ban_rounds_val, Now() + INTERVAL :ban_interval MINUTE, :ckey, :computerid, :ip, :a_ckey, :a_computerid, :a_ip, :who, :adminwho, '', null, null, null, null, null)"
-	om_sql_write(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
+	sql_write(sql, list("serverip" = serverip, "bantype_str" = bantype_str, "reason" = reason, "job" = job, "ban_duration_val" = ban_duration_val, "ban_rounds_val" = ban_rounds_val, "ban_interval" = ban_interval, "ckey" = ckey, "computerid" = computerid, "ip" = ip, "a_ckey" = a_ckey, "a_computerid" = a_computerid, "a_ip" = a_ip, "who" = who, "adminwho" = adminwho))
 	to_chat(usr, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
 	message_admins("[key_name_admin(usr)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
 
@@ -232,7 +232,7 @@
 				to_chat(user, "Cancelled")
 				return
 
-			om_sql_write("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
+			sql_write("UPDATE erro_ban SET reason = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban reason from <cite><b>\"', :old_reason, '\"</b></cite> to <cite><b>\"', :value, '\"</b></cite><BR>')) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_reason" = reason, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s reason from [reason] to [value]")
 			return
 		if("duration")
@@ -243,7 +243,7 @@
 				to_chat(user, "Cancelled")
 				return
 
-			om_sql_write("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
+			sql_write("UPDATE erro_ban SET duration = :value, edits = CONCAT(edits, CONCAT('- ', :eckey, ' changed ban duration from ', :old_duration, ' to ', :value, '<br>')), expiration_time = DATE_ADD(bantime, INTERVAL :value MINUTE) WHERE id = :banid", list("value" = value, "eckey" = eckey, "old_duration" = duration, "banid" = banid))
 			message_admins("[key_name_admin(user)] has edited a ban for [pckey]'s duration from [duration] to [value]")
 			return
 		if("unban")
@@ -336,7 +336,7 @@
 	var/unban_ip = src.owner():address
 	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
 
-	om_sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
+	sql_write("UPDATE erro_ban SET unbanned = 1, unbanned_datetime = Now(), unbanned_ckey = :unban_ckey, unbanned_computerid = :unban_computerid, unbanned_ip = :unban_ip WHERE id = :id", list("unban_ckey" = unban_ckey, "unban_computerid" = unban_computerid, "unban_ip" = unban_ip, "id" = id))
 
 
 /client/proc/DB_ban_panel()

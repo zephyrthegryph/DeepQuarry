@@ -414,7 +414,7 @@ GLOBAL_PROTECT(protected_ranks)
 		return
 	if(!length(result["rows"])) //no row is returned if the rank already has the correct flag value
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("admin_ranks")] SET [flags_to_update] WHERE rank = :rank",
 		list("rank" = rank_name)
 	)
@@ -440,7 +440,7 @@ GLOBAL_PROTECT(protected_ranks)
 	if(error)
 		log_sql("Admin DB sync failed: [error]")
 		return
-	om_sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
+	sql_write("UPDATE [format_table_name("erro_player")] AS p INNER JOIN [format_table_name("admin")] AS a ON p.ckey = a.ckey SET p.lastadminrank = a.rank")
 
 /proc/save_admin_backup()
 	if(IsAdminAdvancedProcCall())

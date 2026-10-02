@@ -502,7 +502,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_delid)
 	if(!SSdbcore.IsConnected())
 		tgui_alert_async(usr, "Connection to Archive has been severed. Aborting.")
 		return TRUE
-	om_sql_write("DELETE FROM library WHERE id = :id", list("id" = numeric_id))
+	sql_write("DELETE FROM library WHERE id = :id", list("id" = numeric_id))
 	log_admin("[usr.key] has deleted library book id=[numeric_id]")
 	refresh_external()
 	return TRUE

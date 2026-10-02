@@ -49,10 +49,26 @@
 	var/datum/op_result/waiting
 	/// The fields captured when the op first suspended (name -> value): the op uses what the player saw.
 	var/list/captured
+	/// A backend request's failure text (REQ_TRANSPORT_FAILED, REQ_FAILED), for the log.
+	var/last_error
 
 /// A request that has ended can not be answered again.
 /datum/request/proc/is_open()
 	return isnull(outcome) && !QDELETED(src)
+
+/// A backend request (code/engine/io/) starts its work here, once it is open and registered: the base does nothing (a prompt
+/// waits for its answerer).
+/datum/request/proc/begin()
+	return
+
+/// The backend could not take the request (no connection, nowhere to send it): it ends as REQ_TRANSPORT_FAILED on the next
+/// tick, never inside the call that opened it, so the caller always holds an open request first.
+/datum/request/proc/fail_transport(why)
+	last_error = why
+	after(src, 1 TICK, TYPE_PROC_REF(/datum/request, transport_failed), key = "request_begin")
+
+/datum/request/proc/transport_failed()
+	request_end(src, REQ_TRANSPORT_FAILED, null)
 
 /// The timeout passed before anything answered.
 /datum/request/proc/timed_out()
@@ -147,6 +163,7 @@ SYSTEM_DEF(requests)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
+	R.begin()
 	return R
 
 /// Ends `R` with `outcome` and runs its handler. Returns TRUE when this call ended it, FALSE when it had already ended.

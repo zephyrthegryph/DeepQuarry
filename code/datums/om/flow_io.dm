@@ -185,7 +185,7 @@
 
 /// Runs one statement as the running flow's next query (the flow unwinds until it's answered)
 /// and returns TRUE on success. For a write whose success the flow reads, or that a later read
-/// in the same flow must see (om_sql_write() jobs run concurrently and aren't ordered).
+/// in the same flow must see (sql_write() jobs run concurrently and aren't ordered).
 /proc/flow_sql(sql, list/arguments)
 	var/datum/db_query/Q = SSdbcore.NewQuery(sql, arguments)
 	. = Q.Execute()

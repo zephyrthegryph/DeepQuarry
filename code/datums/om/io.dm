@@ -417,13 +417,6 @@
 	if(error)
 		log_sql("[error] | Query used: [sql]")
 
-/// Fire-and-forget SQL write (an insert or update nobody reads back). Owned by the global
-/// owner; a failure is logged to the SQL log with the query text.
-/proc/om_sql_write(sql, list/arguments)
-	if(!SSdbcore?.IsConnected())
-		return 0
-	return om_io(null, /datum/om/io/sql, sql, arguments, /proc/om_io_log_sql_error, sql)
-
 /// Fire-and-forget HTTP GET (webhooks). Owned by the global owner; a failure is logged.
 /proc/om_http_get(url)
 	return om_io(null, /datum/om/io/http, RUSTG_HTTP_METHOD_GET, url, "", null, /proc/om_io_log_http_error, url)

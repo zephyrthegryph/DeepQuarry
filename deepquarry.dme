@@ -5661,6 +5661,8 @@
 #include "code\engine\kernel\jobs.dm"
 #include "code\engine\kernel\requests.dm"
 #include "code\engine\kernel\safe.dm"
+#include "code\engine\io\db.dm"
+#include "code\engine\io\path.dm"
 #include "code\engine\parts\stubs.dm"
 #include "code\engine\stats\stubs.dm"
 #include "code\engine\_generated\reads.dm"

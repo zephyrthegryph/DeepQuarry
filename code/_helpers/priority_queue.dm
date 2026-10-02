@@ -31,7 +31,7 @@
 		return null
 	. = LAZYACCESS(array, 1)
 	LAZYINITLIST(array); array.Swap(1, length(array))
-	--length(array)
+	array.Cut(length(array))
 	bubble_down(1)
 
 /datum/priority_queue/proc/peek()
@@ -75,11 +75,11 @@
 		return
 	if(index == length)
 		. = LAZYACCESS(array, index)
-		--length(array)
+		array.Cut(length(array))
 		return
 	. = LAZYACCESS(array, index)
 	LAZYINITLIST(array); array.Swap(index, length)
-	--length(array)
+	array.Cut(length(array))
 	bubble_down(index)
 
 /datum/priority_queue/proc/find(entry)

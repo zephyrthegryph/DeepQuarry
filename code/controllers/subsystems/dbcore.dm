@@ -294,7 +294,7 @@ SYSTEM_DEF(dbcore)
 /datum/system/dbcore/proc/SetRoundStart()
 	if(!Connect())
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("round")] SET start_datetime = Now() WHERE id = :round_id",
 		list("round_id" = GLOB.round_id)
 	)
@@ -303,7 +303,7 @@ SYSTEM_DEF(dbcore)
 /datum/system/dbcore/proc/SetRoundEnd()
 	if(!Connect())
 		return
-	om_sql_write(
+	sql_write(
 		"UPDATE [format_table_name("round")] SET end_datetime = Now(), game_mode_result = :game_mode_result, station_name = :station_name WHERE id = :round_id",
 		list("game_mode_result" = "extended", "station_name" = station_name(), "round_id" = GLOB.round_id) // FIXME: temporary solution as we only use extended so far
 	)
@@ -584,3 +584,7 @@ mass_insert_io() runs it on the I/O lane; on_done gets the outcome.
 /datum/db_query/proc/Close()
 	rows = null
 	item = null
+
+/// Runs `query` on the connection and waits for the answer: the blocking call db_query_now() wraps. Returns rust_g's raw JSON.
+/datum/system/dbcore/proc/query_blocking(query, list/params)
+	return rustg_sql_query_blocking(connection, query, json_encode(params || list()))

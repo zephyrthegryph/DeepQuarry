@@ -177,6 +177,7 @@
 #include "kernel_test_clock.dm"
 #include "kernel_inbox.dm"
 #include "kernel_requests.dm"
+#include "kernel_io.dm"
 #include "kernel_sequence.dm"
 #include "techwebs.dm"
 #include "tgui_create_message.dm"

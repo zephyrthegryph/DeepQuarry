@@ -298,7 +298,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	else
 		metrics_write_statements(sample_statements)
 	if(event_statement)
-		om_sql_write(event_statement[1], event_statement[2])
+		sql_write(event_statement[1], event_statement[2])
 	last_flush_ms = plan["ms"] + TICK_USAGE_TO_MS(started)
 
 /// Turns the runtime and overrun buffers into events.
@@ -371,7 +371,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 
 /proc/metrics_write_statements(list/statements)
 	for(var/list/statement as anything in statements)
-		om_sql_write(statement[1], statement[2])
+		sql_write(statement[1], statement[2])
 
 /// Runs the statements now, in order, waiting for each: the shutdown flush only, when the I/O
 /// lane has stopped.

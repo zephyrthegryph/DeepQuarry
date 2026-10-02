@@ -166,13 +166,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write(
+	sql_write(
 		"DELETE FROM [format_table_name("admin")] WHERE ckey = :ckey",
 		list("ckey" = admin_ckey)
 	)
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_REMOVED]', :admin_ckey, CONCAT('Admin removed: ', :admin_ckey))
 	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_ckey" = admin_ckey))
@@ -350,33 +350,33 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		for (var/datum/admin_rank/custom_rank in custom_ranks)
 			if(custom_names_in_db[custom_rank.name])
 				continue
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_ranks")] (`rank`, flags, exclude_flags, can_edit_flags)
 				VALUES (:new_rank, '0', '0', '0')
 			"}, list("new_rank" = custom_rank.name))
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank, CONCAT('New rank added: ', :new_rank))
 			"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "new_rank" = custom_rank.name))
 		if(isnull(old_rank))
 			// Not in the admin table yet (a new or temporary admin): one insert, with the rank.
 			old_rank = "NEW ADMIN"
-			om_sql_write(
+			sql_write(
 				"INSERT INTO [format_table_name("admin")] (ckey, `rank`) VALUES (:ckey, :new_rank)",
 				list("ckey" = admin_ckey, "new_rank" = joined_rank)
 			)
-			om_sql_write({"
+			sql_write({"
 				INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 				VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_ADDED]', :target, CONCAT('New admin added: ', :target))
 			"}, list("round_id" = "[GLOB.round_id]",  "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey))
 		else
-			om_sql_write(
+			sql_write(
 				"UPDATE [format_table_name("admin")] SET `rank` = :new_rank WHERE ckey = :admin_ckey",
 				list("new_rank" = joined_rank, "admin_ckey" = admin_ckey)
 			)
 		message_admins(m1)
 		log_admin(m2)
-		om_sql_write({"
+		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_ADMIN_RANK_CHANGED]', :target, CONCAT('Rank of ', :target, ' changed from ', :old_rank, ' to ', :new_rank))
 		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "target" = admin_ckey, "old_rank" = old_rank, "new_rank" = joined_rank))
@@ -522,13 +522,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_ranks")] (`rank`, flags, exclude_flags, can_edit_flags)
 		VALUES (:new_rank, :rights, :excluded_rights, :edit_rights)
 	"}, list("new_rank" = custom_rank.name, "rights" = rights, "excluded_rights" = excluded_rights, "edit_rights" = edit_rights))
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_ADDED]', :new_rank,
 		CONCAT('New rank added: ', :new_rank, ' (', :rights, ')', ' (', :excluded_rights, ')', ' (', :edit_rights, ')'))
@@ -612,13 +612,13 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		message_admins(m1)
 		log_admin(m2)
 		return
-	om_sql_write(
+	sql_write(
 		"DELETE FROM [format_table_name("admin_ranks")] WHERE `rank` = :admin_rank",
 		list("admin_rank" = admin_rank)
 	)
 	message_admins(m1)
 	log_admin(m2)
-	om_sql_write({"
+	sql_write({"
 		INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 		VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_REMOVED]', :admin_rank, CONCAT('Rank removed: ', :admin_rank))
 	"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))
@@ -773,26 +773,26 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 		// Doing it as we are does technically mean conflicts can occur, but that's rare enough I'm ok with it
 		switch(what_to_edit)
 			if("Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET flags = :flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "flags" = new_flags))
 			if("Excluded Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET exclude_flags = :exclude_flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "exclude_flags" = new_flags))
 			if("Edit Rights")
-				om_sql_write({"
+				sql_write({"
 					UPDATE [format_table_name("admin_ranks")]
 					SET can_edit_flags = :can_edit_flags
 					WHERE rank = :rank_name
 				"}, list("rank_name" = admin_rank, "can_edit_flags" = new_flags))
 
 
-		om_sql_write({"
+		sql_write({"
 			INSERT INTO [format_table_name("admin_log")] (datetime, round_id, adminckey, adminip, operation, target, log)
 			VALUES (NOW(), :round_id, :adminckey, INET_ATON(:adminip), '[PERMISSIONS_ACTION_RANK_CHANGED]', :admin_rank, CONCAT('Rank changed: ', :admin_rank))
 		"}, list("round_id" = "[GLOB.round_id]", "adminckey" = usr.ckey, "adminip" = usr.client.address, "admin_rank" = admin_rank))
