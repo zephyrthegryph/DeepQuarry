@@ -1,4 +1,4 @@
-/// A spent worn cigarette becomes a floor butt, carrying evidence and its handle.
+/// A spent worn cigarette becomes a floor butt, carrying evidence but ending its clothing identity.
 /datum/unit_test/interim_cigarette_butt_lifecycle/Run()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
@@ -14,8 +14,9 @@
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(cig), "burning out deletes the original cigarette")
 	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "burning out clears the worn mask slot")
-	var/obj/item/trash/cigbutt/butt = om_resolve(handle)
-	TEST_ASSERT(istype(butt), "the cigarette handle resolves to its butt successor")
+	TEST_ASSERT_NULL(om_resolve(handle), "the clothing handle ends when its successor belongs to the trash family")
+	var/obj/item/trash/cigbutt/butt = locate_within(T, /obj/item/trash/cigbutt)
+	TEST_ASSERT(istype(butt), "burning out creates the cigarette's butt successor")
 	TEST_ASSERT_EQUAL(butt.loc, T, "the butt stays on the floor rather than replacing the worn mask")
 	TEST_ASSERT(findtext(butt.desc, "interim test brand"), "the butt preserves its cigarette brand")
 	var/list/butt_prints = butt.forensic_data?.get_prints()
