@@ -62,15 +62,13 @@ SYSTEM_DEF(tgui)
 	wait = 9
 	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	init_stage = INITSTAGE_MAIN
-	/// The window pass ran out of budget with windows left to process: the next run resumes it.
-	var/resuming = FALSE
-
 	needs = list(
 		/datum/system/assets
 	)
 
-	/// A list of UIs scheduled to process
-	var/list/current_run = list()
+	/// The open windows that opted into periodic refreshes (autoupdate). The system's one recurring work item
+	/// exists only while this is non-empty. Everything else about a window is event-driven (see ui_status).
+	var/list/autoupdating = list()
 	/// A list of all open UIs
 	var/list/all_uis = list()
 	/// The HTML base used for all UIs.
@@ -238,28 +236,34 @@ SYSTEM_DEF(tgui)
 	msg = "P:[length(all_uis)]"
 	return ..()
 
-/// The window pass (phase K, every `wait`): each open window's process().
+/// The autoupdate pass (phase K): the refresh of the windows that opted into one. A window's status, range and
+/// liveness are event-driven (om_ui_status_bind(), the ping timer): this is the only recurring work, and it parks
+/// when no window is autoupdating (set_autoupdate(TRUE) wakes it).
 /datum/system/tgui/reactions()
 	. = ..()
-	. += every(9, PROC_REF(process_uis), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
+	. += every(9, PROC_REF(refresh_autoupdating), phase = KERNEL_PHASE_K, when = PROC_REF(work_ready), lane = LANE_URGENT)
 
-/datum/system/tgui/proc/process_uis(dt)
-	if(!resuming)
-		src.current_run = all_uis.Copy()
-	resuming = FALSE
-	// Cache for sanic speed (lists are references anyways)
-	var/list/current_run = src.current_run
-	while(length(current_run))
-		var/datum/tgui/ui = current_run[length(current_run)]
-		current_run.len--
-		// TODO: Move user/src_object check to process()
-		if(ui?.user && ui.src_object())
-			ui.process(wait * 0.1)
-		else
-			ui.close(0)
-		if(KERNEL_OVER_BUDGET)
-			resuming = TRUE
-			return STEP_YIELD
+/datum/system/tgui/proc/refresh_autoupdating(dt)
+	if(!length(autoupdating))
+		return STEP_PARK
+	for(var/datum/tgui/ui as anything in autoupdating.Copy())
+		if(QDELETED(ui) || ui.closing)
+			autoupdating -= ui
+			continue
+		ui.process()
+	return STEP_DONE
+
+/// Registers or drops `ui` from the autoupdate pass to match its autoupdate flag (only while it is open).
+/datum/system/tgui/proc/sync_autoupdate(datum/tgui/ui)
+	if(!(ui in all_uis))
+		return
+	if(ui.autoupdate && !QDELETED(ui) && !ui.closing)
+		if(!(ui in autoupdating))
+			autoupdating += ui
+			log_tgui(ui.user, "autoupdate on", context = "SStgui/sync_autoupdate")
+		kernel_wake_work("[type]:refresh_autoupdating")
+	else
+		autoupdating -= ui
 
 /**
  * public
@@ -514,7 +518,7 @@ SYSTEM_DEF(tgui)
 		// Check if UI is valid.
 		if(ui?.src_object() && ui.user && ui.src_object().tgui_host(ui.user))
 			if(ui == now_ui)
-				INVOKE_ASYNC(ui, TYPE_PROC_REF(/datum/tgui, process), wait * 0.1, TRUE) // ALLOW(scheduler): tgui process re-runs arbitrary tgui_interact overrides / asset sends
+				ui.process(TRUE)
 			else
 				ui.request_push()
 			count++
@@ -573,7 +577,7 @@ SYSTEM_DEF(tgui)
 		return count
 	for(var/datum/tgui/ui in user.tgui_open_uis)
 		if(isnull(src_object) || (ui.src_object == src_object))
-			ui.process(wait * 0.1, force = 1)
+			ui.process(TRUE)
 			count++
 	return count
 
@@ -608,6 +612,7 @@ SYSTEM_DEF(tgui)
 	ui.user?.tgui_open_uis |= ui
 	LAZYOR(ui.src_object().open_tguis, ui)
 	all_uis |= ui
+	sync_autoupdate(ui)
 
 /**
  * private
@@ -621,7 +626,7 @@ SYSTEM_DEF(tgui)
 /datum/system/tgui/proc/on_close(datum/tgui/ui)
 	// Remove it from the list of processing UIs.
 	all_uis -= ui
-	current_run -= ui
+	autoupdating -= ui
 	// If the user exists, remove it from them too.
 	if(ui.user)
 		ui.user.tgui_open_uis -= ui
@@ -684,6 +689,7 @@ SYSTEM_DEF(tgui)
 	if(!islist(target.tgui_open_uis))
 		target.tgui_open_uis = list()
 	target.tgui_open_uis |= ui
+	om_ui_status_bind(ui)
 	return TRUE
 
 /**

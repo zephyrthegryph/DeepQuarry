@@ -164,6 +164,9 @@
 		#endif
 	SStgui.on_open(src)
 	bind_changes()
+	om_ui_status_bind(src)
+	// A shell that never answers is a zombie: one timer, cancelled when it does (or when the window closes).
+	arm_ping_timeout()
 
 	return TRUE
 
@@ -266,6 +269,8 @@
 			src_object().tgui_close(user)
 		SStgui.on_close(src)
 		unbind_changes()
+		om_ui_status_unbind(src)
+		cancel_after(src, "ping")
 
 		if(user?.client)
 			terminate_byondui_elements()
@@ -305,6 +310,7 @@
  */
 /datum/tgui/proc/set_autoupdate(autoupdate)
 	src.autoupdate = autoupdate
+	SStgui.sync_autoupdate(src)
 
 /**
  * public
@@ -502,30 +508,7 @@
 /datum/tgui/process(force = FALSE)
 	if(closing)
 		return
-	if(QDELETED(src_object()) || QDELETED(window()))
-		close(can_be_suspended = FALSE)
-		return
-	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
-	// mob it was opened against: follow the client to its current mob rather than
-	// tearing the page down with the dead mob.
-	if(QDELETED(user) && !closeable && !window().pooled)
-		var/mob/current_mob = window().client()?.mob
-		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
-			close(can_be_suspended = FALSE)
-			return
-	var/datum/host = src_object().tgui_host(user)
-	// If the object or user died (or something else), abort.
-	if(QDELETED(host) || QDELETED(user))
-		close(can_be_suspended = FALSE)
-		return
-	// Validate ping
-	if(!initialized && ELAPSED(src, opened_at, CLOCK_WORLD) > TGUI_PING_TIMEOUT)
-		log_tgui(user, \
-			"Error: Zombie window detected, killing it with fire.\n" \
-			+ "window_id: [window().id]\n" \
-			+ "opened_at: [opened_at]\n" \
-			+ "world.time: [world.time]")
-		close(can_be_suspended = FALSE)
+	if(!ui_participants_alive())
 		return
 	// Update through the declared UI's refresh (its ui_prepare() hook, then the push)
 	if(status != STATUS_DISABLED && (autoupdate || force))
@@ -537,7 +520,54 @@
 		close()
 		return
 	if(needs_update)
-		window().send_message("update", get_payload())
+		send_status_update()
+
+/**
+ * private
+ *
+ * TRUE while the window's object, window and user are all still there. Closes the window (or, for a persistent
+ * UI on a dedicated window, follows the client to its current mob) and returns FALSE otherwise.
+ */
+/datum/tgui/proc/ui_participants_alive()
+	if(QDELETED(src_object()) || QDELETED(window()))
+		close(can_be_suspended = FALSE)
+		return FALSE
+	// A persistent UI on a dedicated window (tooltip, media panel) outlives the
+	// mob it was opened against: follow the client to its current mob rather than
+	// tearing the page down with the dead mob.
+	if(QDELETED(user) && !closeable && !window().pooled)
+		var/mob/current_mob = window().client()?.mob
+		if(QDELETED(current_mob) || !SStgui.transfer_ui(src, current_mob))
+			close(can_be_suspended = FALSE)
+			return FALSE
+	var/datum/host = src_object().tgui_host(user)
+	// If the object or user died (or something else), abort.
+	if(QDELETED(host) || QDELETED(user))
+		close(can_be_suspended = FALSE)
+		return FALSE
+	return TRUE
+
+/// Arms the one zombie-window timer (cancelled when the window reports ready, or closes).
+/datum/tgui/proc/arm_ping_timeout()
+	after(src, TGUI_PING_TIMEOUT, PROC_REF(ping_timeout), key = "ping", clock = CLOCK_WORLD)
+
+/// Sends the window its current status and data.
+/datum/tgui/proc/send_status_update()
+	window().send_message("update", get_payload())
+
+/// The user, the host or the window stopped being referenced (deleted, or cleared): the status check decides what
+/// that means for the window. Deferred to the presentation lane: this runs inside the other end's destruction.
+/datum/tgui/proc/participant_gone(datum/other)
+	if(closing || QDELETED(src))
+		return
+	om_wake(src, om_registry().behaviour(/datum/om/behaviour/internal/ui_status))
+
+/// The ping timer fired: a window that never reported ready is a zombie.
+/datum/tgui/proc/ping_timeout()
+	if(closing || initialized || QDELETED(src))
+		return
+	log_tgui(user, "Error: Zombie window detected, killing it with fire. window_id: [window()?.id] opened_at: [opened_at] world.time: [world.time]", context = "tgui/ping_timeout")
+	close(can_be_suspended = FALSE)
 
 /**
  * private
@@ -576,8 +606,10 @@
 			if(initialized)
 				send_full_update()
 			initialized = TRUE
+			cancel_after(src, "ping")
 		if("ping/reply")
 			initialized = TRUE
+			cancel_after(src, "ping")
 		if("suspend")
 			close(can_be_suspended = TRUE)
 			return TRUE
@@ -641,7 +673,9 @@
 
 /datum/tgui/relations()
 	. = ..()
-	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis))
+	. += rel_one(nameof(user), back = nameof(/mob::tgui_open_uis), on_unlink = PROC_REF(participant_gone))
+	. += rel_one(nameof(src_object), on_unlink = PROC_REF(participant_gone))
+	. += rel_one(nameof(window), on_unlink = PROC_REF(participant_gone))
 /mob/relations()
 	. = ..()
 	. += rel_many(nameof(tgui_open_uis), back = nameof(/datum/tgui::user))

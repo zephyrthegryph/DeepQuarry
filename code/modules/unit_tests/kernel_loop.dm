@@ -11,7 +11,7 @@
 	TEST_ASSERT_EQUAL(Kernel.init_stage_completed, INITSTAGE_MAX, "the loop runs at the last init stage")
 	TEST_ASSERT(Kernel.current_runlevel >= 1, "the kernel keeps the run level")
 	var/list/key_phase = list(
-		"[/datum/system/tgui]:process_uis" = KERNEL_PHASE_K,
+		"[/datum/system/tgui]:refresh_autoupdating" = KERNEL_PHASE_K,
 		"[/datum/system/dbcore]:run_queries" = KERNEL_PHASE_K,
 		"[/datum/system/profiler]:sample" = KERNEL_PHASE_K,
 		"[/datum/system/garbage]:collect" = KERNEL_PHASE_G,
@@ -24,12 +24,12 @@
 	// Kernel.x is the loop's value, written by the kernel.
 	var/iteration_before = Kernel.iteration
 	var/ticks_before = K.ticks
-	var/tgui_before = SStgui.times_fired
-	sleep(2 SECONDS)
+	var/host_before = SSgarbage.times_fired
+	sleep(3 SECONDS)
 	TEST_ASSERT(K.ticks > ticks_before, "the kernel loop ticks")
 	TEST_ASSERT_EQUAL(Kernel.iteration - iteration_before, K.ticks - ticks_before, "Kernel.iteration counts the kernel's ticks")
 	TEST_ASSERT_EQUAL(Kernel.last_run, K.last_tick, "Kernel.last_run is the kernel heartbeat")
-	TEST_ASSERT(SStgui.times_fired > tgui_before, "a host system on a longer wait runs from the kernel")
+	TEST_ASSERT(SSgarbage.times_fired > host_before, "a host system on a longer wait runs from the kernel")
 
 /// The watchdog watches kernel.last_tick, and Recreate_kernel() replaces the loop without doubling it.
 /datum/unit_test/kernel_watchdog_watches_kernel
