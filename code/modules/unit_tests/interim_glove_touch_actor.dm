@@ -34,6 +34,7 @@
 	TEST_ASSERT_EQUAL(ring.zap_stance, I_HELP, "unarmed attack preserves the help stance")
 	TEST_ASSERT_EQUAL(ring.battery.charge, charge_before, "the real buzzer does not spend charge on help")
 	actor.UnarmedAttack(target, TRUE, I_HURT)
+	own_turf_contents(T)
 	TEST_ASSERT_EQUAL(ring.zap_count, 2, "the harm attack invokes the glove again")
 	TEST_ASSERT_EQUAL(ring.zap_stance, I_HURT, "unarmed attack preserves the harm stance")
 	TEST_ASSERT(ring.battery.charge < charge_before, "the real harm zap consumes battery charge")
