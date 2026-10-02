@@ -76,6 +76,13 @@ exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 # read exempt_path().)
 exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/"]
 
+[lint.instance_list]
+# instance_list_lint.py: allow_annotations.exempt_path() (EXEMPT_DIRS and EXEMPT_FILES): unit tests and
+# benchmarks build the forbidden things on purpose, the vendored tgstation-server DMAPI is kept verbatim.
+# The GLOBAL_DATUM_INIT singleton scan still reads these files (cx.all_files()).
+exempt_prefixes = ["code/modules/unit_tests/", "code/modules/benchmarks/", "code/modules/tgs/"]
+exempt_files = ["code/__defines/tgs.dm"]
+
 [lint.latent]
 # latent_lint.py SKIP_DIRS: os.walk prunes any directory named unit_tests.
 exempt_contains = ["/unit_tests/"]
