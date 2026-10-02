@@ -64,7 +64,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 	add_attack_logs(user,M,"Implanted with [imp.name] using [name]")
 
 	if(imp.handle_implant(M))
-		imp.post_implant(M)
+		imp.post_implant(M, user)
 
 		if(ishuman(M))
 			var/mob/living/carbon/human/H = M

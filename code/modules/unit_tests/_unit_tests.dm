@@ -441,6 +441,8 @@
 #include "interim_lathe_wire_actor.dm"
 #include "interim_lego_lifecycle.dm"
 #include "interim_wire_actor.dm"
+#include "interim_frame_finalization.dm"
+#include "interim_implant_actor.dm"
 #include "interim_smokable_lifecycle.dm"
 #include "interim_storage_lifecycle.dm"
 #include "interim_wrapped_present_lifecycle.dm"

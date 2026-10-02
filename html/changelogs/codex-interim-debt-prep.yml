@@ -6,3 +6,4 @@ changes:
   - bugfix: "Ticket actions refuse invalid authorization levels and stale escalation requests."
   - bugfix: "Biopsy reports reach the scanner user after printing, and invalid beams stay stopped."
   - bugfix: "Marker beacon pickup no longer duplicates beacons when both hands are full."
+  - bugfix: "Timed implant installation preserves the installer for configuration and size-control ownership."
