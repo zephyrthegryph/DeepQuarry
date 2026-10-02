@@ -1388,12 +1388,17 @@ impl ProjectProcedureGraph {
     /// edits reuse the same revision and perform no semantic fact replay.
     /// The resolver must include each procedure's owner/static overlays.
     pub fn refresh_facts(&mut self, revision: &str, mut resolve: impl FnMut(&ProcKey, &BindingFact) -> FactValue) -> usize {
-        if self.revision.as_deref() == Some(revision) { return self.refresh_pending(&mut resolve); }
+        if self.revision.as_deref() == Some(revision) {
+            let changed = self.refresh_pending(&mut resolve);
+            self.reconcile_validated_candidates();
+            return changed;
+        }
         let ids: BTreeSet<_> = self.reverse.keys().chain(self.compact_reverse.keys()).copied().collect();
         self.restore_certificate_readers(&ids);
         let changed = self.refresh_fact_ids(&ids, &mut resolve);
         self.pending_shared.clear(); self.pending_private.clear();
         self.revision = Some(revision.to_owned());
+        self.reconcile_validated_candidates();
         changed
     }
 
@@ -1405,7 +1410,22 @@ impl ProjectProcedureGraph {
         self.refresh_fact_ids(&ids, &mut resolve);
         self.refresh_pending(&mut resolve);
         self.revision = Some(revision.to_owned());
+        self.reconcile_validated_candidates();
         self.dirty.clone()
+    }
+
+    /// Resolving an unknown disk fact changes its Salsa input from None even
+    /// when its value equals the persisted witness. That is a validation event,
+    /// not necessarily a semantic invalidation. Admit only candidates whose
+    /// complete current dependency set (including negative observations) and
+    /// descriptor pass the normal Salsa query before retiring their dirty flag.
+    fn reconcile_validated_candidates(&mut self) {
+        let validated: Vec<_> = self.dirty.iter().filter(|key| {
+            self.records.get(*key).is_some_and(|record|
+                record.active && current_candidate(&self.db, record.input).is_some())
+        }).cloned().collect();
+        for key in validated { self.dirty.remove(&key); }
+        self.stats.invalidated_procedures = self.dirty.len();
     }
     pub fn dirty_keys(&self) -> impl Iterator<Item=&ProcKey> { self.dirty.iter() }
     pub fn has_pending_validation(&self) -> bool { !self.pending_shared.is_empty() || !self.pending_private.is_empty() }
