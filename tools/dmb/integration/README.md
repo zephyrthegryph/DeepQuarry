@@ -115,6 +115,62 @@ starts a world or runs a DM suite.
 mode. Conventional output publication still updates their generated DMB/RSC.
 The large-project mode is opt-in; the default gate remains the tiny fixture.
 
+### Owned game worktrees
+
+`-OwnedGameRepository` dispatches to `accept-game-worktrees.ps1`. This mode creates
+six **new detached worktrees** at the explicit `-GitRef`; it does not change an
+existing checkout. Start with `-PlanOnly`, which resolves the commit, checks paths
+and hashes the supplied binaries/schema without creating worktrees or processes:
+
+```powershell
+pwsh -File tools/dmb/integration/accept-six-worktrees.ps1 -Compiler E:/cargo-target/dmb-architecture/debug/dm-compile.exe -Daemon E:/cargo-target/dmb-architecture/debug/dm-compiled.exe -OwnedGameRepository E:/projects/CHOMPStation2 -GitRef ac1af55d1a9a8e023e46bd058be59ed82c503f52 -AssetOverlayRoot E:/projects/CHOMPStation2 -OutputRoot E:/dq-six-acceptance -PlanOnly
+```
+
+Remove `-PlanOnly` to run. The new output root must not exist. Defaults are one
+daemon worker, one lowering worker, one 256 MiB transport client, 2048 MiB daemon
+and fresh process ceilings, and a 2048 MiB sampled aggregate budget. The fresh
+reference runs only after the daemon has stopped. Those limits are never raised
+automatically. Unlike the supplied-worktree mode, this gate edits its own probe:
+procedure body, new procedure, new variable, variable default, signature, and a
+revert after each. All changes leave the tracked game source alone.
+
+An owned DME at the worktree root includes the original game manifest plus the
+probe. Root placement keeps resource paths relative to the game directory.
+Results therefore describe the pinned game **plus this probe and asset overlay**.
+The daemon remains alive during all initial, unchanged and edit/revert builds,
+then restarts against disk caches. With the daemon stopped, the driver restores
+each exact probe state and compares all six outputs with a fresh standalone
+process using an empty all-stage cache. Every phase requires identical expanded
+source digests and full DMB/RSC SHA-256 digests. Reverts must recover the initial
+generation; edits must change it. Strict native production and zero fallback are
+required. The full gate includes 78 cache-free game compilations and is deliberately
+expensive; the small fixture remains the development gate.
+
+Generated assets are copied once from `-AssetOverlayRoot`/`-AssetDirectories`
+(default `icons/gen`) into an owned snapshot. A sorted size/SHA-256 manifest is
+recorded. Overlay paths must be absent from the pinned Git tree. A deny-write and
+deny-delete ACL protects the owned snapshot; six verified junctions point there.
+The user's generated art and its ACL are never changed. No icon repacker or
+ordinary build pipeline runs through these links. Snapshot hashes and junction
+targets are checked before references and at completion.
+
+`acceptance.json` is updated throughout the run, including failures, native
+classifications, timings, source/probe revisions, byte digests and limits. A
+preflight failure prints failure JSON when there is no safely owned result folder.
+Logs, failed fresh artifacts, worktrees and the frozen asset snapshot remain for
+inspection. Successful fresh artifacts are removed after comparison to bound disk
+use (`-KeepFreshArtifacts` retains them). `-CleanupWorktrees` removes successful
+worktrees only after source and probe checks; verified junction entries are
+unlinked **without recursion** before Git removes the checkout. Unexpected human
+changes or reparse points preserve the worktree. The asset snapshot remains;
+its owned deny ACL must be removed deliberately before later deleting it.
+
+`check-game-plan.ps1` accepts `-Compiler`, `-Daemon`, `-Repository`, `-GitRef` and
+optional asset/project arguments. It parses the three script/module files and
+checks valid planning, invalid refs, project path escapes, an existing output
+root, and excess client concurrency. All five cases are read-only and start no
+compiler processes or worktrees.
+
 ### Commit replay
 
 `replay-commits.ps1` creates one actual detached Git worktree inside a new owned

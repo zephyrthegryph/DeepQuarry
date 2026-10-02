@@ -65,12 +65,15 @@ function Wait-CompilerRun {
     return [pscustomobject]@{ exit_code = $Run.Process.ExitCode; runtime_seconds = ($Run.Process.ExitTime - $Run.Process.StartTime).TotalSeconds; sampled_peak_private_bytes = $peak }
 }
 function Start-CompilerDaemon {
-    param([string]$Executable, [string]$Directory, [string]$CacheRoot, [string]$Prefix, [int]$MemoryMb = 1536, [int]$Workers = 1)
+    param([string]$Executable, [string]$Directory, [string]$CacheRoot, [string]$Prefix, [int]$MemoryMb = 1536, [int]$Workers = 1, [hashtable]$Environment = @{})
     $listener = [Net.Sockets.TcpListener]::new([Net.IPAddress]::Loopback, 0)
     $listener.Start()
     $port = $listener.LocalEndpoint.Port
     $listener.Stop()
-    $run = Start-CompilerRun $Executable $Directory @("$port", $CacheRoot) $Prefix @{ DM_COMPILER_CACHE_ROOT = $CacheRoot; DM_DAEMON_WORKERS = "$Workers" } $MemoryMb
+    $childEnvironment = @{} + $Environment
+    $childEnvironment['DM_COMPILER_CACHE_ROOT'] = $CacheRoot
+    $childEnvironment['DM_DAEMON_WORKERS'] = "$Workers"
+    $run = Start-CompilerRun $Executable $Directory @("$port", $CacheRoot) $Prefix $childEnvironment $MemoryMb
     $watch = [Diagnostics.Stopwatch]::StartNew()
     while ($watch.Elapsed.TotalSeconds -lt 30) {
         if ($run.Process.HasExited) { Complete-CompilerRun $run; throw "Daemon startup failed; see $Prefix.stderr.log" }

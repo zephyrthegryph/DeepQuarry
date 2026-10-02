@@ -17,6 +17,15 @@ param(
     [string]$ProjectFile = 'deepquarry.dme',
     [string[]]$Defines = @(),
     [string]$OutputRoot = '',
+    [string]$OwnedGameRepository = '',
+    [string]$GitRef = '',
+    [string]$AssetOverlayRoot = '',
+    [string[]]$AssetDirectories = @('icons/gen'),
+    [ValidateRange(64, 256)][int]$TransportMemoryMb = 256,
+    [ValidateRange(256, 2048)][int]$FreshMemoryMb = 2048,
+    [switch]$PlanOnly,
+    [switch]$KeepFreshArtifacts,
+    [switch]$CleanupWorktrees,
     [ValidateRange(1, 2)][int]$MaxClients = 2,
     [ValidateRange(256, 2048)][int]$DaemonMemoryMb = 1536,
     [ValidateRange(256, 2048)][int]$ClientMemoryMb = 1024,
@@ -24,6 +33,23 @@ param(
     [ValidateRange(10, 1800)][int]$TimeoutSeconds = 900
 )
 $ErrorActionPreference = 'Stop'
+if ($OwnedGameRepository) {
+    try {
+        if ($Worktrees.Count) { throw 'OwnedGameRepository and supplied Worktrees are separate acceptance modes.' }
+        if ($PSBoundParameters.ContainsKey('MaxClients') -and $MaxClients -ne 1) { throw 'Owned game acceptance currently permits one transport client.' }
+        if ($PSBoundParameters.ContainsKey('ClientMemoryMb')) { throw 'Use TransportMemoryMb and FreshMemoryMb for owned game acceptance.' }
+        if ($AggregateMemoryMb -gt 2048) { throw 'Owned game acceptance caps its aggregate budget at 2048 MiB.' }
+    } catch {
+        [pscustomobject]@{ schema = 2; mode = 'owned-game'; ok = $false; native_gate_passed = $false; failure = $_.Exception.Message } | ConvertTo-Json
+        throw
+    }
+    $ownedArguments = @{ Compiler = $Compiler; Daemon = $Daemon; Builtins = $Builtins; Repository = $OwnedGameRepository; GitRef = $GitRef; ProjectFile = $ProjectFile; OutputRoot = $OutputRoot; AssetOverlayRoot = $AssetOverlayRoot; AssetDirectories = $AssetDirectories; TransportMemoryMb = $TransportMemoryMb; FreshMemoryMb = $FreshMemoryMb; AggregateMemoryMb = $AggregateMemoryMb; TimeoutSeconds = $TimeoutSeconds; PlanOnly = $PlanOnly; KeepFreshArtifacts = $KeepFreshArtifacts; CleanupWorktrees = $CleanupWorktrees }
+    if ($PSBoundParameters.ContainsKey('DaemonMemoryMb')) { $ownedArguments.DaemonMemoryMb = $DaemonMemoryMb }
+    if ($PSBoundParameters.ContainsKey('Defines')) { $ownedArguments.Defines = $Defines }
+    & "$PSScriptRoot/accept-game-worktrees.ps1" @ownedArguments
+    return
+}
+if ($PlanOnly -or $GitRef -or $AssetOverlayRoot -or $KeepFreshArtifacts -or $CleanupWorktrees) { throw 'These options require OwnedGameRepository; tiny and supplied-worktree modes retain their existing behavior.' }
 Import-Module "$PSScriptRoot/process.psm1" -Force
 $Compiler = (Resolve-Path -LiteralPath $Compiler).Path
 $Daemon = (Resolve-Path -LiteralPath $Daemon).Path
