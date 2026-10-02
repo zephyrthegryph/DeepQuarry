@@ -23,7 +23,7 @@
 	. += "The red light is [G.wire_locked_out ? "on." : "off."]"
 	. += "The blue light is [(G.wire_allow_manual_1 && G.wire_allow_manual_2 && G.wire_allow_manual_3) ? "on." : "off."]"
 
-/datum/wires/grid_checker/on_cut(wire, mend)
+/datum/wires/grid_checker/on_cut(wire, mend, mob/user)
 	var/obj/machinery/power/grid_checker/G = holder
 	switch(wire)
 		if(WIRE_LOCKOUT)
@@ -37,10 +37,10 @@
 		if(WIRE_ELECTRIFY)
 			if(G.wire_locked_out)
 				return
-			G.shock(usr, 70)
+			G.shock(user, 70)
 	..()
 
-/datum/wires/grid_checker/on_pulse(wire)
+/datum/wires/grid_checker/on_pulse(wire, mob/user)
 	var/obj/machinery/power/grid_checker/G = holder
 	switch(wire)
 		if(WIRE_REBOOT)
@@ -59,5 +59,5 @@
 		if(WIRE_ELECTRIFY)
 			if(G.wire_locked_out)
 				return
-			G.shock(usr, 70)
+			G.shock(user, 70)
 	..()
