@@ -6,14 +6,20 @@
 
 /datum/unit_test/dq_e3
 	abstract_type = /datum/unit_test/dq_e3
+	/// TRUE for a test that advances time (timed holds, the drain per tick): it runs on the kernel's test clock.
+	var/needs_clock = FALSE
 
 /// Runs `run_e3()` with declaration reports captured, so a deliberate error is read instead of failing the run.
 /datum/unit_test/dq_e3/Run()
 	GLOB.declare_report_capture = list()
-	test_time(0) // starts the test clock before any deadline is computed
+	if(needs_clock)
+		test_driver_begin() // the test clock, started before any deadline is computed and put back after
 	run_e3()
+	if(needs_clock)
+		test_driver_end()
 	GLOB.declare_report_capture = null
 	GLOB.stat_marked = list()
+	GLOB.stat_tick_spent = 0
 
 /datum/unit_test/dq_e3/proc/run_e3()
 	return
@@ -159,6 +165,7 @@
 	TEST_ASSERT_EQUAL(M.e3_draw, 2, "nothing was placed")
 
 /datum/unit_test/dq_e3/hold_timed_outlives_its_source_untimed_does_not
+	needs_clock = TRUE
 
 /datum/unit_test/dq_e3/hold_timed_outlives_its_source_untimed_does_not/run_e3()
 	var/obj/e3_machine/M = allocate(/obj/e3_machine)
@@ -181,6 +188,7 @@
 	TEST_ASSERT_EQUAL(length(held_by(M, STAT_E3_DRAW)), 0, "nothing is held any more")
 
 /datum/unit_test/dq_e3/hold_reapply_follows_the_stat
+	needs_clock = TRUE
 
 /datum/unit_test/dq_e3/hold_reapply_follows_the_stat/run_e3()
 	var/obj/e3_machine/M = allocate(/obj/e3_machine)
@@ -341,6 +349,7 @@
 /// The stat half of E0 proof 8 (the notice chain waits on E4): sixty lamps read the night system through its accessor, a flip marks them all, and
 /// a 20-evaluation budget settles them over several drain points with none lost.
 /datum/unit_test/dq_e3/settle_night_cascade_under_budget
+	needs_clock = TRUE
 
 /datum/unit_test/dq_e3/settle_night_cascade_under_budget/run_e3()
 	var/list/lamps = list()
