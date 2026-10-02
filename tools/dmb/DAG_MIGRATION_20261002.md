@@ -119,3 +119,27 @@ The byte export API now materializes an archive when callers request bytes
 instead of a generation, including after independent bytecode reuse.
 
 No correctness tests were run. These following changes require run G.
+
+## Run G and direct composition integration
+
+G completed: cold212.006s, unchanged3.205s, body127.091s, newproc134.081s,
+newvar121.855s, default108.396s, asset94.983s, newresource120.865s,
+freshcachedprocess0.160s, freshbody72.882s. All compiler requests succeeded;
+this does not establish runtime correctness. Warm regression was traced to
+external encoding/shared lookup caches pushing the aggregate budget over its
+limit at the next request. New request handling trims these cheap optional
+indexes before evicting session dependency graphs.
+
+The next prototype routes canonical published builds through one chunked
+physical DMB encoder, immutable256KiB disk pages and ordered SHA manifests.
+CAS storage and generation publication stream verified pages; the full byte
+buffer remains an explicit legacy/export adapter. The semantic final Dmb
+arrays are still assembled; this is not a claim that every output list remains
+on disk throughout linking. Final outputs remain durable; disposable cache
+pages use atomic rename without per-page sync.
+
+Resource layout identity now tracks exact alias partitions/dense indices,
+with compatibility-checked CRC-row remapping on asset edits. Content checksums
+are part of resource IDs and cannot simply be omitted from output. Unchanged
+RSCs whose clocks changed through hardlink creation are reverified and reused,
+rather than recomposed. These changes await benchmark H.

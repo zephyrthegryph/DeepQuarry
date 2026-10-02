@@ -12,6 +12,12 @@ use std::sync::Arc;
 /// Keep the exact bytes consumed during a pass. The consistency check must
 /// compare those bytes, rather than independently re-reading sources that may
 /// already have changed while preprocessing was in progress.
+fn trace_preparation_stage(stage: &str, started: std::time::Instant) {
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {
+        eprintln!("DM_BUILD_TRACE preparation {stage}: {:.3}s", started.elapsed().as_secs_f64());
+    }
+}
+
 #[derive(Default)]
 struct RecordingFileSystem<'a> {
     retained: Option<&'a BTreeMap<PathBuf, RetainedSource>>,
@@ -453,10 +459,13 @@ impl DiscoveryCache {
         });
         unchanged.extend(supplied_unchanged.iter().cloned());
         let misses = self.expansions.misses;
+        let splice_started = std::time::Instant::now();
         let spliced = old
             .as_ref()
             .filter(|snapshot| snapshot.context == context)
             .and_then(|snapshot| try_splice_sources(snapshot, &unchanged).ok().flatten());
+        trace_preparation_stage("source splice", splice_started);
+        let discovery_started = std::time::Instant::now();
         let (discovered, expansion) = if let Some((discovered, expansion)) = spliced {
             (discovered, Some(expansion))
         } else {
@@ -475,6 +484,8 @@ impl DiscoveryCache {
                 )),
             )
         };
+        trace_preparation_stage("discovery and expansion pieces", discovery_started);
+        let metadata_started = std::time::Instant::now();
         let (mut project, sources, proof, digests, stamps, mut stats) = discovered;
         project.compact_origins();
         let expansion = Arc::new(expansion.unwrap_or_else(|| {
@@ -554,6 +565,8 @@ impl DiscoveryCache {
             Sha256::digest(format!("{context}:{project_digest}"))
         );
         stats.disk_restored = disk_restored;
+        trace_preparation_stage("origins sources changes identity", metadata_started);
+        let macros_started = std::time::Instant::now();
         let mut macro_names = if let Some(old) = &old {
             // The namespace is deliberately conservative across generations.
             // Previously scanned unchanged files contribute through old names;
@@ -569,6 +582,7 @@ impl DiscoveryCache {
         }
         macro_names.extend(defines.keys().cloned());
         let macro_names = Arc::new(macro_names);
+        trace_preparation_stage("macro namespace", macros_started);
         let mut snapshot = Arc::new(PreparedProject {
             project: Arc::new(project),
             macro_names,
@@ -582,6 +596,7 @@ impl DiscoveryCache {
             context,
             proof,
         });
+        let persistence_started = std::time::Instant::now();
         if self.expansions.misses != misses {
             let _ = self.expansions.save_incremental(&self.path);
         }
@@ -590,6 +605,7 @@ impl DiscoveryCache {
                 Arc::make_mut(&mut Arc::make_mut(&mut snapshot).expansion).attach_backings(&store.root);
             }
         }
+        trace_preparation_stage("prepared and preprocess persistence", persistence_started);
         self.sources = (*snapshot.sources).clone();
         self.released_context = None;
         self.released_proof = None;
@@ -911,6 +927,7 @@ fn discover_with_retained(
                 (path, bytes)
             })
             .collect();
+        let read_started = std::time::Instant::now();
         let prefetched = dm_work::map_ordered(
             &jobs,
             limits,
@@ -945,8 +962,12 @@ fn discover_with_retained(
             bytes_read: std::cell::Cell::new(prefetched_bytes),
             ..Default::default()
         };
+        trace_preparation_stage("authored prefetch", read_started);
+        let preprocess_started = std::time::Instant::now();
         let (discovery, pieces) =
             dm_preprocess::preprocess_project_cached_segmented(root, &provider, defines, cache);
+        trace_preparation_stage("ordered preprocessing", preprocess_started);
+        let proof_started = std::time::Instant::now();
         let stats = PreparationStats {
             preprocessed: true,
             source_files_read: provider.files_read.get(),
@@ -996,6 +1017,7 @@ fn discover_with_retained(
                     continue;
                 }
             }
+            trace_preparation_stage("input proof establishment", proof_started);
             return Ok((discovery, sources, proof, digests, stamps, stats, pieces));
         }
     }
@@ -1066,9 +1088,9 @@ mod tests {
         assert_eq!(restored.project.as_ref(), first.project.as_ref());
         assert_eq!(restored.project_digest, first.project_digest);
         assert_eq!(restored.revision, first.revision);
-        assert_eq!(restored.project.origins[1].source_line, 2);
+        assert_eq!(restored.project.origin_get(1).unwrap().source_line, 2);
         assert_eq!(
-            restored.project.origins[1].path.as_ref(),
+            restored.project.origin_get(1).unwrap().path.as_ref(),
             &fixture.0.join("a.dm")
         );
     }
@@ -1154,7 +1176,7 @@ mod tests {
         let defines = [("ANSWER".into(), "17".into())].into();
         let arrived = cache.prepare(&root, &defines).unwrap();
         assert!(arrived.project.diagnostics.is_empty());
-        assert!(arrived.project.text.contains("return 17"));
+        assert!(arrived.expansion.materialize().unwrap().contains("return 17"));
         assert!(arrived.changes.configuration_changed);
         assert!(arrived
             .changes
@@ -1163,7 +1185,7 @@ mod tests {
         let changed = cache
             .prepare(&root, &[("ANSWER".into(), "18".into())].into())
             .unwrap();
-        assert!(changed.project.text.contains("return 18"));
+        assert!(changed.expansion.materialize().unwrap().contains("return 18"));
         assert!(changed.changes.configuration_changed);
         assert_ne!(changed.revision, arrived.revision);
     }
@@ -1206,7 +1228,7 @@ mod tests {
         let restored = restarted.prepare(&root, &BTreeMap::new()).unwrap();
         assert!(!restored.stats.disk_restored);
         assert!(restored.stats.preprocessed);
-        assert!(restored.project.text.contains("return 2"));
+        assert!(restored.expansion.materialize().unwrap().contains("return 2"));
     }
 
     #[test]

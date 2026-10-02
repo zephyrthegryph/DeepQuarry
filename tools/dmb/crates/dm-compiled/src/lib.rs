@@ -210,6 +210,13 @@ struct CachedPairManifest {
     rsc_digest: String,
 }
 
+#[derive(Serialize, Deserialize)]
+struct CachedBytecodeManifest {
+    version: u32,
+    pair: CachedPairManifest,
+    catalog: dm_resources::ResourceCatalog,
+}
+
 const PAIR_MANIFEST_VERSION: u32 = 1;
 
 impl ArtifactKey {
@@ -436,6 +443,36 @@ impl ContentStore {
                 Err(error)
             }
         }
+    }
+
+    fn put_dmb_pages(&self, image: &dm_output::chunks::StoredDmb) -> io::Result<String> {
+        let digest = image.digest().to_owned();
+        let directory = self.root.join("project-dmb-v1").join(&digest[..2]);
+        fs::create_dir_all(&directory)?;
+        let destination = directory.join(&digest);
+        if self.verify_blob(&destination, &digest).unwrap_or(false) { return Ok(digest); }
+        if destination.exists() {
+            let quarantine = directory.join(format!("{digest}.corrupt-{}-{}", std::process::id(), TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+            match fs::rename(&destination, &quarantine) {
+                Ok(()) => { let _ = fs::remove_file(&quarantine); }
+                Err(_) if self.verify_blob(&destination, &digest).unwrap_or(false) => return Ok(digest),
+                Err(error) if error.kind() == io::ErrorKind::NotFound => {},
+                Err(error) => return Err(error),
+            }
+        }
+        let temporary = directory.join(format!("{digest}.{}.{}.tmp",std::process::id(),TEMP_SEQUENCE.fetch_add(1,Ordering::Relaxed)));
+        let result = (|| {
+            let mut output = fs::OpenOptions::new().create_new(true).write(true).open(&temporary)?;
+            image.write_to(&mut output)?;
+            output.sync_all()?; drop(output);
+            match fs::rename(&temporary,&destination) {
+                Ok(()) => Ok(digest.clone()),
+                Err(_) if self.verify_blob(&destination,&digest).unwrap_or(false) => Ok(digest.clone()),
+                Err(error) => Err(error),
+            }
+        })();
+        let _ = fs::remove_file(&temporary);
+        result
     }
 
     pub fn get(&self, namespace: &str, digest: &str) -> io::Result<Vec<u8>> {
@@ -1816,6 +1853,18 @@ impl Coordinator {
 
     pub fn handle(&mut self, request: Request) -> Response {
         self.clock = self.clock.saturating_add(1);
+        let external = self.serialization_wire.resident_bytes()
+            .saturating_add(self.serialization_validation.resident_bytes())
+            .saturating_add(dm_compiler::bootstrap::shared_declaration_cache_bytes())
+            .saturating_add(self.asset_inventory.values().map(|x|x.resident_bytes()).sum::<usize>());
+        if self.frontend_pool.stats().bytes.saturating_add(external) > self.frontend_pool.retention_budget() {
+            // Recreating physical encoding indexes is cheaper than reloading a
+            // worktree's dependency graph. Shared semantic nodes held by a session
+            // survive dropping optional global lookup ownership.
+            self.serialization_wire.clear();
+            self.serialization_validation.clear();
+            dm_compiler::bootstrap::trim_shared_declaration_cache(0);
+        }
         self.frontend_pool.set_external_bytes(
             self.serialization_wire
                 .resident_bytes()
@@ -2826,6 +2875,7 @@ impl Coordinator {
         };
         trace_build(trace, "artifact CAS lookup", cache_started);
         let mut bytecode_key = None;
+        let mut bytecode_catalog = None;
         if cached_pair.is_none() && key.build_mode != "legacy-history" {
             let archive_started = Instant::now();
             let archive = match dm_resources::prepare_archive(&self.blobs.root, &snapshot.resource_requests) {
@@ -2833,26 +2883,31 @@ impl Coordinator {
                 Err(error) => return failed_internal(error),
             };
             let mut independent = artifact.clone();
-            independent.stage = "project-bytecode-catalog-v1".into();
+            independent.stage = "project-bytecode-layout-v2".into();
             independent.dependency_digests.push(format!("{:x}", Sha256::digest(world_name.as_bytes())));
-            independent.input_digests[2] = hex_digest(&archive.catalog().bytecode_fingerprint());
+            independent.input_digests[2] = hex_digest(&archive.catalog().layout_fingerprint());
             let candidate = self.blobs.get_artifact(&independent).ok().flatten()
-                .and_then(|bytes| serde_json::from_slice::<CachedPairManifest>(&bytes).ok())
-                .filter(|record| record.version == PAIR_MANIFEST_VERSION);
+                .and_then(|bytes| serde_json::from_slice::<CachedBytecodeManifest>(&bytes).ok())
+                .filter(|record| record.version == 2 && record.pair.version == PAIR_MANIFEST_VERSION);
             if let Some(record) = candidate {
-                let hit = self.blobs.get("project-dmb-v1", &record.dmb_digest).ok()
+                let hit = self.blobs.get("project-dmb-v1", &record.pair.dmb_digest).ok()
                     .and_then(|bytes| {
-                        let dmb = byond_dmb::dmb::Dmb::from_bytes(&bytes).ok()?;
+                        let mut dmb = byond_dmb::dmb::Dmb::from_bytes(&bytes).ok()?;
+                        let previous: Vec<_> = dmb.resources.iter().map(|row|(row.id,row.kind)).collect();
+                        if !archive.catalog().remap_if_compatible(&record.catalog, &mut dmb) { return None; }
+                        let changed = dmb.resources.iter().map(|row|(row.id,row.kind)).ne(previous.into_iter());
+                        let bytes = if changed { dmb.to_bytes().ok()? } else { bytes };
                         let verified = VerifiedArchive::from_prepared_archive(&archive, &dmb).ok()?;
                         Some((bytes, verified))
                     });
                 if let Some((bytes, verified)) = hit {
                     let manifest = CachedPairManifest {version: PAIR_MANIFEST_VERSION,
-                        emitted_procs: record.emitted_procs, dmb_digest: record.dmb_digest,
-                        rsc_digest: archive.digest().to_owned()};
+                        emitted_procs: record.pair.emitted_procs, dmb_digest: match self.blobs.put("project-dmb-v1", &bytes) {
+                            Ok(digest) => digest, Err(error) => return failed_internal(error),
+                        }, rsc_digest: archive.digest().to_owned()};
                     if let Ok(encoded) = serde_json::to_vec(&manifest) { let _ = self.blobs.put_artifact(&artifact, &encoded); }
                     cached_pair_archive = Some(verified);
-                    cached_pair = Some((bytes, Vec::new(), record.emitted_procs));
+                    cached_pair = Some((bytes, Vec::new(), record.pair.emitted_procs));
                 }
             }
             // Persist catalog metadata; the addressed prepared archive cache lets
@@ -2867,10 +2922,12 @@ impl Coordinator {
                 // remains available through its addressed prepared archive cache.
             }
             bytecode_key = Some(independent);
+            bytecode_catalog = Some(archive.catalog().clone());
             trace_build(trace, "resource archive preparation/bytecode lookup", archive_started);
         }
         let mut reused_archive = cached_pair_archive;
         let mut verified_bytecode = None;
+        let mut stored_bytecode = None;
         let (dmb_bytes, mut rsc_bytes, emitted_procs, cache_hit, lowered_procs, reused_procs) =
             if let Some((dmb, rsc, count)) = cached_pair {
                 (dmb, rsc, count, true, 0, count)
@@ -2930,6 +2987,18 @@ impl Coordinator {
                 let wire_started = Instant::now();
                 let (dmb_bytes, list_spans) = match (prepared.serialized_dmb, prepared.list_spans) {
                     (Some(bytes), Some(spans)) => (bytes, spans),
+                    _ if output_root.is_some() && key.build_mode != "legacy-history" && pending_checkpoint.is_none() && reused_archive.is_some() => {
+                        let image = match dmb.reference_validated(&mut self.serialization_validation) {
+                            Ok(image) => image, Err(error) => return failed_internal(error),
+                        };
+                        let (stored, receipt) = match VerifiedBytecode::serialize_chunks(&image, &mut self.serialization_wire, &self.blobs.root) {
+                            Ok(value) => value, Err(error) => return failed_internal(error),
+                        };
+                        let spans = stored.manifest().list_spans.clone();
+                        verified_bytecode = Some(receipt);
+                        stored_bytecode = Some(stored);
+                        (Vec::new(), spans)
+                    }
                     _ => match dmb
                         .reference_validated(&mut self.serialization_validation)
                         .and_then(|image| {
@@ -2947,7 +3016,9 @@ impl Coordinator {
                 let mut retained_record = None;
                 let mut checkpoint_size = None;
                 let mut write_pair = || -> io::Result<()> {
-                    let dmb_digest = self.blobs.put("project-dmb-v1", &dmb_bytes)?;
+                    let dmb_digest = if let Some(stored) = &stored_bytecode {
+                        self.blobs.put_dmb_pages(stored)?
+                    } else { self.blobs.put("project-dmb-v1", &dmb_bytes)? };
                     let rsc_digest = if let Some(archive) = &reused_archive {
                         archive.digest().to_owned()
                     } else {
@@ -2990,8 +3061,9 @@ impl Coordinator {
                     };
                     let encoded_manifest = serde_json::to_vec(&manifest).map_err(io::Error::other)?;
                     self.blobs.put_artifact(&artifact, &encoded_manifest)?;
-                    if let Some(bytecode_key) = &bytecode_key {
-                        self.blobs.put_artifact(bytecode_key, &encoded_manifest)?;
+                    if let (Some(bytecode_key), Some(catalog)) = (&bytecode_key, &bytecode_catalog) {
+                        let record = CachedBytecodeManifest { version: 2, pair: manifest, catalog: catalog.clone() };
+                        self.blobs.put_artifact(bytecode_key, &serde_json::to_vec(&record).map_err(io::Error::other)?)?;
                     }
                     Ok(())
                 };
@@ -3058,14 +3130,16 @@ impl Coordinator {
                 .map(|generation| generation.rsc);
             let publish_started = Instant::now();
             let published = if let Some(archive) = &reused_archive {
-                let publication = match &verified_bytecode {
-                    Some(receipt) => publish_generation_with_verified_bytecode(
+                let publication = match (&stored_bytecode, &verified_bytecode) {
+                    (Some(stored), Some(receipt)) => dm_output::generation::publish_generation_with_chunked_bytecode(&root, stored, archive, receipt),
+                    (None, Some(receipt)) => publish_generation_with_verified_bytecode(
                         &root, &dmb_bytes, archive, receipt,
                     ),
-                    None => publish_generation_with_archive(&root, &dmb_bytes, archive),
+                    _ => publish_generation_with_archive(&root, &dmb_bytes, archive),
                 };
                 match publication {
                     Ok(generation) => Ok(generation),
+                    Err(error) if stored_bytecode.is_some() => Err(error),
                     Err(_) => self
                         .blobs
                         .get_bounded("project-rsc-v1", archive.digest(), 512 * 1024 * 1024)

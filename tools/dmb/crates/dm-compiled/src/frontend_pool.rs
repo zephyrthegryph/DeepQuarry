@@ -174,6 +174,7 @@ impl FrontendPool {
         self.trace_entry("discovery returned", &key);
         self.trim(0);
     }
+    pub fn retention_budget(&self) -> usize { self.limits.max_bytes }
     pub fn stats(&self) -> FrontendPoolStats {
         let mut stats = self.stats;
         stats.sessions = self.entries.len();
@@ -569,11 +570,11 @@ mod tests {
                 .prepare(&key.project, &key.defines.iter().cloned().collect())
                 .unwrap();
             let mut frontend = pool.take_or_insert(key, fixture.cache());
-            frontend.update(&prepared.project).unwrap();
+            frontend.compact_snapshot_segmented(&prepared.expansion.source()).unwrap().1;
             pool.put(key.clone(), frontend);
             pool.put_discovery(key.clone(), discovery);
-            assert!(prepared.project.text.contains("return 1"));
-            assert!(prepared.project.origins.iter().any(|origin| {
+            assert!(prepared.expansion.materialize().unwrap().contains("return 1"));
+            assert!(prepared.project.origin_iter().any(|origin| {
                 origin.path.as_ref() == &key.worktree.join("answer.dm") && origin.source_line == 2
             }));
             originals.push(prepared);
@@ -593,7 +594,7 @@ mod tests {
                 .prepare(&key.project, &key.defines.iter().cloned().collect())
                 .unwrap();
             if index == 0 {
-                assert!(prepared.project.text.contains("return 22"));
+                assert!(prepared.expansion.materialize().unwrap().contains("return 22"));
                 assert!(prepared
                     .changes
                     .changed_sources
@@ -606,10 +607,10 @@ mod tests {
                     &originals[index].project,
                     &prepared.project
                 ));
-                assert!(prepared.project.text.contains("return 1"));
+                assert!(prepared.expansion.materialize().unwrap().contains("return 1"));
             }
             let mut frontend = pool.take_or_insert(key, fixture.cache());
-            let outline = frontend.update(&prepared.project).unwrap();
+            let outline = frontend.compact_snapshot_segmented(&prepared.expansion.source()).unwrap().1;
             assert!(outline.procedures["/proc/answer"]
                 .source
                 .contains(if index == 0 { "return 22" } else { "return 1" }));
@@ -633,7 +634,7 @@ mod tests {
                 &configured.defines.iter().cloned().collect(),
             )
             .unwrap();
-        assert!(prepared.project.text.contains("return 7"));
+        assert!(prepared.expansion.materialize().unwrap().contains("return 7"));
         pool.put_discovery(configured.clone(), discovery);
         assert_eq!(pool.stats().sessions, 6);
         assert_eq!(pool.stats().evictions, 1);
@@ -713,7 +714,7 @@ mod tests {
         assert!(prepared.stats.retained_hit);
         assert!(!prepared.stats.preprocessed);
         assert!(std::sync::Arc::ptr_eq(&original.project, &prepared.project));
-        assert!(prepared.project.text.contains("return 1"));
+        assert!(prepared.expansion.materialize().unwrap().contains("return 1"));
         pool.put_discovery(keys[1].clone(), restored);
         assert_eq!(pool.stats().active_bytes, 0);
     }
@@ -737,7 +738,7 @@ mod tests {
             .unwrap();
         let expansions = discovery.retention_footprint().expansions;
         let mut frontend = pool.take_or_insert(&key, fixture.cache());
-        let original = frontend.update(&prepared.project).unwrap();
+        let original = frontend.compact_snapshot_segmented(&prepared.expansion.source()).unwrap().1;
         pool.put_discovery(key.clone(), discovery);
         pool.put(key.clone(), frontend);
         pool.limits.max_bytes = pool.stats().bytes - expansions - source.len() / 2;
@@ -755,7 +756,7 @@ mod tests {
         assert!(retained.stats.retained_hit);
         assert!(std::sync::Arc::ptr_eq(&prepared.project, &retained.project));
         let mut frontend = pool.take_or_insert(&key, fixture.cache());
-        let outline = frontend.update(&retained.project).unwrap();
+        let outline = frontend.compact_snapshot_segmented(&retained.expansion.source()).unwrap().1;
         assert_eq!(
             outline.procedures["/proc/answer"].digest,
             original.procedures["/proc/answer"].digest

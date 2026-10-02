@@ -117,6 +117,7 @@ impl SegmentedExpansion {
     /// Each active hasher sees exactly its original flat byte stream. Decoded
     /// chunks live only for this iteration, never in a process-wide memo.
     fn digest_ranges(&self, ranges: &[(usize, Span)]) -> Option<Vec<(usize, [u8; 32])>> {
+        let started=std::time::Instant::now();
         let mut events = BTreeMap::<usize, (Vec<usize>, Vec<usize>)>::new();
         let mut result = Vec::with_capacity(ranges.len());
         for &(id, span) in ranges {
@@ -158,6 +159,7 @@ impl SegmentedExpansion {
             if events.peek().is_none() && active.is_empty() { break; }
         }
         if events.peek().is_some() || !active.is_empty() { return None; }
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE preparation changed unit SHA: {} intervals, {:.3}s",ranges.len(),started.elapsed().as_secs_f64()); }
         Some(result)
     }
     pub(crate) fn attach_backings(&mut self,root:&std::path::Path) {

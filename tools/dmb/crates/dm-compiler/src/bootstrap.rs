@@ -3578,9 +3578,17 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         }
     }
     trace("type defaults start");
-    for window in type_items.chunks(64) {
+    let mut owner_plan_time=std::time::Duration::ZERO;
+    let mut default_plan_time=std::time::Duration::ZERO;
+    let mut default_wire_time=std::time::Duration::ZERO;
+    for window in type_items.chunks(1024) {
+    let started=std::time::Instant::now();
     let owner_plans=default_plans::owner_batch(window,workers);
+    owner_plan_time+=started.elapsed();
+    let started=std::time::Instant::now();
     semantic_declarations::prefetch_owner_defaults(window,&owner_plans,workers);
+    default_plan_time+=started.elapsed();
+    let wire_started=std::time::Instant::now();
     for (item,owner_plan) in window.iter().zip(&owner_plans) {
         let result = emit_type(
             item,
@@ -3602,7 +3610,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             }
         }
     }
+    default_wire_time+=wire_started.elapsed();
     }
+    trace(&format!("type default stages: ownerplans={:.3}s semanticplans={:.3}s wire={:.3}s",owner_plan_time.as_secs_f64(),default_plan_time.as_secs_f64(),default_wire_time.as_secs_f64()));
     trace("type defaults complete");
     let mut verb_owners: HashMap<String, Vec<String>> = HashMap::new();
     let mut indexed_pending = 0;

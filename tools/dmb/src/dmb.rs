@@ -77,6 +77,9 @@ impl<'a> Reader<'a> {
 
 struct Writer {
     bytes: Vec<u8>,
+    pages: Vec<Arc<[u8]>>,
+    sealed: usize,
+    segmented: bool,
     object_size: usize,
     object_overflow: bool,
     compatibility_version: u16,
@@ -85,16 +88,31 @@ impl Writer {
     fn new(object_size: usize, compatibility_version: u16) -> Self {
         Self {
             bytes: Vec::new(),
+            pages: Vec::new(), sealed: 0, segmented: false,
             object_size,
             object_overflow: false,
             compatibility_version,
         }
     }
     fn at(&self) -> usize {
-        self.bytes.len()
+        self.sealed + self.bytes.len()
     }
     fn raw(&mut self, bytes: &[u8]) {
         self.bytes.extend_from_slice(bytes);
+    }
+    fn seal(&mut self) {
+        if self.segmented && !self.bytes.is_empty() {
+            self.sealed += self.bytes.len();
+            self.pages.push(std::mem::take(&mut self.bytes).into());
+        }
+    }
+    fn shared(&mut self, bytes: &Arc<[u8]>) {
+        if self.segmented && bytes.len() >= 4096 {
+            self.seal(); self.sealed += bytes.len(); self.pages.push(Arc::clone(bytes));
+        } else { self.raw(bytes); }
+    }
+    fn bounded_page(&mut self) {
+        if self.bytes.len() >= 256 * 1024 { self.seal(); }
     }
     fn u8(&mut self, value: u8) {
         self.bytes.push(value);
@@ -120,6 +138,7 @@ impl Writer {
         self.object(count);
         for item in items {
             write(self, item);
+            self.bounded_page();
         }
         Ok(())
     }
@@ -590,6 +609,21 @@ fn crypt_string(data: &mut [u8], offset: usize) {
 /// Only Dmb's validator can construct this proof; mutation requires ending the
 /// borrow, so serializers cannot accidentally apply it to another generation.
 pub struct ReferenceValidatedImage<'a> { image: &'a Dmb }
+/// Immutable ordered physical pages. List spans refer to absolute output
+/// offsets, independent of page boundaries. Pages can be persisted/composed
+/// without allocating a second complete wire image.
+pub struct ChunkedDmb {
+    pub pages: Vec<Arc<[u8]>>,
+    pub list_spans: Vec<std::ops::Range<usize>>,
+    pub len: usize,
+}
+impl ChunkedDmb {
+    pub fn into_bytes(self) -> (Vec<u8>, Vec<std::ops::Range<usize>>) {
+        let mut bytes = Vec::with_capacity(self.len);
+        for page in self.pages { bytes.extend_from_slice(&page); }
+        (bytes, self.list_spans)
+    }
+}
 impl<'a> ReferenceValidatedImage<'a> {
     pub fn image(&self) -> &'a Dmb { self.image }
     pub fn to_bytes_with_list_spans_cached(&self, cache: &mut DmbWireCache) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
@@ -597,6 +631,9 @@ impl<'a> ReferenceValidatedImage<'a> {
     }
     pub fn to_bytes_with_list_spans(&self) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
         self.image.serialize_with_list_spans(true, None)
+    }
+    pub fn to_chunks_cached(&self, cache: &mut DmbWireCache) -> io::Result<ChunkedDmb> {
+        self.image.serialize_chunks(true, Some(cache))
     }
 }
 
@@ -640,7 +677,7 @@ impl DmbWireCache {
         self.active.insert(key);
         if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket| bucket.iter()
             .find(|(old, _)| matches!(old, WireRecord::List(prior) if prior.as_slice() == words))) {
-            writer.raw(bytes);
+            writer.shared(bytes);
             self.hits += 1;
             return;
         }
@@ -669,7 +706,7 @@ impl DmbWireCache {
         self.active.insert(key);
         if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket|
             bucket.iter().find(|(old, _)| *old == record)) {
-            writer.raw(bytes);
+            writer.shared(bytes);
             self.hits += 1;
             return;
         }
@@ -677,7 +714,8 @@ impl DmbWireCache {
         let mut fragment = Writer::new(writer.object_size, writer.compatibility_version);
         encode(&mut fragment);
         writer.object_overflow |= fragment.object_overflow;
-        writer.raw(&fragment.bytes);
+        let encoded: Arc<[u8]> = fragment.bytes.into();
+        writer.shared(&encoded);
         // Overflowed records are never proofs of valid wire data.
         if fragment.object_overflow { return; }
         let dynamic = match &record {
@@ -685,10 +723,10 @@ impl DmbWireCache {
             WireRecord::World(world) => world.client_script_files.capacity() * 4,
             _ => 0,
         };
-        let charge = fragment.bytes.len() + dynamic + std::mem::size_of::<WireRecord>() + 96;
+        let charge = encoded.len() + dynamic + std::mem::size_of::<WireRecord>() + 96;
         if self.bytes.saturating_add(charge) > 64 * 1024 * 1024 { return; }
         self.bytes += charge;
-        self.records.entry(key).or_default().push((record, fragment.bytes.into()));
+        self.records.entry(key).or_default().push((record, encoded));
     }
 }
 
@@ -2132,6 +2170,9 @@ impl Dmb {
     // The only true caller is the immutable validator token above. Wire-width,
     // header and grid checks remain mandatory for both entry points.
     fn serialize_with_list_spans(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<(Vec<u8>, Vec<std::ops::Range<usize>>)> {
+        self.serialize_chunks(references_proven, wire_cache.take()).map(ChunkedDmb::into_bytes)
+    }
+    fn serialize_chunks(&self, references_proven: bool, mut wire_cache: Option<&mut DmbWireCache>) -> io::Result<ChunkedDmb> {
         if self.header.version_line != b"world bin v516\n"
             || !self
                 .header
@@ -2212,6 +2253,7 @@ impl Dmb {
             },
             compatibility_version(&self.header.compatibility_line)?,
         );
+        w.segmented = true;
         // Reserve once for the mandatory new dense generation. The upper bound
         // avoids geometric reallocations/copies while remaining close to the
         // actual image (only optional fixed-size record fields are overestimated).
@@ -2238,7 +2280,7 @@ impl Dmb {
             .ok_or_else(|| invalid("wire string size overflow"))?)?; }
         for list in &self.lists { reserve(1, list.len().checked_mul(width).and_then(|n| n.checked_add(2))
             .ok_or_else(|| invalid("wire list size overflow"))?)?; }
-        w.bytes.try_reserve_exact(estimate).map_err(io::Error::other)?;
+        w.bytes.try_reserve_exact(estimate.min(256 * 1024)).map_err(io::Error::other)?;
         if let Some(line) = &self.header.executor_line {
             // Native world.executor text may contain newlines. The reader stops
             // at a version line followed by a compatibility line, so reject
@@ -2265,6 +2307,7 @@ impl Dmb {
         for run in &self.grid {
             let encode = |w: &mut Writer| { w.object(run.turf); w.object(run.area); w.object(run.contents); w.u8(run.copies); };
             if let Some(cache) = wire_cache.as_deref_mut() { cache.append(&mut w, 11, WireRecord::Grid(run.clone()), encode); } else { encode(&mut w); }
+            w.bounded_page();
         }
         let total_string_bytes = self.strings.iter().try_fold(0usize, |sum, string| {
             sum.checked_add(string.data.len() + 1)
@@ -2297,11 +2340,12 @@ impl Dmb {
             let offset = w.at() - string_origin;
             w.u16((remaining as u16) ^ offset as u16);
             let offset = w.at() - string_origin;
-            let encrypted_start = w.at();
+            let encrypted_start = w.bytes.len();
             w.raw(&string.data);
             crypt_string(&mut w.bytes[encrypted_start..], offset);
             string_hash = nqcrc(string_hash, &string.data);
             string_hash = nqcrc(string_hash, &[0]);
+            w.bounded_page();
         }
         w.u32(string_hash);
         let mut list_spans = Vec::with_capacity(self.lists.len());
@@ -2346,7 +2390,9 @@ impl Dmb {
             return Err(invalid("object ID exceeds selected 16-bit width"));
         }
         if let Some(cache) = wire_cache.as_deref_mut() { cache.finish_generation(); }
-        Ok((w.bytes, list_spans))
+        let len = w.at();
+        w.seal();
+        Ok(ChunkedDmb { pages: w.pages, list_spans, len })
     }
 }
 

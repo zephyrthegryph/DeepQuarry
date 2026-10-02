@@ -115,6 +115,12 @@ pub(super) fn prefetch_owner_defaults(items:&[&Item],plans:&[Arc<default_plans::
     }).collect();
     let configured=dm_work::WorkLimits::configured();
     let limits=dm_work::WorkLimits {workers:workers.min(configured.workers).clamp(1,4),max_active_bytes:configured.max_active_bytes.min(8*1024*1024)};
+    // A resident candidate is validated by the consuming query. Prefetch only
+    // genuine candidate misses; do not replay every cached readset twice.
+    let cache=value_cache().lock().unwrap_or_else(|error|error.into_inner());
+    let jobs:Vec<_>=jobs.into_iter().filter(|(owner,source,blocked)|!cache.entries.contains_key(&(owner.to_string(),expression_key(source,blocked)))).collect();
+    drop(cache);
+    if jobs.is_empty() {return;}
     let _=dm_work::map_ordered(&jobs,limits,|(_,source,blocked)|source.len()+blocked.len()*64+256,|(owner,source,blocked)| {
         let _active=activate(Arc::clone(&model));
         let _=evaluate(source,Some(owner),blocked);

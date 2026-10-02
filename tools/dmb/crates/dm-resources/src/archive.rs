@@ -67,10 +67,7 @@ fn temporary(path: &Path) -> Temporary {
         TEMP.fetch_add(1, Ordering::Relaxed)
     )))
 }
-// Concurrent worktrees publish immutable objects under the same digest. Keep
-// an existing valid inode rather than replacing it and invalidating receipts.
-fn promote(tmp: &Temporary, destination: &Path, digest: &str, length: u64) -> io::Result<()> {
-    fn identical(path: &Path, expected: &str, length: u64) -> io::Result<bool> {
+fn identical(path: &Path, expected: &str, length: u64) -> io::Result<bool> {
         let mut reader = fs::File::open(path)?;
         if reader.metadata()?.len() != length {
             return Ok(false);
@@ -86,6 +83,10 @@ fn promote(tmp: &Temporary, destination: &Path, digest: &str, length: u64) -> io
         }
         Ok(format!("{:x}", hash.finalize()) == expected)
     }
+
+// Concurrent worktrees publish immutable objects under the same digest. Keep
+// an existing valid inode rather than replacing it and invalidating receipts.
+fn promote(tmp: &Temporary, destination: &Path, digest: &str, length: u64) -> io::Result<()> {
     if destination.exists() && identical(destination, digest, length)? {
         return Ok(());
     }
@@ -247,7 +248,8 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
             .join("project-rsc-v1")
             .join(&record.digest[..2])
             .join(&record.digest);
-        if capture(&path).as_ref() == Some(&record.stamp) {
+        let before = capture(&path);
+        if before.as_ref() == Some(&record.stamp) {
             return Ok(PreparedArchive {
                 path,
                 digest: record.digest,
@@ -255,6 +257,16 @@ pub fn prepare_archive(root: &Path, requests: &[ResourceRequest]) -> io::Result<
                 stamp: record.stamp,
                 catalog,
             });
+        }
+        // Adding a hardlink changes Windows change clocks without changing bytes.
+        // Refresh a verified identity instead of recomposing the unchanged archive.
+        if let Some(stamp) = before {
+            if identical(&path, &record.digest, record.len).unwrap_or(false)
+                && capture(&path).as_ref() == Some(&stamp) {
+                let refreshed = ArchiveRecord {digest: record.digest.clone(), len: record.len, stamp: stamp.clone()};
+                store.commit(&[], &[Change::Put(archive_key.clone(), serde_json::to_vec(&refreshed).map_err(io::Error::other)?)], None)?;
+                return Ok(PreparedArchive {path, digest: record.digest, len: record.len, stamp, catalog});
+            }
         }
     }
     let keys: Vec<_> = catalog

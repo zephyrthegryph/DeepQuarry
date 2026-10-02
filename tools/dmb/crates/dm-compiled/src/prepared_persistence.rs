@@ -57,10 +57,11 @@ struct Head {
 }
 
 pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Result<()> {
+    let persist_started = std::time::Instant::now();
     let mut paths = BTreeMap::new();
     fn path_id(paths: &mut BTreeMap<PathBuf, usize>, path: &std::path::Path) -> usize {
-        let next = paths.len();
-        *paths.entry(path.to_path_buf()).or_insert(next)
+        if let Some(id) = paths.get(path) { return *id; }
+        let next=paths.len();paths.insert(path.to_path_buf(),next);next
     }
     let project = &snapshot.project;
     // Previously every body edit published expanded text plus every authored
@@ -100,6 +101,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .filter(|(_, (digest, _))| !known.contains(digest) && scheduled.insert(digest.clone()))
         .map(|(piece, _)| piece)
         .collect();
+    let expanded_started = std::time::Instant::now();
     let chunk_writes = dm_work::map_ordered(
         &missing_chunks,
         dm_work::WorkLimits::configured(),
@@ -120,6 +122,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         .values()
         .filter(|source| !known_sources.contains(&source.digest))
         .collect();
+    trace_persistence("expanded CAS writes", expanded_started);
+    let authored_started = std::time::Instant::now();
     let writes = dm_work::map_ordered(
         &missing,
         dm_work::WorkLimits::configured(),
@@ -134,6 +138,8 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     for write in writes {
         write?;
     }
+    trace_persistence("authored CAS writes", authored_started);
+    let manifest_started = std::time::Instant::now();
     let mut sources = Vec::with_capacity(snapshot.sources.len());
     for (path, source) in snapshot.sources.iter() {
         sources.push(Source {
@@ -225,7 +231,7 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         context: snapshot.context.clone(),
         manifest: digest,
     };
-    store
+    let result = store
         .metadata
         .put_many(
             vec![(
@@ -234,7 +240,10 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
             )],
             None,
         )
-        .map(|_| ())
+        .map(|_| ());
+    trace_persistence("origin and manifest publication", manifest_started);
+    trace_persistence("total", persist_started);
+    result
 }
 
 fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manifest>> {
@@ -440,4 +449,8 @@ fn read_varint(bytes: &mut &[u8]) -> io::Result<usize> {
         }
     }
     Err(io::Error::other("origin varint overflow"))
+}
+
+fn trace_persistence(stage:&str,started:std::time::Instant) {
+    if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared persistence {stage}: {:.3}s",started.elapsed().as_secs_f64());}
 }

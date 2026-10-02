@@ -13,7 +13,7 @@ fn artifacts()->&'static Mutex<Artifacts> {
     static CACHE:OnceLock<Mutex<Artifacts>>=OnceLock::new();
     CACHE.get_or_init(||Mutex::new(Artifacts::default()))
 }
-fn namespace()->String {format!("symbolic-owner-recipes-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
+fn namespace()->String {format!("symbolic-owner-recipes-v2-{}",env!("DM_EMISSION_FINGERPRINT"))}
 fn seeds_namespace()->String {format!("symbolic-builtin-schema-v1-{}",env!("DM_EMISSION_FINGERPRINT"))}
 pub(super) fn bind(root:&std::path::Path) {
     let mut cache=artifacts().lock().unwrap_or_else(|error|error.into_inner());
@@ -138,16 +138,30 @@ fn build_roots(roots:&[&[Item]],modified:&[Item],builtin:&Dmb,builtin_image:&[u8
     let mut globals=previous.map(|model|model.globals.clone()).unwrap_or_else(||builtins.globals.clone());
     let mut recipes=previous.map(|model|model.recipes.clone()).unwrap_or_default();
     let mut types=Vec::new();for items in roots {collect_type_items(items,&mut types);}types.extend(modified.iter());
-    let owner_plans=default_plans::owner_batch(&types,workers);
-    let mut groups=BTreeMap::<String,Vec<Arc<default_plans::OwnerDeclarationPlan>>>::new();
-    for (item,plan) in types.into_iter().zip(owner_plans) {groups.entry(item.header.trim().to_owned()).or_default().push(plan);}
-    let next:BTreeMap<_,_>=groups.iter().map(|(path,plans)| {
-        let mut hash=Sha256::new();hash.update(identity.as_bytes());hash.update((path.len() as u64).to_le_bytes());hash.update(path.as_bytes());hash.update((plans.len() as u64).to_le_bytes());
-        for plan in plans {hash.update(plan.semantic_identity.as_bytes());}
+    // Semantic owner identity contains local declarations only. Procedure
+    // headers and child offsets affect physical plans, never this database.
+    // Derive syntax plans only for owners whose declaration rows changed.
+    let mut source_groups=BTreeMap::<String,Vec<&Item>>::new();
+    for item in types {source_groups.entry(item.header.trim().to_owned()).or_default().push(item);}
+    let next:BTreeMap<_,_>=source_groups.iter().map(|(path,items)| {
+        let mut hash=Sha256::new();hash.update(b"symbolic-owner-input-v2\0");
+        hash.update(identity.as_bytes());hash.update((path.len() as u64).to_le_bytes());hash.update(path.as_bytes());
+        for item in items {
+            for child in &item.children {
+                if matches!(child.kind,ItemKind::Var|ItemKind::Unknown|ItemKind::Statement) {
+                    hash.update([child.kind as u8]);hash.update((child.header.len() as u64).to_le_bytes());hash.update(child.header.as_bytes());
+                }
+            }
+        }
         (path.clone(),format!("{:x}",hash.finalize()))
     }).collect();
     let changed:Vec<_>=next.iter().filter(|(path,identity)|recipes.get(*path)!=Some(*identity)).map(|(_,identity)|identity.clone()).collect();
     hydrate(&changed);
+    let changed_types:Vec<_>=source_groups.iter().filter(|(path,_)|recipes.get(*path)!=next.get(*path))
+        .flat_map(|(_,items)|items.iter().copied()).collect();
+    let owner_plans=default_plans::owner_batch(&changed_types,workers);
+    let mut groups=BTreeMap::<String,Vec<Arc<default_plans::OwnerDeclarationPlan>>>::new();
+    for (item,plan) in changed_types.into_iter().zip(owner_plans) {groups.entry(item.header.trim().to_owned()).or_default().push(plan);}
     let removed:Vec<_>=recipes.keys().filter(|path|!path.is_empty()&&!next.contains_key(*path)).cloned().collect();
     for path in removed {
         recipes.remove(&path);if let Some(base)=builtins.owners.get(&path) {owners.insert(path,Arc::clone(base));} else {owners.remove(&path);}

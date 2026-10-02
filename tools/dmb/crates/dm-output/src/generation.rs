@@ -144,6 +144,17 @@ pub struct VerifiedBytecode {
     resources: String,
 }
 impl VerifiedBytecode {
+    pub fn serialize_chunks(
+        image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
+        cache: &mut byond_dmb::dmb::DmbWireCache,
+        root: &Path,
+    ) -> io::Result<(crate::chunks::StoredDmb, Self)> {
+        let pages = image.to_chunks_cached(cache)?;
+        let stored = crate::chunks::persist(root, &pages)?;
+        let receipt = Self { digest: stored.digest().to_owned(), len: stored.len(),
+            resources: resource_digest(image.image()) };
+        Ok((stored, receipt))
+    }
     pub fn serialize_cached(
         image: &byond_dmb::dmb::ReferenceValidatedImage<'_>,
         cache: &mut byond_dmb::dmb::DmbWireCache,
@@ -559,15 +570,44 @@ fn publish_verified_archive_inner(
     resources: &str,
     digest: Option<&str>,
 ) -> io::Result<Generation> {
+    let digest = digest.map(str::to_owned).unwrap_or_else(||format!("{:x}",Sha256::digest(dmb)));
+    publish_verified_archive_source(root, archive, resources, &digest, dmb.len(),
+        |output|output.write_all(dmb), |path|file_matches_bytes(path,dmb))
+}
+
+/// Publish directly from immutable disk object pages; no full DMB Vec or
+/// decoding is needed after the immutable image issued its receipt.
+pub fn publish_generation_with_chunked_bytecode(
+    root: &Path,
+    dmb: &crate::chunks::StoredDmb,
+    archive: &VerifiedArchive,
+    receipt: &VerifiedBytecode,
+) -> io::Result<Generation> {
+    if dmb.len() != receipt.len || dmb.digest() != receipt.digest {
+        return Err(invalid("chunked bytecode differs from its validation receipt"));
+    }
+    publish_verified_archive_source(root, archive, &receipt.resources, &receipt.digest,receipt.len,
+        |output|dmb.write_to(output), |path| {
+            let mut input = File::open(path)?; let mut hash = Sha256::new(); let mut len=0usize;
+            let mut buffer=[0u8;64*1024];
+            loop { let count=input.read(&mut buffer)?; if count==0 {break;}
+                len+=count; hash.update(&buffer[..count]); }
+            Ok(len==receipt.len && format!("{:x}",hash.finalize())==receipt.digest)
+        })
+}
+
+fn publish_verified_archive_source(
+    root: &Path, archive: &VerifiedArchive, resources: &str, digest: &str, len: usize,
+    write: impl FnOnce(&mut File)->io::Result<()>,
+    matches: impl Fn(&Path)->io::Result<bool>,
+) -> io::Result<Generation> {
     use dm_host::file_stamp::{capture_file, open_verified};
     if resources != archive.content.resources {
         return Err(invalid("changed DMB resource table requires a new archive"));
     }
     let content = ContentDigests {
-        dmb_len: dmb.len() as u64,
-        dmb_digest: digest
-            .map(str::to_owned)
-            .unwrap_or_else(|| format!("{:x}", Sha256::digest(dmb))),
+        dmb_len: len as u64,
+        dmb_digest: digest.to_owned(),
         rsc_len: archive.len(),
         rsc_digest: archive.digest().into(),
         resources: archive.content.resources.clone(),
@@ -615,7 +655,7 @@ fn publish_verified_archive_inner(
         fs::create_dir(&temp)?;
         let result = (|| {
             let mut output = File::create(temp.join("world.dmb"))?;
-            output.write_all(dmb)?;
+            write(&mut output)?;
             output.sync_all()?;
             drop(output);
             if fs::hard_link(&archive.path, temp.join("world.rsc")).is_err() {
@@ -642,7 +682,7 @@ fn publish_verified_archive_inner(
     if created {
         let dmb_stamp =
             capture(&published.dmb).ok_or_else(|| invalid("published DMB stamp unavailable"))?;
-        if !file_matches_bytes(&published.dmb, dmb)? {
+        if !matches(&published.dmb)? {
             return Err(invalid("published DMB bytes changed"));
         }
         if capture(&published.dmb).as_ref() != Some(&dmb_stamp) {

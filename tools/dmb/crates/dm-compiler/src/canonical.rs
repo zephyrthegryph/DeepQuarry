@@ -987,6 +987,14 @@ impl CanonicalSession {
         const_eval::flush_cache();
         semantic_declarations::flush_cache();
         default_plans::flush_cache();
+        if std::env::var_os("DM_BUILD_TRACE").is_some() {
+            eprintln!("DM_BUILD_TRACE canonical retained: frozen={} invocation={} owner={} semantic={} declarations={} maps={}",
+                self.skeleton.as_ref().map_or(0,|(_,skeleton)|skeleton.resident_charge.load(Ordering::Relaxed)),
+                self.invocation_fragments.resident_bytes(),
+                self.owner_frames.lock().unwrap_or_else(|error|error.into_inner()).resident_bytes(),
+                self.semantic_declarations.as_ref().map_or(0,|model|model.resident_bytes()),
+                self.declaration_inputs.as_ref().map_or(0,DeclarationInputs::resident_bytes),self.maps.resident_bytes());
+        }
     }
     /// Output projections are expendable accelerators. Retain compact semantic
     /// owner/invocation fragments when releasing output buffers under pressure.

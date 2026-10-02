@@ -54,8 +54,57 @@ pub struct ResourceCatalog {
     pub entries: Vec<ResourceDescriptor>,
 }
 impl ResourceCatalog {
+    /// Dense resource layout, independent of content CRC values. Identical
+    /// content aliases share a table slot; their equivalence partition remains
+    /// part of this projection even when all CRC values change.
+    pub fn layout_fingerprint(&self) -> [u8; 32] {
+        let mut digest = Sha256::new();
+        digest.update(b"dm-resource-layout-projection-v1\0");
+        digest.update((self.entries.len() as u64).to_le_bytes());
+        let mut groups = HashMap::new();
+        for entry in &self.entries {
+            let next = groups.len() as u64;
+            let group = *groups.entry((entry.id, entry.kind)).or_insert(next);
+            digest.update((entry.archive_name.len() as u64).to_le_bytes());
+            digest.update(entry.archive_name.as_bytes());
+            digest.update([entry.kind]); digest.update(group.to_le_bytes());
+        }
+        digest.finalize().into()
+    }
+
+    /// Patch only physical content IDs when the exact dense layout is preserved.
+    /// No mutation occurs on failure. An independently keyed builtin prefix is
+    /// preserved only if catalog attachment cannot alias against that prefix.
+    pub fn remap_if_compatible(&self, old: &Self, dmb: &mut byond_dmb::dmb::Dmb) -> bool {
+        if self.validate().is_err() || old.validate().is_err()
+            || self.entries.len() != old.entries.len() { return false; }
+        let mut forward = HashMap::new(); let mut reverse = HashMap::new();
+        let mut old_rows = Vec::new(); let mut new_rows = Vec::new();
+        for (old_entry, new_entry) in old.entries.iter().zip(&self.entries) {
+            if old_entry.archive_name != new_entry.archive_name || old_entry.kind != new_entry.kind { return false; }
+            let prior = (old_entry.id, old_entry.kind);
+            let current = (new_entry.id, new_entry.kind);
+            if forward.get(&prior).is_some_and(|mapped| *mapped != current)
+                || reverse.get(&current).is_some_and(|mapped| *mapped != prior) { return false; }
+            if forward.insert(prior,current).is_none() {
+                old_rows.push(byond_dmb::dmb::ResourceRef {id:prior.0,kind:prior.1});
+                new_rows.push(byond_dmb::dmb::ResourceRef {id:current.0,kind:current.1});
+            }
+            reverse.insert(current,prior);
+        }
+        let Some(prefix) = dmb.resources.len().checked_sub(old_rows.len()) else { return false; };
+        if dmb.resources[prefix..] != old_rows { return false; }
+        if dmb.resources[..prefix].iter().any(|row|
+            forward.contains_key(&(row.id,row.kind)) || reverse.contains_key(&(row.id,row.kind))) {
+            return false;
+        }
+        dmb.resources[prefix..].clone_from_slice(&new_rows);
+        true
+    }
+
     /// Exact resource assignment projection consumed by bytecode generation.
-    /// Asset bytes belong to the separately verified RSC identity. Entry order
+    /// CRC changes invalidate this exact projection. Asset-only reuse should
+    /// use layout_fingerprint plus remap_if_compatible instead. Entry order
     /// matters because attachment assigns dense resource table indices in order.
     /// Callers must still validate this catalog and independently verify the RSC.
     pub fn bytecode_fingerprint(&self) -> [u8; 32] {
