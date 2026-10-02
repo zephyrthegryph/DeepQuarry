@@ -1,0 +1,33 @@
+/// A real injector leaves its hand and becomes the bag's actual nullspace-owned injector.
+/datum/unit_test/interim_cryobag_insert_injector/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/body_bag/cryobag/bag = allocate(/obj/structure/closet/body_bag/cryobag, T)
+	var/obj/item/reagent_containers/syringe/injector = allocate(/obj/item/reagent_containers/syringe, T)
+	TEST_ASSERT(!bag.opened, "the actual stasis bag is closed for injector insertion")
+	TEST_ASSERT(user.put_in_active_hand(injector), "the actual injector is held")
+	bag.cryobag_interaction_item(user, injector, null)
+	TEST_ASSERT_EQUAL(bag.syringe, injector, "the bag installs the actual supplied injector")
+	TEST_ASSERT_EQUAL(owner_of(injector), bag, "the bag owns the installed injector")
+	TEST_ASSERT_NULL(injector.loc, "the installed injector retains deliberate nullspace storage")
+	TEST_ASSERT_NULL(user.get_active_hand(), "the injector's original hand is correctly vacated")
+	TEST_ASSERT(!QDELETED(injector), "installation preserves the actual injector")
+
+/// A NODROP injector is rejected without forcibly moving it or adopting it.
+/datum/unit_test/interim_cryobag_insert_sticky_refusal/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/closet/body_bag/cryobag/bag = allocate(/obj/structure/closet/body_bag/cryobag, T)
+	var/obj/item/reagent_containers/syringe/injector = allocate(/obj/item/reagent_containers/syringe, T)
+	TEST_ASSERT(!bag.opened, "the actual stasis bag is closed for injector insertion")
+	TEST_ASSERT(user.put_in_active_hand(injector), "the actual injector is held")
+	add_trait(injector, TRAIT_NODROP, "interim_cryobag_injector")
+	TEST_ASSERT(injector.loc.release_refusal(injector, user), "the actual NODROP injector refuses release")
+	TEST_ASSERT(bag.can_insert_injector(user, bag, injector) != TRUE, "the interaction requirement rejects the actual sticky injector")
+	bag.cryobag_interaction_item(user, injector, null)
+	TEST_ASSERT_NULL(bag.syringe, "refusal leaves the bag without an injector")
+	TEST_ASSERT_EQUAL(injector.loc, user, "refusal preserves the injector on its holder")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), injector, "refusal preserves the injector's original hand")
+	TEST_ASSERT_NULL(owner_of(injector), "refusal does not transfer injector ownership to the bag")
+	TEST_ASSERT(!QDELETED(injector), "refusal preserves the actual injector")
+	remove_trait(injector, TRAIT_NODROP, "interim_cryobag_injector")

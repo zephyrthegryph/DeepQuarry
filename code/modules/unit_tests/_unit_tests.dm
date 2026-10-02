@@ -497,6 +497,10 @@
 #include "interim_pipe_meter_replacement.dm"
 #include "interim_gunbox_lifecycle.dm"
 #include "interim_bodybag_lifecycle.dm"
+#include "interim_windoor_completion.dm"
+#include "interim_windoor_dismantle.dm"
+#include "interim_cryobag_injector.dm"
+#include "interim_butterfly_assembly.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

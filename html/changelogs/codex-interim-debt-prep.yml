@@ -21,3 +21,4 @@ changes:
   - bugfix: "Deleted closed clamps restore pipe flow, and closed storage displays release their item labels and pins."
   - bugfix: "Hailer mask assemblies and selection kits preserve ingredients on refusal without dropping unrelated held items."
   - bugfix: "Gun boxes and folded body bags preserve their contents without creating duplicate products when removal is refused."
+  - bugfix: "Stasis-bag injector loading and concealed-knife assembly respect stuck ingredients and preserve inventory bookkeeping."

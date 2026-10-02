@@ -208,7 +208,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, app
 
 EXTEND_INTERACTIONS(/obj/structure/closet/body_bag/cryobag, \
 	INTERACT_HAND(null, PROC_REF(cryobag_interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(cryobag_interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(cryobag_interaction_item), REQ_TARGET_STATE(/obj/structure/closet/body_bag/cryobag/proc/can_insert_injector)), \
 )
 
 /// Old attack_hand.
@@ -292,6 +292,17 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 		FOR_REAL_CONTENTS(var/mob/living/L, src)
 			. += L.examine(user)
 
+/// Loading an injector must respect its current holder's release rules.
+/obj/structure/closet/body_bag/cryobag/proc/can_insert_injector(mob/user, atom/target, obj/item/held)
+	if(opened || !istype(held, /obj/item/reagent_containers/syringe))
+		return TRUE
+	if(syringe)
+		return "the bag already has an injector"
+	var/reason = held.loc?.release_refusal(held, user)
+	if(reason)
+		return reason
+	return TRUE
+
 /// Old attackby: while closed, scan the occupant or load an injector.
 /obj/structure/closet/body_bag/cryobag/proc/cryobag_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(opened)
@@ -307,10 +318,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 				to_chat(user,span_warning("\The [src] already has an injector! Remove it first."))
 			else
 				var/obj/item/reagent_containers/syringe/syringe = W
-				to_chat(user,span_info("You insert \the [syringe] into \the [src], and it locks into place."))
-				user.unEquip(syringe)
+				if(can_insert_injector(user, src, syringe) != TRUE)
+					return INTERACTION_HANDLED_PASS
+				if(!syringe.loc.release_to(syringe, get_turf(src), null, user))
+					return INTERACTION_HANDLED_PASS
+				if(!own_move(syringe, src, nameof(src.syringe)))
+					return INTERACTION_HANDLED_PASS
 				syringe.moveToNullspace()
-				own_move(syringe, src, nameof(syringe))
+				to_chat(user,span_info("You insert \the [syringe] into \the [src], and it locks into place."))
 				for(var/mob/living/carbon/human/H in contents) // ALLOW(latent): mobs are never latent
 					inject_occupant(H)
 					break
