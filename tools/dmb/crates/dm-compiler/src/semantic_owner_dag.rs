@@ -197,13 +197,18 @@ fn build_roots(roots:&[&[Item]],modified:&[Item],builtin:&Dmb,builtin_image:&[u8
 }
 pub(super) fn resident_bytes()->usize {
     let cache=artifacts().lock().unwrap_or_else(|error|error.into_inner());
-    cache.bytes+cache.pending_bytes+cache.seeds.values().map(|(_,size)|*size).sum::<usize>()+cache.missing.len()*96
+    cache.pending_bytes+cache.owners.iter().map(|(key,(owner,size))|key.capacity()+96+size.div_ceil(Arc::strong_count(owner).max(1))).sum::<usize>()
+        +cache.seeds.values().map(|(model,size)|size.div_ceil(Arc::strong_count(model).max(1))).sum::<usize>()+cache.missing.len()*96
 }
 pub(super) fn trim_to(max_bytes:usize) {
     let mut cache=artifacts().lock().unwrap_or_else(|error|error.into_inner());flush_locked(&mut cache);
-    while cache.bytes>max_bytes {
+    // Decoded lookup ownership is expendable; immutable models keep their Arc
+    // fragments. Negative inventories and native seeds also count toward the
+    // same requested budget, rather than escaping a trim of owner rows alone.
+    cache.missing.clear();
+    while cache.bytes+cache.seeds.values().map(|(_,size)|*size).sum::<usize>()>max_bytes {
+        if let Some(key)=cache.seeds.keys().next().cloned() {cache.seeds.remove(&key);continue;}
         let Some(key)=cache.owners.keys().next().cloned() else {break;};
         if let Some((_,size))=cache.owners.remove(&key) {cache.bytes=cache.bytes.saturating_sub(size);}
     }
-    if max_bytes==0 {cache.seeds.clear();cache.missing.clear();}
 }

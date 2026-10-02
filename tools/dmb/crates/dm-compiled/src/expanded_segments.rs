@@ -393,6 +393,7 @@ fn splice_raw_units(
     };
     // Origins before the edit use the previous generation's shared line table.
     let offsets = old_source.line_starts();
+    let mut origin_builder = dm_preprocess::SourceMapBuilder::default();
     let mut origin_index = 0;
     let mut line_delta: i64 = 0;
     for (span, text, path) in &replacements {
@@ -403,7 +404,7 @@ fn splice_raw_units(
             }
             let mut origin = origin.clone();
             origin.output_line = usize::try_from(origin.output_line as i64 + line_delta).ok()?;
-            project.origins.push(origin);
+            origin_builder.push(origin);
             origin_index += 1;
         }
         let first_line = previous.origin_get(origin_index)?.output_line;
@@ -421,7 +422,7 @@ fn splice_raw_units(
         }
         let mut new_count = 0;
         for (line, _) in text.split_inclusive('\n').enumerate() {
-            project.origins.push(dm_preprocess::Origin {
+            origin_builder.push(dm_preprocess::Origin {
                 output_line: usize::try_from(first_line as i64 + line_delta).ok()? + line,
                 path: Arc::clone(path),
                 source_line: line + 1,
@@ -433,8 +434,9 @@ fn splice_raw_units(
     for origin in previous.origin_iter().skip(origin_index) {
         let mut origin = origin.clone();
         origin.output_line = usize::try_from(origin.output_line as i64 + line_delta).ok()?;
-        project.origins.push(origin);
+        origin_builder.push(origin);
     }
+    project.origin_map = Some(Arc::new(origin_builder.finish()));
     let translate = |offset: usize| -> Option<usize> {
         let mut delta: i64 = 0;
         for (span, text, _) in &replacements {

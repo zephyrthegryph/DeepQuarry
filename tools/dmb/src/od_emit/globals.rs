@@ -146,7 +146,7 @@ impl Builder<'_> {
         let mut footer = if self.dmb.variable_footer == NONE {
             Vec::new()
         } else {
-            self.dmb.lists[self.dmb.variable_footer as usize].clone()
+            self.dmb.lists[self.dmb.variable_footer as usize].to_vec()
         };
         let baseline_names = self.baseline.and_then(|base| base.globals.as_ref());
         if globals.globals.keys().any(|&id| id >= globals.names.len()) {
@@ -253,7 +253,7 @@ impl Builder<'_> {
                 let mut declarations = if current == NONE {
                     Vec::new()
                 } else {
-                    self.dmb.lists[current as usize].clone()
+                    self.dmb.lists[current as usize].to_vec()
                 };
                 declarations.extend(additions);
                 let id = self.list(declarations);
@@ -1079,7 +1079,7 @@ impl Builder<'_> {
                     words.push(record.variable_id);
                     words.extend(record.value.encode());
                 }
-                self.dmb.lists[list_id as usize] = words;
+                self.dmb.lists[list_id as usize] = (words).into();
             }
         }
         if let Some(globals) = &self.input.globals {
@@ -1247,7 +1247,7 @@ impl Builder<'_> {
                     words.push(remap[record.variable_id as usize]);
                     words.extend(record.value.encode());
                 }
-                self.dmb.lists[initial as usize] = words;
+                self.dmb.lists[initial as usize] = (words).into();
             }
         }
         let mut locals_lists = std::collections::HashSet::new();
@@ -1368,7 +1368,7 @@ impl Builder<'_> {
                 if list_id == NONE || !class_value_lists.insert(list_id) {
                     continue;
                 }
-                let words = self.dmb.lists[list_id as usize].clone();
+                let words = self.dmb.lists[list_id as usize].to_vec();
                 let mut at = 0;
                 let mut rewritten = Vec::with_capacity(words.len());
                 while at < words.len() {
@@ -1380,7 +1380,7 @@ impl Builder<'_> {
                     rewritten.extend(value.encode());
                     at += consumed;
                 }
-                self.dmb.lists[list_id as usize] = rewritten;
+                self.dmb.lists[list_id as usize] = (rewritten).into();
             }
         }
         let mut visited = std::collections::HashSet::new();
@@ -1516,7 +1516,7 @@ impl Builder<'_> {
                         words.push(entry.variable_id);
                         words.extend(entry.value.encode());
                     }
-                    self.dmb.lists[list_id as usize] = words;
+                    self.dmb.lists[list_id as usize] = (words).into();
                 }
             }
             let list_id = self.dmb.classes[class_id as usize].overriding_variable_list_id();
@@ -1543,7 +1543,7 @@ impl Builder<'_> {
                         words.push(entry.name_string_id);
                         words.extend(entry.value.encode());
                     }
-                    self.dmb.lists[list_id as usize] = words;
+                    self.dmb.lists[list_id as usize] = (words).into();
                 }
             }
         }

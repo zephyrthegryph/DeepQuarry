@@ -1847,7 +1847,7 @@ fn replay_procedure_fragment(
         old.checked_sub(fragment.old_variable_base).filter(|offset| (*offset as usize) < fragment.variables.len())
             .and_then(|offset| variable_base.checked_add(offset)).ok_or_else(|| "output DAG local variable dependency missing".into())
     };
-    let code_id = append_list(dmb, words.to_vec());
+    let code_id = dmb.append_shared_list(Arc::clone(&words)).map_err(|error|error.to_string())?;
     let locals = fragment.locals.iter().map(|&id| variable_id(id)).collect::<Result<Vec<_>, _>>()?;
     let locals_id = append_list(dmb, locals);
     let mut arguments = fragment.arguments.clone();
@@ -4830,8 +4830,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     strings: recipes,
                                     variables: dmb.variables[output_variable_base..].to_vec(),
                                     old_variable_base: output_variable_base as u32,
-                                    locals: dmb.lists[locals_id as usize].clone(),
-                                    arguments: dmb.lists[args_id as usize].clone(),
+                                    locals: dmb.lists[locals_id as usize].to_vec(),
+                                    arguments: dmb.lists[args_id as usize].to_vec(),
                                     record: dmb.procs[proc_index].clone(), relocations, debug,
                                     helpers: output_helpers, words: Arc::clone(&linked_words),
                                 };
@@ -4906,40 +4906,24 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 reusable.then_some(&mut *session),
             )?;
             trace("primary dynamic initializers complete; modified initializers start");
-            for declaration in &modified.declarations {
-                let alias = declaration.header.trim();
-                let owner = class_paths[&modified.parents[alias]];
-                let pending = declaration
-                    .children
-                    .iter()
-                    .map(|child| {
-                        let (name, expression) =
-                            child.header.split_once('=').expect("modified assignment");
-                        PendingDynamic {
-                            owner: Some(owner),
-                            name: name.trim().into(),
-                            expression: expression.trim().into(),
-                            sized_array: false,
-                        }
-                    })
-                    .collect();
-                let ids = emit_dynamic_initializers_with_pool(
-                    &mut dmb,
-                    pending,
-                    &mut strings,
-                    &class_paths,
-                    &resource_ids,
-                    &initializer_globals,
-                    &global_proc_ids,
-                    &shared_bindings,
-                    &prepared_member_globals,
-                    lowering_cache,
-                    false,
-                    Some(pool),
-                    reusable.then_some(&mut *session),
-                )?;
-                let instance = strings.4[alias] as usize;
-                dmb.instances[instance].initializer = ids.first().copied().unwrap_or(0xffff);
+            // Keep modified-instance groups distinct even when their base owner
+            // matches. Restore their requested payloads in one bounded stage,
+            // rather than reopening the database for each individual instance.
+            let groups:Vec<_>=modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).map(|declaration| {
+                let owner=class_paths[&modified.parents[declaration.header.trim()]];
+                let pending=declaration.children.iter().map(|child| {
+                    let (name,expression)=child.header.split_once('=').expect("modified assignment");
+                    PendingDynamic {owner:Some(owner),name:name.trim().into(),expression:expression.trim().into(),sized_array:false}
+                }).collect();
+                (Some(owner),pending)
+            }).collect();
+            let ids=initializer_pipeline::emit_initializer_groups_with_pool(
+                &mut dmb,groups,&mut strings,&class_paths,&resource_ids,&initializer_globals,
+                &global_proc_ids,&shared_bindings,&prepared_member_globals,lowering_cache,false,
+                Some(pool),reusable.then_some(&mut *session))?;
+            for (declaration,id) in modified.declarations.iter().filter(|declaration|!declaration.children.is_empty()).zip(ids) {
+                let instance=strings.4[declaration.header.trim()] as usize;
+                dmb.instances[instance].initializer=id;
             }
             trace("dynamic initializers complete; worker finalization start");
             Ok(())
@@ -5191,7 +5175,7 @@ fn reorder_member_override_lists(dmb: &mut Dmb) {
             if list_id == 0xffff {
                 continue;
             }
-            let members = dmb.lists[list_id as usize].clone();
+            let members = dmb.lists[list_id as usize].to_vec();
             let paths: Vec<_> = members
                 .iter()
                 .map(|id| {
@@ -5219,7 +5203,7 @@ fn reorder_member_override_lists(dmb: &mut Dmb) {
                 })
                 .collect();
             if implicit.is_empty() {
-                dmb.lists[list_id as usize] = members;
+                dmb.lists[list_id as usize] = (members).into();
                 continue;
             }
             let mut active = Vec::new();
@@ -5245,7 +5229,7 @@ fn reorder_member_override_lists(dmb: &mut Dmb) {
             }
             active.extend(other);
             active.extend(shadowed);
-            dmb.lists[list_id as usize] = active;
+            dmb.lists[list_id as usize] = (active).into();
         }
     }
 }
@@ -5771,7 +5755,7 @@ fn refresh_inherited_class_header(
     inherited.overrides = if inherited.overrides == 0xffff {
         0xffff
     } else {
-        let values = dmb.lists[inherited.overrides as usize].clone();
+        let values = dmb.lists[inherited.overrides as usize].to_vec();
         append_list(dmb, values)
     };
     let mut ancestor = parent;

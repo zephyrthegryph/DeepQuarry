@@ -797,7 +797,7 @@ fn skeleton_heap(image: &Dmb, metadata: &SkeletonMetadata) -> usize {
         .iter()
         .map(|s| s.data.capacity())
         .sum::<usize>();
-    bytes += image.lists.iter().map(vec_heap).sum::<usize>();
+    bytes += image.lists.iter().map(|words| words.capacity() * std::mem::size_of::<u32>()).sum::<usize>();
     bytes += metadata.strings.resident_bytes();
     bytes += metadata.proc_paths.capacity() * (std::mem::size_of::<Vec<u8>>() + 16)
         + metadata.proc_paths.iter().map(Vec::capacity).sum::<usize>();

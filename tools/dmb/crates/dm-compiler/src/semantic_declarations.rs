@@ -263,7 +263,7 @@ pub(super) fn resident_bytes()->usize {
 /// their immutable owner Arcs until completion.
 pub(super) fn trim_to(max_bytes:usize) {
     owner_dag::trim_to(max_bytes/3);
-    if max_bytes==0 { default_queries::reset(); }
+    if default_queries::resident_bytes()>max_bytes/6 { default_queries::reset(); }
     let mut values=value_cache().lock().unwrap_or_else(|error|error.into_inner());
     flush_values(&mut values);
     while values.bytes>max_bytes/2 {

@@ -7,6 +7,7 @@ use serde::{Serialize, Deserialize};
 use byond_dmb::dmb::{Proc, Variable};
 use dm_codegen_byond::relocatable::{OutputRelocation, OutputDebugRelocation};
 use sha2::{Digest, Sha256};
+const OBJECT_WINDOW: usize = 1024;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub(super) enum StringRecipe {
@@ -167,7 +168,10 @@ impl ProcedureFragments {
     pub fn has_handle(&self, key: &crate::ProcKey) -> bool { self.handles.contains_key(key) }
     pub fn prefetch(&mut self, keys: &[crate::ProcKey]) {
         let Some(store) = self.store.clone() else { return; };
-        for chunk in keys.chunks(256) {
+        // One addressed source-order window shares database ownership. Payload
+        // byte limits and recursive split remain unchanged; decode work still
+        // drains under its separate 64 MiB expanded-memory budget.
+        for chunk in keys.chunks(OBJECT_WINDOW) {
             let missing: Vec<_> = chunk.iter().filter(|key| !self.handles.contains_key(*key)
                 && !self.known_missing.contains(*key)).cloned().collect();
             if !missing.is_empty() {

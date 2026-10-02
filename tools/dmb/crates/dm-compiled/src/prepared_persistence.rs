@@ -2,7 +2,7 @@
 //! Publish bytes before the mutable head; concurrent writers may publish either
 //! fully verified revision. No database/Salsa IDs are serialized.
 use crate::{input_proof::InputProof, prepared_project::*, ContentStore};
-use dm_preprocess::{Diagnostic, Macro, Origin, PreprocessedProject, Unit};
+use dm_preprocess::{Diagnostic, Macro, PreprocessedProject, Unit};
 use dm_syntax::Span;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
@@ -10,7 +10,7 @@ use std::io;
 use std::path::PathBuf;
 use std::sync::Arc;
 
-const VERSION: u32 = 4;
+const VERSION: u32 = 5;
 const MAX_PACK: usize = 128 * 1024 * 1024;
 const MAX_EXPANDED_BYTES: usize = 1024 * 1024 * 1024;
 const MAX_MANIFEST: usize = 64 * 1024 * 1024;
@@ -150,16 +150,12 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
             stamp: source.stamp.clone(),
         });
     }
-    let mut origin_bytes = Vec::with_capacity(project.origin_count() * 5);
-    for origin in project.origin_iter() {
-        write_varint(&mut origin_bytes, origin.output_line);
-        write_varint(&mut origin_bytes, path_id(&mut paths, &origin.path));
-        write_varint(&mut origin_bytes, origin.source_line);
-    }
+    let origin_started=std::time::Instant::now();
+    let map = snapshot.project.origin_map.clone().unwrap_or_else(||Arc::new(dm_preprocess::OriginMap::from_origins(project.origin_iter())));
+    let origin_bytes=encode_snapshot(map.as_ref())?;
     let origins = format!("{:x}", Sha256::digest(&origin_bytes));
-    if !known.contains(&origins) {
-        store.put_rebuildable("prepared-input-chunk-v2", &origin_bytes)?;
-    }
+    if !known.contains(&origins) {store.put_rebuildable("prepared-input-chunk-v2", &origin_bytes)?;}
+    trace_persistence("compact origin encoding and CAS", origin_started);
     let units = project
         .units
         .iter()
@@ -221,7 +217,9 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
         macro_names: snapshot.macro_names.as_ref().clone(),
         proof: snapshot.proof.clone(),
     };
-    let bytes = serde_json::to_vec(&manifest).map_err(io::Error::other)?;
+    let encode_started=std::time::Instant::now();
+    let bytes = encode_snapshot(&manifest)?;
+    trace_persistence("manifest encoding", encode_started);
     if bytes.len() > MAX_MANIFEST {
         return Ok(());
     }
@@ -258,12 +256,9 @@ fn load_manifest(store: &ContentStore, context: &str) -> io::Result<Option<Manif
     if head.version != VERSION || head.context != context {
         return Ok(None);
     }
-    let manifest = serde_json::from_slice(&store.get_bounded(
-        "prepared-input-manifest-v2",
-        &head.manifest,
-        MAX_MANIFEST,
-    )?)
-    .map_err(io::Error::other)?;
+    let manifest = decode_snapshot(&store.get_bounded(
+        "prepared-input-manifest-v2", &head.manifest, MAX_MANIFEST,
+    )?)?;
     Ok(Some(manifest))
 }
 
@@ -354,17 +349,9 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     }
     let origin_bytes =
         store.get_bounded("prepared-input-chunk-v2", &manifest.origins, MAX_MANIFEST)?;
-    let mut reader = origin_bytes.as_slice();
-    let mut origins = Vec::with_capacity(manifest.origin_count);
-    for _ in 0..manifest.origin_count {
-        origins.push(Origin {
-            output_line: read_varint(&mut reader)?,
-            path: path(read_varint(&mut reader)?)?,
-            source_line: read_varint(&mut reader)?,
-        });
-    }
-    if !reader.is_empty() {
-        return Err(io::Error::other("trailing prepared origin bytes"));
+    let origins:dm_preprocess::OriginMap=decode_snapshot(&origin_bytes)?;
+    if !origins.validate() || origins.len()!=manifest.origin_count {
+        return Err(io::Error::other("invalid prepared compact origin map"));
     }
     let units = manifest
         .units
@@ -392,8 +379,8 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     };
     let mut project = PreprocessedProject {
         text: String::new(),
-        origins,
-        origin_map: None,
+        origins: Vec::new(),
+        origin_map: Some(Arc::new(origins)),
         units,
         unit_digests: manifest.unit_digests,
         dependencies: resolve(manifest.dependencies)?
@@ -425,32 +412,19 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
 }
 use sha2::{Digest, Sha256};
 
-fn write_varint(bytes: &mut Vec<u8>, mut value: usize) {
-    while value >= 128 {
-        bytes.push((value as u8 & 127) | 128);
-        value >>= 7;
-    }
-    bytes.push(value as u8);
-}
-fn read_varint(bytes: &mut &[u8]) -> io::Result<usize> {
-    let mut value = 0usize;
-    for shift in (0..usize::BITS).step_by(7) {
-        let (&byte, rest) = bytes
-            .split_first()
-            .ok_or_else(|| io::Error::other("truncated origin varint"))?;
-        *bytes = rest;
-        let part = usize::from(byte & 127);
-        if part > (usize::MAX >> shift) {
-            return Err(io::Error::other("origin varint overflow"));
-        }
-        value |= part << shift;
-        if byte & 128 == 0 {
-            return Ok(value);
-        }
-    }
-    Err(io::Error::other("origin varint overflow"))
-}
-
 fn trace_persistence(stage:&str,started:std::time::Instant) {
     if std::env::var_os("DM_BUILD_TRACE").is_some() {eprintln!("DM_BUILD_TRACE prepared persistence {stage}: {:.3}s",started.elapsed().as_secs_f64());}
+}
+
+fn encode_snapshot(value:&impl Serialize)->io::Result<Vec<u8>> {
+    let bytes=rmp_serde::to_vec(value).map_err(io::Error::other)?;
+    if bytes.len()>MAX_MANIFEST {return Err(io::Error::other("prepared snapshot exceeds decoded limit"));}
+    Ok(lz4_flex::compress_prepend_size(&bytes))
+}
+fn decode_snapshot<T:serde::de::DeserializeOwned>(bytes:&[u8])->io::Result<T> {
+    let size=bytes.get(..4).and_then(|prefix|prefix.try_into().ok()).map(u32::from_le_bytes)
+        .ok_or_else(||io::Error::other("truncated prepared snapshot"))?;
+    if size as usize>MAX_MANIFEST {return Err(io::Error::other("prepared snapshot exceeds decoded limit"));}
+    let bytes=lz4_flex::decompress_size_prepended(bytes).map_err(io::Error::other)?;
+    rmp_serde::from_slice(&bytes).map_err(io::Error::other)
 }

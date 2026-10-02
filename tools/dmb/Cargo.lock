@@ -180,6 +180,8 @@ dependencies = [
  "dm-store",
  "dm-syntax",
  "dm-work",
+ "lz4_flex",
+ "rmp-serde",
  "serde",
  "serde_json",
  "sha2",

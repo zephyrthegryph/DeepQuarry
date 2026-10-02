@@ -3237,15 +3237,15 @@ mod tests {
             copies: 1,
         });
         let mut actual = expected.clone();
-        actual.lists[code as usize] = vec![
+        actual.lists[code as usize] = (vec![
             0x50, 2, 0x34, 0xffdc, 0xffce, y, 0x50, 1, 0x34, 0xffdc, 0xffce, x, 0,
-        ];
+        ]).into();
         assert!(!compare_maps(&expected, &actual, 10).is_empty());
         assert!(compare_maps_semantic(&expected, &actual, 10).is_empty());
-        actual.lists[code as usize] = vec![
+        actual.lists[code as usize] = (vec![
             0x50, 2, 0x34, 0xffdc, 0xffce, 0xffdc, 0xffce, y, 0x50, 1, 0x34, 0xffdc, 0xffce,
             0xffdc, 0xffce, x, 0,
-        ];
+        ]).into();
         assert!(compare_maps_semantic(&expected, &actual, 10).is_empty());
         actual.lists[code as usize][6] = 0xffe5;
         assert!(constant_initializer_signature(&actual, initializer_id).is_none());

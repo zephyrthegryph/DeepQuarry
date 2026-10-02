@@ -10,6 +10,9 @@ pub(super) fn query_keys(pending:&[PendingDynamic],dmb:&Dmb,strings:&StringIndex
         let index=*indices.entry(assignment.owner).or_insert_with(||{let index=groups.len();groups.push((assignment.owner,Vec::new()));index});
         groups[index].1.push(assignment);
     }
+    group_keys(groups.into_iter().map(|(owner,assignments)|(owner,assignments)).collect(),dmb,strings,attach)
+}
+fn group_keys(groups:Vec<(Option<u32>,Vec<&PendingDynamic>)>,dmb:&Dmb,strings:&StringIndex,attach:bool)->Vec<crate::ProcKey> {
     groups.into_iter().map(|(owner,mut assignments)| {
         if owner.is_none() {assignments.sort_by_key(|assignment|!assignment.sized_array&&!literal_initializer(&assignment.expression,dmb,strings));}
         let mut source=String::from("/proc/__initializer()\n");
@@ -32,18 +35,9 @@ pub(super) fn emit_dynamic_initializers_with_pool(
     prepared_member_globals: &PreparedMemberGlobals,
     lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
     attach: bool,
-    mut pool: Option<&mut procedure_pipeline::LoweringPool>,
-    mut session: Option<&mut canonical::CanonicalSession>,
+    pool: Option<&mut procedure_pipeline::LoweringPool>,
+    session: Option<&mut canonical::CanonicalSession>,
 ) -> Result<Vec<u32>, String> {
-    let mut generated = Vec::new();
-    let phase_started = std::time::Instant::now();
-    let mut parse_time = std::time::Duration::ZERO;
-    let mut binding_time = std::time::Duration::ZERO;
-    let mut lowering_time = std::time::Duration::ZERO;
-    let mut linking_time = std::time::Duration::ZERO;
-    let mut prepared_hits = 0;
-    let mut lowered_groups = 0;
-    let shared = Arc::clone(project_bindings);
     let mut groups: Vec<(Option<u32>, Vec<PendingDynamic>)> = Vec::new();
     // Index only the lookup. The vector retains first-occurrence owner order
     // and each owner's authored assignment order for deterministic linking.
@@ -56,11 +50,37 @@ pub(super) fn emit_dynamic_initializers_with_pool(
         });
         groups[index].1.push(assignment);
     }
+    emit_initializer_groups_with_pool(dmb, groups, strings, classes, resources, globals, global_procs, project_bindings, prepared_member_globals, lowering_cache, attach, pool, session)
+}
+
+pub(super) fn emit_initializer_groups_with_pool(
+    dmb: &mut Dmb,
+    groups: Vec<(Option<u32>,Vec<PendingDynamic>)>,
+    strings: &mut StringIndex,
+    classes: &HashMap<String, u32>,
+    resources: &HashMap<String, u32>,
+    globals: &HashMap<String, u32>,
+    global_procs: &HashMap<String, u32>,
+    project_bindings: &Arc<SharedLowerBindings>,
+    prepared_member_globals: &PreparedMemberGlobals,
+    lowering_cache: &mut crate::lower_cache::ProcLoweringCache,
+    attach: bool,
+    mut pool: Option<&mut procedure_pipeline::LoweringPool>,
+    mut session: Option<&mut canonical::CanonicalSession>,
+) -> Result<Vec<u32>, String> {
+    let mut generated = Vec::new();
+    let phase_started = std::time::Instant::now();
+    let mut parse_time = std::time::Duration::ZERO;
+    let mut binding_time = std::time::Duration::ZERO;
+    let mut lowering_time = std::time::Duration::ZERO;
+    let mut linking_time = std::time::Duration::ZERO;
+    let mut prepared_hits = 0;
+    let mut lowered_groups = 0;
+    let shared = Arc::clone(project_bindings);
     if let Some(session) = session.as_deref_mut() {
         // Headers were restored before declaration fact refresh. Fetch payloads
         // only for this requested group set; no stale helper inventory scan.
-        let requested:Vec<_>=groups.iter().flat_map(|(_,assignments)|assignments.iter().cloned()).collect();
-        let keys=query_keys(&requested,dmb,strings,attach);
+        let keys=group_keys(groups.iter().map(|(owner,assignments)|(*owner,assignments.iter().collect())).collect(),dmb,strings,attach);
         for chunk in keys.chunks(1024) {
             let _ = session.graph.prefetch(chunk);
         }

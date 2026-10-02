@@ -3148,7 +3148,7 @@ fn reordered_arguments_keep_world_receivers_on_every_path() {
             .collect();
         let mut copy = dmb.clone();
         let list = copy.procs[proc_id].code_locals_args[0] as usize;
-        copy.lists[list] = words;
+        copy.lists[list] = (words).into();
         copy
     }
     let input = crate::opendream::OpenDreamProgram::from_slice(include_bytes!(

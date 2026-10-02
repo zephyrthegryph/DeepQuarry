@@ -287,7 +287,7 @@ fn world_resident_bytes(dmb: &byond_dmb::dmb::Dmb, image: &[u8], checkpoint_byte
     // their allocations. DMB records and list/string buffers are charged directly.
     checkpoint_bytes.saturating_mul(2)
         + image.len()
-        + dmb.lists.capacity() * std::mem::size_of::<Vec<u32>>()
+        + dmb.lists.capacity() * std::mem::size_of::<byond_dmb::list_words::ListWords>()
         + dmb
             .lists
             .iter()

@@ -382,7 +382,7 @@ pub fn try_emit_outline(
                 // The indexed output writer can splice this position-independent record.
                 let shared_code = references.get(old_code as usize).copied().unwrap_or(0) != 1;
                 let code = if !shared_code && dmb.lists.get(old_code as usize).is_some() {
-                    dmb.lists[old_code as usize] = linked.words;
+                    dmb.lists[old_code as usize] = (linked.words).into();
                     old_code
                 } else {
                     append_list(&mut dmb, linked.words)

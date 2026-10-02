@@ -10,6 +10,7 @@ use std::collections::{HashMap, HashSet};
 use std::io::{self, ErrorKind};
 use std::hash::{Hash, Hasher};
 use std::sync::Arc;
+pub use crate::list_words::{ListTable, ListWords};
 
 fn invalid(message: &'static str) -> io::Error {
     io::Error::new(ErrorKind::InvalidData, message)
@@ -651,7 +652,7 @@ pub struct DmbWireCache {
 }
 #[derive(Clone, Eq, PartialEq, Hash)]
 enum WireRecord {
-    Class(Class), Mob(MobType), List(Vec<u32>), Proc(Proc), Variable(Variable),
+    Class(Class), Mob(MobType), List(ListWords), Proc(Proc), Variable(Variable),
     Reference(u32), Instance(Instance), MapObject(MapObject), World(World),
     Resource(ResourceRef), Grid(GridRun),
 }
@@ -670,18 +671,18 @@ impl DmbWireCache {
         }).sum();
         self.active.clear();
     }
-    fn append_list(&mut self, writer: &mut Writer, words: &[u32]) {
+    fn append_list(&mut self, writer: &mut Writer, words: &ListWords) {
         let mut hash = std::collections::hash_map::DefaultHasher::new();
         words.hash(&mut hash);
         let key = (3, writer.object_size, writer.compatibility_version, hash.finish());
         self.active.insert(key);
         if let Some((_, bytes)) = self.records.get(&key).and_then(|bucket| bucket.iter()
-            .find(|(old, _)| matches!(old, WireRecord::List(prior) if prior.as_slice() == words))) {
+            .find(|(old, _)| matches!(old, WireRecord::List(prior) if prior.as_slice() == words.as_slice()))) {
             writer.shared(bytes);
             self.hits += 1;
             return;
         }
-        self.append(writer, 3, WireRecord::List(words.to_vec()), |writer| {
+        self.append(writer, 3, WireRecord::List(words.clone()), |writer| {
             writer.u16(words.len() as u16);
             for &word in words { writer.object(word); }
         });
@@ -776,7 +777,7 @@ impl ReferenceValidationCache {
             record.lists_and_procs[3], record.lists_and_procs[4], record.overrides];
         ids.sort_unstable(); ids.dedup();
         let lists: Vec<_> = ids.into_iter().filter(|id| *id != NONE)
-            .filter_map(|id| image.lists.get(id as usize).map(|words| (id, words.clone()))).collect();
+            .filter_map(|id| image.lists.get(id as usize).map(|words| (id, words.to_vec()))).collect();
         let proof = ClassReferenceProof { record: record.clone(), lists, bounds };
         let charge = proof.charge();
         if self.bytes.saturating_add(charge) > 32 * 1024 * 1024 { return; }
@@ -1190,7 +1191,7 @@ pub struct Dmb {
     pub classes: Vec<Class>,
     pub mobs: Vec<MobType>,
     pub strings: Vec<DmString>,
-    pub lists: Vec<Vec<u32>>,
+    pub lists: ListTable,
     pub procs: Vec<Proc>,
     pub variables: Vec<Variable>,
     /// List ID of (variable ID, declaration flags) pairs for globals.
@@ -1397,6 +1398,20 @@ impl ProcArgument {
 }
 
 impl Dmb {
+    pub fn list_words(&self, id: u32) -> Option<&[u32]> {
+        self.lists.get(id as usize).map(ListWords::as_slice)
+    }
+    pub fn append_shared_list(&mut self, words: Arc<[u32]>) -> io::Result<u32> {
+        if words.len()>u16::MAX as usize {return Err(invalid("list exceeds u16 element count"));}
+        if self.lists.len()==NONE as usize {self.lists.push(Vec::new());}
+        let id=u32::try_from(self.lists.len()).map_err(|_|invalid("list table exceeds u32"))?;
+        self.lists.push(words);
+        if self.lists.len()>u16::MAX as usize {self.header.flags|=0x4000_0000;}
+        Ok(id)
+    }
+    pub fn materialize_sources(&mut self) {
+        for list in &mut self.lists {let _=list.to_mut();}
+    }
     /// Checks the typed cross-table references needed to construct a world.
     /// Generic list contents and bytecode words have context-specific meanings.
     /// Remove unreachable list records and intern identical immutable word arrays.
@@ -1435,7 +1450,7 @@ impl Dmb {
         let mut remap = vec![NONE; old_count];
         use std::hash::{Hash, Hasher};
         let mut intern = std::collections::HashMap::<u64, Vec<u32>>::new();
-        let mut lists = Vec::new();
+        let mut lists = Vec::<ListWords>::new();
         for (old, words) in self.lists.iter().enumerate() {
             if !live[old] {
                 continue;
@@ -1448,7 +1463,7 @@ impl Dmb {
             } else {
                 // 0xffff is NONE even when the table uses 32-bit object IDs.
                 if lists.len() == NONE as usize {
-                    lists.push(Vec::new());
+                    lists.push(Vec::new().into());
                 }
                 let id =
                     u32::try_from(lists.len()).map_err(|_| invalid("list table exceeds u32"))?;
@@ -1479,7 +1494,7 @@ impl Dmb {
         }
         map(&mut self.world.ids[3]);
         map(&mut self.variable_footer);
-        self.lists = lists;
+        self.lists = lists.into();
         self.validate_references()?;
         Ok(old_count.saturating_sub(self.lists.len()))
     }
@@ -1582,7 +1597,8 @@ impl Dmb {
             if cache.as_ref().and_then(|cache| cache.classes.get(&class_index)).is_some_and(|proof|
                 proof.record == *class
                 && proof.bounds.iter().zip(bounds).all(|(old, current)| *old <= current)
-                && proof.lists.iter().all(|(id, words)| self.lists.get(*id as usize) == Some(words))) {
+                && proof.lists.iter().all(|(id, words)| self.lists.get(*id as usize)
+                    .is_some_and(|actual|actual.as_slice()==words.as_slice()))) {
                 continue;
             }
             if !in_table(class.path_string_id(), self.strings.len())
@@ -1851,7 +1867,7 @@ impl Dmb {
             return None;
         }
         let list_id = self.procs.get(proc_index)?.code_locals_args[0];
-        self.lists.get(list_id as usize).map(Vec::as_slice)
+        self.list_words(list_id)
     }
 
     pub fn proc_arguments(&self, proc_index: usize) -> Option<Vec<ProcArgument>> {
@@ -2144,7 +2160,7 @@ impl Dmb {
                 classes,
                 mobs,
                 strings,
-                lists,
+                lists: lists.into(),
                 procs,
                 variables,
                 variable_footer,
@@ -2210,7 +2226,7 @@ impl Dmb {
         if covered != cells {
             return Err(invalid("grid runs do not cover map dimensions"));
         }
-        if self.lists.iter().any(|list| list.len() > u16::MAX as usize) {
+        if (0..self.lists.len()).any(|id|self.list_words(id as u32).unwrap().len()>u16::MAX as usize) {
             return Err(invalid("list exceeds u16 element count"));
         }
         if self.world.client_script_files.len() > u16::MAX as usize {
@@ -2278,7 +2294,7 @@ impl Dmb {
         reserve(self.world.client_script_files.len(), width)?;
         for string in &self.strings { reserve(1, string.data.len().checked_add(2 * (usize::from(string.long_chunks) + 1))
             .ok_or_else(|| invalid("wire string size overflow"))?)?; }
-        for list in &self.lists { reserve(1, list.len().checked_mul(width).and_then(|n| n.checked_add(2))
+        for id in 0..self.lists.len() { let list=self.list_words(id as u32).unwrap(); reserve(1, list.len().checked_mul(width).and_then(|n| n.checked_add(2))
             .ok_or_else(|| invalid("wire list size overflow"))?)?; }
         w.bytes.try_reserve_exact(estimate.min(256 * 1024)).map_err(io::Error::other)?;
         if let Some(line) = &self.header.executor_line {
@@ -2349,15 +2365,18 @@ impl Dmb {
         }
         w.u32(string_hash);
         let mut list_spans = Vec::with_capacity(self.lists.len());
-        w.table(&self.lists, |w, list| {
+        w.object(u32::try_from(self.lists.len()).map_err(|_|invalid("list table exceeds u32"))?);
+        for id in 0..self.lists.len() {
+            let list=&self.lists[id];
             let start = w.at();
             let encode = |w: &mut Writer| {
                 w.u16(list.len() as u16);
                 for &value in list { w.object(value); }
             };
-            if let Some(cache) = wire_cache.as_deref_mut() { cache.append_list(w, list); } else { encode(w); }
+            if let Some(cache) = wire_cache.as_deref_mut() { cache.append_list(&mut w, list); } else { encode(&mut w); }
             list_spans.push(start..w.at());
-        })?;
+            w.bounded_page();
+        }
         w.table(&self.procs, |w, item| {
             if let Some(cache) = wire_cache.as_deref_mut() { cache.append(w, 4, WireRecord::Proc(item.clone()), |w| item.write(w)); } else { item.write(w); }
         })?;
@@ -2437,7 +2456,7 @@ mod tests {
         assert!(dmb.is_reserved_proc_slot(0xffff));
         assert!(!dmb.is_reserved_proc_slot(0x10000));
         dmb.lists.resize(0x10000, Vec::new());
-        dmb.lists[0xffff] = vec![0, 0, 0, 0];
+        dmb.lists[0xffff] = (vec![0, 0, 0, 0]).into();
         assert!(dmb.proc_code_words(0xffff).is_none());
         assert!(dmb.proc_arguments(0xffff).is_none());
         dmb.validate_references().unwrap();
@@ -2460,7 +2479,7 @@ mod tests {
         // A duplicate live procedure body plus an unreachable construction snapshot.
         let old = dmb.procs[0].code_locals_args[0];
         let duplicate = dmb.lists.len() as u32;
-        dmb.lists.push(dmb.lists[old as usize].clone());
+        dmb.lists.push(dmb.lists[old as usize].to_vec());
         dmb.procs[0].code_locals_args[0] = duplicate;
         dmb.lists.push(vec![0xdead_beef]);
         assert!(dmb.compact_lists().unwrap() >= 2);
@@ -2491,7 +2510,7 @@ mod tests {
         let words: Vec<_> = dmb
             .grid
             .iter()
-            .map(|run| dmb.lists[run.contents as usize].clone())
+            .map(|run| dmb.lists[run.contents as usize].to_vec())
             .collect();
         dmb.compact_lists().unwrap();
         assert_eq!(dmb.world.ids[3], 0xffff);
@@ -2516,7 +2535,7 @@ mod tests {
         assert_eq!(dmb.classes[class_id].initialized_variable_list_id(), 0xffff);
         assert_eq!(dmb.classes[class_id].overriding_variable_list_id(), 0xffff);
         dmb.lists.resize(65_536, Vec::new());
-        dmb.lists[65_535] = vec![0, 0];
+        dmb.lists[65_535] = (vec![0, 0]).into();
         assert_eq!(dmb.class_variable_declarations(class_id), None);
         assert_eq!(dmb.class_initial_values(class_id), None);
         assert_eq!(dmb.class_builtin_overrides(class_id), None);
@@ -2544,7 +2563,7 @@ mod tests {
                 data: b"hello".to_vec(),
                 long_chunks: 0,
             }],
-            lists: vec![vec![0, 42]],
+            lists: vec![vec![0, 42]].into(),
             procs: vec![],
             variables: vec![],
             variable_footer: 0xffff,
@@ -2595,13 +2614,13 @@ mod tests {
             code_locals_args: [0, 1, 2],
         });
         dmb.validate_references().unwrap();
-        dmb.lists[0] = vec![0, 42, 0];
+        dmb.lists[0] = (vec![0, 42, 0]).into();
         dmb.validate_changed_lists(&[0]).unwrap();
-        dmb.lists[1] = vec![1];
+        dmb.lists[1] = (vec![1]).into();
         assert!(dmb.validate_changed_lists(&[1]).is_err());
         assert!(dmb.validate_references().is_err());
-        dmb.lists[1] = vec![0];
-        dmb.lists[2] = vec![7];
+        dmb.lists[1] = (vec![0]).into();
+        dmb.lists[2] = (vec![7]).into();
         assert!(dmb.validate_changed_lists(&[2]).is_err());
         assert!(dmb.validate_changed_lists(&[u32::MAX]).is_err());
         dmb.lists[2].clear();
@@ -2898,7 +2917,7 @@ mod tests {
             extended_flags: None,
             code_locals_args: [0, empty_list, empty_list],
         });
-        let old_list = dmb.lists[0].clone();
+        let old_list = dmb.lists[0].to_vec();
         let instructions = crate::bytecode::decode(&[0x50, 7, 0]).unwrap();
         dmb.replace_proc_code(0, &instructions).unwrap();
         assert_eq!(dmb.lists[0], old_list);

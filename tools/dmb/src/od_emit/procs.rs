@@ -621,7 +621,7 @@ impl Builder<'_> {
             let mut values = if old == NONE {
                 Vec::new()
             } else {
-                self.dmb.lists[old as usize].clone()
+                self.dmb.lists[old as usize].to_vec()
             };
             values.push(id);
             let new = self.list(values);
@@ -632,7 +632,7 @@ impl Builder<'_> {
             let mut values = if old == NONE {
                 Vec::new()
             } else {
-                self.dmb.lists[old as usize].clone()
+                self.dmb.lists[old as usize].to_vec()
             };
             values.extend(world_procs);
             self.dmb.world.ids[3] = self.list(values);
@@ -661,7 +661,7 @@ impl Builder<'_> {
         }
         let mut membership_remap = HashMap::new();
         for list in membership_lists {
-            let mut values = self.dmb.lists[list as usize].clone();
+            let mut values = self.dmb.lists[list as usize].to_vec();
             values.sort_by_key(|id| {
                 std::cmp::Reverse(membership_order.get(id).copied().unwrap_or((false, 0)))
             });

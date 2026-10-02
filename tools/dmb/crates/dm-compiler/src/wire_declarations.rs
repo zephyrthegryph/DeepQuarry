@@ -11,7 +11,7 @@ impl Drop for Generation {fn drop(&mut self) {INDEX.with(|index|*index.borrow_mu
 pub(super) fn begin()->Generation {INDEX.with(|index|*index.borrow_mut()=Index::default());Generation}
 pub(super) fn local(dmb:&Dmb,class:u32,name:&str)->Option<(u32,u32)> {
     let owner=dmb.classes.get(class as usize)?;
-    let list=owner.lists_and_procs[4];let words=dmb.lists.get(list as usize).map_or(0,Vec::len);
+    let list=owner.lists_and_procs[4];let words=dmb.lists.get(list as usize).map_or(0,|words| words.len());
     INDEX.with(|index| {
         let mut index=index.borrow_mut();
         if let Some(fields)=index.classes.get(&class) {

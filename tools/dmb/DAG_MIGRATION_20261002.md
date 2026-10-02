@@ -143,3 +143,17 @@ with compatibility-checked CRC-row remapping on asset edits. Content checksums
 are part of resource IDs and cannot simply be omitted from output. Unchanged
 RSCs whose clocks changed through hardlink creation are reverified and reused,
 rather than recomposed. These changes await benchmark H.
+
+## Completed H benchmark
+
+H succeeded: cold224.108s; unchanged0.434s; body58.270s; newproc84.669s;
+newvar101.074s; default93.668s; asset16.425s; newresource100.577s;
+freshcachedprocess0.162s; freshbody60.257s. Runtime correctness remains
+unverified. Asset remapping bypassed procedure compilation as intended.
+Body facts refreshed without header reload. Its remaining costs included
+source persistence7.573s, output requested reads4.465s, and modified initializer
+preparation18.976s despite unchanged generated code. Subsequent implementation
+batches these initializer groups, persists compact origin runs and compressed
+schemaV5 metadata, uses first-class COW word lists, and increases bounded
+fragment lookahead. Shared semantic cache charges and trims were corrected.
+These following changes await rebuild and benchmark I.

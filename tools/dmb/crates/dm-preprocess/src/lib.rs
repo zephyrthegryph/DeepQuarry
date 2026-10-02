@@ -5,7 +5,7 @@
 //! in-memory fixtures, and the filesystem without hiding reads from the incremental engine.
 
 mod origin_map;
-pub use origin_map::OriginMap;
+pub use origin_map::{OriginMap, SourceMapBuilder};
 
 use dm_syntax::{lex, lex_spans, visit_tokens, quoted_end, Span, SpanToken, TokenKind};
 use serde::{Deserialize, Serialize};
@@ -564,6 +564,9 @@ impl PreprocessCache {
     /// index. A concurrent worktree can replace the index with its own valid
     /// version; source/environment fingerprints still gate every replay.
     pub fn save_incremental(&mut self, path: &Path) -> Result<(), String> {
+        let started=std::time::Instant::now();
+        let encoding_ns=AtomicU64::new(0);
+        let publication_ns=AtomicU64::new(0);
         let directory = path.with_extension("parts");
         fs::create_dir_all(&directory).map_err(|error| error.to_string())?;
         let mut index = self
@@ -588,16 +591,20 @@ impl PreprocessCache {
                 };
                 let mut keys = Vec::new();
                 for entry in units {
+                    let encoding_started=std::time::Instant::now();
                     let bytes = serde_json::to_vec(&DiskEntry::from(entry))
                         .map_err(|error| error.to_string())?;
+                    encoding_ns.fetch_add(encoding_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
                     if bytes.len() > 8 * 1024 * 1024 {
                         continue;
                     }
+                    let publication_started=std::time::Instant::now();
                     let key = format!("{:x}", Sha256::digest(&bytes));
                     let chunk = directory.join(&key);
                     if !fs::read(&chunk).is_ok_and(|old| old == bytes) {
                         write_atomic(&chunk, &bytes, false)?;
                     }
+                    publication_ns.fetch_add(publication_started.elapsed().as_nanos().min(u64::MAX as u128) as u64, Ordering::Relaxed);
                     keys.push(key);
                 }
                 published.insert(file.clone(), keys);
@@ -631,6 +638,7 @@ impl PreprocessCache {
         write_atomic(&path.with_extension("index.json"), &bytes, true)?;
         self.disk = Some((directory, index));
         self.dirty.clear();
+        if std::env::var_os("DM_BUILD_TRACE").is_some() { eprintln!("DM_BUILD_TRACE preprocessing persistence: {} paths, encode workers {:.3}s, hash/read/write workers {:.3}s, wall {:.3}s",paths.len(),encoding_ns.load(Ordering::Relaxed) as f64/1e9,publication_ns.load(Ordering::Relaxed) as f64/1e9,started.elapsed().as_secs_f64()); }
         Ok(())
     }
 
