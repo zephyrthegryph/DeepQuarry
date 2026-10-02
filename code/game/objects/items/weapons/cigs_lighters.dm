@@ -226,7 +226,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/smokable, TYPE_PROC_REF(/atom, a
 			var/mob/living/voice/V = src.possessed_voice[1]
 			butt.inhabit_item(V, null, V.tf_mob_holder, TRUE)
 			qdel(V)
-		qdel(src)
+		replace_with(src, butt)
 	else
 		new /obj/effect/decal/cleanable/ash(T)
 		if(ismob(loc))

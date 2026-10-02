@@ -1,0 +1,42 @@
+/// A spent worn cigarette becomes a floor butt, carrying evidence and its handle.
+/datum/unit_test/interim_cigarette_butt_lifecycle/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/mask/smokable/cigarette/cig = allocate(/obj/item/clothing/mask/smokable/cigarette, T)
+	cig.brand = "interim test brand"
+	var/datum/forensics_crime/evidence = cig.init_forensic_data()
+	TEST_ASSERT(evidence.add_prints(H), "the cigarette acquires fingerprint evidence")
+	var/list/prints = evidence.get_prints().Copy()
+	TEST_ASSERT(length(prints), "the transfer fixture contains an actual fingerprint")
+	TEST_ASSERT(H.equip_to_slot_if_possible(cig, SLOT_ID_MASK, disable_warning = TRUE), "the cigarette is worn before burning out")
+	var/handle = om_handle(cig)
+	cig.die(TRUE)
+	TEST_ASSERT(QDELETED(cig), "burning out deletes the original cigarette")
+	TEST_ASSERT_NULL(H.get_equipped_item(SLOT_ID_MASK), "burning out clears the worn mask slot")
+	var/obj/item/trash/cigbutt/butt = om_resolve(handle)
+	TEST_ASSERT(istype(butt), "the cigarette handle resolves to its butt successor")
+	TEST_ASSERT_EQUAL(butt.loc, T, "the butt stays on the floor rather than replacing the worn mask")
+	TEST_ASSERT(findtext(butt.desc, "interim test brand"), "the butt preserves its cigarette brand")
+	var/list/butt_prints = butt.forensic_data?.get_prints()
+	for(var/print in prints)
+		TEST_ASSERT_EQUAL(butt_prints?[print], prints[print], "the butt preserves each fingerprint's evidence")
+	qdel(butt)
+
+/// A reusable pipe is emptied without replacement or loss of its worn slot.
+/datum/unit_test/interim_pipe_ash_lifecycle/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	var/obj/item/clothing/mask/smokable/pipe/pipe = allocate(/obj/item/clothing/mask/smokable/pipe, T)
+	TEST_ASSERT(H.equip_to_slot_if_possible(pipe, SLOT_ID_MASK, disable_warning = TRUE), "the pipe is worn before emptying")
+	pipe.reagents.add_reagent(REAGENT_ID_NICOTINE, 5)
+	pipe.smoketime = 5
+	var/handle = om_handle(pipe)
+	pipe.die(FALSE)
+	TEST_ASSERT(!QDELETED(pipe), "emptying keeps the reusable pipe")
+	TEST_ASSERT_EQUAL(om_resolve(handle), pipe, "the pipe retains its original handle")
+	TEST_ASSERT_EQUAL(H.get_equipped_item(SLOT_ID_MASK), pipe, "the empty pipe remains worn")
+	TEST_ASSERT_EQUAL(pipe.smoketime, 0, "the worn pipe's fuel time is exhausted")
+	TEST_ASSERT_EQUAL(pipe.reagents.total_volume, 0, "emptying clears the pipe's reagent payload")
+	var/obj/effect/decal/cleanable/ash/ash = locate() in T
+	TEST_ASSERT(ash, "emptying creates an ash deposit")
+	qdel(ash)
