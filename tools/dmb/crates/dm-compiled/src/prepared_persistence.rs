@@ -67,12 +67,13 @@ pub(crate) struct SourceInventory {
     dirty: BTreeSet<usize>,
     expanded: BTreeSet<String>,
     origins: String,
+    origin_map:std::sync::Weak<dm_preprocess::OriginMap>,
 }
 impl SourceInventory {
     pub(crate) fn updated(&self,previous:&BTreeMap<PathBuf,PreparedSource>,current:&BTreeMap<PathBuf,PreparedSource>)->Self {
         let mut next=self.clone();
         for (path,source) in current {
-            if previous.get(path).is_none_or(|old|old.digest!=source.digest || old.stamp!=source.stamp) {next.dirty.insert(source_bucket(path));}
+            if previous.get(path).is_none_or(|old|old.digest!=source.digest || old.stamp!=source.stamp) {next.dirty.insert(source.inventory_bucket as usize);}
         }
         for path in previous.keys().filter(|path|!current.contains_key(*path)) {next.dirty.insert(source_bucket(path));}
         next
@@ -86,7 +87,7 @@ pub(super) struct PublishedInputs {
     pub backings:BTreeMap<[u8;32],crate::PackedBlob>,
     pub inventory:SourceInventory,
 }
-fn source_bucket(path:&std::path::Path)->usize {
+pub(crate) fn source_bucket(path:&std::path::Path)->usize {
     // Authored filesystem identity belongs to this project-context cache only;
     // bucket membership never enters semantic compiler/output identity.
     Sha256::digest(path.as_os_str().as_encoded_bytes())[0] as usize
@@ -184,11 +185,11 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     let manifest_started = std::time::Instant::now();
     let mut inventory=snapshot.source_inventory.as_ref().map(|inventory|inventory.as_ref().clone()).unwrap_or_else(||SourceInventory {
         pages:previous.as_ref().map_or_else(||vec![None;256],|manifest|manifest.source_pages.clone()),
-        dirty:(0..256).collect(),expanded:BTreeSet::new(),origins:String::new(),
+        dirty:(0..256).collect(),expanded:BTreeSet::new(),origins:String::new(),origin_map:std::sync::Weak::new(),
     });
     let mut buckets:BTreeMap<usize,Vec<Source>>=inventory.dirty.iter().map(|bucket|(*bucket,Vec::new())).collect();
-    for (path,source) in snapshot.sources.iter() {
-        let bucket=source_bucket(path);
+    for (path,source) in snapshot.sources.iter().filter(|_|!inventory.dirty.is_empty()) {
+        let bucket=source.inventory_bucket as usize;
         if let Some(rows)=buckets.get_mut(&bucket) {
             let backing=backings.get(&source.digest).ok_or_else(||io::Error::other("authored source backing missing after publication"))?;
             rows.push(Source {path:path.clone(),start:backing.start,end:backing.start+backing.len,digest:source.digest,pack:backing.pack.clone(),stamp:source.stamp.clone()});
@@ -205,9 +206,15 @@ pub(super) fn save(store: &ContentStore, snapshot: &PreparedProject) -> io::Resu
     inventory.dirty.clear();
     let origin_started=std::time::Instant::now();
     let map = snapshot.project.origin_map.clone().unwrap_or_else(||Arc::new(dm_preprocess::OriginMap::from_origins(project.origin_iter())));
-    let origin_bytes=encode_snapshot(map.as_ref())?;
-    let origins = format!("{:x}", Sha256::digest(&origin_bytes));
-    if !known.contains(&origins) {store.put_rebuildable("prepared-input-chunk-v2", &origin_bytes)?;}
+    let origins=if inventory.origin_map.upgrade().is_some_and(|old|Arc::ptr_eq(&old,&map)) && !inventory.origins.is_empty() {
+        inventory.origins.clone()
+    } else {
+        let origin_bytes=encode_snapshot(map.as_ref())?;
+        let digest=format!("{:x}",Sha256::digest(&origin_bytes));
+        if !known.contains(&digest) {store.put_rebuildable("prepared-input-chunk-v2",&origin_bytes)?;}
+        digest
+    };
+    inventory.origin_map=Arc::downgrade(&map);
     trace_persistence("compact origin encoding and CAS", origin_started);
     let units = project
         .units
@@ -405,6 +412,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
                     blob_offset:source.start,
                     blob_packed:source.pack.is_some(),
                     blob_published:true,
+                    inventory_bucket:bucket as u8,
                     digest: source.digest,
                     stamp: source.stamp.clone(),
                 },
@@ -467,7 +475,7 @@ pub(super) fn load(store: &ContentStore, context: &str) -> io::Result<Option<Pre
     if !project.semantic_identity.as_ref().is_some_and(|identity|identity.validate(&project,expanded.len())) {
         return Err(io::Error::other("invalid prepared emission identity"));
     }
-    let source_inventory=Some(Arc::new(SourceInventory {pages:manifest.source_pages.clone(),dirty:BTreeSet::new(),expanded:manifest.pack.iter().map(|(digest,_)|digest.clone()).collect(),origins:manifest.origins.clone()}));
+    let source_inventory=Some(Arc::new(SourceInventory {pages:manifest.source_pages.clone(),dirty:BTreeSet::new(),expanded:manifest.pack.iter().map(|(digest,_)|digest.clone()).collect(),origins:manifest.origins.clone(),origin_map:project.origin_map.as_ref().map_or_else(std::sync::Weak::new,Arc::downgrade)}));
     Ok(Some(PreparedProject {
         source_inventory,
         project: Arc::new(project),

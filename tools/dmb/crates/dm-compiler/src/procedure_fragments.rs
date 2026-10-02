@@ -476,12 +476,14 @@ impl ProcedureFragments {
     }
     fn hydrate_code(&mut self, store: &dm_store::Store, fragments: Vec<(String, Arc<OutputFragment>)>) {
         let hydration_started=std::time::Instant::now();
-        let names: Vec<_>=fragments.iter().filter_map(|(_,fragment)|fragment.code_digest.clone())
+        let names: Vec<_>=fragments.iter().filter(|(_,fragment)|fragment.wire_code.is_none()).filter_map(|(_,fragment)|fragment.code_digest.clone())
             .collect::<std::collections::BTreeSet<_>>().into_iter().collect();
         let mut words=HashMap::new();
         self.read_code_window(store,&names,&mut words);
+        let handles:Vec<_>=fragments.iter().filter_map(|(_,fragment)|fragment.wire_code.clone()).collect();
+        self.read_wire_code_window(&handles,&mut words);
         for (payload,mut fragment) in fragments {
-            if let Some(name)=&fragment.code_digest {
+            if let Some(name)=fragment.wire_code.as_ref().map(|handle|handle.digest()).or(fragment.code_digest.as_deref()) {
                 let Some(code)=words.get(name) else { continue; };
                 let Some(fragment)=Arc::get_mut(&mut fragment) else { continue; };
                 fragment.words=Arc::clone(code);
@@ -489,6 +491,28 @@ impl ProcedureFragments {
             if fragment.validate() { self.retain_decoded(payload,fragment); }
         }
         self.stats.code_hydration_seconds+=hydration_started.elapsed().as_secs_f64();
+    }
+    /// Explicit compatibility hydration reads the same verified code leaf as
+    /// physical publication, rather than persisting a duplicate representation.
+    fn read_wire_code_window(&mut self,handles:&[dm_output::wire_image::VerifiedCodeHandle],words:&mut HashMap<String,Arc<[u32]>>) {
+        let Some(store)=self.code_store.clone() else {return;};
+        let mut start=0;
+        while start<handles.len() {
+            let mut end=start;let mut bytes=0usize;
+            while end<handles.len()&&end-start<1024 {
+                let charge=2+handles[end].word_count()*handles[end].object_width();
+                if end>start&&bytes+charge>8*1024*1024 {break;}bytes+=charge;end+=1;
+            }
+            let started=std::time::Instant::now();let result=store.prefetch(&handles[start..end]);
+            self.stats.read_seconds+=started.elapsed().as_secs_f64();self.stats.batches+=1;
+            if result.is_ok() {for handle in &handles[start..end] {
+                if words.contains_key(handle.digest()) {continue;}
+                let Ok(raw)=store.restore(handle) else {continue;};self.stats.code_read_bytes+=raw.len();self.stats.disk_bytes+=raw.len();
+                let code:Vec<u32>=if handle.object_width()==4 {raw[2..].chunks_exact(4).map(|word|u32::from_le_bytes(word.try_into().unwrap())).collect()}
+                    else {raw[2..].chunks_exact(2).map(|word|u16::from_le_bytes(word.try_into().unwrap()) as u32).collect()};
+                words.insert(handle.digest().to_owned(),code.into());
+            }}start=end;
+        }
     }
     fn read_code_window(&mut self, store: &dm_store::Store, names: &[String], words: &mut HashMap<String,Arc<[u32]>>) {
         if names.is_empty() { return; }
@@ -561,14 +585,16 @@ impl ProcedureFragments {
     }
     pub fn retain(&mut self, key: crate::ProcKey, descriptor: crate::ProcDescriptor, candidate: String, mut fragment: OutputFragment) {
         let encode_start = std::time::Instant::now();
-        let mut raw_code = Vec::with_capacity(fragment.words.len()*4);
-        for word in fragment.words.iter() { raw_code.extend_from_slice(&word.to_le_bytes()); }
-        let mut code=b"DMWORD02".to_vec();
-        code.extend(lz4_flex::compress_prepend_size(&raw_code));
-        let code_digest = format!("{:x}",Sha256::digest(&code));
-        fragment.code_digest=Some(code_digest.clone());
         fragment.code_word_count=Some(fragment.words.len() as u32);
-        fragment.wire_code=self.code_store.as_ref().and_then(|store|store.stage_words(&fragment.words,4).ok());
+        if fragment.wire_code.is_none() {fragment.wire_code=self.code_store.as_ref().and_then(|store|store.stage_words(&fragment.words,4).ok());}
+        let legacy_code=if let Some(handle)=&fragment.wire_code {
+            fragment.code_digest=Some(handle.digest().to_owned());None
+        } else {
+            let mut raw_code=Vec::with_capacity(fragment.words.len()*4);
+            for word in fragment.words.iter() {raw_code.extend_from_slice(&word.to_le_bytes());}
+            let mut code=b"DMWORD02".to_vec();code.extend(lz4_flex::compress_prepend_size(&raw_code));
+            let digest=format!("{:x}",Sha256::digest(&code));fragment.code_digest=Some(digest.clone());Some((digest,code))
+        };
         let Some(recipe_identity)=fragment.recipe_identity() else {return;};
         if let Some(linked)=fragment.linked.as_mut() {linked.recipe_identity=recipe_identity;}
         let Some(bytes) = fragment.encode() else { return; };
@@ -576,8 +602,9 @@ impl ProcedureFragments {
         let payload = format!("{:x}", Sha256::digest(&bytes));
         let handle = Handle { descriptor, candidate, payload: payload.clone() };
         let Ok(handle_bytes) = serde_json::to_vec(&handle) else { return; };
-        self.pending_bytes += bytes.len() + code.len() + handle_bytes.len();
-        self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.code_blobs,code_digest),code));
+        self.pending_bytes += bytes.len() + handle_bytes.len();
+        if let Some((code_digest,code))=legacy_code {self.pending_bytes+=code.len();
+            self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.code_blobs,code_digest),code));}
         self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.blobs, &payload), bytes));
         self.pending.push(dm_store::Change::Put(dm_store::Key::new(&self.namespace,
             crate::lower_cache::shared_binding_fingerprint(&key)), handle_bytes));

@@ -175,3 +175,27 @@ mod windows {
         }
     }
 }
+
+/// Host memory observations for compiler phase traces; never a query input.
+#[derive(Clone,Copy,Debug)]
+pub struct ProcessMemorySnapshot {pub private_bytes:usize,pub working_set_bytes:usize,pub peak_commit_bytes:usize}
+#[cfg(not(windows))]
+pub fn process_memory_snapshot()->Option<ProcessMemorySnapshot> {None}
+#[cfg(windows)]
+pub fn process_memory_snapshot()->Option<ProcessMemorySnapshot> {
+    #[repr(C)]
+    #[derive(Default)]
+    struct Counters {cb:u32,faults:u32,peak_working_set:usize,working_set:usize,peak_paged:usize,paged:usize,
+        peak_nonpaged:usize,nonpaged:usize,pagefile:usize,peak_pagefile:usize,private:usize}
+    #[link(name="kernel32")]
+    unsafe extern "system" {
+        fn GetCurrentProcess()->*mut std::ffi::c_void;
+        fn K32GetProcessMemoryInfo(process:*mut std::ffi::c_void,counters:*mut Counters,size:u32)->i32;
+    }
+    let mut counters=Counters::default();counters.cb=u32::try_from(std::mem::size_of::<Counters>()).ok()?;
+    // The pseudo handle is read-only and the repr(C) buffer matches the Windows
+    // PROCESS_MEMORY_COUNTERS_EX layout on the calling pointer width.
+    let size=counters.cb;
+    if unsafe {K32GetProcessMemoryInfo(GetCurrentProcess(),&mut counters,size)}==0 {return None;}
+    Some(ProcessMemorySnapshot {private_bytes:counters.private,working_set_bytes:counters.working_set,peak_commit_bytes:counters.peak_pagefile})
+}

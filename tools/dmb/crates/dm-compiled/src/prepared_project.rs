@@ -22,6 +22,7 @@ pub struct PreparedSource {
     pub(crate) blob_offset: usize,
     pub(crate) blob_packed: bool,
     pub(crate) blob_published: bool,
+    pub(crate) inventory_bucket: u8,
     /// Content identity after the compiler's UTF-8/Windows-1252 decoding.
     pub digest: [u8; 32],
     pub(crate) stamp: Option<FileStamp>,

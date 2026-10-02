@@ -194,6 +194,7 @@ dependencies = [
  "byond-dmb",
  "dm-analysis",
  "dm-codegen-byond",
+ "dm-host",
  "dm-ir",
  "dm-output",
  "dm-preprocess",

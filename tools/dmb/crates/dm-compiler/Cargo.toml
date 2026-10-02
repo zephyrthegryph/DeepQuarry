@@ -8,6 +8,7 @@ description = "Incremental query engine for DM projects"
 [dependencies]
 dm-analysis = { path = "../dm-analysis" }
 dm-work = { path = "../dm-work" }
+dm-host = { path = "../dm-host" }
 salsa = "=0.28.5"
 dm-syntax = { path = "../dm-syntax" }
 dm-preprocess = { path = "../dm-preprocess" }

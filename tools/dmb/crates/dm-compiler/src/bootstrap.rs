@@ -249,6 +249,54 @@ struct TypeMetadataState {
     authored_texts: HashSet<u32>,
     static_ids: HashMap<String, u32>,
     dynamic_static_scopes: HashMap<String, u32>,
+    // Generation-local physical topology. All authored parent/name declarations are
+    // collected before defaults run; serialized declaration bases need no memo.
+    #[serde(skip)]
+    inherited_names: Vec<u8>,
+    #[serde(skip)]
+    builtin_children: Option<HashMap<u32, Vec<usize>>>,
+}
+
+impl TypeMetadataState {
+    fn inherits_authored_name(&mut self, mut class: u32, dmb: &Dmb) -> Result<bool, String> {
+        self.inherited_names.resize(dmb.classes.len(), 0);
+        let mut chain = Vec::new();
+        let mut visited = HashSet::new();
+        let named = loop {
+            if class == 0xffff { break false; }
+            let row = dmb.classes.get(class as usize)
+                .ok_or_else(|| format!("invalid inherited name class {class}"))?;
+            match self.inherited_names[class as usize] {
+                1 => break false,
+                2 => break true,
+                _ => {}
+            }
+            if !visited.insert(class) {
+                return Err("cyclic inherited name ancestry".to_owned());
+            }
+            chain.push(class);
+            if self.authored_names.contains(&class) { break true; }
+            class = row.parent_class_id();
+        };
+        for class in chain {
+            self.inherited_names[class as usize] = if named { 2 } else { 1 };
+        }
+        Ok(named)
+    }
+
+    fn builtin_children(&mut self, dmb: &Dmb) -> &HashMap<u32, Vec<usize>> {
+        let limit = self.first_generated_class;
+        self.builtin_children.get_or_insert_with(|| {
+            let mut children: HashMap<u32, Vec<usize>> = HashMap::new();
+            for (id, class) in dmb.classes.iter().take(limit).enumerate() {
+                let parent = class.parent_class_id();
+                if parent != 0xffff && parent != id as u32 {
+                    children.entry(parent).or_default().push(id);
+                }
+            }
+            children
+        })
+    }
 }
 
 /// Recognize the setting by tokens rather than formatting around its assignment.
@@ -3514,6 +3562,8 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
         authored_texts: HashSet::new(),
         static_ids: HashMap::new(),
         dynamic_static_scopes: HashMap::new(),
+        inherited_names: Vec::new(),
+        builtin_children: None,
     };
     for item in &type_items {
         ensure_class(item.header.trim(), &mut dmb, &mut strings, &mut class_paths)?;
@@ -4416,6 +4466,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                 if progress_ordinal >= next_progress {
                     let stats = &session.procedure_fragments.stats;
                     let graph_stats = session.graph.stats();
+                    if let Some(memory)=dm_host::process_memory_snapshot(){trace(&format!("procedure memory: private_mib={:.1} working_mib={:.1} peak_commit_mib={:.1}",memory.private_bytes as f64/1048576.0,memory.working_set_bytes as f64/1048576.0,memory.peak_commit_bytes as f64/1048576.0));}
                     let (constant_entries,constant_evictions)=const_eval::cache_stats();
                     trace(&format!("procedure output {progress_ordinal}/{procedure_count}: elapsed={:.3}s reused={} built={} encode={:.3}s flush={:.3}s read={:.3}s decode={:.3}s graph_persist={:.3}s graph_install={:.3}s constant_entries={} constant_evictions={}",
                         output_started.elapsed().as_secs_f64(), stats.reused, stats.built,
@@ -4723,7 +4774,12 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                         .category
                         .as_ref()
                         .map_or(0xffff, |category| strings.intern_bytes(&mut dmb, category));
-                    let code_id = dmb.append_shared_list(Arc::clone(&linked_words)).map_err(|error|error.to_string())?;
+                    // Fresh physical objects enter the same addressed store as
+                    // retained objects; only this active lowering window owns words.
+                    let fresh_wire_code=session.procedure_fragments.code_store()
+                        .and_then(|store|store.stage_words(&linked_words,4).ok());
+                    let code_id=if let Some(handle)=&fresh_wire_code {dmb.append_code_handle(handle.clone())}
+                        else {dmb.append_shared_list(Arc::clone(&linked_words))}.map_err(|error|error.to_string())?;
                     let local_ids:Vec<u32> = simple
                         .local_names
                         .iter()
@@ -4905,7 +4961,7 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
                                     old_variable_base: output_variable_base as u32,
                                     locals: local_offsets.into(), arguments: argument_offsets.into(),
                                     record: relative_record, relocations, debug,
-                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, allocated_rows:Some(allocated_rows),wire_code:None, words: Arc::clone(&linked_words),
+                                    helpers: output_helpers, linked, code_digest:None, code_word_count:None, allocated_rows:Some(allocated_rows),wire_code:fresh_wire_code.clone(), words: Arc::clone(&linked_words),
                                 };
                                 session.procedure_fragments.retain(key.clone(), descriptor.clone(), candidate, fragment);
                             }
@@ -5049,7 +5105,9 @@ fn emit_global_procs_mode_with_frontend_catalog_inner(
             &initializer_globals, Some(&static_ids), &global_proc_ids)?;
         envelope.section.attach_projection_cache(Arc::clone(&session.output_projections));
         let words = envelope.section.materialize(&ledger).map_err(|error| error.to_string())?;
-        let code_id = dmb.append_list(words.into()).map_err(|error|error.to_string())?;
+        let helper_wire_code=session.procedure_fragments.code_store().and_then(|store|store.stage_words(&words,4).ok());
+        let code_id=if let Some(handle)=helper_wire_code {dmb.append_code_handle(handle)}
+            else {dmb.append_list(words.into())}.map_err(|error|error.to_string())?;
         let empty_id = dmb.append_list(Vec::new().into()).map_err(|error|error.to_string())?;
         dmb.reserve_proc_sentinel();
         let proc_id = dmb.procs().len() as u32;
@@ -5830,18 +5888,11 @@ fn refresh_inherited_class_header(
         let values = dmb.lists[inherited.overrides as usize].to_vec();
         append_list(dmb, values)
     };
-    let mut ancestor = parent;
-    let mut named = path
+    let named = path
         .rsplit('/')
         .next()
-        .is_some_and(|leaf| leaf.starts_with("__dm_modified_"));
-    while ancestor != 0xffff {
-        if metadata.authored_names.contains(&ancestor) {
-            named = true;
-            break;
-        }
-        ancestor = dmb.classes[ancestor as usize].parent_class_id();
-    }
+        .is_some_and(|leaf| leaf.starts_with("__dm_modified_"))
+        || metadata.inherits_authored_name(parent, dmb)?;
     if !named {
         inherited.initial_ids[2] = original.initial_ids[2];
         inherited.text = original.text;
@@ -5863,7 +5914,7 @@ fn propagate_builtin_parent_defaults(
     dmb: &mut Dmb,
     parent: u32,
     before: byond_dmb::dmb::Class,
-    limit: usize,
+    children_by_parent: &HashMap<u32, Vec<usize>>,
     authored: &HashSet<&str>,
 ) {
     let mut queue = vec![(parent, before)];
@@ -5873,10 +5924,9 @@ fn propagate_builtin_parent_defaults(
             continue;
         }
         let new_parent = dmb.classes[parent as usize].clone();
-        let children: Vec<_> = (0..limit)
-            .filter(|&id| id as u32 != parent && dmb.classes[id].parent_class_id() == parent)
-            .collect();
-        for id in children {
+        // Ascending native row order preserves the original source-independent
+        // traversal and its LIFO propagation order without rescanning every row.
+        for &id in children_by_parent.get(&parent).into_iter().flatten() {
             let original = dmb.classes[id].clone();
             let child = &mut dmb.classes[id];
             macro_rules! inherit { ($($field:ident),*) => { $(if original.$field == old_parent.$field { child.$field = new_parent.$field.clone(); })* }; }
@@ -6178,11 +6228,12 @@ fn emit_type<'a>(
             .iter()
             .filter_map(|child| child.header.split_once('=').map(|(name, _)| name.trim()))
             .collect::<HashSet<_>>();
+        let children = metadata.builtin_children(dmb);
         propagate_builtin_parent_defaults(
             dmb,
             class_id,
             previous,
-            metadata.first_generated_class,
+            children,
             &authored,
         );
     }

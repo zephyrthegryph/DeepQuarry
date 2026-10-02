@@ -299,3 +299,10 @@ Addressed assembly checkpoint Cargo CLI/example build passed with -j1. Integrati
 
 Next implementation streams encoder pages directly to immutable disk objects, composes DMB CAS once under a guarded file receipt, and publishes a new generation by protected hardlink or verified copy. Owner eviction now subtracts stored admission charges; field-type derivation shares the main bounded owner-plan window, eliminating the earlier point-read prepass.
 Followup streaming/source-bucket/semantic-world-owner checkpoint built successfully (-j1 CLI and iteration example, 3m20s). S benchmark uses fresh uncompressed cache and output directories on E to preserve C disk headroom; measurements should be interpreted with that storage location recorded. No Rust or DM tests were run.
+
+## S prototype benchmark interruption and followup
+
+S (e57c770193, fresh uncompressed E cache/output) passed the former Genesis failure but aborted at procedure output54272/68411 with allocation failure under the enforced3GiB process budget. It did not publish a baseline artifact; no valid cold/edit timings are available from this run. The trace reached118.458s within native compilation before aborting. Do not compare this failure as a completed compile.
+
+Followup normal code persistence removes duplicate compressed word blobs when a verified wire leaf exists. Fresh main procedure/helper code now stages immediately into addressed output slots and reuses that same leaf in fragment metadata; resident words are a fallback only when optional disk staging is unavailable. Added Windows private/working/peak-commit phase observations to diagnose remaining memory growth. Name inheritance now uses a generation-local parent-chain memo and native-child adjacency. Source inventory buckets are computed once and Arc-identical origin maps reuse published origin SHA via weak provenance. No Rust tests or DM/runtime tests were run.
+Memory-focused followup CLI/example build passed (-j1, 2m02s). T reruns the same3GiB cap with private/working/peak-commit procedure-phase traces; no tests/runtime validation.
