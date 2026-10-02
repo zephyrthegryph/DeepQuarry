@@ -1,7 +1,6 @@
 # Per-instance list declarations not yet reasoned about (tools/ci/instance_list_lint.py).
 # rule<TAB>file<TAB>normalized line. Shrink-only: convert (AGENTS.md 3a) or give a real
 # `// ALLOW(instance_list): <reason>`, then `python tools/ci/instance_list_lint.py --update`.
-instance_list	code/datums/entity_state/species/shadekin/shadekin.dm	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
 instance_list	code/datums/om/bundle.dm	var/list/behaviours = list()
 instance_list	code/datums/om/bundle.dm	var/list/stages = list()
 instance_list	code/datums/om/bundle.dm	var/list/tasks = list()

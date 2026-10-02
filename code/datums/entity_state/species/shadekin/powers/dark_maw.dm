@@ -43,7 +43,7 @@
 	return TRUE
 
 /datum/interaction/ability/self/shadekin_dark_maw/clear
-	id = "shadekin_clear_dark_maws"
+	id = ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS
 	name = "Dispel dark maws"
 	category = ABILITY_CAT_OFFENSE
 	requires = list(REQ_ON(PRED_ACTOR, /mob/living/proc/dq_pred_shadekin, "you aren't shadekin"))
