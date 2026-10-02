@@ -196,7 +196,7 @@
 	if(!GLOB.prompt_flow)
 		return prompt_flow(src, PROC_REF(DB_ban_edit), args)
 
-	if(!check_rights_for(user, R_BAN))
+	if(!user || owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.edit"))
 		return
 
 	if(!isnum(banid) || !istext(param))
@@ -206,7 +206,7 @@
 	var/datum/db_query/query = SSdbcore.NewQuery("SELECT ckey, duration, reason FROM erro_ban WHERE id = :banid", list("banid" = banid))
 	query.Execute()
 
-	var/eckey = usr.ckey	//Editing admin ckey
+	var/eckey = user.ckey	//Editing admin ckey
 	var/pckey				//(banned) Player ckey
 	var/duration			//Old duration
 	var/reason				//Old reason
@@ -354,11 +354,11 @@
 	if(!user)
 		return
 
-	if(!check_rights_for(user, R_BAN))
+	if(owner() != user || user.holder != src || !admin_require(user, R_BAN, "ban.panel"))
 		return
 
 	if(!SSdbcore.IsConnected())
-		to_chat(usr, span_filter_adminlog("[span_red("Failed to establish database connection")]"))
+		to_chat(user, span_filter_adminlog("[span_red("Failed to establish database connection")]"))
 		return
 
 	var/datum/tgui_ban_panel/tgui = new(user, playerckey, src)
