@@ -482,7 +482,6 @@ qdel_src	code/modules/recycling/disposal-construction.dm	qdel(src)
 qdel_src	code/modules/recycling/disposal.dm	qdel(src)
 qdel_src	code/modules/recycling/disposal_machines.dm	qdel(src)
 qdel_src	code/modules/recycling/disposal_machines.dm	qdel(src) //Parent above should do this, but that's not a thing as of writing this.
-qdel_src	code/modules/recycling/disposal_mail.dm	qdel(src)
 qdel_src	code/modules/research/tg/experisci/experiment/handlers/experiment_handler.dm	qdel(src)
 qdel_src	code/modules/scripting/Parser/Keywords.dm	qdel(src)
 qdel_src	code/modules/security levels/keycard authentication.dm	qdel(src)
