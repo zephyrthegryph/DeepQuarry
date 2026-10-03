@@ -234,7 +234,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 				dir_text += "WEST"
 
 		if(dir_text)
-			to_chat(usr, "If a direction, direction is: [dir_text]", confidential = TRUE)
+			to_chat(src, "If a direction, direction is: [dir_text]", confidential = TRUE)
 
 	var/original_var = variable
 
