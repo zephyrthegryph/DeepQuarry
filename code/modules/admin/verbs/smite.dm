@@ -186,8 +186,7 @@
 	if(!istype(target))
 		return
 
-	var/real_user = user ? user : usr
-	var/user_name = real_user ? key_name(real_user) : "Remotely (Discord)"
+	var/user_name = user ? key_name(user) : "Remotely (Discord)"
 
 	to_chat(target,"You've been hit by bluespace artillery!")
 	log_and_message_admins("has been hit by Bluespace Artillery fired by [user_name]", target)
@@ -245,7 +244,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	om_after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), target, user, size_of_square, halfbox)
 
 /// redspace_abduction() a second after the target freezes.
-/proc/redspace_abduction_copy(mob/living/target, client/user, size_of_square, halfbox)
+/proc/redspace_abduction_copy(mob/living/target, user, size_of_square, halfbox)
 	//Lower left corner of a working box
 	var/llc_x = max(0,halfbox-target.x) + min(target.x+halfbox, world.maxx) - size_of_square
 	var/llc_y = max(0,halfbox-target.y) + min(target.y+halfbox, world.maxy) - size_of_square
@@ -296,7 +295,13 @@ GLOBAL_VAR(redspace_abduction_z)
 
 	target.forceMove(locate(target.x,target.y,GLOB.redspace_abduction_z))
 	to_chat(target,span_danger("The tug relaxes, but everything around you looks... slightly off."))
-	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
+	var/client/acting_client
+	if(ismob(user))
+		var/mob/actor = user
+		acting_client = actor.client
+	else if(isclient(user))
+		acting_client = user
+	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(acting_client, R_HOLDER))])"))
 
 	target.set_transforming(FALSE)
 
