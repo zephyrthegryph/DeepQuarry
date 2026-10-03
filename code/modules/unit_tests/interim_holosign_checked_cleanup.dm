@@ -1,0 +1,71 @@
+/// Actual projector use maintains exact reciprocal sign relationships through terminal cleanup.
+/datum/unit_test/interim_holosign_checked_cleanup
+	parent_type = /datum/unit_test/dq_p2_reagents
+	var/clear_all_case = FALSE
+
+/datum/unit_test/interim_holosign_checked_cleanup/all
+	clear_all_case = TRUE
+
+/datum/unit_test/interim_holosign_checked_cleanup/run_gate()
+	var/turf/T = locate(run_loc_floor_bottom_left.x + 1, run_loc_floor_bottom_left.y + 1, run_loc_floor_bottom_left.z)
+	var/turf/T2 = locate(T.x + 1, T.y, T.z)
+	var/turf/T3 = locate(T.x + 2, T.y, T.z)
+	TEST_ASSERT(istype(T, /turf/simulated) && istype(T2, /turf/simulated) && istype(T3, /turf/simulated), "The actual fixture must provide three distinct interior simulated floors")
+	var/mob/living/carbon/human/actor = rc_actor(T)
+	var/obj/item/holosign_creator/projector = allocate(/obj/item/holosign_creator, T)
+	var/obj/item/holosign_creator/control = allocate(/obj/item/holosign_creator, T)
+	TEST_ASSERT_EQUAL(projector.holosign_type, /obj/structure/holosign/wetsign, "The canonical projector must construct real wet-floor signs")
+	TEST_ASSERT_EQUAL(projector.creation_time, 0, "The canonical projector must create immediately")
+	TEST_ASSERT_EQUAL(length(projector.signs), 0, "The actual fresh projector must start without sign relations")
+	TEST_ASSERT(actor.put_in_active_hand(projector), "The actor must really hold the original projector")
+	projector.afterattack(T, actor, TRUE, list())
+	TEST_ASSERT_EQUAL(length(projector.signs), 1, "Actual first projection must add exactly one sign relation")
+	var/obj/structure/holosign/first = projector.signs[1]
+	own(first)
+	TEST_ASSERT_EQUAL(first.type, /obj/structure/holosign/wetsign, "Actual projection must create the exact canonical sign type")
+	TEST_ASSERT_EQUAL(first.loc, T, "Actual first projection must occupy its selected floor")
+	TEST_ASSERT_EQUAL(first.projector, projector, "Actual construction must set the exact reciprocal projector relation")
+	projector.afterattack(T2, actor, TRUE, list())
+	TEST_ASSERT_EQUAL(length(projector.signs), 2, "Actual second projection must preserve the first and add exactly one sign")
+	var/obj/structure/holosign/second = projector.signs[2]
+	own(second)
+	TEST_ASSERT_EQUAL(second.loc, T2, "The exact second sign must occupy its selected floor")
+	TEST_ASSERT_EQUAL(second.projector, projector, "The exact second sign must link its original projector")
+	actor.drop_item()
+	TEST_ASSERT(actor.put_in_active_hand(control), "The actor must really hold the independent projector")
+	control.afterattack(T3, actor, TRUE, list())
+	TEST_ASSERT_EQUAL(length(control.signs), 1, "The independent actual projector must create its own sign")
+	var/obj/structure/holosign/unrelated = control.signs[1]
+	own(unrelated)
+	actor.drop_item()
+	TEST_ASSERT(actor.put_in_active_hand(projector), "The actor must restore the original projector hand")
+	if(clear_all_case)
+		TEST_ASSERT(projector.interaction_self(actor, projector, null), "Actual clear-all must preserve its success return")
+	else
+		projector.afterattack(T, actor, TRUE, list())
+		TEST_ASSERT(!QDELETED(second), "Single deactivation must preserve the exact other original sign")
+		TEST_ASSERT_EQUAL(length(projector.signs), 1, "Single deactivation must remove only one reciprocal relation")
+		TEST_ASSERT_EQUAL(projector.signs[1], second, "The surviving relation must hold the exact original second sign")
+		TEST_ASSERT_EQUAL(second.projector, projector, "Single deactivation must preserve the surviving exact backlink")
+		projector.afterattack(T2, actor, TRUE, list())
+	TEST_ASSERT(QDELETED(first) && QDELETED(second), "Actual cleanup must dispose of both exact original signs")
+	TEST_ASSERT_EQUAL(length(projector.signs), 0, "Actual cleanup must leave no stale original sign relations")
+	TEST_ASSERT(!QDELETED(unrelated), "Cleanup must preserve the exact unrelated projector sign")
+	TEST_ASSERT_EQUAL(unrelated.projector, control, "Cleanup must preserve the independent exact projector backlink")
+	TEST_ASSERT_EQUAL(unrelated.loc, T3, "Cleanup must preserve the independent sign floor")
+	TEST_ASSERT_EQUAL(length(control.signs), 1, "Cleanup must preserve the independent actual relation count")
+	projector.afterattack(T, actor, TRUE, list())
+	TEST_ASSERT_EQUAL(length(projector.signs), 1, "The actual cleared projector must be reusable")
+	var/obj/structure/holosign/replacement = projector.signs[1]
+	own(replacement)
+	TEST_ASSERT(replacement != first && replacement != second, "Reuse must create a distinct actual sign identity")
+	TEST_ASSERT_EQUAL(replacement.type, /obj/structure/holosign/wetsign, "Reuse must preserve exact canonical type")
+	TEST_ASSERT_EQUAL(replacement.projector, projector, "Reuse must restore the actual reciprocal projector relation")
+	TEST_ASSERT_EQUAL(replacement.loc, T, "Reuse must preserve its selected actual floor")
+	projector.interaction_self(actor, projector, null)
+	actor.drop_item()
+	TEST_ASSERT(actor.put_in_active_hand(control), "The actor must hold the independent projector for final public cleanup")
+	control.interaction_self(actor, control, null)
+	TEST_ASSERT(QDELETED(replacement) && QDELETED(unrelated), "Actual final public cleanup must dispose of both remaining signs")
+	TEST_ASSERT_EQUAL(length(projector.signs), 0, "Final cleanup must empty the original projector")
+	TEST_ASSERT_EQUAL(length(control.signs), 0, "Final cleanup must empty the independent projector")

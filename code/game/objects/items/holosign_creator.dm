@@ -31,7 +31,7 @@
 	var/obj/structure/holosign/H = locate_on(T, holosign_type)
 	if(H)
 		to_chat(user, span_notice("You use [src] to deactivate [H]."))
-		qdel(H)
+		consume(H, user)
 	else
 		if(om_busy(src)) // a sign being projected claims the creator
 			to_chat(user, span_notice("[src] is busy creating a hologram."))
@@ -50,8 +50,8 @@ DECLARE_INTERACTIONS(/obj/item/holosign_creator, INTERACT_USE(null, PROC_REF(int
 /// Old attack_self.
 /obj/item/holosign_creator/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(length(signs))
-		for(var/H in signs)
-			qdel(H)
+		for(var/obj/structure/holosign/H as anything in signs.Copy())
+			consume(H, user)
 		to_chat(user, span_notice("You clear all active holograms."))
 	return TRUE
 
