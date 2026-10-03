@@ -152,13 +152,15 @@
 
 // ---- the window: interface() ----
 
-/// The interface entry of a holder's table (the window it opens), or null.
+/// The interface entry of a holder's table (the window it opens), or null. A subtype that declares its own window beats the one it inherits (the most
+/// specific declaration wins, section 1 "Precedence"; it also says `without("ui_open")` so the inherited open op does not clash with its own).
 /proc/present_interface(datum/holder)
 	RETURN_TYPE(/datum/entry)
 	var/datum/type_table/T = table_of(holder)
+	var/datum/entry/found
 	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_INTERFACE))
-		return C.item
-	return null
+		found = C.item
+	return found
 
 /// A type's own window data: the output of the standard name ui_data(datum/act/A). A.actor is the viewer. Base: no data.
 /atom/proc/ui_data(datum/act/eval/A)

@@ -992,6 +992,33 @@
 	into += entry_line(121)
 	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(emp_scramble))))
 
+/// CAPABILITIES(/obj/machinery/power/smes/batteryrack) at code/modules/power/batteryrack.dm:54
+/obj/machinery/power/smes/batteryrack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/batteryrack.dm", 54, /obj/machinery/power/smes/batteryrack)
+	into += entry_line(54)
+	into += list(global.without("tryinput", "tryoutput", "input", "output", "ui_open"))
+	into += entry_line(54)
+	into += list(global.owns_many(nameof(internal_cells), /obj/item/cell))
+	into += entry_line(54)
+	into += list(global.part_replacement())
+	into += entry_line(54)
+	into += list(global.interface("Batteryrack"))
+	into += entry_line(54)
+	into += list(global.op("insert_cell", global.item(/obj/item/cell), global.needs(global.req(PROC_REF(cell_room), because = MSG(batteryrack/full))), global.then(PROC_REF(cell_inserted)), global.says(MSG(batteryrack/inserted))))
+	into += entry_line(54)
+	into += list(global.op("disable", global.ui_act(), global.then(PROC_REF(ui_disable))))
+	into += entry_line(54)
+	into += list(global.op("enable", global.ui_act(global.arg("enable")), global.then(PROC_REF(ui_enable))))
+	into += entry_line(54)
+	into += list(global.op("equaliseon", global.ui_act(), global.sets(nameof(equalise), TRUE)))
+	into += entry_line(54)
+	into += list(global.op("equaliseoff", global.ui_act(), global.sets(nameof(equalise), FALSE)))
+	into += entry_line(54)
+	into += list(global.op("ejectcell", global.ui_act(global.arg("ejectcell")), global.then(PROC_REF(ui_eject_cell))))
+	into += entry_line(54)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(power_frame))))
+
 /// CAPABILITIES(/obj/machinery/power/smes/buildable) at code/modules/power/smes_construction.dm:122
 /obj/machinery/power/smes/buildable/declared_entries(list/into)
 	..(into)
@@ -1916,6 +1943,26 @@
 	into += entry_block("code/tests/engine/p2_fixtures.dm", 26, /obj/p2_hit/taker)
 	into += entry_line(27)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
+
+/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:261
+/obj/p2_windowed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 261, /obj/p2_windowed)
+	into += entry_line(261)
+	into += list(global.interface("P2First"))
+	into += entry_line(261)
+	into += list(global.op("p2_window_press", global.ui_act(), global.then(PROC_REF(window_pressed))))
+
+/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:270
+/obj/p2_windowed/second/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 270, /obj/p2_windowed/second)
+	into += entry_line(270)
+	into += list(global.without("ui_open"))
+	into += entry_line(270)
+	into += list(global.interface("P2Second"))
+	into += entry_line(270)
+	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
 /// CAPABILITIES(/obj/s1_fixture/bare_meter) at code/tests/engine/s1_fixtures.dm:254
 /obj/s1_fixture/bare_meter/declared_entries(list/into)

@@ -53,7 +53,9 @@
 
 /// The overlay keys the rack draws.
 /proc/p2_rack_overlays(obj/machinery/power/smes/batteryrack/R)
-	return R.appearance_overlays()
+	var/datum/look/look = new
+	R.draw(look)
+	return look.overlays.Copy()
 
 /// One frame of the rack's own charge work (it reads its cells back and balances them).
 /proc/p2_rack_power_step(obj/machinery/power/smes/batteryrack/R)
@@ -329,6 +331,22 @@
 	p2_rack_ui(H, R, "equaliseoff")
 	p2_settle()
 	TEST_ASSERT(!p2_rack_equalising(R), "off again")
+
+/// A button the rack does not have (the SMES's input toggle and level setters) does nothing: the rack's window is its own. (New with the
+/// conversion: the old rack answered the SMES's op buttons through the inherited table, see intended_changes.md.)
+/datum/unit_test/dq_p2_smes/rack_has_no_smes_buttons
+/datum/unit_test/dq_p2_smes/rack_has_no_smes_buttons/run_gate()
+	var/mob/living/carbon/human/H = p2_actor()
+	var/obj/machinery/power/smes/batteryrack/R = p2_rack()
+	var/level = R.output_level
+	p2_rack_ui(H, R, "tryinput")
+	p2_rack_ui(H, R, "tryoutput")
+	p2_rack_ui(H, R, "output", list("adjust" = 0, "target" = "min"))
+	p2_rack_ui(H, R, "input", list("adjust" = 0, "target" = "min"))
+	p2_settle()
+	TEST_ASSERT(!R.input_attempt && !R.output_attempt, "the SMES toggles do nothing")
+	TEST_ASSERT_EQUAL(R.output_level, level, "and neither does the output level setter")
+	TEST_ASSERT_EQUAL(R.input_level, level, "nor the input level setter")
 
 /// The window's data: the mode, the limits, the equalise switch, and nine cell slots with the used ones described.
 /datum/unit_test/dq_p2_smes/rack_window_data

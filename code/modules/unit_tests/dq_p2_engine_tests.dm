@@ -288,3 +288,16 @@
 	input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
 	TEST_ASSERT_EQUAL(using.reached, 0, "an item whose attack() used the click does not reach afterattack")
 	H.set_use_stance(I_HELP)
+
+// A subtype's own interface() replaces the window it inherits (without("ui_open") drops the inherited open op).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_subtype_window_replaces_the_inherited_one
+
+/datum/unit_test/dq_p2_engine/a_subtype_window_replaces_the_inherited_one/run_gate()
+	var/obj/p2_windowed/first = allocate(/obj/p2_windowed)
+	var/obj/p2_windowed/second/second = allocate(/obj/p2_windowed/second)
+	TEST_ASSERT_EQUAL(first.ui_interface(), "P2First", "a holder opens the window it declares")
+	TEST_ASSERT_EQUAL(second.ui_interface(), "P2Second", "its subtype opens its own")
+	TEST_ASSERT_NOTNULL(op_plan_for(second, "ui_open"), "and still has one open op")
+

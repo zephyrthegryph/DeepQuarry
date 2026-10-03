@@ -251,4 +251,22 @@ CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_u
 	dragged++
 	return OP_OK
 
+
+// ---- a subtype's own window ----
+
+/// A holder with a window.
+/obj/p2_windowed
+	name = "p2 windowed"
+
+CAPABILITIES(/obj/p2_windowed, 	interface("P2First"), 	op("p2_window_press", ui_act(), then(PROC_REF(window_pressed))))
+
+/obj/p2_windowed/proc/window_pressed(datum/act/op/A)
+	return OP_OK
+
+/// A subtype with its own window: the inherited open op goes, the new window is the one it opens.
+/obj/p2_windowed/second
+	name = "p2 windowed second"
+
+CAPABILITIES(/obj/p2_windowed/second, 	without("ui_open"), 	interface("P2Second"), 	op("p2_window_press_second", ui_act(), then(PROC_REF(window_pressed))))
+
 #endif

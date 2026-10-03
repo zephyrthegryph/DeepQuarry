@@ -6,8 +6,7 @@
 // present stage (its icon), every MACHINE_PIPELINE_INTERVAL while any has work. Settled, all idle
 // and the machine parks; a channel wakes it (CHANGE_MACHINE_*), raised by the base setters
 // (power_change(), atom_break(), atom_fix()) and by each type's own producers, or MACHINE_WAKE().
-// A type's behaviour is a variant of a base stage, resolved by type depth: power/smes serves
-// every power storage unit.
+// A type's behaviour is a variant of a base stage, resolved by type depth.
 
 /// One machine frame per machine service interval (MACHINE_SERVICE_INTERVAL).
 #define MACHINE_PIPELINE_INTERVAL MACHINE_SERVICE_INTERVAL
@@ -15,7 +14,6 @@
 /datum/om/decl/pipeline_machines
 	of = list(
 		/obj/machinery/power/apc,
-		/obj/machinery/power/smes/batteryrack,
 		/obj/machinery/firealarm,
 		/obj/machinery/alarm,
 		/obj/machinery/portable_atmospherics/canister,
@@ -356,19 +354,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 /datum/om/stage/machine/present/apc/perform(obj/machinery/power/apc/M, datum/om/frame/machine/F)
 	return STAGE_IDLE
-
-// ---------------------------------------------------------------- SMES
-
-/// Rust charges and discharges; the rack's own power_step() does the rest (it re-reads and balances its cells every frame). The SMES
-/// proper is declared and has no stage.
-/datum/om/stage/machine/power/smes
-	of = /obj/machinery/power/smes/batteryrack
-
-/datum/om/stage/machine/power/smes/perform(obj/machinery/power/smes/batteryrack/M, datum/om/frame/machine/F)
-	return M.power_step()
-
-/datum/om/stage/machine/power/smes/idle(obj/machinery/power/smes/batteryrack/M)
-	return M.power_settled()
 
 // ---------------------------------------------------------------- fire alarms
 
