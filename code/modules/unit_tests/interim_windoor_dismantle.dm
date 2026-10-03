@@ -1,16 +1,16 @@
 /// Real dismantling must preserve the installed configuration and electronics.
 /datum/unit_test/interim_windoor_dismantle
+	parent_type = /datum/unit_test/dq_p2_reagents
 	var/has_installed_board = TRUE
 
 /datum/unit_test/interim_windoor_dismantle/generated_electronics
 	has_installed_board = FALSE
 
-/datum/unit_test/interim_windoor_dismantle/Run()
+/datum/unit_test/interim_windoor_dismantle/run_gate()
 	var/turf/T = test_floor()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/actor = rc_actor(T)
 	var/obj/machinery/door/window/brigdoor/door = allocate(/obj/machinery/door/window/brigdoor, T)
 	door.set_dir(WEST)
-	door.set_density(FALSE)
 	door.base_state = "rightsecure"
 	door.name = "Preserved windoor"
 	door.req_access = null
@@ -23,9 +23,19 @@
 		own_set(door, nameof(door.electronics), board)
 	else
 		TEST_ASSERT_NULL(door.electronics, "The generated-electronics fixture must have no installed board")
+	var/obj/item/clothing/under/color/grey/uniform = allocate(/obj/item/clothing/under/color/grey, T)
+	TEST_ASSERT(actor.equip_to_slot(uniform, SLOT_ID_UNIFORM), "actual uniform provides the real ID attachment slot")
+	var/obj/item/card/id/id = allocate(/obj/item/card/id, T)
+	id.access = list(ACCESS_SECURITY)
+	TEST_ASSERT(actor.equip_to_slot(id, SLOT_ID_ID), "actual security ID satisfies the real windoor access guard")
+	rc_click(actor, door, null, I_HELP, FALSE)
+	test_time(2 SECONDS)
+	TEST_ASSERT(!door.density && !door.operating, "actual admitted hand input opens and settles the windoor before prying")
 	var/door_handle = om_handle(door)
 	var/list/before = turf_contents_of_type(T, /obj/structure/windoor_assembly)
-	door.crowbar_act_tool_done(actor)
+	var/obj/item/tool/crowbar/crowbar = allocate(/obj/item/tool/crowbar, T)
+	rc_click(actor, door, crowbar, I_HELP, FALSE)
+	test_time(5 SECONDS)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(door), "Dismantling must remove the installed windoor")
 	var/list/created = turf_contents_of_type(T, /obj/structure/windoor_assembly) - before
@@ -37,8 +47,8 @@
 	TEST_ASSERT_EQUAL(frame.facing, "r", "The right-facing configuration must survive")
 	TEST_ASSERT_EQUAL(frame.dir, WEST, "Direction must survive")
 	TEST_ASSERT_EQUAL(frame.created_name, "Preserved windoor", "The configured name must survive")
-	TEST_ASSERT_EQUAL(frame.state, "02", "The wired state must survive")
-	TEST_ASSERT_EQUAL(frame.step, 2, "The installed-electronics step must survive")
+	TEST_ASSERT(built(frame, STAGE_WINDOOR_ASSEMBLY_BOARDED), "The actual boarded construction stage must survive")
+	TEST_ASSERT_EQUAL(frame.sprite_state(), "02", "The real boarded stage retains the wired sprite state")
 	TEST_ASSERT(frame.electronics && !QDELETED(frame.electronics), "The assembly must have surviving electronics")
 	if(has_installed_board)
 		TEST_ASSERT_EQUAL(frame.electronics, board, "The exact installed board must transfer")
