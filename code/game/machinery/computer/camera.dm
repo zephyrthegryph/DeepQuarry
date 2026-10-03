@@ -146,17 +146,21 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/entertainment,
 		radio?.on = TRUE
 
 /obj/machinery/computer/security/telescreen/entertainment/Click(location, control, params)
+	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
+		..()
+
+/obj/machinery/computer/security/telescreen/entertainment/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
+		if(isliving(user) && Adjacent(user) && !user.incapacitated())
 			toggle()
-			act_message(usr, src, MSG_SELF(span_info("You toggle %T% [enabled ? "on" : "off"].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " toggles %T% [enabled ? "on" : "off"].")), runemessage = "click")
+			act_message(user, src, MSG_SELF(span_info("You toggle %T% [enabled ? "on" : "off"].")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " toggles %T% [enabled ? "on" : "off"].")), runemessage = "click")
 	// start - Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
-			return
+			return TRUE
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		attack_hand(usr)
-		return
-	..()
+		attack_hand(user)
+		return TRUE
+	return FALSE
 	// end
 
 APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/entertainment)
