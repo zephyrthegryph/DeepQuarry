@@ -85,6 +85,9 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 	/// Edge id -> index into `edges` (plain numbers, not entities). Read through edge_by_id().
 	var/tmp/list/edges_by_id
 
+CAPABILITIES(/datum/construction_graph)
+	owns_many(nameof(edges))
+
 /datum/construction_graph/New()
 	..()
 	edges_by_state = list()
@@ -111,7 +114,7 @@ GLOBAL_LIST_INIT(construction_graphs, init_construction_graphs())
 		edge.id = "[base_id]#[n]"
 	if(!edge.name)
 		edge.name = capitalize(edge.step_text)
-	own_add(src, nameof(edges), edge)
+	rel_add(src, nameof(edges), edge)
 	var/edge_index = length(edges)
 	edges_by_id[edge.id] = edge_index
 	if(edge.from_state == CONSTRUCTION_ANY_STATE)

@@ -58,11 +58,14 @@ MATERIAL_MIX(/obj/item/backup_implanter, list(MAT_STEEL = 2000, MAT_GLASS = 2000
 
 	var/db_key // To give to the baby implants
 
+CAPABILITIES(/obj/item/backup_implanter)
+	owns_many(nameof(imps), /obj/item/implant/backup)
+
 /obj/item/backup_implanter/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to max_implants)
 		var/obj/item/implant/backup/imp = new(src, db_key)
-		own_add(src, nameof(imps), imp)
+		rel_add(src, nameof(imps), imp)
 		imp.germ_level = 0
 	update()
 

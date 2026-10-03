@@ -135,7 +135,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 			C.move_into(new_coil, CONTAINER_SLOT_INTERNALS)
 		own_take_all(new_coil, nameof(new_coil.component_parts))
 		for(var/obj/item/I in new_coil.slot_contents(CONTAINER_SLOT_INTERNALS))
-			own_add(new_coil, nameof(new_coil.component_parts), I)
+			rel_add(new_coil, nameof(new_coil.component_parts), I)
 		new_coil.RefreshParts()
 
 		new_coil.set_anchored(anchored)
@@ -337,9 +337,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 	buckle_lying = FALSE
 	circuit = /obj/item/circuitboard/grounding_rod
 
-/obj/machinery/power/grounding_rod/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/power/grounding_rod)
+	climb()
 
 /obj/machinery/power/grounding_rod/examine(user)
 	. = ..()

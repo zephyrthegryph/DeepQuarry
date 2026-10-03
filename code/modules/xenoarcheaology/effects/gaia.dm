@@ -7,6 +7,9 @@
 
 	effect_color = "#8cd448"
 
+CAPABILITIES(/datum/artifact_effect/gaia)
+	owns_many(nameof(my_glitterflies))
+
 /datum/artifact_effect/gaia/proc/age_plantlife(obj/machinery/portable_atmospherics/hydroponics/Tray = null)
 	if(istype(Tray) && Tray.seed)
 		Tray.health += rand(1,3) * HYDRO_SPEED_MULTIPLIER
@@ -39,7 +42,7 @@
 		if(prob(30))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -53,7 +56,7 @@
 		if(prob(2))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 
@@ -67,7 +70,7 @@
 		if(prob(10))
 			var/mob/living/simple_mob/animal/sif/glitterfly/G = new(get_turf(Tray))
 
-			own_add(src, nameof(my_glitterflies), G)
+			rel_add(src, nameof(my_glitterflies), G)
 
 			G.ai_brain.returns_home = TRUE
 

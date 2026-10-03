@@ -5,6 +5,9 @@
 	var/jellyfish_cap	= 20
 	var/list/spawned_jellyfish
 
+CAPABILITIES(/datum/event/jellyfish_migration)
+	owns_many(nameof(spawned_jellyfish))
+
 /datum/event/jellyfish_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -71,7 +74,7 @@
 /datum/event/jellyfish_migration/proc/spawn_one_jellyfish(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/vore/alienanimals/space_jellyfish(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_jellyfish_destruction))
-	own_add(src, nameof(spawned_jellyfish), M)
+	rel_add(src, nameof(spawned_jellyfish), M)
 	return M
 
 // Counts living jellyfish spawned by this event.

@@ -9,7 +9,7 @@
 	holder.add_reagent(reagent_id, 5)
 	var/datum/reagent/chemical = holder.get_reagent(reagent_id)
 	TEST_ASSERT_NOTNULL(chemical, "Actual reagent insertion must create the tested chemical")
-	TEST_ASSERT_EQUAL(chemical.holder, holder, "The chemical must belong to the real recipient holder")
+	TEST_ASSERT_EQUAL(chemical.holder, holder, "The chemical must belong to the real recipient holder") // ALLOW(check_grep): a reagent's holder is its reagents datum, not an admin holder
 	if(touch_route)
 		chemical.affect_touch(recipient, recipient.reagent_tag(), 1)
 	else

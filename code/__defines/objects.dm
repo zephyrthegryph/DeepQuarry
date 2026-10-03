@@ -51,3 +51,6 @@
 #define MECH_ELECTRIC	"Firmware"
 
 #define DRINK_ICON_FILE 'icons/pdrink.dmi'
+
+/// How long a cliff takes to climb (a double cliff takes half).
+#define CLIFF_CLIMB_TIME (10 SECONDS)

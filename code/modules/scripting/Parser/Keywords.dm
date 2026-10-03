@@ -45,7 +45,7 @@
 /datum/n_Keyword/nS_Keyword/kwReturn/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadReturn(parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadReturn(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/ReturnStatement/stmt=new
 	parser.NextToken()   //skip 'return' token
@@ -71,7 +71,7 @@
 	var/datum/node/statement/IfStatement/stmt
 	if(L&&L.len) stmt=L[L.len] //Get the last statement in the current block
 	if(!stmt || !istype(stmt) || stmt.else_block) //Ensure that it is an if statement
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/ExpectedToken("if statement",parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/ExpectedToken("if statement",parser.curToken()))
 		return KW_FAIL
 	parser.NextToken()         //skip 'else' token
 	if(!parser.CheckToken("{", /datum/token/symbol, skip=0))
@@ -95,7 +95,7 @@
 /datum/n_Keyword/nS_Keyword/kwBreak/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/BreakStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
@@ -104,7 +104,7 @@
 /datum/n_Keyword/nS_Keyword/kwContinue/Parse(datum/n_Parser/nS_Parser/parser)
 	.=KW_PASS
 	if(istype(parser.curBlock(), /datum/node/BlockDefinition/GlobalBlock))
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		. = KW_WARN
 	var/datum/node/statement/ContinueStatement/stmt=new
 	parser.NextToken()   //skip 'break' token
@@ -115,7 +115,7 @@
 	var/datum/node/statement/FunctionDefinition/def=new
 	parser.NextToken() //skip 'def' token
 	if(!parser.options().IsValidID(parser.curToken().value))
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
 		return KW_FAIL
 	def.func_name=parser.curToken().value
 	parser.NextToken()
@@ -129,14 +129,14 @@
 				if(")")
 					break
 				else
-					own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
+					rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 					return KW_ERR
 
 		else if(istype(parser.curToken(), /datum/token/word))
 			def.parameters+=parser.curToken().value
 			parser.NextToken()
 		else
-			own_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
+			rel_add(parser, nameof(parser.errors), new/datum/scriptError/InvalidID(parser.curToken()))
 			return KW_ERR
 	if(!parser.CheckToken(")", /datum/token/symbol))
 		return KW_FAIL
@@ -149,7 +149,7 @@
 		parser.curBlock().functions[def.func_name]=def
 		parser.AddBlock(def.block)
 	else
-		own_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
+		rel_add(parser, nameof(parser.errors), new/datum/scriptError/BadToken(parser.curToken()))
 		return KW_FAIL
 
 #undef KW_FAIL

@@ -31,7 +31,7 @@
 			break
 	if(!hasRecord)
 		var/datum/stored_item/item = new/datum/stored_item(src,O.type,O.name,O.get_amount())
-		own_add(src, nameof(item_records), item)
+		rel_add(src, nameof(item_records), item)
 		consume(O)
 
 /obj/machinery/smartfridge/tcrystal/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

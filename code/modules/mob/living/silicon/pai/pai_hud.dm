@@ -96,7 +96,7 @@
 	combat_button.icon = ui_style
 	combat_button.alpha = ui_alpha
 	combat_button.layer = LAYER_HUD_ITEM
-	own_add(HUD, nameof(HUD.adding), combat_button)
+	rel_add(HUD, nameof(HUD.adding), combat_button)
 
 	//Move intent (walk/run)
 	using = new /atom/movable/screen()
@@ -106,7 +106,7 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
 	//Resist button
@@ -117,7 +117,7 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.hotkeybuttons), using)
+	rel_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
 	rel_set(src, nameof(pullin), new /atom/movable/screen())
@@ -157,7 +157,7 @@
 	using.screen_loc = ui_movi
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Software interface button
@@ -167,7 +167,7 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Radio configuration button
@@ -177,7 +177,7 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//PDA button
@@ -187,7 +187,7 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Communicator button
@@ -197,7 +197,7 @@
 	using.screen_loc = ui_pai_comms
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	//Language button
@@ -207,7 +207,7 @@
 	using.screen_loc = ui_acti
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	using = new /atom/movable/screen/pai()
@@ -216,7 +216,7 @@
 	using.screen_loc = ui_inventory
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.extra_screens), using)
+	rel_add(HUD, nameof(HUD.extra_screens), using)
 	rel_add(HUD, nameof(HUD.hud_elements), using)
 
 	using = new /atom/movable/screen/pai()
@@ -225,7 +225,7 @@
 	using.screen_loc = "WEST:6,SOUTH:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "crew manifest"
@@ -233,7 +233,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "medical records"
@@ -241,7 +241,7 @@
 	using.screen_loc = "WEST:6,SOUTH+1:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "security records"
@@ -249,7 +249,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "atmosphere sensor"
@@ -257,7 +257,7 @@
 	using.screen_loc = "WEST:6,SOUTH+2:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "remote signaler"
@@ -265,7 +265,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "universal translator"
@@ -273,7 +273,7 @@
 	using.screen_loc = "WEST:6,SOUTH+3:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "door jack"
@@ -281,7 +281,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "ar hud"
@@ -289,7 +289,7 @@
 	using.screen_loc = "WEST:6,SOUTH+4:18"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	using = new /atom/movable/screen/pai()
 	using.name = "death alarm"
@@ -297,7 +297,7 @@
 	using.screen_loc = "WEST:6,SOUTH+5:2"
 	using.color = ui_color
 	using.alpha = ui_alpha
-	own_add(HUD, nameof(HUD.other), using)
+	rel_add(HUD, nameof(HUD.other), using)
 
 	rel_set(src, nameof(autowhisper_display), new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
@@ -311,7 +311,7 @@
 	aw.icon_state = "aw-select"
 	aw.name = "autowhisper mode"
 	aw.screen_loc = "EAST-1:28,CENTER-2:13"
-	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.extra_screens), aw)
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
@@ -319,7 +319,7 @@
 	aw.icon_state = "lang"
 	aw.name = "check known languages"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.extra_screens), aw)
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
@@ -327,7 +327,7 @@
 	aw.icon_state = "pose"
 	aw.name = "set pose"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.extra_screens), aw)
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
@@ -335,7 +335,7 @@
 	aw.icon_state = "up"
 	aw.name = "move upwards"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.extra_screens), aw)
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	aw = new /atom/movable/screen()
@@ -343,7 +343,7 @@
 	aw.icon_state = "down"
 	aw.name = "move downwards"
 	aw.screen_loc = ui_under_health
-	own_add(HUD, nameof(HUD.extra_screens), aw)
+	rel_add(HUD, nameof(HUD.extra_screens), aw)
 	rel_add(HUD, nameof(HUD.hud_elements), aw)
 
 	if(client)

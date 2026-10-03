@@ -114,6 +114,10 @@
 	// own firemodes list / sel_mode index.
 	var/datum/gun_firemode_selector/firemode_selector = null
 
+CAPABILITIES(/obj/item/gun)
+	owns_one(nameof(firemode_selector), /datum/gun_firemode_selector, starts = /datum/gun_firemode_selector)
+	owns_many(nameof(firemodes))
+
 /obj/item/gun/item_ctrl_click(mob/user)
 	if(can_flashlight && ishuman(user) && loc == user && !user.incapacitated(INCAPACITATION_ALL))
 		toggle_flashlight()
@@ -130,9 +134,6 @@
 
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
 	update_icon()
-
-CAPABILITIES(/obj/item/gun)
-	owns_one(nameof(firemode_selector), /datum/gun_firemode_selector, starts = /datum/gun_firemode_selector)
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()

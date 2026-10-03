@@ -33,6 +33,7 @@
 
 CAPABILITIES(/obj/machinery/smartfridge)
 	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
+	owns_many(nameof(item_records))
 
 /obj/machinery/smartfridge/secure
 	is_secure = 1
@@ -242,7 +243,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		own_add(src, nameof(item_records), I)
+		rel_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
 	update_icon()

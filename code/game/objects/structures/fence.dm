@@ -27,6 +27,18 @@
 	update_cut_status()
 	return ..()
 
+CAPABILITIES(/obj/structure/fence)
+	climb(gate = PROC_REF(needs_a_climbable_hole))
+
+/// A fence is climbed through a medium hole: an intact one is too tight to, and a large one is walked through.
+/obj/structure/fence/proc/needs_a_climbable_hole(mob/living/climber)
+	switch(hole_size)
+		if(NO_HOLE)
+			return "There is no hole in \the [src] to climb through."
+		if(LARGE_HOLE)
+			return "The hole in \the [src] is big enough to walk through."
+	return null
+
 /obj/structure/fence/examine(mob/user)
 	. = ..()
 
@@ -125,11 +137,9 @@
 		if(MEDIUM_HOLE)
 			act_message(user, src, others = span_notice("%U% cuts into %T% some more."))
 			to_chat(user, span_notice("You could probably fit yourself through that hole now. Although climbing through would be much faster if you made it even bigger."))
-			make_climbable()
 		if(LARGE_HOLE)
 			act_message(user, src, others = span_notice("%U% completely cuts through %T%."))
 			to_chat(user, span_notice("The hole in \the [src] is now big enough to walk through."))
-			unmake_climbable()
 	update_cut_status()
 
 /obj/structure/fence/Bumped(AM)

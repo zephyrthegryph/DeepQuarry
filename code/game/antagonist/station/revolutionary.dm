@@ -47,4 +47,4 @@ GLOBAL_DATUM(revs, /datum/antagonist/revolutionary)
 		var/datum/objective/rev/rev_obj = new
 		rel_set(rev_obj, nameof(rev_obj.target), player.mind)
 		rev_obj.explanation_text = "Assassinate, capture or convert [player.real_name], the [player.mind.assigned_role]."
-		own_add(src, nameof(global_objectives), rev_obj)
+		rel_add(src, nameof(global_objectives), rev_obj)

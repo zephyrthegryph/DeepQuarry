@@ -20,13 +20,15 @@
 
 DECLARE_DEFAULT_CHILD(/obj/machinery/reagent_refinery/furnace, "beaker", /obj/item/reagent_containers/glass/beaker/bluespace)
 
+CAPABILITIES(/obj/machinery/reagent_refinery/furnace)
+	climb()
+
 /obj/machinery/reagent_refinery/furnace/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable()
 
 
 /obj/machinery/reagent_refinery/furnace/refinery_step()

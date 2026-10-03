@@ -1243,7 +1243,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 	T.source_terminal = name
 	T.date = GLOB.current_date_string
 	T.time = stationtime2text()
-	own_add(GLOB.vendor_account, nameof(/datum/money_account::transaction_log), T)
+	rel_add(GLOB.vendor_account, nameof(/datum/money_account::transaction_log), T)
 
 /// TGUI Stuff
 

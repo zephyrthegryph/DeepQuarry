@@ -53,6 +53,14 @@ SYSTEM_DEF(supply)
 	var/movetime = 1200
 	var/datum/shuttle/autodock/ferry/supply/shuttle
 
+CAPABILITIES(/datum/system/supply)
+	owns_many(nameof(adm_export_history))
+	owns_many(nameof(adm_order_history))
+	owns_many(nameof(exported_crates))
+	owns_many(nameof(market_transactions))
+	owns_many(nameof(order_history))
+	owns_many(nameof(service_invoices))
+
 /// The 15-minute payroll cycle runs once the first service step has started it.
 OM_FIELD(/datum/system/supply, payroll_running, FALSE, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_running")
@@ -577,7 +585,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 				if(MA.export_sale(EC, FALSE))
 					things_sold_successfully += MA
 
-			own_add(src, nameof(exported_crates), EC)
+			rel_add(src, nameof(exported_crates), EC)
 			distribute_export_revenue(EC)
 			EC.value += base_value
 
@@ -598,7 +606,7 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 			adm.sales_destination = EC.sales_destination
 			adm.sales_eligible_value = EC.sales_eligible_value
 			adm.sales_producer_percentages = EC.sales_producer_percentages?.Copy()
-			own_add(src, nameof(adm_export_history), adm)
+			rel_add(src, nameof(adm_export_history), adm)
 
 			qdel(MA)
 
@@ -944,8 +952,8 @@ DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_ru
 	adm_order.ordered_at = new_order.ordered_at
 	adm_order.status = new_order.status
 
-	own_add(src, nameof(order_history), new_order)
-	own_add(src, nameof(adm_order_history), adm_order)
+	rel_add(src, nameof(order_history), new_order)
+	rel_add(src, nameof(adm_order_history), adm_order)
 	return new_order
 
 // Will delete the specified export receipt from the user-side list

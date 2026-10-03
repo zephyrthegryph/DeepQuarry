@@ -23,6 +23,7 @@
 
 CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	owns_one(nameof(internal_tank), /obj/machinery/portable_atmospherics/canister)
+	climb()
 
 /obj/machinery/reagent_refinery/reactor/Initialize(mapload)
 	. = ..()
@@ -33,7 +34,6 @@ CAPABILITIES(/obj/machinery/reagent_refinery/reactor)
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable()
 
 
 /obj/machinery/reagent_refinery/reactor/refinery_step()

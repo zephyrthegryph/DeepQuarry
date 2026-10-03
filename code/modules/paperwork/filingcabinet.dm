@@ -25,12 +25,14 @@
 	icon_state = "tallcabinet"
 
 
+CAPABILITIES(/obj/structure/filingcabinet)
+	climb()
+
 /obj/structure/filingcabinet/Initialize(mapload)
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/paper) || istype(I, /obj/item/folder) || istype(I, /obj/item/photo) || istype(I, /obj/item/paper_bundle))
 			I.forceMove(src)
 	. = ..()
-	make_climbable()
 
 /// Old attackby.
 /obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)

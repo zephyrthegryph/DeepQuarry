@@ -11,6 +11,9 @@
 	var/base_icon_state = "nboard0"
 	var/const/max_notices = 5
 
+CAPABILITIES(/obj/structure/noticeboard)
+	owns_many(nameof(notices))
+
 /obj/structure/noticeboard/Initialize(mapload)
 	. = ..()
 
@@ -22,7 +25,7 @@
 			break
 	// notices in contents
 	for(var/obj/item/paper/note in contents)
-		own_add(src, nameof(notices), note)
+		rel_add(src, nameof(notices), note)
 		if(LAZYLEN(notices) >= max_notices)
 			break
 

@@ -89,7 +89,7 @@ CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 			product.category = category
 			product.item_desc = initial(NS.desc)
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 
 /obj/machinery/vending/nifsoft_shop/can_buy(datum/stored_item/vending_product/R, mob/user)
 	. = ..()

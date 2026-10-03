@@ -398,7 +398,7 @@
 /datum/species/proc/update_attack_types()
 	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 /datum/species/New()
 	share_type_tables()
@@ -413,7 +413,7 @@
 
 	own_take_all(src, nameof(unarmed_attacks))
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 	update_sort_hint()
 
@@ -835,7 +835,7 @@ TYPE_TABLE_DECLARE(/datum/species, shared_table_vars, list("assisted_langs", "un
 	own_clear(src, nameof(unarmed_attacks), OWN_DELETE)
 	unarmed_types = unarmed_types + /datum/unarmed_attack/bite/sharp/numbing // copy: the table is shared per type
 	for(var/u_type in unarmed_types)
-		own_add(src, nameof(unarmed_attacks), new u_type())
+		rel_add(src, nameof(unarmed_attacks), new u_type())
 
 /// Gives `H` this species' per-mob state: /datum/trait_state paths, a /datum/forms type,
 /// /datum/shadekin and /datum/xenochimera.

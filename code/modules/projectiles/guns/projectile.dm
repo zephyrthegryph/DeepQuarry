@@ -38,12 +38,15 @@
 	///Var for attack_self chain
 	var/special_weapon_handling = FALSE
 
+CAPABILITIES(/obj/item/gun/projectile)
+	owns_many(nameof(loaded))
+
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
 	. = ..()
 	if(starts_loaded)
 		if(ispath(ammo_type) && (load_method & (SINGLE_CASING|SPEEDLOADER)))
 			for(var/i in 1 to max_shells)
-				own_add(src, nameof(loaded), new ammo_type(src))
+				rel_add(src, nameof(loaded), new ammo_type(src))
 			if(random_start_ammo)
 				for(var/i in 1 to rand(0, max_shells))
 					if(!length(loaded))
@@ -109,9 +112,9 @@
 				play_sfx(src, SFX_CASING_SOUND)
 		if(CYCLE_CASINGS) //cycle the casing back to the end.
 			if(ammo_magazine)
-				own_add(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
+				rel_add(ammo_magazine, nameof(ammo_magazine.stored_ammo), chambered)
 			else
-				own_add(src, nameof(loaded), chambered)
+				rel_add(src, nameof(loaded), chambered)
 
 	if(handle_casings != HOLD_CASINGS)
 		rel_clear(src, nameof(chambered))

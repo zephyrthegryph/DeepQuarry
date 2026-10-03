@@ -665,7 +665,7 @@
 			product.amount = (current_list[1][entry]) ? current_list[1][entry] : 1
 			product.category = category
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
 
 	// Consumed, as in the base proc.

@@ -31,6 +31,9 @@ CAPABILITIES(/mob/living)
 	owns_one(nameof(shadekin), /datum/shadekin)
 	owns_one(nameof(turfslip), /datum/turfslip)
 	owns_one(nameof(vore_panel_button), /datum/vore_panel_button)
+	owns_many(nameof(owned_soul_links), /datum/soul_link)
+	owns_many(nameof(status_effects))
+	owns_many(nameof(trait_states))
 
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as

@@ -288,7 +288,7 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	//If not, we're probably just in a prefs list or something.
 	if(ismob(loc))
 		rel_set(src, nameof(owner), loc)
-		own_add(owner, nameof(owner.vore_organs), src)
+		rel_add(owner, nameof(owner.vore_organs), src)
 		belly_reschedule()
 
 // The mob owns its bellies (vore_organs); `owner` is the belly's one-sided view back.

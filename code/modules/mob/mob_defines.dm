@@ -314,6 +314,8 @@ CAPABILITIES(/mob)
 	owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
 	owns_one(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
 	owns_one(nameof(zone_sel), /atom/movable/screen/zone_sel)
+	owns_many(nameof(spell_masters), /atom/movable/screen/movable/spell_master)
+	owns_many(nameof(vore_organs))
 
 
 /mob

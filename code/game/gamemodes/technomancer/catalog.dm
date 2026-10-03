@@ -38,6 +38,12 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 	var/show_scepter_text = 0
 	var/universal = FALSE // Allows non-technomancers to use this catalog
 
+CAPABILITIES(/obj/item/technomancer_catalog)
+	owns_many(nameof(assistance_instances))
+	owns_many(nameof(consumable_instances))
+	owns_many(nameof(equipment_instances))
+	owns_many(nameof(spell_instances))
+
 /obj/item/technomancer_catalog/apprentice
 	name = "apprentice's catalog"
 	budget = 700
@@ -77,16 +83,16 @@ GLOBAL_LIST_INIT(all_technomancer_assistance, subtypesof(/datum/technomancer/ass
 /obj/item/technomancer_catalog/proc/set_up()
 	if(!length(spell_instances))
 		for(var/S in GLOB.all_technomancer_spells)
-			own_add(src, nameof(spell_instances), new S())
+			rel_add(src, nameof(spell_instances), new S())
 	if(!length(equipment_instances))
 		for(var/E in GLOB.all_technomancer_equipment)
-			own_add(src, nameof(equipment_instances), new E())
+			rel_add(src, nameof(equipment_instances), new E())
 	if(!length(consumable_instances))
 		for(var/C in GLOB.all_technomancer_consumables)
-			own_add(src, nameof(consumable_instances), new C())
+			rel_add(src, nameof(consumable_instances), new C())
 	if(!length(assistance_instances))
 		for(var/A in GLOB.all_technomancer_assistance)
-			own_add(src, nameof(assistance_instances), new A())
+			rel_add(src, nameof(assistance_instances), new A())
 
 /obj/item/technomancer_catalog/apprentice/set_up()
 	..()

@@ -73,7 +73,7 @@
 	C.func_name	= path
 	rel_set(C, nameof(C.object), new /datum/node/identifier("src"))
 	for(var/p in params)
-		own_add(C, nameof(C.parameters), new/datum/node/expression/value/variable(p))
+		rel_add(C, nameof(C.parameters), new/datum/node/expression/value/variable(p))
 	var/datum/node/statement/ReturnStatement/R=new()
 	rel_set(R, nameof(R.value), C)
 	LAZYADD(S.block.statements, R)
@@ -122,7 +122,7 @@
 		stmt.func_name  = func.func_name
 		// The call owns its argument nodes: wrap each raw value (Eval() unwraps them again).
 		for(var/p in params)
-			own_add(stmt, nameof(stmt.parameters), script_value_node(p))
+			rel_add(stmt, nameof(stmt.parameters), script_value_node(p))
 		return RunFunction(stmt)
 	else
 		return call(func)(arglist(params))

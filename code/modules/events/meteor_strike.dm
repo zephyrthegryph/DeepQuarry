@@ -78,6 +78,9 @@
 	icon_state = "large"
 	density = TRUE
 
+CAPABILITIES(/obj/structure/meteorite)
+	climb()
+
 /obj/structure/meteorite/Initialize(mapload)
 	. = ..()
 	icon = turn(icon, 90)
@@ -93,7 +96,6 @@
 				new /obj/item/ore/diamond(src)
 		if(91 to 100)
 			new /obj/machinery/artifact(src)
-	make_climbable()
 
 /obj/structure/meteorite/proc/break_apart_done(mob/M)
 	act_message(M, src, MSG_SELF(span_warning("You break apart %T%.")), MSG_OTHERS(span_warning("%U% breaks apart %T%.")))

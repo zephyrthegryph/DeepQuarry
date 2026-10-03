@@ -111,6 +111,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 
 CAPABILITIES(/datum/radial_menu)
 	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
+	owns_many(nameof(elements), /atom/movable/screen)
 
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)
@@ -157,7 +158,7 @@ CAPABILITIES(/datum/radial_menu)
 			var/atom/movable/screen/radial/slice/new_element = new /atom/movable/screen/radial/slice
 			new_element.tooltips = use_tooltips
 			new_element.set_parent(src)
-			own_add(src, nameof(elements), new_element)
+			rel_add(src, nameof(elements), new_element)
 
 	var/page = 1
 	page_data = list(null)

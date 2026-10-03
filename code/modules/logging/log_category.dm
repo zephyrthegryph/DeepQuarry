@@ -37,6 +37,9 @@
 	/// We have a lot more than those log lines, so we only store the last ones in a ring
 	var/ring_write_index = 1
 
+CAPABILITIES(/datum/log_category)
+	owns_many(nameof(log_ring))
+
 GENERAL_PROTECT_DATUM(/datum/log_category)
 
 /// Add an entry to this category. It is very important that any data you provide doesn't hold references to anything!
@@ -55,7 +58,7 @@ GENERAL_PROTECT_DATUM(/datum/log_category)
 	entry_count += 1
 
 	if(entry_count <= CONFIG_MAX_CACHED_LOG_ENTRIES)
-		own_add(src, nameof(log_ring), entry)
+		rel_add(src, nameof(log_ring), entry)
 	else
 		own_put(src, nameof(log_ring), ring_write_index, entry)
 	ring_write_index++

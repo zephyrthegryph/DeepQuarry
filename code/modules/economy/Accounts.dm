@@ -41,6 +41,9 @@
 	var/total_revenue = 0
 	var/total_expenses = 0
 
+CAPABILITIES(/datum/money_account)
+	owns_many(nameof(transaction_log))
+
 /datum/money_account/proc/record_transaction(target, purpose, amount, terminal_id)
 	var/datum/transaction/transaction = new
 	transaction.target_name = target
@@ -49,7 +52,7 @@
 	transaction.date = GLOB.current_date_string
 	transaction.time = stationtime2text()
 	transaction.source_terminal = terminal_id
-	own_add(src, nameof(transaction_log), transaction)
+	rel_add(src, nameof(transaction_log), transaction)
 
 /datum/money_account/proc/credit(amount, source_name, purpose, terminal_id = "Station budget ledger", external = TRUE, allow_suspended = FALSE)
 	if(!isnum(amount) || amount <= 0 || (suspended && !allow_suspended))
@@ -257,7 +260,7 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 		R.stamps += "<HR><i>This paper has been stamped by the Accounts Database.</i>"
 
 	//add the account
-	own_add(M, nameof(M.transaction_log), T)
+	rel_add(M, nameof(M.transaction_log), T)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, M)
 
 	return M

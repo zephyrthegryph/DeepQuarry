@@ -112,6 +112,9 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 	/// Relation view: the selected scan (one of positive_locations).
 	var/tmp/datum/depth_scan/current
 
+CAPABILITIES(/obj/item/depth_scanner)
+	owns_many(nameof(positive_locations))
+
 /datum/depth_scan
 	var/time = ""
 	var/coords = ""
@@ -139,7 +142,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 				D.depth = "[F.excavation_required]"
 				D.material = get_responsive_reagent(F.find_type)
 
-			own_add(src, nameof(positive_locations), D)
+			rel_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings."))
 
@@ -155,7 +158,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 			//these values are arbitrary
 			D.depth = rand(150, 200)
 
-			own_add(src, nameof(positive_locations), D)
+			rel_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
 

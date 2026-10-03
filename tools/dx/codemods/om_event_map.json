@@ -1061,52 +1061,6 @@
   "target": "/datum/notice/client_click",
   "tests": []
  },
- "/datum/om/event/climb_shake": {
-  "emits": [
-   "code/game/objects/structures.dm",
-   "code/game/objects/structures/crates_lockers/crates.dm",
-   "code/modules/power/solar.dm",
-   "code/modules/tables/flipping.dm"
-  ],
-  "fields": [
-   "user"
-  ],
-  "listeners": [
-   "code/datums/behaviours/climbable.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "user"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/climb_shake",
-  "tests": []
- },
- "/datum/om/event/climb_start": {
-  "emits": [
-   "code/datums/behaviours/climbable.dm",
-   "code/datums/capabilities/library/climb.dm",
-   "code/game/objects/buckling.dm",
-   "code/game/objects/structures/crates_lockers/__closets.dm",
-   "code/game/objects/structures/low_wall.dm",
-   "code/modules/vehicles/cargo_train.dm"
-  ],
-  "fields": [
-   "user"
-  ],
-  "listeners": [
-   "code/datums/behaviours/climbable.dm",
-   "code/engine/_generated/event_twins.dm"
-  ],
-  "notice_fields": [
-   "user"
-  ],
-  "reads_result": false,
-  "target": "/datum/notice/climb_start",
-  "tests": [
-   "code/modules/unit_tests/dq_p2_table_behaviour.dm"
-  ]
- },
  "/datum/om/event/closet_closed": {
   "emits": [
    "code/game/objects/structures/crates_lockers/__closets.dm"
@@ -1267,7 +1221,6 @@
   ],
   "listeners": [
    "code/datums/behaviours/burning.dm",
-   "code/datums/behaviours/climbable.dm",
    "code/datums/entity_state/machinery/disposal_connection.dm",
    "code/datums/entity_state/materials/material_container.dm",
    "code/datums/entity_state/reagent_hose/connector.dm",
@@ -2324,7 +2277,6 @@
    "code/controllers/subsystems/contracts.dm",
    "code/datums/behaviours/absorbent.dm",
    "code/datums/behaviours/cleaning.dm",
-   "code/datums/behaviours/climbable.dm",
    "code/datums/behaviours/footstep.dm",
    "code/datums/behaviours/omen.dm",
    "code/datums/behaviours/resize_guard.dm",

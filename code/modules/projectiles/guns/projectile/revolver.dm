@@ -239,11 +239,14 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/revolver/deckard, "deckard-{appeara
 	/// Owned rounds of the primary cylinder while the secondary one is being fired.
 	var/list/tertiary_loaded
 
+CAPABILITIES(/obj/item/gun/projectile/revolver/lemat)
+	owns_many(nameof(secondary_loaded))
+
 
 /obj/item/gun/projectile/revolver/lemat/Initialize(mapload)
 	. = ..()
 	for(var/i in 1 to secondary_max_shells)
-		own_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
+		rel_add(src, nameof(secondary_loaded), new secondary_ammo_type(src))
 
 EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap Firing Mode", PROC_REF(lemat_verb_swap_firing_mode), REQ_IN_INVENTORY))
 
@@ -289,7 +292,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/revolver/lemat, INTERACT_VERB("Swap
 	for(var/obj/item/ammo_casing/casing as anything in current)
 		own_add(src, stash_var, casing)
 	for(var/obj/item/ammo_casing/casing as anything in incoming)
-		own_add(src, nameof(loaded), casing)
+		rel_add(src, nameof(loaded), casing)
 
 /// Old Spin cylinder verb override: the LeMat spins whichever cylinder it is firing from.
 /obj/item/gun/projectile/revolver/lemat/revolver_verb_spin_cylinder(mob/user, obj/item/held, datum/interaction/interaction)

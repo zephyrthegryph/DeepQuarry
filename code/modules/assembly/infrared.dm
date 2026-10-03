@@ -13,6 +13,9 @@ MATERIAL_MIX(/obj/item/assembly/infra, list(MAT_STEEL = 1000, MAT_GLASS = 500))
 	var/visible = 0
 	var/list/i_beams = null
 
+CAPABILITIES(/obj/item/assembly/infra)
+	owns_many(nameof(i_beams))
+
 OM_FIELD(/obj/item/assembly/infra, on, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/assembly/infra, PERIODIC_SLOW, list("secured", "on"))
 
@@ -71,7 +74,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly/infra, TYPE_PROC_REF(/atom, appearanc
 		if(!step(I, I.dir)) //Try to take a step in that direction
 			return //Couldn't, oh well, we hit a wall or something. Beam should qdel itself in it's Bump().
 		I.set_density(FALSE)
-		own_add(src, nameof(i_beams), I)
+		rel_add(src, nameof(i_beams), I)
 		I.visible = visible
 
 /// A subtype adding to an ancestor's compact specs uses declare_interactions() (the proven

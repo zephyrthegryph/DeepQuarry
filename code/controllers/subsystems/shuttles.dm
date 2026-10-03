@@ -7,6 +7,9 @@
 /// Temporary countdown radios are retained until arrival or refusal.
 /datum/system/shuttles/var/list/specops_announcers
 
+CAPABILITIES(/datum/system/shuttles)
+	owns_many(nameof(specops_announcers))
+
 SYSTEM_DEF(shuttles)
 	name = "Shuttles"
 	init_stage = INITSTAGE_MAIN
@@ -78,7 +81,7 @@ SYSTEM_DEF(shuttles)
 	return PROCESS_KILL
 
 /datum/system/shuttles/proc/hold_specops_announcer(obj/item/radio/intercom/announcer)
-	return own_add(src, nameof(specops_announcers), announcer)
+	return rel_add(src, nameof(specops_announcers), announcer)
 
 /datum/system/shuttles/proc/release_specops_announcer(obj/item/radio/intercom/announcer)
 	return own_remove(src, nameof(specops_announcers), announcer)

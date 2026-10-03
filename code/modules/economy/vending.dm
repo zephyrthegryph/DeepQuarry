@@ -206,7 +206,7 @@ GLOBAL_LIST_EMPTY(vending_products)
 			product.variant = spec["variant"]
 			product.category = category
 
-			own_add(src, nameof(product_records), product)
+			rel_add(src, nameof(product_records), product)
 			GLOB.vending_products[entry] = 1
 
 	if(LAZYLEN(prices))

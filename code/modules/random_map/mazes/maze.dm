@@ -5,6 +5,9 @@
 	var/list/openlist
 	var/list/closedlist
 
+CAPABILITIES(/datum/random_map/maze)
+	owns_many(nameof(openlist))
+
 /datum/random_map/maze/set_map_size()
 	// Map has to be odd so that there are walls on all sides.
 	if(limit_x%2==0) limit_x++
@@ -20,7 +23,7 @@
 	if(start_y%2!=0) start_y++
 
 	// Create the origin cell to start us off.
-	own_add(src, nameof(openlist), new /datum/maze_cell(start_x,start_y))
+	rel_add(src, nameof(openlist), new /datum/maze_cell(start_x,start_y))
 
 	while(length(openlist))
 		// Grab a maze point to use and remove it from the open list.
@@ -62,4 +65,4 @@
 	LAZYSET(checked_coord_cache, "[tx]-[ty]", 1)
 	map[get_map_cell(tx,ty)] = DOOR_CHAR
 	var/datum/maze_cell/new_cell = new(tx,ty,nx,ny)
-	own_add(src, nameof(openlist), new_cell)
+	rel_add(src, nameof(openlist), new_cell)

@@ -116,13 +116,12 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 	use_power = USE_POWER_OFF
 	idle_power_usage = 0
 
+CAPABILITIES(/obj/machinery/shieldgen)
+	owns_many(nameof(deployed_shields))
+	climb()
+
 DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
-
-/obj/machinery/shieldgen/Initialize(mapload)
-	. = ..()
-	make_climbable()
-
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)
@@ -160,7 +159,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 		if (is_type_in_list(target_tile,GLOB.shieldgen_blockedturfs) && !(locate_within(target_tile, /obj/machinery/shield)))
 			if (malfunction && prob(33) || !malfunction)
 				var/obj/machinery/shield/S = new/obj/machinery/shield(target_tile)
-				own_add(src, nameof(deployed_shields), S) // a destroyed tile leaves the list by itself
+				rel_add(src, nameof(deployed_shields), S) // a destroyed tile leaves the list by itself
 				rel_set(S, nameof(S.our_owner), src)
 				use_power(S.shield_generate_power)
 

@@ -49,11 +49,13 @@ DECLARE_APPEARANCE(/obj/machinery/space_heater, "panel_open", list("1" = list(AP
 // Regulates the air while switched on (any state but SHEATER_OFF).
 DECLARE_PERIODIC_WHILE(/obj/machinery/space_heater, MACHINE_PIPELINE, "state")
 
+CAPABILITIES(/obj/machinery/space_heater)
+	climb()
+
 /obj/machinery/space_heater/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	update_icon()
-	make_climbable()
 
 /obj/machinery/space_heater/RefreshParts(limited = 0)
 	min_temperature = DEFAULT_MIN_TEMP

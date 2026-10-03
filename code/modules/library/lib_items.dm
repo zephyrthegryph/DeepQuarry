@@ -20,13 +20,15 @@
 	density = TRUE
 	opacity = 1
 
+CAPABILITIES(/obj/structure/bookcase)
+	climb()
+
 /obj/structure/bookcase/Initialize(mapload)
 	. = ..()
 	for(var/obj/item/I in contents_of(loc))
 		if(istype(I, /obj/item/book))
 			I.forceMove(src)
 	update_icon()
-	make_climbable()
 
 /// Old attackby.
 /obj/structure/bookcase/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)

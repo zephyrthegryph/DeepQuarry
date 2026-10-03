@@ -15,6 +15,9 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 	var/list/viewing_clients
 	var/list/popup_plane_masters
 
+CAPABILITIES(/atom/movable/screen/map_view_tg)
+	owns_many(nameof(popup_plane_masters))
+
 
 // hides itself from every client still viewing it (held by ckey).
 /atom/movable/screen/map_view_tg/on_destroy(force)
@@ -32,7 +35,7 @@ INITIALIZE_IMMEDIATE(/atom/movable/screen/map_view_tg)
 
 	own_clear(src, nameof(popup_plane_masters), OWN_DELETE)
 	for(var/atom/movable/screen/fresh as anything in get_tgui_plane_masters())
-		own_add(src, nameof(popup_plane_masters), fresh)
+		rel_add(src, nameof(popup_plane_masters), fresh)
 
 	for(var/atom/movable/screen/instance as anything in popup_plane_masters)
 		instance.assigned_map = assigned_map

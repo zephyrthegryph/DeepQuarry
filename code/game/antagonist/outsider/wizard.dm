@@ -48,20 +48,20 @@ GLOBAL_DATUM(wizards, /datum/antagonist/wizard)
 		var/datum/objective/assassinate/kill_objective = new
 		rel_set(kill_objective, nameof(kill_objective.owner), wizard)
 		kill_objective.find_target()
-		own_add(wizard, nameof(wizard.objectives), kill_objective)
+		rel_add(wizard, nameof(wizard.objectives), kill_objective)
 	if(steal)
 		var/datum/objective/steal/steal_objective = new
 		rel_set(steal_objective, nameof(steal_objective.owner), wizard)
 		steal_objective.find_target()
-		own_add(wizard, nameof(wizard.objectives), steal_objective)
+		rel_add(wizard, nameof(wizard.objectives), steal_objective)
 	if(escape)
 		var/datum/objective/survive/survive_objective = new
 		rel_set(survive_objective, nameof(survive_objective.owner), wizard)
-		own_add(wizard, nameof(wizard.objectives), survive_objective)
+		rel_add(wizard, nameof(wizard.objectives), survive_objective)
 	if(hijack)
 		var/datum/objective/hijack/hijack_objective = new
 		rel_set(hijack_objective, nameof(hijack_objective.owner), wizard)
-		own_add(wizard, nameof(wizard.objectives), hijack_objective)
+		rel_add(wizard, nameof(wizard.objectives), hijack_objective)
 	return
 
 /datum/antagonist/wizard/update_antag_mob(datum/mind/wizard)

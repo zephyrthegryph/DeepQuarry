@@ -30,10 +30,12 @@
 		/obj/item/clothing/head/helmet/space
 		)
 
+CAPABILITIES(/obj/machinery/washing_machine)
+	climb()
+
 /obj/machinery/washing_machine/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 
 /obj/machinery/washing_machine/ownership()
 	. = ..()
@@ -100,7 +102,7 @@
 		HH.forceMove(get_turf(src))
 		HH.use(HH.get_amount())
 
-		own_add(src, nameof(washing), WL)
+		rel_add(src, nameof(washing), WL)
 	var/has_mobs = FALSE
 	for(var/mob/living/mobs in washing)
 		has_mobs = TRUE

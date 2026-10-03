@@ -16,9 +16,8 @@
 	throwpass = 1
 	var/item_place = 1 //allows items to be placed on the table, but not on benches.
 
-/obj/structure/casino_table/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/casino_table)
+	climb()
 
 DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_REF(interaction_place)))
 

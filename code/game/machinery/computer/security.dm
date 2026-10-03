@@ -352,7 +352,7 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_new)
 		R.fields["ma_crim_d"]	= "No major crime convictions."
 		R.fields["notes"]		= "No notes."
 		R.fields["notes"]		= "No notes."
-		own_add(GLOB.data_core, nameof(/datum/datacore::security), R)
+		rel_add(GLOB.data_core, nameof(/datum/datacore::security), R)
 		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 		screen = SEC_DATA_RECORD
 		set_temp("Security record created.", "success")

@@ -1,7 +1,7 @@
 /// Adds the item to searchables and to_image (if needed)
 /datum/lootpanel/proc/add_to_index(datum/search_object/index)
 	om_hook(index, /datum/om/event/qdeleting, src, PROC_REF(on_searchable_deleted))
-	own_add(src, nameof(searchables), index)
+	rel_add(src, nameof(searchables), index)
 	if(isnull(index.icon))
 		rel_add(src, nameof(to_image), index)
 

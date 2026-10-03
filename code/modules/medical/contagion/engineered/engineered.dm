@@ -47,10 +47,13 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	var/s_processing = FALSE
 	var/id = ""
 
+CAPABILITIES(/datum/affliction/contagion/engineered)
+	owns_many(nameof(symptoms))
+
 /datum/affliction/contagion/engineered/New(process = TRUE, datum/affliction/contagion/engineered/D)
 	if(istype(D))
 		for(var/datum/viral_trait/S in D.symptoms)
-			own_add(src, nameof(symptoms), new S.type)
+			rel_add(src, nameof(symptoms), new S.type)
 	else
 		D = null
 
@@ -110,7 +113,7 @@ GLOBAL_LIST_INIT(advance_cures, list(
 	var/datum/affliction/contagion/engineered/A = ..()
 	own_clear(A, nameof(A.symptoms), OWN_DELETE)
 	for(var/datum/viral_trait/S as anything in symptoms)
-		own_add(A, nameof(A.symptoms), S.Copy())
+		rel_add(A, nameof(A.symptoms), S.Copy())
 	A.set_virus_modifiers(virus_modifiers & ~(PROCESSING | HAS_TIMER))
 	A.set_spread_flags(spread_flags)
 	A.disease_flags = disease_flags
@@ -416,10 +419,10 @@ GLOBAL_LIST_INIT(advance_cures, list(
 		return
 
 	if(length(symptoms) < (VIRUS_SYMPTOM_LIMIT - 1) + rand(-1, 1))
-		own_add(src, nameof(symptoms), S)
+		rel_add(src, nameof(symptoms), S)
 	else
 		RemoveSymptom(pick(symptoms))
-		own_add(src, nameof(symptoms), S)
+		rel_add(src, nameof(symptoms), S)
 	Refresh()
 
 // Simply removes the symptom.
@@ -534,7 +537,7 @@ ADMIN_VERB(AdminCreateVirus, R_SPAWN|R_EVENT, "Create Advanced Virus", "Create a
 		else if(ispath(symptom))
 			var/datum/viral_trait/S = new symptom
 			if(!D.HasSymptom(S))
-				own_add(D, nameof(/datum/job::symptoms), S)
+				rel_add(D, nameof(/datum/job::symptoms), S)
 				i -= 1
 	while(i > 0)
 

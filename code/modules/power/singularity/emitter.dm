@@ -361,10 +361,12 @@ DECLARE_EMAG(/obj/machinery/power/emitter, PROC_REF(on_emag), null, null)
 	icon_state = "emitter0"
 	var/previous_state = 0
 
+CAPABILITIES(/obj/machinery/power/emitter)
+	climb()
+
 /obj/machinery/power/emitter/Initialize(mapload)
 	. = ..()
 	previous_state = state
-	make_climbable()
 	make_rotatable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 

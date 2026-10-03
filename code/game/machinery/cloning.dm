@@ -517,7 +517,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/clonepod, "pod_{appearance_state}")
 /obj/machinery/clonepod/proc/track_biomass_container(obj/item/reagent_containers/glass/container)
 	if(!container || (container in containers))
 		return
-	own_add(src, nameof(containers), container)
+	rel_add(src, nameof(containers), container)
 
 //Health Tracker Implant
 

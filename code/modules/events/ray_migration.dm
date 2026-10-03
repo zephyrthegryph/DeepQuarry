@@ -5,6 +5,9 @@
 	var/ray_cap	= 10
 	var/list/spawned_ray
 
+CAPABILITIES(/datum/event/ray_migration)
+	owns_many(nameof(spawned_ray))
+
 /datum/event/ray_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -71,7 +74,7 @@
 /datum/event/ray_migration/proc/spawn_one_ray(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/ray(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_ray_destruction))
-	own_add(src, nameof(spawned_ray), M)
+	rel_add(src, nameof(spawned_ray), M)
 	return M
 
 // Counts living ray spawned by this event.

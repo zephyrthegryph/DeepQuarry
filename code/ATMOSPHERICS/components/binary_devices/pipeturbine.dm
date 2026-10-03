@@ -29,6 +29,9 @@ OM_DERIVE_FIELD(/obj/machinery/atmospherics/pipeturbine, unbroken, list("stat"))
 
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/pipeturbine, MACHINE_PIPELINE, list("anchored", "unbroken"))
 
+CAPABILITIES(/obj/machinery/atmospherics/pipeturbine)
+	climb()
+
 /obj/machinery/atmospherics/pipeturbine/Initialize(mapload, newdir)
 	. = ..()
 	atmos_air_set(src, nameof(air_in), new /datum/gas_mixture(200))
@@ -46,7 +49,6 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/atmospherics/pipeturbine, MACHINE_PIPE
 		if(WEST)
 			initialize_directions = NORTH|SOUTH
 
-	make_climbable()
 	make_rotatable()
 
 /obj/machinery/atmospherics/pipeturbine/machine_step()
@@ -231,10 +233,12 @@ OM_DERIVE_FIELD(/obj/machinery/power/turbinemotor, unbroken, list("stat"))
 
 DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/power/turbinemotor, MACHINE_PIPELINE, list("anchored", "unbroken"))
 
+CAPABILITIES(/obj/machinery/power/turbinemotor)
+	climb()
+
 /obj/machinery/power/turbinemotor/Initialize(mapload)
 	. = ..()
 	updateConnection()
-	make_climbable()
 	make_rotatable()
 
 /obj/machinery/power/turbinemotor/proc/updateConnection()

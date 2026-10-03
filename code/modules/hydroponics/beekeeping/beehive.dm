@@ -21,9 +21,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/beehive, MACHINE_PIPELINE, "hive_active")
 /obj/machinery/beehive/proc/hive_active()
 	return bee_count || smoked
 
-/obj/machinery/beehive/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/beehive)
+	climb()
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/beehive, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/beehive/appearance_overlays()

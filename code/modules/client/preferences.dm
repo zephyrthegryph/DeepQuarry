@@ -125,12 +125,13 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 
 CAPABILITIES(/datum/preferences)
 	owns_one(nameof(savefile), /datum/json_savefile)
+	owns_many(nameof(middleware), /datum/preference_middleware)
 
 /datum/preferences/New(client/C)
 	rel_set(src, nameof(client), C)
 
 	for(var/middleware_type in subtypesof(/datum/preference_middleware))
-		own_add(src, nameof(middleware), new middleware_type(src))
+		rel_add(src, nameof(middleware), new middleware_type(src))
 
 	if(istype(C)) // IS_CLIENT_OR_MOCK
 		client_ckey = C.ckey

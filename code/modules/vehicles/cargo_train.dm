@@ -398,12 +398,14 @@ DECLARE_APPEARANCE_PROC(/obj/vehicle/train/engine, TYPE_PROC_REF(/atom, appearan
 
 DECLARE_REAGENTS(/obj/vehicle/train/trolley_tank, CARGOTANKER_VOLUME, null)
 
+CAPABILITIES(/obj/vehicle/train/trolley_tank)
+	climb()
+
 /obj/vehicle/train/trolley_tank/Initialize(mapload)
 	. = ..()
 	update_icon()
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)
-	make_climbable()
 	make_sellable(/datum/sellable/trolley_tank)
 
 /obj/vehicle/train/trolley_tank/insert_cell(obj/item/cell/C, mob/living/carbon/human/H)
@@ -420,9 +422,8 @@ EXTEND_INTERACTIONS(/obj/vehicle/train/trolley_tank, \
 
 /// Old MouseDrop_T: climb, empty a beaker in, or latch another car (the only train drag it allows).
 /obj/vehicle/train/trolley_tank/proc/interaction_trolley_tank_drag(mob/user, atom/movable/C, datum/interaction/interaction)
-	if(C == user)
-		om_emit(src, new /datum/om/event/climb_start(user))
-		return TRUE
+	if(C == user) // climbing is the climb capability's own drag
+		return FALSE
 
 	if(istype(C,/obj/item/reagent_containers/glass))
 		var/obj/item/reagent_containers/glass/G = C

@@ -30,7 +30,7 @@
 	)
 
 /datum/system/radiation/proc/queue_pulse(datum/radiation_pulse_information/pulse_information)
-	own_add(src, nameof(processing), pulse_information)
+	rel_add(src, nameof(processing), pulse_information)
 
 /datum/system/radiation/proc/is_enabled()
 	return enabled

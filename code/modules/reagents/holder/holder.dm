@@ -15,6 +15,9 @@
 	/// A removal happened inside the current batch.
 	var/tmp/batch_changed = FALSE
 
+CAPABILITIES(/datum/reagents)
+	owns_many(nameof(reagent_list))
+
 /datum/reagents/New(max = 100, atom/A = null)
 	..()
 	reagent_list = GLOB.reagents_empty_list // ALLOW(ownership): the shared empty sentinel, never written (own_reagent_lists() first)
@@ -173,7 +176,7 @@
 	if(D)
 		var/datum/reagent/R = new D.type()
 		own_reagent_lists()
-		own_add(src, nameof(reagent_list), R)
+		rel_add(src, nameof(reagent_list), R)
 		// Only update reagent_by_id if no entry exists yet for this id.
 		// Blood incompatibility may create multiple datums with the same id; the first one
 		// keeps the O(1) slot and the extras remain accessible only via reagent_list iteration.

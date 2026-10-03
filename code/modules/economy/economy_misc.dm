@@ -77,7 +77,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 		T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 		//add the account
-		own_add(GLOB.station_account, nameof(/datum/money_account::transaction_log), T)
+		rel_add(GLOB.station_account, nameof(/datum/money_account::transaction_log), T)
 		registry_join(REGISTRY_MONEY_ACCOUNTS, GLOB.station_account)
 
 /proc/create_department_account(department)
@@ -101,7 +101,7 @@ GLOBAL_VAR_INIT(economy_init, 0)
 	T.source_terminal = "Biesel GalaxyNet Terminal #277"
 
 	//add the account
-	own_add(department_account, nameof(department_account.transaction_log), T)
+	rel_add(department_account, nameof(department_account.transaction_log), T)
 	registry_join(REGISTRY_MONEY_ACCOUNTS, department_account)
 
 	GLOB.department_accounts[department] = department_account

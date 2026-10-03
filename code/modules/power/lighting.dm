@@ -1079,7 +1079,7 @@ CAPABILITIES(/obj/item/light)
 
 /datum/prompt/number/light_tune/prepare(datum/act/A)
 	var/datum/act/op/O = A
-	var/obj/item/light/B = light_tuned_bulb(O?.holder)
+	var/obj/item/light/B = light_tuned_bulb_of(O)
 	var/datum/prompt/choice = O?.step_answer("what")
 	if(!B || !choice)
 		return
@@ -1114,11 +1114,15 @@ CAPABILITIES(/obj/item/light)
 
 /datum/prompt/color/light_tune/prepare(datum/act/A)
 	var/datum/act/op/O = A
-	var/obj/item/light/B = light_tuned_bulb(O?.holder)
+	var/obj/item/light/B = light_tuned_bulb_of(O)
 	var/datum/prompt/choice = O?.step_answer("what")
 	if(!B || !choice)
 		return
 	default = (choice.value == LIGHT_TUNE_NIGHT_COLOR) ? B.nightshift_color : B.brightness_color
+
+/// The bulb the op's holder is, or the bulb in the fixture it is.
+/proc/light_tuned_bulb_of(datum/act/op/O)
+	return light_tuned_bulb(O?.holder) // ALLOW(check_grep): the op's holder is the entity it runs on, never an admin holder
 
 /// The bulb a multitool works on: the holder itself, or the bulb in a fixture.
 /proc/light_tuned_bulb(datum/holder)

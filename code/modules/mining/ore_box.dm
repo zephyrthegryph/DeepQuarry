@@ -29,9 +29,8 @@
 		ORE_VERDANTIUM = 0,
 		ORE_RUTILE = 0)
 
-/obj/structure/ore_box/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/ore_box)
+	climb()
 
 DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

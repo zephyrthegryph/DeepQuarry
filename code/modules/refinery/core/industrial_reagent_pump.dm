@@ -9,6 +9,9 @@
 	active_power_usage = 50
 	circuit = /obj/item/circuitboard/industrial_reagent_pump
 
+CAPABILITIES(/obj/machinery/reagent_refinery/pump)
+	climb()
+
 /obj/machinery/reagent_refinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -21,7 +24,6 @@
 	add_hose_connector(/datum/hose_connector/input)
 	add_hose_connector(/datum/hose_connector/output)
 
-	make_climbable()
 
 /obj/machinery/reagent_refinery/pump/refinery_step()
 	if(!anchored)

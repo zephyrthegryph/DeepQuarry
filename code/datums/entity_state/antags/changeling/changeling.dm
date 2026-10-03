@@ -58,6 +58,7 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 
 CAPABILITIES(/datum/changeling)
 	owns_one(nameof(power_panel), /datum/changeling_panel)
+	owns_many(nameof(absorbed_dna), /datum/absorbed_dna)
 
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.
@@ -140,7 +141,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 	changeling_update_languages(comp.absorbed_languages)
 
 	if(!comp.GetDNA(newDNA.name)) // Don't duplicate - I wonder if it's possible for it to still be a different DNA? DNA code could use a rewrite
-		own_add(comp, nameof(comp.absorbed_dna), newDNA)
+		rel_add(comp, nameof(comp.absorbed_dna), newDNA)
 
 //Restores our verbs. It will only restore verbs allowed during lesser (monkey) form if we are not human
 /mob/proc/make_changeling()

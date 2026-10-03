@@ -18,13 +18,16 @@ ADMIN_VERB_AND_CONTEXT_MENU(modify_robot, R_ADMIN|R_FUN|R_VAREDIT|R_EVENT, "Modi
 	var/list/datum/ai_laws/law_list
 	var/tmp/obj/item/robotic_multibelt/multibelt_holder	//Currently selected multibelt.
 
+CAPABILITIES(/datum/eventkit/modify_robot)
+	owns_many(nameof(law_list), /datum/ai_laws)
+
 /datum/eventkit/modify_robot/New()
 	. = ..()
 	log_and_message_admins("has used modify robot and is modifying [target()]")
 	var/list/laws = list()
 	init_subtypes(/datum/ai_laws, laws)
 	for(var/datum/ai_laws/laws_entry as anything in dd_sortedObjectList(laws))
-		own_add(src, nameof(law_list), laws_entry)
+		rel_add(src, nameof(law_list), laws_entry)
 
 /datum/eventkit/modify_robot/tgui_close()
 	rel_clear(src, nameof(target))

@@ -146,6 +146,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/gravity_generator, "{get_status}_{sprite_numb
 	var/list/levels
 	var/list/areas
 
+CAPABILITIES(/obj/machinery/gravity_generator/main)
+	owns_many(nameof(parts), /obj/machinery/gravity_generator/part)
+
 /// POWER_IDLE (0), POWER_UP or POWER_DOWN; non-idle means it is spinning up or down (machine_step()).
 OM_FIELD(/obj/machinery/gravity_generator/main, charging_state, POWER_IDLE, CHANGE_MACHINE_SETTINGS)
 /// Not BROKEN (a broken generator doesn't spin; operable() would also stop the spin-down on power loss).
@@ -190,7 +193,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/gravity_generator/main, MACHINE_PIPELI
 			part.layer = ABOVE_MOB_LAYER
 		part.sprite_number = count
 		rel_set(part, nameof(part.main_part), src)
-		own_add(src, nameof(parts), part)
+		rel_add(src, nameof(parts), part)
 		part.update_icon()
 
 /obj/machinery/gravity_generator/main/proc/connected_parts()

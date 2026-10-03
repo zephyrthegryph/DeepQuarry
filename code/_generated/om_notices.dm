@@ -183,20 +183,6 @@
 	src.params = params
 	src.user = user
 
-/// From /datum/om/event/climb_shake.
-/datum/notice/climb_shake
-	var/user
-
-/datum/notice/climb_shake/fill(user)
-	src.user = user
-
-/// From /datum/om/event/climb_start.
-/datum/notice/climb_start
-	var/user
-
-/datum/notice/climb_start/fill(user)
-	src.user = user
-
 /// From /datum/om/event/closet_closed.
 /datum/notice/closet_closed
 

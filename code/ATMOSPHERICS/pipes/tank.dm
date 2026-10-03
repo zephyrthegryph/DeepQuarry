@@ -20,9 +20,8 @@
 
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/pipe/tank, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "air")))
 
-/obj/machinery/atmospherics/pipe/tank/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/atmospherics/pipe/tank)
+	climb()
 
 /obj/machinery/atmospherics/pipe/tank/init_dir()
 	initialize_directions = dir

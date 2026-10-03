@@ -231,6 +231,9 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 	/// event field -> offer-context field
 	var/list/context_fields
 
+CAPABILITIES(/datum/contract_opportunity_rule)
+	owns_many(nameof(signals))
+
 /datum/contract_opportunity_rule/New()
 	. = ..()
 	own_take_all(src, nameof(signals))
@@ -249,7 +252,7 @@ CAPABILITIES(/datum/contract_opportunity_signal)
 		if(existing.id == signal.id)
 			qdel(signal)
 			return null
-	own_add(src, nameof(signals), signal)
+	rel_add(src, nameof(signals), signal)
 	return signal
 
 /datum/contract_opportunity_rule/proc/forward_context(event_field, context_field = null)

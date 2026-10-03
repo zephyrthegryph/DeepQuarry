@@ -94,10 +94,12 @@ EXTEND_INTERACTIONS(/obj/machinery/organ_printer, \
 DECLARE_APPEARANCE(/obj/machinery/organ_printer, "panel_open", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_panel_open"))))
 DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APPEARANCE_OVERLAYS = list("bioprinter_working"))))
 
+CAPABILITIES(/obj/machinery/organ_printer)
+	climb()
+
 /obj/machinery/organ_printer/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 
 /obj/machinery/organ_printer/examine(mob/user)
 	. = ..()

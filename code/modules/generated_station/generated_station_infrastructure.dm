@@ -108,9 +108,9 @@
 		var/obj/machinery/generated_station_data_relay/relay = new(placement)
 		relay.station_id = station_spec.id
 		relay.department_id = department.id
-		own_add(station_materialization, nameof(station_materialization.infrastructure), relay)
+		rel_add(station_materialization, nameof(station_materialization.infrastructure), relay)
 		var/obj/machinery/camera/camera = new(camera_placement)
 		camera.set_dir(turn(generated_station_adjacent_wall_direction(camera_placement), 180))
 		rel_set(relay, nameof(relay.camera), camera)
-		own_add(station_materialization, nameof(station_materialization.infrastructure), camera)
+		rel_add(station_materialization, nameof(station_materialization.infrastructure), camera)
 	return TRUE

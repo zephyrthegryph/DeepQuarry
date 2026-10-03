@@ -30,7 +30,7 @@
 			var/shreddamage = H.species.can_shred(user, FALSE, 11)
 			if(shreddamage)
 				attack_generic(user, shreddamage, "attacks")
-	om_emit(src, new /datum/om/event/climb_shake(user))
+	climb_shake_off(src, user)
 	return ..()
 
 // Default destruction for integrity-using structures: drop any parts (via Destroy) and delete.

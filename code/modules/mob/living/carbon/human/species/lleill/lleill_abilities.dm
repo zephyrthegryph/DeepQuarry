@@ -213,7 +213,7 @@
 	var/spawnloc = get_turf(src)
 	var/obj/structure/glamour_ring/R = new(spawnloc)
 	R.connected_mob = src
-	own_add(src, nameof(teleporters), R)
+	rel_add(src, nameof(teleporters), R)
 	proto_private(src, nameof(species)) // per-mob change: never mutate the shared species
 	species.lleill_energy -= energy_cost_spawn
 	species.update_lleill_hud(src)

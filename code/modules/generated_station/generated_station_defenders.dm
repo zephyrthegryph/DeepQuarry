@@ -71,6 +71,9 @@
 	var/casualties = 0
 	var/suppress_sensor_events = FALSE
 
+CAPABILITIES(/datum/generated_station_defense_runtime)
+	owns_many(nameof(agents))
+
 /// Area entry is only an event trigger. A report requires a real powered camera
 /// relay in this department to confirm line of sight.
 /area/generated_station/Entered(atom/movable/arrived, atom/old_loc)
@@ -143,7 +146,7 @@
 	defender.ai_brain?.set_hostile(FALSE)
 	defender.ai_brain?.go_sleep()
 	var/datum/generated_station_defender_agent/agent = new(defender, src, department_id, squad.id, spawn_turf)
-	own_add(src, nameof(agents), agent)
+	rel_add(src, nameof(agents), agent)
 	squad.add_member(REF(defender))
 	director().register_defender(defender)
 	return agent

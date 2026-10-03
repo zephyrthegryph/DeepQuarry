@@ -16,6 +16,9 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 
+CAPABILITIES(/obj/item/autopsy_scanner)
+	owns_many(nameof(chemtraces))
+
 /datum/autopsy_data_scanner
 	var/weapon = null // this is the DEFINITE weapon type that was used
 	var/list/organs_scanned	// this maps a number of scanned organs to
@@ -63,7 +66,7 @@
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
-			own_add(src, nameof(chemtraces), V)
+			rel_add(src, nameof(chemtraces), V)
 
 /// Requirement: only a conscious human can print the data.
 /obj/item/autopsy_scanner/proc/can_print_data(mob/user, atom/target, obj/item/held)
@@ -162,7 +165,7 @@
 	if(target_name != M.name)
 		target_name = M.name
 		own_set(src, nameof(wdata), list())
-		own_set(src, nameof(chemtraces), list())
+		rel_set(src, nameof(chemtraces), list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 

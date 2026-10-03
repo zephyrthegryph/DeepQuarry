@@ -625,7 +625,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/port_gen/pacman/super/potato, TYPE_
 	// Rebuild from mapper's parts
 	for(var/i = 1, i <= parts_found.len, i++)
 		var/obj/item/W = parts_found[i]
-		own_add(src, nameof(component_parts), W)
+		rel_add(src, nameof(component_parts), W)
 		W.move_into(src, CONTAINER_SLOT_INTERNALS)
 	RefreshParts()
 

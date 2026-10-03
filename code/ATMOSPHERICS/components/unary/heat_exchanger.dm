@@ -17,9 +17,8 @@
 	var/update_cycle
 	gas_dependency_mask = GAS_DEPENDENCY_ALL
 
-/obj/machinery/atmospherics/unary/heat_exchanger/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
+	climb()
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
 

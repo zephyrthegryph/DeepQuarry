@@ -70,7 +70,7 @@ CAPABILITIES(/datum/event/disease_outbreak)
 	var/list/payload_symptoms = A.GenerateSymptomsBySeverity(max_severity - 1, max_severity, 2) //Choose "Payload" symptoms
 	own_clear(A, nameof(A.symptoms), OWN_DELETE)
 	for(var/datum/viral_trait/payload_symptom as anything in payload_symptoms)
-		own_add(A, nameof(A.symptoms), payload_symptom)
+		rel_add(A, nameof(A.symptoms), payload_symptom)
 	A.AssignProperties(A.GenerateProperties())
 	var/list/symptoms_to_try = transmissable_symptoms.Copy()
 	while(length(symptoms_to_try))

@@ -15,7 +15,7 @@
 	C.icon = H.ui_style
 	C.color = H.ui_color
 	C.alpha = H.ui_alpha
-	own_add(H, nameof(H.other_important), C)
+	rel_add(H, nameof(H.other_important), C)
 	CL.screen += C
 	om_hook(C, /datum/om/event/click, src, PROC_REF(on_button_click))
 

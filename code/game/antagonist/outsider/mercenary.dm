@@ -27,7 +27,7 @@ GLOBAL_DATUM(mercs, /datum/antagonist/mercenary)
 	if(!..())
 		return 0
 	own_clear(src, nameof(global_objectives), OWN_DELETE)
-	own_add(src, nameof(global_objectives), new /datum/objective/nuclear)
+	rel_add(src, nameof(global_objectives), new /datum/objective/nuclear)
 	return 1
 
 /datum/antagonist/mercenary/equip(mob/living/carbon/human/player)

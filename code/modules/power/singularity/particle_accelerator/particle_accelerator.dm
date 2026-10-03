@@ -71,9 +71,11 @@ So, hopefully this is helpful if any more icons are to be added/changed/wonderin
 	var/strength = null
 	var/desc_holder = null
 
+CAPABILITIES(/obj/structure/particle_accelerator)
+	climb()
+
 /obj/structure/particle_accelerator/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	make_rotatable()
 
 // its control box rescans its parts.
@@ -219,9 +221,11 @@ APPEARANCE_TEMPLATE(/obj/structure/particle_accelerator, "{reference}{appearance
 	var/strength = 0
 	var/desc_holder = null
 
+CAPABILITIES(/obj/machinery/particle_accelerator)
+	climb()
+
 /obj/machinery/particle_accelerator/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	make_rotatable()
 
 

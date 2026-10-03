@@ -300,7 +300,7 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/utility/rename, INTERACT_USE(null, P
 		generic_error(user, R, type)
 		return FALSE
 
-	own_add(R.module, nameof(/datum/generated_station_materialization::modules), new /obj/item/tank/jetpack/carbondioxide(R.module))
+	rel_add(R.module, nameof(/datum/generated_station_materialization::modules), new /obj/item/tank/jetpack/carbondioxide(R.module))
 	return TRUE
 
 /obj/item/borg/upgrade/advanced/advhealth

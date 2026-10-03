@@ -19,11 +19,13 @@
 
 	var/list/scrubbing_gas = list(GAS_PHORON, GAS_CO2, GAS_N2O, GAS_VOLATILE_FUEL, GAS_CH4) // ALLOW(instance_list): d: replaced per instance at runtime (4 assignments)
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber)
+	climb()
+
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
 		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
-	make_climbable()
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))
 /// An EMP may toggle a working scrubber.
@@ -184,6 +186,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/scrubber/hug
 	if(.)
 		set_use_power(1 + on)
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge)
+	without(CAP_CLIMB) // not climbable
+
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/Initialize(mapload)
 	. = ..(mapload, TRUE)
 
@@ -192,8 +197,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/powered/scrubber/hug
 
 	name = "[name] (ID [id])"
 
-	// Not climbable!
-	unmake_climbable()
 
 /obj/machinery/portable_atmospherics/powered/scrubber/huge/declare_interactions(list/into)
 	into += list(

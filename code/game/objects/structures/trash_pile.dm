@@ -12,6 +12,9 @@
 	var/mob/living/hider		// A simple animal that might be hiding in the pile
 	var/obj/structure/mob_spawner/mouse_nest/mouse_nest = null
 
+CAPABILITIES(/obj/structure/trash_pile)
+	climb()
+
 /obj/structure/trash_pile/Initialize(mapload)
 	. = ..()
 	icon_state = pick(
@@ -26,7 +29,6 @@
 		"boxfort",
 		"trashbag",
 		"brokecomp")
-	make_climbable()
 
 DECLARE_DEFAULT_CHILD(/obj/structure/trash_pile, "mouse_nest", /obj/structure/mob_spawner/mouse_nest)
 

@@ -7,6 +7,9 @@
 	var/metroids = FALSE
 	var/list/alive_metroids
 
+CAPABILITIES(/datum/event/horde_infestation)
+	owns_many(nameof(alive_metroids))
+
 /datum/event/horde_infestation/setup()
 	announceWhen = rand(announceWhen, announceWhen + 60)
 
@@ -72,7 +75,7 @@
 				/mob/living/simple_mob/metroid/juvenile/zeta = 2,
 				/mob/living/simple_mob/metroid/juvenile/omega = 1,
 				))
-			own_add(src, nameof(alive_metroids), new spawn_metroids(get_turf(vent)))
+			rel_add(src, nameof(alive_metroids), new spawn_metroids(get_turf(vent)))
 			rel_remove(src, nameof(vents), vent)
 			spawncount--
 		rel_clear(src, nameof(vents))

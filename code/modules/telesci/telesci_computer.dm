@@ -52,7 +52,7 @@ CAPABILITIES(/obj/machinery/computer/telescience)
 	. = ..()
 	recalibrate()
 	for(var/i = 1; i <= starting_crystals; i++)
-		own_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
+		rel_add(src, nameof(crystals), new /obj/item/bluespace_crystal/artificial(src)) // starting crystals
 
 /obj/machinery/computer/telescience/declare_interactions(list/into)
 	into += list(

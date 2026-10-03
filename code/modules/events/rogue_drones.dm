@@ -2,6 +2,9 @@
 	endWhen = 1000
 	var/list/drones_list
 
+CAPABILITIES(/datum/event/rogue_drone)
+	owns_many(nameof(drones_list))
+
 /datum/event/rogue_drone/start()
 	//spawn them at the same place as carp
 	var/list/possible_spawns = list()
@@ -19,7 +22,7 @@
 		return
 	for(var/i=0, i<num, i++)
 		var/mob/living/simple_mob/mechanical/combat_drone/event/D = new(get_turf(pick(possible_spawns)))
-		own_add(src, nameof(drones_list), D)
+		rel_add(src, nameof(drones_list), D)
 
 /datum/event/rogue_drone/announce()
 	var/msg

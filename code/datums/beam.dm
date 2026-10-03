@@ -16,6 +16,9 @@
 	var/static_beam = 0
 	var/beam_type = /obj/effect/ebeam //must be subtype
 
+CAPABILITIES(/datum/beam)
+	owns_many(nameof(elements))
+
 /// Set by Start(): beam_tick() runs every `sleep_time` while set (DECLARE_REPEAT).
 OM_FIELD_TYPED(/datum/beam, tmp, beam_running, FALSE, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
@@ -96,7 +99,7 @@ DECLARE_REPEAT(/datum/beam, "sleep_time", beam_tick, "beam_running")
 			X.color = beam_color
 
 		rel_set(X, nameof(X.owner), src)
-		own_add(src, nameof(elements), X)
+		rel_add(src, nameof(elements), X)
 
 		//Assign icon, for main segments it's base_icon, for the end, it's icon+icon_state
 		//cropped by a transparent box of length-N pixel size

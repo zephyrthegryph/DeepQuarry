@@ -54,6 +54,9 @@ CAPABILITIES(/atom)
 	var/static/list/volatile_reagents = list(PHORON_PATH, HYDROPHORON_PATH, THERMITE_PATH)
 	var/static/list/toxic_reagents = list(TOXIN_PATH)
 
+CAPABILITIES(/datum/artifact_master)
+	owns_many(nameof(my_effects))
+
 /// The anomalous atom this state belongs to (a relation view); the master runs its effects while it has one.
 OM_FIELD_VIEW(/datum/artifact_master, tmp/atom, holder, CHANGE_DATUM_A)
 DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
@@ -124,7 +127,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		return
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
-		own_add(src, nameof(my_effects), my_effect)
+		rel_add(src, nameof(my_effects), my_effect)
 		if(!istype(holder(), my_effect.req_type))
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
 			own_remove(src, nameof(my_effects), my_effect)
@@ -146,7 +149,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(LAZYLEN(make_effects))
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
-			own_add(src, nameof(my_effects), new_effect)
+			rel_add(src, nameof(my_effects), new_effect)
 			if(!istype(holder(), new_effect.req_type))
 				own_remove(src, nameof(my_effects), new_effect)
 
@@ -186,7 +189,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
-			own_add(src, nameof(my_effects), AE)
+			rel_add(src, nameof(my_effects), AE)
 			if(istype(holder(), AE.req_type))
 				effect_generation_chance -= 30
 			else
@@ -198,7 +201,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		effect_generation_chance /= 2
 
 		if(prob(effect_generation_chance))
-			own_add(src, nameof(my_effects), new chosen_path(src))
+			rel_add(src, nameof(my_effects), new chosen_path(src))
 
 		effect_generation_chance = round(effect_generation_chance)
 
@@ -482,4 +485,3 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 /// Accessor for the holder var.
 /datum/artifact_master/proc/holder() as /atom
 	return holder
-

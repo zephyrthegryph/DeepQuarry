@@ -452,7 +452,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 
 		for(var/new_dest in destinations)
 			var/datum/shuttle_destination/D = new new_dest(WM)
-			own_add(WM, nameof(WM.destinations), D)
+			rel_add(WM, nameof(WM.destinations), D)
 
 			for(var/type_to_link in D.routes_to_make)
 				var/travel_delay = LAZYACCESS(D.routes_to_make, type_to_link)

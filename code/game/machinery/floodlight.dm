@@ -16,9 +16,11 @@
 DECLARE_DEFAULT_CHILD(/obj/machinery/floodlight, "cell", /obj/item/cell)
 DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
+CAPABILITIES(/obj/machinery/floodlight)
+	climb()
+
 /obj/machinery/floodlight/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	make_rotatable()
 
 /obj/machinery/floodlight/proc/appearance_battery()

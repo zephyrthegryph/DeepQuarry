@@ -26,4 +26,4 @@
 			else
 				P.card_icon = "[colour]col"
 			P.back_icon = "card_back"
-			own_add(src, nameof(cards), P)
+			rel_add(src, nameof(cards), P)

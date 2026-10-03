@@ -74,6 +74,8 @@
 
 CAPABILITIES(/datum/body)
 	owns_one(nameof(physiology), /datum/physiology)
+	owns_many(nameof(afflictions))
+	owns_many(nameof(supports))
 
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
@@ -100,7 +102,7 @@ CAPABILITIES(/datum/body)
 		S.factor_id = factor_id
 		rel_set(S, nameof(S.source), source)
 		S.source_name = "[source]"
-		own_add(src, nameof(supports), S)
+		rel_add(src, nameof(supports), S)
 	var/changed = fresh || S.floor != floor || S.multiplier != multiplier
 	S.floor = floor
 	S.multiplier = multiplier

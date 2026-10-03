@@ -275,7 +275,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	var/atom/target = A.target
 	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food))
 		return FALSE
-	for(var/datum/reagent/R as anything in target.reagents.reagent_list) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	for(var/datum/reagent/R as anything in target.reagents.reagent_list)
 		if(istype(R, /datum/reagent/nutriment/coating))
 			return TRUE
 	return FALSE

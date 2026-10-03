@@ -37,6 +37,9 @@ CAPABILITIES(/datum/generated_room_placement)
 	var/list/occupied
 	var/list/issues
 
+CAPABILITIES(/datum/generated_room_solution)
+	owns_many(nameof(placements))
+
 /datum/generated_room_solution/New()
 	..()
 	own_take_all(src, nameof(placements))
@@ -180,6 +183,14 @@ CAPABILITIES(/datum/generated_station_materialization)
 	owns_one(nameof(entry), /obj/effect/landmark/generated_station_entry)
 	owns_one(nameof(service_validation), /datum/generated_station_validation_result)
 	owns_one(nameof(tile_plan), /datum/generated_station_tile_plan)
+	owns_many(nameof(control_landmarks))
+	owns_many(nameof(doors))
+	owns_many(nameof(infrastructure))
+	owns_many(nameof(modules))
+	owns_many(nameof(owned_furnishing_atoms))
+	owns_many(nameof(room_solutions))
+	owns_many(nameof(service_endpoints))
+	owns_many(nameof(service_routes))
 
 /datum/generated_station_materialization/New()
 	..()
@@ -201,7 +212,7 @@ CAPABILITIES(/datum/generated_station_materialization)
 /datum/generated_station_materialization/proc/register_owned_furnishing_atom(atom/movable/furnishing)
 	if(!furnishing || (furnishing in owned_furnishing_atoms))
 		return
-	own_add(src, nameof(owned_furnishing_atoms), furnishing)
+	rel_add(src, nameof(owned_furnishing_atoms), furnishing)
 	for(var/atom/movable/contained in furnishing)
 		register_owned_furnishing_atom(contained)
 
@@ -581,7 +592,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				configure_department_airlock(airlock, department_for_node(node_by_id(intent.owner_id)))
 			else if(intent.access_id)
 				configure_airlock_access(airlock, intent.access_id)
-			own_add(result, nameof(result.doors), airlock)
+			rel_add(result, nameof(result.doors), airlock)
 			result.door_count++
 		if(i < length(tiles) && generation_checkpoint("Installing planned doors", 45))
 			return i + 1
@@ -844,7 +855,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			ChangeArea(door_turf, A)
 			var/obj/machinery/door/airlock/airlock = new(door_turf)
 			airlock.set_dir(direction)
-			own_add(result, nameof(result.doors), airlock)
+			rel_add(result, nameof(result.doors), airlock)
 			result.door_count++
 			return TRUE
 	return FALSE
@@ -898,7 +909,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			module.footprint_y1 = module.y1
 			module.footprint_x2 = module.x2
 			module.footprint_y2 = module.y2
-			own_add(result, nameof(result.modules), module)
+			rel_add(result, nameof(result.modules), module)
 	return TRUE
 
 /// Gives every planned room an independent area and therefore its own APC,
@@ -958,7 +969,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				var/list/parts = splittext(key, ",")
 				solution.reserve_circulation(text2num(parts[1]), text2num(parts[2]))
 			solutions_by_native_id["[room.rust_room_id]"] = solution
-			own_add(result, nameof(result.room_solutions), solution)
+			rel_add(result, nameof(result.room_solutions), solution)
 	return synthesize_fixtures(1)
 
 /// The Rust fixtures, one at a time from `cursor`: the next cursor, null when done, FALSE on a
@@ -1004,7 +1015,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			placement.x = fixture.x
 			placement.y = fixture.y
 			placement.dir = fixture.direction
-			own_add(solution, nameof(solution.placements), placement)
+			rel_add(solution, nameof(solution.placements), placement)
 	synthesis_rooms = null
 	synthesis_solutions = null
 	return null
@@ -1101,7 +1112,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 			core.station_id = spec().id
 			core.department_node_id = node.id
 			core.module_role = control_module.role
-			own_add(result, nameof(result.control_landmarks), core)
+			rel_add(result, nameof(result.control_landmarks), core)
 
 /// Transit cannot overwrite a department reservation; department frontages are opened later as doors.
 /datum/generated_station_materializer/proc/claim_transit_tile(local_x, local_y, floor_type)
@@ -1378,7 +1389,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	var/obj/machinery/door/airlock/airlock = new(T)
 	airlock.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 	configure_department_airlock(airlock, department)
-	own_add(result, nameof(result.doors), airlock)
+	rel_add(result, nameof(result.doors), airlock)
 	result.door_count++
 
 /// Applies the generated station's department access policy to an entrance.
@@ -1529,8 +1540,8 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/obj/machinery/door/airlock/generated_station_exterior/exterior = new(outer)
 		exterior.set_dir(outward in list(EAST, WEST) ? EAST : NORTH)
 		exterior.req_access = list(ACCESS_MAINT_TUNNELS)
-		own_add(result, nameof(result.doors), inner)
-		own_add(result, nameof(result.doors), exterior)
+		rel_add(result, nameof(result.doors), inner)
+		rel_add(result, nameof(result.doors), exterior)
 		result.door_count += 2
 
 /datum/generated_station_materializer/proc/place_entry()

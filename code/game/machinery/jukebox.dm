@@ -30,6 +30,9 @@
 
 DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing")
 
+CAPABILITIES(/obj/machinery/media/jukebox)
+	climb()
+
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -37,7 +40,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
-	make_climbable()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks
@@ -346,6 +348,9 @@ DECLARE_EMAG(/obj/machinery/media/jukebox, PROC_REF(on_emag), null, null)
 
 	var/list/custom_tracks
 
+CAPABILITIES(/obj/machinery/media/jukebox/ghost)
+	owns_many(nameof(custom_tracks))
+
 // Just junk to make it sneaky - I wish a lot more stuff was on /obj/machinery/media instead of /jukebox so I could use that.
 /obj/machinery/media/jukebox/ghost/is_incorporeal()
 	return TRUE
@@ -429,7 +434,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	var/obj/machinery/media/jukebox/ghost/jukebox = target
 	// So they're obvious and grouped
 	var/genre = "! Admin Loaded !"
-	own_add(jukebox, nameof(jukebox.custom_tracks), new /datum/track(url, title, duration, ask.text, genre))
+	rel_add(jukebox, nameof(jukebox.custom_tracks), new /datum/track(url, title, duration, ask.text, genre))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_remove(mob/user)
 	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))

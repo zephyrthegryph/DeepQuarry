@@ -232,14 +232,14 @@
 		processed_turfs.Add(archeo_turf)
 		if(isnull(archeo_turf.finds))
 			if(prob(50))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 190)))
 			else if(prob(75))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 90)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(110, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 90)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(110, 190)))
 			else
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 50)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(60, 140)))
-				own_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(150, 190)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(10, 50)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(60, 140)))
+				rel_add(archeo_turf, nameof(archeo_turf.finds), new /datum/find(digsite, rand(150, 190)))
 
 			//sometimes a find will be close enough to the surface to show
 			var/datum/find/F = archeo_turf.finds[1]

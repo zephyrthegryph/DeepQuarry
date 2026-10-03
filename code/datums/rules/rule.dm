@@ -73,6 +73,7 @@
 
 CAPABILITIES(/datum/rule)
 	owns_one(nameof(predicate), /datum/predicate)
+	owns_many(nameof(triggers))
 
 /datum/rule/proc/compile()
 	errors = list()
@@ -103,7 +104,7 @@ CAPABILITIES(/datum/rule)
 		compiler.visit(predicate.root)
 		// The rule takes the triggers the (transient) compiler built.
 		for(var/datum/rule_trigger/trigger as anything in compiler.triggers?.Copy())
-			own_add(src, nameof(triggers), own_take_member(compiler, nameof(compiler.triggers), trigger))
+			rel_add(src, nameof(triggers), own_take_member(compiler, nameof(compiler.triggers), trigger))
 		errors += compiler.errors
 		if(!length(triggers))
 			errors += "has no trigger: no clause reads a channel-backed or DM-owned property"
@@ -184,6 +185,9 @@ CAPABILITIES(/datum/rule)
 	var/list/triggers = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
 	var/list/errors = list() // ALLOW(instance_list): per-rule compiler output: filled while the rule compiles and read for the rule's whole life
 
+CAPABILITIES(/datum/rule_compiler)
+	owns_many(nameof(triggers))
+
 /datum/rule_compiler/New(datum/rule/rule)
 	..()
 	src.rule_static = rule
@@ -232,7 +236,7 @@ CAPABILITIES(/datum/rule)
 			rel_set(trigger, nameof(trigger.provider), provider)
 			trigger.lo = band.lo
 			trigger.hi = band.hi
-			own_add(src, nameof(triggers), trigger)
+			rel_add(src, nameof(triggers), trigger)
 		else if(dm_key(band.property))
 			add_key(band.property)
 		return
@@ -249,7 +253,7 @@ CAPABILITIES(/datum/rule)
 			rel_set(trigger, nameof(trigger.provider), a)
 			trigger.property_b = rel.property_b
 			rel_set(trigger, nameof(trigger.provider_b), b)
-			own_add(src, nameof(triggers), trigger)
+			rel_add(src, nameof(triggers), trigger)
 			return
 		if(b || dm_key(rel.property_b))
 			// Dynamic on the right: flip it so the dynamic side is on the left.
@@ -287,7 +291,7 @@ CAPABILITIES(/datum/rule)
 		error("threshold [property] against [value_property]: the level must be a static property")
 	if(provider && (op == PRED_CMP_EQ || op == PRED_CMP_NE))
 		error("[property] compared with == or !=; a watch needs a threshold or a band")
-	own_add(src, nameof(triggers), trigger)
+	rel_add(src, nameof(triggers), trigger)
 
 /datum/rule_compiler/proc/add_key(property)
 	var/key_kind = dm_key(property)
@@ -300,7 +304,7 @@ CAPABILITIES(/datum/rule)
 	trigger.kind = RULE_TRIGGER_KEY
 	trigger.property = property
 	trigger.key_kind = key_kind
-	own_add(src, nameof(triggers), trigger)
+	rel_add(src, nameof(triggers), trigger)
 
 /// a op b  <=>  b (mirror op) a.
 /proc/dq_rule_mirror_cmp(op)

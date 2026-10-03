@@ -72,6 +72,7 @@ CAPABILITIES(/datum/mind)
 	owns_one(nameof(identity), /datum/character_identity)
 	owns_one(nameof(my_religion), /datum/religion)
 	owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel)
+	owns_many(nameof(objectives), /datum/objective)
 
 /datum/mind/New(key)
 	src.key = key
@@ -325,7 +326,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	// An edit replaces the old objective (deleted) with the new one at the end of the list.
 	if (objective)
 		own_remove(src, nameof(objectives), objective)
-	own_add(src, nameof(objectives), new_objective)
+	rel_add(src, nameof(objectives), new_objective)
 
 /datum/mind/proc/telecrystals_set(datum/om/prompt/number/ask)
 	tcrystals = ask.number
@@ -521,7 +522,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 /// Adopts `O` as one of this mind's objectives and points its owner view back here.
 /datum/mind/proc/add_objective(datum/objective/O)
 	rel_set(O, nameof(O.owner), src)
-	return own_add(src, nameof(objectives), O)
+	return rel_add(src, nameof(objectives), O)
 
 /// Every objective this mind pursues: its own, then the antagonist-wide ones it shares.
 /datum/mind/proc/all_objectives()

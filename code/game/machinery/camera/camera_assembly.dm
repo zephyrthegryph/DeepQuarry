@@ -22,6 +22,9 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 				4 = Screwdriver panel closed and is fully built (you cannot attach upgrades)
 	*/
 
+CAPABILITIES(/obj/item/camera_assembly)
+	owns_many(nameof(upgrades))
+
 
 /// Old attackby.
 /obj/item/camera_assembly/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)

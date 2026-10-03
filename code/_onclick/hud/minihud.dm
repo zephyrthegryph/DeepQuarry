@@ -3,6 +3,9 @@
 	/// Our screen elements (owned)
 	var/list/screenobjs
 
+CAPABILITIES(/datum/mini_hud)
+	owns_many(nameof(screenobjs))
+
 /// Subtypes that update every second set this: periodic_step() runs while it is (DECLARE_PERIODIC_WHILE).
 OM_FIELD(/datum/mini_hud, needs_processing, FALSE, CHANGE_DATUM_A)
 DECLARE_PERIODIC_WHILE(/datum/mini_hud, PERIODIC_SECOND, "needs_processing")

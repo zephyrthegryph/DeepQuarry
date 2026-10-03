@@ -76,6 +76,7 @@ CAPABILITIES(/obj/item/reagent_containers/syringe)
 	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"),
 		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
 		then(PROC_REF(stabbed)))
+	owns_many(nameof(viruses))
 
 MSG_DEF_SELF(syringe/too_big, "This syringe is too big to stab someone with it.")
 MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
@@ -125,14 +126,17 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	var/datum/syringe_contamination/C = new
 	C.hash = hash
 	for(var/datum/affliction/contagion/D as anything in contagions)
-		own_add(C, nameof(C.contagions), D)
-	own_add(src, nameof(viruses), C)
+		rel_add(C, nameof(C.contagions), D)
+	rel_add(src, nameof(viruses), C)
 
 /// The contagion copies a syringe carries from one target (keyed by that target's hash).
 /datum/syringe_contamination
 	var/hash
 	/// Owned contagion copies.
 	var/list/contagions
+
+CAPABILITIES(/datum/syringe_contamination)
+	owns_many(nameof(contagions))
 
 /// Units a harm-intent stab forces in out of `volume`: 5-10 short of the barrel, never below 0.
 /obj/item/reagent_containers/syringe/proc/syringestab_amount(volume)

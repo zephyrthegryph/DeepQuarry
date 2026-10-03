@@ -34,50 +34,50 @@ TOPIC_ACTION(/datum/antagonist/traitor, "spawn_uplink", PROC_REF(topic_spawn_upl
 		var/datum/objective/assassinate/kill_objective = new
 		rel_set(kill_objective, nameof(kill_objective.owner), traitor)
 		kill_objective.find_target()
-		own_add(traitor, nameof(traitor.objectives), kill_objective)
+		rel_add(traitor, nameof(traitor.objectives), kill_objective)
 
 		var/datum/objective/survive/survive_objective = new
 		rel_set(survive_objective, nameof(survive_objective.owner), traitor)
-		own_add(traitor, nameof(traitor.objectives), survive_objective)
+		rel_add(traitor, nameof(traitor.objectives), survive_objective)
 
 		if(prob(10))
 			var/datum/objective/block/block_objective = new
 			rel_set(block_objective, nameof(block_objective.owner), traitor)
-			own_add(traitor, nameof(traitor.objectives), block_objective)
+			rel_add(traitor, nameof(traitor.objectives), block_objective)
 	else
 		switch(rand(1,100))
 			if(1 to 33)
 				var/datum/objective/assassinate/kill_objective = new
 				rel_set(kill_objective, nameof(kill_objective.owner), traitor)
 				kill_objective.find_target()
-				own_add(traitor, nameof(traitor.objectives), kill_objective)
+				rel_add(traitor, nameof(traitor.objectives), kill_objective)
 			if(34 to 50)
 				var/datum/objective/brig/brig_objective = new
 				rel_set(brig_objective, nameof(brig_objective.owner), traitor)
 				brig_objective.find_target()
-				own_add(traitor, nameof(traitor.objectives), brig_objective)
+				rel_add(traitor, nameof(traitor.objectives), brig_objective)
 			if(51 to 66)
 				var/datum/objective/harm/harm_objective = new
 				rel_set(harm_objective, nameof(harm_objective.owner), traitor)
 				harm_objective.find_target()
-				own_add(traitor, nameof(traitor.objectives), harm_objective)
+				rel_add(traitor, nameof(traitor.objectives), harm_objective)
 			else
 				var/datum/objective/steal/steal_objective = new
 				rel_set(steal_objective, nameof(steal_objective.owner), traitor)
 				steal_objective.find_target()
-				own_add(traitor, nameof(traitor.objectives), steal_objective)
+				rel_add(traitor, nameof(traitor.objectives), steal_objective)
 		switch(rand(1,100))
 			if(1 to 100)
 				if (!(locate_in_list(traitor.objectives, /datum/objective/escape)))
 					var/datum/objective/escape/escape_objective = new
 					rel_set(escape_objective, nameof(escape_objective.owner), traitor)
-					own_add(traitor, nameof(traitor.objectives), escape_objective)
+					rel_add(traitor, nameof(traitor.objectives), escape_objective)
 
 			else
 				if (!(locate_in_list(traitor.objectives, /datum/objective/hijack)))
 					var/datum/objective/hijack/hijack_objective = new
 					rel_set(hijack_objective, nameof(hijack_objective.owner), traitor)
-					own_add(traitor, nameof(traitor.objectives), hijack_objective)
+					rel_add(traitor, nameof(traitor.objectives), hijack_objective)
 	return
 
 /datum/antagonist/traitor/equip(mob/living/carbon/human/traitor_mob)

@@ -17,7 +17,7 @@
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)
 	if(H && ishuman(H))
-		own_add(H, nameof(H.genetic_side_effects), src)
+		rel_add(H, nameof(H.genetic_side_effects), src)
 		rel_set(src, nameof(host), H)
 	// start the side effect, this should give some cue as to what's happening,
 	// such as gasping. These cues need to be unique among side-effects.

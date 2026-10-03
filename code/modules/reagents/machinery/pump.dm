@@ -23,6 +23,9 @@ DECLARE_REAGENTS(/obj/machinery/pump, 200, null)
 /// Pumps every machine frame while on (set_pump_on()).
 DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 
+CAPABILITIES(/obj/machinery/pump)
+	climb()
+
 /obj/machinery/pump/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -33,7 +36,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 	RefreshParts()
 	update_icon()
 
-	make_climbable()
 
 
 /obj/machinery/pump/RefreshParts()

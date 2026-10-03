@@ -11,6 +11,9 @@
 
 	EXPIRY_DECLARE(last_world_time)
 
+CAPABILITIES(/datum/event_container)
+	owns_many(nameof(event_pool))
+
 /// The random-event clock: every 2 s it advances (or, paused, pushes back) the next event.
 /datum/event_container/periodic_step()
 	if(!GLOB.round_start_time)

@@ -85,6 +85,9 @@ CAPABILITIES(/datum/rig_vision)
 
 	var/vision_index
 
+CAPABILITIES(/obj/item/rig_module/vision)
+	owns_many(nameof(vision_modes))
+
 /obj/item/rig_module/vision/multi
 
 	name = "hardsuit optical package"
@@ -251,7 +254,7 @@ CAPABILITIES(/datum/rig_vision)
 	var/list/mode_types = vision_modes.Copy()
 	own_clear(src, nameof(vision_modes)) // the type list holds no children yet: this only empties it
 	for(var/vision_mode in mode_types)
-		var/datum/rig_vision/vision_datum = own_add(src, nameof(vision_modes), new vision_mode)
+		var/datum/rig_vision/vision_datum = rel_add(src, nameof(vision_modes), new vision_mode)
 		if(!vision)
 			rel_set(src, nameof(vision), vision_datum)
 

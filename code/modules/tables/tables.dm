@@ -75,6 +75,7 @@ MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some dama
 
 CAPABILITIES(/obj/structure/table)
 	table_frame()
+	climb(landing = PROC_REF(flipped_landing))
 	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle))))
 	extend("construction.build:table_reinforced", priority(above("place_dragged")))
 	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(req(PROC_REF(is_damaged))),
@@ -287,8 +288,6 @@ CAPABILITIES(/obj/structure/table)
 	update_icon()
 	update_desc()
 	update_material()
-
-	make_climbable(/datum/om/behaviour/climbable/table)
 
 // neighbouring tables re-smooth without it.
 /obj/structure/table/on_destroy(force)

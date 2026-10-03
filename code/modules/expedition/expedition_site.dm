@@ -61,6 +61,7 @@ CAPABILITIES(/datum/expedition_site)
 	owns_one(nameof(station_simulation), /datum/generated_station_simulation)
 	owns_one(nameof(station_spec), /datum/generated_station_spec)
 	owns_one(nameof(station_utilities), /datum/generated_station_utility_topology)
+	owns_many(nameof(station_controls))
 
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level

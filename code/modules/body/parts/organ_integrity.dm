@@ -102,7 +102,7 @@
 	if(owner?.body)
 		owner.body.add_affliction(L, src)
 	else
-		own_add(src, nameof(detached_afflictions), L)
+		rel_add(src, nameof(detached_afflictions), L)
 	L.add_damage(amount)
 	return L
 

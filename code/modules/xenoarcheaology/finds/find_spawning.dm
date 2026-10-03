@@ -394,7 +394,7 @@
 			var/num_bullets = rand(1,new_gun.max_shells)
 			own_clear(new_gun, nameof(new_gun.loaded), OWN_DELETE) //Remove all the bullets we spawned with.
 			for(var/i = 1, i <= num_bullets, i++)//Load our gun with the special artifact ammo.
-				own_add(new_gun, nameof(new_gun.loaded), new /obj/item/ammo_casing/artifact(new_gun))
+				rel_add(new_gun, nameof(new_gun.loaded), new /obj/item/ammo_casing/artifact(new_gun))
 
 		if(ARCHAEO_UNKNOWN) //This previously spawned NOTHING...Are you kidding me?
 			var/new_sample = new /obj/item/research_sample/rare(src.loc) //So instead, you get a really good research sample. Eat your heart out, science.

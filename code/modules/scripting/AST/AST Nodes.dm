@@ -79,6 +79,7 @@ CAPABILITIES(/datum/node/expression/op)
 
 CAPABILITIES(/datum/node/expression/FunctionCall)
 	owns_one(nameof(object), /datum/node/identifier)
+	owns_many(nameof(parameters))
 
 /*
 	Class: literal

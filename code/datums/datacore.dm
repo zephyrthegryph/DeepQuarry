@@ -16,6 +16,15 @@
 	//This list tracks characters spawned in the world and cannot be modified in-game. Currently referenced by respawn_character().
 	var/list/locked = list() // ALLOW(instance_list): owned records of the one data core; not static so the ownership accessors reach it through vars
 
+CAPABILITIES(/datum/datacore)
+	owns_many(nameof(general))
+	owns_many(nameof(hidden_general))
+	owns_many(nameof(hidden_medical))
+	owns_many(nameof(hidden_security))
+	owns_many(nameof(locked))
+	owns_many(nameof(medical))
+	owns_many(nameof(security))
+
 
 /datum/datacore/proc/get_manifest(monochrome, OOC,snowflake = FALSE)
 	var/list/heads = new()
@@ -430,7 +439,7 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 			L.fields["exploit_record"] = H.exploit_record
 		else
 			L.fields["exploit_record"] = "No additional information acquired."
-		own_add(src, nameof(locked), L) // the data core made this record and holds it
+		rel_add(src, nameof(locked), L) // the data core made this record and holds it
 	return
 
 /proc/generate_record_id()
@@ -475,9 +484,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	G.fields["photo-west"] = "'data:image/png;base64,[icon2base64(side)]'"
 	G.fields["notes"] = "No notes found."
 	if(hidden)
-		own_add(src, nameof(hidden_general), G)
+		rel_add(src, nameof(hidden_general), G)
 	else
-		own_add(src, nameof(general), G)
+		rel_add(src, nameof(general), G)
 		SSjob.update_limit(JOB_ANOMALY, general.len)
 
 	return G
@@ -497,9 +506,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	R.fields["ma_crim_d"]	= "No major crime convictions."
 	R.fields["notes"]		= "No notes."
 	if(hidden)
-		own_add(src, nameof(hidden_security), R)
+		rel_add(src, nameof(hidden_security), R)
 	else
-		own_add(src, nameof(security), R)
+		rel_add(src, nameof(security), R)
 
 	return R
 
@@ -524,9 +533,9 @@ GLOBAL_LIST_EMPTY(PDA_Manifest)
 	M.fields["cdi_d"]		= "No diseases have been diagnosed at the moment."
 	M.fields["notes"] = "No notes found."
 	if(hidden)
-		own_add(src, nameof(hidden_medical), M)
+		rel_add(src, nameof(hidden_medical), M)
 	else
-		own_add(src, nameof(medical), M)
+		rel_add(src, nameof(medical), M)
 
 	return M
 

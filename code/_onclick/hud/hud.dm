@@ -230,6 +230,12 @@ CAPABILITIES(/datum/hud)
 	owns_one(nameof(palette_down), /atom/movable/screen/palette_scroll/down)
 	owns_one(nameof(palette_up), /atom/movable/screen/palette_scroll/up)
 	owns_one(nameof(toggle_palette), /atom/movable/screen/button_palette)
+	owns_many(nameof(adding))
+	owns_many(nameof(ammo_hud_list), /atom/movable/screen/ammo)
+	owns_many(nameof(extra_screens))
+	owns_many(nameof(hotkeybuttons), /atom/movable/screen)
+	owns_many(nameof(other))
+	owns_many(nameof(other_important))
 
 /datum/hud/New(mob/owner)
 	rel_set(src, nameof(mymob), owner)
@@ -573,7 +579,7 @@ CAPABILITIES(/datum/hud)
 	if(length(ammo_hud_list) >= MAX_AMMO_HUD_POSSIBLE)
 		return
 	var/atom/movable/screen/ammo/ammo_hud = new
-	own_add(src, nameof(ammo_hud_list), ammo_hud)
+	rel_add(src, nameof(ammo_hud_list), ammo_hud)
 	ammo_hud.screen_loc = ammo_hud.ammo_screen_loc_list[length(ammo_hud_list)]
 	rel_set(ammo_hud, nameof(ammo_hud.our_gun), G)
 	ammo_hud.add_hud(user, G)

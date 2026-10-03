@@ -112,9 +112,8 @@
 	anchored = TRUE
 	flags = ON_BORDER
 
-/obj/structure/fitness/boxing_ropes/Initialize(mapload)
-	. = ..()
-	make_climbable(vaulting = TRUE)
+CAPABILITIES(/obj/structure/fitness/boxing_ropes)
+	climb(vaulting = TRUE)
 
 /obj/structure/fitness/boxing_ropes/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSTABLE))

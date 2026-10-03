@@ -22,7 +22,7 @@
 		P.name = "[cardtext]"
 		P.card_icon = "[icon_state]_card"
 		P.back_icon = "[icon_state]_card_back"
-		own_add(src, nameof(cards), P)
+		rel_add(src, nameof(cards), P)
 	if(!blanks)
 		return
 	for(var/x=1 to blanks)
@@ -30,4 +30,4 @@
 		P.name = "Blank Card"
 		P.card_icon = "[icon_state]_card_back"
 		P.back_icon = "[icon_state]_card_back"
-		own_add(src, nameof(cards), P)
+		rel_add(src, nameof(cards), P)

@@ -19,6 +19,9 @@
 	var/replenishing = 0
 	var/injecting = 0
 
+CAPABILITIES(/obj/machinery/implantchair)
+	owns_many(nameof(implant_list), /obj/item/implant/loyalty)
+
 /obj/machinery/implantchair/Initialize(mapload)
 	. = ..()
 	add_implants()
@@ -135,7 +138,7 @@
 /obj/machinery/implantchair/proc/add_implants()
 	for(var/i=0, i<src.max_implants, i++)
 		var/obj/item/implant/loyalty/I = new /obj/item/implant/loyalty(src)
-		own_add(src, nameof(implant_list), I)
+		rel_add(src, nameof(implant_list), I)
 	return
 
 /datum/interaction/machine_verb/implantchair_get_out

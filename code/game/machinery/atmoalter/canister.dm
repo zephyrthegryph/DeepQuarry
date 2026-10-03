@@ -28,9 +28,8 @@
 	interact_offline = 1 // Allows this to be used when not in powered area.
 	var/release_log = ""
 
-/obj/machinery/portable_atmospherics/canister/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/portable_atmospherics/canister)
+	climb()
 
 /obj/machinery/portable_atmospherics/canister/proc/effective_maximum_pressure()
 	var/internal_temperature = air_contents?.return_temperature() || T20C

@@ -37,6 +37,8 @@
 CAPABILITIES(/datum/ai_laws)
 	owns_one(nameof(zeroth_law), /datum/ai_law/zero)
 	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
+	owns_many(nameof(inherent_laws), /datum/ai_law)
+	owns_many(nameof(ion_laws), /datum/ai_law/ion)
 
 /datum/ai_laws/New()
 	..()
@@ -130,7 +132,7 @@ CAPABILITIES(/datum/ai_laws)
 			return
 
 	var/new_law = new/datum/ai_law/ion(law)
-	own_add(src, nameof(ion_laws), new_law)
+	rel_add(src, nameof(ion_laws), new_law)
 	if(state_ion.len < length(ion_laws))
 		state_ion += 1
 
@@ -145,7 +147,7 @@ CAPABILITIES(/datum/ai_laws)
 			return
 
 	var/new_law = new/datum/ai_law/inherent(law)
-	own_add(src, nameof(inherent_laws), new_law)
+	rel_add(src, nameof(inherent_laws), new_law)
 	if(state_inherent.len < length(inherent_laws))
 		state_inherent += 1
 

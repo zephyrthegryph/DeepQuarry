@@ -41,6 +41,9 @@
 	var/list/attached_blankets
 	anchored = TRUE
 
+CAPABILITIES(/obj/structure/picnic_blanket_deployed)
+	owns_many(nameof(attached_blankets))
+
 /obj/structure/picnic_blanket_deployed/proc/picnic_blanket_deployed_fold_up_effect(mob/user, obj/item/held, datum/interaction/interaction)
 
 	for(var/obj/structure/picnic_blanket_deployed/side in attached_blankets)
@@ -87,7 +90,7 @@
 
 			//Actually spawning
 			var/obj/structure/picnic_blanket_deployed/side = new /obj/structure/picnic_blanket_deployed(T)
-			own_add(src, nameof(attached_blankets), side)
+			rel_add(src, nameof(attached_blankets), side)
 			side.blanket_type = SIDE
 			side.name = name //Making sure side blankets inherit our vars if they got edited at runtime
 			side.desc = desc

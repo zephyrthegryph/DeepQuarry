@@ -29,6 +29,9 @@
 	EXPIRY_DECLARE(updated)
 	var/announcement = ""
 
+CAPABILITIES(/datum/feed_channel)
+	owns_many(nameof(messages))
+
 /datum/feed_message/proc/clear()
 	src.author = ""
 	src.body = ""
@@ -46,7 +49,7 @@
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
-	own_set(src, nameof(messages), list())
+	rel_set(src, nameof(messages), list())
 	src.locked = 0
 	src.author = ""
 	src.backup_author = ""
@@ -61,6 +64,7 @@
 
 CAPABILITIES(/datum/feed_network)
 	owns_one(nameof(wanted_issue_owned), /datum/feed_message)
+	owns_many(nameof(network_channels), /datum/feed_channel)
 
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
@@ -72,7 +76,7 @@ CAPABILITIES(/datum/feed_network)
 		newChannel.announcement = announcement_message
 	else
 		newChannel.announcement = "Breaking news from [channel_name]!"
-	own_add(src, nameof(network_channels), newChannel)
+	rel_add(src, nameof(network_channels), newChannel)
 
 /datum/feed_network/proc/SubmitArticle(msg, author, channel_name, obj/item/photo/photo, adminMessage = 0, message_type = "", title)
 	var/datum/feed_message/newMsg = new /datum/feed_message
@@ -96,7 +100,7 @@ CAPABILITIES(/datum/feed_network)
 			break
 
 /datum/feed_network/proc/insert_message_in_channel(datum/feed_channel/FC, datum/feed_message/newMsg)
-	own_add(FC, nameof(FC.messages), newMsg)
+	rel_add(FC, nameof(FC.messages), newMsg)
 	rel_set(newMsg, nameof(newMsg.parent_channel), FC)
 	FC.update()
 	alert_readers(FC.announcement)

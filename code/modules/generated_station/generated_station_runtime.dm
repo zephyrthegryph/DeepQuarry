@@ -201,7 +201,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, nameof(station_controls), control)
+		rel_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
 		qdel(core)
 	// Landmarks are useful publication anchors, but they must not be a failure
@@ -235,7 +235,7 @@
 		var/obj/machinery/generated_station_department_control/control = new(control_turf)
 		control.station_id = station_spec.id
 		control.department_id = department.id
-		own_add(src, nameof(station_controls), control)
+		rel_add(src, nameof(station_controls), control)
 		controlled_departments[department.id] = TRUE
 	return TRUE
 

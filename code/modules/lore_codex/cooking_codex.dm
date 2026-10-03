@@ -132,5 +132,5 @@
 	new_children_list = sortList(new_children_list)
 	for(var/x = 1, x <= LAZYLEN(new_children_list), x++)
 		var/key = new_children_list[x]
-		own_add(src, nameof(child_pages), new_children_list[key])
+		rel_add(src, nameof(child_pages), new_children_list[key])
 	src.index_page()

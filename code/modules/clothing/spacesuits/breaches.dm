@@ -21,6 +21,9 @@
 	var/base_name                           // Used to keep the original name safe while we apply modifiers.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/clothing/suit/space)
+	owns_many(nameof(breaches))
+
 /obj/item/clothing/suit/space/Initialize(mapload)
 	. = ..()
 	base_name = "[name]"
@@ -106,7 +109,7 @@
 	if (amount)
 		//Spawn a new breach.
 		var/datum/breach/B = new()
-		own_add(src, nameof(breaches), B)
+		rel_add(src, nameof(breaches), B)
 
 		B.class = min(amount,5)
 

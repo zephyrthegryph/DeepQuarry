@@ -50,6 +50,9 @@ SYSTEM_DEF(server_metrics)
 	/// What the last flush cost to build and send, ms; reported with the next sample.
 	var/last_flush_ms
 
+CAPABILITIES(/datum/system/server_metrics)
+	owns_many(nameof(sources))
+
 /datum/system/server_metrics/preinit()
 	boot_realtime = REALTIMEOFDAY
 
@@ -64,7 +67,7 @@ SYSTEM_DEF(server_metrics)
 		var/datum/metrics_source/source_proto = source_type
 		if(initial(source_proto.abstract_type) == source_type)
 			continue
-		own_add(src, nameof(sources), new source_type)
+		rel_add(src, nameof(sources), new source_type)
 	return TRUE
 
 /// One sample every METRICS_SAMPLE_INTERVAL and, every METRICS_SAMPLES_PER_FLUSH samples, a flush. Both are

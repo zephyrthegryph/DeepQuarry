@@ -10,9 +10,8 @@
 
 DECLARE_PERIODIC_WHILE(/obj/machinery/smartfridge/drying_rack, MACHINE_PIPELINE, "operable")
 
-/obj/machinery/smartfridge/drying_rack/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/smartfridge/drying_rack)
+	climb()
 
 /obj/machinery/smartfridge/drying_rack/accept_check(obj/item/O as obj)
 	if(istype(O, /obj/item/reagent_containers/food/snacks/))

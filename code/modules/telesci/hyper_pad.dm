@@ -25,6 +25,9 @@
 	var/list/linked
 	var/max_item_teleport = 30
 
+CAPABILITIES(/obj/machinery/hyperpad/centre)
+	owns_many(nameof(linked))
+
 /obj/machinery/hyperpad/centre/Initialize(mapload)
 	. = ..()
 	if(map_pad_id)
@@ -127,7 +130,7 @@
 		var/iterate = 1
 		for(var/turf/T in turfs)
 			var/obj/machinery/hyperpad/new_pad = new /obj/machinery/hyperpad(T)
-			own_add(src, nameof(linked), new_pad) // the centre's pieces go with it
+			rel_add(src, nameof(linked), new_pad) // the centre's pieces go with it
 			rel_set(new_pad, nameof(new_pad.primary), src)
 			new_pad.dir = dirs[iterate]
 			iterate += 1

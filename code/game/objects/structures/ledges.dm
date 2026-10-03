@@ -10,9 +10,8 @@
 	layer = STAIRS_LAYER
 	icon_state = "ledge"
 
-/obj/structure/ledge/Initialize(mapload)
-	. = ..()
-	make_climbable(vaulting = TRUE)
+CAPABILITIES(/obj/structure/ledge)
+	climb(vaulting = TRUE)
 
 /obj/structure/ledge_corner
 	icon_state = "ledge-corner"
@@ -25,9 +24,8 @@
 	anchored = TRUE
 	layer = STAIRS_LAYER
 
-/obj/structure/ledge_corner/Initialize(mapload)
-	. = ..()
-	make_climbable(vaulting = TRUE)
+CAPABILITIES(/obj/structure/ledge_corner)
+	climb(vaulting = TRUE)
 
 /obj/structure/ledge/ledge_nub
 	desc = "Part of a rocky ledge."

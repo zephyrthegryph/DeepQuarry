@@ -143,6 +143,7 @@ Class Procs:
 
 CAPABILITIES(/obj/machinery)
 	owns_one(nameof(circuit), /obj/item/circuitboard)
+	owns_many(nameof(component_parts))
 
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
@@ -414,7 +415,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 		if(istype(I, /obj/item/circuitboard))
 			rel_set(src, nameof(circuit), I)
 		else
-			own_add(src, nameof(component_parts), I)
+			rel_add(src, nameof(component_parts), I)
 
 // Duplicate of below because we don't want to fuck around with CanUseTopic in TGUI
 // TODO: Replace this with can_interact from /tg/
@@ -566,7 +567,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 		qdel(C)
 		C = new /obj/item/cell/high(src)
 		C.move_into(src, CONTAINER_SLOT_INTERNALS)
-		own_add(src, nameof(component_parts), C)
+		rel_add(src, nameof(component_parts), C)
 		RefreshParts()
 		return C
 

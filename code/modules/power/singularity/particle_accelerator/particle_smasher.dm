@@ -26,6 +26,9 @@
 	var/max_storage = 3	// How many items can be jammed into it?
 	var/list/recipes	// The list containing the Particle Smasher's recipes.
 
+CAPABILITIES(/obj/machinery/particle_smasher)
+	owns_many(nameof(recipes))
+
 /obj/machinery/particle_smasher/Initialize(mapload)
 	. = ..()
 	update_icon()
@@ -218,7 +221,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 /obj/machinery/particle_smasher/proc/prepare_recipes()
 	own_clear(src, nameof(recipes), OWN_DELETE)
 	for(var/D in subtypesof(/datum/particle_smasher_recipe))
-		own_add(src, nameof(recipes), new D)
+		rel_add(src, nameof(recipes), new D)
 
 /obj/machinery/particle_smasher/proc/TryCraft()
 

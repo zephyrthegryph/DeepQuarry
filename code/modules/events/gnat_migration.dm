@@ -5,6 +5,9 @@
 	var/gnat_cap	= 10
 	var/list/spawned_gnat
 
+CAPABILITIES(/datum/event/gnat_migration)
+	owns_many(nameof(spawned_gnat))
+
 /datum/event/gnat_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -71,7 +74,7 @@
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_gnat_destruction))
-	own_add(src, nameof(spawned_gnat), M)
+	rel_add(src, nameof(spawned_gnat), M)
 	return M
 
 // Counts living gnat spawned by this event.

@@ -145,10 +145,10 @@
 		"heat" = list(/datum/om/behaviour/overheating),
 		// code/datums/looping_sounds/.
 		"sound" = list(/datum/om/behaviour/sleeper/looping_sound),
-		// code/datums/behaviours/: per-object feature behaviours (climbable, footstep, slosh, ...).
+		// code/datums/behaviours/: per-object feature behaviours (footstep, slosh, ...).
 		"object_behaviours" = list(
 			/datum/om/behaviour/absorbent, /datum/om/behaviour/bluespace_connection, /datum/om/behaviour/burning,
-			/datum/om/behaviour/cleaning, /datum/om/behaviour/climbable, /datum/om/behaviour/footstep,
+			/datum/om/behaviour/cleaning, /datum/om/behaviour/footstep,
 			/datum/om/behaviour/omen, /datum/om/behaviour/resize_guard,
 			/datum/om/behaviour/slip_prone, /datum/om/behaviour/slosh, /datum/om/behaviour/swarming,
 			/datum/om/behaviour/tether_host, /datum/om/behaviour/tether_handheld,

@@ -8,6 +8,9 @@
 	var/list/genes
 	var/genesource = "unknown"
 
+CAPABILITIES(/obj/item/disk/botany)
+	owns_many(nameof(genes))
+
 /obj/item/disk/botany/Initialize(mapload)
 	. = ..()
 	pixel_x = rand(-5,5)
@@ -289,7 +292,7 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 	var/datum/plantgene/P = genetics().get_gene(params["get_gene"])
 	if(!P)
 		return
-	own_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
+	rel_add(loaded_disk, nameof(/obj/item/disk/botany::genes), P) // get_gene() makes a fresh copy: the disk owns it
 
 	loaded_disk.genesource = "[genetics().display_name]"
 	if(!genetics().roundstart)

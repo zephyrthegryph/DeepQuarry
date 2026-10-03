@@ -17,6 +17,9 @@
 
 	var/datum/material/material
 
+CAPABILITIES(/obj/structure/gravemarker)
+	climb()
+
 /obj/structure/gravemarker/Initialize(mapload, material_name)
 	. = ..()
 	if(!material_name)
@@ -26,7 +29,6 @@
 		stack_trace("Material of type: [material_name] does not exist.")
 		return INITIALIZE_HINT_QDEL
 	color = material.icon_colour
-	make_climbable()
 	make_rotatable()
 
 /obj/structure/gravemarker/examine(mob/user)

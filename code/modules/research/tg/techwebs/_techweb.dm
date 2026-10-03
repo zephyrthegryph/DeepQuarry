@@ -82,6 +82,9 @@
 	*/
 	var/list/research_queue_nodes
 
+CAPABILITIES(/datum/techweb)
+	owns_many(nameof(available_experiments), /datum/experiment)
+
 /datum/techweb/New()
 	for(var/i in SSresearch.techweb_nodes_starting)
 		var/datum/techweb_node/DN = SSresearch.techweb_node_by_id(i)
@@ -289,7 +292,7 @@
 		var/datum/experiment/experiment = completed_experiment
 		if (experiment == experiment_type)
 			return FALSE
-	own_add(src, nameof(available_experiments), new experiment_type(src))
+	rel_add(src, nameof(available_experiments), new experiment_type(src))
 
 /**
  * Adds a list of experiments to this techweb by their types, ensures that no duplicates are added.

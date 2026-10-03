@@ -96,6 +96,9 @@ SYSTEM_DEF(expedition)
 	/// Z-levels currently being cleared incrementally and unavailable for reuse.
 	var/list/teardown_z = list()
 
+CAPABILITIES(/datum/system/expedition)
+	owns_many(nameof(descriptors))
+
 /datum/system/expedition/initialize()
 	initialized = TRUE
 	#ifndef CITESTING
@@ -267,7 +270,7 @@ SYSTEM_DEF(expedition)
 		var/obj/machinery/power/apc/APC = new(apc_turf)
 		APC.set_dir(WEST)
 		rel_set(emergency_area, nameof(emergency_area.apc), APC)
-		own_add(materialization, nameof(materialization.infrastructure), APC)
+		rel_add(materialization, nameof(materialization.infrastructure), APC)
 		// The APC owns its terminal (deleted with it); it is not adopted separately.
 	var/list/light_sockets = list(
 		list(materialization.world_turf(mid_x, spec.grid_height - 1), NORTH, 0, 26),
@@ -283,7 +286,7 @@ SYSTEM_DEF(expedition)
 		light.set_dir(socket[2])
 		light.pixel_x = socket[3]
 		light.pixel_y = socket[4]
-		own_add(materialization, nameof(materialization.infrastructure), light)
+		rel_add(materialization, nameof(materialization.infrastructure), light)
 	emergency_area.power_change()
 
 /// generate_site() for the live game: the same attempts, but planning and materializing run as

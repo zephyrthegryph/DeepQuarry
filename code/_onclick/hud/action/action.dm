@@ -47,6 +47,9 @@
 	/// This is the icon state for any FOREGROUND overlay icons on the button (such as borders)
 	var/overlay_icon_state
 
+CAPABILITIES(/datum/action)
+	owns_many(nameof(viewers))
+
 /datum/action/New(Target)
 	link_to(Target)
 
@@ -285,7 +288,7 @@
 	SetId(button, viewer)
 
 	rel_set(button, nameof(button.our_hud), our_hud)
-	own_add(src, nameof(viewers), button)
+	rel_add(src, nameof(viewers), button)
 	if(viewer.client)
 		viewer.client.screen += button
 

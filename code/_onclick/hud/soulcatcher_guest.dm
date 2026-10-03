@@ -83,27 +83,27 @@
 	using = new /atom/movable/screen/nifsc/reenter()
 	using.screen_loc = ui_nifsc_reenter
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/nifsc/arproj()
 	using.screen_loc = ui_nifsc_arproj
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/nifsc/jumptoowner()
 	using.screen_loc = ui_nifsc_jumptoowner
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/nifsc/nme()
 	using.screen_loc = ui_nifsc_nme
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/nifsc/nsay()
 	using.screen_loc = ui_nifsc_nsay
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	if(client && apply_to_client)
 		client.screen = list()
 		if(length(HUD.adding))

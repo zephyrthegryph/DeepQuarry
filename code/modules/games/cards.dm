@@ -9,6 +9,9 @@
 	var/list/cards = list() // ALLOW(instance_list): d: a deck always holds cards
 	COOLDOWN_DECLARE(shuffle_cooldown) // to prevent spam shuffle
 
+CAPABILITIES(/obj/item/deck)
+	owns_many(nameof(cards))
+
 /obj/item/deck/holder
 	name = "card box"
 	desc = "A small leather case to show how classy you are compared to everyone else."
@@ -40,14 +43,14 @@
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]num"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				own_add(src, nameof(cards), pcard)
+				rel_add(src, nameof(cards), pcard)
 
 			for(var/number in list("jack","queen","king"))
 				pcard = new()
 				pcard.name = "[number] of [suit]"
 				pcard.card_icon = "[card_icon_prefix][colour]col"
 				pcard.back_icon = "[card_icon_prefix]card_back"
-				own_add(src, nameof(cards), pcard) // Make it so.
+				rel_add(src, nameof(cards), pcard) // Make it so.
 
 		init_jokers()
 
@@ -57,7 +60,7 @@
 		pcard = new()
 		pcard.name = "joker"
 		pcard.card_icon = "joker"
-		own_add(src, nameof(cards), pcard)
+		rel_add(src, nameof(cards), pcard)
 
 /obj/item/deck/cards/Initialize(mapload)
 	. = ..()
@@ -346,7 +349,7 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 		while(length(unshuffled))
 			var/datum/playingcard/P = pick(unshuffled)
 			unshuffled -= P
-			own_add(src, nameof(cards), P)
+			rel_add(src, nameof(cards), P)
 		act_message(user, src, others = span_notice("%U% shuffles %T%."))
 		play_sfx(src, SFX_ITEMS_CARDSHUFFLE)
 		COOLDOWN_START(src, shuffle_cooldown, 1 SECOND)
@@ -397,6 +400,9 @@ DECLARE_INTERACTIONS(/obj/item/deck, \
 	var/parentdeck = null // This variable is added here so that card pack dependent card can be mixed together by defining a "parentdeck" for them
 	drop_sound = SFX_ITEMS_DROP_PAPER
 	pickup_sound = SFX_ITEMS_PICKUP_PAPER
+
+CAPABILITIES(/obj/item/pack)
+	owns_many(nameof(cards))
 
 
 DECLARE_INTERACTIONS(/obj/item/pack, INTERACT_USE(null, PROC_REF(interaction_self)))
