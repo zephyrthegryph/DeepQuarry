@@ -70,7 +70,7 @@
 "aar" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_port2_outer";
@@ -311,7 +311,7 @@
 "aaT" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_port2_inner";
@@ -620,7 +620,7 @@
 /area/maintenance/firstdeck/forestarboard)
 "aby" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_port_outer";
@@ -684,7 +684,7 @@
 /area/shuttle/response_ship/firstdeck)
 "abI" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_starboard_outer";
@@ -854,7 +854,7 @@
 /area/shuttle/escape_pod1/station)
 "acf" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_1_hatch";
@@ -871,7 +871,7 @@
 /area/shuttle/escape_pod2/station)
 "ach" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_2_hatch";
@@ -1066,7 +1066,7 @@
 /area/hallway/primary/firstdeck/fore)
 "acE" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_1_berth_hatch";
@@ -1082,7 +1082,7 @@
 /area/hallway/primary/firstdeck/fore)
 "acG" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_2_berth_hatch";
@@ -1134,7 +1134,7 @@
 	dir = 4
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_port_inner";
@@ -1149,7 +1149,7 @@
 	dir = 1
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_port_inner";
@@ -1297,7 +1297,7 @@
 	dir = 1
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_starboard_inner";
@@ -1312,7 +1312,7 @@
 	dir = 4
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1fore_starboard_inner";
@@ -4567,7 +4567,7 @@
 /area/hangar/one)
 "akh" = (
 /obj/machinery/door/airlock/voidcraft/vertical{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "expshuttle1_door_L";
 	name = "shuttle side hatch"
@@ -6013,7 +6013,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/maintenance_hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_inner";
@@ -6156,7 +6156,7 @@
 /area/rnd/xenobiology/xenoflora_isolation)
 "anD" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_2_hatch";
@@ -6460,7 +6460,7 @@
 	},
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/maintenance_hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "server_access_outer";
@@ -6670,7 +6670,7 @@
 /area/rnd/xenobiology/xenoflora_isolation)
 "aox" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_2_berth_hatch";
@@ -12622,7 +12622,7 @@
 /area/tcomm/entrance)
 "aAx" = (
 /obj/machinery/door/airlock/multi_tile/metal{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "expshuttle1_door_cargo"
 	},
@@ -14077,7 +14077,7 @@
 /area/hangar/two)
 "aDo" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_1_berth_hatch";
@@ -14820,7 +14820,7 @@
 /area/shuttle/large_escape_pod1/station)
 "aEB" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "large_escape_pod_1_hatch";
@@ -17196,7 +17196,7 @@
 	specialfunctions = 4
 	},
 /obj/machinery/door/airlock/voidcraft/vertical{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "expshuttle2_door_L";
 	name = "shuttle side hatch"
@@ -18515,7 +18515,7 @@
 /area/engineering/auxiliary_engineering)
 "aMz" = (
 /obj/machinery/door/airlock/multi_tile/metal{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "expshuttle2_door_cargo"
 	},
@@ -21350,7 +21350,7 @@
 /area/shuttle/large_escape_pod2/station)
 "aSk" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_3_hatch";
@@ -21361,7 +21361,7 @@
 /area/shuttle/escape_pod3/station)
 "aSl" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_3_berth_hatch";
@@ -21527,7 +21527,7 @@
 /area/construction/firstdeck/construction4)
 "aSA" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_5_hatch";
@@ -22168,7 +22168,7 @@
 /area/shuttle/shuttle2/start)
 "aTK" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_4_hatch";
@@ -22179,7 +22179,7 @@
 /area/shuttle/escape_pod4/station)
 "aTL" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_4_berth_hatch";
@@ -22339,7 +22339,7 @@
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aUa" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_6_berth_hatch";
@@ -22351,7 +22351,7 @@
 /area/hallway/secondary/escape/firstdeck/ep_aftstarboard)
 "aUb" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_6_hatch";
@@ -22990,7 +22990,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1aft_port_outer";
@@ -23032,7 +23032,7 @@
 	},
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1aft_port_inner";
@@ -23230,7 +23230,7 @@
 	},
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "ninja_shuttle_dock_inner";
@@ -23263,7 +23263,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "ninja_shuttle_dock_outer";
@@ -23292,7 +23292,7 @@
 "aVG" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "skipjack_shuttle_dock_inner";
@@ -23340,7 +23340,7 @@
 "aVM" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1aft_starboard_inner";
@@ -23525,7 +23525,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "skipjack_shuttle_dock_outer";
@@ -23538,7 +23538,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "skipjack_shuttle_dock_outer";
@@ -23559,7 +23559,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1aft_starboard_outer";
@@ -23580,7 +23580,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d1aft_starboard_outer";
@@ -35700,7 +35700,7 @@
 /area/maintenance/security_port)
 "brS" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eva_port_outer";
@@ -35740,7 +35740,7 @@
 	dir = 8
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eva_port_inner";
@@ -36201,7 +36201,7 @@
 /area/hallway/secondary/eva_hallway)
 "bsL" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eva_starboard_inner";
@@ -36245,7 +36245,7 @@
 /area/hallway/secondary/eva_hallway)
 "bsO" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eva_starboard_outer";
@@ -36557,7 +36557,7 @@
 "btu" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eva_port_inner";
@@ -37402,7 +37402,7 @@
 /area/maintenance/research)
 "bvh" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_starboard_outer";
@@ -39431,7 +39431,7 @@
 /area/maintenance/research)
 "byM" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_starboard_inner";
@@ -39553,7 +39553,7 @@
 /area/rnd/toxins_launch)
 "bzb" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "toxins_outer";
@@ -41002,7 +41002,7 @@
 "bBD" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "toxins_inner";
@@ -41856,7 +41856,7 @@
 /area/rnd/toxins_launch)
 "bDh" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_port_outer";
@@ -44365,7 +44365,7 @@
 /area/engineering/drone_fabrication)
 "bHY" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_port_inner";
@@ -44378,7 +44378,7 @@
 "bHZ" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_port_inner";
@@ -47737,7 +47737,7 @@
 "bOt" = (
 /obj/machinery/door/airlock/glass_research{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "tox_airlock_interior";
@@ -47764,7 +47764,7 @@
 "bOv" = (
 /obj/machinery/door/airlock/glass_research{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "tox_airlock_exterior";
@@ -59398,7 +59398,7 @@
 	},
 /obj/machinery/door/airlock/medical{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "virology_airlock_exterior";
@@ -59455,7 +59455,7 @@
 	},
 /obj/machinery/door/airlock/medical{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "virology_airlock_interior";
@@ -61825,7 +61825,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	id_tag = "engine_electrical_maintenance";
 	name = "SMES Access";
@@ -72839,7 +72839,7 @@
 /area/maintenance/cargo)
 "cMZ" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "crg_aft_inner";
@@ -72852,7 +72852,7 @@
 "cNa" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "crg_aft_inner";
@@ -74916,7 +74916,7 @@
 /area/medical/medbay2)
 "cQN" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "crg_aft_outer";
@@ -77781,7 +77781,7 @@
 /area/maintenance/medbay)
 "cWm" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_starboard_inner";
@@ -79724,7 +79724,7 @@
 /area/maintenance/chapel)
 "cZT" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_starboard_outer";
@@ -83571,7 +83571,7 @@
 /area/hydroponics)
 "dgE" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_5_berth_hatch";
@@ -87853,7 +87853,7 @@
 /area/construction/seconddeck/construction2)
 "dpR" = (
 /obj/machinery/door/airlock{
-	cap_state = 128;
+	bolted_at_start = 1;
 	name = "Unit 1"
 	},
 /turf/simulated/floor/plating,
@@ -90631,7 +90631,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "s1s_dock_outer";
@@ -90689,7 +90689,7 @@
 /area/hallway/secondary/entry/D1)
 "dvS" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "s1s_dock_inner";
@@ -90782,7 +90782,7 @@
 /area/hallway/secondary/entry/D3)
 "dwb" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "centcom_dock_inner";
@@ -90844,7 +90844,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "centcom_dock_outer";
@@ -91260,7 +91260,7 @@
 /area/hallway/secondary/entry/D1)
 "dxd" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_inner";
@@ -91311,7 +91311,7 @@
 /area/hallway/secondary/entry/D1)
 "dxg" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_outer";
@@ -91324,7 +91324,7 @@
 /area/hallway/secondary/entry/D1)
 "dxh" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_starboard_outer";
@@ -91375,7 +91375,7 @@
 /area/hallway/secondary/entry/D2)
 "dxk" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_starboard_inner";
@@ -91418,7 +91418,7 @@
 "dxn" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_north_inner";
@@ -91476,7 +91476,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_north_outer";
@@ -91520,7 +91520,7 @@
 "dxu" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_north_inner";
@@ -91601,7 +91601,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_outer";
@@ -91683,7 +91683,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_north_outer";
@@ -91698,7 +91698,7 @@
 	dir = 4
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_north_inner";
@@ -91745,7 +91745,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_north_outer";
@@ -92025,7 +92025,7 @@
 "dyr" = (
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "specops_dock_outer";
@@ -92086,7 +92086,7 @@
 /area/hallway/secondary/entry/D1)
 "dyu" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "specops_dock_inner";
@@ -92169,7 +92169,7 @@
 "dyC" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "s2s_dock_inner";
@@ -92220,7 +92220,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "s2s_dock_outer";
@@ -92392,7 +92392,7 @@
 /area/hallway/secondary/entry/D1)
 "dza" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_inner";
@@ -92432,7 +92432,7 @@
 /area/hallway/secondary/entry/D1)
 "dzd" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_outer";
@@ -92497,7 +92497,7 @@
 /area/hallway/secondary/entry/D2)
 "dzh" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_starboard_inner";
@@ -92523,7 +92523,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_north_outer";
@@ -92544,7 +92544,7 @@
 "dzl" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_south_inner";
@@ -92583,7 +92583,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_south_outer";
@@ -92634,7 +92634,7 @@
 "dzr" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_south_inner";
@@ -92702,7 +92702,7 @@
 /area/hallway/secondary/entry/D1)
 "dzw" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_outer";
@@ -92715,7 +92715,7 @@
 /area/hallway/secondary/entry/D1)
 "dzx" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_starboard_outer";
@@ -92795,7 +92795,7 @@
 /area/hallway/secondary/entry/D2)
 "dzD" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_south_outer";
@@ -92821,7 +92821,7 @@
 	},
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_south_inner";
@@ -92866,7 +92866,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_south_outer";
@@ -93170,7 +93170,7 @@
 /area/hallway/secondary/entry/D1)
 "dAo" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "trade_shuttle_dock_inner";
@@ -93184,7 +93184,7 @@
 "dAp" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "trade_shuttle_dock_inner";
@@ -93197,7 +93197,7 @@
 "dAq" = (
 /obj/machinery/atmospherics/pipe/simple/hidden,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "admin_shuttle_dock_inner";
@@ -93215,7 +93215,7 @@
 "dAs" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "nuke_shuttle_dock_inner";
@@ -93466,7 +93466,7 @@
 "dAM" = (
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "trade_shuttle_dock_outer";
@@ -93489,7 +93489,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "trade_shuttle_dock_outer";
@@ -93514,7 +93514,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "admin_shuttle_dock_outer";
@@ -93535,7 +93535,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "nuke_shuttle_dock_outer";
@@ -93550,7 +93550,7 @@
 /obj/machinery/shield_diffuser,
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "nuke_shuttle_dock_outer";
@@ -93981,7 +93981,7 @@
 /area/ai)
 "dBU" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	name = "AI Core";
 	req_access = list(16);
@@ -94030,7 +94030,7 @@
 /area/ai)
 "dBW" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	icon_state = "door_locked";
 	name = "AI Core";
 	req_access = list(16);
@@ -94380,7 +94380,7 @@
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/shield_diffuser,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "arrivals_dock_south_outer";
@@ -94543,7 +94543,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_port_solar_outer";
@@ -94602,7 +94602,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_port_solar_inner";
@@ -94888,7 +94888,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_starboard_solar_inner";
@@ -94944,7 +94944,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "fore_starboard_solar_outer";
@@ -97091,7 +97091,7 @@
 /area/hallway/primary/thirddeck/port)
 "dIw" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d3_port_outer";
@@ -97131,7 +97131,7 @@
 /area/hallway/primary/thirddeck/port)
 "dIz" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d3_port_inner";
@@ -97504,7 +97504,7 @@
 /area/hallway/primary/thirddeck/starboard)
 "dJj" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d3_starboard_inner";
@@ -97545,7 +97545,7 @@
 /area/hallway/primary/thirddeck/starboard)
 "dJm" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "d3_starboard_outer";
@@ -98572,7 +98572,7 @@
 /area/shuttle/escape_pod5/station)
 "dLl" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_7_hatch";
@@ -98583,7 +98583,7 @@
 /area/shuttle/escape_pod7/station)
 "dLm" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_7_berth_hatch";
@@ -98842,7 +98842,7 @@
 /area/hallway/primary/thirddeck/starboard)
 "dLL" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_8_berth_hatch";
@@ -98854,7 +98854,7 @@
 /area/hallway/primary/thirddeck/starboard)
 "dLM" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_pod_8_hatch";
@@ -102641,7 +102641,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_port_solar_outer";
@@ -102704,7 +102704,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_port_solar_inner";
@@ -103138,7 +103138,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_starboard_solar_inner";
@@ -103198,7 +103198,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "aft_starboard_solar_outer";
@@ -105983,7 +105983,7 @@
 	},
 /obj/machinery/door/airlock/research{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "xenostation_airlock_exterior";
@@ -106339,7 +106339,7 @@
 	},
 /obj/machinery/door/airlock/research{
 	autoclose = 0;
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "xenostation_airlock_interior";
@@ -107816,7 +107816,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_north_starboard_outer";
@@ -107838,7 +107838,7 @@
 	req_one_access = list(13)
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "escape_dock_south_starboard_outer";
@@ -108485,7 +108485,7 @@
 "twa" = (
 /obj/effect/floor_decal/industrial/hatch/yellow,
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1381;
 	icon_state = "door_locked";
 	id_tag = "dock3_south_inner";

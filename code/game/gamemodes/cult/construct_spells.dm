@@ -194,7 +194,7 @@
 		for(var/obj/machinery/door/door in contents_of(T))
 			if(istype(door,/obj/machinery/door/airlock))
 				var/obj/machinery/door/airlock/AL = door
-				cap_set(AL, CAP_BOLTED | CAP_WELDED, FALSE) //The spirits of the damned care not for your locks, or your welding tools.
+				AL.unbolt_unweld() //The spirits of the damned care not for your locks, or your welding tools.
 			else if(istype(door, /obj/machinery/door/firedoor))
 				var/obj/machinery/door/firedoor/FD = door
 				FD.blocked = 0

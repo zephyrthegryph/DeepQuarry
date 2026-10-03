@@ -5,7 +5,6 @@
 	anchored = FALSE
 	density = TRUE
 	w_class = ITEMSIZE_HUGE
-	var/state = 0
 	var/base_icon_state = ""
 	var/base_name = "airlock"
 	var/obj/item/airlock_electronics/electronics = null
@@ -151,192 +150,112 @@
 		bound_width = world.icon_size
 		bound_height = width * world.icon_size
 
-/obj/structure/door_assembly/proc/rename_door(mob/living/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(door_named), title = name, message = "Enter the name for the [base_name].", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+TRACKED(/obj/structure/door_assembly, glass)
 
-/obj/structure/door_assembly/proc/door_named(datum/om/prompt/text/ask)
-	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	update_state()
+// ---- what an airlock assembly is, declared ----
+//
+// The build ladder is a state graph: a loose frame, bolted down (a wrench), wired (a length of cable), with its electronics in, finished (a screwdriver:
+// the airlock the assembly stands for takes its place). Plating and windows are the assembly's own ops beside the ladder: reinforced glass makes a
+// window, a few minerals plate it, a welder takes either back off or, from a loose bare frame, takes the whole assembly down into steel. The name
+// and picture of the assembly follow its stage and what is fitted (update_state()).
 
-/// Old attack_robot: drones and engineering borgs next to it rename it.
-/obj/structure/door_assembly/proc/door_assembly_robot_rename(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
-	if(istype(user) && Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
-		rename_door(user)
-	return TRUE
+STAGE_DEF(door_assembly, frame)
+STAGE_DEF(door_assembly, secured)
+STAGE_DEF(door_assembly, wired)
+STAGE_DEF(door_assembly, boarded)
+STAGE_DEF(door_assembly, finished)
 
-/obj/structure/door_assembly/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/door_assembly_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_ROBOT("Rename", PROC_REF(door_assembly_robot_rename)))
-	..()
+MSG_DEF_SELF(stage/door_assembly/frame, "It is a bare frame.")
+MSG_DEF_SELF(stage/door_assembly/secured, "It is bolted to the floor.")
+MSG_DEF_SELF(stage/door_assembly/wired, "It is wired.")
+MSG_DEF_SELF(stage/door_assembly/boarded, "Its electronics are in.")
+MSG_DEF_SELF(stage/door_assembly/finished, "It is finished.")
 
-/// Old attackby: rename with a pen, wire, install electronics, or plate the assembly.
-/datum/interaction/entry_item/door_assembly_item
-	id = "door_assembly_item"
-	name = "Use"
-	effect = /obj/structure/door_assembly/proc/interaction_item
+MSG_DEF_SELF(door_assembly/bad_plating, "You cannot make an airlock out of that material.")
+MSG_DEF_SELF(door_assembly/more_sheets, "You need more sheets than that.")
+MSG_DEF_SELF(door_assembly/bolted_down, "Unbolt it from the floor first.")
+MSG_DEF_SELF(door_assembly/plated, "Take the plating off first.")
 
-/obj/structure/door_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen))
-		rename_door(user)
-		return TRUE
+CAPABILITIES(/obj/structure/door_assembly, \
+	construction(start(STAGE_DOOR_ASSEMBLY_FRAME), \
+		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))), \
+		stage(STAGE_DOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))), \
+		stage(STAGE_DOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_CROWBAR), wait(4 SECONDS))), \
+		stage(STAGE_DOOR_ASSEMBLY_FINISHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), then(PROC_REF(finish_airlock)), undo = null), \
+		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
+	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
+	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed))), \
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed))), \
+	op("plate_glass", stack(/obj/item/stack/material/glass/reinforced, 1), label("Install windows"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(glass_in))), 	op("plate", inputs(stack(/obj/item/stack/material/gold, 2), stack(/obj/item/stack/material/silver, 2), stack(/obj/item/stack/material/diamond, 2), stack(/obj/item/stack/material/uranium, 2), stack(/obj/item/stack/material/phoron, 2), stack(/obj/item/stack/material/sandstone, 2)), label("Install plating"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(plated_in))), 	op("plate_bad", item(/obj/item/stack/material), label("Install plating"), when(PROC_REF(unplated)), when(cond_not(req(/obj/item/stack/material/glass/reinforced))), when(cond_not(req(/obj/item/stack/material/gold))), when(cond_not(req(/obj/item/stack/material/silver))), when(cond_not(req(/obj/item/stack/material/diamond))), when(cond_not(req(/obj/item/stack/material/uranium))), when(cond_not(req(/obj/item/stack/material/phoron))), when(cond_not(req(/obj/item/stack/material/sandstone))), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(plating_refused))), 	op("unplate", tool(TOOL_WELDER), label("Take the plating off"), when(PROC_REF(plated)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(plating_off))), \
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down)))))
 
-	if(istype(W, /obj/item/stack/cable_coil) && state == 0 && anchored)
-		var/obj/item/stack/cable_coil/C = W
-		if (C.get_amount() < 1)
-			to_chat(user, span_warning("You need one length of coil to wire the airlock assembly."))
-			return TRUE
-		act_message(user, null, MSG_SELF("You start to wire the airlock assembly."), MSG_OTHERS("%U% wires the airlock assembly."))
-		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, C))
+/// Neither windows nor plating are fitted, and the type takes them (glass is -1 for the ones that do not).
+/obj/structure/door_assembly/proc/unplated(datum/act/A)
+	return !glass
 
-	else if(istype(W, /obj/item/airlock_electronics) && state == 1)
-		playsound(src, W.usesound, 100, 1)
-		act_message(user, null, MSG_SELF("You start to install electronics into the airlock assembly."), \
-			MSG_OTHERS("%U% installs the electronics into the airlock assembly."))
+/// Windows or plating are fitted.
+/obj/structure/door_assembly/proc/plated(datum/act/A)
+	return istext(glass) || glass == 1
 
-		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(W, user))
+/// A material that is no plating: the assembly says so and keeps the sheets.
+/obj/structure/door_assembly/proc/plating_refused(datum/act/op/A)
+	to_chat(A.actor, span_warning("You cannot make an airlock out of that material."))
+	return OP_OK
 
-	else if(istype(W, /obj/item/stack/material) && !glass)
-		var/obj/item/stack/S = W
-		var/material_name = S.get_material_name()
-		if (S)
-			if (S.get_amount() >= 1)
-				if(material_name == MAT_RGLASS)
-					play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-					act_message(user, null, MSG_SELF("You start to install [S.name] into the airlock assembly."), \
-						MSG_OTHERS("%U% adds [S.name] to the airlock assembly."))
-					om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done3), done_args = list(user, S))
-				else if(material_name)
-					// Ugly hack, will suffice for now. Need to fix it upstream as well, may rewrite mineral walls. ~Z
-					if(!(material_name in list(MAT_GOLD, MAT_SILVER, MAT_DIAMOND, MAT_URANIUM, MAT_PHORON, MAT_SANDSTONE)))
-						to_chat(user, "You cannot make an airlock out of that material.")
-						return TRUE
-					if(S.get_amount() >= 2)
-						play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-						act_message(user, null, MSG_SELF("You start to install [S.name] into the airlock assembly."), \
-							MSG_OTHERS("%U% adds [S.name] to the airlock assembly."))
-						om_task_start(/datum/om/task/timed/door_assembly_attackby, user, src, S = S, material_name = material_name)
-
-	update_state()
-	return TRUE
-
-/obj/structure/door_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/C)
-	if(!(state == 0 && anchored))
-		return
-	if (C.use(1))
-		src.state = 1
-		to_chat(user, span_notice("You wire the airlock."))
-/obj/structure/door_assembly/proc/attackby_timed_done2(obj/item/W, mob/user)
-	if(!src) return
-	to_chat(user, span_notice("You installed the airlock electronics!"))
-	src.state = 2
-	own_set(src, nameof(src.electronics), W, user = user)
-/obj/structure/door_assembly/proc/attackby_timed_done3(mob/user, obj/item/stack/S)
-	if(!(!glass))
-		return
-	if (S.use(1))
-		to_chat(user, span_notice("You installed reinforced glass windows into the airlock assembly."))
-		glass = 1
-/datum/om/task/timed/door_assembly_attackby
-	duration = 4 SECONDS
-	complete_proc = /obj/structure/door_assembly/proc/attackby_timed_done4
-	var/obj/item/stack/S
-	var/material_name
-
-/obj/structure/door_assembly/proc/attackby_timed_done4(datum/om/task/timed/door_assembly_attackby/task)
-	var/mob/user = task.actor
-	var/obj/item/stack/S = task.S
-	var/material_name = task.material_name
-	if(!(!glass))
-		return
-	if (S.use(2))
-		to_chat(user, span_notice("You installed [material_display_name(material_name)] plating into the airlock assembly."))
-		glass = material_name
-
-/obj/structure/door_assembly/welder_act(mob/user, obj/item/W)
-	if(!(istext(glass) || glass == 1 || !anchored))
+/obj/structure/door_assembly/proc/renamed(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/new_name = sanitizeSafe(R?.value, MAX_NAME_LEN)
+	if(!isnull(R?.value))
+		created_name = new_name
 		update_state()
-		return NONE
-	if(istext(glass))
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the [glass] plating off the airlock assembly.", start_others = "[user] welds the [glass] plating off the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	else if(glass == 1)
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to weld the glass panel out of the airlock assembly.", start_others = "[user] welds the glass panel out of the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
-	else if(!anchored)
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to dissassemble the airlock assembly.", start_others = "[user] dissassembles the airlock assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done3), done_args = list(user))
+	return OP_OK
+
+/// Drones and engineering borgs next to it rename it.
+/obj/structure/door_assembly/proc/robot_may_rename(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
+	return istype(user) && user.module?.names_assemblies // ALLOW(reads): a cyborg's module is fixed between modules; the click re-evaluates it
+
+/obj/structure/door_assembly/proc/secured_down(datum/act/op/A)
+	to_chat(A.actor, span_notice("You secured the airlock assembly!"))
+	set_anchored(TRUE)
 	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/door_assembly/proc/welder_act_tool_done(mob/user)
-	to_chat(user, span_notice("You welded the [glass] plating off!"))
-	var/M = text2path("/obj/item/stack/material/[glass]")
-	new M(src.loc, 2)
-	glass = 0
-/obj/structure/door_assembly/proc/welder_act_tool_done2(mob/user)
-	to_chat(user, span_notice("You welded the glass panel out!"))
-	new /obj/item/stack/material/glass/reinforced(src.loc)
-	glass = 0
-/obj/structure/door_assembly/proc/welder_act_tool_done3(mob/user)
-	to_chat(user, span_notice("You dissasembled the airlock assembly!"))
-	replace_with(src, /obj/item/stack/material/steel, 4)
-
-/obj/structure/door_assembly/wrench_act(mob/user, obj/item/W)
-	if(state != 0)
-		update_state()
-		return NONE
-	var/was_anchored = anchored
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You starts [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", start_others = "[user] begins [was_anchored ? "un" : ""]securing the airlock assembly [was_anchored ? "from" : "to"] the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user, was_anchored))
+/obj/structure/door_assembly/proc/unsecured(datum/act/op/A)
+	to_chat(A.actor, span_notice("You unsecured the airlock assembly!"))
+	set_anchored(FALSE)
 	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/door_assembly/proc/wrench_act_tool_done(mob/user, was_anchored)
-	to_chat(user, span_notice("You [was_anchored ? "un" : ""]secured the airlock assembly!"))
-	set_anchored(!anchored)
-
-/obj/structure/door_assembly/wirecutter_act(mob/user, obj/item/W)
-	if(state != 1)
-		update_state()
-		return NONE
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, start_self = "You start to cut the wires from airlock assembly.", start_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
+/obj/structure/door_assembly/proc/wired_up(datum/act/op/A)
+	to_chat(A.actor, span_notice("You wire the airlock."))
 	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/door_assembly/proc/wirecutter_act_tool_done(mob/user)
-	to_chat(user, span_notice("You cut the airlock wires.!"))
-	new/obj/item/stack/cable_coil(src.loc, 1)
-	src.state = 0
-
-/obj/structure/door_assembly/crowbar_act(mob/user, obj/item/W)
-	if(state != 2)
-		update_state()
-		return NONE
-	if(!electronics)
-		to_chat(user, span_notice("There was nothing to remove."))
-		src.state = 1
-		update_state()
-		return ITEM_INTERACT_SUCCESS
-
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start removing the electronics from the airlock assembly.", start_others = "\The [user] starts removing the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
+/obj/structure/door_assembly/proc/unwired(datum/act/op/A)
+	to_chat(A.actor, span_notice("You cut the airlock wires.!"))
 	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/door_assembly/proc/crowbar_act_tool_done(mob/user)
-	to_chat(user, span_notice("You removed the airlock electronics!"))
-	src.state = 1
-	electronics.forceMove(src.loc)
-	own_take(src, nameof(electronics))
-
-/obj/structure/door_assembly/screwdriver_act(mob/user, obj/item/W)
-	if(state != 2)
-		update_state()
-		return NONE
-	to_chat(user, span_notice("Now finishing the airlock."))
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
+/obj/structure/door_assembly/proc/board_seated(datum/act/op/A)
+	var/obj/item/W = A.held
+	to_chat(A.actor, span_notice("You installed the airlock electronics!"))
+	playsound(src, W.usesound, 100, 1)
+	own_set(src, nameof(electronics), W, user = A.actor)
 	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/door_assembly/proc/screwdriver_act_tool_done(mob/user)
-	to_chat(user, span_notice("You finish the airlock!"))
+/obj/structure/door_assembly/proc/board_taken(datum/act/op/A)
+	to_chat(A.actor, span_notice("You removed the airlock electronics!"))
+	if(electronics)
+		electronics.forceMove(loc)
+		own_take(src, nameof(electronics))
+	update_state()
+	return OP_OK
+
+/// The finished airlock takes the assembly's place.
+/obj/structure/door_assembly/proc/finish_airlock(datum/act/op/A)
+	to_chat(A.actor, span_notice("You finish the airlock!"))
 	var/path
 	if(istext(glass))
 		path = text2path("/obj/machinery/door/airlock/[glass]")
@@ -344,10 +263,56 @@
 		path = text2path("/obj/machinery/door/airlock[glass_type]")
 	else
 		path = text2path("/obj/machinery/door/airlock[airlock_type]")
-
 	replace_with(src, path, src)
+	return OP_OK
+
+/// A loose bare frame comes apart into its steel.
+/obj/structure/door_assembly/proc/disassembled(datum/act/op/A)
+	to_chat(A.actor, span_notice("You dissasembled the airlock assembly!"))
+	replace_with(src, /obj/item/stack/material/steel, 4)
+	return OP_OK
+
+/obj/structure/door_assembly/proc/glass_in(datum/act/op/A)
+	if(glass)
+		return OP_REFUSED
+	to_chat(A.actor, span_notice("You installed reinforced glass windows into the airlock assembly."))
+	set_glass(1)
+	update_state()
+	return OP_OK
+
+/obj/structure/door_assembly/proc/plated_in(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	if(glass || !istype(S))
+		return OP_REFUSED
+	var/material_name = S.get_material_name()
+	to_chat(A.actor, span_notice("You installed [material_display_name(material_name)] plating into the airlock assembly."))
+	set_glass(material_name)
+	update_state()
+	return OP_OK
+
+/obj/structure/door_assembly/proc/plating_off(datum/act/op/A)
+	var/mob/user = A.actor
+	if(istext(glass))
+		to_chat(user, span_notice("You welded the [glass] plating off!"))
+		var/M = text2path("/obj/item/stack/material/[glass]")
+		new M(loc, 2)
+	else
+		to_chat(user, span_notice("You welded the glass panel out!"))
+		new /obj/item/stack/material/glass/reinforced(loc)
+	set_glass(0)
+	update_state()
+	return OP_OK
+
+/// How far the assembly is built, as the number its picture and name are made from: 0 bare (bolted down or not), 1 wired, 2 with its electronics in.
+/obj/structure/door_assembly/proc/assembly_state()
+	if(built(src, STAGE_DOOR_ASSEMBLY_BOARDED))
+		return 2
+	if(built(src, STAGE_DOOR_ASSEMBLY_WIRED))
+		return 1
+	return 0
 
 /obj/structure/door_assembly/proc/update_state()
+	var/state = assembly_state()
 	icon_state = "door_as_[glass == 1 ? "g" : ""][istext(glass) ? glass : base_icon_state][state]"
 	name = ""
 	switch (state)
@@ -366,7 +331,3 @@
 	if(prob(40)) // Chance for the frame to let the bullet keep going.
 		return PROJECTILE_CONTINUE
 	return ..()
-
-/obj/structure/door_assembly/ownership()
-	. = ..()
-	. += owns(nameof(electronics), policy = OWN_CONTAINED)

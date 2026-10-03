@@ -4637,7 +4637,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/turf/T = get_turf(A)
 	A.set_density(FALSE)
 	A.operating = FALSE
-	cap_set(A, CAP_BOLTED, FALSE)
+	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
 	A.frozen = FALSE
 	A.autoclose_cancel()
 	A.safe = TRUE
@@ -4661,7 +4661,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/door/airlock/external/A = allocate(/obj/machinery/door/airlock/external, run_loc_floor_bottom_left)
 	A.set_density(TRUE)
 	A.operating = FALSE
-	cap_set(A, CAP_BOLTED, FALSE)
+	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
 	A.frozen = FALSE
 	A.id_tag = "dq_secure_open_test"
 	TEST_ASSERT(A.arePowerSystemsOn(), "the test airlock has no power")
@@ -4677,7 +4677,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(is_bolted(A), "secure_open left the door unbolted (it would autoclose and retry forever)")
 	TEST_ASSERT_NULL(A.cur_command, "secure_open never completed")
 	// Already open and unbolted (bolts raised by hand): the command only bolts it.
-	cap_set(A, CAP_BOLTED, FALSE)
+	cap_key_set(A, BOLTS_BOLTED, FALSE, null)
 	A.receive_signal(S)
 	waited = 0
 	while((A.cur_command || A.operating) && waited < 5 SECONDS)
@@ -4701,7 +4701,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(!A.autoclose_pending(), "closed airlock kept its stale autoclose deadline")
 	A.set_density(FALSE)
 	A.operating = FALSE
-	cap_set(A, CAP_BOLTED, TRUE)
+	cap_key_set(A, BOLTS_BOLTED, TRUE, null)
 	A.autoclose_in(1)
 	for(var/i in 1 to 200)
 		if(!A.autoclose_pending())

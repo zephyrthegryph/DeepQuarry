@@ -18,7 +18,6 @@
 /// Door weld_shut(): welded shut.
 #define CAP_WELDED (1<<6)
 /// Door bolts(): bolted.
-#define CAP_BOLTED (1<<7)
 /// reagent_container(): the lid is open.
 #define CAP_LID_OPEN (1<<8)
 /// smokable(): lit.
@@ -32,5 +31,4 @@
 /// cover(removable = TRUE): the cover is knocked off (APC).
 #define CAP_COVER_REMOVED (1<<14)
 /// Door emergency_access(): emergency access on.
-#define CAP_EMERGENCY_ACCESS (1<<15)
 // Free: 16 .. 23.

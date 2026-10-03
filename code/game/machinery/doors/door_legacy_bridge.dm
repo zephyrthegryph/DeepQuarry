@@ -6,7 +6,6 @@
 /proc/legacy_door_ops()
 	return list(without(CAP_DOORS), without(CAP_EMAG), without("strike"), without("reinforce"), without("weld_plasteel"), without("unreinforce"), without("repair"))
 
-CAPABILITIES(/obj/machinery/door/airlock, legacy_door_ops())
 CAPABILITIES(/obj/machinery/door/firedoor, legacy_door_ops())
 CAPABILITIES(/obj/machinery/door/blast, legacy_door_ops())
 CAPABILITIES(/obj/machinery/door/window, legacy_door_ops())

@@ -92,12 +92,6 @@
 /proc/cap_in_hand(mob/user, atom/holder, obj/item/held)
 	return dq_interaction_self_reach(user, holder, held) ? TRUE : "it's not in your hand"
 
-/proc/is_bolted(atom/A)
-	return !!(A.cap_state & CAP_BOLTED)
-
-/proc/is_welded(atom/A)
-	return !!(A.cap_state & CAP_WELDED)
-
 /// Sets D's var to a capability's type default unless the instance already differs from its compiled
 /// default (a map edit, an earlier write): a capability's arguments are type defaults, instance vars win.
 /proc/cap_default_var(datum/D, var_name, value)

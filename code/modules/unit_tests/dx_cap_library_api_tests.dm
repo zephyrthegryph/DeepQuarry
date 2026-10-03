@@ -135,6 +135,3 @@
 	TEST_ASSERT_EQUAL(A.cell, cell, "inserted")
 	refresh_flush()
 	TEST_ASSERT(cap_test_has_layer(A, LOOK_CELL), "the slot's part is drawn while filled")
-	TEST_ASSERT(!is_bolted(A) && !is_welded(A), "the accessors read clear bits")
-	cap_set(A, CAP_BOLTED | CAP_WELDED, TRUE)
-	TEST_ASSERT(is_bolted(A) && is_welded(A), "and set ones")

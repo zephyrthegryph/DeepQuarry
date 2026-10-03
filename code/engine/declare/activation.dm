@@ -318,6 +318,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 /// The capability of `E` with id `cap_id` (and selector): the interned definition of its type-level or a live granted activation,
 /// null when it has none. With one instance of the capability the selector may be left out. Replaces the legacy cap_of(atom, key).
 /proc/cap_of(datum/E, key, selector)
+	READS_FROM() // the type's compiled table, not an entity's state
 	if(!isnum(key))
 		return legacy_cap_of(E, key)
 	var/datum/type_table/T = table_of(E)
@@ -478,6 +479,7 @@ GLOBAL_LIST_EMPTY(source_ids) // id -> name, built on first use
 
 /// The type-level (or only) activation of `cap_id` on holder, created lazily: the one whose state the accessors read and write.
 /proc/cap_activation(datum/holder, cap_id, selector, create = FALSE)
+	READS_FROM(holder)
 	var/datum/capability/def = cap_of(holder, cap_id, selector)
 	if(!def)
 		return null

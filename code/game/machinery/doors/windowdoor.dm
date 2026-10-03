@@ -40,7 +40,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 			ae.conf_access = req_access
 		else if (LAZYLEN(req_one_access))
 			ae.conf_access = req_one_access
-			ae.one_access = 1
+			ae.set_one_access(1)
 	else
 		ae = electronics
 		own_take(src, nameof(electronics))

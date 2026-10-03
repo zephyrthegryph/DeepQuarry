@@ -77,6 +77,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 
 /// Is `wire` of `holder` cut? A holder whose wires were never touched has none cut.
 /proc/wire_is_cut(datum/holder, wire)
+	READS_FROM(holder)
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, FALSE)
 	var/datum/cap_data/wires/D = act?.data
 	return D?.wire_set ? D.wire_set.is_cut(wire) : FALSE

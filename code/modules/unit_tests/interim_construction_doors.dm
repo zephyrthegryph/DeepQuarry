@@ -35,10 +35,14 @@
 /datum/unit_test/interim_airlock_electronics_emag/Run()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
+	var/obj/item/card/emag/card = allocate(/obj/item/card/emag)
+	var/uses = card.uses
 	TEST_ASSERT(!electronics.emagged, "Electronics must start with intact access restrictions")
-	TEST_ASSERT_EQUAL(emag_target(electronics, 1, actor), 1, "First emag must consume one use")
+	perform_op(actor, electronics, "emag.use", card, origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_EQUAL(card.uses, uses - 1, "First emag must consume one use")
 	TEST_ASSERT(electronics.emagged, "Successful emag did not remove access restrictions")
-	TEST_ASSERT_EQUAL(emag_target(electronics, 1, actor), EMAG_DECLINED, "Already emagged electronics must refuse another use")
+	perform_op(actor, electronics, "emag.use", card, origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_EQUAL(card.uses, uses - 1, "Already emagged electronics must refuse another use")
 	TEST_ASSERT(electronics.emagged, "Declined repeat emag must retain the bypass")
 
 /datum/unit_test/interim_girder_secure_displace/Run()
@@ -117,8 +121,9 @@
 	actor.name = actor.real_name
 	var/obj/item/airlock_electronics/electronics = allocate(/obj/item/airlock_electronics)
 	TEST_ASSERT(electronics.locked, "Electronics must initially be locked")
-	TEST_ASSERT_EQUAL(emag_target(electronics, 1, actor), 1, "Fixture must bypass access checks")
-	TEST_ASSERT(electronics.ui_act_login(actor, list()), "Login handler did not accept the explicit actor")
+	perform_op(actor, electronics, "emag.use", allocate(/obj/item/card/emag), origin = ORIGIN_SYSTEM)
+	TEST_ASSERT(electronics.emagged, "Fixture must bypass access checks")
+	perform_op(actor, electronics, "login", origin = ORIGIN_SYSTEM)
 	TEST_ASSERT(!electronics.locked, "Emagged electronics must unlock for the supplied actor")
 	TEST_ASSERT_EQUAL(electronics.last_configurator, actor.name, "Login attribution must identify the supplied actor")
 
@@ -129,7 +134,7 @@
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
 	door.set_stat(0)
 	TEST_ASSERT(door.arePowerSystemsOn(), "Fixture must have working airlock power")
-	var/datum/wires/wires = wires_of(door)
+	var/datum/wires/wires = wire_set_of(door)
 	TEST_ASSERT_NOTNULL(wires, "Airlock did not provide wires")
 	wires.pulse(WIRE_ELECTRIFY, actor)
 	TEST_ASSERT(door.isElectrified(), "Pulsing the electrify wire must electrify the door")

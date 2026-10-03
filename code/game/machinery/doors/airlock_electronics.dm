@@ -16,32 +16,53 @@ MATERIAL_MIX(/obj/item/airlock_electronics, list(MAT_STEEL = 50,MAT_GLASS = 50))
 	var/locked = 1
 	var/emagged = 0
 
-DECLARE_EMAG(/obj/item/airlock_electronics, PROC_REF(on_emag), null, null)
+TRACKED(/obj/item/airlock_electronics, locked)
+TRACKED(/obj/item/airlock_electronics, one_access)
+TRACKED(/obj/item/airlock_electronics, last_configurator)
+
+MSG_DEF_SELF(airlock_electronics/hardened, "You don't appear to be able to bypass this hardened device!")
+MSG_DEF_SELF(airlock_electronics/logged_out, "It is locked: log in first.")
+MSG_DEF_SELF(airlock_electronics/cant_use, "You can't use that right now.")
+MSG_DEF(airlock_electronics/emagged, "You remove the access restrictions on %T%!", "")
+
+// The device is its own window: held and used on itself it opens the programming interface; its buttons are ops.
+
+CAPABILITIES(/obj/item/airlock_electronics, \
+	interface("AirlockElectronics", title = "Airlock Electronics", input = in_hand()), \
+	emag(list(needs(req(PROC_REF(not_hardened), because = MSG(airlock_electronics/hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged)), \
+	op("login", ui_act("login"), then(PROC_REF(ui_login))), \
+	op("logout", ui_act("logout"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_logout))), \
+	op("one_access", ui_act("one_access"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_one_access))), \
+	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access_all))), \
+	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access))), \
+	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok), because = MSG(airlock_electronics/cant_use)))), \
+	extend("ui_open", when(req(PROC_REF(user_may_open)))))
+
+/// Only a person or a cyborg takes the device in hand to program it.
+/obj/item/airlock_electronics/proc/user_may_open(datum/act/op/A)
+	return ishuman(A.actor) || istype(A.actor, /mob/living/silicon/robot)
+
+/obj/item/airlock_electronics/proc/ui_user_ok(datum/act/op/A)
+	var/mob/user = A.actor
+	return !user.stat && !user.restrained() && (ishuman(user) || istype(user, /mob/living/silicon))
+
+/obj/item/airlock_electronics/proc/logged_in(datum/act/A)
+	return !locked
+
+/obj/item/airlock_electronics/proc/not_hardened(datum/act/A)
+	return !secure // ALLOW(reads): the hardened kind is a different type; the flag never changes
+
+/// A cryptographic sequencer removes the access restrictions (a hardened device cannot be bypassed).
+/obj/item/airlock_electronics/proc/emag_effect(datum/act/op/A)
+	emagged = 1
+	return OP_OK
 
 /obj/item/airlock_electronics/mark_emagged()
 	emagged = TRUE
-/obj/item/airlock_electronics/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	emagged = 1
-	to_chat(user, span_notice("You remove the access restrictions on [src]!"))
-	return 1
 
-// TGUI migration. attack_self opens AirlockElectronics.tsx;
-// the Topic dispatch moves to tgui_act.
-DECLARE_INTERACTIONS(/obj/item/airlock_electronics, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/// Old attack_self.
-/obj/item/airlock_electronics/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ishuman(user) && !istype(user, /mob/living/silicon/robot))
-		return TRUE
-	tgui_interact(user)
-	return TRUE
-
-DECLARE_UI(/obj/item/airlock_electronics, "AirlockElectronics", UI_TITLE("Airlock Electronics"))
-
-UI_DATA_REPLACE(/obj/item/airlock_electronics, "merge:ui_data_obj_item_airlock_electronics{locked:bool,one_access:bool,last_configurator:bool,all_selected:bool,accesses:list}")
-
-/// The computed part of /obj/item/airlock_electronics's window data (declared on its UI_DATA row).
-/obj/item/airlock_electronics/proc/ui_data_obj_item_airlock_electronics(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window data.
+/obj/item/airlock_electronics/ui_data(datum/act/eval/A)
+	var/mob/user = A.actor
 	var/list/data = list()
 	data["locked"] = !!locked
 	data["one_access"] = !!one_access
@@ -58,78 +79,61 @@ UI_DATA_REPLACE(/obj/item/airlock_electronics, "merge:ui_data_obj_item_airlock_e
 	data["accesses"] = access_list
 	return data
 
-/obj/item/airlock_electronics/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(user.stat || user.restrained() || (!ishuman(user) && !istype(user, /mob/living/silicon)))
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/item/airlock_electronics, "login", ui_act_login)
-UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_login)
+/obj/item/airlock_electronics/proc/ui_login(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged || issilicon(user))
-		locked = 0
-		last_configurator = user.name
+		set_locked(0)
+		set_last_configurator(user.name)
 	else if(isliving(user))
 		var/obj/item/card/id/id
 		if(ishuman(user))
 			var/mob/living/carbon/human/H = user
 			id = H.get_idcard()
 			if(id && check_access(id))
-				locked = 0
-				last_configurator = id.registered_name
+				set_locked(0)
+				set_last_configurator(id.registered_name)
 		if(locked)
 			var/obj/item/I = user.get_active_hand()
 			id = I?.GetID()
 			if(id && check_access(id))
-				locked = 0
-				last_configurator = id.registered_name
-	return TRUE
+				set_locked(0)
+				set_last_configurator(id.registered_name)
+	return OP_OK
 
-UI_ACT(/obj/item/airlock_electronics, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_logout)
-	if(locked)
-		return TRUE
-	locked = 1
-	return TRUE
+/obj/item/airlock_electronics/proc/ui_logout(datum/act/op/A)
+	set_locked(1)
+	return OP_OK
 
-UI_ACT(/obj/item/airlock_electronics, "one_access", ui_act_one_access)
-UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_one_access)
-	if(locked)
-		return TRUE
-	one_access = !one_access
-	return TRUE
+/obj/item/airlock_electronics/proc/ui_one_access(datum/act/op/A)
+	set_one_access(!one_access)
+	return OP_OK
 
-UI_ACT(/obj/item/airlock_electronics, "access_all", ui_act_access_all)
-UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access_all)
-	if(locked)
-		return TRUE
+/obj/item/airlock_electronics/proc/ui_access_all(datum/act/op/A)
 	// Clears all access requirements; only allow users who may program any access.
-	var/list/available = get_available_accesses(user)
+	var/list/available = get_available_accesses(A.actor)
 	if(length(available) && length(available) >= length(SSaccess.get_all_station_access()))
 		conf_access = null
-	return TRUE
+		changed(src)
+	return OP_OK
 
-UI_ACT(/obj/item/airlock_electronics, "access", ui_act_access, UI_ARG_NUM("access"))
-UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access)
-	if(locked)
-		return TRUE
+/obj/item/airlock_electronics/proc/ui_access(datum/act/op/A, access)
 	// Re-validate the client-supplied access against what this user may actually program.
-	var/acc = params["access"]
-	if(acc in get_available_accesses(user))
-		toggle_access(acc)
-	return TRUE
+	if(access in get_available_accesses(A.actor))
+		toggle_access(access)
+	return OP_OK
 
 /obj/item/airlock_electronics/proc/toggle_access(req)
 	// Copy: conf_access may be a door's interned access list (intern_access_lists()).
-	conf_access = conf_access ? conf_access.Copy() : list()
+	var/list/access = conf_access ? conf_access.Copy() : list()
 
-	if (!(req in conf_access))
-		conf_access += req
+	if (!(req in access))
+		access += req
 	else
-		conf_access -= req
-		if (!conf_access.len)
-			conf_access = null
+		access -= req
+		if (!access.len)
+			access = null
+	conf_access = access
+	changed(src)
 
 /obj/item/airlock_electronics/proc/get_available_accesses(mob/user)
 	var/obj/item/card/id/id
@@ -156,7 +160,3 @@ UI_ACT_PROC(/obj/item/airlock_electronics, ui_act_access)
 	name = "secure airlock electronics"
 	desc = "designed to be somewhat more resistant to hacking than standard electronics."
 	secure = 1
-
-/obj/item/airlock_electronics/secure/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_warning("You don't appear to be able to bypass this hardened device!"))
-	return EMAG_DECLINED

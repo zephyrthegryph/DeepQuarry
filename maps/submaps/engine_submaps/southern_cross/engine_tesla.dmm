@@ -173,7 +173,7 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_outer";
@@ -632,7 +632,7 @@
 /area/engineering/engine_room)
 "bB" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_north_inner";
@@ -1083,7 +1083,7 @@
 	req_one_access = list(10,11,13)
 	},
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_outer";
@@ -1096,7 +1096,7 @@
 /area/engineering/engine_room)
 "cB" = (
 /obj/machinery/door/airlock/glass_external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1379;
 	icon_state = "door_locked";
 	id_tag = "eng_south_inner";

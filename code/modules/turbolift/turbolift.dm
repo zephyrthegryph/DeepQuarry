@@ -62,11 +62,11 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 				A.play_ambience(M)
 		// Disable safeties on the doors during firemode, reset when done
 		for(var/obj/machinery/door/airlock/door in F.doors)
-			door.safe = new_fire_mode ? FALSE : initial(door.safe)
+			door.set_safe(new_fire_mode ? FALSE : initial(door.safe))
 
 	// Disable safeties on the doors during firemode, reset when done
 	for(var/obj/machinery/door/airlock/door in doors)
-		door.safe = new_fire_mode ? FALSE : initial(door.safe)
+		door.set_safe(new_fire_mode ? FALSE : initial(door.safe))
 	update_ext_panel_icons()
 	control_panel_interior.update_icon()
 

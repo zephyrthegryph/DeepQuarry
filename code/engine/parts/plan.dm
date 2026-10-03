@@ -53,8 +53,9 @@
 	var/list/captured
 	var/list/chance_entry
 	var/datum/entry/part/chance/chance
-	/// Effects in declaration order.
+	/// Effects in declaration order, the early ones (then(.., early = TRUE)) first.
 	var/list/effects
+	var/early_effects = 0
 	var/datum/entry/part/says/says
 	var/datum/entry/part/plays/plays
 	var/datum/entry/part/verbs/verb_pair
@@ -269,7 +270,7 @@
 			var/datum/entry/E = part
 			if(E.kind == ENTRY_THEN)
 				// E4's then(): the op's custom effect.
-				var/datum/entry/part/effect/then/then_part = part_make(/datum/entry/part/effect/then, list("handler" = E.args["handler"], "checks" = E.args["checks"]))
+				var/datum/entry/part/effect/then/then_part = part_make(/datum/entry/part/effect/then, list("handler" = E.args["handler"], "checks" = E.args["checks"], "early" = E.args["early"]))
 				LAZYADD(P.provenance, "[level] [then_part.describe()] @ [origin_text]")
 				then_part.compile(P, level)
 			else if(E.kind == ENTRY_CHANCE)
@@ -410,6 +411,13 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 
 /datum/entry/part/effect/compile(datum/op_plan/P, level)
 	LAZYADD(P.effects, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/effect/then/compile(datum/op_plan/P, level)
+	if(!src.args["early"])
+		return ..()
+	if(!P.effects)
+		P.effects = list()
+	P.effects.Insert(++P.early_effects, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
 /datum/entry/part/effect/toggles/compile(datum/op_plan/P, level)
 	..()

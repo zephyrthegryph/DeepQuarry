@@ -106,7 +106,7 @@
 	TEST_ASSERT_NULL(menu.default_action, "the resolver answers no input with it either")
 	TEST_ASSERT_NULL(action_def_of(ACT_NONE), "ACT_NONE is no action")
 	for(var/gesture in list(GESTURE_CLICK, GESTURE_SELF, GESTURE_ALT, GESTURE_CTRL, GESTURE_SHIFT, GESTURE_DRAG, GESTURE_RIGHT))
-		for(var/stance in GLOB.cap_all_stances)
+		for(var/stance in list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 			TEST_ASSERT(!(ACT_NONE in bind_profile_of(H).actions_for(gesture, stance)), "no profile lists ACT_NONE ([gesture], [stance])")
 		TEST_ASSERT_NOTEQUAL(dx_resolved_key(H, F, gesture), "menu_only", "no gesture reaches it ([gesture])")
 	var/datum/interaction_resolution/resolution = interactions_for(H, F, null, null, null, INPUT_ACTION_USE)
@@ -251,7 +251,7 @@
 	var/list/types = list(
 		/obj/cap_fixture/anchorable, /obj/cap_fixture/breakable, /obj/cap_fixture/seat, /obj/cap_fixture/cell_box,
 		/obj/cap_fixture/cell_charger, /obj/cap_fixture/climbable, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
-		/obj/cap_fixture/door_caps, /obj/item/dq_cap_fixture/flask, /obj/item/dq_cap_fixture/snack, /obj/cap_fixture/emag,
+		/obj/item/dq_cap_fixture/flask, /obj/item/dq_cap_fixture/snack, /obj/cap_fixture/emag,
 		/obj/structure/table/standard/cap_fixture, /obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
 		/obj/cap_fixture/panel, /obj/cap_fixture/reagent_vat, /obj/cap_fixture/reagent_jar, /obj/cap_fixture/rotatable,
 		/obj/cap_fixture/beacon, /obj/item/dq_cap_fixture/cig, /obj/cap_fixture/stampable, /obj/cap_fixture/storage_belt,

@@ -83,7 +83,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 	changed(A) // the wires window is its own host: the door's look and panel follow the wire
 	switch(wire)
 		if(WIRE_IDSCAN)
-			A.aiDisabledIdScanner = !mend
+			A.set_aiDisabledIdScanner(!mend)
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!mend)
 				//Cutting either one disables the main door power, but unless backup power is also cut, the backup power re-powers the door in 10 seconds. While unpowered, the door may be crowbarred open, but bolts-raising will not work. Cutting these wires may electocute the user.
@@ -112,14 +112,14 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 				//one wire for AI control. Cutting this prevents the AI from controlling the door unless it has hacked the door through the power connection (which takes about a minute). If both main and backup power are cut, as well as this wire, then the AI cannot operate or hack the door at all.
 				//aiControlDisabled: If 1, AI control is disabled until the AI hacks back in and disables the lock. If 2, the AI has bypassed the lock. If -1, the control is enabled but the AI had bypassed it earlier, so if it is disabled again the AI would have no trouble getting back in.
 				if(A.aiControlDisabled == 0)
-					A.aiControlDisabled = 1
+					A.set_aiControlDisabled(1)
 				else if(A.aiControlDisabled == -1)
-					A.aiControlDisabled = 2
+					A.set_aiControlDisabled(2)
 			else
 				if(A.aiControlDisabled == 1)
-					A.aiControlDisabled = 0
+					A.set_aiControlDisabled(0)
 				else if(A.aiControlDisabled == 2)
-					A.aiControlDisabled = -1
+					A.set_aiControlDisabled(-1)
 
 		if(WIRE_ELECTRIFY)
 			if(!mend)
@@ -130,7 +130,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 			return // Don't update the dialog.
 
 		if (WIRE_SAFETY)
-			A.safe = mend
+			A.set_safe(mend)
 
 		if(WIRE_SPEED)
 			A.autoclose = mend
@@ -139,7 +139,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 					A.close()
 
 		if(WIRE_BOLT_LIGHT)
-			A.lights = mend
+			A.set_lights(mend)
 
 
 /datum/wires/airlock/on_pulse(wire, mob/user)
@@ -169,11 +169,11 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 
 		if(WIRE_AI_CONTROL)
 			if(A.aiControlDisabled == 0)
-				A.aiControlDisabled = 1
+				A.set_aiControlDisabled(1)
 			else if(A.aiControlDisabled == -1)
-				A.aiControlDisabled = 2
+				A.set_aiControlDisabled(2)
 
-			om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
+			after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
 		if(WIRE_ELECTRIFY)
 			//one wire for electrifying the door. Sending a pulse through this electrifies the door for 30 seconds.
@@ -188,7 +188,7 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 				else			A.close()
 
 		if(WIRE_SAFETY)
-			A.safe = !A.safe
+			A.set_safe(!A.safe)
 			if(!A.density)
 				A.close()
 
@@ -196,11 +196,11 @@ UI_ACT_PROC(/datum/wires/airlock, ui_act_clear_frequency)
 			A.normalspeed = !A.normalspeed
 
 		if(WIRE_BOLT_LIGHT)
-			A.lights = !A.lights
+			A.set_lights(!A.lights)
 
 /datum/wires/airlock/proc/ai_control_pulse_ends()
 	var/obj/machinery/door/airlock/A = holder
 	if(A.aiControlDisabled == 1)
-		A.aiControlDisabled = 0
+		A.set_aiControlDisabled(0)
 	else if(A.aiControlDisabled == 2)
-		A.aiControlDisabled = -1
+		A.set_aiControlDisabled(-1)

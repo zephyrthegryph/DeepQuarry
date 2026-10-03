@@ -99,7 +99,7 @@
 
 /datum/event2/event/airlock_failure/door_crush/break_door(obj/machinery/door/airlock/door)
 	door.normalspeed = FALSE
-	door.safe = FALSE
+	door.set_safe(FALSE)
 
 /datum/event2/event/airlock_failure/shock/break_door(obj/machinery/door/airlock/door)
 	door.electrify(-1)

@@ -144,14 +144,14 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 			var/obj/machinery/door/airlock/airlock = object
 			var/obj/machinery/door/airlock/new_airlock = new_object
 			new_airlock.req_one_access = airlock.req_one_access?.Copy()
-			cap_set(new_airlock, CAP_BOLTED, is_bolted(airlock))
+			cap_key_set(new_airlock, BOLTS_BOLTED, is_bolted(airlock), null)
 			if(istype(object, /obj/machinery/door/airlock/multi_tile))
 				for(var/turf/location in object.locs)
 					if(location == object.loc)
 						continue
 					var/obj/machinery/door/airlock/long_airlock = new replace_path(location)
 					long_airlock.req_one_access = airlock.req_one_access?.Copy()
-					cap_set(long_airlock, CAP_BOLTED, is_bolted(airlock))
+					cap_key_set(long_airlock, BOLTS_BOLTED, is_bolted(airlock), null)
 					long_airlock.name = airlock.name
 		new_object.name = object.name
 	qdel(object)

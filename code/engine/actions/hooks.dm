@@ -72,8 +72,9 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 
 /// then(PROC_REF(x), checks = /datum/act/y): calls x(datum/act/A). CAP_PROC(x) names a proc of the capability datum. `checks` is an op effect's declaration of the
 /// world action it starts (the op engine pre-checks it; a hook ignores it).
-/proc/then(handler, checks = null)
-	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks))
+/// `early` (an op effect only): the effect runs before the op's other effects, in declaration order among the early ones (a shock a touch takes first).
+/proc/then(handler, checks = null, early = FALSE)
+	return entry_make(ENTRY_THEN, null, list("handler" = handler, "checks" = checks, "early" = early))
 
 /// chance(p, otherwise = parts): inside an instead, takes over with probability p percent (one roll, drawn only when the hook's earlier gates held). In an
 /// op the failed roll plays `otherwise` (feedback parts) and commits the op's costs.

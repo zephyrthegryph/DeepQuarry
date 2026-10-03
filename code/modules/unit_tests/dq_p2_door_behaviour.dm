@@ -47,13 +47,18 @@
 /proc/p2_door_emergency(obj/machinery/door/D)
 	return emergency_access_on(D)
 
+/// How far an airlock assembly is built: 0 bare, 1 wired, 2 with its electronics in.
+/proc/p2_door_assembly_state(obj/structure/door_assembly/A)
+	return A.assembly_state()
+
 /// Whether the door has power it can move on (main or backup).
 /proc/p2_door_powered(obj/machinery/door/airlock/D)
 	return D.arePowerSystemsOn()
 
 /// Whether the door's safeties stop it closing on someone.
 /proc/p2_door_safeties(obj/machinery/door/D)
-	return door_safeties_on(D)
+	var/obj/machinery/door/airlock/A = D
+	return !istype(A) || !!A.safe
 
 /// Sets whether the door closes itself after a wait (the timing wire's switch).
 /proc/p2_door_set_autoclose(obj/machinery/door/D, on)
@@ -73,11 +78,11 @@
 
 /// Cuts wire `wire`, or mends it when it is cut (the wirecutter toggle).
 /proc/p2_door_wire_cut(obj/machinery/door/D, wire, mob/actor)
-	return wires_of(D).cut(wire, actor)
+	return wire_set_of(D).cut(wire, actor)
 
 /// Sends a multitool pulse down wire `wire`.
 /proc/p2_door_wire_pulse(obj/machinery/door/D, wire, mob/actor)
-	return wires_of(D).pulse(wire, actor)
+	return wire_set_of(D).pulse(wire, actor)
 
 /// Drops (on) or raises the bolts the way a wire or a button does: forced, no power or wire check.
 /proc/p2_door_set_bolts(obj/machinery/door/D, on)
@@ -1283,7 +1288,7 @@
 	if(!A.anchored)
 		return null
 	click(H, A, give_item(H, /obj/item/stack/cable_coil, 5))
-	if(A.state != 1)
+	if(p2_door_assembly_state(A) != 1)
 		return null
 	click(H, A, hold(H, board))
 	return board
@@ -1296,15 +1301,15 @@
 	var/obj/item/airlock_electronics/board = allocate(/obj/item/airlock_electronics, H.loc)
 	board.conf_access = list(ACCESS_ENGINE)
 	TEST_ASSERT(!A.anchored, "a new assembly is loose")
-	TEST_ASSERT_EQUAL(A.state, 0, "and bare")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 0, "and bare")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	TEST_ASSERT(A.anchored, "a wrench bolts it to the floor")
 	var/obj/item/stack/cable_coil/cable = give_item(H, /obj/item/stack/cable_coil, 5)
 	click(H, A, cable)
-	TEST_ASSERT_EQUAL(A.state, 1, "cable wires it")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 1, "cable wires it")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 4, "using one length")
 	click(H, A, hold(H, board))
-	TEST_ASSERT_EQUAL(A.state, 2, "electronics go in")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 2, "electronics go in")
 	TEST_ASSERT_EQUAL(A.electronics, board, "and the assembly keeps them")
 	click(H, A, give_tool(H, /obj/item/tool/screwdriver))
 	TEST_ASSERT(QDELETED(A), "a screwdriver finishes the airlock")
@@ -1345,13 +1350,13 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/airlock_electronics/board = frame_up(A, H, list(ACCESS_ENGINE))
 	TEST_ASSERT_NOTNULL(board, "the frame went up")
-	TEST_ASSERT_EQUAL(A.state, 2, "electronics in")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 2, "electronics in")
 	click(H, A, give_tool(H, /obj/item/tool/crowbar))
-	TEST_ASSERT_EQUAL(A.state, 1, "a crowbar takes the electronics out")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 1, "a crowbar takes the electronics out")
 	TEST_ASSERT_NULL(A.electronics, "the assembly no longer holds them")
 	TEST_ASSERT_EQUAL(board.loc, tile(2, 2), "they lie on the floor")
 	click(H, A, give_tool(H, /obj/item/tool/wirecutters))
-	TEST_ASSERT_EQUAL(A.state, 0, "wirecutters strip the wiring")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 0, "wirecutters strip the wiring")
 	TEST_ASSERT(A.anchored, "the frame is still bolted down")
 	click(H, A, give_tool(H, /obj/item/tool/wrench))
 	TEST_ASSERT(!A.anchored, "a wrench frees it again")
@@ -1364,7 +1369,7 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	var/obj/item/stack/cable_coil/cable = give_item(H, /obj/item/stack/cable_coil, 5)
 	click(H, A, cable)
-	TEST_ASSERT_EQUAL(A.state, 0, "a loose frame cannot be wired")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 0, "a loose frame cannot be wired")
 	TEST_ASSERT_EQUAL(cable.get_amount(), 5, "and no cable is used")
 
 /datum/unit_test/dq_p2_door/door_assembly_electronics_need_wiring_first
@@ -1449,7 +1454,7 @@
 	TEST_ASSERT_NOTNULL(A, "an assembly is left")
 	own(A)
 	TEST_ASSERT(A.anchored, "bolted down")
-	TEST_ASSERT_EQUAL(A.state, 1, "wired, awaiting electronics")
+	TEST_ASSERT_EQUAL(p2_door_assembly_state(A), 1, "wired, awaiting electronics")
 	var/obj/item/airlock_electronics/board = locate(/obj/item/airlock_electronics) in tile(2, 2)
 	TEST_ASSERT_NOTNULL(board, "the electronics lie on the floor")
 	TEST_ASSERT(board.conf_access ~= list(ACCESS_ENGINE), "with the door's access on them")

@@ -6,12 +6,12 @@
 	var/datum/radio_frequency/radio_connection
 	var/last_reported_density = -1
 	var/last_reported_locked = -1
+	/// The command the door is currently attempting to complete; command_step() retries it every second while set (airlock.dm declares the every()).
+	var/cur_command
 
-/// The command the door is currently attempting to complete; command_step() retries it while set.
-OM_FIELD(/obj/machinery/door/airlock, cur_command, null, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command")
+TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTINGS)
 
-/obj/machinery/door/airlock/proc/command_step()
+/obj/machinery/door/airlock/proc/command_step(datum/act/A)
 	if (arePowerSystemsOn())
 		execute_current_command()
 
@@ -46,8 +46,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	if(do_lock)
 		lock(forced = TRUE)
 	if(delayed_status)
-		// ALLOW(sys_om_after_rearm): one-shot deferral, not a loop: the re-armed call passes no args, so delayed_status is FALSE there and it never re-arms.
-		om_after(src, 0.2 SECONDS, PROC_REF(check_completion))
+		after(src, 0.2 SECONDS, PROC_REF(check_completion))
 		return
 	var/completed_command = cur_command
 	if(command_completed(completed_command))
@@ -58,11 +57,11 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	switch(command)
 		if("open")
 			open()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("close")
 			close()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion))
 
 		if("unlock")
 			unlock()
@@ -74,12 +73,12 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 		if("secure_open")
 			unlock()
 
-			om_after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
+			after(src, 0.2 SECONDS, PROC_REF(do_secure_open))
 
 		if("secure_close")
 			unlock()
 			close()
-			om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE, 0.2 SECONDS)
+			after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), with = list(TRUE, 0.2 SECONDS))
 
 		if("update")
 			check_completion(delayed_status = TRUE)
@@ -88,7 +87,7 @@ DECLARE_REPEAT(/obj/machinery/door/airlock, 1 SECOND, command_step, "cur_command
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	open()
-	om_after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), TRUE)
+	after(src, anim_length_before_density + anim_length_before_finalize, PROC_REF(check_completion), with = list(TRUE))
 
 /obj/machinery/door/airlock/proc/command_completed(command)
 	switch(command)

@@ -122,7 +122,7 @@
 	if(wire_cut(WIRE_BOLT_LIGHT))
 		to_chat(user, "The bolt lights wire is cut - The door bolt lights are permanently disabled.")
 		return
-	lights = !lights
+	set_lights(!lights)
 	to_chat(user, span_notice("Lights are now [lights ? "on." : "off."]"))
 	changed(src) // an AI hotkey, not a dispatched call
 	return TRUE

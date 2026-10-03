@@ -2998,7 +2998,7 @@
 	icon_state = "1-2"
 	},
 /obj/machinery/door/airlock/medical{
-	cap_state = 64;
+	welded_at_start = 1;
 	name = "Medical Wing"
 	},
 /turf/simulated/floor/tiled/old_tile/gray,
@@ -3508,7 +3508,7 @@
 /area/derelict/eva/annex)
 "oM" = (
 /obj/machinery/door/airlock/glass{
-	cap_state = 64;
+	welded_at_start = 1;
 	name = "Hydroponics"
 	},
 /turf/simulated/floor/tiled/old_tile/gray,
@@ -3964,7 +3964,7 @@
 	icon_state = "4-8"
 	},
 /obj/machinery/door/airlock/medical{
-	cap_state = 64;
+	welded_at_start = 1;
 	name = "Medical Wing"
 	},
 /turf/simulated/floor/tiled/old_tile/gray,
@@ -3991,7 +3991,7 @@
 /area/derelict/arrival)
 "qJ" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	name = "Storage Bay"
 	},
 /obj/effect/decal/cleanable/dirt,
@@ -4003,7 +4003,7 @@
 /area/derelict/crew_quarters)
 "qL" = (
 /obj/machinery/door/airlock/medical{
-	cap_state = 64;
+	welded_at_start = 1;
 	name = "Medical Wing"
 	},
 /turf/simulated/floor/tiled/old_tile/gray,
@@ -4064,7 +4064,7 @@
 /area/derelict/arrival)
 "qW" = (
 /obj/machinery/door/airlock/hatch{
-	cap_state = 128;
+	bolted_at_start = 1;
 	name = "Storage Bay"
 	},
 /turf/simulated/floor/tiled/old_tile/gray,

@@ -114,6 +114,5 @@
 	for(var/name in list("power_channel_mode", "set_power_channel_mode", "power_channel_load", "power_breaker", "set_power_breaker", "power_nightshift", "set_power_nightshift", "power_nightshift_lit", "power_channels_lit", "slot_refusal", "slot_inserted", "slot_ejected", "set_bolted", "is_electrified", "electrified_left", "electric_shock", "cap_pry_reason", "cap_pry_name", "cap_pry_force", "door_safeties_on", "emag_message", "emag_committed", "cap_panel_toggle", "wall_mount_orient", "gas_at_port", "wires_type_for", "cap_writable_write"))
 		TEST_ASSERT(!hascall(I, name), "/atom has no holder proc [name]")
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
-	TEST_ASSERT(istype(cap_of(door, /datum/capability/bolts), /datum/capability/bolts/airlock), "the airlock's bolts subtype")
 	TEST_ASSERT(set_bolted(door, TRUE, TRUE), "bolting through the airlock's mechanism")
 	TEST_ASSERT(is_bolted(door), "bolted")

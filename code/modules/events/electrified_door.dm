@@ -29,7 +29,7 @@
 		chosen_door().electrify(-1)
 	chosen_door().lock()
 	chosen_door().take_damage(chosen_door().max_integrity * 5/6, BRUTE)
-	chosen_door().aiControlDisabled = 1
+	chosen_door().set_aiControlDisabled(1)
 	chosen_door().update_icon()
 
 /// Accessor for the chosen_door var.

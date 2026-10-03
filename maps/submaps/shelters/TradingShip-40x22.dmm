@@ -377,7 +377,7 @@
 	command = "cycle_exterior"
 	},
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_outer";
@@ -573,7 +573,7 @@
 /area/survivalpod/superpose/TradingShip)
 "nh" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_inner";
@@ -1027,7 +1027,7 @@
 "wz" = (
 /obj/machinery/atmospherics/pipe/simple/visible,
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_inner";
@@ -1399,7 +1399,7 @@
 /area/survivalpod/superpose/TradingShip)
 "FW" = (
 /obj/machinery/door/airlock/external{
-	cap_state = 128;
+	bolted_at_start = 1;
 	frequency = 1331;
 	icon_state = "door_locked";
 	id_tag = "trade2_outer";
