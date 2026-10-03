@@ -53,8 +53,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 /obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
-		user.drop_item()
-		W.forceMove(src)
+		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		if(istype(W, /obj/item/paper))
 			rel_set(src, nameof(toppaper), W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
