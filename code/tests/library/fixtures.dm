@@ -152,4 +152,51 @@ CAPABILITIES(/obj/lib_fixture/glow_box)
 /obj/lib_fixture/glow_box/proc/note_line(datum/act/A)
 	return shown_note
 
+/// Structures: buckle() and climb(). A chair seats one, a sofa two (and waits longer to seat someone else), a pipe takes only a restrained mob.
+/obj/lib_fixture/chair
+	name = "lib chair"
+
+CAPABILITIES(/obj/lib_fixture/chair)
+	buckle()
+
+/obj/lib_fixture/sofa
+	name = "lib sofa"
+
+CAPABILITIES(/obj/lib_fixture/sofa)
+	buckle(slots = 2, delay = 3 SECONDS)
+
+/obj/lib_fixture/clamp
+	name = "lib clamp"
+
+CAPABILITIES(/obj/lib_fixture/clamp)
+	buckle(restrained = TRUE)
+
+/// A mob that is always restrained (handcuffed): the one a clamp takes.
+/mob/living/simple_mob/e0_fixture/lib_cuffed
+	name = "lib cuffed mob"
+
+/mob/living/simple_mob/e0_fixture/lib_cuffed/restrained()
+	return TRUE
+
+/// A crate is climbed onto in 3.5 seconds; a railing in 2 and, from its own tile, over to the tile it faces.
+/obj/lib_fixture/crate
+	name = "lib crate"
+	density = TRUE
+
+CAPABILITIES(/obj/lib_fixture/crate)
+	climb()
+
+/obj/lib_fixture/railing
+	name = "lib railing"
+	density = TRUE
+	dir = EAST
+
+CAPABILITIES(/obj/lib_fixture/railing)
+	climb(delay = 2 SECONDS, vaulting = TRUE)
+
+/// Something solid that is not climbable: it stops a climb onto its tile.
+/obj/lib_fixture/boulder
+	name = "lib boulder"
+	density = TRUE
+
 #endif

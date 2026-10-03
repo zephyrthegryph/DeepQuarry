@@ -31,6 +31,17 @@
 /datum/capdef_decl/c_breakable/spec()
 	return list(CAP_BREAKABLE, /datum/capability/lib/breakable, NONE, STACK, "breakable", "repair")
 
+/// CAPABILITY_TYPE(buckle, CAP_BUCKLE) at code/library/structures/buckle.dm:41
+/datum/capability/lib/buckle
+	var/slots = 1
+	var/delay = 1.5 SECONDS
+	var/restrained = FALSE
+/proc/buckle(slots, delay, restrained)
+	RETURN_TYPE(/datum/capability/lib/buckle)
+	return cap_construct(CAP_BUCKLE, /datum/capability/lib/buckle, list(slots, delay, restrained), "slots, delay, restrained")
+/datum/capdef_decl/c_buckle/spec()
+	return list(CAP_BUCKLE, /datum/capability/lib/buckle, NONE, STACK, "buckle", "slots, delay, restrained")
+
 /// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/bays.dm:70
 /datum/capability/lib/cell_bay
 	var/slot_var = null
@@ -42,6 +53,16 @@
 	return cap_construct(CAP_CELL_BAY, /datum/capability/lib/cell_bay, list(slot_var, at, accepts, starts), "slot_var, at, accepts, starts")
 /datum/capdef_decl/c_cell_bay/spec()
 	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts")
+
+/// CAPABILITY_TYPE(climb, CAP_CLIMB) at code/library/structures/climb.dm:30
+/datum/capability/lib/climb
+	var/delay = 3.5 SECONDS
+	var/vaulting = FALSE
+/proc/climb(delay, vaulting)
+	RETURN_TYPE(/datum/capability/lib/climb)
+	return cap_construct(CAP_CLIMB, /datum/capability/lib/climb, list(delay, vaulting), "delay, vaulting")
+/datum/capdef_decl/c_climb/spec()
+	return list(CAP_CLIMB, /datum/capability/lib/climb, NONE, STACK, "climb", "delay, vaulting")
 
 /// CAPABILITY_TYPE(compartment, CAP_COMPARTMENT) at code/engine/library/bays.dm:38
 /datum/capability/lib/compartment
@@ -3718,6 +3739,27 @@
 	into += entry_line(130)
 	into += list(global.while_slotted(SLOT_ANY_HELD, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 3)), on = ON_HOLDER))
 
+/// CAPABILITIES(/obj/lib_fixture/chair) at code/tests/library/fixtures.dm:159
+/obj/lib_fixture/chair/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 159, /obj/lib_fixture/chair)
+	into += entry_line(160)
+	into += list(global.buckle())
+
+/// CAPABILITIES(/obj/lib_fixture/clamp) at code/tests/library/fixtures.dm:171
+/obj/lib_fixture/clamp/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 171, /obj/lib_fixture/clamp)
+	into += entry_line(172)
+	into += list(global.buckle(restrained = TRUE))
+
+/// CAPABILITIES(/obj/lib_fixture/crate) at code/tests/library/fixtures.dm:186
+/obj/lib_fixture/crate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 186, /obj/lib_fixture/crate)
+	into += entry_line(187)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:145
 /obj/lib_fixture/glow_box/declared_entries(list/into)
 	..(into)
@@ -3753,6 +3795,20 @@
 	into += entry_block("code/tests/library/fixtures.dm", 108, /obj/lib_fixture/pod/stubborn)
 	into += entry_line(109)
 	into += list(global.configure(global.interior(escape_chance = 0)))
+
+/// CAPABILITIES(/obj/lib_fixture/railing) at code/tests/library/fixtures.dm:194
+/obj/lib_fixture/railing/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 194, /obj/lib_fixture/railing)
+	into += entry_line(195)
+	into += list(global.climb(delay = 2 SECONDS, vaulting = TRUE))
+
+/// CAPABILITIES(/obj/lib_fixture/sofa) at code/tests/library/fixtures.dm:165
+/obj/lib_fixture/sofa/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 165, /obj/lib_fixture/sofa)
+	into += entry_line(166)
+	into += list(global.buckle(slots = 2, delay = 3 SECONDS))
 
 /// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:77
 /obj/lib_fixture/tank/declared_entries(list/into)
