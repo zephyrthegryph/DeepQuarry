@@ -107,10 +107,12 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 		held.resolve_attackby(src, user)
 		return TRUE
 
+	if(!istype(held, /obj/item/card/id))
+		return TRUE
 	var/obj/item/card/id/idcard = held
 	if(!held_card())
-		user.drop_item()
-		idcard.forceMove(src)
+		if(!own_bring_in(src, nameof(held_card), idcard, null, user, TRUE, null, FALSE))
+			return TRUE
 		rel_set(src, nameof(held_card), idcard)
 		if(authenticated_account() && held_card().associated_account_number != authenticated_account().account_number)
 			rel_clear(src, nameof(authenticated_account))
@@ -129,15 +131,21 @@ DECLARE_EMAG(/obj/machinery/atm, PROC_REF(on_emag), null, null)
 
 /obj/machinery/atm/proc/interaction_atm_deposit_cash(mob/user, obj/item/spacecash/held, datum/interaction/interaction)
 	// Convert physical cash into an audited account deposit.
-	authenticated_account().credit(held.worth, user.real_name, "Cash deposit", machine_id)
+	var/datum/money_account/account = authenticated_account()
+	var/deposit_value = held.worth
+	if(!account || account.suspended || !isnum(deposit_value) || deposit_value <= 0)
+		return TRUE
+	var/cash_name = "[held]"
+	if(!consume(held, user))
+		return TRUE
+	account.credit(deposit_value, user.real_name, "Cash deposit", machine_id)
 	if(prob(50))
 		play_sfx(src, SFX_ITEMS_POLAROID1)
 	else
 		play_sfx(src, SFX_ITEMS_POLAROID2)
 
-	to_chat(user, span_info("You insert [held] into [src]."))
+	to_chat(user, span_info("You insert [cash_name] into [src]."))
 	src.attack_hand(user)
-	consume(held, user)
 	return TRUE
 
 /obj/machinery/atm/screwdriver_act(mob/user, obj/item/tool)
