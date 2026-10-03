@@ -64,12 +64,20 @@
 /// that takes no ionic damage, a mob family's own explosion ladder): delivers an empty packet so
 /// the type's reactions to `entry` fire. Returns TRUE if a reaction blocked the hit.
 /atom/proc/react_to_entry(entry, severity = 0, atom/source = null, atom/attacker = null)
-	if(!damage_rows_of(src))
-		return FALSE
 	var/datum/damage_packet/packet = damage_packet(source, attacker, null, null, DAMAGE_PACKET_SILENT, 0, 0, null, entry, severity)
+	// The engine's hit action first (a silent entry is a hit too: an EMP or a blast that lands no integrity loss still reaches the hooks).
+	var/hit = (entry == DAMAGE_ENTRY_PROJECTILE) ? ACT_PASS : hit_try(src, packet) // a round reaches the hit action through its own damage packet
+	if(isnull(hit))
+		packet.release()
+		return TRUE
+	if(!damage_rows_of(src))
+		act_done(hit)
+		packet.release()
+		return FALSE
 	if(entry == DAMAGE_ENTRY_PROJECTILE && GLOB.projectile_pre_reacted == ref(src))
 		packet.flags |= DAMAGE_PACKET_PRE_REACTED
 	. = react_to_packet(packet)
+	act_done(hit)
 	packet.release()
 
 /// The target (as a ref) whose DAMAGE_PROJECTILE BEFORE reactions bullet_act() has already run

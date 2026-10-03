@@ -192,7 +192,12 @@ CAPABILITIES(/obj/machinery/power/apc, \
 	extend("ui_open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
 	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))), \
 	extend("nightshift", drop = "lock"), \
+	extend("construction.undo:apc_board", when(COVER_OPEN)), \
+	extend("construction.undo:apc_wired", when(COVER_OPEN)), \
+	extend("construction.undo:apc_wired", priority(above("wires.cut"))), \
+	extend("construction.undo:apc_secured", when(COVER_OPEN)), \
 	extend("construction.build:apc_secured", priority(above("panel.open"))), \
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first)))), \
 	extend("construction.undo:apc_secured", priority(above("panel.open"))), \
 	extend("construction.undo:apc_board", priority(above("open_wires"))), \
 	extend("construction.undo:apc_wired", priority(above("open_wires"))), \
@@ -227,7 +232,8 @@ CAPABILITIES(/obj/machinery/power/apc/angled, \
 		stage(STAGE_APC_WIRED, stack(/obj/item/stack/cable_coil, 10), \
 			needs(req(TYPE_PROC_REF(/obj/machinery/power/apc, floor_exposed), because = MSG(apc/floor_blocks))), \
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_wired)), \
-			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut))), \
+			undone(TYPE_PROC_REF(/obj/machinery/power/apc, terminal_cut)), \
+			undo = list(tool(TOOL_WIRECUTTER))), \
 		stage(STAGE_APC_SECURED, tool(TOOL_SCREWDRIVER), \
 			needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))), \
 			then(TYPE_PROC_REF(/obj/machinery/power/apc, electronics_secured)), \

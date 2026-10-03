@@ -439,10 +439,14 @@ GLOBAL_DATUM(om_reg, /datum/om/registry)
 /// of the most-derived declared holder type that `key` is a subtype of (or
 /// equal to). Null when nothing was declared for it.
 /datum/om/registry/proc/slot_group_for(key)
+	// The most-derived declared holder type `key` is (or is a subtype of). The list is sorted by a partial order only (unrelated types compare equal),
+	// so the first match is not always the deepest: pick the one no other match is a subtype of.
+	var/best = null
 	for(var/h in slot_holder_types)
 		if(key == h || ispath(key, h))
-			return slot_groups_by_holder[h]
-	return null
+			if(isnull(best) || ispath(h, best))
+				best = h
+	return isnull(best) ? null : slot_groups_by_holder[best]
 
 /// Returns a new list: a's entries, then b's (b wins). Neither is modified.
 /proc/om_merge_assoc(list/a, list/b)

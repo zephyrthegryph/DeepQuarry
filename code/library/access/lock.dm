@@ -31,13 +31,17 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		// A card (or PDA) on the holder: the card in hand is the credential.
 		op("toggle", inputs(swipe), needs(req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		// An alt-click, with or without something in hand: what the actor carries is the credential.
-		op("toggle_worn", inputs(hand(), item(/obj/item)), gesture(GESTURE_ALT), needs(req_credential_worn(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
+		op("toggle_worn", inputs(hand()), when(CAP_PROC(worn_credential_offered)), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		extend(TAG_UI, needs(req_unlocked_for_actor(id = "lock"))),
 		extend(TAG_CONTROL, needs(req_unlocked_for_actor(id = "lock"))),
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),
 		examine_line(MSG(lock/is_unlocked), when = cond_not(LOCK_LOCKED)))
 
 /// What the lock toggle just did.
+/// The empty hand's touch is the lock's only where what the actor carries opens it (anything else the touch means is left alone).
+/datum/capability/lib/lock/proc/worn_credential_offered(datum/act/op/A)
+	return isnull(A.held) && req_credential_worn(id_types || list(/obj/item/card/id, /obj/item/pda)).holds(A)
+
 /datum/capability/lib/lock/proc/toggled_message(datum/act/A)
 	return lock_locked(A.holder) ? /datum/msg/lock/locked : /datum/msg/lock/unlocked
 

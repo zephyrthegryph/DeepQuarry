@@ -31,7 +31,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	return /datum/cap_data/wires
 
 /datum/capability/lib/wires/entries()
-	var/list/at_the_wires = list(needs(req_is(PANEL_OPEN, because = MSG(wires/hidden))), wait(0), then(CAP_PROC(open_window)))
+	var/list/at_the_wires = list(when(PANEL_OPEN), wait(0), then(CAP_PROC(open_window)))
 	return list(
 		op("pulse", tool(TOOL_MULTITOOL), label("Pulse wires"), at_the_wires),
 		op("cut", tool(TOOL_WIRECUTTER), label("Cut wires"), at_the_wires),

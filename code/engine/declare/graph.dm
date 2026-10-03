@@ -337,21 +337,27 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 
 /// The history, seeded first when the instance was placed part-built: along the unique path from the graph's start, or the path `via` names.
 /// Seeded entries carry empty ledger entries, so undoing past the seed refunds nothing.
-/proc/graph_history(datum/E, cap_id = CAP_CONSTRUCTION)
-	var/datum/cap_data/graph_state/S = graph_state(E, cap_id, TRUE)
+/proc/graph_history(datum/E, cap_id = CAP_CONSTRUCTION, create = TRUE)
+	var/datum/cap_data/graph_state/S = graph_state(E, cap_id, create)
 	if(!S)
-		return list()
+		// A read of an instance that has taken no step yet: the seeded path of its placed stage, built without making the activation (a read never grants).
+		return create ? list() : graph_seed_rows(cap_of(E, cap_id))
 	if(!S.seeded)
 		S.seeded = TRUE
-		var/datum/capability/construction/def = cap_of(E, cap_id)
-		if(def?.graph && !isnull(def.start) && def.start != def.graph.start && !length(S.history))
-			var/list/path = graph_seed_path(def)
-			if(length(path))
-				var/datum/state_graph/G = def.graph
-				for(var/i in 2 to length(path))
-					var/datum/graph_edge/edge = graph_first_edge(G, path[i - 1], path[i])
-					LAZYADD(S.history, list(list(edge?.key, path[i - 1], path[i], null)))
+		if(!length(S.history))
+			S.history = graph_seed_rows(cap_of(E, cap_id))
 	return S.history || list()
+
+/// The history rows a part-built start stands for (empty for a start at the graph's own start).
+/proc/graph_seed_rows(datum/capability/construction/def)
+	. = list()
+	if(def?.graph && !isnull(def.start) && def.start != def.graph.start)
+		var/list/path = graph_seed_path(def)
+		if(length(path))
+			var/datum/state_graph/G = def.graph
+			for(var/i in 2 to length(path))
+				var/datum/graph_edge/edge = graph_first_edge(G, path[i - 1], path[i])
+				. += list(list(edge?.key, path[i - 1], path[i], null))
 
 /// The stage path a part-built definition stands for: via, between the start and the placed stage, or the one path there is.
 /proc/graph_seed_path(datum/capability/construction/def)
@@ -457,7 +463,7 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 			return TRUE
 		if(def.graph.start == stage && graph_declares(def.graph, stage))
 			return TRUE
-		for(var/list/row as anything in graph_history(E, cap_id))
+		for(var/list/row as anything in graph_history(E, cap_id, FALSE))
 			if(row[3] == stage || row[2] == stage)
 				return TRUE
 	return FALSE
@@ -477,7 +483,7 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 		var/datum/capability/construction/def = cap_of(E, cap_id)
 		if(!def?.graph)
 			continue
-		var/list/history = graph_history(E, cap_id)
+		var/list/history = graph_history(E, cap_id, FALSE)
 		for(var/i in length(history) to 1 step -1)
 			var/list/row = history[i]
 			if(row[3] == stage)

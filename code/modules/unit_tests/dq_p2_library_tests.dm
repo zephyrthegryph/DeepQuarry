@@ -96,7 +96,7 @@
 	var/obj/item/multitool/multitool = allocate(/obj/item/multitool)
 	TEST_ASSERT(!wire_is_cut(B, WIRE_IDSCAN), "no wire is cut")
 	var/datum/op_result/closed = test_click(M, B, multitool)
-	TEST_ASSERT_NOTEQUAL(closed?.outcome, ACT_COMMITTED, "the wires are not reachable behind a closed panel")
+	TEST_ASSERT_NOTEQUAL(closed?.key, "wires.pulse", "the wires are not reachable behind a closed panel")
 	touch(M, B, driver)
 	var/datum/op_result/open = touch(M, B, multitool)
 	TEST_ASSERT_EQUAL(open?.outcome, ACT_COMMITTED, "with the panel open the multitool reaches them")
