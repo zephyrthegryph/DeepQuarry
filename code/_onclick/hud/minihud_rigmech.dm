@@ -136,13 +136,17 @@
 	screen_loc = ui_rig_airtoggle
 
 /atom/movable/screen/rig/airtoggle/Click()
+	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
 	var/mob/living/carbon/human/user = usr
+	toggle_air_with_actor(user)
+
+/atom/movable/screen/rig/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/item/rig/owner_rig = master_ref
 	if(!owner_rig || user != owner_rig.wearer())
 		return
-	user.toggle_internals()
+	user.toggle_internals(user)
 
 /atom/movable/screen/mech
 	icon = 'icons/mob/screen_rigmech.dmi'
@@ -188,13 +192,17 @@
 	screen_loc = ui_mech_airtoggle
 
 /atom/movable/screen/mech/airtoggle/Click()
+	// ALLOW(sys_usr_outside_verb): Native screen clicks supply the actor through BYOND usr.
 	var/mob/living/carbon/human/user = usr
+	toggle_air_with_actor(user)
+
+/atom/movable/screen/mech/airtoggle/proc/toggle_air_with_actor(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat || user.incapacitated())
 		return
 	var/obj/mecha/owner_mech = master_ref
 	if(user != owner_mech?.slot_item(MECHA_SLOT_PILOT))
 		return
-	owner_mech.toggle_internal_tank()
+	owner_mech.toggle_internal_tank(user)
 
 
 /// The rig this hud shows (a relation view: null once that is deleted).
