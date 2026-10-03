@@ -74,3 +74,5 @@ changes:
   - bugfix: "Animal digestion choices retain their selecting actor after the prompt."
   - bugfix: "Special operations countdowns retain their actor and clean up blocked-launch radios."
   - bugfix: "Cell bays respect source release rules and preserve inventory bookkeeping during insertion."
+  - admin: "Ban validation and player-note reports retain their supplied actor."
+  - bugfix: "Emagging an unopened atmos console creates and subverts its controller safely."

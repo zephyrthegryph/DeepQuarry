@@ -661,13 +661,14 @@
 #include "interim_reagent_fractional_depletion.dm"
 #include "interim_countdown_orphan_cleanup.dm"
 #include "interim_holographic_glass_cleanup.dm"
-#include "interim_player_notes_filter_actor.dm"
 #include "interim_airlock_timing_wire_repair.dm"
 #include "interim_toolbox_size_refusal.dm"
 #include "interim_girder_timed_securing.dm"
+#include "interim_player_notes_filter_actor.dm"
 #include "interim_mine_payload_cleanup.dm"
 #include "interim_toolbox_bulk_gather_empty.dm"
 #include "interim_soil_fill_cleanup.dm"
+#include "interim_atmos_console_unopened_emag.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
