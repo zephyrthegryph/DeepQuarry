@@ -1192,7 +1192,7 @@
 	test_time(20 SECONDS)
 	TEST_ASSERT(same_charge(p2_smes_charge(S), settled), "and the discharge stops")
 
-/// Pulsing the grounding wire only grounds it again (a spark, no lasting change).
+/// Pulsing the grounding wire ungrounds the unit and stays so after a cut; mending grounds it.
 /datum/unit_test/dq_p2_smes/grounding_wire_pulse_leaves_it_grounded
 
 /datum/unit_test/dq_p2_smes/grounding_wire_pulse_leaves_it_grounded/run_gate()
