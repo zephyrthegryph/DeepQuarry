@@ -422,9 +422,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/ships/ship.dm	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
-usr_outside_verb	code/modules/paperwork/clipboard.dm	if(ishuman(usr))
-usr_outside_verb	code/modules/paperwork/clipboard.dm	var/mob/M = usr
-usr_outside_verb	code/modules/paperwork/clipboard.dm	add_fingerprint(usr)
 usr_outside_verb	code/modules/paperwork/paper_sticky.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/paperwork/paperbin.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/paperwork/photography.dm	if(ishuman(usr))

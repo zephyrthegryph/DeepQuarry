@@ -712,6 +712,7 @@
 #include "interim_warp_strike_init.dm"
 #include "interim_technomancer_core_first_equip.dm"
 #include "interim_microscope_drop_actor.dm"
+#include "interim_clipboard_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
