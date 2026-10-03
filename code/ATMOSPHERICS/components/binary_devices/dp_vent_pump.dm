@@ -185,10 +185,10 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks
 //Radio remote control
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, radio_filter = RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/proc/broadcast_status()
 	if(!radio_connection)

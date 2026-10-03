@@ -83,8 +83,8 @@
 // register for radio system
 /obj/machinery/status_display/Initialize(mapload)
 	. = ..()
-	if(GLOB.radio_service)
-		GLOB.radio_service.add_object(src, frequency)
+	if(SSradio)
+		SSradio.add_object(src, frequency)
 	refresh()
 
 // A status display redraws only when its input changes: a signal, an alert, power, the

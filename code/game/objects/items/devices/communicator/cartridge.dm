@@ -282,8 +282,7 @@
 
 /obj/item/commcard/head/Initialize(mapload)
 	// Have to register the commcard with the Radio controller to receive updates to the status displays
-	// ALLOW(decl): service call with a frequency argument
-	GLOB.radio_service.add_object(src, 1435)
+	SSradio.add_object(src, 1435)
 	. = ..()
 	internal_data["stat_display_line1"] = null
 	internal_data["stat_display_line2"] = null

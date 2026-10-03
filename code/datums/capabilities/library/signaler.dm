@@ -63,7 +63,7 @@
 	// Joins the radio on its frequency (moves to systems() once the core has it).
 	var/obj/O = holder
 	if(istype(O))
-		GLOB.radio_service.add_object(O, cap_signaler_frequency(O), RADIO_CHAT)
+		SSradio.add_object(O, cap_signaler_frequency(O), RADIO_CHAT)
 
 /// The signaler capability of O, or null.
 /proc/cap_signaler_cap(obj/O)
@@ -89,9 +89,9 @@
 	frequency = sanitize_frequency(frequency, RADIO_LOW_FREQ, RADIO_HIGH_FREQ)
 	if(old == frequency)
 		return frequency
-	GLOB.radio_service.remove_object(O, old)
+	SSradio.remove_object(O, old)
 	O.cap_signal_frequency = frequency
-	GLOB.radio_service.add_object(O, frequency, RADIO_CHAT)
+	SSradio.add_object(O, frequency, RADIO_CHAT)
 	changed(O, CHANGE_CAPABILITY)
 	return frequency
 
@@ -113,7 +113,7 @@
 	rel_set(signal, nameof(signal.source), O)
 	signal.encryption = cap_signaler_code(O)
 	signal.data["message"] = "ACTIVATE"
-	var/datum/radio_frequency/channel = GLOB.radio_service.return_frequency(cap_signaler_frequency(O))
+	var/datum/radio_frequency/channel = SSradio.return_frequency(cap_signaler_frequency(O))
 	channel.post_signal(O, signal)
 	COOLDOWN_START(D, next_signal, SIGNALER_COOLDOWN)
 	return null

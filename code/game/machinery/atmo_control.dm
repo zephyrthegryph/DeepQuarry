@@ -118,9 +118,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/air_sensor, "gsensor{on}")
 
 /obj/machinery/air_sensor/proc/set_frequency(new_frequency)
 	invalidate_gas_dependencies()
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/air_sensor/Initialize(mapload)
 	. = ..()
@@ -267,9 +267,9 @@ UI_DATA_REPLACE(/obj/machinery/computer/general_air_control, "merge:ui_data_obj_
 	return data
 
 /obj/machinery/computer/general_air_control/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/computer/general_air_control/multitool_act(mob/user, obj/item/W)
 	var/static/list/options = list("Sensors", "Frequency", "Cancel")

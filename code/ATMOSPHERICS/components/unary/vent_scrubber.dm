@@ -144,9 +144,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 			add_underlay(T,, dir)
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, radio_filter_in))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, radio_filter_in))
 
 /obj/machinery/atmospherics/unary/vent_scrubber/proc/broadcast_status()
 	if(!radio_connection)

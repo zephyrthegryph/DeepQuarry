@@ -465,11 +465,11 @@
 /obj/item/integrated_circuit/input/signaler/proc/set_frequency(new_frequency)
 	if(!frequency)
 		return
-	if(!GLOB.radio_service)
+	if(!SSradio)
 		return
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/integrated_circuit/input/signaler/receive_signal(datum/signal/signal)
 	var/new_code = get_pin_data(IC_INPUT, 2)

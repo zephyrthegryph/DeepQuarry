@@ -126,7 +126,7 @@ UI_ACT_PROC(/obj/machinery/computer/prison_shuttle, ui_act_send_to_station)
 
 
 /obj/machinery/computer/prison_shuttle/proc/post_signal(command)
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1311)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1311)
 	if(!frequency) return
 	var/datum/signal/status_signal = new
 	rel_set(status_signal, nameof(status_signal.source), src)

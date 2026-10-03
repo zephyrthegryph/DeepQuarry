@@ -34,7 +34,7 @@ UI_ACT_PROC(/datum/data/pda/app/status_display, ui_act_status)
 	return TRUE
 
 /datum/data/pda/app/status_display/proc/post_status(command, data1, data2)
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(1435)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(1435)
 	if(!frequency)
 		return
 

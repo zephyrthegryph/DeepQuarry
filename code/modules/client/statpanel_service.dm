@@ -35,7 +35,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			"Round Time: [roundduration2text()]",
 			"Station Date: [stationdate2text()], [capitalize(GLOB.world_time_season)]",
 			"Station Time: [stationtime2text()]",
-			"Time Dilation: [round(GLOB.time_track_service.time_dilation_current,1)]% AVG:([round(GLOB.time_track_service.time_dilation_avg_fast,1)]%, [round(GLOB.time_track_service.time_dilation_avg,1)]%, [round(GLOB.time_track_service.time_dilation_avg_slow,1)]%)"
+			"Time Dilation: [round(SStime_track.time_dilation_current,1)]% AVG:([round(SStime_track.time_dilation_avg_fast,1)]%, [round(SStime_track.time_dilation_avg,1)]%, [round(SStime_track.time_dilation_avg_slow,1)]%)"
 		)
 
 		if(SSemergency_shuttle.evac)
@@ -180,10 +180,10 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		"target_tps" = world.fps,
 		"current_usage" = history.len ? history[history.len] : 0,
 		"maptick" = MAPTICK_LAST_INTERNAL_TICK_USAGE,
-		"tidi" = GLOB.time_track_service.time_dilation_current,
-		"tidi_fast" = GLOB.time_track_service.time_dilation_avg_fast,
-		"tidi_medium" = GLOB.time_track_service.time_dilation_avg,
-		"tidi_slow" = GLOB.time_track_service.time_dilation_avg_slow,
+		"tidi" = SStime_track.time_dilation_current,
+		"tidi_fast" = SStime_track.time_dilation_avg_fast,
+		"tidi_medium" = SStime_track.time_dilation_avg,
+		"tidi_slow" = SStime_track.time_dilation_avg_slow,
 		"window_5s" = Kernel.performance_window(5),
 		"window_30s" = Kernel.performance_window(30),
 		"window_5m" = Kernel.performance_window(300),

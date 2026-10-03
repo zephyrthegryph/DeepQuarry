@@ -139,23 +139,23 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 /obj/item/assembly/signaler/proc/set_frequency(new_frequency)
 	if(!frequency)
 		return
-	if(!GLOB.radio_service)
+	if(!SSradio)
 		after(src, 2 SECONDS, PROC_REF(radio_checkup), with = list(new_frequency))
 		return
 	set_radio(new_frequency)
 
 /obj/item/assembly/signaler/proc/radio_checkup(new_frequency)
 	PROTECTED_PROC(TRUE)
-	if(!GLOB.radio_service)
+	if(!SSradio)
 		return
 	set_radio(new_frequency)
 
 /obj/item/assembly/signaler/proc/set_radio(new_frequency)
 	PROTECTED_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 // BEGIN re-adds stealth removal
 /obj/item/assembly/signaler/periodic_step()
 	var/mob/M = src.loc

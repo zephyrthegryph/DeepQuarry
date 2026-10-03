@@ -68,7 +68,8 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/floor/holofloor/space, TYPE_PROC_REF(/at
 /turf/simulated/floor/holofloor/space/appearance_overlays()
 	. = list()
 	. += ..()
-	. += skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+	var/datum/system/skybox/sky = SSskybox.ready()
+	. += sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 
 /turf/simulated/floor/holofloor/reinforced
 	icon = 'icons/turf/flooring/tiles.dmi'

@@ -732,12 +732,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 
 /obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 	. = ..()
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 
 /obj/item/clothing/accessory/collar/shock/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
 

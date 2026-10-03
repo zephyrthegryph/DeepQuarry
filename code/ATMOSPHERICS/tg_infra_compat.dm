@@ -8,7 +8,7 @@
 // Each entry is either:
 //   - a real implementation bridging to a CHOMP-side equivalent
 //     (record_feedback → feedback_add_details, wet_floor → CHOMP wet_floor,
-//      analyze_gases, fire_nuclear_particle → GLOB.radiation_service.irradiate)
+//      analyze_gases, fire_nuclear_particle → SSradiation.irradiate)
 //   - a real base no-op for a /tg/ hook that subtypes override
 //     (process_atmos, apply_fire_protection)
 //   - a var/list scaffold (multiz_levels, z_list, electrolyzer_reactions)
@@ -296,8 +296,8 @@ GLOBAL_LIST_INIT(diagonals_multiz, list(NORTHEAST, NORTHWEST, SOUTHEAST, SOUTHWE
 	return TRUE
 
 /turf/proc/fire_nuclear_particle()
-	if(GLOB.radiation_service)
-		GLOB.radiation_service.irradiate(src, 50)
+	if(SSradiation)
+		SSradiation.irradiate(src, 50)
 	return
 
 /proc/isgroundlessturf(turf/T)

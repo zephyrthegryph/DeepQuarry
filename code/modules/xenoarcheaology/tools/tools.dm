@@ -63,8 +63,8 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 		var/nearestSimpleTargetDist = -1
 		var/turf/cur_turf = get_turf(src)
 
-		if(GLOB.xenoarch_service) //Sanity check due to runtimes ~Z
-			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.artifact_spawning_turfs)
+		if(SSxenoarch) //Sanity check due to runtimes ~Z
+			for(var/turf/simulated/mineral/T as anything in SSxenoarch.artifact_spawning_turfs)
 				if(T.density && T.artifact_find)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
@@ -72,22 +72,22 @@ DECLARE_INTERACTIONS(/obj/item/ano_scanner, INTERACT_USE(null, PROC_REF(interact
 							nearestTargetDist = cur_dist + rand() * 2 - 1
 							nearestTargetId = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), T)
 
-			for(var/turf/simulated/mineral/T as anything in GLOB.xenoarch_service.digsite_spawning_turfs)
+			for(var/turf/simulated/mineral/T as anything in SSxenoarch.digsite_spawning_turfs)
 				if(T.density && T.finds && T.finds.len)
 					if(T.z == cur_turf.z)
 						var/cur_dist = get_dist(cur_turf, T) * 2
 						if(nearestSimpleTargetDist < 0 || cur_dist < nearestSimpleTargetDist)
 							nearestSimpleTargetDist = cur_dist + rand() * 2 - 1
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::digsite_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::digsite_spawning_turfs), T)
 
-		if(GLOB.xenoarch_service && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
+		if(SSxenoarch && ((nearestTargetDist == -1) || (nearestSimpleTargetDist == -1)) && user.z && (ELAPSED(src, last_repopulation_time, CLOCK_WORLD) >= repopulation_delay))
 			if(!(user.z in using_map.xenoarch_exempt_levels)) //We found no artifacts and our Z level is not spawn exempt. Time for random generation.
 				EXPIRY_STAMP(src, last_repopulation_time, CLOCK_WORLD)
 				to_chat(user, "The [src] beeps and buzzes, a warning popping up on screen stating 'No artifacts detected on current wavelength. Swapping to different wavelength. Please try scanning momentarily.'")
-				GLOB.xenoarch_service.continual_generation(user)
+				SSxenoarch.continual_generation(user)
 
 		if(nearestTargetDist >= 0)
 			to_chat(user, "Large artifact energy signature detected on wavelength '[nearestTargetId]' in a radius of [nearestTargetDist]m[nearestSimpleTargetDist > 0 ? "; small anomaly detected in a radius of [nearestSimpleTargetDist]m" : ""]")

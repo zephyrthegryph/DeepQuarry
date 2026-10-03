@@ -36,8 +36,8 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 	hide(!T.is_plating())
 	rel_set(src, nameof(center), T)
 
-	if(GLOB.radio_service)
-		GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
+	if(SSradio)
+		SSradio.add_object(src, freq, RADIO_MAGNETS)
 
 // update the invisibility and icon
 /obj/machinery/magnetic_module/hide(intact)
@@ -188,8 +188,8 @@ DECLARE_REPEAT(/obj/machinery/magnetic_controller, "magnet_delay", magnet_move_s
 			if(M.freq == frequency && M.code == code)
 				rel_add(src, nameof(magnets), M)
 
-	if(GLOB.radio_service)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
+	if(SSradio)
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_MAGNETS))
 
 	if(path) // check for default path
 		filter_path() // renders rpath

@@ -1,14 +1,8 @@
 
 //Exists to handle a few global variables that change enough to justify this. Technically a parallax, but it exhibits a skybox effect.
-// The skybox world service (fold wave F4; was SSskybox): the space and dust appearances and the
-// per-z skybox images. Data only; it builds its caches on first use (skybox_service()).
-GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
-
-/proc/skybox_service() as /datum/world_service/skybox
-	RETURN_TYPE(/datum/world_service/skybox)
-	return LAZY_SERVICE(skybox_service)
-
-/datum/world_service/skybox
+// The skybox system (was SSskybox): the space and dust appearances and the per-z skybox images. Data only; it builds
+// its caches on first use (SSskybox.ready()). The API is in skybox_api.dm.
+SYSTEM_DEF(skybox)
 	name = "Space skybox"
 	var/static/list/skybox_cache = list() // ALLOW(cache): service-owned appearance tables with paired index lists
 
@@ -22,7 +16,10 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 	var/static/list/phase_shift_by_x = list()
 	var/static/list/phase_shift_by_y = list()
 
-/datum/world_service/skybox/initialize()
+/datum/system/skybox/boots_in_dag()
+	return FALSE
+
+/datum/system/skybox/initialize()
 	if(initialized)
 		return
 	initialized = TRUE
@@ -100,12 +97,7 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 
 		mapedge_cache["[dir]"] = MA
 
-/datum/world_service/skybox/proc/get_skybox(z)
-	if(!skybox_cache["[z]"])
-		skybox_cache["[z]"] = generate_skybox(z)
-	return skybox_cache["[z]"]
-
-/datum/world_service/skybox/proc/generate_skybox(z)
+/datum/system/skybox/proc/generate_skybox(z)
 	var/datum/skybox_settings/settings = using_map.get_skybox_datum(z)
 
 	var/new_overlays = list()
@@ -147,17 +139,6 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 	res.overlays = new_overlays
 
 	return res
-
-/datum/world_service/skybox/proc/rebuild_skyboxes(list/zlevels)
-	for(var/z in zlevels)
-		skybox_cache["[z]"] = generate_skybox(z)
-
-	for(var/client/C in GLOB.clients)
-		var/their_z = get_z(C.mob)
-		if(!their_z) //Nullspace
-			continue
-		if(their_z in zlevels)
-			C.update_skybox(1)
 
 // Settings datum that maps can override to play with their skyboxes
 /datum/skybox_settings

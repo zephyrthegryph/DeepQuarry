@@ -100,7 +100,7 @@
 	expire_skybox_representation()
 	build_skybox_representation()
 	for(var/obj/effect/overmap/visitable/O in contents_of(loc))
-		skybox_service().rebuild_skyboxes(O.map_z)
+		SSskybox.ready().rebuild_skyboxes(O.map_z)
 
 /obj/effect/overmap/proc/get_scan_data(mob/user)
 	var/dat = {"\[b\]Scan conducted at\[/b\]: [stationtime2text()] [stationdate2text()]\n\n[scanner_desc]"}

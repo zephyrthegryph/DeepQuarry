@@ -3,15 +3,13 @@
 #define DEFAULT_CONVERSION_PROB 60
 #define DEFAULT_CONVERSION_DELAY 2.5 SECONDS
 
-// The turf cascade world service (fold wave F4; was SSturf_cascade): a spreading turf conversion
-// (the supermatter cascade). /datum/om/behaviour/world/turf_cascade (code/datums/om/world_lanes.dm)
-// grows it every 0.2 s while one is running and parks otherwise.
-GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
-
-/datum/world_service/turf_cascade
+// The turf cascade system (was SSturf_cascade): a spreading turf conversion (the supermatter cascade). It grows it
+// every 0.2 s while one is running and parks otherwise. The API is in turf_cascade_api.dm.
+SYSTEM_DEF(turf_cascade)
 	name = "Turf Cascade"
-	lane = /datum/om/behaviour/world/turf_cascade
-	on_demand = TRUE
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	/// TRUE while a step that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 
 	VAR_PRIVATE/next_group_time = 0 // cooldown: the next expansion
 	VAR_PRIVATE/next_group_delay = DEFAULT_CONVERSION_DELAY
@@ -24,19 +22,27 @@ GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
 	VAR_PRIVATE/conversion_probability = DEFAULT_CONVERSION_PROB // Randomized rate of conversion, 0 to 100
 	VAR_PRIVATE/conversion_rate = DEFAULT_CONVERSION_RATE // Maximum number of turfs converted in each batch
 
-/datum/world_service/turf_cascade/stat_line()
-	return "C: [length(currentrun)] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
+/datum/system/turf_cascade/reactions()
+	. = ..()
+	. += every(2, PROC_REF(grow_cascade), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/world_service/turf_cascade/has_work()
+/datum/system/turf_cascade/stat_entry(msg)
+	return "[msg]C: [length(currentrun)] | R: [length(remaining_turf)] | R: [conversion_rate] | P: [turf_replace_type]"
+
+/datum/system/turf_cascade/proc/has_work()
 	return !isnull(turf_replace_type)
 
-/datum/world_service/turf_cascade/service_step(resumed)
+/datum/system/turf_cascade/proc/grow_cascade(dt)
+	if(!has_work())
+		return STEP_PARK
+	var/resumed = resuming
+	resuming = FALSE
 	if(!resumed)
 		if(!COOLDOWN_FINISHED(src, next_group_time)) // Wait for next expansion
-			return TRUE
+			return STEP_DONE
 		if(!turf_replace_type || (!length(remaining_turf) && !length(currentrun)))
 			stop_cascade()
-			return TRUE
+			return STEP_PARK
 		COOLDOWN_START(src, next_group_time, next_group_delay)
 
 		if(!length(currentrun) && length(remaining_turf) && turf_iterations <= 0)
@@ -60,8 +66,9 @@ GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
 		currentrun += next
 		if(!length(remaining_turf))
 			break
-		if(TICK_CHECK)
-			return FALSE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
 
 	while(length(currentrun))
 		var/turf/changing = currentrun[1]
@@ -72,34 +79,17 @@ GLOBAL_DATUM_INIT(turf_cascade_service, /datum/world_service/turf_cascade, new)
 			changing.ChangeTurf(turf_replace_type)
 			remaining_turf += changing.conversion_cascade_act(remaining_turf)
 
-		if(TICK_CHECK)
-			return FALSE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
 
-	return TRUE
-
-/// Starts the turf cascade and wakes the service's lane. If a cascade is already in process, it will not allow another another to start.
-/datum/world_service/turf_cascade/proc/start_cascade(turf/start_turf, turf_path, max_per_fire = DEFAULT_CONVERSION_RATE, time_delay = DEFAULT_CONVERSION_DELAY, convert_probability = DEFAULT_CONVERSION_PROB)
-	if(turf_replace_type)
-		return
-	if(!isturf(start_turf) || !max_per_fire)
-		return
-	turf_replace_type = turf_path
-	remaining_turf.Add(start_turf)
-	conversion_rate = max_per_fire
-	conversion_probability = convert_probability
-	next_group_delay = DEFAULT_CONVERSION_DELAY
-	log_world("Turf cascade started at [AREACOORD(start_turf)] converting to [turf_path].")
-	demand()
+	return STEP_DONE
 
 /// Called when we have no more turfs to convert, or an admin wants to emergency stop
-/datum/world_service/turf_cascade/proc/stop_cascade()
+/datum/system/turf_cascade/proc/stop_cascade()
 	turf_replace_type = null
 	remaining_turf.Cut()
 	currentrun.Cut()
 	conversion_rate = DEFAULT_CONVERSION_RATE
 	conversion_probability = DEFAULT_CONVERSION_PROB
 	next_group_delay = DEFAULT_CONVERSION_DELAY
-
-#undef DEFAULT_CONVERSION_RATE
-#undef DEFAULT_CONVERSION_PROB
-#undef DEFAULT_CONVERSION_DELAY

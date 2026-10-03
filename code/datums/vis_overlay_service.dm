@@ -1,16 +1,22 @@
-// The shared vis-contents overlay cache (was SSvis_overlays): unused overlays expire every minute.
-GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
-
-/datum/world_service/vis_overlays
+// The shared vis-contents overlay cache (was SSvis_overlays): unused overlays expire every minute. The API is in
+// vis_overlay_api.dm.
+SYSTEM_DEF(vis_overlays)
 	name = "Vis contents overlays"
-	lane = /datum/om/behaviour/world/vis_overlays
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 
-	var/list/vis_overlay_cache = list()
-	var/list/currentrun
+	VAR_PRIVATE/list/vis_overlay_cache = list()
+	VAR_PRIVATE/list/currentrun
+	/// TRUE while a sweep that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 
-/datum/world_service/vis_overlays/service_step(resumed)
-	if(!resumed)
+/datum/system/vis_overlays/reactions()
+	. = ..()
+	. += every(1 MINUTE, PROC_REF(expire_overlays), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
+
+/datum/system/vis_overlays/proc/expire_overlays(dt)
+	if(!resuming)
 		currentrun = vis_overlay_cache.Copy()
+	resuming = FALSE
 	var/list/current_run = currentrun
 
 	while(length(current_run))
@@ -22,36 +28,12 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 		else if(overlay.unused && ELAPSED(overlay, unused, CLOCK_WORLD) > overlay.cache_expiration)
 			own_take_member(src, nameof(vis_overlay_cache), key)
 			qdel(overlay)
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-//the "thing" var can be anything with vis_contents which includes images - in the future someone should totally allow vis overlays to be passed in as an arg instead of all this bullshit
-/datum/world_service/vis_overlays/proc/add_vis_overlay(atom/movable/thing, icon, iconstate, layer, plane, dir, alpha = 255, add_appearance_flags = NONE, add_vis_flags = NONE, unique = FALSE)
-	var/obj/effect/overlay/vis/overlay
-	if(!unique)
-		. = "[icon]|[iconstate]|[layer]|[plane]|[dir]|[alpha]|[add_appearance_flags]"
-		overlay = vis_overlay_cache[.]
-		if(!overlay)
-			overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
-			own_put(src, nameof(vis_overlay_cache), ., overlay)
-		else
-			overlay.unused = 0
-	else
-		overlay = _create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
-		overlay.cache_expiration = -1
-		var/cache_id = "\ref[overlay]@{[world.time]}"
-		own_put(src, nameof(vis_overlay_cache), cache_id, overlay)
-		. = overlay
-	thing.vis_contents += overlay
-
-	if(!isatom(thing))
-		return overlay
-
-	rel_add(thing, nameof(thing.managed_vis_overlays), overlay)
-	return overlay
-
-/datum/world_service/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
+/datum/system/vis_overlays/proc/_create_new_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags)
 	var/obj/effect/overlay/vis/overlay = new
 	overlay.icon = icon
 	overlay.icon_state = iconstate
@@ -63,33 +45,13 @@ GLOBAL_DATUM_INIT(vis_overlays_service, /datum/world_service/vis_overlays, new)
 	overlay.vis_flags |= add_vis_flags
 	return overlay
 
-
-/datum/world_service/vis_overlays/proc/remove_vis_overlay(atom/movable/thing, list/overlays)
-	thing.vis_contents -= overlays
-	if(!isatom(thing))
-		return
-	// `overlays` may be a single overlay, or a list (even thing.managed_vis_overlays itself).
-	var/list/removing = islist(overlays) ? overlays.Copy() : list(overlays)
-	for(var/obj/effect/overlay/vis/overlay as anything in removing)
-		rel_remove(thing, nameof(thing.managed_vis_overlays), overlay)
-
 /atom/proc/add_vis_overlay(icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags = VIS_INHERIT_ID, unique)
 	// The extremely minimal version where you just pass a string and nothing else
 	if(istext(icon))
 		iconstate = icon
 		icon = src.icon
 
-	return GLOB.vis_overlays_service.add_vis_overlay(src, icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags, unique)
+	return SSvis_overlays.add_vis_overlay(src, icon, iconstate, layer, plane, dir, alpha, add_appearance_flags, add_vis_flags, unique)
 
 /atom/proc/remove_vis_overlay(list/overlays)
-	return GLOB.vis_overlays_service.remove_vis_overlay(src, overlays)
-
-/// vis_overlays (was SSvis_overlays).
-/datum/om/behaviour/world/vis_overlays
-	name = "world: vis_overlays"
-	every = 1 MINUTE
-	lane = LANE_BACKGROUND
-
-/datum/om/behaviour/world/vis_overlays/service()
-	return GLOB.vis_overlays_service
-
+	return SSvis_overlays.remove_vis_overlay(src, overlays)

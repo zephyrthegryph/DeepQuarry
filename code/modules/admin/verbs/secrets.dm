@@ -545,7 +545,7 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_supermatter_cascade)
 		return
 	if(choice == "NO TIME TO EXPLAIN")
 		explosion(get_turf(holder().mob), 8, 16, 24, 32, 1)
-		GLOB.turf_cascade_service.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
+		SSturf_cascade.start_cascade(get_turf(holder().mob), /turf/unsimulated/wall/supermatter)
 		SetUniversalState(/datum/universal_state/supermatter_cascade)
 		message_admins("[key_name_admin(holder())] has managed to destroy the universe with a supermatter cascade. Good job, [key_name_admin(holder())]")
 	if(holder())

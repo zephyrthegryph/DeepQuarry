@@ -6,21 +6,6 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// The four world lanes are on the global owner at the old subsystems' cadence.
-/datum/unit_test/dq_world_lanes_f3_attached
-
-/datum/unit_test/dq_world_lanes_f3_attached/Run()
-	var/datum/om/global_owner/owner = om_global_owner()
-	var/list/cadence = list(
-		/datum/om/behaviour/world/radiation = 0.5 SECONDS,
-	)
-	for(var/lane in cadence)
-		TEST_ASSERT(om_attached(owner, lane), "[lane] is not on the global owner")
-		var/datum/om/behaviour/world/B = om_registry().behaviour(lane)
-		TEST_ASSERT_EQUAL(B.every, cadence[lane], "[lane] lost its subsystem's cadence")
-		TEST_ASSERT_NOTNULL(B.service(), "[lane] has no service")
-		TEST_ASSERT_EQUAL(B.service().lane, lane, "[lane]'s service names a different lane")
-
 /// Every data-only service initializes on first use and builds its tables.
 /datum/unit_test/dq_world_lanes_f3_lazy_services
 
@@ -51,7 +36,7 @@
 	TEST_ASSERT(SSpai.initialized, "the pAI service never initialized (SSatoms)")
 	TEST_ASSERT(length(SSpai.get_chassis_list()), "the pAI service has no chassis")
 	TEST_ASSERT(length(GLOB.pai_software_by_key), "the pAI service registered no software")
-	TEST_ASSERT(GLOB.xenoarch_service.initialized, "the xenoarch service never initialized (SSatoms)")
+	TEST_ASSERT(SSxenoarch.initialized, "the xenoarch service never initialized (SSatoms)")
 	TEST_ASSERT(SSevents.initialized, "the event service never initialized (SSatoms)")
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]
@@ -61,7 +46,7 @@
 /datum/unit_test/dq_world_lanes_f3_radiation
 
 /datum/unit_test/dq_world_lanes_f3_radiation/Run()
-	var/datum/world_service/radiation/S = GLOB.radiation_service
+	var/datum/system/radiation/S = SSradiation
 	var/obj/item/source = allocate(/obj/item/stack/rods, run_loc_floor_bottom_left)
 	S.enabled = FALSE
 	TEST_ASSERT(!radiation_pulse(source, 3, 0.1), "a disabled radiation service queued a pulse")
@@ -70,10 +55,11 @@
 	TEST_ASSERT(radiation_pulse(source, 3, 0.1), "radiation_pulse() refused a pulse")
 	TEST_ASSERT_EQUAL(length(S.processing), queued + 1, "the pulse was not queued on the service")
 	var/steps = 0
+	var/result = STEP_YIELD
 	while(length(S.processing) && steps++ < 200)
-		S.run_step()
+		result = S.radiation_step(0)
 	TEST_ASSERT(!length(S.processing), "the radiation step never drained its queue")
-	TEST_ASSERT(!S.resuming, "a drained radiation step is still resuming")
+	TEST_ASSERT_EQUAL(result, STEP_DONE, "a drained radiation step is still yielding")
 
 /// A throw runs on the continuous throwing lane and parks when it lands.
 /datum/unit_test/dq_world_lanes_f3_throwing

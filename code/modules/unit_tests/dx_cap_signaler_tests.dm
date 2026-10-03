@@ -16,7 +16,7 @@
 	cap_signal_code = 9
 
 /proc/dx_listens_on(obj/O, frequency)
-	var/datum/radio_frequency/channel = GLOB.radio_service.frequencies["[frequency]"]
+	var/datum/radio_frequency/channel = SSradio.frequencies["[frequency]"]
 	var/list/listeners = channel?.devices[RADIO_CHAT]
 	return !!(O in listeners)
 

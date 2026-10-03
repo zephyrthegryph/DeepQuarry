@@ -46,7 +46,7 @@
 	cam_foreground.fill_rect(1, 1, size_x, size_y)
 
 	local_skybox.cut_overlays()
-	local_skybox.add_overlay(skybox_service().get_skybox(get_z(newturf)))
+	local_skybox.add_overlay(SSskybox.ready().get_skybox(get_z(newturf)))
 	local_skybox.scale_to_view(size_x)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - newturf.x, (world.maxy>>1) - newturf.y)
 
