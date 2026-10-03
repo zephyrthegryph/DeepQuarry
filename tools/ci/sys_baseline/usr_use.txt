@@ -301,8 +301,6 @@ usr_outside_verb	code/modules/client/client procs.dm	if(!hsrc && topic_dispatch(
 usr_outside_verb	code/modules/client/client procs.dm	OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/clothing/clothing.dm	if(ishuman(usr))
-usr_outside_verb	code/modules/clothing/clothing.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The suit is not initialized."))
