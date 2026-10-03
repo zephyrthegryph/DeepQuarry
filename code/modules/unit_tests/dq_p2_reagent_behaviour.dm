@@ -79,6 +79,8 @@
 	for(var/atom/A as anything in rc_extra)
 		if(!QDELETED(A))
 			qdel(A)
+	for(var/obj/effect/effect/water/puff in range(10, run_loc_floor_bottom_left))
+		qdel(puff) // what a spray left in the air
 	own_turf_contents(run_loc_floor_bottom_left)
 	test_driver_end()
 
