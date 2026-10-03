@@ -59,3 +59,7 @@ changes:
   - bugfix: "Machine frames refuse unreleasable circuit boards without advancing construction."
   - bugfix: "Refused transfers into full storage preserve the source item display."
   - bugfix: "Diagonal inventory controls act on the client mob consistently."
+  - bugfix: "Empty meal packages that cannot be released no longer disappear or create duplicate wrapper trash."
+  - admin: "Media track controls retain the editing player through rights checks and prompts."
+  - bugfix: "Dismantling a grave marker that cannot be released preserves it without refunding material."
+  - bugfix: "Ghost-role replies retain the observer who received the question across asynchronous answers."
