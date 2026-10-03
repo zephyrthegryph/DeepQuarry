@@ -28,7 +28,7 @@
 	if(linkedmonitor())
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
-	qdel(camera)
+	own_clear(src, nameof(camera), OWN_DELETE)
 	own_set(src, nameof(camera), new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
