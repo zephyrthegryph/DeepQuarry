@@ -853,6 +853,7 @@
 #include "interim_space_worm_detach_cleanup.dm"
 #include "interim_projectile_fire_cleanup.dm"
 #include "interim_ashtray_sticky_butt.dm"
+#include "interim_drone_circuit_sticky_printer_paper.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
