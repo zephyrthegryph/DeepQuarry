@@ -96,3 +96,6 @@ changes:
   - bugfix: "Pneumatic cannons respect held tank release rules."
   - bugfix: "Fluid pumps respect held power-cell release rules."
   - bugfix: "Kinetic accelerators respect held modkit release rules."
+  - bugfix: "Linen bins respect held bedsheet and hidden-item release rules."
+  - bugfix: "Coatracks respect held coat release rules."
+  - bugfix: "Target stakes respect held target release rules before pinning."

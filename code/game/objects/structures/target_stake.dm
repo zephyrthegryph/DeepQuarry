@@ -37,10 +37,20 @@
 		return TRUE // get rid of that pinned target first!
 
 	if(istype(W, /obj/item/target))
+		var/atom/destination = loc
+		if(!destination)
+			return TRUE
+		var/reason = own_transfer_refusal(destination, W, null, user)
+		if(reason)
+			refuse(user, "[capitalize(reason)].")
+			return TRUE
+		var/atom/source = W.loc
+		if(source)
+			source.release_to(W, destination, null, user)
+		if(W.loc != destination)
+			return TRUE
 		set_density(FALSE)
 		W.set_density(TRUE)
-		user.remove_from_mob(W)
-		W.forceMove(loc)
 		W.layer = ABOVE_JUNK_LAYER
 		rel_set(src, nameof(pinned_target), W)
 		to_chat(user, "You slide the target into the stake.")
