@@ -844,6 +844,7 @@
 #include "interim_glitch_illusion_death_cleanup.dm"
 #include "interim_paper_supply_pickup_actor.dm"
 #include "interim_bluespace_collar_sticky_cracking.dm"
+#include "interim_clipboard_sticky_pen_slot.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
