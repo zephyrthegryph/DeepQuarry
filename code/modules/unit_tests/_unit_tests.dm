@@ -743,6 +743,7 @@
 #include "interim_foodcart_sticky_food.dm"
 #include "interim_safe_sticky_insertion_capacity_refund.dm"
 #include "interim_anodevice_sticky_battery.dm"
+#include "interim_moneybag_sticky_coin.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

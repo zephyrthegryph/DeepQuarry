@@ -48,9 +48,9 @@ DECLARE_INTERACTIONS(/obj/item/moneybag, \
 /obj/item/moneybag/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if (istype(W, /obj/item/coin))
 		var/obj/item/coin/C = W
+		if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You add the [C.name] into the bag."))
-		user.drop_item()
-		C.forceMove(src)
 	if (istype(W, /obj/item/moneybag))
 		var/obj/item/moneybag/C = W
 		for (var/obj/O in contents_of(C))
