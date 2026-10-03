@@ -71,23 +71,23 @@ UI_ACT_PROC(/datum/tgui_ban_panel, ui_act_confirmban)
 	switch(bantype)
 		if(BANTYPE_PERMA)
 			if(!banckey || !banreason)
-				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
+				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey and reason)"))
 				return
 			banduration = null
 			banjob = null
 		if(BANTYPE_TEMP)
 			if(!banckey || !banreason || !banduration)
-				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
+				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and duration)"))
 				return
 			banjob = null
 		if(BANTYPE_JOB_PERMA)
 			if(!banckey || !banreason || !banjob)
-				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
 				return
 			banduration = null
 		if(BANTYPE_JOB_TEMP)
 			if(!banckey || !banreason || !banjob || !banduration)
-				to_chat(usr, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
+				to_chat(ui.user, span_filter_adminlog("Not enough parameters (Requires ckey, reason and job)"))
 				return
 
 	var/mob/playermob
