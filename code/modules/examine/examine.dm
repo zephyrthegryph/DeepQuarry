@@ -159,7 +159,7 @@
 	if(client)
 		var/is_antag = antag_check()
 		client.update_description_holders(A, is_antag)
-		GLOB.statpanels_service.set_examine_tab(client)
+		SSstatpanels.set_examine_tab(client)
 
 
 

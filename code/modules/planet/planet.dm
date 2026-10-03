@@ -60,12 +60,11 @@
 		update_sun()
 	if(needs_work & PLANET_PROCESS_SUN)
 		needs_work &= ~PLANET_PROCESS_SUN
-		GLOB.planet_service.needs_sun_update |= src
+		SSplanets.needs_sun_update |= src
 	if(needs_work & PLANET_PROCESS_TEMP)
 		needs_work &= ~PLANET_PROCESS_TEMP
-		GLOB.planet_service.needs_temp_update |= src
-	if(GLOB.planet_service.has_work())
-		GLOB.planet_service.demand()
+		SSplanets.needs_temp_update |= src
+	SSplanets.wake_updates()
 
 // This changes the position of the sun on the planet.
 /datum/planet/proc/update_sun()

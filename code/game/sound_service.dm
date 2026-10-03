@@ -1,16 +1,8 @@
 #define DATUMLESS "NO_DATUM"
 
-// The sound world service (fold wave F3; was SSsounds): sound channel reservations and the talk
-// sound table. It has no periodic work, so it is a lazy service, set up on first use through
-// sound_service().
-GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
-
-/// The sound service, initialized on first use.
-/proc/sound_service() as /datum/world_service/sounds
-	RETURN_TYPE(/datum/world_service/sounds)
-	return LAZY_SERVICE(sound_service)
-
-/datum/world_service/sounds
+// The sound system (was SSsounds): sound channel reservations and the talk sound table. It has no periodic work, so it
+// is a lazy system (outside the boot DAG), set up on first use through SSsounds.ready(). The API is in sound_api.dm.
+SYSTEM_DEF(sounds)
 	name = "Sounds"
 	var/static/using_channels_max = CHANNEL_HIGHEST_AVAILABLE //BYOND max channels
 	/// Amount of channels to reserve for random usage rather than reservations being allowed to reserve all channels. Also a nice safeguard for when someone screws up.
@@ -34,16 +26,19 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	/// Assoc list of character speaking sounds, contains lists of sounds per key for use with pick()
 	var/talk_sound_map = list()
 
-/datum/world_service/sounds/initialize()
+/datum/system/sounds/boots_in_dag()
+	return FALSE
+
+/datum/system/sounds/initialize()
 	initialized = TRUE
 	setup_available_channels()
 	create_talk_sound_map()
 	log_world("Sound service initialized: [length(channel_list)] channels, [length(talk_sound_map)] talk sound sets.")
 
-/datum/world_service/sounds/stat_line()
-	return "Reserved: [length(reserved_channels)] | Left: [available_channels_left()]"
+/datum/system/sounds/stat_entry(msg)
+	return "[msg]Reserved: [length(reserved_channels)] | Left: [available_channels_left()]"
 
-/datum/world_service/sounds/proc/setup_available_channels()
+/datum/system/sounds/proc/setup_available_channels()
 	channel_list = list()
 	reserved_channels = list()
 	using_channels = list()
@@ -54,7 +49,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	channel_reserve_high = length(channel_list)
 
 /// Removes a channel from using list.
-/datum/world_service/sounds/proc/free_sound_channel(channel)
+/datum/system/sounds/proc/free_sound_channel(channel)
 	var/text_channel = num2text(channel)
 	var/using = using_channels[text_channel]
 	using_channels -= text_channel
@@ -65,7 +60,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	free_channel(channel)
 
 /// Frees all the channels a datum is using.
-/datum/world_service/sounds/proc/free_datum_channels(datum/D)
+/datum/system/sounds/proc/release_datum_channels(datum/D)
 	var/key = (D == DATUMLESS) ? DATUMLESS : ref(D)
 	var/list/L = using_channels_by_datum[key]
 	if(!L)
@@ -76,11 +71,11 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	using_channels_by_datum -= key
 
 /// Frees all datumless channels
-/datum/world_service/sounds/proc/free_datumless_channels()
-	free_datum_channels(DATUMLESS)
+/datum/system/sounds/proc/free_datumless_channels()
+	release_datum_channels(DATUMLESS)
 
 /// NO AUTOMATIC CLEANUP - If you use this, you better manually free it later! Returns an integer for channel.
-/datum/world_service/sounds/proc/reserve_sound_channel_datumless()
+/datum/system/sounds/proc/reserve_sound_channel_datumless()
 	. = reserve_channel()
 	if(!.) //oh no..
 		return FALSE
@@ -90,7 +85,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 	using_channels_by_datum[DATUMLESS] += .
 
 /// Reserves a channel for a datum, which frees it with free_datum_channels() (songs do when they stop). Returns an integer for channel.
-/datum/world_service/sounds/proc/reserve_sound_channel(datum/D)
+/datum/system/sounds/proc/claim_sound_channel(datum/D)
 	if(!D) //i don't like typechecks but someone will fuck it up
 		CRASH("Attempted to reserve sound channel without datum using the managed proc.")
 	.= reserve_channel()
@@ -105,7 +100,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 /**
  * Reserves a channel and updates the datastructure. Private proc.
  */
-/datum/world_service/sounds/proc/reserve_channel()
+/datum/system/sounds/proc/reserve_channel()
 	PRIVATE_PROC(TRUE)
 	if(channel_reserve_high <= random_channels_min) // out of channels
 		return
@@ -116,7 +111,7 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 /**
  * Frees a channel and updates the datastructure. Private proc.
  */
-/datum/world_service/sounds/proc/free_channel(number)
+/datum/system/sounds/proc/free_channel(number)
 	PRIVATE_PROC(TRUE)
 	var/text_channel = num2text(number)
 	var/index = reserved_channels[text_channel]
@@ -134,28 +129,12 @@ GLOBAL_DATUM_INIT(sound_service, /datum/world_service/sounds, new)
 		return
 	reserved_channels[text_reserved] = index
 
-/// Random available channel, returns text.
-/datum/world_service/sounds/proc/random_available_channel_text()
-	if(!length(channel_list))
-		return
-	if(channel_random_low > channel_reserve_high)
-		channel_random_low = 1
-	. = "[channel_list[channel_random_low++]]"
-
-/// Random available channel, returns number
-/datum/world_service/sounds/proc/random_available_channel()
-	if(!length(channel_list))
-		return
-	if(channel_random_low > channel_reserve_high)
-		channel_random_low = 1
-	. = channel_list[channel_random_low++]
-
 /// How many channels we have left.
-/datum/world_service/sounds/proc/available_channels_left()
+/datum/system/sounds/proc/available_channels_left()
 	return length(channel_list) - random_channels_min
 
 /// Init talking sound lists
-/datum/world_service/sounds/proc/create_talk_sound_map()
+/datum/system/sounds/proc/create_talk_sound_map()
 	talk_sound_map["beep-boop"] = DEFAULT_TALK_SOUNDS // first is DEFAULT
 	talk_sound_map["goon speak 1"] =list('sound/talksounds/goon/speak_1.ogg', 'sound/talksounds/goon/speak_1_ask.ogg', 'sound/talksounds/goon/speak_1_exclaim.ogg')
 	talk_sound_map["goon speak 2"] = list('sound/talksounds/goon/speak_2.ogg', 'sound/talksounds/goon/speak_2_ask.ogg', 'sound/talksounds/goon/speak_2_exclaim.ogg')

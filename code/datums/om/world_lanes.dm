@@ -164,12 +164,3 @@
 
 // ---------------------------------------------------------------- fold wave F4 lanes
 
-/// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
-/datum/om/behaviour/world/planets
-	name = "world: planets"
-	every = 2 SECONDS
-	lane = LANE_BACKGROUND
-
-/datum/om/behaviour/world/planets/service()
-	return GLOB.planet_service
-

@@ -14,15 +14,15 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	var/modified = 0
 
 /obj/item/seeds/Initialize(mapload, _seed_type)
-	if(_seed_type in GLOB.plant_service.seeds)
+	if(_seed_type in SSplants.seeds)
 		seed_type = _seed_type
 	update_seed()
 	. = ..()
 
 //Grabs the appropriate seed datum from the global list.
 /obj/item/seeds/proc/update_seed()
-	if(!seed() && seed_type && !isnull(GLOB.plant_service.seeds) && GLOB.plant_service.seeds[seed_type])
-		proto_set(src, nameof(seed_static), GLOB.plant_service.seeds[seed_type])
+	if(!seed() && seed_type && !isnull(SSplants.seeds) && SSplants.seeds[seed_type])
+		proto_set(src, nameof(seed_static), SSplants.seeds[seed_type])
 	update_appearance()
 
 //Updates strings and icon appropriately based on seed datum.
@@ -78,7 +78,7 @@ REGISTRY_MEMBERSHIP(/obj/item/seeds, REGISTRY_SEED_PACKS)
 	seed_type = null
 
 /obj/item/seeds/random/Initialize(mapload)
-	proto_set(src, nameof(seed_static), GLOB.plant_service.create_random_seed())
+	proto_set(src, nameof(seed_static), SSplants.create_random_seed())
 	seed_type = seed().name
 	. = ..()
 

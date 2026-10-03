@@ -62,9 +62,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 /obj/effect/plant/on_destroy(force)
 	if(seed() && seed().get_trait(TRAIT_SPREAD)==2)
 		unsense_proximity(callback = TYPE_PROC_REF(/atom, HasProximity), center = get_turf(src))
-	GLOB.plant_service.remove_plant(src)
+	SSplants.remove_plant(src)
 	for(var/obj/effect/plant/neighbor in range(1,src))
-		GLOB.plant_service.add_plant(neighbor)
+		SSplants.add_plant(neighbor)
 	..()
 
 /obj/effect/plant/single
@@ -80,12 +80,12 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	else
 		rel_set(src, nameof(parent), newparent)
 
-	if(!GLOB.plant_service)
+	if(!SSplants)
 		to_chat(world, span_danger("Plant controller does not exist and [src] requires it. Aborting."))
 		return INITIALIZE_HINT_QDEL
 
 	if(!istype(newseed))
-		newseed = GLOB.plant_service.seeds[DEFAULT_SEED]
+		newseed = SSplants.seeds[DEFAULT_SEED]
 	proto_set(src, nameof(seed_static), seed_shareable(newseed)) // vines share their seed
 	if(!seed())
 		return INITIALIZE_HINT_QDEL
@@ -121,7 +121,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 /obj/effect/plant/proc/finish_spreading()
 	set_dir(calc_dir())
 	update_icon()
-	GLOB.plant_service.add_plant(src)
+	SSplants.add_plant(src)
 	//Some plants eat through plating.
 	if(islist(seed().chems) && !isnull(seed().chems[REAGENT_ID_PACID]))
 		var/turf/T = get_turf(src)
@@ -236,7 +236,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 /// Old attackby: a scalpel takes a sample, anything else hacks at the plant. The item's normal handling still follows.
 /obj/effect/plant/proc/interaction_hit_plant(mob/user, obj/item/held, datum/interaction/interaction)
 	user.setClickCooldown(user.get_attack_speed(held))
-	GLOB.plant_service.add_plant(src)
+	SSplants.add_plant(src)
 
 	if(istype(held, /obj/item/surgical/scalpel))
 		take_plant_sample(user)
@@ -269,7 +269,7 @@ EXTEND_INTERACTIONS(/obj/effect/plant, \
 
 /obj/effect/plant/wirecutter_act(mob/user, obj/item/tool)
 	user.setClickCooldown(user.get_attack_speed(tool))
-	GLOB.plant_service.add_plant(src)
+	SSplants.add_plant(src)
 	return take_plant_sample(user) ? ITEM_INTERACT_SUCCESS : ITEM_INTERACT_BLOCKING
 
 //handles being overrun by vines - note that attacker_parent may be null in some cases
@@ -333,7 +333,7 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 
 	if(turfs.len) //Pick a turf to spawn at if we can
 		var/turf/simulated/floor/T = pick(turfs) // end
-		var/datum/seed/seed = GLOB.plant_service.create_random_seed(1)
+		var/datum/seed/seed = SSplants.create_random_seed(1)
 		seed.set_trait(TRAIT_SPREAD,2)             // So it will function properly as vines.
 		seed.set_trait(TRAIT_POTENCY,rand(potency_min, potency_max)) // 70-100 potency will help guarantee a wide spread and powerful effects.
 		seed.set_trait(TRAIT_MATURATION,rand(maturation_min, maturation_max))

@@ -27,7 +27,7 @@ SYSTEM_DEF(lighting)
 		initialized = TRUE
 		create_all_lighting_objects()
 
-	for(var/datum/planet/planet in GLOB.planet_service.planets)
+	for(var/datum/planet/planet in SSplanets.planets)
 		if(!planet_shandlers[planet])
 			planet_shandlers[planet] = new /datum/planet_sunlight_handler(planet)
 
@@ -154,8 +154,8 @@ SYSTEM_DEF(lighting)
 	var/datum/planet_sunlight_handler/pshandler = z_to_pshandler[z]
 	if(istype(pshandler))
 		return pshandler
-	else if(GLOB.planet_service.initialized && length(GLOB.planet_service.z_to_planet) >= z && GLOB.planet_service.z_to_planet[z])
-		var/datum/planet/P = GLOB.planet_service.z_to_planet[z]
+	else if(SSplanets.initialized && length(SSplanets.z_to_planet) >= z && SSplanets.z_to_planet[z])
+		var/datum/planet/P = SSplanets.z_to_planet[z]
 		if(istype(P))
 			pshandler = get_pshandler_planet(P)
 			z_to_pshandler[z] = pshandler

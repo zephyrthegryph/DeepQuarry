@@ -24,7 +24,7 @@ ADMIN_VERB(admin_lightning_strike, R_FUN, "Lightning Strike", "Causes lightning 
 
 	// Do a lightning flash for the whole planet, if the turf belongs to a planet.
 	var/datum/planet/P = null
-	P = LAZYACCESS(GLOB.planet_service.z_to_planet, T.z)
+	P = LAZYACCESS(SSplanets.z_to_planet, T.z)
 	if(P)
 		var/datum/weather_holder/holder = P.weather_holder
 		flick("lightning_flash", holder.special_visuals)

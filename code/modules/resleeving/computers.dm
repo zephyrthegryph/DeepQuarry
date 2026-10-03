@@ -603,7 +603,7 @@ EXTEND_INTERACTIONS(/obj/item/cmo_disk_holder, INTERACT_USE("Tear open", PROC_RE
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/computer/transhuman/resleeving/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 
 /// The inserted emergency disk (owned).
 /obj/machinery/computer/transhuman/resleeving/proc/disk() as /obj/item/disk/transcore

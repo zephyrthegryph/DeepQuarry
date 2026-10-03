@@ -110,7 +110,7 @@
 	else
 		if(old_shandler) // the new turf can't hold one
 			qdel(old_shandler)
-		if(istype(W_sim) && (GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) && has_dynamic_lighting())
+		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
 			own_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).

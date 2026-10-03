@@ -72,7 +72,7 @@ DECLARE_VERB_IF(/turf/simulated, /turf/simulated/proc/climb_wall, "climbable")
 		holy = 1
 	levelupdate()
 	if(is_outdoors())
-		GLOB.planet_service.addTurf(src)
+		SSplanets.addTurf(src)
 
 /turf/simulated/examine(mob/user)
 	. = ..()

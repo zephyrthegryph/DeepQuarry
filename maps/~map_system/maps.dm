@@ -167,7 +167,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 /datum/map/proc/get_zlevel_time(z)
 	if(!z)
 		z = 1
-	var/datum/planet/P = z <= GLOB.planet_service.z_to_planet.len ? GLOB.planet_service.z_to_planet[z] : null
+	var/datum/planet/P = z <= SSplanets.z_to_planet.len ? SSplanets.z_to_planet[z] : null
 	// We found a planet tied to that zlevel, give them the time
 	if(P?.current_time)
 		return P.current_time

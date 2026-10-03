@@ -1090,7 +1090,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
-	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind.name)
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(!(record.dead_state == MR_DEAD))
@@ -1118,7 +1118,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	if(!mind)
 		to_chat(src,span_warning("Your ghost is missing game values that allow this functionality, sorry."))
 		return
-	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(mind.name)
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[src.mind.name]
 		if(record.dead_state == MR_DEAD || !(record.do_notify))

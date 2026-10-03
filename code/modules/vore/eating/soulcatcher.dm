@@ -162,7 +162,7 @@
 
 	if(isliving(M))
 		if(ishuman(M))
-			GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+			SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))

@@ -396,7 +396,7 @@ EXTEND_INTERACTIONS(/obj/machinery/medical_kiosk, \
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/machinery/medical_kiosk/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 
 /// active user (a relation view: it reads null once the target is deleted).
 /obj/machinery/medical_kiosk/proc/active_user() as /mob/living

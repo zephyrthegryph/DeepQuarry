@@ -78,13 +78,13 @@ UI_ACT_PROC(/obj/item/analyzer/plant_analyzer, ui_act_close)
 	else if(istype(target,/obj/item/reagent_containers/food/snacks/grown))
 
 		var/obj/item/reagent_containers/food/snacks/grown/G = target
-		grown_seed = GLOB.plant_service.seeds[G.plantname]
+		grown_seed = SSplants.seeds[G.plantname]
 		grown_reagents = G.reagents
 
 	else if(istype(target,/obj/item/grown))
 
 		var/obj/item/grown/G = target
-		grown_seed = GLOB.plant_service.seeds[G.plantname]
+		grown_seed = SSplants.seeds[G.plantname]
 		grown_reagents = G.reagents
 
 	else if(istype(target,/obj/item/seeds))

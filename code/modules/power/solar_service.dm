@@ -88,9 +88,9 @@ SYSTEM_DEF(solars)
 	return "[msg]Controllers: [length(controller_run)]"
 
 /datum/system/solars/proc/get_solar_angle(turf/our_t)
-	if(!our_t || our_t.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_t.z])
+	if(!our_t || our_t.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_t.z])
 		return GLOB.sun.angle // standard in space solar panels use the global sun angle
 
 	// On planets, use the daynight cycle
-	var/datum/planet/our_planet = GLOB.planet_service.z_to_planet[our_t.z]
+	var/datum/planet/our_planet = SSplanets.z_to_planet[our_t.z]
 	return our_planet.get_sun_solar_position()

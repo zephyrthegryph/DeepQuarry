@@ -18,8 +18,8 @@
 	var/turf/actor_floor = get_step(T, WEST)
 	TEST_ASSERT(isfloorturf(T) && isfloorturf(neighbor_floor) && isfloorturf(actor_floor), "The actual neighbor fixture uses three real room floors")
 	TEST_ASSERT(!T.density && !neighbor_floor.density && !actor_floor.density, "The real neighbor fixture has three passable floors")
-	TEST_ASSERT(GLOB.plant_service && GLOB.plant_service.initialized, "The actual live-plant service is initialized")
-	var/datum/seed/seed = GLOB.plant_service.seeds[PLANT_GLOWSHROOM]
+	TEST_ASSERT(SSplants && SSplants.initialized, "The actual live-plant service is initialized")
+	var/datum/seed/seed = SSplants.seeds[PLANT_GLOWSHROOM]
 	TEST_ASSERT_NOTNULL(seed, "The real plant service contains its canonical registered glowshroom seed")
 	seed.update_growth_stages()
 	TEST_ASSERT(seed.growth_stages > 0 && seed.get_trait(TRAIT_ENDURANCE) > 0, "The canonical real seed resolves positive construction growth stages and endurance")

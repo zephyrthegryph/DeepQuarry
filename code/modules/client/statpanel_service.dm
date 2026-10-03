@@ -1,9 +1,10 @@
-// The stat panel world service (was SSstatpanels): refreshes every client's stat tabs every 4 ticks.
-GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
-
-/datum/world_service/statpanels
+// The stat panel system (was SSstatpanels): refreshes every client's stat tabs every 4 ticks. The API is in
+// statpanel_api.dm.
+SYSTEM_DEF(statpanels)
 	name = "Stat Panels"
-	lane = /datum/om/behaviour/world/statpanels
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	/// TRUE while a pass that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 	var/list/currentrun = list()
 	var/list/global_data
 	var/list/mc_data
@@ -22,7 +23,13 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	///how many full runs this subsystem has completed. used for variable rate refreshes.
 	var/num_fires = 0
 
-/datum/world_service/statpanels/service_step(resumed)
+/datum/system/statpanels/reactions()
+	. = ..()
+	. += every(4, PROC_REF(refresh_tabs), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/statpanels/proc/refresh_tabs(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	if (!resumed)
 		num_fires++
 		global_data = list(
@@ -107,11 +114,12 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			if((num_fires % misc_wait == 0))
 				update_misc_tabs(target,target_mob)
 
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-/datum/world_service/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
+/datum/system/statpanels/proc/update_misc_tabs(client/target,mob/target_mob)
 	target_mob.update_misc_tabs()
 	for(var/tab in target_mob.misc_tabs)
 		if(length(target_mob.misc_tabs[tab]) == 0 && (tab in target.misc_tabs))
@@ -132,7 +140,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			target.misc_tabs -= tab
 			target.stat_panel.send_message("remove_misc",tab)
 
-/datum/world_service/statpanels/proc/set_status_tab(client/target)
+/datum/system/statpanels/proc/set_status_tab(client/target)
 	if(!global_data)//statbrowser hasnt fired yet and we were called from immediate_send_stat_data()
 		return
 
@@ -142,7 +150,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		other_str = target.mob?.get_status_tab_items(),
 	))
 
-/datum/world_service/statpanels/proc/set_MC_tab(client/target)
+/datum/system/statpanels/proc/set_MC_tab(client/target)
 	var/turf/eye_turf = get_turf(target.eye)
 	var/coord_entry = COORD(eye_turf)
 	if(!mc_data)
@@ -156,7 +164,7 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		"coord_entry" = coord_entry,
 	))
 
-/datum/world_service/statpanels/proc/generate_mc_metrics()
+/datum/system/statpanels/proc/generate_mc_metrics()
 	var/list/history = Kernel.perf_tick_usage
 	var/list/rust_allocator = vg_verdigris_allocator_diagnostics()
 	var/history_start = max(1, history.len - 119)
@@ -206,55 +214,13 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		),
 	)
 
-/datum/world_service/statpanels/proc/set_examine_tab(client/target)
-	var/description_holders = target.description_holders
-	var/list/examine_update = list()
-
-	var/atom/atom_icon = description_holders["icon"]
-	var/shown_icon = target.examine_icon()
-	if(!shown_icon && atom_icon)
-		if(ismob(atom_icon))
-			// Flattening a human's dozens of overlays synchronously took 0.8-1.0s
-			// per examine and froze the entire BYOND thread. Use an already-cached
-			// composite when one exists; otherwise the base mob appearance is a
-			// deliberately cheap portrait fallback.
-			var/icon/cached_mob_icon = get_cached_examine_icon(atom_icon)
-			shown_icon = cached_mob_icon \
-				? icon2html(cached_mob_icon, target, sourceonly = TRUE) \
-				: icon2html(atom_icon, target, sourceonly = TRUE)
-		else if(length(atom_icon.overlays) > 0)
-			var/force_south = FALSE
-			if(isliving(atom_icon))
-				force_south = TRUE
-			shown_icon = costly_icon2html(atom_icon, target, sourceonly=TRUE, force_south = force_south)
-		else
-			shown_icon = icon2html(atom_icon, target, sourceonly=TRUE)
-		target.examine_icon = shown_icon
-	examine_update += "<img src=\"[shown_icon]\" />&emsp;" + span_giant("[description_holders["name"]]") //The name, written in big letters.
-	examine_update += "[description_holders["desc"]]" //the default examine text.
-	if(description_holders["info"])
-		examine_update += span_blue(span_bold("[replacetext(description_holders["info"], "\n", "<BR>")]")) + "<br />" //Blue, informative text.
-	if(description_holders["interactions"])
-		for(var/line in description_holders["interactions"])
-			examine_update += span_blue(span_bold("[line]")) + "<br />"
-	if(description_holders["fluff"])
-		examine_update += span_green(span_bold("[replacetext(description_holders["fluff"], "\n", "<BR>")]")) + "<br />" //Green, fluff-related text.
-	if(description_holders["antag"])
-		examine_update += span_red(span_bold("[description_holders["antag"]]")) + "<br />" //Red, malicious antag-related text
-
-	var/update_panel = FALSE
-	if(target.prefs?.read_preference(/datum/preference/choiced/examine_mode) == EXAMINE_MODE_SWITCH_TO_PANEL)
-		update_panel = TRUE
-
-	target.stat_panel.send_message("update_examine", list("EX" = examine_update, "UPD" = update_panel))
-
-/datum/world_service/statpanels/proc/set_tickets_tab(client/target)
+/datum/system/statpanels/proc/set_tickets_tab(client/target)
 	var/list/tickets = list()
 	if(check_rights_for(target, R_ADMIN|R_SERVER|R_MOD|R_MENTOR)) //Prevents non-staff from opening the list of ahelp tickets
 		tickets = GLOB.tickets.stat_entry(target)
 	target.stat_panel.send_message("update_tickets", tickets)
 
-/datum/world_service/statpanels/proc/set_SDQL2_tab(client/target)
+/datum/system/statpanels/proc/set_SDQL2_tab(client/target)
 	var/list/sdql2A = list()
 	sdql2A[++sdql2A.len] = list("", "Access Global SDQL2 List", REF(GLOB.sdql2_vv_statobj))
 	var/list/sdql2B = list()
@@ -265,12 +231,12 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 	target.stat_panel.send_message("update_sdql2", sdql2A)
 
 /// Set up the various action tabs.
-/datum/world_service/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
+/datum/system/statpanels/proc/set_action_tabs(client/target, mob/target_mob)
 	return
 
 
 
-/datum/world_service/statpanels/proc/generate_mc_data()
+/datum/system/statpanels/proc/generate_mc_data()
 	mc_data = list(
 		list("CPU:", world.cpu),
 		list("Instances:", "[num2text(length(world.contents), 10)]"),
@@ -306,58 +272,5 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "\ref[service]")
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
 
-///immediately update the active statpanel tab of the target client
-/datum/world_service/statpanels/proc/immediate_send_stat_data(client/target)
-	if(!target.stat_panel.is_ready())
-		return FALSE
-
-	if(target.stat_tab == "Examine")
-		set_examine_tab(target)
-		return TRUE
-
-	if(target.stat_tab == "Status")
-		set_status_tab(target)
-		return TRUE
-
-	var/mob/target_mob = target.mob
-
-	// Handle actions
-
-	var/update_actions = FALSE
-	if(target.stat_tab in target.spell_tabs)
-		update_actions = TRUE
-
-
-	if(update_actions)
-		set_action_tabs(target, target_mob)
-		return TRUE
-
-	if(!target.holder)
-		return FALSE
-
-	if(target.stat_tab == "MC")
-		set_MC_tab(target)
-		return TRUE
-
-	if(target.stat_tab == "Tickets")
-		set_tickets_tab(target)
-		return TRUE
-
-	if(!REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && ("SDQL2" in target.panel_tabs))
-		target.stat_panel.send_message("remove_sdql2")
-
-	else if(REGISTRY_COUNT(REGISTRY_SDQL2_QUERIES) && target.stat_tab == "SDQL2")
-		set_SDQL2_tab(target)
-
 /// Stat panel window declaration
 /client/var/datum/tgui_window/stat_panel
-
-/// statpanels (was SSstatpanels).
-/datum/om/behaviour/world/statpanels
-	name = "world: statpanels"
-	every = 4
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/statpanels/service()
-	return GLOB.statpanels_service
-

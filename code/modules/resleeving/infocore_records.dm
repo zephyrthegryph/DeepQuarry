@@ -63,7 +63,7 @@
 	EXPIRY_STAMP(src, last_update, CLOCK_WORLD)
 
 	if(add_to_db)
-		GLOB.transcore_service.add_backup(src, database_key = database_key)
+		SStranscore.add_backup(src, database_key = database_key)
 
 /// The character this record restores: name, flavour text, languages, OOC
 /// notes and persistent traits all come from the mind's identity (by
@@ -199,7 +199,7 @@
 		organ_data[org] = I.robotic
 
 	if(add_to_db)
-		GLOB.transcore_service.add_body(src, database_key = database_key)
+		SStranscore.add_body(src, database_key = database_key)
 
 /**
  * Make a deep copy of this record so it can be saved on a disk without modifications

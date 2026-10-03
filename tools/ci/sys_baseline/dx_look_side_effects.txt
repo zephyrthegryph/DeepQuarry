@@ -506,7 +506,7 @@ dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	floor_markings
 dx_appearance_side_effect	code/modules/holomap/station_holomap.dm	floor_markings.pixel_y = -src.pixel_y
 dx_appearance_side_effect	code/modules/hydroponics/grown.dm	fruit_base.color = "[seed().get_trait(TRAIT_PRODUCT_COLOUR)]"
 dx_appearance_side_effect	code/modules/hydroponics/grown.dm	fruit_leaves.color = "[seed().get_trait(TRAIT_PLANT_COLOUR)]"
-dx_appearance_side_effect	code/modules/hydroponics/grown.dm	GLOB.plant_service.plant_icon_cache[icon_key] = plant_icon
+dx_appearance_side_effect	code/modules/hydroponics/grown.dm	SSplants.plant_icon_cache[icon_key] = plant_icon
 dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(blight, 0.5, l_color = clr)
 dx_appearance_side_effect	code/modules/hydroponics/spreading/spreading.dm	set_light(0)
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	name = "[base_name] ([seed.seed_name])"
@@ -517,9 +517,9 @@ dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	de
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	to_chat(world, span_danger("Seed type [seed.get_trait(TRAIT_PLANT_ICON)] cannot find a growth stage value."))
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay.color = FROZEN_PLANT_COLOUR
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	plant_overlay.color = seed.get_trait(TRAIT_PLANT_COLOUR)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	GLOB.plant_service.plant_icon_cache["[ikey]-[seed.get_trait(TRAIT_PLANT_COLOUR)]"] = plant_overlay
+dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["[ikey]-[seed.get_trait(TRAIT_PLANT_COLOUR)]"] = plant_overlay
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	harvest_overlay.color = seed.get_trait(TRAIT_PRODUCT_COLOUR)
-dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	GLOB.plant_service.plant_icon_cache["product-[ikey]-[seed.get_trait(TRAIT_PRODUCT_COLOUR)]"] = harvest_overlay
+dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	SSplants.plant_icon_cache["product-[ikey]-[seed.get_trait(TRAIT_PRODUCT_COLOUR)]"] = harvest_overlay
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	set_light(round(seed.get_trait(TRAIT_POTENCY)/10), l_color = clr)
 dx_appearance_side_effect	code/modules/hydroponics/trays/tray_update_icons.dm	set_light(0)
 dx_appearance_side_effect	code/modules/integrated_electronics/core/assemblies.dm	detail_overlay.color = detail_color

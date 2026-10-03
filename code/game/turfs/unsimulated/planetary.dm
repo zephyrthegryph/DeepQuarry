@@ -21,12 +21,12 @@
 
 /turf/unsimulated/wall/planetary/Initialize(mapload)
 	. = ..()
-	GLOB.planet_service.addTurf(src)
+	SSplanets.addTurf(src)
 
 /// Phase 2: leaves its planet's turf set.
 /turf/unsimulated/wall/planetary/lifecycle_dematerialize()
 	. = ..()
-	GLOB.planet_service.removeTurf(src)
+	SSplanets.removeTurf(src)
 
 /turf/unsimulated/wall/planetary/set_temperature(new_temperature)
 	if(new_temperature == get_temperature())

@@ -35,7 +35,7 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 /turf/simulated/floor/lifecycle_dematerialize()
 	. = ..()
 	if(is_outdoors())
-		GLOB.planet_service.removeTurf(src)
+		SSplanets.removeTurf(src)
 
 /turf/simulated/floor/outdoors/get_dig_loot_type(mob/user, obj/item/W)
 	return pick( \
@@ -69,14 +69,14 @@ DECLARE_SHARED_CACHE(turf_edge_overlays, GLOBAL_PROC_REF(build_turf_edge_overlay
 	if(is_outdoors()) // Already outdoors.
 		return
 	outdoors = OUTDOORS_YES
-	GLOB.planet_service.addTurf(src)
+	SSplanets.addTurf(src)
 
 /// Makes the turf explicitly indoors.
 /turf/simulated/proc/make_indoors()
 	if(!is_outdoors()) // Already indoors.
 		return
 	outdoors = OUTDOORS_NO
-	GLOB.planet_service.removeTurf(src)
+	SSplanets.removeTurf(src)
 
 /turf/simulated/post_change()
 	..()

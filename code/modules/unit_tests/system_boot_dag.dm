@@ -92,8 +92,8 @@
 			var/datum/system/dep = system_table()[need]
 			TEST_ASSERT(dep?.initialized, "[S.type] needs [need], which never initialized")
 	// A system may need a world service: SSatoms declares the two boots it used to do by hand.
-	TEST_ASSERT(/datum/world_service/planets in SSatoms.needs, "SSatoms declares the planet service as a need")
-	TEST_ASSERT(GLOB.planet_service.initialized && GLOB.transcore_service.initialized, "the services SSatoms needs booted")
+	TEST_ASSERT(/datum/system/planets in SSatoms.needs, "SSatoms declares the planet system as a need")
+	TEST_ASSERT(SSplanets.initialized && SStranscore.initialized, "the services SSatoms needs booted")
 	// world_services() is derived from the registry (no hand list): every service in it is the registered one, and
 	// the well-known ones are there.
 	var/list/services = world_services()

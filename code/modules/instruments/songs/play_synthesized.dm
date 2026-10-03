@@ -78,7 +78,7 @@
 		LAZYCLEARLIST(channels_idle)
 		SSinstruments.ready().current_instrument_channels -= using_sound_channels
 		using_sound_channels = 0
-		sound_service().free_datum_channels(src)
+		SSsounds.ready().free_datum_channels(src)
 
 /**
  * Stops all sounds we are responsible for in a given person. Only works in synthesized mode.

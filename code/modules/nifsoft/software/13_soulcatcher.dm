@@ -251,7 +251,7 @@
 
 	//If they have these values, apply them
 	if(ishuman(M))
-		GLOB.transcore_service.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
+		SStranscore.m_backup(brainmob.mind,0) //It does ONE, so medical will hear about it.
 
 	//Else maybe they're a joining ghost
 	else if(isobserver(M))
@@ -322,7 +322,7 @@
 	..()
 
 	if(!self.parent_mob && !self.transient &&(self.life_tick % 150 == 0) && self.soulcatcher()?.setting_flags & NIF_SC_BACKUPS)
-		GLOB.transcore_service.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
+		SStranscore.m_backup(self.mind,0) //Passed 0 means "Don't touch the nif fields on the mind record"
 
 	self.life_tick++
 

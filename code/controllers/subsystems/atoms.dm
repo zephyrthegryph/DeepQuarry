@@ -7,9 +7,11 @@ SYSTEM_DEF(atoms)
 		/datum/system/mapping,
 		/datum/system/job,
 		// Mapload resleeving machines register with the transcore databases (was a SStranscore dependency).
-		/datum/world_service/transcore,
+		/datum/system/transcore,
 		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
-		/datum/world_service/planets,
+		/datum/system/planets,
+		// Mapload R&D servers connect to the science techweb in Initialize() (the boot order no longer happens to put it first).
+		/datum/world_service/research,
 	)
 
 	/// A stack of list(source, desired initialized state)

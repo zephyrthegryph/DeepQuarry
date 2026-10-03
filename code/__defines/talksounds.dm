@@ -3,7 +3,7 @@
 /proc/get_talk_sound(voice_sound)
 	if(!voice_sound)
 		return DEFAULT_TALK_SOUNDS
-	return sound_service().talk_sound_map[voice_sound]
+	return SSsounds.ready().talk_sound(voice_sound)
 
 /proc/rlist(list/keys,list/values) //short for reversible list generator
 	var/list/rlist = list(list(),list(),FALSE,0)

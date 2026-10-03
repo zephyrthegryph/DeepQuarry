@@ -275,4 +275,92 @@
 	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	TEST_ASSERT(SSradiation.irradiate(target, 0), "irradiate() refused a plain target")
 
+/// Planets: boot after mapping, apply queued sun and temperature updates every 2 s on the background lane, park when there is
+/// nothing to apply and wake on queued work.
+/datum/unit_test/dq_system_planets
+
+/datum/unit_test/dq_system_planets/Run()
+	assert_system_ported(SSplanets, /datum/system/planets)
+	TEST_ASSERT(/datum/system/mapping in SSplanets.needs, "planets boot after mapping")
+	var/datum/work_item/W = assert_work_declared(SSplanets, nameof(/datum/system/planets/proc/apply_updates), 2 SECONDS, LANE_BACKGROUND)
+	TEST_ASSERT_EQUAL(SSplanets.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "planet updates run outside the game")
+	TEST_ASSERT_EQUAL(SSplanets.apply_updates(0), STEP_PARK, "an idle planet system must park")
+	W.parked = TRUE
+	SSplanets.wake_updates()
+	TEST_ASSERT(W.parked, "waking with nothing queued must leave the item parked")
+	TEST_ASSERT(islist(SSplanets.planets), "the planet list is not a list")
+	TEST_ASSERT(SSplants.initialized, "the plant system is set up by the planet system's initialize()")
+	W.parked = FALSE
+
+/// Plants: a lazy system outside the boot DAG with the seed tables, growing plants join the registry and the growth lane
+/// through the api.
+/datum/unit_test/dq_system_plants
+
+/datum/unit_test/dq_system_plants/Run()
+	TEST_ASSERT(!SSplants.boots_in_dag(), "a lazy system must stay out of the boot DAG")
+	TEST_ASSERT(!(SSplants in kernel_boot_systems()), "the lazy plant system is a boot node")
+	TEST_ASSERT_EQUAL(SSplants.ready(), SSplants, "ready() must return the system")
+	assert_system_ported(SSplants, /datum/system/plants)
+	TEST_ASSERT(length(SSplants.seeds), "the plant system has no seeds")
+	TEST_ASSERT(length(SSplants.gene_tag_masks), "the plant system has no gene masks")
+	var/lines = length(SSplants.seeds)
+	var/datum/seed/random = SSplants.create_random_seed(TRUE)
+	TEST_ASSERT_NOTNULL(random, "create_random_seed() made no seed")
+	TEST_ASSERT_EQUAL(length(SSplants.seeds), lines + 1, "the random seed was not filed")
+	SSplants.seeds -= random.name
+	qdel(random)
+
+/// Sounds: a lazy system, channels are reserved for a datum and freed with it, random channels come from the free ones and the
+/// talk sound table is built.
+/datum/unit_test/dq_system_sounds
+
+/datum/unit_test/dq_system_sounds/Run()
+	TEST_ASSERT(!SSsounds.boots_in_dag(), "a lazy system must stay out of the boot DAG")
+	TEST_ASSERT(!(SSsounds in kernel_boot_systems()), "the lazy sound system is a boot node")
+	TEST_ASSERT_EQUAL(SSsounds.ready(), SSsounds, "ready() must return the system")
+	assert_system_ported(SSsounds, /datum/system/sounds)
+	TEST_ASSERT(length(SSsounds.talk_sound_sets()), "the sound system has no talk sounds")
+	TEST_ASSERT(islist(SSsounds.talk_sound("beep-boop")), "the default talk sound set is missing")
+	TEST_ASSERT(SSsounds.random_available_channel(), "the sound system handed out no channel")
+	TEST_ASSERT(istext(SSsounds.random_available_channel_text()), "the textual channel is not text")
+	var/left = SSsounds.available_channels_left()
+	var/datum/holder = allocate(/datum)
+	var/channel = SSsounds.reserve_sound_channel(holder)
+	TEST_ASSERT(channel, "no channel was reserved for the datum")
+	TEST_ASSERT(SSsounds.vars["reserved_channels"]["[channel]"], "the reserved channel is not recorded")
+	SSsounds.free_datum_channels(holder)
+	TEST_ASSERT_NULL(SSsounds.vars["reserved_channels"]["[channel]"], "freeing the datum's channels left the reservation")
+	TEST_ASSERT_EQUAL(SSsounds.available_channels_left(), left, "reserving and freeing changed the free channel count")
+
+/// Transcore: boots after mapping, scans every 3 minutes in the game on the background lane, the databases answer by key and
+/// by mind name through the api.
+/datum/unit_test/dq_system_transcore
+
+/datum/unit_test/dq_system_transcore/Run()
+	assert_system_ported(SStranscore, /datum/system/transcore)
+	TEST_ASSERT(/datum/system/mapping in SStranscore.needs, "transcore boots after mapping")
+	assert_work_declared(SStranscore, nameof(/datum/system/transcore/proc/scan_step), 3 MINUTES, LANE_BACKGROUND)
+	TEST_ASSERT_EQUAL(SStranscore.periodic_runlevels, RUNLEVEL_GAME, "transcore scans outside the game")
+	TEST_ASSERT(length(SStranscore.databases), "transcore has no databases")
+	TEST_ASSERT_EQUAL(SStranscore.db_by_key(null), SStranscore.default_db, "the null key must answer the default database")
+	TEST_ASSERT_EQUAL(SStranscore.db_by_key("default"), SStranscore.default_db, "the default key must answer the default database")
+	TEST_ASSERT_NULL(SStranscore.db_by_mind_name("dq nobody"), "an unknown mind has no database")
+	var/result = SStranscore.scan_step(0)
+	for(var/i in 1 to 50) // a test tick is always over budget: the scan yields between records
+		if(result != STEP_YIELD)
+			break
+		result = SStranscore.scan_step(0)
+	TEST_ASSERT_EQUAL(result, STEP_DONE, "the transcore scan did not finish")
+
+/// Stat panels: every 4 ticks in the lobby and the game, a pass with no clients finishes.
+/datum/unit_test/dq_system_statpanels
+
+/datum/unit_test/dq_system_statpanels/Run()
+	assert_system_ported(SSstatpanels, /datum/system/statpanels)
+	assert_work_declared(SSstatpanels, nameof(/datum/system/statpanels/proc/refresh_tabs), 4, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSstatpanels.periodic_runlevels, RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT, "stat panels lost their lobby runlevel")
+	var/fires = SSstatpanels.num_fires
+	TEST_ASSERT_EQUAL(SSstatpanels.refresh_tabs(0), STEP_DONE, "a pass with no clients must finish")
+	TEST_ASSERT_EQUAL(SSstatpanels.num_fires, fires + 1, "the pass did not count itself")
+
 #endif

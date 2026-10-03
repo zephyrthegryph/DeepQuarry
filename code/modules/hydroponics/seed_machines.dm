@@ -206,7 +206,7 @@ UI_DATA(/obj/machinery/botany/extractor, "degradation:num", "merge:ui_data_obj_m
 /obj/machinery/botany/extractor/proc/ui_data_obj_machinery_botany_extractor(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	var/list/geneMasks = GLOB.plant_service.gene_masked_list
+	var/list/geneMasks = SSplants.gene_masked_list
 	data["geneMasks"] = geneMasks
 
 	data["activity"] = active
@@ -244,8 +244,8 @@ UI_ACT_PROC(/obj/machinery/botany, ui_act_eject_packet)
 		return
 	seed.forceMove(get_turf(src))
 
-	if(seed.seed().name == "new line" || isnull(GLOB.plant_service.seeds[seed.seed().name]))
-		GLOB.plant_service.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
+	if(seed.seed().name == "new line" || isnull(SSplants.seeds[seed.seed().name]))
+		SSplants.register_line(seed.seed()) // the packet keeps its private copy, renamed to the line
 
 	seed.update_seed()
 	visible_message("[icon2html(src,viewers(src))] [src] beeps and spits out [seed].")
@@ -295,8 +295,8 @@ UI_ACT_PROC(/obj/machinery/botany/extractor, ui_act_get_gene)
 	if(!genetics().roundstart)
 		loaded_disk.genesource += " (variety #[genetics().uid])"
 
-	loaded_disk.name += " ([GLOB.plant_service.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
-	loaded_disk.desc += " The label reads \'gene [GLOB.plant_service.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
+	loaded_disk.name += " ([SSplants.gene_tag_masks[params["get_gene"]]], #[genetics().uid])"
+	loaded_disk.desc += " The label reads \'gene [SSplants.gene_tag_masks[params["get_gene"]]], sampled from [genetics().display_name]\'."
 	eject_disk = 1
 
 	degradation += rand(20,60)
@@ -344,7 +344,7 @@ UI_DATA(/obj/machinery/botany/editor, "merge:ui_data_obj_machinery_botany_editor
 
 		for(var/datum/plantgene/P in loaded_disk.genes)
 			if(data["locus"] != "") data["locus"] += ", "
-			data["locus"] += "[GLOB.plant_service.gene_tag_masks[P.genetype]]"
+			data["locus"] += "[SSplants.gene_tag_masks[P.genetype]]"
 
 	else
 		data["disk"] = 0
@@ -366,7 +366,7 @@ UI_ACT_PROC(/obj/machinery/botany/editor, ui_act_apply_gene)
 	COOLDOWN_START(src, action_cooldown, action_time)
 	set_active(1)
 
-	if(!isnull(GLOB.plant_service.seeds[seed.seed().name]))
+	if(!isnull(SSplants.seeds[seed.seed().name]))
 		var/datum/seed/modified_seed = seed.seed().diverge(1)
 		if(!modified_seed) // TRAIT_IMMUTABLE: never edit the shared line
 			set_active(FALSE)

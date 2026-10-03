@@ -216,7 +216,7 @@
 /datum/nifsoft/mindbackup/activate()
 	if((. = ..()))
 		var/mob/living/carbon/human/H = nif().human
-		GLOB.transcore_service.m_backup(H.mind,H.nif,one_time = TRUE)
+		SStranscore.m_backup(H.mind,H.nif,one_time = TRUE)
 		persist_nif_data(H)
 		nif().notify("Mind backed up!")
 		nif().use_charge(0.1)

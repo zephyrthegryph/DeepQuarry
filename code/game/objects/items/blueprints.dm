@@ -531,7 +531,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			AO.charges -= 1
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in GLOB.planet_service.planets)
+	for(var/datum/planet/PL in SSplanets.planets)
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)
@@ -930,7 +930,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 
 	var/list/zLevels = using_map.station_levels.Copy()
-	for(var/datum/planet/PL in GLOB.planet_service.planets)
+	for(var/datum/planet/PL in SSplanets.planets)
 		zLevels -= PL.expected_z_levels
 	for(var/obj/machinery/gravity_generator/main/GG in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 		if(GG.z in zLevels)

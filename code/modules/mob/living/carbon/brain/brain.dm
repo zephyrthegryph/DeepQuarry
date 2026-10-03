@@ -114,7 +114,7 @@
 /// The Notify Transcore verb's work. A brain with no mind or no backup record gets the no-backup
 /// answer instead of a runtime (audit A7). Returns TRUE when a notification was sent.
 /mob/living/carbon/brain/proc/backup_ping_resolve()
-	var/datum/transcore_db/db = mind ? GLOB.transcore_service.db_by_mind_name(mind.name) : null
+	var/datum/transcore_db/db = mind ? SStranscore.db_by_mind_name(mind.name) : null
 	var/datum/transhuman/mind_record/record = db?.backed_up[mind.name]
 	if(!record)
 		to_chat(src, span_warning("No backup record could be found, sorry."))

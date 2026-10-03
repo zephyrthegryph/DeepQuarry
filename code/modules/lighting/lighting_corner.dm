@@ -73,7 +73,7 @@
 		master_SE = process_next // ALLOW(ownership): lighting engine master turf, set once per corner; the corner dies with its turfs, and a turf index entry per corner would cost the whole map
 		process_next.lighting_corner_NW = src
 
-	if(((GLOB.planet_service.initialized && GLOB.planet_service.z_to_planet.len >= z && GLOB.planet_service.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
+	if(((SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) || SSlighting.get_pshandler_z(z)) && dynamic) sunlight = SUNLIGHT_POSSIBLE
 
 /datum/lighting_corner/proc/save_master(turf/master, dir)
 	switch (dir)

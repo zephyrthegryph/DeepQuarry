@@ -121,7 +121,7 @@
 	return "beep-boop"
 
 /datum/preference/text/human/voice_sound/get_pref_choices(datum/preferences/preferences)
-	return assoc_to_keys(sound_service().talk_sound_map)
+	return assoc_to_keys(SSsounds.ready().talk_sound_sets())
 
 /datum/preference/text/human/voice_sound/apply_to_human(mob/living/carbon/human/target, value)
 	if(!value)
