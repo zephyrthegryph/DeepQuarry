@@ -330,18 +330,7 @@ GLOBAL_LIST_EMPTY(resource_adapters)
 	if(D && ("blood_volume" in D.vars))
 		D.vars["blood_volume"] -= R.amount
 
-/// RES_REAGENTS: a reagent holder's volume. A transfer is a reservation on the source and a reservation of capacity on the target (phase 2's
-/// beaker adapters fill this in: nothing in E2's gate spends reagents).
-/datum/resource/reagents
-	res_id = RES_REAGENTS
-	name = "reagents"
-
-/datum/resource/reagents/holder_of(datum/act/op/A)
-	return A.held || A.target
-
-/datum/resource/reagents/available(datum/act/op/A)
-	var/atom/movable/AM = A.held || A.target
-	return istype(AM) && AM.reagents ? AM.reagents.total_volume : 0
+/// RES_REAGENTS is the library's adapter: code/library/reagents/reagent_flow.dm (a transfer reserves the source's volume and the target's capacity).
 
 /// RES_SLOT_CAPACITY: a slot's free capacity. An insert reserves it and the move commits it. The slot is `A.target`'s, named by the op's put_in().
 /datum/resource/slot_capacity

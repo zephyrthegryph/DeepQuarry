@@ -23,9 +23,7 @@
 // accessors (cover_open(holder), ...), which publish a key when they change, so a redraw or a window refresh follows with nothing called by hand.
 // A window's buttons are ops with a ui_act() binding: tgui_act() routes a button to its op first (code/engine/parts/inputs.dm, op_ui_act()).
 
-/// The entry kinds of the presentation layer.
-#define ENTRY_LOOK_LAYER "look_layer"
-#define ENTRY_EXAMINE_LINE "examine_line"
+/// The entry kinds of the presentation layer: look_layer and examine_line are code/engine/present/look.dm and examine.dm.
 /// The kind interface() makes (code/engine/parts/part.dm).
 #define ENTRY_INTERFACE "interface"
 
@@ -33,21 +31,6 @@
 #define OUTPUT_HOOK_DRAW (1<<0)
 #define OUTPUT_HOOK_EXAMINE (1<<1)
 #define OUTPUT_HOOK_UI (1<<2)
-
-/// look_layer(name, when =): a layer of the look while the condition holds. `under` draws it below the base (the final look.layer(under = TRUE)).
-/// `reads` names the holder vars a PROC_REF condition reads (a var or a capability key in the condition needs none).
-/proc/look_layer(layer_name, when = null, under = FALSE, list/reads = null)
-	if(!istext(layer_name) || !length(layer_name))
-		declare_report("look_layer(): the first argument is the layer's name (a LOOK_* text), got [isnull(layer_name) ? "null" : "[layer_name]"]")
-		return null
-	return entry_make(ENTRY_LOOK_LAYER, null, list("layer" = layer_name, "when" = when, "under" = under, "reads" = reads))
-
-/// examine_line(text | MSG(x) | PROC_REF(x), when =): a line of the holder's examine text while the condition holds.
-/proc/examine_line(line, when = null, list/reads = null)
-	if(isnull(line))
-		declare_report("examine_line(): give it a text, a MSG(x) or a PROC_REF")
-		return null
-	return entry_make(ENTRY_EXAMINE_LINE, null, list("line" = line, "when" = when, "reads" = reads))
 
 /datum/capability
 	/// OUTPUT_HOOK_* bits: which of on_draw(), on_examine() and on_ui_data() this definition overrides (the presentation skips it otherwise).
@@ -121,13 +104,11 @@
 			if(ok)
 				. += def
 
-/// The look: the layers and capability draws of the holder's table. Called from /atom/draw().
+/// The look: the capability draws of the holder's table (the look_layer entries draw through look_layers_draw(), code/engine/present/look.dm). Called from /atom/draw().
 /proc/present_draw(atom/holder, datum/look/look)
 	var/datum/type_table/T = table_of(holder)
 	if(!length(T.items))
 		return
-	for(var/datum/entry/E as anything in present_entries(holder, ENTRY_LOOK_LAYER))
-		look.part(E.args["layer"])
 	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_DRAW))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
@@ -135,27 +116,12 @@
 		def.on_draw(A, look)
 		A.release()
 
-/// The examine lines of the holder's table: the examine_line entries, then the capabilities' own. Called from caps_examine().
+/// The examine lines the capabilities' on_examine() add (the examine_line entries are examine_collect(), code/engine/present/examine.dm). Called from caps_examine().
 /proc/present_examine(atom/holder, mob/user)
 	. = list()
 	var/datum/type_table/T = table_of(holder)
 	if(!length(T.items))
 		return
-	for(var/datum/entry/E as anything in present_entries(holder, ENTRY_EXAMINE_LINE))
-		var/line = E.args["line"]
-		if(ispath(line, /datum/msg))
-			. += reason_text(line)
-		else if(istext(line) && !(line in holder.vars) && hascall(holder, line))
-			var/datum/act/eval/A = take(/datum/act/eval)
-			A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-			var/got = call(holder, line)(A)
-			A.release()
-			if(islist(got))
-				. += got
-			else if(istext(got))
-				. += got
-		else if(istext(line))
-			. += line
 	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_EXAMINE))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release

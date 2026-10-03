@@ -131,28 +131,17 @@
 // The presentation bridge: look layers, examine lines, the window's data and its buttons, a wait a proc sizes.
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A look has a layer of this name (the hatch draws its own lamps beside the fixture's).
-/proc/look_has_layer(datum/look/look, name)
-	for(var/list/part in look.parts)
-		if(part[1] == name)
-			return TRUE
-	return FALSE
-
 /datum/unit_test/dq_p2_lib/present_outputs
 
 /datum/unit_test/dq_p2_lib/present_outputs/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
 	var/obj/machinery/p2_box/B = allocate(/obj/machinery/p2_box)
 	var/forbidden = reason_text(/datum/msg/p2/ui_forbidden)
-	TEST_ASSERT(!(forbidden in present_examine(B, M)), "an examine line is absent while its condition is false")
-	var/datum/look/look = new
-	present_draw(B, look)
-	TEST_ASSERT(look_has_layer(look, "p2-label"), "a look layer is drawn while its var is truthy")
+	TEST_ASSERT(!(forbidden in examine_collect(B, M)), "an examine line is absent while its condition is false")
+	TEST_ASSERT(("p2-label" in look_layers_of(B)), "a look layer is drawn while its var is truthy")
 	B.set_label_shown(FALSE)
-	TEST_ASSERT(forbidden in present_examine(B, M), "the examine line appears when its condition holds")
-	var/datum/look/second = new
-	present_draw(B, second)
-	TEST_ASSERT(!look_has_layer(second, "p2-label"), "and the layer goes")
+	TEST_ASSERT(forbidden in examine_collect(B, M), "the examine line appears when its condition holds")
+	TEST_ASSERT(!("p2-label" in look_layers_of(B)), "and the layer goes")
 	var/list/data = list()
 	present_tgui_data(B, M, data)
 	TEST_ASSERT_EQUAL(data["viewer"], M.name, "ui_data() gets the viewer as A.actor")
