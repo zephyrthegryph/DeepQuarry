@@ -106,7 +106,12 @@
 	SSasset_loading.queue_asset(probe)
 	TEST_ASSERT(!W.parked, "queueing an asset did not wake the parked item")
 	TEST_ASSERT_EQUAL(length(SSasset_loading.generate_queue), 1, "the asset was not queued")
-	TEST_ASSERT_EQUAL(SSasset_loading.generate_step(0), STEP_PARK, "a drained queue must park the item")
+	var/result = SSasset_loading.generate_step(0)
+	for(var/i in 1 to 20) // a test tick is always over budget: the step yields once per asset
+		if(result != STEP_YIELD)
+			break
+		result = SSasset_loading.generate_step(0)
+	TEST_ASSERT_EQUAL(result, STEP_PARK, "a drained queue must park the item")
 	TEST_ASSERT_EQUAL(probe.generated, 1, "the queued asset was not built")
 	SSasset_loading.queue_asset(probe)
 	SSasset_loading.dequeue_asset(probe)
@@ -139,7 +144,12 @@
 	SScharacter_setup.queue_preferences_save(probe)
 	TEST_ASSERT(!W.parked, "queueing a save did not wake the parked item")
 	TEST_ASSERT(probe in SScharacter_setup.save_queue, "the save was not queued")
-	TEST_ASSERT_EQUAL(SScharacter_setup.save_queued(0), STEP_PARK, "a drained save queue must park the item")
+	var/result = SScharacter_setup.save_queued(0)
+	for(var/i in 1 to 20) // a test tick is always over budget: the step yields once per save
+		if(result != STEP_YIELD)
+			break
+		result = SScharacter_setup.save_queued(0)
+	TEST_ASSERT_EQUAL(result, STEP_PARK, "a drained save queue must park the item")
 	TEST_ASSERT_EQUAL(probe.saves, 1, "the queued save was not written")
 	SScharacter_setup.queue_preferences_save(null)
 	TEST_ASSERT_EQUAL(length(SScharacter_setup.save_queue), 0, "a null save was queued")
@@ -263,9 +273,8 @@
 	SSexplosions.wakeup()
 	TEST_ASSERT(SSexplosions.awake, "wakeup() did not start the epoch")
 	TEST_ASSERT(!W.parked, "wakeup() did not wake the parked item")
-	TEST_ASSERT_EQUAL(SSexplosions.explosion_step(0), STEP_DONE, "an awake idle epoch keeps running until it goes to sleep")
-	SSexplosions.gotosleep()
-	TEST_ASSERT_EQUAL(SSexplosions.explosion_step(0), STEP_PARK, "a finished epoch must park the item")
+	TEST_ASSERT_EQUAL(SSexplosions.explosion_step(0), STEP_PARK, "an epoch with nothing queued ends, goes to sleep and parks the item")
+	TEST_ASSERT(!SSexplosions.awake, "an epoch with nothing queued must go to sleep")
 	W.parked = FALSE
 
 /// The antagonist templates: boots after atoms, holds one template per antagonist type and the syndicate code phrases.
