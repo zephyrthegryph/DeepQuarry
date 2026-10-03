@@ -153,8 +153,6 @@ usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clot
 usr_outside_verb	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	if(ishuman(usr))
-usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
