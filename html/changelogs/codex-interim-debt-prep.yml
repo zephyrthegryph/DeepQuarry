@@ -135,3 +135,6 @@ changes:
   - bugfix: "Seismic-charge upgrades consume their original laser before granting stronger blast settings."
   - bugfix: "Returned paper cups must leave their holder before restoring dispenser stock."
   - bugfix: "Flamethrower recovery and sunflower seed harvesting respect sources that cannot leave your hand."
+  - bugfix: "Glass jars and reconstitutors respect banknotes and paste that cannot leave your hand."
+  - bugfix: "Material weapon shattering and bluespace crystal use respect release rules and clear consumed originals from hands."
+  - bugfix: "Micro-mech boarding, powered backpack pickup and technomancer spell buttons use the initiating actor."
