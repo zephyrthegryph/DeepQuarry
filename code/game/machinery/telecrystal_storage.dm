@@ -68,8 +68,14 @@ UI_ACT_OVERRIDE(/obj/machinery/smartfridge/tcrystal, ui_act_release)
 	if(QDELETED(src) || QDELETED(user) || !user.Adjacent(src))
 		return FALSE
 
-	var/index = text2num(index_param)
+	if(!isnum(amount) || amount <= 0 || amount != round(amount))
+		return FALSE
+	var/index = isnum(index_param) ? index_param : text2num(index_param)
+	if(!isnum(index) || index < 1 || index != round(index) || index > LAZYLEN(item_records))
+		return FALSE
 	var/datum/stored_item/I = item_records[index]
+	if(!I)
+		return FALSE
 	var/count = I.get_amount()
 
 	// Sanity check, there are probably ways to press the button when it shouldn't be possible.

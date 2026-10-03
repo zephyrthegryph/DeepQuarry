@@ -553,6 +553,7 @@
 #include "interim_gravemarker_lifecycle.dm"
 #include "interim_barricade_dismantle.dm"
 #include "interim_floor_dismantle.dm"
+#include "interim_telecrystal_release_validation.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
