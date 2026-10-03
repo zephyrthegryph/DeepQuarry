@@ -334,8 +334,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_o
 	blade_overlay.color = lcolor
 	if(active)
 		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+	if(ishuman(loc))
+		var/mob/living/carbon/human/H = loc
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 

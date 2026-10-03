@@ -792,6 +792,7 @@
 #include "interim_boulder_excavation_cleanup.dm"
 #include "interim_paper_bin_sticky_paper.dm"
 #include "interim_camera_sticky_film.dm"
+#include "interim_holo_sword_holder_appearance.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
