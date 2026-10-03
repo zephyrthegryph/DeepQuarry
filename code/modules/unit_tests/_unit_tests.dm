@@ -813,6 +813,7 @@
 #include "interim_void_cell_sticky_mode_swap.dm"
 #include "interim_alien_cell_sticky_mode_swap.dm"
 #include "interim_autolathe_drop_actor.dm"
+#include "interim_mutant_event_growth_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
