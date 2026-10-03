@@ -14,10 +14,6 @@
 
 	light_color = LIGHT_COLOR_GREEN
 
-/obj/machinery/computer/stockexchange/Initialize(mapload)
-	. = ..()
-	logged_in = "Cargo Department"
-
 /obj/machinery/computer/stockexchange/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/stockexchange_attackby,

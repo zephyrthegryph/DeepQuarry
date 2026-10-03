@@ -631,6 +631,8 @@
 #include "interim_windoor_emag_disabled_open.dm"
 #include "interim_mre_wrapper_consumption.dm"
 #include "interim_condiment_food_transfer.dm"
+#include "interim_stock_account_data.dm"
+#include "interim_teppi_mutation_data.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

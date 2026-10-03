@@ -1072,9 +1072,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	sortTim(., associative = TRUE)
 
 //This a teppi with funny colors will spawn!
-/mob/living/simple_mob/vore/alienanimals/teppi/mutant/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/mutant
 	teppi_mutate = TRUE
-	. = ..()
 
 //Custom teppi colors! For funzies.
 
