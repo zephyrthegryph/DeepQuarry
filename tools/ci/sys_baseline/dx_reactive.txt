@@ -28,13 +28,3 @@ dx_untracked_read	code/game/machinery/computer/supply.dm	list("field" = "Market 
 dx_untracked_read	code/game/machinery/computer/supply.dm	if(primary_department?.name in GLOB.department_accounts)
 dx_untracked_read	code/game/machinery/computer/supply.dm	department = primary_department.name
 dx_untracked_read	code/game/machinery/computer/supply.dm	data["personal_balance"] = personal_account?.money || 0
-dx_untracked_read	code/modules/economy/vending.dm	if(!(I.category & categories))
-dx_untracked_read	code/modules/economy/vending.dm	"name" = I.item_name,
-dx_untracked_read	code/modules/economy/vending.dm	"desc" = I.item_desc,
-dx_untracked_read	code/modules/economy/vending.dm	"price" = I.price,
-dx_untracked_read	code/modules/economy/vending.dm	"color" = I.display_color,
-dx_untracked_read	code/modules/economy/vending.dm	"isatom" = ispath(I.item_path, /atom),
-dx_untracked_read	code/modules/economy/vending.dm	"path" = replacetext(replacetext("[I.item_path]", "/obj/item/", ""), "/", "-"),
-dx_untracked_read	code/modules/economy/vending.dm	data["coin"] = coin ? coin.name : FALSE
-dx_untracked_read	code/modules/economy/vending.dm	"name" = A.owner_name,
-dx_untracked_read	code/modules/economy/vending.dm	data["userMoney"] = A.money

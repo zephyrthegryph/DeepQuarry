@@ -205,6 +205,51 @@
 	TEST_ASSERT_EQUAL(T.dragged, 1, "and not the drag")
 
 // ---------------------------------------------------------------------------------------------------------------------
+// A player's click and drag run their ops with the click's parameters readable (an item put on a table aligns to where it was clicked), and a player's
+// drag of an item onto something with ops of its own reaches the op that answers a drag.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_players_click_carries_its_parameters
+
+/datum/unit_test/dq_p2_engine/a_players_click_carries_its_parameters/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_dragtarget/T = allocate(/obj/p2_dragtarget, get_step(H, NORTH))
+	var/obj/item/pen = allocate(/obj/item/pen, get_turf(H))
+	H.put_in_active_hand(pen)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, T, null, "mapwindow.map", "icon-x=5;icon-y=7;left=1"))
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.used, 1, "the click ran the use op")
+	TEST_ASSERT(findtext(T.seen_params, "icon-x=5"), "the op saw where the click landed")
+	TEST_ASSERT_NULL(dq_interaction_click_params(H), "and the parameters are gone when it is done")
+
+/datum/unit_test/dq_p2_engine/a_players_drag_reaches_an_op
+
+/datum/unit_test/dq_p2_engine/a_players_drag_reaches_an_op/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_dragtarget/T = allocate(/obj/p2_dragtarget, get_step(H, NORTH))
+	var/obj/item/pen = allocate(/obj/item/pen, get_step(H, EAST))
+	var/datum/input_adapter/adapter = H.input_adapter()
+	adapter.drag(H, pen, T, null, null, null, null, "icon-x=3;icon-y=4;left=1")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.dragged, 1, "the drag op ran")
+	TEST_ASSERT_EQUAL(T.used, 0, "and the use op did not")
+	TEST_ASSERT(findtext(T.seen_params, "icon-x=3"), "it saw where the drag was dropped")
+	TEST_ASSERT_NULL(dq_interaction_click_params(H), "and the parameters are gone when it is done")
+
+/datum/unit_test/dq_p2_engine/a_drag_onto_a_thing_without_ops_is_left_to_it
+
+/datum/unit_test/dq_p2_engine/a_drag_onto_a_thing_without_ops_is_left_to_it/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_dragtarget/T = allocate(/obj/p2_dragtarget, get_step(H, NORTH))
+	var/obj/item/pen = allocate(/obj/item/pen, get_step(H, EAST))
+	var/obj/item/other = allocate(/obj/item/pen, get_step(H, WEST))
+	var/datum/input_adapter/adapter = H.input_adapter()
+	adapter.drag(H, pen, other, null, null, null, null, "left=1")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.dragged, 0, "a drag onto another thing does not reach the target")
+
+// ---------------------------------------------------------------------------------------------------------------------
 // A legacy entry interaction answers the shape of input its handler did: attack_hand an empty hand, attackby a held item used on something else.
 // ---------------------------------------------------------------------------------------------------------------------
 

@@ -262,6 +262,7 @@
 
 /// Checks if something is blocking our climb destination, ignores climbable objects
 /proc/can_climb_turf(obj/climbed_thing)
+	READS_FROM() // what stands on a tile is asked when a choice is made, never cached
 	var/turf/T = get_turf(climbed_thing)
 	if(!T || !istype(T))
 		return "empty void"

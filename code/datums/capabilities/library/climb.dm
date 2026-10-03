@@ -35,7 +35,7 @@
 	// ACT_NONE: a click keeps doing the holder's own thing, a drag climbs; the Menu, radial and command bar name it.
 	return list(adopt_entry(lib_op("Climb", GLOBAL_PROC_REF(cap_climb_start), OP_SHAPE_HAND, key = "climb", action = ACT_NONE, needs = GLOBAL_PROC_REF(cap_climb_ok), works_broken = TRUE, works_unpowered = TRUE)))
 
-/// needs: the holder is still climbable (a table flipped by the cap_flip() capability stays climbable).
+/// needs: the holder is still climbable (a flipped table stays climbable).
 /proc/cap_climb_ok(mob/user, obj/holder, obj/item/held)
 	if(!holder.climbable_type)
 		return "it can't be climbed"

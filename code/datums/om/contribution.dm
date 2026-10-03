@@ -488,6 +488,7 @@
 	return E ? om_release(E, kind, source, id) : FALSE
 
 /proc/om_has_grant(target, kind, id)
+	READS_FROM() // a grant is asked when a choice is made, never cached
 	var/datum/E = om_grant_target(target, FALSE)
 	if(!E)
 		return FALSE
