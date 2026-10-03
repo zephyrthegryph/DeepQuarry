@@ -56,9 +56,6 @@
 			M.forceMove(src)
 			M.gib()
 
-/obj/machinery/gibber/Initialize(mapload)
-	. = ..()
-
 /// Appearance reader: which status light the gibber shows.
 /obj/machinery/gibber/proc/appearance_gibber_light()
 	if(!operable())

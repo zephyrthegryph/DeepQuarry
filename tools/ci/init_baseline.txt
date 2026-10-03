@@ -1304,7 +1304,6 @@ initialize	code/modules/food/kitchen/cooking_machines/fryer.dm	/obj/machinery/ap
 initialize	code/modules/food/kitchen/cooking_machines/grill.dm	/obj/machinery/appliance/cooker/grill/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/oven.dm	/obj/machinery/appliance/cooker/oven/Initialize(mapload)
 initialize	code/modules/food/kitchen/gibber.dm	/obj/machinery/gibber/autogibber/Initialize(mapload)
-initialize	code/modules/food/kitchen/gibber.dm	/obj/machinery/gibber/Initialize(mapload)
 initialize	code/modules/food/kitchen/icecream.dm	/obj/machinery/icecream_vat/Initialize(mapload)
 initialize	code/modules/food/kitchen/microwave.dm	/obj/machinery/microwave/Initialize(mapload)
 initialize	code/modules/food/kitchen/smartfridge/drying_rack.dm	/obj/machinery/smartfridge/drying_rack/Initialize(mapload)
