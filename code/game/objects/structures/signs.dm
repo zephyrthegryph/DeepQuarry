@@ -1650,7 +1650,7 @@ DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_
 			MSG_OTHERS(span_notice("%U% unfastens the tattered remnants of %T%.")))
 	if(linked_flag)
 		qdel(linked_flag) //otherwise you're going to get weird duping nonsense
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/sign/flag/declare_interactions(list/into)
 	into += list(
@@ -1714,7 +1714,7 @@ DAMAGE_REACTION_AFTER(/obj/structure/sign/flag, DAMAGE_EXPLOSION, PROC_REF(flag_
 	new /obj/effect/decal/cleanable/ash(src.loc)
 	if(linked_flag)
 		qdel(linked_flag)
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/structure/sign/flag/blank/left
