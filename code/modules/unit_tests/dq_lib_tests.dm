@@ -307,7 +307,8 @@
 	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "a count inside the stack splits it")
 	TEST_ASSERT_EQUAL(stack_item.amount, 5, "the stack kept the rest")
 	var/pieces = 0
-	var/list/nearby = get_turf(stack_item).contents + M.contents
+	var/turf/floor_turf = get_turf(stack_item)
+	var/list/nearby = floor_turf.contents + M.contents
 	for(var/obj/item/lib_fixture/sheets/other in nearby)
 		if(other != stack_item)
 			pieces += other.amount
