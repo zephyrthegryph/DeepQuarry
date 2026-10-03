@@ -140,10 +140,10 @@
 	playsound(src, tool.usesound, 100, 1)
 	if(ruined)
 		to_chat(user, span_notice("You remove the remnants of the poster."))
-		qdel(src)
+		consume(src, user)
 	else
 		to_chat(user, span_notice("You carefully remove the poster from the wall."))
-		roll_and_drop(get_turf(user))
+		roll_and_drop(get_turf(user), user)
 	return ITEM_INTERACT_SUCCESS
 
 DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
@@ -175,12 +175,16 @@ DECLARE_INTERACTIONS(/obj/structure/sign/poster, INTERACT_HAND_UNGATED(null, PRO
 	desc = "You can't make out anything from the poster's original print. It's ruined."
 	add_fingerprint(user)
 
-/// Creates a poster item using roll_type as the path, and qdels the wall poster
-/obj/structure/sign/poster/proc/roll_and_drop(turf/newloc)
+/// Consumes the wall poster before returning its matching rolled item.
+/obj/structure/sign/poster/proc/roll_and_drop(turf/newloc, mob/user)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	var/obj/item/poster/P = new roll_type(newloc, poster_decl)
+	var/product_type = roll_type
+	var/datum/decl/poster/product_decl = poster_decl
+	if(!consume(src, user))
+		return null
+	var/obj/item/poster/P = new product_type(newloc, product_decl)
 	P.forceMove(newloc)
-	qdel(src)
+	return P
 
 /// Whether the poster has been ripped.
 /obj/structure/sign/poster/proc/is_ruined()
