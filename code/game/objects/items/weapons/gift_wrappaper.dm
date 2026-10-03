@@ -32,7 +32,8 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 
 /// Old attack_self.
 /obj/item/gift/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.drop_item()
+	if(!release_wrapper(user))
+		return TRUE
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
 	if(gift)
 		var/obj/item/present = gift
@@ -43,6 +44,20 @@ DECLARE_INTERACTIONS(/obj/item/gift, INTERACT_USE(null, PROC_REF(interaction_sel
 		to_chat(user, span_warning("The gift was empty!"))
 	consume(src, user)
 	return TRUE
+
+/// A turf contains the holder too, so release to it directly after checking the actual source rather than using adoption's ancestor shortcut.
+/obj/item/gift/proc/release_wrapper(mob/user)
+	var/turf/destination = get_turf(src)
+	if(!destination)
+		return FALSE
+	var/reason = own_transfer_refusal(destination, src, null, user)
+	if(reason)
+		refuse(user, "[capitalize(reason)].")
+		return FALSE
+	var/atom/place = loc
+	if(place)
+		place.release_to(src, destination, null, user)
+	return loc == destination
 
 /obj/effect/spresent/relaymove(mob/user as mob)
 	if(user.stat)
