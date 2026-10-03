@@ -20,7 +20,7 @@
 /obj/machinery/appliance/mixer/candy/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
+	own_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())

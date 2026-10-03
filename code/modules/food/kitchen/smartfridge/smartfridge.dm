@@ -43,7 +43,7 @@
 	else
 		set_wires(new /datum/wires/smartfridge(src))
 
-	rel_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
+	own_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
 	update_icon()
 	default_apply_parts()
 
@@ -239,7 +239,7 @@ DECLARE_EMAG(/obj/machinery/smartfridge/secure, PROC_REF(on_emag), null, null)
 	if(!istype(I))
 		I = new stored_datum_type(src, O.type, O.name)
 		I.collapsible = collapse_stock
-		rel_add(src, nameof(item_records), I)
+		own_add(src, nameof(item_records), I)
 	I.add_product(O)
 	SStgui.update_uis(src)
 	update_icon()

@@ -17,7 +17,7 @@
 /obj/machinery/appliance/mixer/cereal/Initialize(mapload)
 	. = ..()
 
-	rel_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
+	own_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())

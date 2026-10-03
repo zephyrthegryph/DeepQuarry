@@ -304,7 +304,7 @@ EXTEND_INTERACTIONS(/obj/machinery/appliance, \
 		var/obj/item/reagent_containers/cooking_container/CC = I
 		CI = new /datum/cooking_item/(CC)
 		I.forceMove(src)
-		rel_add(src, nameof(cooking_objs), CI)
+		own_add(src, nameof(cooking_objs), CI)
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " puts %I% into %T%."), item = I)
 		if (CC.check_contents() == 0)//If we're just putting an empty container in, then dont start any processing.
 			return TRUE
