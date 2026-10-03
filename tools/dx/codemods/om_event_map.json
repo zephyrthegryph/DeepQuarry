@@ -1063,7 +1063,6 @@
  },
  "/datum/om/event/climb_shake": {
   "emits": [
-   "code/datums/capabilities/library/flip.dm",
    "code/game/objects/structures.dm",
    "code/game/objects/structures/crates_lockers/crates.dm",
    "code/modules/power/solar.dm",
@@ -1104,7 +1103,9 @@
   ],
   "reads_result": false,
   "target": "/datum/notice/climb_start",
-  "tests": []
+  "tests": [
+   "code/modules/unit_tests/dq_p2_table_behaviour.dm"
+  ]
  },
  "/datum/om/event/closet_closed": {
   "emits": [
