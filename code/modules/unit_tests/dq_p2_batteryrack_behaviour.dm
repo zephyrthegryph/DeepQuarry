@@ -231,7 +231,7 @@
 	p2_settle()
 	for(var/obj/item/cell/C as anything in cells)
 		TEST_ASSERT(!QDELETED(C), "the cell survived")
-		TEST_ASSERT_EQUAL(get_turf(C), T, "and lies where the rack stood")
+		TEST_ASSERT_EQUAL(C.loc, T, "and lies where the rack stood")
 	TEST_ASSERT_EQUAL(length(p2_rack_cells(R)), 0, "the rack holds none")
 
 /// A rack broken down by damage takes its cells with it: pinned as it is (only dismantle() drops them).
@@ -330,7 +330,9 @@
 	var/list/first = slots[1]
 	var/list/second = slots[2]
 	var/list/third = slots[3]
-	TEST_ASSERT(first["used"] && second["used"] && !third["used"], "two used, the rest free")
+	TEST_ASSERT_EQUAL(first["used"], 1, "the first slot is used")
+	TEST_ASSERT_EQUAL(second["used"], 1, "and the second")
+	TEST_ASSERT_EQUAL(third["used"], 0, "the third is free")
 	TEST_ASSERT_EQUAL(first["slot"], 1, "slots count from one")
 	TEST_ASSERT(abs(first["percentage"] - 100) < 0.1, "the first cell is full ([first["percentage"]])")
 	TEST_ASSERT(abs(second["percentage"] - 50) < 0.1, "the second is half")
