@@ -3101,6 +3101,13 @@
 	into += entry_line(236)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
+/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:270
+/obj/p2_asker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 270, /obj/p2_asker)
+	into += entry_line(270)
+	into += list(global.op("ask", global.ui_act(), global.asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), global.then(PROC_REF(asked_done))))
+
 /// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:204
 /obj/p2_bundled/declared_entries(list/into)
 	..(into)
@@ -3161,24 +3168,24 @@
 	into += entry_line(27)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
 
-/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:267
+/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:287
 /obj/p2_windowed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 267, /obj/p2_windowed)
-	into += entry_line(267)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 287, /obj/p2_windowed)
+	into += entry_line(287)
 	into += list(global.interface("P2First"))
-	into += entry_line(267)
+	into += entry_line(287)
 	into += list(global.op("p2_window_press", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
-/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:276
+/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:296
 /obj/p2_windowed/second/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 276, /obj/p2_windowed/second)
-	into += entry_line(276)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 296, /obj/p2_windowed/second)
+	into += entry_line(296)
 	into += list(global.without("ui_open"))
-	into += entry_line(276)
+	into += entry_line(296)
 	into += list(global.interface("P2Second"))
-	into += entry_line(276)
+	into += entry_line(296)
 	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
 /// CAPABILITIES(/obj/p2s_chain) at code/tests/engine/p2_storage_fixtures.dm:12

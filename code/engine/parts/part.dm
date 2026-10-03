@@ -335,10 +335,12 @@
 	var/speed = op_var(A.held, "tool_speed")
 	return (isnum(speed) && speed > 0 && A.binding?.bind_kind == BIND_TOOL) ? t / speed : t
 
-/// asks(/datum/request/x, field = v..., step =, resume =, keeps =): a workflow step. DM cannot carry free named arguments through one
+/// asks(/datum/request/x, field = v..., step =, resume =, keeps =, when =): a workflow step. DM cannot carry free named arguments through one
 /// proc, so the request's fields go in `fields` as a list(name = value) the call names (asks(/datum/prompt/text/rename, fields = list("a" = 1))).
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps))
+/// `when` (a condition: a var, a stat, a tree, or a PROC_REF x(datum/act/op/A)) is read when the step is reached: the step is skipped, with no
+/// prompt, while it does not hold (a PIN is asked only of a card that has one). A skipped step leaves A.answer as it was.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when))
 
 /datum/entry/part/asks
 	part_name = "asks"

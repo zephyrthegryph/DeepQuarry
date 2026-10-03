@@ -258,6 +258,26 @@ CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_u
 	return OP_OK
 
 
+// ---- an asks() with a condition ----
+
+/// A holder whose op asks for a number only while `want` says so.
+/obj/p2_asker
+	name = "p2 asker"
+	var/want = FALSE
+	var/ran = 0
+	var/asked_value = null
+
+CAPABILITIES(/obj/p2_asker, 	op("ask", ui_act(), asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), then(PROC_REF(asked_done))))
+
+/obj/p2_asker/proc/ask_wanted(datum/act/op/A)
+	return want // ALLOW(reads): a test fixture's plain flag, read when the step is reached
+
+/obj/p2_asker/proc/asked_done(datum/act/op/A)
+	ran++
+	var/datum/prompt/P = A.answer
+	asked_value = P?.value
+	return OP_OK
+
 // ---- a subtype's own window ----
 
 /// A holder with a window.

@@ -443,6 +443,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			cursor++
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
+			if(!isnull(Q.args["when"]) && !op_cond(A, Q.args["when"]))
+				suspend_act()
+				continue // the step's own condition does not hold: no prompt, on to the next step
 			take_capture(A)
 			keeps = Q.args["keeps"] & op_default_keeps(A, binding)
 			var/list/fields = op_request_fields(A, Q)

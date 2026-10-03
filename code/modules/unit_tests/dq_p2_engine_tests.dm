@@ -289,6 +289,29 @@
 	TEST_ASSERT_EQUAL(using.reached, 0, "an item whose attack() used the click does not reach afterattack")
 	H.set_use_stance(I_HELP)
 
+// ---------------------------------------------------------------------------------------------------------------------
+// asks(when =): the step is skipped, with no prompt, while its condition does not hold, and asks as ever while it does.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/asks_when_skips_the_prompt_until_it_holds
+
+/datum/unit_test/dq_p2_engine/asks_when_skips_the_prompt_until_it_holds/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_asker/T = allocate(/obj/p2_asker)
+	test_ui(H, T, "ask")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.ran, 1, "while the condition does not hold the op runs at once, with no question")
+	TEST_ASSERT_NULL(T.asked_value, "and there is no answer")
+	T.want = TRUE
+	test_ui(H, T, "ask")
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.ran, 1, "while it holds the op waits for the answer")
+	test_answer(H, 7)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.ran, 2, "and runs once it is answered")
+	TEST_ASSERT_EQUAL(T.asked_value, 7, "with the answer in hand")
+
+// ---------------------------------------------------------------------------------------------------------------------
 // A subtype's own interface() replaces the window it inherits (without("ui_open") drops the inherited open op).
 // ---------------------------------------------------------------------------------------------------------------------
 
