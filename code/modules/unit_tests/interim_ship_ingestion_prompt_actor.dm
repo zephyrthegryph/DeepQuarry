@@ -57,7 +57,7 @@
 /datum/unit_test/om/interim_ship_ingestion_prompt_actor/proc/cleanup_ship(obj/effect/overmap/visitable/ship/ship)
 	if(QDELETED(ship))
 		return
-	var/datum/flight_destination/destination = GLOB.flight_service?.destination_for_target(ship)
+	var/datum/flight_destination/destination = SSflight.destination_for_target(ship)
 	if(destination)
-		GLOB.flight_service.unregister_destination(destination.id)
+		SSflight.unregister_destination(destination.id)
 	qdel(ship)
