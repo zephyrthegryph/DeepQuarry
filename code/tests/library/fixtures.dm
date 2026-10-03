@@ -42,7 +42,7 @@ CAPABILITIES(/obj/item/lib_fixture/syringe, \
 CAPABILITIES(/obj/item/lib_fixture/sprayer, \
 	reagent_container(volume = 30, transfer = list(5, 10), spray = TRUE))
 
-/// A plain open tank with a reagent holder and no capability: what a legacy container looks like to a transfer.
+/// An open tank: the capability on a bigger lidless holder, standing for any open container a transfer meets.
 /obj/lib_fixture
 	name = "lib fixture"
 
@@ -50,9 +50,7 @@ CAPABILITIES(/obj/item/lib_fixture/sprayer, \
 	name = "lib tank"
 	flags = OPENCONTAINER
 
-/obj/lib_fixture/tank/Initialize(mapload)
-	. = ..()
-	create_reagents(100)
+CAPABILITIES(/obj/lib_fixture/tank, 	reagent_container(volume = 100, transfer = list(5, 10)))
 
 /// Stacks: stackable() on an item whose units are its `amount`.
 /obj/item/lib_fixture/sheets

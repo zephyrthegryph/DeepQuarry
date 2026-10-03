@@ -266,7 +266,7 @@ thermal_allow = ["code/__defines/verdigris/_bindings.dm"]
 input_ladder_allow = ["code/modules/keybindings/router.dm", "code/engine/parts/inputs.dm"]
 # `.holder` in the engine is the part/action holder entity (act.holder, notice.holder), never an admin holder:
 # these files are not about admin rights, so the raw-.holder ratchet does not count them.
-admin_holder_allow = ["code/engine/", "code/tests/engine/"]
+admin_holder_allow = ["code/engine/", "code/tests/engine/", "code/library/", "code/tests/library/"]
 # the compiled-table golden is a raw string whose lines are indented two spaces by explain_type()
 space_indent_allow = ["code/modules/unit_tests/dq_e1_declare_tests.dm"]
 # type-specific tool checks and domains converted later (mecha: I5; surgery and medical machines)
