@@ -456,7 +456,7 @@ EXTEND_INTERACTIONS(/obj/effect/ant_structure, \
 
 
 /obj/effect/ant_structure/proc/die()
-	qdel(src)
+	consume(src)
 
 /obj/effect/ant_structure/atom_destruction(damage_flag)
 	. = ..()
