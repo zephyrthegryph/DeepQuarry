@@ -187,10 +187,6 @@
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
 
-/obj/machinery/vending/generated_reads()
-	. = ..()
-	. += ui_from(nameof(categories), nameof(coin), nameof(has_prices), nameof(product_records))
-
 /// Types whose reactions() declare every() / on_cross() / on_notice(), with the RXB_* kinds (code/datums/reactions/work.dm).
 /proc/rx_boot_types()
 	RETURN_TYPE(/list)

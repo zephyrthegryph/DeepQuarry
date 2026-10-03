@@ -100,9 +100,6 @@
 	TEST_ASSERT_NOTNULL(test_op(H, A, "open_maintenance_panel"), "the panel needs the access")
 	cap_set(A, CAP_EMAGGED, TRUE)
 	TEST_ASSERT_NULL(test_op(H, A, "open_maintenance_panel"), "an emagged panel opens for anyone")
-	var/obj/machinery/vending/V = allocate(/obj/machinery/vending/coffee, T)
-	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/wires), "the vendor's service panel has its wires")
-	TEST_ASSERT_NOTNULL(cap_of(V, /datum/capability/emag), "and its emag")
 
 // ---- the holder-interface move ----
 

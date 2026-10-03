@@ -18,19 +18,19 @@
 
 /// The service panel is open.
 /proc/p2v_panel_open(obj/machinery/vending/V)
-	return !!panel_is_open(V)
+	return !!panel_open(V)
 
 /// The vendor is emagged (its product lock shorted out).
 /proc/p2v_emagged(obj/machinery/vending/V)
-	return !!is_emagged(V)
+	return !!emag_emagged(V)
 
 /// The vendor is broken.
 /proc/p2v_broken(obj/machinery/vending/V)
-	return !!is_broken(V)
+	return !!V.has_stat(BROKEN)
 
 /// The vendor's wire set.
 /proc/p2v_wires(obj/machinery/vending/V)
-	return wires_of(V)
+	return wire_set_of(V)
 
 /// The window's data as a viewer is sent it.
 /proc/p2v_data(obj/machinery/vending/V, mob/user)
@@ -48,7 +48,7 @@
 
 /// The actor asks the vendor for its log (the menu entry "Check vending logs").
 /proc/p2v_check_logs(mob/actor, obj/machinery/vending/V)
-	return V.check_logs(actor)
+	return test_menu(actor, V, "check_logs")
 
 /// The vendor's records, in order.
 /proc/p2v_records(obj/machinery/vending/V)
@@ -56,6 +56,7 @@
 
 /// The record of a product type.
 /proc/p2v_record(obj/machinery/vending/V, path)
+	RETURN_TYPE(/datum/stored_item/vending_product)
 	for(var/datum/stored_item/vending_product/R as anything in V.product_records)
 		if(R.item_path == path)
 			return R
@@ -289,6 +290,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 
 /// The account behind a card.
 /datum/unit_test/dq_p2_vending/proc/p2v_account(obj/item/card/id/C)
+	RETURN_TYPE(/datum/money_account)
 	return get_account(C.associated_account_number)
 
 /// The vendor's department account holds `amount` more than it did (a fresh account the vendor pays into).
@@ -683,6 +685,53 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	TEST_ASSERT_EQUAL(p2v_account(C).money, 100, "nothing paid")
 	TEST_ASSERT_EQUAL(dept.money, 0, "nothing received")
 	TEST_ASSERT(p2v_ready(V), "the machine is free")
+
+/// A card whose account is protected by a PIN pays once the PIN is typed in the prompt the vend asks (the prompt is the op's own step).
+/datum/unit_test/dq_p2_vending/vend_pays_with_a_pin_card_when_answered
+/datum/unit_test/dq_p2_vending/vend_pays_with_a_pin_card_when_answered/run_gate()
+	var/datum/money_account/dept = p2v_own_vendor_account(0)
+	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/p2v_test/priced)
+	var/mob/living/carbon/human/H = p2v_actor()
+	var/obj/item/card/id/C = p2v_id(H, null, 100)
+	var/datum/money_account/mine = p2v_account(C)
+	mine.security_level = 1
+	var/key = p2v_key(V, /obj/item/pen)
+	p2v_ui(H, V, "vend", list("vend" = key))
+	p2v_settle(0)
+	TEST_ASSERT_EQUAL(mine.money, 100, "nothing is paid before the PIN is answered")
+	test_answer(H, mine.remote_access_pin)
+	p2v_settle()
+	TEST_ASSERT_EQUAL(mine.money, 95, "the price came out of the account")
+	TEST_ASSERT_EQUAL(dept.money, 5, "and into the vendor account")
+	TEST_ASSERT_EQUAL(p2v_record(V, /obj/item/pen).get_amount(), 2, "the pen was taken")
+	p2v_ui(H, V, "vend", list("vend" = key))
+	p2v_settle(0)
+	test_answer(H, mine.remote_access_pin + 1)
+	p2v_settle()
+	TEST_ASSERT_EQUAL(mine.money, 95, "a wrong PIN pays nothing")
+	TEST_ASSERT(p2v_ready(V), "and leaves the machine free")
+	p2v_ui(H, V, "vend", list("vend" = key))
+	p2v_settle(0)
+	test_answer(H, null, REQ_CANCELLED)
+	p2v_settle()
+	TEST_ASSERT_EQUAL(mine.money, 95, "a cancelled prompt pays nothing")
+	TEST_ASSERT_EQUAL(p2v_record(V, /obj/item/pen).get_amount(), 2, "and takes nothing")
+
+/// A customer the vendor turns away (no access) is not asked for a PIN.
+/datum/unit_test/dq_p2_vending/vend_does_not_ask_the_pin_of_a_stranger
+/datum/unit_test/dq_p2_vending/vend_does_not_ask_the_pin_of_a_stranger/run_gate()
+	p2v_own_vendor_account(0)
+	var/obj/machinery/vending/V = p2v_vendor(/obj/machinery/vending/p2v_test/priced)
+	V.req_access = list(ACCESS_SECURITY)
+	var/mob/living/carbon/human/H = p2v_actor()
+	var/obj/item/card/id/C = p2v_id(H, list(ACCESS_ENGINE), 100)
+	p2v_account(C).security_level = 1
+	p2v_ui(H, V, "vend", list("vend" = p2v_key(V, /obj/item/pen)))
+	p2v_settle(0)
+	test_answer(H, p2v_account(C).remote_access_pin)
+	p2v_settle()
+	TEST_ASSERT_EQUAL(p2v_account(C).money, 100, "nothing is paid by someone without access")
+	TEST_ASSERT_EQUAL(p2v_record(V, /obj/item/pen).get_amount(), 3, "and nothing is taken")
 
 /// A machine whose vendor account is gone or suspended takes no payment.
 /datum/unit_test/dq_p2_vending/vend_refuses_without_a_vendor_account
@@ -1156,8 +1205,7 @@ GLOBAL_LIST_EMPTY(p2v_log_windows)
 	var/mob/living/carbon/human/H = p2v_actor()
 	var/datum/look/look = p2v_look(V)
 	TEST_ASSERT(isnull(look.icon_state) || look.icon_state == "generic", "a working vendor shows its face")
-	// Not pinned: whether a shut vendor lays its panel state (the old draw gave overlay() a null `when` for a shut panel, and a null argument means
-	// "not given", so the panel state was drawn over every vendor; intended_changes.md).
+	TEST_ASSERT(!("generic-panel" in look.overlays), "no panel state while shut")
 	V.set_stat(NOPOWER)
 	look = p2v_look(V)
 	TEST_ASSERT_EQUAL(look.icon_state, "generic-off", "no power: the dark face")
