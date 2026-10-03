@@ -127,10 +127,10 @@
 /datum/unit_test/dq_p2_reagents/full_person_cannot_eat/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/S = sn_snack()
-	H.nutrition = 7000
+	H.set_nutrition(7000)
 	rc_click(H, H, S, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_units(S), 32, "nothing was eaten")
-	H.nutrition = 100
+	H.set_nutrition(100)
 	rc_click(H, H, S, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_units(S), 29, "a hungry one eats")
 
