@@ -30,7 +30,9 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"connected_ai",
 	"lying",
 	"aidisabled",
-	"hacker"
+	"hacker",
+	"steward",
+	"welded"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -76,5 +78,12 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(2, 0, 13),
 		list(1, 0, 18),
 		list(1, 0, 19)),
-	"/obj/p2_hit/halver::never" = list(0)
+	"/obj/p2_hit/halver::never" = list(0),
+	"/obj/s1_fixture/picky::actor_is_steward" = list(0,
+		list(1, 0, 20)),
+	"/obj/s1_fixture/picky::not_welded" = list(0,
+		list(1, 0, 21)),
+	"/obj/s1_fixture/picky::takes_gizmos_only" = list(0),
+	"/obj/s1_fixture/rack::not_welded" = list(0,
+		list(1, 0, 21))
 ))

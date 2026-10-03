@@ -39,6 +39,12 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 /proc/act_chain_text()
 	return length(GLOB.act_chain) ? jointext(GLOB.act_chain, " > ") : "(top level)"
 
+/// Who does the next action and under what authority: a caller that starts a world action for an actor (slot_transfer()) sets these just
+/// before ACT_TRY() and clears them after; act_begin() consumes them, so only that one action carries them (a nested action starts clean).
+/// An action begun under AUTH_ADMIN skips its needs() hooks (the forced transfer): its instead() and adjusts() still run.
+GLOBAL_VAR(act_next_actor)
+GLOBAL_VAR(act_next_authority)
+
 /// A pooled act of `type`, with its holder and target set; null when nesting is at the cap (the action is refused and reported).
 /proc/act_begin(act_type, datum/holder)
 	if(GLOB.act_depth >= ACT_MAX_DEPTH)
@@ -52,13 +58,20 @@ MSG_DEF_SELF(act/too_deeply_nested, "too deeply nested")
 	GLOB.act_taken++
 	A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
 	A.target = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.actor = GLOB.act_next_actor // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+	A.authority = GLOB.act_next_authority
+	GLOB.act_next_actor = null
+	GLOB.act_next_authority = null
 	return A
 
 /// Runs the hooks of the action: needs, instead, adjusts. Returns the act (the caller goes on), or null (refused or taken over: the act is
 /// ended and released here).
 /proc/act_resolve(datum/act/action/A)
 	var/datum/act_plan/P = act_plan_for(A.holder, A.type)
+	var/forced = isnum(A.authority) && (A.authority & AUTH_ADMIN)
 	for(var/datum/hook/H as anything in P.needs)
+		if(forced)
+			break // an admin authority skips requirements (a forced slot transfer), never the takeovers and adjustments below
 		if(!hook_conditions_hold(H, A.holder))
 			continue
 		var/reason = act_needs_refusal(A, H)

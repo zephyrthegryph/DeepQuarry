@@ -460,6 +460,7 @@
 #include "dq_p2_engine_tests.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
+#include "dq_s1_slots_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

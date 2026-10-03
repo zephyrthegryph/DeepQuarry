@@ -124,7 +124,7 @@ GLOBAL_LIST_INIT(rx_kind_keys, list(null, null, null, "rel_grant", "rel_listener
 			else if(R.kind == RXN_CROSS && R.key == key)
 				rx_cross_check(E, R, L)
 	// The on_change() hooks of the engine that read the key are marked for the next drain point.
-	if(islist(GLOB?.change_index_by_type) && (GLOB.change_index_by_type[E.type] || E.rx?.hooks))
+	if(islist(GLOB?.change_index_by_type) && (GLOB.change_index_by_type[E.type] || E.rx?.hooks || GLOB.change_hop_keys[key]))
 		hooks_change_published(E, key)
 	// A pending operation watching this read re-checks now (a cheap no-op while nothing is pending).
 	if(length(GLOB.op_watchers))

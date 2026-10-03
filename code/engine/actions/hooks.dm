@@ -161,9 +161,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 		for(var/datum/entry/part in E.children)
 			var/kind
 			if(istype(part, /datum/entry/part/needs))
-				// needs(req...) inside extend() is the op language's needs part: its children are the requirements (act_needs_refusal reads them).
-				kind = HOOK_NEEDS
-			else switch(part.kind)
+				// needs(req...) of the part engine (extend(/datum/act/insert, needs(...))): its requirements refuse the action
+				var/datum/hook/needs_hook = hook_make(HOOK_NEEDS, target, part, E, C, A, serial)
+				needs_hook.order = ORDER_NORMAL
+				. += needs_hook
+				continue
+			switch(part.kind)
 				if(ENTRY_INSTEAD)
 					kind = HOOK_INSTEAD
 				if(ENTRY_ADJUSTS)

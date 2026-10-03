@@ -42,6 +42,7 @@
 			return null
 	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
+	activations_relation_changed(holder, var_name) // a species change re-makes what the species grants (rel_grants)
 	if(old_private)
 		own_unstamp(old)
 		if(!QDELETED(old))
@@ -61,6 +62,7 @@
 			return null
 	holder.vars[var_name] = value // ALLOW(api): this proc is the accessor: the one place allowed to write this var by name
 	own_field_changed(holder, var_name)
+	activations_relation_changed(holder, var_name) // a species change re-makes what the species grants (rel_grants)
 	if(!old_private)
 		return null
 	own_unstamp(old)

@@ -34,6 +34,8 @@
 	var/list/errors
 	/// var names of the rel_grants() entries (relation-scoped grants), or null.
 	var/list/rel_grant_vars
+	/// TRUE when the type declares a while_slotted() entry: the ledger asks before it spends anything on a slot move (scopes.dm).
+	var/has_slotted = FALSE
 	/// ENGINE_HOOK_*: the lifecycle work an instance of the type needs.
 	var/hook_flags = 0
 
@@ -143,10 +145,13 @@ GLOBAL_VAR(declare_report_capture)
 		table_apply(T, item, origin_now, null, null)
 	table_validate(T)
 	T.rel_grant_vars = null
+	T.has_slotted = FALSE
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
 		if(istype(E) && E.kind == ENTRY_REL_GRANTS)
 			LAZYOR(T.rel_grant_vars, E.args["var"])
+		else if(istype(E) && E.kind == ENTRY_WHILE_SLOTTED)
+			T.has_slotted = TRUE
 	T.hook_flags = table_hook_flags(T)
 	return T
 
@@ -163,6 +168,8 @@ GLOBAL_VAR(declare_report_capture)
 				. |= ENGINE_HOOK_INIT
 			else if(istype(E) && E.kind == ENTRY_ON_CHANGE)
 				. |= ENGINE_HOOK_INIT // the baseline of an on_change hook is taken when the holder initializes
+			else if(istype(E) && E.kind == ENTRY_EVERY && isnull(C.owner))
+				. |= ENGINE_HOOK_INIT // a type-level every() is armed when the holder initializes
 	if(stat_table_needs_init(T))
 		. |= ENGINE_HOOK_INIT | ENGINE_HOOK_STATS
 

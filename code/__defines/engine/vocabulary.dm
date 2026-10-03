@@ -88,6 +88,12 @@
 #define ON_HELD 4
 #define ON_CONTENTS 5
 
+// ---- Slot families a while_slotted() may name (scopes.dm, slot_matches()). ----
+/// Any slot of the holder that is worn equipment (a body slot with BODY_SLOT_WORN).
+#define SLOT_ANY_WORN "any_worn"
+/// Any hand of the holder.
+#define SLOT_ANY_HELD "any_held"
+
 // ---- Request outcomes: one enum for every workflow step (section 13). ----
 #define REQ_ANSWERED 1
 #define REQ_CANCELLED 2

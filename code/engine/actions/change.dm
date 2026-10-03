@@ -7,7 +7,9 @@
 // per drain however many of its reads changed. A condition's edge is ENTER (became true) or EXIT (became false); ANY (= ENTER | EXIT) on a key
 // compares values. Reads: a var name, a stat id (both its var and its stat key), a capability state key, cond_not/all/any of those, or a
 // proc of the holder x(datum/act/A) whose own-var reads E5 generated. A read through a relation hop (nameof(terminal.charge)) watches the relation
-// var itself; the far var's own change reaches it when the relation is rewritten (E3's hop reverse index serves stats, not these hooks).
+// var itself (rewriting it re-reads the far end) AND the far var's own changes: a hop path registers its last segment in GLOB.change_hop_keys, so a
+// write of that var on any entity is published, and hooks_change_hop_published() walks the relations back along the path to the entities that read
+// it (the same reverse walk the stat layer's hops use) and marks their hooks.
 //
 // A type's own on_change entries watch through the compiled table (rx_readers() asks hooks_watching()); an activation's watch its holder as dynamic
 // readers (rx_watch_adjust()) and end with the activation. The baseline (the value before the first change) is taken when the holder initializes
@@ -16,6 +18,7 @@
 
 GLOBAL_LIST_EMPTY(change_index_by_type) // instance type -> (key -> list of /datum/hook), or FALSE for a type with no on_change
 GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the order first marked
+GLOBAL_LIST_EMPTY(change_hop_keys) // far var name -> (hop path text -> number of hooks reading it): the keys whose writes on any entity may matter
 
 /datum/rx_state
 	/// hook serial -> the value its last evaluation saw (a boolean for an edge, the raw value for ANY).
@@ -109,13 +112,38 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		H.reads = change_read_keys(E, H.entry.args["cond"])
 		for(var/key in H.reads)
 			LAZYADD(index[key], H)
+		change_hop_register(H.entry.args["cond"])
 	GLOB.change_index_by_type[E.type] = length(index) ? index : FALSE
 	return GLOB.change_index_by_type[E.type]
+
+/// A hook reads `cond`: when it is a hop path ("terminal.charge"), its last segment becomes a key whose writes are published everywhere.
+/proc/change_hop_register(cond, delta = 1)
+	if(!istext(cond))
+		return
+	var/dot = findtext(cond, ".")
+	if(!dot)
+		return
+	var/last = copytext(cond, findlasttext(cond, ".") + 1)
+	var/list/paths = GLOB.change_hop_keys[last]
+	if(!paths)
+		if(delta < 0)
+			return
+		paths = list()
+		GLOB.change_hop_keys[last] = paths
+	var/count = (paths[cond] || 0) + delta
+	if(count > 0)
+		paths[cond] = count
+	else
+		paths -= cond
+		if(!length(paths))
+			GLOB.change_hop_keys -= last
 
 /// TRUE when a type-level on_change of E's type reads `key` (rx_readers() asks, so changed() publishes it).
 /proc/hooks_watching(datum/E, key)
 	if(!islist(GLOB?.change_index_by_type))
 		return FALSE
+	if(GLOB.change_hop_keys[key])
+		return TRUE // some hook reads this var on the far end of a relation
 	var/index = GLOB.change_index_by_type[E.type]
 	if(isnull(index))
 		index = change_index_of(E)
@@ -132,6 +160,36 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 	for(var/datum/hook/H as anything in E.rx?.hooks)
 		if(H.kind == HOOK_CHANGE && (key in H.reads) && H.activation && !H.activation.dead && H.activation.runs)
 			hook_change_pend(E, H)
+	if(GLOB.change_hop_keys[key])
+		hooks_change_hop_published(E, key)
+
+/// `key` of E, the far end of a hop path some hook reads, was published: the entities that reach E along such a path are found by walking the
+/// relations back (rel_sources), and each one's hooks that read that path are marked for the next drain point.
+/proc/hooks_change_hop_published(datum/E, key)
+	for(var/path_text in GLOB.change_hop_keys[key])
+		var/list/path = splittext(path_text, ".")
+		path.len-- // the far var itself
+		var/list/frontier = list(E)
+		for(var/i in length(path) to 1 step -1)
+			var/segment = path[i]
+			var/list/next_frontier = list()
+			for(var/datum/at as anything in frontier)
+				for(var/list/pair as anything in rel_sources(at))
+					var/datum/source = pair[1]
+					if(pair[2] == segment && !QDELETED(source))
+						next_frontier |= list(source)
+			frontier = next_frontier
+			if(!length(frontier))
+				break
+		for(var/datum/reader as anything in frontier)
+			var/index = change_index_of(reader)
+			if(index)
+				for(var/datum/hook/H as anything in index[path[1]])
+					if(H.entry.args["cond"] == path_text)
+						hook_change_pend(reader, H)
+			for(var/datum/hook/H as anything in reader.rx?.hooks)
+				if(H.kind == HOOK_CHANGE && H.entry.args["cond"] == path_text && H.activation && !H.activation.dead && H.activation.runs)
+					hook_change_pend(reader, H)
 
 /proc/hook_change_pend(datum/E, datum/hook/H)
 	var/list/per = GLOB.hook_change_pending[E]
@@ -210,6 +268,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 	LAZYADD(rx.hooks, H) // ALLOW(ownership): an engine record the one teardown path drops
 	for(var/key in H.reads)
 		rx_watch_adjust(A.holder, key, 1)
+	change_hop_register(E.args["cond"])
 	LAZYSET(rx.change_last, "[H.serial]", change_value(A.holder, H))
 	return TRUE
 
@@ -223,6 +282,7 @@ GLOBAL_LIST_EMPTY(hook_change_pending) // holder -> list(hook -> TRUE), in the o
 		holder.rx.hooks -= H
 		for(var/key in H.reads)
 			rx_watch_adjust(holder, key, -1)
+		change_hop_register(E.args["cond"], -1)
 		holder.rx.change_last?.Remove("[H.serial]")
 		H.activation = null // ALLOW(ownership): an engine record the one teardown path drops
 	if(!length(holder.rx.hooks))
