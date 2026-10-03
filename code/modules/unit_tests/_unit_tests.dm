@@ -597,6 +597,7 @@
 #include "interim_screen_actor.dm"
 #include "interim_action_button_click_actor.dm"
 #include "interim_inventory_screen_actor.dm"
+#include "interim_rune_visibility_endings.dm"
 #include "interim_speech_image_capture.dm"
 #include "interim_legacy_item_screen_actor.dm"
 // END_INCLUDE

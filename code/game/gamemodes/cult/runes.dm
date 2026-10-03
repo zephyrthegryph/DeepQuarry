@@ -427,7 +427,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			user.say("Kla[pick("'","`")]atu barada nikt'o!")
 			for (var/mob/V in viewers(src))
 				V.show_message(span_warning("The rune turns into gray dust, veiling the surrounding runes."), 3)
-			qdel(src)
+			consume(src, user)
 		else
 			user.whisper("Kla[pick("'","`")]atu barada nikt'o!")
 			to_chat(user, span_warning("Your talisman turns into gray dust, veiling the surrounding runes."))
@@ -824,7 +824,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	if(go)
 		for(var/obj/effect/rune/R in orange(rad,src))
 			if(R!=src)
-				R:visibility=15
+				R.visibility=15
 			S=1
 	if(S)
 		if(istype(W,/obj/item/nullrod))
@@ -834,7 +834,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			user.say("Nikt[pick("'","`")]o barada kla'atu!")
 			for (var/mob/V in viewers(src))
 				V.show_message(span_warning("The rune turns into red dust, reveaing the surrounding runes."), 3)
-			qdel(src)
+			consume(src, user)
 			return
 		if(istype(W,/obj/item/paper/talisman))
 			user.whisper("Nikt[pick("'","`")]o barada kla'atu!")
