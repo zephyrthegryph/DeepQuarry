@@ -36,14 +36,9 @@ CAPABILITIES(/obj/item/storage/laundry_basket, \
 	linked = O
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/laundry_basket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/laundry_basket/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		icon_state = "laundry-full"
-	else
-		icon_state = "laundry-empty"
-	return .
+/obj/item/storage/laundry_basket/draw(datum/look/look)
+	. = ..()
+	look.state(held_count() ? "laundry-full" : "laundry-empty")
 
 
 /obj/item/storage/laundry_basket/MouseDrop(obj/over_object)

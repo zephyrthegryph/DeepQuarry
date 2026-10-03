@@ -21,15 +21,11 @@
 CAPABILITIES(/obj/item/storage/sample_container, \
 	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/sample_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/sample_container/appearance_overlays()
-	. = list()
-	. += ..()
-	icon_state = "sample_container_[contents.len]"
-	if(contents_count(src) > 0)
-		set_light(1, contents_count(src), lightcolor)
-	else
-		set_light(0)
+/obj/item/storage/sample_container/draw(datum/look/look)
+	. = ..()
+	look.state("sample_container_[held_count()]")
+	if(held_count() > 0)
+		look.light(1, held_count(), lightcolor)
 
 /obj/item/storage/sample_container/afterattack(turf/T as turf, mob/user as mob)
 	for(var/obj/item/research_sample/S in turf_contents_of_type(T, /obj/item/research_sample))

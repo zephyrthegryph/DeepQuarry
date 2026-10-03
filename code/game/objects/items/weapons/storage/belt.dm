@@ -48,12 +48,6 @@ CAPABILITIES(/obj/item/storage/belt, \
 			standing.add_overlay(add_icon)
 	return standing
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/appearance_overlays()
-	. = list()
-	if (ismob(src.loc))
-		var/mob/M = src.loc
-		M.update_inv_belt()
 
 /obj/item/storage/belt/utility
 	name = "tool-belt" //Carn: utility belt is nicer, but it bamboozles the text parsing.

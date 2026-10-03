@@ -49,7 +49,6 @@ dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(0)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(FALSE)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light(l_range = 2, l_power = 0.25, l_color = new_color)
 dx_appearance_side_effect	code/game/machinery/air_alarm.dm	set_light_on(TRUE)
-dx_appearance_side_effect	code/game/machinery/cell_charger.dm	chargelevel = newlevel
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:2"
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = "alert:1"
 dx_appearance_side_effect	code/game/machinery/computer/atmos_alert.dm	icon_screen = initial(icon_screen)
@@ -252,13 +251,6 @@ dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	item_state 
 dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	set_light(lrange, lpower, lcolor)
 dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	set_light(0)
 dx_appearance_side_effect	code/game/objects/items/weapons/shields.dm	item_state = "[icon_state]"
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/bags.dm	else icon_state = "trashbag3"
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/fancy.dm	appearance = ma
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/fancy.dm	appearance = ma
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/firstaid.dm	I.color = wrapper_color
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/misc.dm	ma.pixel_x = x_offset
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/mre.dm	isopened = 1
-dx_appearance_side_effect	code/game/objects/items/weapons/storage/wallets.dm	tiny_image.appearance_flags = RESET_COLOR
 dx_appearance_side_effect	code/game/objects/items/weapons/stunbaton.dm	set_light(2, 1, lightcolor)
 dx_appearance_side_effect	code/game/objects/items/weapons/stunbaton.dm	set_light(0)
 dx_appearance_side_effect	code/game/objects/items/weapons/tanks/tanks.dm	tank.update_icon()
@@ -481,13 +473,6 @@ dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "A box suited 
 dx_appearance_side_effect	code/modules/food/food/snacks.dm	desc = "[desc] The box has a tag, it reads: '[boxtag]'."
 dx_appearance_side_effect	code/modules/food/food/snacks.dm	pizzaimg.pixel_y = -3
 dx_appearance_side_effect	code/modules/food/food/snacks.dm	tagimg.pixel_y = boxes.len * 3
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(0.1 to 20) filling.icon_state = "[icon_state]-10"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(20 to 40) filling.icon_state = "[icon_state]-20"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(40 to 60) filling.icon_state = "[icon_state]-40"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(60 to 80) filling.icon_state = "[icon_state]-60"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(80 to 100) filling.icon_state = "[icon_state]-80"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	if(100 to INFINITY) filling.icon_state = "[icon_state]-100"
-dx_appearance_side_effect	code/modules/food/glass/bottle.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker.dm	light.pixel_x = light_x
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker.dm	light.pixel_y = light_y
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	scale = ratio**(1/3) //Scaling factor is square root of desired area
@@ -796,13 +781,6 @@ dx_appearance_side_effect	code/modules/reagents/machinery/pump.dm	I.color = reag
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/blood_pack.dm	item_state = "bloodpack_empty"
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/blood_pack.dm	item_state = "bloodpack_half"
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/blood_pack.dm	item_state = "bloodpack_full"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(0.1 to 20) filling.icon_state = "[icon_state]-10"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(20 to 40) filling.icon_state = "[icon_state]-20"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(40 to 60) filling.icon_state = "[icon_state]-40"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(60 to 80) filling.icon_state = "[icon_state]-60"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(80 to 100) filling.icon_state = "[icon_state]-80"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	if(100 to INFINITY) filling.icon_state = "[icon_state]-100"
-dx_appearance_side_effect	code/modules/reagents/reagent_containers/glass.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/spray.dm	hose_overlay = new/icon(icon, "[icon_state]+hose")
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling = image(icon, src, "filler[rounded_vol]")
 dx_appearance_side_effect	code/modules/reagents/reagent_containers/syringes.dm	filling.color = reagents.get_color()
@@ -836,8 +814,6 @@ dx_appearance_side_effect	code/modules/refinery/core/industrial_reagent_vat.dm	f
 dx_appearance_side_effect	code/modules/refinery/equipment/chemcontainer.dm	chems.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/refinery/equipment/pumprelay.dm	filling.color = reagents.get_color()
 dx_appearance_side_effect	code/modules/research/tg/machinery/_production.dm	stripe.color = stripe_color
-dx_appearance_side_effect	code/modules/samples/container.dm	set_light(1, contents_count(src), lightcolor)
-dx_appearance_side_effect	code/modules/samples/container.dm	set_light(0)
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 3, "#66FFFF")
 dx_appearance_side_effect	code/modules/shieldgen/energy_field.dm	set_light(3, 5, "#FF9900")
 dx_appearance_side_effect	code/modules/shieldgen/shield_gen.dm	set_light(0)

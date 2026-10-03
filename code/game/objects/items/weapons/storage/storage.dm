@@ -80,6 +80,18 @@ CAPABILITIES(/obj/item/storage, \
 
 READS_AS(/obj/item/storage/proc/holds_good_bulb, STORAGE_CONTENTS_KEY)
 
+/// How many things it holds, declared or real: what a look that shows the fill reads. It is published as STORAGE_CONTENTS_KEY when a move changes it.
+/obj/item/storage/proc/held_count()
+	return storage_total(src)
+
+READS_AS(/obj/item/storage/proc/held_count, STORAGE_CONTENTS_KEY)
+
+/// What it holds, a copy in the order the window shows it (the things themselves, so a look can read them). Published as held_count() is.
+/obj/item/storage/proc/held_things()
+	return slot_contents(CONTAINER_SLOT_STORAGE)
+
+READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
+
 /obj/item/storage/proc/feed_replacer(datum/act/op/A)
 	make_contents_real()
 	var/obj/item/lightreplacer/LP = A.held
@@ -299,6 +311,10 @@ READS_AS(/obj/item/storage/proc/holds_good_bulb, STORAGE_CONTENTS_KEY)
 	PUBLISH_CHANGE(src, STORAGE_CONTENTS_KEY)
 	if(hud)
 		refresh_hud()
+	// A worn storage shows what is in it on the wearer's sprite.
+	if(ismob(loc))
+		var/mob/wearer = loc
+		wearer.update_inv_belt()
 
 // ---- Gather and empty ----
 
@@ -919,6 +935,8 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 	var/closed_state
 	special_handling = TRUE
 
+TRACKED(/obj/item/storage/trinketbox, open)
+
 CAPABILITIES(/obj/item/storage/trinketbox, \
 	configure(storage(accepts = list( \
 		/obj/item/clothing/accessory/ring, \
@@ -926,25 +944,22 @@ CAPABILITIES(/obj/item/storage/trinketbox, \
 		/obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)),, \
 	op("lid", in_hand(), label("Open"), then(PROC_REF(flip_lid))))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/trinketbox/appearance_overlays()
-	. = list()
+/obj/item/storage/trinketbox/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-
-		var/list/held = slot_contents(CONTAINER_SLOT_STORAGE)
+		look.state(open_state)
+		var/list/held = held_things()
 		if(length(held) >= 1)
 			var/contained_image = null
-			if(istype(held[1],  /obj/item/clothing/accessory/ring))
+			if(istype(held[1], /obj/item/clothing/accessory/ring))
 				contained_image = "ring_trinket"
 			else if(istype(held[1], /obj/item/coin))
 				contained_image = "coin_trinket"
 			else if(istype(held[1], /obj/item/clothing/accessory/medal))
 				contained_image = "medal_trinket"
-			if(contained_image)
-				. += contained_image
+			look.overlay(contained_image)
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/trinketbox/Initialize(mapload)
 	if(!open_state)
@@ -955,7 +970,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/trinketbox, TYPE_PROC_REF(/atom, appea
 
 /// Used in hand: the lid flips.
 /obj/item/storage/trinketbox/proc/flip_lid(datum/act/op/A)
-	open = !open
+	set_open(!open)
 	update_icon()
 	return OP_OK
 

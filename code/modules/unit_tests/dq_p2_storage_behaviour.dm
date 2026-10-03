@@ -248,7 +248,7 @@
 	var/obj/item/storage/toolbox/emergency/E = sb_make(/obj/item/storage/toolbox/emergency)
 	TEST_ASSERT_EQUAL(sb_count(E), 4, "an emergency toolbox starts with four things")
 	var/obj/item/storage/toolbox/mechanical/emptied = new(run_loc_floor_bottom_left)
-	sb_extra += emptied
+	LAZYADD(sb_extra, emptied)
 	TEST_ASSERT(sb_count(emptied) > 0, "a plain new toolbox is full too")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -896,3 +896,126 @@
 	for(var/path in types)
 		var/datum/type_table/T = table_of_type(path)
 		TEST_ASSERT(!isnull(T), "[path] builds a table")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// What the bots make of a storage item
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_storage/toolbox_and_tiles_make_a_floorbot_kit
+/datum/unit_test/dq_p2_storage/toolbox_and_tiles_make_a_floorbot_kit/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/toolbox/mechanical/T = sb_make(/obj/item/storage/toolbox/mechanical)
+	for(var/obj/item/spilled as anything in sb_items(T))
+		LAZYADD(sb_extra, spilled)
+	T.spill()
+	var/obj/item/stack/tile/floor/tiles = new(run_loc_floor_bottom_left, 10)
+	LAZYADD(sb_extra, tiles)
+	sb_click(H, T, tiles)
+	TEST_ASSERT_EQUAL(tiles.amount, 0, "an empty toolbox takes ten tiles for a floorbot kit")
+	var/found = FALSE
+	for(var/obj/item/toolbox_tiles/kit in range(1, H))
+		found = TRUE
+	for(var/obj/item/toolbox_tiles/kit in H.contents)
+		found = TRUE
+	TEST_ASSERT(found, "the kit is where the person is")
+
+/datum/unit_test/dq_p2_storage/toolbox_with_tools_is_not_a_floorbot_kit
+/datum/unit_test/dq_p2_storage/toolbox_with_tools_is_not_a_floorbot_kit/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/toolbox/mechanical/T = sb_make(/obj/item/storage/toolbox/mechanical)
+	var/obj/item/stack/tile/floor/tiles = new(run_loc_floor_bottom_left, 10)
+	LAZYADD(sb_extra, tiles)
+	sb_click(H, T, tiles)
+	TEST_ASSERT(!QDELETED(T), "a toolbox with tools in it is not turned into a kit")
+	var/found = FALSE
+	for(var/obj/item/toolbox_tiles/kit in range(1, H))
+		found = TRUE
+	for(var/obj/item/toolbox_tiles/kit in H.contents)
+		found = TRUE
+	TEST_ASSERT(!found, "no kit was made")
+
+/datum/unit_test/dq_p2_storage/robot_arm_and_medkit_make_a_medibot_assembly
+/datum/unit_test/dq_p2_storage/robot_arm_and_medkit_make_a_medibot_assembly/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/firstaid/fire/kit = sb_make(/obj/item/storage/firstaid/fire)
+	var/obj/item/robot_parts/l_arm/arm = sb_make(/obj/item/robot_parts/l_arm)
+	sb_click(H, kit, arm)
+	TEST_ASSERT(!QDELETED(kit), "a kit with things in it is not built on")
+	TEST_ASSERT(!QDELETED(arm), "and the arm is kept")
+	for(var/obj/item/spilled as anything in sb_items(kit))
+		LAZYADD(sb_extra, spilled)
+	kit.spill()
+	sb_click(H, kit, arm)
+	TEST_ASSERT(QDELETED(kit), "an empty kit and a robot arm make an assembly")
+	var/found = FALSE
+	for(var/obj/item/firstaid_arm_assembly/assembly in range(1, H))
+		found = TRUE
+	for(var/obj/item/firstaid_arm_assembly/assembly in H.contents)
+		found = TRUE
+	TEST_ASSERT(found, "the assembly is where the person is")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// What a storage looks like
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// The icon state the thing shows now.
+/proc/sb_icon(atom/A)
+	return A.icon_state
+
+/datum/unit_test/dq_p2_storage/trash_bag_shows_how_full_it_is
+/datum/unit_test/dq_p2_storage/trash_bag_shows_how_full_it_is/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/bag/trash/bag = sb_make(/obj/item/storage/bag/trash)
+	bag.update_icon()
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_icon(bag), "trashbag0", "an empty bag shows no trash")
+	var/obj/item/p2_storage_probe/junk = sb_make(/obj/item/p2_storage_probe)
+	sb_click(H, bag, junk)
+	TEST_ASSERT_EQUAL(sb_icon(bag), "trashbag1", "one thing shows some trash")
+	sb_stuff(H, bag, /obj/item/p2_storage_probe, 8)
+	TEST_ASSERT_EQUAL(sb_icon(bag), "trashbag2", "nine things show more")
+
+/datum/unit_test/dq_p2_storage/boxed_goods_show_how_many_are_left
+/datum/unit_test/dq_p2_storage/boxed_goods_show_how_many_are_left/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/fancy/candle_box/B = sb_make(/obj/item/storage/fancy/candle_box)
+	B.update_icon()
+	sb_settle()
+	var/count = sb_count(B)
+	TEST_ASSERT(count > 0, "the box starts with candles")
+	TEST_ASSERT_EQUAL(sb_icon(B), "[B.icon_type]box[count]", "the box shows how many")
+	sb_empty_hands(H)
+	H.put_in_inactive_hand(B)
+	sb_open_held(H, B)
+	var/obj/item/first = sb_items(B)[1]
+	H.drop_item()
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, first, null, null, "left=1"))
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_icon(B), "[B.icon_type]box[count - 1]", "and one fewer after one comes out")
+
+/datum/unit_test/dq_p2_storage/lockbox_shows_its_lock
+/datum/unit_test/dq_p2_storage/lockbox_shows_its_lock/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/lockbox/L = sb_make(/obj/item/storage/lockbox)
+	L.update_icon()
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_icon(L), "lockbox+l", "locked")
+	var/obj/item/card/id/right = sb_make(/obj/item/card/id)
+	right.access = list(ACCESS_ARMORY)
+	sb_click(H, L, right)
+	TEST_ASSERT_EQUAL(sb_icon(L), "lockbox", "unlocked")
+	var/obj/item/card/emag/emag = sb_make(/obj/item/card/emag)
+	sb_click(H, L, emag)
+	TEST_ASSERT_EQUAL(sb_icon(L), "lockbox+b", "broken")
+
+/datum/unit_test/dq_p2_storage/laundry_basket_shows_when_it_is_full
+/datum/unit_test/dq_p2_storage/laundry_basket_shows_when_it_is_full/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/laundry_basket/B = sb_make(/obj/item/storage/laundry_basket)
+	B.update_icon()
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_icon(B), "laundry-empty", "empty")
+	var/obj/item/p2_storage_probe/I = sb_make(/obj/item/p2_storage_probe)
+	sb_click(H, B, I)
+	TEST_ASSERT_EQUAL(sb_icon(B), "laundry-full", "full of laundry")

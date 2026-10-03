@@ -1362,25 +1362,24 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte, \
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/fluff/charlotte, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/fluff/charlotte/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/fluff/charlotte/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(contents_count(src) >= 1)
-			. += "charlottebox[contents.len]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("charlottebox[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/fancy/fluff/charlotte/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
+	set_open(TRUE)
 	update_icon()
 	..()
 
 /obj/item/storage/fancy/fluff/charlotte/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	update_icon()
 	..()
 

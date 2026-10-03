@@ -28,12 +28,11 @@
 	var/open_state
 	var/closed_state
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/appearance_overlays()
-	. = list()
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
-	icon_state = "[icon_type]box[total_contents]"
-	return .
+TRACKED(/obj/item/storage/fancy, open)
+
+/obj/item/storage/fancy/draw(datum/look/look)
+	. = ..()
+	look.state("[icon_type]box[held_count()]")
 
 /obj/item/storage/fancy/examine(mob/user)
 	. = ..()
@@ -74,27 +73,26 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box, \
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/egg_box/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/egg_box/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "eggbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("eggbox[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/fancy/egg_box/open(mob/user as mob)
 	if(open)
 		return
 	if (isobserver(user))
 		return
-	open = TRUE
+	set_open(TRUE)
 	update_icon()
 	..()
 
 /obj/item/storage/fancy/egg_box/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	update_icon()
 	..()
 
@@ -175,14 +173,19 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box, \
 		C.name = "[C.colourName] [initial(C.name)]"
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/crayons/appearance_overlays()
+/obj/item/storage/fancy/crayons/draw(datum/look/look)
+	. = ..()
+	look.state(initial(icon_state)) // a box of crayons shows the crayons, not a count
+	for(var/colour in crayon_colours())
+		look.overlay(colour, icon = 'icons/obj/crayons.dmi')
+
+/// The colour of each crayon inside, in order.
+/obj/item/storage/fancy/crayons/proc/crayon_colours()
 	. = list()
-	var/mutable_appearance/ma = new(src)
-	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/crayon in slot_contents(CONTAINER_SLOT_STORAGE))
-		. += image('icons/obj/crayons.dmi',crayon.colourName)
-	appearance = ma
+	for(var/obj/item/pen/crayon/crayon in held_things())
+		. += crayon.colourName
+
+READS_AS(/obj/item/storage/fancy/crayons/proc/crayon_colours, STORAGE_CONTENTS_KEY)
 
 // The mime and rainbow crayons are too sad and too powerful for the box.
 CAPABILITIES(/obj/item/storage/fancy/crayons, \
@@ -208,14 +211,19 @@ CAPABILITIES(/obj/item/storage/fancy/crayons, \
 		M.name = "[M.colourName] [initial(M.name)]"
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/markers/appearance_overlays()
+/obj/item/storage/fancy/markers/draw(datum/look/look)
+	. = ..()
+	look.state(initial(icon_state)) // a box of markers shows the markers, not a count
+	for(var/colour in marker_colours())
+		look.overlay("m[colour]", icon = 'icons/obj/crayons.dmi')
+
+/// The colour of each marker inside, in order.
+/obj/item/storage/fancy/markers/proc/marker_colours()
 	. = list()
-	var/mutable_appearance/ma = new(src)
-	ma.cut_overlays()
-	for(var/obj/item/pen/crayon/marker/marker in slot_contents(CONTAINER_SLOT_STORAGE))
-		ma.add_overlay(image('icons/obj/crayons.dmi',"m"+marker.colourName))
-	appearance = ma
+	for(var/obj/item/pen/crayon/marker/marker in held_things())
+		. += marker.colourName
+
+READS_AS(/obj/item/storage/fancy/markers/proc/marker_colours, STORAGE_CONTENTS_KEY)
 
 CAPABILITIES(/obj/item/storage/fancy/markers, \
 	configure(storage(accepts = list(/obj/item/pen/crayon/marker))))
@@ -275,20 +283,19 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes, \
 			C.brand = brand
 			C.desc += " This one is \a [brand]."
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/cigarettes/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/cigarettes/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "cig[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("cig[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/fancy/cigarettes/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
+	set_open(TRUE)
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
@@ -296,7 +303,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom,
 	..()
 
 /obj/item/storage/fancy/cigarettes/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
@@ -426,25 +433,24 @@ CAPABILITIES(/obj/item/storage/fancy/cigar, \
 	reagents.trans_to_obj(C, (reagents.total_volume/length(slot_contents(CONTAINER_SLOT_STORAGE))))
 	return ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/cigar/appearance_overlays()
-	. = list()
+/obj/item/storage/fancy/cigar/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) >= 1)
-			. += "[initial(icon_state)][length(slot_contents(CONTAINER_SLOT_STORAGE))]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("[initial(icon_state)][held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/fancy/cigar/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
+	set_open(TRUE)
 	update_icon()
 	..()
 
 /obj/item/storage/fancy/cigar/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	update_icon()
 	..()
 
@@ -573,11 +579,9 @@ CAPABILITIES(/obj/item/storage/fancy/heartbox, \
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/heartbox, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/fancy/heartbox/appearance_overlays()
-	. = list()
-	if (length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "heartbox_empty"
+/obj/item/storage/fancy/heartbox/draw(datum/look/look)
+	. = ..()
+	look.state(held_count() == 0 ? "heartbox_empty" : initial(icon_state))
 
 
 /obj/item/storage/fancy/cigar/cohiba

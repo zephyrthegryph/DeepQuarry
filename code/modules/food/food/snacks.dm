@@ -7462,13 +7462,9 @@ CAPABILITIES(/obj/item/storage/box/wings, \
 	update_icon()
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/wings, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/wings/appearance_overlays()
-	. = list()
-	var/i = 0
-	for(var/obj/item/reagent_containers/food/snacks/W in contents)
-		i++
-	icon_state = "[icon_base][i]"
+/obj/item/storage/box/wings/draw(datum/look/look)
+	. = ..()
+	look.state("[icon_base][held_count()]")
 
 /obj/item/reagent_containers/food/snacks/chickenwing
 	name = "chicken wing"

@@ -466,6 +466,7 @@
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_reagent_needle_behaviour.dm"
 #include "dq_p2_storage_behaviour.dm"
+#include "dq_p2_storage_engine_tests.dm"
 #include "dq_s1_slots_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

@@ -332,16 +332,13 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 
 /* Assembly */
 
-EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/item/stack/tile/floor, PROC_REF(interaction_floorbot_tiles), "Add tiles", REQ_TARGET_STATE(/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles)))
+// Ten floor tiles on an empty toolbox start a floorbot; a toolbox with something in it takes them like any storage.
+CAPABILITIES(/obj/item/storage/toolbox/mechanical, \
+	op("add_tiles", item(/obj/item/stack/tile/floor), priority(above("storage.put_in")), when(req_storage_empty()), label("Add tiles"), then(PROC_REF(add_floorbot_tiles))))
 
-/// Requirement: the toolbox must be empty to become a floorbot kit.
-/obj/item/storage/toolbox/mechanical/proc/can_take_floorbot_tiles(mob/user, atom/target, obj/item/held)
-	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
-		return "they won't fit in as there is already stuff inside"
-	return TRUE
-
-/// Old attackby: ten floor tiles in an empty toolbox start a floorbot.
-/obj/item/storage/toolbox/mechanical/proc/interaction_floorbot_tiles(mob/living/user, obj/item/stack/tile/floor/T, datum/interaction/interaction)
+/obj/item/storage/toolbox/mechanical/proc/add_floorbot_tiles(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/stack/tile/floor/T = A.held
 	if(user.s_active)
 		user.s_active.close(user)
 	if(T.use(10))
@@ -351,7 +348,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/toolbox/mechanical, INTERACT_INSERT(/obj/i
 		consume(src, user)
 	else
 		to_chat(user, span_warning("You need 10 floor tiles for a floorbot."))
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/toolbox_tiles
 	desc = "It's a toolbox with tiles sticking out the top"

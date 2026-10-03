@@ -37,12 +37,19 @@
 	// guard (code/engine/parts/purity.dm) is lifted for it.
 	var/pure_depth = GLOB.op_pure_depth
 	var/derived_depth = GLOB.derived_evaluating
+	var/adopting = GLOB.ledger_adopting
 	GLOB.op_pure_depth = 0
 	GLOB.derived_evaluating = 0
+	GLOB.ledger_adopting = TRUE
 	L = dq_ledger_open(holder, destroying)
 	GLOB.op_pure_depth = pure_depth
 	GLOB.derived_evaluating = derived_depth
+	GLOB.ledger_adopting = adopting
 	return L
+
+/// TRUE while a ledger is being built or is adopting contents (dq_ledger()): the holder marks itself changed by the links it makes, and a refresh that
+/// asked is not writing state when that happens.
+GLOBAL_VAR_INIT(ledger_adopting, FALSE)
 
 /// dq_ledger()'s slow path: the ledger built if there is none, and synced.
 /proc/dq_ledger_open(atom/holder, destroying = FALSE)

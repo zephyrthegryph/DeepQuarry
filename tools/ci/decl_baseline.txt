@@ -114,7 +114,6 @@ init_reagents	code/modules/reagents/machinery/dispenser/cartridge.dm	reagents.ad
 init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_WATER,2000)
 init_reagents	code/modules/reagents/machinery/dispenser/reagent_tank.dm	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
 init_reagents	code/modules/reagents/reagent_containers/blood_pack.dm	reagents.add_reagent(reag_id, 200, list("donor"=null,"viruses"=null,"species"=blood_species,"blood_colour"=blood_colour,"blood_DNA"=null,"blood_type"=blood_type,"resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-init_reagents	code/modules/reagents/reagent_containers/glass.dm	reagents.add_reagent(R,prefill[R])
 init_reagents	code/modules/reagents/reagent_containers/hypospray.dm	reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
 init_reagents	code/modules/reagents/reagent_containers/spray.dm	reagents.add_reagent(REAGENT_ID_CLEANER, volume)
 init_reagents	code/modules/reagents/reagent_containers/spray.dm	reagents.add_reagent(REAGENT_ID_STERILIZINE, volume)
@@ -183,7 +182,6 @@ init_visuals	code/datums/entity_state/reactive_icon_update.dm	icon_state = "scre
 init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/datums/entity_state/species/shadekin/powers/dark_maw.dm	icon_state = "dark_maw_used"
 init_visuals	code/game/area/areas.dm	icon_state = ""
-init_visuals	code/game/machinery/cell_charger.dm	add_overlay("ccharger1")
 init_visuals	code/game/machinery/computer/bodycamera.dm	add_overlay("glass")
 init_visuals	code/game/machinery/computer/camera.dm	add_overlay(MAT_GLASS)
 init_visuals	code/game/machinery/cryo.dm	icon_state = "base"

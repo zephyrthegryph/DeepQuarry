@@ -61,6 +61,30 @@
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
 
+/obj/item/storage/box/fancy/chewables/tobacco/nico/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
+
+/obj/item/storage/box/tgmc_mre/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(isopened))
+
+/obj/item/storage/fancy/cigar/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
+
+/obj/item/storage/fancy/cigarettes/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
+
+/obj/item/storage/fancy/egg_box/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
+
+/obj/item/storage/fancy/fluff/charlotte/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
+
 /obj/item/storage/lockbox/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(broken), nameof(icon_broken), nameof(icon_closed), nameof(icon_locked))
@@ -69,9 +93,29 @@
 	. = ..()
 	. += drawn_from(nameof(broken))
 
+/obj/item/storage/mre/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(opened))
+
+/obj/item/storage/mrebag/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(opened))
+
+/obj/item/storage/pill_bottle/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(wrapper_image))
+
+/obj/item/storage/sample_container/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(lightcolor))
+
 /obj/item/storage/secure/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(emagged), nameof(icon_locking), nameof(icon_opened), nameof(icon_sparking), nameof(locked), nameof(sparking))
+
+/obj/item/storage/trinketbox/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))
 
 /obj/machinery/atmospherics/binary/dp_vent_pump/generated_reads()
 	. = ..()

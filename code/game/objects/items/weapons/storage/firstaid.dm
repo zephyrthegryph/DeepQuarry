@@ -113,6 +113,8 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery, \
 	use_sound = SFX_ITEMS_STORAGE_PILLBOTTLE
 	max_storage_space = ITEMSIZE_COST_TINY * 14
 	var/wrapper_color
+	/// The coloured wrapper, made when the bottle is.
+	var/tmp/image/wrapper_image
 	var/label
 
 	var/label_text = ""
@@ -124,15 +126,14 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery, \
 	. = ..()
 	base_name = name
 	base_desc = desc
+	if(wrapper_color)
+		wrapper_image = image(icon, "pillbottle_wrap")
+		wrapper_image.color = wrapper_color
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pill_bottle/appearance_overlays()
-	. = list()
-	if(wrapper_color)
-		var/image/I = image(icon, "pillbottle_wrap")
-		I.color = wrapper_color
-		. += I
+/obj/item/storage/pill_bottle/draw(datum/look/look)
+	. = ..()
+	look.overlay(wrapper_image)
 
 CAPABILITIES(/obj/item/storage/pill_bottle, \
 	configure(storage(accepts = list( \

@@ -229,12 +229,10 @@ CAPABILITIES(/obj/item/storage/pouch/flares, \
 /obj/item/storage/pouch/flares/full_glow
 	starts_with = list(/obj/item/flashlight/glowstick = 14) // Full box of glowsticks.
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/flares, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/flares/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "flare_[length(slot_contents(CONTAINER_SLOT_STORAGE))]"
-	. += ..()
+/obj/item/storage/pouch/flares/draw(datum/look/look)
+	. = ..()
+	if(held_count())
+		look.overlay("flare_[held_count()]")
 
 /obj/item/storage/pouch/holster
 	name = "storage pouch (holster)"
@@ -251,12 +249,9 @@ CAPABILITIES(/obj/item/storage/pouch/holster, \
 /obj/item/storage/pouch/holster/full_taser
 	starts_with = list(/obj/item/gun/energy/taser)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/holster, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/holster/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "pistol_layer"
-	. += ..()
+/obj/item/storage/pouch/holster/draw(datum/look/look)
+	. = ..()
+	look.overlay("pistol_layer", when = held_count())
 
 /obj/item/storage/pouch/baton
 	name = "storage pouch (melee)"
@@ -274,12 +269,9 @@ CAPABILITIES(/obj/item/storage/pouch/baton, \
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/pouch/baton, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/pouch/baton/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		. += "baton_layer"
-	. += ..()
+/obj/item/storage/pouch/baton/draw(datum/look/look)
+	. = ..()
+	look.overlay("baton_layer", when = held_count())
 
 /obj/item/storage/pouch/holding
 	name = "storage pouch of holding"

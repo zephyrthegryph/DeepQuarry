@@ -465,7 +465,6 @@
  "/datum/om/event/before/attackby": {
   "emits": [
    "code/_onclick/item_attack.dm",
-   "code/game/objects/items/weapons/storage/storage.dm",
    "code/game/turfs/simulated/floor_attackby.dm"
   ],
   "fields": [

@@ -27,12 +27,12 @@ MRE Stuff
 	. = ..()
 	. += meal_desc
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/mre/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/mre, opened)
+
+/obj/item/storage/mre/draw(datum/look/look)
+	. = ..()
 	if(opened)
-		icon_state = "[initial(icon_state)][opened]"
-	. += ..()
+		look.state("[initial(icon_state)][opened]")
 
 CAPABILITIES(/obj/item/storage/mre, \
 	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open))))
@@ -45,7 +45,7 @@ CAPABILITIES(/obj/item/storage/mre, \
 /obj/item/storage/mre/open(mob/user)
 	if(!opened)
 		to_chat(user, span_notice("You tear open the bag, breaking the vacuum seal."))
-		opened = 1
+		set_opened(1)
 		update_icon()
 	. = ..()
 
@@ -232,12 +232,12 @@ CAPABILITIES(/obj/item/storage/mre, \
 	special_handling = TRUE
 
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/mrebag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/mrebag/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/mrebag, opened)
+
+/obj/item/storage/mrebag/draw(datum/look/look)
+	. = ..()
 	if(opened)
-		icon_state = "[initial(icon_state)][opened]"
-	. += ..()
+		look.state("[initial(icon_state)][opened]")
 
 CAPABILITIES(/obj/item/storage/mrebag, \
 	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open))))
@@ -250,7 +250,7 @@ CAPABILITIES(/obj/item/storage/mrebag, \
 /obj/item/storage/mrebag/open(mob/user)
 	if(!opened && !isobserver(user))
 		to_chat(user, span_notice("The pouch heats up as you break the vacuum seal."))
-		opened = 1
+		set_opened(1)
 		update_icon()
 	. = ..()
 
@@ -345,12 +345,17 @@ CAPABILITIES(/obj/item/storage/box/tgmc_mre, \
 			new /obj/item/trash/tgmc_mre(T)
 		qdel(src)
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/tgmc_mre, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/tgmc_mre/appearance_overlays()
-	. = list()
-	if(!isopened)
-		isopened = 1
-		icon_state = "tgmc_mre_opened"
+TRACKED(/obj/item/storage/box/tgmc_mre, isopened)
+
+/// The first thing that moves in or out opens the wrapper.
+/obj/item/storage/box/tgmc_mre/on_slot_changed(slot_id, atom/movable/thing, inserted)
+	set_isopened(1)
+	return ..()
+
+/obj/item/storage/box/tgmc_mre/draw(datum/look/look)
+	. = ..()
+	if(isopened)
+		look.state("tgmc_mre_opened")
 
 // The sneaky food-looks-like-a-package items
 /obj/item/reagent_containers/food/snacks/tgmc_mre_component

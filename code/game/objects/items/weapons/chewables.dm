@@ -178,20 +178,21 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/fancy/chewables/tobacco/nico/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
+
+/obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(contents_count(src) >= 1)
-			. += "chew_nico[contents.len]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("chew_nico[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
+	set_open(TRUE)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
@@ -199,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE
 	..()
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else

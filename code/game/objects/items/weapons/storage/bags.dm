@@ -54,16 +54,17 @@
 CAPABILITIES(/obj/item/storage/bag/trash, \
 	configure(storage(refuses = list(/obj/item/disk/nuclear))))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/bag/trash/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) == 0)
-		icon_state = "trashbag0"
-	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 9)
-		icon_state = "trashbag1"
-	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 18)
-		icon_state = "trashbag2"
-	else icon_state = "trashbag3"
+/obj/item/storage/bag/trash/draw(datum/look/look)
+	. = ..()
+	var/held = held_count()
+	if(held == 0)
+		look.state("trashbag0")
+	else if(held < 9)
+		look.state("trashbag1")
+	else if(held < 18)
+		look.state("trashbag2")
+	else
+		look.state("trashbag3")
 
 /obj/item/storage/bag/trash/holding
 	name = "trash bag of holding"
@@ -410,12 +411,12 @@ CAPABILITIES(/obj/item/storage/bag/detective, \
 CAPABILITIES(/obj/item/storage/bag/santabag, \
 	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/santabag, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/bag/santabag/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 10)
-		icon_state = "giftbag0"
-	else if(length(slot_contents(CONTAINER_SLOT_STORAGE)) < 25)
-		icon_state = "giftbag1"
+/obj/item/storage/bag/santabag/draw(datum/look/look)
+	. = ..()
+	var/held = held_count()
+	if(held < 10)
+		look.state("giftbag0")
+	else if(held < 25)
+		look.state("giftbag1")
 	else
-		icon_state = "giftbag2"
+		look.state("giftbag2")

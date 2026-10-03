@@ -139,3 +139,18 @@ overlay mark and a dismantle that deletes its cells are each caught by a test). 
 
 * A subtype's own `interface()` replaces the window it inherits (`present_interface()` answers the most specific declaration; the subtype says
   `without("ui_open")` so the inherited open op does not clash with its own). Test: `dq_p2_engine/a_subtype_window_replaces_the_inherited_one`.
+## Storage items (backpacks, bags, boxes, belts, pill bottles, toolboxes, lockboxes and the kits and cases around them)
+
+Pinned by `code/modules/unit_tests/dq_p2_storage_behaviour.dm` (written and green on the legacy code first; only its adapters changed, and the tests added with the bot assemblies and the looks were checked against the commit before the conversion).
+
+* **A crayon the box will not take says the general refusal.** The mime and rainbow crayons are `refuses` of the crayon box now (they are separate types), so they get "won't go in: it doesn't take that" instead of "too sad / too powerful to be contained in this box". The same check on the marker box was dead code (no mime or rainbow marker exists) and is gone.
+* **An ID without the access, on an unlocked lockbox, is refused ("Access denied") and not put in.** The old entry said "Access Denied" and then put the card in. A broken lock, a locked box and an energy blade behave as before (the blade still slices the lock and then goes in, now through `passes()`).
+* **The lockbox's lock is `lock()`.** `locked` is the capability's state `LOCK_LOCKED` (`lock_locked(box)`), `broken` stays a tracked var; an emag is `emag()` and its card pays a use and says the library's line besides the old "faint electrical spark" message. A PDA does not work a lockbox (`id_types` is the card only), and an alt-click on one opens it as before.
+* **Parachute packing says nothing at the start and nothing when it is given up.** The waits are the old ones (five seconds to pack, two and a half to unpack); the "You start to pack" and "You give up" messages went with `om_task_timed` (an op's wait has no start message and says one thing when it is cancelled). The finish messages are the old ones.
+* **A secure safe's service panel, memory reset and emag are ops.** The screwdriver and the multitool wait what the old tasks did (2 s and 10 s); the `om_busy` guard went with the task. The keypad is the same window (`SecureSafe`) and its `type` action is an op; the sparks, the shorted lock and the open light are drawn from tracked state.
+* **A pill bottle's label prompt asks "Enter a label for it:"** (the old prompt named the bottle). The rules for the text are the old ones.
+* **A box folds without checking that its user is within one tile** (it can only be used in hand, which is within reach).
+* **The belt sprite of a worn storage follows the slot changes**, not every `update_icon()`: `on_slot_changed()` tells the wearer.
+* **The 85 percent tray slip, the hand labeler's silence and the light replacer's refill are the same behaviours in new places** (`storage_balks()` of the tray, the labeler in the storage's `quiet` list, an op of the storage type).
+* **The bot assemblies (a toolbox with ten floor tiles, a first aid kit with a robot arm) are ops of their storage types** in `floorbot.dm` and `medbot.dm`: on an empty toolbox the tiles start the kit and on one with tools they go in like any item; a robot arm on a kit with things in it says to empty it first.
+* The old `cap_storage()` library, its tests and the `HOLDS_*` bits are deleted (nothing used them); the slot's hold constraint and `restrict_hold()` of a storage are the capability's.
