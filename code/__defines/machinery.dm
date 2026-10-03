@@ -190,6 +190,8 @@ if (!(DATUM.datum_flags & DF_ISPROCESSING)) {\
 /// The machine world service's cadence (code/game/machinery/machine_service.dm): gas wakes, the
 /// pump commit and the power step. Machine timing that used to read SSmachines.wait reads this.
 #define MACHINE_SERVICE_INTERVAL (2 SECONDS)
+/// The longest a brig door timer can be set, in deciseconds.
+#define MAX_TIMER 36000
 
 // GAS_DEPENDENCY_PRESSURE/TEMPERATURE/COMPOSITION and GAS_DEPENDENCY_OBSERVATION_STRIDE
 // are generated from the Rust constants in code/__defines/verdigris/_bindings.dm.

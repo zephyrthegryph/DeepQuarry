@@ -73,7 +73,6 @@
 		/obj/machinery/cryopod,
 		/obj/machinery/disposal,
 		/obj/machinery/dnaforensics,
-		/obj/machinery/door_timer,
 		/obj/machinery/drone_fabricator,
 		/obj/machinery/embedded_controller,
 		/obj/machinery/exonet_node,

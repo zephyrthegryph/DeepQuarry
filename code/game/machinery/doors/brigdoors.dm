@@ -2,7 +2,6 @@
 #define FONT_SIZE "5pt"
 #define FONT_COLOR "#09f"
 #define FONT_STYLE "Small Fonts"
-#define MAX_TIMER 36000
 
 #define PRESET_SHORT 1 MINUTES
 #define PRESET_MEDIUM 5 MINUTES
@@ -29,6 +28,8 @@
 	var/id = null     		// id of door it controls.
 	EXPIRY_DECLARE(activation_time)
 	var/timer_duration = 0
+	/// Counting down: true while the timer runs.
+	var/timing = FALSE
 
 	/// Brig closets sharing our id, found at LateInitialize (a relation view: they leave when they die).
 	var/list/obj/targets
@@ -39,19 +40,35 @@
 	maptext_height = 26
 	maptext_width = 32
 
-/// boolean, true/1 timer is on, false/0 means it's not timing
-OM_FIELD(/obj/machinery/door_timer, timing, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
+TRACKED(/obj/machinery/door_timer, timing)
+
+// ---- what a door timer is, declared ----
+//
+// It closes and locks the brig doors and closets of its cell for as long as it is set to, then lets them go, and counts down on its display. Its
+// window sets the time (to a number of seconds or a preset added on), starts and stops it and fires the cell's flashers, for whoever has access.
+
+MSG_DEF_SELF(door_timer/denied, "Access denied.")
+
+CAPABILITIES(/obj/machinery/door_timer, \
+	ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig), \
+	ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id)), \
+	ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id)), \
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(count_down)), when = nameof(timing)), \
+	interface("BrigTimer", title = "Door Timer"), \
+	op("time", ui_act("time", arg("time", int(0, MAX_TIMER))), then(PROC_REF(ui_time))), \
+	op("start", ui_act("start"), then(PROC_REF(ui_start))), \
+	op("stop", ui_act("stop"), then(PROC_REF(ui_stop))), \
+	op("flash", ui_act("flash"), then(PROC_REF(ui_flash))), \
+	op("preset", ui_act("preset", arg("preset", enum(list("short", "medium", "long")))), then(PROC_REF(ui_preset))), \
+	extend(TAG_UI, needs(req(PROC_REF(timer_access), because = MSG(door_timer/denied)))))
+
+/// Whoever has access works its window.
+/obj/machinery/door_timer/proc/timer_access(datum/act/op/A)
+	return allowed(A.actor) // ALLOW(reads): access is read when the button is pressed
 
 /obj/machinery/door_timer/Initialize(mapload)
 	..()
 	return INITIALIZE_HINT_LATELOAD
-
-/obj/machinery/door_timer/relations()
-	. = ..()
-	. += rel_many(nameof(targets))
-	. += rel_many(nameof(brig_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/window/brigdoor)
-	. += rel_many(nameof(brig_flashers), keyed = nameof(id), keyed_target = /obj/machinery/flasher)
 
 /obj/machinery/door_timer/LateInitialize()
 	// Brig closets are objects without a keyed index (outside this scope): still found by scan.
@@ -66,11 +83,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer
 // update the door_timer window and the icon
-/// Counts down (and redraws its display) while timing; otherwise it sleeps until timer_start(), or
-/// until power returns to a timing unit.
-/obj/machinery/door_timer/machine_step()
+/// Counts down (and redraws its display) while timing: when the time is up the doors open and the timer resets. A timer with no power waits.
+/obj/machinery/door_timer/proc/count_down(datum/act/A)
 	if(!operable())
-		return sleep_until_powered()
+		return
 	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
 		timer_end() // open doors, reset timer, clear status screen
 	update_icon()
@@ -137,19 +153,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/door_timer, MACHINE_PIPELINE, "timing")
 	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
 		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 
-/obj/machinery/door_timer/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/open_ui,
-	)
-	..()
-
-DECLARE_UI(/obj/machinery/door_timer, "BrigTimer")
-
-UI_DATA_REPLACE(/obj/machinery/door_timer, "timing:num", "merge:ui_data_obj_machinery_door_timer{time_left:unknown,max_time_left:num,flash_found:bool,flash_charging:bool,preset_short:unknown,preset_medium:unknown,preset_long:unknown}")
-
-/// The computed part of /obj/machinery/door_timer's window data (declared on its UI_DATA row).
-/obj/machinery/door_timer/proc/ui_data_obj_machinery_door_timer(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/// The computed part of the window data.
+/obj/machinery/door_timer/ui_data(datum/act/eval/A)
 	var/list/data = list()
+	data["timing"] = !!timing
 	data["time_left"] = time_left()
 	data["max_time_left"] = MAX_TIMER
 	data["flash_found"] = FALSE
@@ -164,50 +171,30 @@ UI_DATA_REPLACE(/obj/machinery/door_timer, "timing:num", "merge:ui_data_obj_mach
 			break
 	return data
 
-/obj/machinery/door_timer/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!allowed(ui.user))
-		to_chat(ui.user, span_warning("Access denied."))
-		return FALSE
-	return TRUE
+/// Sets the time, in seconds.
+/obj/machinery/door_timer/proc/ui_time(datum/act/op/A)
+	var/new_time = A.args["time"]
+	if(isnum(new_time) && new_time)
+		set_timer(new_time * 10)
+	return OP_OK
 
-UI_ACT(/obj/machinery/door_timer, "time", ui_act_time, UI_ARG_NUM("time"))
-UI_ACT_PROC(/obj/machinery/door_timer, ui_act_time)
-	. = TRUE
-	var/real_new_time = 0
-	var/new_time = params["time"]
-	if(isnum(new_time))
-		real_new_time = new_time
-	else
-		var/list/L = splittext(new_time, ":")
-		for(var/i in 1 to LAZYLEN(L))
-			real_new_time += text2num(L[i]) * (60 ** (LAZYLEN(L) - i))
-	if(real_new_time)
-		set_timer(real_new_time * 10)
-
-UI_ACT(/obj/machinery/door_timer, "start", ui_act_start)
-UI_ACT_PROC(/obj/machinery/door_timer, ui_act_start)
-	. = TRUE
+/obj/machinery/door_timer/proc/ui_start(datum/act/op/A)
 	timer_start()
+	return OP_OK
 
-UI_ACT(/obj/machinery/door_timer, "stop", ui_act_stop)
-UI_ACT_PROC(/obj/machinery/door_timer, ui_act_stop)
-	. = TRUE
+/obj/machinery/door_timer/proc/ui_stop(datum/act/op/A)
 	timer_end(forced = TRUE)
+	return OP_OK
 
-UI_ACT(/obj/machinery/door_timer, "flash", ui_act_flash)
-UI_ACT_PROC(/obj/machinery/door_timer, ui_act_flash)
-	. = TRUE
+/obj/machinery/door_timer/proc/ui_flash(datum/act/op/A)
 	for(var/obj/machinery/flasher/F as anything in brig_flashers)
 		F.flash()
+	return OP_OK
 
-UI_ACT(/obj/machinery/door_timer, "preset", ui_act_preset, UI_ARG_TEXT("preset"))
-UI_ACT_PROC(/obj/machinery/door_timer, ui_act_preset)
-	. = TRUE
-	var/preset = params["preset"]
+/// A preset is added to the time left.
+/obj/machinery/door_timer/proc/ui_preset(datum/act/op/A)
 	var/preset_time = time_left()
-	switch(preset)
+	switch(A.args["preset"])
 		if("short")
 			preset_time = PRESET_SHORT
 		if("medium")
@@ -217,6 +204,7 @@ UI_ACT_PROC(/obj/machinery/door_timer, ui_act_preset)
 	set_timer(timer_duration + preset_time)
 	if(timing)
 		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
+	return OP_OK
 
 //icon update function
 // if NOPOWER, display blank
@@ -294,8 +282,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/door_timer, TYPE_PROC_REF(/atom, appearan
 #undef FONT_COLOR
 #undef FONT_STYLE
 #undef CHARS_PER_LINE
-
-#undef MAX_TIMER
 
 #undef PRESET_SHORT
 #undef PRESET_MEDIUM

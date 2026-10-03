@@ -2342,6 +2342,82 @@
 	TEST_ASSERT_EQUAL(button.command, "open", "None leaves it as it is")
 
 // =====================================================================================================================
+// BRIG DOOR TIMERS
+// =====================================================================================================================
+
+/// A timer, a brig windoor and a cell closet of one id, at (2, 2), (1, 2) and (4, 2); the door is open.
+/datum/unit_test/dq_p2_door/proc/timer_setup(list/access)
+	var/obj/machinery/door/window/brigdoor/D = allocate(/obj/machinery/door/window/brigdoor, tile(1, 2))
+	D.id = "p2_cell"
+	p2_door_set_power(D, TRUE)
+	var/obj/machinery/door_timer/T = allocate(/obj/machinery/door_timer, tile(2, 2))
+	T.id = "p2_cell"
+	p2_door_set_power(T, TRUE)
+	if(access)
+		T.req_access = access
+	return list(T, D)
+
+/datum/unit_test/dq_p2_door/timer_closes_the_cell_then_lets_it_go
+
+/datum/unit_test/dq_p2_door/timer_closes_the_cell_then_lets_it_go/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/obj/machinery/door/window/brigdoor/D = set_up[2]
+	D.open()
+	test_time(2 SECONDS)
+	TEST_ASSERT(!D.density, "the cell door is open")
+	var/mob/living/carbon/human/H = make_person(list(ACCESS_BRIG), tile(3, 2))
+	var/datum/op_result/R1 = p2_door_ui(H, T, "time", list("time" = 6))
+	var/datum/op_result/R2 = p2_door_ui(H, T, "start")
+	test_time(2 SECONDS)
+	TEST_ASSERT(T.timing, "it is counting [R1?.outcome] [R1?.reason] [R2?.outcome] [R2?.reason] [T.timer_duration]")
+	TEST_ASSERT(D.density, "and the cell door is shut")
+	test_time(10 SECONDS)
+	TEST_ASSERT(!T.timing, "when the time is up it stops")
+	TEST_ASSERT(!D.density, "and lets the door go")
+
+/datum/unit_test/dq_p2_door/timer_stop_lets_it_go_early
+
+/datum/unit_test/dq_p2_door/timer_stop_lets_it_go_early/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/obj/machinery/door/window/brigdoor/D = set_up[2]
+	D.open()
+	test_time(2 SECONDS)
+	var/mob/living/carbon/human/H = make_person(list(ACCESS_BRIG), tile(3, 2))
+	p2_door_ui(H, T, "time", list("time" = 600))
+	p2_door_ui(H, T, "start")
+	test_time(2 SECONDS)
+	TEST_ASSERT(D.density, "shut")
+	p2_door_ui(H, T, "stop")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!T.timing, "stopped")
+	TEST_ASSERT(!D.density, "and the door is let go")
+
+/datum/unit_test/dq_p2_door/timer_window_wants_access
+
+/datum/unit_test/dq_p2_door/timer_window_wants_access/run_gate()
+	var/list/set_up = timer_setup(list(ACCESS_BRIG))
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/mob/living/carbon/human/stranger = make_person(null, tile(3, 2))
+	p2_door_ui(stranger, T, "time", list("time" = 60))
+	TEST_ASSERT_EQUAL(T.timer_duration, 0, "a stranger cannot set the time")
+	var/mob/living/carbon/human/guard = make_person(list(ACCESS_BRIG), tile(3, 3))
+	p2_door_ui(guard, T, "time", list("time" = 60))
+	TEST_ASSERT_EQUAL(T.timer_duration, 600, "a guard can")
+	p2_door_ui(guard, T, "preset", list("preset" = "short"))
+	TEST_ASSERT_EQUAL(T.timer_duration, 600 + 600, "a preset is added to the time")
+
+/datum/unit_test/dq_p2_door/timer_window_shows_what_it_counts
+
+/datum/unit_test/dq_p2_door/timer_window_shows_what_it_counts/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/list/data = T.ui_data(null)
+	TEST_ASSERT(!data["timing"], "not counting")
+	TEST_ASSERT_EQUAL(data["max_time_left"], MAX_TIMER, "with its longest time")
+
+// =====================================================================================================================
 // THE RECORDER
 // =====================================================================================================================
 
