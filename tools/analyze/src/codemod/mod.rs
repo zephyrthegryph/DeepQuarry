@@ -29,6 +29,7 @@
 
 pub mod helpers;
 pub mod keys;
+pub mod om_hook;
 pub mod own_decl;
 pub mod report;
 pub mod scan;
@@ -97,10 +98,14 @@ pub struct Need {
     pub origin: String,
 }
 
+#[derive(Default)]
 pub struct Rewrite {
     pub edits: Vec<Edit>,
     pub keys: Vec<KeyUse>,
     pub needs: Vec<Need>,
+    /// Keys of definitions elsewhere that must change with this site (a handler whose signature changes); the codemod's
+    /// `follow_edits()` turns the distinct keys of the kept sites into edits.
+    pub follows: Vec<String>,
 }
 
 pub enum Outcome {
@@ -111,7 +116,7 @@ pub enum Outcome {
 
 impl Outcome {
     pub fn edits(edits: Vec<Edit>) -> Outcome {
-        Outcome::Rewrite(Rewrite { edits, keys: Vec::new(), needs: Vec::new() })
+        Outcome::Rewrite(Rewrite { edits, ..Default::default() })
     }
 }
 
@@ -171,6 +176,10 @@ pub trait Codemod: Send + Sync {
         false
     }
     /// The edits that declare what the rewritten sites asked for, as (file, edits) in each file's own coordinates.
+    /// The edits for the definitions the kept sites asked to follow (`Rewrite::follows`), as (file, edits).
+    fn follow_edits(&self, _root: &Path, _tree: &Tree, _sem: &Sem, _prep: &(dyn Any + Send + Sync), _follows: &[String]) -> Vec<(String, Vec<Edit>)> {
+        Vec::new()
+    }
     fn declaration_edits(&self, _root: &Path, _tree: &Tree, _sem: &Sem, _prep: &(dyn Any + Send + Sync), _needs: &[Need]) -> Vec<(String, Vec<Edit>)> {
         Vec::new()
     }
@@ -367,6 +376,8 @@ pub struct RunResult {
     pub changes: Vec<FileChange>,
     /// Declarations inserted for the rewritten sites: (type, var) pairs.
     pub declared: Vec<Need>,
+    /// Definitions rewritten to follow the sites (handlers whose signature changed).
+    pub followed: usize,
 }
 
 impl RunResult {
@@ -429,6 +440,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
 
     let mut file_edits: BTreeMap<String, (String, Vec<Edit>, usize)> = BTreeMap::new();
     let mut needs: Vec<Need> = Vec::new();
+    let mut follows: Vec<String> = Vec::new();
     for rel in &files {
         let abs = root.join(rel);
         let Ok(bytes) = std::fs::read(&abs) else { continue };
@@ -451,7 +463,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
         let empty = Vec::new();
         let file_cands = by_file.get(rel.as_str()).unwrap_or(&empty);
         let mut pending: Vec<ResidueSite> = Vec::new();
-        let mut sites: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>)> = Vec::new();
+        let mut sites: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>, Vec<String>)> = Vec::new();
         let mut claimed: BTreeSet<usize> = BTreeSet::new();
         let mut matched: BTreeMap<usize, (&Cand, bool)> = BTreeMap::new();
         let mut ordered: Vec<&&Cand> = file_cands.iter().collect();
@@ -490,7 +502,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
             }
             let cx = Ctx { rel, line, text: &text, clean: &clean, node: &node, callee: &c.callee, owner: &c.owner, proc_name: &c.proc_name, stmt_level: *stmt, sem: &sem, prep: &*prep };
             match cm.rewrite(&cx) {
-                Outcome::Rewrite(r) => sites.push((*off, r.edits, r.keys, r.needs)),
+                Outcome::Rewrite(r) => sites.push((*off, r.edits, r.keys, r.needs, r.follows)),
                 Outcome::Residue(reason, _why) => pending.push(ResidueSite { file: rel.clone(), line, reason: reason.to_string(), text: snippet(&text, *off) }),
             }
         }
@@ -508,10 +520,10 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
             }
         }
         // Overlapping edits: keep the earlier site, the later one is residue.
-        sites.sort_by_key(|(off, _, _, _)| *off);
-        let mut kept: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>)> = Vec::new();
+        sites.sort_by_key(|(off, _, _, _, _)| *off);
+        let mut kept: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>, Vec<String>)> = Vec::new();
         let mut taken: Vec<(usize, usize)> = Vec::new();
-        for (off, edits, keys, needs) in sites {
+        for (off, edits, keys, needs, follows) in sites {
             let overlaps = edits.iter().any(|e| taken.iter().any(|(s, t)| if e.start == e.end { e.start > *s && e.start < *t } else { e.start < *t && e.end > *s }));
             if overlaps {
                 let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
@@ -521,29 +533,48 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
             for e in &edits {
                 taken.push((e.start, e.end));
             }
-            kept.push((off, edits, keys, needs));
+            kept.push((off, edits, keys, needs, follows));
         }
         if !selected {
             res.outside_filter += kept.len() + pending.len();
             // Residue and keys still count for the whole-tree report; only the edits are withheld.
             res.residue.extend(pending);
-            for (_, _, k, _) in kept {
+            for (_, _, k, _, _) in kept {
                 res.keys.extend(k);
             }
             continue;
         }
         res.residue.extend(pending);
         let mut all_edits: Vec<Edit> = Vec::new();
-        for (_, e, k, n) in &kept {
+        for (_, e, k, n, fo) in &kept {
             all_edits.extend(e.iter().cloned());
             res.keys.extend(k.iter().cloned());
             needs.extend(n.iter().cloned());
+            follows.extend(fo.iter().cloned());
         }
         res.rewrites += kept.len();
         if all_edits.is_empty() {
             continue;
         }
         file_edits.insert(rel.clone(), (text, all_edits, kept.len()));
+    }
+    follows.sort();
+    follows.dedup();
+    if !follows.is_empty() {
+        for (rel, edits) in cm.follow_edits(root, &tree, &sem, &*prep, &follows) {
+            if edits.is_empty() {
+                continue;
+            }
+            match file_edits.get_mut(&rel) {
+                Some(entry) => entry.1.extend(edits),
+                None => {
+                    if let Ok(text) = std::fs::read_to_string(root.join(&rel)) {
+                        file_edits.insert(rel, (text, edits, 0));
+                    }
+                }
+            }
+            res.followed += 1;
+        }
     }
     // The declarations the rewritten sites asked for: once per (type, var), in whichever file the type's block lives.
     needs.sort();

@@ -125,6 +125,11 @@ fn om_after_fixtures_and_gates() {
 }
 
 #[test]
+fn om_hook_fixtures_and_gates() {
+    check("om_hook");
+}
+
+#[test]
 fn own_set_fixtures_and_gates() {
     check("own_set");
 }
@@ -136,7 +141,7 @@ fn own_add_fixtures_and_gates() {
 
 #[test]
 fn every_registered_codemod_has_a_test_and_a_directory() {
-    let names: Vec<&str> = vec!["om_after", "own_add", "own_set"];
+    let names: Vec<&str> = vec!["om_after", "om_hook", "own_add", "own_set"];
     let reg: Vec<String> = codemod::registry().iter().map(|c| c.name().to_string()).collect();
     assert_eq!(reg, names, "a new codemod needs a #[test] in tests/codemods.rs that calls check(name)");
     for n in &reg {
