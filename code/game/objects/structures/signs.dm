@@ -47,30 +47,41 @@
 	ask_flags = ASK_HELD | ASK_CAPABLE
 
 /datum/om/prompt/choice/sign_direction/valid()
-	return isturf(answerer.loc) ? null : "not on a turf"
+	if(!isturf(answerer.loc))
+		return "not on a turf"
+	var/obj/item/sign/sign = receiver
+	return sign?.loc?.release_refusal(sign, answerer)
 
 /obj/item/sign/proc/direction_chosen(datum/om/prompt/choice/sign_direction/ask)
 	var/mob/user = ask.answerer
 	var/obj/item/tool = ask.subject
 	var/direction = ask.choice
-	if(direction == "Cancel") return
-	var/target_type = original_type || /obj/structure/sign
-	var/obj/structure/sign/S = new target_type(user.loc)
+	var/offset_x = 0
+	var/offset_y = 0
 	switch(direction)
 		if("North")
-			S.pixel_y = 32
+			offset_y = 32
 		if("East")
-			S.pixel_x = 32
+			offset_x = 32
 		if("South")
-			S.pixel_y = -32
+			offset_y = -32
 		if("West")
-			S.pixel_x = -32
-		else return
-	S.name = name
-	S.desc = desc
-	S.icon_state = sign_state
+			offset_x = -32
+		else
+			return
+	var/target_type = original_type || /obj/structure/sign
+	var/restored_name = name
+	var/restored_desc = desc
+	var/restored_state = sign_state
+	if(!consume(src, user))
+		return FALSE
+	var/obj/structure/sign/S = new target_type(user.loc)
+	S.pixel_x = offset_x
+	S.pixel_y = offset_y
+	S.name = restored_name
+	S.desc = restored_desc
+	S.icon_state = restored_state
 	to_chat(user, "You fasten \the [S] with your [tool].")
-	qdel(src)
 	return TRUE
 
 /obj/structure/sign/scenery/map

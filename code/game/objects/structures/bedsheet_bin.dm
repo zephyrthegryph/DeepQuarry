@@ -56,10 +56,14 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	return FALSE
 
 /obj/item/bedsheet/proc/attackby_timed_done(mob/user)
-	to_chat(user, span_notice("You cut [src] into pieces!"))
+	var/turf/T = drop_location()
+	var/message = span_notice("You cut [src] into pieces!")
+	if(!consume(src, user))
+		return FALSE
+	to_chat(user, message)
 	for(var/i in 1 to rand(2,5))
-		new /obj/item/reagent_containers/glass/rag(drop_location())
-	qdel(src)
+		new /obj/item/reagent_containers/glass/rag(T)
+	return TRUE
 
 /obj/item/bedsheet/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)
