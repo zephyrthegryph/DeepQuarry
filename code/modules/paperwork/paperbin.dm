@@ -97,8 +97,8 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 	if(!istype(i))
 		return INTERACTION_HANDLED_PASS
 
-	user.drop_item()
-	i.forceMove(src)
+	if(!own_bring_in(src, nameof(papers), i, null, user, TRUE, null, FALSE))
+		return INTERACTION_HANDLED_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
 	update_icon()
