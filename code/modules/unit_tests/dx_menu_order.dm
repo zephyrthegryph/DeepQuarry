@@ -55,6 +55,7 @@
 	H.set_use_stance(I_HELP)
 	var/list/golden = dx_menu_order_golden()
 	var/list/seen = list()
+	var/diffs = 0
 	var/capture = !length(golden)
 	var/obj/item/storage/box/crate = allocate(/obj/item/storage/box, T)
 	for(var/holder_type in dx_menu_order_holders())
@@ -95,17 +96,20 @@
 					continue
 				if(line)
 					seen[label] = line
-					TEST_ASSERT_EQUAL(line, golden[label], "[label]: the click and menu order is the one captured before the default precedence")
+					if(line != golden[label])
+						log_test("DXDIFF|[label]|[golden[label]]|[line]")
+						diffs++
 	if(capture)
 		TEST_FAIL("no golden table: captured the orders into the log (DXORDER lines)")
 		return
+	TEST_ASSERT_EQUAL(diffs, 0, "scenarios whose click or menu order changed (the DXDIFF lines of the log)")
 	TEST_ASSERT_EQUAL(length(seen), length(golden), "the same scenarios resolve to a non-empty order as when the table was captured")
 
 // ---- every type, statically ----
 
-/// The order of a type's own ops with every gate ignored (one target-side candidate per op at its tier, in declaration order), as the click
-/// sort puts them: a string of keys. Only types that carry an op the default precedence orders (a construction step or the storage fallback) or
-/// a relative priority are listed, so the table is the whole set the default can move.
+/// The order of a type's own ops with every gate ignored (one target-side candidate per binding at its op's tier, in declaration order), as the
+/// click sort puts them: a string of keys. Only types that carry something the default precedence orders (a construction step, the maintenance
+/// access, two item inputs where one is the narrower) or a relative priority are listed, so the table is the whole set the default can move.
 /proc/dx_menu_order_static(type)
 	var/datum/type_table/T = table_of_type(type)
 	if(!T)
@@ -116,15 +120,28 @@
 	var/interesting = FALSE
 	var/datum/op_resolution/S = new
 	S.ordered = list()
+	var/list/item_types = list()
 	var/seq = 0
 	for(var/datum/op_plan/P as anything in index.ordered)
-		if(findtext(P.key, "construction.") == 1 || P.key == "storage.put_in" || length(P.priority_rel))
+		var/key = P.key
+		if(findtext(key, "construction.") == 1 || findtext(key, "panel.") == 1 || findtext(key, "wires.") == 1 || key == "open_wires" || key == "storage.put_in" || length(P.priority_rel))
 			interesting = TRUE
-		var/datum/op_cand/C = new
-		C.oplan = P
-		C.tier = P.tier
-		C.seq = ++seq
-		S.ordered += C
+		for(var/datum/entry/part/bind/B as anything in P.bindings)
+			var/datum/op_cand/C = new
+			C.oplan = P
+			C.tier = P.tier
+			C.seq = ++seq
+			if("family" in C.vars)
+				C.vars["family"] = call("/proc/op_family_of")(key)
+			if(B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK)
+				var/item_type = B.args["type"]
+				if("item_type" in C.vars)
+					C.vars["item_type"] = item_type
+				for(var/other in item_types)
+					if(other != item_type && (ispath(other, item_type) || ispath(item_type, other)))
+						interesting = TRUE
+				item_types += item_type
+			S.ordered += C
 	if(!interesting)
 		return null
 	op_resolution_sort(S)
