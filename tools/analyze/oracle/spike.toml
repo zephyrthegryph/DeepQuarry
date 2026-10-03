@@ -18,7 +18,6 @@
 # 3 UI data procs (tgui_data): real windows, hand lists from reads.dm
 "/datum/round_status_panel ui"
 "/obj/machinery/computer/supplycomp ui"
-"/obj/machinery/vending ui"
 # 5 condition procs: area and light derive_*() (hand-written derived()), one should_run()
 "/area derive lights_nightshift"
 "/area derive lights_emergency_off"

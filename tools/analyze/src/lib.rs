@@ -7,6 +7,8 @@
 pub mod allow;
 pub mod baseline;
 pub mod cache;
+pub mod codemod;
+pub mod codemods;
 pub mod dm;
 pub mod frontend;
 pub mod incr;

@@ -28,6 +28,8 @@ USAGE
   analyze list                          The registered lints.
   analyze frontend-diff                 Compare the text scanner with the dreammaker parser.
   analyze gen [--check] [NAME...]       Write (or check) the generated DM under code/engine/_generated/.
+  analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
+      AST-aware rewriters (phase 2.5); `analyze codemod help`.
   analyze sem reads /type proc | oracle [--all]
                                         Semantic queries: a handler's reads; the reads spike oracle.
 
@@ -293,6 +295,7 @@ fn main() -> ExitCode {
         }
         "sem" => dq_analyze::sem::cli::run(&args.flags, &root),
         "gen" => dq_analyze::sem::cli::gen(&args.flags, &root),
+        "codemod" => dq_analyze::codemod::cli(&args.flags, &root),
         "fixture" => dq_analyze::sem::cli::fixture(&args.flags, &root),
         "frontend-diff" => {
             use dq_analyze::frontend::{self, Frontend};

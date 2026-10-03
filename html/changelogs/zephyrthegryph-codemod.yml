@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "analyze codemod: the phase 2.5 AST-aware rewriter (call spans from the dreammaker parse, span edits that keep comments and formatting, residue.json, key-collision report, revert record) with the first three codemods: om_after to after(), own_set to rel_set(), own_add to rel_add(). Nothing is applied tree-wide."
