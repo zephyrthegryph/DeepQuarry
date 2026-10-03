@@ -1,4 +1,4 @@
-/// Actual lamp shade installation must consume its original before enabling a refundable shade.
+/// A shade that cannot leave the hand is not installed (the allowed install and the screwdriver removal are dq_p2_lights/screwdriver_takes_the_shade_off_and_a_shade_goes_back_on).
 /datum/unit_test/interim_floor_lamp_sticky_shade/Run()
 	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
@@ -16,21 +16,4 @@
 	TEST_ASSERT_EQUAL(user.get_active_hand(), shade, "refused installation preserves exact original hand")
 	TEST_ASSERT_EQUAL(shade.loc, user, "refused installation preserves inventory containment")
 	remove_trait(shade, TRAIT_NODROP, "interim_floor_lamp_shade")
-	test_click(user, lamp, shade)
-	test_time(10 SECONDS)
-	TEST_ASSERT(QDELETED(shade), "allowed installation consumes exact original shade")
-	TEST_ASSERT_NULL(user.get_active_hand(), "allowed consumption clears actual source hand")
-	TEST_ASSERT_EQUAL(lamp.lamp_shade, 1, "one consumed original grants actual installed shade state")
-	var/obj/item/tool/screwdriver/tool = allocate(/obj/item/tool/screwdriver, T)
-	TEST_ASSERT(user.put_in_active_hand(tool), "the actor holds an actual screwdriver for shade removal")
-	var/refunds_before = length(contents_of(T, /obj/item/lampshade))
-	test_click(user, lamp, tool)
-	test_time(10 SECONDS)
-	TEST_ASSERT_EQUAL(lamp.lamp_shade, FALSE, "actual screwdriver removal clears installed shade state")
-	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/lampshade)), refunds_before + 1, "actual screwdriver removal refunds exactly one physical shade")
-	var/obj/item/lampshade/refund = locate_within(T, /obj/item/lampshade)
-	TEST_ASSERT_NOTNULL(refund, "actual removal creates a real surviving shade refund")
-	own(refund)
-	TEST_ASSERT(!QDELETED(refund) && refund != shade, "the refund is a real replacement for the consumed original")
-	TEST_ASSERT_EQUAL(user.get_active_hand(), tool, "actual removal preserves the actor's original screwdriver")
 	test_driver_end()
