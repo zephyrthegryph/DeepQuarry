@@ -788,6 +788,7 @@
 #include "interim_pda_sticky_pen.dm"
 #include "interim_clipboard_sticky_paper.dm"
 #include "interim_click_catcher_actor.dm"
+#include "interim_directional_shield_edge_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
