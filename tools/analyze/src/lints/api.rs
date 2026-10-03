@@ -6,9 +6,14 @@
 //! `scan_tree`. Unit tests are skipped by every rule except `field_write`. Findings are numbered
 //! in the CODE view's lines (the Python indexed the raw lines with them for ALLOW); kept as is.
 
-use rayon::prelude::*;
+use std::collections::{BTreeMap, HashMap};
+use std::sync::OnceLock;
 
-use crate::dm::field_write::FwlIndex;
+use serde::{Deserialize, Serialize};
+
+use crate::dm::field_write::{Fields, FwlIndex};
+use crate::dm::pylines::recorded_into;
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -164,6 +169,61 @@ fn emit(out: &mut Sink, f: &SourceFile, rule: &str, line: usize) {
     }
 }
 
+/// One file's part of the declared-field index (`FwlIndex::build` over that one file).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct FwFacts {
+    fields: Vec<(String, Vec<String>)>,
+    members: BTreeMap<String, BTreeMap<String, String>>,
+    globals: BTreeMap<String, String>,
+}
+
+fn fw_facts(f: &SourceFile) -> FwFacts {
+    let one = FwlIndex::build(&[f]);
+    FwFacts {
+        fields: one.fields,
+        members: one.members.into_iter().map(|(k, v)| (k, v.into_iter().collect())).collect(),
+        globals: one.globals.into_iter().collect(),
+    }
+}
+
+/// The tree-wide index: what `FwlIndex::build` makes of every file, merged in file order (field
+/// names in first-seen order, last writer wins for a member or a global).
+fn merge_index(facts: &[FwFacts]) -> FwlIndex {
+    let mut fields: Vec<(String, Vec<String>)> = Vec::new();
+    let mut at: HashMap<String, usize> = HashMap::new();
+    let mut members: HashMap<String, HashMap<String, String>> = HashMap::new();
+    let mut globals: HashMap<String, String> = HashMap::new();
+    for fa in facts {
+        for (name, types) in &fa.fields {
+            match at.get(name) {
+                Some(&i) => fields[i].1.extend(types.iter().cloned()),
+                None => {
+                    at.insert(name.clone(), fields.len());
+                    fields.push((name.clone(), types.clone()));
+                }
+            }
+        }
+        for (owner, vars) in &fa.members {
+            let slot = members.entry(owner.clone()).or_default();
+            for (name, ty) in vars {
+                slot.insert(name.clone(), ty.clone());
+            }
+        }
+        for (name, ty) in &fa.globals {
+            globals.insert(name.clone(), ty.clone());
+        }
+    }
+    FwlIndex { fields, members, globals }
+}
+
+fn sorted_members(index: &FwlIndex) -> BTreeMap<&String, BTreeMap<&String, &String>> {
+    index.members.iter().map(|(k, v)| (k, v.iter().collect())).collect()
+}
+
+fn sorted_globals(index: &FwlIndex) -> BTreeMap<&String, &String> {
+    index.globals.iter().collect()
+}
+
 struct Api {
     call_pats: Vec<(&'static str, Pat)>,
     vars_helpers: Pat,
@@ -283,16 +343,29 @@ impl Lint for Api {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        // field_write: every file, unit tests included.
-        let index = FwlIndex::get(cx.tree);
-        let fields = index.all_fields();
+        // field_write: every file, unit tests included. The global declared-field index is the merge
+        // of per-file facts (cached by content); one file's judgement is cached by (content, index).
+        let all = cx.all_files();
+        let facts = incr::facts("api-fw-facts", &all, fw_facts);
         let files = cx.files();
-        let found: Vec<Vec<usize>> = files.par_iter().map(|f| index.check(&fields, &f.code().text)).collect();
+        let index = merge_index(&facts);
+        let key = incr::ctx_key(&(&index.fields, sorted_members(&index), sorted_globals(&index)));
+        let fields: OnceLock<Fields> = OnceLock::new();
+        let found = recorded_into(out, || {
+            incr::keyed("api-fw-judge", key, &files, |f| {
+                let fields = fields.get_or_init(|| index.all_fields());
+                let mut kept: Vec<u32> = Vec::new();
+                for line in index.check(fields, &f.code().text) {
+                    if !crate::dm::sys::kept_recorded(f, line, "api") {
+                        kept.push(line as u32);
+                    }
+                }
+                kept
+            })
+        });
         for (f, lines) in files.iter().zip(found) {
             for line in lines {
-                if !out.allowed(f, line, "api") {
-                    out.site_in("field_write", &f.rel, line);
-                }
+                out.site_in("field_write", &f.rel, line as usize);
             }
         }
     }

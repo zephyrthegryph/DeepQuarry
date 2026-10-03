@@ -11,6 +11,9 @@
 
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -38,42 +41,78 @@ static META: Meta = Meta {
 
 struct CapBits;
 
-fn check(files: &[&SourceFile], registry: &[String], writers: &[String], write_exempt: &[String], out: &mut Sink) {
+/// What one line of a file contributes: a `#define CAP_x (1<<n)` and/or a raw `cap_state` write.
+#[derive(Serialize, Deserialize, PartialEq)]
+struct Ev {
+    line: u32,
+    define: Option<(String, u128)>,
+    raw_write: bool,
+}
+
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    events: Vec<Ev>,
+}
+
+/// One file's events. `writers` / `write_exempt` decide `raw_write`, a function of the file's path.
+fn facts_of(f: &SourceFile, writers: &[String], write_exempt: &[String]) -> Facts {
+    let rel = f.rel.as_str();
+    let mut events = Vec::new();
+    for (number, line) in f.raw().numbered() {
+        let mut define = None;
+        if let Some(m) = pat!(r"^\s*#define\s+(CAP_[A-Z0-9_]+)\s+\(1\s*<<\s*(\d+)\)").captures(line) {
+            let shift: u128 = m.s(2).parse().unwrap_or(u128::MAX);
+            define = Some((m.s(1).to_string(), shift));
+        }
+        let code = pat!(r#""[^"]*""#).replace_all(before_slashes(line), "\"\"");
+        let mut raw_write = false;
+        if pat!(r"\bcap_state\s*(\|=|&=|\^=|=(?!=))").is_match(&code) && !writers.iter().any(|w| w == rel) && !starts_with_any(rel, write_exempt) {
+            let var_line = pat!(r"^\s*var/").is_match(&code);
+            let tab_assign = pat!(r"^\t+cap_state\s*=").is_match(&code);
+            // `A or B and C` in the Python: `and` binds tighter.
+            let type_default = (var_line || (tab_assign && !code.contains('/'))) && pat!(r"^\tcap_state\s*=").is_match(&code);
+            // a type default (`cap_state = CAP_X` under a type) is configuration, not a write
+            raw_write = !type_default;
+        }
+        if define.is_some() || raw_write {
+            events.push(Ev { line: number as u32, define, raw_write });
+        }
+    }
+    Facts { events }
+}
+
+/// The findings, from every file's events in file order (the shared `seen` table is the only
+/// cross-file state).
+fn assemble(files: &[&SourceFile], facts: &[Facts], registry: &[String], out: &mut Sink) {
     let registry_path = registry.first().map(|s| s.as_str()).unwrap_or("");
     let mut seen: HashMap<u128, String> = HashMap::new();
-    for f in files {
+    for (f, fa) in files.iter().zip(facts) {
         let rel = f.rel.as_str();
-        for (number, line) in f.raw().numbered() {
-            if let Some(m) = pat!(r"^\s*#define\s+(CAP_[A-Z0-9_]+)\s+\(1\s*<<\s*(\d+)\)").captures(line) {
-                let name = m.s(1);
-                let shift: u128 = m.s(2).parse().unwrap_or(u128::MAX);
+        for ev in &fa.events {
+            let number = ev.line as usize;
+            if let Some((name, shift)) = &ev.define {
                 if rel != registry_path {
                     out.site_in_msg("outside_registry", rel, number, format!("{} is allocated outside {}", name, registry_path));
                 }
-                if shift >= 24 {
+                if *shift >= 24 {
                     out.site_in_msg("bit_range", rel, number, format!("{} uses bit {} (max 23)", name, shift));
                 }
-                if let Some(prev) = seen.get(&shift) {
+                if let Some(prev) = seen.get(shift) {
                     out.site_in_msg("bit_shared", rel, number, format!("{} shares bit {} with {}", name, shift, prev));
                 }
-                seen.insert(shift, name.to_string());
+                seen.insert(*shift, name.to_string());
             }
-            let code = pat!(r#""[^"]*""#).replace_all(before_slashes(line), "\"\"");
-            if pat!(r"\bcap_state\s*(\|=|&=|\^=|=(?!=))").is_match(&code)
-                && !writers.iter().any(|w| w == rel)
-                && !starts_with_any(rel, write_exempt)
-            {
-                let var_line = pat!(r"^\s*var/").is_match(&code);
-                let tab_assign = pat!(r"^\t+cap_state\s*=").is_match(&code);
-                // `A or B and C` in the Python: `and` binds tighter.
-                if (var_line || (tab_assign && !code.contains('/'))) && pat!(r"^\tcap_state\s*=").is_match(&code) {
-                    // a type default (`cap_state = CAP_X` under a type) is configuration, not a write
-                    continue;
-                }
+            if ev.raw_write {
                 out.site_in_msg("raw_write", rel, number, "write cap_state through cap_set()");
             }
         }
     }
+}
+
+/// Uncached check (the selftest's entry).
+fn check(files: &[&SourceFile], registry: &[String], writers: &[String], write_exempt: &[String], out: &mut Sink) {
+    let facts: Vec<Facts> = files.iter().map(|f| facts_of(f, writers, write_exempt)).collect();
+    assemble(files, &facts, registry, out);
 }
 
 impl Lint for CapBits {
@@ -83,7 +122,10 @@ impl Lint for CapBits {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
-        check(&files, cx.list("registry"), cx.list("writers"), cx.list("write_exempt_prefixes"), out);
+        let (writers, write_exempt) = (cx.list("writers"), cx.list("write_exempt_prefixes"));
+        let ctx = incr::ctx_key(&(writers, write_exempt));
+        let facts = incr::keyed("cap_bits-facts", ctx, &files, |f| facts_of(f, writers, write_exempt));
+        assemble(&files, &facts, cx.list("registry"), out);
         let n = out.sites.len();
         out.note(format!("cap_bits_lint: {} problem(s)", n));
     }

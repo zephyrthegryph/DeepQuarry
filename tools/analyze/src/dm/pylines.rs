@@ -62,6 +62,32 @@ pub fn allowed_in(out: &mut Sink, f: &SourceFile, lines: &[&str], number: usize,
     }
 }
 
+/// [`allowed_in`] for code that runs inside an `incr` closure: the use is recorded through
+/// `sys::replay_recorded` (the thread's recorded set) instead of into a `Sink`, so the cache captures
+/// it with the result and replays it on a hit.
+pub fn allowed_in_recorded(f: &SourceFile, lines: &[&str], number: usize, lint: &str) -> bool {
+    let mut sink = Sink::new();
+    let kept = allowed_in(&mut sink, f, lines, number, lint);
+    if !sink.allow_used.is_empty() {
+        crate::dm::sys::replay_recorded(sink.allow_used);
+    }
+    kept
+}
+
+/// Runs `run` (which may record ALLOW uses through `sys::kept_recorded` / [`allowed_in_recorded`],
+/// directly or through `incr` caches that replay them) and moves what it recorded into `out`.
+pub fn recorded_into<T>(out: &mut Sink, run: impl FnOnce() -> T) -> T {
+    let before = crate::dm::sys::take_recorded();
+    let result = run();
+    for u in crate::dm::sys::take_recorded() {
+        if !out.allow_used.contains(&u) {
+            out.allow_used.push(u);
+        }
+    }
+    crate::dm::sys::restore_recorded(before);
+    result
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

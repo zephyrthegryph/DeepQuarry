@@ -18,10 +18,14 @@
 //! Python iterates `glob.glob` order and this engine path-sorted order; they only differ for a
 //! duplicate definition, where "first one wins" could pick a different file.
 
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 
+use serde::{Deserialize, Serialize};
+
 use crate::baseline::{self, Mode};
+use crate::dm::pylines::recorded_into;
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -87,9 +91,6 @@ impl<V> OrderedMap<V> {
             self.map.insert(k.to_string(), v);
         }
     }
-    fn get(&self, k: &str) -> Option<&V> {
-        self.map.get(k)
-    }
     fn iter(&self) -> impl Iterator<Item = (&String, &V)> {
         self.order.iter().map(move |k| (k, &self.map[k]))
     }
@@ -97,7 +98,6 @@ impl<V> OrderedMap<V> {
 
 #[derive(Default, Clone)]
 struct Decl {
-    file: String,
     needs: Option<Vec<String>>,
     uses: Option<Vec<String>>,
     emits: Option<Vec<String>>,
@@ -174,70 +174,236 @@ impl<'g> Tarjan<'g> {
     }
 }
 
-struct Doc<'a> {
-    rel: &'a str,
-    f: &'a SourceFile,
-    code: Vec<&'a str>,
+/// One file's contribution to the cross-file index.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    /// `SUBSYSTEM_DEF(x)` / `SYSTEM_DEF(x)` names declared in the file, in order.
+    ss_defs: Vec<String>,
+    /// `GLOBAL_DATUM_INIT(x_service, /datum/world_service...)`: `(name, type)`.
+    service_defs: Vec<(String, String)>,
+    /// `/datum/system/x` type blocks (the whole path).
+    system_types: Vec<String>,
+    /// Every type block in the file (sorted, unique): the `known` set.
+    types: Vec<String>,
+    /// `needs` / `uses` / `emits` lists: `(type, kind 0/1/2, typepaths)`, in order.
+    entries: Vec<(String, u8, Vec<String>)>,
+    /// The proc names an `api.dm` defines (sorted, unique); empty for any other file.
+    api_procs: Vec<String>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
+    let mut fa = Facts::default();
+    let ss_def = crate::pat!(r"(?m)^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)");
+    let service_def = crate::pat!(r"(?m)^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)");
+    let system_type = crate::pat!(r"(?m)^/datum/system/(\w+)\s*$");
+    let raw = f.text();
+    for c in ss_def.captures_iter(raw) {
+        fa.ss_defs.push(c.s(1).to_string());
+    }
+    for c in service_def.captures_iter(raw) {
+        fa.service_defs.push((c.s(1).to_string(), c.s(2).to_string()));
+    }
+    for c in system_type.captures_iter(raw) {
+        fa.system_types.push(format!("/datum/system/{}", c.s(1)));
+    }
+
+    let typedef = crate::pat_match!(r"(/[\w/]+)\s*$");
+    let var_needs = crate::pat_match!(r"\s+(?:var/list/)?needs\s*=\s*list\(");
+    let var_uses = crate::pat_match!(r"\s+(?:var/list/)?uses\s*=\s*list\(");
+    let var_emits = crate::pat_match!(r"\s+(?:var/list/)?emits\s*=\s*list\(");
+    let code = f.code().lines_vec();
+    let mut types: BTreeSet<String> = BTreeSet::new();
+    let mut current: Option<String> = None;
+    for (number, line) in code.iter().enumerate() {
+        if let Some(m) = typedef.captures(line) {
+            let t = m.s(1).to_string();
+            types.insert(t.clone());
+            current = Some(t);
+            continue;
+        }
+        let Some(cur) = &current else { continue };
+        for (kind, pat) in [(0u8, var_needs), (1u8, var_uses), (2u8, var_emits)] {
+            if pat.is_match(line) {
+                fa.entries.push((cur.clone(), kind, list_arg(&code, number)));
+            }
+        }
+    }
+    fa.types = types.into_iter().collect();
+
+    if f.rel.ends_with("/api.dm") {
+        let api_proc = crate::pat!(r"(?m)^/[\w/]+/(?:proc/)?(\w+)\s*\(");
+        let procs: BTreeSet<String> = api_proc.captures_iter(&f.code().text).iter().map(|c| c.s(1).to_string()).collect();
+        fa.api_procs = procs.into_iter().collect();
+    }
+    fa
+}
+
+/// What the per-file judgement reads: the owners, the api procs, the `uses` / `emits` of systems.
+#[derive(Serialize)]
+struct Ctx {
+    ss_owner: Vec<(String, String)>,
+    service_owner: Vec<(String, String, String)>,
+    system_owner: Vec<(String, String)>,
+    api_procs: BTreeMap<String, Vec<String>>,
+    uses: BTreeMap<String, Option<Vec<String>>>,
+    emits: BTreeMap<String, Option<Vec<String>>>,
+}
+
+/// One file's findings: B1..B4 hits in line order, the systems it calls from outside, and its
+/// would-be B6 emits `(system index, line, event type)`.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct FileOut {
+    /// `(rule 0..=3 for B1..B4, line, key, text)`.
+    hits: Vec<(u8, u32, String, String)>,
+    called: Vec<String>,
+    b6: Vec<(u32, u32, String)>,
+}
+
+/// Lookup tables over [`Ctx`] (the judge's hot paths).
+struct Look<'a> {
+    ss: HashMap<&'a str, &'a str>,
+    services: HashMap<&'a str, (&'a str, &'a str)>,
+    systems: HashMap<&'a str, &'a str>,
+}
+
+fn judge(f: &SourceFile, ctx: &Ctx, look: &Look) -> FileOut {
+    let ss_access = crate::pat!(r"(?<![\w.])SS(\w+)\.(\w+)(\s*\()?");
+    let service_access = crate::pat!(r"(?<![\w.])GLOB\.(\w+_service)\.(\w+)(\s*\()?");
+    let system_access = crate::pat!(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?");
+    let proc_def = crate::pat_match!(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\(");
+    let emit = crate::pat!(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)");
+    let rel = f.rel.as_str();
+    let code = f.code().lines_vec();
+    let mut out = FileOut::default();
+    let mut called: BTreeSet<String> = BTreeSet::new();
+    for (i, line) in code.iter().enumerate() {
+        let number = i + 1;
+        if crate::dm::sys::kept_recorded(f, number, LINT) {
+            continue;
+        }
+        let where_ = format!("{}:{}: {}", rel, number, py_strip(f.raw().line(number)));
+        for m in ss_access.captures_iter(line) {
+            let Some(owner) = look.ss.get(m.s(1)) else { continue };
+            if inside(rel, owner) {
+                continue;
+            }
+            if !m.matched(3) {
+                out.hits.push((0, number as u32, format!("B1:{}:SS{}", rel, m.s(1)).replace(' ', "%20"), where_.clone()));
+            }
+        }
+        for m in service_access.captures_iter(line) {
+            let Some(own) = look.services.get(m.s(1)) else { continue };
+            if inside(rel, own.0) {
+                continue;
+            }
+            if !m.matched(3) {
+                out.hits.push((0, number as u32, format!("B1:{}:GLOB.{}", rel, m.s(1)).replace(' ', "%20"), where_.clone()));
+            }
+        }
+        for m in system_access.captures_iter(line) {
+            let (typ, member, is_call) = (m.s(1), m.s(2), m.matched(3));
+            let Some(owner) = look.systems.get(typ) else { continue };
+            if inside(rel, owner) {
+                continue;
+            }
+            called.insert(typ.to_string());
+            if !is_call {
+                out.hits.push((0, number as u32, format!("B1:{}:{}", rel, typ).replace(' ', "%20"), where_.clone()));
+            } else if !ctx.api_procs.get(typ).map(|s| s.iter().any(|p| p == member)).unwrap_or(false) {
+                out.hits.push((1, number as u32, format!("B2:{}:{}", rel, typ).replace(' ', "%20"), where_.clone()));
+            } else {
+                let caller = ctx.system_owner.iter().find(|(_, dir)| inside(rel, dir)).map(|(t, _)| t.clone());
+                if let Some(caller) = caller {
+                    let uses = ctx.uses.get(&caller).and_then(|u| u.as_ref());
+                    if !uses.map(|u| u.iter().any(|x| x == typ)).unwrap_or(false) {
+                        out.hits.push((3, number as u32, format!("B4:{}:{}", rel, typ).replace(' ', "%20"), where_.clone()));
+                    }
+                }
+            }
+        }
+        if let Some(m) = proc_def.captures(line) {
+            let (kind, name) = (m.s(1), m.s(2));
+            let owner: Option<String> = if kind == "controller/subsystem" {
+                look.ss.get(name).map(|s| s.to_string())
+            } else if kind == "world_service" {
+                let suffix = format!("/{}", name);
+                ctx.service_owner.iter().find(|(_, _, ty)| ty.ends_with(&suffix)).map(|(_, dir, _)| dir.clone())
+            } else {
+                // SYSTEM_DEF(x) declares /datum/system/x through a macro, like SUBSYSTEM_DEF(x).
+                // Python `a or b`: an empty-string owner folder falls through to b.
+                match look.ss.get(name) {
+                    Some(o) if !o.is_empty() => Some(o.to_string()),
+                    _ => look.systems.get(format!("/datum/system/{}", name).as_str()).map(|s| s.to_string()),
+                }
+            };
+            if let Some(owner) = owner {
+                if !inside(rel, &owner) {
+                    out.hits.push((2, number as u32, format!("B3:{}:{}", rel, name).replace(' ', "%20"), where_.clone()));
+                }
+            }
+        }
+    }
+    out.called = called.into_iter().collect();
+
+    // B6: emitted events are declared (once the system declares `emits`).
+    for (ti, (typ, owner_dir)) in ctx.system_owner.iter().enumerate() {
+        let Some(emits) = ctx.emits.get(typ).and_then(|e| e.as_ref()) else { continue };
+        if !inside(rel, owner_dir) {
+            continue;
+        }
+        for (i, line) in code.iter().enumerate() {
+            let number = i + 1;
+            for m in emit.captures_iter(line) {
+                if !emits.iter().any(|e| e == m.s(1)) && !crate::dm::sys::kept_recorded(f, number, LINT) {
+                    out.b6.push((ti as u32, number as u32, m.s(1).to_string()));
+                }
+            }
+        }
+    }
+    out
+}
+
+fn hit(out: &mut Sink, rule: &str, name: String, rel: &str, line: usize, text: String) {
+    let key = name.replace(' ', "%20");
+    out.site_keyed(rule, rel, line, text, key);
 }
 
 impl SystemBoundary {
     fn check(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
-        let docs: Vec<Doc> = files.iter().map(|f| Doc { rel: &f.rel, f, code: f.code().lines_vec() }).collect();
-        let by_rel: HashMap<&str, usize> = docs.iter().enumerate().map(|(i, d)| (d.rel, i)).collect();
+        let facts = incr::facts("system_boundary-facts", &files, facts_of);
+        let by_rel: HashMap<&str, usize> = files.iter().enumerate().map(|(i, f)| (f.rel.as_str(), i)).collect();
 
         // scan_owners
-        let ss_def = crate::pat!(r"(?m)^\s*(?:VERB_MANAGER_)?(?:SUBSYSTEM|SYSTEM)_DEF\((\w+)\)");
-        let service_def = crate::pat!(r"(?m)^\s*GLOBAL_DATUM_INIT\((\w+_service),\s*(/datum/world_service[\w/]*)");
-        let system_type = crate::pat!(r"(?m)^/datum/system/(\w+)\s*$");
         let mut ss_owner: OrderedMap<String> = OrderedMap::new();
         let mut service_owner: OrderedMap<(String, String)> = OrderedMap::new();
         let mut system_owner: OrderedMap<String> = OrderedMap::new();
-        for d in &docs {
-            let raw = d.f.text();
-            for c in ss_def.captures_iter(raw) {
-                ss_owner.setdefault(c.s(1), folder_of(d.rel).to_string());
-            }
-            for c in service_def.captures_iter(raw) {
-                service_owner.setdefault(c.s(1), (folder_of(d.rel).to_string(), c.s(2).to_string()));
-            }
-            for c in system_type.captures_iter(raw) {
-                system_owner.setdefault(&format!("/datum/system/{}", c.s(1)), folder_of(d.rel).to_string());
-            }
-        }
-
         // declarations
-        let typedef = crate::pat_match!(r"(/[\w/]+)\s*$");
-        let var_needs = crate::pat_match!(r"\s+(?:var/list/)?needs\s*=\s*list\(");
-        let var_uses = crate::pat_match!(r"\s+(?:var/list/)?uses\s*=\s*list\(");
-        let var_emits = crate::pat_match!(r"\s+(?:var/list/)?emits\s*=\s*list\(");
         let mut decl_order: Vec<String> = Vec::new();
         let mut decls: HashMap<String, Decl> = HashMap::new();
         let mut known: HashSet<String> = HashSet::new();
-        for d in &docs {
-            let mut current: Option<String> = None;
-            for (number, line) in d.code.iter().enumerate() {
-                if let Some(m) = typedef.captures(line) {
-                    let t = m.s(1).to_string();
-                    known.insert(t.clone());
-                    current = Some(t);
-                    continue;
+        for (f, fa) in files.iter().zip(&facts) {
+            let folder = folder_of(&f.rel);
+            for n in &fa.ss_defs {
+                ss_owner.setdefault(n, folder.to_string());
+            }
+            for (n, t) in &fa.service_defs {
+                service_owner.setdefault(n, (folder.to_string(), t.clone()));
+            }
+            for t in &fa.system_types {
+                system_owner.setdefault(t, folder.to_string());
+            }
+            known.extend(fa.types.iter().cloned());
+            for (cur, kind, arg) in &fa.entries {
+                if !decls.contains_key(cur) {
+                    decl_order.push(cur.clone());
+                    decls.insert(cur.clone(), Decl::default());
                 }
-                let Some(cur) = &current else { continue };
-                for (var, pat) in [("needs", var_needs), ("uses", var_uses), ("emits", var_emits)] {
-                    if pat.is_match(line) {
-                        if !decls.contains_key(cur) {
-                            decl_order.push(cur.clone());
-                            decls.insert(cur.clone(), Decl { file: d.rel.to_string(), ..Decl::default() });
-                        }
-                        let arg = list_arg(&d.code, number);
-                        let e = decls.get_mut(cur).unwrap();
-                        match var {
-                            "needs" => e.needs = Some(arg),
-                            "uses" => e.uses = Some(arg),
-                            _ => e.emits = Some(arg),
-                        }
-                    }
+                let e = decls.get_mut(cur).unwrap();
+                match kind {
+                    0 => e.needs = Some(arg.clone()),
+                    1 => e.uses = Some(arg.clone()),
+                    _ => e.emits = Some(arg.clone()),
                 }
             }
         }
@@ -248,99 +414,35 @@ impl SystemBoundary {
         }
 
         // api procs per system
-        let api_proc = crate::pat!(r"(?m)^/[\w/]+/(?:proc/)?(\w+)\s*\(");
-        let mut api_procs: HashMap<String, HashSet<String>> = HashMap::new();
+        let mut api_procs: BTreeMap<String, Vec<String>> = BTreeMap::new();
         for (typ, owner_dir) in system_owner.iter() {
-            let mut procs = HashSet::new();
-            if let Some(&i) = by_rel.get(format!("{}/api.dm", owner_dir).as_str()) {
-                let text = docs[i].code.join("\n");
-                for c in api_proc.captures_iter(&text) {
-                    procs.insert(c.s(1).to_string());
-                }
-            }
+            let procs = by_rel.get(format!("{}/api.dm", owner_dir).as_str()).map(|&i| facts[i].api_procs.clone()).unwrap_or_default();
             api_procs.insert(typ.clone(), procs);
         }
 
-        let mut system_called_from: HashMap<String, HashSet<String>> = HashMap::new();
-        let ss_access = crate::pat!(r"(?<![\w.])SS(\w+)\.(\w+)(\s*\()?");
-        let service_access = crate::pat!(r"(?<![\w.])GLOB\.(\w+_service)\.(\w+)(\s*\()?");
-        let system_access = crate::pat!(r"(?<![\w.])system\(\s*(/datum/system/\w+)\s*\)\.(\w+)(\s*\()?");
-        let proc_def = crate::pat_match!(r"/datum/(controller/subsystem|world_service|system)/(\w+)/(?:proc/)?(\w+)\s*\(");
-
-        let hit = |out: &mut Sink, rule: &str, name: String, rel: &str, line: usize, text: String| {
-            let key = name.replace(' ', "%20");
-            out.site_keyed(rule, rel, line, text, key);
+        let ctx = Ctx {
+            ss_owner: ss_owner.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+            service_owner: service_owner.iter().map(|(k, v)| (k.clone(), v.0.clone(), v.1.clone())).collect(),
+            system_owner: system_owner.iter().map(|(k, v)| (k.clone(), v.clone())).collect(),
+            api_procs,
+            uses: system_owner.iter().map(|(k, _)| (k.clone(), decls.get(k).and_then(|d| d.uses.clone()))).collect(),
+            emits: system_owner.iter().map(|(k, _)| (k.clone(), decls.get(k).and_then(|d| d.emits.clone()))).collect(),
         };
+        let look = Look {
+            ss: ctx.ss_owner.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect(),
+            services: ctx.service_owner.iter().map(|(k, d, t)| (k.as_str(), (d.as_str(), t.as_str()))).collect(),
+            systems: ctx.system_owner.iter().map(|(k, v)| (k.as_str(), v.as_str())).collect(),
+        };
+        let key = incr::ctx_key(&ctx);
+        let results = recorded_into(out, || incr::keyed("system_boundary-judge", key, &files, |f| judge(f, &ctx, &look)));
 
-        for d in &docs {
-            let rel = d.rel;
-            for (i, line) in d.code.iter().enumerate() {
-                let number = i + 1;
-                if out.allowed(d.f, number, LINT) {
-                    continue;
-                }
-                let where_ = format!("{}:{}: {}", rel, number, py_strip(d.f.raw().line(number)));
-                for m in ss_access.captures_iter(line) {
-                    let Some(owner) = ss_owner.get(m.s(1)) else { continue };
-                    if inside(rel, owner) {
-                        continue;
-                    }
-                    if !m.matched(3) {
-                        hit(out, "B1", format!("B1:{}:SS{}", rel, m.s(1)), rel, number, where_.clone());
-                    }
-                }
-                for m in service_access.captures_iter(line) {
-                    let Some(own) = service_owner.get(m.s(1)) else { continue };
-                    if inside(rel, &own.0) {
-                        continue;
-                    }
-                    if !m.matched(3) {
-                        hit(out, "B1", format!("B1:{}:GLOB.{}", rel, m.s(1)), rel, number, where_.clone());
-                    }
-                }
-                for m in system_access.captures_iter(line) {
-                    let (typ, member, is_call) = (m.s(1), m.s(2), m.matched(3));
-                    let Some(owner) = system_owner.get(typ) else { continue };
-                    if inside(rel, owner) {
-                        continue;
-                    }
-                    system_called_from.entry(typ.to_string()).or_default().insert(rel.to_string());
-                    if !is_call {
-                        hit(out, "B1", format!("B1:{}:{}", rel, typ), rel, number, where_.clone());
-                    } else if !api_procs.get(typ).map(|s| s.contains(member)).unwrap_or(false) {
-                        hit(out, "B2", format!("B2:{}:{}", rel, typ), rel, number, where_.clone());
-                    } else {
-                        let caller = system_owner.iter().find(|(_, dir)| inside(rel, dir)).map(|(t, _)| t.clone());
-                        if let Some(caller) = caller {
-                            let uses = decls.get(&caller).and_then(|d| d.uses.as_ref());
-                            if !uses.map(|u| u.iter().any(|x| x == typ)).unwrap_or(false) {
-                                hit(out, "B4", format!("B4:{}:{}", rel, typ), rel, number, where_.clone());
-                            }
-                        }
-                    }
-                }
-                if let Some(m) = proc_def.captures(line) {
-                    let (kind, name) = (m.s(1), m.s(2));
-                    let owner: Option<String> = if kind == "controller/subsystem" {
-                        ss_owner.get(name).cloned()
-                    } else if kind == "world_service" {
-                        let suffix = format!("/{}", name);
-                        service_owner.iter().find(|(_, o)| o.1.ends_with(&suffix)).map(|(_, o)| o.0.clone())
-                    } else {
-                        // SYSTEM_DEF(x) declares /datum/system/x through a macro, like SUBSYSTEM_DEF(x).
-                        // Python `a or b`: an empty-string owner folder falls through to b.
-                        match ss_owner.get(name) {
-                            Some(o) if !o.is_empty() => Some(o.clone()),
-                            _ => system_owner.get(&format!("/datum/system/{}", name)).cloned(),
-                        }
-                    };
-                    if let Some(owner) = owner {
-                        if !inside(rel, &owner) {
-                            hit(out, "B3", format!("B3:{}:{}", rel, name), rel, number, where_.clone());
-                        }
-                    }
-                }
+        let rule_names = ["B1", "B2", "B3", "B4"];
+        let mut system_called_from: HashSet<&str> = HashSet::new();
+        for (f, fo) in files.iter().zip(&results) {
+            for (rule, line, key, text) in &fo.hits {
+                out.site_keyed(rule_names[*rule as usize], &f.rel, *line as usize, text.clone(), key.clone());
             }
+            system_called_from.extend(fo.called.iter().map(|s| s.as_str()));
         }
 
         // B5: cycles in needs, and needs that name nothing.
@@ -383,19 +485,13 @@ impl SystemBoundary {
         }
 
         // B6: emitted events are declared (once the system declares `emits`).
-        let emit = crate::pat!(r"OM_EMIT\w*\(\s*(/datum/om/event/[\w/]+)");
-        for (typ, owner_dir) in system_owner.iter() {
-            let Some(emits) = decls.get(typ).and_then(|d| d.emits.as_ref()) else { continue };
-            for d in &docs {
-                if !inside(d.rel, owner_dir) {
-                    continue;
-                }
-                for (i, line) in d.code.iter().enumerate() {
-                    let number = i + 1;
-                    for m in emit.captures_iter(line) {
-                        if !emits.iter().any(|e| e == m.s(1)) && !out.allowed(d.f, number, LINT) {
-                            hit(out, "B6", format!("B6:{}:{}", d.rel, typ), d.rel, number, format!("{}:{} emits {}", d.rel, number, m.s(1)));
-                        }
+        let with_b6: Vec<(usize, &FileOut)> = results.iter().enumerate().filter(|(_, fo)| !fo.b6.is_empty()).collect();
+        for (ti, (typ, _)) in ctx.system_owner.iter().enumerate() {
+            for (fi, fo) in &with_b6 {
+                let rel = files[*fi].rel.as_str();
+                for (t, number, evt) in &fo.b6 {
+                    if *t as usize == ti {
+                        hit(out, "B6", format!("B6:{}:{}", rel, typ), rel, *number as usize, format!("{}:{} emits {}", rel, number, evt));
                     }
                 }
             }
@@ -404,7 +500,7 @@ impl SystemBoundary {
         // B7: api.dm iff other folders call the system.
         for (typ, owner_dir) in system_owner.iter() {
             let has_api = by_rel.contains_key(format!("{}/api.dm", owner_dir).as_str());
-            let called = system_called_from.get(typ).map(|s| !s.is_empty()).unwrap_or(false);
+            let called = system_called_from.contains(typ.as_str());
             if called != has_api {
                 let text = format!(
                     "{}: api.dm {} but {}",

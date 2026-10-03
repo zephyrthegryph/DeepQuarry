@@ -11,12 +11,13 @@
 //! yields one site per parameter (several sites on the proc head line); `$` in the dispatcher's
 //! raw regex keeps Python's "also before a trailing newline" meaning.
 
-use std::cell::RefCell;
+use std::cell::{OnceCell, RefCell};
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::rc::Rc;
-use std::sync::Arc;
+use serde::{Deserialize, Serialize};
 
-use crate::dm::dx::{enclosing_call, is_subtype, lineage, DxIndex, Proc};
+use crate::dm::dx::{enclosing_call, is_subtype, lineage, procs_in, Proc};
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::{Caps, Pat};
@@ -314,7 +315,7 @@ fn object_keys(body: &[char]) -> Option<Vec<String>> {
     Some(keys)
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 struct RawCall {
     line: usize,
     action: String,
@@ -470,7 +471,11 @@ impl<V> Om<V> {
 }
 
 struct Hosts {
-    idx: Arc<DxIndex>,
+    /// The procs the analysis reads by index: every `act_` proc, every global `cap_*` /
+    /// capabilities-directory proc and every `capabilities()` proc, in file order.
+    procs: Vec<Proc>,
+    /// Content hash of each of `procs`.
+    hashes: Vec<u128>,
     ids: HashMap<String, String>,
     legacy: HashSet<String>,
     /// host type -> {action key: proc index}
@@ -484,63 +489,172 @@ struct Hosts {
     actions_cache: RefCell<HashMap<String, Rc<HashMap<String, usize>>>>,
 }
 
+/// `(tgui_id by type, DECLARE_UI types)` of one file (the head of the old `Hosts::new`).
+fn host_scan(f: &SourceFile) -> (Vec<(String, String)>, Vec<String>) {
+    let mut ids = Vec::new();
+    let mut legacy = Vec::new();
+    let clean = f.clean();
+    let raw = f.raw();
+    let mut current: Option<String> = None;
+    for number in 1..=clean.num_lines() {
+        let code = clean.line(number);
+        if let Some(head) = pat!(r"^(/[\w/]+)\s*$").captures(py_rstrip(code)) {
+            current = Some(head.s(1).to_string());
+            continue;
+        }
+        if !code.is_empty() && !code.starts_with([' ', '\t']) {
+            current = None;
+            if let Some(l) = pat!(r"^\s*DECLARE_UI\w*\(\s*(/[\w/]+)").captures(code) {
+                legacy.push(l.s(1).to_string());
+            }
+            if let Some(l) = pat!(r#"^(/[\w/]+?)/tgui_id\s*=\s*"([^"\n]+)""#).captures(raw.line(number)) {
+                ids.push((l.s(1).to_string(), l.s(2).to_string()));
+            }
+            continue;
+        }
+        if let Some(cur) = &current {
+            if code.contains("tgui_id") {
+                if let Some(t) = pat!(r#"^\s+tgui_id\s*=\s*"([^"\n]+)""#).captures(raw.line(number)) {
+                    ids.push((cur.clone(), t.s(1).to_string()));
+                }
+            }
+        }
+    }
+    (ids, legacy)
+}
+
+/// A proc the analysis reads by index, as cached per file (`kind` 0: act_, 1: global constructor,
+/// 2: capabilities()). Constructors and capabilities() carry their sanitized body.
+#[derive(Serialize, Deserialize, Clone, PartialEq)]
+struct PInfo {
+    kind: u8,
+    line: u32,
+    path: String,
+    name: String,
+    params: Vec<String>,
+    body_start: u32,
+    body_len: u32,
+    hash: u128,
+    body: Option<String>,
+}
+
+/// One dm file's contribution: hosts, the procs read by index, the identity hash of every proc
+/// (`names`: name hash and content hash, in file order), and the lines an `ALLOW(ui_actions)` keeps.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct DmFacts {
+    ids: Vec<(String, String)>,
+    legacy: Vec<String>,
+    procs: Vec<PInfo>,
+    names: Vec<(u64, u128)>,
+    /// `(asked line, annotation line, reason code)`.
+    kept: Vec<(u32, u32, String)>,
+}
+
+fn name_hash(name: &str) -> u64 {
+    u64::from_le_bytes(blake3::hash(name.as_bytes()).as_bytes()[..8].try_into().unwrap())
+}
+
+fn dm_facts(f: &SourceFile) -> DmFacts {
+    let (ids, legacy) = host_scan(f);
+    let clean = f.clean();
+    let mut out = DmFacts { ids, legacy, ..DmFacts::default() };
+    for p in procs_in(f) {
+        let body: String = (0..p.body_len).map(|k| clean.line(p.body_start + k)).collect::<Vec<_>>().join("\n");
+        let mut h = blake3::Hasher::new();
+        let params = p.params.join("\u{1}");
+        for part in [p.path.as_str(), p.name.as_str(), params.as_str(), body.as_str()] {
+            h.update(part.as_bytes());
+            h.update(b"\0");
+        }
+        let hash = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
+        out.names.push((name_hash(&p.name), hash));
+        let kind = if p.name.starts_with("act_") && !p.is_global() {
+            Some(0u8)
+        } else if p.is_global() && (p.name.starts_with("cap_") || p.rel.starts_with(CAPS_DIR)) {
+            Some(1)
+        } else if p.name == "capabilities" && !p.is_global() {
+            Some(2)
+        } else {
+            None
+        };
+        if let Some(kind) = kind {
+            out.procs.push(PInfo {
+                kind,
+                line: p.line as u32,
+                path: p.path.clone(),
+                name: p.name.clone(),
+                params: p.params.clone(),
+                body_start: p.body_start as u32,
+                body_len: p.body_len as u32,
+                hash,
+                body: if kind > 0 { Some(body) } else { None },
+            });
+        }
+    }
+    if f.text().contains("ui_actions") {
+        for number in 1..=f.raw().num_lines() {
+            if let Some(k) = crate::allow::kept(f, number, "ui_actions") {
+                out.kept.push((number as u32, k.line as u32, k.code.unwrap_or_default()));
+            }
+        }
+    }
+    out
+}
+
 impl Hosts {
-    fn new(tree: &Tree, files: &[&SourceFile], idx: Arc<DxIndex>) -> Hosts {
-        let _ = tree;
+    fn new(files: &[&SourceFile], facts: &[DmFacts]) -> Hosts {
         let mut ids = HashMap::new();
         let mut legacy = HashSet::new();
-        for f in files {
-            let clean = f.clean();
-            let raw = f.raw();
-            let mut current: Option<String> = None;
-            for number in 1..=clean.num_lines() {
-                let code = clean.line(number);
-                if let Some(head) = pat!(r"^(/[\w/]+)\s*$").captures(py_rstrip(code)) {
-                    current = Some(head.s(1).to_string());
-                    continue;
-                }
-                if !code.is_empty() && !code.starts_with([' ', '\t']) {
-                    current = None;
-                    if let Some(l) = pat!(r"^\s*DECLARE_UI\w*\(\s*(/[\w/]+)").captures(code) {
-                        legacy.insert(l.s(1).to_string());
-                    }
-                    if let Some(l) = pat!(r#"^(/[\w/]+?)/tgui_id\s*=\s*"([^"\n]+)""#).captures(raw.line(number)) {
-                        ids.insert(l.s(1).to_string(), l.s(2).to_string());
-                    }
-                    continue;
-                }
-                if let Some(cur) = &current {
-                    if code.contains("tgui_id") {
-                        if let Some(t) = pat!(r#"^\s+tgui_id\s*=\s*"([^"\n]+)""#).captures(raw.line(number)) {
-                            ids.insert(cur.clone(), t.s(1).to_string());
-                        }
-                    }
-                }
+        let mut procs: Vec<Proc> = Vec::new();
+        let mut kinds: Vec<(u8, Option<String>)> = Vec::new();
+        let mut hashes: Vec<u128> = Vec::new();
+        for (f, fa) in files.iter().zip(facts) {
+            for (t, id) in &fa.ids {
+                ids.insert(t.clone(), id.clone());
+            }
+            legacy.extend(fa.legacy.iter().cloned());
+            for p in &fa.procs {
+                procs.push(Proc {
+                    rel: f.rel.clone(),
+                    line: p.line as usize,
+                    path: p.path.clone(),
+                    name: p.name.clone(),
+                    params: p.params.clone(),
+                    body_start: p.body_start as usize,
+                    body_len: p.body_len as usize,
+                });
+                kinds.push((p.kind, p.body.clone()));
+                hashes.push(p.hash);
             }
         }
         let mut acts: Om<Om<usize>> = Om::new();
         let mut cap_acts: Om<Om<usize>> = Om::new();
         let mut ctor_bodies = HashMap::new();
         let mut caps_bodies: Om<Vec<String>> = Om::new();
-        // `Om<Vec<String>>` needs a Default for entry_or_new; do it by hand.
-        for (n, proc) in idx.procs.iter().enumerate() {
-            if proc.name.starts_with("act_") && !proc.is_global() {
-                let table = if is_subtype(&proc.path, CAP_ROOT) { &mut cap_acts } else { &mut acts };
-                if table.is_empty_at(&proc.path) {
-                    table.insert(&proc.path, Om::new());
+        for (n, proc) in procs.iter().enumerate() {
+            let (kind, body) = &kinds[n];
+            match kind {
+                0 => {
+                    let table = if is_subtype(&proc.path, CAP_ROOT) { &mut cap_acts } else { &mut acts };
+                    if table.is_empty_at(&proc.path) {
+                        table.insert(&proc.path, Om::new());
+                    }
+                    table.map.get_mut(&proc.path).unwrap().insert(&proc.name[4..], n);
                 }
-                table.map.get_mut(&proc.path).unwrap().insert(&proc.name[4..], n);
-            } else if proc.is_global() && (proc.name.starts_with("cap_") || proc.rel.starts_with(CAPS_DIR)) {
-                ctor_bodies.insert(proc.name.clone(), body_text(&idx, proc, files));
-            } else if proc.name == "capabilities" && !proc.is_global() {
-                if caps_bodies.is_empty_at(&proc.path) {
-                    caps_bodies.insert(&proc.path, Vec::new());
+                1 => {
+                    ctor_bodies.insert(proc.name.clone(), body.clone().unwrap_or_default());
                 }
-                caps_bodies.map.get_mut(&proc.path).unwrap().push(body_text(&idx, proc, files));
+                _ => {
+                    if caps_bodies.is_empty_at(&proc.path) {
+                        caps_bodies.insert(&proc.path, Vec::new());
+                    }
+                    caps_bodies.map.get_mut(&proc.path).unwrap().push(body.clone().unwrap_or_default());
+                }
             }
         }
         let mut hosts = Hosts {
-            idx,
+            procs,
+            hashes,
             ids,
             legacy,
             acts,
@@ -700,18 +814,6 @@ impl Hosts {
     }
 }
 
-/// The sanitized body lines of `proc`, joined with newlines (`"\n".join(proc.body)`).
-fn body_text(idx: &DxIndex, proc: &Proc, files: &[&SourceFile]) -> String {
-    let _ = idx;
-    match files.iter().find(|f| f.rel == proc.rel) {
-        Some(f) => {
-            let clean = f.clean();
-            (0..proc.body_len).map(|k| clean.line(proc.body_start + k)).collect::<Vec<_>>().join("\n")
-        }
-        None => String::new(),
-    }
-}
-
 // ---- analysis ---------------------------------------------------------------------------------
 
 struct Analysis<'a> {
@@ -720,11 +822,131 @@ struct Analysis<'a> {
     norm: &'a Normaliser,
     acts: &'a Acts,
     pats: RefCell<HashMap<String, Rc<Pat>>>,
+    helpers: &'a Helpers<'a>,
+    c2: Option<&'a C2Cache>,
+}
+
+/// Every proc of a given name, loaded on demand from the (few) files that define one; the names a
+/// root evaluation asked for are recorded as its dependencies.
+struct Helpers<'a> {
+    tree: &'a Tree,
+    files: &'a [&'a SourceFile],
+    facts: &'a [DmFacts],
+    by_name: OnceCell<HashMap<u64, Vec<usize>>>,
+    loaded: RefCell<HashMap<String, Rc<Vec<Proc>>>>,
+    touched: RefCell<BTreeSet<u64>>,
+}
+
+impl<'a> Helpers<'a> {
+    fn new(tree: &'a Tree, files: &'a [&'a SourceFile], facts: &'a [DmFacts]) -> Helpers<'a> {
+        Helpers { tree, files, facts, by_name: OnceCell::new(), loaded: RefCell::new(HashMap::new()), touched: RefCell::new(BTreeSet::new()) }
+    }
+
+    fn begin(&self) {
+        self.touched.borrow_mut().clear();
+    }
+
+    fn end(&self) -> Vec<u64> {
+        self.touched.borrow().iter().copied().collect()
+    }
+
+    /// `procs_named(name)`: file order, then the file's own order.
+    fn named(&self, name: &str) -> Rc<Vec<Proc>> {
+        let nh = name_hash(name);
+        self.touched.borrow_mut().insert(nh);
+        if let Some(v) = self.loaded.borrow().get(name) {
+            return v.clone();
+        }
+        let by_name = self.by_name.get_or_init(|| {
+            let mut m: HashMap<u64, Vec<usize>> = HashMap::new();
+            for (i, fa) in self.facts.iter().enumerate() {
+                for (h, _) in &fa.names {
+                    let e = m.entry(*h).or_default();
+                    if e.last() != Some(&i) {
+                        e.push(i);
+                    }
+                }
+            }
+            m
+        });
+        let mut out: Vec<Proc> = Vec::new();
+        for &i in by_name.get(&nh).map(|v| v.as_slice()).unwrap_or(&[]) {
+            let rel = &self.files[i].rel;
+            if let Some(f) = self.tree.get(rel) {
+                out.extend(procs_in(f).into_iter().filter(|p| p.name == name));
+            }
+        }
+        let rc = Rc::new(out);
+        self.loaded.borrow_mut().insert(name.to_string(), rc.clone());
+        rc
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone)]
+struct C2Entry {
+    deps: Vec<(u64, u128)>,
+    off: Option<u32>,
+}
+
+/// The persistent C2 answers (`old`), the group hashes that validate them, and what this run used.
+struct C2Cache {
+    old: HashMap<u128, C2Entry>,
+    groups: HashMap<u64, u128>,
+    used: RefCell<HashMap<u128, C2Entry>>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct C2File {
+    stamp: String,
+    map: HashMap<u128, C2Entry>,
+}
+
+fn c2_path() -> Option<std::path::PathBuf> {
+    incr::dir().map(|d| d.join("incr-ui_actions-c2.bin"))
+}
+
+fn c2_load() -> HashMap<u128, C2Entry> {
+    let (Some(path), Some(stamp)) = (c2_path(), incr::stamp()) else { return HashMap::new() };
+    match std::fs::read(&path).ok().and_then(|b| bincode::deserialize::<C2File>(&b).ok()) {
+        Some(f) if f.stamp == stamp => f.map,
+        _ => HashMap::new(),
+    }
+}
+
+fn c2_save(old_len: usize, cache: &C2Cache) {
+    let (Some(path), Some(stamp)) = (c2_path(), incr::stamp()) else { return };
+    let used = cache.used.borrow();
+    let unchanged = used.len() == old_len && used.keys().all(|k| cache.old.contains_key(k));
+    if unchanged {
+        return;
+    }
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    if let Ok(bytes) = bincode::serialize(&C2File { stamp, map: used.clone() }) {
+        let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+        if std::fs::write(&tmp, &bytes).is_ok() {
+            let _ = std::fs::rename(&tmp, &path);
+        } else {
+            let _ = std::fs::remove_file(&tmp);
+        }
+    }
+}
+
+/// Group hash per proc name: every proc of that name folded in file order.
+fn group_hashes(facts: &[DmFacts]) -> HashMap<u64, u128> {
+    let mut g: HashMap<u64, u128> = HashMap::new();
+    for fa in facts {
+        for (nh, ph) in &fa.names {
+            g.entry(*nh).and_modify(|h| *h = (h.rotate_left(17) ^ ph).wrapping_mul(0x9E37_79B9_7F4A_7C15_F39C_C060_5CED_C835)).or_insert(*ph);
+        }
+    }
+    g
 }
 
 impl<'a> Analysis<'a> {
     fn proc(&self, n: usize) -> &Proc {
-        &self.hosts.idx.procs[n]
+        &self.hosts.procs[n]
     }
 
     /// The hard failures: `(rel, line, message)` for act() calls that don't match the act_ procs
@@ -860,10 +1082,11 @@ impl<'a> Analysis<'a> {
         g.entry(param.to_string()).or_insert_with(|| Rc::new(Pat::new(&format!(r"(?<![\w./:]){}\b", regex::escape(param))))).clone()
     }
 
-    fn find_proc(&self, path: &str, name: &str) -> Option<&Proc> {
+    fn find_proc(&self, path: &str, name: &str) -> Option<Proc> {
         let chain = lineage(path);
-        let mut best: Option<(i64, &Proc)> = None;
-        for proc in self.hosts.idx.procs_named(name) {
+        let mut best: Option<(i64, usize)> = None;
+        let named = self.helpers.named(name);
+        for (i, proc) in named.iter().enumerate() {
             if proc.is_global() || chain.contains(&proc.path) {
                 let rank = if proc.is_global() {
                     -1
@@ -871,11 +1094,11 @@ impl<'a> Analysis<'a> {
                     chain.len() as i64 - chain.iter().position(|c| *c == proc.path).unwrap() as i64
                 };
                 if best.map(|b| rank > b.0).unwrap_or(true) {
-                    best = Some((rank, proc));
+                    best = Some((rank, i));
                 }
             }
         }
-        best.map(|b| b.1)
+        best.map(|b| named[b.1].clone())
     }
 
     /// `first_bad_use`: None when param's first real use validates it, else the offending line.
@@ -918,7 +1141,7 @@ impl<'a> Analysis<'a> {
                                     None => helper.params.get(call.index),
                                 };
                                 if let Some(target) = target {
-                                    if helper.params.contains(target) && self.first_bad_use(helper, target, depth + 1).is_none() {
+                                    if helper.params.contains(target) && self.first_bad_use(&helper, target, depth + 1).is_none() {
                                         return None;
                                     }
                                 }
@@ -932,6 +1155,27 @@ impl<'a> Analysis<'a> {
         None
     }
 
+    /// `first_bad_use(proc, param, 0)` through the persistent cache: an entry is the answer plus the
+    /// proc-name groups the evaluation looked up (helpers), valid while the root proc and each such
+    /// group (every proc of that name, in file order) hash the same.
+    fn cached_bad_use(&self, n: usize, proc: &Proc, param: &str) -> Option<usize> {
+        let Some(cache) = &self.c2 else { return self.first_bad_use(proc, param, 0) };
+        let root = self.hosts.hashes[n];
+        let key = incr::mix(&[root, incr::ctx_key(param)]);
+        if let Some(e) = cache.old.get(&key) {
+            if e.deps.iter().all(|(nh, gh)| cache.groups.get(nh).copied().unwrap_or(0) == *gh) {
+                cache.used.borrow_mut().insert(key, e.clone());
+                return e.off.map(|o| proc.body_start + o as usize);
+            }
+        }
+        self.helpers.begin();
+        let got = self.first_bad_use(proc, param, 0);
+        let deps: Vec<(u64, u128)> = self.helpers.end().into_iter().map(|nh| (nh, cache.groups.get(&nh).copied().unwrap_or(0))).collect();
+        let off = got.map(|l| (l - proc.body_start) as u32);
+        cache.used.borrow_mut().insert(key, C2Entry { deps, off });
+        got
+    }
+
     /// C2: `(proc, param, line)`.
     fn unvalidated_params(&self, procs: &[usize]) -> Vec<(usize, String, usize)> {
         let mut out = Vec::new();
@@ -941,7 +1185,7 @@ impl<'a> Analysis<'a> {
                 if self.norm.reserved.contains(param) {
                     continue;
                 }
-                if let Some(bad) = self.first_bad_use(proc, param, 0) {
+                if let Some(bad) = self.cached_bad_use(n, proc, param) {
                     out.push((n, param.clone(), bad));
                 }
             }
@@ -970,6 +1214,11 @@ impl<'a> Analysis<'a> {
     }
 }
 
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct TsxFacts {
+    calls: Vec<RawCall>,
+}
+
 struct UiActions;
 
 impl Lint for UiActions {
@@ -989,21 +1238,47 @@ impl Lint for UiActions {
                 return;
             }
         };
-        let mut tsx: Vec<(String, Vec<Call>)> = Vec::new();
-        for f in &files {
-            if matches!(f.ext(), "tsx" | "ts" | "jsx" | "js") && !f.rel.ends_with(".d.ts") {
-                let calls = tsx_calls(f.text()).iter().map(|c| Call::new(&f.rel, c, &norm)).collect();
-                tsx.push((f.rel.clone(), calls));
-            }
-        }
+        // TSX act() calls: per file, cached by content.
+        let tsx_files: Vec<&SourceFile> =
+            files.iter().copied().filter(|f| matches!(f.ext(), "tsx" | "ts" | "jsx" | "js") && !f.rel.ends_with(".d.ts")).collect();
+        let tsx_facts = incr::facts("ui_actions-tsx", &tsx_files, |f| TsxFacts { calls: tsx_calls(f.text()) });
+        let tsx: Vec<(String, Vec<Call>)> = tsx_files
+            .iter()
+            .zip(&tsx_facts)
+            .map(|(f, fa)| (f.rel.clone(), fa.calls.iter().map(|c| Call::new(&f.rel, c, &norm)).collect()))
+            .collect();
         let acts = Acts::real(tsx);
-        let idx = DxIndex::get(cx.tree, &dm);
-        let hosts = Hosts::new(cx.tree, &dm, idx);
-        let an = Analysis { tree: cx.tree, hosts: &hosts, norm: &norm, acts: &acts, pats: RefCell::new(HashMap::new()) };
-        let (unsent, unvalidated) = an.dx_sites(&mut |rel, line| match cx.tree.get(rel) {
-            Some(f) => out.allowed(f, line, "ui_actions"),
-            None => false,
+        // DM hosts and procs: per file, cached by content.
+        let facts = incr::facts("ui_actions-dm", &dm, dm_facts);
+        let hosts = Hosts::new(&dm, &facts);
+        let helpers = Helpers::new(cx.tree, &dm, &facts);
+        let old = c2_load();
+        let old_len = old.len();
+        let c2 = C2Cache { old, groups: group_hashes(&facts), used: RefCell::new(HashMap::new()) };
+        let an = Analysis {
+            tree: cx.tree,
+            hosts: &hosts,
+            norm: &norm,
+            acts: &acts,
+            pats: RefCell::new(HashMap::new()),
+            helpers: &helpers,
+            c2: Some(&c2),
+        };
+        let by_rel: HashMap<&str, usize> = dm.iter().enumerate().map(|(i, f)| (f.rel.as_str(), i)).collect();
+        let (unsent, unvalidated) = an.dx_sites(&mut |rel, line| {
+            let Some(&i) = by_rel.get(rel) else { return false };
+            match facts[i].kept.iter().find(|k| k.0 as usize == line) {
+                Some((_, at, code)) => {
+                    let u = crate::lint::AllowUse { rel: rel.to_string(), line: *at, name: "ui_actions".to_string(), code: code.clone() };
+                    if !out.allow_used.contains(&u) {
+                        out.allow_used.push(u);
+                    }
+                    true
+                }
+                None => false,
+            }
         });
+        c2_save(old_len, &c2);
         let problems = an.check();
         for (rel, line) in unsent {
             out.site_in(R_UNSENT, &rel, line);
@@ -1168,14 +1443,15 @@ fn selftest() -> Result<(), String> {
     let caps_rel = format!("{}library/fixture.dm", CAPS_DIR);
     let tree = Tree::from_files(vec![SourceFile::from_text("x.dm", DM_FIXTURE), SourceFile::from_text(&caps_rel, BUNDLE_FIXTURE)]);
     let files: Vec<&SourceFile> = tree.files.iter().collect();
-    let idx = DxIndex::get(&tree, &files);
-    let hosts = Hosts::new(&tree, &files, idx);
+    let facts: Vec<DmFacts> = files.iter().map(|f| dm_facts(f)).collect();
+    let hosts = Hosts::new(&files, &facts);
+    let helpers = Helpers::new(&tree, &files, &facts);
     let table = vec![
         ("Thing".to_string(), calls.iter().map(|c| Call::new("x.tsx", c, &norm)).collect::<Vec<_>>()),
         ("Old".to_string(), vec![Call::new("o.tsx", &RawCall { line: 1, action: "nope".to_string(), keys: Some(vec![]) }, &norm)]),
     ];
     let acts = Acts::fixed(table);
-    let an = Analysis { tree: &tree, hosts: &hosts, norm: &norm, acts: &acts, pats: RefCell::new(HashMap::new()) };
+    let an = Analysis { tree: &tree, hosts: &hosts, norm: &norm, acts: &acts, pats: RefCell::new(HashMap::new()), helpers: &helpers, c2: None };
     let problems = an.check();
     let msgs: Vec<&str> = problems.iter().map(|p| p.2.as_str()).collect();
     ensure(problems.len() == 5, || format!("{:?}", msgs))?;

@@ -29,7 +29,6 @@ use std::fmt::Write as _;
 use std::path::Path;
 
 use md5::{Digest, Md5};
-use rayon::prelude::*;
 
 use crate::baseline::Mode;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink, Site};
@@ -281,21 +280,27 @@ impl Lint for CheckGrep {
         // the checks whose pattern is read from the generated bindings
         let dynamic = dynamic_parts(cx);
         if !dynamic.is_empty() {
+            // One file's findings depend on it and on the two bindings files the patterns are read from.
             let files = cx.all_files();
-            let sinks: Vec<Sink> = files
-                .par_iter()
-                .map(|f| {
+            let key = crate::incr::mix(&[
+                cx.tree.get(SEEDS_FILE).map(|f| f.fkey).unwrap_or(0),
+                cx.tree.get(BINDINGS_FILE).map(|f| f.fkey).unwrap_or(0),
+            ]);
+            let found = crate::dm::pylines::recorded_into(out, || {
+                crate::incr::keyed("check_grep-dyn", key, &files, |f| {
                     let mut s = Sink::new();
                     s.cur = f.rel.clone();
                     for c in &dynamic {
                         c.scan(cx, f, &mut s);
                     }
-                    s
+                    crate::dm::sys::replay_recorded(s.allow_used);
+                    s.sites.into_iter().map(|x| (x.rule, x.line, x.msg, x.key)).collect::<Vec<(String, u32, String, String)>>()
                 })
-                .collect();
-            for s in sinks {
-                out.sites.extend(s.sites);
-                out.allow_used.extend(s.allow_used);
+            });
+            for (f, sites) in files.iter().zip(found) {
+                for (rule, line, msg, key) in sites {
+                    out.sites.push(Site { rule, rel: f.rel.clone(), line, msg, key });
+                }
             }
         }
 

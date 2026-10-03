@@ -24,6 +24,10 @@
 use std::borrow::Cow;
 use std::collections::HashSet;
 
+use serde::{Deserialize, Serialize};
+
+use crate::incr;
+
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -49,6 +53,11 @@ static META: Meta = Meta {
     allow: &["pollers"],
     lists: &["step_exempt_prefixes"],
 };
+
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Steps {
+    steps: Vec<(u32, String)>,
+}
 
 struct Pollers;
 
@@ -130,23 +139,35 @@ impl Lint for Pollers {
         }
     }
 
-    /// `check_step_coverage`: every `machine_step()` type is under a type of the pipeline decl.
+    /// `check_step_coverage`: every `machine_step()` type is under a type of the pipeline decl. The
+    /// `machine_step()` heads of a file are cached by content; the check against the decl's roots is
+    /// a cheap merge.
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let roots = cx.tree.get(PIPELINE_FILE).and_then(|f| machine_pipeline_roots(f.text()));
         let Some(roots) = roots else {
             out.site_in_msg("step_coverage", PIPELINE_FILE, 1, "could not find /datum/om/decl/pipeline_machines in machine_pipeline.dm");
             return;
         };
-        for f in cx.all_files() {
+        let all = cx.all_files();
+        let heads = incr::facts("pollers-steps", &all, |f| {
+            let mut steps = Vec::new();
+            if f.text().contains("machine_step(") {
+                for (n, line) in f.raw().numbered() {
+                    if let Some(m) = pat_match!(r"^(/obj/machinery[\w/]*?)/machine_step\(").captures(line) {
+                        steps.push((n as u32, m.s(1).to_string()));
+                    }
+                }
+            }
+            Steps { steps }
+        });
+        for (f, fa) in all.iter().zip(&heads) {
             // Test probes join lazily through MACHINE_WAKE().
-            if starts_with_any(&f.rel, cx.list("step_exempt_prefixes")) || !f.text().contains("machine_step(") {
+            if fa.steps.is_empty() || starts_with_any(&f.rel, cx.list("step_exempt_prefixes")) {
                 continue;
             }
-            for (n, line) in f.raw().numbered() {
-                let Some(m) = pat_match!(r"^(/obj/machinery[\w/]*?)/machine_step\(").captures(line) else { continue };
-                let t = m.s(1);
+            for (n, t) in &fa.steps {
                 // The defaults, not work.
-                if matches!(t, "/obj/machinery" | "/obj/machinery/atmospherics" | "/obj/machinery/proc") {
+                if matches!(t.as_str(), "/obj/machinery" | "/obj/machinery/atmospherics" | "/obj/machinery/proc") {
                     continue;
                 }
                 let parts: Vec<&str> = t.split('/').collect();
@@ -154,7 +175,7 @@ impl Lint for Pollers {
                     out.site_in_msg(
                         "step_coverage",
                         &f.rel,
-                        n,
+                        *n as usize,
                         format!("{} defines machine_step() but is not under any type in /datum/om/decl/pipeline_machines", t),
                     );
                 }

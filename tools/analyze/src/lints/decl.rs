@@ -16,9 +16,13 @@
 //!   column-0 line;
 //! * the ALLOW question is asked once per line that has at least one hit, and keeps all its hits.
 
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
+use serde::{Deserialize, Serialize};
+
+use crate::dm::pylines::recorded_into;
 use crate::dm::sys::col0;
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::Parity;
 use crate::pat::Pat;
@@ -108,24 +112,96 @@ impl Decl {
     }
 }
 
-/// `OWN_WRITE` over every raw line of every file: the var names written through the own_* accessors.
-fn owned_vars(files: &[&SourceFile]) -> HashSet<String> {
+/// `OWN_WRITE` over every raw line of one file: the var names written through the own_* accessors
+/// (sorted, unique). The tree-wide set is the union over every file, exempt ones too.
+fn owned_vars_of(f: &SourceFile) -> Vec<String> {
     let own_write = crate::pat!(
         r#"\bown_(?:set|add|put|transfer|move)\([^,]+,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#
     );
-    let mut names = HashSet::new();
-    for f in files {
-        for line in f.raw().lines() {
-            // `\bown_...` needs the text `own_`: a prefilter with the same result.
-            if !line.contains("own_") {
-                continue;
-            }
-            for m in own_write.captures_iter(line) {
-                names.insert(m.s(1).to_string());
-            }
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for line in f.raw().lines() {
+        // `\bown_...` needs the text `own_`: a prefilter with the same result.
+        if !line.contains("own_") {
+            continue;
+        }
+        for m in own_write.captures_iter(line) {
+            names.insert(m.s(1).to_string());
         }
     }
-    names
+    names.into_iter().collect()
+}
+
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Owned {
+    names: Vec<String>,
+}
+
+impl Decl {
+    /// One file's sites as `(rule index, line)`, in emission order. ALLOW questions are recorded
+    /// (the cache replays them).
+    fn judge(&self, f: &SourceFile, refs: &BTreeSet<String>) -> Vec<(u8, u32)> {
+        let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
+        let new_into = pat_match!(r#"^\s*own_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
+        let qdel_var = crate::pat!(
+            r#"\bown_(?:clear|take|take_all)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
+        );
+        // MATERIALIZE_RULES: the INIT_RULES that also apply to on_materialize(), in INIT_RULES order.
+        let materialize = ["init_registry", "init_service", "init_scheduling"];
+        let rule_index = |name: &str| META.rules.iter().position(|r| r.name == name).unwrap_or(0) as u8;
+
+        let mut out: Vec<(u8, u32)> = Vec::new();
+        let mut proc: Option<&str> = None;
+        for (number, line) in f.raw().numbered() {
+            if let Some(m) = header.captures(line) {
+                proc = Some(match m.s(2) {
+                    "Initialize" => "Initialize",
+                    "on_materialize" => "on_materialize",
+                    _ => "on_destroy",
+                });
+                continue;
+            }
+            if col0(line) {
+                proc = None;
+                continue;
+            }
+            let Some(proc) = proc else { continue };
+            if py_strip(line).is_empty() {
+                continue;
+            }
+            let code = before_slashes(line);
+            if py_strip(code).is_empty() {
+                continue;
+            }
+            let mut hit: Vec<&'static str> = Vec::new();
+            match proc {
+                "Initialize" => {
+                    hit.extend(self.init_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
+                    if new_into.is_match(code) {
+                        hit.push("init_new_child");
+                    }
+                }
+                "on_materialize" => {
+                    hit.extend(self.init_rules.iter().filter(|(r, rx)| materialize.contains(r) && rx.is_match(code)).map(|(r, _)| *r));
+                }
+                _ => {
+                    hit.extend(self.destroy_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
+                    for qm in qdel_var.captures_iter(code) {
+                        if qm.matched(1) || (qm.matched(2) && refs.contains(qm.s(2))) {
+                            hit.push("destroy_qdel_owned");
+                            break;
+                        }
+                    }
+                }
+            }
+            // Asked only about a line that would otherwise count.
+            if !hit.is_empty() && !crate::dm::sys::kept_recorded(f, number, "decl") {
+                for rule in hit {
+                    out.push((rule_index(rule), number as u32));
+                }
+            }
+        }
+        out
+    }
 }
 
 impl Lint for Decl {
@@ -134,67 +210,15 @@ impl Lint for Decl {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
-        let new_into = pat_match!(r#"^\s*own_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
-        let qdel_var = crate::pat!(
-            r#"\bown_(?:clear|take|take_all)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
-        );
-        let refs = owned_vars(&cx.all_files());
-        // MATERIALIZE_RULES: the INIT_RULES that also apply to on_materialize(), in INIT_RULES order.
-        let materialize = ["init_registry", "init_service", "init_scheduling"];
-
-        for f in cx.files() {
-            let mut proc: Option<&str> = None;
-            for (number, line) in f.raw().numbered() {
-                if let Some(m) = header.captures(line) {
-                    proc = Some(match m.s(2) {
-                        "Initialize" => "Initialize",
-                        "on_materialize" => "on_materialize",
-                        _ => "on_destroy",
-                    });
-                    continue;
-                }
-                if col0(line) {
-                    proc = None;
-                    continue;
-                }
-                let Some(proc) = proc else { continue };
-                if py_strip(line).is_empty() {
-                    continue;
-                }
-                let code = before_slashes(line);
-                if py_strip(code).is_empty() {
-                    continue;
-                }
-                let mut hit: Vec<&'static str> = Vec::new();
-                match proc {
-                    "Initialize" => {
-                        hit.extend(self.init_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
-                        if new_into.is_match(code) {
-                            hit.push("init_new_child");
-                        }
-                    }
-                    "on_materialize" => {
-                        hit.extend(
-                            self.init_rules.iter().filter(|(r, rx)| materialize.contains(r) && rx.is_match(code)).map(|(r, _)| *r),
-                        );
-                    }
-                    _ => {
-                        hit.extend(self.destroy_rules.iter().filter(|(_, rx)| rx.is_match(code)).map(|(r, _)| *r));
-                        for qm in qdel_var.captures_iter(code) {
-                            if qm.matched(1) || (qm.matched(2) && refs.contains(qm.s(2))) {
-                                hit.push("destroy_qdel_owned");
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Asked only about a line that would otherwise count.
-                if !hit.is_empty() && !out.allowed(f, number, "decl") {
-                    for rule in hit {
-                        out.site_in(rule, &f.rel, number);
-                    }
-                }
+        let all = cx.all_files();
+        let owned = incr::facts("decl-owned", &all, |f| Owned { names: owned_vars_of(f) });
+        let refs: BTreeSet<String> = owned.into_iter().flat_map(|o| o.names).collect();
+        let files = cx.files();
+        let key = incr::ctx_key(&refs);
+        let results = recorded_into(out, || incr::keyed("decl-judge", key, &files, |f| self.judge(f, &refs)));
+        for (f, res) in files.iter().zip(results) {
+            for (rule, line) in res {
+                out.site_in(META.rules[rule as usize].name, &f.rel, line as usize);
             }
         }
     }
