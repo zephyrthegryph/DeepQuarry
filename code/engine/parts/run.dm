@@ -1225,7 +1225,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!thing)
 		return null
 	if(istype(A.target, /atom) && op_var_slot(A.target, src.args["slot"]))
-		return varslot_refusal(A.target, src.args["slot"], thing)
+		return varslot_refusal(A.target, src.args["slot"], thing, A.actor)
 	var/why = slot_precheck(A.target, src.args["slot"], thing, A.actor)
 	return why || op_insert_precheck(A.target, thing, src.args["slot"])
 
@@ -1258,7 +1258,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/slot_id = src.args["slot"]
 	// A one-item slot over a var of the holder (a cell bay): the item goes into the holder and the var names it.
 	if(op_var_slot(holder, slot_id))
-		var/var_why = varslot_refusal(holder, slot_id, thing)
+		var/var_why = varslot_refusal(holder, slot_id, thing, A.actor)
 		if(var_why)
 			A.reason = var_why
 			return OP_REFUSED

@@ -150,16 +150,16 @@ MSG_DEF_SELF(cell_bay/missing, "The power cell is missing.")
 	changed(holder, CHANGE_EXPLICIT, var_name)
 
 /// Why `thing` cannot go into the var-slot, or null.
-/proc/varslot_refusal(atom/holder, var_name, atom/movable/thing)
+/proc/varslot_refusal(atom/holder, var_name, atom/movable/thing, mob/actor)
 	if(!isnull(holder.vars[var_name]))
 		return /datum/msg/bay/full
-	return null
+	return own_transfer_refusal(holder, thing, null, actor)
 
 /// Puts `thing` into the var-slot of the holder. TRUE when it went in.
 /proc/varslot_insert(atom/holder, var_name, atom/movable/thing, mob/actor)
-	if(varslot_refusal(holder, var_name, thing))
+	if(varslot_refusal(holder, var_name, thing, actor))
 		return FALSE
-	if(!thing.forceMove(holder))
+	if(!own_bring_in(holder, var_name, thing, null, actor, TRUE, null, FALSE))
 		return FALSE
 	varslot_set(holder, var_name, thing)
 	return TRUE
