@@ -1,15 +1,8 @@
-// The instrument world service (fold wave F3; was SSinstruments): instrument data and instrument
-// sound-channel bookkeeping. Playing songs run on the instruments continuous lane
-// (PERIODIC_INSTRUMENTS, code/datums/om/periodic.dm) and every song is in REGISTRY_SONGS, so this
-// has no periodic work: it is a lazy service, set up on first use through instrument_service().
-GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
-
-/// The instrument service, initialized on first use.
-/proc/instrument_service() as /datum/world_service/instruments
-	RETURN_TYPE(/datum/world_service/instruments)
-	return LAZY_SERVICE(instrument_service)
-
-/datum/world_service/instruments
+// The instrument system (was SSinstruments): instrument data and instrument sound-channel bookkeeping.
+// Playing songs run on the instruments continuous lane (PERIODIC_INSTRUMENTS, code/datums/om/periodic.dm) and
+// every song is in REGISTRY_SONGS, so this has no periodic work: it is a lazy system, set up on first use
+// through SSinstruments.ready() (it stays out of the boot DAG).
+SYSTEM_DEF(instruments)
 	name = "Instruments"
 	/// List of all instrument data, associative id = datum
 	var/list/datum/instrument/instrument_data = list()
@@ -30,16 +23,24 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 		SUSTAIN_EXPONENTIAL,
 	)
 
-/datum/world_service/instruments/initialize()
+/datum/system/instruments/boots_in_dag()
+	return FALSE
+
+/// Typed, so `SSinstruments.ready().var` reads as the system's own var.
+/datum/system/instruments/ready()
+	RETURN_TYPE(/datum/system/instruments)
+	return ..()
+
+/datum/system/instruments/initialize()
 	initialized = TRUE
 	initialize_instrument_data()
 	synthesizer_instrument_ids = get_allowed_instrument_ids()
 	log_world("Instrument service initialized: [length(instrument_data)] instruments.")
 
-/datum/world_service/instruments/stat_line()
-	return "Songs: [REGISTRY_COUNT(REGISTRY_SONGS)] | Channels: [current_instrument_channels]/[max_instrument_channels]"
+/datum/system/instruments/stat_entry(msg)
+	return "[..()]Songs: [REGISTRY_COUNT(REGISTRY_SONGS)] | Channels: [current_instrument_channels]/[max_instrument_channels]"
 
-/datum/world_service/instruments/proc/initialize_instrument_data()
+/datum/system/instruments/proc/initialize_instrument_data()
 	for(var/path in subtypesof(/datum/instrument))
 		var/datum/instrument/I = path
 		if(initial(I.abstract_type) == path)
@@ -50,14 +51,3 @@ GLOBAL_DATUM_INIT(instrument_service, /datum/world_service/instruments, new)
 			qdel(I)
 			continue
 		instrument_data[I.id] = I
-
-/datum/world_service/instruments/proc/get_instrument(id_or_path)
-	return instrument_data["[id_or_path]"]
-
-/datum/world_service/instruments/proc/reserve_instrument_channel(datum/instrument/I)
-	if(current_instrument_channels > max_instrument_channels)
-		return
-	. = sound_service().reserve_sound_channel(I)
-	if(!isnull(.))
-		current_instrument_channels++
-

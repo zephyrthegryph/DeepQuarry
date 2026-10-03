@@ -114,7 +114,7 @@
 /datum/unit_test/dq_k_b_s13_species_gate_data
 
 /datum/unit_test/dq_k_b_s13_species_gate_data/Run()
-	var/datum/reagent/R = chemistry_service().chemical_reagents[REAGENT_ID_ETHYLREDOXRAZINE]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_ETHYLREDOXRAZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: ethylredoxrazine exists")
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/dq_test_diona_tag/D = allocate(/mob/living/carbon/human/dq_test_diona_tag)
@@ -122,7 +122,7 @@
 	TEST_ASSERT_EQUAL(R.effective_dose(D, 5, CHEM_BLOOD), 0, "a diona ignores it in the blood")
 	TEST_ASSERT_EQUAL(R.effective_dose(D, 5, CHEM_INGEST), 0, "a diona ignores it when ingested")
 	TEST_ASSERT(R.species_immune(D, CHEM_BLOOD), "species_immune() reads immune_species_blood")
-	var/datum/reagent/C = chemistry_service().chemical_reagents[REAGENT_ID_CALCIUMCARBONATE]
+	var/datum/reagent/C = SSchemistry.ready().chemical_reagents[REAGENT_ID_CALCIUMCARBONATE]
 	TEST_ASSERT(C.species_immune(D, CHEM_BLOOD), "calcium carbonate's blood gate is data")
 	TEST_ASSERT(!C.species_immune(D, CHEM_INGEST), "calcium carbonate's ingest route is not gated")
 
@@ -177,7 +177,7 @@
 /datum/unit_test/dq_k_b_k5_germ_writer/Run()
 	var/obj/item/I = allocate(/obj/item)
 	I.germ_level = 10
-	var/datum/reagent/R = chemistry_service().chemical_reagents[REAGENT_ID_STERILIZINE]
+	var/datum/reagent/R = SSchemistry.ready().chemical_reagents[REAGENT_ID_STERILIZINE]
 	TEST_ASSERT_NOTNULL(R, "setup: sterilizine exists")
 	var/old_volume = R.volume
 	R.volume = 1
@@ -202,12 +202,12 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/dq_test_slime_tag/S = allocate(/mob/living/carbon/human/dq_test_slime_tag)
 	var/mob/living/carbon/human/dq_test_diona_tag/D = allocate(/mob/living/carbon/human/dq_test_diona_tag)
-	var/datum/reagent/mind = chemistry_service().chemical_reagents[REAGENT_ID_MINDBREAKER]
+	var/datum/reagent/mind = SSchemistry.ready().chemical_reagents[REAGENT_ID_MINDBREAKER]
 	TEST_ASSERT_EQUAL(mind.species_mult(H), 1, "an unlisted species gets full strength")
 	TEST_ASSERT_EQUAL(mind.species_mult(S), 0.15, "a Promethean feels mindbreaker at ~1/6")
 	TEST_ASSERT(mind.inert_for(D), "diona are inert to a reagent's extras by default")
 	TEST_ASSERT(!mind.inert_for(H), "humans are not inert")
-	var/datum/reagent/kelo = chemistry_service().chemical_reagents[REAGENT_ID_KELOTANE]
+	var/datum/reagent/kelo = SSchemistry.ready().chemical_reagents[REAGENT_ID_KELOTANE]
 	kelo.apply_species_injuries(H, kelo.species_injuries_blood, 5)
 	TEST_ASSERT_EQUAL(H.injury_load(INJURY_CATEGORY_PHYSICAL), 0, "kelotane's species reaction spares humans")
 	kelo.apply_species_injuries(S, kelo.species_injuries_blood, 5)

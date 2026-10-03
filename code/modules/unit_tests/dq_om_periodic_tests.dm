@@ -370,9 +370,9 @@
 	TEST_ASSERT(E.periodic_pipe == PERIODIC_SLOW, "a new event is not on the slow lane")
 	E.kill()
 	TEST_ASSERT(!om_task_periodic_running(E), "a killed event kept its lane")
-	own_remove(GLOB.event_service, nameof(/datum/world_service/events::finished_events), E) // the service owns finished events
+	own_remove(SSevents, nameof(/datum/system/events::finished_events), E) // the service owns finished events
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
+		var/datum/event_container/EC = SSevents.event_containers[i]
 		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not keeping its clock")
 
 /// Shuttles (was SSshuttles' fire loop): a shuttle with work is on the slow lane, an idle one is not.

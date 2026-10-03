@@ -231,7 +231,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 
 	if(prob(50))
 		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
-		GLOB.motiontracker_service.ping(src,10)
+		SSmotiontracker.ping(src,10)
 	om_after(src, travel_time, PROC_REF(vent_crawl_exit), entry, exit_vent)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
@@ -254,7 +254,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 				walk_to(src, target_atom, 5)
 				if(prob(25))
 					src.visible_message(span_notice("\The [src] skitters[pick(" away"," around","")]."))
-				GLOB.motiontracker_service.ping(src,10)
+				SSmotiontracker.ping(src,10)
 		else if(amount_grown < 75 && prob(5))
 			//vent crawl!
 			for(var/obj/machinery/atmospherics/unary/vent_pump/v in view(7,src))

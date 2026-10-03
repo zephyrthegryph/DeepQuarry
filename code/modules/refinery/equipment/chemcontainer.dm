@@ -26,7 +26,7 @@
 /obj/item/reagent_containers/chem_canister/Initialize(mapload)
 	. = ..()
 	if(loaded_reagent)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[loaded_reagent]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[loaded_reagent]
 		if(R) // Sanity check the reagent
 			set_canister(R.name,R.id)
 			reagents.add_reagent(R.id, volume)

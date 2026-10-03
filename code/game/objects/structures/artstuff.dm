@@ -444,7 +444,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 /obj/structure/sign/painting/Initialize(mapload, dir, building)
 	. = ..()
 	if(persistence_id)
-		SSpersistence.painting_frames += src
+		SSpersistence.painting_frames += src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 	if(dir)
 		set_dir(dir)
 	if(building)
@@ -454,7 +454,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 /// Phase 2: leaves the persistent painting frames.
 /obj/structure/sign/painting/lifecycle_dematerialize()
 	. = ..()
-	SSpersistence.painting_frames -= src
+	SSpersistence.painting_frames -= src // ALLOW(ownership): the persistence system's list of painting frames, joined and left by the frame itself
 
 /obj/structure/sign/painting/declare_interactions(list/into)
 	into += list(

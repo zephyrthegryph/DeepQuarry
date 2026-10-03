@@ -4,9 +4,9 @@
 
 /datum/shuttle/autodock/ferry/escape_pod/New()
 	move_time = move_time + rand(-30, 60)
-	if(name in GLOB.emergency_shuttle_service.escape_pods)
+	if(name in SSemergency_shuttle.escape_pods)
 		CRASH("An escape pod with the name '[name]' has already been defined.")
-	GLOB.emergency_shuttle_service.escape_pods[name] = src
+	SSemergency_shuttle.escape_pods[name] = src
 
 	..()
 
@@ -66,7 +66,7 @@ UI_DATA_REPLACE(/obj/machinery/embedded_controller/radio/simple_docking_controll
 		"docking_status" = docking_program.get_docking_status(),
 		"override_enabled" = docking_program.override_enabled,
 		"exterior_status" =	docking_program.memory["door_status"],								// TGUI DATA fails silently when there's no linked pod, leading to UI crashes
-		"can_force" = pod()?.can_force() || (GLOB.emergency_shuttle_service.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
+		"can_force" = pod()?.can_force() || (SSemergency_shuttle.departed && pod()?.can_launch()),	//allow players to manually launch ahead of time if the shuttle leaves
 		"armed" = pod()?.arming_controller().armed,
 		"internalTemplateName" = "EscapePodConsole",
 	)
@@ -80,7 +80,7 @@ UI_ACT(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape
 UI_ACT_PROC(/obj/machinery/embedded_controller/radio/simple_docking_controller/escape_pod, ui_act_force_launch)
 	if(pod().can_force())
 		pod().force_launch(src)
-	else if(GLOB.emergency_shuttle_service.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
+	else if(SSemergency_shuttle.departed && pod().can_launch())	//allow players to manually launch ahead of time if the shuttle leaves
 		pod().launch(src)
 	. = TRUE
 

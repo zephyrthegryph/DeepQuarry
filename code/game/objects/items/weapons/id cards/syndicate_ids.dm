@@ -35,7 +35,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/card/id/syndicate, "agentcard_module", /datum/tg
 	if(istype(O, /obj/item/card/id))
 		var/obj/item/card/id/I = O
 		src.access |= I.GetAccess()
-		if(GLOB.antag_service.player_is_antag(user.mind) || registered_user() == user)
+		if(SSantag.player_is_antag(user.mind) || registered_user() == user)
 			to_chat(user, span_notice("The microscanner activates as you pass it over the ID, copying its access."))
 
 /// Edit or show an agent ID. Re-checked on the answer: still carried by its registered owner.

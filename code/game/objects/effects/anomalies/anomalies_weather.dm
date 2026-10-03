@@ -160,7 +160,7 @@
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
 				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
 
-			var/reagent_id = pick(chemistry_service().chemical_reagents)
+			var/reagent_id = pick(SSchemistry.ready().chemical_reagents)
 			if(reagent_id in GLOB.obtainable_chemical_blacklist)
 				update_reagent(REAGENT_ID_WATER) // You get WATER.
 			else

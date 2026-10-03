@@ -196,33 +196,6 @@
 /datum/om/behaviour/world/radiation/service()
 	return GLOB.radiation_service
 
-/// Motion tracker echo drawing (was SSmotiontracker, 1 s).
-/datum/om/behaviour/world/motiontracker
-	name = "world: motion tracker"
-	every = 1 SECOND
-
-/datum/om/behaviour/world/motiontracker/service()
-	return GLOB.motiontracker_service
-
-/// pAI candidate list refresh from the observers (was SSpai, 4 s).
-/datum/om/behaviour/world/pai
-	name = "world: pai candidates"
-	every = 4 SECONDS
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/pai/service()
-	return GLOB.pai_service
-
-/// Mail accrual for the supply shuttle (was SSmail, 60 s).
-/datum/om/behaviour/world/mail
-	name = "world: mail"
-	every = 60 SECONDS
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/mail/service()
-	return GLOB.mail_service
-
 // ---------------------------------------------------------------- fold wave F4 lanes
 
 /// Sun position and the solar controllers and panels (was SSsun + SSsolars, 1 min).
@@ -232,15 +205,6 @@
 
 /datum/om/behaviour/world/solars/service()
 	return GLOB.solar_service
-
-/// Night shift lighting (was SSnightshift, 60 s).
-/datum/om/behaviour/world/nightshift
-	name = "world: night shift"
-	every = 60 SECONDS
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/nightshift/service()
-	return GLOB.nightshift_service
 
 /// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
 /datum/om/behaviour/world/planets
@@ -276,24 +240,6 @@
 
 /datum/om/behaviour/world/turf_cascade/service()
 	return GLOB.turf_cascade_service
-
-/// Explosion epochs (was SSexplosions, 0.5 s). On demand; explosion() wakes it at once.
-/datum/om/behaviour/world/explosions
-	name = "world: explosions"
-	every = 0.5 SECONDS
-
-/datum/om/behaviour/world/explosions/service()
-	return GLOB.explosion_service
-
-/// AFK kicks (was SSinactivity, 1 min).
-/datum/om/behaviour/world/inactivity
-	name = "world: inactivity"
-	every = 1 MINUTE
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/inactivity/service()
-	return GLOB.inactivity_service
 
 /// Automatic crew transfer votes and the shift's hard end (was SStransfer, 1 s).
 /datum/om/behaviour/world/transfer

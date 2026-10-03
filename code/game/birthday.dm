@@ -49,4 +49,4 @@
 		to_chat(src, span_notice("You are now [age]! Happy birthday!"))
 		write_preference_directly(/datum/preference/numeric/human/age, age, WRITE_PREF_MANUAL)	//Set the age on the character sheet
 
-	GLOB.character_setup_service.queue_preferences_save(client?.prefs)
+	SScharacter_setup.queue_preferences_save(client?.prefs)

@@ -7,9 +7,9 @@
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
 	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, null))
-	if(GLOB.emergency_shuttle_service.shuttle)
+	if(SSemergency_shuttle.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
-	rel_set(GLOB.emergency_shuttle_service, nameof(/datum/flight_vessel::shuttle), src)
+	rel_set(SSemergency_shuttle, nameof(/datum/flight_vessel::shuttle), src)
 
 /datum/shuttle/autodock/ferry/emergency/arrived()
 	. = ..()
@@ -17,7 +17,7 @@
 		var/obj/machinery/computer/shuttle_control/emergency/C = in_use
 		C.reset_authorization()
 
-	GLOB.emergency_shuttle_service.shuttle_arrived()
+	SSemergency_shuttle.shuttle_arrived()
 
 /datum/shuttle/autodock/ferry/emergency/long_jump(destination, interim, travel_time)
 	if (!location)
@@ -27,16 +27,16 @@
 
 	//update move_time and launch_time so we get correct ETAs
 	move_time = travel_time
-	EXPIRY_STAMP(GLOB.emergency_shuttle_service, launch_time, CLOCK_WORLD)
+	EXPIRY_STAMP(SSemergency_shuttle, launch_time, CLOCK_WORLD)
 
 	..(destination, interim, travel_time, direction)
 
 /datum/shuttle/autodock/ferry/emergency/perform_shuttle_move()
 	if (current_location() == landmark_station())	//leaving the station
-		GLOB.emergency_shuttle_service.departed = TRUE
-		var/estimated_time = round(GLOB.emergency_shuttle_service.estimate_arrival_time()/60,1)
+		SSemergency_shuttle.departed = TRUE
+		var/estimated_time = round(SSemergency_shuttle.estimate_arrival_time()/60,1)
 
-		if (GLOB.emergency_shuttle_service.evac)
+		if (SSemergency_shuttle.evac)
 			GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.emergency_shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"))
 		else
 			GLOB.priority_announcement.Announce(replacetext(replacetext(using_map.shuttle_leaving_dock, "%dock_name%", "[using_map.dock_name]"),  "%ETA%", "[estimated_time] minute\s"), new_sound = ANNOUNCER_MSG_SHUTTLE_ENDROUND_RETURNING)
@@ -70,8 +70,8 @@
 	if (!can_launch(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
-		if (GLOB.emergency_shuttle_service.autopilot)
-			GLOB.emergency_shuttle_service.autopilot = FALSE
+		if (SSemergency_shuttle.autopilot)
+			SSemergency_shuttle.set_autopilot(FALSE)
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Launch sequence initiated!"))
 
 	if(actor)
@@ -84,8 +84,8 @@
 	if (!can_force(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
-		if (GLOB.emergency_shuttle_service.autopilot)
-			GLOB.emergency_shuttle_service.autopilot = FALSE
+		if (SSemergency_shuttle.autopilot)
+			SSemergency_shuttle.set_autopilot(FALSE)
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Bluespace drive engaged!"))
 
 	if(actor)
@@ -98,8 +98,8 @@
 	if (!can_cancel(user)) return
 
 	if (istype(user, /obj/machinery/computer/shuttle_control/emergency))	//if we were given a command by an emergency shuttle console
-		if (GLOB.emergency_shuttle_service.autopilot)
-			GLOB.emergency_shuttle_service.autopilot = FALSE
+		if (SSemergency_shuttle.autopilot)
+			SSemergency_shuttle.set_autopilot(FALSE)
 			to_chat(world, span_boldnotice("Alert: The shuttle autopilot has been overridden. Launch sequence aborted!"))
 
 	if(actor)

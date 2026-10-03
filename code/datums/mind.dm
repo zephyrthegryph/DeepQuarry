@@ -122,7 +122,7 @@
 	if(new_character.client)
 		new_character.client.init_verbs() // re-initialize character specific verbs
 
-	GLOB.antag_service.update_antag_icons(src)
+	SSantag.update_antag_icons(src)
 
 /datum/mind/proc/store_memory(new_text)
 	memory += "[new_text]<BR>"
@@ -414,7 +414,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		rel_set(src, nameof(mind), new /datum/mind(key))
 		rel_set(mind, nameof(mind.original_character), src)
 		if(SSticker)
-			SSticker.minds += mind
+			SSticker.minds += mind // ALLOW(ownership): the ticker's roster of minds, appended where the mind is created; no registry for minds yet
 		else
 			log_world("## DEBUG: mind_initialize(): No ticker ready yet! Please inform Carn")
 	if(!mind.name)	mind.name = real_name
@@ -423,7 +423,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 		bind_identity(mind.identity)
 	else
 		own_set(mind, nameof(mind.identity), identity())
-	if(GLOB.antag_service.player_is_antag(mind))
+	if(SSantag.player_is_antag(mind))
 		om_grant(src.client, GRANT_VERB, /client/proc/aooc, mind) // the mind grants its player aooc while it is an antag
 	if (client?.prefs)
 		// directory tags migrated from legacy /datum/preferences vars

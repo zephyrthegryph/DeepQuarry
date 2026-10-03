@@ -440,7 +440,7 @@ GLOBAL_LIST_INIT(emp_ladder, list(100, 70, 40, 10))
 	return receive_split(packet, generic_attack_kind(user), null, amount)
 
 /// Explosion: blast from the propagated severity. Explosions deliver it in
-/// type batches (GLOB.explosion_service.deliver_blast_batches); objects are destroyed by
+/// type batches (SSexplosions.deliver_blast_batches); objects are destroyed by
 /// integrity, never by a severity ladder.
 /atom/proc/receive_explosion(severity)
 	if(resistance_flags & BOMB_PROOF)

@@ -137,7 +137,7 @@ GLOBAL_DATUM_INIT(skybox_service, /datum/world_service/skybox, new)
 						new_overlays += other.get_skybox_representation(z)
 
 	// Allow events to apply custom overlays to skybox! (Awesome!)
-	for(var/datum/event/E in GLOB.event_service.active_events())
+	for(var/datum/event/E in SSevents.active_events())
 		if(E.has_skybox_image && E.isRunning && (z in E.affecting_z))
 			new_overlays += E.get_skybox_image()
 

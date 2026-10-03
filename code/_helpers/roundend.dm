@@ -14,7 +14,7 @@
 		if(Player.mind && !isnewplayer(Player))
 			if(Player.stat != DEAD)
 				var/turf/playerTurf = get_turf(Player)
-				if(GLOB.emergency_shuttle_service.departed && GLOB.emergency_shuttle_service.evac)
+				if(SSemergency_shuttle.departed && SSemergency_shuttle.evac)
 					if(isNotAdminLevel(playerTurf.z))
 						to_chat(Player, span_filter_system(span_blue(span_bold("You survived the round, but remained on [station_name()] as [Player.real_name]."))))
 					else
@@ -78,7 +78,7 @@
 	RoundTrivia()
 
 	//Ask the event manager to print round end information
-	GLOB.event_service.RoundEnd()
+	SSevents.RoundEnd()
 
 	//Print a list of antagonists to the server log
 	var/list/total_antagonists = list()

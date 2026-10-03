@@ -3,21 +3,26 @@
  * SPDX-License-Identifier: MIT
  */
 
-// The soft ping world service (was SSping): every 4 s it pings each ready tgui chat panel.
-GLOBAL_DATUM_INIT(ping_service, /datum/world_service/ping, new)
-
-/datum/world_service/ping
+// The soft ping system (was SSping): every 4 s it pings each ready tgui chat panel.
+SYSTEM_DEF(ping)
 	name = "Ping"
-	lane = /datum/om/behaviour/world/ping
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	var/list/currentrun = list()
+	/// TRUE while a ping pass that ran out of budget waits to resume.
+	VAR_PRIVATE/ping_resuming = FALSE
 
-/datum/world_service/ping/stat_line()
-	return "P:[length(GLOB.clients)]"
+/datum/system/ping/stat_entry(msg)
+	return "[..()]P:[length(GLOB.clients)]"
 
-/datum/world_service/ping/service_step(resumed)
+/datum/system/ping/reactions()
+	. = ..()
+	. += every(4 SECONDS, PROC_REF(ping_clients), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/ping/proc/ping_clients(dt)
 	// Prepare the new batch of clients
-	if (!resumed)
+	if (!ping_resuming)
 		src.currentrun = GLOB.clients.Copy()
+	ping_resuming = FALSE
 
 	// De-reference the list for sanic speeds
 	var/list/currentrun = src.currentrun
@@ -39,15 +44,7 @@ GLOBAL_DATUM_INIT(ping_service, /datum/world_service/ping, new)
 				"afk" = client.is_afk(3.5 SECONDS),
 			))
 
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
-
-/// ping (was SSping).
-/datum/om/behaviour/world/ping
-	name = "world: ping"
-	every = 4 SECONDS
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/ping/service()
-	return GLOB.ping_service
+		if(KERNEL_OVER_BUDGET)
+			ping_resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE

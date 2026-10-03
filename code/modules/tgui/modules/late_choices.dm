@@ -65,10 +65,10 @@ UI_DATA(/datum/tgui_module/late_choices, "merge:ui_data_datum_tgui_module_late_c
 	data["name"] = name
 	data["duration"] = roundduration2text()
 
-	if(GLOB.emergency_shuttle_service?.going_to_centcom())
+	if(SSemergency_shuttle?.going_to_centcom())
 		data["evac"] = "Gone"
-	else if(GLOB.emergency_shuttle_service?.online())
-		if(GLOB.emergency_shuttle_service.evac)
+	else if(SSemergency_shuttle?.online())
+		if(SSemergency_shuttle.evac)
 			data["evac"] = "Emergency"
 		else
 			data["evac"] = "Crew Transfer"

@@ -521,7 +521,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	if(occupant.mind)
 		if(occupant.original_player && ckey(occupant.mind.key) != occupant.original_player)
 			log_and_message_admins("is now a cross-sleeved character. Body originally belonged to [occupant.real_name]. Mind is now [occupant.mind.name].",occupant)
-		var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(occupant.mind.special_role)
+		var/datum/antagonist/antag_data = SSantag.get_antag_data(occupant.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(occupant.mind)
 			antag_data.place_mob(occupant)

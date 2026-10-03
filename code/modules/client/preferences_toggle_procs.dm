@@ -11,7 +11,7 @@
 	var/_cur = prefs.read_preference(/datum/preference/numeric/human/be_special)
 	var/_new = _cur ^ role_flag
 	prefs.update_preference_by_type(/datum/preference/numeric/human/be_special, _new)
-	GLOB.character_setup_service.queue_preferences_save(prefs)
+	SScharacter_setup.queue_preferences_save(prefs)
 
 	to_chat(src,"You will [(_new & role_flag) ? "now" : "no longer"] be considered for [role] events (where possible).")
 

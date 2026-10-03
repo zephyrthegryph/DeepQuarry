@@ -464,7 +464,7 @@
 
 		for(var/x=1;x<=additional_chems;x++)
 
-			var/new_chem = pick(chemistry_service().chemical_reagents)
+			var/new_chem = pick(SSchemistry.ready().chemical_reagents)
 			var/list/currently_banned_chems = list()
 			currently_banned_chems += GLOB.obtainable_chemical_blacklist
 			if(new_chem in currently_banned_chems)
@@ -477,7 +477,7 @@
 		if(!beneficial_reagents)
 			beneficial_reagents = list()
 		for(var/x = 1 to unique_beneficial_count)
-			beneficial_reagents[pick(chemistry_service().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
+			beneficial_reagents[pick(SSchemistry.ready().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
 		set_trait(TRAIT_BENEFICIAL_REAG, beneficial_reagents)
 
 	if(prob(5))
@@ -485,7 +485,7 @@
 		if(!mutagenic_reagents)
 			mutagenic_reagents = list()
 		for(var/x = 1 to unique_mutagenic_count)
-			mutagenic_reagents[pick(chemistry_service().chemical_reagents)] = rand(0, 20)
+			mutagenic_reagents[pick(SSchemistry.ready().chemical_reagents)] = rand(0, 20)
 		set_trait(TRAIT_MUTAGENIC_REAG, mutagenic_reagents)
 
 	if(prob(5))
@@ -493,7 +493,7 @@
 		if(!toxic_reagents)
 			toxic_reagents = list()
 		for(var/x = 1 to unique_toxic_count)
-			toxic_reagents[pick(chemistry_service().chemical_reagents)] = round(rand(-100, 100) / 10)
+			toxic_reagents[pick(SSchemistry.ready().chemical_reagents)] = round(rand(-100, 100) / 10)
 		set_trait(TRAIT_TOXIC_REAG, toxic_reagents)
 
 	if(prob(90))
@@ -599,7 +599,7 @@
 					if(!toxic_reagents)
 						toxic_reagents = list()
 					for(var/x = 1 to unique_toxic_count)
-						toxic_reagents[pick(chemistry_service().chemical_reagents)] = round(rand(-100, 100) / 10)
+						toxic_reagents[pick(SSchemistry.ready().chemical_reagents)] = round(rand(-100, 100) / 10)
 					set_trait(TRAIT_TOXIC_REAG, toxic_reagents)
 			if(5)
 				set_trait(TRAIT_WEED_TOLERANCE,      get_trait(TRAIT_WEED_TOLERANCE)+(rand(-2,2)*degree),10, 0)
@@ -619,7 +619,7 @@
 					if(!mutagenic_reagents)
 						mutagenic_reagents = list()
 					for(var/x = 1 to unique_mutagenic_count)
-						mutagenic_reagents[pick(chemistry_service().chemical_reagents)] = rand(0, 20)
+						mutagenic_reagents[pick(SSchemistry.ready().chemical_reagents)] = rand(0, 20)
 					set_trait(TRAIT_MUTAGENIC_REAG, mutagenic_reagents)
 			if(8)
 				set_trait(TRAIT_ENDURANCE,           get_trait(TRAIT_ENDURANCE)+(rand(-5,5)*degree),100,10)
@@ -639,7 +639,7 @@
 					if(!beneficial_reagents)
 						beneficial_reagents = list()
 					for(var/x = 1 to unique_beneficial_count)
-						beneficial_reagents[pick(chemistry_service().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
+						beneficial_reagents[pick(SSchemistry.ready().chemical_reagents)] = list(round(rand(-100, 100) / 10), round(rand(-100, 100) / 10), round(rand(-100, 100) / 10))
 					set_trait(TRAIT_BENEFICIAL_REAG, beneficial_reagents)
 			if(10)
 				if(prob(degree*2))

@@ -68,7 +68,7 @@ SYSTEM_DEF(profiler)
 		"garbage" = system_diagnostics(SSgarbage),
 		"shuttles" = system_diagnostics(SSshuttles),
 		"radiation" = world_service_diagnostics(GLOB.radiation_service),
-		"explosions" = world_service_diagnostics(GLOB.explosion_service),
+		"explosions" = system_diagnostics(SSexplosions),
 	)
 	var/list/material_graphs = list()
 	for(var/id in GLOB.machine_service.power_material_overlays)
@@ -118,7 +118,7 @@ SYSTEM_DEF(profiler)
 	subsystems["garbage"] += SSgarbage.performance_diagnostics()
 	subsystems["shuttles"] += SSshuttles.performance_diagnostics()
 	subsystems["radiation"] += GLOB.radiation_service.performance_diagnostics()
-	subsystems["explosions"] += GLOB.explosion_service.performance_diagnostics()
+	subsystems["explosions"] += SSexplosions.performance_diagnostics()
 	// Rust world wakes (timers, keys, rate crossings, native watches) on the OM scheduler.
 	subsystems["world_step"] = om_world_diagnostics()
 	var/list/profile = list(

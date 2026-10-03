@@ -150,7 +150,7 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 		M.toff = FALSE
 
 	if(chassis_name != PAI_DEFAULT_CHASSIS) // For subtypes that override base chassis( like the syndi pet pai )
-		internal_set_chassis( GLOB.pai_service.chassis_data(chassis_name))
+		internal_set_chassis( SSpai.chassis_data(chassis_name))
 
 /mob/living/silicon/pai/Login()
 	. = ..()
@@ -223,9 +223,9 @@ DECLARE_REPEAT(/mob/living/silicon/pai, 1 SECOND, hack_tick, "hackdoor")
 
 /// Change pai sprite and offsets based upon the selected chassis id
 /mob/living/silicon/pai/proc/change_chassis(new_chassis)
-	if(!(new_chassis in GLOB.pai_service.get_chassis_list()))
+	if(!(new_chassis in SSpai.get_chassis_list()))
 		new_chassis = PAI_DEFAULT_CHASSIS
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(new_chassis)
+	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(new_chassis)
 	if(chassis_data.emagged && !src.card.emagged)
 		return
 	chassis_name = new_chassis
@@ -423,7 +423,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	if(!istype(H))
 		return
 
-	H.icon_state = GLOB.pai_service.chassis_data(chassis_name).sprite_icon_state
+	H.icon_state = SSpai.chassis_data(chassis_name).sprite_icon_state
 	grabber.update_inv_l_hand()
 	grabber.update_inv_r_hand()
 	return H
@@ -566,7 +566,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	. = list()
 	. += ..()
 
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
+	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
 	if(chassis_data.holo_projector)
 		icon_state = null
 		icon = holo_icon_south
@@ -590,7 +590,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 /mob/living/silicon/pai/proc/add_eyes()
 	remove_eyes()
 
-	var/datum/pai_sprite/chassis_data = GLOB.pai_service.chassis_data(chassis_name)
+	var/datum/pai_sprite/chassis_data = SSpai.chassis_data(chassis_name)
 	if(chassis_data.holo_projector)
 		// Special eyes that are based on holoprojection of your character's icon size
 		if(holo_icon_south.Width() > 32)
@@ -664,7 +664,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 
 /mob/living/silicon/pai/set_dir(new_dir)
 	. = ..()
-	if(. && GLOB.pai_service.chassis_data(chassis_name).holo_projector)
+	if(. && SSpai.chassis_data(chassis_name).holo_projector)
 		switch(dir)
 			if(SOUTH)
 				icon = holo_icon_south

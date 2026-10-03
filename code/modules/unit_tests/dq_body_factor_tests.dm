@@ -327,7 +327,7 @@
 	TEST_ASSERT_EQUAL(lines[1], "Airway: -80% at full severity", "multipliers print as a percent change")
 	TEST_ASSERT_EQUAL(lines[2], "Heart rate: +15 bpm at full severity", "additive factors print with their unit")
 	// Every authored reagent and affliction table only names real factors.
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		for(var/factor_id in R.factors)
 			TEST_ASSERT(isnum(factor_id) && factor_id >= 1 && factor_id <= BF_COUNT, "[R.type] has an invalid factor id [factor_id]")

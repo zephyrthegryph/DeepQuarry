@@ -254,7 +254,7 @@ UI_DATA_REPLACE(/datum/shadekin, "merge:ui_data_datum_shadekin{stun_time:unknown
 	return data
 
 /datum/shadekin/tgui_close(mob/user)
-	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
+	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
 /datum/shadekin/proc/flicker_color_picked(datum/om/prompt/color/ask)

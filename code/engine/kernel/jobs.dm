@@ -60,7 +60,7 @@ SYSTEM_DEF(kernel_jobs)
 	return length(jobs) > 0
 
 /datum/system/kernel_jobs/proc/start(datum/kernel_job/J)
-	jobs += J
+	jobs += J // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
 	started++
 
 /// One kernel pass: every job runs steps inside its own budget, until the pass's limit is reached.

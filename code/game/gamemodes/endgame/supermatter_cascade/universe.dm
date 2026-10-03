@@ -44,9 +44,9 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	for(var/mob/M in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		M.flash_eyes()
 
-	if(GLOB.emergency_shuttle_service.can_recall())
+	if(SSemergency_shuttle.can_recall())
 		GLOB.priority_announcement.Announce("The emergency shuttle has returned due to bluespace distortion.")
-		GLOB.emergency_shuttle_service.recall()
+		SSemergency_shuttle.recall()
 
 	AreaSet()
 	MiscSet()
@@ -97,7 +97,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 			M.current.status_at_least(EFFECT_WEAKENED, 10)
 			M.current.flash_eyes()
 
-		GLOB.antag_service.clear_antag_roles(M)
+		SSantag.clear_antag_roles(M)
 
 /// The cascade announcement, then five minutes to get through the rift.
 /datum/universal_state/supermatter_cascade/proc/announce_cascade()

@@ -239,7 +239,7 @@
 	// Finally get to injecting
 	if(!use_chems(BORER_POWER_COST_SECRETE))
 		return
-	var/datum/reagent/inject_reagent = chemistry_service().chemical_reagents[injecting_chem]
+	var/datum/reagent/inject_reagent = SSchemistry.ready().chemical_reagents[injecting_chem]
 	if(!inject_reagent)
 		CRASH("Invalid chem reagent [injecting_chem], in borer chemical injection.")
 

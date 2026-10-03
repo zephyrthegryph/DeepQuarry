@@ -433,7 +433,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 		call_shuttle_proc(src)
 
 	// hack to display shuttle timer
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		post_status(src, "shuttle", user = src)
 
 /mob/living/silicon/ai/proc/ai_recall_shuttle()

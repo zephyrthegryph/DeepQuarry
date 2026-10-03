@@ -121,12 +121,12 @@
 	if(SSair)
 		SSair.mark_for_update(W)
 
-	var/defer_explosion_appearance = GLOB.explosion_service.is_bulk_resolving()
+	var/defer_explosion_appearance = SSexplosions.is_bulk_resolving()
 	if(CONFIG_GET(number/starlight) && !defer_explosion_appearance)
 		for(var/turf/space/S in range(W, 1))
 			S.update_starlight()
 	if(defer_explosion_appearance)
-		GLOB.explosion_service.defer_turf_update(W)
+		SSexplosions.defer_turf_update(W)
 	else
 		W.levelupdate()
 		W.update_icon()

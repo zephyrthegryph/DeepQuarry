@@ -41,7 +41,7 @@
 		return
 
 	if (!at_station())	//at centcom
-		GLOB.mail_service.create_mail()
+		SSmail.create_mail()
 		GLOB.supply_service.buy()
 
 	//We pretend it's a long_jump by making the shuttle stay at centcom for the "in-transit" period.

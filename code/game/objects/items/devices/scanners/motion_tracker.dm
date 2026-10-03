@@ -16,7 +16,7 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 /obj/item/motiontracker/Initialize(mapload)
-	om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
+	om_hook(SSmotiontracker, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
 	. = ..()
 	if(ismob(loc))
 		var/mob/M = loc
@@ -37,7 +37,7 @@ MATERIAL_MIX(/obj/item/motiontracker, list(MAT_STEEL = 30,MAT_GLASS = 20))
 	var/atom/scan_pos = src
 	if(!isturf(loc))
 		scan_pos = loc
-	if(!echo_source || get_dist(scan_pos,echo_source) > GLOB.motiontracker_service.max_range || scan_pos.z != echo_source.z)
+	if(!echo_source || get_dist(scan_pos,echo_source) > SSmotiontracker.max_range || scan_pos.z != echo_source.z)
 		return
 	flick("pinondirect",src)
 

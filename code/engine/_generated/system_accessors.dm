@@ -3,7 +3,7 @@
 
 /// SYSTEM_ACCESSOR(nightshift, night_shift_active, nameof(nightshift_active)) at code/contracts/accessors/accessors.dm:11: the nightshift system's `nightshift_active`, read as a plain var.
 /proc/night_shift_active()
-	return GLOB.nightshift_service.nightshift_active
+	return SSnightshift.nightshift_active
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

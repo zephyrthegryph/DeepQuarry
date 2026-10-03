@@ -562,6 +562,11 @@ pub fn file_events(rel: &str, raw: &View, code: &View) -> Vec<IdxEv> {
                 current = None;
                 continue;
             }
+            // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
+            if let Some(m) = crate::pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
+                current = Some(format!("/datum/system/{}", m.s(1)));
+                continue;
+            }
             let m = TYPE_LINE.captures(py_rstrip(line));
             current = match m {
                 Some(m) if !line.contains('(') => Some(m.s(1).to_string()),

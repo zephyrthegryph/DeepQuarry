@@ -1,7 +1,7 @@
 ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink recipe info and images for wiki or other use.", ADMIN_CATEGORY_SERVER_ADMIN)
 	//////////////////////// DRINK
 	var/list/drink_recipes = list()
-	for(var/datum/decl/chemical_reaction/instant/drinks/CR in chemistry_service().chemical_reactions)
+	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.ready().chemical_reactions)
 		drink_recipes[CR.type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
 								"Reagents" = (CR.required_reagents || list()),
@@ -34,7 +34,7 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 		qdel(R)
 
 	//////////////////////// FOOD+ (basically condiments, tofu, cheese, soysauce, etc)
-	for(var/datum/decl/chemical_reaction/instant/food/CR in chemistry_service().chemical_reactions)
+	for(var/datum/decl/chemical_reaction/instant/food/CR in SSchemistry.ready().chemical_reactions)
 		food_recipes[CR.type] = list("Result" = CR.name,
 								"ResAmt" = CR.result_amount,
 								"Reagents" = (CR.required_reagents || list()),
@@ -67,7 +67,7 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 	//Reagents can be resolved to nicer names as well
 	for(var/Rp in food_recipes)
 		for(var/rid in food_recipes[Rp]["Reagents"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -76,7 +76,7 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 			food_recipes[Rp]["Reagents"] -= rid
 			food_recipes[Rp]["Reagents"][R_name] = amt
 		for(var/rid in food_recipes[Rp]["Catalysts"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -86,7 +86,7 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 			food_recipes[Rp]["Catalysts"][R_name] = amt
 	for(var/Rp in drink_recipes)
 		for(var/rid in drink_recipes[Rp]["Reagents"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.
@@ -95,7 +95,7 @@ ADMIN_VERB(recipe_dump, R_SERVER, "Generate Recipe Dump", "Dumps food and drink 
 			drink_recipes[Rp]["Reagents"] -= rid
 			drink_recipes[Rp]["Reagents"][R_name] = amt
 		for(var/rid in drink_recipes[Rp]["Catalysts"])
-			var/datum/reagent/Rd = chemistry_service().chemical_reagents[rid]
+			var/datum/reagent/Rd = SSchemistry.ready().chemical_reagents[rid]
 			if(!Rd) // Leaving this here in the event that if rd is ever invalid or there's a recipe issue, it'll be skipped and recipe dumps can still be ran.
 				log_runtime(EXCEPTION("Food \"[Rp]\" had an invalid RID: \"[rid]\"! Check your reagents list for a missing or mistyped reagent!"))
 				continue // This allows the dump to still continue, and it will skip the invalid recipes.

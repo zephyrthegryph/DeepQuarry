@@ -68,11 +68,11 @@
 		identity = subject_identities[body_key]
 		if(identity)
 			subject_identities -= body_key
-			subject_identities[key] = identity
+			subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	if(!identity)
 		identity = new("DQ-SUB-[next_subject_id++]", subject)
-		subject_identities[key] = identity
-		subject_identities[identity.id] = identity
+		subject_identities[key] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
+		subject_identities[identity.id] = identity // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	else
 		identity.update(subject)
 	return identity
@@ -91,7 +91,7 @@
 		return null
 	var/id = "DQ-EV-[next_evidence_id++]"
 	var/datum/contract_evidence/evidence = new(id, kind, subject_id, creator_account, source, payload)
-	evidence_by_id[id] = evidence
+	evidence_by_id[id] = evidence // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	emit_contract_event(CONTRACT_EVENT_EVIDENCE_REGISTERED, list(
 		"subject_id" = subject_id,
 		"actor_account" = creator_account,

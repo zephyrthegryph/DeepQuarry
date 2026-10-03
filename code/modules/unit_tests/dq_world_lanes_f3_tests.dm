@@ -13,9 +13,6 @@
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/cadence = list(
 		/datum/om/behaviour/world/radiation = 0.5 SECONDS,
-		/datum/om/behaviour/world/motiontracker = 1 SECOND,
-		/datum/om/behaviour/world/pai = 4 SECONDS,
-		/datum/om/behaviour/world/mail = 60 SECONDS,
 	)
 	for(var/lane in cadence)
 		TEST_ASSERT(om_attached(owner, lane), "[lane] is not on the global owner")
@@ -28,14 +25,14 @@
 /datum/unit_test/dq_world_lanes_f3_lazy_services
 
 /datum/unit_test/dq_world_lanes_f3_lazy_services/Run()
-	TEST_ASSERT(length(chemistry_service().chemical_reagents), "the chemistry service has no reagents")
-	TEST_ASSERT(length(chemistry_service().chemical_reactions), "the chemistry service has no reactions")
-	TEST_ASSERT(GLOB.chemistry_service.initialized, "chemistry_service() did not mark the service initialized")
+	TEST_ASSERT(length(SSchemistry.ready().chemical_reagents), "the chemistry service has no reagents")
+	TEST_ASSERT(length(SSchemistry.ready().chemical_reactions), "the chemistry service has no reactions")
+	TEST_ASSERT(SSchemistry.initialized, "SSchemistry.ready() did not mark the service initialized")
 	TEST_ASSERT(length(sound_service().talk_sound_map), "the sound service has no talk sounds")
 	TEST_ASSERT(sound_service().random_available_channel(), "the sound service handed out no channel")
-	TEST_ASSERT(length(circuit_service().all_components), "the circuit service has no components")
-	TEST_ASSERT(length(instrument_service().instrument_data), "the instrument service has no instruments")
-	TEST_ASSERT(length(instrument_service().synthesizer_instrument_ids), "the instrument service has no synthesizer ids")
+	TEST_ASSERT(length(SScircuit.ready().all_components), "the circuit service has no components")
+	TEST_ASSERT(length(SSinstruments.ready().instrument_data), "the instrument service has no instruments")
+	TEST_ASSERT(length(SSinstruments.ready().synthesizer_instrument_ids), "the instrument service has no synthesizer ids")
 
 	// A fresh lazy service initializes exactly once, on the first ready().
 	var/datum/world_service/sounds/S = new
@@ -51,25 +48,14 @@
 /datum/unit_test/dq_world_lanes_f3_boot_services
 
 /datum/unit_test/dq_world_lanes_f3_boot_services/Run()
-	TEST_ASSERT(GLOB.pai_service.initialized, "the pAI service never initialized (SSatoms)")
-	TEST_ASSERT(length(GLOB.pai_service.get_chassis_list()), "the pAI service has no chassis")
+	TEST_ASSERT(SSpai.initialized, "the pAI service never initialized (SSatoms)")
+	TEST_ASSERT(length(SSpai.get_chassis_list()), "the pAI service has no chassis")
 	TEST_ASSERT(length(GLOB.pai_software_by_key), "the pAI service registered no software")
 	TEST_ASSERT(GLOB.xenoarch_service.initialized, "the xenoarch service never initialized (SSatoms)")
-	TEST_ASSERT(GLOB.event_service.initialized, "the event service never initialized (SSatoms)")
+	TEST_ASSERT(SSevents.initialized, "the event service never initialized (SSatoms)")
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-		var/datum/event_container/EC = GLOB.event_service.event_containers[i]
+		var/datum/event_container/EC = SSevents.event_containers[i]
 		TEST_ASSERT(EC.periodic_pipe == PERIODIC_SLOW, "event container [i] is not on the slow lane")
-
-/// Mail accrues one step's worth per lane step.
-/datum/unit_test/dq_world_lanes_f3_mail
-
-/datum/unit_test/dq_world_lanes_f3_mail/Run()
-	var/datum/world_service/mail/S = GLOB.mail_service
-	var/saved = S.mail_waiting
-	S.mail_waiting = 0
-	TEST_ASSERT(S.run_step(), "the mail step yielded")
-	TEST_ASSERT_EQUAL(S.mail_waiting, S.mail_per_process, "the mail step did not accrue mail")
-	S.mail_waiting = saved
 
 /// The radiation lane drains its queue, and a disabled service queues nothing.
 /datum/unit_test/dq_world_lanes_f3_radiation
@@ -88,20 +74,6 @@
 		S.run_step()
 	TEST_ASSERT(!length(S.processing), "the radiation step never drained its queue")
 	TEST_ASSERT(!S.resuming, "a drained radiation step is still resuming")
-
-/// Queued motion echoes are drawn and cleared by one step.
-/datum/unit_test/dq_world_lanes_f3_motiontracker
-
-/datum/unit_test/dq_world_lanes_f3_motiontracker/Run()
-	var/datum/world_service/motiontracker/S = GLOB.motiontracker_service
-	var/echoes = S.all_echos_round
-	// A stale client handle: the echo is queued and drawn for nobody (no client in a test run).
-	S.queue_echo(run_loc_floor_bottom_left, run_loc_floor_top_right, 1, "0:0")
-	TEST_ASSERT_EQUAL(S.all_echos_round, echoes + 1, "queue_echo() did not queue an echo")
-	var/steps = 0
-	while(!S.run_step() && steps++ < 50)
-		continue
-	TEST_ASSERT(!S.queued_echo_turfs[REF(run_loc_floor_top_right)], "the motion tracker step left the echo queued")
 
 /// A throw runs on the continuous throwing lane and parks when it lands.
 /datum/unit_test/dq_world_lanes_f3_throwing
@@ -159,9 +131,9 @@
 
 	var/datum/event_meta/EM = new(EVENT_LEVEL_MUNDANE, "Registry test", /datum/event/nothing, 0, add_to_queue = FALSE)
 	var/datum/event/E = new /datum/event/nothing(EM)
-	TEST_ASSERT(E in GLOB.event_service.active_events(), "a new event is not active")
+	TEST_ASSERT(E in SSevents.active_events(), "a new event is not active")
 	E.kill()
-	TEST_ASSERT(!(E in GLOB.event_service.active_events()), "a killed event is still active")
-	own_remove(GLOB.event_service, nameof(/datum/world_service/events::finished_events), E) // the service owns finished events
+	TEST_ASSERT(!(E in SSevents.active_events()), "a killed event is still active")
+	own_remove(SSevents, nameof(/datum/system/events::finished_events), E) // the service owns finished events
 
 #endif

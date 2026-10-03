@@ -3,8 +3,8 @@
  */
 /proc/get_allowed_instrument_ids()
 	. = list()
-	for(var/id in instrument_service().instrument_data)
-		var/datum/instrument/I = instrument_service().instrument_data[id]
+	for(var/id in SSinstruments.ready().instrument_data)
+		var/datum/instrument/I = SSinstruments.ready().instrument_data[id]
 		if(!I.admin_only)
 			. += I.id
 
@@ -68,9 +68,9 @@
 		return length(samples)
 	return (length(samples) >= 128)
 
-// songs using it drop it; leaves instrument_service().
+// songs using it drop it; leaves SSinstruments.ready().
 /datum/instrument/on_destroy(force)
-	instrument_service().instrument_data -= id
+	SSinstruments.ready().instrument_data -= id
 	for(var/datum/song/S as anything in songs_using?.Copy())
 		S.set_instrument(null)
 	..()

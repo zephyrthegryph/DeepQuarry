@@ -165,7 +165,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return D.category_static?.items_by_name[D.name]
 
 /proc/registry_instrument(datum/instrument/D)
-	return GLOB.instrument_service?.instrument_data[D.id]
+	return SSinstruments?.instrument_data[D.id]
 
 /proc/registry_map_template(datum/map_template/D)
 	return (SSmapping?.map_templates[D.name] == D || (D in SSmapping?.shelter_templates)) ? D : null
@@ -177,7 +177,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return (D in GLOB.weighted_randomevent_locations) ? D : null
 
 /proc/registry_reagent(datum/reagent/D)
-	return chemistry_service()?.chemical_reagents[D.id]
+	return SSchemistry.ready()?.chemical_reagents[D.id]
 
 /proc/registry_seed(datum/seed/D)
 	return GLOB.plant_service?.seeds[D.name]
@@ -202,7 +202,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /proc/registry_enum_decls()
 	return GLOB.decls_repository?.fetched_decls
 /proc/registry_enum_reagents()
-	return chemistry_service()?.chemical_reagents
+	return SSchemistry.ready()?.chemical_reagents
 /proc/registry_enum_jobs()
 	return SSjob?.type_occupations
 /proc/registry_enum_ores()

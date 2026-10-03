@@ -12,8 +12,8 @@
 
 // the event service forgets its manager panel.
 /datum/event_manager_panel/lifecycle_dematerialize()
-	if(GLOB.event_service?.tgui_event_manager_panel == src)
-		rel_clear(GLOB.event_service, nameof(/datum/world_service/events::tgui_event_manager_panel))
+	if(SSevents?.tgui_event_manager_panel == src)
+		rel_clear(SSevents, nameof(/datum/system/events::tgui_event_manager_panel))
 	..()
 
 DECLARE_UI_STATE(/datum/event_manager_panel, ADMIN_STATE(R_ADMIN|R_EVENT))
@@ -30,10 +30,10 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 /datum/event_manager_panel/proc/ui_data_datum_event_manager_panel(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 	data["events_paused"] = !CONFIG_GET(flag/allow_random_events)
-	data["report_at_round_end"] = !!GLOB.event_service.report_at_round_end
+	data["report_at_round_end"] = !!SSevents.report_at_round_end
 
-	if(GLOB.event_service.selected_event_container())
-		var/datum/event_container/EC = GLOB.event_service.selected_event_container()
+	if(SSevents.selected_event_container())
+		var/datum/event_container/EC = SSevents.selected_event_container()
 		var/event_time = max(0, EC.next_event_time - world.time)
 		data["selected_severity"] = GLOB.severity_to_string[EC.severity]
 		data["selected_time_left_minutes"] = round(event_time / 600, 0.1)
@@ -51,7 +51,7 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 				"current_weight" = EC.get_weight(EM, active_with_role),
 			))
 		data["available_events"] = avail
-		var/datum/event_meta/NE = GLOB.event_service.new_event
+		var/datum/event_meta/NE = SSevents.new_event
 		data["new_event"] = list(
 			"ref" = "\ref[NE]",
 			"name" = NE.name,
@@ -65,7 +65,7 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 		var/list/severities = list()
 		var/list/next_events = list()
 		for(var/severity = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
-			var/datum/event_container/EC = GLOB.event_service.event_containers[severity]
+			var/datum/event_container/EC = SSevents.event_containers[severity]
 			var/next_event_at = max(0, EC.next_event_time - world.time)
 			severities += list(list(
 				"ref" = "\ref[EC]",
@@ -83,7 +83,7 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 		data["severities"] = severities
 		data["next_events"] = next_events
 		var/list/running = list()
-		for(var/datum/event/E in GLOB.event_service.active_events())
+		for(var/datum/event/E in SSevents.active_events())
 			if(!E.event_meta())
 				continue
 			var/datum/event_meta/EM = E.event_meta()
@@ -101,28 +101,28 @@ UI_DATA_REPLACE(/datum/event_manager_panel, "merge:ui_data_datum_event_manager_p
 
 /// The event containers (the service's severity containers), for the UI's container refs.
 /datum/event_manager_panel/proc/event_containers()
-	return GLOB.event_service.event_containers
+	return SSevents.event_containers
 
 /// The editable event metas, for the UI's meta refs: the selected container's events and the
 /// draft new event.
 /datum/event_manager_panel/proc/editable_metas()
 	. = list()
-	var/datum/event_meta/NE = GLOB.event_service.new_event
+	var/datum/event_meta/NE = SSevents.new_event
 	if(NE)
 		. += NE
-	var/datum/event_container/EC = GLOB.event_service.selected_event_container()
+	var/datum/event_container/EC = SSevents.selected_event_container()
 	if(EC)
 		. += EC.available_events
 
 /// Every container's events, for remove_event (checked against the named container).
 /datum/event_manager_panel/proc/all_available_events()
 	. = list()
-	for(var/datum/event_container/EC as anything in GLOB.event_service.event_containers)
+	for(var/datum/event_container/EC as anything in SSevents.event_containers)
 		. += EC.available_events
 
 /// The running events, for the UI's stop_event refs.
 /datum/event_manager_panel/proc/active_events()
-	return GLOB.event_service.active_events()
+	return SSevents.active_events()
 
 /datum/event_manager_panel/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
 	if(!..())
@@ -139,7 +139,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_pause_all)
 
 UI_ACT(/datum/event_manager_panel, "toggle_report", ui_act_toggle_report)
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_report)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	service.report_at_round_end = !service.report_at_round_end
 	log_and_message_admins("has [service.report_at_round_end ? "enabled" : "disabled"] the round end event report.", user)
 	return TRUE
@@ -201,17 +201,17 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_clear_event)
 
 UI_ACT(/datum/event_manager_panel, "view_events", ui_act_view_events, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_view_events)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	var/datum/event_container/EC = params["ref"]
 	if(!EC)
 		return
-	rel_set(service, nameof(/datum/world_service/events::selected_event_container), EC)
+	rel_set(service, nameof(/datum/system/events::selected_event_container), EC)
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "back", ui_act_back)
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_back)
-	var/datum/world_service/events/service = GLOB.event_service
-	rel_clear(service, nameof(/datum/world_service/events::selected_event_container))
+	var/datum/system/events/service = SSevents
+	rel_clear(service, nameof(/datum/system/events::selected_event_container))
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "stop_event", ui_act_stop_event, UI_ARG_REF("ref", "proc:active_events", /datum/event))
@@ -240,7 +240,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_name)
 
 UI_ACT(/datum/event_manager_panel, "set_type", ui_act_set_type, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_type)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	var/datum/event_meta/EM = params["ref"]
 	if(!EM)
 		return
@@ -252,7 +252,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_type)
 
 UI_ACT(/datum/event_manager_panel, "set_weight", ui_act_set_weight, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_weight)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	var/datum/event_meta/EM = params["ref"]
 	if(!EM)
 		return
@@ -266,7 +266,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_set_weight)
 
 UI_ACT(/datum/event_manager_panel, "toggle_oneshot", ui_act_toggle_oneshot, UI_ARG_REF("ref", "proc:editable_metas", /datum/event_meta))
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_toggle_oneshot)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	var/datum/event_meta/EM = params["ref"]
 	if(!EM)
 		return
@@ -301,7 +301,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_remove_event)
 
 UI_ACT(/datum/event_manager_panel, "add_event", ui_act_add_event)
 UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
-	var/datum/world_service/events/service = GLOB.event_service
+	var/datum/system/events/service = SSevents
 	var/datum/event_container/EC = service.selected_event_container()
 	var/datum/event_meta/NE = service.new_event
 	if(!EC || !NE?.name || !NE.event_type)
@@ -311,12 +311,12 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
 		return
 	NE.severity = EC.severity
 	// The container adopts the drafted meta; the service starts a fresh draft below.
-	own_transfer(service, nameof(/datum/world_service/events::new_event), EC, nameof(/datum/event_container::event_pool))
+	own_transfer(service, nameof(/datum/system/events::new_event), EC, nameof(/datum/event_container::event_pool))
 	rel_add(EC, nameof(/datum/event_container::available_events), NE)
 	log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
-	own_set(service, nameof(/datum/world_service/events::new_event), new /datum/event_meta)
+	own_set(service, nameof(/datum/system/events::new_event), new /datum/event_meta)
 	return TRUE
 
-/datum/world_service/events
+/datum/system/events
 	var/datum/event_manager_panel/tgui_event_manager_panel
 

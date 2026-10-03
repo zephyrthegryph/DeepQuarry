@@ -64,7 +64,7 @@
 
 /datum/unit_test/dq_p1_b5_claridyl_one_side_effect/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/datum/reagent/claridyl/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_CLARIDYL]
+	var/datum/reagent/claridyl/R = SSchemistry.chemical_reagents[REAGENT_ID_CLARIDYL]
 	R.claridyl_side_effect(H, 4) // dizziness only
 	TEST_ASSERT(H.has_status(EFFECT_DIZZY), "side effect 4 is dizziness")
 	TEST_ASSERT(!H.has_status(EFFECT_WEAKENED), "one roll must not also weaken")
@@ -75,7 +75,7 @@
 /datum/unit_test/dq_p1_b7_hannoa_bands
 
 /datum/unit_test/dq_p1_b7_hannoa_bands/Run()
-	var/datum/reagent/hannoa/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_HANNOA]
+	var/datum/reagent/hannoa/R = SSchemistry.chemical_reagents[REAGENT_ID_HANNOA]
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	R.hannoa_sedation(H, 3)
 	TEST_ASSERT(H.has_status(EFFECT_BLURRY), "a dose of 3 blurs vision")
@@ -88,7 +88,7 @@
 /datum/unit_test/dq_p1_b8_eden_metabolises
 
 /datum/unit_test/dq_p1_b8_eden_metabolises/Run()
-	var/datum/reagent/eden/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_EDEN]
+	var/datum/reagent/eden/R = SSchemistry.chemical_reagents[REAGENT_ID_EDEN]
 	TEST_ASSERT(R.metabolism > 0, "Eden must metabolise (metabolism [R.metabolism])")
 
 /// B16: Malish-Qualem never divides by a zero healing strength.
@@ -103,7 +103,7 @@
 	var/obj/item/organ/internal/liver = H.organ_in(O_LIVER)
 	liver.transplant_data = list()
 	liver.can_reject = !initial(liver.can_reject)
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_MALISHQUALEM]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_MALISHQUALEM]
 	R.affect_blood(H, IS_SKRELL, 0.1)
 	H.species.chem_strength_heal = old_heal
 	TEST_ASSERT(H.injury_load(INJURY_CATEGORY_TOXIC) < 100, "the rejection toxin is bounded and per unit (load [H.injury_load(INJURY_CATEGORY_TOXIC)])")
@@ -126,7 +126,7 @@
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
 	var/weight = H.weight
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_LIPOSTIPO]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_LIPOSTIPO]
 	R.affect_blood(H, null, 0.2)
 	TEST_ASSERT(H.nutrition > 100, "the weight-gain drug must add nutrition, got [H.nutrition]")
 	TEST_ASSERT(abs((H.weight - weight) - 0.3) < 0.001, "0.2u adds 0.3 weight, got [H.weight - weight]")
@@ -166,7 +166,7 @@
 /datum/unit_test/dq_p1_b18_drink_nutrition/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	H.set_nutrition(100)
-	var/datum/reagent/drink/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_ORANGEJUICE]
+	var/datum/reagent/drink/R = SSchemistry.chemical_reagents[REAGENT_ID_ORANGEJUICE]
 	var/removed = 1
 	var/expected = 100 + R.nutriment_factor * removed * H.species.organic_food_coeff
 	if(!(H.species.allergens & R.allergen_type) && !(H.species.medallergens & R.medallergen_type))
@@ -178,11 +178,11 @@
 /datum/unit_test/dq_p1_b19_species_factor_merge
 
 /datum/unit_test/dq_p1_b19_species_factor_merge/Run()
-	var/datum/reagent/R = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_DEXALIN]
+	var/datum/reagent/R = SSchemistry.chemical_reagents[REAGENT_ID_DEXALIN]
 	var/alist/merged = R.merged_species_factors(IS_SLIME)
 	TEST_ASSERT(merged?[BF_O2_CARRIAGE], "prometheans on dexalin keep its oxygen carriage")
 	TEST_ASSERT(merged?[BF_ANALGESIA], "and get their own analgesia")
-	var/datum/reagent/bloodburn = GLOB.chemistry_service.chemical_reagents[REAGENT_ID_BLOODBURN]
+	var/datum/reagent/bloodburn = SSchemistry.chemical_reagents[REAGENT_ID_BLOODBURN]
 	TEST_ASSERT(!length(bloodburn.factors), "bloodburn does not inherit claridyl's factors")
 
 /// B12: a cold drink cools a hot body toward the target and never heats it.

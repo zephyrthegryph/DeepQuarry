@@ -154,7 +154,7 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Toggle Eye Glow"
 
-	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)
+	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
 		to_chat(src, span_filter_notice("Your selected chassis cannot modify its eye glow!"))
 		return
 
@@ -169,7 +169,7 @@
 	set category = VERB_CAT_ABILITIES_PAI_COMMANDS
 	set name = "Pick Eye Color"
 
-	if(!GLOB.pai_service.chassis_data(chassis_name).has_eye_sprites)
+	if(!SSpai.chassis_data(chassis_name).has_eye_sprites)
 		to_chat(src, span_warning("Your selected chassis eye color can not be modified. The color you pick will only apply to supporting chassis and your card screen."))
 		return
 

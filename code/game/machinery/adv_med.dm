@@ -294,7 +294,7 @@ UI_ACT_PROC(/obj/machinery/bodyscanner, ui_act_print_p)
 	for(var/addic in occupant.get_all_addictions())
 		var/level = occupant.get_addiction_to_reagent(addic)
 		if(level > 0 && level < 80)
-			var/datum/reagent/R = chemistry_service().chemical_reagents[addic]
+			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[addic]
 			dat += span_red("Experiencing withdrawal symptoms: [R.name]")
 			break
 	return dat.Join("<br>")

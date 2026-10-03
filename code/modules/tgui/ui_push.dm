@@ -39,7 +39,7 @@ SYSTEM_DEF(ui_push)
 		SStgui.update_uis(host)
 		return
 	for(var/datum/tgui/ui as anything in host.open_tguis)
-		LAZYSET(S.pending, ui, TRUE)
+		LAZYSET(S.pending, ui, TRUE) // ALLOW(ownership): the UI push system's pending set, written and drained only by this system
 		.++
 
 /// Delivers every queued push now (the phase R step; refresh_flush() for tests and admin tools).

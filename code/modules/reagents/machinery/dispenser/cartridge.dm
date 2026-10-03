@@ -21,7 +21,7 @@
 	. = ..()
 	if(spawn_reagent)
 		reagents.add_reagent(spawn_reagent, volume)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[spawn_reagent]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[spawn_reagent]
 		setLabel(R.name)
 
 /obj/item/reagent_containers/chem_disp_cartridge/proc/setLabel(L, mob/user = null)

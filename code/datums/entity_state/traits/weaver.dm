@@ -109,7 +109,7 @@ UI_DATA_REPLACE(/datum/trait_state/weaver, "merge:ui_data_datum_trait_state_weav
 	return data
 
 /datum/trait_state/weaver/tgui_close(mob/user)
-	GLOB.character_setup_service.queue_preferences_save(user?.client?.prefs)
+	SScharacter_setup.queue_preferences_save(user?.client?.prefs)
 	. = ..()
 
 /datum/trait_state/weaver/proc/correct_savefile_selected()

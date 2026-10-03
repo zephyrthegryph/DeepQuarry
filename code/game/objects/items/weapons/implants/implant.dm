@@ -460,14 +460,14 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 	var/mob/living/carbon/human/H = M
 	if(!H.mind)
 		return
-	var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(H.mind.special_role)
+	var/datum/antagonist/antag_data = SSantag.get_antag_data(H.mind.special_role)
 	if(antag_data && (antag_data.flags & ANTAG_IMPLANT_IMMUNE))
 		act_message(H, null, MSG_SELF("You feel the corporate tendrils of [using_map.company_name] try to invade your mind!"), MSG_OTHERS("%U% seems to resist the implant!"))
 		. = FALSE
 
 /obj/item/implant/loyalty/post_implant(mob/M)
 	var/mob/living/carbon/human/H = M
-	GLOB.antag_service.clear_antag_roles(H.mind, 1)
+	SSantag.clear_antag_roles(H.mind, 1)
 	to_chat(H, span_notice("You feel a surge of loyalty towards [using_map.company_name]."))
 
 //////////////////////////////

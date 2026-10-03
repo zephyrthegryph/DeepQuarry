@@ -1,12 +1,9 @@
-// The motion tracker world service (fold wave F3; was SSmotiontracker). ping() raises
-// /datum/om/event/movable_motiontracker on the service for every hooked listener; listeners queue echo
-// turfs with queue_echo(), and /datum/om/behaviour/world/motiontracker (code/datums/om/world_lanes.dm)
-// draws the queued echoes every second.
-GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new)
-
-/datum/world_service/motiontracker
+// The motion tracker system (was SSmotiontracker). ping() raises /datum/om/event/movable_motiontracker on the
+// system for every hooked listener; listeners queue echo turfs with queue_echo(), and draw_echoes draws the
+// queued echoes every second.
+SYSTEM_DEF(motiontracker)
 	name = "Motion Tracker"
-	lane = /datum/om/behaviour/world/motiontracker
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	var/hide_all = FALSE // Hide and seek mode
 	var/min_range = 2
 	var/max_range = 8
@@ -15,9 +12,10 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	var/list/queued_echo_turfs = list()
 	var/list/currentrun = list()
 	var/list/expended_echos = list()
+	/// TRUE while an echo pass that ran out of budget waits to resume.
+	VAR_PRIVATE/echo_resuming = FALSE
 
-/datum/world_service/motiontracker/stat_line()
-	var/msg
+/datum/system/motiontracker/stat_entry(msg)
 	var/count = 0
 	var/list/track_hooks = om_rec?.hooks_in?[/datum/om/event/movable_motiontracker]
 	if(track_hooks)
@@ -25,13 +23,18 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 	if(hide_all)
 		msg = "HIDE AND SEEK"
 	else
-		msg = "L: [count] | Q: [length(queued_echo_turfs)] | A: [all_echos_round]/[all_pings_round]"
+		msg += "L: [count] | Q: [length(queued_echo_turfs)] | A: [all_echos_round]/[all_pings_round]"
 	return msg
 
-/datum/world_service/motiontracker/service_step(resumed)
-	if(!resumed)
+/datum/system/motiontracker/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(draw_echoes), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/motiontracker/proc/draw_echoes(dt)
+	if(!echo_resuming)
 		src.currentrun = queued_echo_turfs.Copy()
 		expended_echos.Cut()
+	echo_resuming = FALSE
 	while(length(currentrun))
 		var/key = currentrun[1] // Because using an index into an associative array gets the key at that index... I hate you byond.
 		var/list/data = currentrun[key]
@@ -51,42 +54,9 @@ GLOBAL_DATUM_INIT(motiontracker_service, /datum/world_service/motiontracker, new
 					E.append_client(C)
 		currentrun.Remove(key)
 		expended_echos[key] = data
-		if(TICK_CHECK)
-			return FALSE
+		if(KERNEL_OVER_BUDGET)
+			echo_resuming = TRUE
+			return STEP_YIELD
 	// Removed used keys, incase the current queue grew while we were processing this one
 	queued_echo_turfs -= expended_echos
-	return TRUE
-
-// We get this from anything in the world that would cause a motion tracker ping
-// From sounds to motions, to mob attacks. This then sends a signal to anyone listening.
-/datum/world_service/motiontracker/proc/ping(atom/source, hear_chance = 30)
-	if(hide_all) // No pings, admins turned us off
-		return
-	var/turf/T = get_turf(source)
-	if(!isturf(T)) // ONLY call from turfs
-		return
-	if(!prob(hear_chance))
-		return
-	if(hear_chance <= 40)
-		T = get_step(T,pick(GLOB.cardinal))
-		if(!T) // incase...
-			return
-	// Echo time, we have a turf
-	if(queued_echo_turfs[REF(T)]) // Already echoing
-		return
-	all_pings_round++
-	OM_EMIT(src, /datum/om/event/movable_motiontracker, source, T)
-
-// We get this back from anything that handles the signal, and queues up a turf to draw the echo on
-// The logic is in the SIGNAL HANDLER for if it does anything at all with the signal instead of assuming
-// everything wants effects drawn, for example the motion tracker item just flicks() and doesn't call this.
-/datum/world_service/motiontracker/proc/queue_echo(turf/Rt,turf/At,echo_count = 1,client)
-	if(!Rt || !At || !client)
-		return
-	var/rfe = REF(At)
-	if(!queued_echo_turfs[rfe]) // We only care about the final turf, not the root turf for duping
-		queued_echo_turfs[rfe] = list(At, Rt, echo_count, list(client))
-		all_echos_round++
-	else
-		var/list/data = queued_echo_turfs[rfe]
-		data[4] += list(client)
+	return STEP_DONE

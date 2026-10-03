@@ -39,35 +39,6 @@
 	TEST_ASSERT(GLOB.machine_service.steps > machine_steps, "the scheduler never ran the machine lane")
 	TEST_ASSERT(GLOB.mob_service.steps > mob_steps, "the scheduler never ran the mob lane")
 
-/// A service whose step yields `yields` times before it completes.
-/datum/world_service/dq_yield_probe
-	name = "yield probe"
-	var/yields = 0
-	var/resumed_calls = 0
-
-/datum/world_service/dq_yield_probe/service_step(resumed)
-	if(resumed)
-		resumed_calls++
-	if(yields > 0)
-		yields--
-		return FALSE
-	return TRUE
-
-/// A yielding step stays in flight (resuming) and only counts as one completed step.
-/datum/unit_test/dq_world_lanes_yield_resume
-
-/datum/unit_test/dq_world_lanes_yield_resume/Run()
-	var/datum/world_service/dq_yield_probe/S = new
-	S.yields = 2
-	TEST_ASSERT(!S.run_step(), "a yielding step reported completion")
-	TEST_ASSERT(S.resuming, "a yielded step is not marked resuming")
-	TEST_ASSERT(!S.run_step(), "the second slice should still yield")
-	TEST_ASSERT(S.run_step(), "the last slice did not complete")
-	TEST_ASSERT(!S.resuming, "a completed step is still resuming")
-	TEST_ASSERT_EQUAL(S.steps, 1, "three slices of one step counted as more than one step")
-	TEST_ASSERT_EQUAL(S.resumed_calls, 2, "the resumed slices were not told they resume")
-	qdel(S)
-
 /// The machine service's gas wake finishes the whole batch when unbudgeted, and its step
 /// completes (gas wakes, pump commit, power) with a clean pump queue.
 /datum/unit_test/dq_world_lanes_machine_step

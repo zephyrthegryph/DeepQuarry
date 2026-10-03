@@ -41,7 +41,7 @@
 			if(!S)
 				S = sound(get_sfx(soundin))
 			hearer.playsound_local(turf_source, soundin, vol, vary, frequency, falloff, is_global, channel, pressure_affected, S, preference, volume_channel, T)
-			GLOB.motiontracker_service.ping(source,vol) // Nearly everything pings this, the quieter the less likely
+			SSmotiontracker.ping(source,vol) // Nearly everything pings this, the quieter the less likely
 
 /// TRUE if any player could hear a playsound() from `turf_source` within `max_distance`.
 /// Mirrors playsound()'s listener rules, minus soundproofing and walls.

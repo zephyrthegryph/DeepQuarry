@@ -1,6 +1,6 @@
 // Batched explosions and the shared EMP ladder (doc/rewrite/damage.md §7, D5).
 // Atoms reached by an explosion get their blast packets from
-// GLOB.explosion_service.deliver_blast_batches(): grouped by type, bounded by a budget,
+// SSexplosions.deliver_blast_batches(): grouped by type, bounded by a budget,
 // with container contents queued in bulk. Objects are destroyed by integrity.
 
 GLOBAL_LIST_EMPTY(dq_blast_probe_log)
@@ -22,8 +22,8 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 /// Deliver a blast of `severity` to `atoms` the way an explosion epoch does.
 /datum/unit_test/dq_explosion_batch/proc/blast(list/atoms, severity, budget = INFINITY)
 	for(var/atom/movable/AM as anything in atoms)
-		GLOB.explosion_service.queue_blast(AM, severity)
-	return GLOB.explosion_service.deliver_blast_batches(budget, FALSE)
+		SSexplosions.queue_blast(AM, severity)
+	return SSexplosions.deliver_blast_batches(budget, FALSE)
 
 
 /// Outcome parity: which fixture objects survive each severity ring, and with
@@ -93,14 +93,14 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 		atoms += allocate(/obj/structure/dq_blast_probe/alpha, test_floor())
 		atoms += allocate(/obj/structure/dq_blast_probe/beta, test_floor())
 	for(var/atom/movable/AM as anything in atoms)
-		GLOB.explosion_service.queue_blast(AM, 3)
-	GLOB.explosion_service.queue_blast(atoms[1], 2) // a stronger ring reaches it too
-	TEST_ASSERT_EQUAL(GLOB.explosion_service.pending_blast_count(), 10, "a doubly reached atom should be queued once")
+		SSexplosions.queue_blast(AM, 3)
+	SSexplosions.queue_blast(atoms[1], 2) // a stronger ring reaches it too
+	TEST_ASSERT_EQUAL(SSexplosions.pending_blast_count(), 10, "a doubly reached atom should be queued once")
 
-	TEST_ASSERT(!GLOB.explosion_service.deliver_blast_batches(4, FALSE), "delivery should stop at the budget")
+	TEST_ASSERT(!SSexplosions.deliver_blast_batches(4, FALSE), "delivery should stop at the budget")
 	TEST_ASSERT_EQUAL(length(GLOB.dq_blast_probe_log), 4, "exactly the budget's worth of atoms should get packets")
-	TEST_ASSERT_EQUAL(GLOB.explosion_service.pending_blast_count(), 6, "the rest should stay queued")
-	TEST_ASSERT(GLOB.explosion_service.deliver_blast_batches(INFINITY, FALSE), "delivery should finish")
+	TEST_ASSERT_EQUAL(SSexplosions.pending_blast_count(), 6, "the rest should stay queued")
+	TEST_ASSERT(SSexplosions.deliver_blast_batches(INFINITY, FALSE), "delivery should finish")
 	TEST_ASSERT_EQUAL(length(GLOB.dq_blast_probe_log), 10, "every atom should get one packet")
 
 	var/list/expected = list()
@@ -205,7 +205,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 
 /datum/unit_test/dq_explosion_idle_epoch_closes_batches/Run()
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "a contract batch was already open")
-	GLOB.explosion_service.wake_and_defer_subsystem_updates()
+	SSexplosions.wake_and_defer_subsystem_updates()
 	TEST_ASSERT(SScontracts.is_contract_batching(), "the epoch opens a contract batch")
 	for(var/i in 1 to 40)
 		if(!SScontracts.is_contract_batching())
@@ -219,7 +219,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 
 /datum/unit_test/dq_explosion_epoch_resumes_blast_delivery/Run()
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "a contract batch was already open")
-	set_var(GLOB.explosion_service, "blast_batch_budget", 2)
+	set_var(SSexplosions, "blast_batch_budget", 2)
 	GLOB.dq_blast_probe_log.Cut()
 	var/turf/T = test_floor()
 	for(var/i in 1 to 6)
@@ -229,6 +229,6 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 		if(!SScontracts.is_contract_batching())
 			break
 		om_test_ticks(1)
-	TEST_ASSERT_EQUAL(GLOB.explosion_service.pending_blast_count(), 0, "blasts were left queued after the epoch")
+	TEST_ASSERT_EQUAL(SSexplosions.pending_blast_count(), 0, "blasts were left queued after the epoch")
 	TEST_ASSERT(length(GLOB.dq_blast_probe_log) >= 6, "only [length(GLOB.dq_blast_probe_log)] of 6 probes got a packet")
 	TEST_ASSERT(!SScontracts.is_contract_batching(), "the epoch ended with its contract batch still open")

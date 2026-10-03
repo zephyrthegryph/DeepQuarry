@@ -1,6 +1,6 @@
 /// Returns distilled_reactions_by_reagent so handle_reactions() uses the distilling reaction bucket.
 /datum/reagents/distilling/get_reaction_lookup()
-	return chemistry_service().distilled_reactions_by_reagent
+	return SSchemistry.ready().distilled_reactions_by_reagent
 
 /// Distilling holders do not track belly-reagent state.
 /datum/reagents/distilling/supports_belly_reagents()

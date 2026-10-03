@@ -136,7 +136,7 @@ DECLARE_INTERACTIONS(/obj/item/beartrap, \
 			act_message(L, src, MSG_SELF(span_danger("You step on %T%!")), \
 				MSG_OTHERS(span_danger("%U% steps on %T%.")), \
 				MSG_BLIND(span_infoplain(span_bold("You hear a loud metallic snap!"))))
-			GLOB.motiontracker_service.ping(src,100) // Clunk!
+			SSmotiontracker.ping(src,100) // Clunk!
 			attack_mob(L)
 			if(!has_buckled_mobs())
 				set_anchored(FALSE)

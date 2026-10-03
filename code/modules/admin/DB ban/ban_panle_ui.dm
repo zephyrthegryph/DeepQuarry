@@ -32,8 +32,8 @@ DECLARE_UI(/datum/tgui_ban_panel, "BanPanel", UI_TITLE("Ban Panel"))
 
 /datum/tgui_ban_panel/tgui_static_data(mob/user)
 	var/list/bantypes = list("traitor","changeling","operative","revolutionary","cultist","wizard") //For legacy bans.
-	for(var/antag_type in GLOB.antag_service.all_antag_types) // Grab other bans.
-		var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
+	for(var/antag_type in SSantag.all_antag_types) // Grab other bans.
+		var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
 		bantypes |= antag.bantype
 
 	var/list/data = list(

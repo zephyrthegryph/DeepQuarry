@@ -229,7 +229,7 @@ DECLARE_INTERACTIONS(/obj/item/ghost_trap, \
 
 	if(deployed)
 		visible_message(span_danger("A flurry of beams shoot into the air from \the [src]!"))
-		GLOB.motiontracker_service.ping(src,100) // Clunk!
+		SSmotiontracker.ping(src,100) // Clunk!
 		catch_ghost(passing_entity)
 		deployed = FALSE
 		set_anchored(FALSE)

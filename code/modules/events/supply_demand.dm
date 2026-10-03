@@ -291,8 +291,8 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
 	// Checking if they show up in health analyzer is good huristic for it being a drug
 	var/list/medicineReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/CR in chemistry_service().chemical_reactions)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[initial(CR.result)]
+	for(var/datum/decl/chemical_reaction/instant/CR in SSchemistry.ready().chemical_reactions)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
 		if(R && R.scannable)
 			medicineReagents += R
 	for(var/i in 1 to differentTypes)
@@ -304,8 +304,8 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
 	var/list/drinkReagents = list()
-	for(var/datum/decl/chemical_reaction/instant/drinks/CR in chemistry_service().chemical_reactions)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[initial(CR.result)]
+	for(var/datum/decl/chemical_reaction/instant/drinks/CR in SSchemistry.ready().chemical_reactions)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[initial(CR.result)]
 		if(istype(R, /datum/reagent/drink) || istype(R, /datum/reagent/ethanol))
 			drinkReagents += R
 	for(var/i in 1 to differentTypes)

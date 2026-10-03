@@ -55,7 +55,7 @@
 		contract?.board_key || candidate?.board_key,
 		reason,
 	)
-	lifecycle_history += entry
+	lifecycle_history += entry // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	if(length(lifecycle_history) > CONTRACT_LIFECYCLE_HISTORY_LIMIT)
 		var/datum/contract_lifecycle_entry/expired = lifecycle_history[1]
 		lifecycle_history.Cut(1, 2)
@@ -197,7 +197,7 @@
 		candidate_expires_at,
 		priority,
 	)
-	offer_candidates += candidate
+	offer_candidates += candidate // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	record_lifecycle("candidate", null, candidate, reason)
 	var/datum/contract/materialized = candidate_context["defer_materialization"] ? null : try_materialize_candidate(candidate)
 	if(materialized)

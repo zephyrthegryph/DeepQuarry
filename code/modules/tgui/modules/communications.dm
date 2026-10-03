@@ -151,12 +151,12 @@ UI_DATA(/datum/tgui_module/communications, "emagged:num", "message_current_id=cu
 	data["msg_cooldown"] = message_cooldown ? (round((message_cooldown - world.time) / 10)) : 0
 	data["cc_cooldown"] = centcomm_message_cooldown ? (round((centcomm_message_cooldown - world.time) / 10)) : 0
 
-	data["esc_callable"] = GLOB.emergency_shuttle_service.location() && !GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
-	data["esc_recallable"] = GLOB.emergency_shuttle_service.location() && GLOB.emergency_shuttle_service.online() ? TRUE : FALSE
+	data["esc_callable"] = SSemergency_shuttle.location() && !SSemergency_shuttle.online() ? TRUE : FALSE
+	data["esc_recallable"] = SSemergency_shuttle.location() && SSemergency_shuttle.online() ? TRUE : FALSE
 	data["esc_status"] = FALSE
-	if(GLOB.emergency_shuttle_service.has_eta())
-		var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
-		data["esc_status"] = GLOB.emergency_shuttle_service.online() ? "ETA:" : "RECALLING:"
+	if(SSemergency_shuttle.has_eta())
+		var/timeleft = SSemergency_shuttle.estimate_arrival_time()
+		data["esc_status"] = SSemergency_shuttle.online() ? "ETA:" : "RECALLING:"
 		data["esc_status"] += " [timeleft / 60 % 60]:[add_zero(num2text(timeleft % 60), 2)]"
 	return data
 
@@ -289,7 +289,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_callshuttle)
 
 	if(response == "Yes")
 		call_shuttle_proc(ui.user)
-		if(GLOB.emergency_shuttle_service.online())
+		if(SSemergency_shuttle.online())
 			post_status(src, "shuttle", user = ui.user)
 		setMenuState(ui.user, COMM_SCREEN_MAIN)
 
@@ -429,7 +429,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		PS.allowedtocall = !(PS.allowedtocall)
 
 /proc/call_shuttle_proc(mob/user)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
 	if(!GLOB.universe.OnShuttleCall(user))
@@ -440,7 +440,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		to_chat(user, "[using_map.boss_short] will not allow the shuttle to be called. Consider all contracts terminated.")
 		return
 
-	if(GLOB.emergency_shuttle_service.deny_shuttle)
+	if(SSemergency_shuttle.deny_shuttle)
 		to_chat(user, "The emergency shuttle may not be sent at this time. Please try again later.")
 		return
 
@@ -448,11 +448,11 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		to_chat(user, "The emergency shuttle is refueling. Please wait another [round((6000-world.time)/600)] minute\s before trying again.")
 		return
 
-	if(GLOB.emergency_shuttle_service.going_to_centcom())
+	if(SSemergency_shuttle.going_to_centcom())
 		to_chat(user, "The emergency shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		to_chat(user, "The emergency shuttle is already on its way.")
 		return
 
@@ -460,7 +460,7 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 		to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 		return
 
-	GLOB.emergency_shuttle_service.call_evac()
+	SSemergency_shuttle.call_evac()
 	log_game("[key_name(user)] has called the shuttle.")
 	message_admins("[key_name_admin(user)] has called the shuttle.", 1)
 	admin_chat_message(message = "Emergency evac beginning! Called by [key_name(user)]!", color = "#CC2222")
@@ -468,20 +468,20 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 	return
 
 /proc/init_shift_change(mob/user, force = 0)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
-	if(GLOB.emergency_shuttle_service.going_to_centcom())
+	if(SSemergency_shuttle.going_to_centcom())
 		to_chat(user, "The shuttle may not be called while returning to [using_map.boss_short].")
 		return
 
-	if(GLOB.emergency_shuttle_service.online())
+	if(SSemergency_shuttle.online())
 		to_chat(user, "The shuttle is already on its way.")
 		return
 
 	// if force is 0, some things may stop the shuttle call
 	if(!force)
-		if(GLOB.emergency_shuttle_service.deny_shuttle)
+		if(SSemergency_shuttle.deny_shuttle)
 			to_chat(user, "[using_map.boss_short] does not currently have a shuttle available in your sector. Please try again later.")
 			return
 
@@ -495,18 +495,18 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 
 		if(SSticker.mode.auto_recall_shuttle)
 			//New version pretends to call the shuttle but cause the shuttle to return after a random duration.
-			GLOB.emergency_shuttle_service.auto_recall = TRUE
+			SSemergency_shuttle.auto_recall = TRUE
 
 		if(SSticker.mode.name == "blob" || SSticker.mode.name == "epidemic")
 			to_chat(user, "Under directive 7-10, [station_name()] is quarantined until further notice.")
 			return
 
-	GLOB.emergency_shuttle_service.call_transfer()
+	SSemergency_shuttle.call_transfer()
 
 	//delay events in case of an autotransfer
 	if (isnull(user))
-		GLOB.event_service.delay_events(EVENT_LEVEL_MODERATE, 9000) //15 minutes
-		GLOB.event_service.delay_events(EVENT_LEVEL_MAJOR, 9000)
+		SSevents.delay_events(EVENT_LEVEL_MODERATE, 9000) //15 minutes
+		SSevents.delay_events(EVENT_LEVEL_MAJOR, 9000)
 
 	log_game("[user? key_name(user) : "Autotransfer"] has called the shuttle.")
 	message_admins("[user? key_name_admin(user) : "Autotransfer"] has called the shuttle.", 1)
@@ -515,13 +515,13 @@ UI_ACT_PROC(/datum/tgui_module/communications, ui_act_restorebackup)
 	return
 
 /proc/cancel_call_proc(mob/user)
-	if (!( SSticker ) || !GLOB.emergency_shuttle_service.can_recall())
+	if (!( SSticker ) || !SSemergency_shuttle.can_recall())
 		return
 	if((SSticker.mode.name == "blob")||(SSticker.mode.name == "Meteor"))
 		return
 
-	if(!GLOB.emergency_shuttle_service.going_to_centcom()) //check that shuttle isn't already heading to CentCom
-		GLOB.emergency_shuttle_service.recall()
+	if(!SSemergency_shuttle.going_to_centcom()) //check that shuttle isn't already heading to CentCom
+		SSemergency_shuttle.recall()
 		log_game("[key_name(user)] has recalled the shuttle.")
 		message_admins("[key_name_admin(user)] has recalled the shuttle.", 1)
 	return

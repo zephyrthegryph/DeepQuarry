@@ -341,7 +341,7 @@
 /datum/benchmark/sm_soak/Run()
 	wait_for_assets()
 	if(param("profile_types", 0))
-		GLOB.explosion_service.profile_atom_types = TRUE
+		SSexplosions.profile_atom_types = TRUE
 	mark("before")
 	var/blasts = param("blasts", 4)
 	var/list/drains = list()

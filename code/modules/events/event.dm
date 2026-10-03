@@ -163,7 +163,7 @@
 
 	EXPIRY_STAMP(src, endedAt, CLOCK_WORLD)
 	if(!external_use)
-		GLOB.event_service.event_complete(src)
+		SSevents.event_complete(src)
 
 //Called during building of skybox to get overlays
 /datum/event/proc/get_skybox_image()
