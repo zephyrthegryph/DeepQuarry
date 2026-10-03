@@ -842,6 +842,7 @@
 #include "interim_singularity_beacon_sticky_deployment.dm"
 #include "interim_translocator_sticky_beacon_reclaim.dm"
 #include "interim_glitch_illusion_death_cleanup.dm"
+#include "interim_paper_supply_pickup_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

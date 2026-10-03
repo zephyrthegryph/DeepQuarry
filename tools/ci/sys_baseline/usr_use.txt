@@ -296,8 +296,6 @@ usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
 usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src = src, params = params, title = name)
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
-usr_outside_verb	code/modules/paperwork/paper_sticky.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
-usr_outside_verb	code/modules/paperwork/paperbin.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
