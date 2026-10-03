@@ -687,6 +687,7 @@
 #include "interim_snow_shovel_cleanup.dm"
 #include "interim_nuclear_sticky_auth_disk.dm"
 #include "interim_clonepod_sticky_container.dm"
+#include "interim_pulse_exhaustion.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

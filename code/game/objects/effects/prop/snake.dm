@@ -36,7 +36,7 @@
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse_wait()
 	if(pulses_remaining <= 0)
-		qdel(src)
+		consume(src)
 		return
 	om_after(src, pulse_delay, PROC_REF(snake_pulse))
 

@@ -51,7 +51,7 @@ DECLARE_REPEAT(/obj/effect/temporary_effect/pulse, "pulse_delay", pulse_step, "p
 		pulses_remaining--
 		on_pulse()
 		return
-	qdel(src)
+	consume(src)
 	return REPEAT_STOP
 
 // Override for specific effects.
