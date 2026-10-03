@@ -1,3 +1,21 @@
+// The recharger and the wall recharger (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md).
+//
+// ONE CAPABILITIES list says what each is: a machine that works only with power and a whole casing, a wrench-anchored base (the wall one is bolted
+// to its wall), a part-replacer target, a one-item slot (`charging`, owned: a device left in it is dropped when the recharger goes), the ops that
+// fill it (by hand or by dragging) and empty it, and the charge loop. The imperative parts below are its own: the conditions and effects the list
+// names (the take op sits at priority 5: below the insert, above a module-less cyborg's generic swallow of an empty touch), the charge frames for each kind of device, its power mode and its look.
+//
+// What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, NOPOWER, ...) read through machine_basics()'s one
+// bridge contribution, set_use_power(), RefreshParts() with the circuit board and its parts, and maintenance_flags (the panel and the crowbar).
+
+MSG_DEF_SELF(recharger/occupied, "Something is already charging here.")
+MSG_DEF_SELF(recharger/no_power, "It blinks red as you try to insert that.")
+MSG_DEF_SELF(recharger/no_port, "That has no recharge port.")
+MSG_DEF_SELF(recharger/no_battery_installed, "That does not have a battery installed.")
+MSG_DEF_SELF(recharger/pai_panel, "That won't fit in the recharger with its panel open.")
+MSG_DEF_SELF(recharger/pai_fine, "That boops... it doesn't need to be recharged!")
+MSG_DEF_SELF(recharger/pai_empty, "That doesn't have a personality!")
+
 GLOBAL_LIST_INIT(allowed_recharger_devices, list(
 	/obj/item/gun/energy,
 	/obj/item/gun/magnetic,
@@ -35,7 +53,11 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	/obj/item/ammo_magazine/cell_mag
 	))
 
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
+/// What the recharger is doing, as the look shows it.
+#define RECHARGER_IDLE 0
+#define RECHARGER_CHARGING 1
+#define RECHARGER_CHARGED 2
+
 /obj/machinery/recharger
 	maintenance_flags = MACHINE_MAINT_STANDARD
 	name = "recharger"
@@ -46,8 +68,8 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 4
 	active_power_usage = 40000	//40 kW
-	var/efficiency = 40000 //will provide the modified power rate when upgraded
-	/// Runs on the machine pipeline (machine_pipeline.dm): the power/recharger stage charges.
+	/// The charge given per machine frame, in watts; the capacitors set it (RefreshParts()).
+	var/efficiency = 40000
 	var/icon_state_charged = "recharger2"
 	var/icon_state_charging = "recharger1"
 	var/icon_state_idle = "recharger0" //also when unpowered
@@ -55,166 +77,191 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 	var/portable = TRUE
 	///If we can charge everything or use a smaller list.
 	var/small = FALSE
+	/// The item being recharged.
+	var/obj/item/charging
+	/// RECHARGER_*: what the look shows.
+	var/charge_phase = RECHARGER_IDLE
 	circuit = /obj/item/circuitboard/recharger
+
+TRACKED(/obj/machinery/recharger, charge_phase)
+
+CAPABILITIES(/obj/machinery/recharger, \
+	machine_basics(repair = NONE), \
+	anchor(empty = nameof(charging)), \
+	part_replacement(), \
+	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL), \
+	op("insert", item(/obj/item), when(req(PROC_REF(takes_device))), \
+		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), \
+		then(PROC_REF(insert_device))), \
+	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req(PROC_REF(takes_device))), \
+		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), \
+		then(PROC_REF(drag_in_device))), \
+	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_device))), \
+	examine_line(PROC_REF(examine_contents)), \
+	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed))), \
+	on_change(nameof(anchored), ANY, then(PROC_REF(charging_changed))), \
+	on_change(nameof(stat), ANY, then(PROC_REF(charging_changed))), \
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging)))
+
+/// A wall recharger is bolted to its wall: its wrench does nothing.
+/obj/machinery/recharger/wallcharger
+	name = "wall recharger"
+	desc = "A more powerful recharger designed for energy weapons."
+	icon = 'icons/obj/stationobjs.dmi'
+	icon_state = "wrecharger0"
+	plane = TURF_PLANE
+	layer = ABOVE_TURF_LAYER
+	active_power_usage = 60000	//60 kW , It's more specialized than the standalone recharger (guns, batons, and flashlights only) so make it more powerful
+	efficiency = 60000
+	small = TRUE
+	icon_state_charged = "wrecharger2"
+	icon_state_charging = "wrecharger1"
+	icon_state_idle = "wrecharger0"
+	portable = FALSE
+	circuit = /obj/item/circuitboard/recharger/wrecharger
+	flags = WALL_ITEM
+
+CAPABILITIES(/obj/machinery/recharger/wallcharger, \
+	without(CAP_ANCHOR))
 
 /obj/machinery/recharger/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
+	settle_power()
 
+/obj/machinery/recharger/RefreshParts()
+	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
+	efficiency = active_power_usage * (1+ (E - 1)*0.5)
 
-/obj/machinery/recharger/examine(mob/user)
-	. = ..()
+// ---- the slot's conditions ----
 
-	if(get_dist(user, src) <= 5)
-		. += "[charging ? "[charging]" : "Nothing"] is in [src]."
-		if(charging)
-			var/obj/item/cell/C = charging.get_cell()
-			if(C)				// Sometimes we get things without cells in it.
-				. += "Current charge: [C.charge] / [C.maxcharge]"
+/// Whether the held item is a device this recharger (or wall charger) takes.
+/obj/machinery/recharger/proc/takes_device(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(!held)
+		return FALSE
+	for(var/type in (small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)) // ALLOW(reads): the lists are constants and an item's type is fixed for its life
+		if(istype(held, type))
+			return TRUE
+	return FALSE
 
-///Checks valid items to see if there's any reasons we wouldn't allow them to be put in.
-/obj/machinery/recharger/proc/do_allowed_checks(obj/item/G, mob/user)
-	. = FALSE
+/// Why this device cannot go in now, or null.
+/obj/machinery/recharger/proc/device_refusal(datum/act/op/A)
+	var/obj/item/G = A.held
 	if(charging)
-		to_chat(user, span_warning("\A [charging] is already charging here."))
-		return
+		return /datum/msg/recharger/occupied
 	// Checks to make sure he's not in space doing it, and that the area got proper power.
-	if(!powered())
-		to_chat(user, span_warning("\The [src] blinks red as you try to insert [G]!"))
-		return
+	if(!cap_powered())
+		return /datum/msg/recharger/no_power
 	if(istype(G, /obj/item/gun/energy))
 		var/obj/item/gun/energy/E = G
 		if(E.self_recharge)
-			to_chat(user, span_notice("\The [E] has no recharge port."))
-			return
+			return /datum/msg/recharger/no_port
 	if(istype(G, /obj/item/modular_computer))
 		var/obj/item/modular_computer/C = G
-		if(!C.battery_module)
-			to_chat(user, span_notice("\The [C] does not have a battery installed. "))
-			return
+		if(!C.battery_module) // ALLOW(reads): a computer's battery is legacy item state, read when the computer is offered
+			return /datum/msg/recharger/no_battery_installed
 	if(istype(G, /obj/item/flash))
 		var/obj/item/flash/F = G
 		if(F.use_external_power)
-			to_chat(user, span_notice("\The [F] has no recharge port."))
-			return
+			return /datum/msg/recharger/no_port
 	if(istype(G, /obj/item/weldingtool/electric))
 		var/obj/item/weldingtool/electric/EW = G
 		if(EW.use_external_power)
-			to_chat(user, span_notice("\The [EW] has no recharge port."))
-			return
-	if(!G.get_cell() && !is_type_in_list(G, GLOB.recharger_battery_exempt))
-		to_chat(user, "\The [G] does not have a battery installed.")
-		return
+			return /datum/msg/recharger/no_port
+	if(!G.get_cell() && !battery_exempt(G))
+		return /datum/msg/recharger/no_battery_installed
 	if(istype(G, /obj/item/paicard))
 		var/obj/item/paicard/ourcard = G
-		if(ourcard.panel_open)
-			to_chat(user, span_warning("\The [ourcard] won't fit in the recharger with its panel open."))
-			return
-		if(ourcard.pai)
-			if(ourcard.pai.stat == CONSCIOUS)
-				to_chat(user, span_warning("\The [ourcard] boops... it doesn't need to be recharged!"))
-				return
+		if(ourcard.panel_open) // ALLOW(reads): a card's panel is legacy item state, read when the card is offered
+			return /datum/msg/recharger/pai_panel
+		if(ourcard.pai) // ALLOW(reads): a card's personality is legacy item state, read when the card is offered
+			if(ourcard.pai.stat == CONSCIOUS) // ALLOW(reads): a personality's state is legacy mob state, read when the card is offered
+				return /datum/msg/recharger/pai_fine
 		else
-			to_chat(user, span_warning("\The [ourcard] doesn't have a personality!"))
-			return
-	return TRUE
+			return /datum/msg/recharger/pai_empty
+	return null
 
-/obj/machinery/recharger/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/recharger_insert,
-		/datum/interaction/machine_item/part_replacement,
-		/datum/interaction/machine_hand/ungated/recharger_take,
-		/datum/interaction/machine_drag/recharger_insert,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take", PROC_REF(recharger_silicon_take)))
-	..()
+/// Devices that charge without a cell of their own (a pAI card, microbatteries).
+/obj/machinery/recharger/proc/battery_exempt(obj/item/G)
+	for(var/type in GLOB.recharger_battery_exempt)
+		if(istype(G, type))
+			return TRUE
+	return FALSE
 
-/// Put a chargeable device in the recharger.
-/datum/interaction/machine_item/recharger_insert
-	id = "recharger_insert"
-	name = "Insert to charge"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharger/proc/takes_device, "it doesn't charge that"))
-	effect = /obj/machinery/recharger/proc/interaction_insert
+/obj/machinery/recharger/proc/device_ok(datum/act/op/A)
+	return isnull(device_refusal(A))
 
-/// Drag a chargeable device onto the recharger.
-/datum/interaction/machine_drag/recharger_insert
-	id = "recharger_drag_insert"
-	name = "Insert to charge"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/recharger/proc/takes_device, "it doesn't charge that"))
-	effect = /obj/machinery/recharger/proc/interaction_drag_insert
-
-/// Take the charging device out.
-/datum/interaction/machine_hand/ungated/recharger_take
-	id = "recharger_take"
-	name = "Take out"
-	category = INTERACTION_CAT_EJECT
-	requires = list(REQ_REACH_ADJACENT)
-	effect = /obj/machinery/recharger/proc/interaction_take
-
-/// Whether `held` is a device this recharger (or wall charger) takes.
-/obj/machinery/recharger/proc/takes_device(mob/actor, atom/target, atom/held)
-	if(!held)
-		return FALSE
-	return is_type_in_list(held, small ? GLOB.allowed_wallcharger_devices : GLOB.allowed_recharger_devices)
-
-/obj/machinery/recharger/proc/interaction_insert(mob/user, obj/item/G, datum/interaction/interaction)
-	if(!do_allowed_checks(G, user))
-		return TRUE
+/// A device goes in by hand: an unlucky person sometimes puts it in backwards, and it lands on the floor.
+/obj/machinery/recharger/proc/insert_device(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/G = A.held
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
-		act_message(user, src, MSG_SELF("You insert [charging] into %T% backwards!"), MSG_OTHERS("%U% inserts [charging] into %T% backwards!"))
+		act_message(user, src, MSG_SELF("You insert [G] into %T% backwards!"), MSG_OTHERS("%U% inserts [G] into %T% backwards!"))
 		user.drop_item()
 		G.forceMove(get_turf(src))
-		return TRUE
+		return OP_OK
 	user.drop_item()
-	G.forceMove(src)
-	set_charging(G)
-	changed(src, CHANGE_MACHINE_OCCUPANT)
-	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
-	return TRUE
+	return put_device(user, G)
 
-/obj/machinery/recharger/proc/interaction_drag_insert(mob/user, obj/item/G, datum/interaction/interaction)
-	if(!do_allowed_checks(G, user))
-		return TRUE
-	G.forceMove(src)
-	set_charging(G)
-	changed(src, CHANGE_MACHINE_OCCUPANT)
-	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
-	return TRUE
+/// A device dragged onto it goes in (no luck involved).
+/obj/machinery/recharger/proc/drag_in_device(datum/act/op/A)
+	return put_device(A.actor, A.held)
 
-/obj/machinery/recharger/wrench_act(mob/user, obj/item/tool)
-	if(!portable)
-		return ..()
-	if(charging)
-		to_chat(user, span_warning("Remove [charging] first!"))
-		return ITEM_INTERACT_BLOCKING
-	set_anchored(!anchored)
-	changed(src, CHANGE_MACHINE_ANCHORED)
-	to_chat(user, "You [anchored ? "attached" : "detached"] [src].")
-	playsound(src, tool.usesound, 75, TRUE)
-	return ITEM_INTERACT_SUCCESS
+/obj/machinery/recharger/proc/put_device(mob/user, obj/item/G)
+	if(!varslot_insert(src, nameof(charging), G, user))
+		return OP_REFUSED
+	act_message(user, src, MSG_SELF("You insert [G] into %T%."), MSG_OTHERS("%U% inserts [G] into %T%."))
+	return OP_OK
 
-/obj/machinery/recharger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)
+/// The empty hand takes the device out. A cyborg beside it sets the device down on the recharger's tile instead of holding it.
+/obj/machinery/recharger/proc/take_device(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/device = charging
+	if(!device || !user)
+		return OP_REFUSED
 	add_fingerprint(user)
-	if(charging)
-		act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
-		charging.update_icon()
-		user.put_in_hands(charging)
-		set_charging(null)
-		changed(src, CHANGE_MACHINE_OCCUPANT)
-	return TRUE
+	act_message(user, src, MSG_SELF("You remove [device] from %T%."), MSG_OTHERS("%U% removes [device] from %T%."))
+	device.update_icon()
+	if(isrobot(user))
+		varslot_set(src, nameof(charging), null)
+		device.forceMove(loc)
+		return OP_OK
+	varslot_take(src, nameof(charging), user)
+	return OP_OK
 
-/// Old attack_ai: a cyborg next to it takes out what's charging. Nothing for the AI.
-/obj/machinery/recharger/proc/recharger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
-		if(charging)
-			act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
-			charging.update_icon()
-			charging.forceMove(src.loc)
-			set_charging(null)
-			changed(src, CHANGE_MACHINE_OCCUPANT)
-	return TRUE
+// ---- the charge loop ----
 
-/// One frame of charging (the machine pipeline's power/recharger stage decides whether to).
+/// Powered, whole and bolted down.
+/obj/machinery/recharger/proc/usable()
+	return operable() && anchored
+
+/// The power mode and look this recharger should have: off when it cannot work, idle with nothing to charge, active while it charges.
+/obj/machinery/recharger/proc/settle_power()
+	if(!usable())
+		set_use_power(USE_POWER_OFF)
+		set_charge_phase(RECHARGER_IDLE)
+	else if(!charging)
+		set_use_power(USE_POWER_IDLE)
+		set_charge_phase(RECHARGER_IDLE)
+	else if(charging_complete())
+		set_use_power(USE_POWER_IDLE)
+		set_charge_phase(RECHARGER_CHARGED)
+	else
+		set_use_power(USE_POWER_ACTIVE)
+		set_charge_phase(RECHARGER_CHARGING)
+
+/// A device went in or out, or it was bolted or unbolted, or its power or casing changed: the power mode and look follow.
+/obj/machinery/recharger/proc/charging_changed(datum/act/A)
+	settle_power()
+
+/// One machine frame.
+/obj/machinery/recharger/proc/charge_frame(datum/act/timer/A)
+	if(usable() && charging && !charging_complete())
+		charge_step()
+	settle_power()
+
+/// One frame of charging.
 /obj/machinery/recharger/proc/charge_step()
 	if(istype(charging, /obj/item/paicard))
 		charge_pai(charging)
@@ -227,13 +274,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		return
 	var/obj/item/cell/C = charging.get_cell()
 	if(istype(C))
-		if(!C.fully_charged())
-			icon_state = icon_state_charging
-			C.give(CELLRATE*efficiency)
-			set_use_power(USE_POWER_ACTIVE)
-		else
-			icon_state = icon_state_charged
-			set_use_power(USE_POWER_IDLE)
+		C.give(CELLRATE*efficiency)
 	else if(istype(charging, /obj/item/ammo_casing/microbattery))
 		charge_microbattery(charging)
 
@@ -264,8 +305,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 ///Charges PAIs.
 /obj/machinery/recharger/proc/charge_pai(obj/item/paicard/pcard)
 	if(pcard.is_damage_critical())
-		pcard.forceMove(get_turf(src))
-		set_charging(null)
+		varslot_take(src, nameof(charging), null)
 		return
 	if(pcard.pai.is_injured())
 		pcard.pai.mend(TREAT_PLATING_REPAIR, 5)
@@ -273,21 +313,16 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 		pcard.pai.mend(TREAT_TISSUE_REPAIR, 5)
 		pcard.pai.mend(TREAT_BURN_CARE, 5)
 	else
-		set_charging(null)
+		varslot_take(src, nameof(charging), null)
 		visible_message(span_notice("\The [src] ejects the [pcard]!"))
-		pcard.forceMove(get_turf(src))
 		pcard.pai.full_restore()
 
 ///Charges microbatteries. One projectile at a time.
 /obj/machinery/recharger/proc/charge_microbattery(obj/item/ammo_casing/microbattery/batt)
 	if(batt.shots_left >= initial(batt.shots_left))
 		batt.shots_left = initial(batt.shots_left)
-		icon_state = icon_state_charged
-		set_use_power(USE_POWER_IDLE)
 	else
-		icon_state = icon_state_charging
 		batt.shots_left++
-		set_use_power(USE_POWER_ACTIVE)
 
 ///Charges cell magazines, one projectile at a time.
 /obj/machinery/recharger/proc/charge_cell_magazine(obj/item/ammo_magazine/cell_mag/magazine)
@@ -296,11 +331,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			if(shot_to_charge.shots_left >= initial(shot_to_charge.shots_left))
 				continue
 			shot_to_charge.shots_left++
-			icon_state = icon_state_charging
-			set_use_power(USE_POWER_ACTIVE)
 			return
-	icon_state = icon_state_charged
-	set_use_power(USE_POWER_IDLE)
 
 ///Charges cell guns. First charges the currently chambered battery, then the batteries in the magazine.
 /obj/machinery/recharger/proc/charge_cell_gun(obj/item/gun/projectile/cell_loaded/cellgun)
@@ -309,9 +340,7 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 	//First, we charge the currently chambered battery if there is one.
 	if(batt && !(batt.shots_left >= initial(batt.shots_left)))
-		icon_state = icon_state_charging
 		batt.shots_left++
-		set_use_power(USE_POWER_ACTIVE)
 		return
 	//Second, we charge the batteries in the magazine.
 	else if(magazine && LAZYLEN(magazine.stored_ammo))
@@ -319,34 +348,28 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 			if(shot_to_charge.shots_left >= initial(shot_to_charge.shots_left))
 				continue
 			shot_to_charge.shots_left++
-			icon_state = icon_state_charging
-			set_use_power(USE_POWER_ACTIVE)
 			return //only heal one at a time.
-	//If the chambered battery AND the magazine are all full, we are done.
-	icon_state = icon_state_charged
-	set_use_power(USE_POWER_IDLE)
-	return
 
-// Immediate feedback; the power stage refines it (charged, charging) each frame.
-APPEARANCE_TEMPLATE(/obj/machinery/recharger, "{charging?@icon_state_charging:@icon_state_idle}")
+// ---- what it shows ----
 
-/obj/machinery/recharger/RefreshParts()
-	var/E = get_part_rating(/obj/item/stock_parts/capacitor)
-	efficiency = active_power_usage * (1+ (E - 1)*0.5)
+/obj/machinery/recharger/draw(datum/look/look)
+	..()
+	switch(charge_phase)
+		if(RECHARGER_CHARGED)
+			look.state(icon_state_charged)
+		if(RECHARGER_CHARGING)
+			look.state(icon_state_charging)
+		else
+			look.state(icon_state_idle)
 
-/obj/machinery/recharger/wallcharger
-	name = "wall recharger"
-	desc = "A more powerful recharger designed for energy weapons."
-	icon = 'icons/obj/stationobjs.dmi'
-	icon_state = "wrecharger0"
-	plane = TURF_PLANE
-	layer = ABOVE_TURF_LAYER
-	active_power_usage = 60000	//60 kW , It's more specialized than the standalone recharger (guns, batons, and flashlights only) so make it more powerful
-	efficiency = 60000
-	small = TRUE
-	icon_state_charged = "wrecharger2"
-	icon_state_charging = "wrecharger1"
-	icon_state_idle = "wrecharger0"
-	portable = FALSE
-	circuit = /obj/item/circuitboard/recharger/wrecharger
-	flags = WALL_ITEM
+/// Within a few tiles it says what it holds.
+/obj/machinery/recharger/proc/examine_contents(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user || get_dist(user, src) > 5)
+		return null
+	var/list/lines = list("[charging ? "[charging]" : "Nothing"] is in [src].")
+	if(charging)
+		var/obj/item/cell/C = charging.get_cell()
+		if(C) // Sometimes we get things without cells in it.
+			lines += "Current charge: [C.charge] / [C.maxcharge]"
+	return lines

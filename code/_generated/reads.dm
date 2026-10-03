@@ -101,6 +101,10 @@
 	. = ..()
 	. += rust_push(nameof(scrubbing), nameof(scrubbing_gas), nameof(use_power), nameof(welded))
 
+/obj/machinery/cell_charger/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(anchored), nameof(charging))
+
 /obj/machinery/computer/supplycomp/generated_reads()
 	. = ..()
 	. += ui_from(nameof(authorization), nameof(can_order_contraband))
@@ -118,6 +122,10 @@
 	. = ..()
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
 	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
+
+/obj/machinery/recharger/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))
 
 /obj/machinery/vending/generated_reads()
 	. = ..()

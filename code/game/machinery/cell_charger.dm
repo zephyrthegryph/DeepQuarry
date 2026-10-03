@@ -1,3 +1,17 @@
+// The heavy-duty cell charger (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md).
+//
+// ONE CAPABILITIES list says what it is: a machine that works only with power and a whole casing, a wrench-anchored base, a part-replacer target,
+// a one-cell slot (`charging`, owned: the cell goes when the charger does), the ops that fill and empty the slot, and the charge loop.
+// The take op sits at priority 5: below the insert (a refused insert keeps what is in the charger) and above a module-less cyborg's generic swallow of an
+// empty touch. The imperative parts below are its own: the conditions and effects the list names, the charge frame, its power mode and its look.
+//
+// What the machine core still keeps until the machine track (phase 4): the stat bits (BROKEN, NOPOWER, ...) read through machine_basics()'s one
+// bridge contribution, set_use_power(), RefreshParts() with the circuit board and its parts, and maintenance_flags (the panel and the crowbar).
+
+MSG_DEF(charger/inserted, "You insert %I% into %T%.", "%U% inserts %I% into %T%.")
+MSG_DEF_SELF(charger/wrong_cell, "It isn't fitted for that type of cell.")
+MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell.")
+
 /obj/machinery/cell_charger
 	name = "heavy-duty cell charger"
 	desc = "A much more powerful version of the standard recharger that is specially designed for charging power cells."
@@ -7,141 +21,136 @@
 	use_power = USE_POWER_IDLE
 	idle_power_usage = 5
 	active_power_usage = 60000	//60 kW. (this the power drawn when charging)
-	var/efficiency = 60000 //will provide the modified power rate when upgraded
+	/// The charge given per machine frame, in watts; the capacitors set it (RefreshParts()).
+	var/efficiency = 60000
 	power_channel = EQUIP
-	/// Runs on the machine pipeline (machine_pipeline.dm): the power/cell_charger stage charges.
+	/// The cell being charged.
+	var/obj/item/cell/charging
+	/// How full the shown cell looks (0 to 4), or -1 with none: the look reads it, the charge frame writes it.
 	var/chargelevel = -1
 	circuit = /obj/item/circuitboard/cell_charger
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
+TRACKED(/obj/machinery/cell_charger, chargelevel)
+
+CAPABILITIES(/obj/machinery/cell_charger, \
+	machine_basics(repair = NONE), \
+	anchor(empty = nameof(charging)), \
+	part_replacement(), \
+	extend("part_replacement.replace", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
+	owns_one(nameof(charging), /obj/item/cell), \
+	op("insert", item(/obj/item/cell), when(nameof(anchored)), \
+		needs(req(PROC_REF(can_insert), because = PROC_REF(insert_refusal))), \
+		put_in(nameof(charging)), says(MSG(charger/inserted))), \
+	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_cell))), \
+	examine_line(PROC_REF(examine_contents)), \
+	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed))), \
+	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed))), \
+	on_change(nameof(stat), ANY, then(PROC_REF(condition_changed))), \
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging)))
+
 /obj/machinery/cell_charger/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	add_overlay("ccharger1")
+	settle_power()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/cell_charger, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/cell_charger/appearance_overlays()
-	. = list()
-	if(!anchored)
-		icon_state = "ccharger2"
+/// Its charge rate follows its capacitors (the machine core calls this when parts change).
+/obj/machinery/cell_charger/RefreshParts()
+	var/rating = get_part_rating(/obj/item/stock_parts/capacitor)
+	efficiency = active_power_usage * (1 + (rating - 1) * 0.5)
 
-	if(charging && operable())
-		var/newlevel = 	round(charging.percent() * 4.0 / 99)
+// ---- the slot's conditions ----
 
-		. += "ccharger-o[newlevel]"
-
-		chargelevel = newlevel
-		. += image(charging.icon, charging.icon_state)
-		. += "ccharger-[charging.connector_type]-on"
-
-	else if(anchored)
-		icon_state = "ccharger0"
-		. += "ccharger1"
-
-/obj/machinery/cell_charger/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 5)
-		. += "[charging ? "[charging]" : "Nothing"] is in [src]."
-		if(charging)
-			. += "Current charge: [charging.charge] / [charging.maxcharge]"
-
-/obj/machinery/cell_charger/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/cell_charger_insert,
-		/datum/interaction/machine_hand/ungated/cell_charger_take,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Take cell", PROC_REF(cell_charger_silicon_take)))
-	..()
-
-/// Its charge rate follows its capacitors (cap_parts(): efficiency is derived from the parts, never written by hand),
-/// and the RPED upgrades them through the parts capability's "replace_parts" op.
-/obj/machinery/cell_charger/capabilities()
-	. = ..()
-	. += cap_parts(list(
-		part_stat(nameof(efficiency), /obj/item/stock_parts/capacitor, base = 1, per = 0.5, scale = nameof(active_power_usage)),
-	))
-
-/// Insert a cell to charge it.
-/datum/interaction/machine_item/cell_charger_insert
-	id = "cell_charger_insert"
-	name = "Insert cell"
-	held_type = /obj/item/cell
-	requires = list(REQ_INTERACTION_REACH, REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_working, "it isn't working"), REQ_TARGET_STATE(/obj/machinery/cell_charger/proc/can_insert_cell))
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/cell_charger/proc/is_anchored, "it isn't anchored"))
-	effect = /obj/machinery/cell_charger/proc/interaction_insert
-
-/obj/machinery/cell_charger/proc/is_working(mob/actor, atom/target, obj/item/held)
-	return !has_stat(BROKEN)
-
-/obj/machinery/cell_charger/proc/is_anchored(mob/actor, atom/target, obj/item/held)
-	return anchored
-
-/// Requirement: TRUE, or why the cell can't go in.
-/obj/machinery/cell_charger/proc/can_insert_cell(mob/user, atom/target, obj/item/W)
-	if(istype(W, /obj/item/cell/device))
-		return "it isn't fitted for that type of cell"
+/// Why this cell cannot go in now, or null: a casing that is broken, a device cell, a cell already in, an area with no power (it will not let the
+/// charger cheat power where no APC serves).
+/obj/machinery/cell_charger/proc/insert_refusal(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(has_stat(BROKEN))
+		return /datum/msg/machine/inoperable
+	if(istype(held, /obj/item/cell/device))
+		return /datum/msg/charger/wrong_cell
 	if(charging)
-		return "there is already [charging] in it"
-	var/area/a = loc?.loc
-	if(isarea(a) && a.power_equip == 0) // There's no APC in this area, don't try to cheat power!
-		return "it blinks red as you try to insert [W]"
-	return TRUE
+		return /datum/msg/bay/full
+	var/area/a = loc?.loc // ALLOW(reads): the area a machine stands in is legacy map state, read when a cell is offered, never from a cached menu
+	if(isarea(a) && a.power_equip == 0)
+		return /datum/msg/charger/no_area_power
+	return null
 
-/obj/machinery/cell_charger/proc/interaction_insert(mob/user, obj/item/W, datum/interaction/interaction)
-	var/area/a = loc.loc // Gets our locations location, like a dream within a dream
-	if(!isarea(a))
-		return TRUE
+/obj/machinery/cell_charger/proc/can_insert(datum/act/op/A)
+	return isnull(insert_refusal(A))
 
-	user.drop_item()
-	W.forceMove(src)
-	set_charging(W)
-	changed(src, CHANGE_MACHINE_OCCUPANT)
-	act_message(user, src, MSG_SELF("You insert [charging] into %T%."), MSG_OTHERS("%U% inserts [charging] into %T%."))
-	chargelevel = -1
-	update_icon()
-	return TRUE
-
-/obj/machinery/cell_charger/wrench_act(mob/user, obj/item/tool)
-	if(charging)
-		to_chat(user, span_warning("Remove [charging] first!"))
-		return ITEM_INTERACT_BLOCKING
-	set_anchored(!anchored)
-	changed(src, CHANGE_MACHINE_ANCHORED)
-	to_chat(user, "You [anchored ? "attach" : "detach"] [src] [anchored ? "to" : "from"] the ground")
-	playsound(src, tool.usesound, 75, TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/// Take the charging cell out.
-/datum/interaction/machine_hand/ungated/cell_charger_take
-	id = "cell_charger_take"
-	name = "Take out"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/cell_charger/proc/interaction_take
-
-/obj/machinery/cell_charger/proc/interaction_take(mob/user, obj/item/held, datum/interaction/interaction)
+/// The empty hand takes the cell out. A cyborg beside it sets the cell down on the charger's tile instead of holding it.
+/obj/machinery/cell_charger/proc/take_cell(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/cell/cell = charging
+	if(!cell || !user)
+		return OP_REFUSED
 	add_fingerprint(user)
+	act_message(user, src, MSG_SELF("You remove [cell] from %T%."), MSG_OTHERS("%U% removes [cell] from %T%."))
+	if(isrobot(user))
+		varslot_set(src, nameof(charging), null)
+		cell.forceMove(loc)
+		cell.update_icon()
+		return OP_OK
+	varslot_take(src, nameof(charging), user)
+	cell.update_icon()
+	return OP_OK
 
-	if(charging)
-		user.put_in_hands(charging)
-		charging.update_icon()
-		act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
+// ---- the charge loop ----
 
-		set_charging(null)
-		chargelevel = -1
-		changed(src, CHANGE_MACHINE_OCCUPANT)
-		update_icon()
-	return TRUE
+/// Powered, whole and bolted down.
+/obj/machinery/cell_charger/proc/usable()
+	return operable() && anchored
 
-/// Old attack_ai: a cyborg next to it takes the cell out. Nothing for the AI.
-/obj/machinery/cell_charger/proc/cell_charger_silicon_take(mob/user, obj/item/held, datum/interaction/interaction)
-	if(isrobot(user) && Adjacent(user)) // Borgs can remove the cell if they are near enough
-		if(charging)
-			act_message(user, src, MSG_SELF("You remove [charging] from %T%."), MSG_OTHERS("%U% removes [charging] from %T%."))
-			charging.forceMove(src.loc)
-			charging.update_icon()
-			set_charging(null)
-			changed(src, CHANGE_MACHINE_OCCUPANT)
-			update_icon()
-	return TRUE
+/// The power mode this charger should be in: off when it cannot work, idle with nothing to charge, active while it charges.
+/obj/machinery/cell_charger/proc/settle_power()
+	if(!usable())
+		set_use_power(USE_POWER_OFF)
+	else if(!charging || charging.fully_charged())
+		set_use_power(USE_POWER_IDLE)
+	else
+		set_use_power(USE_POWER_ACTIVE)
 
+/// One machine frame: the cell takes its share of charge.
+/obj/machinery/cell_charger/proc/charge_frame(datum/act/timer/A)
+	if(usable() && charging && !charging.fully_charged())
+		charging.give(efficiency * CELLRATE)
+		set_chargelevel(level_of(charging))
+	settle_power()
 
+/// It was bolted down or unbolted, or its power or casing changed: the power mode follows.
+/obj/machinery/cell_charger/proc/condition_changed(datum/act/A)
+	settle_power()
+
+/// A cell went in or out: the power mode and the shown level follow.
+/obj/machinery/cell_charger/proc/charging_changed(datum/act/A)
+	set_chargelevel(charging ? level_of(charging) : -1)
+	settle_power()
+
+/// How full the cell looks, 0 to 4.
+/obj/machinery/cell_charger/proc/level_of(obj/item/cell/cell)
+	return round(cell.percent() * 4.0 / 99)
+
+// ---- what it shows ----
+
+/obj/machinery/cell_charger/draw(datum/look/look)
+	..()
+	look.state(anchored ? "ccharger0" : "ccharger2")
+	var/obj/item/cell/cell = charging
+	if(cell && operable())
+		look.overlay("ccharger-o[chargelevel]")
+		look.overlay(cell.icon_state, icon = cell.icon) // ALLOW(sys_dx_untracked_read): a cell's sprite is fixed for its life
+		look.overlay("ccharger-[cell.connector_type]-on") // ALLOW(sys_dx_untracked_read): a cell's connector type is fixed for its life
+	else if(anchored)
+		look.overlay("ccharger1")
+
+/// Within a few tiles it says what it holds.
+/obj/machinery/cell_charger/proc/examine_contents(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user || get_dist(user, src) > 5)
+		return null
+	var/obj/item/cell/cell = charging
+	var/list/lines = list("[cell ? "[cell]" : "Nothing"] is in [src].")
+	if(cell)
+		lines += "Current charge: [cell.charge] / [cell.maxcharge]"
+	return lines

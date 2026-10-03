@@ -6,16 +6,14 @@
 // present stage (its icon), every MACHINE_PIPELINE_INTERVAL while any has work. Settled, all idle
 // and the machine parks; a channel wakes it (CHANGE_MACHINE_*), raised by the base setters
 // (power_change(), atom_break(), atom_fix()) and by each type's own producers, or MACHINE_WAKE().
-// A type's behaviour is a variant of a base stage, resolved by type depth: power/recharger serves
-// every recharger.
+// A type's behaviour is a variant of a base stage, resolved by type depth: power/smes serves
+// every power storage unit.
 
 /// One machine frame per machine service interval (MACHINE_SERVICE_INTERVAL).
 #define MACHINE_PIPELINE_INTERVAL MACHINE_SERVICE_INTERVAL
 
 /datum/om/decl/pipeline_machines
 	of = list(
-		/obj/machinery/recharger,
-		/obj/machinery/cell_charger,
 		/obj/machinery/power/apc,
 		/obj/machinery/power/smes,
 		/obj/machinery/firealarm,
@@ -346,61 +344,6 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /datum/om/stage/machine/present/idle(obj/machinery/M)
 	return TRUE
 
-// ---------------------------------------------------------------- rechargers
-
-/datum/om/stage/machine/power/recharger
-	of = /obj/machinery/recharger
-	reads = list("charging")
-
-/datum/om/stage/machine/power/recharger/perform(obj/machinery/recharger/M, datum/om/frame/machine/F)
-	if(!F.usable())
-		M.set_use_power(USE_POWER_OFF)
-		M.icon_state = M.icon_state_idle
-		return STAGE_IDLE
-	if(!M.charging)
-		M.set_use_power(USE_POWER_IDLE)
-		M.icon_state = M.icon_state_idle
-		return STAGE_IDLE
-	if(M.charging_complete())
-		M.set_use_power(USE_POWER_IDLE)
-		M.icon_state = M.icon_state_charged
-		return STAGE_IDLE
-	M.charge_step()
-
-/// Settled: nothing to charge (or it can't), and the power mode already says so.
-/datum/om/stage/machine/power/recharger/idle(obj/machinery/recharger/M)
-	if((!M.operable()) || !M.anchored)
-		return M.use_power == USE_POWER_OFF
-	if(!M.charging || M.charging_complete())
-		return M.use_power == USE_POWER_IDLE
-	return FALSE
-
-// ---------------------------------------------------------------- cell chargers
-
-/datum/om/stage/machine/power/cell_charger
-	of = /obj/machinery/cell_charger
-	reads = list("charging")
-
-/datum/om/stage/machine/power/cell_charger/perform(obj/machinery/cell_charger/M, datum/om/frame/machine/F)
-	if(!F.usable())
-		M.set_use_power(USE_POWER_OFF)
-		return STAGE_IDLE
-	if(!M.charging || M.charging.fully_charged())
-		M.set_use_power(USE_POWER_IDLE)
-		return STAGE_IDLE
-	var/newlevel = round(M.charging.percent() * 4.0 / 99)
-	M.charging.give(M.efficiency * CELLRATE)
-	M.set_use_power(USE_POWER_ACTIVE)
-	if(M.chargelevel != newlevel)
-		M.update_icon()
-
-/datum/om/stage/machine/power/cell_charger/idle(obj/machinery/cell_charger/M)
-	if((!M.operable()) || !M.anchored)
-		return M.use_power == USE_POWER_OFF
-	if(!M.charging || M.charging.fully_charged())
-		return M.use_power == USE_POWER_IDLE
-	return FALSE
-
 // ---------------------------------------------------------------- APCs
 
 // Rust runs the distributor and the APC's settings reach it through its generated push_to_rust(): the APC has
@@ -713,13 +656,6 @@ OM_FIELD_TYPED(/obj/machinery, tmp, step_waiting_power, FALSE, CHANGE_MACHINE_PO
 /// pipeline (PERIODIC_FAST, code/datums/om/periodic.dm).
 OM_FIELD(/obj/machinery, speed_process, FALSE, CHANGE_MACHINE_SETTINGS)
 
-/// The item being recharged.
-OM_FIELD_TYPED(/obj/machinery/recharger, obj/item, charging, null, CHANGE_MACHINE_OCCUPANT)
-/obj/machinery/recharger/ownership()
-	. = ..()
-	. += owns(nameof(charging), policy = OWN_SPILL)
-/// The cell being charged.
-OM_FIELD_TYPED(/obj/machinery/cell_charger, obj/item/cell, charging, null, CHANGE_MACHINE_OCCUPANT)
 /// TRUE while the fire alarm's countdown runs.
 OM_FIELD(/obj/machinery/firealarm, timing, 0, CHANGE_MACHINE_SETTINGS)
 /// Heating/cooling mode of the air alarm's thermostat (0 off).

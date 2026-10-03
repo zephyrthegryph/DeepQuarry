@@ -482,42 +482,6 @@
 
 // --- Machines ------------------------------------------------------------------------
 
-/// A recharger charges on the machine pipeline while it has work, idles and parks when the cell is
-/// full, and wakes when a cell goes in; it never joins SSmachines' roster.
-/datum/unit_test/om_pipeline/recharger_idles
-
-/datum/unit_test/om_pipeline/recharger_idles/run_pipeline()
-	var/obj/machinery/recharger/R = allocate(/obj/machinery/recharger)
-	TEST_ASSERT(om_attached(R, /datum/om/pipeline/machine), "a recharger runs the machine pipeline")
-	TEST_ASSERT(!machine_stepping(R), "and doesn't poll")
-	R.stat_remove(NOPOWER | BROKEN)
-	var/datum/om/frame/S = om_pipe_state(R, /datum/om/pipeline/machine, TRUE)
-	for(var/i in 1 to 3)
-		om_run_frame_now(R, /datum/om/pipeline/machine)
-	TEST_ASSERT(S.parked, "an empty recharger parks")
-	var/obj/item/cell/C = new /obj/item/cell/high(R)
-	C.charge = C.maxcharge - C.maxcharge / 100
-	R.set_charging(C) // raises CHANGE_MACHINE_OCCUPANT
-	sched.run_pass(1e9)
-	TEST_ASSERT(!S.parked, "inserting something wakes it")
-	var/frames = 0
-	while(!C.fully_charged() && frames < 50)
-		om_run_frame_now(R, /datum/om/pipeline/machine)
-		frames++
-	TEST_ASSERT(C.fully_charged(), "it charges the cell")
-	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_ACTIVE, "drawing active power while charging")
-	for(var/i in 1 to 3)
-		om_run_frame_now(R, /datum/om/pipeline/machine)
-	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "idle power once charged")
-	TEST_ASSERT(S.parked, "a settled recharger parks")
-	R.stat_add(NOPOWER)
-	changed(R, CHANGE_MACHINE_POWER)
-	sched.run_pass(1e9)
-	TEST_ASSERT(!S.parked, "losing power wakes it (power_change raises CHANGE_MACHINE_POWER)")
-	R.stat_remove(NOPOWER)
-	R.set_charging(null)
-	qdel(C)
-
 /// An APC and an SMES settle and park on the machine pipeline; an APC power failure is a timed_set().
 /datum/unit_test/om_pipeline/apc_and_smes_park
 

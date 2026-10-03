@@ -436,7 +436,7 @@
 	p2_area.power_equip = TRUE
 	R.stat_remove(NOPOWER)
 	var/obj/item/gun/energy/selfish = allocate(/obj/item/gun/energy/taser, run_loc_floor_bottom_left)
-	selfish.self_recharge = TRUE
+	selfish.set_self_recharge(TRUE)
 	touch(H, R, selfish)
 	TEST_ASSERT_NULL(p2c_held(R), "a self-charging gun has no port")
 	touch(H, R, G)

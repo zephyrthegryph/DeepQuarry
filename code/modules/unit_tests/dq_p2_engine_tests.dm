@@ -182,3 +182,24 @@
 	TEST_ASSERT(QDELETED(F), "the frame is gone")
 	TEST_ASSERT_EQUAL(refunded, 5, "the ledger is refunded exactly as for an ordinary dismantle")
 	own_turf_contents(floor)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// gesture(G) alone is enough: a drag op answers a drag, a use op a click, and the two do not clash.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/pinned_gesture_answers_its_own_intents
+
+/datum/unit_test/dq_p2_engine/pinned_gesture_answers_its_own_intents/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_dragtarget/T = allocate(/obj/p2_dragtarget, get_turf(H))
+	var/obj/item/pen = allocate(/obj/item/pen, get_turf(H))
+	TEST_ASSERT(assert_resolves(H, T, pen, GESTURE_CLICK, "use"), "a click with the item is the use")
+	TEST_ASSERT(assert_resolves(H, T, pen, GESTURE_DRAG, "drag"), "a drag of the item is the drag op")
+	test_click(H, T, pen, GESTURE_DRAG)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.dragged, 1, "the drag ran")
+	TEST_ASSERT_EQUAL(T.used, 0, "and the use did not")
+	test_click(H, T, pen)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(T.used, 1, "a click runs the use")
+	TEST_ASSERT_EQUAL(T.dragged, 1, "and not the drag")

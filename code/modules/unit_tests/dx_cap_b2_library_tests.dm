@@ -1,44 +1,5 @@
-// B2 library capabilities: cap_parts, cap_occupant, cap_access, service_panel, and the holder-interface move
+// B2 library capabilities: cap_occupant, cap_access, service_panel, and the holder-interface move
 // (code/datums/capabilities/library/{parts,occupant,access}.dm, presets.dm service_panel()).
-
-// ---- cap_parts ----
-
-/// The cell charger's efficiency is derived from its capacitors: right at init, and again when the parts relation
-/// changes (the parts capability's on_change reaction), with no RefreshParts() override.
-/datum/unit_test/dx_cap_parts_derived/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/obj/machinery/cell_charger/C = allocate(/obj/machinery/cell_charger, T)
-	TEST_ASSERT_NOTNULL(cap_of(C, /datum/capability/parts), "the charger declares cap_parts()")
-	var/rating = part_rating(C, /obj/item/stock_parts/capacitor)
-	TEST_ASSERT(rating >= 1, "its capacitor counts (latent or real): [rating]")
-	TEST_ASSERT_EQUAL(C.efficiency, C.active_power_usage * (1 + (rating - 1) * 0.5), "efficiency derived from the parts at init")
-	C.materialize_parts()
-	var/obj/item/stock_parts/capacitor/old = locate() in C.component_parts
-	TEST_ASSERT_NOTNULL(old, "a real capacitor once materialized")
-	own_take_member(C, nameof(C.component_parts), old)
-	qdel(old)
-	var/obj/item/stock_parts/capacitor/better = allocate(/obj/item/stock_parts/capacitor, T)
-	better.rating = 3
-	better.move_into(C, CONTAINER_SLOT_INTERNALS)
-	own_add(C, nameof(C.component_parts), better)
-	rx_drain()
-	TEST_ASSERT_EQUAL(part_rating(C, /obj/item/stock_parts/capacitor), 3, "the rating follows the relation")
-	TEST_ASSERT_EQUAL(C.efficiency, C.active_power_usage * 2, "efficiency re-derived from the relation change")
-	TEST_ASSERT_NOTNULL(cap_test_entry(C, "parts:rped"), "the RPED goes through the parts capability's op")
-
-/// part_rating()'s aggregates and part_stat()'s formula.
-/datum/unit_test/dx_cap_parts_aggregates/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, T)
-	for(var/r in list(1, 2, 4))
-		var/obj/item/stock_parts/capacitor/P = allocate(/obj/item/stock_parts/capacitor, T)
-		P.rating = r
-		P.forceMove(B)
-	TEST_ASSERT_EQUAL(part_rating(B, /obj/item/stock_parts/capacitor), 7, "sum")
-	TEST_ASSERT_EQUAL(part_rating(B, /obj/item/stock_parts/capacitor, PART_RATING_MIN), 1, "min")
-	TEST_ASSERT_EQUAL(part_rating(B, /obj/item/stock_parts/capacitor, PART_RATING_MAX), 4, "max")
-	TEST_ASSERT_EQUAL(part_rating(B, /obj/item/stock_parts/capacitor, PART_RATING_COUNT), 3, "count")
-	TEST_ASSERT_EQUAL(part_rating(B, /obj/item/stock_parts/manipulator), 0, "none: 0")
 
 // ---- cap_occupant ----
 
