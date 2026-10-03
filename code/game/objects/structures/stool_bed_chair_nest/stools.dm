@@ -100,54 +100,38 @@ DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlay
 		cover_material.place_sheet(T, 1)
 	return TRUE
 
-DECLARE_INTERACTIONS(/obj/item/stool, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/stool)
+	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
+		needs(req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
+		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding))), then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
+	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"), then(PROC_REF(taken_apart)))
 
-/// Old attackby.
-/obj/item/stool/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		if(padding_material)
-			to_chat(user, "\The [src] is already padded.")
-			return INTERACTION_HANDLED_PASS
-		var/obj/item/stack/C = W
-		if(C.get_amount() < 1) // How??
-			consume(C, user)
-			return INTERACTION_HANDLED_PASS
-		var/padding_type
-		//CHOMPstation Start: making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
-		if(istype(W,/obj/item/stack/tile/carpet))
-			var/obj/item/stack/tile/carpet/M = W
-			if(M.material && (M.material.flags & MATERIAL_PADDING))
-				padding_type = "[M.material.name]"
-		//CHOMPstation END
-		else if(istype(W,/obj/item/stack/material))
-			var/obj/item/stack/material/M = W
-			if(M.material && (M.material.flags & MATERIAL_PADDING))
-				padding_type = "[M.material.name]"
-		if(!padding_type)
-			to_chat(user, "You cannot pad \the [src] with that.")
-			return INTERACTION_HANDLED_PASS
-		C.use(1)
-		if(!istype(src.loc, /turf))
-			user.drop_from_inventory(src)
-			src.forceMove(get_turf(src))
-		to_chat(user, "You add padding to \the [src].")
-		add_padding(padding_type)
-		return INTERACTION_HANDLED_PASS
-	else
-		return FALSE
+/obj/item/stool/proc/can_be_padded(datum/act/op/A)
+	return !padding_material && !isnull(padding_type_of(A.held)) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
-/obj/item/stool/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 50, 1)
-	return dismantle(user)
+/obj/item/stool/proc/padding_refusal(datum/act/op/A)
+	return padding_material ? /datum/msg/bed/already_padded : /datum/msg/bed/not_padding
 
-/obj/item/stool/wirecutter_act(mob/user, obj/item/W)
-	if(!padding_material)
-		to_chat(user, "\The [src] has no padding to remove.")
-		return TRUE
-	to_chat(user, "You remove the padding from \the [src].")
-	playsound(src, W.usesound, 50, 1)
+/// A stack of padding goes on: the sheet is spent by the op.
+/obj/item/stool/proc/padded_with(datum/act/op/A)
+	if(!istype(src.loc, /turf))
+		A.actor.drop_from_inventory(src)
+		src.forceMove(get_turf(src))
+	add_padding(padding_type_of(A.held))
+	return OP_OK
+
+/obj/item/stool/proc/has_padding(datum/act/A)
+	return !!padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+
+/obj/item/stool/proc/unpadded(datum/act/op/A)
+	playsound(src, A.held.usesound, 50, 1)
 	remove_padding()
-	return TRUE
+	return OP_OK
+
+/obj/item/stool/proc/taken_apart(datum/act/op/A)
+	playsound(src, A.held.usesound, 50, 1)
+	return dismantle(A.actor) ? OP_OK : OP_REFUSED
 
 
 // === merged from stools_vr.dm during hard-fork de-suffix (verified no override-order change) ===

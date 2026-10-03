@@ -22,6 +22,10 @@
 	var/base_icon = "bed"
 	var/applies_material_colour = 1
 	var/flippable = TRUE
+	/// What a stack, wirecutters and a wrench can do to it: pad it, take the padding off, take it apart. FALSE on the kinds that are built to stay as they are.
+	var/can_pad = TRUE
+	var/can_unpad = TRUE
+	var/can_dismantle = TRUE
 
 /obj/structure/bed/Initialize(mapload, new_material, new_padding_material)
 	..()
@@ -82,99 +86,91 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_over
 		return TRUE
 	return ..()
 
-/obj/structure/bed/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/bed_item,
-	)
-	..()
+MSG_DEF_SELF(bed/already_padded, "It is already padded.")
+MSG_DEF_SELF(bed/not_padding, "You cannot pad that with that.")
+MSG_DEF_SELF(bed/no_padding, "It has no padding to remove.")
+MSG_DEF_SELF(bed/cant_pad, "You cannot pad that.")
+MSG_DEF_SELF(bed/cant_unpad, "You cannot take the padding off that.")
+MSG_DEF_SELF(bed/cant_dismantle, "You cannot dismantle that.")
+MSG_DEF(bed/padded, "You add padding to %T%.", "%U% adds padding to %T%.")
+MSG_DEF(bed/unpadded, "You remove the padding from %T%.", "%U% removes the padding from %T%.")
 
-/// Old attackby: pad with a stack, tuck a disk/plushie in, or buckle a grabbed mob in.
-/datum/interaction/entry_item/bed_item
-	id = "bed_item"
-	name = "Use"
-	effect = /obj/structure/bed/proc/interaction_item
+CAPABILITIES(/obj/structure/bed)
+	buckle()
+	op("pad", stack(/obj/item/stack, 1), wait(0), label("Pad"),
+		needs(req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), then(PROC_REF(padded_with)), says(MSG(bed/padded)))
+	op("tuck_disk", item(/obj/item/disk), then(PROC_REF(tucked_in)))
+	op("tuck_plushie", item(/obj/item/toy/plushie), then(PROC_REF(tucked_in)))
+	op("unpad", tool(TOOL_WIRECUTTER), wait(0), label("Remove padding"),
+		needs(req(PROC_REF(has_padding), because = MSG(bed/no_padding)), req(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))),
+		then(PROC_REF(unpadded)), says(MSG(bed/unpadded)))
+	op("dismantle", tool(TOOL_WRENCH), wait(0), label("Dismantle"),
+		needs(req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), then(PROC_REF(taken_apart)))
 
-/obj/structure/bed/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		if(padding_material)
-			to_chat(user, "\The [src] is already padded.")
-			return TRUE
-		var/obj/item/stack/C = W
-		if(C.get_amount() < 1) // How??
-			consume(C, user)
-			return TRUE
-		var/padding_type
-		// making carpets different and not just the boring basic red no matter carpet type, consider merging material variables at stack level in future - Jack
-		if(istype(W,/obj/item/stack/tile/carpet))
-			var/obj/item/stack/tile/carpet/M = W
-			if(M.material && (M.material.flags & MATERIAL_PADDING))
-				padding_type = "[M.material.name]"
-		else if(istype(W,/obj/item/stack/material))
-			var/obj/item/stack/material/M = W
-			if(M.material && (M.material.flags & MATERIAL_PADDING))
-				padding_type = "[M.material.name]"
-		if(!padding_type)
-			to_chat(user, "You cannot pad \the [src] with that.")
-			return TRUE
-		C.use(1)
-		if(!istype(src.loc, /turf))
-			user.drop_from_inventory(src)
-			src.forceMove(get_turf(src))
-		to_chat(user, "You add padding to \the [src].")
-		add_padding(padding_type)
-		return TRUE
+/// What a bed that is not for lying on does without: the nest, the pillow piles (their own hands and items replace the bed's).
+/proc/bed_hands_off()
+	return list(without(CAP_BUCKLE), without("pad"), without("tuck_disk"), without("tuck_plushie"), without("unpad"), without("dismantle"))
 
-	else if(istype(W, /obj/item/disk) || (istype(W, /obj/item/toy/plushie)))
-		user.drop_from_inventory(W, get_turf(src))
-		W.pixel_x = 10 //make sure they reach the pillow
-		W.pixel_y = -6
-		if(istype(W, /obj/item/disk))
-			user.visible_message(span_notice("[src] sleeps soundly. Sleep tight, disky."))
+/// The name of the material a stack pads with (a padding carpet tile or sheet), or null when it is no padding.
+/proc/padding_type_of(obj/item/stack/S)
+	READS_FROM() // what a stack is made of is fixed for its life
+	if(istype(S, /obj/item/stack/tile/carpet))
+		var/obj/item/stack/tile/carpet/C = S
+		if(C.material && (C.material.flags & MATERIAL_PADDING))
+			return "[C.material.name]"
+	else if(istype(S, /obj/item/stack/material))
+		var/obj/item/stack/material/M = S
+		if(M.material && (M.material.flags & MATERIAL_PADDING))
+			return "[M.material.name]"
+	return null
 
-	else if(istype(W, /obj/item/grab))
-		var/obj/item/grab/G = W
-		var/mob/living/affecting = G?.grab_target()
-		if(has_buckled_mobs()) //Handles trying to buckle someone else to a chair when someone else is on it
-			to_chat(user, span_notice("\The [src] already has someone buckled to it."))
-			return TRUE
-		act_message(user, affecting, others = span_notice("%U% attempts to buckle %T% into \the [src]!"))
-		om_task_start(/datum/om/task/timed/bed_attackby, user, src, W = W, affecting = affecting)
-	return TRUE
+/obj/structure/bed/proc/can_be_padded(datum/act/op/A)
+	return can_pad && !padding_material && !isnull(padding_type_of(A.held)) // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
 
-/datum/om/task/timed/bed_attackby
-	duration = 2 SECONDS
-	complete_proc = /obj/structure/bed/proc/attackby_timed_done
-	var/obj/item/W
-	var/mob/living/affecting
+/obj/structure/bed/proc/padding_refusal(datum/act/op/A)
+	if(!can_pad)
+		return /datum/msg/bed/cant_pad
+	if(padding_material)
+		return /datum/msg/bed/already_padded
+	return /datum/msg/bed/not_padding
 
-/obj/structure/bed/proc/attackby_timed_done(datum/om/task/timed/bed_attackby/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
-	var/mob/living/affecting = task.affecting
-	affecting.forceMove(loc)
-	deferred_buckle(affecting, user.name)
-	consume(W, user)
+/// A stack of padding goes on: the sheet is spent by the op.
+/obj/structure/bed/proc/padded_with(datum/act/op/A)
+	if(!istype(src.loc, /turf))
+		A.actor.drop_from_inventory(src)
+		src.forceMove(get_turf(src))
+	add_padding(padding_type_of(A.held))
+	return OP_OK
 
-/obj/structure/bed/wrench_act(mob/user, obj/item/W)
-	playsound(src, W.usesound, 50, 1)
-	dismantle()
-	consume(src, user)
-	return TRUE
+/// A disk or a plushie is set down on the bed, at the pillow.
+/obj/structure/bed/proc/tucked_in(datum/act/op/A)
+	var/obj/item/W = A.held
+	A.actor.drop_from_inventory(W, get_turf(src))
+	W.pixel_x = 10 //make sure they reach the pillow
+	W.pixel_y = -6
+	if(istype(W, /obj/item/disk))
+		A.actor.visible_message(span_notice("[src] sleeps soundly. Sleep tight, disky."))
+	return OP_OK
 
-/obj/structure/bed/wirecutter_act(mob/user, obj/item/W)
-	if(!padding_material)
-		to_chat(user, "\The [src] has no padding to remove.")
-		return TRUE
-	to_chat(user, "You remove the padding from \the [src].")
-	playsound(src, W.usesound, 100, 1)
+/obj/structure/bed/proc/has_padding(datum/act/A)
+	return !!padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+
+/obj/structure/bed/proc/unpad_allowed(datum/act/A)
+	return can_unpad
+
+/obj/structure/bed/proc/unpadded(datum/act/op/A)
+	playsound(src, A.held.usesound, 100, 1)
 	remove_padding()
-	return TRUE
+	return OP_OK
 
-/obj/structure/bed/proc/deferred_buckle(mob/living/affecting, buckler_name)
-	if(buckle_mob(affecting))
-		act_message(affecting, src, MSG_SELF(span_danger("You are src?.buckled_to() to %T% by [buckler_name]!")), \
-			MSG_OTHERS(span_danger("[affecting.name] is src?.buckled_to() to %T% by [buckler_name]!")), \
-			MSG_BLIND(span_notice("You hear metal clanking.")))
+/obj/structure/bed/proc/dismantle_allowed(datum/act/A)
+	return can_dismantle
+
+/obj/structure/bed/proc/taken_apart(datum/act/op/A)
+	playsound(src, A.held.usesound, 50, 1)
+	dismantle()
+	consume(src, A.actor)
+	return OP_OK
 
 /obj/structure/bed/proc/remove_padding()
 	if(padding_material)
@@ -238,6 +234,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_over
 	var/bedtype = /obj/structure/bed/roller
 	var/rollertype = /obj/item/roller
 	flippable = FALSE
+	can_pad = FALSE
+	can_unpad = FALSE
+	can_dismantle = FALSE
 
 /obj/structure/bed/roller/adv
 	name = "advanced roller bed"
@@ -248,27 +247,20 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_over
 
 APPEARANCE_NONE(/obj/structure/bed/roller)
 
-/// Overrides bed's interaction_item(): a stack does nothing, a roller holder collapses the
-/// bed, and anything else falls through to bed's own handling.
-/obj/structure/bed/roller/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		return TRUE
-	else if(istype(W,/obj/item/roller_holder))
-		if(has_buckled_mobs())
-			for(var/A in src?.buckled_mob_list())
-				user_unbuckle_mob(A, user)
-		else
-			act_message(user, null, others = "%U% collapses \the [src.name].")
-			new rollertype(get_turf(src))
-			expire(0)
-		return TRUE
-	return ..()
+CAPABILITIES(/obj/structure/bed/roller)
+	op("collapse", item(/obj/item/roller_holder), label("Collapse"), then(PROC_REF(collapse_with_rack)))
 
-/obj/structure/bed/roller/wrench_act(mob/user, obj/item/W)
-	return TRUE
-
-/obj/structure/bed/roller/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
+/// A roller bed rack collapses an empty bed into its folded item; a bed with somebody on it lets them go instead.
+/obj/structure/bed/roller/proc/collapse_with_rack(datum/act/op/A)
+	var/mob/user = A.actor
+	if(has_buckled_mobs())
+		for(var/mob/living/occupant in src.buckled_mob_list())
+			user_unbuckle_mob(occupant, user)
+	else
+		act_message(user, null, others = "%U% collapses \the [src.name].")
+		new rollertype(get_turf(src))
+		expire(0)
+	return OP_OK
 
 /obj/item/roller
 	name = "roller bed"
@@ -284,29 +276,29 @@ APPEARANCE_NONE(/obj/structure/bed/roller)
 	drop_sound = SFX_ITEMS_DROP_AXE
 	pickup_sound = SFX_ITEMS_PICKUP_AXE
 
-DECLARE_INTERACTIONS(/obj/item/roller, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+CAPABILITIES(/obj/item/roller)
+	op("unfold", in_hand(), label("Unfold"), then(PROC_REF(unfolded)))
+	op("rack", item(/obj/item/roller_holder), label("Rack"), when(req(PROC_REF(rack_is_empty))), then(PROC_REF(racked)), passes())
 
-/// Old attack_self.
-/obj/item/roller/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The folded bed is set up where its carrier stands, and is used up.
+/obj/item/roller/proc/unfolded(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/structure/bed/roller/R = new bedtype(user.loc)
 	R.add_fingerprint(user)
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/roller/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// The rack held in hand has nothing in it.
+/obj/item/roller/proc/rack_is_empty(datum/act/op/A)
+	var/obj/item/roller_holder/RH = A.held
+	return istype(RH) && !RH.held
 
-	if(istype(W,/obj/item/roller_holder))
-		var/obj/item/roller_holder/RH = W
-		if(!RH.held)
-			to_chat(user, span_notice("You collect the roller bed."))
-			own_set(RH, nameof(RH.held), src, user = user, into = TRUE)
-			return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/// The rack takes the folded bed.
+/obj/item/roller/proc/racked(datum/act/op/A)
+	var/obj/item/roller_holder/RH = A.held
+	to_chat(A.actor, span_notice("You collect the roller bed."))
+	rel_set(RH, nameof(RH.held), src)
+	return OP_OK
 
 /obj/item/roller/adv
 	name = "advanced roller bed"
@@ -323,16 +315,18 @@ DECLARE_INTERACTIONS(/obj/item/roller, \
 	icon_state = "rollerbed"
 	var/obj/item/roller/held
 
-DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_FIELD("held"), "the rack is empty")))
+CAPABILITIES(/obj/item/roller_holder)
+	owns_one(nameof(held), /obj/item/roller, starts = /obj/item/roller)
+	op("deploy", in_hand(), label("Deploy"), when(nameof(held)), then(PROC_REF(deployed)))
 
-/// Old attack_self.
-/obj/item/roller_holder/proc/interaction_self(mob/user, obj/item/self_item, datum/interaction/interaction)
+/// The rack sets its folded bed up where its carrier stands.
+/obj/item/roller_holder/proc/deployed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You deploy the roller bed."))
 	var/obj/structure/bed/roller/R = new held.bedtype(user.loc)
 	R.add_fingerprint(user)
-	own_clear(src, nameof(held), OWN_DELETE)
-	return TRUE
-
+	rel_clear(src, nameof(held))
+	return OP_OK
 
 /obj/structure/bed/roller/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -389,17 +383,11 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 	icon = 'icons/obj/abductor.dmi'
 	icon_state = "bed_red"
 	flippable = FALSE
+	can_pad = FALSE
+	can_unpad = FALSE
+	can_dismantle = FALSE
 
 APPEARANCE_NONE(/obj/structure/bed/alien)
-/// Overrides bed's interaction_item(): no deconning.
-/obj/structure/bed/alien/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return TRUE
-
-/obj/structure/bed/alien/wrench_act(mob/user, obj/item/W)
-	return TRUE
-
-/obj/structure/bed/alien/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
 
 /*
  * Dirty Mattress
@@ -415,34 +403,20 @@ APPEARANCE_NONE(/obj/structure/bed/alien)
 	buckle_dir = SOUTH
 	buckle_lying = 1
 
-/obj/structure/dirtybed/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_item/dirtybed_item,
-	)
-	..()
+MSG_DEF_SELF(dirtybed/loose, "The bed isn't secured.")
 
-/// Old attackby: a notice if the bed isn't anchored.
-/datum/interaction/entry_item/dirtybed_item
-	id = "dirtybed_item"
-	name = "Use"
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/structure/dirtybed/proc/dirtybed_not_anchored, null))
-	effect = /obj/structure/dirtybed/proc/interaction_item
+CAPABILITIES(/obj/structure/dirtybed)
+	buckle()
+	anchor()
+	extend("anchor.toggle", wait(2 SECONDS))
+	op("loose", item(/obj/item), label("Use"), when(req(PROC_REF(is_loose))), then(PROC_REF(note_loose)))
 
-/obj/structure/dirtybed/proc/dirtybed_not_anchored(mob/actor, atom/target, obj/item/held)
+/// The mattress is not bolted down.
+/obj/structure/dirtybed/proc/is_loose(datum/act/A)
 	return !anchored
 
-/obj/structure/dirtybed/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	to_chat(user,span_notice(" The bed isn't secured."))
-	return TRUE
+/// Anything clicked on a loose mattress only says it is not secured.
+/obj/structure/dirtybed/proc/note_loose(datum/act/op/A)
+	to_chat(A.actor, span_notice(" The bed isn't secured."))
+	return OP_OK
 
-/obj/structure/dirtybed/wrench_act(mob/user, obj/item/W)
-	act_message(user, src, MSG_SELF("You start [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."), \
-		MSG_OTHERS("%U% begins [anchored ? "unsecuring %T% from" : "securing %T% to"] the floor."))
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WRENCH, volume = 100, receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return TRUE
-
-/obj/structure/dirtybed/proc/wrench_act_tool_done(mob/user)
-	set_anchored(!anchored)
-	to_chat(user, span_notice("You [anchored ? "secured" : "unsecured"] \the [src]!"))
-
-DECLARE_DEFAULT_CHILD(/obj/item/roller_holder, "held", /obj/item/roller)

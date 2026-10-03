@@ -13,23 +13,33 @@
 	. = ..()
 	update_layer()
 
-/// Overrides bed's interaction_item(): also lets a shock kit turn the chair into an e-chair.
-/obj/structure/bed/chair/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = ..()
-	if(!padding_material && istype(W, /obj/item/assembly/shock_kit))
-		var/obj/item/assembly/shock_kit/SK = W
-		if(!SK.status)
-			to_chat(user, span_notice("\The [SK] is not ready to be attached!"))
-			return TRUE
-		var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
-		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		E.set_dir(dir)
-		if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
-			qdel(E) // ALLOW(lifecycle): discards the just-built chair after own_set() refused the part: it never held anything and has no holder to take it out of
-			return TRUE
-		rel_set(SK, nameof(SK.master), E)
-		replace_with(src, E)
-	return TRUE
+MSG_DEF_SELF(chair/kit_unready, "The kit is not ready to be attached!")
+MSG_DEF_SELF(chair/padded, "Take the padding off first.")
+
+CAPABILITIES(/obj/structure/bed/chair)
+	op("shock_kit", item(/obj/item/assembly/shock_kit), label("Attach kit"),
+		needs(req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), then(PROC_REF(electrified)))
+
+/obj/structure/bed/chair/proc/kit_ready(datum/act/op/A)
+	var/obj/item/assembly/shock_kit/SK = A.held
+	return !!SK.status // ALLOW(reads): a kit's secured switch is read when it is clicked on; the click asks again
+
+/obj/structure/bed/chair/proc/unpadded_chair(datum/act/A)
+	return !padding_material // ALLOW(reads): the padding is a material set when the seat is made or padded; a menu entry that asks is advisory, the click asks again
+
+/// A secured shock kit turns the chair into an electric chair, with the kit inside.
+/obj/structure/bed/chair/proc/electrified(datum/act/op/A)
+	var/obj/item/assembly/shock_kit/SK = A.held
+	var/mob/user = A.actor
+	var/obj/structure/bed/chair/e_chair/E = new (src.loc, material.name)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+	E.set_dir(dir)
+	if(!own_set(E, nameof(E.part), SK, user = user)) // out of the hand, into the chair
+		qdel(E) // ALLOW(lifecycle): discards the just-built chair after own_set() refused the part: it never held anything and has no holder to take it out of
+		return OP_REFUSED
+	rel_set(SK, nameof(SK.master), E)
+	replace_with(src, E)
+	return OP_OK
 
 EXTEND_INTERACTIONS(/obj/structure/bed/chair, INTERACT_TK("Rotate", PROC_REF(interaction_tk)))
 
@@ -183,17 +193,10 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/comfy, TYPE_PROC_REF(/atom, app
 /obj/structure/bed/chair/office
 	anchored = FALSE
 	buckle_movable = 1
+	can_pad = FALSE
+	can_unpad = FALSE
 
 APPEARANCE_NONE(/obj/structure/bed/chair/office)
-
-/// Overrides chair's interaction_item(): no padding this chair with a stack.
-/obj/structure/bed/chair/office/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		return TRUE
-	return ..()
-
-/obj/structure/bed/chair/office/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
 
 /obj/structure/bed/chair/office/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()
@@ -251,17 +254,10 @@ APPEARANCE_NONE(/obj/structure/bed/chair/office)
 	name = "wooden chair"
 	desc = "Old is never too old to not be in fashion."
 	icon_state = "wooden_chair"
+	can_pad = FALSE
+	can_unpad = FALSE
 
 APPEARANCE_NONE(/obj/structure/bed/chair/wood)
-
-/// Overrides chair's interaction_item(): no padding this chair with a stack.
-/obj/structure/bed/chair/wood/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		return TRUE
-	return ..()
-
-/obj/structure/bed/chair/wood/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
 
 /obj/structure/bed/chair/wood/Initialize(mapload)
 	. = ..(mapload, MAT_WOOD)

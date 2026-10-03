@@ -31,16 +31,18 @@
 /datum/capdef_decl/c_breakable/spec()
 	return list(CAP_BREAKABLE, /datum/capability/lib/breakable, NONE, STACK, "breakable", "repair")
 
-/// CAPABILITY_TYPE(buckle, CAP_BUCKLE) at code/library/structures/buckle.dm:41
+/// CAPABILITY_TYPE(buckle, CAP_BUCKLE) at code/library/structures/buckle.dm:48
 /datum/capability/lib/buckle
 	var/slots = 1
 	var/delay = 1.5 SECONDS
 	var/restrained = FALSE
-/proc/buckle(slots, delay, restrained)
+	var/smallest = null
+	var/largest = null
+/proc/buckle(slots, delay, restrained, smallest, largest)
 	RETURN_TYPE(/datum/capability/lib/buckle)
-	return cap_construct(CAP_BUCKLE, /datum/capability/lib/buckle, list(slots, delay, restrained), "slots, delay, restrained")
+	return cap_construct(CAP_BUCKLE, /datum/capability/lib/buckle, list(slots, delay, restrained, smallest, largest), "slots, delay, restrained, smallest, largest")
 /datum/capdef_decl/c_buckle/spec()
-	return list(CAP_BUCKLE, /datum/capability/lib/buckle, NONE, STACK, "buckle", "slots, delay, restrained")
+	return list(CAP_BUCKLE, /datum/capability/lib/buckle, NONE, STACK, "buckle", "slots, delay, restrained, smallest, largest")
 
 /// CAPABILITY_TYPE(cell_bay, CAP_CELL_BAY) at code/engine/library/bays.dm:70
 /datum/capability/lib/cell_bay
@@ -3579,6 +3581,24 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(geological_data_static), /datum/geosample))
 
+/// CAPABILITIES(/obj/item/roller) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:279
+/obj/item/roller/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/bed.dm", 279, /obj/item/roller)
+	into += entry_line(280)
+	into += list(global.op("unfold", global.in_hand(), global.label("Unfold"), global.then(PROC_REF(unfolded))))
+	into += entry_line(281)
+	into += list(global.op("rack", global.item(/obj/item/roller_holder), global.label("Rack"), global.when(global.req(PROC_REF(rack_is_empty))), global.then(PROC_REF(racked)), global.passes()))
+
+/// CAPABILITIES(/obj/item/roller_holder) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:318
+/obj/item/roller_holder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/bed.dm", 318, /obj/item/roller_holder)
+	into += entry_line(319)
+	into += list(global.owns_one(nameof(held), /obj/item/roller, starts = /obj/item/roller))
+	into += entry_line(320)
+	into += list(global.op("deploy", global.in_hand(), global.label("Deploy"), global.when(nameof(held)), global.then(PROC_REF(deployed))))
+
 /// CAPABILITIES(/obj/item/shield/energy) at code/game/objects/items/weapons/shields.dm:159
 /obj/item/shield/energy/declared_entries(list/into)
 	..(into)
@@ -3629,6 +3649,17 @@
 	into += entry_block("code/game/objects/items/devices/starcaster.dm", 19, /obj/item/starcaster_news)
 	into += entry_line(20)
 	into += list(global.owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article))
+
+/// CAPABILITIES(/obj/item/stool) at code/game/objects/structures/stool_bed_chair_nest/stools.dm:103
+/obj/item/stool/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/stools.dm", 103, /obj/item/stool)
+	into += entry_line(104)
+	into += list(global.op("pad", global.stack(/obj/item/stack, 1), global.wait(0), global.label("Pad"), global.needs(global.req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), global.then(PROC_REF(padded_with)), global.says(MSG(bed/padded))))
+	into += entry_line(106)
+	into += list(global.op("unpad", global.tool(TOOL_WIRECUTTER), global.wait(0), global.label("Remove padding"), global.needs(global.req(PROC_REF(has_padding), because = MSG(bed/no_padding))), global.then(PROC_REF(unpadded)), global.says(MSG(bed/unpadded))))
+	into += entry_line(108)
+	into += list(global.op("dismantle", global.tool(TOOL_WRENCH), global.wait(0), global.label("Dismantle"), global.then(PROC_REF(taken_apart))))
 
 /// CAPABILITIES(/obj/item/storage) at code/game/objects/items/weapons/storage/storage.dm:57
 /obj/item/storage/declared_entries(list/into)
@@ -4845,6 +4876,13 @@
 	into += entry_block("code/game/objects/items/weapons/weldbackpack.dm", 15, /obj/item/weldpack)
 	into += entry_line(16)
 	into += list(global.owns_one(nameof(nozzle), /obj/item))
+
+/// CAPABILITIES(/obj/item/wheelchair) at code/game/objects/structures/stool_bed_chair_nest/wheelchair_item.dm:10
+/obj/item/wheelchair/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/wheelchair_item.dm", 10, /obj/item/wheelchair)
+	into += entry_line(11)
+	into += list(global.op("unfold", global.in_hand(), global.label("Unfold"), global.then(PROC_REF(unfolded))))
 
 /// CAPABILITIES(/obj/machinery) at code/game/machinery/machinery.dm:144
 /obj/machinery/declared_entries(list/into)
@@ -6195,12 +6233,77 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(laws), /datum/ai_laws))
 
+/// CAPABILITIES(/obj/structure/bed) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:98
+/obj/structure/bed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/bed.dm", 98, /obj/structure/bed)
+	into += entry_line(99)
+	into += list(global.buckle())
+	into += entry_line(100)
+	into += list(global.op("pad", global.stack(/obj/item/stack, 1), global.wait(0), global.label("Pad"), global.needs(global.req(PROC_REF(can_be_padded), because = PROC_REF(padding_refusal))), global.then(PROC_REF(padded_with)), global.says(MSG(bed/padded))))
+	into += entry_line(102)
+	into += list(global.op("tuck_disk", global.item(/obj/item/disk), global.then(PROC_REF(tucked_in))))
+	into += entry_line(103)
+	into += list(global.op("tuck_plushie", global.item(/obj/item/toy/plushie), global.then(PROC_REF(tucked_in))))
+	into += entry_line(104)
+	into += list(global.op("unpad", global.tool(TOOL_WIRECUTTER), global.wait(0), global.label("Remove padding"), global.needs(global.req(PROC_REF(has_padding), because = MSG(bed/no_padding)), global.req(PROC_REF(unpad_allowed), because = MSG(bed/cant_unpad))), global.then(PROC_REF(unpadded)), global.says(MSG(bed/unpadded))))
+	into += entry_line(107)
+	into += list(global.op("dismantle", global.tool(TOOL_WRENCH), global.wait(0), global.label("Dismantle"), global.needs(global.req(PROC_REF(dismantle_allowed), because = MSG(bed/cant_dismantle))), global.then(PROC_REF(taken_apart))))
+
+/// CAPABILITIES(/obj/structure/bed/chair) at code/game/objects/structures/stool_bed_chair_nest/chairs.dm:19
+/obj/structure/bed/chair/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/chairs.dm", 19, /obj/structure/bed/chair)
+	into += entry_line(20)
+	into += list(global.op("shock_kit", global.item(/obj/item/assembly/shock_kit), global.label("Attach kit"), global.needs(global.req(PROC_REF(kit_ready), because = MSG(chair/kit_unready)), global.req(PROC_REF(unpadded_chair), because = MSG(chair/padded))), global.then(PROC_REF(electrified))))
+
+/// CAPABILITIES(/obj/structure/bed/chair/e_chair) at code/game/objects/structures/electricchair.dm:14
+/obj/structure/bed/chair/e_chair/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/electricchair.dm", 14, /obj/structure/bed/chair/e_chair)
+	into += entry_line(15)
+	into += list(global.without("dismantle"))
+	into += entry_line(16)
+	into += list(global.op("unwire", global.tool(TOOL_WRENCH), global.wait(0), global.label("Unwire"), global.then(PROC_REF(back_to_chair))))
+
+/// CAPABILITIES(/obj/structure/bed/chair/wheelchair) at code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm:140
+/obj/structure/bed/chair/wheelchair/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm", 140, /obj/structure/bed/chair/wheelchair)
+	into += entry_line(141)
+	into += list(global.configure(global.buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size))))
+	into += entry_line(142)
+	into += list(global.op("touch", global.hand(), global.label("Use"), global.priority(global.above("buckle.unbuckle")), global.then(PROC_REF(touched))))
+
+/// CAPABILITIES(/obj/structure/bed/nest) at code/game/objects/structures/stool_bed_chair_nest/alien_nests.dm:75
+/obj/structure/bed/nest/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/alien_nests.dm", 75, /obj/structure/bed/nest)
+	into += entry_line(76)
+	into += list(bed_hands_off())
+
 /// CAPABILITIES(/obj/structure/bed/pillowpile) at code/game/objects/structures/pillows.dm:55
 /obj/structure/bed/pillowpile/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/pillows.dm", 55, /obj/structure/bed/pillowpile)
 	into += entry_line(56)
 	into += list(global.owns_one(nameof(front), /obj/structure/bed/pillowpilefront))
+	into += entry_line(57)
+	into += list(bed_hands_off())
+
+/// CAPABILITIES(/obj/structure/bed/pillowpilefront) at code/game/objects/structures/pillows.dm:83
+/obj/structure/bed/pillowpilefront/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/pillows.dm", 83, /obj/structure/bed/pillowpilefront)
+	into += entry_line(84)
+	into += list(bed_hands_off())
+
+/// CAPABILITIES(/obj/structure/bed/roller) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:250
+/obj/structure/bed/roller/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/bed.dm", 250, /obj/structure/bed/roller)
+	into += entry_line(251)
+	into += list(global.op("collapse", global.item(/obj/item/roller_holder), global.label("Collapse"), global.then(PROC_REF(collapse_with_rack))))
 
 /// CAPABILITIES(/obj/structure/blob/core) at code/modules/blob2/blobs/core.dm:23
 /obj/structure/blob/core/declared_entries(list/into)
@@ -6247,6 +6350,19 @@
 	into += list(global.extend("construction.dismantle", global.needs(global.req_not(global.req_built(STAGE_LIGHTSWITCH_FASTENED, because = MSG(lightswitch/fastened_first)), because = MSG(lightswitch/fastened_first)))))
 	into += entry_line(81)
 	into += list(global.op("touch", global.item(/obj/item), global.priority(OP_PRIORITY_DEFAULT), global.wait(0), global.then(PROC_REF(touched_with)), global.passes()))
+
+/// CAPABILITIES(/obj/structure/dirtybed) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:408
+/obj/structure/dirtybed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/stool_bed_chair_nest/bed.dm", 408, /obj/structure/dirtybed)
+	into += entry_line(409)
+	into += list(global.buckle())
+	into += entry_line(410)
+	into += list(global.anchor())
+	into += entry_line(411)
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS)))
+	into += entry_line(412)
+	into += list(global.op("loose", global.item(/obj/item), global.label("Use"), global.when(global.req(PROC_REF(is_loose))), global.then(PROC_REF(note_loose))))
 
 /// CAPABILITIES(/obj/structure/door_assembly) at code/game/objects/structures/door_assembly.dm:179
 /obj/structure/door_assembly/declared_entries(list/into)
@@ -6354,6 +6470,13 @@
 	into += entry_block("code/modules/instruments/stationary.dm", 11, /obj/structure/musician)
 	into += entry_line(12)
 	into += list(global.owns_one(nameof(song), /datum/song/stationary))
+
+/// CAPABILITIES(/obj/structure/p2_bare_seat) at code/modules/unit_tests/dq_p2_seating_behaviour.dm:504
+/obj/structure/p2_bare_seat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/unit_tests/dq_p2_seating_behaviour.dm", 504, /obj/structure/p2_bare_seat)
+	into += entry_line(505)
+	into += list(global.buckle())
 
 /// CAPABILITIES(/obj/structure/prop/transmitter) at code/game/objects/structures/props/transmitter.dm:11
 /obj/structure/prop/transmitter/declared_entries(list/into)

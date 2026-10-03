@@ -33,7 +33,8 @@
 	test_time(1 SECOND)
 	TEST_ASSERT(QDELETED(bed), "the real original bed expires after collapse")
 	TEST_ASSERT(actor.put_in_active_hand(folded), "the actual collapsed product can be held for deployment")
-	TEST_ASSERT_EQUAL(folded.interaction_self(actor, null, null), TRUE, "the real folded product deploys through its existing construction effect")
+	p2_seat_use_in_hand(actor, folded)
+	test_time(1 SECOND)
 	var/obj/structure/bed/roller/rebuilt = locate(/obj/structure/bed/roller) in start
 	TEST_ASSERT_NOTNULL(rebuilt, "actual construction creates a replacement roller bed")
 	own(rebuilt)

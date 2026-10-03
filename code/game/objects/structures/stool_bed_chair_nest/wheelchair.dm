@@ -5,6 +5,9 @@
 	icon_state = "wheelchair"
 	anchored = FALSE
 	buckle_movable = 1
+	can_pad = FALSE
+	can_unpad = FALSE
+	can_dismantle = FALSE
 
 	var/folded_type = /obj/item/wheelchair
 	var/driving = 0
@@ -30,18 +33,6 @@
 	max_mob_buckle_size = MOB_MEDIUM
 	folded_type = /obj/item/wheelchair/motor/small
 
-/obj/structure/bed/chair/wheelchair/can_buckle_check(mob/living/M, forced = FALSE)
-	. = ..()
-	if(.)
-		// We don't even USE mob sizes really... Monkeys are the only 'small' mobs that come to mind.
-		// Teshari and prometheans have both have their mob sizes ripped from them (because frankly, the implementation led to some exploity things)
-		if(M.mob_size < min_mob_buckle_size)
-			to_chat(M, span_warning("You are too small to use \the [src]."))
-			. = FALSE
-		else if(M.mob_size > max_mob_buckle_size)
-			to_chat(M, span_warning("You are too large to use \the [src]."))
-			. = FALSE
-
 DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/bed/chair/wheelchair/appearance_overlays()
 	. = list()
@@ -55,18 +46,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 		if(has_buckled_mobs())
 			for(var/mob/living/L as anything in src?.buckled_mob_list())
 				L.set_dir(dir)
-
-/// Overrides chair's interaction_item(): no padding this wheelchair with a stack.
-/obj/structure/bed/chair/wheelchair/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/stack))
-		return TRUE
-	return ..()
-
-/obj/structure/bed/chair/wheelchair/wrench_act(mob/user, obj/item/W)
-	return TRUE
-
-/obj/structure/bed/chair/wheelchair/wirecutter_act(mob/user, obj/item/W)
-	return TRUE
 
 /obj/structure/bed/chair/wheelchair/relaymove(mob/user, direction)
 	// Redundant check?
@@ -158,26 +137,20 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 				if (occupant && (src.loc != occupant.loc))
 					src.forceMove(occupant.loc) // Failsafe to make sure the wheelchair stays beneath the occupant after driving
 
-/obj/structure/bed/chair/wheelchair/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/entry_hand/wheelchair_hand,
-	)
-	..()
+CAPABILITIES(/obj/structure/bed/chair/wheelchair)
+	configure(buckle(smallest = nameof(min_mob_buckle_size), largest = nameof(max_mob_buckle_size)))
+	op("touch", hand(), label("Use"), priority(above("buckle.unbuckle")), then(PROC_REF(touched)))
 
-/// Old attack_hand: drop the puller, or unbuckle whoever's sitting in it.
-/datum/interaction/entry_hand/wheelchair_hand
-	id = "wheelchair_hand"
-	name = "Use"
-	effect = /obj/structure/bed/chair/wheelchair/proc/interaction_hand
-
-/obj/structure/bed/chair/wheelchair/proc/interaction_hand(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// A hand on the chair: drops the one pulling it, or frees whoever is sitting in it.
+/obj/structure/bed/chair/wheelchair/proc/touched(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (src?.pulling_target())
 		MouseDrop(user)
 	else
 		if(has_buckled_mobs())
-			for(var/A in src?.buckled_mob_list())
-				user_unbuckle_mob(A, user)
-	return TRUE
+			for(var/mob/living/occupant in src.buckled_mob_list())
+				user_unbuckle_mob(occupant, user)
+	return OP_OK
 
 /obj/structure/bed/chair/wheelchair/click_ctrl(mob/user)
 	if(in_range(src, user))
@@ -246,12 +219,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 			newdir = 4
 		B.set_dir(newdir)
 	bloodiness--
-
-/obj/structure/bed/chair/wheelchair/buckle_mob(mob/M as mob, mob/user as mob)
-	var/mob/living/pulling = src?.pulling_target()
-	if(M == pulling)
-		om_unlink(src, pulling, /datum/om/relation/pulling)
-	..()
 
 /obj/structure/bed/chair/wheelchair/MouseDrop(over_object, src_location, over_location)
 	..()

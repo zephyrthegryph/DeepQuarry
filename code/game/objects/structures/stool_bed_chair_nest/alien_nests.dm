@@ -71,7 +71,10 @@ APPEARANCE_NONE(/obj/structure/bed/nest)
 	return
 
 // Nest's Use and item overrides fully replace bed's (the original overrides never called
-// ..() into it either), so it declares its own interactions.
+// ..() into it either), so it declares its own interactions and takes none of the bed's ops.
+CAPABILITIES(/obj/structure/bed/nest)
+	bed_hands_off()
+
 /obj/structure/bed/nest/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_item/nest_item,

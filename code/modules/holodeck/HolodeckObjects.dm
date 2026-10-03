@@ -245,13 +245,12 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 		visible_message("[src] fades away as it shatters!")
 	consume(src)
 
-/obj/structure/bed/chair/holochair/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/bed/chair/holochair
+	can_dismantle = FALSE
 
-/obj/structure/bed/holobed/wrench_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("It's a holobed, you can't dismantle it!"))
-	return ITEM_INTERACT_BLOCKING
+/obj/structure/bed/holobed
+	can_dismantle = FALSE
+
 /obj/item/holo
 	injury_kind = INJURY_PAIN
 	no_attack_log = 1
