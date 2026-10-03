@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Pills and patches run on the dose capability"
+  - bugfix: "A pill is no longer lost in a full container, and an empty patch is no longer used up"

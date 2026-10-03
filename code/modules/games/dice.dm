@@ -214,9 +214,9 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	storage_slots = 5
 	special_handling = TRUE
 
-TYPE_TABLE(/obj/item/storage/dicecup, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/dice, \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/dicecup, \
+	configure(storage(accepts = list(/obj/item/dice))))
 
 EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \
@@ -224,10 +224,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 	INTERACT_VERB("Reveal Dice", PROC_REF(dicecup_verb_reveal), REQ_IN_INVENTORY), \
 )
 
-/// Old attack_self: after the storage's own self-use, shake the cup.
+/// Old attack_self: shake the cup.
 /obj/item/storage/dicecup/proc/interaction_shake(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
 	act_message(user, src, MSG_SELF(span_notice("You shake %T%.")), \
 		MSG_OTHERS(span_notice("%U% shakes %T%.")), \
 		MSG_BLIND(span_notice("You hear dice rolling.")))

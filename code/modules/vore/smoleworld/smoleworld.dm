@@ -64,10 +64,12 @@
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks
 	)
 
+CAPABILITIES(/obj/item/storage/smolebrickcase, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)))
+
 //Track code
 //defineing actions
 
-TYPE_TABLE(/obj/item/storage/smolebrickcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/structure/smoletrack
 	icon = 'icons/vore/smoleworld_vr.dmi'
 	color = "#ffffff"
@@ -408,4 +410,6 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 	/obj/item/reagent_containers/food/snacks/snackplanet/virgoprime
 	)
 
-TYPE_TABLE(/obj/item/storage/bagoplanets, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bagoplanets, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)))

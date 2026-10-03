@@ -9,7 +9,7 @@
 
 /obj/item/refill_cartridge/proc/can_refill(obj/machinery/vending/V as obj)
 	if(exact_type)
-		if(V.type == refill_type)
+		if(V.type == refill_type) // ALLOW(reads): a vendor's type is fixed for its life
 			return TRUE
 	else
 		if(istype(V, refill_type))

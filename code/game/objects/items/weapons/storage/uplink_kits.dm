@@ -338,4 +338,9 @@
 		/obj/item/tool/screwdriver
 	)
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/fuelrod, hold_spec, list(HOLD_ONLY(list(/obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/secure/briefcase/fuelrod, \
+	configure(storage(accepts = list( \
+		/obj/item/cell, \
+		/obj/item/stock_parts, \
+		/obj/item/tool/screwdriver))))

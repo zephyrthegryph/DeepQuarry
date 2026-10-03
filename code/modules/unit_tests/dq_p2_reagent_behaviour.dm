@@ -95,6 +95,7 @@
 /datum/unit_test/dq_p2_reagents/proc/rc_actor(turf/T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T || run_loc_floor_bottom_left)
 	H.enable_godmode()
+	dq_give_zone_sel(H)
 	return H
 
 /// A container of `type` holding `amount` units of water.

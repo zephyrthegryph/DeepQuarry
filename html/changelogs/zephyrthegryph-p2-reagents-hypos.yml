@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Hyposprays, autoinjectors and blood packs run on the injector and reagent_container capabilities"
+  - bugfix: "A vial can be loaded into a vial hypospray again"

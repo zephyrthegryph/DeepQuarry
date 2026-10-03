@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Vending machines declared with the machine library; the PIN prompt is a workflow step; a shut vendor no longer draws its open panel"

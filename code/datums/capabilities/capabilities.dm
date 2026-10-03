@@ -156,7 +156,7 @@ GLOBAL_LIST_EMPTY(caps_interned)
 	return !!(A.cap_state & CAP_COVER_OPEN)
 /proc/panel_is_open(atom/A)
 	READS_FROM(A)
-	return !!(A.cap_state & CAP_PANEL_OPEN) || (cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key
+	return !!(A.cap_state & CAP_PANEL_OPEN) || !!(cap_of(A, CAP_PANEL) && panel_open(A, null)) // a converted holder keeps it as a capability key (a boolean: a null `when` draws unconditionally)
 /proc/is_locked(atom/A)
 	return !!(A.cap_state & CAP_LOCKED)
 /proc/is_emagged(atom/A)

@@ -298,12 +298,14 @@ REGISTRY_MEMBERSHIP(/datum/money_account, REGISTRY_MONEY_ACCOUNTS)
 			break
 
 /proc/get_account(account_number)
+	READS_FROM() // the account registry is asked when an action is chosen, never cached
 	for(var/datum/money_account/D in REGISTRY_MEMBERS(REGISTRY_MONEY_ACCOUNTS))
 		if(D.account_number == account_number)
 			return D
 
 /// Whether paying with this card needs its account PIN (ask it before paying: purchase_with_id_card() takes it).
 /proc/id_card_needs_pin(obj/item/card/id/I)
+	READS_FROM() // an account's security level is set when it is made and by its owner at a terminal: asked when a purchase is chosen, never cached
 	var/datum/money_account/customer_account = get_account(I?.associated_account_number)
 	return customer_account && customer_account.security_level != 0
 

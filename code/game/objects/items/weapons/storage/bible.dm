@@ -38,14 +38,14 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 
 EXTEND_INTERACTIONS(/obj/item/storage/bible, \
 	INTERACT_USE(null, PROC_REF(interaction_bible_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_bible_item)), \
 )
 
-/// Old attack_self: after the storage's own self-use, a chaplain configures their religion.
-/obj/item/storage/bible/proc/interaction_bible_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
+// An item put into a bible turns a page first, and then goes on to the storage's insertion (passes()).
+CAPABILITIES(/obj/item/storage/bible, \
+	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes()))
 
+/// Used in hand: a chaplain configures their religion.
+/obj/item/storage/bible/proc/interaction_bible_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
 	if(user?.mind?.assigned_role != JOB_CHAPLAIN)
 		return FALSE
 
@@ -130,8 +130,8 @@ EXTEND_INTERACTIONS(/obj/item/storage/bible, \
 			A.reagents.del_reagent(REAGENT_ID_WATER)
 			A.reagents.add_reagent(REAGENT_ID_HOLYWATER,water2holy)
 
-/// Old attackby: the page-turn sound, then the storage's own insertion.
-/obj/item/storage/bible/proc/interaction_bible_item(mob/user, obj/item/W, datum/interaction/interaction)
+/// The page-turn sound.
+/obj/item/storage/bible/proc/turn_page(datum/act/op/A)
 	if (src.use_sound)
 		playsound(src, src.use_sound, 50, 1, -5)
-	return FALSE
+	return OP_OK

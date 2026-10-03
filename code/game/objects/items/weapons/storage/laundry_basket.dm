@@ -20,25 +20,12 @@
 	var/linked
 	resistance_flags = FLAMMABLE
 
-TYPE_TABLE(/obj/item/storage/laundry_basket, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 
-EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pick up", PROC_REF(interaction_two_hands), REQ_TARGET_STATE(/obj/item/storage/laundry_basket/proc/can_lift)))
-
-/// Requirement: lifting the basket takes both hands.
-/obj/item/storage/laundry_basket/proc/can_lift(mob/living/user, atom/target, obj/item/held)
-	if(ishuman(user))
-		var/mob/living/carbon/human/H = user
-		var/obj/item/organ/external/temp = H.get_organ(user.hand ? BP_L_HAND : BP_R_HAND)
-		if(!temp)
-			return "you need two hands to pick this up"
-	if(user.get_inactive_hand())
-		return "you need your other hand to be empty"
-	return TRUE
-
-/// Old attack_hand: lifting the basket takes both hands; with both free the storage's touch goes on.
-/obj/item/storage/laundry_basket/proc/interaction_two_hands(mob/living/user, obj/item/held, datum/interaction/interaction)
-	return FALSE // can_lift() refuses a one-handed lift; otherwise the storage's touch goes on
+// Lifting the basket takes both hands.
+CAPABILITIES(/obj/item/storage/laundry_basket, \
+	configure(storage(max_size = ITEMSIZE_LARGE)), \
+	two_hands())
 
 /obj/item/storage/laundry_basket/pickup(mob/user)
 	var/obj/item/storage/laundry_basket/offhand/O = new(user)
@@ -49,14 +36,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/laundry_basket, INTERACT_HAND_UNGATED("Pic
 	linked = O
 	return
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/laundry_basket, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/laundry_basket/appearance_overlays()
-	. = list()
-	if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-		icon_state = "laundry-full"
-	else
-		icon_state = "laundry-empty"
-	return .
+/obj/item/storage/laundry_basket/draw(datum/look/look)
+	. = ..()
+	look.state(held_count() ? "laundry-full" : "laundry-empty")
 
 
 /obj/item/storage/laundry_basket/MouseDrop(obj/over_object)

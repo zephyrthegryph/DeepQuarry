@@ -9,57 +9,70 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4 //The sum of the w_classes of all the items in this storage item.
 	req_access = list(ACCESS_ARMORY)
 	preserve_item = 1
-	var/locked = 1
 	var/broken = 0
 	var/icon_locked = "lockbox+l"
 	var/icon_closed = "lockbox"
 	var/icon_broken = "lockbox+b"
 
-TYPE_TABLE(/obj/item/storage/lockbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+TRACKED(/obj/item/storage/lockbox, broken)
 
+MSG_DEF_SELF(lockbox/broken, "It appears to be broken.")
+MSG_DEF_SELF(lockbox/locked, "It's locked!")
 
-EXTEND_INTERACTIONS(/obj/item/storage/lockbox, INTERACT_ITEM("Put in", PROC_REF(interaction_lockbox_item)))
+// A lockbox starts locked. An ID with the access locks and unlocks it (locking shuts the window of whoever is looking into it); a broken lock
+// stays open for good; locked, it takes nothing and does not open; an energy blade slices the lock open, and an emag shorts it out.
+CAPABILITIES(/obj/item/storage/lockbox, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)), \
+	lock(id_types = list(/obj/item/card/id), starts_locked = TRUE, alt = FALSE), \
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE), \
+	extend("lock.toggle", needs(req(PROC_REF(lock_works), because = MSG(lockbox/broken)))), \
+	extend("lock.toggle", priority(above("storage.put_in"))), \
+	extend("storage.put_in", when(cond_not(LOCK_LOCKED))), \
+	extend("storage.refuse", when(cond_not(LOCK_LOCKED))), \
+	on_change(LOCK_LOCKED, ANY, then(PROC_REF(lock_changed))), \
+	op("slice", item(/obj/item/melee/energy/blade), priority(above("storage.put_in")), when(PROC_REF(blade_can_slice)), label("Slice open"), then(PROC_REF(slice_open)), passes()), \
+	op("locked_click", item(/obj/item), priority(below("storage.put_in")), when(LOCK_LOCKED), label("Put in"), says(MSG(lockbox/locked)), passes()))
 
-/// Old attackby: an ID locks or unlocks it, an energy blade slices it open; unlocked, the storage takes the item.
-/obj/item/storage/lockbox/proc/interaction_lockbox_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/card/id))
-		if(src.broken)
-			to_chat(user, span_warning("It appears to be broken."))
-			return INTERACTION_HANDLED_PASS
-		if(src.allowed(user))
-			src.locked = !( src.locked )
-			if(src.locked)
-				src.icon_state = src.icon_locked
-				to_chat(user, span_notice("You lock \the [src]!"))
-				close_all()
-				return INTERACTION_HANDLED_PASS
-			else
-				src.icon_state = src.icon_closed
-				to_chat(user, span_notice("You unlock \the [src]!"))
-				return INTERACTION_HANDLED_PASS
-		else
-			to_chat(user, span_warning("Access Denied"))
-	else if(istype(W, /obj/item/melee/energy/blade))
-		if(break_lock("The locker has been sliced open by [user] with an energy blade!", "You hear metal being sliced and sparks flying."))
-			fx_sparks(src.loc, 5, FALSE)
-			play_sfx(src, SFX_WEAPONS_BLADE1)
-			play_sfx(src, SFX_SPARKS)
-	if(!locked)
-		return interaction_item(user, W, interaction)
-	to_chat(user, span_warning("It's locked!"))
-	return INTERACTION_HANDLED_PASS
+/// The lock still works: a broken one stays open.
+/obj/item/storage/lockbox/proc/lock_works(datum/act/A)
+	return !broken
 
+/// Locking it shuts the window of whoever is looking inside; either way it is drawn again.
+/obj/item/storage/lockbox/proc/lock_changed(datum/act/A)
+	if(lock_locked(src))
+		close_all()
+	update_icon()
+
+/obj/item/storage/lockbox/proc/blade_can_slice(datum/act/op/A)
+	return !broken
+
+/// An energy blade slices the lock open; the click goes on (the blade may then go in).
+/obj/item/storage/lockbox/proc/slice_open(datum/act/op/A)
+	if(break_lock("The locker has been sliced open by [A.actor] with an energy blade!", "You hear metal being sliced and sparks flying."))
+		fx_sparks(src.loc, 5, FALSE)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
+		play_sfx(src, SFX_SPARKS)
+	return OP_OK
+
+/obj/item/storage/lockbox/draw(datum/look/look)
+	. = ..()
+	if(broken)
+		look.state(icon_broken)
+	else if(lock_locked(src))
+		look.state(icon_locked)
+	else
+		look.state(icon_closed)
 
 /obj/item/storage/lockbox/show_to(mob/user as mob)
-	if(locked)
+	if(lock_locked(src))
 		to_chat(user, span_warning("It's locked!"))
 	else
 		..()
 	return
 
-DECLARE_EMAG_REPEATABLE(/obj/item/storage/lockbox, PROC_REF(on_emag), null)
-/obj/item/storage/lockbox/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	return break_lock(null, null, user)
+/obj/item/storage/lockbox/proc/on_emag(datum/act/op/A)
+	break_lock(null, null, A.actor)
+	return OP_OK
 
 /// Breaks the lock open (an emag, or a blade slicing it). Returns 1 if it was still intact.
 /obj/item/storage/lockbox/proc/break_lock(visual_feedback, audible_feedback, mob/user)
@@ -73,10 +86,9 @@ DECLARE_EMAG_REPEATABLE(/obj/item/storage/lockbox, PROC_REF(on_emag), null)
 		else
 			audible_feedback = span_warning("You hear a faint electrical spark.")
 
-		broken = 1
-		locked = 0
+		set_broken(1)
+		cap_key_set(src, LOCK_LOCKED, FALSE, null)
 		desc = "It appears to be broken."
-		icon_state = src.icon_broken
 		visible_message(visual_feedback, audible_feedback)
 		return 1
 

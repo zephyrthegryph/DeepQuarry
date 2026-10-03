@@ -57,6 +57,7 @@
 	var/list/effects
 	var/early_effects = 0
 	var/datum/entry/part/says/says
+	var/datum/entry/part/begins/begins
 	var/datum/entry/part/plays/plays
 	var/datum/entry/part/verbs/verb_pair
 	var/datum/entry/part/flash/flash
@@ -430,6 +431,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 
 /datum/entry/part/says/compile(datum/op_plan/P, level)
 	P.says = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/begins/compile(datum/op_plan/P, level)
+	P.begins = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
 /datum/entry/part/plays/compile(datum/op_plan/P, level)
 	P.plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)

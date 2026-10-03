@@ -32,7 +32,7 @@ CAPABILITIES(/obj/item/lib_fixture/flask, \
 	name = "lib syringe"
 
 CAPABILITIES(/obj/item/lib_fixture/syringe, \
-	reagent_container(volume = 15, transfer = list(5, 10, 15), needle = TRUE), \
+	reagent_container(volume = 15, transfer = list(5, 10, 15), needle = TRUE, injects = TRUE), \
 	extend("reagent_container.inject", wait(3 SECONDS), logs(LOG_ADMIN)))
 
 /// A jug: every setting of reagent_container() is a var of the type, and it takes the lid off at the start, rests on tables and feeds others.

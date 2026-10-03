@@ -390,15 +390,16 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 	use_to_pickup = TRUE
 	allow_quick_gather = TRUE
 
-TYPE_TABLE(/obj/item/storage/bag/mail, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/bag/mail, \
+	configure(storage(accepts = list( \
 		/obj/item/mail, \
 		/obj/item/smallDelivery, \
 		/obj/item/paper, \
 		/obj/item/stolenpackage, \
 		/obj/item/contraband, \
 		/obj/item/mail_scanner, \
-		/obj/item/pen \
-	)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+		/obj/item/pen), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/mail/borg
 	name = "letter compartment"

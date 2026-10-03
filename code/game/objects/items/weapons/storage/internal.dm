@@ -12,8 +12,6 @@
 		return INITIALIZE_HINT_QDEL
 	name = master_item().name
 
-EXTEND_INTERACTIONS(/obj/item/storage/internal, INTERACT_HAND_UNGATED(null, TYPE_PROC_REF(/atom, interaction_swallow)))
-
 /// Internal storage is part of its owner and is never worn on its own.
 TYPE_TABLE(/obj/item/storage/internal, equip_spec, list(REQ_BECAUSE(REQ_TYPE(PRED_TARGET, list()), "it can't be worn")))
 

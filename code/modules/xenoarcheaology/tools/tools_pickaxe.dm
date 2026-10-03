@@ -118,14 +118,17 @@
 	max_storage_space = ITEMSIZE_COST_SMALL * 9
 	use_to_pickup = TRUE
 
-TYPE_TABLE(/obj/item/storage/excavation, hold_spec, list(HOLD_ONLY(list(/obj/item/pickaxe/brush, \
-	/obj/item/pickaxe/one_pick, \
-	/obj/item/pickaxe/two_pick, \
-	/obj/item/pickaxe/three_pick, \
-	/obj/item/pickaxe/four_pick, \
-	/obj/item/pickaxe/five_pick, \
-	/obj/item/pickaxe/six_pick, \
-	/obj/item/pickaxe/hand)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/excavation, \
+	configure(storage(accepts = list( \
+		/obj/item/pickaxe/brush, \
+		/obj/item/pickaxe/one_pick, \
+		/obj/item/pickaxe/two_pick, \
+		/obj/item/pickaxe/three_pick, \
+		/obj/item/pickaxe/four_pick, \
+		/obj/item/pickaxe/five_pick, \
+		/obj/item/pickaxe/six_pick, \
+		/obj/item/pickaxe/hand))))
 
 /obj/item/storage/excavation/Initialize(mapload)
 	. = ..()

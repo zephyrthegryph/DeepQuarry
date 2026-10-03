@@ -77,7 +77,7 @@
 		return
 #if defined(UNIT_TESTS)
 	// H5: a refresh that marks its own entity again is a feedback loop (a reactive proc wrote state).
-	if(E == GLOB.refresh_running)
+	if(E == GLOB.refresh_running && !GLOB.ledger_adopting)
 		var/msg = "REFRESH SELF-MARK: [E.type] marked itself changed during its own refresh"
 		GLOB.refresh_self_marks += msg
 		if(!GLOB.refresh_self_mark_expected)

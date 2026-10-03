@@ -18,10 +18,13 @@
 //   splash       the same click in a hostile stance, on what cannot be poured into: everything in the held container is splashed over it
 //   drink        a click on yourself in a stance that is not hostile: one transfer, swallowed (ingested); half of it for a small mob
 //   feed         (feed = TRUE) the same click on somebody else, after `feed_wait`: the mouth, a gag, a mask or a belly can refuse
-//   inject       (needle = TRUE) the held container into another mob
+//   inject       (injects = TRUE) the held container into another mob, instantly (a hypospray; the syringe and the dropper have needle()'s ops)
 //   spray        (spray = TRUE) the amount of one transfer is sprayed at the target (atom/reagent_spray_at(): a puff, a splash, what the holder's type
 //                makes of it), after a click cooldown of `spray_cooldown`; a click on what the container rests on is left alone. A sprayer and a needle
-//                container (`needle`) are not plain containers: they do not pour, splash, drink or feed. `settable` = FALSE leaves out set_amount.
+//                container (`needle`; its ops are needle()'s) are not plain containers: they do not pour, splash, drink or feed. `sealed` = TRUE is a
+//                container that is never open (a syringe), whatever it has for a lid. `lid_visible` = FALSE
+//                is a lid that is only a state (an autoinjector is shut once it is spent): no op, no layer, no examine line; `starts_open` may be the name of a
+//                holder var. `settable` = FALSE leaves out set_amount.
 //
 // A pour, a fill, a drink and an injection are one RES_REAGENTS transaction: the source's volume and the sink's capacity are set aside together and
 // committed together (reagent_flow.dm), so a sink that is full refuses with its reason before anything leaves the source. Requirements say why: a
@@ -33,7 +36,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, sealed = FALSE, lid_visible = TRUE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -67,7 +70,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 /datum/capability/lib/reagent_container/entries()
 	return list(
-		lid ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
+		(lid && lid_visible) ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
 		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), label("Set transfer amount"),
 			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
 		(spray || needle) ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
@@ -92,16 +95,16 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
 				req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/feed))) : null,
-		needle ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
+		injects ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)), req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
 		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), priority(above("reagent_container.fill")), label("Spray"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_amount), because = MSG(reagent_container/empty))),
 			then(CAP_PROC(sprayed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
-		lid ? look_layer(LOOK_LID, when = cond_not(REAGENT_CONTAINER_LID_OPEN)) : null,
+		(lid && lid_visible) ? look_layer(LOOK_LID, when = cond_not(REAGENT_CONTAINER_LID_OPEN)) : null,
 		look_layer(CAP_PROC(fill_layer)),
 		examine_line(CAP_PROC(volume_text)),
-		lid ? examine_line(CAP_PROC(lid_text)) : null)
+		(lid && lid_visible) ? examine_line(CAP_PROC(lid_text)) : null)
 
 /// Look steps of the fill gauge.
 #define REAGENT_FILL_LEVELS 4
@@ -113,7 +116,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		holder.create_reagents(max_volume)
 	else if(holder.reagents.maximum_volume != max_volume)
 		holder.reagents.maximum_volume = max_volume
-	if(!lid || starts_open)
+	if(!lid || setting(holder, starts_open, FALSE))
 		cap_key_set(holder, REAGENT_CONTAINER_LID_OPEN, TRUE)
 	var/list/fill = setting(holder, starts, null)
 	for(var/id in fill)

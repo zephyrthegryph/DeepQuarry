@@ -121,6 +121,17 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 
 	return val
 
+/// A tray with things on it does not go into a storage: nearly always it refuses, and now and then it slips and is put in anyway.
+/obj/item/tray/storage_balks(obj/item/storage/S, mob/user)
+	if(calc_carry() <= 0)
+		return FALSE
+	if(prob(85))
+		to_chat(user, span_warning("The tray won't fit in [S]."))
+		return TRUE
+	user.drop_from_inventory(src, get_turf(user))
+	to_chat(user, span_warning("God damn it!"))
+	return FALSE
+
 /obj/item/tray/pickup(mob/user)
 
 	if(!isturf(loc))

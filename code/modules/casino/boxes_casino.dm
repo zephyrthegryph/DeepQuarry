@@ -59,7 +59,9 @@
 		/obj/item/roulette_ball = 7,
 		/obj/item/roulette_ball/hollow = 2)
 
-TYPE_TABLE(/obj/item/storage/box/roulette_balls_normal, hold_spec, list(HOLD_ONLY(list(/obj/item/roulette_ball)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/roulette_balls_normal, \
+	configure(storage(accepts = list(/obj/item/roulette_ball))))
 
 /obj/item/storage/box/roulette_balls_fancy
 	name = "fancy roulette ball box"
@@ -78,7 +80,9 @@ TYPE_TABLE(/obj/item/storage/box/roulette_balls_normal, hold_spec, list(HOLD_ONL
 		/obj/item/roulette_ball/planet,
 		/obj/item/roulette_ball/gold)
 
-TYPE_TABLE(/obj/item/storage/box/roulette_balls_fancy, hold_spec, list(HOLD_ONLY(list(/obj/item/roulette_ball)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/roulette_balls_fancy, \
+	configure(storage(accepts = list(/obj/item/roulette_ball))))
 
 /obj/item/storage/box/roulette_balls_cheat
 	name = "special roulette ball box"
@@ -94,4 +98,6 @@ TYPE_TABLE(/obj/item/storage/box/roulette_balls_fancy, hold_spec, list(HOLD_ONLY
 		/obj/item/roulette_ball/cheat/odd,
 		/obj/item/roulette_ball/cheat/even)
 
-TYPE_TABLE(/obj/item/storage/box/roulette_balls_cheat, hold_spec, list(HOLD_ONLY(list(/obj/item/roulette_ball)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat, \
+	configure(storage(accepts = list(/obj/item/roulette_ball))))

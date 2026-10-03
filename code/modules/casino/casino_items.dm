@@ -4,7 +4,9 @@
 	icon = 'icons/obj/casino_ch.dmi'
 	icon_state = "casinowallet_black"
 
-TYPE_TABLE(/obj/item/storage/wallet/casino, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/wallet/casino, \
+	configure(storage(accepts = list( \
 		/obj/item/spacecash, \
 		/obj/item/card, \
 		/obj/item/clothing/mask/smokable/cigarette/, \
@@ -42,8 +44,7 @@ TYPE_TABLE(/obj/item/storage/wallet/casino, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/book/codex/casino, \
 		/obj/item/storage/pill_bottle/dice, \
 		/obj/item/storage/pill_bottle/dice_nerd, \
-		/obj/item/storage/dicecup/loaded \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/storage/dicecup/loaded))))
 
 /obj/item/storage/wallet/casino/proc/casino_toggle_design_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

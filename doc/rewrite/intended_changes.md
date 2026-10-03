@@ -66,6 +66,54 @@ its adapter block changed). Rags are not converted yet: they inherit the label a
 * `without(CAP_X)` of a bundle drops the capability the bundle brought, and everything that one brought. Test: `dq_p2_engine/without_drops_a_bundles_nested_capability`.
 * The old `cap_reagent_container()` library, its test and the `CAP_LID_OPEN` bit are deleted (nothing used them).
 
+## Reagent containers: syringes and droppers
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_needle_behaviour.dm` (31 tests, written and green on the legacy code first; only the set-amount adapter
+changed with the conversion).
+
+* **The waits show no progress bar and the first message is the library's.** An injection (two thirds of the syringe's time, a third for yourself), somebody
+  else's blood draw (three seconds) and the dropper's squirt into the eyes (two seconds) are waits of the operation engine: it draws no progress bar, and a
+  second injection started in the meantime is not refused by name (the second one finds the target or the syringe changed when its wait ends). Somebody
+  injecting you is still seen to ("is trying to inject", "begins hunting for an injection port on the suit"): that is the new `begins()` part.
+* **The thick hide of a species turns a needle away after the wait, not before it** (the same roll, for somebody else only). A needle that cannot go in a
+  robotic, lifelike or missing limb is refused before the wait, as before. The old check ran the injector's own `can_inject()` twice (once for each
+  message); it is one roll now.
+* **A syringe switching mode redraws.** A full syringe that is drawing, or an empty one that is injecting, is set to the other mode when it is clicked on
+  something (as before) and the look follows at once (the mode mark on the held syringe used to lag one redraw).
+* **The messages are the library's** ("It is full.", "You cannot directly fill this object."); what is refused and when is the same. The lethal injection
+  syringe still refuses blood and the stab, each with its own message.
+* **A harm click on a person with a capped syringe still stabs** (the cap was never a guard): pinned, not changed.
+* **A dropper's contents are told as "It contains 3 of 5 units."** (within two tiles) instead of "It contains 3 units of liquid."
+* **Dead code is gone:** the syringe's `drawing` flag, its OM timed tasks and the `SYRINGE_*` defines (now `NEEDLE_*` in `code/__defines/reagents.dm`).
+
+## Reagent containers: pills and patches
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_pill_behaviour.dm` (13 tests, written and green on the legacy code first, and green unchanged after the
+conversion).
+
+* **A pill or patch is not wasted on a full container or an empty hand-me-down.** A pill dissolved in a container with no room left used to be used up and
+  its contents lost; it is refused and kept now. A container with room for only part of it takes what fits and the pill is used up, as before (pinned). An
+  empty patch (they start empty) used to be put on for nothing and used up; it is refused with "It is empty." and kept.
+* **The one who puts a patch on somebody else is seen to attempt it** without the limb's name ("attempts to place the patch onto Jane"), and the one who forces
+  a pill is told "You attempt to force Jane to swallow the pill". The waits (three seconds) draw no progress bar.
+* **The thick hide of a species is rolled when the patch goes on,** after the wait for somebody else (the same roll; a thick material is refused before
+  the wait).
+* **The messages are the library's** (the limb is missing, it won't work on a robotic limb, it can't be applied through thick material); what is refused
+  and when is the same.
+
+## Reagent containers: hyposprays and blood packs
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_hypo_behaviour.dm` (the hypospray, autoinjector, vial and blood pack tests green on the legacy code first
+and unchanged after the conversion; the vial test was red on master before this step, see below).
+
+* **A vial can be loaded into a vial hypospray again.** The glass container conversion (step 1) made a click with an open vial on the hypospray (an open
+  holder) a pour, and a pour into a hypospray with no volume refused, so the old load entry was never reached. The `load` op now sits above the pour.
+* **A spent autoinjector is shut by its lid state, not the old flag** (`open_at_start`, `REAGENT_CONTAINER_LID_OPEN`): unidentified injectors start shut
+  the same way. Nothing a player does differs.
+* **The thick hide of a species turns a hypospray away after the wait** (the same roll; before it, for an injection that waits). The injector's three
+  seconds and the one who begins an injection being seen to are the op engine's `begins()`; no progress bar.
+* **Blood packs:** the label question is the library's text prompt, and the label rules (fifty characters at most, ten shown in the name) are unchanged.
+
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
 Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).
@@ -93,3 +141,44 @@ Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written a
   redraw. `power_poll()` no longer raises the machine pipeline's CHANGE_MACHINE_CHARGE channel (nothing waits on it).
 * **The battery rack keeps its legacy forms** (its own window, interactions and pipeline stage; it was the SMES stage's other user): the stage is
   retargeted to the rack, it draws its own cells (not the SMES overlays) and sends its own window data.
+
+## Battery rack (power cell rack PSU)
+
+Pinned by `code/modules/unit_tests/dq_p2_batteryrack_behaviour.dm` (34 tests, written and green on the legacy forms first; mutation-checked: a wrong cell limit, the
+least/most charged cell swapped, a wrong input mode, a wrong clamp, no capacity change on eject, no SMES unit conversion, a wrong slot flag, no transfer cap, a wrong
+overlay mark and a dismantle that deletes its cells are each caught by a test). Only the adapter block of the file changed with the conversion.
+
+* **The rack's window takes only its own buttons.** The converted SMES brought its window buttons (toggle input, toggle output, set input, set output) in its
+  inherited table, so a rack's window could be sent them (the rack's own `inputting()`/`outputting()` swallowed the toggles, but the level setters worked).
+  The rack drops them (`without(...)`); what it keeps is what its window shows: mode, equalise, eject. An EMP, a wire or an admin still reaches the rack's
+  `inputting()` and `outputting()`, which still do nothing.
+* **The look follows the cells and the charge.** The old rack redrew every tenth frame (twenty seconds) and when a cell went in or out; it now redraws
+  in the frame its overlay set changes (a cell filling up, emptying, or the gauge stepping a level), and a cell going in or out is as immediate as before.
+  Cost is the overlay set computed each frame (the frame already walks the cells).
+* **A cell is taken in by an op.** A cell clicked on a rack ends the click there (the old entry also fell through to the part replacer and the base
+  attack, which did nothing for a cell). A full rack refuses with "It has no empty slot for that." (the old text named the rack and the cell).
+* **The frame is a timer, not a pipeline stage.** `every(MACHINE_SERVICE_INTERVAL, ...)` runs the same work at the same cadence the machine pipeline had
+  (the rack never idled there either); the SMES stage and the pipeline's entry for the rack are gone.
+* **Cells are an owned list** (`owns_many`): a rack destroyed or deleted deletes its cells, as before (only `dismantle()` drops them). Tests pin both.
+* The premade `input_and_output_on` rack still sets mode three but not its input and output attempts (the rack's `inputting()`/`outputting()` do nothing): pinned as
+  it was, not fixed.
+
+## Engine pieces the battery rack added
+
+* A subtype's own `interface()` replaces the window it inherits (`present_interface()` answers the most specific declaration; the subtype says
+  `without("ui_open")` so the inherited open op does not clash with its own). Test: `dq_p2_engine/a_subtype_window_replaces_the_inherited_one`.
+## Storage items (backpacks, bags, boxes, belts, pill bottles, toolboxes, lockboxes and the kits and cases around them)
+
+Pinned by `code/modules/unit_tests/dq_p2_storage_behaviour.dm` (written and green on the legacy code first; only its adapters changed, and the tests added with the bot assemblies and the looks were checked against the commit before the conversion).
+
+* **A crayon the box will not take says the general refusal.** The mime and rainbow crayons are `refuses` of the crayon box now (they are separate types), so they get "won't go in: it doesn't take that" instead of "too sad / too powerful to be contained in this box". The same check on the marker box was dead code (no mime or rainbow marker exists) and is gone.
+* **An ID without the access, on an unlocked lockbox, is refused ("Access denied") and not put in.** The old entry said "Access Denied" and then put the card in. A broken lock, a locked box and an energy blade behave as before (the blade still slices the lock and then goes in, now through `passes()`).
+* **The lockbox's lock is `lock()`.** `locked` is the capability's state `LOCK_LOCKED` (`lock_locked(box)`), `broken` stays a tracked var; an emag is `emag()` and its card pays a use and says the library's line besides the old "faint electrical spark" message. A PDA does not work a lockbox (`id_types` is the card only), and an alt-click on one opens it as before.
+* **Parachute packing says nothing at the start and nothing when it is given up.** The waits are the old ones (five seconds to pack, two and a half to unpack); the "You start to pack" and "You give up" messages went with `om_task_timed` (an op's wait has no start message and says one thing when it is cancelled). The finish messages are the old ones.
+* **A secure safe's service panel, memory reset and emag are ops.** The screwdriver and the multitool wait what the old tasks did (2 s and 10 s); the `om_busy` guard went with the task. The keypad is the same window (`SecureSafe`) and its `type` action is an op; the sparks, the shorted lock and the open light are drawn from tracked state.
+* **A pill bottle's label prompt asks "Enter a label for it:"** (the old prompt named the bottle). The rules for the text are the old ones.
+* **A box folds without checking that its user is within one tile** (it can only be used in hand, which is within reach).
+* **The belt sprite of a worn storage follows the slot changes**, not every `update_icon()`: `on_slot_changed()` tells the wearer.
+* **The 85 percent tray slip, the hand labeler's silence and the light replacer's refill are the same behaviours in new places** (`storage_balks()` of the tray, the labeler in the storage's `quiet` list, an op of the storage type).
+* **The bot assemblies (a toolbox with ten floor tiles, a first aid kit with a robot arm) are ops of their storage types** in `floorbot.dm` and `medbot.dm`: on an empty toolbox the tiles start the kit and on one with tools they go in like any item; a robot arm on a kit with things in it says to empty it first.
+* The old `cap_storage()` library, its tests and the `HOLDS_*` bits are deleted (nothing used them); the slot's hold constraint and `restrict_hold()` of a storage are the capability's.
