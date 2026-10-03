@@ -15,179 +15,6 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 /proc/get_light_type_instance(light_type)
 	return CACHED(light_type_instance, light_type)
 
-/obj/machinery/light_construct
-	name = "light fixture frame"
-	desc = "A light fixture under construction."
-	icon = 'icons/obj/lighting.dmi'
-	icon_state = "tube-construct-stage1"
-	anchored = TRUE
-	plane = MOB_PLANE
-	var/stage = 1
-	var/fixture_type = /obj/machinery/light
-	var/sheets_refunded = 2
-	var/tmp/obj/machinery/light/newlight
-	var/tmp/obj/item/cell/cell
-
-	var/cell_connectors = TRUE
-
-/obj/machinery/light_construct/Initialize(mapload, newdir, building = 0, datum/frame/frame_types/frame_type, obj/machinery/light/fixture = null)
-	. = ..()
-	if(fixture)
-		fixture_type = fixture.type
-		fixture.transfer_fingerprints_to(src)
-		set_dir(fixture.dir)
-		stage = 2
-	else if(newdir)
-		set_dir(newdir)
-	update_icon()
-
-DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPEARANCE_ICON_STATE = "tube-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "tube-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "tube-empty")))
-
-/obj/machinery/light_construct/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 2)
-		switch(stage)
-			if(1)
-				. += "It's an empty frame."
-			if(2)
-				. += "It's wired."
-			if(3)
-				. += "The casing is closed."
-		if(cell_connectors)
-			if(cell())
-				. += "You see [cell()] inside the casing."
-			else
-				. += "The casing has no power cell for backup power."
-		else
-			. += span_danger("This casing doesn't support power cells for backup power.")
-
-/obj/machinery/light_construct/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/light_construct_insert_cell,
-		/datum/interaction/machine_item/light_construct_add_wires,
-		/datum/interaction/machine_hand/light_construct_remove_cell,
-	)
-	..()
-
-/datum/interaction/machine_hand/light_construct_remove_cell
-	id = "light_construct_remove_cell"
-	name = "Remove cell"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/light_construct/proc/interaction_remove_cell
-
-/obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	var/obj/item/cell/removed = cell()
-	if(removed)
-		act_message(user, src, MSG_SELF(span_notice("You remove [removed].")), MSG_OTHERS("%U% removes [removed] from %T%!"))
-		user.put_in_hands(removed)
-		removed.update_icon()
-		own_take(src, nameof(cell)) // it left for the user's hands
-	return TRUE
-
-/datum/interaction/machine_item/light_construct_insert_cell
-	id = "light_construct_insert_cell"
-	name = "Insert cell"
-	held_type = /obj/item/cell/emergency_light
-	effect = /obj/machinery/light_construct/proc/interaction_insert_cell
-
-/obj/machinery/light_construct/proc/interaction_insert_cell(mob/user, obj/item/cell/emergency_light/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(!cell_connectors)
-		to_chat(user, span_warning("This [name] can't support a power cell!"))
-		return TRUE
-	if(cell())
-		to_chat(user, span_warning("There is a power cell already installed!"))
-	else if(own_set(src, nameof(src.cell), W, user = user))
-		act_message(user, src, MSG_SELF(span_notice("You add [W] to %T%.")), MSG_OTHERS(span_notice("%U% hooks up [W] to %T%.")))
-		play_sfx(src, SFX_MACHINES_CLICK)
-	return TRUE
-
-/datum/interaction/machine_item/light_construct_add_wires
-	id = "light_construct_add_wires"
-	name = "Add wires"
-	held_type = /obj/item/stack/cable_coil
-	effect = /obj/machinery/light_construct/proc/interaction_add_wires
-
-/// The old stage != 1 check was a silent return (no ..() either), so it stays in the effect.
-/obj/machinery/light_construct/proc/interaction_add_wires(mob/user, obj/item/stack/cable_coil/coil, datum/interaction/interaction)
-	add_fingerprint(user)
-	if (stage != 1)
-		return TRUE
-	if (coil.use(1))
-		stage = 2
-		update_icon()
-		act_message(user, src, MSG_SELF("You add wires to %T%."), MSG_OTHERS("[user.name] adds wires to %T%."))
-	return TRUE
-
-/obj/machinery/light_construct/wrench_act(mob/user, obj/item/tool)
-	if(stage == 2)
-		to_chat(user, "You have to remove the wires first.")
-		return ITEM_INTERACT_BLOCKING
-	if(stage == 3)
-		to_chat(user, "You have to unscrew the case first.")
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 3 SECONDS, volume = 75, start_self = "You begin deconstructing [src].", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/light_construct/proc/wrench_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF("You deconstruct %T%."), MSG_OTHERS("[user.name] deconstructs %T%."), MSG_BLIND("You hear a noise."))
-	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
-	replace_with(src, /obj/item/stack/material/steel, sheets_refunded)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/light_construct/wirecutter_act(mob/user, obj/item/tool)
-	if(stage != 2)
-		return ITEM_INTERACT_BLOCKING
-	stage = 1
-	update_icon()
-	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
-	act_message(user, src, MSG_SELF("You remove the wiring from %T%."), MSG_OTHERS("[user.name] removes the wiring from %T%."), MSG_BLIND("You hear a noise."))
-	playsound(src, tool.usesound, 50, TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/light_construct/screwdriver_act(mob/user, obj/item/tool)
-	if(stage != 2)
-		return ITEM_INTERACT_BLOCKING
-	stage = 3
-	update_icon()
-	act_message(user, src, MSG_SELF("You close %T%'s casing."), MSG_OTHERS("[user.name] closes %T%'s casing."), MSG_BLIND("You hear a noise."))
-	playsound(src, tool.usesound, 75, TRUE)
-	var/obj/machinery/light/finished_light = new fixture_type(loc, src)
-	finished_light.set_dir(dir)
-	transfer_fingerprints_to(finished_light)
-	if(cell())
-		finished_light.latent_cell_charge = null
-		cell().forceMove(finished_light)
-		own_transfer(src, nameof(cell), finished_light, nameof(finished_light.cell))
-	replace_with(src, finished_light)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/light_construct/small
-	name = "small light fixture frame"
-	desc = "A small light fixture under construction."
-	icon = 'icons/obj/lighting.dmi'
-	icon_state = "bulb-construct-stage1"
-	anchored = TRUE
-	stage = 1
-	fixture_type = /obj/machinery/light/small
-	sheets_refunded = 1
-
-DECLARE_APPEARANCE(/obj/machinery/light_construct/small, "stage", list("1" = list(APPEARANCE_ICON_STATE = "bulb-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "bulb-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "bulb-empty")))
-
-/obj/machinery/light_construct/flamp
-	name = "floor light fixture frame"
-	desc = "A floor light fixture under construction."
-	icon = 'icons/obj/lighting.dmi'
-	icon_state = "flamp-construct-stage1"
-	anchored = FALSE
-	plane = OBJ_PLANE
-	layer = OBJ_LAYER
-	stage = 1
-	fixture_type = /obj/machinery/light/flamp
-	sheets_refunded = 2
-
-DECLARE_APPEARANCE(/obj/machinery/light_construct/flamp, "stage", list("1" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "flamp-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "flamp-empty")))
-
 // the standard tube light fixture
 
 /obj/machinery/light
@@ -762,7 +589,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		return NONE
 	playsound(src, tool.usesound, 75, TRUE)
 	act_message(user, src, MSG_SELF("You open %T%'s casing."), MSG_OTHERS("[user.name] opens %T%'s casing."), MSG_BLIND("You hear a noise."))
-	replace_with(src, construct_type, src)
+	replace_with(src, construct_type, null, FALSE, null, src)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/machinery/light/multitool_act(mob/user, obj/item/tool)
@@ -1524,9 +1351,6 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 // I hate the way macros look stupid standing near lights. I don't care how absurd this looks.
 
-/obj/machinery/light_construct
-	layer = BELOW_MOB_LAYER
-
 /obj/machinery/light
 	layer = BELOW_MOB_LAYER
 
@@ -1616,22 +1440,6 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 /obj/machinery/light/floortube/flicker
 	auto_flicker = TRUE
 
-/obj/machinery/light_construct/floortube
-	name = "floor light fixture frame"
-	desc = "A floor light fixture under construction."
-	icon = 'icons/obj/lighting.dmi'
-	icon_state = "floortube-construct-stage1"
-	stage = 1
-	anchored = FALSE
-	fixture_type = /obj/machinery/light/floortube
-	sheets_refunded = 2
-
-/obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
-	. = ..()
-	make_rotatable()
-
-DECLARE_APPEARANCE(/obj/machinery/light_construct/floortube, "stage", list("1" = list(APPEARANCE_ICON_STATE = "floortube-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "floortube-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "floortube-empty")))
-
 // Big Flamp
 
 /obj/machinery/light/bigfloorlamp
@@ -1649,18 +1457,6 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/floortube, "stage", list("1" =
 
 /obj/machinery/light/bigfloorlamp/flicker
 	auto_flicker = TRUE
-
-/obj/machinery/light_construct/bigfloorlamp
-	name = "big floor light fixture frame"
-	desc = "A big floor light fixture under construction."
-	icon = 'icons/obj/lighting32x64.dmi'
-	icon_state = "big_flamp-construct-stage1"
-	stage = 1
-	anchored = FALSE
-	fixture_type = /obj/machinery/light/bigfloorlamp
-	sheets_refunded = 3
-
-DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1" = list(APPEARANCE_ICON_STATE = "big_flamp-construct-stage1"), "2" = list(APPEARANCE_ICON_STATE = "big_flamp-construct-stage2"), "3" = list(APPEARANCE_ICON_STATE = "big_flamp-empty")))
 
 // Fairy lights
 
@@ -1782,21 +1578,9 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct/bigfloorlamp, "stage", list("1
 /obj/machinery/light/ownership()
 	. = ..()
 	. += owns(nameof(installed_light), policy = OWN_CONTAINED)
-/obj/machinery/light_construct/ownership()
-	. = ..()
-	. += owns(nameof(cell), policy = OWN_CONTAINED)
-
-/// the newlight this refers to: a relation view, null once that is deleted.
-/obj/machinery/light_construct/proc/newlight() as /obj/machinery/light
-	return newlight
-
 /// The area whose power this light draws on (a plain area var).
 /obj/machinery/light/proc/area_power_token() as /area
 	return area_power_token
-
-/// The emergency cell fitted in the frame (owned, in its contents).
-/obj/machinery/light_construct/proc/cell() as /obj/item/cell
-	return cell
 
 /// A multitool recolouring a bulb (normal or nightshift colour).
 /datum/om/prompt/color/light_bulb

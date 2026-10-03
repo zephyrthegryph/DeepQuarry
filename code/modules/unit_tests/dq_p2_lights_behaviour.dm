@@ -72,19 +72,18 @@
 /proc/p2l_area_power_change(area/A)
 	A.power_change()
 
-/// The stage of the frame a screwdriver leaves when it opens an empty fixture. The legacy code builds the frame with the fixture in the wrong
-/// constructor argument, so the frame comes out bare (stage 1), facing south and of its default fixture type; the converted frame is wired
-/// (stage 2) and remembers the fixture (intended_changes.md).
+/// The stage of the frame a screwdriver leaves when it opens an empty fixture (the legacy code lost the fixture argument and left a bare frame;
+/// the converted frame is wired and remembers the fixture: intended_changes.md).
 /proc/p2l_opened_frame_stage()
-	return 1
+	return 2
 
 /// The frame's stage: 1 (empty frame), 2 (wired) or 3 (casing closed).
 /proc/p2l_stage(obj/machinery/light_construct/C)
-	return C.stage
+	return built(C, STAGE_LIGHT_FRAME_WIRED) ? 2 : 1
 
 /// The emergency cell the frame holds, or null.
 /proc/p2l_frame_cell(obj/machinery/light_construct/C)
-	return C.cell()
+	return C.cell
 
 /// The light switch's frame stage: FRAME_UNFASTENED, FRAME_FASTENED or FRAME_WIRED.
 /proc/p2l_switch_stage(obj/structure/construction/C)
@@ -1352,7 +1351,7 @@
 /// The cell the fixture ends up with after a frame that held `cell` is closed into it: the legacy code moves the cell into the fixture but loses the
 /// link (`cell` stays null: the cell is orphaned in its contents), so a fixture built that way has none; the converted frame hands it over.
 /proc/p2l_cell_after_closing(obj/item/cell/emergency_light/cell)
-	return null
+	return cell
 
 /// The cell in the frame becomes the fixture's emergency cell.
 /datum/unit_test/dq_p2_lights/the_frame_cell_becomes_the_fixture_cell
@@ -1367,7 +1366,10 @@
 	click(H, C, coil())
 	click(H, C, tool(/obj/item/tool/screwdriver))
 	var/obj/machinery/light/L = locate(/obj/machinery/light) in T
-	TEST_ASSERT(istype(L), "a fixture")
+	var/list/seen = list()
+	for(var/atom/movable/AM in T)
+		seen += "[AM.type]"
+	TEST_ASSERT(istype(L), "a fixture (frame deleted [QDELETED(C)], on the tile [jointext(seen, ", ")])")
 	TEST_ASSERT(p2l_cell(L) == p2l_cell_after_closing(E), "the fixture's emergency cell is what closing the frame hands over (cell [p2l_cell(L)])")
 	qdel(L)
 
@@ -1428,7 +1430,7 @@
 	click(H, C, E)
 	TEST_ASSERT(p2l_frame_cell(C) == E, "the emergency cell is in")
 	click(H, C, F)
-	TEST_ASSERT(p2l_frame_cell(C) == E, "a second is refused")
+	TEST_ASSERT(p2l_frame_cell(C) == E, "a second is refused (cell [p2l_frame_cell(C)] E loc [E.loc] F loc [F.loc])")
 	click(H, C, null)
 	TEST_ASSERT_NULL(p2l_frame_cell(C), "a hand takes it out (operable [C.operable()], stat [C.stat])")
 	TEST_ASSERT(H.get_active_hand() == E, "into the hand")

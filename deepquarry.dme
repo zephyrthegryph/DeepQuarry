@@ -4124,6 +4124,7 @@
 #include "code\modules\power\gravitygenerator.dm"
 #include "code\modules\power\grid_checker.dm"
 #include "code\modules\power\lighting.dm"
+#include "code\modules\power\light_construct.dm"
 #include "code\modules\power\lighting_neon.dm"
 #include "code\modules\power\lightswitch.dm"
 #include "code\modules\power\port_gen.dm"
