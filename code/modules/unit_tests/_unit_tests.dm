@@ -832,6 +832,7 @@
 #include "interim_paicard_cell_repair_consumption.dm"
 #include "interim_beehive_assembly_refusal.dm"
 #include "interim_beehive_assembly_consumption.dm"
+#include "interim_material_armor_shatter_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

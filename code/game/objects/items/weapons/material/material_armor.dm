@@ -81,6 +81,8 @@
 /obj/item/clothing/proc/shatter()
 	if(!material)
 		return
+	if(loc?.release_refusal(src))
+		return
 	var/turf/T = get_turf(src)
 	T.visible_message(span_danger("\The [src] [material.destruction_desc]!"))
 	if(isliving(loc))
@@ -91,7 +93,7 @@
 			M.embed(S)
 
 	play_sfx(src, SFX_SHATTER)
-	qdel(src)
+	consume(src)
 
 // Might be best to make ablative vests a material armor using a new material to cut down on this copypaste.
 /obj/item/clothing/suit/armor/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
