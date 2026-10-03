@@ -585,6 +585,7 @@
 #include "interim_beaker_lid_transfer.dm"
 #include "interim_remote_button_emag.dm"
 #include "interim_type_picker_actor.dm"
+#include "interim_cleanup_validation.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
