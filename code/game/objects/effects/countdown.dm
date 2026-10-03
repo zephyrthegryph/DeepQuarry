@@ -56,7 +56,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 
 /obj/effect/countdown/periodic_step()
 	if(!attached_to || QDELETED(attached_to))
-		qdel(src)
+		consume(src)
 		return
 	forceMove(get_turf(attached_to))
 	var/new_val = get_value()
