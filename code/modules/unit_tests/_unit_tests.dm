@@ -850,6 +850,7 @@
 #include "interim_secure_crate_tamper_cleanup.dm"
 #include "interim_imperion_projectile_range_cleanup.dm"
 #include "interim_fabricator_drop_actor.dm"
+#include "interim_space_worm_detach_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

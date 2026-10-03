@@ -336,6 +336,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	return
 
 /mob/living/simple_mob/animal/space/space_worm/proc/Detach(die = 0)
+	if(loc?.release_refusal(src))
+		return
 	var/mob/living/simple_mob/animal/space/space_worm/head/newHead = new severed_head_type(loc,0)
 	var/mob/living/simple_mob/animal/space/space_worm/newHeadPrevious = previous
 
@@ -346,7 +348,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/space/space_worm, TYPE_PRO
 	if(die)
 		newHead.death()
 
-	qdel(src)
+	consume(src)
 
 /mob/living/simple_mob/animal/space/space_worm/proc/ProcessStomach()
 	for(var/atom/movable/stomachContent in contents)
