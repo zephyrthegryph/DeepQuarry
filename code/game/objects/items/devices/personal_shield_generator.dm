@@ -123,13 +123,17 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 	return TRUE
 
 /obj/item/personal_shield_generator/MouseDrop()
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
+	drag_backpack_with_actor(user)
+
+/obj/item/personal_shield_generator/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
 /obj/item/personal_shield_generator/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

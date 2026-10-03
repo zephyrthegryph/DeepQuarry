@@ -15,13 +15,31 @@
 /datum/unit_test/interim_backpack_drag_actor/radio
 	device_type = /obj/item/bluespaceradio
 
+/datum/unit_test/interim_backpack_drag_actor/medigun
+	device_type = /obj/item/medigun_backpack
+
+/datum/unit_test/interim_backpack_drag_actor/shield
+	device_type = /obj/item/personal_shield_generator/loaded
+
+/datum/unit_test/interim_backpack_drag_actor/proc/linked_handheld(obj/item/device)
+	if(istype(device, /obj/item/personal_shield_generator))
+		var/obj/item/personal_shield_generator/generator = device
+		return generator.active_weapon
+	return device.tethered_handheld()
+
 /datum/unit_test/interim_backpack_drag_actor/proc/drag_for(obj/item/device, mob/user)
 	if(istype(device, /obj/item/defib_kit))
 		var/obj/item/defib_kit/defib = device
 		defib.drag_backpack_with_actor(user)
-	else
+	else if(istype(device, /obj/item/bluespaceradio))
 		var/obj/item/bluespaceradio/radio = device
 		radio.drag_backpack_with_actor(user)
+	else if(istype(device, /obj/item/medigun_backpack))
+		var/obj/item/medigun_backpack/medigun = device
+		medigun.drag_backpack_with_actor(user)
+	else
+		var/obj/item/personal_shield_generator/generator = device
+		generator.drag_backpack_with_actor(user)
 
 /datum/unit_test/interim_backpack_drag_actor/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -32,7 +50,7 @@
 	var/datum/hud/hud = allocate(/datum/hud, actor)
 	hud.build_action_groups()
 	var/obj/item/device = allocate(device_type, T)
-	var/obj/item/tether = device.tethered_handheld()
+	var/obj/item/tether = linked_handheld(device)
 	TEST_ASSERT_NOTNULL(tether, "actual device initialization creates its real linked handheld")
 	TEST_ASSERT(actor.equip_to_slot(device, SLOT_ID_BACK), "actual inventory equips the real backpack device")
 	set_var(device, nameof(device.canremove), FALSE)
@@ -59,7 +77,7 @@
 	TEST_ASSERT_NULL(actor.get_equipped_item(SLOT_ID_BACK), "native successful pickup clears the exact real worn slot")
 	TEST_ASSERT(actor.item_is_in_hands(device), "native successful pickup puts the exact device in its actual wearer's hand")
 	TEST_ASSERT_EQUAL(device.loc, actor, "actual native pickup retains the wearer's physical containment")
-	TEST_ASSERT_EQUAL(device.tethered_handheld(), tether, "actual pickup preserves the original linked handheld identity")
+	TEST_ASSERT_EQUAL(linked_handheld(device), tether, "actual pickup preserves the original linked handheld identity")
 	TEST_ASSERT(!bystander.item_is_in_hands(device), "original destination semantics do not grant the device to the unrelated human")
 	TEST_ASSERT(actor.unEquip(device), "actual held item removal permits the second real worn fixture")
 	TEST_ASSERT(actor.equip_to_slot(device, SLOT_ID_BACK), "actual inventory restores the real backpack slot")
@@ -77,5 +95,5 @@
 	TEST_ASSERT_EQUAL(device.loc, T, "original checked worn release leaves the exact device on the real floor when neither hand fits")
 	TEST_ASSERT_EQUAL(actor.get_left_hand(), left, "pickup failure preserves the actual left hand blocker")
 	TEST_ASSERT_EQUAL(actor.get_right_hand(), right, "pickup failure preserves the actual right hand blocker")
-	TEST_ASSERT_EQUAL(device.tethered_handheld(), tether, "all real worn and floor transitions preserve exact linked handheld identity")
+	TEST_ASSERT_EQUAL(linked_handheld(device), tether, "all real worn and floor transitions preserve exact linked handheld identity")
 	TEST_ASSERT(!QDELETED(device), "original occupied-hand handling never deletes the real backpack device")
