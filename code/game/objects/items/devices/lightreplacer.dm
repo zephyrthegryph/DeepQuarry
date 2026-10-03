@@ -222,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(intera
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
 				rel_clear(target, nameof(target.installed_light)) //Remove the light! (its glass went into the shards)
-				target.set_latent_bulb(FALSE)
+				target.latent_bulb = FALSE
 				target.refresh_light()
 
 			var/obj/item/light/L2 = new target.light_type()

@@ -101,23 +101,9 @@
 /proc/p2l_switch_area(obj/machinery/light_switch/S)
 	return S.area()
 
-/// Lets the prompts a type asks the legacy way be answered by the test (they are collected instead of shown). Call once the kernel is on its
-/// test clock.
-/proc/p2l_capture_prompts()
-	om_scheduler().test_prompts = list()
-
-/// Answers the question `actor` was asked with `value` (the engine's request answers first; a question asked the legacy way is answered
-/// through its collected prompt). `cancel` closes it.
+/// Answers the question `actor` was asked with `value` (`cancel` closes it).
 /proc/p2l_answer(mob/actor, value, cancel = FALSE)
-	var/datum/op_result/result = test_answer(actor, value, cancel ? REQ_CANCELLED : REQ_ANSWERED)
-	if(!isnull(result))
-		return result
-	var/list/prompts = om_scheduler().test_prompts
-	for(var/i in length(prompts) to 1 step -1)
-		var/datum/om/prompt/P = prompts[i]
-		if(!P.answered && P.peek("answerer") == actor)
-			return om_prompt_answer(P, cancel ? null : value, cancel)
-	return null
+	return test_answer(actor, value, cancel ? REQ_CANCELLED : REQ_ANSWERED)
 
 /// A click as a player makes it: `held` in the active hand, the stance set, the click sent through the input inbox.
 /proc/p2l_click(mob/living/carbon/human/H, atom/target, obj/item/held, stance = I_HELP, modifiers = "left=1")
@@ -148,11 +134,11 @@
 	var/p2l_area_switch
 	var/p2l_area_equip
 	var/list/p2l_apcs
+	var/list/p2l_people
 
 /datum/unit_test/dq_p2_lights/Run()
 	if(!live)
 		test_driver_begin()
-		p2l_capture_prompts()
 	test_rng(11)
 	p2l_area = get_area(run_loc_floor_bottom_left)
 	p2l_area_requires = p2l_area.requires_power
@@ -164,6 +150,9 @@
 	p2l_area.power_light = TRUE
 	p2l_area.lightswitch = 1
 	run_gate()
+	for(var/mob/M as anything in p2l_people)
+		while(SSrequests.open_for(M))
+			test_answer(M, null, REQ_CANCELLED)
 	for(var/obj/machinery/power/apc/A as anything in p2l_apcs)
 		if(!QDELETED(A))
 			qdel(A)
@@ -195,6 +184,7 @@
 /datum/unit_test/dq_p2_lights/proc/person(turf/T)
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T || tile(3, 2))
 	H.enable_godmode()
+	LAZYADD(p2l_people, H)
 	return H
 
 /// A silicon AI, its core off in the corner.
@@ -206,6 +196,13 @@
 	var/mob/living/silicon/robot/R = allocate(/mob/living/silicon/robot, T || tile(3, 2))
 	R.enable_godmode()
 	return R
+
+/// Heat-proof gloves on the person (a lit tube is too hot to take out bare-handed).
+/datum/unit_test/dq_p2_lights/proc/gloved(mob/living/carbon/human/H)
+	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves, tile(0, 1))
+	G.max_heat_protection_temperature = 1000
+	H.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
+	return H
 
 /// The actor clicks `target` with `held` in hand (nothing: an empty hand), in `stance`, and waits.
 /datum/unit_test/dq_p2_lights/proc/click(mob/living/carbon/human/H, atom/target, obj/item/held, stance = I_HELP, modifiers = "left=1")
@@ -550,7 +547,7 @@
 /datum/unit_test/dq_p2_lights/nightshift_uses_the_tube_night_range/run_gate()
 	var/obj/machinery/power/apc/A = apc_for_area()
 	var/obj/machinery/light/L = light()
-	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/H = gloved(person())
 	var/obj/item/light/B = p2l_bulb(L)
 	B.nightshift_range = 3
 	click(H, L, null) // the tube comes out and goes back in, so the fixture takes its numbers again
@@ -741,7 +738,7 @@
 
 /datum/unit_test/dq_p2_lights/tube_taken_out_and_put_back_works_again/run_gate()
 	var/obj/machinery/light/L = light()
-	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/H = gloved(person())
 	click(H, L, null)
 	var/obj/item/light/B = H.get_active_hand()
 	click(H, L, B)
@@ -755,7 +752,7 @@
 /datum/unit_test/dq_p2_lights/a_tuned_tube_keeps_its_numbers_between_fixtures/run_gate()
 	var/obj/machinery/light/L = light(/obj/machinery/light, tile(2, 2))
 	var/obj/machinery/light/M = light(/obj/machinery/light, tile(4, 2))
-	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/H = gloved(person())
 	var/obj/item/light/tube/B = p2l_bulb(L)
 	B.brightness_range = 3
 	B.brightness_color = "#123456"
@@ -1143,7 +1140,7 @@
 
 /datum/unit_test/dq_p2_lights/floor_lamp_without_a_shade_gives_up_its_bulb/run_gate()
 	var/obj/machinery/light/flamp/F = light(/obj/machinery/light/flamp)
-	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/H = gloved(person())
 	F.lamp_shade = 0
 	click(H, F, null)
 	TEST_ASSERT_EQUAL(p2l_status(F), LIGHT_EMPTY, "the bulb came out")

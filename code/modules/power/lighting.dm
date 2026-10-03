@@ -101,7 +101,6 @@ TRACKED(/obj/machinery/light, overlay_color)
 TRACKED(/obj/machinery/light, emergency_mode)
 TRACKED(/obj/machinery/light, nightshift_allowed)
 TRACKED(/obj/machinery/light, flickering)
-TRACKED(/obj/machinery/light, latent_bulb)
 TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light, \
@@ -406,7 +405,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /obj/machinery/light/proc/bulb()
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
-		set_latent_bulb(FALSE)
+		latent_bulb = FALSE
 		var/obj/item/light/made = new light_type(src)
 		rel_set(src, nameof(installed_light), made)
 		made.set_status(status)
@@ -479,7 +478,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	rel_set(src, nameof(installed_light), L)
 	. = TRUE
 	update_from_bulb(L)
-	set_latent_bulb(FALSE)
+	latent_bulb = FALSE
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	refresh_light()
@@ -494,7 +493,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /obj/machinery/light/proc/remove_bulb()
 	switchcount = 0
 	rel_take(src, nameof(installed_light))
-	set_latent_bulb(FALSE)
+	latent_bulb = FALSE
 	set_bulb_status(LIGHT_EMPTY)
 	refresh_light()
 
@@ -595,8 +594,8 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	//Let's actually put the real bulb in their hand.
 	var/obj/item/light/B = bulb()
 	B.set_status(status) //Update the bulb they're being given. If it's broken, the bulb should be as well!
-	user.put_in_active_hand(B)	//puts it in our active hand
 	remove_bulb()
+	user.put_in_active_hand(B)	//puts it in our active hand
 	return OP_OK
 
 /// Pull the bulb out at range into a telekinetic grab.
@@ -604,12 +603,12 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
 	var/obj/item/light/B = bulb()
 	B.set_status(status)
+	remove_bulb()
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
 	rel_set(O, nameof(O.host), user)
 	O.focus_object(B)
-	remove_bulb()
 	return OP_OK
 
 /// A silicon's touch (an AI's click, a cyborg's): its emergency lighting goes off or on. The silicon click is still the legacy input adapter's, which
@@ -1238,7 +1237,7 @@ CAPABILITIES(/obj/item/light, \
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		set_latent_bulb(TRUE) // the bulb is data until someone takes it (C5)
+		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
 		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
 		update_from_bulb(L)
 		if(prob(L.broken_chance))
@@ -1446,7 +1445,7 @@ MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 
 /// A multitool on a fixture with a working bulb tunes that bulb.
 /obj/machinery/light/proc/bulb_can_be_tuned(datum/act/A)
-	return status != LIGHT_BROKEN && status != LIGHT_EMPTY && has_bulb()
+	return status != LIGHT_BROKEN && status != LIGHT_EMPTY
 
 /obj/machinery/light/proc/tune_needs_number(datum/act/op/A)
 	var/datum/prompt/choice = A.step_answer("what")
