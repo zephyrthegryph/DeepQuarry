@@ -76,10 +76,11 @@ DECLARE_APPEARANCE(/obj/machinery/light_construct, "stage", list("1" = list(APPE
 	effect = /obj/machinery/light_construct/proc/interaction_remove_cell
 
 /obj/machinery/light_construct/proc/interaction_remove_cell(mob/user, obj/item/held, datum/interaction/interaction)
-	if(cell())
-		act_message(user, src, MSG_SELF(span_notice("You remove [cell()].")), MSG_OTHERS("%U% removes [cell()] from %T%!"))
-		user.put_in_hands(cell())
-		cell().update_icon()
+	var/obj/item/cell/removed = cell()
+	if(removed)
+		act_message(user, src, MSG_SELF(span_notice("You remove [removed].")), MSG_OTHERS("%U% removes [removed] from %T%!"))
+		user.put_in_hands(removed)
+		removed.update_icon()
 		own_take(src, nameof(cell)) // it left for the user's hands
 	return TRUE
 

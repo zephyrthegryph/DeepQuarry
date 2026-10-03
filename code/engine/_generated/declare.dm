@@ -598,6 +598,15 @@
 	into += entry_line(75)
 	into += list(global.op("drink", global.in_hand(), global.stance(I_HURT), global.label("Drink"), global.then(PROC_REF(drunk))))
 
+/// CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge) at code/modules/reagents/machinery/dispenser/cartridge.dm:42
+/obj/item/reagent_containers/chem_disp_cartridge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/cartridge.dm", 42, /obj/item/reagent_containers/chem_disp_cartridge)
+	into += entry_line(43)
+	into += list(global.reagent_container( volume = nameof(volume), lid = TRUE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount), taps = list(/obj/structure/reagent_dispensers)))
+	into += entry_line(50)
+	into += list(global.op("label", global.menu(), global.label("Set Cartridge Label"), global.asks(/datum/prompt/text, fields = list("question" = "Label for it:")), global.then(PROC_REF(label_set))))
+
 /// CAPABILITIES(/obj/item/reagent_containers/dropper) at code/modules/reagents/reagent_containers/dropper.dm:22
 /obj/item/reagent_containers/dropper/declared_entries(list/into)
 	..(into)
@@ -608,6 +617,13 @@
 	into += list(global.needle( draws_from = list(/obj/structure/reagent_dispensers), fills = list(/obj/item/reagent_containers/food, /obj/item/clothing/mask/smokable/cigarette)))
 	into += entry_line(34)
 	into += list(global.op("squirt", global.at_target(/mob/living), global.label("Squirt into eyes"), global.begins(MSG(dropper/begin)), global.wait(2 SECONDS), global.needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))), global.then(PROC_REF(squirted))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge) at code/game/objects/items/weapons/ecigs.dm:169
+/obj/item/reagent_containers/ecig_cartridge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 169, /obj/item/reagent_containers/ecig_cartridge)
+	into += entry_line(170)
+	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass) at code/modules/reagents/reagent_containers/glass.dm:64
 /obj/item/reagent_containers/glass/declared_entries(list/into)
@@ -721,6 +737,26 @@
 	into += entry_block("code/modules/reagents/reagent_containers/patch.dm", 24, /obj/item/reagent_containers/pill/patch)
 	into += entry_line(25)
 	into += list(global.configure(global.dose(route = CHEM_TOUCH, pierces = nameof(pierce_material))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/powder) at code/game/objects/items/contraband.dm:85
+/obj/item/reagent_containers/powder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/contraband.dm", 85, /obj/item/reagent_containers/powder)
+	into += entry_line(86)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount)))
+	into += entry_line(94)
+	into += list(global.op("snort", global.inputs(global.item(/obj/item/glass_extra/straw), global.item(/obj/item/reagent_containers/rollingpaper)), global.label("Snort it"), global.needs(global.req(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), global.then(PROC_REF(snorted))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/rollingpaper) at code/game/objects/items/weapons/cigs_lighters.dm:580
+/obj/item/reagent_containers/rollingpaper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cigs_lighters.dm", 580, /obj/item/reagent_containers/rollingpaper)
+	into += entry_line(581)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE))
+	into += entry_line(587)
+	into += list(global.op("add", global.item(/obj/item/reagent_containers/food/snacks), global.label("Add it to the paper"), global.then(PROC_REF(plant_added))))
+	into += entry_line(588)
+	into += list(global.op("roll", global.in_hand(), global.label("Roll it"), global.then(PROC_REF(rolled))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/spray) at code/modules/reagents/reagent_containers/spray.dm:27
 /obj/item/reagent_containers/spray/declared_entries(list/into)
@@ -3585,9 +3621,3 @@
 	into += list(global.every(5, global.then(PROC_REF(fast_tick))))
 
 #endif
-/// declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.
-/proc/declared_keyed_targets()
-	. = list()
-	.[/obj/machinery/door/blast] = "id"
-	.[/obj/machinery/mass_driver] = "id"
-
