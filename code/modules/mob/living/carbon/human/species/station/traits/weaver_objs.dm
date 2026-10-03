@@ -21,13 +21,13 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 
 	if(W.force)
 		act_message(user, src, others = span_warning("%T% has been [LAZYLEN(W.attack_verb) ? pick(W.attack_verb) : "attacked"] with %I% by %U%."), item = W)
-		qdel(src)
+		consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
 /obj/effect/weaversilk/bullet_act(obj/item/projectile/Proj)
 	..()
 	if(Proj.get_structure_damage())
-		qdel(src)
+		consume(src)
 
 /// Heat behaviour rule: silk burns away and feeds the fire.
 /obj/effect/weaversilk/proc/rule_burn_away(datum/rule/rule)
@@ -37,12 +37,12 @@ EXTEND_INTERACTIONS(/obj/effect/weaversilk, \
 
 /obj/effect/weaversilk/attack_generic(mob/user as mob, damage)
 	if(damage)
-		qdel(src)
+		consume(src, user)
 
 /// Old attack_hand on harm intent: tear the silk down by hand.
 /obj/effect/weaversilk/proc/interaction_tear_weaversilk(mob/user, obj/item/held, datum/interaction/interaction)
 	to_chat(user,span_warning("You easily tear down [name]."))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/weaversilk/floor
@@ -96,7 +96,7 @@ EXTEND_INTERACTIONS(/obj/structure/bed/double/weaversilk_nest, \
 	if(has_buckled_mobs())
 		return FALSE
 	to_chat(user,span_warning("You easily tear down [name]."))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/weaversilk/trap
