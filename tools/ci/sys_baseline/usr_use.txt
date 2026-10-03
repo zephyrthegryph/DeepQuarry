@@ -119,8 +119,6 @@ usr_outside_verb	code/controllers/measure/synthetic.dm	usr = saved_user
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	var/old_usr = usr
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = admin.mob
 usr_outside_verb	code/controllers/subsystems/admin_verbs.dm	usr = old_usr
-usr_outside_verb	code/controllers/subsystems/media_tracks.dm	om_flow_start(/datum/om/flow/media_track_add, usr, null, tracks = src)
-usr_outside_verb	code/controllers/subsystems/media_tracks.dm	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
 usr_outside_verb	code/controllers/subsystems/ticker.dm	if(usr && !check_rights(R_SERVER, TRUE))
 usr_outside_verb	code/datums/callback.dm	if(usr)
 usr_outside_verb	code/datums/callback.dm	rel_set(src, nameof(user), usr)
@@ -179,8 +177,6 @@ usr_outside_verb	code/game/machinery/gear_dispenser.dm	om_ask(usr, /datum/om/pro
 usr_outside_verb	code/game/machinery/iv_drip.dm	if(!isliving(usr))
 usr_outside_verb	code/game/machinery/iv_drip.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 usr_outside_verb	code/game/machinery/iv_drip.dm	act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
-usr_outside_verb	code/game/machinery/jukebox.dm	om_flow_start(/datum/om/flow/jukebox_track_add, usr, src)
-usr_outside_verb	code/game/machinery/jukebox.dm	om_ask(usr, /datum/om/prompt/text, PROC_REF(manual_track_removal_entered), message = "Input track title or URL to remove (must be exact)", title = "Remove Track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
 usr_outside_verb	code/game/machinery/oxygen_pump.dm	var/mob/living/user = usr
 usr_outside_verb	code/game/mecha/micro/micro.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)
