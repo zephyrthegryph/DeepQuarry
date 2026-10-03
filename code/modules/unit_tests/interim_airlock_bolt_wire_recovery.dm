@@ -1,11 +1,13 @@
 /// Actual bolt-wire cutting drops bolts; mending repairs the conductor without raising bolts, and only a subsequent intact powered pulse raises them.
-/datum/unit_test/om/interim_airlock_bolt_wire_recovery/run_om(list/made)
-	var/turf/T = test_floor()
+/datum/unit_test/om/interim_airlock_bolt_wire_recovery
+	parent_type = /datum/unit_test/dq_p2_door
+
+/datum/unit_test/om/interim_airlock_bolt_wire_recovery/run_gate()
+	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
-	made += door
-	door.set_stat(0)
+	p2_door_set_power(door, TRUE)
 	door.autoclose = FALSE
-	var/datum/wires/airlock/wires = wires_of(door)
+	var/datum/wires/airlock/wires = wire_set_of(door)
 	TEST_ASSERT(istype(wires), "the actual airlock creates its real wires datum")
 	TEST_ASSERT(door.arePowerSystemsOn() && door.density && !door.operating, "the actual airlock starts powered, closed and idle")
 	TEST_ASSERT(!is_bolted(door) && !wires.is_cut(WIRE_DOOR_BOLTS), "the actual bolt mechanism starts raised with an intact conductor")
@@ -29,5 +31,5 @@
 	TEST_ASSERT(!door.wire_cut(WIRE_DOOR_BOLTS) && door.arePowerSystemsOn(), "actual bolt recovery preserves the repaired conductor and available power")
 	door.open()
 	TEST_ASSERT(door.density && door.operating, "actual ordinary opening begins only after the bolt recovery")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(!door.density && !door.opacity && !door.operating, "actual opening timers finish with a passable idle airlock after bolt recovery")

@@ -1,10 +1,12 @@
 /// Actual unpowered airlock motion must refuse ordinary operation and mechanical obstructions, while forced motion completes through its real animation timers.
-/datum/unit_test/om/interim_airlock_unpowered_motion/run_om(list/made)
-	var/turf/T = test_floor()
+/datum/unit_test/om/interim_airlock_unpowered_motion
+	parent_type = /datum/unit_test/dq_p2_door
+
+/datum/unit_test/om/interim_airlock_unpowered_motion/run_gate()
+	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
-	made += door
 	door.autoclose = FALSE
-	door.set_stat(NOPOWER)
+	p2_door_set_power(door, FALSE)
 	TEST_ASSERT(!door.arePowerSystemsOn(), "the actual airlock fixture has no operating power")
 	TEST_ASSERT(door.density && !door.operating, "the actual airlock starts closed and idle")
 	var/timers_before = om_timer_count(door)
@@ -23,7 +25,7 @@
 	door.open(TRUE)
 	TEST_ASSERT_EQUAL(door.operating, 1, "the unrestricted actual forced open starts animation")
 	TEST_ASSERT(door.density, "actual forced opening retains density before its animation deadline")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(!door.density && !door.operating, "the actual forced open timers finish with an open idle airlock")
 	TEST_ASSERT(!door.opacity, "the actually opened airlock no longer blocks sight")
 	TEST_ASSERT(!door.arePowerSystemsOn(), "forced opening does not restore actual airlock power")
@@ -32,7 +34,7 @@
 	door.close(TRUE)
 	TEST_ASSERT_EQUAL(door.operating, 1, "the actual forced close starts animation without power")
 	TEST_ASSERT(!door.density, "actual forced closing preserves the open density until its animation deadline")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(door.density && !door.operating, "the real forced close timers finish with a closed idle airlock")
 	TEST_ASSERT(door.opacity, "the actual closed opaque airlock blocks sight again")
 	TEST_ASSERT(!door.arePowerSystemsOn(), "forced closing does not restore actual airlock power")

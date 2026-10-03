@@ -1,14 +1,16 @@
 /// The actual airlock control-wire pulse respects an intact ID scanner, bypasses it only while that wire is cut, and returns to access-gated behavior after mending.
-/datum/unit_test/om/interim_airlock_id_wire_pulse/run_om(list/made)
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+/datum/unit_test/om/interim_airlock_id_wire_pulse
+	parent_type = /datum/unit_test/dq_p2_door
+
+/datum/unit_test/om/interim_airlock_id_wire_pulse/run_gate()
+	var/turf/T = tile(2, 2)
+	var/mob/living/carbon/human/user = make_person(null, tile(3, 2))
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
-	made += list(user, door)
-	door.set_stat(0)
+	p2_door_set_power(door, TRUE)
 	door.autoclose = FALSE
 	door.req_access = list(ACCESS_SECURITY)
 	var/list/access_before = door.req_access
-	var/datum/wires/airlock/wires = wires_of(door)
+	var/datum/wires/airlock/wires = wire_set_of(door)
 	TEST_ASSERT(istype(wires), "the actual airlock creates its real airlock wires datum")
 	TEST_ASSERT(door.arePowerSystemsOn(), "the actual wire-pulse fixture has available actuator power")
 	TEST_ASSERT(door.requiresID() && !door.check_access(null), "the actual restricted airlock starts with an intact ID scanner")
@@ -24,7 +26,7 @@
 	wires.pulse(WIRE_OPEN_DOOR, user)
 	TEST_ASSERT(door.operating && door.density, "actual control-wire pulse starts opening while density remains until animation")
 	TEST_ASSERT(om_timer_count(door) > timers_before, "actual scanner-bypassing pulse schedules a real opening animation")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(!door.density && !door.opacity && !door.operating, "the actual scanner-bypassing animation opens the passage and finishes idle")
 	wires.cut(WIRE_IDSCAN, user)
 	TEST_ASSERT(!wires.is_cut(WIRE_IDSCAN) && !door.wire_cut(WIRE_IDSCAN), "the actual interactive wire API mends the scanner wire")

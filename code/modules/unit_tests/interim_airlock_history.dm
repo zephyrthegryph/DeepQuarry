@@ -4,7 +4,7 @@
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human)
 	actor.name = "Interim Electrification Operator"
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock)
-	door.set_stat(0)
+	p2_door_set_power(door, TRUE)
 	TEST_ASSERT(door.arePowerSystemsOn(), "the real door has working internal power")
 	var/before = length(door.shockedby)
 	door.electrify((2 SECONDS) / (1 SECOND), FALSE, actor)

@@ -1,10 +1,12 @@
 /// Cutting the timing wire disables automatic closing; actual repair of that wire immediately starts closing an already-open powered airlock.
-/datum/unit_test/om/interim_airlock_timing_wire_repair/run_om(list/made)
-	var/turf/T = test_floor()
+/datum/unit_test/om/interim_airlock_timing_wire_repair
+	parent_type = /datum/unit_test/dq_p2_door
+
+/datum/unit_test/om/interim_airlock_timing_wire_repair/run_gate()
+	var/turf/T = tile(2, 2)
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
-	made += door
-	door.set_stat(0)
-	var/datum/wires/airlock/wires = wires_of(door)
+	p2_door_set_power(door, TRUE)
+	var/datum/wires/airlock/wires = wire_set_of(door)
 	TEST_ASSERT(istype(wires), "the actual airlock has its real wire controller")
 	TEST_ASSERT(door.arePowerSystemsOn() && door.autoclose, "the actual powered airlock starts with automatic closing enabled")
 	wires.cut(WIRE_SPEED, null)
@@ -12,15 +14,15 @@
 	TEST_ASSERT(!door.autoclose, "actual timing-wire cutting disables automatic closing")
 	door.open()
 	TEST_ASSERT(door.density && door.operating, "actual ordinary opening starts through its animation")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(!door.density && !door.opacity && !door.operating, "actual opening finishes with a passable idle airlock")
 	TEST_ASSERT(!door.autoclose_pending(), "the actually opened airlock has no automatic closing deadline with its timing wire cut")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(!door.density && !door.operating, "the actual cut timing wire leaves the passage open as time advances")
 	wires.cut(WIRE_SPEED, null)
 	TEST_ASSERT(!wires.is_cut(WIRE_SPEED) && !door.wire_cut(WIRE_SPEED), "actual timing-wire repair restores the conductor")
 	TEST_ASSERT(door.autoclose, "actual timing-wire repair restores automatic closing")
 	TEST_ASSERT(!door.density && door.operating, "actual timing-wire repair starts closing the open passage before its animation deadline")
-	scheduler_advance((2 SECONDS) / (1 SECOND))
+	test_time(2 SECONDS)
 	TEST_ASSERT(door.density && door.opacity && !door.operating, "actual repair-triggered closing finishes with a closed idle airlock")
 	TEST_ASSERT(door.arePowerSystemsOn() && !is_bolted(door), "actual timing-wire repair preserves power and the raised bolts")
