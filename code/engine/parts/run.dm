@@ -75,7 +75,8 @@
 		unknown.origin = origin
 		unknown.outcome = ACT_REFUSED
 		unknown.reason = /datum/msg/op/unknown
-		stack_trace("perform_op(): [target?.type] has no op \"[key]\"")
+		TEST_REC_OUTCOME(key, ACT_REFUSED, unknown.reason, actor) // an AI behaviour calls ops speculatively: an op nobody here has is a refusal with a reason, not an error
+		log_game("perform_op(): [target?.type] has no op \"[key]\" (refused: no such op here)")
 		return unknown
 	return op_perform_by_key(actor, target, held, key, origin, authority || AUTH_PHYSICAL, trace)
 

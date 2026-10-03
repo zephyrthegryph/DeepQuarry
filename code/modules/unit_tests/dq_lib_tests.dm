@@ -202,6 +202,11 @@
 		if(C.eff_key == "reagent_container.pour")
 			has_pour = TRUE
 	TEST_ASSERT(!has_pour, "a sprayer has no pour op")
+	var/datum/op_result/speculative = perform_op(M, tank, "reagent_container.pour", sprayer)
+	TEST_ASSERT_NOTNULL(speculative, "calling an op nobody here has returns a result, not an error")
+	TEST_ASSERT_EQUAL(speculative.outcome, ACT_REFUSED, "which is a refusal")
+	TEST_ASSERT_EQUAL(speculative.reason, /datum/msg/op/unknown, "with the reason 'no such op'")
+	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "and nothing was spent")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // interior: the escape.
