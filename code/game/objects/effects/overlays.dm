@@ -79,7 +79,7 @@ EXTEND_INTERACTIONS(/obj/effect/overlay/snow, \
 
 /obj/effect/overlay/snow/proc/attackby_timed_done(mob/user)
 	to_chat(user, span_notice("You have finished shoveling!"))
-	qdel(src)
+	consume(src, user)
 
 /obj/effect/overlay/snow/floor
 	icon_state = "snowfloor"
