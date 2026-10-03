@@ -475,13 +475,6 @@ usr_outside_verb	code/modules/mob/mob.dm	if(usr?.read_preference(/datum/preferen
 usr_outside_verb	code/modules/mob/mob.dm	openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
-usr_outside_verb	code/modules/mob/mob_movement.dm	if(isliving(usr))
-usr_outside_verb	code/modules/mob/mob_movement.dm	var/mob/living/carbon/C = usr
-usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("This mob type cannot throw items."))
-usr_outside_verb	code/modules/mob/mob_movement.dm	if(isliving(usr))
-usr_outside_verb	code/modules/mob/mob_movement.dm	var/mob/living/carbon/C = usr
-usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("You have nothing to drop in your hand."))
-usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("This mob type cannot drop items."))
 usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
 usr_outside_verb	code/modules/multiz/hoist.dm	if(!Adjacent(usr) || !dest.Adjacent(usr)) return // carried over from the default proc

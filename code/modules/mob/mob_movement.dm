@@ -39,33 +39,40 @@
 	diagonal_action(SOUTHWEST)
 
 /client/proc/diagonal_action(direction)
-	switch(client_dir(direction, 1))
+	var/resolved_direction = client_dir(direction, 1)
+	switch(resolved_direction)
 		if(NORTHEAST)
 			swap_hand()
 			return
 		if(SOUTHEAST)
 			attack_self()
 			return
+		if(SOUTHWEST, NORTHWEST)
+			mob?.diagonal_inventory_action(resolved_direction)
+			return
+
+/// Inventory hotkeys support every living mob; nonliving mobs receive the existing refusal.
+/mob/proc/diagonal_inventory_action(direction)
+	var/mob/living/C = src
+	if(!istype(C))
+		if(direction == SOUTHWEST)
+			to_chat(src, span_red("This mob type cannot throw items."))
+		else if(direction == NORTHWEST)
+			to_chat(src, span_red("This mob type cannot drop items."))
+		return
+	switch(direction)
 		if(SOUTHWEST)
-			if(isliving(usr))
-				var/mob/living/carbon/C = usr
-				C.toggle_throw_mode()
-			else
-				to_chat(usr, span_red("This mob type cannot throw items."))
-			return
+			C.toggle_throw_mode()
 		if(NORTHWEST)
-			if(isliving(usr))
-				var/mob/living/carbon/C = usr
-				if(!C.get_active_hand())
-					if(C?.pulling_target())
-						C.stop_pulling()
-						return
-					to_chat(usr, span_red("You have nothing to drop in your hand."))
+			if(!C.get_active_hand())
+				if(C.pulling_target())
+					C.stop_pulling()
 					return
-				drop_item()
-			else
-				to_chat(usr, span_red("This mob type cannot drop items."))
-			return
+				to_chat(C, span_red("You have nothing to drop in your hand."))
+				return
+			// Preserve the native client's drop guard, including drops inside bellies.
+			if(!isrobot(C) && C.stat == CONSCIOUS && (isturf(C.loc) || isbelly(C.loc)))
+				C.drop_item()
 
 //This gets called when you press the delete button.
 /client/verb/delete_key_pressed()
