@@ -140,3 +140,38 @@
 	TEST_ASSERT_EQUAL(owner_of(first), destination, "the transfer updates actual ownership")
 	TEST_ASSERT_EQUAL(destination.used_capacity, first.size, "the emptied drive accounts for its adopted file")
 	TEST_ASSERT_EQUAL(drive.used_capacity, expected_capacity - first.size, "the donor capacity reflects the transferred file")
+
+/datum/unit_test/interim_hard_drive_direct_transfer/Run()
+	var/obj/item/computer_hardware/hard_drive/donor = allocate(/obj/item/computer_hardware/hard_drive)
+	var/obj/item/computer_hardware/hard_drive/destination = allocate(/obj/item/computer_hardware/hard_drive)
+	var/list/donor_defaults = donor.stored_files.Copy()
+	var/list/destination_defaults = destination.stored_files.Copy()
+	var/donor_default_capacity = donor.used_capacity
+	var/destination_default_capacity = destination.used_capacity
+	var/datum/computer_file/data/transferred = allocate(/datum/computer_file/data)
+	transferred.filename = "interim_direct_transfer"
+	transferred.size = 7
+	TEST_ASSERT(donor.store_file(transferred), "the real donor stores a seven-unit file")
+	TEST_ASSERT_EQUAL(donor.used_capacity, donor_default_capacity + 7, "donor capacity includes its new file")
+	TEST_ASSERT(destination.store_file(transferred), "the real storage API directly moves an already owned file")
+	TEST_ASSERT_EQUAL(owner_of(transferred), destination, "the exact file becomes owned by its destination")
+	TEST_ASSERT_EQUAL(transferred.holder(), destination, "the file holder relation resolves its new drive")
+	TEST_ASSERT_EQUAL(destination.find_file_by_name(transferred.filename), transferred, "destination lookup returns the exact transferred object")
+	TEST_ASSERT_NULL(donor.find_file_by_name(transferred.filename), "donor lookup no longer returns the transferred file")
+	TEST_ASSERT_EQUAL(donor.used_capacity, donor_default_capacity, "direct transfer releases exactly seven units of donor capacity")
+	TEST_ASSERT_EQUAL(destination.used_capacity, destination_default_capacity + 7, "destination gains exactly seven units of capacity")
+	TEST_ASSERT_EQUAL(length(donor.stored_files), 3, "the donor keeps all three default files")
+	TEST_ASSERT_EQUAL(length(destination.stored_files), 4, "the destination keeps its defaults alongside the transferred file")
+	for(var/datum/computer_file/file in donor_defaults)
+		TEST_ASSERT_EQUAL(donor.find_file_by_name(file.filename), file, "the donor keeps the exact default file identity")
+		TEST_ASSERT_EQUAL(owner_of(file), donor, "donor defaults keep their actual owner")
+	for(var/datum/computer_file/file in destination_defaults)
+		TEST_ASSERT_EQUAL(destination.find_file_by_name(file.filename), file, "the destination keeps the exact default file identity")
+		TEST_ASSERT_EQUAL(owner_of(file), destination, "destination defaults keep their actual owner")
+	// A failed transfer must leave the file and both capacity counters intact.
+	donor.max_capacity = donor.used_capacity
+	TEST_ASSERT(!donor.store_file(transferred), "a drive without spare capacity rejects the actual transfer")
+	TEST_ASSERT_EQUAL(owner_of(transferred), destination, "the refused transfer retains destination ownership")
+	TEST_ASSERT_EQUAL(destination.find_file_by_name(transferred.filename), transferred, "refusal retains the exact file in its current drive")
+	TEST_ASSERT_EQUAL(donor.used_capacity, donor_default_capacity, "refusal leaves donor capacity unchanged")
+	TEST_ASSERT_EQUAL(destination.used_capacity, destination_default_capacity + 7, "refusal leaves destination capacity unchanged")
