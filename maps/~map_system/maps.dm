@@ -191,7 +191,7 @@ GLOBAL_LIST_EMPTY(all_maps)
 	else
 		return FALSE
 
-// Boolean for if we should use GLOB.nightshift_service night hours
+// Boolean for if we should use SSnightshift night hours
 /datum/map/proc/get_nightshift()
 	return get_night(5) // Defaults to z1, customize however you want on your own maps - Sif is 5
 

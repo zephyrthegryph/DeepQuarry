@@ -90,7 +90,7 @@ DECLARE_INTERACTIONS(/obj/item/mining_scanner, \
 			var/amnt = reagents_found[reg_id]
 			var/minimum = 25
 			if(amnt > minimum || exact)
-				var/datum/reagent/R = chemistry_service().chemical_reagents[reg_id]
+				var/datum/reagent/R = SSchemistry.ready().chemical_reagents[reg_id]
 				var/ds = ""
 				if(amnt <= minimum && exact)
 					ds = "miniscule "

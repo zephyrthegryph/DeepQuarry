@@ -1,19 +1,23 @@
-// The AFK kick world service (fold wave F4; was SSinactivity): every minute on the background lane
-// (/datum/om/behaviour/world/inactivity, code/datums/om/world_lanes.dm) it disconnects clients idle
+// The AFK kick system (was SSinactivity): every minute on the background lane it disconnects clients idle
 // longer than the kick_inactive config minutes. Does nothing while that config is 0.
-GLOBAL_DATUM_INIT(inactivity_service, /datum/world_service/inactivity, new)
-
-/datum/world_service/inactivity
+SYSTEM_DEF(inactivity)
 	name = "Inactivity"
-	lane = /datum/om/behaviour/world/inactivity
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 	var/tmp/list/client_list
 	var/number_kicked = 0
+	/// TRUE while a kick pass that ran out of budget waits to resume.
+	VAR_PRIVATE/kick_resuming = FALSE
 
-/datum/world_service/inactivity/service_step(resumed)
+/datum/system/inactivity/reactions()
+	. = ..()
+	. += every(1 MINUTE, PROC_REF(kick_step), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
+
+/datum/system/inactivity/proc/kick_step(dt)
 	if (!CONFIG_GET(number/kick_inactive))
-		return TRUE
-	if (!resumed)
+		return STEP_DONE
+	if (!kick_resuming)
 		client_list = GLOB.clients.Copy()
+	kick_resuming = FALSE
 
 	while(length(client_list))
 		var/client/C = client_list[length(client_list)]
@@ -56,13 +60,14 @@ GLOBAL_DATUM_INIT(inactivity_service, /datum/world_service/inactivity, new)
 			qdel(C)
 			number_kicked++
 
-		if (TICK_CHECK)
-			return FALSE
-	return TRUE
+		if (KERNEL_OVER_BUDGET)
+			kick_resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-/datum/world_service/inactivity/stat_line()
-	return "Kicked: [number_kicked]"
+/datum/system/inactivity/stat_entry(msg)
+	return "[..()]Kicked: [number_kicked]"
 
-/datum/world_service/inactivity/proc/can_kick(client/C)
+/datum/system/inactivity/proc/can_kick(client/C)
 	if(check_rights_for(C, R_HOLDER|R_MENTOR)) return FALSE // Don't kick admins.
 	return TRUE

@@ -585,7 +585,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new_character.key = player_key
 		//Were they any particular special role? If so, copy.
 		if(new_character.mind)
-			var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(new_character.mind.special_role)
+			var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 			if(antag_data)
 				antag_data.add_antagonist(new_character.mind)
 				antag_data.place_mob(new_character)
@@ -801,7 +801,7 @@ ADMIN_VERB(toggle_view_range, R_HOLDER, "Change View Range", "Switches between 1
 	feedback_add_details("admin_verb","CVRA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emergency shuttel.", ADMIN_CATEGORY_EVENTS)
-	if ((!( SSticker ) || !GLOB.emergency_shuttle_service.location()))
+	if ((!( SSticker ) || !SSemergency_shuttle.location()))
 		return
 
 	om_flow_start(/datum/om/flow/admin_call_shuttle, user.mob, null, requires = PROMPT_ADMIN(permissions))
@@ -812,7 +812,7 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 	var/recall = FALSE
 
 /datum/om/flow/admin_call_shuttle/valid()
-	return (SSticker && GLOB.emergency_shuttle_service.location()) ? null : "no shuttle"
+	return (SSticker && SSemergency_shuttle.location()) ? null : "no shuttle"
 
 /datum/om/flow/admin_call_shuttle/start()
 	om_ask(actor, /datum/om/prompt/confirm, PROC_REF(confirmed), title = "Confirm", message = "You sure?")
@@ -833,11 +833,11 @@ ADMIN_VERB(admin_call_shuttle, R_ADMIN|R_SERVER, "Call Shuttle", "Calls the emer
 /datum/om/flow/admin_call_shuttle/proc/call_answered(datum/om/prompt/choice/ask)
 	var/mob/user = actor
 	if(recall)
-		GLOB.emergency_shuttle_service.auto_recall = TRUE	//enable auto-recall
+		SSemergency_shuttle.auto_recall = TRUE	//enable auto-recall
 	if (ask.choice == "Emergency")
-		GLOB.emergency_shuttle_service.call_evac()
+		SSemergency_shuttle.call_evac()
 	else
-		GLOB.emergency_shuttle_service.call_transfer()
+		SSemergency_shuttle.call_transfer()
 
 
 	feedback_add_details("admin_verb","CSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -849,10 +849,10 @@ ADMIN_VERB(admin_cancel_shuttle, R_ADMIN|R_FUN, "Cancel Shuttle", "Cancels the e
 
 /datum/admin_verb/admin_cancel_shuttle/proc/cancel_confirmed(datum/om/prompt/confirm/ask)
 	var/client/user = ask.answerer.client
-	if(!SSticker || !GLOB.emergency_shuttle_service.can_recall())
+	if(!SSticker || !SSemergency_shuttle.can_recall())
 		return
 
-	GLOB.emergency_shuttle_service.recall()
+	SSemergency_shuttle.recall()
 	feedback_add_details("admin_verb","CCSHUT") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] admin-recalled the emergency shuttle.")
 	message_admins(span_blue("[key_name_admin(user)] admin-recalled the emergency shuttle."))
@@ -861,10 +861,10 @@ ADMIN_VERB(admin_deny_shuttle, R_ADMIN, "Toggle Deny Shuttle", "Prevents the shu
 	if (!SSticker)
 		return
 
-	GLOB.emergency_shuttle_service.deny_shuttle = !GLOB.emergency_shuttle_service.deny_shuttle
+	SSemergency_shuttle.deny_shuttle = !SSemergency_shuttle.deny_shuttle
 
-	log_admin("[key_name(user)] has [GLOB.emergency_shuttle_service.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
-	message_admins("[key_name_admin(user)] has [GLOB.emergency_shuttle_service.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
+	log_admin("[key_name(user)] has [SSemergency_shuttle.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
+	message_admins("[key_name_admin(user)] has [SSemergency_shuttle.deny_shuttle ? "denied" : "allowed"] the shuttle to be called.")
 
 ADMIN_VERB(everyone_random, R_FUN, "Make Everyone Random", "Make everyone have a random appearance. You can only use this before rounds!", ADMIN_CATEGORY_FUN_DO_NOT)
 	if (SSticker && SSticker.mode)

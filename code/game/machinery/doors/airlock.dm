@@ -1106,7 +1106,7 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 			if(T && T.z == get_z(src))
 				M.playsound_local(get_turf(src), sound, volume, 1, null, 0, TRUE, sound(sound), volume_channel = VOLUME_CHANNEL_DOORS)
 
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 
 	if(closeOther() != null && istype(closeOther(), /obj/machinery/door/airlock/) && !closeOther().density)
 		closeOther().close()
@@ -1251,7 +1251,7 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 			if(T && T.z == get_z(src))
 				M.playsound_local(get_turf(src), sound, volume, 1, null, 0, TRUE, sound(sound), volume_channel = VOLUME_CHANNEL_DOORS)
 
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 
 	for(var/turf/turf in locs)
 		var/obj/structure/window/killthis = (locate_within(turf, /obj/structure/window))

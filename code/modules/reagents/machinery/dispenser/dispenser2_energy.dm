@@ -12,7 +12,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, 
 		process_tick = 15
 		. = 0
 		for(var/id in dispense_reagents)
-			var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+			var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 			if(!R)
 				stack_trace("[src] at [x],[y],[z] failed to find reagent '[id]'!")
 				LAZYREMOVE(dispense_reagents, id)
@@ -32,7 +32,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/chemical_dispenser, MACHINE_PIPELINE, 
 	if(!_recharge_reagents)
 		return FALSE
 	for(var/id in dispense_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		var/obj/item/reagent_containers/chem_disp_cartridge/C = R ? cartridges[R.name] : null
 		if(C && C.reagents.total_volume < C.reagents.maximum_volume)
 			return TRUE

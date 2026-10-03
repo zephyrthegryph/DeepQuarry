@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interac
 					return INTERACTION_HANDLED_PASS
 
 				if(occupant.mind)
-					GLOB.antag_service.clear_antag_roles(occupant.mind, 1)
+					SSantag.clear_antag_roles(occupant.mind, 1)
 
 				if(!own_set(src, nameof(src.brain), P, user = user))
 					return INTERACTION_HANDLED_PASS

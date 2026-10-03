@@ -40,7 +40,7 @@
 	if(avoid_highlighting) message["avoidHighlighting"] = avoid_highlighting
 
 	// send it immediately
-	GLOB.chat_service.send_immediate(target, message)
+	SSchat.send_immediate(target, message)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
 		if (islist(target))
@@ -100,7 +100,7 @@
 	if(text) message["text"] = text
 	if(html) message["html"] = html
 	if(avoid_highlighting) message["avoidHighlighting"] = avoid_highlighting
-	GLOB.chat_service.queue(target, message)
+	SSchat.queue(target, message)
 
 	if (CONFIG_GET(flag/chatlog_database_backend))
 		if (islist(target))

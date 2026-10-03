@@ -38,8 +38,8 @@ GLOBAL_DATUM_INIT(statpanels_service, /datum/world_service/statpanels, new)
 			"Time Dilation: [round(GLOB.time_track_service.time_dilation_current,1)]% AVG:([round(GLOB.time_track_service.time_dilation_avg_fast,1)]%, [round(GLOB.time_track_service.time_dilation_avg,1)]%, [round(GLOB.time_track_service.time_dilation_avg_slow,1)]%)"
 		)
 
-		if(GLOB.emergency_shuttle_service.evac)
-			var/ETA = GLOB.emergency_shuttle_service.get_status_panel_eta()
+		if(SSemergency_shuttle.evac)
+			var/ETA = SSemergency_shuttle.get_status_panel_eta()
 			if(ETA)
 				global_data += "[ETA]"
 

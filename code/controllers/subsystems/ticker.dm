@@ -157,10 +157,10 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 				var/game_finished = FALSE
 				var/mode_finished = FALSE
 				if (CONFIG_GET(flag/continuous_rounds)) // Game keeps going after mode ends.
-					game_finished = (GLOB.emergency_shuttle_service.returned() || mode.station_was_nuked)
+					game_finished = (SSemergency_shuttle.returned() || mode.station_was_nuked)
 					mode_finished = ((end_game_state >= END_GAME_MODE_FINISHED) || mode.check_finished()) // Short circuit if already finished.
 				else // Game ends when mode does
-					game_finished = (mode.check_finished() || (GLOB.emergency_shuttle_service.returned() && GLOB.emergency_shuttle_service.evac)) || GLOB.universe_has_ended
+					game_finished = (mode.check_finished() || (SSemergency_shuttle.returned() && SSemergency_shuttle.evac)) || GLOB.universe_has_ended
 					mode_finished = game_finished
 
 				if(game_finished && mode_finished)
@@ -402,7 +402,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 		if(player && player.mind && player.mind.assigned_role)
 			if(player.mind.assigned_role == JOB_SITE_MANAGER)
 				captainless=0
-			if(!GLOB.antag_service.player_is_antag(player.mind, only_offstation_roles = 1))
+			if(!SSantag.player_is_antag(player.mind, only_offstation_roles = 1))
 				SSjob.equip_rank(player, player.mind.assigned_role, 0)
 				UpdateFactionList(player)
 				// equip_custom_items(player) // Removal

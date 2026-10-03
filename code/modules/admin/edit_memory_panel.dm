@@ -33,9 +33,9 @@ DECLARE_UI(/datum/edit_memory_panel, "EditMemoryPanel")
 
 /datum/edit_memory_panel/proc/snapshot_antag_blocks()
 	var/list/blocks = list()
-	if(target_mind && GLOB.antag_service.all_antag_types)
-		for(var/antag_type in GLOB.antag_service.all_antag_types)
-			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
+	if(target_mind && SSantag.all_antag_types)
+		for(var/antag_type in SSantag.all_antag_types)
+			var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
 			var/list/entry = A?.get_panel_data(target_mind)
 			if(entry)
 				blocks += list(entry)
@@ -162,7 +162,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_refresh_antags)
 
 UI_ACT(/datum/edit_memory_panel, "antag_add", ui_act_antag_add, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
-	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
+	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
 	if(A && A.add_antagonist(target_mind, 1, 1, 0, 1, 1))
 		log_admin("[key_name_admin(ui.user)] made [key_name(target_mind)] into a [A.role_text].")
 	snapshot_antag_blocks()
@@ -171,7 +171,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_add)
 
 UI_ACT(/datum/edit_memory_panel, "antag_remove", ui_act_antag_remove, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_remove)
-	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
+	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
 	if(A)
 		A.remove_antagonist(target_mind)
 	snapshot_antag_blocks()
@@ -180,7 +180,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_remove)
 
 UI_ACT(/datum/edit_memory_panel, "antag_equip", ui_act_antag_equip, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_equip)
-	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
+	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
 	if(A && target_mind.current)
 		A.equip(target_mind.current)
 	SStgui.update_uis(src)
@@ -188,7 +188,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_equip)
 
 UI_ACT(/datum/edit_memory_panel, "antag_unequip", ui_act_antag_unequip, UI_ARG_VALUE("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_unequip)
-	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
+	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
 	if(A && target_mind.current)
 		A.unequip(target_mind.current)
 	SStgui.update_uis(src)
@@ -196,7 +196,7 @@ UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_unequip)
 
 UI_ACT(/datum/edit_memory_panel, "antag_move_to_spawn", ui_act_antag_move_to_spawn, UI_ARG_TEXT("id"))
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_antag_move_to_spawn)
-	var/datum/antagonist/A = GLOB.antag_service.all_antag_types[params["id"]]
+	var/datum/antagonist/A = SSantag.all_antag_types[params["id"]]
 	if(A && target_mind.current)
 		A.place_mob(target_mind.current)
 	SStgui.update_uis(src)

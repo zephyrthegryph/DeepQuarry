@@ -131,12 +131,12 @@ GLOBAL_LIST_INIT(dq_treatment_tag_names, list( \
 	// fixers…) only treats if it declares its own, different profile. DM
 	// builds list defaults per instance, so compare contents, not refs.
 	var/list/tags_by_type = list()
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		if(R)
 			tags_by_type[R.type] = R.treatment_tags
-	for(var/id in chemistry_service().chemical_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[id]
+	for(var/id in SSchemistry.ready().chemical_reagents)
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[id]
 		if(!length(R?.treatment_tags))
 			continue
 		var/parent = R.parent_type

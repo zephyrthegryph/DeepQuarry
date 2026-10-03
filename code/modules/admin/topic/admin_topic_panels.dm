@@ -65,41 +65,41 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 
 	switch(args["call_shuttle"])
 		if("1")
-			if(!SSticker || !GLOB.emergency_shuttle_service.location())
+			if(!SSticker || !SSemergency_shuttle.location())
 				return
-			if(GLOB.emergency_shuttle_service.can_call())
-				GLOB.emergency_shuttle_service.call_evac()
+			if(SSemergency_shuttle.can_call())
+				SSemergency_shuttle.call_evac()
 				log_admin("[key_name(user)] called the Emergency Shuttle")
 				message_admins(span_blue("[key_name_admin(user)] called the Emergency Shuttle to the station."), 1)
 
 		if("2")
-			if(!SSticker || !GLOB.emergency_shuttle_service.location())
+			if(!SSticker || !SSemergency_shuttle.location())
 				return
-			if(GLOB.emergency_shuttle_service.can_call())
-				GLOB.emergency_shuttle_service.call_evac()
+			if(SSemergency_shuttle.can_call())
+				SSemergency_shuttle.call_evac()
 				log_admin("[key_name(user)] called the Emergency Shuttle")
 				message_admins(span_blue("[key_name_admin(user)] called the Emergency Shuttle to the station."), 1)
 
-			else if(GLOB.emergency_shuttle_service.can_recall())
-				GLOB.emergency_shuttle_service.recall()
+			else if(SSemergency_shuttle.can_recall())
+				SSemergency_shuttle.recall()
 				log_admin("[key_name(user)] sent the Emergency Shuttle back")
 				message_admins(span_blue("[key_name_admin(user)] sent the Emergency Shuttle back."), 1)
 
 /datum/admins/proc/topic_edit_shuttle_time(mob/user, list/args)
-	if(GLOB.emergency_shuttle_service.wait_for_launch)
-		var/new_time_left = topic_ask(user, args, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = GLOB.emergency_shuttle_service.estimate_launch_time())
+	if(SSemergency_shuttle.wait_for_launch)
+		var/new_time_left = topic_ask(user, args, "a1", /datum/om/prompt/number, message = "Enter new shuttle launch countdown (seconds):", title = "Edit Shuttle Launch Time", default = SSemergency_shuttle.estimate_launch_time())
 		if(isnull(new_time_left))
 			return
 
-		EXPIRY_SET(GLOB.emergency_shuttle_service, launch_time, (new_time_left SECONDS), CLOCK_WORLD)
+		EXPIRY_SET(SSemergency_shuttle, launch_time, (new_time_left SECONDS), CLOCK_WORLD)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's launch time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's launch time to [new_time_left SECONDS]"), 1)
-	else if(GLOB.emergency_shuttle_service.shuttle.has_arrive_time())
-		var/new_time_left = topic_ask(user, args, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = GLOB.emergency_shuttle_service.estimate_arrival_time())
+	else if(SSemergency_shuttle.shuttle.has_arrive_time())
+		var/new_time_left = topic_ask(user, args, "a2", /datum/om/prompt/number, message = "Enter new shuttle arrival time (seconds):", title = "Edit Shuttle Arrival Time", default = SSemergency_shuttle.estimate_arrival_time())
 		if(isnull(new_time_left))
 			return
-		EXPIRY_SET(GLOB.emergency_shuttle_service.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)
+		EXPIRY_SET(SSemergency_shuttle.shuttle, arrive_time, (new_time_left SECONDS), CLOCK_WORLD)
 
 		log_admin("[key_name(user)] edited the Emergency Shuttle's arrival time to [new_time_left]")
 		message_admins(span_blue("[key_name_admin(user)] edited the Emergency Shuttle's arrival time to [new_time_left SECONDS]"), 1)

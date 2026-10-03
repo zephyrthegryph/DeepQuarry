@@ -4,7 +4,7 @@ ADMIN_VERB(spawn_chemdisp_cartridge, R_SPAWN, "Spawn Chemical Dispenser Cartridg
 		return
 	if(!size)
 		return
-	var/reagent = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select the reagent to put into the catridge", title = "Select Reagent", choices = chemistry_service().chemical_reagents)
+	var/reagent = verb_ask(user, "a2", args, /datum/om/prompt/choice, message = "Select the reagent to put into the catridge", title = "Select Reagent", choices = SSchemistry.ready().chemical_reagents)
 	if(isnull(reagent))
 		return
 	if(!reagent)
@@ -16,6 +16,6 @@ ADMIN_VERB(spawn_chemdisp_cartridge, R_SPAWN, "Spawn Chemical Dispenser Cartridg
 		if("medium") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge/medium(user_mob.loc)
 		if("large") new_catridge = new /obj/item/reagent_containers/chem_disp_cartridge(user_mob.loc)
 	new_catridge.reagents.add_reagent(reagent, new_catridge.volume)
-	var/datum/reagent/used_reagent = chemistry_service().chemical_reagents[reagent]
+	var/datum/reagent/used_reagent = SSchemistry.ready().chemical_reagents[reagent]
 	new_catridge.setLabel(used_reagent.name)
 	log_admin("[key_name(user)] spawned a [size] reagent container containing [reagent] at ([user_mob.x],[user_mob.y],[user_mob.z])")

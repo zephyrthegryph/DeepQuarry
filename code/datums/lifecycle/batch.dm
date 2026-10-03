@@ -166,7 +166,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_effect_turfs)
 		if(SSair)
 			SSair.rust_pipe_topology_dirty = TRUE
 			// An explosion's bulk resolve commits once itself when it ends.
-			if(!GLOB.explosion_service.is_bulk_resolving())
+			if(!SSexplosions.is_bulk_resolving())
 				// Directly: rust_commit_pending_pipenets() would defer to this batch again.
 				SSair.rust_pipe_topology_dirty = FALSE
 				SSair.rust_apply_pipe_commit()

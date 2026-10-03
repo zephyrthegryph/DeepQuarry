@@ -1,21 +1,22 @@
-// The mail world service (fold wave F3; was SSmail): mail accrues every 60 s on
-// /datum/om/behaviour/world/mail (code/datums/om/world_lanes.dm) and the supply shuttle delivers it.
-GLOBAL_DATUM_INIT(mail_service, /datum/world_service/mail, new)
-
-/datum/world_service/mail
+// The mail system (was SSmail): mail accrues every 60 s on the background lane and the supply shuttle delivers it.
+SYSTEM_DEF(mail)
 	name = "Mail"
-	lane = /datum/om/behaviour/world/mail
+	periodic_runlevels = RUNLEVELS_DEFAULT
 	var/mail_waiting = 0					// Pending mail
 	var/mail_per_process = 0.55				// Mail to be generated
 	var/admin_mail = list()					// Mail added by Spawn Mail
 	var/list/banned_jobs = list(JOB_OUTSIDER,JOB_ANOMALY,JOB_VR,JOB_MAINT_LURKER,JOB_TALON_CAPTAIN,JOB_TALON_DOCTOR,JOB_TALON_ENGINEER,JOB_TALON_GUARD,JOB_TALON_PILOT,JOB_TALON_MINER) // Jobs that can't receive mail
 
-/datum/world_service/mail/service_step(resumed)
-	mail_waiting += mail_per_process
-	return TRUE
+/datum/system/mail/reactions()
+	. = ..()
+	. += every(60 SECONDS, PROC_REF(accrue_mail), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
 
-/datum/world_service/mail/stat_line()
-	return "Waiting: [round(mail_waiting, 0.01)] | Admin: [length(admin_mail)]"
+/datum/system/mail/proc/accrue_mail(dt)
+	mail_waiting += mail_per_process
+	return STEP_DONE
+
+/datum/system/mail/stat_entry(msg)
+	return "[..()]Waiting: [round(mail_waiting, 0.01)] | Admin: [length(admin_mail)]"
 
 /*	Generates a box of mail. Depending on the time that has passed between shuttles being called, it will send more or less mail and dependant on a small random number to simulate inflation
 	Whenever the cargo shuttle gets sent back to the station, it will add the mail crate if there's any mail to be sent to the station.
@@ -23,13 +24,13 @@ GLOBAL_DATUM_INIT(mail_service, /datum/world_service/mail, new)
 	Only alive, active and NT employeers should be getting mail.
 */
 
-/datum/world_service/mail/proc/create_mail()
+/datum/system/mail/proc/create_mail()
 	// Spawn crate
 	var/obj/structure/closet/crate/mail/mailcrate = new(pick(GLOB.supply_service.get_clear_turfs()))
 	// Collect recipients
 	var/list/mail_recipients = list()
 	for(var/mob/living/carbon/human/player_human in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(player_human.stat != DEAD && player_human.client && player_human.client.inactivity <= 10 MINUTES && !(player_human.job in banned_jobs) && !GLOB.antag_service.player_is_antag(player_human.mind) && !isbelly(player_human.loc)) // Only alive, active and NT employeers should be getting mail.
+		if(player_human.stat != DEAD && player_human.client && player_human.client.inactivity <= 10 MINUTES && !(player_human.job in banned_jobs) && !SSantag.player_is_antag(player_human.mind) && !isbelly(player_human.loc)) // Only alive, active and NT employeers should be getting mail.
 			mail_recipients += player_human
 
 	// Creates mail for all the mail waiting to arrive, if there's nobody to receive it, it will be a chance of junk mail.

@@ -42,7 +42,7 @@ SYSTEM_DEF(pathing)
 	var/dropped = 0
 
 /datum/system/pathing/proc/enqueue(datum/io/path/R)
-	queue += R
+	queue += R // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
 	if(!working)
 		work()
 

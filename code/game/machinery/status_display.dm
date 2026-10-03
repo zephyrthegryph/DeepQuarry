@@ -97,7 +97,7 @@
 		return 0
 	switch(mode)
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)
-			if(GLOB.emergency_shuttle_service?.shuttle && GLOB.emergency_shuttle_service.has_eta())
+			if(SSemergency_shuttle?.shuttle && SSemergency_shuttle.has_eta())
 				return 2 SECONDS
 		if(STATUS_DISPLAY_MESSAGE)
 			if(index1 || index2)
@@ -116,7 +116,7 @@
 /proc/shuttle_schedule_source(id)
 	switch(id)
 		if(SHUTTLE_SCHEDULE_EVAC)
-			return GLOB.emergency_shuttle_service
+			return SSemergency_shuttle
 		if(SHUTTLE_SCHEDULE_SUPPLY)
 			return GLOB.supply_service
 	return null
@@ -197,20 +197,20 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 		if(STATUS_DISPLAY_BLANK)	//blank
 			return 1
 		if(STATUS_DISPLAY_TRANSFER_SHUTTLE_TIME)				//emergency shuttle timer
-			if(!GLOB.emergency_shuttle_service?.shuttle)
+			if(!SSemergency_shuttle?.shuttle)
 				message1 = "-ETA-"
 				message2 = "Never" // You're here forever.
 				return 1
-			if(GLOB.emergency_shuttle_service.waiting_to_leave())
+			if(SSemergency_shuttle.waiting_to_leave())
 				message1 = "-ETD-"
-				if(GLOB.emergency_shuttle_service.shuttle.is_launching())
+				if(SSemergency_shuttle.shuttle.is_launching())
 					message2 = "Launch"
 				else
 					message2 = get_shuttle_timer_departure()
 					if(length(message2) > CHARS_PER_LINE)
 						message2 = "Error"
 				update_display(message1, message2)
-			else if(GLOB.emergency_shuttle_service.has_eta())
+			else if(SSemergency_shuttle.has_eta())
 				message1 = "-ETA-"
 				message2 = get_shuttle_timer_arrival()
 				if(length(message2) > CHARS_PER_LINE)
@@ -310,17 +310,17 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 		maptext = new_text
 
 /obj/machinery/status_display/proc/get_shuttle_timer_arrival()
-	if(!GLOB.emergency_shuttle_service)
+	if(!SSemergency_shuttle)
 		return "Error"
-	var/timeleft = GLOB.emergency_shuttle_service.estimate_arrival_time()
+	var/timeleft = SSemergency_shuttle.estimate_arrival_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_shuttle_timer_departure()
-	if(!GLOB.emergency_shuttle_service)
+	if(!SSemergency_shuttle)
 		return "Error"
-	var/timeleft = GLOB.emergency_shuttle_service.estimate_launch_time()
+	var/timeleft = SSemergency_shuttle.estimate_launch_time()
 	if(timeleft < 0)
 		return ""
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"

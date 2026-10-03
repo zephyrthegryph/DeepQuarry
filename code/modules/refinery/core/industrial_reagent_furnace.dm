@@ -182,7 +182,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 	if(filter_reagent_id == "-1")
 		filter = "sintering out nothing"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "sintering [R.name]"
 	var/select = rerun_ask(user, "k188", PROC_REF(interaction_set_filter), args, /datum/om/prompt/choice, message = "Select chemical to sinter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
 	if(isnull(select))
@@ -225,7 +225,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/furnace, TYPE_PROC_REF(/
 	if(filter_reagent_id == "-1")
 		filter = "sintering out nothing"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "sintering [R.name]"
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is currently [filter]."
 	. += "The sintering mold is [ (beaker.reagents.total_volume / REAGENTS_PER_SHEET) * 100 ]% full."

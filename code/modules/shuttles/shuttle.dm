@@ -491,8 +491,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 
 /// Wakes the status displays that show this shuttle's schedule (KEY_SHUTTLE_SCHEDULE).
 /datum/shuttle/proc/publish_schedule()
-	if(src == GLOB.emergency_shuttle_service?.shuttle)
-		changed(GLOB.emergency_shuttle_service, CHANGE_SHUTTLE_SCHEDULE)
+	if(src == SSemergency_shuttle?.shuttle)
+		changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
 	else if(src == GLOB.supply_service?.shuttle)
 		changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
 

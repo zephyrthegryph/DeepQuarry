@@ -278,7 +278,7 @@ UI_DATA_REPLACE(/obj/machinery/sleeper, "amounts:list", "maxchem=max_chem:num", 
 
 	var/list/chemicals = list()
 	for(var/re in available_chemicals)
-		var/datum/reagent/temp = chemistry_service().chemical_reagents[re]
+		var/datum/reagent/temp = SSchemistry.ready().chemical_reagents[re]
 		if(temp)
 			var/reagent_amount = 0
 			var/pretty_amount

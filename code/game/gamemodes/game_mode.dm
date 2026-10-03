@@ -75,7 +75,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	if(id == "self")
 		user.client.debug_variables(src)
 		return
-	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
+	var/datum/antagonist/antag = SSantag.all_antag_types[id]
 	if(antag)
 		user.client.debug_variables(antag)
 		message_admins("Admin [key_name_admin(user)] is debugging the [antag.role_text] template.")
@@ -86,7 +86,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	if(antag_tags && (id in antag_tags))
 		to_chat(user, "Cannot remove core mode antag type.")
 		return
-	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[id]
+	var/datum/antagonist/antag = SSantag.all_antag_types[id]
 	if(antag_templates && antag_templates.len && antag && (antag in antag_templates) && (antag.id in GLOB.additional_antag_types))
 		rel_remove(src, nameof(antag_templates), antag)
 		GLOB.additional_antag_types -= antag.id
@@ -94,7 +94,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	refresh_game_mode_panel(user)
 
 /datum/game_mode/proc/topic_add_antag_type(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = GLOB.antag_service.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
+	om_ask(user, /datum/om/prompt/choice, PROC_REF(antag_type_added), choices = SSantag.all_antag_types, title = "Select Antag Type", message = "Which type do you wish to add?", requires = PROMPT_ADMIN(R_ADMIN|R_SERVER))
 
 /datum/game_mode/proc/game_mode_option_prompt(option)
 	switch(option)
@@ -136,7 +136,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /datum/game_mode/proc/antag_type_added(datum/om/prompt/choice/ask)
 	var/mob/user = ask.answerer
-	var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[ask.choice]
+	var/datum/antagonist/antag = SSantag.all_antag_types[ask.choice]
 	if(antag)
 		if(!(antag in SSticker.mode.antag_templates))
 			rel_add(SSticker.mode, nameof(/datum/game_mode::antag_templates), antag)
@@ -186,7 +186,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	var/enemy_count = 0
 	if(antag_tags && length(antag_tags))
 		for(var/antag_tag in antag_tags)
-			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_tag]
+			var/datum/antagonist/antag = SSantag.all_antag_types[antag_tag]
 			if(!antag)
 				continue
 			var/list/potential = list()
@@ -204,12 +204,12 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 /datum/game_mode/proc/refresh_event_modifiers()
 	if(event_delay_mod_moderate || event_delay_mod_major)
-		GLOB.event_service.report_at_round_end = TRUE
+		SSevents.report_at_round_end = TRUE
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EModerate = GLOB.event_service.event_containers[EVENT_LEVEL_MODERATE]
+			var/datum/event_container/EModerate = SSevents.event_containers[EVENT_LEVEL_MODERATE]
 			EModerate.delay_modifier = event_delay_mod_moderate
 		if(event_delay_mod_moderate)
-			var/datum/event_container/EMajor = GLOB.event_service.event_containers[EVENT_LEVEL_MAJOR]
+			var/datum/event_container/EMajor = SSevents.event_containers[EVENT_LEVEL_MAJOR]
 			EMajor.delay_modifier = event_delay_mod_major
 
 /datum/game_mode/proc/pre_setup()
@@ -236,8 +236,8 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 		if(antag.is_latejoin_template())
 			rel_add(src, nameof(latejoin_templates), antag)
 
-	if(GLOB.emergency_shuttle_service && auto_recall_shuttle)
-		GLOB.emergency_shuttle_service.auto_recall = TRUE
+	if(SSemergency_shuttle && auto_recall_shuttle)
+		SSemergency_shuttle.auto_recall = TRUE
 
 	feedback_set_details("round_start","[time2text(world.realtime)]")
 	SSdbcore.SetRoundStart() // an om_io write; returns at once
@@ -289,14 +289,14 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	GLOB.command_announcement.Announce("The presence of [pick(reasons)] in the region is tying up all available local emergency resources; emergency response teams cannot be called at this time, and post-evacuation recovery efforts will be substantially delayed.","Emergency Transmission")
 
 /datum/game_mode/proc/check_finished()
-	if(GLOB.emergency_shuttle_service.returned() || station_was_nuked)
+	if(SSemergency_shuttle.returned() || station_was_nuked)
 		return 1
 	if(end_on_antag_death && antag_templates && antag_templates.len)
 		for(var/datum/antagonist/antag in antag_templates)
 			if(!antag.antags_are_dead())
 				return 0
 		if(CONFIG_GET(flag/continuous_rounds))
-			GLOB.emergency_shuttle_service.auto_recall = FALSE
+			SSemergency_shuttle.auto_recall = FALSE
 			return 0
 		return 1
 	return 0
@@ -386,7 +386,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	var/text = ""
 	if(surviving_total > 0)
 		text += "<br>There [surviving_total>1 ? ("were " + span_bold("[surviving_total] survivors")) : ("was " + span_bold("one survivor"))] ("
-		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [GLOB.emergency_shuttle_service.evac ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
+		text += span_bold("[escaped_total>0 ? escaped_total : "none"] [SSemergency_shuttle.evac ? "escaped" : "transferred"]") + ") and " + span_bold("[ghosts] ghosts")
 		text += ".<br>"
 	else
 		text += "There were " + span_bold("no survivors") + " (" + span_bold("[ghosts] ghosts") + ")."
@@ -432,7 +432,7 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	var/list/players = list()
 	var/list/candidates = list()
 
-	var/datum/antagonist/antag_template = GLOB.antag_service.all_antag_types[antag_id]
+	var/datum/antagonist/antag_template = SSantag.all_antag_types[antag_id]
 	if(!antag_template)
 		return candidates
 
@@ -481,13 +481,13 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	if(antag_tags && length(antag_tags))
 		rel_clear(src, nameof(antag_templates))
 		for(var/antag_tag in antag_tags)
-			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_tag]
+			var/datum/antagonist/antag = SSantag.all_antag_types[antag_tag]
 			if(antag && !(antag in antag_templates))
 				rel_add(src, nameof(antag_templates), antag)
 
 	if(GLOB.additional_antag_types && GLOB.additional_antag_types.len)
 		for(var/antag_type in GLOB.additional_antag_types)
-			var/datum/antagonist/antag = GLOB.antag_service.all_antag_types[antag_type]
+			var/datum/antagonist/antag = SSantag.all_antag_types[antag_type]
 			if(antag && !(antag in antag_templates))
 				rel_add(src, nameof(antag_templates), antag)
 

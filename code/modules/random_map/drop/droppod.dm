@@ -189,7 +189,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 
 		// Equip them, if they are human and it is desirable.
 		if(ispath(spawn_path, /mob/living/carbon/human))
-			antag_type = verb_ask(user, "antag", args, /datum/om/prompt/choice, message = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = GLOB.antag_service.all_antag_types, cancel_answer = "")
+			antag_type = verb_ask(user, "antag", args, /datum/om/prompt/choice, message = "Select an equipment template to use or cancel for nude.", title = "Drop Pod Selection", choices = SSantag.all_antag_types, cancel_answer = "")
 			if(isnull(antag_type))
 				return
 
@@ -203,7 +203,7 @@ ADMIN_VERB(call_drop_pod, R_FUN, "Call Drop Pod", "Call an immediate drop pod on
 		spawned_mob = new spawn_path()
 		spawned_mob.tag = "awaiting drop"
 		if(antag_type)
-			var/datum/antagonist/A = GLOB.antag_service.all_antag_types[antag_type]
+			var/datum/antagonist/A = SSantag.all_antag_types[antag_type]
 			A?.equip(spawned_mob)
 	else
 		for(var/i=0;i<spawn_count;i++)

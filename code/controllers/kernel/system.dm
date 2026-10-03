@@ -139,6 +139,17 @@
 /datum/system/proc/boots_in_dag()
 	return TRUE
 
+/// A lazy system (boots_in_dag() FALSE) initializes on first use: `SSx.ready()` returns the system, initializing it when
+/// it is not yet. initialize() sets `initialized` first, so a re-entrant call does not recurse.
+/datum/system/proc/ready()
+	RETURN_TYPE(/datum/system)
+	if(!initialized)
+		var/started = REALTIMEOFDAY
+		initialize()
+		initialized = TRUE
+		log_world("System [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
+	return src
+
 /// Called once, after every DAG node has initialized: the bulk first evaluation of the members that
 /// joined during boot (machine first wakes, and so on). Override and do the work; the kernel marks the
 /// system ready around it.

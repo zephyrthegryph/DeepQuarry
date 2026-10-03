@@ -110,9 +110,9 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 /datum/asset/proc/ensure_ready()
 	return src
 
-/// Stub to hook into if your asset is having its generation queued by GLOB.asset_loading_service
+/// Stub to hook into if your asset is having its generation queued by SSasset_loading
 /datum/asset/proc/queued_generation()
-	CRASH("[type] inserted into GLOB.asset_loading_service despite not implementing /proc/queued_generation")
+	CRASH("[type] inserted into SSasset_loading despite not implementing /proc/queued_generation")
 
 /datum/asset/proc/get_url_mappings()
 	return list()
@@ -323,7 +323,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 	if(should_load_immediately())
 		realize_spritesheets(yield = FALSE)
 	else
-		GLOB.asset_loading_service.queue_asset(src)
+		SSasset_loading.queue_asset(src)
 
 /datum/asset/spritesheet/proc/realize_spritesheets(yield)
 	if(fully_generated)
@@ -356,7 +356,7 @@ GLOBAL_VAR_INIT(asset_known_hashes_dirty, FALSE)
 		write_to_cache()
 	fully_generated = TRUE
 	// If we were ever in there, remove ourselves
-	GLOB.asset_loading_service.dequeue_asset(src)
+	SSasset_loading.dequeue_asset(src)
 
 /datum/asset/spritesheet/queued_generation()
 	realize_spritesheets(yield = TRUE)

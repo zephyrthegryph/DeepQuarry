@@ -574,7 +574,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 	var/sql_computerid = src.computer_id
 	var/sql_admin_rank = admin_rank
 
-	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (GLOB.chat_service will queue it)
+	// If you're about to disconnect the player, you have to use to_chat_immediate otherwise they won't get the message (SSchat will queue it)
 
 	//Panic bunker code
 	if (isnum(player_age) && player_age == 0) //first connection

@@ -206,7 +206,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(new_character.mind)
 		new_character.mind.loaded_from_ckey = picked_ckey
 		new_character.mind.loaded_from_slot = picked_slot
-		var/datum/antagonist/antag_data = GLOB.antag_service.get_antag_data(new_character.mind.special_role)
+		var/datum/antagonist/antag_data = SSantag.get_antag_data(new_character.mind.special_role)
 		if(antag_data)
 			antag_data.add_antagonist(new_character.mind)
 			antag_data.place_mob(new_character)

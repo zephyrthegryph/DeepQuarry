@@ -6,6 +6,8 @@
 //! reads engine follows a call of it to that var (`ReadKind::System`), which is how a stat that
 //! calls `night_shift_active()` is marked when `night` changes.
 
+use std::collections::HashSet;
+
 use crate::sem::gen::{system_types, system_vars, GenCx, GenOut, Generator, SYSTEM_INSTANCE};
 
 struct SystemAccessors;
@@ -20,6 +22,24 @@ impl Generator for SystemAccessors {
     }
 
     fn generate(&self, cx: &GenCx, out: &mut GenOut) {
+        // A system declared with SYSTEM_DEF(x) is read through its `SSx` global; a legacy world service through its GLOB var.
+        let sys_def = crate::pat!(r"(?m)^\s*SYSTEM_DEF\((\w+)\)");
+        let mut sys_defs: HashSet<String> = HashSet::new();
+        for f in cx.tree.select(&crate::tree::CODE_DM) {
+            if !f.text().contains("SYSTEM_DEF(") {
+                continue;
+            }
+            for c in sys_def.captures_iter(f.text()) {
+                sys_defs.insert(c.s(1).to_string());
+            }
+        }
+        let instance = |system: &str| -> String {
+            if sys_defs.contains(system) {
+                format!("SS{}", system)
+            } else {
+                SYSTEM_INSTANCE.replace("{system}", system)
+            }
+        };
         let mut rows: Vec<(String, String, String, String, u32)> = Vec::new();
         for m in cx.markers("SYSTEM_ACCESSOR") {
             let (Some(system), Some(name), Some(key)) = (m.args.first(), m.args.get(1), m.args.get(2)) else {
@@ -50,7 +70,7 @@ impl Generator for SystemAccessors {
             for (name, system, var, rel, line) in rows {
                 out.doc(format!("SYSTEM_ACCESSOR({}, {}, nameof({})) at {}:{}: the {} system's `{}`, read as a plain var.", system, name, var, rel, line, system, var));
                 out.line(format!("/proc/{}()", name));
-                out.line(format!("\treturn {}.{}", SYSTEM_INSTANCE.replace("{system}", &system), var));
+                out.line(format!("\treturn {}.{}", instance(&system), var));
                 out.blank();
             }
         };

@@ -159,7 +159,7 @@ SYSTEM_DEF(requests)
 	R.opened_at = world.time // ALLOW(sys_world_time_write): the request's own open stamp, read for diagnostics, not an expiry
 	R.answerer_expected = !isnull(R.answerer)
 	var/datum/system/requests/registry = SSrequests
-	registry.open += R
+	registry.open += R // ALLOW(ownership): the kernel's own queue, appended and drained by this system only
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")

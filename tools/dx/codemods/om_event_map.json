@@ -2291,7 +2291,7 @@
  },
  "/datum/om/event/movable_motiontracker": {
   "emits": [
-   "code/game/objects/items/devices/scanners/motiontracker_service.dm"
+   "code/game/objects/items/devices/scanners/motiontracker_api.dm"
   ],
   "fields": [
    "source",

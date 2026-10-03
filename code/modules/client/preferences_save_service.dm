@@ -1,11 +1,8 @@
-// The preference save world service (was SScharacter_setup): queued saves are written every
+// The preference save system (was SScharacter_setup): queued saves are written every
 // second on the background lane, parked while the queue is empty.
-GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup, new)
-
-/datum/world_service/character_setup
+SYSTEM_DEF(character_setup)
 	name = "Character Setup"
-	lane = /datum/om/behaviour/world/character_setup
-	on_demand = TRUE
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	var/list/prefs_awaiting_setup = list()
 	var/list/preferences_datums = list()
@@ -16,7 +13,7 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 	/// In-flight character preview renders (owned /datum/dq_preview_poll), see preview_async.dm.
 	var/list/preview_polls
 /*
-/datum/world_service/character_setup/Initialize()
+/datum/system/character_setup/Initialize()
 	while(length(prefs_awaiting_setup))
 		var/datum/preferences/prefs = prefs_awaiting_setup[length(prefs_awaiting_setup)]
 		prefs_awaiting_setup.len--
@@ -27,7 +24,12 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 		new_player.deferred_login()
 	. = ..()
 */	//Might be useful if we ever switch to Bay prefs.
-/datum/world_service/character_setup/service_step(resumed)
+/datum/system/character_setup/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(save_queued), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
+
+/// Writes the queued preference saves; parks the item when the queue is empty.
+/datum/system/character_setup/proc/save_queued(dt)
 	while(length(save_queue))
 		var/datum/preferences/prefs = save_queue[length(save_queue)]
 		rel_remove(src, nameof(save_queue), prefs)
@@ -38,30 +40,11 @@ GLOBAL_DATUM_INIT(character_setup_service, /datum/world_service/character_setup,
 		if(!QDELETED(prefs) && prefs.client())
 			prefs.save_preferences()
 
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
+		if(KERNEL_OVER_BUDGET)
+			return STEP_YIELD
+	return length(save_queue) ? STEP_DONE : STEP_PARK
 
-/datum/world_service/character_setup/proc/queue_preferences_save(datum/preferences/prefs)
-	if(!prefs)
-		return
-	rel_add(src, nameof(save_queue), prefs)
-	demand()
+/datum/system/character_setup/stat_entry(msg)
+	return "[..()]Save queue: [length(save_queue)]"
 
-/datum/world_service/character_setup/has_work()
-	return length(save_queue)
-
-/datum/world_service/character_setup/stat_line()
-	return "Save queue: [length(save_queue)]"
-
-/// preference saves
-/datum/om/behaviour/world/character_setup
-	name = "world: preference saves"
-	every = 1 SECOND
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/character_setup/service()
-	return GLOB.character_setup_service
-
-/// Pending saves: drained by service_step(); deleted prefs are skipped there.
+/// Pending saves: drained by save_queued(); deleted prefs are skipped there.

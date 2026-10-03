@@ -7,7 +7,7 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)
 	. = ..()
 	for(var/x=1;x<=10;x++) //You got 10 chances to hit a reagent that is NOT banned.
-		var/new_chem = pick(chemistry_service().chemical_reagents)
+		var/new_chem = pick(SSchemistry.ready().chemical_reagents)
 		if(new_chem in GLOB.obtainable_chemical_blacklist)
 			continue
 		else

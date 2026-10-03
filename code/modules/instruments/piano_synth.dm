@@ -6,7 +6,7 @@
 
 /obj/item/instrument/piano_synth/Initialize(mapload)
 	. = ..()
-	song.allowed_instrument_ids = instrument_service().synthesizer_instrument_ids
+	song.allowed_instrument_ids = SSinstruments.ready().synthesizer_instrument_ids
 
 /obj/item/instrument/piano_synth/headphones
 	name = "headphones"

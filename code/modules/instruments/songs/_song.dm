@@ -164,7 +164,7 @@ DECLARE_PERIODIC_WHILE(/datum/song, PERIODIC_INSTRUMENTS, "playing")
 	using_instrument_static = null
 	legacy = null
 	if(istext(I) || ispath(I))
-		I = instrument_service().instrument_data[I]
+		I = SSinstruments.ready().instrument_data[I]
 	if(istype(I))
 		using_instrument_static = I
 		rel_add(I, nameof(I.songs_using), src)

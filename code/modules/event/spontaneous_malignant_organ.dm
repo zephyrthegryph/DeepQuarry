@@ -4,7 +4,7 @@
 		if(!A)
 			continue
 		// Dont give bellied people and antags cancer
-		if(GLOB.antag_service.player_is_antag(H.mind) || isbelly(H.loc))
+		if(SSantag.player_is_antag(H.mind) || isbelly(H.loc))
 			continue
 		if(H.species.virus_immune)
 			continue

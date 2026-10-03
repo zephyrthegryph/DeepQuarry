@@ -380,7 +380,7 @@ SYSTEM_DEF(air)
 	// them and register on StopLoadingMap, preserving the old load-time behaviour.
 	if(map_loading && !(activate.flags_1 & INITIALIZED_1))
 		if(queued_for_activation)
-			queued_for_activation[activate] = activate
+			queued_for_activation[activate] = activate // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 		return
 	// flag >= 0 registers/updates the turf in the arena; the Rust side reads
 	// blocks_air / air / planetary_atmos and figures out whether it's an airless
@@ -532,7 +532,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 	atmos_gen = list()
 	for(var/T in subtypesof(/datum/atmosphere))
 		var/datum/atmosphere/atmostype = T
-		atmos_gen[initial(atmostype.id)] = new atmostype
+		atmos_gen[initial(atmostype.id)] = new atmostype // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 
 /// Takes a gas string, returns the matching mutable gas_mixture
 /datum/system/air/proc/parse_gas_string(gas_string, gastype = /datum/gas_mixture)
@@ -546,7 +546,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 	var/datum/gas_mixture/canonical_mix = new gastype()
 	// We set here so any future key changes don't fuck us
-	strings_to_mix[cache_key] = canonical_mix
+	strings_to_mix[cache_key] = canonical_mix // ALLOW(ownership): scratch list of the air system, written only by its own procs and emptied each pass
 	gas_string = preprocess_gas_string(gas_string)
 
 	// Moles/temperature live in the Rust arena now — write through the arena-backed

@@ -93,7 +93,7 @@
 /// Returns the chemistry service reaction lookup list used by handle_reactions().
 /// Subtypes override this to select a different reaction bucket (e.g. distilled_reactions_by_reagent).
 /datum/reagents/proc/get_reaction_lookup()
-	return chemistry_service().instant_reactions_by_reagent
+	return SSchemistry.ready().instant_reactions_by_reagent
 
 /// Returns TRUE if this holder type tracks and passes belly-reagent state when processing reactions.
 /// Distilling holders override this to return FALSE.
@@ -169,7 +169,7 @@
 			my_atom.on_reagent_change()
 		return 1
 
-	var/datum/reagent/D = chemistry_service().chemical_reagents[id]
+	var/datum/reagent/D = SSchemistry.ready().chemical_reagents[id]
 	if(D)
 		var/datum/reagent/R = new D.type()
 		own_reagent_lists()

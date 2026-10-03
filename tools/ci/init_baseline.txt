@@ -1056,7 +1056,7 @@ initialize	code/modules/body/body.dm	/mob/living/Initialize(mapload)
 initialize	code/modules/casino/casino.dm	/obj/structure/casino_table/Initialize(mapload)
 initialize	code/modules/casino/casino.dm	/obj/structure/casino_table/roulette_table/Initialize(mapload)
 initialize	code/modules/casino/casino_prize_vendor.dm	/obj/machinery/casino_prize_dispenser/Initialize(mapload)
-initialize	code/modules/client/preferences_save_service.dm	/datum/world_service/character_setup/Initialize()
+initialize	code/modules/client/preferences_save_service.dm	/datum/system/character_setup/Initialize()
 initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/choker/Initialize(mapload)
 initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/collar/Initialize(mapload)
 initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/collar/shock/Initialize(mapload)
@@ -2395,7 +2395,6 @@ world_reads	code/game/objects/items/devices/radio/intercom.dm	internal_channels 
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_internal_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
 world_reads	code/game/objects/items/devices/radio/radio.dm	internal_channels = GLOB.default_medbay_channels.Copy()
-world_reads	code/game/objects/items/devices/scanners/motion_tracker.dm	om_hook(GLOB.motiontracker_service, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
 world_reads	code/game/objects/items/ghost_hunting/goggles.dm	rel_set(src, nameof(overlay), GLOB.global_hud.heavy_whitense) //obscures your vision of the real realm AND makes actually seeing ghosts difficult.
 world_reads	code/game/objects/items/stacks/sandbags.dm	recipes = GLOB.sandbag_recipes
 world_reads	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	network = GLOB.engineering_networks
@@ -2529,7 +2528,6 @@ world_reads	code/modules/mob/living/silicon/ai/ai.dm	var/list/possibleNames = GL
 world_reads	code/modules/mob/living/silicon/ai/ai.dm	pickedName = pick(GLOB.ai_names)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	qdel(GLOB.ai_camera_room_landmark)
 world_reads	code/modules/mob/living/silicon/ai/multicam.dm	GLOB.ai_camera_room_landmark = src
-world_reads	code/modules/mob/living/silicon/pai/pai.dm	internal_set_chassis( GLOB.pai_service.chassis_data(chassis_name))
 world_reads	code/modules/mob/living/silicon/pai/software.dm	for(var/id in GLOB.default_pai_software)
 world_reads	code/modules/mob/living/silicon/silicon.dm	apply_default_language(GLOB.all_languages[LANGUAGE_GALCOM])
 world_reads	code/modules/mob/living/simple_mob/simple_mob.dm	languages |= GLOB.all_languages[L]

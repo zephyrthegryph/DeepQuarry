@@ -3,22 +3,28 @@
 //// For tracking how much department PTO time players have accured
 ////////////////////////////////
 
-// Paid leave world service (was SSpersist): PTO accrues every 15 minutes on the background lane.
-GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
-
-/datum/world_service/persist
+// Paid leave system (was SSpersist): PTO accrues every 15 minutes on the background lane.
+SYSTEM_DEF(persist)
 	name = "Persist"
-	lane = /datum/om/behaviour/world/persist
-	/// Accrual period; must match the lane's `every`.
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	/// Accrual period; must match the every() interval below.
 	var/accrual_interval = 15 MINUTES
 	var/list/currentrun = list()
 	var/list/query_stack = list()
+	/// TRUE while an accrual pass that ran out of budget waits to resume.
+	VAR_PRIVATE/accrual_resuming = FALSE
 
-/datum/world_service/persist/service_step(resumed)
-	return update_department_hours(resumed)
+/datum/system/persist/reactions()
+	. = ..()
+	. += every(15 MINUTES, PROC_REF(accrue_pto), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
 
-// Do PTO Accruals
-/datum/world_service/persist/proc/update_department_hours(resumed = FALSE)
+/datum/system/persist/proc/accrue_pto(dt)
+	var/done = update_department_hours(accrual_resuming)
+	accrual_resuming = !done
+	return done ? STEP_DONE : STEP_YIELD
+
+// Do PTO Accruals. Returns FALSE when the pass ran out of budget and must resume.
+/datum/system/persist/proc/update_department_hours(resumed = FALSE)
 	if(!CONFIG_GET(flag/time_off))
 		return TRUE
 
@@ -41,7 +47,7 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 		// Try and detect job and department of mob
 		var/datum/job/J = detect_job(M)
 		if(!istype(J) || !J.pto_type || !J.timeoff_factor)
-			if (TICK_CHECK)
+			if (KERNEL_OVER_BUDGET)
 				return FALSE
 			continue
 
@@ -54,7 +60,7 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 				if(C?.module?.pto_type)
 					department_earning = C.module.pto_type
 			if(department_earning == PTO_CYBORG)
-				if (TICK_CHECK)
+				if (KERNEL_OVER_BUDGET)
 					return FALSE
 				continue
 
@@ -96,7 +102,7 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 		)
 		query_stack += list(entry)
 
-		if (TICK_CHECK)
+		if (KERNEL_OVER_BUDGET)
 			return FALSE
 
 	if(length(query_stack))
@@ -106,7 +112,7 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 
 
 // This proc tries to find the job datum of an arbitrary mob.
-/datum/world_service/persist/proc/detect_job(mob/M)
+/datum/system/persist/proc/detect_job(mob/M)
 	// Records are usually the most reliable way to get what job someone is.
 	var/datum/data/record/R = find_general_record("name", M.real_name)
 	if(R) // We found someone with a record.
@@ -119,13 +125,3 @@ GLOBAL_DATUM_INIT(persist_service, /datum/world_service/persist, new)
 	// Let's check the mind.
 	if(M.mind && M.mind.assigned_role)
 		. = SSjob.get_job(M.mind.assigned_role)
-
-/// PTO accrual
-/datum/om/behaviour/world/persist
-	name = "world: PTO accrual"
-	every = 15 MINUTES
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
-
-/datum/om/behaviour/world/persist/service()
-	return GLOB.persist_service

@@ -132,7 +132,7 @@
 	rust_allocate_pipe_ports()
 	rust_register_pipe_port_data()
 	rust_register_pipe_edges()
-	if(commit && !GLOB.explosion_service.is_bulk_resolving())
+	if(commit && !SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /// Queue authoritative port records without publishing any edges. Bulk graph
@@ -179,7 +179,7 @@
 		SSair.rust_queue_pipe_operation(RUST_PIPE_OP_DISCONNECT, rust_pipe_port_ids[old_edges[edge_index]], rust_pipe_port_ids[old_edges[edge_index + 1]])
 	for(var/edge_index = 1, edge_index < length(new_edges), edge_index += 2)
 		SSair.rust_queue_pipe_operation(RUST_PIPE_OP_CONNECT, rust_pipe_port_ids[new_edges[edge_index]], rust_pipe_port_ids[new_edges[edge_index + 1]])
-	if(!GLOB.explosion_service.is_bulk_resolving())
+	if(!SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /obj/machinery/atmospherics/proc/rust_unregister_pipe_topology()
@@ -199,7 +199,7 @@
 			SSair?.rust_queue_pipe_operation(RUST_PIPE_OP_REMOVE, port_id)
 		rust_free_pipe_port(port_id)
 	rust_pipe_port_ids = null
-	if(SSair && !GLOB.explosion_service.is_bulk_resolving())
+	if(SSair && !SSexplosions.is_bulk_resolving())
 		SSair.rust_commit_pending_pipenets()
 
 /// Drop this compatibility membership without attempting to destroy a

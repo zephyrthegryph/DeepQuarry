@@ -96,7 +96,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 				if(BORGHYPO_STATUS_CONTAINERFULL)
 					return result
 				if(BORGHYPO_STATUS_NOCHARGE)
-					var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[step_reagent_id]
+					var/datum/reagent/empty_reagent = SSchemistry.ready().chemical_reagents[step_reagent_id]
 					to_chat(user, span_warning("[src] doesn't have enough ") + span_boldwarning(empty_reagent.name) + span_warning(" to complete this recipe!"))
 					return result
 		return BORGHYPO_STATUS_SUCCESS
@@ -109,7 +109,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 
 	for(var/T in TYPE_TABLE_GET(src, borghypo_reagent_ids))
 		reagent_volumes[T] = volume
-		var/datum/reagent/hypo_reagent = chemistry_service().chemical_reagents[T]
+		var/datum/reagent/hypo_reagent = SSchemistry.ready().chemical_reagents[T]
 		LAZYADD(reagent_names, hypo_reagent.name)
 
 /// Every [recharge_time] steps, recharges some reagents from its cyborg while any is short (a
@@ -191,7 +191,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo, \
 						balloon_alert(user, "not enough reagents to inject full recipe!")
 						balloon_alert(M, "you feel multiple tiny pricks in quick succession!")
 					else
-						var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[reagent_id]
+						var/datum/reagent/empty_reagent = SSchemistry.ready().chemical_reagents[reagent_id]
 						balloon_alert(user, "\the [src] doesn't have enough [empty_reagent.name]!")
 					return OP_REFUSED
 				if(BORGHYPO_STATUS_NORECIPE)
@@ -243,7 +243,7 @@ UI_DATA_REPLACE(/obj/item/reagent_containers/borghypo, "amount=amount_per_transf
 
 	var/list/chemicals = list()
 	for(var/key, value in reagent_volumes)
-		var/datum/reagent/available_reagent = chemistry_service().chemical_reagents[key]
+		var/datum/reagent/available_reagent = SSchemistry.ready().chemical_reagents[key]
 		// If the user is searching for a particular chemical by name, only add this one if its name matches their search!
 		if((ui_chemical_search && findtext(available_reagent.name, ui_chemical_search)) || !ui_chemical_search)
 			UNTYPED_LIST_ADD(chemicals, list("name" = available_reagent.name, "id" = key, "volume" = value))
@@ -258,7 +258,7 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_select_reagent)
 	var/list/ids = TYPE_TABLE_GET(src, borghypo_reagent_ids)
 	var/new_mode = ids.Find(params["selectedReagentId"])
 	if(new_mode)
-		var/datum/reagent/selected_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
+		var/datum/reagent/selected_reagent = SSchemistry.ready().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[new_mode]]
 		play_sfx(src, SFX_EFFECTS_POP)
 		if(recording_recipe)
 			UNTYPED_LIST_ADD(recording_recipe, list("id" = selected_reagent.id, "amount" = amount_per_transfer_from_this))
@@ -355,7 +355,7 @@ UI_ACT_PROC(/obj/item/reagent_containers/borghypo, ui_act_set_chemical_search)
 /obj/item/reagent_containers/borghypo/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
-		var/datum/reagent/current_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
+		var/datum/reagent/current_reagent = SSchemistry.ready().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
 		. += span_notice("It is currently producing [current_reagent.name] and has [reagent_volumes[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]] out of [volume] units left.")
 
 /obj/item/reagent_containers/borghypo/service
@@ -442,7 +442,7 @@ CAPABILITIES(/obj/item/reagent_containers/borghypo/service, \
 			if(is_dispensing_recipe)
 				balloon_alert(user, "not enough reagents to finish recipe '[selected_recipe_id]'!")
 			else
-				var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
+				var/datum/reagent/empty_reagent = SSchemistry.ready().chemical_reagents[TYPE_TABLE_GET(src, borghypo_reagent_ids)[mode]]
 				balloon_alert(user, "not enough of reagent '[empty_reagent.name]'!")
 		if(BORGHYPO_STATUS_NORECIPE)
 			balloon_alert(user, "recipe '[selected_recipe_id]' not found!")

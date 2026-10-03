@@ -41,8 +41,8 @@ UI_DATA(/datum/song, "id", "note_shift:num", "sustain_mode", "volume:num", "volu
 	data["can_switch_instrument"] = (length(allowed_instrument_ids) > 1)
 	data["possible_instruments"] = list()
 	for(var/instrument in allowed_instrument_ids)
-		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = instrument_service().instrument_data[instrument], "id" = instrument))
-	data["sustain_modes"] = instrument_service().note_sustain_modes
+		UNTYPED_LIST_ADD(data["possible_instruments"], list("name" = SSinstruments.ready().instrument_data[instrument], "id" = instrument))
+	data["sustain_modes"] = SSinstruments.ready().note_sustain_modes
 	data["max_repeats"] = max_repeats
 	data["min_volume"] = min_volume
 	data["max_volume"] = max_volume
@@ -165,7 +165,7 @@ UI_ACT_PROC(/datum/song, ui_act_modify_line)
 UI_ACT(/datum/song, "set_sustain_mode", ui_act_set_sustain_mode, UI_ARG_VALUE("new_mode"))
 UI_ACT_PROC(/datum/song, ui_act_set_sustain_mode)
 	var/new_mode = params["new_mode"]
-	if(isnull(new_mode) || !(new_mode in instrument_service().note_sustain_modes))
+	if(isnull(new_mode) || !(new_mode in SSinstruments.ready().note_sustain_modes))
 		return FALSE
 	sustain_mode = new_mode
 	return TRUE

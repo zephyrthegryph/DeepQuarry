@@ -103,7 +103,7 @@
 		visible_message(span_infoplain(span_bold("\The [name]") + " [deathmessage]"))
 	death_links(gibbed)
 	play_death_sound(gibbed)
-	GLOB.motiontracker_service.ping(src, 80)
+	SSmotiontracker.ping(src, 80)
 
 	update_canmove()
 	layer = MOB_LAYER

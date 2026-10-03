@@ -220,6 +220,12 @@ pub fn type_vars(files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {
                 group_indent = None;
                 continue;
             }
+            // SYSTEM_DEF(x) declares /datum/system/x through a macro: its indented body is that type's block.
+            if let Some(h) = pat!(r"^SYSTEM_DEF\((\w+)\)\s*$").captures(py_rstrip(line)) {
+                current = Some(format!("/datum/system/{}", h.s(1)));
+                group_indent = None;
+                continue;
+            }
             if !line.is_empty() && !line.starts_with([' ', '\t']) {
                 current = None;
                 continue;

@@ -188,8 +188,8 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 		qdel(src)
 
 		// pAI notify if we have be pAI invite on
-		GLOB.pai_service.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
-		if(GLOB.pai_service.invite_valid(observer))
+		SSpai.clear_pai_block_delay(REF(observer)) // Reset invite cooldown if we cancelled all invites for the round
+		if(SSpai.invite_valid(observer))
 			observer.pai_card_ping()
 
 	return TRUE

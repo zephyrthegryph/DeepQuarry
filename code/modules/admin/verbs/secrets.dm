@@ -165,16 +165,16 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_night_shift_set)
 	switch(val)
 		if("Automatic")
 			if(CONFIG_GET(flag/enable_night_shifts))
-				GLOB.nightshift_service.automatic = TRUE
-				GLOB.nightshift_service.check_nightshift(TRUE)
+				SSnightshift.automatic = TRUE
+				SSnightshift.check_nightshift(TRUE)
 			else
-				GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+				SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 		if("On")
-			GLOB.nightshift_service.automatic = FALSE
-			GLOB.nightshift_service.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
+			SSnightshift.automatic = FALSE
+			SSnightshift.update_nightshift(active = TRUE, announce = TRUE, forced = TRUE)
 		if("Off")
-			GLOB.nightshift_service.automatic = FALSE
-			GLOB.nightshift_service.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
+			SSnightshift.automatic = FALSE
+			SSnightshift.update_nightshift(active = FALSE, announce = TRUE, forced = TRUE)
 	if(holder())
 		log_admin("[key_name(holder())] used secret: [action].")
 

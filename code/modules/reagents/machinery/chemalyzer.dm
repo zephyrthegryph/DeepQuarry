@@ -111,7 +111,7 @@ UI_DATA_REPLACE(/obj/machinery/chemical_analyzer, "merge:ui_data_obj_machinery_c
 	var/list/reagents_sent = list()
 	var/obj/item/reagent_containers/glass/beaker/large/beaker_path = /obj/item/reagent_containers/glass/beaker/large
 	for(var/ID in found_reagents)
-		var/datum/reagent/R = chemistry_service().chemical_reagents[ID]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[ID]
 		if(!R)
 			continue
 		var/list/subdata = list()

@@ -45,7 +45,7 @@
 			if(COOLDOWN_FINISHED(user, next_play_vent))
 				COOLDOWN_START(user, next_play_vent, 30)
 				var/turf/T = get_turf(src)
-				GLOB.motiontracker_service.ping(T,40) // Teshari rattler
+				SSmotiontracker.ping(T,40) // Teshari rattler
 				play_sfx(T, SFX_MACHINES_VENTCRAWL)
 				var/message = pick(
 					prob(90);"* clunk *",

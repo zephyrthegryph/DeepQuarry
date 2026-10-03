@@ -121,7 +121,7 @@
 /obj/item/mail/proc/setRecipient(mob/user)
 	var/list/recipients = list()
 	for(var/mob/living/player in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
-		if(!GLOB.antag_service.player_is_antag(player.mind) && player.mind.show_in_directory)
+		if(!SSantag.player_is_antag(player.mind) && player.mind.show_in_directory)
 			recipients += player
 
 	om_ask(user, /datum/om/prompt/choice, PROC_REF(recipient_chosen), title = "Recipients", message = "Choose recipient", choices = recipients, ask_flags = ASK_CARRIED | ASK_CAPABLE)
@@ -339,7 +339,7 @@ ADMIN_VERB(spawn_mail, R_SPAWN, "Spawn Mail", "Spawn mail for a specific player,
 		var/obj/item/mail/new_mail = new
 		new_mail.initialize_for_recipient(recipient_mind, TRUE)
 		new chosen(new_mail)
-		GLOB.mail_service.admin_mail += new_mail
+		SSmail.admin_mail += new_mail
 		log_and_message_admins("spawned [chosen] inside an envelope at the shuttle")
 	else
 		var/obj/item/mail/ground_mail = new /obj/item/mail(user_mob.loc)

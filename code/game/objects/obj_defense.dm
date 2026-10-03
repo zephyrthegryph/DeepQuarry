@@ -32,7 +32,7 @@
 	return ..()
 
 /// Explosion adapter: blast from the propagated severity, delivered in type
-/// batches by GLOB.explosion_service. Objects are destroyed by integrity.
+/// batches by SSexplosions. Objects are destroyed by integrity.
 /obj/ex_act(severity)
 	if(..())
 		return

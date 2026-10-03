@@ -80,16 +80,16 @@
 	var/list/addict = list()
 	for(var/datum/reagent/R in bloodstr.reagent_list)
 		var/reagentid = R.id
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/ethanol))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/ethanol))
 			reagentid = REAGENT_ID_ETHANOL
 		if(reagentid in get_addictive_reagents(ADDICT_ALL))
 			addict.Add(reagentid)
 	// Only needed for alcohols, will interfere with pills if you detect other things!
 	for(var/datum/reagent/R in ingested.reagent_list)
 		var/reagentid = R.id
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/ethanol))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/ethanol))
 			reagentid = REAGENT_ID_ETHANOL
-		if(istype(chemistry_service().chemical_reagents[reagentid], /datum/reagent/drink/coffee))
+		if(istype(SSchemistry.ready().chemical_reagents[reagentid], /datum/reagent/drink/coffee))
 			reagentid = REAGENT_ID_COFFEE
 		if(reagentid in get_addictive_reagents(ADDICT_ALL))
 			addict.Add(reagentid)
@@ -125,7 +125,7 @@
 			if(LAZYACCESS(addiction_counters,A) < ADDICTION_PEAK)
 				if(LAZYACCESS(addiction_counters,A) < 100)
 					LAZYSET(addiction_counters,A,100)
-					var/datum/reagent/RR = chemistry_service().chemical_reagents[A]
+					var/datum/reagent/RR = SSchemistry.ready().chemical_reagents[A]
 					var/message = RR.addiction_refresh_message()
 					if(message)
 						to_chat(src, message)
@@ -141,7 +141,7 @@
 			if(prob(15) && LAZYFIND(addiction_counters, C))
 				addiction_counters[C] += 1
 		// proc reagent's withdrawl
-		var/datum/reagent/RE = chemistry_service().chemical_reagents[C]
+		var/datum/reagent/RE = SSchemistry.ready().chemical_reagents[C]
 		var/addict_counter_before = LAZYACCESS(addiction_counters,C)
 		if(LAZYACCESS(addiction_counters,C) > 0)
 			var/withdrawal_counter = RE.handle_addiction(src,species.reagent_tag)

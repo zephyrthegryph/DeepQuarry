@@ -1,8 +1,6 @@
-// The antagonist world service (fold wave F4; was SSantag_job): the antagonist templates, their
-// spawn points and the syndicate code phrases. Data only; boots after SSatoms (after SSjob).
-GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
-
-/datum/world_service/antag
+// The antagonist system (was SSantag_job): the antagonist templates, their spawn points and the syndicate
+// code phrases. Data only; boots after SSatoms (after SSjob).
+SYSTEM_DEF(antag)
 	name = "Antag Job"
 	needs = list(/datum/system/atoms)
 
@@ -15,7 +13,7 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 
 /// The service owns its antagonist templates (keyed by id).
 
-/datum/world_service/antag/initialize()
+/datum/system/antag/initialize()
 	if(initialized)
 		return
 	initialized = TRUE
@@ -40,7 +38,7 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 	-N
 	*/
 
-/datum/world_service/antag/proc/generate_code_phrase()//Proc is used for phrase and response in master_controller.dm
+/datum/system/antag/proc/generate_code_phrase()//Proc is used for phrase and response in master_controller.dm
 
 	var/code_phrase = ""//What is returned when the proc finishes.
 	var/words = pick(//How many words there will be. Minimum of two. 2, 4 and 5 have a lesser chance of being selected. 3 is the most likely.
@@ -118,45 +116,9 @@ GLOBAL_DATUM_INIT(antag_service, /datum/world_service/antag, new)
 		- To skip equipping with appropriate gear, supply a positive third argument.
 */
 
-/datum/world_service/antag/proc/get_antag_data(antag_type)
-	return all_antag_types[antag_type]
-
-/datum/world_service/antag/proc/clear_antag_roles(datum/mind/player, implanted)
-	for(var/antag_type, value in all_antag_types)
-		var/datum/antagonist/antag = value
-		if(!implanted || !(antag.flags & ANTAG_IMPLANT_IMMUNE))
-			antag.remove_antagonist(player, 1, implanted)
-
-/datum/world_service/antag/proc/update_antag_icons(datum/mind/player)
-	for(var/antag_type, value in all_antag_types)
-		var/datum/antagonist/antag = value
-		if(player)
-			antag.update_icons_removed(player)
-			if(antag.is_antagonist(player))
-				antag.update_icons_added(player)
-		else
-			antag.update_all_icons()
-
-/datum/world_service/antag/proc/populate_antag_type_list()
+/datum/system/antag/proc/populate_antag_type_list()
 	for(var/antag_type in subtypesof(/datum/antagonist))
 		var/datum/antagonist/antag_daturn = new antag_type
 		own_put(src, nameof(all_antag_types), antag_daturn.id, antag_daturn)
 		all_antag_spawnpoints[antag_daturn.landmark_id] = list()
 		antag_names_to_ids[antag_daturn.role_text] = antag_daturn.id
-
-/datum/world_service/antag/proc/get_antags(atype)
-	var/datum/antagonist/antag = all_antag_types[atype]
-	if(antag && islist(antag.current_antagonists))
-		return antag.current_antagonists
-	return list()
-
-/datum/world_service/antag/proc/player_is_antag(datum/mind/player, only_offstation_roles = FALSE)
-	for(var/antag_type, value in all_antag_types)
-		var/datum/antagonist/antag = value
-		if(only_offstation_roles && !(antag.flags & ANTAG_OVERRIDE_JOB))
-			continue
-		if(player in antag.current_antagonists)
-			return TRUE
-		if(player in antag.pending_antagonists)
-			return TRUE
-	return FALSE

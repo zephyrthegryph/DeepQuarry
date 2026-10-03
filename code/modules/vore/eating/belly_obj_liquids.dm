@@ -340,7 +340,7 @@
 
 /obj/belly/state_post_apply(list/blob, flags)
 	..()
-	if(!chemistry_service().chemical_reagents[reagentid])
+	if(!SSchemistry.ready().chemical_reagents[reagentid])
 		to_chat(owner, span_warning("Belly reagent with ID \"[reagentid]\" not found, please reselect your liquid reagent"))
 		reagentid = REAGENT_ID_WATER
 		generated_reagents = list(REAGENT_ID_WATER = 1)

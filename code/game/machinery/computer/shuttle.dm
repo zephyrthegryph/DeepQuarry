@@ -23,7 +23,7 @@
 /obj/machinery/computer/shuttle/proc/interaction_authorize(mob/user, obj/item/card/W, datum/interaction/interaction)
 	if(!operable())
 		return TRUE
-	if ((!( istype(W, /obj/item/card) ) || !( SSticker ) || GLOB.emergency_shuttle_service.location() || !( user )))
+	if ((!( istype(W, /obj/item/card) ) || !( SSticker ) || SSemergency_shuttle.location() || !( user )))
 		return TRUE
 	if (istype(W, /obj/item/card/id)||istype(W, /obj/item/pda))
 		if (istype(W, /obj/item/pda))
@@ -72,7 +72,7 @@
 				message_admins("[key_name_admin(user)] has launched the shuttle")
 				log_game("[user.ckey] has launched the shuttle early")
 				to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
-				GLOB.emergency_shuttle_service.set_launch_countdown(10)
+				SSemergency_shuttle.set_launch_countdown(10)
 				src.authorized = list(  )
 
 		if("Repeal")
@@ -85,7 +85,7 @@
 			src.authorized = list(  )
 
 /obj/machinery/computer/shuttle/proc/emag_launch_chosen(datum/om/prompt/confirm/ask)
-	if(!emagged && !GLOB.emergency_shuttle_service.location())
+	if(!emagged && !SSemergency_shuttle.location())
 		to_chat(world, span_boldnotice("Alert: Shuttle launch time shortened to 10 seconds!"))
-		GLOB.emergency_shuttle_service.set_launch_countdown(10)
+		SSemergency_shuttle.set_launch_countdown(10)
 		set_emagged(1)

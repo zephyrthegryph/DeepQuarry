@@ -145,7 +145,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		domutcheck(M,null)
 		M.UpdateAppearance()
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/stun
@@ -159,7 +159,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	if(istype(M))
 		M.status_at_least(EFFECT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	consume(src)
 
 /obj/effect/mine/n2o
@@ -173,7 +173,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		if(!target.blocks_air)
 			target.assume_gas(GAS_N2O, 30)
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	consume(src)
 
 /obj/effect/mine/phoron
@@ -188,7 +188,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 			target.assume_gas(GAS_PHORON, 30)
 			target.hotspot_expose(1000, CELL_VOLUME)
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/kick
@@ -223,7 +223,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		return
 	src.fragmentate(O, num_fragments, spread_range, fragment_types) //only 20 weak fragments because you're stepping directly on it
 	visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	qdel(src)
 
 /obj/effect/mine/training	//Name and Desc commented out so it's possible to trick people with the training mines
@@ -250,7 +250,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	triggered = TRUE
 	fx_sparks(src, 3)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	empulse(loc, 2, 4, 7, 10, 1) // As strong as an EMP grenade
 	qdel(src)
 
@@ -269,7 +269,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M.adjust_fire_stacks(5)
 		M.fire_act()
 	visible_message("\The [src.name] bursts into flames!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	consume(src)
 
 /obj/effect/mine/stripping
@@ -284,7 +284,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		for(var/obj/item/content_item in contents_of(M))
 			M.drop_from_inventory(content_item)
 	visible_message("\The [src.name] explodes, stripping [M]!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 	consume(src)
 
 /obj/effect/mine/gadget
@@ -303,7 +303,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	else
 		explosion(loc, 0, 0, 2, 2)
 		visible_message("\The [src.name] detonates!")
-	GLOB.motiontracker_service.ping(src,100)
+	SSmotiontracker.ping(src,100)
 
 	qdel(src)
 

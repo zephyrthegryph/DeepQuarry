@@ -343,7 +343,7 @@
 			stack_trace("Opportunity rule [rule.id] targets missing contract definition [rule.definition_id].")
 			qdel(rule)
 			continue
-		opportunity_rules[rule.id] = rule
+		opportunity_rules[rule.id] = rule // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 		for(var/datum/contract_opportunity_signal/signal in rule.signals)
 			LAZYINITLIST(opportunity_rules_by_event[signal.event_type])
 			opportunity_rules_by_event[signal.event_type] |= rule
@@ -366,7 +366,7 @@
 		var/datum/contract_opportunity_window/window = opportunity_windows[window_key]
 		if(!window)
 			window = new(window_key, bucket, rule)
-			opportunity_windows[window_key] = window
+			opportunity_windows[window_key] = window // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 		// A batch (damage_batch.dm) prunes each window once and evaluates it
 		// once, when the batch ends, with its last event.
 		var/batching = contract_batch_depth > 0
@@ -413,7 +413,7 @@
 	opportunity_cooldowns[window_key] = EXPIRY_AT(null, CLOCK_WORLD, 0) + rule.cooldown
 	opportunities_triggered++
 	var/datum/contract_opportunity_history_entry/history_entry = new(rule, window, event, signal_snapshots)
-	opportunity_history += history_entry
+	opportunity_history += history_entry // ALLOW(ownership): the contracts system's own ledger table, written only by its own procs
 	if(length(opportunity_history) > CONTRACT_OPPORTUNITY_HISTORY_LIMIT)
 		var/datum/contract_opportunity_history_entry/expired = opportunity_history[1]
 		opportunity_history.Cut(1, 2)

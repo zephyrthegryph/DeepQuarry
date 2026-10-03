@@ -109,7 +109,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 	else if(filter_reagent_id == "-2")
 		filter = "filtering out everything"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
 	var/select = rerun_ask(user, "k113", PROC_REF(set_filter), args, /datum/om/prompt/choice, message = "Select chemical to filter. It is currently [filter].", title = "Chemical Select", choices = tgui_list)
 	if(isnull(select))
@@ -152,7 +152,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/filter, TYPE_PROC_REF(/a
 	else if(filter_reagent_id == "-2")
 		filter = "filtering out everything"
 	else if(filter_reagent_id != "")
-		var/datum/reagent/R = chemistry_service().chemical_reagents[filter_reagent_id]
+		var/datum/reagent/R = SSchemistry.ready().chemical_reagents[filter_reagent_id]
 		filter = "filtering [R.name]"
 	. += "The meter shows [reagents.total_volume]u / [reagents.maximum_volume]u. It is currently [filter]. At a rate of [amount_per_transfer_from_this]u."
 	tutorial(REFINERY_TUTORIAL_INPUT|REFINERY_TUTORIAL_FILTER, .)
