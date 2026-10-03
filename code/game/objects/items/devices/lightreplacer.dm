@@ -74,14 +74,14 @@ TRACKED(/obj/item/lightreplacer, uses)
 TRACKED(/obj/item/lightreplacer, max_uses)
 TRACKED(/obj/item/lightpainter, resetmode)
 
-CAPABILITIES(/obj/item/lightreplacer, \
-	emag(then(PROC_REF(on_emag)), repeatable = TRUE), \
-	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0), \
-		needs(req(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in))), \
-	op("add_light", item(/obj/item/light), wait(0), then(PROC_REF(light_in))), \
-	op("fill_from_box", item(/obj/item/storage), wait(0), then(PROC_REF(fill_from_box))), \
-	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at))), \
-	op("colour", in_hand(), when(PROC_REF(say_uses)), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked))))
+CAPABILITIES(/obj/item/lightreplacer)
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0),
+		needs(req(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in)))
+	op("add_light", item(/obj/item/light), wait(0), then(PROC_REF(light_in)))
+	op("fill_from_box", item(/obj/item/storage), wait(0), then(PROC_REF(fill_from_box)))
+	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at)))
+	op("colour", in_hand(), when(PROC_REF(say_uses)), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked)))
 
 MSG_DEF_SELF(lightreplacer/bad_glass, "That is not glass.")
 MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
@@ -286,9 +286,9 @@ MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 		else
 			. += "It is currently coloring lights."
 
-CAPABILITIES(/obj/item/lightpainter, \
-	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light))), \
-	op("use", in_hand(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose Light Color", "default" = nameof(setcolor)), when = PROC_REF(not_painting)), then(PROC_REF(used_in_hand))))
+CAPABILITIES(/obj/item/lightpainter)
+	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light)))
+	op("use", in_hand(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose Light Color", "default" = nameof(setcolor)), when = PROC_REF(not_painting)), then(PROC_REF(used_in_hand)))
 
 /// The painter used on a fixture.
 /obj/item/lightpainter/proc/paint_light(datum/act/op/A)

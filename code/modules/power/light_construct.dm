@@ -30,17 +30,17 @@ MSG_DEF_SELF(light_frame/no_cells, "This casing can't support a power cell!")
 	var/obj/item/cell/emergency_light/cell
 	var/cell_connectors = TRUE
 
-CAPABILITIES(/obj/machinery/light_construct, \
-	construction(start(STAGE_LIGHT_FRAME_BARE), \
-		stage(STAGE_LIGHT_FRAME_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))), \
-		stage(STAGE_LIGHT_FRAME_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed_into_fixture)), undo = null), \
-		dismantle(tool(TOOL_WRENCH), wait(3 SECONDS), then(PROC_REF(taken_apart)))), \
-	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHT_FRAME_WIRED, because = MSG(light_frame/unwire_first)), because = MSG(light_frame/unwire_first)))), \
-	owns_one(nameof(cell), /obj/item/cell/emergency_light), \
-	cell_bay(nameof(cell), accepts = /obj/item/cell/emergency_light), \
-	extend("cell_bay.cell.take", when(req_empty_hand())), \
-	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full)))), \
-	examine_line(PROC_REF(examine_cell)))
+CAPABILITIES(/obj/machinery/light_construct)
+	construction(start(STAGE_LIGHT_FRAME_BARE),
+		stage(STAGE_LIGHT_FRAME_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
+		stage(STAGE_LIGHT_FRAME_CLOSED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(closed_into_fixture)), undo = null),
+		dismantle(tool(TOOL_WRENCH), wait(3 SECONDS), then(PROC_REF(taken_apart))))
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHT_FRAME_WIRED, because = MSG(light_frame/unwire_first)), because = MSG(light_frame/unwire_first))))
+	owns_one(nameof(cell), /obj/item/cell/emergency_light)
+	cell_bay(nameof(cell), accepts = /obj/item/cell/emergency_light)
+	extend("cell_bay.cell.take", when(req_empty_hand()))
+	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full))))
+	examine_line(PROC_REF(examine_cell))
 
 // INIT: fixture_type, facing and build stage taken from the fixture it was opened from
 /obj/machinery/light_construct/Initialize(mapload, newdir, building = 0, datum/frame/frame_types/frame_type, obj/machinery/light/fixture = null)

@@ -326,8 +326,8 @@ CAPABILITIES(/obj/p2_windowed/second)
 	var/pulses = 0
 	var/gaps_asked = 0
 
-CAPABILITIES(/obj/p2_pulse, \
-	every(PROC_REF(next_gap), then(PROC_REF(pulse))))
+CAPABILITIES(/obj/p2_pulse)
+	every(PROC_REF(next_gap), then(PROC_REF(pulse)))
 
 /obj/p2_pulse/proc/next_gap(datum/act/A)
 	gaps_asked++

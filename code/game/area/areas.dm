@@ -688,9 +688,9 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	. += rel_one(nameof(apc))
 
 /// What the area's lights read from its APC, as stats the APC's state feeds through the apc relation: the lights read them through theirs.
-CAPABILITIES(/area, \
-	contributes(STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)), \
-	contributes(STAT_LIGHTS_EMERGENCY_OFF, PROC_REF(emergency_lights_switched_off)))
+CAPABILITIES(/area)
+	contributes(STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))
+	contributes(STAT_LIGHTS_EMERGENCY_OFF, PROC_REF(emergency_lights_switched_off))
 
 /// Night lighting: the night shift's ask to the APC, under the APC's UI setting.
 /area/proc/wants_night_lights(datum/act/A)

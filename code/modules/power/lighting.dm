@@ -103,26 +103,26 @@ TRACKED(/obj/machinery/light, nightshift_allowed)
 TRACKED(/obj/machinery/light, flickering)
 TRACKED(/obj/machinery/light, auto_flicker)
 
-CAPABILITIES(/obj/machinery/light, \
-	powered(POWER_CHANNEL_LIGHTING), \
-	link(/obj/machinery/light::power_area, /area::lights, b_many = TRUE), \
-	owns_one(nameof(installed_light), /obj/item/light), \
-	owns_one(nameof(cell), /obj/item/cell/emergency_light), \
-	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift)), \
-	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off)), \
-	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0), \
-		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held))), \
-	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb))), \
-	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by))), \
-	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing))), \
-	op("tune", tool(TOOL_MULTITOOL), when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), then(PROC_REF(tuned))), \
-	examine_line(PROC_REF(examine_status)), \
-	examine_line(PROC_REF(examine_charge)), \
-	on_change(nameof(status), ANY, then(PROC_REF(status_changed))), \
-	on_change(nameof(nightshift_enabled), ANY, then(PROC_REF(area_lighting_changed))), \
-	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed))), \
-	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering)), \
-	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching)))
+CAPABILITIES(/obj/machinery/light)
+	powered(POWER_CHANNEL_LIGHTING)
+	links(/obj/machinery/light::power_area, /area::lights, b_many = TRUE)
+	owns_one(nameof(installed_light), /obj/item/light)
+	owns_one(nameof(cell), /obj/item/cell/emergency_light)
+	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift))
+	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off))
+	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0),
+		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
+	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
+	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by)))
+	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing)))
+	op("tune", tool(TOOL_MULTITOOL), when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), then(PROC_REF(tuned)))
+	examine_line(PROC_REF(examine_status))
+	examine_line(PROC_REF(examine_charge))
+	on_change(nameof(status), ANY, then(PROC_REF(status_changed)))
+	on_change(nameof(nightshift_enabled), ANY, then(PROC_REF(area_lighting_changed)))
+	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed)))
+	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering))
+	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching))
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)
@@ -1013,11 +1013,11 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 TRACKED(/obj/item/light, status)
 
-CAPABILITIES(/obj/item/light, \
-	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned))), \
-	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe))), \
-	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit))), \
-	on_change(nameof(status), ANY, then(PROC_REF(status_changed))))
+CAPABILITIES(/obj/item/light)
+	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned)))
+	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe)))
+	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit)))
+	on_change(nameof(status), ANY, then(PROC_REF(status_changed)))
 
 /// The picture of a light shows its state.
 /obj/item/light/draw(datum/look/look)
@@ -1382,10 +1382,10 @@ CAPABILITIES(/obj/item/light, \
 	overlay_above_everything = TRUE
 
 /// A wall torch swallows whatever is used on it (it is no socket to smash or fill).
-CAPABILITIES(/obj/machinery/light/small/torch, \
-	without("insert"), \
-	without("hit"), \
-	op("swallow", item(/obj/item), answers(INTENT_USE, INTENT_ATTACK), wait(0), then(PROC_REF(swallowed))))
+CAPABILITIES(/obj/machinery/light/small/torch)
+	without("insert")
+	without("hit")
+	op("swallow", item(/obj/item), answers(INTENT_USE, INTENT_ATTACK), wait(0), then(PROC_REF(swallowed)))
 
 /obj/machinery/light/small/torch/proc/swallowed(datum/act/op/A)
 	return OP_OK
@@ -1406,13 +1406,13 @@ CAPABILITIES(/obj/machinery/light/small/torch, \
 
 /// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
 /// it too (it has no emergency lighting of its own to toggle).
-CAPABILITIES(/obj/machinery/light/flamp, \
-	anchor(), \
-	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on))), \
-	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off))), \
-	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0), \
-		needs(req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp))), \
-	extend("open_casing", when(cond_not(nameof(lamp_shade)))))
+CAPABILITIES(/obj/machinery/light/flamp)
+	anchor()
+	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on)))
+	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off)))
+	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0),
+		needs(req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp)))
+	extend("open_casing", when(cond_not(nameof(lamp_shade))))
 
 /obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)
 	return status != LIGHT_EMPTY

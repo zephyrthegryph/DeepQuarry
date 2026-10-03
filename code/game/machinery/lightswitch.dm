@@ -36,12 +36,12 @@
 // switch has power or not (so no machine_basics(): nothing here needs a working casing), any other item used on it leaves its prints, an
 // electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
-CAPABILITIES(/obj/machinery/light_switch, \
-	powered(POWER_CHANNEL_LIGHTING), \
-	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), wait(0), then(PROC_REF(toggle_lights))), \
-	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes()), \
-	examine_line(PROC_REF(examine_state)), \
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_reread))))
+CAPABILITIES(/obj/machinery/light_switch)
+	powered(POWER_CHANNEL_LIGHTING)
+	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), wait(0), then(PROC_REF(toggle_lights)))
+	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes())
+	examine_line(PROC_REF(examine_state))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_reread)))
 
 /// What the switch shows: dark without power, else its state, lit in the colour of the state.
 /obj/machinery/light_switch/draw(datum/look/look)
