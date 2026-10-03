@@ -532,7 +532,7 @@ DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARAN
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/derez()
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " fades away!"))
-	qdel(src)
+	consume(src)
 
 
 /// the currentarea this refers to (a relation view: it reads null once the target is deleted).
