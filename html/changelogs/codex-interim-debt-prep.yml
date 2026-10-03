@@ -38,3 +38,4 @@ changes:
   - bugfix: "Picnic blankets release their held source before unfolding and preserve inventory when removal is refused."
   - bugfix: "Broadcast emails retain queued messages until delivery and discard failed or cancelled clones."
   - admin: "Vote startup retains the initiating administrator through the vote service."
+  - bugfix: "Rigged crates shock the actual opener, including an occupant trying to escape."

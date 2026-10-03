@@ -563,6 +563,7 @@
 #include "interim_crate_cage_recovery.dm"
 #include "interim_vote_actor.dm"
 #include "interim_storage_sticky_inventory.dm"
+#include "interim_crate_opener_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

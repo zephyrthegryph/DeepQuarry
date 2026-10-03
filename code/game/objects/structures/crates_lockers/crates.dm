@@ -24,14 +24,13 @@
 /obj/structure/closet/crate/can_close()
 	return 1
 
-/obj/structure/closet/crate/open()
+/obj/structure/closet/crate/open(mob/user)
 	if(src.opened)
 		return 0
 	if(!src.can_open())
 		return 0
 	void_shipping_ledger("crate opened")
 
-	var/mob/user = istype(usr, /mob) ? usr : null
 	var/obj/item/radio/electropack/rig
 	if(rigged)
 		for(var/obj/item/radio/electropack/E in slot_contents())
