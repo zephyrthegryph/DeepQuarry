@@ -767,6 +767,7 @@
 #include "interim_atm_sticky_id.dm"
 #include "interim_atm_sticky_cash_deposit.dm"
 #include "interim_message_server_sticky_upgrade.dm"
+#include "interim_shock_kit_recovery.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

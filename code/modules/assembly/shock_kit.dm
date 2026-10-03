@@ -11,6 +11,8 @@
 
 /obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
 	if(!status)
+		if(loc?.release_refusal(src, user))
+			return ITEM_INTERACT_BLOCKING
 		var/turf/T = loc
 		if(ismob(T))
 			T = T.loc
@@ -20,7 +22,7 @@
 		rel_clear(part2, nameof(part2.master))
 		own_take(src, nameof(part1))
 		own_take(src, nameof(part2))
-		qdel(src)
+		consume(src, user)
 		return ITEM_INTERACT_SUCCESS
 	return ITEM_INTERACT_BLOCKING
 
