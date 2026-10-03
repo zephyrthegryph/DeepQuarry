@@ -83,6 +83,9 @@
 	if(F in stored_files)
 		return 0
 
+	// The first file must enter an owned list, rather than a scalar slot.
+	if(!stored_files)
+		own_set(src, nameof(stored_files), list())
 	own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files))
 	rel_set(F, nameof(/datum/computer_file/::holder), src)
 	recalculate_size()

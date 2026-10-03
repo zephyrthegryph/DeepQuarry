@@ -73,7 +73,7 @@ UI_DATA_REPLACE(/obj/item/modular_computer, "device_theme:text", "merge:ui_data_
 // Handles user's GUI input
 UI_ACT(/obj/item/modular_computer, "PC_exit", ui_act_pc_exit)
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_exit)
-	kill_program()
+	kill_program(FALSE, user)
 	return TRUE
 
 UI_ACT(/obj/item/modular_computer, "PC_shutdown", ui_act_pc_shutdown)
@@ -101,7 +101,7 @@ UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_killprogram)
 
 UI_ACT(/obj/item/modular_computer, "PC_runprogram", ui_act_pc_runprogram, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_runprogram)
-	return run_program(params["name"])
+	return run_program(params["name"], user)
 
 UI_ACT(/obj/item/modular_computer, "PC_setautorun", ui_act_pc_setautorun, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/obj/item/modular_computer, ui_act_pc_setautorun)

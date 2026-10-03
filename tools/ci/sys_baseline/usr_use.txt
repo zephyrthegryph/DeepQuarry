@@ -669,8 +669,6 @@ usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("You hav
 usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("This mob type cannot drop items."))
 usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
-usr_outside_verb	code/modules/modular_computers/computers/modular_computer/core.dm	var/mob/user = usr
-usr_outside_verb	code/modules/modular_computers/computers/modular_computer/core.dm	var/mob/user = usr
 usr_outside_verb	code/modules/multiz/hoist.dm	if(!Adjacent(usr) || !dest.Adjacent(usr)) return // carried over from the default proc
 usr_outside_verb	code/modules/multiz/hoist.dm	if (!(ishuman(usr) || issilicon(usr)))
 usr_outside_verb	code/modules/multiz/hoist.dm	if (usr.incapacitated())

@@ -152,12 +152,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 			to_chat(user, "You press the power button but \the [src] does not respond")
 
 // Relays kill program request to currently active program. Use this to quit current program.
-/obj/item/modular_computer/proc/kill_program(forced = 0)
+/obj/item/modular_computer/proc/kill_program(forced = 0, mob/user)
 	if(active_program())
 		active_program().kill_program(forced)
 		rel_clear(src, nameof(active_program))
-	var/mob/user = usr
-	om_after(src, 1, PROC_REF(delayed_reopen_ui), user)
+	om_after(src, 0.1 SECONDS, PROC_REF(delayed_reopen_ui), user)
 	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)
@@ -199,7 +198,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 	// Autorun feature
 	var/datum/computer_file/data/autorun = hard_drive ? hard_drive.find_file_by_name("autorun") : null
 	if(istype(autorun))
-		run_program(autorun.stored_data)
+		run_program(autorun.stored_data, user)
 
 	if(user)
 		tgui_interact(user)
@@ -216,9 +215,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 	if(istype(user))
 		tgui_interact(user) // Re-open the UI on this computer. It should show the main screen now.
 
-/obj/item/modular_computer/proc/run_program(prog)
+/obj/item/modular_computer/proc/run_program(prog, mob/user)
 	var/datum/computer_file/program/P = null
-	var/mob/user = usr
 	if(hard_drive)
 		P = hard_drive.find_file_by_name(prog)
 

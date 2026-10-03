@@ -39,3 +39,5 @@ changes:
   - bugfix: "Broadcast emails retain queued messages until delivery and discard failed or cancelled clones."
   - admin: "Vote startup retains the initiating administrator through the vote service."
   - bugfix: "Rigged crates shock the actual opener, including an occupant trying to escape."
+  - bugfix: "Modular computers retain the user for program access checks, autorun and delayed quit feedback."
+  - bugfix: "Computer drives retain their default and added files in a searchable owned file list."
