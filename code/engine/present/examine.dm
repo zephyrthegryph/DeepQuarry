@@ -30,8 +30,8 @@
 	for(var/datum/centry/C as anything in compiled_entries(T, kind))
 		var/datum/present_row/R = new
 		R.entry = C.item // ALLOW(ownership): a transient record of one collection: dropped with it
-		R.def = C.owner ? T.caps[C.owner] : null // ALLOW(ownership): a transient record of one collection: dropped with it
-		R.whens = C.whens // ALLOW(ownership): a transient record of one collection: dropped with it
+		R.def = C.owner ? T.caps[C.owner] : null
+		R.whens = C.whens
 		. += R
 	for(var/datum/activation/A as anything in holder.rx?.activations)
 		if(A.dead || !A.runs || T.caps[A.def.key])
@@ -42,9 +42,9 @@
 				continue
 			var/datum/present_row/R = new
 			R.entry = E // ALLOW(ownership): a transient record of one collection: dropped with it
-			R.def = A.def // ALLOW(ownership): a transient record of one collection: dropped with it
+			R.def = A.def
 			R.activation = A // ALLOW(ownership): a transient record of one collection: dropped with it
-			R.whens = C.whens // ALLOW(ownership): a transient record of one collection: dropped with it
+			R.whens = C.whens
 			. += R
 
 /// A context for evaluating a present row's condition or text proc: holder, capability, activation, and the examiner as the actor.
@@ -52,10 +52,10 @@
 	RETURN_TYPE(/datum/act/op)
 	var/datum/act/op/A = take(/datum/act/op)
 	A.holder = holder // ALLOW(ownership): a pooled transient: reset on release
-	A.cap = R?.def // ALLOW(ownership): a pooled transient: reset on release
+	A.cap = R?.def
 	A.activation = R?.activation // ALLOW(ownership): a pooled transient: reset on release
-	A.actor = examiner // ALLOW(ownership): a pooled transient: reset on release
-	A.target = holder // ALLOW(ownership): a pooled transient: reset on release
+	A.actor = examiner
+	A.target = holder
 	return A
 
 /// Do the when() blocks around a row and its own `when` argument all hold? Evaluated when read (a condition used for matching).

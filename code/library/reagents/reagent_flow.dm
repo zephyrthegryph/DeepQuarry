@@ -135,5 +135,5 @@
 /proc/reagent_flow_end(datum/reservation/reagents/R)
 	var/datum/reservation/reagents/P = R.peer
 	if(P)
-		R.peer = null
+		R.peer = null // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
 		reservation_forget(P)

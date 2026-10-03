@@ -75,7 +75,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		needle ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)), req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
-		spray ? op("spray", at_target(), label("Spray"),
+		spray ? op("spray", at_target(), when(CAP_PROC(held_has_reagents)), label("Spray"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
 		lid ? look_layer(LOOK_LID, when = cond_not(REAGENT_CONTAINER_LID_OPEN)) : null,

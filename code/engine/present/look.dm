@@ -26,9 +26,12 @@
 		return
 	for(var/datum/present_row/R as anything in present_rows(holder, ENTRY_LOOK_LAYER))
 		var/datum/act/op/A = present_context(holder, R, null)
-		var/layer_name = R.entry.args["layer"]
-		if(!(layer_name in .) && present_row_holds(holder, R, A))
-			. += layer_name
+		var/source = R.entry.args["layer"]
+		if(present_row_holds(holder, R, A))
+			var/list/names = list()
+			examine_row_text(A, source, names) // a layer name is text, or a handler's answer (CAP_PROC / PROC_REF) in the same forms an examine line takes
+			for(var/layer_name in names)
+				. |= layer_name
 		A.release()
 
 /// Draws every active layer into `look` (called from /atom/proc/draw after the legacy capabilities draw theirs).
