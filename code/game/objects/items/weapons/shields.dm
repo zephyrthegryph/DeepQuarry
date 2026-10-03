@@ -153,17 +153,21 @@ DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interac
 			return (base_block_chance - round(damage / 3)) //block bullets and beams using the old block chance
 	return base_block_chance
 
-DECLARE_INTERACTIONS(/obj/item/shield/energy, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/shield/energy/proc/can_recolor)), \
-)
+TRACKED(/obj/item/shield/energy, active)
+TRACKED(/obj/item/shield/energy, lcolor)
 
-/// Old attack_self.
-/obj/item/shield/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/shield/energy)
+	op("toggle", in_hand(), label("Toggle shield"), then(PROC_REF(shield_toggled)))
+	op("recolor", inputs(hand(), in_hand()), answers(INTENT_TOGGLE), label("Recolor shield"),
+		needs(req_adjacent()), confirms("Are you sure you want to recolor your shield?"),
+		asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor))), then(PROC_REF(shield_recolored)))
+
+/obj/item/shield/energy/proc/shield_toggled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if (CLUMSY_FAIL_CHANCE(user))
 		to_chat(user, span_warning("You beat yourself in the head with [src]."))
 		user.injure(INJURY_BLUNT, 5, source = src)
-	active = !active
+	set_active(!active)
 	if (active)
 		force = 10
 		update_icon()
@@ -186,7 +190,7 @@ DECLARE_INTERACTIONS(/obj/item/shield/energy, \
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/shield/energy/appearance_overlays()
@@ -209,28 +213,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 		holder.update_inv_l_hand()
 		holder.update_inv_r_hand()
 
-/// Requirement for recolouring the shield.
-/obj/item/shield/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)
-	if(!in_range(src, user))
-		return TRUE // the effect declines silently
-	if(user.incapacitated() || !istype(user))
-		return "you can't do that right now"
-	return TRUE
-
-/// Old click_alt.
-/obj/item/shield/energy/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(!in_range(src, user))	//Basic checks to prevent abuse
-		return TRUE
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_shield_color), message = "Are you sure you want to recolor your shield?", title = "Confirm Recolor", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return TRUE
-
-/obj/item/shield/energy/proc/ask_shield_color(datum/om/prompt/confirm/ask)
-	om_ask(ask.answerer, /datum/om/prompt/color, PROC_REF(shield_recolored), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-
-/obj/item/shield/energy/proc/shield_recolored(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/shield/energy/proc/shield_recolored(datum/act/op/A)
+	var/datum/prompt/color/choice = A.answer
+	if(!istype(choice) || !choice.value)
+		return OP_REFUSED
+	set_lcolor(sanitize_hexcolor(choice.value))
 	update_icon()
+	return OP_OK
 
 /obj/item/shield/energy/examine(mob/user)
 	. = ..()
@@ -255,11 +244,14 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 	else
 		return 0
 */
-EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/shield/riot/tele, active)
 
-/// Old attack_self.
-/obj/item/shield/riot/tele/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+CAPABILITIES(/obj/item/shield/riot/tele)
+	op("toggle", in_hand(), label("Extend or retract shield"), then(PROC_REF(shield_toggled)))
+
+/obj/item/shield/riot/tele/proc/shield_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	icon_state = "teleriot[active]"
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 
@@ -284,10 +276,9 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(inte
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 
-// === merged from shields_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/shield/energy/imperial
 	name = "energy scutum"
 	desc = "It's really easy to mispronounce the name of this shield if you've only read it in books."
@@ -311,7 +302,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/tele, INTERACT_USE(null, PROC_REF(inte
 
 
 /obj/item/shield/riot/explorer
-	name = "green explorer shield" //CHOMP explo keep
+	name = "green explorer shield"
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention."
 	icon = 'icons/obj/weapons_vr.dmi'
 	icon_state = "explorer_shield"
@@ -363,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted:}")
 
 /obj/item/shield/riot/explorer/purple
-	name = "purple explorer shield" //CHOMP explo keep
+	name = "purple explorer shield"
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention. This one is POURPEL"
 	icon_state = "explorer_shield_P"
 

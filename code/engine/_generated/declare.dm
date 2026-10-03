@@ -771,6 +771,21 @@
 	into += entry_line(101)
 	into += list(global.op("toggle", global.in_hand(), global.label("Extend or collapse cane"), global.then(PROC_REF(collapsed_toggled))))
 
+/// CAPABILITIES(/obj/item/circuitboard/security) at code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm:23
+/obj/item/circuitboard/security/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm", 23, /obj/item/circuitboard/security)
+	into += entry_line(24)
+	into += list(global.op("lock", global.item(/obj/item/card/id), global.needs(global.req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), global.label("Lock or unlock circuit controls"), global.then(PROC_REF(lock_toggled)), global.passes()))
+	into += entry_line(25)
+	into += list(global.op("networks", global.tool(TOOL_MULTITOOL), global.needs(global.req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), global.label("Configure camera networks"), global.wait(0), global.asks(/datum/prompt/text, fields = list("question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = global.computed(PROC_REF(networks_default)))), global.then(PROC_REF(networks_entered)), global.passes()))
+	into += entry_line(27)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), say = MSG(camera_board/emagged)))
+	into += entry_line(28)
+	into += list(global.extend("emag.use", global.needs(global.req_is(nameof(emagged), FALSE, because = MSG(camera_board/already)))))
+	into += entry_line(29)
+	into += list(global.extend("emag.subvert", global.needs(global.req_is(nameof(emagged), FALSE, because = MSG(camera_board/already)))))
+
 /// CAPABILITIES(/obj/item/clothing/accessory/permit) at code/modules/clothing/accessories/permits.dm:18
 /obj/item/clothing/accessory/permit/declared_entries(list/into)
 	..(into)
@@ -779,6 +794,51 @@
 	into += list(global.op("register", global.in_hand(), global.label("Register"), global.needs(global.req(/mob/living, of = ON_ACTOR), global.req_is(nameof(owner), FALSE, because = MSG(permit/already_registered))), global.then(PROC_REF(registered))))
 	into += entry_line(21)
 	into += list(global.emag(global.then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE))
+
+/// CAPABILITIES(/obj/item/gene_scanner) at code/game/objects/items/devices/scanners/gene.dm:10
+/obj/item/gene_scanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/gene.dm", 10, /obj/item/gene_scanner)
+	into += entry_line(11)
+	into += list(global.op("scan_genes", global.inputs(global.at_target(/mob), global.at_target(/obj/item/organ), global.at_target(/obj/item/dnainjector)), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Scan genetic traits"), global.needs(global.req_adjacent()), global.then(PROC_REF(scan_started), early = TRUE), global.wait(6 SECONDS), global.then(PROC_REF(genes_scanned))))
+
+/// CAPABILITIES(/obj/item/gold_star_printer) at code/game/objects/items/devices/gold_star_printer.dm:13
+/obj/item/gold_star_printer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/gold_star_printer.dm", 13, /obj/item/gold_star_printer)
+	into += entry_line(14)
+	into += list(global.op("print", global.in_hand(), global.label("Print gold star"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, step = "title", fields = list("title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32)), global.asks(/datum/prompt/text/gold_star_description, step = "description", when = PROC_REF(has_title)), global.then(PROC_REF(star_printed))))
+
+/// CAPABILITIES(/obj/item/hailer) at code/game/objects/items/devices/whistle.dm:19
+/obj/item/hailer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/whistle.dm", 19, /obj/item/hailer)
+	into += entry_line(20)
+	into += list(held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED))
+	into += entry_line(21)
+	into += list(global.op("hail", global.in_hand(), global.label("Hail"), global.cooldown(2 SECONDS), global.then(PROC_REF(hailed))))
+	into += entry_line(22)
+	into += list(global.op("set_message", global.menu(), global.label("Set Hailer Message"), global.needs(global.carried(), global.req(PROC_REF(unfried), because = PROC_REF(settings_refusal))), global.asks(/datum/prompt/text, fields = list("question" = "Please enter new message (leave blank to reset).")), global.then(PROC_REF(message_picked))))
+	into += entry_line(24)
+	into += list(global.emag(list(global.needs(global.req(PROC_REF(unfried), because = PROC_REF(emag_refusal))), global.then(PROC_REF(overloaded))), repeatable = TRUE))
+
+/// CAPABILITIES(/obj/item/haircomb) at code/game/objects/items/weapons/cosmetics.dm:88
+/obj/item/haircomb/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cosmetics.dm", 88, /obj/item/haircomb)
+	into += entry_line(89)
+	into += list(global.op("comb", global.in_hand(), global.label("Comb hair"), global.then(PROC_REF(hair_combed))))
+
+/// CAPABILITIES(/obj/item/healthanalyzer) at code/game/objects/items/devices/scanners/health.dm:43
+/obj/item/healthanalyzer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/health.dm", 43, /obj/item/healthanalyzer)
+	into += entry_line(44)
+	into += list(held_verb(/obj/item/healthanalyzer/proc/toggle_guidance, SLOT_ANY_CARRIED))
+	into += entry_line(45)
+	into += list(global.op("toggle_advanced", global.menu(), global.label("Toggle Advanced Scan"), global.when(PROC_REF(advanced_profile)), global.needs(global.carried()), global.then(PROC_REF(advanced_toggled))))
+	into += entry_line(46)
+	into += list(global.op("toggle_guidance", global.menu(), global.label("Toggle Guidance"), global.needs(global.carried()), global.then(PROC_REF(guidance_toggled))))
 
 /// CAPABILITIES(/obj/item/light) at code/modules/power/lighting.dm:1016
 /obj/item/light/declared_entries(list/into)
@@ -818,6 +878,24 @@
 	into += list(global.op("replace", global.at_target(/obj/machinery/light), global.wait(0), global.then(PROC_REF(replace_light_at))))
 	into += entry_line(84)
 	into += list(global.op("colour", global.in_hand(), global.when(PROC_REF(say_uses)), global.wait(0), global.asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), global.then(PROC_REF(colour_asked))))
+
+/// CAPABILITIES(/obj/item/lipstick) at code/game/objects/items/weapons/cosmetics.dm:36
+/obj/item/lipstick/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cosmetics.dm", 36, /obj/item/lipstick)
+	into += entry_line(37)
+	into += list(global.op("twist", global.in_hand(), global.label("Twist lipstick"), global.then(PROC_REF(twisted))))
+	into += entry_line(38)
+	into += list(global.op("apply", global.at_target(/mob/living), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Apply lipstick"), global.needs(global.req_adjacent(), global.req_is(nameof(open), TRUE), global.req(PROC_REF(clean_lips), because = PROC_REF(lip_refusal))), global.then(PROC_REF(application_started), early = TRUE), global.wait(PROC_REF(application_delay)), global.then(PROC_REF(lipstick_applied))))
+
+/// CAPABILITIES(/obj/item/makeover) at code/game/objects/items/weapons/cosmetics.dm:119
+/obj/item/makeover/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/cosmetics.dm", 119, /obj/item/makeover)
+	into += entry_line(120)
+	into += list(global.owns_one(nameof(M), starts = /datum/tgui_module/appearance_changer/mirror/coskit))
+	into += entry_line(121)
+	into += list(global.op("makeover", global.in_hand(), global.label("Adjust appearance"), global.needs(global.req(/mob/living/carbon/human, of = ON_ACTOR)), global.then(PROC_REF(appearance_adjusted))))
 
 /// CAPABILITIES(/obj/item/melee/telebaton) at code/game/objects/items/weapons/swords_axes_etc.dm:60
 /obj/item/melee/telebaton/declared_entries(list/into)
@@ -870,6 +948,15 @@
 	into += list(global.op("refit", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Refit hardsuit"), global.when(PROC_REF(has_refit_parts)), global.needs(global.req_adjacent(), global.req(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), global.then(PROC_REF(refitted))))
 	into += entry_line(26)
 	into += list(global.op("discard_spent", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Discard spent kit"), global.when(global.cond_not(PROC_REF(has_refit_parts))), global.needs(global.req_adjacent()), global.then(PROC_REF(spent_discarded))))
+
+/// CAPABILITIES(/obj/item/pipe_painter) at code/game/objects/items/devices/pipe_painter.dm:19
+/obj/item/pipe_painter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/pipe_painter.dm", 19, /obj/item/pipe_painter)
+	into += entry_line(20)
+	into += list(global.op("choose_mode", global.in_hand(), global.label("Choose paint colour"), global.needs(global.carried()), global.asks(/datum/prompt/choice/pipe_painter_mode), global.then(PROC_REF(mode_picked))))
+	into += entry_line(22)
+	into += list(global.op("paint", global.at_target(/obj/machinery/atmospherics/pipe), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Paint pipe"), global.needs(global.req_adjacent(), global.req(PROC_REF(paintable_pipe), because = MSG(op/not_available))), global.then(PROC_REF(pipe_painted))))
 
 /// CAPABILITIES(/obj/item/pizzabox) at code/modules/food/food/snacks.dm:3716
 /obj/item/pizzabox/declared_entries(list/into)
@@ -1425,12 +1512,35 @@
 	into += entry_line(93)
 	into += list(global.op("resonate", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Create resonance field"), global.needs(global.req_adjacent(), global.req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), global.then(PROC_REF(resonated))))
 
+/// CAPABILITIES(/obj/item/shield/energy) at code/game/objects/items/weapons/shields.dm:159
+/obj/item/shield/energy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 159, /obj/item/shield/energy)
+	into += entry_line(160)
+	into += list(global.op("toggle", global.in_hand(), global.label("Toggle shield"), global.then(PROC_REF(shield_toggled))))
+	into += entry_line(161)
+	into += list(global.op("recolor", global.inputs(global.hand(), global.in_hand()), global.answers(INTENT_TOGGLE), global.label("Recolor shield"), global.needs(global.req_adjacent()), global.confirms("Are you sure you want to recolor your shield?"), global.asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor))), global.then(PROC_REF(shield_recolored))))
+
+/// CAPABILITIES(/obj/item/shield/riot/tele) at code/game/objects/items/weapons/shields.dm:249
+/obj/item/shield/riot/tele/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 249, /obj/item/shield/riot/tele)
+	into += entry_line(250)
+	into += list(global.op("toggle", global.in_hand(), global.label("Extend or retract shield"), global.then(PROC_REF(shield_toggled))))
+
 /// CAPABILITIES(/obj/item/shovel) at code/modules/mining/mine_items.dm:149
 /obj/item/shovel/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mining/mine_items.dm", 149, /obj/item/shovel)
 	into += entry_line(150)
 	into += list(global.op("toggle_grave_mode", global.hand(), global.gesture(GESTURE_ALT), global.label("Toggle digging mode"), global.needs(global.req_adjacent()), global.then(PROC_REF(grave_mode_toggled))))
+
+/// CAPABILITIES(/obj/item/slime_scanner) at code/game/objects/items/devices/scanners/slime.dm:14
+/obj/item/slime_scanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/scanners/slime.dm", 14, /obj/item/slime_scanner)
+	into += entry_line(15)
+	into += list(global.op("scan_slime", global.at_target(/mob/living), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Scan slime"), global.needs(global.req_adjacent(), global.req(/mob/living/simple_mob/slime/xenobio, of = ON_TARGET, because = PROC_REF(scan_refusal))), global.then(PROC_REF(slime_scanned))))
 
 /// CAPABILITIES(/obj/item/storage) at code/game/objects/items/weapons/storage/storage.dm:57
 /obj/item/storage/declared_entries(list/into)
@@ -2566,6 +2676,20 @@
 	into += list(held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED))
 	into += entry_line(121)
 	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
+
+/// CAPABILITIES(/obj/item/text_to_speech) at code/game/objects/items/devices/text_to_speech.dm:11
+/obj/item/text_to_speech/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/text_to_speech.dm", 11, /obj/item/text_to_speech)
+	into += entry_line(12)
+	into += list(global.op("speak", global.inputs(global.in_hand(), global.hand()), global.answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), global.label("Speak a message"), global.needs(global.carried(), global.req_capable()), global.then(PROC_REF(speech_started), early = TRUE), global.asks(/datum/prompt/text/tts_message, fields = list("question" = "Choose a message to relay to those around you.", "default" = "")), global.then(PROC_REF(message_spoken))))
+
+/// CAPABILITIES(/obj/item/ticket_printer) at code/game/objects/items/devices/ticket_printer.dm:12
+/obj/item/ticket_printer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/ticket_printer.dm", 12, /obj/item/ticket_printer)
+	into += entry_line(13)
+	into += list(global.op("print", global.in_hand(), global.label("Print ticket"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, step = "recipient", fields = list("title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)), global.asks(/datum/prompt/text/ticket_printer_details, step = "details", when = PROC_REF(has_recipient)), global.then(PROC_REF(ticket_printed))))
 
 /// CAPABILITIES(/obj/item/trash/bowl) at code/modules/food/food/z_custom_food.dm:252
 /obj/item/trash/bowl/declared_entries(list/into)

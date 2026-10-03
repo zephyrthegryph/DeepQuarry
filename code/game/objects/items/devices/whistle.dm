@@ -8,55 +8,57 @@
 	slot_flags = SLOT_EARS
 
 	var/use_message = "Halt! Security!"
-	COOLDOWN_DECLARE(spamcheck)
 	var/insults
 
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-/obj/item/hailer/proc/set_message_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(message_entered), message = "Please enter new message (leave blank to reset).", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+TRACKED(/obj/item/hailer, use_message)
+TRACKED(/obj/item/hailer, insults)
 
-/obj/item/hailer/proc/message_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_message = ask.text
-	if(!new_message || new_message == "")
-		use_message = "Halt! Security!"
-	else
-		use_message = capitalize(new_message)
+CAPABILITIES(/obj/item/hailer)
+	held_verb(/obj/item/hailer/proc/set_hailer_message, SLOT_ANY_CARRIED)
+	op("hail", in_hand(), label("Hail"), cooldown(2 SECONDS), then(PROC_REF(hailed)))
+	op("set_message", menu(), label("Set Hailer Message"), needs(carried(), req(PROC_REF(unfried), because = PROC_REF(settings_refusal))),
+		asks(/datum/prompt/text, fields = list("question" = "Please enter new message (leave blank to reset).")), then(PROC_REF(message_picked)))
+	emag(list(needs(req(PROC_REF(unfried), because = PROC_REF(emag_refusal))), then(PROC_REF(overloaded))), repeatable = TRUE)
 
-	to_chat(user, "You configure the hailer to shout \"[use_message]\".")
+/obj/item/hailer/proc/set_hailer_message()
+	set name = "Set Hailer Message"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "set_message", null, ORIGIN_VERB)
 
-DECLARE_INTERACTIONS(/obj/item/hailer, INTERACT_USE(null, PROC_REF(interaction_self)))
+/obj/item/hailer/proc/unfried(datum/act/op/A)
+	return isnull(insults)
 
-/obj/item/hailer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if (!COOLDOWN_FINISHED(src, spamcheck))
-		return
+/obj/item/hailer/proc/settings_refusal(datum/act/op/A)
+	return "the hailer is fried, the tiny input screen just shows a waving ASCII penis"
 
+/obj/item/hailer/proc/emag_refusal(datum/act/op/A)
+	return "The hailer is fried. You can't even fit the sequencer into the input slot."
+
+/obj/item/hailer/proc/message_picked(datum/act/op/A)
+	var/datum/prompt/text/ask = A.answer
+	set_use_message(ask.value ? capitalize(ask.value) : "Halt! Security!")
+	to_chat(A.actor, "You configure the hailer to shout \"[use_message]\".")
+	return OP_OK
+
+/obj/item/hailer/proc/hailed(datum/act/op/A)
+	var/mob/user = A.actor
 	if(isnull(insults))
 		play_sfx(src, SFX_VOICE_HALT)
 		user.audible_message(span_warning("[user]'s [name] rasps, \"[use_message]\""), span_warning("\The [user] holds up \the [name]."), runemessage = "\[TTS Voice\] [use_message]")
 	else
 		if(insults > 0)
 			play_sfx(src, SFX_VOICE_BINSULT)
-			// Yes, it used to show the transcription of the sound clip. That was a) inaccurate b) immature as shit.
 			user.audible_message(span_warning("[user]'s [name] gurgles something indecipherable and deeply offensive."), span_warning("\The [user] holds up \the [name]."), runemessage = "\[TTS Voice\] #&@&^%(*")
-			insults--
+			set_insults(insults - 1)
 		else
 			to_chat(user, span_danger("*BZZZZZZZZT*"))
+	return OP_OK
 
-	COOLDOWN_START(src, spamcheck, 2 SECONDS)
-
-DECLARE_EMAG_REPEATABLE(/obj/item/hailer, PROC_REF(on_emag), null)
-/obj/item/hailer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(isnull(insults))
-		to_chat(user, span_danger("You overload \the [src]'s voice synthesizer."))
-		insults = rand(1, 3)//to prevent dickflooding
-		return 1
-	else
-		to_chat(user, "The hailer is fried. You can't even fit the sequencer into the input slot.")
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/hailer, \
-	INTERACT_VERB("Set Hailer Message", PROC_REF(set_message_effect), REQ_IN_INVENTORY, REQ_BECAUSE(REQ_FIELD_EQ("insults", null), "the hailer is fried, the tiny input screen just shows a waving ASCII penis")), \
-)
+/obj/item/hailer/proc/overloaded(datum/act/op/A)
+	to_chat(A.actor, span_danger("You overload \the [src]'s voice synthesizer."))
+	set_insults(rand(1, 3))
+	return OP_OK

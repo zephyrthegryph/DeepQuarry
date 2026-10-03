@@ -7,54 +7,45 @@
 	icon_state = "gold_star_printer"
 	slot_flags = SLOT_BELT | SLOT_HOLSTER
 	var/print_cooldown = 1 MINUTE
-	COOLDOWN_DECLARE(print_cooldown_until)
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/gold_star_printer)
+	op("print", in_hand(), label("Print gold star"), cooldown(print_cooldown), needs(carried()),
+		asks(/datum/prompt/text, step = "title", fields = list("title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32)),
+		asks(/datum/prompt/text/gold_star_description, step = "description", when = PROC_REF(has_title)),
+		then(PROC_REF(star_printed)))
 
-/obj/item/gold_star_printer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(COOLDOWN_FINISHED(src, print_cooldown_until))
-		make_star(user)
-	else
-		to_chat(user, span_warning("\The [src] is not ready to print another star yet."))
+/obj/item/gold_star_printer/proc/has_title(datum/act/op/A)
+	var/datum/prompt/text/title_answer = A.step_answer("title")
+	return !!title_answer?.value
 
-/obj/item/gold_star_printer/proc/make_star(mob/user)
-
-	om_ask(user, /datum/om/prompt/text, PROC_REF(star_titled), title = "Title", message = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", max_length = 32, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/datum/om/prompt/text/gold_star_desc
+/datum/prompt/text/gold_star_description
 	title = "Ticket Details"
-	max_length = 200
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
-	var/star_title
+	max_len = 200
 
-/datum/om/prompt/text/gold_star_desc/prepare()
-	message = "Choose the description of the 'Gold Star for [star_title]', this is what it will read on examination. (Max length: 200)"
-	return TRUE
+/datum/prompt/text/gold_star_description/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/datum/prompt/text/title_answer = asking.step_answer("title")
+		question = "Choose the description of the 'Gold Star for [title_answer.value]', this is what it will read on examination. (Max length: 200)"
 
-/obj/item/gold_star_printer/proc/star_titled(datum/om/prompt/text/ask)
-	if(!ask.text)
-		return
-	om_ask(ask.answerer, /datum/om/prompt/text/gold_star_desc, PROC_REF(star_described), star_title = ask.text)
-
-/obj/item/gold_star_printer/proc/star_described(datum/om/prompt/text/gold_star_desc/ask)
-	var/mob/user = ask.answerer
-	var/star_title = ask.star_title
-	var/star_desc = ask.text
-	if(!star_desc)
-		return
-
+/obj/item/gold_star_printer/proc/star_printed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/datum/prompt/text/title_answer = A.step_answer("title")
+	var/datum/prompt/text/description_answer = A.step_answer("description")
+	var/star_title = title_answer?.value
+	var/star_desc = description_answer?.value
+	if(!star_title || !star_desc)
+		return OP_REFUSED
 	var/turf/our_turf = get_turf(user)
-
 	var/obj/item/clothing/accessory/gold_sticker/p = new /obj/item/clothing/accessory/gold_sticker(our_turf)
-
 	p.desc = "A gold star issued by [user] for [star_title], if you look closely, the fine print reads: [star_desc]"
 	p.name = "Gold Star for [star_title]"
 	play_sfx(user, SFX_ITEMS_TICKET_PRINTER)
-
 	log_admin("[key_name(user)] has printed a Gold Star for [star_title] with the description: \"[star_desc]\"")
-	COOLDOWN_START(src, print_cooldown_until, print_cooldown)
+	return OP_OK
 
 /obj/item/clothing/accessory/gold_sticker
 	name = "Gold Star"

@@ -891,6 +891,7 @@
 #include "round2_technomancer_ability_actor.dm"
 #include "round2_rig_grenade_checked_load.dm"
 #include "round2_translator_native_choice.dm"
+#include "round2_camera_board_native.dm"
 #include "interim2_caseless_chamber_disposal.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

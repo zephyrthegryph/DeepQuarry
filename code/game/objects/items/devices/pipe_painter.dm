@@ -10,28 +10,42 @@
 
 /obj/item/pipe_painter/Initialize(mapload)
 	. = ..()
-	modes = new()
 	for(var/C in GLOB.pipe_colors)
-		modes += "[C]"
-	mode = pick(modes)
+		LAZYADD(modes, "[C]")
+	set_mode(pick(modes))
 
-/obj/item/pipe_painter/afterattack(atom/A, mob/user as mob, proximity)
-	if(!proximity)
-		return
+TRACKED(/obj/item/pipe_painter, mode)
 
-	if(!istype(A,/obj/machinery/atmospherics/pipe) || istype(A,/obj/machinery/atmospherics/pipe/tank) || istype(A,/obj/machinery/atmospherics/pipe/vent) || istype(A,/obj/machinery/atmospherics/pipe/simple/heat_exchanging) || istype(A,/obj/machinery/atmospherics/pipe/simple/insulated) || !in_range(user, A))
-		return
-	var/obj/machinery/atmospherics/pipe/P = A
+CAPABILITIES(/obj/item/pipe_painter)
+	op("choose_mode", in_hand(), label("Choose paint colour"), needs(carried()),
+		asks(/datum/prompt/choice/pipe_painter_mode), then(PROC_REF(mode_picked)))
+	op("paint", at_target(/obj/machinery/atmospherics/pipe), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint pipe"),
+		needs(req_adjacent(), req(PROC_REF(paintable_pipe), because = MSG(op/not_available))), then(PROC_REF(pipe_painted)))
 
+/datum/prompt/choice/pipe_painter_mode
+	title = "Pipe painter"
+	question = "Which colour do you want to use?"
+
+/datum/prompt/choice/pipe_painter_mode/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/pipe_painter/painter = asking.holder // ALLOW(check_grep): the operation holder is the paint device whose colours populate this prompt, not an admin credential
+		if(istype(painter))
+			choices = painter.modes.Copy()
+
+/obj/item/pipe_painter/proc/mode_picked(datum/act/op/A)
+	var/datum/prompt/choice/picked = A.answer
+	set_mode(picked.value)
+	return OP_OK
+
+/obj/item/pipe_painter/proc/paintable_pipe(datum/act/op/A)
+	return !istype(A.target, /obj/machinery/atmospherics/pipe/tank) && !istype(A.target, /obj/machinery/atmospherics/pipe/vent) && !istype(A.target, /obj/machinery/atmospherics/pipe/simple/heat_exchanging) && !istype(A.target, /obj/machinery/atmospherics/pipe/simple/insulated)
+
+/obj/item/pipe_painter/proc/pipe_painted(datum/act/op/A)
+	var/obj/machinery/atmospherics/pipe/P = A.target
 	P.change_color(GLOB.pipe_colors[mode])
-
-DECLARE_INTERACTIONS(/obj/item/pipe_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/obj/item/pipe_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(mode_chosen), title = "Pipe painter", message = "Which colour do you want to use?", choices = modes, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/pipe_painter/proc/mode_chosen(datum/om/prompt/choice/ask)
-	mode = ask.choice
+	return OP_OK
 
 /obj/item/pipe_painter/examine(mob/user)
 	. = ..()

@@ -32,7 +32,7 @@
 		if(entry && entry.icon_state == "eshield_blade")
 			inactive_blades++
 	TEST_ASSERT_EQUAL(inactive_blades, 0, "the actual initial inactive appearance contains no blade")
-	shield.interaction_self(holder, shield, null)
+	perform_op(holder, shield, "toggle", null, ORIGIN_SYSTEM)
 	TEST_ASSERT(shield.active, "the actual shield interaction extends its blade")
 	TEST_ASSERT_EQUAL(shield.item_state, "eshield_blade", "the actual extended blade has its held item state")
 	TEST_ASSERT_EQUAL(shield.light_range, shield.lrange, "the real active shield enables its configured illumination")
@@ -52,7 +52,7 @@
 			active_blades++
 	TEST_ASSERT_EQUAL(active_blades, 1, "the actual extended appearance contains exactly one blade overlay")
 	TEST_ASSERT_EQUAL(holder.get_active_hand(), shield, "appearance generation preserves actual held ownership")
-	shield.interaction_self(holder, shield, null)
+	perform_op(holder, shield, "toggle", null, ORIGIN_SYSTEM)
 	TEST_ASSERT(!shield.active, "the actual shield interaction retracts its blade")
 	TEST_ASSERT_EQUAL(shield.light_range, 0, "the real retracted shield extinguishes its illumination")
 	TEST_ASSERT_EQUAL(shield.item_state, "eshield", "the actual retracted shield restores its held item state")

@@ -1,6 +1,13 @@
-/obj/item/healthanalyzer/proc/toggle_guide_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	guide = !guide
-	to_chat(user, span_notice("You toggle \the [src]'s guidance system [guide ? "on" : "off"]."))
+/obj/item/healthanalyzer/proc/toggle_guidance()
+	set name = "Toggle Guidance"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "toggle_guidance", null, ORIGIN_VERB)
+
+/obj/item/healthanalyzer/proc/guidance_toggled(datum/act/op/A)
+	set_guide(!guide)
+	to_chat(A.actor, span_notice("You toggle \the [src]'s guidance system [guide ? "on" : "off"]."))
+	return OP_OK
 
 /obj/item/healthanalyzer/guide
 	name = "Instructional health analyzer"
@@ -52,8 +59,3 @@
 	if(!length(lines))
 		return
 	user.show_message(span_notice(span_bold("GUIDANCE SYSTEM BEGIN")) + "<br>" + lines.Join("<br>") + "<br>" + span_notice("For more detailed information on the patient's condition, utilize a body scanner at the closest medical bay."), 1)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/healthanalyzer, \
-	INTERACT_VERB("Toggle Guidance", PROC_REF(toggle_guide_effect), REQ_IN_INVENTORY), \
-)
