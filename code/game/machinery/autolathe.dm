@@ -414,16 +414,19 @@ UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
 	SStgui.update_uis(src)
 
 /obj/machinery/autolathe/MouseDrop(over_object, src_location, over_location)
-	if(isobserver(usr) || !Adjacent(usr))
+	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native lathe drag captures its actor before the unchanged layout guards.
+
+/obj/machinery/autolathe/proc/choose_drop_with_actor(mob/user, over_location)
+	if(isobserver(user) || !Adjacent(user))
 		return
 	if(om_busy(src))
-		balloon_alert(usr, "printing started!")
+		balloon_alert(user, "printing started!")
 		return
 	var/direction = get_dir(src, over_location)
 	if(!direction)
 		return
 	drop_direction = direction
-	balloon_alert(usr, "dropping [dir2text(drop_direction)]")
+	balloon_alert(user, "dropping [dir2text(drop_direction)]")
 
 /// Old click_alt: kept whole (BLOCKING and SUCCESS both consume the input; neither falls through).
 /datum/interaction/machine_alt/autolathe_reset_drop

@@ -105,9 +105,6 @@ usr_outside_verb	code/game/gamemodes/technomancer/core_obj.dm	var/mob/living/car
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	if(ishuman(usr) || isAI(usr)) // ghosts can call ..() for examine
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	var/mob/living/L = usr
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	usr.examinate(src)
-usr_outside_verb	code/game/machinery/autolathe.dm	if(isobserver(usr) || !Adjacent(usr))
-usr_outside_verb	code/game/machinery/autolathe.dm	balloon_alert(usr, "printing started!")
-usr_outside_verb	code/game/machinery/autolathe.dm	balloon_alert(usr, "dropping [dir2text(drop_direction)]")
 usr_outside_verb	code/game/machinery/computer/bodycamera.dm	if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
 usr_outside_verb	code/game/machinery/computer/bodycamera.dm	act_message(usr, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
 usr_outside_verb	code/game/machinery/computer/bodycamera.dm	attack_hand(usr)
