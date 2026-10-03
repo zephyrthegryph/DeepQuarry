@@ -278,10 +278,9 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(LAZYLEN(containers) >= container_limit)
 		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		return
+	if(!own_add(src, nameof(containers), W, user = user))
+		return
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
-	track_biomass_container(W)
-	user.drop_item()
-	W.forceMove(src)
 
 /// Old attackby.
 /obj/machinery/clonepod/proc/clonepod_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
