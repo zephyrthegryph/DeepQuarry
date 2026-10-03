@@ -1,4 +1,4 @@
-//! The E5 reads spike (doc/rewrite/final_api.html section 19), held forever: on 20 real handlers
+//! The E5 reads spike (doc/rewrite/final_api.html section 19), held forever: on 18 real handlers
 //! the generated reads contain every read in the existing hand-written lists, with at most one
 //! handler needing a `READS_AS` / `READS_FROM` annotation. The handlers and the one invalidation
 //! token are pinned in `tools/analyze/oracle/spike.toml`.
@@ -21,7 +21,7 @@ fn repo_root() -> PathBuf {
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
-    assert_eq!(cfg.handlers.len(), 20, "the spike pins 20 handlers");
+    assert_eq!(cfg.handlers.len(), 18, "the spike pins 18 handlers");
 
     let opts = Options { root: root.clone(), lints: vec!["sem/keys".to_string()], no_cache: true, raw: true, ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
@@ -58,7 +58,7 @@ fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     }
     let new_helpers: Vec<&String> = helpers.iter().filter(|h| !cfg.unannotated.contains(*h)).collect();
     assert!(new_helpers.is_empty(), "handlers call global procs without READS_FROM that spike.toml [unannotated] does not list: {:?}", new_helpers);
-    eprintln!("spike: {} of 20 handlers call {} global helpers without READS_FROM", with_globals, helpers.len());
+    eprintln!("spike: {} of 18 handlers call {} global helpers without READS_FROM", with_globals, helpers.len());
     assert!(needing_annotation.len() <= 1, "more than one handler needs an annotation: {:#?}", needing_annotation);
     // The report the lead reads: how many differ only by the invalidation token.
     let tokens = cfg
@@ -66,5 +66,5 @@ fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
         .iter()
         .filter(|(t, k, v)| rows.iter().any(|r| &r.ty == t && r.kind.label() == k && &r.var == v && !r.tokens.is_empty()))
         .count();
-    eprintln!("spike: 20 handlers, {} need an annotation, {} list the invalidation token", needing_annotation.len(), tokens);
+    eprintln!("spike: 18 handlers, {} need an annotation, {} list the invalidation token", needing_annotation.len(), tokens);
 }

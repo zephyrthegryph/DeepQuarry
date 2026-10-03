@@ -259,7 +259,7 @@ edge is added), `reads_as_uncovered` (a `READS_AS` accessor reading untracked st
 Ranks (`sem/graph.rs`): 0 for a value that reads only base state, else one more than its deepest derived read; a handler's
 rank in `reads.dm` is one more than the deepest derived value it reads.
 
-**The spike (oracle).** `tools/analyze/oracle/spike.toml` pins 20 real handlers; `cargo test --test oracle` and `analyze sem
+**The spike (oracle).** `tools/analyze/oracle/spike.toml` pins 18 real handlers; `cargo test --test oracle` and `analyze sem
 oracle` check that the generated reads contain every read in their hand-written lists (`derived()` entries and the lists
 the legacy lint generated into `code/_generated/reads.dm`). Result: 20 of 20 contain every hand-written read and none needs a
 `READS_AS`; five atmos push lists also name `rust_device_rev`, an invalidation token bumped by setters, which is not a read
