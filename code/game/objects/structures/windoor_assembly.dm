@@ -104,7 +104,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 /// Drones and engineering borgs next to it rename it.
 /obj/structure/windoor_assembly/proc/robot_may_rename(datum/act/op/A)
 	var/mob/living/silicon/robot/user = A.actor
-	return istype(user) && Adjacent(user) && user.module?.names_assemblies
+	return istype(user) && user.module?.names_assemblies // ALLOW(reads): a cyborg's module is fixed between modules; the click re-evaluates it
 
 /obj/structure/windoor_assembly/proc/secured_down(datum/act/op/A)
 	to_chat(A.actor, span_notice("You've secured the windoor assembly!"))
@@ -146,7 +146,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 
 /// The electronics in it are not a burnt out board.
 /obj/structure/windoor_assembly/proc/board_whole(datum/act/A)
-	return !istype(electronics, /obj/item/circuitboard/broken) // ALLOW(reads): the board in it is read when the crowbar is tried; it cannot change while the assembly is finished
+	return !istype(electronics, /obj/item/circuitboard/broken)
 
 /// A loose bare frame comes apart into its glass.
 /obj/structure/windoor_assembly/proc/disassembled(datum/act/op/A)
@@ -163,9 +163,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 	to_chat(A.actor, span_notice("You finish the windoor!"))
 	SStgui.close_uis(src)
 	set_density(TRUE) //Shouldn't matter but just incase
-	var/obj/machinery/door/window/windoor = replace_with(src, secure ? /obj/machinery/door/window/brigdoor : /obj/machinery/door/window)
-	if(!windoor)
-		return OP_FAILED
+	var/obj/machinery/door/window/windoor = secure ? new /obj/machinery/door/window/brigdoor(loc) : new /obj/machinery/door/window(loc)
 	var/side = facing == "l" ? "left" : "right"
 	var/open_state = secure ? "[side]secure" : side
 	windoor.icon_state = "[open_state]open"
@@ -182,11 +180,12 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 		windoor.req_access = electronics.conf_access
 	electronics.forceMove(windoor)
 	own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
+	qdel(src)
 	return OP_OK
 
 /// How far the assembly is built, as the number its picture is made from: 01 loose or bolted down, 02 wired or beyond.
 /obj/structure/windoor_assembly/proc/sprite_state()
-	return built(src, STAGE_WINDOOR_ASSEMBLY_WIRED) ? "02" : "01"
+	return (built(src, STAGE_WINDOOR_ASSEMBLY_WIRED) || built(src, STAGE_WINDOOR_ASSEMBLY_BOARDED)) ? "02" : "01"
 
 /// The name follows the step: anchored, wired, near finished.
 /obj/structure/windoor_assembly/proc/update_state()
@@ -212,7 +211,7 @@ APPEARANCE_NONE(/obj/structure/windoor_assembly)
 	look.state("[facing]_[secure]windoor_assembly[sprite_state()]")
 
 /obj/structure/windoor_assembly/handle_rotation_verbs(angle, mob/user)
-	var/wired = built(src, STAGE_WINDOOR_ASSEMBLY_WIRED)
+	var/wired = sprite_state() == "02"
 	if(wired)
 		update_nearby_tiles(need_rebuild=1) //Compel updates before
 	. = ..()

@@ -96,8 +96,7 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"glass",
 	"module",
 	"names_assemblies",
-	"electronics",
-	"locs"
+	"electronics"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -369,7 +368,5 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 85)),
 	"/obj/structure/windoor_assembly::robot_may_rename" = list(0,
 		list(2, 0, 83),
-		list(2, 0, 84, 83),
-		list(1, 0, 20),
-		list(1, 0, 86))
+		list(2, 0, 84, 83))
 ))

@@ -2242,6 +2242,8 @@
 	into += entry_line(166)
 	into += list(global.op("weld_repair", global.tool(TOOL_WELDER), global.stance(I_HELP), global.label("Repair"), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.costs(RES_FUEL, 1), global.needs(global.req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), global.then(PROC_REF(repaired)), global.says(MSG(windoor/repaired))))
 	into += entry_line(168)
+	into += list(global.op("crowbar_shut", global.tool(TOOL_CROWBAR), global.when(nameof(density)), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(169)
 	into += list(global.op("pry_out", global.tool(TOOL_CROWBAR), global.label("Pry out of the frame"), global.when(global.cond_not(nameof(density))), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.then(PROC_REF(pried_out))))
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166

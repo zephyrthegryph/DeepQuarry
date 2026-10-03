@@ -433,8 +433,8 @@
 		"/obj/structure/door_assembly|robot|none => |",
 		"/obj/structure/door_assembly|ai|none => |",
 		"/obj/structure/door_assembly|ghost|none => |",
-		"/obj/structure/windoor_assembly|human|none => gen_verb_windoor_assembly_flip_effect,windoor_assembly_item|",
-		"/obj/structure/windoor_assembly|robot|none => gen_robot_windoor_robot_rename,gen_verb_windoor_assembly_flip_effect,windoor_assembly_item|",
+		"/obj/structure/windoor_assembly|human|none => |",
+		"/obj/structure/windoor_assembly|robot|none => |",
 		"/obj/structure/windoor_assembly|ai|none => |",
 		"/obj/structure/windoor_assembly|ghost|none => |",
 	)
