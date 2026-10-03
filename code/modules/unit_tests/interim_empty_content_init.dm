@@ -1,5 +1,6 @@
 /// Removing empty initialization wrappers retains actual declared contents and public behavior.
 /datum/unit_test/interim_empty_content_init/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/reagent_containers/food/drinks/bluespace_coffee/coffee = allocate(/obj/item/reagent_containers/food/drinks/bluespace_coffee, T)
@@ -8,14 +9,18 @@
 	TEST_ASSERT_EQUAL(coffee.amount_per_transfer_from_this, 5, "actual coffee retains its inherited sip amount")
 	TEST_ASSERT(user.put_in_active_hand(coffee), "actual actor holds its real infinite coffee")
 	var/ingested_before = user.ingested.get_reagent_amount(REAGENT_ID_COFFEE)
-	TEST_ASSERT_EQUAL(coffee.attack(user, user), ITEM_INTERACT_SUCCESS, "actual coffee self-drinking is successful")
+	user.next_click = 0
+	test_click(user, user, coffee)
+	test_time(3)
 	TEST_ASSERT(abs(user.ingested.get_reagent_amount(REAGENT_ID_COFFEE) - ingested_before - 5) < 0.001, "actual self-drinking transfers the exact inherited five-unit sip")
 	TEST_ASSERT_EQUAL(coffee.reagents.get_reagent_amount(REAGENT_ID_COFFEE), 50, "actual infinite coffee refills its source after drinking")
 	TEST_ASSERT_EQUAL(coffee.reagents.total_volume, 50, "actual refill respects the original fifty-unit capacity")
 	TEST_ASSERT(!QDELETED(coffee), "actual drinking preserves the same infinite coffee item")
 	TEST_ASSERT_EQUAL(user.get_active_hand(), coffee, "actual drinking retains its original hand identity")
+	test_driver_end()
 
 /datum/unit_test/interim_empty_content_init/churro/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/reagent_containers/food/snacks/churro/churro = allocate(/obj/item/reagent_containers/food/snacks/churro, T)
@@ -25,19 +30,20 @@
 	TEST_ASSERT_EQUAL(churro.bitesize, 2, "actual churro retains its two-unit bite")
 	TEST_ASSERT(user.put_in_active_hand(churro), "actual actor holds its initialized churro")
 	var/ingested_before = user.ingested.total_volume
-	TEST_ASSERT_EQUAL(churro.finish_feeding(user, user, FALSE, null), TRUE, "actual first churro bite executes")
+	TEST_ASSERT_EQUAL(interim_bite(user, churro), TRUE, "actual first churro bite executes")
 	TEST_ASSERT_EQUAL(churro.reagents.total_volume, 3, "actual first bite debits two units")
 	TEST_ASSERT_EQUAL(churro.bitecount, 1, "actual first bite records one bite")
 	TEST_ASSERT(!QDELETED(churro), "actual partial bite preserves its churro")
-	TEST_ASSERT_EQUAL(churro.finish_feeding(user, user, FALSE, null), TRUE, "actual second churro bite executes")
+	TEST_ASSERT_EQUAL(interim_bite(user, churro), TRUE, "actual second churro bite executes")
 	TEST_ASSERT(abs(churro.reagents.total_volume - 1) < 0.001, "actual second bite leaves one unit within native reagent precision")
-	TEST_ASSERT_EQUAL(churro.finish_feeding(user, user, FALSE, null), TRUE, "actual final churro bite executes")
+	TEST_ASSERT_EQUAL(interim_bite(user, churro), TRUE, "actual final churro bite executes")
 	var/obj/item/trash = user.get_active_hand()
 	own(trash)
 	TEST_ASSERT(QDELETED(churro), "actual final bite consumes the original churro")
 	TEST_ASSERT(abs(user.ingested.total_volume - ingested_before - 5) < 0.001, "actual bites transfer all five original units to the real ingest holder")
 	TEST_ASSERT(trash && trash.type == /obj/item/paper/crumpled, "actual finished churro yields its exact declared paper trash")
 	TEST_ASSERT_EQUAL(trash.loc, user, "actual churro trash is held by its original eater")
+	test_driver_end()
 
 /datum/unit_test/interim_empty_content_init/ecig/Run()
 	var/turf/T = run_loc_floor_bottom_left

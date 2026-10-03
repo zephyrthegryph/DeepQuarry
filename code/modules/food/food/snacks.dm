@@ -50,6 +50,9 @@
 	/// Sound of eating.
 	var/eating_sound = SFX_ITEMS_EATFOOD
 
+	/// What it says when it is emptied into an open container held to it (a /datum/msg type), or null: it is not (an egg is cracked, a fruit torn open).
+	var/opens_into
+
 	/// Yems.
 	food_can_insert_micro = TRUE
 
@@ -125,231 +128,6 @@
 				qdel(V)
 		consume(src, feeder || eater)
 
-/// Old attack_self. Subtypes with special_handling do their own self-use (their candidates run first).
-/obj/item/reagent_containers/food/snacks/proc/snacks_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	if(package && !user.incapacitated())
-		unpackage(user)
-
-	if(canned && !user.incapacitated())
-		uncan(user)
-	return TRUE
-
-/obj/item/reagent_containers/food/snacks/attack(mob/living/eater, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(reagents && !reagents.total_volume)
-		balloon_alert(user, "none of \the [src] left!")
-		consume(src, user)
-		return ITEM_INTERACT_FAILURE
-
-	if(package)
-		balloon_alert(user, "the package is in the way!")
-		return ITEM_INTERACT_FAILURE
-
-	if(canned)
-		balloon_alert(user, "the can is closed!")
-		return ITEM_INTERACT_FAILURE
-
-	if(istype(eater, /mob/living/carbon))
-		//TODO: replace with standard_feed_mob() call.
-
-		if(!eater.consume_liquid_belly)
-			if(liquid_belly_check())
-				to_chat(user, span_infoplain("[user == eater ? "You can't" : "\The [eater] can't"] consume that, it contains something produced from a belly!"))
-				return ITEM_INTERACT_FAILURE
-		var/swallow_whole = FALSE
-		var/obj/belly/belly_target				// These are surprise tools that will help us later
-
-		var/fullness = eater.nutrition + (eater.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT) * 25)
-		if(eater == user)								//If you're eating it yourself
-			if(ishuman(eater))
-				var/mob/living/carbon/human/human_eater = eater
-				if(!human_eater.check_has_mouth())
-					balloon_alert(user, "you don't have a mouth!")
-					return ITEM_INTERACT_FAILURE
-				var/obj/item/blocked = null
-				if(survivalfood)
-					blocked = human_eater.check_mouth_coverage_survival()
-				else
-					blocked = human_eater.check_mouth_coverage()
-				if(blocked)
-					balloon_alert(user, "\the [blocked] is in the way!")
-					return ITEM_INTERACT_FAILURE
-
-			user.setClickCooldown(user.get_attack_speed(src)) //puts a limit on how fast people can eat/drink things
-			// Changing a lot of the to_chat ahead
-			if (fullness <= 50)
-				to_chat(eater, span_danger("You hungrily chew out a piece of [src] and gobble it!"))
-			if (fullness > 50 && fullness <= 150)
-				to_chat(eater, span_notice("You hungrily begin to eat [src]."))
-			if (fullness > 150 && fullness <= 350)
-				to_chat(eater, span_notice("You take a bite of [src]."))
-			if (fullness > 350 && fullness <= 550)
-				to_chat(eater, span_notice("You chew a bit of [src], despite feeling rather full."))
-			if (fullness > 550 && fullness <= 650)
-				to_chat(eater, span_notice("You swallow some more of the [src], causing your belly to swell out a little."))
-			if (fullness > 650 && fullness <= 1000)
-				to_chat(eater, span_notice("You stuff yourself with the [src]. Your stomach feels very heavy."))
-			if (fullness > 1000 && fullness <= 3000)
-				to_chat(eater, span_notice("You swallow down the hunk of [src]. Surely you have to have some limits?"))
-			if (fullness > 3000 && fullness <= 5500)
-				to_chat(eater, span_danger("You force the piece of [src] down. You can feel your stomach getting firm as it reaches its limits."))
-			if (fullness > 5500 && fullness <= 6000)
-				to_chat(eater, span_danger("You glug down the bite of [src], you are reaching the very limits of what you can eat, but maybe a few more bites could be managed..."))
-			if (fullness > 6000) // There has to be a limit eventually.
-				to_chat(eater, span_danger("Nope. That's it. You literally cannot force any more of [src] to go down your throat. It's fair to say you're full."))
-				return ITEM_INTERACT_FAILURE
-
-		else if(stance == I_HURT)
-			return ..()
-
-		else
-			if(ishuman(eater))
-				var/mob/living/carbon/human/human_eater = eater
-				if(!human_eater.check_has_mouth())
-					balloon_alert(user, "\the [human_eater] doesn't have a mouth!")
-					return ITEM_INTERACT_FAILURE
-				var/obj/item/blocked = null
-				var/unconcious = FALSE
-				blocked = human_eater.check_mouth_coverage()
-				if(survivalfood)
-					blocked = human_eater.check_mouth_coverage_survival()
-					if(human_eater.stat && human_eater.check_mouth_coverage())
-						unconcious = TRUE
-						blocked = human_eater.check_mouth_coverage()
-
-				if(isliving(user))	// We definitely are, but never hurts to check
-					var/mob/living/feeder = user
-					swallow_whole = feeder.stuffing_feeder
-				if(swallow_whole)
-					var/_answer_k227 = rerun_ask(user, "k227", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = human_eater.feedable_bellies())
-					if(isnull(_answer_k227))
-						return TRUE
-					belly_target = _answer_k227
-
-				if(unconcious)
-					to_chat(user, span_warning("You can't feed [human_eater] through \the [blocked] while they are unconcious!"))
-					return ITEM_INTERACT_FAILURE
-
-				if(blocked)
-					balloon_alert(user, "\the [blocked] is in the way!")
-					return ITEM_INTERACT_FAILURE
-
-				if(swallow_whole)
-					if(!(human_eater.feeding))
-						balloon_alert(user, "you can't feed [human_eater] a whole [src] as they refuse to be fed whole things!")
-						return ITEM_INTERACT_FAILURE
-					if(!belly_target)
-						balloon_alert(user, "you can't feed [human_eater] a whole [src] as they don't appear to have a belly to fit it!")
-						return ITEM_INTERACT_FAILURE
-
-				if(swallow_whole)
-					user.balloon_alert_visible("[user] attempts to make [human_eater] consume [src] whole into their [belly_target].")
-				else
-					user.balloon_alert_visible("[user] attempts to feed [human_eater] [src].")
-
-				var/feed_duration = 3 SECONDS
-				if(swallow_whole)
-					feed_duration = 5 SECONDS
-
-				user.setClickCooldown(user.get_attack_speed(src))
-				om_task_start(/datum/om/task/timed/snacks_feed_other, user, human_eater, duration = feed_duration, swallow_whole = swallow_whole, belly_target = belly_target)
-				return ITEM_INTERACT_SUCCESS
-
-			else
-				balloon_alert(user, "this creature does not seem to have a mouth!")
-				return ITEM_INTERACT_FAILURE
-
-		return finish_feeding(eater, user, swallow_whole, belly_target)
-	else if(isliving(eater) && user.stuffing_feeder)
-		var/swallow_whole = user.stuffing_feeder
-		var/obj/belly/belly_target
-		if(swallow_whole)
-			var/_answer_k268 = rerun_ask(user, "k268", PROC_REF(attack), args, /datum/om/prompt/choice, message = "Choose Belly", title = "Belly Choice", choices = eater.feedable_bellies())
-			if(isnull(_answer_k268))
-				return TRUE
-			belly_target = _answer_k268
-			if(!(eater.feeding))
-				to_chat(user, "You can't feed [eater] a whole [src] as they refuse to be fed whole things!")
-				balloon_alert(user, "they refuse to be fed whole things!")
-				return
-			if(!belly_target)
-				to_chat(user, "You can't feed [eater] a whole [src] as they don't appear to have a belly to fit it!")
-				balloon_alert(user, "they don't have a belly to fit it!")
-				return
-			act_message(user, eater, others = "%U% attempts to make %T% consume [src] whole into their [belly_target].")
-			user.balloon_alert_visible("attempts to make [eater] consume [src] whole into their [belly_target].")
-			var/feed_duration = 3 SECONDS
-			user.setClickCooldown(user.get_attack_speed(src))
-			om_task_start(/datum/om/task/timed/snacks_feed_whole, user, eater, duration = feed_duration, belly_target = belly_target)
-			return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/datum/om/task/timed/snacks_feed_whole
-	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_whole_done
-	var/obj/belly/belly_target
-
-/obj/item/reagent_containers/food/snacks/proc/feed_whole_done(datum/om/task/timed/snacks_feed_whole/task)
-	var/mob/living/eater = task.target
-	var/mob/living/user = task.actor
-	var/obj/belly/belly_target = task.belly_target
-	add_attack_logs(user,eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-	act_message(user, src, others = "%U% successfully forces %T% into [eater]'s [belly_target].")
-	user.balloon_alert_visible("forces [src] into [eater]'s [belly_target].")
-	user.drop_item()
-	if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
-		forceMove(get_turf(user))
-
-/datum/om/task/timed/snacks_feed_other
-	complete_proc = /obj/item/reagent_containers/food/snacks/proc/feed_other_done
-	var/swallow_whole
-	var/obj/belly/belly_target
-
-/obj/item/reagent_containers/food/snacks/proc/feed_other_done(datum/om/task/timed/snacks_feed_other/task)
-	var/mob/living/carbon/human/human_eater = task.target
-	var/mob/living/user = task.actor
-	var/swallow_whole = task.swallow_whole
-	var/obj/belly/belly_target = task.belly_target
-	if(!reagents || (reagents && !reagents.total_volume))
-		return
-
-	if(swallow_whole && !belly_target)
-		return			// Just in case we lost belly mid-feed
-
-	if(swallow_whole)
-		add_attack_logs(user, human_eater,"Whole-fed with [src.name] containing [reagentlist(src)] into [belly_target]", admin_notify = FALSE)
-		act_message(user, src, others = "%U% successfully forces %T% into [human_eater]'s [belly_target].")
-		user.balloon_alert_visible("forces [src] into [human_eater]'s [belly_target]")
-	else
-		add_attack_logs(user, human_eater,"Fed with [src.name] containing [reagentlist(src)]", admin_notify = FALSE)
-		act_message(user, human_eater, others = "%U% feeds %T% [src].")
-		user.balloon_alert_visible("feeds [human_eater] [src].")
-	finish_feeding(human_eater, user, swallow_whole, belly_target)
-
-/// The bite (or the whole thing) goes in.
-/obj/item/reagent_containers/food/snacks/proc/finish_feeding(mob/living/eater, mob/living/user, swallow_whole, obj/belly/belly_target)
-	if(swallow_whole)
-		user.drop_item()
-		if(!move_into(belly_target, BELLY_SLOT_INTERIOR, user))
-			return ITEM_INTERACT_FAILURE
-		return ITEM_INTERACT_SUCCESS
-	else if(reagents)								//Handle ingestion of the reagent.
-		playsound(eater, eating_sound, rand(10,50), 1)
-		if(reagents.total_volume)
-			var/bite_mod = 1
-			var/mob/living/carbon/human/human_eater = eater
-			if(istype(human_eater))
-				bite_mod = human_eater.species.bite_mod
-			if(reagents.total_volume > bitesize * bite_mod)
-				reagents.trans_to_mob(eater, bitesize * bite_mod, CHEM_INGEST)
-			else
-				reagents.trans_to_mob(eater, reagents.total_volume, CHEM_INGEST)
-			bitecount++
-			On_Consume(eater, user)
-		return TRUE
-	return ITEM_INTERACT_FAILURE
-
 /obj/item/reagent_containers/food/snacks/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -366,80 +144,30 @@
 		else
 			. += span_notice("It was bitten multiple times!")
 
-/// Old attackby. FALSE falls to the food handling where the old code called ..().
-/obj/item/reagent_containers/food/snacks/proc/snacks_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/storage))
-		return FALSE // -> food, then item/attackby()
+// A snack is eaten a bite at a time (edible()): by whoever holds it, fed to somebody else, or swallowed whole by the one who is stuffed with it. A wrapped one
+// is unwrapped and a sealed one opened by using it in hand. A loaf is sliced by an edged thing on a table or a tray, and anything small enough (and a knife
+// off a table) may be hidden in it; a fork or spoon scoops it up; held to an open container of batter it is coated; and an egg or a fruit with `opens_into`
+// is emptied into an open container. Whatever is stuffed inside it drops out when it is destroyed.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks)
+	edible( 
+		bite = nameof(bitesize),
+		taken = nameof(bitecount),
+		sound = nameof(eating_sound),
+		survival = nameof(survivalfood),
+		shut = list(nameof(package) = MSG(edible/wrapped), nameof(canned) = MSG(edible/sealed)))
+	owns_many(nameof(contents), on_destroy = ON_DESTROY_SPILL)
+	op("unwrap", in_hand(), when(req(PROC_REF(is_wrapped))), label("Unwrap it"), then(PROC_REF(unwrapped)))
+	op("open_can", in_hand(), priority(OP_PRIORITY_NORMAL + 1), when(req(PROC_REF(is_sealed))), label("Open it"), then(PROC_REF(can_opened)))
+	op("scoop", item(/obj/item/material/kitchen/utensil), priority(OP_PRIORITY_PART + 1), label("Scoop up"), then(PROC_REF(scooped)), passes())
+	op("slice", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_cut_by_held))), label("Slice it"), then(PROC_REF(sliced)))
+	op("hide", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(req(PROC_REF(takes_hidden_item))), label("Hide it inside"),
+		asks(/datum/prompt/yes_no, fields = list("question" = "You can't slice it here. Would you like to hide the thing inside it instead?", "title" = "No Cutting Surface!")), then(PROC_REF(hidden_inside)))
+	op("coat", at_target(), priority(OP_PRIORITY_PART), when(req(PROC_REF(target_has_coating))), label("Dip in it"), then(PROC_REF(dipped_in_coating)))
+	op("pour_out", at_target(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(pours_into_target))), label("Empty it into"),
+		needs(req_reagent_room(because = MSG(reagent_container/full))), costs(RES_REAGENTS, PROC_REF(pour_amount)), consumes(), says(PROC_REF(pour_message)))
 
-	// Eating with forks
-	if(istype(W,/obj/item/material/kitchen/utensil))
-		var/obj/item/material/kitchen/utensil/utensil = W
-		utensil.load_food(user, src)
-		return INTERACTION_HANDLED_PASS
-
-	if(food_can_insert_micro && istype(W, /obj/item/holder))
-		return FALSE // a micro in a holder is stuffed in by the food's own op; any other holder is an item
-
-	if (is_sliceable())
-		//these are used to allow hiding edge items in food that is not on a table/tray
-		var/can_slice_here = isturf(src.loc) && ((locate_within(src.loc, /obj/structure/table)) || (locate_within(src.loc, /obj/machinery/optable)) || (locate_within(src.loc, /obj/item/tray)))
-		var/hide_item = !has_edge(W) || !can_slice_here
-
-		if (hide_item)
-			if (W.w_class >= src.w_class || is_robot_module(W) || istype(W, /obj/item/holder))
-				return INTERACTION_HANDLED_PASS
-
-			var/_answer_k397 = rerun_ask(user, "k397", PROC_REF(snacks_item), args, /datum/om/prompt/choice/alert, message = "You can't slice \the [src] here. Would you like to hide \the [W] inside it instead?", title = "No Cutting Surface!", choices = list("Yes","No"))
-			if(isnull(_answer_k397))
-				return TRUE
-			if(_answer_k397 != "Yes")
-				to_chat(user, span_warning("You cannot slice \the [src] here! You need a table or at least a tray to do it."))
-				balloon_alert(user, "you cannot slice \the [src] here! You need a table or at least a tray to do it.")
-				return INTERACTION_HANDLED_PASS
-			else
-				to_chat(user, "Slipped \the [W] inside \the [src].")
-				balloon_alert(user, "slipped \the [W] inside \the [src].")
-				user.drop_from_inventory(W, src)
-				add_fingerprint(user)
-				return INTERACTION_HANDLED_PASS
-
-		if (has_edge(W))
-			if (!can_slice_here)
-				to_chat(user, span_warning("You cannot slice \the [src] here! You need a table or at least a tray to do it."))
-				balloon_alert(user, "you need a table or at least a tray to slice it.")
-				return INTERACTION_HANDLED_PASS
-
-			var/slices_lost = 0
-			if (W.w_class > 3)
-				act_message(user, src, MSG_SELF(span_notice("You crudely slice %T% with your [W]!")), \
-					MSG_OTHERS(span_notice("%U% crudely slices %T% with [W]!")))
-				user.balloon_alert_visible("crudely slices \the [src]", "crudely sliced \the [src]")
-				slices_lost = rand(1,min(1,round(slices_num/2)))
-			else
-				act_message(user, src, MSG_SELF(span_notice("You slice %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " slices %T%!")))
-				user.balloon_alert_visible("slices \the [src]", "sliced \the [src]!")
-			var/reagents_per_slice = reagents.total_volume/slices_num
-			for(var/i=1 to (slices_num-slices_lost))
-				var/obj/slice = new slice_path (src.loc)
-				reagents.trans_to_obj(slice, reagents_per_slice)
-				if(food_inserted_micros && food_inserted_micros.len && istype(slice, /obj/item/reagent_containers/food/snacks))
-					var/obj/item/reagent_containers/food/snacks/S = slice
-					for(var/mob/living/F in food_inserted_micros)
-						F.forceMove(S)
-						own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
-			on_slice_extra()
-
-			consume(src, user)
-			return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
-	return
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
-	INTERACT_SELF(null, PROC_REF(snacks_self)), \
-	INTERACT_ITEM(null, PROC_REF(snacks_item)), \
-)
+MSG_DEF(snack/crack, "You crack %I% into %T%.", "%U% cracks %I% into %T%.")
+MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% tears %I% open, pouring it into %T%.")
 
 /// A snack that is still wrapped or sealed takes nobody.
 /obj/item/reagent_containers/food/snacks/stuffing_free(datum/act/op/A)
@@ -450,10 +178,128 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)
 
-// things stuffed inside drop out.
-/obj/item/reagent_containers/food/snacks/ownership()
-	. = ..()
-	. += owns(nameof(contents), policy = OWN_SPILL)
+/// It is wrapped, and its own use in hand is not something else (a type with special_handling has a use of its own).
+/obj/item/reagent_containers/food/snacks/proc/is_wrapped(datum/act/op/A)
+	return package && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/// It is sealed in a can, and its own use in hand is not something else.
+/obj/item/reagent_containers/food/snacks/proc/is_sealed(datum/act/op/A)
+	return canned && !special_handling // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/obj/item/reagent_containers/food/snacks/proc/unwrapped(datum/act/op/A)
+	unpackage(A.actor)
+	return OP_OK
+
+/obj/item/reagent_containers/food/snacks/proc/can_opened(datum/act/op/A)
+	uncan(A.actor)
+	return OP_OK
+
+/// A fork or spoon scoops some of it up.
+/obj/item/reagent_containers/food/snacks/proc/scooped(datum/act/op/A)
+	var/obj/item/material/kitchen/utensil/utensil = A.held
+	utensil.load_food(A.actor, src)
+	return OP_OK
+
+/// Where a loaf may be cut: it lies on a table, an operating table or a tray.
+/obj/item/reagent_containers/food/snacks/proc/on_cutting_surface()
+	return isturf(loc) && ((locate_within(loc, /obj/structure/table)) || (locate_within(loc, /obj/machinery/optable)) || (locate_within(loc, /obj/item/tray))) // ALLOW(reads): where the loaf lies is read when it is cut; the click asks again
+
+/// An edged thing is held to a loaf on a cutting surface.
+/obj/item/reagent_containers/food/snacks/proc/is_cut_by_held(datum/act/op/A)
+	var/obj/item/W = A.held
+	return is_sliceable() && !istype(W, /obj/item/storage) && has_edge(W) && on_cutting_surface()
+
+/// A thing is held to a loaf that cannot be cut now (it has no edge, or it is not on a surface): it may be hidden inside when it is smaller than the loaf
+/// and is not a robot's tool or a held person.
+/obj/item/reagent_containers/food/snacks/proc/takes_hidden_item(datum/act/op/A)
+	var/obj/item/W = A.held
+	if(!is_sliceable() || istype(W, /obj/item/storage) || istype(W, /obj/item/holder) || is_robot_module(W))
+		return FALSE
+	if(has_edge(W) && on_cutting_surface())
+		return FALSE
+	return W.w_class < w_class // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/// The held thing slips inside the loaf.
+/obj/item/reagent_containers/food/snacks/proc/hidden_inside(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	to_chat(user, "Slipped \the [W] inside \the [src].")
+	balloon_alert(user, "slipped \the [W] inside \the [src].")
+	user.drop_from_inventory(W, src)
+	add_fingerprint(user)
+	return OP_OK
+
+/// The loaf is cut into its slices, each with its share of what it holds; a big blade loses some.
+/obj/item/reagent_containers/food/snacks/proc/sliced(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/slices_lost = 0
+	if (W.w_class > 3)
+		act_message(user, src, MSG_SELF(span_notice("You crudely slice %T% with your [W]!")), \
+			MSG_OTHERS(span_notice("%U% crudely slices %T% with [W]!")))
+		user.balloon_alert_visible("crudely slices \the [src]", "crudely sliced \the [src]")
+		slices_lost = rand(1,min(1,round(slices_num/2)))
+	else
+		act_message(user, src, MSG_SELF(span_notice("You slice %T%!")), MSG_OTHERS(span_notice(span_bold("%U%") + " slices %T%!")))
+		user.balloon_alert_visible("slices \the [src]", "sliced \the [src]!")
+	var/reagents_per_slice = reagents.total_volume/slices_num
+	for(var/i=1 to (slices_num-slices_lost))
+		var/obj/slice = new slice_path (src.loc)
+		reagents.trans_to_obj(slice, reagents_per_slice)
+		if(food_inserted_micros && food_inserted_micros.len && istype(slice, /obj/item/reagent_containers/food/snacks))
+			var/obj/item/reagent_containers/food/snacks/S = slice
+			for(var/mob/living/F in food_inserted_micros)
+				F.forceMove(S)
+				own_transfer(src, nameof(food_inserted_micros), S, nameof(S.food_inserted_micros), F)
+	on_slice_extra()
+	consume(src, user)
+	return OP_OK
+
+/obj/item/reagent_containers/food/snacks/proc/on_slice_extra()
+	return
+
+/// The held thing turns this into `copies` of `product` (made inside it, so what it holds spills out where it was, as the old recipes did) and says `message`;
+/// `uses_held` takes the held thing in too.
+/obj/item/reagent_containers/food/snacks/proc/turn_into(datum/act/op/A, product, message, copies = 1, uses_held = FALSE)
+	var/mob/user = A.actor
+	for(var/i in 1 to copies)
+		new product(src)
+	to_chat(user, message)
+	if(uses_held)
+		consume(A.held, user)
+	consume(src, user)
+	return OP_OK
+
+/// The clicked thing is an open container (not a food) with a coating (batter) in it.
+/obj/item/reagent_containers/food/snacks/proc/target_has_coating(datum/act/op/A)
+	var/atom/target = A.target
+	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food)) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+		return FALSE
+	for(var/datum/reagent/R as anything in target.reagents.reagent_list) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+		if(istype(R, /datum/reagent/nutriment/coating))
+			return TRUE
+	return FALSE
+
+/// The snack is dipped: the first coating in the container that can be taken is drawn onto it.
+/obj/item/reagent_containers/food/snacks/proc/dipped_in_coating(datum/act/op/A)
+	var/atom/target = A.target
+	for(var/datum/reagent/R as anything in target.reagents.reagent_list)
+		if(istype(R, /datum/reagent/nutriment/coating) && apply_coating(R, A.actor))
+			break
+	return OP_OK
+
+/// Something it says when it is emptied into an open container (an egg is cracked, a fruit torn open), or null: it is not.
+/obj/item/reagent_containers/food/snacks/proc/pour_message(datum/act/op/A)
+	return opens_into
+
+/// The snack opens into the open container it is held to (a microwave is not one: it takes the snack itself).
+/obj/item/reagent_containers/food/snacks/proc/pours_into_target(datum/act/op/A)
+	var/atom/target = A.target
+	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/// All of it that fits.
+/obj/item/reagent_containers/food/snacks/proc/pour_amount(datum/act/op/A)
+	return min(reagents_giveable(src), reagents_takeable(A.target))
 
 /obj/item/reagent_containers/food/snacks/proc/unpackage(mob/user)
 	package = FALSE
@@ -896,17 +742,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly/cher
 	volume = 10
 	center_of_mass_x = 16
 	center_of_mass_y = 13
+	opens_into = /datum/msg/snack/crack
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg, null, list(REAGENT_ID_EGG = 3))
-
-/obj/item/reagent_containers/food/snacks/egg/afterattack(obj/O as obj, mob/user as mob, proximity)
-	if(istype(O,/obj/machinery/microwave))
-		return . = ..()
-	if(!(proximity && O.is_open_container()))
-		return
-	to_chat(user, "You crack \the [src] into \the [O].")
-	reagents.trans_to(O, reagents.total_volume)
-	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/egg/throw_impact(atom/hit_atom)
 	. = ..()
@@ -914,22 +752,25 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/egg, null, list(REAGEN
 	src.visible_message(span_red("[src.name] has been squashed."),span_red("You hear a smack."))
 	replace_with(src, /obj/effect/decal/cleanable/egg_smudge)
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/egg, INTERACT_ITEM(null, PROC_REF(egg_item)))
+// A crayon of the colours an egg takes colours it.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/egg)
+	op("colour", item(/obj/item/pen/crayon), priority(OP_PRIORITY_PART), label("Colour it"),
+		needs(req(PROC_REF(takes_colour), because = MSG(snack/egg_refuses))), then(PROC_REF(coloured)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/egg/proc/egg_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype( W, /obj/item/pen/crayon ))
-		var/obj/item/pen/crayon/C = W
-		var/clr = C.colourName
+MSG_DEF_SELF(snack/egg_refuses, "The egg refuses to take on this color!")
 
-		if(!(clr in list("blue","green","mime","orange","purple","rainbow","red","yellow")))
-			to_chat(user, span_blue("The egg refuses to take on this color!"))
-			return INTERACTION_HANDLED_PASS
+/// The crayon is one of the colours an egg takes.
+/obj/item/reagent_containers/food/snacks/egg/proc/takes_colour(datum/act/op/A)
+	var/static/list/colours = list("blue", "green", "mime", "orange", "purple", "rainbow", "red", "yellow")
+	var/obj/item/pen/crayon/C = A.held
+	return (C.colourName in colours) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-		to_chat(user, span_blue("You color \the [src] [clr]"))
-		icon_state = "egg-[clr]"
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/egg/proc/coloured(datum/act/op/A)
+	var/obj/item/pen/crayon/C = A.held
+	var/clr = C.colourName
+	to_chat(A.actor, span_blue("You color \the [src] [clr]"))
+	icon_state = "egg-[clr]"
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/egg/blue
 	icon_state = "egg-blue"
@@ -1266,15 +1107,22 @@ TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/dankpocket, donkp
 
 TYPE_TABLE(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, donkpocket_heated_reagents, list(REAGENT_ID_DOCTORSDELIGHT = 5, REAGENT_ID_HYPERZINE = 0.75, REAGENT_ID_SYNAPTIZINE = 0.25))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket, INTERACT_SELF("Crush package", PROC_REF(sinpocket_self), REQ_FIELD_NOT("has_been_heated", "the heating chemicals have already been spent")))
+// Its package is crushed once; twenty seconds later it is heated.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket)
+	op("crush", in_hand(), priority(OP_PRIORITY_PART), label("Crush package"), needs(req(PROC_REF(not_yet_heated), because = MSG(snack/heat_spent))), then(PROC_REF(crushed)))
 
-/// Old attack_self.
-/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/sinpocket_self(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(snack/heat_spent, "The heating chemicals have already been spent.")
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/not_yet_heated(datum/act/op/A)
+	return !has_been_heated // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/obj/item/reagent_containers/food/snacks/donkpocket/sinpocket/proc/crushed(datum/act/op/A)
+	var/mob/user = A.actor
 	has_been_heated = TRUE
 	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
 		MSG_OTHERS(span_notice("%U% crushes %T% package.")))
-	after(src, 20 SECONDS, PROC_REF(self_heated), with = list(user))
-	return TRUE
+	after(src, 20 SECONDS, PROC_REF(self_heated), key = "self_heated", with = list(user))
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/brainburger
 	name = "brainburger"
@@ -1889,13 +1737,16 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/amanitajelly, null, li
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkeycube, null, list(REAGENT_ID_PROTEIN = 10))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERACT_SELF(null, PROC_REF(monkeycube_self)))
+// A wrapped cube is unwrapped by using it in hand.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube)
+	op("unwrap_cube", in_hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(cube_is_wrapped))), label("Unwrap it"), then(PROC_REF(cube_unwrapped)))
 
-/// Old attack_self.
-/obj/item/reagent_containers/food/snacks/monkeycube/proc/monkeycube_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(wrapped)
-		Unwrap(user)
-	return TRUE
+/obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_is_wrapped(datum/act/op/A)
+	return !!wrapped // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+
+/obj/item/reagent_containers/food/snacks/monkeycube/proc/cube_unwrapped(datum/act/op/A)
+	Unwrap(A.actor)
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/monkeycube/proc/Expand()
 	src.visible_message(span_infoplain(span_bold("\The [src]") + " expands!"))
@@ -3860,6 +3711,25 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpiz
 	var/list/boxes = list() // If the boxes are stacked, they come here
 	var/boxtag = ""
 
+// A pizza box: using it opens and shuts it (a stack stays shut); an empty hand takes the pizza out of an open one, or the top box off a stack held in the
+// other hand; a box goes on a shut box up to five high, a pizza into an open one, and a pen writes on the tag of a shut one.
+CAPABILITIES(/obj/item/pizzabox)
+	owns_one(nameof(pizza), /obj/item/reagent_containers/food/snacks/sliceable/pizza)
+	op("toggle", in_hand(), label("Open or close it"), needs(req(PROC_REF(not_stacked), because = MSG(pizzabox/stacked))), then(PROC_REF(toggled)))
+	op("take_pizza", hand(), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(open_with_pizza))), label("Take the pizza"), then(PROC_REF(pizza_taken)))
+	op("take_box", hand(), priority(OP_PRIORITY_PART), when(req(PROC_REF(stack_in_off_hand))), label("Take the top box"), then(PROC_REF(box_taken)))
+	op("stack", item(/obj/item/pizzabox), priority(OP_PRIORITY_PART), when(req(PROC_REF(held_is_another))), label("Put it on top"),
+		needs(req(PROC_REF(both_shut), because = MSG(pizzabox/close_first)), req(PROC_REF(stack_has_room), because = MSG(pizzabox/too_high))), then(PROC_REF(box_stacked)))
+	op("put_pizza", item(/obj/item/reagent_containers/food/snacks/sliceable/pizza), priority(OP_PRIORITY_PART),
+		needs(req(PROC_REF(is_open), because = MSG(pizzabox/lid_shut))), then(PROC_REF(pizza_put_in)))
+	op("write_tag", item(/obj/item/pen), priority(OP_PRIORITY_PART), when(req(PROC_REF(is_shut))), label("Write on the tag"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), then(PROC_REF(tag_written)))
+
+MSG_DEF_SELF(pizzabox/stacked, "It is under a stack of boxes.")
+MSG_DEF_SELF(pizzabox/close_first, "Close the box first!")
+MSG_DEF_SELF(pizzabox/too_high, "The stack is too high!")
+MSG_DEF_SELF(pizzabox/lid_shut, "You try to push it through the lid but it doesn't work!")
+
 DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/pizzabox/appearance_overlays()
 	. = list()
@@ -3912,111 +3782,97 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 
 	icon_state = "pizzabox[boxes.len+1]"
 
-/// Old attack_hand: take the pizza or the top box, else the normal pickup (FALSE).
-/obj/item/pizzabox/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/// A stack stays shut.
+/obj/item/pizzabox/proc/not_stacked(datum/act/op/A)
+	return length(boxes) == 0 // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-	if( open && pizza )
-		user.put_in_hands( pizza )
-
-		to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
-		own_take(src, nameof(pizza))
-		update_icon()
-		return TRUE
-
-	if( boxes.len > 0 )
-		if( user.get_inactive_hand() != src )
-			return FALSE
-
-		var/obj/item/pizzabox/box = boxes[boxes.len]
-		boxes -= box
-
-		user.put_in_hands( box )
-		to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-		box.update_icon()
-		update_icon()
-		return TRUE
-	return FALSE
-
-DECLARE_INTERACTIONS(/obj/item/pizzabox, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-)
-
-/// Old attack_self.
-/obj/item/pizzabox/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if( boxes.len > 0 )
-		return TRUE
-
+/obj/item/pizzabox/proc/toggled(datum/act/op/A)
 	open = !open
-
 	if( open && pizza )
 		ismessy = 1
-
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/// Old attackby.
-/obj/item/pizzabox/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if( istype(I, /obj/item/pizzabox/) )
-		var/obj/item/pizzabox/box = I
+/obj/item/pizzabox/proc/open_with_pizza(datum/act/op/A)
+	return open && !isnull(pizza) && isnull(A.held) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-		if( !box.open && !src.open )
-			// Make a list of all boxes to be added
-			var/list/boxestoadd = list()
-			boxestoadd += box
-			for(var/obj/item/pizzabox/i in box.boxes)
-				boxestoadd += i
+/obj/item/pizzabox/proc/is_open(datum/act/op/A)
+	return !!open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-			if( (boxes.len+1) + boxestoadd.len <= 5 )
-				user.drop_item()
+/obj/item/pizzabox/proc/is_shut(datum/act/op/A)
+	return !open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-				box.forceMove(src)
-				box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
-				src.boxes.Add( boxestoadd )
+/obj/item/pizzabox/proc/pizza_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	user.put_in_hands( pizza )
+	to_chat(user, span_warning("You take \the [src.pizza] out of \the [src]."))
+	own_take(src, nameof(pizza))
+	update_icon()
+	return OP_OK
 
-				box.update_icon()
-				update_icon()
+/// A stack of boxes, with the one it is in held in the other hand.
+/obj/item/pizzabox/proc/stack_in_off_hand(datum/act/op/A)
+	var/mob/user = A.actor
+	return length(boxes) > 0 && isnull(A.held) && user.get_inactive_hand() == src // ALLOW(reads): which hand holds the stack is read when the top box is taken; the click asks again
 
-				to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
-			else
-				to_chat(user, span_warning("The stack is too high!"))
-		else
-			to_chat(user, span_warning("Close \the [box] first!"))
+/obj/item/pizzabox/proc/box_taken(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pizzabox/box = boxes[boxes.len]
+	boxes -= box
+	user.put_in_hands( box )
+	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
+	box.update_icon()
+	update_icon()
+	return OP_OK
 
-		return INTERACTION_HANDLED_PASS
+/// The held box is another one, not this one used in hand.
+/obj/item/pizzabox/proc/held_is_another(datum/act/op/A)
+	return A.held != src
 
-	if( istype(I, /obj/item/reagent_containers/food/snacks/sliceable/pizza/) ) // Long ass fucking object name
+/obj/item/pizzabox/proc/both_shut(datum/act/op/A)
+	var/obj/item/pizzabox/box = A.held
+	return !box.open && !open // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-		if( src.open )
-			if(!own_set(src, nameof(src.pizza), I, user = user))
-				return INTERACTION_HANDLED_PASS
+/// The boxes to add, with the ones already in the pile, are no more than five.
+/obj/item/pizzabox/proc/stack_has_room(datum/act/op/A)
+	var/obj/item/pizzabox/box = A.held
+	return (boxes.len + 1) + (1 + box.boxes.len) <= 5 // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
-			update_icon()
+/obj/item/pizzabox/proc/box_stacked(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/pizzabox/box = A.held
+	// Make a list of all boxes to be added
+	var/list/boxestoadd = list()
+	boxestoadd += box
+	for(var/obj/item/pizzabox/i in box.boxes)
+		boxestoadd += i
+	user.drop_item()
+	box.forceMove(src)
+	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
+	src.boxes.Add( boxestoadd )
+	box.update_icon()
+	update_icon()
+	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
+	return OP_OK
 
-			to_chat(user, span_warning("You put \the [I] in \the [src]!"))
-		else
-			to_chat(user, span_warning("You try to push \the [I] through the lid but it doesn't work!"))
-		return INTERACTION_HANDLED_PASS
+/obj/item/pizzabox/proc/pizza_put_in(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
+	if(!own_set(src, nameof(src.pizza), I, user = user))
+		return OP_REFUSED
+	update_icon()
+	to_chat(user, span_warning("You put \the [I] in \the [src]!"))
+	return OP_OK
 
-	if( istype(I, /obj/item/pen/) )
-
-		if( src.open )
-			return INTERACTION_HANDLED_PASS
-
-		var/t = rerun_ask(user, "k4329", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter what you want to add to the tag:", title = "Write", max_length = 30)
-		if(isnull(t))
-			return TRUE
-
-		var/obj/item/pizzabox/boxtotagto = src
-		if( boxes.len > 0 )
-			boxtotagto = boxes[boxes.len]
-
-		boxtotagto.boxtag = copytext("[boxtotagto.boxtag][t]", 1, 30)
-
-		update_icon()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/pizzabox/proc/tag_written(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/obj/item/pizzabox/boxtotagto = src
+	if( boxes.len > 0 )
+		boxtotagto = boxes[boxes.len]
+	boxtotagto.boxtag = copytext("[boxtotagto.boxtag][R?.value]", 1, 30)
+	boxtotagto.update_icon()
+	update_icon()
+	return OP_OK
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
 	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
@@ -4076,15 +3932,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dionaroast, null, list
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/dough, null, list(REAGENT_ID_PROTEIN = 1))
 
 // Dough + rolling pin = flat dough
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dough, INTERACT_ITEM(null, PROC_REF(dough_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/dough)
+	op("flatten", item(/obj/item/material/kitchen/rollingpin), priority(OP_PRIORITY_PART + 1), label("Flatten it"), then(PROC_REF(flattened)))
 
-/// Old attackby. It never called its parent, so it always answers.
-/obj/item/reagent_containers/food/snacks/dough/proc/dough_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/kitchen/rollingpin))
-		new /obj/item/reagent_containers/food/snacks/sliceable/flatdough(src)
-		to_chat(user, "You flatten the dough.")
-		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+/obj/item/reagent_containers/food/snacks/dough/proc/flattened(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/sliceable/flatdough, "You flatten the dough.")
 
 // slicable into 3xdoughslices
 /obj/item/reagent_containers/food/snacks/sliceable/flatdough
@@ -4126,30 +3978,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/flatdough, n
 	nutriment_desc = list("bun" = 4)
 
 // Burger + cheese wedge = cheeseburger
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeyburger, INTERACT_ITEM(null, PROC_REF(monkeyburger_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeyburger)
+	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/monkeyburger/proc/monkeyburger_item(mob/user, obj/item/reagent_containers/food/snacks/cheesewedge/W, datum/interaction/interaction)
-	if(istype(W))// && !istype(src,/obj/item/reagent_containers/food/snacks/cheesewedge))
-		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
-		to_chat(user, "You make a cheeseburger.")
-		consume(W, user)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/monkeyburger/proc/cheese_added(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/cheeseburger, "You make a cheeseburger.", uses_held = TRUE)
 
 // Human Burger + cheese wedge = cheeseburger
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/human/burger, INTERACT_ITEM(null, PROC_REF(human_burger_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/human/burger)
+	op("add_cheese", item(/obj/item/reagent_containers/food/snacks/cheesewedge), priority(OP_PRIORITY_PART + 1), label("Add the cheese"), then(PROC_REF(cheese_added)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/human/burger/proc/human_burger_item(mob/user, obj/item/reagent_containers/food/snacks/cheesewedge/W, datum/interaction/interaction)
-	if(istype(W))
-		new /obj/item/reagent_containers/food/snacks/cheeseburger(src)
-		to_chat(user, "You make a cheeseburger.")
-		consume(W, user)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/human/burger/proc/cheese_added(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/cheeseburger, "You make a cheeseburger.", uses_held = TRUE)
 
 /obj/item/reagent_containers/food/snacks/bunbun
 	name = "\improper Bun Bun"
@@ -4609,17 +4449,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/wormdeluxe, null, list
 	nutriment_amt = 2
 	nutriment_desc = list("tart" = 1)
 	w_class = ITEMSIZE_TINY
+	opens_into = /datum/msg/snack/tear_open
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/siffruit, null, list(REAGENT_ID_SIFSAP = 2))
-
-/obj/item/reagent_containers/food/snacks/siffruit/afterattack(obj/O as obj, mob/user as mob, proximity)
-	if(istype(O,/obj/machinery/microwave))
-		return ..()
-	if(!(proximity && O.is_open_container()))
-		return
-	to_chat(user, span_notice("You tear \the [src]'s sac open, pouring it into \the [O]."))
-	reagents.trans_to(O, reagents.total_volume)
-	consume(src, user)
 
 /obj/item/reagent_containers/food/snacks/bagelplain
 	name = "plain bagel"
@@ -4927,17 +4759,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/funnelcake, null, list
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/spreads, null, list(REAGENT_ID_TRIGLYCERIDE = 20, REAGENT_ID_SODIUMCHLORIDE = 1))
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/rawcutlet, INTERACT_ITEM(null, PROC_REF(rawcutlet_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/rawcutlet)
+	op("slice_bacon", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Slice it into bacon"), then(PROC_REF(sliced_into_bacon)))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/rawcutlet/proc/rawcutlet_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
-		new /obj/item/reagent_containers/food/snacks/rawbacon(src)
-		to_chat(user, "You slice the cutlet into thin strips of bacon.")
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/rawcutlet/proc/sliced_into_bacon(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/rawbacon, "You slice the cutlet into thin strips of bacon.", copies = 2)
 
 /obj/item/reagent_containers/food/snacks/rawbacon
 	name = "raw bacon"
@@ -5321,10 +5147,12 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/honeybun, null, list(R
 	bitesize = 1
 	nutriment_amt = 10
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
+// An empty hand takes a chip from the basket.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/chipplate)
+	op("take_chip", hand(), priority(OP_PRIORITY_PART), label("Take a chip"), then(PROC_REF(chip_taken)))
 
-/// Old attack_hand.
-/obj/item/reagent_containers/food/snacks/chipplate/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/reagent_containers/food/snacks/chipplate/proc/chip_taken(datum/act/op/A)
+	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/returningitem = new vendingobject(loc)
 	reagents.trans_to(returningitem, bitesize)
 	returningitem.bitesize = 2
@@ -5337,7 +5165,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT
 		if (loc == user)
 			user.put_in_hands(waste)
 		consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/chipplate/MouseDrop(mob/user) //Dropping the chip onto the user
 	if(istype(user) && user == usr)
@@ -5371,45 +5199,55 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/chipplate, INTERACT
 	center_of_mass_y = 16
 	nutriment_amt = 20
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/dip, INTERACT_ITEM(null, PROC_REF(dip_item)))
+// A chip held to a dip is dipped.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/dip)
+	op("dip_chip", item(/obj/item/reagent_containers/food/snacks/chip), priority(OP_PRIORITY_PART + 1), when(req(PROC_REF(is_dippable))), label("Dip it"), then(PROC_REF(chip_dipped)))
 
-/// Old attackby (ran the snack handling first; that did nothing for chips). Anything that isn't a chip falls to it (FALSE).
-/obj/item/reagent_containers/food/snacks/dip/proc/dip_item(mob/user, obj/item/reagent_containers/food/snacks/item, datum/interaction/interaction)
-	var/obj/item/reagent_containers/food/snacks/returningitem
-	if(istype(item,/obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho")
-		returningitem = new nachotrans(src)
-	else if (istype(item,/obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
-		returningitem = new chiptrans(src)
-	if(returningitem)
-		returningitem.reagents.clear_reagents() //Clear the new chip
-		var/memed = 0
-		item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
-		if(item.icon_state == "chip_half")
-			returningitem.icon_state = "[returningitem.icon_state]_half"
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
-		else if(prob(1))
-			memed = 1
-			to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
-			returningitem.icon_state = "[returningitem.icon_state]_half"
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
-		else
-			returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
-		consume(item, user)
-		reagents.trans_to(returningitem, bitesize) //Dip to new chip
-		user.put_in_hands(returningitem)
+/// What a chip dipped here becomes, or null when it is not one that can be.
+/obj/item/reagent_containers/food/snacks/dip/proc/dipped_type(obj/item/reagent_containers/food/snacks/item)
+	if(istype(item, /obj/item/reagent_containers/food/snacks/chip/nacho) && item.icon_state == "nacho") // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+		return nachotrans
+	if(istype(item, /obj/item/reagent_containers/food/snacks/chip) && (item.icon_state == "chip" || item.icon_state == "chip_half"))
+		return chiptrans
+	return null
 
-		if (reagents && reagents.total_volume)
-			if(!memed)
-				to_chat(user, "You scoop up some dip with the chip.")
-		else
-			if(!memed)
-				to_chat(user, "You scoop up the remaining dip with the chip.")
-			var/obj/waste = new trash(loc)
-			if (loc == user)
-				user.put_in_hands(waste)
-			consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/dip/proc/is_dippable(datum/act/op/A)
+	return !isnull(dipped_type(A.held))
+
+/// The chip comes out dipped: what it held and some of the dip, in the hand; the dip is used up with its last scoop.
+/obj/item/reagent_containers/food/snacks/dip/proc/chip_dipped(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/item = A.held
+	var/chip_type = dipped_type(item)
+	var/obj/item/reagent_containers/food/snacks/returningitem = new chip_type(src)
+	returningitem.reagents.clear_reagents() //Clear the new chip
+	var/memed = 0
+	item.reagents.trans_to(returningitem, item.reagents.total_volume) //Old chip to new chip
+	if(item.icon_state == "chip_half")
+		returningitem.icon_state = "[returningitem.icon_state]_half"
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+	else if(prob(1))
+		memed = 1
+		to_chat(user, "You scoop up some dip with the chip, but mid-scop, the chip breaks off into the dreadful abyss of dip, never to be seen again...")
+		returningitem.icon_state = "[returningitem.icon_state]_half"
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume,1,10)
+	else
+		returningitem.bitesize = clamp(returningitem.reagents.total_volume*0.5,1,10)
+	consume(item, user)
+	reagents.trans_to(returningitem, bitesize) //Dip to new chip
+	user.put_in_hands(returningitem)
+
+	if (reagents && reagents.total_volume)
+		if(!memed)
+			to_chat(user, "You scoop up some dip with the chip.")
+	else
+		if(!memed)
+			to_chat(user, "You scoop up the remaining dip with the chip.")
+		var/obj/waste = new trash(loc)
+		if (loc == user)
+			user.put_in_hands(waste)
+		consume(src, user)
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/dip/salsa
 	name = "salsa dip"
@@ -7172,15 +7010,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/supremoburri
 	nutriment_desc = list(REAGENT_ID_NOTHING = 1)
 	bitesize = 1
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/steamtealeaf, INTERACT_ITEM(null, PROC_REF(steamtealeaf_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/steamtealeaf)
+	op("roll", item(/obj/item/material/kitchen/rollingpin), priority(OP_PRIORITY_PART + 1), label("Roll it"), then(PROC_REF(rolled)))
 
-/// Old attackby. It never called its parent, so it always answers.
-/obj/item/reagent_containers/food/snacks/steamtealeaf/proc/steamtealeaf_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/kitchen/rollingpin))
-		new /obj/item/reagent_containers/food/snacks/steamrolltealeaf(src)
-		to_chat(user, span_notice("You roll the steamed tea leaf."))
-		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+/obj/item/reagent_containers/food/snacks/steamtealeaf/proc/rolled(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/steamrolltealeaf, span_notice("You roll the steamed tea leaf."))
 
 /obj/item/reagent_containers/food/snacks/steamrolltealeaf
 	name = "Rolled steamed tea leaf"
@@ -8480,9 +8314,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/acorn, null, list(REAG
 		user.automatic_custom_emote(VISIBLE_MESSAGE,"[pick("burps", "cries for more", "burps twice", "looks at the area where the food was")]", check_stat = TRUE)
 
 
-/obj/item/pizzabox/ownership()
-	. = ..()
-	. += owns(nameof(pizza), policy = OWN_CONTAINED)
 
 /// the coating this refers to (a relation view: null once it is deleted).
 /obj/item/reagent_containers/food/snacks/proc/coating() as /datum/reagent/nutriment/coating

@@ -10,11 +10,12 @@
 // A shadowed activation (a BEST or UNIQUE stack where another activation runs) keeps its clock and skips its handler, so it resumes the moment
 // it wins. The system forms of every() (a /datum/system's work items, code/datums/reactions/reactions.dm) keep their own shape.
 
-/// every(interval, then(...) | parts..., when = cond): one entry. `interval` is deciseconds of the holder's clock. The system form
-/// every(interval, PROC_REF(x), ...) is reactions.dm's and never reaches here.
+/// every(interval, then(...) | parts..., when = cond): one entry. `interval` is deciseconds of the holder's clock, or a PROC_REF of a holder proc
+/// x(datum/act/A) answering them, asked again before every run (a flicker that waits a random while). The system form every(interval, PROC_REF(x), ...)
+/// is reactions.dm's and never reaches here.
 /proc/every_entry(interval, p1, p2, p3, p4, when = null)
-	if(!isnum(interval) || interval <= 0)
-		declare_report("every(): the interval must be a positive number of deciseconds, got [isnull(interval) ? "null" : "[interval]"]")
+	if(!(istext(interval) && length(interval)) && (!isnum(interval) || interval <= 0))
+		declare_report("every(): the interval must be a positive number of deciseconds or a PROC_REF, got [isnull(interval) ? "null" : "[interval]"]")
 		return null
 	return entry_make(ENTRY_EVERY, null, list("interval" = interval, "when" = when), entry_flatten(list(p1, p2, p3, p4)))
 
@@ -39,6 +40,15 @@
 /proc/activation_every_key(datum/activation/A, datum/entry/E)
 	return "every:[A.serial]:[copytext(md5(E.sig), 1, 9)]"
 
+/// The deciseconds to the next run of an every() on `holder`: its interval, or what the holder proc the interval names answers now (never below one
+/// decisecond).
+/proc/every_interval(datum/holder, datum/entry/E)
+	var/interval = E.args["interval"]
+	if(istext(interval))
+		var/answer = call(holder, interval)(null)
+		return isnum(answer) ? max(1, answer) : 1
+	return interval
+
 /// The pooled timer context of one every() run: holder, the activation (null for a type-level every()), its source and the interval.
 /proc/every_context(datum/holder, datum/activation/A, source, dt)
 	var/datum/act/timer/T = take(/datum/act/timer)
@@ -54,7 +64,7 @@
 	var/datum/holder = A.holder
 	if(!holder || QDELETED(holder) || A.dead)
 		return
-	after(holder, E.args["interval"], GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
+	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(activation_every_fire), key = activation_every_key(A, E), with = list(A, E))
 
 /// One run of an every(): the handler (unless the activation is shadowed or its when fails), then the next arming unless the handler ended the activation.
 /proc/activation_every_fire(datum/activation/A, datum/entry/E)
@@ -68,7 +78,7 @@
 	if(gated && !isnull(cond))
 		gated = !!change_condition(holder, cond)
 	if(gated)
-		var/datum/act/timer/T = every_context(holder, A, A.source, E.args["interval"])
+		var/datum/act/timer/T = every_context(holder, A, A.source, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth
 		try
 			hook_run_parts(null, T, E.children)
@@ -99,7 +109,7 @@
 
 /proc/type_every_schedule(datum/holder, datum/centry/C, index)
 	var/datum/entry/E = C.item
-	after(holder, E.args["interval"], GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index))
+	after(holder, every_interval(holder, E), GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index))
 
 /// One run of a type-level every(): the handler unless the gate fails, then the next arming.
 /proc/type_every_fire(datum/holder, datum/centry/C, index)
@@ -111,7 +121,7 @@
 	if(gated && !isnull(cond))
 		gated = !!change_condition(holder, cond)
 	if(gated)
-		var/datum/act/timer/T = every_context(holder, null, holder, E.args["interval"])
+		var/datum/act/timer/T = every_context(holder, null, holder, isnum(E.args["interval"]) ? E.args["interval"] : 0)
 		var/depth = GLOB.act_depth
 		try
 			hook_run_parts(null, T, E.children)

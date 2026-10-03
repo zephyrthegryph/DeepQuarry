@@ -1,5 +1,13 @@
+/// The eater clicks themselves with the food in hand and a moment goes by (the bite's aftermath runs a tick later).
+/proc/interim_bite(mob/living/carbon/human/eater, obj/item/food)
+	eater.next_click = 0
+	test_click(eater, eater, food)
+	test_time(3)
+	return TRUE
+
 /// Actual foods keep integer and fractional bite sizes through their real ingest transfer.
 /datum/unit_test/interim_food_bite_data/Run()
+	test_driver_begin()
 	var/static/list/cases = list(
 		list(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito, 6),
 		list(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/filled, 6),
@@ -21,7 +29,7 @@
 		var/original_ingested = eater.ingested.total_volume
 		TEST_ASSERT(original_source > entry[2], "the actual food starts with more than one full bite: [entry[1]]")
 		TEST_ASSERT(eater.put_in_active_hand(food), "the actual food starts in the eater's real hand: [entry[1]]")
-		TEST_ASSERT_EQUAL(food.finish_feeding(eater, eater, FALSE, null), TRUE, "the actual food performs its real feeding effect: [entry[1]]")
+		TEST_ASSERT_EQUAL(interim_bite(eater, food), TRUE, "the actual food performs its real feeding effect: [entry[1]]")
 		TEST_ASSERT(abs(food.reagents.total_volume - (original_source - entry[2])) < 0.001, "the actual bite debits the exact integer or fractional portion: [entry[1]]")
 		if(food.type == /obj/item/reagent_containers/food/snacks/sliceable/monkfishremains)
 			// The original 0.01 bite splits into 0.008 nutriment and 0.002 carbon;
@@ -37,3 +45,4 @@
 		TEST_ASSERT_EQUAL(food.bitecount, 1, "the actual food counts exactly one completed bite: [entry[1]]")
 		TEST_ASSERT(!QDELETED(food), "the real partial bite preserves its exact food item: [entry[1]]")
 		TEST_ASSERT_EQUAL(eater.get_active_hand(), food, "the real partial bite preserves the exact food hand slot: [entry[1]]")
+	test_driver_end()

@@ -26,8 +26,6 @@
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
-	/// The old Set transfer amount entry is the capability's.
-	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/food/drinks/Initialize(mapload)
 	. = ..()

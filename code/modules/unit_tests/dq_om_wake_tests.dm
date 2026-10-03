@@ -157,35 +157,6 @@
 	C.affected_by_emp_until = world.time + 1
 	C.schedule_camera_timer()
 
-/// Lights: area power is a key; emergency discharge and recharge are timers.
-/datum/unit_test/dq_om_wake_light_area_power
-
-/datum/unit_test/dq_om_wake_light_area_power/Run()
-	var/obj/machinery/light/L = allocate(/obj/machinery/light, test_floor())
-	var/area/A = get_area(L)
-	TEST_ASSERT(!isnull(L.area_power_token()), "a light did not subscribe to its area's power key")
-	TEST_ASSERT_NULL(L.om_sleep_violation(), "a new light is not asleep")
-	var/failure = om_wake_test(L, om_callable(A, TYPE_PROC_REF(/area, power_change)))
-	TEST_ASSERT(!failure, failure)
-
-	// Losing light power puts a charged light on its cell, on a timer. (The light switch
-	// does not: a switched-off light stays dark.)
-	var/old_power = A.power_light
-	var/was_powered = L.has_power() && A.requires_power
-	A.power_light = FALSE
-	A.power_change()
-	OM_TEST_WAIT_UNTIL(L.emergency_mode, 60) // may never come (the guard below), so bounded and unasserted here
-	if(was_powered && L.has_cell() && L.has_emergency_power(0.2) && L.status == LIGHT_OK && !L.no_emergency)
-		TEST_ASSERT(L.emergency_mode, "an unpowered charged light did not go to emergency power")
-		TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency discharge has no timer")
-	TEST_ASSERT_NULL(L.om_sleep_violation(), "an unpowered light's audit failed")
-	A.power_light = old_power
-	A.power_change()
-	OM_TEST_WAIT_UNTIL(!L.emergency_mode && !L.emergency_discharge_at, 60)
-	if(L.has_power())
-		TEST_ASSERT(!L.emergency_mode, "power returned but the light stayed on its cell")
-		TEST_ASSERT(!L.emergency_discharge_at, "power returned but emergency discharge kept its deadline")
-
 /// Status displays: static modes sleep; moving content has one timer; shuttle modes watch the key.
 /datum/unit_test/dq_om_wake_status_display
 

@@ -14,7 +14,6 @@
 	volume = 5
 	drop_sound = SFX_ITEMS_DROP_GLASS
 	pickup_sound = SFX_ITEMS_PICKUP_GLASS
-	transfer_amount_verb = FALSE
 
 // A dropper is a sealed container of its volume that draws from open containers and tanks while it is empty and squirts what it holds into open
 // containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it

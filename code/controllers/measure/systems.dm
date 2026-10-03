@@ -143,8 +143,6 @@
 		"materials" = list(/datum/om/behaviour/material_emission, /datum/om/behaviour/material_service),
 		// code/modules/heat/.
 		"heat" = list(/datum/om/behaviour/overheating),
-		// code/modules/power/lighting.dm.
-		"lighting" = list(/datum/om/behaviour/sleeper/light),
 		// code/datums/looping_sounds/.
 		"sound" = list(/datum/om/behaviour/sleeper/looping_sound),
 		// code/datums/behaviours/: per-object feature behaviours (climbable, footstep, slosh, ...).

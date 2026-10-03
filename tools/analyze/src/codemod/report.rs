@@ -340,6 +340,11 @@ pub fn summary(cm: &dyn Codemod, res: &RunResult, keys: &KeyReport, took: std::t
     let _ = writeln!(o, "codemod {}: {}", cm.name(), cm.about());
     let _ = writeln!(o, "  parser sites in scope : {}", res.ast_sites);
     let _ = writeln!(o, "  rewritten             : {} ({} files, {} lines)", res.rewrites, res.changes.len(), res.edited_lines());
+    if !res.declared.is_empty() {
+        let types: std::collections::BTreeSet<&str> = res.declared.iter().map(|n| n.holder.as_str()).collect();
+        let many = res.declared.iter().filter(|n| n.many).count();
+        let _ = writeln!(o, "  declarations added    : {} ({} owns_one, {} owns_many, on {} types)", res.declared.len(), res.declared.len() - many, many, types.len());
+    }
     let _ = writeln!(o, "  residue               : {}", res.residue.len());
     let by = res.residue_by_reason();
     let mut docs: std::collections::BTreeMap<&str, &str> = std::collections::BTreeMap::new();

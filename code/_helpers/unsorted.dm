@@ -1044,9 +1044,10 @@ GLOBAL_LIST_INIT(common_tools, list(
 
 //Whether or not the given item counts as cutting with an edge in terms of removing limbs
 /proc/has_edge(obj/item/O)
+	READS_FROM(O)
 	if(!isitem(O))
 		return FALSE
-	if(O.edge)
+	if(O.edge) // ALLOW(reads): a helper a food condition asks about the held thing; the click asks again
 		return TRUE
 	return FALSE
 

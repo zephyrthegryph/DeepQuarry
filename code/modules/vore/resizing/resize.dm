@@ -71,7 +71,7 @@
 	return 100000 //Whatever it is, it's too big to pick up, or it's a ghost, or something.
 
 /mob/living/get_effective_size(micro = FALSE)
-	return size_multiplier
+	return size_multiplier // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 
 /mob/living/carbon/human/get_effective_size(micro = FALSE)		// Set micro to TRUE for interactions where you're small, to FALSE for ones where you're large.
 	var/effective_size = size_multiplier

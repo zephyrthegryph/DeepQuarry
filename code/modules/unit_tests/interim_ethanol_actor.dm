@@ -25,15 +25,6 @@
 	TEST_ASSERT_NULL(source.last_actor_ref, "an ambient exposure does not inherit a previous actor")
 	TEST_ASSERT_EQUAL(source.touch_count, 2, "ambient touch still invokes object exposure")
 	TEST_ASSERT(!paper.info, "ambient ethanol exposure still removes ink")
-	var/obj/item/reagent_containers/glass/beaker/pour_source = allocate(/obj/item/reagent_containers/glass/beaker, T)
-	var/obj/item/reagent_containers/glass/beaker/pour_target = allocate(/obj/item/reagent_containers/glass/beaker, T)
-	own_clear(pour_source, nameof(pour_source.reagents))
-	own_set(pour_source, nameof(pour_source.reagents), source)
-	rel_set(source, nameof(source.my_atom), pour_source)
-	pour_source.amount_per_transfer_from_this = 3
-	TEST_ASSERT_EQUAL(pour_source.standard_pour_into(user, pour_target), 1, "the player-facing pour helper handles the transfer")
-	TEST_ASSERT_EQUAL(source.last_actor_ref, REF(user), "standard_pour_into forwards its actor through transfer and exposure")
-	TEST_ASSERT_EQUAL(pour_target.reagents.get_reagent_amount(REAGENT_ID_ETHANOL), 3, "the forwarded pour still transfers its configured dose")
 
 /datum/unit_test/interim_ethanol_book_ink/Run()
 	var/turf/T = run_loc_floor_bottom_left
@@ -55,24 +46,6 @@
 	source.reagents.trans_to_obj(book, 5, user = user)
 	TEST_ASSERT_NULL(book.dat, "trans_to_obj's temporary holder forwards exposure to real ethanol")
 	TEST_ASSERT_EQUAL(source.reagents.total_volume, 5, "the temporary exposure transfer debits only its requested amount")
-
-/datum/reagents/interim_ethanol_actor_probe/splash(atom/target, amount = 1, multiplier = 1, copy = 0, min_spill = 0, max_spill = 60, mob/user = null)
-	last_actor_ref = user ? REF(user) : null
-	return ..()
-
-/datum/unit_test/interim_ethanol_standard_splash_actor/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
-	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
-	var/obj/item/reagent_containers/glass/beaker/container = allocate(/obj/item/reagent_containers/glass/beaker, T)
-	var/datum/reagents/interim_ethanol_actor_probe/source = allocate(/datum/reagents/interim_ethanol_actor_probe)
-	own_clear(container, nameof(container.reagents))
-	own_set(container, nameof(container.reagents), source)
-	rel_set(source, nameof(source.my_atom), container)
-	source.add_reagent(REAGENT_ID_ETHANOL, 10)
-	TEST_ASSERT_EQUAL(container.standard_splash_mob(user, target), 1, "the standard splash handles a real target")
-	TEST_ASSERT_EQUAL(source.last_actor_ref, REF(user), "the standard splash preserves its actor through recursive spill calls")
-	TEST_ASSERT(target.touching.get_reagent_amount(REAGENT_ID_ETHANOL) > 0, "the splash actually exposes its target to ethanol")
 
 /datum/unit_test/interim_ethanol_spray_actor/Run()
 	var/turf/T = run_loc_floor_bottom_left

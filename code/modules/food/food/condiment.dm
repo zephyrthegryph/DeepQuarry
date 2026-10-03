@@ -16,8 +16,6 @@
 	center_of_mass_x = 16
 	center_of_mass_y = 6
 	volume = 50
-	/// The old Set transfer amount entries are the capability's.
-	transfer_amount_verb = FALSE
 	/// The bottle is named, described and drawn for the reagent it holds most of (a small shaker, a packet, the spice bottle and a carton keep their own looks).
 	var/looks_like_contents = TRUE
 

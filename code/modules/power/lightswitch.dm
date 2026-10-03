@@ -24,38 +24,39 @@
 	x_offset = 26
 	y_offset = 26
 
-// Attackby on the lightswitch for deconstruction steps.
-/// The old attackby: fingerprinted, then fell through to ..().
-/datum/interaction/machine_item/lightswitch_fingerprint
-	id = "lightswitch_fingerprint"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_fingerprint
-
 /obj/machinery/light_switch
 	maintenance_flags = MACHINE_MAINT_STANDARD
 
 /obj/machinery/light_switch/dismantle()
 	play_sfx(src, SFX_ITEMS_CROWBAR)
 	var/obj/structure/construction/lightswitch/A = new(src.loc, src.dir)
-	A.stage = FRAME_WIRED
+	graph_place(A, STAGE_LIGHTSWITCH_WIRED)
 	A.pixel_x = pixel_x
 	A.pixel_y = pixel_y
-	A.update_icon()
+	A.update_state()
 	replace_with(src, A)
 	return 1
 
 //
-// Simple Construction Frame - Simpler than the full frame system for circuitless construction.
-// If this works out well for light switches we can use it for other lightweight constructables.
+// Simple Construction Frame: circuitless construction for light switches (a graph: loose frame, fastened to the wall, wired, closed into the
+// switch; a welder takes a loose frame down).
 //
+
+STAGE_DEF(lightswitch, frame)
+STAGE_DEF(lightswitch, fastened)
+STAGE_DEF(lightswitch, wired)
+STAGE_DEF(lightswitch, finished)
+
+MSG_DEF_SELF(stage/lightswitch/frame, "It's an empty frame.")
+MSG_DEF_SELF(stage/lightswitch/fastened, "It's fixed to the wall.")
+MSG_DEF_SELF(stage/lightswitch/wired, "It's wired.")
+MSG_DEF_SELF(stage/lightswitch/finished, "It is finished.")
 
 /obj/structure/construction
 	name = "simple frame prototype"
 	desc = "This is a prototype object and you should not see it, report to a developer"
 	anchored = TRUE
 	var/base_icon = "something"
-	var/stage = FRAME_UNFASTENED
 	var/build_machine_type = null
 	var/x_offset = 26
 	var/y_offset = 26
@@ -68,94 +69,59 @@
 		pixel_x = (dir & 3) ? 0 : (dir == EAST ? -x_offset : x_offset)
 	if(y_offset)
 		pixel_y = (dir & 3) ? (dir == NORTH ? -y_offset : y_offset) : 0
+	update_state()
 
-/obj/structure/construction/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 2)
-		switch(stage)
-			if(FRAME_UNFASTENED)
-				. += "It's an empty frame."
-			if(FRAME_FASTENED)
-				. += "It's fixed to the wall."
-			if(FRAME_WIRED)
-				. += "It's wired."
+CAPABILITIES(/obj/structure/construction/lightswitch)
+	construction(start(STAGE_LIGHTSWITCH_FRAME),
+		stage(STAGE_LIGHTSWITCH_FASTENED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(stage_changed)), undone(PROC_REF(stage_changed))),
+		stage(STAGE_LIGHTSWITCH_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(0), then(PROC_REF(wired)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(0))),
+		stage(STAGE_LIGHTSWITCH_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), then(PROC_REF(finished)), undo = null),
+		dismantle(tool(TOOL_WELDER), wait(2 SECONDS), then(PROC_REF(deconstructed))))
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHTSWITCH_FASTENED, because = MSG(lightswitch/fastened_first)), because = MSG(lightswitch/fastened_first))))
+	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes())
 
-APPEARANCE_TEMPLATE(/obj/structure/construction, "{base_icon}{stage}")
+MSG_DEF_SELF(lightswitch/fastened_first, "You have to unscrew the case first.")
 
-DECLARE_INTERACTIONS(/obj/structure/construction, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/// How far the frame is built, as the number its picture is made from: FRAME_UNFASTENED, FRAME_FASTENED or FRAME_WIRED.
+/obj/structure/construction/proc/frame_stage()
+	if(built(src, STAGE_LIGHTSWITCH_WIRED))
+		return FRAME_WIRED
+	if(built(src, STAGE_LIGHTSWITCH_FASTENED))
+		return FRAME_FASTENED
+	return FRAME_UNFASTENED
 
-/// Old attackby.
-/obj/structure/construction/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	add_fingerprint(user)
-	if(istype(W, /obj/item/stack/cable_coil))
-		if (stage == FRAME_FASTENED)
-			var/obj/item/stack/cable_coil/coil = W
-			if (coil.use(1))
-				stage = FRAME_WIRED
-				user.update_examine_panel(src)
-				act_message(user, src, MSG_SELF("You add wires to %T%."), MSG_OTHERS("%U% adds wires to %T%."), MSG_BLIND("You hear a noise."))
-				play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-				update_icon()
-		return INTERACTION_HANDLED_PASS
+/obj/structure/construction/proc/update_state()
+	icon_state = "[base_icon][frame_stage()]"
 
-	return FALSE
+/obj/structure/construction/proc/stage_changed(datum/act/op/A)
+	update_state()
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER, 75)
+	return OP_OK
 
-/obj/structure/construction/welder_act(mob/user, obj/item/W)
-	if(stage != FRAME_UNFASTENED)
-		to_chat(user, stage == FRAME_FASTENED ? "You have to unscrew the case first." : "You have to remove the wires first.")
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, W, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start deconstructing \the [src].", start_others = "\The [user] begins deconstructing \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/obj/structure/construction/proc/wired(datum/act/op/A)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+	update_state()
+	return OP_OK
 
-/obj/structure/construction/proc/welder_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You deconstruct %T%.")), MSG_OTHERS(span_warning("%U% has deconstructed %T%.")))
+/// The ledger gives the length of cable back.
+/obj/structure/construction/proc/unwired(datum/act/op/A)
+	update_state()
+	return OP_OK
+
+/obj/structure/construction/proc/touched_with(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/// The last screw closes the frame into the machine it stands for, on the same spot.
+/obj/structure/construction/proc/finished(datum/act/op/A)
+	var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
+	newmachine.pixel_x = pixel_x
+	newmachine.pixel_y = pixel_y
+	transfer_fingerprints_to(newmachine)
+	replace_with(src, newmachine)
+	return OP_OK
+
+/obj/structure/construction/proc/deconstructed(datum/act/op/A)
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT, 1.5)
 	replace_with(src, /obj/item/stack/material/steel, 2)
-
-/obj/structure/construction/wirecutter_act(mob/user, obj/item/W)
-	if(stage != FRAME_WIRED)
-		return ITEM_INTERACT_BLOCKING
-	stage = FRAME_FASTENED
-	user.update_examine_panel(src)
-	new /obj/item/stack/cable_coil(get_turf(src), 1, "red")
-	act_message(user, src, MSG_SELF("You remove the wiring from %T%."), MSG_OTHERS("%U% removes the wiring from %T%."), MSG_BLIND("You hear a snip."))
-	playsound(src, W.usesound, 50, 1)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/construction/screwdriver_act(mob/user, obj/item/W)
-	if(stage == FRAME_UNFASTENED)
-		stage = FRAME_FASTENED
-		act_message(user, src, MSG_SELF("You screw %T% in place."), MSG_OTHERS("%U% screws %T% in place."), MSG_BLIND("You hear a noise."))
-	else if(stage == FRAME_FASTENED)
-		stage = FRAME_UNFASTENED
-		act_message(user, src, MSG_SELF("You unscrew %T%."), MSG_OTHERS("%U% unscrews %T%."), MSG_BLIND("You hear a noise."))
-	else
-		act_message(user, src, MSG_SELF("You close %T%'s casing."), MSG_OTHERS("%U% closes %T%'s casing."), MSG_BLIND("You hear a click."))
-		playsound(src, W.usesound, 75, 1)
-		var/obj/newmachine = new build_machine_type(get_turf(src), src.dir)
-		newmachine.pixel_x = pixel_x
-		newmachine.pixel_y = pixel_y
-		transfer_fingerprints_to(newmachine)
-		replace_with(src, newmachine)
-		return ITEM_INTERACT_SUCCESS
-	user.update_examine_panel(src)
-	playsound(src, W.usesound, 75, 1)
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/construction/get_description_interaction()
-	. = list()
-	switch(stage)
-		if(FRAME_UNFASTENED)
-			. += list(
-				"[desc_panel_image("screwdriver")]to continue construction.",
-				"[desc_panel_image("welder")]to deconstruct.")
-		if(FRAME_FASTENED)
-			. += list(
-				"[desc_panel_image("cable coil")]to continue construction.",
-				"[desc_panel_image("screwdriver")]to reverse construction.")
-		if(FRAME_WIRED)
-			. += list(
-				"[desc_panel_image("screwdriver")]to finish construction.",
-				"[desc_panel_image("wirecutters")]to reverse construction.")
+	return OP_OK

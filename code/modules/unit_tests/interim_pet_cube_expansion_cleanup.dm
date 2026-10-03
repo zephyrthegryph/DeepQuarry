@@ -1,4 +1,5 @@
 /datum/unit_test/interim_pet_cube_expansion_cleanup/Run()
+	test_driver_begin()
 	var/turf/T = test_floor()
 	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
 	var/obj/item/storage/box/monkeycubes/pets/box = allocate(/obj/item/storage/box/monkeycubes/pets, T)
@@ -9,7 +10,9 @@
 	TEST_ASSERT(cube.wrapped, "The actual constructor creates a genuinely wrapped original cube")
 	TEST_ASSERT(box.release_to(cube, T, null, actor), "The actual original box releases its real cube onto the floor")
 	TEST_ASSERT(actor.put_in_active_hand(cube), "The actual actor holds the exact original pet cube")
-	TEST_ASSERT(cube.monkeycube_self(actor, cube, null), "The actual self-use unwraps the original pet cube")
+	actor.next_click = 0
+	test_click(actor, cube, cube)
+	test_time(10 SECONDS)
 	TEST_ASSERT(!cube.wrapped, "Actual self-use leaves the original cube genuinely unwrapped")
 	var/list/before = turf_contents_of_type(T, /mob/living/simple_mob/animal/passive/dog/corgi/Ian)
 	add_trait(cube, TRAIT_NODROP, "interim_pet_cube_expansion_cleanup")
@@ -33,3 +36,4 @@
 	TEST_ASSERT(!QDELETED(box) && box.loc == T, "Actual expansion preserves the original source box")
 	TEST_ASSERT_EQUAL(actor.get_active_hand(), pen, "Actual expansion preserves the unrelated original held pen")
 	TEST_ASSERT(!QDELETED(actor) && actor.loc == T, "Actual expansion preserves the original actor and floor")
+	test_driver_end()

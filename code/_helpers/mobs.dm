@@ -186,10 +186,11 @@ Proc for attack log creation, because really why not
 
 //checks whether this item is a module of the robot it is located in.
 /proc/is_robot_module(obj/item/thing)
-	if (!thing || !isrobot(thing.loc))
+	READS_FROM(thing)
+	if (!thing || !isrobot(thing.loc)) // ALLOW(reads): a helper a food condition asks about the held thing; the click asks again
 		return 0
-	var/mob/living/silicon/robot/R = thing.loc
-	return (thing in R.module.modules)
+	var/mob/living/silicon/robot/R = thing.loc // ALLOW(reads): a helper a food condition asks about the held thing; the click asks again
+	return (thing in R.module.modules) // ALLOW(reads): a helper a food condition asks about the held thing; the click asks again
 
 /proc/get_exposed_defense_zone(atom/movable/target)
 	var/obj/item/grab/G = locate_within(target, /obj/item/grab)

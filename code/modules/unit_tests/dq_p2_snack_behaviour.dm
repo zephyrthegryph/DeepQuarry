@@ -25,15 +25,18 @@
 /proc/sn_coating(obj/item/reagent_containers/food/snacks/F)
 	return F.coating()
 
-/// The actor clicks `target` with `held` and gives `answer` to the one question it asks (the old prompt is keyed by its asker, a key and the proc).
-/datum/unit_test/dq_p2_reagents/proc/sn_click_answering(mob/living/carbon/human/H, atom/target, obj/item/held, asker, key, proc_name, answer, stance = I_HELP)
-	GLOB.om_rerun_answers["[REF(asker)]:[proc_name]"] = list("[key]" = answer)
-	rc_click(H, target, held, stance)
-	GLOB.om_rerun_answers -= "[REF(asker)]:[proc_name]"
+/// The actor clicks `target` with `held` and gives `answer` to the one question it asks.
+/datum/unit_test/dq_p2_reagents/proc/sn_click_answering(mob/living/carbon/human/H, atom/target, obj/item/held, answer, stance = I_HELP)
+	rc_click(H, target, held, stance, FALSE)
+	if(isnull(answer))
+		test_answer(H, null, REQ_CANCELLED)
+	else
+		test_answer(H, answer)
+	rc_settle()
 
 /// The actor clicks `food` with `held` and says yes or no to hiding it in the food.
 /datum/unit_test/dq_p2_reagents/proc/sn_click_hiding(mob/living/carbon/human/H, obj/item/reagent_containers/food/snacks/food, obj/item/held, answer)
-	sn_click_answering(H, food, held, food, "k397", "snacks_item", answer)
+	sn_click_answering(H, food, held, answer == "Yes" ? TRUE : null)
 
 /// A snack of `type` on the test turf.
 /datum/unit_test/dq_p2_reagents/proc/sn_snack(type = /obj/item/reagent_containers/food/snacks/aesirsalad, turf/T)
@@ -115,6 +118,7 @@
 		if(QDELETED(S))
 			break
 		rc_click(H, H, S, I_HELP, FALSE)
+		test_time(1 SECONDS)
 	TEST_ASSERT(QDELETED(S), "the snack is gone")
 	var/obj/item/trash/snack_bowl/trash = locate() in H
 	if(!trash)
@@ -127,9 +131,10 @@
 /datum/unit_test/dq_p2_reagents/full_person_cannot_eat/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/S = sn_snack()
-	H.set_nutrition(7000)
+	H.reagents.add_reagent(REAGENT_ID_NUTRIMENT, 260)
 	rc_click(H, H, S, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_units(S), 32, "nothing was eaten")
+	H.reagents.clear_reagents()
 	H.set_nutrition(100)
 	rc_click(H, H, S, I_HELP, FALSE)
 	TEST_ASSERT_EQUAL(rc_units(S), 29, "a hungry one eats")
@@ -629,7 +634,7 @@
 
 /// The person writes on the tag of a closed box with a pen, giving `text` when asked.
 /datum/unit_test/dq_p2_reagents/proc/sn_tag_box(mob/living/carbon/human/H, obj/item/pizzabox/box, obj/item/pen/pen, text)
-	sn_click_answering(H, box, pen, box, "k4329", "interaction_item", text)
+	sn_click_answering(H, box, pen, text)
 
 /// Using a box opens and shuts it, and an open box with a pizza is made messy; a stack does not open.
 /datum/unit_test/dq_p2_reagents/pizza_box_opens_and_shuts
@@ -669,6 +674,7 @@
 	rc_click(H, box, pizza, I_HELP)
 	TEST_ASSERT_NULL(box.pizza, "a shut box does not take it")
 	box.open = TRUE
+	changed(box)
 	rc_click(H, box, pizza, I_HELP)
 	TEST_ASSERT_EQUAL(box.pizza, pizza, "an open one does")
 
@@ -684,6 +690,7 @@
 	TEST_ASSERT_EQUAL(top.loc, bottom, "inside the pile")
 	var/obj/item/pizzabox/open_box = allocate(/obj/item/pizzabox, run_loc_floor_bottom_left)
 	open_box.open = TRUE
+	changed(open_box)
 	rc_click(H, bottom, open_box, I_HELP)
 	TEST_ASSERT_EQUAL(length(bottom.boxes), 1, "an open box is not stacked")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)

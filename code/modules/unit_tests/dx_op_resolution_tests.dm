@@ -251,7 +251,7 @@
 	var/list/types = list(
 		/obj/cap_fixture/anchorable, /obj/cap_fixture/breakable, /obj/cap_fixture/seat, /obj/cap_fixture/cell_box,
 		/obj/cap_fixture/cell_charger, /obj/cap_fixture/climbable, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
-		/obj/item/dq_cap_fixture/flask, /obj/item/dq_cap_fixture/snack, /obj/cap_fixture/emag,
+		/obj/cap_fixture/emag,
 		/obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
 		/obj/cap_fixture/panel, /obj/cap_fixture/rotatable,
 		/obj/cap_fixture/beacon, /obj/item/dq_cap_fixture/cig, /obj/cap_fixture/stampable,

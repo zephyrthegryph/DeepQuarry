@@ -21,7 +21,6 @@
 	VAR_PRIVATE/label = ""
 
 /obj/item/reagent_containers/chem_canister
-	transfer_amount_verb = FALSE // Can't be set on these
 
 /obj/item/reagent_containers/chem_canister/Initialize(mapload)
 	. = ..()

@@ -96,10 +96,12 @@ fn check(name: &str) {
         assert_eq!(res2.residue, res.residue, "{}/{}: two runs report different residue", name, c.name);
         assert_eq!(res2.keys, res.keys);
 
-        // Local and reversible: every edit has an exact inverse, and no line is added or removed.
+        // Local and reversible: every edit has an exact inverse, and no line is added or removed (a codemod that declares what its sites need adds those lines).
         for ch in &res.changes {
             assert_eq!(codemod::revert_edits(&ch.after, &ch.inverse), ch.before, "{}/{}: the inverse edits do not restore the input", name, c.name);
-            assert_eq!(ch.before.matches('\n').count(), ch.after.matches('\n').count(), "{}/{}: the codemod changed the line count", name, c.name);
+            if !cm.declares() {
+                assert_eq!(ch.before.matches('\n').count(), ch.after.matches('\n').count(), "{}/{}: the codemod changed the line count", name, c.name);
+            }
         }
 
         // CRLF in, CRLF out: line endings are outside the rewritten spans.
@@ -155,7 +157,7 @@ fn excluded_paths_are_counted_and_never_rewritten() {
     write("code/a_stubs.dm", &stubs);
     write("code/modules/unit_tests/t.dm", "/datum/proc/t()\n\town_set(src, \"cell\", null)\n");
     write("code/engine/e.dm", "/datum/proc/e()\n\town_set(src, \"cell\", null)\n");
-    write("code/modules/real/r.dm", "/datum/proc/r()\n\town_set(src, \"cell\", null)\n");
+    write("code/modules/real/r.dm", "/datum/real_holder\n\tvar/datum/cell\n\n/datum/real_holder/proc/r()\n\town_set(src, \"cell\", null)\n");
     let res = codemod::run(d.path(), cm.as_ref(), &RunOpts { apply: true, paths: vec![] }).unwrap();
     assert_eq!(res.rewrites, 1);
     assert_eq!(res.excluded, 2);
@@ -174,7 +176,7 @@ fn a_path_filter_withholds_edits_but_still_reports_the_whole_tree() {
         std::fs::write(p, text).unwrap();
     };
     write("code/a_stubs.dm", &stubs);
-    write("code/modules/a/x.dm", "/datum/proc/x()\n\town_set(src, \"cell\", null)\n");
+    write("code/modules/a/x.dm", "/datum/holder_a\n\tvar/datum/cell\n\n/datum/holder_a/proc/x()\n\town_set(src, \"cell\", null)\n");
     write("code/modules/b/y.dm", "/datum/proc/y()\n\town_set(src, \"cell\", null, user = null)\n");
     let res = codemod::run(d.path(), cm.as_ref(), &RunOpts { apply: true, paths: vec!["code/modules/a/".into()] }).unwrap();
     assert_eq!(res.rewrites, 1);
