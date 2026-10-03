@@ -207,9 +207,11 @@ This device records all warnings given and teleport events for admin review in c
 	else if(istype(W,/obj/item/perfect_tele_beacon))
 		var/obj/item/perfect_tele_beacon/tb = W
 		if(tb in beacons)
-			to_chat(user,span_notice("You re-insert \the [tb] into \the [src]."))
+			var/beacon_name = "\the [tb]"
+			if(!consume(tb, user))
+				return TRUE
+			to_chat(user,span_notice("You re-insert [beacon_name] into \the [src]."))
 			rel_remove(src, nameof(beacons), tb)
-			consume(tb, user)
 			beacons_left++
 		else
 			to_chat(user,span_notice("\The [tb] doesn't belong to \the [src]."))

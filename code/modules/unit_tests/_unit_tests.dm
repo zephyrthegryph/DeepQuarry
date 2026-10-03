@@ -840,6 +840,7 @@
 #include "interim_homunculus_death_cleanup.dm"
 #include "interim_tabletop_pickup_actor.dm"
 #include "interim_singularity_beacon_sticky_deployment.dm"
+#include "interim_translocator_sticky_beacon_reclaim.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
