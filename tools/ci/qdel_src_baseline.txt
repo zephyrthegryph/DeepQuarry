@@ -212,7 +212,6 @@ qdel_src	code/game/objects/items/weapons/material/material_armor.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/material/material_weapons.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/material/material_weapons.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/material/shards.dm	qdel(src)
-qdel_src	code/game/objects/items/weapons/policetape.dm	qdel(src) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 qdel_src	code/game/objects/items/weapons/storage/boxes.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/syndie.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/tanks/tanks.dm	qdel(src)

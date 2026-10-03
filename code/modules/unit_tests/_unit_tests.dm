@@ -760,6 +760,7 @@
 #include "interim_smart_magazine_emag_original_round.dm"
 #include "interim_monkey_rehydrator_sticky_cube.dm"
 #include "interim_microwave_sticky_produce.dm"
+#include "interim_tape_break_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
