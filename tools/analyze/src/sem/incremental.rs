@@ -307,10 +307,11 @@ fn validate(tree: &Tree) -> Option<Record> {
     let changed_tokens: Vec<(String, Hash)> = changed.iter().map(|rel| (rel.clone(), token_hash(tree, rel))).collect();
     let all_same = changed_tokens.iter().all(|(rel, t)| *t == rec.files[rel].tokens);
     if all_same {
+        // Nothing to learn and nothing worth a 1 MB write: the next run finds the same changed files the same way
+        // (a token hash each, no parse).
         for rel in &changed {
             rec.files.get_mut(rel)?.fkey = now[rel];
         }
-        save(&rec);
         return Some(rec);
     }
     let changed: Vec<String> = changed_tokens.iter().filter(|(rel, t)| *t != rec.files[rel].tokens).map(|(rel, _)| rel.clone()).collect();
