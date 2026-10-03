@@ -10,11 +10,13 @@
 	var/upperdrop = 10
 	var/outcropdrop = /obj/item/ore/glass
 
+CAPABILITIES(/obj/structure/outcrop)
+	climb()
+
 /obj/structure/outcrop/Initialize(mapload)
 	. = ..()
 	if(prob(1))
 		add_overlay("[initial(icon_state)]-egg")
-	make_climbable()
 
 /obj/structure/outcrop/diamond
 	name = "shiny outcrop"

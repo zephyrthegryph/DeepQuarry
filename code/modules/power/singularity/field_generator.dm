@@ -84,9 +84,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 
 	return .
 
+CAPABILITIES(/obj/machinery/field_generator)
+	climb()
+
 /obj/machinery/field_generator/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	emp_protection_flags |= EMP_PROTECT_SELF
 
 /obj/machinery/field_generator/machine_step()

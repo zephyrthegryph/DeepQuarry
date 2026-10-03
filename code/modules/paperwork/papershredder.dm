@@ -26,11 +26,13 @@
 		/obj/item/paper_bundle = 3,
 		)
 
+CAPABILITIES(/obj/machinery/papershredder)
+	climb()
+
 /obj/machinery/papershredder/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	update_icon()
-	make_climbable()
 
 /obj/machinery/papershredder/declare_interactions(list/into)
 	into += list(

@@ -28,7 +28,6 @@ When mapping these in, be sure to give at least a one tile clearance, as NORTH f
 two tiles on initialization, and which way a cliff is facing may change during maploading.
 */
 
-#define CLIFF_CLIMB_DELAY 10
 /obj/structure/cliff
 	name = "cliff"
 	desc = "A steep rock ledge. You might be able to climb it if you feel bold enough."
@@ -52,7 +51,22 @@ two tiles on initialization, and which way a cliff is facing may change during m
 /obj/structure/cliff/Initialize(mapload)
 	. = ..()
 	register_dangerous_to_step()
-	make_climbable(/datum/om/behaviour/climbable/cliff, CLIFF_CLIMB_DELAY SECONDS)
+
+CAPABILITIES(/obj/structure/cliff)
+	climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed))
+
+/// North facing cliffs are two tiles high and take half the time.
+/obj/structure/cliff/proc/climb_delay()
+	return is_double_cliff ? CLIFF_CLIMB_TIME / 2 : CLIFF_CLIMB_TIME
+
+/// Cliff climbing requires climbing gear: null when the climber has it, else why not.
+/obj/structure/cliff/proc/climbing_gear_needed(mob/living/climber)
+	if(ishuman(climber))
+		var/mob/living/carbon/human/H = climber
+		var/obj/item/clothing/shoes/shoes = H.get_equipped_item(SLOT_ID_SHOES)
+		if(shoes && shoes.rock_climbing)
+			return null
+	return "\The [src] is too steep to climb unassisted."
 
 /// Phase 2: leaves the dangerous-to-step index.
 /obj/structure/cliff/lifecycle_dematerialize()
@@ -250,4 +264,3 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 		return FALSE
 	return ..()
 
-#undef CLIFF_CLIMB_DELAY

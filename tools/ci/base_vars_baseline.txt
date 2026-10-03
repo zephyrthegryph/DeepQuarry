@@ -25,10 +25,6 @@ base_var	code/datums/behaviours/burning.dm	var/burn_particle_type
 base_var	code/datums/behaviours/burning.dm	var/burn_fuel = 0
 base_var	code/datums/behaviours/burning.dm	var/tmp/datum/native_watch/heat/burn_cool_watch
 base_var	code/datums/behaviours/burning.dm	var/burn_ended_by
-base_var	code/datums/behaviours/climbable.dm	var/climbable_type
-base_var	code/datums/behaviours/climbable.dm	var/climbable_delay = 3.5 SECONDS
-base_var	code/datums/behaviours/climbable.dm	var/climbable_vaulting = FALSE
-base_var	code/datums/behaviours/climbable.dm	var/list/mob/living/climbers
 base_var	code/datums/behaviours/conflict_checking.dm	var/conflict_id
 base_var	code/datums/behaviours/deconstructable_research.dm	var/techweb_points = 0
 base_var	code/datums/behaviours/deconstructable_research.dm	var/techweb_point_type = TECHWEB_POINT_TYPE_GENERIC

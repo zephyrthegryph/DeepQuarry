@@ -30,10 +30,12 @@
 		/obj/item/clothing/head/helmet/space
 		)
 
+CAPABILITIES(/obj/machinery/washing_machine)
+	climb()
+
 /obj/machinery/washing_machine/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 
 /obj/machinery/washing_machine/ownership()
 	. = ..()

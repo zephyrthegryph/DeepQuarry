@@ -10,10 +10,12 @@
 	circuit = /obj/item/circuitboard/industrial_reagent_waste_processor
 	default_max_vol = CARGOTANKER_VOLUME
 
+CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor)
+	climb()
+
 /obj/machinery/reagent_refinery/waste_processor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 	flags |= NOREACT
 
 /obj/machinery/reagent_refinery/waste_processor/refinery_step()

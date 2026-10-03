@@ -295,7 +295,7 @@ machinery_ex_act_allow = ["code/game/machinery/machinery.dm"]
 # The count ratchets of check_grep.sh: a rule over its ceiling fails (`analyze baseline --update`
 # lowers a ceiling, never raises it). The colour-macro count is MACRO_COUNT in dependencies.sh.
 [lint.check_grep.ceilings]
-admin_rights_shrink_only_baseline_one_mechanism_admin_can = 65
+admin_rights_shrink_only_baseline_one_mechanism_admin_can = 60
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__holder = 247
 admin_rights_shrink_only_baseline_one_mechanism_admin_can__rights_and = 17
 heat_ratchet_on_fire_act_overrides_h3 = 6

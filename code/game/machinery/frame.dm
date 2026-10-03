@@ -353,6 +353,9 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 		var/obj/ct = ct_path
 		req_component_names[ct_path] = initial(ct.name)
 
+CAPABILITIES(/obj/structure/frame)
+	climb()
+
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)
@@ -380,7 +383,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 	update_icon()
 
-	make_climbable()
 	make_rotatable()
 
 // The board, cables, glass and tool steps are the frame's construction graph:

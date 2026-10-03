@@ -25,11 +25,13 @@
 	. = ..()
 	. += legacy_powered_by(POWERED_BY_AREA, role = POWER_ROLE_COMPUTER)
 
+CAPABILITIES(/obj/machinery/computer)
+	climb()
+
 /obj/machinery/computer/Initialize(mapload)
 	. = ..()
 	power_change()
 	update_icon()
-	make_climbable()
 
 DAMAGE_REACTION(/obj/machinery/computer, DAMAGE_EMP, PROC_REF(computer_emp))
 /// An EMP may break the computer.

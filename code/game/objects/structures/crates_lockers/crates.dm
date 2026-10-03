@@ -15,9 +15,11 @@
 	open_sound = SFX_EFFECTS_CRATE_OPEN
 	close_sound = SFX_EFFECTS_CRATE_CLOSE
 
+CAPABILITIES(/obj/structure/closet/crate)
+	climb()
+
 /obj/structure/closet/crate/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	make_rotatable()
 
 /obj/structure/closet/crate/can_close()
@@ -47,7 +49,7 @@
 	slot_empty(CONTAINER_SLOT_INTERIOR, get_turf(src))
 	src.opened = 1
 
-	om_emit(src, new /datum/om/event/climb_shake(null))
+	climb_shake_off(src, null)
 	update_icon()
 	return 1
 

@@ -341,7 +341,6 @@
 #include "dx_cap_anchor_tests.dm"
 #include "dx_cap_assembly_tests.dm"
 #include "dx_cap_block_tests.dm"
-#include "dx_cap_climb_tests.dm"
 #include "dx_cap_embed_tests.dm"
 #include "dx_cap_entries_tests.dm"
 #include "dx_operations_tests.dm"

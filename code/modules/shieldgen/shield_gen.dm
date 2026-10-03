@@ -30,6 +30,7 @@
 CAPABILITIES(/obj/machinery/shield_gen)
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
 	owns_many(nameof(field))
+	climb()
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -54,7 +55,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 				rel_set(cap, nameof(cap.owned_gen), src)
 	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
-	make_climbable()
 
 
 /// Maintains its field while on (toggle() raises it and drops the whole field when switched off).

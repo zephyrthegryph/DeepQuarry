@@ -122,10 +122,8 @@ CAPABILITIES(/obj/machinery/shieldgen)
 DECLARE_DEFAULT_CHILD(/obj/machinery/shieldgen, "cell", "cell_type")
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldgen, MACHINE_PIPELINE, "active")
 
-/obj/machinery/shieldgen/Initialize(mapload)
-	. = ..()
-	make_climbable()
-
+CAPABILITIES(/obj/machinery/shieldgen)
+	climb()
 
 // its shields collapse.
 /obj/machinery/shieldgen/on_destroy(force)

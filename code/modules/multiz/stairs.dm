@@ -240,12 +240,14 @@
 	var/obj/structure/stairs/top/top = null
 	var/obj/structure/stairs/bottom/bottom = null
 
+CAPABILITIES(/obj/structure/stairs/middle)
+	climb()
+
 /obj/structure/stairs/middle/Initialize(mapload)
 	. = ..()
 	if(!GetAbove(src))
 		WARNING("Stair created without level above: ([loc.x], [loc.y], [loc.z])")
 		return INITIALIZE_HINT_QDEL
-	make_climbable()
 
 /obj/structure/stairs/middle/relations()
 	. = ..()

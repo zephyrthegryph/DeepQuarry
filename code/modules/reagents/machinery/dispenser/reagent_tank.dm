@@ -99,9 +99,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	. = ..()
 	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_WATER = 1000))
 
-/obj/structure/reagent_dispensers/watertank/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/watertank)
+	climb()
 
 /obj/structure/reagent_dispensers/watertank/high
 	name = "high-capacity water tank"
@@ -130,9 +129,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	. = ..()
 	. += refine(CAP_REAGENTS, add = list(REAGENT_ID_FUEL = 1000))
 
-/obj/structure/reagent_dispensers/fueltank/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/fueltank)
+	climb()
 
 /obj/structure/reagent_dispensers/fueltank/high
 	name = "high-capacity fuel tank"
@@ -154,9 +152,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	. = ..()
 	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_FIREFOAM = 1000))
 
-/obj/structure/reagent_dispensers/foam/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/foam)
+	climb()
 
 //Helium3
 /obj/structure/reagent_dispensers/he3
@@ -169,9 +166,8 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers, DAMAGE_BLOB, PROC_REF(dispens
 	. = ..()
 	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_HELIUM3 = 1000))
 
-/obj/structure/reagent_dispensers/he3/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/he3)
+	climb()
 
 /*
  * Misc
@@ -379,12 +375,14 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/fueltank, DAMAGE_EXPLOSION, PR
 	cupholder = 1
 	cups = 10
 
+CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler)
+	climb()
+
 /obj/structure/reagent_dispensers/water_cooler/Initialize(mapload)
 	. = ..()
 	if(bottle)
 		reagents.add_reagent(REAGENT_ID_WATER,2000)
 	update_icon()
-	make_climbable()
 	make_rotatable()
 
 /obj/structure/reagent_dispensers/water_cooler/examine(mob/user)
@@ -520,9 +518,8 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	. = ..()
 	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_BEER = 1000))
 
-/obj/structure/reagent_dispensers/beerkeg/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg)
+	climb()
 
 /obj/structure/reagent_dispensers/beerkeg/wood
 	name = "beer keg"
@@ -556,9 +553,8 @@ DECLARE_APPEARANCE(/obj/structure/reagent_dispensers/water_cooler, "bottle", lis
 	. = ..()
 	. += refine(CAP_REAGENTS, starts = list(REAGENT_ID_COOKINGOIL = 5000))
 
-/obj/structure/reagent_dispensers/cookingoil/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil)
+	climb()
 
 /obj/structure/reagent_dispensers/cookingoil/bullet_act(obj/item/projectile/Proj)
 	if(Proj.get_structure_damage())
@@ -583,10 +579,12 @@ DAMAGE_REACTION(/obj/structure/reagent_dispensers/cookingoil, DAMAGE_EXPLOSION, 
 	icon_state = "bloodbarrel"
 	amount_per_transfer_from_this = 10
 
+CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel)
+	climb()
+
 /obj/structure/reagent_dispensers/bloodbarrel/Initialize(mapload)
 	. = ..()
 	reagents.add_reagent(REAGENT_ID_BLOOD, 1000, list("donor"=null,"viruses"=null,"blood_DNA"=null,"blood_type"="O-","resistances"=null,"trace_chem"=null,"changeling"=FALSE))
-	make_climbable()
 
 
 /obj/structure/reagent_dispensers/space_cleaner

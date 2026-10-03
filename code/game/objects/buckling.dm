@@ -43,7 +43,7 @@
 	/// mounted another way (riding animals use their mount verb) and so ignore the drag.
 	var/drag_buckle = TRUE
 
-/// Every movable's default drag: buckle the dragged mob, or climb it.
+/// Every movable's default drag: buckle the dragged mob.
 /atom/movable/declare_interactions(list/into)
 	..()
 	var/static/list/drag_spec = INTERACT_DRAG_DEFAULT("Buckle", PROC_REF(interaction_drag_buckle))
@@ -51,9 +51,9 @@
 	drag.applies_proc = PROC_REF(offers_drag_buckle)
 	into += drag
 
-/// Whether the default drag does anything here: something can be buckled to it, or it can be climbed.
+/// Whether the default drag does anything here: something can be buckled to it (climbing is the climb capability's own drag).
 /atom/movable/proc/offers_drag_buckle()
-	return drag_buckle && (can_buckle || has_trait(src, TRAIT_CLIMBABLE))
+	return drag_buckle && can_buckle
 
 /atom/movable/proc/interaction_drag_buckle(mob/user, atom/movable/dropping, datum/interaction/interaction)
 	if(!drag_buckle)
@@ -62,9 +62,6 @@
 	if(can_buckle && istype(M))
 		if(user_buckle_mob(M, user))
 			return TRUE
-	if(M == user && has_trait(src,TRAIT_CLIMBABLE)) // Buckling takes priority
-		om_emit(src, new /datum/om/event/climb_start(user))
-		return TRUE
 	return FALSE
 
 /atom/movable/proc/has_buckled_mobs()

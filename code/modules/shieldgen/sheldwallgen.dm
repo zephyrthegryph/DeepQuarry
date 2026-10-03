@@ -30,9 +30,8 @@ OM_DERIVE_FIELD(/obj/machinery/shieldwallgen, wallgen_has_work, list("active", "
 	return active || anchored
 DECLARE_PERIODIC_WHILE(/obj/machinery/shieldwallgen, MACHINE_PIPELINE, "wallgen_has_work")
 
-/obj/machinery/shieldwallgen/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/shieldwallgen)
+	climb()
 
 /obj/machinery/shieldwallgen/declare_interactions(list/into)
 	into += list(

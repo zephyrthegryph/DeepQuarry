@@ -23,9 +23,11 @@
 /// Charges from the cable underneath while bolted down (it parks once full or with nothing to draw).
 DECLARE_PERIODIC_WHILE(/obj/machinery/shield_capacitor, MACHINE_PIPELINE, "anchored")
 
+CAPABILITIES(/obj/machinery/shield_capacitor)
+	climb()
+
 /obj/machinery/shield_capacitor/Initialize(mapload)
 	. = ..()
-	make_climbable()
 	make_rotatable()
 
 /obj/machinery/shield_capacitor/advanced

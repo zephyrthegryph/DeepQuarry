@@ -101,8 +101,6 @@ dx_appearance_side_effect	code/game/machinery/iv_drip.dm	if(75 to 79) filling.ic
 dx_appearance_side_effect	code/game/machinery/iv_drip.dm	if(80 to 90) filling.icon_state = "reagent80"
 dx_appearance_side_effect	code/game/machinery/iv_drip.dm	if(91 to INFINITY) filling.icon_state = "reagent100"
 dx_appearance_side_effect	code/game/machinery/iv_drip.dm	filling.icon += reagents.get_color()
-dx_appearance_side_effect	code/game/machinery/lightswitch.dm	set_light(0)
-dx_appearance_side_effect	code/game/machinery/lightswitch.dm	set_light(2, 0.1, on ? "#82FF4C" : "#F86060")
 dx_appearance_side_effect	code/game/machinery/neonsign.dm	set_light(0)
 dx_appearance_side_effect	code/game/machinery/neonsign.dm	set_light(2, 0.25, signlight)
 dx_appearance_side_effect	code/game/machinery/newscaster.dm	set_light(0)
@@ -715,11 +713,6 @@ dx_appearance_side_effect	code/modules/power/generator.dm	circ1().temperature_ov
 dx_appearance_side_effect	code/modules/power/generator.dm	circ2().temperature_overlay = "circ-[extreme]cold"
 dx_appearance_side_effect	code/modules/power/grid_checker.dm	set_light(2, 2, "#F86060")
 dx_appearance_side_effect	code/modules/power/grid_checker.dm	set_light(2, 2, "#A8B0F8")
-dx_appearance_side_effect	code/modules/power/lighting.dm	base_state = "flampshade"
-dx_appearance_side_effect	code/modules/power/lighting.dm	base_state = "flamp"
-dx_appearance_side_effect	code/modules/power/lighting.dm	desc = "A replacement [name]."
-dx_appearance_side_effect	code/modules/power/lighting.dm	desc = "A burnt-out [name]."
-dx_appearance_side_effect	code/modules/power/lighting.dm	desc = "A broken [name]."
 dx_appearance_side_effect	code/modules/power/port_gen.dm	set_light(0)
 dx_appearance_side_effect	code/modules/power/port_gen.dm	set_light(l_range = 2, l_power = 2, l_color = "#A8B0F8")
 dx_appearance_side_effect	code/modules/power/port_gen.dm	set_light(l_range = 5, l_power = 4, l_color = "#A8B0F8")

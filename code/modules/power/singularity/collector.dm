@@ -19,10 +19,12 @@
 
 REGISTRY_MEMBERSHIP(/obj/machinery/power/rad_collector, REGISTRY_RAD_COLLECTORS)
 
+CAPABILITIES(/obj/machinery/power/rad_collector)
+	climb()
+
 /obj/machinery/power/rad_collector/Initialize(mapload)
 	. = ..()
 	apply_rad_shield_material()
-	make_climbable()
 	om_hook(src, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(process_rads))
 
 /obj/machinery/power/rad_collector/proc/process_rads(datum/source, datum/om/event/before/in_range_of_irradiation/event)

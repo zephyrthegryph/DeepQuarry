@@ -152,10 +152,12 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/thermoregulator, MACHINE_PIPELINE, "
 	removed.add_thermal_energy(moved)
 	return mode
 
+CAPABILITIES(/obj/machinery/power/thermoregulator)
+	climb()
+
 /obj/machinery/power/thermoregulator/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 
 /obj/machinery/power/thermoregulator/Moved(atom/old_loc, direction, forced = FALSE)
 	. = ..()

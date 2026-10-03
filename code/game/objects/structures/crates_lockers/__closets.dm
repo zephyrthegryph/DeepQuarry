@@ -404,10 +404,7 @@ CAPABILITIES(/obj/structure/closet)
 		return INTERACTION_HANDLED_PASS
 	if(!isturf(user.loc)) // are you in a container/closet/pod/etc?
 		return INTERACTION_HANDLED_PASS
-	if(!opened)
-		// Attempt to climb if not opened!
-		if(O == user)
-			om_emit(src, new /datum/om/event/climb_start(user))
+	if(!opened) // a closed one is climbed by the climb capability's own drag, not here
 		return INTERACTION_HANDLED_PASS
 	if(istype(O, /obj/structure/closet))
 		return INTERACTION_HANDLED_PASS

@@ -250,7 +250,7 @@
 	var/turf/T = run_loc_floor_bottom_left
 	var/list/types = list(
 		/obj/cap_fixture/anchorable, /obj/cap_fixture/breakable, /obj/lib_fixture/chair, /obj/cap_fixture/cell_box,
-		/obj/cap_fixture/cell_charger, /obj/cap_fixture/climbable, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
+		/obj/cap_fixture/cell_charger, /obj/cap_fixture/cover_hand, /obj/cap_fixture/cover_crowbar,
 		/obj/cap_fixture/emag,
 		/obj/cap_fixture/labelled, /obj/cap_fixture/lib_slot, /obj/cap_fixture/lock,
 		/obj/cap_fixture/panel, /obj/cap_fixture/rotatable,

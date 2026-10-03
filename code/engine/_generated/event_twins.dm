@@ -23,8 +23,6 @@ GLOBAL_LIST_INIT(event_twin_notice, list(
 	/datum/om/event/carbon_slip = list(/datum/notice/carbon_slip, "slipped_on", "stun_duration"),
 	/datum/om/event/click = list(/datum/notice/click, "location", "control", "params", "user"),
 	/datum/om/event/client_click = list(/datum/notice/client_click, "target_", "location", "control", "params", "user"),
-	/datum/om/event/climb_shake = list(/datum/notice/climb_shake, "user"),
-	/datum/om/event/climb_start = list(/datum/notice/climb_start, "user"),
 	/datum/om/event/closet_closed = list(/datum/notice/closet_closed),
 	/datum/om/event/disposal_link = list(/datum/notice/disposal_link, "trunk"),
 	/datum/om/event/disposal_receive = list(/datum/notice/disposal_receive, "items", "gas"),

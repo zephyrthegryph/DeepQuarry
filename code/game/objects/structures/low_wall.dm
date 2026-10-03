@@ -28,6 +28,9 @@
 
 DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "blank")))
 
+CAPABILITIES(/obj/structure/low_wall)
+	climb()
+
 /obj/structure/low_wall/Initialize(mapload, materialtype)
 	. = ..()
 	var/turf/T = loc
@@ -43,7 +46,6 @@ DECLARE_APPEARANCE(/obj/structure/low_wall, null, list(APPEARANCE_ANY = list(APP
 	max_integrity = material.integrity
 	update_integrity(max_integrity)
 
-	make_climbable()
 
 	return INITIALIZE_HINT_LATELOAD
 
@@ -125,8 +127,7 @@ DESTROY_EFFECTS(/obj/structure/low_wall, new /datum/destroy_effects_data(neighbo
 	effect = /obj/structure/low_wall/proc/interaction_drag
 
 /obj/structure/low_wall/proc/interaction_drag(mob/user, atom/movable/AM, datum/interaction/interaction)
-	if(AM == user)
-		om_emit(src, new /datum/om/event/climb_start(user))
+	if(AM == user) // climbing is the climb capability's own drag
 		return INTERACTION_HANDLED_PASS
 	var/obj/O = AM
 	if(!istype(O))

@@ -674,9 +674,8 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 	anchored = TRUE
 	density = TRUE
 
-/obj/machinery/bookbinder/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/bookbinder)
+	climb()
 
 /obj/machinery/bookbinder/declare_interactions(list/into)
 	into += list(

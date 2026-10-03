@@ -30,6 +30,9 @@
 
 DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing")
 
+CAPABILITIES(/obj/machinery/media/jukebox)
+	climb()
+
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
@@ -37,7 +40,6 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()
-	make_climbable()
 
 /obj/machinery/media/jukebox/proc/getTracksList()
 	return hacked ? SSmedia_tracks.all_tracks : SSmedia_tracks.jukebox_tracks

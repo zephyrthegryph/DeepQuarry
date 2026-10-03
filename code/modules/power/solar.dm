@@ -35,13 +35,15 @@ GLOBAL_VAR_INIT(solar_gen_rate, 1500)
 /obj/machinery/power/solar/drain_power()
 	return -1
 
+CAPABILITIES(/obj/machinery/power/solar)
+	climb()
+
 /obj/machinery/power/solar/Initialize(mapload, glass_type)
 	. = ..()
 	if(glass_type == /obj/item/stack/material/glass/reinforced) //if the panel is in reinforced glass
 		max_integrity *= 2
 		update_integrity(max_integrity)
 	update_icon()
-	make_climbable()
 
 /// `connect_to_network()` needs `vg_entity` bound, which only happens once
 /// `on_materialize()`'s `vg_bind()` runs -- see the base class override's
@@ -158,7 +160,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/power/solar/proc/broken()
 	unset_control()
 	update_icon()
-	om_emit(src, new /datum/om/event/climb_shake(null))
+	climb_shake_off(src, null)
 	return
 
 //trace towards sun to see if we're in shadow

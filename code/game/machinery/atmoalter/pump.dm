@@ -20,6 +20,9 @@
 /obj/machinery/portable_atmospherics/powered/pump/filled
 	start_pressure = 90 * ONE_ATMOSPHERE
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump)
+	climb()
+
 /obj/machinery/portable_atmospherics/powered/pump/Initialize(mapload, skip_cell)
 	. = ..()
 
@@ -29,7 +32,6 @@
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])
 
-	make_climbable()
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/portable_atmospherics/powered/pump, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/portable_atmospherics/powered/pump/appearance_overlays()

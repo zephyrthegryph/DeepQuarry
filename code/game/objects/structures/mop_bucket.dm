@@ -13,9 +13,8 @@ REGISTRY_MEMBERSHIP(/obj/structure/mopbucket, REGISTRY_MOP_BUCKETS)
 
 DECLARE_REAGENTS(/obj/structure/mopbucket, 300, null)
 
-/obj/structure/mopbucket/Initialize(mapload, ...)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/mopbucket)
+	climb()
 
 /obj/structure/mopbucket/examine(mob/user)
 	. = ..()

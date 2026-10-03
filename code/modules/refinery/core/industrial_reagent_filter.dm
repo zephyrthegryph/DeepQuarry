@@ -18,13 +18,15 @@
 	filter_side = 1 // R
 	icon_state = "filter_r"
 
+CAPABILITIES(/obj/machinery/reagent_refinery/filter)
+	climb()
+
 /obj/machinery/reagent_refinery/filter/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable()
 
 /obj/machinery/reagent_refinery/filter/refinery_step()
 	if(!anchored)

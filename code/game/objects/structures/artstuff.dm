@@ -11,9 +11,8 @@
 	density = TRUE
 	var/obj/item/canvas/painting = null
 
-/obj/structure/easel/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/easel)
+	climb()
 
 /obj/structure/easel/declare_interactions(list/into)
 	into += list(

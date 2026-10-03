@@ -27,10 +27,7 @@ CAPABILITIES(/obj/structure/janitorialcart)
 	owns_one(nameof(mymop), /obj/item/mop)
 	owns_one(nameof(myreplacer), /obj/item/lightreplacer)
 	owns_one(nameof(myspray), /obj/item/reagent_containers/spray)
-
-/obj/structure/janitorialcart/Initialize(mapload, ...)
-	. = ..()
-	make_climbable()
+	climb()
 
 /obj/structure/janitorialcart/proc/equip_janicart_item(mob/user, obj/item/I)
 	if(!equippable_item_whitelist)

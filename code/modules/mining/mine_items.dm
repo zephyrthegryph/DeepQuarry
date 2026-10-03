@@ -363,10 +363,12 @@ EXTEND_INTERACTIONS(/obj/item/stack/lightpole, INTERACT_USE("Plant", PROC_REF(li
 	var/stack_type = /obj/item/stack/lightpole/red
 	catalogue_data = list(/datum/category_item/catalogue/material/trail_blazer)
 
+CAPABILITIES(/obj/structure/trailblazer)
+	climb()
+
 /obj/structure/trailblazer/Initialize(mapload)
 	. = ..()
 	set_color()
-	make_climbable()
 
 /obj/structure/trailblazer/proc/set_color()
 	icon_state = "redtrail_light_on"

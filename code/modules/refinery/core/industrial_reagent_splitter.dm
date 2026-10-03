@@ -9,13 +9,15 @@
 	circuit = /obj/item/circuitboard/industrial_reagent_splitter
 	default_max_vol = 60 // smoll
 
+CAPABILITIES(/obj/machinery/reagent_refinery/splitter)
+	climb()
+
 /obj/machinery/reagent_refinery/splitter/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	// Update neighbours and self for state
 	update_neighbours()
 	update_icon()
-	make_climbable()
 
 /obj/machinery/reagent_refinery/splitter/refinery_step()
 	if(!anchored)

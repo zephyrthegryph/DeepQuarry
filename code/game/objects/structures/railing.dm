@@ -31,10 +31,17 @@
 	// TODO - "constructed" is not passed to us. We need to find a way to do this safely.
 	if (constructed) // player-constructed railings
 		set_anchored(FALSE)
-	make_climbable(/datum/om/behaviour/climbable/unanchored_can_break, 3.4 SECONDS, TRUE) // It's a RAILING!
 	make_rotatable()
 	if(src.anchored)
 		update_icon()
+
+CAPABILITIES(/obj/structure/railing)
+	climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over))
+
+/// A railing that is not anchored breaks under whoever climbed it.
+/obj/structure/railing/proc/climbed_over(mob/living/climber)
+	if(!anchored)
+		take_damage(9999, BRUTE, MELEE)
 
 DESTROY_EFFECTS(/obj/structure/railing, new /datum/destroy_effects_data(neighbor_type = /obj/structure/railing, neighbor_reconnect = FALSE))
 

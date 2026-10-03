@@ -82,9 +82,10 @@
 			return TRUE
 	return FALSE
 
-/// The mob starts climbing onto the table (the verb "Climb structure", or the Menu's Climb).
+/// The mob drags itself onto the table (the climb capability's drag).
 /proc/p2_table_climb(mob/living/climber, obj/structure/table/T)
-	om_emit(T, new /datum/om/event/climb_start(climber))
+	climber.next_click = 0
+	test_drag(climber, climber, T)
 
 /// The number of overlay images the table draws now (its layers: frame, plating, reinforcement, carpet).
 /proc/p2_table_layers(obj/structure/table/T)

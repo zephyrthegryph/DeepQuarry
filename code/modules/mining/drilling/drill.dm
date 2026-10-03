@@ -95,6 +95,7 @@
 
 CAPABILITIES(/obj/machinery/mining/drill)
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
+	climb()
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -120,7 +121,6 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 	. = ..()
 	default_apply_parts()
 	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
-	make_climbable()
 
 
 /obj/machinery/mining/drill/dismantle()
@@ -482,10 +482,12 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 	if(brace_tier >= 3)
 		. += span_notice("The internals of the brace look resilient enough to support a drill by itself.")
 
+CAPABILITIES(/obj/machinery/mining/brace)
+	climb()
+
 /obj/machinery/mining/brace/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	make_climbable()
 	make_rotatable()
 
 /obj/machinery/mining/brace/RefreshParts()

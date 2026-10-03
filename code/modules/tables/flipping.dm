@@ -58,8 +58,16 @@
 		return OP_REFUSED
 	if(!flip(get_cardinal_dir(A.actor, src)))
 		return OP_FAILED
-	om_emit(src, new /datum/om/event/climb_shake(A.actor))
+	climb_shake_off(src, A.actor)
 	return OP_OK
+
+/// Where a climber ends up on a flipped table: one standing on its tile climbs out the side it faces (when it can go there), anyone else onto the tile.
+/obj/structure/table/proc/flipped_landing(mob/living/climber)
+	if(flipped == 1 && climber.loc == loc)
+		var/turf/T = get_step(src, dir)
+		if(T?.Enter(climber))
+			return T
+	return null
 
 /// The Put table back entry.
 /obj/structure/table/proc/put_back(datum/act/op/A)

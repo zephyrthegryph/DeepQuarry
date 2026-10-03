@@ -56,15 +56,19 @@
 /datum/capdef_decl/c_cell_bay/spec()
 	return list(CAP_CELL_BAY, /datum/capability/lib/cell_bay, "slot_var", STACK, "cell_bay", "slot_var, at, accepts, starts")
 
-/// CAPABILITY_TYPE(climb, CAP_CLIMB) at code/library/structures/climb.dm:30
+/// CAPABILITY_TYPE(climb, CAP_CLIMB) at code/library/structures/climb.dm:38
 /datum/capability/lib/climb
 	var/delay = 3.5 SECONDS
 	var/vaulting = FALSE
-/proc/climb(delay, vaulting)
+	var/landing = null
+	var/delay_by = null
+	var/gate = null
+	var/climbed = null
+/proc/climb(delay, vaulting, landing, delay_by, gate, climbed)
 	RETURN_TYPE(/datum/capability/lib/climb)
-	return cap_construct(CAP_CLIMB, /datum/capability/lib/climb, list(delay, vaulting), "delay, vaulting")
+	return cap_construct(CAP_CLIMB, /datum/capability/lib/climb, list(delay, vaulting, landing, delay_by, gate, climbed), "delay, vaulting, landing, delay_by, gate, climbed")
 /datum/capdef_decl/c_climb/spec()
-	return list(CAP_CLIMB, /datum/capability/lib/climb, NONE, STACK, "climb", "delay, vaulting")
+	return list(CAP_CLIMB, /datum/capability/lib/climb, NONE, STACK, "climb", "delay, vaulting, landing, delay_by, gate, climbed")
 
 /// CAPABILITY_TYPE(compartment, CAP_COMPARTMENT) at code/engine/library/bays.dm:38
 /datum/capability/lib/compartment
@@ -5631,6 +5635,13 @@
 	into += entry_line(332)
 	into += list(global.on_op("press", global.then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
 
+/// CAPABILITIES(/obj/machinery/account_database) at code/modules/economy/Accounts_DB.dm:44
+/obj/machinery/account_database/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/economy/Accounts_DB.dm", 44, /obj/machinery/account_database)
+	into += entry_line(45)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:191
 /obj/machinery/airlock_sensor/declared_entries(list/into)
 	..(into)
@@ -5726,6 +5737,27 @@
 	into += entry_line(31)
 	into += list(global.owns_one(nameof(air_temporary), /datum/gas_mixture))
 
+/// CAPABILITIES(/obj/machinery/atmospherics/pipe/tank) at code/ATMOSPHERICS/pipes/tank.dm:23
+/obj/machinery/atmospherics/pipe/tank/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/pipes/tank.dm", 23, /obj/machinery/atmospherics/pipe/tank)
+	into += entry_line(24)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/pipeturbine) at code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm:32
+/obj/machinery/atmospherics/pipeturbine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm", 32, /obj/machinery/atmospherics/pipeturbine)
+	into += entry_line(33)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger) at code/ATMOSPHERICS/components/unary/heat_exchanger.dm:20
+/obj/machinery/atmospherics/unary/heat_exchanger/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/unary/heat_exchanger.dm", 20, /obj/machinery/atmospherics/unary/heat_exchanger)
+	into += entry_line(21)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/autolathe) at code/game/machinery/autolathe.dm:44
 /obj/machinery/autolathe/declared_entries(list/into)
 	..(into)
@@ -5734,6 +5766,13 @@
 	into += list(global.owns_one(nameof(materials), /datum/material_container))
 	into += entry_line(46)
 	into += list(global.owns_one(nameof(print_sound), /datum/looping_sound/lathe_print))
+
+/// CAPABILITIES(/obj/machinery/beehive) at code/modules/hydroponics/beekeeping/beehive.dm:24
+/obj/machinery/beehive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/hydroponics/beekeeping/beehive.dm", 24, /obj/machinery/beehive)
+	into += entry_line(25)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/blackbox_recorder) at code/modules/research/message_server.dm:310
 /obj/machinery/blackbox_recorder/declared_entries(list/into)
@@ -5755,6 +5794,13 @@
 	into += entry_block("code/game/machinery/bomb_tester.dm", 37, /obj/machinery/bomb_tester)
 	into += entry_line(38)
 	into += list(global.owns_one(nameof(faketank), /datum/gas_mixture))
+
+/// CAPABILITIES(/obj/machinery/bookbinder) at code/modules/library/lib_machines.dm:677
+/obj/machinery/bookbinder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/library/lib_machines.dm", 677, /obj/machinery/bookbinder)
+	into += entry_line(678)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
 /obj/machinery/button/remote/declared_entries(list/into)
@@ -5857,6 +5903,13 @@
 	into += entry_block("code/modules/power/turbine.dm", 45, /obj/machinery/compressor)
 	into += entry_line(46)
 	into += list(global.owns_one(nameof(gas_contained), /datum/gas_mixture))
+
+/// CAPABILITIES(/obj/machinery/computer) at code/game/machinery/computer/computer.dm:28
+/obj/machinery/computer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/computer/computer.dm", 28, /obj/machinery/computer)
+	into += entry_line(29)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/computer/atmoscontrol) at code/game/machinery/computer/atmos_control.dm:18
 /obj/machinery/computer/atmoscontrol/declared_entries(list/into)
@@ -6223,6 +6276,13 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
 
+/// CAPABILITIES(/obj/machinery/field_generator) at code/modules/power/singularity/field_generator.dm:87
+/obj/machinery/field_generator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/singularity/field_generator.dm", 87, /obj/machinery/field_generator)
+	into += entry_line(88)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/firealarm) at code/game/machinery/fire_alarm.dm:38
 /obj/machinery/firealarm/declared_entries(list/into)
 	..(into)
@@ -6235,6 +6295,13 @@
 	into += list(global.owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm))
 	into += entry_line(42)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm))
+
+/// CAPABILITIES(/obj/machinery/floodlight) at code/game/machinery/floodlight.dm:19
+/obj/machinery/floodlight/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/floodlight.dm", 19, /obj/machinery/floodlight)
+	into += entry_line(20)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/gear_dispenser) at code/game/machinery/gear_dispenser.dm:160
 /obj/machinery/gear_dispenser/declared_entries(list/into)
@@ -6328,30 +6395,30 @@
 	into += entry_line(125)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching)))
 
-/// CAPABILITIES(/obj/machinery/light/flamp) at code/modules/power/lighting.dm:1409
+/// CAPABILITIES(/obj/machinery/light/flamp) at code/modules/power/lighting.dm:1413
 /obj/machinery/light/flamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/lighting.dm", 1409, /obj/machinery/light/flamp)
-	into += entry_line(1410)
+	into += entry_block("code/modules/power/lighting.dm", 1413, /obj/machinery/light/flamp)
+	into += entry_line(1414)
 	into += list(global.anchor())
-	into += entry_line(1411)
-	into += list(global.op("add_shade", global.item(/obj/item/lampshade), global.when(global.cond_not(nameof(lamp_shade))), global.wait(0), global.then(PROC_REF(shade_on))))
-	into += entry_line(1412)
-	into += list(global.op("remove_shade", global.tool(TOOL_SCREWDRIVER), global.when(nameof(lamp_shade)), global.priority(global.above("open_casing")), global.wait(0), global.then(PROC_REF(shade_off))))
-	into += entry_line(1413)
-	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.when(nameof(lamp_shade)), global.when(req_empty_hand()), global.priority(global.above("remove")), global.wait(0), global.needs(global.req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), global.then(PROC_REF(toggle_lamp))))
 	into += entry_line(1415)
+	into += list(global.op("add_shade", global.item(/obj/item/lampshade), global.when(global.cond_not(nameof(lamp_shade))), global.wait(0), global.then(PROC_REF(shade_on))))
+	into += entry_line(1416)
+	into += list(global.op("remove_shade", global.tool(TOOL_SCREWDRIVER), global.when(nameof(lamp_shade)), global.priority(global.above("open_casing")), global.wait(0), global.then(PROC_REF(shade_off))))
+	into += entry_line(1417)
+	into += list(global.op("toggle", global.hand(), global.label("Toggle"), global.when(nameof(lamp_shade)), global.when(req_empty_hand()), global.priority(global.above("remove")), global.wait(0), global.needs(global.req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), global.then(PROC_REF(toggle_lamp))))
+	into += entry_line(1419)
 	into += list(global.extend("open_casing", global.when(global.cond_not(nameof(lamp_shade)))))
 
-/// CAPABILITIES(/obj/machinery/light/small/torch) at code/modules/power/lighting.dm:1385
+/// CAPABILITIES(/obj/machinery/light/small/torch) at code/modules/power/lighting.dm:1389
 /obj/machinery/light/small/torch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/power/lighting.dm", 1385, /obj/machinery/light/small/torch)
-	into += entry_line(1386)
+	into += entry_block("code/modules/power/lighting.dm", 1389, /obj/machinery/light/small/torch)
+	into += entry_line(1390)
 	into += list(global.without("insert"))
-	into += entry_line(1387)
+	into += entry_line(1391)
 	into += list(global.without("hit"))
-	into += entry_line(1388)
+	into += entry_line(1392)
 	into += list(global.op("swallow", global.item(/obj/item), global.answers(INTENT_USE, INTENT_ATTACK), global.wait(0), global.then(PROC_REF(swallowed))))
 
 /// CAPABILITIES(/obj/machinery/light_construct) at code/modules/power/light_construct.dm:33
@@ -6417,11 +6484,18 @@
 	into += entry_line(58)
 	into += list(global.owns_one(nameof(rmat), /datum/remote_materials))
 
-/// CAPABILITIES(/obj/machinery/media/jukebox/ghost) at code/game/machinery/jukebox.dm:349
+/// CAPABILITIES(/obj/machinery/media/jukebox) at code/game/machinery/jukebox.dm:33
+/obj/machinery/media/jukebox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/jukebox.dm", 33, /obj/machinery/media/jukebox)
+	into += entry_line(34)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/media/jukebox/ghost) at code/game/machinery/jukebox.dm:351
 /obj/machinery/media/jukebox/ghost/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/jukebox.dm", 349, /obj/machinery/media/jukebox/ghost)
-	into += entry_line(350)
+	into += entry_block("code/game/machinery/jukebox.dm", 351, /obj/machinery/media/jukebox/ghost)
+	into += entry_line(352)
 	into += list(global.owns_many(nameof(custom_tracks)))
 
 /// CAPABILITIES(/obj/machinery/message_server) at code/modules/research/message_server.dm:78
@@ -6442,12 +6516,21 @@
 	into += entry_line(48)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/microwave))
 
+/// CAPABILITIES(/obj/machinery/mining/brace) at code/modules/mining/drilling/drill.dm:485
+/obj/machinery/mining/brace/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/drilling/drill.dm", 485, /obj/machinery/mining/brace)
+	into += entry_line(486)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/mining/drill) at code/modules/mining/drilling/drill.dm:96
 /obj/machinery/mining/drill/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mining/drilling/drill.dm", 96, /obj/machinery/mining/drill)
 	into += entry_line(97)
 	into += list(global.owns_one(nameof(faultreporter), /obj/item/radio/intercom))
+	into += entry_line(98)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/newscaster) at code/game/machinery/newscaster.dm:161
 /obj/machinery/newscaster/declared_entries(list/into)
@@ -6470,6 +6553,27 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(materials), /datum/material_container))
 
+/// CAPABILITIES(/obj/machinery/organ_printer) at code/game/machinery/bioprinter.dm:97
+/obj/machinery/organ_printer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/bioprinter.dm", 97, /obj/machinery/organ_printer)
+	into += entry_line(98)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/papershredder) at code/modules/paperwork/papershredder.dm:29
+/obj/machinery/papershredder/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/papershredder.dm", 29, /obj/machinery/papershredder)
+	into += entry_line(30)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/particle_accelerator) at code/modules/power/singularity/particle_accelerator/particle_accelerator.dm:224
+/obj/machinery/particle_accelerator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/singularity/particle_accelerator/particle_accelerator.dm", 224, /obj/machinery/particle_accelerator)
+	into += entry_line(225)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/particle_smasher) at code/modules/power/singularity/particle_accelerator/particle_smasher.dm:29
 /obj/machinery/particle_smasher/declared_entries(list/into)
 	..(into)
@@ -6484,12 +6588,40 @@
 	into += entry_line(22)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/tcomms))
 
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/canister) at code/game/machinery/atmoalter/canister.dm:31
+/obj/machinery/portable_atmospherics/canister/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/canister.dm", 31, /obj/machinery/portable_atmospherics/canister)
+	into += entry_line(32)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics) at code/modules/hydroponics/trays/tray.dm:141
 /obj/machinery/portable_atmospherics/hydroponics/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/hydroponics/trays/tray.dm", 141, /obj/machinery/portable_atmospherics/hydroponics)
 	into += entry_line(142)
 	into += list(global.owns_one(nameof(temp_chem_holder), /obj))
+
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/pump) at code/game/machinery/atmoalter/pump.dm:23
+/obj/machinery/portable_atmospherics/powered/pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/pump.dm", 23, /obj/machinery/portable_atmospherics/powered/pump)
+	into += entry_line(24)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber) at code/game/machinery/atmoalter/scrubber.dm:22
+/obj/machinery/portable_atmospherics/powered/scrubber/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/scrubber.dm", 22, /obj/machinery/portable_atmospherics/powered/scrubber)
+	into += entry_line(23)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/portable_atmospherics/powered/scrubber/huge) at code/game/machinery/atmoalter/scrubber.dm:189
+/obj/machinery/portable_atmospherics/powered/scrubber/huge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/atmoalter/scrubber.dm", 189, /obj/machinery/portable_atmospherics/powered/scrubber/huge)
+	into += entry_line(190)
+	into += list(global.without(CAP_CLIMB))
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166
 /obj/machinery/power/apc/declared_entries(list/into)
@@ -6589,6 +6721,13 @@
 	into += entry_line(219)
 	into += list(global.configure(global.wall_mount(offset = 24, offset_ns = 20)))
 
+/// CAPABILITIES(/obj/machinery/power/emitter) at code/modules/power/singularity/emitter.dm:364
+/obj/machinery/power/emitter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/singularity/emitter.dm", 364, /obj/machinery/power/emitter)
+	into += entry_line(365)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/power/fusion_core) at code/modules/power/fusion/core/_core.dm:41
 /obj/machinery/power/fusion_core/declared_entries(list/into)
 	..(into)
@@ -6602,6 +6741,20 @@
 	into += entry_block("code/modules/power/generator.dm", 34, /obj/machinery/power/generator)
 	into += entry_line(35)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/generator))
+
+/// CAPABILITIES(/obj/machinery/power/grounding_rod) at code/modules/power/tesla/coil.dm:340
+/obj/machinery/power/grounding_rod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/tesla/coil.dm", 340, /obj/machinery/power/grounding_rod)
+	into += entry_line(341)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/power/rad_collector) at code/modules/power/singularity/collector.dm:22
+/obj/machinery/power/rad_collector/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/singularity/collector.dm", 22, /obj/machinery/power/rad_collector)
+	into += entry_line(23)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/power/shield_generator) at code/modules/shieldgen/shield_generator.dm:45
 /obj/machinery/power/shield_generator/declared_entries(list/into)
@@ -6706,6 +6859,13 @@
 	into += entry_line(619)
 	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(hybrid_charge))))
 
+/// CAPABILITIES(/obj/machinery/power/solar) at code/modules/power/solar.dm:38
+/obj/machinery/power/solar/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/solar.dm", 38, /obj/machinery/power/solar)
+	into += entry_line(39)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/power/supermatter) at code/modules/power/supermatter/supermatter.dm:126
 /obj/machinery/power/supermatter/declared_entries(list/into)
 	..(into)
@@ -6713,12 +6873,77 @@
 	into += entry_line(127)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/supermatter))
 
+/// CAPABILITIES(/obj/machinery/power/thermoregulator) at code/game/machinery/airconditioner.dm:155
+/obj/machinery/power/thermoregulator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/airconditioner.dm", 155, /obj/machinery/power/thermoregulator)
+	into += entry_line(156)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/power/turbinemotor) at code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm:236
+/obj/machinery/power/turbinemotor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/ATMOSPHERICS/components/binary_devices/pipeturbine.dm", 236, /obj/machinery/power/turbinemotor)
+	into += entry_line(237)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/pump) at code/modules/reagents/machinery/pump.dm:26
+/obj/machinery/pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/pump.dm", 26, /obj/machinery/pump)
+	into += entry_line(27)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/filter) at code/modules/refinery/core/industrial_reagent_filter.dm:21
+/obj/machinery/reagent_refinery/filter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_filter.dm", 21, /obj/machinery/reagent_refinery/filter)
+	into += entry_line(22)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/furnace) at code/modules/refinery/core/industrial_reagent_furnace.dm:23
+/obj/machinery/reagent_refinery/furnace/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_furnace.dm", 23, /obj/machinery/reagent_refinery/furnace)
+	into += entry_line(24)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/pipe) at code/modules/refinery/core/industrial_reagent_pipe.dm:13
+/obj/machinery/reagent_refinery/pipe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_pipe.dm", 13, /obj/machinery/reagent_refinery/pipe)
+	into += entry_line(14)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/pump) at code/modules/refinery/core/industrial_reagent_pump.dm:12
+/obj/machinery/reagent_refinery/pump/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_pump.dm", 12, /obj/machinery/reagent_refinery/pump)
+	into += entry_line(13)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/reagent_refinery/reactor) at code/modules/refinery/core/industrial_reagent_reactor.dm:24
 /obj/machinery/reagent_refinery/reactor/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/refinery/core/industrial_reagent_reactor.dm", 24, /obj/machinery/reagent_refinery/reactor)
 	into += entry_line(25)
 	into += list(global.owns_one(nameof(internal_tank), /obj/machinery/portable_atmospherics/canister))
+	into += entry_line(26)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/splitter) at code/modules/refinery/core/industrial_reagent_splitter.dm:12
+/obj/machinery/reagent_refinery/splitter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_splitter.dm", 12, /obj/machinery/reagent_refinery/splitter)
+	into += entry_line(13)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/reagent_refinery/waste_processor) at code/modules/refinery/core/industrial_reagent_waste.dm:13
+/obj/machinery/reagent_refinery/waste_processor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/refinery/core/industrial_reagent_waste.dm", 13, /obj/machinery/reagent_refinery/waste_processor)
+	into += entry_line(14)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/reagentgrinder) at code/modules/reagents/machinery/grinder.dm:21
 /obj/machinery/reagentgrinder/declared_entries(list/into)
@@ -6795,6 +7020,13 @@
 	into += entry_line(52)
 	into += list(global.owns_many(nameof(piles_contra), /datum/seed_pile))
 
+/// CAPABILITIES(/obj/machinery/shield_capacitor) at code/modules/shieldgen/shield_capacitor.dm:26
+/obj/machinery/shield_capacitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/shieldgen/shield_capacitor.dm", 26, /obj/machinery/shield_capacitor)
+	into += entry_line(27)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/machinery/shield_gen) at code/modules/shieldgen/shield_gen.dm:30
 /obj/machinery/shield_gen/declared_entries(list/into)
 	..(into)
@@ -6803,6 +7035,8 @@
 	into += list(global.owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator))
 	into += entry_line(32)
 	into += list(global.owns_many(nameof(field)))
+	into += entry_line(33)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/shieldgen) at code/modules/shieldgen/emergency_shield.dm:119
 /obj/machinery/shieldgen/declared_entries(list/into)
@@ -6810,6 +7044,20 @@
 	into += entry_block("code/modules/shieldgen/emergency_shield.dm", 119, /obj/machinery/shieldgen)
 	into += entry_line(120)
 	into += list(global.owns_many(nameof(deployed_shields)))
+
+/// CAPABILITIES(/obj/machinery/shieldgen) at code/modules/shieldgen/emergency_shield.dm:125
+/obj/machinery/shieldgen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/shieldgen/emergency_shield.dm", 125, /obj/machinery/shieldgen)
+	into += entry_line(126)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/shieldwallgen) at code/modules/shieldgen/sheldwallgen.dm:33
+/obj/machinery/shieldwallgen/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/shieldgen/sheldwallgen.dm", 33, /obj/machinery/shieldwallgen)
+	into += entry_line(34)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:517
 /obj/machinery/shower/declared_entries(list/into)
@@ -6833,6 +7081,20 @@
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/fridge))
 	into += entry_line(36)
 	into += list(global.owns_many(nameof(item_records)))
+
+/// CAPABILITIES(/obj/machinery/smartfridge/drying_rack) at code/modules/food/kitchen/smartfridge/drying_rack.dm:13
+/obj/machinery/smartfridge/drying_rack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/kitchen/smartfridge/drying_rack.dm", 13, /obj/machinery/smartfridge/drying_rack)
+	into += entry_line(14)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/space_heater) at code/game/machinery/spaceheater.dm:52
+/obj/machinery/space_heater/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/spaceheater.dm", 52, /obj/machinery/space_heater)
+	into += entry_line(53)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/station_slot_machine) at code/modules/casino/slots.dm:183
 /obj/machinery/station_slot_machine/declared_entries(list/into)
@@ -6947,11 +7209,18 @@
 	into += entry_line(38)
 	into += list(global.owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad))
 
-/// CAPABILITIES(/obj/machinery/wheel_of_fortune) at code/modules/casino/casino.dm:408
+/// CAPABILITIES(/obj/machinery/washing_machine) at code/game/machinery/washing_machine.dm:33
+/obj/machinery/washing_machine/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/washing_machine.dm", 33, /obj/machinery/washing_machine)
+	into += entry_line(34)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/machinery/wheel_of_fortune) at code/modules/casino/casino.dm:407
 /obj/machinery/wheel_of_fortune/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 408, /obj/machinery/wheel_of_fortune)
-	into += entry_line(409)
+	into += entry_block("code/modules/casino/casino.dm", 407, /obj/machinery/wheel_of_fortune)
+	into += entry_line(408)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system))
 
 /// CAPABILITIES(/obj/mecha) at code/game/mecha/mecha.dm:176
@@ -7067,6 +7336,20 @@
 	into += entry_line(24)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
 
+/// CAPABILITIES(/obj/structure/bookcase) at code/modules/library/lib_items.dm:23
+/obj/structure/bookcase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/library/lib_items.dm", 23, /obj/structure/bookcase)
+	into += entry_line(24)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/casino_table) at code/modules/casino/casino.dm:19
+/obj/structure/casino_table/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino.dm", 19, /obj/structure/casino_table)
+	into += entry_line(20)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/casino_table/board_game) at code/modules/casino/board_games/board_table.dm:17
 /obj/structure/casino_table/board_game/declared_entries(list/into)
 	..(into)
@@ -7074,12 +7357,19 @@
 	into += entry_line(18)
 	into += list(global.owns_one(nameof(game_ui), /datum/board_game))
 
-/// CAPABILITIES(/obj/structure/casino_table/roulette_table) at code/modules/casino/casino.dm:46
+/// CAPABILITIES(/obj/structure/casino_table/roulette_table) at code/modules/casino/casino.dm:45
 /obj/structure/casino_table/roulette_table/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/casino/casino.dm", 46, /obj/structure/casino_table/roulette_table)
-	into += entry_line(47)
+	into += entry_block("code/modules/casino/casino.dm", 45, /obj/structure/casino_table/roulette_table)
+	into += entry_line(46)
 	into += list(global.owns_one(nameof(confetti_spread), /datum/effect/effect/system))
+
+/// CAPABILITIES(/obj/structure/cliff) at code/game/objects/structures/cliff.dm:55
+/obj/structure/cliff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/cliff.dm", 55, /obj/structure/cliff)
+	into += entry_line(56)
+	into += list(global.climb(delay = CLIFF_CLIMB_TIME, delay_by = PROC_REF(climb_delay), gate = PROC_REF(climbing_gear_needed)))
 
 /// CAPABILITIES(/obj/structure/closet) at code/game/objects/structures/crates_lockers/__closets.dm:49
 /obj/structure/closet/declared_entries(list/into)
@@ -7094,6 +7384,27 @@
 	into += entry_block("code/game/objects/items/bodybag.dm", 207, /obj/structure/closet/body_bag/cryobag)
 	into += entry_line(208)
 	into += list(global.owns_one(nameof(tank), /obj/item/tank))
+
+/// CAPABILITIES(/obj/structure/closet/crate) at code/game/objects/structures/crates_lockers/crates.dm:18
+/obj/structure/closet/crate/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/crates.dm", 18, /obj/structure/closet/crate)
+	into += entry_line(19)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/closet/crate/oldreactor) at code/game/objects/items/poi_items.dm:107
+/obj/structure/closet/crate/oldreactor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/poi_items.dm", 107, /obj/structure/closet/crate/oldreactor)
+	into += entry_line(108)
+	into += list(global.without(CAP_CLIMB))
+
+/// CAPABILITIES(/obj/structure/closet/secure_closet/freezer) at code/game/objects/structures/crates_lockers/closets/secure/freezer.dm:1
+/obj/structure/closet/secure_closet/freezer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/secure/freezer.dm", 1, /obj/structure/closet/secure_closet/freezer)
+	into += entry_line(2)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/construction/lightswitch) at code/modules/power/lightswitch.dm:74
 /obj/structure/construction/lightswitch/declared_entries(list/into)
@@ -7156,6 +7467,27 @@
 	into += entry_line(14)
 	into += list(global.owns_one(nameof(air), /datum/gas_mixture/pod_air))
 
+/// CAPABILITIES(/obj/structure/easel) at code/game/objects/structures/artstuff.dm:14
+/obj/structure/easel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/artstuff.dm", 14, /obj/structure/easel)
+	into += entry_line(15)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/fence) at code/game/objects/structures/fence.dm:30
+/obj/structure/fence/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/fence.dm", 30, /obj/structure/fence)
+	into += entry_line(31)
+	into += list(global.climb(gate = PROC_REF(needs_a_climbable_hole)))
+
+/// CAPABILITIES(/obj/structure/filingcabinet) at code/modules/paperwork/filingcabinet.dm:28
+/obj/structure/filingcabinet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/filingcabinet.dm", 28, /obj/structure/filingcabinet)
+	into += entry_line(29)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/firedoor_assembly) at code/game/machinery/doors/firedoor_assembly.dm:34
 /obj/structure/firedoor_assembly/declared_entries(list/into)
 	..(into)
@@ -7171,6 +7503,13 @@
 	into += entry_line(42)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
 
+/// CAPABILITIES(/obj/structure/fitness/boxing_ropes) at code/game/objects/structures/fitness.dm:115
+/obj/structure/fitness/boxing_ropes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/fitness.dm", 115, /obj/structure/fitness/boxing_ropes)
+	into += entry_line(116)
+	into += list(global.climb(vaulting = TRUE))
+
 /// CAPABILITIES(/obj/structure/frame) at code/game/machinery/frame.dm:315
 /obj/structure/frame/declared_entries(list/into)
 	..(into)
@@ -7178,12 +7517,26 @@
 	into += entry_line(316)
 	into += list(global.owns_many(nameof(components)))
 
+/// CAPABILITIES(/obj/structure/frame) at code/game/machinery/frame.dm:356
+/obj/structure/frame/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/frame.dm", 356, /obj/structure/frame)
+	into += entry_line(357)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/ghost_pod) at code/game/objects/structures/ghost_pods/ghost_pods.dm:18
 /obj/structure/ghost_pod/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/structures/ghost_pods/ghost_pods.dm", 18, /obj/structure/ghost_pod)
 	into += entry_line(19)
 	into += list(global.owns_one(nameof(Q), /datum/ghost_query))
+
+/// CAPABILITIES(/obj/structure/gravemarker) at code/game/objects/structures/gravemarker.dm:20
+/obj/structure/gravemarker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/gravemarker.dm", 20, /obj/structure/gravemarker)
+	into += entry_line(21)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/hoist) at code/modules/multiz/hoist.dm:121
 /obj/structure/hoist/declared_entries(list/into)
@@ -7204,6 +7557,29 @@
 	into += list(global.owns_one(nameof(myreplacer), /obj/item/lightreplacer))
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(myspray), /obj/item/reagent_containers/spray))
+	into += entry_line(30)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/ledge) at code/game/objects/structures/ledges.dm:13
+/obj/structure/ledge/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/ledges.dm", 13, /obj/structure/ledge)
+	into += entry_line(14)
+	into += list(global.climb(vaulting = TRUE))
+
+/// CAPABILITIES(/obj/structure/ledge_corner) at code/game/objects/structures/ledges.dm:27
+/obj/structure/ledge_corner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/ledges.dm", 27, /obj/structure/ledge_corner)
+	into += entry_line(28)
+	into += list(global.climb(vaulting = TRUE))
+
+/// CAPABILITIES(/obj/structure/low_wall) at code/game/objects/structures/low_wall.dm:31
+/obj/structure/low_wall/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/low_wall.dm", 31, /obj/structure/low_wall)
+	into += entry_line(32)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/medical_stand) at code/game/objects/structures/medical_stand.dm:22
 /obj/structure/medical_stand/declared_entries(list/into)
@@ -7211,6 +7587,13 @@
 	into += entry_block("code/game/objects/structures/medical_stand.dm", 22, /obj/structure/medical_stand)
 	into += entry_line(23)
 	into += list(global.owns_one(nameof(contained), /obj/item/clothing/mask/breath))
+
+/// CAPABILITIES(/obj/structure/meteorite) at code/modules/events/meteor_strike.dm:81
+/obj/structure/meteorite/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/events/meteor_strike.dm", 81, /obj/structure/meteorite)
+	into += entry_line(82)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/mirror) at code/game/objects/structures/mirror.dm:15
 /obj/structure/mirror/declared_entries(list/into)
@@ -7226,6 +7609,13 @@
 	into += entry_line(134)
 	into += list(global.owns_one(nameof(prox), /datum/proximity_monitor/mobspawner))
 
+/// CAPABILITIES(/obj/structure/mopbucket) at code/game/objects/structures/mop_bucket.dm:16
+/obj/structure/mopbucket/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/mop_bucket.dm", 16, /obj/structure/mopbucket)
+	into += entry_line(17)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/morgue) at code/game/objects/structures/morgue.dm:25
 /obj/structure/morgue/declared_entries(list/into)
 	..(into)
@@ -7240,6 +7630,13 @@
 	into += entry_line(12)
 	into += list(global.owns_one(nameof(song), /datum/song/stationary))
 
+/// CAPABILITIES(/obj/structure/musician/piano) at code/modules/instruments/stationary.dm:60
+/obj/structure/musician/piano/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/instruments/stationary.dm", 60, /obj/structure/musician/piano)
+	into += entry_line(61)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/noticeboard) at code/modules/persistence/noticeboard.dm:14
 /obj/structure/noticeboard/declared_entries(list/into)
 	..(into)
@@ -7247,12 +7644,33 @@
 	into += entry_line(15)
 	into += list(global.owns_many(nameof(notices)))
 
+/// CAPABILITIES(/obj/structure/ore_box) at code/modules/mining/ore_box.dm:32
+/obj/structure/ore_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/ore_box.dm", 32, /obj/structure/ore_box)
+	into += entry_line(33)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/outcrop) at code/modules/mining/mine_outcrops.dm:13
+/obj/structure/outcrop/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/mine_outcrops.dm", 13, /obj/structure/outcrop)
+	into += entry_line(14)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/p2_bare_seat) at code/modules/unit_tests/dq_p2_seating_behaviour.dm:504
 /obj/structure/p2_bare_seat/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/unit_tests/dq_p2_seating_behaviour.dm", 504, /obj/structure/p2_bare_seat)
 	into += entry_line(505)
 	into += list(global.buckle())
+
+/// CAPABILITIES(/obj/structure/particle_accelerator) at code/modules/power/singularity/particle_accelerator/particle_accelerator.dm:74
+/obj/structure/particle_accelerator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/power/singularity/particle_accelerator/particle_accelerator.dm", 74, /obj/structure/particle_accelerator)
+	into += entry_line(75)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/picnic_blanket_deployed) at code/game/objects/items/weapons/picnic_blankets.dm:44
 /obj/structure/picnic_blanket_deployed/declared_entries(list/into)
@@ -7268,6 +7686,76 @@
 	into += entry_line(12)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/sequence/morse))
 
+/// CAPABILITIES(/obj/structure/railing) at code/game/objects/structures/railing.dm:38
+/obj/structure/railing/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/railing.dm", 38, /obj/structure/railing)
+	into += entry_line(39)
+	into += list(global.climb(delay = 3.4 SECONDS, vaulting = TRUE, climbed = PROC_REF(climbed_over)))
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/beerkeg) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:521
+/obj/structure/reagent_dispensers/beerkeg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 521, /obj/structure/reagent_dispensers/beerkeg)
+	into += entry_line(522)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/bloodbarrel) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:582
+/obj/structure/reagent_dispensers/bloodbarrel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 582, /obj/structure/reagent_dispensers/bloodbarrel)
+	into += entry_line(583)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/cookingoil) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:556
+/obj/structure/reagent_dispensers/cookingoil/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 556, /obj/structure/reagent_dispensers/cookingoil)
+	into += entry_line(557)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/foam) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:155
+/obj/structure/reagent_dispensers/foam/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 155, /obj/structure/reagent_dispensers/foam)
+	into += entry_line(156)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/fueltank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:132
+/obj/structure/reagent_dispensers/fueltank/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 132, /obj/structure/reagent_dispensers/fueltank)
+	into += entry_line(133)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/he3) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:169
+/obj/structure/reagent_dispensers/he3/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 169, /obj/structure/reagent_dispensers/he3)
+	into += entry_line(170)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/water_cooler) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:378
+/obj/structure/reagent_dispensers/water_cooler/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 378, /obj/structure/reagent_dispensers/water_cooler)
+	into += entry_line(379)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/reagent_dispensers/watertank) at code/modules/reagents/machinery/dispenser/reagent_tank.dm:102
+/obj/structure/reagent_dispensers/watertank/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/machinery/dispenser/reagent_tank.dm", 102, /obj/structure/reagent_dispensers/watertank)
+	into += entry_line(103)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/stairs/middle) at code/modules/multiz/stairs.dm:243
+/obj/structure/stairs/middle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/multiz/stairs.dm", 243, /obj/structure/stairs/middle)
+	into += entry_line(244)
+	into += list(global.climb())
+
 /// CAPABILITIES(/obj/structure/table) at code/modules/tables/tables.dm:76
 /obj/structure/table/declared_entries(list/into)
 	..(into)
@@ -7275,41 +7763,64 @@
 	into += entry_line(77)
 	into += list(table_frame())
 	into += entry_line(78)
-	into += list(global.extend("construction.dismantle", global.when(global.req_graph_at(list(STAGE_TABLE_FRAME))), global.needs(global.req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle)))))
+	into += list(global.climb(landing = PROC_REF(flipped_landing)))
 	into += entry_line(79)
-	into += list(global.extend("construction.build:table_reinforced", global.priority(global.above("place_dragged"))))
+	into += list(global.extend("construction.dismantle", global.when(global.req_graph_at(list(STAGE_TABLE_FRAME))), global.needs(global.req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle)))))
 	into += entry_line(80)
+	into += list(global.extend("construction.build:table_reinforced", global.priority(global.above("place_dragged"))))
+	into += entry_line(81)
 	into += list(global.op("repair", global.tool(TOOL_WELDER), global.wait(2 SECONDS), global.label("Repair"), global.when(global.req(PROC_REF(is_damaged))), global.then(PROC_REF(repaired)), global.says(MSG(table/repaired))))
-	into += entry_line(82)
+	into += entry_line(83)
 	into += list(global.op("carpet", global.stack(/obj/item/stack/tile/carpet, 1), global.wait(0), global.label("Carpet"), global.when(global.req(PROC_REF(can_carpet))), global.then(PROC_REF(carpet_laid)), global.says(MSG(table/carpeted))))
-	into += entry_line(84)
+	into += entry_line(85)
 	into += list(global.op("uncarpet", global.tool(TOOL_CROWBAR), global.wait(0), global.label("Remove carpet"), global.when(nameof(carpeted)), global.then(PROC_REF(carpet_lifted)), global.says(MSG(table/uncarpeted))))
-	into += entry_line(86)
+	into += entry_line(87)
 	into += list(global.op("flip", global.menu(), global.label("Flip table"), global.when(global.req(PROC_REF(is_flippable))), global.needs(global.req(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), global.req(PROC_REF(can_flip_away), because = MSG(table/wont_budge))), global.then(PROC_REF(flip_over)), global.says(MSG(table/flipped))))
-	into += entry_line(89)
+	into += entry_line(90)
 	into += list(global.op("put_back", global.menu(), global.label("Put table back"), global.when(global.req(PROC_REF(is_flipped_up))), global.needs(global.req(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), global.req(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))), global.then(PROC_REF(put_back)), global.says(MSG(table/put_back))))
-	into += entry_line(92)
-	into += list(global.op("slice_blade", global.item(/obj/item/melee/energy/blade), global.then(PROC_REF(sliced_apart))))
 	into += entry_line(93)
-	into += list(global.op("slice_arm_blade", global.item(/obj/item/melee/changeling/arm_blade), global.then(PROC_REF(sliced_apart))))
+	into += list(global.op("slice_blade", global.item(/obj/item/melee/energy/blade), global.then(PROC_REF(sliced_apart))))
 	into += entry_line(94)
-	into += list(global.op("claw", global.hand(), global.when(global.req(PROC_REF(actor_is_xeno))), global.then(PROC_REF(clawed_apart))))
+	into += list(global.op("slice_arm_blade", global.item(/obj/item/melee/changeling/arm_blade), global.then(PROC_REF(sliced_apart))))
 	into += entry_line(95)
-	into += list(global.op("slam", global.item(/obj/item/grab), global.hostile(), global.label("Slam against table"), global.when(global.req(PROC_REF(slam_applies))), global.then(PROC_REF(slam_face))))
+	into += list(global.op("claw", global.hand(), global.when(global.req(PROC_REF(actor_is_xeno))), global.then(PROC_REF(clawed_apart))))
 	into += entry_line(96)
+	into += list(global.op("slam", global.item(/obj/item/grab), global.hostile(), global.label("Slam against table"), global.when(global.req(PROC_REF(slam_applies))), global.then(PROC_REF(slam_face))))
+	into += entry_line(97)
 	into += list(global.op("put_on", global.item(/obj/item/grab), global.label("Put on table"), global.when(global.req(PROC_REF(person_grabbed))), global.needs(global.req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), global.then(PROC_REF(put_person_on))))
-	into += entry_line(98)
+	into += entry_line(99)
 	into += list(global.op("place", global.item(/obj/item), global.label("Place"), global.priority(OP_PRIORITY_NORMAL - 5), global.needs(global.req(PROC_REF(has_surface), because = MSG(table/needs_plating)), global.req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))), global.then(PROC_REF(place_held))))
-	into += entry_line(101)
+	into += entry_line(102)
 	into += list(global.op("place_dragged", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.label("Place"), global.needs(global.req(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), global.then(PROC_REF(place_dragged))))
-	into += entry_line(103)
-	into += list(global.on_op("construction.build:table_plated", global.then(PROC_REF(layers_changed))))
 	into += entry_line(104)
-	into += list(global.on_op("construction.build:table_reinforced", global.then(PROC_REF(layers_changed))))
+	into += list(global.on_op("construction.build:table_plated", global.then(PROC_REF(layers_changed))))
 	into += entry_line(105)
-	into += list(global.on_op("construction.undo:table_plated", global.then(PROC_REF(layers_changed))))
+	into += list(global.on_op("construction.build:table_reinforced", global.then(PROC_REF(layers_changed))))
 	into += entry_line(106)
+	into += list(global.on_op("construction.undo:table_plated", global.then(PROC_REF(layers_changed))))
+	into += entry_line(107)
 	into += list(global.on_op("construction.undo:table_reinforced", global.then(PROC_REF(layers_changed))))
+
+/// CAPABILITIES(/obj/structure/trailblazer) at code/modules/mining/mine_items.dm:366
+/obj/structure/trailblazer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/mine_items.dm", 366, /obj/structure/trailblazer)
+	into += entry_line(367)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/trash_pile) at code/game/objects/structures/trash_pile.dm:15
+/obj/structure/trash_pile/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/trash_pile.dm", 15, /obj/structure/trash_pile)
+	into += entry_line(16)
+	into += list(global.climb())
+
+/// CAPABILITIES(/obj/structure/undies_wardrobe) at code/game/objects/structures/under_wardrobe.dm:8
+/obj/structure/undies_wardrobe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/under_wardrobe.dm", 8, /obj/structure/undies_wardrobe)
+	into += entry_line(9)
+	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/windoor_assembly) at code/game/objects/structures/windoor_assembly.dm:84
 /obj/structure/windoor_assembly/declared_entries(list/into)
@@ -7334,6 +7845,13 @@
 	into += entry_block("code/modules/vehicles/vehicle.dm", 52, /obj/vehicle)
 	into += entry_line(53)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine))
+
+/// CAPABILITIES(/obj/vehicle/train/trolley_tank) at code/modules/vehicles/cargo_train.dm:401
+/obj/vehicle/train/trolley_tank/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vehicles/cargo_train.dm", 401, /obj/vehicle/train/trolley_tank)
+	into += entry_line(402)
+	into += list(global.climb())
 
 /// CAPABILITIES(/turf/open) at code/ATMOSPHERICS/environmental/LINDA_turf_tile.dm:47
 /turf/open/declared_entries(list/into)

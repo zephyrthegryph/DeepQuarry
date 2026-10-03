@@ -337,9 +337,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/power/tesla_coil, "{icontype}{panel_open?_ope
 	buckle_lying = FALSE
 	circuit = /obj/item/circuitboard/grounding_rod
 
-/obj/machinery/power/grounding_rod/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/machinery/power/grounding_rod)
+	climb()
 
 /obj/machinery/power/grounding_rod/examine(user)
 	. = ..()

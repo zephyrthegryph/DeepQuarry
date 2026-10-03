@@ -57,9 +57,8 @@ DECLARE_INTERACTIONS(/obj/structure/musician, INTERACT_HAND_UNGATED(null, PROC_R
 	broken_icon_state = "pianobroken"
 	integrity_failure = 0.25
 
-/obj/structure/musician/piano/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/musician/piano)
+	climb()
 
 /obj/structure/musician/piano/unanchored
 	anchored = FALSE

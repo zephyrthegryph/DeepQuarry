@@ -104,10 +104,8 @@ DECLARE_PERIODIC(/obj/item/poi/pascalb, PERIODIC_SLOW)
 	starts_with = list(
 		/obj/item/fuel_assembly/deuterium = 6)
 
-/obj/structure/closet/crate/oldreactor/Initialize(mapload)
-	. = ..()
-	// Not climbable!
-	unmake_climbable()
+CAPABILITIES(/obj/structure/closet/crate/oldreactor)
+	without(CAP_CLIMB) // not climbable
 
 /obj/item/poi/brokenoldreactor
 	icon_state = "poireactor_broken"

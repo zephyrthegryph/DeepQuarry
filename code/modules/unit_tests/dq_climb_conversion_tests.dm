@@ -34,7 +34,7 @@
 /// The climber drags itself onto the structure, as a player does.
 /datum/unit_test/dq_climb/proc/climb_it(mob/living/climber, atom/movable/S)
 	climber.next_click = 0
-	om_emit(S, new /datum/om/event/climb_start(climber))
+	return test_drag(climber, climber, S)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The default climb
@@ -203,6 +203,69 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(H.loc, at, "the climber is on the table's tile")
 
+/// A climber standing on a flipped table climbs out the side the table faces (the old table's rule never moved them at all).
+/datum/unit_test/dq_climb/a_flipped_table_is_climbed_out_the_side_it_faces
+
+/datum/unit_test/dq_climb/a_flipped_table_is_climbed_out_the_side_it_faces/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/table/T = allocate(/obj/structure/table/steel, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	test_menu(H, T, "flip")
+	TEST_ASSERT_EQUAL(T.flipped, 1, "the table is flipped")
+	TEST_ASSERT_EQUAL(T.dir, NORTH, "facing north")
+	climb_it(H, T)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.loc, at, "the climber is on the table's tile")
+	climb_it(H, T)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.loc, floor_at(1, 2), "and climbing again from there goes out the side the table faces")
+
+/// The menu offers Climb on a structure, and picking it is the same climb.
+/datum/unit_test/dq_climb/the_menu_climb_is_the_same_climb
+
+/datum/unit_test/dq_climb/the_menu_climb_is_the_same_climb/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/closet/crate/C = allocate(/obj/structure/closet/crate, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/datum/op_result/picked = test_menu(H, C, "climb.climb_menu")
+	TEST_ASSERT_NOTNULL(picked, "the menu offers Climb")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.loc, at, "the climber is on the crate's tile")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Fences
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// An intact fence cannot be climbed; one cut to a medium hole can; one cut large is walked through, not climbed.
+/datum/unit_test/dq_climb/a_fence_is_climbed_through_a_medium_hole
+
+/datum/unit_test/dq_climb/a_fence_is_climbed_through_a_medium_hole/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/fence/intact = allocate(/obj/structure/fence, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/datum/op_result/refused = climb_it(H, intact)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H.loc, floor_at(1, 0), "an intact fence is not climbed (refused: [refused?.reason])")
+	var/obj/structure/fence/medium = allocate(/obj/structure/fence/cut/medium, floor_at(2, 1))
+	var/mob/living/carbon/human/H2 = actor(floor_at(2, 0))
+	climb_it(H2, medium)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H2.loc, get_turf(medium), "a medium hole is climbed through")
+	var/obj/structure/fence/large = allocate(/obj/structure/fence/cut/large, floor_at(3, 1))
+	var/mob/living/carbon/human/H3 = actor(floor_at(3, 0))
+	climb_it(H3, large)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(H3.loc, floor_at(3, 0), "a large hole is walked through, not climbed")
+
+/// What is not climbable is not offered a climb.
+/datum/unit_test/dq_climb/a_huge_scrubber_is_not_climbable
+
+/datum/unit_test/dq_climb/a_huge_scrubber_is_not_climbable/run_gate()
+	var/obj/machinery/portable_atmospherics/powered/scrubber/S = allocate(/obj/machinery/portable_atmospherics/powered/scrubber, floor_at(1, 1))
+	var/obj/machinery/portable_atmospherics/powered/scrubber/huge/H = allocate(/obj/machinery/portable_atmospherics/powered/scrubber/huge, floor_at(2, 1))
+	TEST_ASSERT(has_trait(S, TRAIT_CLIMBABLE), "a portable scrubber is climbable")
+	TEST_ASSERT(!has_trait(H, TRAIT_CLIMBABLE), "a huge one is not")
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Shaking climbers off
 // ---------------------------------------------------------------------------------------------------------------------
@@ -241,7 +304,7 @@
 /datum/unit_test/dq_climb/shaking_an_empty_structure_does_nothing/run_gate()
 	var/obj/structure/closet/crate/C = allocate(/obj/structure/closet/crate, floor_at(1, 1))
 	var/mob/living/carbon/human/bystander = actor(floor_at(1, 0))
-	climb_shake_for_test(C, bystander)
+	climb_shake_off(C, bystander)
 	TEST_ASSERT_EQUAL(bystander.status_units(EFFECT_WEAKENED), 0, "nobody was knocked down")
 
 /// A climber cannot shake itself off.
@@ -252,11 +315,7 @@
 	var/mob/living/carbon/human/climber = allocate(/mob/living/carbon/human, floor_at(1, 0))
 	climb_it(climber, C)
 	test_time(1 SECOND)
-	climb_shake_for_test(C, climber)
+	climb_shake_off(C, climber)
 	TEST_ASSERT_EQUAL(climber.status_units(EFFECT_WEAKENED), 0, "the climber is not knocked down by its own shake")
 	test_time(4 SECONDS)
 	TEST_ASSERT_EQUAL(climber.loc, C.loc, "and gets up")
-
-/// Shakes `S` as `user` does (null: nobody, a crate opening).
-/proc/climb_shake_for_test(obj/S, mob/user)
-	om_emit(S, new /datum/om/event/climb_shake(user))

@@ -5,9 +5,8 @@
 	icon_state = "wardrobe"
 	density = TRUE
 
-/obj/structure/undies_wardrobe/Initialize(mapload)
-	. = ..()
-	make_climbable()
+CAPABILITIES(/obj/structure/undies_wardrobe)
+	climb()
 
 /obj/structure/undies_wardrobe/declare_interactions(list/into)
 	into += list(
