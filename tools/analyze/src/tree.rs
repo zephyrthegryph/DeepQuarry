@@ -224,6 +224,33 @@ pub struct FileMeta {
     pub hash: Hash,
 }
 
+/// The rayon pool that memo inits run on. Large on purpose: a worker blocked on a nested memo
+/// (an init that asks for another memoized value) must never starve the work it waits for.
+fn init_pool() -> &'static rayon::ThreadPool {
+    static POOL: OnceLock<rayon::ThreadPool> = OnceLock::new();
+    POOL.get_or_init(|| {
+        rayon::ThreadPoolBuilder::new()
+            .num_threads(64)
+            .stack_size(16 << 20)
+            .thread_name(|i| format!("analyze-init-{}", i))
+            .build()
+            .expect("init pool")
+    })
+}
+
+/// Runs `f` where rayon calls cannot deadlock against the lint fan-out (the latent hazard the
+/// README described): on a fresh OS thread, inside [`init_pool`]. The calling thread blocks in a
+/// plain join, so it never steals a lint job while it holds a memo cell or a `OnceLock` init.
+pub fn run_isolated<T: Send>(f: impl FnOnce() -> T + Send) -> T {
+    std::thread::scope(|s| {
+        let h = std::thread::Builder::new().stack_size(16 << 20).spawn_scoped(s, || init_pool().install(f)).expect("spawn init thread");
+        match h.join() {
+            Ok(v) => v,
+            Err(e) => std::panic::resume_unwind(e),
+        }
+    })
+}
+
 pub struct Tree {
     pub root: PathBuf,
     pub files: Vec<SourceFile>,
@@ -329,13 +356,17 @@ impl Tree {
     /// proc table, a type index, ...). `init` runs under the key's own lock, so concurrent lints
     /// wait for one build instead of racing to do it twice. The value must own its data (it is
     /// `'static`): refer to files by index or path and read them back through the tree.
-    pub fn memo<T: std::any::Any + Send + Sync>(&self, key: &str, init: impl FnOnce() -> T) -> std::sync::Arc<T> {
+    ///
+    /// `init` runs on its own thread against a private rayon pool ([`run_isolated`]), so it may use
+    /// `par_iter` freely: the waiting caller is blocked, not stealing, and the pool only ever holds
+    /// the work of inits (never a lint job that needs the cell being built).
+    pub fn memo<T: std::any::Any + Send + Sync>(&self, key: &str, init: impl FnOnce() -> T + Send) -> std::sync::Arc<T> {
         // Per-key once-cell, so building one value never blocks lookups of another.
         let cell: std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>> = {
             let mut g = self.memo_cells.lock().unwrap();
             g.entry(key.to_string()).or_default().clone()
         };
-        let any = cell.get_or_init(|| std::sync::Arc::new(init()) as std::sync::Arc<dyn std::any::Any + Send + Sync>).clone();
+        let any = cell.get_or_init(|| std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>).clone();
         any.downcast::<T>().expect("memo key reused with a different type")
     }
 
@@ -344,11 +375,13 @@ impl Tree {
     /// sanitize it on that one thread (seconds), while every other lint waited on the same cells.
     pub fn prewarm(&self) {
         self.prewarm_once.get_or_init(|| {
-            self.files.par_iter().for_each(|f| {
-                let _ = f.raw();
-                let _ = f.code();
-                let _ = f.clean();
-            });
+            run_isolated(|| {
+                self.files.par_iter().for_each(|f| {
+                    let _ = f.raw();
+                    let _ = f.code();
+                    let _ = f.clean();
+                })
+            })
         });
     }
 

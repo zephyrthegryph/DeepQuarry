@@ -9,6 +9,7 @@ pub mod baseline;
 pub mod cache;
 pub mod dm;
 pub mod frontend;
+pub mod incr;
 pub mod gens;
 pub mod lint;
 pub mod lints;

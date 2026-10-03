@@ -46,7 +46,11 @@ struct MetaFile {
 
 impl Cache {
     pub fn open(root: &Path, scopes_hash: &str, enabled: bool) -> Cache {
-        Cache { dir: root.join("data").join("analyze-cache"), stamp: format!("{}|{}", ENGINE_HASH, scopes_hash), enabled }
+        // `DQ_ANALYZE_CACHE` moves the cache (several engine builds, or worktrees, on one tree).
+        let dir = std::env::var_os("DQ_ANALYZE_CACHE").map(PathBuf::from).unwrap_or_else(|| root.join("data").join("analyze-cache"));
+        let stamp = format!("{}|{}", ENGINE_HASH, scopes_hash);
+        crate::incr::configure(dir.clone(), stamp.clone(), enabled);
+        Cache { dir, stamp, enabled }
     }
 
     pub fn stamp(&self) -> &str {

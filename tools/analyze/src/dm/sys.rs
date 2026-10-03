@@ -130,6 +130,28 @@ pub fn kept_recorded(f: &SourceFile, number: usize, name: &str) -> bool {
     }
 }
 
+/// Takes the calling thread's recorded ALLOW uses (the incremental cache captures them per file).
+pub fn take_recorded() -> Vec<crate::lint::AllowUse> {
+    EXTRA_USED.with(|e| std::mem::take(&mut *e.borrow_mut()))
+}
+
+/// Puts back what [`take_recorded`] took.
+pub fn restore_recorded(v: Vec<crate::lint::AllowUse>) {
+    EXTRA_USED.with(|e| *e.borrow_mut() = v);
+}
+
+/// Records uses captured elsewhere (a cache hit) on the calling thread.
+pub fn replay_recorded(v: Vec<crate::lint::AllowUse>) {
+    EXTRA_USED.with(|e| {
+        let mut e = e.borrow_mut();
+        for u in v {
+            if !e.contains(&u) {
+                e.push(u);
+            }
+        }
+    });
+}
+
 fn drain_extra(out: &mut Sink) {
     EXTRA_USED.with(|e| {
         for u in e.borrow_mut().drain(..) {
