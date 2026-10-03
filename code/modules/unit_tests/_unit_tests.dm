@@ -870,6 +870,7 @@
 #include "interim_technomancer_spellbutton_actor.dm"
 #include "interim_laser_pointer_sticky_diode.dm"
 #include "interim_vitals_monitor_drag_actor.dm"
+#include "interim_mining_voucher_sticky_points.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
