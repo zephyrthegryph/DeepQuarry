@@ -454,10 +454,12 @@ APPEARANCE_TEMPLATE(/obj/item/personal_shield_generator/belt/mining, "shieldpack
 	if(modifier_type == /datum/body_effect/shield_projection/mining/strong)
 		to_chat(user, span_warning("This shield generator is already upgraded!"))
 		return TRUE
+	var/upgrade_name = "[W]"
+	if(!consume(W, user))
+		return TRUE
 	modifier_type = /datum/body_effect/shield_projection/mining/strong
 	upgraded = TRUE
-	to_chat(user, span_notice("You upgrade the [src] with the [W]!"))
-	consume(W, user)
+	to_chat(user, span_notice("You upgrade the [src] with the [upgrade_name]!"))
 	return TRUE
 
 //Security belts

@@ -826,6 +826,7 @@
 #include "interim_frame_board_construct_actor.dm"
 #include "interim_ant_structure_welder_cleanup.dm"
 #include "interim_paper_shredder_sticky_paper.dm"
+#include "interim_mining_shield_sticky_upgrade.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
