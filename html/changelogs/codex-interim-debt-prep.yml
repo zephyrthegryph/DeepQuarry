@@ -54,3 +54,8 @@ changes:
   - bugfix: "Legacy item action buttons pass the clicking player to the item action."
   - bugfix: "Toy sword and shoe appearance changes redraw their actual holder instead of an unrelated player."
   - admin: "Filter editor choices and permission checks retain the editing player."
+  - bugfix: "Girder resets no longer stack reinforcement strength, and removing struts restores the frame material strength."
+  - admin: "SDQL parsing, query variables and diagnostics retain the requesting player."
+  - bugfix: "Machine frames refuse unreleasable circuit boards without advancing construction."
+  - bugfix: "Refused transfers into full storage preserve the source item display."
+  - bugfix: "Diagonal inventory controls act on the client mob consistently."

@@ -637,7 +637,7 @@ GLOBAL_LIST_EMPTY(icon_state_lists)
 /proc/pick_and_customize_icon(mob/user, pick_only=FALSE, key = "icon")
 	var/icon/icon_result = null
 	if(!user)
-		user = usr
+		return null
 
 	var/icon_from_file = flow_ask(user, "[key]:from_file", /datum/om/prompt/choice/alert, message = "Do you wish to pick an icon from file?", title = "File picker icon", choices = list("Yes", "No"))
 	if(isnull(icon_from_file))
