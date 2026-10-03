@@ -643,13 +643,13 @@
 #include "interim_apc_cell_eject_occupied_hands.dm"
 #include "interim_energy_net_effect_cleanup.dm"
 #include "interim_storage_nested_cycle_refusals.dm"
-#include "interim_apc_bay_adapters.dm"
 #include "interim_dare_jackpot.dm"
 #include "interim_computer_frame_glass_material.dm"
 #include "interim_ghost_hud_actor.dm"
 #include "interim_pylon_pulverize.dm"
 #include "interim_airlock_id_wire_pulse.dm"
 #include "interim_nif_size_actor.dm"
+#include "interim_apc_bay_adapters.dm"
 #include "interim_anomaly_cleanup.dm"
 #include "interim_dark_growth_cleanup.dm"
 #include "interim_fluff_injector_consumption.dm"
@@ -658,6 +658,7 @@
 #include "interim_specops_countdown_actor.dm"
 #include "interim_weaversilk_cleanup.dm"
 #include "interim_airlock_bolt_wire_recovery.dm"
+#include "interim_reagent_fractional_depletion.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
