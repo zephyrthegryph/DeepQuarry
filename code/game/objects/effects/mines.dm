@@ -174,7 +174,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 			target.assume_gas(GAS_N2O, 30)
 	visible_message("\The [src.name] detonates!")
 	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/phoron
 	mineitemtype = /obj/item/mine/phoron
@@ -270,7 +270,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M.fire_act()
 	visible_message("\The [src.name] bursts into flames!")
 	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/stripping
 	mineitemtype = /obj/item/mine/stripping
