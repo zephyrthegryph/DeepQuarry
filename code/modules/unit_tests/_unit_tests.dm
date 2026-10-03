@@ -821,6 +821,7 @@
 #include "interim_slime_potion_sticky_mimic.dm"
 #include "interim_ore_box_sticky_ore.dm"
 #include "interim_solar_assembly_sticky_tracker.dm"
+#include "interim_holographic_synx_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
