@@ -471,7 +471,7 @@ impl Tree {
     /// Loads the persisted line texts (entries of files that no longer exist or changed are simply never asked for).
     pub fn load_line_cache(&self, path: &Path, stamp: &str) {
         let Ok(bytes) = std::fs::read(path) else { return };
-        let Ok((st, map)) = bincode::deserialize::<(String, Vec<((Hash, u32), String)>)>(&bytes) else { return };
+        let Ok((st, map)) = crate::incr::de::<(String, Vec<((Hash, u32), String)>)>(&bytes) else { return };
         if st == stamp {
             *self.line_cache.lock().unwrap() = map.into_iter().collect();
         }
@@ -486,7 +486,7 @@ impl Tree {
         let g = self.line_cache.lock().unwrap();
         let mut rows: Vec<((Hash, u32), String)> = g.iter().filter(|(k, _)| live.contains(&k.0)).map(|(k, v)| (*k, v.clone())).collect();
         rows.sort();
-        if let Ok(bytes) = bincode::serialize(&(stamp.to_string(), rows)) {
+        if let Ok(bytes) = crate::incr::ser(&(stamp.to_string(), rows)) {
             if let Some(dir) = path.parent() {
                 let _ = std::fs::create_dir_all(dir);
             }

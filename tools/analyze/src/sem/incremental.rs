@@ -42,6 +42,8 @@ pub struct FileFacts {
     pub shape: Hash,
     pub writes: Vec<String>,
     pub directive: bool,
+    /// Digest of the comment-stripped, blank-line-free text: equal means the parse is unchanged but for line numbers.
+    pub tokens: Hash,
     /// Digest of the file's single-token lines (`/datum/foo`, `foo`): a type header with no body defines a type
     /// and leaves no var or proc entry in the shape, so a change to these lines is treated as a structure change.
     pub bare: Hash,
@@ -52,7 +54,9 @@ pub struct Record {
     pub stamp: String,
     pub env: Hash,
     pub files: BTreeMap<String, FileFacts>,
-    /// type path -> the file the model located it in.
+    /// type path -> the file the model located it in. Stored apart (`sem-types.bin`) and read only when a changed
+    /// file needs a partial parse.
+    #[serde(skip)]
     pub type_loc: BTreeMap<String, String>,
     pub footprint: Vec<String>,
     pub sinks: BTreeMap<String, Sink>,
@@ -71,9 +75,26 @@ fn path() -> Option<std::path::PathBuf> {
     crate::incr::dir().map(|d| d.join(FILE))
 }
 
+fn types_path() -> Option<std::path::PathBuf> {
+    crate::incr::dir().map(|d| d.join("sem-types.bin"))
+}
+
+fn load_types(stamp: &str, env: Hash) -> Option<BTreeMap<String, String>> {
+    let (st, e, map): (String, Hash, Vec<(String, String)>) = crate::incr::de(&std::fs::read(types_path()?).ok()?).ok()?;
+    (st == stamp && e == env).then(|| map.into_iter().collect())
+}
+
+fn save_types(stamp: &str, env: Hash, map: &BTreeMap<String, String>) {
+    let Some(p) = types_path() else { return };
+    let rows: Vec<(&String, &String)> = map.iter().collect();
+    if let Ok(bytes) = crate::incr::ser(&(stamp, env, rows)) {
+        let _ = std::fs::write(&p, bytes);
+    }
+}
+
 fn load() -> Option<Record> {
     let stamp = crate::incr::stamp()?;
-    let r: Record = bincode::deserialize(&std::fs::read(path()?).ok()?).ok()?;
+    let r: Record = crate::incr::de(&std::fs::read(path()?).ok()?).ok()?;
     (r.stamp == stamp).then_some(r)
 }
 
@@ -82,7 +103,7 @@ fn save(r: &Record) {
     if let Some(dir) = p.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    if let Ok(bytes) = bincode::serialize(r) {
+    if let Ok(bytes) = crate::incr::ser(r) {
         let tmp = p.with_extension(format!("tmp{}", std::process::id()));
         if std::fs::write(&tmp, &bytes).is_ok() {
             let _ = std::fs::rename(&tmp, &p);
@@ -126,6 +147,20 @@ fn text_of(tree: &Tree, rel: &str) -> String {
         Some(f) => f.text().to_string(),
         None => tree.read_extra(rel).map(|t| t.as_ref().clone()).unwrap_or_default(),
     }
+}
+
+/// Digest of the text with comments removed, trailing space trimmed and blank lines dropped.
+fn token_hash(tree: &Tree, rel: &str) -> Hash {
+    let stripped = super::decls::strip_comments_keep_strings(&text_of(tree, rel));
+    let mut out = String::with_capacity(stripped.len());
+    for l in stripped.lines() {
+        let t = l.trim_end();
+        if !t.trim().is_empty() {
+            out.push_str(t);
+            out.push('\n');
+        }
+    }
+    h128(out.as_bytes())
 }
 
 fn has_directive(text: &str) -> bool {
@@ -261,6 +296,21 @@ fn validate(tree: &Tree) -> Option<Record> {
         if footprint.contains(rel.as_str()) || rel.starts_with("code/__defines/") || rec.files[rel].directive {
             return miss(3);
         }
+    }
+    // A change that leaves the comment-stripped text alone (a comment, blank lines) cannot change what the
+    // model derives from a file outside the footprint: no parse.
+    let changed_tokens: Vec<(String, Hash)> = changed.iter().map(|rel| (rel.clone(), token_hash(tree, rel))).collect();
+    let all_same = changed_tokens.iter().all(|(rel, t)| *t == rec.files[rel].tokens);
+    if all_same {
+        for rel in &changed {
+            rec.files.get_mut(rel)?.fkey = now[rel];
+        }
+        save(&rec);
+        return Some(rec);
+    }
+    let changed: Vec<String> = changed_tokens.iter().filter(|(rel, t)| *t != rec.files[rel].tokens).map(|(rel, _)| rel.clone()).collect();
+    let same_tokens: Vec<String> = changed_tokens.iter().filter(|(rel, t)| *t == rec.files[rel].tokens).map(|(rel, _)| rel.clone()).collect();
+    for rel in &changed {
         if bare_hash(tree, rel) != rec.files[rel].bare {
             return miss(9);
         }
@@ -268,6 +318,8 @@ fn validate(tree: &Tree) -> Option<Record> {
             return miss(4);
         }
     }
+    let Some(type_loc) = load_types(&rec.stamp, rec.env) else { return miss(10) };
+    rec.type_loc = type_loc;
     let sem = Sem::build_partial(&tree.root, tree, &changed).ok()?;
     let got = collect(&sem);
     for rel in &changed {
@@ -290,8 +342,10 @@ fn validate(tree: &Tree) -> Option<Record> {
             return miss(8);
         }
     }
-    for rel in &changed {
-        rec.files.get_mut(rel)?.fkey = now[rel];
+    for rel in changed.iter().chain(same_tokens.iter()) {
+        let f = rec.files.get_mut(rel)?;
+        f.fkey = now[rel];
+        f.tokens = token_hash(tree, rel);
     }
     save(&rec);
     Some(rec)
@@ -334,11 +388,13 @@ pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
                 writes: col.writes.get(&rel).map(|s| s.iter().cloned().collect()).unwrap_or_default(),
                 directive: has_directive(&text_of(tree, &rel)),
                 bare: bare_hash(tree, &rel),
+                tokens: token_hash(tree, &rel),
             },
         );
     }
     let type_loc: BTreeMap<String, String> = sem.type_loc.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-    *pending(tree).lock().unwrap() = Some(Record { stamp, env, files, type_loc, footprint, sinks: BTreeMap::new(), gens: BTreeMap::new() });
+    save_types(&stamp, env, &type_loc);
+    *pending(tree).lock().unwrap() = Some(Record { stamp, env, files, type_loc: BTreeMap::new(), footprint, sinks: BTreeMap::new(), gens: BTreeMap::new() });
 }
 
 /// The stored output of a generator that used the full model, when the record is valid.

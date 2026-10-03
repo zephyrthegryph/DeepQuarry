@@ -61,7 +61,7 @@ impl Cache {
         if !self.enabled {
             return HashMap::new();
         }
-        match std::fs::read(self.dir.join("meta.bin")).ok().and_then(|b| bincode::deserialize::<MetaFile>(&b).ok()) {
+        match std::fs::read(self.dir.join("meta.bin")).ok().and_then(|b| crate::incr::de::<MetaFile>(&b).ok()) {
             // File metadata does not depend on the engine build, only on the files, so the stamp
             // is not compared here: a hash of unchanged bytes stays valid across engine builds.
             Some(m) => m.files,
@@ -75,7 +75,7 @@ impl Cache {
         }
         let _ = std::fs::create_dir_all(&self.dir);
         let m = MetaFile { stamp: self.stamp.clone(), files: files.clone() };
-        if let Ok(bytes) = bincode::serialize(&m) {
+        if let Ok(bytes) = crate::incr::ser(&m) {
             atomic_write(&self.dir.join("meta.bin"), &bytes);
         }
     }
@@ -115,7 +115,7 @@ impl Cache {
         if !self.enabled {
             return LintCache { stamp: self.stamp.clone(), ..Default::default() };
         }
-        let loaded = std::fs::read(self.lint_path(name)).ok().and_then(|b| bincode::deserialize::<LintCache>(&b).ok());
+        let loaded = std::fs::read(self.lint_path(name)).ok().and_then(|b| crate::incr::de::<LintCache>(&b).ok());
         match loaded {
             Some(c) if c.stamp == self.stamp => c,
             _ => LintCache { stamp: self.stamp.clone(), ..Default::default() },
@@ -127,7 +127,7 @@ impl Cache {
             return;
         }
         let _ = std::fs::create_dir_all(&self.dir);
-        if let Ok(bytes) = bincode::serialize(cache) {
+        if let Ok(bytes) = crate::incr::ser(cache) {
             atomic_write(&self.lint_path(name), &bytes);
         }
     }

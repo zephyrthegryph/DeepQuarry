@@ -87,7 +87,7 @@ fn config() -> Option<(PathBuf, String)> {
 }
 
 fn load_at(path: &std::path::Path, stamp: &str, ctx: Hash) -> StoreFile {
-    let loaded = std::fs::read(path).ok().and_then(|b| bincode::deserialize::<StoreFile>(&b).ok());
+    let loaded = std::fs::read(path).ok().and_then(|b| de::<StoreFile>(&b).ok());
     match loaded {
         Some(s) if s.stamp == stamp && s.ctx == ctx => s,
         _ => StoreFile { stamp: stamp.to_string(), ctx, ..Default::default() },
@@ -105,7 +105,7 @@ fn save(path: &std::path::Path, st: &StoreFile) {
     if let Some(dir) = path.parent() {
         let _ = std::fs::create_dir_all(dir);
     }
-    if let Ok(bytes) = bincode::serialize(st) {
+    if let Ok(bytes) = ser(st) {
         let tmp = path.with_extension(format!("tmp{}", std::process::id()));
         if std::fs::write(&tmp, &bytes).is_ok() {
             let _ = std::fs::rename(&tmp, path);
@@ -113,6 +113,18 @@ fn save(path: &std::path::Path, st: &StoreFile) {
             let _ = std::fs::remove_file(&tmp);
         }
     }
+}
+
+/// The on-disk encoding: bincode with variable-length integers (lengths, lines and offsets cost a byte or two, not eight).
+pub fn ser<T: Serialize + ?Sized>(v: &T) -> Result<Vec<u8>, bincode::Error> {
+    use bincode::Options;
+    bincode::DefaultOptions::new().with_varint_encoding().serialize(v)
+}
+
+/// Reads what [`ser`] wrote.
+pub fn de<T: DeserializeOwned>(b: &[u8]) -> Result<T, bincode::Error> {
+    use bincode::Options;
+    bincode::DefaultOptions::new().with_varint_encoding().deserialize(b)
 }
 
 /// The cache directory of this run, when caching is on.
@@ -129,12 +141,12 @@ pub fn stamp() -> Option<String> {
 pub fn cached<T: Serialize + DeserializeOwned>(name: &str, key: Hash, compute: impl FnOnce() -> T) -> T {
     let (st, target) = load(name, key);
     if let Some(b) = st.map.get(&0) {
-        if let Ok(v) = bincode::deserialize::<T>(b) {
+        if let Ok(v) = de::<T>(b) {
             return v;
         }
     }
     let v = compute();
-    if let (Some((path, _)), Ok(b)) = (target, bincode::serialize(&v)) {
+    if let (Some((path, _)), Ok(b)) = (target, ser(&v)) {
         let mut st = st;
         st.map.clear();
         st.map.insert(0, b);
@@ -145,7 +157,7 @@ pub fn cached<T: Serialize + DeserializeOwned>(name: &str, key: Hash, compute: i
 
 /// A 128-bit key of any serializable value (a merged index, a list of facts).
 pub fn ctx_key<T: Serialize + ?Sized>(v: &T) -> Hash {
-    let bytes = bincode::serialize(v).unwrap_or_default();
+    let bytes = ser(v).unwrap_or_default();
     u128::from_le_bytes(blake3::hash(&bytes).as_bytes()[..16].try_into().unwrap())
 }
 
@@ -192,7 +204,7 @@ where
                 return (R::default(), false, Vec::new());
             }
             if let Some(b) = st.map.get(&file.fkey) {
-                if let Ok((r, u)) = bincode::deserialize::<(R, Vec<AllowUse>)>(b) {
+                if let Ok((r, u)) = de::<(R, Vec<AllowUse>)>(b) {
                     return (r, false, u);
                 }
             }
@@ -218,7 +230,7 @@ where
             if let Some(b) = stores[k].map.remove(&file.fkey) {
                 maps[k].insert(file.fkey, b);
             }
-        } else if let Ok(b) = bincode::serialize(&(&r, &u)) {
+        } else if let Ok(b) = ser(&(&r, &u)) {
             maps[k].insert(file.fkey, b);
         }
         uses.extend(u);
