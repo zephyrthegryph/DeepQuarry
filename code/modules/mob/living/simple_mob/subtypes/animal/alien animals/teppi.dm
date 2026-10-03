@@ -1077,7 +1077,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 
 //Custom teppi colors! For funzies.
 
-/mob/living/simple_mob/vore/alienanimals/teppi/cass/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/cass
 	inherit_colors = TRUE
 	color = "#c69c85"
 	marking_color = "#eeb698"
@@ -1086,9 +1086,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#272523"
 	marking_type = "2"
 	horn_type =  "0"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/baby/cass
 	inherit_colors = TRUE
 	color = "#c69c85"
 	marking_color = "#eeb698"
@@ -1097,9 +1096,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#272523"
 	marking_type = "2"
 	horn_type =  "0"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/aronai/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/aronai
 	inherit_colors = TRUE
 	color = "#404040"
 	marking_color = "#222222"
@@ -1108,9 +1106,8 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#e16f2d"
 	marking_type = "13"
 	horn_type = "1"
-	. = ..()
 
-/mob/living/simple_mob/vore/alienanimals/teppi/lira/Initialize(mapload)
+/mob/living/simple_mob/vore/alienanimals/teppi/lira
 	inherit_colors = TRUE
 	color = "#fdfae9"
 	marking_color = "#ffffc0"
@@ -1119,4 +1116,3 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/alienanimals/teppi, TYPE_PRO
 	skin_color = "#f09ca9"
 	marking_type = "13"
 	horn_type = "0"
-	. = ..()

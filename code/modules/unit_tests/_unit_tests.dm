@@ -653,6 +653,7 @@
 #include "interim_anomaly_cleanup.dm"
 #include "interim_dark_growth_cleanup.dm"
 #include "interim_fluff_injector_consumption.dm"
+#include "interim_teppi_palette_data.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
