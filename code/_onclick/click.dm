@@ -174,21 +174,28 @@
 	screen_loc = "SOUTHWEST to NORTHEAST"
 
 /atom/movable/screen/click_catcher/Click(location, control, params)
+	var/result = resolve_click_with_actor(usr, params) // ALLOW(sys_usr_outside_verb): Native map catcher click supplies its actor while retaining downstream turf Click in native context.
+	if(isturf(result))
+		var/turf/T = result
+		T.Click(location, control, params)
+	return 1
+
+/atom/movable/screen/click_catcher/proc/resolve_click_with_actor(mob/user, params)
 	var/list/P = params2list(params)
 	switch(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, click_catcher_table)))
 		if(INPUT_ACTION_SWAP_HANDS)
-			if(istype(usr, /mob/living/carbon))
-				var/mob/living/carbon/C = usr
+			if(istype(user, /mob/living/carbon))
+				var/mob/living/carbon/C = user
 				C.swap_hand()
 				return 1
-	var/turf/T = get_turf(usr)
+	var/turf/T = get_turf(user)
 	if(T)
 		T = screen_loc2turf(P[SCREEN_LOC], T)
 		if(T)
 			if(GLOB.input_router.classify(P, TYPE_TABLE_GET(GLOB.input_router, shift_table)) == INPUT_ACTION_INSPECT)
-				usr.face_atom(T)
+				user.face_atom(T)
 				return 1
-			T.Click(location, control, params)
+			return T
 	return 1
 
 /// MouseWheelOn
