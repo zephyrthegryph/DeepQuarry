@@ -16,21 +16,29 @@ const RULES: &[RuleMeta] = &[RuleMeta {
     hint: "appearance procs (appearance_overlays, DECLARE_APPEARANCE_PROC rows; draw() is dx_reactive_write's) write no state and play no sound: move it to the handler or setter that changes the state (G12)",
 }];
 
+/// The proc names one file's `DECLARE_APPEARANCE_PROC(...)` rows name (per-file facts, cached by content).
+fn names_in_file(f: &SourceFile) -> Vec<String> {
+    let row = pat!(r"\bDECLARE_APPEARANCE_PROC\s*\(\s*/[\w/]+\s*,\s*(?:TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\)|PROC_REF\(\s*(\w+)\s*\))");
+    let mut out: Vec<String> = Vec::new();
+    for line in f.clean().lines() {
+        if !line.contains("DECLARE_APPEARANCE_PROC") {
+            continue;
+        }
+        for m in row.captures_iter(line) {
+            out.push(if m.matched(1) { m.s(1) } else { m.s(2) }.to_string());
+        }
+    }
+    out.sort();
+    out.dedup();
+    out
+}
+
 /// `appearance_proc_names`: `ALWAYS` plus every proc a DECLARE_APPEARANCE_PROC row names.
 fn appearance_proc_names(files: &[&SourceFile]) -> HashSet<String> {
-    let row = pat!(r"\bDECLARE_APPEARANCE_PROC\s*\(\s*/[\w/]+\s*,\s*(?:TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\)|PROC_REF\(\s*(\w+)\s*\))");
     let mut names: HashSet<String> = HashSet::new();
     names.insert("appearance_overlays".to_string());
-    for f in files {
-        for line in f.clean().lines() {
-            if !line.contains("DECLARE_APPEARANCE_PROC") {
-                continue;
-            }
-            for m in row.captures_iter(line) {
-                let n = if m.matched(1) { m.s(1) } else { m.s(2) };
-                names.insert(n.to_string());
-            }
-        }
+    for per_file in crate::incr::facts("sys-dx-look-names", files, names_in_file) {
+        names.extend(per_file);
     }
     names
 }

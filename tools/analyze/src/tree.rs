@@ -124,7 +124,15 @@ fn read_text(path: &Path) -> String {
 
 impl SourceFile {
     fn data(&self) -> &Data {
-        self.data.get_or_init(|| Data { raw: View::new(read_text(&self.abs)), code: OnceLock::new(), clean: OnceLock::new() })
+        self.data.get_or_init(|| {
+            if std::env::var("DQ_ANALYZE_TRACE_LOAD").is_ok() {
+                static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+                if N.fetch_add(1, std::sync::atomic::Ordering::Relaxed) == 300 {
+                    eprintln!("analyze: 300th lazy file load, from: {}", std::backtrace::Backtrace::force_capture());
+                }
+            }
+            Data { raw: View::new(read_text(&self.abs)), code: OnceLock::new(), clean: OnceLock::new() }
+        })
     }
 
     /// The file's text as the Python lints saw it (universal newlines).

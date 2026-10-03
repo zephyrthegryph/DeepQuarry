@@ -53,7 +53,34 @@ pub fn system_types(system: &str) -> Vec<String> {
 /// system's type, not the whole tree.
 pub fn system_vars(tree: &Tree, system: &str) -> (bool, std::collections::HashSet<String>) {
     let types = system_types(system);
-    let files: Vec<&crate::tree::SourceFile> = tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| types.iter().any(|t| f.code().text.contains(t.as_str()))).collect();
+    // Which files mention `/datum/world_service/<system>` or `/datum/system/<system>` (as a substring of the
+    // comment-stripped text, like `contains`): per-file facts, read once per content change.
+    let mentions: Arc<Vec<(String, Vec<(u8, String)>)>> = tree.memo("sem/system_mentions", || {
+        let all = tree.select(&crate::tree::CODE_DM);
+        let facts: Vec<Vec<(u8, String)>> = crate::incr::facts("system-type-mentions", &all, |f| {
+            let text = &f.code().text;
+            let mut out: Vec<(u8, String)> = Vec::new();
+            for (k, prefix) in ["/datum/world_service/", "/datum/system/"].iter().enumerate() {
+                let mut from = 0;
+                while let Some(i) = text[from..].find(prefix) {
+                    let start = from + i + prefix.len();
+                    let run: String = text[start..].chars().take_while(|c| c.is_alphanumeric() || *c == '_').collect();
+                    out.push((k as u8, run));
+                    from = start;
+                }
+            }
+            out.sort();
+            out.dedup();
+            out
+        });
+        all.iter().zip(facts).map(|(f, m)| (f.rel.clone(), m)).collect()
+    });
+    let plain = !system.is_empty() && system.chars().all(|c| c.is_alphanumeric() || c == '_');
+    let files: Vec<&crate::tree::SourceFile> = if plain {
+        mentions.iter().filter(|(_, m)| m.iter().any(|(_, run)| run.starts_with(system))).filter_map(|(rel, _)| tree.get(rel)).collect()
+    } else {
+        tree.select(&crate::tree::CODE_DM).into_iter().filter(|f| types.iter().any(|t| f.code().text.contains(t.as_str()))).collect()
+    };
     let table = crate::dm::dx::type_vars(&files);
     let mut vars = std::collections::HashSet::new();
     let mut known = false;

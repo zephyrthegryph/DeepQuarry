@@ -236,7 +236,7 @@ impl Engine {
                     // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
                     // re-enters this call and waits on the cell this thread is initializing. run_all
                     // prewarms from the main thread (`prepare`) before it fans out.
-                    if rayon::current_thread_index().is_none() {
+                    if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
                         self.tree.prewarm();
                     }
                     lint.scan_tree(&cx, &mut sink);
