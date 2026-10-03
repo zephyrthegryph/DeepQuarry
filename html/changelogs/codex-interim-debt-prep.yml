@@ -115,3 +115,6 @@ changes:
   - bugfix: "Chained shoes, paper bundles and filing cabinets respect stuck items; strange rocks retain concealed finds when release is refused."
   - bugfix: "Holographic swords redraw the hands of their actual holder."
   - bugfix: "Service fabricator refills and contraband unwrapping require consuming their original cartridge or package."
+  - bugfix: "Cat boxes respect release rules; floorlayers preserve stuck tiles and avoid merging stacks into themselves."
+  - bugfix: "Power-cell mode swaps respect stuck cells and preserve their charge and persistence setting."
+  - bugfix: "Slime extract enhancers and floor-lamp shades must be consumed before granting extra uses or a refundable shade."
