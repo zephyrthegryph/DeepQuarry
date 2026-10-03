@@ -737,6 +737,7 @@
 #include "interim_energy_shield_holder_appearance.dm"
 #include "interim_tarot_shuffle_actor.dm"
 #include "interim_birdcrate_recovery.dm"
+#include "interim_infrared_beam_endpoints.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

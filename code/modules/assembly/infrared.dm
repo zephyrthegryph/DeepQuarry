@@ -146,15 +146,15 @@ DECLARE_PERIODIC(/obj/effect/beam/i_beam, PERIODIC_SLOW)
 
 /obj/effect/beam/i_beam/proc/hit()
 	master()?.trigger_beam()
-	qdel(src)
+	consume(src)
 
 /obj/effect/beam/i_beam/periodic_step()
 	if(loc?.density || !master())
-		qdel(src)
+		consume(src)
 		return
 
 /obj/effect/beam/i_beam/Bump()
-	qdel(src)
+	consume(src)
 
 /obj/effect/beam/i_beam/Bumped()
 	hit()
