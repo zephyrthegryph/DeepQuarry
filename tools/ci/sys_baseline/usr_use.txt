@@ -681,8 +681,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/ships/ship.dm	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
-usr_outside_verb	code/modules/paperwork/adminpaper.dm	admin_write("[params["id"]]", usr)
-usr_outside_verb	code/modules/paperwork/adminpaper.dm	admin_write("end", usr)
 usr_outside_verb	code/modules/paperwork/clipboard.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/paperwork/clipboard.dm	var/mob/M = usr
 usr_outside_verb	code/modules/paperwork/clipboard.dm	add_fingerprint(usr)

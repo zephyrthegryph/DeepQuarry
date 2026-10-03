@@ -41,3 +41,6 @@ changes:
   - bugfix: "Rigged crates shock the actual opener, including an occupant trying to escape."
   - bugfix: "Modular computers retain the user for program access checks, autorun and delayed quit feedback."
   - bugfix: "Computer drives retain their default and added files in a searchable owned file list."
+  - bugfix: "Stool dismantling preserves items that cannot be released and returns materials only on success."
+  - bugfix: "Direct file transfers update the original drive capacity as well as the destination."
+  - admin: "Administrative paper editing uses its intended writer and retains the editing user."

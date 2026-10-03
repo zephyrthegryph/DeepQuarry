@@ -104,18 +104,12 @@ UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_ite
 
 UI_ACT(/obj/item/paper/admin, "write_field", ui_act_write_field, UI_ARG_TEXT("id"))
 UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_field)
-	. = ..()
-	if(.)
-		return
-	admin_write("[params["id"]]", usr)
+	admin_write("[params["id"]]", user)
 	return TRUE
 
 UI_ACT(/obj/item/paper/admin, "write_end", ui_act_write_end)
 UI_ACT_OVERRIDE(/obj/item/paper/admin, ui_act_write_end)
-	. = ..()
-	if(.)
-		return
-	admin_write("end", usr)
+	admin_write("end", user)
 	return TRUE
 
 UI_ACT(/obj/item/paper/admin, "confirm", ui_act_confirm)
