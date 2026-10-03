@@ -46,7 +46,8 @@ GLOBAL_LIST_INIT(robot_glass_options, list(
 			balloon_alert(user, "the fabricator can't hold any more matter.")
 			return INTERACTION_HANDLED_PASS
 
-		consume(W, user)
+		if(!consume(W, user))
+			return INTERACTION_HANDLED_PASS
 
 		stored_matter += 10
 		play_sfx(src, SFX_MACHINES_CLICK, 0.2)
