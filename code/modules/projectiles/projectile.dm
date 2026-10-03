@@ -338,6 +338,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/fire(angle, atom/direct_target)
 	//If no angle needs to resolve it from xo/yo!
 	if(direct_target)
+		if(loc?.release_refusal(src))
+			return
 		if(bump_targets)
 			var/impact_result = direct_target.bullet_act(src, def_zone)
 			// mob/living/bullet_act() already calls on_hit() internally with the correct
@@ -348,16 +350,16 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				// Fall through to the normal launch path below instead of qdel-ing.
 				direct_target = null
 			else
-				qdel(src)
+				consume(src)
 				return
 		else
-			qdel(src)
+			consume(src)
 			return
 	if(isnum(angle))
 		setAngle(angle)
 	rel_set(src, nameof(starting), get_turf(src))
 	if(!starting)
-		qdel(src)
+		consume(src)
 		return
 	if(isnull(Angle))	//Try to resolve through offsets if there's no angle set.
 		if(isnull(xo) || isnull(yo))
