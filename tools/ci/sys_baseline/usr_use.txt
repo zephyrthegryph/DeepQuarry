@@ -420,8 +420,6 @@ usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/pr
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/teshari.dm	if(holder_type && istype(M) && Adjacent(M) && (usr == M || usr == DraggedH) && DraggedH != M && !M.incapacitated() && DraggedH.pickup_pref && (M != usr || (M == usr && M.pickup_active)) && (!DraggedH.combat_mode && !M.combat_mode))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/teshari.dm	get_scooped(M, (usr == DraggedH))
 usr_outside_verb	code/modules/mob/living/inventory.dm	if(istype(L) && L != src && L == usr && Adjacent(L))
-usr_outside_verb	code/modules/mob/living/silicon/pai/pai_hud.dm	if(!ispAI(usr))
-usr_outside_verb	code/modules/mob/living/silicon/pai/pai_hud.dm	var/mob/living/silicon/pai/p = usr
 usr_outside_verb	code/modules/mob/mob.dm	if(usr != src && will_show_tooltip())
 usr_outside_verb	code/modules/mob/mob.dm	if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
 usr_outside_verb	code/modules/mob/mob.dm	openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
