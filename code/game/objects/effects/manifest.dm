@@ -4,9 +4,6 @@
 	icon_state = "x"
 	unacidable = TRUE//Just to be sure.
 
-/obj/effect/manifest/Initialize(mapload)
-	. = ..()
-
 	invisibility = INVISIBILITY_ABSTRACT
 
 /obj/effect/manifest/proc/manifest()
@@ -16,6 +13,5 @@
 	var/obj/item/paper/P = new /obj/item/paper( src.loc )
 	P.info = dat
 	P.name = "paper- 'Crew Manifest'"
-	//SN src = null
 	replace_with(src, P)
 	return

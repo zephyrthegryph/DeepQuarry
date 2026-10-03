@@ -370,7 +370,6 @@ initialize	code/game/objects/effects/landmarks.dm	/obj/effect/landmark/virtual_r
 initialize	code/game/objects/effects/landmarks_events.dm	/obj/effect/landmark/event_trigger/Initialize(mapload)
 initialize	code/game/objects/effects/landmarks_events.dm	/obj/effect/landmark/event_trigger/auto_narrate/Initialize(mapload)
 initialize	code/game/objects/effects/landmarks_poi.dm	/obj/effect/landmark/poi_loader/Initialize(mapload)
-initialize	code/game/objects/effects/manifest.dm	/obj/effect/manifest/Initialize(mapload)
 initialize	code/game/objects/effects/map_effects/beam_point.dm	/obj/effect/map_effect/beam_point/Initialize(mapload)
 initialize	code/game/objects/effects/map_effects/effect_emitter.dm	/obj/effect/map_effect/interval/effect_emitter/Initialize(mapload)
 initialize	code/game/objects/effects/map_effects/portal.dm	/obj/effect/map_effect/portal/master/Initialize(mapload)

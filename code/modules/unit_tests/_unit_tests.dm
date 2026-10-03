@@ -671,6 +671,7 @@
 #include "interim_atmos_console_unopened_emag.dm"
 #include "interim_redspace_abduction_actor_refusal.dm"
 #include "interim_holocarp_cleanup.dm"
+#include "interim_manifest_data.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
