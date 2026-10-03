@@ -333,4 +333,54 @@
 	TEST_ASSERT(length(SSpai.get_chassis_list()), "the pAI system has no chassis")
 	TEST_ASSERT_EQUAL(SSpai.refresh_candidates(0), STEP_DONE, "the candidate refresh did not finish in one pass")
 
+/// Mob deaths: reported every 2 s, the queue drains into one insert per pass.
+/datum/unit_test/dq_system_mobs
+
+/datum/unit_test/dq_system_mobs/Run()
+	assert_system_ported(SSmobs, /datum/system/mobs)
+	assert_work_declared(SSmobs, nameof(/datum/system/mobs/proc/report_step), 2 SECONDS, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSmobs.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "mob reports run outside the game")
+	var/list/saved = SSmobs.death_list
+	SSmobs.death_list = list(list("name" = "dq test"))
+	TEST_ASSERT_EQUAL(SSmobs.report_step(0), STEP_DONE, "the mob step did not finish")
+	TEST_ASSERT_EQUAL(length(SSmobs.death_list), 0, "the mob step did not drain the death queue")
+	SSmobs.death_list = saved
+
+/// Machines: booted by hand from SSair (outside the DAG), steps every MACHINE_SERVICE_INTERVAL, finishes an unbudgeted step.
+/datum/unit_test/dq_system_machines
+
+/datum/unit_test/dq_system_machines/Run()
+	assert_system_ported(SSmachines, /datum/system/machines)
+	TEST_ASSERT(!SSmachines.boots_in_dag(), "SSair boots the machine system by hand")
+	assert_work_declared(SSmachines, nameof(/datum/system/machines/proc/machine_step), MACHINE_SERVICE_INTERVAL, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(MACHINE_SERVICE_INTERVAL, 2 SECONDS, "machine timing changed")
+	TEST_ASSERT(SSmachines.members_ready, "the boot pass ran on_members_ready() for the machine system")
+
+/// Expedition: boots after mapping, polls sites every 2 s and parks while none is live.
+/datum/unit_test/dq_system_expedition
+
+/datum/unit_test/dq_system_expedition/Run()
+	assert_system_ported(SSexpedition, /datum/system/expedition)
+	TEST_ASSERT(/datum/system/mapping in SSexpedition.needs, "expeditions boot after mapping")
+	var/datum/work_item/W = assert_work_declared(SSexpedition, nameof(/datum/system/expedition/proc/poll_sites), 2 SECONDS, LANE_SIMULATION)
+	var/list/saved = SSexpedition.sites
+	SSexpedition.sites = list()
+	TEST_ASSERT_EQUAL(SSexpedition.poll_sites(0), STEP_PARK, "with no live site the poll must park")
+	W.parked = TRUE
+	SSexpedition.demand()
+	TEST_ASSERT(!W.parked, "demand() did not wake the parked poll")
+	SSexpedition.sites = saved
+	W.parked = FALSE
+
+/// Flight operations: boots after shuttles and expeditions, processes plans every second.
+/datum/unit_test/dq_system_flight
+
+/datum/unit_test/dq_system_flight/Run()
+	assert_system_ported(SSflight, /datum/system/flight)
+	TEST_ASSERT(/datum/system/shuttles in SSflight.needs, "flight boots after the shuttles")
+	TEST_ASSERT(/datum/system/expedition in SSflight.needs, "flight boots after expeditions")
+	assert_work_declared(SSflight, nameof(/datum/system/flight/proc/plan_step), 1 SECOND, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSflight.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "flight plans run outside the game")
+	TEST_ASSERT(islist(SSflight.plans), "the plan table exists")
+
 #endif

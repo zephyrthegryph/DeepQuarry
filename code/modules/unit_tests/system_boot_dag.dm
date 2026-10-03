@@ -99,8 +99,8 @@
 	var/list/services = world_services()
 	for(var/datum/world_service/W as anything in services)
 		TEST_ASSERT_EQUAL(system_table()[W.type], W, "[W.type] is in world_services() but not the registry")
-	TEST_ASSERT(GLOB.machine_service in services, "the machine service is in the derived list")
-	TEST_ASSERT(GLOB.mob_service in services, "the mob service is in the derived list")
+	TEST_ASSERT(SSmachines in registered, "the machine service is in the derived list")
+	TEST_ASSERT(SSmobs in registered, "the mob service is in the derived list")
 	// Members that joined during boot were released in the bulk pass.
-	TEST_ASSERT(GLOB.machine_service.members_ready, "the boot pass runs on_members_ready() for the machine service")
+	TEST_ASSERT(SSmachines.members_ready, "the boot pass runs on_members_ready() for the machine service")
 	TEST_ASSERT(!GLOB.machine_first_wakes_bulk, "machine first wakes were flushed by on_members_ready()")

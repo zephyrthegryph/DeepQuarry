@@ -13,7 +13,7 @@
 //
 // Delivery for a gas-backed watch rides one native gas watch per mixture (Rust-owned,
 // code/datums/om/native.dm), which carries the union of the interest masks armed on it.
-// GLOB.machine_service.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm) fires
+// SSmachines.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm) fires
 // that native watch per observation; its owner (/datum/om_gas_watch_hub) hands the record to
 // om_watch_dispatch_gas(), which walks this file's per-mixture table
 // (om_gas_watches_by_mixture) instead of a generic subscriber list.
@@ -171,7 +171,7 @@
 GLOBAL_LIST_EMPTY(om_watch_registry)
 
 /// Reverse index for gas-driven watches: "[mixture_id]" -> list of /datum/om_watch, so
-/// om_watch_dispatch_gas() (called from GLOB.machine_service.wake_dirty_gas_subscribers()) doesn't have
+/// om_watch_dispatch_gas() (called from SSmachines.wake_dirty_gas_subscribers()) doesn't have
 /// to walk every watch in the registry for every dirty mixture.
 GLOBAL_LIST_EMPTY(om_gas_watches_by_mixture)
 
@@ -536,7 +536,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 // ---------------------------------------------------------------- dispatch
 
 /proc/om_watch_fire(datum/om_watch/W, datum/entity)
-	GLOB.machine_service.gas_woken_last++
+	SSmachines.gas_woken_last++
 	if(istype(entity, /obj/machinery))
 		var/obj/machinery/M = entity
 		M.gas_dependency_wake_count++
@@ -545,7 +545,7 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 	if(W.channel)
 		native_changed(entity, W.channel, NATIVE_SRC_GAS_WATCH)
 
-/// Called from GLOB.machine_service.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm)
+/// Called from SSmachines.wake_dirty_gas_subscribers() (code/controllers/subsystems/machines.dm)
 /// for every dirty mixture Rust reports. Walks every watch armed on that mixture and fires the
 /// ones whose mode says this notification is actionable.
 /proc/om_watch_dispatch_gas(mixture_id, change_mask, list/observation, observation_index)
@@ -554,9 +554,9 @@ GLOBAL_LIST_EMPTY(om_gas_native_watches)
 		return
 	for(var/datum/om_watch/W as anything in L.Copy())
 		var/datum/entity = om_resolve(W.entity_ref)
-		GLOB.machine_service.current_gas_wake_subscribers++
+		SSmachines.current_gas_wake_subscribers++
 		if(!entity)
-			GLOB.machine_service.gas_dead_last++
+			SSmachines.gas_dead_last++
 			om_watch_unindex_gas(W) // stale: the watching object is gone, drop it
 			continue
 		switch(W.mode)

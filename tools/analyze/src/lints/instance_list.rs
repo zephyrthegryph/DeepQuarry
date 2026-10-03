@@ -211,6 +211,12 @@ fn facts_of(f: &SourceFile) -> Facts {
                 globals.push(m.s(1).to_string());
             }
         }
+        if text.contains("SYSTEM_DEF(") {
+            // SYSTEM_DEF(x) declares the one instance of /datum/system/x.
+            for m in pat!(r"(?m)^SYSTEM_DEF\((\w+)\)").captures_iter(text) {
+                globals.push(format!("/datum/system/{}", m.s(1)));
+            }
+        }
     }
     globals.sort();
     globals.dedup();

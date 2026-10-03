@@ -1,17 +1,16 @@
 //
-// The machine world service (fold wave F1; was SSmachines): gas wakes, the batched pump commit and
+// The machine system (was SSmachines): gas wakes, the batched pump commit and
 // the power step (M3: the power network itself runs in Rust, see code/modules/power/power_bridge.dm),
-// run every MACHINE_SERVICE_INTERVAL by /datum/om/behaviour/world/machines on the OM global owner
-// (code/datums/om/world_lanes.dm). It polls no machines: their DM work runs on the machine pipeline
+// run every MACHINE_SERVICE_INTERVAL by machine_step. It polls no machines: their DM work runs on the machine pipeline
 // (code/game/machinery/machine_pipeline.dm), woken by MACHINE_WAKE(), their channels and their
 // watches (roadmap S5). Pipenets live on SSair (LINDA).
 //
 
-GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
-
-/datum/world_service/machines
+SYSTEM_DEF(machines)
 	name = "Machines"
-	lane = /datum/om/behaviour/world/machines
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
+	/// TRUE while a machine step that ran over budget waits to resume.
+	VAR_PRIVATE/machines_resuming = FALSE
 
 	/// Stage costs (EMA of each logical stage, all resumed slices combined) and their last run.
 	var/cost_machinery     = 0
@@ -50,7 +49,12 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 
 /// Boot: one power step, then a complete gas wake and pump commit (SSair.Initialize calls this
 /// where SSmachines used to initialize, before the atmos machinery setup).
-/datum/world_service/machines/initialize()
+/// SSair boots it by hand (kernel_boot_system()) at the top of its own initialize(): the machine step needs the map and
+/// the pipenets, so it is not a node of the boot DAG.
+/datum/system/machines/boots_in_dag()
+	return FALSE
+
+/datum/system/machines/initialize()
 	process_power()
 	while(!wake_dirty_gas_subscribers(FALSE))
 		continue
@@ -60,7 +64,17 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /// Gas watches, then the pump transfers the pipeline devices queued since the last commit, then
 /// the power step. The gas wake may yield; the power step only starts once it has completed, and its
 /// APC/SMES poll may yield too (a resumed step carries on with the poll).
-/datum/world_service/machines/service_step(resumed)
+/datum/system/machines/reactions()
+	. = ..()
+	. += every(MACHINE_SERVICE_INTERVAL, PROC_REF(machine_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/// One kernel run of the machine step: yields over budget (resumes next tick).
+/datum/system/machines/proc/machine_step(dt)
+	var/done = step_machines(machines_resuming)
+	machines_resuming = !done
+	return done ? STEP_DONE : STEP_YIELD
+
+/datum/system/machines/proc/step_machines(resumed)
 	if(!power_poll_queue)
 		var/started = TICK_USAGE
 		if(!resumed)
@@ -92,14 +106,14 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 
 /// The whole power step at once (boot and admin repair). The world lane runs it in parts instead
 /// (service_step()), so the APC poll can yield between ticks.
-/datum/world_service/machines/proc/process_power()
+/datum/system/machines/proc/process_power()
 	process_power_begin()
 	poll_power_storage(FALSE)
 	process_power_finish()
 
 /// The power step up to the APC/SMES poll: area loads, the Rust commit, grid state and every power
 /// machine's region. Queues the APCs and SMES for poll_power_storage().
-/datum/world_service/machines/proc/process_power_begin()
+/datum/system/machines/proc/process_power_begin()
 	power_flush_areas()
 	vg_power_commit()
 	for(var/id in power_grids)
@@ -126,7 +140,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /// (apply_area_power(): every machine and light in it), so when every APC changes at once -- the first
 /// step of a round, or a grid coming back -- the poll is seconds of work. `budgeted` stops at the tick
 /// limit and returns FALSE (the next call carries on); otherwise it polls them all.
-/datum/world_service/machines/proc/poll_power_storage(budgeted)
+/datum/system/machines/proc/poll_power_storage(budgeted)
 	var/list/queue = power_poll_queue
 	while(power_poll_index <= length(queue))
 		var/obj/machinery/power/machine = queue[power_poll_index++]
@@ -144,20 +158,14 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 	power_poll_index = 1
 	return TRUE
 
-/datum/world_service/machines/stat_line()
-	. = "C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
+/datum/system/machines/stat_entry(msg)
+	. = "[..()]C:{MC:[round(last_cost_machinery,1)]/[round(cost_machinery,1)]|"
 	. += "PN:[round(last_cost_powernets,1)]/[round(cost_powernets,1)]} "
 	. += "MP:[om_pipeline_parked_count(/datum/om/pipeline/machine)] parked|"
 	. += "PN:[length(power_grids)]|"
 	. += "GD:[gas_dirty_last] GW:[gas_woken_last] GX:[gas_dead_last]"
 
-/datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, datum/gas_mixture/sink, requested_moles, specific_power, source_moles, source_volume)
-	if(!M || !source || !sink || requested_moles <= 0)
-		return FALSE
-	pending_pump_transfers += list(list(M, source, sink, requested_moles, specific_power, source_moles, source_volume))
-	return TRUE
-
-/datum/world_service/machines/proc/flush_pump_transfers()
+/datum/system/machines/proc/flush_pump_transfers()
 	if(!length(pending_pump_transfers))
 		last_pump_commit_ms = 0
 		last_pump_commit_wall_ms = 0
@@ -224,7 +232,7 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /// (/datum/native_watch/gas, code/datums/om/native.dm). The OM watch layer owns one
 /// native watch per watched mixture (code/datums/om/watch.dm), which fans the record
 /// out to every om_watch armed on that mixture (om_watch_dispatch_gas()).
-/datum/world_service/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
+/datum/system/machines/proc/wake_dirty_gas_subscribers(budgeted = FALSE)
 	var/scan_started = TICK_USAGE
 	if(!pending_dirty_gas_mixtures)
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -262,10 +270,3 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /// tests): if it has no watch armed it's already running and this is a no-op.
 /proc/om_watch_invalidate(datum/entity)
 	om_watch_fire_all(entity)
-
-/datum/world_service/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
-	if(!G)
-		return
-	G.register_gas_dependencies()
-	MACHINE_SLEEP(G)
-

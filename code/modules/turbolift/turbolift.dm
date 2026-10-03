@@ -208,7 +208,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	origin.move_contents_to(destination)
 
 	if((locate_in_area(destination, /obj/machinery/power)) || (locate_in_area(destination, /obj/structure/cable)))
-		GLOB.machine_service.power_reregister(get_area_turfs(destination))
+		SSmachines.power_reregister(get_area_turfs(destination))
 
 	rel_set(src, nameof(current_floor), next_floor)
 	control_panel_interior.visible_message("The elevator [moving_upwards ? "rises" : "descends"] smoothly.")

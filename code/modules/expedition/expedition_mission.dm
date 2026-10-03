@@ -3,7 +3,7 @@
 // A mission is a bundle of /datum/expedition_objective (see expedition_objective.dm)
 // bound to one /datum/expedition_site. The completion system:
 //   * populate(site)       builds the objectives and spawns their content.
-//   * check_completion()   polled by GLOB.expedition_service.service_step(): advances each
+//   * check_completion()   polled by SSexpedition.service_step(): advances each
 //                          objective, fails on a deadline or a party wipe, and
 //                          returns TRUE once every REQUIRED objective is done.
 //   * on_complete()        pays the base reward plus a bonus for each optional
@@ -74,7 +74,7 @@
 			return FALSE
 	return TRUE
 
-// Polled by GLOB.expedition_service.service_step(). Returns TRUE when all required objectives are
+// Polled by SSexpedition.service_step(). Returns TRUE when all required objectives are
 // done; flips state to FAILED on a deadline or a total party wipe.
 /datum/expedition_mission/proc/check_completion()
 	if(state == EXP_MISSION_COMPLETE)
@@ -125,8 +125,8 @@
 		if(!O.required && O.state == EXP_OBJ_COMPLETE)
 			pts += O.bonus_points
 			cash += O.bonus_cash
-	if(GLOB.expedition_service)
-		GLOB.expedition_service.survey_points_total += pts
+	if(SSexpedition)
+		SSexpedition.survey_points_total += pts
 	var/list/mob/living/crew = list()
 	if(site())
 		for(var/mob/living/L in site().participants)

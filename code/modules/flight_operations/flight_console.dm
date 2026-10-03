@@ -39,13 +39,13 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 	if(forced_vessel())
 		return forced_vessel()
 	var/obj/effect/overmap/visitable/ship/ship = resolve_ship()
-	return GLOB.flight_service?.vessel_for_ship(ship) || GLOB.flight_service?.register_vessel(ship)
+	return SSflight?.vessel_for_ship(ship) || SSflight?.register_vessel(ship)
 
 /datum/flight_operations_ui/proc/serialize_destinations(datum/flight_vessel/viewing_vessel)
 	var/list/destination_data = list()
 	var/obj/effect/overmap/visitable/ship/viewing_ship = viewing_vessel?.ship()
-	for(var/id in GLOB.flight_service.destinations)
-		var/datum/flight_destination/destination = GLOB.flight_service.destinations[id]
+	for(var/id in SSflight.destinations)
+		var/datum/flight_destination/destination = SSflight.destinations[id]
 		if(!destination?.discovered || (destination.kind != FLIGHT_DEST_SYSTEM && !destination.is_available()))
 			continue
 		var/list/render_data = list(
@@ -70,9 +70,9 @@ DECLARE_UI(/datum/flight_operations_ui, "FlightOperations", UI_TITLE("Flight Ope
 			"is_current" = destination.target() == viewing_ship,
 		)
 		if(destination.kind == FLIGHT_DEST_VESSEL)
-			var/datum/flight_vessel/render_vessel = GLOB.flight_service.vessel_for_ship(destination.target())
+			var/datum/flight_vessel/render_vessel = SSflight.vessel_for_ship(destination.target())
 			var/is_carrier = istype(render_vessel?.ship(), /obj/effect/overmap/visitable/ship/exploration_carrier)
-			var/datum/flight_port/render_port = is_carrier ? null : GLOB.flight_service.ports[render_vessel?.docked_port_id]
+			var/datum/flight_port/render_port = is_carrier ? null : SSflight.ports[render_vessel?.docked_port_id]
 			render_data["scene_role"] = render_port ? "docked" : "orbital"
 			render_data["docked_port_id"] = render_port?.id
 			render_data["docked_host_id"] = render_port?.host_destination_id
@@ -88,7 +88,7 @@ UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operati
 	var/list/data = list(
 		"vessel" = vessel?.name || "Unlinked vessel",
 		"vessel_id" = vessel?.id,
-		"vessel_destination_id" = GLOB.flight_service?.destination_for_target(ship)?.id,
+		"vessel_destination_id" = SSflight?.destination_for_target(ship)?.id,
 		"orbit_parent_id" = vessel?.orbit_parent_id,
 		"docked_port_id" = vessel?.docked_port_id,
 		"capabilities" = vessel?.capabilities || 0,
@@ -107,8 +107,8 @@ UI_DATA_REPLACE(/datum/flight_operations_ui, "merge:ui_data_datum_flight_operati
 	data["destinations"] = serialize_destinations(vessel)
 	if(ship)
 		var/list/contacts = list()
-		for(var/contact_id in GLOB.flight_service.vessels)
-			var/datum/flight_vessel/contact_vessel = GLOB.flight_service.vessels[contact_id]
+		for(var/contact_id in SSflight.vessels)
+			var/datum/flight_vessel/contact_vessel = SSflight.vessels[contact_id]
 			if(contact_vessel == vessel || contact_vessel.orbit_parent_id != vessel.orbit_parent_id)
 				continue
 			contacts += list(list("name" = contact_vessel.name, "ref" = contact_vessel.id))
@@ -156,9 +156,9 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_jump)
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
-		GLOB.flight_service.plans -= vessel.active_plan.id
+		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/jump_plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/jump_plan = SSflight.create_plan(vessel, params["destination_id"])
 	if(!jump_plan || !jump_plan.start())
 		to_chat(ui.user, span_warning("The jump could not be initiated."))
 		return TRUE
@@ -171,9 +171,9 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_select_destination)
 	if(vessel.active_plan)
 		if(vessel.active_plan.state != FLIGHT_PLAN_DRAFT)
 			return FALSE
-		GLOB.flight_service.plans -= vessel.active_plan.id
+		SSflight.plans -= vessel.active_plan.id
 		own_clear(vessel, nameof(/datum/flight_vessel::active_plan), OWN_DELETE)
-	var/datum/flight_plan/plan = GLOB.flight_service.create_plan(vessel, params["destination_id"])
+	var/datum/flight_plan/plan = SSflight.create_plan(vessel, params["destination_id"])
 	if(!plan)
 		to_chat(ui.user, span_warning("The selected destination cannot be added to this vessel's flight plan."))
 	return TRUE
@@ -194,7 +194,7 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abort)
 UI_ACT(/datum/flight_operations_ui, "abandon_expedition", ui_act_abandon_expedition)
 UI_ACT_PROC(/datum/flight_operations_ui, ui_act_abandon_expedition)
 	var/datum/flight_vessel/vessel = resolve_vessel()
-	GLOB.expedition_service.abandon_assignment(ui.user, vessel)
+	SSexpedition.abandon_assignment(ui.user, vessel)
 	return TRUE
 
 UI_ACT(/datum/flight_operations_ui, "toggle_engines", ui_act_toggle_engines)

@@ -18,7 +18,7 @@
 		var/obj/item/gripper/G = locate_in_list(module, /obj/item/gripper)
 		G?.drop_item()
 	remove_robot_verbs()
-	GLOB.mob_service.report_death(src)
+	SSmobs.report_death(src)
 
 /mob/living/silicon/robot/on_revived(reason, datum/source)
 	. = ..()

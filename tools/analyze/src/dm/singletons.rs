@@ -43,6 +43,12 @@ pub fn singleton_types(tree: &Tree, files: &[&SourceFile]) -> Arc<HashSet<String
                     types.insert(m.s(1).to_string());
                 }
             }
+            if text.contains("SYSTEM_DEF(") {
+                // SYSTEM_DEF(x) declares the one instance of /datum/system/x.
+                for m in pat!(r"(?m)^SYSTEM_DEF\((\w+)\)").captures_iter(text) {
+                    types.insert(format!("/datum/system/{}", m.s(1)));
+                }
+            }
         }
         types.remove("/datum");
         types

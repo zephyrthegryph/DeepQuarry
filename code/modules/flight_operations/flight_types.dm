@@ -82,7 +82,7 @@
 
 /datum/flight_vessel/proc/current_destination_id()
 	if(docked_port_id)
-		var/datum/flight_port/port = GLOB.flight_service?.ports[docked_port_id]
+		var/datum/flight_port/port = SSflight?.ports[docked_port_id]
 		if(port?.host_destination_id)
 			return port.host_destination_id
 	return orbit_parent_id
@@ -112,8 +112,8 @@
 		if(!station_berth.accepts_shuttle(vessel.shuttle()))
 			return FALSE
 	if(berth_group)
-		for(var/id in GLOB.flight_service.ports)
-			var/datum/flight_port/sibling = GLOB.flight_service.ports[id]
+		for(var/id in SSflight.ports)
+			var/datum/flight_port/sibling = SSflight.ports[id]
 			if(sibling != src && sibling.berth_group == berth_group && (sibling.occupied_by() || (sibling.reserved_by() && sibling.reserved_by() != requesting_plan)))
 				return FALSE
 	if(occupied_by() && occupied_by() != vessel)
@@ -189,12 +189,12 @@
 		fail("Vessel lacks the capabilities required for this destination.")
 		return FALSE
 	if(destination().kind == FLIGHT_DEST_STATION)
-		rel_set(src, nameof(arrival_port), GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, nameof(arrival_port), SSflight.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible station berth is available.")
 			return FALSE
 	if(destination().kind == FLIGHT_DEST_VESSEL)
-		rel_set(src, nameof(arrival_port), GLOB.flight_service.reserve_arrival_port(src))
+		rel_set(src, nameof(arrival_port), SSflight.reserve_arrival_port(src))
 		if(!arrival_port())
 			fail("No compatible arrival port is available.")
 			return FALSE

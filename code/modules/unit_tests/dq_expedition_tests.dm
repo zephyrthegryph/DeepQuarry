@@ -1,5 +1,5 @@
 // DQ expedition generator tests.
-// Exercises the on-demand z-level generator (GLOB.expedition_service) end-to-end. This is
+// Exercises the on-demand z-level generator (SSexpedition) end-to-end. This is
 // a genuine integration test: generate_site() allocates a real z-level, runs
 // the verdigris cave-gen FFI to carve it, and scatters content. If verdigris
 // failed to load, the carve would no-op (every cell stays a dense wall),
@@ -30,11 +30,11 @@
 /datum/unit_test/dq_expedition_generates_site
 
 /datum/unit_test/dq_expedition_generates_site/Run()
-	TEST_ASSERT_NOTNULL(GLOB.expedition_service, "GLOB.expedition_service is null — subsystem failed to initialize")
+	TEST_ASSERT_NOTNULL(SSexpedition, "SSexpedition is null — subsystem failed to initialize")
 
 	var/pre_maxz = world.maxz
 	var/datum/expedition_mission/mission = new /datum/expedition_mission/survey(EXP_DIFF_MED)
-	var/datum/expedition_site/site = GLOB.expedition_service.generate_site(mission, EXP_DIFF_MED)
+	var/datum/expedition_site/site = SSexpedition.generate_site(mission, EXP_DIFF_MED)
 
 	release_site_at_teardown(site, "expedition integration unit test")
 	TEST_ASSERT_NOTNULL(site, "generate_site() returned null — z-alloc, verdigris carve, or content scatter failed")
@@ -60,7 +60,7 @@
 	TEST_ASSERT(site.mission.has_viable_objectives(), "generated site mission has no viable spawned objective content")
 
 	// The site must be registered for later lookup.
-	TEST_ASSERT(GLOB.expedition_service.sites["[site.z_level]"] == site, "site was not registered in GLOB.expedition_service.sites")
+	TEST_ASSERT(SSexpedition.sites["[site.z_level]"] == site, "site was not registered in SSexpedition.sites")
 
 	// Count carved floors as a sanity signal on the cave gen.
 	var/floor_count = 0
@@ -77,7 +77,7 @@
 	var/list/diagnostics = list()
 	var/datum/generated_station_prng/seed_stream = new(20260721)
 	var/seed = ((seed_stream.next() + world.time + REALTIMEOFDAY) % 15999999) + 1
-	var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, diagnostics)
+	var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, diagnostics)
 	release_site_at_teardown(site, "debug station unit test")
 	qdel(seed_stream)
 	TEST_ASSERT_NOTNULL(site, "Pseudo-random debug station seed [seed] failed: [jointext(diagnostics, "; ")]")
@@ -133,7 +133,7 @@
 /datum/unit_test/dq_emergency_station_fallback_is_playable
 
 /datum/unit_test/dq_emergency_station_fallback_is_playable/Run()
-	var/z = GLOB.expedition_service.acquire_z()
+	var/z = SSexpedition.acquire_z()
 	TEST_ASSERT(isnum(z) && z > 0, "Emergency-station test could not reserve a z-level")
 	var/datum/generated_station_spec/spec = generated_station_emergency_spec(8675309)
 	var/datum/generated_station_materialization/materialization = generated_station_emergency_materialization(spec, z)
@@ -145,8 +145,8 @@
 	TEST_ASSERT(istype(materialization.world_turf(1, 1), /turf/simulated/wall), "Emergency station fallback has no sealed corner hull")
 	qdel(materialization)
 	qdel(spec)
-	GLOB.expedition_service.wipe_z(z)
-	GLOB.expedition_service.free_z |= z
+	SSexpedition.wipe_z(z)
+	SSexpedition.free_z |= z
 
 
 /// Models exterior vacuum against live turf and atom density. The result remains
@@ -281,7 +281,7 @@
 	for(var/sample in 1 to 8)
 		var/seed = ((seed_stream.next() + sample) % 2147483646) + 1
 		var/list/diagnostics = list()
-		var/datum/expedition_site/site = GLOB.expedition_service.generate_debug_station(seed, diagnostics)
+		var/datum/expedition_site/site = SSexpedition.generate_debug_station(seed, diagnostics)
 		// Released below once the sample passes (so samples reuse the z); teardown releases a failed one.
 		release_site_at_teardown(site, "generated station physical regression unit test")
 		TEST_ASSERT_NOTNULL(site, "Pseudo-random runtime sample [sample] seed [seed] failed: [jointext(diagnostics, "; ")]")
@@ -319,7 +319,7 @@
 		var/list/open_door_findings = vacuum_findings(site)
 		TEST_ASSERT_NOTNULL(open_door_findings["reached_floor"], "Seed [seed] vacuum audit accepted a deliberately opened exterior airlock")
 		test_door.set_density(original_density)
-		GLOB.expedition_service.release_site(site, "generated station physical regression unit test")
+		SSexpedition.release_site(site, "generated station physical regression unit test")
 	qdel(seed_stream)
 
 
@@ -345,10 +345,10 @@
 	site.status = EXP_STATUS_ACTIVE
 	site.deployed_at = world.time - EXP_DEPLOY_GRACE - 1
 	site.last_occupied = world.time - EXP_AUTO_RELEASE_GRACE - 1
-	own_put(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), "assignment-lifecycle-test", site)
+	own_put(SSexpedition, nameof(/datum/system/expedition::sites), "assignment-lifecycle-test", site)
 	defer_cleanup(null, GLOBAL_PROC_REF(dq_test_take_expedition_site), "assignment-lifecycle-test")
-	GLOB.expedition_service.service_step()
-	TEST_ASSERT(GLOB.expedition_service.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
+	SSexpedition.poll_sites(0)
+	TEST_ASSERT(SSexpedition.sites["assignment-lifecycle-test"] == site, "An empty active site was released while its incomplete assignment was still held by the shuttle console")
 	dq_test_take_expedition_site("assignment-lifecycle-test")
 
 	rel_clear(console, nameof(console.active_expedition))
@@ -364,9 +364,9 @@
 
 /datum/unit_test/proc/release_site_if_live(datum/expedition_site/site, reason)
 	if(site.status != EXP_STATUS_EXPIRED)
-		GLOB.expedition_service.release_site(site, reason)
+		SSexpedition.release_site(site, reason)
 
 /// Takes the test site a test put in the expedition registry under `key` back out, if it's still there.
 /proc/dq_test_take_expedition_site(key)
-	if(key in GLOB.expedition_service.sites)
-		own_take_member(GLOB.expedition_service, nameof(/datum/world_service/expedition::sites), key)
+	if(key in SSexpedition.sites)
+		own_take_member(SSexpedition, nameof(/datum/system/expedition::sites), key)

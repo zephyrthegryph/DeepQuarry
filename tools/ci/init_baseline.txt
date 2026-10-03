@@ -1341,7 +1341,6 @@ initialize	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	/obj/ite
 initialize	code/modules/food/kitchen/cooking_machines/_mixer.dm	/obj/machinery/appliance/mixer/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/candy.dm	/obj/machinery/appliance/mixer/candy/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/cereal.dm	/obj/machinery/appliance/mixer/cereal/Initialize(mapload)
-initialize	code/modules/food/kitchen/cooking_machines/container.dm	/obj/item/reagent_containers/cooking_container/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/container.dm	/obj/item/reagent_containers/cooking_container/oven/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/container.dm	/obj/item/reagent_containers/cooking_container/grill/Initialize(mapload)
 initialize	code/modules/food/kitchen/cooking_machines/fryer.dm	/obj/machinery/appliance/cooker/fryer/Initialize(mapload)
@@ -2630,7 +2629,6 @@ world_reads	code/modules/organs/organ.dm	data.setup_from_species(GLOB.all_specie
 world_reads	code/modules/organs/organ.dm	data.setup_from_species(GLOB.all_species["Human"])
 world_reads	code/modules/overmap/events/overmap_event.dm	GLOB.overmap_event_handler.update_hazards(loc)
 world_reads	code/modules/overmap/sectors.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
-world_reads	code/modules/overmap/ships/ship.dm	GLOB.flight_service?.register_vessel(src)
 world_reads	code/modules/paperwork/faxmachine.dm	if( !(("[department]" in GLOB.alldepartments) || ("[department]" in GLOB.admin_departments)) )
 world_reads	code/modules/paperwork/faxmachine.dm	GLOB.alldepartments |= department
 world_reads	code/modules/paperwork/photography.dm	id = GLOB.photo_count++

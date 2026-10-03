@@ -434,7 +434,7 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	var/list/moved_turfs = list()
 	for(var/turf/source in turf_translation)
 		moved_turfs += turf_translation[source]
-	GLOB.machine_service.power_reregister(moved_turfs)
+	SSmachines.power_reregister(moved_turfs)
 	for(var/obj/item/radio/intercom/I in radios)
 		if(istype(I))
 			I.update_broadcast_tiles()

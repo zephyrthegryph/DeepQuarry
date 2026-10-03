@@ -23,10 +23,6 @@ doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(form
 doc_unknown_name	doc/rewrite/kernel.md	system(/datum/system/db).mass_insert(format_table_name("death"), take_rows())
 doc_unknown_name	doc/rewrite/kernel.md	return length(teardown_z) || has_generation_queued() // was on_demand + has_work()
 doc_unknown_name	doc/rewrite/kernel.md	if(system(/datum/system/flight).destination_busy(site.flight_destination_id))
-doc_unknown_name	doc/rewrite/kernel.md	if(site.z_level > 0 && players_on_z(site.z_level))
-doc_unknown_name	doc/rewrite/kernel.md	release_site(site, "assignment abandoned") // emits site_released; flight unregisters its OWN destination
-doc_unknown_name	doc/rewrite/kernel.md	rebuild_registry()
-doc_unknown_name	doc/rewrite/kernel.md	register_expedition(site) // replay: works whichever booted first
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, source)
 doc_unknown_name	doc/rewrite/lifecycle.md	POOL_RESET(/datum/damage_packet, attacker)
 doc_unknown_name	doc/rewrite/migration_guide.md	set_name(name)

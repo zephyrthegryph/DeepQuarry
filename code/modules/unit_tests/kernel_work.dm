@@ -329,7 +329,7 @@
 	TEST_ASSERT_EQUAL(S.member_list()[1], a, "member_list() is the relation store's list")
 	S.kernel_leave(a)
 	TEST_ASSERT_EQUAL(S.member_count(), 0, "leaving removes it")
-	TEST_ASSERT(GLOB.machine_service in world_services(), "world_services() is derived from the registry")
+	TEST_ASSERT(SSmachines in kernel_systems(), "kernel_systems() is derived from the registry")
 
 /datum/unit_test/kernel_work_stage_adapter
 

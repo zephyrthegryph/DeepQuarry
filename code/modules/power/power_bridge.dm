@@ -22,7 +22,7 @@
 // the entity `vg_power_bind_cable` hands back) is the only identity Rust
 // needs.
 
-/datum/world_service/machines
+/datum/system/machines
 	/// Region id (Rust's raw handle bits + 1; negative for detached test
 	/// grids) -> its flat state list (power_grid.dm). An alist: the ids are
 	/// numbers, and a plain list would treat them as positions.
@@ -42,9 +42,9 @@
 
 /// Queues an area's loads for its APC.
 /area/proc/power_loads_changed()
-	GLOB.machine_service.power_dirty_areas[src] = TRUE
+	SSmachines.power_dirty_areas[src] = TRUE
 
-/datum/world_service/machines/proc/power_flush_areas()
+/datum/system/machines/proc/power_flush_areas()
 	for(var/area/A as anything in power_dirty_areas)
 		var/obj/machinery/power/apc/apc = A.apc
 		if(apc?.vg_entity)
@@ -67,7 +67,7 @@
 /// machinery-tick-cadence bookkeeping (SMES icons, APC displays) that isn't
 /// itself simulated in Rust.
 /// The rest of the power step: the engineered-conductor overlays.
-/datum/world_service/machines/proc/process_power_finish()
+/datum/system/machines/proc/process_power_finish()
 	for(var/obj/structure/cable/cable as anything in power_material_cables)
 		if(QDELETED(cable))
 			power_material_cables -= cable
@@ -88,7 +88,7 @@
 /proc/power_topology_edited(source)
 	var/datum/source_datum = source
 	CHURN_COUNT(power_edits, istype(source_datum) ? source_datum.type : source)
-	var/datum/world_service/machines/service = GLOB.machine_service
+	var/datum/system/machines/service = SSmachines
 	if(service)
 		service.power_regions_stale = TRUE
 
@@ -96,7 +96,7 @@
 /// machine, APC and SMES (admin repair): unbinds and rebinds every
 /// `vg_entity` a power object holds, so a divergence from Rust's own state
 /// cannot survive it.
-/datum/world_service/machines/proc/power_reregister_all()
+/datum/system/machines/proc/power_reregister_all()
 	for(var/id in power_material_overlays)
 		qdel(power_material_overlays[id])
 	power_material_overlays = alist()
@@ -118,7 +118,7 @@
 
 /// Registers every cable and power machine again (admin repair, and after
 /// bulk moves that bypass Moved()).
-/datum/world_service/machines/proc/power_reregister(list/turfs)
+/datum/system/machines/proc/power_reregister(list/turfs)
 	for(var/turf/T as anything in turfs)
 		for(var/obj/structure/cable/cable in contents_of(T))
 			cable.power_register()

@@ -6,61 +6,25 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// The machine and mob lanes are attached to the live scheduler's global owner at the old
-/// subsystems' cadence, and a real SSbehaviours pass runs them.
-/datum/unit_test/dq_world_lanes_attached_and_run
-
-/datum/unit_test/dq_world_lanes_attached_and_run/Run()
-	var/datum/om/global_owner/owner = om_global_owner()
-	TEST_ASSERT(om_attached(owner, /datum/om/behaviour/world/machines), "the machine lane is not on the global owner")
-	TEST_ASSERT(om_attached(owner, /datum/om/behaviour/world/mobs), "the mob lane is not on the global owner")
-	var/datum/om/behaviour/world/machines/M = om_registry().behaviour(/datum/om/behaviour/world/machines)
-	var/datum/om/behaviour/world/mobs/B = om_registry().behaviour(/datum/om/behaviour/world/mobs)
-	TEST_ASSERT_EQUAL(M.every, 2 SECONDS, "the machine lane lost SSmachines' 2 s cadence")
-	TEST_ASSERT_EQUAL(B.every, 2 SECONDS, "the mob lane lost SSmobs' 2 s cadence")
-	TEST_ASSERT_EQUAL(MACHINE_SERVICE_INTERVAL, 2 SECONDS, "machine timing no longer matches the lane")
-
-	// A direct tick is one step.
-	var/machine_steps = GLOB.machine_service.steps
-	var/mob_steps = GLOB.mob_service.steps
-	M.tick(owner, 2)
-	B.tick(owner, 2)
-	TEST_ASSERT(GLOB.machine_service.steps > machine_steps || GLOB.machine_service.resuming, "a machine lane tick did not step the machine service")
-	TEST_ASSERT_EQUAL(GLOB.mob_service.steps, mob_steps + 1, "a mob lane tick did not step the mob service")
-
-	// Outside a direct call, the scheduler must run them on its own, on cadence.
-	if(!(Kernel.current_runlevel & (RUNLEVEL_GAME | RUNLEVEL_POSTGAME)))
-		return
-	machine_steps = GLOB.machine_service.steps
-	mob_steps = GLOB.mob_service.steps
-	var/deadline = REALTIMEOFDAY + 15 SECONDS
-	while((GLOB.machine_service.steps <= machine_steps || GLOB.mob_service.steps <= mob_steps) && REALTIMEOFDAY < deadline)
-		sleep(world.tick_lag)
-	TEST_ASSERT(GLOB.machine_service.steps > machine_steps, "the scheduler never ran the machine lane")
-	TEST_ASSERT(GLOB.mob_service.steps > mob_steps, "the scheduler never ran the mob lane")
-
 /// The machine service's gas wake finishes the whole batch when unbudgeted, and its step
 /// completes (gas wakes, pump commit, power) with a clean pump queue.
 /datum/unit_test/dq_world_lanes_machine_step
 
 /datum/unit_test/dq_world_lanes_machine_step/Run()
-	var/datum/world_service/machines/S = GLOB.machine_service
+	var/datum/system/machines/S = SSmachines
 	TEST_ASSERT(S.wake_dirty_gas_subscribers(), "an unbudgeted gas wake yielded")
 	TEST_ASSERT_NULL(S.pending_dirty_gas_mixtures, "a completed gas wake kept its batch")
-	var/was_resuming = S.resuming
-	S.resuming = FALSE
-	TEST_ASSERT(S.service_step(FALSE) || TICK_CHECK, "the machine step yielded with budget to spare")
-	S.resuming = was_resuming
+	TEST_ASSERT(S.step_machines(FALSE) || TICK_CHECK, "the machine step yielded with budget to spare")
 	TEST_ASSERT_EQUAL(length(S.pending_pump_transfers), 0, "the machine step left pump transfers uncommitted")
 
 /// The mob service drains its death queue each step (the database insert runs off the lane).
 /datum/unit_test/dq_world_lanes_mob_deaths
 
 /datum/unit_test/dq_world_lanes_mob_deaths/Run()
-	var/datum/world_service/mobs/S = GLOB.mob_service
+	var/datum/system/mobs/S = SSmobs
 	var/list/saved = S.death_list
 	S.death_list = list(list("name" = "dq test"))
-	S.service_step(FALSE)
+	S.report_step(0)
 	TEST_ASSERT_EQUAL(length(S.death_list), 0, "the mob step did not drain the death queue")
 	S.death_list = saved
 

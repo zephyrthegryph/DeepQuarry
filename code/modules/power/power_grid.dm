@@ -5,7 +5,7 @@
 // topology and the ledger; DM keeps only what Rust deliberately does not:
 // the monitor warning, and which machines sit on a region
 // (so readers can walk them), in one flat list per region in
-// `GLOB.machine_service.power_grids`.
+// `SSmachines.power_grids`.
 //
 // Region ids are stable across edits that keep the region (a merge keeps the
 // larger region's id; a split keeps the parent id for one side). A region
@@ -35,7 +35,7 @@
 /proc/power_grid(id)
 	if(!id)
 		return null
-	var/list/grid = GLOB.machine_service.power_grids[id]
+	var/list/grid = SSmachines.power_grids[id]
 	if(grid)
 		return grid
 	grid = new /list(PGRID_FIELDS)
@@ -46,13 +46,13 @@
 	grid[PGRID_MATERIAL_PROBLEM] = FALSE
 	grid[PGRID_PROBLEM_SHOWN] = FALSE
 	grid[PGRID_NODES] = list() // one per live region; created because a machine joined
-	GLOB.machine_service.power_grids[id] = grid
+	SSmachines.power_grids[id] = grid
 	power_grid_refresh(id)
 	return grid
 
 /// Raises `bits` on every machine bound to region `id`.
 /proc/power_grid_changed(id, bits)
-	var/list/grid = id ? GLOB.machine_service.power_grids[id] : null
+	var/list/grid = id ? SSmachines.power_grids[id] : null
 	if(!grid)
 		return
 	for(var/obj/machinery/power/M as anything in grid[PGRID_NODES])
@@ -63,7 +63,7 @@
 /proc/power_grid_refresh(id)
 	if(id <= 0)
 		return TRUE
-	var/list/grid = GLOB.machine_service.power_grids[id]
+	var/list/grid = SSmachines.power_grids[id]
 	if(!grid)
 		return FALSE
 	var/list/info = vg_power_region_read(id)
@@ -88,7 +88,7 @@
 
 /// Announces a warning that started or ended since the last announcement.
 /proc/power_grid_sync_problem(id)
-	var/list/grid = GLOB.machine_service.power_grids[id]
+	var/list/grid = SSmachines.power_grids[id]
 	if(!grid)
 		return
 	var/now = power_problem(id)
@@ -173,7 +173,7 @@
 	var/list/grid = power_grid(id)
 	if(!grid || amount <= 0)
 		return 0
-	var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[id]
+	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[id]
 	var/efficiency = 1
 	if(consumer && overlay?.material_graph)
 		efficiency = overlay.material_graph.efficiency_for(consumer)
@@ -199,7 +199,7 @@
 
 /// Ends a timed power_warn() on region `id` once its duration has run out.
 /proc/power_warn_expire(id)
-	var/list/grid = GLOB.machine_service.power_grids[id]
+	var/list/grid = SSmachines.power_grids[id]
 	if(!grid)
 		return
 	grid[PGRID_PROBLEM_TIMED] = FALSE
@@ -214,7 +214,7 @@
 
 /// Binds `M` onto region `new_id` (0 = none), leaving its old one.
 /proc/power_grid_move_node(obj/machinery/power/M, old_id, new_id)
-	var/list/old_grid = old_id ? GLOB.machine_service.power_grids[old_id] : null
+	var/list/old_grid = old_id ? SSmachines.power_grids[old_id] : null
 	if(old_grid)
 		old_grid[PGRID_NODES] -= M
 		power_grid_changed(old_id, CHANGE_POWER_GRID_TOPOLOGY)
@@ -222,16 +222,16 @@
 	if(new_grid)
 		new_grid[PGRID_NODES] |= M
 		power_grid_changed(new_id, CHANGE_POWER_GRID_TOPOLOGY)
-	var/datum/material_power_overlay/overlay = GLOB.machine_service.power_material_overlays[old_id]
+	var/datum/material_power_overlay/overlay = SSmachines.power_material_overlays[old_id]
 	overlay?.material_cache_dirty = TRUE
-	overlay = GLOB.machine_service.power_material_overlays[new_id]
+	overlay = SSmachines.power_material_overlays[new_id]
 	overlay?.material_cache_dirty = TRUE
 
 // ---- detached test grids ----------------------------------------------------
 
 /// A detached grid holding `avail` W that Rust never sees (tests). Returns its id.
 /proc/power_test_grid(avail = 0)
-	var/id = --GLOB.machine_service.power_test_grid_serial
+	var/id = --SSmachines.power_test_grid_serial
 	var/list/grid = power_grid(id)
 	grid[PGRID_AVAIL] = avail
 	return id
@@ -257,7 +257,7 @@
 	for(var/obj/machinery/power/M as anything in nodes.Copy())
 		if(M.power_region == id)
 			M.power_region = 0
-	GLOB.machine_service.power_grids -= id
+	SSmachines.power_grids -= id
 
 // ---- material overlay -------------------------------------------------------
 // The CG voltage solver (material_power.rs) runs only for regions holding an
@@ -284,8 +284,8 @@
 
 /datum/material_power_overlay/lifecycle_unbind()
 	. = ..()
-	if(region_id && GLOB.machine_service.power_material_overlays[region_id] == src)
-		GLOB.machine_service.power_material_overlays -= region_id
+	if(region_id && SSmachines.power_material_overlays[region_id] == src)
+		SSmachines.power_material_overlays -= region_id
 
 /datum/material_power_overlay/proc/add_cable(obj/structure/cable/C)
 	rel_add(src, nameof(cables), C) // two-sided: sets C.material_overlay
