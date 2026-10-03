@@ -62,7 +62,6 @@ dx_raw_delay	code/game/mecha/equipment/weapons/weapons.dm	om_after(src, fire_coo
 dx_raw_delay	code/game/objects/effects/chem/foam.dm	om_after(src, 3 + metal * 3, PROC_REF(post_spread))
 dx_raw_delay	code/game/objects/effects/chem/foam.dm	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
 dx_raw_delay	code/game/objects/effects/confetti.dm	om_after(src, 20 + steps * 5, PROC_REF(dec_confetti_sparks))
-dx_raw_delay	code/game/objects/effects/dark_growth.dm	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
 dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	om_after(src, 3, PROC_REF(streak_step), pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4))
 dx_raw_delay	code/game/objects/effects/decals/Cleanable/humans.dm	om_after(src, 3, PROC_REF(streak_step), direction, i + 1, steps)
