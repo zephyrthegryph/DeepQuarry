@@ -65,6 +65,7 @@ bash tools/dq_focused_test.sh /datum/unit_test/belly_damage /datum/unit_test/spr
 bash tools/dq_focused_test.sh belly_damage spritesheets                 # bare names get /datum/unit_test/ prepended
 bash tools/dq_focused_test.sh 'dq_expedition_*'                        # glob over every /datum/unit_test type (quote it)
 bash tools/dq_focused_test.sh --repeat=5 belly_damage                  # N runs, per-run pass/FAIL summary, fails if any failed
+bash tools/dq_focused_test.sh --list 'dq_e0_proof/*'                    # print what the names/globs expand to (about 1 s, runs nothing)
 bash tools/dq_focused_test.sh --dm-version=516.1682 belly_damage        # any other --flag is forwarded to dm-test
 DQ_WIP_TREE=1 bash tools/dq_focused_test.sh /datum/unit_test/<name>   # tree with someone else's unfinished includes
 ```

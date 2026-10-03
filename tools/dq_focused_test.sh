@@ -17,6 +17,9 @@
 # containing * ? or [ is matched against every /datum/unit_test type defined
 # under code/ and expands to all matches (it fails if nothing matches).
 #
+# --list prints the expansion (one /datum/unit_test name per line) and exits
+# without compiling or running; use it to check a glob.
+#
 # The test names go to the unit-test world as `dm-test --focus=...` (the
 # test-focus world param); no source file is edited, so concurrent runs and
 # other agents can't clear or add to this run's focus, and every focus set
@@ -34,13 +37,19 @@ usage() {
 
 # Every /datum/unit_test type defined in code/, without the prefix (one per line).
 test_types() {
-	grep -rhoE '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' code --include='*.dm' \
-		| sed -E 's#^/datum/unit_test/##; s#[[:space:]]+$##' | sort -u
+	# git grep reads the worktree in-process (about 0.5 s); a recursive grep over
+	# code/ takes minutes on Windows. --untracked picks up new files. One awk
+	# pass strips the prefix and dedupes.
+	{
+		git grep -h -o -E --untracked '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' -- 'code/*.dm' 2>/dev/null \
+			|| grep -rhoE '^/datum/unit_test/[A-Za-z0-9_/]+[[:space:]]*$' code --include='*.dm'
+	} | awk '{ sub(/^\/datum\/unit_test\//, ""); sub(/[[:space:]]+$/, ""); if (!seen[$0]++) print }'
 }
 
 args=()
 tests=()
 repeat=1
+list_only=0
 all_types=""
 for arg in "$@"; do
 	case "$arg" in
@@ -49,6 +58,7 @@ for arg in "$@"; do
 			repeat="${arg#--repeat=}"
 			[[ "$repeat" =~ ^[1-9][0-9]*$ ]] || { echo "--repeat needs a positive integer, got '$repeat'" >&2; exit 2; }
 			;;
+		--list) list_only=1 ;;
 		-h|--help) usage ;;
 		--*) args+=("$arg") ;;
 		-*) echo "unknown argument: $arg" >&2; usage ;;
@@ -79,6 +89,11 @@ for arg in "$@"; do
 	esac
 done
 [ ${#tests[@]} -gt 0 ] || usage
+if [ "$list_only" -eq 1 ]; then
+	printf '%s
+' "${tests[@]}"
+	exit 0
+fi
 
 # Short names (no leading slash): Git Bash would rewrite "/datum/..." into a
 # Windows path on its way to cmd.exe. dm-test adds the /datum/unit_test/ prefix back.
