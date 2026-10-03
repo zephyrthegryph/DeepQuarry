@@ -479,7 +479,6 @@
 #include "dq_eg2_gap_tests.dm"
 #include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_p2_food_behaviour.dm"
-#include "dq_p2_snack_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
 #include "interim_fax_actor.dm"
 #include "interim_crystal_consumption.dm"

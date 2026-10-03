@@ -30,7 +30,7 @@
 
 /obj/machinery/appliance/cooker/grill/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
+	rel_set(src, nameof(grill_loop), new /datum/looping_sound/grill(list(src), FALSE))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker/grill, TYPE_PROC_REF(/atom, appearance_overlays), list())

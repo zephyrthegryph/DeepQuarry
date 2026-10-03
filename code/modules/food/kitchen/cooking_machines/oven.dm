@@ -43,7 +43,7 @@
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
+	rel_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
 
 
 UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")

@@ -42,9 +42,9 @@
 
 /obj/machinery/appliance/cooker/fryer/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
+	rel_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
 
-	own_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
+	rel_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
 	oil.optimal_oil = optimal_oil
 	var/variance = rand()*0.15
 	// Fryer is always a little below full, but its usually negligible

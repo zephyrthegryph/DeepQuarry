@@ -334,7 +334,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	after(user, 0.5 SECONDS, GLOBAL_PROC_REF(food_finished_emote), key = "food_finished_emote", with = list(user, !reagents?.total_volume))
+	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -466,171 +466,221 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/chocolateegg, null, li
 
 /obj/item/reagent_containers/food/snacks/donut/plain
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "plain donut"
 	icon_state = "donut"
 	desc = "A plain ol' donut."
+
 /obj/item/reagent_containers/food/snacks/donut/plain/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "plain jelly donut"
 	icon_state = "jelly"
 	desc = "At least this one has jelly!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/plain/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/pink
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "pink frosted donut"
 	icon_state = "donut_pink"
 	desc = "This one has pink frosting!"
 	overlay_state = "donut_pink_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/pink/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "pink frosted jelly donut"
 	icon_state = "jelly_pink"
 	desc = "This one has pink frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/pink/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/purple
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "purple frosted donut"
 	icon_state = "donut_purple"
 	desc = "This one has purple frosting!"
 	overlay_state = "donut_purple_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/purple/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "purple frosted jelly donut"
 	icon_state = "jelly_purple"
 	desc = "This one has purple frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/purple/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/green
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "green frosted donut"
 	icon_state = "donut_green"
 	desc = "This one has green frosting!"
 	overlay_state = "donut_green_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/green/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "green frosted jelly donut"
 	icon_state = "jelly_green"
 	desc = "This one has green frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/green/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/beige
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "beige frosted donut"
 	icon_state = "donut_beige"
 	desc = "This one has beige frosting!"
 	overlay_state = "donut_beige_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/beige/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "beige frosted jelly donut"
 	icon_state = "jelly_beige"
 	desc = "This one has beige frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/beige/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/choc
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate frosted donut"
 	icon_state = "donut_choc"
 	desc = "This one has chocolate frosting!"
 	overlay_state = "donut_choc_inbox"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc, null, list(REAGENT_ID_CHOCOLATE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/choc/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate frosted jelly donut"
 	icon_state = "jelly_choc"
 	desc = "This one has chocolate frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc/jelly, null, list(REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/blue
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "blue frosted donut"
 	icon_state = "donut_blue"
 	desc = "This one has blue frosting!"
 	overlay_state = "donut_blue_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/blue/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "blue frosted jelly donut"
 	icon_state = "jelly_blue"
 	desc = "This one has blue frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/blue/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/yellow
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "yellow frosted donut"
 	icon_state = "donut_yellow"
 	desc = "This one has yellow frosting!"
 	overlay_state = "donut_yellow_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/yellow/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "yellow frosted jelly donut"
 	icon_state = "jelly_yellow"
 	desc = "This one has yellow frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/yellow/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/olive
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "olive frosted donut"
 	icon_state = "donut_olive"
 	desc = "This one has olive frosting!"
 	overlay_state = "donut_olive_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/olive/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "olive frosted jelly donut"
 	icon_state = "jelly_olive"
 	desc = "This one has olive frosting and a jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/olive/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/homer
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "frosted donut with sprinkles"
 	icon_state = "donut_homer"
 	desc = "It's a d'ohnut!"
 	overlay_state = "donut_homer_inbox"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/homer, null, list(REAGENT_ID_SPRINKLES = 1))
 
+
 /obj/item/reagent_containers/food/snacks/donut/homer/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "frosted jelly donut with sprinkles"
 	icon_state = "jelly_homer"
 	desc = "It's a d'ohnut with jelly filling!"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/homer/jelly, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5))
 
+
 /obj/item/reagent_containers/food/snacks/donut/choc_sprinkles
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate sprinkles donut"
 	icon_state = "donut_choc_sprinkles"
 	desc = "Mmm, chocolate with sprinkles... approaching maximum donut."
 	overlay_state = "donut_choc_sprinkles_inbox"
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_CHOCOLATE = 1))
 
+
 /obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "chocolate sprinkles jelly donut"
 	icon_state = "jelly_choc_sprinkles"
 	desc = "Pretty sure this is the most sugar you can pack into a donut."
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/choc_sprinkles/jelly, null, list(REAGENT_ID_SPRINKLES = 1, REAGENT_ID_BERRYJUICE = 5, REAGENT_ID_CHOCOLATE = 1))
+
 
 /obj/item/reagent_containers/food/snacks/donut/meat
 	name = "meat donut"
 	icon_state = "donut_meat"
 	desc = "This donut has ... meat? Is it made of meat?!"
 	overlay_state = "donut_meat_inbox"
-DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/meat, null, list(REAGENT_ID_PROTEIN = 3))
+/obj/item/reagent_containers/food/snacks/donut/meat/Initialize(mapload)
+	. = ..()
+	reagents.add_reagent(REAGENT_ID_PROTEIN, 3, nutriment_desc)
 
 /obj/item/reagent_containers/food/snacks/donut/laugh
 	nutriment_amt = 4.5
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "laugh donut"
 	icon_state = "donut_laugh"
 	desc = "Try not to laugh."
 	overlay_state = "donut_laugh_inbox"
+
 /obj/item/reagent_containers/food/snacks/donut/laugh/jelly
 	nutriment_amt = 6
+	nutriment_desc = list("sweetness" = 0, "donut" = 0)
 	name = "laugh jelly donut"
 	icon_state = "jelly_laugh"
 	desc = "Try not to be jelly."
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donut/laugh/jelly, null, list(REAGENT_ID_BERRYJUICE = 5))
+
 
 /obj/item/reagent_containers/food/snacks/donut/chaos
 	name = "Chaos Donut"
@@ -994,7 +1044,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cooltime()
 	if (src.warm)
-		after(src, 420 SECONDS, PROC_REF(cool_down), key = "cool_down")
+		after(src, 420 SECONDS, PROC_REF(cool_down))
 	return
 
 /obj/item/reagent_containers/food/snacks/donkpocket/spicy
@@ -1780,10 +1830,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/monkeycube, \
 	wrapped = 1
 
 /obj/item/reagent_containers/food/snacks/monkeycube/pet/Expand()
+	var/mob/holder
+	if(ismob(loc))
+		holder = loc
+	if(loc?.release_refusal(src, holder))
+		return 0
 	src.visible_message("<b>\The [src]</b> expands!")
 	if(pet_path)
 		new pet_path(get_turf(src))
-	qdel(src)
+	consume(src, holder)
 	return 1
 
 /obj/item/reagent_containers/food/snacks/spellburger
@@ -3766,7 +3821,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	boxes -= box
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-	box.update_icon()
+	box.box.update_icon()
 	update_icon()
 	return OP_OK
 
@@ -3795,7 +3850,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	box.forceMove(src)
 	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
 	src.boxes.Add( boxestoadd )
-	box.update_icon()
+	box.box.update_icon()
 	update_icon()
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK
@@ -3820,32 +3875,32 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	return OP_OK
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 
@@ -6829,8 +6884,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburrito, 
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/churro, null, list(REAGENT_ID_COOKINGOIL = 1))
 
-/obj/item/reagent_containers/food/snacks/churro/Initialize(mapload)
-	. = ..()
 	//Imported food from old code
 /obj/item/reagent_containers/food/snacks/sauerkraut
 	name = "Sauerkraut"
@@ -6923,9 +6976,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumpburger, null, lis
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito, null, list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_NUTRIMENT = 15))
 
-/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/Initialize(mapload)
-	. = ..()
-	bitesize = 6
 
 /obj/item/reagent_containers/food/snacks/sliceable/supremoburrito
 	name = "Supremo burrito"
@@ -6945,7 +6995,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/supremoburri
 	desc = "The BBB. An engorged burrito filled to the brim of what makes Mexico. Beans, cheese and meat that ooze by how stuffed it is"
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "bigbeanburrito"
-	bitesize = 3
+	bitesize = 6
 	whole_path = /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/filled
@@ -7307,15 +7357,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbugempty, null, li
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/makaroni, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6))
 
 /obj/item/reagent_containers/food/snacks/lobster
+	bitesize = 0.1
 	name = "raw lobster"
 	desc = "A shifty lobster. You can try eating it, but its shell is extremely tough."
 	icon = 'icons/obj/food.dmi'
 	icon_state = "lobster_raw"
 	nutriment_amt = 5
 
-/obj/item/reagent_containers/food/snacks/lobster/Initialize(mapload)
-	. = ..()
-	bitesize = 0.1
 
 /obj/item/reagent_containers/food/snacks/lobstercooked
 	name = "cooked lobster"
@@ -7383,6 +7431,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishfillet, null, 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, list(REAGENT_ID_PROTEIN = 5))
 
 /obj/item/reagent_containers/food/snacks/sliceable/monkfishremains
+	bitesize = 0.01 //impossible to eat
 	name = "monkfish remains"
 	icon = 'icons/obj/food.dmi'
 	icon_state = "monkfish_remains"
@@ -7394,9 +7443,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, 
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains, null, list(REAGENT_ID_CARBON = 5))
 
-/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains/Initialize(mapload)
-	. = ..()
-	bitesize = 0.01 //impossible to eat
 
 /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk
 	name = "chunk of shark meat"

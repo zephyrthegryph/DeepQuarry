@@ -86,7 +86,7 @@
 
 	default_apply_parts()
 
-	own_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
 	update_icon()
 
 
