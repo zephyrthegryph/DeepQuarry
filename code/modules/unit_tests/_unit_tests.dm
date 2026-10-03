@@ -777,6 +777,7 @@
 #include "interim_storage_drop_actor.dm"
 #include "interim_evidence_bag_actor.dm"
 #include "interim_hallucination_target_cleanup.dm"
+#include "interim_teleporter_sticky_coordinate_card.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

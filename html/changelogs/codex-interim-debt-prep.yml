@@ -107,3 +107,5 @@ changes:
   - bugfix: "Monkey rehydrators and microwaves respect items that cannot leave your hand."
   - bugfix: "ATMs respect stuck IDs, and message server upgrades require consuming their board."
   - bugfix: "ATM deposits require consuming cash, and stuck hailer masks and electrohelmets retain their parts when disassembly is refused."
+  - bugfix: "Sandwiches and custom food plates preserve stuck ingredients and their reagents; stuck pet cubes cannot create duplicate pets."
+  - bugfix: "Teleporter coordinate cards must be consumed before granting a destination."

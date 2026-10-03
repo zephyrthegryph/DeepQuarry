@@ -73,12 +73,13 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/teleporter, "teleport_control", /d
 		L = locate("landmark*[C.data]") // use old stype
 
 	if(istype(L, /obj/effect/landmark/) && istype(L.loc, /turf))
+		var/destination_name = C.data
+		if(!consume(C, user))
+			return TRUE
 		to_chat(user, "You insert the coordinates into the machine.")
 		to_chat(user, "A message flashes across the screen, reminding the user that the nuclear authentication disk is not transportable via insecure means.")
-		user.drop_item()
-		consume(C, user)
 
-		if(C.data == "Clown Land")
+		if(destination_name == "Clown Land")
 			//whoops
 			for(var/mob/O in hearers(src, null))
 				O.show_message(span_warning("Incoming bluespace portal detected, unable to lock in."), 2)
