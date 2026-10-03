@@ -697,6 +697,7 @@
 #include "interim_seed_extractor_sticky_fossil.dm"
 #include "interim_spider_egg_hatch_cleanup.dm"
 #include "interim_pai_hud_actor.dm"
+#include "interim_empty_content_init.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

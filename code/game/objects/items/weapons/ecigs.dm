@@ -16,9 +16,6 @@
 	var/icon_empty
 	var/ecig_colors = list(null, COLOR_DARK_GRAY, COLOR_RED_GRAY, COLOR_BLUE_GRAY, COLOR_GREEN_GRAY, COLOR_PURPLE_GRAY)
 
-/obj/item/clothing/mask/smokable/ecig/Initialize(mapload)
-	. = ..()
-
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
 
 /// Vapes (periodic_step) every 2 s while switched on (replaces the smokable's "lit").

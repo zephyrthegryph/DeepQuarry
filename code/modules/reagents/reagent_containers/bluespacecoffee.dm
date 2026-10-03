@@ -10,9 +10,7 @@
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bluespace_coffee, null, list(REAGENT_ID_COFFEE = 50))
 
-/obj/item/reagent_containers/food/drinks/bluespace_coffee/Initialize(mapload)
-	. = ..()
-	//Infinite Coffee
+// Infinite Coffee
 /obj/item/reagent_containers/food/drinks/bluespace_coffee/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	..()
 	reagents.add_reagent(REAGENT_ID_COFFEE, 50)

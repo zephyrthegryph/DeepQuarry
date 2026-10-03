@@ -7067,8 +7067,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/vendburrito, 
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/churro, null, list(REAGENT_ID_COOKINGOIL = 1))
 
-/obj/item/reagent_containers/food/snacks/churro/Initialize(mapload)
-	. = ..()
 	//Imported food from old code
 /obj/item/reagent_containers/food/snacks/sauerkraut
 	name = "Sauerkraut"
