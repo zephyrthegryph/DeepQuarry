@@ -389,16 +389,16 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	L[++L.len] = list(" ", "[action_click.update("[SDQL2_IS_RUNNING? "HALT" : "RUN"]")]", REF(action_click))
 	return L
 
-/datum/SDQL2_query/proc/delete_click()
-	admin_del(usr)
+/datum/SDQL2_query/proc/delete_click(mob/user)
+	admin_del(user)
 
-/datum/SDQL2_query/proc/action_click()
+/datum/SDQL2_query/proc/action_click(mob/user)
 	if(SDQL2_IS_RUNNING)
-		admin_halt(usr)
+		admin_halt(user)
 	else
-		admin_run(usr)
+		admin_run(user)
 
-/datum/SDQL2_query/proc/admin_halt(user = usr)
+/datum/SDQL2_query/proc/admin_halt(mob/user)
 	if(!SDQL2_IS_RUNNING)
 		return
 	var/msg = "[key_name(user)] has halted query #[id]"
@@ -406,7 +406,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	log_admin(msg)
 	state = SDQL2_STATE_HALTING
 
-/datum/SDQL2_query/proc/admin_run(mob/user = usr)
+/datum/SDQL2_query/proc/admin_run(mob/user)
 	if(SDQL2_IS_RUNNING)
 		return
 	var/msg = "[key_name(user)] has (re)started query #[id]"
@@ -416,7 +416,7 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	show_next_to_key = user.ckey
 	ARun()
 
-/datum/SDQL2_query/proc/admin_del(user = usr)
+/datum/SDQL2_query/proc/admin_del(mob/user)
 	var/msg = "[key_name(user)] has stopped + deleted query #[id]"
 	message_admins(msg)
 	log_admin(msg)
@@ -1110,11 +1110,11 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 
 /obj/effect/statclick/SDQL2_delete/Click()
 	var/datum/SDQL2_query/Q = target
-	Q.delete_click()
+	Q.delete_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query deletion.
 
 /obj/effect/statclick/SDQL2_action/Click()
 	var/datum/SDQL2_query/Q = target
-	Q.action_click()
+	Q.action_click(usr) // ALLOW(sys_usr_outside_verb): Native stat button captures the clicked actor for query execution.
 
 /obj/effect/statclick/SDQL2_VV_all
 	name = "VIEW VARIABLES"
