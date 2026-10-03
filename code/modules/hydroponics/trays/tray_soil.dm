@@ -91,11 +91,11 @@
 		qdel(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/die()
-	qdel(src)
+	consume(src)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/invisible/machine_step()
 	if(!seed)
-		qdel(src)
+		consume(src)
 		return PROCESS_KILL
 	else if(name=="plant")
 		name = seed.display_name
