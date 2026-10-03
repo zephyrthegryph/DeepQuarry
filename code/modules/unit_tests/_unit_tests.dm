@@ -855,9 +855,10 @@
 #include "interim_ashtray_sticky_butt.dm"
 #include "interim_drone_circuit_sticky_printer_paper.dm"
 #include "interim_rig_mech_air_forwarded_actor.dm"
-#include "interim_seismic_charge_sticky_laser.dm"
 #include "interim_backpack_drag_actor.dm"
+#include "interim_seismic_charge_sticky_laser.dm"
 #include "interim_balloon_mixed_capacity_refill.dm"
+#include "interim_cup_return_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

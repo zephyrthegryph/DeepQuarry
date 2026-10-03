@@ -130,3 +130,7 @@ changes:
   - bugfix: "Paper-bin and sticky-pad pickup safely reject unsupported actors while preserving their paper stock."
   - bugfix: "Collar cracking and clipboard pen insertion respect items that cannot leave your hand."
   - bugfix: "Timed prosthetics species uploads must consume the original disk before adding its fabrication option."
+  - bugfix: "Ashtray insertion and debug-printer paper loading respect items that cannot leave your hand."
+  - bugfix: "RIG and mech air controls retain the actual wearer or pilot; backpack pickup checks the initiating actor."
+  - bugfix: "Seismic-charge upgrades consume their original laser before granting stronger blast settings."
+  - bugfix: "Returned paper cups must leave their holder before restoring dispenser stock."
