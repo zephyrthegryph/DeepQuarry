@@ -160,6 +160,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 			return // an op key or a capability id: E2's
 		for(var/datum/entry/part in E.children)
 			var/kind
+			if(istype(part, /datum/entry/part/needs))
+				// needs(req...) of the part engine (extend(/datum/act/insert, needs(...))): its requirements refuse the action
+				var/datum/hook/needs_hook = hook_make(HOOK_NEEDS, target, part, E, C, A, serial)
+				needs_hook.order = ORDER_NORMAL
+				. += needs_hook
+				continue
 			switch(part.kind)
 				if(ENTRY_INSTEAD)
 					kind = HOOK_INSTEAD

@@ -8,9 +8,9 @@
 /// The key hands_refresh() publishes when the answer of has_working_hand() changed (the reads of the hands() condition).
 #define HANDS_KEY "working_hands"
 
-/mob/living
+/datum/rx_state
 	/// What has_working_hand() answered last time hands_refresh() asked (null: not asked yet).
-	var/tmp/hands_known
+	var/hands_known
 
 /// Does this body have a working hand? A body that declares hand slots has one while any of them is usable (its limb is there, the species and the
 /// mob allow it); a body that declares none (an abstract fixture, a mob whose plan has no hands) is not missing any, so its species' hands() stands.
@@ -30,10 +30,11 @@
 	if(QDELETED(src))
 		return
 	var/now = has_working_hand()
-	if(now == hands_known)
+	var/datum/rx_state/state = rx_of(src)
+	if(now == state.hands_known)
 		return
-	var/first = isnull(hands_known)
-	hands_known = now
+	var/first = isnull(state.hands_known)
+	state.hands_known = now
 	if(first)
 		return // the first answer is the baseline, not a change
 	log_world("HANDS: [src] ([type]) now [now ? "has" : "has no"] working hands")

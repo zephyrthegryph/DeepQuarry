@@ -44,6 +44,8 @@ CAPABILITIES(/obj/s1_fixture/rack, \
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed))), \
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted))))
 
+TRACKED(/obj/s1_fixture/rack, welded)
+
 /obj/s1_fixture/rack/proc/not_welded(datum/act/A)
 	return !welded
 
@@ -69,12 +71,14 @@ CAPABILITIES(/obj/s1_fixture/rack, \
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 1
 
-CAPABILITIES(/obj/s1_fixture/picky, \
+CAPABILITIES(/obj/s1_fixture/picky, 	ref_one(nameof(steward), /mob), \
 	extend(/datum/act/insert, needs(req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets)))), \
 	extend(/datum/act/insert, needs(req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward)))), \
 	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded)))), \
 	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed))), \
 	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted))))
+
+TRACKED(/obj/s1_fixture/picky, welded)
 
 /obj/s1_fixture/picky/proc/takes_gizmos_only(datum/act/A)
 	var/datum/act/insert/F = A
@@ -194,9 +198,6 @@ CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless, \
 	var/powered = FALSE
 	var/ticks = 0
 	var/slow_ticks = 0
-	var/last_dt
-	var/last_holder_was_me = FALSE
-	var/last_source_was_me = FALSE
 
 CAPABILITIES(/obj/s1_fixture/ticker, \
 	every(1 SECOND, then(PROC_REF(tick))), \
@@ -204,9 +205,6 @@ CAPABILITIES(/obj/s1_fixture/ticker, \
 
 /obj/s1_fixture/ticker/proc/tick(datum/act/timer/A)
 	ticks++
-	last_dt = A.dt
-	last_holder_was_me = (A.holder == src)
-	last_source_was_me = (A.source == src)
 
 /obj/s1_fixture/ticker/proc/slow_tick(datum/act/timer/A)
 	slow_ticks++

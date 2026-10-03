@@ -192,7 +192,11 @@
 	GLOB.act_next_actor = null
 	GLOB.act_next_authority = null
 	if(isnull(entering))
+		var/refused_for = GLOB.act_last_reason
+		var/refused_how = GLOB.act_last_outcome
 		act_cancel(leaving)
+		GLOB.act_last_reason = refused_for // cancelling the removal must not hide why the insert was refused
+		GLOB.act_last_outcome = refused_how
 		log_world("SLOT_TRANSFER: [thing] into [new_holder] ([slot_id || "default"]) refused or taken over ([GLOB.act_last_reason])")
 		return FALSE
 	var/into_slot = ACT_FINAL(entering, slot_id, slot_id)
@@ -203,8 +207,10 @@
 	else if(!dq_ledger_refusal(thing, new_holder, into_slot, actor))
 		landed = dq_ledger_commit(thing, new_holder, into_slot)
 	if(!landed)
+		var/failed_for = GLOB.act_last_reason
 		act_cancel(entering)
 		act_cancel(leaving)
+		GLOB.act_last_reason = failed_for
 		return FALSE
 	TEST_REC_TRANSFER(thing, src, new_holder, into_slot)
 	act_done(leaving)

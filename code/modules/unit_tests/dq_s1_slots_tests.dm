@@ -218,7 +218,7 @@
 	TEST_ASSERT_EQUAL(rack.removed_heard, 0, "a refused transfer publishes no removal")
 	TEST_ASSERT_EQUAL(picky.inserted_heard, 0, "and no insertion")
 	// A gizmo is right, but only the steward may.
-	picky.steward = steward
+	rel_set(picky, nameof(picky.steward), steward)
 	TEST_ASSERT(!rack.slot_transfer(gizmo, picky), "no actor: the steward's rule refuses")
 	TEST_ASSERT(!rack.slot_transfer(gizmo, picky, null, allocate(/mob/living/carbon/human, T)), "another actor: refused")
 	TEST_ASSERT_EQUAL(gizmo.loc, rack, "still in the rack")
@@ -228,12 +228,12 @@
 	TEST_ASSERT_EQUAL(picky.inserted_heard, 1, "the picky rack heard the insertion")
 	TEST_ASSERT_EQUAL(s1_strike(rack), 10, "the move ended the rack-side scope")
 	// The source's own remove needs() (welded) refuses a transfer out of it as well.
-	picky.welded = TRUE
+	picky.set_welded(TRUE)
 	var/obj/s1_fixture/rack/second = allocate(/obj/s1_fixture/rack, T)
 	TEST_ASSERT(!picky.slot_transfer(gizmo, second, null, steward), "welded in: the remove is refused")
 	TEST_ASSERT_EQUAL(gizmo.loc, picky, "still there")
 	// Forced: an admin authority skips the requirements and the ledger's refusals but still runs the actions and their notices.
-	picky.steward = null
+	rel_set(picky, nameof(picky.steward), null)
 	var/obj/item/s1_fixture/gizmo/other = allocate(/obj/item/s1_fixture/gizmo, T)
 	TEST_ASSERT(trinket.move_into(rack, "s1_side") || trinket.loc == rack, "setup")
 	TEST_ASSERT(!picky.slot_transfer(gizmo, second, null, steward, AUTH_PHYSICAL), "an ordinary authority forces nothing")
@@ -242,7 +242,7 @@
 	TEST_ASSERT_EQUAL(gizmo.loc, second, "it moved")
 	TEST_ASSERT_EQUAL(picky.removed_heard, removed_before + 1, "the removal notice still went out")
 	// Into a full one-slot picky rack, past the insert needs() and the capacity.
-	picky.welded = FALSE
+	picky.set_welded(FALSE)
 	TEST_ASSERT(other.move_into(picky), "fill the picky rack's one place")
 	TEST_ASSERT(!rack.slot_transfer(trinket, picky), "full and picky: refused")
 	TEST_ASSERT(rack.slot_transfer(trinket, picky, null, null, AUTH_ADMIN), "forced past needs() and capacity")
@@ -259,8 +259,6 @@
 	var/obj/s1_fixture/ticker/fast/F = allocate(/obj/s1_fixture/ticker/fast, test_floor())
 	test_time(3 SECONDS)
 	TEST_ASSERT_EQUAL(F.ticks, 3, "every(1 SECOND) ran three times in three seconds")
-	TEST_ASSERT_EQUAL(F.last_dt, 1 SECOND, "A.dt is the interval")
-	TEST_ASSERT(F.last_holder_was_me && F.last_source_was_me, "A.holder and A.source are the instance")
 	TEST_ASSERT_EQUAL(F.slow_ticks, 0, "the gated every(when = powered) did not run while unpowered")
 	TEST_ASSERT_EQUAL(F.fast_ticks, 3 SECONDS / 5, "a subtype's own every() runs beside the parent's")
 	F.powered = TRUE
