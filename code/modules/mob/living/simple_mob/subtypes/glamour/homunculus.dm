@@ -22,7 +22,7 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/homunculus/replace_death(gibbed)
-	qdel(src)
+	consume(src)
 	return TRUE
 
 APPEARANCE_NONE(/mob/living/simple_mob/homunculus)
