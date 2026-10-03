@@ -173,5 +173,10 @@ fn compute(tree: &Tree) -> Analysis {
         }
     }
     an.accessor_gaps.sort_by(|a, b| (a.rel.as_str(), a.line).cmp(&(b.rel.as_str(), b.line)));
+    let footprint = sem.footprint();
+    if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+        eprintln!("analyze: sem footprint: {} handlers, {} files consulted", an.handlers.len(), footprint.len());
+    }
+    super::incremental::capture(tree, &sem, footprint);
     an
 }

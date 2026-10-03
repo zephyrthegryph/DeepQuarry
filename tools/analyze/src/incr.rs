@@ -96,6 +96,34 @@ fn save(path: &std::path::Path, st: &StoreFile) {
     }
 }
 
+/// The cache directory of this run, when caching is on.
+pub fn dir() -> Option<PathBuf> {
+    cfg().lock().unwrap().as_ref().filter(|c| c.enabled).map(|c| c.dir.clone())
+}
+
+/// The engine/scope stamp of this run, when caching is on.
+pub fn stamp() -> Option<String> {
+    cfg().lock().unwrap().as_ref().filter(|c| c.enabled).map(|c| c.stamp.clone())
+}
+
+/// One value cached under `key`: `compute()` runs only when the stored key differs.
+pub fn cached<T: Serialize + DeserializeOwned>(name: &str, key: Hash, compute: impl FnOnce() -> T) -> T {
+    let (st, target) = load(name, key);
+    if let Some(b) = st.map.get(&0) {
+        if let Ok(v) = bincode::deserialize::<T>(b) {
+            return v;
+        }
+    }
+    let v = compute();
+    if let (Some((path, _)), Ok(b)) = (target, bincode::serialize(&v)) {
+        let mut st = st;
+        st.map.clear();
+        st.map.insert(0, b);
+        save(&path, &st);
+    }
+    v
+}
+
 /// A 128-bit key of any serializable value (a merged index, a list of facts).
 pub fn ctx_key<T: Serialize + ?Sized>(v: &T) -> Hash {
     let bytes = bincode::serialize(v).unwrap_or_default();

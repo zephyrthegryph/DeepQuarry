@@ -20,6 +20,7 @@ pub mod decls;
 pub mod graph;
 pub mod keys;
 pub mod gen;
+pub mod incremental;
 pub mod oracle;
 pub mod reads;
 
@@ -84,6 +85,13 @@ pub struct Sem {
     /// file -> sorted (line, owner type path) of every var/proc definition, for locating the owner
     /// of a text marker by its line.
     def_index: HashMap<String, Vec<(u32, String, String)>>,
+    /// Files whose definitions (locations, bodies) the analysis consulted: the footprint a cached
+    /// result depends on (see `sem::incremental`). Every file-attributed answer goes through
+    /// [`Sem::rel`] or the def index, which record here.
+    /// type path -> repo-relative file of the type's location.
+    type_loc: HashMap<String, String>,
+    touched: std::sync::Mutex<std::collections::HashSet<dreammaker::FileId>>,
+    touched_rel: std::sync::Mutex<std::collections::HashSet<String>>,
 }
 
 impl Sem {
@@ -153,9 +161,13 @@ impl Sem {
                 .clone();
             Some(r)
         };
+        let mut type_loc: HashMap<String, String> = HashMap::new();
         for ty in objtree.iter_types() {
             let t = ty.get();
             let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
+            if let Some(r) = rel_of(t.location, &mut files) {
+                type_loc.insert(path.clone(), r);
+            }
             for (_n, v) in &t.vars {
                 if let Some(d) = &v.declaration {
                     if let Some(r) = rel_of(d.location, &mut files) {
@@ -178,11 +190,37 @@ impl Sem {
         if let Some(dir) = _keep {
             let _ = std::fs::remove_dir_all(dir);
         }
-        Ok(Sem { objtree, files, root: root.to_path_buf(), errors, def_index })
+        Ok(Sem { objtree, files, root: root.to_path_buf(), errors, def_index, type_loc, touched: Default::default(), touched_rel: Default::default() })
     }
 
     pub fn rel(&self, loc: Location) -> &str {
+        if !loc.is_builtins() {
+            self.touched.lock().unwrap().insert(loc.file);
+        }
         self.files.get(&loc.file).map(|s| s.as_str()).unwrap_or("")
+    }
+
+    /// The file a location is in, without recording it in the footprint.
+    pub(crate) fn file_of(&self, loc: Location) -> Option<&str> {
+        if loc.is_builtins() {
+            return None;
+        }
+        self.files.get(&loc.file).map(|s| s.as_str())
+    }
+
+    fn touch_rel(&self, file: &str) {
+        self.touched_rel.lock().unwrap().insert(file.to_string());
+    }
+
+    /// Every file the analysis consulted so far (repo-relative, sorted).
+    pub fn footprint(&self) -> Vec<String> {
+        let mut out: std::collections::BTreeSet<String> = self.touched_rel.lock().unwrap().iter().cloned().collect();
+        for id in self.touched.lock().unwrap().iter() {
+            if let Some(r) = self.files.get(id) {
+                out.insert(r.clone());
+            }
+        }
+        out.into_iter().collect()
     }
 
     pub fn ty(&self, path: &str) -> Option<TypeRef<'_>> {
@@ -267,6 +305,7 @@ impl Sem {
     /// The type that owns the definition nearest `line` in `file`, looking back first and then
     /// forward: where a text marker (`READS_AS(...)`) sits is decided by the definitions around it.
     pub fn owner_candidates(&self, file: &str, line: u32) -> Vec<String> {
+        self.touch_rel(file);
         let Some(defs) = self.def_index.get(file) else { return Vec::new() };
         let mut out = Vec::new();
         let idx = defs.partition_point(|(l, _, _)| *l <= line);
@@ -281,6 +320,7 @@ impl Sem {
 
     /// Every `(file, line, owner)` definition, for "which proc is this line in".
     pub fn defs_in(&self, file: &str) -> &[(u32, String, String)] {
+        self.touch_rel(file);
         self.def_index.get(file).map(|v| v.as_slice()).unwrap_or(&[])
     }
 
@@ -346,6 +386,7 @@ impl Sem {
     /// The nearest definition at or before `line` in `file`: `(owner, name)` of the proc or var it
     /// declares. A marker inside a proc body belongs to that proc.
     pub fn def_at(&self, file: &str, line: u32) -> Option<(String, String)> {
+        self.touch_rel(file);
         let defs = self.def_index.get(file)?;
         let idx = defs.partition_point(|(l, _, _)| *l <= line);
         if idx == 0 {

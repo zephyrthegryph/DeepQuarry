@@ -429,21 +429,24 @@ impl WriteIndex {
     pub fn build(sem: &Sem) -> WriteIndex {
         let procs: Vec<ProcRef> = sem.objtree.iter_types().flat_map(|t| t.iter_self_procs().collect::<Vec<_>>()).filter(|p| !p.is_builtin()).collect();
         // Plain threads, not rayon: this runs under a memo init (see `par_map`).
-        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| {
-            let mut s = HashSet::new();
-            let name = p.name();
-            let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
-            if let Some(code) = &p.get().code {
-                collect_writes(code, ctor, &mut s);
-            }
-            s
-        });
+        let sets: Vec<HashSet<String>> = super::par_map(&procs, |p| proc_writes(*p));
         let mut w = WriteIndex::default();
         for s in sets {
             w.written.extend(s);
         }
         w
     }
+}
+
+/// The var names one proc's body writes (a constructor's writes are init and do not count).
+pub fn proc_writes(p: ProcRef) -> HashSet<String> {
+    let mut s = HashSet::new();
+    let name = p.name();
+    let ctor = matches!(name, "New" | "Initialize" | "initialize" | "Init");
+    if let Some(code) = &p.get().code {
+        collect_writes(code, ctor, &mut s);
+    }
+    s
 }
 
 fn collect_writes(code: &Block, ctor: bool, out: &mut HashSet<String>) {
