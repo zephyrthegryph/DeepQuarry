@@ -859,6 +859,7 @@
 #include "interim_seismic_charge_sticky_laser.dm"
 #include "interim_balloon_mixed_capacity_refill.dm"
 #include "interim_cup_return_actor.dm"
+#include "interim_flamethrower_recovery.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -136,6 +136,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 /obj/item/flamethrower/wrench_act(mob/user, obj/item/tool)
 	if(status || user.stat || user.restrained() || user.lying)
 		return ITEM_INTERACT_BLOCKING
+	if(loc?.release_refusal(src, user))
+		return ITEM_INTERACT_BLOCKING
 	var/turf/T = get_turf(src)
 	if(weldtool)
 		weldtool.forceMove(T)
@@ -147,7 +149,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		ptank.forceMove(T)
 		own_take(src, nameof(ptank))
 	new /obj/item/stack/rods(T)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /obj/item/flamethrower/screwdriver_act(mob/user, obj/item/tool)

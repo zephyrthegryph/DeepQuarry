@@ -1,0 +1,67 @@
+/// Real disassembly recovers the exact owned parts only after its source can leave its holder.
+/datum/unit_test/interim_flamethrower_recovery
+	parent_type = /datum/unit_test/dq_p2_reagents
+	var/held_case = FALSE
+
+/datum/unit_test/interim_flamethrower_recovery/held
+	held_case = TRUE
+
+/datum/unit_test/interim_flamethrower_recovery/run_gate()
+	var/turf/T = test_floor()
+	var/mob/living/carbon/human/actor = rc_actor(T)
+	var/obj/item/flamethrower/full/source = allocate(/obj/item/flamethrower/full, T)
+	var/obj/item/weldingtool/welder = source.weldtool
+	var/obj/item/assembly/igniter/igniter = source.igniter
+	TEST_ASSERT(istype(welder) && istype(igniter), "The real full constructor must allocate both canonical parts")
+	own(welder)
+	own(igniter)
+	TEST_ASSERT_EQUAL(owner_of(welder), source, "The actual source must own its original welder")
+	TEST_ASSERT_EQUAL(owner_of(igniter), source, "The actual source must own its original igniter")
+	TEST_ASSERT_EQUAL(source.status, TRUE, "The full constructor must start secured")
+	TEST_ASSERT_EQUAL(source.lit, FALSE, "The actual full constructor must start unlit")
+	var/obj/item/tank/phoron/tank = allocate(/obj/item/tank/phoron, T)
+	source.interaction_item(actor, tank, null)
+	TEST_ASSERT_EQUAL(source.ptank, tank, "Actual tank insertion must retain the exact tank")
+	TEST_ASSERT_EQUAL(owner_of(tank), source, "Actual tank insertion must transfer ownership")
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	var/obj/item/tool/screwdriver/screwdriver = allocate(/obj/item/tool/screwdriver, T)
+	var/list/before = turf_contents_of_type(T, /obj/item/stack/rods)
+	TEST_ASSERT_EQUAL(source.wrench_act(actor, wrench), ITEM_INTERACT_BLOCKING, "The actual secured state must refuse disassembly")
+	TEST_ASSERT_EQUAL(source.weldtool, welder, "Secured refusal must preserve the original welder link")
+	TEST_ASSERT_EQUAL(source.igniter, igniter, "Secured refusal must preserve the original igniter link")
+	TEST_ASSERT_EQUAL(source.ptank, tank, "Secured refusal must preserve the original tank link")
+	TEST_ASSERT(actor.put_in_active_hand(screwdriver), "The actor must really hold the screwdriver")
+	TEST_ASSERT_EQUAL(source.screwdriver_act(actor, screwdriver), ITEM_INTERACT_SUCCESS, "The real screwdriver must unsecure the source")
+	TEST_ASSERT_EQUAL(source.status, FALSE, "Actual screwdriver use must produce the dismantlable state")
+	actor.drop_item()
+	TEST_ASSERT(actor.put_in_active_hand(wrench), "The actor must really hold the wrench")
+	if(held_case)
+		TEST_ASSERT(actor.put_in_inactive_hand(source), "The source must occupy the actual other hand")
+		add_trait(source, TRAIT_NODROP, "interim_flamethrower_recovery")
+		TEST_ASSERT_EQUAL(source.wrench_act(actor, wrench), ITEM_INTERACT_BLOCKING, "A stuck held source must refuse recovery")
+		TEST_ASSERT(!QDELETED(source), "Refusal must preserve the exact source")
+		TEST_ASSERT_EQUAL(actor.get_inactive_hand(), source, "Refusal must retain the original held source")
+		TEST_ASSERT_EQUAL(source.weldtool, welder, "Refusal must preserve the original welder link")
+		TEST_ASSERT_EQUAL(source.igniter, igniter, "Refusal must preserve the original igniter link")
+		TEST_ASSERT_EQUAL(source.ptank, tank, "Refusal must preserve the original tank link")
+		for(var/obj/item/I as anything in list(welder, igniter, tank))
+			TEST_ASSERT(!QDELETED(I), "Refusal must preserve every original part")
+			TEST_ASSERT_EQUAL(owner_of(I), source, "Refusal must preserve each original owner")
+			TEST_ASSERT_EQUAL(I.loc, source, "Refusal must preserve each original part containment")
+		TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/item/stack/rods) - before), 0, "Refusal must not create rods")
+		remove_trait(source, TRAIT_NODROP, "interim_flamethrower_recovery")
+	TEST_ASSERT_EQUAL(source.wrench_act(actor, wrench), ITEM_INTERACT_SUCCESS, "Actual unlit unsecured disassembly must succeed")
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(source), "Recovery must consume the exact source")
+	if(held_case)
+		TEST_ASSERT_NULL(actor.get_inactive_hand(), "Successful recovery must clear the actual source hand")
+	TEST_ASSERT_EQUAL(actor.get_active_hand(), wrench, "Recovery must preserve the actual wrench hand")
+	for(var/obj/item/I as anything in list(welder, igniter, tank))
+		TEST_ASSERT(!QDELETED(I), "Recovery must preserve each exact original part")
+		TEST_ASSERT_EQUAL(I.loc, T, "Recovery must put each original part on the source floor")
+		TEST_ASSERT_NULL(owner_of(I), "Recovery must release each original source ownership")
+	var/list/products = turf_contents_of_type(T, /obj/item/stack/rods) - before
+	TEST_ASSERT_EQUAL(length(products), 1, "Recovery must produce exactly one rods stack")
+	var/obj/item/stack/rods/rods = products[1]
+	TEST_ASSERT_EQUAL(rods.type, /obj/item/stack/rods, "Recovered rods must have their canonical type")
+	TEST_ASSERT_EQUAL(rods.amount, 1, "Actual recovery must produce exactly one rod")
