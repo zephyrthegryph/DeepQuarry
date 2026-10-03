@@ -13,6 +13,11 @@
 //   slots       most mobs buckled at once
 //   delay       how long buckling someone else takes (themselves, none)
 //   restrained  the mob must be restrained (handcuffed) to be buckled
+//   smallest    the smallest mob_size the seat takes (a number, or the name of a var of the holder: a wheelchair's min_mob_buckle_size)
+//   largest     the largest mob_size it takes (the same)
+//
+// A seat that is full still takes a predator who sits down on it when the one on it can be eaten by them (can_stumble_vore): the occupant is freed and the
+// predator swallows them where they sit, as the old buckling did. A thing the holder is pulling is let go of when it is buckled to the holder.
 //
 // What is buckled to what is the OM relation /datum/om/relation/buckled_to (code/datums/om/library.dm): buckle_mob() and unbuckle_mob() write it, the
 // relation's own hooks do the rest (the direction, the buckled alert, the riding offsets) and drop the edge if the mob ends up off the structure's tile,
@@ -37,8 +42,10 @@ MSG_DEF_SELF(buckle/seated_here, "They are already buckled to it.")
 MSG_DEF_SELF(buckle/held_by_others, "They are held by someone else.")
 MSG_DEF_SELF(buckle/pinned, "They are pinned down.")
 MSG_DEF_SELF(buckle/itself, "It can't be buckled to itself.")
+MSG_DEF_SELF(buckle/too_small, "They are too small to use it.")
+MSG_DEF_SELF(buckle/too_large, "They are too large to use it.")
 
-CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, slots = 1, delay = 1.5 SECONDS, restrained = FALSE)
+CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, slots = 1, delay = 1.5 SECONDS, restrained = FALSE, smallest = null, largest = null)
 
 /datum/capability/lib/buckle
 
@@ -100,11 +107,32 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	for(var/obj/item/grab/grip as anything in victim.grabbed_by_list())
 		if(grip.grab_assailant() != actor)
 			return /datum/msg/buckle/held_by_others
-	if(length(holder.buckled_mob_list()) >= slots)
+	var/small = setting(holder, smallest)
+	if(!isnull(small) && victim.mob_size < small)
+		return /datum/msg/buckle/too_small
+	var/large = setting(holder, largest)
+	if(!isnull(large) && victim.mob_size > large)
+		return /datum/msg/buckle/too_large
+	if(length(holder.buckled_mob_list()) >= slots && !length(swallowed_by(holder, victim)))
 		return /datum/msg/buckle/full
 	if(!(victim.Adjacent(holder) || victim.loc == holder.loc))
 		return /datum/msg/buckle/not_here
 	return null
+
+/// A setting: the value written in the declaration, or what the holder's var of that name says now.
+/datum/capability/lib/buckle/proc/setting(atom/holder, value)
+	if(istext(value))
+		value = holder.vars[value]
+	return value
+
+/// The occupants a predator sitting down on a full seat would eat (none when the seat has room or the sitter is no predator).
+/datum/capability/lib/buckle/proc/swallowed_by(atom/movable/holder, mob/living/victim)
+	. = list()
+	if(!is_vore_predator(victim) || !victim.vore_selected)
+		return
+	for(var/mob/living/L as anything in holder.buckled_mob_list())
+		if(can_stumble_vore(prey = L, pred = victim))
+			. += L
 
 /datum/capability/lib/buckle/proc/can_buckle_victim(datum/act/op/A)
 	return isnull(refusal(A.holder, victim_of(A), A.actor))
@@ -129,6 +157,15 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 		return OP_REFUSED
 	if(victim.loc != holder.loc)
 		victim.forceMove(get_turf(holder))
+	om_unlink(holder, victim, /datum/om/relation/pulling) // a seat that was pulling the one who sits down lets go (a wheelchair)
+	var/list/eaten = length(holder.buckled_mob_list()) >= slots ? swallowed_by(holder, victim) : list()
+	for(var/mob/living/L as anything in eaten)
+		holder.unbuckle_mob(L, TRUE)
+		if(victim == A.actor)
+			act_message(victim, L, others = span_warning("%U% sits down on %T%!"))
+		else
+			act_message(A.actor, victim, others = span_warning("%T% is forced to sit down on [L.name] by %U%!"))
+		victim.begin_instant_nom(A.actor, L, victim, victim.vore_selected)
 	// The capability has done the checks, so the old can_buckle and max_buckled_mobs vars are not asked: the relation is written directly.
 	var/linked = om_link(victim, holder, /datum/om/relation/buckled_to)
 	if(!istype(linked, /datum/om/edge))
@@ -139,6 +176,9 @@ CAPABILITY_TYPE(buckle, CAP_BUCKLE, /datum/capability/lib/buckle, key = NONE, sl
 	if(A.actor)
 		holder.add_fingerprint(A.actor)
 	victim.reveal(TRUE, null)
+	var/obj/item/grab/grip = A.held
+	if(istype(grip) && !QDELETED(grip))
+		consume(grip, A.actor) // the grab lets go: the mob is seated, not held
 	act_done(B)
 	return OP_OK
 

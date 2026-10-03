@@ -657,7 +657,6 @@
 #include "code\datums\capabilities\library\assembly.dm"
 #include "code\datums\capabilities\library\block.dm"
 #include "code\datums\capabilities\library\breakable.dm"
-#include "code\datums\capabilities\library\buckle.dm"
 #include "code\datums\capabilities\library\checks.dm"
 #include "code\datums\capabilities\library\cell_holder.dm"
 #include "code\datums\capabilities\library\climb.dm"

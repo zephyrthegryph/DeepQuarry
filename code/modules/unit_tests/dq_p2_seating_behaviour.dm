@@ -25,6 +25,14 @@
 	input_submit(E)
 	return E.result
 
+/// The actor uses the item it holds (a click on itself).
+/proc/p2_seat_use_in_hand(mob/living/actor, obj/item/I)
+	if(actor.get_active_hand() != I)
+		actor.drop_item()
+		actor.put_in_active_hand(I)
+	actor.next_click = 0
+	return test_click(actor, I, I, GESTURE_SELF)
+
 /// The material the seat or stool is padded with, or null.
 /proc/p2_seat_padding(atom/S)
 	var/obj/structure/bed/B = S
@@ -40,7 +48,7 @@
 /// Somebody is buckled to the seat as a person sitting down would be (no wait, no grab).
 /proc/p2_seat_buckle(obj/structure/S, mob/living/M)
 	M.forceMove(S.loc)
-	return S.buckle_mob(M)
+	return S.buckle_mob(M, TRUE)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // The base
@@ -152,18 +160,18 @@
 	TEST_ASSERT_EQUAL(p2_seat_padding(C), get_material_by_name(MAT_CLOTH), "padded")
 	TEST_ASSERT_EQUAL(S.get_amount(), 4, "one sheet used")
 
-/// Every kind of bed takes padding from a stack, the roller bed, office chair, wooden chair, wheelchair and alien bed included. PINNED: their own
-/// interaction_item() overrides swallow the stack, but the entry names the bed's own proc by path, so the overrides never run.
-/datum/unit_test/dq_p2_seat/every_seat_takes_padding
+/// Some seats take no padding and swallow the stack: roller beds, office chairs, wooden chairs, wheelchairs, the alien bed. (Their own overrides of the bed's
+/// stack handling never ran before: they pad now no more: doc/rewrite/intended_changes.md.)
+/datum/unit_test/dq_p2_seat/some_seats_take_no_padding
 
-/datum/unit_test/dq_p2_seat/every_seat_takes_padding/run_gate()
+/datum/unit_test/dq_p2_seat/some_seats_take_no_padding/run_gate()
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	for(var/path in list(/obj/structure/bed/roller, /obj/structure/bed/chair/office, /obj/structure/bed/chair/wood, /obj/structure/bed/chair/wheelchair, /obj/structure/bed/alien))
 		var/obj/structure/bed/B = allocate(path, floor_at(1, 1))
 		var/obj/item/stack/material/cloth/S = sheets(/obj/item/stack/material/cloth, 5, H.loc)
 		touch(H, B, S)
-		TEST_ASSERT_NOTNULL(p2_seat_padding(B), "[path] was padded")
-		TEST_ASSERT_EQUAL(S.get_amount(), 4, "[path] used a sheet")
+		TEST_ASSERT_NULL(p2_seat_padding(B), "[path] was not padded")
+		TEST_ASSERT_EQUAL(S.get_amount(), 5, "[path] used no sheet")
 		qdel(S)
 		qdel(B)
 
@@ -261,29 +269,31 @@
 	TEST_ASSERT_NOTNULL(found, "a chair stands there")
 	TEST_ASSERT(!istype(found, /obj/structure/bed/chair/e_chair), "and it is a plain one")
 
-/// A shock kit does nothing to a chair, secured or not. PINNED: the chair's interaction_item() (which would make an electric chair) never runs, for the
-/// same reason as the padding overrides.
-/datum/unit_test/dq_p2_seat/a_shock_kit_does_nothing_to_a_chair
+/// A secured shock kit clicked on an unpadded chair makes it an electric chair; an unsecured one is refused. (The chair's own stack and kit handling never
+/// ran before: doc/rewrite/intended_changes.md.)
+/datum/unit_test/dq_p2_seat/a_shock_kit_makes_an_electric_chair
 
-/datum/unit_test/dq_p2_seat/a_shock_kit_does_nothing_to_a_chair/run_gate()
+/datum/unit_test/dq_p2_seat/a_shock_kit_makes_an_electric_chair/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/bed/chair/C = allocate(/obj/structure/bed/chair, at)
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	var/obj/item/assembly/shock_kit/kit = allocate(/obj/item/assembly/shock_kit, H.loc)
+	touch(H, C, kit)
+	TEST_ASSERT(!QDELETED(C), "an unsecured kit is refused: the chair stays")
 	kit.status = 1
 	touch(H, C, kit)
-	TEST_ASSERT(!QDELETED(C), "the chair stays")
-	TEST_ASSERT_NULL(locate(/obj/structure/bed/chair/e_chair) in at, "no electric chair")
+	TEST_ASSERT_NOTNULL(locate(/obj/structure/bed/chair/e_chair) in at, "a secured one makes an electric chair")
+	TEST_ASSERT(QDELETED(C), "the chair is gone")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Buckling
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A grab clicked on a bed moves the grabbed person onto its tile after two seconds. PINNED: they are not buckled, because the grab is still in the
-/// grabber's hand when the buckle is tried and a grabbed person cannot be buckled.
-/datum/unit_test/dq_p2_seat/a_grab_moves_a_person_onto_the_bed_after_two_seconds
+/// A grab clicked on a bed buckles the grabbed person to it after two seconds. (The old code tried to buckle while the grab was still held, which a
+/// grabbed person cannot be: it only moved them onto the tile. doc/rewrite/intended_changes.md.)
+/datum/unit_test/dq_p2_seat/a_grab_buckles_a_person_after_two_seconds
 
-/datum/unit_test/dq_p2_seat/a_grab_moves_a_person_onto_the_bed_after_two_seconds/run_gate()
+/datum/unit_test/dq_p2_seat/a_grab_buckles_a_person_after_two_seconds/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/bed/B = allocate(/obj/structure/bed, at)
 	var/mob/living/carbon/human/grabber = actor(floor_at(1, 0))
@@ -295,7 +305,7 @@
 	TEST_ASSERT_EQUAL(victim.loc, floor_at(0, 0), "not moved after a second")
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(victim.loc, at, "on the bed's tile after three")
-	TEST_ASSERT_EQUAL(length(p2_seat_occupants(B)), 0, "and not buckled")
+	TEST_ASSERT(victim in p2_seat_occupants(B), "and buckled")
 
 /// A bed with somebody on it takes nobody else.
 /datum/unit_test/dq_p2_seat/an_occupied_bed_takes_nobody_else
@@ -370,22 +380,23 @@
 	R.unbuckle_mob(M)
 	TEST_ASSERT(!R.density, "freed: not dense again")
 
-/// The roller bed rack does nothing to a roller bed, empty or occupied. PINNED: roller bed's interaction_item() (collapse it, or free its person)
-/// never runs, for the same reason as the padding overrides.
-/datum/unit_test/dq_p2_seat/the_rack_does_nothing_to_a_roller_bed
+/// The roller bed rack collapses an empty roller bed into its folded item; with somebody on it, it frees them and the bed stays. (The bed's own handling of
+/// the rack never ran before: doc/rewrite/intended_changes.md.)
+/datum/unit_test/dq_p2_seat/the_rack_collapses_a_roller_bed
 
-/datum/unit_test/dq_p2_seat/the_rack_does_nothing_to_a_roller_bed/run_gate()
+/datum/unit_test/dq_p2_seat/the_rack_collapses_a_roller_bed/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/bed/roller/R = allocate(/obj/structure/bed/roller, at)
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	var/mob/living/carbon/human/M = patient(floor_at(1, 0))
 	var/obj/item/roller_holder/rack = allocate(/obj/item/roller_holder, H.loc)
-	touch(H, R, rack)
-	TEST_ASSERT(!QDELETED(R), "the empty bed stays")
-	TEST_ASSERT_NULL(locate(/obj/item/roller) in at, "no folded bed")
 	p2_seat_buckle(R, M)
 	touch(H, R, rack)
-	TEST_ASSERT_EQUAL(length(p2_seat_occupants(R)), 1, "the person stays buckled")
+	TEST_ASSERT(!QDELETED(R), "with somebody on it the bed stays")
+	TEST_ASSERT_EQUAL(length(p2_seat_occupants(R)), 0, "and they are freed")
+	touch(H, R, rack)
+	TEST_ASSERT(QDELETED(R), "empty, it is collapsed")
+	TEST_ASSERT_NOTNULL(locate(/obj/item/roller) in at, "into a folded roller bed")
 
 /// A folded roller bed used in hand sets the bed up where the person stands, and is used up.
 /datum/unit_test/dq_p2_seat/a_folded_roller_bed_deploys
@@ -394,7 +405,7 @@
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	var/obj/item/roller/folded = allocate(/obj/item/roller, H.loc)
 	H.put_in_active_hand(folded)
-	folded.attack_self(H)
+	p2_seat_use_in_hand(H, folded)
 	settle()
 	TEST_ASSERT(QDELETED(folded), "the folded bed is used up")
 	TEST_ASSERT_NOTNULL(locate(/obj/structure/bed/roller) in H.loc, "a bed stands where they are")
@@ -409,7 +420,7 @@
 	touch(H, folded, rack)
 	TEST_ASSERT(istype(rack.held, /obj/item/roller), "the rack holds a folded bed")
 	H.put_in_active_hand(rack)
-	rack.attack_self(H)
+	p2_seat_use_in_hand(H, rack)
 	settle()
 	TEST_ASSERT_NULL(rack.held, "the rack is empty again")
 	TEST_ASSERT_NOTNULL(locate(/obj/structure/bed/roller) in H.loc, "a bed was set up")
@@ -479,3 +490,96 @@
 	B.MouseDrop_T(M, H)
 	settle()
 	TEST_ASSERT(M in p2_seat_occupants(B), "the dragged person is buckled")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// buckle() on its own (a bare seat that declares nothing else)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A seat with nothing but the buckle capability.
+/obj/structure/p2_bare_seat
+	name = "p2 bare seat"
+	can_buckle = TRUE
+	anchored = TRUE
+
+CAPABILITIES(/obj/structure/p2_bare_seat)
+	buckle()
+
+/// buckle.grab waits its time, buckles the grabbed person and lets the grab go; a second grab on a taken seat is refused; an empty hand frees the occupant,
+/// and a hand on a seat nobody sits on does nothing.
+/datum/unit_test/dq_p2_seat/the_buckle_capability_works_on_a_bare_seat
+
+/datum/unit_test/dq_p2_seat/the_buckle_capability_works_on_a_bare_seat/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/p2_bare_seat/seat = allocate(/obj/structure/p2_bare_seat, at)
+	var/mob/living/carbon/human/grabber = actor(floor_at(1, 0))
+	var/mob/living/carbon/human/first = patient(floor_at(0, 0))
+	var/mob/living/carbon/human/second = patient(floor_at(2, 0))
+	touch(grabber, seat, null)
+	TEST_ASSERT_EQUAL(length(p2_seat_occupants(seat)), 0, "an empty hand on an empty seat does nothing")
+	var/obj/item/grab/G = grab(grabber, first, GRAB_AGGRESSIVE)
+	p2_seat_click(grabber, seat, G)
+	test_time(1 SECOND)
+	TEST_ASSERT_EQUAL(length(p2_seat_occupants(seat)), 0, "nobody is buckled before the wait is over")
+	test_time(2 SECONDS)
+	TEST_ASSERT(first in p2_seat_occupants(seat), "the grabbed person is buckled after it")
+	TEST_ASSERT_EQUAL(first.loc, at, "on the seat's tile")
+	TEST_ASSERT(!istype(grabber.get_active_hand(), /obj/item/grab), "and the grab let go")
+	var/obj/item/grab/second_grab = grab(grabber, second, GRAB_AGGRESSIVE)
+	p2_seat_click(grabber, seat, second_grab)
+	settle()
+	TEST_ASSERT(!(second in p2_seat_occupants(seat)), "a taken seat takes nobody else")
+	touch(grabber, seat, null)
+	TEST_ASSERT_EQUAL(length(p2_seat_occupants(seat)), 0, "an empty hand frees the occupant")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The wheelchair, its folded item, the nest
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A folded wheelchair used in hand is set up where its carrier stands and keeps its name, and is used up.
+/datum/unit_test/dq_p2_seat/a_folded_wheelchair_unfolds
+
+/datum/unit_test/dq_p2_seat/a_folded_wheelchair_unfolds/run_gate()
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/obj/item/wheelchair/motor/folded = allocate(/obj/item/wheelchair/motor, H.loc)
+	p2_seat_use_in_hand(H, folded)
+	settle()
+	TEST_ASSERT(QDELETED(folded), "the folded chair is used up")
+	var/obj/structure/bed/chair/wheelchair/W = locate(/obj/structure/bed/chair/wheelchair) in H.loc
+	TEST_ASSERT_NOTNULL(W, "a wheelchair stands where they are")
+	TEST_ASSERT(istype(W, /obj/structure/bed/chair/wheelchair/motor), "of the folded kind")
+
+/// A nest takes no padding and no stack: it is hit instead, and a person is not unbuckled by an empty hand the bed's way.
+/datum/unit_test/dq_p2_seat/a_nest_takes_no_padding
+
+/datum/unit_test/dq_p2_seat/a_nest_takes_no_padding/run_gate()
+	var/obj/structure/bed/nest/N = allocate(/obj/structure/bed/nest, floor_at(1, 1))
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/obj/item/stack/material/cloth/S = sheets(/obj/item/stack/material/cloth, 5, H.loc)
+	touch(H, N, S)
+	TEST_ASSERT_NULL(p2_seat_padding(N), "not padded")
+	TEST_ASSERT_EQUAL(S.get_amount(), 5, "no sheet used")
+
+/// A wheelchair takes only the sizes its vars say (the small electric chair's range is narrower), and a person it was pulling is let go of when they sit in it.
+/datum/unit_test/dq_p2_seat/a_wheelchair_takes_only_its_sizes
+
+/datum/unit_test/dq_p2_seat/a_wheelchair_takes_only_its_sizes/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/bed/chair/wheelchair/small = allocate(/obj/structure/bed/chair/wheelchair/smallmotor, at)
+	var/mob/living/carbon/human/grabber = actor(floor_at(1, 0))
+	var/mob/living/carbon/human/big = patient(floor_at(0, 0))
+	big.mob_size = MOB_LARGE
+	var/obj/item/grab/G = grab(grabber, big, GRAB_AGGRESSIVE)
+	p2_seat_click(grabber, small, G)
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(length(p2_seat_occupants(small)), 0, "a large person is too large for the small electric chair")
+	big.mob_size = MOB_MEDIUM
+	if(!istype(grabber.get_active_hand(), /obj/item/grab))
+		G = grab(grabber, big, GRAB_AGGRESSIVE)
+	else
+		G = grabber.get_active_hand()
+	om_link(small, big, /datum/om/relation/pulling)
+	TEST_ASSERT_EQUAL(small.pulling_target(), big, "the chair pulls them")
+	p2_seat_click(grabber, small, G)
+	test_time(5 SECONDS)
+	TEST_ASSERT(big in p2_seat_occupants(small), "a medium one sits in it")
+	TEST_ASSERT_NULL(small.pulling_target(), "and the chair lets go of them")

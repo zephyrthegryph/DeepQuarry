@@ -11,16 +11,21 @@
 	add_overlay(image('icons/obj/objects.dmi', src, "echair_over", MOB_LAYER + 1, dir))
 	return
 
-/obj/structure/bed/chair/e_chair/wrench_act(mob/user, obj/item/W)
+CAPABILITIES(/obj/structure/bed/chair/e_chair)
+	without("dismantle")
+	op("unwire", tool(TOOL_WRENCH), wait(0), label("Unwire"), then(PROC_REF(back_to_chair)))
+
+/// A wrench takes the kit out and leaves a plain chair.
+/obj/structure/bed/chair/e_chair/proc/back_to_chair(datum/act/op/A)
 	var/obj/structure/bed/chair/C = new /obj/structure/bed/chair(loc)
-	playsound(src, W.usesound, 50, 1)
+	playsound(src, A.held.usesound, 50, 1)
 	C.set_dir(dir)
 	if(part)
 		part.forceMove(loc)
 		rel_clear(part, nameof(part.master))
 		own_take(src, nameof(part))
 	replace_with(src, C)
-	return TRUE
+	return OP_OK
 
 /obj/structure/bed/chair/e_chair/proc/e_chair_toggle_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

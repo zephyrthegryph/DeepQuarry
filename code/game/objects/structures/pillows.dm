@@ -79,6 +79,11 @@ APPEARANCE_NONE(/obj/structure/bed/pillowpilefront)
 
 APPEARANCE_NONE(/obj/structure/bed/pillowpile)
 
+CAPABILITIES(/obj/structure/bed/pillowpile)
+	bed_hands_off()
+CAPABILITIES(/obj/structure/bed/pillowpilefront)
+	bed_hands_off()
+
 /obj/structure/bed/pillowpile/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/entry_hand/pillowpile_hand,
