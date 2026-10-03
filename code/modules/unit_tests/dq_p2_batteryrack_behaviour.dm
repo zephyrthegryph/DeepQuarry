@@ -53,9 +53,7 @@
 
 /// The overlay keys the rack draws.
 /proc/p2_rack_overlays(obj/machinery/power/smes/batteryrack/R)
-	var/datum/look/look = new
-	R.draw(look)
-	return look.overlays.Copy()
+	return R.appearance_overlays()
 
 /// One frame of the rack's own charge work (it reads its cells back and balances them).
 /proc/p2_rack_power_step(obj/machinery/power/smes/batteryrack/R)
@@ -161,6 +159,28 @@
 	TEST_ASSERT_EQUAL(length(p2_rack_cells(R)), 3, "still three")
 	TEST_ASSERT_NOTEQUAL(extra.loc, R, "and it is not inside")
 	TEST_ASSERT_EQUAL(p2_rack_capacity(R), capacity, "the capacity did not change")
+
+/// A cell goes in with the service hatch open as well as shut.
+/datum/unit_test/dq_p2_smes/rack_takes_a_cell_with_the_hatch_open
+/datum/unit_test/dq_p2_smes/rack_takes_a_cell_with_the_hatch_open/run_gate()
+	var/mob/living/carbon/human/H = p2_actor()
+	var/obj/machinery/power/smes/batteryrack/R = p2_rack()
+	open_panel(H, R)
+	TEST_ASSERT(R.panel_open, "the hatch is open")
+	var/obj/item/cell/C = p2_rack_cell()
+	p2_rack_put(H, R, C)
+	TEST_ASSERT(C in p2_rack_cells(R), "the cell is in")
+
+/// A rack with its hatch open takes any other item and does nothing with it, as the SMES does.
+/datum/unit_test/dq_p2_smes/rack_with_the_hatch_open_swallows_other_items
+/datum/unit_test/dq_p2_smes/rack_with_the_hatch_open_swallows_other_items/run_gate()
+	var/mob/living/carbon/human/H = p2_actor()
+	var/obj/machinery/power/smes/batteryrack/R = p2_rack()
+	open_panel(H, R)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, p2_side_spot())
+	touch(H, R, pen)
+	TEST_ASSERT_EQUAL(length(p2_rack_cells(R)), 0, "a pen is still not a cell")
+	TEST_ASSERT_NOTEQUAL(pen.loc, R, "and does not go in")
 
 /// Something that is not a cell is not taken in as one.
 /datum/unit_test/dq_p2_smes/rack_ignores_other_items
@@ -489,7 +509,7 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/machinery/power/smes/batteryrack/R = p2_rack_loaded(H, list(100, 0, 50))
 	p2_rack_power_step(R)
-	var/list/keys = R.appearance_overlays()
+	var/list/keys = p2_rack_overlays(R)
 	TEST_ASSERT(("cell1" in keys) && ("cell2" in keys) && ("cell3" in keys), "a layer for each cell")
 	TEST_ASSERT(!("cell4" in keys), "and none for a free slot")
 	TEST_ASSERT("cell1f" in keys, "a full cell is marked")
@@ -507,11 +527,11 @@
 	var/mob/living/carbon/human/H = p2_actor()
 	var/obj/machinery/power/smes/batteryrack/R = p2_rack_loaded(H, list(100))
 	p2_rack_power_step(R)
-	TEST_ASSERT("charge7" in R.appearance_overlays(), "a full rack is at seven")
+	TEST_ASSERT("charge7" in p2_rack_overlays(R), "a full rack is at seven")
 	var/obj/item/cell/C = p2_rack_cells(R)[1]
 	C.charge = 0
 	p2_rack_power_step(R)
-	TEST_ASSERT("charge0" in R.appearance_overlays(), "an empty rack is at zero")
+	TEST_ASSERT("charge0" in p2_rack_overlays(R), "an empty rack is at zero")
 
 /// A mapped rack makes its own cells and puts them in, no more than it holds.
 /datum/unit_test/dq_p2_smes/rack_mapped_gets_cells
