@@ -6,7 +6,7 @@
 	almost anything into a trash can.
 */
 
-/atom/proc/CanMouseDrop(atom/over, mob/user = usr)
+/atom/proc/CanMouseDrop(atom/over, mob/user)
 	if(!user || !over)
 		return FALSE
 	if(user.incapacitated())

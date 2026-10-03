@@ -198,11 +198,15 @@ DECLARE_INTERACTIONS(/obj/item/proton_pack, INTERACT_HAND(null, PROC_REF(interac
 	return FALSE
 
 /obj/item/proton_pack/MouseDrop()
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
+	drag_backpack_with_actor(user)
+
+/obj/item/proton_pack/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(src.loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = src.loc
 		if(!M.unEquip(src))
 			return
-		src.add_fingerprint(usr)
+		src.add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)

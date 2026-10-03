@@ -21,6 +21,9 @@
 /datum/unit_test/interim_backpack_drag_actor/shield
 	device_type = /obj/item/personal_shield_generator/loaded
 
+/datum/unit_test/interim_backpack_drag_actor/proton
+	device_type = /obj/item/proton_pack
+
 /datum/unit_test/interim_backpack_drag_actor/proc/linked_handheld(obj/item/device)
 	if(istype(device, /obj/item/personal_shield_generator))
 		var/obj/item/personal_shield_generator/generator = device
@@ -37,9 +40,12 @@
 	else if(istype(device, /obj/item/medigun_backpack))
 		var/obj/item/medigun_backpack/medigun = device
 		medigun.drag_backpack_with_actor(user)
-	else
+	else if(istype(device, /obj/item/personal_shield_generator))
 		var/obj/item/personal_shield_generator/generator = device
 		generator.drag_backpack_with_actor(user)
+	else
+		var/obj/item/proton_pack/proton = device
+		proton.drag_backpack_with_actor(user)
 
 /datum/unit_test/interim_backpack_drag_actor/Run()
 	var/turf/T = run_loc_floor_bottom_left

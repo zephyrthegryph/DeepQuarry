@@ -7,7 +7,6 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
-usr_outside_verb	code/_onclick/drag_drop.dm	/atom/proc/CanMouseDrop(atom/over, mob/user = usr)
 usr_outside_verb	code/_onclick/hud/ability_screen_objects.dm	if(!usr)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
@@ -113,7 +112,6 @@ usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/ghost_hunting/weapons.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
