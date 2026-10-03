@@ -297,7 +297,7 @@ ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct 
 	feedback_add_details("admin_verb","ADC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(take_picture, R_DEBUG, "Save PNG", "Opens a dialog to save a PNG of any object in the game.", ADMIN_CATEGORY_DEBUG_MISC, atom/selected_atom in world)
-	downloadImage(selected_atom)
+	downloadImage(selected_atom, null, user)
 
 ADMIN_VERB_VISIBILITY(cmd_admin_areatest, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(cmd_admin_areatest, R_DEBUG, "Test areas", "Manually tests all areas and prints to world (Only use on a test server).", ADMIN_CATEGORY_MAPPING_TESTS)

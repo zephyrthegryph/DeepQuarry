@@ -1,5 +1,4 @@
 # sys_lint baseline for tools/ci/sys_rules/usr_use.py (doc/rewrite/systems.md); shrink-only, target 0
-usr_outside_verb	code/_helpers/icons.dm	usr << ftp(this_icon,"[A.name].png")
 usr_outside_verb	code/_helpers/mobs.dm	var/temp = usr
 usr_outside_verb	code/_helpers/mobs.dm	usr = user_mob
 usr_outside_verb	code/_helpers/mobs.dm	usr = temp

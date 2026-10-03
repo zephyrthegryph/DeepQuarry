@@ -327,10 +327,10 @@
 	qdel(west)
 	return full
 
-/proc/downloadImage(atom/A, dir)
+/proc/downloadImage(atom/A, dir, client/user)
 	var/icon/this_icon = getFlatIcon(A,defdir=dir)
 
-	usr << ftp(this_icon,"[A.name].png")
+	user << ftp(this_icon,"[A.name].png")
 
 /proc/AddCamoOverlay(mob/owner_atom, atom/A) //A is the atom which we are using as the overlay.
 	var/icon/opacity_icon = new(A.icon, A.icon_state)//Don't really care for overlays/underlays.
