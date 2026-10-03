@@ -714,6 +714,7 @@
 #include "interim_microscope_drop_actor.dm"
 #include "interim_clipboard_drop_actor.dm"
 #include "interim_changeling_clothing_emp_data.dm"
+#include "interim_randomspawn_constructor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
