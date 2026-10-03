@@ -23,9 +23,6 @@
 	var/damage_to_energy_multiplier = 50.0 //Determines how much energy to charge for blocking, e.g. 20 damage attack = 750 energy cost
 	var/block_percentage = 75
 
-/obj/item/clothing/suit/armor/shield/Initialize(mapload)
-	. = ..()
-
 /obj/item/clothing/suit/armor/shield/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	//Since this is a pierce of armor that is passive, we do not need to check if the user is incapacitated.
 	if(!active)

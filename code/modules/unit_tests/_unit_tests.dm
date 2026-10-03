@@ -703,6 +703,7 @@
 #include "interim_technomancer_core_first_equip.dm"
 #include "interim_target_zone_hud_actor.dm"
 #include "interim_hoist_detach_actor.dm"
+#include "interim_shield_armor_init.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

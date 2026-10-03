@@ -93,7 +93,6 @@ initialize	code/game/gamemodes/cult/ritual.dm	/obj/item/book/tome/Initialize(map
 initialize	code/game/gamemodes/meteor/meteors.dm	/obj/effect/meteor/Initialize(mapload)
 initialize	code/game/gamemodes/technomancer/catalog.dm	/obj/item/technomancer_catalog/Initialize(mapload)
 initialize	code/game/gamemodes/technomancer/core_obj.dm	/obj/spellbutton/Initialize(mapload, path, new_name, new_icon_state)
-initialize	code/game/gamemodes/technomancer/devices/shield_armor.dm	/obj/item/clothing/suit/armor/shield/Initialize(mapload)
 initialize	code/game/gamemodes/technomancer/equipment.dm	/obj/item/storage/belt/medical/technomancer/Initialize(mapload)
 initialize	code/game/gamemodes/technomancer/spell_objs.dm	/obj/item/spell/Initialize(mapload, coreless)
 initialize	code/game/gamemodes/technomancer/spells/aura/aura.dm	/obj/item/spell/aura/Initialize(mapload)
