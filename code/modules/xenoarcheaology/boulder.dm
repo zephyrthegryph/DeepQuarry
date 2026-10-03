@@ -70,6 +70,8 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 	to_chat(user, span_notice("\The [src] has been excavated to a depth of [2 * src.excavation_level]cm."))
 
 /obj/structure/boulder/proc/dig_done(mob/user, obj/item/pickaxe/P)
+	if(loc?.release_refusal(src, user))
+		return
 	to_chat(user, span_notice("You finish [P.drill_verb] [src]."))
 	excavation_level += P.excavation_amount
 
@@ -87,7 +89,7 @@ DECLARE_INTERACTIONS(/obj/structure/boulder, INTERACT_ITEM(null, PROC_REF(intera
 		else
 			act_message(user, src, MSG_SELF(span_notice("%T% has been whittled away under your careful excavation, but there was nothing of interest inside.")), \
 				MSG_OTHERS(span_warning("%T% suddenly crumbles away.")))
-		qdel(src)
+		consume(src, user)
 
 /obj/structure/boulder/Bumped(AM)
 	. = ..()
