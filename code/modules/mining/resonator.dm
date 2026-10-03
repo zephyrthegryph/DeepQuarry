@@ -152,7 +152,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 			add_attack_logs(creator, L, "used a resonator field on")
 		to_chat(L, span_danger("\The [src] ruptured with you in it!"))
 		L.injure(INJURY_BLUNT, resonance_damage, null, src)
-	qdel(src)
+	consume(src)
 
 
 /obj/effect/temp_visual/resonance_crush
