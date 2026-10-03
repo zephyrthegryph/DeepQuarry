@@ -197,7 +197,6 @@ qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src)
 qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src) //should be safe to qdel immediately since if someone is still using this stack it will persist for a little while longer
 qdel_src	code/game/objects/items/stacks/stack.dm	qdel(src)
 qdel_src	code/game/objects/items/uav.dm	qdel(src)
-qdel_src	code/game/objects/items/weapons/chewables.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/dna_injector.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/flamethrower.dm	qdel(src)
 qdel_src	code/game/objects/items/weapons/grenades/anti_photon_grenade.dm	qdel(src)

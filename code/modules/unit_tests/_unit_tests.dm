@@ -754,6 +754,7 @@
 #include "interim_sand_scatter_cleanup.dm"
 #include "interim_resonance_burst_cleanup.dm"
 #include "interim_deadplant_cleanup.dm"
+#include "interim_chewable_spitout_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

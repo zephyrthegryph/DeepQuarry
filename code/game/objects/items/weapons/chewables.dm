@@ -100,7 +100,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, a
 					M.update_inv_l_hand(0)
 					M.update_inv_r_hand(1)
 					M.put_in_hands(butt)
-	qdel(src)
+	consume(src)
 
 /obj/item/clothing/mask/chewable/tobacco/cheap
 	name = "chewing tobacco"
