@@ -574,6 +574,7 @@
 #include "interim_airlock_assembly_glass.dm"
 #include "interim_adminpaper_write_actor.dm"
 #include "interim_flag_removal.dm"
+#include "interim_reagent_implant_transfer_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

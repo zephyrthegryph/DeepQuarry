@@ -358,7 +358,6 @@ usr_outside_verb	code/game/objects/items/toys/toys.dm	var/mob/living/carbon/huma
 usr_outside_verb	code/game/objects/items/toys/toys.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
-usr_outside_verb	code/game/objects/items/weapons/implants/implantreagent.dm	/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user = usr)
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	if(ishuman(usr))
