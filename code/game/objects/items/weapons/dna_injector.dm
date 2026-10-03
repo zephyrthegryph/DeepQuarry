@@ -16,18 +16,18 @@
 	var/datatype=0
 	var/value=0
 
-	// Traitgenes edit begin - Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
+	// Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
 	var/has_radiation = TRUE
-	// Traitgenes edit end
 
-/obj/item/dnainjector/Initialize(mapload) // Traitgenes edit - Moved to init
+// INIT: allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
+/obj/item/dnainjector/Initialize(mapload)
 	if(datatype && block)
 		own_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
 		own_set(buf, nameof(buf.dna), new /datum/dna)
 		buf.types = datatype
 		buf.dna.ResetSE()
 		SetValue(src.value)
-	. = ..() // Traitgenes edit - Moved to init
+	. = ..()
 
 /obj/item/dnainjector/proc/GetRealBlock(selblock)
 	if(selblock==0)
@@ -69,7 +69,7 @@
 		L.apply_effect(rand(5,20), IRRADIATE, check_protection = 0)
 		L.injure(INJURY_CELLULAR, max(2, L.injury_load(INJURY_CATEGORY_GENETIC)), source = src)
 
-	// Traitgenes edit begin - NO_DNA and Synthetics cannot be mutated
+	// NO_DNA and Synthetics cannot be mutated
 	var/allow = TRUE
 	if(HAS_SYNTHETIC_BIOLOGY(M))
 		allow = FALSE
@@ -77,8 +77,7 @@
 		var/mob/living/carbon/human/H = M
 		if(!H.species || H.species.flags & NO_DNA)
 			allow = FALSE
-	// Traitgenes edit end
-	if (!(M.has_mutation(NOCLONE)) && allow) // prevents drained people from having their DNA changed, Traitgenes edit - NO_DNA and Synthetics cannot be mutated
+	if (!(M.has_mutation(NOCLONE)) && allow) // prevents drained people from having their DNA changed; NO_DNA and synthetics cannot be mutated
 		if(buf)
 			if (buf.types & DNA2_BUF_UI)
 				if (!block) //isolated block?
@@ -98,16 +97,15 @@
 				else
 					M.dna.SetSEValue(block,src.GetValue())
 				uses--
-				// Traitgenes edit - Moved gene checks to after side effects
+				// Moved gene checks to after side effects
 				if(prob(5))
 					trigger_side_effect(M)
-			// Traitgenes edit begin - Do gene updates here, and more comprehensively
+			// Do gene updates here, and more comprehensively
 			if(ishuman(M))
 				var/mob/living/carbon/human/H = M
 				H.sync_dna_traits(FALSE,FALSE)
 				H.sync_organ_dna()
 			M.regenerate_icons()
-			// Traitgenes edit end
 
 	if (user)
 		user.drop_from_inventory(src)
@@ -223,8 +221,8 @@
 	if(trait_path && G)
 		pick_block( G, TRUE, FALSE, disabling)
 	else
-		qdel(src)
-		return
+		. = ..()
+		return INITIALIZE_HINT_QDEL
 	. = ..()
 
 	disabling = TRUE
@@ -342,10 +340,7 @@
 	trait_path = /datum/trait/negative/disability_damagedspine
 /obj/item/dnainjector/set_trait/damagedspine/disable
 	disabling = TRUE
-// CHOMPEnable Start
 /obj/item/dnainjector/set_trait/nonconduct // shock
 	trait_path = /datum/trait/positive/nonconductive_plus
 /obj/item/dnainjector/set_trait/nonconduct/disable
 	disabling = TRUE
-// CHOMPEnable End
-

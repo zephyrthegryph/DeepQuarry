@@ -541,7 +541,6 @@ initialize	code/game/objects/items/weapons/circuitboards/computer/camera_monitor
 initialize	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	/obj/item/circuitboard/security/telescreen/entertainment/Initialize(mapload)
 initialize	code/game/objects/items/weapons/circuitboards/computer/camera_monitor.dm	/obj/item/circuitboard/security/telescreen/bodycamera/Initialize(mapload)
 initialize	code/game/objects/items/weapons/cosmetics.dm	/obj/item/lipstick/random/Initialize(mapload)
-initialize	code/game/objects/items/weapons/dna_injector.dm	/obj/item/dnainjector/Initialize(mapload) // Traitgenes edit - Moved to init
 initialize	code/game/objects/items/weapons/dna_injector.dm	/obj/item/dnainjector/random/Initialize(mapload)
 initialize	code/game/objects/items/weapons/dna_injector.dm	/obj/item/dnainjector/random_labeled/Initialize(mapload)
 initialize	code/game/objects/items/weapons/dna_injector.dm	/obj/item/dnainjector/random_good/Initialize(mapload)
