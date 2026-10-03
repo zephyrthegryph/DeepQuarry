@@ -845,6 +845,8 @@
 #include "interim_paper_supply_pickup_actor.dm"
 #include "interim_bluespace_collar_sticky_cracking.dm"
 #include "interim_clipboard_sticky_pen_slot.dm"
+#include "interim_prosthetics_species_upload_refusal.dm"
+#include "interim_prosthetics_species_upload_consumption.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

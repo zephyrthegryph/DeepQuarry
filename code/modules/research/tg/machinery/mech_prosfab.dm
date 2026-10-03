@@ -137,9 +137,11 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg/prosthetics, ui_act_manufact
 	return TRUE
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/proc/species_disk_done(mob/user, obj/item/disk/species/D)
-	species_types |= D.species
-	to_chat(user, span_notice("Uploaded [D.species] files!"))
-	consume(D, user)
+	var/upload_species = D.species
+	if(!consume(D, user))
+		return
+	species_types |= upload_species
+	to_chat(user, span_notice("Uploaded [upload_species] files!"))
 
 /obj/machinery/mecha_part_fabricator_tg/prosthetics/create_new_part(datum/design_techweb/dispensed_design)
 	if(istype(dispensed_design, /datum/design_techweb/prosfab/pros/torso))
