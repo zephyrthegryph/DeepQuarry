@@ -11,44 +11,48 @@
 
 
 /obj/item/evidencebag/MouseDrop(obj/item/I)
-	if (!ishuman(usr))
-		return
-	if(!istype(I) || I.anchored)
-		return  ..()
+	if(!bag_with_actor(usr, I)) // ALLOW(sys_usr_outside_verb): Native evidence bag drag supplies its actor before unchanged conditional parent input routing.
+		return ..()
 
-	var/mob/living/carbon/human/user = usr
+/obj/item/evidencebag/proc/bag_with_actor(mob/actor, obj/item/I)
+	if (!ishuman(actor))
+		return TRUE
+	if(!istype(I) || I.anchored)
+		return FALSE
+
+	var/mob/living/carbon/human/user = actor
 
 	if(!user.item_is_in_hands(src))
-		return //bag must be in your hands to use
+		return TRUE //bag must be in your hands to use
 
 	if (isturf(I.loc))
 		if (!user.Adjacent(I))
-			return
+			return TRUE
 	else
 		//If it isn't on the floor. Do some checks to see if it's in our hands or a box. Otherwise give up.
 		if(istype(I.loc,/obj/item/storage))	//in a container.
 			var/sdepth = I.storage_depth(user)
 			if (sdepth > MAX_STORAGE_REACH)
-				return	//too deeply nested to access
+				return TRUE	//too deeply nested to access
 
 			user.client.screen -= I
 			I.moveToNullspace()
 		else if(user.item_is_in_hands(I))
 			user.drop_from_inventory(I)
 		else
-			return
+			return TRUE
 
 	if(istype(I, /obj/item/evidencebag))
 		to_chat(user, span_notice("You find putting an evidence bag in another evidence bag to be slightly absurd."))
-		return
+		return TRUE
 
 	if(I.w_class > 3)
 		to_chat(user, span_notice("[I] won't fit in [src]."))
-		return
+		return TRUE
 
 	if(contents_count(src))
 		to_chat(user, span_notice("[src] already has something inside it."))
-		return
+		return TRUE
 
 	act_message(user, src, MSG_SELF("You put [I] inside %T%."), \
 		MSG_OTHERS("%U% puts [I] into %T%"), \
@@ -70,7 +74,7 @@
 	I.forceMove(src)
 	rel_set(src, nameof(stored_item), I)
 	w_class = I.w_class
-	return
+	return TRUE
 
 
 DECLARE_INTERACTIONS(/obj/item/evidencebag, INTERACT_USE(null, PROC_REF(interaction_self)))

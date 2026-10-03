@@ -288,8 +288,6 @@ usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/self_dest
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm	if(!skip_check && usr && _answer_a1 != "Yes")
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/voice.dm	om_ask(usr, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
 usr_outside_verb	code/modules/clothing/suits/storage.dm	if (pockets.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/detectivework/tools/evidencebag.dm	if (!ishuman(usr))
-usr_outside_verb	code/modules/detectivework/tools/evidencebag.dm	var/mob/living/carbon/human/user = usr
 usr_outside_verb	code/modules/emotes/custom_emote.dm	if((check_stat && (src && stat)) || is_paralyzed() || (!use_me && usr == src))
 usr_outside_verb	code/modules/emotes/emote_mob.dm	if(usr == src) //client-called emote
 usr_outside_verb	code/modules/emotes/emote_mob.dm	var/involuntary = (usr != src)
