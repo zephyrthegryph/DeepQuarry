@@ -295,7 +295,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/low_wall/eris, TYPE_PROC_REF(/atom, appea
 	for(var/obj/structure/grille/G in turf_contents_of_type(loc, /obj/structure/grille))
 		if(G.anchored)
 			G.take_damage(G.max_integrity, BRUTE, MELEE) // Smash it apart with the wall.
-	qdel(src)
+	consume(src)
 
 /**
  * The two 'real' types
