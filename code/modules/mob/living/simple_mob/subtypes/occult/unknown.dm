@@ -289,10 +289,12 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/glitch_boss_fake/replace_death(gibbed)
+	if(loc?.release_refusal(src))
+		return TRUE
 	new /obj/effect/temp_visual/glitch(get_turf(src))
 	if(prob(prob_respawn))
 		new /mob/living/simple_mob/glitch_boss_fake(get_turf(src))
-	qdel(src)
+	consume(src)
 	return TRUE
 
 /obj/item/projectile/energy/slow_orb_fake

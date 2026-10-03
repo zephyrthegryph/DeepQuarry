@@ -124,3 +124,6 @@ changes:
   - bugfix: "Completed shuttle console construction retains the correct builder in administrator logs."
   - bugfix: "pAI power repairs and beehive assembly respect replacement parts and assemblies that cannot leave your hand."
   - bugfix: "Material armor respects release rules before shattering and clears its equipment slot when it does break."
+  - bugfix: "Medical stands retain the chosen actor across patient prompts; ship confirmations recheck the original drag actor."
+  - bugfix: "Deck and desk-toy pickup safely reject unsupported actors while preserving cards and toy state."
+  - bugfix: "Stickers, deployable singularity beacons and reclaimed translocator beacons must be consumed before granting their result."
