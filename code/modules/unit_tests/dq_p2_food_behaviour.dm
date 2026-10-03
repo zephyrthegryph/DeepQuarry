@@ -471,3 +471,108 @@
 	TEST_ASSERT(("basket1" in fd_cooking_overlays(C)), "of the first level: [json_encode(fd_cooking_overlays(C))]")
 	rc_alt_click(H, C, null)
 	TEST_ASSERT_EQUAL(length(fd_cooking_overlays(C)), 0, "emptied, it draws nothing extra again")
+
+/// Alt-clicking with something in hand empties it all the same.
+/datum/unit_test/dq_p2_reagents/cooking_container_is_emptied_with_a_full_hand
+
+/datum/unit_test/dq_p2_reagents/cooking_container_is_emptied_with_a_full_hand/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/item/reagent_containers/cooking_container/oven/C = fd_cooking()
+	var/obj/item/reagent_containers/food/snacks/aesirsalad/a = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	rc_click(H, C, a)
+	var/obj/item/pen/pen = fd_thing(/obj/item/pen)
+	rc_alt_click(H, C, pen)
+	TEST_ASSERT_NOTEQUAL(a.loc, C, "the food is out")
+	TEST_ASSERT_EQUAL(pen.loc, H, "and the pen is still in the hand")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Food: what every food has
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// An item that is hot (a flame): what tests the blood of a changeling.
+/obj/item/p2_hot_probe
+	name = "hot probe"
+	w_class = ITEMSIZE_TINY
+
+/obj/item/p2_hot_probe/is_hot()
+	return 1000
+
+/// The person renames a food from the menu, giving `value` when asked.
+/proc/fd_rename(mob/actor, obj/item/reagent_containers/food/F, value)
+	GLOB.om_rerun_answers["[REF(F)]:handle_name_change"] = list("k30" = value)
+	F.handle_name_change(actor)
+	GLOB.om_rerun_answers -= "[REF(F)]:handle_name_change"
+
+/// A person can name a food, and a blank answer puts the name back.
+/datum/unit_test/dq_p2_reagents/food_is_renamed
+
+/datum/unit_test/dq_p2_reagents/food_is_renamed/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/item/reagent_containers/food/snacks/aesirsalad/food = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	var/original = food.name
+	fd_rename(H, food, "Grandmas special")
+	TEST_ASSERT_EQUAL(food.name, "Grandmas special", "the name is what was given")
+	fd_rename(H, food, "")
+	TEST_ASSERT_EQUAL(food.name, original, "a blank answer puts it back")
+	var/obj/item/reagent_containers/food/condiment/C = fd_condiment()
+	fd_rename(H, C, "House sauce")
+	TEST_ASSERT_EQUAL(C.name, "House sauce", "a condiment can be named too")
+
+/// A dead person cannot name a food.
+/datum/unit_test/dq_p2_reagents/dead_person_cannot_rename_food
+
+/datum/unit_test/dq_p2_reagents/dead_person_cannot_rename_food/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/item/reagent_containers/food/snacks/aesirsalad/food = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	var/original = food.name
+	H.death()
+	fd_rename(H, food, "Nope")
+	TEST_ASSERT_EQUAL(food.name, original, "the name is unchanged")
+
+/// A hot thing held to an open drink with a changeling's blood in it makes the blood flee; ordinary blood, a cold thing and a shut can leave it. (A
+/// condiment bottle's own item interaction took the item first, so a hot thing on a bottle did nothing.)
+/datum/unit_test/dq_p2_reagents/hot_thing_tests_blood_in_food
+
+/datum/unit_test/dq_p2_reagents/hot_thing_tests_blood_in_food/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/item/reagent_containers/food/drinks/milk/C = fd_thing(/obj/item/reagent_containers/food/drinks/milk)
+	C.reagents.clear_reagents()
+	C.reagents.add_reagent(REAGENT_ID_BLOOD, 10, list("changeling" = TRUE, "blood_type" = "A+", "donor" = null))
+	var/obj/item/pen/cold = fd_thing(/obj/item/pen)
+	rc_click(H, C, cold, I_HELP)
+	TEST_ASSERT_EQUAL(rc_units(C), 10, "a cold thing does nothing")
+	var/obj/item/p2_hot_probe/hot = fd_thing(/obj/item/p2_hot_probe)
+	rc_click(H, C, hot, I_HELP)
+	TEST_ASSERT_EQUAL(rc_units(C), 0, "a hot thing sends the blood fleeing")
+	var/obj/item/reagent_containers/food/drinks/milk/plain = fd_thing(/obj/item/reagent_containers/food/drinks/milk)
+	plain.reagents.clear_reagents()
+	plain.reagents.add_reagent(REAGENT_ID_BLOOD, 10, list("blood_type" = "A+", "donor" = null))
+	rc_click(H, plain, hot, I_HELP)
+	TEST_ASSERT_EQUAL(rc_units(plain), 10, "ordinary blood stays")
+	var/obj/item/reagent_containers/food/drinks/cans/cola/can = fd_thing(/obj/item/reagent_containers/food/drinks/cans/cola)
+	can.reagents.add_reagent(REAGENT_ID_BLOOD, 5, list("changeling" = TRUE, "blood_type" = "A+", "donor" = null))
+	var/before = rc_units(can)
+	rc_click(H, can, hot, I_HELP)
+	TEST_ASSERT_EQUAL(rc_units(can), before, "a shut can is not tested")
+	var/obj/item/reagent_containers/food/condiment/bottle = fd_condiment(/obj/item/reagent_containers/food/condiment)
+	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, list("changeling" = TRUE, "blood_type" = "A+", "donor" = null))
+	rc_click(H, bottle, hot, I_HELP)
+	TEST_ASSERT_EQUAL(rc_units(bottle), 10, "a condiment bottle does not test it")
+
+/// A food put on a table by a click lands in the grid cell that was clicked (the item's centre of mass in the cell).
+/datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table
+
+/datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/structure/table/table = allocate(/obj/structure/table/standard, run_loc_floor_bottom_left)
+	var/obj/item/reagent_containers/food/snacks/aesirsalad/food = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
+	H.drop_item()
+	H.put_in_active_hand(food)
+	H.set_use_stance(I_HELP)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, table, null, null, "left=1;icon-x=28;icon-y=4"))
+	rc_settle()
+	TEST_ASSERT_EQUAL(food.loc, get_turf(table), "the food is on the table")
+	// cell size 4, so x 28 is cell 7 and y 4 is cell 1: pixel = 4 * (0.5 + cell) - the centre of mass
+	TEST_ASSERT_EQUAL(food.pixel_x, 4 * 7.5 - food.center_of_mass_x, "aligned in x")
+	TEST_ASSERT_EQUAL(food.pixel_y, 4 * 1.5 - food.center_of_mass_y, "aligned in y")
