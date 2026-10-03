@@ -233,5 +233,4 @@ DECLARE_INTERACTIONS(/obj/item/ore, INTERACT_ITEM(null, PROC_REF(interaction_ite
 /// Sand thrown in someone's eyes is gone once it lands.
 /obj/item/ore/proc/scatter_if_dropped()
 	if(isturf(loc))
-		qdel(src)
-
+		consume(src)
