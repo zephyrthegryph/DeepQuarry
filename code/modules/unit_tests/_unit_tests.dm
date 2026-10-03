@@ -599,6 +599,8 @@
 #include "interim_inventory_screen_actor.dm"
 #include "interim_rune_visibility_endings.dm"
 #include "interim_poster_recovery.dm"
+#include "interim_wall_dismantle_materials.dm"
+#include "interim_barrier_emag_stages.dm"
 #include "interim_speech_image_capture.dm"
 #include "interim_legacy_item_screen_actor.dm"
 #include "interim_foam_wall_removal.dm"
