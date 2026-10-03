@@ -104,3 +104,6 @@ changes:
   - bugfix: "Safe retrieval refunds the removed item's occupied capacity."
   - bugfix: "Energy melee weapons redraw their actual holder's hands."
   - bugfix: "Artifact harvesters respect held-battery release rules."
+  - bugfix: "Monkey rehydrators and microwaves respect items that cannot leave your hand."
+  - bugfix: "ATMs respect stuck IDs, and message server upgrades require consuming their board."
+  - bugfix: "ATM deposits require consuming cash, and stuck hailer masks and electrohelmets retain their parts when disassembly is refused."
