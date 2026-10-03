@@ -39,7 +39,7 @@
 	if(length(deleted))
 		. |= deleted
 
-/datum/computer_file/data/email_account/proc/send_mail(recipient_address, datum/computer_file/data/email_message/message, relayed = 0)
+/datum/computer_file/data/email_account/proc/send_mail(recipient_address, datum/computer_file/data/email_message/message, relayed = 0, mob/user)
 	var/datum/computer_file/data/email_account/recipient
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
 		if(account.login == recipient_address)
@@ -49,13 +49,13 @@
 	if(!istype(recipient))
 		return 0
 
-	if(!recipient.receive_mail(message, relayed))
+	if(!recipient.receive_mail(message, relayed, user))
 		return
 
 	GLOB.ntnet_global.add_log_with_ids_check("EMAIL LOG: [login] -> [recipient.login] title: [message.title].")
 	return 1
 
-/datum/computer_file/data/email_account/proc/receive_mail(datum/computer_file/data/email_message/received_message, relayed)
+/datum/computer_file/data/email_account/proc/receive_mail(datum/computer_file/data/email_message/received_message, relayed, mob/user)
 	received_message.set_timestamp()
 	if(!GLOB.ntnet_global.intrusion_detection_enabled)
 		rel_add(src, nameof(inbox), received_message)
@@ -80,19 +80,19 @@
 /datum/computer_file/data/email_account/service/broadcaster
 	login = EMAIL_BROADCAST
 
-/datum/computer_file/data/email_account/service/broadcaster/receive_mail(datum/computer_file/data/email_message/received_message, relayed)
+/datum/computer_file/data/email_account/service/broadcaster/receive_mail(datum/computer_file/data/email_message/received_message, relayed, mob/user)
 	if(suspended || !istype(received_message) || relayed)
 		return FALSE
 	// Possibly exploitable for user spamming so keep admins informed.
 	if(!received_message.spam)
-		log_and_message_admins("Broadcast email address used by [usr]. Message title: [received_message.title].")
+		log_and_message_admins("Broadcast email address used by [user]. Message title: [received_message.title].")
 
-	// One delivery every two deciseconds, on the broadcaster's clock.
+	// One delivery every 0.2 seconds, on the broadcaster's clock.
 	var/delay = 0
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		var/datum/computer_file/data/email_message/new_message = received_message.clone()
-		om_after(src, delay, PROC_REF(send_mail), email_account.login, new_message, 1)
-		delay += 2
+		om_after(src, delay, PROC_REF(send_mail), email_account.login, new_message, 1, user)
+		delay += 0.2 SECONDS
 
 	return TRUE
 

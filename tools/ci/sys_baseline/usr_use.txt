@@ -284,7 +284,6 @@ usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // UI_ACT handlers may read usr, as they do when the user clicks.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor // Verbs and panel procs read usr, as they did when first run.
 usr_outside_verb	code/datums/topic/topic_dispatch.dm	return topic_dispatch(src, usr, href_list)
-usr_outside_verb	code/datums/wires/particle_accelerator.dm	C.add_strength(usr)
 usr_outside_verb	code/defines/procs/announce.dm	log_game("[key_name(usr)] has made \a [announcement_type]: [message_title] - [message] - [announcer]")
 usr_outside_verb	code/defines/procs/announce.dm	message_admins("[key_name_admin(usr)] has made \a [announcement_type].", 1)
 usr_outside_verb	code/game/antagonist/station/highlander.dm	tgui_alert_async(usr, "The game hasn't started yet!")
@@ -672,7 +671,6 @@ usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("You hav
 usr_outside_verb	code/modules/mob/mob_movement.dm	to_chat(usr, span_red("This mob type cannot drop items."))
 usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
-usr_outside_verb	code/modules/modular_computers/NTNet/emails/email_account.dm	log_and_message_admins("Broadcast email address used by [usr]. Message title: [received_message.title].")
 usr_outside_verb	code/modules/modular_computers/computers/modular_computer/core.dm	var/mob/user = usr
 usr_outside_verb	code/modules/modular_computers/computers/modular_computer/core.dm	var/mob/user = usr
 usr_outside_verb	code/modules/multiz/hoist.dm	if(!Adjacent(usr) || !dest.Adjacent(usr)) return // carried over from the default proc

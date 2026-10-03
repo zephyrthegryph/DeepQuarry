@@ -95,9 +95,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 		if(strength > strength_upper_limit)
 			strength = strength_upper_limit
 		else
-			message_admins("PA Control Computer increased to [strength] by [key_name(user, user.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
+			message_admins("PA Control Computer increased to [strength] by [key_name(user, user?.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
 			log_game("PACCEL([x],[y],[z]) [key_name(user)] increased to [strength]")
-			investigate_log("increased to " + span_red("[strength]") + " by [user.key]","singulo")
+			investigate_log("increased to " + span_red("[strength]") + " by [user?.key]","singulo")
 		strength_change()
 
 /obj/machinery/particle_accelerator/control_box/proc/remove_strength(mob/user, s)
@@ -106,9 +106,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/particle_accelerator/control_box, "{appearanc
 		if(strength < 0)
 			strength = 0
 		else
-			message_admins("PA Control Computer decreased to [strength] by [key_name(user, user.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
+			message_admins("PA Control Computer decreased to [strength] by [key_name(user, user?.client)][ADMIN_QUE(user)] in [ADMIN_COORDJMP(src)]")
 			log_game("PACCEL([x],[y],[z]) [key_name(user)] decreased to [strength]")
-			investigate_log("decreased to " + span_green("[strength]") + " by [user.key]","singulo")
+			investigate_log("decreased to " + span_green("[strength]") + " by [user?.key]","singulo")
 		strength_change()
 
 /obj/machinery/particle_accelerator/control_box/power_change()
