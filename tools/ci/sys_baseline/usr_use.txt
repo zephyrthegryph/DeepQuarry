@@ -46,16 +46,6 @@ usr_outside_verb	code/_onclick/hud/alert.dm	to_chat(usr,span_boldnotice(name) + 
 usr_outside_verb	code/_onclick/hud/alert.dm	return usr.client.Click(master, location, control, params)
 usr_outside_verb	code/_onclick/hud/ghost.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/ghost.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/ghost.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/ghost.dm	var/mob/observer/dead/G = usr
 usr_outside_verb	code/_onclick/hud/gun_mode.dm	if(!usr)
 usr_outside_verb	code/_onclick/hud/gun_mode.dm	var/mob/living/user = usr
 usr_outside_verb	code/_onclick/hud/gun_mode.dm	var/mob/living/user = usr
