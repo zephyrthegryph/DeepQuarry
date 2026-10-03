@@ -877,6 +877,7 @@
 #include "interim_crate_sticky_electropack.dm"
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
+#include "interim_assembly_holder_sticky_disassembly.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

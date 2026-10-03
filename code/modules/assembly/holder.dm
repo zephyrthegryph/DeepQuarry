@@ -155,6 +155,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 		var/turf/T = get_turf(src)
 		if(!T)
 			return TRUE
+		if(loc?.release_refusal(src, user))
+			return TRUE
 		// Taken out of the holder before it is consumed (CONTAINED: they must leave its slots first).
 		var/obj/item/assembly/left = own_take(src, nameof(a_left))
 		var/obj/item/assembly/right = own_take(src, nameof(a_right))

@@ -138,3 +138,6 @@ changes:
   - bugfix: "Glass jars and reconstitutors respect banknotes and paste that cannot leave your hand."
   - bugfix: "Material weapon shattering and bluespace crystal use respect release rules and clear consumed originals from hands."
   - bugfix: "Micro-mech boarding, powered backpack pickup and technomancer spell buttons use the initiating actor."
+  - bugfix: "Mining vouchers must be consumed before granting rewards; tourniquets and crate electropacks respect release rules."
+  - bugfix: "Autopsy scanners dispose of their copied wound records when rescanned or removed."
+  - bugfix: "Inventory dragging safely handles missing targets; stuck assembly holders retain their original components."
