@@ -3605,3 +3605,9 @@
 	into += list(global.every(5, global.then(PROC_REF(fast_tick))))
 
 #endif
+/// declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.
+/proc/declared_keyed_targets()
+	. = list()
+	.[/obj/machinery/door/blast] = "id"
+	.[/obj/machinery/mass_driver] = "id"
+
