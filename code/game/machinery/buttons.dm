@@ -118,9 +118,19 @@
 /obj/machinery/button/mob_spawner_button/second
 	link = "MOBSPAWNSECOND"
 
-/obj/machinery/button/remote/noemag/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	to_chat(user, span_warning("The cryptographic sequencer seems to do nothing."))
-	return 0
+MSG_DEF_SELF(button/no_emag, "The cryptographic sequencer seems to do nothing.")
+
+// A button no sequencer works: it says so and the card keeps its use.
+CAPABILITIES(/obj/machinery/button/remote/noemag, \
+	without(CAP_EMAG), \
+	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0), \
+		needs(req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), then(PROC_REF(press_nothing))))
+
+/obj/machinery/button/remote/noemag/proc/sequencer_welcome(datum/act/A)
+	return FALSE
+
+/obj/machinery/button/remote/noemag/proc/press_nothing(datum/act/op/A)
+	return OP_OK
 
 /// mobspawned (a relation view: it reads null once the target is deleted).
 /obj/machinery/button/mob_spawner_button/proc/mobspawned() as /mob/living/simple_mob

@@ -197,6 +197,15 @@
 /datum/capdef_decl/c_maintenance_hatch/spec()
 	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say")
 
+/// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:13
+/datum/capability/lib/multitool_settings
+	var/settings = null
+/proc/multitool_settings(settings)
+	RETURN_TYPE(/datum/capability/lib/multitool_settings)
+	return cap_construct(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, list(settings), "settings")
+/datum/capdef_decl/c_multitool_settings/spec()
+	return list(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, NONE, STACK, "multitool_settings", "settings")
+
 /// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:10
 /datum/capability/lib/natural_weapon
 	var/weapon = /datum/natural_weapon
@@ -2145,21 +2154,84 @@
 	into += entry_line(121)
 	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
 
-/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
+/// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:325
+/obj/machinery/access_button/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 325, /obj/machinery/access_button)
+	into += entry_line(326)
+	into += list(global.multitool_settings(list( list("Tag", "master_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'."))))
+	into += entry_line(330)
+	into += list(global.op("press", global.inputs(global.hand(), global.item(/obj/item/card/id), global.item(/obj/item/pda)), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(button_allows), because = MSG(access_button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(331)
+	into += list(global.on_op("press", global.then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
+
+/// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:190
+/obj/machinery/airlock_sensor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 190, /obj/machinery/airlock_sensor)
+	into += entry_line(191)
+	into += list(global.multitool_settings(list( list("Master Tag", "master_tag", "text", 30), list("ID Tag", "id_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior."))))
+	into += entry_line(196)
+	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
+
+/// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
+/obj/machinery/button/remote/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/door_control.dm", 34, /obj/machinery/button/remote)
+	into += entry_line(35)
+	into += list(global.emag(global.then(PROC_REF(lock_scorched)), repeatable = TRUE))
+	into += entry_line(36)
+	into += list(global.extend("emag.use", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
+	into += entry_line(37)
+	into += list(global.extend("emag.subvert", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
+	into += entry_line(38)
+	into += list(global.op("press_hand", global.hand(), global.label("Toggle"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(40)
+	into += list(global.op("press_item", global.item(/obj/item), global.label("Toggle"), global.when(global.req(PROC_REF(item_presses))), global.priority(OP_PRIORITY_NORMAL + 1), global.wait(0), global.needs(global.req(PROC_REF(button_works), because = MSG(button/dead)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(42)
+	into += list(global.op("press_silicon", global.ai(), global.wait(0), global.needs(global.req(PROC_REF(has_network), because = MSG(button/no_route)), global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(44)
+	into += list(global.on_op("press_hand", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+	into += entry_line(45)
+	into += list(global.on_op("press_item", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+	into += entry_line(46)
+	into += list(global.on_op("press_silicon", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+
+/// CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod) at code/modules/mining/shelter_atoms.dm:643
+/obj/machinery/button/remote/airlock/survival_pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/shelter_atoms.dm", 643, /obj/machinery/button/remote/airlock/survival_pod)
+	into += entry_line(644)
+	into += list(global.without("press_hand"))
+	into += entry_line(645)
+	into += list(global.op("pod_use", global.hand(), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(pod_used))))
+
+/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:187
 /obj/machinery/button/remote/blast_door/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 176, /obj/machinery/button/remote/blast_door)
-	into += entry_line(177)
+	into += entry_block("code/game/machinery/door_control.dm", 187, /obj/machinery/button/remote/blast_door)
+	into += entry_line(188)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
 
-/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:227
+/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:238
 /obj/machinery/button/remote/driver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 227, /obj/machinery/button/remote/driver)
-	into += entry_line(228)
+	into += entry_block("code/game/machinery/door_control.dm", 238, /obj/machinery/button/remote/driver)
+	into += entry_line(239)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
-	into += entry_line(229)
+	into += entry_line(240)
 	into += list(global.ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
+	into += entry_line(241)
+	into += list(global.op("set_id", global.tool(TOOL_MULTITOOL), global.label("Set the id"), global.wait(0), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(id_question)))), global.then(PROC_REF(id_entered))))
+
+/// CAPABILITIES(/obj/machinery/button/remote/noemag) at code/game/machinery/buttons.dm:124
+/obj/machinery/button/remote/noemag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/buttons.dm", 124, /obj/machinery/button/remote/noemag)
+	into += entry_line(125)
+	into += list(global.without(CAP_EMAG))
+	into += entry_line(126)
+	into += list(global.op("emag_refused", global.item(/obj/item/card/emag), global.priority(OP_PRIORITY_SUBVERT), global.wait(0), global.needs(global.req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), global.then(PROC_REF(press_nothing))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -2466,6 +2538,33 @@
 	into += list(global.op("crowbar_shut", global.tool(TOOL_CROWBAR), global.when(nameof(density)), global.priority(OP_PRIORITY_PART), global.wait(0), global.then(PROC_REF(nothing_done))))
 	into += entry_line(169)
 	into += list(global.op("pry_out", global.tool(TOOL_CROWBAR), global.label("Pry out of the frame"), global.when(global.cond_not(nameof(density))), global.when(PROC_REF(not_swinging)), global.priority(OP_PRIORITY_PART), global.wait(4 SECONDS), global.then(PROC_REF(pried_out))))
+
+/// CAPABILITIES(/obj/machinery/door_timer) at code/game/machinery/doors/brigdoors.dm:51
+/obj/machinery/door_timer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/brigdoors.dm", 51, /obj/machinery/door_timer)
+	into += entry_line(52)
+	into += list(global.ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig))
+	into += entry_line(53)
+	into += list(global.ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id)))
+	into += entry_line(54)
+	into += list(global.ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id)))
+	into += entry_line(55)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(redraw)), when = nameof(timing)))
+	into += entry_line(56)
+	into += list(global.interface("BrigTimer", title = "Door Timer"))
+	into += entry_line(57)
+	into += list(global.op("time", global.ui_act("time", global.arg("time", global.int(0, MAX_TIMER))), global.then(PROC_REF(ui_time))))
+	into += entry_line(58)
+	into += list(global.op("start", global.ui_act("start"), global.then(PROC_REF(ui_start))))
+	into += entry_line(59)
+	into += list(global.op("stop", global.ui_act("stop"), global.then(PROC_REF(ui_stop))))
+	into += entry_line(60)
+	into += list(global.op("flash", global.ui_act("flash"), global.then(PROC_REF(ui_flash))))
+	into += entry_line(61)
+	into += list(global.op("preset", global.ui_act("preset", global.arg("preset", global.enum(list("short", "medium", "long")))), global.then(PROC_REF(ui_preset))))
+	into += entry_line(62)
+	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(timer_access), because = MSG(door_timer/denied)))))
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166
 /obj/machinery/power/apc/declared_entries(list/into)
@@ -3885,5 +3984,7 @@
 /proc/declared_keyed_targets()
 	. = list()
 	.[/obj/machinery/door/blast] = "id"
+	.[/obj/machinery/door/window/brigdoor] = "id"
+	.[/obj/machinery/flasher] = "id"
 	.[/obj/machinery/mass_driver] = "id"
 

@@ -177,6 +177,18 @@
 /obj/machinery/button/remote/airlock/p2_test
 	id = "p2_airlock_test"
 
+/obj/machinery/button/remote/blast_door/single_use/p2_test
+	id = "p2_blast_test"
+
+/obj/machinery/button/remote/driver/p2_test
+	id = "p2_blast_test"
+
+/obj/machinery/door/window/brigdoor/p2_test
+	id = "p2_cell"
+
+/obj/machinery/door_timer/p2_test
+	id = "p2_cell"
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Base: the kernel on its injected clock around the test (unless the test runs live), a clean driver after.
 // ---------------------------------------------------------------------------------------------------------------------
@@ -2139,6 +2151,278 @@
 	TEST_ASSERT(D.density, "a brig door refuses a medic")
 	click(guard, D, null)
 	TEST_ASSERT(!D.density, "and opens for security")
+
+// =====================================================================================================================
+// REMOTE BUTTONS
+// =====================================================================================================================
+
+/// A button at (4, 2) with a person next to it, and a blast door of its id.
+/datum/unit_test/dq_p2_door/proc/button_setup(button_type = /obj/machinery/button/remote/blast_door/p2_test, list/access)
+	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular/p2_test)
+	var/obj/machinery/button/remote/button = allocate(button_type, tile(4, 2))
+	p2_door_set_power(button, TRUE)
+	if(access)
+		button.req_access = access
+	return list(B, button)
+
+/datum/unit_test/dq_p2_door/button_access_lock_keeps_out_strangers
+
+/datum/unit_test/dq_p2_door/button_access_lock_keeps_out_strangers/run_gate()
+	var/list/set_up = button_setup(access = list(ACCESS_ENGINE))
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/carbon/human/stranger = make_person(null, tile(4, 3))
+	var/mob/living/carbon/human/engineer = make_person(list(ACCESS_ENGINE), tile(5, 2))
+	click(stranger, button, null)
+	TEST_ASSERT(B.density, "a stranger cannot work a locked button")
+	click(engineer, button, null)
+	TEST_ASSERT(!B.density, "an engineer can")
+
+/datum/unit_test/dq_p2_door/button_is_pressed_by_any_held_thing
+
+/datum/unit_test/dq_p2_door/button_is_pressed_by_any_held_thing/run_gate()
+	var/list/set_up = button_setup()
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/carbon/human/H = make_person(null, tile(4, 3))
+	click(H, button, give_item(H, /obj/item/pen))
+	TEST_ASSERT(!B.density, "a pen presses a remote button")
+
+/datum/unit_test/dq_p2_door/button_sequencer_scorches_the_lock_off
+
+/datum/unit_test/dq_p2_door/button_sequencer_scorches_the_lock_off/run_gate()
+	var/list/set_up = button_setup(access = list(ACCESS_ENGINE))
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/carbon/human/H = make_person(null, tile(4, 3))
+	var/obj/item/card/emag/emag = give_item(H, /obj/item/card/emag)
+	click(H, button, emag)
+	TEST_ASSERT(!LAZYLEN(button.req_access), "the sequencer burns the lock off")
+	click(H, button, null)
+	TEST_ASSERT(!B.density, "and a stranger works it")
+
+/datum/unit_test/dq_p2_door/button_silicon_presses_it_from_afar
+
+/datum/unit_test/dq_p2_door/button_silicon_presses_it_from_afar/run_gate()
+	var/list/set_up = button_setup()
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/silicon/ai/AI = make_ai()
+	button.silicon_pressed(AI)
+	settle()
+	TEST_ASSERT(!B.density, "an AI works a remote button")
+
+/datum/unit_test/dq_p2_door/button_single_use_is_spent
+
+/datum/unit_test/dq_p2_door/button_single_use_is_spent/run_gate()
+	var/list/set_up = button_setup(/obj/machinery/button/remote/blast_door/single_use/p2_test)
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/carbon/human/H = make_person(null, tile(4, 3))
+	click(H, button, null)
+	TEST_ASSERT(!B.density, "the first press opens it")
+	click(H, button, null)
+	TEST_ASSERT(!B.density, "a spent button does nothing")
+
+/datum/unit_test/dq_p2_door/driver_button_wants_an_id_or_a_pda
+
+/datum/unit_test/dq_p2_door/driver_button_wants_an_id_or_a_pda/run_gate()
+	var/list/set_up = button_setup(/obj/machinery/button/remote/driver/p2_test)
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/button = set_up[2]
+	var/mob/living/carbon/human/H = make_person(null, tile(4, 3))
+	click(H, button, give_item(H, /obj/item/pen))
+	TEST_ASSERT(B.density, "a pen does not press the mass driver button")
+	p2_door_click(H, button, give_item(H, /obj/item/card/id))
+	test_time(1 SECOND)
+	TEST_ASSERT(!B.density, "an ID does")
+	test_time(8 SECONDS)
+	TEST_ASSERT(B.density, "and the doors shut again after the launch")
+
+/datum/unit_test/dq_p2_door/driver_button_id_is_set_with_a_multitool
+
+/datum/unit_test/dq_p2_door/driver_button_id_is_set_with_a_multitool/run_gate()
+	var/list/set_up = button_setup(/obj/machinery/button/remote/driver/p2_test)
+	var/obj/machinery/door/blast/B = set_up[1]
+	var/obj/machinery/button/remote/driver/button = set_up[2]
+	var/mob/living/carbon/human/H = make_person(null, tile(4, 3))
+	p2_door_click(H, button, give_tool(H, /obj/item/multitool))
+	p2_door_answer(H, 4242)
+	settle()
+	TEST_ASSERT_EQUAL(button.id, 4242, "the multitool sets the id")
+	p2_door_click(H, button, give_item(H, /obj/item/card/id))
+	test_time(1 SECOND)
+	TEST_ASSERT(B.density, "and the old door no longer answers it")
+
+// =====================================================================================================================
+// AIRLOCK SENSORS AND ACCESS BUTTONS
+// =====================================================================================================================
+
+/// Hears what a sensor or a button sends on the airlock frequency.
+/obj/p2_radio_listener
+	var/list/heard
+
+/obj/p2_radio_listener/receive_signal(datum/signal/signal)
+	LAZYADD(heard, list(signal.data.Copy()))
+
+/// A listener on the airlock frequency, next to where a sensor or a button is put at (2, 2).
+/datum/unit_test/dq_p2_door/proc/radio_listener()
+	var/obj/p2_radio_listener/L = allocate(/obj/p2_radio_listener, tile(1, 2))
+	GLOB.radio_service.add_object(L, AIRLOCK_FREQ, RADIO_AIRLOCK)
+	return L
+
+/datum/unit_test/dq_p2_door/access_button_sends_its_command_to_whoever_has_access
+
+/datum/unit_test/dq_p2_door/access_button_sends_its_command_to_whoever_has_access/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	button.master_tag = "p2_controller"
+	button.req_access = list(ACCESS_ENGINE)
+	var/mob/living/carbon/human/stranger = make_person(null, tile(3, 2))
+	var/mob/living/carbon/human/engineer = make_person(list(ACCESS_ENGINE), tile(3, 3))
+	click(stranger, button, null)
+	TEST_ASSERT(!LAZYLEN(L.heard), "a stranger's press sends nothing")
+	click(engineer, button, null)
+	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an engineer's press sends one signal")
+	var/list/signal = L.heard[1]
+	TEST_ASSERT_EQUAL(signal["tag"], "p2_controller", "to its controller")
+	TEST_ASSERT_EQUAL(signal["command"], "cycle_interior", "with its command")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/access_button_takes_a_swiped_id
+
+/datum/unit_test/dq_p2_door/access_button_takes_a_swiped_id/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	button.req_access = list(ACCESS_ENGINE)
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	var/obj/item/card/id/card = give_item(H, /obj/item/card/id)
+	card.access = list(ACCESS_ENGINE)
+	click(H, button, card)
+	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an ID swiped on it presses it")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure
+
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/airlock_sensor/sensor = allocate(/obj/machinery/airlock_sensor/airlock_interior, tile(2, 2))
+	p2_door_set_power(sensor, TRUE)
+	sensor.master_tag = "p2_controller"
+	sensor.id_tag = "p2_sensor"
+	sensor.previousPressure = null // it read once when it was made, before it had its tag
+	sensor.sample_pressure()
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	click(H, sensor, null)
+	var/cycled = FALSE
+	var/reported = FALSE
+	for(var/list/signal in L.heard)
+		if(signal["command"] == "cycle_interior" && signal["tag"] == "p2_controller")
+			cycled = TRUE
+		if(signal["tag"] == "p2_sensor" && !isnull(signal["pressure"]))
+			reported = TRUE
+	TEST_ASSERT(cycled, "a hand on it asks the controller to cycle")
+	TEST_ASSERT(reported, "and it reports the pressure under its id tag")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool
+
+/datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool/run_gate()
+	var/obj/machinery/access_button/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	var/obj/item/tool = give_tool(H, /obj/item/multitool)
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "Tag")
+	p2_door_answer(H, "p2_new_tag")
+	settle()
+	TEST_ASSERT_EQUAL(button.master_tag, "p2_new_tag", "the multitool sets the tag")
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "Command")
+	p2_door_answer(H, "open")
+	settle()
+	TEST_ASSERT_EQUAL(button.command, "open", "and the command")
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "None")
+	settle()
+	TEST_ASSERT_EQUAL(button.command, "open", "None leaves it as it is")
+
+// =====================================================================================================================
+// BRIG DOOR TIMERS
+// =====================================================================================================================
+
+/// A timer, a brig windoor and a cell closet of one id, at (2, 2), (1, 2) and (4, 2); the door is open.
+/datum/unit_test/dq_p2_door/proc/timer_setup(list/access)
+	var/obj/machinery/door/window/brigdoor/D = allocate(/obj/machinery/door/window/brigdoor/p2_test, tile(1, 2))
+	p2_door_set_power(D, TRUE)
+	var/obj/machinery/door_timer/T = allocate(/obj/machinery/door_timer/p2_test, tile(2, 2))
+	T.atom_fix() // it broke itself at LateInitialize, before its keyed doors had linked
+	p2_door_set_power(T, TRUE)
+	if(access)
+		T.req_access = access
+	return list(T, D)
+
+/datum/unit_test/dq_p2_door/timer_closes_the_cell_then_lets_it_go
+
+/datum/unit_test/dq_p2_door/timer_closes_the_cell_then_lets_it_go/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/obj/machinery/door/window/brigdoor/D = set_up[2]
+	D.open()
+	test_time(2 SECONDS)
+	TEST_ASSERT(!D.density, "the cell door is open")
+	var/mob/living/carbon/human/H = make_person(list(ACCESS_BRIG), tile(3, 2))
+	p2_door_ui(H, T, "time", list("time" = 6))
+	p2_door_ui(H, T, "start")
+	test_time(2 SECONDS)
+	TEST_ASSERT(T.timing, "it is counting")
+	TEST_ASSERT(D.density, "and the cell door is shut")
+	test_time(10 SECONDS)
+	TEST_ASSERT(!T.timing, "when the time is up it stops")
+	TEST_ASSERT(!D.density, "and lets the door go")
+
+/datum/unit_test/dq_p2_door/timer_stop_lets_it_go_early
+
+/datum/unit_test/dq_p2_door/timer_stop_lets_it_go_early/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/obj/machinery/door/window/brigdoor/D = set_up[2]
+	D.open()
+	test_time(2 SECONDS)
+	var/mob/living/carbon/human/H = make_person(list(ACCESS_BRIG), tile(3, 2))
+	p2_door_ui(H, T, "time", list("time" = 600))
+	p2_door_ui(H, T, "start")
+	test_time(2 SECONDS)
+	TEST_ASSERT(D.density, "shut")
+	p2_door_ui(H, T, "stop")
+	test_time(2 SECONDS)
+	TEST_ASSERT(!T.timing, "stopped")
+	TEST_ASSERT(!D.density, "and the door is let go")
+
+/datum/unit_test/dq_p2_door/timer_window_wants_access
+
+/datum/unit_test/dq_p2_door/timer_window_wants_access/run_gate()
+	var/list/set_up = timer_setup(list(ACCESS_BRIG))
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/mob/living/carbon/human/stranger = make_person(null, tile(3, 2))
+	p2_door_ui(stranger, T, "time", list("time" = 60))
+	TEST_ASSERT_EQUAL(T.timer_duration, 0, "a stranger cannot set the time")
+	var/mob/living/carbon/human/guard = make_person(list(ACCESS_BRIG), tile(3, 3))
+	p2_door_ui(guard, T, "time", list("time" = 60))
+	TEST_ASSERT_EQUAL(T.timer_duration, 600, "a guard can")
+	p2_door_ui(guard, T, "preset", list("preset" = "short"))
+	TEST_ASSERT_EQUAL(T.timer_duration, 600 + 600, "a preset is added to the time")
+
+/datum/unit_test/dq_p2_door/timer_window_shows_what_it_counts
+
+/datum/unit_test/dq_p2_door/timer_window_shows_what_it_counts/run_gate()
+	var/list/set_up = timer_setup()
+	var/obj/machinery/door_timer/T = set_up[1]
+	var/list/data = T.ui_data(null)
+	TEST_ASSERT(!data["timing"], "not counting")
+	TEST_ASSERT_EQUAL(data["max_time_left"], MAX_TIMER, "with its longest time")
 
 // =====================================================================================================================
 // THE RECORDER

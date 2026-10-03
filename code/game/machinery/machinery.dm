@@ -462,6 +462,24 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 	return ..()
 
+MSG_DEF_SELF(machine/not_working, "It isn't working.")
+MSG_DEF_SELF(machine/cant_reach, "You can't reach it like this.")
+MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
+
+/// The hand needs what the machinery hand gate needs: power, posture and dexterity.
+/obj/machinery/proc/hand_ok(datum/act/op/A)
+	return isnull(hand_refusal(A))
+
+/obj/machinery/proc/hand_refusal(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!operable(MAINT))
+		return /datum/msg/machine/not_working
+	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
+		return /datum/msg/machine/cant_reach
+	if(!user?.IsAdvancedToolUser())
+		return /datum/msg/machine/no_dexterity
+	return null
+
 /// The parts changed: a machine recomputes what its parts rate (until the machine track turns this into components(slots)).
 /obj/machinery/proc/RefreshParts()
 	return

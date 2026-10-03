@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Remote door and blast door buttons, the mass driver button, airlock sensors, access buttons and the brig door timer are rebuilt on the capability engine; multitool settings are a shared library capability."
+  - bugfix: "The brig door timer counts on a timer of its own, so it ends when the time is up whatever the machine tick."

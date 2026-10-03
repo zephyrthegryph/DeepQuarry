@@ -2939,17 +2939,16 @@ GLOBAL_LIST_EMPTY(dq_atmos_test_air_snapshots)
 	dq_atmos_test_isolate_pair(T, T)
 	T.air_update_turf(TRUE, FALSE)
 	var/obj/machinery/airlock_sensor/S = new(T)
-	S.machine_step()
-	TEST_ASSERT(!machine_stepping(S), \
-		"stable airlock sensor did not enter gas dependency sleep")
-	TEST_ASSERT(om_watch_armed(S), "sleeping airlock sensor did not arm a gas watch")
+	S.sample_pressure()
+	TEST_ASSERT(om_watch_armed(S), "a settled airlock sensor did not arm a gas watch")
+	var/before = S.previousPressure
 	T.return_air().adjust_moles(/datum/gas/oxygen, 10)
 	for(var/i in 1 to 4096)
 		GLOB.machine_service.wake_dirty_gas_subscribers()
-		if(machine_stepping(S))
+		if(S.previousPressure != before)
 			break
-	TEST_ASSERT(machine_stepping(S), \
-		"pressure mutation did not wake sleeping airlock sensor")
+	TEST_ASSERT(S.previousPressure != before, "pressure mutation did not make the airlock sensor read again")
+	TEST_ASSERT(om_watch_armed(S), "the sensor did not go back to waiting on its gas")
 	qdel(S)
 
 

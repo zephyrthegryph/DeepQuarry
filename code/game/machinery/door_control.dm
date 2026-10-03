@@ -19,75 +19,86 @@
 	idle_power_usage = 2
 	active_power_usage = 4
 
-/obj/machinery/button/remote/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/remote_toggle,
-		/datum/interaction/machine_item/remote_toggle_item,
-	)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle", PROC_REF(remote_silicon_use)))
-	..()
+// ---- what a remote button is, declared ----
+//
+// A switch that works something at a distance: the hand that presses it (by the machinery's hand gate), any thing held (an ID or a PDA only, for
+// the mass driver's), a silicon at any range when its network wire is whole. An access lock keeps out whoever has no access (with the check
+// wire whole), a sequencer scorches the lock off, and a single use one is spent once pressed. What each kind works is its trigger().
 
-/// Old attack_ai: silicons press it as a hand would, when its network wire is intact.
-/obj/machinery/button/remote/proc/remote_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(wires_num & 2)
-		attack_hand(user)
-	else
-		to_chat(user, "Error, no route to host.")
+MSG_DEF_SELF(button/denied, "Access Denied")
+MSG_DEF_SELF(button/dead, "It has no power.")
+MSG_DEF_SELF(button/spent, "Nothing happens.")
+MSG_DEF_SELF(button/no_route, "Error, no route to host.")
+MSG_DEF_SELF(button/no_lock, "It has no lock to subvert.")
+
+CAPABILITIES(/obj/machinery/button/remote, \
+	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE), \
+	extend("emag.use", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))), \
+	extend("emag.subvert", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))), \
+	op("press_hand", hand(), label("Toggle"), wait(0), \
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
+	op("press_item", item(/obj/item), label("Toggle"), when(req(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0), \
+		needs(req(PROC_REF(button_works), because = MSG(button/dead)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
+	op("press_silicon", ai(), wait(0), \
+		needs(req(PROC_REF(has_network), because = MSG(button/no_route)), req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
+	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED), \
+	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED), \
+	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+
+DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PROC_REF(silicon_pressed)))
+
+/// A silicon presses it from wherever it can see it (the same press as a hand's).
+/obj/machinery/button/remote/proc/silicon_pressed(mob/user, obj/item/held, datum/interaction/interaction)
+	perform_op(user, src, "press_silicon", origin = ORIGIN_SYSTEM)
 	return TRUE
 
-/// The old attack_hand, gated (it called ..()).
-/datum/interaction/machine_hand/remote_toggle
-	id = "remote_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
-	effect = /obj/machinery/button/remote/proc/interaction_toggle
-
-/// Requirement: TRUE, or why pressing the button does nothing (a spent single-use button).
-/obj/machinery/button/remote/proc/can_press(mob/user, atom/target, obj/item/held)
+/// Any held thing presses it (the mass driver's takes only an ID or a PDA).
+/obj/machinery/button/remote/proc/item_presses(datum/act/op/A)
 	return TRUE
 
-/// The old attackby: `return attack_hand(user)` for any item.
-/datum/interaction/machine_item/remote_toggle_item
-	id = "remote_toggle_item"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	held_type = /obj/item
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
-	effect = /obj/machinery/button/remote/proc/interaction_toggle
+/// Not spent (a single use button is, once pressed).
+/obj/machinery/button/remote/proc/can_press(datum/act/A)
+	return TRUE
 
-/**
- * The remote/driver subtype's own attackby replaced this one outright (no ..()),
- * restricting it to ID cards/PDAs; excluded here so driver instances don't also
- * offer this generic any-item version.
- */
-/datum/interaction/machine_item/remote_toggle_item/applies_to(atom/target)
-	return !istype(target, /obj/machinery/button/remote/driver)
+/// It works at all (it has power and is not broken).
+/obj/machinery/button/remote/proc/button_works(datum/act/A)
+	return operable()
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/button/remote, PROC_REF(on_emag), null)
-/obj/machinery/button/remote/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(LAZYLEN(req_access) || LAZYLEN(req_one_access))
-		req_access = null
-		req_one_access = null
-		play_sfx(src, SFX_SPARKS, 2)
-		return 1
+/// Its network wire is whole (a silicon cannot reach it otherwise).
+/obj/machinery/button/remote/proc/has_network(datum/act/A)
+	return !!(wires_num & 2)
 
-/obj/machinery/button/remote/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/// Whoever has access presses it, and anyone does while its check wire is cut.
+/obj/machinery/button/remote/proc/may_press(datum/act/op/A)
+	return allowed(A.actor) || !(wires_num & 1)
+
+/// A refusal flashes the denial on a working button that is not spent and checks access (what refused it, then, was its lock).
+/obj/machinery/button/remote/proc/denied_flash(datum/act/A)
+	if(operable() && can_press(A) && (wires_num & 1))
+		flick("doorctrl-denied", src)
+	return OP_OK
+
+/// The press: it draws power, shows pressed, toggles what it is set to and works whatever it controls; the picture comes back a moment later.
+/obj/machinery/button/remote/proc/pressed(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
-	if(!operable())
-		return TRUE
-
-	if(!allowed(user) && (wires_num & 1))
-		to_chat(user, span_warning("Access Denied"))
-		flick("doorctrl-denied",src)
-		return TRUE
-
 	use_power(5)
 	icon_state = "doorctrl1"
 	desiredstate = !desiredstate
 	trigger(user)
-	om_after_unique(src, 1.5 SECONDS, TYPE_PROC_REF(/atom, update_icon))
-	return TRUE
+	after(src, 1.5 SECONDS, TYPE_PROC_REF(/atom, update_icon), key = "reset_look", clock = CLOCK_WORLD)
+	return OP_OK
+
+/// A lock (an access list) is there to scorch off.
+/obj/machinery/button/remote/proc/has_access_lock(datum/act/A)
+	return LAZYLEN(req_access) || LAZYLEN(req_one_access) // ALLOW(reads): the access lists are read when the sequencer is tried
+
+/// The sequencer scorches the access lock off.
+/obj/machinery/button/remote/proc/lock_scorched(datum/act/op/A)
+	req_access = null
+	req_one_access = null
+	play_sfx(src, SFX_SPARKS, 2)
+	return OP_OK
 
 /obj/machinery/button/remote/proc/trigger()
 	return
@@ -192,7 +203,7 @@ CAPABILITIES(/obj/machinery/button/remote/blast_door, \
 	density = 1
 
 /// Toggles like any remote button but keeps the bear's sprite.
-/obj/machinery/button/remote/blast_door/bear/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/blast_door/bear/pressed(datum/act/op/A)
 	. = ..()
 	icon_state = "stuffedbear"
 
@@ -226,7 +237,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 /obj/machinery/button/remote/driver/var/list/obj/machinery/mass_driver/controlled_drivers
 CAPABILITIES(/obj/machinery/button/remote/driver, \
 	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)), \
-	ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
+	ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)), \
+	op("set_id", tool(TOOL_MULTITOOL), label("Set the id"), wait(0), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(id_question)))), then(PROC_REF(id_entered))))
 
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)
@@ -235,13 +247,13 @@ CAPABILITIES(/obj/machinery/button/remote/driver, \
 
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
 		M.open()
-	om_after_unique(src, 2 SECONDS, PROC_REF(trigger_step_one))
+	after(src, 2 SECONDS, PROC_REF(trigger_step_one), key = "drive_start", clock = CLOCK_WORLD)
 
 /obj/machinery/button/remote/driver/proc/trigger_step_one()
 	PRIVATE_PROC(TRUE)
 	for(var/obj/machinery/mass_driver/M as anything in controlled_drivers)
 		M.drive()
-	om_after_unique(src, 5 SECONDS, PROC_REF(trigger_step_two))
+	after(src, 5 SECONDS, PROC_REF(trigger_step_two), key = "drive_end", clock = CLOCK_WORLD)
 
 /obj/machinery/button/remote/driver/proc/trigger_step_two()
 	PRIVATE_PROC(TRUE)
@@ -251,30 +263,20 @@ CAPABILITIES(/obj/machinery/button/remote/driver, \
 
 	set_active(FALSE)
 
-/obj/machinery/button/remote/driver/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/remote_driver_id_swipe,
-	)
-	..()
+/// Only an ID or a PDA presses it (any other held thing does nothing).
+/obj/machinery/button/remote/driver/item_presses(datum/act/op/A)
+	return istype(A.held, /obj/item/card/id) || istype(A.held, /obj/item/pda)
 
-/// The old attackby: replaced the base's any-item forward with an ID/PDA-only one.
-/datum/interaction/machine_item/remote_driver_id_swipe
-	id = "remote_driver_id_swipe"
-	name = "Swipe ID"
-	category = INTERACTION_CAT_TOGGLE
-	held_type = list(/obj/item/card/id, /obj/item/pda)
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/button/remote/proc/can_press))
-	effect = /obj/machinery/button/remote/proc/interaction_toggle
+/// What the id is, asked of whoever holds a multitool to it.
+/obj/machinery/button/remote/driver/proc/id_question(datum/act/A)
+	return "[src] has an id of \"[id]\". What would you like it to be?"
 
-/obj/machinery/button/remote/driver/multitool_act(mob/user, obj/item/tool)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(driver_id_entered), message = "[src] has an id of \"[id]\". What would you like it to be?", title = "[src] ID]", default = id, max = 9999, requires = PROMPT_ADJACENT)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/button/remote/driver/proc/driver_id_entered(datum/om/prompt/number/ask)
-	var/new_id = ask.number
+/obj/machinery/button/remote/driver/proc/id_entered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/new_id = R?.value
 	if(new_id)
 		keyed_set_id(src, nameof(id), new_id) // re-links the keyed doors and drivers
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
 /obj/machinery/button/remote/driver/proc/appearance_active()
 	return (active && !has_stat(NOPOWER)) ? 1 : 0
@@ -324,13 +326,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_ac
 	name = "single use button"
 	var/has_been_pressed = FALSE
 
-/obj/machinery/button/remote/blast_door/single_use/can_press(mob/user, atom/target, obj/item/held)
-	if(has_been_pressed)
-		return "nothing happens"
-	return ..()
+TRACKED(/obj/machinery/button/remote/blast_door/single_use, has_been_pressed)
+
+/obj/machinery/button/remote/blast_door/single_use/can_press(datum/act/A)
+	return !has_been_pressed
 
 /obj/machinery/button/remote/blast_door/single_use/trigger()
-	has_been_pressed = TRUE
+	set_has_been_pressed(TRUE)
 	update_icon()
 	..()
 
@@ -343,9 +345,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/driver, "launcher{appearance_ac
 	/// The sprite once pressed.
 	var/pressed_state = "slab1"
 
-/obj/machinery/button/remote/blast_door/single_use/slab/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/blast_door/single_use/slab/pressed(datum/act/op/A)
 	. = ..()
-	to_chat(user,span_notice("You hear a heavy mechanism open somewhere in the distance."))
+	to_chat(A.actor, span_notice("You hear a heavy mechanism open somewhere in the distance."))
 	icon_state = pressed_state
 
 APPEARANCE_NONE(/obj/machinery/button/remote/blast_door/single_use/slab)

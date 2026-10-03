@@ -259,10 +259,9 @@
 	brig.stat_remove(NOPOWER|BROKEN)
 	brig.set_timer(1 MINUTE)
 	brig.timer_start()
-	TEST_ASSERT(sys_periodic_allows(brig, MACHINE_PIPELINE), "starting a brig timer did not declare it stepping")
-	TEST_ASSERT_NOTEQUAL(brig.machine_step(), PROCESS_KILL, "a timing brig timer stopped counting")
+	TEST_ASSERT(brig.timing && after_pending(brig, "end"), "starting a brig timer did not arm its end")
 	brig.timer_end()
-	TEST_ASSERT(!sys_periodic_allows(brig, MACHINE_PIPELINE), "a finished brig timer kept stepping")
+	TEST_ASSERT(!brig.timing && !after_pending(brig, "end"), "a finished brig timer kept a timer pending")
 
 /// A machine that ended its work for lack of power resumes when power returns, and the audit
 /// sees it as idle only while it is unpowered.
