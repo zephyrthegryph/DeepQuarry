@@ -842,13 +842,14 @@
 #include "interim_singularity_beacon_sticky_deployment.dm"
 #include "interim_translocator_sticky_beacon_reclaim.dm"
 #include "interim_glitch_illusion_death_cleanup.dm"
-#include "interim_paper_supply_pickup_actor.dm"
 #include "interim_bluespace_collar_sticky_cracking.dm"
 #include "interim_clipboard_sticky_pen_slot.dm"
 #include "interim_prosthetics_species_upload_refusal.dm"
 #include "interim_prosthetics_species_upload_consumption.dm"
+#include "interim_paper_supply_pickup_actor.dm"
 #include "interim_secure_crate_tamper_cleanup.dm"
 #include "interim_imperion_projectile_range_cleanup.dm"
+#include "interim_fabricator_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -127,3 +127,6 @@ changes:
   - bugfix: "Medical stands retain the chosen actor across patient prompts; ship confirmations recheck the original drag actor."
   - bugfix: "Deck and desk-toy pickup safely reject unsupported actors while preserving cards and toy state."
   - bugfix: "Stickers, deployable singularity beacons and reclaimed translocator beacons must be consumed before granting their result."
+  - bugfix: "Paper-bin and sticky-pad pickup safely reject unsupported actors while preserving their paper stock."
+  - bugfix: "Collar cracking and clipboard pen insertion respect items that cannot leave your hand."
+  - bugfix: "Timed prosthetics species uploads must consume the original disk before adding its fabrication option."

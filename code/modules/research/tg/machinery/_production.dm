@@ -509,7 +509,9 @@ UI_ACT_PROC(/obj/machinery/rnd/production, ui_act_build)
 	icon_state = initial(icon_state)
 
 /obj/machinery/rnd/production/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	var/mob/user = usr
+	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native fabricator drag captures its actor before unchanged layout guards and notifications.
+
+/obj/machinery/rnd/production/proc/choose_drop_with_actor(mob/user, over_location)
 	if(!Adjacent(user))
 		return
 	if(isobserver(user) || user.is_incorporeal())

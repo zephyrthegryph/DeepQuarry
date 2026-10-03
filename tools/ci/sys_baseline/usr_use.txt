@@ -302,8 +302,6 @@ usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
-usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user = usr
-usr_outside_verb	code/modules/research/tg/machinery/mech_fabricator.dm	var/mob/user = usr
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
