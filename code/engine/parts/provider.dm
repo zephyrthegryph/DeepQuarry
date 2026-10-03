@@ -94,7 +94,7 @@
 	. = list()
 	if(actor && !QDELETED(actor))
 		provider_collect(actor, actor, .)
-	if(held && !QDELETED(held))
+	if(held && !QDELETED(held) && isitem(held)) // a dragged mob is no provider
 		provider_collect(held, held, .)
 
 /proc/provider_collect(datum/D, datum/source, list/into)
@@ -220,6 +220,11 @@
 		if(REACH_ADJACENT)
 			// Each provider reaches the surface when its reach covers the distance (and a clear line when it asks for one).
 			var/list/able = list()
+			if(!need && !length(fits))
+				// an op that needs nothing of its provider (by(0): a mouse climbing into a bag) reaches what is next to the actor
+				if(dist > 1)
+					return /datum/msg/op/unreachable
+				able = null
 			for(var/datum/prov/V as anything in fits)
 				var/range = V.reach()
 				if(isnull(range) || range < dist)
@@ -227,9 +232,10 @@
 				if(V.entry.args["los"] && dist > 0 && !reach_line_clear(actor, surface))
 					continue
 				able += V
-			if(!length(able))
-				return /datum/msg/op/unreachable
-			fits = able
+			if(!isnull(able))
+				if(!length(able))
+					return /datum/msg/op/unreachable
+				fits = able
 		if(REACH_INSIDE)
 			var/inside = FALSE
 			if(isatom(target) && actor)

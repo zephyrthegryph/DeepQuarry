@@ -305,7 +305,7 @@
 /datum/capdef_decl/c_stackable/spec()
 	return list(CAP_STACKABLE, /datum/capability/lib/stackable, NONE, STACK, "stackable", "max_amount")
 
-/// CAPABILITY_TYPE(storage, CAP_STORAGE) at code/library/containers/storage.dm:40
+/// CAPABILITY_TYPE(storage, CAP_STORAGE) at code/library/containers/storage.dm:41
 /datum/capability/lib/storage
 	var/space = null
 	var/slots = null
@@ -567,7 +567,7 @@
 	into += entry_line(327)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(328)
-	into += list(global.ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(328)
 	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
 	into += entry_line(328)
@@ -2106,13 +2106,13 @@
 	into += entry_line(337)
 	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.priority(global.above("storage.put_in")), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
-/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:940
+/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:903
 /obj/item/storage/trinketbox/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 940, /obj/item/storage/trinketbox)
-	into += entry_line(941)
+	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 903, /obj/item/storage/trinketbox)
+	into += entry_line(904)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/accessory/ring, /obj/item/coin, /obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)))
-	into += entry_line(945)
+	into += entry_line(908)
 	into += list(global.op("lid", global.in_hand(), global.label("Open"), global.then(PROC_REF(flip_lid))))
 
 /// CAPABILITIES(/obj/item/storage/vore_egg) at code/game/objects/items/weapons/storage/egg.dm:19
@@ -3478,6 +3478,15 @@
 	into += list(global.op("words", global.menu(), global.asks(/datum/prompt/text, fields = list("max_len" = 5)), global.then(PROC_REF(answered))))
 	into += entry_line(25)
 	into += list(global.op("amount", global.menu(), global.asks(/datum/prompt/number, fields = list("min_value" = 1, "max_value" = 10, "step" = 1)), global.then(PROC_REF(answered))))
+
+/// CAPABILITIES(/obj/eg2_dragtarget) at code/tests/engine/eg2_fixtures.dm:52
+/obj/eg2_dragtarget/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/eg2_fixtures.dm", 52, /obj/eg2_dragtarget)
+	into += entry_line(53)
+	into += list(global.op("mob_in", global.item(/mob/living), global.gesture(GESTURE_DRAG), global.then(PROC_REF(mob_dropped))))
+	into += entry_line(54)
+	into += list(global.op("item_in", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(item_dropped))))
 
 /// CAPABILITIES(/obj/eg2_waiter) at code/tests/engine/eg2_wait_fixtures.dm:10
 /obj/eg2_waiter/declared_entries(list/into)

@@ -49,6 +49,24 @@
 	. = op_resolve_click(actor, target, held, gesture, origin, quiet, defer_legacy)
 	dq_interaction_set_click_params(actor, saved_params)
 
+/// The drag seam. A driver-built drag is always the new resolver's; a player's is when the target or the dragged atom has an op, and what no op answers goes
+/// on to the legacy chain (the gesture entries, then MouseDrop_T) exactly as before.
+/proc/input_resolve_drag(datum/input_event/drag/E)
+	RETURN_TYPE(/datum/op_result)
+	var/mob/actor = E.actor
+	var/atom/over = E.over
+	var/atom/dragged = E.dragged
+	var/params = E.legacy_args?[5]
+	if(E.driven)
+		return op_resolve_click_with_params(actor, over, dragged, GESTURE_DRAG, E.origin || ORIGIN_CLICK, params)
+	if(over && (op_has_ops(over) || op_has_ops(dragged)))
+		var/datum/op_result/result = op_resolve_click_with_params(actor, over, dragged, GESTURE_DRAG, ORIGIN_CLICK, params, TRUE, TRUE)
+		if(result)
+			return result
+	var/datum/input_adapter/adapter = actor.input_adapter()
+	adapter.drag_legacy(actor, dragged, over, E.legacy_args)
+	return null
+
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
 /// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain
 /// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.

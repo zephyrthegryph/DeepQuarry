@@ -154,7 +154,7 @@
 /proc/op_binding_fits(datum/entry/part/bind/B, mob/actor, datum/target, obj/item/held, datum/holder, side)
 	switch(B.bind_kind)
 		if(BIND_TOOL)
-			if(!held || side != CAND_TARGET)
+			if(!isitem(held) || side != CAND_TARGET)
 				return FALSE
 			for(var/quality in B.args["quality"])
 				if(held.has_tool_quality(quality))

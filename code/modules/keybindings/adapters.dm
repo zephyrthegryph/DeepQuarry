@@ -142,18 +142,19 @@ TYPE_TABLE_DECLARE(/datum/input_adapter, adapter_click_table, TYPE_TABLE_GET(GLO
 /datum/input_adapter/proc/self_use(mob/user, obj/item/held, list/modifiers)
 	held.attack_self(user, modifiers)
 
-/// The Drag action.
+/// The Drag action: the inbox resolves it (the target's ops see the dragged atom as the held one), and what no op answers is drag_legacy().
 /datum/input_adapter/proc/drag(mob/user, atom/dragged, atom/over, src_location, over_location, src_control, over_control, params)
 	if(!dragged.Adjacent(user) || !over.Adjacent(user))
 		return // should stop you from dragging through windows
 	if(user.is_incorporeal())
 		return
+	input_submit(new /datum/input_event/drag(user, dragged, over, list(src_location, over_location, src_control, over_control, params)))
+
+/// The drag no op took: the gesture entries, then MouseDrop_T of the target.
+/datum/input_adapter/proc/drag_legacy(mob/user, atom/dragged, atom/over, list/legacy)
 	if(try_gesture_drag(user, dragged, over))
 		return
-	// An item dragged onto something with ops of its own: the ops that answer a drag take it, or nothing does and the old MouseDrop_T goes on.
-	if(isitem(dragged) && op_has_ops(over) && op_resolve_click_with_params(user, over, dragged, GESTURE_DRAG, ORIGIN_CLICK, params, TRUE, TRUE))
-		return
-	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, src_location, over_location, src_control, over_control, params) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after
+	INVOKE_ASYNC(over, TYPE_PROC_REF(/atom, MouseDrop_T), dragged, user, legacy?[1], legacy?[2], legacy?[3], legacy?[4], legacy?[5]) // ALLOW(scheduler): MouseDrop_T overrides may prompt/do_after
 
 /// A category key: the best interaction of that category on the target.
 /datum/input_adapter/proc/perform_category(mob/user, atom/target, category)

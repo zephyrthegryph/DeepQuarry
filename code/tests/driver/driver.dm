@@ -119,6 +119,10 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 /proc/test_click(mob/actor, atom/target, obj/item/held, gesture = GESTURE_CLICK)
 	return inbox_click(actor, target, held, gesture, ORIGIN_CLICK)
 
+/// Drags `dragged` onto `over` as a player's drag would (origin ORIGIN_CLICK, gesture GESTURE_DRAG): the dragged atom, an item or a mob, is the held one.
+/proc/test_drag(mob/actor, atom/dragged, atom/over)
+	return inbox_drag(actor, dragged, over)
+
 /// Presses a window button as a player would (origin ORIGIN_UI): the args cross the schema boundary, the op's ui_act()
 /// binding matches, and the result comes back.
 /proc/test_ui(mob/actor, window, action, list/args)

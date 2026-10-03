@@ -37,3 +37,29 @@ CAPABILITIES(/obj/eg2_asker, \
 	return OP_OK
 
 #endif
+
+#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
+
+// ---- drag input for mobs ----
+
+/// A target with one op for a dragged mob and one for a dragged item.
+/obj/eg2_dragtarget
+	name = "eg2 drag target"
+	var/mobs = 0
+	var/items = 0
+	var/last
+
+CAPABILITIES(/obj/eg2_dragtarget, \
+	op("mob_in", item(/mob/living), gesture(GESTURE_DRAG), then(PROC_REF(mob_dropped))), \
+	op("item_in", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(item_dropped))))
+
+/obj/eg2_dragtarget/proc/mob_dropped(datum/act/op/A)
+	mobs++
+	last = A.held
+	return OP_OK
+
+/obj/eg2_dragtarget/proc/item_dropped(datum/act/op/A)
+	items++
+	return OP_OK
+
+#endif

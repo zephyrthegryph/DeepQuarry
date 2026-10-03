@@ -237,3 +237,42 @@
 	TEST_ASSERT(slot_matches(SLOT_ANY_CARRIED, SLOT_ID_POCKET_L, H), "SLOT_ANY_CARRIED covers a pocket")
 	TEST_ASSERT(!slot_matches(SLOT_ANY_HELD, SLOT_ID_POCKET_L, H), "SLOT_ANY_HELD does not")
 	qdel(W)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Drag input for mobs
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A mob dragged onto a target reaches the target's ops as the held atom; an op that wants an item does not match it.
+/datum/unit_test/dq_eg2/a_mob_drag_reaches_ops
+/datum/unit_test/dq_eg2/a_mob_drag_reaches_ops/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/other = person()
+	var/obj/eg2_dragtarget/D = allocate(/obj/eg2_dragtarget, run_loc_floor_bottom_left)
+	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	test_drag(H, other, D)
+	TEST_ASSERT_EQUAL(D.mobs, 1, "the mob drag ran the op that takes a mob")
+	TEST_ASSERT(D.last == other, "with the dragged mob as the held atom")
+	test_drag(H, pen, D)
+	TEST_ASSERT_EQUAL(D.mobs, 1, "an item drag does not run it")
+	TEST_ASSERT_EQUAL(D.items, 1, "it runs the item's op")
+
+/// Proof site: a mouse (no hands) dragging itself onto a storage climbs in as a held creature; a person of normal size, or somebody dragging another, does not.
+/datum/unit_test/dq_eg2/micro_drag_climbs_into_storage
+/datum/unit_test/dq_eg2/micro_drag_climbs_into_storage/run_gate()
+	var/obj/item/storage/box/B = allocate(/obj/item/storage/box, run_loc_floor_bottom_left)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/H = person()
+	test_drag(H, H, B)
+	test_time(5 SECONDS)
+	TEST_ASSERT(H.loc == run_loc_floor_bottom_left, "a person of normal size does not fit")
+	test_drag(H, M, B)
+	test_time(5 SECONDS)
+	TEST_ASSERT(M.loc == run_loc_floor_bottom_left, "somebody else dragging the mouse does not put it in")
+	var/datum/op_result/climbed = test_drag(M, M, B)
+	test_time(5 SECONDS)
+	TEST_ASSERT(istype(M.loc, /obj/item/holder), "the mouse climbed into a holder ([climbed?.outcome] [climbed?.reason])")
+	TEST_ASSERT(M.loc.loc == B, "which is in the box")
+	var/obj/item/holder/scooped = M.loc
+	B.remove_from_storage(scooped, run_loc_floor_bottom_left)
+	M.forceMove(run_loc_floor_bottom_left)
+	qdel(scooped)

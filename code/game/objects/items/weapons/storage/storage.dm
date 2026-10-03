@@ -469,43 +469,6 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /obj/item/storage/AllowDrop()
 	return TRUE
 
-// Allows micros to drag themselves into storage items
-// A micro dragged onto a storage climbs in. A drag reaches ops for an item only, not yet for a mob dragging itself, so this is the one entry of the
-// old interactions the storage keeps (INTERACT_DRAG); it goes when the drag input carries a mob.
-DECLARE_INTERACTIONS(/obj/item/storage, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-)
-
-/// Old MouseDrop_T.
-/obj/item/storage/proc/interaction_drag(mob/living/user, mob/living/target, datum/interaction/interaction)
-	make_contents_real()
-	if(!istype(user)) return INTERACTION_HANDLED_PASS
-	if(target != user) return INTERACTION_HANDLED_PASS
-	if(user.incapacitated() || user?.buckled_to()) return INTERACTION_HANDLED_PASS
-	if(get_holder_of_type(src, /mob/living/carbon/human) == user) return INTERACTION_HANDLED_PASS
-	if(ishuman(user) && user.get_effective_size(TRUE) > 0.25) return INTERACTION_HANDLED_PASS
-	if(ismouse(user) && user.get_effective_size(TRUE) > 1) return INTERACTION_HANDLED_PASS
-
-	// Create a dummy holder with user's size to test insertion
-	var/obj/item/holder/D = new/obj/item/holder
-	if(ismouse(user))
-		D.w_class = ITEMSIZE_TINY // Mouse smol
-	else if(ishuman(user))
-		D.w_class = ITEMSIZE_SMALL // Players small
-	else        // Other creatures not accepted at this time
-		qdel(D) // If there's a better way to check the size of a
-		return INTERACTION_HANDLED_PASS
-	if(insert_refusal(D, user)) // If the dummy item doesn't fit, exit
-		qdel(D)
-		return INTERACTION_HANDLED_PASS
-	qdel(D)
-
-	// Scoop and insert target into storage
-	var/obj/item/holder/H = new user.holder_type(get_turf(user), user)
-	if(insert_item(H, null, TRUE))
-		to_chat(user, span_notice("You climb into \the [src]."))
-	return FALSE
-
 // ---- Legacy wrappers for mob inventory (C3 moves these callers onto slots) ----
 // Only for: /mob/living/equip_to_storage (mob/living/inventory.dm, 3 calls),
 // human/inventory.dm (the worn belt) and protean_rig.dm (the rig backpack).
