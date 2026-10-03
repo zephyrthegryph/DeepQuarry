@@ -12,14 +12,18 @@
 	if(equipping)
 		return ..()
 	icon_state = initial(icon_state)
-	flipped = FALSE
+	set_flipped(FALSE)
 	..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/soft, INTERACT_USE("Flip", PROC_REF(soft_cap_flip_self)))
+TRACKED(/obj/item/clothing/head/soft, flipped)
+
+CAPABILITIES(/obj/item/clothing/head/soft)
+	op("flip", in_hand(), label("Flip"), then(PROC_REF(soft_cap_flip_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/soft/proc/soft_cap_flip_self(mob/user, obj/item/held, datum/interaction/interaction)
-	flipped = !flipped
+/obj/item/clothing/head/soft/proc/soft_cap_flip_self(datum/act/op/A)
+	var/mob/user = A.actor
+	set_flipped(!flipped)
 	if(flipped)
 		icon_state = "[icon_state]_flipped"
 		to_chat(user, "You flip the hat backwards.")
@@ -27,6 +31,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/soft, INTERACT_USE("Flip", PROC_REF(
 		icon_state = initial(icon_state)
 		to_chat(user, "You flip the hat back in normal position.")
 	update_clothing_icon()	//so our mob-overlays update
+	return OP_OK
+
 
 /obj/item/clothing/head/soft/red
 	name = "red cap"

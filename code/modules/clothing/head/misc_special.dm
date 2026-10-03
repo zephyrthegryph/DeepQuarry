@@ -166,16 +166,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/cakehat, INTERACT_USE("Light", PROC_
 	flags_inv = HIDEEARS
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/head/ushanka, INTERACT_USE("Toggle ear flaps", PROC_REF(ushanka_flaps_self)))
+CAPABILITIES(/obj/item/clothing/head/ushanka)
+	op("flaps", in_hand(), label("Toggle ear flaps"), then(PROC_REF(ushanka_flaps_self)))
 
 /// Old attack_self.
-/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/head/ushanka/proc/ushanka_flaps_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(src.icon_state == initial(icon_state))
 		src.icon_state = "[icon_state]up"
 		to_chat(user, "You raise the ear flaps on the ushanka.")
 	else
 		src.icon_state = initial(icon_state)
 		to_chat(user, "You lower the ear flaps on the ushanka.")
+	return OP_OK
+
 
 /obj/item/clothing/head/ushanka/black
 	icon_state = "blkushankadown"
