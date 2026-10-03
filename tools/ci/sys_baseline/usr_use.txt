@@ -380,13 +380,6 @@ usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No rea
 usr_outside_verb	code/modules/overmap/ships/ship.dm	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
 usr_outside_verb	code/modules/paperwork/paper_sticky.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
 usr_outside_verb	code/modules/paperwork/paperbin.dm	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
-usr_outside_verb	code/modules/paperwork/photography.dm	if(ishuman(usr))
-usr_outside_verb	code/modules/paperwork/photography.dm	var/mob/living/carbon/human/M = usr
-usr_outside_verb	code/modules/paperwork/photography.dm	add_fingerprint(usr)
-usr_outside_verb	code/modules/paperwork/photography.dm	if(over_object == usr && in_range(src, usr) || usr.contents.Find(src))
-usr_outside_verb	code/modules/paperwork/photography.dm	if(usr.s_active)
-usr_outside_verb	code/modules/paperwork/photography.dm	usr.s_active.close(usr)
-usr_outside_verb	code/modules/paperwork/photography.dm	show_to(usr)
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr

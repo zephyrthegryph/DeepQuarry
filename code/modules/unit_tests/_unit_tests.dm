@@ -733,6 +733,7 @@
 #include "interim_clothing_drop_actor.dm"
 #include "interim_two_ear_drop_actor.dm"
 #include "interim_gun_weldpack_drop_actor.dm"
+#include "interim_photo_album_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
