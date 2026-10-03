@@ -806,6 +806,7 @@
 #include "interim_contraband_sticky_unwrapping.dm"
 #include "interim_clamp_detach_actor.dm"
 #include "interim_resist_alert_actor.dm"
+#include "interim_cat_box_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

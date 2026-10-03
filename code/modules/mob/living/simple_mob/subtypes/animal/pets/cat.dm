@@ -291,11 +291,13 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 
 /// Old attack_self.
 /obj/item/cat_box/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(loc?.release_refusal(src, user))
+		return TRUE
 	var/turf/catturf = get_turf(src)
 	to_chat(user, span_notice("You peek into \the [name]-- and a cat jumps out!"))
 	new cattype(catturf)
 	new /obj/item/stack/material/cardboard(catturf) //if i fits i sits
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/item/cat_box/black
