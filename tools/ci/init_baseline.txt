@@ -1141,8 +1141,6 @@ initialize	code/modules/clothing/gloves/miscellaneous.dm	/obj/item/clothing/glov
 initialize	code/modules/clothing/head/fishing.dm	/obj/item/clothing/head/fishing/Initialize(mapload)
 initialize	code/modules/clothing/head/pilot_helmet.dm	/obj/item/clothing/head/pilot/Initialize(mapload)
 initialize	code/modules/clothing/masks/gasmask.dm	/obj/item/clothing/mask/gas/Initialize(mapload)
-initialize	code/modules/clothing/masks/miscellaneous.dm	/obj/item/clothing/mask/muzzle/Initialize(mapload)
-initialize	code/modules/clothing/masks/miscellaneous.dm	/obj/item/clothing/mask/horsehead/Initialize(mapload)
 initialize	code/modules/clothing/masks/miscellaneous.dm	/obj/item/clothing/mask/paper/Initialize(mapload)
 initialize	code/modules/clothing/masks/miscellaneous.dm	/obj/item/clothing/mask/emotions/Initialize(mapload)
 initialize	code/modules/clothing/shoes/miscellaneous.dm	/obj/item/clothing/shoes/boots/ranger/Initialize(mapload)

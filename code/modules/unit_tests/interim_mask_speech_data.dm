@@ -1,0 +1,22 @@
+/// Real inherited muzzle speech tables and horse tables remain independent per item.
+/datum/unit_test/interim_mask_speech_data/Run()
+	var/static/list/muzzle_types = list(/obj/item/clothing/mask/muzzle, /obj/item/clothing/mask/muzzle/tape, /obj/item/clothing/mask/muzzle/ballgag, /obj/item/clothing/mask/muzzle/ballgag/ringgag)
+	for(var/mask_type in muzzle_types)
+		var/obj/item/clothing/mask/muzzle/mask = allocate(mask_type)
+		var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human)
+		TEST_ASSERT_EQUAL(jointext(mask.say_messages, "|"), "Mmfph!|Mmmf mrrfff!|Mmmf mnnf!", "real muzzle descendants retain the exact speech table")
+		TEST_ASSERT_EQUAL(jointext(mask.say_verbs, "|"), "mumbles|says", "real muzzle descendants retain the exact speech verbs")
+		TEST_ASSERT(user.equip_to_slot(mask, SLOT_ID_MASK), "real muzzle is equipped for actual speech filtering")
+		var/list/message_data = list("original speech", "original verb")
+		TEST_ASSERT_EQUAL(user.handle_speech_problems(message_data), 1, "actual worn muzzle handles speech")
+		TEST_ASSERT((message_data[1] in mask.say_messages), "actual speech becomes a declared muzzle phrase")
+		TEST_ASSERT((message_data[2] in mask.say_verbs), "actual speech uses a declared muzzle verb")
+	var/obj/item/clothing/mask/horsehead/horse = allocate(/obj/item/clothing/mask/horsehead)
+	var/obj/item/clothing/mask/horsehead/other = allocate(/obj/item/clothing/mask/horsehead)
+	TEST_ASSERT_EQUAL(horse.voicechange, 0, "ordinary horse mask keeps voice changes disabled")
+	TEST_ASSERT_EQUAL(jointext(horse.say_messages, "|"), "NEEIIGGGHHHH!|NEEEIIIIGHH!|NEIIIGGHH!|HAAWWWWW!|HAAAWWW!", "actual horse mask retains every original phrase")
+	TEST_ASSERT_EQUAL(jointext(horse.say_verbs, "|"), "whinnies|neighs|says", "actual horse mask retains every original verb")
+	horse.say_messages += "instance phrase"
+	horse.say_verbs += "instance verb"
+	TEST_ASSERT(!("instance phrase" in other.say_messages), "changing one actual mask phrase table preserves another mask")
+	TEST_ASSERT(!("instance verb" in other.say_verbs), "changing one actual mask verb table preserves another mask")
