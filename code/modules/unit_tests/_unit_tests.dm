@@ -715,6 +715,7 @@
 #include "interim_clipboard_drop_actor.dm"
 #include "interim_changeling_clothing_emp_data.dm"
 #include "interim_randomspawn_constructor.dm"
+#include "interim_hacktool_supported_table.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

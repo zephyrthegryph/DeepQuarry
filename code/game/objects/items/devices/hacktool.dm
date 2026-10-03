@@ -6,7 +6,7 @@
 
 	var/in_hack_mode = 0
 	var/list/known_targets
-	var/list/supported_types
+	var/static/list/supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 	var/datum/tgui_state/default/must_hack/hack_state
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
@@ -19,7 +19,6 @@
 /obj/item/multitool/hacktool/Initialize(mapload)
 	. = ..()
 	max_known_targets = 5 + rand(1,3)
-	supported_types = list(/obj/machinery/door/airlock,/obj/structure/closet/crate/secure,/obj/structure/closet/secure_closet)
 
 DECLARE_DEFAULT_CHILD(/obj/item/multitool/hacktool, "hack_state", /datum/tgui_state/default/must_hack)
 
