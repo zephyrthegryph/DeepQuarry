@@ -52,12 +52,66 @@
 /datum/capdef_decl/c_deployment_graph/spec()
 	return list(CAP_DEPLOYMENT, /datum/capability/construction/deployment, NONE, STACK, "deployment", "start, via")
 
+/// CAPABILITY_TYPE(interior, CAP_INTERIOR) at code/library/containers/interior.dm:14
+/datum/capability/lib/interior
+	var/escape_wait = 30 SECONDS
+	var/escape_chance = 100
+/proc/interior(escape_wait, escape_chance)
+	RETURN_TYPE(/datum/capability/lib/interior)
+	return cap_construct(CAP_INTERIOR, /datum/capability/lib/interior, list(escape_wait, escape_chance), "escape_wait, escape_chance")
+/datum/capdef_decl/c_interior/spec()
+	return list(CAP_INTERIOR, /datum/capability/lib/interior, NONE, STACK, "interior", "escape_wait, escape_chance")
+
+/// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:11
+/datum/capability/lib/natural_weapon
+	var/weapon = /datum/natural_weapon
+	var/damage = 10
+	var/name = null
+	var/recover = 2 SECONDS
+/proc/natural_weapon(weapon, damage, name, recover)
+	RETURN_TYPE(/datum/capability/lib/natural_weapon)
+	return cap_construct(CAP_NATURAL_WEAPON, /datum/capability/lib/natural_weapon, list(weapon, damage, name, recover), "weapon, damage, name, recover")
+/datum/capdef_decl/c_natural_weapon/spec()
+	return list(CAP_NATURAL_WEAPON, /datum/capability/lib/natural_weapon, "name", STACK, "natural_weapon", "weapon, damage, name, recover")
+
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:25
+/datum/capability/lib/reagent_container
+	var/volume = 30
+	var/transfer = list(5, 10, 15, 30)
+	var/lid = FALSE
+	var/needle = FALSE
+	var/spray = FALSE
+/proc/reagent_container(volume, transfer, lid, needle, spray)
+	RETURN_TYPE(/datum/capability/lib/reagent_container)
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, spray), "volume, transfer, lid, needle, spray")
+/datum/capdef_decl/c_reagent_container/spec()
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, spray")
+
+/// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
+/datum/capability/lib/stackable
+	var/max_amount = 50
+/proc/stackable(max_amount)
+	RETURN_TYPE(/datum/capability/lib/stackable)
+	return cap_construct(CAP_STACKABLE, /datum/capability/lib/stackable, list(max_amount), "max_amount")
+/datum/capdef_decl/c_stackable/spec()
+	return list(CAP_STACKABLE, /datum/capability/lib/stackable, NONE, STACK, "stackable", "max_amount")
+
 /// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/bays.dm:179
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
 	return cap_construct(CAP_TELEKINESIS, /datum/capability/def/telekinesis, list(), "")
 /datum/capdef_decl/c_telekinesis/spec()
 	return list(CAP_TELEKINESIS, /datum/capability/def/telekinesis, NONE, STACK, "telekinesis", "")
+
+/// CAPABILITY_TYPE(trait, CAP_TRAIT) at code/library/items/trait.dm:12
+/datum/capability/lib/trait
+	var/trait = null
+	var/examine = null
+/proc/trait(trait, examine)
+	RETURN_TYPE(/datum/capability/lib/trait)
+	return cap_construct(CAP_TRAIT, /datum/capability/lib/trait, list(trait, examine), "trait, examine")
+/datum/capdef_decl/c_trait/spec()
+	return list(CAP_TRAIT, /datum/capability/lib/trait, "trait", STACK, "trait", "trait, examine")
 
 /// cap_keys(CAP_COVER) at code/engine/library/bays.dm:35
 /datum/cap_keys_decl/k_cover/spec()
@@ -68,6 +122,13 @@
 /// The state key REMOVED of cover, read on a holder (a granted capability with several selectors names the selector).
 /proc/cover_removed(datum/holder, selector)
 	return cap_key_get(holder, COVER_REMOVED, selector)
+
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:26
+/datum/cap_keys_decl/k_reagent_container/spec()
+	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
+/// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
+/proc/reagent_container_lid_open(datum/holder, selector)
+	return cap_key_get(holder, REAGENT_CONTAINER_LID_OPEN, selector)
 
 /datum/stage_def/door_frame/spec()
 	return list(STAGE_DOOR_FRAME, "door", "frame")
@@ -88,17 +149,17 @@
 /datum/source_def/all/spec()
 	return list(SRC_ALL, "all")
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:306
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:312
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 306, /datum/pending_op)
-	into += entry_line(307)
+	into += entry_block("code/engine/parts/run.dm", 312, /datum/pending_op)
+	into += entry_line(313)
 	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(308)
+	into += entry_line(314)
 	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(309)
+	into += entry_line(315)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(310)
+	into += entry_line(316)
 	into += list(global.ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
@@ -270,6 +331,13 @@
 	into += list(global.rel_grants(nameof(species)))
 	into += entry_line(115)
 	into += list(global.hands())
+
+/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:97
+/mob/living/simple_mob/lib_fixture_biter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 97, /mob/living/simple_mob/lib_fixture_biter)
+	into += entry_line(98)
+	into += list(global.natural_weapon(/datum/natural_weapon/bite, damage = 10))
 
 /// CAPABILITIES(/mob/living/simple_mob/s1_fixture) at code/tests/engine/s1_fixtures.dm:179
 /mob/living/simple_mob/s1_fixture/declared_entries(list/into)
@@ -690,6 +758,57 @@
 	into += entry_line(96)
 	into += list(global.while_slotted("e4_slot", global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 1)), on = ON_HOLDER))
 
+/// CAPABILITIES(/obj/item/lib_fixture/beaker) at code/tests/library/fixtures.dm:14
+/obj/item/lib_fixture/beaker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 14, /obj/item/lib_fixture/beaker)
+	into += entry_line(15)
+	into += list(global.reagent_container(volume = 60, transfer = list(5, 10, 15, 30, 60), lid = TRUE))
+
+/// CAPABILITIES(/obj/item/lib_fixture/beaker/large) at code/tests/library/fixtures.dm:20
+/obj/item/lib_fixture/beaker/large/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 20, /obj/item/lib_fixture/beaker/large)
+	into += entry_line(21)
+	into += list(global.configure(global.reagent_container(volume = 120)))
+
+/// CAPABILITIES(/obj/item/lib_fixture/flask) at code/tests/library/fixtures.dm:27
+/obj/item/lib_fixture/flask/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 27, /obj/item/lib_fixture/flask)
+	into += entry_line(28)
+	into += list(global.reagent_container(volume = 30, transfer = list(5, 10, 15, 30)))
+
+/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:89
+/obj/item/lib_fixture/hazmat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 89, /obj/item/lib_fixture/hazmat)
+	into += entry_line(90)
+	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = "A hazmat patch is sewn on."))
+
+/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:61
+/obj/item/lib_fixture/sheets/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 61, /obj/item/lib_fixture/sheets)
+	into += entry_line(62)
+	into += list(global.stackable(max_amount = 10))
+
+/// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:42
+/obj/item/lib_fixture/sprayer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 42, /obj/item/lib_fixture/sprayer)
+	into += entry_line(43)
+	into += list(global.reagent_container(volume = 30, transfer = list(5, 10), spray = TRUE))
+
+/// CAPABILITIES(/obj/item/lib_fixture/syringe) at code/tests/library/fixtures.dm:34
+/obj/item/lib_fixture/syringe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 34, /obj/item/lib_fixture/syringe)
+	into += entry_line(35)
+	into += list(global.reagent_container(volume = 15, transfer = list(5, 10, 15), needle = TRUE))
+	into += entry_line(36)
+	into += list(global.extend("reagent_container.inject", global.wait(3 SECONDS), global.logs(LOG_ADMIN)))
+
 /// CAPABILITIES(/obj/item/p1_telecube) at code/tests/engine/p1_fixtures.dm:89
 /obj/item/p1_telecube/declared_entries(list/into)
 	..(into)
@@ -733,6 +852,49 @@
 	into += entry_block("code/tests/engine/s1_fixtures.dm", 129, /obj/item/s1_fixture/torch)
 	into += entry_line(130)
 	into += list(global.while_slotted(SLOT_ANY_HELD, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 3)), on = ON_HOLDER))
+
+/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:113
+/obj/lib_fixture/glow_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 113, /obj/lib_fixture/glow_box)
+	into += entry_line(114)
+	into += list(global.examine_line("It is a box."))
+	into += entry_line(115)
+	into += list(global.examine_line(PROC_REF(note_line)))
+	into += entry_line(116)
+	into += list(global.examine_line("It glows.", when = nameof(lit)))
+	into += entry_line(117)
+	into += list(global.look_layer("glow", when = nameof(lit)))
+	into += entry_line(118)
+	into += list(global.look_layer("box"))
+
+/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:70
+/obj/lib_fixture/pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 70, /obj/lib_fixture/pod)
+	into += entry_line(71)
+	into += list(global.interior(escape_wait = 10 SECONDS, escape_chance = 100))
+
+/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:82
+/obj/lib_fixture/pod/by_var/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 82, /obj/lib_fixture/pod/by_var)
+	into += entry_line(83)
+	into += list(global.configure(global.interior(escape_chance = nameof(chance_var))))
+
+/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:76
+/obj/lib_fixture/pod/stubborn/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 76, /obj/lib_fixture/pod/stubborn)
+	into += entry_line(77)
+	into += list(global.configure(global.interior(escape_chance = 0)))
+
+/// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:53
+/obj/lib_fixture/tank/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 53, /obj/lib_fixture/tank)
+	into += entry_line(53)
+	into += list(global.reagent_container(volume = 100, transfer = list(5, 10)))
 
 /// CAPABILITIES(/obj/s1_fixture/bare_meter) at code/tests/engine/s1_fixtures.dm:254
 /obj/s1_fixture/bare_meter/declared_entries(list/into)
