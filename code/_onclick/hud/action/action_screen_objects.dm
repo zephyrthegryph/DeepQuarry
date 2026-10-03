@@ -40,18 +40,23 @@
 
 	return TRUE
 
-/atom/movable/screen/movable/action_button/Click(location,control,params)
-	if(!can_use(usr))
+/atom/movable/screen/movable/action_button/Click(location, control, params)
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND action button Click supplies its clicking mob through usr at this native boundary
+
+/atom/movable/screen/movable/action_button/click_with_actor(mob/user, location, control, params)
+	if(!user)
+		return
+	if(!can_use(user))
 		return
 
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud.position_action(src, SCRN_OBJ_DEFAULT)
 		return TRUE
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return
-	usr.setClickCooldown(1)
+	user.setClickCooldown(0.1 SECONDS)
 	var/trigger_flags
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION

@@ -65,19 +65,22 @@
 /atom/movable/screen/item_action
 	var/obj/item/owner
 
-/atom/movable/screen/item_action/Click()
-	if(!usr || !owner())
+/atom/movable/screen/item_action/Click(location, control, params)
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND item action screen Click supplies its clicking mob through usr at this native boundary
+
+/atom/movable/screen/item_action/click_with_actor(mob/user, location, control, params)
+	if(!user || !owner())
 		return 1
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return
 
-	if(usr.stat || usr.restrained() || usr.has_status(EFFECT_STUNNED) || usr.lying)
+	if(user.stat || user.restrained() || user.has_status(EFFECT_STUNNED) || user.lying)
 		return 1
 
-	if(!(owner() in usr))
+	if(!(owner() in user))
 		return 1
 
-	owner().ui_action_click()
+	owner().ui_action_click(user)
 	return 1
 
 /atom/movable/screen/grab
@@ -673,32 +676,37 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					H.hatch() // Hatch.
 	return 1
 
-/atom/movable/screen/inventory/Click()
+/atom/movable/screen/inventory/Click(location, control, params)
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND inventory screen Click supplies its clicking mob through usr at this native boundary
+
+/atom/movable/screen/inventory/click_with_actor(mob/user, location, control, params)
+	if(!user)
+		return 1
 	// At this point in client Click() code we have passed the 1/10 sec check and little else
 	// We don't even know if it's a middle click
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return 1
-	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
+	if(user.stat || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_WEAKENED))
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 		return 1
 	switch(name)
 		if("r_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
 				C.activate_hand("r")
 		if("l_hand")
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
 				C.activate_hand("l")
 		if("swap")
-			usr:swap_hand()
+			user.swap_hand()
 		if("hand")
-			usr:swap_hand()
+			user.swap_hand()
 		else
-			if(usr.attack_ui(slot_id))
-				usr.update_inv_l_hand(0)
-				usr.update_inv_r_hand(0)
+			if(user.attack_ui(slot_id))
+				user.update_inv_l_hand(0)
+				user.update_inv_r_hand(0)
 	return 1
 
 // Hand slots are special to handle the handcuffs overlay

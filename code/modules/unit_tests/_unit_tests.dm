@@ -595,7 +595,10 @@
 #include "interim_frame_glass_cost_recheck.dm"
 #include "interim_broodling_replacement.dm"
 #include "interim_screen_actor.dm"
+#include "interim_action_button_click_actor.dm"
+#include "interim_inventory_screen_actor.dm"
 #include "interim_speech_image_capture.dm"
+#include "interim_legacy_item_screen_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
