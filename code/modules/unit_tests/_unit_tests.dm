@@ -570,6 +570,8 @@
 #include "interim_computer_program_actor.dm"
 #include "interim_frame_component_removal.dm"
 #include "interim_stool_recovery.dm"
+#include "interim_airlock_assembly_wiring.dm"
+#include "interim_airlock_assembly_glass.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
