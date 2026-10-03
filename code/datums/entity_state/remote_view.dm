@@ -66,8 +66,8 @@ CAPABILITIES(/datum/remote_view)
 		om_hook(host_mob, /datum/om/event/moved, src, PROC_REF(on_hostmob_moved_event))
 	else
 		om_hook(host_mob, /datum/om/event/before/movable_z_changed, src, PROC_REF(on_hostmob_moved_event))
-	om_hook(host_mob, /datum/om/event/mob_reset_perspective, src, PROC_REF(on_reset_perspective))
-	om_hook(host_mob, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
+	observe(host_mob, /datum/notice/mob_reset_perspective, src, then(PROC_REF(on_reset_perspective)))
+	observe(host_mob, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Upon any disruptive status effects
 	if(settings.will_stun)
 		om_hook(host_mob, /datum/om/event/living_status_stun, src, PROC_REF(on_status_effect_event))
@@ -84,23 +84,23 @@ CAPABILITIES(/datum/remote_view)
 	// Handle relayed movement
 	if(settings.relay_movement)
 		om_hook(host_mob, /datum/om/event/before/mob_relay_movement, src, PROC_REF(handle_relay_movement))
-	om_hook(host_mob, /datum/om/event/mob_handle_vision, src, PROC_REF(handle_mob_vision_update))
+	observe(host_mob, /datum/notice/mob_handle_vision, src, then(PROC_REF(handle_mob_vision_update)))
 	// Hud overrides
 	if(settings.override_entire_hud)
 		om_hook(host_mob, /datum/om/event/before/mob_handle_hud, src, PROC_REF(handle_hud_override))
 	if(settings.override_health_hud)
 		om_hook(host_mob, /datum/om/event/before/mob_handle_hud_health_icon, src, PROC_REF(handle_hud_health))
 	if(settings.override_darkvision_hud)
-		om_hook(host_mob, /datum/om/event/mob_handle_hud_darksight, src, PROC_REF(handle_hud_darkvision))
+		observe(host_mob, /datum/notice/mob_handle_hud_darksight, src, then(PROC_REF(handle_hud_darkvision)))
 	// Recursive move fires this, we only want it to handle stuff like being inside a paicard when releasing turf lock
 	if(isturf(focused_on))
-		om_hook(host_mob, /datum/om/event/movable_attempted_move, src, PROC_REF(on_recursive_moved_event))
+		observe(host_mob, /datum/notice/movable_attempted_move, src, then(PROC_REF(on_recursive_moved_event)))
 	// Focus on remote view
 	rel_set(src, nameof(remote_view_target), focused_on)
 	if(host_mob != remote_view_target) // Some items just offset our view, so we set ourselves as the view target, don't double dip if so!
 		om_hook(remote_view_target, /datum/om/event/qdeleting, src, PROC_REF(handle_endview))
-		om_hook(remote_view_target, /datum/om/event/mob_reset_perspective, src, PROC_REF(on_remotetarget_reset_perspective))
-		om_hook(remote_view_target, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
+		observe(remote_view_target, /datum/notice/mob_reset_perspective, src, then(PROC_REF(on_remotetarget_reset_perspective)))
+		observe(remote_view_target, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// If the user has already limited their HUD this avoids them having a HUD when they zoom in
 	if(settings.use_zoom_hud && host_mob.hud_used.hud_shown)
 		host_mob.toggle_zoom_hud()
@@ -154,9 +154,11 @@ CAPABILITIES(/datum/remote_view)
 	end_view()
 	qdel(src)
 
-/datum/remote_view/proc/on_recursive_moved_event(atom/source, datum/om/event/movable_attempted_move/event)
+/datum/remote_view/proc/on_recursive_moved_event(datum/act/notice/A)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
+	var/atom/source = A.target
+	var/datum/notice/movable_attempted_move/event = A
 	handle_recursive_moved(source, event.old_loc, event.new_loc)
 
 /datum/remote_view/proc/handle_recursive_moved(atom/source, atom/oldloc, atom/new_loc)
@@ -171,9 +173,10 @@ CAPABILITIES(/datum/remote_view)
 	end_view()
 	qdel(src)
 
-/datum/remote_view/proc/on_forced_endview_event(datum/source, datum/om/event/remote_view_clear/event)
+/datum/remote_view/proc/on_forced_endview_event(datum/act/notice/A)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
+	var/datum/source = A.target
 	handle_forced_endview(source)
 
 /// By default pass this down, but we need unique handling for subtypes sometimes
@@ -227,7 +230,7 @@ CAPABILITIES(/datum/remote_view)
 		return
 	handle_endview(source)
 
-/datum/remote_view/proc/on_reset_perspective(datum/source, datum/om/event/mob_reset_perspective/event)
+/datum/remote_view/proc/on_reset_perspective(datum/act/notice/A)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
@@ -239,7 +242,7 @@ CAPABILITIES(/datum/remote_view)
 	// The object already changed it's view, lets not interupt it like the others
 	qdel(src)
 
-/datum/remote_view/proc/on_remotetarget_reset_perspective(datum/source, datum/om/event/mob_reset_perspective/event)
+/datum/remote_view/proc/on_remotetarget_reset_perspective(datum/act/notice/A)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
 	RETURN_TYPE(null)
@@ -295,7 +298,7 @@ CAPABILITIES(/datum/remote_view)
 		return
 	return settings.handle_hud_health(src, host_mob)
 
-/datum/remote_view/proc/handle_hud_darkvision(datum/source, datum/om/event/mob_handle_hud_darksight/event)
+/datum/remote_view/proc/handle_hud_darkvision(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	RETURN_TYPE(null)
@@ -304,7 +307,7 @@ CAPABILITIES(/datum/remote_view)
 		return
 	settings.handle_hud_darkvision(src, host_mob)
 
-/datum/remote_view/proc/handle_mob_vision_update(datum/source, datum/om/event/mob_handle_vision/event)
+/datum/remote_view/proc/handle_mob_vision_update(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -348,7 +351,7 @@ CAPABILITIES(/datum/remote_view)
 		/datum/om/event/item_dropped,
 		/datum/om/event/item_equipped,
 		), src, PROC_REF(handle_endview))
-	om_hook(host_item, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
+	observe(host_item, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 	// Unfortunately too many things read this to control item state for me to remove this.
 	// Oh well! better than looking the view up everywhere. Lets just manage item/zoom in this datum though...
 	our_item.zoom = TRUE
@@ -400,11 +403,11 @@ CAPABILITIES(/datum/remote_view)
 	if(!.)
 		return
 	// Remote view mutation stops viewing when mobs die or if we lose the mutation/gene
-	om_hook(host_mob, /datum/om/event/mob_dna_mutation, src, PROC_REF(on_mutation))
+	observe(host_mob, /datum/notice/mob_dna_mutation, src, then(PROC_REF(on_mutation)))
 	if(host_mob != remote_view_target)
 		om_hook(remote_view_target, /datum/om/event/mob_death, src, PROC_REF(handle_endview))
 
-/datum/remote_view/mremote_mutation/proc/on_mutation(datum/source, datum/om/event/mob_dna_mutation/event)
+/datum/remote_view/mremote_mutation/proc/on_mutation(datum/act/notice/A)
 	EVENT_HANDLER
 	PRIVATE_PROC(TRUE)
 	if(!host_mob)
@@ -431,7 +434,7 @@ CAPABILITIES(/datum/remote_view)
 	view_coordinator.look(host_mob)
 	if("viewers" in view_coordinator.vars)
 		rel_add(view_coordinator, nameof(/datum/action::viewers), host_mob)
-	om_hook(view_coordinator, /datum/om/event/remote_view_clear, src, PROC_REF(on_forced_endview_event))
+	observe(view_coordinator, /datum/notice/remote_view_clear, src, then(PROC_REF(on_forced_endview_event)))
 
 // The view coordinator stops showing to this viewer.
 /datum/remote_view/viewer_managed/lifecycle_unbind()
@@ -464,7 +467,7 @@ CAPABILITIES(/datum/remote_view)
 		return
 	// Items can be nested deeply, so we need to update on any parent reorganization or actual move.
 	dq_add_recursive_move(host_mob)
-	om_hook(host_mob, /datum/om/event/movable_attempted_move, src, PROC_REF(on_recursive_moved_event)) // Doesn't need override, basetype only ever hooks this if we're looking at a turf
+	observe(host_mob, /datum/notice/movable_attempted_move, src, then(PROC_REF(on_recursive_moved_event))) // Doesn't need override, basetype only ever hooks this if we're looking at a turf
 	// Check our inmob state
 	if(ismob(find_topmost_atom()))
 		needs_to_decouple = TRUE

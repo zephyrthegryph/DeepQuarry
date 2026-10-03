@@ -121,7 +121,7 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 
 /mob/living/silicon/pai/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
+	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 
 	if(istype(loc, /obj/item/paicard))
 		rel_set(src, nameof(card), loc)
@@ -446,8 +446,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 
 /// Something's probably attacking us! The more damage it is doing, the more
 /// likely it is to damage something important in the card.
-/mob/living/silicon/pai/proc/on_injured(datum/source, datum/om/event/living_injured/event)
+/mob/living/silicon/pai/proc/on_injured(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/amount = event.applied
 	var/category = injury_category(kind)

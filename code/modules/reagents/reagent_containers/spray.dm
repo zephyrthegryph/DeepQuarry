@@ -206,9 +206,9 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
 	. = ..()
 	dq_add_recursive_move(src)
 	add_hose_connector(/datum/hose_connector/input)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(update_hose))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(update_hose)))
 
-/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(atom/source, datum/om/event/movable_attempted_move/event)
+/obj/item/reagent_containers/spray/chemsprayer/hosed/proc/update_hose(datum/act/notice/A)
 	EVENT_HANDLER
 	for(var/datum/hose_connector/HC as anything in get_hose_connectors())
 		HC.update_hose_beam()

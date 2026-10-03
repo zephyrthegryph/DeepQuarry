@@ -448,7 +448,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 
 	forceMove(get_turf(parent_human()))
 	dq_add_recursive_move(parent_human())
-	om_hook(parent_human(), /datum/om/event/movable_attempted_move, src, PROC_REF(human_moved))
+	global.observe(parent_human(), /datum/notice/movable_attempted_move, src, then(PROC_REF(human_moved)))
 
 	//Time to play dressup
 	if(brainmob.client.prefs)
@@ -481,7 +481,7 @@ CAPABILITIES(/datum/nifsoft/soulcatcher)
 		sprint = initial
 	return 1
 
-/mob/observer/eye/ar_soul/proc/human_moved(datum/source, datum/om/event/movable_attempted_move/event)
+/mob/observer/eye/ar_soul/proc/human_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	if(!can_see(parent_human(),src))
 		forceMove(get_turf(parent_human()))

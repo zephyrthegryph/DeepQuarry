@@ -1491,11 +1491,11 @@
 	into += entry_line(41)
 	into += list(global.owns_many(nameof(placements)))
 
-/// CAPABILITIES(/datum/generated_station_defense_runtime) at code/modules/generated_station/generated_station_defenders.dm:74
+/// CAPABILITIES(/datum/generated_station_defense_runtime) at code/modules/generated_station/generated_station_defenders.dm:75
 /datum/generated_station_defense_runtime/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/generated_station/generated_station_defenders.dm", 74, /datum/generated_station_defense_runtime)
-	into += entry_line(75)
+	into += entry_block("code/modules/generated_station/generated_station_defenders.dm", 75, /datum/generated_station_defense_runtime)
+	into += entry_line(76)
 	into += list(global.owns_many(nameof(agents)))
 
 /// CAPABILITIES(/datum/generated_station_department_definition) at code/modules/generated_station/generated_station_types.dm:11
@@ -2300,11 +2300,11 @@
 	into += entry_line(9)
 	into += list(global.owns_one(nameof(sun), /atom/movable/sun_visuals))
 
-/// CAPABILITIES(/datum/supply_demand_order/gas) at code/modules/events/supply_demand.dm:252
+/// CAPABILITIES(/datum/supply_demand_order/gas) at code/modules/events/supply_demand.dm:253
 /datum/supply_demand_order/gas/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/events/supply_demand.dm", 252, /datum/supply_demand_order/gas)
-	into += entry_line(253)
+	into += entry_block("code/modules/events/supply_demand.dm", 253, /datum/supply_demand_order/gas)
+	into += entry_line(254)
 	into += list(global.owns_one(nameof(mixture), /datum/gas_mixture))
 
 /// CAPABILITIES(/datum/syringe_contamination) at code/modules/reagents/reagent_containers/syringes.dm:138
@@ -7054,11 +7054,11 @@
 	into += entry_line(34)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:517
+/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:518
 /obj/machinery/shower/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 517, /obj/machinery/shower)
-	into += entry_line(518)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 518, /obj/machinery/shower)
+	into += entry_line(519)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/showering))
 
 /// CAPABILITIES(/obj/machinery/slot_machine) at code/modules/casino/slots.dm:34

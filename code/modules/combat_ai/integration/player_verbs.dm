@@ -35,8 +35,9 @@ TYPE_TABLE_DECLARE(/datum/ai_behavior, get_player_verb_info, null)
 // verb list of every wild simple_mob in the round.
 // ---------------------------------------------------------------------------
 
-/datum/ai_brain/proc/on_holder_login_event(mob/source, datum/om/event/mob_login/event)
+/datum/ai_brain/proc/on_holder_login_event(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/source = A.target
 	on_holder_login(source)
 
 /datum/ai_brain/proc/on_holder_login(mob/source)

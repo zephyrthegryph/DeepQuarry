@@ -73,7 +73,7 @@ CAPABILITIES(/datum/event/ray_migration)
 // Spawn a single ray at given location.
 /datum/event/ray_migration/proc/spawn_one_ray(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/ray(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_ray_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_ray_destruction)))
 	rel_add(src, nameof(spawned_ray), M)
 	return M
 
@@ -85,8 +85,9 @@ CAPABILITIES(/datum/event/ray_migration)
 			. += 1
 
 // If ray is bomphed, remove it from the list.
-/datum/event/ray_migration/proc/on_ray_destruction(mob/M, datum/om/event/qdeleting/event)
+/datum/event/ray_migration/proc/on_ray_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_ray), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 

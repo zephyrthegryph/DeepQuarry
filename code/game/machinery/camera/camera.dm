@@ -48,7 +48,8 @@ CAPABILITIES(/obj/machinery/camera)
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
-	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
+	observe(src, /datum/notice/machinery_power_lost, src, then(PROC_REF(on_power_signal)))
+	observe(src, /datum/notice/machinery_power_restored, src, then(PROC_REF(on_power_signal)))
 	set_wires(new /datum/wires/camera(src))
 	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 	assembly.state = 4
@@ -135,7 +136,7 @@ CAPABILITIES(/obj/machinery/camera)
 	return null
 
 /// The area's channel change reaches cameras as the machinery power events.
-/obj/machinery/camera/proc/on_power_signal(datum/source, datum/om/event/event)
+/obj/machinery/camera/proc/on_power_signal(datum/act/notice/A)
 	EVENT_HANDLER
 	schedule_camera_timer()
 

@@ -15,7 +15,7 @@
 	..()
 	rel_set(src, nameof(owner), new_owner)
 	slipping_dir = owner.dir
-	om_hook(owner, /datum/om/event/moved, src, PROC_REF(move_react))
+	observe(owner, /datum/notice/moved, src, then(PROC_REF(move_react)))
 
 /// The mob's slide, starting one if it has none (was LoadComponent).
 /mob/living/proc/get_or_start_turfslip() as /datum/turfslip
@@ -75,7 +75,7 @@
 		owner.slip("the [floor_type] floor", slip_stun)
 		after(src, 1, PROC_REF(next_slip))
 
-/datum/turfslip/proc/move_react(atom/source, datum/om/event/moved/event)
+/datum/turfslip/proc/move_react(datum/act/notice/A)
 	EVENT_HANDLER
 
 	// Can the mob slip?

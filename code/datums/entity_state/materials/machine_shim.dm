@@ -20,12 +20,12 @@
 	rel_set(owner, nameof(owner.machine_shim), src)
 	// Mob
 	om_stage_add(host_mob(), /datum/om/stage/life/trait/using_machine_shim)
-	om_hook(host_mob(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_mob_moved))
-	om_hook(host_mob(), /datum/om/event/mob_logout, src, PROC_REF(on_mob_logout))
+	observe(host_mob(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_mob_moved)))
+	observe(host_mob(), /datum/notice/mob_logout, src, then(PROC_REF(on_mob_logout)))
 
 	// Machine
 	rel_set(src, nameof(linked_machine), machine)
-	om_hook(linked_machine(), /datum/om/event/qdeleting, src, PROC_REF(on_machine_qdelete))
+	observe(linked_machine(), /datum/notice/qdeleting, src, then(PROC_REF(on_machine_qdelete)))
 	linked_machine().in_use = TRUE
 
 	// Lets complain if an object uses TGUI but is still setting the machine.
@@ -42,7 +42,7 @@
 		om_stage_remove(owner, /datum/om/stage/life/trait/using_machine_shim)
 		owner.reset_perspective()
 
-/datum/using_machine_shim/proc/on_mob_moved(datum/source, datum/om/event/movable_attempted_move/event)
+/datum/using_machine_shim/proc/on_mob_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
@@ -57,13 +57,13 @@
 /datum/using_machine_shim/proc/on_mob_life()
 	on_mob_action()
 
-/datum/using_machine_shim/proc/on_machine_qdelete(datum/source, datum/om/event/qdeleting/event)
+/datum/using_machine_shim/proc/on_machine_qdelete(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	qdel(src)
 
-/datum/using_machine_shim/proc/on_mob_logout(datum/source, datum/om/event/mob_logout/event)
+/datum/using_machine_shim/proc/on_mob_logout(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)

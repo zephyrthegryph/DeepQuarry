@@ -195,8 +195,9 @@
 	return NONE
 
 /// Called when an action associated with our item is deleted
-/obj/item/proc/on_action_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/item/proc/on_action_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 
 	if(!(source in actions))
 		CRASH("An action ([source.type]) was deleted that was associated with an item ([src]), but was not found in the item's actions list.")
@@ -217,7 +218,7 @@
 		CRASH("item add_item_action got a type or instance of something that wasn't an action.")
 
 	rel_add(src, nameof(actions), action)
-	om_hook(action, /datum/om/event/qdeleting, src, PROC_REF(on_action_deleted))
+	observe(action, /datum/notice/qdeleting, src, then(PROC_REF(on_action_deleted)))
 	if(ismob(loc))
 		// We're being held or are equipped by someone while adding an action?
 		// Then they should also probably be granted the action, given it's in a correct slot

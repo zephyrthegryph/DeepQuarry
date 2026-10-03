@@ -100,18 +100,19 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 	update_icon()
 
 /obj/item/nif/proc/register_human()
-	om_hook(human, /datum/om/event/mob_death, src, PROC_REF(on_human_death))
+	observe(human, /datum/notice/mob_death, src, then(PROC_REF(on_human_death)))
 
 /obj/item/nif/proc/unregister_human()
 	if(!human)
 		return
-	om_unhook(human, /datum/om/event/mob_death, src)
+	unobserve(human, /datum/notice/mob_death, src)
 	rel_clear(src, nameof(human)) // the pair clears human.nif too
 
 /// Saves the NIF's data when the implanted human dies. The save does savefile I/O, so it
 /// runs right after the event instead of inside it (handlers must not sleep).
-/obj/item/nif/proc/on_human_death(mob/living/carbon/human/source, datum/om/event/mob_death/event)
+/obj/item/nif/proc/on_human_death(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/source = A.target
 	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 
 /obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)

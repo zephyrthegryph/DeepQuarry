@@ -19,7 +19,8 @@ CAPABILITIES(/obj/machinery/bluespace_beacon)
 	rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
-	om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
+	observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
+	observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
 
 	hide(!T.is_plating())
 
@@ -37,7 +38,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 		rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
 		Beacon.forceMove(T)
-		om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
+		observe(Beacon, /datum/notice/moved, src, then(PROC_REF(beacon_changed)))
+		observe(Beacon, /datum/notice/qdeleting, src, then(PROC_REF(beacon_changed)))
 	if(Beacon)
 		if(Beacon.loc != src.loc)
 			Beacon.forceMove(src.loc)
@@ -49,8 +51,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 	. = ..()
 	MACHINE_WAKE(src)
 
-/obj/machinery/bluespace_beacon/proc/beacon_changed(datum/source, datum/om/event/event)
+/obj/machinery/bluespace_beacon/proc/beacon_changed(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	if(source == Beacon && QDELETED(source))
 		own_take(src, nameof(Beacon))
 	MACHINE_WAKE(src)

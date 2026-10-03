@@ -1068,7 +1068,7 @@ SETTER(/mob/living, nutrition)
 /datum/character_setup_button/New(mob/living/M)
 	..()
 	rel_set(src, nameof(owner), M)
-	om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_client_login))
+	observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_client_login)))
 	if(owner.client)
 		create_mob_button(owner)
 
@@ -1087,8 +1087,9 @@ SETTER(/mob/living, nutrition)
 		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
-/datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
+/datum/character_setup_button/proc/on_client_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	create_mob_button(source)
 
 /datum/character_setup_button/proc/create_mob_button(mob/user)
@@ -1099,7 +1100,7 @@ SETTER(/mob/living, nutrition)
 		var/atom/movable/screen/character_setup/button = new
 		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
-		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
+		observe(screen_icon, /datum/notice/click, src, then(PROC_REF(character_setup_click)))
 	if(ispAI(user))
 		screen_icon.icon = 'icons/mob/pai_hud.dmi'
 		screen_icon.screen_loc = ui_acti
@@ -1111,8 +1112,9 @@ SETTER(/mob/living, nutrition)
 		screen_icon.screen_loc = ui_ai_pda_send
 	user.client?.screen += screen_icon
 
-/datum/character_setup_button/proc/character_setup_click(datum/source, datum/om/event/click/event)
+/datum/character_setup_button/proc/character_setup_click(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/click/event = A
 	var/mob/clicker = event.user
 	if(clicker?.client?.prefs)
 		INVOKE_ASYNC(clicker.client.prefs, TYPE_PROC_REF(/datum/preferences, ShowChoices), clicker) // ALLOW(scheduler): ShowChoices opens tgui (asset/window setup)

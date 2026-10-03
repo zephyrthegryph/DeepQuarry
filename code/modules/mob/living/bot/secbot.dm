@@ -193,13 +193,14 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 
 /mob/living/bot/secbot/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/living_injured, src, PROC_REF(on_injured))
+	global.observe(src, /datum/notice/living_injured, src, then(PROC_REF(on_injured)))
 
 /// Anything that actually hurt us is an attack: find who did it and retaliate.
-/mob/living/bot/secbot/proc/on_injured(datum/source, datum/om/event/living_injured/event)
+/mob/living/bot/secbot/proc/on_injured(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/living_injured/event = A
 	var/amount = event.applied
-	var/atom/injury_source = event.source
+	var/atom/injury_source = event.source_
 	if(amount <= 0 || !injury_source)
 		return
 	var/mob/attacker
@@ -242,11 +243,12 @@ UI_ACT_PROC(/mob/living/bot/secbot, ui_act_declarearrests)
 		playsound(src, preparing_arrest_sounds, 50)
 	// Register to be told when the target moves
 	dq_add_recursive_move(target)
-	om_hook(target, /datum/om/event/movable_attempted_move, src, PROC_REF(target_moved))
+	global.observe(target, /datum/notice/movable_attempted_move, src, then(PROC_REF(target_moved)))
 
 // Callback invoked if the registered target moves
-/mob/living/bot/secbot/proc/target_moved(atom/movable/moving_instance, datum/om/event/movable_attempted_move/event)
+/mob/living/bot/secbot/proc/target_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/moving_instance = A.target
 	if(get_dist(get_turf(src), get_turf(target)) >= 1)
 		awaiting_surrender = INFINITY	// Done waiting!
 		om_unhook(moving_instance, /datum/om/event/movable_attempted_move, src)

@@ -24,9 +24,9 @@
 		om_unhook(target_ref(), /datum/om/event/qdeleting, src)
 	rel_set(src, nameof(target), new_target)
 	if(istype(target_ref(), /obj/machinery/atmospherics/pipe))
-		om_hook(target_ref(), /datum/om/event/qdeleting, src, PROC_REF(on_target_deleted))
+		observe(target_ref(), /datum/notice/qdeleting, src, then(PROC_REF(on_target_deleted)))
 
-/obj/machinery/meter/proc/on_target_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/machinery/meter/proc/on_target_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	rel_clear(src, nameof(target))
 	if(QDELETED(src))

@@ -151,14 +151,15 @@ DECLARE_INTERACTIONS(/obj/item/ore_bag, INTERACT_ITEM(null, PROC_REF(interaction
 /obj/item/ore_bag/equipped(mob/user)
 	..()
 	dq_add_recursive_move(user)
-	om_hook(user, /datum/om/event/movable_attempted_move, src, PROC_REF(autoload))
+	observe(user, /datum/notice/movable_attempted_move, src, then(PROC_REF(autoload)))
 
 /obj/item/ore_bag/dropped(mob/user, equipping, slot)
 	..()
 	om_unhook(user, /datum/om/event/movable_attempted_move, src)
 
-/obj/item/ore_bag/proc/autoload(mob/user, datum/om/event/movable_attempted_move/event)
+/obj/item/ore_bag/proc/autoload(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/user = A.target
 	var/obj/item/ore/O = locate_on(get_turf(user), /obj/item/ore)
 	if(O)
 		gather_all(get_turf(user), user)

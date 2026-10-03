@@ -5,7 +5,7 @@
 
 /datum/trait_state/drippy/attach()
 	..()
-	om_hook(owner, /datum/om/event/human_dna_finalized, src, PROC_REF(create_color))
+	observe(owner, /datum/notice/human_dna_finalized, src, then(PROC_REF(create_color)))
 
 /datum/trait_state/drippy/life_tick()
 	var/mob/living/living_guy = owner
@@ -52,7 +52,7 @@
 	dq_set_fluorescent(B, 0)
 	B.invisibility = INVISIBILITY_NONE
 
-/datum/trait_state/drippy/proc/create_color(datum/source, datum/om/event/human_dna_finalized/event)
+/datum/trait_state/drippy/proc/create_color(datum/act/notice/A)
 	EVENT_HANDLER
 	if(ishuman(owner))
 		var/mob/living/carbon/human/temp_human = owner

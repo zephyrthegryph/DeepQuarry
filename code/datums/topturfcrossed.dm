@@ -13,11 +13,12 @@
 		return
 	rel_set(src, nameof(owner), new_owner)
 	dq_add_recursive_move(owner) // Required if we want to be useful at all
-	om_hook(owner, /datum/om/event/movable_attempted_move, src, PROC_REF(handle_location_change))
+	observe(owner, /datum/notice/movable_attempted_move, src, then(PROC_REF(handle_location_change)))
 	update_turf_hooks(get_turf(owner))
 
-/datum/topturfcrossed/proc/handle_location_change(datum/source, datum/om/event/movable_attempted_move/event)
+/datum/topturfcrossed/proc/handle_location_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	if(!owner)
 		return
 	update_turf_hooks(event.new_loc)
@@ -31,18 +32,19 @@
 			return
 	// Always remove the hook from our old turf when hooking the new one
 	if(our_old_turf())
-		om_unhook(our_old_turf(), /datum/om/event/observer_turf_entered, src)
+		unobserve(our_old_turf(), /datum/notice/observer_turf_entered, src)
 		rel_clear(src, nameof(our_old_turf))
 	// Only hook the turf if we are inside something, otherwise we'd get DOUBLECROSSED
 	if(new_loc && !isturf(owner.loc))
 		var/turf/find_new = isturf(new_loc) ? new_loc : get_turf(new_loc)
 		if(find_new)
-			om_hook(find_new, /datum/om/event/observer_turf_entered, src, PROC_REF(handle_turf_entered))
+			observe(find_new, /datum/notice/observer_turf_entered, src, then(PROC_REF(handle_turf_entered)))
 			rel_set(src, nameof(our_old_turf), find_new)
 
 /// Forwards the Cross() call from the turf to the object hooked
-/datum/topturfcrossed/proc/handle_turf_entered(datum/source, datum/om/event/observer_turf_entered/event)
+/datum/topturfcrossed/proc/handle_turf_entered(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/observer_turf_entered/event = A
 	var/atom/movable/crosser = event.arrived
 	if(QDELETED(crosser) || QDELETED(owner))
 		return

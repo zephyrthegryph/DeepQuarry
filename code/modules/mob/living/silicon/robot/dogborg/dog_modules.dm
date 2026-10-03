@@ -467,10 +467,11 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 /obj/item/reagent_containers/glass/beaker/large/borg/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(R), loc.loc)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/source, datum/om/event/movable_attempted_move/event)
+/obj/item/reagent_containers/glass/beaker/large/borg/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc

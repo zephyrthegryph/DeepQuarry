@@ -61,8 +61,8 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	connector_number = same + 1
 	rel_add(carrier, nameof(carrier.hose_connectors), src)
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
-	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
-	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))
+	observe(carrier, /datum/notice/moved, src, then(PROC_REF(move_react)))
+	observe(carrier, /datum/notice/hose_forcepump, src, then(PROC_REF(on_force_pump)))
 	om_grant(carrier, GRANT_VERB, /atom/proc/disconnect_hose, src)
 	return TRUE
 
@@ -110,7 +110,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 	reagents.trans_to_holder(connected_to, reagents.maximum_volume)
 	connected_to.trans_to_holder(reagents, rand(1,reagents.maximum_volume))
 
-/datum/hose_connector/proc/on_force_pump(datum/source, datum/om/event/hose_forcepump/event)
+/datum/hose_connector/proc/on_force_pump(datum/act/notice/A)
 	EVENT_HANDLER
 	force_pump()
 
@@ -208,7 +208,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		hose_pair = "nothing"
 	examine_texts += span_notice("[name] #[connector_number] is [my_hose ? "connected to [hose_pair]" : "disconnected"].")
 
-/datum/hose_connector/proc/move_react(atom/source, datum/om/event/moved/event)
+/datum/hose_connector/proc/move_react(datum/act/notice/A)
 	EVENT_HANDLER
 	update_hose_beam()
 

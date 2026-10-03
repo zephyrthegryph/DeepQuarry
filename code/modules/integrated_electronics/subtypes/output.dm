@@ -374,7 +374,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 /obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(on_moved))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(on_moved)))
 
 // its hologram goes with it.
 
@@ -462,7 +462,7 @@ CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
 	if(hologram)
 		update_hologram()
 
-/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/source, datum/om/event/movable_attempted_move/event)
+/obj/item/integrated_circuit/output/holographic_projector/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	if(hologram)
 		update_hologram_position()

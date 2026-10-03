@@ -1,6 +1,7 @@
 /// On searchables change, either reset or update
-/datum/lootpanel/proc/on_searchable_deleted(datum/search_object/source, datum/om/event/qdeleting/event)
+/datum/lootpanel/proc/on_searchable_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/search_object/source = A.target
 
 	own_take_member(src, nameof(searchables), source) // it is being deleted: out of our lists now
 	rel_remove(src, nameof(to_image), source)

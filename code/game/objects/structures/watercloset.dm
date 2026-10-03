@@ -47,7 +47,7 @@
 	// Non-bluespace plumbing. For POIs and player construction n' stuff.
 	var/obj/structure/disposalpipe/trunk/trunk = locate_on(get_turf(src), /obj/structure/disposalpipe/trunk)
 	add_disposal_connection(FALSE) //Dont show our disposal connection, and we want to handle failed flushes on our own.
-	om_hook(src, /datum/om/event/disposal_receive, src, PROC_REF(toilet_reflux))
+	observe(src, /datum/notice/disposal_receive, src, then(PROC_REF(toilet_reflux)))
 	if(trunk)
 		OM_EMIT(src, /datum/om/event/disposal_link, trunk)
 
@@ -393,8 +393,9 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	panic_mult = initial(panic_mult)
 	rel_clear(src, nameof(currently_held_objects)) //Clear the list.
 
-/obj/structure/toilet/proc/toilet_reflux(datum/source, datum/om/event/disposal_receive/event)
+/obj/structure/toilet/proc/toilet_reflux(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/disposal_receive/event = A
 	var/list/received_items = event.items
 	var/datum/gas_mixture/gas = event.gas
 	var/turf/T = get_turf(src)

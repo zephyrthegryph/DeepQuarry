@@ -52,7 +52,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 
 	if(istype(loc, /mob))
 		rel_set(src, nameof(holder), loc)
-		om_hook(holder_ref(), /datum/om/event/movable_attempted_move, src, PROC_REF(on_holder_moved))
+		observe(holder_ref(), /datum/notice/movable_attempted_move, src, then(PROC_REF(on_holder_moved)))
 		dq_add_recursive_move(holder_ref())
 
 	if(holder_ref() && tracking)
@@ -108,8 +108,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/gps, "compass", /obj/compass_holder)
 	return (target.z in reachable_z_levels)
 
 /// Hooked on the holder's movement.
-/obj/item/gps/proc/on_holder_moved(atom/movable/source, datum/om/event/movable_attempted_move/event)
+/obj/item/gps/proc/on_holder_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/source = A.target
 	update_compass(source)
 
 /obj/item/gps/proc/update_compass(atom/movable/source, update_compass_icon)

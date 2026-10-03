@@ -29,18 +29,18 @@ DECLARE_PERIODIC_WHILE(/obj/effect/countdown, PERIODIC_FAST, "started")
 	rel_set(src, nameof(attached_to), A)
 	var/turf/loc_turf = get_turf(A)
 	if(!loc_turf)
-		om_hook(attached_to, /datum/om/event/moved, src, PROC_REF(retry_attach))
+		observe(attached_to, /datum/notice/moved, src, then(PROC_REF(retry_attach)))
 	else
 		forceMove(loc_turf)
 
-/obj/effect/countdown/proc/retry_attach(datum/source, datum/om/event/moved/event)
+/obj/effect/countdown/proc/retry_attach(datum/act/notice/A)
 	EVENT_HANDLER
 
 	var/turf/loc_turf = get_turf(attached_to)
 	if(!loc_turf)
 		return
 	forceMove(loc_turf)
-	om_unhook(attached_to, /datum/om/event/moved, src)
+	unobserve(attached_to, /datum/notice/moved, src)
 
 /obj/effect/countdown/proc/start()
 	set_started(TRUE)

@@ -15,8 +15,8 @@
 	department_id = new_department_id
 	squad_id = new_squad_id
 	rel_set(src, nameof(home), new_home)
-	om_hook(defender(), /datum/om/event/dqai_damage_taken, src, PROC_REF(on_damage))
-	om_hook(defender(), /datum/om/event/mob_death, src, PROC_REF(on_death))
+	observe(defender(), /datum/notice/dqai_damage_taken, src, then(PROC_REF(on_damage)))
+	observe(defender(), /datum/notice/mob_death, src, then(PROC_REF(on_death)))
 
 // its director unregisters the defender.
 /datum/generated_station_defender_agent/on_destroy(force)
@@ -29,8 +29,9 @@
 /datum/generated_station_defender_agent/proc/is_active()
 	return defender() && !QDELETED(defender()) && defender().stat < DEAD
 
-/datum/generated_station_defender_agent/proc/on_damage(datum/source, datum/om/event/dqai_damage_taken/event)
+/datum/generated_station_defender_agent/proc/on_damage(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/dqai_damage_taken/event = A
 	var/atom/attacker = event.attacker
 	if(attacker)
 		rel_set(src, nameof(last_contact), attacker)
@@ -38,7 +39,7 @@
 	if(defender() && defender().vitality() <= GENERATED_STATION_DEFENDER_RETREAT_HEALTH)
 		runtime()?.retreat_agent(src)
 
-/datum/generated_station_defender_agent/proc/on_death(datum/source, datum/om/event/mob_death/event)
+/datum/generated_station_defender_agent/proc/on_death(datum/act/notice/A)
 	EVENT_HANDLER
 	runtime()?.on_casualty(src)
 

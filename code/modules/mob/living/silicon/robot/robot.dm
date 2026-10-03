@@ -165,7 +165,7 @@
 /mob/living/silicon/robot/Initialize(mapload, is_decoy)
 	if(islist(req_access))
 		req_access = shared_type_list(type, "req_access", req_access)
-	om_hook(src, /datum/om/event/living_shield_injury, src, PROC_REF(absorb_injury_with_shield))
+	global.observe(src, /datum/notice/living_shield_injury, src, then(PROC_REF(absorb_injury_with_shield)))
 
 	add_language(LANGUAGE_ROBOT_TALK, 1)
 	add_language(LANGUAGE_GALCOM, 1)
@@ -407,7 +407,7 @@
 		consume(mount.uninstall())
 	if(new_cell)
 		om_hook(new_cell, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(shield_cell_from_emp))
-		om_hook(new_cell, /datum/om/event/qdeleting, src, PROC_REF(on_cell_deleted))
+		global.observe(new_cell, /datum/notice/qdeleting, src, then(PROC_REF(on_cell_deleted)))
 		if(mount && mount.wrapped != new_cell)
 			mount.install(new_cell)
 	if(!QDELETED(src))
@@ -428,8 +428,9 @@
 	EVENT_HANDLER
 	return EMP_PROTECT_SELF
 
-/mob/living/silicon/robot/proc/on_cell_deleted(datum/source, datum/om/event/qdeleting/event)
+/mob/living/silicon/robot/proc/on_cell_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	var/datum/robot_component/mount = get_component(ROBOT_SLOT_POWER)
 	if(mount?.wrapped == source)
 		own_take(mount, nameof(mount.wrapped))
@@ -1583,17 +1584,17 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	rel_set(src, nameof(connected_ai), new_ai)
 	if(new_ai)
 		rel_add(new_ai, nameof(new_ai.connected_robots), src)
-		om_hook(new_ai, /datum/om/event/silicon_laws_changed, src, PROC_REF(on_master_laws_changed))
-		om_hook(new_ai, /datum/om/event/qdeleting, src, PROC_REF(on_master_deleted))
+		global.observe(new_ai, /datum/notice/silicon_laws_changed, src, then(PROC_REF(on_master_laws_changed)))
+		global.observe(new_ai, /datum/notice/qdeleting, src, then(PROC_REF(on_master_deleted)))
 	log_runtime("ROBOT_LINK: [key_name(src)] master AI [old_ai ? key_name(old_ai) : "none"] -> [new_ai ? key_name(new_ai) : "none"].")
 	return TRUE
 
-/mob/living/silicon/robot/proc/on_master_laws_changed(datum/source, datum/om/event/silicon_laws_changed/event)
+/mob/living/silicon/robot/proc/on_master_laws_changed(datum/act/notice/A)
 	EVENT_HANDLER
 	if(lawupdate)
 		sync()
 
-/mob/living/silicon/robot/proc/on_master_deleted(datum/source, datum/om/event/qdeleting/event)
+/mob/living/silicon/robot/proc/on_master_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	set_master_ai(null, TRUE)
 

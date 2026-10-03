@@ -125,14 +125,14 @@ CAPABILITIES(/datum/overlay_lighting)
 /// Hooks the owner's events and starts tracking its holder (was RegisterWithParent).
 /datum/overlay_lighting/proc/attach()
 	if(directional)
-		om_hook(owner, /datum/om/event/atom_dir_change, src, PROC_REF(on_parent_dir_change))
-	om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_parent_moved_event))
-	om_hook(owner, /datum/om/event/atom_update_light_range, src, PROC_REF(on_range_event))
-	om_hook(owner, /datum/om/event/atom_update_light_power, src, PROC_REF(on_power_event))
-	om_hook(owner, /datum/om/event/atom_update_light_color, src, PROC_REF(on_color_event))
-	om_hook(owner, /datum/om/event/atom_update_light_on, src, PROC_REF(on_toggle))
-	om_hook(owner, /datum/om/event/atom_update_light_flags, src, PROC_REF(on_light_flags_change))
-	om_hook(owner, /datum/om/event/atom_used_in_craft, src, PROC_REF(on_parent_crafted))
+		observe(owner, /datum/notice/atom_dir_change, src, then(PROC_REF(on_parent_dir_change)))
+	observe(owner, /datum/notice/moved, src, then(PROC_REF(on_parent_moved_event)))
+	observe(owner, /datum/notice/atom_update_light_range, src, then(PROC_REF(on_range_event)))
+	observe(owner, /datum/notice/atom_update_light_power, src, then(PROC_REF(on_power_event)))
+	observe(owner, /datum/notice/atom_update_light_color, src, then(PROC_REF(on_color_event)))
+	observe(owner, /datum/notice/atom_update_light_on, src, then(PROC_REF(on_toggle)))
+	observe(owner, /datum/notice/atom_update_light_flags, src, then(PROC_REF(on_light_flags_change)))
+	observe(owner, /datum/notice/atom_used_in_craft, src, then(PROC_REF(on_parent_crafted)))
 	var/atom/movable/movable_parent = owner
 	if(movable_parent.light_flags & LIGHT_ATTACHED)
 		overlay_lighting_flags |= LIGHTING_ATTACHED
@@ -239,13 +239,13 @@ CAPABILITIES(/datum/overlay_lighting)
 		var/atom/movable/old_parent_attached_to = .
 		om_unhook(old_parent_attached_to, list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
 		if(old_parent_attached_to == current_holder())
-			om_hook(old_parent_attached_to, /datum/om/event/qdeleting, src, PROC_REF(on_holder_qdel))
-			om_hook(old_parent_attached_to, /datum/om/event/moved, src, PROC_REF(on_holder_moved))
+			observe(old_parent_attached_to, /datum/notice/qdeleting, src, then(PROC_REF(on_holder_qdel)))
+			observe(old_parent_attached_to, /datum/notice/moved, src, then(PROC_REF(on_holder_moved)))
 	if(parent_attached_to())
 		if(parent_attached_to() == current_holder())
 			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
-		om_hook(parent_attached_to(), /datum/om/event/qdeleting, src, PROC_REF(on_parent_attached_to_qdel))
-		om_hook(parent_attached_to(), /datum/om/event/moved, src, PROC_REF(on_parent_attached_to_moved))
+		observe(parent_attached_to(), /datum/notice/qdeleting, src, then(PROC_REF(on_parent_attached_to_qdel)))
+		observe(parent_attached_to(), /datum/notice/moved, src, then(PROC_REF(on_parent_attached_to_moved)))
 	check_holder()
 
 ///Called to change the value of current_holder.
@@ -258,7 +258,7 @@ CAPABILITIES(/datum/overlay_lighting)
 		if(current_holder() != owner && current_holder() != parent_attached_to())
 			om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
 			if(directional)
-				om_unhook(current_holder(), /datum/om/event/atom_dir_change, src)
+				unobserve(current_holder(), /datum/notice/atom_dir_change, src)
 		if(overlay_lighting_flags & LIGHTING_ON)
 			remove_dynamic_lumi()
 	rel_set(src, nameof(current_holder), new_holder)
@@ -266,10 +266,10 @@ CAPABILITIES(/datum/overlay_lighting)
 		clean_old_turfs()
 		return
 	if(new_holder != owner && new_holder != parent_attached_to())
-		om_hook(new_holder, /datum/om/event/qdeleting, src, PROC_REF(on_holder_qdel))
-		om_hook(new_holder, /datum/om/event/moved, src, PROC_REF(on_holder_moved))
+		observe(new_holder, /datum/notice/qdeleting, src, then(PROC_REF(on_holder_qdel)))
+		observe(new_holder, /datum/notice/moved, src, then(PROC_REF(on_holder_moved)))
 		if(directional)
-			om_hook(new_holder, /datum/om/event/atom_dir_change, src, PROC_REF(on_holder_dir_change))
+			observe(new_holder, /datum/notice/atom_dir_change, src, then(PROC_REF(on_holder_dir_change)))
 	if(overlay_lighting_flags & LIGHTING_ON)
 		make_luminosity_update()
 		add_dynamic_lumi()
@@ -290,23 +290,25 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_holder(null)
 
 ///Called when the current_holder is qdeleted, to remove the light effect.
-/datum/overlay_lighting/proc/on_holder_qdel(atom/movable/source, datum/om/event/qdeleting/event)
+/datum/overlay_lighting/proc/on_holder_qdel(datum/act/notice/A)
 	EVENT_HANDLER
 	om_unhook(current_holder(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
 	if(directional)
-		om_unhook(current_holder(), /datum/om/event/atom_dir_change, src)
+		unobserve(current_holder(), /datum/notice/atom_dir_change, src)
 	set_holder(null)
 
 ///Called when current_holder changes loc.
-/datum/overlay_lighting/proc/on_holder_moved(atom/movable/source, datum/om/event/moved/event)
+/datum/overlay_lighting/proc/on_holder_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	if(!(overlay_lighting_flags & LIGHTING_ON))
 		return
 	make_luminosity_update()
 
 ///Called when parent changes loc.
-/datum/overlay_lighting/proc/on_parent_moved_event(atom/movable/source, datum/om/event/moved/event)
+/datum/overlay_lighting/proc/on_parent_moved_event(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/source = A.target
+	var/datum/notice/moved/event = A
 	on_parent_moved(source, event.old_loc, event.direction, event.forced)
 
 ///Called when parent changes loc (also called directly by turf translation).
@@ -320,17 +322,17 @@ CAPABILITIES(/datum/overlay_lighting)
 	make_luminosity_update()
 
 ///Called when the current_holder is qdeleted, to remove the light effect.
-/datum/overlay_lighting/proc/on_parent_attached_to_qdel(atom/movable/source, datum/om/event/qdeleting/event)
+/datum/overlay_lighting/proc/on_parent_attached_to_qdel(datum/act/notice/A)
 	EVENT_HANDLER
 	om_unhook(parent_attached_to(), list(/datum/om/event/qdeleting, /datum/om/event/moved), src)
 	if(directional)
-		om_unhook(parent_attached_to(), /datum/om/event/atom_dir_change, src)
+		unobserve(parent_attached_to(), /datum/notice/atom_dir_change, src)
 	if(parent_attached_to() == current_holder())
 		set_holder(null)
 	set_parent_attached_to(null)
 
 ///Called when parent_attached_to changes loc.
-/datum/overlay_lighting/proc/on_parent_attached_to_moved(atom/movable/source, datum/om/event/moved/event)
+/datum/overlay_lighting/proc/on_parent_attached_to_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	check_holder()
 	if(!(overlay_lighting_flags & LIGHTING_ON) || !current_holder())
@@ -338,8 +340,10 @@ CAPABILITIES(/datum/overlay_lighting)
 	make_luminosity_update()
 
 ///Changes the range which the light reaches. 0 means no light, 6 is the maximum value.
-/datum/overlay_lighting/proc/on_range_event(atom/source, datum/om/event/atom_update_light_range/event)
+/datum/overlay_lighting/proc/on_range_event(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
+	var/datum/notice/atom_update_light_range/event = A
 	set_range(source, event.old_range)
 
 /datum/overlay_lighting/proc/set_range(atom/source, old_range)
@@ -365,8 +369,10 @@ CAPABILITIES(/datum/overlay_lighting)
 		make_luminosity_update()
 
 ///Changes the intensity/brightness of the light by altering the visual object's alpha.
-/datum/overlay_lighting/proc/on_power_event(atom/source, datum/om/event/atom_update_light_power/event)
+/datum/overlay_lighting/proc/on_power_event(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
+	var/datum/notice/atom_update_light_power/event = A
 	set_power(source, event.old_power)
 
 /datum/overlay_lighting/proc/set_power(atom/source, old_power)
@@ -378,8 +384,10 @@ CAPABILITIES(/datum/overlay_lighting)
 		cone.alpha = min(200, (abs(new_power) * 90)+20)
 
 ///Changes the light's color, pretty straightforward.
-/datum/overlay_lighting/proc/on_color_event(atom/source, datum/om/event/atom_update_light_color/event)
+/datum/overlay_lighting/proc/on_color_event(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
+	var/datum/notice/atom_update_light_color/event = A
 	set_color(source, event.old_color)
 
 /datum/overlay_lighting/proc/set_color(atom/source, old_color)
@@ -389,8 +397,9 @@ CAPABILITIES(/datum/overlay_lighting)
 		cone.color = new_color
 
 ///Toggles the light on and off.
-/datum/overlay_lighting/proc/on_toggle(atom/source, datum/om/event/atom_update_light_on/event)
+/datum/overlay_lighting/proc/on_toggle(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
 	var/new_value = source.light_on
 	if(new_value) //Truthy value input, turn on.
 		turn_on()
@@ -398,8 +407,10 @@ CAPABILITIES(/datum/overlay_lighting)
 	turn_off() //Falsey value, turn off.
 
 ///Triggered right after the parent light flags change.
-/datum/overlay_lighting/proc/on_light_flags_change(atom/source, datum/om/event/atom_update_light_flags/event)
+/datum/overlay_lighting/proc/on_light_flags_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
+	var/datum/notice/atom_update_light_flags/event = A
 	var/old_flags = event.old_flags
 	var/new_flags = source.light_flags
 	var/atom/movable/movable_parent = owner
@@ -492,13 +503,15 @@ CAPABILITIES(/datum/overlay_lighting)
 	set_cone_direction(NORTH, angle)
 
 ///Called when current_holder changes loc.
-/datum/overlay_lighting/proc/on_holder_dir_change(atom/movable/source, datum/om/event/atom_dir_change/event)
+/datum/overlay_lighting/proc/on_holder_dir_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_dir_change/event = A
 	set_direction(event.new_dir)
 
 ///Called when parent changes loc.
-/datum/overlay_lighting/proc/on_parent_dir_change(atom/movable/source, datum/om/event/atom_dir_change/event)
+/datum/overlay_lighting/proc/on_parent_dir_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_dir_change/event = A
 	set_direction(event.new_dir)
 
 ///Sets the cone's direction for directional lighting
@@ -550,14 +563,15 @@ CAPABILITIES(/datum/overlay_lighting)
 	if(!skip_update && (overlay_lighting_flags & LIGHTING_ON))
 		make_luminosity_update()
 
-/datum/overlay_lighting/proc/on_parent_crafted(datum/source, datum/om/event/atom_used_in_craft/event)
+/datum/overlay_lighting/proc/on_parent_crafted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_used_in_craft/event = A
 	var/atom/movable/new_craft = event.result_
 	if(!istype(new_craft))
 		return
 
-	om_unhook(owner, /datum/om/event/atom_used_in_craft, src)
-	om_hook(new_craft, /datum/om/event/atom_used_in_craft, src, PROC_REF(on_parent_crafted))
+	unobserve(owner, /datum/notice/atom_used_in_craft, src)
+	observe(new_craft, /datum/notice/atom_used_in_craft, src, then(PROC_REF(on_parent_crafted)))
 	set_parent_attached_to(new_craft)
 
 /// Handles putting the source for overlay lights into the light eater queue since we aren't tracked by [/atom/var/light_sources]

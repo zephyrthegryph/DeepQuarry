@@ -175,7 +175,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 	var/client/C = null
 	if(!new_overmind)
 		rel_set(src, nameof(Q), new /datum/ghost_query/blob())
-		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+		observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 		Q.query()
 
 	else
@@ -183,14 +183,14 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 		overmind_creation(C)
 	rel_clear(src, nameof(controller)) //Controller has been set. Let's null it now.
 
-/obj/structure/blob/core/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+/obj/structure/blob/core/proc/get_winner(datum/act/notice/A)
 	EVENT_HANDLER
 	if(Q && Q.candidates.len) //Q should NEVER get deleted but...whatever, sanity.
 		var/mob/observer/dead/D = Q.candidates[1]
 		var/client/C
 		C = D.client
 		overmind_creation(C)
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
 	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 
 /obj/structure/blob/core/proc/overmind_creation(client/new_overmind)

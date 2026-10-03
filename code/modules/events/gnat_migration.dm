@@ -73,7 +73,7 @@ CAPABILITIES(/datum/event/gnat_migration)
 // Spawn a single gnat at given location.
 /datum/event/gnat_migration/proc/spawn_one_gnat(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/gnat(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_gnat_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_gnat_destruction)))
 	rel_add(src, nameof(spawned_gnat), M)
 	return M
 
@@ -85,8 +85,9 @@ CAPABILITIES(/datum/event/gnat_migration)
 			. += 1
 
 // If gnat is bomphed, remove it from the list.
-/datum/event/gnat_migration/proc/on_gnat_destruction(mob/M, datum/om/event/qdeleting/event)
+/datum/event/gnat_migration/proc/on_gnat_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_gnat), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 

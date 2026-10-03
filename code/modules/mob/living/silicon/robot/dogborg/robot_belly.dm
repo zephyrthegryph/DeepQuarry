@@ -29,9 +29,9 @@
 	R.max_buckled_mobs = 1
 	if(!R.riding_datum)
 		rel_set(R, nameof(R.riding_datum), new /datum/riding/dogborg(R))
-	om_hook(R, /datum/om/event/mob_death, src, PROC_REF(on_death))
-	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
-	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
+	observe(R, /datum/notice/mob_death, src, then(PROC_REF(on_death)))
+	observe(R, /datum/notice/robot_equipment_changed, src, then(PROC_REF(on_equipment_changed)))
+	observe(R, /datum/notice/robot_belly_fullness, src, then(PROC_REF(on_belly_fullness)))
 
 // owned state datum (was a component): its riders and ore bags are let go.
 /datum/robot_belly/on_destroy(force)
@@ -70,14 +70,14 @@
 	for(var/obj/item/dogborg/sleeper/S in R.get_all_held_items())
 		. |= S
 
-/datum/robot_belly/proc/on_death(datum/source, datum/om/event/mob_death/event)
+/datum/robot_belly/proc/on_death(datum/act/notice/A)
 	EVENT_HANDLER
 	for(var/obj/item/dogborg/sleeper/S as anything in get_sleepers())
 		S.go_out()
 
 /// Ore bags autoload only while their compactor is equipped; the pounce turns
 /// bluespace while anomalous sight is active.
-/datum/robot_belly/proc/on_equipment_changed(datum/source, datum/om/event/robot_equipment_changed/event)
+/datum/robot_belly/proc/on_equipment_changed(datum/act/notice/A)
 	EVENT_HANDLER
 	var/mob/living/silicon/robot/R = owner
 	var/list/held = R.get_all_held_items()
@@ -106,8 +106,9 @@
 
 /// The "sleeper" belly class shows the sleeper's contents per the owner's
 /// overlay preference.
-/datum/robot_belly/proc/on_belly_fullness(datum/source, datum/om/event/robot_belly_fullness/event)
+/datum/robot_belly/proc/on_belly_fullness(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/robot_belly_fullness/event = A
 	var/belly_class = event.belly_class
 	var/list/fullness_ref = event.fullness_ref
 	var/mob/living/silicon/robot/R = owner

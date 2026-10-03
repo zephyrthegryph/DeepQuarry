@@ -36,7 +36,7 @@
 		return
 	source.apply_body_effect(/datum/body_effect/leash)
 	source.throw_alert("leashed", /atom/movable/screen/alert/leash_pet, new_master = target)
-	om_hook(source, /datum/om/event/moved, target, TYPE_PROC_REF(/obj/item/leash, on_pet_move))
+	observe(source, /datum/notice/moved, target, then(TYPE_PROC_REF(/obj/item/leash, on_pet_move)))
 	om_task_periodic(target, PERIODIC_SLOW)
 
 /datum/om/relation/leashed_to/on_unlink(mob/living/source, obj/item/leash/target, datum/om/edge/edge)
@@ -44,7 +44,7 @@
 		source.clear_alert("leashed")
 		source.remove_body_effect(/datum/body_effect/leash)
 	if(istype(target))
-		om_unhook(source, /datum/om/event/moved, target)
+		unobserve(source, /datum/notice/moved, target)
 		om_task_periodic_stop(target)
 		// No pet, no leash: let go of the holder too.
 		var/mob/living/master = target?.leash_master()
@@ -59,13 +59,13 @@
 	if(!istype(source) || !istype(target))
 		return
 	target.throw_alert("leash", /atom/movable/screen/alert/leash_dom, new_master = source)
-	om_hook(target, /datum/om/event/moved, source, TYPE_PROC_REF(/obj/item/leash, on_master_move))
+	observe(target, /datum/notice/moved, source, then(TYPE_PROC_REF(/obj/item/leash, on_master_move)))
 
 /datum/om/relation/leash_held_by/on_unlink(obj/item/leash/source, mob/living/target, datum/om/edge/edge)
 	if(istype(target) && !QDELETED(target))
 		target.clear_alert("leash")
 	if(istype(source))
-		om_unhook(target, /datum/om/event/moved, source)
+		unobserve(target, /datum/notice/moved, source)
 		// No holder, no leash: the pet is free.
 		var/mob/living/pet = source?.leash_pet()
 		if(pet)
@@ -198,7 +198,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	apply_tug_mob_to_mob(leash_pet, leash_master, 1)
 	return TRUE
 
-/obj/item/leash/proc/on_master_move(datum/source, datum/om/event/moved/event)
+/obj/item/leash/proc/on_master_move(datum/act/notice/A)
 	EVENT_HANDLER
 	var/mob/living/leash_pet = src?.leash_pet()
 	//Make sure the dom still has a pet
@@ -248,7 +248,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		leash_pet.body?.add_restriction(src, BF_AIRWAY, 0.2, 5 SECONDS) // the collar yanks the throat shut
 		clear_leash()
 
-/obj/item/leash/proc/on_pet_move(datum/source, datum/om/event/moved/event)
+/obj/item/leash/proc/on_pet_move(datum/act/notice/A)
 	EVENT_HANDLER
 	//This should only work if there is a pet and a master.
 	if(!src?.leash_master() || !src?.leash_pet())

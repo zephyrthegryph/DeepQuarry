@@ -32,21 +32,21 @@ CAPABILITIES(/obj/structure/ghost_pod)
 		log_and_message_admins(adminalert, user)
 	busy = TRUE
 	rel_set(src, nameof(Q), new ghost_query_type())
-	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
+	observe(Q, /datum/notice/ghost_query_complete, src, then(PROC_REF(get_winner)))
 	Q.query()
 
-/obj/structure/ghost_pod/proc/get_winner(datum/source, datum/om/event/ghost_query_complete/event)
+/obj/structure/ghost_pod/proc/get_winner(datum/act/notice/A)
 	EVENT_HANDLER
 	busy = FALSE
 	if(length(Q.candidates))
 		var/mob/observer/dead/D = Q.candidates[1]
-		om_unhook(Q, /datum/om/event/ghost_query_complete, src)
+		unobserve(Q, /datum/notice/ghost_query_complete, src)
 		own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 		create_occupant(D)
 		return
 
 	// No volunteer: an automatic pod's auto_trigger() repeat tries again after delay_to_try_again.
-	om_unhook(Q, /datum/om/event/ghost_query_complete, src)
+	unobserve(Q, /datum/notice/ghost_query_complete, src)
 	own_clear(src, nameof(Q), OWN_DELETE) //get rid of the query
 
 // Override this to create whatever mob you need. Be sure to call ..() if you don't want it to make infinite mobs.

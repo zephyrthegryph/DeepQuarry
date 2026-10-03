@@ -23,7 +23,7 @@
 		path = item.type
 
 	if(isturf(item))
-		om_hook(item, /datum/om/event/turf_change, src, PROC_REF(on_turf_change))
+		observe(item, /datum/notice/turf_change, src, then(PROC_REF(on_turf_change)))
 	else
 		// Lest we find ourselves here again, this is intentionally stupid.
 		// It tracks items going out and user actions, otherwise they can refresh the lootpanel.
@@ -72,8 +72,9 @@
 	qdel(src)
 
 /// Parent tile has been altered, entire search needs reset
-/datum/search_object/proc/on_turf_change(turf/source, datum/om/event/turf_change/event)
+/datum/search_object/proc/on_turf_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/turf_change/event = A
 	var/list/post_change_callbacks = event.post_change_callbacks
 
 	post_change_callbacks += list(om_callable(null, GLOBAL_PROC_REF(qdel), src))

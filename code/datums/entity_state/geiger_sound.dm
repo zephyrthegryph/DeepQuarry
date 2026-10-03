@@ -37,7 +37,7 @@ CAPABILITIES(/obj/item/geiger)
 
 	if (isitem(owner))
 		var/atom/atom_parent = owner
-		om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
+		observe(owner, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 		register_to_loc(atom_parent.loc)
 
 /datum/geiger_sound/proc/detach()
@@ -66,8 +66,9 @@ CAPABILITIES(/obj/item/geiger)
 
 	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
 
-/datum/geiger_sound/proc/on_moved(atom/source, datum/om/event/moved/event)
+/datum/geiger_sound/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/source = A.target
 	register_to_loc(source.loc)
 
 /datum/geiger_sound/proc/register_to_loc(new_loc)

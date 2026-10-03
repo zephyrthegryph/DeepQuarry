@@ -79,9 +79,9 @@ SYSTEM_DEF(contracts)
 	custody_last_ended_at_by_subject = list()
 	security_record_subject_ids = list()
 	infrastructure_fact_revisions = list()
-	om_hook(OM_WORLD, /datum/om/event/world_mob_created, src, PROC_REF(on_mob_created))
-	om_hook(OM_WORLD, /datum/om/event/world_mob_death, src, PROC_REF(on_mob_death))
-	om_hook(OM_WORLD, /datum/om/event/world_payment_account_status, src, PROC_REF(on_payment_account_status))
+	observe(OM_WORLD, /datum/notice/world_mob_created, src, then(PROC_REF(on_mob_created)))
+	observe(OM_WORLD, /datum/notice/world_mob_death, src, then(PROC_REF(on_mob_death)))
+	observe(OM_WORLD, /datum/notice/world_payment_account_status, src, then(PROC_REF(on_payment_account_status)))
 	for(var/mob/living/carbon/human/subject in REGISTRY_MEMBERS(REGISTRY_HUMANS))
 		watch_contract_subject(subject)
 	for(var/definition_type as anything in subtypesof(/datum/contract_definition))
@@ -105,29 +105,31 @@ SYSTEM_DEF(contracts)
 	infrastructure_fact_revisions[key] = revision
 	return revision
 
-/datum/system/contracts/proc/on_mob_created(datum/source, datum/om/event/world_mob_created/event)
+/datum/system/contracts/proc/on_mob_created(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/world_mob_created/event = A
 	var/mob/created_mob = event.mob
 	var/mob/living/carbon/human/subject = created_mob
 	if(istype(subject))
 		watch_contract_subject(subject)
 
 /datum/system/contracts/proc/watch_contract_subject(mob/living/carbon/human/subject)
-	om_hook(subject, /datum/om/event/mob_medical_issues_changed, src, PROC_REF(on_medical_issues_changed))
+	observe(subject, /datum/notice/mob_medical_issues_changed, src, then(PROC_REF(on_medical_issues_changed)))
 	om_hook(subject, /datum/om/event/affliction_severity_changed, src, PROC_REF(on_affliction_severity_changed))
 	om_hook(subject, /datum/om/event/body_afflictions_changed, src, PROC_REF(on_body_afflictions_changed))
-	om_hook(subject, /datum/om/event/living_revived, src, PROC_REF(on_medical_subject_revived))
-	om_hook(subject, /datum/om/event/mob_login, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_logout, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_mind_transferred_into, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/mob_mind_transferred_out_of, src, PROC_REF(on_medical_subject_availability))
-	om_hook(subject, /datum/om/event/moved, src, PROC_REF(on_custody_input_changed))
-	om_hook(subject, /datum/om/event/mob_equipped_item, src, PROC_REF(on_custody_input_changed))
-	om_hook(subject, /datum/om/event/mob_unequipped_item, src, PROC_REF(on_custody_input_changed))
+	observe(subject, /datum/notice/living_revived, src, then(PROC_REF(on_medical_subject_revived)))
+	observe(subject, /datum/notice/mob_login, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_logout, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_mind_transferred_into, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/mob_mind_transferred_out_of, src, then(PROC_REF(on_medical_subject_availability)))
+	observe(subject, /datum/notice/moved, src, then(PROC_REF(on_custody_input_changed)))
+	observe(subject, /datum/notice/mob_equipped_item, src, then(PROC_REF(on_custody_input_changed)))
+	observe(subject, /datum/notice/mob_unequipped_item, src, then(PROC_REF(on_custody_input_changed)))
 	refresh_physical_custody(subject)
 
-/datum/system/contracts/proc/on_custody_input_changed(mob/living/carbon/human/subject, datum/om/event/event)
+/datum/system/contracts/proc/on_custody_input_changed(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/subject = A.target
 	refresh_physical_custody(subject)
 
 /datum/system/contracts/proc/is_physically_custodied(mob/living/carbon/human/subject)
@@ -224,8 +226,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		"subject_name" = subject.real_name,
 	)
 
-/datum/system/contracts/proc/on_payment_account_status(datum/source, datum/om/event/world_payment_account_status/event)
+/datum/system/contracts/proc/on_payment_account_status(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/world_payment_account_status/event = A
 	var/datum/money_account/account = event.account
 	if(!account || account.suspended)
 		return
@@ -276,8 +279,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	var/completion_number = completions_by_definition[definition.id] || 0
 	return !!queue_offer(definition.id, context, "Allied standing unlocked a higher-tier follow-up commission", "followup:[definition.id]:[completion_number]", 90)
 
-/datum/system/contracts/proc/on_medical_subject_availability(mob/living/carbon/human/subject, datum/om/event/event)
+/datum/system/contracts/proc/on_medical_subject_availability(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/subject = A.target
 	queue_medical_subject_reconciliation(subject)
 
 /datum/system/contracts/proc/queue_medical_subject_reconciliation(mob/living/carbon/human/subject)
@@ -307,13 +311,15 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	reconcile_medical_trial_side_contracts()
 	consider_rare_medical_case(subject)
 
-/datum/system/contracts/proc/on_medical_issues_changed(mob/living/carbon/human/subject, datum/om/event/mob_medical_issues_changed/event)
+/datum/system/contracts/proc/on_medical_issues_changed(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/subject = A.target
 	subject.refresh_contract_medical_eligibility()
 	consider_rare_medical_case(subject)
 
-/datum/system/contracts/proc/on_mob_death(datum/source, datum/om/event/world_mob_death/event)
+/datum/system/contracts/proc/on_mob_death(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/world_mob_death/event = A
 	var/mob/living/dead_mob = event.living
 	if(ishuman(dead_mob))
 		var/mob/living/carbon/human/dead_subject = dead_mob
@@ -321,8 +327,9 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 		reconcile_medical_trial_offers()
 		withdraw_rare_case_offers(dead_mob)
 
-/datum/system/contracts/proc/on_medical_subject_revived(mob/living/carbon/human/subject, datum/om/event/living_revived/event)
+/datum/system/contracts/proc/on_medical_subject_revived(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/human/subject = A.target
 	subject.contract_medical_indications = null
 	subject.refresh_contract_medical_eligibility()
 

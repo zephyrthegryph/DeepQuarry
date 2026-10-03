@@ -47,25 +47,26 @@ why aren't these accessories?
 
 	rel_set(src, nameof(worn_mob), mob)
 
-	om_hook(mob, /datum/om/event/mob_login, src, PROC_REF(worn_mob_logged_in))
-	om_hook(mob, /datum/om/event/mob_logout, src, PROC_REF(worn_mob_logged_out))
+	observe(mob, /datum/notice/mob_login, src, then(PROC_REF(worn_mob_logged_in)))
+	observe(mob, /datum/notice/mob_logout, src, then(PROC_REF(worn_mob_logged_out)))
 	transmit_emote(src, span_notice("\The [src] has been put on by [mob]!"))
 
 /obj/item/remote_scene_tool/proc/unregister_from_mob(mob)
 	if(worn_mob() == null) return
-	om_unhook(worn_mob(), list(/datum/om/event/mob_login, /datum/om/event/mob_logout), src)
+	unobserve(worn_mob(), /datum/notice/mob_login, src)
+	unobserve(worn_mob(), /datum/notice/mob_logout, src)
 	rel_clear(src, nameof(worn_mob))
 	transmit_emote(src, span_warning("\The [src]'s wearer has removed it!"))
 
 //called when the mob wearing this item logs out
-/obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/source, datum/om/event/mob_logout/event)
+/obj/item/remote_scene_tool/proc/worn_mob_logged_out(datum/act/notice/A)
 	EVENT_HANDLER
 	if(!linked())
 		return
 	transmit_emote(src, span_warning("\The [src]'s wearer has gone SSD!"))
 	linked()?.linked_updated()
 
-/obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/source, datum/om/event/mob_login/event)
+/obj/item/remote_scene_tool/proc/worn_mob_logged_in(datum/act/notice/A)
 	EVENT_HANDLER
 	//called when the mob wearing this item logs in
 	if(!linked())
@@ -103,9 +104,9 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/Initialize(mapload)
 	. = ..()
-	om_hook(src, /datum/om/event/atom_entering, src, PROC_REF(check_loc))
+	observe(src, /datum/notice/atom_entering, src, then(PROC_REF(check_loc)))
 
-/obj/item/remote_scene_tool/proc/check_loc(atom/movable/mover, datum/om/event/atom_entering/event)
+/obj/item/remote_scene_tool/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
 	after(src, 1, PROC_REF(delayed_loc_check))
 

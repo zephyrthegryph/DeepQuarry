@@ -95,16 +95,18 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 
 /obj/machinery/mecha_part_fabricator_tg/proc/connect_techweb(datum/techweb/new_techweb)
 	if(stored_research())
-		om_unhook(stored_research(), list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src)
+		unobserve(stored_research(), /datum/notice/techweb_add_design, src)
+		unobserve(stored_research(), /datum/notice/techweb_remove_design, src)
 	stored_research_static = new_techweb
 	if(!isnull(stored_research()))
 		on_connected_techweb()
 
 /obj/machinery/mecha_part_fabricator_tg/proc/on_connected_techweb()
-	om_hook(stored_research(), list(/datum/om/event/techweb_add_design, /datum/om/event/techweb_remove_design), src, PROC_REF(on_techweb_update))
+	observe(stored_research(), /datum/notice/techweb_add_design, src, then(PROC_REF(on_techweb_update)))
+	observe(stored_research(), /datum/notice/techweb_remove_design, src, then(PROC_REF(on_techweb_update)))
 	update_menu_tech()
 
-/obj/machinery/mecha_part_fabricator_tg/proc/on_techweb_update(datum/source, datum/om/event/event)
+/obj/machinery/mecha_part_fabricator_tg/proc/on_techweb_update(datum/act/notice/A)
 	EVENT_HANDLER
 
 	// We're probably going to get more than one update (design) at a time, so batch

@@ -18,7 +18,7 @@
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
 		rel_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
-		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
+		observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 
 	update_icon()
 
@@ -43,7 +43,7 @@
 		if(!has_extinguisher && opened)
 			if(!own_set(src, nameof(src.has_extinguisher), O, user = user))
 				return TRUE
-			om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
+			observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 			to_chat(user, span_notice("You place [O] in [src]."))
 		else
 			opened = !opened
@@ -107,8 +107,9 @@
 	update_icon()
 	return TRUE
 
-/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/structure/extinguisher_cabinet/proc/on_extinguisher_deleted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	if(source != has_extinguisher)
 		return
 	own_take(src, nameof(has_extinguisher))

@@ -95,7 +95,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 
 	if(!isnull(last_target()))
 		om_unhook(last_target(), /datum/om/event/qdeleting, src)
-	om_hook(thing, /datum/om/event/qdeleting, src, PROC_REF(on_target_qdel))
+	observe(thing, /datum/notice/qdeleting, src, then(PROC_REF(on_target_qdel)))
 	rel_set(src, nameof(last_target), thing)
 	_revision++
 	queueHide = FALSE
@@ -154,7 +154,7 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 		do_hide(hide_revision)
 	return TRUE
 
-/datum/tooltip/proc/on_target_qdel(datum/source, datum/om/event/qdeleting/event)
+/datum/tooltip/proc/on_target_qdel(datum/act/notice/A)
 	EVENT_HANDLER
 	hide()
 	rel_clear(src, nameof(last_target))

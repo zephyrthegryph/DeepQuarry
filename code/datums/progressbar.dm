@@ -60,9 +60,9 @@
 		rel_set(src, nameof(user_client), user().client)
 		add_prog_bar_image_to_client()
 
-	om_hook(user(), /datum/om/event/qdeleting, src, PROC_REF(on_user_delete))
+	observe(user(), /datum/notice/qdeleting, src, then(PROC_REF(on_user_delete)))
 	om_hook(user(), /datum/om/event/mob_logout, src, PROC_REF(clean_user_client))
-	om_hook(user(), /datum/om/event/mob_login, src, PROC_REF(on_user_login))
+	observe(user(), /datum/notice/mob_login, src, then(PROC_REF(on_user_login)))
 
 	if(starting_amount)
 		update(starting_amount)
@@ -89,8 +89,9 @@
 
 
 ///Called right before the user's Destroy()
-/datum/progressbar/proc/on_user_delete(datum/source, datum/om/event/qdeleting/event)
+/datum/progressbar/proc/on_user_delete(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 
 	var/mob/dying_user = source
 	dying_user.progressbars = null //We can simply nuke the list and stop worrying about updating other prog bars if the user itself is gone.
@@ -107,7 +108,7 @@
 	rel_clear(src, nameof(user_client))
 
 ///Called by user's Login(), it transfers the progress bar image to the new client.
-/datum/progressbar/proc/on_user_login(datum/source, datum/om/event/mob_login/event)
+/datum/progressbar/proc/on_user_login(datum/act/notice/A)
 	EVENT_HANDLER
 
 	if(user_client())

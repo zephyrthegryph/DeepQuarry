@@ -7,18 +7,19 @@
 		linked_experiment_handler.announce_message("Incorrect object for experiment.")
 		return FALSE
 
-	om_hook(currently_scanned_atom, /datum/om/event/telesci_teleport, src, PROC_REF(teleported_items))
+	observe(currently_scanned_atom, /datum/notice/telesci_teleport, src, then(PROC_REF(teleported_items)))
 	linked_experiment_handler.announce_message("Experiment ready to start.")
 	return TRUE
 
 /datum/experiment/physical/teleporting/unregister_events()
-	om_unhook(currently_scanned_atom, /datum/om/event/telesci_teleport, src)
+	unobserve(currently_scanned_atom, /datum/notice/telesci_teleport, src)
 
 /datum/experiment/physical/teleporting/check_progress()
 	. += EXPERIMENT_PROG_BOOL("Teleport an object to the telescience telepad.", is_complete())
 
-/datum/experiment/physical/teleporting/proc/teleported_items(datum/source, datum/om/event/telesci_teleport/event)
+/datum/experiment/physical/teleporting/proc/teleported_items(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/telesci_teleport/event = A
 	var/list/atom/movable/teleported_things = event.teleported_things
 	var/sending = event.sending
 	// we must GET an object, not just send one.

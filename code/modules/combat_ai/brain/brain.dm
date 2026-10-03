@@ -83,11 +83,11 @@ CAPABILITIES(/datum/ai_brain)
 	target_selector_chain = list(/datum/target_selector/closest)
 	rel_set(src, nameof(home_turf), get_turf(owner))
 	manage_processing(DQAI_PROCESSING)
-	om_hook(holder, /datum/om/event/mob_statchange, src, PROC_REF(on_stat_change))
-	om_hook(holder, /datum/om/event/living_injured, src, PROC_REF(on_holder_injured))
+	observe(holder, /datum/notice/mob_statchange, src, then(PROC_REF(on_stat_change)))
+	observe(holder, /datum/notice/living_injured, src, then(PROC_REF(on_holder_injured)))
 	// Lazily add the player-castable-moves dispatcher verb on login — avoids
 	// bloating the verbs list of every wild simple_mob in the round.
-	om_hook(holder, /datum/om/event/mob_login, src, PROC_REF(on_holder_login_event))
+	observe(holder, /datum/notice/mob_login, src, then(PROC_REF(on_holder_login_event)))
 	if(holder.client)
 		on_holder_login(holder)
 	rebuild_behaviors()
@@ -582,8 +582,9 @@ CAPABILITIES(/datum/ai_brain)
 // Event handlers.
 // ---------------------------------------------------------------------------
 
-/datum/ai_brain/proc/on_stat_change(datum/source, datum/om/event/mob_statchange/event)
+/datum/ai_brain/proc/on_stat_change(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/mob_statchange/event = A
 	var/old_stat = event.old_stat
 	var/new_stat = event.new_stat
 	if(new_stat >= DEAD)

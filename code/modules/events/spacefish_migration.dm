@@ -88,7 +88,7 @@ CAPABILITIES(/datum/event/spacefish_migration)
 // Spawn a single fish at given location.
 /datum/event/spacefish_migration/proc/spawn_one_fish(loc)
 	var/mob/living/simple_mob/animal/M = new fish_type(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_fish_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_fish_destruction)))
 	rel_add(src, nameof(spawned_fish), M)
 	return M
 
@@ -100,8 +100,9 @@ CAPABILITIES(/datum/event/spacefish_migration)
 			. += 1
 
 // If fish is bomphed, remove it from the list.
-/datum/event/spacefish_migration/proc/on_fish_destruction(mob/M, datum/om/event/qdeleting/event)
+/datum/event/spacefish_migration/proc/on_fish_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_fish), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 

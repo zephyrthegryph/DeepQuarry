@@ -613,8 +613,8 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 		rel_set(src, nameof(our_robot), loc)
 	else //We were in neither. Let's qdel ourselves.
 		return INITIALIZE_HINT_QDEL
-	om_hook(our_robot, /datum/om/event/do_after_began, src, PROC_REF(begin_using))
-	om_hook(our_robot, /datum/om/event/do_after_ended, src, PROC_REF(end_using))
+	observe(our_robot, /datum/notice/do_after_began, src, then(PROC_REF(begin_using)))
+	observe(our_robot, /datum/notice/do_after_ended, src, then(PROC_REF(end_using)))
 
 // The selected pocket is one of `pockets`, and the robot owns the gripper.
 
@@ -759,10 +759,11 @@ EXTEND_INTERACTIONS(/obj/item/gripper, INTERACT_VERB("Drop Item", PROC_REF(gripp
 /obj/item/reagent_containers/glass/bucket/cyborg/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(R), loc.loc)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(check_loc))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(check_loc)))
 
-/obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(atom/movable/mover, datum/om/event/movable_attempted_move/event)
+/obj/item/reagent_containers/glass/bucket/cyborg/proc/check_loc(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/movable_attempted_move/event = A
 	var/atom/old_loc = event.old_loc
 	if(old_loc == R || old_loc == R.module)
 		last_robot_loc = old_loc

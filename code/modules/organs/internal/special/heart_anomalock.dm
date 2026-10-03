@@ -29,13 +29,13 @@
 		add_lightning_overlay(30 SECONDS)
 		play_sfx(owner, SFX_MACHINES_DEFIB_ZAP)
 		owner.emp_protection_flags |= EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS
-		om_hook(owner, /datum/om/event/trait_gained, src, PROC_REF(on_owner_trait_gained))
-		om_hook(owner, /datum/om/event/atom_emp_act, src, PROC_REF(on_emp_act))
+		observe(owner, /datum/notice/trait_gained, src, then(PROC_REF(on_owner_trait_gained)))
+		observe(owner, /datum/notice/atom_emp_act, src, then(PROC_REF(on_emp_act)))
 
 	if(removed)
 		clear_lightning_overlay(owner)
-		om_unhook(owner, /datum/om/event/trait_gained, src)
-		om_unhook(owner, /datum/om/event/atom_emp_act, src)
+		unobserve(owner, /datum/notice/trait_gained, src)
+		unobserve(owner, /datum/notice/atom_emp_act, src)
 		owner.emp_protection_flags &= ~(EMP_PROTECT_SELF|EMP_PROTECT_CONTENTS)
 		tesla_zap(owner, 10, 2500, current_jumps = 5)
 		expire(0)
@@ -57,8 +57,10 @@
 	lightning_overlay = null
 
 /// Event wrapper: the owner gained a trait; only critical condition triggers survival mode.
-/obj/item/organ/internal/heart/machine/anomalock/proc/on_owner_trait_gained(mob/living/carbon/source, datum/om/event/trait_gained/event)
+/obj/item/organ/internal/heart/machine/anomalock/proc/on_owner_trait_gained(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/carbon/source = A.target
+	var/datum/notice/trait_gained/event = A
 	if(event.trait != TRAIT_CRITICAL_CONDITION)
 		return
 	activate_survival(source)
@@ -77,7 +79,7 @@
 	balloon_alert(organ_owner, "your heart strengthtens")
 	play_sfx(owner, SFX_MACHINES_DEFIB_ZAP, 0.8, vary = FALSE, extrarange = 0)
 
-/obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/source, datum/om/event/atom_emp_act/event)
+/obj/item/organ/internal/heart/machine/anomalock/proc/on_emp_act(datum/act/notice/A)
 	EVENT_HANDLER
 	add_lightning_overlay(10 SECONDS)
 

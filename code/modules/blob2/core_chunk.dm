@@ -54,8 +54,9 @@ DECLARE_REAGENTS(/obj/item/blobcore_chunk, 120, null)
 
 		om_task_periodic(src, PERIODIC_SLOW)
 
-/obj/item/blobcore_chunk/proc/call_chunk_unique(datum/source, datum/om/event/event)
+/obj/item/blobcore_chunk/proc/call_chunk_unique(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/source = A.target
 	if(blob_type)
 		blob_type.chunk_unique(src, list(source))
 	return

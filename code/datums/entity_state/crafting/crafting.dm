@@ -3,10 +3,12 @@
 	..()
 	rel_set(src, nameof(owner), owner)
 	if(ismob(owner))
-		om_hook(owner, /datum/om/event/mob_client_login, src, PROC_REF(on_owner_login))
+		observe(owner, /datum/notice/mob_client_login, src, then(PROC_REF(on_owner_login)))
 
-/datum/personal_crafting/proc/on_owner_login(mob/user, datum/om/event/mob_client_login/event)
+/datum/personal_crafting/proc/on_owner_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/user = A.target
+	var/datum/notice/mob_client_login/event = A
 	create_mob_button(user, event.client)
 
 /datum/personal_crafting/proc/create_mob_button(mob/user, client/CL)
@@ -17,7 +19,7 @@
 	C.alpha = H.ui_alpha
 	rel_add(H, nameof(H.other_important), C)
 	CL.screen += C
-	om_hook(C, /datum/om/event/click, src, PROC_REF(on_button_click))
+	observe(C, /datum/notice/click, src, then(PROC_REF(on_button_click)))
 
 /datum/personal_crafting
 	var/mob/owner
@@ -436,8 +438,9 @@
 				qdel(I)
 	return parts
 
-/datum/personal_crafting/proc/on_button_click(atom/source, datum/om/event/click/event)
+/datum/personal_crafting/proc/on_button_click(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/click/event = A
 	var/user = event.user
 	if(user == owner)
 		INVOKE_ASYNC(src, PROC_REF(tgui_interact), user) // ALLOW(scheduler): tgui_interact may block on asset/window setup

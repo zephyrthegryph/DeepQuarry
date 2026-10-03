@@ -71,7 +71,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 	// Also announce over main comms so people know to look
 	GLOB.command_announcement.Announce("An order for the [using_map.facility_type] to deliver supplies to [command_name()] has been delivered to all supply Request Consoles", my_department, ANNOUNCER_MSG_SUPPLYORDER)
-	om_hook(OM_WORLD, /datum/om/event/world_supply_shuttle_depart, src, PROC_REF(handle_supply_demand_sell_shuttle))
+	observe(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src, then(PROC_REF(handle_supply_demand_sell_shuttle)))
 
 /datum/event/supply_demand/tick()
 	if(length(required_items) == 0)
@@ -79,7 +79,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/end()
 	registry_leave(REGISTRY_DEMAND_EVENTS, src)
-	om_unhook(OM_WORLD, /datum/om/event/world_supply_shuttle_depart, src)
+	unobserve(OM_WORLD, /datum/notice/world_supply_shuttle_depart, src)
 	// Check if the crew succeeded or failed!
 	if(length(required_items) == 0)
 		// Success!
@@ -100,8 +100,9 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 /**
  * Event handler for when the shuttle emits /datum/om/event/world_supply_shuttle_depart
  */
-/datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/source, datum/om/event/world_supply_shuttle_depart/event)
+/datum/event/supply_demand/proc/handle_supply_demand_sell_shuttle(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/world_supply_shuttle_depart/event = A
 	var/list/area/supply_shuttle_areas = event.supply_shuttle_areas
 	for(var/datum/event/supply_demand/E in REGISTRY_MEMBERS(REGISTRY_DEMAND_EVENTS))
 		// I don't think multiple supply shuttles have ever been used, but retaining support regardless...

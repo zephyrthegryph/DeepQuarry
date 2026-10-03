@@ -37,14 +37,15 @@
 /// Starts watching `plate`'s turf for arrivals.
 /obj/machinery/mineral/proc/watch_input(obj/machinery/mineral/plate)
 	if(plate?.loc)
-		om_hook(plate.loc, /datum/om/event/atom_entered, src, PROC_REF(on_input_entered))
+		observe(plate.loc, /datum/notice/atom_entered, src, then(PROC_REF(on_input_entered)))
 
 /obj/machinery/mineral/proc/unwatch_input(obj/machinery/mineral/plate)
 	if(plate?.loc)
-		om_unhook(plate.loc, /datum/om/event/atom_entered, src)
+		unobserve(plate.loc, /datum/notice/atom_entered, src)
 
-/obj/machinery/mineral/proc/on_input_entered(datum/source, datum/om/event/atom_entered/event)
+/obj/machinery/mineral/proc/on_input_entered(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/atom_entered/event = A
 	var/atom/movable/arrived = event.arrived
 	if(isitem(arrived) || istype(arrived, /obj/structure/ore_box))
 		wake_mining()

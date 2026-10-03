@@ -6,13 +6,13 @@
 	if(!is_motion_tracking)
 		is_motion_tracking = TRUE
 		wants_to_see_motion_echos = TRUE
-		om_hook(SSmotiontracker, /datum/om/event/movable_motiontracker, src, PROC_REF(handle_motion_tracking))
+		global.observe(SSmotiontracker, /datum/notice/movable_motiontracker, src, then(PROC_REF(handle_motion_tracking)))
 		om_grant(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
 
 /mob/proc/motiontracker_unsubscribe(destroying = FALSE)
 	if(is_motion_tracking)
 		is_motion_tracking = FALSE
-		om_unhook(SSmotiontracker, /datum/om/event/movable_motiontracker, src)
+		unobserve(SSmotiontracker, /datum/notice/movable_motiontracker, src)
 		om_revoke(src, GRANT_VERB, /mob/proc/toggle_motion_echo_vis, src)
 
 /mob/living/carbon/human/motiontracker_unsubscribe(destroying = FALSE)
@@ -22,12 +22,13 @@
 	. = ..()
 
 // For /datum/om/event/movable_motiontracker
-/mob/proc/handle_motion_tracking(datum/source, datum/om/event/movable_motiontracker/event)
+/mob/proc/handle_motion_tracking(datum/act/notice/A)
 	EVENT_HANDLER
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
+	var/datum/notice/movable_motiontracker/event = A
 	// The event carries the moving atom itself (emitted synchronously, never stored).
-	var/atom/echo_source = event.source
+	var/atom/echo_source = event.source_
 	var/turf/T = event.echo_turf_location
 	if(!client || !wants_to_see_motion_echos || stat || is_deaf())
 		return

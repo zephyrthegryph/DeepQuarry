@@ -76,7 +76,7 @@ CAPABILITIES(/datum/cinematic)
 	// Place the /atom/movable/screen/cinematic into everyone's screens, and prevent movement.
 	for(var/mob/watching_mob in watchers)
 		show_to(watching_mob, watching_mob.client)
-		om_hook(watching_mob, /datum/om/event/mob_client_login, src, PROC_REF(on_watcher_client_login))
+		observe(watching_mob, /datum/notice/mob_client_login, src, then(PROC_REF(on_watcher_client_login)))
 		// Close watcher ui's, too, so they can watch it.
 		SStgui.close_user_uis(watching_mob)
 
@@ -107,8 +107,10 @@ CAPABILITIES(/datum/cinematic)
 	return COMPONENT_GLOB_BLOCK_CINEMATIC
 
 /// Hooked to mob_client_login on each watching mob.
-/datum/cinematic/proc/on_watcher_client_login(mob/watching_mob, datum/om/event/mob_client_login/event)
+/datum/cinematic/proc/on_watcher_client_login(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/watching_mob = A.target
+	var/datum/notice/mob_client_login/event = A
 	show_to(watching_mob, event.client)
 
 /// Whenever a mob watching the cinematic logs in, show them the ongoing cinematic
@@ -164,7 +166,7 @@ CAPABILITIES(/datum/cinematic)
 	if(QDELETED(locked_mob))
 		return
 	remove_trait(locked_mob, TRAIT_NO_TRANSFORM, CINEMATIC_SOURCE)
-	om_unhook(locked_mob, /datum/om/event/mob_client_login, src)
+	unobserve(locked_mob, /datum/notice/mob_client_login, src)
 
 /// Removes the passed client from our watching list.
 /datum/cinematic/proc/remove_watcher(client/no_longer_watching)

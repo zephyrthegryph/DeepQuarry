@@ -53,10 +53,10 @@
 
 /datum/trait_state/gargoyle/proc/unpause()
 	paused = FALSE
-	om_unhook(gargoyle(), /datum/om/event/moved, src)
+	unobserve(gargoyle(), /datum/notice/moved, src)
 	return
 
-/datum/trait_state/gargoyle/proc/on_moved(datum/source, datum/om/event/moved/event)
+/datum/trait_state/gargoyle/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
 	unpause()
 
@@ -95,7 +95,7 @@
 
 	if(!transformed && !paused)
 		paused = TRUE
-		om_hook(owner, /datum/om/event/moved, src, PROC_REF(on_moved))
+		observe(owner, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 		to_chat(owner, span_notice("You start conserving your energy."))
 
 /mob/living/carbon/human/proc/gargoyle_checkenergy()

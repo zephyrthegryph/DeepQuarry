@@ -21,10 +21,10 @@
 	. = ..()
 	var/area/A = get_area(src)
 	if(A)
-		om_hook(A, /datum/om/event/observer_apc, src, PROC_REF(on_observer_apc))
+		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
 	update_icon()
 
-/obj/item/radio/intercom/proc/on_observer_apc(datum/source, datum/om/event/observer_apc/event)
+/obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
 	EVENT_HANDLER
 	update_icon()
 

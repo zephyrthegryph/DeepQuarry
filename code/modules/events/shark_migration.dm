@@ -73,7 +73,7 @@ CAPABILITIES(/datum/event/shark_migration)
 // Spawn a single shark at given location.
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_shark_destruction))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(on_shark_destruction)))
 	rel_add(src, nameof(spawned_shark), M)
 	return M
 
@@ -85,8 +85,9 @@ CAPABILITIES(/datum/event/shark_migration)
 			. += 1
 
 // If shark is bomphed, remove it from the list.
-/datum/event/shark_migration/proc/on_shark_destruction(mob/M, datum/om/event/qdeleting/event)
+/datum/event/shark_migration/proc/on_shark_destruction(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/M = A.target
 	own_take_member(src, nameof(spawned_shark), M)
 	om_unhook(M, /datum/om/event/qdeleting, src)
 

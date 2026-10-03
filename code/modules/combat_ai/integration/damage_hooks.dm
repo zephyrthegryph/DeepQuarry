@@ -6,11 +6,12 @@
 // hit regardless of the source (projectile, melee, generic attack,
 // environmental). Mobs without a brain pay nothing.
 
-/datum/ai_brain/proc/on_holder_injured(mob/living/source_mob, datum/om/event/living_injured/event)
+/datum/ai_brain/proc/on_holder_injured(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/living_injured/event = A
 	var/kind = event.kind
 	var/applied = event.applied
-	var/atom/source = event.source
+	var/atom/source = event.source_
 	if(applied <= 0 || QDELETED(holder))
 		return
 	holder.dq_notify_damage(applied, kind, dq_resolve_attacker(source))

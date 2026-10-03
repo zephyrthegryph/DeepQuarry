@@ -14,9 +14,9 @@
 
 /datum/trait_state/waddle_trait/attach()
 	..()
-	om_hook(owner, /datum/om/event/moved, src, PROC_REF(handle_comp))
+	observe(owner, /datum/notice/moved, src, then(PROC_REF(handle_comp)))
 
-/datum/trait_state/waddle_trait/proc/handle_comp(datum/source, datum/om/event/moved/event)
+/datum/trait_state/waddle_trait/proc/handle_comp(datum/act/notice/A)
 	EVENT_HANDLER
 	if (QDELETED(our_atom()))
 		return

@@ -20,7 +20,7 @@ CAPABILITIES(/datum/xenochimera)
 		log_runtime("XENOCHIMERA: /datum/xenochimera created for non-human [new_owner] ([new_owner?.type]); ignoring.")
 		return
 	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in xenochimera
-	om_hook(owner, /datum/om/event/human_dna_finalized, src, PROC_REF(on_dna_finalized))
+	observe(owner, /datum/notice/human_dna_finalized, src, then(PROC_REF(on_dna_finalized)))
 	if(owner.dna)
 		handle_record()
 	om_grant(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
@@ -33,7 +33,7 @@ CAPABILITIES(/datum/xenochimera)
 	if(owner)
 		om_revoke(owner, GRANT_VERB, /mob/living/carbon/human/proc/reconstitute_form, src)
 
-/datum/xenochimera/proc/on_dna_finalized(datum/source, datum/om/event/human_dna_finalized/event)
+/datum/xenochimera/proc/on_dna_finalized(datum/act/notice/A)
 	EVENT_HANDLER
 	handle_record()
 

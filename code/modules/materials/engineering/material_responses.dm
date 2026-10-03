@@ -78,11 +78,11 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	om_hook(parent, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(parent, /datum/om/event/before/atom_take_damage, src, PROC_REF(on_take_damage))
 	om_hook(parent, /datum/om/event/before/atom_pre_emp_act, src, PROC_REF(on_pre_emp))
-	om_hook(parent, /datum/om/event/atom_fire_act, src, PROC_REF(on_fire))
-	om_hook(parent, /datum/om/event/atom_propagate_rad_pulse, src, PROC_REF(on_propagated_radiation))
+	observe(parent, /datum/notice/atom_fire_act, src, then(PROC_REF(on_fire)))
+	observe(parent, /datum/notice/atom_propagate_rad_pulse, src, then(PROC_REF(on_propagated_radiation)))
 	om_hook(parent, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_radiation))
 	om_hook(parent, /datum/om/event/before/attackby, src, PROC_REF(on_attackby))
-	om_hook(parent, /datum/om/event/material_surgery, src, PROC_REF(on_surgery))
+	observe(parent, /datum/notice/material_surgery, src, then(PROC_REF(on_surgery)))
 
 // its owner leaves the radiovoltaic registry (hooks and the `parent` back link
 // clear with the links).
@@ -147,7 +147,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(electrical_form && material?.critical_temperature > 0 && ambient_temperature() < material.critical_temperature)
 		return EMP_PROTECT_SELF
 
-/datum/material_response/proc/on_fire(datum/source, datum/om/event/atom_fire_act/event)
+/datum/material_response/proc/on_fire(datum/act/notice/A)
 	EVENT_HANDLER
 	var/datum/material/material = material()
 	if(!material || !armor_form || material.phase_change_capacity <= 0)
@@ -163,7 +163,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		air.add_thermal_energy(-absorbed)
 		stored_phase_energy += absorbed
 
-/datum/material_response/proc/on_propagated_radiation(datum/source, datum/om/event/atom_propagate_rad_pulse/event)
+/datum/material_response/proc/on_propagated_radiation(datum/act/notice/A)
 	EVENT_HANDLER
 	apply_radiation_energy(25)
 
@@ -234,8 +234,9 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 	if(material.reagent_porosity > 0 && item.reagents?.total_volume && isliving(cause))
 		item.reagents.trans_to(cause, min(2, item.reagents.total_volume))
 
-/datum/material_response/proc/on_surgery(datum/source, datum/om/event/material_surgery/event)
+/datum/material_response/proc/on_surgery(datum/act/notice/A)
 	EVENT_HANDLER
+	var/datum/notice/material_surgery/event = A
 	var/mob/living/carbon/human/target = event.patient
 	var/target_zone = event.zone
 	var/successful = event.success

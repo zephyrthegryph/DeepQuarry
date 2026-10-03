@@ -104,7 +104,7 @@ CAPABILITIES(/obj/item/shield_projector)
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
 	dq_add_recursive_move(src)
-	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(moved_event))
+	observe(src, /datum/notice/movable_attempted_move, src, then(PROC_REF(moved_event)))
 	if(always_on)
 		after(src, 0, PROC_REF(create_shields))
 	return ..()
@@ -114,7 +114,7 @@ CAPABILITIES(/obj/item/shield_projector)
 	destroy_shields()
 	..()
 
-/obj/item/shield_projector/proc/moved_event(datum/source, datum/om/event/movable_attempted_move/event)
+/obj/item/shield_projector/proc/moved_event(datum/act/notice/A)
 	EVENT_HANDLER
 	update_shield_positions()
 

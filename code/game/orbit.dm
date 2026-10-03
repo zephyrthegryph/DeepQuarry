@@ -34,7 +34,7 @@
 
 /datum/om/relation/orbiting/proc/watch(atom/movable/AM)
 	if(!QDELETED(AM))
-		om_hook(AM, /datum/om/event/moved, src, PROC_REF(on_moved))
+		observe(AM, /datum/notice/moved, src, then(PROC_REF(on_moved)))
 
 /datum/om/relation/orbiting/proc/watch_holders(atom/movable/center)
 	var/atom/movable/holder = center.loc
@@ -50,10 +50,11 @@
 		return
 	if(AM?.orbit_target() || LAZYLEN(AM?.orbiter_list()))
 		return
-	om_unhook(AM, /datum/om/event/moved, src)
+	unobserve(AM, /datum/notice/moved, src)
 
-/datum/om/relation/orbiting/proc/on_moved(atom/movable/mover, datum/om/event/moved/event)
+/datum/om/relation/orbiting/proc/on_moved(datum/act/notice/A)
 	EVENT_HANDLER
+	var/atom/movable/mover = A.target
 	var/involved = FALSE
 	// An orbiter that left its center's turf stops orbiting.
 	var/atom/center = mover?.orbit_target()
@@ -70,7 +71,7 @@
 			involved = TRUE
 			follow(inner)
 	if(!involved)
-		om_unhook(mover, /datum/om/event/moved, src)
+		unobserve(mover, /datum/notice/moved, src)
 
 /datum/om/relation/orbiting/proc/follow(atom/movable/center)
 	var/turf/T = get_turf(center)

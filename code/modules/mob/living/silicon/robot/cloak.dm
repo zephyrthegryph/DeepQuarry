@@ -128,12 +128,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	L.set_body_effect_state(type, state)
 	L.set_body_effect_factors(type, state.cloaked_factors)
 	L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
-	om_hook(L, /datum/om/event/mob_apply_damage, src, PROC_REF(damage_inflicted))
+	observe(L, /datum/notice/mob_apply_damage, src, then(PROC_REF(damage_inflicted)))
 	om_hook(L, /datum/om/event/before/robot_item_attack, src, PROC_REF(attacked_in_cloak))
 
 /datum/body_effect/robot_cloak/on_end(mob/living/L, expired)
 	L.clear_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK)
-	om_unhook(L, /datum/om/event/mob_apply_damage, src)
+	unobserve(L, /datum/notice/mob_apply_damage, src)
 	om_unhook(L, /datum/om/event/before/robot_item_attack, src)
 	robot_cloak_remove_wibble(L, TRUE)
 
@@ -150,8 +150,10 @@ DECLARE_INTERACTIONS(/obj/item/borg/cloak, \
 	if(state.cloaked && !state.times_hit) //The !times_hit is here so it doesn't interfere with the animation.
 		L.set_alpha_source(ALPHA_SOURCE_ROBOT_CLOAK, state.visibility/255, animate_time = 1 SECOND)
 
-/datum/body_effect/robot_cloak/proc/damage_inflicted(mob/living/source, datum/om/event/mob_apply_damage/event)
+/datum/body_effect/robot_cloak/proc/damage_inflicted(datum/act/notice/A)
 	EVENT_HANDLER
+	var/mob/living/source = A.target
+	var/datum/notice/mob_apply_damage/event = A
 	var/damage = event.damage
 	var/datum/robot_cloak_state/state = source.body_effect_state(type)
 	if(!state || damage < 5) //weak, don't do anything.

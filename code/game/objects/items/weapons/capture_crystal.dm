@@ -308,8 +308,8 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 
 //Make it so the crystal knows if its mob references get deleted to make sure things get cleaned up
 /obj/item/capture_crystal/proc/knowyoursignals(mob/living/M, mob/living/U)
-	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(mob_was_deleted))
-	om_hook(U, /datum/om/event/qdeleting, src, PROC_REF(owner_was_deleted))
+	observe(M, /datum/notice/qdeleting, src, then(PROC_REF(mob_was_deleted)))
+	observe(U, /datum/notice/qdeleting, src, then(PROC_REF(owner_was_deleted)))
 
 //The basic capture command does most of the registration work.
 /obj/item/capture_crystal/proc/capture(mob/living/M, mob/living/U)
@@ -437,7 +437,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	recall(U)
 
 //The clean up procs!
-/obj/item/capture_crystal/proc/mob_was_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/item/capture_crystal/proc/mob_was_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	om_unhook(bound_mob, /datum/om/event/qdeleting, src)
 	om_unhook(owner, /datum/om/event/qdeleting, src)
@@ -448,7 +448,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	persist_storable = TRUE
 	update_icon()
 
-/obj/item/capture_crystal/proc/owner_was_deleted(datum/source, datum/om/event/qdeleting/event)
+/obj/item/capture_crystal/proc/owner_was_deleted(datum/act/notice/A)
 	EVENT_HANDLER
 	om_unhook(owner, /datum/om/event/qdeleting, src)
 	rel_clear(src, nameof(owner))
