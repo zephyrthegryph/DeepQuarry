@@ -99,3 +99,6 @@ changes:
   - bugfix: "Linen bins respect held bedsheet and hidden-item release rules."
   - bugfix: "Coatracks respect held coat release rules."
   - bugfix: "Target stakes respect held target release rules before pinning."
+  - bugfix: "Energy shields redraw the hands of their actual holder."
+  - bugfix: "Food carts, safes, anomaly utilizers and money bags respect held-item release rules."
+  - bugfix: "Safe retrieval refunds the removed item's occupied capacity."
