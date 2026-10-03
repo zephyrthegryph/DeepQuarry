@@ -714,13 +714,6 @@ usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ?
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user = usr
 usr_outside_verb	code/modules/research/tg/machinery/mech_fabricator.dm	var/mob/user = usr
-usr_outside_verb	code/modules/spells/aoe_turf/aoe_turf.dm	/datum/spell/aoe_turf/choose_targets(mob/user = usr)
-usr_outside_verb	code/modules/spells/general/rune_write.dm	/datum/spell/rune_write/choose_targets(mob/user = usr)
-usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/choose_targets(mob/user = usr) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
-usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
-usr_outside_verb	code/modules/spells/spell_code.dm	/datum/spell/proc/invocation(mob/user = usr, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
-usr_outside_verb	code/modules/spells/targeted/projectile/dumbfire.dm	/datum/spell/targeted/projectile/dumbfire/choose_targets(mob/user = usr)
-usr_outside_verb	code/modules/spells/targeted/targeted.dm	/datum/spell/targeted/choose_targets(mob/user = usr)
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No notes found.")

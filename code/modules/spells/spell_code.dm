@@ -83,10 +83,10 @@ DECLARE_REPEAT(/datum/spell, 1 SECOND, recharge_tick, "recharging")
 /////CASTING/////
 /////////////////
 
-/datum/spell/proc/choose_targets(mob/user = usr) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
+/datum/spell/proc/choose_targets(mob/user) //depends on subtype - see targeted.dm, aoe_turf.dm, dumbfire.dm, or code in general folder
 	return
 
-/datum/spell/proc/perform(mob/user = usr, skipcharge = 0) //if recharge is started is important for the trigger spells
+/datum/spell/proc/perform(mob/user, skipcharge = 0) //if recharge is started is important for the trigger spells
 	if(!holder())
 		rel_set(src, nameof(holder), user) //just in case
 	if(!cast_check(skipcharge, user))
@@ -285,7 +285,7 @@ GLOBAL_LIST_EMPTY(spell_cast_args)
 		return 0
 	return 1
 
-/datum/spell/proc/invocation(mob/user = usr, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
+/datum/spell/proc/invocation(mob/user, list/targets) //datum/spelling the spell out and setting it on recharge/reducing charges amount
 
 	switch(invocation_type)
 		if(SpI_SHOUT)
