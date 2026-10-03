@@ -4,3 +4,8 @@ extra_args
 too_few_args
 reference
 not_in_ast
+dynamic_var
+untyped_var
+scalar_var
+unknown_var
+unresolved_receiver

@@ -29,12 +29,15 @@
 
 pub mod helpers;
 pub mod keys;
+pub mod own_decl;
 pub mod report;
 pub mod scan;
 
+use std::any::Any;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
+use std::sync::Arc;
 
 use dreammaker::ast::{Expression, Statement, Term};
 
@@ -78,9 +81,26 @@ pub struct KeyUse {
     pub synthesized: bool,
 }
 
+/// A declaration a rewritten site needs: `holder.var` has to be declared (`owns_one` / `owns_many`) on the type that declares the var, or
+/// the new form would not know the var. The codemod asks for it and the framework inserts it once per (type, var), in that type's
+/// `CAPABILITIES` block (made when there is none).
+#[derive(Clone, Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Need {
+    /// The type that declares the var.
+    pub holder: String,
+    pub var: String,
+    /// A list var (`owns_many`) rather than a single value (`owns_one`).
+    pub many: bool,
+    /// The var's declared type (the element type of a list).
+    pub vtype: String,
+    /// `file:line` of the first site that needs it.
+    pub origin: String,
+}
+
 pub struct Rewrite {
     pub edits: Vec<Edit>,
     pub keys: Vec<KeyUse>,
+    pub needs: Vec<Need>,
 }
 
 pub enum Outcome {
@@ -91,7 +111,7 @@ pub enum Outcome {
 
 impl Outcome {
     pub fn edits(edits: Vec<Edit>) -> Outcome {
-        Outcome::Rewrite(Rewrite { edits, keys: Vec::new() })
+        Outcome::Rewrite(Rewrite { edits, keys: Vec::new(), needs: Vec::new() })
     }
 }
 
@@ -109,6 +129,8 @@ pub struct Ctx<'a> {
     /// The call is a whole statement (its value is unused).
     pub stmt_level: bool,
     pub sem: &'a Sem,
+    /// What the codemod's `prepare()` built once for the run (`()` for a codemod that has none).
+    pub prep: &'a (dyn Any + Send + Sync),
 }
 
 impl Ctx<'_> {
@@ -140,6 +162,18 @@ pub trait Codemod: Send + Sync {
         default_excluded(rel)
     }
     fn rewrite(&self, cx: &Ctx) -> Outcome;
+    /// Facts the rewrite of every site shares, built once from the whole tree.
+    fn prepare(&self, _tree: &Tree, _sem: &Sem) -> Arc<dyn Any + Send + Sync> {
+        Arc::new(())
+    }
+    /// TRUE for a codemod that also inserts declarations (its output adds lines, so the "no line added" gate does not apply to it).
+    fn declares(&self) -> bool {
+        false
+    }
+    /// The edits that declare what the rewritten sites asked for, as (file, edits) in each file's own coordinates.
+    fn declaration_edits(&self, _root: &Path, _tree: &Tree, _sem: &Sem, _prep: &(dyn Any + Send + Sync), _needs: &[Need]) -> Vec<(String, Vec<Edit>)> {
+        Vec::new()
+    }
 }
 
 /// The directories the count method leaves out: the engine, the legacy object model, defines, unit tests
@@ -331,6 +365,8 @@ pub struct RunResult {
     pub outside_filter: usize,
     pub keys: Vec<KeyUse>,
     pub changes: Vec<FileChange>,
+    /// Declarations inserted for the rewritten sites: (type, var) pairs.
+    pub declared: Vec<Need>,
 }
 
 impl RunResult {
@@ -375,6 +411,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
     let sem = crate::sem::sem_for(&tree).ok_or_else(|| "the semantic model did not build".to_string())?;
     let names = cm.callees();
     let cands = candidates(&sem, names);
+    let prep = cm.prepare(&tree, &sem);
 
     let mut res = RunResult { name: cm.name().to_string(), ..Default::default() };
     // Files to look at: the parser's, and every file whose text names a callee.
@@ -390,6 +427,8 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
         by_file.entry(c.rel.as_str()).or_default().push(c);
     }
 
+    let mut file_edits: BTreeMap<String, (String, Vec<Edit>, usize)> = BTreeMap::new();
+    let mut needs: Vec<Need> = Vec::new();
     for rel in &files {
         let abs = root.join(rel);
         let Ok(bytes) = std::fs::read(&abs) else { continue };
@@ -412,7 +451,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
         let empty = Vec::new();
         let file_cands = by_file.get(rel.as_str()).unwrap_or(&empty);
         let mut pending: Vec<ResidueSite> = Vec::new();
-        let mut sites: Vec<(usize, Vec<Edit>, Vec<KeyUse>)> = Vec::new();
+        let mut sites: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>)> = Vec::new();
         let mut claimed: BTreeSet<usize> = BTreeSet::new();
         let mut matched: BTreeMap<usize, (&Cand, bool)> = BTreeMap::new();
         let mut ordered: Vec<&&Cand> = file_cands.iter().collect();
@@ -449,9 +488,9 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
                 pending.push(ResidueSite { file: rel.clone(), line, reason: "arg_count_mismatch".into(), text: snippet(&text, *off) });
                 continue;
             }
-            let cx = Ctx { rel, line, text: &text, clean: &clean, node: &node, callee: &c.callee, owner: &c.owner, proc_name: &c.proc_name, stmt_level: *stmt, sem: &sem };
+            let cx = Ctx { rel, line, text: &text, clean: &clean, node: &node, callee: &c.callee, owner: &c.owner, proc_name: &c.proc_name, stmt_level: *stmt, sem: &sem, prep: &*prep };
             match cm.rewrite(&cx) {
-                Outcome::Rewrite(r) => sites.push((*off, r.edits, r.keys)),
+                Outcome::Rewrite(r) => sites.push((*off, r.edits, r.keys, r.needs)),
                 Outcome::Residue(reason, _why) => pending.push(ResidueSite { file: rel.clone(), line, reason: reason.to_string(), text: snippet(&text, *off) }),
             }
         }
@@ -469,10 +508,10 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
             }
         }
         // Overlapping edits: keep the earlier site, the later one is residue.
-        sites.sort_by_key(|(off, _, _)| *off);
-        let mut kept: Vec<(usize, Vec<Edit>, Vec<KeyUse>)> = Vec::new();
+        sites.sort_by_key(|(off, _, _, _)| *off);
+        let mut kept: Vec<(usize, Vec<Edit>, Vec<KeyUse>, Vec<Need>)> = Vec::new();
         let mut taken: Vec<(usize, usize)> = Vec::new();
-        for (off, edits, keys) in sites {
+        for (off, edits, keys, needs) in sites {
             let overlaps = edits.iter().any(|e| taken.iter().any(|(s, t)| if e.start == e.end { e.start > *s && e.start < *t } else { e.start < *t && e.end > *s }));
             if overlaps {
                 let line = text[..off].bytes().filter(|b| *b == b'\n').count() as u32 + 1;
@@ -482,30 +521,53 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
             for e in &edits {
                 taken.push((e.start, e.end));
             }
-            kept.push((off, edits, keys));
+            kept.push((off, edits, keys, needs));
         }
         if !selected {
             res.outside_filter += kept.len() + pending.len();
             // Residue and keys still count for the whole-tree report; only the edits are withheld.
             res.residue.extend(pending);
-            for (_, _, k) in kept {
+            for (_, _, k, _) in kept {
                 res.keys.extend(k);
             }
             continue;
         }
         res.residue.extend(pending);
         let mut all_edits: Vec<Edit> = Vec::new();
-        for (_, e, k) in &kept {
+        for (_, e, k, n) in &kept {
             all_edits.extend(e.iter().cloned());
             res.keys.extend(k.iter().cloned());
+            needs.extend(n.iter().cloned());
         }
         res.rewrites += kept.len();
         if all_edits.is_empty() {
             continue;
         }
-        let (after, inverse) = apply_edits(&text, all_edits);
+        file_edits.insert(rel.clone(), (text, all_edits, kept.len()));
+    }
+    // The declarations the rewritten sites asked for: once per (type, var), in whichever file the type's block lives.
+    needs.sort();
+    needs.dedup_by(|a, b| a.holder == b.holder && a.var == b.var);
+    if !needs.is_empty() {
+        for (rel, edits) in cm.declaration_edits(root, &tree, &sem, &*prep, &needs) {
+            if edits.is_empty() {
+                continue;
+            }
+            match file_edits.get_mut(&rel) {
+                Some(entry) => entry.1.extend(edits),
+                None => {
+                    if let Ok(text) = std::fs::read_to_string(root.join(&rel)) {
+                        file_edits.insert(rel, (text, edits, 0));
+                    }
+                }
+            }
+        }
+        res.declared = needs;
+    }
+    for (rel, (text, edits, n_sites)) in file_edits {
+        let (after, inverse) = apply_edits(&text, edits);
         if after != text {
-            res.changes.push(FileChange { rel: rel.clone(), before: text, after, inverse, sites: kept.len() });
+            res.changes.push(FileChange { rel, before: text, after, inverse, sites: n_sites });
         }
     }
     res.residue.sort();
