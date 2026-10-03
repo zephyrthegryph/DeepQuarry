@@ -5711,6 +5711,7 @@
 #include "code\engine\present\prompt_windows.dm"
 #include "code\engine\library\bays.dm"
 #include "code\library\mob\hands.dm"
+#include "code\library\mob\silicon.dm"
 #include "code\library\machine\anchor.dm"
 #include "code\library\machine\cover.dm"
 #include "code\library\machine\panel.dm"

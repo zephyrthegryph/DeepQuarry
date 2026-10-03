@@ -133,13 +133,13 @@
 
 /// explain_click(): the explanation of a click as text lines (one string, newline separated), or a list when `as_list`.
 /proc/explain_click(mob/actor, atom/target, obj/item/held, gesture = GESTURE_CLICK, as_list = FALSE)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, gesture, null, TRUE, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE, TRUE)
 	var/list/lines = op_explain_lines(R)
 	return as_list ? lines : jointext(lines, "\n")
 
 /// Asserts in a unit test that a click resolves to `key`. Returns TRUE when it does; a test calls it inside TEST_ASSERT.
 /proc/assert_resolves(mob/actor, atom/target, obj/item/held, gesture, key)
-	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, AUTH_PHYSICAL, gesture, null, TRUE)
+	var/datum/op_resolution/R = op_resolve(actor, target, held, ORIGIN_CLICK, actor_authority(actor), gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
 	return !!winner && winner.oplan?.key == key
 

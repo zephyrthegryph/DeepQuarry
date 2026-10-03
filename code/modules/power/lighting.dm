@@ -114,6 +114,7 @@ CAPABILITIES(/obj/machinery/light)
 		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held)))
 	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb)))
 	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by)))
+	op("toggle_emergency", remote(), label("Toggle emergency lights"), wait(0), then(PROC_REF(toggle_emergency_lights)))
 	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing)))
 	op("tune", tool(TOOL_MULTITOOL), when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), then(PROC_REF(tuned)))
 	examine_line(PROC_REF(examine_status))
@@ -611,17 +612,12 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	O.focus_object(B)
 	return OP_OK
 
-/// A silicon's touch (an AI's click, a cyborg's): its emergency lighting goes off or on. The silicon click is still the legacy input adapter's, which
-/// reaches a holder through INTERACT_SILICON entries: this one entry is the only legacy interaction left on the fixture.
-/obj/machinery/light/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)))
-	..()
-
-/obj/machinery/light/proc/light_silicon_toggle_emergency(mob/user, obj/item/held, datum/interaction/interaction)
+/// A silicon's touch (an AI's click through its cameras, a cyborg's): its emergency lighting goes off or on.
+/obj/machinery/light/proc/toggle_emergency_lights(datum/act/op/A)
 	no_emergency = !no_emergency
-	to_chat(user, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
+	to_chat(A.actor, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
 	refresh_light(FALSE)
-	return TRUE
+	return OP_OK
 
 // ---- the area's power ----
 

@@ -177,12 +177,7 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 /obj/item/lightreplacer/proc/say_uses(datum/act/op/A)
 	return !special_handling
 
-/// The cyborg variant (dogborg_modules.dm) still answers its own use in the hand through the legacy table and calls up to this: the ordinary
-/// replacer's use is the colour op, so there is nothing for it to do.
-DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(interaction_self)))
-
-/obj/item/lightreplacer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	return FALSE
+/// The cyborg variant (dogborg/dog_modules.dm) says what its own use in the hand does: it asks for the reserves or the colour instead.
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 

@@ -1,4 +1,5 @@
 #define TK_MAXRANGE 15
+#define BORG_INTERFACE_REACH 7
 
 /// Action has succeeded, preventing further alt click interaction
 #define CLICK_ACTION_SUCCESS (1<<0)

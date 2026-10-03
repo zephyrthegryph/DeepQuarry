@@ -104,6 +104,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 	can_be_antagged = TRUE
 
 CAPABILITIES(/mob/living/silicon/ai)
+	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS)
 	owns_one(nameof(aiCommunicator), /obj/item/communicator)
 	owns_one(nameof(aiPDA), /obj/item/pda/ai)
 	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated)

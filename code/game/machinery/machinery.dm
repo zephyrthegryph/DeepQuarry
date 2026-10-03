@@ -438,7 +438,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/atom, interaction_swallow), REQ_TARGET_STATE(/obj/machinery/proc/machinery_robot_remote_locked)))
 
 /obj/machinery/proc/machinery_robot_remote_locked(mob/actor, atom/target, obj/item/held)
-	return isrobot(actor) && (!actor.client || actor.is_remote_viewing())
+	return isrobot(actor) && actor.is_remote_viewing()
 
 /// The checks every machine's hand interactions pass behind (see machine_use_blocker() for the Menu's version).
 /obj/machinery/hand_gate(mob/user as mob)

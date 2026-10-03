@@ -146,6 +146,20 @@
 
 // ---- the actor gate ----
 
+/// The authority an actor's clicks and menu picks carry (what its providers give: a mob with hands, AUTH_PHYSICAL; an AI's interface,
+/// AUTH_REMOTE_ACCESS; a cyborg's gripper and interface, both). The mob's own choice: /mob/proc/click_authority().
+/proc/actor_authority(mob/actor)
+	return actor ? actor.click_authority() : AUTH_PHYSICAL
+
+/// The authority this mob's clicks and menu picks carry. A silicon overrides it (code/library/mob/silicon.dm).
+/mob/proc/click_authority()
+	return AUTH_PHYSICAL
+
+/// Can this mob see `target` for a REACH_VIEW op (a remote() op on what it sees)? An AI sees through its cameras (silicon.dm).
+/mob/proc/reach_view_sees(atom/target)
+	var/turf/here = get_turf(src)
+	return here && (target in dview(world.view, here)) // dview(): a dark room is still seen, as in reach_line_clear()
+
 /// The mask of origins the actor can act through (acts_via), ORIGIN_ALL for what has none.
 /proc/actor_acts_via(mob/actor)
 	if(istype(actor, /mob/living))
@@ -197,6 +211,11 @@
 	var/need = op_affordance(P, B, held)
 	var/list/provs = providers_for(actor, held)
 	var/list/fits = list()
+	// The authority a provider has to carry is the input's narrowed to what the binding accepts: a borg's click carries both physical and remote
+	// access, and a hand op takes only its hand, a remote() op only its interface.
+	if(!(authority & AUTH_ADMIN))
+		var/chosen_authority = LAZYACCESS(P.selects, "authority")
+		authority &= isnull(chosen_authority) ? B.authority_mask() : chosen_authority
 	for(var/datum/prov/V as anything in provs)
 		if(need && (V.aff() & need) != need)
 			continue
@@ -246,7 +265,7 @@
 			if(!inside)
 				return /datum/msg/op/unreachable
 		if(REACH_VIEW)
-			if(!isatom(target) || !actor || !(target in view(actor)))
+			if(!isatom(target) || !actor || !actor.reach_view_sees(target))
 				return /datum/msg/op/unreachable
 		if(REACH_ANY)
 			pass()
