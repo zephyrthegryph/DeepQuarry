@@ -271,14 +271,14 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 
 /obj/structure/bedsheetbin/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/bedsheet))
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(sheets), I, null, user, TRUE, null, FALSE))
+			return TRUE
 		rel_add(src, nameof(sheets), I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(hidden), I, null, user, TRUE, null, FALSE))
+			return TRUE
 		rel_set(src, nameof(hidden), I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE
