@@ -62,7 +62,7 @@
 /datum/capdef_decl/c_interior/spec()
 	return list(CAP_INTERIOR, /datum/capability/lib/interior, NONE, STACK, "interior", "escape_wait, escape_chance")
 
-/// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:11
+/// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:10
 /datum/capability/lib/natural_weapon
 	var/weapon = /datum/natural_weapon
 	var/damage = 10
