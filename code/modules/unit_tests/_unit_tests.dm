@@ -462,6 +462,7 @@
 #include "dq_p2_vending_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
+#include "dq_p2_table_behaviour.dm"
 #include "dq_p2_reagent_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"
