@@ -121,8 +121,11 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	var/hovering_choice
 	var/mutable_appearance/selecting_appearance
 
-/atom/movable/screen/zone_sel/Click(location, control,params)
-	if(isobserver(usr))
+/atom/movable/screen/zone_sel/Click(location, control, params)
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): native targeting HUD clicks supply the initiating actor without chaining the atom input router
+
+/atom/movable/screen/zone_sel/click_with_actor(mob/user, location, control, params)
+	if(isobserver(user))
 		return
 
 	var/list/PL = params2list(params)
@@ -132,7 +135,7 @@ DECLARE_INTERACTIONS(/atom/movable/screen/grab, 	INTERACT_HAND_UNGATED("Nothing"
 	if(!choice)
 		return 1
 
-	return set_selected_zone(choice, usr)
+	return set_selected_zone(choice, user)
 
 /atom/movable/screen/zone_sel/MouseEntered(location, control, params)
 	MouseMove(location, control, params)
