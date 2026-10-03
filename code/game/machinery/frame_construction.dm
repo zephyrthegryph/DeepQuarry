@@ -306,7 +306,7 @@
 
 /datum/interaction/construction/frame/finish_machine/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	frame.finish_machine()
+	frame.finish_machine(actor)
 	return TRUE
 
 /obj/structure/frame/proc/has_all_components(mob/actor, atom/target, obj/item/held)
@@ -328,7 +328,7 @@
 
 /datum/interaction/construction/frame/finish_alarm/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	frame.finish_simple(TRUE)
+	frame.finish_simple(TRUE, actor)
 	return TRUE
 
 /datum/interaction/construction/frame/add_glass
@@ -384,13 +384,13 @@
 /datum/interaction/construction/frame/connect_monitor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
 	if(frame.frame_type.frame_class == FRAME_CLASS_COMPUTER)
-		frame.finish_computer()
+		frame.finish_computer(actor)
 	else
-		frame.finish_simple(FALSE)
+		frame.finish_simple(FALSE, actor)
 	return TRUE
 
 /// Builds the machine from the board, moving the installed parts into it.
-/obj/structure/frame/proc/finish_machine()
+/obj/structure/frame/proc/finish_machine(mob/user = null)
 	var/obj/machinery/new_machine = new circuit.build_path(src.loc, dir)
 	new_machine.copy_material_construction_from(src)
 	// Handle machines that have allocated default parts in thier constructor.
@@ -401,7 +401,7 @@
 	else
 		own_take_all(new_machine, nameof(new_machine.component_parts))
 
-	circuit.construct(new_machine)
+	circuit.construct(new_machine, user)
 
 	// new_machine's own default board+parts (latent_generator(), roadmap C6)
 	// already resolved into entries the moment its Initialize() first asked
@@ -432,12 +432,12 @@
 	replace_with(src, new_machine)
 
 /// Builds an alarm (facing the frame's way first) or a display from the board.
-/obj/structure/frame/proc/finish_simple(alarm)
+/obj/structure/frame/proc/finish_simple(alarm, mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
 	B.pixel_x = pixel_x
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
-	circuit.construct(B)
+	circuit.construct(B, user)
 	circuit.moveToNullspace()
 	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	if(!alarm)
@@ -445,12 +445,12 @@
 	replace_with(src, B)
 
 /// Builds a computer, and redraws the consoles beside it.
-/obj/structure/frame/proc/finish_computer()
+/obj/structure/frame/proc/finish_computer(mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
 	B.pixel_x = pixel_x
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
-	circuit.construct(B)
+	circuit.construct(B, user)
 	circuit.moveToNullspace()
 	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)

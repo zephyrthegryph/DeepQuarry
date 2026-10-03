@@ -823,6 +823,7 @@
 #include "interim_solar_assembly_sticky_tracker.dm"
 #include "interim_holographic_synx_cleanup.dm"
 #include "interim_remove_ban_actor.dm"
+#include "interim_frame_board_construct_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

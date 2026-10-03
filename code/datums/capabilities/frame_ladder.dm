@@ -217,13 +217,13 @@
 	to_chat(user, desc)
 
 /obj/structure/frame/proc/frame_ladder_finish_machine(mob/user, obj/item/held, from)
-	finish_machine()
+	finish_machine(user)
 
 /obj/structure/frame/proc/frame_ladder_finish_alarm(mob/user, obj/item/held, from)
-	finish_simple(TRUE)
+	finish_simple(TRUE, user)
 
 /obj/structure/frame/proc/frame_ladder_finish_screen(mob/user, obj/item/held, from)
 	if(frame_type.frame_class == FRAME_CLASS_COMPUTER)
-		finish_computer()
+		finish_computer(user)
 	else
-		finish_simple(FALSE)
+		finish_simple(FALSE, user)
