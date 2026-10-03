@@ -40,10 +40,12 @@ REGISTRY_MEMBERSHIP(/obj/item/radio/beacon, REGISTRY_BEACONS)
 	if(.)
 		return TRUE
 	if(user)
+		var/turf/sound_origin = get_turf(src)
+		if(!consume(src, user))
+			return TRUE
 		to_chat(user, span_notice("Locked In"))
 		new /obj/machinery/power/singularity_beacon/syndicate( user.loc )
-		play_sfx(src, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = 1)
-		consume(src, user)
+		play_sfx(sound_origin, SFX_EFFECTS_POP, 2, vary = TRUE, extrarange = 1)
 	return
 
 /// Old object verbs.
