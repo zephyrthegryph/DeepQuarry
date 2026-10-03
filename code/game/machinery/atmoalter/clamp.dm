@@ -91,14 +91,17 @@
 	return 1
 
 /obj/machinery/clamp/MouseDrop(obj/over_object as obj)
-	if(!usr)
+	return detach_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native clamp drag captures the actor before its unchanged timed removal.
+
+/obj/machinery/clamp/proc/detach_with_actor(mob/user, atom/over_object)
+	if(!user)
 		return
 
-	if(open && over_object == usr && Adjacent(usr))
-		to_chat(usr, span_notice("You begin to remove \the [src]..."))
-		om_task_timed(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(usr))
+	if(open && over_object == user && Adjacent(user))
+		to_chat(user, span_notice("You begin to remove \the [src]..."))
+		om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(user))
 	else
-		to_chat(usr, span_warning("You can't remove \the [src] while it's active!"))
+		to_chat(user, span_warning("You can't remove \the [src] while it's active!"))
 
 /obj/machinery/clamp/proc/MouseDrop_timed_done(mob/usr_mob)
 	to_chat(usr_mob, span_notice("You have removed \the [src]."))

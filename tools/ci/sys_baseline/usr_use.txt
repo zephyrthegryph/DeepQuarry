@@ -106,11 +106,6 @@ usr_outside_verb	code/game/antagonist/station/renegade.dm	to_chat(usr, span_info
 usr_outside_verb	code/game/antagonist/station/renegade.dm	message_admins("[key_name_admin(usr, 1)] summoned guns!")
 usr_outside_verb	code/game/gamemodes/technomancer/core_obj.dm	if(ishuman(usr))
 usr_outside_verb	code/game/gamemodes/technomancer/core_obj.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	if(!usr)
-usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	if(open && over_object == usr && Adjacent(usr))
-usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	to_chat(usr, span_notice("You begin to remove \the [src]..."))
-usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	om_task_timed(usr, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(MouseDrop_timed_done), done_args = list(usr))
-usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	to_chat(usr, span_warning("You can't remove \the [src] while it's active!"))
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	if(ishuman(usr) || isAI(usr)) // ghosts can call ..() for examine
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	var/mob/living/L = usr
 usr_outside_verb	code/game/machinery/atmoalter/meter.dm	usr.examinate(src)
