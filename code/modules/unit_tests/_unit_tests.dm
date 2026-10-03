@@ -747,6 +747,7 @@
 #include "interim_inflatable_timed_deflation_refund.dm"
 #include "interim_girder_timed_wall_plating.dm"
 #include "interim_machine_frame_timed_cut_refund.dm"
+#include "interim_patient_machine_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

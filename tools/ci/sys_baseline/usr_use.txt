@@ -134,12 +134,6 @@ usr_outside_verb	code/game/machinery/computer/camera.dm	attack_hand(usr)
 usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon, "[name].dmi")
-usr_outside_verb	code/game/machinery/feeder.dm	if(!isliving(usr))
-usr_outside_verb	code/game/machinery/feeder.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-usr_outside_verb	code/game/machinery/feeder.dm	act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
-usr_outside_verb	code/game/machinery/iv_drip.dm	if(!isliving(usr))
-usr_outside_verb	code/game/machinery/iv_drip.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-usr_outside_verb	code/game/machinery/iv_drip.dm	act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")
 usr_outside_verb	code/game/machinery/oxygen_pump.dm	var/mob/living/user = usr
 usr_outside_verb	code/game/mecha/micro/micro.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)
