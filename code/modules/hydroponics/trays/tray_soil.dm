@@ -43,7 +43,7 @@
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/fill_in_done(mob/user)
 	act_message(user, src, others = span_notice("%U% fills in %T%."))
-	qdel(src)
+	consume(src, user)
 
 /obj/machinery/portable_atmospherics/hydroponics/soil/proc/interaction_shovel(mob/user, obj/item/O, datum/interaction/interaction)
 	if(!seed)
