@@ -54,8 +54,9 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	effect = /obj/machinery/floorlayer/proc/interaction_load_tile
 
 /obj/machinery/floorlayer/proc/interaction_load_tile(mob/user, obj/item/W, datum/interaction/interaction)
+	if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+		return TRUE
 	to_chat(user, span_notice("\The [W] successfully loaded."))
-	user.drop_item(W)
 	TakeTile(W)
 	return TRUE
 
@@ -127,7 +128,8 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stack/tile/tile1 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 		for(var/obj/item/stack/tile/tile2 in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-			tile2.transfer_to(tile1)
+			if(tile2 != tile1)
+				tile2.transfer_to(tile1)
 
 /obj/machinery/floorlayer/proc/layFloor(turf/w_turf)
 	if(!T)
