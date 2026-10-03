@@ -321,15 +321,18 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 /atom/movable/screen/button_palette/Click(location, control, params)
-	if(!can_use(usr))
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): Native palette clicks supply the actor without invoking parent input routing.
+
+/atom/movable/screen/button_palette/click_with_actor(mob/user, location, control, params)
+	if(!can_use(user))
 		return
 
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
+		for(var/datum/action/action as anything in user.actions) // Reset action positions to default
 			for(var/atom/movable/screen/movable/action_button/button as anything in action.viewers)
 				var/datum/hud/hud = button.our_hud
 				hud?.position_action(button, SCRN_OBJ_DEFAULT)
-		to_chat(usr, span_notice("Action button positions have been reset."))
+		to_chat(user, span_notice("Action button positions have been reset."))
 		return TRUE
 
 	set_expanded(!expanded)

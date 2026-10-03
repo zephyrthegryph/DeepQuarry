@@ -13,7 +13,6 @@ usr_outside_verb	code/_onclick/click.dm	var/turf/T = get_turf(usr)
 usr_outside_verb	code/_onclick/click.dm	usr.face_atom(T)
 usr_outside_verb	code/_onclick/drag_drop.dm	/atom/proc/CanMouseDrop(atom/over, mob/user = usr)
 usr_outside_verb	code/_onclick/hud/ability_screen_objects.dm	if(!usr)
-usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud/our_hud = usr.hud_used
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
@@ -22,8 +21,6 @@ usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	var/datum/hud
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))
-usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
-usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	to_chat(usr, span_notice("Action button positions have been reset."))
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
