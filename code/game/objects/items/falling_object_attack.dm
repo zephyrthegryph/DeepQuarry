@@ -36,4 +36,4 @@
 		if(!L.injure(INJURY_BLUNT, 35, target_zone, src, flags = INJURE_ARMORED))
 			break
 	play_sfx(src, SFX_EFFECTS_CLANG2)
-	qdel(src)
+	consume(src)
