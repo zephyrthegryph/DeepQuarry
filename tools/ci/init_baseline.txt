@@ -1216,7 +1216,6 @@ initialize	code/modules/entopics/entopics.dm	/obj/item/entopic_debug/Initialize(
 initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/horoscope/Initialize(mapload)
 initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/emf/Initialize(mapload)
 initialize	code/modules/entrepreneur/entrepreneur_items.dm	/obj/item/entrepreneur/crystal/Initialize(mapload)
-initialize	code/modules/env_message/env_message.dm	/obj/effect/env_message/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/effect/meteor_falling/Initialize(mapload)
 initialize	code/modules/events/meteor_strike.dm	/obj/structure/meteorite/Initialize(mapload)
 initialize	code/modules/exploration/lootsafe.dm	/obj/structure/closet/crate/secure/lootsafe/numberlock/Initialize(mapload)

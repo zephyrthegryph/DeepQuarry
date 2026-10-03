@@ -11,9 +11,6 @@
 
 REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 
-/obj/effect/env_message/Initialize(mapload)
-	.=..()
-
 /obj/effect/env_message/examine(mob/user)
 	. = ..()
 	for(var/tckey in message_list)
@@ -26,7 +23,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/env_message, REGISTRY_ENV_MESSAGES)
 /obj/effect/env_message/proc/remove_message(tckey)
 	LAZYREMOVE(message_list, tckey)
 	if(!length(message_list))
-		qdel(src)
+		consume(src)
 	else
 		update_message()
 
