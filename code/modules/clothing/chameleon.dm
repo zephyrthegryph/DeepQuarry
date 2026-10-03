@@ -41,11 +41,11 @@
 	desc = "It's a plain jumpsuit. It seems to have a small dial on the wrist."
 
 
-/obj/item/clothing/under/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/under/chameleon/on_materialize()
 	if(!GLOB.chamelion_jumpsuit_choices)
 		var/blocked = list(src.type, /obj/item/clothing/under/gimmick)//Prevent infinite loops and bad jumpsuits.
 		GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/under/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -83,11 +83,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon, \
 	desc = "It looks like a plain hat, but upon closer inspection, there's an advanced holographic array installed inside. It seems to have a small dial inside."
 	body_parts_covered = 0
 
-/obj/item/clothing/head/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/head/chameleon/on_materialize()
 	if(!GLOB.chamelion_head_choices)
 		var/blocked = list(src.type)//Prevent infinite loops and bad hats.
 		GLOB.chamelion_head_choices = generate_chameleon_choices(/obj/item/clothing/head, blocked)
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/head/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -123,11 +123,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon, \
 	icon_state = "armor"
 	desc = "It appears to be a vest of standard armor, except this is embedded with a hidden holographic cloaker, allowing it to change it's appearance, but offering no protection.. It seems to have a small dial inside."
 
-/obj/item/clothing/suit/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/suit/chameleon/on_materialize()
 	if(!GLOB.chamelion_suit_choices)
 		var/blocked = list(src.type, /obj/item/clothing/suit/cyborg_suit, /obj/item/clothing/suit/justice, /obj/item/clothing/suit/greatcoat)
 		GLOB.chamelion_suit_choices = generate_chameleon_choices(/obj/item/clothing/suit, blocked)
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/suit/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -162,11 +162,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon, \
 	icon_state = "black"
 	desc = "They're comfy black shoes, with clever cloaking technology built in. It seems to have a small dial on the back of each shoe."
 
-/obj/item/clothing/shoes/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/shoes/chameleon/on_materialize()
 	if(!GLOB.chamelion_shoe_choices)
 		var/blocked = list(src.type, /obj/item/clothing/shoes/syndigaloshes, /obj/item/clothing/shoes/cyborg)//prevent infinite loops and bad shoes.
 		GLOB.chamelion_shoe_choices = generate_chameleon_choices(/obj/item/clothing/shoes, blocked)
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/shoes/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -259,10 +259,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon, \
 	icon_state = "black"
 	desc = "It looks like a pair of gloves, but it seems to have a small dial inside."
 
-/obj/item/clothing/gloves/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/gloves/chameleon/on_materialize()
 	if(!GLOB.chamelion_glove_choices)
 		GLOB.chamelion_glove_choices = generate_chameleon_choices(/obj/item/clothing/gloves, list(src.type))
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/gloves/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -298,10 +298,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon, \
 	icon_state = "gas_alt" // file change
 	desc = "It looks like a plain gask mask, but on closer inspection, it seems to have a small dial inside."
 
-/obj/item/clothing/mask/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/mask/chameleon/on_materialize()
 	if(!GLOB.chamelion_mask_choices)
 		GLOB.chamelion_mask_choices = generate_chameleon_choices(/obj/item/clothing/mask, list(src.type))
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/mask/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -339,10 +339,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon, \
 	desc = "It looks like a plain set of mesons, but on closer inspection, it seems to have a small dial inside."
 	var/list/global/clothing_choices
 
-/obj/item/clothing/glasses/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/glasses/chameleon/on_materialize()
 	if(!clothing_choices)
 		clothing_choices = generate_chameleon_choices(/obj/item/clothing/glasses, list(src.type))
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/glasses/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -423,11 +423,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon, \
 	icon = 'icons/inventory/accessory/item.dmi'
 	icon_state = "blacktie"
 
-/obj/item/clothing/accessory/chameleon/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/chameleon/on_materialize()
 	if(!GLOB.chamelion_accessory_choices)
 		var/blocked = list(src.type, /obj/item/clothing/accessory/storage)
 		GLOB.chamelion_accessory_choices = generate_chameleon_choices(/obj/item/clothing/accessory, blocked)
+	. = ..()
 
 DAMAGE_REACTION(/obj/item/clothing/accessory/chameleon, DAMAGE_EMP, PROC_REF(chameleon_emp_reveal))
 
@@ -472,13 +472,12 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/chameleon, \
 
 	var/copy_projectile	// a projectile type path
 
-/obj/item/gun/energy/chameleon/Initialize(mapload)
-	. = ..()
-
+/obj/item/gun/energy/chameleon/on_materialize()
 	if(!LAZYLEN(GLOB.gun_choices))
 		for(var/gun_type in typesof(/obj/item/gun/) - src.type)
 			var/obj/item/gun/G = gun_type
 			GLOB.gun_choices[initial(G.name)] = gun_type
+	. = ..()
 
 /obj/item/gun/energy/chameleon/consume_next_projectile()
 	var/obj/item/projectile/P = ..()
