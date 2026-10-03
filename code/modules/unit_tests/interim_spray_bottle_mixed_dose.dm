@@ -1,8 +1,11 @@
 /// The actual spray-bottle entry emits its configured mixed dose into a real travelling puff and refuses a smaller remainder.
-/datum/unit_test/interim_spray_bottle_mixed_dose/Run()
+/datum/unit_test/interim_spray_bottle_mixed_dose
+	parent_type = /datum/unit_test/dq_p2_reagents
+
+/datum/unit_test/interim_spray_bottle_mixed_dose/run_gate()
 	var/turf/T = run_loc_floor_bottom_left
 	var/turf/target = run_loc_floor_top_right
-	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/user = rc_actor(T)
 	var/obj/item/reagent_containers/spray/bottle = allocate(/obj/item/reagent_containers/spray, T)
 	TEST_ASSERT(target != T && !target.density, "the actual spray target is a distinct open test-floor turf")
 	var/turf/first_step = get_step(T, get_dir(T, target))
@@ -17,7 +20,7 @@
 	for(var/obj/effect/effect/water/chempuff/puff in range(1, T))
 		before += puff
 	TEST_ASSERT_EQUAL(length(before), 0, "the real spray origin starts without a travelling chemical puff")
-	bottle.afterattack(target, user, FALSE)
+	rc_click(user, target, bottle, I_HELP, FALSE)
 	var/list/emitted = list()
 	for(var/obj/effect/effect/water/chempuff/puff in range(1, T))
 		own(puff)
@@ -35,7 +38,7 @@
 	// Keep the source's measured remainder, then lower it below the actual entry's minimum dose.
 	bottle.reagents.remove_reagent(REAGENT_ID_SUGAR, 1)
 	TEST_ASSERT_EQUAL(bottle.reagents.total_volume, 9, "the real source now contains a positive remainder below one dose")
-	bottle.afterattack(target, user, FALSE)
+	rc_click(user, target, bottle, I_HELP, FALSE)
 	var/after_count = 0
 	for(var/obj/effect/effect/water/chempuff/after_puff in range(1, T))
 		own(after_puff)
