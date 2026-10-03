@@ -17,14 +17,14 @@ EXTEND_INTERACTIONS(/obj/effect/dead_plant, \
 
 /// Old attack_hand: a touch clears the dead plant away.
 /obj/effect/dead_plant/proc/interaction_clear_dead_plant(mob/user, obj/item/held, datum/interaction/interaction)
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /// Old attackby: any item clears it and lets the neighbouring vines regrow (the item's normal handling still follows).
 /obj/effect/dead_plant/proc/interaction_clear_dead_plant_item(mob/user, obj/item/held, datum/interaction/interaction)
 	for(var/obj/effect/plant/neighbor in range(1, src))
 		neighbor.update_neighbors()
-	qdel(src)
+	consume(src, user)
 	return INTERACTION_HANDLED_PASS
 
 /// Growing (on PERIODIC_PLANTS) while in REGISTRY_GROWING_PLANTS: add_plant() / remove_plant().
