@@ -376,7 +376,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperionspear = 5)
 
 /obj/item/projectile/bullet/imperionspear/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperionspear
 	name = "energy spear"
@@ -397,7 +397,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperionblaster = 8)
 
 /obj/item/projectile/bullet/imperionblaster/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperionblaster
 	name = "energy pellet"
@@ -418,7 +418,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/simple_mob/mechanical/mecha/imperion/phase5, "
 	submunitions = list(/obj/item/projectile/energy/imperiontesla = 2)
 
 /obj/item/projectile/bullet/imperiontesla/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/energy/imperiontesla
 	name = "energy sphere"
