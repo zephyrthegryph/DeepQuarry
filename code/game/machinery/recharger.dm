@@ -197,11 +197,10 @@ CAPABILITIES(/obj/machinery/recharger/wallcharger, \
 	var/mob/user = A.actor
 	var/obj/item/G = A.held
 	if(has_trait(user, TRAIT_UNLUCKY) && prob(10))
+		if(!user.unEquip(G, target = get_turf(src)) || G.loc != get_turf(src))
+			return OP_REFUSED
 		act_message(user, src, MSG_SELF("You insert [G] into %T% backwards!"), MSG_OTHERS("%U% inserts [G] into %T% backwards!"))
-		user.drop_item()
-		G.forceMove(get_turf(src))
 		return OP_OK
-	user.drop_item()
 	return put_device(user, G)
 
 /// A device dragged onto it goes in (no luck involved).
