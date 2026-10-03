@@ -15,7 +15,7 @@
 /datum/om/decl/pipeline_machines
 	of = list(
 		/obj/machinery/power/apc,
-		/obj/machinery/power/smes,
+		/obj/machinery/power/smes/batteryrack,
 		/obj/machinery/firealarm,
 		/obj/machinery/alarm,
 		/obj/machinery/portable_atmospherics/canister,
@@ -359,15 +359,15 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 
 // ---------------------------------------------------------------- SMES
 
-/// Rust charges and discharges; the unit's own power_step() does the rest (buildable units
-/// with a cut grounding wire, hybrids and battery racks keep working every frame).
+/// Rust charges and discharges; the rack's own power_step() does the rest (it re-reads and balances its cells every frame). The SMES
+/// proper is declared and has no stage.
 /datum/om/stage/machine/power/smes
-	of = /obj/machinery/power/smes
+	of = /obj/machinery/power/smes/batteryrack
 
-/datum/om/stage/machine/power/smes/perform(obj/machinery/power/smes/M, datum/om/frame/machine/F)
+/datum/om/stage/machine/power/smes/perform(obj/machinery/power/smes/batteryrack/M, datum/om/frame/machine/F)
 	return M.power_step()
 
-/datum/om/stage/machine/power/smes/idle(obj/machinery/power/smes/M)
+/datum/om/stage/machine/power/smes/idle(obj/machinery/power/smes/batteryrack/M)
 	return M.power_settled()
 
 // ---------------------------------------------------------------- fire alarms

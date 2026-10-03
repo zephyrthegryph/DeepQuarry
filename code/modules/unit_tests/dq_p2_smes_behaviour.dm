@@ -57,7 +57,9 @@
 
 /// The window's data as a viewer is sent it.
 /proc/p2_smes_data(obj/machinery/power/smes/S, mob/user)
-	return S.ui_data_obj_machinery_power_smes(user, null, null)
+	var/list/data = list()
+	present_tgui_data(S, user, data)
+	return data
 
 /// Presses a window button as the actor: the engine's op if the SMES has one for the action, else today's tgui_act().
 /proc/p2_smes_ui(mob/actor, obj/machinery/power/smes/S, action, list/args)
@@ -69,14 +71,13 @@
 	. = S.tgui_act(action, args || list(), ui)
 	qdel(ui)
 
-/// The actor works the SMES with a welding tool. A click with the hatch open is swallowed by the "any other item" entry today, so the
-/// adapter calls the SMES's welding entry directly.
+/// The actor works the SMES with a welding tool.
 /proc/p2_smes_weld(mob/user, obj/machinery/power/smes/S, obj/item/weldingtool/welder)
-	S.welder_act(user, welder)
+	test_click(user, S, welder)
 
-/// The actor works the SMES with wirecutters (the same story as the welder: the click never reaches the cutting entry today).
+/// The actor works the SMES with wirecutters.
 /proc/p2_smes_cut(mob/user, obj/machinery/power/smes/S, obj/item/tool/wirecutters/cutters)
-	S.wirecutter_act(user, cutters)
+	test_click(user, S, cutters)
 
 /// The SMES's window was opened for `user` (a test mob has no client, so the type records the open).
 /proc/p2_smes_interface_opened(obj/machinery/power/smes/S, mob/user)
@@ -92,17 +93,28 @@
 
 /// The unit is told its output is at `level` as the pipeline would show it (the one input the sound loop reads).
 /proc/p2_smes_show_output(obj/machinery/power/smes/S, level)
-	S.outputting = level
+	S.set_outputting(level)
 	S.update_soundloop()
 
-/// The output overlay key and the input overlay key and the charge gauge, as the unit draws them.
+/// The output overlay key and the input overlay key and the charge gauge, as the unit draws them: "" and "" and "0" when nothing of that is drawn.
 /proc/p2_smes_overlay_keys(obj/machinery/power/smes/S)
-	return list("[S.appearance_smes_output()]", "[S.appearance_smes_input()]", "[S.appearance_smes_charge()]")
+	var/datum/look/look = new
+	S.draw(look)
+	var/output = ""
+	var/input = ""
+	var/charge = "0"
+	for(var/overlay in look.overlays)
+		if(copytext(overlay, 1, 8) == "smes-op")
+			output = copytext(overlay, 8)
+		else if(copytext(overlay, 1, 8) == "smes-oc")
+			input = copytext(overlay, 8)
+		else if(copytext(overlay, 1, 8) == "smes-og")
+			charge = copytext(overlay, 8)
+	return list(output, input, charge)
 
 /// A power company's grid check suspends all input and output.
 /proc/p2_smes_set_grid_check(obj/machinery/power/smes/S, on)
-	S.grid_check = on
-	S.power_sync()
+	S.set_grid_check(on)
 
 /// The mapper's late pass: coils laid on the tile, the preset's settings.
 /proc/p2_smes_map_late(obj/machinery/power/smes/S)

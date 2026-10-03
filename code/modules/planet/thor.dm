@@ -766,7 +766,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /obj/machinery/power/smes/buildable/offmap_spawn/empty/Initialize(mapload)
 	. = ..()
 	set_stored_charge(0)
-	RCon = TRUE
-	input_level = input_level_max
-	output_level = output_level_max
-	input_attempt = TRUE
+	set_RCon(TRUE)
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
+	set_input_attempt(TRUE)

@@ -4,3 +4,6 @@ changes:
   - refactor: "The heavy-duty cell charger, the recharger and the wall recharger are declared with the machine library (wrench anchor, part replacer, one-item slot, charge loop on the machine frame) instead of interaction tables and machine pipeline stages"
   - code_imp: "A drag op pins its gesture alone: gesture(GESTURE_DRAG) answers a drag and no longer clashes with the use op that takes the same item"
   - qol: "Chargers say when they are unpowered or broken when examined"
+  - refactor: "The SMES (plain, buildable and hybrid) and its input terminals are declared (window buttons, terminal build and cut, casing weld, coils, RCON tag, EMP) instead of interaction tables, UI rows and a machine pipeline stage"
+  - bugfix: "A SMES and its input terminals are linked: destroying a terminal tells the unit, and the wirecutters find the terminal to take down"
+  - bugfix: "Wirecutters and a welding tool used on a SMES with its hatch open take the terminal down and repair the casing instead of being swallowed"

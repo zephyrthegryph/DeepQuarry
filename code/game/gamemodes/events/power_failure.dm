@@ -38,9 +38,8 @@
 		if((current_area.type in skipped_areas) || isNotStationLevel(S.z))
 			continue
 		S.set_stored_charge(S.last_charge)
-		S.output_attempt = S.last_output_attempt
-		S.input_attempt = S.last_input_attempt
-		S.update_icon()
+		S.set_output_attempt(S.last_output_attempt)
+		S.set_input_attempt(S.last_input_attempt)
 		S.power_change()
 
 /proc/power_restore_quick(announce = 1)
@@ -51,8 +50,7 @@
 		if(isNotStationLevel(S.z))
 			continue
 		S.set_stored_charge(S.capacity)
-		S.output_level = S.output_level_max
-		S.output_attempt = 1
-		S.input_attempt = 1
-		S.update_icon()
+		S.set_output_level(S.output_level_max)
+		S.set_output_attempt(1)
+		S.set_input_attempt(1)
 		S.power_change()

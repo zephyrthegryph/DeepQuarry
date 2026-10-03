@@ -10,23 +10,23 @@
 	// Set input and output to max
 	inputting(TRUE)
 	outputting(TRUE)
-	input_level = input_level_max
-	output_level = output_level_max
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
 
 /// Standard charge, but with 100% output by default
 /obj/machinery/power/smes/buildable/max_output/apply_mapped_settings()
 	outputting(TRUE)
-	output_level = output_level_max
+	set_output_level(output_level_max)
 
 /// Standard charge, but with 100% input by default
 /obj/machinery/power/smes/buildable/max_input/apply_mapped_settings()
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /// Standard charge, no output by default
 /obj/machinery/power/smes/buildable/disable_output/apply_mapped_settings()
 	outputting(FALSE)
-	output_level = 0
+	set_output_level(0)
 
 /// Max charge, but with 100% input by default
 /obj/machinery/power/smes/buildable/max_charge_max_input/apply_mapped_settings()
@@ -34,7 +34,7 @@
 	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /// Max charge, but with 100% output by default
 /obj/machinery/power/smes/buildable/max_charge_max_output/apply_mapped_settings()
@@ -42,16 +42,16 @@
 	set_stored_charge(capacity)
 	// Set input to max
 	outputting(TRUE)
-	output_level = output_level_max
+	set_output_level(output_level_max)
 
 /// Max input, max output, default starting charge
 /obj/machinery/power/smes/buildable/max_input_max_output/apply_mapped_settings()
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 	// Set input to max
 	outputting(TRUE)
-	output_level = output_level_max
+	set_output_level(output_level_max)
 
 
 // Poi prop
@@ -76,16 +76,16 @@
 	// Set input and output to max
 	inputting(TRUE)
 	outputting(TRUE)
-	input_level = input_level_max
-	output_level = output_level_max
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
 
 /obj/machinery/power/smes/buildable/hybrid/max_output/apply_mapped_settings()
 	outputting(TRUE)
-	output_level = output_level_max
+	set_output_level(output_level_max)
 
 /obj/machinery/power/smes/buildable/hybrid/max_input/apply_mapped_settings()
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /obj/machinery/power/smes/buildable/hybrid/high_recharge_rate/apply_mapped_settings()
 	recharge_rate = 10000
@@ -103,7 +103,7 @@
 	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /obj/machinery/power/smes/batteryrack/mapped/input_and_output_on/apply_mapped_settings()
 	inputting(TRUE)
@@ -123,14 +123,14 @@
 	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /obj/machinery/power/smes/buildable/power_shuttle/max_charge_max_input_base_output/apply_mapped_settings()
 	// Set charge
 	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 	// Standard level output
 	outputting(TRUE)
 
@@ -144,10 +144,10 @@
 	set_stored_charge(capacity)
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 
 /obj/machinery/power/smes/buildable/point_of_interest/max_input/apply_mapped_settings()
 	// Set input to max
 	inputting(TRUE)
-	input_level = input_level_max
+	set_input_level(input_level_max)
 

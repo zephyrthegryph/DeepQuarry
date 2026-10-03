@@ -24,16 +24,13 @@
 	var/obj/machinery/power/smes/buildable/S = holder
 	switch(wire)
 		if(WIRE_SMES_RCON)
-			S.RCon = mend
+			S.set_RCon(mend)
 		if(WIRE_SMES_INPUT)
-			S.input_cut = !mend
-			changed(S, CHANGE_MACHINE_SETTINGS)
+			S.set_input_cut(!mend)
 		if(WIRE_SMES_OUTPUT)
-			S.output_cut = !mend
-			changed(S, CHANGE_MACHINE_SETTINGS)
+			S.set_output_cut(!mend)
 		if(WIRE_SMES_GROUNDING)
-			S.grounding = mend
-			changed(S, CHANGE_MACHINE_SETTINGS)
+			S.set_grounding(mend)
 		if(WIRE_SMES_FAILSAFES)
 			S.safeties_enabled = mend
 	..()
@@ -44,16 +41,15 @@
 		if(WIRE_SMES_RCON)
 			if(S.RCon)
 				S.set_rcon(FALSE)
-				om_after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_rcon), TRUE)
+				after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_rcon), key = "rcon_pulse", with = list(TRUE))
 		if(WIRE_SMES_INPUT)
 			S.toggle_input()
 		if(WIRE_SMES_OUTPUT)
 			S.toggle_output()
 		if(WIRE_SMES_GROUNDING)
-			S.grounding = 0
-			changed(S, CHANGE_MACHINE_SETTINGS)
+			S.set_grounding(0)
 		if(WIRE_SMES_FAILSAFES)
 			if(S.safeties_enabled)
 				S.set_safeties(FALSE)
-				om_after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_safeties), TRUE)
+				after(S, 1 SECOND, TYPE_PROC_REF(/obj/machinery/power/smes/buildable, set_safeties), key = "failsafe_pulse", with = list(TRUE))
 	..()

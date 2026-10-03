@@ -10,7 +10,7 @@
 
 /obj/item/circuitboard/smes/construct(obj/machinery/power/smes/buildable/S)
 	if(..(S))
-		S.output_attempt = 0 //built SMES default to off
+		S.set_output_attempt(0) //built SMES default to off
 
 /obj/item/circuitboard/batteryrack
 	name = T_BOARD("battery rack PSU")
