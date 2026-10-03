@@ -81,7 +81,7 @@
 
 		if(door.density && door.operable())
 			door.do_animate("spark")
-			om_after(src, 0.6 SECONDS, PROC_REF(pulse_door), door, user)
+			after(src, 0.6 SECONDS, PROC_REF(pulse_door), with = list(door, user))
 		else //Probably broken or no power.
 			to_chat(user, span_warning("The door does not respond to the pulse."))
 		door.add_fingerprint(user)

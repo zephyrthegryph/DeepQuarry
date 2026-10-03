@@ -328,7 +328,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Orange extract reaction (fire) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, /proc/slime_extract_fire, with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/orange_heatwave
@@ -430,7 +430,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Yellow extract reaction (lightning) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, /proc/slime_extract_lightning, with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/yellow_flashlight
@@ -455,7 +455,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	log_and_message_admins("Yellow extract reaction (emp) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 	holder.my_atom.visible_message(span_danger("\The [src] begins to vibrate violently!"))
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, holder.my_atom)
+	after(holder.my_atom, 5 SECONDS, /proc/slime_extract_emp, with = list(holder.my_atom))
 	..()
 
 /datum/decl/chemical_reaction/instant/slime/yellow_battery
@@ -897,7 +897,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	play_sfx(holder.my_atom, SFX_EFFECTS_PHASEIN, 0.75)
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	if(istype(holder.my_atom, /obj/item/slime_extract/green))
-		om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, holder.my_atom)
+		after(holder.my_atom, 5 SECONDS, /proc/slime_extract_start_emitting, with = list(holder.my_atom))
 
 /datum/decl/chemical_reaction/instant/slime/green_emitter
 	name = "Slime Radiation Emitter"
@@ -1045,7 +1045,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 	holder.my_atom.visible_message(span_danger("\The [holder.my_atom] begins to vibrate violently!"))
 	log_and_message_admins("Oil extract reaction (explosion) has been activated in [get_area(holder.my_atom)].  Last fingerprints: [holder.my_atom.forensic_data?.get_lastprint()]")
 
-	om_after(holder.my_atom, 5 SECONDS, /proc/slime_extract_explode, holder.my_atom, power)
+	after(holder.my_atom, 5 SECONDS, /proc/slime_extract_explode, with = list(holder.my_atom, power))
 
 // ********************
 // * Bluespace slimes *

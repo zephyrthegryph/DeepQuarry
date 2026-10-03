@@ -69,7 +69,7 @@
 		return
 	if(door_locked)
 		to_chat(occupant, span_notice("\The [src] is locked! You begin operating the emergency unlock mechanism. This will take one minute."))
-		om_after(src, 1 MINUTE, PROC_REF(emergency_unlocked), occupant)
+		after(src, 1 MINUTE, PROC_REF(emergency_unlocked), with = list(occupant))
 		return
 	passenger_disembark(occupant)
 

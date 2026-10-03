@@ -87,7 +87,7 @@
 	visible_message("The washing machine starts a cycle.")
 	play_sfx(src, SFX_ITEMS_WASHINGMACHINE)
 
-	om_after(src, 2 SECONDS, PROC_REF(finish_wash), damage_modifier)
+	after(src, 2 SECONDS, PROC_REF(finish_wash), with = list(damage_modifier))
 
 /obj/machinery/washing_machine/proc/finish_wash(damage_modifier)
 	for(var/atom/A in washing)

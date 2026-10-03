@@ -113,7 +113,7 @@
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
-		after_slot(src, "camera_timer_token", max(deadline - world.time, 0), PROC_REF(camera_timer_fired))
+		after(src, max(deadline - world.time, 0), PROC_REF(camera_timer_fired), key = "camera_timer_token")
 
 /obj/machinery/camera/proc/camera_timer_fired()
 	camera_timer_at = 0

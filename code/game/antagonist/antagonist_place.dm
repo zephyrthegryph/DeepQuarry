@@ -11,7 +11,7 @@
 		if(announced)
 			return
 		announced = 1
-		om_after(src, spawn_announcement_delay || 0, PROC_REF(make_spawn_announcement))
+		after(src, spawn_announcement_delay || 0, PROC_REF(make_spawn_announcement))
 	return
 
 /datum/antagonist/proc/make_spawn_announcement()

@@ -50,7 +50,7 @@
 
 	if(species.allergen_reaction & AG_GIBBING)
 		if(prob(disable_severity / 6))
-			om_after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
+			after(H, rand(3,6), TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib))
 		else if(prob(disable_severity))
 			H.emote(pick(list("whimper","belch","belch","belch","choke","shiver")))
 			H.status_at_least(EFFECT_WEAKENED, disable_severity / 3)
@@ -62,7 +62,7 @@
 			else if(prob(80))
 				if(prob(30))
 					to_chat(H, span_warning("You feel like you are about to sneeze!"))
-				om_after(H, rand(0.75,3) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_sneeze))
+				after(H, rand(0.75,3) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_sneeze))
 
 	if(species.allergen_reaction & AG_COUGH)
 		if(prob(disable_severity/2))
@@ -84,7 +84,7 @@
 	if(remaining > 0)
 		H.emote(pick(list("whimper","belch","shiver")))
 		remaining--
-		om_after(H, rand(1,1.2) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib), remaining)
+		after(H, rand(1,1.2) SECOND, TYPE_PROC_REF(/mob/living/carbon/human, allergy_gib), with = list(remaining))
 		return
 	H.emote("belch")
 	H.gib()

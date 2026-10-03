@@ -50,7 +50,7 @@
 	else
 		cut_overlay(sprite_datum.get_belly_overlay(src, vs_fullness, belly_class))
 		add_overlay("[sprite_datum.get_belly_overlay(src, vs_fullness, belly_class)]-struggle")
-	om_after(src, 1.2 SECONDS, PROC_REF(end_vs_animate), belly_class)
+	after(src, 1.2 SECONDS, PROC_REF(end_vs_animate), with = list(belly_class))
 
 /mob/living/silicon/robot/proc/end_vs_animate(belly_class)
 	var/vs_fullness = vore_fullness_ex[belly_class]

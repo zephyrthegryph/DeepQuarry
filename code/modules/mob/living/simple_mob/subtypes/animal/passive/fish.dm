@@ -56,7 +56,7 @@
 	var/turf/T = get_turf(self)
 	if(T && !is_type_in_list(T, GLOB.suitable_fish_turf_types))
 		if(prob(50))
-			om_after(self, 0, TYPE_PROC_REF(/mob/living, say), pick("Blub", "Glub", "Burble"))
+			after(self, 0, TYPE_PROC_REF(/mob/living, say), with = list(pick("Blub", "Glub", "Burble")))
 		self.add_oxygen_debt(self.unsuitable_atoms_damage, T)
 
 // Subtypes.
@@ -342,7 +342,7 @@ DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, l
 		return
 	Move(T)
 	if(steps > 1)
-		om_after(src, 3, PROC_REF(koi_flee), M, steps - 1)
+		after(src, 3, PROC_REF(koi_flee), with = list(M, steps - 1))
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
 	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(koi_poisonous_interaction_hand)), \

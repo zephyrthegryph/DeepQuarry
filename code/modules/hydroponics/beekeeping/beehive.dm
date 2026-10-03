@@ -313,7 +313,7 @@ DECLARE_APPEARANCE(/obj/machinery/honey_extractor, "panel_open", list("1" = list
 	use_power_oneoff(active_power_usage * 5) //uses 5 second of active power at once, because I could not figure out how active powerdraw works and if or how the work is timed.
 	held.honey = 0
 	held.update_icon() //updates the honeyframe
-	om_after(src, 5 SECONDS, PROC_REF(finish_extracting))
+	after(src, 5 SECONDS, PROC_REF(finish_extracting))
 	return TRUE
 
 /datum/interaction/machine_item/honey_extractor_collect

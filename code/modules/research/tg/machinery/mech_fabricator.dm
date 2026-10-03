@@ -543,7 +543,7 @@ UI_ACT_PROC(/obj/machinery/mecha_part_fabricator_tg, ui_act_remove_mat)
 
 /obj/machinery/mecha_part_fabricator_tg/proc/AfterMaterialInsert(item_inserted, id_inserted, amount_inserted)
 	add_overlay("fab-load-metal")
-	om_after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), "fab-load-metal")
+	after(src, 1 SECONDS, TYPE_PROC_REF(/atom, cut_overlay), with = list("fab-load-metal"))
 
 DECLARE_APPEARANCE(/obj/machinery/mecha_part_fabricator_tg, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "fab-o"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "fab-idle")))
 

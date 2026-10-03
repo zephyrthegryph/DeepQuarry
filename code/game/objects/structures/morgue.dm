@@ -353,7 +353,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
+		after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return
 
 /*
@@ -449,5 +449,5 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 			consume(O)
 
 		new /obj/effect/decal/cleanable/ash(src)
-		om_after(src, 3 SECONDS, PROC_REF(cremation_done))
+		after(src, 3 SECONDS, PROC_REF(cremation_done))
 	return

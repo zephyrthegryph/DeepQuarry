@@ -11,8 +11,8 @@ GLOBAL_DATUM_INIT(news_data, /datum/lore/news, new)
 
 /datum/lore/news/New()
 	..()
-	om_after(src, 5 SECONDS, PROC_REF(find_station_newspaper)) //Give it a second or it gets fucky.
-	om_after(src, 30 SECONDS, PROC_REF(fill_codex_news)) // Yes, again.
+	after(src, 5 SECONDS, PROC_REF(find_station_newspaper)) //Give it a second or it gets fucky.
+	after(src, 30 SECONDS, PROC_REF(fill_codex_news)) // Yes, again.
 	if (!news_codex.newsindex)
 		return
 	else

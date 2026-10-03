@@ -77,4 +77,4 @@
 					human.change_hair_color(255, 255, 255)
 				host.visible_message(span_warning("[host] looks terrifyingly gaunt..."), span_danger("You suddenly feel like your skin is <i>wrong</i>..."))
 				host.add_atom_colour("#1d2953", TEMPORARY_COLOUR_PRIORITY)
-				om_after(src, 10 SECONDS, PROC_REF(cure))
+				after(src, 10 SECONDS, PROC_REF(cure))

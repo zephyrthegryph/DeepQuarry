@@ -161,9 +161,9 @@
 			M.take_damage(i * 2, "energy") // Mechs don't have a concept for siemens so energy armor check is the best alternative.
 
 	if(i < 10)
-		om_after(src, 1 SECOND, PROC_REF(energy_ball_pulse), i + 1, old_shock_resist)
+		after(src, 1 SECOND, PROC_REF(energy_ball_pulse), with = list(i + 1, old_shock_resist))
 		return
-	om_after(src, 1 SECOND, PROC_REF(energy_ball_discharge), old_shock_resist)
+	after(src, 1 SECOND, PROC_REF(energy_ball_discharge), with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_discharge(old_shock_resist)
 
@@ -183,7 +183,7 @@
 	energy_ball.stop_orbit()
 	qdel(energy_ball)
 
-	om_after(src, 1 SECOND, PROC_REF(energy_ball_done), old_shock_resist)
+	after(src, 1 SECOND, PROC_REF(energy_ball_done), with = list(old_shock_resist))
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/proc/energy_ball_done(old_shock_resist)
 	// Resist resistance to old value.

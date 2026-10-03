@@ -339,7 +339,7 @@ UI_ACT_PROC(/mob/living/bot/mulebot, ui_act_safety)
 	if(istext(om_hold_busy(src, 2)))
 		return
 	C.forceMove(loc)
-	om_after(src, 2, PROC_REF(load_finish), C)
+	after(src, 2, PROC_REF(load_finish), with = list(C))
 
 /mob/living/bot/mulebot/proc/load_finish(atom/movable/C)
 	if(C.loc != loc) //To prevent you from going onto more than one bot.

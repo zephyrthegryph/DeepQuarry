@@ -38,7 +38,7 @@
 	if(pulses_remaining <= 0)
 		consume(src)
 		return
-	om_after(src, pulse_delay, PROC_REF(snake_pulse))
+	after(src, pulse_delay, PROC_REF(snake_pulse))
 
 /obj/effect/temporary_effect/pulse/snake/proc/snake_pulse()
 	if(!on_pulse())
@@ -107,7 +107,7 @@
 	if(T)
 		T.color = "#00ff00"
 
-		om_after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), initial(T.color))
+		after(T, 3 SECONDS, TYPE_PROC_REF(/atom, set_base_color), with = list(initial(T.color)))
 
 /obj/effect/temporary_effect/pulse/snake/test/hunter/pulse_loop()
 	rel_set(src, nameof(hunting), locate_in_list(range(7, src), /mob/living))

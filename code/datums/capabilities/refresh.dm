@@ -43,7 +43,7 @@
 	DERIVED_EVAL_END
 	var/pending = om_timer_slot_pending(D, "periodic_interval")
 	if(want && !pending)
-		after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+		after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 	else if(!want && pending)
 		om_cancel_timer_slot(D, "periodic_interval")
 
@@ -53,7 +53,7 @@
 		return
 	if(D.periodic_step(D.periodic_interval) == PROCESS_KILL || !D.should_run())
 		return
-	after_slot(D, "periodic_interval", D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), D)
+	after(D, D.periodic_interval, GLOBAL_PROC_REF(periodic_interval_fire), key = "periodic_interval", with = list(D))
 
 /// Marks E changed: queues its refresh (and its owners', up the chain) and raises `channel` for OM
 /// observers. The rare direct write outside a dispatched call or a TRACKED setter calls this.

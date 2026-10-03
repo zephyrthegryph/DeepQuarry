@@ -97,7 +97,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/girder, TYPE_PROC_REF(/atom, appearance_o
 		return 0
 	user.do_attack_animation(src)
 	act_message(user, src, others = span_danger("%U% [attack_message] %T%!"))
-	om_after(src, 1, PROC_REF(dismantle))
+	after(src, 1, PROC_REF(dismantle))
 	return 1
 
 /obj/structure/girder/bullet_act(obj/item/projectile/Proj)

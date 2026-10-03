@@ -53,7 +53,7 @@
 
 /obj/effect/artillery_attack/LateInitialize()
 	var/delay = rand(25, 30)
-	om_after(src, delay, PROC_REF(spawner))
+	after(src, delay, PROC_REF(spawner))
 
 /obj/effect/artillery_attack/proc/spawner()
 	new ammmotype(src.loc)

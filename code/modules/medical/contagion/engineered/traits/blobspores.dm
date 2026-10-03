@@ -96,7 +96,7 @@ BONUS
 		return
 	var/mob/living/M = A.host
 	act_message(M, null, others = span_danger("%U% starts swelling grotesquely!"))
-	om_after(src, 10 SECONDS, PROC_REF(pop), A, M)
+	after(src, 10 SECONDS, PROC_REF(pop), with = list(A, M))
 
 /datum/viral_trait/blobspores/proc/pop(datum/affliction/contagion/engineered/A, mob/living/M)
 	if(!A || !M)

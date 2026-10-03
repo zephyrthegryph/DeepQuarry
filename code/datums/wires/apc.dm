@@ -24,19 +24,19 @@
 	switch(wire)
 		if(WIRE_IDSCAN)
 			A.set_locked(FALSE)
-			om_after(A, 30 SECONDS, TYPE_PROC_REF(/obj/machinery/power/apc, set_locked), TRUE)
+			after(A, 30 SECONDS, TYPE_PROC_REF(/obj/machinery/power/apc, set_locked), with = list(TRUE))
 
 		if(WIRE_MAIN_POWER1, WIRE_MAIN_POWER2)
 			if(!A.shorted)
 				A.set_shorted(TRUE)
 
-				om_after(src, 2 MINUTES, PROC_REF(main_power_pulse_ends))
+				after(src, 2 MINUTES, PROC_REF(main_power_pulse_ends))
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
 				A.set_aidisabled(TRUE)
 
-				om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
+				after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
 /datum/wires/apc/on_cut(wire, mend, mob/user)
 	var/obj/machinery/power/apc/A = holder

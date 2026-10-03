@@ -112,7 +112,7 @@ DECLARE_APPEARANCE(/obj/machinery/recycling/stamper, "panel_open", list("1" = li
 	working = TRUE
 	icon_state = "crusher-process"
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 5 SECONDS, PROC_REF(crush_done), O)
+	after(src, 5 SECONDS, PROC_REF(crush_done), with = list(O))
 
 /obj/machinery/recycling/crusher/proc/crush_done(obj/item/O)
 	var/trash = 1 // Trash multiplier
@@ -167,7 +167,7 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	working = TRUE
 	icon_state = "sorter-process"
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 2 SECONDS, PROC_REF(sort_done), O)
+	after(src, 2 SECONDS, PROC_REF(sort_done), with = list(O))
 
 /obj/machinery/recycling/sorter/proc/sort_done(obj/item/O)
 	sort_item(O)
@@ -216,7 +216,7 @@ DECLARE_REPEAT(/obj/machinery/recycling/sorter, 2 SECONDS, dispense_if_possible,
 	working = TRUE
 	icon_state = "stamper-process"
 	set_use_power(USE_POWER_ACTIVE)
-	om_after(src, 6.4 SECONDS, PROC_REF(stamp_done), O)
+	after(src, 6.4 SECONDS, PROC_REF(stamp_done), with = list(O))
 
 /obj/machinery/recycling/stamper/proc/stamp_done(obj/item/O)
 	dust_to_sheet(O)

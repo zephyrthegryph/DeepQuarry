@@ -161,7 +161,7 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 	lightning.old_style_target(user)
 	lightning.fire()
 	if(left > 1)
-		om_after(src, 0.3 SECONDS, PROC_REF(create_lightning_beam), user, source, left - 1)
+		after(src, 0.3 SECONDS, PROC_REF(create_lightning_beam), with = list(user, source, left - 1))
 
 /obj/item/projectile/beam/lightning/energy_siphon
 	name = "energy stream"

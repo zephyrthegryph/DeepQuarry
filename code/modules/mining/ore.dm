@@ -45,7 +45,7 @@
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
 		H.status_at_least(EFFECT_BLINDED, 5)
 		H.status_adjust(EFFECT_BLURRY, 10)
-		om_after(src, 1, PROC_REF(scatter_if_dropped))
+		after(src, 1, PROC_REF(scatter_if_dropped))
 
 
 /obj/item/ore/phoron
@@ -91,7 +91,7 @@
 		to_chat(H, span_danger("Some of \the [src] gets in your eyes!"))
 		H.status_at_least(EFFECT_BLINDED, 10)
 		H.status_adjust(EFFECT_BLURRY, 15)
-		om_after(src, 1, PROC_REF(scatter_if_dropped))
+		after(src, 1, PROC_REF(scatter_if_dropped))
 
 /obj/item/ore/lead
 	name = "lead glance"

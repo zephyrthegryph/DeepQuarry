@@ -424,7 +424,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	M.client?.screen -= booting_L
 	qdel(booting_L)
 	booting_R.icon_state = "boot_done"
-	om_after(M, 4 SECONDS, /proc/rig_boot_hud_clear, M, booting_R)
+	after(M, 4 SECONDS, /proc/rig_boot_hud_clear, with = list(M, booting_R))
 
 	if(canremove)
 		for(var/obj/item/rig_module/module in installed_modules)

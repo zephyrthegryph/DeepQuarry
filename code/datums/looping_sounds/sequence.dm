@@ -183,7 +183,7 @@
 	for(var/sound in instructions)
 		var/file = (sound == MORSE_DOT) ? dot_soundfile : dash_soundfile
 		if(offset)
-			om_after(src, offset, PROC_REF(play), file)
+			after(src, offset, PROC_REF(play), with = list(file))
 		else
 			play(file)
 		offset += ((sound == MORSE_DOT) ? dot_delay : dash_delay) + spaces_between_sounds

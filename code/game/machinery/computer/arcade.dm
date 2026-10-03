@@ -161,7 +161,7 @@ UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyA
 				play_sfx(src, SFX_ARCADE_HIT, ignore_walls = FALSE)
 				if(turtle > 0)
 					turtle--
-				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, attackamt, 0, 0)
+				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, attackamt, 0, 0))
 			if(XENO_CHEM_HEAL)
 				blocked = 1
 				var/pointamt = rand(1,3)
@@ -169,7 +169,7 @@ UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyA
 				temp = "You use [pointamt] magic to heal for [healamt] damage!"
 				play_sfx(src, SFX_ARCADE_HEAL, ignore_walls = FALSE)
 				turtle++
-				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, pointamt, healamt)
+				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, 0, pointamt, healamt))
 			if("charge")
 				blocked = 1
 				var/chargeamt = rand(4,7)
@@ -178,7 +178,7 @@ UI_DATA(/obj/machinery/computer/arcade/battle, "name:text", "temp:text", "enemyA
 				player_mp += chargeamt
 				if(turtle > 0)
 					turtle--
-				om_after(src, 1 SECOND, PROC_REF(battle_resolve), ui.user, 0, 0, 0)
+				after(src, 1 SECOND, PROC_REF(battle_resolve), with = list(ui.user, 0, 0, 0))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/arcade/battle, "newgame", ui_act_newgame)
@@ -407,7 +407,7 @@ DECLARE_EMAG(/obj/machinery/computer/arcade/battle, PROC_REF(on_emag), null, nul
 	if(istype(L))
 		L.injure(INJURY_BLUNT, 25, null, src)
 	if(hits < 3)
-		om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), L, hits + 1)
+		after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(L, hits + 1))
 
 // Event screens embed href links (event()); the tgui buttons call the orion_* procs directly.
 TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "close", PROC_REF(orion_close))
@@ -475,7 +475,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 					if(severity >= 3) //you didn't pray hard enough
 						to_chat(M, span_warning("An overpowering wave of nausea consumes over you. You hunch over, your stomach's contents preparing for a spectacular exit."))
 						if(ishuman(M))
-							om_after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
+							after(M, 3 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, vomit))
 				if(ORION_TRAIL_FLUX)
 					if(prob(75))
 						M.status_at_least(EFFECT_WEAKENED, 3)
@@ -497,7 +497,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 					food = rand(10,80) / rand(1,2)
 					fuel = rand(10,60) / rand(1,2)
 					if(electronics)
-						om_after(src, 1 SECOND, PROC_REF(malfunction_restore), oldfood, oldfuel)
+						after(src, 1 SECOND, PROC_REF(malfunction_restore), with = list(oldfood, oldfuel))
 	orion_refresh(user)
 
 /obj/machinery/computer/arcade/orion_trail/proc/orion_newgame(mob/user, list/args)
@@ -572,7 +572,7 @@ TOPIC_ACTION(/obj/machinery/computer/arcade/orion_trail, "trade", PROC_REF(orion
 				src.show_message("\The [src] states, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRIFIED.","You hear something say, 'YOU ARE EXPERIENCING A BLACKHOLE. BE TERRFIED'")
 				to_chat(user, span_warning("Something draws you closer and closer to the machine."))
 				//spawning a literal blackhole would be fun, but a bit disruptive.
-				om_after(src, 1 SECOND, PROC_REF(blackhole_hurt), user, 0)
+				after(src, 1 SECOND, PROC_REF(blackhole_hurt), with = list(user, 0))
 		else
 			event = null
 			turns += 1
@@ -1043,7 +1043,7 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 	active = 1
 	src.visible_message(span_notice("[src] softly beeps and whirs to life!"))
 	src.audible_message(span_bold("\The [src]") + " says, 'This is ship ID #[rand(1,1000)] to Orion Port Authority. We're coming in for landing, over.'")
-	om_after(src, 2 SECONDS, PROC_REF(countdown), 1)
+	after(src, 2 SECONDS, PROC_REF(countdown), with = list(1))
 	return TRUE
 
 /obj/item/orion_ship/proc/countdown(stage)
@@ -1051,10 +1051,10 @@ DECLARE_INTERACTIONS(/obj/item/orion_ship, INTERACT_USE(null, PROC_REF(interacti
 		if(1)
 			src.visible_message(span_warning("[src] begins to vibrate..."))
 			src.audible_message(span_bold("\The [src]") + " says, 'Uh, Port? Having some issues with our reactor, could you check it out? Over.'")
-			om_after(src, 3 SECONDS, PROC_REF(countdown), 2)
+			after(src, 3 SECONDS, PROC_REF(countdown), with = list(2))
 		if(2)
 			src.audible_message(span_bold("\The [src]") + " says, 'Oh, God! Code Eight! CODE EIGHT! IT'S GONNA BL-'")
-			om_after(src, 3.6, PROC_REF(countdown), 3)
+			after(src, 3.6, PROC_REF(countdown), with = list(3))
 		if(3)
 			src.visible_message(span_danger("[src] explodes!"))
 			explosion(src.loc, 1,2,4)

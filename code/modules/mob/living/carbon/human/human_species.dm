@@ -55,7 +55,7 @@
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/proc/turntable_step(facing)
 	set_dir(facing)
-	om_after(src, 2 SECONDS, PROC_REF(turntable_step), turn(facing, 90))
+	after(src, 2 SECONDS, PROC_REF(turntable_step), with = list(turn(facing, 90)))
 
 /mob/living/carbon/human/dummy/mannequin/autoequip/tajaran
 	icon = 'icons/mob/human_races/r_tajaran.dmi'

@@ -45,7 +45,7 @@
 	if(!found_target) //meaning if the statue didn't find a valid target
 		return INITIALIZE_HINT_QDEL
 
-	om_after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
+	after(src, timer * 2 SECONDS, PROC_REF(release)) // the old countdown: one per 2 s step
 
 /// The petrification wears off (its timer): the statue frees whoever is inside.
 /obj/structure/closet/statue/proc/release()

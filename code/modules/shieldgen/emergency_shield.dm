@@ -68,7 +68,7 @@
 		receive_weapon_hit(W, user)
 
 	set_opacity(1)
-	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
+	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
 	return FALSE
 
 DAMAGE_REACTION_AFTER(/obj/machinery/shield, DAMAGE_PROJECTILE, PROC_REF(shield_flash_opaque))
@@ -77,7 +77,7 @@ DAMAGE_REACTION(/obj/machinery/shield, DAMAGE_THROWN, PROC_REF(shield_thrown_hit
 /// The shield flickers opaque for a moment after absorbing a hit (purely aesthetic).
 /obj/machinery/shield/proc/shield_flash_opaque(datum/damage_packet/packet)
 	set_opacity(1)
-	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), 0)
+	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_opacity), with = list(0))
 
 /// A thrown hit is announced and flickers the shield, then lands as usual.
 /obj/machinery/shield/proc/shield_thrown_hit(datum/damage_packet/packet)

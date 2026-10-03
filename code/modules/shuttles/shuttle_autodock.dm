@@ -214,7 +214,7 @@
 
 	//whatever we were doing with docking: stop it, then redock
 	force_undock()
-	om_after(src, 1 SECOND, PROC_REF(dock))
+	after(src, 1 SECOND, PROC_REF(dock))
 
 //returns 1 if the shuttle is getting ready to move, but is not in transit yet
 /datum/shuttle/autodock/proc/is_launching()

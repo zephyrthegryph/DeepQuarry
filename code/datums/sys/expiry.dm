@@ -39,7 +39,7 @@
 	var/left = value - EXPIRY_NOW(D, hook[1])
 	if(left < 0)
 		left = 0
-	after_slot(D, "expiry_lapse:[var_name]", left, GLOBAL_PROC_REF(expiry_lapse_fire), D, var_name)
+	after(D, left, GLOBAL_PROC_REF(expiry_lapse_fire), key = "expiry_lapse:[var_name]", with = list(D, var_name))
 
 /proc/expiry_lapse_fire(datum/D, var_name)
 	if(QDELETED(D))

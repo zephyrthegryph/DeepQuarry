@@ -37,7 +37,7 @@ DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")
 	cancel_pending_floors()
 	update_ext_panel_icons()
 	control_panel_interior.audible_message(span_info("This turbolift is responding to a priority call.  Please exit the lift when it stops and make way."), runemessage = "BUZZ")
-	om_after(src, time, PROC_REF(end_priority_mode))
+	after(src, time, PROC_REF(end_priority_mode))
 
 /datum/turbolift/proc/update_fire_mode(new_fire_mode)
 	if(fire_mode == new_fire_mode)

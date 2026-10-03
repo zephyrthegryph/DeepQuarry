@@ -530,7 +530,7 @@ SETTER(/atom/movable, anchored)
 /atom/movable/proc/glide_for(movetime)
 	if(movetime)
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(movetime), 1)
-		om_after(src, movetime, PROC_REF(reset_glide_size))
+		after(src, movetime, PROC_REF(reset_glide_size))
 	else
 		glide_size = initial(glide_size)
 
@@ -729,7 +729,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	animate(filters[our_filter], offset = 1, size = 8, time = length, flags = ANIMATION_PARALLEL)
 
 	//When the animations finish
-	om_after(src, length + 5, PROC_REF(cloak_animation_done), initial_alpha)
+	after(src, length + 5, PROC_REF(cloak_animation_done), with = list(initial_alpha))
 
 /atom/movable/proc/cloak_animation_done(initial_alpha)
 	//Remove those
@@ -755,7 +755,7 @@ DECLARE_INTERACTIONS(/atom/movable/overlay, 	INTERACT_HAND_UNGATED(null, PROC_RE
 	animate(filters[our_filter], offset = 0, size = 0, time = length, flags = ANIMATION_PARALLEL)
 
 	//When the animations finish
-	om_after(src, length + 5, PROC_REF(uncloak_animation_done))
+	after(src, length + 5, PROC_REF(uncloak_animation_done))
 
 /atom/movable/proc/uncloak_animation_done()
 	//Remove those

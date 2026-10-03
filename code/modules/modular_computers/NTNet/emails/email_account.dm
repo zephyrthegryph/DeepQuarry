@@ -94,7 +94,7 @@
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		var/datum/computer_file/data/email_message/new_message = received_message.clone()
 		own_add(src, nameof(pending_messages), new_message)
-		if(!om_after(src, delay, PROC_REF(deliver_broadcast), email_account.login, new_message, user))
+		if(!after(src, delay, PROC_REF(deliver_broadcast), with = list(email_account.login, new_message, user)))
 			own_remove(src, nameof(pending_messages), new_message)
 		delay += 0.2 SECONDS
 

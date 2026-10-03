@@ -113,7 +113,7 @@ UI_ACT_PROC(/obj/machinery/computer/roguezones, ui_act_recall_shuttle)
 	//Set some kinda scanning var to pause UI input on console
 	EXPIRY_STAMP(GLOB.rm_controller, last_scan, CLOCK_WORLD)
 	scanning = 1
-	om_after(src, 6 SECONDS, PROC_REF(finish_scan))
+	after(src, 6 SECONDS, PROC_REF(finish_scan))
 
 /obj/machinery/computer/roguezones/proc/finish_scan()
 	//Break the shuttle temporarily.

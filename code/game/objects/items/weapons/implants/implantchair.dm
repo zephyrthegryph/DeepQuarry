@@ -41,14 +41,14 @@
 		injecting = 1
 		go_out()
 		ready = 0
-		om_after(src, injection_cooldown, PROC_REF(set_ready))
+		after(src, injection_cooldown, PROC_REF(set_ready))
 	add_fingerprint(user)
 
 /obj/machinery/implantchair/proc/start_replenish(mob/user)
 	if(get_dist(src, user) > 1 && !isAI(user))
 		return
 	ready = 0
-	om_after(src, replenish_cooldown, PROC_REF(replenished))
+	after(src, replenish_cooldown, PROC_REF(replenished))
 	add_fingerprint(user)
 
 

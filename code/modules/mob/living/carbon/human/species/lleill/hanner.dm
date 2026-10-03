@@ -122,7 +122,7 @@
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
+	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /datum/species/shapeshifter/hanner/add_inherent_verbs(mob/living/carbon/human/H)
 	..()

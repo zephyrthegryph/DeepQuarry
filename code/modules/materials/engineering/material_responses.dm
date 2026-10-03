@@ -139,7 +139,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	if(material.shape_recovery_rate > 0 && ambient_temperature() >= material.shape_recovery_temperature)
 		var/obj/item/item = parent
-		om_after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), max(1, round(material.shape_recovery_rate)))
+		after(item, 1 SECOND, TYPE_PROC_REF(/atom, repair_damage), with = list(max(1, round(material.shape_recovery_rate))))
 
 /datum/material_response/proc/on_pre_emp(datum/source, datum/om/event/before/atom_pre_emp_act/event)
 	EVENT_HANDLER
@@ -184,7 +184,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		item.set_light(clamp(material.scintillation_efficiency * 5, 0.5, 5), clamp(material.scintillation_efficiency * 3, 0.3, 3), "#88ddff")
 		if(om_timer_slot_pending(src, "scintillation_timer"))
 			om_cancel_timer_slot(src, "scintillation_timer")
-		after_slot(src, "scintillation_timer", 5 SECONDS, PROC_REF(end_scintillation))
+		after(src, 5 SECONDS, PROC_REF(end_scintillation), key = "scintillation_timer")
 
 /datum/material_response/proc/end_scintillation()
 	var/obj/item/item = parent

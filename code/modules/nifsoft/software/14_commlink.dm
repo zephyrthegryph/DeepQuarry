@@ -24,7 +24,7 @@
 	if((. = ..()))
 		nif().comm.initialize_exonet(nif().human)
 		nif().comm.tgui_interact(nif().human, custom_state = GLOB.tgui_commlink_state)
-		om_after(src, 0, PROC_REF(deactivate))
+		after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/commlink/stat_text()
 	return "Show Commlink"

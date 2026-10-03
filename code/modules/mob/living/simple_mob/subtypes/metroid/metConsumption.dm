@@ -76,7 +76,7 @@
 		)
 	rel_clear(src, nameof(victim))
 	update_icon()
-	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
+	after(src, 3 SECONDS, PROC_REF(ai_brain_resume)) // Resume normal operations.
 
 /mob/living/simple_mob/metroid/juvenile/proc/can_consume(mob/living/L)
 	if(!L || !istype(L))

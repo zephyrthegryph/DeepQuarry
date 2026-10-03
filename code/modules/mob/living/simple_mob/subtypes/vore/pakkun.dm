@@ -110,7 +110,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 /mob/living/simple_mob/vore/pakkun/on_throw_vore_special(pred, mob/living/target)
 	if(pred && !extra_possessive && !(LAZYFIND(prey_excludes, target)))
 		rel_add(src, nameof(prey_excludes), target)
-		om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), target)
+		after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(target))
 	// DQEdit: legacy if-block emptied.
 
 /mob/living/simple_mob/vore/pakkun/load_default_bellies()
@@ -136,7 +136,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pakkun, \
 	for(var/mob/living/L in living_mobs(0))
 		if(!(LAZYFIND(prey_excludes, L)))
 			rel_add(src, nameof(prey_excludes), L)
-			om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
+			after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(L))
 	return TRUE
 
 //a palette-swapped version that's a bit bossier, in JRPG tradition

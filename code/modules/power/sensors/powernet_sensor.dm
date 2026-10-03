@@ -75,7 +75,7 @@
 		record()
 	if(!om_timer_slot_pending(src, "record_timer"))
 		var/delay = power_region ? max(1, next_record - world.time) : record_interval
-		after_slot(src, "record_timer", delay, PROC_REF(wake_for_record))
+		after(src, delay, PROC_REF(wake_for_record), key = "record_timer")
 	return PROCESS_KILL
 
 /obj/machinery/power/sensor/proc/wake_for_record()

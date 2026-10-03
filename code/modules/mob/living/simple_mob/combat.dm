@@ -240,7 +240,7 @@
 /// (after a half-second deploy), then retracts with `retract_message` and calls
 /// `then_proc(target)` if given.
 /mob/living/simple_mob/proc/rocket_volley(atom/target, rocket_type, count, retract_message, then_proc)
-	om_after(src, 0.5 SECONDS, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, 1)
+	after(src, 0.5 SECONDS, PROC_REF(rocket_volley_step), with = list(target, rocket_type, count, retract_message, then_proc, 1))
 
 /mob/living/simple_mob/proc/rocket_volley_step(atom/target, rocket_type, count, retract_message, then_proc, i)
 	var/turf/T = get_turf(target)
@@ -252,9 +252,9 @@
 		rocket.old_style_target(T, src)
 		rocket.fire()
 	if(i < count)
-		om_after(src, 1 SECOND, PROC_REF(rocket_volley_step), target, rocket_type, count, retract_message, then_proc, i + 1)
+		after(src, 1 SECOND, PROC_REF(rocket_volley_step), with = list(target, rocket_type, count, retract_message, then_proc, i + 1))
 		return
-	om_after(src, 1 SECOND, PROC_REF(rocket_volley_end), target, retract_message, then_proc)
+	after(src, 1 SECOND, PROC_REF(rocket_volley_end), with = list(target, retract_message, then_proc))
 
 /mob/living/simple_mob/proc/rocket_volley_end(atom/target, retract_message, then_proc)
 	visible_message(span_warning(retract_message))
@@ -277,7 +277,7 @@
 
 	setClickCooldown(true_attack_delay) // Insurance against a really long attack being longer than default click delay.
 
-	if(!om_after(src, true_attack_delay, PROC_REF(attack_delay_done), then_proc, list(A) + args.Copy(4)))
+	if(!after(src, true_attack_delay, PROC_REF(attack_delay_done), with = list(then_proc, list(A) + args.Copy(4))))
 		ai_busy_end()
 
 /mob/living/simple_mob/proc/attack_delay_done(then_proc, list/call_args)

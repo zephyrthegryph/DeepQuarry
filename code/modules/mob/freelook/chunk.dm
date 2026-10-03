@@ -62,7 +62,7 @@
 	if(visible || update_now)
 		if(!updating)
 			updating = 1
-			om_after(src, UPDATE_BUFFER, PROC_REF(update)) // Batch large changes, such as many doors opening or closing at once
+			after(src, UPDATE_BUFFER, PROC_REF(update)) // Batch large changes, such as many doors opening or closing at once
 	else
 		changed = 1
 

@@ -99,7 +99,7 @@ GLOBAL_DATUM_INIT(command_announcement, /datum/announcement/priority/command, ne
 
 	if(!message_sound)
 		return
-	om_after(src, announcer_message_preamble_delay(), PROC_REF(internal_postfire_play_sound), message_sound, zlevels)
+	after(src, announcer_message_preamble_delay(), PROC_REF(internal_postfire_play_sound), with = list(message_sound, zlevels))
 
 /datum/announcement/proc/internal_postfire_play_sound(message_sound, list/zlevels)
 	SHOULD_NOT_OVERRIDE(TRUE)

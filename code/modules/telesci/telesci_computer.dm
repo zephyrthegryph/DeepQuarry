@@ -287,7 +287,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 			teleporting = 1
 			temp_msg = "Powering up bluespace crystals. Please wait."
 
-		om_after(src, spawn_time, PROC_REF(finish_teleport), user, trueDistance, spawn_time, target, trueX, trueY) // in deciseconds
+		after(src, spawn_time, PROC_REF(finish_teleport), with = list(user, trueDistance, spawn_time, target, trueX, trueY)) // in deciseconds
 
 /obj/machinery/computer/telescience/proc/teleport(mob/user)
 	if(!COOLDOWN_FINISHED(src, teleport_cooldown))

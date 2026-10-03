@@ -342,7 +342,7 @@ default behaviour is:
 			inertia_dir = 0
 			return
 
-		om_after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), loc)
+		after(src, 0.5 SECONDS, PROC_REF(handle_inertial_drift), with = list(loc))
 
 /mob/living/proc/handle_inertial_drift(locthen)
 	PRIVATE_PROC(TRUE)

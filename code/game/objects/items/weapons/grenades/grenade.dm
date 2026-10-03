@@ -28,7 +28,7 @@
 
 		activate(user)
 		add_fingerprint(user)
-		om_after(src, 5, PROC_REF(detonate))
+		after(src, 5, PROC_REF(detonate))
 		return 0
 	return 1
 
@@ -72,7 +72,7 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 	active = 1
 	playsound(src, arm_sound, 75, 1, -3)
 
-	om_after(src, det_time, PROC_REF(detonate))
+	after(src, det_time, PROC_REF(detonate))
 
 /obj/item/grenade/proc/detonate()
 	var/turf/T = get_turf(src)
@@ -116,6 +116,6 @@ EXTEND_INTERACTIONS(/obj/item/grenade, \
 
 	spraying.start(start_data)
 	if(duration > 0)
-		om_after(src, 1 SECOND, PROC_REF(effect_spraying), spraying, --duration)
+		after(src, 1 SECOND, PROC_REF(effect_spraying), with = list(spraying, --duration))
 		return
 	qdel(src)

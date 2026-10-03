@@ -52,7 +52,7 @@
 	if(QDELETED(AM) || (tiles && curtiles >= tiles) || AM.z != src.z)
 		throw_end(AM)
 		return
-	om_after(src, speed, PROC_REF(throw_step), AM, curtiles + 1)
+	after(src, speed, PROC_REF(throw_step), with = list(AM, curtiles + 1))
 
 /obj/effect/step_trigger/thrower/proc/throw_step(atom/movable/AM, curtiles)
 	var/stopthrow = 0

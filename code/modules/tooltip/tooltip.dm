@@ -143,10 +143,10 @@ DECLARE_UI(/datum/tooltip, "Tooltip", UI_PINNED)
 	// A previously-started Byond.winget() can finish after the immediate winset
 	// and briefly show the browser again. Reassert hidden after that async turn,
 	// but only if no newer hover has superseded this revision.
-	om_after(src, 0.1 SECONDS, PROC_REF(ensure_hidden), hide_revision)
+	after(src, 0.1 SECONDS, PROC_REF(ensure_hidden), with = list(hide_revision))
 	queueHide = showing ? TRUE : FALSE
 	if(queueHide)
-		om_after(src, 0.1 SECONDS, PROC_REF(do_hide), hide_revision)
+		after(src, 0.1 SECONDS, PROC_REF(do_hide), with = list(hide_revision))
 	else
 		do_hide(hide_revision)
 	return TRUE

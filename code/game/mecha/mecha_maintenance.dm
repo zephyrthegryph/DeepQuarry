@@ -364,5 +364,5 @@
 /obj/mecha/proc/start_recalibration(mob/actor, obj/item/held, datum/interaction/interaction)
 	occupant_message("Recalibrating coordination system.")
 	mecha_log_message("Recalibration of coordination system started.")
-	om_after(src, 10 SECONDS, PROC_REF(recalibration_done), loc)
+	after(src, 10 SECONDS, PROC_REF(recalibration_done), with = list(loc))
 	return TRUE

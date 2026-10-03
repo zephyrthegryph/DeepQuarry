@@ -40,7 +40,7 @@
 			rel_set(src, nameof(drilling_turf), get_turf(src))
 			src.visible_message(span_bold("\The [src]") + " begins to drill into \the [M].")
 			set_anchored(TRUE)
-			om_after(src, drill_time, PROC_REF(finish_drilling), M)
+			after(src, drill_time, PROC_REF(finish_drilling), with = list(M))
 
 /obj/machinery/giga_drill/proc/finish_drilling(turf/simulated/mineral/M)
 	if(get_turf(src) == drilling_turf() && active)

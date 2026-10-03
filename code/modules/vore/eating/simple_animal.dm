@@ -63,7 +63,7 @@
 			return
 		if(confirm == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
-			om_after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), vore_default_mode)
+			after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), with = list(vore_default_mode))
 	else
 		var/confirm = rerun_ask(user, "a2", PROC_REF(toggle_digestion_for), args, /datum/om/prompt/choice/alert, message = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", choices = list("Disable", "Cancel"))
 		if(isnull(confirm))
@@ -106,7 +106,7 @@
 			for(var/mob/living/L in living_mobs(0)) //add everyone on the tile to the do-not-eat list for a while
 				if(!(LAZYFIND(prey_excludes, L))) // Unless they're already on it, just to avoid fuckery.
 					rel_add(src, nameof(prey_excludes), L)
-					om_after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), L)
+					after(src, 5 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(L))
 	else if(istype(O, /obj/item/healthanalyzer))
 		var/healthpercent = round(vitality() * 100)
 		to_chat(user, span_notice("[src] seems to be [healthpercent]% healthy."))

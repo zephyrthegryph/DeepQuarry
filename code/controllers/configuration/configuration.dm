@@ -446,4 +446,4 @@ Example config:
 
 //Message admins when you can.
 /datum/controller/configuration/proc/DelayedMessageAdmins(text)
-	om_after(null, 0, GLOBAL_PROC_REF(message_admins), text)
+	after(null, 0, GLOBAL_PROC_REF(message_admins), with = list(text))

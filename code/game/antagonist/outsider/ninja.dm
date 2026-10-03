@@ -116,7 +116,7 @@ GLOBAL_DATUM(ninjas, /datum/antagonist/ninja)
 		if(rig.air_supply)
 			rel_set(player, nameof(player.internal), rig.air_supply)
 
-	om_after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
+	after(player, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, ninja_internals_check))
 
 /datum/antagonist/ninja/proc/generate_ninja_directive(side)
 	var/directive = "[side=="face"?"[using_map.company_name]":"A criminal syndicate"] is your employer. "//Let them know which side they're on.

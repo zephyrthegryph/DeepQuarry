@@ -341,7 +341,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	shock_turf_windup(owner.loc)
 
 /obj/item/clothing/suit/armor/reactive/weather/proc/shock_turf_windup(turf/target)
-	om_after(src, 1 SECOND, GLOBAL_PROC_REF(lightning_strike), target)
+	after(src, 1 SECOND, GLOBAL_PROC_REF(lightning_strike), with = list(target))
 
 /obj/item/clothing/suit/armor/reactive/stealth
 	name = "reactive stealth armor"
@@ -374,9 +374,9 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	owner.alpha = 0
 	in_stealth = TRUE
 	act_message(owner, null, others = span_danger("%U% is hit by [attack_text] in the chest!"))
-	om_after(src, stealth_time, PROC_REF(end_stealth), owner)
+	after(src, stealth_time, PROC_REF(end_stealth), with = list(owner))
 	decoy.say("*sidestep")
-	om_after(src, stealth_time, PROC_REF(destroy_illusion), decoy)
+	after(src, stealth_time, PROC_REF(destroy_illusion), with = list(decoy))
 	decoy.expire(stealth_time)
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return TRUE
@@ -395,7 +395,7 @@ DAMAGE_REACTION(/obj/item/clothing/suit/armor/reactive, DAMAGE_EMP, PROC_REF(rea
 	var/mob/living/attacker = hitby
 	owner.visible_message(span_danger("[src] activates, cloaking the wrong person!"))
 	attacker.alpha = 0
-	om_after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), attacker, initial(attacker.alpha))
+	after(attacker, 4 SECONDS, GLOBAL_PROC_REF(reactive_cloak_wear_off), with = list(attacker, initial(attacker.alpha)))
 	COOLDOWN_START(src, reactivearmor_cooldown, reactivearmor_cooldown_duration)
 	return FALSE
 

@@ -48,7 +48,7 @@
  */
 /datum/tgui_say/proc/initialize()
 	// Deferred until after the client constructor: a timer, the constructor never waits.
-	om_after(src, 3 SECONDS, PROC_REF(initialize_window))
+	after(src, 3 SECONDS, PROC_REF(initialize_window))
 
 /datum/tgui_say/proc/initialize_window()
 	window.initialize(

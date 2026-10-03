@@ -17,7 +17,7 @@
 		update_icon()
 		shutdown_computer()
 		to_chat(user, "You press a hard-reset button on \the [src]. It displays a brief debug screen before shutting down.")
-		om_after(src, 2 SECONDS, PROC_REF(clear_bsod))
+		after(src, 2 SECONDS, PROC_REF(clear_bsod))
 
 /// Old verb "Eject ID": eject the ID card from the computer, if it has an ID slot with a card inside.
 /obj/item/modular_computer/proc/computer_verb_eject_id(mob/user, obj/item/held, datum/interaction/interaction)

@@ -123,12 +123,12 @@
 			has_hunted_unlucky = TRUE
 			walk(src, 0)
 			//stone_grinding.ogg
-			om_after(src, 1 SECOND, PROC_REF(fetch_boy), unlucky_bugger)
+			after(src, 1 SECOND, PROC_REF(fetch_boy), with = list(unlucky_bugger))
 			break
 
 /obj/effect/immovablerod/proc/fetch_boy(unlucky_bugger)
 	walk_towards(src, unlucky_bugger, 1)
-	om_after(src, 2 SECONDS, PROC_REF(resume_path))
+	after(src, 2 SECONDS, PROC_REF(resume_path))
 
 /obj/effect/immovablerod/proc/resume_path()
 	walk(src, 0)

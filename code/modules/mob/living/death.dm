@@ -50,4 +50,4 @@
 		MSG_OTHERS(span_danger(span_bold("%U%") + " starts convulsing violently!")))
 	status_at_least(EFFECT_WEAKENED, 30)
 	status_adjust(EFFECT_JITTERY, 1000)
-	om_after(src, rand(2 SECONDS, 10 SECONDS), PROC_REF(gib))
+	after(src, rand(2 SECONDS, 10 SECONDS), PROC_REF(gib))

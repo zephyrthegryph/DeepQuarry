@@ -1096,7 +1096,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		om_cancel_timer_slot(src, "light_timer_token")
 	light_timer_at = deadline
 	if(deadline)
-		after_slot(src, "light_timer_token", max(deadline - world.time, 0), PROC_REF(light_timer_fired))
+		after(src, max(deadline - world.time, 0), PROC_REF(light_timer_fired), key = "light_timer_token")
 
 /obj/machinery/light/proc/light_timer_fired()
 	light_timer_at = 0
@@ -1253,7 +1253,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/light/proc/explode()
 	var/turf/T = get_turf(src.loc)
 	broken()	// break it first to give a warning
-	om_after(src, 2, PROC_REF(explode_now), T)
+	after(src, 2, PROC_REF(explode_now), with = list(T))
 
 /obj/machinery/light/proc/explode_now(turf/T)
 	explosion(T, 0, 0, 2, 2)

@@ -163,7 +163,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 		GLOB.ert_base_chance += 3
 	if(get_security_level() == "delta")
 		GLOB.ert_base_chance += 10           // Need those big guns
-	om_after(null, 3 MINUTES, GLOBAL_PROC_REF(increment_ert_chance))
+	after(null, 3 MINUTES, GLOBAL_PROC_REF(increment_ert_chance))
 
 
 /proc/trigger_armed_response_team(force = 0)
@@ -191,7 +191,7 @@ ADMIN_VERB(response_team, R_ADMIN|R_MOD|R_EVENT, "Dispatch Emergency Response Te
 	GLOB.send_emergency_team = 1
 	consider_ert_load()
 
-	om_after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
+	after(null, 5 MINUTES, GLOBAL_PROC_REF(close_armed_response_team))
 
 /proc/ert_load_finished(z)
 	log_and_message_admins("Loaded the ERT shuttle just now.")

@@ -123,7 +123,7 @@
 	melee_swing_resolving = FALSE
 	var/serial = ++melee_swing_serial
 	// Belt-and-braces: guarantees the flag resets even if something below runtimes.
-	om_after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), serial)
+	after(src, windup + MELEE_SWING_STUCK_GRACE, PROC_REF(clear_stuck_swing), with = list(serial))
 
 	// Wait out the windup. do_after cancels if WE move, drop the weapon, or get incapacitated.
 	// Passing target = src means a dodging victim does NOT cancel it (they just leave the tiles).

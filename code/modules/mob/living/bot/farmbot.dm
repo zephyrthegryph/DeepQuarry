@@ -74,7 +74,7 @@ EXTEND_INTERACTIONS(/mob/living/bot/farmbot, INTERACT_HAND_AS(I_HELP, "Open cont
 	if(!emagged)
 		if(user)
 			to_chat(user, span_notice("You short out [src]'s plant identifier circuits."))
-		om_after(src, rand(30, 50), PROC_REF(emag_takes))
+		after(src, rand(30, 50), PROC_REF(emag_takes))
 		return 1
 
 /mob/living/bot/farmbot/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)

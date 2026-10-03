@@ -107,7 +107,7 @@ why aren't these accessories?
 
 /obj/item/remote_scene_tool/proc/check_loc(atom/movable/mover, datum/om/event/atom_entering/event)
 	EVENT_HANDLER
-	om_after(src, 1, PROC_REF(delayed_loc_check))
+	after(src, 1, PROC_REF(delayed_loc_check))
 
 /obj/item/remote_scene_tool/proc/delayed_loc_check()
 //why is this delayed? because when moving stuff between slots, it considers it in a different spot, and calls the commsig multiple times - so the end

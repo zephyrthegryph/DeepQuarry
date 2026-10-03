@@ -129,7 +129,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/atmospherics/valve/shutoff, REGISTRY_SHUTOFF_
 		return // Not initialized yet: Initialize() subscribes.
 	subscribe_network_keys()
 	// Check on the next timer pass, once the rebuild that moved us has finished.
-	om_after(src, 0, PROC_REF(recheck_leaks))
+	after(src, 0, PROC_REF(recheck_leaks))
 
 /obj/machinery/atmospherics/valve/shutoff/proc/recheck_leaks()
 	subscribe_network_keys()

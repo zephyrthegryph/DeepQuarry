@@ -22,7 +22,7 @@
 	attempting = 1 //One at a time!!
 	set_locked(1)
 	eject_wait = 1
-	om_after(src, 3 SECONDS, PROC_REF(allow_eject))
+	after(src, 3 SECONDS, PROC_REF(allow_eject))
 
 	// Remove biomass when the cloning is started, rather than when the guy pops out
 	remove_biomass(CLONE_BIOMASS)
@@ -491,7 +491,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 	//Re-supply a NIF if one was backed up with them.
 	if(MR.nif_path)
 		var/obj/item/nif/nif = new MR.nif_path(occupant,null,MR.nif_savedata)
-		om_after(nif, 0, /proc/install_nif_software, nif, MR.nif_software) //Delay to not install software before NIF is fully installed
+		after(nif, 0, /proc/install_nif_software, with = list(nif, MR.nif_software)) //Delay to not install software before NIF is fully installed
 		nif.durability = MR.nif_durability //Restore backed up durability after restoring the softs.
 
 	// If it was a custom sleeve (not owned by anyone), update namification sequences

@@ -424,7 +424,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/humanoid/astral_collective/mind/gravi
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/do_special_attack(atom/A, stance)
 	for(var/mob/living/L in orange(src, 7)) //despite the attack range being 6 we do 7 so folks don't wander in then get confused why they are getting hit by it
 		Beam(L, icon_state = "chain", time = 1.5 SECONDS, maxdistance = 6)
-	om_after(src, 2.5 SECONDS, PROC_REF(super_move), A)
+	after(src, 2.5 SECONDS, PROC_REF(super_move), with = list(A))
 
 /mob/living/simple_mob/humanoid/astral_collective/mind/gravity/proc/super_move(atom/target)
 	if(!target)

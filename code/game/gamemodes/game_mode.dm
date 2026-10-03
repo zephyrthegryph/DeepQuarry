@@ -225,8 +225,8 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 
 	refresh_event_modifiers()
 
-	om_after(src, ROUNDSTART_LOGOUT_REPORT_TIME, /proc/display_roundstart_logout_report)
-	om_after(src, rand(waittime_l, waittime_h) + rand(100,150), PROC_REF(announce_ert_disabled))
+	after(src, ROUNDSTART_LOGOUT_REPORT_TIME, /proc/display_roundstart_logout_report)
+	after(src, rand(waittime_l, waittime_h) + rand(100,150), PROC_REF(announce_ert_disabled))
 
 	//Assign all antag types for this game mode. Any players spawned as antags earlier should have been removed from the pending list, so no need to worry about those.
 	for(var/datum/antagonist/antag in antag_templates)
@@ -313,14 +313,14 @@ TOPIC_ACTION(/datum/game_mode, "add_antag_type", PROC_REF(topic_add_antag_type),
 	antag.print_player_summary()
 
 /datum/game_mode/proc/finish_antag_goals()
-	om_after(src, 1 SECOND, PROC_REF(finish_completion_declatration))
+	after(src, 1 SECOND, PROC_REF(finish_completion_declatration))
 
 /datum/game_mode/proc/declare_completion()
 	var/is_antag_mode = LAZYLEN(antag_templates)
 	check_victory()
 	if(is_antag_mode)
 		is_antag_mode += 2
-		om_after(src, 1 SECOND, PROC_REF(declare_antag_goals))
+		after(src, 1 SECOND, PROC_REF(declare_antag_goals))
 	return is_antag_mode SECONDS
 
 /datum/game_mode/proc/finish_completion_declatration()

@@ -381,7 +381,7 @@ This device records all warnings given and teleport events for admin review in c
 			phase_in(grabbed,get_turf(grabbed))
 
 	update_icon()
-	om_after(src, 30 SECONDS, PROC_REF(translocator_ready))
+	after(src, 30 SECONDS, PROC_REF(translocator_ready))
 
 	LAZYSET(logged_events, "[world.time]", "[user] teleported [target] to [real_dest] [televored ? "(Belly: [lowertext(real_dest.name)])" : null]")
 

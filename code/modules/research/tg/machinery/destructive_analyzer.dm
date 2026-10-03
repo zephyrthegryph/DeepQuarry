@@ -119,7 +119,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 		SStgui.update_uis(src)
 		to_chat(user, span_notice("You add \the [O] to \the [src]."))
 		flick("d_analyzer_la", src)
-		om_after(src, 1 SECONDS, PROC_REF(analyze_finish))
+		after(src, 1 SECONDS, PROC_REF(analyze_finish))
 	return TRUE
 
 /obj/machinery/rnd/destructive_analyzer/proc/analyze_finish()
@@ -165,7 +165,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/destructive_analyzer, TYPE_PROC_REF(/
 	// Feedback
 	play_sfx(get_turf(src), SFX_MACHINES_CLICK)
 	rped_recycler_ready = FALSE
-	om_after(src, 5 SECONDS, PROC_REF(rped_ready))
+	after(src, 5 SECONDS, PROC_REF(rped_ready))
 	to_chat(user, span_notice("You deconstruct all the parts of rating [lowest_rating] in [replacer] with [src]."))
 	return TRUE
 
@@ -262,7 +262,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 	if(!current_item || QDELETED(src))
 		return FALSE
 	set_busy(TRUE)
-	om_after(src, 2.4 SECONDS, PROC_REF(reset_busy))
+	after(src, 2.4 SECONDS, PROC_REF(reset_busy))
 	use_power(active_power_usage)
 	// Destroy items inside
 	own_take(src, nameof(loaded_item)) // destroyed below

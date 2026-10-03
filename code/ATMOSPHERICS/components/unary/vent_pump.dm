@@ -385,10 +385,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_pump, TYPE_PROC_R
 		return
 
 	if(signal.data["status"] != null)
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

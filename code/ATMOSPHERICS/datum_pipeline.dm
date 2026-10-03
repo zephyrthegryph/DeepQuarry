@@ -59,7 +59,7 @@
 		if(!member.check_pressure(pressure))
 			break
 	if(needs_followup && !om_timer_slot_pending(src, "engineered_exposure_timer"))
-		after_slot(src, "engineered_exposure_timer", 5 SECONDS, PROC_REF(wake_engineered_exposure))
+		after(src, 5 SECONDS, PROC_REF(wake_engineered_exposure), key = "engineered_exposure_timer")
 
 /datum/pipeline/proc/wake_engineered_exposure()
 	network?.mark_dirty()

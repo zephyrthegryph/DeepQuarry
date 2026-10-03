@@ -491,7 +491,7 @@ UI_ACT_PROC(/obj/item/integrated_circuit_printer, ui_act_build)
 	is_printing = TRUE
 	EXPIRY_SET(src, print_end_time, print_time, CLOCK_WORLD)
 
-	om_after(src, print_time, PROC_REF(finish_printing))
+	after(src, print_time, PROC_REF(finish_printing))
 
 	var/print_minutes = round(print_time / 600, 0.1) // Convert to minutes for display
 	to_chat(user, span_notice("Printing '[assembly.name]' with [LAZYLEN(created_components)] component\s. Estimated completion time: [print_minutes] minute\s."))

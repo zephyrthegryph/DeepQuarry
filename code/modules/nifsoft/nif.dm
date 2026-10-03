@@ -112,7 +112,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 /// runs right after the event instead of inside it (handlers must not sleep).
 /obj/item/nif/proc/on_human_death(mob/living/carbon/human/source, datum/om/event/mob_death/event)
 	EVENT_HANDLER
-	om_after(src, 0, PROC_REF(persist_on_death), source)
+	after(src, 0, PROC_REF(persist_on_death), with = list(source))
 
 /obj/item/nif/proc/persist_on_death(mob/living/carbon/human/source)
 	if(!QDELETED(source))
@@ -163,7 +163,7 @@ You can also set the stat of a NIF to NIF_TEMPFAIL without any issues to disable
 			return FALSE
 		forceMove(parent)
 		rel_add(parent, nameof(parent.implants), src)
-		om_after(src, 1, PROC_REF(quick_install), H)
+		after(src, 1, PROC_REF(quick_install), with = list(H))
 		return TRUE
 
 	return FALSE
@@ -310,7 +310,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 			EXPIRY_SET(src, install_done, 15 MINUTES, CLOCK_WORLD) // Install time from 35 minutes to 15 minutes.
 			owner_key = human.ckey
 			notify("Adapting to new user...")
-			om_after(src, 5 SECONDS, PROC_REF(notify), "Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE)
+			after(src, 5 SECONDS, PROC_REF(notify), with = list("Adjoining optic [HAS_SYNTHETIC_BIOLOGY(human) ? "interface" : "nerve"], please be patient.", TRUE))
 		else
 			notify("You are not an authorized user for this device. Please contact [owner].",TRUE)
 			unimplant(human)

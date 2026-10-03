@@ -194,7 +194,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/quantumpad, TYPE_PROC_REF(/atom, ap
 	play_sfx(src, SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
 
-	om_after(src, teleport_speed, PROC_REF(finish_teleport), user)
+	after(src, teleport_speed, PROC_REF(finish_teleport), with = list(user))
 
 /obj/machinery/power/quantumpad/proc/initMappedLink()
 	. = FALSE

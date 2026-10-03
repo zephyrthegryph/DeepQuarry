@@ -539,7 +539,7 @@
 /mob/living/silicon/robot/proc/start_killswitch(delay = ROBOT_KILLSWITCH_DELAY)
 	if(om_timer_slot_pending(src, "killswitch"))
 		return FALSE
-	after_slot(src, "killswitch", delay, PROC_REF(fire_killswitch))
+	after(src, delay, PROC_REF(fire_killswitch), key = "killswitch")
 	log_game("ROBOT: killswitch armed on [key_name(src)] ([delay / (1 SECOND)]s).")
 	return TRUE
 
@@ -554,13 +554,13 @@
 		return
 	to_chat(src, span_danger("Killswitch Activated"))
 	log_game("ROBOT: killswitch fired on [key_name(src)].")
-	om_after(src, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
+	after(src, 0.5 SECONDS, TYPE_PROC_REF(/mob, gib))
 
 /// Lock the modules. Equipment drops once; activation is refused until the lock times out.
 /mob/living/silicon/robot/proc/start_weapon_lock(duration = ROBOT_WEAPON_LOCK_DELAY)
 	if(om_timer_slot_pending(src, "weapon_lock"))
 		om_cancel_timer_slot(src, "weapon_lock")
-	after_slot(src, "weapon_lock", duration, PROC_REF(end_weapon_lock))
+	after(src, duration, PROC_REF(end_weapon_lock), key = "weapon_lock")
 	uneq_all()
 	to_chat(src, span_danger("Weapon lock engaged."))
 
@@ -1702,7 +1702,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 	var/list/next_line = step < length(lines) ? lines[step + 1] : null
 	var/delay = next_line ? next_line[1] : 0
 	if(delay)
-		om_after(src, delay, PROC_REF(play_subversion_sequence), operator_name, operator_their, step + 1)
+		after(src, delay, PROC_REF(play_subversion_sequence), with = list(operator_name, operator_their, step + 1))
 	else
 		play_subversion_sequence(operator_name, operator_their, step + 1)
 

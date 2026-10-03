@@ -39,9 +39,9 @@
 	if(om_timer_slot_pending(src, "wet_cleanup_timer"))
 		om_cancel_timer_slot(src, "wet_cleanup_timer")
 	if(wet == TURFSLIP_LUBE)
-		after_slot(src, "wet_cleanup_timer", 160 SECONDS, PROC_REF(wet_floor_finish))
+		after(src, 160 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 	else
-		after_slot(src, "wet_cleanup_timer", 40 SECONDS, PROC_REF(wet_floor_finish))
+		after(src, 40 SECONDS, PROC_REF(wet_floor_finish), key = "wet_cleanup_timer")
 
 /turf/simulated/proc/wet_floor_finish()
 	wet = TURFSLIP_DRY
@@ -60,7 +60,7 @@
 		wet_overlay = null
 	wet_overlay = image('icons/turf/overlays.dmi',src,"snowfloor")
 	add_overlay(wet_overlay)
-	om_after(src, 5 MINUTES, PROC_REF(snow_dries))
+	after(src, 5 MINUTES, PROC_REF(snow_dries))
 
 // A turf's verbs are declared, never granted per turf: no store entry on any turf, so a
 // ChangeTurf() leaves nothing behind for the new turf (the old one's verbs go with its type).

@@ -282,7 +282,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_send)
 			sendfax(destination, ui.user)
 
 		if (sendcooldown)
-			om_after(src, sendcooldown, PROC_REF(cooldown_over))
+			after(src, sendcooldown, PROC_REF(cooldown_over))
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "dept", ui_act_dept)
@@ -415,7 +415,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 	playsound(src, "sound/machines/printer.ogg", 50, 1)
 
 	// give the sprite some time to flick
-	om_after(src, 2 SECONDS, PROC_REF(print_received), incoming)
+	after(src, 2 SECONDS, PROC_REF(print_received), with = list(incoming))
 	return 1
 
 /obj/machinery/photocopier/faxmachine/proc/print_received(obj/item/incoming)
@@ -463,7 +463,7 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 		message_admins(sender, "[uppertext(destination)] FAX", rcvdcopy, "UNKNOWN")
 
 	sendcooldown = 1800
-	om_after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), "[src] beeps, \"Message transmitted successfully.\"")
+	after(src, 5 SECONDS, TYPE_PROC_REF(/atom, visible_message), with = list("[src] beeps, \"Message transmitted successfully.\""))
 
 // Turns objects into just text.
 /obj/machinery/photocopier/faxmachine/proc/make_summary(obj/item/sent)

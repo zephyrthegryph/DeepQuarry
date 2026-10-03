@@ -153,7 +153,7 @@ DECLARE_EMAG(/obj/machinery/embedded_controller/radio/simple_docking_controller/
 
 /datum/embedded_program/docking/simple/escape_pod_berth/prepare_for_undocking()
 	EXPIRY_SET(src, eject_time, eject_delay*10, CLOCK_WORLD)
-	om_after(src, eject_delay*10, PROC_REF(eject_timer_fired))
+	after(src, eject_delay*10, PROC_REF(eject_timer_fired))
 
 /// Accessor for the arming_controller var.
 /datum/shuttle/autodock/ferry/escape_pod/proc/arming_controller() as /datum/embedded_program/docking/simple/escape_pod_berth

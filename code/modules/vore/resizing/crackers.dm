@@ -110,7 +110,7 @@
 			if(!dq_get_cloaked(winner))
 				act_message(winner, null, others = span_bold("%U%") + " vanishes from sight.")
 				winner.cloak()
-			om_after(winner, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
+			after(winner, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 		if(FALLING_CRACKER)
 			act_message(winner, null, others = span_bold("%U%") + " is suddenly knocked to the ground.")
 			winner.status_set(EFFECT_WEAKENED, max(winner.status_units(EFFECT_WEAKENED),50))

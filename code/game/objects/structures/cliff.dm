@@ -217,7 +217,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 		if(displaced) // Make the fall look more natural when falling sideways.
 			L.pixel_z = 32 * 2
 			animate(L, pixel_z = 0, time = fall_time)
-		om_after(src, fall_time, PROC_REF(fall_land), L, T, safe_fall, harm) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
+		after(src, fall_time, PROC_REF(fall_land), with = list(L, T, safe_fall, harm)) // A brief delay inbetween the two sounds helps sell the 'ouch' effect.
 
 /obj/structure/cliff/proc/fall_land(mob/living/L, turf/T, safe_fall, harm)
 
@@ -242,7 +242,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/cliff, TYPE_PROC_REF(/atom, appearance_ov
 	var/obj/structure/cliff/bottom_cliff = locate_on(T, /obj/structure/cliff)
 	if(bottom_cliff)
 		visible_message(span_danger("\The [L] rolls down towards \the [bottom_cliff]!"))
-		om_after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), L)
+		after(bottom_cliff, 5, TYPE_PROC_REF(/obj/structure/cliff, fall_off_cliff), with = list(L))
 
 // This tells AI mobs to not be dumb and step off cliffs willingly.
 /obj/structure/cliff/is_safe_to_step(mob/living/L)

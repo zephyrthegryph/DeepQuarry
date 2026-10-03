@@ -50,7 +50,7 @@
 				host.emote("cough")
 				for(var/i in 1 to 2)
 					var/mob/living/simple_mob/animal/sif/glitterfly/B = new(host.loc)
-					om_after(B, rand(5, 25) SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/sif/glitterfly, decompose))
+					after(B, rand(5, 25) SECONDS, TYPE_PROC_REF(/mob/living/simple_mob/animal/sif/glitterfly, decompose))
 
 /mob/living/simple_mob/animal/sif/glitterfly/proc/decompose()
 	act_message(src, null, MSG_SELF(span_userdanger("You decompose for being too long out of your habitat!")), \

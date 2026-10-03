@@ -113,7 +113,7 @@
 	cap_set(I, CAP_LIT, TRUE)
 	play_sfx(I, SFX_ITEMS_CIGS_LIGHTERS_CIG_LIGHT)
 	I.set_light(2, 0.25, "#E38F46")
-	after_slot(I, "cap_smokable", SMOKABLE_PUFF_EVERY, GLOBAL_PROC_REF(cap_smokable_puff), I)
+	after(I, SMOKABLE_PUFF_EVERY, GLOBAL_PROC_REF(cap_smokable_puff), key = "cap_smokable", with = list(I))
 	return TRUE
 
 /// Puts I out (still smokable if it has burn time left).
@@ -134,7 +134,7 @@
 	var/turf/T = get_turf(I)
 	T?.hotspot_expose(700, 5)
 	if(cap_smokable_burn(I, SMOKABLE_PUFF_EVERY))
-		after_slot(I, "cap_smokable", SMOKABLE_PUFF_EVERY, GLOBAL_PROC_REF(cap_smokable_puff), I)
+		after(I, SMOKABLE_PUFF_EVERY, GLOBAL_PROC_REF(cap_smokable_puff), key = "cap_smokable", with = list(I))
 
 /// I burnt out: it goes out, and leaves its butt (and is gone) or stays burnt with its reagents gone.
 /proc/cap_smokable_burn_out(obj/item/I)

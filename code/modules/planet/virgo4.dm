@@ -91,7 +91,7 @@ GLOBAL_DATUM(planet_virgo4, /datum/planet/virgo4)
 
 		new_color = rgb(new_r, new_g, new_b)
 
-	om_after(src, 1, PROC_REF(update_sun_deferred), new_brightness, new_color)
+	after(src, 1, PROC_REF(update_sun_deferred), with = list(new_brightness, new_color))
 
 
 /datum/weather_holder/virgo4

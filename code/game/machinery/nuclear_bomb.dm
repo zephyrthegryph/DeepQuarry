@@ -400,12 +400,12 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 		return TRUE
 	if(light_wire == wire)
 		toggle_lighthack()
-		om_after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
+		after(src, 10 SECONDS, PROC_REF(toggle_lighthack))
 	if(timing_wire == wire && timing)
 		explode()
 	if(safety_wire == wire)
 		toggle_safety()
-		om_after(src, 10 SECONDS, PROC_REF(toggle_safety))
+		after(src, 10 SECONDS, PROC_REF(toggle_safety))
 		if(safety == 1)
 			visible_message(span_notice("The [src] quiets down."))
 			if(!lighthack && icon_state == "nuclearbomb2")
@@ -458,7 +458,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 	world << sound('sound/machines/Alarm.ogg') // The nuclear alarm is audible world-wide.
 	if(SSticker && SSticker.mode)
 		SSticker.mode.explosion_in_progress = 1
-	om_after(src, 10 SECONDS, PROC_REF(detonate))
+	after(src, 10 SECONDS, PROC_REF(detonate))
 
 /// Ten seconds after the alarm: the blast, the cinematic and the round outcome.
 /obj/machinery/nuclearbomb/proc/detonate()
@@ -488,7 +488,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 				cinematic_type = /datum/cinematic/nuke/far_explosion
 		play_cinematic(cinematic_type)
 		// The rest happens at the blast, once the intro has played (it slept through it before S10b).
-		om_after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), off_station, SSticker.mode.name == "mercenary")
+		after(null, initial(cinematic_type.intro_time), GLOBAL_PROC_REF(nuke_blast_aftermath), with = list(off_station, SSticker.mode.name == "mercenary"))
 
 /// A nuke's blast, after its cinematic's intro: kills the station for a self-destruct hit,
 /// then settles the round.
@@ -518,7 +518,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_pulse)
 
 			if(GLOB.blackbox)
 				GLOB.blackbox.save_all_data_to_sql()
-			om_after(null, 30 SECONDS, /proc/nuke_reboot)
+			after(null, 30 SECONDS, /proc/nuke_reboot)
 
 /proc/nuke_reboot()
 	log_game("Rebooting due to nuclear detonation")

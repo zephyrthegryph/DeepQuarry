@@ -69,7 +69,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 	floor_markings = image('icons/obj/machines/stationmap.dmi', "decal_station_map")
 	floor_markings.dir = src.dir
 
-	om_after(src, 1, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
+	after(src, 1, TYPE_PROC_REF(/atom, update_icon)) //When built from frames, need to allow time for it to set pixel_x and pixel_y
 
 /obj/machinery/station_map/declare_interactions(list/into)
 	into += list(
@@ -171,7 +171,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/station_map, MACHINE_PIPELINE, "watching_m
 			if(QDELETED(watcher))
 				watcher.client.images -= holomap_datum.station_map // no timer on a dying mob
 			else
-				om_after(watcher, 5, /proc/remove_client_image, watcher, holomap_datum.station_map) //we give it time to fade out
+				after(watcher, 5, /proc/remove_client_image, with = list(watcher, holomap_datum.station_map)) //we give it time to fade out
 		om_unhook(watcher, list(/datum/om/event/movable_attempted_move, /datum/om/event/qdeleting), src)
 	rel_clear(src, nameof(watching_mob))
 	set_use_power(USE_POWER_IDLE)

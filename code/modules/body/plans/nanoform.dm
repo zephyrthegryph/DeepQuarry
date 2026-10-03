@@ -401,7 +401,7 @@
 	revival_step = next_step
 	log_game("NANOFORM: [key_name(owner)] dormancy advanced to step [revival_step] by [tag].")
 	if(revival_step == DORMANCY_REBOOTING)
-		after_slot(src, "reboot_timer", DORMANCY_REBOOT_TIME, PROC_REF(complete_revival))
+		after(src, DORMANCY_REBOOT_TIME, PROC_REF(complete_revival), key = "reboot_timer")
 	return 1
 
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,

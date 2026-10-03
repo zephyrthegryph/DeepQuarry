@@ -126,7 +126,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/rnd/production, TYPE_PROC_REF(/atom, appe
 
 	if(!techweb_updating) //so we batch these updates together
 		techweb_updating = TRUE
-		om_after(src, 2 SECONDS, PROC_REF(update_designs))
+		after(src, 2 SECONDS, PROC_REF(update_designs))
 
 /**
  * Consumes power for the item inserted either into silo or local storage.

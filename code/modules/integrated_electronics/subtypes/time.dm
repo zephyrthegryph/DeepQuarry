@@ -25,7 +25,7 @@
 		var/new_delay = CLAMP(delay_input, 1, 1 HOUR)
 		delay = new_delay
 
-	om_after(src, delay, PROC_REF(activate_pin), 2)
+	after(src, delay, PROC_REF(activate_pin), with = list(2))
 
 /obj/item/integrated_circuit/time/ticker
 	name = "ticker circuit"

@@ -275,10 +275,10 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/shadekin, TYPE_PROC_REF(/atom, ap
 				toggle_hud_vis()
 		stop_sound_channel(CHANNEL_PREYLOOP)
 
-		om_after(src, 10 MINUTES, PROC_REF(can_leave_dark))
+		after(src, 10 MINUTES, PROC_REF(can_leave_dark))
 	else
-		om_after(src, 1 SECOND, PROC_REF(enter_the_dark))
-		om_after(src, 15 MINUTES, PROC_REF(can_leave_dark))
+		after(src, 1 SECOND, PROC_REF(enter_the_dark))
+		after(src, 15 MINUTES, PROC_REF(can_leave_dark))
 	return TRUE
 
 /// No retreat left: the kin fades out for good.

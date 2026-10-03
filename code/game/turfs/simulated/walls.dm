@@ -301,7 +301,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 	F.icon_state = "dmg[rand(1,4)]"
 	to_chat(user, span_warning("The thermite starts melting through the wall."))
 
-	om_after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), O)
+	after(src, 10 SECONDS, PROC_REF(thermitemelt_cleanup), with = list(O))
 //	F.sd_LumReset()		//TODO: ~Carn
 	return
 
@@ -328,7 +328,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/wall, PERIODIC_SLOW, "radioactive")
 
 /turf/simulated/wall/burn(temperature)
 	if(material.combustion_effect(src, temperature, 0.7))
-		om_after(src, 2, PROC_REF(burn_collapse), temperature, girder_material.name)
+		after(src, 2, PROC_REF(burn_collapse), with = list(temperature, girder_material.name))
 
 /turf/simulated/wall/proc/burn_collapse(temperature, girder_mat_name)
 	new /obj/structure/girder(src, girder_mat_name)

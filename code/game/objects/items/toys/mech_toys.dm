@@ -177,7 +177,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 		to_chat(user, span_notice("You offer battle to [target.name]!"))
 		to_chat(target, span_notice(span_bold("[user.name] wants to battle with [user.p_their()] [name]!") + " " + span_italics("Attack them with a toy mech to initiate combat.")))
 		wants_to_battle = TRUE
-		om_after(src, 6 SECONDS, PROC_REF(withdraw_offer), user)
+		after(src, 6 SECONDS, PROC_REF(withdraw_offer), with = list(user))
 		return ITEM_INTERACT_SUCCESS
 
 	..()
@@ -242,13 +242,13 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 	COOLDOWN_START(src, timer, cooldown*cooldown_multiplier)
 	COOLDOWN_START(attacker, timer, attacker.cooldown*attacker.cooldown_multiplier)
 
-	om_after(src, 1 SECOND, PROC_REF(brawl_round), attacker, attacker_controller, opponent, 0)
+	after(src, 1 SECOND, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, 0))
 
 /// Checks the fighters, then half a second later the next exchange lands.
 /obj/item/toy/mecha/proc/brawl_round(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent, battle_length)
 	//--THE BATTLE BEGINS--
 	if(combat_health > 0 && attacker.combat_health > 0 && battle_length < MAX_BATTLE_LENGTH && combat_can_continue(attacker, attacker_controller, opponent))
-		om_after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), attacker, attacker_controller, opponent, battle_length)
+		after(src, 0.5 SECONDS, PROC_REF(brawl_exchange), with = list(attacker, attacker_controller, opponent, battle_length))
 		return
 	brawl_end(attacker, attacker_controller, opponent)
 
@@ -342,7 +342,7 @@ EXTEND_INTERACTIONS(/obj/item/toy/mecha, INTERACT_HAND_DEFAULT("Pick up", PROC_R
 				act_message(attacker_controller, src, MSG_SELF(span_notice(" You don't know what to do next.")), \
 					MSG_OTHERS(span_notice(" %T% and [attacker] stand around awkwardly.")))
 
-	om_after(src, 0.5 SECONDS, PROC_REF(brawl_round), attacker, attacker_controller, opponent, battle_length + 1)
+	after(src, 0.5 SECONDS, PROC_REF(brawl_round), with = list(attacker, attacker_controller, opponent, battle_length + 1))
 
 /obj/item/toy/mecha/proc/brawl_end(obj/item/toy/mecha/attacker, mob/living/carbon/attacker_controller, mob/living/carbon/opponent)
 	var/mob/living/carbon/src_controller = (opponent)? opponent : attacker_controller

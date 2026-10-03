@@ -21,7 +21,7 @@
 	I.plane = TURF_PLANE
 	I.layer = ABOVE_TURF_LAYER
 	user.client?.images |= I
-	om_after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
+	after(src, 23, PROC_REF(loop_animation)) //That's just how long the animation is
 
 // the marker image comes off its caster's client.
 /datum/technomancer_marker/lifecycle_prerelease()
@@ -114,7 +114,7 @@
 		return
 	if(time_left > 0)
 		set_light(light_intensity, light_intensity, l_color = "#006AFF")
-		om_after(src, 1 SECOND, PROC_REF(recall_glow), user, marker, time_left - 1, light_intensity + 1)
+		after(src, 1 SECOND, PROC_REF(recall_glow), with = list(user, marker, time_left - 1, light_intensity + 1))
 		return
 	var/turf/target_turf = marker.T() // Multiple technomancer support
 	var/turf/old_turf = get_turf(user)

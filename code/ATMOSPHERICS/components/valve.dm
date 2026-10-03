@@ -97,7 +97,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve, TYPE_PROC_REF(/atom, 
 /obj/machinery/atmospherics/valve/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
 	add_fingerprint(user)
 	animate_toggle()
-	om_after(src, 1 SECOND, PROC_REF(finish_toggle))
+	after(src, 1 SECOND, PROC_REF(finish_toggle))
 	return TRUE
 
 /// The switch, a second after the wheel is turned.

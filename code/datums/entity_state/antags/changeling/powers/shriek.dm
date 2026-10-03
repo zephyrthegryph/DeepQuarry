@@ -83,7 +83,7 @@
 		L.broken()
 
 	changeling.set_cooldown(CHANGELING_SCREECH, 10 SECONDS)
-	om_after(src, 10 SECONDS, PROC_REF(changeling_screech_ready))
+	after(src, 10 SECONDS, PROC_REF(changeling_screech_ready))
 
 	add_attack_logs(src,affected,"Used resonant shriek")
 	feedback_add_details("changeling_powers","RS")
@@ -138,7 +138,7 @@
 	empulse(get_turf(src), range_heavy, range_med, range_light, range_long)
 
 	changeling.set_cooldown(CHANGELING_SCREECH, 10 SECONDS)
-	om_after(src, 10 SECONDS, PROC_REF(changeling_screech_ready))
+	after(src, 10 SECONDS, PROC_REF(changeling_screech_ready))
 	act_message(src, null, others = span_notice("%U% appears to shout."))
 	add_attack_logs(src,src,"Use dissonant shriek")
 	return TRUE

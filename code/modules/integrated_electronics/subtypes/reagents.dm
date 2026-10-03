@@ -150,7 +150,7 @@
 				return
 			var/turf/T = get_turf(AM)
 			T.visible_message(span_warning("[src] is trying to inject [L]!"))
-			om_after(src, 3 SECONDS, PROC_REF(inject_mob), L)
+			after(src, 3 SECONDS, PROC_REF(inject_mob), with = list(L))
 			return
 		else
 			// Use standardized injection compatibility for objects

@@ -50,7 +50,7 @@
 	if(immortal)
 		return
 	countdown.start()
-	om_after(src, lifespan, PROC_REF(lifespan_over))
+	after(src, lifespan, PROC_REF(lifespan_over))
 
 /// The anomaly's lifespan ended (its timer): it detonates whether or not anyone is near.
 /obj/effect/anomaly/proc/lifespan_over()

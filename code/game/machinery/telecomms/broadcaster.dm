@@ -52,7 +52,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 		// simulate the network lag if necessary
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(receive_information_delayed), signal)
+			after(src, signal.data["slow"], PROC_REF(receive_information_delayed), with = list(signal))
 			return
 		receive_information_delayed(signal)
 
@@ -99,7 +99,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 
 	if(!GLOB.message_delay)
 		GLOB.message_delay = 1
-		om_after(src, 1 SECOND, PROC_REF(clear_recent_messages))
+		after(src, 1 SECOND, PROC_REF(clear_recent_messages))
 
 	/* --- Do a snazzy animation! --- */
 	flick("broadcaster_send", src)
@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["level"] = map_levels
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/allinone/proc/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -226,7 +226,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		//signal.data["level"] = using_map.contact_levels.Copy()
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/allinone/antag/broadcast_signal(datum/signal/signal)
 	/* ###### Broadcast a message using signal.data ###### */
@@ -769,7 +769,7 @@ GLOBAL_VAR_INIT(message_delay, 0) // To make sure restarting the recentmessages 
 		signal.data["compression"] = 0 // decompress since we're a processor
 
 		if(signal.data["slow"] > 0)
-			om_after(src, signal.data["slow"], PROC_REF(broadcast_signal), signal)
+			after(src, signal.data["slow"], PROC_REF(broadcast_signal), with = list(signal))
 
 /obj/machinery/telecomms/broadcaster/proc/clear_recent_messages()
 	GLOB.message_delay = 0

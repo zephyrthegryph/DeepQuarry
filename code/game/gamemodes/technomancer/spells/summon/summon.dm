@@ -17,7 +17,7 @@
 		var/obj/effect/E = new(T)
 		E.icon = 'icons/obj/objects.dmi'
 		E.icon_state = "anom"
-		om_after(src, 5 SECONDS, PROC_REF(summon_arrives), E, T, user)
+		after(src, 5 SECONDS, PROC_REF(summon_arrives), with = list(E, T, user))
 
 /obj/item/spell/summon/proc/summon_arrives(obj/effect/E, turf/T, mob/living/user)
 	qdel(E)

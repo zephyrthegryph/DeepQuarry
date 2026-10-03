@@ -93,7 +93,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 		user.put_in_hands(old_assembly)
 	if(istype(held,/obj/item/fuel_assembly/blitz))
 		visible_message(span_warning("The fuel injector begins to shake and whirr violently as it tries to accept the blitz rod!"))
-		om_after(src, 3 SECONDS, PROC_REF(blitz_boom))
+		after(src, 3 SECONDS, PROC_REF(blitz_boom))
 	return TRUE
 
 /datum/interaction/machine_item/fuel_injector_part_replace

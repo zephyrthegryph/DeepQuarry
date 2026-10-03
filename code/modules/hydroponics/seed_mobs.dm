@@ -9,7 +9,7 @@
 	var/datum/ghosttrap/plant/P = get_ghost_trap("living plant")
 	P.request_player(host, "Someone is harvesting [display_name]. ")
 
-	om_after(src, 75, PROC_REF(living_product_unclaimed), host)
+	after(src, 75, PROC_REF(living_product_unclaimed), with = list(host))
 
 /datum/seed/proc/living_product_unclaimed(mob/living/host)
 	if(QDELETED(host))

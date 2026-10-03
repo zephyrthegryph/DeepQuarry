@@ -316,7 +316,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		act_message(src, null, others = span_warning("[user.name] bonks %U% harmlessly with [W]."))
-	om_after(src, 1, PROC_REF(close_up_unless_dead))
+	after(src, 1, PROC_REF(close_up_unless_dead))
 	return TRUE
 
 /// Swiping an ID over a pAI. Re-checked on the answer: next to the pAI and able, it still
@@ -505,7 +505,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 /// Fully heals a pai, used when a pai is repaired
 /mob/living/silicon/pai/proc/full_restore()
 	fully_heal()
-	om_after(src, 5 SECONDS, PROC_REF(restore_delay_start))
+	after(src, 5 SECONDS, PROC_REF(restore_delay_start))
 
 /mob/living/silicon/pai/proc/restore_delay_start()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -513,7 +513,7 @@ DAMAGE_REACTION(/mob/living/silicon/pai, DAMAGE_EMP, PROC_REF(emp_scramble))
 	card.setEmotion(16)
 	if(stat == DEAD)
 		return_from_death("pAI restored", card, REVIVE_IGNORE_WINDOW)
-	om_after(src, 1 SECONDS, PROC_REF(restore_delay_end))
+	after(src, 1 SECONDS, PROC_REF(restore_delay_end))
 
 /mob/living/silicon/pai/proc/restore_delay_end()
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -636,7 +636,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 	var/mob/living/carbon/human/dummy/dummy = new ()
 	//This doesn't include custom_items because that's ... hard.
 	client.prefs.dress_preview_mob(dummy)
-	om_after(src, 1 SECOND, PROC_REF(character_icon_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+	after(src, 1 SECOND, PROC_REF(character_icon_from_dummy), with = list(dummy)) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 	return TRUE
 
 /mob/living/silicon/pai/proc/character_icon_from_dummy(mob/living/carbon/human/dummy/dummy)

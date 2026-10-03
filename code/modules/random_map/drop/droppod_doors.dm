@@ -13,7 +13,7 @@
 /obj/structure/droppod_door/Initialize(mapload, autoopen)
 	. = ..()
 	if(autoopen)
-		om_after(src, 10 SECONDS, PROC_REF(deploy))
+		after(src, 10 SECONDS, PROC_REF(deploy))
 
 /// Old attack_ai: an adjacent silicon opens it as by hand.
 /obj/structure/droppod_door/proc/droppod_door_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
@@ -34,7 +34,7 @@ DECLARE_INTERACTIONS(/obj/structure/droppod_door, \
 	if(deploying) return TRUE
 	deploying = TRUE
 	to_chat(user, span_danger("You prime the explosive bolts. Better get clear!"))
-	om_after(src, 3 SECONDS, PROC_REF(deploy))
+	after(src, 3 SECONDS, PROC_REF(deploy))
 	return TRUE
 
 /obj/structure/droppod_door/proc/deploy()

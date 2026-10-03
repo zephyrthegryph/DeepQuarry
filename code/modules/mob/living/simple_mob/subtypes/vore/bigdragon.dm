@@ -674,7 +674,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		if(!self.enraged)
 			if(self.vitality() <= 0.5)
 				self.enraged = 1
-				om_after(self, 0, TYPE_PROC_REF(/mob/living, say), "No more games. COME HERE.")
+				after(self, 0, TYPE_PROC_REF(/mob/living, say), with = list("No more games. COME HERE."))
 		if(self.enraged)
 			if(self.vitality() >= 0.5)
 				self.enraged = 0
@@ -713,7 +713,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		om_after(src, 1, PROC_REF(yeet), am)
+		after(src, 1, PROC_REF(yeet), with = list(am))
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 //Split repulse into two parts so I can recycle this later
@@ -745,7 +745,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	do_windup_animation(A, charge_warmup)
 	//callbacks are more reliable than byond's process scheduler
-	after_slot(src, "chargetimer", charge_warmup, PROC_REF(chargeend), A)
+	after(src, charge_warmup, PROC_REF(chargeend), key = "chargetimer", with = list(A))
 
 
 /mob/living/simple_mob/vore/bigdragon/proc/chargeend(atom/A, explicit = 0, gentle = 0)
@@ -786,7 +786,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		ai_busy_begin()
 	flames = 1
 	build_icons()
-	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A))
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/bigdragon/proc/firebreathend(atom/A)

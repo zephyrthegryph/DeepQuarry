@@ -32,7 +32,7 @@
 /// Checks for a win or loss half a second from now, then runs `next` (a proc on src): at
 /// once, or a second later when the game just ended.
 /datum/computer_file/program/game/proc/game_check(next)
-	om_after(src, 0.5 SECONDS, PROC_REF(game_evaluate), next)
+	after(src, 0.5 SECONDS, PROC_REF(game_evaluate), with = list(next))
 
 /datum/computer_file/program/game/proc/game_evaluate(next)
 	var/ended = TRUE
@@ -55,7 +55,7 @@
 		ended = FALSE
 	if(next)
 		if(ended)
-			om_after(src, 1 SECOND, next)
+			after(src, 1 SECOND, next)
 		else
 			call(src, next)()
 
@@ -124,7 +124,7 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_attack)
 	heads_up = "You attack for [attackamt] damage."
 	play_sfx(computer().loc, SFX_ARCADE_HIT)
 	boss_hp -= attackamt
-	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/game, "Heal", ui_act_heal)
@@ -140,7 +140,7 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_heal)
 	play_sfx(computer().loc, SFX_ARCADE_HEAL)
 	player_hp += healamt
 	player_mp -= healcost
-	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/game, "Recharge_Power", ui_act_recharge_power)
@@ -152,7 +152,7 @@ UI_ACT_PROC(/datum/computer_file/program/game, ui_act_recharge_power)
 	heads_up = "You regain [rechargeamt] magic power."
 	play_sfx(computer().loc, SFX_ARCADE_MANA)
 	player_mp += rechargeamt
-	om_after(src, 1 SECOND, PROC_REF(resolve_player_turn))
+	after(src, 1 SECOND, PROC_REF(resolve_player_turn))
 	return TRUE
 
 UI_ACT(/datum/computer_file/program/game, "Dispense_Tickets", ui_act_dispense_tickets)

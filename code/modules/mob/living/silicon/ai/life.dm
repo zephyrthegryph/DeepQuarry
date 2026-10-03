@@ -127,7 +127,7 @@
 
 /mob/living/silicon/ai/proc/schedule_power_restore_step(step, delay)
 	cancel_power_restore()
-	after_slot(src, "power_restore_timer", delay, PROC_REF(power_restore_step), step)
+	after(src, delay, PROC_REF(power_restore_step), key = "power_restore_timer", with = list(step))
 
 /mob/living/silicon/ai/proc/cancel_power_restore()
 	if(om_timer_slot_pending(src, "power_restore_timer"))

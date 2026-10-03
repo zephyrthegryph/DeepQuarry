@@ -1078,7 +1078,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 
 	tail_overlay = set_tail_state(t_state) // Calls remove_layer & apply_layer
 	if(tail_overlay)
-		om_after(src, 2 SECONDS, PROC_REF(animate_tail_once_end), tail_layer, t_state)
+		after(src, 2 SECONDS, PROC_REF(animate_tail_once_end), with = list(tail_layer, t_state))
 
 /mob/living/carbon/human/proc/animate_tail_once_end(tail_layer, t_state)
 	//check that the animation hasn't changed in the meantime
@@ -1400,7 +1400,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(!struggle_anim_stomach)
 		struggle_anim_stomach = TRUE
 		update_vore_belly_sprite()
-		om_after(src, 12, PROC_REF(end_belly_struggle_anim))
+		after(src, 12, PROC_REF(end_belly_struggle_anim))
 
 /mob/living/carbon/human/proc/update_vore_tail_sprite()
 	if(QDESTROYING(src))
@@ -1435,7 +1435,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(tail_style.struggle_anim && !struggle_anim_taur)
 		struggle_anim_taur = TRUE
 		update_vore_tail_sprite()
-		om_after(src, 12, PROC_REF(end_tail_struggle_anim))
+		after(src, 12, PROC_REF(end_tail_struggle_anim))
 
 /mob/living/carbon/human/proc/GetAppearanceFromPrefs(flavourtext, oocnotes)
 	/* Jank code that effectively creates the client's mob from save, then copies its appearance to our current mob.

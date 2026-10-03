@@ -192,7 +192,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	var/Angle = round(Get_Angle(src,M))
 	var/matrix/rot_matrix = matrix()
 	rot_matrix.Turn(Angle)
-	om_after(src, rotation_speed, PROC_REF(finish_shot), M)
+	after(src, rotation_speed, PROC_REF(finish_shot), with = list(M))
 	animate(src, transform = rot_matrix, rotation_speed, easing = SINE_EASING)
 
 	set_dir(ATAN2(transform.b, transform.a) > 0 ? NORTH : SOUTH)
@@ -212,7 +212,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 	use_power_oneoff(idle_power_usage * 10)
 	coil.launch_projectile(target = M.loc, user = src)
-	om_after(src, 10, PROC_REF(fire_sound_delayed))
+	after(src, 10, PROC_REF(fire_sound_delayed))
 
 /obj/machinery/pointdefense/proc/fire_sound_delayed()
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)

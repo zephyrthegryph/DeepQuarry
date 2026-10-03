@@ -149,7 +149,7 @@
 						return
 					T = pick(possible_targets)
 
-				om_after(target, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 40, 1)
+				after(target, 2, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 40, 1))
 				visible_message(span_notice("\The [T] is snatched by \the [src]!"))
 				T.throw_at(get_turf(firer), 7, 1, src)
 				success = TRUE
@@ -160,7 +160,7 @@
 				if(I_HELP)
 					var/message = pick(help_messages)
 					if(message == "slaps")
-						om_after(src, 1, TYPE_PROC_REF(/atom, om_playsound), 'sound/effects/snap.ogg', 50, 1)
+						after(src, 1, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 50, 1))
 					visible_message(span_notice("\The [src] [message] [target]."))
 					done_mob_unique = TRUE
 					success = TRUE
@@ -180,7 +180,7 @@
 					success = TRUE
 				if(I_GRAB)
 					var/turf/STurf = get_turf(L)
-					om_after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), crack_sound, 60, 1)
+					after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 60, 1))
 					act_message(src, L, others = span_critical("%U% rips %T% towards \the [firer]!"))
 					L.throw_at(get_turf(get_step(firer,get_dir(firer,L))), 6, 1, src)
 					done_mob_unique = TRUE

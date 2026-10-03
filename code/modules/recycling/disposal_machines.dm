@@ -639,7 +639,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 	flushing = TRUE
 	flush_animation()
 	//Bit of a nasty way to do this. But sleep()s are nastier.
-	om_after(src, 1 SECOND, PROC_REF(flush_startup))
+	after(src, 1 SECOND, PROC_REF(flush_startup))
 
 /obj/machinery/disposal/proc/flush_animation()
 	PROTECTED_PROC(TRUE)
@@ -648,7 +648,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 /obj/machinery/disposal/proc/flush_startup()
 	PROTECTED_PROC(TRUE)
 	play_sfx(src, SFX_MACHINES_DISPOSALFLUSH)
-	om_after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish
+	after(src, 0.5 SECONDS, PROC_REF(flush_complete)) // wait for animation to finish
 
 /obj/machinery/disposal/proc/flush_complete()
 	PROTECTED_PROC(TRUE)
@@ -691,7 +691,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 			// A station-wide restoration otherwise wakes every empty bin in the
 			// same tick, their combined pump surge drops the grid, and all of them
 			// go back to sleep without charging. Spread retries across the cycle.
-			after_slot(src, "power_retry_timer", rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore))
+			after(src, rand(1 SECOND, 30 SECONDS), PROC_REF(retry_charge_after_power_restore), key = "power_retry_timer")
 
 /obj/machinery/disposal/proc/retry_charge_after_power_restore()
 	if(mode == DISPOSALMODE_CHARGING && operable() && can_pressurize_from(loc.return_air()))

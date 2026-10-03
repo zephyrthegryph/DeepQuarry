@@ -54,7 +54,7 @@
 			src.visible_message("[src] pushes [target] out of the way.")
 
 		melee_can_hit = 0
-		om_after(src, melee_cooldown, PROC_REF(reset_melee))
+		after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -69,7 +69,7 @@
 					else
 						play_sfx(src, SFX_WEAPONS_SMASH)
 					melee_can_hit = 0
-					om_after(src, melee_cooldown, PROC_REF(reset_melee))
+					after(src, melee_cooldown, PROC_REF(reset_melee))
 					break
 	return
 

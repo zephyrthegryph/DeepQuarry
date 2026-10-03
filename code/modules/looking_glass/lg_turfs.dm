@@ -24,7 +24,7 @@
 	icon_state = "origin_switching"
 
 	animate(src, color = "#000000", time = 3 SECONDS)
-	om_after(src, 3 SECONDS, PROC_REF(activate_finish))
+	after(src, 3 SECONDS, PROC_REF(activate_finish))
 
 /turf/simulated/floor/looking_glass/proc/activate_finish()
 	var/new_x = 0
@@ -61,7 +61,7 @@
 
 /turf/simulated/floor/looking_glass/proc/deactivate()
 	animate(src, color = "#000000", transform = matrix(), time = 3 SECONDS)
-	om_after(src, 3 SECONDS, PROC_REF(deactivate_finish))
+	after(src, 3 SECONDS, PROC_REF(deactivate_finish))
 
 /turf/simulated/floor/looking_glass/proc/deactivate_finish()
 	var/mutable_appearance/MA = new (src)
@@ -73,4 +73,4 @@
 	appearance = MA
 
 	animate(src, color = null, time = 3 SECONDS)
-	om_after(src, 3 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), "origin")
+	after(src, 3 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list("origin"))

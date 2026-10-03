@@ -832,7 +832,7 @@ SYSTEM_DEF(job)
 					to_chat(pred, span_warning("You must be within station grounds to accept."))
 					return
 				if(backup)
-					om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+					after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				log_admin("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
 				message_admins("[key_name(spawn_client)] has vore spawned into [key_name(pred)]")
 				to_chat(spawn_client, span_notice("You have been spawned via vore. You are free to roleplay how you got there as you please, such as teleportation or having had already been there."))
@@ -987,7 +987,7 @@ SYSTEM_DEF(job)
 					item_to_be = item
 					item_carrier = carrier
 					if(backup)
-						om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				else
 					var/confirm = rerun_ask_on(joiner, spawn_client, "unheld_ok", TYPE_PROC_REF(/mob/new_player, do_late_spawn), list(rank), /datum/om/prompt/choice/alert, message = "\The [item.name] is currently not in any character's possession! Do you still want to spawn as it?", title = "Confirm", choices = list("No", "Yes"))
 					if(confirm != "Yes")
@@ -995,7 +995,7 @@ SYSTEM_DEF(job)
 					log_and_message_admins("[key_name(spawn_client)] has item spawned into \a [item.name] that was not held by anyone")
 					item_to_be = item
 					if(backup)
-						om_after(src, 5 SECONDS, PROC_REF(m_backup_client), spawn_client)
+						after(src, 5 SECONDS, PROC_REF(m_backup_client), with = list(spawn_client))
 				if(istype(item, /obj/item/capture_crystal))
 					var/obj/item/capture_crystal/cryst = item
 					if(cryst.spawn_mob_type)

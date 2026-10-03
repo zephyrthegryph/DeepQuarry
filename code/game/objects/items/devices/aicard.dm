@@ -193,7 +193,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 	// This is absolutely evil and I love it.
 	if(our_ai.deployed_shell && prob(power_lost)) //You feel it creeping? Eventually will reach 100, resulting in the second half of the AI's remaining life being lonely.
 		our_ai.disconnect_shell("Disconnecting from remote shell due to insufficent power.")
-	if(!om_after(src, 1 SECOND, PROC_REF(wipe_ai_tick), our_ai, power_lost + 2))
+	if(!after(src, 1 SECOND, PROC_REF(wipe_ai_tick), with = list(our_ai, power_lost + 2)))
 		flush = FALSE
 
 /// Relation view: carded ai (reads null once it is gone).

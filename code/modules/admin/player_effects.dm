@@ -109,7 +109,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_attack)
 		shadekin.ai_brain.mauling = TRUE
 	om_run_frame_now(shadekin, /datum/om/pipeline/life)
 	//Remove when done
-	om_after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
+	after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
 UI_ACT(/datum/eventkit/player_effects, "shadekin_vore", ui_act_shadekin_vore)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_shadekin_vore)
@@ -314,7 +314,7 @@ UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_elder_smite)
 	if(!target().ckey)
 		return
 	target().overlay_fullscreen("scrolls", /atom/movable/screen/fullscreen/scrolls, 1)
-	om_after(target(), 20 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), "scrolls")
+	after(target(), 20 SECONDS, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("scrolls"))
 
 UI_ACT(/datum/eventkit/player_effects, "wet_floors", ui_act_wet_floors)
 UI_ACT_PROC(/datum/eventkit/player_effects, ui_act_wet_floors)

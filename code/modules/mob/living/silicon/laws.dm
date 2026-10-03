@@ -127,9 +127,9 @@
 		stating_laws[prefix] = 0
 		return
 	if(index >= length(lines))
-		om_after(src, 1 SECOND, PROC_REF(state_laws_done), prefix)
+		after(src, 1 SECOND, PROC_REF(state_laws_done), with = list(prefix))
 		return
-	om_after(src, 1 SECOND, PROC_REF(state_law_line), method, prefix, lines, index + 1)
+	after(src, 1 SECOND, PROC_REF(state_law_line), with = list(method, prefix, lines, index + 1))
 
 /mob/living/silicon/proc/state_laws_done(prefix)
 	stating_laws[prefix] = 0

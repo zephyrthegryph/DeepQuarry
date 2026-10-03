@@ -228,7 +228,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 
 	occupant.ghostize()
 
-	om_after(src, gib_time, PROC_REF(finish_gibbing), byproducts)
+	after(src, gib_time, PROC_REF(finish_gibbing), with = list(byproducts))
 
 /obj/machinery/gibber/proc/finish_gibbing(list/byproducts)
 	// The occupant is whoever is still in the slot when the timer fires (a deleted one is simply gone).

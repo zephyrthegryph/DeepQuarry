@@ -1478,7 +1478,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-opening",src)
-	om_after(src, 8, PROC_REF(open_finish))
+	after(src, 8, PROC_REF(open_finish))
 
 /obj/structure/auto_flesh_door/proc/open_finish()
 	set_density(FALSE)
@@ -1496,7 +1496,7 @@ DECLARE_INTERACTIONS(/obj/structure/auto_flesh_door, 	INTERACT_HAND_AS(I_HELP, "
 	var/oursound = pick(open_sounds)
 	playsound(src, oursound, 100, 1, preference = /datum/preference/toggle/digestion_noises , volume_channel = VOLUME_CHANNEL_VORE)
 	flick("flesh-closing",src)
-	om_after(src, 8, PROC_REF(close_finish))
+	after(src, 8, PROC_REF(close_finish))
 
 /obj/structure/auto_flesh_door/proc/close_finish()
 	set_density(TRUE)

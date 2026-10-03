@@ -936,7 +936,7 @@ GLOBAL_LIST_EMPTY(blood_overlays_by_type)
 		return
 	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 		var/user = usr
-		after_slot(src, "tip_timer", 5, PROC_REF(openTip), location, control, params, user)
+		after(src, 5, PROC_REF(openTip), key = "tip_timer", with = list(location, control, params, user))
 
 /obj/item/MouseExited()
 	. = ..()

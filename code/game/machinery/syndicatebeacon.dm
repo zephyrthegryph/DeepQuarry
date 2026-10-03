@@ -73,7 +73,7 @@
 		if(1)
 			temptext = span_red(span_italics(span_bold("Double-crosser. You planned to betray us from the start. Allow us to repay the favor in kind.")))
 			updateUsrDialog(user)
-			om_after(src, rand(50,200), PROC_REF(selfdestruct))
+			after(src, rand(50,200), PROC_REF(selfdestruct))
 			return
 		if(2)
 			return

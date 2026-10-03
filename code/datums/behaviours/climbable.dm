@@ -49,7 +49,7 @@
 /datum/om/behaviour/climbable/on_climb_start(obj/O, datum/om/event/climb_start/event)
 	var/mob/living/H = event.user
 	if(istype(H) && can_climb(O, H))
-		om_after(O, 0, TYPE_PROC_REF(/obj, climbable_do_climb), H) // Out of the event delivery.
+		after(O, 0, TYPE_PROC_REF(/obj, climbable_do_climb), with = list(H)) // Out of the event delivery.
 
 /datum/om/behaviour/climbable/on_climb_shake(obj/O, datum/om/event/climb_shake/event)
 	shaken(O, event.user)

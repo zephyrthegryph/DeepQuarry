@@ -195,9 +195,9 @@
 	exploded = 1
 	// Looping Alarms. We want to stop the alarm here.
 	if(stationcrystal) // Are we an on-station crystal?
-		om_after(null, 10 SECONDS, GLOBAL_PROC_REF(reset_sm_alarms))
+		after(null, 10 SECONDS, GLOBAL_PROC_REF(reset_sm_alarms))
 
-	om_after(src, pull_time, PROC_REF(explode_effects))
+	after(src, pull_time, PROC_REF(explode_effects))
 
 /obj/machinery/power/supermatter/proc/explode_effects()
 	var/turf/TS = get_turf(src)		// The turf supermatter is on. SM being in a locker, exosuit, or other container shouldn't block it's effects that way.
@@ -268,7 +268,7 @@
 	delamination_delete = TRUE
 	// Allow the explosion to finish. The global owner: the crystal is deleted below and the
 	// explosion may replace the turf.
-	om_after(null, 5, /proc/leave_broken_supermatter, TS)
+	after(null, 5, /proc/leave_broken_supermatter, with = list(TS))
 	qdel(src)
 
 /proc/leave_broken_supermatter(turf/TS)
@@ -546,7 +546,7 @@ DECLARE_APPEARANCE(/obj/machinery/power/supermatter, "final_countdown", list("1"
 	if((i % 50) == 0 || i <= 50)
 		var/speaking = i > 50 ? "[DisplayTimeText(i, TRUE)] remain before causality stabilization." : "[i*0.1]..."
 		GLOB.global_announcer.autosay(speaking, "Supermatter Monitor")
-	om_after(src, 1 SECOND, PROC_REF(countdown_tick), i - 10)
+	after(src, 1 SECOND, PROC_REF(countdown_tick), with = list(i - 10))
 
 /obj/machinery/power/supermatter/bullet_act(obj/item/projectile/Proj)
 	var/turf/L = loc

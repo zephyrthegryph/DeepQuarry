@@ -60,7 +60,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/slime/xenobio, TYPE_PROC_REF(/ato
 
 /datum/om/stage/life/special/slime/xenobio/perform(mob/living/simple_mob/slime/xenobio/self, datum/om/frame/life/ctx)
 	if(self.stat != DEAD)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
+		after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob/slime/xenobio, handle_nutrition))
 
 		if(self.victim)
 			self.handle_consumption()

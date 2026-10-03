@@ -140,7 +140,7 @@ UI_ACT_PROC(/obj/item/assembly/signaler, ui_act_reset)
 	if(!frequency)
 		return
 	if(!GLOB.radio_service)
-		om_after(src, 2 SECONDS, PROC_REF(radio_checkup), new_frequency)
+		after(src, 2 SECONDS, PROC_REF(radio_checkup), with = list(new_frequency))
 		return
 	set_radio(new_frequency)
 

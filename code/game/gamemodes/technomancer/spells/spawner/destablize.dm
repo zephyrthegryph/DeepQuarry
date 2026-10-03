@@ -45,7 +45,7 @@
 	if(!pulses_remaining)
 		qdel(src)
 		return
-	om_after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
+	after(src, 0.5 SECONDS, PROC_REF(radiate_pulse))
 
 /obj/effect/temporary_effect/destablize/proc/radiate_pulse()
 	for(var/mob/living/L in range(src, instability_range) )

@@ -76,7 +76,7 @@
 	else
 		to_chat(user, span_green("Update Completed. New setting:[on ? "on": "off"]"))
 	update_locked = 1
-	om_after(src, 60 SECONDS, PROC_REF(unlock_updates))
+	after(src, 60 SECONDS, PROC_REF(unlock_updates))
 
 /obj/machinery/power/breakerbox/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
@@ -168,5 +168,5 @@
 	if(!update_locked)
 		set_breaker_on(!on)
 		update_locked = 1
-		om_after(src, 1 MINUTE, PROC_REF(unlock_updates))
+		after(src, 1 MINUTE, PROC_REF(unlock_updates))
 

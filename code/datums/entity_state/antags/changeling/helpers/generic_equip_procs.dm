@@ -158,7 +158,7 @@ GLOBAL_LIST_INIT(changeling_grown_pieces, list(
 		M.equip_to_slot_or_del(I, piece[3])
 		grown_items_list.Add(piece[4])
 		playsound(src, piece[5], 30, 1)
-		om_after(src, 1 SECOND, PROC_REF(changeling_grow_piece), stuff_to_equip, i + 1, grown_items_list)
+		after(src, 1 SECOND, PROC_REF(changeling_grow_piece), with = list(stuff_to_equip, i + 1, grown_items_list))
 		return
 
 	var/feedback = english_list(grown_items_list, nothing_text = "nothing", and_text = " and ", comma_text = ", ", final_comma_text = "" )

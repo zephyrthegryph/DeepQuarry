@@ -209,7 +209,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/bottle, TYPE_PR
 	var/spin_rotation = (rand(0,359))
 	act_message(user, src, MSG_SELF(span_notice("You spin %T%!")), MSG_OTHERS(span_warning("%U% spins %T%!")))
 	SpinAnimation(3,10)
-	om_after(src, 3 SECONDS, PROC_REF(finish_spin), spin_rotation)
+	after(src, 3 SECONDS, PROC_REF(finish_spin), with = list(spin_rotation))
 
 //Keeping this here for now, I'll ask if I should keep it here.
 /obj/item/broken_bottle

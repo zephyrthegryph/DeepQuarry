@@ -703,7 +703,7 @@ TOPIC_ACTION(/mob/living/silicon/ai, "open", PROC_REF(topic_open_door), TOPIC_RE
 			var/mob/living/carbon/human/dummy/dummy = new ()
 			//This doesn't include custom_items because that's ... hard.
 			client.prefs.dress_preview_mob(dummy)
-			om_after(src, 1 SECOND, PROC_REF(hologram_from_dummy), dummy) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
+			after(src, 1 SECOND, PROC_REF(hologram_from_dummy), with = list(dummy)) //Strange bug in preview code? Without this, certain things won't show up. Yay race conditions?
 
 		else //A premade from the dmi
 			var/icon_list[] = list(

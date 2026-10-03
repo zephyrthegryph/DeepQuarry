@@ -107,7 +107,7 @@
 	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!special_handling || (SK && SK.no_retreat))
-		om_after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
+		after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
 	else
 		if(!SK)
 			return
@@ -179,13 +179,13 @@
 			H.muffled = FALSE
 			H.forced_psay = FALSE
 
-			om_after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
+			after(H, 5 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 		else
 			H.apply_body_effect(/datum/body_effect/dark_respite, 25 MINUTES)
 
-			om_after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
+			after(H, 1 SECOND, TYPE_PROC_REF(/mob/living, enter_the_dark))
 
-			om_after(H, 15 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
+			after(H, 15 MINUTES, TYPE_PROC_REF(/mob/living, can_leave_dark))
 
 		return TRUE
 

@@ -85,12 +85,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/sonadile, TYPE_PROC_REF(/ato
 			return .
 		else if((stat == CONSCIOUS) && (!icon_rest || !resting || !incapacitated(INCAPACITATION_DISABLED)) && (vore_icons & SA_ICON_LIVING))
 			icon_state = "[icon_living]-[vore_fullness]"
-			om_after(src, 10 SECONDS, PROC_REF(settle_full_icon))
+			after(src, 10 SECONDS, PROC_REF(settle_full_icon))
 		else if(stat >= DEAD && (vore_icons & SA_ICON_DEAD))
 			icon_state = "[icon_dead]-[vore_fullness]"
 		else if(((stat == UNCONSCIOUS) || resting || incapacitated(INCAPACITATION_DISABLED) ) && icon_rest && (vore_icons & SA_ICON_REST))
 			icon_state = "[icon_rest]-[vore_fullness]"
-			om_after(src, 10 SECONDS, PROC_REF(settle_full_icon))
+			after(src, 10 SECONDS, PROC_REF(settle_full_icon))
 		if(vore_eyes && voremob_awake) //Update eye layer if applicable.
 			remove_eyes()
 			add_eyes()

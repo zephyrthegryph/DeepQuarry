@@ -290,20 +290,20 @@ DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
 
 	if(length(mytape.storedinfo) < i+1)
 		playsleepseconds = 1
-		om_after(src, 1 SECOND, PROC_REF(play_end_of_tape))
+		after(src, 1 SECOND, PROC_REF(play_end_of_tape))
 		return
 	playsleepseconds = mytape.timestamp[i+1] - mytape.timestamp[i]
 
 	if(playsleepseconds > 14)
-		om_after(src, 1 SECOND, PROC_REF(play_skip_silence), i, playsleepseconds)
+		after(src, 1 SECOND, PROC_REF(play_skip_silence), with = list(i, playsleepseconds))
 		return
-	om_after(src, 10 * playsleepseconds, PROC_REF(play_step), i + 1)
+	after(src, 10 * playsleepseconds, PROC_REF(play_step), with = list(i + 1))
 
 /obj/item/taperecorder/proc/play_skip_silence(i, skipped)
 	var/turf/T = get_turf(src)
 	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": Skipping [skipped] seconds of silence"), runemessage = "tape winding")
 	playsleepseconds = 1
-	om_after(src, 1 SECOND, PROC_REF(play_step), i + 1)
+	after(src, 1 SECOND, PROC_REF(play_step), with = list(i + 1))
 
 /obj/item/taperecorder/proc/play_end_of_tape()
 	var/turf/T = get_turf(src)
@@ -317,7 +317,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
 	if(emagged)
 		var/turf/T = get_turf(src)
 		T.audible_message(span_maroon(span_bold("Tape Recorder") + ": This tape recorder will self-destruct in... Five."), runemessage = "beep beep")
-		om_after(src, 1 SECOND, PROC_REF(self_destruct_count), 4)
+		after(src, 1 SECOND, PROC_REF(self_destruct_count), with = list(4))
 
 /obj/item/taperecorder/proc/self_destruct_count(n)
 	if(n <= 0)
@@ -326,7 +326,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/taperecorder, PROC_REF(on_emag), null)
 	var/turf/T = get_turf(src)
 	var/static/list/words = list("One", "Two", "Three", "Four")
 	T.audible_message(span_maroon(span_bold("Tape Recorder") + ": [words[n]]."))
-	om_after(src, 1 SECOND, PROC_REF(self_destruct_count), n - 1)
+	after(src, 1 SECOND, PROC_REF(self_destruct_count), with = list(n - 1))
 
 /obj/item/taperecorder/proc/print_transcript_effect(mob/user, obj/item/held, datum/interaction/interaction)
 

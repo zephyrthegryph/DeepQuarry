@@ -43,7 +43,7 @@ DECLARE_INTERACTIONS(/obj/item/batterer, INTERACT_USE(null, PROC_REF(interaction
 	var/list/affected = list()
 	for(var/mob/living/carbon/human/M in orange(10, user))
 		affected += M
-		om_after(src, 0, PROC_REF(mind_batter_effect), M)
+		after(src, 0, PROC_REF(mind_batter_effect), with = list(M))
 
 	add_attack_logs(user,affected,"Used a [name]")
 

@@ -156,7 +156,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/modular_computer, TYPE_PROC_REF(/atom, appeara
 	if(active_program())
 		active_program().kill_program(forced)
 		rel_clear(src, nameof(active_program))
-	om_after(src, 0.1 SECONDS, PROC_REF(delayed_reopen_ui), user)
+	after(src, 0.1 SECONDS, PROC_REF(delayed_reopen_ui), with = list(user))
 	update_icon()
 
 /obj/item/modular_computer/proc/delayed_reopen_ui(mob/user)

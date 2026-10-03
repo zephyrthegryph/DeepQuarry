@@ -185,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	ready = FALSE
 	update_icon()
-	om_after(src, cooldown_time, PROC_REF(ready))
+	after(src, cooldown_time, PROC_REF(ready))
 	if(mate_too && mate())
 		mate().cooldown(mate_too = FALSE) //No infinite recursion pls
 
@@ -196,7 +196,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 /// Fades `AM` out, moves it to `T` (if any) once faded, then fades it back in (half a second each).
 /obj/item/telecube/proc/fade_and_move(atom/movable/AM, turf/T, announce = FALSE)
 	animate_out(AM)
-	om_after(src, 0.5 SECONDS, PROC_REF(fade_back_in), AM, T, announce)
+	after(src, 0.5 SECONDS, PROC_REF(fade_back_in), with = list(AM, T, announce))
 
 /obj/item/telecube/proc/fade_back_in(atom/movable/AM, turf/T, announce)
 	AM.filters -= filter(type="blur", size = 2)
@@ -226,7 +226,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/telecube, TYPE_PROC_REF(/atom, appearance_over
 
 	animate(target, alpha = 255, time = 5) //In
 	animate(target.filters[our_filter_index], size = 0, time = 5, flags = ANIMATION_PARALLEL)
-	om_after(src, 0.5 SECONDS, PROC_REF(clear_blur), target)
+	after(src, 0.5 SECONDS, PROC_REF(clear_blur), with = list(target))
 
 /obj/item/telecube/item_ctrl_click(mob/user)
 	if(Adjacent(user) && teleport_to_mate(user))

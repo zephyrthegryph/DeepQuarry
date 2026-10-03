@@ -164,7 +164,7 @@ DECLARE_INTERACTIONS(/obj/item/tray, INTERACT_ITEM(null, PROC_REF(interaction_it
 	if(equipping)
 		return ..() //Don't bother searching if we're just being put in a pocket/in hands.
 	..()
-	om_after(src, 0, PROC_REF(spill_where_dropped)) //Allows the tray to update location, rather than just checking against mob's location
+	after(src, 0, PROC_REF(spill_where_dropped)) //Allows the tray to update location, rather than just checking against mob's location
 
 /obj/item/tray/proc/spill_where_dropped()
 	var/noTable = null

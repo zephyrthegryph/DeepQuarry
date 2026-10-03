@@ -125,7 +125,7 @@
 
 		visible_message(span_notice("\The [src] begins to shape a nutriment slurry."))
 
-		om_after(src, print_delay/speed, PROC_REF(print_done), foodItem)
+		after(src, print_delay/speed, PROC_REF(print_done), with = list(foodItem))
 
 
 /// Scan a food item to learn its recipe.
@@ -246,7 +246,7 @@ DECLARE_APPEARANCE(/obj/machinery/food_replicator, "printing", list("1" = list(A
 	message_admins("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]")
 	log_game("[src] attempted to create an EX donk pocket at [x], [y], [z], last touched by [forensic_data?.get_lastprint()]. (<A href='byond://?_src_=holder;[HrefToken()];adminplayerobservecoodjump=1;X=[x];Y=[y];Z=[z]'>JMP</a>)", 1)
 
-	om_after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
+	after(src, 6 SECONDS, PROC_REF(self_destruct_boom)) // GET OUT, GET OUT
 
 /obj/machinery/food_replicator/proc/self_destruct_boom()
 	atom_break()

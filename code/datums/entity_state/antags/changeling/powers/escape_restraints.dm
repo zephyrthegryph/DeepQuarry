@@ -41,7 +41,7 @@
 		escape_cooldown *= 0.5
 
 	changeling.set_cooldown(ESCAPE_RESTRAINTS, escape_cooldown)
-	om_after(src, escape_cooldown, PROC_REF(changeling_escape_restraints_ready))
+	after(src, escape_cooldown, PROC_REF(changeling_escape_restraints_ready))
 
 	feedback_add_details("changeling_powers","ESR")
 	return TRUE

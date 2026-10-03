@@ -83,7 +83,7 @@
 					chassis.float_direction = direction
 					chassis.start_process(MECHA_PROC_MOVEMENT)
 					chassis.mecha_log_message(span_warning("Movement control lost. Inertial movement started."))
-			om_after(chassis, get_step_delay(), TYPE_PROC_REF(/obj/mecha, reset_can_move))
+			after(chassis, get_step_delay(), TYPE_PROC_REF(/obj/mecha, reset_can_move))
 			return 1
 		return 0
 	if(mech_body_plan().has_affliction(chassis, MECHA_INT_CONTROL_LOST))
@@ -126,7 +126,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/jetpack, "toggle", PROC_
 	toggle()
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/do_after_cooldown()
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 	return 1
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/cooldown_over()

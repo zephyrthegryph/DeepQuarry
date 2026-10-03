@@ -133,7 +133,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 		QDEL_NULL(machine_effect)
 	ai_brain?.lose_target()
 	powermachine.set_draining(1)
-	om_after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
+	after(src, 3 SECONDS, PROC_REF(ai_brain_resume))
 /mob/living/simple_mob/animal/solargrub_larva/proc/do_ventcrawl(obj/machinery/atmospherics/unary/vent_pump/vent)
 	if(!vent)
 		return
@@ -148,7 +148,7 @@ REGISTRY_MEMBERSHIP(/mob/living/simple_mob/animal/solargrub_larva, REGISTRY_SOLA
 /// Travel time through the ducts; welded exits redirect up to `redirect_attempts` times.
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_travel(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
 	var/travel_time = round(get_dist(get_turf(src), get_turf(end_vent)) / 2)
-	om_after(src, travel_time, PROC_REF(ventcrawl_arrive), vent, end_vent, redirect_attempts)
+	after(src, travel_time, PROC_REF(ventcrawl_arrive), with = list(vent, end_vent, redirect_attempts))
 
 /mob/living/simple_mob/animal/solargrub_larva/proc/ventcrawl_arrive(obj/machinery/atmospherics/unary/vent_pump/vent, obj/machinery/atmospherics/unary/vent_pump/end_vent, redirect_attempts)
 	if(end_vent.welded && redirect_attempts)

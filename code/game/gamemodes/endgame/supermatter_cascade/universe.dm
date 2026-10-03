@@ -61,7 +61,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 	if(GLOB.endgame_exits?.len)
 		new /obj/singularity/narsie/large/exit(pick(GLOB.endgame_exits))
 
-	om_after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
+	after(src, rand(30,60) SECONDS, PROC_REF(announce_cascade))
 
 /datum/universal_state/supermatter_cascade/proc/AreaSet()
 	for(var/area/A in world)
@@ -117,7 +117,7 @@ GLOBAL_VAR_INIT(universe_has_ended, 0)
 		if(istype(C, /obj/machinery/computer/shuttle_control/research) || istype(C, /obj/machinery/computer/shuttle_control/mining))
 			C.req_access = list()
 			C.req_one_access = list()
-	om_after(src, 5 MINUTES, PROC_REF(universe_collapses))
+	after(src, 5 MINUTES, PROC_REF(universe_collapses))
 
 /datum/universal_state/supermatter_cascade/proc/universe_collapses()
 	play_cinematic(/datum/cinematic/nuke/self_destruct) // TODO: Custom cinematic. No longer sleeps: the blast is an om_after() timer.

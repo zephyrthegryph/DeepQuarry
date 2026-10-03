@@ -207,7 +207,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	if(leash_pet.absorbed)
 		clear_leash()
 		return
-	om_after(src, 0.2 SECONDS, PROC_REF(after_master_move))
+	after(src, 0.2 SECONDS, PROC_REF(after_master_move))
 
 /obj/item/leash/proc/after_master_move()
 	//If the master moves, pull the pet in behind
@@ -219,7 +219,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 	apply_tug_mob_to_mob(leash_pet, leash_master, 2)
 
 	//Knock the pet over if they get further behind. Shouldn't happen too often.
-	om_after(src, 0.3 SECONDS, PROC_REF(leash_trip_check)) //This way running normally won't just yank the pet to the ground.
+	after(src, 0.3 SECONDS, PROC_REF(leash_trip_check)) //This way running normally won't just yank the pet to the ground.
 
 /obj/item/leash/proc/leash_trip_check()
 	var/mob/living/leash_pet = src?.leash_pet()
@@ -233,7 +233,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		leash_pet.apply_effect(5, STUN, 0)
 
 	//This code is to check if the pet has gotten too far away, and then break the leash.
-	om_after(src, 0.3 SECONDS, PROC_REF(leash_snap_check)) //Wait to snap the leash
+	after(src, 0.3 SECONDS, PROC_REF(leash_snap_check)) //Wait to snap the leash
 
 /obj/item/leash/proc/leash_snap_check()
 	var/mob/living/leash_pet = src?.leash_pet()
@@ -255,7 +255,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		return
 
 	//If the pet gets too far away, they get tugged back
-	om_after(src, 0.3 SECONDS, PROC_REF(after_pet_move)) //A short timer so the pet kind of bounces back after they make the step
+	after(src, 0.3 SECONDS, PROC_REF(after_pet_move)) //A short timer so the pet kind of bounces back after they make the step
 
 /obj/item/leash/proc/after_pet_move()
 	var/mob/living/leash_pet = src?.leash_pet()
@@ -273,7 +273,7 @@ DECLARE_INTERACTIONS(/obj/item/leash, INTERACT_USE("Tug", PROC_REF(interaction_s
 		clear_leash()
 		return
 	//Dropping procs any time the leash changes slots. So, we will wait a tick and see if the leash was actually dropped
-	om_after(src, 0.1 SECONDS, PROC_REF(drop_effects), user)
+	after(src, 0.1 SECONDS, PROC_REF(drop_effects), with = list(user))
 
 /obj/item/leash/proc/drop_effects(mob/user)
 	SHOULD_NOT_SLEEP(TRUE)

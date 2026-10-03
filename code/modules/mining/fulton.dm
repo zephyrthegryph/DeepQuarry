@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 
 /obj/effect/extraction_holder/proc/fulton_expand(atom/movable/A, turf/landing)
 	add_overlay(fulton_balloon("fulton_expand"))
-	om_after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), A, landing)
+	after(src, 0.4 SECONDS, PROC_REF(fulton_inflate), with = list(A, landing))
 
 /obj/effect/extraction_holder/proc/fulton_inflate(atom/movable/A, turf/landing)
 	cut_overlays()
@@ -110,7 +110,7 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	animate(pixel_z = 10, time = 10)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	om_after(src, 6 SECONDS, PROC_REF(fulton_launch), A, landing)
+	after(src, 6 SECONDS, PROC_REF(fulton_launch), with = list(A, landing))
 
 /obj/effect/extraction_holder/proc/fulton_launch(atom/movable/A, turf/landing)
 	play_sfx(src, SFX_ITEMS_FULTEXT_LAUNCH)
@@ -119,26 +119,26 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 		var/mob/living/carbon/human/L = A
 		L.status_adjust(EFFECT_STUNNED, 20)
 		L.status_set(EFFECT_DROWSY, 0)
-	om_after(src, 3 SECONDS, PROC_REF(fulton_arrive), A, landing)
+	after(src, 3 SECONDS, PROC_REF(fulton_arrive), with = list(A, landing))
 
 /obj/effect/extraction_holder/proc/fulton_arrive(atom/movable/A, turf/landing)
 	forceMove(landing)
 	animate(src, pixel_z = 10, time = 50)
 	animate(pixel_z = 15, time = 10)
 	animate(pixel_z = 10, time = 10)
-	om_after(src, 7 SECONDS, PROC_REF(fulton_retract), A)
+	after(src, 7 SECONDS, PROC_REF(fulton_retract), with = list(A))
 
 /obj/effect/extraction_holder/proc/fulton_retract(atom/movable/A)
 	cut_overlays()
 	add_overlay(fulton_balloon("fulton_retract"))
-	om_after(src, 0.4 SECONDS, PROC_REF(fulton_land), A)
+	after(src, 0.4 SECONDS, PROC_REF(fulton_land), with = list(A))
 
 /obj/effect/extraction_holder/proc/fulton_land(atom/movable/A)
 	cut_overlays()
 	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
 	A.set_density(initial(A.density))
 	animate(src, pixel_z = 0, time = 0.5 SECONDS)
-	om_after(src, 0.5 SECONDS, PROC_REF(fulton_release), A)
+	after(src, 0.5 SECONDS, PROC_REF(fulton_release), with = list(A))
 
 /obj/effect/extraction_holder/proc/fulton_release(atom/movable/A)
 	A.forceMove(loc)

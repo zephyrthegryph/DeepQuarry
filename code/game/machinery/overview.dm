@@ -304,7 +304,7 @@
 	return
 
 /obj/machinery/computer/security/proc/close(mob/user)
-	om_after(src, 2 SECONDS, PROC_REF(close_check), user)
+	after(src, 2 SECONDS, PROC_REF(close_check), with = list(user))
 
 /proc/getr(col)
 	return hex2num(copytext(col, 2,4))

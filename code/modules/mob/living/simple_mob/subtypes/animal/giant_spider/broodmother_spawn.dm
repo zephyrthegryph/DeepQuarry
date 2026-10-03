@@ -174,7 +174,7 @@
 /mob/living/simple_mob/animal/giant_spider/broodling/Initialize(mapload)
 	. = ..()
 	adjust_scale(0.75)
-	after_slot(src, "deathtimer", 2 MINUTES, PROC_REF(death))
+	after(src, 2 MINUTES, PROC_REF(death), key = "deathtimer")
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)

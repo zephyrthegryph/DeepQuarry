@@ -209,7 +209,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 					ability_icon_given = P.ability_icon_state,
 					arguments = list()
 					)
-	om_after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
+	after(H, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, show_lleill_display))
 
 /mob/living/carbon/human/proc/show_lleill_display()
 	if(lleill_display)

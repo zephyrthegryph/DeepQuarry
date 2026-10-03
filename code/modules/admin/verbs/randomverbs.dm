@@ -37,7 +37,7 @@ ADMIN_VERB(cmd_admin_prison, R_ADMIN|R_MOD, "Prison", "Send target to prison.", 
 			var/mob/living/carbon/human/prisoner = target_mob
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/under/color/prison(prisoner), SLOT_ID_UNIFORM)
 			prisoner.equip_to_slot_or_del(new /obj/item/clothing/shoes/orange(prisoner), SLOT_ID_SHOES)
-		om_after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), target_mob, span_bolddanger("You have been sent to the prison station!"))
+		after(target_mob, 5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(target_mob, span_bolddanger("You have been sent to the prison station!")))
 		log_admin("[key_name(user)] sent [key_name(target_mob)] to the prison station.")
 		message_admins(span_blue("[key_name_admin(user)] sent [key_name_admin(target_mob)] to the prison station."), 1)
 		feedback_add_details("admin_verb","PRISON") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -656,7 +656,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 		new /obj/structure/drop_pod(target_turf, new_character)
 		to_chat(new_character, span_boldnotice("Please wait for your arrival."))
 	else if(showy == "Fall")
-		om_after(new_character, 1 TICK, GLOBAL_PROC_REF(admin_spawn_fall), new_character)
+		after(new_character, 1 TICK, GLOBAL_PROC_REF(admin_spawn_fall), with = list(new_character))
 		to_chat(new_character, span_boldnotice("You have been fully spawned. Enjoy the game."))
 
 	return new_character
@@ -674,7 +674,7 @@ ADMIN_VERB(respawn_character, (R_ADMIN|R_REJUVINATE), "Spawn Character", "(Re)Sp
 	new_character.set_density(FALSE)
 	new_character.set_opacity(FALSE)
 	animate(new_character, pixel_y = initial_y, pixel_x = initial_x , time = 0.7 SECONDS)
-	om_after(new_character, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable, end_fall))
+	after(new_character, 0.7 SECONDS, TYPE_PROC_REF(/atom/movable, end_fall))
 
 ADMIN_VERB(cmd_admin_add_freeform_ai_law, R_FUN, "Add Custom AI law", "Adds a custom law to a silicon.", ADMIN_CATEGORY_FUN_SILICON)
 	om_ask(user, /datum/om/prompt/text, PROC_REF(law_entered), title = "What?", message = "Please enter anything you want the AI to do. Anything. Serious.", max_length = MAX_MESSAGE_LEN, requires = PROMPT_ADMIN(permissions))

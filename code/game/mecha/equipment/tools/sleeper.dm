@@ -304,7 +304,7 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, ui_act_inject)
 	if(usr!=src?.slot_item(MECHA_SLOT_PILOT) || usr.stat == 2)
 		return
 	to_chat(usr,span_notice("Release sequence activated. This will take one minute."))
-	om_after(src, 1 MINUTE, PROC_REF(release_sequence_done), occupant)
+	after(src, 1 MINUTE, PROC_REF(release_sequence_done), with = list(occupant))
 
 /obj/item/mecha_parts/mecha_equipment/tool/sleeper/proc/release_sequence_done(mob/living/carbon/human/occupant)
 	if(occupant != src?.slot_item(OCCUPANT_SLOT_MECHA_SLEEPER)) //Check if someone's released/replaced/bombed him already

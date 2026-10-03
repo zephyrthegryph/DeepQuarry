@@ -244,7 +244,7 @@
 					var/lost_plasma = (plasma_temperature*percent_unstable)
 					radiation += lost_plasma
 					if(flare)
-						om_after(src, 1, PROC_REF(emflare))
+						after(src, 1, PROC_REF(emflare))
 					if(fuel_loss)
 						for(var/particle in dormant_reactant_quantities)
 							var/lost_fuel = dormant_reactant_quantities[particle]*percent_unstable
@@ -583,7 +583,7 @@
 		light_min_range = 30
 		light_max_range = 30
 		visible_message(span_danger("\The [src] flares to eye-searing brightness!"))
-		om_after(src, 6 SECONDS, PROC_REF(temp_color))
+		after(src, 6 SECONDS, PROC_REF(temp_color))
 		return
 //Rupture() is no longer the end all be all. Fear the magnetic resonance cascade and quantum flux cascade
 
@@ -602,7 +602,7 @@
 	empulse(pick(things_in_range), CEILING(plasma_temperature/1000, 1), CEILING(plasma_temperature/300, 1))
 	// Six more blasts over ten seconds, on the core's clock: the field is gone by then.
 	for(var/delay in list(25, 50, 75, 85, 95, 105))
-		om_after(owned_core, delay, /proc/fusion_rupture_blast, things_in_range)
+		after(owned_core, delay, /proc/fusion_rupture_blast, with = list(things_in_range))
 	return
 
 /obj/effect/fusion_em_field/proc/MRC() //spews electromagnetic pulses in an area around the core.
@@ -614,7 +614,7 @@
 	for (var/turf/T in things_in_range)
 		turfs_in_range.Add(T)
 	for(var/loopcount = 1 to 10)
-		om_after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, things_in_range) // the core's clock: the field is gone by then
+		after(owned_core, 20 SECONDS, /proc/fusion_cascade_pulse, with = list(things_in_range)) // the core's clock: the field is gone by then
 	qdel(src)
 	return
 

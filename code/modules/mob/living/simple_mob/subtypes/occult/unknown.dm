@@ -208,7 +208,7 @@
 		if(target.client)
 			to_chat(target, span_critical("You feel as though you are losing your sense of direction! Brace yourself!"))
 		new /obj/effect/temp_visual/pre_confuse(get_turf(target))
-		om_after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
+		after(target, 5 SECONDS, TYPE_PROC_REF(/mob/living, glitch_confusion))
 
 /mob/living/simple_mob/glitch_boss/proc/bullethell(atom/A)
 
@@ -224,13 +224,13 @@
 		sd += 90
 	sd += pick(offsets)
 	if(wave < 4)
-		om_after(src, 2 SECONDS, PROC_REF(bullethell_wave), sd, wave + 1)
+		after(src, 2 SECONDS, PROC_REF(bullethell_wave), with = list(sd, wave + 1))
 
 /mob/living/simple_mob/glitch_boss/proc/speed_up_boost(atom/A)
 	if(base_attack_cooldown == initial(base_attack_cooldown))
 		base_attack_cooldown = 1 SECOND
 		var/duration = (special_attack_cooldown == 5 SECONDS) ? 5 SECONDS : 10 SECONDS
-		om_after(src, duration, PROC_REF(end_speed_boost))
+		after(src, duration, PROC_REF(end_speed_boost))
 
 /mob/living/simple_mob/glitch_boss/do_special_attack(atom/A, stance)
 	. = TRUE

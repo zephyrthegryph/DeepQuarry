@@ -156,7 +156,7 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 			if(prob(40) && insults <= 0)
 				fx_sparks(get_turf(user), 2)
 				user.visible_message(span_warning("\The [src] sparks violently!"))
-				om_after(src, 3 SECONDS, PROC_REF(overload_boom))
+				after(src, 3 SECONDS, PROC_REF(overload_boom))
 	else
 		user.audible_message(span_bold("[user.GetVoice()]") + "[user.GetAltName()] broadcasts, <FONT size=[broadcast_size] face='[broadcast_font]' color='[broadcast_color]'>\"[message]\"</FONT>", runemessage = message)
 

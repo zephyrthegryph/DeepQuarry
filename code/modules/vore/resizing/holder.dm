@@ -1,6 +1,6 @@
 /obj/item/holder/dropped(mob/user, equipping, slot)
 	..()
-	om_after(src, 1, PROC_REF(delete_if_dropped))
+	after(src, 1, PROC_REF(delete_if_dropped))
 
 EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(holder_pick_up)))
 

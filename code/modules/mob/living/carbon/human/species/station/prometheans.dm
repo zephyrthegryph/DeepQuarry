@@ -186,7 +186,7 @@
 /datum/species/shapeshifter/promethean/handle_death(mob/living/carbon/human/H)
 	if(!H)
 		return
-	om_after(H, 1, TYPE_PROC_REF(/mob, gib))
+	after(H, 1, TYPE_PROC_REF(/mob, gib))
 
 /datum/species/shapeshifter/promethean/get_blood_colour(mob/living/carbon/human/H)
 	return (H ? rgb(H.r_skin, H.g_skin, H.b_skin) : ..())
@@ -257,7 +257,7 @@
 
 /datum/trait_state/promethean_biology/proc/restart_stillness()
 	still = FALSE
-	after_slot(src, "still_timer", PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still))
+	after(src, PROMETHEAN_STILLNESS_TIME, PROC_REF(became_still), key = "still_timer")
 
 /datum/trait_state/promethean_biology/proc/became_still()
 	still = TRUE

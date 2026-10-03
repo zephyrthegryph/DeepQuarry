@@ -11,7 +11,7 @@
 // Description: Synths don't use languages properly, so this is a bandaid fix until that can be resolved..
 /obj/item/communicator/integrated/open_connection_to_ghost(user, candidate)
 	..(user, candidate)
-	om_after(src, 0.1 SECONDS, PROC_REF(set_ghost_voice_universal))
+	after(src, 0.1 SECONDS, PROC_REF(set_ghost_voice_universal))
 
 /obj/item/communicator/integrated/proc/set_ghost_voice_universal()
 	for(var/mob/living/voice/V in contents)

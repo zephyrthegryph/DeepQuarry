@@ -151,7 +151,7 @@ APPEARANCE_EMISSIVE(/obj/machinery/maint_vendor, "appearance_powered", list("1" 
 /obj/machinery/maint_vendor/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	om_after(src, duration, PROC_REF(reset_screen_state))
+	after(src, duration, PROC_REF(reset_screen_state))
 
 /obj/machinery/maint_vendor/proc/reset_screen_state()
 	if(!is_on)

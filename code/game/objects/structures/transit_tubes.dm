@@ -106,12 +106,12 @@
 /obj/structure/transit_tube/station/proc/open_animation()
 	if(icon_state == "closed")
 		icon_state = "opening"
-		om_after(src, OPEN_DURATION, PROC_REF(finish_animation), "opening", "open")
+		after(src, OPEN_DURATION, PROC_REF(finish_animation), with = list("opening", "open"))
 
 /obj/structure/transit_tube/station/proc/close_animation()
 	if(icon_state == "open")
 		icon_state = "closing"
-		om_after(src, CLOSE_DURATION, PROC_REF(finish_animation), "closing", "closed")
+		after(src, CLOSE_DURATION, PROC_REF(finish_animation), with = list("closing", "closed"))
 
 /obj/structure/transit_tube/station/proc/finish_animation(from_state, to_state)
 	if(icon_state == from_state)
@@ -120,14 +120,14 @@
 /obj/structure/transit_tube/station/proc/launch_pod()
 	for(var/obj/structure/transit_tube_pod/pod in turf_contents_of_type(loc, /obj/structure/transit_tube_pod))
 		if(!pod.moving && (pod.dir in directions()))
-			om_after(src, 5, PROC_REF(launch_close), pod)
+			after(src, 5, PROC_REF(launch_close), with = list(pod))
 			return
 
 /// Launching, step 1: close the station around the pod.
 /obj/structure/transit_tube/station/proc/launch_close(obj/structure/transit_tube_pod/pod)
 	pod_moving = 1
 	close_animation()
-	om_after(src, CLOSE_DURATION + 2, PROC_REF(launch_go), pod)
+	after(src, CLOSE_DURATION + 2, PROC_REF(launch_go), with = list(pod))
 
 /// Launching, step 2: send the pod on its way.
 /obj/structure/transit_tube/station/proc/launch_go(obj/structure/transit_tube_pod/pod)
@@ -159,18 +159,18 @@
 
 /obj/structure/transit_tube/station/pod_stopped(obj/structure/transit_tube_pod/pod, from_dir)
 	pod_moving = 1
-	om_after(src, 5, PROC_REF(arrival_open), pod)
+	after(src, 5, PROC_REF(arrival_open), with = list(pod))
 
 /// A pod arrived: open the station.
 /obj/structure/transit_tube/station/proc/arrival_open(obj/structure/transit_tube_pod/pod)
 	open_animation()
-	om_after(src, OPEN_DURATION + 2, PROC_REF(arrival_opened), pod)
+	after(src, OPEN_DURATION + 2, PROC_REF(arrival_opened), with = list(pod))
 
 /obj/structure/transit_tube/station/proc/arrival_opened(obj/structure/transit_tube_pod/pod)
 	pod_moving = 0
 	pod.mix_air()
 	if(automatic_launch_time)
-		om_after(src, automatic_launch_time, PROC_REF(automatic_launch))
+		after(src, automatic_launch_time, PROC_REF(automatic_launch))
 
 /// Relaunches the waiting pod, unless something moved it or closed the station meanwhile.
 /obj/structure/transit_tube/station/proc/automatic_launch()
@@ -387,7 +387,7 @@
 /obj/structure/transit_tube/proc/init_dirs()
 	if(icon_state == "auto")
 		// Additional delay, for map loading.
-		om_after(src, 1, PROC_REF(init_dirs_automatic))
+		after(src, 1, PROC_REF(init_dirs_automatic))
 
 	else
 		tube_dirs = parse_dirs(icon_state)

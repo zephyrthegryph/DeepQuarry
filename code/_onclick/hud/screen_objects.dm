@@ -1037,7 +1037,7 @@ DECLARE_DEFAULT_CHILD(/atom/movable/screen/movable/mapper_holder, "mapbutton", /
 			F.icon_state = "frame"
 			user.client.screen += F
 			flick("[hud_state_empty]_flash", F)
-			om_after(src, 2 SECONDS, PROC_REF(end_empty_flash), user, F, empty)
+			after(src, 2 SECONDS, PROC_REF(end_empty_flash), with = list(user, F, empty))
 	else
 		warned = FALSE
 		overlays += image('icons/mob/screen_ammo.dmi', src, "[hud_state]")

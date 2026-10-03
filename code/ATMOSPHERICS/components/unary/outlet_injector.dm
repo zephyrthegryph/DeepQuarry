@@ -153,10 +153,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/outlet_injector, "{appeara
 		volume_rate = between(0, number, air_contents.return_volume())
 
 	if(signal.data["status"])
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 
 /obj/machinery/atmospherics/unary/outlet_injector/hide(i)

@@ -158,10 +158,10 @@
 				for(var/obj/item/reagent_containers/food/snacks/snakesnack/S in oview(self,7))
 					if(isturf(S.loc) || ishuman(S.loc))
 						rel_set(self, nameof(self.movement_target), S)
-						om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "turns towards \the [self.movement_target] and slithers towards it.")
+						after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("turns towards \the [self.movement_target] and slithers towards it."))
 						break
 			if(self.movement_target)
-				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+				after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 /mob/living/simple_mob/animal/passive/snake/python/noodle/apply_melee_effects(atom/A)
 	if(ismouse(A))

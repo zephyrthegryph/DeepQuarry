@@ -188,7 +188,7 @@ DAMAGE_REACTION(/obj/structure/blob, DAMAGE_EMP, PROC_REF(blob_on_emp))
 		B.set_density(TRUE)
 		if(T.Enter(B,src)) //NOW we can attempt to move into the tile
 			// A decisecond later, so the slide animation works.
-			om_after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), T, src, expand_reaction)
+			after(B, 0.1 SECONDS, TYPE_PROC_REF(/obj/structure/blob, slide_into), with = list(T, src, expand_reaction))
 			return B
 
 		else

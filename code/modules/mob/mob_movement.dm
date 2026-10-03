@@ -354,8 +354,8 @@
 				// pass-through flags a tick later (preserves old spawn(0)/spawn(1) timing).
 				// grab_chain_step wraps the built-in Move() (no sleep; called directly).
 				M.grab_chain_step(pre_move_loc, get_dir(M, pre_move_loc), total_delay)
-				om_after(M, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
-				om_after(my_mob, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
+				after(M, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
+				after(my_mob, 1 DECISECONDS, TYPE_PROC_REF(/mob, clear_other_mobs))
 
 	// Update all the grabs!
 	for (var/obj/item/grab/G in my_mob)

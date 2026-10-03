@@ -108,7 +108,7 @@
 	if(unit_test_is_focused_run())
 		report_delay = 0
 	#endif
-	om_after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
+	after(src, report_delay + extra_delay, PROC_REF(standard_reboot))
 
 /datum/system/ticker/proc/standard_reboot()
 	if(ready_for_reboot)

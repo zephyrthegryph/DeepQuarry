@@ -110,7 +110,7 @@ DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 		D.fire()
 		charged = FALSE
 		update_icon()
-		om_after(src, charge_time, PROC_REF(Recharge))
+		after(src, charge_time, PROC_REF(Recharge))
 		return
 	if(proximity_flag && isliving(target))
 		detonate(target, user)

@@ -207,7 +207,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		om_after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/newscaster/tgui_status(mob/user)
 	if(!ispowered || (has_stat(BROKEN)))
@@ -710,7 +710,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 			O.show_message(span_newscaster("<EM>[name]</EM> beeps, \"[news_call]\""),2)
 		alert = 1
 		update_icon()
-		om_after(src, 30 SECONDS, PROC_REF(clear_alert))
+		after(src, 30 SECONDS, PROC_REF(clear_alert))
 // playsound(src.loc, 'sound/machines/twobeep.ogg', 75, 1) // less peeps pls
 	else
 		for(var/mob/O in hearers(world.view-1, T))

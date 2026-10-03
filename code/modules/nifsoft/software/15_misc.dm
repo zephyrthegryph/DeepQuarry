@@ -17,7 +17,7 @@
 			rel_set(src, nameof(apc), locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 		act_message(H, null, MSG_SELF(span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()].")), \
@@ -67,7 +67,7 @@
 	if((. = ..()))
 		if(used >= 1500)
 			nif().notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 /datum/nifsoft/heatsinks/stat_text()
@@ -134,7 +134,7 @@
 		var/datum/om/prompt/number/ask = om_ask(implant?.human, /datum/om/prompt/number, PROC_REF(size_chosen), message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1, subject = implant, optional = TRUE)
 		rel_set(src, nameof(size_prompt), ask)
 		// This is a pulse: the answer can outlive its original implanted owner.
-		om_after(src, 0, PROC_REF(deactivate))
+		after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/sizechange/proc/size_chosen(datum/om/prompt/number/ask)
 	if(ask != size_prompt)

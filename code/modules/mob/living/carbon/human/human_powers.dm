@@ -196,7 +196,7 @@
 
 	to_chat(src, span_notice("Performing self-diagnostic, please wait..."))
 
-	om_after(src, 5 SECONDS, PROC_REF(self_diagnostic_report))
+	after(src, 5 SECONDS, PROC_REF(self_diagnostic_report))
 
 /mob/living/carbon/human/proc/self_diagnostic_report()
 	var/output = span_filter_notice("Self-Diagnostic Results:\n")
@@ -396,7 +396,7 @@
 	if(stat == DEAD) return
 
 	to_chat(src, span_notice("Performing reagent purge, please wait..."))
-	om_after(src, 5 SECONDS, PROC_REF(reagent_purge_done))
+	after(src, 5 SECONDS, PROC_REF(reagent_purge_done))
 	return TRUE
 
 /mob/living/carbon/human/proc/reagent_purge_done()

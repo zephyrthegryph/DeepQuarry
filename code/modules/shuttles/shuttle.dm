@@ -160,12 +160,12 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), start_location, destination)
+	after(src, warmup_time*10, PROC_REF(short_jump_warmed_up), with = list(start_location, destination))
 
 /datum/shuttle/proc/short_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	make_sounds(HYPERSPACE_WARMUP)
 	create_warning_effect(destination)
-	om_after(src, 5 SECONDS, PROC_REF(short_jump_go), start_location, destination) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(short_jump_go), with = list(start_location, destination)) // so the sound finishes.
 
 /datum/shuttle/proc/short_jump_go(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination)
 	if(!post_warmup_checks())
@@ -203,12 +203,12 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	// TODO - Figure out exactly when to play sounds. Before warmup_time delay? Should there be a sleep for waiting for sounds? or no?
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), start_location, destination, interim, travel_time)
+	after(src, warmup_time*10, PROC_REF(long_jump_warmed_up), with = list(start_location, destination, interim, travel_time))
 
 /datum/shuttle/proc/long_jump_warmed_up(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
 	make_sounds(HYPERSPACE_WARMUP)
 	create_warning_effect(interim) // Really doubt someone is gonna get crushed in the interim area but for completeness's sake we'll make the warning.
-	om_after(src, 5 SECONDS, PROC_REF(long_jump_depart), start_location, destination, interim, travel_time) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(long_jump_depart), with = list(start_location, destination, interim, travel_time)) // so the sound finishes.
 
 /datum/shuttle/proc/long_jump_depart(obj/effect/shuttle_landmark/start_location, obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/interim, travel_time)
 	if(!post_warmup_checks())

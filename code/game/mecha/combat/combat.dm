@@ -73,7 +73,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 			src.visible_message("[src] pushes [T] out of the way.")
 
 		melee_can_hit = 0
-		om_after(src, melee_cooldown, PROC_REF(reset_melee))
+		after(src, melee_cooldown, PROC_REF(reset_melee))
 		return
 
 	else
@@ -92,7 +92,7 @@ TYPE_TABLE(/obj/mecha/combat, mecha_starting_components, list( \
 
 				melee_can_hit = 0
 
-				om_after(src, melee_cooldown, PROC_REF(reset_melee))
+				after(src, melee_cooldown, PROC_REF(reset_melee))
 	return
 
 /obj/mecha/combat/moved_inside(mob/living/carbon/human/H as mob)

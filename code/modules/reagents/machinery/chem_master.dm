@@ -451,7 +451,7 @@ UI_ACT_PROC(/obj/machinery/chem_master, ui_act_print)
 		P.info += span_bold("Description:") + " [R.description]"
 	P.info += "<br><br><b>Notes:</b><br>"
 	P.name = "Chemical Analysis - [R.name]"
-	om_after(src, 5 SECONDS, PROC_REF(printing_done))
+	after(src, 5 SECONDS, PROC_REF(printing_done))
 
 UI_ACT(/obj/machinery/chem_master, "add", ui_act_add, UI_ARG_NUM("amount"), UI_ARG_TEXT("id"))
 UI_ACT_PROC(/obj/machinery/chem_master, ui_act_add)

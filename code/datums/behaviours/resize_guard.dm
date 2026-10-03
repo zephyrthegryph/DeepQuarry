@@ -6,7 +6,7 @@
 	handles = list(/datum/om/event/moved)
 
 /datum/om/behaviour/resize_guard/on_moved(mob/living/L, datum/om/event/moved/event)
-	om_after(L, 0, TYPE_PROC_REF(/mob/living, resize_guard_check))
+	after(L, 0, TYPE_PROC_REF(/mob/living, resize_guard_check))
 
 /mob/living/proc/resize_guard_check()
 	if(!om_attached(src, /datum/om/behaviour/resize_guard))

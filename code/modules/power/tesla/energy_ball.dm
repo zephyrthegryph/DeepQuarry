@@ -82,7 +82,7 @@
 	if(left <= 0)
 		zap_after_move()
 	else if(moved)
-		om_after(src, 0.1 SECONDS, PROC_REF(basket_ball_step), left - 1, move_bias)
+		after(src, 0.1 SECONDS, PROC_REF(basket_ball_step), with = list(left - 1, move_bias))
 	else
 		basket_ball_step(left - 1, move_bias)
 
@@ -98,7 +98,7 @@
 		energy_to_raise = energy_to_raise * 1.25
 
 		play_sfx(src, SFX_EFFECTS_LIGHTNING_CHARGEUP)
-		om_after(src, 10 SECONDS, PROC_REF(new_mini_ball))
+		after(src, 10 SECONDS, PROC_REF(new_mini_ball))
 
 	else if(energy < energy_to_lower && length(orbiting_balls()))
 		energy_to_raise = energy_to_raise / 1.25

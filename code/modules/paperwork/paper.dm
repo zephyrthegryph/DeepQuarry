@@ -479,7 +479,7 @@ UI_ACT_PROC(/obj/item/paper, ui_act_write_end)
 			item = P)
 		play_sfx(src, SFX_BUREAUCRACY_PAPERBURN)
 
-		om_after(src, 2 SECONDS, PROC_REF(burn_through), user, P, class)
+		after(src, 2 SECONDS, PROC_REF(burn_through), with = list(user, P, class))
 
 
 /obj/item/paper/get_worn_icon_state(slot_name)

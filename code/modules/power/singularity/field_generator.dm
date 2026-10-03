@@ -200,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 
 /obj/machinery/field_generator/proc/turn_off()
 	set_active(0)
-	om_after(src, 1, PROC_REF(finish_turn_off))
+	after(src, 1, PROC_REF(finish_turn_off))
 	update_icon()
 
 /obj/machinery/field_generator/proc/finish_turn_off()
@@ -271,10 +271,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/field_generator, TYPE_PROC_REF(/atom, app
 	if(src.state != 2 || !anchored)
 		turn_off()
 		return
-	om_after(src, 1, PROC_REF(setup_field), 1)
-	om_after(src, 2, PROC_REF(setup_field), 2)
-	om_after(src, 3, PROC_REF(setup_field), 4)
-	om_after(src, 4, PROC_REF(setup_field), 8)
+	after(src, 1, PROC_REF(setup_field), with = list(1))
+	after(src, 2, PROC_REF(setup_field), with = list(2))
+	after(src, 3, PROC_REF(setup_field), with = list(4))
+	after(src, 4, PROC_REF(setup_field), with = list(8))
 	set_active(2)
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)

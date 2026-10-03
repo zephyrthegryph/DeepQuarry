@@ -248,7 +248,7 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 				to_chat(user, span_warning("\The [O] contains components unsuitable for cooking."))
 				return TRUE
 		// gotta let afterattack resolve
-		om_after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
+		after(src, 1 SECOND, TYPE_PROC_REF(/datum, update_static_data_for_all_viewers))
 		return TRUE
 	return FALSE
 

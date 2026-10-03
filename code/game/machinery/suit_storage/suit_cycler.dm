@@ -426,7 +426,7 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_repair_suit)
 	if(!suit || !can_repair)
 		return
 	set_active(1)
-	om_after(src, 10 SECONDS, PROC_REF(finish_repair), ui.user)
+	after(src, 10 SECONDS, PROC_REF(finish_repair), with = list(ui.user))
 	. = TRUE
 
 UI_ACT(/obj/machinery/suit_cycler, "apply_paintjob", ui_act_apply_paintjob)
@@ -434,7 +434,7 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_apply_paintjob)
 	if(!suit && !helmet)
 		return
 	set_active(1)
-	om_after(src, 10 SECONDS, PROC_REF(finish_paintjob), ui.user)
+	after(src, 10 SECONDS, PROC_REF(finish_paintjob), with = list(ui.user))
 	. = TRUE
 
 UI_ACT(/obj/machinery/suit_cycler, "lock", ui_act_lock)
@@ -460,7 +460,7 @@ UI_ACT_PROC(/obj/machinery/suit_cycler, ui_act_uv)
 
 	set_active(1)
 	set_irradiating(10)
-	om_after(src, 1 SECOND, PROC_REF(uv_wash))
+	after(src, 1 SECOND, PROC_REF(uv_wash))
 	. = TRUE
 
 /obj/machinery/suit_cycler/proc/uv_wash()

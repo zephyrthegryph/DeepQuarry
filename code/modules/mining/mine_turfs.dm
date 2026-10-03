@@ -258,7 +258,7 @@ DECLARE_APPEARANCE_PROC(/turf/simulated/mineral, TYPE_PROC_REF(/atom, appearance
 			GetDrilled()
 
 	if(severity <= 2) // Now to expose the ore lying under the sand.
-		om_after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
+		after(src, 1, PROC_REF(expose_ore)) // Otherwise most of the ore is lost to the explosion, which makes this rather moot.
 
 /// After a blast: the ore lying under the sand spills out.
 /turf/simulated/mineral/proc/expose_ore()

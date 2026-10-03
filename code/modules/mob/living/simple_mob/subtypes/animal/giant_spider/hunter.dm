@@ -60,7 +60,7 @@
 	ai_busy_begin()
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(hunter_leap), A) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(hunter_leap), with = list(A)) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_leap(atom/A)
 
@@ -70,7 +70,7 @@
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(hunter_land)) // For the throw to complete.
+	after(src, 5, PROC_REF(hunter_land)) // For the throw to complete.
 
 /mob/living/simple_mob/animal/giant_spider/hunter/proc/hunter_land()
 

@@ -169,7 +169,7 @@
 	ai_busy_begin()
 	// Telegraph, since getting bitten suddenly feels bad.
 	do_windup_animation(A, warning_warmup)
-	om_after(src, warning_warmup, PROC_REF(warning_leap), A) // For the telegraphing.
+	after(src, warning_warmup, PROC_REF(warning_leap), with = list(A)) // For the telegraphing.
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_leap(mob/living/A)
 	// Do the actual leap.
@@ -178,7 +178,7 @@
 	throw_at(get_step(get_turf(A), get_turf(src)), 4, 1, src)
 	playsound(src, warning_sound, 75, 1)
 
-	om_after(src, 0.5 SECONDS, PROC_REF(warning_finish), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 0.5 SECONDS, PROC_REF(warning_finish), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/animal/giant_spider/proc/warning_finish(mob/living/A)
 	if(status_flags & LEAPING)

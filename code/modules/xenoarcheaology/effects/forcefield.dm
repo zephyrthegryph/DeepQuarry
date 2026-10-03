@@ -27,7 +27,7 @@
 			E.set_density(TRUE)
 			E.set_anchored(TRUE)
 			E.invisibility = INVISIBILITY_NONE
-		om_after(src, 1 SECOND, PROC_REF(UpdateMove))
+		after(src, 1 SECOND, PROC_REF(UpdateMove))
 	return 1
 
 /datum/artifact_effect/forcefield/periodic_step()

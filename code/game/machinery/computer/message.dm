@@ -49,7 +49,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/message_monitor, PROC_REF(on_ema
 			MK.forceMove(loc)
 			// Will help make emagging the console not so easy to get away with.
 			MK.info += "<br><br>" + span_red("£%@%(*$%&(£&?*(%&£/{}")
-			om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
+			after(src, 100*length(linkedServer().decryptkey), PROC_REF(UnmagConsole))
 			temp = rebootmsg
 			update_icon()
 			return 1
@@ -221,7 +221,7 @@ UI_ACT_PROC(/obj/machinery/computer/message_monitor, ui_act_hack)
 		hacking = 1
 		update_icon()
 		//Time it takes to bruteforce is dependant on the password length.
-		om_after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), ui.user)
+		after(src, 100*length(linkedServer().decryptkey), PROC_REF(brute_force_done), with = list(ui.user))
 
 //Turn the server on/off.
 

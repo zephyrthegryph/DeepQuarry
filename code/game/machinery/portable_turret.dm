@@ -516,7 +516,7 @@ UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
 	if(powered())
 		set_powered(TRUE)
 	else
-		om_after(src, rand(0, 15), PROC_REF(power_off_delayed))
+		after(src, rand(0, 15), PROC_REF(power_off_delayed))
 
 /obj/machinery/porta_turret/proc/power_off_delayed()
 	set_powered(FALSE)
@@ -609,7 +609,7 @@ UI_ACT_PROC(/obj/machinery/porta_turret, ui_act_authdown)
 	if(!operable())
 		return
 	attacked = TRUE
-	om_after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
+	after(src, TURRET_RETALIATION_TIME, PROC_REF(retaliate_end))
 	play_sfx(src, SFX_MACHINES_TERMINAL_ALERT)
 
 /// om_after() target: back on after an emag's grace period.
@@ -652,7 +652,7 @@ DECLARE_EMAG(/obj/machinery/porta_turret, PROC_REF(on_emag), null, null)
 	controllock = TRUE
 	enabled = FALSE //turns off the turret temporarily
 	// 6 seconds for the traitor to gtfo of the area before the turret decides to ruin his shit.
-	om_after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
+	after(src, 6 SECONDS, PROC_REF(emag_reenable)) // Turns it back on. The cover popUp() popDown() are automatically called in process(), no need to define it here
 	return 1
 
 // While the cover is closed the turret is heavily armored: incoming damage is
@@ -699,7 +699,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 			set_emagged(TRUE)
 
 		enabled=0
-		om_after(src, rand(60, 600), PROC_REF(emp_reenable))
+		after(src, rand(60, 600), PROC_REF(emp_reenable))
 
 /obj/machinery/porta_turret/proc/emp_reenable()
 	if(!enabled)
@@ -711,7 +711,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	if(prob(75)) // Superior alien technology, I guess.
 		return
 	enabled = FALSE
-	om_after(src, rand(1 MINUTE, 2 MINUTES), PROC_REF(emp_reenable))
+	after(src, rand(1 MINUTE, 2 MINUTES), PROC_REF(emp_reenable))
 
 /obj/machinery/porta_turret/proc/die()	//called when the turret dies, ie, integrity <= 0
 	atom_break()
@@ -891,7 +891,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	flick_holder.layer = layer + 0.1
 	flick("popup_[turret_type]", flick_holder)
 	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_DEPLOY)
-	om_after(src, 1 SECOND, PROC_REF(popup_finish), flick_holder)
+	after(src, 1 SECOND, PROC_REF(popup_finish), with = list(flick_holder))
 
 /obj/machinery/porta_turret/proc/popup_finish(flick_holder)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -924,7 +924,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	flick_holder.layer = layer + 0.1
 	flick("popdown_[turret_type]", flick_holder)
 	play_sfx(src, SFX_MACHINES_TURRETS_TURRET_RETRACT)
-	om_after(src, 1 SECOND, PROC_REF(popdown_finish), flick_holder)
+	after(src, 1 SECOND, PROC_REF(popdown_finish), with = list(flick_holder))
 
 /obj/machinery/porta_turret/proc/popdown_finish(flick_holder)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -967,7 +967,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	if(last_fired || !raised)
 		return
 	last_fired = TRUE
-	om_after(src, current_delay, PROC_REF(shot_reload))
+	after(src, current_delay, PROC_REF(shot_reload))
 
 	if(!isturf(get_turf(src)) || !isturf(get_turf(target)))
 		return

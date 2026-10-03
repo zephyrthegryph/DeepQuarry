@@ -31,43 +31,43 @@ DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 		if(ST.type == base_turf)
 			continue
 		ST.ChangeTurf(base_turf)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_1))
+	after(src, 0.6 SECONDS, PROC_REF(pull_1))
 
 /obj/effect/bhole/proc/pull_1()
 	grav(10, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_2))
+	after(src, 0.6 SECONDS, PROC_REF(pull_2))
 
 /obj/effect/bhole/proc/pull_2()
 	grav(8, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_3))
+	after(src, 0.6 SECONDS, PROC_REF(pull_3))
 
 /obj/effect/bhole/proc/pull_3()
 	grav(9, 4, 10, 0)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_4))
+	after(src, 0.6 SECONDS, PROC_REF(pull_4))
 
 /obj/effect/bhole/proc/pull_4()
 	grav(7, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_5))
+	after(src, 0.6 SECONDS, PROC_REF(pull_5))
 
 /obj/effect/bhole/proc/pull_5()
 	grav(5, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_6))
+	after(src, 0.6 SECONDS, PROC_REF(pull_6))
 
 /obj/effect/bhole/proc/pull_6()
 	grav(6, 3, 40, 1)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_7))
+	after(src, 0.6 SECONDS, PROC_REF(pull_7))
 
 /obj/effect/bhole/proc/pull_7()
 	grav(4, 2, 50, 6)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_8))
+	after(src, 0.6 SECONDS, PROC_REF(pull_8))
 
 /obj/effect/bhole/proc/pull_8()
 	grav(3, 2, 50, 6)
-	om_after(src, 0.6 SECONDS, PROC_REF(pull_9))
+	after(src, 0.6 SECONDS, PROC_REF(pull_9))
 
 /obj/effect/bhole/proc/pull_9()
 	grav(2, 2, 75,25)
-	om_after(src, 0.6 SECONDS, PROC_REF(move))
+	after(src, 0.6 SECONDS, PROC_REF(move))
 
 /obj/effect/bhole/proc/move()
 	//MOVEMENT

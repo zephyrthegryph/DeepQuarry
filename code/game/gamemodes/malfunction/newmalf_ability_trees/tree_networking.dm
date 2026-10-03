@@ -67,9 +67,9 @@
 
 	user.hacking = 1
 	to_chat(user, "Beginning APC system override...")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), user, "APC hack completed. Uploading modified operation software..")
-	om_after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), user, "Restarting APC to apply changes..")
-	om_after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), user, REF(A))
+	after(user, 30 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "APC hack completed. Uploading modified operation software.."))
+	after(user, 50 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(user, "Restarting APC to apply changes.."))
+	after(user, 60 SECONDS, GLOBAL_PROC_REF(malf_apc_hack_done), with = list(user, REF(A)))
 
 /proc/malf_apc_hack_done(mob/living/silicon/ai/user, apc_ref)
 	var/obj/machinery/power/apc/A = locate(apc_ref)
@@ -174,7 +174,7 @@
 	if(duration > 3000)								// Two types of announcements. Short hacks trigger immediate warnings. Long hacks are more "progressive".
 		// Network monitoring closes in over the hack, on the AI's clock.
 		for(var/stage in 1 to 4)
-			om_after(user, stage * duration / 5, TYPE_PROC_REF(/mob/living/silicon/ai, network_trace_announce), stage)
+			after(user, stage * duration / 5, TYPE_PROC_REF(/mob/living/silicon/ai, network_trace_announce), with = list(stage))
 	else
 		GLOB.command_announcement.Announce("We have detected a strong brute-force attack on your firewall which seems to be originating from your AI system. It already controls almost the whole network, and the only thing that's preventing it from accessing the self-destruct is this firewall. You don't have much time before it succeeds.", "Network Monitoring")
 	to_chat(user, "## BEGINNING SYSTEM OVERRIDE.")
@@ -182,7 +182,7 @@
 	user.hacking = 1
 	user.system_override = 1
 	// Now actually begin the hack. Each APC takes 10 seconds.
-	om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, shuffle(remaining_apcs))
+	after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), with = list(user, shuffle(remaining_apcs)))
 
 /// Overrides the next APC every 10 seconds; the firewall falls 30 seconds after the last.
 /proc/malf_override_next_apc(mob/living/silicon/ai/user, list/remaining_apcs)
@@ -196,10 +196,10 @@
 			if(A.hacker == user)
 				to_chat(user, "## OVERRIDDEN: [A.name]")
 		if(length(remaining_apcs))
-			om_after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), user, remaining_apcs)
+			after(user, 10 SECONDS, GLOBAL_PROC_REF(malf_override_next_apc), with = list(user, remaining_apcs))
 			return
 	to_chat(user, "## REACHABLE APC SYSTEMS OVERTAKEN. BYPASSING PRIMARY FIREWALL.")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), user)
+	after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_override_finish), with = list(user))
 
 /proc/malf_override_finish(mob/living/silicon/ai/user)
 	// Hack all APCs, including those built during hack sequence.

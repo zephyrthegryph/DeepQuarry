@@ -5,7 +5,7 @@
 /datum/cinematic/malf/play_cinematic()
 	flick("intro_malf", screen)
 	// The intro runs its course, then the blast (om_after(), no sleep: S10b).
-	om_after(src, intro_time, PROC_REF(play_malf_blast))
+	after(src, intro_time, PROC_REF(play_malf_blast))
 
 /// The second half of the doomsday cinematic, after the intro animation.
 /datum/cinematic/malf/proc/play_malf_blast()

@@ -129,7 +129,7 @@ DECLARE_REAGENTS_TYPED(/obj/machinery/portable_atmospherics/powered/reagent_dist
 		visible_message(span_infoplain(span_bold("\The [src]") + " rattles to life."))
 		reagents.handle_reactions()
 	else
-		om_after(user, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), span_notice("Nothing happens.."))
+		after(user, 1 SECOND, TYPE_PROC_REF(/datum, om_chat), with = list(span_notice("Nothing happens..")))
 
 /obj/machinery/portable_atmospherics/powered/reagent_distillery/declare_interactions(list/into)
 	into += list(

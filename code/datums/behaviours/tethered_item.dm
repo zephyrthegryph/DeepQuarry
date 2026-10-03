@@ -18,7 +18,7 @@
 /datum/om/relation/tethered_to/on_unlink(obj/item/handheld, obj/item/host, datum/om/edge/edge)
 	if(QDELETED(host) || !host.tether_path)
 		return
-	om_after(host, 0, TYPE_PROC_REF(/obj/item, tether_remake_handheld))
+	after(host, 0, TYPE_PROC_REF(/obj/item, tether_remake_handheld))
 
 /obj/item
 	/// Path of the tethered handheld this host makes, or null (not a tether host).

@@ -52,7 +52,7 @@
 		//Cosmetics mostly
 		flick("phasein",src)
 		automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-		om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, FALSE) //The duration of the TP animation
+		after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, FALSE)) //The duration of the TP animation
 
 
 	//Shifting out
@@ -69,7 +69,7 @@
 
 		cut_overlays()
 		flick("phaseout",src)
-		om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
+		after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
 
 /mob/living/simple_mob/vore/demon/verb/demonic_phase_shift()
 	set name = "Phase Shift"
@@ -116,8 +116,8 @@
 
 	cut_overlays()
 	flick("phaseout",src)
-	om_after(src, 3 SECONDS, PROC_REF(demon_phased_out), original_canmove)
-	om_after(src, 33 SECONDS, PROC_REF(demon_shift_return))
+	after(src, 3 SECONDS, PROC_REF(demon_phased_out), with = list(original_canmove))
+	after(src, 33 SECONDS, PROC_REF(demon_shift_return))
 
 /// The temporary phase shift runs out: back into reality.
 /mob/living/simple_mob/vore/demon/proc/demon_shift_return()
@@ -140,7 +140,7 @@
 	//Cosmetics mostly
 	flick("phasein",src)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-	om_after(src, 3 SECONDS, PROC_REF(demon_phased_in), original_canmove, TRUE) //The duration of the TP animation
+	after(src, 3 SECONDS, PROC_REF(demon_phased_in), with = list(original_canmove, TRUE)) //The duration of the TP animation
 
 /mob/living/simple_mob/vore/demon/proc/demon_phased_out(original_canmove)
 	invisibility = INVISIBILITY_LEVEL_TWO
@@ -154,7 +154,7 @@
 	set_density(FALSE)
 	force_max_speed = TRUE
 
-	om_after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
+	after(src, 30 SECONDS, PROC_REF(phase_shift_wears_off))
 /// Phase-in animation done: maybe grab someone on arrival.
 /mob/living/simple_mob/vore/demon/proc/demon_phased_in(original_canmove, from_temporary)
 	set_is_shifting(FALSE)
@@ -327,7 +327,7 @@
 	//Cosmetics mostly
 	flick("phasein",src)
 	automatic_custom_emote(VISIBLE_MESSAGE,"phases in!")
-	om_after(src, 3 SECONDS, PROC_REF(phase_in_lands), original_canmove) //The duration of the TP animation
+	after(src, 3 SECONDS, PROC_REF(phase_in_lands), with = list(original_canmove)) //The duration of the TP animation
 
 /// The end of the phase-in animation.
 /mob/living/simple_mob/vore/demon/proc/phase_in_lands(original_canmove)

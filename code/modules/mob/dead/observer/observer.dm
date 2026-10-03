@@ -1054,7 +1054,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		PP.cut_overlays()
 		PP.add_overlay("pai-ghostalert")
 		PP.alertUpdate()
-		om_after(PP, 1 MINUTE, TYPE_PROC_REF(/obj/item/paicard, clear_invite_overlay))
+		after(PP, 1 MINUTE, TYPE_PROC_REF(/obj/item/paicard, clear_invite_overlay))
 	return count
 
 /mob/observer/dead/speech_bubble_appearance()

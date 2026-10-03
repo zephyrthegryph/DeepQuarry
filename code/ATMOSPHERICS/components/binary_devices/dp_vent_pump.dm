@@ -251,10 +251,10 @@ TRACKED_BRIDGED(/obj/machinery/atmospherics/binary/dp_vent_pump, pressure_checks
 		set_external_pressure_bound(between(0, text2num(signal.data["set_external_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 
 #undef EXTERNAL_PRESSURE_BOUND

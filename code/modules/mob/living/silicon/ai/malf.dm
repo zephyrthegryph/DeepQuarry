@@ -21,7 +21,7 @@
 /mob/living/silicon/ai/proc/stop_malf()
 	// Generic variables
 	malfunctioning = 0
-	om_after(src, 1 SECOND, PROC_REF(stop_malf_finish))
+	after(src, 1 SECOND, PROC_REF(stop_malf_finish))
 
 /mob/living/silicon/ai/proc/stop_malf_finish()
 	var/mob/living/silicon/ai/user = src

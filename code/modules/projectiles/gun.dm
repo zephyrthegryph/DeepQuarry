@@ -217,7 +217,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 					to_chat(M, span_danger("\The [src] hisses in dissapointment."))
 					visible_message(span_game(span_say(span_name("\The [src]") + " announces, \"Self-destruct occurring in ten seconds.\"")), span_game(span_say(span_name("\The [src]") + " announces, \"Self-destruct occurring in ten seconds.\"")))
 					attached_lock.exploding = 1
-					om_after(src, 10 SECONDS, PROC_REF(lock_explosion))
+					after(src, 10 SECONDS, PROC_REF(lock_explosion))
 					return FALSE
 	if(M.has_mutation(HULK))
 		to_chat(M, span_danger("Your fingers are much too large for the trigger guard!"))
@@ -480,16 +480,16 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 				pointblank = 0
 
 			if(ticker < burst)
-				om_after(src, burst_delay, PROC_REF(handle_gunfire), target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance)
+				after(src, burst_delay, PROC_REF(handle_gunfire), with = list(target, user, clickparams, pointblank, reflex, ++ticker, TRUE, stance))
 				return
 
 			if(ticker == burst)
 				COOLDOWN_START(src, next_fire_time, fire_delay)
 				if(muzzle_flash)
 					if(gun_light)
-						om_after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), light_brightness)
+						after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), with = list(light_brightness))
 					else
-						om_after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), 0)
+						after(src, burst_delay, TYPE_PROC_REF(/atom, set_light), with = list(0))
 
 // Similar to the above proc, but does not require a user, which is ideal for things like turrets.
 /obj/item/gun/proc/Fire_userless(atom/target)
@@ -554,7 +554,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 			if(ticker < burst)
 				// Bug fix: was incorrectly calling handle_gunfire (which requires a user arg);
 				// userless firing loop must recurse into handle_userless_gunfire.
-				om_after(src, burst_delay, PROC_REF(handle_userless_gunfire), target, ++ticker, TRUE)
+				after(src, burst_delay, PROC_REF(handle_userless_gunfire), with = list(target, ++ticker, TRUE))
 
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 

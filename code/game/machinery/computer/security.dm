@@ -406,7 +406,7 @@ UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_print_p)
 	if(!printing)
 		printing = TRUE
 		SStgui.update_uis(src)
-		om_after(src, 5 SECONDS, PROC_REF(print_finish))
+		after(src, 5 SECONDS, PROC_REF(print_finish))
 
 UI_ACT(/obj/machinery/computer/secure_data, "photo_front", ui_act_photo_front)
 UI_ACT_PROC(/obj/machinery/computer/secure_data, ui_act_photo_front)

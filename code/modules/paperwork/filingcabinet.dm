@@ -126,7 +126,7 @@ UI_ACT_PROC(/obj/structure/filingcabinet, ui_act_remove_object)
 /obj/structure/filingcabinet/proc/open_animation()
 	flick("[initial(icon_state)]-open",src)
 	play_sfx(src, SFX_BUREAUCRACY_FILINGCABINET)
-	om_after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), initial(icon_state))
+	after(src, 2 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /*
  * Security Record Cabinets

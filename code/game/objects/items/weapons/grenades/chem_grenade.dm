@@ -174,7 +174,7 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	if(!has_reagents)
 		icon_state = initial(icon_state) +"_locked"
 		play_sfx(src, SFX_ITEMS_SCREWDRIVER2, 2)
-		om_after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
+		after(src, 0, PROC_REF(sync_det_time)) //Otherwise det_time is erroneously set to 0 after this
 		return
 
 	play_sfx(src, SFX_EFFECTS_BAMF, volume = 50)

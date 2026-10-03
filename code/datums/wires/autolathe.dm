@@ -43,13 +43,13 @@
 		if(WIRE_LATHE_HACK)
 			A.hacked = !A.hacked
 			A.update_tgui_static_data(user)
-			om_after(src, 5 SECONDS, PROC_REF(reset_hacked), WIRE_LATHE_HACK, user)
+			after(src, 5 SECONDS, PROC_REF(reset_hacked), with = list(WIRE_LATHE_HACK, user))
 		if(WIRE_ELECTRIFY)
 			A.shocked = !A.shocked
-			om_after(src, 5 SECONDS, PROC_REF(reset_electrify), WIRE_ELECTRIFY)
+			after(src, 5 SECONDS, PROC_REF(reset_electrify), with = list(WIRE_ELECTRIFY))
 		if(WIRE_LATHE_DISABLE)
 			A.disabled = !A.disabled
-			om_after(src, 5 SECONDS, PROC_REF(reset_disable), WIRE_LATHE_DISABLE)
+			after(src, 5 SECONDS, PROC_REF(reset_disable), with = list(WIRE_LATHE_DISABLE))
 	..()
 
 /datum/wires/autolathe/proc/reset_hacked(wire, mob/user)

@@ -23,9 +23,9 @@
 	metal = ismetal
 	play_sfx(src, SFX_EFFECTS_BUBBLES2)
 	if(dries)
-		om_after(src, 3 + metal * 3, PROC_REF(post_spread))
-		om_after(src, 12 SECONDS, PROC_REF(pre_harden))
-		om_after(src, 15 SECONDS, PROC_REF(harden))
+		after(src, 3 + metal * 3, PROC_REF(post_spread))
+		after(src, 12 SECONDS, PROC_REF(pre_harden))
+		after(src, 15 SECONDS, PROC_REF(harden))
 
 /obj/effect/effect/foam/proc/post_spread()
 	periodic_step()
@@ -201,7 +201,7 @@ DECLARE_INTERACTIONS(/obj/structure/foamedmetal, \
 
 /obj/effect/effect/foam/firefighting/Initialize(mapload)
 	. = ..()
-	om_after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
+	after(src, (lifetime + 1) * 2 SECONDS, PROC_REF(dissolve)) // the old lifetime: one per 2 s step
 
 /obj/effect/effect/foam/firefighting/proc/dissolve()
 	flick("[icon_state]-disolve", src)

@@ -34,7 +34,7 @@
 
 	to_chat(user, "***** CORE SELF-DESTRUCT SEQUENCE ACTIVATED *****")
 	to_chat(user, "Use command again to cancel self-destruct. Destroying in 15 seconds.")
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, 14)
+	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), with = list(user, 14))
 
 /// The core bomb's countdown, once a second; it goes off at zero unless cancelled.
 /proc/malf_core_bomb_tick(mob/living/silicon/ai/user, timer)
@@ -42,7 +42,7 @@
 		return
 	to_chat(user, "** [timer] **")
 	if(timer > 0)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), user, timer - 1)
+		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_core_bomb_tick), with = list(user, timer - 1))
 		return
 	explosion(user.loc, 3,6,12,24)
 	qdel(user)
@@ -97,7 +97,7 @@
 	set_security_level("delta")
 	radio.autosay("Self destruct sequence has been activated. Self-destructing in 120 seconds.", "Self-Destruct Control")
 
-	om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, 120)
+	after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, 120))
 
 /// The station self-destruct countdown, once a second.
 /proc/malf_station_bomb_tick(mob/living/silicon/ai/user, obj/item/radio/radio, timer)
@@ -109,14 +109,14 @@
 	if(timer == 1)
 		radio.autosay("Self destructing now. Have a nice day.", "Self-Destruct Control")
 	if(timer > 1)
-		om_after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), user, radio, timer - 1)
+		after(user, 1 SECOND, GLOBAL_PROC_REF(malf_station_bomb_tick), with = list(user, radio, timer - 1))
 		return
 
 	if(SSticker)
 		var/datum/cinematic/malf/malf_type = /datum/cinematic/malf
 		play_cinematic(malf_type)
 		// The station dies at the blast, once the intro has played (it slept through it before S10b).
-		om_after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
+		after(null, initial(malf_type.intro_time), GLOBAL_PROC_REF(malf_station_blast))
 
 /// The doomsday blast, after its cinematic's intro: kills the station.
 /proc/malf_station_blast()

@@ -158,7 +158,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(lunge_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(lunge_1), with = list(L)) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge_1(mob/living/L)
@@ -173,7 +173,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(lunge_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 5, PROC_REF(lunge_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/ddraig/proc/lunge_2(mob/living/L)
 
@@ -191,7 +191,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% opens its maw, emitting flames!")))
 	do_windup_animation(A, charge_warmup)
-	after_slot(src, "firebreathtimer", charge_warmup, PROC_REF(firebreathend), A)
+	after(src, charge_warmup, PROC_REF(firebreathend), key = "firebreathtimer", with = list(A))
 	playsound(src, "sound/magic/Fireball.ogg", 50, 1)
 
 /mob/living/simple_mob/vore/ddraig/proc/firebreathend(atom/A)
@@ -213,7 +213,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	ai_busy_begin()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to shimmer with a rainbow hue!")))
 	do_windup_animation(A, tf_warmup)
-	om_after(src, tf_warmup, PROC_REF(tfbeam_1), A)
+	after(src, tf_warmup, PROC_REF(tfbeam_1), with = list(A))
 
 
 /mob/living/simple_mob/vore/ddraig/proc/tfbeam_1(atom/A)
@@ -247,7 +247,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 
 		M.tf_into(new_mob)
 
-		om_after(new_mob, 30 SECONDS, TYPE_PROC_REF(/mob/living, revert_mob_tf))
+		after(new_mob, 30 SECONDS, TYPE_PROC_REF(/mob/living, revert_mob_tf))
 
 /obj/item/projectile/beam/mouselaser/ddraig/spawn_mob(mob/living/target)
 	var/list/tf_list = list(/mob/living/simple_mob/animal/passive/mouse,
@@ -353,7 +353,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/ddraig, /mob/living/proc/glamour_
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	om_after(src, 1 SECOND, PROC_REF(finish_polymorph), coolanimation, chosen_beast, beast_options[chosen_beast])
+	after(src, 1 SECOND, PROC_REF(finish_polymorph), with = list(coolanimation, chosen_beast, beast_options[chosen_beast]))
 
 /mob/living/proc/polymorph_living_failed(datum/om/task/timed/living_polymorph_living/task)
 	act_message(src, null, null, MSG_OTHERS("<b>%U%</b> ceases shifting their form."))
