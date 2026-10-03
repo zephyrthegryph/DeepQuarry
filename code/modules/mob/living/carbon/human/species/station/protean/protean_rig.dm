@@ -714,38 +714,43 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 		to_chat(user, "[src] has not assimilated a RIG. Use one on it to assimilate.")
 
 /obj/item/rig/protean/MouseDrop(obj/over_object as obj)
+	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native protean cluster drag supplies its actor before unchanged conditional parent inventory routing.
+		return ..()
+
+/obj/item/rig/protean/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(get_dormancy()) //We adjust our unremovable upon being attempted to be moved via checking if we are dead or not.
 		unremovable = FALSE
 	else
 		unremovable = TRUE
 
 	if(unremovable)
-		return
+		return TRUE
 
-	if (isliving(usr) || isobserver(usr))
+	if (isliving(user) || isobserver(user))
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.unEquip(src)
-				usr.put_in_r_hand(src)
+				user.unEquip(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.unEquip(src)
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.unEquip(src)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
-// Destroy() reads both before letting go (the core spills out, soaking stops).
+// Teardown reads both before letting go (the core spills out, soaking stops).

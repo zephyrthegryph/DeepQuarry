@@ -324,16 +324,6 @@ usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/A
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if (isliving(usr) || isobserver(usr))
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	usr.unEquip(src)
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	usr.unEquip(src)
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_rig.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/teshari.dm	if(holder_type && istype(M) && Adjacent(M) && (usr == M || usr == DraggedH) && DraggedH != M && !M.incapacitated() && DraggedH.pickup_pref && (M != usr || (M == usr && M.pickup_active)) && (!DraggedH.combat_mode && !M.combat_mode))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/teshari.dm	get_scooped(M, (usr == DraggedH))
 usr_outside_verb	code/modules/mob/living/inventory.dm	if(istype(L) && L != src && L == usr && Adjacent(L))
