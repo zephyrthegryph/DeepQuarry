@@ -81,20 +81,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/stool, TYPE_PROC_REF(/atom, appearance_overlay
 		user.drop_from_inventory(src)
 
 		user.remove_from_mob(src)
-		dismantle()
-		consume(src, user)
+		dismantle(user)
 		var/mob/living/T = M
 		T.status_at_least(EFFECT_WEAKENED, 10)
 		T.injure(INJURY_BLUNT, 20, null, src)
 		return ITEM_INTERACT_SUCCESS
 	..()
 
-/obj/item/stool/proc/dismantle()
-	if(material)
-		material.place_sheet(get_turf(src), 1)
-	if(padding_material)
-		padding_material.place_sheet(get_turf(src), 1)
-	qdel(src)
+/obj/item/stool/proc/dismantle(mob/user)
+	var/turf/T = get_turf(src)
+	var/datum/material/frame_material = material
+	var/datum/material/cover_material = padding_material
+	if(!consume(src, user))
+		return FALSE
+	if(frame_material)
+		frame_material.place_sheet(T, 1)
+	if(cover_material)
+		cover_material.place_sheet(T, 1)
+	return TRUE
 
 DECLARE_INTERACTIONS(/obj/item/stool, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -134,9 +138,7 @@ DECLARE_INTERACTIONS(/obj/item/stool, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 /obj/item/stool/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
-	dismantle()
-	qdel(src)
-	return TRUE
+	return dismantle(user)
 
 /obj/item/stool/wirecutter_act(mob/user, obj/item/W)
 	if(!padding_material)

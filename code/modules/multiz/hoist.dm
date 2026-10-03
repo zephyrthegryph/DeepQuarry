@@ -66,17 +66,20 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 /obj/effect/hoist_hook/MouseDrop(atom/dest)
 	..()
-	if(!Adjacent(usr) || !dest.Adjacent(usr)) return // carried over from the default proc
+	detach_with_actor(usr, dest) // ALLOW(sys_usr_outside_verb): native hoist drag supplies its initiating actor after the unchanged parent drag router
 
-	if (!(ishuman(usr) || issilicon(usr)))
+/obj/effect/hoist_hook/proc/detach_with_actor(mob/user, atom/dest)
+	if(!Adjacent(user) || !dest.Adjacent(user)) return // carried over from the default proc
+
+	if (!(ishuman(user) || issilicon(user)))
 		return
 
-	if (usr.incapacitated())
-		to_chat(usr, span_notice("You can't do that while incapacitated."))
+	if (user.incapacitated())
+		to_chat(user, span_notice("You can't do that while incapacitated."))
 		return
 
-	if (!usr.IsAdvancedToolUser())
-		to_chat(usr, span_notice("You stare cluelessly at \the [src]."))
+	if (!user.IsAdvancedToolUser())
+		to_chat(user, span_notice("You stare cluelessly at \the [src]."))
 		return
 
 	if (!source_hoist().hoistee())
@@ -90,7 +93,7 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 
 	var/turf/desturf = dest
 	source_hoist().hoistee().forceMove(desturf)
-	act_message(usr, null, MSG_SELF(span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp.")), \
+	act_message(user, null, MSG_SELF(span_danger("You detach \the [source_hoist().hoistee()] from the hoist clamp.")), \
 		MSG_OTHERS(span_danger("%U% detaches \the [source_hoist().hoistee()] from the hoist clamp.")), \
 		MSG_BLIND(span_danger("You hear something unclamp.")))
 	source_hoist().release_hoistee()

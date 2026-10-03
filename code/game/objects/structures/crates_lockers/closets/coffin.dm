@@ -156,7 +156,7 @@
 	if(LAZYLEN(contents) || has_latent())
 		alpha = 40	// If we've got stuff inside, like maybe a person, just make it hard to see us
 	else
-		qdel(src)	// Else, go away
+		consume(src, user)	// Else, go away
 	return
 
 /obj/structure/closet/grave/proc/attackby_tool_failed2(mob/user)

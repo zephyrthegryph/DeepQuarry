@@ -21,8 +21,11 @@
 
 
 /obj/item/paper_bin/MouseDrop(mob/user)
-	if(user == usr && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
-		if(!isanimal(user))
+	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native paper-supply drag captures its initiating actor separately from the destination mob.
+
+/obj/item/paper_bin/proc/pickup_with_actor(mob/user, mob/destination)
+	if(user && user == destination && !(user.restrained() || user.stat) && (user.contents.Find(src) || in_range(src, user)))
+		if(ishuman(user))
 			if( !user.get_active_hand() )		//if active hand is empty
 				var/mob/living/carbon/human/H = user
 				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]
@@ -97,8 +100,8 @@ DECLARE_INTERACTIONS(/obj/item/paper_bin, \
 	if(!istype(i))
 		return INTERACTION_HANDLED_PASS
 
-	user.drop_item()
-	i.forceMove(src)
+	if(!own_bring_in(src, nameof(papers), i, null, user, TRUE, null, FALSE))
+		return INTERACTION_HANDLED_PASS
 	to_chat(user, span_notice("You put [i] in [src]."))
 	rel_add(src, nameof(papers), i)
 	update_icon()

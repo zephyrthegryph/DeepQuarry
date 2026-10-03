@@ -83,4 +83,4 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 	rel_set(P, nameof(P.destination), fax)
 	rel_set(P, nameof(P.sender), sender)
 
-	P.adminbrowse()
+	P.adminbrowse(user)

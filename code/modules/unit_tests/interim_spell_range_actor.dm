@@ -44,3 +44,68 @@
 	TEST_ASSERT_EQUAL(spell.before_actor_ref, REF(user), "perform_cast passes the caster to the real range wrapper")
 	TEST_ASSERT_EQUAL(spell.cast_actor_ref, REF(user), "the same caster reaches the spell effect")
 	TEST_ASSERT_EQUAL(spell.cast_target_count, 2, "actor plumbing preserves the existing unfiltered effect target list")
+
+/// Proximity selection excludes the supplied caster until INCLUDEUSER is enabled.
+/datum/unit_test/interim_spell_proximity_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/caster = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, T)
+	var/obj/item/pen/origin = allocate(/obj/item/pen, T)
+	var/datum/spell/targeted/projectile/spell = allocate(/datum/spell/targeted/projectile)
+	spell.cast_prox_range = 0
+	spell.spell_flags = NONE
+	var/list/targets = spell.choose_prox_targets(caster, origin)
+	TEST_ASSERT(!(caster in targets), "the explicit caster is excluded from proximity targets")
+	TEST_ASSERT(other in targets, "another living target in range remains eligible")
+	spell.spell_flags |= INCLUDEUSER
+	targets = spell.choose_prox_targets(caster, origin)
+	TEST_ASSERT(caster in targets, "INCLUDEUSER permits the explicit caster")
+	TEST_ASSERT(other in targets, "INCLUDEUSER preserves the other target")
+
+/// Charging a holder-var spell adjusts only the explicitly supplied actor's real status.
+/datum/unit_test/interim_spell_charge_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, T)
+	var/mob/living/carbon/human/bystander = allocate(/mob/living/carbon/human, T)
+	var/datum/spell/spell = allocate(/datum/spell)
+	spell.charge_type = Sp_HOLDVAR
+	spell.holder_var_type = "stunned"
+	spell.holder_var_amount = 2 SECONDS
+	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "the supplied actor starts unstunned")
+	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "the bystander starts unstunned")
+	TEST_ASSERT(spell.take_charge(target, FALSE), "the real holder-var charge path succeeds")
+	TEST_ASSERT(target.has_status(EFFECT_STUNNED), "charging applies real stun to the supplied actor")
+	TEST_ASSERT(!bystander.has_status(EFFECT_STUNNED), "charging leaves the bystander unaffected")
+	spell.adjust_var(target, "stunned", -2 SECONDS)
+	TEST_ASSERT(!target.has_status(EFFECT_STUNNED), "signed adjustment removes the supplied actor's stun")
+
+/// Record validation's actor while retaining all real spell checks and rune construction.
+/datum/spell/rune_write/interim_actor_probe
+	spell_flags = NONE
+	var/check_actor_ref
+	var/check_count = 0
+
+/datum/spell/rune_write/interim_actor_probe/choose_targets(mob/user)
+	picked_rune = "Stun"
+	return list(user)
+
+/datum/spell/rune_write/interim_actor_probe/cast_check(skipcharge = 0, mob/user)
+	check_actor_ref = user ? REF(user) : null
+	check_count++
+	return ..(skipcharge, user)
+
+/datum/unit_test/interim_rune_validation_actor/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/datum/spell/rune_write/interim_actor_probe/spell = allocate(/datum/spell/rune_write/interim_actor_probe)
+	spell.charge_counter = 42
+	spell.perform_cast(user, TRUE)
+	own_turf_contents(T)
+	TEST_ASSERT_EQUAL(spell.check_count, 1, "the selected rune runs its real secondary casting validation")
+	TEST_ASSERT_EQUAL(spell.check_actor_ref, REF(user), "secondary validation receives the explicitly supplied caster")
+	var/obj/effect/rune/rune = locate_within(T, /obj/effect/rune)
+	TEST_ASSERT(istype(rune), "the real spell creates a rune at the caster's location")
+	TEST_ASSERT_EQUAL(rune.word1, GLOB.cultwords["join"], "the rune receives the first Stun word")
+	TEST_ASSERT_EQUAL(rune.word2, GLOB.cultwords["hide"], "the rune receives the second Stun word")
+	TEST_ASSERT_EQUAL(rune.word3, GLOB.cultwords["technology"], "the rune receives the third Stun word")
+	TEST_ASSERT_EQUAL(spell.charge_counter, 42, "skip-charge validation preserves the existing spell charge")

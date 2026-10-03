@@ -8,9 +8,8 @@ SYSTEM_DEF(media_tracks)
 	var/list/jukebox_tracks = list()
 	/// Lobby music tracks
 	var/list/lobby_tracks = list()
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
+	/// Casino jukebox tracks.
 	var/list/casino_tracks = list()
-	/// CHOMPstation edit end
 
 /datum/system/media_tracks/initialize()
 	load_tracks()
@@ -54,9 +53,7 @@ SYSTEM_DEF(media_tracks)
 			T.secret = entry["secret"] ? 1 : 0
 			T.lobby = entry["lobby"] ? 1 : 0
 
-			/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
 			T.casino = entry["casino"] ? 1 : 0
-			/// CHOMPstation edit end
 
 			all_tracks += T
 
@@ -66,25 +63,21 @@ SYSTEM_DEF(media_tracks)
 
 	jukebox_tracks.Cut()
 	lobby_tracks.Cut()
-	/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
 	casino_tracks.Cut()
-	/// CHOMPstation edit end
 
 	for(var/datum/track/T in all_tracks)
-		/// CHOMPstation edit start: Jack - Injecting casino track into new jukebox subsystem
 		if(!T.secret && !T.casino)
 			jukebox_tracks += T
 		if(T.lobby)
 			lobby_tracks += T
 		if(T.casino)
 			casino_tracks += T
-		/// CHOMPstation edit end
 
-/datum/system/media_tracks/proc/manual_track_add()
-	if(!check_rights(R_DEBUG|R_FUN))
+/datum/system/media_tracks/proc/manual_track_add(mob/user)
+	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_flow_start(/datum/om/flow/media_track_add, usr, null, tracks = src)
+	om_flow_start(/datum/om/flow/media_track_add, user, null, tracks = src)
 
 /// An admin adds a media track: the URL (or pasted JSON, which ends the questions), then the
 /// title, duration, artist, genre and the secret/lobby/casino marks. A cancel ends it.
@@ -209,11 +202,11 @@ SYSTEM_DEF(media_tracks)
 	report_progress("New media track added by [user.client]: [title]")
 	sort_tracks()
 
-/datum/system/media_tracks/proc/manual_track_remove()
-	if(!check_rights(R_DEBUG|R_FUN))
+/datum/system/media_tracks/proc/manual_track_remove(mob/user)
+	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
-	om_ask(usr, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
+	om_ask(user, /datum/om/prompt/text/media_track, PROC_REF(manual_track_removal_entered), title = "Remove Track", message = "Input track title or URL to remove (must be exact)")
 
 /datum/system/media_tracks/proc/manual_track_removal_entered(datum/om/prompt/text/media_track/ask)
 	var/mob/user = ask.answerer
@@ -263,11 +256,11 @@ VV_TOPIC_ACTION(/datum/system/media_tracks, "add_track", PROC_REF(vv_topic_add_t
 VV_TOPIC_ACTION(/datum/system/media_tracks, "remove_track", PROC_REF(vv_topic_remove_track))
 
 /datum/system/media_tracks/proc/vv_topic_add_track(mob/user, list/args)
-	manual_track_add()
+	manual_track_add(user)
 	user.client?.debug_variables(src)
 	return TRUE
 
 /datum/system/media_tracks/proc/vv_topic_remove_track(mob/user, list/args)
-	manual_track_remove()
+	manual_track_remove(user)
 	user.client?.debug_variables(src)
 	return TRUE

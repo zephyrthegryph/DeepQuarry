@@ -1,0 +1,43 @@
+/// Actual blade and grip assembly consumes both ingredients and preserves the blade's material.
+/datum/unit_test/interim_butterfly_assembly/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/item/material/butterflyhandle/grip = allocate(/obj/item/material/butterflyhandle, T, MAT_STEEL)
+	var/obj/item/material/butterflyblade/blade = allocate(/obj/item/material/butterflyblade, T, MAT_GLASS)
+	TEST_ASSERT(user.put_in_l_hand(grip), "the real grip occupies the left hand")
+	TEST_ASSERT(user.put_in_r_hand(blade), "the real blade occupies the right hand")
+	var/datum/material/blade_material = blade.material
+	grip.butterflyhandle_interaction_item(user, blade, null)
+	own_turf_contents(T)
+	TEST_ASSERT(QDELETED(grip), "assembly consumes the actual grip")
+	TEST_ASSERT(QDELETED(blade), "assembly consumes the actual blade")
+	var/obj/item/material/butterflyconstruction/product = locate_within(T, /obj/item/material/butterflyconstruction)
+	TEST_ASSERT(product, "assembly creates the actual unfinished knife on the original actor's turf")
+	TEST_ASSERT_EQUAL(product.material, blade_material, "the actual knife retains the blade's distinct glass material")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/material/butterflyconstruction)), 1, "assembly creates exactly one unfinished knife")
+	TEST_ASSERT_NULL(user.get_equipped_item(SLOT_ID_HAND_L), "assembly vacates the grip's hand")
+	TEST_ASSERT_NULL(user.get_equipped_item(SLOT_ID_HAND_R), "assembly vacates the blade's hand")
+
+/// A sticky source or blade refuses assembly before either ingredient moves or a knife is created.
+/datum/unit_test/interim_butterfly_assembly_refusal/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	for(var/source_refuses in list(TRUE, FALSE))
+		var/obj/item/material/butterflyhandle/grip = allocate(/obj/item/material/butterflyhandle, T, MAT_STEEL)
+		var/obj/item/material/butterflyblade/blade = allocate(/obj/item/material/butterflyblade, T, MAT_GLASS)
+		TEST_ASSERT(user.put_in_l_hand(grip), "the actual grip occupies the left hand")
+		TEST_ASSERT(user.put_in_r_hand(blade), "the actual blade occupies the right hand")
+		var/obj/item/sticky = source_refuses ? grip : blade
+		add_trait(sticky, TRAIT_NODROP, "interim_butterfly_assembly")
+		TEST_ASSERT(sticky.loc.release_refusal(sticky, user), "the actual sticky ingredient refuses release")
+		TEST_ASSERT(grip.can_attach_blade(user, grip, blade) != TRUE, "the assembly requirement rejects the sticky ingredient")
+		grip.butterflyhandle_interaction_item(user, blade, null)
+		own_turf_contents(T)
+		TEST_ASSERT(!QDELETED(grip), "refusal preserves the actual grip")
+		TEST_ASSERT(!QDELETED(blade), "refusal preserves the actual blade")
+		TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_L), grip, "refusal preserves the grip's hand")
+		TEST_ASSERT_EQUAL(user.get_equipped_item(SLOT_ID_HAND_R), blade, "refusal preserves the blade's hand")
+		TEST_ASSERT_NULL(locate_within(T, /obj/item/material/butterflyconstruction), "refusal creates no unfinished knife")
+		remove_trait(sticky, TRAIT_NODROP, "interim_butterfly_assembly")
+		user.drop_from_inventory(grip)
+		user.drop_from_inventory(blade)

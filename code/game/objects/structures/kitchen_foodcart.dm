@@ -29,8 +29,8 @@
 	effect = /obj/structure/foodcart/proc/interaction_item
 
 /obj/structure/foodcart/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
-	user.drop_item()
-	O.forceMove(src)
+	if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
+		return TRUE
 	update_icon()
 	return TRUE
 

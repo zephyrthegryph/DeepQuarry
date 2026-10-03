@@ -1,0 +1,36 @@
+/// Resetting and removing real reinforcement must rebuild integrity from the actual frame material, not retain or accumulate the old reinforcement bonus.
+/datum/unit_test/interim_girder_reinforcement_integrity/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/static/list/material_cases = list(
+		list(MAT_STEEL, MAT_PLASTEEL),
+		list(MAT_PLASTEEL, MAT_STEEL),
+	)
+	for(var/list/material_case as anything in material_cases)
+		var/datum/material/frame_material = get_material_by_name(material_case[1])
+		var/datum/material/reinforcement = get_material_by_name(material_case[2])
+		var/obj/structure/girder/girder = allocate(/obj/structure/girder, T)
+		girder.set_material(frame_material)
+		var/base_integrity = round(frame_material.integrity)
+		var/reinforced_integrity = base_integrity + round(reinforcement.integrity / 2)
+		TEST_ASSERT_EQUAL(girder.max_integrity, base_integrity, "the actual unreinforced frame starts with its own material allowance")
+		girder.reinf_material = reinforcement
+		girder.reinforce_girder()
+		TEST_ASSERT_EQUAL(girder.max_integrity, reinforced_integrity, "actual reinforcement adds its one material-derived integrity bonus")
+		girder.reset_girder()
+		TEST_ASSERT_EQUAL(girder.max_integrity, reinforced_integrity, "resetting actual installed reinforcement cannot add its bonus twice")
+		TEST_ASSERT_EQUAL(girder.get_integrity(), reinforced_integrity, "actual reinforced reset repairs to the correct allowance")
+		girder.reset_girder()
+		TEST_ASSERT_EQUAL(girder.max_integrity, reinforced_integrity, "a second actual reset cannot accumulate reinforcement integrity")
+		TEST_ASSERT(interim_construction_step(girder, user, /datum/interaction/construction/girder/unsecure_struts), "the actual reinforced graph completes its strut-unsecuring step")
+		TEST_ASSERT_EQUAL(girder.state, 1, "actual strut unsecuring reaches the loose-strut stage")
+		TEST_ASSERT_EQUAL(girder.max_integrity, reinforced_integrity, "loosening actual struts does not remove their installed reinforcement yet")
+		TEST_ASSERT(interim_construction_step(girder, user, /datum/interaction/construction/girder/remove_struts), "the actual loose-strut graph completes its reinforcement-removal step")
+		own_turf_contents(T)
+		TEST_ASSERT_NULL(girder.reinf_material, "actual completed strut removal clears the reinforcement")
+		TEST_ASSERT_EQUAL(girder.girder_material, frame_material, "actual completed removal preserves the original frame material")
+		TEST_ASSERT_EQUAL(girder.max_integrity, base_integrity, "actual completed strut removal restores the frame's original material allowance")
+		TEST_ASSERT_EQUAL(girder.get_integrity(), base_integrity, "actual completed removal leaves current integrity within the restored allowance")
+		TEST_ASSERT(girder.anchored && girder.state == 0, "actual completed removal preserves an anchored ordinary frame")
+		girder.reset_girder()
+		TEST_ASSERT_EQUAL(girder.max_integrity, base_integrity, "subsequent actual unreinforced reset preserves the restored original allowance")

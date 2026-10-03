@@ -359,6 +359,8 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 			if(!addon_selection)
 				to_chat(redeemer, span_warning("You must select an addon."))
 				return
+			if(!consume(voucher, redeemer))
+				return
 			new /obj/item/gun/energy/kinetic_accelerator(drop_location)
 			switch(addon_selection)
 				if("Cooldown")
@@ -369,6 +371,8 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 					new /obj/item/clothing/accessory/holster/waist/kinetic_accelerator(drop_location)
 
 		if("Resonator + Advanced Ore Scanner") //1400 points worth
+			if(!consume(voucher, redeemer))
+				return
 			new /obj/item/resonator(drop_location)
 			new /obj/item/mining_scanner/advanced(drop_location)
 
@@ -381,6 +385,8 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 				return
 			if(!addon_selection)
 				to_chat(redeemer, span_warning("You must select an addon."))
+				return
+			if(!consume(voucher, redeemer))
 				return
 			new /obj/item/gun/energy/locked/phasegun/pistol(drop_location) //1500
 			new /obj/item/material/knife/machete(drop_location) //1000
@@ -400,9 +406,10 @@ UI_ACT_PROC(/obj/machinery/mineral/equipment_vendor, ui_act_purchase)
 					new /obj/item/reagent_containers/hypospray/autoinjector/oxy(medbox)
 					new /obj/item/reagent_containers/hypospray/autoinjector/trauma(medbox)
 		if("1000 Points") //1000 points
+			if(!consume(voucher, redeemer))
+				return
 			var/obj/item/card/mining_point_card/new_card = new(drop_location)
 			new_card.mine_points = 1000
-	consume(voucher, redeemer)
 
 /obj/machinery/mineral/equipment_vendor/proc/new_prize(name, path, cost) // Generic proc for adding new entries. Good for abusing for FUN and PROFIT.
 	if(!cost)

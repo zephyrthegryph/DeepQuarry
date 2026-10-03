@@ -14,7 +14,7 @@
 
 EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 	INTERACT_USE("Flip open", PROC_REF(locket_flip_self)), \
-	INTERACT_ITEM(null, PROC_REF(locket_insert_item), REQ_FIELD("open", "you have to open it first")), \
+	INTERACT_ITEM(null, PROC_REF(locket_insert_item), REQ_FIELD("open", "you have to open it first"), REQ_TARGET_STATE(/obj/item/clothing/accessory/locket/proc/can_insert_keepsake)), \
 )
 
 /// Old attack_self: flip the locket open or closed.
@@ -37,16 +37,29 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/locket, \
 	else
 		icon_state = "[base_icon]"
 
+/// A paper or photo must be releasable from its current holder before insertion.
+/obj/item/clothing/accessory/locket/proc/can_insert_keepsake(mob/user, atom/target, obj/item/held_item)
+	if(!istype(held_item, /obj/item/paper) && !istype(held_item, /obj/item/photo))
+		return TRUE
+	if(held())
+		return "the locket already has something inside"
+	var/reason = held_item.loc?.release_refusal(held_item, user)
+	if(reason)
+		return reason
+	return TRUE
+
 /// Old attackby: slip a paper or photo inside.
 /obj/item/clothing/accessory/locket/proc/locket_insert_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O,/obj/item/paper) || istype(O, /obj/item/photo))
 		if(held())
 			to_chat(user, "\The [src] already has something inside it.")
 		else
-			to_chat(user, "You slip [O] into [src].")
-			user.drop_item()
-			O.forceMove(src)
+			if(can_insert_keepsake(user, src, O) != TRUE)
+				return INTERACTION_HANDLED_PASS
+			if(!O.loc.release_to(O, src, null, user))
+				return INTERACTION_HANDLED_PASS
 			rel_set(src, nameof(held), O)
+			to_chat(user, "You slip [O] into [src].")
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

@@ -44,6 +44,8 @@
 //////////
 
 /datum/SDQL_parser
+	/// The mob receiving diagnostics for the current parse; a relation view.
+	var/mob/requester
 	var/query_type
 	var/error = 0
 
@@ -60,10 +62,11 @@
 
 /datum/SDQL_parser/proc/parse_error(error_message)
 	error = 1
-	to_chat(usr, span_warning("SQDL2 Parsing Error: [error_message]"))
+	to_chat(requester, span_warning("SQDL2 Parsing Error: [error_message]"))
 	return query.len + 1
 
-/datum/SDQL_parser/proc/parse()
+/datum/SDQL_parser/proc/parse(mob/user = null)
+	rel_set(src, nameof(requester), user)
 	tree = list()
 	query_options(1, tree)
 

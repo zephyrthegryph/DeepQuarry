@@ -223,7 +223,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 		to_chat(M, span_danger("Your fingers are much too large for the trigger guard!"))
 		return FALSE
 	if(CLUMSY_HARM_CHANCE(M)) //Clumsy handling
-		var/obj/P = consume_next_projectile()
+		var/obj/P = consume_next_projectile(user)
 		if(P)
 			if(process_projectile(P, user, user, pick(BP_L_FOOT, BP_R_FOOT)))
 				handle_post_fire(user, user)
@@ -345,34 +345,39 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		return 1
 
 /obj/item/gun/MouseDrop(obj/over_object as obj)
+	if(!handle_inventory_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native inventory drag supplies the actor before preserving its conditional parent routing.
+		return ..()
+
+/obj/item/gun/proc/handle_inventory_drop(mob/user, obj/over_object)
 	if(!canremove)
-		return
+		return TRUE
 
-	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
+	if (ishuman(user) || issmall(user)) //so monkeys can take off their backpacks -- Urist
 
-		if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-			return
+		if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech. why?
+			return TRUE
 
 		if (!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		//makes sure that the thing is equipped, so that we can't drag it into our hand from miles away.
 		//there's got to be a better way of doing this.
-		if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-			return
+		if (!(src.loc == user) || (src.loc && src.loc.loc == user))
+			return TRUE
 
-		if (( usr.restrained() ) || ( usr.stat ))
-			return
+		if (( user.restrained() ) || ( user.stat ))
+			return TRUE
 
-		if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-			return
+		if ((src.loc == user) && !(istype(over_object, /atom/movable/screen)) && !user.unEquip(src))
+			return TRUE
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
+	return TRUE
 
 /// `stance` is the firer's stance from the input that pulled the trigger (I_HURT for machines, AI and reflex shots).
 /obj/item/gun/proc/Fire(atom/target, mob/living/user, clickparams, pointblank=0, reflex=0, stance = I_HURT)
@@ -554,7 +559,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 	add_attack_logs(src,target,"Fired [src.name] (Unmanned)")
 
 //obtains the next projectile to fire
-/obj/item/gun/proc/consume_next_projectile()
+/obj/item/gun/proc/consume_next_projectile(mob/user)
 	return null
 
 //used by aiming code
@@ -746,7 +751,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 
 /obj/item/gun/proc/suicide_trigger(mob/living/carbon/human/M)
 	var/mob/living/user = M
-	var/obj/item/projectile/in_chamber = consume_next_projectile()
+	var/obj/item/projectile/in_chamber = consume_next_projectile(user)
 	if (istype(in_chamber))
 		act_message(user, null, others = span_warning("%U% pulls the trigger."))
 		play_fire_sound(M, in_chamber)
@@ -772,21 +777,28 @@ DECLARE_EMAG_REPEATABLE(/obj/item/gun, PROC_REF(on_emag), null)
 		mouthshoot = 0
 		return
 
-/obj/item/gun/proc/toggle_scope(zoom_amount=2.0)
+/// Use the same declared requirements and feedback for an action button as the interaction menu.
+/obj/item/gun/proc/perform_scope_interaction(mob/user, effect)
+	for(var/datum/interaction/candidate as anything in interaction_candidates(src))
+		if(candidate.effect == effect && candidate.applies_to(src))
+			return candidate.perform(user, src, user?.get_active_hand())
+	return FALSE
+
+/obj/item/gun/proc/toggle_scope(zoom_amount=2.0, mob/living/user)
 	//looking through a scope limits your periphereal vision
 	//still, increase the view size by a tiny amount so that sniping isn't too restricted to NSEW
 	var/zoom_offset = round(world.view * zoom_amount)
 	var/view_size = round(world.view + zoom_amount)
 	var/scoped_accuracy_mod = zoom_offset
 
-	zoom(zoom_offset, view_size)
+	zoom(user, zoom_offset, view_size)
 	if(zoom)
 		accuracy = scoped_accuracy + scoped_accuracy_mod
 		if(recoil)
 			recoil = round(recoil*zoom_amount+1) //recoil is worse when looking through a scope
 
 //make sure accuracy and recoil are reset regardless of how the item is unzoomed.
-/obj/item/gun/zoom()
+/obj/item/gun/zoom(mob/living/M, tileoffset = 14, viewsize = 9)
 	..()
 	if(!zoom)
 		accuracy = initial(accuracy)

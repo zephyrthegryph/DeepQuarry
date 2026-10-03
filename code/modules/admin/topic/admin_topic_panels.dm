@@ -191,7 +191,7 @@ TOPIC_ACTION(/datum/admins, "notes", PROC_REF(topic_notes), TOPIC_TEXT("notes"),
 	error_viewer.show_to(owner(), args["viewruntime_backto"], args["viewruntime_linear"])
 
 /datum/admins/proc/topic_adminchecklaws(mob/user, list/args)
-	output_ai_laws()
+	output_ai_laws(user)
 
 /datum/admins/proc/topic_spawn_panel(mob/user, list/args)
 	SSadmin_verbs.dynamic_invoke_verb(user, /datum/admin_verb/spawn_panel)

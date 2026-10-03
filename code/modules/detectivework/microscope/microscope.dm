@@ -22,17 +22,26 @@
 	id = "microscope_insert_sample"
 	name = "Insert sample"
 	held_type = /obj/item
-	also_requires = list(REQ_FIELD_NOT("sample", "there is already a slide in the microscope"))
+	also_requires = list(REQ_FIELD_NOT("sample", "there is already a slide in the microscope"), REQ_TARGET_STATE(/obj/machinery/microscope/proc/can_insert_sample))
 	effect = /obj/machinery/microscope/proc/interaction_attackby
+
+/// A microscope sample must be releasable from its current holder before insertion.
+/obj/machinery/microscope/proc/can_insert_sample(mob/user, atom/target, obj/item/held)
+	var/reason = held?.loc?.release_refusal(held, user)
+	if(reason)
+		return reason
+	return TRUE
 
 /obj/machinery/microscope/proc/interaction_attackby(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!istype(held, /obj/item/forensics/swab) && !istype(held, /obj/item/sample/fibers) && !istype(held, /obj/item/sample/print))
 		return FALSE
 
-	to_chat(user, span_notice("You insert \the [held] into the microscope."))
-	user.unEquip(held)
-	held.forceMove(src)
+	if(can_insert_sample(user, src, held) != TRUE)
+		return FALSE
+	if(!held.loc.release_to(held, src, null, user))
+		return FALSE
 	rel_set(src, nameof(sample), held)
+	to_chat(user, span_notice("You insert \the [held] into the microscope."))
 	update_icon()
 	return TRUE
 
@@ -135,10 +144,14 @@
 	update_icon()
 
 /obj/machinery/microscope/MouseDrop(atom/other)
-	if(usr == other)
-		remove_sample(usr)
-	else
+	if(!handle_sample_drop(usr, other)) // ALLOW(sys_usr_outside_verb): Native microscope drag supplies the actor before selecting the unchanged parent routing branch.
 		return ..()
+
+/obj/machinery/microscope/proc/handle_sample_drop(mob/user, atom/other)
+	if(user != other)
+		return FALSE
+	remove_sample(user)
+	return TRUE
 
 APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope{sample?slide:}")
 

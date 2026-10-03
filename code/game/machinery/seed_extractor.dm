@@ -36,8 +36,6 @@
 	effect = /obj/machinery/seed_extractor/proc/interaction_extract_grown
 
 /obj/machinery/seed_extractor/proc/interaction_extract_grown(mob/user, obj/item/O, datum/interaction/interaction)
-	user.remove_from_mob(O)
-
 	var/datum/seed/new_seed_type
 	if(istype(O, /obj/item/grown))
 		var/obj/item/grown/F = O
@@ -46,17 +44,18 @@
 		var/obj/item/reagent_containers/food/snacks/grown/F = O
 		new_seed_type = GLOB.plant_service.seeds[F.plantname]
 
+	var/produce_name = "[O]"
+	if(!consume(O, user))
+		return TRUE
 	if(new_seed_type)
-		to_chat(user, span_notice("You extract some seeds from [O]."))
+		to_chat(user, span_notice("You extract some seeds from [produce_name]."))
 		var/produce = rand(1,4)
 		for(var/i = 0;i<=produce;i++)
 			var/obj/item/seeds/seeds = new(get_turf(src))
 			seeds.seed_type = new_seed_type.name
 			seeds.update_seed()
 	else
-		to_chat(user, "[O] doesn't seem to have any usable seeds inside it.")
-
-	consume(O, user)
+		to_chat(user, "[produce_name] doesn't seem to have any usable seeds inside it.")
 	return TRUE
 
 /// Grass.
@@ -81,9 +80,11 @@
 	effect = /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil
 
 /obj/machinery/seed_extractor/proc/interaction_pulverize_fossil(mob/user, obj/item/O, datum/interaction/interaction)
+	var/fossil_name = "\the [O]"
+	if(!consume(O, user))
+		return TRUE
 	var/obj/item/seeds/random/R = new(get_turf(src))
-	to_chat(user, "\The [src] pulverizes \the [O] and spits out \the [R].")
-	consume(O, user)
+	to_chat(user, "\The [src] pulverizes [fossil_name] and spits out \the [R].")
 	return TRUE
 
 /// Anything else: the old attackby never chained to ..(), so it silently swallowed the hit.

@@ -48,26 +48,7 @@ CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween, \
 
 	var/has_candy = TRUE
 
-	var/list/candy = list( // ALLOW(instance_list): d: edited in place per instance (5 writers)
-		/obj/item/reagent_containers/food/snacks/cb01,
-		/obj/item/reagent_containers/food/snacks/cb02,
-		/obj/item/reagent_containers/food/snacks/cb03,
-		/obj/item/reagent_containers/food/snacks/cb04,
-		/obj/item/reagent_containers/food/snacks/cb05,
-		/obj/item/reagent_containers/food/snacks/cb06,
-		/obj/item/reagent_containers/food/snacks/cb07,
-		/obj/item/reagent_containers/food/snacks/cb08,
-		/obj/item/reagent_containers/food/snacks/cb09,
-		/obj/item/reagent_containers/food/snacks/cb10,
-		/obj/item/reagent_containers/food/snacks/candy_corn,
-		/obj/item/reagent_containers/food/snacks/triton,
-		/obj/item/reagent_containers/food/snacks/saturn,
-		/obj/item/reagent_containers/food/snacks/jupiter,
-		/obj/item/reagent_containers/food/snacks/pluto,
-		/obj/item/reagent_containers/food/snacks/mars,
-		/obj/item/reagent_containers/food/snacks/venus,
-		/obj/item/reagent_containers/food/snacks/oort
-	)
+
 
 	var/static/list/badcandy = list(
 		/obj/item/reagent_containers/food/snacks/no_raisin,
@@ -76,6 +57,27 @@ CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween, \
 	)
 
 	var/list/treated
+
+TYPE_TABLE_DECLARE(/obj/structure/candybowl, candy_choices, list( \
+		/obj/item/reagent_containers/food/snacks/cb01, \
+		/obj/item/reagent_containers/food/snacks/cb02, \
+		/obj/item/reagent_containers/food/snacks/cb03, \
+		/obj/item/reagent_containers/food/snacks/cb04, \
+		/obj/item/reagent_containers/food/snacks/cb05, \
+		/obj/item/reagent_containers/food/snacks/cb06, \
+		/obj/item/reagent_containers/food/snacks/cb07, \
+		/obj/item/reagent_containers/food/snacks/cb08, \
+		/obj/item/reagent_containers/food/snacks/cb09, \
+		/obj/item/reagent_containers/food/snacks/cb10, \
+		/obj/item/reagent_containers/food/snacks/candy_corn, \
+		/obj/item/reagent_containers/food/snacks/triton, \
+		/obj/item/reagent_containers/food/snacks/saturn, \
+		/obj/item/reagent_containers/food/snacks/jupiter, \
+		/obj/item/reagent_containers/food/snacks/pluto, \
+		/obj/item/reagent_containers/food/snacks/mars, \
+		/obj/item/reagent_containers/food/snacks/venus, \
+		/obj/item/reagent_containers/food/snacks/oort \
+	))
 
 DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand), REQ_TARGET_STATE(/obj/structure/candybowl/proc/can_search)), \
@@ -113,9 +115,9 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 				to_chat(user, span_danger("That's one too many! The bowl is empty now..."))
 				empty()
 			else
-				thegoods = pick(candy)
+				thegoods = pick(TYPE_TABLE_GET(src, candy_choices))
 	else
-		thegoods = pick(candy)
+		thegoods = pick(TYPE_TABLE_GET(src, candy_choices))
 		LAZYSET(treated, user.ckey, TRUE)
 
 	add_fingerprint(user)
@@ -153,58 +155,48 @@ DECLARE_INTERACTIONS(/obj/structure/candybowl, \
 /obj/structure/candybowl/medical
 	name = "medical candy bowl"
 
-/obj/structure/candybowl/medical/Initialize(mapload)
-	. = ..()
-	candy += list(
-		/obj/item/clothing/mask/chewable/candy/lolli,
-		/obj/item/reagent_containers/food/snacks/organ,
-		/obj/item/storage/box/shrimpsandbananas
-	)
+TYPE_TABLE(/obj/structure/candybowl/medical, candy_choices, ..() + list( \
+		/obj/item/clothing/mask/chewable/candy/lolli, \
+		/obj/item/reagent_containers/food/snacks/organ, \
+		/obj/item/storage/box/shrimpsandbananas \
+	))
 
 /obj/structure/candybowl/engineering
 	name = "engineering candy bowl"
 
-/obj/structure/candybowl/engineering/Initialize(mapload)
-	. = ..()
-	candy += list(
-		/obj/item/reagent_containers/food/snacks/welders_original,
-		/obj/item/reagent_containers/food/snacks/butterscotch,
-		/obj/item/reagent_containers/food/snacks/chocolatepiece
-	)
+TYPE_TABLE(/obj/structure/candybowl/engineering, candy_choices, ..() + list( \
+		/obj/item/reagent_containers/food/snacks/welders_original, \
+		/obj/item/reagent_containers/food/snacks/butterscotch, \
+		/obj/item/reagent_containers/food/snacks/chocolatepiece \
+	))
 
 /obj/structure/candybowl/cargo
 	name = "cargo candy bowl"
 
-/obj/structure/candybowl/cargo/Initialize(mapload)
-	. = ..()
-	candy += list(
-		/obj/item/reagent_containers/food/snacks/butterscotch,
-		/obj/item/reagent_containers/food/snacks/honey_candy,
-		/obj/item/storage/box/winegum,
-	)
+TYPE_TABLE(/obj/structure/candybowl/cargo, candy_choices, ..() + list( \
+		/obj/item/reagent_containers/food/snacks/butterscotch, \
+		/obj/item/reagent_containers/food/snacks/honey_candy, \
+		/obj/item/storage/box/winegum, \
+	))
 
 /obj/structure/candybowl/science
 	name = "science candy bowl"
 
-/obj/structure/candybowl/science/Initialize(mapload)
-	. = ..()
-	candy += list(
-		/obj/item/reagent_containers/food/snacks/reishicup,
-		/obj/item/reagent_containers/food/snacks/antball,
-		/obj/item/storage/box/winegum,
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
-	)
+TYPE_TABLE(/obj/structure/candybowl/science, candy_choices, ..() + list( \
+		/obj/item/reagent_containers/food/snacks/reishicup, \
+		/obj/item/reagent_containers/food/snacks/antball, \
+		/obj/item/storage/box/winegum, \
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle \
+	))
 
 /obj/structure/candybowl/security
 	name = "security candy bowl"
 
-/obj/structure/candybowl/security/Initialize(mapload)
-	. = ..()
-	candy += list(
-		/obj/item/reagent_containers/food/snacks/spicy_boys,
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
-		/obj/item/reagent_containers/food/snacks/candy_corn
-	)
+TYPE_TABLE(/obj/structure/candybowl/security, candy_choices, ..() + list( \
+		/obj/item/reagent_containers/food/snacks/spicy_boys, \
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/white, \
+		/obj/item/reagent_containers/food/snacks/candy_corn \
+	))
 
 /obj/structure/boxpile
 	name = "box pile"

@@ -129,7 +129,7 @@ DECLARE_PERIODIC(/obj/effect/alien/weeds/node, PERIODIC_SLOW)
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
-		qdel(src)
+		consume(src)
 		return
 
 	if(!linked_node())
@@ -264,7 +264,7 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 
 /obj/effect/alien/acid/proc/tick()
 	if(!target)
-		qdel(src)
+		consume(src)
 		return REPEAT_STOP
 
 	ticks += 1
@@ -281,7 +281,7 @@ DECLARE_REPEAT(/obj/effect/alien/acid, "acid_tick_delay", tick, null)
 			T.ex_act(1)
 		else if(isobj(target))
 			qdel(target)
-		qdel(src)
+		consume(src)
 		return REPEAT_STOP
 
 	switch(target_strength - ticks)

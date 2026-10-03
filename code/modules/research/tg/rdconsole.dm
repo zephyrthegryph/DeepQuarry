@@ -32,7 +32,7 @@ Nothing else in the console has ID requirements.
 	/// Determines if the console is locked, and consequently if actions can be performed with it
 	locked = FALSE
 	/// Used for compressing data sent to the UI via static_data as payload size is of concern
-	var/id_cache = list()
+	var/list/id_cache
 	/// Sequence var for the id cache
 	var/id_cache_seq = 1
 	/// Cooldown that prevents hanging the MC when tech disks are copied
@@ -247,10 +247,10 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
  * * id - the ID to compress
  */
 /obj/machinery/computer/rdconsole_tg/proc/compress_id(id)
-	if (!id_cache[id])
-		id_cache[id] = id_cache_seq
+	if (!LAZYACCESS(id_cache, id))
+		LAZYSET(id_cache, id, id_cache_seq)
 		id_cache_seq += 1
-	return id_cache[id]
+	return LAZYACCESS(id_cache, id)
 
 /obj/machinery/computer/rdconsole_tg/tgui_static_data(mob/user)
 	. = list(

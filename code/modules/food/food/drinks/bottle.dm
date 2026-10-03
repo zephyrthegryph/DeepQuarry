@@ -83,7 +83,7 @@
 	play_sfx(src, SFX_SHATTER)
 	src.transfer_fingerprints_to(B)
 
-	qdel(src)
+	replace_with(src, B)
 	return B
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/smash_bottle_effect(mob/user, obj/item/held, datum/interaction/interaction)

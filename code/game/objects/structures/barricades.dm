@@ -99,7 +99,7 @@
 /obj/structure/barricade/proc/dismantle()
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("\The [src] falls apart!"))
-	qdel(src)
+	consume(src)
 	return
 
 /obj/structure/barricade/CanPass(atom/movable/mover, turf/target)//So bullets will fly over and stuff.
@@ -134,7 +134,7 @@ DESTROY_EFFECTS(/obj/structure/barricade/sandbag, new /datum/destroy_effects_dat
 	update_connections(1, src)
 	material.place_dismantled_product(get_turf(src))
 	visible_message(span_danger("\The [src] falls apart!"))
-	qdel(src)
+	consume(src)
 	return
 
 DECLARE_APPEARANCE_PROC(/obj/structure/barricade/sandbag, TYPE_PROC_REF(/atom, appearance_overlays), list())

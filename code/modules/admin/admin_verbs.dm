@@ -95,16 +95,16 @@ ADMIN_VERB(invisimin, R_ADMIN|R_MOD|R_EVENT, "Invisimin", "Toggles ghost-like in
 	mob.alpha = max(mob.alpha - 100, 0)
 
 ADMIN_VERB(list_bombers, R_ADMIN, "List Bombers", "Look at all bombs and their likely culprit.", ADMIN_CATEGORY_GAME)
-	user.holder.list_bombers()
+	user.holder.list_bombers(user.mob)
 
 ADMIN_VERB(list_signalers, R_ADMIN, "List Signalers", "View all signalers.", ADMIN_CATEGORY_GAME)
-	user.holder.list_signalers()
+	user.holder.list_signalers(user.mob)
 
 ADMIN_VERB(list_law_changes, R_ADMIN, "List Law Changes", "View all AI law changes.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	user.holder.list_law_changes()
+	user.holder.list_law_changes(user.mob)
 
 ADMIN_VERB(show_manifest, R_ADMIN, "Show Manifest", "View the shift's Manifest.", ADMIN_CATEGORY_DEBUG_GAME)
-	user.holder.show_manifest()
+	user.holder.show_manifest(user.mob)
 
 ADMIN_VERB(player_panel, R_HOLDER, "Player Panel", "Open the player panel.", ADMIN_CATEGORY_GAME)
 	user.holder.player_panel_old(user)
@@ -337,7 +337,7 @@ ADMIN_VERB(toggle_log_hrefs, R_SERVER, "Toggle href logging", "Allows to toggle 
 	message_admins(span_bold("[key_name_admin(user)] [CONFIG_GET(flag/log_hrefs) ? "started" : "stopped"] logging hrefs"))
 
 ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the current AI laws.", ADMIN_CATEGORY_SILICON)
-	user.holder.output_ai_laws()
+	user.holder.output_ai_laws(user.mob)
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
 	var/mob/living/silicon/silicon_target = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Rename Silicon.", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))

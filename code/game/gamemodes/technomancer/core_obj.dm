@@ -50,8 +50,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 // Removes the spell buttons from the HUD.
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
-	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
-		wearer.ability_master.remove_ability(A)
+	// The inventory equip path calls dropped() before an unworn core has its first wearer.
+	if(wearer)
+		for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
+			wearer.ability_master.remove_ability(A)
 	rel_clear(src, nameof(wearer))
 	canremove = TRUE
 	..()
@@ -146,8 +148,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 	src.ability_icon_state = new_icon_state
 
 /obj/spellbutton/Click()
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native spell button clicking supplies the initiating actor through BYOND usr.
+	create_spell_with_actor(user)
+
+/obj/spellbutton/proc/create_spell_with_actor(mob/user)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
 		H.place_spell_in_hand(spellpath)
 
 /obj/spellbutton/DblClick()

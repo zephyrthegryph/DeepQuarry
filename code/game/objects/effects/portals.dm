@@ -57,17 +57,17 @@ EXTEND_INTERACTIONS(/obj/effect/portal, \
 	if (icon_state == "portal1")
 		return
 	if (!( target_ref() ))
-		qdel(src)
+		consume(src)
 		return
 	if (istype(M, /atom/movable))
-		// ition Start: Prevent taurriding abuse
+		// Prevent taurriding abuse.
 		if(isliving(M))
 			var/mob/living/L = M
 			if(LAZYLEN(L?.buckled_mob_list()))
 				var/datum/riding/R = L.riding_datum
 				for(var/rider in L?.buckled_mob_list())
 					R.force_dismount(rider)
-		// ition End: Prevent taurriding abuse
+
 		if(isbelly(target_ref()))
 			if(target_ref() == M)
 				return

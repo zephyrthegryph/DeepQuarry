@@ -42,10 +42,6 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 		"Aux" = PIPING_LAYER_AUX
 	)
 
-/obj/item/pipe_dispenser/Initialize(mapload)
-	. = ..()
-	// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
-
 /obj/item/pipe_dispenser/proc/SetupPipes()
 	if(!first_atmos)
 		first_atmos = GLOB.atmos_pipe_recipes[GLOB.atmos_pipe_recipes[1]][1]
@@ -54,6 +50,7 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 	if(!recipe())
 		recipe_static = first_atmos
 
+// RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 DECLARE_DEFAULT_CHILD(/obj/item/pipe_dispenser, "tool", /obj/item/tool/wrench/cyborg)
 
 DECLARE_INTERACTIONS(/obj/item/pipe_dispenser, INTERACT_USE(null, PROC_REF(interaction_self)))

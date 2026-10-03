@@ -82,7 +82,8 @@ DECLARE_INTERACTIONS(/obj/item/gun/launcher/pneumatic, \
 /obj/item/gun/launcher/pneumatic/gun_item(mob/user, obj/item/W, datum/interaction/interaction)
 	. = INTERACTION_HANDLED_PASS
 	if(!tank() && istype(W,/obj/item/tank))
-		user.drop_from_inventory(W, src)
+		if(!own_bring_in(src, nameof(tank), W, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		rel_set(src, nameof(tank), W)
 		act_message(user, src, MSG_SELF("You jam [W] into %T%'s valve and twist it closed."), MSG_OTHERS("%U% jams [W] into %T%'s valve and twists it closed."))
 		update_icon()

@@ -691,12 +691,12 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_admin_add))
 
 /obj/machinery/gear_dispenser/proc/vv_topic_admin_add(mob/user, list/args)
-	admin_add()
+	admin_add(user)
 	user.client?.debug_variables(src)
 	return TRUE
 
-/obj/machinery/gear_dispenser/proc/admin_add()
-	if(!check_rights(R_DEBUG|R_FUN))
+/obj/machinery/gear_dispenser/proc/admin_add(mob/user)
+	if(!admin_require(user?.client, R_DEBUG|R_FUN, "check_rights in [callee?.proc]"))
 		return
 
 	var/example = @{"[
@@ -717,7 +717,7 @@ VV_TOPIC_ACTION(/obj/machinery/gear_dispenser, "admin_add", PROC_REF(vv_topic_ad
 	 * "gearlist" = array of types (yes the types are not valid json, byond parses them into real types.)
 	 * "req_one_access" = array of numbers (accesses)
 	 */
-	om_ask(usr, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
 
 /obj/machinery/gear_dispenser/proc/gear_pack_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer

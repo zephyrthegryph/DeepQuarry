@@ -157,7 +157,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/tmp/obj/item/ammo_casing/my_case
 
-	var/crawl_destroy = FALSE //chompADD: Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
+	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
@@ -172,7 +172,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/on_range() //if we want there to be effects when they reach the end of their range
 	impact_sounds(loc)
 	impact_visuals(loc) // So it does a little 'burst' effect, but not actually do anything (unless overrided).
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/proc/return_predicted_turf_after_moves(moves, forced_angle)		//I say predicted because there's no telling that the projectile won't change direction/location in flight.
 	if(!trajectory && isnull(forced_angle) && isnull(Angle))
@@ -338,6 +338,8 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/fire(angle, atom/direct_target)
 	//If no angle needs to resolve it from xo/yo!
 	if(direct_target)
+		if(loc?.release_refusal(src))
+			return
 		if(bump_targets)
 			var/impact_result = direct_target.bullet_act(src, def_zone)
 			// mob/living/bullet_act() already calls on_hit() internally with the correct
@@ -348,16 +350,16 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 				// Fall through to the normal launch path below instead of qdel-ing.
 				direct_target = null
 			else
-				qdel(src)
+				consume(src)
 				return
 		else
-			qdel(src)
+			consume(src)
 			return
 	if(isnum(angle))
 		setAngle(angle)
 	rel_set(src, nameof(starting), get_turf(src))
 	if(!starting)
-		qdel(src)
+		consume(src)
 		return
 	if(isnull(Angle))	//Try to resolve through offsets if there's no angle set.
 		if(isnull(xo) || isnull(yo))
@@ -572,7 +574,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			// So we'll check before, just in case. Lying might gives a chance to dodge, however.
 			if(is_swarmer(L) && L.stat != DEAD && !L.lying)
 				return TRUE
-			if(crawl_destroy == TRUE) //chompADD
+			if(crawl_destroy == TRUE)
 				return TRUE
 			if(!L.density)
 				var/datum/shadekin/SK = L.get_shadekin_state()
@@ -656,7 +658,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	if(A && bump_targets)
 		on_impact(A)
-	qdel(src)
+	consume(src)
 	return TRUE
 
 // Authoritative effect-application hook.  Called from within mob/living/bullet_act()

@@ -17,10 +17,14 @@
 	update_icon()
 
 /obj/item/clipboard/MouseDrop(obj/over_object as obj) //Quick clipboard fix. -Agouri
-	if(ishuman(usr))
-		var/mob/M = usr
+	if(!handle_hand_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native clipboard drag supplies the actor before preserving its conditional parent routing.
+		return ..()
+
+/obj/item/clipboard/proc/handle_hand_drop(mob/user, obj/over_object)
+	if(ishuman(user))
+		var/mob/M = user
 		if(!(istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 
 		if(!M.restrained() && !M.stat)
 			switch(over_object.name)
@@ -31,8 +35,8 @@
 					M.unEquip(src)
 					M.put_in_l_hand(src)
 
-			add_fingerprint(usr)
-			return
+			add_fingerprint(user)
+	return TRUE
 
 DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/clipboard/appearance_overlays()
@@ -49,8 +53,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/clipboard, TYPE_PROC_REF(/atom, appearance_ove
 /obj/item/clipboard/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 
 	if(istype(W, /obj/item/paper) || istype(W, /obj/item/photo))
-		user.drop_item()
-		W.forceMove(src)
+		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		if(istype(W, /obj/item/paper))
 			rel_set(src, nameof(toppaper), W)
 		to_chat(user, span_notice("You clip the [W] onto \the [src]."))
@@ -141,8 +145,8 @@ UI_ACT_PROC(/obj/item/clipboard, ui_act_add_pen)
 	if(!haspen())
 		var/obj/item/pen/W = user.get_active_hand()
 		if(istype(W, /obj/item/pen))
-			user.drop_item()
-			W.forceMove(src)
+			if(!own_bring_in(src, nameof(/obj/item/clipboard::haspen), W, null, user, TRUE, null, FALSE))
+				return TRUE
 			rel_set(src, nameof(/obj/item/clipboard::haspen), W)
 			to_chat(user, span_notice("You slot the pen into \the [src]."))
 			update_icon()

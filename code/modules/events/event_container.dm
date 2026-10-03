@@ -120,8 +120,8 @@
 
 	log_game("Next event of severity [GLOB.severity_to_string[severity]] in [(next_event_time - world.time)/600] minutes.")
 
-/datum/event_container/proc/SelectEvent()
-	om_ask(usr, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
+/datum/event_container/proc/SelectEvent(mob/user)
+	om_ask(user, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
 
 /// Picking the next event of a container (subject). Re-checked on the answer: still available.
 /datum/om/prompt/choice/queue_event

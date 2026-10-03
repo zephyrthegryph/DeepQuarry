@@ -40,18 +40,23 @@
 
 	return TRUE
 
-/atom/movable/screen/movable/action_button/Click(location,control,params)
-	if(!can_use(usr))
+/atom/movable/screen/movable/action_button/Click(location, control, params)
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND action button Click supplies its clicking mob through usr at this native boundary
+
+/atom/movable/screen/movable/action_button/click_with_actor(mob/user, location, control, params)
+	if(!user)
+		return
+	if(!can_use(user))
 		return
 
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud.position_action(src, SCRN_OBJ_DEFAULT)
 		return TRUE
-	if(!usr.checkClickCooldown())
+	if(!user.checkClickCooldown())
 		return
-	usr.setClickCooldown(1)
+	user.setClickCooldown(0.1 SECONDS)
 	var/trigger_flags
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, secondary_table), INPUT_ACTION_ALTERNATE_SECONDARY))
 		trigger_flags |= TRIGGER_SECONDARY_ACTION
@@ -62,7 +67,10 @@
 // Very much byond logic, but I want nice behavior, so we fake it with drag
 /atom/movable/screen/movable/action_button/MouseDrag(atom/over_object, src_location, over_location, src_control, over_control, params)
 	. = ..()
-	if(!can_use(usr))
+	drag_with_actor(usr, over_object, over_location, over_control, params) // ALLOW(sys_usr_outside_verb): Native action button drag supplies its viewer after unchanged parent drag routing.
+
+/atom/movable/screen/movable/action_button/proc/drag_with_actor(mob/user, atom/over_object, over_location, over_control, params)
+	if(!can_use(user))
 		return
 	if(over_object == last_hovored)
 		return
@@ -72,7 +80,7 @@
 		old_object = last_hovored
 	else // If there is no current ref, we assume it was us. We also treat this as our "first go" location.
 		old_object = src
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud?.generate_landings(src)
 
 	if(old_object)
@@ -94,33 +102,40 @@
 	return ..()
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
-	rel_clear(src, nameof(last_hovored))
-	if(!can_use(usr))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
+	var/datum/hud/our_hud = user?.hud_used
+	if(drop_with_actor(user, over_object))
 		return
-	var/datum/hud/our_hud = usr.hud_used
+	. = ..()
+	our_hud.position_action(src, screen_loc)
+	save_position()
+
+/atom/movable/screen/movable/action_button/proc/drop_with_actor(mob/user, atom/over_object)
+	rel_clear(src, nameof(last_hovored))
+	if(!can_use(user))
+		return TRUE
+	var/datum/hud/our_hud = user.hud_used
 	if(over_object == src)
 		our_hud.hide_landings()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/action_landing))
 		var/atom/movable/screen/action_landing/reserve = over_object
 		reserve.hit_by(src)
 		our_hud.hide_landings()
 		save_position()
-		return
+		return TRUE
 
 	our_hud.hide_landings()
 	if(istype(over_object, /atom/movable/screen/button_palette) || istype(over_object, /atom/movable/screen/palette_scroll))
 		our_hud.position_action(src, SCRN_OBJ_IN_PALETTE)
 		save_position()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/movable/action_button))
 		var/atom/movable/screen/movable/action_button/button = over_object
 		our_hud.position_action_relative(src, button)
 		save_position()
-		return
-	. = ..()
-	our_hud.position_action(src, screen_loc)
-	save_position()
+		return TRUE
+	return FALSE
 
 /atom/movable/screen/movable/action_button/proc/save_position()
 	var/mob/user = our_hud().mymob()
@@ -316,15 +331,18 @@ GLOBAL_LIST_INIT(palette_removed_matrix, list(1.4,0,0,0, 0.7,0.4,0,0, 0.4,0,0.6,
 	return TRUE
 
 /atom/movable/screen/button_palette/Click(location, control, params)
-	if(!can_use(usr))
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): Native palette clicks supply the actor without invoking parent input routing.
+
+/atom/movable/screen/button_palette/click_with_actor(mob/user, location, control, params)
+	if(!can_use(user))
 		return
 
 	if(GLOB.input_router.click_is(params, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		for(var/datum/action/action as anything in usr.actions) // Reset action positions to default
+		for(var/datum/action/action as anything in user.actions) // Reset action positions to default
 			for(var/atom/movable/screen/movable/action_button/button as anything in action.viewers)
 				var/datum/hud/hud = button.our_hud
 				hud?.position_action(button, SCRN_OBJ_DEFAULT)
-		to_chat(usr, span_notice("Action button positions have been reset."))
+		to_chat(user, span_notice("Action button positions have been reset."))
 		return TRUE
 
 	set_expanded(!expanded)

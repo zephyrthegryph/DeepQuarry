@@ -160,7 +160,10 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
 	var/mob/living/carbon/human/human_user = user
 	var/obj/item/P = params["ref"]
 	if(open && P && in_range(src, human_user))
+		var/was_stored = P.loc == src
 		human_user.put_in_hands(P)
+		if(was_stored && P.loc != src)
+			space = max(0, space - P.w_class)
 	return TRUE
 
 
@@ -173,9 +176,9 @@ UI_ACT_PROC(/obj/structure/safe, ui_act_retrieve)
 /obj/structure/safe/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(open)
 		if(I.w_class + space <= maxspace)
+			if(!own_bring_in(src, nameof(contents), I, null, user, TRUE, null, FALSE))
+				return TRUE
 			space += I.w_class
-			user.drop_item()
-			I.forceMove(src)
 			to_chat(user, span_notice("You put [I] in \the [src]."))
 			updateUsrDialog(user)
 		else

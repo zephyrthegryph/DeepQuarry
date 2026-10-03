@@ -120,7 +120,7 @@ DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) //
 
 /obj/effect/energy_net/proc/check_empty()
 	if(!has_buckled_mobs())
-		qdel(src)
+		consume(src)
 
 // netted mobs are told they're free.
 /obj/effect/energy_net/lifecycle_prerelease()
@@ -148,7 +148,7 @@ DECLARE_START_TIMER(/obj/effect/energy_net, 2 SECONDS, PROC_REF(check_empty)) //
 		M.can_pull_size = 0
 	else //Just unbuckled someone
 		M.can_pull_size = initial(M.can_pull_size)
-		qdel(src)
+		consume(src)
 
 /obj/item/energy_net/shrink
 	name = "compactor energy net"

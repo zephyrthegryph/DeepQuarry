@@ -170,7 +170,7 @@
 		to_chat(M, span_warning("Your intent may not be completely beneficial."))
 	H.ckey = M.ckey
 	visible_message(span_warning("As \the [src] opens, the pipes on \the [src] surge, before it grows dark."))
-	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].")
+	log_and_message_admins("successfully opened \a [src] and got a [occupant_type].", opening_actor)
 
 	var/list/uniform_options
 	var/list/shoe_options

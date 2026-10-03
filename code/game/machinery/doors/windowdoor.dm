@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/door/window, \
 		own_move(door_electronics, assembly, nameof(assembly.electronics)) // from the door to the assembly
 	assembly.update_state()
 	set_operating(0)
-	qdel(src)
+	replace_with(src, assembly)
 	return OP_OK
 
 /obj/machinery/door/window/brigdoor

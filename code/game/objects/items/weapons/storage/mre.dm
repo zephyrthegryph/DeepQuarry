@@ -335,15 +335,14 @@ CAPABILITIES(/obj/item/storage/box/tgmc_mre, \
 	new /obj/item/reagent_containers/food/snacks/tgmc_mre_component(src, desert)
 	new /obj/random/mre/drink(src)
 
-/obj/item/storage/box/tgmc_mre/remove_from_storage()
+/obj/item/storage/box/tgmc_mre/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
 	if(. && !length(slot_contents(CONTAINER_SLOT_STORAGE)) && !gc_destroyed)
 		// Eaten empty, it leaves its wrapper as trash. (A plain delete of the box does not:
 		// that dropped a wrapper for every MRE any cleanup or test ever removed.)
 		var/turf/T = get_turf(src)
-		if(T)
+		if(consume(src, user) && T)
 			new /obj/item/trash/tgmc_mre(T)
-		qdel(src)
 
 TRACKED(/obj/item/storage/box/tgmc_mre, isopened)
 

@@ -751,8 +751,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	return !lamp_shade
 
 /obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
+	if(!consume(W, user))
+		return TRUE
 	lamp_shade = 1
-	consume(W, user)
 	update_icon()
 	return TRUE
 

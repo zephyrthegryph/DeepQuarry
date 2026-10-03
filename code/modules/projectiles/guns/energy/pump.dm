@@ -240,13 +240,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/carbine, TYPE_PROC_
 	)
 
 /obj/item/gun/energy/locked/frontier/rifle/ui_action_click(mob/user, actiontype)
-	frontier_rifle_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(frontier_rifle_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("Use Scope", PROC_REF(frontier_rifle_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/energy/locked/frontier/rifle, INTERACT_VERB("Use Scope", PROC_REF(frontier_rifle_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/energy/locked/frontier/rifle/proc/frontier_rifle_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/locked/frontier/rifle, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/gun/energy/locked/frontier/rifle/appearance_overlays()

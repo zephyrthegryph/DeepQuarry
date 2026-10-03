@@ -1,0 +1,41 @@
+/// The real heavy-duty cell charger respects inventory release rules and returns the original owned cell.
+/datum/unit_test/interim_cell_charger_sticky_cell
+	parent_type = /datum/unit_test/dq_p2_chargers
+
+/datum/unit_test/interim_cell_charger_sticky_cell/run_gate()
+	var/turf/T = run_loc_floor_bottom_left
+	var/area/A = get_area(T)
+	TEST_ASSERT_NOTNULL(A, "the actual test floor has an area")
+	TEST_ASSERT(A.power_equip, "the inherited actual charger fixture supplies area equipment power")
+	var/mob/living/carbon/human/user = p2c_actor(T)
+	var/obj/machinery/cell_charger/charger = p2c_cell_charger(T)
+	var/obj/item/cell/cell = allocate(/obj/item/cell, T)
+	charger.set_stat(0)
+	TEST_ASSERT(charger.operable() && charger.anchored, "the real cell charger is operable and anchored")
+	TEST_ASSERT_NULL(charger.charging, "the actual powered charger starts empty")
+	TEST_ASSERT(user.put_in_active_hand(cell), "the actor holds the actual cell")
+	var/charge_before = cell.charge
+	TEST_ASSERT_NULL(owner_of(cell), "the fresh cell has no declared owner")
+	// Explicit op dispatch runs current requirements and the real checked slot effect, without asserting native click selection.
+	add_trait(cell, TRAIT_NODROP, "interim_cell_charger_sticky")
+	TEST_ASSERT(user.release_refusal(cell, user), "the real inventory refuses release of the sticky cell")
+	perform_op(user, charger, "insert", cell, origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_NULL(charger.charging, "refused release leaves the actual charger empty")
+	TEST_ASSERT_EQUAL(cell.loc, user, "refused release leaves the cell inside its actual actor")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), cell, "refused release preserves the exact active hand")
+	TEST_ASSERT_EQUAL(cell.charge, charge_before, "refused insertion preserves charge")
+	remove_trait(cell, TRAIT_NODROP, "interim_cell_charger_sticky")
+	perform_op(user, charger, "insert", cell, origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_EQUAL(charger.charging, cell, "allowed insertion records the original cell")
+	TEST_ASSERT_EQUAL(cell.loc, charger, "allowed insertion moves the original cell into the charger")
+	TEST_ASSERT_NULL(user.get_active_hand(), "allowed insertion clears the actual source hand")
+	TEST_ASSERT_EQUAL(owner_of(cell), charger, "the current owns_one slot stamps the original cell ownership")
+	perform_op(user, charger, "take", origin = ORIGIN_SYSTEM)
+	TEST_ASSERT_NULL(charger.charging, "actual removal clears the charging reference")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), cell, "actual removal returns the original cell to its free hand")
+	TEST_ASSERT_EQUAL(cell.loc, user, "actual removal restores inventory containment")
+	TEST_ASSERT_NULL(owner_of(cell), "actual removal leaves no stale charger ownership")
+	TEST_ASSERT_EQUAL(cell.charge, charge_before, "the insertion and removal round trip conserves stored charge")
+	qdel(charger)
+	TEST_ASSERT(!QDELETED(cell), "empty charger teardown preserves its returned cell")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), cell, "empty charger teardown preserves the original occupied hand")

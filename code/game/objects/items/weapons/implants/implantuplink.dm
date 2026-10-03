@@ -10,11 +10,11 @@
 	//Code currently uses a mind var for telecrystals, balancing is currently an issue. Will investigate.
 	. = ..()
 
-/obj/item/implant/uplink/post_implant(mob/source)
+/obj/item/implant/uplink/post_implant(mob/source, mob/user = null)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
+	om_ask(user, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
 
 /obj/item/implant/uplink/proc/emote_chosen(datum/om/prompt/choice/implant_emote/ask)
 	activation_emote = ask.choice

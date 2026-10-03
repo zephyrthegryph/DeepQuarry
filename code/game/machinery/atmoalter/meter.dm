@@ -33,7 +33,7 @@
 		return
 	var/obj/item/pipe_meter/PM = new /obj/item/pipe_meter(loc)
 	transfer_fingerprints_to(PM)
-	qdel(src)
+	replace_with(src, PM)
 
 /obj/machinery/meter/proc/select_target()
 	var/obj/machinery/atmospherics/pipe/P

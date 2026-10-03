@@ -267,7 +267,7 @@
  *
  * return bool Whether the topic is passed (TRUE), or cancelled (FALSE).
  */
-/proc/tgui_Topic(href_list)
+/proc/tgui_Topic(href_list, mob/user)
 	// Skip non-tgui topics
 	// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 	if(!href_list["tgui"])
@@ -279,25 +279,25 @@
 		// ALLOW(sys_topic_raw_dispatch): the tgui message protocol (tgui=1;type=...), not a datum href action; its messages reach tgui_act().
 		if (href_list["ns"])
 			context += " ([href_list["ns"]])"
-		log_tgui(usr, href_list["message"],
+		log_tgui(user, href_list["message"],
 			context = context)
 	// Reload all tgui windows
 	if(type == "cacheReloaded")
 		#ifdef DEBUG
-		if(usr.client.address != "127.0.0.1" && usr.client.address != "::1")
+		if(user.client.address != "127.0.0.1" && user.client.address != "::1")
 			return TRUE
 		// Every development build may assign new async chunk ids. Refresh the
 		// manifest and registrations before any browser is told to reload.
 		if(!SStgui.reload_development_chunks())
 			return TRUE
 		#else
-		if(usr.client.tgui_cache_reloaded)
+		if(user.client.tgui_cache_reloaded)
 			return TRUE
 		#endif
 		// Mark as reloaded
-		usr.client.tgui_cache_reloaded = TRUE
+		user.client.tgui_cache_reloaded = TRUE
 		// Notify windows
-		var/list/windows = usr.client.tgui_windows
+		var/list/windows = user.client.tgui_windows
 		for(var/window_id in windows)
 			var/datum/tgui_window/window = windows[window_id]
 			if (window.status == TGUI_WINDOW_READY)
@@ -307,12 +307,12 @@
 	var/window_id = href_list["window_id"]
 	var/datum/tgui_window/window
 	if(window_id)
-		window = usr.client.tgui_windows[window_id]
+		window = user.client.tgui_windows[window_id]
 		if(!window)
-			log_tgui(usr,
+			log_tgui(user,
 				"Error: Couldn't find the window datum, force closing.",
 				context = window_id)
-			SStgui.force_close_window(usr, window_id)
+			SStgui.force_close_window(user, window_id)
 			return TRUE
 
 	// Decode payload
@@ -322,7 +322,7 @@
 		var/payload_text = href_list["payload"]
 
 		if (!rustg_json_is_valid(payload_text))
-			log_tgui(usr, "Error: Invalid JSON")
+			log_tgui(user, "Error: Invalid JSON")
 			return TRUE
 
 		payload = json_decode(payload_text)

@@ -49,7 +49,7 @@
 		to_chat(user , "[src] shatters into a scattering of overstressed metal shards as it leaves the crossbow.")
 		var/obj/item/material/shard/shrapnel/S = new()
 		S.forceMove(get_turf(src))
-		qdel(src)
+		consume(src, user)
 
 /obj/item/gun/launcher/crossbow
 	name = "powered crossbow"

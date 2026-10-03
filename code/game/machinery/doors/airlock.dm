@@ -351,10 +351,10 @@ About the new airlock wires panel:
 		electrified_to(0)
 	else if(duration)	//electrify door for the given duration seconds
 		if(actor)
-			shockedby += "\[[time_stamp()]\] - [actor](ckey:[actor.ckey])"
+			LAZYADD(shockedby, "\[[time_stamp()]\] - [actor](ckey:[actor.ckey])")
 			add_attack_logs(actor, src, "Electrified a door")
 		else
-			shockedby += "\[[time_stamp()]\] - EMP)"
+			LAZYADD(shockedby, "\[[time_stamp()]\] - EMP)")
 		message = "The door is now electrified [duration == -1 ? "permanently" : "for [duration] second\s"]."
 		if(duration == -1)
 			cancel_after(src, "electrified")
@@ -987,7 +987,7 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 
 		electronics.forceMove(get_turf(src))
 		own_take(src, nameof(electronics))
-	qdel(src)
+	replace_with(src, da)
 
 /obj/machinery/door/airlock/proc/can_remove_electronics(datum/act/A)
 	return !frozen && panel_open(src) && (operating < 0 || (!operating && weld_shut_welded(src) && !arePowerSystemsOn() && density && (!bolts_bolted(src) || (has_stat(BROKEN)))))

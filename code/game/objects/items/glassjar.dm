@@ -116,7 +116,6 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 			contains = JAR_NOTHING
 			update_icon()
 			return TRUE
-	//CHOMPDDITION: your god can not help you
 	for(var/mob/M in contents_of(src))
 		if(istype(M,/mob/living/voice)) //Don't knock voices out!
 			continue
@@ -127,16 +126,14 @@ DECLARE_INTERACTIONS(/obj/item/glass_jar, \
 /// Old attackby.
 /obj/item/glass_jar/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/spacecash))
-		if(contains == JAR_NOTHING)
-			contains = JAR_MONEY
-		if(contains != JAR_MONEY)
+		if(contains != JAR_NOTHING && contains != JAR_MONEY)
 			return INTERACTION_HANDLED_PASS
 		var/obj/item/spacecash/S = W
+		if(!own_bring_in(src, nameof(contents), S, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
+		contains = JAR_MONEY
 		act_message(user, src, others = span_notice("%U% puts [S.worth] [S.worth > 1 ? "thalers" : "thaler"] into %T%."))
-		user.drop_from_inventory(S)
-		S.forceMove(src)
 		update_icon()
-	//CHOMPDDITION: your god can not help you
 	if(istype(W,/obj/item/holder/micro))
 		var/full = 0
 		for(var/mob/M in contents_of(src))

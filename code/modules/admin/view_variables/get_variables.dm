@@ -141,13 +141,13 @@
 				return
 
 		if(VV_ATOM_TYPE)
-			.["value"] = pick_closest_path(FALSE, key = "[key]:path")
+			.["value"] = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			if(.["value"] == null)
 				.["class"] = null
 				return
 
 		if(VV_DATUM_TYPE)
-			.["value"] = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			.["value"] = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			if(.["value"] == null)
 				.["class"] = null
 				return
@@ -160,7 +160,7 @@
 			.["value"] = type
 
 		if(VV_ATOM_REFERENCE)
-			var/type = pick_closest_path(FALSE, key = "[key]:path")
+			var/type = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
@@ -173,7 +173,7 @@
 			.["value"] = things[value]
 
 		if(VV_DATUM_REFERENCE)
-			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
@@ -186,7 +186,7 @@
 			.["value"] = things[value]
 
 		if(VV_MOB_REFERENCE)
-			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)), "[key]:path")
+			var/type = pick_closest_path(FALSE, make_types_fancy(typesof(/mob)), "[key]:path", mob)
 			var/subtypes = vv_subtype_prompt(type, key)
 			if(subtypes == null)
 				.["class"] = null
@@ -241,7 +241,7 @@
 				return
 
 		if(VV_NEW_ATOM)
-			var/type = pick_closest_path(FALSE, key = "[key]:path")
+			var/type = pick_closest_path(FALSE, key = "[key]:path", user = mob)
 			if(!type)
 				.["class"] = null
 				return
@@ -251,7 +251,7 @@
 			.["value"] = newguy
 
 		if(VV_NEW_DATUM)
-			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path")
+			var/type = pick_closest_path(FALSE, GLOBAL_TABLE_GET(get_fancy_list_of_datum_types), "[key]:path", mob)
 			if(!type)
 				.["class"] = null
 				return

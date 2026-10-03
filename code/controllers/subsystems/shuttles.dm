@@ -4,6 +4,9 @@
 // Also handles initialization and processing of overmap sectors.
 //
 
+/// Temporary countdown radios are retained until arrival or refusal.
+/datum/system/shuttles/var/list/specops_announcers
+
 SYSTEM_DEF(shuttles)
 	name = "Shuttles"
 	init_stage = INITSTAGE_MAIN
@@ -73,6 +76,12 @@ SYSTEM_DEF(shuttles)
 /// One step of this shuttle's launch/move state machine.
 /datum/shuttle/proc/shuttle_step()
 	return PROCESS_KILL
+
+/datum/system/shuttles/proc/hold_specops_announcer(obj/item/radio/intercom/announcer)
+	return own_add(src, nameof(specops_announcers), announcer)
+
+/datum/system/shuttles/proc/release_specops_announcer(obj/item/radio/intercom/announcer)
+	return own_remove(src, nameof(specops_announcers), announcer)
 
 /datum/system/shuttles/proc/performance_diagnostics()
 	var/list/type_costs = profile_type_cost_ms.Copy()

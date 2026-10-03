@@ -24,7 +24,7 @@
 
 /obj/item/broken_gun/proc/validate_gun_type()
 	if(!my_guntype)
-		qdel(src)
+		consume(src)
 
 /obj/item/broken_gun/examine(mob/user)
 	. = ..()

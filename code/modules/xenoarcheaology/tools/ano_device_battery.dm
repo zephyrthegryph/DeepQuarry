@@ -77,9 +77,9 @@ DECLARE_INTERACTIONS(/obj/item/anodevice, \
 /obj/item/anodevice/proc/interaction_item(mob/user, obj/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/anobattery))
 		if(!inserted_battery())
+			if(!own_bring_in(src, nameof(inserted_battery), I, null, user, TRUE, null, FALSE))
+				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_blue("You insert the battery."))
-			user.drop_item()
-			I.forceMove(src)
 			rel_set(src, nameof(inserted_battery), I)
 			UpdateSprite()
 	else

@@ -7,6 +7,8 @@
 	var/icon_state_opened = null	// Icon to switch to when 'used'.
 	var/used = FALSE
 	var/busy = FALSE // Don't spam ghosts by spamclicking.
+	/// Operator who started this query, distinct from its volunteer winner.
+	var/mob/opening_actor
 	var/needscharger //For drone pods that want their pod to turn into a charger.
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 	unacidable = TRUE
@@ -20,10 +22,11 @@
 	if(busy)
 		return FALSE
 
+	rel_set(src, nameof(opening_actor), user)
 	if(alert)
 		visible_message(alert)
 	if(adminalert)
-		log_and_message_admins(adminalert)
+		log_and_message_admins(adminalert, user)
 	busy = TRUE
 	own_set(src, nameof(Q), new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
@@ -293,3 +296,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 /obj/structure/ghost_pod/ghost_activated/LateInitialize()
 	ghostpod_startup(spawn_active)
 
+
+/obj/structure/ghost_pod/relations()
+	. = ..()
+	. += rel_one(nameof(opening_actor))

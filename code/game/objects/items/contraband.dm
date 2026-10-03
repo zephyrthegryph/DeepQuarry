@@ -240,6 +240,8 @@ DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(inter
 
 /// Old attack_self.
 /obj/item/contraband/proc/interaction_unwrap(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!consume(src, user))
+		return INTERACTION_HANDLED_PASS
 	var/contraband = pick(
 		/obj/item/reagent_containers/glass/beaker/vial/macrocillin,
 		/obj/item/reagent_containers/glass/beaker/vial/microcillin,
@@ -257,4 +259,3 @@ DECLARE_INTERACTIONS(/obj/item/contraband, INTERACT_USE("Unwrap", PROC_REF(inter
 
 	user.put_in_hands(new contraband(user.loc))
 	to_chat(user, "You unwrap the package.")
-	consume(src, user)

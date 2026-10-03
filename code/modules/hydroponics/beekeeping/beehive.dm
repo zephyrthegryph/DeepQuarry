@@ -377,9 +377,10 @@ DECLARE_INTERACTIONS(/obj/item/beehive_assembly, INTERACT_USE(null, PROC_REF(int
 	return TRUE
 
 /obj/item/beehive_assembly/proc/assemble_done(mob/user)
+	if(!consume(src, user))
+		return
 	act_message(user, null, MSG_SELF(span_notice("You construct a beehive.")), MSG_OTHERS(span_notice("%U% constructs a beehive.")))
 	new /obj/machinery/beehive(get_turf(user))
-	consume(src, user)
 
 /obj/item/stack/material/wax
 	name = "wax"

@@ -35,9 +35,9 @@
 /// Old attackby.
 /obj/structure/filingcabinet/proc/interaction_item(mob/user, obj/item/P, datum/interaction/interaction)
 	if(istype(P, /obj/item/paper) || istype(P, /obj/item/folder) || istype(P, /obj/item/photo) || istype(P, /obj/item/paper_bundle))
+		if(!own_bring_in(src, nameof(contents), P, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You put [P] in [src]."))
-		user.drop_item()
-		P.forceMove(src)
 		open_animation()
 		SStgui.update_uis(src)
 	else

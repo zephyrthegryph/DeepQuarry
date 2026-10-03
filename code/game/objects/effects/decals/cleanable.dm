@@ -41,7 +41,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 /obj/effect/decal/cleanable/wash(clean_types)
 	. = ..()
 	if (. || (clean_types & clean_type))
-		qdel(src)
+		consume(src)
 		return TRUE
 
 // persistent filth forgets this decal.

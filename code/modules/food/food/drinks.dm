@@ -457,16 +457,24 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/dry_ramen, null, list(
 		icon_state = "water_cup_e"
 
 /obj/item/reagent_containers/food/drinks/sillycup/MouseDrop(obj/over_object as obj)
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native item dragging supplies its initiating actor through BYOND usr.
+	if(!cup_return_with_actor(user, over_object))
+		return ..()
+
+/// TRUE consumes the same empty-cup/cooler branch even when its range or capacity check refuses.
+/obj/item/reagent_containers/food/drinks/sillycup/proc/cup_return_with_actor(mob/user, obj/over_object)
 	if(!reagents.total_volume && istype(over_object, /obj/structure/reagent_dispensers/water_cooler))
-		if(over_object.Adjacent(usr))
+		if(over_object.Adjacent(user))
 			var/obj/structure/reagent_dispensers/water_cooler/W = over_object
 			if(W.cupholder && W.cups < 10)
+				var/message = span_notice("You put the [src] in the cup dispenser.")
+				if(!consume(src, user))
+					return TRUE
 				W.cups++
-				to_chat(usr, span_notice("You put the [src] in the cup dispenser."))
-				qdel(src)
+				to_chat(user, message)
 				W.update_icon()
-	else
-		return ..()
+		return TRUE
+	return FALSE
 
 //////////////////////////drinkingglass and shaker//
 //Note by Darem: This code handles the mixing of drinks. New drinks go in three places: In Chemistry-Reagents.dm (for the drink

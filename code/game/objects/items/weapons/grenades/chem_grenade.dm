@@ -52,8 +52,16 @@ DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)
 
 DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
+	INTERACT_ITEM(null, PROC_REF(interaction_item), REQ_TARGET_STATE(/obj/item/grenade/chem_grenade/proc/can_insert_container)), \
 )
+
+/// A matching chemical container must be releasable before grenade assembly changes.
+/obj/item/grenade/chem_grenade/proc/can_insert_container(mob/user, atom/target, obj/item/held)
+	if((!stage || stage == 1) && path != 2 && is_type_in_list(held, TYPE_TABLE_GET(src, chem_grenade_containers)))
+		var/reason = held.loc?.release_refusal(held, user)
+		if(reason)
+			return reason
+	return TRUE
 
 /// Old attackby.
 /obj/item/grenade/chem_grenade/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
@@ -80,16 +88,17 @@ DECLARE_INTERACTIONS(/obj/item/grenade/chem_grenade, \
 		name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 		stage = 1
 	else if(is_type_in_list(W, TYPE_TABLE_GET(src, chem_grenade_containers)) && (!stage || stage==1) && path != 2)
+		if(can_insert_container(user, src, W) != TRUE)
+			return INTERACTION_HANDLED_PASS
 		path = 1
 		if(length(beakers) == 2)
 			to_chat(user, span_warning("The grenade can not hold more containers."))
 			return INTERACTION_HANDLED_PASS
 		else
 			if(W.reagents.total_volume)
+				if(!own_add(src, nameof(beakers), W, user = user, into = TRUE))
+					return INTERACTION_HANDLED_PASS
 				to_chat(user, span_notice("You add \the [W] to the assembly."))
-				user.drop_item()
-				W.forceMove(src)
-				own_move(W, src, nameof(beakers))
 				stage = 1
 				name = "unsecured grenade with [length(beakers)] containers[detonator?" and detonator":""]"
 			else

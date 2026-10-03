@@ -56,13 +56,13 @@
 TYPE_TABLE_DECLARE(/obj/item/implant/organ/limbaugment, limbaugment_targets, list(O_AUG_L_FOREARM, O_AUG_R_FOREARM))
 
 
-/obj/item/implant/organ/limbaugment/post_implant(mob/M)
+/obj/item/implant/organ/limbaugment/post_implant(mob/M, mob/user = null)
 	if(ishuman(M))
 		var/mob/living/carbon/human/H = M
 
 		var/list/choices = augment_choices(H)
 		if(length(choices) > 1)
-			om_ask(usr, /datum/om/prompt/choice/augment_location, PROC_REF(augment_location_chosen), choices = choices, patient = H)
+			om_ask(user, /datum/om/prompt/choice/augment_location, PROC_REF(augment_location_chosen), choices = choices, patient = H)
 			return
 		install_augment(H, length(choices) ? choices[1] : null)
 

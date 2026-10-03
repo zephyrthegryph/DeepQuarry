@@ -15,6 +15,8 @@
 		return
 
 /mob/living/simple_mob/animal/passive/lizard/event/proc/man()
+	if(loc?.release_refusal(src))
+		return
 	var/mob/bigger = new /mob/living/simple_mob/vore/aggressive/lizardman(get_turf(src))
 
 	if(istype(loc,/obj/belly))
@@ -23,7 +25,7 @@
 		to_chat(B.owner, span_warning("\The [src] suddenly evolves inside your [lowertext(B.name)]!"))
 		B.release_specific_contents(src, TRUE)
 		B.nom_atom(bigger, null)
-		qdel(src)
+		consume(src)
 	else
 		act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-		qdel(src)
+		consume(src)

@@ -360,7 +360,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 	if (interaction.stance == I_HELP && src.allowed(user))
 		user.show_viewers(span_infoplain(span_bold("\The [user]") + " lifts \the [src], allowing passage."))
 		for(var/obj/item/tape/T in gettapeline())
-			T.lift(100) //~10 seconds
+			T.lift(10 SECONDS) //~10 seconds
 	else
 		breaktape(user, interaction.stance)
 	return TRUE
@@ -409,7 +409,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 		if(T.tape_dir & get_dir(T, src))
 			qdel(T)
 
-	qdel(src) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
+	consume(src, user) //TODO: Dropping a trash item holding fibers/fingerprints of all broken tape parts
 	return
 
 /obj/item/tape/proc/settle()

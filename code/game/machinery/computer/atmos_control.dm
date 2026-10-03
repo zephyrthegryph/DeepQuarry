@@ -39,7 +39,8 @@ DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null
 	act_message(user, src, MSG_SELF(span_warning("You cause the screen to flash as you gain full control.")), \
 		MSG_OTHERS(span_warning("%U% does something %T%, causing the screen to flash!")), \
 		MSG_BLIND("You hear an electronic warble."))
-	atmos_control.emagged = 1
+	var/datum/tgui_module/atmos_control/controller = ui_redirect(user)
+	controller.emagged = TRUE
 	return 1
 
 /obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)

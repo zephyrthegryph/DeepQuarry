@@ -80,7 +80,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vitals_monitor, MACHINE_PIPELINE, "victim"
 		play_sfx(src, SFX_MACHINES_QUIET_BEEP, volume = 0)
 
 /obj/machinery/vitals_monitor/MouseDrop(over_object, src_location, over_location)
-	if(!CanMouseDrop(over_object))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native patient dragging supplies the initiating actor through BYOND usr.
+	drop_patient_with_actor(user, over_object)
+
+/obj/machinery/vitals_monitor/proc/drop_patient_with_actor(mob/user, atom/over_object)
+	if(!CanMouseDrop(over_object, user))
 		return
 	if(victim())
 		rel_clear(src, nameof(victim))

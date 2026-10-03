@@ -88,11 +88,10 @@ REGISTRY_MEMBERSHIP(/obj/machinery/photocopier/faxmachine, REGISTRY_FAXES)
 	effect = /obj/machinery/photocopier/faxmachine/proc/interaction_request_roles
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_request_roles(mob/user, obj/item/held, datum/interaction/interaction)
-	request_roles()
+	request_roles(user)
 	return TRUE
 
-/obj/machinery/photocopier/faxmachine/proc/request_roles()
-	var/mob/living/L = usr
+/obj/machinery/photocopier/faxmachine/proc/request_roles(mob/living/L)
 
 	if(!L || !isturf(L.loc) || !isliving(L))
 		return
@@ -254,7 +253,7 @@ UI_ACT_OVERRIDE(/obj/machinery/photocopier/faxmachine, ui_act_remove)
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "send_automated_staff_request", ui_act_send_automated_staff_request)
 UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_send_automated_staff_request)
-	request_roles()
+	request_roles(ui.user)
 	return TRUE
 
 UI_ACT(/obj/machinery/photocopier/faxmachine, "rename", ui_act_rename)
@@ -351,12 +350,15 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-		user.drop_item()
+		if(!istype(held, /obj/item/toner))
+			return TRUE
+		var/obj/item/toner/T = held
+		var/refill_amount = T.toner_amount
+		if(!consume(held, user))
+			return TRUE
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		var/obj/item/toner/T = held
-		toner += T.toner_amount
-		consume(held, user)
+		toner += refill_amount
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)

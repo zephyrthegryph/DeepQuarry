@@ -212,13 +212,13 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/serdy, "{initial(icon_sta
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/hunter/ui_action_click(mob/user, actiontype)
-	serdy_hunter_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(serdy_hunter_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VERB("Use Scope", PROC_REF(serdy_hunter_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hunter/proc/serdy_hunter_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 // AR Variants
 
@@ -456,13 +456,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hunter, INTERACT_VE
 	one_handed_penalty = 70
 
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/ui_action_click(mob/user, actiontype)
-	serdy_mosin_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(serdy_mosin_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTERACT_VERB("Use Scope", PROC_REF(serdy_mosin_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/mosin/scoped/proc/serdy_mosin_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/type901
 	name = "Type 901 Assault rifle"
@@ -522,13 +522,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/mosin/scoped, INTER
 	fire_sound = "sound/weapons/serdy/sks.ogg"
 
 /obj/item/gun/projectile/automatic/serdy/awp/ui_action_click(mob/user, actiontype)
-	serdy_awp_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(serdy_awp_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB("Use Scope", PROC_REF(serdy_awp_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/awp/proc/serdy_awp_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/hectate
 	name = "Hectate II"
@@ -558,13 +558,13 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/awp, INTERACT_VERB(
 
 
 /obj/item/gun/projectile/automatic/serdy/hectate/ui_action_click(mob/user, actiontype)
-	serdy_hectate_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(serdy_hectate_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/automatic/serdy/hectate, INTERACT_VERB("Use Scope", PROC_REF(serdy_hectate_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/automatic/serdy/hectate/proc/serdy_hectate_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 /obj/item/gun/projectile/automatic/serdy/memegun
 	name = "Hardbass Special"

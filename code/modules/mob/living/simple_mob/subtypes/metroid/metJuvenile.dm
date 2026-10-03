@@ -69,12 +69,14 @@
 		to_chat(src, span_warning("I am not ready to evolve yet..."))
 
 /mob/living/simple_mob/metroid/juvenile/proc/expand_troid()
+	if(loc?.release_refusal(src))
+		return
 	var/mob/living/L
 	L = new next(get_turf(src)) //Next is a variable defined by metTypes.dm that just points to the next metroid in the evolutionary stage.
 	if(mind)
 		src.mind.transfer_to(L)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% suddenly evolves!")))
-	qdel(src)
+	global.consume(src)
 
 // Code for metroids attacking other things.
 // metroid attacks change based on intent.

@@ -39,9 +39,10 @@ DECLARE_INTERACTIONS(/obj/structure/ore_box, INTERACT_ITEM(null, PROC_REF(intera
 /obj/structure/ore_box/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/ore))
 		var/obj/item/ore/ore = W
-		stored_ore[ore.material]++
-		user.remove_from_mob(W)
-		consume(ore, user)
+		var/ore_material = ore.material
+		if(!consume(ore, user))
+			return INTERACTION_HANDLED_PASS
+		stored_ore[ore_material]++
 		return INTERACTION_HANDLED_PASS
 
 	if(istype(W, /obj/item/dogborg/sleeper/compactor/supply))

@@ -121,11 +121,15 @@ CAPABILITIES(/obj/item/storage/photo_album, \
 	configure(storage(accepts = list(/obj/item/photo))))
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
+	if(!handle_album_drop(usr, over_object)) // ALLOW(sys_usr_outside_verb): Native photo album drag supplies the actor before preserving its conditional parent routing.
+		return ..()
 
-	if(ishuman(usr))
-		var/mob/living/carbon/human/M = usr
+/obj/item/storage/photo_album/proc/handle_album_drop(mob/user, obj/over_object)
+
+	if(ishuman(user))
+		var/mob/living/carbon/human/M = user
 		if(!( istype(over_object, /atom/movable/screen) ))
-			return ..()
+			return FALSE
 		play_sfx(src, SFX_RUSTLE, 2)
 		if((!( M.restrained() ) && !( M.stat ) && M.get_equipped_item(SLOT_ID_BACK) == src))
 			switch(over_object.name)
@@ -135,14 +139,14 @@ CAPABILITIES(/obj/item/storage/photo_album, \
 				if("l_hand")
 					M.unEquip(src)
 					M.put_in_l_hand(src)
-			add_fingerprint(usr)
-			return
-		if(over_object == usr && in_range(src, usr) || usr.contents.Find(src))
-			if(usr.s_active)
-				usr.s_active.close(usr)
-			show_to(usr)
-			return
-	return
+			add_fingerprint(user)
+			return TRUE
+		if(over_object == user && in_range(src, user) || user.contents.Find(src))
+			if(user.s_active)
+				user.s_active.close(user)
+			show_to(user)
+			return TRUE
+	return TRUE
 
 /*********
 * camera *
@@ -198,9 +202,10 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 		if(pictures_left)
 			to_chat(user, span_notice("[src] still has some film in it!"))
 			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_notice("You insert [I] into [src]."))
-		user.drop_item()
-		consume(I, user)
+		var/film_name = "[I]"
+		if(!consume(I, user))
+			return INTERACTION_HANDLED_PASS
+		to_chat(user, span_notice("You insert [film_name] into [src]."))
 		pictures_left = pictures_max
 		return INTERACTION_HANDLED_PASS
 	return FALSE

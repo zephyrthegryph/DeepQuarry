@@ -177,12 +177,13 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 
 /obj/machinery/photocopier/proc/interaction_insert_toner(mob/user, obj/item/toner/O, datum/interaction/interaction)
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-		user.drop_item()
+		var/refill_amount = O.toner_amount
+		if(!consume(O, user))
+			return TRUE
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		flick("photocopier_toner", src)
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		toner += O.toner_amount
-		consume(O, user)
+		toner += refill_amount
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		flick("photocopier_notoner", src)

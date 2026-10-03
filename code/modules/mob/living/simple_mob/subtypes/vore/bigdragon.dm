@@ -813,7 +813,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	submunitions = list(/obj/item/projectile/bullet/incendiary/dragonflame = 5)
 
 /obj/item/projectile/bullet/dragon/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/incendiary/dragonflame
 	name = "dragon flame"
@@ -841,7 +841,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 		return 1
 
 /obj/item/projectile/bullet/incendiary/dragonflame/on_range()
-	qdel(src)
+	consume(src)
 
 /obj/item/projectile/bullet/incendiary/dragonflame/Move()
 	. = ..()
@@ -871,7 +871,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 
 	handle_tame_item(O, user)
 
-	// DQEdit - legacy ai_brain swap removed. Modern brain uses set_hostile() /
+	// Legacy ai_brain swap removed. Modern brain uses set_hostile() /
 	// personal disposition for state changes.
 	faction = FACTION_NEUTRAL
 	norange = 1		//Don't start fires while friendly
@@ -889,7 +889,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/vore/bigdragon, TYPE_PROC_REF(/at
 	norange = 0
 	faction = FACTION_DRAGON
 	say("HAVE IT YOUR WAY THEN")
-	// DQEdit - legacy ai_brain swap removed; brain stays put.
+	// Legacy ai_brain swap removed; brain stays put.
 	ai_brain?.set_hostile(TRUE)
 	rel_set(src, nameof(vore_selected), gut1)
 	if(attacker)

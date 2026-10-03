@@ -1,0 +1,51 @@
+/// The real loose machine-frame cutting edge refuses a wrong tool and refunds its exact frame-size allowance only after welding completes.
+/datum/unit_test/om/interim_machine_frame_timed_cut_refund/run_om(list/made)
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	user.enable_godmode()
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
+	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench, T)
+	var/obj/item/weldingtool/welder = allocate(/obj/item/weldingtool, T)
+	var/datum/construction_graph/graph = construction_graph_of(frame)
+	TEST_ASSERT_EQUAL(graph.state_of(frame), "loose", "the actual unanchored frame begins in its declared loose construction state")
+	var/refund_size = frame.frame_type.frame_size
+	TEST_ASSERT(refund_size > 0, "the actual frame's declared sheet allowance is positive")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material)), 0, "the actual cutting fixture begins without recovered sheets")
+	var/datum/interaction/construction/cutting
+	for(var/datum/interaction/construction/edge as anything in construction_edges_for(frame))
+		if(edge.type == /datum/interaction/construction/frame/cut_apart/loose)
+			cutting = edge
+			break
+	TEST_ASSERT_NOTNULL(cutting, "the actual loose frame exposes its declared cutting edge")
+	TEST_ASSERT(user.put_in_active_hand(wrench), "the actor holds the actual wrong construction tool")
+	TEST_ASSERT_NOTNULL(cutting.why_not(user, frame, wrench), "the actual cutting requirement refuses a wrench")
+	TEST_ASSERT(!cutting.perform(user, frame, wrench), "the actual public edge rejects the wrong tool")
+	TEST_ASSERT(!QDELETED(frame), "wrong-tool refusal preserves the original frame")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material)), 0, "wrong-tool refusal creates no sheet refund")
+	TEST_ASSERT(!LAZYLEN(user.do_afters), "wrong-tool refusal starts no cutting task")
+	TEST_ASSERT(user.unEquip(wrench), "the actor actually clears the wrong tool")
+	TEST_ASSERT(user.put_in_active_hand(welder), "the actor holds the real welding tool")
+	TEST_ASSERT(welder.interaction_self(user, welder, null), "actual tool interaction lights the welder")
+	TEST_ASSERT(welder.isOn(), "the real held welder is lit")
+	var/cutting_delay = cutting.duration_for(user, frame, welder)
+	TEST_ASSERT(cutting_delay > 0, "the actual cutting edge has a positive scaled tool delay")
+	TEST_ASSERT_NULL(cutting.why_not(user, frame, welder), "the actual lit welder satisfies the construction requirement")
+	TEST_ASSERT(cutting.perform(user, frame, welder), "the public construction edge starts actual timed cutting")
+	TEST_ASSERT(LAZYLEN(user.do_afters), "actual cutting creates its pending timed task")
+	TEST_ASSERT(!QDELETED(frame), "starting actual cutting preserves the original frame until completion")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/item/stack/material)), 0, "starting actual cutting creates no early sheet refund")
+	scheduler_advance((cutting_delay + 1 SECOND) / (1 SECOND))
+	welder.interaction_self(user, welder, null)
+	own_turf_contents(T)
+	TEST_ASSERT(!user.incapacitated(), "the actual safe fixture stays capable through cutting")
+	TEST_ASSERT(!LAZYLEN(user.do_afters), "actual completed cutting releases its pending task")
+	TEST_ASSERT(QDELETED(frame), "actual completed cutting consumes the original frame")
+	var/refunded_sheets = 0
+	var/refund_stacks = 0
+	for(var/obj/item/stack/material/refund as anything in contents_of(T, /obj/item/stack/material))
+		TEST_ASSERT(istype(refund, /obj/item/stack/material/steel), "actual frame cutting refunds only its declared steel sheets")
+		refunded_sheets += refund.get_amount()
+		refund_stacks++
+	TEST_ASSERT_EQUAL(refund_stacks, 1, "actual cutting creates exactly one material stack")
+	TEST_ASSERT_EQUAL(refunded_sheets, refund_size, "actual cutting refunds exactly the original frame-type sheet allowance")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), welder, "actual cutting preserves the actor's original welding tool")

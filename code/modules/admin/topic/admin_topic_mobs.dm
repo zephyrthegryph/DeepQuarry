@@ -373,7 +373,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	var/answer = topic_ask(user, args, "a30", /datum/om/prompt/choice/alert, message = "Are you sure you wish to hit [key_name(M)] with Blue Space Artillery?", title = "Confirm Firing?", choices = list("Yes", "No"))
 	if(answer != "Yes" || QDELETED(M))
 		return
-	bluespace_artillery(M, src)
+	bluespace_artillery(M, user)
 
 /datum/admins/proc/topic_jumpto(mob/user, list/args)
 	if(!CONFIG_GET(flag/allow_admin_jump))

@@ -40,7 +40,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 
 /obj/machinery/feeder/MouseDrop(over_object, src_location, over_location)
 	..()
-	if(!isliving(usr))
+	return drop_patient_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native patient attachment drag supplies the actor after unchanged parent input routing.
+
+/obj/machinery/feeder/proc/drop_patient_with_actor(mob/user, atom/over_object)
+	if(!isliving(user))
 		return
 
 	if(attached())
@@ -49,8 +52,8 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/feeder, TYPE_PROC_REF(/atom, appearance_o
 		update_icon()
 		return
 
-	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
-		act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
+	if(in_range(src, user) && ishuman(over_object) && get_dist(over_object, src) <= 1)
+		act_message(user, null, others = "%U% inserts the feeding tube into \the [over_object].")
 		rel_set(src, nameof(attached), over_object)
 		update_icon()
 

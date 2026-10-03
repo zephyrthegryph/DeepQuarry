@@ -391,11 +391,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 /obj/machinery/media/jukebox/ghost/getTracksList()
 	return (custom_tracks + ..())
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_add()
-	if(!check_rights(R_FUN|R_ADMIN))
+/obj/machinery/media/jukebox/ghost/proc/manual_track_add(mob/user)
+	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
 		return
 
-	om_flow_start(/datum/om/flow/jukebox_track_add, usr, src)
+	om_flow_start(/datum/om/flow/jukebox_track_add, user, src)
 
 /// An admin adds a custom track: url, title, duration, then an optional artist.
 /datum/om/flow/jukebox_track_add
@@ -431,11 +431,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/media/jukebox/ghost, TYPE_PROC_REF(/atom,
 	var/genre = "! Admin Loaded !"
 	own_add(jukebox, nameof(jukebox.custom_tracks), new /datum/track(url, title, duration, ask.text, genre))
 
-/obj/machinery/media/jukebox/ghost/proc/manual_track_remove()
-	if(!check_rights(R_FUN|R_ADMIN))
+/obj/machinery/media/jukebox/ghost/proc/manual_track_remove(mob/user)
+	if(!admin_require(user?.client, R_FUN|R_ADMIN, "check_rights in [callee?.proc]"))
 		return
 
-	om_ask(usr, /datum/om/prompt/text, PROC_REF(manual_track_removal_entered), message = "Input track title or URL to remove (must be exact)", title = "Remove Track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
+	om_ask(user, /datum/om/prompt/text, PROC_REF(manual_track_removal_entered), message = "Input track title or URL to remove (must be exact)", title = "Remove Track", requires = PROMPT_ADMIN(R_FUN|R_ADMIN))
 
 /obj/machinery/media/jukebox/ghost/proc/manual_track_removal_entered(datum/om/prompt/text/ask)
 	var/mob/user = ask.answerer
@@ -462,12 +462,12 @@ VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "add_track", PROC_REF(vv_top
 VV_TOPIC_ACTION(/obj/machinery/media/jukebox/ghost, "remove_track", PROC_REF(vv_topic_remove_track))
 
 /obj/machinery/media/jukebox/ghost/proc/vv_topic_add_track(mob/user, list/args)
-	manual_track_add()
+	manual_track_add(user)
 	user.client?.debug_variables(src)
 	return TRUE
 
 /obj/machinery/media/jukebox/ghost/proc/vv_topic_remove_track(mob/user, list/args)
-	manual_track_remove()
+	manual_track_remove(user)
 	user.client?.debug_variables(src)
 	return TRUE
 

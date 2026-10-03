@@ -176,12 +176,17 @@
 
 // This handles the drag-open inventory panel.
 /mob/living/MouseDrop(atom/over_object)
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native inventory dragging supplies the initiating actor before the unchanged parent fallback.
+	if(!inventory_drop_with_actor(user, over_object))
+		. = ..()
+
+/mob/living/proc/inventory_drop_with_actor(mob/user, atom/over_object)
 	var/mob/living/L = over_object
-	if(L.is_incorporeal())
-		return
-	if(istype(L) && L != src && L == usr && Adjacent(L))
+	if(over_object && over_object.is_incorporeal())
+		return TRUE
+	if(istype(L) && L != src && L == user && Adjacent(L))
 		show_inventory_panel(L)
-	. = ..()
+	return FALSE
 
 /mob/living/proc/show_inventory_panel(mob/user, datum/tgui_state/state)
 	if(!inventory_panel_type)

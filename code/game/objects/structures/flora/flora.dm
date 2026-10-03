@@ -84,7 +84,7 @@
 
 /obj/structure/flora/proc/attackby_timed_done(mob/living/user)
 	act_message(user, src, others = span_notice("%U% uproots and discards %T%!"))
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/flora/proc/can_harvest(obj/item/I)
 	. = FALSE

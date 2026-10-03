@@ -18,20 +18,20 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT
 			sandwich_limit += 4
 
 	if(istype(W,/obj/item/material/shard))
+		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You hide [W] in \the [src]."))
-		user.drop_item()
-		W.forceMove(src)
 		update()
 		return INTERACTION_HANDLED_PASS
 	else if(istype(W,/obj/item/reagent_containers/food/snacks))
 		if(contents_count(src) > sandwich_limit)
 			to_chat(user, span_red("If you put anything else on \the [src] it's going to collapse."))
 			return INTERACTION_HANDLED_PASS
+		if(!own_add(src, nameof(src.ingredients), W, user = user))
+			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_blue("You layer [W] over \the [src]."))
 		var/obj/item/reagent_containers/F = W
 		F.reagents.trans_to_obj(src, F.reagents.total_volume)
-		if(!own_add(src, nameof(src.ingredients), W, user = user))
-			return INTERACTION_HANDLED_PASS
 		update()
 		return INTERACTION_HANDLED_PASS
 	return FALSE

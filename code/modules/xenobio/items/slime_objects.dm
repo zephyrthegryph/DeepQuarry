@@ -92,6 +92,8 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 	force = 1 //Needs a token force to ensure you can attack because for some reason you can't attack with 0 force things
 
 /obj/item/slime_crystal/apply_hit_effect(mob/living/target, mob/living/user, hit_zone)
+	if(loc?.release_refusal(src, user))
+		return
 	act_message(target, src, others = span_warning("%U% has been teleported with %T% by \the [user]!"))
 	safe_blink(target, 14)
 	consume(src, user)
@@ -100,6 +102,8 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 /// Old attack_self.
 /obj/item/slime_crystal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+	if(loc?.release_refusal(src, user))
+		return FALSE
 	act_message(user, src, others = span_warning("%U% teleports themselves with %T%!"))
 	safe_blink(user, 14)
 	consume(src, user)
@@ -111,10 +115,12 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 	if(AM.anchored)
 		return
+	if(loc?.release_refusal(src))
+		return
 
 	AM.visible_message(span_warning("\The [AM] has been teleported with \the [src]!"))
 	safe_blink(AM, 14)
-	qdel(src)
+	consume(src)
 
 /obj/item/disposable_teleporter/slime
 	name = "greater slime crystal"
@@ -126,6 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 // Very filling food.
 /obj/item/reagent_containers/food/snacks/slime
+	bitesize = 5
 	name = "slimy clump"
 	desc = "A glob of slime that is thick as honey.  For the brave " + JOB_XENOBIOLOGIST + "."
 	icon_state = "honeycomb"
@@ -135,9 +142,6 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	nutriment_amt = 25 // Very filling.
 	nutriment_desc = list("slime" = 10, "sweetness" = 10, REAGENT_ID_BLISS = 5)
 
-/obj/item/reagent_containers/food/snacks/slime/Initialize(mapload)
-	. = ..()
-	bitesize = 5
 
 //Flashlight
 

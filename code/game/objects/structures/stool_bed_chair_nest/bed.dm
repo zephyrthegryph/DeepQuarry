@@ -158,7 +158,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed, TYPE_PROC_REF(/atom, appearance_over
 /obj/structure/bed/wrench_act(mob/user, obj/item/W)
 	playsound(src, W.usesound, 50, 1)
 	dismantle()
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/structure/bed/wirecutter_act(mob/user, obj/item/W)
@@ -355,10 +355,13 @@ DECLARE_INTERACTIONS(/obj/item/roller_holder, INTERACT_USE(null, PROC_REF(intera
 
 /obj/structure/bed/roller/MouseDrop(over_object, src_location, over_location)
 	..()
-	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-		if(!ishuman(usr))	return
+	return collapse_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native roller bed drag supplies the actor after the unchanged parent input routing.
+
+/obj/structure/bed/roller/proc/collapse_with_actor(mob/user, atom/over_object)
+	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
+		if(!ishuman(user))	return
 		if(has_buckled_mobs())	return 0
-		act_message(usr, null, others = "%U% collapses \the [src.name].")
+		act_message(user, null, others = "%U% collapses \the [src.name].")
 		new rollertype(get_turf(src))
 		expire(0)
 		return

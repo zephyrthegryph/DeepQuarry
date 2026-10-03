@@ -5,6 +5,7 @@
 
 /*********************Mining Hammer****************/
 /obj/item/kinetic_crusher
+	conflict_id = CONFLICT_ELEMENT_CRUSHER
 	icon = 'icons/obj/mining.dmi'
 	icon_state = "crusher"
 	item_state = "crusher0"
@@ -58,9 +59,6 @@
 	detonation_damage = 60
 	wielded = 1
 
-/obj/item/kinetic_crusher/Initialize(mapload)
-	. = ..()
-	conflict_id = CONFLICT_ELEMENT_CRUSHER
 
 DECLARE_EMAG(/obj/item/kinetic_crusher, PROC_REF(on_emag), null, null)
 

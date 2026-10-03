@@ -48,7 +48,9 @@
 	set category = VERB_CAT_OOC_MOB_SETTINGS
 	set src in oview(1)
 
-	var/mob/living/carbon/human/user = usr
+	return toggle_digestion_for(usr)
+
+/mob/living/simple_mob/proc/toggle_digestion_for(mob/living/carbon/human/user)
 	if(!istype(user) || user.stat) return
 
 	if(!vore_selected)
@@ -56,14 +58,14 @@
 		return
 
 	if(vore_selected.digest_mode == DM_HOLD)
-		var/confirm = rerun_ask(user, "a1", PROC_REF(toggle_digestion), args, /datum/om/prompt/choice/alert, message = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", choices = list("Enable", "Cancel"))
+		var/confirm = rerun_ask(user, "a1", PROC_REF(toggle_digestion_for), args, /datum/om/prompt/choice/alert, message = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", choices = list("Enable", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
 			om_after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), vore_default_mode)
 	else
-		var/confirm = rerun_ask(user, "a2", PROC_REF(toggle_digestion), args, /datum/om/prompt/choice/alert, message = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", choices = list("Disable", "Cancel"))
+		var/confirm = rerun_ask(user, "a2", PROC_REF(toggle_digestion_for), args, /datum/om/prompt/choice/alert, message = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", choices = list("Disable", "Cancel"))
 		if(isnull(confirm))
 			return
 		if(confirm == "Disable")

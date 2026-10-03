@@ -81,10 +81,16 @@ GLOBAL_VAR(bomb_set)
 	return extended
 
 /obj/machinery/nuclearbomb/proc/interaction_insert_disk(mob/user, obj/item/O, datum/interaction/interaction)
-	user.drop_item()
-	O.forceMove(src)
-	rel_set(src, nameof(auth), O)
+	if(!insert_auth_disk(user, O))
+		return TRUE
 	add_fingerprint(user)
+	return TRUE
+
+/// Check the disk's actual source before recording its authentication relation.
+/obj/machinery/nuclearbomb/proc/insert_auth_disk(mob/user, obj/item/disk)
+	if(!own_bring_in(src, nameof(auth), disk, null, user, TRUE, null, FALSE))
+		return FALSE
+	rel_set(src, nameof(auth), disk)
 	return TRUE
 
 /obj/machinery/nuclearbomb/screwdriver_act(mob/user, obj/item/tool)
@@ -276,9 +282,7 @@ UI_ACT_PROC(/obj/machinery/nuclearbomb, ui_act_auth)
 	else
 		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/disk/nuclear))
-			user.drop_item()
-			I.forceMove(src)
-			rel_set(src, nameof(/obj/machinery/nuclearbomb::auth), I)
+			insert_auth_disk(user, I)
 	return TRUE
 
 UI_ACT(/obj/machinery/nuclearbomb, "type", ui_act_type, UI_ARG_TEXT("key"))

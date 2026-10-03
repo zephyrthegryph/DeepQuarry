@@ -25,7 +25,7 @@ DECLARE_APPEARANCE(/obj/structure/closet/secure_closet/egg, "opened", list())
 
 /obj/structure/closet/secure_closet/egg/welder_act(mob/user, obj/item/W)
 	dump_contents()
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/structure/closet/secure_closet/egg/wrench_act(mob/user, obj/item/W)

@@ -222,9 +222,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 					return INTERACTION_HANDLED_PASS
 
 				if(seed().kitchen_tag == PLANT_SUNFLOWERS)
-					new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
+					var/turf/product_turf = get_turf(src)
+					if(!consume(src, user))
+						return INTERACTION_HANDLED_PASS
+					new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 					to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-					consume(src, user)
 					return INTERACTION_HANDLED_PASS
 
 				if(seed().kitchen_tag == PLANT_POTATO || !isnull(seed().chems[REAGENT_ID_POTATOJUICE]))
@@ -265,9 +267,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/grown, \
 		consume(src, user)
 		return INTERACTION_HANDLED_PASS
 	if(seed() && seed().kitchen_tag == PLANT_SUNFLOWERS && istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawsunflower(get_turf(src))
+		var/turf/product_turf = get_turf(src)
+		if(!consume(src, user))
+			return INTERACTION_HANDLED_PASS
+		new /obj/item/reagent_containers/food/snacks/rawsunflower(product_turf)
 		to_chat(user, span_notice("You remove the seeds from the flower, slightly damaging them."))
-		consume(src, user)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

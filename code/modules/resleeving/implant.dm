@@ -117,7 +117,7 @@ EXTEND_INTERACTIONS(/obj/item/backup_implanter, \
 
 		var/obj/item/implant/backup/imp = imps[LAZYLEN(imps)]
 		if(imp.handle_implant(M,user.zone_sel.selecting))
-			imp.post_implant(M)
+			imp.post_implant(M, user)
 			own_take_member(src, nameof(imps), imp)
 			add_attack_logs(user,M,"Implanted backup implant")
 
@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 
 	//Implant the implant.
 	if(imp.handle_implant(user, user.zone_sel.selecting))
-		imp.post_implant(user)
+		imp.post_implant(user, user)
 		add_attack_logs(user, user, "Implanted backup implant")
 		act_message(user, null, others = span_notice("%U% has been backup implanted by %U%."))
 

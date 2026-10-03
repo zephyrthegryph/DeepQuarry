@@ -38,7 +38,7 @@
 	if(new_pos)
 		forceMove(new_pos)
 	else
-		qdel(src)
+		consume(src)
 
 /obj/effect/directional_shield/proc/update_color(new_color)
 	if(!projector)

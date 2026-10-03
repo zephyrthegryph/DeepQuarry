@@ -786,3 +786,301 @@
 
 /// The fixture floor, rebuilt per event by Run().
 // turfs, never freed
+
+/// Compare actual research-console cache allocation before and after lazy-list changes.
+/// Run separately on each revision: bench --scenario=rdconsole_id_cache --arg=consoles=200 --arg=ids=20 --arg=lookups=100.
+/datum/benchmark/rdconsole_id_cache
+	id = "rdconsole_id_cache"
+	description = "Research consoles: untouched ID-cache allocation and actual payload deduplication"
+
+/datum/benchmark/rdconsole_id_cache/Run()
+	var/consoles_n = max(1, param("consoles", 200))
+	var/ids_n = max(1, param("ids", 20))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/consoles = list()
+	var/list/ids = list()
+	for(var/i in 1 to ids_n)
+		ids += "benchmark-id-[i]"
+	var/turf/T = locate(10, 10, 1)
+	mark("before_consoles")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to consoles_n)
+		consoles += new /obj/machinery/computer/rdconsole_tg(T)
+	metric("console_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("console_allocation")
+	mark("untouched_consoles")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			untouched_lists++
+		untouched_entries += length(console.id_cache)
+	count_metric("untouched_id_cache_lists", untouched_lists, "lists")
+	count_metric("untouched_id_cache_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	var/mapping_errors = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		for(var/round in 1 to lookups_n)
+			for(var/i in 1 to ids_n)
+				if(console.compress_id(ids[i]) != i)
+					mapping_errors++
+	metric("deduplication_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("deduplication")
+	mark("populated_consoles")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		if(islist(console.id_cache))
+			populated_lists++
+		populated_entries += length(console.id_cache)
+	count_metric("populated_id_cache_lists", populated_lists, "lists")
+	count_metric("populated_id_cache_entries", populated_entries, "entries")
+	count_metric("deduplication_mapping_errors", mapping_errors, "errors")
+	count_metric("consoles", consoles_n, "consoles")
+	count_metric("distinct_ids_per_console", ids_n, "IDs")
+	count_metric("compression_calls", consoles_n * lookups_n * ids_n, "calls")
+	for(var/obj/machinery/computer/rdconsole_tg/console as anything in consoles)
+		qdel(console)
+	mark("after_console_cleanup")
+
+/// Actual airlock histories before and after the lazy-list change. Run both revisions with identical parameters.
+/datum/benchmark/airlock_history_lists
+	id = "airlock_history_lists"
+	description = "Actual airlocks: untouched history-list allocation and repeated ambient electrification"
+
+/datum/benchmark/airlock_history_lists/Run()
+	var/doors_n = max(1, param("doors", 200))
+	var/entries_n = max(1, param("entries", 5))
+	var/list/doors = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_airlocks")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to doors_n)
+		var/obj/machinery/door/airlock/door = new(T)
+		door.set_stat(0)
+		doors += door
+	metric("airlock_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("airlock_allocation")
+	mark("untouched_airlocks")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			untouched_lists++
+		untouched_entries += length(door.shockedby)
+	count_metric("untouched_history_lists", untouched_lists, "lists")
+	count_metric("untouched_history_entries", untouched_entries, "entries")
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		for(var/i in 1 to entries_n)
+			door.electrify((2 SECONDS) / (1 SECOND))
+	metric("electrification_history_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("electrification_history")
+	mark("populated_airlocks")
+	var/populated_lists = 0
+	var/populated_entries = 0
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		if(islist(door.shockedby))
+			populated_lists++
+		populated_entries += length(door.shockedby)
+	count_metric("populated_history_lists", populated_lists, "lists")
+	count_metric("populated_history_entries", populated_entries, "entries")
+	count_metric("expected_history_entries", doors_n * entries_n, "entries")
+	count_metric("airlocks", doors_n, "airlocks")
+	for(var/obj/machinery/door/airlock/door as anything in doors)
+		qdel(door)
+	mark("after_airlock_cleanup")
+
+/// Actual living mobs and real incoming aim relationships, before/after lazy-list changes.
+/datum/benchmark/aimed_relation_lists
+	id = "aimed_relation_lists"
+	description = "Living mobs: untouched incoming-aim lists and actual aim/cancel relationships"
+
+/datum/benchmark/aimed_relation_lists/Run()
+	var/mobs_n = max(1, param("mobs", 200))
+	var/list/mobs = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_mobs")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		mobs += new /mob/living/carbon/human(T)
+	metric("mob_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("mob_allocation")
+	mark("untouched_mobs")
+	var/untouched_lists = 0
+	var/untouched_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		if(islist(M.aimed))
+			untouched_lists++
+		untouched_entries += length(M.aimed)
+	count_metric("untouched_aimed_lists", untouched_lists, "lists")
+	count_metric("untouched_aimed_entries", untouched_entries, "entries")
+	var/mob/living/carbon/human/actor = new(T)
+	var/obj/item/binoculars/tool = new(T)
+	var/relationship_errors = 0
+	if(!actor.put_in_active_hand(tool))
+		relationship_errors++
+	own_set(actor, nameof(actor.aiming), new /obj/aiming_overlay(actor))
+	var/obj/aiming_overlay/aim = actor.aiming
+	begin_window()
+	start = REALTIMEOFDAY
+	var/populated_entries = 0
+	for(var/mob/living/M as anything in mobs)
+		aim.aim_at(M, tool)
+		populated_entries += length(M.aimed)
+		if(aim.aiming_at != M || !(aim in M.aimed))
+			relationship_errors++
+		actor.stop_aiming(tool, TRUE)
+		if(length(M.aimed) || aim.aiming_at || aim.aiming_with())
+			relationship_errors++
+	metric("aim_cancel_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("aim_cancel")
+	count_metric("observed_aim_entries", populated_entries, "entries")
+	count_metric("expected_aim_entries", mobs_n, "entries")
+	count_metric("relationship_errors", relationship_errors, "errors")
+	mark("after_aim_cancel")
+	qdel(actor)
+	for(var/mob/living/M as anything in mobs)
+		qdel(M)
+	mark("after_mob_cleanup")
+
+/// Actual cartridges and vendors before/after optional exception-list allocation.
+/datum/benchmark/refill_exception_lists
+	id = "refill_exception_lists"
+	description = "Refill cartridges: unused exception lists and actual vendor compatibility"
+
+/datum/benchmark/refill_exception_lists/Run()
+	var/cartridges_n = max(1, param("cartridges", 200))
+	var/lookups_n = max(1, param("lookups", 100))
+	var/list/cartridges = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_cartridges")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to cartridges_n)
+		cartridges += new /obj/item/refill_cartridge/multitype/technical(T)
+	metric("cartridge_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("cartridge_allocation")
+	mark("untouched_cartridges")
+	var/unused_lists = 0
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		if(islist(C.refill_exceptions))
+			unused_lists++
+	count_metric("unused_exception_lists", unused_lists, "lists")
+	var/obj/item/refill_cartridge/multitype/clothing/clothing = new(T)
+	var/obj/machinery/vending/tool/tools = new(T)
+	var/obj/machinery/vending/wardrobe/wardrobe = new(T)
+	var/obj/machinery/vending/loadout/gadget/gadget = new(T)
+	var/matching_errors = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		for(var/i in 1 to lookups_n)
+			if(!C.can_refill(tools) || !C.can_refill(gadget) || C.can_refill(wardrobe))
+				matching_errors++
+			if(!clothing.can_refill(wardrobe) || clothing.can_refill(gadget) || clothing.can_refill(tools))
+				matching_errors++
+	metric("vendor_matching_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("vendor_matching")
+	count_metric("matching_errors", matching_errors, "errors")
+	count_metric("clothing_exception_entries", length(clothing.refill_exceptions), "entries")
+	count_metric("cartridges", cartridges_n, "cartridges")
+	count_metric("compatibility_checks", cartridges_n * lookups_n * 6, "checks")
+	qdel(clothing)
+	qdel(tools)
+	qdel(wardrobe)
+	qdel(gadget)
+	for(var/obj/item/refill_cartridge/multitype/C as anything in cartridges)
+		qdel(C)
+	mark("after_cartridge_cleanup")
+
+/// Untouched actual guest passes and the public list-alias contract on first read.
+/datum/benchmark/guest_access_lists
+	id = "guest_access_lists"
+	description = "Guest passes: deferred empty access lists and stable access aliases"
+
+/datum/benchmark/guest_access_lists/Run()
+	var/passes_n = max(1, param("passes", 200))
+	var/list/passes = list()
+	var/turf/T = locate(10, 10, 1)
+	mark("before_passes")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to passes_n)
+		passes += new /obj/item/card/id/guest(T)
+	metric("pass_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("pass_allocation")
+	mark("untouched_passes")
+	var/unused_lists = 0
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		if(islist(P.temp_access))
+			unused_lists++
+	count_metric("untouched_temp_access_lists", unused_lists, "lists")
+	var/alias_errors = 0
+	var/read_lists = 0
+	begin_window()
+	start = REALTIMEOFDAY
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		EXPIRY_SET(P, expiration_time, 1 MINUTE, CLOCK_WORLD)
+		var/list/access = P.GetAccess()
+		if(!islist(access) || !access || length(access))
+			alias_errors++
+		access += ACCESS_ENGINE
+		if(P.GetAccess() != access || !(ACCESS_ENGINE in P.GetAccess()))
+			alias_errors++
+		if(islist(P.temp_access))
+			read_lists++
+	metric("access_alias_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("access_alias")
+	count_metric("read_temp_access_lists", read_lists, "lists")
+	count_metric("access_alias_errors", alias_errors, "errors")
+	mark("after_access_reads")
+	for(var/obj/item/card/id/guest/P as anything in passes)
+		qdel(P)
+	mark("after_pass_cleanup")
+
+/// Actual shadekin variants: distinct constant tables and real ability grants.
+/datum/benchmark/shadekin_ability_tables
+	id = "shadekin_ability_tables"
+	description = "Shadekin variant ability tables and actual source grants"
+
+/datum/benchmark/shadekin_ability_tables/Run()
+	var/mobs_n = max(1, param("mobs", 90))
+	var/list/mobs = list()
+	var/list/tables = list()
+	var/list/variants = list(/datum/shadekin, /datum/shadekin/phase_only, /datum/shadekin/full)
+	var/turf/T = locate(10, 10, 1)
+	var/grant_errors = 0
+	var/granted_entries = 0
+	mark("before_shadekin")
+	begin_window()
+	var/start = REALTIMEOFDAY
+	for(var/i in 1 to mobs_n)
+		var/mob/living/carbon/human/H = new(T)
+		mobs += H
+		var/datum/shadekin/SK = H.add_shadekin(variants[((i - 1) % length(variants)) + 1])
+		var/list/ids = SK.granted_ability_ids()
+		var/table_seen = FALSE
+		for(var/list/table as anything in tables)
+			if(table == ids)
+				table_seen = TRUE
+		if(!table_seen)
+			tables += list(ids)
+		for(var/id in ids)
+			granted_entries++
+			if(!H.has_ability(id))
+				grant_errors++
+	metric("shadekin_allocation_ms", (REALTIMEOFDAY - start) * 100, "ms")
+	end_window("shadekin_allocation")
+	mark("populated_shadekin")
+	count_metric("distinct_ability_tables", length(tables), "lists")
+	count_metric("actual_granted_entries", granted_entries, "grants")
+	count_metric("grant_errors", grant_errors, "errors")
+	for(var/mob/living/carbon/human/H as anything in mobs)
+		qdel(H)
+	mark("after_shadekin_cleanup")

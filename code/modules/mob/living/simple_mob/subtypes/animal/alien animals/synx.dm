@@ -775,10 +775,12 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/synx, TYPE_PROC_REF(/atom,
 	new /obj/item/seeds/hardlightseed/typesx(location)
 
 /mob/living/simple_mob/animal/synx/ai/pet/holo/gib()
+	if(loc?.release_refusal(src))
+		return
 	act_message(src, null, null, MSG_OTHERS(span_notice("%U% fades away!")))
 	var/location = get_turf(src)
 	new /obj/item/seeds/hardlightseed/typesx(location)
-	qdel(src)
+	consume(src)
 
 ////////////////////////////////////////
 ////////////////SYNX VARIATIONS/////////

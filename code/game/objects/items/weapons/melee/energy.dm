@@ -197,8 +197,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy, TYPE_PROC_REF(/atom, appearance_
 		color = "FFFFFF"
 	if(active)
 		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+	if(ishuman(loc))
+		var/mob/living/carbon/human/H = loc
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 

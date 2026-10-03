@@ -204,10 +204,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/shield/energy, TYPE_PROC_REF(/atom, appearance
 		set_light(0)
 		item_state = "[icon_state]"
 
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+	var/mob/living/carbon/human/holder = loc
+	if(istype(holder))
+		holder.update_inv_l_hand()
+		holder.update_inv_r_hand()
 
 /// Requirement for recolouring the shield.
 /obj/item/shield/energy/proc/can_recolor(mob/living/user, atom/target, obj/item/held)

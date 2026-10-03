@@ -53,7 +53,7 @@
 		return
 	timer = 0
 	dump_contents()
-	qdel(src)
+	consume(src)
 
 /obj/structure/closet/statue/dump_contents()
 	latent_materialize_all()
@@ -133,4 +133,4 @@ APPEARANCE_NONE(/obj/structure/closet/statue)
 		user.dust()
 	dump_contents()
 	visible_message(span_warning("[src] shatters!."))
-	qdel(src)
+	consume(src)

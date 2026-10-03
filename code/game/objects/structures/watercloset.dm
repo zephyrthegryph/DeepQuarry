@@ -191,8 +191,8 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		if(w_items + I.w_class > ITEMSIZE_COST_TINY * 5) // 5 tiny or 2 small and 1 tiny
 			to_chat(user, span_notice("The cistern is full."))
 			return TRUE
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(contents), I, null, user, TRUE, null, FALSE))
+			return TRUE
 		w_items += I.w_class
 		to_chat(user, "You carefully place \the [I] into the cistern.")
 		return TRUE

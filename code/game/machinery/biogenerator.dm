@@ -245,7 +245,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 			to_chat(user, span_notice("\The [src] is already full! Activate it."))
 		else
 			for(var/obj/item/reagent_containers/food/snacks/grown/G in contents_of(O))
-				G.forceMove(src)
+				if(!own_bring_in(src, nameof(contents), G, null, user, TRUE, null, FALSE))
+					continue
 				i++
 				if(i >= 10)
 					to_chat(user, span_notice("You fill \the [src] to its capacity."))
@@ -264,8 +265,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/biogenerator, "biogen-{appearance_state}")
 		if(i >= 10)
 			to_chat(user, span_notice("\The [src] is full! Activate it."))
 		else
-			user.remove_from_mob(O)
-			O.forceMove(src)
+			if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user, span_notice("You put \the [O] in \the [src]"))
 	update_icon()
 	return TRUE

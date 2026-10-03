@@ -41,6 +41,7 @@
 		. = FALSE
 
 /obj/item/gun/energy/kinetic_accelerator
+	conflict_id = CONFLICT_ELEMENT_KA
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."
 	icon_state = "kineticgun"
@@ -165,7 +166,6 @@
 	. = ..()
 	if(!holds_charge)
 		empty()
-	conflict_id = CONFLICT_ELEMENT_KA
 
 /obj/item/gun/energy/kinetic_accelerator/equipped(mob/user)
 	. = ..()
@@ -376,7 +376,8 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 				break
 	if(KA.get_remaining_mod_capacity() >= cost)
 		if(.)
-			user.drop_from_inventory(src, KA)
+			if(!own_bring_in(KA, nameof(KA.modkits), src, null, user, TRUE, null, FALSE))
+				return FALSE
 			to_chat(user, span_notice("You install the modkit."))
 			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
 			rel_add(KA, nameof(KA.modkits), src)

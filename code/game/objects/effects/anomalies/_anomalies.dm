@@ -58,7 +58,7 @@
 		return
 	if(loc)
 		detonate()
-	qdel(src)
+	consume(src)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
 /obj/effect/anomaly/periodic_step(delta)
@@ -95,7 +95,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 
 /obj/effect/anomaly/ex_act(strength)
 	if(strength <= 1)
-		qdel(src)
+		consume(src)
 		return TRUE
 	return FALSE
 
@@ -104,7 +104,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	if(!isnull(anomaly_core))
 		anomaly_core.forceMove(get_turf(src))
 		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
-	qdel(src)
+	consume(src)
 
 /obj/effect/anomaly/proc/stabilize(anchor = FALSE, has_core = TRUE, add_stats = FALSE)
 	immortal = TRUE

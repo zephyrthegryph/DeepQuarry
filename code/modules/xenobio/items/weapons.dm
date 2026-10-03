@@ -103,7 +103,6 @@ REMOVAL
 	..()
 
 
-// === merged from weapons_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 /obj/item/xenobio
 	name = "xenobio gun"
 	desc = "You shouldn't see this!"
@@ -143,8 +142,8 @@ DECLARE_INTERACTIONS(/obj/item/xenobio, \
 		if(loaded_item)
 			to_chat(user, span_warning("[I] doesn't seem to fit into [src]."))
 			return INTERACTION_HANDLED_PASS
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(loaded_item), I, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 		loaded_item = I
 		act_message(user, src, MSG_SELF(span_notice("You slot [I] into %T%.")), MSG_OTHERS(span_notice("%U% inserts [I] into %T%.")))
 		return 1

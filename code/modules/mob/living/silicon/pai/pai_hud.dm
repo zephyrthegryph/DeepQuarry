@@ -2,11 +2,11 @@
 	icon = 'icons/mob/pai_hud.dmi'
 	var/base_state
 
-/atom/movable/screen/pai/Click(location, control, params)
+/atom/movable/screen/pai/click_with_actor(mob/user, location, control, params)
 	. = ..()
-	if(!ispAI(usr))
+	if(!ispAI(user))
 		return
-	var/mob/living/silicon/pai/p = usr
+	var/mob/living/silicon/pai/p = user
 	switch(name)
 		if("fold/unfold")
 			if(p.loc == p.card)

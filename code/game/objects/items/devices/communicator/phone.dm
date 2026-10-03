@@ -135,13 +135,12 @@
 	if(length(voice_mobs) == 0 && length(communicating) == 0)
 		return
 
-	for(var/mob/living/voice/voice in voice_mobs) //Handle ghost-callers
+	for(var/mob/living/voice/voice in voice_mobs?.Copy()) //Handle ghost-callers
 		if(target && voice != target) //If no target is inputted, it deletes all of them.
 			continue
 		to_chat(voice, span_danger("[icon2html(src,voice.client)] [reason]."))
 		visible_message(span_danger("[icon2html(src,viewers(src))] [reason]."))
-		own_take_member(src, nameof(voice_mobs), voice)
-		qdel(voice)
+		own_remove(src, nameof(voice_mobs), voice)
 		update_icon()
 
 	for(var/obj/item/communicator/comm in communicating) //Now we handle real communicators.

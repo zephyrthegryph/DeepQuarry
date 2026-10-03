@@ -135,10 +135,10 @@
 
 /datum/interaction/construction/frame/insert_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
+	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
+		return FALSE
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
-		return TRUE
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()
@@ -152,6 +152,9 @@
 	var/datum/frame/frame_types/board_type = board.board_type
 	if(board_type?.name != frame_type.name)
 		return "this frame does not accept circuit boards of this type"
+	var/refusal = board.loc?.release_refusal(board, actor)
+	if(refusal)
+		return refusal
 	return TRUE
 
 /datum/interaction/construction/frame/remove_board
@@ -303,7 +306,7 @@
 
 /datum/interaction/construction/frame/finish_machine/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	frame.finish_machine()
+	frame.finish_machine(actor)
 	return TRUE
 
 /obj/structure/frame/proc/has_all_components(mob/actor, atom/target, obj/item/held)
@@ -325,7 +328,7 @@
 
 /datum/interaction/construction/frame/finish_alarm/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	frame.finish_simple(TRUE)
+	frame.finish_simple(TRUE, actor)
 	return TRUE
 
 /datum/interaction/construction/frame/add_glass
@@ -381,13 +384,13 @@
 /datum/interaction/construction/frame/connect_monitor/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
 	if(frame.frame_type.frame_class == FRAME_CLASS_COMPUTER)
-		frame.finish_computer()
+		frame.finish_computer(actor)
 	else
-		frame.finish_simple(FALSE)
+		frame.finish_simple(FALSE, actor)
 	return TRUE
 
 /// Builds the machine from the board, moving the installed parts into it.
-/obj/structure/frame/proc/finish_machine()
+/obj/structure/frame/proc/finish_machine(mob/user = null)
 	var/obj/machinery/new_machine = new circuit.build_path(src.loc, dir)
 	new_machine.copy_material_construction_from(src)
 	// Handle machines that have allocated default parts in thier constructor.
@@ -398,7 +401,7 @@
 	else
 		own_take_all(new_machine, nameof(new_machine.component_parts))
 
-	circuit.construct(new_machine)
+	circuit.construct(new_machine, user)
 
 	// new_machine's own default board+parts (latent_generator(), roadmap C6)
 	// already resolved into entries the moment its Initialize() first asked
@@ -410,51 +413,50 @@
 	// The frame's installed parts are real physical items the player put in;
 	// move_into() keeps the new machine's ledger (roadmap C6) current, so
 	// RefreshParts() and get_part_rating() see them straight away.
-	for(var/obj/O in components)
+	for(var/obj/O in own_take_all(src, nameof(components)))
 		if(circuit.contain_parts)
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.moveToNullspace()
 		own_add(new_machine, nameof(new_machine.component_parts), O)
-	own_take_all(src, nameof(components)) // the parts are the new machine's now (DECLARE_REF(..., OWNED_LIST) on both)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
-	own_set(new_machine, nameof(new_machine.circuit), circuit)
+	own_transfer(src, nameof(circuit), new_machine, nameof(new_machine.circuit))
 
 	new_machine.RefreshParts()
 	new_machine.finalize_material_assembly()
 
 	new_machine.pixel_x = pixel_x
 	new_machine.pixel_y = pixel_y
-	qdel(src)
+	replace_with(src, new_machine)
 
 /// Builds an alarm (facing the frame's way first) or a display from the board.
-/obj/structure/frame/proc/finish_simple(alarm)
+/obj/structure/frame/proc/finish_simple(alarm, mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
 	B.pixel_x = pixel_x
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
-	circuit.construct(B)
+	circuit.construct(B, user)
 	circuit.moveToNullspace()
-	own_set(B, nameof(B.circuit), circuit)
+	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	if(!alarm)
 		B.update_icon()
-	qdel(src)
+	replace_with(src, B)
 
 /// Builds a computer, and redraws the consoles beside it.
-/obj/structure/frame/proc/finish_computer()
+/obj/structure/frame/proc/finish_computer(mob/user = null)
 	var/obj/machinery/B = new circuit.build_path(src.loc)
 	B.pixel_x = pixel_x
 	B.pixel_y = pixel_y
 	B.set_dir(dir)
-	circuit.construct(B)
+	circuit.construct(B, user)
 	circuit.moveToNullspace()
-	own_set(B, nameof(B.circuit), circuit)
+	own_transfer(src, nameof(circuit), B, nameof(B.circuit))
 	var/obj/machinery/computer/LC = locate_within(get_step(B, turn(B.dir, 90)), /obj/machinery/computer)
 	var/obj/machinery/computer/RC = locate_within(get_step(B, turn(B.dir, -90)), /obj/machinery/computer)
 	if(LC)
 		LC.update_icon()
 	if(RC)
 		RC.update_icon()
-	qdel(src)
+	replace_with(src, B)

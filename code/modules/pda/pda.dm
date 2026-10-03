@@ -449,8 +449,8 @@ DECLARE_INTERACTIONS(/obj/item/pda, \
 		if(O)
 			to_chat(user, span_notice("There is already a pen in \the [src]."))
 		else
-			user.drop_item(C)
-			C.forceMove(src)
+			if(!own_bring_in(src, nameof(contents), C, null, user, TRUE, null, FALSE))
+				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_notice("You slot \the [C] into \the [src]."))
 			add_overlay("pda-pen")
 	return INTERACTION_HANDLED_PASS

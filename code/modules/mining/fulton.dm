@@ -137,12 +137,12 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 	cut_overlays()
 	A.set_anchored(FALSE) // An item has to be unanchored to be extracted in the first place.
 	A.set_density(initial(A.density))
-	animate(src, pixel_z = 0, time = 5)
+	animate(src, pixel_z = 0, time = 0.5 SECONDS)
 	om_after(src, 0.5 SECONDS, PROC_REF(fulton_release), A)
 
 /obj/effect/extraction_holder/proc/fulton_release(atom/movable/A)
 	A.forceMove(loc)
-	qdel(src)
+	consume(src)
 
 // Makes fultons work pretty much anywhere.
 

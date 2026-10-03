@@ -25,7 +25,7 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/ash, \
 	var/turf/simulated/floor/F = get_turf(src)
 	if (istype(F))
 		F.dirt += 4
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/effect/decal/cleanable/greenglow
@@ -244,5 +244,5 @@ EXTEND_INTERACTIONS(/obj/effect/decal/cleanable/confetti, \
 	return TRUE
 
 /obj/effect/decal/cleanable/confetti/proc/attack_hand_timed_done()
-	qdel(src)
+	consume(src)
 

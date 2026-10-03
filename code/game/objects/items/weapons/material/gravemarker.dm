@@ -51,9 +51,13 @@
 	return NONE
 
 /obj/item/material/gravemarker/proc/wrench_act_tool_done(mob/user)
-	material.place_dismantled_product(get_turf(src))
-	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
-	qdel(src)
+	var/datum/material/refund_material = material
+	var/turf/location = get_turf(src)
+	var/marker_name = "\the [src]"
+	if(!consume(src, user))
+		return
+	refund_material.place_dismantled_product(location)
+	act_message(user, location, MSG_SELF("You dismantle [marker_name]."), MSG_OTHERS("%U% dismantles down [marker_name]."))
 
 /obj/item/material/gravemarker/examine(mob/user)
 	. = ..()

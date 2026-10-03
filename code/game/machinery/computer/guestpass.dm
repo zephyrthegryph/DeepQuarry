@@ -8,7 +8,7 @@
 	initial_sprite_stack = list()
 	light_color = "#0099ff"
 
-	var/temp_access = list() //to prevent agent cards stealing access as permanent
+	var/list/temp_access //to prevent agent cards stealing access as permanent
 	EXPIRY_DECLARE(expiration_time)
 	var/expired = 0
 	var/reason = "NOT SPECIFIED"
@@ -20,6 +20,7 @@ APPEARANCE_NONE(/obj/item/card/id/guest)
 	if(EXPIRY_EXPIRED(src, expiration_time, CLOCK_WORLD))
 		return access
 	else
+		LAZYINITLIST(temp_access)
 		return temp_access
 
 /obj/item/card/id/guest/examine(mob/user)

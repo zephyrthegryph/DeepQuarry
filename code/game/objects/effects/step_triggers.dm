@@ -6,8 +6,8 @@
 	invisibility = INVISIBILITY_BADMIN // nope cant see this shit
 	plane = ABOVE_PLANE
 	anchored = TRUE
-	icon = 'icons/mob/screen1.dmi' //VS Edit
-	icon_state = "centermarker" //VS Edit
+	icon = 'icons/mob/screen1.dmi'
+	icon_state = "centermarker"
 
 /obj/effect/step_trigger/proc/Trigger(atom/movable/A)
 	return 0
@@ -358,7 +358,7 @@ But for now, for what it's been used for, it works.
 /obj/effect/step_trigger/teleporter/randomspawn/Initialize(mapload)
 	. = ..()
 	if(destroyprob && prob(destroyprob))
-		qdel(src)
+		return INITIALIZE_HINT_QDEL
 
 /obj/effect/step_trigger/teleporter/randomspawn/Trigger()
 	if(teleprob && !prob(teleprob))

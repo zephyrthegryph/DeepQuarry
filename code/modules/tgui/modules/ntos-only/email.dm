@@ -351,7 +351,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_send)
 	message.stored_data = msg_body
 	message.source = current_account().login
 	own_set(message, nameof(/datum/computer_file/data/email_message::attachment), msg_attachment)
-	if(!current_account().send_mail(msg_recipient, message))
+	if(!current_account().send_mail(msg_recipient, message, FALSE, user))
 		error = "Error sending email: this address doesn't exist."
 		return 1
 	else

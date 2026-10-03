@@ -26,9 +26,11 @@ DECLARE_INTERACTIONS(/obj/structure/bigDelivery, \
 	return TRUE
 
 /obj/structure/bigDelivery/proc/unwrap()
+	if(loc?.release_refusal(src))
+		return
 	play_sfx(src, SFX_ITEMS_PACKAGE_UNWRAP)
-	// Destroy will drop our wrapped object on the turf, so let it.
-	qdel(src)
+	// Teardown drops our wrapped object on the turf, so let it.
+	consume(src)
 
 /// Old attackby.
 /obj/structure/bigDelivery/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)

@@ -248,20 +248,20 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		var/mob/M = src.loc
 		M.update_inv_ears()
 
-/obj/item/clothing/ears/MouseDrop(obj/over_object)
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+/obj/item/clothing/ears/drop_with_actor(mob/user, obj/over_object)
+	if(ishuman(user))
+		var/mob/living/carbon/human/H = user
 		// If this covers both ears, we want to return the result of unequipping the primary object, and kill the off-ear one
 		if(HAS_TAG(src, TAG_WEAR_TWO_EARS))
 			var/obj/item/clothing/ears/O = (H.get_equipped_item(SLOT_ID_EAR_L) == src ? H.get_equipped_item(SLOT_ID_EAR_R) : H.get_equipped_item(SLOT_ID_EAR_L))
 			if(istype(src, /obj/item/clothing/ears/offear))
-				. = O.MouseDrop(over_object)
+				. = O.drop_with_actor(user, over_object)
 				consume(src, H)
 			else
-				. = ..()
+				. = ..(user, over_object)
 				consume(O, H)
 		else
-			. = ..()
+			. = ..(user, over_object)
 
 /obj/item/clothing/ears/offear
 	name = "Other ear"
@@ -700,9 +700,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 	if(gurgled)
 		wash(CLEAN_ALL)
 		gurgle_contaminate()
-	if(ismob(usr))
-		var/mob/M = usr
-		M.update_inv_shoes()
+	var/mob/holder = loc
+	if(istype(holder))
+		holder.update_inv_shoes()
 
 /obj/item/clothing/shoes/wash()
 	. = ..()

@@ -49,8 +49,10 @@
 //Deletes the body upon death
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/passive/cockroach/replace_death(gibbed)
+	if(loc?.release_refusal(src))
+		return TRUE
 	new /obj/effect/decal/cleanable/bug_remains(src.loc)
-	qdel(src)
+	consume(src)
 	return TRUE
 
 //Squish code

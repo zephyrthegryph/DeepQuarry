@@ -96,7 +96,7 @@ UI_DATA(/datum/tgui_module/ship, "merge:ui_data_datum_tgui_module_ship{mapRef:un
 			if(ntos)
 				var/obj/item/modular_computer/M = tgui_host()
 				if(istype(M))
-					M.kill_program()
+					M.kill_program(FALSE, user)
 		return FALSE
 	return ..()
 

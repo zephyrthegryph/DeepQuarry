@@ -60,17 +60,21 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/computer/security/telescreen/bodycamera, "b
 		bradio?.on = TRUE
 
 /obj/machinery/computer/security/telescreen/bodycamera/Click(location, control, params)
+	if(!handle_click_with_actor(usr, params)) // ALLOW(sys_usr_outside_verb): Native monitor click captures its actor while preserving conditional parent input routing.
+		..()
+
+/obj/machinery/computer/security/telescreen/bodycamera/proc/handle_click_with_actor(mob/user, params)
 	var/list/modifiers = params2list(params)
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, alternate_table), INPUT_ACTION_ALTERNATE))
-		if(isliving(usr) && Adjacent(usr) && !usr.incapacitated())
+		if(isliving(user) && Adjacent(user) && !user.incapacitated())
 			bodycam_toggle()
-			act_message(usr, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
+			act_message(user, src, MSG_SELF("You toggle %T% [enabled ? "on" : "off"]."), MSG_OTHERS("<b>%U%</b> toggles %T% [enabled ? "on" : "off"]."), runemessage = "click")
 	//Changing click to only come into play when shift or alt clicking. These things are ANNOYING.
-			return
+			return TRUE
 	if(GLOB.input_router.click_is(modifiers, TYPE_TABLE_GET(GLOB.input_router, shift_table), INPUT_ACTION_INSPECT))
-		attack_hand(usr)
-		return
-	..()
+		attack_hand(user)
+		return TRUE
+	return FALSE
 
 APPEARANCE_NONE(/obj/machinery/computer/security/telescreen/bodycamera)
 /// Follows the camera while it shows one; otherwise it sleeps until it is shown one.

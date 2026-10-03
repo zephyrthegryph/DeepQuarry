@@ -78,12 +78,20 @@
 	if(!check_functionality())
 		return 0
 
-	// stored_files is lazy: LAZYADD below creates it for the first file.
+	// stored_files is lazy and initialized immediately before the first adoption.
 	// This file is already stored. Don't store it again.
 	if(F in stored_files)
 		return 0
 
-	own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files))
+	// The first file must enter an owned list, rather than a scalar slot.
+	if(!stored_files)
+		own_set(src, nameof(stored_files), list())
+	var/datum/previous_owner = owner_of(F)
+	if(!own_move(F, src, nameof(/obj/item/computer_hardware/hard_drive/::stored_files)))
+		return 0
+	if(istype(previous_owner, /obj/item/computer_hardware/hard_drive))
+		var/obj/item/computer_hardware/hard_drive/donor = previous_owner
+		donor.recalculate_size()
 	rel_set(F, nameof(/datum/computer_file/::holder), src)
 	recalculate_size()
 	return 1

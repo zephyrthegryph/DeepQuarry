@@ -150,10 +150,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
  * panel was closed or already held a cell; those calls only ran after a successful insert.
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
-	user.drop_from_inventory(W, src)
 	materialize_parts()
-	W.move_into(src, CONTAINER_SLOT_INTERNALS)
-	own_move(W, src, nameof(component_parts)) // the cell is a part; `cell` views it (RefreshParts())
+	if(!own_add(src, nameof(component_parts), W, user = user, slot = CONTAINER_SLOT_INTERNALS))
+		return TRUE
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment
 	update_icon()

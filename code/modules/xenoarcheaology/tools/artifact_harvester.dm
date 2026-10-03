@@ -61,9 +61,9 @@
 /obj/machinery/artifact_harvester/proc/interaction_artifact_harvester_use_item(mob/user, obj/item/held, datum/interaction/interaction)
 	if(istype(held,/obj/item/anobattery))
 		if(!inserted_battery())
+			if(!own_bring_in(src, nameof(inserted_battery), held, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user, span_blue("You insert [held] into [src]."))
-			user.drop_item()
-			held.forceMove(src)
 			rel_set(src, nameof(inserted_battery), held)
 			SStgui.update_uis(src)
 		else

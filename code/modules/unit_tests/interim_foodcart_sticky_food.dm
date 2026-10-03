@@ -1,0 +1,37 @@
+/// A food cart respects held release and its actual selection prompt returns the original stored food.
+/datum/unit_test/om/interim_foodcart_sticky_food/run_om(list/made)
+	sched.test_prompts = list()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	// The real cart's initializer collects food already on its turf, so create it before this original food.
+	var/obj/structure/foodcart/cart = allocate(/obj/structure/foodcart, T)
+	var/obj/item/reagent_containers/food/snacks/donut/food = allocate(/obj/item/reagent_containers/food/snacks/donut, T)
+	var/original_volume = food.reagents.total_volume
+	TEST_ASSERT_EQUAL(contents_count(cart), 0, "the actual freshly initialized cart has no collected food")
+	TEST_ASSERT(original_volume > 0, "the original actual donut contains its declared food reagents")
+	TEST_ASSERT(user.put_in_active_hand(food), "the actor holds the original actual food")
+	add_trait(food, TRAIT_NODROP, "interim_foodcart_sticky")
+	TEST_ASSERT(user.release_refusal(food, user), "the actual inventory refuses this sticky food's release")
+	cart.interaction_item(user, food, null)
+	TEST_ASSERT_EQUAL(user.get_active_hand(), food, "refused storage preserves the exact original hand")
+	TEST_ASSERT_EQUAL(food.loc, user, "refused storage preserves actual inventory containment")
+	TEST_ASSERT_EQUAL(contents_count(cart), 0, "refused storage places no food inside the cart")
+	TEST_ASSERT_EQUAL(food.reagents.total_volume, original_volume, "refused storage preserves the food's actual reagent amount")
+	remove_trait(food, TRAIT_NODROP, "interim_foodcart_sticky")
+	cart.interaction_item(user, food, null)
+	TEST_ASSERT_EQUAL(food.loc, cart, "allowed storage contains the exact original food")
+	TEST_ASSERT_EQUAL(contents_count(cart), 1, "allowed storage contains exactly one original food item")
+	TEST_ASSERT_NULL(user.get_active_hand(), "allowed storage clears the source hand")
+	TEST_ASSERT_NULL(owner_of(food), "the cart preserves its existing unowned contents policy")
+	cart.interaction_hand(user, null, null)
+	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "actual retrieval opens one real choice prompt")
+	var/datum/om/prompt/choice/ask = sched.test_prompts[1]
+	made += ask
+	TEST_ASSERT_EQUAL(ask.peek("answerer"), user, "the actual choice belongs to the retrieving actor")
+	TEST_ASSERT_NULL(om_prompt_answer(ask, food), "the actual prompt accepts the original contained food")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), food, "the actual selected food returns as the exact original hand item")
+	TEST_ASSERT_EQUAL(food.loc, user, "retrieval restores the original food to actual inventory")
+	TEST_ASSERT_EQUAL(contents_count(cart), 0, "retrieval empties the actual cart contents")
+	TEST_ASSERT_EQUAL(food.reagents.total_volume, original_volume, "the storage round trip preserves the actual food amount")
+	qdel(cart)
+	TEST_ASSERT(!QDELETED(food), "the returned original food survives empty-cart teardown")

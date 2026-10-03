@@ -194,7 +194,7 @@
 /obj/structure/closet/proc/dump_contents()
 	slot_empty(CONTAINER_SLOT_INTERIOR, loc)
 
-/obj/structure/closet/proc/open()
+/obj/structure/closet/proc/open(mob/user)
 	if(opened)
 		return 0
 
@@ -272,7 +272,7 @@
 /obj/structure/closet/proc/toggle(mob/user as mob)
 	if(is_animating_door)
 		return
-	if(!(opened ? close() : open()))
+	if(!(opened ? close() : open(user)))
 		to_chat(user, span_notice("It won't budge!"))
 		return
 
@@ -421,7 +421,7 @@
 	if(user.stat || !isturf(loc))
 		return
 
-	if(!open())
+	if(!open(user))
 		to_chat(user, span_notice("It won't budge!"))
 
 /// Old attack_hand: open/close the closet.
@@ -443,7 +443,7 @@
 // tk grab then use on self
 /obj/structure/closet/attack_self_tk(mob/user as mob)
 	add_fingerprint(user)
-	if(!toggle())
+	if(!toggle(user))
 		to_chat(user, span_notice("It won't budge!"))
 
 /obj/structure/closet/proc/verb_toggleopen_effect(mob/user, obj/item/held, datum/interaction/interaction)

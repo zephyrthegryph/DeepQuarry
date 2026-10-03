@@ -22,7 +22,7 @@
 	var/obj/machinery/camera/C = holder
 	return C.panel_open
 
-/datum/wires/camera/on_cut(wire, mend)
+/datum/wires/camera/on_cut(wire, mend, mob/user)
 	var/obj/machinery/camera/C = holder
 
 	switch(wire)
@@ -32,7 +32,7 @@
 
 		if(WIRE_MAIN_POWER1)
 			if(C.status && !mend || !C.status && mend)
-				C.deactivate(usr, 1)
+				C.deactivate(user, 1)
 
 		if(WIRE_CAM_LIGHT)
 			C.light_disabled = !mend

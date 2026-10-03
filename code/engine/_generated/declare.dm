@@ -738,11 +738,11 @@
 	into += entry_line(34)
 	into += list(global.op("squirt", global.at_target(/mob/living), global.label("Squirt into eyes"), global.begins(MSG(dropper/begin)), global.wait(2 SECONDS), global.needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))), global.then(PROC_REF(squirted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge) at code/game/objects/items/weapons/ecigs.dm:169
+/// CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge) at code/game/objects/items/weapons/ecigs.dm:166
 /obj/item/reagent_containers/ecig_cartridge/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 169, /obj/item/reagent_containers/ecig_cartridge)
-	into += entry_line(170)
+	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 166, /obj/item/reagent_containers/ecig_cartridge)
+	into += entry_line(167)
 	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/food/drinks) at code/modules/food/food/drinks.dm:76
@@ -1031,11 +1031,11 @@
 	into += entry_line(193)
 	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried(), global.req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), global.then(PROC_REF(dufflebag_tilt_effect))))
 
-/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1051
+/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1053
 /obj/item/storage/backpack/fluff/stunstaff/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1051, /obj/item/storage/backpack/fluff/stunstaff)
-	into += entry_line(1052)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1053, /obj/item/storage/backpack/fluff/stunstaff)
+	into += entry_line(1054)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
 
 /// CAPABILITIES(/obj/item/storage/backpack/holding) at code/game/objects/items/weapons/storage/backpack.dm:94
@@ -1367,18 +1367,18 @@
 	into += entry_line(45)
 	into += list(global.op("crumple", global.in_hand(), global.priority(global.below("fold")), global.when(global.cond_all(PROC_REF(crumples), global.cond_any(PROC_REF(cannot_fold), global.cond_not(req_storage_empty())))), global.label("Crumple"), global.then(PROC_REF(crumple_up))))
 
-/// CAPABILITIES(/obj/item/storage/box/admints) at code/modules/food/food/snacks.dm:5993
+/// CAPABILITIES(/obj/item/storage/box/admints) at code/modules/food/food/snacks.dm:5974
 /obj/item/storage/box/admints/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 5993, /obj/item/storage/box/admints)
-	into += entry_line(5994)
+	into += entry_block("code/modules/food/food/snacks.dm", 5974, /obj/item/storage/box/admints)
+	into += entry_line(5975)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints))))
 
-/// CAPABILITIES(/obj/item/storage/box/bourbon) at code/modules/food/food/snacks.dm:8391
+/// CAPABILITIES(/obj/item/storage/box/bourbon) at code/modules/food/food/snacks.dm:8363
 /obj/item/storage/box/bourbon/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8391, /obj/item/storage/box/bourbon)
-	into += entry_line(8392)
+	into += entry_block("code/modules/food/food/snacks.dm", 8363, /obj/item/storage/box/bourbon)
+	into += entry_line(8364)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon))))
 
 /// CAPABILITIES(/obj/item/storage/box/brainzsnax) at code/game/objects/items/weapons/storage/boxes.dm:670
@@ -1395,11 +1395,11 @@
 	into += entry_line(586)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/box/custardcream) at code/modules/food/food/snacks.dm:8363
+/// CAPABILITIES(/obj/item/storage/box/custardcream) at code/modules/food/food/snacks.dm:8335
 /obj/item/storage/box/custardcream/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8363, /obj/item/storage/box/custardcream)
-	into += entry_line(8364)
+	into += entry_block("code/modules/food/food/snacks.dm", 8335, /obj/item/storage/box/custardcream)
+	into += entry_line(8336)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream))))
 
 /// CAPABILITIES(/obj/item/storage/box/donut) at code/game/objects/items/weapons/storage/misc.dm:43
@@ -1479,11 +1479,11 @@
 	into += entry_line(2167)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake))))
 
-/// CAPABILITIES(/obj/item/storage/box/jaffacake) at code/modules/food/food/snacks.dm:8236
+/// CAPABILITIES(/obj/item/storage/box/jaffacake) at code/modules/food/food/snacks.dm:8208
 /obj/item/storage/box/jaffacake/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8236, /obj/item/storage/box/jaffacake)
-	into += entry_line(8237)
+	into += entry_block("code/modules/food/food/snacks.dm", 8208, /obj/item/storage/box/jaffacake)
+	into += entry_line(8209)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
 
 /// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:651
@@ -1530,11 +1530,11 @@
 	into += entry_line(363)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
 
-/// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8491
+/// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8463
 /obj/item/storage/box/rhubarbcustard/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8491, /obj/item/storage/box/rhubarbcustard)
-	into += entry_line(8492)
+	into += entry_block("code/modules/food/food/snacks.dm", 8463, /obj/item/storage/box/rhubarbcustard)
+	into += entry_line(8464)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard))))
 
 /// CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat) at code/modules/casino/boxes_casino.dm:102
@@ -1558,18 +1558,18 @@
 	into += entry_line(64)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/roulette_ball))))
 
-/// CAPABILITIES(/obj/item/storage/box/saucer) at code/modules/food/food/snacks.dm:8335
+/// CAPABILITIES(/obj/item/storage/box/saucer) at code/modules/food/food/snacks.dm:8307
 /obj/item/storage/box/saucer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8335, /obj/item/storage/box/saucer)
-	into += entry_line(8336)
+	into += entry_block("code/modules/food/food/snacks.dm", 8307, /obj/item/storage/box/saucer)
+	into += entry_line(8308)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer))))
 
-/// CAPABILITIES(/obj/item/storage/box/shrimpsandbananas) at code/modules/food/food/snacks.dm:8455
+/// CAPABILITIES(/obj/item/storage/box/shrimpsandbananas) at code/modules/food/food/snacks.dm:8427
 /obj/item/storage/box/shrimpsandbananas/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8455, /obj/item/storage/box/shrimpsandbananas)
-	into += entry_line(8456)
+	into += entry_block("code/modules/food/food/snacks.dm", 8427, /obj/item/storage/box/shrimpsandbananas)
+	into += entry_line(8428)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/foam_banana, /obj/item/reagent_containers/food/snacks/foam_shrimp))))
 
 /// CAPABILITIES(/obj/item/storage/box/snappops) at code/game/objects/items/weapons/storage/boxes.dm:451
@@ -1600,32 +1600,32 @@
 	into += entry_line(2576)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/toy/figure), max_size = ITEMSIZE_TINY)))
 
-/// CAPABILITIES(/obj/item/storage/box/winegum) at code/modules/food/food/snacks.dm:8290
+/// CAPABILITIES(/obj/item/storage/box/winegum) at code/modules/food/food/snacks.dm:8262
 /obj/item/storage/box/winegum/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8290, /obj/item/storage/box/winegum)
-	into += entry_line(8291)
+	into += entry_block("code/modules/food/food/snacks.dm", 8262, /obj/item/storage/box/winegum)
+	into += entry_line(8263)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings) at code/modules/food/food/snacks.dm:7457
+/// CAPABILITIES(/obj/item/storage/box/wings) at code/modules/food/food/snacks.dm:7433
 /obj/item/storage/box/wings/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7457, /obj/item/storage/box/wings)
-	into += entry_line(7458)
+	into += entry_block("code/modules/food/food/snacks.dm", 7433, /obj/item/storage/box/wings)
+	into += entry_line(7434)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings/bucket) at code/modules/food/food/snacks.dm:7917
+/// CAPABILITIES(/obj/item/storage/box/wings/bucket) at code/modules/food/food/snacks.dm:7889
 /obj/item/storage/box/wings/bucket/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7917, /obj/item/storage/box/wings/bucket)
-	into += entry_line(7918)
+	into += entry_block("code/modules/food/food/snacks.dm", 7889, /obj/item/storage/box/wings/bucket)
+	into += entry_line(7890)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings/tray) at code/modules/food/food/snacks.dm:7830
+/// CAPABILITIES(/obj/item/storage/box/wings/tray) at code/modules/food/food/snacks.dm:7802
 /obj/item/storage/box/wings/tray/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7830, /obj/item/storage/box/wings/tray)
-	into += entry_line(7831)
+	into += entry_block("code/modules/food/food/snacks.dm", 7802, /obj/item/storage/box/wings/tray)
+	into += entry_line(7803)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/cube/protein, /obj/item/reagent_containers/food/snacks/cube/nutriment))))
 
 /// CAPABILITIES(/obj/item/storage/box/wormcan) at code/game/objects/items/weapons/storage/misc.dm:83
@@ -1719,11 +1719,11 @@
 	into += entry_line(65)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/egg, /obj/item/reagent_containers/food/snacks/boiledegg))))
 
-/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1352
+/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1354
 /obj/item/storage/fancy/fluff/charlotte/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1352, /obj/item/storage/fancy/fluff/charlotte)
-	into += entry_line(1353)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1354, /obj/item/storage/fancy/fluff/charlotte)
+	into += entry_line(1355)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
 
 /// CAPABILITIES(/obj/item/storage/fancy/heartbox) at code/game/objects/items/weapons/storage/fancy.dm:572
@@ -2106,13 +2106,13 @@
 	into += entry_line(337)
 	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.priority(global.above("storage.put_in")), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
-/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:903
+/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:913
 /obj/item/storage/trinketbox/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 903, /obj/item/storage/trinketbox)
-	into += entry_line(904)
+	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 913, /obj/item/storage/trinketbox)
+	into += entry_line(914)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/accessory/ring, /obj/item/coin, /obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)))
-	into += entry_line(908)
+	into += entry_line(918)
 	into += list(global.op("lid", global.in_hand(), global.label("Open"), global.then(PROC_REF(flip_lid))))
 
 /// CAPABILITIES(/obj/item/storage/vore_egg) at code/game/objects/items/weapons/storage/egg.dm:19
@@ -2813,7 +2813,7 @@
 	..(into)
 	into += entry_block("code/game/machinery/doors/firedoor_assembly.dm", 34, /obj/structure/firedoor_assembly)
 	into += entry_line(35)
-	into += list(global.construction(global.start(STAGE_FIREDOOR_ASSEMBLY_FRAME), global.stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, global.stack(/obj/item/stack/cable_coil, 1), global.wait(4 SECONDS), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), global.then(PROC_REF(wired_up)), global.undone(PROC_REF(unwired)), undo = list(global.tool(TOOL_WIRECUTTER), global.wait(4 SECONDS))), global.stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, global.item(/obj/item/circuitboard/airalarm), global.wait(0), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), global.then(PROC_REF(finish_firedoor)), undo = null), global.dismantle(global.tool(TOOL_WELDER), global.wait(4 SECONDS), global.then(PROC_REF(disassembled)))))
+	into += list(global.construction(global.start(STAGE_FIREDOOR_ASSEMBLY_FRAME), global.stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, global.stack(/obj/item/stack/cable_coil, 1), global.wait(4 SECONDS), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), global.then(PROC_REF(wired_up)), global.undone(PROC_REF(unwired)), undo = list(global.tool(TOOL_WIRECUTTER), global.wait(4 SECONDS))), global.stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, global.item(/obj/item/circuitboard/airalarm), global.wait(0), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first)), global.req(PROC_REF(board_releasable), because = PROC_REF(board_release_refusal))), global.then(PROC_REF(finish_firedoor)), undo = null), global.dismantle(global.tool(TOOL_WELDER), global.wait(4 SECONDS), global.then(PROC_REF(disassembled)))))
 	into += entry_line(39)
 	into += list(global.op("anchor", global.tool(TOOL_WRENCH), global.label("Bolt or unbolt"), global.wait(0), global.then(PROC_REF(anchor_toggled))))
 	into += entry_line(40)

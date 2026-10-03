@@ -21,7 +21,7 @@
 	..()
 	equipped_summons = list("[SLOT_ID_MASK]" = /obj/item/clothing/mask/horsehead)
 
-/datum/spell/targeted/equip_item/horsemask/cast(list/targets, mob/user = usr)
+/datum/spell/targeted/equip_item/horsemask/cast(list/targets, mob/user)
 	..()
 	for(var/mob/living/target in targets)
 		act_message(target, null, MSG_SELF(span_danger("Your face burns up, and shortly after the fire you realise you have the face of a horse!")), \

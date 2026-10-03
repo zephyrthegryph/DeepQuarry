@@ -165,7 +165,7 @@ DECLARE_DEFAULT_CHILD(/mob, "ability_master", /atom/movable/screen/movable/abili
 /atom/movable/screen/ability/on_destroy(force)
 	var/atom/movable/screen/movable/ability_master/master = master_of()
 	if(master) // we leave its list in phase 2
-		if(!length(master.ability_objects - src))
+		if(!LAZYLEN(master.ability_objects) || !length(master.ability_objects - src))
 			master.update_icon()
 	..()
 

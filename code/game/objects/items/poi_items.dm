@@ -217,9 +217,10 @@ DECLARE_PERIODIC(/obj/item/poi/brokenoldreactor, PERIODIC_SLOW)
 
 	if(istype(I, /obj/item/paper) && unscrewed)
 		if(!has_paper)
+			if(!consume(I, user))
+				return INTERACTION_HANDLED_PASS
 			to_chat(user, "You feed the debug printer some paper")
 			has_paper = TRUE
-			consume(I, user)
 		else
 			to_chat(user, span_notice("[src] cannot hold more than 1 sheet of paper."))
 

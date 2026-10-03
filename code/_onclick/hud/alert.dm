@@ -294,8 +294,11 @@ or shoot a gun to move around via Newton's 3rd Law of Motion."
 	icon_state = "fire"
 
 /atom/movable/screen/alert/fire/Click()
-	if(isliving(usr))
-		var/mob/living/L = usr
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
+
+/atom/movable/screen/alert/fire/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/L = user
 		return L.resist()
 
 /atom/movable/screen/alert/irradiated
@@ -407,8 +410,11 @@ so as to remain in compliance with the most up-to-date laws."
 	desc = "You're legcuffed, which slows you down considerably. Click the alert to free yourself."
 
 /atom/movable/screen/alert/restrained/Click()
-	if(isliving(usr))
-		var/mob/living/L = usr
+	return click_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native alert click captures its actor without adding parent input routing.
+
+/atom/movable/screen/alert/restrained/click_with_actor(mob/user, location, control, params)
+	if(isliving(user))
+		var/mob/living/L = user
 		return L.resist()
 
 // TICKETS

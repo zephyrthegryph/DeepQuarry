@@ -414,11 +414,11 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 /// Plays the construction animation for `delay` (shorter states for faster work), then the end animation.
 /obj/effect/constructing_effect/proc/start_animation(delay, status)
 	icon_state = "rcd"
-	if (delay < 10)
+	if (delay < 1 SECOND)
 		icon_state += "_shortest"
-	else if (delay < 20)
+	else if (delay < 2 SECONDS)
 		icon_state += "_shorter"
-	else if (delay < 37)
+	else if (delay < 3.7 SECONDS)
 		icon_state += "_short"
 	if (status == RCD_DECONSTRUCT)
 		icon_state += "_reverse"
@@ -429,10 +429,10 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 		icon_state = "rcd_end_reverse"
 	else
 		icon_state = "rcd_end"
-	om_after(src, 15, PROC_REF(end))
+	om_after(src, 1.5 SECONDS, PROC_REF(end))
 
 /obj/effect/constructing_effect/proc/end()
-	qdel(src)
+	consume(src)
 // end
 
 /// The index of `mode` in this RCD's modes, or 0 when it has no such mode.

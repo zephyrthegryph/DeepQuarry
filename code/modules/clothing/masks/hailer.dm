@@ -139,6 +139,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag)
 	if(!hailer())
 		to_chat(user, span_warning("This mask has an integrated hailer, you can't remove it!"))
 		return ITEM_INTERACT_BLOCKING
+	if(loc?.release_refusal(src, user))
+		return ITEM_INTERACT_BLOCKING
 	var/obj/item/clothing/mask/gas/half/mask = new(loc)
 	playsound(src, tool.usesound, 50, TRUE)
 	transfer_blooddna_to(mask)
@@ -149,7 +151,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/clothing/mask/gas/sechailer, PROC_REF(on_emag)
 		user.put_in_hands(mask)
 	else
 		hailer().forceMove(mask.loc)
-	qdel(src)
+	consume(src, user)
 	return ITEM_INTERACT_SUCCESS
 
 /// Old verb "HALT!".

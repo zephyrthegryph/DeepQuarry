@@ -85,7 +85,7 @@ GLOBAL_DATUM(banlist, /savefile)
 	for (var/A in GLOB.banlist.dir)
 		GLOB.banlist.cd = "/base/[A]"
 		if (!GLOB.banlist["key"] || !GLOB.banlist["id"])
-			RemoveBan(A)
+			RemoveBan(A, null)
 			log_admin("Invalid Ban.")
 			message_admins("Invalid Ban.")
 			continue
@@ -93,7 +93,7 @@ GLOBAL_DATUM(banlist, /savefile)
 		if (!GLOB.banlist["temp"])
 			continue
 		if (GLOB.c_minutes >= GLOB.banlist["minutes"])
-			RemoveBan(A)
+			RemoveBan(A, null)
 
 	return 1
 
@@ -124,7 +124,7 @@ GLOBAL_DATUM(banlist, /savefile)
 	admin_action_message(bannedby, ckey, "banned", reason, temp ? minutes : -1)
 	return 1
 
-/proc/RemoveBan(foldername)
+/proc/RemoveBan(foldername, mob/user = null)
 	var/key
 	var/id
 
@@ -135,22 +135,22 @@ GLOBAL_DATUM(banlist, /savefile)
 
 	if (!GLOB.banlist.dir.Remove(foldername)) return 0
 
-	if(!usr)
+	if(!user)
 		log_admin("Ban Expired: [key]")
 		message_admins("Ban Expired: [key]")
 	else
-		ban_unban_log_save("[key_name_admin(usr)] unbanned [key]")
-		log_admin("[key_name_admin(usr)] unbanned [key]")
-		message_admins("[key_name_admin(usr)] unbanned: [key]")
+		ban_unban_log_save("[key_name_admin(user)] unbanned [key]")
+		log_admin("[key_name_admin(user)] unbanned [key]")
+		message_admins("[key_name_admin(user)] unbanned: [key]")
 		feedback_inc("ban_unban",1)
-		usr.client.holder.DB_ban_unban( ckey(key), BANTYPE_ANY_FULLBAN)
+		user.client.holder.DB_ban_unban( ckey(key), BANTYPE_ANY_FULLBAN)
 	for (var/A in GLOB.banlist.dir)
 		GLOB.banlist.cd = "/base/[A]"
 		if (key == GLOB.banlist["key"] /*|| id == GLOB.banlist["id"]*/)
 			GLOB.banlist.cd = "/base"
 			GLOB.banlist.dir.Remove(A)
 			continue
-	admin_action_message(usr.key, key, "unbanned", "\[Unban\]", 0)
+	admin_action_message(user?.key, key, "unbanned", "\[Unban\]", 0)
 	return 1
 
 /proc/GetExp(minutes as num)
@@ -203,7 +203,7 @@ GLOBAL_DATUM(banlist, /savefile)
 
 	GLOB.banlist.cd = "/base"
 
-/proc/ClearAllBans()
+/proc/ClearAllBans(mob/user = null)
 	GLOB.banlist.cd = "/base"
 	for (var/A in GLOB.banlist.dir)
-		RemoveBan(A)
+		RemoveBan(A, user)

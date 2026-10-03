@@ -6,6 +6,8 @@
 	w_class = ITEMSIZE_SMALL
 	gas_transfer_coefficient = 0.90
 	voicechange = 1
+	say_messages = list("Mmfph!", "Mmmf mrrfff!", "Mmmf mnnf!")
+	say_verbs = list("mumbles", "says")
 
 /obj/item/clothing/mask/muzzle/tape
 	name = "length of tape"
@@ -14,11 +16,6 @@
 	icon_state = "tape_cross"
 	item_state_slots = list(slot_r_hand_str = null, slot_l_hand_str = null)
 	w_class = ITEMSIZE_TINY
-
-/obj/item/clothing/mask/muzzle/Initialize(mapload)
-	. = ..()
-	say_messages = list("Mmfph!", "Mmmf mrrfff!", "Mmmf mnnf!")
-	say_verbs = list("mumbles", "says")
 
 // Clumsy folks can't take the mask off themselves.
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/muzzle, INTERACT_HAND_UNGATED(null, PROC_REF(muzzle_worn_hand)))
@@ -193,6 +190,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
 	body_parts_covered = HEAD|FACE|EYES
 	w_class = ITEMSIZE_SMALL
 	siemens_coefficient = 0.9
+	// The horse mask does not change voices by default; wizard spells enable and replace these tables.
+	say_messages = list("NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!")
+	say_verbs = list("whinnies", "neighs", "says")
 /* //Lost to time.
 /obj/item/clothing/mask/nock_scarab
 	name = "nock mask (blue, scarab)"
@@ -222,12 +222,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/surgical, \
 	w_class = ITEMSIZE_SMALL
 	body_parts_covered = HEAD|FACE
 */
-/obj/item/clothing/mask/horsehead/Initialize(mapload)
-	. = ..()
-	// The horse mask doesn't cause voice changes by default, the wizard spell changes the flag as necessary
-	say_messages = list("NEEIIGGGHHHH!", "NEEEIIIIGHH!", "NEIIIGGHH!", "HAAWWWWW!", "HAAAWWW!")
-	say_verbs = list("whinnies", "neighs", "says")
-
 /obj/item/clothing/mask/ai
 	name = "camera MIU"
 	desc = "Allows for direct mental connection to accessible camera networks."

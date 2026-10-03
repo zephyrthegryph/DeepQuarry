@@ -45,6 +45,7 @@
 #define ABILITY_ID_SHADEKIN_CREATE_SHADE "shadekin_create_shade"
 #define ABILITY_ID_SHADEKIN_DARK_MAW "shadekin_dark_maw"
 #define ABILITY_ID_SHADEKIN_DARK_TUNNELING "shadekin_dark_tunneling"
+#define ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS "shadekin_clear_dark_maws"
 
 // ---- Dark tunneling's numbers (powers/dark_tunnel/dark_tunneling.dm) ----
 #define DARK_TUNNEL_CHANNEL_TIME (60 SECONDS)

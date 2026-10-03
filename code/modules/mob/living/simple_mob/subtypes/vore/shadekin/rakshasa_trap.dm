@@ -69,5 +69,9 @@ DECLARE_INTERACTIONS(/obj/structure/gootrap, INTERACT_HAND(null, PROC_REF(intera
 			if(!has_buckled_mobs())
 				set_anchored(0)
 			deployed = 0
-			message_admins("[key_name(usr)] has stepped in the goo trap.")
+			message_admins(crossing_admin_message(L))
 	..()
+
+/// Format the crossing report from the mob caught by the actual trap callback.
+/obj/structure/gootrap/proc/crossing_admin_message(mob/living/victim)
+	return "[key_name(victim)] has stepped in the goo trap."

@@ -62,6 +62,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 
 /// req_credential_worn(types): the actor carries (worn ID or PDA, a silicon's own access) what grants the holder's access.
 /proc/req_credential_worn(list/types, because = null)
+	RETURN_TYPE(/datum/entry/part/req/credential)
 	return part_make(/datum/entry/part/req/credential, list("types" = types, "in_hand" = FALSE, "because" = because))
 
 /datum/entry/part/req/credential

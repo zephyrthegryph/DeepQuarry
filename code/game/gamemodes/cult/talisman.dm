@@ -38,7 +38,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 				to_chat(user, span_warning("To use this talisman, attack your target directly."))
 				return
 			if("supply")
-				supply()
+				supply(null, user)
 		user.injure(INJURY_BLUNT, 5)
 		if(src && src.imbue!="supply" && src.imbue!="runestun")
 			if(delete)
@@ -62,7 +62,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		..()
 
 
-/obj/item/paper/talisman/proc/supply(key)
+/obj/item/paper/talisman/proc/supply(key, mob/user)
 	if (!src.uses)
 		qdel(src)
 		return
@@ -79,7 +79,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		"Kal om neth — summon a soul stone" = "soulstone",
 		"Da A'ig Osk — summon a construct shell" = "construct",
 	)
-	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(talisman_chant_chosen), title = "Talisman", message = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
+	om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(talisman_chant_chosen), title = "Talisman", message = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
 
 /// A pick made with an item the answerer carries (a talisman, a pinpointer, a technomancer
 /// device or spell): re-checked that it's still carried and they're able.
@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/item/paper/talisman, INTERACT_USE_AS(I_HURT, "Crumple",
 		else
 			return
 	src.uses--
-	supply()
+	supply(null, user)
 
 
 /obj/item/paper/talisman/supply

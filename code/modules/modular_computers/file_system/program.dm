@@ -194,7 +194,7 @@ UI_ACT(/datum/computer_file/program, "PC_exit", ui_act_pc_exit)
 UI_ACT_PROC(/datum/computer_file/program, ui_act_pc_exit)
 	if(!(computer()))
 		return
-	computer().kill_program()
+	computer().kill_program(FALSE, user)
 	ui.close()
 	return 1
 

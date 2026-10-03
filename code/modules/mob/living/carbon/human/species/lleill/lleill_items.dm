@@ -254,6 +254,8 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 	to_chat(M, span_warning("You leave the glamour ring alone."))
 
 /obj/structure/glamour_ring/proc/ring_broken(mob/living/M)
+	if(loc?.release_refusal(src, M))
+		return
 	var/mob/living/carbon/human/L = connected_mob
 	to_chat(M, span_warning("You have destroyed \the [src]."))
 	src.visible_message(span_infoplain(span_bold("\The [M]") + " has broken apart \the [src]."))
@@ -261,7 +263,7 @@ DECLARE_INTERACTIONS(/obj/item/glamour_face, INTERACT_USE(null, PROC_REF(interac
 		to_chat(connected_mob, span_warning("\The [src] has been destroyed by \the [M]."))
 	if(istype(L) && istype(L.species, /datum/species/lleill))
 		own_take_member(L, nameof(L.teleporters), src)
-	qdel(src)
+	consume(src, M)
 
 DECLARE_INTERACTIONS(/obj/structure/glamour_ring, INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)))
 

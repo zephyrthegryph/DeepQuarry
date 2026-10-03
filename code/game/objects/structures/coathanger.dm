@@ -43,9 +43,10 @@
 		if(istype(W,T))
 			can_hang = 1
 	if (can_hang && !coat())
+		if(!own_bring_in(src, nameof(coat), W, null, user, TRUE, null, FALSE))
+			return TRUE
 		act_message(user, src, MSG_SELF("You hang [W] on %T%"), MSG_OTHERS("%U% hangs [W] on %T%."))
 		rel_set(src, nameof(coat), W)
-		user.drop_from_inventory(coat(), src)
 		update_icon()
 	else
 		to_chat(user, span_notice("You cannot hang [W] on [src]"))

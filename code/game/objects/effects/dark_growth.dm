@@ -63,7 +63,7 @@
 		var/health_change = (T.get_lumcount() * -10) + 5
 		health = min(10, health + health_change)
 	if(health <= 0)
-		qdel(src)
+		consume(src)
 		return
 
 /obj/effect/dark/floor
@@ -78,12 +78,12 @@
 
 /obj/effect/dark/proc/unlinked()
 	rel_clear(src, nameof(linked_node)) // the pair takes us out of the node's children_effects
-	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
+	om_after(src, rand(2 SECONDS, 7 SECONDS), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
 	PRIVATE_PROC(TRUE)
 	if(!linked_node)
-		qdel(src)
+		consume(src)
 
 /obj/effect/dark/floor/Initialize(mapload, check_glow, node)
 	. = ..(mapload, !isspace(loc))

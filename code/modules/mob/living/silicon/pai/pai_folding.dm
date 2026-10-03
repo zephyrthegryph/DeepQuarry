@@ -91,8 +91,11 @@
 
 //I'm not sure how much of this is necessary, but I would rather avoid issues.
 /mob/living/silicon/pai/proc/close_up(silent= FALSE)
+	// A destroyed card has already cleared its incoming relation before pAI death runs.
+	if(!card)
+		return
 
-	COOLDOWN_START(src, last_special, 100)
+	COOLDOWN_START(src, last_special, 10 SECONDS)
 
 	if(loc == card)
 		return

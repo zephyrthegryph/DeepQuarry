@@ -12,7 +12,11 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(zoom)))
+DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(interaction_zoom), REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+
+/// Interaction payload arguments do not occupy zoom offset and view-size parameters.
+/obj/item/binoculars/proc/interaction_zoom(mob/user, obj/item/held, datum/interaction/interaction)
+	zoom(user)
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"

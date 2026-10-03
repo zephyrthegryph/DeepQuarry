@@ -1,4 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
 /obj/structure/closet/crate
 	name = "crate"
@@ -24,14 +23,13 @@
 /obj/structure/closet/crate/can_close()
 	return 1
 
-/obj/structure/closet/crate/open()
+/obj/structure/closet/crate/open(mob/user)
 	if(src.opened)
 		return 0
 	if(!src.can_open())
 		return 0
 	void_shipping_ledger("crate opened")
 
-	var/mob/user = istype(usr, /mob) ? usr : null
 	var/obj/item/radio/electropack/rig
 	if(rigged)
 		for(var/obj/item/radio/electropack/E in slot_contents())
@@ -85,7 +83,7 @@
 			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
 			return TRUE
-		if(istype(W, /obj/item/grab)) //VOREstation edit: we don't want to drop grabs into the crate
+		if(istype(W, /obj/item/grab)) // Grabs are not dropped into the crate.
 			return TRUE
 		user.drop_item()
 		if(W)
@@ -103,9 +101,9 @@
 			return TRUE
 	else if(istype(W, /obj/item/radio/electropack))
 		if(rigged)
+			if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user , span_notice("You attach [W] to [src]."))
-			user.drop_item()
-			W.forceMove(src)
 			return TRUE
 	else
 		return ..()
@@ -775,11 +773,13 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 		return
 
 	if(locked && tamper_proof && get_integrity() <= Proj.damage)
+		if(loc?.release_refusal(src))
+			return
 		if(tamper_proof == 2) // Mainly used for events to prevent any chance of opening the box improperly.
 			visible_message(span_bolddanger("The anti-tamper mechanism of [src] triggers an explosion!"))
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 0, 1) // Non-damaging, but it'll alert security.
-			qdel(src)
+			consume(src)
 			return
 		var/open_chance = rand(1,5)
 		switch(open_chance)
@@ -787,7 +787,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 				visible_message(span_bolddanger("The anti-tamper mechanism of [src] causes an explosion!"))
 				var/turf/T = get_turf(src.loc)
 				explosion(T, 0, 0, 0, 1) // Non-damaging, but it'll alert security.
-				qdel(src)
+				consume(src)
 			if(2 to 4)
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
 				for(var/i in 1 to length(slot_contents()) + latent_count()) // For every item in the box, we spawn a pile of ash.

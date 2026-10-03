@@ -56,10 +56,14 @@ DECLARE_INTERACTIONS(/obj/item/bedsheet, \
 	return FALSE
 
 /obj/item/bedsheet/proc/attackby_timed_done(mob/user)
-	to_chat(user, span_notice("You cut [src] into pieces!"))
+	var/turf/T = drop_location()
+	var/message = span_notice("You cut [src] into pieces!")
+	if(!consume(src, user))
+		return FALSE
+	to_chat(user, message)
 	for(var/i in 1 to rand(2,5))
-		new /obj/item/reagent_containers/glass/rag(drop_location())
-	qdel(src)
+		new /obj/item/reagent_containers/glass/rag(T)
+	return TRUE
 
 /obj/item/bedsheet/ghosts_can_use_rotate_verbs()
 	return CONFIG_GET(flag/ghost_interaction)
@@ -267,14 +271,14 @@ APPEARANCE_TEMPLATE(/obj/structure/bedsheetbin, "linenbin-{appearance_fill}")
 
 /obj/structure/bedsheetbin/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/bedsheet))
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(sheets), I, null, user, TRUE, null, FALSE))
+			return TRUE
 		rel_add(src, nameof(sheets), I)
 		amount++
 		to_chat(user, span_notice("You put [I] in [src]."))
 	else if(amount && !hidden() && I.w_class < ITEMSIZE_LARGE)	//make sure there's sheets to hide it among, make sure nothing else is hidden in there.
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_bring_in(src, nameof(hidden), I, null, user, TRUE, null, FALSE))
+			return TRUE
 		rel_set(src, nameof(hidden), I)
 		to_chat(user, span_notice("You hide [I] among the sheets."))
 	return TRUE

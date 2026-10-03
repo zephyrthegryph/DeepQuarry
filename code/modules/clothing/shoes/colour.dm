@@ -95,8 +95,8 @@
 /obj/item/clothing/shoes/orange/proc/attach_cuffs(obj/item/handcuffs/cuffs, mob/user as mob)
 	if (chained()) return
 
-	user.drop_item()
-	cuffs.forceMove(src)
+	if(!own_bring_in(src, nameof(chained), cuffs, null, user, TRUE, null, FALSE))
+		return
 	rel_set(src, nameof(chained), cuffs)
 	slowdown = 15
 	icon_state = "orange1"

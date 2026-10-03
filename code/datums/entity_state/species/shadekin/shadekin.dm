@@ -68,24 +68,13 @@
 	///Our current active dark maws: a relation list view (a maw that dies leaves it)
 	var/list/obj/effect/abstract/dark_maw/active_dark_maws
 
-	//Ability Vars
-	///Ability ids (code/datums/abilities/ability.dm) this variant grants while
-	///the datum is held: the source-tracked grant API, revoked in
-	///Destroy(). Every shadekin gets phase shift, regenerate other and create
-	///shade; phase_only and full override this to add or remove ids.
-	var/list/shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE)
-
 	//Misc Vars
 	///Eyecolor
 	var/eye_color = BLUE_EYES
 	///For downstream. Enables some extra verbs. Causes things to drop in hand when you phase.
 	var/extended_kin = FALSE
 
-/datum/shadekin/phase_only
-	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT)
-
 /datum/shadekin/full
-	shadekin_granted_abilities = list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, "shadekin_clear_dark_maws")
 	extended_kin = TRUE
 	drop_items_on_phase = TRUE
 	camera_counts_as_watcher = TRUE
@@ -113,8 +102,8 @@
 
 	// This datum is the source for every ability it grants
 	// (code/datums/abilities/ability.dm); revoked with it in
-	// Destroy() below, whatever kind of shadekin this is.
-	for(var/ability_id in shadekin_granted_abilities)
+	// lifecycle_prerelease() below, whatever kind of shadekin this is.
+	for(var/ability_id in granted_ability_ids())
 		owner.grant_ability(ability_id, src)
 
 	handle_comp() //First hit is free!
@@ -151,7 +140,7 @@
 	..()
 	if(!owner)
 		return
-	for(var/ability_id in shadekin_granted_abilities)
+	for(var/ability_id in granted_ability_ids())
 		owner.revoke_ability(ability_id, src)
 	if(!ishuman(owner))
 		om_stage_remove(owner, /datum/om/stage/life/trait/shadekin)
@@ -370,3 +359,11 @@ UI_ACT_PROC(/datum/shadekin, ui_act_toggle_voice)
 /datum/shadekin/relations()
 	. = ..()
 	. += rel_many(nameof(active_dark_maws))
+
+/// Constant ability ids shared by every instance of the same concrete type.
+TYPE_TABLE_DECLARE(/datum/shadekin, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE))
+TYPE_TABLE(/datum/shadekin/phase_only, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT))
+TYPE_TABLE(/datum/shadekin/full, shadekin_ability_ids, list(ABILITY_ID_SHADEKIN_PHASE_SHIFT, ABILITY_ID_SHADEKIN_REGENERATE_OTHER, ABILITY_ID_SHADEKIN_CREATE_SHADE, ABILITY_ID_SHADEKIN_DARK_RESPITE, ABILITY_ID_SHADEKIN_DARK_TUNNELING, ABILITY_ID_SHADEKIN_DARK_MAW, ABILITY_ID_SHADEKIN_CLEAR_DARK_MAWS))
+
+/datum/shadekin/proc/granted_ability_ids()
+	return TYPE_TABLE_GET(src, shadekin_ability_ids)

@@ -125,21 +125,33 @@
 	cost = 300
 	wear = 0.5
 
+/datum/nifsoft/sizechange
+	var/tmp/datum/om/prompt/number/size_prompt
+
 /datum/nifsoft/sizechange/activate()
 	if((. = ..()))
-		var/new_size = rerun_ask(usr, "k128", PROC_REF(activate), args, /datum/om/prompt/number, message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1)
-		if(isnull(new_size))
-			return
-
-		if (!nif().human.size_range_check(new_size))
-			if(new_size)
-				to_chat(nif().human,span_notice("The safety features of the NIF Program prevent you from choosing this size."))
-			return
-		else
-			if(nif().human.resize(new_size/100, uncapped=nif().human.has_large_resize_bounds(), ignore_prefs = TRUE))
-				to_chat(nif().human,span_notice("You set the size to [new_size]%"))
-				nif().human.visible_message(span_warning("Swirling grey mist envelops [nif().human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
+		var/obj/item/nif/implant = nif()
+		var/datum/om/prompt/number/ask = om_ask(implant?.human, /datum/om/prompt/number, PROC_REF(size_chosen), message = "Put the desired size (25-200%), or (1-600%) in dormitory areas.", title = "Set Size", default = 200, max = 600, min = 1, subject = implant, optional = TRUE)
+		rel_set(src, nameof(size_prompt), ask)
+		// This is a pulse: the answer can outlive its original implanted owner.
 		om_after(src, 0, PROC_REF(deactivate))
+
+/datum/nifsoft/sizechange/proc/size_chosen(datum/om/prompt/number/ask)
+	if(ask != size_prompt)
+		return
+	rel_clear(src, nameof(size_prompt))
+	var/obj/item/nif/implant = nif()
+	var/mob/living/carbon/human/human = implant?.human
+	if(!human || ask.subject != implant || ask.answerer != human || human.nif != implant || implant.stat != NIF_WORKING || isnull(ask.number))
+		return
+	var/new_size = ask.number
+	if(!human.size_range_check(new_size))
+		if(new_size)
+			to_chat(human, span_notice("The safety features of the NIF Program prevent you from choosing this size."))
+		return
+	if(human.resize(new_size / 100, uncapped = human.has_large_resize_bounds(), ignore_prefs = TRUE))
+		to_chat(human, span_notice("You set the size to [new_size]%"))
+		act_message(human, null, MSG_SELF(span_notice("Swirling streams of nanites wrap around you as you change size!")), MSG_OTHERS(span_warning("Swirling grey mist envelops [MSG_LITERAL("[human]")] as they change size!")))
 
 /datum/nifsoft/sizechange/deactivate(force = FALSE)
 	if((. = ..()))

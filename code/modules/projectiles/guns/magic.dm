@@ -24,8 +24,8 @@ OM_FIELD(/obj/item/gun/magic, can_charge, TRUE, CHANGE_EXPLICIT)
 /// Regains charges while it can charge.
 DECLARE_PERIODIC_WHILE(/obj/item/gun/magic, PERIODIC_SLOW, "can_charge")
 
-/obj/item/gun/magic/consume_next_projectile()
-	if(checks_antimagic && locate_within(usr, /obj/item/nullrod)) return null
+/obj/item/gun/magic/consume_next_projectile(mob/user)
+	if(checks_antimagic && locate_within(user, /obj/item/nullrod)) return null
 	if(!ispath(projectile_type)) return null
 	if(charges <= 0) return null
 

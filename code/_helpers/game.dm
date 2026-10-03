@@ -84,9 +84,11 @@
 /proc/isNotAdminLevel(level)
 	return !isAdminLevel(level)
 
-/proc/circlerange(center=usr,radius=3)
+/proc/circlerange(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -98,9 +100,11 @@
 
 	return turfs
 
-/proc/circleview(center=usr,radius=3)
+/proc/circleview(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/atoms = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -128,9 +132,11 @@
 
 	return dist
 
-/proc/circlerangeturfs(center=usr,radius=3)
+/proc/circlerangeturfs(atom/center,radius=3)
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 
@@ -141,9 +147,11 @@
 			turfs += T
 	return turfs
 
-/proc/circleviewturfs(center=usr,radius=3)		//Is there even a diffrence between this proc and circlerangeturfs()?
+/proc/circleviewturfs(atom/center,radius=3)		//Is there even a diffrence between this proc and circlerangeturfs()?
 
 	var/turf/centerturf = get_turf(center)
+	if(!centerturf)
+		return list()
 	var/list/turfs = new/list()
 	var/rsq = radius * (radius+0.5)
 

@@ -1,0 +1,38 @@
+/// Actual alien acid removes itself only after losing its target or completing its bites.
+/datum/unit_test/interim_alien_acid_completion/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/book/target = allocate(/obj/item/book, T)
+	var/obj/item/pen/unrelated = allocate(/obj/item/pen, T)
+	var/obj/effect/alien/acid/acid = allocate(/obj/effect/alien/acid, T, target)
+	TEST_ASSERT(!QDELETED(acid), "the actual acid initializes with a live object target")
+	TEST_ASSERT_EQUAL(acid.target, target, "the actual acid retains its exact initialized target")
+	TEST_ASSERT_EQUAL(acid.target_strength, 4, "the real object target needs four bites")
+	TEST_ASSERT_EQUAL(acid.ticks, 1, "actual initialization performs the first bite")
+	acid.tick()
+	acid.tick()
+	TEST_ASSERT_EQUAL(acid.ticks, 3, "actual acid records three bites before completion")
+	TEST_ASSERT(!QDELETED(acid), "actual acid survives while one bite remains")
+	TEST_ASSERT(!QDELETED(target), "the exact actual target survives before its final bite")
+	TEST_ASSERT_EQUAL(acid.tick(), REPEAT_STOP, "the actual final bite stops its repeat")
+	TEST_ASSERT(QDELETED(target), "the actual final bite dissolves the exact object target")
+	TEST_ASSERT(QDELETED(acid), "the actual completed acid consumes itself")
+	TEST_ASSERT(!QDELETED(unrelated), "actual acid completion preserves an unrelated item on the same floor")
+	TEST_ASSERT_EQUAL(unrelated.loc, T, "the unrelated item retains its original location")
+
+/datum/unit_test/interim_alien_acid_lost_target/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/item/book/target = allocate(/obj/item/book, T)
+	var/obj/effect/alien/acid/acid = allocate(/obj/effect/alien/acid, T, target)
+	TEST_ASSERT(!QDELETED(acid), "the actual acid starts before its target disappears")
+	TEST_ASSERT_EQUAL(acid.ticks, 1, "actual initialization completes only its first bite")
+	TEST_ASSERT(consume(target), "the real target can be removed through its public consumption API")
+	TEST_ASSERT(QDELETED(target), "the original actual target is gone before the next acid tick")
+	TEST_ASSERT_NULL(acid.target, "actual target teardown clears the acid's declared ownership field")
+	TEST_ASSERT_EQUAL(acid.tick(), REPEAT_STOP, "actual acid with a lost target stops repeating")
+	TEST_ASSERT(QDELETED(acid), "the actual lost-target path consumes the acid effect")
+
+/datum/unit_test/interim_alien_acid_missing_target/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/effect/alien/acid/acid = allocate(/obj/effect/alien/acid, T)
+	TEST_ASSERT(QDELETED(acid), "actual targetless initialization consumes its invalid acid effect immediately")
+	TEST_ASSERT_EQUAL(length(contents_of(T, /obj/effect/alien/acid)), 0, "actual targetless initialization leaves no live acid on the floor")

@@ -139,7 +139,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 		. += span_notice("Currently configured to drop printed objects <b>[dir2text(drop_direction)]</b>.")
 
 /obj/machinery/mecha_part_fabricator_tg/MouseDrop(atom/over, src_location, over_location, src_control, over_control, params)
-	var/mob/user = usr
+	return choose_drop_with_actor(usr, over_location) // ALLOW(sys_usr_outside_verb): Native fabricator drag captures its actor before unchanged layout guards and notifications.
+
+/obj/machinery/mecha_part_fabricator_tg/proc/choose_drop_with_actor(mob/user, over_location)
 	if(!Adjacent(user))
 		return
 	if(isobserver(user) || user.is_incorporeal())

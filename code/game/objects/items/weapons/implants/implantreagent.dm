@@ -229,7 +229,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/implanter/reagent_generator, "imp", "implant_typ
 
 	do_reagent_implant(usr)
 
-/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user = usr)
+/mob/living/carbon/human/proc/do_reagent_implant(mob/living/carbon/human/user)
 	if(!isliving(user) || !user.checkClickCooldown())
 		return
 

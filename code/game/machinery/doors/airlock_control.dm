@@ -2,7 +2,7 @@
 /obj/machinery/door/airlock
 	var/id_tag
 	var/frequency
-	var/shockedby = list()
+	var/list/shockedby
 	var/datum/radio_frequency/radio_connection
 	var/last_reported_density = -1
 	var/last_reported_locked = -1

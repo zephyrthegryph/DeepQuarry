@@ -1137,12 +1137,11 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	return isprox(held)
 
 /obj/machinery/porta_turret_construct/proc/interaction_install_prox(mob/user, obj/item/I, datum/interaction/interaction)
-	build_step = 5
-	if(!user.unEquip(I))
+	if(!consume(I, user))
 		to_chat(user, span_notice("\The [I] is stuck to your hand, you cannot put it in \the [src]"))
 		return TRUE
+	build_step = 5
 	to_chat(user, span_notice("You add the prox sensor to the turret."))
-	consume(I, user)
 	return TRUE
 	//attack_hand() removes the gun
 
@@ -1260,7 +1259,7 @@ DAMAGE_REACTION(/obj/machinery/porta_turret, DAMAGE_EMP, PROC_REF(turret_emp))
 	Turret.enabled = FALSE
 	Turret.setup()
 
-	qdel(src) // qdel
+	replace_with(src, Turret)
 
 /obj/machinery/porta_turret_construct/screwdriver_act(mob/user, obj/item/tool)
 	switch(build_step)

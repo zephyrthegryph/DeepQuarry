@@ -63,13 +63,13 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/heavysniper, "heavysniper{bolt_open
 	..()
 
 /obj/item/gun/projectile/heavysniper/ui_action_click(mob/user, actiontype)
-	heavysniper_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(heavysniper_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Scope", PROC_REF(heavysniper_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Scope", PROC_REF(heavysniper_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/heavysniper/proc/heavysniper_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)
 
 ////////////// Dragunov Sniper Rifle //////////////
 
@@ -95,10 +95,10 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile/heavysniper, INTERACT_VERB("Use Sco
 APPEARANCE_TEMPLATE(/obj/item/gun/projectile/SVD, "SVD{ammo_magazine?:-empty}")
 
 /obj/item/gun/projectile/SVD/ui_action_click(mob/user, actiontype)
-	svd_verb_scope(user)
+	perform_scope_interaction(user, PROC_REF(svd_verb_scope))
 
-EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PROC_REF(svd_verb_scope), REQ_IN_INVENTORY))
+EXTEND_INTERACTIONS(/obj/item/gun/projectile/SVD, INTERACT_VERB("Use Scope", PROC_REF(svd_verb_scope), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
 
 /// Old Use Scope verb.
 /obj/item/gun/projectile/SVD/proc/svd_verb_scope(mob/user, obj/item/held, datum/interaction/interaction)
-	toggle_scope(2.0)
+	toggle_scope(2.0, user)

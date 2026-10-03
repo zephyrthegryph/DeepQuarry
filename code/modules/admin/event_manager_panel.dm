@@ -186,7 +186,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_select_event)
 	var/datum/event_container/EC = params["ref"]
 	if(!EC)
 		return
-	EC.SelectEvent()
+	EC.SelectEvent(user)
 	return TRUE
 
 UI_ACT(/datum/event_manager_panel, "clear_event", ui_act_clear_event, UI_ARG_REF("ref", "proc:event_containers", /datum/event_container))

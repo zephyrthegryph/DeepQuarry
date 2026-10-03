@@ -132,7 +132,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_race)
 				owner().custom_species = custom_name
 			cut_data()
 			generate_data(ui.user, owner())
-			changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+			changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 			return 1
 	return FALSE
 
@@ -142,7 +142,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_gender)
 		if(owner().change_gender(params["gender"]))
 			cut_data()
 			generate_data(ui.user, owner())
-			changed_hook(APPEARANCECHANGER_CHANGED_GENDER)
+			changed_hook(APPEARANCECHANGER_CHANGED_GENDER, user)
 			return 1
 	return FALSE
 
@@ -150,7 +150,7 @@ UI_ACT(/datum/tgui_module/appearance_changer, "gender_id", ui_act_gender_id, UI_
 UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_gender_id)
 	if(can_change(owner(), APPEARANCE_GENDER) && (params["gender_id"] in all_genders_define_list))
 		owner().identifying_gender = params["gender_id"]
-		changed_hook(APPEARANCECHANGER_CHANGED_GENDER_ID)
+		changed_hook(APPEARANCECHANGER_CHANGED_GENDER_ID, user)
 		return 1
 	return FALSE
 
@@ -162,7 +162,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_skin_tone)
 			return
 		if(isnum(new_s_tone) && can_still_topic(ui.user, state))
 			new_s_tone = 35 - max(min( round(new_s_tone), 220),1)
-			changed_hook(APPEARANCECHANGER_CHANGED_SKINTONE)
+			changed_hook(APPEARANCECHANGER_CHANGED_SKINTONE, user)
 			return owner().change_skin_tone(new_s_tone)
 	return FALSE
 
@@ -177,7 +177,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_hair)
 	if(can_change(owner(), APPEARANCE_HAIR) && (params["name"] in valid_hairstyles))
 		if(owner().change_hair(params["name"]))
 			update_dna(owner())
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 			return 1
 	return FALSE
 
@@ -188,7 +188,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_hair_grad)
 		owner().grad_style = picked[1] // returned as a list
 		update_dna(owner())
 		owner().regenerate_icons()
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return 1
 	return FALSE
 
@@ -209,7 +209,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_facial_hair)
 	if(can_change(owner(), APPEARANCE_FACIAL_HAIR) && (params["name"] in valid_facial_hairstyles))
 		if(owner().change_facial_hair(params["name"]))
 			update_dna(owner())
-			changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRSTYLE)
+			changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRSTYLE, user)
 			return 1
 	return FALSE
 
@@ -236,7 +236,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_ear)
 		owner().ear_style = instance
 		owner().update_hair()
 		update_dna(owner())
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
 	return FALSE
 
@@ -255,7 +255,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_ear_secondary)
 			owner().ear_secondary_colors.len = instance.get_color_channel_count()
 		owner().update_hair()
 		update_dna(owner())
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
 	return FALSE
 
@@ -278,7 +278,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_ears_alpha)
 		owner().a_ears = new_alpha
 		update_dna(owner())
 		owner().update_hair()
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
 
@@ -289,7 +289,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_secondary_ears_alpha)
 		owner().a_ears2 = new_alpha
 		update_dna(owner())
 		owner().update_hair()
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
 
@@ -314,7 +314,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_tail)
 		owner().tail_style = instance
 		owner().update_tail_showing()
 		update_dna(owner())
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
 	return FALSE
 
@@ -343,7 +343,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_tail_alpha)
 		owner().a_tail = new_alpha
 		update_dna(owner())
 		owner().update_tail_showing()
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
 
@@ -358,7 +358,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_wing)
 		owner().wing_style = instance
 		owner().update_wing_showing()
 		update_dna(owner())
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 		return TRUE
 	return FALSE
 
@@ -387,7 +387,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_wing_alpha)
 		owner().a_wing = new_alpha
 		update_dna(owner())
 		owner().update_wing_showing()
-		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+		changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, user)
 		return 1
 	return FALSE
 
@@ -401,13 +401,13 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_marking)
 				if (name_marking)
 					var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
 					if (owner().remove_marking(mark_datum))
-						changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+						changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 						return TRUE
 			if (1) //add
 				if(name_marking && can_still_topic(ui.user, state))
 					var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
 					if (owner().add_marking(mark_datum))
-						changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE)
+						changed_hook(APPEARANCECHANGER_CHANGED_HAIRSTYLE, user)
 						return TRUE
 			if (2) //move up
 				var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
@@ -490,7 +490,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_base_icon)
 				GLOB.wrapped_species_by_ref["\ref[owner()]"] = new_species
 			owner().regenerate_icons()
 			generate_data(ui.user, owner())
-			changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+			changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 			return TRUE
 	return FALSE
 
@@ -502,7 +502,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_blood_reagent)
 			return
 		if(new_blood_reagents)
 			owner().dna.blood_reagents = new_blood_reagents
-			changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+			changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 			return TRUE
 	return FALSE
 
@@ -527,7 +527,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_weight)
 			if(unit_of_measurement == "Kilograms")
 				new_weight = round(2.20462*text2num(new_weight),4)
 			owner().weight = sanitize_integer(new_weight, WEIGHT_MIN, WEIGHT_MAX, owner().weight)
-			changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+			changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 			return TRUE
 	return FALSE
 
@@ -540,7 +540,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_size_scale)
 		owner().resize(new_size / 100, animate = FALSE, ignore_prefs = TRUE)
 		owner().regenerate_icons()
 		owner().set_dir(owner().dir) // Causes a visual update for fuzzy/offset
-		changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
 
@@ -571,7 +571,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_digitigrade)
 		owner().digitigrade = owner().dna.digitigrade
 		owner().regenerate_icons()
 		generate_data(ui.user, owner())
-		changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+		changed_hook(APPEARANCECHANGER_CHANGED_RACE, user)
 		return TRUE
 	return FALSE
 
@@ -1074,7 +1074,7 @@ UI_DATA(/datum/tgui_module/appearance_changer, "merge:ui_data_datum_tgui_module_
 	return possible_genders
 
 // Used for subtypes to handle messaging or whatever.
-/datum/tgui_module/appearance_changer/proc/changed_hook(flag)
+/datum/tgui_module/appearance_changer/proc/changed_hook(flag, mob/user)
 	return
 
 /datum/tgui_module/appearance_changer/proc/can_use_sprite(datum/sprite_accessory/X, mob/living/carbon/human/target, mob/user)
@@ -1127,9 +1127,9 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 	cam_background.fill_rect(1, 1, 1, 1)
 	local_skybox.cut_overlays()
 
-/datum/tgui_module/appearance_changer/vore/changed_hook(flag)
+/datum/tgui_module/appearance_changer/vore/changed_hook(flag, mob/user)
 	var/mob/living/carbon/human/M = owner()
-	var/mob/living/O = usr
+	var/mob/living/O = user
 
 	switch(flag)
 		if(APPEARANCECHANGER_CHANGED_RACE)
@@ -1312,7 +1312,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			var/b_skin = hex2num(copytext(ask.picked_color, 6, 8))
 			if(owner().change_skin_color(r_skin, g_skin, b_skin))
 				update_dna(owner())
-				changed_hook(APPEARANCECHANGER_CHANGED_SKINCOLOR)
+				changed_hook(APPEARANCECHANGER_CHANGED_SKINCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color")
 			var/r_hair = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1320,7 +1320,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			var/b_hair = hex2num(copytext(ask.picked_color, 6, 8))
 			if(owner().change_hair_color(r_hair, g_hair, b_hair))
 				update_dna(owner())
-				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("hair_color_grad")
 			var/r_grad = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1328,7 +1328,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			var/b_grad = hex2num(copytext(ask.picked_color, 6, 8))
 			if(owner().change_grad_color(r_grad, g_grad, b_grad))
 				update_dna(owner())
-				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+				changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("facial_hair_color")
 			var/r_facial = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1336,7 +1336,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			var/b_facial = hex2num(copytext(ask.picked_color, 6, 8))
 			if(owner().change_facial_hair_color(r_facial, g_facial, b_facial))
 				update_dna(owner())
-				changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRCOLOR)
+				changed_hook(APPEARANCECHANGER_CHANGED_F_HAIRCOLOR, ask.answerer)
 				return TRUE
 		if("eye_color")
 			var/r_eyes = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1344,7 +1344,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			var/b_eyes = hex2num(copytext(ask.picked_color, 6, 8))
 			if(owner().change_eye_color(r_eyes, g_eyes, b_eyes))
 				update_dna(owner())
-				changed_hook(APPEARANCECHANGER_CHANGED_EYES)
+				changed_hook(APPEARANCECHANGER_CHANGED_EYES, ask.answerer)
 				return TRUE
 		if("ears_color")
 			owner().r_ears = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1352,7 +1352,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_ears = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_hair()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("ears2_color")
 			owner().r_ears2 = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1360,7 +1360,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_ears2 = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_hair()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("ears_secondary_color")
 			if(channel > length(owner().ear_secondary_colors))
@@ -1368,7 +1368,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().ear_secondary_colors[channel] = ask.picked_color
 			update_dna(owner())
 			owner().update_hair()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail_color")
 			owner().r_tail = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1376,7 +1376,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_tail = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail2_color")
 			owner().r_tail2 = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1384,7 +1384,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_tail2 = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("tail3_color")
 			owner().r_tail3 = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1392,7 +1392,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_tail3 = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_tail_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing_color")
 			owner().r_wing = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1400,7 +1400,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_wing = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing2_color")
 			owner().r_wing2 = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1408,7 +1408,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_wing2 = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("wing3_color")
 			owner().r_wing3 = hex2num(copytext(ask.picked_color, 2, 4))
@@ -1416,7 +1416,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 			owner().b_wing3 = hex2num(copytext(ask.picked_color, 6, 8))
 			update_dna(owner())
 			owner().update_wing_showing()
-			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR)
+			changed_hook(APPEARANCECHANGER_CHANGED_HAIRCOLOR, ask.answerer)
 			return TRUE
 		if("marking")
 			var/datum/sprite_accessory/marking/mark_datum = GLOB.body_marking_styles_list[name_marking]
@@ -1425,5 +1425,5 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 		if("blood_color")
 			if(can_change(owner(), APPEARANCE_MISC))
 				owner().dna.blood_color = ask.picked_color
-				changed_hook(APPEARANCECHANGER_CHANGED_RACE)
+				changed_hook(APPEARANCECHANGER_CHANGED_RACE, ask.answerer)
 				return TRUE

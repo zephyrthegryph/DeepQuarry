@@ -74,7 +74,7 @@ UI_ACT_PROC(/datum/tgui_module, ui_act_pc_exit)
 		return FALSE
 	switch(action)
 		if("PC_exit")
-			host.kill_program()
+			host.kill_program(FALSE, user)
 		if("PC_shutdown")
 			host.shutdown_computer()
 		if("PC_minimize")

@@ -56,7 +56,7 @@
 		set_opacity(0)
 
 // Prevents singularities and pretty much everything else from moving the field segments away.
-// The only thing that is allowed to move us is the Destroy() proc.
+// Only teardown is allowed to move us.
 /obj/effect/shield/forceMove(atom/destination, direction, movetime)
 	if(QDELING(src))
 		return ..()
@@ -166,7 +166,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 
 /obj/effect/shield/take_damage(damage, damtype, hitby)
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return
 
 	if(!damtype)
@@ -219,7 +219,7 @@ EXTEND_INTERACTIONS(/obj/effect/shield, \
 /obj/effect/shield/CanPass(atom/movable/mover, turf/target)
 	// Somehow we don't have a generator. This shouldn't happen. Delete the shield.
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return 1
 
 	if(disabled_for || diffused_for)
@@ -287,7 +287,7 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 // Special treatment for meteors because they would otherwise penetrate right through the shield.
 /obj/effect/shield/Bumped(atom/movable/mover)
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return 0
 	mover.shield_impact(src)
 	return ..()
@@ -306,7 +306,7 @@ DAMAGE_REACTION(/obj/effect/shield, DAMAGE_EXPLOSION, PROC_REF(shield_blast_drai
 // Called when a flag is toggled. Can be used to add on-toggle behavior, such as visual changes.
 /obj/effect/shield/proc/flags_updated()
 	if(!gen())
-		qdel(src)
+		consume(src)
 		return
 
 	// Update airflow - If atmospheric we block air as long as we're enabled (density works for this)

@@ -82,7 +82,7 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 
 /obj/aiming_overlay/periodic_step()
 	if(!owner())
-		qdel(src)
+		consume(src)
 		return
 	..()
 	update_aiming()
@@ -100,7 +100,7 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 /obj/aiming_overlay/proc/update_aiming()
 
 	if(!owner())
-		qdel(src)
+		consume(src)
 		return
 
 	if(QDELETED(aiming_at))

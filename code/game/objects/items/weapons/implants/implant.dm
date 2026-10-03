@@ -50,7 +50,7 @@
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 // Takes place after handle_implant, if that returns TRUE
-/obj/item/implant/proc/post_implant(mob/source)
+/obj/item/implant/proc/post_implant(mob/source, mob/user = null)
 
 /obj/item/implant/proc/get_data()
 	return "No information available"
@@ -287,8 +287,8 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 	if(t)
 		t.hotspot_expose(3500,125)
 
-/obj/item/implant/explosive/post_implant(mob/source as mob)
-	om_ask(usr, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
+/obj/item/implant/explosive/post_implant(mob/source as mob, mob/user = null)
+	om_ask(user, /datum/om/prompt/choice/explosive_implant_level, PROC_REF(explosive_level_chosen), source = source)
 
 /// The explosive implant's yield, then its phrase; `source` is the implantee.
 /datum/om/prompt/choice/explosive_implant_level
@@ -628,11 +628,11 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 		scanned().forceMove(t)
 	consume(src)
 
-/obj/item/implant/compressed/post_implant(mob/source)
+/obj/item/implant/compressed/post_implant(mob/source, mob/user = null)
 	var/choices = list("blink", "blink_r", "eyebrow", "chuckle", "twitch", "frown", "nod", "blush", "giggle", "grin", "groan", "shrug", "smile", "pale", "sniff", "whimper", "wink")
 	activation_emote = pick(choices)
 	announce_activation(source)
-	om_ask(usr, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
+	om_ask(user, /datum/om/prompt/choice/implant_emote, PROC_REF(emote_chosen), choices = choices, source = source)
 
 /// An emote-triggered implant's activation emote (compressed matter, uplink); `source` is the implantee.
 /datum/om/prompt/choice/implant_emote
@@ -701,7 +701,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 	name = "size control implant"
 	desc = "Implant which allows to control host size via voice commands."
 	icon_state = "implant_evil"
-	var/owner
+	var/mob/owner
 	var/active = TRUE
 
 /obj/item/implant/sizecontrol/get_data()
@@ -760,9 +760,9 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 					var/resizing_value = text2num(size_mult.match)
 					H.resize(CLAMP(resizing_value/100 , RESIZE_MINIMUM_DORMS, RESIZE_MAXIMUM_DORMS), uncapped = H.has_large_resize_bounds()) // Let resize handle size limits. It's meant to do that.
 
-/obj/item/implant/sizecontrol/post_implant(mob/source, mob/living/user = usr)
+/obj/item/implant/sizecontrol/post_implant(mob/source, mob/user = null)
 	if(source != user)
-		owner = user
+		rel_set(src, nameof(owner), user)
 
 DAMAGE_REACTION(/obj/item/implant/sizecontrol, DAMAGE_EMP, PROC_REF(sizecontrol_emp))
 /// An EMP resizes the implantee at random.
@@ -849,7 +849,7 @@ EXTEND_INTERACTIONS(/obj/item/implanter/compliance, INTERACT_USE("Set laws", PRO
 <b>Set Laws:</b>[laws]"}
 	return dat
 
-/obj/item/implant/compliance/post_implant(mob/source, mob/living/user = usr)
+/obj/item/implant/compliance/post_implant(mob/source, mob/user = null)
 	if(!ishuman(source)) //No compliance implanting non-humans.
 		return
 

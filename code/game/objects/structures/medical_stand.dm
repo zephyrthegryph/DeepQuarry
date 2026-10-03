@@ -88,7 +88,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 	..()
 	if(istype(target))
 		var/mob/user = usr
-		if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target))
+		if(!ismob(user) || user.stat == DEAD || !CanMouseDrop(target, user))
 			return
 		var/list/available_options = list()
 		if (tank)
@@ -119,7 +119,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 	attach_action(ask.answerer, ask.choice, ask.patient)
 
 /obj/structure/medical_stand/proc/attach_action(mob/user, action_type, mob/living/carbon/human/target)
-	if(user.stat == DEAD || !CanMouseDrop(target))
+	if(!user || user.stat == DEAD || !CanMouseDrop(target, user))
 		return
 	switch (action_type)
 		if("Gas mask")

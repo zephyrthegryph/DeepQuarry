@@ -61,13 +61,13 @@
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/paper_bundle/proc/insert_sheet_at(mob/user, index, obj/item/sheet)
+	if(!own_bring_in(src, nameof(pages), sheet, null, user, TRUE, null, FALSE))
+		return
 	if(istype(sheet, /obj/item/paper))
 		to_chat(user, span_notice("You add [(sheet.name == "paper") ? "the paper" : sheet.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 	else if(istype(sheet, /obj/item/photo))
 		to_chat(user, span_notice("You add [(sheet.name == "photo") ? "the photo" : sheet.name] to [(src.name == "paper bundle") ? "the paper bundle" : src.name]."))
 
-	user.drop_from_inventory(sheet)
-	sheet.forceMove(src)
 
 	// pages is an ordered relation list: rebuild it in the new order through the accessors.
 	var/list/ordered = pages ? pages.Copy() : list()

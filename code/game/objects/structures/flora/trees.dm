@@ -86,7 +86,7 @@
 
 /obj/structure/flora/tree/proc/chop_done(obj/item/W, mob/living/user)
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " digs up %T% stump with %I%."), item = W)
-	qdel(src)
+	consume(src, user)
 
 // Shakes the tree slightly, more or less stolen from lockers.
 /obj/structure/flora/tree/proc/hit_animation()

@@ -80,7 +80,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/catwalk, TYPE_PROC_REF(/atom, appearance_
 		new /obj/item/stack/rods(src.loc, 2)
 	if(plated_tile)
 		new plated_tile(src.loc)
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/catwalk/declare_interactions(list/into)
 	into += list(

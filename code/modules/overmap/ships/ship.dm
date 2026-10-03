@@ -288,18 +288,21 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 #undef CHANGE_SPEED_BY
 
 /obj/effect/overmap/visitable/ship/MouseDrop(atom/over)
-	if(!isliving(over) || !Adjacent(over) || !Adjacent(usr))
+	return offer_ingestion_with_actor(over, usr) // ALLOW(sys_usr_outside_verb): Native ship drag captures its initiating actor before recipient-owned prompts resume.
+
+/obj/effect/overmap/visitable/ship/proc/offer_ingestion_with_actor(atom/over, mob/user)
+	if(!isliving(over) || !Adjacent(over) || !Adjacent(user))
 		return
 	if(istype(over, /mob/living/simple_mob/vore/overmap))
 		var/mob/living/simple_mob/vore/overmap/sdog = over
 		if(!sdog.shipvore)
 			return
 	var/mob/living/L = over
-	var/confirm = rerun_ask(L, "k285", "MouseDrop" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice/alert, message = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."))
+	var/confirm = rerun_ask(L, "k285", PROC_REF(offer_ingestion_with_actor), args, /datum/om/prompt/choice/alert, message = "You COULD eat this spaceship...", title = "Eat spaceship?", choices = list("Eat it!", "No, thanks."))
 	if(isnull(confirm))
 		return
 	if(confirm == "Eat it!")
-		var/obj/belly/bellychoice = rerun_ask(L, "k287", "MouseDrop" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
+		var/obj/belly/bellychoice = rerun_ask(L, "k287", PROC_REF(offer_ingestion_with_actor), args, /datum/om/prompt/choice, message = "Which belly?", title = "Select A Belly", choices = L.vore_organs)
 		if(isnull(bellychoice))
 			return
 		if(bellychoice)

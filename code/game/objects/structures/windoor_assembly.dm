@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 		new /obj/item/stack/material/glass/reinforced(get_turf(src), 2)
 	else
 		new /obj/item/stack/material/glass(get_turf(src), 2)
-	qdel(src)
+	consume(src, A.actor)
 	return OP_OK
 
 /// The crowbar pries the windoor into the frame: the door takes the assembly's place, open, and closes at once.
@@ -180,7 +180,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 		windoor.req_access = electronics.conf_access
 	electronics.forceMove(windoor)
 	own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
-	qdel(src)
+	replace_with(src, windoor)
 	return OP_OK
 
 /// How far the assembly is built, as the number its picture is made from: 01 loose or bolted down, 02 wired or beyond.

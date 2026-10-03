@@ -234,7 +234,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 	return
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
@@ -242,7 +242,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 
 /obj/structure/bed/chair/holochair/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))
@@ -334,8 +334,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/holo/esword, TYPE_PROC_REF(/atom, appearance_o
 	blade_overlay.color = lcolor
 	if(active)
 		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
+	if(ishuman(loc))
+		var/mob/living/carbon/human/H = loc
 		H.update_inv_l_hand()
 		H.update_inv_r_hand()
 
@@ -532,7 +532,7 @@ DECLARE_APPEARANCE(/obj/machinery/readybutton, "ready", list("1" = list(APPEARAN
 
 /mob/living/simple_mob/animal/space/carp/holodeck/proc/derez()
 	act_message(src, null, others = span_infoplain(span_bold("%U%") + " fades away!"))
-	qdel(src)
+	consume(src)
 
 
 /// the currentarea this refers to (a relation view: it reads null once the target is deleted).

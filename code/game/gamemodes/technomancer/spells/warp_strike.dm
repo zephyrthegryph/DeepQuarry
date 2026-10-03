@@ -12,8 +12,6 @@
 	icon_state = "warp_strike"
 	cast_methods = CAST_RANGED
 	aspect = ASPECT_TELE
-/obj/item/spell/warp_strike/Initialize(mapload)
-	. = ..()
 
 /obj/item/spell/warp_strike/on_ranged_cast(atom/hit_atom, mob/user)
 	var/turf/T = get_turf(hit_atom)

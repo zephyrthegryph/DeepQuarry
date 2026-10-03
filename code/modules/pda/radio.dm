@@ -76,14 +76,14 @@
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
 
-/obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE")
+/obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE", mob/user)
 	if(!COOLDOWN_FINISHED(src, transmission_cooldown))
 		return
 	COOLDOWN_START(src, transmission_cooldown, 0.5 SECONDS)
 
 	var/time = time2text(world.realtime,"hh:mm:ss")
 	var/turf/T = get_turf(src)
-	GLOB.lastsignalers.Add("[time] <B>:</B> [usr.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
+	GLOB.lastsignalers.Add("[time] <B>:</B> [user?.key] used [src] @ location ([T.x],[T.y],[T.z]) <B>:</B> [format_frequency(frequency)]/[code]")
 
 	var/datum/signal/signal = new
 	rel_set(signal, nameof(signal.source), src)
