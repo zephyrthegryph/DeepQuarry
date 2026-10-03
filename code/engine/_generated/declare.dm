@@ -7044,12 +7044,7 @@
 	into += entry_block("code/modules/shieldgen/emergency_shield.dm", 119, /obj/machinery/shieldgen)
 	into += entry_line(120)
 	into += list(global.owns_many(nameof(deployed_shields)))
-
-/// CAPABILITIES(/obj/machinery/shieldgen) at code/modules/shieldgen/emergency_shield.dm:125
-/obj/machinery/shieldgen/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/shieldgen/emergency_shield.dm", 125, /obj/machinery/shieldgen)
-	into += entry_line(126)
+	into += entry_line(121)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/machinery/shieldwallgen) at code/modules/shieldgen/sheldwallgen.dm:33
@@ -7516,12 +7511,7 @@
 	into += entry_block("code/game/machinery/frame.dm", 315, /obj/structure/frame)
 	into += entry_line(316)
 	into += list(global.owns_many(nameof(components)))
-
-/// CAPABILITIES(/obj/structure/frame) at code/game/machinery/frame.dm:356
-/obj/structure/frame/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/frame.dm", 356, /obj/structure/frame)
-	into += entry_line(357)
+	into += entry_line(317)
 	into += list(global.climb())
 
 /// CAPABILITIES(/obj/structure/ghost_pod) at code/game/objects/structures/ghost_pods/ghost_pods.dm:18

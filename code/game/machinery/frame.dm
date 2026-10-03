@@ -314,6 +314,7 @@ GLOBAL_LIST(construction_frame_floor)
 
 CAPABILITIES(/obj/structure/frame)
 	owns_many(nameof(components))
+	climb()
 
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
@@ -352,9 +353,6 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 	for(var/ct_path in req_components)
 		var/obj/ct = ct_path
 		req_component_names[ct_path] = initial(ct.name)
-
-CAPABILITIES(/obj/structure/frame)
-	climb()
 
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
