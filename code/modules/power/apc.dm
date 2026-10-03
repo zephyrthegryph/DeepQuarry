@@ -201,7 +201,6 @@ CAPABILITIES(/obj/machinery/power/apc, \
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first)))), \
 	extend("construction.undo:apc_secured", priority(above("panel.open"))), \
 	extend("construction.undo:apc_board", priority(above("open_wires"))), \
-	extend("construction.undo:apc_wired", priority(above("open_wires"))), \
 	extend("subversion_reset.use", priority(above("wires.pulse"))), \
 	extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
 	extend("cover.remove", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \

@@ -31,7 +31,7 @@ cap_keys(CAP_LOCK, LOCKED = MSG(lock/is_unlocked))
 		// A card (or PDA) on the holder: the card in hand is the credential.
 		op("toggle", inputs(swipe), needs(req_credential_in_hand(cards, because = MSG(lock/denied))), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		// An alt-click, with or without something in hand: what the actor carries is the credential.
-		op("toggle_worn", inputs(hand()), when(CAP_PROC(worn_credential_offered)), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
+		op("toggle_worn", inputs(hand()), priority(OP_PRIORITY_PART), when(CAP_PROC(worn_credential_offered)), toggles(LOCK_LOCKED), says(CAP_PROC(toggled_message)), wait(0), logs(LOG_GAME)),
 		extend(TAG_UI, needs(req_unlocked_for_actor(id = "lock"))),
 		extend(TAG_CONTROL, needs(req_unlocked_for_actor(id = "lock"))),
 		examine_line(MSG(lock/is_locked), when = LOCK_LOCKED),

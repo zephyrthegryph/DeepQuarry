@@ -59,7 +59,7 @@
 	TEST_ASSERT("Its emergency access mode is engaged." in caps_examine(A, H), "examine says so")
 	var/list/data = list()
 	for(var/datum/capability/C as anything in caps_all(A))
-		C.ui_data(A, H, data)
+		C.legacy_ui_data(A, H, data)
 	TEST_ASSERT_EQUAL(data["emergency"], TRUE, "UI data carries emergency")
 	TEST_ASSERT_EQUAL(data["bolted"], FALSE, "UI data carries bolted")
 
