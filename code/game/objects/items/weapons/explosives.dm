@@ -128,8 +128,10 @@ EXTEND_INTERACTIONS(/obj/item/plastique/seismic, INTERACT_ITEM(null, PROC_REF(se
 			var/obj/item/stock_parts/SP = I
 			var/new_blast_power = max(1, round(SP.rating * 2) + 1)
 			if(new_blast_power > blast_heavy)
-				to_chat(user, span_notice("You install \the [I] into \the [src]."))
-				consume(I, user)
+				var/component_label = "\the [I]"
+				if(!consume(I, user))
+					return .
+				to_chat(user, span_notice("You install [component_label] into \the [src]."))
 				blast_heavy = new_blast_power
 				blast_light = blast_heavy + round(new_blast_power * 0.5)
 				blast_flash = blast_light + round(new_blast_power * 0.75)
