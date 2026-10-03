@@ -115,7 +115,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 			if(O)
 				rel_add(O, nameof(O.implants), spiderling)
 			spiderling.faction = faction
-		qdel(src)
+		consume(src)
 
 /obj/effect/spider/eggcluster/small
 	spiders_min = 2
