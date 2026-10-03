@@ -482,7 +482,7 @@
 
 // --- Machines ------------------------------------------------------------------------
 
-/// An APC and an SMES settle and park on the machine pipeline; an APC power failure is a timed_set().
+/// An APC settles and parks on the machine pipeline; an APC power failure is a timed hold.
 /datum/unit_test/om_pipeline/apc_and_smes_park
 
 /datum/unit_test/om_pipeline/apc_and_smes_park/run_pipeline()
@@ -504,21 +504,6 @@
 	TEST_ASSERT(!A.power_failed, "a reboot ends it")
 	om_run_frame_now(A, /datum/om/pipeline/machine)
 	A.update()
-	var/obj/machinery/power/smes/M
-	for(var/obj/machinery/power/smes/candidate as anything in REGISTRY_MEMBERS(REGISTRY_SMES))
-		if(!candidate.has_stat(BROKEN) && !istype(candidate, /obj/machinery/power/smes/buildable/hybrid) && !istype(candidate, /obj/machinery/power/smes/batteryrack))
-			M = candidate
-			break
-	if(!M)
-		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
-		rel_set(src, nameof(sched), om_test_begin())
-		return
-	TEST_ASSERT(!machine_stepping(M), "an SMES doesn't poll")
-	var/datum/om/frame/MS = om_pipe_state(M, /datum/om/pipeline/machine, TRUE)
-	M.set_output(M.output_level)
-	for(var/i in 1 to 3)
-		om_run_frame_now(M, /datum/om/pipeline/machine)
-	TEST_ASSERT(MS.parked, "a settled SMES parks")
 	rel_set(src, nameof(sched), om_test_begin())
 
 /// A fire alarm parks once its (dead-code today) lockdown countdown is off, and a settings

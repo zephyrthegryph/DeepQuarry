@@ -145,6 +145,84 @@ CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame =
 /obj/machinery/p2_box/ui_data(datum/act/eval/A)
 	return list("pressed_with" = pressed_with, "viewer" = A.actor ? A.actor.name : null)
 
+// ---- legacy entries beside ops ----
+
+/// A target with legacy entry interactions only: a touch with an empty hand, and a held item used on it. Each counts that it ran.
+/obj/p2_legacy_target
+	name = "p2 legacy target"
+	var/touched = 0
+	var/used_with = 0
+
+DECLARE_INTERACTIONS(/obj/p2_legacy_target, \
+	INTERACT_HAND("Touch", PROC_REF(p2_touched)), \
+	INTERACT_ITEM(null, PROC_REF(p2_used)))
+
+/obj/p2_legacy_target/proc/p2_touched(mob/user, obj/item/held, datum/interaction/interaction)
+	touched++
+	return TRUE
+
+/obj/p2_legacy_target/proc/p2_used(mob/user, obj/item/W, datum/interaction/interaction)
+	used_with++
+	return TRUE
+
+/// An item with an op of its own (which never applies), so a click with it resolves among the ops and the legacy entries of its target.
+/obj/item/p2_op_item
+	name = "p2 op item"
+	var/tapped = 0
+
+CAPABILITIES(/obj/item/p2_op_item, \
+	op("p2_idle", at_target(/obj/p2_legacy_target), when(PROC_REF(p2_never)), then(PROC_REF(p2_idle))), \
+	op("p2_turf", at_target(/turf), priority(OP_PRIORITY_PART), then(PROC_REF(p2_tapped))))
+
+/obj/item/p2_op_item/proc/p2_tapped(datum/act/op/A)
+	tapped++
+	return OP_OK
+
+/obj/item/p2_op_item/proc/p2_never(datum/act/A)
+	return FALSE
+
+/obj/item/p2_op_item/proc/p2_idle(datum/act/op/A)
+	return OP_OK
+
+// ---- without() of a bundle ----
+
+/// A bundle that brings a capability of its own (and with it, ops).
+CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE, key = NONE)
+
+/datum/capability/def/p2_bundle/entries()
+	return list(reagent_container(volume = 10))
+
+/obj/p2_bundled
+	name = "p2 bundled"
+
+CAPABILITIES(/obj/p2_bundled, \
+	p2_bundle())
+
+/// The same, without the bundle: nothing it brought stays, the nested capability and its ops included.
+/obj/p2_bundled/stripped
+	name = "p2 stripped"
+
+CAPABILITIES(/obj/p2_bundled/stripped, \
+	without(CAP_P2_BUNDLE))
+
+// ---- afterattack on a mob ----
+
+/// An item that does no harm and does its work in afterattack (a spray, a syringe), counting how often it did.
+/obj/item/p2_afterattacker
+	name = "p2 afterattacker"
+	force = 0
+	var/reached = 0
+
+/obj/item/p2_afterattacker/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
+	reached++
+	return
+
+/// The same, but its attack() takes the click (what a beaker feeding somebody does).
+/obj/item/p2_afterattacker/attacker
+
+/obj/item/p2_afterattacker/attacker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	return ITEM_INTERACT_SUCCESS
+
 /// The same box, listening for a slash.
 /obj/machinery/p2_box/slasher
 	var/slashed = 0

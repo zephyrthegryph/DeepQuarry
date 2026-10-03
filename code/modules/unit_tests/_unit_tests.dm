@@ -411,7 +411,6 @@
 #include "dq_part_lifecycle_tests.dm"
 #include "dq_organ_slot_tests.dm"
 #include "dx_cap_cell_holder_tests.dm"
-#include "dx_cap_reagent_container_tests.dm"
 #include "dx_cap_storage_tests.dm"
 #include "interim_actor_propagation.dm"
 #include "interim_armor_lifecycle.dm"
@@ -460,8 +459,11 @@
 #include "dq_p2_engine_tests.dm"
 #include "dq_p2_apc_behaviour.dm"
 #include "dq_p2_chargers_behaviour.dm"
+#include "dq_p2_smes_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
+#include "dq_p2_reagent_behaviour.dm"
+#include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

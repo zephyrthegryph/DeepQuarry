@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 /// (Mixing)Glass.
 ////////////////////////////////////////////////////////////////////////////////
@@ -15,148 +14,83 @@
 	max_transfer_amount = 60
 	volume = 60
 	w_class = ITEMSIZE_SMALL
-	flags = OPENCONTAINER | NOCONDUCT
+	flags = NOCONDUCT
 	unacidable = TRUE //glass doesn't dissolve in acid
 	drop_sound = SFX_ITEMS_DROP_BOTTLE
 	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 	resistance_flags = ACID_PROOF
+	/// The old Set transfer amount menu entry is the capability's now.
+	transfer_amount_verb = FALSE
 
 	var/label_text = ""
+	/// Reagents to fill the container with at the start, formatted as "reagentID" = quantity
+	var/list/prefill = null
 
-	var/container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT
-	var/list/prefill = null	//Reagents to fill the container with on New(), formatted as "reagentID" = quantity
+// What anything made of glass takes from a hand: a pen labels it, a small thing is dipped into it (in a hostile, disarm or grab stance), and a hot
+// thing tests the blood in it.
+CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 
-	///Var for attack_self chain
-	var/special_handling = FALSE
+/datum/capability/def/glass_handling/entries()
+	return list(
+		op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
+			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
+		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
+			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_applied))),
+		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, blood_test_fits)), label("Test the blood"), \
+			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, blood_tested))))
+
+// A glass container is a reagent_container() whose settings are the vars of the type (volume, the amount a transfer moves and the range a person may
+// set it in, prefill); everything under /glass is one but the rag, which has its own rules. It starts with its lid off. It is poured into an open holder of liquid (not onto what it is put on: a table, a machine that
+// takes it), drawn from a closed tank, splashed over things in a hostile stance, drunk from yourself and fed to others in three seconds. A closed one milks the venom of a creature.
+CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
+
+/datum/capability/def/glass_container/entries()
+	return list(
+		reagent_container( \
+			volume = nameof(/obj/item/reagent_containers/glass::volume), \
+			lid = TRUE, \
+			starts_open = TRUE, \
+			transfer_default = nameof(/obj/item/reagent_containers/glass::amount_per_transfer_from_this), \
+			transfer_min = nameof(/obj/item/reagent_containers/glass::min_transfer_amount), \
+			transfer_max = nameof(/obj/item/reagent_containers/glass::max_transfer_amount), \
+			starts = nameof(/obj/item/reagent_containers/glass::prefill), \
+			taps = list(/obj/structure/reagent_dispensers), \
+			rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
+			feed = TRUE, \
+			examine_range = 2),
+		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
+			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
+
+CAPABILITIES(/obj/item/reagent_containers/glass, \
+	glass_handling(), \
+	glass_container())
+
+MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
+MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
+MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too recently, try again later.")
 
 /obj/item/reagent_containers/glass/Initialize(mapload)
 	. = ..()
-	if(LAZYLEN(prefill))
-		for(var/R in prefill)
-			reagents.add_reagent(R,prefill[R])
-		prefill = null
-		update_icon()
 	base_name = name
 	base_desc = desc
 
-/obj/item/reagent_containers/glass/examine(mob/user)
-	. = ..()
-	if(get_dist(user, src) <= 2)
-		if(reagents && reagents.reagent_list.len)
-			. += span_notice("It contains [reagents.total_volume] units of liquid.")
-		else
-			. += span_notice("It is empty.")
-		if(!is_open_container())
-			. += span_notice("Airtight lid seals it completely.")
+// ---- the label ----
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
-	INTERACT_SELF("Toggle lid", PROC_REF(glass_self)), \
-	INTERACT_ITEM_AS(I_HELP, null, PROC_REF(glass_item)), \
-	INTERACT_ITEM_AS(I_DISARM, "Dip into it", PROC_REF(glass_item)), \
-	INTERACT_ITEM_AS(I_GRAB, "Dip into it", PROC_REF(glass_item)), \
-	INTERACT_ITEM_AS(I_HURT, "Dip into it", PROC_REF(glass_item)), \
-)
-
-/// Old attack_self.
-/obj/item/reagent_containers/glass/proc/glass_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	if(is_open_container())
-		balloon_alert(user, "lid put on \the [src]")
-		flags ^= OPENCONTAINER
+/// The pen wrote `value`: the label (up to 50 letters; the name shows 20), or none when it is empty.
+/obj/item/reagent_containers/glass/proc/label_applied(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/user = A.actor
+	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN) || ""
+	if(length(tmp_label) > 50)
+		A.reason = /datum/msg/glass/label_too_long
+		return OP_REFUSED
+	if(length(tmp_label) > 10)
+		balloon_alert(user, "label set")
 	else
-		balloon_alert(user, "lid removed off \the [src]")
-		flags |= OPENCONTAINER
-	update_icon()
-	return TRUE
-
-/obj/item/reagent_containers/glass/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(force && !(flags & NOBLUDGEON) && stance == I_HURT)
-		return	..()
-
-	// If the container is *closed* we do snake milking!~
-	if(!is_open_container() && isliving(M))
-		return attempt_snake_milking(user, M)
-
-	// In combat mode it isn't fed to anyone: afterattack splashes it instead.
-	if(stance != I_HURT && standard_feed_mob(user, M))
-		return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/obj/item/reagent_containers/glass/self_feed_message(mob/user)
-	balloon_alert(user, "swallowed from \the [src]")
-
-/obj/item/reagent_containers/glass/proc/attempt_snake_milking(mob/living/user, mob/living/target)
-	var/reagent
-	var/amount
-
-	if(target.trait_injection_selected)
-		reagent = target.trait_injection_selected
-		amount = target.trait_injection_amount
-	else if(istype(target, /mob/living/simple_mob/animal/giant_spider))
-		var/mob/living/simple_mob/animal/giant_spider/spider = target
-		reagent = spider.poison_type
-		amount = spider.poison_per_bite
-
-	if(!reagent || !amount)
-		to_chat(user, span_warning("[target] does not have venom you can express. Open the beaker to drink from it."))
-		return ITEM_INTERACT_FAILURE
-
-	if(!COOLDOWN_FINISHED(target, venom_milking_cd))
-		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
-			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
-		return ITEM_INTERACT_FAILURE
-
-	COOLDOWN_START(target, venom_milking_cd, 30 SECONDS)
-	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
-	reagents.add_reagent(reagent, amount)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/item/reagent_containers/glass/afterattack(obj/target, mob/user, proximity, click_parameters, stance = I_HURT)
-	if(!proximity || !is_open_container()) //Is the container open & are they next to whatever they're clicking?
-		return 1 //If not, do nothing.
-	for(var/type in GLOB.reagent_containers_can_be_placed_into[container_can_be_placed_into]) //Is it something it can be placed into?
-		if(istype(target, type))
-			return 1
-	if(standard_dispenser_refill(user, target)) //Are they clicking a water tank/some dispenser?
-		return 1
-	if(standard_pour_into(user, target)) //Pouring into another beaker?
-		return
-	if(stance == I_HURT)
-		if(standard_splash_mob(user,target))
-			return 1
-		if(reagents && reagents.total_volume)
-			balloon_alert(user, "splashed the solution onto [target]")
-			reagents.splash(target, reagents.total_volume, user = user)
-			return 1
-	..()
-
-/// Old attackby. A storage bag still reaches the base item handling afterwards (FALSE), as the old ..() did.
-/obj/item/reagent_containers/glass/proc/glass_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(glass_item), args, /datum/om/prompt/text, message = "Enter a label for [name]", title = "Label", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_a1))
-			return TRUE
-		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
-		if(length(tmp_label) > 50)
-			to_chat(user, span_notice("The label can be at most 50 characters long."))
-		else if(length(tmp_label) > 10)
-			balloon_alert(user, "label set")
-			label_text = tmp_label
-			update_name_label()
-		else
-			balloon_alert(user, "label set to \"[tmp_label]\"")
-			label_text = tmp_label
-			update_name_label()
-	// Dipping is the Disarm/Grab/combat-mode declarations; outside combat mode it only labels.
-	if(W && W.w_class <= w_class && (flags & OPENCONTAINER) && (interaction.stance in list(I_DISARM, I_GRAB, I_HURT)))
-		balloon_alert(user, "[W] dipped into \the [src].")
-		reagents.touch_obj(W, reagents.total_volume, user)
-	attempt_changeling_test(W,user)
-	if(istype(W,/obj/item/storage/bag))
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+		balloon_alert(user, "label set to \"[tmp_label]\"")
+	label_text = tmp_label
+	update_name_label()
+	return OP_OK
 
 /obj/item/reagent_containers/glass/proc/update_name_label()
 	if(label_text == "")
@@ -167,7 +101,83 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	else
 		name = "[base_name] ([label_text])"
 	desc = "[base_desc] It is labeled \"[label_text]\"."
-	update_icon()
+	changed(src)
+
+// ---- dipping and testing ----
+
+/// The held thing is small enough to dip, the container is open, and the thing is not a container of its own (which pours instead).
+/obj/item/reagent_containers/glass/proc/dip_fits(datum/act/op/A)
+	var/obj/item/held = A.held
+	return !isnull(held) && held.w_class <= w_class && is_open_container() && !istype(held, /obj/item/reagent_containers)
+
+/obj/item/reagent_containers/glass/proc/dip_applied(datum/act/op/A)
+	var/obj/item/held = A.held
+	balloon_alert(A.actor, "[held] dipped into \the [src].")
+	reagents.touch_obj(held, reagents.total_volume, A.actor)
+	return OP_OK
+
+/// A hot thing held over an open container with blood in it.
+/obj/item/reagent_containers/glass/proc/blood_test_fits(datum/act/op/A)
+	var/obj/item/held = A.held
+	return !isnull(held) && is_open_container() && !!reagents.get_reagent(REAGENT_ID_BLOOD) && held.is_hot()
+
+/obj/item/reagent_containers/glass/proc/blood_tested(datum/act/op/A)
+	var/datum/reagent/blood/B = reagents.get_reagent(REAGENT_ID_BLOOD)
+	if(B)
+		balloon_alert(A.actor, "\The [A.held] burns the blood in \the [src].")
+		B.changling_blood_test(reagents)
+	return OP_OK
+
+// ---- venom ----
+
+/// What a creature's venom is and how much of it comes out of one milking: a trait's chosen injection, or a spider's poison.
+/obj/item/reagent_containers/glass/proc/venom_milked(datum/act/op/A)
+	var/mob/living/target = A.target
+	var/mob/living/user = A.actor
+	var/reagent
+	var/amount
+	if(target.trait_injection_selected)
+		reagent = target.trait_injection_selected
+		amount = target.trait_injection_amount
+	else if(istype(target, /mob/living/simple_mob/animal/giant_spider))
+		var/mob/living/simple_mob/animal/giant_spider/spider = target
+		reagent = spider.poison_type
+		amount = spider.poison_per_bite
+	if(!reagent || !amount)
+		A.reason = /datum/msg/glass/no_venom
+		return OP_REFUSED
+	if(!COOLDOWN_FINISHED(target, venom_milking_cd))
+		act_message(user, target, MSG_SELF(span_warning("%T% had their venom expressed too recently, try again later.")), \
+			MSG_OTHERS(span_warning("%U% attempts to express venom from %T%, but nothing happens.")))
+		A.reason = /datum/msg/glass/venom_recently
+		return OP_REFUSED
+	COOLDOWN_START(target, venom_milking_cd, 30 SECONDS)
+	act_message(user, target, others = span_notice("%U% expresses venom from %T%."))
+	reagents.add_reagent(reagent, amount)
+	return OP_OK
+
+/// Venom was expressed from this mob recently (a COOLDOWN; venom_milked()).
+/mob/living/var/tmp/venom_milking_cd = 0
+
+/// The look of a glass container: the filling (by how full it is, in the colour of what is in it), the lid while it is on, and a label.
+/obj/item/reagent_containers/glass/proc/draw_glass(datum/look/look, base, filled, labelled)
+	var/datum/reagents/R = reagents
+	if(filled && R?.total_volume)
+		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
+		var/percent = round((R.total_volume / volume) * 100)
+		switch(percent)
+			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
+			if(20 to 40) 	filling.icon_state = "[icon_state]-20"
+			if(40 to 60)	filling.icon_state = "[icon_state]-40"
+			if(60 to 80)	filling.icon_state = "[icon_state]-60"
+			if(80 to 100)	filling.icon_state = "[icon_state]-80"
+			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
+		filling.color = R.get_color()
+		look.overlay(filling)
+	if(!is_open_container())
+		look.overlay("lid_[base]")
+	if(labelled && label_text)
+		look.overlay("label_[base]")
 
 /obj/item/reagent_containers/glass/beaker
 	name = "beaker"
@@ -190,49 +200,14 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass, \
 	. = ..()
 	desc += " Can hold up to [volume] units."
 
+/// What it holds changes colour with no change of the amount: the filling is redrawn.
 /obj/item/reagent_containers/glass/beaker/on_reagent_change()
-	update_icon()
+	changed(src)
 
-/obj/item/reagent_containers/glass/beaker/pickup(mob/user)
-	..()
-	update_icon()
-
-/obj/item/reagent_containers/glass/beaker/dropped(mob/user, equipping, slot)
-	..()
-	update_icon()
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/beaker, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(beaker_pick_up)))
-
-/// Picking the beaker up refreshes its look.
-/obj/item/reagent_containers/glass/beaker/proc/beaker_pick_up(mob/user, obj/item/held, datum/interaction/interaction)
-	. = TRUE
-	interaction_pick_up(user, held, interaction)
-	update_icon()
-
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/glass/beaker/appearance_overlays()
-	. = list()
-
-	if(reagents.total_volume)
-		var/image/filling = image('icons/obj/reagentfillings.dmi', src, "[icon_state]10")
-
-		var/percent = round((reagents.total_volume / volume) * 100)
-		switch(percent)
-			if(0.1 to 20)	filling.icon_state = "[icon_state]-10"
-			if(20 to 40) 	filling.icon_state = "[icon_state]-20"
-			if(40 to 60)	filling.icon_state = "[icon_state]-40"
-			if(60 to 80)	filling.icon_state = "[icon_state]-60"
-			if(80 to 100)	filling.icon_state = "[icon_state]-80"
-			if(100 to INFINITY)	filling.icon_state = "[icon_state]-100"
-
-		filling.color = reagents.get_color()
-		. += filling
-
-	if (!is_open_container())
-		. += "lid_[initial(icon_state)]"
-
-	if (label_text)
-		. += "label_[initial(icon_state)]"
+/// The filling in the colour of what it holds, the lid while it is on, and a label.
+/obj/item/reagent_containers/glass/beaker/draw(datum/look/look)
+	. = ..()
+	draw_glass(look, initial(icon_state), TRUE, TRUE)
 
 /obj/item/reagent_containers/glass/beaker/large
 	name = "large beaker"
@@ -245,7 +220,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
-	flags = OPENCONTAINER
+	flags = NONE
 	rating = 3
 
 /obj/item/reagent_containers/glass/beaker/noreact
@@ -258,7 +233,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	material_total = 500
 	volume = 60
 	amount_per_transfer_from_this = 10
-	flags = OPENCONTAINER | NOREACT
+	flags = NOREACT
 
 /obj/item/reagent_containers/glass/beaker/bluespace
 	name = "bluespace beaker"
@@ -271,7 +246,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	volume = 300
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 300
-	flags = OPENCONTAINER
+	flags = NONE
 	rating = 5
 
 /obj/item/reagent_containers/glass/beaker/vial
@@ -286,7 +261,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	w_class = ITEMSIZE_TINY
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 30
-	flags = OPENCONTAINER
+	flags = NONE
 
 /obj/item/reagent_containers/glass/beaker/cryoxadone
 	name = "beaker (cryoxadone)"
@@ -304,7 +279,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	volume = 120
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 120
-	flags = OPENCONTAINER
+	flags = NONE
 
 /obj/item/reagent_containers/glass/bucket
 	desc = "It's a bucket."
@@ -319,60 +294,62 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/glass/beaker, TYPE_PROC_REF
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
 	volume = 120
-	flags = OPENCONTAINER
+	flags = NONE
 	unacidable = FALSE
 	drop_sound = SFX_ITEMS_DROP_HELM
 	pickup_sound = SFX_ITEMS_PICKUP_HELM
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket, INTERACT_ITEM(null, PROC_REF(bucket_item)))
+/// The lid, while it is on.
+/obj/item/reagent_containers/glass/bucket/draw(datum/look/look)
+	. = ..()
+	draw_glass(look, initial(icon_state), FALSE, FALSE)
 
-/// Old attackby. FALSE falls to the glass handling, as the old ..() did.
-/obj/item/reagent_containers/glass/bucket/proc/bucket_item(mob/user, obj/item/D, datum/interaction/interaction)
-	if(isprox(D))
-		to_chat(user, "You add [D] to [src].")
-		consume(D, user)
-		user.put_in_hands(new /obj/item/bucket_sensor)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	else if(istype(D, /obj/item/stack/material) && D.get_material_name() == MAT_STEEL)
-		var/obj/item/stack/material/M = D
-		if (M.use(1))
-			var/obj/item/secbot_assembly/edCLN_assembly/B = new /obj/item/secbot_assembly/edCLN_assembly
-			B.forceMove(get_turf(src))
-			to_chat(user, span_notice("You armed the robot frame."))
-			if (user.get_inactive_hand()==src)
-				user.remove_from_mob(src)
-				user.put_in_inactive_hand(B)
-			consume(src, user)
-		else
-			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
-	else if(istype(D, /obj/item/mop) || istype(D, /obj/item/soap) || istype(D, /obj/item/reagent_containers/glass/rag))
-		if(reagents.total_volume < 1)
-			to_chat(user, span_warning("\The [src] is empty!"))
-		else
-			reagents.trans_to_obj(D, 5, user = user)
-			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
-			play_sfx(src, SFX_EFFECTS_SLOSH)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+// A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket, \
+	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added))), \
+	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed))), \
+	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"), \
+		needs(req_reagents(1, because = MSG(glass/bucket_empty))), then(PROC_REF(wetted))), \
+	op("cut_helmet", tool(TOOL_WIRECUTTER), wait(0), label("Cut a hole in it"), then(PROC_REF(cut_into_helmet))))
 
-/obj/item/reagent_containers/glass/bucket/wirecutter_act(mob/user, obj/item/tool)
-	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [tool]. It's kinda useless as a bucket now."))
+MSG_DEF_SELF(glass/bucket_empty, "The bucket is empty!")
+MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with electronics.")
+
+/// The sensor goes into the bucket, and the bucket sensor is put in the hands of whoever did it.
+/obj/item/reagent_containers/glass/bucket/proc/sensor_added(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, "You add [A.held] to [src].")
+	consume(A.held, user)
+	user.put_in_hands(new /obj/item/bucket_sensor)
+	consume(src, user)
+	return OP_OK
+
+/// A sheet of steel (the op took it) arms the robot frame: it replaces the bucket where it is held.
+/obj/item/reagent_containers/glass/bucket/proc/frame_armed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/secbot_assembly/edCLN_assembly/B = new /obj/item/secbot_assembly/edCLN_assembly
+	B.forceMove(get_turf(src))
+	to_chat(user, span_notice("You armed the robot frame."))
+	if(user.get_inactive_hand() == src)
+		user.remove_from_mob(src)
+		user.put_in_inactive_hand(B)
+	consume(src, user)
+	return OP_OK
+
+/// The mop or the soap is wetted from the bucket, 5 units.
+/obj/item/reagent_containers/glass/bucket/proc/wetted(datum/act/op/A)
+	var/obj/item/D = A.held
+	reagents.trans_to_obj(D, 5, user = A.actor)
+	to_chat(A.actor, span_notice("You wet \the [D] in \the [src]."))
+	play_sfx(src, SFX_EFFECTS_SLOSH)
+	return OP_OK
+
+/obj/item/reagent_containers/glass/bucket/proc/cut_into_helmet(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [A.held]. It's kinda useless as a bucket now."))
 	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket)
 	consume(src, user)
-	return ITEM_INTERACT_SUCCESS
-
-/// Appearance reader: TRUE while the bucket is closed (draws the lid).
-/obj/item/reagent_containers/glass/bucket/proc/appearance_lidded()
-	return is_open_container() ? FALSE : TRUE
-
-DECLARE_APPEARANCE(/obj/item/reagent_containers/glass/bucket, "appearance_lidded", list(
-	"1" = list(APPEARANCE_OVERLAYS = list("lid_bucket")),
-))
-DECLARE_APPEARANCE(/obj/item/reagent_containers/glass/bucket/wood, "appearance_lidded", list(
-	"1" = list(APPEARANCE_OVERLAYS = list("lid_woodbucket")),
-))
+	return OP_OK
 
 /obj/item/reagent_containers/glass/bucket/wood
 	desc = "An old wooden bucket."
@@ -387,32 +364,26 @@ DECLARE_APPEARANCE(/obj/item/reagent_containers/glass/bucket/wood, "appearance_l
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = 120
 	volume = 120
-	flags = OPENCONTAINER
+	flags = NONE
 	unacidable = FALSE
 	drop_sound = SFX_ITEMS_DROP_WOODEN
 	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITEM(null, PROC_REF(wood_bucket_item)))
+// A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood, \
+	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet))), \
+	extend("sensor", needs(req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics)))))
 
-/// Old attackby. FALSE falls to the bucket handling, as the old ..() did.
-/obj/item/reagent_containers/glass/bucket/wood/proc/wood_bucket_item(mob/user, obj/item/D, datum/interaction/interaction)
-	if(isprox(D))
-		to_chat(user, "This wooden bucket doesn't play well with electronics.")
-		return INTERACTION_HANDLED_PASS
-	else if(istype(D, /obj/item/material/knife/machete/hatchet))
-		to_chat(user, span_notice("You cut a big hole in \the [src] with \the [D].  It's kinda useless as a bucket now."))
-		user.put_in_hands(new /obj/item/clothing/head/helmet/bucket/wood)
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	else if(istype(D, /obj/item/mop))
-		if(reagents.total_volume < 1)
-			to_chat(user, span_warning("\The [src] is empty!"))
-		else
-			reagents.trans_to_obj(D, 5, user = user)
-			to_chat(user, span_notice("You wet \the [D] in \the [src]."))
-			play_sfx(src, SFX_EFFECTS_SLOSH)
-		return INTERACTION_HANDLED_PASS
+/// A wooden bucket does not take electronics.
+/obj/item/reagent_containers/glass/bucket/wood/proc/electronics_welcome(datum/act/op/A)
 	return FALSE
+
+/obj/item/reagent_containers/glass/bucket/wood/proc/cut_into_wood_helmet(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("You cut a big hole in \the [src] with \the [A.held].  It's kinda useless as a bucket now."))
+	user.put_in_hands(new /obj/item/clothing/head/helmet/bucket/wood)
+	consume(src, user)
+	return OP_OK
 
 /obj/item/reagent_containers/glass/cooler_bottle
 	desc = "A bottle for a water-cooler."
@@ -425,7 +396,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 	max_transfer_amount = 120
 	volume = 2000
 	slowdown = 2
-	container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER
+
+CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle, \
+	configure(reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
 
 /obj/item/reagent_containers/glass/pint_mug
 	desc = "A rustic pint mug designed for drinking ale."
@@ -448,10 +421,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 	max_transfer_amount = 20
 	volume = 60
 	w_class = ITEMSIZE_SMALL
-	flags = OPENCONTAINER
+	flags = NONE
 	MATERIAL_BULK(MAT_STEEL, 50)
 	drop_sound = SFX_ITEMS_DROP_CROWBAR
 	pickup_sound = SFX_ITEMS_PICKUP_DRINKGLASS
+
 
 
 /obj/item/reagent_containers/glass/beaker/neurotoxin
@@ -549,6 +523,3 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/bucket/wood, INTERACT_ITE
 
 /obj/item/reagent_containers/glass/beaker/zombiepowder
 	prefill = list(REAGENT_ID_ZOMBIEPOWDER = 50)
-
-/// Venom was expressed from this mob recently (a COOLDOWN; attempt_snake_milking()).
-/mob/living/var/tmp/venom_milking_cd = 0

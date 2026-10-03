@@ -1142,7 +1142,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 /obj/structure/sink/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
-		RG.reagents.add_reagent(REAGENT_ID_WATER, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
+		RG.reagents.add_reagent(REAGENT_ID_WATER, min(RG.reagents.get_free_space(), reagent_transfer_amount(RG)))
 		act_message(user, src, MSG_SELF(span_notice("You fill %I% using %T%.")), MSG_OTHERS(span_notice("%U% fills %I% using %T%.")), item = RG)
 		play_sfx(src, SFX_EFFECTS_SINK)
 		return 1

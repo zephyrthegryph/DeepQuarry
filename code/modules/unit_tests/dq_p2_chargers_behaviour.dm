@@ -232,7 +232,7 @@
 /datum/unit_test/dq_p2_chargers/cell_charger_cyborg_takes_the_cell/run_gate()
 	var/obj/machinery/cell_charger/C = p2c_cell_charger()
 	var/mob/living/carbon/human/H = p2c_actor()
-	var/mob/living/silicon/robot/R = p2c_borg()
+	var/mob/living/silicon/robot/R = p2c_borg(get_step(run_loc_floor_bottom_left, EAST)) // beside it, not on its tile: the cell is set down on the charger's own
 	var/obj/item/cell/cell = p2c_cell()
 	touch(H, C, cell)
 	TEST_ASSERT_EQUAL(p2c_held(C), cell, "in")
@@ -448,7 +448,7 @@
 /datum/unit_test/dq_p2_chargers/recharger_cyborg_takes_the_device/run_gate()
 	var/obj/machinery/recharger/R = p2c_recharger()
 	var/mob/living/carbon/human/H = p2c_actor()
-	var/mob/living/silicon/robot/B = p2c_borg()
+	var/mob/living/silicon/robot/B = p2c_borg(get_step(run_loc_floor_bottom_left, EAST)) // beside it, not on its tile: the device is set down on the recharger's own
 	var/obj/item/G = p2c_gun()
 	touch(H, R, G)
 	p2c_borg_touch(B, R)

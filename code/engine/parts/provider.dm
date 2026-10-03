@@ -182,7 +182,7 @@
 	if(!isatom(target))
 		return null
 	var/atom/at = target
-	while(at.loc && !isturf(at.loc))
+	while(at.loc && !isturf(at) && !isturf(at.loc)) // a turf is its own surface (its loc is an area, which is nothing to touch)
 		if(at.loc == actor)
 			return at
 		at = at.loc
@@ -296,7 +296,7 @@
 /// Is every bay between target and the touched surface exposed for `authority`? (A closed cover is part of reach: bay_exposed() is the compartment's reason.)
 /proc/reach_exposure(mob/actor, atom/target, authority)
 	var/atom/at = target
-	while(at.loc && !isturf(at.loc) && at.loc != actor)
+	while(at.loc && !isturf(at) && !isturf(at.loc) && at.loc != actor)
 		var/atom/container = at.loc
 		var/why = container.bay_blocked(at, authority)
 		if(why)

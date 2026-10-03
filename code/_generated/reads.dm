@@ -123,6 +123,10 @@
 	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
 	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
 
+/obj/machinery/power/smes/generated_reads()
+	. = ..()
+	. += rust_push(nameof(capacity), nameof(grid_check), nameof(input_attempt), nameof(input_cut), nameof(input_level), nameof(input_pulsed), nameof(output_attempt), nameof(output_cut), nameof(output_level), nameof(output_pulsed), nameof(vg_entity))
+
 /obj/machinery/recharger/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(charge_phase), nameof(icon_state_charged), nameof(icon_state_charging), nameof(icon_state_idle))

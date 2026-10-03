@@ -210,25 +210,24 @@ REGISTRY_MEMBERSHIP(/obj/effect/engine_setup, REGISTRY_ENGINE_SETUP_MARKERS)
 	if(!S)
 		log_and_message_admins("## WARNING: Unable to locate SMES unit at [x] [y] [z]!")
 		return SETUP_WARNING
-	S.input_attempt = 1
-	S.output_attempt = 1
+	S.set_input_attempt(1)
+	S.set_output_attempt(1)
 	if(target_input_level)
 		if(target_input_level > S.input_level_max)
-			S.input_level = S.input_level_max
+			S.set_input_level(S.input_level_max)
 		else
-			S.input_level = target_input_level
+			S.set_input_level(target_input_level)
 	else
-		S.input_level = S.input_level_max
+		S.set_input_level(S.input_level_max)
 
 	if(target_output_level)
 		if(target_output_level > S.output_level_max)
-			S.output_level = S.output_level_max
+			S.set_output_level(S.output_level_max)
 		else
-			S.output_level = target_output_level
+			S.set_output_level(target_output_level)
 	else
-		S.output_level = S.output_level_max
+		S.set_output_level(S.output_level_max)
 
-	S.update_icon()
 	return SETUP_OK
 
 

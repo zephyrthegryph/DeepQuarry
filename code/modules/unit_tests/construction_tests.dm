@@ -62,6 +62,8 @@
 			continue
 		if(machine_path == /obj/machinery/power/smes) // Ignore this snowflake basetype that isn't constructable
 			continue
+		if(machine_path == /obj/machinery/power/smes/p2_test) // The plain unit of the SMES behaviour tests: a fixture no board builds
+			continue
 		if(!machine_path.circuit)
 			continue
 		var/obj/item/circuitboard/board_path = initial(machine_path.circuit)

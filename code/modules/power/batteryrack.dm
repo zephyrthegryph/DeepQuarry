@@ -38,12 +38,19 @@
 
 	max_transfer_rate = 10000 * capacitor_efficiency // 30kw - 90kw depending on used capacitors.
 	max_cells = min(PSU_MAXCELLS, maxcells)
-	input_level = max_transfer_rate
-	output_level = max_transfer_rate
+	set_input_level(max_transfer_rate)
+	set_output_level(max_transfer_rate)
 
 
 /obj/machinery/power/smes/batteryrack/check_terminals()
 	return TRUE // we don't necessarily need terminals
+
+/// A cell rack draws its own cells and charge gauge (the appearance below), not the SMES's status overlays, and its window is its own.
+/obj/machinery/power/smes/batteryrack/draw_status(datum/look/look)
+	return
+
+/obj/machinery/power/smes/batteryrack/ui_data(datum/act/eval/A)
+	return list()
 
 APPEARANCE_NONE(/obj/machinery/power/smes/batteryrack)
 DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/atom, appearance_overlays), list())
@@ -72,7 +79,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 
 	newmaxcharge /= CELLRATE		// Convert to Joules
 	newmaxcharge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
-	capacity = newmaxcharge
+	set_capacity(newmaxcharge)
 	set_stored_charge(between(0, stored_charge(), newmaxcharge))
 
 // Sets input/output depending on our "mode" var.
@@ -80,17 +87,17 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	set_mode(newmode)
 	switch(mode)
 		if(PSU_OFFLINE)
-			input_attempt = 0
-			output_attempt = 0
+			set_input_attempt(0)
+			set_output_attempt(0)
 		if(PSU_INPUT)
-			input_attempt = 1
-			output_attempt = 0
+			set_input_attempt(1)
+			set_output_attempt(0)
 		if(PSU_OUTPUT)
-			input_attempt = 0
-			output_attempt = 1
+			set_input_attempt(0)
+			set_output_attempt(1)
 		if(PSU_AUTO)
-			input_attempt = 1
-			output_attempt = 1
+			set_input_attempt(1)
+			set_output_attempt(1)
 
 // Store charge in the power cells, instead of using the charge var. Amount is in joules.
 /obj/machinery/power/smes/batteryrack/add_charge(amount)
@@ -159,11 +166,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	update_icon()
 	return 1
 
-/obj/machinery/power/smes/batteryrack/power_settled()
+/obj/machinery/power/smes/batteryrack/proc/power_settled()
 	return FALSE
 
 /// A rack re-reads its cells and balances them every frame, so it never idles.
-/obj/machinery/power/smes/batteryrack/power_step()
+/obj/machinery/power/smes/batteryrack/proc/power_step()
 	var/cell_charge = 0
 	for(var/obj/item/cell/C in internal_cells)
 		cell_charge += C.charge
@@ -171,7 +178,6 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/smes/batteryrack, TYPE_PROC_REF(/at
 	cell_charge *= SMESRATE		// And to SMES charge units (which are for some reason different than CELLRATE)
 	set_stored_charge(cell_charge)
 
-	..()
 	. = null
 	ui_tick = !ui_tick
 	icon_update++

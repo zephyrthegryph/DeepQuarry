@@ -9,6 +9,8 @@
 	desc = "It's an underfloor wiring terminal for power equipment."
 	level = 1
 	var/tmp/obj/machinery/power/master
+	/// The power storage unit an input terminal feeds (the pair end of the unit's `terminals`).
+	var/tmp/obj/machinery/power/smes/unit
 	anchored = TRUE
 	plane = PLATING_PLANE
 	layer = WIRES_LAYER+0.01
@@ -38,6 +40,7 @@
 // The APC that owns this terminal: its `master` is paired with the APC's `terminal` (link() in the APC's CAPABILITIES), and the terminal goes when
 // the APC does (the APC's on_destroy()).
 
-/// the master this refers to: a relation view, null once that is deleted.
+/// the master this refers to: a relation view, null once that is deleted. An APC's terminal answers to the APC through `master`, a power
+/// storage unit's input terminal to its unit through `unit` (each the pair end of a link declared on the machine).
 /obj/machinery/power/terminal/proc/master() as /obj/machinery/power
-	return master
+	return master || unit

@@ -122,7 +122,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 			A.set_grid_check(FALSE)
 
 	for(var/obj/machinery/power/smes/smes in power_grid_nodes(power_region)) // These are "upstream"
-		smes.grid_check = FALSE
+		smes.set_grid_check(FALSE)
 
 /obj/machinery/power/grid_checker/proc/power_failure_times_out()
 	if(power_failing) // Check to see if engineering didn't beat us to it.

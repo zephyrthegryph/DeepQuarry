@@ -495,7 +495,7 @@ DECLARE_INTERACTIONS(/obj/item/medigun_backpack, \
 	. = FALSE
 	if(!maintenance && (istype(container, /obj/item/reagent_containers/glass/beaker) || istype(container, /obj/item/reagent_containers/glass/bottle)))
 
-		if(!(container.flags & OPENCONTAINER))
+		if(!container.is_open_container())
 			to_chat(user, span_warning("You need to open the [container] first!"))
 			return
 

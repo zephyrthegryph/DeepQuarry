@@ -11,6 +11,10 @@
 	/// FALSE hides the Set transfer amount Menu entry (sprays, canisters), as dropping the old set_APTFT verb did.
 	var/transfer_amount_verb = TRUE
 
+/// What one transfer from this moves: the setting var of a container that is not converted yet.
+/obj/item/reagent_containers/legacy_transfer_amount()
+	return amount_per_transfer_from_this
+
 /// Old Set transfer amount verb.
 /obj/item/reagent_containers/proc/reagent_container_verb_set_transfer(mob/user, obj/item/held, datum/interaction/interaction)
 	var/N = rerun_ask(user, "a1", PROC_REF(reagent_container_verb_set_transfer), args, /datum/om/prompt/number, message = "Amount per transfer from this: ([min_transfer_amount]-[max_transfer_amount])", title = "[src]", default = amount_per_transfer_from_this, max = max_transfer_amount, min = min_transfer_amount)
@@ -176,7 +180,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 
 // EXTEND (not DECLARE) so the many subtypes that DECLARE their own specs keep this one.
 EXTEND_INTERACTIONS(/obj/item/reagent_containers, \
-	INTERACT_ALT("Set transfer amount", PROC_REF(transfer_amount_alt)), \
+	INTERACT_ALT("Set transfer amount", PROC_REF(transfer_amount_alt), REQ_ON(PRED_TARGET, /obj/item/reagent_containers/proc/pred_can_set_transfer, "its transfer amount is fixed")), \
 	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_container_verb_set_transfer), REQ_IN_INVENTORY, REQ_ON(PRED_TARGET, /obj/item/reagent_containers/proc/pred_can_set_transfer, "its transfer amount is fixed")), \
 )
 

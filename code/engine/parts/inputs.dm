@@ -217,6 +217,8 @@ GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
 	var/datum/interaction_resolution/L = interactions_for(R.actor, R.target, R.held, null, null, null, null, FALSE, FALSE)
 	var/seq = 1000
 	for(var/datum/interaction/I as anything in L.available)
+		if(!op_legacy_fits(I, R))
+			continue
 		var/intent = op_legacy_intent(I)
 		if(isnull(intent))
 			continue
@@ -237,6 +239,19 @@ GLOBAL_LIST_EMPTY(op_legacy_plans) // interaction type -> /datum/op_plan
 		C.rank = rank
 		C.intent = intent
 		R.ordered += C // ALLOW(ownership): a transient record of one resolution: dropped with it
+
+/// Does a legacy entry interaction fit the shape of this input? The legacy handlers it came from ran only for such an input: attack_hand for an empty
+/// hand, attackby for a held item used on something else, attack_self for the held item itself. (The resolver of the interactions does not ask: the
+/// caller is what chose the entry, and here nobody has.) Without it a held item is offered the hand's touches of its target, and a punch is thrown with it.
+/proc/op_legacy_fits(datum/interaction/I, datum/op_resolution/R)
+	switch(I.entry)
+		if(INTERACTION_ENTRY_HAND)
+			return isnull(R.held)
+		if(INTERACTION_ENTRY_ITEM)
+			return !isnull(R.held) && R.held != R.target
+		if(INTERACTION_ENTRY_SELF)
+			return !isnull(R.held) && R.held == R.target
+	return TRUE
 
 /// Runs a legacy interaction that won a resolution: its own attempt() decides, the result is the outcome.
 /proc/op_run_legacy(datum/op_cand/C, datum/op_resolution/R, datum/op_result/result)

@@ -221,7 +221,12 @@ GLOBAL_LIST_EMPTY(interaction_entry_attack_modifier)
 	if(om_wants(src, /datum/om/event/before/attackby) && om_emit(src, new /datum/om/event/before/attackby(I, user, dq_interaction_click_params(user))) == EVENT_VETO)
 		return INTERACTION_HANDLED_PASS
 	var/modifier = GLOB.interaction_entry_attack_modifier[user]
-	return hit_with_item(I, user, isnull(modifier) ? 1 : modifier, interaction.stance) ? TRUE : INTERACTION_HANDLED_PASS
+	var/hit = hit_with_item(I, user, isnull(modifier) ? 1 : modifier, interaction.stance)
+	// An item that does no harm (attack() answers ITEM_INTERACT_FAILURE: force 0, no bludgeon, a stance that does not hit) did nothing to this mob: its own
+	// afterattack follows, as it did before attack() answered with the ITEM_INTERACT_* flags (a spray, a syringe, a dropper, a splash all live there).
+	if(hit == ITEM_INTERACT_FAILURE)
+		return INTERACTION_HANDLED_PASS
+	return hit ? TRUE : INTERACTION_HANDLED_PASS
 
 /// An empty-hand touch on this mob in `stance` (I_HELP, I_DISARM, I_GRAB or I_HURT); mob types extend it (their unarmed combat). The base reacts for the AI and thorns.
 /mob/living/proc/unarmed_touch(mob/living/user, stance = I_HELP)

@@ -203,3 +203,88 @@
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(T.used, 1, "a click runs the use")
 	TEST_ASSERT_EQUAL(T.dragged, 1, "and not the drag")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A legacy entry interaction answers the shape of input its handler did: attack_hand an empty hand, attackby a held item used on something else.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/legacy_entries_fit_the_input
+
+/datum/unit_test/dq_p2_engine/legacy_entries_fit_the_input/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_legacy_target/T = allocate(/obj/p2_legacy_target)
+	var/obj/item/p2_op_item/I = allocate(/obj/item/p2_op_item)
+	H.drop_item()
+	H.put_in_active_hand(I)
+	test_click(H, T, I)
+	TEST_ASSERT_EQUAL(T.touched, 0, "an item in hand is not given the touch of an empty hand")
+	TEST_ASSERT_EQUAL(T.used_with, 1, "the entry for an item used on it ran")
+	H.drop_item()
+	test_click(H, T, null)
+	TEST_ASSERT_EQUAL(T.touched, 1, "an empty hand touches it")
+	TEST_ASSERT_EQUAL(T.used_with, 1, "and uses no item on it")
+	own_turf_contents(get_turf(T))
+
+// ---------------------------------------------------------------------------------------------------------------------
+// A turf is something an op can be done at: the surface of a turf is the turf (its loc is an area, which nobody touches).
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/an_op_at_a_turf_is_reached
+
+/datum/unit_test/dq_p2_engine/an_op_at_a_turf_is_reached/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_op_item/I = allocate(/obj/item/p2_op_item)
+	H.drop_item()
+	H.put_in_active_hand(I)
+	var/turf/own = get_turf(H)
+	test_click(H, own, I)
+	TEST_ASSERT_EQUAL(I.tapped, 1, "the turf the actor stands on is reached")
+	var/turf/near = get_step(own, EAST)
+	test_click(H, near, I)
+	TEST_ASSERT_EQUAL(I.tapped, 2, "and the one beside it")
+	var/turf/far = locate(own.x + 6, own.y, own.z)
+	test_click(H, far, I)
+	TEST_ASSERT_EQUAL(I.tapped, 2, "but not one six tiles away")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// without(CAP_X) of a bundle drops what the bundle brought, a capability of its own included, with everything that one brought.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/without_drops_a_bundles_nested_capability
+
+/datum/unit_test/dq_p2_engine/without_drops_a_bundles_nested_capability/run_gate()
+	var/obj/p2_bundled/whole = allocate(/obj/p2_bundled)
+	var/obj/p2_bundled/stripped/bare = allocate(/obj/p2_bundled/stripped)
+	TEST_ASSERT_NOTNULL(cap_of(whole, CAP_REAGENT_CONTAINER), "the bundle brings its nested capability")
+	TEST_ASSERT_NOTNULL(op_plan_for(whole, "reagent_container.set_amount"), "and its ops")
+	TEST_ASSERT_NULL(cap_of(bare, CAP_REAGENT_CONTAINER), "a subtype without the bundle has no nested capability")
+	TEST_ASSERT_NULL(op_plan_for(bare, "reagent_container.set_amount"), "and none of its ops")
+	TEST_ASSERT_NULL(bare.reagents, "and no holder made by it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// An item that does no harm reaches its own afterattack when it is clicked on a person next to the clicker (attack() did nothing: its answer is a
+// failure, not a verdict that the click was used); an item whose attack() used the click does not.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_harmless_item_reaches_afterattack_on_a_mob
+
+/datum/unit_test/dq_p2_engine/a_harmless_item_reaches_afterattack_on_a_mob/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_afterattacker/plain = allocate(/obj/item/p2_afterattacker)
+	var/obj/item/p2_afterattacker/attacker/using = allocate(/obj/item/p2_afterattacker/attacker)
+	for(var/stance in list(I_HELP, I_DISARM, I_GRAB, I_HURT))
+		var/before = plain.reached
+		H.drop_item()
+		H.put_in_active_hand(plain)
+		H.set_use_stance(stance)
+		H.next_click = 0
+		input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
+		TEST_ASSERT_EQUAL(plain.reached - before, 1, "in the [stance] stance a click on a person reaches the harmless item's afterattack")
+	H.set_use_stance(I_HELP)
+	H.drop_item()
+	H.put_in_active_hand(using)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
+	TEST_ASSERT_EQUAL(using.reached, 0, "an item whose attack() used the click does not reach afterattack")
+	H.set_use_stance(I_HELP)

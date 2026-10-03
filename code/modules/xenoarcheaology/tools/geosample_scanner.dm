@@ -74,7 +74,7 @@ DECLARE_REAGENTS(/obj/machinery/radiocarbon_spectrometer, COOLANT_MAX, null)
 			if(!G.reagents.has_reagent(REAGENT_ID_WATER))
 				to_chat(user, span_danger("No water found in beaker."))
 				return TRUE
-			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, G.amount_per_transfer_from_this)
+			var/trans = G.reagents.trans_id_to(src, REAGENT_ID_WATER, reagent_transfer_amount(G))
 			to_chat(user, span_info("You transfer [trans ? trans : 0]u of water into [src]."))
 			return TRUE
 		else if(choice == "Empty water")

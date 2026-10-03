@@ -228,9 +228,9 @@
 	var/old_smes = S ? list(S.stored_charge(), S.input_attempt, S.output_attempt) : null
 	if(S)
 		S.set_stored_charge(S.capacity)
-		S.input_attempt = FALSE
-		S.output_attempt = FALSE
-		S.power_sync()
+		S.set_input_attempt(FALSE)
+		S.set_output_attempt(FALSE)
+		refresh_flush()
 	// The monitor view settles geometrically; the APC reaches full charge.
 	for(var/i in 1 to 80)
 		dq_power_test_step()
@@ -244,9 +244,9 @@
 		TEST_ASSERT_EQUAL(S.power_event_count, smes_events, "an idle SMES kept hearing power events")
 		TEST_ASSERT(!machine_stepping(S), "an idle SMES is polling")
 		S.set_stored_charge(old_smes[1])
-		S.input_attempt = old_smes[2]
-		S.output_attempt = old_smes[3]
-		S.power_sync()
+		S.set_input_attempt(old_smes[2])
+		S.set_output_attempt(old_smes[3])
+		refresh_flush()
 	else
 		TEST_NOTICE(src, "no SMES on the test map; checked the APC only")
 	T.set_power_supply(0)

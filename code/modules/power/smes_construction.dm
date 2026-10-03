@@ -89,10 +89,10 @@
 /obj/machinery/power/smes/buildable/point_of_interest/Initialize(mapload)
 	. = ..()
 	set_stored_charge(capacity) // Should be enough for an individual POI.
-	RCon = FALSE
-	input_level = input_level_max
-	output_level = output_level_max
-	input_attempt = TRUE
+	set_RCon(FALSE)
+	set_input_level(input_level_max)
+	set_output_level(output_level_max)
+	set_input_attempt(TRUE)
 
 // END SMES SUBTYPES
 
@@ -108,41 +108,55 @@
 	initial_charge = 0
 	should_be_mapped = 1
 
+TRACKED(/obj/machinery/power/smes/buildable, failing)
+TRACKED(/obj/machinery/power/smes/buildable, grounding)
+TRACKED(/obj/machinery/power/smes/buildable, RCon)
+
+MSG_DEF_SELF(smes/rcon_cut, "Connection error: Destination Unreachable.")
+MSG_DEF_SELF(smes/overloaded, "The indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea.")
+MSG_DEF_SELF(smes/safety_circuit, "The safety circuit is preventing modifications while there is charge stored.")
+MSG_DEF_SELF(smes/turn_it_off, "Turn it off first.")
+MSG_DEF_SELF(smes/coils_full, "You can't insert more coils into this SMES unit!")
+MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
+
+CAPABILITIES(/obj/machinery/power/smes/buildable, \
+	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), then(PROC_REF(failing_refusal))), \
+	op("install_coil", item(/obj/item/smes_coil), when(nameof(panel_open)), then(PROC_REF(coil_installed))), \
+	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), when(nameof(panel_open)), \
+		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))), \
+		asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")), \
+		then(PROC_REF(rcon_tag_answered))), \
+	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut))))), \
+	extend("ui_open", then(PROC_REF(open_wires_beside_the_window))), \
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = cond_not(nameof(grounding))))
+
+/// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a small chance of breaking lights on the APCs of its
+/// powernet. It carries on until grounded or nearly empty.
+/obj/machinery/power/smes/buildable/proc/grounding_frame(datum/act/timer/A)
+	if(grounding || Percentage() <= 5)
+		return
+	fx_sparks(src, 5)
+	adjust_stored_charge(-(output_level_max * SMESRATE))
+	if(prob(1)) // Small chance of overload occuring since grounding is disabled.
+		apcs_overload(0,10)
+
+/// A hand on the unit with its hatch open: the wires window opens beside the unit's own window (a silicon at the unit can work the wiring too).
+/obj/machinery/power/smes/buildable/proc/open_wires_beside_the_window(datum/act/op/A)
+	var/mob/user = A.actor
+	if(panel_open && user && !isAI(user))
+		wires.Interact(user)
+	return OP_OK
+
+/// What a thing with the unit failing is told.
+/obj/machinery/power/smes/buildable/proc/failing_refusal(datum/act/op/A)
+	to_chat(A.actor, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
+	return OP_OK
+
 // RCON consoles rescan without it.
 /obj/machinery/power/smes/buildable/on_destroy(force)
 	for(var/datum/tgui_module/rcon/R in world)
 		R.FindDevices()
 	..()
-
-/// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a
-/// small chance of breaking lights on the APCs of its powernet. It stays awake until grounded or
-/// nearly empty.
-/obj/machinery/power/smes/buildable/power_step()
-	var/needs_grounding_tick = !grounding && (Percentage() > 5)
-	if(needs_grounding_tick)
-		fx_sparks(src, 5)
-		adjust_stored_charge(-(output_level_max * SMESRATE))
-		if(prob(1)) // Small chance of overload occuring since grounding is disabled.
-			apcs_overload(0,10)
-	. = ..()
-	if(needs_grounding_tick)
-		return null
-
-/obj/machinery/power/smes/buildable/power_settled()
-	return grounding || Percentage() <= 5
-
-/// Old attack_ai: AI requires the RCON wire to be intact to operate the SMES (the default Use).
-/// Cyborgs standing next to the SMES can also play with the wiring.
-/obj/machinery/power/smes/buildable/proc/smes_buildable_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	if(RCon)
-		actor_use_default(/datum/input_adapter/ai, user, src)
-	else // RCON wire cut
-		to_chat(user, span_warning("Connection error: Destination Unreachable."))
-
-	// Cyborgs standing next to the SMES can play with the wiring.
-	if(isrobot(user) && Adjacent(user) && panel_open)
-		wires.Interact(user)
-	return TRUE
 
 // Proc: New()
 // Parameters: None
@@ -159,35 +173,6 @@
 			own_add(src, nameof(component_parts), new /obj/item/smes_coil(src))
 		recalc_coils()
 
-// Proc: attack_hand()
-// Parameters: None
-// Description: Opens the UI as usual, and if cover is removed opens the wiring panel.
-/obj/machinery/power/smes/buildable/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", PROC_REF(smes_buildable_silicon_use)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_hand/smes_buildable_wires,
-	)
-	..()
-
-/// Approximation: the old attack_hand unconditionally called ..() (the ancestor SMES's own
-/// attack_hand, out of this file's scope) and then always opened the wire panel if open.
-/// The ancestor call can't be replayed from here, so this declines (FALSE) to let the entry
-/// fall through to whatever the ancestor/base machinery attack_hand still provides; the wire
-/// panel now opens before that fallback runs rather than after, an order approximation - see report.
-/datum/interaction/machine_hand/smes_buildable_wires
-	id = "smes_buildable_wires"
-	name = "Use"
-	effect = /obj/machinery/power/smes/buildable/proc/interaction_wires
-
-/obj/machinery/power/smes/buildable/proc/interaction_wires(mob/user, obj/item/held, datum/interaction/interaction)
-	if(panel_open)
-		wires.Interact(user)
-	return FALSE
-
 /obj/machinery/power/smes/buildable/RefreshParts()
 	recalc_coils()
 
@@ -196,15 +181,15 @@
 // Description: Updates properties (IO, capacity, etc.) of this SMES by checking internal components.
 /obj/machinery/power/smes/buildable/proc/recalc_coils()
 	if ((cur_coils <= max_coils) && (cur_coils >= 1))
-		capacity = 0
-		input_level_max = 0
-		output_level_max = 0
+		var/new_capacity = 0
+		var/new_io = 0
 		for(var/obj/item/smes_coil/C in component_parts)
-			capacity += C.ChargeCapacity
-			input_level_max += C.IOCapacity
-			output_level_max += C.IOCapacity
+			new_capacity += C.ChargeCapacity
+			new_io += C.IOCapacity
+		set_capacity(new_capacity)
+		input_level_max = new_io
+		output_level_max = new_io
 		set_stored_charge(between(0, stored_charge(), capacity))
-		power_sync()
 		return 1
 	return 0
 
@@ -297,10 +282,9 @@
 				log_game("SMES explosion imminent.")
 				message_admins("SMES explosion imminent.")
 				ping("DANGER! Magnetic containment field unstable! Containment field failure imminent!")
-				failing = 1
-				update_icon()
+				set_failing(1)
 				// 30 - 60 seconds and then BAM!
-				om_after(src, rand(300,600), PROC_REF(containment_failure))
+				after(src, rand(30 SECONDS, 60 SECONDS), PROC_REF(containment_failure), key = "containment_failure")
 
 	fx_sparks(src, spark_amount)
 	set_stored_charge(0)
@@ -320,66 +304,31 @@
 			if (prob(failure_chance))
 				A.atom_break()
 
-// Critical SMESs show only the smes-crit overlay.
-DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = list(APPEARANCE_OVERLAYS = list("smes-crit"))))
-
-/obj/machinery/power/smes/buildable/appearance_smes_dark()
-	return failing || ..()
-
-// Proc: attackby()
-// Parameters: 2 (W - object that was used on this machine, user - person which used the object)
-// Description: Handles tool interaction. Allows deconstruction/upgrading/fixing.
-/obj/machinery/power/smes/buildable/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/smes_buildable_failing_block,
-		/datum/interaction/machine_item/smes_buildable_install_coil,
-	)
+// A critical unit shows only the smes-crit overlay.
+/obj/machinery/power/smes/buildable/draw_status(datum/look/look)
+	if(failing)
+		look.overlay("smes-crit")
+		return
 	..()
 
-// No more disassembling of overloaded SMESs. You broke it, now enjoy the consequences.
-/datum/interaction/machine_item/smes_buildable_failing_block
-	id = "smes_buildable_failing_block"
-	name = "Use"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/is_failing, null))
-	effect = /obj/machinery/power/smes/buildable/proc/interaction_failing_block
+// ---- the coils ----
 
-/obj/machinery/power/smes/buildable/proc/is_failing(mob/actor, atom/target, obj/item/held)
-	return failing
-
-/obj/machinery/power/smes/buildable/proc/interaction_failing_block(mob/user, obj/item/held, datum/interaction/interaction)
-	to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
-	return TRUE
-
-/**
- * Approximation: the old attackby gated everything below on `if(..())` - the ancestor SMES's
- * own attackby (out of this file's scope), which per the comment returns truthy only when
- * the maintenance hatch is open and it took no action itself (terminal de/construction).
- * That can't be replayed from here, so this is offered only when the panel is open (see
- * report); when not offered, the entry falls through to the base/ancestor attackby, matching
- * the old "..() returned falsy, nothing else happens" path.
- */
-/datum/interaction/machine_item/smes_buildable_install_coil
-	id = "smes_buildable_install_coil"
-	name = "Install coil"
-	held_type = /obj/item/smes_coil
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/power/smes/buildable/proc/panel_is_open_impl, null))
-	effect = /obj/machinery/power/smes/buildable/proc/interaction_install_coil
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/power/smes/buildable/proc/can_modify))
-
-/obj/machinery/power/smes/buildable/proc/panel_is_open_impl(mob/actor, atom/target, obj/item/held)
-	return panel_open
-
-/// Requirement: TRUE, or why the SMES can't be modified now.
-/obj/machinery/power/smes/buildable/proc/can_modify(mob/user, atom/target, obj/item/held)
-	// Charged above 1% and safeties are enabled.
+/// Why the unit cannot be modified now, or null: charged above 1% with the safeties on, or a switch on.
+/obj/machinery/power/smes/buildable/proc/modify_refusal(datum/act/op/A)
 	if((stored_charge() > (capacity/100)) && safeties_enabled)
-		return "the safety circuit is preventing modifications while there is charge stored"
+		return /datum/msg/smes/safety_circuit
 	if(output_attempt || input_attempt)
-		return "turn it off first"
-	return TRUE
+		return /datum/msg/smes/turn_it_off
+	return null
 
-/obj/machinery/power/smes/buildable/proc/interaction_install_coil(mob/user, obj/item/W, datum/interaction/interaction)
+/// The coil goes in: with the safety circuit off and charge held, the modification can fail badly.
+/obj/machinery/power/smes/buildable/proc/coil_installed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	var/why = modify_refusal(A)
+	if(why)
+		A.reason = why
+		return OP_REFUSED
 	// Probability of failure if safety circuit is disabled (in %)
 	var/failure_probability = round((stored_charge() / capacity) * 100)
 
@@ -392,77 +341,44 @@ DECLARE_APPEARANCE(/obj/machinery/power/smes/buildable, "failing", list("1" = li
 
 		if (failure_probability && prob(failure_probability))
 			total_system_failure(failure_probability, user)
-			return TRUE
+			return OP_OK
 
 		to_chat(user, "You install the coil into the SMES unit!")
 		cur_coils ++
 		if(!own_add(src, nameof(src.component_parts), W, user = user))
-			return TRUE
+			return OP_OK
 		recalc_coils()
 	else
 		to_chat(user, span_red("You can't insert more coils into this SMES unit!"))
-	return TRUE
+	return OP_OK
 
-/obj/machinery/power/smes/buildable/multitool_act(mob/user, obj/item/tool)
-	if(failing || !panel_open)
-		if(failing)
-			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
-		return ITEM_INTERACT_BLOCKING
-	var/new_tag = rerun_ask(user, "k418", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/text, message = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.", title = "SMES RCON system", max_length = MAX_NAME_LEN)
-	if(isnull(new_tag))
-		return ITEM_INTERACT_BLOCKING
+/// The RCON tag was typed in.
+/obj/machinery/power/smes/buildable/proc/rcon_tag_answered(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/new_tag = isnull(R) ? null : R.value
 	if(!new_tag)
-		return ITEM_INTERACT_BLOCKING
+		return OP_REFUSED
 	for(var/obj/machinery/power/smes/buildable/smes in REGISTRY_MEMBERS(REGISTRY_SMES))
 		if(smes.RCon_tag == new_tag)
-			to_chat(user, span_warning("The entered RCON tag [new_tag] already exists. Aborting."))
-			return ITEM_INTERACT_BLOCKING
+			A.reason = /datum/msg/smes/tag_taken
+			return OP_REFUSED
 	RCon_tag = new_tag
-	to_chat(user, span_notice("You changed the RCON tag to: [new_tag]"))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/power/smes/buildable/crowbar_act(mob/user, obj/item/tool)
-	if(failing || !panel_open)
-		if(failing)
-			to_chat(user, span_warning("The [src]'s indicator lights are flashing wildly. It seems to be overloaded! Touching it now is probably not a good idea."))
-		return ITEM_INTERACT_BLOCKING
-	if((stored_charge() > capacity / 100) && safeties_enabled)
-		to_chat(user, span_warning("The safety circuit of [src] is preventing modifications while there is charge stored!"))
-		return ITEM_INTERACT_BLOCKING
-	if(output_attempt || input_attempt)
-		to_chat(user, span_warning("Turn off [src] first!"))
-		return ITEM_INTERACT_BLOCKING
-	if(length(terminals))
-		to_chat(user, span_warning("You have to disassemble the terminal first!"))
-		return ITEM_INTERACT_BLOCKING
-	var/failure_probability = round(stored_charge() / capacity * 100)
-	if(failure_probability < 5)
-		failure_probability = 0
-	use_tool(user, tool, src, delay = 10 SECONDS * cur_coils, volume = 50, start_self = "You begin to disassemble [src]!", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user, failure_probability))
-	return ITEM_INTERACT_SUCCESS
+	to_chat(A.actor, span_notice("You changed the RCON tag to: [new_tag]"))
+	return OP_OK
 
 /obj/machinery/power/smes/buildable/proc/containment_failure()
 	if(!failing) // Admin can manually set this var back to 0 to stop overload, for use when griffed.
-		update_icon()
 		ping("Magnetic containment stabilised.")
 		return
 	ping("DANGER! Magnetic containment field failure in 3 ... 2 ... 1 ...")
 	explosion(get_turf(src),1,2,4,8)
 	// Not sure if this is necessary, but just in case the SMES *somehow* survived..
 	qdel(src)
-/obj/machinery/power/smes/buildable/proc/crowbar_act_tool_done(mob/user, failure_probability)
-	if(failure_probability && prob(failure_probability))
-		total_system_failure(failure_probability, user)
-		return ITEM_INTERACT_SUCCESS
-	to_chat(user, span_red("You have disassembled the SMES cell!"))
-	dismantle()
 
 /// Remote (AI and RCON) control on or off.
 /obj/machinery/power/smes/buildable/proc/set_rcon(state)
-	RCon = state
-	changed(src, CHANGE_MACHINE_SETTINGS)
+	set_RCon(state)
 
 /// The failsafes on or off.
 /obj/machinery/power/smes/buildable/proc/set_safeties(state)
 	safeties_enabled = state
-	changed(src, CHANGE_MACHINE_SETTINGS)

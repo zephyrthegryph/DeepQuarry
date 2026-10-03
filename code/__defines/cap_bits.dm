@@ -17,9 +17,6 @@
 #define CAP_WIRES_EXPOSED (1<<5)
 /// Door weld_shut(): welded shut.
 #define CAP_WELDED (1<<6)
-/// Door bolts(): bolted.
-/// reagent_container(): the lid is open.
-#define CAP_LID_OPEN (1<<8)
 /// smokable(): lit.
 #define CAP_LIT (1<<9)
 /// two_handed(): wielded.
