@@ -212,6 +212,8 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 		if(istype(part, /obj/item/organ/external))
 			limbs = TRUE
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	if(limbs)
+		owner.hands_refresh() // the hands() provider follows the limbs
 	if(limbs && ishuman(owner))
 		var/mob/living/carbon/human/H = owner
 		H.refresh_modular_limb_verbs()
@@ -253,6 +255,7 @@ GLOBAL_DATUM(dq_part_reparenting, /obj/item/organ)
 	if(destroying || reparent)
 		return
 	invalidate(BODY_DIRTY_ORGANS | BODY_DIRTY_VITALS | BODY_DIRTY_FACTORS | BODY_DIRTY_ARMOR)
+	owner.hands_refresh() // the hands() provider follows the limbs
 	if(ishuman(owner))
 		var/mob/living/carbon/human/H = owner
 		H.refresh_modular_limb_verbs()

@@ -10,9 +10,6 @@
 // A shadowed activation (a BEST or UNIQUE stack where another activation runs) keeps its clock and skips its handler, so it resumes the moment
 // it wins. The system forms of every() (a /datum/system's work items, code/datums/reactions/reactions.dm) keep their own shape.
 
-/// The entry kind of a capability's every().
-#define ENTRY_EVERY "every"
-
 /// every(interval, then(...) | parts..., when = cond): one entry. `interval` is deciseconds of the holder's clock. The system form
 /// every(interval, PROC_REF(x), ...) is reactions.dm's and never reaches here.
 /proc/every_entry(interval, p1, p2, p3, p4, when = null)
@@ -76,3 +73,49 @@
 		T.release()
 	if(!A.dead)
 		activation_every_arm(A, E)
+
+// ---- type-level every() ----
+//
+//	CAPABILITIES(/obj/machinery/x, every(5 SECONDS, then(PROC_REF(tick)), when = "on"))      // work the TYPE owns: runs while the instance lives
+//
+// An every() written in a type's own CAPABILITIES list (not in a capability's entries()) is armed when the instance initializes (engine_holder_init())
+// and runs on the instance's own clock until it is deleted (the entity's timers die with it). Its handler is the same x(datum/act/timer/A) with A.holder
+// the instance, A.cap and A.activation null, A.source the instance and A.dt the interval. The `when =` argument and any enclosing when() block gate
+// each run; a gated run is skipped and the next one still armed, so the work resumes the moment the gate holds again.
+
+/// Arms the type-level every() entries of `holder`, an interval from now on its clock.
+/proc/type_every_arm(datum/holder, datum/type_table/T)
+	var/index = 0
+	for(var/datum/centry/C as anything in compiled_entries(T, ENTRY_EVERY))
+		if(!isnull(C.owner))
+			continue // a capability's: its activation arms it
+		index++
+		type_every_schedule(holder, C, index)
+
+/proc/type_every_schedule(datum/holder, datum/centry/C, index)
+	var/datum/entry/E = C.item
+	after(holder, E.args["interval"], GLOBAL_PROC_REF(type_every_fire), key = "every:type:[index]", with = list(holder, C, index))
+
+/// One run of a type-level every(): the handler unless the gate fails, then the next arming.
+/proc/type_every_fire(datum/holder, datum/centry/C, index)
+	if(!holder || QDELETED(holder) || !C)
+		return
+	var/datum/entry/E = C.item
+	var/gated = op_whens_hold(holder, C.whens)
+	var/cond = E.args["when"]
+	if(gated && !isnull(cond))
+		gated = !!change_condition(holder, cond)
+	if(gated)
+		var/datum/act/timer/T = take(/datum/act/timer)
+		T.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		T.source = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		T.dt = E.args["interval"]
+		var/depth = GLOB.act_depth
+		try
+			hook_run_parts(null, T, E.children)
+		catch(var/exception/fault)
+			stack_trace("type every() on [holder.type]: [fault] ([fault.file]:[fault.line])")
+		GLOB.act_depth = depth
+		T.release()
+	if(!QDELETED(holder))
+		type_every_schedule(holder, C, index)

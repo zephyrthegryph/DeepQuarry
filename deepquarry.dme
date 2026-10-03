@@ -5674,6 +5674,7 @@
 #include "code\engine\io\path.dm"
 #include "code\engine\parts\part.dm"
 #include "code\engine\parts\cond.dm"
+#include "code\engine\parts\hands.dm"
 #include "code\engine\parts\plan.dm"
 #include "code\engine\parts\provider.dm"
 #include "code\engine\parts\resolve.dm"

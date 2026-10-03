@@ -55,6 +55,8 @@
 #define ENTRY_NEEDS "needs"
 #define ENTRY_THEN "then"
 #define ENTRY_CHANCE "chance"
+/// every(): a capability's periodic work (every.dm), or a type's own.
+#define ENTRY_EVERY "every"
 
 /// Rule names a report carries (tests assert on them).
 #define RULE_ACT_DEPTH "act_depth"

@@ -18,9 +18,11 @@
 /proc/provides(aff, reach = null, line_of_sight = FALSE, authority = AUTH_PHYSICAL, accepts = null, key = null)
 	return entry_make(ENTRY_PROVIDES, key, list("aff" = aff, "reach" = reach, "los" = line_of_sight, "authority" = authority, "accepts" = accepts))
 
-/// hands(): the hand provider a species grants.
+/// hands(): the hand provider a species grants: provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1) while the body has a working hand
+/// (when(PROC_REF(has_working_hand), ...), hands.dm). The condition is read when the provider set is read; what changes it (a limb attached or lost)
+/// publishes HANDS_KEY and bumps the actor's provider set generation (hands_refresh()), so a cached menu is stale at once.
 /proc/hands()
-	return provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1)
+	return when(TYPE_PROC_REF(/mob/living, has_working_hand), provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1), reads = list(HANDS_KEY))
 
 /// One provider in play: the declaration and the entity that gives it.
 /datum/prov

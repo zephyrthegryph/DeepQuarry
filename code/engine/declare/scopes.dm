@@ -17,6 +17,7 @@
 	if(T.hook_flags & ENGINE_HOOK_STATS)
 		stat_holder_init(holder, mapload)
 	hooks_change_baseline(holder)
+	type_every_arm(holder, T)
 
 /// Before the base body of Initialize runs: for work the parent's init reads (a part made in nullspace).
 /proc/engine_holder_preinit(datum/holder, mapload)
@@ -77,6 +78,9 @@
 
 // ---- relation scope: species_capabilities() ----
 
+/// The entry kinds of a relation-granted value's own list that work on the holder (relation_scope_capabilities()).
+GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY_EXTEND, ENTRY_ON_NOTICE, ENTRY_ON_CHANGE, "every"))
+
 /**
  * holder.var_name (a relation) was written. The grants it drives, rel_grants(nameof(var)) entries of the holder's table, are re-made:
  * what the old value granted ends, then each capability the new value's own CAPABILITIES list declares is granted, sourced by the new
@@ -101,42 +105,91 @@
 	var/datum/value = holder.vars[var_name]
 	if(!isdatum(value) || QDELETED(value))
 		return
+	for(var/datum/capability/def as anything in relation_scope_capabilities(value))
+		activation_attach(holder, def, value, null, SCOPE_RELATION, var_name, null)
+	log_world("GRANTS: [holder.type] now gets what [value.type] declares through [var_name]")
+
+/// What a value granted through a relation (a species) brings its holder: each capability its own CAPABILITIES list names, and every other entry
+/// that works on a holder (a provider such as hands(), a contribution, a hook, an every()) together in one capability of triggers only, so the
+/// relation scopes them like any grant and one teardown path ends them. An entry inside a when() keeps its condition. Built once per value type.
+/proc/relation_scope_capabilities(datum/value)
+	var/static/list/known = list()
+	var/list/cached = known[value.type]
+	if(!isnull(cached))
+		return cached
 	var/datum/type_table/value_table = table_of(value)
-	for(var/datum/centry/C as anything in compiled_entries(value_table, ENTRY_CAPABILITY))
-		activation_attach(holder, C.item, value, null, SCOPE_RELATION, var_name, null)
+	. = list()
+	var/list/loose = list()
+	for(var/datum/centry/C as anything in value_table.items)
+		if(istype(C.item, /datum/capability))
+			if(isnull(C.owner))
+				. += C.item
+			continue
+		var/datum/entry/E = C.item
+		if(!istype(E) || !isnull(C.owner) || !(E.kind in GLOB.relation_scope_kinds))
+			continue
+		var/datum/entry/wrapped = E
+		for(var/i in length(C.whens) to 1 step -1)
+			var/datum/entry/W = C.whens[i]
+			wrapped = entry_make(ENTRY_WHEN, null, W.args, list(wrapped))
+		loose += wrapped
+	if(length(loose))
+		. += hook_capability_of(loose, FALSE)
+	known[value.type] = .
 
 // ---- slot scope: while_slotted() ----
 
-/// `item` was put into `holder`'s slot `slot_id`. The while_slotted entries of the item's type (ON_HOLDER) are granted to the holder with
-/// the item as source, and those of the holder's type (ON_CONTENTS) to the item with the holder as source, both for exactly the item's
-/// time in the slot and bound to it.
+/// `item` was put into `holder`'s slot `slot_id` (the ledger's note_enter() and reslot() call this for every real slot move). The while_slotted
+/// entries of the item's type (ON_HOLDER) are granted to the holder with the item as source, and those of the holder's type (ON_CONTENTS) to the
+/// item with the holder as source, both for exactly the item's time in the slot and bound to it. A type with no while_slotted entry costs two
+/// flag reads.
 /proc/activations_slot_enter(datum/item, datum/holder, slot_id)
-	for(var/datum/centry/C as anything in compiled_entries(table_of(item), ENTRY_WHILE_SLOTTED))
-		var/datum/entry/E = C.item
-		if(E.args["on"] != ON_HOLDER || !slot_matches(E.args["slot"], slot_id))
-			continue
-		for(var/datum/capability/child as anything in slot_scope_capabilities(E))
-			activation_attach(holder, child, item, null, SCOPE_SLOT, slot_id, null)
-	for(var/datum/centry/C as anything in compiled_entries(table_of(holder), ENTRY_WHILE_SLOTTED))
-		var/datum/entry/E = C.item
-		if(E.args["on"] != ON_CONTENTS || !slot_matches(E.args["slot"], slot_id))
-			continue
-		for(var/datum/capability/child as anything in slot_scope_capabilities(E))
-			activation_attach(item, child, holder, null, SCOPE_SLOT, slot_id, null)
+	if(!islist(GLOB?.type_table_of_type) || QDELETED(item) || QDELETED(holder))
+		return
+	var/datum/type_table/item_table = table_of(item)
+	if(item_table.has_slotted)
+		for(var/datum/centry/C as anything in compiled_entries(item_table, ENTRY_WHILE_SLOTTED))
+			var/datum/entry/E = C.item
+			if(E.args["on"] != ON_HOLDER || !slot_matches(E.args["slot"], slot_id, holder))
+				continue
+			for(var/datum/capability/child as anything in slot_scope_capabilities(E))
+				activation_attach(holder, child, item, null, SCOPE_SLOT, slot_id, null)
+	var/datum/type_table/holder_table = table_of(holder)
+	if(holder_table.has_slotted)
+		for(var/datum/centry/C as anything in compiled_entries(holder_table, ENTRY_WHILE_SLOTTED))
+			var/datum/entry/E = C.item
+			if(E.args["on"] != ON_CONTENTS || !slot_matches(E.args["slot"], slot_id, holder))
+				continue
+			for(var/datum/capability/child as anything in slot_scope_capabilities(E))
+				activation_attach(item, child, holder, null, SCOPE_SLOT, slot_id, null)
 
 /// `item` left `holder`'s slot `slot_id`, however it left: everything the slot scoped goes at once.
 /proc/activations_slot_exit(datum/item, datum/holder, slot_id)
-	for(var/datum/activation/A as anything in holder.rx?.activations?.Copy())
-		if(A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == item)
-			activation_end(A)
-	for(var/datum/activation/A as anything in item.rx?.activations?.Copy())
-		if(A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == holder)
-			activation_end(A)
+	if(!islist(GLOB?.type_table_of_type))
+		return
+	// Only what a while_slotted entry could have made is looked for: a type that declares none holds none.
+	if(holder.rx?.activations && table_of(item).has_slotted)
+		for(var/datum/activation/A as anything in holder.rx.activations.Copy())
+			if(A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == item)
+				activation_end(A)
+	if(item.rx?.activations && table_of(holder).has_slotted)
+		for(var/datum/activation/A as anything in item.rx.activations.Copy())
+			if(A.scope == SCOPE_SLOT && A.scope_data == slot_id && A.source == holder)
+				activation_end(A)
 
-/// Does a while_slotted entry's slot id cover the slot an item went into? An entry may name a family of slots (a list of ids).
-/proc/slot_matches(entry_slot, slot_id)
+/// Does a while_slotted entry's slot id cover the slot an item went into? An entry may name a family of slots (a list of ids), or SLOT_ANY_WORN
+/// (any slot of the holder that is worn equipment) or SLOT_ANY_HELD (any hand).
+/proc/slot_matches(entry_slot, slot_id, atom/holder)
 	if(islist(entry_slot))
 		return slot_id in entry_slot
+	if(entry_slot == SLOT_ANY_WORN || entry_slot == SLOT_ANY_HELD)
+		var/datum/om/relation/slot/def = holder?.ledger?.def_by_id(slot_id)
+		if(!def)
+			return FALSE
+		if(entry_slot == SLOT_ANY_HELD)
+			return istype(def, /datum/om/relation/slot/body/hand)
+		var/datum/om/relation/slot/body/body_def = def
+		return istype(body_def) && !!(body_def.roles & BODY_SLOT_WORN)
 	return entry_slot == slot_id
 
 /// The capabilities a while_slotted entry applies: each capability child as it is, and every other entry (a hook, a contribution) together in one

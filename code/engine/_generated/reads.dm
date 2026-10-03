@@ -17,7 +17,9 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"touched",
 	"locked",
 	"apc",
-	"channel_on"
+	"channel_on",
+	"steward",
+	"welded"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -41,5 +43,12 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 4)),
 	"/obj/e3_load::apc_channel" = list(0,
 		list(1, 0, 5),
-		list(1, 0, 6, 5))
+		list(1, 0, 6, 5)),
+	"/obj/s1_fixture/picky::actor_is_steward" = list(0,
+		list(1, 0, 7)),
+	"/obj/s1_fixture/picky::not_welded" = list(0,
+		list(1, 0, 8)),
+	"/obj/s1_fixture/picky::takes_gizmos_only" = list(0),
+	"/obj/s1_fixture/rack::not_welded" = list(0,
+		list(1, 0, 8))
 ))

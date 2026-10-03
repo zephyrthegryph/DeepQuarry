@@ -291,6 +291,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	holder.on_slot_changed(id, thing, TRUE)
 	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, id)
 	om_slot_entered(holder, thing, def)
+	activations_slot_enter(thing, holder, id)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, id, flags)
 
@@ -316,6 +317,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	holder.on_slot_changed(id, thing, FALSE)
 	OM_EMIT(holder, /datum/om/event/slot_removed, thing, id)
 	om_slot_left(holder, thing, def)
+	activations_slot_exit(thing, holder, id)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, id, flags)
 	// The slot was its ownership (doc/rewrite/ownership.md sec 1.1): a CONTAINED / SPILL owned var
@@ -338,6 +340,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	holder.on_slot_changed(old_id, thing, FALSE)
 	OM_EMIT(holder, /datum/om/event/slot_removed, thing, old_id)
 	om_slot_left(holder, thing, old_def)
+	activations_slot_exit(thing, holder, old_id)
 	if(thing.has_slot_hooks)
 		thing.on_unslotted(holder, old_id, flags)
 	var/datum/om/relation/slot/def = def_by_id(new_id)
@@ -354,6 +357,7 @@ DECLARE_SHARED_CACHE(ledger_measure_ids, GLOBAL_PROC_REF(dq_build_ledger_measure
 	holder.on_slot_changed(new_id, thing, TRUE)
 	OM_EMIT(holder, /datum/om/event/slot_inserted, thing, new_id)
 	om_slot_entered(holder, thing, def)
+	activations_slot_enter(thing, holder, new_id)
 	if(thing.has_slot_hooks)
 		thing.on_slotted(holder, new_id, flags)
 

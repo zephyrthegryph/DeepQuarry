@@ -103,7 +103,7 @@ CAPABILITIES(/datum/e0_species/shifter, e0_phase_shift())
 /// handler writes its A.source into (proof 2).
 /mob/living/simple_mob/e0_fixture
 	name = "e0 fixture mob"
-	has_hands = FALSE
+	has_hands = TRUE // a body that can hold things: its own hands() (below) is gated by it
 	var/datum/e0_species/species
 	var/dark_energy = 100
 	/// Written by the reflect handler of the test-only mirror capability: the winning activation source.
