@@ -33,7 +33,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, splash_mobs = TRUE, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, spray_mobs = TRUE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -223,13 +223,11 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 /// The clicked thing is sprayed at: not what the container rests on, and not a tap with its top shut (which fills it).
 /datum/capability/lib/reagent_container/proc/target_sprayable(datum/act/op/A)
-	if(!spray_mobs && ismob(A.target) && A.actor?.Adjacent(A.target))
-		return FALSE // `spray_mobs` = FALSE: a person next to the sprayer is not sprayed by a click on them (a person at a distance is)
 	return !rests_on_target(A.target) && !target_is_tap(A)
 
 /// The clicked thing can be splashed: it is not poured into, not drawn from, and not something this container is put on.
 /datum/capability/lib/reagent_container/proc/target_splashable(datum/act/op/A)
-	return (splash_mobs || !ismob(A.target)) && !target_pourable(A) && !target_is_tap(A) && !rests_on_target(A.target)
+	return !target_pourable(A) && !target_is_tap(A) && !rests_on_target(A.target)
 
 /// The container is put on or in the clicked thing (a table, a machine that takes it): it is never poured or splashed over it.
 /datum/capability/lib/reagent_container/proc/rests_on_target(atom/target)

@@ -260,3 +260,31 @@
 	TEST_ASSERT_NULL(cap_of(bare, CAP_REAGENT_CONTAINER), "a subtype without the bundle has no nested capability")
 	TEST_ASSERT_NULL(op_plan_for(bare, "reagent_container.set_amount"), "and none of its ops")
 	TEST_ASSERT_NULL(bare.reagents, "and no holder made by it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// An item that does no harm reaches its own afterattack when it is clicked on a person next to the clicker (attack() did nothing: its answer is a
+// failure, not a verdict that the click was used); an item whose attack() used the click does not.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_harmless_item_reaches_afterattack_on_a_mob
+
+/datum/unit_test/dq_p2_engine/a_harmless_item_reaches_afterattack_on_a_mob/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human)
+	var/obj/item/p2_afterattacker/plain = allocate(/obj/item/p2_afterattacker)
+	var/obj/item/p2_afterattacker/attacker/using = allocate(/obj/item/p2_afterattacker/attacker)
+	for(var/stance in list(I_HELP, I_DISARM, I_GRAB, I_HURT))
+		var/before = plain.reached
+		H.drop_item()
+		H.put_in_active_hand(plain)
+		H.set_use_stance(stance)
+		H.next_click = 0
+		input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
+		TEST_ASSERT_EQUAL(plain.reached - before, 1, "in the [stance] stance a click on a person reaches the harmless item's afterattack")
+	H.set_use_stance(I_HELP)
+	H.drop_item()
+	H.put_in_active_hand(using)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, other, null, null, "left=1"))
+	TEST_ASSERT_EQUAL(using.reached, 0, "an item whose attack() used the click does not reach afterattack")
+	H.set_use_stance(I_HELP)

@@ -41,8 +41,7 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 
 // A glass container is a reagent_container() whose settings are the vars of the type (volume, the amount a transfer moves and the range a person may
 // set it in, prefill); everything under /glass is one but the rag, which has its own rules. It starts with its lid off. It is poured into an open holder of liquid (not onto what it is put on: a table, a machine that
-// takes it), drawn from a closed tank, splashed over things in a hostile stance (and not over a mob: the old click of a mob never reached a splash),
-// drunk from yourself and fed to others in three seconds. A closed one milks the venom of a creature.
+// takes it), drawn from a closed tank, splashed over things in a hostile stance, drunk from yourself and fed to others in three seconds. A closed one milks the venom of a creature.
 CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 
 /datum/capability/def/glass_container/entries()
@@ -58,8 +57,7 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			taps = list(/obj/structure/reagent_dispensers), \
 			rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
 			feed = TRUE, \
-			examine_range = 2, \
-			splash_mobs = FALSE),
+			examine_range = 2),
 		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 

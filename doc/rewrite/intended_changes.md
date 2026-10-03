@@ -37,9 +37,10 @@ Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, writt
 Pinned by `code/modules/unit_tests/dq_p2_reagent_behaviour.dm` (written and green on the legacy code first; the converted code passes the same tests, only
 its adapter block changed). Rags are not converted yet: they inherit the label and dip handling and keep their own rules.
 
-* **A hostile click on a person with an open container still does nothing.** The old splash of a person (and of yourself) has been unreachable since the
-  interaction migration (the container's attack handler consumed the click before its afterattack ran); the tests pin that, and the converted container
-  keeps it (`splash_mobs = FALSE` in `glass_container()`). Letting a hostile click splash a person is that one param.
+* **A hostile click on a person with an open container splashes them again.** It had been unreachable on master since the interaction migration: an item
+  that does no harm answered its `attack()` with `ITEM_INTERACT_FAILURE`, and `interaction_hit` read that as "the click was used", so the item's
+  `afterattack` never ran on an adjacent mob (sprays, splashes, syringes, droppers). Engine fix in `code/_onclick/item_attack.dm` with a test
+  (`dq_p2_engine/a_harmless_item_reaches_afterattack_on_a_mob`); spray bottles now spray a person next to the sprayer as they did before the migration.
 * **A splash empties the container.** The old splash over a floor or an object sometimes left a random part of the contents behind (the splash spilled a
   random share on the floor and then failed to move the rest); the commit spends exactly what it reserved.
 * **An empty label clears the label** (the name goes back to the bare name); the old code left the name as "beaker ()".
@@ -58,7 +59,7 @@ its adapter block changed). Rags are not converted yet: they inherit the label a
 ## Engine and library pieces the glass containers added
 
 * `reagent_container()` settings may be var names (`volume = nameof(volume)`), plus `starts_open`, `transfer_default/min/max`, `starts`, `taps`, `rests_on`,
-  `feed`/`feed_wait`, `examine_range`, `splash_mobs` (engine_contracts.md, "Reagent containers"). Tests: `dq_lib/reagent_*`.
+  `feed`/`feed_wait`, `examine_range`, `settable`, `spray_cooldown`, `shows_contents` (engine_contracts.md, "Reagent containers"). Tests: `dq_lib/reagent_*`.
 * A legacy entry interaction answers the input its handler did (`op_legacy_fits()`): a held item is no longer offered the empty-hand touches of its target.
   A turf is reachable as the target of an op (`reach_surface()`). Tests: `dq_p2_engine/legacy_entries_fit_the_input`, `an_op_at_a_turf_is_reached`.
 * `req_reagents(units, more =)`, `reagent_transfer_amount()`, `atom/legacy_transfer_amount()`; `atom/is_open_container()` follows the capability's lid.

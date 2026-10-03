@@ -60,9 +60,9 @@
 
 /// A click on a floor sprays one amount out as a puff, and a hostile one the same. A click on a person sprays nothing: the attack handler of a person
 /// ends the click before the bottle's own is reached (as it does for any item that does no harm), so a person is not sprayed by a click on them.
-/datum/unit_test/dq_p2_reagents/spray_puffs_at_a_floor_and_leaves_a_person_alone
+/datum/unit_test/dq_p2_reagents/spray_puffs_at_a_floor_and_at_a_person
 
-/datum/unit_test/dq_p2_reagents/spray_puffs_at_a_floor_and_leaves_a_person_alone/run_gate()
+/datum/unit_test/dq_p2_reagents/spray_puffs_at_a_floor_and_at_a_person/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/spray/cleaner/S = allocate(/obj/item/reagent_containers/spray/cleaner)
 	var/turf/T = get_turf(H)
@@ -72,11 +72,11 @@
 	TEST_ASSERT(rc_puffs(T) > 0, "and it is in the air as a puff")
 	var/mob/living/carbon/human/other = rc_actor()
 	rc_click(H, other, S, I_HELP, FALSE)
-	TEST_ASSERT_EQUAL(rc_units(S), 240, "a person clicked on is not sprayed")
+	TEST_ASSERT_EQUAL(rc_units(S), 230, "a person clicked on is sprayed")
 	rc_click(H, other, S, I_HURT, FALSE)
-	TEST_ASSERT_EQUAL(rc_units(S), 240, "nor in a hostile stance")
+	TEST_ASSERT_EQUAL(rc_units(S), 220, "also in a hostile stance")
 	rc_click(H, T, S, I_HURT, FALSE)
-	TEST_ASSERT_EQUAL(rc_units(S), 230, "a hostile click on the floor sprays the same amount")
+	TEST_ASSERT_EQUAL(rc_units(S), 210, "a hostile click on the floor sprays the same amount")
 
 /// A spray bottle works at range: a click on a far floor sprays one amount.
 /datum/unit_test/dq_p2_reagents/spray_works_at_range

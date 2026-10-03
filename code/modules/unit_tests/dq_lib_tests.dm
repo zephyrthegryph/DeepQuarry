@@ -251,7 +251,7 @@
 		var/took = answered?.outcome == ACT_COMMITTED
 		TEST_ASSERT_EQUAL(took, wanted, "an answer of [value] is accepted: [wanted]")
 
-/// A container does not pour into or splash over what it is put on, and not over a mob; a click on a mob feeds it after the wait.
+/// A container does not pour into or splash over what it is put on; a hostile click on a mob splashes it; a click on a mob feeds it after the wait.
 /datum/unit_test/dq_lib/reagent_rests_on_things_and_feeds_after_a_wait
 
 /datum/unit_test/dq_lib/reagent_rests_on_things_and_feeds_after_a_wait/run_gate()
@@ -266,8 +266,10 @@
 	var/datum/op_result/hostile_table = test_click(H, table, jug)
 	TEST_ASSERT(!hostile_table || !findtext(hostile_table.key, "reagent_container."), "nor is a hostile one a splash")
 	var/datum/op_result/hostile_person = test_click(H, patient, jug)
-	TEST_ASSERT(!hostile_person || !findtext(hostile_person.key, "reagent_container."), "a hostile click on a person is not a splash when the container says splash_mobs = FALSE")
+	TEST_ASSERT_EQUAL(hostile_person?.key, "reagent_container.splash", "a hostile click on a person splashes them")
 	H.set_use_stance(I_HELP)
+	jug.reagents.clear_reagents()
+	jug.reagents.add_reagent(REAGENT_ID_WATER, 30)
 	var/before = patient.ingested.total_volume
 	var/datum/op_result/feeding = test_click(H, patient, jug)
 	TEST_ASSERT_EQUAL(feeding?.key, "reagent_container.feed", "a click on another person feeds them")

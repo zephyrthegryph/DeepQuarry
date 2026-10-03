@@ -415,17 +415,15 @@
 
 /// A hostile click on a person does nothing with an open container: the attack handler takes the click, and the old splash of a person
 /// (and of yourself) is never reached. A help click feeds instead (tested below).
-/datum/unit_test/dq_p2_reagents/hostile_click_on_a_person_splashes_nothing
+/datum/unit_test/dq_p2_reagents/hostile_click_on_a_person_splashes_them
 
-/datum/unit_test/dq_p2_reagents/hostile_click_on_a_person_splashes_nothing/run_gate()
+/datum/unit_test/dq_p2_reagents/hostile_click_on_a_person_splashes_them/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/mob/living/carbon/human/victim = rc_actor()
 	var/obj/item/reagent_containers/C = rc_filled(/obj/item/reagent_containers/glass/beaker, 40)
 	var/before = victim.ingested.total_volume
 	rc_click(H, victim, C, I_HURT)
-	TEST_ASSERT_EQUAL(C.reagents.total_volume, 40, "a person clicked in a hostile stance: nothing leaves the beaker")
-	rc_click(H, H, C, I_HURT)
-	TEST_ASSERT_EQUAL(C.reagents.total_volume, 40, "yourself clicked in a hostile stance: nothing leaves either")
+	TEST_ASSERT(C.reagents.total_volume < 40, "a person clicked in a hostile stance is splashed: the beaker loses some")
 	TEST_ASSERT_EQUAL(victim.ingested.total_volume, before, "and nobody swallows anything")
 
 // ---------------------------------------------------------------------------------------------------------------------

@@ -30,7 +30,6 @@ CAPABILITIES(/obj/item/reagent_containers/spray, \
 		spray = TRUE, \
 		settable = FALSE, \
 		shows_contents = FALSE, \
-		spray_mobs = FALSE, \
 		transfer_default = nameof(amount_per_transfer_from_this), \
 		taps = list(/obj/structure/reagent_dispensers), \
 		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart)), \

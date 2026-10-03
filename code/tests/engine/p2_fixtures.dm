@@ -205,6 +205,24 @@ CAPABILITIES(/obj/p2_bundled, \
 CAPABILITIES(/obj/p2_bundled/stripped, \
 	without(CAP_P2_BUNDLE))
 
+// ---- afterattack on a mob ----
+
+/// An item that does no harm and does its work in afterattack (a spray, a syringe), counting how often it did.
+/obj/item/p2_afterattacker
+	name = "p2 afterattacker"
+	force = 0
+	var/reached = 0
+
+/obj/item/p2_afterattacker/afterattack(atom/target, mob/user, proximity_flag, click_parameters, stance = I_HURT)
+	reached++
+	return
+
+/// The same, but its attack() takes the click (what a beaker feeding somebody does).
+/obj/item/p2_afterattacker/attacker
+
+/obj/item/p2_afterattacker/attacker/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
+	return ITEM_INTERACT_SUCCESS
+
 /// The same box, listening for a slash.
 /obj/machinery/p2_box/slasher
 	var/slashed = 0

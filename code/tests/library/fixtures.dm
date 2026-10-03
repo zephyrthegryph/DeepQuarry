@@ -46,7 +46,7 @@ CAPABILITIES(/obj/item/lib_fixture/syringe, \
 
 CAPABILITIES(/obj/item/lib_fixture/jug, \
 	reagent_container(volume = nameof(capacity), transfer_default = nameof(per_transfer), transfer_min = nameof(least), transfer_max = nameof(most), \
-		starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1, splash_mobs = FALSE))
+		starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1))
 
 /// A jug that starts with 30 units of water.
 /obj/item/lib_fixture/jug/stocked
