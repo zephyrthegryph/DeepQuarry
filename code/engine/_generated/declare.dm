@@ -4400,7 +4400,7 @@
 	into += entry_line(58)
 	into += list(global.storage( space = nameof(/obj/item/storage::max_storage_space), slots = nameof(/obj/item/storage::storage_slots), max_size = ITEMSIZE_SMALL, empties = nameof(/obj/item/storage::allow_quick_empty), gather_toggle = nameof(/obj/item/storage::allow_quick_gather), special = nameof(/obj/item/storage::special_handling), pocketable = nameof(/obj/item/storage::pocketable), quiet = list(/obj/item/hand_labeler)))
 	into += entry_line(67)
-	into += list(global.op("feed_replacer", global.item(/obj/item/lightreplacer), global.priority(global.above("storage.put_in")), global.when(PROC_REF(has_bulbs_for)), global.label("Refill the light replacer"), global.then(PROC_REF(feed_replacer))))
+	into += list(global.op("feed_replacer", global.item(/obj/item/lightreplacer), global.when(PROC_REF(has_bulbs_for)), global.label("Refill the light replacer"), global.then(PROC_REF(feed_replacer))))
 	into += entry_line(69)
 	into += list(global.owns_one(nameof(hud), /datum/storage_hud))
 
@@ -4432,7 +4432,7 @@
 	into += entry_line(95)
 	into += list(global.configure(global.storage(refuses = list(/obj/item/storage/backpack/holding))))
 	into += entry_line(96)
-	into += list(global.op("conflict", global.item(/obj/item/storage/backpack/holding), global.priority(global.above("storage.put_in")), global.label("Put in"), global.then(PROC_REF(bluespace_conflict))))
+	into += list(global.op("conflict", global.item(/obj/item/storage/backpack/holding), global.label("Put in"), global.then(PROC_REF(bluespace_conflict))))
 
 /// CAPABILITIES(/obj/item/storage/backpack/holding/duffle) at code/game/objects/items/weapons/storage/backpack.dm:75
 /obj/item/storage/backpack/holding/duffle/declared_entries(list/into)
@@ -4894,7 +4894,7 @@
 	into += entry_line(467)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/flame/match))))
 	into += entry_line(468)
-	into += list(global.op("strike", global.item(/obj/item/flame/match), global.priority(global.above("storage.put_in")), global.label("Strike"), global.then(PROC_REF(strike_match))))
+	into += list(global.op("strike", global.item(/obj/item/flame/match), global.label("Strike"), global.then(PROC_REF(strike_match))))
 
 /// CAPABILITIES(/obj/item/storage/box/mixedglasses) at code/modules/food/drinkingglass/glass_boxes.dm:19
 /obj/item/storage/box/mixedglasses/declared_entries(list/into)
@@ -5146,7 +5146,7 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/bot/medbot.dm", 497, /obj/item/storage/firstaid)
 	into += entry_line(498)
-	into += list(global.op("add_arm", global.inputs(global.item(/obj/item/robot_parts/l_arm), global.item(/obj/item/robot_parts/r_arm), global.item(/obj/item/organ/external/arm)), global.priority(global.above("storage.put_in")), global.when(global.req(PROC_REF(arm_is_robotic))), global.label("Add robot arm"), global.needs(req_storage_empty(because = MSG(medbot/empty_first))), global.then(PROC_REF(add_robot_arm))))
+	into += list(global.op("add_arm", global.inputs(global.item(/obj/item/robot_parts/l_arm), global.item(/obj/item/robot_parts/r_arm), global.item(/obj/item/organ/external/arm)), global.when(global.req(PROC_REF(arm_is_robotic))), global.label("Add robot arm"), global.needs(req_storage_empty(because = MSG(medbot/empty_first))), global.then(PROC_REF(add_robot_arm))))
 
 /// CAPABILITIES(/obj/item/storage/firstaid/surgery) at code/game/objects/items/weapons/storage/firstaid.dm:68
 /obj/item/storage/firstaid/surgery/declared_entries(list/into)
@@ -5182,7 +5182,7 @@
 	into += entry_line(27)
 	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
 	into += entry_line(28)
-	into += list(global.extend("lock.toggle", global.needs(global.req(PROC_REF(lock_works), because = MSG(lockbox/broken))), global.priority(global.above("storage.put_in"))))
+	into += list(global.extend("lock.toggle", global.needs(global.req(PROC_REF(lock_works), because = MSG(lockbox/broken)))))
 	into += entry_line(29)
 	into += list(global.extend("storage.put_in", global.when(global.cond_not(LOCK_LOCKED))))
 	into += entry_line(30)
@@ -5190,7 +5190,7 @@
 	into += entry_line(31)
 	into += list(global.on_change(LOCK_LOCKED, ANY, global.then(PROC_REF(lock_changed))))
 	into += entry_line(32)
-	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.priority(global.above("storage.put_in")), global.when(PROC_REF(blade_can_slice)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.when(PROC_REF(blade_can_slice)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
 	into += entry_line(33)
 	into += list(global.op("locked_click", global.item(/obj/item), global.priority(global.below("storage.put_in")), global.when(LOCK_LOCKED), global.label("Put in"), global.says(MSG(lockbox/locked)), global.passes()))
 
@@ -5250,7 +5250,7 @@
 	into += entry_line(139)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/pill, /obj/item/dice, /obj/item/paper), max_size = ITEMSIZE_TINY)))
 	into += entry_line(144)
-	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.priority(global.above("storage.put_in")), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
+	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
 
 /// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:23
 /obj/item/storage/pouch/declared_entries(list/into)
@@ -5386,7 +5386,7 @@
 	into += entry_line(49)
 	into += list(global.extend("storage.refuse", global.when(global.cond_not(nameof(locked)))))
 	into += entry_line(50)
-	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.priority(global.above("storage.put_in")), global.when(nameof(locked)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.when(nameof(locked)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
 	into += entry_line(51)
 	into += list(global.op("locked_click", global.item(/obj/item), global.priority(global.below("storage.put_in")), global.when(nameof(locked)), global.label("Put in"), global.passes()))
 	into += entry_line(52)
@@ -5489,7 +5489,7 @@
 	..(into)
 	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 336, /obj/item/storage/toolbox/mechanical)
 	into += entry_line(337)
-	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.priority(global.above("storage.put_in")), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
+	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
 /// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:919
 /obj/item/storage/trinketbox/declared_entries(list/into)

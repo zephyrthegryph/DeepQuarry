@@ -141,7 +141,7 @@ CAPABILITIES(/obj/item/storage/pill_bottle)
 		/obj/item/dice,
 		/obj/item/paper), max_size = ITEMSIZE_TINY))
 	
-	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), priority(above("storage.put_in")), label("Label"),
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label"),
 		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
 
 /// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).

@@ -64,7 +64,7 @@ CAPABILITIES(/obj/item/storage)
 		special = nameof(/obj/item/storage::special_handling),
 		pocketable = nameof(/obj/item/storage::pocketable),
 		quiet = list(/obj/item/hand_labeler))
-	op("feed_replacer", item(/obj/item/lightreplacer), priority(above("storage.put_in")), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
+	op("feed_replacer", item(/obj/item/lightreplacer), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
 		then(PROC_REF(feed_replacer)))
 	owns_one(nameof(hud), /datum/storage_hud)
 

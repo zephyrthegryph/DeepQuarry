@@ -44,7 +44,7 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 
 /datum/capability/lib/storage/entries()
 	return list(
-		op("gather", item(/obj/item/storage), priority(above("storage.put_in")), when(CAP_PROC(gathers_here)), label("Gather"), \
+		op("gather", item(/obj/item/storage), when(CAP_PROC(gathers_here)), label("Gather"), \
 			then(CAP_PROC(gather_here)), passes()),
 		op("put_in", item(/obj/item), when(CAP_PROC(takes_it)), label("Put in"), \
 			needs(req(CAP_PROC(fits), because = CAP_PROC(unfit_reason))), \

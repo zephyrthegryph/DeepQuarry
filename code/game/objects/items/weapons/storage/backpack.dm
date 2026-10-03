@@ -93,7 +93,7 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
 
 CAPABILITIES(/obj/item/storage/backpack/holding)
 	configure(storage(refuses = list(/obj/item/storage/backpack/holding)))
-	op("conflict", item(/obj/item/storage/backpack/holding), priority(above("storage.put_in")), label("Put in"), then(PROC_REF(bluespace_conflict)))
+	op("conflict", item(/obj/item/storage/backpack/holding), label("Put in"), then(PROC_REF(bluespace_conflict)))
 
 /// Two bags of holding destroy the one put in.
 /obj/item/storage/backpack/holding/proc/bluespace_conflict(datum/act/op/A)
