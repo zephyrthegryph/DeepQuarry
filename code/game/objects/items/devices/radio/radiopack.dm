@@ -25,13 +25,17 @@ DECLARE_INTERACTIONS(/obj/item/bluespaceradio, INTERACT_HAND(null, PROC_REF(inte
 	return FALSE
 
 /obj/item/bluespaceradio/MouseDrop()
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native backpack dragging supplies the initiating actor through BYOND usr.
+	drag_backpack_with_actor(user)
+
+/obj/item/bluespaceradio/proc/drag_backpack_with_actor(mob/user)
 	if(ismob(loc))
-		if(!CanMouseDrop(src))
+		if(!CanMouseDrop(src, user))
 			return
 		var/mob/M = loc
 		if(!M.unEquip(src))
 			return
-		add_fingerprint(usr)
+		add_fingerprint(user)
 		M.put_in_any_hand_if_possible(src)
 
 //Subspace Radio Handset

@@ -116,9 +116,7 @@ usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/devices/defib.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/devices/personal_shield_generator.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/devices/radio/radiopack.dm	add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/ghost_hunting/weapons.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
