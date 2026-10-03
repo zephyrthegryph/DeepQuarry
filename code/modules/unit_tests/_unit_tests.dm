@@ -817,6 +817,7 @@
 #include "interim_slime_extract_sticky_enhancer.dm"
 #include "interim_floor_lamp_sticky_shade.dm"
 #include "interim_camera_monitor_actor.dm"
+#include "interim_dragon_projectile_range_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
