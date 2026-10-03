@@ -705,6 +705,8 @@
 #include "interim_hoist_detach_actor.dm"
 #include "interim_shield_armor_init.dm"
 #include "interim_gibber_init.dm"
+#include "interim_gaiter_sticky_mask.dm"
+#include "interim_gaiter_mask_replacement_refund.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

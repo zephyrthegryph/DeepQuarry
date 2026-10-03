@@ -488,11 +488,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 /// Old attackby: tuck a breath mask behind the gaiter. Always falls through, as the old ..() did.
 /obj/item/clothing/accessory/gaiter/proc/gaiter_tuck_mask_item(mob/user, obj/item/I, datum/interaction/interaction)
 	if(istype(I, /obj/item/clothing/mask/breath))
+		if(!own_bring_in(src, nameof(breathmask), I, null, user, TRUE, null, FALSE))
+			return FALSE
+		if(breathmask())
+			gaiter_remove_mask_alt(user, null, null)
 		to_chat(user, span_notice("You tuck [I] behind [src]."))
 		rel_set(src, nameof(breathmask), I)
 		breath_masked = TRUE
-		user.drop_from_inventory(I, drop_location())
-		I.forceMove(src)
 		item_flags &= ~FLEXIBLEMATERIAL
 	return FALSE
 
