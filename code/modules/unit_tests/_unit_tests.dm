@@ -808,6 +808,7 @@
 #include "interim_resist_alert_actor.dm"
 #include "interim_cat_box_cleanup.dm"
 #include "interim_cockroach_death_cleanup.dm"
+#include "interim_metroid_evolution_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
