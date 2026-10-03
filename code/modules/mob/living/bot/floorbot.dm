@@ -334,7 +334,7 @@ UI_ACT_PROC(/mob/living/bot/floorbot, ui_act_bridgemode)
 
 // Ten floor tiles on an empty toolbox start a floorbot; a toolbox with something in it takes them like any storage.
 CAPABILITIES(/obj/item/storage/toolbox/mechanical)
-	op("add_tiles", item(/obj/item/stack/tile/floor), priority(above("storage.put_in")), when(req_storage_empty()), label("Add tiles"), then(PROC_REF(add_floorbot_tiles)))
+	op("add_tiles", item(/obj/item/stack/tile/floor), when(req_storage_empty()), label("Add tiles"), then(PROC_REF(add_floorbot_tiles)))
 
 /obj/item/storage/toolbox/mechanical/proc/add_floorbot_tiles(datum/act/op/A)
 	var/mob/living/user = A.actor

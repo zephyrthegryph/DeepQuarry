@@ -39,6 +39,8 @@
 	var/dropped_cond
 	/// The tier it sits at.
 	var/tier = OP_PRIORITY_NORMAL
+	/// The type its item() or stack() binding takes, or null.
+	var/item_type
 	var/seq = 0
 
 /// What one resolution found: every candidate with the filter that dropped it, the ordered survivors and the winner.
@@ -316,6 +318,8 @@
 	C.activation = granted_by // ALLOW(ownership): a transient record of one resolution: dropped with it
 	C.cap = granted_by ? granted_by.def : P.owner_def
 	C.tier = P.tier
+	if(B.bind_kind == BIND_ITEM || B.bind_kind == BIND_STACK)
+		C.item_type = B.args["type"]
 	C.seq = seq
 	R.all += C // ALLOW(ownership): a transient record of one resolution: dropped with it
 	op_cand_pass1(R, C, gesture)
@@ -466,7 +470,7 @@
 	var/static/list/depth = list(GATE_ACTOR = 1, GATE_ORIGIN = 2, GATE_PROVIDER = 3, GATE_REACH = 4)
 	return (depth[A.dropped_by] || 0) > (depth[B.dropped_by] || 0)
 
-/// Sorts the survivors: intent rank, tier, then target before held before actor, then declaration order; then relative priorities.
+/// Sorts the survivors: intent rank, tier, then target before held before actor, then declaration order; then relative priorities (explicit, else op_default_anchor).
 /proc/op_resolution_sort(datum/op_resolution/R)
 	var/list/sorted = list()
 	for(var/datum/op_cand/C as anything in R.ordered)
@@ -477,21 +481,41 @@
 				break
 		sorted.Insert(position, C)
 	// priority(above(key)) / priority(below(key)): moved next to the named candidate whatever the tiers
+	var/has_catch_all = FALSE
+	for(var/datum/op_cand/O as anything in sorted)
+		if(O.oplan.key == OP_KEY_STORAGE_PUT_IN)
+			has_catch_all = TRUE
+			break
 	for(var/datum/op_cand/C as anything in sorted.Copy())
 		var/list/rel = C.oplan.priority_rel
-		if(!length(rel))
-			continue
 		var/datum/op_cand/anchor = null
-		for(var/datum/op_cand/O as anything in sorted)
-			if(O != C && O.oplan.key == rel[2])
-				anchor = O
-				break
+		var/placement = "above"
+		if(length(rel))
+			placement = rel[1]
+			for(var/datum/op_cand/O as anything in sorted)
+				if(O != C && O.oplan.key == rel[2])
+					anchor = O
+					break
+		else if(has_catch_all && C.item_type)
+			anchor = op_default_anchor(C, sorted)
 		if(!anchor)
 			continue
 		sorted -= C
 		var/at = sorted.Find(anchor)
-		sorted.Insert(rel[1] == "above" ? at : at + 1, C)
+		sorted.Insert(placement == "above" ? at : at + 1, C)
 	R.ordered = sorted
+
+/// The default relative priority of a candidate, so an op never needs priority(above(key)) just to hold its place in a menu or a click (an
+/// explicit priority() still says an exception). Today one rule: the storage catch-all "storage.put_in" takes any item, so an op of the same holder
+/// for a narrower item (strike(item(match)), label(item(pen)), a gather of another storage) answers just above it, whatever the tiers. Returns
+/// the candidate to sit above, or null.
+/proc/op_default_anchor(datum/op_cand/C, list/sorted)
+	for(var/datum/op_cand/O as anything in sorted)
+		if(O.oplan.key != OP_KEY_STORAGE_PUT_IN || O.holder != C.holder || O == C || !O.item_type || O.item_type == C.item_type)
+			continue
+		if(ispath(C.item_type, O.item_type))
+			return O
+	return null
 
 /// Does candidate A come before B?
 /proc/op_cand_precedes(datum/op_cand/A, datum/op_cand/B)

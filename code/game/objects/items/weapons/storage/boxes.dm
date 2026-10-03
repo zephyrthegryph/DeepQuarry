@@ -465,7 +465,7 @@ CAPABILITIES(/obj/item/storage/box/snappops)
 
 CAPABILITIES(/obj/item/storage/box/matches)
 	configure(storage(accepts = list(/obj/item/flame/match)))
-	op("strike", item(/obj/item/flame/match), priority(above("storage.put_in")), label("Strike"), then(PROC_REF(strike_match)))
+	op("strike", item(/obj/item/flame/match), label("Strike"), then(PROC_REF(strike_match)))
 
 /// A match struck on the box: it never goes in, and it may light.
 /obj/item/storage/box/matches/proc/strike_match(datum/act/op/A)
