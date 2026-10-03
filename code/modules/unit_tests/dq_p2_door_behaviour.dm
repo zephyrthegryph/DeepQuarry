@@ -2312,6 +2312,8 @@
 	p2_door_set_power(sensor, TRUE)
 	sensor.master_tag = "p2_controller"
 	sensor.id_tag = "p2_sensor"
+	sensor.previousPressure = null // it read once when it was made, before it had its tag
+	sensor.sample_pressure()
 	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
 	click(H, sensor, null)
 	var/cycled = FALSE

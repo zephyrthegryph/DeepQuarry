@@ -184,11 +184,10 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 
 // ---- what an airlock sensor is, declared ----
 //
-// It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes, and a hand
-// on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
+// It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes: it waits on a gas
+// watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
 CAPABILITIES(/obj/machinery/airlock_sensor, \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(sample_pressure)), when = nameof(on)), \
 	multitool_settings(list( \
 		list("Master Tag", "master_tag", "text", 30), \
 		list("ID Tag", "id_tag", "text", 30), \
@@ -207,9 +206,35 @@ CAPABILITIES(/obj/machinery/airlock_sensor, \
 	flick("airlock_sensor_cycle", src)
 	return OP_OK
 
+/// Waits for the air: one gas watch on the mixture here, woken only when the reading (to a tenth of a kilopascal) would be new, so a change that leaves
+/// it identical cannot affect a controller or the icon.
+/obj/machinery/airlock_sensor/proc/register_gas_dependencies()
+	var/datum/gas_mixture/environment = return_air()
+	om_watch_arm_condition(src, "gas", list(environment?.arena_id()), GAS_DEPENDENCY_PRESSURE, om_callable(src, PROC_REF(gas_wake_condition)), wake_callback = om_callable(src, PROC_REF(wake_from_gas)))
+
+/obj/machinery/airlock_sensor/proc/gas_wake_condition()
+	var/datum/gas_mixture/environment = return_air()
+	return on && environment && round(environment.return_pressure(), 0.1) != previousPressure
+
+/obj/machinery/airlock_sensor/proc/unregister_gas_dependencies()
+	om_watch_disarm(src, "gas")
+
+/// The reading changed: it is read and sent, and the sensor waits again.
+/obj/machinery/airlock_sensor/proc/wake_from_gas()
+	unregister_gas_dependencies()
+	sample_pressure()
+
+/// A sensor on the map reads once when the world is up and then waits.
+/obj/machinery/airlock_sensor/on_materialize()
+	. = ..()
+	sample_pressure()
+
 /// Reads the pressure here: a reading that differs from the last (to a tenth of a kilopascal) is sent to the controller, and below 80% of an
 /// atmosphere the sensor shows its alert.
-/obj/machinery/airlock_sensor/proc/sample_pressure(datum/act/A)
+/obj/machinery/airlock_sensor/proc/sample_pressure()
+	if(!on)
+		unregister_gas_dependencies()
+		return
 	// return_air() is guaranteed non-null (empty vacuum mix on airless tiles): a sensor on a vacuum dock tile reports 0 pressure.
 	var/datum/gas_mixture/air_sample = return_air()
 	var/pressure = round(air_sample.return_pressure(), 0.1)
@@ -228,6 +253,7 @@ CAPABILITIES(/obj/machinery/airlock_sensor, \
 		alert = (pressure < ONE_ATMOSPHERE*0.8)
 
 		update_icon()
+	register_gas_dependencies()
 
 APPEARANCE_TEMPLATE(/obj/machinery/airlock_sensor, "airlock_sensor_{on?@appearance_mode:off}")
 DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(APPEARANCE_ICON_STATE = "airlock_sensor_open")))
