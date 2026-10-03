@@ -170,9 +170,9 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 	if(istype(W,/obj/item/pen/crayon) || istype(W,/obj/item/stamp))
 		if(state in list (EMPTY_OPEN, FULL_OPEN, BLOODY_OPEN))
 			if(!crayon())
-				user.drop_item()
+				if(!own_bring_in(src, nameof(crayon), W, null, user, TRUE, null, FALSE))
+					return TRUE
 				rel_set(src, nameof(crayon), W)
-				crayon().forceMove(src)
 			//else: old fell through to a bare ..() (approximated as a no-op)
 
 		//else: old fell through to a bare ..() (approximated as a no-op)
@@ -236,6 +236,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 			set_state(EMPTY_CLOSED)
 		if(EMPTY_CLOSED)
 			set_state(EMPTY_OPEN)
+			eject_dye()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
 			own_take_all(src, nameof(washing))
@@ -244,7 +245,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 		if(FULL_CLOSED)
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, nameof(crayon))
+			eject_dye()
 			own_take_all(src, nameof(washing))
 			set_state(EMPTY_OPEN)
 		if(RUNNING)
@@ -261,7 +262,7 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 					mobs.gib()
 			for(var/atom/movable/O in washing)
 				O.forceMove(get_turf(src))
-			rel_clear(src, nameof(crayon))
+			eject_dye()
 			set_state(EMPTY_OPEN)
 			own_take_all(src, nameof(washing))
 
@@ -276,6 +277,13 @@ DECLARE_APPEARANCE(/obj/machinery/washing_machine, "panel_open", list("1" = list
 #undef BLOODY_OPEN
 #undef BLOODY_CLOSED
 #undef BLOODY_RUNNING
+
+/// Return the separate dye item whenever the washer is opened.
+/obj/machinery/washing_machine/proc/eject_dye()
+	var/obj/dye = crayon()
+	if(dye)
+		dye.forceMove(get_turf(src))
+	rel_clear(src, nameof(crayon))
 
 /// crayon (a relation view: it reads null once the target is deleted).
 /obj/machinery/washing_machine/proc/crayon() as /obj

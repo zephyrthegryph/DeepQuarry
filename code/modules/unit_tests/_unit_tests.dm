@@ -682,6 +682,8 @@
 #include "interim_cell_charger_sticky_cell.dm"
 #include "interim_spider_death_cleanup.dm"
 #include "interim_soulcatcher_hud_actor.dm"
+#include "interim_washer_sticky_dye.dm"
+#include "interim_washer_dye_ejection.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
