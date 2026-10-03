@@ -46,3 +46,5 @@ changes:
   - admin: "Administrative paper editing uses its intended writer and retains the editing user."
   - bugfix: "Supply talisman choices retain the invoking user across successive selections."
   - admin: "Event selection retains the user through queued choices."
+  - admin: "Variable-viewer type prompts retain the editing user."
+  - bugfix: "Cutting bedsheets and refastening signs preserve items that cannot be released."
