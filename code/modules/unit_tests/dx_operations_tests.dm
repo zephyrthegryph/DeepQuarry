@@ -17,7 +17,7 @@
 	. += cap_op("Remote", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), via = ROUTE_UI, needs = req_set(CAP_EMAGGED), action = ACT_PULL, key = "remote")
 	. += cap_op("Impossible", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), by = (1<<12), via = ROUTE_UI, needs = req_set(CAP_EMAGGED), action = ACT_PRY, key = "impossible")
 	. += cap_op("Bayed", TYPE_PROC_REF(/obj/cap_fixture/ops, fx_op), at = BAY_INTERIOR, action = ACT_EJECT, key = "bayed")
-	. += compartment(BAY_INTERIOR, door = CAP_PANEL_OPEN, heat = 0.25, gas = FALSE)
+	. += legacy_compartment(BAY_INTERIOR, door = CAP_PANEL_OPEN, heat = 0.25, gas = FALSE)
 
 /obj/cap_fixture/ops/reactions()
 	. = ..()
@@ -276,7 +276,7 @@
 	ctx.release()
 
 	// door = CAP_KEY and route_gate, on a boundary of their own.
-	var/datum/capability/compartment/keyed = compartment(BAY_CARGO, door = CAP_KEY, route_gate = req_clear(CAP_BROKEN))
+	var/datum/capability/compartment/keyed = legacy_compartment(BAY_CARGO, door = CAP_KEY, route_gate = req_clear(CAP_BROKEN))
 	ctx = op_ctx_take(H, F, null, dx_op_of(F, "bayed"))
 	TEST_ASSERT(!keyed.passes(ROUTE_PHYSICAL, ctx), "CAP_KEY: no access, no physical route")
 	TEST_ASSERT_EQUAL(ctx.reason, /datum/msg/req_no_access, "for want of access")
@@ -296,7 +296,7 @@
 
 /obj/item/dx_bay_holder/capabilities()
 	. = ..()
-	. += compartment(BAY_INTERIOR, heat = 0.25, radiation = 0.5, gas = FALSE)
+	. += legacy_compartment(BAY_INTERIOR, heat = 0.25, radiation = 0.5, gas = FALSE)
 
 /datum/om/relation/slot/dx_bay_holder_slot
 	holder = /obj/item/dx_bay_holder
