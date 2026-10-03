@@ -25,7 +25,7 @@
 //! Any doubt is a miss, never a stale hit: a changed file the partial parse reads differently
 //! (a macro from some other file, an `#ifdef`) simply fails step 3 and the full model runs.
 
-use std::collections::{BTreeMap, BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::sync::{Arc, Mutex};
 
 use serde::{Deserialize, Serialize};
@@ -211,6 +211,7 @@ struct Collected {
 
 fn collect(sem: &Sem) -> Collected {
     let mut c = Collected { shape: HashMap::new(), writes: HashMap::new(), types: HashMap::new() };
+    let mut procs: Vec<(dreammaker::objtree::ProcRef, &str)> = Vec::new();
     for ty in sem.objtree.iter_types() {
         let t = ty.get();
         let path = if t.path.is_empty() { "/".to_string() } else { t.path.clone() };
@@ -250,11 +251,15 @@ fn collect(sem: &Sem) -> Collected {
                 continue;
             }
             if let Some(f) = sem.file_of(p.get().location) {
-                let w = super::reads::proc_writes(p);
-                if !w.is_empty() {
-                    c.writes.entry(f.to_string()).or_default().extend(w);
-                }
+                procs.push((p, f));
             }
+        }
+    }
+    // The bodies of every proc, walked on plain threads (this runs under a memo init).
+    let sets: Vec<HashSet<String>> = super::par_map(&procs, |(p, _)| super::reads::proc_writes(*p));
+    for ((_, f), w) in procs.iter().zip(sets) {
+        if !w.is_empty() {
+            c.writes.entry(f.to_string()).or_default().extend(w);
         }
     }
     for v in c.shape.values_mut() {
