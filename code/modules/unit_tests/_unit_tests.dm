@@ -579,6 +579,7 @@
 #include "interim_girder_reinforcement_dose.dm"
 #include "interim_talisman_supply_actor.dm"
 #include "interim_statue_endings.dm"
+#include "interim_dropper_container_dose.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
