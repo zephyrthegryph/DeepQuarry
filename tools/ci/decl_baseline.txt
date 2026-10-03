@@ -127,7 +127,6 @@ init_service	code/game/machinery/doors/alarmlock.dm	rel_set(src, nameof(air_conn
 init_service	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
 init_service	code/game/machinery/magnet.dm	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 init_service	code/game/machinery/status_display.dm	GLOB.radio_service.add_object(src, frequency)
-init_service	code/game/objects/effects/landmarks_poi.dm	GLOB.poi_service.enqueue(src)
 init_service	code/game/objects/items/devices/radio/radio.dm	LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name], RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 init_service	code/game/turfs/simulated.dm	GLOB.planet_service.addTurf(src)
 init_service	code/game/turfs/unsimulated/planetary.dm	GLOB.planet_service.addTurf(src)

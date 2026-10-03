@@ -1,34 +1,30 @@
 /// Player tips procs and lists are defined under /code/modules/player_tips
-// The player tips world service (was SSplayer_tips): every 5 minutes it checks whether a tip is
-// due and sends it to every player.
-GLOBAL_DATUM_INIT(player_tips_service, /datum/world_service/player_tips, new)
-
-/datum/world_service/player_tips
+// The player tips system (was SSplayer_tips): every 5 minutes it checks whether a tip is due and sends it to every
+// player.
+SYSTEM_DEF(player_tips)
 	name = "Periodic Player Tips"
-	lane = /datum/om/behaviour/world/player_tips
+	periodic_runlevels = RUNLEVEL_GAME
+	VAR_PRIVATE/static/datum/player_tips/player_tips = new
+	VAR_PRIVATE/list/current_run
+	/// TRUE while a pass that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 
-	var/static/datum/player_tips/player_tips = new
-	var/list/current_run
+/datum/system/player_tips/reactions()
+	. = ..()
+	. += every(5 MINUTES, PROC_REF(send_tips), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/world_service/player_tips/service_step(resumed)
-	if(!resumed)
+/datum/system/player_tips/proc/send_tips(dt)
+	if(!resuming)
 		if(!player_tips.check_next_tip())
-			return TRUE
+			return STEP_DONE
 		player_tips.set_current_tip()
 		current_run = REGISTRY_COPY(REGISTRY_PLAYERS)
+	resuming = FALSE
 
 	for(var/mob/target_mob in current_run)
 		current_run -= target_mob
 		player_tips.send_tip(target_mob)
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
-
-/// player tips
-/datum/om/behaviour/world/player_tips
-	name = "world: player tips"
-	every = 5 MINUTES
-	runlevels = RUNLEVEL_GAME
-
-/datum/om/behaviour/world/player_tips/service()
-	return GLOB.player_tips_service
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE

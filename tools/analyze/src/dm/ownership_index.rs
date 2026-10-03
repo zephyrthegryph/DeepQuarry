@@ -82,6 +82,8 @@ pub const VALUE_TYPES: &[&str] =
 
 pub const OWN_FUNCS: &[&str] = &["own_set", "own_take", "own_add", "own_remove", "own_put", "own_take_member", "own_clear", "own_transfer"];
 pub const REL_FUNCS: &[&str] = &["rel_set", "rel_add", "rel_remove", "rel_clear", "rel_link", "rel_unlink"];
+/// The `rel_*` writers that replace `own_*` (the rest of `REL_FUNCS` write a true relation).
+pub const REL_WRITERS: &[&str] = &["rel_set", "rel_add", "rel_remove", "rel_clear"];
 pub const PROTO_FUNCS: &[&str] = &["proto_set", "proto_private"];
 pub const OBJLIST_WRITES: &[&str] = &["+=", "|=", "[]=", "LAZYADD", "LAZYOR", "LAZYSET", "LAZYDISTINCTADD", "LAZYINSERT", ".Add", ".Insert"];
 

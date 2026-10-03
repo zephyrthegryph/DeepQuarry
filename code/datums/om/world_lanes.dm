@@ -190,24 +190,6 @@
 /datum/om/behaviour/world/planets/service()
 	return GLOB.planet_service
 
-/// Mid-round POI placement (was SSpoints_of_interest, 1 s). On demand; runs in the lobby too.
-/datum/om/behaviour/world/pois
-	name = "world: points of interest"
-	every = 1 SECOND
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/pois/service()
-	return GLOB.poi_service
-
-/// Star movement behind moving overmap ships (was SSstarmover, every tick). On demand.
-/datum/om/behaviour/world/starmover
-	name = "world: star movement"
-	every = 1
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/starmover/service()
-	return GLOB.starmover_service
-
 /// A spreading turf conversion (was SSturf_cascade, 0.2 s). On demand.
 /datum/om/behaviour/world/turf_cascade
 	name = "world: turf cascade"
@@ -216,11 +198,3 @@
 /datum/om/behaviour/world/turf_cascade/service()
 	return GLOB.turf_cascade_service
 
-/// Automatic crew transfer votes and the shift's hard end (was SStransfer, 1 s).
-/datum/om/behaviour/world/transfer
-	name = "world: crew transfer"
-	every = 1 SECOND
-	runlevels = RUNLEVEL_GAME
-
-/datum/om/behaviour/world/transfer/service()
-	return GLOB.transfer_service

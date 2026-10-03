@@ -174,7 +174,7 @@ DECLARE_REPEAT(/datum/system/ticker, "reboot_countdown_delay", announce_countdow
 					mode.cleanup()
 					//call a transfer shuttle vote
 					to_chat(world, span_boldannounce("The round has ended!"))
-					GLOB.vote_service.start_vote(new /datum/vote/crew_transfer)
+					SSvote.start_vote(new /datum/vote/crew_transfer)
 
 		// FIXME: IMPROVE THIS LATER!
 		if(GAME_STATE_FINISHED)
