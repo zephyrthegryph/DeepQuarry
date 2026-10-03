@@ -77,7 +77,8 @@
 #define CAP_WALL_MACHINE 337
 #define CAP_WALL_MOUNT 338
 #define CAP_WELD_SHUT 339
-#define CAP_WIRES 340
+#define CAP_WIPER 340
+#define CAP_WIRES 341
 
 /// Source ids: SRC_<NAME> for each SOURCE_DEF(name).
 #define SRC_AI_CONTROL 1
