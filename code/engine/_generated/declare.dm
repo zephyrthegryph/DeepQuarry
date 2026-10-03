@@ -112,23 +112,6 @@
 /datum/capdef_decl/c_dose/spec()
 	return list(CAP_DOSE, /datum/capability/lib/dose, NONE, STACK, "dose", "route, dose_wait, pierces, cuts_into")
 
-/// CAPABILITY_TYPE(edible, CAP_EDIBLE) at code/library/reagents/edible.dm:23
-/datum/capability/lib/edible
-	var/bite = 1
-	var/taken = null
-	var/sound = null
-	var/survival = null
-	var/shut = null
-	var/feed_wait = 30
-	var/whole_wait = 50
-	var/other_wait = 30
-	var/fullness_limit = 6000
-/proc/edible(bite, taken, sound, survival, shut, feed_wait, whole_wait, other_wait, fullness_limit)
-	RETURN_TYPE(/datum/capability/lib/edible)
-	return cap_construct(CAP_EDIBLE, /datum/capability/lib/edible, list(bite, taken, sound, survival, shut, feed_wait, whole_wait, other_wait, fullness_limit), "bite, taken, sound, survival, shut, feed_wait, whole_wait, other_wait, fullness_limit")
-/datum/capdef_decl/c_edible/spec()
-	return list(CAP_EDIBLE, /datum/capability/lib/edible, NONE, STACK, "edible", "bite, taken, sound, survival, shut, feed_wait, whole_wait, other_wait, fullness_limit")
-
 /// CAPABILITY_TYPE(emag, CAP_EMAG) at code/library/access/emag.dm:20
 /datum/capability/lib/emag
 	var/parts = null
@@ -758,7 +741,7 @@
 	..(into)
 	into += entry_block("code/modules/food/kitchen/cooking_machines/container.dm", 29, /obj/item/reagent_containers/cooking_container)
 	into += entry_line(30)
-	into += list(global.op("insert", global.item(/obj/item), global.priority(OP_PRIORITY_PART), global.when(PROC_REF(takes_item)), global.label("Put in"), global.needs(global.req(PROC_REF(has_room), because = MSG(cooking_container/full))), global.then(PROC_REF(item_inserted))))
+	into += list(global.op("insert", global.item(/obj/item), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(takes_item))), global.label("Put in"), global.needs(global.req(PROC_REF(has_room), because = MSG(cooking_container/full))), global.then(PROC_REF(item_inserted))))
 	into += entry_line(32)
 	into += list(global.op("empty", global.inputs(global.hand(), global.menu()), global.answers(INTENT_TOGGLE), global.label("Empty container"), global.needs(global.req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), global.then(PROC_REF(emptied))))
 	into += entry_line(34)
@@ -791,11 +774,11 @@
 	into += entry_line(19)
 	into += list(global.owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL))
 	into += entry_line(20)
-	into += list(global.op("blood_test", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.when(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits)), global.label("Test the blood"), global.then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))))
+	into += list(global.op("blood_test", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.when(global.req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), global.label("Test the blood"), global.then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))))
 	into += entry_line(22)
 	into += list(global.op("rename", global.menu(), global.label("Rename food"), global.needs(global.req(PROC_REF(can_cook), because = MSG(food/cannot_cook))), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = global.computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)), global.then(PROC_REF(renamed))))
 	into += entry_line(25)
-	into += list(global.op("stuff", global.item(/obj/item/holder), global.priority(OP_PRIORITY_PART), global.when(PROC_REF(takes_micro)), global.label("Put in"), global.needs(global.req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), global.then(PROC_REF(micro_stuffed))))
+	into += list(global.op("stuff", global.item(/obj/item/holder), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(takes_micro))), global.label("Put in"), global.needs(global.req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), global.then(PROC_REF(micro_stuffed))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/food/condiment) at code/modules/food/food/condiment.dm:26
 /obj/item/reagent_containers/food/condiment/declared_entries(list/into)

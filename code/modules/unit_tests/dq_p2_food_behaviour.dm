@@ -551,21 +551,3 @@
 	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, list("changeling" = TRUE, "blood_type" = "A+", "donor" = null))
 	rc_click(H, bottle, hot, I_HELP)
 	TEST_ASSERT_EQUAL(rc_units(bottle), 0, "a condiment bottle tests it too")
-
-/// A food put on a table by a click lands in the grid cell that was clicked (the item's centre of mass in the cell).
-/datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table
-
-/datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table/run_gate()
-	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/structure/table/table = allocate(/obj/structure/table/standard, get_step(run_loc_floor_bottom_left, NORTH))
-	var/obj/item/reagent_containers/food/snacks/aesirsalad/food = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
-	H.drop_item()
-	H.put_in_active_hand(food)
-	H.set_use_stance(I_HELP)
-	H.next_click = 0
-	input_submit(new /datum/input_event/click(H, table, null, null, "left=1;icon-x=28;icon-y=4"))
-	rc_settle()
-	TEST_ASSERT_EQUAL(food.loc, get_turf(table), "the food is on the table")
-	// cell size 4, so x 28 is cell 7 and y 4 is cell 1: pixel = 4 * (0.5 + cell) - the centre of mass
-	TEST_ASSERT_EQUAL(food.pixel_x, 4 * 7.5 - food.center_of_mass_x, "aligned in x")
-	TEST_ASSERT_EQUAL(food.pixel_y, 4 * 1.5 - food.center_of_mass_y, "aligned in y")

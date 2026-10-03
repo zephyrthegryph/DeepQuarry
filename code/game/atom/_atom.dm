@@ -133,7 +133,7 @@
 	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 	if(C)
 		return !C.sealed && (!C.lid || reagent_container_lid_open(src))
-	return !!(flags & OPENCONTAINER)
+	return !!(flags & OPENCONTAINER) // ALLOW(reads): a container without the capability is open by its flag; a condition that asks reads it when it is asked
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.
 

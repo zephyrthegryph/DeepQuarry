@@ -17,12 +17,12 @@
 // out when it is destroyed.
 CAPABILITIES(/obj/item/reagent_containers/food, \
 	owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL), \
-	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits)), label("Test the blood"), \
+	op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), label("Test the blood"), \
 		then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))), \
 	op("rename", menu(), label("Rename food"), needs(req(PROC_REF(can_cook), because = MSG(food/cannot_cook))), \
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)), \
 		then(PROC_REF(renamed))), \
-	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(PROC_REF(takes_micro)), label("Put in"), \
+	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_micro))), label("Put in"), \
 		needs(req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), then(PROC_REF(micro_stuffed))))
 
 MSG_DEF_SELF(food/cannot_cook, "You can't cook!")

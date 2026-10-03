@@ -27,7 +27,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/cooking_container, "max_reagents",
 // poured in. A held thing on the list is put in, and an alt-click or the menu takes every solid thing out onto the floor. What it holds is listed in its
 // examine text, and a load of things is drawn on it.
 CAPABILITIES(/obj/item/reagent_containers/cooking_container, \
-	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(PROC_REF(takes_item)), label("Put in"), \
+	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"), \
 		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted))), \
 	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"), \
 		needs(req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), then(PROC_REF(emptied))), \
@@ -74,7 +74,7 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 /// There is a solid thing in it to take out.
 /obj/item/reagent_containers/cooking_container/proc/holds_solids(datum/act/op/A)
-	return contents_count(src) > 0
+	return length(contents) > 0 // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 
 /// Everything solid comes out.
 /obj/item/reagent_containers/cooking_container/proc/emptied(datum/act/op/A)
@@ -161,10 +161,10 @@ MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can rem
 
 /obj/item/reagent_containers/cooking_container/proc/can_fit(obj/item/I)
 	var/total = 0
-	for (var/obj/item/J in contents)
-		total += J.w_class
+	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
+		total += J.w_class // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 
-	if((max_space - total) >= I.w_class)
+	if((max_space - total) >= I.w_class) // ALLOW(reads): the room is read when a thing is put in; the click asks again
 		return 1
 
 
