@@ -724,6 +724,7 @@
 #include "interim_powered_melee_drop_actor.dm"
 #include "interim_roller_bed_collapse_actor.dm"
 #include "interim_illusionary_fall_cleanup.dm"
+#include "interim_processing_console_constructor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

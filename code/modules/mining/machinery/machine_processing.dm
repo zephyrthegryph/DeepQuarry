@@ -29,7 +29,7 @@
 		rel_set(machine(), nameof(/obj/machinery/bodyscanner::console), src)
 	else
 		log_mapping("Ore processing machine console at [src.x], [src.y], [src.z] could not find its machine!")
-		qdel(src)
+		return INITIALIZE_HINT_QDEL
 
 /obj/machinery/mineral/processing_unit_console/ownership()
 	. = ..()
