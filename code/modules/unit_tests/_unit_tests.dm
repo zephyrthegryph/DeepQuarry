@@ -865,6 +865,7 @@
 #include "interim_material_weapon_shatter.dm"
 #include "interim_micro_passenger_actor.dm"
 #include "interim_slime_crystal_release.dm"
+#include "interim_reconstitutor_sticky_paste.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

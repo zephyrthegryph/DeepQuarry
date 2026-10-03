@@ -147,11 +147,14 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		if(nanomass_reserve >= nanotank_max)
 			to_chat(user,span_notice("The tank is full!"))
 			return TRUE
-		nanomass_reserve += NP.amount * max(1,NP.mech_repair / paste_inefficiency)
+		var/paste_gain = NP.amount * max(1,NP.mech_repair / paste_inefficiency)
+		var/paste_label = "\the [NP]"
+		if(!consume(NP, user))
+			return TRUE
+		nanomass_reserve += paste_gain
 		if(nanomass_reserve > nanotank_max)
 			nanomass_reserve = nanotank_max
-		to_chat(user,span_notice("You fill \the [src] with paste from \the [NP]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
-		consume(NP, user)
+		to_chat(user,span_notice("You fill \the [src] with paste from [paste_label]. The display now reads [nanomass_reserve]/[nanotank_max] units."))
 	update_icon()
 	return FALSE
 
