@@ -21,7 +21,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 	var/answer = topic_ask(user, args, "a4", /datum/om/prompt/choice/alert, message = "Are you sure you want to unban [key]?", title = "Confirmation", choices = list("Yes", "No"))
 	if(answer != "Yes")
 		return
-	if(!RemoveBan(banfolder))
+	if(!RemoveBan(banfolder, user))
 		tgui_alert_async(user, "This ban has already been lifted / does not exist.", "Error")
 	unbanpanel()
 

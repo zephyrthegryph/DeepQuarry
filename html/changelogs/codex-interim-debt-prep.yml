@@ -118,3 +118,5 @@ changes:
   - bugfix: "Cat boxes respect release rules; floorlayers preserve stuck tiles and avoid merging stacks into themselves."
   - bugfix: "Power-cell mode swaps respect stuck cells and preserve their charge and persistence setting."
   - bugfix: "Slime extract enhancers and floor-lamp shades must be consumed before granting extra uses or a refundable shade."
+  - bugfix: "Mimic potions, ore boxes and solar tracker upgrades require consuming their original item before granting its result."
+  - bugfix: "Ban removal preserves the selected administrator across confirmation, and automatic expiry works without a player actor."
