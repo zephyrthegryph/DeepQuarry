@@ -340,6 +340,8 @@
 			return ORIGIN_UI
 		if(BIND_AI)
 			return ORIGIN_AI
+		if(BIND_CLICKS)
+			return ORIGIN_CLICK
 	return ORIGIN_NONE
 
 /datum/entry/part/bind/proc/reach_policy()
@@ -375,7 +377,7 @@
 
 /// Is this a physical binding (hand, tool, item, stack, in_hand, at_target, inside)?
 /datum/entry/part/bind/proc/physical()
-	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE)
+	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE, BIND_CLICKS)
 
 /// The origins the op accepts through this binding: the select origin() when the op names one.
 /proc/op_accepts_origin(datum/op_plan/P, datum/entry/part/bind/B, origin)

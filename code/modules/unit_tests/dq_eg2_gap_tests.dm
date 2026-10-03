@@ -276,3 +276,30 @@
 	B.remove_from_storage(scooped, run_loc_floor_bottom_left)
 	M.forceMove(run_loc_floor_bottom_left)
 	qdel(scooped)
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Player clicks for natural weapons
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A player-controlled mob with a natural weapon bites what it clicks on a hostile stance, through the same op the AI reaches by key; on a help stance its click
+/// is not a bite; a mob with no natural weapon is not routed through the resolver at all.
+/datum/unit_test/dq_eg2/natural_weapon_bites_on_a_click
+/datum/unit_test/dq_eg2/natural_weapon_bites_on_a_click/run_gate()
+	var/mob/living/simple_mob/lib_fixture_biter/biter = allocate(/mob/living/simple_mob/lib_fixture_biter, run_loc_floor_bottom_left)
+	var/obj/lib_fixture/dummy/target = allocate(/obj/lib_fixture/dummy, run_loc_floor_bottom_left)
+	TEST_ASSERT(op_has_click_ops(biter), "a mob with a natural weapon has ops its clicks reach")
+	var/mob/living/carbon/human/H = person()
+	TEST_ASSERT(!op_has_click_ops(H), "a person has none")
+	var/before = target.get_integrity()
+	biter.set_use_stance(I_HELP)
+	test_click(biter, target)
+	TEST_ASSERT_EQUAL(target.get_integrity(), before, "a click on a help stance is not a bite")
+	biter.set_use_stance(I_HURT)
+	var/datum/op_result/bite = test_click(biter, target)
+	TEST_ASSERT_EQUAL(bite?.key, "natural_weapon.attack", "a hostile click resolves to the natural weapon's op")
+	TEST_ASSERT_EQUAL(before - target.get_integrity(), 10, "and bites for the declared damage")
+	test_click(biter, target)
+	TEST_ASSERT_EQUAL(before - target.get_integrity(), 10, "the cooldown holds for a click as it does for the AI")
+	test_time(3 SECONDS)
+	input_submit(new /datum/input_event/click(biter, target, null, null, "left=1")) // a player's own click, not the driver's
+	TEST_ASSERT_EQUAL(before - target.get_integrity(), 20, "a player's click bites too")

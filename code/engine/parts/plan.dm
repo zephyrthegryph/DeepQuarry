@@ -96,6 +96,8 @@
 /datum/op_index
 	var/list/by_key
 	var/list/ordered
+	/// TRUE when one of the ops has a clicks() binding: its holder, as an actor, has ops its own clicks can reach.
+	var/has_clicks = FALSE
 
 /datum/type_table
 	/// The compiled ops of the table (made on first use), and the ones each granted capability definition would bring to a holder of it, by definition key.
@@ -122,6 +124,10 @@
 			index.ordered -= index.by_key[P.key]
 		index.by_key[P.key] = P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 		index.ordered += P // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+	for(var/datum/op_plan/clicked as anything in index.ordered)
+		for(var/datum/entry/part/bind/B as anything in clicked.bindings)
+			if(B.bind_kind == BIND_CLICKS)
+				index.has_clicks = TRUE
 	return index
 
 /// The compiled ops of a type table.

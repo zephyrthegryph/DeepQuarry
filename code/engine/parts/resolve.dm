@@ -175,6 +175,8 @@
 			return side == CAND_TARGET
 		if(BIND_MENU, BIND_AI)
 			return TRUE // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side
+		if(BIND_CLICKS)
+			return side == CAND_ACTOR // the actor's own op, reached by its click on the target
 	return side == CAND_TARGET
 
 // ---- the candidate index: rows interned by (origin, authority, gesture, intents, side, held type) ----
@@ -220,7 +222,7 @@
 		return TRUE
 	if(origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, authority))
 		return TRUE
-	if(side == CAND_ACTOR && B.bind_kind != BIND_MENU && B.bind_kind != BIND_AI)
+	if(side == CAND_ACTOR && !op_actor_side_binding(B))
 		return FALSE
 	if(origin != ORIGIN_SYSTEM || !isnull(gesture))
 		switch(B.bind_kind)
@@ -238,6 +240,9 @@
 					return FALSE
 			if(BIND_MENU)
 				pass()
+			if(BIND_CLICKS)
+				if(side != CAND_ACTOR)
+					return FALSE
 			else
 				if(side != CAND_TARGET)
 					return FALSE
@@ -253,6 +258,10 @@
 		if(!matched)
 			return FALSE
 	return TRUE
+
+/// Can an op with this binding be a candidate on the actor's side? An actor's own menu and ai ops are chosen by key; a clicks() op is reached by the click.
+/proc/op_actor_side_binding(datum/entry/part/bind/B)
+	return B.bind_kind == BIND_MENU || B.bind_kind == BIND_AI || B.bind_kind == BIND_CLICKS
 
 /// Adds the candidates of one side of an input (the target's, the held item's or the actor's own ops) to the resolution. `seq` is the running
 /// declaration counter; the new value is returned.
@@ -355,7 +364,7 @@
 		return FALSE
 	if(R.origin != ORIGIN_SYSTEM && !op_accepts_authority(P, B, R.authority))
 		return FALSE
-	if(side == CAND_ACTOR && B.bind_kind != BIND_MENU && B.bind_kind != BIND_AI)
+	if(side == CAND_ACTOR && !op_actor_side_binding(B))
 		return TRUE
 	if((R.origin != ORIGIN_SYSTEM || !isnull(gesture)) && !op_binding_fits(B, R.actor, R.target, R.held, holder, side))
 		return TRUE
@@ -393,7 +402,7 @@
 		C.dropped_by = GATE_MATCH
 		return
 	var/datum/target = (C.side == CAND_ACTOR) ? R.actor : R.target
-	if(C.side == CAND_ACTOR && B.bind_kind != BIND_MENU && B.bind_kind != BIND_AI)
+	if(C.side == CAND_ACTOR && !op_actor_side_binding(B))
 		C.dropped_by = GATE_MATCH
 		return
 	if(R.origin != ORIGIN_SYSTEM || !isnull(gesture))
@@ -426,7 +435,7 @@
 			return
 	// providers and the reach gate (not for the game acting for itself)
 	if(R.origin != ORIGIN_SYSTEM && op_reach_policy(P, B) != REACH_ANY)
-		var/atom/aim = (C.side == CAND_ACTOR) ? R.actor : R.target
+		var/atom/aim = (C.side == CAND_ACTOR && B.bind_kind != BIND_CLICKS) ? R.actor : R.target
 		var/list/chosen = list()
 		var/why = reach_gate(R.actor, aim, R.held, P, B, R.authority, chosen)
 		if(why)
@@ -509,7 +518,7 @@
 	A.held = held
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
 	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
-	var/aimed = C.side == CAND_ACTOR && !isnull(target) && target != actor && !isnull(LAZYACCESS(C.oplan.selects, "reach"))
+	var/aimed = C.side == CAND_ACTOR && !isnull(target) && target != actor && (!isnull(LAZYACCESS(C.oplan.selects, "reach")) || C.binding?.bind_kind == BIND_CLICKS)
 	A.target = ((C.side == CAND_ACTOR && !aimed) || isnull(target)) ? C.holder : target
 	if(istype(A.target, /atom))
 		A.target_atom = A.target // ALLOW(ownership): a pooled transient: reset on release

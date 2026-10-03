@@ -145,6 +145,10 @@
 	part_name = "ai"
 	bind_kind = BIND_AI
 
+/datum/entry/part/bind/clicks
+	part_name = "clicks"
+	bind_kind = BIND_CLICKS
+
 /// hand(): the actor's hand on the target.
 /proc/hand()
 	return part_make(/datum/entry/part/bind/hand)
@@ -188,6 +192,12 @@
 /// ai(): an AI controller or a script calls the op by key.
 /proc/ai()
 	return part_make(/datum/entry/part/bind/ai)
+
+/// clicks(): the actor's own op, performed on whatever the actor clicks (a player-controlled mob's natural weapon: the bite of a carp). The op belongs to the
+/// actor and not to the clicked thing, so it is a candidate only on the actor's side; it is physical, so the actor has to be able to act. Beside ai(), it is
+/// the input a player uses for the op an AI behaviour reaches by key.
+/proc/clicks()
+	return part_make(/datum/entry/part/bind/clicks)
 
 /// ui_act(args...) or ui_act("name", args...): a window button. The window action is the op's key unless a name is given. The arguments
 /// are arg(name, schema) parts.

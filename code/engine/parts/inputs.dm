@@ -34,7 +34,7 @@
 	OM_EMIT(E.target, /datum/om/event/click, E.location, E.control, E.params, E.actor)
 	var/gesture = op_gesture_of_params(E.params)
 	var/obj/item/held = actor?.get_active_hand()
-	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held)))
+	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held) || op_has_click_ops(actor)))
 		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)
 			return result
@@ -48,6 +48,19 @@
 	var/saved_params = dq_interaction_set_click_params(actor, params)
 	. = op_resolve_click(actor, target, held, gesture, origin, quiet, defer_legacy)
 	dq_interaction_set_click_params(actor, saved_params)
+
+/// Does the actor have an op of its own that its clicks reach (a clicks() binding: a natural weapon)? A plain read of the compiled index, so a click of a
+/// mob with none costs two lookups.
+/proc/op_has_click_ops(mob/actor)
+	if(!actor || QDELETED(actor))
+		return FALSE
+	var/datum/type_table/T = table_of(actor)
+	if(op_index_of_table(T).has_clicks)
+		return TRUE
+	for(var/datum/activation/A as anything in actor.rx?.activations)
+		if(!A.dead && A.runs && op_index_of_def(T, A.def).has_clicks)
+			return TRUE
+	return FALSE
 
 /// The drag seam. A driver-built drag is always the new resolver's; a player's is when the target or the dragged atom has an op, and what no op answers goes
 /// on to the legacy chain (the gesture entries, then MouseDrop_T) exactly as before.
