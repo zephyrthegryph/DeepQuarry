@@ -417,7 +417,7 @@ UI_ACT(/datum/secrets_menu, "onlyone", ui_act_onlyone)
 UI_ACT_PROC(/datum/secrets_menu, ui_act_onlyone)
 	if(!is_funmin)
 		return
-	var/response = act_ask(usr, action, params, ui, "a13", /datum/om/prompt/choice/alert, message = "Delay by 40 seconds?", title = "There can, in fact, only be one", choices = list("Instant!", HIGHLANDER_DELAY_TEXT))
+	var/response = act_ask(user, action, params, ui, "a13", /datum/om/prompt/choice/alert, message = "Delay by 40 seconds?", title = "There can, in fact, only be one", choices = list("Instant!", HIGHLANDER_DELAY_TEXT))
 	if(isnull(response))
 		return
 	switch(response)

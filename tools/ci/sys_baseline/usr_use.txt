@@ -360,7 +360,6 @@ usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/pro
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
-usr_outside_verb	code/modules/admin/verbs/secrets.dm	var/response = act_ask(usr, action, params, ui, "a13", /datum/om/prompt/choice/alert, message = "Delay by 40 seconds?", title = "There can, in fact, only be one", choices = list("Instant!", HIGHLANDER_DELAY_TEXT))
 usr_outside_verb	code/modules/admin/verbs/smite.dm	var/real_user = user ? user : usr
 usr_outside_verb	code/modules/admin/verbs/smite.dm	to_chat(user, span_notice("The mob has been moved. ([admin_jump_link(target, check_rights_for(usr.client, R_HOLDER))])"))
 usr_outside_verb	code/modules/admin/view_variables/admin_delete.dm	log_admin("[key_name(usr)] deleted [D] [coords]")
