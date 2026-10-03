@@ -756,6 +756,7 @@
 #include "interim_deadplant_cleanup.dm"
 #include "interim_chewable_spitout_cleanup.dm"
 #include "interim_artifact_harvester_sticky_battery.dm"
+#include "interim_native_tap_mixed_capacity_dose.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
