@@ -49,8 +49,8 @@
 /// The part of a scenario line a player sees: the click survivors and the menu. The "all" part also lists ops that cannot answer the input (a
 /// held storage's put_in beside a target storage's), so it is recorded for diagnosis but not asserted.
 /proc/dx_menu_order_answered(line)
-	var/list/parts = splittext(line, " | ")
-	return "[parts[2]] | [parts[3]]"
+	var/first = findtext(line, " | ")
+	return copytext(line, first + 3)
 
 /datum/unit_test/dx_menu_order
 	priority = TEST_LONGER
