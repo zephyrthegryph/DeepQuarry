@@ -152,8 +152,6 @@ usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	if (isliving(usr) || isobserver(usr))
-usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	usr.ClickOn(I)
 usr_outside_verb	code/game/objects/structures/artstuff.dm	if(!check_rights_for(usr.client, R_HOLDER))
 usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_notice("The chosen painting is the following \n\n \
