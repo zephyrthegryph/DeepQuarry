@@ -46,11 +46,11 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 				req(CAP_PROC(limb_not_robotic), because = MSG(dose/limb_robotic)), req(CAP_PROC(limb_open), because = MSG(dose/limb_covered))),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(put_on_other)), says(MSG(dose/stuck))) : null,
 		touch ? null : op("take", at_target(/mob/living/carbon/human), when(CAP_PROC(targets_self)), priority(OP_PRIORITY_PART), label("Swallow"),
-			needs(req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)), req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
+			needs(req_belly_free(), req_mouth_free()),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), says(MSG(dose/taken))),
 		touch ? null : op("force", at_target(/mob/living/carbon/human), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Force down"),
 			begins(MSG(dose/begin_force)), wait(CAP_PROC(wait_time)),
-			needs(req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)), req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
+			needs(req_belly_free(), req_mouth_free()),
 			costs(RES_REAGENTS, CAP_PROC(whole)), consumes(), then(CAP_PROC(forced_down)), says(MSG(dose/forced))),
 		cuts_into ? op("cut", item(/obj/item), when(CAP_PROC(held_cuts)), label("Cut it up"), then(CAP_PROC(cut_up))) : null,
 		op("dissolve", at_target(), when(CAP_PROC(target_is_open_holder)), priority(OP_PRIORITY_PART), label("Dissolve in it"),
@@ -105,6 +105,12 @@ MSG_DEF(dose/dissolved, "You put %I% in %T%; it dissolves.", "%U% puts something
 /datum/capability/lib/dose/proc/target_has_room(datum/act/op/A)
 	var/atom/target = A.target
 	return reagents_takeable(target) > 0
+
+/datum/capability/lib/dose/proc/req_belly_free()
+	return req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly))
+
+/datum/capability/lib/dose/proc/req_mouth_free()
+	return req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))
 
 /datum/capability/lib/dose/proc/belly_free(datum/act/op/A)
 	var/mob/living/target = A.target

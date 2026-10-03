@@ -37,7 +37,7 @@ CAPABILITIES(/obj/machinery/cell_charger)
 	machine_basics(repair = NONE)
 	anchor(empty = nameof(charging))
 	part_replacement()
-	extend("part_replacement.replace", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	extend("part_replacement.replace", needs(req_operable()))
 	owns_one(nameof(charging), /obj/item/cell)
 	op("insert", item(/obj/item/cell), when(nameof(anchored)),
 		needs(req(PROC_REF(can_insert), because = PROC_REF(insert_refusal))),

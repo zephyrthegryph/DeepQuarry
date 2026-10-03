@@ -22,7 +22,7 @@
 /datum/capdef_decl/c_bolts/spec()
 	return list(CAP_BOLTS, /datum/capability/lib/bolts, NONE, STACK, "bolts", "drop, raise, starts")
 
-/// CAPABILITY_TYPE(breakable, CAP_BREAKABLE) at code/library/machine/machine.dm:30
+/// CAPABILITY_TYPE(breakable, CAP_BREAKABLE) at code/library/machine/machine.dm:38
 /datum/capability/lib/breakable
 	var/repair = TOOL_WELDER
 /proc/breakable(repair)
@@ -208,7 +208,7 @@
 /datum/capdef_decl/c_lock/spec()
 	return list(CAP_LOCK, /datum/capability/lib/lock, NONE, STACK, "lock", "id_types, starts_locked, alt")
 
-/// CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS) at code/library/machine/machine.dm:82
+/// CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS) at code/library/machine/machine.dm:90
 /datum/capability/def/machine_basics
 	var/board = null
 	var/repair = TOOL_WELDER
@@ -220,7 +220,7 @@
 /datum/capdef_decl/c_machine_basics/spec()
 	return list(CAP_MACHINE_BASICS, /datum/capability/def/machine_basics, NONE, STACK, "machine_basics", "board, repair, frame, powered")
 
-/// CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH) at code/library/machine/machine.dm:135
+/// CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH) at code/library/machine/machine.dm:143
 /datum/capability/lib/maintenance_hatch
 	var/cover = null
 	var/wires = null
@@ -422,7 +422,7 @@
 /datum/capdef_decl/c_verb_grant/spec()
 	return list(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, "verb_path", STACK, "verb_grant", "verb_path")
 
-/// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:101
+/// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:109
 /datum/capability/def/wall_machine
 	var/board = null
 	var/repair = TOOL_WELDER
@@ -436,7 +436,7 @@
 /datum/capdef_decl/c_wall_machine/spec()
 	return list(CAP_WALL_MACHINE, /datum/capability/def/wall_machine, NONE, STACK, "wall_machine", "board, repair, frame, powered, offset, offset_ns")
 
-/// CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT) at code/library/machine/machine.dm:48
+/// CAPABILITY_TYPE(wall_mount, CAP_WALL_MOUNT) at code/library/machine/machine.dm:56
 /datum/capability/lib/wall_mount
 	var/offset = 26
 	var/offset_ns = null
@@ -2573,7 +2573,7 @@
 	into += entry_line(39)
 	into += list(global.part_replacement())
 	into += entry_line(40)
-	into += list(global.extend("part_replacement.replace", global.needs(global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
+	into += list(global.extend("part_replacement.replace", global.needs(req_operable())))
 	into += entry_line(41)
 	into += list(global.owns_one(nameof(charging), /obj/item/cell))
 	into += entry_line(42)
@@ -2600,7 +2600,7 @@
 	into += entry_line(70)
 	into += list(global.doors())
 	into += entry_line(71)
-	into += list(global.emag(list(global.needs(global.req_is(nameof(density), because = MSG(door/close_first)), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), global.then(PROC_REF(door_emag))), repeatable = TRUE))
+	into += list(global.emag(list(global.needs(global.req_is(nameof(density), because = MSG(door/close_first)), req_operable()), global.then(PROC_REF(door_emag))), repeatable = TRUE))
 	into += entry_line(72)
 	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.when(nameof(density)), global.when(global.cond_not(global.req(/obj/item/card))), global.when(global.cond_not(global.req(/obj/item/stack/material/plasteel))), global.then(PROC_REF(strike_with))))
 	into += entry_line(73)
@@ -3019,11 +3019,11 @@
 	into += entry_line(190)
 	into += list(global.op("overload", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), global.then(PROC_REF(ui_overload)), global.logs(LOG_GAME)))
 	into += entry_line(191)
-	into += list(global.op("lock", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), global.toggles(LOCK_LOCKED), global.logs(LOG_GAME)))
+	into += list(global.op("lock", global.ui_act(), global.needs(global.req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_operable()), global.toggles(LOCK_LOCKED), global.logs(LOG_GAME)))
 	into += entry_line(192)
 	into += list(global.op("open_wires", global.hand(), global.when(PANEL_OPEN), global.priority(global.above("ui_open")), global.then(PROC_REF(open_wire_window))))
 	into += entry_line(193)
-	into += list(global.extend("ui_open", global.needs(global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
+	into += list(global.extend("ui_open", global.needs(req_operable())))
 	into += entry_line(194)
 	into += list(global.extend(TAG_UI, global.needs(global.req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))))
 	into += entry_line(195)
@@ -3051,9 +3051,9 @@
 	into += entry_line(206)
 	into += list(global.extend("cell_bay.cell.insert", global.needs(global.req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), global.req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason)))))
 	into += entry_line(207)
-	into += list(global.extend(CAP_LOCK, global.needs(req_not_subverted(), req_wire(WIRE_IDSCAN), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
+	into += list(global.extend(CAP_LOCK, global.needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable())))
 	into += entry_line(208)
-	into += list(global.extend("emag.use", global.needs(req_not_subverted(), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
+	into += list(global.extend("emag.use", global.needs(req_not_subverted(), req_operable())))
 	into += entry_line(209)
 	into += list(global.extend(/datum/act/hit/blob, global.instead(cuts_all_wires(), global.sets(PANEL_OPEN, TRUE))))
 	into += entry_line(210)
@@ -3221,7 +3221,7 @@
 	into += entry_line(126)
 	into += list(global.anchor())
 	into += entry_line(127)
-	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(global.req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)))))
+	into += list(global.extend("anchor.toggle", global.wait(2 SECONDS), global.needs(req_panel_closed())))
 	into += entry_line(128)
 	into += list(global.owns_one(nameof(coin), /obj/item/coin))
 	into += entry_line(129)
@@ -3237,23 +3237,23 @@
 	into += entry_line(138)
 	into += list(global.op("toggle_voice", global.ui_act(), global.when(PANEL_OPEN), global.toggles(nameof(shut_up))))
 	into += entry_line(139)
-	into += list(global.op("insert_coin", global.item(/obj/item/coin), global.when(nameof(has_premium)), global.needs(global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), global.req_empty(nameof(coin), because = MSG(bay/full))), global.put_in(nameof(coin))))
+	into += list(global.op("insert_coin", global.item(/obj/item/coin), global.when(nameof(has_premium)), global.needs(req_operable(), global.req_empty(nameof(coin), because = MSG(bay/full))), global.put_in(nameof(coin))))
 	into += entry_line(140)
 	into += list(global.op("reject_fake_coin", global.item(/obj/item/fake_coin), global.when(nameof(has_premium)), global.then(PROC_REF(fake_coin_rejected))))
 	into += entry_line(141)
-	into += list(global.op("refill", global.item(/obj/item/refill_cartridge), global.needs(global.req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), global.req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), global.req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), global.req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), global.then(PROC_REF(refilled)), global.consumes()))
+	into += list(global.op("refill", global.item(/obj/item/refill_cartridge), global.needs(req_panel_closed(), req_operable(), global.req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), global.req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), global.req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), global.then(PROC_REF(refilled)), global.consumes()))
 	into += entry_line(144)
 	into += list(global.op("stock", global.item(/obj/item), global.when(PROC_REF(stockable)), global.then(PROC_REF(stocked))))
 	into += entry_line(145)
-	into += list(global.op("open_with_item", global.item(/obj/item), global.priority(global.above("stock")), global.when(PROC_REF(item_opens_window)), global.needs(global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), global.opens_ui()))
+	into += list(global.op("open_with_item", global.item(/obj/item), global.priority(global.above("stock")), global.when(PROC_REF(item_opens_window)), global.needs(req_operable()), global.opens_ui()))
 	into += entry_line(146)
 	into += list(global.op("check_logs", global.hand(), global.when(PROC_REF(bare_touch)), global.label("Check vending logs"), global.priority(global.below("ui_open")), global.then(PROC_REF(check_logs_op))))
 	into += entry_line(147)
-	into += list(global.extend("ui_open", global.when(PROC_REF(bare_touch)), global.needs(global.req_on_authority(AUTH_PHYSICAL), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), global.then(PROC_REF(shock_guard), early = TRUE), global.then(PROC_REF(open_wires_beside_the_window))))
+	into += list(global.extend("ui_open", global.when(PROC_REF(bare_touch)), global.needs(global.req_on_authority(AUTH_PHYSICAL), req_operable()), global.then(PROC_REF(shock_guard), early = TRUE), global.then(PROC_REF(open_wires_beside_the_window))))
 	into += entry_line(148)
 	into += list(global.extend("open_with_item", global.then(PROC_REF(shock_guard), early = TRUE), global.then(PROC_REF(open_wires_beside_the_window))))
 	into += entry_line(149)
-	into += list(global.extend(TAG_UI, global.needs(global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), global.req(PROC_REF(customer_capable), because = MSG(op/failed)))))
+	into += list(global.extend(TAG_UI, global.needs(req_operable(), global.req(PROC_REF(customer_capable), because = MSG(op/failed)))))
 	into += entry_line(150)
 	into += list(global.on_notice(/datum/notice/hit/explosion, global.then(PROC_REF(vending_blast_malfunction))))
 	into += entry_line(151)

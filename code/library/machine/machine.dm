@@ -21,6 +21,14 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 /obj/machinery/proc/stat_bits_allow(datum/act/A)
 	return !has_stat(MACHINE_INOPERABLE_FLAGS)
 
+/// The machine works (STAT_OPERABLE), else "It isn't working." The requirement of every control a dead machine refuses.
+/proc/req_operable()
+	return req_is(STAT_OPERABLE, because = MSG(machine/inoperable))
+
+/// The maintenance panel is closed, else "Close the maintenance panel first."
+/proc/req_panel_closed()
+	return req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel))
+
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
 	return has_stat(BROKEN)
@@ -91,7 +99,7 @@ CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS, key = NONE, board = null, rep
 		op("slash", hand(), label("Slash"), priority(OP_PRIORITY_CLAW), \
 			when(TYPE_PROC_REF(/atom, claw_slash_offered)), \
 			then(TYPE_PROC_REF(/atom, claw_slash)), says(MSG(machine/slash))),
-		extend(TAG_CONTROL, needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))))
+		extend(TAG_CONTROL, needs(req_operable())))
 	if(powered)
 		entries += powered()
 	if(frame && frame != NONE)
@@ -145,7 +153,7 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 /datum/capability/lib/maintenance_hatch/entries()
 	var/list/closed_up = list(
 		req_is(COVER_OPEN, FALSE, because = MSG(hatch/close_cover)),
-		req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)))
+		req_panel_closed())
 	var/list/entries = list(
 		compartment(BAY_HATCH, door = CAP_COVER),
 		cover || cover(),
