@@ -52,7 +52,7 @@
 	var/obj/O = holder
 	return list("It is set to [format_frequency(cap_signaler_frequency(O))], code [cap_signaler_code(O)].")
 
-/datum/capability/signaler/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/signaler/legacy_ui_data(atom/holder, mob/user, list/data)
 	var/obj/O = holder
 	data["frequency"] = cap_signaler_frequency(O)
 	data["code"] = cap_signaler_code(O)

@@ -55,7 +55,7 @@
 
 /// Adds keys to this capability's own UI list: the holder's tgui_data() carries it as
 /// data["caps"][ui_key()] (caps_ui_data()).
-/datum/capability/proc/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/proc/legacy_ui_data(atom/holder, mob/user, list/data)
 	return
 
 /// This capability's key under data["caps"]: its layer name, else its key.

@@ -19,11 +19,11 @@ MSG_DEF(machine/slash, "You slash at %T%!", "%U% slashes at %T%!")
 /// STAT_OPERABLE's reading of the machine core's condition bits: none of BROKEN, NOPOWER, POWEROFF, MAINT, EMPED is set. Written once, here, and
 /// deleted with the bits (phase 4).
 /obj/machinery/proc/stat_bits_allow(datum/act/A)
-	return !(stat & MACHINE_INOPERABLE_FLAGS)
+	return !has_stat(MACHINE_INOPERABLE_FLAGS)
 
 /// The machine is broken (the BROKEN bit atom_break() sets): what breakable() draws and says.
 /obj/machinery/proc/stat_is_broken(datum/act/A)
-	return !!(stat & BROKEN)
+	return has_stat(BROKEN)
 
 // ---- breakable ----
 
@@ -41,7 +41,7 @@ CAPABILITY_TYPE(breakable, CAP_BREAKABLE, /datum/capability/lib/breakable, key =
 
 /datum/capability/lib/breakable/proc/is_broken(datum/act/A)
 	var/obj/machinery/M = A.holder
-	return istype(M) && (M.stat & BROKEN)
+	return istype(M) && M.has_stat(BROKEN)
 
 // ---- the wall mount ----
 
@@ -173,5 +173,7 @@ CAPABILITY_TYPE(maintenance_hatch, CAP_MAINTENANCE_HATCH, /datum/capability/lib/
 	if(emag)
 		look.part(LOOK_EMAGGED, emag_emagged(holder))
 
+GLOBAL_LIST_INIT(hatch_output_reads, list("stat"))
+
 /datum/capability/lib/maintenance_hatch/output_reads(hook)
-	return list("stat")
+	return GLOB.hatch_output_reads

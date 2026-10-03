@@ -1146,6 +1146,11 @@ impl Lint for DerivedReads {
         let files = cx.files();
         let model = Model::get(cx.tree, &files);
         let want = generated_text(&model);
+        // The Python writer was deleted with the port: DQ_WRITE_GENERATED=1 rewrites the committed file from the model (the stale check then passes).
+        if std::env::var("DQ_WRITE_GENERATED").is_ok() {
+            let _ = std::fs::write(cx.tree.root.join(GENERATED_REL), want.as_bytes());
+            return false;
+        }
         let current = cx.tree.read_extra(GENERATED_REL);
         if current.as_deref().map(|s| s.as_str()) != Some(want.as_str()) {
             let _ = writeln!(

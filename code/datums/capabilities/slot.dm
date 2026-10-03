@@ -140,7 +140,7 @@
 /datum/capability/slot/ui_key()
 	return ui_key_name
 
-/datum/capability/slot/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/slot/legacy_ui_data(atom/holder, mob/user, list/data)
 	if(ui_key_name)
 		data["item"] = slot_ui(holder.vars[slot_var])
 

@@ -118,7 +118,7 @@
 	var/text = cap_has(holder, bit) ? examine_on : examine_off
 	return text ? list(text) : null
 
-/datum/capability/toggle_state/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/toggle_state/legacy_ui_data(atom/holder, mob/user, list/data)
 	data[name] = cap_has(holder, bit)
 
 /// The toggle state named `name` on A: TRUE on, FALSE off, null when A has no such toggle.

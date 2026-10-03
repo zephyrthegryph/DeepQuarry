@@ -33,7 +33,7 @@ GLOBAL_LIST_INIT(cap_examine_broken, list("It is broken."))
 /datum/capability/breakable/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = is_broken(holder))
 
-/datum/capability/breakable/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/breakable/legacy_ui_data(atom/holder, mob/user, list/data)
 	data[LOOK_BROKEN] = is_broken(holder)
 
 /// atom_break() / atom_fix() report here: a breakable holder mirrors it into CAP_BROKEN.

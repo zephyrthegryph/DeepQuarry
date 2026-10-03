@@ -106,7 +106,7 @@
 		look.gauge("fill", level = R.total_volume / R.maximum_volume, levels = fill_levels)
 	draw_layer(look, when = lid && !(holder.cap_state & CAP_LID_OPEN))
 
-/datum/capability/reagent_container/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/reagent_container/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["reagent_volume"] = holder.reagents?.total_volume || 0
 	data["reagent_max_volume"] = holder.reagents?.maximum_volume || 0
 	data["lid_open"] = !!(holder.cap_state & CAP_LID_OPEN)

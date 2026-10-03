@@ -59,7 +59,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/datum/cap_data/wires/D = act?.data
 	if(D?.wire_set)
 		var/datum/wires/W = D.wire_set
-		D.wire_set = null
+		D.wire_set = null // ALLOW(ownership): the wire set belongs to the capability's own data record, which is dropped with the activation
 		qdel(W) // ALLOW(lifecycle): a wire set is a plain datum the capability's data holds, not an atom: the lifecycle verbs take atoms
 
 /// The wire set of `holder`, made on first use, or null when it has no wires capability. The one reader: the wires window, the wire rules and
@@ -72,7 +72,7 @@ CAPABILITY_TYPE(wires, CAP_WIRES, /datum/capability/lib/wires, key = NONE, kind 
 	var/datum/activation/act = cap_activation(holder, CAP_WIRES, null, TRUE)
 	var/datum/cap_data/wires/D = cap_data(act)
 	if(!D.wire_set)
-		D.wire_set = def.make_set(holder)
+		D.wire_set = def.make_set(holder) // ALLOW(ownership): the wire set belongs to the capability's own data record, which is dropped with the activation
 	return D.wire_set
 
 /// Is `wire` of `holder` cut? A holder whose wires were never touched has none cut.

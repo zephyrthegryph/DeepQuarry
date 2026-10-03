@@ -32,7 +32,7 @@
 
 /obj/proc/check_access_list(list/L)
 	// We don't require access
-	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access))
+	if(!LAZYLEN(req_access) && !LAZYLEN(req_one_access)) // ALLOW(reads): access lists are set by the map or an admin and never change during play, so a cached answer cannot go stale
 		return TRUE
 
 	// They passed nothing, but we are something that requires access

@@ -30,7 +30,7 @@ GLOBAL_LIST_INIT(cap_examine_panel_open, list("The maintenance panel is open."))
 /datum/capability/panel/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = panel_is_open(holder))
 
-/datum/capability/panel/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/panel/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["open"] = panel_is_open(holder)
 
 /proc/cap_panel_name(atom/holder, mob/user)

@@ -22,5 +22,5 @@ GLOBAL_LIST_INIT(cap_examine_unpowered, list("It is unpowered."))
 /datum/capability/powered/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = !holder.cap_powered())
 
-/datum/capability/powered/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/powered/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["powered"] = holder.cap_powered()

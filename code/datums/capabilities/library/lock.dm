@@ -50,7 +50,7 @@
 /datum/capability/lock/look_parts()
 	return lamp ? list(LOOK_LOCKED, LOOK_UNLOCKED) : list(LOOK_LOCKED)
 
-/datum/capability/lock/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/lock/legacy_ui_data(atom/holder, mob/user, list/data)
 	data[LOOK_LOCKED] = is_locked(holder)
 
 /// Whether `accesses` opens this lock on holder: the holder's own req_access / req_one_access when

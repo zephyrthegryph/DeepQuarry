@@ -34,7 +34,7 @@
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
-				A.aidisabled = TRUE
+				A.set_aidisabled(TRUE)
 
 				om_after(src, 1 SECOND, PROC_REF(ai_control_pulse_ends))
 
@@ -54,7 +54,7 @@
 					A.shock(user, 50)
 
 		if(WIRE_AI_CONTROL)
-			A.aidisabled = !mend
+			A.set_aidisabled(!mend)
 
 /datum/wires/apc/proc/main_power_pulse_ends()
 	var/obj/machinery/power/apc/A = holder
@@ -64,4 +64,4 @@
 /datum/wires/apc/proc/ai_control_pulse_ends()
 	var/obj/machinery/power/apc/A = holder
 	if(!is_cut(WIRE_AI_CONTROL))
-		A.aidisabled = FALSE
+		A.set_aidisabled(FALSE)

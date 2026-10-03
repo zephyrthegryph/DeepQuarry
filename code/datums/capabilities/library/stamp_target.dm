@@ -54,7 +54,7 @@
 	for(var/mark in D?.marks)
 		look.overlay(mark)
 
-/datum/capability/stamp_target/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/stamp_target/legacy_ui_data(atom/holder, mob/user, list/data)
 	var/datum/cap_stamp_data/D = holder.cap_data?[key]
 	data["stamps"] = D?.lines ? D.lines.Copy() : list()
 

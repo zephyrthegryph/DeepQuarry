@@ -853,7 +853,7 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 	return 1
 
 /mob/observer/dead/proc/can_admin_interact()
-	return check_rights_for(src.client, R_ADMIN|R_EVENT|R_DEBUG)
+	return check_rights_for(src.client, R_ADMIN|R_EVENT|R_DEBUG) // ALLOW(reads): the ghost's client is its admin rights holder; rights change by an admin action, never mid-menu, so a cached answer cannot go stale
 
 /mob/observer/dead/verb/toggle_ghostsee()
 	set name = "Toggle Ghost Vision"

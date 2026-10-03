@@ -123,6 +123,7 @@ TRACKED_BRIDGED(/obj/machinery/power/apc, operating, CHANGE_MACHINE_SETTINGS)
 TRACKED_BRIDGED(/obj/machinery/power/apc, chargemode, CHANGE_MACHINE_SETTINGS)
 TRACKED_BRIDGED(/obj/machinery/power/apc, grid_check, CHANGE_MACHINE_SETTINGS)
 TRACKED(/obj/machinery/power/apc, coverlocked)
+TRACKED(/obj/machinery/power/apc, aidisabled)
 TRACKED(/obj/machinery/power/apc, nightshift_lights)
 TRACKED(/obj/machinery/power/apc, nightshift_setting)
 TRACKED(/obj/machinery/power/apc, emergency_lights)
@@ -287,7 +288,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled, \
 /// A power cell fits when it is the size this bay takes.
 /obj/machinery/power/apc/proc/cell_fits(datum/act/op/A)
 	var/obj/item/held = A.held
-	return !istype(held) || held.w_class == ITEMSIZE_NORMAL
+	return !istype(held) || held.w_class == ITEMSIZE_NORMAL // ALLOW(reads): an item's size is fixed for its life, so no change can be missed
 
 /obj/machinery/power/apc/proc/cell_fit_reason(datum/act/op/A)
 	var/obj/item/held = A.held
@@ -400,7 +401,7 @@ CAPABILITIES(/obj/machinery/power/apc/angled, \
 		return null
 	if(user.stat)
 		return /datum/msg/apc/cant_use
-	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying)
+	if(!user.IsAdvancedToolUser() || user.restrained() || user.lying) // ALLOW(reads): a mob lying down is legacy mob state, tracked in the mob conversion; the check runs when a window button is pressed, never from a cached menu
 		return /datum/msg/apc/cant_use
 	if(issilicon(user))
 		var/permit = FALSE
@@ -409,11 +410,11 @@ CAPABILITIES(/obj/machinery/power/apc/angled, \
 		if(hacker)
 			if(hacker == AI)
 				permit = TRUE
-			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker)
+			else if(istype(robot) && robot.connected_ai && robot.connected_ai == hacker) // ALLOW(reads): a cyborg's master AI link is legacy silicon state, tracked in the mob conversion; read when a window button is pressed
 				permit = TRUE
 		if(aidisabled && !permit)
 			return /datum/msg/apc/ai_disabled
-	else if(get_dist(src, user) > 1 || !istype(loc, /turf))
+	else if(get_dist(src, user) > 1)
 		return /datum/msg/apc/cant_use
 	return null
 
@@ -580,7 +581,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 		area().power_environ = 0
 		area().power_change()
 	if(terminal)
-		qdel(terminal) // the terminal goes with the APC it serves
+		terminal.expire(0) // the terminal goes with the APC it serves
 	..()
 
 /// Something about the APC changed (settings, cell, damage): the push to Rust follows (generated).

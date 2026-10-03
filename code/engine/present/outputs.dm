@@ -131,7 +131,7 @@
 	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_DRAW))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def
 		def.on_draw(A, look)
 		A.release()
 
@@ -159,7 +159,7 @@
 	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_EXAMINE))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def
 		def.on_examine(A, .)
 		A.release()
 
@@ -169,7 +169,7 @@
 	for(var/datum/capability/def as anything in present_capabilities(holder, OUTPUT_HOOK_UI))
 		var/datum/act/eval/A = take(/datum/act/eval)
 		A.holder = holder // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
-		A.cap = def // ALLOW(ownership): a pooled context holds its entities for one trigger and is reset on release
+		A.cap = def
 		var/list/mine = list()
 		def.on_ui_data(A, mine)
 		A.release()

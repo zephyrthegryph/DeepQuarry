@@ -85,7 +85,7 @@
 		return list("It is empty.")
 	return list("It holds [count] thing\s.")
 
-/datum/capability/storage/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/storage/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["storage_count"] = length(storage_items(holder))
 	data["storage_space"] = list("used" = holder.slot_used(CONTAINER_SLOT_STORAGE), "max" = total_for(holder))
 

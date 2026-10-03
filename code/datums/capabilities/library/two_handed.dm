@@ -65,7 +65,7 @@ GLOBAL_LIST_INIT(cap_examine_unwielded, list("It can be wielded in both hands.")
 		return GLOB.cap_examine_wielded
 	return GLOB.cap_examine_unwielded
 
-/datum/capability/two_handed/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/two_handed/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["wielded"] = cap_has(holder, CAP_WIELDED)
 
 /proc/cap_two_handed_name(obj/item/holder, mob/user)

@@ -193,7 +193,7 @@
 				return
 			to_chat(src, "Receiving control information from APC.")
 			theAPC.set_operating(1)
-			theAPC.equipment = 3
+			theAPC.set_equipment(3)
 			theAPC.update()
 			aiRestorePowerRoutine = AI_POWER_RESTORED
 			log_runtime("AI_POWER: [key_name(src)] forced [theAPC] on.")

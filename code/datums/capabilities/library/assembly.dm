@@ -58,7 +58,7 @@
 	var/obj/O = holder
 	look.part(attached_state, !!(istype(O) && !isnull(O.attached_assembly)))
 
-/datum/capability/assembly/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/assembly/legacy_ui_data(atom/holder, mob/user, list/data)
 	var/obj/O = holder
 	data["attached_assembly"] = O.attached_assembly ? "[O.attached_assembly]" : null
 

@@ -58,7 +58,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 /datum/capability/bolts/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = is_bolted(holder))
 
-/datum/capability/bolts/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/bolts/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["bolted"] = is_bolted(holder)
 
 /// Drops (on) or raises the bolts through the holder's own mechanism. forced skips the mechanism's
@@ -97,7 +97,7 @@ GLOBAL_LIST_INIT(cap_all_stances, list(I_HELP, I_DISARM, I_GRAB, I_HURT))
 		return FALSE
 	return shock(holder, user, held ? item_chance : touch_chance)
 
-/datum/capability/electrify/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/electrify/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["electrified"] = is_electrified(holder)
 	data["electrified_left"] = electrified_left(holder)
 
@@ -171,7 +171,7 @@ GLOBAL_LIST_INIT(cap_examine_welded, list("It has been welded shut."))
 /datum/capability/weld_shut/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = is_welded(holder))
 
-/datum/capability/weld_shut/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/weld_shut/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["welded"] = is_welded(holder)
 
 /proc/cap_weld_name(atom/holder, mob/user)
@@ -285,7 +285,7 @@ GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engag
 /datum/capability/emergency_access/draw(atom/holder, datum/look/look)
 	draw_layer(look, when = emergency_access_on(holder))
 
-/datum/capability/emergency_access/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/emergency_access/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["emergency"] = emergency_access_on(holder)
 
 // ============================================================================
@@ -312,7 +312,7 @@ GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engag
 /datum/capability/lock/door/draw(atom/holder, datum/look/look)
 	return
 
-/datum/capability/lock/door/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/lock/door/legacy_ui_data(atom/holder, mob/user, list/data)
 	return
 
 // ============================================================================
@@ -341,7 +341,7 @@ GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engag
 				holder.take_damage(dealt, BRUTE, MELEE)
 				. = TRUE
 
-/datum/capability/crush/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/crush/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["safe"] = safeties_on(holder)
 
 /// Whether the holder's safeties stop it closing on someone.
@@ -397,7 +397,7 @@ GLOBAL_LIST_INIT(cap_examine_emergency, list("Its emergency access mode is engag
 		highest_temp = max(highest_temp, airmix_temp)
 	return abs(highest_temp - lowest_temp) >= 5 ? thermal_wait : close_wait
 
-/datum/capability/door_timing/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/door_timing/legacy_ui_data(atom/holder, mob/user, list/data)
 	var/obj/machinery/door/D = holder
 	if(istype(D))
 		data["speed"] = D.normalspeed
@@ -512,7 +512,7 @@ TYPE_TABLE(/datum/capability/ai_control, ui_logged_actions, list(
 	holder.user_toggle_open(user)
 	return TRUE
 
-/datum/capability/ai_control/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/ai_control/legacy_ui_data(atom/holder, mob/user, list/data)
 	var/obj/machinery/door/airlock/A = holder
 	if(!istype(A))
 		return

@@ -55,7 +55,7 @@
 /datum/capability/writable/draw(atom/holder, datum/look/look)
 	look.part(written_state, !!(!isnull(cap_writable_text(holder))))
 
-/datum/capability/writable/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/writable/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["written"] = cap_writable_text(holder)
 	data["writable_left"] = cap_writable_space(holder)
 

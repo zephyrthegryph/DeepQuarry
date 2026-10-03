@@ -30,8 +30,7 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"connected_ai",
 	"lying",
 	"aidisabled",
-	"hacker",
-	"loc"
+	"hacker"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -76,7 +75,6 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(2, 0, 17),
 		list(2, 0, 13),
 		list(1, 0, 18),
-		list(1, 0, 19),
-		list(1, 0, 20)),
+		list(1, 0, 19)),
 	"/obj/p2_hit/halver::never" = list(0)
 ))

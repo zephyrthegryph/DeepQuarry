@@ -52,7 +52,7 @@ GLOBAL_LIST_INIT(cap_examine_cover_open, list("Its cover is open."))
 	// A removed cover isn't drawn open: the holder draws its coverless sprite (the APC).
 	draw_layer(look, when = cover_is_open(holder) && !legacy_cover_removed(holder))
 
-/datum/capability/cover/ui_data(atom/holder, mob/user, list/data)
+/datum/capability/cover/legacy_ui_data(atom/holder, mob/user, list/data)
 	data["open"] = cover_is_open(holder)
 	data["removed"] = legacy_cover_removed(holder)
 

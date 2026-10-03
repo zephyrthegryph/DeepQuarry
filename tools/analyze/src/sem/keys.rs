@@ -119,6 +119,10 @@ impl KeyIndex {
             }
         }
         k.cap_state_ids = state;
+        // Ops the engine itself makes: the state graph's build/undo/dismantle (stage-suffixed: `construction.build:door_wired`) and the window opener of interface().
+        for engine_op in ["construction.build", "construction.undo", "construction.dismantle", "ui_open"] {
+            k.ops.insert(engine_op.to_string());
+        }
         k
     }
 

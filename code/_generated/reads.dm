@@ -116,9 +116,8 @@
 
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
-	. += drawn_from(nameof(cell), nameof(charging))
+	. += drawn_from(nameof(cell), nameof(charging), nameof(operating))
 	. += rust_push(nameof(cell), nameof(chargelevel), nameof(chargemode), nameof(grid_check), nameof(operating), nameof(power_failed), nameof(shorted), nameof(vg_entity))
-	. += ui_from(nameof(chargemode), nameof(charging), nameof(coverlocked), nameof(emergency_lights), nameof(grid_check), nameof(main_status))
 
 /obj/machinery/vending/generated_reads()
 	. = ..()
@@ -146,7 +145,6 @@
 			/obj/effect/hotspot = RXB_EVERY,
 			/obj/item/broken_gun = RXB_INIT,
 			/obj/item/clothing/shoes/dry_galoshes = RXB_NOTICE,
-			/obj/machinery/power/apc = RXB_NOTICE,
 		)
 	return table
 
