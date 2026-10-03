@@ -16,7 +16,6 @@
 
 // A bottle is stoppered at first.
 CAPABILITIES(/obj/item/reagent_containers/glass/bottle, \
-	glass_container(), \
 	configure(reagent_container(starts_open = FALSE)))
 
 /obj/item/reagent_containers/glass/bottle/Initialize(mapload)

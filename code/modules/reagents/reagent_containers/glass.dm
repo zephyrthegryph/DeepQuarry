@@ -40,7 +40,7 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, blood_tested))))
 
 // A glass container is a reagent_container() whose settings are the vars of the type (volume, the amount a transfer moves and the range a person may
-// set it in, prefill). It starts with its lid off. It is poured into an open holder of liquid (not onto what it is put on: a table, a machine that
+// set it in, prefill); everything under /glass is one but the rag, which has its own rules. It starts with its lid off. It is poured into an open holder of liquid (not onto what it is put on: a table, a machine that
 // takes it), drawn from a closed tank, splashed over things in a hostile stance (and not over a mob: the old click of a mob never reached a splash),
 // drunk from yourself and fed to others in three seconds. A closed one milks the venom of a creature.
 CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
@@ -64,7 +64,8 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
 CAPABILITIES(/obj/item/reagent_containers/glass, \
-	glass_handling())
+	glass_handling(), \
+	glass_container())
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
@@ -201,9 +202,6 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	. = ..()
 	desc += " Can hold up to [volume] units."
 
-CAPABILITIES(/obj/item/reagent_containers/glass/beaker, \
-	glass_container())
-
 /// What it holds changes colour with no change of the amount: the filling is redrawn.
 /obj/item/reagent_containers/glass/beaker/on_reagent_change()
 	changed(src)
@@ -310,7 +308,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/beaker, \
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
 CAPABILITIES(/obj/item/reagent_containers/glass/bucket, \
-	glass_container(), \
 	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added))), \
 	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed))), \
 	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"), \
@@ -403,7 +400,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood, \
 	slowdown = 2
 
 CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle, \
-	glass_container(), \
 	configure(reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
 
 /obj/item/reagent_containers/glass/pint_mug
@@ -414,9 +410,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle, \
 	MATERIAL_BULK(MAT_WOOD, 50)
 	drop_sound = SFX_ITEMS_DROP_WOODEN
 	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
-
-CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug, \
-	glass_container())
 
 /obj/item/reagent_containers/glass/beaker/vial/sustenance
 	name = "vial (artificial sustenance)"
@@ -435,8 +428,6 @@ CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug, \
 	drop_sound = SFX_ITEMS_DROP_CROWBAR
 	pickup_sound = SFX_ITEMS_PICKUP_DRINKGLASS
 
-CAPABILITIES(/obj/item/reagent_containers/glass/kettle, \
-	glass_container())
 
 
 /obj/item/reagent_containers/glass/beaker/neurotoxin

@@ -184,6 +184,27 @@ CAPABILITIES(/obj/item/p2_op_item, \
 /obj/item/p2_op_item/proc/p2_idle(datum/act/op/A)
 	return OP_OK
 
+// ---- without() of a bundle ----
+
+/// A bundle that brings a capability of its own (and with it, ops).
+CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE, key = NONE)
+
+/datum/capability/def/p2_bundle/entries()
+	return list(reagent_container(volume = 10))
+
+/obj/p2_bundled
+	name = "p2 bundled"
+
+CAPABILITIES(/obj/p2_bundled, \
+	p2_bundle())
+
+/// The same, without the bundle: nothing it brought stays, the nested capability and its ops included.
+/obj/p2_bundled/stripped
+	name = "p2 stripped"
+
+CAPABILITIES(/obj/p2_bundled/stripped, \
+	without(CAP_P2_BUNDLE))
+
 /// The same box, listening for a slash.
 /obj/machinery/p2_box/slasher
 	var/slashed = 0

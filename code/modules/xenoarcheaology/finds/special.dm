@@ -2,9 +2,6 @@
 /obj/item/reagent_containers/glass/replenishing
 	var/spawning_id
 
-CAPABILITIES(/obj/item/reagent_containers/glass/replenishing, \
-	glass_container())
-
 DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 
 /obj/item/reagent_containers/glass/replenishing/Initialize(mapload)

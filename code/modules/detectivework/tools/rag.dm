@@ -30,6 +30,11 @@
 OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "rag_lit")
 
+// A rag is not a container that is poured and drunk from: it wrings itself out, wipes, smothers and soaks by the rules below (it keeps the glass
+// handling: a label, a dip, a hot thing over blood).
+CAPABILITIES(/obj/item/reagent_containers/glass/rag, \
+	without(CAP_GLASS_CONTAINER))
+
 /obj/item/reagent_containers/glass/rag/Initialize(mapload)
 	. = ..()
 	update_name()

@@ -409,12 +409,7 @@
 	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 66, /obj/item/reagent_containers/glass)
 	into += entry_line(67)
 	into += list(global.glass_handling())
-
-/// CAPABILITIES(/obj/item/reagent_containers/glass/beaker) at code/modules/reagents/reagent_containers/glass.dm:204
-/obj/item/reagent_containers/glass/beaker/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 204, /obj/item/reagent_containers/glass/beaker)
-	into += entry_line(205)
+	into += entry_line(68)
 	into += list(global.glass_container())
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random) at code/game/objects/items/contraband.dm:21
@@ -429,8 +424,6 @@
 	..(into)
 	into += entry_block("code/modules/food/glass/bottle.dm", 18, /obj/item/reagent_containers/glass/bottle)
 	into += entry_line(19)
-	into += list(global.glass_container())
-	into += entry_line(20)
 	into += list(global.configure(global.reagent_container(starts_open = FALSE)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass/bottle/robot) at code/modules/food/glass/bottle/robot.dm:9
@@ -440,68 +433,48 @@
 	into += entry_line(10)
 	into += list(global.configure(global.reagent_container(starts_open = TRUE)))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket) at code/modules/reagents/reagent_containers/glass.dm:312
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket) at code/modules/reagents/reagent_containers/glass.dm:310
 /obj/item/reagent_containers/glass/bucket/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 312, /obj/item/reagent_containers/glass/bucket)
-	into += entry_line(313)
-	into += list(global.glass_container())
-	into += entry_line(314)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 310, /obj/item/reagent_containers/glass/bucket)
+	into += entry_line(311)
 	into += list(global.op("sensor", global.item(/obj/item/assembly/prox_sensor), global.priority(OP_PRIORITY_PART), global.label("Add the sensor"), global.then(PROC_REF(sensor_added))))
-	into += entry_line(315)
+	into += entry_line(312)
 	into += list(global.op("robot_frame", global.stack(/obj/item/stack/material/steel, 1), global.priority(OP_PRIORITY_PART), global.label("Arm the robot frame"), global.then(PROC_REF(frame_armed))))
-	into += entry_line(316)
+	into += entry_line(313)
 	into += list(global.op("wet", global.inputs(global.item(/obj/item/mop), global.item(/obj/item/soap)), global.priority(OP_PRIORITY_PART), global.label("Wet it"), global.needs(req_reagents(1, because = MSG(glass/bucket_empty))), global.then(PROC_REF(wetted))))
-	into += entry_line(318)
+	into += entry_line(315)
 	into += list(global.op("cut_helmet", global.tool(TOOL_WIRECUTTER), global.wait(0), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_helmet))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood) at code/modules/reagents/reagent_containers/glass.dm:378
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood) at code/modules/reagents/reagent_containers/glass.dm:375
 /obj/item/reagent_containers/glass/bucket/wood/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 378, /obj/item/reagent_containers/glass/bucket/wood)
-	into += entry_line(379)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 375, /obj/item/reagent_containers/glass/bucket/wood)
+	into += entry_line(376)
 	into += list(global.op("hatchet_helmet", global.item(/obj/item/material/knife/machete/hatchet), global.priority(OP_PRIORITY_PART), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_wood_helmet))))
-	into += entry_line(380)
+	into += entry_line(377)
 	into += list(global.extend("sensor", global.needs(global.req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics)))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle) at code/modules/reagents/reagent_containers/glass.dm:405
+/// CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle) at code/modules/reagents/reagent_containers/glass.dm:402
 /obj/item/reagent_containers/glass/cooler_bottle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 405, /obj/item/reagent_containers/glass/cooler_bottle)
-	into += entry_line(406)
-	into += list(global.glass_container())
-	into += entry_line(407)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 402, /obj/item/reagent_containers/glass/cooler_bottle)
+	into += entry_line(403)
 	into += list(global.configure(global.reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
-
-/// CAPABILITIES(/obj/item/reagent_containers/glass/kettle) at code/modules/reagents/reagent_containers/glass.dm:438
-/obj/item/reagent_containers/glass/kettle/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 438, /obj/item/reagent_containers/glass/kettle)
-	into += entry_line(439)
-	into += list(global.glass_container())
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass/paint) at code/game/objects/items/weapons/paint.dm:21
 /obj/item/reagent_containers/glass/paint/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/paint.dm", 21, /obj/item/reagent_containers/glass/paint)
 	into += entry_line(22)
-	into += list(global.glass_container())
-	into += entry_line(23)
 	into += list(global.op("paint", global.at_target(/turf/simulated), global.answers(INTENT_ATTACK, INTENT_USE), global.priority(OP_PRIORITY_ATTACK), global.priority(global.above("reagent_container.splash")), global.when(req_reagents(5, more = TRUE)), global.label("Paint"), global.then(PROC_REF(painted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug) at code/modules/reagents/reagent_containers/glass.dm:418
-/obj/item/reagent_containers/glass/pint_mug/declared_entries(list/into)
+/// CAPABILITIES(/obj/item/reagent_containers/glass/rag) at code/modules/detectivework/tools/rag.dm:35
+/obj/item/reagent_containers/glass/rag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 418, /obj/item/reagent_containers/glass/pint_mug)
-	into += entry_line(419)
-	into += list(global.glass_container())
-
-/// CAPABILITIES(/obj/item/reagent_containers/glass/replenishing) at code/modules/xenoarcheaology/finds/special.dm:5
-/obj/item/reagent_containers/glass/replenishing/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/xenoarcheaology/finds/special.dm", 5, /obj/item/reagent_containers/glass/replenishing)
-	into += entry_line(6)
-	into += list(global.glass_container())
+	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
+	into += entry_line(36)
+	into += list(global.without(CAP_GLASS_CONTAINER))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -813,6 +786,13 @@
 	return cap_construct(CAP_P1_TICKER, /datum/capability/p1_ticker, list(power), "power")
 /datum/capdef_decl/c_p1_ticker/spec()
 	return list(CAP_P1_TICKER, /datum/capability/p1_ticker, NONE, BEST(power), "p1_ticker", "power")
+
+/// CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE) at code/tests/engine/p2_fixtures.dm:190
+/proc/p2_bundle()
+	RETURN_TYPE(/datum/capability/def/p2_bundle)
+	return cap_construct(CAP_P2_BUNDLE, /datum/capability/def/p2_bundle, list(), "")
+/datum/capdef_decl/c_p2_bundle/spec()
+	return list(CAP_P2_BUNDLE, /datum/capability/def/p2_bundle, NONE, STACK, "p2_bundle", "")
 
 /// cap_keys(CAP_E1_SOLO) at code/tests/engine/e1_fixtures.dm:41
 /datum/cap_keys_decl/k_e1_solo/spec()
@@ -1502,20 +1482,34 @@
 	into += entry_line(128)
 	into += list(global.op("fit", global.tool(TOOL_WRENCH), global.wait(PROC_REF(fit_wait)), global.then(PROC_REF(fitted_now))))
 
-/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:191
+/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:212
 /obj/machinery/p2_box/slasher/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 191, /obj/machinery/p2_box/slasher)
-	into += entry_line(191)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 212, /obj/machinery/p2_box/slasher)
+	into += entry_line(212)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
-/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:205
+/// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:198
+/obj/p2_bundled/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 198, /obj/p2_bundled)
+	into += entry_line(199)
+	into += list(global.p2_bundle())
+
+/// CAPABILITIES(/obj/p2_bundled/stripped) at code/tests/engine/p2_fixtures.dm:205
+/obj/p2_bundled/stripped/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 205, /obj/p2_bundled/stripped)
+	into += entry_line(206)
+	into += list(global.without(CAP_P2_BUNDLE))
+
+/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:226
 /obj/p2_dragtarget/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 205, /obj/p2_dragtarget)
-	into += entry_line(205)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 226, /obj/p2_dragtarget)
+	into += entry_line(226)
 	into += list(global.op("use", global.item(/obj/item), global.then(PROC_REF(was_used))))
-	into += entry_line(205)
+	into += entry_line(226)
 	into += list(global.op("drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(was_dragged))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91

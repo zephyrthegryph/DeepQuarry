@@ -19,7 +19,6 @@
 // A paint can paints a floor, 5 units at a time while it has more than that (in any stance: it is not splashed over it); everything else is the glass
 // container's.
 CAPABILITIES(/obj/item/reagent_containers/glass/paint, \
-	glass_container(), \
 	op("paint", at_target(/turf/simulated), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), priority(above("reagent_container.splash")), when(req_reagents(5, more = TRUE)), \
 		label("Paint"), then(PROC_REF(painted))))
 

@@ -419,12 +419,22 @@ GLOBAL_VAR(declare_report_capture)
 	if(!removed)
 		table_error(T, origin, declare_rule(RULE_WITHOUT), "without([target]) names nothing the type has", "the key must exist in an ancestor's list, or be the CAP id of a capability it declares")
 		return
-	var/list/final = list()
-	for(var/datum/centry/C as anything in keep)
-		if(C.owner && (C.owner in dropped_caps))
-			continue
-		final += C
-	T.items = final
+	// What a dropped capability brought goes with it, and so does a capability it brought (a bundle's nested one) with everything that one brought.
+	var/list/pool = keep
+	var/stable = FALSE
+	while(!stable)
+		stable = TRUE
+		var/list/next = list()
+		for(var/datum/centry/C as anything in pool)
+			if(C.owner && (C.owner in dropped_caps))
+				var/datum/capability/brought = C.item
+				if(istype(brought) && !(brought.key in dropped_caps))
+					dropped_caps += brought.key
+					stable = FALSE
+				continue
+			next += C
+		pool = next
+	T.items = pool
 	for(var/key in dropped_caps)
 		T.caps -= key
 

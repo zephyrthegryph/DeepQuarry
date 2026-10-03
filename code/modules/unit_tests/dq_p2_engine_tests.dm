@@ -245,3 +245,18 @@
 	var/turf/far = locate(own.x + 6, own.y, own.z)
 	test_click(H, far, I)
 	TEST_ASSERT_EQUAL(I.tapped, 2, "but not one six tiles away")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// without(CAP_X) of a bundle drops what the bundle brought, a capability of its own included, with everything that one brought.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/without_drops_a_bundles_nested_capability
+
+/datum/unit_test/dq_p2_engine/without_drops_a_bundles_nested_capability/run_gate()
+	var/obj/p2_bundled/whole = allocate(/obj/p2_bundled)
+	var/obj/p2_bundled/stripped/bare = allocate(/obj/p2_bundled/stripped)
+	TEST_ASSERT_NOTNULL(cap_of(whole, CAP_REAGENT_CONTAINER), "the bundle brings its nested capability")
+	TEST_ASSERT_NOTNULL(op_plan_for(whole, "reagent_container.set_amount"), "and its ops")
+	TEST_ASSERT_NULL(cap_of(bare, CAP_REAGENT_CONTAINER), "a subtype without the bundle has no nested capability")
+	TEST_ASSERT_NULL(op_plan_for(bare, "reagent_container.set_amount"), "and none of its ops")
+	TEST_ASSERT_NULL(bare.reagents, "and no holder made by it")
