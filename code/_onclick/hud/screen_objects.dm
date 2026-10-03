@@ -232,33 +232,37 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 
 /atom/movable/screen/Click(location, control, params)
 	..() // why the FUCK was this not called before
-	if(!usr)	return 1
+	return click_with_actor(usr, location, control, params) // ALLOW(sys_usr_outside_verb): BYOND screen Click supplies the clicking mob through usr at this native boundary
+
+/// The named HUD controls act on the mob supplied by their native click boundary.
+/atom/movable/screen/proc/click_with_actor(mob/user, location, control, params)
+	if(!user)	return 1
 	switch(name)
 		if("toggle")
-			if(usr.hud_used.inventory_shown)
-				usr.hud_used.inventory_shown = 0
-				usr.client.screen -= usr.hud_used.other
+			if(user.hud_used.inventory_shown)
+				user.hud_used.inventory_shown = 0
+				user.client.screen -= user.hud_used.other
 			else
-				usr.hud_used.inventory_shown = 1
-				usr.client.screen += usr.hud_used.other
+				user.hud_used.inventory_shown = 1
+				user.client.screen += user.hud_used.other
 
-			usr.hud_used.hidden_inventory_update()
+			user.hud_used.hidden_inventory_update()
 
 		if("equip")
-			if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+			if (istype(user.loc,/obj/mecha)) // stops inventory actions in a mech
 				return 1
-			if(ishuman(usr))
-				var/mob/living/carbon/human/H = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/H = user
 				H.quick_equip()
 
 		if("resist")
-			if(isliving(usr))
-				var/mob/living/L = usr
+			if(isliving(user))
+				var/mob/living/L = user
 				L.resist()
 
 		if("control_vtec")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.speed == 0 && R.vtec_active)
 					R.speed = -0.5
 					R.hud_used.control_vtec.icon_state = "speed_1"
@@ -270,15 +274,15 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					R.hud_used.control_vtec.icon_state = "speed_0"
 
 		if("mov_intent")
-			if(isliving(usr))
-				if(iscarbon(usr))
-					var/mob/living/carbon/C = usr
+			if(isliving(user))
+				if(iscarbon(user))
+					var/mob/living/carbon/C = user
 					if(C.get_equipped_item(SLOT_ID_LEGCUFFED))
 						to_chat(C, span_notice("You are legcuffed! You cannot run until you get [C.get_equipped_item(SLOT_ID_LEGCUFFED)] removed!"))
 						C.m_intent = I_WALK	//Just incase
 						C.hud_used.move_intent.icon_state = "walking"
 						return 1
-				var/mob/living/L = usr
+				var/mob/living/L = user
 				switch(L.m_intent)
 					if(I_RUN)
 						L.m_intent = I_WALK
@@ -287,30 +291,30 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 						L.m_intent = I_RUN
 						L.hud_used.move_intent.icon_state = "running"
 		if("m_intent")
-			if(!usr.m_int)
-				switch(usr.m_intent)
+			if(!user.m_int)
+				switch(user.m_intent)
 					if(I_RUN)
-						usr.m_int = "13,14"
+						user.m_int = "13,14"
 					if(I_WALK)
-						usr.m_int = "14,14"
+						user.m_int = "14,14"
 					if("face")
-						usr.m_int = "15,14"
+						user.m_int = "15,14"
 			else
-				usr.m_int = null
+				user.m_int = null
 		if(I_WALK)
-			usr.m_intent = I_WALK
-			usr.m_int = "14,14"
+			user.m_intent = I_WALK
+			user.m_int = "14,14"
 		if("face")
-			usr.m_intent = "face"
-			usr.m_int = "15,14"
+			user.m_intent = "face"
+			user.m_int = "15,14"
 		if(I_RUN)
-			usr.m_intent = I_RUN
-			usr.m_int = "13,14"
+			user.m_intent = I_RUN
+			user.m_int = "13,14"
 		if("Reset Machine")
-			usr.unset_machine()
+			user.unset_machine()
 		if("internal") //dear god this entire thing needs to be rewritten this is literally assaulting my eyes with how awful it is. FUCK.
-			if(iscarbon(usr))
-				var/mob/living/carbon/C = usr
+			if(iscarbon(user))
+				var/mob/living/carbon/C = user
 				if(!C.stat && !C.has_status(EFFECT_STUNNED) && !C.has_status(EFFECT_PARALYZED) && !C.restrained())
 					if(C.internal)
 						rel_clear(C, nameof(C.internal)) // a relation: the tank stays in its inventory slot
@@ -428,59 +432,59 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 								to_chat(C, span_notice("You don't have a[breathes==GAS_O2 ? "n " + GAS_O2 : addtext(" ",breathes)] tank."))
 
 		if("pull")
-			usr.stop_pulling()
+			user.stop_pulling()
 		if("throw")
-			if(!usr.stat && isturf(usr.loc) && !usr.restrained())
-				usr:toggle_throw_mode()
+			if(!user.stat && isturf(user.loc) && !user.restrained())
+				user.toggle_throw_mode()
 		if("drop")
-			if(usr.client)
-				usr.client.drop_item()
+			if(user.client)
+				user.client.drop_item()
 		if("autowhisper")
-			if(isliving(usr))
-				var/mob/living/u = usr
+			if(isliving(user))
+				var/mob/living/u = user
 				u.toggle_autowhisper()
 		if("autowhisper mode")
-			if(isliving(usr))
-				var/mob/living/u = usr
+			if(isliving(user))
+				var/mob/living/u = user
 				u.autowhisper_mode()
 		if("check known languages")
-			usr.check_languages()
+			user.check_languages()
 		if("set pose")
-			if(ishuman(usr))
-				var/mob/living/carbon/human/u = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/u = user
 				u.pose()
-			else if (issilicon(usr))
-				var/mob/living/silicon/u = usr
+			else if (issilicon(user))
+				var/mob/living/silicon/u = user
 				u.pose()
 
 		if("move upwards")
-			usr.up()
+			user.up()
 		if("Move Up") // AI version
-			usr.zMove(UP)
+			user.zMove(UP)
 
 		if("move downwards")
-			usr.down()
+			user.down()
 		if("Move Down") // AI version
-			usr.zMove(DOWN)
+			user.zMove(DOWN)
 
 		if("use held item on self")
 			var/atom/movable/screen/useself/s = src
-			if(ishuman(usr))
-				var/mob/living/carbon/human/u = usr
+			if(ishuman(user))
+				var/mob/living/carbon/human/u = user
 				var/obj/item/i = u.get_active_hand()
 				if(i)
 					s.can_use(u,i)
 				else
-					to_chat(usr, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
+					to_chat(user, span_notice("You're not holding anything to use. You need to have something in your active hand to use it."))
 
 		if("module")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				R.pick_module()
 
 		if("inventory")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.module)
 					R.hud_used.toggle_show_robot_modules()
 					return 1
@@ -488,176 +492,181 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/zone_sel, TYPE_PROC_REF(/atom, appe
 					to_chat(R, "You haven't selected a module yet.")
 
 		if("radio")
-			if(issilicon(usr))
-				usr:radio_menu()
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.radio_menu()
 		if("panel")
-			if(issilicon(usr))
-				usr:installed_modules()
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.installed_modules()
 
 		if("store")
-			if(isrobot(usr))
-				var/mob/living/silicon/robot/R = usr
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
 				if(R.module)
 					R.uneq_active()
 				else
 					to_chat(R, "You haven't selected a module yet.")
 
 		if("module1")
-			if(isrobot(usr))
-				usr:toggle_module(1)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(1)
 
 		if("module2")
-			if(isrobot(usr))
-				usr:toggle_module(2)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(2)
 
 		if("module3")
-			if(isrobot(usr))
-				usr:toggle_module(3)
+			if(isrobot(user))
+				var/mob/living/silicon/robot/R = user
+				R.toggle_module(3)
 
 		if("AI Core")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.view_core()
 
 		if("Show Camera List")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
-				var/camera = rerun_ask(ai_user, "k545", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
+				var/camera = rerun_ask(ai_user, "k545", PROC_REF(click_with_actor), args, /datum/om/prompt/choice, message = "Pick Camera:", title = "Camera Choice", choices = ai_user.get_camera_list())
 				if(isnull(camera))
 					return
 				ai_user.ai_camera_list(camera)
 
 		if("Track With Camera")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
-				var/target_name = rerun_ask(ai_user, "k551", "Click" /* a built-in proc, which nameof cannot name */, args, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
+				var/target_name = rerun_ask(ai_user, "k551", PROC_REF(click_with_actor), args, /datum/om/prompt/choice, message = "Pick Mob:", title = "Mob Choice", choices = ai_user.trackable_mobs())
 				if(isnull(target_name))
 					return
 				ai_user.ai_camera_track(target_name)
 
 		if("Toggle Camera Light")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.toggle_camera_light()
 
 		if("Crew Monitoring")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_crew_monitor()
 
 		if("Show Crew Manifest")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_crew_manifest()
 
 		if("Show Alerts")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.subsystem_alarm_monitor()
 
 		if("Announcement")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_announcement()
 
 		if("Call Emergency Shuttle")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_call_shuttle()
 
 		if("State Laws")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.ai_checklaws()
 
 		if("PDA - Messenger")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.aiPDA.start_program(ai_user.aiPDA.find_program(/datum/data/pda/app/messenger))
-				ai_user.aiPDA.cmd_pda_open_ui(usr)
+				ai_user.aiPDA.cmd_pda_open_ui(user)
 
 		if("Take Image")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.take_image()
 
 		if("View Images")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.view_images()
 
 		if("Multicamera Mode")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.toggle_multicam()
 
 		if("New Camera")
-			if(isAI(usr))
-				var/mob/living/silicon/ai/ai_user = usr
+			if(isAI(user))
+				var/mob/living/silicon/ai/ai_user = user
 				ai_user.drop_new_multicam()
 
 		if("shadekin status")
-			var/turf/T = get_turf(usr)
+			var/turf/T = get_turf(user)
 			if(T)
 				var/darkness = round(1 - T.get_lumcount(),0.1)
-				to_chat(usr,span_notice(span_bold("Darkness:") + " [darkness]"))
-			var/mob/living/H = usr
+				to_chat(user,span_notice(span_bold("Darkness:") + " [darkness]"))
+			var/mob/living/H = user
 			if(ismob(H))
 				var/datum/shadekin/SK = H.get_shadekin_state()
 				if(SK)
-					to_chat(usr,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
+					to_chat(user,span_notice(span_bold("Energy:") + " [SK.shadekin_get_energy()]"))
 
 		if("glamour")
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			if(istype(H))
-				to_chat(usr,span_notice(span_bold("Energy:") + " [H.species.lleill_energy]/[H.species.lleill_energy_max]"))
+				to_chat(user,span_notice(span_bold("Energy:") + " [H.species.lleill_energy]/[H.species.lleill_energy_max]"))
 
 		if("danger level")
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc)
 				if(xc.feral > 50)
-					to_chat(usr, span_warning("You are currently <b>completely feral.</b>"))
+					to_chat(user, span_warning("You are currently <b>completely feral.</b>"))
 				else if(xc.feral > 10)
-					to_chat(usr, span_warning("You are currently <b>crazed and confused.</b>"))
+					to_chat(user, span_warning("You are currently <b>crazed and confused.</b>"))
 				else if(xc.feral > 0)
-					to_chat(usr, span_warning("You are currently <b>acting on instinct.</b>"))
+					to_chat(user, span_warning("You are currently <b>acting on instinct.</b>"))
 				else
-					to_chat(usr, span_notice("You are currently <b>calm and collected.</b>"))
+					to_chat(user, span_notice("You are currently <b>calm and collected.</b>"))
 				if(xc.feral > 0)
 					var/feral_passing = TRUE
 					if(H.traumatic_shock > min(60, H.nutrition/10))
-						to_chat(usr, span_warning("Your pain prevents you from regaining focus."))
+						to_chat(user, span_warning("Your pain prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(xc.feral + H.nutrition < 150)
-						to_chat(usr, span_warning("Your hunger prevents you from regaining focus."))
+						to_chat(user, span_warning("Your hunger prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(H.status_units(EFFECT_JITTERY) >= 100)
-						to_chat(usr, span_warning("Your jitterness prevents you from regaining focus."))
+						to_chat(user, span_warning("Your jitterness prevents you from regaining focus."))
 						feral_passing = FALSE
 					if(feral_passing)
 						var/turf/T = get_turf(H)
 						if(T.get_lumcount() <= 0.1)
-							to_chat(usr, span_notice("You are slowly calming down in darkness' safety..."))
+							to_chat(user, span_notice("You are slowly calming down in darkness' safety..."))
 						else if(isbelly(H.loc)) // Safety message for if inside a belly.
-							to_chat(usr, span_notice("You are slowly calming down within the darkness of something's belly, listening to their body as it moves around you. ...safe..."))
+							to_chat(user, span_notice("You are slowly calming down within the darkness of something's belly, listening to their body as it moves around you. ...safe..."))
 						else
-							to_chat(usr, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
+							to_chat(user, span_notice("You are slowly calming down... But safety of darkness is much preferred."))
 				else
 					if(H.nutrition < 150)
-						to_chat(usr, span_warning("Your hunger is slowly making you unstable."))
+						to_chat(user, span_warning("Your hunger is slowly making you unstable."))
 
 		if("Reconstructing Form") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_NOW)
-					to_chat(usr, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
+					to_chat(user, span_notice("We are currently reviving, and will be done in [round((xc.revive_finished - world.time) / 10)] seconds, or [round(((xc.revive_finished - world.time) * 0.1) / 60)] minutes."))
 				else if(xc.revive_ready == REVIVING_DONE)
-					to_chat(usr, span_warning("You should have a notification + alert for this! Bug report that this is still here!"))
+					to_chat(user, span_warning("You should have a notification + alert for this! Bug report that this is still here!"))
 
 		if("Ready to Hatch") // Allow Viewing Reconstruction Timer + Hatching for 'chimera
-			var/mob/living/carbon/human/H = usr
+			var/mob/living/carbon/human/H = user
 			var/datum/xenochimera/xc = H.get_xenochimera_state()
 			if(xc) // If you're somehow able to click this while not a chimera, this should prevent weird runtimes. Will need changing if regeneration is ever opened to non-chimera using the same alert.
 				if(xc.revive_ready == REVIVING_DONE) // Sanity check.

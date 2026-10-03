@@ -49,3 +49,4 @@ changes:
   - admin: "Variable-viewer type prompts retain the editing user."
   - bugfix: "Cutting bedsheets and refastening signs preserve items that cannot be released."
   - bugfix: "Surplus vouchers preserve items that cannot be released and deliver rewards only after successful consumption."
+  - bugfix: "HUD controls retain the clicking user and safely ignore unsupported robot controls."
