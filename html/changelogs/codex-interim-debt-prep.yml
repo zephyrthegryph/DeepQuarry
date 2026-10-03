@@ -93,3 +93,6 @@ changes:
   - bugfix: "Cistern insertion respects held item release rules."
   - bugfix: "Gift unwrapping preserves its present when the wrapper cannot be released."
   - bugfix: "Technomancer cores equip and remove their ability buttons without cleanup failures."
+  - bugfix: "Pneumatic cannons respect held tank release rules."
+  - bugfix: "Fluid pumps respect held power-cell release rules."
+  - bugfix: "Kinetic accelerators respect held modkit release rules."

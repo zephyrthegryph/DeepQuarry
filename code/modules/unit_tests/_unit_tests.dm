@@ -719,6 +719,7 @@
 #include "interim_pneumatic_sticky_tank.dm"
 #include "interim_fluid_pump_sticky_cell.dm"
 #include "interim_accelerator_sticky_modkit.dm"
+#include "interim_spray_bottle_mixed_dose.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
