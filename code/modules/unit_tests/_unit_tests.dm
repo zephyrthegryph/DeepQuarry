@@ -685,6 +685,7 @@
 #include "interim_washer_sticky_dye.dm"
 #include "interim_washer_dye_ejection.dm"
 #include "interim_snow_shovel_cleanup.dm"
+#include "interim_nuclear_sticky_auth_disk.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
