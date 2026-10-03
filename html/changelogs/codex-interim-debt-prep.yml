@@ -84,3 +84,8 @@ changes:
   - bugfix: "Nuclear authentication insertion respects held disk release rules."
   - bugfix: "Clonepods respect container release rules after loading delays."
   - bugfix: "Camera upgrades respect release restrictions and can be removed after first insertion."
+  - bugfix: "Biogenerators respect produce release rules and clear bag display state during bulk transfer."
+  - bugfix: "Seed extraction produces seeds only after successful input consumption."
+  - admin: "Note deletion retains the initiating actor and flushes saved notes safely."
+  - bugfix: "Pipe recycling credits metal only after successful consumption."
+  - bugfix: "Newscaster photo replacement preserves the current attachment when the new photo cannot be released."

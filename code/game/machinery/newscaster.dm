@@ -642,6 +642,11 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	rel_set(src, nameof(photo), p)
 
 /obj/machinery/newscaster/proc/AttachPhoto(mob/user)
+	var/obj/item/photo/incoming
+	if(istype(user.get_active_hand(), /obj/item/photo))
+		incoming = user.get_active_hand()
+		if(!own_bring_in(src, nameof(photo_data), incoming, null, user, TRUE, null, FALSE))
+			return
 	if(photo_data)
 		if(!photo_data.is_synth)
 			photo_data.photo().forceMove(src.loc)
@@ -649,11 +654,8 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 				user.put_in_inactive_hand(photo_data.photo())
 		qdel(photo_data)
 
-	if(istype(user.get_active_hand(), /obj/item/photo))
-		var/obj/item/photo = user.get_active_hand()
-		user.drop_item()
-		photo.forceMove(src)
-		own_set(src, nameof(photo_data), new /datum/news_photo(photo, 0))
+	if(incoming)
+		own_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
 		var/obj/item/photo/selection = tempAI.GetPicture()
