@@ -35,8 +35,7 @@ CAPABILITIES(/obj/item/reagent_containers/spray)
 		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart))
 	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied)))
 	examine_line(PROC_REF(units_left))
-	extend("reagent_container.spray", reach(REACH_ANY))
-	extend("reagent_container.spray", then(PROC_REF(spray_logged)))
+	extend("reagent_container.spray", reach(REACH_ANY), then(PROC_REF(spray_logged)))
 
 MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 

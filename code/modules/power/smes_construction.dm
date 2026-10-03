@@ -126,8 +126,7 @@ CAPABILITIES(/obj/machinery/power/smes/buildable)
 		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))),
 		asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")),
 		then(PROC_REF(rcon_tag_answered)))
-	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut)))))
-	extend("ui_open", then(PROC_REF(open_wires_beside_the_window)))
+	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut)))), then(PROC_REF(open_wires_beside_the_window)))
 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = cond_not(nameof(grounding)))
 
 /// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a small chance of breaking lights on the APCs of its

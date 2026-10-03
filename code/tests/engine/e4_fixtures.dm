@@ -32,8 +32,7 @@ ACTION(e4_nest, notice = /datum/notice/e4_nested)
 /obj/e4_fixture/target
 
 CAPABILITIES(/obj/e4_fixture/target)
-	extend(/datum/act/e4_strike, adjusts("amount", scale = 0.5))
-	extend(/datum/act/e4_strike, instead(when(nameof(shield)), then(PROC_REF(absorb))))
+	extend(/datum/act/e4_strike, adjusts("amount", scale = 0.5), instead(when(nameof(shield)), then(PROC_REF(absorb))))
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard)))
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED)
 	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY)
