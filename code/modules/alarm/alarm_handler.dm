@@ -38,7 +38,7 @@ CAPABILITIES(/datum/alarm_handler)
 
 	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)
-		own_set(src, nameof(alarms), dd_sortedObjectList(alarms))
+		rel_set(src, nameof(alarms), dd_sortedObjectList(alarms))
 		on_alarm_change(existing, ALARM_RAISED)
 
 	return new_alarm

@@ -49,7 +49,7 @@ CAPABILITIES(/datum/feed_channel)
 
 /datum/feed_channel/proc/clear()
 	src.channel_name = ""
-	own_set(src, nameof(messages), list())
+	rel_set(src, nameof(messages), list())
 	src.locked = 0
 	src.author = ""
 	src.backup_author = ""

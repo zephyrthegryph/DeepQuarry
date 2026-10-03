@@ -165,7 +165,7 @@ CAPABILITIES(/obj/item/autopsy_scanner)
 	if(target_name != M.name)
 		target_name = M.name
 		own_set(src, nameof(wdata), list())
-		own_set(src, nameof(chemtraces), list())
+		rel_set(src, nameof(chemtraces), list())
 		src.timeofdeath = null
 		to_chat(user, span_notice("A new patient has been registered. Purging data for previous patient."))
 
