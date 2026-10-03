@@ -67,7 +67,10 @@
 // Very much byond logic, but I want nice behavior, so we fake it with drag
 /atom/movable/screen/movable/action_button/MouseDrag(atom/over_object, src_location, over_location, src_control, over_control, params)
 	. = ..()
-	if(!can_use(usr))
+	drag_with_actor(usr, over_object, over_location, over_control, params) // ALLOW(sys_usr_outside_verb): Native action button drag supplies its viewer after unchanged parent drag routing.
+
+/atom/movable/screen/movable/action_button/proc/drag_with_actor(mob/user, atom/over_object, over_location, over_control, params)
+	if(!can_use(user))
 		return
 	if(over_object == last_hovored)
 		return
@@ -77,7 +80,7 @@
 		old_object = last_hovored
 	else // If there is no current ref, we assume it was us. We also treat this as our "first go" location.
 		old_object = src
-		var/datum/hud/our_hud = usr.hud_used
+		var/datum/hud/our_hud = user.hud_used
 		our_hud?.generate_landings(src)
 
 	if(old_object)
@@ -99,33 +102,40 @@
 	return ..()
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
-	rel_clear(src, nameof(last_hovored))
-	if(!can_use(usr))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
+	if(drop_with_actor(user, over_object))
 		return
-	var/datum/hud/our_hud = usr.hud_used
+	. = ..()
+	var/datum/hud/our_hud = user.hud_used
+	our_hud.position_action(src, screen_loc)
+	save_position()
+
+/atom/movable/screen/movable/action_button/proc/drop_with_actor(mob/user, atom/over_object)
+	rel_clear(src, nameof(last_hovored))
+	if(!can_use(user))
+		return TRUE
+	var/datum/hud/our_hud = user.hud_used
 	if(over_object == src)
 		our_hud.hide_landings()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/action_landing))
 		var/atom/movable/screen/action_landing/reserve = over_object
 		reserve.hit_by(src)
 		our_hud.hide_landings()
 		save_position()
-		return
+		return TRUE
 
 	our_hud.hide_landings()
 	if(istype(over_object, /atom/movable/screen/button_palette) || istype(over_object, /atom/movable/screen/palette_scroll))
 		our_hud.position_action(src, SCRN_OBJ_IN_PALETTE)
 		save_position()
-		return
+		return TRUE
 	if(istype(over_object, /atom/movable/screen/movable/action_button))
 		var/atom/movable/screen/movable/action_button/button = over_object
 		our_hud.position_action_relative(src, button)
 		save_position()
-		return
-	. = ..()
-	our_hud.position_action(src, screen_loc)
-	save_position()
+		return TRUE
+	return FALSE
 
 /atom/movable/screen/movable/action_button/proc/save_position()
 	var/mob/user = our_hud().mymob()

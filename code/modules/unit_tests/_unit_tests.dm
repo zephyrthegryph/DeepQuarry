@@ -762,6 +762,8 @@
 #include "interim_microwave_sticky_produce.dm"
 #include "interim_tape_break_cleanup.dm"
 #include "interim_invisible_soil_terminal_cleanup.dm"
+#include "interim_action_button_drag_actor.dm"
+#include "interim_action_button_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
