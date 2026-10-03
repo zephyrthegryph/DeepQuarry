@@ -147,14 +147,17 @@ EXTEND_INTERACTIONS(/obj/item/cell/device/weapon/recharge/alien, INTERACT_USE(nu
 /obj/item/cell/device/weapon/recharge/alien/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!swaps_to)
 		return TRUE
-	user.remove_from_mob(src)
-	to_chat(user, span_notice("You swap [src] to 'machinery cell' mode."))
-	var/obj/item/cell/newcell = new swaps_to(null)
-	user.put_in_active_hand(newcell)
+	var/cell_name = "[src]"
 	var/percentage = charge/maxcharge
+	var/original_persist_storable = persist_storable
+	var/replacement_type = swaps_to
+	if(!consume(src, user))
+		return TRUE
+	to_chat(user, span_notice("You swap [cell_name] to 'machinery cell' mode."))
+	var/obj/item/cell/newcell = new replacement_type(null)
+	user.put_in_active_hand(newcell)
 	newcell.charge = newcell.maxcharge * percentage
-	newcell.persist_storable = persist_storable
-	consume(src, user)
+	newcell.persist_storable = original_persist_storable
 	return TRUE
 
 // Bloo friendlier hybrid tech
