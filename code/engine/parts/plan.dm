@@ -67,6 +67,8 @@
 	/// claims(): the target is claimed while the op waits.
 	var/claims = FALSE
 	var/passes = FALSE
+	/// silent_wait(): the wait draws no progress bar.
+	var/silent_wait = FALSE
 	var/label
 	/// An explicit OP_PRIORITY_X, or null.
 	var/priority_tier
@@ -449,6 +451,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 
 /datum/entry/part/delayed/compile(datum/op_plan/P, level)
 	LAZYADD(P.delayed, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/silent_wait/compile(datum/op_plan/P, level)
+	P.silent_wait = TRUE
 
 /datum/entry/part/quiet/compile(datum/op_plan/P, level)
 	P.quiet = TRUE

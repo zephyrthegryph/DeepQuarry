@@ -79,7 +79,9 @@
 #define ADJACENT (1<<1)
 #define TARGET_PRESENT (1<<2)
 #define ALIVE (1<<3)
-#define WAIT_KEEPS_DEFAULT (HELD | ADJACENT | TARGET_PRESENT | ALIVE)
+/// The actor stays where it started (a timed action is cancelled by walking away, as the legacy timed actions were).
+#define STAY (1<<4)
+#define WAIT_KEEPS_DEFAULT (HELD | ADJACENT | TARGET_PRESENT | ALIVE | STAY)
 
 // ---- Where an effect lands (section 8). ----
 #define ON_TARGET 1
