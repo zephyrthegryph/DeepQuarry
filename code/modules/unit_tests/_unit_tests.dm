@@ -678,6 +678,7 @@
 #include "interim_candybowl_tables.dm"
 #include "interim_recharger_sticky_cell_routes.dm"
 #include "interim_portal_target_cleanup.dm"
+#include "interim_gun_hud_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
