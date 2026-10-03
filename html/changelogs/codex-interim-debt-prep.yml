@@ -141,3 +141,4 @@ changes:
   - bugfix: "Mining vouchers must be consumed before granting rewards; tourniquets and crate electropacks respect release rules."
   - bugfix: "Autopsy scanners dispose of their copied wound records when rescanned or removed."
   - bugfix: "Inventory dragging safely handles missing targets; stuck assembly holders retain their original components."
+  - bugfix: "Firedoor construction preserves its assembly when the circuit board cannot leave your hand."

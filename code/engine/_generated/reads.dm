@@ -373,6 +373,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(2, 0, 84, 83)),
 	"/obj/structure/door_assembly::unplated" = list(0,
 		list(1, 0, 82)),
+	"/obj/structure/firedoor_assembly::board_releasable" = list(0),
 	"/obj/structure/firedoor_assembly::unglazed" = list(0,
 		list(1, 0, 82)),
 	"/obj/structure/table::actor_can_flip" = list(0,
