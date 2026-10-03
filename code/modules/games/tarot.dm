@@ -24,8 +24,7 @@
 			P.back_icon = "card_back_tarot"
 			own_add(src, nameof(cards), P)
 
-/obj/item/deck/tarot/shuffle()
-	var/mob/living/user = usr
+/obj/item/deck/tarot/shuffle(mob/user)
 	if (COOLDOWN_FINISHED(src, shuffle_cooldown))
 		var/list/unshuffled = own_take_all(src, nameof(cards))
 		while(length(unshuffled))

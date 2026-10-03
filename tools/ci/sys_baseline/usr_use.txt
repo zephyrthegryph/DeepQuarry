@@ -334,7 +334,6 @@ usr_outside_verb	code/modules/food/food/drinks.dm	if(over_object.Adjacent(usr))
 usr_outside_verb	code/modules/food/food/drinks.dm	to_chat(usr, span_notice("You put the [src] in the cup dispenser."))
 usr_outside_verb	code/modules/food/food/snacks.dm	if(istype(user) && user == usr)
 usr_outside_verb	code/modules/games/cards.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
-usr_outside_verb	code/modules/games/tarot.dm	var/mob/living/user = usr
 usr_outside_verb	code/modules/holodeck/HolodeckObjects.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/holodeck/HolodeckObjects.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(pin, usr)
