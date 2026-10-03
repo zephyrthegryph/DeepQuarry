@@ -44,7 +44,7 @@
 /// Non movables don't delete contents on destroy, so we gotta do this
 /obj/effect/abstract/particle_holder/proc/parent_deleted(datum/source, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	qdel(src)
+	consume(src)
 
 /// Hooked on the parent's moved event.
 /obj/effect/abstract/particle_holder/proc/on_parent_moved(atom/movable/attached, datum/om/event/moved/event)

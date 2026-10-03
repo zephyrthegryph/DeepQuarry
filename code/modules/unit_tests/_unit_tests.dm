@@ -726,6 +726,7 @@
 #include "interim_illusionary_fall_cleanup.dm"
 #include "interim_processing_console_constructor.dm"
 #include "interim_trait_injector_constructor.dm"
+#include "interim_particle_parent_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
