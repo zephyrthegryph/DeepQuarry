@@ -62,6 +62,33 @@
 /proc/sb_broken(obj/item/storage/lockbox/L)
 	return !!L.broken
 
+/// The pill bottle's label text.
+/proc/sb_label(obj/item/storage/pill_bottle/B)
+	return B.label_text
+
+/// The briefcase is locked.
+/proc/sb_secure_locked(obj/item/storage/secure/S)
+	return !!S.locked
+
+/// The quickdraw case draws the first item to the hand instead of opening.
+/proc/sb_quickmode(obj/item/storage/quickdraw/Q)
+	return !!Q.quickmode
+
+/// The trinket box lid is open.
+/proc/sb_lid_open(obj/item/storage/trinketbox/T)
+	return !!T.open
+
+/// The person writes `text` on the pill bottle's label after a pen was used on it (the prompt the click opened is answered).
+/proc/sb_write_label(mob/M, obj/item/storage/pill_bottle/B, text)
+	var/datum/om/prompt/text/ask = new
+	ask.answerer = M
+	ask.text = text
+	B.label_entered(ask)
+
+/// The MRE has been torn open.
+/proc/sb_torn_open(obj/item/storage/mre/M)
+	return !!M.opened
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Fixtures
 // ---------------------------------------------------------------------------------------------------------------------
@@ -662,3 +689,197 @@
 	TEST_ASSERT_EQUAL(sb_count(pack), 0, "a spilled pack is empty")
 	for(var/obj/item/I as anything in things)
 		TEST_ASSERT(I.loc != pack && !QDELETED(I), "each thing was dropped")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Types with their own handling of a click
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_storage/pocketed_storage_comes_to_the_hand
+/datum/unit_test/dq_p2_storage/pocketed_storage_comes_to_the_hand/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/pill_bottle/bottle = sb_make(/obj/item/storage/pill_bottle)
+	H.equip_to_slot_or_del(new /obj/item/clothing/under/color/black(H), SLOT_ID_UNIFORM)
+	TEST_ASSERT(H.equip_to_slot_if_possible(bottle, SLOT_ID_POCKET_L), "the fixture bottle fits a pocket")
+	sb_empty_hands(H)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, bottle, null, null, "left=1"))
+	sb_settle()
+	TEST_ASSERT(sb_in_hands(H, bottle), "an empty hand on a pocketed storage takes it to the hand")
+	TEST_ASSERT(!sb_is_open(H, bottle), "and does not open it")
+
+/datum/unit_test/dq_p2_storage/box_folds_only_when_empty
+/datum/unit_test/dq_p2_storage/box_folds_only_when_empty/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/box/full = sb_make(/obj/item/storage/box)
+	var/obj/item/p2_storage_probe/tiny/I = sb_make(/obj/item/p2_storage_probe/tiny)
+	sb_click(H, full, I)
+	sb_use_held(H, full)
+	TEST_ASSERT(!QDELETED(full), "a box with something in it is not folded")
+	var/obj/item/storage/box/empty_box = sb_make(/obj/item/storage/box)
+	sb_use_held(H, empty_box)
+	TEST_ASSERT(QDELETED(empty_box), "an empty box used in hand folds flat")
+	var/found = FALSE
+	for(var/obj/item/stack/material/cardboard/C in range(1, H))
+		found = TRUE
+	for(var/obj/item/stack/material/cardboard/C in H.contents)
+		found = TRUE
+	TEST_ASSERT(found, "and cardboard is left")
+
+/datum/unit_test/dq_p2_storage/pill_bottle_is_labelled_with_a_pen
+/datum/unit_test/dq_p2_storage/pill_bottle_is_labelled_with_a_pen/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/pill_bottle/bottle = sb_make(/obj/item/storage/pill_bottle)
+	var/obj/item/pen/pen = sb_make(/obj/item/pen)
+	var/before = bottle.name
+	sb_click(H, bottle, pen)
+	sb_write_label(H, bottle, "aspirin")
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_label(bottle), "aspirin", "the label was written")
+	TEST_ASSERT(findtext(bottle.name, "aspirin"), "and shows in the name")
+	TEST_ASSERT(pen.loc != bottle, "the pen was not put in the bottle")
+	TEST_ASSERT(bottle.name != before, "the name changed")
+
+/datum/unit_test/dq_p2_storage/matchbox_strikes_instead_of_taking
+/datum/unit_test/dq_p2_storage/matchbox_strikes_instead_of_taking/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/box/matches/M = sb_make(/obj/item/storage/box/matches)
+	var/obj/item/flame/match/match = sb_make(/obj/item/flame/match)
+	sb_click(H, M, match)
+	TEST_ASSERT(match.loc != M, "a match clicked on the box is struck, not put back")
+	var/obj/item/p2_storage_probe/tiny/other = sb_make(/obj/item/p2_storage_probe/tiny)
+	sb_click(H, M, other)
+	TEST_ASSERT(other.loc != M, "and the box takes nothing but matches")
+
+/datum/unit_test/dq_p2_storage/crayon_box_refuses_the_mime_and_rainbow_crayons
+/datum/unit_test/dq_p2_storage/crayon_box_refuses_the_mime_and_rainbow_crayons/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/fancy/crayons/box = sb_make(/obj/item/storage/fancy/crayons)
+	for(var/obj/item/I as anything in sb_items(box))
+		qdel(I)
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_count(box), 0, "the box was emptied for the test")
+	var/obj/item/pen/crayon/red = sb_make(/obj/item/pen/crayon)
+	sb_click(H, box, red)
+	TEST_ASSERT_EQUAL(red.loc, box, "an ordinary crayon goes in")
+	var/obj/item/pen/crayon/mime/mime = sb_make(/obj/item/pen/crayon/mime)
+	sb_click(H, box, mime)
+	TEST_ASSERT(mime.loc != box, "the mime crayon does not")
+	var/obj/item/pen/crayon/rainbow/rainbow = sb_make(/obj/item/pen/crayon/rainbow)
+	sb_click(H, box, rainbow)
+	TEST_ASSERT(rainbow.loc != box, "the rainbow crayon does not")
+
+/datum/unit_test/dq_p2_storage/quickdraw_case_draws_or_opens
+/datum/unit_test/dq_p2_storage/quickdraw_case_draws_or_opens/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/quickdraw/syringe_case/case = sb_make(/obj/item/storage/quickdraw/syringe_case)
+	TEST_ASSERT(sb_quickmode(case), "a syringe case starts in quickdraw mode")
+	var/count = sb_count(case)
+	TEST_ASSERT(count > 0, "and starts loaded")
+	sb_empty_hands(H)
+	H.put_in_inactive_hand(case)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, case, null, null, "left=1"))
+	sb_settle()
+	TEST_ASSERT_EQUAL(sb_count(case), count - 1, "an empty hand on the carried case draws one thing out")
+	TEST_ASSERT(!sb_is_open(H, case), "without opening it")
+	// the alt-click switches the mode
+	sb_alt_click(H, case)
+	TEST_ASSERT(!sb_quickmode(case), "an alt-click on the carried case switches the mode off")
+	sb_alt_click(H, case)
+	TEST_ASSERT(sb_quickmode(case), "and on again")
+
+/datum/unit_test/dq_p2_storage/laundry_basket_needs_two_hands
+/datum/unit_test/dq_p2_storage/laundry_basket_needs_two_hands/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/laundry_basket/B = sb_make(/obj/item/storage/laundry_basket)
+	var/obj/item/p2_storage_probe/busy = sb_make(/obj/item/p2_storage_probe)
+	sb_empty_hands(H)
+	H.put_in_inactive_hand(busy)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
+	sb_settle()
+	TEST_ASSERT(!sb_in_hands(H, B), "with the other hand full the basket is not lifted")
+	sb_empty_hands(H)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, B, null, null, "left=1"))
+	sb_settle()
+	TEST_ASSERT(sb_in_hands(H, B), "with both hands free it is")
+	TEST_ASSERT(istype(H.get_inactive_hand(), /obj/item/storage/laundry_basket/offhand), "and the other hand holds the second grip")
+
+/datum/unit_test/dq_p2_storage/trinket_box_lid_toggles
+/datum/unit_test/dq_p2_storage/trinket_box_lid_toggles/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/trinketbox/T = sb_make(/obj/item/storage/trinketbox)
+	TEST_ASSERT(!sb_lid_open(T), "closed to start with")
+	sb_use_held(H, T)
+	TEST_ASSERT(sb_lid_open(T), "used in hand it opens")
+	sb_use_held(H, T)
+	TEST_ASSERT(!sb_lid_open(T), "and closes again")
+
+/datum/unit_test/dq_p2_storage/mre_tears_open_when_used
+/datum/unit_test/dq_p2_storage/mre_tears_open_when_used/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/mre/menu10/M = sb_make(/obj/item/storage/mre/menu10)
+	TEST_ASSERT(!sb_torn_open(M), "sealed to start with")
+	sb_use_held(H, M)
+	TEST_ASSERT(sb_torn_open(M), "using it tears it open")
+	TEST_ASSERT(sb_is_open(H, M), "and shows what is inside")
+
+/datum/unit_test/dq_p2_storage/secure_briefcase_locked_refuses
+/datum/unit_test/dq_p2_storage/secure_briefcase_locked_refuses/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/secure/briefcase/S = sb_make(/obj/item/storage/secure/briefcase)
+	TEST_ASSERT(sb_secure_locked(S), "a secure briefcase starts locked")
+	var/obj/item/p2_storage_probe/tiny/I = sb_make(/obj/item/p2_storage_probe/tiny)
+	sb_click(H, S, I)
+	TEST_ASSERT(I.loc != S, "a locked briefcase takes nothing")
+	sb_alt_click(H, S)
+	TEST_ASSERT(!sb_is_open(H, S), "does not open by alt-click")
+	sb_open_held(H, S)
+	TEST_ASSERT(!sb_is_open(H, S), "nor held in the hand")
+	S.locked = 0
+	sb_click(H, S, I)
+	TEST_ASSERT_EQUAL(I.loc, S, "an unlocked briefcase takes items")
+	sb_open_held(H, S)
+	TEST_ASSERT(sb_is_open(H, S), "and opens")
+
+/datum/unit_test/dq_p2_storage/secure_briefcase_emag_opens_it_after_a_moment
+/datum/unit_test/dq_p2_storage/secure_briefcase_emag_opens_it_after_a_moment/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/secure/briefcase/S = sb_make(/obj/item/storage/secure/briefcase)
+	var/obj/item/card/emag/emag = sb_make(/obj/item/card/emag)
+	sb_click(H, S, emag)
+	sb_settle()
+	TEST_ASSERT(!sb_secure_locked(S), "the emag shorts the lock out")
+	var/obj/item/p2_storage_probe/tiny/I = sb_make(/obj/item/p2_storage_probe/tiny)
+	sb_click(H, S, I)
+	TEST_ASSERT_EQUAL(I.loc, S, "and the briefcase takes items")
+
+/datum/unit_test/dq_p2_storage/light_replacer_takes_good_bulbs_from_a_box
+/datum/unit_test/dq_p2_storage/light_replacer_takes_good_bulbs_from_a_box/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/box/lights/bulbs/B = sb_make(/obj/item/storage/box/lights/bulbs)
+	var/obj/item/lightreplacer/R = sb_make(/obj/item/lightreplacer)
+	R.uses = 0
+	var/count = sb_count(B)
+	TEST_ASSERT(count > 2, "the box starts with bulbs")
+	sb_click(H, B, R)
+	TEST_ASSERT(R.uses > 0, "the replacer took bulbs")
+	TEST_ASSERT(sb_count(B) < count, "out of the box")
+	TEST_ASSERT(R.loc != B, "and was not itself put in")
+
+/datum/unit_test/dq_p2_storage/vial_box_is_a_lockbox
+/datum/unit_test/dq_p2_storage/vial_box_is_a_lockbox/run_gate()
+	var/mob/living/carbon/human/H = sb_actor()
+	var/obj/item/storage/lockbox/vials/L = sb_make(/obj/item/storage/lockbox/vials)
+	TEST_ASSERT(sb_locked(L), "locked to start with")
+	var/obj/item/card/id/right = sb_make(/obj/item/card/id)
+	right.access = list(ACCESS_VIROLOGY)
+	sb_click(H, L, right)
+	TEST_ASSERT(!sb_locked(L), "the right ID unlocks it")
+	var/obj/item/reagent_containers/glass/beaker/vial/vial = sb_make(/obj/item/reagent_containers/glass/beaker/vial)
+	sb_click(H, L, vial)
+	TEST_ASSERT_EQUAL(vial.loc, L, "it takes a vial")
+	var/obj/item/p2_storage_probe/tiny/junk = sb_make(/obj/item/p2_storage_probe/tiny)
+	sb_click(H, L, junk)
+	TEST_ASSERT(junk.loc != L, "and nothing else")
