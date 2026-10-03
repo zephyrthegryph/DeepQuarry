@@ -780,6 +780,7 @@
 #include "interim_teleporter_sticky_coordinate_card.dm"
 #include "interim_protean_cluster_drop_actor.dm"
 #include "interim_cleanable_wash_cleanup.dm"
+#include "interim_glamour_ring_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
