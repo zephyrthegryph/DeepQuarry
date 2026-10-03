@@ -28,7 +28,7 @@
 	R.buckle_lying = FALSE
 	R.max_buckled_mobs = 1
 	if(!R.riding_datum)
-		own_set(R, nameof(R.riding_datum), new /datum/riding/dogborg(R))
+		rel_set(R, nameof(R.riding_datum), new /datum/riding/dogborg(R))
 	om_hook(R, /datum/om/event/mob_death, src, PROC_REF(on_death))
 	om_hook(R, /datum/om/event/robot_equipment_changed, src, PROC_REF(on_equipment_changed))
 	om_hook(R, /datum/om/event/robot_belly_fullness, src, PROC_REF(on_belly_fullness))
@@ -48,7 +48,7 @@
 /// Gives `R` a robot belly if it has none.
 /mob/living/silicon/robot/proc/add_robot_belly()
 	if(!robot_belly)
-		own_set(src, nameof(robot_belly), new /datum/robot_belly(src))
+		rel_set(src, nameof(robot_belly), new /datum/robot_belly(src))
 	return robot_belly
 
 /// The sleeper sets this; the sprite only redraws when it actually changes.

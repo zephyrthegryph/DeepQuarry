@@ -15,7 +15,7 @@
 	own_add(HUD, nameof(HUD.adding), using)
 	rel_set(HUD, nameof(HUD.move_intent), using) // owned by HUD.adding
 
-	own_set(src, nameof(healths), new /atom/movable/screen())
+	rel_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = HUD.ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"

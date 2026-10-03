@@ -120,8 +120,11 @@ UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
 
 	var/datum/tgui_module/power_monitor/power_monitor
 
+CAPABILITIES(/datum/data/pda/app/power)
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor)
+
 /datum/data/pda/app/power/New()
-	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor(src))
+	rel_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor(src))
 	. = ..()
 
 

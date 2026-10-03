@@ -196,7 +196,7 @@ GLOBAL_VAR(map_load_active)
 			P = new /datum/parsed_map()
 		parsed = P
 		source = P
-		own_set(T, nameof(T.parsed_map), T.keep_cached_map ? P : null)
+		rel_set(T, nameof(T.parsed_map), T.keep_cached_map ? P : null)
 		phase = P.bounds ? MAP_LOAD_CACHE : MAP_LOAD_PARSE
 		if(phase == MAP_LOAD_PARSE)
 			P.parse_begin(file(T.mappath), -INFINITY, INFINITY, -INFINITY, INFINITY, -INFINITY, INFINITY, FALSE)

@@ -117,6 +117,6 @@
 		rel_set(vessel, nameof(vessel.active_expedition), site)
 	var/datum/flight_destination/origin = destinations?[vessel.current_destination_id()]
 	var/datum/flight_plan/plan = new(vessel, origin, destination)
-	own_set(vessel, nameof(vessel.active_plan), plan) // the vessel owns its active plan; plans is the service's id lookup
+	rel_set(vessel, nameof(vessel.active_plan), plan) // the vessel owns its active plan; plans is the service's id lookup
 	own_put(src, nameof(plans), plan.id, plan)
 	return plan

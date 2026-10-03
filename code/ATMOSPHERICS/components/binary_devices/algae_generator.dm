@@ -33,6 +33,9 @@
 	var/const/input_gas = GAS_CO2
 	var/const/output_gas = GAS_O2
 
+CAPABILITIES(/obj/machinery/atmospherics/binary/algae_farm)
+	owns_one(nameof(internal), /datum/gas_mixture)
+
 /// Switched to active (grow lights on) and operable: it converts while this holds.
 OM_DERIVE_FIELD(/obj/machinery/atmospherics/binary/algae_farm, farming, list("operable", "use_power"))
 /obj/machinery/atmospherics/binary/algae_farm/proc/farming()
@@ -55,7 +58,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/atmospherics/binary/algae_farm, MACHINE_PI
 
 /obj/machinery/atmospherics/binary/algae_farm/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(internal), new /datum/gas_mixture)
+	rel_set(src, nameof(internal), new /datum/gas_mixture)
 	desc = initial(desc) + " Its outlet port is to the [dir2text(dir)]."
 	default_apply_parts()
 	update_icon()

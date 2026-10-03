@@ -30,6 +30,10 @@ OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/cell, cell, CHANGE_EXPLICIT)
 /// Installed capacitor. Higher rating == faster charge between shots. Set to a path to spawn with one of that type.
 OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor, CHANGE_EXPLICIT)
 
+CAPABILITIES(/obj/item/gun/magnetic)
+	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
+	owns_one(nameof(loaded), /obj/item)
+
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
 /// Swapping parts goes through own_set()/own_take() (and a destroyed part is cleared by the
 /// ownership framework), all of which raise the part fields; the capacitor's charge is a cross-entity
@@ -46,7 +50,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/magnetic, "loaded", "loaded")
 	. = ..()
 	// So you can have some spawn with components
 	if(ispath(capacitor))
-		own_set(src, nameof(capacitor), new capacitor(src))
+		rel_set(src, nameof(capacitor), new capacitor(src))
 		capacitor.set_charge(capacitor.max_charge)
 
 	if(capacitor)
@@ -201,7 +205,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(!own_set(src, nameof(src.loaded), thing, user = user))
 				return
 		else
-			own_set(src, nameof(loaded), new load_type(src, 1))
+			rel_set(src, nameof(loaded), new load_type(src, 1))
 			ammo.use(1)
 
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " loads %T% with \the [loaded]."))

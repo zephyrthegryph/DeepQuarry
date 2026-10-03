@@ -11,6 +11,9 @@
 	VAR_PRIVATE/regen_sounds = SFX_EFFECTS_MOB_EFFECTS_XENOCHIMERA_REGEN_MIX
 	VAR_PRIVATE/datum/transhuman/body_record/revival_record
 
+CAPABILITIES(/datum/xenochimera)
+	owns_one(nameof(revival_record), /datum/transhuman/body_record)
+
 /datum/xenochimera/New(mob/living/carbon/human/new_owner)
 	..()
 	if(!ishuman(new_owner))
@@ -37,7 +40,7 @@
 /datum/xenochimera/proc/handle_record()
 	if(QDELETED(owner))
 		return
-	own_set(src, nameof(revival_record), new /datum/transhuman/body_record(owner))
+	rel_set(src, nameof(revival_record), new /datum/transhuman/body_record(owner))
 
 /// Ticked from the human species_components life stage.
 /datum/xenochimera/proc/handle_comp()
@@ -518,7 +521,7 @@
 	RETURN_TYPE(/datum/xenochimera)
 	if(xenochimera)
 		return xenochimera
-	own_set(src, nameof(xenochimera), new /datum/xenochimera(src))
+	rel_set(src, nameof(xenochimera), new /datum/xenochimera(src))
 	return xenochimera
 
 /// Removes the xenochimera state datum, if any.

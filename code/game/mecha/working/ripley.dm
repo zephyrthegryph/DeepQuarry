@@ -19,6 +19,9 @@
 	icon_scale_x = 1.2
 	icon_scale_y = 1.2
 
+CAPABILITIES(/obj/mecha/working/ripley)
+	owns_one(nameof(orescanner), /obj/item/mining_scanner)
+
 TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull/durable, \
 		/obj/item/mecha_parts/component/actuator, \
@@ -116,7 +119,7 @@ TYPE_TABLE(/obj/mecha/working/ripley, mecha_starting_components, list( \
 
 /obj/mecha/working/ripley/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(orescanner), new /obj/item/mining_scanner)
+	rel_set(src, nameof(orescanner), new /obj/item/mining_scanner)
 
 EXTEND_INTERACTIONS(/obj/mecha/working/ripley, \
 	INTERACT_VERB("Detect Ores", PROC_REF(ripley_detect_ore), REQ_ON(PRED_TARGET, /obj/mecha/proc/pred_mecha_pilot, null)), \

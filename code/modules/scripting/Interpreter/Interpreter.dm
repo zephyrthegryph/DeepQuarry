@@ -56,6 +56,10 @@
 	/// Where the frames of the current unwind go (just after the frames still pending from before).
 	var/unwind_at
 
+CAPABILITIES(/datum/n_Interpreter)
+	owns_one(nameof(globalScope), /datum/scope)
+	owns_one(nameof(program), /datum/node/BlockDefinition)
+
 /*
 	Constructor: New
 	Calls <Load()> with the given parameters.
@@ -69,7 +73,7 @@
 	Raises a runtime error.
 */
 /datum/n_Interpreter/proc/RaiseError(datum/runtimeError/e)
-	own_set(e, nameof(e.stack), functions.Copy())
+	rel_set(e, nameof(e.stack), functions.Copy())
 	e.stack.Push(curFunction())
 	src.HandleError(e)
 
@@ -82,7 +86,7 @@
 /datum/n_Interpreter/proc/CreateGlobalScope()
 	scopes.Clear()
 	var/datum/scope/S = new(program, null)
-	own_set(src, nameof(globalScope), S)
+	rel_set(src, nameof(globalScope), S)
 	return S
 
 /*

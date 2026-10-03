@@ -11,7 +11,7 @@ ADMIN_VERB(view_feedback, R_ADMIN|R_DEBUG|R_EVENT, "View Feedback", "Open the Fe
 
 	var/datum/managed_browser/feedback_viewer/viewer = new(user)
 	if(!QDELETED(viewer))
-		own_set(user, nameof(/client::feedback_viewer), viewer) // the client owns its viewer; viewer.my_client is the back view
+		rel_set(user, nameof(/client::feedback_viewer), viewer) // the client owns its viewer; viewer.my_client is the back view
 
 // This object holds the code to run the admin feedback viewer.
 /datum/managed_browser/feedback_viewer

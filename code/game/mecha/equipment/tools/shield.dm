@@ -14,9 +14,12 @@
 
 	equip_type = EQUIP_HULL
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/combat_shield)
+	owns_one(nameof(my_shield), /obj/item/shield_projector/line/exosuit)
+
 /obj/item/mecha_parts/mecha_equipment/combat_shield/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(my_shield), new my_shield_type)
+	rel_set(src, nameof(my_shield), new my_shield_type)
 	my_shield.shield_regen_delay = equip_cooldown
 	rel_set(my_shield, nameof(my_shield.my_tool), src)
 

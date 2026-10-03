@@ -5,6 +5,9 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 	var/static/list/diseases_minor = list()
 	var/static/list/diseases_moderate_major = list()
 
+CAPABILITIES(/datum/event/disease_outbreak)
+	owns_one(nameof(chosen_disease), /datum/affliction/contagion)
+
 /datum/event/disease_outbreak/setup()
 	if(isemptylist(diseases_minor) && isemptylist(diseases_moderate_major))
 		populate_diseases()
@@ -20,12 +23,12 @@ GLOBAL_LIST_EMPTY(current_pending_diseases)
 			else
 				stack_trace("Disease Outbreak: Invalid Event Level [severity]. Expected: 1-2")
 				virus = /datum/affliction/contagion/cold
-		own_set(src, nameof(chosen_disease), new virus)
+		rel_set(src, nameof(chosen_disease), new virus)
 	else
 		if(severity == EVENT_LEVEL_MAJOR)
-			own_set(src, nameof(chosen_disease), create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
+			rel_set(src, nameof(chosen_disease), create_virus(severity * pick(2,3))) //50% chance for a major disease instead of a moderate one
 		else
-			own_set(src, nameof(chosen_disease), create_virus(severity * 2))
+			rel_set(src, nameof(chosen_disease), create_virus(severity * 2))
 
 	chosen_disease.set_virus_modifiers(chosen_disease.virus_modifiers | CARRIER)
 

@@ -15,6 +15,9 @@
 	var/list/monitored_alarm_ids = null
 	var/datum/tgui_module/atmos_control/atmos_control
 
+CAPABILITIES(/obj/machinery/computer/atmoscontrol)
+	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control)
+
 /obj/machinery/computer/atmoscontrol/laptop //[TO DO] Change name to PCU and update mapdata to include replacement computers
 	name = "\improper Atmospherics PCU"
 	desc = "A personal computer unit. It seems to have only the Atmosphereics Control program installed."
@@ -45,6 +48,6 @@ DECLARE_EMAG(/obj/machinery/computer/atmoscontrol, PROC_REF(on_emag), null, null
 
 /obj/machinery/computer/atmoscontrol/ui_redirect(mob/user)
 	if(!atmos_control)
-		own_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
+		rel_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control(src, req_access, req_one_access, monitored_alarm_ids))
 	return atmos_control
 

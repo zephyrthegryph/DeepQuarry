@@ -53,6 +53,10 @@
 	/// Direction the produced items will drop (0 means on top of us)
 	var/drop_direction = SOUTH
 
+CAPABILITIES(/obj/machinery/mecha_part_fabricator_tg)
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
+	owns_one(nameof(rmat), /datum/remote_materials)
+
 /// The current design datum that the machine is building.
 /// Whether or not the machine is building the entire queue automagically.
 OM_FIELD(/obj/machinery/mecha_part_fabricator_tg, process_queue, FALSE, CHANGE_MACHINE_SETTINGS)
@@ -68,8 +72,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 /obj/machinery/mecha_part_fabricator_tg/var/datum/design_techweb/being_built
 
 /obj/machinery/mecha_part_fabricator_tg/Initialize(mapload)
-	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-	own_set(src, nameof(rmat), new /datum/remote_materials( \
+	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
+	rel_set(src, nameof(rmat), new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_events = list( \
@@ -316,7 +320,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mecha_part_fabricator_tg, PERIODIC_FAST, "
 	if(exit.density)
 		atom_say("Error! The part outlet is obstructed.")
 		desc = "It's trying to dispense the fabricated [dispensed_design.name], but the part outlet is obstructed."
-		own_set(src, nameof(stored_part), built_part)
+		rel_set(src, nameof(stored_part), built_part)
 		return FALSE
 
 	atom_say("The fabrication of [built_part] is now complete.")

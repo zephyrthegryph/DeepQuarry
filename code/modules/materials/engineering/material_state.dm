@@ -46,6 +46,9 @@
 	/// world.time of the last process_material_environment_now() sample.
 	var/last_process = 0
 
+CAPABILITIES(/datum/material_assembly)
+	owns_one(nameof(service), /datum/material_service)
+
 /// The part of the record that survives serialization, as name = value for what is not the default.
 /datum/material_assembly/proc/saved()
 	. = list()
@@ -95,6 +98,9 @@
 	var/recoil_delta = 0
 	/// The physical-response state of an item made of an engineered material (owned; hooks its events).
 	var/datum/material_response/response
+
+CAPABILITIES(/datum/material_build)
+	owns_one(nameof(response), /datum/material_response)
 
 /// The part of the record that survives serialization, as name = value for what is not the default.
 /// (The response is live wiring: it pins the holder instead, state_refusal().)

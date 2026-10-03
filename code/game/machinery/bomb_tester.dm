@@ -34,11 +34,14 @@
 	var/datum/gas_mixture/faketank
 	var/faketank_integrity
 
+CAPABILITIES(/obj/machinery/bomb_tester)
+	owns_one(nameof(faketank), /datum/gas_mixture)
+
 /obj/machinery/bomb_tester/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
 	RefreshParts()
-	own_set(src, nameof(faketank), new /datum/gas_mixture)
+	rel_set(src, nameof(faketank), new /datum/gas_mixture)
 
 /obj/machinery/bomb_tester/dismantle()
 	if(tank1)

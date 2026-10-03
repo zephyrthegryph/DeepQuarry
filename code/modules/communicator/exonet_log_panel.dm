@@ -3,6 +3,9 @@
 /mob/observer/dead
 	var/datum/exonet_log_panel/dq_exonet_log_panel_cache
 
+CAPABILITIES(/mob/observer/dead)
+	owns_one(nameof(dq_exonet_log_panel_cache), /datum/exonet_log_panel)
+
 /datum/exonet_log_panel
 	var/tmp/mob/observer/dead/host
 
@@ -38,7 +41,7 @@ UI_DATA_REPLACE(/datum/exonet_log_panel, "merge:ui_data_datum_exonet_log_panel{l
 	set name = "Show Text Messages"
 	set desc = "Allows you to see exonet text messages you've sent and received."
 	if(!dq_exonet_log_panel_cache)
-		own_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
+		rel_set(src, nameof(dq_exonet_log_panel_cache), new /datum/exonet_log_panel(src))
 	dq_exonet_log_panel_cache.tgui_interact(src)
 
 

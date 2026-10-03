@@ -22,6 +22,9 @@
 	anchored = TRUE
 	unacidable = TRUE
 
+CAPABILITIES(/obj/structure/morgue)
+	owns_one(nameof(connected), /obj/structure/m_tray)
+
 
 /obj/structure/morgue/proc/get_occupants()
 	rel_clear(src, nameof(occupants))
@@ -92,7 +95,7 @@
 
 /obj/structure/morgue/proc/open()
 	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-	own_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
+	rel_set(src, nameof(connected), new /obj/structure/m_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, src.dir)
 	src.connected.layer = OBJ_LAYER
@@ -259,7 +262,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 		own_clear(src, nameof(connected), OWN_DELETE)
 	else if (src.locked == 0)
 		play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-		own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+		rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 		rel_set(connected, nameof(connected.connected), src)
 		step(src.connected, dir)
 		src.connected.layer = OBJ_LAYER
@@ -297,7 +300,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/morgue/crematorium, REGISTRY_CREMATORIUMS)
 /obj/structure/morgue/crematorium/relaymove(mob/user as mob)
 	if (user.stat || locked)
 		return
-	own_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
+	rel_set(src, nameof(connected), new /obj/structure/m_tray/c_tray( src.loc ))
 	rel_set(connected, nameof(connected.connected), src)
 	step(src.connected, EAST)
 	src.connected.layer = OBJ_LAYER

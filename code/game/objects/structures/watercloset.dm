@@ -40,7 +40,7 @@
 	add_hose_connector(/datum/hose_connector/endless_drain) // Cannot suck from toilet... for obvious reasons.
 
 	if(teleplumb_crystal)
-		own_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
+		rel_set(src, nameof(teleplumb_crystal), new /obj/item/bluespace_crystal(src))
 		rel_set(src, nameof(teleplumb_dest), locate(/obj/effect/landmark/teleplumb_exit))
 		desc = "The BS-500, a bluespace rift-rotation-based waste disposal unit for small matter. This one seems remarkably clean."
 
@@ -514,9 +514,12 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 	var/reagent_id = REAGENT_ID_WATER
 	var/reaction_volume = 200
 
+CAPABILITIES(/obj/machinery/shower)
+	owns_one(nameof(soundloop), /datum/looping_sound/showering)
+
 /obj/machinery/shower/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/showering(list(src), FALSE))
 
 DECLARE_REAGENT_FROM_VAR(/obj/machinery/shower, "reaction_volume", "reagent_id", "reaction_volume")
 

@@ -106,7 +106,7 @@ GLOBAL_LIST_INIT(dq_species_preview_cache_warm_init, dq_warm_species_preview_cac
 		// init loop. Pre-warmed at world startup via dq_warm_species_preview_cache.
 		try
 			var/mob/living/carbon/human/dummy/mannequin/M = new(null)
-			own_set(M, nameof(M.dna), new /datum/dna(null))
+			rel_set(M, nameof(M.dna), new /datum/dna(null))
 			M.set_species(S.name)
 			M.update_icons_body()
 			result_icon = getFlatIcon(M, defdir = SOUTH, no_anim = TRUE)

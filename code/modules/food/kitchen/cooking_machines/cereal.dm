@@ -14,10 +14,13 @@
 		"Cereal" = /obj/item/reagent_containers/food/snacks/variable/cereal
 	)
 
+CAPABILITIES(/obj/machinery/appliance/mixer/cereal)
+	owns_one(nameof(cerealmaker_loop), /datum/looping_sound/cerealmaker)
+
 /obj/machinery/appliance/mixer/cereal/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
+	rel_set(src, nameof(cerealmaker_loop), new /datum/looping_sound/cerealmaker(list(src), FALSE))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/cereal, TYPE_PROC_REF(/atom, appearance_overlays), list())

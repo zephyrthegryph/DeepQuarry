@@ -94,7 +94,7 @@ BONUS
 	var/datum/affliction/contagion/engineered/strain = A.Copy()
 	own_add(phage, nameof(phage.infections), strain)
 	// base_disease is its own copy: never alias one contagion between two holders.
-	own_set(phage, nameof(phage.base_disease), A.Copy())
+	rel_set(phage, nameof(phage.base_disease), A.Copy())
 
 	if(A.transmission >= 12)
 		for(var/datum/affliction/contagion/D in M.get_contagions())

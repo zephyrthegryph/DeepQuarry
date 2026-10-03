@@ -50,7 +50,7 @@
 						break
 					own_remove(src, nameof(loaded), loaded[1])
 		if(ispath(magazine_type) && (load_method & MAGAZINE))
-			own_set(src, nameof(ammo_magazine), new magazine_type(src))
+			rel_set(src, nameof(ammo_magazine), new magazine_type(src))
 			allowed_magazines += /obj/item/ammo_magazine/smart
 			if(random_start_ammo)
 				var/ammo_cut = rand(0,ammo_magazine.max_ammo)

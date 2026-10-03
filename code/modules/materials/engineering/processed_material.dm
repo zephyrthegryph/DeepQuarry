@@ -66,6 +66,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	stack_type = /obj/item/stack/material/processed_alloy
 	var/datum/material_batch/batch_template
 
+CAPABILITIES(/datum/material/processed_alloy)
+	owns_one(nameof(batch_template), /datum/material_batch)
+
 
 /proc/register_processed_material(datum/material_batch/batch)
 	if(!istype(batch) || !length(batch.composition))
@@ -80,7 +83,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	material.name = key
 	material.display_name = batch.display_name()
 	material.use_name = material.display_name
-	own_set(material, nameof(material.batch_template), batch.copy_batch())
+	rel_set(material, nameof(material.batch_template), batch.copy_batch())
 	material.hardness = batch.hardness
 	material.integrity = clamp(round(batch.toughness * 2), 5, 250)
 	material.elasticity = clamp(batch.toughness - batch.brittleness * 0.25, 1, 100)
@@ -257,7 +260,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	// on the output turf preserves both initialization and the returned ref.
 	var/obj/item/stack/material/processed_alloy/stock = new /obj/item/stack/material/processed_alloy(location, stack_amount, material_key)
 	own_clear(stock, nameof(stock.batch_state), OWN_DELETE)
-	own_set(stock, nameof(stock.batch_state), batch.copy_for_amount(stack_amount))
+	rel_set(stock, nameof(stock.batch_state), batch.copy_for_amount(stack_amount))
 	stock.feedstock_purity = batch.purity
 	stock.feedstock_lot_id = uppertext(copytext(md5("[world.realtime]-[REF(stock)]-[rand()]"), 1, 9))
 	stock.update_thermal_processing()
@@ -289,6 +292,9 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 	/// current amount, so splitting/merging/using never creates or destroys value.
 	var/export_value_per_sheet = 0
 
+CAPABILITIES(/obj/item/stack/material/processed_alloy)
+	owns_one(nameof(batch_state), /datum/material_batch)
+
 // INIT: this stack's material, colour, export value and a batch copy sized to its amount
 // ALLOW(init): the material is a per-instance argument and the batch copy is sized to this stack
 /obj/item/stack/material/processed_alloy/Initialize(mapload, _amount, _material_name)
@@ -300,7 +306,7 @@ GLOBAL_LIST_EMPTY(processed_material_dedup)
 		export_value_per_sheet = max(material.supply_conversion_value, 0)
 		set_economic_provenance(DEPARTMENT_RESEARCH, export_value_per_sheet * amount)
 		var/datum/material/processed_alloy/processed = material
-		own_set(src, nameof(batch_state), processed.batch_template.copy_for_amount(amount))
+		rel_set(src, nameof(batch_state), processed.batch_template.copy_for_amount(amount))
 
 
 /// Hot stock glowing and cooling towards ambient (update_thermal_processing(), periodic_step()).
@@ -311,7 +317,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	if(batch_state)
 		return batch_state
 	var/datum/material/processed_alloy/processed = material
-	own_set(src, nameof(batch_state), processed?.batch_template?.copy_for_amount(amount))
+	rel_set(src, nameof(batch_state), processed?.batch_template?.copy_for_amount(amount))
 	return batch_state
 
 /obj/item/stack/material/processed_alloy/proc/update_thermal_processing()
@@ -348,9 +354,9 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 		return new_stack
 	new_stack.set_processed_material(material.name)
 	own_clear(new_stack, nameof(new_stack.batch_state), OWN_DELETE)
-	own_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
+	rel_set(new_stack, nameof(new_stack.batch_state), original.copy_for_amount(new_stack.get_amount()))
 	own_clear(src, nameof(batch_state), OWN_DELETE)
-	own_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
+	rel_set(src, nameof(batch_state), original.copy_for_amount(max(old_amount - new_stack.get_amount(), 0)))
 	qdel(original) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return new_stack
 
@@ -385,12 +391,12 @@ DECLARE_PERIODIC_WHILE(/obj/item/stack/material/processed_alloy, PERIODIC_SLOW, 
 	new_target.temperature = (target_batch.temperature * target_before + source_batch.temperature * transferred) / max(target_before + transferred, 1)
 	new_target.recalculate()
 	own_clear(processed_target, nameof(processed_target.batch_state), OWN_DELETE)
-	own_set(processed_target, nameof(processed_target.batch_state), new_target)
+	rel_set(processed_target, nameof(processed_target.batch_state), new_target)
 	processed_target.update_thermal_processing()
 	if(!QDELETED(src))
 		var/datum/material_batch/new_source = source_batch.copy_for_amount(source_before - transferred)
 		own_clear(src, nameof(batch_state), OWN_DELETE)
-		own_set(src, nameof(batch_state), new_source)
+		rel_set(src, nameof(batch_state), new_source)
 		update_thermal_processing()
 	qdel(source_portion) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	qdel(source_batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms

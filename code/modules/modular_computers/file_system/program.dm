@@ -37,6 +37,9 @@
 	var/ntnet_speed = 0						// GQ/s - current network connectivity transfer rate
 	/// Name of the tgui interface
 
+CAPABILITIES(/datum/computer_file/program)
+	owns_one(nameof(TM), /datum/tgui_module)
+
 /datum/computer_file/program/New(obj/item/modular_computer/comp = null)
 	..()
 	if(comp && istype(comp))
@@ -137,7 +140,7 @@
 	if(can_run(user, 1) || !requires_access_to_run)
 		rel_set(computer(), nameof(/obj/item/modular_computer::active_program), src)
 		if(tguimodule_path)
-			own_set(src, nameof(TM), new tguimodule_path(src))
+			rel_set(src, nameof(TM), new tguimodule_path(src))
 			// Prefer the card inserted into the computer's card slot for access checks;
 			// fall back to the user's own access if no card is slotted.
 			var/obj/item/card/id/auth_card = computer()?.card_slot?.stored_card()

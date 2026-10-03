@@ -138,6 +138,9 @@
 	REAGENT_ID_PITCHERNECTAR =  1
 	)
 
+CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	owns_one(nameof(temp_chem_holder), /obj)
+
 /obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
 	var/static/list/actor_specs = list(
 		INTERACT_OBSERVER("Harvest", PROC_REF(hydroponics_ghost_harvest)),
@@ -222,7 +225,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	..()
 	if(!ov_lowhealth)
 		setup_overlays()
-	own_set(src, nameof(temp_chem_holder), new /obj())
+	rel_set(src, nameof(temp_chem_holder), new /obj())
 	temp_chem_holder.create_reagents(10) // ALLOW(decl): holder on a bare scratch /obj child, not on src
 	if(mechanical)
 		connect()

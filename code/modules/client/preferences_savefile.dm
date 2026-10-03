@@ -27,7 +27,7 @@
 /datum/preferences/proc/load_savefile()
 	if(load_and_save && !path)
 		CRASH("Attempted to load savefile without first loading a path!")
-	own_set(src, nameof(savefile), new /datum/json_savefile(load_and_save ? path : null))
+	rel_set(src, nameof(savefile), new /datum/json_savefile(load_and_save ? path : null))
 
 // General preferences, have to be preloaded
 /datum/preferences/proc/load_early_prefs()

@@ -1,12 +1,12 @@
 /obj/item/Initialize(mapload)
 	if(init_hide_identity)
-		own_set(src, nameof(identity), new identity_type(src))
+		rel_set(src, nameof(identity), new identity_type(src))
 	return ..()
 
 
 /obj/item/proc/hide_identity() // Mostly for admins to make things secret.
 	if(!identity)
-		own_set(src, nameof(identity), new identity_type(src))
+		rel_set(src, nameof(identity), new identity_type(src))
 	else
 		identity.unidentify()
 

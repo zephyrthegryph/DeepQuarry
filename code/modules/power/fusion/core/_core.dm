@@ -37,6 +37,9 @@ DECLARE_REAGENTS(/obj/machinery/power/fusion_core, 10000, null)
 
 /// Its running field (Startup()/Shutdown()); the core ticks it while it has one.
 OM_FIELD_VIEW(/obj/machinery/power/fusion_core, obj/effect/fusion_em_field, owned_field, CHANGE_MACHINE_SETTINGS)
+
+CAPABILITIES(/obj/machinery/power/fusion_core)
+	owns_one(nameof(owned_field), /obj/effect/fusion_em_field)
 DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owned_field")
 
 /obj/machinery/power/fusion_core/Initialize(mapload)
@@ -89,7 +92,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 /obj/machinery/power/fusion_core/proc/Startup()
 	if(owned_field)
 		return
-	own_set(src, nameof(owned_field), new /obj/effect/fusion_em_field(loc, src))
+	rel_set(src, nameof(owned_field), new /obj/effect/fusion_em_field(loc, src))
 	owned_field.ChangeFieldStrength(field_strength)
 	icon_state = "core1"
 	set_use_power(USE_POWER_ACTIVE)
@@ -241,7 +244,7 @@ TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC
 		batch.add_dissolved_gas("fusion hydrogen", min(hydrogen / 50, field_work))
 		owned_field.dormant_reactant_quantities[hydrogen_key] = max(0, hydrogen - 5)
 	var/obj/item/stack/material/processed_alloy/replacement = replace_processed_stack(material_sample, batch, src)
-	own_set(src, nameof(material_sample), replacement)
+	rel_set(src, nameof(material_sample), replacement)
 	if(material_sample)
 		material_sample.forceMove(src)
 	if(round(old_fusion_strength / 25) != round((LAZYACCESS(batch.field_treatments, MATERIAL_FIELD_FUSION) || 0) / 25))

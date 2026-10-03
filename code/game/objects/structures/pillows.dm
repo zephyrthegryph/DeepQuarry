@@ -52,6 +52,9 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 	var/obj/structure/bed/pillowpilefront/front
 	flippable = FALSE
 
+CAPABILITIES(/obj/structure/bed/pillowpile)
+	owns_one(nameof(front), /obj/structure/bed/pillowpilefront)
+
 /obj/structure/bed/pillowpilefront
 	name = "pillow pile"
 	desc = "A massive pile of pillows!"
@@ -66,7 +69,7 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 /obj/structure/bed/pillowpile/Initialize(mapload)
 	. = ..()
 	var/turf/T = get_turf(src)
-	own_set(src, nameof(front), new pillowpilefront(T))
+	rel_set(src, nameof(front), new pillowpilefront(T))
 	rel_set(front, nameof(front.pile), src)
 
 // The front piece is the pile's other half: the pile owns it (implicit OWN, deleted with the

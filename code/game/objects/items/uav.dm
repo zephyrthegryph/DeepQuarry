@@ -42,6 +42,9 @@
 	// Idle shutdown time
 	var/no_masters_time = 0
 
+CAPABILITIES(/obj/item/uav)
+	owns_one(nameof(cell), /obj/item/cell)
+
 /obj/item/uav/loaded
 	cell_type = /obj/item/cell/high
 
@@ -49,7 +52,7 @@
 	. = ..()
 
 	if(!cell && cell_type)
-		own_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
+		rel_set(src, nameof(cell), new cell_type) // ALLOW(decl): made in nullspace, not in src
 
 	ion_trail.set_up(src)
 	ion_trail.stop()

@@ -179,9 +179,12 @@ TYPE_TABLE_DECLARE(/obj/item/rcd, rcd_modes, list(RCD_FLOORWALL, RCD_AIRLOCK, RC
 	var/make_cell = TRUE // If false, initialize() won't spawn a cell for this.
 	var/electric_cost_coefficent = 83.33 // Higher numbers make it less efficent. 86.3... means it should matche the standard RCD capacity on a 10k cell.
 
+CAPABILITIES(/obj/item/rcd/electric)
+	owns_one(nameof(cell), /obj/item/cell)
+
 /obj/item/rcd/electric/Initialize(mapload)
 	if(make_cell)
-		own_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): the cell is made only when make_cell is set, which a declaration cannot condition
+		rel_set(src, nameof(cell), new /obj/item/cell/high(src)) // ALLOW(decl): the cell is made only when make_cell is set, which a declaration cannot condition
 	return ..()
 
 

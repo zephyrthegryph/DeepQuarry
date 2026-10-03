@@ -16,10 +16,13 @@
 	var/state
 	var/datum/gas_mixture/air_contents = null
 
+CAPABILITIES(/obj/item/latexballon)
+	owns_one(nameof(air_contents), /datum/gas_mixture)
+
 /obj/item/latexballon/proc/blow(obj/item/tank/tank)
 	if (icon_state == "latexballon_bursted")
 		return
-	own_set(src, nameof(air_contents), tank.remove_air_volume(3))
+	rel_set(src, nameof(air_contents), tank.remove_air_volume(3))
 	icon_state = "latexballon_blow"
 	item_state = "latexballon"
 

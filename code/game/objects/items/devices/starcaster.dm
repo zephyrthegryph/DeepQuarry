@@ -16,6 +16,9 @@
 	var/datum/computer_file/data/news_article/loaded_article_owned //You must specify the variable this far to avoid compilation errors.
 	var/show_archived = null
 
+CAPABILITIES(/obj/item/starcaster_news)
+	owns_one(nameof(loaded_article_owned), /datum/computer_file/data/news_article)
+
 
 
 DECLARE_INTERACTIONS(/obj/item/starcaster_news, INTERACT_USE(null, PROC_REF(interaction_self)))
@@ -63,7 +66,7 @@ UI_ACT_PROC(/obj/item/starcaster_news, ui_act_prg_openarticle)
 
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 		if(N.uid == params["uid"])
-			own_set(src, nameof(/obj/item/starcaster_news::loaded_article_owned), N.clone())
+			rel_set(src, nameof(/obj/item/starcaster_news::loaded_article_owned), N.clone())
 			break
 
 UI_ACT(/obj/item/starcaster_news, "PRG_reset", ui_act_prg_reset)

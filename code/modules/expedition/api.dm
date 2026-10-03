@@ -74,7 +74,7 @@
 	site.name = "Site [pick("Theta", "Sigma", "Kappa", "Vega", "Orion", "Lyra", "Cygnus", "Draco")]-[rand(1, 99)]"
 	site.faction = mission?.faction_type || expedition_pick_faction(difficulty)
 	site.name += " — [expedition_faction_name(site.faction)]"
-	own_set(site, nameof(site.mission), mission)
+	rel_set(site, nameof(site.mission), mission)
 	rel_set(site, nameof(site.assigned_shuttle), assigned_shuttle)
 	rel_set(site, nameof(site.origin_console), origin_console)
 	site.parent_destination_id = parent_destination_id

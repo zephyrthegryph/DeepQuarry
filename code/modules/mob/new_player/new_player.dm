@@ -299,7 +299,7 @@
 
 /mob/new_player/proc/LateChoices()
 	if(!late_choices_dialog)
-		own_set(src, nameof(late_choices_dialog), new /datum/tgui_module/late_choices(src))
+		rel_set(src, nameof(late_choices_dialog), new /datum/tgui_module/late_choices(src))
 	late_choices_dialog.tgui_interact(src)
 
 /mob/new_player/proc/create_character(turf/T)
@@ -382,7 +382,7 @@
 
 /mob/new_player/proc/ViewManifest()
 	if(!manifest_dialog)
-		own_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
+		rel_set(src, nameof(manifest_dialog), new /datum/tgui_module/crew_manifest/new_player(src))
 	manifest_dialog.tgui_interact(src)
 
 /mob/new_player/Move()

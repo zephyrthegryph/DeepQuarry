@@ -120,7 +120,7 @@
 	own_add(HUD, nameof(HUD.hotkeybuttons), using)
 
 	//Pull button
-	own_set(src, nameof(pullin), new /atom/movable/screen())
+	rel_set(src, nameof(pullin), new /atom/movable/screen())
 	pullin.icon = ui_style
 	pullin.icon_state = "pull0"
 	pullin.name = "pull"
@@ -128,16 +128,16 @@
 	rel_add(HUD, nameof(HUD.hud_elements), pullin)
 
 	//Health status
-	own_set(src, nameof(healths), new /atom/movable/screen())
+	rel_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = ui_style
 	healths.icon_state = "health0"
 	healths.name = "health"
 	healths.screen_loc = ui_health
 	rel_add(HUD, nameof(HUD.hud_elements), healths)
 
-	own_set(src, nameof(pain), new /atom/movable/screen( null ))
+	rel_set(src, nameof(pain), new /atom/movable/screen( null ))
 
-	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
+	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = ui_style
 	zone_sel.color = ui_color
 	zone_sel.alpha = ui_alpha
@@ -145,7 +145,7 @@
 	zone_sel.update_icon()
 	rel_add(HUD, nameof(HUD.hud_elements), zone_sel)
 
-	own_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())
+	rel_set(src, nameof(pai_fold_display), new /atom/movable/screen/pai/pai_fold_display())
 	pai_fold_display.screen_loc = ui_health
 	pai_fold_display.icon_state = "folded"
 	rel_add(HUD, nameof(HUD.hud_elements), pai_fold_display)
@@ -299,7 +299,7 @@
 	using.alpha = ui_alpha
 	own_add(HUD, nameof(HUD.other), using)
 
-	own_set(src, nameof(autowhisper_display), new /atom/movable/screen())
+	rel_set(src, nameof(autowhisper_display), new /atom/movable/screen())
 	autowhisper_display.icon = 'icons/mob/screen/minimalist.dmi'
 	autowhisper_display.icon_state = "autowhisper"
 	autowhisper_display.name = "autowhisper"

@@ -10,10 +10,13 @@
 	var/obj/item/circuitboard/circuit = null
 	var/obj/item/mmi/brain = null
 
+CAPABILITIES(/obj/structure/AIcore)
+	owns_one(nameof(laws), /datum/ai_laws)
+
 /obj/structure/AIcore/Initialize(mapload)
 	. = ..()
 	if(mapload)
-		own_set(src, nameof(laws), new using_map.default_law_type)
+		rel_set(src, nameof(laws), new using_map.default_law_type)
 
 DECLARE_INTERACTIONS(/obj/structure/AIcore, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 

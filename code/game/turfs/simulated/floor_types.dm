@@ -46,7 +46,7 @@
 
 	// Associate the holder with the new turf.
 	rel_set(new_holder, nameof(new_holder.my_turf), new_dest)
-	own_set(new_dest, nameof(new_dest.landed_holder_ref), new_holder)
+	rel_set(new_dest, nameof(new_dest.landed_holder_ref), new_holder)
 
 	//Update underlays if necessary (interior corners won't have changed).
 	if(new_dest.takes_underlays && !new_dest.interior_corner)
@@ -91,6 +91,9 @@
 	rad_insulation = RAD_MEDIUM_INSULATION
 	rad_shield_material = MAT_TITANIUM
 	rad_shield_thickness_mm = RAD_SHUTTLE_HULL_THICKNESS_MM
+
+CAPABILITIES(/turf/simulated/shuttle)
+	owns_one(nameof(landed_holder_ref), /obj/landed_holder)
 
 /turf/simulated/shuttle/Initialize(mapload)
 	. = ..()

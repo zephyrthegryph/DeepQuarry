@@ -53,6 +53,9 @@
 
 	var/atom/movable/screen/connected_button
 
+CAPABILITIES(/datum/spell)
+	owns_one(nameof(connected_button), /atom/movable/screen)
+
 ///////////////////////
 ///SETUP AND PROCESS///
 ///////////////////////

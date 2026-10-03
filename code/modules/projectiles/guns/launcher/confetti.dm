@@ -14,6 +14,9 @@
 	var/max_confetti = 20
 	special_handling = TRUE
 
+CAPABILITIES(/obj/item/gun/launcher/confetti_cannon)
+	owns_one(nameof(chambered), /obj/item/grenade/confetti/party_ball)
+
 /obj/item/gun/launcher/confetti_cannon/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
@@ -35,7 +38,7 @@
 	play_sfx(user, SFX_WEAPONS_SHOTGUNPUMP)
 	if(!chambered)
 		if(confetti_charge)
-			own_set(src, nameof(chambered), new /obj/item/grenade/confetti/party_ball)
+			rel_set(src, nameof(chambered), new /obj/item/grenade/confetti/party_ball)
 			--confetti_charge
 			to_chat(user, span_blue("You compress a new confetti ball."))
 		else
@@ -96,13 +99,13 @@
 		play_sfx(src, SFX_EFFECTS_POP)
 		switch(choice)
 			if("Confetti")
-				own_set(src, nameof(chambered), new /obj/item/grenade/confetti/party_ball)
+				rel_set(src, nameof(chambered), new /obj/item/grenade/confetti/party_ball)
 				to_chat(user, span_blue("Confetti loaded."))
 			if("Banana Peel")
-				own_set(src, nameof(chambered), new /obj/item/bananapeel)
+				rel_set(src, nameof(chambered), new /obj/item/bananapeel)
 				to_chat(user, span_blue("Banana peel loaded."))
 			if("Cream Pie")
-				own_set(src, nameof(chambered), new /obj/item/reagent_containers/food/snacks/pie)
+				rel_set(src, nameof(chambered), new /obj/item/reagent_containers/food/snacks/pie)
 				to_chat(user, span_blue("Banana cream pie loaded."))
 	else
 		to_chat(user, span_red("The [src] is already loaded!"))

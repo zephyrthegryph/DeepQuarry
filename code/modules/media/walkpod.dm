@@ -26,6 +26,9 @@
 	w_class = ITEMSIZE_COST_SMALL
 	slot_flags = SLOT_BELT
 
+CAPABILITIES(/obj/item/walkpod)
+	owns_one(nameof(deployed_headpods), /obj/item/headpods)
+
 /// Person whomst is listening to us. periodic_step() checks on them and plays music while set (DECLARE_PERIODIC_WHILE).
 OM_FIELD_VIEW(/obj/item/walkpod, mob/living, listener, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/walkpod, PERIODIC_SLOW, "listener")
@@ -231,7 +234,7 @@ UI_ACT_PROC(/obj/item/walkpod, ui_act_play)
 	var/mob/living/L = user
 	if(!istype(L))
 		return
-	own_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
+	rel_set(src, nameof(deployed_headpods), new /obj/item/headpods ())
 	L.put_in_any_hand_if_possible(deployed_headpods)
 	update_icon()
 

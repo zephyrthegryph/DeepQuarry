@@ -33,6 +33,9 @@
 	/// The installed item (part, cell, or fried remains). Null for internal parts.
 	var/obj/item/wrapped = null
 
+CAPABILITIES(/datum/robot_component)
+	owns_one(nameof(wrapped), /obj/item)
+
 /datum/robot_component/New(mob/living/silicon/robot/R, new_slot)
 	rel_set(src, nameof(owner), R)
 	slot = new_slot
@@ -79,7 +82,7 @@
 	// robot's cell watcher) see an empty slot rather than a removal.
 	own_clear(src, nameof(wrapped), OWN_DELETE)
 	if(!internal)
-		own_set(src, nameof(wrapped), new /obj/item/broken_device)
+		rel_set(src, nameof(wrapped), new /obj/item/broken_device)
 		wrapped.icon_state = brokenstate
 	installed = ROBOT_PART_DESTROYED
 	max_damage = initial(max_damage)
@@ -164,7 +167,7 @@
 		rel_clear(A, nameof(A.location))
 	if(wrapped && !QDELETED(wrapped))
 		if(!wrapped.carried_afflictions)
-			own_set(wrapped, nameof(wrapped.carried_afflictions), new /datum/carried_afflictions(wrapped))
+			rel_set(wrapped, nameof(wrapped.carried_afflictions), new /datum/carried_afflictions(wrapped))
 		wrapped.carried_afflictions.take(leaving)
 	else
 		QDEL_LIST(leaving)
@@ -365,6 +368,12 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	rel_set(src, nameof(holder), part)
 
 /obj/item/var/datum/carried_afflictions/carried_afflictions
+
+CAPABILITIES(/obj/item)
+	owns_one(nameof(carried_afflictions), /datum/carried_afflictions)
+	owns_one(nameof(economic_adoption), /datum/economic_adoption)
+	owns_one(nameof(identity), /datum/identification)
+	owns_one(nameof(mind_host), /datum/mind_host)
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)

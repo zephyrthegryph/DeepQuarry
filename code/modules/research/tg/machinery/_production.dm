@@ -36,13 +36,17 @@
 	var/build_coefficient = 1
 	var/tmp/list/build_chosen_materials
 
+CAPABILITIES(/obj/machinery/rnd/production)
+	owns_one(nameof(materials), /datum/remote_materials)
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
+
 /// One item every build_time_per_item while busy printing.
 DECLARE_REPEAT(/obj/machinery/rnd/production, "build_time_per_item", do_make_item, "busy")
 
 
 /obj/machinery/rnd/production/Initialize(mapload)
-	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
-	own_set(src, nameof(materials), new /datum/remote_materials(
+	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE))
+	rel_set(src, nameof(materials), new /datum/remote_materials(
 		src, \
 		mapload, \
 		mat_container_events = list( \

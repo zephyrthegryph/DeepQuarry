@@ -20,6 +20,9 @@
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 	var/tmp/client/controller	//Whoever is set to be controlling the blob. Used when the blob is created.
 
+CAPABILITIES(/obj/structure/blob/core)
+	owns_one(nameof(Q), /datum/ghost_query)
+
 // Spawn this if you want a ghost to be able to play as the blob.
 /obj/structure/blob/core/player
 	ai_controlled = FALSE
@@ -171,7 +174,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/blob/core, TYPE_PROC_REF(/atom, appearanc
 
 	var/client/C = null
 	if(!new_overmind)
-		own_set(src, nameof(Q), new /datum/ghost_query/blob())
+		rel_set(src, nameof(Q), new /datum/ghost_query/blob())
 		om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 		Q.query()
 

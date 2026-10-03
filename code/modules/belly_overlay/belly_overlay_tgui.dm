@@ -16,6 +16,9 @@
 	/// hasn't changed, so liquid bellies don't repaint the tgui every single tick.
 	var/last_show_sig
 
+CAPABILITIES(/datum/belly_overlay_tgui)
+	owns_one(nameof(active_ui), /datum/tgui)
+
 /datum/belly_overlay_tgui/New(mob/M)
 	rel_set(src, nameof(owner), M)
 
@@ -39,7 +42,7 @@ DECLARE_UI(/datum/belly_overlay_tgui, "BellyOverlay", UI_TITLE("Belly Overlay"))
 	return new /datum/tgui_window(user.client, "mapwindow.belly_overlay")
 
 /datum/belly_overlay_tgui/ui_opening(mob/user, datum/tgui/ui)
-	own_set(src, nameof(active_ui), ui)
+	rel_set(src, nameof(active_ui), ui)
 
 UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tgui{}")
 
@@ -189,7 +192,7 @@ UI_DATA_REPLACE(/datum/belly_overlay_tgui, "merge:ui_data_datum_belly_overlay_tg
 	if(!M)
 		return null
 	if(!M.belly_overlay_tgui)
-		own_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
+		rel_set(M, nameof(/mob::belly_overlay_tgui), new /datum/belly_overlay_tgui(M))
 	return M.belly_overlay_tgui
 
 /mob

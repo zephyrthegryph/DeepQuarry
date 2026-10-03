@@ -21,6 +21,10 @@ GLOBAL_LIST_EMPTY(fake_sunlight_zs)
 	var/weather_visuals_icon = 'icons/effects/weather.dmi'
 	var/weather_visuals_icon_state = null
 
+CAPABILITIES(/obj/effect/fake_sun)
+	owns_one(nameof(sun), /atom/movable/sun_visuals)
+	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+
 TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 	list( \
 	"brightness" = 1, \
@@ -155,9 +159,9 @@ TYPE_TABLE_DECLARE(/obj/effect/fake_sun, fake_sun_light_setups, list( \
 		WARNING("Fake sun placed on a level where it can't find any outdoor turfs to color at [x],[y],[z].")
 		return
 
-	own_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
+	rel_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
 
-	own_set(src, nameof(visuals), new /atom/movable/weather_visuals(null))
+	rel_set(src, nameof(visuals), new /atom/movable/weather_visuals(null))
 	visuals.icon = weather_visuals_icon
 	visuals.icon_state = weather_visuals_icon_state
 

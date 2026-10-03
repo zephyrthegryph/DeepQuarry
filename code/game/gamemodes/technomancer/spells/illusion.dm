@@ -16,6 +16,9 @@
 	var/atom/movable/copied
 	var/mob/living/simple_mob/illusion/illusion = null
 
+CAPABILITIES(/obj/item/spell/illusion)
+	owns_one(nameof(illusion), /mob/living/simple_mob/illusion)
+
 /obj/item/spell/illusion/on_ranged_cast(atom/hit_atom, mob/user)
 	if(istype(hit_atom, /atom/movable))
 		var/atom/movable/AM = hit_atom
@@ -31,7 +34,7 @@
 			if(!copied())
 				rel_set(src, nameof(copied), user)
 			if(pay_energy(500))
-				own_set(src, nameof(illusion), new /mob/living/simple_mob/illusion(T))
+				rel_set(src, nameof(illusion), new /mob/living/simple_mob/illusion(T))
 				illusion.copy_appearance(copied())
 				illusion.copy_overlays(copied(), TRUE)
 				to_chat(user, span_notice("An illusion of \the [copied()] is made on \the [T]."))

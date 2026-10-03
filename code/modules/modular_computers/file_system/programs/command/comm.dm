@@ -14,9 +14,12 @@
 	category = PROG_COMMAND
 	var/datum/comm_message_listener/message_core
 
+CAPABILITIES(/datum/computer_file/program/comm)
+	owns_one(nameof(message_core), /datum/comm_message_listener)
+
 /datum/computer_file/program/comm/New(obj/item/modular_computer/comp = null)
 	..()
-	own_set(src, nameof(message_core), new /datum/comm_message_listener)
+	rel_set(src, nameof(message_core), new /datum/comm_message_listener)
 
 
 /datum/computer_file/program/comm/clone()

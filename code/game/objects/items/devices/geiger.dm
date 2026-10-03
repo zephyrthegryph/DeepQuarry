@@ -86,7 +86,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 
 	if (scanning)
 		if(!geiger_sound)
-			own_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
+			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound(src))
 	else
 		own_clear(src, nameof(geiger_sound), OWN_DELETE)
 
@@ -180,7 +180,7 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 	. = ..()
 	if(scanning)
 		if(!geiger_sound)
-			own_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): the sound is made only while the geiger is scanning, which a declaration cannot condition
+			rel_set(src, nameof(geiger_sound), new /datum/geiger_sound/wall(src)) // ALLOW(decl): the sound is made only while the geiger is scanning, which a declaration cannot condition
 
 DECLARE_APPEARANCE(/obj/item/geiger/wall, "appearance_geiger_level", list( \
 	"0" = list(APPEARANCE_ICON_STATE = "geiger_wall-p"), \

@@ -27,6 +27,9 @@
 	buckle_require_restraints = 1
 	buckle_lying = -1
 
+CAPABILITIES(/obj/machinery/atmospherics/pipe)
+	owns_one(nameof(air_temporary), /datum/gas_mixture)
+
 /obj/machinery/atmospherics/pipe/drain_power()
 	return -1
 

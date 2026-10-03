@@ -100,7 +100,7 @@
 	var/atom/movable/screen/spell/newscreen = new /atom/movable/screen/spell()
 	rel_set(newscreen, nameof(newscreen.spell), spell)
 
-	own_set(spell, nameof(spell.connected_button), newscreen)
+	rel_set(spell, nameof(spell.connected_button), newscreen)
 
 	if(!spell.override_base) //if it's not set, we do basic checks
 		if(spell.spell_flags & CONSTRUCT_CHECK)

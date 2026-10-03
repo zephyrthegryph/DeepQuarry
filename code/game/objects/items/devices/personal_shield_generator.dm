@@ -37,6 +37,9 @@
 	var/has_weapon = 1										// Backpack units generally have weapons.
 	var/effect_color = "#99FFFF"							// Allows for changing shield colors. Default cyan.
 
+CAPABILITIES(/obj/item/personal_shield_generator)
+	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
+
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
 
@@ -44,10 +47,10 @@
 	. = ..()
 	if(has_weapon)
 		if(ispath(active_weapon))
-			own_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(src, nameof(active_weapon), new active_weapon(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 		else
-			own_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
+			rel_set(src, nameof(active_weapon), new /obj/item/gun/energy/gun/generator(src, src)) // ALLOW(decl): the holder is built with constructor arguments (a size and its owner) that a bare declaration cannot pass
 			rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)
 	update_icon()
 

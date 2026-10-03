@@ -7,6 +7,9 @@
 	var/datum/geosample/geologic_data
 	var/material
 
+CAPABILITIES(/obj/item/ore)
+	owns_one(nameof(geologic_data), /datum/geosample)
+
 /obj/item/ore/archeology_debris
 	name = "rocky debris"
 	desc = "Leftover rocky debris from digging."

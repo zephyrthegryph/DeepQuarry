@@ -167,7 +167,7 @@ APPEARANCE_TEMPLATE(/obj/item/gun/launcher/crossbow/bow, "{initial(icon_state)}{
 	if(!bolt)
 		act_message(user, src, MSG_SELF(span_infoplain("You fabricate a new hardlight projectile with %T%.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " fabricates a new hardlight projectile with %T%.")))
-		own_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
+		rel_set(src, nameof(bolt), new /obj/item/arrow/energy(src))
 		update_icon()
 	draw_string(user)
 

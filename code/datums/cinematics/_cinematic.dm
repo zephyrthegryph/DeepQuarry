@@ -49,12 +49,16 @@
 	/// Whether the cinematic turns off ooc when played globally.
 	var/stop_ooc = TRUE
 
+CAPABILITIES(/datum/cinematic)
+	owns_one(nameof(screen), /atom/movable/screen/cinematic)
+	owns_one(nameof(special_callback), /datum/callback)
+
 /datum/cinematic/New(watcher, datum/callback/special_callback)
-	own_set(src, nameof(screen), new /atom/movable/screen/cinematic(src))
+	rel_set(src, nameof(screen), new /atom/movable/screen/cinematic(src))
 	if(watcher == world)
 		is_global = TRUE
 
-	own_set(src, nameof(special_callback), special_callback)
+	rel_set(src, nameof(special_callback), special_callback)
 
 
 /// Actually goes through the process of showing the cinematic to the list of watchers.

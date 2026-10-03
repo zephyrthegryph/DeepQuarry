@@ -159,6 +159,9 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 	var/crawl_destroy = FALSE // Making bullet hell lite mobs, need something to add to their projectiles to destroy laying folks
 
+CAPABILITIES(/obj/item/projectile)
+	owns_one(nameof(trajectory), /datum/point/vector)
+
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
 	if(istype(loc, /obj/item/ammo_casing))
@@ -374,7 +377,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	trajectory_ignore_forcemove = TRUE
 	forceMove(starting)
 	trajectory_ignore_forcemove = FALSE
-	own_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
+	rel_set(src, nameof(trajectory), new /datum/point/vector(starting.x, starting.y, starting.z, pixel_x, pixel_y, Angle, GLOB.projectile_pixel_speed))
 	EXPIRY_STAMP(src, last_projectile_move, CLOCK_WORLD)
 	permutated = list()
 	originalRange = range

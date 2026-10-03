@@ -69,6 +69,9 @@
 	var/y
 	var/obj/effect/landmark/generated_station_service/landmark
 
+CAPABILITIES(/datum/generated_station_service_endpoint)
+	owns_one(nameof(landmark), /obj/effect/landmark/generated_station_service)
+
 
 /// A route between two service endpoints, stored in planner-local coordinates.
 /datum/generated_station_service_route
@@ -406,7 +409,7 @@ GLOBAL_LIST_INIT(generated_station_module_role_table_default, list("control", "s
 			if(T)
 				endpoint.x = T.x - min_x + 1
 				endpoint.y = T.y - min_y + 1
-				own_set(endpoint, nameof(endpoint.landmark), new /obj/effect/landmark/generated_station_service(T))
+				rel_set(endpoint, nameof(endpoint.landmark), new /obj/effect/landmark/generated_station_service(T))
 				endpoint.landmark.station_id = spec().id
 				endpoint.landmark.department_node_id = node.id
 				endpoint.landmark.service_id = service_id

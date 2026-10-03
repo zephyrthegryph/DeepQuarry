@@ -115,9 +115,12 @@
 	var/om_child_type
 	var/shipvore = FALSE	//Enable this to allow the mob to eat spaceships by dragging them onto its sprite.
 
+CAPABILITIES(/mob/living/simple_mob/vore/overmap)
+	owns_one(nameof(child_om_marker), /obj/effect/overmap/visitable/simplemob)
+
 /mob/living/simple_mob/vore/overmap/Initialize(mapload, new_child)
 	. = ..()
-	own_set(src, nameof(child_om_marker), new_child)
+	rel_set(src, nameof(child_om_marker), new_child)
 	if(child_om_marker)
 		om_link(src, child_om_marker, /datum/om/relation/overmap_mob_marker)
 	if(!om_child_type)
@@ -131,7 +134,7 @@
 		return
 	if(!child_om_marker)
 		var/obj/effect/overmap/visitable/simplemob/C = new om_child_type(loc, src)
-		own_set(src, nameof(child_om_marker), C)
+		rel_set(src, nameof(child_om_marker), C)
 		// The marker's Initialize() may have failed and deleted itself.
 		if(!QDELETED(C))
 			om_link(src, C, /datum/om/relation/overmap_mob_marker)

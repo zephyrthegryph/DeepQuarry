@@ -307,7 +307,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pitcher_fruit, null, l
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/Initialize(mapload)
 	. = ..()
 	bitesize = 1
-	own_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
+	rel_set(src, nameof(pit), new /obj/item/seeds/pitcherseed(src))
 	seed = pit.seed()
 
 /obj/item/reagent_containers/food/snacks/pitcher_fruit/afterattack(obj/O as obj, mob/user as mob, proximity)

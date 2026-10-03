@@ -49,7 +49,7 @@ GLOBAL_LIST_EMPTY(dq_permissions_panels)
 		dq_perms_log_operation = op
 		dq_perms_log_page = text2num(log_page) || 0
 	if(!dq_permissions_panel)
-		own_set(src, nameof(dq_permissions_panel), new /datum/permissions_panel(src))
+		rel_set(src, nameof(dq_permissions_panel), new /datum/permissions_panel(src))
 	dq_permissions_panel.tgui_interact(panel_owner.mob)
 	SStgui.update_uis(dq_permissions_panel)
 	dq_permissions_panel.refresh_db()

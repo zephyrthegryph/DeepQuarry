@@ -37,6 +37,9 @@
 	var/stat_tracking = TRUE
 	flags = REMOTEVIEW_ON_ENTER
 
+CAPABILITIES(/obj/machinery/disposal)
+	owns_one(nameof(air_contents), /datum/gas_mixture)
+
 // C11: one slot, accepting anything (any movable dropped, thrown or grabbed
 // into the bin before a flush). Drop policy is left to this type's own
 // Destroy() below, which already calls eject() -- emptying the bin onto the
@@ -670,7 +673,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/disposal, TYPE_PROC_REF(/atom, appearance
 		if(length(slot_contents(CONTAINER_SLOT_DISPOSAL)))
 			packet_expel(src, flushed_items, air_contents)
 
-	own_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
+	rel_set(src, nameof(air_contents), new /datum/gas_mixture(PRESSURE_TANK_VOLUME)) // new empty gas resv. Disposal packet takes ownership of the original one!
 	flushing = FALSE
 
 	// now reset disposal state

@@ -9,6 +9,12 @@
 	var/atom/movable/screen/background/cam_background
 	var/atom/movable/screen/skybox/local_skybox
 
+CAPABILITIES(/obj/item/communicator)
+	owns_one(nameof(cam_background), /atom/movable/screen/background)
+	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
+	owns_one(nameof(exonet), /datum/exonet_protocol)
+	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
+
 
 // Proc: setup_tgui_camera()
 // Parameters: None
@@ -17,7 +23,7 @@
 	map_name = "communicator_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
+	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
 	cam_screen.del_on_map_removal = FALSE
@@ -31,12 +37,12 @@
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
+	rel_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 
-	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 

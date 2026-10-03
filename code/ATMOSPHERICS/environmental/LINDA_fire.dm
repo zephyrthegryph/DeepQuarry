@@ -172,7 +172,7 @@
 		// When we are spawned from a deletion signal from our previous hotspot, this can happen
 		if(!QDELETED(location.active_hotspot))
 			qdel(location.active_hotspot)
-	own_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
+	rel_set(location, nameof(location.active_hotspot), src) // the turf owns its fire (deleted with it); the one it replaces was destroyed above
 
 	bypassing = !just_spawned && (volume > CELL_VOLUME*0.95)
 
@@ -408,6 +408,9 @@
 	var/drop_off_dist
 	COOLDOWN_DECLARE(update_sound_center)
 
+CAPABILITIES(/datum/hot_group)
+	owns_one(nameof(sound), /datum/looping_sound/fire)
+
 
 /datum/hot_group/proc/remove_from_group(obj/effect/hotspot/target)
 	rel_remove(src, nameof(spot_list), target)
@@ -474,7 +477,7 @@
 			rel_set(sound, nameof(sound.parent), sound_turf)
 			rel_set(src, nameof(current_sound_loc), sound_turf)
 		return
-	own_set(src, nameof(sound), new /datum/looping_sound/fire(sound_turf, TRUE))
+	rel_set(src, nameof(sound), new /datum/looping_sound/fire(sound_turf, TRUE))
 	sound.falloff_distance = drop_off_dist
 	sound.extra_range = drop_off_dist
 	rel_set(src, nameof(current_sound_loc), sound_turf)

@@ -760,7 +760,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fire
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/human/bloodjaunt/fireball/load_default_bellies()
@@ -798,7 +798,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/noodle, /mob/living/p
 /mob/living/simple_mob/humanoid/cultist/noodle/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/noodle/load_default_bellies()
@@ -837,7 +837,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/tesh, /mob/living/pro
 /mob/living/simple_mob/humanoid/cultist/tesh/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/tesh/load_default_bellies()
@@ -875,7 +875,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/humanoid/cultist/castertesh, /mob/livi
 /mob/living/simple_mob/humanoid/cultist/castertesh/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/humanoid/cultist/castertesh/load_default_bellies()

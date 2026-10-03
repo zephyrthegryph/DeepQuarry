@@ -18,6 +18,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/chameleon)
+	owns_one(nameof(active_dummy), /obj/effect/dummy/chameleon)
+
 /obj/item/chameleon/dropped(mob/user, equipping, slot)
 	if(equipping)
 		return ..()
@@ -104,7 +107,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 	set_dir(O.dir)
 	M.forceMove(src)
 	rel_set(src, nameof(master), C)
-	own_set(master, nameof(master.active_dummy), src)
+	rel_set(master, nameof(master.active_dummy), src)
 
 EXTEND_INTERACTIONS(/obj/effect/dummy/chameleon, \
 	INTERACT_ITEM("Disrupt", PROC_REF(interaction_disrupt)), \

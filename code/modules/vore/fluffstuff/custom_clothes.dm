@@ -1969,6 +1969,9 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 	var/owner = "ryumi"
 	var/obj/item/perfect_tele/translocator = null // The translocator installed inside, if there is one. Gotta go out and get it first!
 
+CAPABILITIES(/obj/item/clothing/head/fluff/nikki)
+	owns_one(nameof(translocator), /obj/item/perfect_tele)
+
 /// Old verb "Nikki's Hat - Unequip Translocator".
 /obj/item/clothing/head/fluff/nikki/proc/nikki_hat_unequip_translocator_verb(mob/user, obj/item/held, datum/interaction/interaction)
 	translocator_unequip(translocator, user)
@@ -1979,7 +1982,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/fluff/nikki, equip_spec, dq_spec_join(..(), 
 /obj/item/clothing/head/fluff/nikki/proc/translocator_equip_done(obj/item/perfect_tele/T, mob/living/carbon/human/user)
 	var/obj/item/perfect_tele/old = own_take(src, nameof(src.translocator)) // handed back below, not disposed of
 	if(!own_set(src, nameof(src.translocator), T, user = user))
-		own_set(src, nameof(src.translocator), old)
+		rel_set(src, nameof(src.translocator), old)
 		return
 	if(old)
 		user.put_in_hands(old)

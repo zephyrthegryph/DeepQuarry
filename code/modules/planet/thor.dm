@@ -13,7 +13,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /datum/planet/thor/New()
 	..()
 	GLOB.planet_thor = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/thor(src))
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/thor(src))
 
 /datum/planet/thor/update_sun()
 	..()

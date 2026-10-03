@@ -73,7 +73,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/horse, /mob/living/proc/toggle_ri
 /mob/living/simple_mob/vore/horse/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -2
 
 /mob/living/simple_mob/vore/horse/load_default_bellies()

@@ -145,14 +145,14 @@
 	NextToken()
 	var/t=options().binary_operators[options().assign_operators[curToken().value]]
 	var/datum/node/statement/VariableAssignment/stmt=new()
-	own_set(stmt, nameof(stmt.var_name), new /datum/node/identifier(name))
+	rel_set(stmt, nameof(stmt.var_name), new /datum/node/identifier(name))
 	NextToken()
 	if(t)
-		own_set(stmt, nameof(stmt.value), new t())
+		rel_set(stmt, nameof(stmt.value), new t())
 		stmt.value:exp=new/datum/node/expression/value/variable(stmt.var_name)
 		stmt.value:exp2=ParseExpression()
 	else
-		own_set(stmt, nameof(stmt.value), ParseExpression())
+		rel_set(stmt, nameof(stmt.value), ParseExpression())
 	LAZYADD(curBlock().statements, stmt)
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()

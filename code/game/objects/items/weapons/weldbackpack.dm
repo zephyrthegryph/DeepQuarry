@@ -12,13 +12,16 @@
 	drop_sound = SFX_ITEMS_DROP_BACKPACK
 	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
+CAPABILITIES(/obj/item/weldpack)
+	owns_one(nameof(nozzle), /obj/item)
+
 /obj/item/weldpack/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(max_fuel) //Lotsa refills
-	own_set(src, nameof(reagents), R)
+	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
-	own_set(src, nameof(nozzle), new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
+	rel_set(src, nameof(nozzle), new nozzle_type(src)) // the pack owns its nozzle (deleted with it, even out in a hand)
 	nozzle_attached = 1
 
 

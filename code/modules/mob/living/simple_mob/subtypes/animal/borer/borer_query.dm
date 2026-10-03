@@ -1,8 +1,12 @@
 /mob/living/simple_mob/animal/borer
 	var/datum/ghost_query/ghost_check // Used to unregister our signal
 
+CAPABILITIES(/mob/living/simple_mob/animal/borer)
+	owns_one(nameof(ghost_check), /datum/ghost_query)
+	owns_one(nameof(host_brain), /mob/living/captive_brain)
+
 /mob/living/simple_mob/animal/borer/proc/request_player()
-	own_set(src, nameof(ghost_check), new /datum/ghost_query/borer())
+	rel_set(src, nameof(ghost_check), new /datum/ghost_query/borer())
 	om_hook(ghost_check, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	ghost_check.query() // This will sleep the proc for awhile.
 

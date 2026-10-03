@@ -5,7 +5,7 @@
 	var/mob/living/silicon/ai/user = src
 	// Setup Variables
 	malfunctioning = 1
-	own_set(src, nameof(research), new/datum/malf_research())
+	rel_set(src, nameof(research), new/datum/malf_research())
 	rel_set(research, nameof(research.owner), src)
 	recalc_cpu()
 
@@ -137,4 +137,4 @@
 
 // Cleaner proc for creating powersupply for an AI.
 /mob/living/silicon/ai/proc/create_powersupply()
-	own_set(src, nameof(psupply), new/obj/machinery/ai_powersupply(src))
+	rel_set(src, nameof(psupply), new/obj/machinery/ai_powersupply(src))

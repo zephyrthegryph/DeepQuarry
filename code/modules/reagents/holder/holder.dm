@@ -530,7 +530,7 @@
 /atom/proc/create_reagents(max_vol, reagents_type = /datum/reagents)
 	if(!ispath(reagents_type))
 		reagents_type = /datum/reagents
-	own_set(src, nameof(reagents), new reagents_type(max_vol, src))
+	rel_set(src, nameof(reagents), new reagents_type(max_vol, src))
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID

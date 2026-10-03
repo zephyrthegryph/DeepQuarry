@@ -52,6 +52,16 @@
 	/// Set once the mission's on_complete() has fired, so it only pays out once.
 	var/rewarded = FALSE
 
+CAPABILITIES(/datum/expedition_site)
+	owns_one(nameof(landing_waypoint), /obj/effect/shuttle_landmark/automatic/clearing/expedition)
+	owns_one(nameof(mission), /datum/expedition_mission)
+	owns_one(nameof(station_defense), /datum/generated_station_defense_runtime)
+	owns_one(nameof(station_director), /datum/generated_station_director)
+	owns_one(nameof(station_materialization), /datum/generated_station_materialization)
+	owns_one(nameof(station_simulation), /datum/generated_station_simulation)
+	owns_one(nameof(station_spec), /datum/generated_station_spec)
+	owns_one(nameof(station_utilities), /datum/generated_station_utility_topology)
+
 /datum/expedition_site/New(_z_level, _difficulty = EXP_DIFF_LOW, turf/_landing)
 	z_level = _z_level
 	difficulty = _difficulty

@@ -182,7 +182,7 @@
 		hud_elements |= pullin
 
 	if(hud_data.has_internals)
-		own_set(src, nameof(internals), new /atom/movable/screen())
+		rel_set(src, nameof(internals), new /atom/movable/screen())
 		internals.icon = HUD.ui_style
 		internals.icon_state = "internal0"
 		if(istype(internal, /obj/item/tank)) //Internals on already? Iight, prove it
@@ -192,7 +192,7 @@
 		hud_elements |= internals
 
 	if(hud_data.has_warnings)
-		own_set(src, nameof(healths), new /atom/movable/screen())
+		rel_set(src, nameof(healths), new /atom/movable/screen())
 		healths.icon = HUD.ui_style
 		healths.icon_state = "health0"
 		healths.name = "health"
@@ -260,25 +260,25 @@
 	hud_elements |= xenochimera_danger_display
 	hud_elements |= lleill_display
 
-	own_set(src, nameof(ling_chem_display), new /atom/movable/screen/ling/chems())
+	rel_set(src, nameof(ling_chem_display), new /atom/movable/screen/ling/chems())
 	ling_chem_display.screen_loc = ui_ling_chemical_display
 	ling_chem_display.icon_state = "ling_chems"
 	hud_elements |= ling_chem_display
 
-	own_set(src, nameof(wiz_instability_display), new /atom/movable/screen/wizard/instability())
+	rel_set(src, nameof(wiz_instability_display), new /atom/movable/screen/wizard/instability())
 	wiz_instability_display.screen_loc = ui_wiz_instability_display
 	wiz_instability_display.icon_state = "wiz_instability_none"
 	hud_elements |= wiz_instability_display
 
-	own_set(src, nameof(wiz_energy_display), new/atom/movable/screen/wizard/energy())
+	rel_set(src, nameof(wiz_energy_display), new/atom/movable/screen/wizard/energy())
 	wiz_energy_display.screen_loc = ui_wiz_energy_display
 	wiz_energy_display.icon_state = "wiz_energy"
 	hud_elements |= wiz_energy_display
 
 
-	own_set(src, nameof(pain), new /atom/movable/screen( null ))
+	rel_set(src, nameof(pain), new /atom/movable/screen( null ))
 
-	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
+	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel( null ))
 	zone_sel.icon = HUD.ui_style
 	zone_sel.color = HUD.ui_color
 	zone_sel.alpha = HUD.ui_alpha
@@ -287,23 +287,23 @@
 	hud_elements |= zone_sel
 
 	//Handle the gun settings buttons
-	own_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
+	rel_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
 	gun_setting_icon.icon = HUD.ui_style
 	gun_setting_icon.color = HUD.ui_color
 	gun_setting_icon.alpha = HUD.ui_alpha
 	hud_elements |= gun_setting_icon
 
-	own_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
+	rel_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
 	item_use_icon.icon = HUD.ui_style
 	item_use_icon.color = HUD.ui_color
 	item_use_icon.alpha = HUD.ui_alpha
 
-	own_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
+	rel_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
 	gun_move_icon.icon = HUD.ui_style
 	gun_move_icon.color = HUD.ui_color
 	gun_move_icon.alpha = HUD.ui_alpha
 
-	own_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
+	rel_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
 	radio_use_icon.icon = HUD.ui_style
 	radio_use_icon.color = HUD.ui_color
 	radio_use_icon.alpha = HUD.ui_alpha

@@ -107,7 +107,7 @@
 		return
 	rel_set(src, nameof(identity), I)
 	if(mind)
-		own_set(mind, nameof(mind.identity), I)
+		rel_set(mind, nameof(mind.identity), I)
 
 /// Add/remove bookkeeping for persistent traits (genetic body effects, body_effects.dm).
 /mob/living/proc/record_genetic_effect(effect_type, present)
@@ -132,7 +132,7 @@
 	RETURN_TYPE(/datum/character_identity)
 	if(!identity && isliving(current))
 		var/mob/living/L = current
-		own_set(src, nameof(identity), L.identity())
+		rel_set(src, nameof(identity), L.identity())
 	return identity
 
 // --- Moving minds --------------------------------------------------------------------

@@ -14,6 +14,9 @@
 DECLARE_DEFAULT_CHILD(/obj/machinery/suspension_gen, "cell", /obj/item/cell/high)
 /// The field it projects while active (activate() .. deactivate()).
 OM_FIELD_VIEW(/obj/machinery/suspension_gen, obj/effect/suspension_field, suspension_field, CHANGE_MACHINE_SETTINGS)
+
+CAPABILITIES(/obj/machinery/suspension_gen)
+	owns_one(nameof(suspension_field), /obj/effect/suspension_field)
 /// Holds its field (draining its cell) while it has one.
 DECLARE_PERIODIC_WHILE(/obj/machinery/suspension_gen, MACHINE_PIPELINE, "suspension_field")
 
@@ -186,9 +189,9 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/suspension_gen, PROC_REF(on_emag), null)
 		anom.immortal = TRUE
 		anom.move_chance = 0
 		if(!anom.stats)
-			own_set(anom, nameof(anom.stats), new /datum/anomaly_stats(anom))
+			rel_set(anom, nameof(anom.stats), new /datum/anomaly_stats(anom))
 
-	own_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
+	rel_set(src, nameof(suspension_field), new /obj/effect/suspension_field(T))
 	visible_message(span_blue("[icon2html(src,viewers(src))] [src] activates with a low hum."))
 	icon_state = "suspension_on"
 	play_sfx(loc, SFX_MACHINES_QUIET_BEEP)

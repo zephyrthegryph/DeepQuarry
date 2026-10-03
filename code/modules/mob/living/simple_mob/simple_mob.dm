@@ -172,6 +172,9 @@
 	strip_pref = FALSE
 	blocks_emissive = EMISSIVE_BLOCK_UNIQUE // Note, this should be refactored to drop priority overlays
 
+CAPABILITIES(/mob/living/simple_mob)
+	owns_one(nameof(myid), /obj/item/card/id)
+
 // Verbs every simple mob has, or doesn't, by what it is (code/datums/om/grant_verbs.dm).
 DECLARE_VERB_HIDE(/mob/living/simple_mob, /mob/verb/observe)
 DECLARE_VERB_IF(/mob/living/simple_mob, /mob/living/simple_mob/proc/animal_nom, "vore_active") // useable before the vorgans initialise
@@ -195,7 +198,7 @@ DECLARE_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/use_pda) // TGP
 		myid_access = shared_type_list(type, "myid_access", myid_access)
 
 	if(ID_provided)
-		own_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
+		rel_set(src, nameof(myid), new /obj/item/card/id(src)) // ALLOW(decl): conditional on ID_provided
 		myid.access = myid_access ? myid_access.Copy() : list()
 
 	for(var/L in has_langs)
@@ -676,7 +679,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	om_attach(src, /datum/om/behaviour/slosh) // Sloshy element
 
 	if(!soulgem)
-		own_set(src, nameof(soulgem), new /obj/soulgem(src))
+		rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	// Since they have bellies, add verbs to toggle settings on them.
 	om_grant(src, GRANT_VERB, /mob/living/simple_mob/proc/toggle_digestion, src)

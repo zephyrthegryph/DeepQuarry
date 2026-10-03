@@ -77,6 +77,11 @@
 	///Cone offset Y hint from atom, when facing east/west, ignored for north/south (uses 16 in those cases)
 	var/cone_hint_y
 
+CAPABILITIES(/datum/overlay_lighting)
+	owns_one(nameof(cone), /obj/effect/overlay/light_cone)
+	owns_one(nameof(directional_atom), /obj/effect/abstract/directional_lighting)
+	owns_one(nameof(visible_mask), /obj/effect/overlay/light_visible)
+
 /// Creates and attaches the overlay light of `new_owner` (stored in new_owner.overlay_light).
 /// Returns null when new_owner cannot have one.
 /proc/add_overlay_lighting(atom/movable/new_owner, _range, _power, _color, starts_on, is_directional)
@@ -88,7 +93,7 @@
 	if(new_owner.overlay_light)
 		return new_owner.overlay_light
 	var/datum/overlay_lighting/light = new(new_owner, _range, _power, _color, starts_on, is_directional)
-	own_set(new_owner, nameof(new_owner.overlay_light), light)
+	rel_set(new_owner, nameof(new_owner.overlay_light), light)
 	light.attach()
 	return light
 
@@ -97,11 +102,11 @@
 	rel_set(src, nameof(owner), new_owner)
 	var/atom/movable/movable_parent = owner
 
-	own_set(src, nameof(visible_mask), new /obj/effect/overlay/light_visible())
+	rel_set(src, nameof(visible_mask), new /obj/effect/overlay/light_visible())
 	if(is_directional)
 		directional = TRUE
-		own_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
-		own_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
+		rel_set(src, nameof(directional_atom), new /obj/effect/abstract/directional_lighting())
+		rel_set(src, nameof(cone), new /obj/effect/overlay/light_cone())
 		cone_hint_x = movable_parent.light_cone_x_offset
 		cone_hint_y = movable_parent.light_cone_y_offset
 		set_direction(movable_parent.dir)

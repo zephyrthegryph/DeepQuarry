@@ -36,12 +36,15 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/perfect_tele)
+	owns_one(nameof(power_source), /obj/item/cell)
+
 /obj/item/perfect_tele/Initialize(mapload)
 	. = ..()
 
 	flags |= NOBLUDGEON
 	if(!power_source) // no cell_type
-		own_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
+		rel_set(src, nameof(power_source), new /obj/item/cell/device(src)) // ALLOW(decl): fallback when a subtype clears cell_type
 	rebuild_radial_images()
 
 DECLARE_DEFAULT_CHILD(/obj/item/perfect_tele, "power_source", "cell_type")

@@ -47,8 +47,13 @@
 /// of the var and everything the old species gave goes in the same step.
 CAPABILITIES(/mob/living/carbon)
 	rel_grants(nameof(species))
+	owns_one(nameof(cozyloop), /datum/looping_sound/mob/cozyloop)
+	owns_one(nameof(hallucinations), /datum/hallucinations)
+	owns_one(nameof(ingested), /datum/reagents/metabolism/ingested)
+	owns_one(nameof(touching), /datum/reagents/metabolism/touch)
 
 /// Every species has hands (has_working_hand() drops them when the body has lost them all). A species without hands overrides this list with
 /// without(); a mob with no species (a carp, a borg, the AI) declares its own providers.
 CAPABILITIES(/datum/species)
 	hands()
+	owns_one(nameof(hud), /datum/hud_data)

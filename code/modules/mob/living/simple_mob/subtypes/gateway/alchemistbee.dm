@@ -56,7 +56,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 /mob/living/simple_mob/vr/alchemistbee/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = 1
 
 /mob/living/simple_mob/vr/alchemistbee/load_default_bellies()

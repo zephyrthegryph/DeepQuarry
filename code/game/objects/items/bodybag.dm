@@ -204,8 +204,11 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag, TYPE_PROC_REF(/atom, app
 	var/stasis_level = /datum/body_effect/stasis/deep
 	var/obj/item/reagent_containers/syringe/syringe
 
+CAPABILITIES(/obj/structure/closet/body_bag/cryobag)
+	owns_one(nameof(tank), /obj/item/tank)
+
 /obj/structure/closet/body_bag/cryobag/Initialize(mapload)
-	own_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
+	rel_set(src, nameof(tank), new tank_type(null)) // ALLOW(decl): made in nullspace, not in src. It's in nullspace to prevent ejection when the bag is opened.
 	..()
 
 

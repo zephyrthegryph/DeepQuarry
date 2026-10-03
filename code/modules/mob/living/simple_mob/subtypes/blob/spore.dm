@@ -129,7 +129,7 @@
 	H.forceMove(src)
 	rel_set(src, nameof(infested), H)
 
-	own_set(src, nameof(say_list), new /datum/say_list/infested())
+	rel_set(src, nameof(say_list), new /datum/say_list/infested())
 
 	update_icons()
 	visible_message(span_warning("The corpse of [H.name] suddenly rises!"))

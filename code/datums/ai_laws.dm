@@ -34,6 +34,10 @@
 	var/list/state_inherent = list() // ALLOW(instance_list): d: per law set, written through the internal law procs; one per silicon
 	var/list/state_supplied = list() // ALLOW(instance_list): d: per law set, written through get/set_state_internal(); one per silicon
 
+CAPABILITIES(/datum/ai_laws)
+	owns_one(nameof(zeroth_law), /datum/ai_law/zero)
+	owns_one(nameof(zeroth_law_borg), /datum/ai_law/zero)
+
 /datum/ai_laws/New()
 	..()
 	sort_laws()
@@ -110,9 +114,9 @@
 	if(!law)
 		return
 
-	own_set(src, nameof(zeroth_law), new /datum/ai_law/zero(law))
+	rel_set(src, nameof(zeroth_law), new /datum/ai_law/zero(law))
 	if(law_borg) //Making it possible for slaved borgs to see a different law 0 than their AI. --NEO
-		own_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
+		rel_set(src, nameof(zeroth_law_borg), new /datum/ai_law/zero(law_borg))
 	else
 		own_clear(src, nameof(zeroth_law_borg), OWN_DELETE)
 	rel_clear(src, nameof(sorted_laws))

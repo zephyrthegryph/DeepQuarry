@@ -12,6 +12,9 @@
 	var/datum/reagents/reagents = null
 	var/makes_gurgles = TRUE
 
+CAPABILITIES(/datum/hose_connector)
+	owns_one(nameof(reagents), /datum/reagents)
+
 /// The hose plugged into this socket. It pumps every 2 s while one is (DECLARE_PERIODIC_WHILE).
 OM_FIELD_VIEW_OF(/datum/hose_connector, my_hose, CHANGE_DATUM_A)
 DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
@@ -43,7 +46,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 /// Binds to `new_carrier`. FALSE when the carrier is incompatible.
 /datum/hose_connector/proc/attach(atom/movable/new_carrier, set_unique_name = null)
 	rel_set(src, nameof(carrier), new_carrier)
-	own_set(src, nameof(reagents), new /datum/reagents(60, src))
+	rel_set(src, nameof(reagents), new /datum/reagents(60, src))
 	// Handle uniquely named connectors
 	if(set_unique_name)
 		name = set_unique_name

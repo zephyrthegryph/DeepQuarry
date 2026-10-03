@@ -173,6 +173,12 @@
 	var/list/micro_utility_equipment
 	var/list/micro_weapon_equipment
 
+CAPABILITIES(/obj/mecha)
+	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(internal_tank), /obj/item/tank)
+	owns_one(nameof(minihud), /datum/mini_hud/mech)
+	owns_one(nameof(radio), /obj/item/radio)
+
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
 		/obj/item/mecha_parts/component/actuator, \
@@ -479,14 +485,14 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	// the ZAS portable canister type was deleted in the LINDA migration.
 	// Mech internal tank now uses /obj/item/tank/air (regular oxygen tank) which
 	// has return_air() and persists in the mech's contents.
-	own_set(src, nameof(internal_tank), new /obj/item/tank/air(src))
+	rel_set(src, nameof(internal_tank), new /obj/item/tank/air(src))
 	return internal_tank
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
 		own_set(src, nameof(src.cell), C, into = TRUE)
 		return
-	own_set(src, nameof(cell), new /obj/item/cell/mech(src))
+	rel_set(src, nameof(cell), new /obj/item/cell/mech(src))
 
 /obj/mecha/get_cell()
 	return cell
@@ -505,7 +511,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 	return cabin_air
 
 /obj/mecha/proc/add_radio()
-	own_set(src, nameof(radio), new /obj/item/radio(src))
+	rel_set(src, nameof(radio), new /obj/item/radio(src))
 	radio.name = "[src] radio"
 	radio.icon = icon
 	radio.icon_state = icon_state
@@ -1643,7 +1649,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		src.log_append_to_last("[H] moved in as pilot.")
 		update_icon()
 		if(occupant.hud_used)
-			own_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
+			rel_set(src, nameof(minihud), new /datum/mini_hud/mech (occupant.hud_used, src))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 

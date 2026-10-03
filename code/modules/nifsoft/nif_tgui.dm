@@ -18,6 +18,9 @@
 	var/tmp/last_notification
 	var/datum/nif_menu/menu_ref
 
+CAPABILITIES(/obj/item/nif)
+	owns_one(nameof(menu_ref), /datum/nif_menu)
+
 /**
  * Small helper datum to manage the HUD icon.
  * Owned by the NIF through `menu_ref`; hooks the implanted mob and goes away with it.

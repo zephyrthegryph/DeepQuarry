@@ -331,7 +331,7 @@
 		qdel(src)
 		return
 	rel_set(src, nameof(parent), new_parent)
-	own_set(new_parent, nameof(new_parent.economic_adoption), src)
+	rel_set(new_parent, nameof(new_parent.economic_adoption), src)
 	invoice_id = _invoice_id
 	customer_account = _customer_account
 	customer_department = _customer_department

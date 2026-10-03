@@ -11,9 +11,12 @@
 	var/_canary_serial
 	var/datum/stack_canary/_canary
 
+CAPABILITIES(/datum/stack_end_detector)
+	owns_one(nameof(_canary), /datum/stack_canary)
+
 /datum/stack_end_detector/New()
 	var/static/next_serial = 0
-	own_set(src, nameof(_canary), new /datum/stack_canary())
+	rel_set(src, nameof(_canary), new /datum/stack_canary())
 	_canary.serial = ++next_serial
 	_canary_serial = _canary.serial
 	_canary_ref = REF(_canary)

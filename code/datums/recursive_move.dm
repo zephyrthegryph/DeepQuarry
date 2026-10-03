@@ -26,7 +26,7 @@
 		AM.recursive_move.reset_parents()
 		AM.recursive_move.setup_parents()
 		return AM.recursive_move
-	own_set(AM, nameof(AM.recursive_move), new /datum/recursive_move(AM))
+	rel_set(AM, nameof(AM.recursive_move), new /datum/recursive_move(AM))
 	return AM.recursive_move
 
 /datum/recursive_move/New(atom/movable/new_holder)

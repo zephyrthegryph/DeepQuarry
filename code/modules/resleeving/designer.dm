@@ -23,6 +23,9 @@
 	var/db_key
 	var/tmp/datum/transcore_db/our_db_static	// These persist all round and are never destroyed, just keep a hard ref
 
+CAPABILITIES(/obj/machinery/computer/transhuman/designer)
+	owns_one(nameof(designer_gui), /datum/tgui_module/appearance_changer/body_designer)
+
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
 	our_db_static = SStranscore.db_by_key(db_key)
@@ -57,7 +60,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 	if(!operable())
 		return
 	if(!designer_gui)
-		own_set(src, nameof(designer_gui), new /datum/tgui_module/appearance_changer/body_designer(src, null))
+		rel_set(src, nameof(designer_gui), new /datum/tgui_module/appearance_changer/body_designer(src, null))
 		rel_set(designer_gui, nameof(designer_gui.linked_body_design_console), src)
 		designer_gui.jiggle_map()
 	if(!designer_gui.owner())

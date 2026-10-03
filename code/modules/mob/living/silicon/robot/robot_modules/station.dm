@@ -58,7 +58,7 @@
 		return
 
 	var/mob/living/silicon/robot/R = loc
-	own_set(R, nameof(R.module), src)
+	rel_set(R, nameof(R.module), src)
 
 	add_camera_networks(R)
 	add_languages(R)
@@ -691,7 +691,7 @@ DAMAGE_REACTION(/obj/item/robot_module, DAMAGE_EMP, PROC_REF(emp_synths))
 	own_add(src, nameof(emag), PB)
 
 	var/datum/reagents/R = new/datum/reagents(50)
-	own_set(PB, nameof(PB.reagents), R)
+	rel_set(PB, nameof(PB.reagents), R)
 	rel_set(R, nameof(R.my_atom), PB)
 	R.add_reagent(REAGENT_ID_BEER2, 50)
 	PB.name = "Auntie Hong's Final Sip"

@@ -56,6 +56,9 @@ GLOBAL_LIST_EMPTY_TYPED(powerinstances, /datum/power/changeling)
 		CHANGELING_SCREECH = 0
 	)
 
+CAPABILITIES(/datum/changeling)
+	owns_one(nameof(power_panel), /datum/changeling_panel)
+
 ///Checks if a mind or a mob is a changeling.
 ///Checks to see if the thing fed to it is a changeling first, then does some deeper searching.
 /proc/is_changeling(mob/M)
@@ -152,7 +155,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 			return
 		var/mob/living/living_self = src
 		comp = new /datum/changeling(living_self)
-		own_set(living_self, nameof(living_self.changeling_state), comp)
+		rel_set(living_self, nameof(living_self.changeling_state), comp)
 	rel_set(mind.antag_holder, nameof(/datum/antag_holder::changeling), comp)
 	var/lesser_form = !ishuman(src)
 
@@ -174,7 +177,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 				om_grant(src, GRANT_VERB, P.verbpath, comp)
 			if(P.make_hud_button)
 				if(!src.ability_master)
-					own_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
+					rel_set(src, nameof(ability_master), new /atom/movable/screen/movable/ability_master(src))
 				src.ability_master.add_ling_ability(
 					object_given = src,
 					verb_given = P.verbpath,
@@ -365,7 +368,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 		for(var/changeling_power in GLOB.changeling_powers)
 			GLOB.powerinstances += new changeling_power()
 	if(!comp.power_panel)
-		own_set(comp, nameof(comp.power_panel), new /datum/changeling_panel())
+		rel_set(comp, nameof(comp.power_panel), new /datum/changeling_panel())
 		rel_set(comp.power_panel, nameof(/datum/changeling_panel::comp), comp)
 
 	comp.power_panel.tgui_interact(src)
@@ -401,7 +404,7 @@ OM_FIELD(/datum/changeling, camo_draining, FALSE, CHANGE_DATUM_A)
 
 	if(Thepower.make_hud_button && Thepower.isVerb)
 		// A fresh master (own_set deletes the old one); a mob without one gets its first.
-		own_set(owner, nameof(owner.ability_master), new /atom/movable/screen/movable/ability_master(owner))
+		rel_set(owner, nameof(owner.ability_master), new /atom/movable/screen/movable/ability_master(owner))
 		owner.ability_master.add_ling_ability(
 			object_given = owner,
 			verb_given = Thepower.verbpath,

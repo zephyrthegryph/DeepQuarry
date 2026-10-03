@@ -7,9 +7,12 @@
 	p_drain = 0.025
 	var/datum/tgui_module/crew_monitor/nif/arscreen
 
+CAPABILITIES(/datum/nifsoft/crewmonitor)
+	owns_one(nameof(arscreen), /datum/tgui_module/crew_monitor/nif)
+
 /datum/nifsoft/crewmonitor/New()
 	..()
-	own_set(src, nameof(arscreen), new /datum/tgui_module/crew_monitor/nif(nif()))
+	rel_set(src, nameof(arscreen), new /datum/tgui_module/crew_monitor/nif(nif()))
 
 
 /datum/nifsoft/crewmonitor/activate()
@@ -33,9 +36,12 @@
 	p_drain = 0.025
 	var/datum/tgui_module/alarm_monitor/engineering/nif/tgarscreen
 
+CAPABILITIES(/datum/nifsoft/alarmmonitor)
+	owns_one(nameof(tgarscreen), /datum/tgui_module/alarm_monitor/engineering/nif)
+
 /datum/nifsoft/alarmmonitor/New()
 	..()
-	own_set(src, nameof(tgarscreen), new /datum/tgui_module/alarm_monitor/engineering/nif(nif()))
+	rel_set(src, nameof(tgarscreen), new /datum/tgui_module/alarm_monitor/engineering/nif(nif()))
 
 
 /datum/nifsoft/alarmmonitor/activate()

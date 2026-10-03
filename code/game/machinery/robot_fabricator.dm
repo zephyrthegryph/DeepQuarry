@@ -131,7 +131,7 @@ UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
 	return TRUE
 
 /obj/machinery/robotic_fabricator/proc/complete_building(building)
-	own_set(src, nameof(being_built), new building(src))
+	rel_set(src, nameof(being_built), new building(src))
 	being_built.forceMove(get_turf(src))
 	own_take(src, nameof(being_built))
 	set_use_power(USE_POWER_IDLE)

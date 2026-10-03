@@ -30,6 +30,14 @@
 
 /// The artifact state of an anomalous atom (was the artifact_master component). Owned by it.
 /atom/var/datum/artifact_master/artifact_master
+
+CAPABILITIES(/atom)
+	owns_one(nameof(artifact_master), /datum/artifact_master)
+	owns_one(nameof(forensic_data), /datum/forensics_crime)
+	owns_one(nameof(light), /datum/light_source)
+	owns_one(nameof(reagents), /datum/reagents)
+	owns_one(nameof(rx_node), /datum/dq_rx_node)
+	owns_one(nameof(wires), /datum/wires)
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/artifact_master
@@ -56,7 +64,7 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		qdel(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
-	own_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
+	rel_set(new_holder, nameof(/atom::artifact_master), src) // the anomalous atom owns its artifact state
 
 	own_take_all(src, nameof(my_effects))
 	lifecycle_decls_init(src) // a non-atom: starts the holder declaration

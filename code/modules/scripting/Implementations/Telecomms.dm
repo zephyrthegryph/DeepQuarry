@@ -20,6 +20,9 @@
 	 * Returns: List of errors
 	*/
 
+CAPABILITIES(/datum/TCS_Compiler)
+	owns_one(nameof(interpreter), /datum/n_Interpreter/TCS_Interpreter)
+
 /datum/TCS_Compiler/proc/Compile(code as message)
 	var/datum/n_scriptOptions/nS_Options/options = new()
 	var/datum/n_Scanner/nS_Scanner/scanner       = new(code, options)
@@ -35,7 +38,7 @@
 	if(returnerrors.len)
 		return returnerrors
 
-	own_set(src, nameof(interpreter), new /datum/n_Interpreter/TCS_Interpreter(program))
+	rel_set(src, nameof(interpreter), new /datum/n_Interpreter/TCS_Interpreter(program))
 	interpreter.persist	= 1
 	rel_set(interpreter, nameof(interpreter.Compiler), src)
 

@@ -6,7 +6,7 @@
 
 /mob/living/silicon/robot/malf/lost/setup_module()
 	..()
-	own_set(src, nameof(module), new /obj/item/robot_module/robot/malf/lost(src))
+	rel_set(src, nameof(module), new /obj/item/robot_module/robot/malf/lost(src))
 	scramble_hardware(20)
 
 /mob/living/silicon/robot/malf/lost/speech_bubble_appearance()
@@ -19,7 +19,7 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset())
+	rel_set(src, nameof(laws), give_random_lawset())
 	if(old_name == laws.name)
 		apply_new_laws()
 
@@ -31,7 +31,7 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/vore/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset_vore(100))
+	rel_set(src, nameof(laws), give_random_lawset_vore(100))
 	if(old_name == laws.name)
 		apply_new_laws()
 
@@ -39,7 +39,7 @@
 
 /mob/living/silicon/robot/malf/lost/randomlaws/mixed/apply_new_laws()
 	var/old_name = laws?.name
-	own_set(src, nameof(laws), give_random_lawset_vore(60))
+	rel_set(src, nameof(laws), give_random_lawset_vore(60))
 	if(old_name == laws.name)
 		apply_new_laws()
 

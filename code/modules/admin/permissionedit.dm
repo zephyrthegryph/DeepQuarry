@@ -459,7 +459,7 @@ GLOBAL_LIST_INIT(permission_action_types, list(
 			/* init_edit_rights = */ admin_holder.can_edit_rights_flags(),
 		)
 
-		own_set(admin_holder, nameof(admin_holder.custom_rank), new_admin_rank)
+		rel_set(admin_holder, nameof(admin_holder.custom_rank), new_admin_rank)
 		admin_holder.set_ranks(list(new_admin_rank))
 
 	var/log = "[key_name(user)] has updated the admin rights of [admin_ckey] into [rights2text(new_flags)]"

@@ -1343,9 +1343,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		own_set(src, nameof(electronics), new/obj/item/airlock_electronics/secure(src))
+		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics/secure(src))
 	else
-		own_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
+		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))

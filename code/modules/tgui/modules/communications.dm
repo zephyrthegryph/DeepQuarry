@@ -39,9 +39,12 @@
 
 	var/list/req_access = list() // ALLOW(instance_list): d: access list; an empty list and null differ for access checks
 
+CAPABILITIES(/datum/tgui_module/communications)
+	owns_one(nameof(crew_announcement), /datum/announcement/priority)
+
 /datum/tgui_module/communications/New(host)
 	. = ..()
-	own_set(src, nameof(crew_announcement), new /datum/announcement/priority())
+	rel_set(src, nameof(crew_announcement), new /datum/announcement/priority())
 	crew_announcement.newscast = TRUE
 
 /datum/tgui_module/communications/ui_prepare(mob/user, datum/tgui/ui)

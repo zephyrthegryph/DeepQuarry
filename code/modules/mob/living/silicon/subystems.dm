@@ -32,13 +32,13 @@
 	idcard_type = /obj/item/card/id/syndicate
 
 /mob/living/silicon/proc/init_subsystems()
-	own_set(src, nameof(alarm_monitor), new /datum/tgui_module/alarm_monitor/all/robot(src))
-	own_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control/robot(src))
-	own_set(src, nameof(crew_manifest), new /datum/tgui_module/crew_manifest/robot(src))
-	own_set(src, nameof(crew_monitor), new /datum/tgui_module/crew_monitor/robot(src))
-	own_set(src, nameof(law_manager), new /datum/tgui_module/law_manager/robot(src))
-	own_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor/robot(src))
-	own_set(src, nameof(rcon), new /datum/tgui_module/rcon/robot(src))
+	rel_set(src, nameof(alarm_monitor), new /datum/tgui_module/alarm_monitor/all/robot(src))
+	rel_set(src, nameof(atmos_control), new /datum/tgui_module/atmos_control/robot(src))
+	rel_set(src, nameof(crew_manifest), new /datum/tgui_module/crew_manifest/robot(src))
+	rel_set(src, nameof(crew_monitor), new /datum/tgui_module/crew_monitor/robot(src))
+	rel_set(src, nameof(law_manager), new /datum/tgui_module/law_manager/robot(src))
+	rel_set(src, nameof(power_monitor), new /datum/tgui_module/power_monitor/robot(src))
+	rel_set(src, nameof(rcon), new /datum/tgui_module/rcon/robot(src))
 
 	if(!register_alarms)
 		return
@@ -115,5 +115,5 @@
 
 /mob/living/silicon/robot/init_subsystems()
 	..()
-	own_set(src, nameof(decal_control), new /datum/tgui_module/robot_ui_decals(src))
+	rel_set(src, nameof(decal_control), new /datum/tgui_module/robot_ui_decals(src))
 

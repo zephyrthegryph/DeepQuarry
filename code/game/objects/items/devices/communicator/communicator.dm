@@ -185,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 		if (istype(I, /obj/item/card/id) && I:registered_name)
 			var/obj/old_id = own_take(src, nameof(src.id))
 			if(!own_set(src, nameof(src.id), I, user = user))
-				own_set(src, nameof(src.id), old_id)
+				rel_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)
 			return 1
@@ -214,7 +214,7 @@ DECLARE_INTERACTIONS(/obj/item/communicator, \
 	if(!user || !isliving(user))
 		return
 	if(!exonet)
-		own_set(src, nameof(exonet), new /datum/exonet_protocol(src))
+		rel_set(src, nameof(exonet), new /datum/exonet_protocol(src))
 	if(!exonet.address)
 		exonet.make_address("communicator-[user.client]-[user.name]")
 	if(!node)
@@ -267,7 +267,7 @@ DAMAGE_REACTION(/obj/item/communicator, DAMAGE_EMP, PROC_REF(communicator_emp))
 // Description: Searches all communicators and ghosts in the world, and adds them to the known_devices list if they are 'visible'.
 /obj/item/communicator/proc/populate_known_devices(mob/user)
 	if(!exonet)
-		own_set(src, nameof(exonet), new /datum/exonet_protocol(src))
+		rel_set(src, nameof(exonet), new /datum/exonet_protocol(src))
 	rel_clear(src, nameof(known_devices))
 	if(!get_connection_to_tcomms()) //If the network's down, we can't see anything.
 		return

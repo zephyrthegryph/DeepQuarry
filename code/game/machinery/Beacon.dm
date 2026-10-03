@@ -10,10 +10,13 @@
 	idle_power_usage = 0
 	var/obj/item/radio/beacon/Beacon
 
+CAPABILITIES(/obj/machinery/bluespace_beacon)
+	owns_one(nameof(Beacon), /obj/item/radio/beacon)
+
 /obj/machinery/bluespace_beacon/Initialize(mapload)
 	. = ..()
 	var/turf/T = src.loc
-	own_set(src, nameof(Beacon), new /obj/item/radio/beacon)
+	rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 	Beacon.invisibility = INVISIBILITY_MAXIMUM
 	Beacon.forceMove(T)
 	om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))
@@ -31,7 +34,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/bluespace_beacon, "floor_beacon{invisibility?
 /obj/machinery/bluespace_beacon/machine_step()
 	if(!Beacon)
 		var/turf/T = src.loc
-		own_set(src, nameof(Beacon), new /obj/item/radio/beacon)
+		rel_set(src, nameof(Beacon), new /obj/item/radio/beacon)
 		Beacon.invisibility = INVISIBILITY_MAXIMUM
 		Beacon.forceMove(T)
 		om_hook(Beacon, list(/datum/om/event/moved, /datum/om/event/qdeleting), src, PROC_REF(beacon_changed))

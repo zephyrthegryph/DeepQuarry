@@ -48,6 +48,9 @@
 	var/fluctuation_counter = 0
 	var/datum/industry/industry = null
 
+CAPABILITIES(/datum/stock)
+	owns_one(nameof(industry), /datum/industry)
+
 /datum/stock/proc/addEvent(datum/stockEvent/E)
 	own_add(src, nameof(events), E)
 
@@ -73,19 +76,19 @@
 
 /datum/stock/proc/generateIndustry()
 	if (findtext(name, "Farms"))
-		own_set(src, nameof(industry), new /datum/industry/agriculture)
+		rel_set(src, nameof(industry), new /datum/industry/agriculture)
 	else if (findtext(name, "Software") || findtext(name, "Programming")  || findtext(name, "IT Group") || findtext(name, "Electronics") || findtext(name, "Electric") || findtext(name, "Nanotechnology"))
-		own_set(src, nameof(industry), new /datum/industry/it)
+		rel_set(src, nameof(industry), new /datum/industry/it)
 	else if (findtext(name, "Mobile") || findtext(name, "Communications"))
-		own_set(src, nameof(industry), new /datum/industry/communications)
+		rel_set(src, nameof(industry), new /datum/industry/communications)
 	else if (findtext(name, "Pharmaceuticals") || findtext(name, "Health"))
-		own_set(src, nameof(industry), new /datum/industry/health)
+		rel_set(src, nameof(industry), new /datum/industry/health)
 	else if (findtext(name, "Wholesale") || findtext(name, "Stores"))
-		own_set(src, nameof(industry), new /datum/industry/consumer)
+		rel_set(src, nameof(industry), new /datum/industry/consumer)
 	else
 		var/ts = typesof(/datum/industry) - /datum/industry
 		var/in_t = pick(ts)
-		own_set(src, nameof(industry), new in_t)
+		rel_set(src, nameof(industry), new in_t)
 	for (var/i = 0, i < rand(2, 5), i++)
 		products += industry.generateProductName(name)
 

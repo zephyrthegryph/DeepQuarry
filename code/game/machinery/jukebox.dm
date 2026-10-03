@@ -33,7 +33,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/media/jukebox, MACHINE_PIPELINE, "playing"
 /obj/machinery/media/jukebox/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, nameof(wires), new/datum/wires/jukebox(src))
+	rel_set(src, nameof(wires), new/datum/wires/jukebox(src))
 	update_icon()
 	if(!LAZYLEN(getTracksList()))
 		atom_break()

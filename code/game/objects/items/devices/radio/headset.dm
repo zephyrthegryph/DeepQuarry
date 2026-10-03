@@ -22,6 +22,9 @@
 	drop_sound = SFX_ITEMS_DROP_COMPONENT
 	pickup_sound = SFX_ITEMS_PICKUP_COMPONENT
 
+CAPABILITIES(/obj/item/radio/headset)
+	owns_one(nameof(keyslot2), /obj/item/encryptionkey)
+
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
 	internal_channels.Cut()

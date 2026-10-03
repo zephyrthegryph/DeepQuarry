@@ -25,7 +25,7 @@
 /obj/item/inducer/Initialize(mapload)
 	. = ..()
 	if(!cell && cell_type)
-		own_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
+		rel_set(src, nameof(cell), new cell_type(src)) // ALLOW(decl): cell_type is picked per instance
 
 /obj/item/inducer/proc/induce(obj/item/cell/target, coefficient)
 	var/totransfer = min(cell.charge,(powertransfer * coefficient))

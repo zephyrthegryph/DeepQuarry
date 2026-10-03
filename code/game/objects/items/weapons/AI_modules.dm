@@ -20,6 +20,9 @@ MATERIAL_MIX(/obj/item/aiModule, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	preserve_item = 1
 	var/datum/ai_laws/laws = null
 
+CAPABILITIES(/obj/item/aiModule)
+	owns_one(nameof(laws), /datum/ai_laws)
+
 /obj/item/aiModule/examine(mob/user)
 	. = ..()
 	if(!laws)
@@ -310,7 +313,7 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(in
 // VOREstation edit: use map default laws
 /obj/item/aiModule/reset/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
+	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
 
 /obj/item/aiModule/reset/transmitInstructions(mob/living/silicon/ai/target, mob/sender)
 	log_law_changes(target, sender)

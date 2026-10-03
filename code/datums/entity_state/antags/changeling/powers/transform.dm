@@ -41,7 +41,7 @@
 		var/newSpecies = chosen_dna.speciesName
 		H.set_species(newSpecies)
 
-	own_set(src, nameof(dna), chosen_dna.dna.Clone())
+	rel_set(src, nameof(dna), chosen_dna.dna.Clone())
 	if(ishuman(src))
 		var/mob/living/carbon/human/H = src
 		H.identifying_gender = chosen_dna.identifying_gender

@@ -34,10 +34,13 @@
 	/// Any partial packets that we have received from TGUI, waiting to be sent
 	var/partial_packets
 
+CAPABILITIES(/datum/tgui_say)
+	owns_one(nameof(window), /datum/tgui_window)
+
 /** Creates the new input window to exist in the background. */
 /datum/tgui_say/New(client/client, id)
 	rel_set(src, nameof(client), client)
-	own_set(src, nameof(window), new /datum/tgui_window(client, id))
+	rel_set(src, nameof(window), new /datum/tgui_window(client, id))
 	winset(client, SKIN_TGUI_SAY, "size=1,1;is-visible=0;")
 	window.subscribe(src, PROC_REF(on_message))
 	window.is_browser = TRUE

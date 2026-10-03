@@ -9,6 +9,9 @@
 	var/status = SHIP_STATUS_LANDED
 	icon_state = "shuttle_nosprite"
 
+CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
+	owns_one(nameof(landmark), /obj/effect/shuttle_landmark/ship)
+
 /obj/effect/overmap/visitable/ship/landable/can_burn()
 	if(status != SHIP_STATUS_OVERMAP)
 		return 0
@@ -29,7 +32,7 @@
 
 // We autobuild our z levels.
 /obj/effect/overmap/visitable/ship/landable/find_z_levels()
-	own_set(src, nameof(landmark), new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
+	rel_set(src, nameof(landmark), new /obj/effect/shuttle_landmark/ship(null, shuttle)) // Create in nullspace since we lazy-create overmap z
 	rel_set(landmark, nameof(landmark.ship), src)
 	add_landmark(landmark, shuttle)
 

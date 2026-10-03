@@ -22,7 +22,7 @@
 		return FALSE
 	var/client/player = user.client
 	if(!player.interaction_menu)
-		own_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
+		rel_set(player, nameof(/client::interaction_menu), new /datum/interaction_menu(player))
 	rel_set(player.interaction_menu, nameof(/datum/accessory_stat_modifier::target), target)
 	log_input("Input: [key_name(user)] opened the interaction menu on [target] ([target.type]).")
 	player.interaction_menu.tgui_interact(user)

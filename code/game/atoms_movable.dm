@@ -58,7 +58,7 @@
 	if (blocks_emissive)
 		if (blocks_emissive == EMISSIVE_BLOCK_UNIQUE)
 			render_target = ref(src)
-			own_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
+			rel_set(src, nameof(/atom/movable::em_block), new /atom/movable/emissive_blocker(null, src))
 			// Note, this should be refactored to drop priority overlays
 			add_overlay(list(em_block), TRUE)
 			om_hook(em_block, /datum/om/event/qdeleting, src, PROC_REF(emblocker_gc))

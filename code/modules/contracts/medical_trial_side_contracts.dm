@@ -26,7 +26,7 @@
 		qdel(src)
 		return
 	rel_set(src, nameof(holder), new_holder)
-	own_set(new_holder, nameof(new_holder.contract_document), src)
+	rel_set(new_holder, nameof(new_holder.contract_document), src)
 	contract_id = _contract_id
 	document_kind = _document_kind
 	destination = _destination

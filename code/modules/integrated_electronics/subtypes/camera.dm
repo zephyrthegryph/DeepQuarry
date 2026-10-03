@@ -27,10 +27,13 @@
 	var/camera_network_id
 	var/see_dark = FALSE
 
+CAPABILITIES(/obj/item/integrated_circuit/output/video_camera)
+	owns_one(nameof(camera), /obj/machinery/camera/intcircuit)
+
 /obj/item/integrated_circuit/output/video_camera/Initialize(mapload)
 	. = ..()
 	camera_network_id = "ic_cam_[sequential_id(/obj/item/integrated_circuit/output/video_camera)]"
-	own_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
+	rel_set(src, nameof(camera), new /obj/machinery/camera/intcircuit(src, camera_network_id, see_dark))
 	update_camera_name()
 
 

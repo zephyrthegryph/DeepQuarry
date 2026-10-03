@@ -15,7 +15,7 @@ GLOBAL_DATUM(planet_sif, /datum/planet/sif)
 /datum/planet/sif/New()
 	..()
 	GLOB.planet_sif = src
-	own_set(src, nameof(weather_holder), new /datum/weather_holder/sif(src)) // Cold weather is also nice.
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder/sif(src)) // Cold weather is also nice.
 
 // This code is horrible.
 /datum/planet/sif/update_sun()

@@ -31,6 +31,9 @@
 	light_overlay = "helmet_light"
 	light_range = 4
 
+CAPABILITIES(/obj/item/clothing/head/helmet/space)
+	owns_one(nameof(camera), /obj/machinery/camera)
+
 TYPE_TABLE(/obj/item/clothing/head/helmet/space, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_DIONA))))
 
 DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/helmet/space/proc/toggle_camera, "camera_networks")
@@ -49,7 +52,7 @@ DECLARE_VERB_IF(/obj/item/clothing/head/helmet/space, /obj/item/clothing/head/he
 		return
 
 	if(!camera)
-		own_set(src, nameof(camera), new /obj/machinery/camera(src))
+		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.replace_networks(camera_networks)
 		camera.set_status(FALSE) //So the camera will activate in the following check.
 

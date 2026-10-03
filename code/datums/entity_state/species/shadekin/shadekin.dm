@@ -90,7 +90,7 @@
 		log_runtime("SHADEKIN: [type] created for incompatible [new_owner] ([new_owner?.type]); ignoring.")
 		return
 	rel_set(src, nameof(owner), new_owner) // one-sided back view: the mob owns us in its shadekin var
-	own_set(owner, nameof(owner.shadekin), src)
+	rel_set(owner, nameof(owner.shadekin), src)
 	if(!ishuman(owner))
 		om_stage_add(owner, /datum/om/stage/life/trait/shadekin) //Happens every life tick (mobs)
 	//Humans are ticked by the species_components life stage instead.

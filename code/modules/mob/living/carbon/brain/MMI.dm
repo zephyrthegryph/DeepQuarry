@@ -21,6 +21,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/mmi)
+	owns_one(nameof(body_backup), /mob/living)
+
 /obj/item/mmi/Initialize(mapload)
 	. = ..()
 	make_mind_host()
@@ -211,6 +214,9 @@ DAMAGE_REACTION(/obj/item/mmi, DAMAGE_EMP, PROC_REF(emp_interference))
 	///Var for attack_self chain
 	var/is_digital_robot = FALSE
 
+CAPABILITIES(/obj/item/mmi/digital)
+	owns_one(nameof(Q), /datum/ghost_query)
+
 /obj/item/mmi/digital/Initialize(mapload)
 	. = ..()
 	// A synthetic mind host: an empty view waits for a mind, with no tissue.
@@ -269,7 +275,7 @@ EXTEND_INTERACTIONS(/obj/item/mmi/digital, \
 		return
 	searching = 1
 
-	own_set(src, nameof(Q), new ghost_query_type())
+	rel_set(src, nameof(Q), new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 

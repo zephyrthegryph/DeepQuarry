@@ -44,6 +44,10 @@
 	var/max_share = 0
 	#endif
 
+CAPABILITIES(/turf/open)
+	owns_one(nameof(active_hotspot), /obj/effect/hotspot)
+	owns_one(nameof(air), /datum/gas_mixture)
+
 /turf/open/Initialize(mapload)
 	setup_open_air()
 	. = ..()
@@ -71,7 +75,7 @@
 				immutable_air[initial_gas_mix] = shared_air
 			air = shared_air // ALLOW(ownership): the round-long immutable vacuum shared by every space/transit turf, held by the static cache; never owned or deleted by a turf
 		else
-			own_set(src, nameof(air), create_gas_mixture())
+			rel_set(src, nameof(air), create_gas_mixture())
 		if(planetary_atmos)
 			if(!SSair.planetary[initial_gas_mix])
 				var/datum/gas_mixture/immutable/planetary/mix = new

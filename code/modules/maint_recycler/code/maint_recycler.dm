@@ -113,6 +113,11 @@
 	/// * Rectifier distort @ 39
 	/// filter curve EQ w/ telephone preset
 
+CAPABILITIES(/obj/machinery/maint_recycler)
+	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
+	owns_one(nameof(item_overlay), /obj/effect/overlay/recycler)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
@@ -123,7 +128,7 @@
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()
 	//init hatch
-	own_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
+	rel_set(src, nameof(hatch), new /obj/effect/overlay/recycler)
 	hatch.icon = 'code/modules/maint_recycler/icons/maint_recycler.dmi'
 	hatch.icon_state = "door closed"
 	hatch.layer = src.layer+0.1
@@ -135,7 +140,7 @@
 	//at least for 32x32 stuff!
 	src.underlays |= underlay
 
-	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
+	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon
@@ -143,7 +148,7 @@
 
 	src.vis_contents |= monitor_screen
 
-	own_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
+	rel_set(src, nameof(item_overlay), new /obj/effect/overlay/recycler)
 	item_overlay.layer = src.layer-0.1
 	src.vis_contents |= item_overlay
 

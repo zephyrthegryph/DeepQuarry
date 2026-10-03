@@ -5,6 +5,9 @@
 	var/our_color = "#FFFFFF"
 	var/our_brightness = 1.0
 
+CAPABILITIES(/datum/sun_holder)
+	owns_one(nameof(sun), /atom/movable/sun_visuals)
+
 /// world.time the running rainbow() ends; rainbow_step() runs every 0.3 s while set (DECLARE_REPEAT).
 OM_FIELD_TYPED(/datum/sun_holder, tmp, rainbow_ends_at, 0, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
@@ -16,7 +19,7 @@ DECLARE_REPEAT(/datum/sun_holder, 0.3 SECONDS, rainbow_step, "rainbow_ends_at")
 /datum/sun_holder/New(source)
 	..()
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
-	own_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
+	rel_set(src, nameof(sun), new /atom/movable/sun_visuals(null))
 	our_planet_static = source
 
 /datum/sun_holder/proc/update_color(new_color)

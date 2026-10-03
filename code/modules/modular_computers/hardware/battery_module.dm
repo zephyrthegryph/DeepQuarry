@@ -9,6 +9,9 @@
 	var/battery_rating = 750
 	var/obj/item/cell/battery = null
 
+CAPABILITIES(/obj/item/computer_hardware/battery_module)
+	owns_one(nameof(battery), /obj/item/cell)
+
 /obj/item/computer_hardware/battery_module/advanced
 	name = "advanced battery"
 	desc = "An advanced power cell, often used in most laptops. It is too large to be fitted into smaller devices. It's rating is 1100."
@@ -62,9 +65,9 @@
 
 /obj/item/computer_hardware/battery_module/Initialize(mapload, cell_type)
 	if(ispath(cell_type))
-		own_set(src, nameof(battery), new cell_type(src))
+		rel_set(src, nameof(battery), new cell_type(src))
 	else
-		own_set(src, nameof(battery), new/obj/item/cell(src))
+		rel_set(src, nameof(battery), new/obj/item/cell(src))
 	battery.maxcharge = battery_rating
 	battery.charge = 0
 	. = ..()

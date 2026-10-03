@@ -142,7 +142,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 		scoped_accuracy = accuracy
 
 	if(dna_lock)
-		own_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
+		rel_set(src, nameof(attached_lock), new /obj/item/dnalockingchip(src))
 
 	if(sel_mode <= length(firemodes))
 		var/datum/firemode/new_mode = LAZYACCESS(firemodes, sel_mode)
@@ -243,7 +243,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_se
 	if(adjacent) return //A is adjacent, is the user, or is on the user's person
 
 	if(!user.aiming)
-		own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+		rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 
 	if(user && user.client && user.aiming && user.aiming.active && user.aiming.aiming_at != A)
 		PreFire(A,user,params) //They're using the new gun system, locate what they're aiming at.

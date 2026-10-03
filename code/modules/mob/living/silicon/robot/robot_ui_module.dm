@@ -174,7 +174,7 @@ UI_ACT_PROC(/datum/tgui_module/robot_ui_module, ui_act_confirm)
 	if(modtype != new_module || !module)
 		own_clear(src, nameof(module), OWN_DELETE)
 		modtype = new_module
-		own_set(src, nameof(module), new module_type(src))
+		rel_set(src, nameof(module), new module_type(src))
 		feedback_inc("cyborg_[lowertext(new_module)]",1)
 	updatename()
 	hud_used.update_robot_modules_display()

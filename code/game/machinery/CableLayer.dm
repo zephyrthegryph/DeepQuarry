@@ -9,7 +9,7 @@
 	on = 0
 
 /obj/machinery/cablelayer/Initialize(mapload)
-	own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
+	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, max_cable))
 	. = ..()
 
 /obj/machinery/cablelayer/Moved(atom/old_loc, direction, forced = FALSE)
@@ -99,7 +99,7 @@
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, to_load))
+				rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)

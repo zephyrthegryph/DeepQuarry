@@ -19,6 +19,9 @@
 	var/static/list/transfer_amounts = list(REM, 1, 2)
 	var/transfer_amount = 1
 
+CAPABILITIES(/obj/structure/medical_stand)
+	owns_one(nameof(contained), /obj/item/clothing/mask/breath)
+
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon/human, breather, CHANGE_EXPLICIT)
 OM_FIELD(/obj/structure/medical_stand, valve_opened, FALSE, CHANGE_EXPLICIT)
 OM_FIELD_VIEW(/obj/structure/medical_stand, mob/living/carbon, attached, CHANGE_EXPLICIT)
@@ -182,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/medical_stand, TYPE_PROC_REF(/atom, appea
 		contained.forceMove(src)
 	else
 		qdel(contained)
-		own_set(src, nameof(contained), new mask_type(src))
+		rel_set(src, nameof(contained), new mask_type(src))
 	rel_clear(src, nameof(breather))
 	src.visible_message(span_infoplain(span_bold("\The [contained]") + " slips to \the [src]!"))
 	update_icon()
@@ -401,7 +404,7 @@ DECLARE_INTERACTIONS(/obj/structure/medical_stand, \
 				contained.forceMove(src)
 			else
 				qdel(contained)
-				own_set(src, nameof(contained), new mask_type (src))
+				rel_set(src, nameof(contained), new mask_type (src))
 			src.visible_message(span_bold("\The [contained]") + " slips to \the [src]!")
 			rel_clear(src, nameof(breather))
 			update_icon()

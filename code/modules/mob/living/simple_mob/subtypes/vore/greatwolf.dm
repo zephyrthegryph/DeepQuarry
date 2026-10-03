@@ -97,7 +97,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/greatwolf, /mob/living/simple_mob
 /mob/living/simple_mob/vore/greatwolf/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1.5 // 1.5 Downstream
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/greatwolf, \

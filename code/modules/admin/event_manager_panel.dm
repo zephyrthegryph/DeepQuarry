@@ -314,7 +314,7 @@ UI_ACT_PROC(/datum/event_manager_panel, ui_act_add_event)
 	own_transfer(service, nameof(/datum/system/events::new_event), EC, nameof(/datum/event_container::event_pool))
 	rel_add(EC, nameof(/datum/event_container::available_events), NE)
 	log_and_message_admins("has added \a [GLOB.severity_to_string[NE.severity]] event '[NE.name]' of type [NE.event_type] with weight [NE.weight].", user)
-	own_set(service, nameof(/datum/system/events::new_event), new /datum/event_meta)
+	rel_set(service, nameof(/datum/system/events::new_event), new /datum/event_meta)
 	return TRUE
 
 /datum/system/events

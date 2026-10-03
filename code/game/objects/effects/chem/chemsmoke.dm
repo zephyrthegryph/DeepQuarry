@@ -38,6 +38,9 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 	var/density
 	var/show_log = 1
 
+CAPABILITIES(/datum/effect/effect/system/smoke_spread/chem)
+	owns_one(nameof(chemholder), /obj)
+
 /datum/effect/effect/system/smoke_spread/chem/spores
 	show_log = 0
 	var/datum/seed/seed_static
@@ -54,7 +57,7 @@ DECLARE_REAGENTS(/obj/effect/effect/smoke/chem, 500, null)
 
 /datum/effect/effect/system/smoke_spread/chem/New()
 	..()
-	own_set(src, nameof(chemholder), new/obj())
+	rel_set(src, nameof(chemholder), new/obj())
 	chemholder.create_reagents(500)
 
 

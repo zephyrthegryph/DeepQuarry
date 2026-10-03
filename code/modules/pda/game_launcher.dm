@@ -14,6 +14,16 @@
 	var/datum/board_game/nine_mens/ninemens
 	var/datum/board_game/four_row/tic_tac_toe/tictactoe
 
+CAPABILITIES(/datum/data/pda/app/game_launcher)
+	owns_one(nameof(checkers), /datum/board_game/checkers)
+	owns_one(nameof(chess), /datum/board_game/chess)
+	owns_one(nameof(fourrow), /datum/board_game/four_row)
+	owns_one(nameof(ninemens), /datum/board_game/nine_mens)
+	owns_one(nameof(rpgdice), /datum/board_game/rpg_dice)
+	owns_one(nameof(spacebattle), /datum/board_game/space_battle)
+	owns_one(nameof(tictactoe), /datum/board_game/four_row/tic_tac_toe)
+	owns_one(nameof(voresweeper), /datum/board_game/vore_sweeper)
+
 /datum/data/pda/app/game_launcher/update_ui(mob/user, list/data)
 	data["available_games"] = list(GAME_SWEEPER = voresweeper, GAME_FOUR_ROW = fourrow, GAME_SPACE_BATTLE = spacebattle, GAME_RGP_DICE = rpgdice, GAME_CHESS = chess, GAME_CHECKERS = checkers, GAME_NINE_MENS_MORRIS = ninemens, GAME_TIC_TAC_TOE = tictactoe)
 
@@ -25,7 +35,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_sweeper)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), OWN_DELETE)
 		return TRUE
 	if(!voresweeper)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), new /datum/board_game/vore_sweeper(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::voresweeper), new /datum/board_game/vore_sweeper(pda()))
 	voresweeper.tgui_interact(ui.user)
 	return TRUE
 
@@ -37,7 +47,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_four_row)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::fourrow), OWN_DELETE)
 		return TRUE
 	if(!fourrow)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::fourrow), new /datum/board_game/four_row(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::fourrow), new /datum/board_game/four_row(pda()))
 	fourrow.tgui_interact(ui.user)
 	return TRUE
 
@@ -49,7 +59,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_space_battle)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), OWN_DELETE)
 		return TRUE
 	if(!spacebattle)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), new /datum/board_game/space_battle(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::spacebattle), new /datum/board_game/space_battle(pda()))
 	spacebattle.tgui_interact(ui.user)
 	return TRUE
 
@@ -61,7 +71,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_rgp_dice)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), OWN_DELETE)
 		return TRUE
 	if(!rpgdice)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), new /datum/board_game/rpg_dice(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::rpgdice), new /datum/board_game/rpg_dice(pda()))
 	rpgdice.tgui_interact(ui.user)
 	return TRUE
 
@@ -73,7 +83,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_chess)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::chess), OWN_DELETE)
 		return TRUE
 	if(!chess)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::chess), new /datum/board_game/chess(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::chess), new /datum/board_game/chess(pda()))
 	chess.tgui_interact(ui.user)
 	return TRUE
 
@@ -85,7 +95,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_checkers)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::checkers), OWN_DELETE)
 		return TRUE
 	if(!checkers)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::checkers), new /datum/board_game/checkers(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::checkers), new /datum/board_game/checkers(pda()))
 	checkers.tgui_interact(ui.user)
 	return TRUE
 
@@ -97,7 +107,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_nine_mens_morris)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::ninemens), OWN_DELETE)
 		return TRUE
 	if(!ninemens)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::ninemens), new /datum/board_game/nine_mens(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::ninemens), new /datum/board_game/nine_mens(pda()))
 	ninemens.tgui_interact(ui.user)
 	return TRUE
 
@@ -109,7 +119,7 @@ UI_ACT_PROC(/datum/data/pda/app/game_launcher, ui_act_game_tic_tac_toe)
 		own_clear(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), OWN_DELETE)
 		return TRUE
 	if(!tictactoe)
-		own_set(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), new /datum/board_game/four_row/tic_tac_toe(pda()))
+		rel_set(src, nameof(/datum/data/pda/app/game_launcher::tictactoe), new /datum/board_game/four_row/tic_tac_toe(pda()))
 	tictactoe.tgui_interact(ui.user)
 	return TRUE
 

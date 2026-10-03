@@ -17,6 +17,9 @@
 	var/obj/item/projectile/BB = null	//The loaded bullet - make it so that the projectiles are created only when needed?
 	var/caseless = null					//Caseless ammo deletes its self once the projectile is fired.
 
+CAPABILITIES(/obj/item/ammo_casing)
+	owns_one(nameof(BB), /obj/item/projectile)
+
 DECLARE_DEFAULT_CHILD(/obj/item/ammo_casing, "BB", "projectile_type")
 
 /obj/item/ammo_casing/Initialize(mapload)

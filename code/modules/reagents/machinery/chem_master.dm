@@ -30,7 +30,7 @@
 	. = ..()
 	default_apply_parts()
 	var/datum/reagents/R = new/datum/reagents(900)	//Just a huge random number so the buffer should (probably) never dump your reagents.
-	own_set(src, nameof(reagents), R)	//There should be a nano ui thingy to warn of this.
+	rel_set(src, nameof(reagents), R)	//There should be a nano ui thingy to warn of this.
 	rel_set(R, nameof(R.my_atom), src)
 
 APPEARANCE_TEMPLATE(/obj/machinery/chem_master, "mixer{beaker?1:0}")

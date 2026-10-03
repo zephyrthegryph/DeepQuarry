@@ -47,9 +47,12 @@
 	power_draw_per_use = 80
 	var/obj/item/card/id/idc
 
+CAPABILITIES(/obj/item/integrated_circuit/smart/advanced_pathfinder)
+	owns_one(nameof(idc), /obj/item/card/id)
+
 /obj/item/integrated_circuit/smart/advanced_pathfinder/Initialize(mapload)
 	.=..()
-	own_set(src, nameof(idc), new /obj/item/card/id(src))
+	rel_set(src, nameof(idc), new /obj/item/card/id(src))
 
 /obj/item/integrated_circuit/smart/advanced_pathfinder/do_work()
 	if(!assembly())

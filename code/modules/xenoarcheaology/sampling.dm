@@ -10,6 +10,9 @@
 	/// The sliver's own geosample (a private copy of the sampled one; owned).
 	var/tmp/datum/geosample/geological_data_static
 
+CAPABILITIES(/obj/item/rocksliver)
+	owns_one(nameof(geological_data_static), /datum/geosample)
+
 /obj/item/rocksliver/Initialize(mapload)
 	. = ..()
 	icon_state = "sliver[rand(1, 3)]"
@@ -111,6 +114,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/core_sampler)
+	owns_one(nameof(filled_bag), /obj/item/evidencebag)
+
 /obj/item/core_sampler/examine(mob/user)
 	. = ..()
 	if(get_dist(user, src) <= 2)
@@ -150,7 +156,7 @@
 			to_chat(user, span_warning("The core sampler is out of sample bags."))
 		else
 			//create a new sample bag which we'll fill with rock samples
-			own_set(src, nameof(filled_bag), new /obj/item/evidencebag(src))
+			rel_set(src, nameof(filled_bag), new /obj/item/evidencebag(src))
 			filled_bag.name = "sample bag"
 			filled_bag.desc = "a bag for holding research samples."
 
@@ -159,7 +165,7 @@
 
 			//put in a rock sliver
 			var/obj/item/rocksliver/R = new(filled_bag)
-			own_set(R, nameof(R.geological_data_static), geo_data.copy())
+			rel_set(R, nameof(R.geological_data_static), geo_data.copy())
 
 			//update the sample bag
 			filled_bag.icon_state = "evidence"

@@ -63,7 +63,7 @@ GLOBAL_LIST_INIT(nymph_default_emotes, list(
 /mob/living/carbon/alien/diona/proc/wear_hat(obj/item/new_hat)
 	if(hat)
 		return
-	own_set(src, nameof(hat), new_hat)
+	rel_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
 	update_icons()
 

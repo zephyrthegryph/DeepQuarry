@@ -43,6 +43,9 @@ DECLARE_INTERACTIONS(/obj/structure/casino_table, INTERACT_ITEM("Place", PROC_RE
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 5
 
+CAPABILITIES(/obj/structure/casino_table/roulette_table)
+	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+
 DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/roulette_table, "ball", /obj/item/roulette_ball)
 
 /obj/structure/casino_table/roulette_table/Initialize(mapload)
@@ -401,6 +404,9 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 15
+
+CAPABILITIES(/obj/machinery/wheel_of_fortune)
+	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 
 /obj/machinery/wheel_of_fortune/declare_interactions(list/into)
 	into += list(
@@ -1012,7 +1018,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 
 	if(color=="gold") // Happy celebrations!
 		visible_message(span_notice("The roulette stops spinning, the ball lands on the golden zero! Fortune favors all bets!"))
-		own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
+		rel_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
 		confetti_spread.attach(src) //If somehow people start dragging roulette
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	else
@@ -1021,7 +1027,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 /// The wheel stops: the result, confetti, and the wheel is free again.
 /obj/machinery/wheel_of_fortune/proc/wheel_stops(message)
 	visible_message(span_notice(message))
-	own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
+	rel_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
 	confetti_spread.attach(src) //If somehow people start dragging slot machine
 	confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 	flick("[icon_state]-winning",src)

@@ -97,7 +97,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/tile_type_chosen(datum/om/prompt/choice/ask)
 	var/obj/item/stack/tile/selected = ask.choice
 	if(selected.loc == src)
-		own_set(src, nameof(T), selected)
+		rel_set(src, nameof(T), selected)
 
 /obj/machinery/floorlayer/examine(mob/user)
 	. = ..()
@@ -120,7 +120,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/floorlayer, "T", /obj/item/stack/tile/floor
 /obj/machinery/floorlayer/proc/TakeNewStack()
 	latent_materialize_all() // a walk needs real things (C5)
 	for(var/obj/item/stack/tile/tile in contents) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-		own_set(src, nameof(T), tile)
+		rel_set(src, nameof(T), tile)
 		return 1
 	return 0
 

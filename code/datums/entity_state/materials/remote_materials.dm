@@ -28,6 +28,9 @@ handles linking back and forth.
 	///Our own container when not linked to a silo (owned).
 	var/datum/material_container/local_container
 
+CAPABILITIES(/datum/remote_materials)
+	owns_one(nameof(local_container), /datum/material_container)
+
 
 /datum/remote_materials/New(
 	atom/new_owner,
@@ -90,7 +93,7 @@ handles linking back and forth.
 
 	rel_clear(src, nameof(silo))
 
-	own_set(src, nameof(local_container), new /datum/material_container( \
+	rel_set(src, nameof(local_container), new /datum/material_container( \
 		owner, \
 		subtypesof(/datum/material), \
 		local_size, \

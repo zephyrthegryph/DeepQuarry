@@ -23,6 +23,10 @@
 	var/datum/anomaly_stats/stats
 	var/danger_mult = 1
 
+CAPABILITIES(/obj/effect/anomaly)
+	owns_one(nameof(anomaly_core), /obj/item/assembly/signaler/anomaly)
+	owns_one(nameof(stats), /datum/anomaly_stats)
+
 /obj/effect/anomaly/Initialize(mapload, new_lifespan, drops_core = TRUE)
 	. = ..()
 
@@ -35,7 +39,7 @@
 		own_clear(src, nameof(anomaly_core), OWN_DELETE) // still the type path here, or a core made early
 
 	if(anomaly_core)
-		own_set(src, nameof(anomaly_core), new anomaly_core(src))
+		rel_set(src, nameof(anomaly_core), new anomaly_core(src))
 		anomaly_core.set_frequency(sanitize_frequency(rand(PUBLIC_LOW_FREQ, PUBLIC_HIGH_FREQ)))
 		anomaly_core.code = rand(1, 100)
 		anomaly_core.anomaly_type = type
@@ -114,7 +118,7 @@ DECLARE_PERIODIC(/obj/effect/anomaly, PERIODIC_SLOW)
 	if(anchor)
 		move_chance = 0
 	if(!stats && add_stats)
-		own_set(src, nameof(stats), new /datum/anomaly_stats)
+		rel_set(src, nameof(stats), new /datum/anomaly_stats)
 		rel_set(stats, nameof(stats.attached_anomaly), src)
 		stats.calculate_points()
 		set_density(TRUE)

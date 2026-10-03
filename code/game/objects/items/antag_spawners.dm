@@ -5,6 +5,9 @@
 	var/searching = FALSE
 	var/datum/ghost_query/Q //This is used so we can unregister ourself.
 
+CAPABILITIES(/obj/item/antag_spawner)
+	owns_one(nameof(Q), /datum/ghost_query)
+
 /obj/item/antag_spawner/proc/spawn_antag(client/C, turf/T)
 	return
 
@@ -18,7 +21,7 @@
 		return // Already searching.
 	searching = TRUE
 
-	own_set(src, nameof(Q), new ghost_query_type())
+	rel_set(src, nameof(Q), new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 

@@ -41,6 +41,12 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	var/delete_on_depletion = FALSE
 	var/repeat_search = FALSE
 
+CAPABILITIES(/datum/loot_decl)
+	owns_one(nameof(main_table), /datum/loot_entry/sub)
+	owns_one(nameof(rare), /datum/loot_entry/sub)
+	owns_one(nameof(uncommon), /datum/loot_entry/sub)
+	owns_one(nameof(unlucky), /datum/loot_entry/sub)
+
 
 /// The merged spec list (DECLARE_LOOT overrides this, merging over ..()).
 /datum/loot_decl/proc/specs()
@@ -52,7 +58,7 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	if(!length(S))
 		return FALSE
 	if(S["table"])
-		own_set(src, nameof(main_table), new /datum/loot_entry/sub(1, S["table"]))
+		rel_set(src, nameof(main_table), new /datum/loot_entry/sub(1, S["table"]))
 	if(!isnull(S["count"]))
 		count = S["count"]
 	if(!isnull(S["chance"]))
@@ -61,11 +67,11 @@ GLOBAL_LIST_EMPTY(loot_times_searched)
 	hook = S["hook"]
 	per_round = !!S["per_round"]
 	if(S["unlucky"])
-		own_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, S["unlucky"]))
+		rel_set(src, nameof(unlucky), new /datum/loot_entry/sub(1, S["unlucky"]))
 	if(S["uncommon"])
-		own_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, S["uncommon"]))
+		rel_set(src, nameof(uncommon), new /datum/loot_entry/sub(1, S["uncommon"]))
 	if(S["rare"])
-		own_set(src, nameof(rare), new /datum/loot_entry/sub(1, S["rare"]))
+		rel_set(src, nameof(rare), new /datum/loot_entry/sub(1, S["rare"]))
 	uncommon_chance = S["uncommon_chance"] || 0
 	rare_chance = S["rare_chance"] || 0
 	gamma_chance = S["gamma_chance"] || 0

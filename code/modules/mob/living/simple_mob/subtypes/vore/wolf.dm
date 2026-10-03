@@ -117,7 +117,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/wolf/direwolf, /mob/living/simple
 /mob/living/simple_mob/vore/wolf/direwolf/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1
 
 /mob/living/simple_mob/vore/wolf/direwolf/dog

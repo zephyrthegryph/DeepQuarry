@@ -5,6 +5,9 @@
 	vis_flags = NONE
 	var/mob/living/body_backup = null //add reforming
 
+CAPABILITIES(/mob/observer)
+	owns_one(nameof(body_backup), /mob/living)
+
 /mob/observer/dead
 	name = "ghost"
 	desc = "It's a g-g-g-g-ghooooost!" //jinkies!

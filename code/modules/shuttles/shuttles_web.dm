@@ -23,8 +23,11 @@
 	/// Relation list: the registered pilot helmets.
 	var/list/obj/item/clothing/head/pilot/helmets
 
+CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
+	owns_one(nameof(web_master), /datum/shuttle_web_master)
+
 /datum/shuttle/autodock/web_shuttle/New()
-	own_set(src, nameof(web_master), new web_master_type(src))
+	rel_set(src, nameof(web_master), new web_master_type(src))
 	build_destinations()
 	if(autopilot)
 		shuttle_flags_add(SHUTTLE_FLAGS_PROCESS)

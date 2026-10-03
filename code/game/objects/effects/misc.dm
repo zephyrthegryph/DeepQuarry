@@ -112,8 +112,11 @@
 	var/trans_angle
 	var/icon_dist
 
+CAPABILITIES(/obj/effect/abstract/directional_lighting)
+	owns_one(nameof(light_spot), /obj/effect/abstract/light_spot)
+
 /obj/effect/abstract/directional_lighting/Initialize(mapload)
-	own_set(src, nameof(light_spot), new /obj/effect/abstract/light_spot)
+	rel_set(src, nameof(light_spot), new /obj/effect/abstract/light_spot)
 	. = ..()
 	vis_contents += light_spot
 

@@ -218,6 +218,9 @@
 	var/tmp/datum/generated_station_materialization/materialization
 	var/datum/generated_station_utility_topology/result
 
+CAPABILITIES(/datum/generated_station_utility_builder)
+	owns_one(nameof(result), /datum/generated_station_utility_topology)
+
 /// Reserves fixtures and station-wide routes against local coordinates before live turfs exist.
 /datum/generated_station_materializer/proc/plan_generated_station_utilities()
 	var/datum/generated_station_tile_plan/plan = result?.tile_plan
@@ -447,7 +450,7 @@
 		return null
 	rel_set(src, nameof(spec), new_spec)
 	rel_set(src, nameof(materialization), new_materialization)
-	own_set(src, nameof(result), new /datum/generated_station_utility_topology)
+	rel_set(src, nameof(result), new /datum/generated_station_utility_topology)
 	result.station_id = spec().id
 	var/list/path_targets = list()
 	var/list/power_targets = list()
@@ -795,7 +798,7 @@
 	if(!station_spec || !station_materialization || station_utilities)
 		return FALSE
 	var/datum/generated_station_utility_builder/builder = new
-	own_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
+	rel_set(src, nameof(station_utilities), builder.build(station_spec, station_materialization))
 	qdel(builder)
 	return !!station_utilities
 

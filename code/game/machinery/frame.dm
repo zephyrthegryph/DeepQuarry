@@ -353,7 +353,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 /obj/structure/frame/Initialize(mapload, dir, building = 0, datum/frame/frame_types/type, mob/user as mob)
 	. = ..()
 	if(building)
-		own_set(src, nameof(frame_type), frame_type_copy(type))
+		rel_set(src, nameof(frame_type), frame_type_copy(type))
 		state = FRAME_PLACED
 
 		if(dir)
@@ -367,7 +367,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/frame, TYPE_PROC_REF(/atom, appearance_ov
 
 		if(frame_type.circuit)
 			need_circuit = FALSE
-			own_set(src, nameof(circuit), new frame_type.circuit(src))
+			rel_set(src, nameof(circuit), new frame_type.circuit(src))
 
 	if(frame_type.name == "Computer")
 		set_density(TRUE)

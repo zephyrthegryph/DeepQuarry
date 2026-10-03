@@ -18,6 +18,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/camerabug)
+	owns_one(nameof(camera), /obj/machinery/camera/bug)
+
 
 /obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	act_message(user, src, MSG_SELF(span_notice("You crush %T% under your foot, breaking it.")), \
@@ -29,7 +32,7 @@
 		linkedmonitor().unpair(src)
 	rel_clear(src, nameof(linkedmonitor))
 	own_clear(src, nameof(camera), OWN_DELETE)
-	own_set(src, nameof(camera), new camtype(src))
+	rel_set(src, nameof(camera), new camtype(src))
 	to_chat(user, span_notice("You turn the [src] off and on again, delinking it from any monitors."))
 
 /obj/item/brokenbug

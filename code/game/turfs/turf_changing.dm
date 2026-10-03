@@ -105,13 +105,13 @@
 	W.lighting_corners_initialised = old_lighting_corners_initialized
 	var/turf/simulated/W_sim = W
 	if(istype(W_sim) && old_shandler)
-		own_set(W_sim, nameof(W_sim.shandler), old_shandler)
+		rel_set(W_sim, nameof(W_sim.shandler), old_shandler)
 		rel_set(old_shandler, nameof(old_shandler.holder), W)
 	else
 		if(old_shandler) // the new turf can't hold one
 			qdel(old_shandler)
 		if(istype(W_sim) && (SSplanets.initialized && SSplanets.z_to_planet.len >= z && SSplanets.z_to_planet[z]) && has_dynamic_lighting())
-			own_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
+			rel_set(W_sim, nameof(W_sim.shandler), new /datum/sunlight_handler(src))
 			W_sim.shandler.manualInit()
 	// old_fire was ZAS-only; no-op under LINDA (no old fire to remove).
 

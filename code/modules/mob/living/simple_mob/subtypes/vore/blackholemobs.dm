@@ -629,6 +629,9 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 	armor_spec = "melee=100;bullet=80;laser=80;energy=97;bio=100;rad=100"
 	var/datum/looping_sound/obelisk/loopy = 1
 
+CAPABILITIES(/mob/living/simple_mob/vore/blackhole_obelisk)
+	owns_one(nameof(loopy), /datum/looping_sound/obelisk)
+
 /mob/living/simple_mob/vore/blackhole_obelisk/monolith
 	name = "Black Hole Monolith"
 	desc = "A towering, polished stone spire of dark psychic energy, with four sides, covered in constantly shifting inscriptions... It throbs with unknown energies, your mere presence near it makes your head ache horribly, and fills your mind with foreign images and language..."
@@ -667,7 +670,7 @@ GLOBAL_LIST_INIT(obelisk_lure_messages, list(
 /mob/living/simple_mob/vore/blackhole_obelisk/Initialize(mapload)
 	. = ..()
 	obelisk_lure_messages = GLOB.obelisk_lure_messages
-	own_set(src, nameof(loopy), new /datum/looping_sound/obelisk(list(src),FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	rel_set(src, nameof(loopy), new /datum/looping_sound/obelisk(list(src),FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	loopy.start()
 
 /mob/living/simple_mob/vore/blackhole_obelisk/proc/handle_hungry()

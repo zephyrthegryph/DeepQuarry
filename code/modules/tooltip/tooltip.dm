@@ -38,11 +38,14 @@
 	// older atom from hiding a newer tooltip that reused the same browser.
 	var/_revision = 0
 
+CAPABILITIES(/datum/tooltip)
+	owns_one(nameof(tooltip_window), /datum/tgui_window)
+
 /datum/tooltip/New(client/C)
 	if(!C)
 		return
 	owner = C // a client, not a datum: plain (the client owns us as its tooltips)
-	own_set(src, nameof(tooltip_window), new /datum/tgui_window(C, control))
+	rel_set(src, nameof(tooltip_window), new /datum/tgui_window(C, control))
 	// The tgui ui is opened lazily in show(), bound to the CURRENT mob. Opening it
 	// here (at login) binds it to the lobby new_player mob, which is deleted on
 	// spawn — after which update_uis() pushes to a dead user and the frontend

@@ -33,6 +33,18 @@
 	fire_stack_decay_rate = -0.55
 	var/idcard_type = /obj/item/card/id/synthetic
 
+CAPABILITIES(/mob/living/silicon)
+	owns_one(nameof(aiCamera), /obj/item/camera/siliconcam)
+	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor/all/robot)
+	owns_one(nameof(atmos_control), /datum/tgui_module/atmos_control/robot)
+	owns_one(nameof(crew_manifest), /datum/tgui_module/crew_manifest/robot)
+	owns_one(nameof(crew_monitor), /datum/tgui_module/crew_monitor/robot)
+	owns_one(nameof(idcard), /obj/item/card/id)
+	owns_one(nameof(law_manager), /datum/tgui_module/law_manager/robot)
+	owns_one(nameof(laws), /datum/ai_laws)
+	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor/robot)
+	owns_one(nameof(rcon), /datum/tgui_module/rcon/robot)
+
 /mob/living/silicon/Initialize(mapload, is_decoy = FALSE)
 	if(silicon_subsystems)
 		silicon_subsystems = shared_type_list(type, "silicon_subsystems", silicon_subsystems)
@@ -62,7 +74,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon, REGISTRY_SILICONS)
 		return
 	if(idcard)
 		return
-	own_set(src, nameof(idcard), new idcard_type(src))
+	rel_set(src, nameof(idcard), new idcard_type(src))
 	set_id_info(idcard)
 
 /mob/living/silicon/proc/SetName(pickedName as text)

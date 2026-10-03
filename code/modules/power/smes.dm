@@ -119,6 +119,7 @@ CAPABILITIES(/obj/machinery/power/smes)
 	examine_line(PROC_REF(examine_state))
 	on_change(nameof(stat), ANY, then(PROC_REF(stat_changed)))
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
+	owns_one(nameof(soundloop), /datum/looping_sound/generator)
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
 /// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) -- unlike the generic terminal, or an APC's own, this is a real network
@@ -140,7 +141,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 /obj/machinery/power/smes/Initialize(mapload)
 	. = ..()
 	add_nearby_terminals()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE)) // hmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm
 	soundloop.extra_range = -6 // Doing this here bc we're reusing the generator hum, and can't directly edit that one
 	soundloop.falloff = 0.2 // Harsher falloff.
 	if(!check_terminals())

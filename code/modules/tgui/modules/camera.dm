@@ -5,19 +5,24 @@
 	var/atom/movable/screen/background/cam_foreground
 	var/atom/movable/screen/skybox/local_skybox
 
+CAPABILITIES(/atom/movable/screen/map_view_tg/camera)
+	owns_one(nameof(cam_background), /atom/movable/screen/background)
+	owns_one(nameof(cam_foreground), /atom/movable/screen/background)
+	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
+
 
 /atom/movable/screen/map_view_tg/camera/generate_view(map_key)
 	. = ..()
-	own_set(src, nameof(cam_background), new /atom/movable/screen/background())
+	rel_set(src, nameof(cam_background), new /atom/movable/screen/background())
 	cam_background.del_on_map_removal = FALSE
 	cam_background.assigned_map = assigned_map
 
-	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
+	rel_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.assigned_map = assigned_map
 
 	// FG
-	own_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_foreground), new /atom/movable/screen/background)
 	cam_foreground.del_on_map_removal = FALSE
 	cam_foreground.assigned_map = assigned_map
 
@@ -75,6 +80,9 @@
 	// Stuff for moving cameras
 	var/tmp/turf/last_camera_turf
 
+CAPABILITIES(/datum/tgui_module/camera)
+	owns_one(nameof(cam_screen_tg), /atom/movable/screen/map_view_tg/camera)
+
 /datum/tgui_module/camera/New(host, list/network_computer)
 	. = ..()
 	if(!LAZYLEN(network_computer))
@@ -84,7 +92,7 @@
 	map_name = "camera_console_[REF(src)]_map"
 
 	// Initialize map objects
-	own_set(src, nameof(cam_screen_tg), new /atom/movable/screen/map_view_tg/camera)
+	rel_set(src, nameof(cam_screen_tg), new /atom/movable/screen/map_view_tg/camera)
 	cam_screen_tg.generate_view(map_name)
 
 

@@ -58,6 +58,9 @@
 	var/tmp/name
 	var/tmp/precedence
 
+CAPABILITIES(/datum/node/expression/op)
+	owns_one(nameof(exp), /datum/node/expression)
+
 /datum/node/expression/op/New()
 	.=..()
 	if(!src.name) src.name="[src.type]"
@@ -73,6 +76,9 @@
 	var/func_name
 	var/datum/node/identifier/object
 	var/list/parameters = list() // ALLOW(instance_list): d: script AST node state
+
+CAPABILITIES(/datum/node/expression/FunctionCall)
+	owns_one(nameof(object), /datum/node/identifier)
 
 /*
 	Class: literal
@@ -94,10 +100,14 @@
 	var/datum/node/object		//Either a node/identifier or another node/expression/value/variable which points to the object
 	var/datum/node/identifier/id
 
+CAPABILITIES(/datum/node/expression/value/variable)
+	owns_one(nameof(id), /datum/node/identifier)
+	owns_one(nameof(object), /datum/node)
+
 
 /datum/node/expression/value/variable/New(ident)
 	.=..()
-	own_set(src, nameof(id), istext(ident) ? new /datum/node/identifier(ident) : ident)
+	rel_set(src, nameof(id), istext(ident) ? new /datum/node/identifier(ident) : ident)
 
 /datum/node/expression/value/variable/ToString()
 	return src.id.ToString()

@@ -6,10 +6,13 @@
 	var/obj/item/weldingtool/welder // owned: the internal welder the tool transforms into, kept in its contents
 	var/weldertype = /obj/item/weldingtool/dummy
 
+CAPABILITIES(/obj/item/tool/transforming)
+	owns_one(nameof(welder), /obj/item/weldingtool)
+
 /obj/item/tool/transforming/Initialize(mapload, no_counterpart = TRUE)
 	. = ..()
 	if(TOOL_WELDER in possible_tooltypes)
-		own_set(src, nameof(welder), new weldertype(src)) // ALLOW(decl): only when a welder mode is possible
+		rel_set(src, nameof(welder), new weldertype(src)) // ALLOW(decl): only when a welder mode is possible
 	on_tool_switch()
 
 

@@ -97,7 +97,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 			log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a helmet but it already has one")
 		else
 			magboots = new magboots_type(voidsuit)
-			own_set(voidsuit, nameof(voidsuit.boots), magboots)
+			rel_set(voidsuit, nameof(voidsuit.boots), magboots)
 
 	if(refit)
 		voidsuit.refit_for_species(user.species?.get_bodytype()) // does helmet and boots if they're attached
@@ -108,7 +108,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a suit cooler but it already has one")
 			else
 				var/obj/item/life_support = new /obj/item/suit_cooling_unit(voidsuit)
-				own_set(voidsuit, nameof(voidsuit.cooler), life_support)
+				rel_set(voidsuit, nameof(voidsuit.cooler), life_support)
 		else if(user.species?.breath_type)
 			if(voidsuit.tank)
 				log_world("## ERROR [src] created a voidsuit [voidsuit] and wants to add a tank but it already has one")
@@ -119,7 +119,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 
 				if(tankpath)
 					var/obj/item/life_support = new tankpath(voidsuit)
-					own_set(voidsuit, nameof(voidsuit.tank), life_support)
+					rel_set(voidsuit, nameof(voidsuit.tank), life_support)
 				else
 					voidsuit.audible_message("Dispenser warning: Unable to locate suitable airtank for user.")
 
@@ -157,6 +157,9 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 	var/needs_power = 0
 	//req_one_access = list(whatever) // Note that each gear datum can have access, too.
 
+CAPABILITIES(/obj/machinery/gear_dispenser)
+	owns_one(nameof(one_setting), /datum/gear_disp)
+
 /obj/machinery/gear_dispenser/custom/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	to_chat(user, span_warning("Your moral standards prevent you from emagging this machine!"))
 	return EMAG_DECLINED // Letting people emag this one would be bad times
@@ -170,7 +173,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		var/datum/gear_disp/S = new gear
 		real_gear_list[S.name] = S
 	if(one_setting)
-		own_set(src, nameof(one_setting), new one_setting)
+		rel_set(src, nameof(one_setting), new one_setting)
 	dispenses = real_gear_list
 
 /obj/machinery/gear_dispenser/declare_interactions(list/into)

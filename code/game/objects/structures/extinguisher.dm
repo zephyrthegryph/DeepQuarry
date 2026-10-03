@@ -17,7 +17,7 @@
 		pixel_x = (dir & 3)? 0 : (dir == 4 ? -27 : 27)
 		pixel_y = (dir & 3)? (dir ==1 ? -27 : 27) : 0
 	else
-		own_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
+		rel_set(src, nameof(has_extinguisher), new/obj/item/extinguisher(src))
 		om_hook(has_extinguisher, /datum/om/event/qdeleting, src, PROC_REF(on_extinguisher_deleted))
 
 	update_icon()

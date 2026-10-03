@@ -75,10 +75,13 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = FALSE
 
+CAPABILITIES(/obj/machinery/message_server)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
 /obj/machinery/message_server/Initialize(mapload)
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

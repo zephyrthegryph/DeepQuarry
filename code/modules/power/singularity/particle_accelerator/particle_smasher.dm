@@ -298,7 +298,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/particle_smasher, TYPE_PROC_REF(/atom, ap
 	var/result = recipe.result
 	if(recipe.recipe_type == PS_RESULT_STACK)
 		var/obj/item/stack/material/M = new result(src)
-		own_set(src, nameof(target), M)
+		rel_set(src, nameof(target), M)
 	else if(recipe.recipe_type == PS_RESULT_ITEM)
 		new result(get_turf(src))
 	update_icon()

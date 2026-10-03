@@ -18,6 +18,9 @@
 	var/message = ""
 	var/show_archived = FALSE
 
+CAPABILITIES(/datum/computer_file/program/newsbrowser)
+	owns_one(nameof(loaded_article), /datum/computer_file/data/news_article)
+
 /datum/computer_file/program/newsbrowser/process_tick()
 	if(!downloading)
 		return
@@ -87,7 +90,7 @@ UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_openarticle)
 
 	for(var/datum/computer_file/data/news_article/N in GLOB.ntnet_global.available_news)
 		if(N.uid == params["uid"])
-			own_set(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), N.clone())
+			rel_set(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), N.clone())
 			downloading = 1
 			break
 

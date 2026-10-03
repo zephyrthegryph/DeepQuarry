@@ -191,6 +191,10 @@
 	var/list/first_fact_times
 	var/list/second_fact_times
 
+CAPABILITIES(/datum/contract_requirement/paired_facts)
+	owns_one(nameof(first_filter), /datum/contract_event_filter)
+	owns_one(nameof(second_filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/paired_facts/New(_first_event_type, _second_event_type, _join_field, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY, _second_join_field)
 	. = ..()
 	first_event_type = _first_event_type
@@ -198,8 +202,8 @@
 	join_field = _join_field
 	second_join_field = _second_join_field || _join_field
 	target = max(1, _target)
-	own_set(src, nameof(first_filter), new /datum/contract_event_filter(_scope_mode))
-	own_set(src, nameof(second_filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(first_filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(second_filter), new /datum/contract_event_filter(_scope_mode))
 	first_facts = list()
 	second_facts = list()
 	credited_facts = list()
@@ -260,12 +264,15 @@
 	var/unique_field
 	var/list/accepted_unique_values
 
+CAPABILITIES(/datum/contract_requirement/event_count)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/event_count/New(_event_type, _target = 1, list/_required_context, _value_field, _required = TRUE, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..(_required)
 	event_type = _event_type
 	target = max(1, _target)
 	value_field = _value_field
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	accepted_unique_values = list()
 	for(var/key in _required_context)
 		filter.require_value(key, _required_context[key])
@@ -332,6 +339,9 @@
 	var/list/pending_tokens
 	var/list/completed_entities
 
+CAPABILITIES(/datum/contract_requirement/sustained_event)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, _threshold, _duration, _target = 1, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
@@ -341,7 +351,7 @@
 	threshold = _threshold
 	duration = max(1, _duration)
 	target = max(1, _target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	completed_entities = list()
 	if(event_type)
@@ -407,13 +417,16 @@
 	var/list/pending_stage_indices
 	var/list/completed_stages
 
+CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/staged_sustained_event/New(_event_type, _entity_field, _numeric_field, _comparator, list/_stages, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
 	entity_field = _entity_field
 	numeric_field = _numeric_field
 	comparator = _comparator
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	pending_tokens = list()
 	pending_stage_indices = list()
 	completed_stages = list()
@@ -537,13 +550,16 @@
 	var/datum/contract_event_filter/filter
 	var/list/entity_values
 
+CAPABILITIES(/datum/contract_requirement/snapshot_total)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/snapshot_total/New(_event_type, _entity_field, _value_field, _target, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
 	entity_field = _entity_field
 	value_field = _value_field
 	target = max(1, _target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	entity_values = list()
 	if(event_type)
 		event_types += event_type
@@ -599,6 +615,9 @@
 	var/list/facts
 	var/list/fact_revisions
 
+CAPABILITIES(/datum/contract_requirement/fact_portfolio)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/fact_portfolio/New(_event_type, _target, _category_field, _value_field, _distinct_category_target = 0, _scope_mode = CONTRACT_EVIDENCE_SCOPE_ANY)
 	. = ..()
 	event_type = _event_type
@@ -606,7 +625,7 @@
 	category_field = _category_field
 	value_field = _value_field
 	distinct_category_target = max(0, _distinct_category_target)
-	own_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(_scope_mode))
 	facts = list()
 	fact_revisions = list()
 	if(event_type)

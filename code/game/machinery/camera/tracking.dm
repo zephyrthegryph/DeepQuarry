@@ -20,7 +20,7 @@
 		if (tempnetwork.len)
 			T[text("[][]", C.c_tag, (C.can_use() ? null : " (Deactivated)"))] = C
 
-	own_set(src, nameof(track), new /datum/trackable())
+	rel_set(src, nameof(track), new /datum/trackable())
 	track.cameras = T
 	return T
 
@@ -131,7 +131,7 @@
 			LAZYSET(TB.others, name, mob_ref)
 
 	var/list/targets = sortList(TB.humans || list()) + sortList(TB.others || list())
-	own_set(src, nameof(track), TB)
+	rel_set(src, nameof(track), TB)
 	return targets
 
 /mob/living/silicon/ai/proc/ai_camera_track(target_name in trackable_mobs())

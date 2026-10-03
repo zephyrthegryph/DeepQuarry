@@ -368,6 +368,9 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 //	var/datum/beam/holo_beam = null // A visual effect, to make it easy to know where a hologram is coming from.
 	// It is commented out due to picking up the assembly killing the beam.
 
+CAPABILITIES(/obj/item/integrated_circuit/output/holographic_projector)
+	owns_one(nameof(hologram), /obj/effect/overlay/holographic)
+
 /obj/item/integrated_circuit/output/holographic_projector/Initialize(mapload)
 	. = ..()
 	dq_add_recursive_move(src)
@@ -435,7 +438,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/integrated_circuit/output/text_to_speech/advance
 
 	if(istype(AM) && assembly())
 		if(AM in view(get_turf(src))) // It must be able to 'see' the object it will copy.
-			own_set(src, nameof(hologram), new /obj/effect/overlay/holographic(src))
+			rel_set(src, nameof(hologram), new /obj/effect/overlay/holographic(src))
 			var/icon/holo_icon = getHologramIcon(getFlatIcon(AM), no_color = TRUE)
 		//	holo_icon.GrayScale() // So it looks better colored.
 			if(holo_color) // The color pin should ensure that it is a valid hex.

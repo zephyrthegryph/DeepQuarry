@@ -246,9 +246,12 @@ EXTEND_INTERACTIONS(/obj/effect/alien/weeds, \
 	var/ticks = 0
 	var/target_strength = 0
 
+CAPABILITIES(/obj/effect/alien/acid)
+	owns_one(nameof(target), /atom)
+
 /obj/effect/alien/acid/Initialize(mapload, target)
 	. = ..()
-	own_set(src, nameof(target), target)
+	rel_set(src, nameof(target), target)
 
 	if(isturf(target)) // Turf take twice as long to take down.
 		target_strength = 8

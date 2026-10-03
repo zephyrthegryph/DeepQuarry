@@ -31,6 +31,9 @@
 	var/datum/looping_sound/fridge/soundloop
 	var/playing_sound = FALSE
 
+CAPABILITIES(/obj/machinery/smartfridge)
+	owns_one(nameof(soundloop), /datum/looping_sound/fridge)
+
 /obj/machinery/smartfridge/secure
 	is_secure = 1
 
@@ -43,7 +46,7 @@
 	else
 		set_wires(new /datum/wires/smartfridge(src))
 
-	own_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/fridge(list(src), FALSE))
 	update_icon()
 	default_apply_parts()
 

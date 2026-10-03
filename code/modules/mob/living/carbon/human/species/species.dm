@@ -403,9 +403,9 @@
 /datum/species/New()
 	share_type_tables()
 	if(hud_type)
-		own_set(src, nameof(hud), new hud_type())
+		rel_set(src, nameof(hud), new hud_type())
 	else
-		own_set(src, nameof(hud), new /datum/hud_data())
+		rel_set(src, nameof(hud), new /datum/hud_data())
 
 	//If the species has eyes, they are the default vision organ
 	if(!vision_organ && has_organ[O_EYES])

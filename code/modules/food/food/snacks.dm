@@ -3875,32 +3875,32 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	return OP_OK
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 

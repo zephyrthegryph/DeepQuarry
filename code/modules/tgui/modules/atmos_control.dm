@@ -8,9 +8,12 @@
 	/// Alarms this console is limited to (weak: the machines own themselves); empty means every alarm.
 	var/list/monitored_alarms
 
+CAPABILITIES(/datum/tgui_module/atmos_control)
+	owns_one(nameof(access), /obj)
+
 /datum/tgui_module/atmos_control/New(atmos_computer, req_access, req_one_access, monitored_alarm_ids)
 	..()
-	own_set(src, nameof(access), new /obj())
+	rel_set(src, nameof(access), new /obj())
 	access.req_access = req_access
 	access.req_one_access = req_one_access
 

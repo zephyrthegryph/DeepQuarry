@@ -37,7 +37,7 @@
 /obj/item/clothing/shoes/proc/make_squeaky(custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)
 	RETURN_TYPE(/datum/squeak)
 	if(!squeak)
-		own_set(src, nameof(squeak), new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange))
+		rel_set(src, nameof(squeak), new /datum/squeak(src, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange))
 	return squeak
 
 /datum/squeak/New(obj/item/clothing/shoes/owner, custom_sounds, volume_override, chance_override, step_delay_override, use_delay_override, extrarange)

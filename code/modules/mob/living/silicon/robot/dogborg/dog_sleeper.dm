@@ -50,6 +50,10 @@
 	var/ore_storage = FALSE
 	var/obj/item/ore_bag/sleeper/ore_bag //Used by supply compactor
 	flags = NOBLUDGEON
+
+CAPABILITIES(/obj/item/dogborg/sleeper)
+	owns_one(nameof(med_analyzer), /obj/item/healthanalyzer)
+	owns_one(nameof(ore_bag), /obj/item/ore_bag/sleeper)
 //The borg is able to heal every damage type. As a nerf, they use 750 charge per injection.
 TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAGENT_ID_INAPROVALINE, REAGENT_ID_BICARIDINE, REAGENT_ID_KELOTANE, REAGENT_ID_ANTITOXIN, REAGENT_ID_DEXALIN, REAGENT_ID_TRICORDRAZINE, REAGENT_ID_SPACEACILLIN, REAGENT_ID_TRAMADOL))
 
@@ -65,9 +69,9 @@ TYPE_TABLE_DECLARE(/obj/item/dogborg/sleeper, sleeper_injection_chems, list(REAG
 			experiment_events = destructive_events, \
 		)
 	if(ore_storage)
-		own_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
+		rel_set(src, nameof(ore_bag), new /obj/item/ore_bag/sleeper(null)) //We don't need it inside, just need a reference to it. // ALLOW(decl): kept in nullspace, conditional
 	. = ..()
-	own_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
+	rel_set(src, nameof(med_analyzer), new /obj/item/healthanalyzer) // ALLOW(decl): kept in nullspace, not in contents
 
 // The synths are the module's (the owned "synths" list); the patient is in our contents.
 // Things in our contents spared from digestion (a marker set; go_out() drops all contents).

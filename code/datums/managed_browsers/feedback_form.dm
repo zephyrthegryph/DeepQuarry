@@ -1,6 +1,11 @@
 /client
 	var/datum/managed_browser/feedback_form/feedback_form = null
 
+CAPABILITIES(/client)
+	owns_one(nameof(feedback_form), /datum/managed_browser/feedback_form)
+	owns_one(nameof(feedback_viewer), /datum/managed_browser/feedback_viewer)
+	owns_one(nameof(interaction_menu), /datum/interaction_menu)
+
 /client/can_vv_get(var_name)//no snooping but doesn't break shit
 	if(var_name == NAMEOF(src, feedback_form))
 		return FALSE

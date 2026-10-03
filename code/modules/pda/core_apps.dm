@@ -339,11 +339,14 @@ UI_ACT_PROC(/datum/data/pda/app/news, ui_act_newsfeed)
 	var/channel = "Common"
 	var/obj/item/radio/intercom/announce
 
+CAPABILITIES(/datum/data/pda/app/timeclock)
+	owns_one(nameof(announce), /obj/item/radio/intercom)
+
 /datum/data/pda/app/timeclock/start()
 	. = ..()
 	//Initialize an intercom to announce going on/off duty
 	if(!announce)
-		own_set(src, nameof(announce), new /obj/item/radio/intercom(src))
+		rel_set(src, nameof(announce), new /obj/item/radio/intercom(src))
 
 /datum/data/pda/app/timeclock/update_ui(mob/user as mob, list/data)
 	//Because tgui_data seems a bit weird with pda apps

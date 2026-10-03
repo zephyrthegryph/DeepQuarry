@@ -76,7 +76,7 @@ TOPIC_ACTION(/datum/admins, "FaxReply", PROC_REF(topic_faxreply), TOPIC_REF("Fax
 	var/obj/machinery/photocopier/faxmachine/fax = args["originfax"]
 
 	var/obj/item/paper/admin/P = new /obj/item/paper/admin(null) //hopefully the null loc won't cause trouble for us
-	own_set(src, nameof(faxreply), P)
+	rel_set(src, nameof(faxreply), P)
 
 	rel_set(P, nameof(P.admindatum), src)
 	P.origin = args["replyorigin"]

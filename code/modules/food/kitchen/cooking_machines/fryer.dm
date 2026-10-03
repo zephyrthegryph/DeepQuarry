@@ -36,15 +36,19 @@
 	var/datum/reagents/oil_reagents/oil
 	var/optimal_oil = 2500 //25 litres of cooking oil
 
+CAPABILITIES(/obj/machinery/appliance/cooker/fryer)
+	owns_one(nameof(fry_loop), /datum/looping_sound/deep_fryer)
+	owns_one(nameof(oil), /datum/reagents/oil_reagents)
+
 ///Reagent subtype for the fryer.
 /datum/reagents/oil_reagents
 	var/optimal_oil = 2500 //Overridden during init of the fryer.
 
 /obj/machinery/appliance/cooker/fryer/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
+	rel_set(src, nameof(fry_loop), new /datum/looping_sound/deep_fryer(list(src), FALSE))
 
-	own_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
+	rel_set(src, nameof(oil), new/datum/reagents/oil_reagents(optimal_oil * 1.25, src))
 	oil.optimal_oil = optimal_oil
 	var/variance = rand()*0.15
 	// Fryer is always a little below full, but its usually negligible

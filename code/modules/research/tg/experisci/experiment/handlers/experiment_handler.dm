@@ -57,7 +57,7 @@
 		return
 	// The owner adopts us; its previous handler is deleted by own_set().
 	rel_set(src, nameof(/datum/action_group::owner), new_owner)
-	own_set(new_owner, nameof(/atom/movable::experiment_handler), src)
+	rel_set(new_owner, nameof(/atom/movable::experiment_handler), src)
 
 	src.allowed_experiments = allowed_experiments
 	src.blacklisted_experiments = blacklisted_experiments

@@ -30,7 +30,7 @@
 		return null
 	if(reactive_icon)
 		qdel(reactive_icon)
-	own_set(src, nameof(reactive_icon), new type(src, icon_prefix, directions, range, triggering_mobs))
+	rel_set(src, nameof(reactive_icon), new type(src, icon_prefix, directions, range, triggering_mobs))
 	return reactive_icon
 
 /datum/reactive_icon_update/New(obj/owner, icon_prefix, list/directions, range, triggering_mobs)

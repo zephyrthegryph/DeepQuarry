@@ -141,7 +141,7 @@ UI_ACT_PROC(/datum/computer_file/program/nttransfer, ui_act_prg_downloadfile)
 		if(pass != remote().server_password)
 			error = "Incorrect Password"
 			return
-	own_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
+	rel_set(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), remote().provided_file().clone())
 	rel_add(remote(), nameof(/datum/computer_file/data/email_account::connected_clients), src)
 	return TRUE
 

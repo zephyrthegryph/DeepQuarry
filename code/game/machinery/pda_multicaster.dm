@@ -18,6 +18,9 @@
 	/// Until when an EMP keeps the multicaster down (EMP_DISABLE).
 	EXPIRY_DECLARE(emp_until)
 
+CAPABILITIES(/obj/machinery/pda_multicaster)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+
 /obj/machinery/pda_multicaster/Initialize(mapload)
 	. = ..()
 	internal_PDAs = list("command" = new /obj/item/pda/multicaster/command(src),
@@ -29,7 +32,7 @@
 		"cargo" = new /obj/item/pda/multicaster/cargo(src),
 		"civilian" = new /obj/item/pda/multicaster/civilian(src))
 
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

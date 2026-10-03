@@ -19,7 +19,7 @@
 /mob/living/carbon/human/proc/add_forms(forms_type = /datum/forms)
 	RETURN_TYPE(/datum/forms)
 	if(!character_forms)
-		own_set(src, nameof(character_forms), new forms_type(src))
+		rel_set(src, nameof(character_forms), new forms_type(src))
 	return character_forms
 
 /// Removes the character's forms datum if it is of `forms_type` (or a subtype).

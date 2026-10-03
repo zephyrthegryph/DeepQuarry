@@ -16,9 +16,12 @@
 	/// Each client notifies on protected playback, so this prevents spamming admins.
 	var/static/admins_warned = 0 // COOLDOWN, shared by every panel
 
+CAPABILITIES(/datum/tgui_panel)
+	owns_one(nameof(window), /datum/tgui_window)
+
 /datum/tgui_panel/New(client/client, id)
 	rel_set(src, nameof(client), client)
-	own_set(src, nameof(window), new /datum/tgui_window(client, id))
+	rel_set(src, nameof(window), new /datum/tgui_window(client, id))
 	window.subscribe(src, PROC_REF(on_message))
 
 /datum/tgui_panel/Del()

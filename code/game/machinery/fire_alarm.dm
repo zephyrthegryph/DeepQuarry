@@ -35,6 +35,12 @@ FIRE ALARM
 	var/critwarn = FALSE // Looping Alarms
 	var/causalitywarn = FALSE // Looping Alarms
 
+CAPABILITIES(/obj/machinery/firealarm)
+	owns_one(nameof(causality), /datum/looping_sound/alarm/sm_causality_alarm)
+	owns_one(nameof(critalarm), /datum/looping_sound/alarm/sm_critical_alarm)
+	owns_one(nameof(engalarm), /datum/looping_sound/alarm/engineering_alarm)
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/fire_alarm)
+
 /obj/machinery/firealarm/alarms_hidden
 	alarms_hidden = TRUE
 
@@ -60,10 +66,10 @@ FIRE ALARM
 	if(z in using_map.contact_levels)
 		set_security_level(GLOB.security_level ? get_security_level() : "green")
 
-	own_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
-	own_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/fire_alarm(list(src), FALSE)) // Create soundloop
+	rel_set(src, nameof(engalarm), new /datum/looping_sound/alarm/engineering_alarm(list(src), FALSE)) // Create soundloop
+	rel_set(src, nameof(critalarm), new /datum/looping_sound/alarm/sm_critical_alarm(list(src), FALSE)) // Create soundloop
+	rel_set(src, nameof(causality), new /datum/looping_sound/alarm/sm_causality_alarm(list(src), FALSE)) // Create soundloop
 
 
 // a sounding alarm is reset for its area.

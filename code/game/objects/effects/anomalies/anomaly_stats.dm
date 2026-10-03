@@ -24,6 +24,9 @@
 	var/min_activation = 45 SECONDS
 	var/max_activation = 90 SECONDS
 
+CAPABILITIES(/datum/anomaly_stats)
+	owns_one(nameof(modifier), /datum/anomaly_modifiers)
+
 /datum/anomaly_stats/New()
 	randomize_particle_types()
 	severity = rand(5, 15)
@@ -159,7 +162,7 @@
 	if(modifier)
 		modifier.on_remove(attached_anomaly)
 
-	own_set(src, nameof(modifier), new picked_mod) // disposes of the old modifier
+	rel_set(src, nameof(modifier), new picked_mod) // disposes of the old modifier
 	modifier.on_add(attached_anomaly)
 	calculate_points()
 	return

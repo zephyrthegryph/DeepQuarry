@@ -42,6 +42,9 @@
 	var/comp_id = 0
 	var/efficiency
 
+CAPABILITIES(/obj/machinery/compressor)
+	owns_one(nameof(gas_contained), /datum/gas_mixture)
+
 /obj/machinery/power/turbine
 	maintenance_flags = MACHINE_MAINT_STANDARD_MOVABLE
 	maintenance_wrench_time = 2 SECONDS
@@ -107,7 +110,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/turbine, MACHINE_PIPELINE, "unbroken
 /obj/machinery/compressor/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, nameof(gas_contained), new /datum/gas_mixture())
+	rel_set(src, nameof(gas_contained), new /datum/gas_mixture())
 	rel_set(src, nameof(inturf), get_step(src, dir))
 	locate_machinery()
 	if(!turbine())

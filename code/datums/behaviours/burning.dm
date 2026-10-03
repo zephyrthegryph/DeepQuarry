@@ -32,6 +32,12 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	/// Why the fire went out (BURN_ENDED_*), for tests and examine.
 	var/burn_ended_by
 
+CAPABILITIES(/obj)
+	owns_one(nameof(burn_cool_watch), /datum/native_watch/heat)
+	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
+	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
+	owns_one(nameof(talking_atom), /datum/talking_atom)
+
 
 /// TRUE while this object burns.
 /obj/proc/is_burning()
@@ -86,7 +92,7 @@ GLOBAL_DATUM_INIT(fire_overlay, /mutable_appearance, mutable_appearance('icons/e
 	if(get_temperature() < limit + BURN_EXTINGUISH_MARGIN)
 		vg_heat_body_set_temperature(heat_body, limit + BURN_EXTINGUISH_MARGIN)
 	vg_heat_body_power(heat_body, BURN_POWER)
-	own_set(src, nameof(burn_cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
+	rel_set(src, nameof(burn_cool_watch), heat_watch_threshold(src, src, limit, FALSE, TYPE_PROC_REF(/obj, burning_cooled)))
 
 /// Below this the fire goes out.
 /obj/proc/burn_out_temperature()

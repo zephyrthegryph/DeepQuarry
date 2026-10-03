@@ -54,11 +54,14 @@ GLOBAL_LIST_EMPTY(req_console_information)
 	light_range = 0
 	var/datum/announcement/announcement
 
+CAPABILITIES(/obj/machinery/requests_console)
+	owns_one(nameof(announcement), /datum/announcement)
+
 REGISTRY_MEMBERSHIP(/obj/machinery/requests_console, REGISTRY_ALARM_CONSOLES)
 
 /obj/machinery/requests_console/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(announcement), new /datum/announcement)
+	rel_set(src, nameof(announcement), new /datum/announcement)
 	announcement.title = "[department] announcement"
 	announcement.newscast = 1
 

@@ -59,6 +59,9 @@
 	var/list/datum/feed_channel/network_channels
 	var/datum/feed_message/wanted_issue_owned
 
+CAPABILITIES(/datum/feed_network)
+	owns_one(nameof(wanted_issue_owned), /datum/feed_message)
+
 /datum/feed_network/proc/CreateFeedChannel(channel_name, author, locked, adminChannel = 0, announcement_message)
 	var/datum/feed_channel/newChannel = new /datum/feed_channel
 	newChannel.channel_name = channel_name
@@ -150,6 +153,9 @@
 	circuit = /obj/item/circuitboard/newscaster
 	// TGUI
 	var/list/temp = null
+
+CAPABILITIES(/obj/machinery/newscaster)
+	owns_one(nameof(photo_data), /datum/news_photo)
 
 /obj/machinery/newscaster/security_unit                   //Security unit
 	name = "Security Newscaster"
@@ -610,7 +616,7 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 	WANTED.backup_author = scanned_user //I know, a bit wacky
 	if(photo_data)
 		WANTED.img = photo_data.photo().img
-	own_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
+	rel_set(GLOB.news_network, nameof(/datum/feed_network::wanted_issue_owned), WANTED)
 	GLOB.news_network.alert_readers()
 	set_temp("Wanted issue for [channel_name] is now in Network Circulation.", "success", FALSE)
 	return TRUE
@@ -655,14 +661,14 @@ UI_ACT_PROC(/obj/machinery/newscaster, ui_act_show_channel)
 		qdel(photo_data)
 
 	if(incoming)
-		own_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))
+		rel_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))
 	else if(istype(user,/mob/living/silicon))
 		var/mob/living/silicon/tempAI = user
 		var/obj/item/photo/selection = tempAI.GetPicture()
 		if(!selection)
 			return
 
-		own_set(src, nameof(photo_data), new /datum/news_photo(selection, 1))
+		rel_set(src, nameof(photo_data), new /datum/news_photo(selection, 1))
 
 ////////////////////////////////////helper procs
 /obj/machinery/newscaster/proc/tgui_user_name(mob/user)

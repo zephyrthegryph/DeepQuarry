@@ -19,6 +19,9 @@
 	var/allow_duplicates = FALSE // If false, only one map template will be spawned by the game. Doesn't affect admins spawning then manually.
 	var/discard_prob = 0 // If non-zero, there is a chance that the map seeding algorithm will skip this template when selecting potential templates to use.
 
+CAPABILITIES(/datum/map_template)
+	owns_one(nameof(parsed_map), /datum/parsed_map)
+
 /datum/map_template/New(path = null, rename = null, cache = FALSE)
 	SHOULD_CALL_PARENT(TRUE)
 	. = ..()
@@ -42,7 +45,7 @@
 		width = bounds[MAP_MAXX] // Assumes all templates are rectangular, have a single Z level, and begin at 1,1,1
 		height = bounds[MAP_MAXY]
 		if(cache)
-			own_set(src, nameof(parsed_map), parsed)
+			rel_set(src, nameof(parsed_map), parsed)
 	return bounds
 
 /// Bounds written by the build (tools/build/lib/map_bounds.ts) so templates don't

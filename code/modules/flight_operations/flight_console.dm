@@ -221,10 +221,13 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 /obj/machinery/computer/ship
 	var/datum/flight_operations_ui/flight_operations_ui
 
+CAPABILITIES(/obj/machinery/computer/ship)
+	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+
 /// Helm and navigation consoles show the Flight Operations UI.
 /obj/machinery/computer/ship/proc/flight_operations()
 	if(!flight_operations_ui)
-		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
+		rel_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 /obj/machinery/computer/ship/helm/ui_redirect(mob/user)
@@ -236,9 +239,12 @@ UI_ACT_PROC(/datum/flight_operations_ui, ui_act_thrust_limit)
 /obj/machinery/computer/shuttle_control/explore
 	var/datum/flight_operations_ui/flight_operations_ui
 
+CAPABILITIES(/obj/machinery/computer/shuttle_control/explore)
+	owns_one(nameof(flight_operations_ui), /datum/flight_operations_ui)
+
 /obj/machinery/computer/shuttle_control/explore/ui_redirect(mob/user)
 	if(!flight_operations_ui)
-		own_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
+		rel_set(src, nameof(flight_operations_ui), new /datum/flight_operations_ui(src))
 	return flight_operations_ui
 
 

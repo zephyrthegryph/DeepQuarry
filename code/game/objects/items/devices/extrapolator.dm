@@ -31,7 +31,7 @@
 	. = ..()
 	starting_scanner = starting_scanner || default_scanning_module
 	if(ispath(starting_scanner, /obj/item/stock_parts/scanning_module))
-		own_set(src, nameof(scanner), new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
+		rel_set(src, nameof(scanner), new starting_scanner(src)) // ALLOW(decl): scanner from an Initialize argument
 	else if(istype(starting_scanner))
 		own_set(src, nameof(src.scanner), starting_scanner, into = TRUE)
 

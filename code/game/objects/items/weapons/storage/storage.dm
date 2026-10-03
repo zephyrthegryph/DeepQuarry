@@ -66,6 +66,7 @@ CAPABILITIES(/obj/item/storage)
 		quiet = list(/obj/item/hand_labeler))
 	op("feed_replacer", item(/obj/item/lightreplacer), priority(above("storage.put_in")), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
 		then(PROC_REF(feed_replacer)))
+	owns_one(nameof(hud), /datum/storage_hud)
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
 /obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
@@ -536,7 +537,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		user.s_active.hide_from(user)
 
 	if(!hud)
-		own_set(src, nameof(hud), new /datum/storage_hud(src))
+		rel_set(src, nameof(hud), new /datum/storage_hud(src))
 	LAZYDISTINCTADD(is_seeing, user)
 	rel_set(user, nameof(/mob::s_active), src)
 	var/client/C = user.client
@@ -593,6 +594,9 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 	/// display_contents_with_number). on_destroy() unpins each.
 	var/list/obj/item/shown
 
+CAPABILITIES(/datum/storage_hud)
+	owns_one(nameof(closer), /atom/movable/screen/close)
+
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 
 /datum/storage_hud/New(obj/item/storage/S)
@@ -607,7 +611,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 		own_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
 		own_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
 		own_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
-	own_set(src, nameof(closer), new /atom/movable/screen/close())
+	rel_set(src, nameof(closer), new /atom/movable/screen/close())
 	rel_set(closer, nameof(closer.master_ref), master)
 	closer.icon_state = "storage_close"
 	closer.hud_layerise()

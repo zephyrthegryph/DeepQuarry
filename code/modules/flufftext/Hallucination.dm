@@ -26,6 +26,9 @@ Gunshots/explosions/opening doors/less rare audio (done)
 	VAR_PRIVATE/hal_crit = FALSE
 	VAR_PRIVATE/hal_screwyhud = HUD_HALLUCINATION_NONE
 
+CAPABILITIES(/datum/hallucinations)
+	owns_one(nameof(halitem), /obj)
+
 /mob/living/carbon/var/datum/hallucinations/hallucinations
 
 /datum/hallucinations/New(mob/living/carbon/human/H)
@@ -68,7 +71,7 @@ Gunshots/explosions/opening doors/less rare audio (done)
 /mob/living/carbon/proc/start_hallucinations(hallucination_type = /datum/hallucinations)
 	if(hallucinations || !ishuman(src))
 		return hallucinations
-	own_set(src, nameof(hallucinations), new hallucination_type(src))
+	rel_set(src, nameof(hallucinations), new hallucination_type(src))
 	return hallucinations
 
 /mob/living/carbon/proc/get_hallucination_state()

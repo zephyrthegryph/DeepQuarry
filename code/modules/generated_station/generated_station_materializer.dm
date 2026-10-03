@@ -7,6 +7,9 @@
 	var/score = 0
 	var/list/reserved_frontage
 
+CAPABILITIES(/datum/generated_room_placement)
+	owns_one(nameof(feature), /datum/generated_room_feature)
+
 /datum/generated_room_placement/New()
 	..()
 	reserved_frontage = list()
@@ -173,6 +176,11 @@
 	var/datum/generated_station_tile_plan/tile_plan
 	var/datum/generated_station_validation_result/service_validation
 
+CAPABILITIES(/datum/generated_station_materialization)
+	owns_one(nameof(entry), /obj/effect/landmark/generated_station_entry)
+	owns_one(nameof(service_validation), /datum/generated_station_validation_result)
+	owns_one(nameof(tile_plan), /datum/generated_station_tile_plan)
+
 /datum/generated_station_materialization/New()
 	..()
 	own_take_all(src, nameof(owned_furnishing_atoms))
@@ -256,6 +264,11 @@
 	/// the affected room, never discard an otherwise playable station.
 	var/strict_room_contracts = TRUE
 
+CAPABILITIES(/datum/generated_station_materializer)
+	owns_one(nameof(active_job), /datum/generated_station_materialization_job)
+	owns_one(nameof(result), /datum/generated_station_materialization)
+	owns_one(nameof(tile_plan), /datum/generated_station_tile_plan)
+
 
 /datum/generated_station_materializer/proc/materialize(datum/generated_station_spec/new_spec, new_z, origin_x = 1, origin_y = 1, datum/flight_plan/flight_plan = null, fast_mode = FALSE)
 	var/datum/generated_station_materialization_job/job = new(src, flight_plan, fast_mode)
@@ -300,7 +313,7 @@
 		return FALSE
 
 	rel_set(src, nameof(spec), new_spec)
-	own_set(src, nameof(active_job), job)
+	rel_set(src, nameof(active_job), job)
 	z_level = new_z
 	min_x = origin_x
 	min_y = origin_y
@@ -313,7 +326,7 @@
 	maintenance_area = generated_station_create_area(/area/generated_station/maintenance)
 	maintenance_area().station_id = spec().id
 	maintenance_area().name = "[spec().name] Maintenance"
-	own_set(src, nameof(result), new /datum/generated_station_materialization)
+	rel_set(src, nameof(result), new /datum/generated_station_materialization)
 	result.station_id = spec().id
 	result.z_level = z_level
 	result.origin_x = min_x
@@ -388,7 +401,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 	generation_checkpoint("Compiling structural ownership", 27)
 	if(!cursor)
 		own_clear(src, nameof(tile_plan), OWN_DELETE)
-		own_set(src, nameof(tile_plan), new /datum/generated_station_tile_plan(spec().grid_width, spec().grid_height, src, TRUE))
+		rel_set(src, nameof(tile_plan), new /datum/generated_station_tile_plan(spec().grid_width, spec().grid_height, src, TRUE))
 		cursor = 1
 	for(var/x in cursor to tile_plan.grid_width)
 		tile_plan.fill_column(x)
@@ -490,7 +503,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		return
 	if(length(tile_plan.errors))
 		return abort_structural("tile-plan")
-	own_set(result, nameof(result.tile_plan), tile_plan)
+	rel_set(result, nameof(result.tile_plan), tile_plan)
 	own_take(src, nameof(tile_plan))
 	return null
 
@@ -618,7 +631,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		// interior access door; retain the playable result and let the independent
 		// architecture audit report any concrete remaining defect.
 		log_world("Generated station [spec().id] retained its best-effort furnishing layout after access repair was exhausted.")
-	own_set(result, nameof(result.service_validation), result.validate_services(spec(), src))
+	rel_set(result, nameof(result.service_validation), result.validate_services(spec(), src))
 	generation_checkpoint("Finalizing walls and atmosphere", 57, TRUE)
 	return null
 
@@ -985,7 +998,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 		var/datum/generated_room_solution/solution = solutions_by_native_id["[fixture.room_numeric_id]"]
 		if(solution)
 			var/datum/generated_room_placement/placement = new
-			own_set(placement, nameof(placement.feature), new /datum/generated_room_feature)
+			rel_set(placement, nameof(placement.feature), new /datum/generated_room_feature)
 			placement.feature.id = fixture.fixture_id
 			placement.feature.atom_type = atom_type
 			placement.x = fixture.x
@@ -1544,7 +1557,7 @@ TYPE_TABLE_DECLARE(/datum/generated_station_materializer, materialize_phases, li
 				T = candidate
 				break
 	if(T)
-		own_set(result, nameof(result.entry), new /obj/effect/landmark/generated_station_entry(T))
+		rel_set(result, nameof(result.entry), new /obj/effect/landmark/generated_station_entry(T))
 		result.entry().station_id = spec().id
 		result.register_furnishing(new /obj/item/card/id/generated_station_master(T))
 

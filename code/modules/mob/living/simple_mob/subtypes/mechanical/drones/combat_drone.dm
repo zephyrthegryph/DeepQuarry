@@ -60,12 +60,15 @@
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail = null
 	var/obj/item/shield_projector/shields = null
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/combat_drone)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+
 /mob/living/simple_mob/mechanical/combat_drone/melee
 	icon_state = "droneM"
 	icon_dead = "droneM_dead"
 
 /mob/living/simple_mob/mechanical/combat_drone/Initialize(mapload)
-	own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
+	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()

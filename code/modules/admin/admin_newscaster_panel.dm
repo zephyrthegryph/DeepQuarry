@@ -15,7 +15,7 @@
 	if(!owner()?.mob)
 		return
 	if(!dq_newscaster_panel)
-		own_set(src, nameof(dq_newscaster_panel), new /datum/newscaster_panel(src))
+		rel_set(src, nameof(dq_newscaster_panel), new /datum/newscaster_panel(src))
 	dq_newscaster_panel.tgui_interact(owner().mob)
 
 /datum/admins

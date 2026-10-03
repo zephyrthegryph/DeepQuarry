@@ -17,6 +17,9 @@
 	var/tmp/moving_upwards
 	EXPIRY_TMP_DECLARE(next_process) // world.time process() should next do something
 
+CAPABILITIES(/datum/turbolift)
+	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
+
 /// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
 OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)
 DECLARE_PERIODIC_WHILE(/datum/turbolift, PERIODIC_SECOND, "busy_state")

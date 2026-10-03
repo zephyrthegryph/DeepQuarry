@@ -38,6 +38,9 @@
 	var/obj/item/aicard/ai_card  // Reference to the MMI, posibrain, intellicard or pAI card previously holding the AI.
 	var/obj/item/ai_verbs/verb_holder
 
+CAPABILITIES(/obj/item/rig_module/ai_container)
+	owns_one(nameof(verb_holder), /obj/item/ai_verbs)
+
 /obj/item/rig_module/ai_container/periodic_step()
 	if(integrated_ai())
 		var/obj/item/rig/rig = get_rig()
@@ -48,7 +51,7 @@
 
 /obj/item/rig_module/ai_container/proc/update_verb_holder()
 	if(!verb_holder)
-		own_set(src, nameof(verb_holder), new /obj/item/ai_verbs(src))
+		rel_set(src, nameof(verb_holder), new /obj/item/ai_verbs(src))
 	if(integrated_ai())
 		verb_holder.forceMove(integrated_ai())
 	else
@@ -81,7 +84,7 @@
 
 		// If the transfer failed we can delete the card.
 		if(locate_in_list(card, /mob/living/silicon/ai))
-			own_set(src, nameof(ai_card), card)
+			rel_set(src, nameof(ai_card), card)
 			rel_set(src, nameof(integrated_ai), locate_in_list(card, /mob/living/silicon/ai))
 		else
 			eject_ai()
@@ -177,7 +180,7 @@
 			if(istype(ai, /obj/item/aicard))
 
 				if(!ai_card)
-					own_set(src, nameof(ai_card), new /obj/item/aicard(src))
+					rel_set(src, nameof(ai_card), new /obj/item/aicard(src))
 
 				var/obj/item/aicard/source_card = ai
 				var/obj/item/aicard/target_card = ai_card

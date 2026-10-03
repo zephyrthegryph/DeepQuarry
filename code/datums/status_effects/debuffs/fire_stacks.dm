@@ -149,6 +149,9 @@
 	/// Cached particle type
 	var/applied_particle_type
 
+CAPABILITIES(/datum/status_effect/fire_handler/fire_stacks)
+	owns_one(nameof(moblight), /obj/effect/dummy/lighting_obj)
+
 /datum/status_effect/fire_handler/fire_stacks/get_examine_text()
 	if(owner.on_fire)
 		return
@@ -258,7 +261,7 @@
 	if(moblight_type)
 		if(moblight)
 			qdel(moblight)
-		own_set(src, nameof(moblight), new moblight_type(owner))
+		rel_set(src, nameof(moblight), new moblight_type(owner))
 
 	cache_stacks()
 	return TRUE

@@ -393,7 +393,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/pda, "cartridge", "default_cartridge")
 		if (istype(I, /obj/item/card/id) && I:registered_name)
 			var/obj/old_id = own_take(src, nameof(src.id)) // handed back below, not disposed of
 			if(!own_set(src, nameof(src.id), I, user = user))
-				own_set(src, nameof(src.id), old_id)
+				rel_set(src, nameof(src.id), old_id)
 				return 0
 			user.put_in_hands(old_id)
 			return 1

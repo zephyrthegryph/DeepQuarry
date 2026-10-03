@@ -18,8 +18,11 @@ It is used to destroy hand-held objects and advance technological research. Used
 	var/rped_recycler_ready = TRUE
 	var/datum/remote_materials/rmat
 
+CAPABILITIES(/obj/machinery/rnd/destructive_analyzer)
+	owns_one(nameof(rmat), /datum/remote_materials)
+
 /obj/machinery/rnd/destructive_analyzer/Initialize(mapload)
-	own_set(src, nameof(rmat), new /datum/remote_materials( \
+	rel_set(src, nameof(rmat), new /datum/remote_materials( \
 		src, \
 		mapload, \
 		mat_container_flags = MATCONTAINER_NO_INSERT \

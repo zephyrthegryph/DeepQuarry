@@ -22,6 +22,12 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 
 	var/static/list/equippable_item_whitelist
 
+CAPABILITIES(/obj/structure/janitorialcart)
+	owns_one(nameof(mybag), /obj/item/storage/bag/trash)
+	owns_one(nameof(mymop), /obj/item/mop)
+	owns_one(nameof(myreplacer), /obj/item/lightreplacer)
+	owns_one(nameof(myspray), /obj/item/reagent_containers/spray)
+
 /obj/structure/janitorialcart/Initialize(mapload, ...)
 	. = ..()
 	make_climbable()
@@ -49,28 +55,28 @@ REGISTRY_MEMBERSHIP(/obj/structure/janitorialcart, REGISTRY_JANITORIAL_CARTS)
 		if(mybag)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		own_set(src, nameof(mybag), I)
+		rel_set(src, nameof(mybag), I)
 		setTguiIcon("mybag", mybag)
 
 	else if(istype(I, /obj/item/mop) || istype(I, /obj/item/mop/advanced))
 		if(mymop)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		own_set(src, nameof(mymop), I)
+		rel_set(src, nameof(mymop), I)
 		setTguiIcon("mymop", mymop)
 
 	else if(istype(I, /obj/item/reagent_containers/spray))
 		if(myspray)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		own_set(src, nameof(myspray), I)
+		rel_set(src, nameof(myspray), I)
 		setTguiIcon("myspray", myspray)
 
 	else if(istype(I, /obj/item/lightreplacer))
 		if(myreplacer)
 			user.balloon_alert(user, "[src] already has \an [I].")
 			return FALSE
-		own_set(src, nameof(myreplacer), I)
+		rel_set(src, nameof(myreplacer), I)
 		setTguiIcon("myreplacer", myreplacer)
 
 	else if(istype(I, /obj/item/clothing/suit/caution))

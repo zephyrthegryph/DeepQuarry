@@ -40,22 +40,22 @@
 	// Spawn the six physical components
 	if(holder().cell_type)
 		var/new_cell_type_path = holder().cell_type
-		own_set(holder(), nameof(/obj/mecha::cell), new new_cell_type_path(holder()))
+		rel_set(holder(), nameof(/obj/mecha::cell), new new_cell_type_path(holder()))
 	if(holder().air_type)
 		var/new_air_type_path = holder().air_type
-		own_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::air_supply), new new_air_type_path(holder()))
 	if(holder().glove_type)
 		var/new_glove_type_path = holder().glove_type
-		own_set(holder(), nameof(/obj/item/rig::gloves), new new_glove_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::gloves), new new_glove_type_path(holder()))
 	if(holder().helm_type)
 		var/new_helm_type_path = holder().helm_type
-		own_set(holder(), nameof(/obj/item/rig::helmet), new new_helm_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::helmet), new new_helm_type_path(holder()))
 	if(holder().boot_type)
 		var/new_boot_type_path = holder().boot_type
-		own_set(holder(), nameof(/obj/item/rig::boots), new new_boot_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::boots), new new_boot_type_path(holder()))
 	if(holder().chest_type)
 		var/new_chest_type_path = holder().chest_type
-		own_set(holder(), nameof(/obj/item/rig::chest), new new_chest_type_path(holder()))
+		rel_set(holder(), nameof(/obj/item/rig::chest), new new_chest_type_path(holder()))
 		holder().chest.adopt_constraint(CONSTRAINT_SUIT_STORAGE, holder())
 
 	// Apply shared stats to equippable pieces

@@ -14,13 +14,16 @@
 
 	var/is_raining = FALSE
 
+CAPABILITIES(/obj/effect/anomaly/weather)
+	owns_one(nameof(selected_weather), /datum/anomalous_weather)
+
 /obj/effect/anomaly/weather/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
 
 	LAZYADD(affected_areas, impact_area())
 
 	if(selected_weather)
-		own_set(src, nameof(selected_weather), new selected_weather)
+		rel_set(src, nameof(selected_weather), new selected_weather)
 	else
 		pick_weather()
 
@@ -94,7 +97,7 @@
 	if(!new_weather_path)
 		new_weather_path = pick(subtypesof(/datum/anomalous_weather))
 
-	own_set(src, nameof(selected_weather), new new_weather_path)
+	rel_set(src, nameof(selected_weather), new new_weather_path)
 
 /obj/effect/anomaly/weather/proc/start_weather()
 	if(QDELETED(src))
@@ -142,7 +145,7 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain) // disposes of the old weather
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain) // disposes of the old weather
 			update_reagent(REAGENT_ID_WATER)
 			add_turfs(circleviewturfs(src, 3))
 			start_weather()
@@ -150,7 +153,7 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain)
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain)
 			update_reagent(pick(REAGENT_ID_WATER, REAGENT_ID_ICE, REAGENT_ID_ORANGEJUICE))
 			add_turfs(circlerangeturfs(src, 4))
 			start_weather()
@@ -158,7 +161,7 @@
 			clear_weather()
 			rel_clear(src, nameof(affected_turfs))
 			if(!istype(selected_weather, /datum/anomalous_weather/rain/storm))
-				own_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
+				rel_set(src, nameof(selected_weather), new /datum/anomalous_weather/rain/storm)
 
 			var/reagent_id = pick(SSchemistry.ready().chemical_reagents)
 			if(reagent_id in GLOB.obtainable_chemical_blacklist)

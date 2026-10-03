@@ -15,6 +15,9 @@
 
 	equip_type = EQUIP_HULL
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/omni_shield)
+	owns_one(nameof(shields), /obj/item/shield_projector)
+
 /obj/item/mecha_parts/mecha_equipment/omni_shield/critfail()
 	..()
 	shields.adjust_health(-200)
@@ -23,7 +26,7 @@
 /obj/item/mecha_parts/mecha_equipment/omni_shield/attach(obj/mecha/M as obj)
 	. = ..()
 	if(chassis)
-		own_set(src, nameof(shields), new shield_type(chassis))
+		rel_set(src, nameof(shields), new shield_type(chassis))
 
 /obj/item/mecha_parts/mecha_equipment/omni_shield/detach()
 	if(chassis)

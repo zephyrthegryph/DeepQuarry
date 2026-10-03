@@ -51,10 +51,13 @@ GLOBAL_TABLE(protean_power_verbs, GLOBAL_PROC_REF(build_protean_power_verbs))
 	/// Stat panel button (an atom, so the panel can click it).
 	var/obj/effect/protean_power_button/button
 
+CAPABILITIES(/datum/protean_power)
+	owns_one(nameof(button), /obj/effect/protean_power_button)
+
 /datum/protean_power/New()
 	..()
 	if(in_stat_panel)
-		own_set(src, nameof(button), new /obj/effect/protean_power_button(null, src))
+		rel_set(src, nameof(button), new /obj/effect/protean_power_button(null, src))
 
 
 /datum/protean_power/proc/try_activate(mob/living/carbon/human/H)

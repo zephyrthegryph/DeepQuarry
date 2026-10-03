@@ -19,11 +19,14 @@
 	// Removed subtype, replaced with flag. Allows for safe injectors. Mostly for admin usage.
 	var/has_radiation = TRUE
 
+CAPABILITIES(/obj/item/dnainjector)
+	owns_one(nameof(buf), /datum/dna2/record)
+
 // INIT: allocates this injector's owned gene record and DNA buffer, then writes its selected gene value before parent initialization
 /obj/item/dnainjector/Initialize(mapload)
 	if(datatype && block)
-		own_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
-		own_set(buf, nameof(buf.dna), new /datum/dna)
+		rel_set(src, nameof(buf), new /datum/dna2/record) // ALLOW(decl): only when datatype and block are set, then configured
+		rel_set(buf, nameof(buf.dna), new /datum/dna)
 		buf.types = datatype
 		buf.dna.ResetSE()
 		SetValue(src.value)

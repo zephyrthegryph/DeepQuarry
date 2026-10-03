@@ -17,10 +17,13 @@
 		"Jelly" = /obj/item/reagent_containers/food/snacks/variable/jelly
 		)
 
+CAPABILITIES(/obj/machinery/appliance/mixer/candy)
+	owns_one(nameof(candymaker_loop), /datum/looping_sound/candymaker)
+
 /obj/machinery/appliance/mixer/candy/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
+	rel_set(src, nameof(candymaker_loop), new /datum/looping_sound/candymaker(list(src), FALSE))
 
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/mixer/candy, TYPE_PROC_REF(/atom, appearance_overlays), list())

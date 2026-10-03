@@ -67,7 +67,7 @@
 	if(old_owner && old_owner.soulgem == src)
 		own_transfer(old_owner, nameof(old_owner.soulgem), target, nameof(/mob::soulgem))
 	else
-		own_set(target, nameof(/mob::soulgem), src)
+		rel_set(target, nameof(/mob::soulgem), src)
 
 // Cleaning up our refs before deletion
 

@@ -9,9 +9,15 @@
 /// The geiger loop, owned: deleted with this datum.
 /datum/geiger_sound/var/datum/looping_sound/geiger/sound
 
+CAPABILITIES(/datum/geiger_sound)
+	owns_one(nameof(sound), /datum/looping_sound/geiger)
+
 
 /// Owned: the active geiger sound loop while the counter is scanning.
 /obj/item/geiger/var/datum/geiger_sound/geiger_sound
+
+CAPABILITIES(/obj/item/geiger)
+	owns_one(nameof(geiger_sound), /datum/geiger_sound)
 
 /datum/geiger_sound/New(atom/new_owner)
 	..()
@@ -23,7 +29,7 @@
 
 /datum/geiger_sound/proc/attach()
 	if(!wall_mounted)
-		own_set(src, nameof(sound), new /datum/looping_sound/geiger(list(owner), TRUE))
+		rel_set(src, nameof(sound), new /datum/looping_sound/geiger(list(owner), TRUE))
 
 	om_hook(owner, /datum/om/event/before/in_range_of_irradiation, src, PROC_REF(on_pre_potential_irradiation))
 
@@ -116,7 +122,7 @@
 	wall_mounted = TRUE
 
 /datum/geiger_sound/wall/attach()
-	own_set(src, nameof(sound), new /datum/looping_sound/geiger/wall(list(owner), TRUE))
+	rel_set(src, nameof(sound), new /datum/looping_sound/geiger/wall(list(owner), TRUE))
 	..()
 
 //Subtype for wall mounted geiger counters, which should be quieter and not have the chance to play when radiation is low.

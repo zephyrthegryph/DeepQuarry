@@ -11,12 +11,15 @@
 
 	var/obj/item/paper/internalPaper
 
+CAPABILITIES(/obj/item/paperplane)
+	owns_one(nameof(internalPaper), /obj/item/paper)
+
 /obj/item/paperplane/Initialize(mapload, obj/item/paper/newPaper)
 	. = ..()
 	pixel_y = rand(-8, 8)
 	pixel_x = rand(-9, 9)
 	if(newPaper)
-		own_set(src, nameof(internalPaper), newPaper)
+		rel_set(src, nameof(internalPaper), newPaper)
 		flags = newPaper.flags
 		color = newPaper.color
 		if(isstorage(newPaper.loc))
@@ -25,7 +28,7 @@
 		else
 			newPaper.forceMove(src)
 	else
-		own_set(src, nameof(internalPaper), new /obj/item/paper(src))
+		rel_set(src, nameof(internalPaper), new /obj/item/paper(src))
 	update_icon()
 
 

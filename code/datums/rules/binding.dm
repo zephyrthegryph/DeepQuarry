@@ -6,6 +6,9 @@
 /// `owner` is its one-sided back view.
 /datum/var/tmp/datum/rule_binding/rule_binding
 
+CAPABILITIES(/datum)
+	owns_one(nameof(rule_binding), /datum/rule_binding)
+
 
 /proc/dq_rule_binding_of(datum/thing)
 	var/datum/rule_binding/binding = thing?.rule_binding
@@ -151,7 +154,7 @@
 	..()
 	rel_set(src, nameof(owner), owner)
 	table = dq_rule_table_for(rules)
-	own_set(owner, nameof(owner.rule_binding), src)
+	rel_set(owner, nameof(owner.rule_binding), src)
 	var/count = table.count
 	for(var/i in 1 to count)
 		if(subscribe(i, rules[i]))

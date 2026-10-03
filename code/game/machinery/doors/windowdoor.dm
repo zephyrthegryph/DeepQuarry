@@ -246,9 +246,9 @@ CAPABILITIES(/obj/machinery/door/window)
 	assembly.created_name = name
 	graph_place(assembly, STAGE_WINDOOR_ASSEMBLY_BOARDED)
 	if(operating == -1)
-		own_set(assembly, nameof(assembly.electronics), new /obj/item/circuitboard/broken(assembly))
+		rel_set(assembly, nameof(assembly.electronics), new /obj/item/circuitboard/broken(assembly))
 	else if(!electronics)
-		own_set(assembly, nameof(assembly.electronics), new /obj/item/airlock_electronics(assembly))
+		rel_set(assembly, nameof(assembly.electronics), new /obj/item/airlock_electronics(assembly))
 		if(LAZYLEN(req_access))
 			assembly.electronics.conf_access = req_access
 		else if(LAZYLEN(req_one_access))

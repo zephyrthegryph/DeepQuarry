@@ -10,6 +10,9 @@
 	var/finished = FALSE
 	var/datum/gas_mixture/pod_air/air
 
+CAPABILITIES(/obj/structure/drop_pod)
+	owns_one(nameof(air), /datum/gas_mixture/pod_air)
+
 /obj/structure/drop_pod/polite
 	polite = TRUE
 
@@ -18,7 +21,7 @@
 	if(A)
 		A.forceMove(src) // helo
 		podfall(auto_open)
-	own_set(src, nameof(air), new /datum/gas_mixture/pod_air)
+	rel_set(src, nameof(air), new /datum/gas_mixture/pod_air)
 
 
 /obj/structure/drop_pod/proc/podfall(auto_open)

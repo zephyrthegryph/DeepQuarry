@@ -7,7 +7,7 @@
 		ui.close()
 
 	winset(src, SKIN_LOBBY_BROWSER, "is-disabled=false;is-visible=true")
-	own_set(src, nameof(lobby_window), new /datum/tgui_window(client, SKIN_LOBBY_BROWSER))
+	rel_set(src, nameof(lobby_window), new /datum/tgui_window(client, SKIN_LOBBY_BROWSER))
 	lobby_window.initialize(
 		assets = list(
 			get_asset_datum(/datum/asset/simple/tgui)
@@ -119,7 +119,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_give_feedback)
 	if(client.feedback_form)
 		client.feedback_form.display() // In case they closed the form early.
 	else
-		own_set(client, nameof(/client::feedback_form), new /datum/managed_browser/feedback_form(client)) // the client owns its form
+		rel_set(client, nameof(/client::feedback_form), new /datum/managed_browser/feedback_form(client)) // the client owns its form
 	return TRUE
 
 UI_ACT(/mob/new_player, "open_station_news", ui_act_open_station_news)

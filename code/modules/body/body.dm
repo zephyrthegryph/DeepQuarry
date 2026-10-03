@@ -26,7 +26,7 @@
 	// A human builds its body in set_species(), before this, so its organs
 	// have part slots to attach into.
 	if(!body)
-		own_set(src, nameof(body), new body_type(src))
+		rel_set(src, nameof(body), new body_type(src))
 	return ..()
 
 
@@ -92,7 +92,7 @@
 	..()
 	rel_set(src, nameof(owner), new_owner)
 	if(physiology_type)
-		own_set(src, nameof(physiology), new physiology_type(src))
+		rel_set(src, nameof(physiology), new physiology_type(src))
 
 /// Afflictions leave through remove_affliction(), so their on_removed()
 /// hooks and signals run, then are deleted.

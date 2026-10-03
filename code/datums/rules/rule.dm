@@ -71,6 +71,9 @@
 	var/list/triggers
 	var/list/errors
 
+CAPABILITIES(/datum/rule)
+	owns_one(nameof(predicate), /datum/predicate)
+
 /datum/rule/proc/compile()
 	errors = list()
 	if(!length(applies_to) && !test_only)
@@ -89,7 +92,7 @@
 			errors += "unknown effect kind [effect_kind]"
 	if(exit_proc && once)
 		errors += "exit_proc needs once = FALSE"
-	own_set(src, nameof(predicate), new /datum/predicate)
+	rel_set(src, nameof(predicate), new /datum/predicate)
 	predicate.name = "rule [name || type]"
 	predicate.spec = condition
 	if(!predicate.compile())

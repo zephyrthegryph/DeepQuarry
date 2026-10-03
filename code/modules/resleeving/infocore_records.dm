@@ -98,6 +98,9 @@
 	var/aflags
 	var/breath_type = GAS_O2
 
+CAPABILITIES(/datum/transhuman/body_record)
+	owns_one(nameof(mydna), /datum/dna2/record)
+
 /datum/transhuman/body_record/New(copyfrom, add_to_db = 0, ckeylock = 0)
 	..()
 	if(istype(copyfrom, /datum/transhuman/body_record))
@@ -146,7 +149,7 @@
 	M.dna.check_integrity()
 
 	//The DNA2 stuff
-	own_set(src, nameof(mydna), new /datum/dna2/record ())
+	rel_set(src, nameof(mydna), new /datum/dna2/record ())
 	QDEL_SWAP(mydna.dna, M.dna.Clone())
 	mydna.ckey = M.ckey
 	mydna.id = copytext(md5(M.real_name), 2, 6)
@@ -215,7 +218,7 @@
 			if(BLACKLISTED_COPY_VARS)
 				continue
 			if("mydna")
-				own_set(src, nameof(mydna), orig.mydna.copy())
+				rel_set(src, nameof(mydna), orig.mydna.copy())
 				continue
 			if("mind_ref")
 				rel_set(src, nameof(mind_ref), orig.mind_ref) // a relation view: never a raw copy
@@ -317,7 +320,7 @@
 
 	//Apply DNA from record
 	if(!mydna.dna) // This case should never happen, but copied from clone pod... Who knows with this codebase.
-		own_set(mydna, nameof(mydna.dna), new /datum/dna())
+		rel_set(mydna, nameof(mydna.dna), new /datum/dna())
 	QDEL_SWAP(H.dna, mydna.dna.Clone())
 	H.original_player = ckey
 

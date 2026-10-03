@@ -22,7 +22,7 @@
 /obj/machinery/portable_atmospherics/powered/scrubber/Initialize(mapload, skip_cell)
 	. = ..()
 	if(!skip_cell)
-		own_set(src, nameof(cell), new/obj/item/cell/apc(src))
+		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 	make_climbable()
 
 DAMAGE_REACTION(/obj/machinery/portable_atmospherics/powered/scrubber, DAMAGE_EMP, PROC_REF(scrubber_emp))

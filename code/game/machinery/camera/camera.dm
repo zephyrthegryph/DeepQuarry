@@ -42,12 +42,15 @@
 
 	var/client_huds = null
 
+CAPABILITIES(/obj/machinery/camera)
+	owns_one(nameof(assembly), /obj/item/camera_assembly)
+
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
 	om_hook(src, list(/datum/om/event/machinery_power_lost, /datum/om/event/machinery_power_restored), src, PROC_REF(on_power_signal))
 	set_wires(new /datum/wires/camera(src))
-	own_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
+	rel_set(src, nameof(assembly), new /obj/item/camera_assembly(src))
 	assembly.state = 4
 	LAZYOR(client_huds, GLOB.global_hud.whitense)
 

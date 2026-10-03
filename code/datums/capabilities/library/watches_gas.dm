@@ -105,7 +105,7 @@
 	armed_id = id
 	if(!mixture)
 		return
-	own_set(src, nameof(watch), om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
+	rel_set(src, nameof(watch), om_watch_gas(holder, mixture, C.channel, C.cmp, C.level, C.callback, C.hysteresis, C.lane))
 
 /datum/capability/watches_gas/on_holder_init(atom/holder, mapload)
 	var/datum/gas_watch_state/state = cap_data(holder, src)

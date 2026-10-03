@@ -26,6 +26,9 @@
 
 	light_color = "#315ab4"
 
+CAPABILITIES(/obj/machinery/computer/cloning)
+	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
+
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
 	. = ..()
@@ -304,7 +307,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_disk)
 				menu = MENU_MAIN
 				return
 
-			own_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
+			rel_set(src, nameof(/obj/machinery/computer/cloning::loaded_BR), new /datum/transhuman/body_record(diskette.stored))
 			rel_set(src, nameof(/obj/machinery/computer/cloning::active_BR), loaded_BR) // Traitgenes Storing the entire body record
 			set_temp("Successfully loaded from disk.", "success")
 		if("save")

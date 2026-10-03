@@ -46,10 +46,13 @@
 	var/list/qualified_lots
 	var/source_department
 
+CAPABILITIES(/datum/contract_requirement/qualified_material_delivery)
+	owns_one(nameof(assay_filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/qualified_material_delivery/New(list/checks, amount = 1, _source_department)
 	. = ..()
 	source_department = _source_department
-	own_set(src, nameof(assay_filter), new /datum/contract_event_filter(source_department ? CONTRACT_EVIDENCE_SCOPE_ANY : CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
+	rel_set(src, nameof(assay_filter), new /datum/contract_event_filter(source_department ? CONTRACT_EVIDENCE_SCOPE_ANY : CONTRACT_EVIDENCE_SCOPE_DEPARTMENT))
 	if(source_department)
 		assay_filter.require_value("department", source_department)
 	minimum_amount = max(1, amount)

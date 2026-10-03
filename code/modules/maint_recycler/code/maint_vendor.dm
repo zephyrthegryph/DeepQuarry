@@ -28,6 +28,9 @@
 
 	var/obj/effect/overlay/recycler/monitor_screen
 
+CAPABILITIES(/obj/machinery/maint_vendor)
+	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
@@ -38,7 +41,7 @@
 		entry.initialize()
 		own_add(src, nameof(product_datums), entry)
 	//move to relevant location
-	own_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
+	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE
 	monitor_screen.layer = src.layer + 0.1
 	monitor_screen.icon = src.icon

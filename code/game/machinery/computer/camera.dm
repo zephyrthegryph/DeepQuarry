@@ -15,11 +15,14 @@
 	var/datum/tgui_module/camera/camera
 	var/camera_datum_type = /datum/tgui_module/camera
 
+CAPABILITIES(/obj/machinery/computer/security)
+	owns_one(nameof(camera), /datum/tgui_module/camera)
+
 /obj/machinery/computer/security/Initialize(mapload)
 	. = ..()
 	if(!LAZYLEN(network))
 		network = get_default_networks()
-	own_set(src, nameof(camera), new camera_datum_type(src, network))
+	rel_set(src, nameof(camera), new camera_datum_type(src, network))
 
 /obj/machinery/computer/security/proc/get_default_networks()
 	. = using_map.station_networks.Copy()

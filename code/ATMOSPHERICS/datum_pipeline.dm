@@ -78,7 +78,7 @@
 			member.loc?.assume_air(share)
 			qdel(share)
 			continue
-		own_set(member, nameof(member.air_temporary), share)
+		rel_set(member, nameof(member.air_temporary), share)
 
 /datum/pipeline/proc/bind_network_air(datum/pipe_network/reference, datum/gas_mixture/network_air)
 	if(network == reference)
