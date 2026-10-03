@@ -556,6 +556,7 @@
 #include "interim_telecrystal_release_validation.dm"
 #include "interim_syringe_container_doses.dm"
 #include "interim_cell_gradual_charge.dm"
+#include "interim_picnic_blanket_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -14,11 +14,20 @@
 	drop_sound = SFX_ITEMS_DROP_CLOTH
 	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
+/// A refused carried blanket must stay folded without allocating floor structures.
+/obj/item/picnic_blankets_carried/proc/can_unfold(mob/user, atom/target, obj/item/held)
+	var/reason = loc?.release_refusal(src, user)
+	if(reason)
+		return reason
+	return TRUE
+
 /obj/item/picnic_blankets_carried/proc/picnic_blankets_carried_fold_out_effect(mob/user, obj/item/held, datum/interaction/interaction)
+	if(can_unfold(user, src, src) != TRUE || !loc.release_to(src, user.loc, null, user))
+		return FALSE
 	var/obj/structure/picnic_blanket_deployed/P = new /obj/structure/picnic_blanket_deployed(user.loc)
 	P.name = name
 	P.desc = unfolded_desc
-	P.unfold()
+	P.unfold(user)
 	replace_with(src, P)
 
 /obj/structure/picnic_blanket_deployed
@@ -45,7 +54,7 @@
 /obj/structure/picnic_blanket_deployed/proc/pred_can_fold_up(mob/actor, atom/target, obj/item/held)
 	return blanket_type == CENTER
 
-/obj/structure/picnic_blanket_deployed/proc/unfold()
+/obj/structure/picnic_blanket_deployed/proc/unfold(mob/user)
 	var/dirs = GLOB.alldirs
 	var/isTableTop //Controls whether to spawn things across tables, or on ground
 	var/doWeHaveTable //Helper var set to true if ANY obj is a table
@@ -63,7 +72,7 @@
 				continue
 			if(LAZYLEN(T.contents) > 20) //Avoiding potential perf issues by not iterating over large piles of objs
 				if(!anti_spam)
-					to_chat(usr, span_notice("Too many items! Couldn't fully unfold the blanket!"))
+					to_chat(user, span_notice("Too many items! Couldn't fully unfold the blanket!"))
 					anti_spam = TRUE
 				continue
 			for(var/obj/O in turf_contents_of_type(T, /obj))
@@ -126,5 +135,5 @@ EXTEND_INTERACTIONS(/obj/structure/picnic_blanket_deployed, \
 
 /// Old object verbs.
 EXTEND_INTERACTIONS(/obj/item/picnic_blankets_carried, \
-	INTERACT_VERB("Fold out", PROC_REF(picnic_blankets_carried_fold_out_effect), REQ_IN_INVENTORY), \
+	INTERACT_VERB("Fold out", PROC_REF(picnic_blankets_carried_fold_out_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/picnic_blankets_carried/proc/can_unfold)), \
 )

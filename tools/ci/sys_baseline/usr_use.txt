@@ -371,7 +371,6 @@ usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if ((src.lo
 usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	usr.put_in_r_hand(src)
 usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	usr.put_in_l_hand(src)
 usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/weapons/picnic_blankets.dm	to_chat(usr, span_notice("Too many items! Couldn't fully unfold the blanket!"))
 usr_outside_verb	code/game/objects/items/weapons/shields.dm	if(ishuman(usr))
 usr_outside_verb	code/game/objects/items/weapons/shields.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
