@@ -121,9 +121,12 @@ DECLARE_INTERACTIONS(/obj/item/gold_star_printer, INTERACT_USE(null, PROC_REF(in
 	if(user.get_active_hand() != src)
 		to_chat(user, span_warning("You need to have \the [src] in your active hand to apply it to something."))
 		return
-	target.desc = "[target.desc] It has a [src] stuck to it!"
-	target.description_fluff = "[target.description_fluff] Attached to it is [desc]"
-	to_chat(user, span_notice("You stick \the [src] to \the [target]."))
-	user.drop_item()
-	consume(src, user)
+	var/sticker_name = "[src]"
+	var/sticker_article = "\the [src]"
+	var/sticker_desc = desc
+	if(!consume(src, user))
+		return
+	target.desc = "[target.desc] It has a [sticker_name] stuck to it!"
+	target.description_fluff = "[target.description_fluff] Attached to it is [sticker_desc]"
+	to_chat(user, span_notice("You stick [sticker_article] to \the [target]."))
 	return

@@ -836,6 +836,7 @@
 #include "interim_slug_glue_wash_cleanup.dm"
 #include "interim_medical_stand_prompt_actor.dm"
 #include "interim_ship_ingestion_prompt_actor.dm"
+#include "interim_gold_sticker_sticky_application.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
