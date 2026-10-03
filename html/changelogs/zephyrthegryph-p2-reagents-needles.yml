@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Syringes and droppers run on the reagent_container and needle capabilities"
+  - qol: "The one who begins to inject someone is seen to again, and the thick-skin check comes after the wait"

@@ -182,6 +182,18 @@
 	var/volume = subject?.reagents ? subject.reagents.total_volume : 0
 	return src.args["more"] ? volume > src.args["units"] : volume >= src.args["units"]
 
+/// req_reagent_room(of =, because =, id =): the holder of the subject (the target by default) has free space in it.
+/proc/req_reagent_room(of = ON_TARGET, because = null, id = null)
+	return part_make(/datum/entry/part/req/reagent_room, list("because" = because, "of" = of, "id" = id))
+
+/datum/entry/part/req/reagent_room
+	part_name = "req_reagent_room"
+	default_reason = /datum/msg/reagent_container/full
+
+/datum/entry/part/req/reagent_room/holds(datum/act/op/A)
+	var/atom/subject = op_subject(A, src.args["of"])
+	return !!subject?.reagents && subject.reagents.get_free_space() > 0
+
 /// How much one transfer from `thing` moves by its own say: what its reagent_container() says it was set to, else the setting of an old-style
 /// container or tank (atom/legacy_transfer_amount()); null when it has none.
 /proc/reagent_transfer_amount(atom/thing)

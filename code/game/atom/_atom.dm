@@ -132,7 +132,7 @@
 /atom/proc/is_open_container()
 	var/datum/capability/lib/reagent_container/C = cap_of(src, CAP_REAGENT_CONTAINER)
 	if(C)
-		return !C.lid || reagent_container_lid_open(src)
+		return !C.sealed && (!C.lid || reagent_container_lid_open(src))
 	return !!(flags & OPENCONTAINER)
 
 /*//Convenience proc to see whether a container can be accessed in a certain way.

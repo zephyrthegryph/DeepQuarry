@@ -40,9 +40,7 @@
 
 /// The person sets the amount of a needle container, giving `value` when asked.
 /proc/rc_needle_set_amount(mob/actor, obj/item/reagent_containers/C, value)
-	GLOB.om_rerun_answers["[REF(C)]:reagent_container_verb_set_transfer"] = list("a1" = value)
-	C.reagent_container_verb_set_transfer(actor, null, null)
-	GLOB.om_rerun_answers -= "[REF(C)]:reagent_container_verb_set_transfer"
+	rc_set_amount_menu(actor, C, value)
 
 /// A syringe of `type` holding `amount` units of water, in `mode`.
 /datum/unit_test/dq_p2_reagents/proc/rc_syringe(type, amount = 0, mode = "draw")

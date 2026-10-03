@@ -97,6 +97,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/item/airlock_electronics::user_may_open" = list(0),
 	"/obj/item/p2_op_item::p2_never" = list(0),
 	"/obj/item/reagent_containers/glass/bucket/wood::electronics_welcome" = list(0),
+	"/obj/item/reagent_containers/syringe/ld50_syringe::no_blood_draw" = list(0),
+	"/obj/item/reagent_containers/syringe::may_stab" = list(0),
 	"/obj/machinery/cell_charger::can_insert" = list(0,
 		list(1, 0, 9),
 		list(1, 0, 10),

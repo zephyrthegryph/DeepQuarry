@@ -301,6 +301,8 @@
 	/// The request the current asks() opened.
 	var/datum/request/request
 	var/started_at = 0
+	/// TRUE once the begins() message has been told (it is told at the first wait only).
+	var/began = FALSE
 	/// The first suspension happened: captured fields are snapshotted.
 	var/captured_taken = FALSE
 	var/list/args_saved
@@ -427,6 +429,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
 			var/delay = W.wait_time(A)
+			if(!began && oplan.begins && delay > 0)
+				began = TRUE
+				oplan.begins.feedback(A)
 			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			suspend_act()
 			if(delay > 0)
@@ -920,6 +925,14 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 /datum/entry/part/says/proc/feedback(datum/act/op/A)
 	var/msg = src.args["msg"]
 	if(istext(msg)) // says(PROC_REF(x)) / says(CAP_PROC(x)): x(datum/act/A) returns the /datum/msg type this commit tells (a toggle says what it did)
+		msg = op_call(A, msg)
+	if(ispath(msg, /datum/msg) && A.actor)
+		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)
+
+/// What the actor and onlookers are told when the op starts waiting.
+/datum/entry/part/begins/proc/feedback(datum/act/op/A)
+	var/msg = src.args["msg"]
+	if(istext(msg))
 		msg = op_call(A, msg)
 	if(ispath(msg, /datum/msg) && A.actor)
 		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)

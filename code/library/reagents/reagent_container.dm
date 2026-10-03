@@ -18,10 +18,11 @@
 //   splash       the same click in a hostile stance, on what cannot be poured into: everything in the held container is splashed over it
 //   drink        a click on yourself in a stance that is not hostile: one transfer, swallowed (ingested); half of it for a small mob
 //   feed         (feed = TRUE) the same click on somebody else, after `feed_wait`: the mouth, a gag, a mask or a belly can refuse
-//   inject       (needle = TRUE) the held container into another mob
+//   inject       (injects = TRUE) the held container into another mob, instantly (a hypospray; the syringe and the dropper have needle()'s ops)
 //   spray        (spray = TRUE) the amount of one transfer is sprayed at the target (atom/reagent_spray_at(): a puff, a splash, what the holder's type
 //                makes of it), after a click cooldown of `spray_cooldown`; a click on what the container rests on is left alone. A sprayer and a needle
-//                container (`needle`) are not plain containers: they do not pour, splash, drink or feed. `settable` = FALSE leaves out set_amount.
+//                container (`needle`; its ops are needle()'s) are not plain containers: they do not pour, splash, drink or feed. `sealed` = TRUE is a
+//                container that is never open (a syringe), whatever it has for a lid. `settable` = FALSE leaves out set_amount.
 //
 // A pour, a fill, a drink and an injection are one RES_REAGENTS transaction: the source's volume and the sink's capacity are set aside together and
 // committed together (reagent_flow.dm), so a sink that is full refuses with its reason before anything leaves the source. Requirements say why: a
@@ -33,7 +34,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, sealed = FALSE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -92,7 +93,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
 				req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/feed))) : null,
-		needle ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
+		injects ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)), req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
 		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), priority(above("reagent_container.fill")), label("Spray"),

@@ -1446,6 +1446,10 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 		W.message = message
 		W.add_fingerprint(src)
 
+/// A species with a thick hide turns a needle away at times (a roll, by how hurt the limb is): TRUE when it does this time.
+/mob/living/carbon/human/proc/thick_skin_holds(obj/item/organ/external/affecting)
+	return (species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2))
+
 /mob/living/carbon/human/can_inject(mob/user, error_msg, target_zone, ignore_thickness = FALSE, method = INJECT_METHOD_NEEDLE)
 	. = 1
 
@@ -1466,7 +1470,7 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	else if (affecting.robotic >= ORGAN_LIFELIKE && method == INJECT_METHOD_NEEDLE)
 		. = 0
 		fail_msg = "Your needle refuses to penetrate more than a short distance..."
-	else if ((species.flags & THICK_SKIN) && prob(70 - round(affecting.get_trauma() + affecting.get_burn() / 2)))	// Allows transplanted limbs with thick skin to maintain their resistance.
+	else if(thick_skin_holds(affecting))	// Allows transplanted limbs with thick skin to maintain their resistance.
 		. = 0
 		fail_msg = "Your needle fails to penetrate \the [affecting]'s thick hide..."
 	else

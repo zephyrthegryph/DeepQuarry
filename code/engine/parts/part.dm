@@ -521,6 +521,15 @@
 	part_name = "says"
 	stages = PART_STAGE_DO
 
+/// begins(msg_type | PROC_REF(x), others =, blind =): the message the actor and onlookers get when the op starts its first wait (the one who begins to
+/// inject someone is seen to), where says() is what they get when it commits. Like says(), the msg may be a proc that answers the message type.
+/proc/begins(msg_type, others = null, blind = null)
+	return part_make(/datum/entry/part/begins, list("msg" = msg_type, "others" = others, "blind" = blind))
+
+/datum/entry/part/begins
+	part_name = "begins"
+	stages = PART_STAGE_WAIT
+
 /// plays(SFX): the sound on commit.
 /proc/plays(sfx)
 	return part_make(/datum/entry/part/plays, list("sfx" = sfx))

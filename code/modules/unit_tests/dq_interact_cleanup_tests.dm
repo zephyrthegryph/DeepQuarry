@@ -146,13 +146,18 @@ GLOBAL_LIST_EMPTY(dq_interact_cleanup_calls)
 
 	var/obj/item/reagent_containers/syringe/S = allocate(/obj/item/reagent_containers/syringe, T)
 	S.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	S.afterattack(victim, user, TRUE, null, I_HURT)
+	user.put_in_active_hand(S)
+	user.next_click = 0
+	input_submit(new /datum/input_event/click(user, victim, null, null, "left=1"))
 	TEST_ASSERT(findtext(S.desc, "broken"), "combat mode: the syringe is stabbed in and breaks")
 
 	var/obj/item/reagent_containers/syringe/ld50_syringe/big = allocate(/obj/item/reagent_containers/syringe/ld50_syringe, T)
-	big.mode = 1 // SYRINGE_INJECT (the defines are file-local)
+	big.mode = NEEDLE_INJECT
 	big.reagents.add_reagent(REAGENT_ID_WATER, 10)
-	big.afterattack(victim, user, TRUE, null, I_HURT)
+	user.drop_item()
+	user.put_in_active_hand(big)
+	user.next_click = 0
+	input_submit(new /datum/input_event/click(user, victim, null, null, "left=1"))
 	TEST_ASSERT_EQUAL(big.reagents.total_volume, 10, "combat mode: the lethal-injection syringe is too big to stab with")
 	TEST_ASSERT(!findtext(big.desc, "broken"), "combat mode: the lethal-injection syringe stays whole")
 

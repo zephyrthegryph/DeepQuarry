@@ -121,11 +121,12 @@ MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
 	var/pressed_with = null
 	var/fitting_time = 20
 	var/fitted = 0
+	var/began = 0
 	var/label_shown = TRUE
 
 TRACKED(/obj/machinery/p2_box, label_shown)
 
-CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), then(PROC_REF(fitted_now))))
+CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), begins(PROC_REF(fit_begins)), then(PROC_REF(fitted_now))))
 
 /obj/machinery/p2_box/proc/emag_effect(datum/act/op/A)
 	emag_ran++
@@ -137,6 +138,11 @@ CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame =
 
 /obj/machinery/p2_box/proc/fit_wait(datum/act/A)
 	return fitting_time
+
+/// begins(): told when the wait starts (a fixture counts it; it tells nobody).
+/obj/machinery/p2_box/proc/fit_begins(datum/act/A)
+	began++
+	return null
 
 /obj/machinery/p2_box/proc/fitted_now(datum/act/op/A)
 	fitted++
