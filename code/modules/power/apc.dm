@@ -1077,7 +1077,8 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/apc, REGISTRY_APCS)
 
 /// The lights of the area this APC powers: its MEMBER relations of role POWER_ROLE_LIGHTING (a copy, the loops yield).
 /obj/machinery/power/apc/proc/area_lights()
-	return area_members(area(), POWER_ROLE_LIGHTING)
+	var/list/found = area()?.lights
+	return found ? found.Copy() : list()
 
 /// The area this APC powers (a plain area var).
 /obj/machinery/power/apc/proc/area() as /area

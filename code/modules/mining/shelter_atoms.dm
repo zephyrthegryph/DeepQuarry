@@ -701,7 +701,7 @@ CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
 		rel_set(src, nameof(target_light), locate_within(dT, /obj/machinery/light))
 	if(target_light())
 		target_light().on = on
-		target_light().update()
+		target_light().refresh_light()
 		// I'm so sorry but for some ungodly reason calling update() simply isn't
 		// enough to make the light actually set its lighting.
 		// So I guess we're doing this manually! :')

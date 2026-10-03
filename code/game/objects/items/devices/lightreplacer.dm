@@ -67,77 +67,101 @@
 	if(get_dist(user, src) <= 2)
 		. += "It has [uses] lights remaining."
 
-DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-)
+/// The replacer is declared (doc/rewrite/conversion_guide.md): glass and lights fill it, a light fixture is its target, an emag card
+/// turns it on and off. Using it in the hand asks for a colour through the legacy prompt until the prompt kinds land.
+TRACKED(/obj/item/lightreplacer, emagged)
+
+CAPABILITIES(/obj/item/lightreplacer, \
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE), \
+	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), when(PROC_REF(plain_glass)), wait(0), \
+		needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in))), \
+	op("add_light", item(/obj/item/light), wait(0), then(PROC_REF(light_in))), \
+	op("fill_from_box", item(/obj/item/storage), wait(0), then(PROC_REF(fill_from_box))), \
+	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at))))
+
+MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 
 /// Old attackby never called ..() regardless of item type, so every click was swallowed.
-/obj/item/lightreplacer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_GLASS || istype(W, /obj/item/stack/material/cyborg/glass))
-		var/obj/item/stack/G = W
-		if(uses >= max_uses)
-			to_chat(user, span_warning("[src.name] is full."))
-			return TRUE
-		else if(G.use(1))
-			add_uses(16) //Autolathe converts 1 sheet into 16 lights.
-			to_chat(user, span_notice("You insert a piece of glass into \the [src.name]. You have [uses] light\s remaining."))
-			return TRUE
-		else
-			to_chat(user, span_warning("You need one sheet of glass to replace lights."))
+/obj/item/lightreplacer/draw(datum/look/look)
+	..()
+	look.state("lightreplacer[emagged]")
 
-	if(istype(W, /obj/item/light))
-		var/new_bulbs = 0
-		var/obj/item/light/L = W
-		if(L.status == 0) // LIGHT OKAY
-			if(uses < max_uses)
-				if(!user.unEquip(W))
-					return TRUE
+/obj/item/lightreplacer/proc/plain_glass(datum/act/op/A)
+	var/obj/item/stack/W = A.held
+	return istype(W, /obj/item/stack/material/cyborg/glass) || (istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_GLASS)
+
+/obj/item/lightreplacer/proc/has_room(datum/act/op/A)
+	return uses < max_uses
+
+/// A sheet of glass makes sixteen lights.
+/obj/item/lightreplacer/proc/glass_in(datum/act/op/A)
+	add_uses(16) //Autolathe converts 1 sheet into 16 lights.
+	to_chat(A.actor, span_notice("You insert a piece of glass into \the [src.name]. You have [uses] light\s remaining."))
+	return OP_OK
+
+/// A light goes in: a working one is a light, a broken or burned one is glass for the shards.
+/obj/item/lightreplacer/proc/light_in(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/light/L = A.held
+	var/new_bulbs = 0
+	if(L.status == LIGHT_OK)
+		if(uses < max_uses)
+			if(!user.unEquip(L))
+				return OP_OK
+			add_uses(1)
+			consume(L, user)
+	else
+		if(!user.unEquip(L))
+			return OP_OK
+		new_bulbs += AddShards(1)
+		consume(L, user)
+	if(new_bulbs != 0)
+		play_sfx(src, SFX_MACHINES_DING)
+	to_chat(user, "You insert \the [L.name] into \the [src.name]. You have [uses] light\s remaining.")
+	return OP_OK
+
+/// A box of lights refills it from the lights in the box.
+/obj/item/lightreplacer/proc/fill_from_box(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/storage/S = A.held
+	var/found_lightbulbs = FALSE
+	var/replaced_something = TRUE
+
+	S.latent_materialize_all() // a walk needs real things (C5)
+	for(var/obj/item/I in contents_of(S)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
+		if(istype(I,/obj/item/light))
+			var/obj/item/light/L = I
+			found_lightbulbs = TRUE
+			if(src.uses >= max_uses)
+				break
+			if(L.status == LIGHT_OK)
+				replaced_something = TRUE
 				add_uses(1)
 				consume(L, user)
-		else
-			if(!user.unEquip(W))
-				return TRUE
-			new_bulbs += AddShards(1)
-			consume(L, user)
-		if(new_bulbs != 0)
-			play_sfx(src, SFX_MACHINES_DING)
-		to_chat(user, "You insert \the [L.name] into \the [src.name]. You have [uses] light\s remaining.")
-		return TRUE
 
-	if(istype(W, /obj/item/storage))
-		var/obj/item/storage/S = W
-		var/found_lightbulbs = FALSE
-		var/replaced_something = TRUE
+			else if(L.status == LIGHT_BROKEN || L.status == LIGHT_BURNED)
+				replaced_something = TRUE
+				AddShards(1)
+				consume(L, user)
 
-		S.latent_materialize_all() // a walk needs real things (C5)
-		for(var/obj/item/I in contents_of(S)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
-			if(istype(I,/obj/item/light))
-				var/obj/item/light/L = I
-				found_lightbulbs = TRUE
-				if(src.uses >= max_uses)
-					break
-				if(L.status == LIGHT_OK)
-					replaced_something = TRUE
-					add_uses(1)
-					consume(L, user)
+	if(!found_lightbulbs)
+		to_chat(user, span_warning("\The [S] contains no bulbs."))
+		return OP_OK
 
-				else if(L.status == LIGHT_BROKEN || L.status == LIGHT_BURNED)
-					replaced_something = TRUE
-					AddShards(1)
-					consume(L, user)
+	if(!replaced_something && src.uses == max_uses)
+		to_chat(user, span_warning("\The [src] is full!"))
+		return OP_OK
 
-		if(!found_lightbulbs)
-			to_chat(user, span_warning("\The [S] contains no bulbs."))
-			return TRUE
+	to_chat(user, span_notice("You fill \the [src] with lights from \the [S]."))
+	return OP_OK
 
-		if(!replaced_something && src.uses == max_uses)
-			to_chat(user, span_warning("\The [src] is full!"))
-			return TRUE
+/// The replacer used on a fixture.
+/obj/item/lightreplacer/proc/replace_light_at(datum/act/op/A)
+	if(isliving(A.actor))
+		ReplaceLight(A.target, A.actor)
+	return OP_OK
 
-		to_chat(user, span_notice("You fill \the [src] with lights from \the [S]."))
-
-	return TRUE
+DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/lightreplacer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(special_handling)
@@ -149,8 +173,6 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, \
 	if(ask.picked_color)
 		selected_color = ask.picked_color
 		to_chat(ask.answerer, "The light color has been changed.")
-
-APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 
@@ -189,14 +211,14 @@ APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 					to_chat(U, span_notice("\The [src] has fabricated a new bulb from the broken bulbs it has stored. It now has [uses] uses."))
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
-				own_clear(target, nameof(target.installed_light), OWN_DELETE) //Remove the light! (its glass went into the shards)
+				rel_clear(target, nameof(target.installed_light)) //Remove the light! (its glass went into the shards)
 				target.latent_bulb = FALSE
-				target.update()
+				target.refresh_light()
 
 			var/obj/item/light/L2 = new target.light_type()
 			L2.brightness_color = selected_color
 			target.insert_bulb(L2) //Call the insertion proc.
-			target.update()
+			target.refresh_light()
 
 			if(target.on && target.rigged)
 				target.explode()
@@ -209,12 +231,11 @@ APPEARANCE_TEMPLATE(/obj/item/lightreplacer, "lightreplacer{emagged}")
 		to_chat(U, "There is a working [target.get_fitting_name()] already inserted.")
 		return
 
-DECLARE_EMAG_REPEATABLE(/obj/item/lightreplacer, PROC_REF(on_emag), null)
-/obj/item/lightreplacer/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	emagged = !emagged
+/// The emag card turns the replacer on and off.
+/obj/item/lightreplacer/proc/on_emag(datum/act/op/A)
+	set_emagged(!emagged)
 	play_sfx(src, SFX_SPARKS, 2)
-	update_icon()
-	return 1
+	return OP_OK
 
 //Can you use it?
 
@@ -254,6 +275,15 @@ MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 			. += "It is currently resetting light colors."
 		else
 			. += "It is currently coloring lights."
+
+CAPABILITIES(/obj/item/lightpainter, \
+	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light))))
+
+/// The painter used on a fixture.
+/obj/item/lightpainter/proc/paint_light(datum/act/op/A)
+	if(isliving(A.actor))
+		ColorLight(A.target, A.actor)
+	return OP_OK
 
 DECLARE_INTERACTIONS(/obj/item/lightpainter, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -296,4 +326,4 @@ DECLARE_INTERACTIONS(/obj/item/lightpainter, INTERACT_USE(null, PROC_REF(interac
 		target.light_color = target.brightness_color
 
 	target.set_light(0)
-	target.update()
+	target.refresh_light()

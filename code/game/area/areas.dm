@@ -46,7 +46,8 @@ GLOBAL_LIST_EMPTY(areas_by_type)
 	/// The APC switched emergency lighting off (derived from it; the lights read it).
 	var/lights_emergency_off = FALSE
 	var/no_air = null
-//	var/list/lights				// list of all lights on this area
+	/// The light fixtures standing in the area (the pair end of their power_area).
+	var/list/lights
 	var/list/all_doors = null		//Added by Strumpetplaya - Alarm Change - Contains a list of doors adjacent to this area
 	var/list/all_arfgs = null		//Similar, but a list of all arfgs adjacent to this area
 	var/firedoors_closed = 0
@@ -686,14 +687,13 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 	. = ..()
 	. += rel_one(nameof(apc))
 
-/// What the area's lights read from its APC, derived through the apc relation: the lights read these through theirs.
-/area/derived()
-	. = ..()
-	. += derive(nameof(lights_nightshift), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_lights)), rel(nameof(apc), nameof(/obj/machinery/power/apc::nightshift_setting)))
-	. += derive(nameof(lights_emergency_off), rel(nameof(apc), nameof(/obj/machinery/power/apc::emergency_lights)))
+/// What the area's lights read from its APC, as stats the APC's state feeds through the apc relation: the lights read them through theirs.
+CAPABILITIES(/area, \
+	contributes(STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)), \
+	contributes(STAT_LIGHTS_EMERGENCY_OFF, PROC_REF(emergency_lights_switched_off)))
 
 /// Night lighting: the night shift's ask to the APC, under the APC's UI setting.
-/area/proc/derive_lights_nightshift()
+/area/proc/wants_night_lights(datum/act/A)
 	if(!apc)
 		return FALSE
 	switch(apc.nightshift_setting)
@@ -703,7 +703,8 @@ GLOBAL_DATUM(spoiler_obfuscation_image, /image)
 			return TRUE
 	return !!apc.nightshift_lights
 
-/area/proc/derive_lights_emergency_off()
+/// The APC switched emergency lighting off.
+/area/proc/emergency_lights_switched_off(datum/act/A)
 	return !!apc?.emergency_lights
 
 /// A new APC (or none) serves the area: its Rust node takes the area's static loads.

@@ -16,6 +16,21 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	return CACHED(light_type_instance, light_type)
 
 // the standard tube light fixture
+//
+// The fixture is declared (doc/rewrite/final_api.html section 16, doc/rewrite/conversion_guide.md): ONE CAPABILITIES list says what it is: a machine
+// on the area's light channel, the bulb in its socket and the emergency cell it holds, the area it stands in, the ops that put a bulb in, take one
+// out, smash, open and tune it, the night shift and emergency switches it reads from its area, the timers of its cell and its flicker. The
+// imperative parts below are its own: the light arithmetic of refresh_light(), the emergency discharge accounting, the conditions and effects the
+// list names and its look.
+//
+// What the machine core keeps until the machine track (phase 4): the NOPOWER bit, power_change() (the area calls it on every channel change and
+// on every use of a light switch: the fixture reads has_power() then), `on`, set_use_power() and the update of the area's power tally.
+
+STAT(/obj/machinery/light, nightshift_enabled, ANY)
+STAT(/obj/machinery/light, area_emergency_off, ANY)
+
+MSG_DEF_SELF(light/fitted, "There is a bulb in it already.")
+MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 
 /obj/machinery/light
 	name = "light fixture"
@@ -25,24 +40,25 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	desc = "A lighting fixture."
 	anchored = TRUE
 	plane = MOB_PLANE
+	layer = BELOW_MOB_LAYER
 	use_power = USE_POWER_ACTIVE
 	idle_power_usage = 2
 	active_power_usage = 10
-	power_channel = LIGHT //Lights are calc'd via area so they dont need to be in the machine list
+	power_channel = LIGHT
 	max_integrity = 20
 	integrity_failure = 0.5
-	var/obj/item/light/installed_light //What light is currently in the socket! Use bulb() to read it.
-	/// A pristine light_type bulb held as data (C5): its status, switchcount and
-	/// rigged are the fixture's own. bulb() makes it real.
+	/// What light is currently in the socket. Use bulb() to read it.
+	var/obj/item/light/installed_light
+	/// A pristine light_type bulb held as data (C5): its status, switchcount and rigged are the fixture's own. bulb() makes it real.
 	var/latent_bulb = FALSE
-	/// Charge of a pristine emergency cell held as data (C5), or null for none.
-	/// emergency_cell() makes it real.
+	/// Charge of a pristine emergency cell held as data (C5), or null for none. emergency_cell() makes it real.
 	var/latent_cell_charge = null
 	on = 0					// 1 if on, 0 if off
 	var/brightness_range
 	var/brightness_power
 	var/brightness_color
-	var/status = LIGHT_OK		// LIGHT_OK, _EMPTY, _BURNED or _BROKEN
+	/// LIGHT_OK, _EMPTY, _BURNED or _BROKEN.
+	var/status = LIGHT_OK
 	/// flicker(): flicks still to go, the flicker colour, and the colours to restore at the end.
 	var/tmp/flicks_left = 0
 	var/tmp/flicker_color
@@ -50,89 +66,90 @@ DECLARE_SHARED_CACHE(light_type_instance, GLOBAL_PROC_REF(build_light_type_insta
 	var/tmp/flicker_original_color_ns
 	var/light_type = /obj/item/light/tube		// the type of light item
 	var/construct_type = /obj/machinery/light_construct
-	var/switchcount = 0			// count of number of times switched on/off
-								// this is used to calc the probability the light burns out
-
+	/// How many times it was switched on: the odds of the bulb burning out.
+	var/switchcount = 0
 	var/rigged = 0				// true if rigged to explode
 	var/needsound = FALSE		// Flag to prevent playing turn-on sound multiple times, and from playing at roundstart
 	var/shows_alerts = TRUE		// Flag for if this fixture should show alerts.  Make sure icon states exist!
 	var/current_alert = null	// Which alert are we showing right now?
-
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
-
 	var/obj/item/cell/emergency_light/cell
-	/// Emergency cell deadlines (world.time; 0 for none) and when discharge accounting last ran.
-	EXPIRY_TMP_DECLARE(emergency_recharge_at)
-	EXPIRY_TMP_DECLARE(emergency_discharge_at)
-	EXPIRY_DECLARE(emergency_discharge_started)
-	/// Wake state: the area whose power it watches, the one om_after() timer on
-	/// next_light_deadline(), and the auto-flicker chunk watches and recheck.
-	var/tmp/area/area_power_token
-	var/tmp/last_area_power = null
-	var/tmp/light_timer_at = 0
-	EXPIRY_TMP_DECLARE(flicker_check_at)
-	var/tmp/list/flicker_chunk_tokens
+	/// World time the emergency discharge was last settled (0 for none).
+	var/emergency_discharge_started = 0
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
-
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
 	var/bulb_emergency_brightness_mul = 0.25	// multiplier for this light's base brightness in emergency power mode
 	var/bulb_emergency_colour = "#FF3232"	// determines the colour of the light while it's in emergency mode
 	var/bulb_emergency_pow_mul = 0.75	// the multiplier for determining the light's power in emergency mode
 	var/bulb_emergency_pow_min = 0.5	// the minimum value for the light's power in emergency mode
-
-	/// The night lighting is on here: the area's APC runs night shift and this fixture allows it (derived through
-	/// power_area, never written by hand).
-	var/nightshift_enabled = FALSE
 	var/nightshift_allowed = TRUE
-	/// The area's APC switched emergency lighting off (derived through power_area).
-	var/area_emergency_off = FALSE
 	/// The area this fixture stands in, as a relation: its night-shift and emergency state are read through it.
 	var/tmp/area/power_area
 	var/brightness_range_ns
 	var/brightness_power_ns
 	var/brightness_color_ns
-
 	var/overlay_color = LIGHT_COLOR_INCANDESCENT_TUBE
+	var/flickering = FALSE
+	var/overlay_above_everything = TRUE
+	/// The area's lights power state the fixture last acted on (so a channel change that changes nothing here does nothing).
+	var/tmp/last_area_power = null
 
-/// A light fixture is a MEMBER relation of the area it stands in (role POWER_ROLE_LIGHTING): its APC reads its lights
-/// through members_of(area, POWER_ROLE_LIGHTING), not by scanning the area.
-/obj/machinery/light/capabilities()
-	. = ..()
-	. += legacy_powered_by(POWERED_BY_AREA, role = POWER_ROLE_LIGHTING)
+TRACKED(/obj/machinery/light, status)
+TRACKED(/obj/machinery/light, current_alert)
+TRACKED(/obj/machinery/light, overlay_color)
+TRACKED(/obj/machinery/light, emergency_mode)
+TRACKED(/obj/machinery/light, nightshift_allowed)
+TRACKED(/obj/machinery/light, flickering)
 
-TRACKED_BRIDGED(/obj/machinery/light, nightshift_allowed, CHANGE_MACHINE_SETTINGS)
+CAPABILITIES(/obj/machinery/light, \
+	powered(POWER_CHANNEL_LIGHTING), \
+	link(/obj/machinery/light::power_area, /area::lights, b_many = TRUE), \
+	owns_one(nameof(installed_light), /obj/item/light), \
+	owns_one(nameof(cell), /obj/item/cell/emergency_light), \
+	contributes(STAT_NIGHTSHIFT_ENABLED, PROC_REF(wants_nightshift)), \
+	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off)), \
+	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0), \
+		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held))), \
+	op("remove", hand(), when(PROC_REF(bare_hand)), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb))), \
+	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by))), \
+	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing))), \
+	examine_line(PROC_REF(examine_status)), \
+	examine_line(PROC_REF(examine_charge)), \
+	on_change(nameof(status), ANY, then(PROC_REF(status_changed))), \
+	on_change(nameof(nightshift_enabled), ANY, then(PROC_REF(area_lighting_changed))), \
+	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed))), \
+	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering)), \
+	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching)))
 
-/obj/machinery/light/relations()
-	. = ..()
-	. += rel_one(nameof(power_area), /area)
+/// The actor's hand is empty.
+/obj/machinery/light/proc/bare_hand(datum/act/op/A)
+	return isnull(A.held)
 
-/// The APC's night-shift and emergency lighting reach a fixture through its area: the area derives them from its APC,
-/// and the fixture from its area. Nothing loops over the lights.
-/obj/machinery/light/derived()
-	. = ..()
-	. += derive(nameof(nightshift_enabled), nameof(nightshift_allowed), rel(nameof(power_area), nameof(/area::lights_nightshift)))
-	. += derive(nameof(area_emergency_off), rel(nameof(power_area), nameof(/area::lights_emergency_off)))
-
-/obj/machinery/light/proc/derive_nightshift_enabled()
+/// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
+/obj/machinery/light/proc/wants_nightshift(datum/act/A)
 	return nightshift_allowed && power_area?.lights_nightshift
 
-/obj/machinery/light/proc/derive_area_emergency_off()
+/// The area's APC switched emergency lighting off.
+/obj/machinery/light/proc/emergency_switched_off(datum/act/A)
 	return !!power_area?.lights_emergency_off
 
-/obj/machinery/light/reactions()
-	. = ..()
-	. += on_change(list(nameof(nightshift_enabled), nameof(area_emergency_off)), PROC_REF(area_lighting_changed))
-
 /// The area's night shift or emergency lighting changed: the fixture redraws its light.
-/obj/machinery/light/proc/area_lighting_changed(list/keys)
+/obj/machinery/light/proc/area_lighting_changed(datum/act/A)
 	if(QDELETED(src))
 		return
-	update(FALSE)
+	refresh_light(FALSE)
 
-/// A flicker() run in progress: do_flicker() flicks every flicker_delay() until flicks_left runs out.
-OM_FIELD(/obj/machinery/light, flickering, FALSE, CHANGE_MACHINE_SETTINGS)
-DECLARE_REPEAT(/obj/machinery/light, "flicker_delay", do_flicker, "flickering")
+/// A bulb that is not whole switches the fixture off (also for a status written by someone else, at the next drain).
+/obj/machinery/light/proc/status_changed(datum/act/A)
+	if(status != LIGHT_OK)
+		set_on(FALSE)
+
+/// The fixture's bulb state, and the light off at once when the bulb is not whole.
+/obj/machinery/light/proc/set_bulb_status(value)
+	set_status(value)
+	if(status != LIGHT_OK)
+		set_on(FALSE)
 
 /obj/machinery/light/flicker
 	auto_flicker = TRUE
@@ -173,6 +190,8 @@ DECLARE_REPEAT(/obj/machinery/light, "flicker_delay", do_flicker, "flickering")
 	var/lamp_shade = 1
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 
+TRACKED(/obj/machinery/light/flamp, lamp_shade)
+
 /obj/machinery/light/flamp/flicker
 	auto_flicker = TRUE
 
@@ -197,79 +216,99 @@ DECLARE_REPEAT(/obj/machinery/light, "flicker_delay", do_flicker, "flickering")
 /obj/machinery/light/flamp/noshade
 	lamp_shade = 0
 
+// ---- what it looks like ----
 
-/// Phase 2: stops watching player chunks for flicker.
-/obj/machinery/light/lifecycle_dematerialize()
-	. = ..()
-	stop_flicker_watch()
-
-DECLARE_APPEARANCE_PROC(/obj/machinery/light, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/light/appearance_overlays()
-	. = list()
-
-	switch(status)		// set icon_states
+/// The fixture's picture: the bulb's state, and the glow of a lit tube.
+/obj/machinery/light/draw(datum/look/look)
+	..()
+	switch(status)
 		if(LIGHT_OK)
 			if(shows_alerts && current_alert && on)
-				icon_state = "[base_state]-alert-[current_alert]"
-				. += add_light_overlay(FALSE, icon_state)
+				look.state("[base_state]-alert-[current_alert]")
+				look.overlay(light_overlay(FALSE, "[base_state]-alert-[current_alert]"))
 			else
-				icon_state = "[base_state][on]"
+				look.state("[base_state][on]")
 				if(on)
-					. += add_light_overlay()
+					look.overlay(light_overlay())
 		if(LIGHT_EMPTY)
-			icon_state = "[base_state]-empty"
+			look.state("[base_state]-empty")
 		if(LIGHT_BURNED)
-			icon_state = "[base_state]-burned"
+			look.state("[base_state]-burned")
 		if(LIGHT_BROKEN)
-			icon_state = "[base_state]-broken"
-	return .
+			look.state("[base_state]-broken")
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/light/flamp/appearance_overlays()
-	. = list()
-	if(lamp_shade)
-		base_state = "flampshade"
-		switch(status)		// set icon_states
-			if(LIGHT_OK)
-				icon_state = "[base_state][on]"
-				if(on)
-					. += add_light_overlay()
-			if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
-				icon_state = "[base_state]0"
-		return .
+/// A floor lamp with a shade is drawn in its shade; without it, as any fixture.
+/obj/machinery/light/flamp/draw(datum/look/look)
+	if(!lamp_shade)
+		return ..()
+	switch(status)
+		if(LIGHT_OK)
+			look.state("flampshade[on]")
+			if(on)
+				look.overlay(light_overlay(TRUE, null, "flampshade"))
+		if(LIGHT_EMPTY, LIGHT_BURNED, LIGHT_BROKEN)
+			look.state("flampshade0")
+
+/// The lit glow over the sprite: tinted by the light's colour, above the lighting or emissive.
+/obj/machinery/light/proc/light_overlay(do_color = TRUE, provided_state = null, state_base = null)
+	var/image/overlay_layer
+	if(provided_state)
+		overlay_layer = image(icon, "[provided_state]-overlay")
 	else
-		base_state = "flamp"
-		. += ..()
+		overlay_layer = image(icon, "[state_base || base_state]-overlay")
+	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
+	if(overlay_color && do_color)
+		overlay_layer.color = overlay_color
+	overlay_layer.plane = overlay_above_everything ? PLANE_LIGHTING_ABOVE : PLANE_EMISSIVE
+	return overlay_layer
 
-/// The fixture's bulb state. A missing, burned or broken bulb switches the light off (the redraw
-/// only draws; it used to do this).
-/obj/machinery/light/proc/set_status(value)
-	status = value
-	if(status != LIGHT_OK)
-		set_on(FALSE)
-	update_icon()
+/// Within two tiles the fixture says what is in it.
+/obj/machinery/light/proc/examine_status(datum/act/op/A)
+	var/fitting = get_fitting_name()
+	switch(status)
+		if(LIGHT_OK)
+			return "It is turned [on ? "on" : "off"]."
+		if(LIGHT_EMPTY)
+			return "The [fitting] has been removed."
+		if(LIGHT_BURNED)
+			return "The [fitting] is burnt out."
+		if(LIGHT_BROKEN)
+			return "The [fitting] has been smashed."
+	return null
+
+/// What the emergency cell holds, counting the drain that has not been settled yet.
+/obj/machinery/light/proc/examine_charge(datum/act/op/A)
+	if(!has_cell())
+		return null
+	var/charge = cell ? cell.charge : latent_cell_charge
+	var/maxcharge = cell ? cell.maxcharge : initial(/obj/item/cell/emergency_light::maxcharge)
+	if(cell && emergency_discharge_started)
+		charge = max(0, charge - LIGHT_EMERGENCY_POWER_USE * (max(0, EXPIRY_NOW(src, CLOCK_WORLD) - emergency_discharge_started) / (2 SECONDS)))
+	return "Its backup power charge meter reads [round((charge / maxcharge) * 100, 0.1)]%."
+
+// ---- alerts ----
 
 /obj/machinery/light/proc/set_alert_atmos()
 	if(!shows_alerts)
 		return
-	current_alert = "atmos"
+	set_current_alert("atmos")
 	light_color = "#6D6DFC"
 	brightness_color = "#6D6DFC"
-	update()
+	refresh_light()
 
 /obj/machinery/light/proc/set_alert_fire()
 	if(!shows_alerts)
 		return
-	current_alert = "fire"
+	set_current_alert("fire")
 	light_color = "#FF3030"
 	brightness_color = "#FF3030"
-	update()
+	refresh_light()
 
 /obj/machinery/light/proc/reset_alert()
 	if(!shows_alerts)
 		return
 
-	current_alert = null
+	set_current_alert(null)
 	var/obj/item/light/L = bulb() //This ensures any special bulbs will stay special!
 
 	if(L)
@@ -277,19 +316,21 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	else
 		brightness_color = nightshift_enabled ? initial(brightness_color_ns) : initial(brightness_color)
 
-	update()
+	refresh_light()
 
 /obj/machinery/light/proc/set_alert_engineering()
 	if(!shows_alerts)
 		return
-	current_alert = "eng"
+	set_current_alert("eng")
 	light_color = "#ff9900"
 	brightness_color = "#ff9900"
-	update()
+	refresh_light()
 
-// update lighting
-/obj/machinery/light/proc/update(trigger = 1)
-	update_icon()
+// ---- the light the fixture gives ----
+
+/// Works out what the fixture gives now (its bulb, the night shift, an alert, its cell) and sets it. `trigger`: a change of light may burn the bulb
+/// out or set off a rigged one (the callers that merely follow an area or a flicker pass FALSE).
+/obj/machinery/light/proc/refresh_light(trigger = 1)
 	if(!on)
 		needsound = TRUE // Play sound next time we turn on
 	else if(needsound)
@@ -317,22 +358,19 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 					explode()
 			else if( prob( min(60, switchcount*switchcount*0.01) ) )
 				if(status == LIGHT_OK && trigger)
-					set_status(LIGHT_BURNED)
-					update_icon()
+					set_bulb_status(LIGHT_BURNED)
 					set_on(0)
 					set_light(0)
 			else
 				set_use_power(USE_POWER_ACTIVE)
 				set_light(correct_range, correct_power, correct_color)
-				overlay_color = correct_overlay
+				set_overlay_color(correct_overlay)
 		if(cell?.charge < cell?.maxcharge)
 			schedule_emergency_recharge()
 	else if(has_emergency_power(LIGHT_EMERGENCY_POWER_USE) && !turned_off())
 		set_use_power(USE_POWER_IDLE)
-		emergency_mode = TRUE
+		set_emergency_mode(TRUE)
 		begin_emergency_discharge()
-		if(auto_flicker)
-			start_flicker_watch()
 	else
 		set_use_power(USE_POWER_IDLE)
 		set_light(0)
@@ -356,7 +394,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 // will not switch on if broken/burned/empty
 /obj/machinery/light/proc/seton(s)
 	set_on((s && status == LIGHT_OK))
-	update()
+	refresh_light()
 
 /obj/machinery/light/get_cell()
 	return emergency_cell()
@@ -370,11 +408,11 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
 		latent_bulb = FALSE
-		own_set(src, nameof(installed_light), new light_type(src))
-		installed_light.status = status
-		installed_light.switchcount = switchcount
-		installed_light.rigged = rigged
-		installed_light.update_icon()
+		var/obj/item/light/made = new light_type(src)
+		rel_set(src, nameof(installed_light), made)
+		made.set_status(status)
+		made.switchcount = switchcount
+		made.rigged = rigged
 	return installed_light
 
 /// Whether an emergency cell is fitted, real or latent.
@@ -387,78 +425,65 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	if(!isnull(latent_cell_charge))
 		var/charge = latent_cell_charge
 		latent_cell_charge = null
-		own_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
+		rel_set(src, nameof(cell), new /obj/item/cell/emergency_light(src))
 		cell.charge = charge
 	return cell
 
-/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's
-/// Initialize() would give here (no charge in a naturally depowered area).
+/// A pristine emergency cell as data: what /obj/item/cell/emergency_light's Initialize() would give here (no charge in a naturally depowered area).
 /obj/machinery/light/proc/declare_emergency_cell()
 	var/area/A = get_area(src)
 	var/obj/item/cell/emergency_light/typed = /obj/item/cell/emergency_light
 	latent_cell_charge = (!A?.lightswitch || !A?.light_power) ? 0 : initial(typed.charge)
-
-// examine verb
-/obj/machinery/light/examine(mob/user)
-	. = ..()
-	var/fitting = get_fitting_name()
-	switch(status)
-		if(LIGHT_OK)
-			. += "It is turned [on? "on" : "off"]."
-		if(LIGHT_EMPTY)
-			. += "The [fitting] has been removed."
-		if(LIGHT_BURNED)
-			. += "The [fitting] is burnt out."
-		if(LIGHT_BROKEN)
-			. += "The [fitting] has been smashed."
-	if(has_cell())
-		// The discharge is settled in batches: bring the meter up to now before reading it.
-		settle_emergency_discharge()
-		var/obj/item/cell/C = emergency_cell()
-		. += "Its backup power charge meter reads [round((C.charge / C.maxcharge) * 100, 0.1)]%."
 
 /obj/machinery/light/proc/get_fitting_name()
 	var/obj/item/light/L = light_type
 	return initial(L.name)
 
 /obj/machinery/light/proc/update_from_bulb(obj/item/light/L)
-	status = L.status
+	set_bulb_status(L.status)
 	switchcount = L.switchcount
 	rigged = L.rigged
 
 	brightness_range = L.brightness_range
 	brightness_power = L.brightness_power
 	brightness_color = L.brightness_color
-	overlay_color = L.brightness_color
+	set_overlay_color(L.brightness_color)
 
 	brightness_range_ns = L.nightshift_range
 	brightness_power_ns = L.nightshift_power
 	brightness_color_ns = L.nightshift_color
 
-// attack with item - insert light (if right type), otherwise try to break the light
+// ---- the socket ----
 
 /// Requirement: the fitting is empty and takes this kind of light.
-/obj/machinery/light/proc/can_take_bulb(mob/user, atom/target, obj/item/held)
-	if(status != LIGHT_EMPTY)
-		return "there is a [get_fitting_name()] already inserted"
-	if(!istype(held, light_type))
-		return "this type of light requires a [get_fitting_name()]"
-	return TRUE
+/obj/machinery/light/proc/can_take_bulb(datum/act/op/A)
+	return isnull(bulb_refusal(A))
 
-/// Requirement: there is a light in the fitting.
-/obj/machinery/light/proc/has_light_in_fitting(mob/user, atom/target, obj/item/held)
-	return status == LIGHT_EMPTY ? "there is no [get_fitting_name()] in this light" : TRUE
+/// Why the held light does not go in, or null.
+/obj/machinery/light/proc/bulb_refusal(datum/act/op/A)
+	if(status != LIGHT_EMPTY)
+		return /datum/msg/light/fitted
+	if(!istype(A.held, light_type))
+		return /datum/msg/light/wrong_kind
+	return null
+
+/// The socket has no bulb in it.
+/obj/machinery/light/proc/socket_empty(datum/act/A)
+	return status == LIGHT_EMPTY
 
 /// Puts bulb `L` in the socket, from wherever it is (`user`'s hand: told why when it can't let go).
 /obj/machinery/light/proc/insert_bulb(obj/item/light/L, mob/user)
-	if(!own_set(src, nameof(src.installed_light), L, user = user, into = TRUE))
+	if(user && L.loc == user && !user.unEquip(L, FALSE, src))
 		return FALSE
+	if(L.loc != src)
+		L.forceMove(src)
+	rel_set(src, nameof(installed_light), L)
 	. = TRUE
 	update_from_bulb(L)
 	latent_bulb = FALSE
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
-	update()
+	refresh_light()
 
 	if(on && rigged)
 
@@ -468,79 +493,26 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		explode()
 
 /obj/machinery/light/proc/remove_bulb()
-	//. = new light_type(src.loc, src)
-
 	switchcount = 0
-	own_take(src, nameof(installed_light))
+	rel_take(src, nameof(installed_light))
 	latent_bulb = FALSE
-	set_status(LIGHT_EMPTY)
-	update()
+	set_bulb_status(LIGHT_EMPTY)
+	refresh_light()
 
-/obj/machinery/light/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)),
-		INTERACT_TK("Remove bulb", PROC_REF(light_tk_remove)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/light_paint,
-		/datum/interaction/machine_item/light_replace,
-		/datum/interaction/machine_item/light_insert_bulb,
-		/datum/interaction/machine_item/light_hit,
-		/datum/interaction/machine_hand/ungated/light_use,
-	)
-	..()
-
-/datum/interaction/machine_item/light_paint
-	id = "light_paint"
-	name = "Paint"
-	held_type = /obj/item/lightpainter
-	effect = /obj/machinery/light/proc/interaction_paint
-
-/obj/machinery/light/proc/interaction_paint(mob/user, obj/item/lightpainter/LP, datum/interaction/interaction)
-	if(isliving(user))
-		var/mob/living/U = user
-		LP.ColorLight(src, U)
-	return TRUE
-
-/// These will never be modified, so it's fine to use old code.
-/datum/interaction/machine_item/light_replace
-	id = "light_replace"
-	name = "Replace bulb"
-	held_type = /obj/item/lightreplacer
-	effect = /obj/machinery/light/proc/interaction_replace
-
-/obj/machinery/light/proc/interaction_replace(mob/user, obj/item/lightreplacer/LR, datum/interaction/interaction)
-	if(isliving(user))
-		var/mob/living/U = user
-		LR.ReplaceLight(src, U)
-	return TRUE
-
-/datum/interaction/machine_item/light_insert_bulb
-	id = "light_insert_bulb"
-	name = "Insert bulb"
-	held_type = /obj/item/light
-	effect = /obj/machinery/light/proc/interaction_insert_bulb
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/can_take_bulb))
-
-/obj/machinery/light/proc/interaction_insert_bulb(mob/user, obj/item/light/W, datum/interaction/interaction)
-	if(!insert_bulb(W, user))
-		return TRUE
-	to_chat(user, "You insert [W].")
-	update() //Like other places, this is done later down the line but this is essential to updating the overlay when nightmode is involved. Again, I have no idea WHY.
+/// The op's work: the held light goes in.
+/obj/machinery/light/proc/insert_held(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!insert_bulb(A.held, user))
+		return OP_REFUSED
+	to_chat(user, "You insert [installed_light].")
+	refresh_light() // Like other places, this is done later down the line but this is essential to updating the overlay when nightmode is involved.
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /// Any other item: smash the light, or stick it into an empty socket.
-/datum/interaction/machine_item/light_hit
-	id = "light_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/light/proc/interaction_hit
-
-/obj/machinery/light/proc/interaction_hit(mob/user, obj/item/W, datum/interaction/interaction)
+/obj/machinery/light/proc/hit_by(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
 	if(status != LIGHT_BROKEN && status != LIGHT_EMPTY)
 		if(prob(1+W.force * 5))
 
@@ -564,183 +536,27 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 			fx_sparks(src, 3)
 			if (prob(75))
 				electrocute_mob(user, get_area(src), src, rand(0.7,1.0))
-	return TRUE
+	return OP_OK
 
-/// Old attackby: falls through to ..() (the base light attackby chain) unless a bare fixture is given a shade.
-/datum/interaction/machine_item/light_flamp_add_shade
-	id = "light_flamp_add_shade"
-	name = "Add lamp shade"
-	held_type = /obj/item/lampshade
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/no_shade, null))
-	effect = /obj/machinery/light/flamp/proc/interaction_add_shade
-
-/obj/machinery/light/flamp/proc/no_shade(mob/actor, atom/target, obj/item/held)
-	return !lamp_shade
-
-/obj/machinery/light/flamp/proc/interaction_add_shade(mob/user, obj/item/lampshade/W, datum/interaction/interaction)
-	if(!consume(W, user))
-		return TRUE
-	lamp_shade = 1
-	update_icon()
-	return TRUE
-
-/obj/machinery/light/screwdriver_act(mob/user, obj/item/tool)
-	if(status != LIGHT_EMPTY)
-		return NONE
-	playsound(src, tool.usesound, 75, TRUE)
+/// A screwdriver opens an empty fixture into a wired frame of its kind, facing the way it did.
+/obj/machinery/light/proc/open_casing(datum/act/op/A)
+	var/mob/user = A.actor
+	playsound(src, A.held.usesound, 75, TRUE)
 	act_message(user, src, MSG_SELF("You open %T%'s casing."), MSG_OTHERS("[user.name] opens %T%'s casing."), MSG_BLIND("You hear a noise."))
 	replace_with(src, construct_type, null, FALSE, null, src)
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/machinery/light/multitool_act(mob/user, obj/item/tool)
-	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !has_bulb())
-		return NONE
-	return bulb().multitool_act(user, tool)
-
-/obj/machinery/light/flamp/wrench_act(mob/user, obj/item/tool)
-	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	to_chat(user, span_notice("You [anchored ? "wrench" : "unwrench"] \the [src]."))
-	return ITEM_INTERACT_SUCCESS
-
-/obj/machinery/light/flamp/screwdriver_act(mob/user, obj/item/tool)
-	if(lamp_shade)
-		playsound(src, tool.usesound, 75, TRUE)
-		act_message(user, src, MSG_SELF("You remove %T%'s lamp shade."), MSG_OTHERS("[user.name] removes %T%'s lamp shade."), MSG_BLIND("You hear a noise."))
-		lamp_shade = FALSE
-		new /obj/item/lampshade(loc)
-		update_icon()
-		return ITEM_INTERACT_SUCCESS
-	return ..()
-
-// returns if the light has power /but/ is manually turned off
-// if a light is turned off, it won't activate emergency power
-/obj/machinery/light/proc/turned_off()
-	var/area/A = get_area(src)
-	return !A.lightswitch && A.power_light || flickering
-
-// returns whether this light has power
-// true if area has power and lightswitch is on
-/obj/machinery/light/proc/has_power()
-	var/area/A = get_area(src)
-	return A && A.lightswitch && (!A.requires_power || A.power_light)
-
-/obj/machinery/light/flamp/has_power()
-	var/area/A = get_area(src)
-	if(lamp_shade)
-		return A && (!A.requires_power || A.power_light)
-	else
-		return A && A.lightswitch && (!A.requires_power || A.power_light)
-
-// returns whether this light has emergency power
-// can also return if it has access to a certain amount of that power
-/obj/machinery/light/proc/has_emergency_power(pwr)
-	if(no_emergency || area_emergency_off || !has_cell())
-		return FALSE
-	var/charge = cell ? cell.charge : latent_cell_charge
-	if(pwr ? charge >= pwr : charge)
-		return status == LIGHT_OK
-
-// attempts to use power from the installed emergency cell, returns true if it does and false if it doesn't
-/obj/machinery/light/proc/use_emergency_power(pwr = LIGHT_EMERGENCY_POWER_USE, drain_seconds = 0)
-	if(turned_off())
-		return FALSE
-	if(!has_emergency_power(pwr))
-		return FALSE
-	var/obj/item/cell/C = emergency_cell()
-	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
-		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
-		set_status(LIGHT_BURNED)
-		if(installed_light)
-			installed_light.status = status
-		return FALSE
-	C.use(pwr, seconds = drain_seconds)
-	set_light(brightness_range * bulb_emergency_brightness_mul, emergency_light_power(C), bulb_emergency_colour)
-	return TRUE
-
-/// The emergency output on cell `C`: the ballast holds the lamp at its emergency level until the cell is down to
-/// what the dimmed level needs (bulb_emergency_pow_min of bulb_emergency_pow_mul), then at that dimmed level until
-/// the cell runs out. Two levels, not a ramp: every station light that loses power at the same moment changes
-/// level at the same moment, and each level change is a lighting update of every fixture in the dark.
-/obj/machinery/light/proc/emergency_light_power(obj/item/cell/C)
-	if(!C?.maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
-		return bulb_emergency_pow_min
-	return C.charge > emergency_dim_charge(C) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
-
-/// The cell charge below which the emergency output drops to its dimmed level.
-/obj/machinery/light/proc/emergency_dim_charge(obj/item/cell/C)
-	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * C.maxcharge : 0
-
-/obj/machinery/light/proc/flicker(amount = rand(10, 20), flicker_color)
-	if(flickering) return
-	if(on && status == LIGHT_OK)
-		flicks_left = amount
-		src.flicker_color = flicker_color
-		flicker_original_color = brightness_color
-		flicker_original_color_ns = brightness_color_ns
-		set_flickering(TRUE)
-		do_flicker()
-
-/// The delay before the next flick (DECLARE_REPEAT reads it each time).
-/obj/machinery/light/proc/flicker_delay()
-	return rand(5, 15)
-
-/obj/machinery/light/proc/do_flicker()
-	SHOULD_NOT_OVERRIDE(TRUE)
-	PRIVATE_PROC(TRUE)
-	if(status != LIGHT_OK)
-		set_flickering(FALSE)
-		return REPEAT_STOP
-	set_on(!on)
-	if(flicker_color && brightness_color != flicker_color)
-		brightness_color = flicker_color
-		brightness_color_ns = flicker_color
-		update(0) //Yes. This is done here and then immediately followed up with another update(0). Why does it need that? I have no clue. But a single update(0) does not work.
-	update(0)
-	if(!on) // Only play when the light turns off.
-		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
-	if(flicks_left > 0)
-		flicks_left--
-		return
-	//All this happens after our final flicker.
-	set_on((status == LIGHT_OK))
-	brightness_color = flicker_original_color
-	brightness_color_ns = flicker_original_color_ns
-	update(0)
-	update(0)
-	set_flickering(FALSE)
-	return REPEAT_STOP
-
-// ai attack - turn on/off emergency lighting for a specific fixture
-/// Old attack_ai: toggle the fixture's emergency lighting.
-/obj/machinery/light/proc/light_silicon_toggle_emergency(mob/user, obj/item/held, datum/interaction/interaction)
-	no_emergency = !no_emergency
-	to_chat(user, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
-	update(FALSE)
-	return TRUE
-
-// ai alt click - Make light flicker.  Very important for atmosphere.
-/obj/machinery/light/silicon_alternate(mob/living/silicon/user)
-	if(!isAI(user))
-		return ..()
-	flicker(1)
-
-// attack with hand - remove tube/bulb
-// if hands aren't protected and the light is on, burn the player
-/// Old attack_hand (never called ..()): remove the tube/bulb; burns hands if not protected while on.
-/datum/interaction/machine_hand/ungated/light_use
-	id = "light_use"
-	name = "Remove bulb"
-	category = INTERACTION_CAT_EJECT
-	effect = /obj/machinery/light/proc/interaction_use
-
-/obj/machinery/light/proc/interaction_use(mob/user, obj/item/held, datum/interaction/interaction)
-
+/// Old attack_hand: remove the tube/bulb; burns hands if not protected and the light is on. Telekinesis takes it at range.
+/obj/machinery/light/proc/take_bulb(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	if(status == LIGHT_EMPTY)
 		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return TRUE
+		return OP_OK
+
+	if(!user.Adjacent(src))
+		return take_bulb_telekinetically(user)
 
 	if(ishuman(user))
 		var/mob/living/carbon/human/H = user
@@ -749,9 +565,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 			for(var/mob/M in viewers(src))
 				M.show_message(span_red("[user.name] smashed the light!"), 3, "You hear a tinkle of breaking glass", 2)
 			broken()
-			return TRUE
+			return OP_OK
 
-	// make it burn hands if not wearing fire-insulated gloves
+	// a lit bulb is too hot to take out bare-handed (fire-insulated gloves, a heat-proof species, cold resistance or telekinesis do)
 	if(on)
 		var/prot = 0
 		var/mob/living/carbon/human/H = user
@@ -767,184 +583,180 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		else
 			prot = 1
 
-			if(prot > 0 || (user.has_mutation(COLD_RESISTANCE)))
-				to_chat(user, "You remove the light [get_fitting_name()]")
-			else if(user.has_mutation(TK))
-				to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
-			else
-				to_chat(user, "You try to remove the [get_fitting_name()], but it's too hot and you don't want to burn your hand.")
-				return TRUE				// if burned, don't remove the light
+		if(prot > 0 || (user.has_mutation(COLD_RESISTANCE)))
+			to_chat(user, "You remove the light [get_fitting_name()]")
+		else if(user.has_mutation(TK))
+			to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
+		else
+			to_chat(user, "You try to remove the [get_fitting_name()], but it's too hot and you don't want to burn your hand.")
+			return OP_OK // if burned, don't remove the light
 	else
 		to_chat(user, "You remove the light [get_fitting_name()].")
 
 	//Let's actually put the real bulb in their hand.
 	var/obj/item/light/B = bulb()
-	B.status = status //Update the bulb they're being given. If it's broken, the bulb should be as well!
+	B.set_status(status) //Update the bulb they're being given. If it's broken, the bulb should be as well!
 	user.put_in_active_hand(B)	//puts it in our active hand
-	B.update_icon()
 	remove_bulb()
-	return TRUE
+	return OP_OK
 
-/obj/machinery/light/flamp/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_SILICON("Use", TYPE_PROC_REF(/atom, interaction_as_touch)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/machine_item/light_flamp_add_shade,
-		/datum/interaction/machine_hand/ungated/light_flamp_toggle,
-	)
-	..()
-
-/// Old attack_hand: with a shade fitted, toggles the lamp instead of falling through to the base light's remove-bulb behaviour.
-/datum/interaction/machine_hand/ungated/light_flamp_toggle
-	id = "light_flamp_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/light/flamp/proc/has_shade, null))
-	effect = /obj/machinery/light/flamp/proc/interaction_toggle
-	also_requires = list(REQ_TARGET_STATE(/obj/machinery/light/proc/has_light_in_fitting))
-
-/obj/machinery/light/flamp/proc/has_shade(mob/actor, atom/target, obj/item/held)
-	return lamp_shade
-
-/obj/machinery/light/flamp/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	if(on)
-		set_on(0)
-		update()
-	else
-		set_on(has_power())
-		update()
-	return TRUE
-
-/// Old attack_tk: pull the bulb out at range into a telekinetic grab.
-/obj/machinery/light/proc/light_tk_remove(mob/user, obj/item/held, datum/interaction/interaction)
-	if(status == LIGHT_EMPTY)
-		to_chat(user, "There is no [get_fitting_name()] in this light.")
-		return TRUE
-
+/// Pull the bulb out at range into a telekinetic grab.
+/obj/machinery/light/proc/take_bulb_telekinetically(mob/user)
 	to_chat(user, "You telekinetically remove the light [get_fitting_name()].")
 	var/obj/item/light/B = bulb()
-	B.status = status
+	B.set_status(status)
 	B.forceMove(src.loc)
 	var/obj/item/tk_grab/O = new(src)
 	user.put_in_active_hand(O)
 	rel_set(O, nameof(O.host), user)
 	O.focus_object(B)
-	B.update_icon()
 	remove_bulb()
+	return OP_OK
+
+/// A silicon's touch (an AI's click, a cyborg's): its emergency lighting goes off or on. The silicon click is still the legacy input adapter's, which
+/// reaches a holder through INTERACT_SILICON entries: this one entry is the only legacy interaction left on the fixture.
+/obj/machinery/light/declare_interactions(list/into)
+	into += dq_interaction_from_spec(type, INTERACT_SILICON("Toggle emergency lights", PROC_REF(light_silicon_toggle_emergency)))
+	..()
+
+/obj/machinery/light/proc/light_silicon_toggle_emergency(mob/user, obj/item/held, datum/interaction/interaction)
+	no_emergency = !no_emergency
+	to_chat(user, span_notice("Emergency lights for this fixture have been [no_emergency ? "disabled" : "enabled"]."))
+	refresh_light(FALSE)
 	return TRUE
 
-// break the light and make sparks if was on
+// ---- the area's power ----
 
-/obj/machinery/light/proc/broken(skip_sound_and_sparks = FALSE)
-	if(status == LIGHT_EMPTY)
-		return
-
-	if(!skip_sound_and_sparks)
-		if(status == LIGHT_OK || status == LIGHT_BURNED)
-			play_sfx(src, SFX_EFFECTS_GLASSHIT)
-		if(on)
-			fx_sparks(src, 3)
-	set_status(LIGHT_BROKEN) //This occasionally runtimes when it occurs midround after build mode spawns a broken light. No idea why.
-	if(installed_light) // a latent bulb takes the fixture's status
-		installed_light.status = status
-		installed_light.update_icon()
-	update()
-
-/obj/machinery/light/atom_break(damage_flag)
-	. = ..()
-	broken()
-
-/obj/machinery/light/atom_fix()
-	. = ..()
-	fix()
-
-/obj/machinery/light/proc/fix()
-	if(status == LIGHT_OK)
-		return
-	set_status(LIGHT_OK)
-	if(installed_light)
-		installed_light.status = LIGHT_OK
-	set_on(1)
-	update()
-
-//blob effect
-
-// A light sleeps on its area's CHANGE_AREA_POWER channel, one om_after() timer for its
-// earliest deadline (emergency discharge and recharge, the auto-flicker recheck) and, for an
-// auto-flicker light running on its cell, the player chunk keys around it.
-
-/// Subscribes to the current area's power key (again, if the area changed).
-/obj/machinery/light/proc/subscribe_area_power()
+/// returns if the light has power /but/ is manually turned off
+/// if a light is turned off, it won't activate emergency power
+/obj/machinery/light/proc/turned_off()
 	var/area/A = get_area(src)
-	if(A != power_area)
-		rel_set(src, nameof(power_area), A)
-	if(A == area_power_token())
+	return !A.lightswitch && A.power_light || flickering
+
+/// returns whether this light has power: true if area has power and lightswitch is on
+/obj/machinery/light/proc/has_power()
+	var/area/A = get_area(src)
+	return A && A.lightswitch && (!A.requires_power || A.power_light)
+
+/obj/machinery/light/flamp/has_power()
+	var/area/A = get_area(src)
+	if(lamp_shade)
+		return A && (!A.requires_power || A.power_light)
+	else
+		return A && A.lightswitch && (!A.requires_power || A.power_light)
+
+/// returns whether this light has emergency power
+/// can also return if it has access to a certain amount of that power
+/obj/machinery/light/proc/has_emergency_power(pwr)
+	if(no_emergency || area_emergency_off || !has_cell())
+		return FALSE
+	var/charge = cell ? cell.charge : latent_cell_charge
+	if(pwr ? charge >= pwr : charge)
+		return status == LIGHT_OK
+
+/// attempts to use power from the installed emergency cell, returns true if it does and false if it doesn't
+/obj/machinery/light/proc/use_emergency_power(pwr = LIGHT_EMERGENCY_POWER_USE, drain_seconds = 0)
+	if(turned_off())
+		return FALSE
+	if(!has_emergency_power(pwr))
+		return FALSE
+	var/obj/item/cell/C = emergency_cell()
+	if(C.charge > 750) //it's meant to handle 120 W, ya doofus. Not Anymore!!
+		visible_message(span_warning("[src] short-circuits from too powerful of a power cell!"))
+		set_bulb_status(LIGHT_BURNED)
+		if(installed_light)
+			installed_light.set_status(status)
+		return FALSE
+	C.use(pwr, seconds = drain_seconds)
+	set_light(brightness_range * bulb_emergency_brightness_mul, emergency_light_power(C), bulb_emergency_colour)
+	return TRUE
+
+/// The emergency output on cell `C`: the ballast holds the lamp at its emergency level until the cell is down to what the dimmed level needs
+/// (bulb_emergency_pow_min of bulb_emergency_pow_mul), then at that dimmed level until the cell runs out. Two levels, not a ramp: every station
+/// light that loses power at the same moment changes level at the same moment, and each level change is a lighting update of every fixture in the dark.
+/obj/machinery/light/proc/emergency_light_power(obj/item/cell/C)
+	if(!C?.maxcharge || bulb_emergency_pow_mul <= bulb_emergency_pow_min)
+		return bulb_emergency_pow_min
+	return C.charge > emergency_dim_charge(C) ? bulb_emergency_pow_mul : bulb_emergency_pow_min
+
+/// The cell charge below which the emergency output drops to its dimmed level.
+/obj/machinery/light/proc/emergency_dim_charge(obj/item/cell/C)
+	return bulb_emergency_pow_mul > 0 ? bulb_emergency_pow_min / bulb_emergency_pow_mul * C.maxcharge : 0
+
+// ---- flicker ----
+
+/obj/machinery/light/proc/flicker(amount = rand(10, 20), flicker_color)
+	if(flickering) return
+	if(on && status == LIGHT_OK)
+		flicks_left = amount
+		src.flicker_color = flicker_color
+		flicker_original_color = brightness_color
+		flicker_original_color_ns = brightness_color_ns
+		set_flickering(TRUE)
+		do_flicker()
+
+/// The delay before the next flick.
+/obj/machinery/light/proc/flicker_delay(datum/act/A)
+	return rand(5, 15)
+
+/// One flick of a flicker run; the run ends when the flicks run out or the bulb is no longer whole.
+/obj/machinery/light/proc/do_flicker(datum/act/A)
+	if(!flickering)
 		return
-	if(area_power_token())
-		om_unwatch(src, area_power_token(), /datum/om/behaviour/sleeper/light)
-		area_power_token = null
-	if(A)
-		om_attach(src, /datum/om/behaviour/sleeper/light)
-		om_watch(src, A, CHANGE_AREA_POWER, /datum/om/behaviour/sleeper/light)
-		area_power_token = A
-
-/// Area power changes and players moving near a waiting auto-flicker light.
-/datum/om/behaviour/sleeper/light
-	name = "light"
-
-/datum/om/behaviour/sleeper/light/on_wake(obj/machinery/light/L, changes)
-	if(QDELETED(L))
+	if(status != LIGHT_OK)
+		set_flickering(FALSE)
 		return
-	L.area_power_changed()
-	// A player moved near an auto-flicker light that is waiting in the dark.
-	if(L.flicker_chunk_tokens && !L.flicker_check_at)
-		L.auto_flicker_check()
-	L.schedule_light_timer()
+	set_on(!on)
+	if(flicker_color && brightness_color != flicker_color)
+		brightness_color = flicker_color
+		brightness_color_ns = flicker_color
+		refresh_light(0) //Yes. This is done here and then immediately followed up with another refresh. Why does it need that? I have no clue. But a single one does not work.
+	refresh_light(0)
+	if(!on) // Only play when the light turns off.
+		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
+	if(flicks_left > 0)
+		flicks_left--
+		return
+	//All this happens after our final flicker.
+	set_on((status == LIGHT_OK))
+	brightness_color = flicker_original_color
+	brightness_color_ns = flicker_original_color_ns
+	refresh_light(0)
+	refresh_light(0)
+	set_flickering(FALSE)
 
-/obj/machinery/light/Moved(atom/old_loc, direction, forced, movetime)
+/// An auto-flicker fixture waits on its cell for someone to see it.
+/obj/machinery/light/proc/flicker_watching(datum/act/A)
+	return auto_flicker && emergency_mode
+
+/// An auto-flicker light on its cell flickers only while a player is near (radius 12); it rechecks every 2 seconds.
+/obj/machinery/light/proc/auto_flicker_check(datum/act/A)
+	if(!auto_flicker || !has_cell() || has_power() || !emergency_mode)
+		return
+	if(flickering)
+		return
+	if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
+		seton(TRUE) // Lights must be on to flicker.
+		flicker(5)
+	else
+		seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
+
+/obj/machinery/light/silicon_alternate(mob/living/silicon/user)
+	if(!isAI(user))
+		return ..()
+	flicker(1)
+
+// ---- the area's power: the fixture follows its area through the machine core's power_change() ----
+
+/// Every channel change of the area, and every use of a light switch, reaches the fixture here.
+/obj/machinery/light/power_change()
 	. = ..()
-	subscribe_area_power()
+	area_power_changed()
 
-/// The earliest pending deadline (world.time), or 0 for none.
-/obj/machinery/light/proc/next_light_deadline()
-	. = 0
-	for(var/deadline in list(emergency_discharge_at, emergency_recharge_at, flicker_check_at))
-		if(deadline > 0 && (!. || deadline < .))
-			. = deadline
-
-/obj/machinery/light/proc/schedule_light_timer()
-	var/deadline = next_light_deadline()
-	if(deadline == light_timer_at && (om_timer_slot_pending(src, "light_timer_token") || !deadline))
-		return
-	if(om_timer_slot_pending(src, "light_timer_token"))
-		om_cancel_timer_slot(src, "light_timer_token")
-	light_timer_at = deadline
-	if(deadline)
-		after(src, max(deadline - world.time, 0), PROC_REF(light_timer_fired), key = "light_timer_token")
-
-/obj/machinery/light/proc/light_timer_fired()
-	light_timer_at = 0
-	if(QDELETED(src))
-		return
-	if(emergency_discharge_at && EXPIRY_EXPIRED(src, emergency_discharge_at, CLOCK_WORLD))
-		continue_emergency_discharge()
-	if(emergency_recharge_at && EXPIRY_EXPIRED(src, emergency_recharge_at, CLOCK_WORLD))
-		finish_emergency_recharge()
-	if(flicker_check_at && EXPIRY_EXPIRED(src, flicker_check_at, CLOCK_WORLD))
-		flicker_check_at = 0
-		auto_flicker_check()
-	schedule_light_timer()
-
-/obj/machinery/light/om_sleep_violation()
-	var/deadline = next_light_deadline()
-	if(deadline && (!om_timer_slot_pending(src, "light_timer_token") || light_timer_at > deadline))
-		return "deadline [deadline] (now [world.time]) has no timer"
-	if(get_area(src) && isnull(area_power_token()))
-		return "not watching its area's power"
-	return null
+/// The fixture moved to another area: it follows that area's night shift and emergency lighting, and its power.
+/obj/machinery/light/area_changed(area/old_area, area/new_area)
+	rel_set(src, nameof(power_area), new_area)
+	return ..()
 
 /// The area's power_change() ran: act only if this light's power actually changed.
 /obj/machinery/light/proc/area_power_changed()
@@ -953,28 +765,30 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		return
 	last_area_power = powered_now
 	if(powered_now)
-		if(emergency_discharge_at)
+		if(after_pending(src, "discharge"))
 			settle_emergency_discharge()
-			emergency_discharge_at = 0
+			cancel_after(src, "discharge")
 			emergency_discharge_started = 0
-		emergency_mode = FALSE
-		stop_flicker_watch()
+		set_emergency_mode(FALSE)
 	else
-		emergency_recharge_at = 0
+		cancel_after(src, "recharge")
 	seton(powered_now)
 	if(powered_now)
 		schedule_emergency_recharge()
-	schedule_light_timer()
+
+/// The fixture stands in another area now (a turf moved with its lights): it reads that one.
+/obj/machinery/light/proc/refresh_area()
+	rel_set(src, nameof(power_area), get_area(src))
+	area_power_changed()
 
 /obj/machinery/light/proc/begin_emergency_discharge()
-	if(!emergency_mode || !has_cell() || emergency_discharge_at)
+	if(!emergency_mode || !has_cell() || after_pending(src, "discharge"))
 		return
-	// Set the initial emergency appearance immediately, then account for charge in one batch when the light
-	// next has to change (emergency_discharge_wait()).
+	// Set the initial emergency appearance immediately, then account for charge in one batch when the light next has to change
+	// (emergency_discharge_wait()).
 	use_emergency_power(0)
 	EXPIRY_STAMP(src, emergency_discharge_started, CLOCK_WORLD)
-	EXPIRY_SET(src, emergency_discharge_at, emergency_discharge_wait(), CLOCK_WORLD)
-	schedule_light_timer()
+	after(src, emergency_discharge_wait(), PROC_REF(continue_emergency_discharge), key = "discharge", clock = CLOCK_WORLD)
 
 /obj/machinery/light/proc/settle_emergency_discharge()
 	if(!emergency_discharge_started || !has_cell())
@@ -986,23 +800,24 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 		// A sustained draw over `elapsed`, settled in one batch: the cell sees its rate, not one surge.
 		use_emergency_power(min(amount, emergency_cell().charge), elapsed / (1 SECOND))
 
-/obj/machinery/light/proc/continue_emergency_discharge()
-	emergency_discharge_at = 0
+/// The discharge batch is due: settle it and arm the next one, or end the emergency light.
+/obj/machinery/light/proc/continue_emergency_discharge(datum/act/A)
+	if(QDELETED(src))
+		return
 	if(has_power() || !emergency_mode || !has_cell())
 		emergency_discharge_started = 0
-		update(FALSE)
+		refresh_light(FALSE)
 		return
 	settle_emergency_discharge()
 	if(!has_emergency_power(LIGHT_EMERGENCY_POWER_USE))
 		emergency_discharge_started = 0
-		update(FALSE)
+		refresh_light(FALSE)
 		return
-	EXPIRY_SET(src, emergency_discharge_at, emergency_discharge_wait(), CLOCK_WORLD)
+	after(src, emergency_discharge_wait(), PROC_REF(continue_emergency_discharge), key = "discharge", clock = CLOCK_WORLD)
 
-/// How long the emergency cell can discharge before the light must change: its output drops to the dimmed level
-/// (emergency_light_power()) or the cell runs out. The drain is settled in one batch then: a fixture in an unpowered
-/// area wakes twice over its cell's half hour, not every few seconds (each wake is a timer, a redraw and a lighting
-/// update, and a station has a thousand such fixtures that all lose power together).
+/// How long the emergency cell can discharge before the light must change: its output drops to the dimmed level (emergency_light_power()) or the
+/// cell runs out. The drain is settled in one batch then: a fixture in an unpowered area wakes twice over its cell's half hour, not every few
+/// seconds (each wake is a timer, a redraw and a lighting update, and a station has a thousand such fixtures that all lose power together).
 /obj/machinery/light/proc/emergency_discharge_wait()
 	var/obj/item/cell/C = emergency_cell()
 	if(!C?.maxcharge)
@@ -1016,60 +831,19 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	return max((C.charge - target) / LIGHT_EMERGENCY_POWER_USE * (2 SECONDS) + 1, 2 SECONDS)
 
 /obj/machinery/light/proc/schedule_emergency_recharge()
-	if(!cell || cell.charge >= cell.maxcharge || !has_power() || emergency_recharge_at)
+	if(!cell || cell.charge >= cell.maxcharge || !has_power() || after_pending(src, "recharge"))
 		return
-	// Charging is time based. Preserve the historical rate of 0.4 charge every
-	// two seconds while stable power is available.
+	// Charging is time based. Preserve the historical rate of 0.4 charge every two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	EXPIRY_SET(src, emergency_recharge_at, max(1, charge_steps * (2 SECONDS)), CLOCK_WORLD)
-	schedule_light_timer()
+	after(src, max(1, charge_steps * (2 SECONDS)), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_WORLD)
 
-/obj/machinery/light/proc/finish_emergency_recharge()
-	emergency_recharge_at = 0
-	if(!cell || !has_power())
+/obj/machinery/light/proc/finish_emergency_recharge(datum/act/A)
+	if(QDELETED(src) || !cell || !has_power())
 		return
 	cell.give(cell.maxcharge - cell.charge)
-	update(FALSE)
+	refresh_light(FALSE)
 
-/// An auto-flicker light on its cell flickers only while a player is near (radius 12). It
-/// waits on the player chunk keys around it, and rechecks every 2 seconds while someone is there.
-/obj/machinery/light/proc/start_flicker_watch()
-	if(!auto_flicker || flicker_chunk_tokens)
-		return
-	om_attach(src, /datum/om/behaviour/sleeper/light)
-	flicker_chunk_tokens = watch_mob_chunks(src, mob_chunks_around(get_turf(src), 12), CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/light)
-	auto_flicker_check()
-
-/obj/machinery/light/proc/stop_flicker_watch()
-	if(flicker_chunk_tokens)
-		flicker_chunk_tokens = unwatch_mob_chunks(src, flicker_chunk_tokens, CHANGE_CHUNK_PLAYER, /datum/om/behaviour/sleeper/light)
-	flicker_check_at = 0
-
-/obj/machinery/light/proc/auto_flicker_check()
-	if(!auto_flicker || !has_cell() || has_power())
-		stop_flicker_watch()
-		schedule_light_timer()
-		return
-	if(flickering)
-		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
-	else if(check_for_player_proximity(src, radius = 12, ignore_ghosts = FALSE, ignore_afk = TRUE))
-		seton(TRUE) // Lights must be on to flicker.
-		flicker(5)
-		EXPIRY_SET(src, flicker_check_at, 2 SECONDS, CLOCK_WORLD)
-	else
-		seton(FALSE) // Otherwise keep it dark and spooky for when someone shows up.
-		flicker_check_at = 0
-	schedule_light_timer()
-
-// Area power reaches lights through CHANGE_AREA_POWER (the light sleeper), not the area's scan of
-// its machines, so this does nothing.
-/obj/machinery/light/power_change()
-	return
-
-/obj/machinery/light
-	power_subscriber = FALSE
-
-// called when on fire
+// ---- heat, breaking, mending ----
 
 /// Heat behaviour rule: the tube breaks above 450 C.
 /obj/machinery/light/proc/rule_break_light(datum/rule/rule)
@@ -1078,13 +852,51 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 // explode the light
 
 /obj/machinery/light/proc/explode()
-	var/turf/T = get_turf(src.loc)
 	broken()	// break it first to give a warning
-	after(src, 2, PROC_REF(explode_now), with = list(T))
+	after(src, 2, PROC_REF(explode_now))
 
-/obj/machinery/light/proc/explode_now(turf/T)
-	explosion(T, 0, 0, 2, 2)
-	om_qdel_after(src, 1)
+/obj/machinery/light/proc/explode_now(datum/act/A)
+	if(QDELETED(src))
+		return
+	explosion(get_turf(src), 0, 0, 2, 2)
+	expire(1)
+
+/// break the light and make sparks if was on
+/obj/machinery/light/proc/broken(skip_sound_and_sparks = FALSE)
+	if(status == LIGHT_EMPTY)
+		return
+
+	if(!skip_sound_and_sparks)
+		if(status == LIGHT_OK || status == LIGHT_BURNED)
+			play_sfx(src, SFX_EFFECTS_GLASSHIT)
+		if(on)
+			fx_sparks(src, 3)
+	set_bulb_status(LIGHT_BROKEN)
+	if(installed_light) // a latent bulb takes the fixture's status
+		installed_light.set_status(status)
+	refresh_light()
+
+/obj/machinery/light/atom_break(damage_flag)
+	. = ..()
+	broken()
+
+/obj/machinery/light/atom_fix()
+	. = ..()
+	fix()
+
+/obj/machinery/light/proc/fix()
+	if(status == LIGHT_OK)
+		return
+	set_bulb_status(LIGHT_OK)
+	if(installed_light)
+		installed_light.set_status(LIGHT_OK)
+	set_on(1)
+	refresh_light()
+
+/// A power surge blows the light.
+/obj/machinery/light/proc/surge_break()
+	set_on(1)
+	broken()
 
 // the light item
 // can be tube or bulb subtypes
@@ -1201,25 +1013,38 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/light/flamp, TYPE_PROC_REF(/atom, appeara
 	item_state = "egg4"
 	MATERIAL_BULK(MAT_GLASS, 100)
 
-// update the icon state and description of the light
-DECLARE_APPEARANCE_PROC(/obj/item/light, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/light/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/light, status)
+
+CAPABILITIES(/obj/item/light, \
+	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe))), \
+	op("shatter", at_target(), hostile(), when(PROC_REF(target_is_no_fixture)), wait(0), then(PROC_REF(shatter_on_hit))), \
+	on_change(nameof(status), ANY, then(PROC_REF(status_changed))))
+
+/// The picture of a light shows its state.
+/obj/item/light/draw(datum/look/look)
+	..()
 	switch(status)
 		if(LIGHT_OK)
-			icon_state = base_state
+			look.state(base_state)
+		if(LIGHT_BURNED)
+			look.state("[base_state]-burned")
+		if(LIGHT_BROKEN)
+			look.state("[base_state]-broken")
+
+/// The description follows the state.
+/obj/item/light/proc/status_changed(datum/act/A)
+	switch(status)
+		if(LIGHT_OK)
 			desc = "A replacement [name]."
 		if(LIGHT_BURNED)
-			icon_state = "[base_state]-burned"
 			desc = "A burnt-out [name]."
 		if(LIGHT_BROKEN)
-			icon_state = "[base_state]-broken"
 			desc = "A broken [name]."
 
 /obj/item/light/Initialize(mapload, obj/machinery/light/fixture = null)
 	. = ..()
 	if(fixture)
-		status = fixture.status
+		set_status(fixture.status)
 		rigged = fixture.rigged
 		switchcount = fixture.switchcount
 		fixture.transfer_fingerprints_to(src)
@@ -1228,7 +1053,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/light, TYPE_PROC_REF(/atom, appearance_overlay
 		brightness_range = fixture.brightness_range
 		brightness_power = fixture.brightness_power
 		brightness_color = fixture.brightness_color
-	update_icon()
 
 // attack bulb/tube with object
 // if a syringe, can inject phoron to make it explode
@@ -1289,53 +1113,43 @@ DECLARE_APPEARANCE_PROC(/obj/item/light, TYPE_PROC_REF(/atom, appearance_overlay
 	if(istype(loc, /obj/machinery/light))
 		var/obj/machinery/light/fixture = loc
 		fixture.update_from_bulb(src)
-		fixture.update()
-		fixture.update() //Yes it has to double update...Don't ask me why. I think it's stupid.
+		fixture.refresh_light()
+		fixture.refresh_light() //Yes it has to double update...Don't ask me why. I think it's stupid.
 
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+/// A syringe emptied into a light: phoron rigs it to explode.
+/obj/item/light/proc/rigged_by_syringe(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/syringe/S = A.held
 
-/// Old attackby.
-/obj/item/light/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/reagent_containers/syringe))
-		var/obj/item/reagent_containers/syringe/S = I
+	to_chat(user, "You inject the solution into the [src].")
 
-		to_chat(user, "You inject the solution into the [src].")
+	if(S.reagents.has_reagent(REAGENT_ID_PHORON, 5))
 
-		if(S.reagents.has_reagent(REAGENT_ID_PHORON, 5))
+		log_admin("LOG: [user.name] ([user.ckey]) injected a light with phoron, rigging it to explode.")
+		message_admins("LOG: [user.name] ([user.ckey]) injected a light with phoron, rigging it to explode.")
 
-			log_admin("LOG: [user.name] ([user.ckey]) injected a light with phoron, rigging it to explode.")
-			message_admins("LOG: [user.name] ([user.ckey]) injected a light with phoron, rigging it to explode.")
+		rigged = 1
 
-			rigged = 1
+	S.reagents.clear_reagents()
+	return OP_OK
 
-		S.reagents.clear_reagents()
-	else
-		return FALSE
-	return TRUE
+/// A light used to hit anything but a fixture shatters (it was an attempt to put it in a socket otherwise).
+/obj/item/light/proc/target_is_no_fixture(datum/act/op/A)
+	return !istype(A.target, /obj/machinery/light)
 
-// called after an attack with a light item
-// shatter light, unless it was an attempt to put it in a light socket
-// now only shatter if the intent was harm
-
-/obj/item/light/afterattack(atom/target, mob/user, proximity, click_parameters, stance = I_HURT)
-	if(!proximity) return
-	if(istype(target, /obj/machinery/light))
-		return
-	if(stance != I_HURT)
-		return
-
+/obj/item/light/proc/shatter_on_hit(datum/act/op/A)
 	shatter()
+	return OP_OK
 
 /obj/item/light/proc/shatter()
 	if(status == LIGHT_OK || status == LIGHT_BURNED)
 		src.visible_message(span_red("[name] shatters."),span_red("You hear a small glass object shatter."))
-		status = LIGHT_BROKEN
+		set_status(LIGHT_BROKEN)
 		force = 5
 		sharp = TRUE
 		play_sfx(src, SFX_EFFECTS_GLASSHIT)
-		update_icon()
 
 //Lamp Shade
 /obj/item/lampshade
@@ -1360,8 +1174,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	. = ..()
 	if(construct)
 		start_with_cell = FALSE
-		lamp_shade = 0
-		update_icon()
+		set_lamp_shade(0)
 	else
 		if(start_with_cell && !no_emergency)
 			declare_emergency_cell()
@@ -1374,7 +1187,7 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 		declare_emergency_cell()
 	if(construct)
 		start_with_cell = FALSE
-		set_status(LIGHT_EMPTY)
+		set_bulb_status(LIGHT_EMPTY)
 		construct_type = construct.type
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
@@ -1387,8 +1200,8 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 
 	set_on(powered())
 	last_area_power = !!has_power()
-	subscribe_area_power()
-	update(0)
+	rel_set(src, nameof(power_area), get_area(src))
+	refresh_light(0)
 	// ition, so large mobs stop looking stupid in front of lights.
 	if (dir == SOUTH) // Lights are backwards, SOUTH lights face north (they are on south wall)
 		layer = ABOVE_MOB_LAYER
@@ -1488,26 +1301,6 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 /obj/machinery/light/small/fairylights/flicker
 	auto_flicker = TRUE
 
-/obj/machinery/light
-	var/overlay_above_everything = TRUE
-
-/obj/machinery/light/proc/add_light_overlay(do_color = TRUE, provided_state = null)
-	. = list()
-	var/image/overlay_layer
-	if(provided_state)
-		overlay_layer = image(icon, "[provided_state]-overlay")
-	else
-		overlay_layer = image(icon, "[base_state]-overlay")
-	overlay_layer.appearance_flags = RESET_COLOR|KEEP_APART
-	if(overlay_color && do_color)
-		overlay_layer.color = overlay_color
-	if(overlay_above_everything)
-		overlay_layer.plane = PLANE_LIGHTING_ABOVE
-	else
-		overlay_layer.plane = PLANE_EMISSIVE
-
-	. += overlay_layer
-
 /obj/machinery/light/lamppost
 	icon = 'icons/obj/lighting32x64.dmi'
 	icon_state = "lamppost1"
@@ -1543,18 +1336,14 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	overlay_color = LIGHT_COLOR_INCANDESCENT_BULB
 	overlay_above_everything = TRUE
 
-/obj/machinery/light/small/torch/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/light_torch_swallow,
-	)
-	..()
+/// A wall torch swallows whatever is used on it (it is no socket to smash or fill).
+CAPABILITIES(/obj/machinery/light/small/torch, \
+	without("insert"), \
+	without("hit"), \
+	op("swallow", item(/obj/item), answers(INTENT_USE, INTENT_ATTACK), wait(0), then(PROC_REF(swallowed))))
 
-/// Old attackby (no args, no ..()): swallows every item, disabling the base light's item interactions entirely.
-/datum/interaction/machine_item/light_torch_swallow
-	id = "light_torch_swallow"
-	name = "Use"
-	held_type = /obj/item
-	effect = /atom/proc/interaction_swallow
+/obj/machinery/light/small/torch/proc/swallowed(datum/act/op/A)
+	return OP_OK
 
 /obj/machinery/light/broken
 	icon_state = "tube-broken"
@@ -1570,17 +1359,50 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	. = ..()
 	broken()
 
-/// A power surge blows the light.
-/obj/machinery/light/proc/surge_break()
-	set_on(1)
-	broken()
+/// A floor lamp: a shade turns the switch into a hand toggle, the wrench bolts it down, the screwdriver takes the shade off. A silicon touch toggles
+/// it too (it has no emergency lighting of its own to toggle).
+CAPABILITIES(/obj/machinery/light/flamp, \
+	anchor(), \
+	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on))), \
+	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off))), \
+	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(PROC_REF(bare_hand)), priority(above("remove")), wait(0), \
+		needs(req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp))), \
+	extend("open_casing", when(cond_not(nameof(lamp_shade)))))
 
-/obj/machinery/light/ownership()
-	. = ..()
-	. += owns(nameof(installed_light), policy = OWN_CONTAINED)
-/// The area whose power this light draws on (a plain area var).
-/obj/machinery/light/proc/area_power_token() as /area
-	return area_power_token
+/obj/machinery/light/flamp/proc/has_light_in_fitting(datum/act/op/A)
+	return status != LIGHT_EMPTY
+
+/obj/machinery/light/flamp/proc/no_light_reason(datum/act/op/A)
+	return /datum/msg/light/no_bulb
+
+MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
+
+/obj/machinery/light/flamp/proc/shade_on(datum/act/op/A)
+	set_lamp_shade(1)
+	consume(A.held, A.actor)
+	return OP_OK
+
+/obj/machinery/light/flamp/proc/shade_off(datum/act/op/A)
+	playsound(src, A.held.usesound, 75, TRUE)
+	act_message(A.actor, src, MSG_SELF("You remove %T%'s lamp shade."), MSG_OTHERS("[A.actor.name] removes %T%'s lamp shade."), MSG_BLIND("You hear a noise."))
+	set_lamp_shade(FALSE)
+	new /obj/item/lampshade(loc)
+	return OP_OK
+
+/obj/machinery/light/flamp/proc/toggle_lamp(datum/act/op/A)
+	if(on)
+		set_on(0)
+		refresh_light()
+	else
+		set_on(has_power())
+		refresh_light()
+	return OP_OK
+
+/// The multitool still answers through the legacy prompts (the prompt kinds are another branch's): until it is an op the tool act stays.
+/obj/machinery/light/multitool_act(mob/user, obj/item/tool)
+	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !has_bulb())
+		return NONE
+	return bulb().multitool_act(user, tool)
 
 /// A multitool recolouring a bulb (normal or nightshift colour).
 /datum/om/prompt/color/light_bulb
@@ -1599,5 +1421,5 @@ DECLARE_INTERACTIONS(/obj/item/light, INTERACT_ITEM(null, PROC_REF(interaction_i
 	if(istype(loc, /obj/machinery/light))
 		var/obj/machinery/light/fixture = loc
 		fixture.update_from_bulb(src)
-		fixture.update()
-		fixture.update()
+		fixture.refresh_light()
+		fixture.refresh_light()

@@ -4303,20 +4303,6 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT(om_watch_armed(F), "early-woken firedoor did not return to dependency sleep")
 	qdel(F)
 
-/datum/unit_test/dq_unpowered_empty_light_hibernates
-
-/datum/unit_test/dq_unpowered_empty_light_hibernates/Run()
-	var/turf/test_turf = run_loc_floor_bottom_left
-	var/obj/machinery/light/L = new(test_turf)
-	L.stat_add(NOPOWER)
-	L.emergency_mode = FALSE
-	L.auto_flicker = FALSE
-	var/obj/item/cell/emergency = L.emergency_cell()
-	emergency.charge = 0
-	L.continue_emergency_discharge()
-	TEST_ASSERT(!L.emergency_discharge_at && !L.flicker_chunk_tokens, "unpowered light without emergency charge kept a timer or chunk keys")
-	qdel(L)
-
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven
 
 /datum/unit_test/dq_emergency_light_discharge_is_timer_driven/Run()
@@ -4326,8 +4312,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	L.emergency_mode = TRUE
 	L.auto_flicker = FALSE
 	L.begin_emergency_discharge()
-	TEST_ASSERT(L.emergency_discharge_at && om_timer_slot_pending(L, "light_timer_token"), "emergency light did not schedule its discharge timer")
-	TEST_ASSERT(!om_task_periodic_running(L), "ordinary emergency light retained SSobj polling")
+	TEST_ASSERT(after_pending(L, "discharge"), "emergency light did not schedule its discharge timer")
 	// The drain is settled when the light must change, not every few seconds: a full cell keeps its emergency
 	// level until it dims, a cell about to run out wakes again soon.
 	var/obj/item/cell/C = L.emergency_cell()

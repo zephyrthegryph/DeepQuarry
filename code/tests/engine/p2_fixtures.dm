@@ -317,4 +317,23 @@ CAPABILITIES(/obj/p2_windowed/second)
 	interface("P2Second")
 	op("p2_window_press_second", ui_act(), then(PROC_REF(window_pressed)))
 
+
+// ---- every() with a PROC_REF interval ----
+
+/// A holder whose every() asks a proc for its gap before each run: the gaps are 2, 4, 2, 4 ... deciseconds.
+/obj/p2_pulse
+	name = "p2 pulse"
+	var/pulses = 0
+	var/gaps_asked = 0
+
+CAPABILITIES(/obj/p2_pulse, \
+	every(PROC_REF(next_gap), then(PROC_REF(pulse))))
+
+/obj/p2_pulse/proc/next_gap(datum/act/A)
+	gaps_asked++
+	return (gaps_asked % 2) ? 2 : 4
+
+/obj/p2_pulse/proc/pulse(datum/act/A)
+	pulses++
+
 #endif

@@ -184,7 +184,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 		brightness_color = "00FF00"
 	else
 		brightness_color = initial(brightness_color)
-	update()
+	refresh_light()
 
 /datum/shuttle/autodock/ferry/specops/proc/announce_arrival()
 	if (!location)	//just arrived home

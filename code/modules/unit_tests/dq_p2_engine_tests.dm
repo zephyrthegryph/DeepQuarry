@@ -369,3 +369,16 @@
 	TEST_ASSERT_EQUAL(second.ui_interface(), "P2Second", "its subtype opens its own")
 	TEST_ASSERT_NOTNULL(op_plan_for(second, "ui_open"), "and still has one open op")
 
+
+// ---------------------------------------------------------------------------------------------------------------------
+// every() takes a PROC_REF for its interval and asks it before every run.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/every_asks_a_proc_for_its_gap
+
+/datum/unit_test/dq_p2_engine/every_asks_a_proc_for_its_gap/run_gate()
+	var/obj/p2_pulse/P = allocate(/obj/p2_pulse)
+	test_time(12)
+	// gaps 2, 4, 2, 4: runs at 2, 6, 8 and 12
+	TEST_ASSERT_EQUAL(P.pulses, 4, "four runs in twelve deciseconds")
+	TEST_ASSERT(P.gaps_asked >= 4, "the gap is asked again before each run")

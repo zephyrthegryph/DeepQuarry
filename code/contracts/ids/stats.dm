@@ -15,4 +15,5 @@ STAT(/atom/movable, suspended, ANY, virtual = TRUE)
 STAT(/atom, clock_rate, MIN, base = 1, virtual = TRUE)
 STAT(/mob/living, clock_rate_bio, MIN, base = 1)
 STAT(/area, lights_nightshift, ANY)
+STAT(/area, lights_emergency_off, ANY)
 

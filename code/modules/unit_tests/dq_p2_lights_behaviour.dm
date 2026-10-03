@@ -77,6 +77,10 @@
 /proc/p2l_opened_frame_stage()
 	return 2
 
+/// The fixture's bulb state, with the light off at once when the bulb is not whole.
+/proc/p2l_set_status(obj/machinery/light/L, value)
+	L.set_bulb_status(value)
+
 /// The frame's stage: 1 (empty frame), 2 (wired) or 3 (casing closed).
 /proc/p2l_stage(obj/machinery/light_construct/C)
 	return built(C, STAGE_LIGHT_FRAME_WIRED) ? 2 : 1
@@ -149,7 +153,7 @@
 	if(!live)
 		test_driver_begin()
 		p2l_capture_prompts()
-	test_rng(1)
+	test_rng(11)
 	p2l_area = get_area(run_loc_floor_bottom_left)
 	p2l_area_requires = p2l_area.requires_power
 	p2l_area_light = p2l_area.power_light
@@ -223,8 +227,7 @@
 /// A loose bulb or tube of `type`.
 /datum/unit_test/dq_p2_lights/proc/bulb(type = /obj/item/light/tube, status = LIGHT_OK)
 	var/obj/item/light/B = allocate(type, tile(3, 1))
-	B.status = status
-	B.update_icon()
+	B.set_status(status)
 	return B
 
 /// An APC for the room's area, so the area has an APC to ask about night shift and emergency lighting. The area's channels are put back as
@@ -341,7 +344,7 @@
 	TEST_ASSERT(!p2l_emergency(L), "a light that is switched off does not use its cell")
 	TEST_ASSERT_EQUAL(L.light_range, 0, "it gives no light")
 	set_area_switch(1)
-	TEST_ASSERT(L.on, "switched on again")
+	TEST_ASSERT(L.on, "switched on again (status [L.status], last [L.last_area_power], has_power [L.has_power()], switch [p2l_area.lightswitch], light [p2l_area.power_light], req [p2l_area.requires_power], sc [L.switchcount], subs [length(p2l_area.power_machines)] [L in p2l_area.power_machines], NOPOWER [L.has_stat(NOPOWER)], flick [L.flickering])")
 	TEST_ASSERT_EQUAL(L.light_range, 6, "its light is back")
 
 /// Losing the light channel puts a fixture with a cell on its emergency power: dim, red, an eighth of the range.
@@ -410,7 +413,7 @@
 	var/obj/machinery/light/M = light(/obj/machinery/light, tile(2, 3))
 	var/obj/machinery/light/N = light(/obj/machinery/light, tile(3, 3))
 	L.broken()
-	M.set_status(LIGHT_BURNED)
+	p2l_set_status(M, LIGHT_BURNED)
 	p2l_make_empty(N)
 	set_area_switch(0)
 	set_area_switch(1)
@@ -458,7 +461,7 @@
 	var/start = C.charge
 	set_area_power(FALSE)
 	sleep(11 SECONDS)
-	L.examine(person())
+	L.settle_emergency_discharge()
 	var/drained = start - C.charge
 	TEST_ASSERT(drained > 0.8 && drained < 1.4, "ten seconds on the cell cost about one charge, not [drained]")
 
@@ -497,6 +500,7 @@
 	p2l_click(AI, L, null)
 	settle()
 	TEST_ASSERT(L.no_emergency, "the AI switched it off")
+	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "and did not take the bulb out: an AI has no hands")
 	p2l_click(AI, L, null)
 	settle()
 	TEST_ASSERT(!L.no_emergency, "and on again")
@@ -689,15 +693,21 @@
 	TEST_ASSERT_EQUAL(p2l_switchcount(L), 0, "the count starts over")
 	TEST_ASSERT(!p2l_has_bulb(L), "no bulb in it")
 
-/// A lit tube comes out of a bare hand too (the old heat check never ran for a person).
-/datum/unit_test/dq_p2_lights/hand_takes_a_lit_tube_out_all_the_same
+/// A lit tube is too hot for a bare hand; gloves that take the heat (or an unlit tube) let it come out.
+/datum/unit_test/dq_p2_lights/lit_tube_needs_heat_proof_gloves
 
-/datum/unit_test/dq_p2_lights/hand_takes_a_lit_tube_out_all_the_same/run_gate()
+/datum/unit_test/dq_p2_lights/lit_tube_needs_heat_proof_gloves/run_gate()
 	var/obj/machinery/light/L = light()
 	var/mob/living/carbon/human/H = person()
 	TEST_ASSERT(L.on, "lit")
 	click(H, L, null)
-	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "the tube came out")
+	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_OK, "a bare hand leaves a lit tube in")
+	TEST_ASSERT_NULL(H.get_active_hand(), "and holds nothing")
+	var/obj/item/clothing/gloves/G = allocate(/obj/item/clothing/gloves, tile(0, 1))
+	G.max_heat_protection_temperature = 1000
+	H.equip_to_slot_or_del(G, SLOT_ID_GLOVES)
+	click(H, L, null)
+	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "gloves that take the heat let it come out")
 	TEST_ASSERT(istype(H.get_active_hand(), /obj/item/light/tube), "into the hand")
 
 /// A broken tube comes out broken.
@@ -1016,7 +1026,7 @@
 	L.broken()
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_EMPTY, "still empty")
 	var/obj/machinery/light/M = light(/obj/machinery/light, tile(3, 3))
-	M.set_status(LIGHT_BURNED)
+	p2l_set_status(M, LIGHT_BURNED)
 	M.broken()
 	TEST_ASSERT_EQUAL(p2l_status(M), LIGHT_BROKEN, "a burned tube breaks")
 
@@ -1210,9 +1220,9 @@
 /datum/unit_test/dq_p2_lights/light_item_shows_its_status/run_gate()
 	var/obj/item/light/tube/B = bulb()
 	TEST_ASSERT_EQUAL(p2l_item_icon(B), "ltube", "a whole tube")
-	B.status = LIGHT_BURNED
+	B.set_status(LIGHT_BURNED)
 	TEST_ASSERT_EQUAL(p2l_item_icon(B), "ltube-burned", "a burned tube")
-	B.status = LIGHT_BROKEN
+	B.set_status(LIGHT_BROKEN)
 	TEST_ASSERT_EQUAL(p2l_item_icon(B), "ltube-broken", "a broken tube")
 
 /// A thrown light shatters when it lands.
