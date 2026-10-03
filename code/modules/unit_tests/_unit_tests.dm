@@ -784,6 +784,7 @@
 #include "interim_photocopier_sticky_toner.dm"
 #include "interim_faxmachine_sticky_toner.dm"
 #include "interim_teshari_scoop_actor.dm"
+#include "interim_gargoyle_terminal_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

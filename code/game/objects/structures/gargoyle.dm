@@ -148,7 +148,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 /obj/structure/gargoyle/periodic_step()
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
-		qdel(src)
+		consume(src)
 		return
 	if(gargoyle.stat == DEAD) //died while in statue state.
 		unpetrify(deal_damage = TRUE, deleting = TRUE)
@@ -182,6 +182,8 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 	return
 
 /obj/structure/gargoyle/proc/unpetrify(deal_damage = TRUE, deleting = FALSE)
+	if(deleting && loc?.release_refusal(src))
+		return
 	var/mob/living/carbon/human/gargoyle = WR_gargoyle
 	if(!gargoyle)
 		return
@@ -221,7 +223,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/gargoyle, PERIODIC_SECOND, "WR_gargoyle")
 		MSG_OTHERS(span_warning("%U%'s skin rapidly reverts, returning them to normal!")))
 	gargoyle = null
 	if(deleting)
-		qdel(src)
+		consume(src)
 
 /obj/structure/gargoyle/return_air()
 	return return_air_for_internal_lifeform()
