@@ -774,11 +774,13 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 		return
 
 	if(locked && tamper_proof && get_integrity() <= Proj.damage)
+		if(loc?.release_refusal(src))
+			return
 		if(tamper_proof == 2) // Mainly used for events to prevent any chance of opening the box improperly.
 			visible_message(span_bolddanger("The anti-tamper mechanism of [src] triggers an explosion!"))
 			var/turf/T = get_turf(src.loc)
 			explosion(T, 0, 0, 0, 1) // Non-damaging, but it'll alert security.
-			qdel(src)
+			consume(src)
 			return
 		var/open_chance = rand(1,5)
 		switch(open_chance)
@@ -786,7 +788,7 @@ DAMAGE_REACTION(/obj/structure/closet/crate/secure, DAMAGE_EMP, PROC_REF(secure_
 				visible_message(span_bolddanger("The anti-tamper mechanism of [src] causes an explosion!"))
 				var/turf/T = get_turf(src.loc)
 				explosion(T, 0, 0, 0, 1) // Non-damaging, but it'll alert security.
-				qdel(src)
+				consume(src)
 			if(2 to 4)
 				visible_message(span_boldwarning("The anti-tamper mechanism of [src] causes a small fire!"))
 				for(var/i in 1 to length(slot_contents()) + latent_count()) // For every item in the box, we spawn a pile of ash.

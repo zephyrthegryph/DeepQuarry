@@ -847,6 +847,7 @@
 #include "interim_clipboard_sticky_pen_slot.dm"
 #include "interim_prosthetics_species_upload_refusal.dm"
 #include "interim_prosthetics_species_upload_consumption.dm"
+#include "interim_secure_crate_tamper_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
