@@ -62,24 +62,32 @@ struct StoreFile {
     clean: HashSet<Hash>,
 }
 
-fn store_path(dir: &std::path::Path, name: &str) -> PathBuf {
+fn store_path(dir: &std::path::Path, name: &str, shard: Option<usize>) -> PathBuf {
     let safe: String = name.chars().map(|c| if c.is_ascii_alphanumeric() || c == '-' { c } else { '_' }).collect();
-    dir.join(format!("incr-{}.bin", safe))
+    match shard {
+        Some(k) => dir.join(format!("incr-{}.{}.bin", safe, k)),
+        None => dir.join(format!("incr-{}.bin", safe)),
+    }
+}
+
+fn config() -> Option<(PathBuf, String)> {
+    let g = cfg().lock().unwrap();
+    g.as_ref().filter(|c| c.enabled).map(|c| (c.dir.clone(), c.stamp.clone()))
+}
+
+fn load_at(path: &std::path::Path, stamp: &str, ctx: Hash) -> StoreFile {
+    let loaded = std::fs::read(path).ok().and_then(|b| bincode::deserialize::<StoreFile>(&b).ok());
+    match loaded {
+        Some(s) if s.stamp == stamp && s.ctx == ctx => s,
+        _ => StoreFile { stamp: stamp.to_string(), ctx, ..Default::default() },
+    }
 }
 
 fn load(name: &str, ctx: Hash) -> (StoreFile, Option<(PathBuf, String)>) {
-    let g = cfg().lock().unwrap();
-    let Some(c) = g.as_ref() else { return (StoreFile::default(), None) };
-    if !c.enabled {
-        return (StoreFile::default(), None);
-    }
-    let path = store_path(&c.dir, name);
-    let loaded = std::fs::read(&path).ok().and_then(|b| bincode::deserialize::<StoreFile>(&b).ok());
-    let st = match loaded {
-        Some(s) if s.stamp == c.stamp && s.ctx == ctx => s,
-        _ => StoreFile { stamp: c.stamp.clone(), ctx, ..Default::default() },
-    };
-    (st, Some((path, c.stamp.clone())))
+    let Some((dir, stamp)) = config() else { return (StoreFile::default(), None) };
+    let path = store_path(&dir, name, None);
+    let st = load_at(&path, &stamp, ctx);
+    (st, Some((path, stamp)))
 }
 
 fn save(path: &std::path::Path, st: &StoreFile) {
@@ -139,16 +147,36 @@ pub fn mix(keys: &[Hash]) -> Hash {
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
 }
 
+/// A store this large is split in [`SHARDS`] files by file-key hash: an edit rewrites one small shard,
+/// and the shards load in parallel.
+const SHARDS: usize = 16;
+const SHARD_MIN_FILES: usize = 1024;
+
+fn shard_of(k: Hash) -> usize {
+    ((k ^ (k >> 64)) as usize) % SHARDS
+}
+
 /// `f(file)` for every file, cached per file under `ctx`. See the module docs.
 pub fn keyed<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
-    let (mut st, target) = load(name, ctx);
+    let sharded = files.len() >= SHARD_MIN_FILES;
+    let n = if sharded { SHARDS } else { 1 };
+    let target = config();
+    let mut stores: Vec<StoreFile> = match &target {
+        None => (0..n).map(|_| StoreFile::default()).collect(),
+        Some((dir, stamp)) => (0..n)
+            .into_par_iter()
+            .map(|k| load_at(&store_path(dir, name, if sharded { Some(k) } else { None }), stamp, ctx))
+            .collect(),
+    };
+    let shard = |file: &SourceFile| if sharded { shard_of(file.fkey) } else { 0 };
     let mut uses: Vec<AllowUse> = Vec::new();
     let results: Vec<(R, bool, Vec<AllowUse>)> = files
         .par_iter()
         .map(|file| {
+            let st = &stores[shard(file)];
             if st.clean.contains(&file.fkey) {
                 return (R::default(), false, Vec::new());
             }
@@ -164,31 +192,34 @@ where
             (r, true, u)
         })
         .collect();
-    let before = st.map.len() + st.clean.len();
-    let mut fresh = false;
-    let mut map: HashMap<Hash, Vec<u8>> = HashMap::new();
-    let mut clean: HashSet<Hash> = HashSet::new();
+    let before: Vec<usize> = stores.iter().map(|s| s.map.len() + s.clean.len()).collect();
+    let mut dirty = vec![false; n];
+    let mut maps: Vec<HashMap<Hash, Vec<u8>>> = (0..n).map(|_| HashMap::new()).collect();
+    let mut cleans: Vec<HashSet<Hash>> = (0..n).map(|_| HashSet::new()).collect();
     let mut out = Vec::with_capacity(results.len());
     for (file, (r, was_fresh, u)) in files.iter().zip(results) {
-        fresh |= was_fresh;
+        let k = shard(file);
+        dirty[k] |= was_fresh;
         if r == R::default() && u.is_empty() {
-            clean.insert(file.fkey);
+            cleans[k].insert(file.fkey);
         } else if !was_fresh {
             // Served from the store: keep its bytes as they are.
-            if let Some(b) = st.map.remove(&file.fkey) {
-                map.insert(file.fkey, b);
+            if let Some(b) = stores[k].map.remove(&file.fkey) {
+                maps[k].insert(file.fkey, b);
             }
         } else if let Ok(b) = bincode::serialize(&(&r, &u)) {
-            map.insert(file.fkey, b);
+            maps[k].insert(file.fkey, b);
         }
         uses.extend(u);
         out.push(r);
     }
-    if let Some((path, _)) = target {
-        if fresh || map.len() + clean.len() != before {
-            st.map = map;
-            st.clean = clean;
-            save(&path, &st);
+    if let Some((dir, _)) = &target {
+        for k in 0..n {
+            if dirty[k] || maps[k].len() + cleans[k].len() != before[k] {
+                stores[k].map = std::mem::take(&mut maps[k]);
+                stores[k].clean = std::mem::take(&mut cleans[k]);
+                save(&store_path(dir, name, if sharded { Some(k) } else { None }), &stores[k]);
+            }
         }
     }
     crate::dm::sys::replay_recorded(uses);
