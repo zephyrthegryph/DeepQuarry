@@ -867,6 +867,7 @@
 #include "interim_slime_crystal_release.dm"
 #include "interim_reconstitutor_sticky_paste.dm"
 #include "interim_camera_bug_reset_ownership.dm"
+#include "interim_technomancer_spellbutton_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
