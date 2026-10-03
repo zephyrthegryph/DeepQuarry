@@ -464,6 +464,7 @@
 #include "dq_p2_door_base_tests.dm"
 #include "dq_p2_reagent_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
+#include "dq_p2_lights_behaviour.dm"
 #include "dq_p2_reagent_needle_behaviour.dm"
 #include "dq_p2_storage_behaviour.dm"
 #include "dq_p2_storage_engine_tests.dm"
