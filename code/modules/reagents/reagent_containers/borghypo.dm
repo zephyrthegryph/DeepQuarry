@@ -137,16 +137,35 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 					reagent_volumes[T] = min(reagent_volumes[T] + 5, volume)
 	return 1
 
-/obj/item/reagent_containers/borghypo/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
+// A cyborg hypospray makes the chosen reagent (or recipe) from its store and puts it into a person by a click (synthesizer(), code/library/reagents/synthesizer.dm);
+// a limb that is not there, or thick material over it, refuses it (unless it bypasses protection). Its store is filled again from its cyborg's cell.
+CAPABILITIES(/obj/item/reagent_containers/borghypo, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		sealed = TRUE, \
+		settable = FALSE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this)), \
+	synthesizer(), \
+	extend("synthesizer.inject", then(PROC_REF(injected))))
+
+/// The click on a person (the old attack handler).
+/obj/item/reagent_containers/borghypo/proc/injected(datum/act/op/A)
+	var/mob/living/M = A.target
+	var/mob/living/user = A.actor
+	return injection_result(M, user)
+
+/obj/item/reagent_containers/borghypo/proc/injection_result(mob/living/M, mob/living/user)
 	if(!istype(M))
-		return ITEM_INTERACT_FAILURE
+		return OP_REFUSED
 
 	var/mob/living/carbon/human/H = M
 	if(istype(H))
 		var/obj/item/organ/external/affected = H.get_organ(user.zone_sel.selecting)
 		if(!affected)
 			balloon_alert(user, "\the [H] is missing that limb!")
-			return ITEM_INTERACT_FAILURE
+			return OP_REFUSED
 
 	if(M.can_inject(user, 1, ignore_thickness = bypass_protection))
 
@@ -166,7 +185,7 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 			switch(result)
 				if(BORGHYPO_STATUS_CONTAINERFULL)
 					balloon_alert(user, "\the [M] has too many reagents in [M.p_their()] system!")
-					return ITEM_INTERACT_FAILURE
+					return OP_REFUSED
 				if(BORGHYPO_STATUS_NOCHARGE)
 					if(is_dispensing_recipe)
 						balloon_alert(user, "not enough reagents to inject full recipe!")
@@ -174,10 +193,10 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 					else
 						var/datum/reagent/empty_reagent = chemistry_service().chemical_reagents[reagent_id]
 						balloon_alert(user, "\the [src] doesn't have enough [empty_reagent.name]!")
-					return ITEM_INTERACT_FAILURE
+					return OP_REFUSED
 				if(BORGHYPO_STATUS_NORECIPE)
 					balloon_alert(user, "recipe '[selected_recipe_id]' not found!")
-					return ITEM_INTERACT_FAILURE
+					return OP_REFUSED
 				else
 					if(is_dispensing_recipe)
 						balloon_alert(user, "recipe '[selected_recipe_id]' injected into \the [M].")
@@ -185,8 +204,8 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 					else
 						balloon_alert(user, "[amount_to_add] units injected into \the [M].")
 						balloon_alert(M, "you feel a tiny prick!")
-					return ITEM_INTERACT_SUCCESS
-	return ITEM_INTERACT_FAILURE
+					return OP_OK
+	return OP_REFUSED
 
 DECLARE_INTERACTIONS(/obj/item/reagent_containers/borghypo, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -401,16 +420,17 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/service, borghypo_reagent_ids, 
 	REAGENT_ID_WATERMELONJUICE, \
 REAGENT_ID_WHISKEY))
 
-/obj/item/reagent_containers/borghypo/service/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	return NONE
+// The drink synthesizer puts drinks into open containers and never into a person.
+CAPABILITIES(/obj/item/reagent_containers/borghypo/service, \
+	configure(synthesizer(containers = TRUE)), \
+	extend("synthesizer.dispense", then(PROC_REF(dispensed))))
 
-/obj/item/reagent_containers/borghypo/service/afterattack(obj/target, mob/user, proximity)
-	if(!proximity)
-		return
+/obj/item/reagent_containers/borghypo/service/injection_result(mob/living/M, mob/living/user)
+	return OP_REFUSED
 
-	if(!target.is_open_container() || !target.reagents)
-		return
-
+/obj/item/reagent_containers/borghypo/proc/dispensed(datum/act/op/A)
+	var/atom/target = A.target
+	var/mob/user = A.actor
 	var/result = try_injection(target.reagents, user)
 	switch(result)
 		if(BORGHYPO_STATUS_CONTAINERFULL)
@@ -431,4 +451,4 @@ REAGENT_ID_WHISKEY))
 				balloon_alert(user, "recipe '[selected_recipe_id]' dispensed to \the [target].")
 			else
 				balloon_alert(user, "[amount_per_transfer_from_this] units dispensed to \the [target].")
-	return
+	return OP_OK

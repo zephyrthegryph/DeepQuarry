@@ -331,6 +331,15 @@
 /datum/capdef_decl/c_subversion_reset/spec()
 	return list(CAP_SUBVERSION_RESET, /datum/capability/lib/subversion_reset, NONE, STACK, "subversion_reset", "parts, done")
 
+/// CAPABILITY_TYPE(synthesizer, CAP_SYNTHESIZER) at code/library/reagents/synthesizer.dm:9
+/datum/capability/lib/synthesizer
+	var/containers = FALSE
+/proc/synthesizer(containers)
+	RETURN_TYPE(/datum/capability/lib/synthesizer)
+	return cap_construct(CAP_SYNTHESIZER, /datum/capability/lib/synthesizer, list(containers), "containers")
+/datum/capdef_decl/c_synthesizer/spec()
+	return list(CAP_SYNTHESIZER, /datum/capability/lib/synthesizer, NONE, STACK, "synthesizer", "containers")
+
 /// CAPABILITY_DEF(telekinesis, CAP_TELEKINESIS) at code/engine/library/bays.dm:181
 /proc/telekinesis()
 	RETURN_TYPE(/datum/capability/def/telekinesis)
@@ -587,6 +596,26 @@
 	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.label("Label it"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
 	into += entry_line(75)
 	into += list(global.op("drink", global.in_hand(), global.stance(I_HURT), global.label("Drink"), global.then(PROC_REF(drunk))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/borghypo) at code/modules/reagents/reagent_containers/borghypo.dm:142
+/obj/item/reagent_containers/borghypo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/borghypo.dm", 142, /obj/item/reagent_containers/borghypo)
+	into += entry_line(143)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(150)
+	into += list(global.synthesizer())
+	into += entry_line(151)
+	into += list(global.extend("synthesizer.inject", global.then(PROC_REF(injected))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/borghypo/service) at code/modules/reagents/reagent_containers/borghypo.dm:424
+/obj/item/reagent_containers/borghypo/service/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/borghypo.dm", 424, /obj/item/reagent_containers/borghypo/service)
+	into += entry_line(425)
+	into += list(global.configure(global.synthesizer(containers = TRUE)))
+	into += entry_line(426)
+	into += list(global.extend("synthesizer.dispense", global.then(PROC_REF(dispensed))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge) at code/modules/reagents/machinery/dispenser/cartridge.dm:42
 /obj/item/reagent_containers/chem_disp_cartridge/declared_entries(list/into)

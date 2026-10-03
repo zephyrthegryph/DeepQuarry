@@ -125,6 +125,13 @@ canister is not converted: it refills the matching cartridge inside a dispenser 
 * **A powder is snorted by a straw or a rolling paper** as before; somebody who is not flesh is told so and the click ends (it used to fall through).
 * **A rolling paper takes a dried plant as before;** the old "nothing in it" requirement on rolling an empty paper never applied, and still does not (pinned).
 
+## Reagent containers: the cyborg hypospray and drink synthesizer
+
+Pinned by the `borghypo_*`, `drink_synthesizer_*` tests of `dq_p2_reagent_hypo_behaviour.dm` (green on the legacy code first, unchanged after).
+
+* **A click is the same; the window and the recharge are not converted** (`DECLARE_UI`/`UI_ACT`, `periodic_step()` and the old set-amount entry stay: the tgui
+  window needs its own wave). The drink synthesizer clicked on a person now refuses silently (it used to fall through to nothing).
+
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
 Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).
