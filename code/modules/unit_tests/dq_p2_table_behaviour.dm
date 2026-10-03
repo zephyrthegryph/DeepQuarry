@@ -13,6 +13,11 @@
 // Adapters: today's accessors, wrapped. After the conversion only these bodies change.
 // ---------------------------------------------------------------------------------------------------------------------
 
+/// The display name of the material with this id ("steel").
+/proc/p2_material_name(id)
+	var/datum/material/M = get_material_by_name(id)
+	return M.display_name
+
 /// The material the table is plated with (a /datum/material), or null for a frame.
 /proc/p2_table_material(obj/structure/table/T)
 	return T.material()
@@ -28,6 +33,11 @@
 /// The table is flipped on its side.
 /proc/p2_table_flipped(obj/structure/table/T)
 	return T.flipped == 1
+
+/// Reinforces the table with `M` as a spell or a theme leaves it (no sheet, no wait): the layer is there and the strength follows.
+/proc/p2_table_reinforce_directly(obj/structure/table/T, datum/material/M)
+	T.set_layers(T.material(), M)
+	T.refresh_layers()
 
 /// The shards the last break produced (a list, possibly empty).
 /proc/p2_table_last_shards(obj/structure/table/T)
@@ -58,22 +68,17 @@
 /// The actor drags `O` onto the table (a mouse drag: the dragged thing is what the table works with).
 /proc/p2_table_drag(mob/living/actor, obj/structure/table/T, atom/movable/O)
 	actor.next_click = 0
-	T.MouseDrop_T(O, actor)
+	test_click(actor, T, O, GESTURE_DRAG)
 
 /// The actor picks the entry named `label` ("Flip table", "Put table back") from the table's context menu. TRUE when the menu offered it (it ran).
 /proc/p2_table_menu(mob/living/actor, obj/structure/table/T, label)
-	var/datum/interaction_resolution/resolution = interactions_for(actor, T, actor.get_active_hand())
-	for(var/datum/interaction/candidate as anything in resolution.available)
-		if(candidate.display_name(actor, T) == label)
-			run_chosen_interaction(actor, T, candidate.id)
-			return TRUE
-	return FALSE
+	var/datum/op_result/result = test_menu(actor, T, label == "Flip table" ? "flip" : "put_back")
+	return result?.outcome == ACT_COMMITTED
 
 /// The context menu offers the entry (available or greyed out) to this actor.
 /proc/p2_table_menu_offers(mob/living/actor, obj/structure/table/T, label)
-	var/datum/interaction_resolution/resolution = interactions_for(actor, T, actor.get_active_hand())
-	for(var/datum/interaction/candidate as anything in resolution.available + resolution.blocked)
-		if(candidate.display_name(actor, T) == label)
+	for(var/list/row as anything in action_options(actor, T, actor.get_active_hand()))
+		if(row["name"] == label)
 			return TRUE
 	return FALSE
 
@@ -263,7 +268,7 @@
 	touch(H, T, S)
 	TEST_ASSERT_EQUAL(p2_table_material(T), get_material_by_name(MAT_STEEL), "plated with steel")
 	TEST_ASSERT_EQUAL(S.get_amount(), 4, "one sheet was used")
-	TEST_ASSERT_EQUAL(T.name, "[get_material_by_name(MAT_STEEL).display_name] table", "it is named for its material")
+	TEST_ASSERT_EQUAL(T.name, "[p2_material_name(MAT_STEEL)] table", "it is named for its material")
 	TEST_ASSERT_EQUAL(p2_table_stage(T), "plated", "a plated table")
 
 /// The plating takes two seconds.
@@ -705,7 +710,7 @@
 /datum/unit_test/dq_p2_table/a_full_break_returns_every_layer/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/table/T = allocate(/obj/structure/table/gamblingtable, at)
-	T.reinforced_static = get_material_by_name(MAT_STEEL)
+	p2_table_reinforce_directly(T, get_material_by_name(MAT_STEEL))
 	var/list/shards = T.break_to_parts(TRUE)
 	TEST_ASSERT(QDELETED(T), "broken")
 	TEST_ASSERT_EQUAL(length(shards), 0, "a full return makes no shards")
@@ -730,8 +735,7 @@
 /datum/unit_test/dq_p2_table/brittle_tables_take_more_damage/run_gate()
 	var/obj/structure/table/glass = allocate(/obj/structure/table/glass, floor_at(1, 1))
 	var/obj/structure/table/hardened = allocate(/obj/structure/table/glass, floor_at(2, 1))
-	hardened.reinforced_static = get_material_by_name(MAT_STEEL)
-	hardened.update_material()
+	p2_table_reinforce_directly(hardened, get_material_by_name(MAT_STEEL))
 	glass.take_damage(5, BRUTE, MELEE)
 	hardened.take_damage(5, BRUTE, MELEE)
 	var/glass_lost = glass.max_integrity - glass.get_integrity()
@@ -906,7 +910,7 @@
 	TEST_ASSERT_EQUAL(p2_table_reinforcement(reinforced), get_material_by_name(MAT_STEEL), "with steel")
 	TEST_ASSERT(p2_table_carpeted(gambling), "a gambling table is carpeted")
 	TEST_ASSERT_EQUAL(p2_table_material(bench), get_material_by_name(MAT_WOOD), "a wooden bench is wooden")
-	TEST_ASSERT_EQUAL(reinforced.name, "reinforced [get_material_by_name(DEFAULT_TABLE_MATERIAL).display_name] table", "a reinforced table says so")
+	TEST_ASSERT_EQUAL(reinforced.name, "reinforced [p2_material_name(DEFAULT_TABLE_MATERIAL)] table", "a reinforced table says so")
 
 /// A rack takes things put on it, can't be plated, and a wrench takes it down to steel.
 /datum/unit_test/dq_p2_table/a_rack_holds_things_and_comes_down_to_steel
@@ -1056,9 +1060,9 @@
 /datum/unit_test/dq_p2_table/the_description_names_the_reinforcement/run_gate()
 	var/obj/structure/table/reinforced = allocate(/obj/structure/table/reinforced, floor_at(1, 1))
 	var/obj/structure/table/plain = allocate(/obj/structure/table/steel, floor_at(2, 1))
-	TEST_ASSERT(findtext(reinforced.desc, get_material_by_name(MAT_STEEL).display_name), "it names the steel")
+	TEST_ASSERT(findtext(reinforced.desc, p2_material_name(MAT_STEEL)), "it names the steel")
 	TEST_ASSERT(!findtext(plain.desc, "reinforced"), "a plain one does not say reinforced")
-	TEST_ASSERT_EQUAL(plain.name, "[get_material_by_name(MAT_STEEL).display_name] table", "named for its plating")
+	TEST_ASSERT_EQUAL(plain.name, "[p2_material_name(MAT_STEEL)] table", "named for its plating")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // Combat mode
@@ -1092,13 +1096,14 @@
 	TEST_ASSERT_EQUAL(axe.loc, at, "the axe is on the table")
 	TEST_ASSERT_EQUAL(T.get_integrity(), before, "the table was not hit")
 
-/// A tool with no job on the table (a crowbar on an uncarpeted one) is put on it only if the old click allowed it: pinned where the tool ends up.
-/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_ends_up_somewhere
+/// A tool with no job on the table (a crowbar on an uncarpeted one) is put on it like any item. (The old tool handler swallowed the click and the tool
+/// stayed in the hand: doc/rewrite/intended_changes.md.)
+/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_is_put_on_the_table
 
-/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_ends_up_somewhere/run_gate()
+/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_is_put_on_the_table/run_gate()
 	var/turf/at = floor_at(1, 1)
 	var/obj/structure/table/T = allocate(/obj/structure/table/steel, at)
 	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
 	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
 	touch(H, T, bar)
-	TEST_ASSERT_EQUAL(bar.loc, H, "PINNED: a tool nobody has a job for stays in the hand")
+	TEST_ASSERT_EQUAL(bar.loc, at, "the crowbar is on the table")

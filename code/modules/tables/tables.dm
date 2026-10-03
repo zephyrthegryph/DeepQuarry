@@ -1,3 +1,12 @@
+// Tables, benches and racks (phase 2, furniture). A table is declared: ONE CAPABILITIES list says what it is, a build ladder (a frame, its plating,
+// its reinforcement, and the wrench that takes the frame down) with the carpet, the repair, the flip and the ways to put things on it as ops of its own.
+// What stays imperative is the table's own: the connected-tile smoothing and look, the cover check for projectiles, the break into parts, and the
+// conditions and effects the declarations name.
+//
+// The plating and the reinforcement are the build graph's: a table is "plated with M" when the graph has passed STAGE_TABLE_PLATED and the ledger says it
+// took a sheet of M there (material(), reinforced()). A preset table (steel, wooden, reinforced, a bench or a rack) starts built with its layers, which
+// set_layers() writes into the graph as if somebody had built it from a sheet of each material, so taking a layer off gives the sheet back either way.
+
 DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER, 2048, 0)
 
 /obj/structure/table
@@ -10,27 +19,180 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	layer = TABLE_LAYER
 	throwpass = 1
 	surgery_cleanliness = 50
+	/// 0: standing; 1: flipped on its side; -1: a kind that is never flipped or stood on (a rack, a bench).
 	var/flipped = 0
 	max_integrity = 10
 
 	// For racks.
 	var/can_reinforce = 1
 	var/can_plate = 1
+	/// FALSE on the tables nobody can take apart: the alien, dark glass and fancy tables, the pod table, a holo rack.
+	var/can_dismantle = TRUE
+
+	/// A preset's layers: the id of the material it starts plated with, and the one it starts reinforced with (null: none).
+	var/plating_id
+	var/reinforcement_id
 
 	/// Transient hand-off: shards produced by the most recent break_to_parts(), read
 	/// by callers (e.g. tableslam) that previously consumed take_damage()'s return.
 	var/list/last_break_shards
-	var/tmp/datum/material/material_static
-	var/tmp/datum/material/reinforced_static
 
 	// Gambling tables. I'd prefer reinforced with carpet/felt/cloth/whatever, but AFAIK it's either harder or impossible to get /obj/item/stack/material of those.
 	// Convert if/when you can easily get stacks of these.
 	var/carpeted = 0
 	var/carpeted_type = /obj/item/stack/tile/carpet
 
-/obj/structure/table/examine_icon()
-	return icon(icon=initial(icon), icon_state=initial(icon_state)) //Basically the map preview version
+TRACKED(/obj/structure/table, flipped)
+TRACKED(/obj/structure/table, carpeted)
 
+STAGE_DEF(table, frame)
+STAGE_DEF(table, plated)
+STAGE_DEF(table, reinforced)
+
+MSG_DEF_SELF(stage/table/frame, "It is a bare frame.")
+MSG_DEF_SELF(stage/table/plated, "It is plated.")
+MSG_DEF_SELF(stage/table/reinforced, "It is plated and reinforced.")
+
+MSG_DEF_SELF(table/needs_plating, "There's nothing to put that on! Try adding plating to the table first.")
+MSG_DEF_SELF(table/put_back_first, "Put the table back in place before reinforcing it!")
+MSG_DEF_SELF(table/already_reinforced, "The table is already reinforced!")
+MSG_DEF_SELF(table/plate_first, "Plate the table before reinforcing it!")
+MSG_DEF_SELF(table/not_reinforceable, "The table cannot be reinforced!")
+MSG_DEF_SELF(table/plating_stuck, "You are unable to remove the plating from this table!")
+MSG_DEF_SELF(table/reinforcement_stuck, "You are unable to remove the reinforcements from this table!")
+MSG_DEF_SELF(table/carpet_on, "Take the carpet off first.")
+MSG_DEF_SELF(table/no_dismantle, "You cannot dismantle that.")
+MSG_DEF_SELF(table/hands_busy, "You need your hands and legs free for this.")
+MSG_DEF_SELF(table/wont_budge, "It won't budge.")
+MSG_DEF_SELF(table/in_the_way, "There's something in the way.")
+MSG_DEF_SELF(table/better_grip, "You need a better grip to do that!")
+MSG_DEF_SELF(table/not_in_hand, "You aren't holding that.")
+MSG_DEF(table/flipped, "You flip %T%!", "%U% flips %T%!")
+MSG_DEF(table/put_back, "You put %T% back on its legs.", "%U% puts %T% back on its legs.")
+MSG_DEF(table/carpeted, "You add %I% to %T%.", "%U% adds %I% to %T%.")
+MSG_DEF(table/uncarpeted, "You remove the carpet from %T%.", "%U% removes the carpet from %T%.")
+MSG_DEF(table/repaired, "You repair some damage to %T%.", "%U% repairs some damage to %T%.")
+
+CAPABILITIES(/obj/structure/table, \
+	table_frame(), \
+	extend("construction.dismantle", when(req_graph_at(list(STAGE_TABLE_FRAME))), needs(req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle)))), \
+	extend("construction.build:table_reinforced", priority(above("place_dragged"))), \
+	op("repair", tool(TOOL_WELDER), wait(2 SECONDS), label("Repair"), when(req(PROC_REF(is_damaged))), \
+		then(PROC_REF(repaired)), says(MSG(table/repaired))), \
+	op("carpet", stack(/obj/item/stack/tile/carpet, 1), wait(0), label("Carpet"), when(req(PROC_REF(can_carpet))), \
+		then(PROC_REF(carpet_laid)), says(MSG(table/carpeted))), \
+	op("uncarpet", tool(TOOL_CROWBAR), wait(0), label("Remove carpet"), when(nameof(carpeted)), \
+		then(PROC_REF(carpet_lifted)), says(MSG(table/uncarpeted))), \
+	op("flip", menu(), label("Flip table"), when(req(PROC_REF(is_flippable))), \
+		needs(req(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), req(PROC_REF(can_flip_away), because = MSG(table/wont_budge))), \
+		then(PROC_REF(flip_over)), says(MSG(table/flipped))), \
+	op("put_back", menu(), label("Put table back"), when(req(PROC_REF(is_flipped_up))), \
+		needs(req(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), req(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))), \
+		then(PROC_REF(put_back)), says(MSG(table/put_back))), \
+	op("slice_blade", item(/obj/item/melee/energy/blade), then(PROC_REF(sliced_apart))), \
+	op("slice_arm_blade", item(/obj/item/melee/changeling/arm_blade), then(PROC_REF(sliced_apart))), \
+	op("claw", hand(), when(req(PROC_REF(actor_is_xeno))), then(PROC_REF(clawed_apart))), \
+	op("slam", item(/obj/item/grab), hostile(), label("Slam against table"), when(req(PROC_REF(slam_applies))), then(PROC_REF(slam_face))), \
+	op("put_on", item(/obj/item/grab), label("Put on table"), when(req(PROC_REF(person_grabbed))), \
+		needs(req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), then(PROC_REF(put_person_on))), \
+	op("place", item(/obj/item), label("Place"), priority(OP_PRIORITY_NORMAL - 5), \
+		needs(req(PROC_REF(has_surface), because = MSG(table/needs_plating)), req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))), \
+		then(PROC_REF(place_held))), \
+	op("place_dragged", item(/obj/item), gesture(GESTURE_DRAG), label("Place"), \
+		needs(req(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), then(PROC_REF(place_dragged))), \
+	on_op("construction.build:table_plated", then(PROC_REF(layers_changed))), \
+	on_op("construction.build:table_reinforced", then(PROC_REF(layers_changed))), \
+	on_op("construction.undo:table_plated", then(PROC_REF(layers_changed))), \
+	on_op("construction.undo:table_reinforced", then(PROC_REF(layers_changed))))
+
+/// The build ladder of a table: a bare frame, a sheet of any material for the plating (the wrench takes it off again), a second sheet dragged on for the
+/// reinforcement (the screwdriver takes it off, slowly), and the wrench that takes a bare frame down into a sheet of steel. The ledger refunds the sheets
+/// the layers took, the same material that went on.
+/proc/table_frame()
+	return construction(start(STAGE_TABLE_FRAME), \
+		stage(STAGE_TABLE_PLATED, stack(/obj/item/stack/material, 1), wait(2 SECONDS), \
+			when(req(TYPE_PROC_REF(/obj/structure/table, plating_open))), \
+			undo = list(tool(TOOL_WRENCH), wait(2 SECONDS), \
+				needs(req(TYPE_PROC_REF(/obj/structure/table, carpet_off), because = MSG(table/carpet_on)), \
+					req(TYPE_PROC_REF(/obj/structure/table, plating_removable), because = MSG(table/plating_stuck))))), \
+		stage(STAGE_TABLE_REINFORCED, stack(/obj/item/stack/material, 1), gesture(GESTURE_DRAG), wait(2 SECONDS), \
+			when(req(TYPE_PROC_REF(/obj/structure/table, reinforcement_open))), \
+			needs(req(TYPE_PROC_REF(/obj/structure/table, standing_up), because = MSG(table/put_back_first))), \
+			undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS), \
+				needs(req(TYPE_PROC_REF(/obj/structure/table, reinforcement_removable), because = MSG(table/reinforcement_stuck))))), \
+		dismantle(tool(TOOL_WRENCH), wait(2 SECONDS), becomes(/obj/item/stack/material/steel)))
+
+// ---- the layers ----
+
+/// The material the table is plated with (a shared definition, never cleared), or null for a bare frame.
+/obj/structure/table/proc/material() as /datum/material
+	return built_material(src, STAGE_TABLE_PLATED)
+
+/// The material the table is reinforced with, or null.
+/obj/structure/table/proc/reinforced() as /datum/material
+	return built_material(src, STAGE_TABLE_REINFORCED)
+
+/// The ledger entry of a sheet of `M` put on by hand: what taking the layer off gives back.
+/proc/table_sheet_ledger(datum/material/M)
+	if(!M)
+		return list()
+	return list("material" = M, "rows" = M.stack_type ? list(list("res" = RES_STACK, "n" = 1, "type" = M.stack_type, "material" = M)) : list())
+
+/**
+ * Builds the table as it stands with `plating` and `reinforcement` (materials; null for none) without anyone building it: a preset at map load, a
+ * cultified table, a dimension theme. The graph is put at the frame and then walked up with a ledger of one sheet of each material, so the layers come
+ * off and give the sheet back whoever put them on. Does not redraw (the caller does).
+ */
+/obj/structure/table/proc/set_layers(datum/material/plating, datum/material/reinforcement)
+	graph_place(src, STAGE_TABLE_FRAME)
+	if(plating)
+		graph_advance(src, STAGE_TABLE_PLATED, null, table_sheet_ledger(plating))
+		if(reinforcement)
+			graph_advance(src, STAGE_TABLE_REINFORCED, null, table_sheet_ledger(reinforcement))
+
+/// Redraws and renames the table and its neighbours, and sets its strength for what it is made of now.
+/obj/structure/table/proc/refresh_layers()
+	update_connections(TRUE)
+	update_icon()
+	for(var/obj/structure/table/T in oview(src, 1))
+		T.update_icon()
+	update_desc()
+	update_material()
+
+/// A layer went on or came off (the build ladder's hook).
+/obj/structure/table/proc/layers_changed(datum/act/notice/A)
+	refresh_layers()
+
+/// The conditions of the ladder. Plating is open to a bare table that can be plated; reinforcing to a kind that can be (the stage itself says plated).
+/obj/structure/table/proc/plating_open(datum/act/A)
+	return can_plate
+
+/obj/structure/table/proc/reinforcement_open(datum/act/A)
+	return can_reinforce
+
+/obj/structure/table/proc/standing_up(datum/act/A)
+	return flipped != 1
+
+/// Taking the plating or the reinforcement off needs a sheet to give back.
+/obj/structure/table/proc/plating_removable(datum/act/A)
+	var/datum/material/M = material()
+	return !!M?.stack_type
+
+/obj/structure/table/proc/carpet_off(datum/act/A)
+	return !carpeted
+
+/obj/structure/table/proc/reinforcement_removable(datum/act/A)
+	var/datum/material/M = reinforced()
+	return !!M?.stack_type
+
+/obj/structure/table/proc/dismantle_allowed(datum/act/A)
+	return can_dismantle
+
+/// The table has a surface to put things on: a plated one, or a kind that never is.
+/obj/structure/table/proc/has_surface(datum/act/A)
+	return !can_plate || !!material()
+
+/// The strength of the table follows what it is made of.
 /obj/structure/table/proc/update_material()
 	var/old_max = max_integrity
 	if(!material())
@@ -44,6 +206,48 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 	// Preserve absolute damage accrued so far when the max changes (mirrors the old
 	// `health += maxhealth - old_maxhealth` behaviour).
 	update_integrity(get_integrity() + (max_integrity - old_max))
+
+/obj/structure/table/proc/update_desc()
+	if(material())
+		name = "[material().display_name] table"
+	else
+		name = "table frame"
+
+	if(reinforced())
+		name = "reinforced [name]"
+		desc = "[initial(desc)] This one seems to be reinforced with [reinforced().display_name]."
+	else
+		desc = initial(desc)
+
+// ---- the carpet and the repair ----
+
+/obj/structure/table/proc/can_carpet(datum/act/A)
+	return !carpeted && !!material()
+
+/obj/structure/table/proc/carpet_laid(datum/act/op/A)
+	var/obj/item/stack/tile/carpet/C = A.held
+	carpeted_type = C.type
+	set_carpeted(TRUE)
+	update_icon()
+	return OP_OK
+
+/obj/structure/table/proc/carpet_lifted(datum/act/op/A)
+	new carpeted_type(loc)
+	set_carpeted(FALSE)
+	update_icon()
+	return OP_OK
+
+/obj/structure/table/proc/is_damaged(datum/act/A)
+	return get_integrity() < max_integrity // ALLOW(reads): a table's strength is read when a repair is tried; the click asks again before anything runs
+
+/obj/structure/table/proc/repaired(datum/act/op/A)
+	repair_damage(max_integrity / 5)
+	return OP_OK
+
+// ---- the strength of the table ----
+
+/obj/structure/table/examine_icon()
+	return icon(icon=initial(icon), icon_state=initial(icon_state)) //Basically the map preview version
 
 /obj/structure/table/take_damage(damage_amount, damage_type = BRUTE, damage_flag, sound_effect = TRUE, attack_dir, armour_penetration = 0)
 	// If the table is made of a brittle material, and is *not* reinforced with a non-brittle material, damage is multiplied by TABLE_BRITTLE_MATERIAL_MULTIPLIER
@@ -63,6 +267,10 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 
 /obj/structure/table/Initialize(mapload)
 	. = ..()
+
+	// A preset starts built with its layers.
+	if(plating_id)
+		set_layers(get_material_by_name(plating_id), reinforcement_id ? get_material_by_name(reinforcement_id) : null)
 
 	// One table per turf.
 	for(var/obj/structure/table/T in contents_of(loc))
@@ -84,92 +292,23 @@ DECLARE_SHARED_CACHE_EX(table_icon, GLOBAL_PROC_REF(build_table_icon), SC_NEVER,
 
 // neighbouring tables re-smooth without it.
 /obj/structure/table/on_destroy(force)
-	material_static = null
-	reinforced_static = null
 	update_connections(1) // Update tables around us to ignore us (material=null forces no connections)
 	for(var/obj/structure/table/T in oview(src, 1))
 		T.update_icon()
 	..()
 
-/// Old attackby (tables.dm): carpet or plate the table.
-/obj/structure/table/proc/interaction_surface(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!carpeted && material() && istype(W, /obj/item/stack/tile/carpet))
-		var/obj/item/stack/tile/carpet/C = W
-		if(C.use(1))
-			act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " adds %I% to %T%.")), item = C)
-			carpeted = 1
-			carpeted_type = W.type
-			update_icon()
-			return 1
-		else
-			to_chat(user, span_warning("You don't have enough carpet!"))
-
-	if(!material() && can_plate && istype(W, /obj/item/stack/material))
-		common_material_add(W, user, "plat", PROC_REF(plating_done))
-		return 1
-
-	return FALSE
-
-/obj/structure/table/screwdriver_act(mob/user, obj/item/tool)
-	if(!reinforced())
-		return ITEM_INTERACT_BLOCKING
-	remove_reinforced(tool, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/table/crowbar_act(mob/user, obj/item/tool)
-	if(!carpeted)
-		return ITEM_INTERACT_BLOCKING
-	act_message(user, src, MSG_SELF(span_notice("You remove the carpet from %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes the carpet from %T%.")))
-	new carpeted_type(loc)
-	carpeted = FALSE
-	update_icon()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/table/wrench_act(mob/user, obj/item/tool)
-	if(carpeted || reinforced())
-		return ITEM_INTERACT_BLOCKING
-	if(material())
-		remove_material(tool, user)
-		return ITEM_INTERACT_SUCCESS
-	dismantle(tool, user)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/table/welder_act(mob/user, obj/item/tool)
-	if(get_integrity() >= max_integrity)
-		return ITEM_INTERACT_BLOCKING
-	var/obj/item/weldingtool/welder = tool.get_welder()
-	if(!welder.welding)
-		return ITEM_INTERACT_BLOCKING
-	use_tool(user, tool, src, delay = 2 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing damage to \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user), claims = TRUE)
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/table/proc/welder_act_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You repair some damage to %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " repairs some damage to %T%.")))
-	repair_damage(max_integrity / 5)
-	return ITEM_INTERACT_SUCCESS
-
-DECLARE_INTERACTIONS(/obj/structure/table, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM("Surface", PROC_REF(interaction_surface)), \
-	INTERACT_INSERT_HOSTILE(/obj/item/grab, PROC_REF(interaction_slam), "Slam against table"), \
-	INTERACT_ITEM("Place", PROC_REF(interaction_item)), \
-	INTERACT_DRAG("Place", PROC_REF(interaction_drag)), \
-)
-
-/// Old attack_hand.
-/obj/structure/table/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(ishuman(user))
-		var/mob/living/carbon/human/X = user
-		if(istype(X.species, /datum/species/xenos))
-			src.attack_alien(user)
-			return TRUE
-	return FALSE
-
 /obj/structure/table/attack_alien(mob/user as mob)
 	act_message(user, src, others = span_danger("%U% tears apart %T%!"))
 	src.break_to_parts()
+
+/// A claw (a xenomorph's hand) tears the table apart.
+/obj/structure/table/proc/actor_is_xeno(datum/act/op/A)
+	var/mob/living/carbon/human/X = A.actor
+	return istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch that asks; the click asks again
+
+/obj/structure/table/proc/clawed_apart(datum/act/op/A)
+	attack_alien(A.actor)
+	return OP_OK
 
 /obj/structure/table/attack_generic(mob/user as mob, damage)
 	if(damage >= 10)
@@ -185,136 +324,6 @@ DECLARE_INTERACTIONS(/obj/structure/table, \
 			return 1
 	act_message(user, src, others = span_infoplain(span_bold("%U%") + " scratches at %T%!"))
 	return ..()
-
-/obj/structure/table/proc/reinforce_table(obj/item/stack/material/S, mob/user)
-	if(reinforced())
-		to_chat(user, span_warning("\The [src] is already reinforced!"))
-		return
-
-	if(!can_reinforce)
-		to_chat(user, span_warning("\The [src] cannot be reinforced!"))
-		return
-
-	if(!material())
-		to_chat(user, span_warning("Plate \the [src] before reinforcing it!"))
-		return
-
-	if(flipped)
-		to_chat(user, span_warning("Put \the [src] back in place before reinforcing it!"))
-		return
-
-	common_material_add(S, user, "reinforc", PROC_REF(reinforcing_done))
-
-/obj/structure/table/proc/plating_done(datum/material/M)
-	if(material())
-		return
-	material_static = M
-	update_connections(1)
-	update_icon()
-	update_desc()
-	update_material()
-
-/obj/structure/table/proc/reinforcing_done(datum/material/M)
-	if(reinforced())
-		return
-	reinforced_static = M
-	update_desc()
-	update_icon()
-	update_material()
-
-/obj/structure/table/proc/update_desc()
-	if(material())
-		name = "[material().display_name] table"
-	else
-		name = "table frame"
-
-	if(reinforced())
-		name = "reinforced [name]"
-		desc = "[initial(desc)] This one seems to be reinforced with [reinforced().display_name]."
-	else
-		desc = initial(desc)
-
-// Returns the material to set the table to.
-/// Plates or reinforces with `S` (a timed action); `done_proc` gets the material on completion.
-/// Verb is actually verb without 'e' or 'ing', which is added. Works for 'plate'/'plating' and 'reinforce'/'reinforcing'.
-/obj/structure/table/proc/common_material_add(obj/item/stack/material/S, mob/user, verb, done_proc)
-	var/datum/material/M = S.get_material()
-	if(!istype(M))
-		to_chat(user, span_warning("You cannot [verb]e \the [src] with \the [S]."))
-		return
-
-	if(om_busy(src))
-		return
-	to_chat(user, span_notice("You begin [verb]ing \the [src] with [M.display_name]."))
-	om_task_start(/datum/om/task/timed/table_material_add, user, src, receiver = src, S = S, "verb" = verb, done_proc = done_proc, M = M)
-
-/datum/om/task/timed/table_material_add
-	duration = 2 SECONDS
-	claims = TRUE
-	complete_proc = /obj/structure/table/proc/material_add_done
-	var/obj/item/stack/material/S
-	var/verb
-	var/done_proc
-	var/datum/material/M
-
-/obj/structure/table/proc/material_add_done(datum/om/task/timed/table_material_add/task)
-	var/obj/item/stack/material/S = task.S
-	var/mob/user = task.actor
-	var/verb = task.verb
-	var/done_proc = task.done_proc
-	var/datum/material/M = task.M
-	if(!S.use(1))
-		return
-	act_message(user, src, MSG_SELF(span_notice("You finish [verb]ing %T%.")), MSG_OTHERS(span_notice("%U% [verb]es %T% with [M.display_name].")))
-	call(src, done_proc)(M)
-
-// Returns the material to set the table to.
-/// Removes the `which` layer ("reinforced" or "material") with a timed tool job.
-/obj/structure/table/proc/common_material_remove(mob/user, datum/material/M, delay, what, type_holding, obj/item/tool, which)
-	if(!M.stack_type)
-		to_chat(user, span_warning("You are unable to remove the [what] from this [src]!"))
-		return M
-
-	if(om_busy(src)) return M
-	act_message(user, src, MSG_SELF(span_notice("You begin removing the [type_holding] holding %T%'s [M.display_name] [what] in place.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins removing the [type_holding] holding %T%'s [M.display_name] [what] in place.")))
-	use_tool(user, tool, src, delay = delay, volume = 50, receiver = src, job_type = /datum/om/task/timed/tool_job/table_layer_remove, job_params = list("material" = M, "what" = what, "which" = which))
-	return TRUE
-
-/obj/structure/table/proc/common_material_remove_tool_done(mob/user, datum/material/M, what, which)
-	act_message(user, src, MSG_SELF(span_notice("You remove the [M.display_name] [what] from %T%.")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " removes the [M.display_name] [what] from %T%.")))
-	new M.stack_type(src.loc)
-	if(which == "reinforced")
-		reinforced_static = null
-		update_desc()
-		update_icon()
-		update_material()
-		return
-	material_static = null
-	update_connections(TRUE)
-	update_icon()
-	for(var/obj/structure/table/table in oview(src, 1))
-		table.update_icon()
-	update_desc()
-	update_material()
-
-/obj/structure/table/proc/remove_reinforced(obj/item/S, mob/user)
-	common_material_remove(user, reinforced(), 40, "reinforcements", "screws", S, "reinforced")
-
-/obj/structure/table/proc/remove_material(obj/item/W, mob/user)
-	common_material_remove(user, material(), 20, "plating", "bolts", W, "material")
-
-/obj/structure/table/proc/dismantle(obj/item/W, mob/user)
-	if(om_busy(src)) return
-	act_message(user, src, MSG_SELF(span_notice("You begin dismantling %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " begins dismantling %T%.")))
-	use_tool(user, W, src, delay = 2 SECONDS, volume = 50, receiver = src, on_done = PROC_REF(dismantle_tool_done), done_args = list(user), claims = TRUE)
-	return TRUE
-
-/obj/structure/table/proc/dismantle_tool_done(mob/user)
-	act_message(user, src, MSG_SELF(span_notice("You dismantle %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " dismantles %T%.")))
-	replace_with(src, /obj/item/stack/material/steel)
-	return
 
 // Returns a list of /obj/item/material/shard objects that were created as a result of this table's breakage.
 // Used for !fun! things such as embedding shards in the faces of tableslammed people.
@@ -500,11 +509,3 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table, TYPE_PROC_REF(/atom, appearance_ov
 #undef CORNER_COUNTERCLOCKWISE
 #undef CORNER_DIAGONAL
 #undef CORNER_CLOCKWISE
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/obj/structure/table/proc/material() as /datum/material
-	return material_static
-
-/// A shared definition/flyweight (implicitly shared), never cleared.
-/obj/structure/table/proc/reinforced() as /datum/material
-	return reinforced_static

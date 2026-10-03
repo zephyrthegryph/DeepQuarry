@@ -121,11 +121,8 @@ TYPE_TABLE_DECLARE(/datum/dimension_theme, dimension_replace_objs, list( \
 
 	if(istype(object, /obj/structure/table) && material)
 		var/obj/structure/table/table = object
-		table.material_static = material
-		table.update_connections(TRUE)
-		table.update_icon()
-		table.update_desc()
-		table.update_material()
+		table.set_layers(material, table.reinforced())
+		table.refresh_layers()
 		return
 
 	if(istype(object, /obj/machinery/light))

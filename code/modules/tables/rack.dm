@@ -21,20 +21,15 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearan
 		color = material().icon_colour
 	return .
 
-/obj/structure/table/rack/holorack/dismantle(obj/item/tool/wrench/W, mob/user)
-	to_chat(user, span_warning("You cannot dismantle \the [src]."))
-	return
-
+/obj/structure/table/rack/holorack
+	can_dismantle = FALSE
 
 /obj/structure/table/rack
 	icon = 'icons/obj/objects_vr.dmi'
 
 /obj/structure/table/rack/steel
+	plating_id = MAT_STEEL
 	color = "#666666"
-
-/obj/structure/table/rack/steel/Initialize(mapload)
-	material_static = get_material_by_name(MAT_STEEL)
-	. = ..()
 
 /obj/structure/table/rack/shelf
 	name = "shelving"
@@ -42,11 +37,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearan
 	icon_state = "shelf"
 
 /obj/structure/table/rack/shelf/steel
+	plating_id = MAT_STEEL
 	color = "#666666"
-
-/obj/structure/table/rack/shelf/steel/Initialize(mapload)
-	material_static = get_material_by_name(MAT_STEEL)
-	. = ..()
 
 // SOMEONE should add cool overlay stuff to this
 /obj/structure/table/rack/gun_rack
@@ -55,36 +47,21 @@ DECLARE_APPEARANCE_PROC(/obj/structure/table/rack, TYPE_PROC_REF(/atom, appearan
 	icon_state = "gunrack"
 
 /obj/structure/table/rack/gun_rack/steel
+	plating_id = MAT_STEEL
 	color = "#666666"
 
-/obj/structure/table/rack/gun_rack/steel/Initialize(mapload)
-	material_static = get_material_by_name(MAT_STEEL)
-	. = ..()
-
 /obj/structure/table/rack/wood
+	plating_id = MAT_WOOD
 	color = "#A1662F"
-
-/obj/structure/table/rack/wood/Initialize(mapload)
-	material_static = get_material_by_name(MAT_WOOD)
-	. = ..()
 
 /obj/structure/table/rack/shelf/wood
+	plating_id = MAT_WOOD
 	color = "#A1662F"
 
-/obj/structure/table/rack/shelf/wood/Initialize(mapload)
-	material_static = get_material_by_name(MAT_WOOD)
-	. = ..()
-
 /obj/structure/table/rack/glamour
+	plating_id = MAT_GLAMOUR
 	color = "#fffbe6"
-
-/obj/structure/table/rack/glamour/Initialize(mapload)
-	material_static = get_material_by_name(MAT_GLAMOUR)
-	. = ..()
 
 /obj/structure/table/rack/shelf/glamour
+	plating_id = MAT_GLAMOUR
 	color = "#fffbe6"
-
-/obj/structure/table/rack/shelf/glamour/Initialize(mapload)
-	material_static = get_material_by_name(MAT_GLAMOUR)
-	. = ..()

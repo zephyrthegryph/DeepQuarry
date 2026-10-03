@@ -526,6 +526,12 @@
 	return list(STAGE_APC_WIRED, "apc", "wired")
 /datum/stage_def/apc_secured/spec()
 	return list(STAGE_APC_SECURED, "apc", "secured")
+/datum/stage_def/table_frame/spec()
+	return list(STAGE_TABLE_FRAME, "table", "frame")
+/datum/stage_def/table_plated/spec()
+	return list(STAGE_TABLE_PLATED, "table", "plated")
+/datum/stage_def/table_reinforced/spec()
+	return list(STAGE_TABLE_REINFORCED, "table", "reinforced")
 /datum/source_def/status/spec()
 	return list(SRC_STATUS, "status")
 /datum/source_def/vv/spec()
@@ -2792,6 +2798,49 @@
 	into += entry_line(42)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
 
+/// CAPABILITIES(/obj/structure/table) at code/modules/tables/tables.dm:76
+/obj/structure/table/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tables/tables.dm", 76, /obj/structure/table)
+	into += entry_line(77)
+	into += list(table_frame())
+	into += entry_line(78)
+	into += list(global.extend("construction.dismantle", global.when(global.req_graph_at(list(STAGE_TABLE_FRAME))), global.needs(global.req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle)))))
+	into += entry_line(79)
+	into += list(global.extend("construction.build:table_reinforced", global.priority(global.above("place_dragged"))))
+	into += entry_line(80)
+	into += list(global.op("repair", global.tool(TOOL_WELDER), global.wait(2 SECONDS), global.label("Repair"), global.when(global.req(PROC_REF(is_damaged))), global.then(PROC_REF(repaired)), global.says(MSG(table/repaired))))
+	into += entry_line(82)
+	into += list(global.op("carpet", global.stack(/obj/item/stack/tile/carpet, 1), global.wait(0), global.label("Carpet"), global.when(global.req(PROC_REF(can_carpet))), global.then(PROC_REF(carpet_laid)), global.says(MSG(table/carpeted))))
+	into += entry_line(84)
+	into += list(global.op("uncarpet", global.tool(TOOL_CROWBAR), global.wait(0), global.label("Remove carpet"), global.when(nameof(carpeted)), global.then(PROC_REF(carpet_lifted)), global.says(MSG(table/uncarpeted))))
+	into += entry_line(86)
+	into += list(global.op("flip", global.menu(), global.label("Flip table"), global.when(global.req(PROC_REF(is_flippable))), global.needs(global.req(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), global.req(PROC_REF(can_flip_away), because = MSG(table/wont_budge))), global.then(PROC_REF(flip_over)), global.says(MSG(table/flipped))))
+	into += entry_line(89)
+	into += list(global.op("put_back", global.menu(), global.label("Put table back"), global.when(global.req(PROC_REF(is_flipped_up))), global.needs(global.req(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), global.req(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))), global.then(PROC_REF(put_back)), global.says(MSG(table/put_back))))
+	into += entry_line(92)
+	into += list(global.op("slice_blade", global.item(/obj/item/melee/energy/blade), global.then(PROC_REF(sliced_apart))))
+	into += entry_line(93)
+	into += list(global.op("slice_arm_blade", global.item(/obj/item/melee/changeling/arm_blade), global.then(PROC_REF(sliced_apart))))
+	into += entry_line(94)
+	into += list(global.op("claw", global.hand(), global.when(global.req(PROC_REF(actor_is_xeno))), global.then(PROC_REF(clawed_apart))))
+	into += entry_line(95)
+	into += list(global.op("slam", global.item(/obj/item/grab), global.hostile(), global.label("Slam against table"), global.when(global.req(PROC_REF(slam_applies))), global.then(PROC_REF(slam_face))))
+	into += entry_line(96)
+	into += list(global.op("put_on", global.item(/obj/item/grab), global.label("Put on table"), global.when(global.req(PROC_REF(person_grabbed))), global.needs(global.req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), global.then(PROC_REF(put_person_on))))
+	into += entry_line(98)
+	into += list(global.op("place", global.item(/obj/item), global.label("Place"), global.priority(OP_PRIORITY_NORMAL - 5), global.needs(global.req(PROC_REF(has_surface), because = MSG(table/needs_plating)), global.req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))), global.then(PROC_REF(place_held))))
+	into += entry_line(101)
+	into += list(global.op("place_dragged", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.label("Place"), global.needs(global.req(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), global.then(PROC_REF(place_dragged))))
+	into += entry_line(103)
+	into += list(global.on_op("construction.build:table_plated", global.then(PROC_REF(layers_changed))))
+	into += entry_line(104)
+	into += list(global.on_op("construction.build:table_reinforced", global.then(PROC_REF(layers_changed))))
+	into += entry_line(105)
+	into += list(global.on_op("construction.undo:table_plated", global.then(PROC_REF(layers_changed))))
+	into += entry_line(106)
+	into += list(global.on_op("construction.undo:table_reinforced", global.then(PROC_REF(layers_changed))))
+
 /// CAPABILITIES(/obj/structure/windoor_assembly) at code/game/objects/structures/windoor_assembly.dm:84
 /obj/structure/windoor_assembly/declared_entries(list/into)
 	..(into)
@@ -3621,11 +3670,11 @@
 	into += entry_line(236)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
-/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:270
+/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:274
 /obj/p2_asker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 270, /obj/p2_asker)
-	into += entry_line(270)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 274, /obj/p2_asker)
+	into += entry_line(274)
 	into += list(global.op("ask", global.ui_act(), global.asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), global.then(PROC_REF(asked_done))))
 
 /// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:204
@@ -3642,13 +3691,13 @@
 	into += entry_line(212)
 	into += list(global.without(CAP_P2_BUNDLE))
 
-/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:250
+/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:252
 /obj/p2_dragtarget/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 250, /obj/p2_dragtarget)
-	into += entry_line(250)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 252, /obj/p2_dragtarget)
+	into += entry_line(252)
 	into += list(global.op("use", global.item(/obj/item), global.then(PROC_REF(was_used))))
-	into += entry_line(250)
+	into += entry_line(252)
 	into += list(global.op("drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(was_dragged))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91
@@ -3688,24 +3737,24 @@
 	into += entry_line(27)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
 
-/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:287
+/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:291
 /obj/p2_windowed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 287, /obj/p2_windowed)
-	into += entry_line(287)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 291, /obj/p2_windowed)
+	into += entry_line(291)
 	into += list(global.interface("P2First"))
-	into += entry_line(287)
+	into += entry_line(291)
 	into += list(global.op("p2_window_press", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
-/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:296
+/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:300
 /obj/p2_windowed/second/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 296, /obj/p2_windowed/second)
-	into += entry_line(296)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 300, /obj/p2_windowed/second)
+	into += entry_line(300)
 	into += list(global.without("ui_open"))
-	into += entry_line(296)
+	into += entry_line(300)
 	into += list(global.interface("P2Second"))
-	into += entry_line(296)
+	into += entry_line(300)
 	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
 /// CAPABILITIES(/obj/p2s_chain) at code/tests/engine/p2_storage_fixtures.dm:12
