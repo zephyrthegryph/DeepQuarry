@@ -1423,8 +1423,9 @@ CAPABILITIES(/obj/machinery/light/flamp, \
 MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 
 /obj/machinery/light/flamp/proc/shade_on(datum/act/op/A)
+	if(!consume(A.held, A.actor))
+		return OP_REFUSED
 	set_lamp_shade(1)
-	consume(A.held, A.actor)
 	return OP_OK
 
 /obj/machinery/light/flamp/proc/shade_off(datum/act/op/A)
