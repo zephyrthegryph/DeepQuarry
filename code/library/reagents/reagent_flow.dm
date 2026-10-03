@@ -125,7 +125,12 @@
 		if(REAGENT_FLOW_SPLASH)
 			var/atom/target = RR.sink
 			moved = min(RR.amount, source.reagents.total_volume)
+			var/volume_before = source.reagents.total_volume
 			source.reagents.splash(target, moved)
+			// splash() may leave part of what it was given in the source: the amount spent is what was reserved, exactly
+			var/left_over = source.reagents.total_volume - (volume_before - moved)
+			if(left_over > 0)
+				source.reagents.remove_any(left_over)
 	return moved > 0 ? OP_OK : OP_FAILED
 
 /datum/resource/reagents/release(datum/reservation/R)

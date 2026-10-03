@@ -46,7 +46,7 @@
 	TEST_ASSERT_EQUAL(poured.outcome, ACT_COMMITTED, "which commits")
 	TEST_ASSERT_EQUAL(source.reagents.total_volume, 15, "the source gave exactly the default transfer amount (5)")
 	TEST_ASSERT_EQUAL(sink.reagents.total_volume, 5, "and the sink took exactly it")
-	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_RESERVE), 2, "two reservations were made: the source's volume and the sink's capacity")
+	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_RESERVE), 1, "one reservation is the engine's to track: the source's volume (it carries the sink's capacity hold)")
 	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_COMMIT), 1, "committed together by the one reservation the engine tracks")
 	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_RELEASE), 0, "and nothing was released")
 	TEST_ASSERT_EQUAL(reagents_reserved(source, FALSE) + reagents_reserved(sink, TRUE), 0, "no hold outlives the op")
@@ -302,6 +302,9 @@
 		if(other != stack_item)
 			pieces += other.amount
 	TEST_ASSERT_EQUAL(pieces, 3, "and exactly the split-off units are a new stack")
+	for(var/obj/item/lib_fixture/sheets/leftover in get_turf(stack_item))
+		if(leftover != stack_item)
+			qdel(leftover)
 	test_menu(M, stack_item, "stackable.split")
 	var/datum/op_result/too_many = test_answer(M, 5)
 	TEST_ASSERT_EQUAL(too_many?.outcome, ACT_REFUSED, "splitting off all of it is refused")
@@ -327,6 +330,8 @@
 	for(var/obj/item/e0_fixture/sheets/S in H)
 		in_hopper += S.amount
 	TEST_ASSERT_EQUAL(in_hopper, E0_SHEETS_PER_LOAD, "and the hopper holds the split, exactly n units")
+	for(var/obj/item/e0_fixture/sheets/loaded in H)
+		qdel(loaded)
 
 // ---------------------------------------------------------------------------------------------------------------------
 // trait.
@@ -370,7 +375,7 @@
 	var/obj/lib_fixture/dummy/target = allocate(/obj/lib_fixture/dummy)
 	var/before = target.get_integrity()
 	var/datum/op_result/by_ai = perform_op(biter, target, "natural_weapon.attack")
-	TEST_ASSERT_EQUAL(by_ai?.outcome, ACT_COMMITTED, "a mob with no hands bites through the op (AI origin)")
+	TEST_ASSERT_EQUAL(by_ai?.outcome, ACT_COMMITTED, "a mob with no hands bites through the op (AI origin): [reason_text(by_ai?.reason)]")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 10, "for exactly the declared damage")
 	var/datum/op_result/cooling = test_menu(biter, target, "natural_weapon.attack")
 	TEST_ASSERT_EQUAL(cooling?.outcome, ACT_REFUSED, "the cooldown is shared by the menu pick: it refuses at once")

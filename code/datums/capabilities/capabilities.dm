@@ -244,6 +244,8 @@ GLOBAL_LIST_EMPTY(caps_interned)
 		. |= TYPE_DERIVES_TYPE_VERBS
 	if(derived_table_of(A))
 		. |= TYPE_DERIVES_DEPS
+	if(look_table_has_layers(table_of(A)))
+		. |= TYPE_DERIVES_LOOK // look_layer() entries draw through look_layers_draw(): the type has a look the refresh engine keeps up
 	GLOB.type_derives_cache[A.type] = .
 
 /// A refresh of A just ran draw() and hidden_verbs(): record what its type derives (first time only).
