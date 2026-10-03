@@ -155,7 +155,7 @@ CAPABILITIES(/obj/structure/windoor_assembly, \
 		new /obj/item/stack/material/glass/reinforced(get_turf(src), 2)
 	else
 		new /obj/item/stack/material/glass(get_turf(src), 2)
-	qdel(src)
+	consume(src, A.actor)
 	return OP_OK
 
 /// The crowbar pries the windoor into the frame: the door takes the assembly's place, open, and closes at once.

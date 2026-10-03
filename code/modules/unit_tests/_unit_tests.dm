@@ -558,6 +558,8 @@
 #include "interim_cell_gradual_charge.dm"
 #include "interim_picnic_blanket_actor.dm"
 #include "interim_spell_explicit_caster.dm"
+#include "interim_girder_windoor_recovery.dm"
+#include "interim_emitter_emag_lock.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

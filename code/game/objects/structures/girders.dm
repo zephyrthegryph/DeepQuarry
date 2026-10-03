@@ -314,7 +314,7 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 
 /obj/structure/girder/proc/dismantle()
 	girder_material.place_dismantled_product(get_turf(src), 2)
-	qdel(src)
+	consume(src)
 
 /// Old attack_hand: a Hulk smashes the girder apart.
 /datum/interaction/entry_hand/girder_hulk_smash
