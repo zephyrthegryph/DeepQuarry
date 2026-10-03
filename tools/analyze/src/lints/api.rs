@@ -191,8 +191,8 @@ fn fw_facts(f: &SourceFile) -> FwFacts {
 fn merge_index(facts: &[FwFacts]) -> FwlIndex {
     let mut fields: Vec<(String, Vec<String>)> = Vec::new();
     let mut at: HashMap<String, usize> = HashMap::new();
-    let mut members: HashMap<String, HashMap<String, String>> = HashMap::new();
-    let mut globals: HashMap<String, String> = HashMap::new();
+    let mut members: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
+    let mut globals: BTreeMap<String, String> = BTreeMap::new();
     for fa in facts {
         for (name, types) in &fa.fields {
             match at.get(name) {

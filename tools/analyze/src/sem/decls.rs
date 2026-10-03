@@ -112,6 +112,7 @@ pub const SOURCE_CALLS: &[&str] = &["hold", "hold_until", "hold_override", "gran
 impl Decls {
     pub fn get(tree: &Tree) -> Arc<Decls> {
         tree.memo("sem/decls", || {
+            let t_decls = std::time::Instant::now();
             let files = tree.select(&CODE_DM);
             // Per file, cached on disk by content: a one-file edit rescans one file.
             let stored: Vec<Stored> = crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
@@ -155,6 +156,9 @@ impl Decls {
             }
             for (t, v) in found {
                 d.relations.entry(t).or_default().insert(v);
+            }
+            if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+                eprintln!("analyze: Decls built in {:.0?} ({} markers, {} defines)", t_decls.elapsed(), d.markers.len(), d.defines.len());
             }
             d
         })
