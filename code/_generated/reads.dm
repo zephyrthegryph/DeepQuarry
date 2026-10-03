@@ -2,11 +2,6 @@
 // What each type's should_run / draw / hidden_verbs / tgui_data / push_to_rust / derive_<x> read, as implicit
 // reads for READERS() (code/datums/reactions). CI fails when this file is stale.
 
-/area/generated_reads()
-	. = ..()
-	. += derive(nameof(lights_emergency_off), nameof(apc))
-	. += derive(nameof(lights_nightshift), nameof(apc))
-
 /datum/round_status_panel/generated_reads()
 	. = ..()
 	. += ui_from(nameof(shown_antag_blocks))
@@ -60,6 +55,10 @@
 /mob/living/simple_mob/vore/demonAI/generated_reads()
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
+
+/obj/item/light/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(base_state), nameof(status))
 
 /obj/item/reagent_containers/cooking_container/generated_reads()
 	. = ..()
@@ -183,8 +182,11 @@
 
 /obj/machinery/light/generated_reads()
 	. = ..()
-	. += derive(nameof(area_emergency_off), nameof(power_area))
-	. += derive(nameof(nightshift_enabled), nameof(nightshift_allowed), nameof(power_area))
+	. += drawn_from(nameof(current_alert), nameof(shows_alerts), nameof(status))
+
+/obj/machinery/light/flamp/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(lamp_shade), nameof(status))
 
 /obj/machinery/power/apc/generated_reads()
 	. = ..()
