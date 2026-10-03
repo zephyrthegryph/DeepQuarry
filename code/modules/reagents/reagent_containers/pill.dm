@@ -22,103 +22,17 @@
 	if(!icon_state)
 		icon_state = "[base_state][rand(1, 4)]" //preset pills only use colour changing or unique icons
 
-/obj/item/reagent_containers/pill/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!M.consume_liquid_belly)
-		if(liquid_belly_check())
-			to_chat(user, span_infoplain("[user == M ? "You can't" : "\The [M] can't"] consume that, it contains something produced from a belly!"))
-			return ITEM_INTERACT_FAILURE
-	if(M == user)
-		if(ishuman(M))
-			var/mob/living/carbon/human/H = M
-			if(!H.check_has_mouth())
-				to_chat(user, "Where do you intend to put \the [src]? You don't have a mouth!")
-				return ITEM_INTERACT_FAILURE
-			var/obj/item/blocked = H.check_mouth_coverage()
-			if(blocked)
-				balloon_alert(user, "\the [blocked] is in the way!")
-				return ITEM_INTERACT_FAILURE
-
-			balloon_alert(user, "swallowed \the [src]")
-			M.drop_from_inventory(src) //icon update
-			if(reagents.total_volume)
-				reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
-			consume(src, user)
-			return ITEM_INTERACT_SUCCESS
-
-	else if(ishuman(M))
-
-		var/mob/living/carbon/human/H = M
-		if(!H.check_has_mouth())
-			balloon_alert(user, "\the [H] doesn't have a mouth.")
-			return ITEM_INTERACT_FAILURE
-		var/obj/item/blocked = H.check_mouth_coverage()
-		if(blocked)
-			balloon_alert(user, "\the [blocked] is in the way!")
-			return ITEM_INTERACT_FAILURE
-
-		user.balloon_alert_visible("[user] attempts to force [M] to swallow \the [src].")
-
-		user.setClickCooldown(user.get_attack_speed(src))
-		om_task_timed(user, 3 SECONDS, M, src, PROC_REF(force_swallow_done), list(user, M))
-		return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/obj/item/reagent_containers/pill/proc/force_swallow_done(mob/living/user, mob/living/M)
-	user.drop_from_inventory(src) //icon update
-	user.balloon_alert_visible("[user] forces [M] to swallow \the [src].")
-
-	var/contained = reagentlist()
-	add_attack_logs(user,M,"Fed a pill containing [contained]")
-
-	if(reagents && reagents.total_volume)
-		reagents.trans_to_mob(M, reagents.total_volume, CHEM_INGEST)
-	consume(src, user)
-
-/obj/item/reagent_containers/pill/afterattack(obj/target, mob/user, proximity)
-	if(!proximity) return
-
-	if(target.is_open_container() && target.reagents)
-		if(!target.reagents.total_volume)
-			balloon_alert(user, "[target] is empty.")
-			return
-		user.balloon_alert_visible("[user] puts something in \the [target]", "[target] dissolves in \the [src]", 2)
-
-		add_attack_logs(user,target,"Spiked [target.name] with a pill containing [reagentlist()]")
-
-		reagents.trans_to(target, reagents.total_volume, user = user)
-		/* for(var/mob/O in viewers(2, user)) // balloon_alert_visible handles this
-			O.show_message(span_warning("[user] puts something in \the [target]."), 1)
-		*/
-		consume(src, user)
-
-	return
-
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/pill, INTERACT_ITEM(null, PROC_REF(interaction_item)))
-
-/// Old attackby.
-/obj/item/reagent_containers/pill/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(is_sharp(W))
-		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
-		user.balloon_alert_visible("[user] cuts up [src] with [W]!", "cut up \the [src] with [W]")
-		play_sfx(src.loc, SFX_EFFECTS_CHOP)
-
-		if(reagents)
-			reagents.trans_to_obj(J, reagents.total_volume, user = user)
-		J.get_appearance()
-		consume(src, user)
-
-	if(istype(W, /obj/item/card/id))
-		var/obj/item/reagent_containers/powder/J = new /obj/item/reagent_containers/powder(src.loc)
-		user.balloon_alert_visible("[user] clumsily cuts up [src] with [W]!", "You clumsily cut up \the [src] with [W]")
-		play_sfx(src.loc, SFX_EFFECTS_CHOP)
-
-		if(reagents)
-			reagents.trans_to_obj(J, reagents.total_volume, user = user)
-		J.get_appearance()
-		consume(src, user)
-
-	return FALSE
+// A pill is a sealed holder of its volume that is taken whole and used up (dose(), code/library/reagents/dose.dm): swallowed at once by yourself, forced down
+// somebody else's throat in three seconds, dissolved in an open container. A sharp thing or an ID card cuts it up into a powder.
+CAPABILITIES(/obj/item/reagent_containers/pill, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		sealed = TRUE, \
+		settable = FALSE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this)), \
+	dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder))
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pills. END

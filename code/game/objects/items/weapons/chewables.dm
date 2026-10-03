@@ -178,20 +178,21 @@ DECLARE_REAGENTS_TINTED(/obj/item/clothing/mask/chewable/tobacco/nico, null, lis
 		closed_state = "[initial(icon_state)]"
 	. = ..()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/box/fancy/chewables/tobacco/nico/appearance_overlays()
-	. = list()
+TRACKED(/obj/item/storage/box/fancy/chewables/tobacco/nico, open)
+
+/obj/item/storage/box/fancy/chewables/tobacco/nico/draw(datum/look/look)
+	. = ..()
 	if(open)
-		icon_state = open_state
-		if(contents_count(src) >= 1)
-			. += "chew_nico[contents.len]"
+		look.state(open_state)
+		if(held_count() >= 1)
+			look.overlay("chew_nico[held_count()]")
 	else
-		icon_state = closed_state
+		look.state(closed_state)
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/open(mob/user as mob)
 	if(open)
 		return
-	open = TRUE
+	set_open(TRUE)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
@@ -199,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/box/fancy/chewables/tobacco/nico, TYPE
 	..()
 
 /obj/item/storage/box/fancy/chewables/tobacco/nico/close(mob/user as mob)
-	open = FALSE
+	set_open(FALSE)
 	if(contents_count(src) == 0)
 		icon_state = "[initial(icon_state)]_empty"
 	else
@@ -248,8 +249,11 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	foldable = null
 	trash = /obj/item/trash/gumpack
 
-TYPE_TABLE(/obj/item/storage/box/gum, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/gum, \
-					/obj/item/trash/spitgum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/gum, \
+	configure(storage(accepts = list( \
+		/obj/item/clothing/mask/chewable/candy/gum, \
+		/obj/item/trash/spitgum))))
 
 /obj/item/clothing/mask/chewable/candy/lolli
 	name = "lollipop"
@@ -354,7 +358,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	foldable = null
 	trash = /obj/item/trash/pocky
 
-TYPE_TABLE(/obj/item/storage/box/pocky, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/chewable/candy/pocky)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/pocky, \
+	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
 
 /obj/item/clothing/mask/chewable/candy/pocky
 	name = "chocolate pocky"

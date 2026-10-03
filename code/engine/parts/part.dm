@@ -335,10 +335,12 @@
 	var/speed = op_var(A.held, "tool_speed")
 	return (isnum(speed) && speed > 0 && A.binding?.bind_kind == BIND_TOOL) ? t / speed : t
 
-/// asks(/datum/request/x, field = v..., step =, resume =, keeps =): a workflow step. DM cannot carry free named arguments through one
+/// asks(/datum/request/x, field = v..., step =, resume =, keeps =, when =): a workflow step. DM cannot carry free named arguments through one
 /// proc, so the request's fields go in `fields` as a list(name = value) the call names (asks(/datum/prompt/text/rename, fields = list("a" = 1))).
-/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT)
-	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps))
+/// `when` (a condition: a var, a stat, a tree, or a PROC_REF x(datum/act/op/A)) is read when the step is reached: the step is skipped, with no
+/// prompt, while it does not hold (a PIN is asked only of a card that has one). A skipped step leaves A.answer as it was.
+/proc/asks(request_type, list/fields = null, step = null, resume = CAPTURE, keeps = WAIT_KEEPS_DEFAULT, when = null)
+	return part_make(/datum/entry/part/asks, list("type" = request_type, "fields" = fields, "step" = step, "resume" = resume, "keeps" = keeps, "when" = when))
 
 /datum/entry/part/asks
 	part_name = "asks"
@@ -526,6 +528,15 @@
 	part_name = "says"
 	stages = PART_STAGE_DO
 
+/// begins(msg_type | PROC_REF(x), others =, blind =): the message the actor and onlookers get when the op starts its first wait (the one who begins to
+/// inject someone is seen to), where says() is what they get when it commits. Like says(), the msg may be a proc that answers the message type.
+/proc/begins(msg_type, others = null, blind = null)
+	return part_make(/datum/entry/part/begins, list("msg" = msg_type, "others" = others, "blind" = blind))
+
+/datum/entry/part/begins
+	part_name = "begins"
+	stages = PART_STAGE_WAIT
+
 /// plays(SFX): the sound on commit.
 /proc/plays(sfx)
 	return part_make(/datum/entry/part/plays, list("sfx" = sfx))
@@ -565,6 +576,14 @@
 /datum/entry/part/delayed
 	part_name = "delayed"
 	stages = PART_STAGE_DO
+
+/// silent_wait(): the op's wait() draws no progress bar (an op whose wait is not a visible action). Without it a timed wait shows the actor a bar and onlookers a cog.
+/proc/silent_wait()
+	return part_make(/datum/entry/part/silent_wait)
+
+/datum/entry/part/silent_wait
+	part_name = "silent_wait"
+	stages = PART_STAGE_WAIT
 
 /// quiet(): no op_done notice.
 /proc/quiet()

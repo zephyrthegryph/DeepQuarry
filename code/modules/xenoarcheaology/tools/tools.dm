@@ -16,7 +16,9 @@
 	storage_slots = 50
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
 
-TYPE_TABLE(/obj/item/storage/bag/fossils, hold_spec, list(HOLD_ONLY(list(/obj/item/fossil)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bag/fossils, \
+	configure(storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"

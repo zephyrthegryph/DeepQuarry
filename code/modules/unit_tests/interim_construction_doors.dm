@@ -213,31 +213,43 @@
 	girder.displace()
 	TEST_ASSERT_EQUAL(dislodge.why_not(actor, girder, crowbar), "it has changed", "A stale dislodging interaction must reject the changed girder state")
 
-/// Run the real door's declared emag and animation timers on an isolated deterministic clock.
-/datum/unit_test/om/interim_door_emag_reaction/run_om(list/made)
-	var/obj/machinery/door/door = allocate(/obj/machinery/door)
-	made += door
+/// A cryptographic sequencer on the real door: the door sparks, gives way after its delay and stays open; an open or an unpowered door takes no charge.
+/// Runs on the kernel's injected clock, through the input a player's click is.
+/datum/unit_test/interim_door_emag_reaction/Run()
+	test_driver_begin()
+	emag_reaction()
+	test_driver_end()
+
+/datum/unit_test/interim_door_emag_reaction/proc/emag_reaction()
+	var/turf/T = run_loc_floor_bottom_left
+	var/obj/machinery/door/door = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 2, T.z))
+	door.autoclose = FALSE
 	door.set_stat(0)
+	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, locate(T.x + 3, T.y + 2, T.z))
+	var/obj/item/card/emag/emag = allocate(/obj/item/card/emag, actor.loc)
+	actor.put_in_active_hand(emag)
 	TEST_ASSERT(door.density && door.operable(), "Fixture door must be closed and operable")
-	var/original_timers = om_timer_count(door)
-	TEST_ASSERT_EQUAL(emag_target(door, 1), 1, "A closed operable door must consume one emag use")
-	TEST_ASSERT_EQUAL(om_timer_count(door), original_timers + 1, "Successful emag must schedule its delayed reaction")
-	TEST_ASSERT(!door.emagged, "Door declaration is repeatable and must not set the gated emag field")
+	var/uses = emag.uses
+	test_click(actor, door, emag)
+	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "A closed operable door must consume one emag use")
 	TEST_ASSERT(door.density, "Emag must retain density until its delayed opening")
-	scheduler_advance(0.7)
+	test_time(0.7 SECONDS)
 	TEST_ASSERT_EQUAL(door.operating, -1, "The emag reaction must disable the door while opening begins")
-	scheduler_advance(1.2)
+	test_time(1.2 SECONDS)
 	TEST_ASSERT(!door.density, "The real delayed emag reaction must finish opening the door")
 	TEST_ASSERT(!door.opacity, "The opened door must no longer block sight")
-	var/open_timers = om_timer_count(door)
-	TEST_ASSERT_EQUAL(emag_target(door, 1), 0, "An already open door must consume no emag uses")
-	TEST_ASSERT_EQUAL(om_timer_count(door), open_timers, "Open-door refusal must schedule no reaction")
-	var/obj/machinery/door/unpowered = allocate(/obj/machinery/door)
-	made += unpowered
+	actor.next_click = 0
+	test_click(actor, door, emag)
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "An already open door must consume no emag uses")
+	var/obj/machinery/door/unpowered = allocate(/obj/machinery/door, locate(T.x + 2, T.y + 3, T.z))
+	unpowered.autoclose = FALSE
 	unpowered.set_stat(NOPOWER)
-	var/unpowered_timers = om_timer_count(unpowered)
-	TEST_ASSERT_EQUAL(emag_target(unpowered, 1), 0, "A closed unpowered door must consume no emag uses")
-	TEST_ASSERT_EQUAL(om_timer_count(unpowered), unpowered_timers, "Unpowered-door refusal must schedule no reaction")
+	actor.forceMove(locate(T.x + 3, T.y + 3, T.z))
+	actor.next_click = 0
+	test_click(actor, unpowered, emag)
+	test_time(2 SECONDS)
+	TEST_ASSERT_EQUAL(emag.uses, uses - 1, "A closed unpowered door must consume no emag uses")
 	TEST_ASSERT(unpowered.density, "Unpowered-door refusal must leave the door closed")
 
 /// Native clients cannot be created by unit tests. Suppress ticket's client-bound constructor;

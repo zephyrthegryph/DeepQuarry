@@ -16,6 +16,8 @@
 /// Mode of a flow: the reagents are swallowed by the target mob (what a drink or a feeding does): no capacity is reserved, and they go where a mouth
 /// sends them (the ingested holder, with the taste).
 #define REAGENT_FLOW_INGEST 3
+/// Mode of a flow: the reagents go on the target mob's skin (a patch): no capacity is reserved.
+#define REAGENT_FLOW_TOUCH 6
 
 /// A reservation of reagents: the source side carries the sink's capacity reservation as its peer, so the one the engine tracks ends both.
 /datum/reservation/reagents
@@ -133,6 +135,11 @@
 			if(QDELETED(eater))
 				return OP_FAILED
 			moved = source.reagents.trans_to_mob(eater, RR.amount, CHEM_INGEST) || 0
+		if(REAGENT_FLOW_TOUCH)
+			var/mob/wearer = RR.sink
+			if(QDELETED(wearer))
+				return OP_FAILED
+			moved = source.reagents.trans_to_mob(wearer, RR.amount, CHEM_TOUCH) || 0
 		if(REAGENT_FLOW_SPLASH)
 			moved = reagent_splash_exactly(source, RR.sink, RR.amount)
 		if(REAGENT_FLOW_SPRAY)
@@ -181,6 +188,18 @@
 	var/atom/subject = op_subject(A, src.args["of"])
 	var/volume = subject?.reagents ? subject.reagents.total_volume : 0
 	return src.args["more"] ? volume > src.args["units"] : volume >= src.args["units"]
+
+/// req_reagent_room(of =, because =, id =): the holder of the subject (the target by default) has free space in it.
+/proc/req_reagent_room(of = ON_TARGET, because = null, id = null)
+	return part_make(/datum/entry/part/req/reagent_room, list("because" = because, "of" = of, "id" = id))
+
+/datum/entry/part/req/reagent_room
+	part_name = "req_reagent_room"
+	default_reason = /datum/msg/reagent_container/full
+
+/datum/entry/part/req/reagent_room/holds(datum/act/op/A)
+	var/atom/subject = op_subject(A, src.args["of"])
+	return !!subject?.reagents && subject.reagents.get_free_space() > 0
 
 /// How much one transfer from `thing` moves by its own say: what its reagent_container() says it was set to, else the setting of an old-style
 /// container or tank (atom/legacy_transfer_amount()); null when it has none.

@@ -50,7 +50,12 @@
 	icon_state = "medbriefcase"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nerd_pack_med, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med, \
+	configure(storage(accepts = list( \
+		/obj/item/gun/projectile/cell_loaded/medical, \
+		/obj/item/ammo_magazine/cell_mag/medical, \
+		/obj/item/ammo_casing/microbattery/medical))))
 
 /obj/item/storage/secure/briefcase/nerd_pack_med/Initialize(mapload)
 	. = ..()
@@ -66,7 +71,12 @@ TYPE_TABLE(/obj/item/storage/secure/briefcase/nerd_pack_med, hold_spec, list(HOL
 	icon_state = "medbriefcase"
 	w_class = ITEMSIZE_NORMAL
 
-TYPE_TABLE(/obj/item/storage/secure/briefcase/nerd_pack_cmo, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/cell_loaded/medical,/obj/item/ammo_magazine/cell_mag/medical,/obj/item/ammo_casing/microbattery/medical)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo, \
+	configure(storage(accepts = list( \
+		/obj/item/gun/projectile/cell_loaded/medical, \
+		/obj/item/ammo_magazine/cell_mag/medical, \
+		/obj/item/ammo_casing/microbattery/medical))))
 
 /obj/item/storage/secure/briefcase/nerd_pack_cmo/Initialize(mapload)
 	. = ..()

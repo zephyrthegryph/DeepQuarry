@@ -35,6 +35,14 @@ REGISTRY_DECLARE_CONDITIONAL(dq_forms_cond, REGISTRY_DQ_FORMS_COND)
 /obj/item/dq_forms_holder/empty
 	part_type = null
 
+/// A test APC that starts no cell and keeps out of its area's power and network (no terminal, no area registration), so a test
+/// can allocate one anywhere and take it back whole.
+/obj/machinery/power/apc/dx_test
+	cell_type = null
+
+/obj/machinery/power/apc/dx_test/init()
+	return
+
 /// An APC whose relation starts a high-capacity cell (starts = nameof(cell_type)).
 /obj/machinery/power/apc/dx_test/cell_start
 	cell_type = /obj/item/cell/high

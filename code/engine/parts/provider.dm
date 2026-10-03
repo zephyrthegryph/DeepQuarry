@@ -45,6 +45,8 @@
 	var/provider_gen = 0
 	/// The act generation: bumped when a published key, relation or containment of this entity changes (caches key on it).
 	var/act_gen = 0
+	/// The waiting claiming op (claims()) that holds this entity, or null.
+	var/datum/pending_op/claimed_by
 
 /proc/provider_set_changed(datum/D)
 	if(!D)

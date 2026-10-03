@@ -19,8 +19,10 @@
 	drop_sound = SFX_ITEMS_DROP_BACKPACK
 	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
-TYPE_TABLE(/obj/item/storage/backpack, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
+
+CAPABILITIES(/obj/item/storage/backpack, \
+	configure(storage(max_size = ITEMSIZE_LARGE)))
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
 	if (slot == SLOT_ID_BACK && src.use_sound)
@@ -58,7 +60,6 @@ TYPE_TABLE(/obj/item/storage/backpack, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_LA
 	max_storage_space = ITEMSIZE_COST_NORMAL * 14 // 56
 	storage_cost = INVENTORY_STANDARD_SPACE + 1
 
-TYPE_TABLE(/obj/item/storage/backpack/holding, hold_spec, list(HOLD_NOT(list(/obj/item/storage/backpack/holding)), HOLD_MAX_SIZE(ITEMSIZE_LARGE)))
 
 /obj/item/storage/backpack/holding/duffle
 	name = "dufflebag of holding"
@@ -71,9 +72,13 @@ TYPE_TABLE(/obj/item/storage/backpack/holding, hold_spec, list(HOLD_NOT(list(/ob
 		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		tilted = 1
 
-/obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/storage/backpack/holding/duffle, \
+	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(PROC_REF(duffle_tilt_effect))))
+
+/obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
-		return
+		return OP_REFUSED
 	if(tilted)
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
@@ -84,16 +89,17 @@ TYPE_TABLE(/obj/item/storage/backpack/holding, hold_spec, list(HOLD_NOT(list(/ob
 		tilted = 1
 	update_icon()
 	user.update_inv_back()
+	return OP_OK
 
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
-	INTERACT_INSERT(/obj/item/storage/backpack/holding, PROC_REF(interaction_conflict), "Put in"), \
-)
+CAPABILITIES(/obj/item/storage/backpack/holding, \
+	configure(storage(refuses = list(/obj/item/storage/backpack/holding))), \
+	op("conflict", item(/obj/item/storage/backpack/holding), priority(above("storage.put_in")), label("Put in"), then(PROC_REF(bluespace_conflict))))
 
-/// Old attackby: two bags of holding destroy the one put in.
-/obj/item/storage/backpack/holding/proc/interaction_conflict(mob/user, obj/item/W, datum/interaction/interaction)
-	to_chat(user, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
-	consume(W, user)
-	return TRUE
+/// Two bags of holding destroy the one put in.
+/obj/item/storage/backpack/holding/proc/bluespace_conflict(datum/act/op/A)
+	to_chat(A.actor, span_warning("The Bluespace interfaces of the two devices conflict and malfunction."))
+	consume(A.held, A.actor)
+	return OP_OK
 
 /obj/item/storage/backpack/cultpack
 	name = "trophy rack"
@@ -181,17 +187,19 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		tilted = 1
 
-/// Requirement: only some duffelbags tilt.
-/obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(mob/user, atom/target, obj/item/held)
-	if(!user.canmove || user.stat || user.restrained())
-		return TRUE // the effect declines silently
-	if(!can_tilt)
-		return "it can't be adjusted like that"
-	return TRUE
+MSG_DEF_SELF(backpack/cant_tilt, "It can't be adjusted like that.")
 
-/obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/storage/backpack/dufflebag, \
+	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), then(PROC_REF(dufflebag_tilt_effect))))
+
+/// Only some duffelbags tilt.
+/obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(datum/act/op/A)
+	return can_tilt
+
+/obj/item/storage/backpack/dufflebag/proc/dufflebag_tilt_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!user.canmove || user.stat || user.restrained())
-		return
+		return OP_REFUSED
 	if(tilted)
 		icon_state = "[initial(icon_state)]"
 		to_chat(user, "You adjust the angle of \the [src] to rest across your lower back.")
@@ -202,6 +210,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 		tilted = 1
 	update_icon()
 	user.update_inv_back()
+	return OP_OK
 
 /obj/item/storage/backpack/dufflebag/syndie
 	name = "black dufflebag"
@@ -479,15 +488,21 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding, \
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
+CAPABILITIES(/obj/item/storage/backpack/purse, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)))
+
 //Parachutes
 
-TYPE_TABLE(/obj/item/storage/backpack/purse, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/backpack/parachute
 	name = "parachute"
 	desc = "A specially made backpack, designed to help one survive jumping from incredible heights. It sacrifices some storage space for that added functionality."
 	icon_state = "parachute"
 	item_state_slots = list(slot_r_hand_str = "backpack", slot_l_hand_str = "backpack")
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
+	/// Packed and ready to open (movement reads the same fact through dq_get_parachute()).
+	var/packed = FALSE
+
+TRACKED(/obj/item/storage/backpack/parachute, packed)
 
 /obj/item/storage/backpack/parachute/examine(mob/user)
 	. = ..()
@@ -498,59 +513,36 @@ TYPE_TABLE(/obj/item/storage/backpack/purse, hold_spec, list(HOLD_MAX_SIZE(ITEMS
 			. += "It seems to be unpacked."
 
 /obj/item/storage/backpack/parachute/handleParachute()
+	set_packed(FALSE)
 	dq_set_parachute(src, FALSE)	//If you dq_get_parachute(src) in, the dq_get_parachute(src) has probably been used.
 
-/// Requirement: the parachute can't be worked on while worn.
-/obj/item/storage/backpack/parachute/proc/can_pack(mob/user, atom/target, obj/item/held)
-	var/mob/living/carbon/human/H = user
-	if(istype(H) && isliving(loc) && !H.stat && H.get_equipped_item(SLOT_ID_BACK) == src)
-		return "how do you expect to work on it while it's on your back"
-	return TRUE
+MSG_DEF_SELF(parachute/worn, "How do you expect to work on it while it's on your back?")
+MSG_DEF(parachute/packed, "You finish packing %T%!", "%U% finishes packing %T%!")
+MSG_DEF(parachute/unpacked, "You finish unpacking %T%!", "%U% finishes unpacking %T%!")
 
-/obj/item/storage/backpack/parachute/proc/pack_parachute_effect(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/storage/backpack/parachute, \
+	op("pack", menu(), when(PROC_REF(is_unpacked)), label("Pack Parachute"), \
+		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(5 SECONDS), \
+		then(PROC_REF(pack_it)), says(MSG(parachute/packed), blind = span_infoplain("You hear the shuffling of cloth."))), \
+	op("unpack", menu(), when(PROC_REF(is_packed)), label("Unpack Parachute"), \
+		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(2.5 SECONDS), \
+		then(PROC_REF(unpack_it)), says(MSG(parachute/unpacked), blind = span_infoplain("You hear the shuffling of cloth."))))
 
+/obj/item/storage/backpack/parachute/proc/is_packed(datum/act/op/A)
+	return packed
 
-	if(!isliving(src.loc))
-		return
+/obj/item/storage/backpack/parachute/proc/is_unpacked(datum/act/op/A)
+	return !packed
 
-	var/mob/living/carbon/human/H = user
-
-	if(!istype(H))
-		return
-	if(H.stat)
-		return
-
-	if(!dq_get_parachute(src))	//This packs the dq_get_parachute(src)
-		act_message(H, src, MSG_SELF(span_notice("You start to pack %T%!")), \
-			MSG_OTHERS(span_infoplain(span_bold("%U%") + " starts to pack %T%!")), \
-			MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
-		om_task_timed(H, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed), fail_args = list(H))
-	else			//This unpacks the dq_get_parachute(src)
-		act_message(H, src, MSG_SELF(span_notice("You start to unpack %T%!")), \
-			MSG_OTHERS(span_infoplain(span_bold("%T%") + " starts to unpack %T%!")), \
-			MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
-		om_task_timed(H, 25, target = src, receiver = src, on_done = PROC_REF(pack_parachute_timed_done2), done_args = list(H), on_fail = PROC_REF(pack_parachute_timed_failed2), fail_args = list(H))
-	return
-
-/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done(mob/living/carbon/human/H)
-	act_message(H, src, MSG_SELF(span_notice("You finish packing %T%!")), \
-		MSG_OTHERS(span_infoplain(span_bold("%U%") + " finishes packing %T%!")), \
-		MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
+/obj/item/storage/backpack/parachute/proc/pack_it(datum/act/op/A)
+	set_packed(TRUE)
 	dq_set_parachute(src, TRUE)
+	return OP_OK
 
-/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed(mob/living/carbon/human/H)
-	act_message(H, src, MSG_SELF(span_notice("You give up on packing %T%!")), \
-		MSG_OTHERS(span_infoplain(span_bold("%T%") + " gives up on packing %T%!")))
-	return
-/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_done2(mob/living/carbon/human/H)
-	act_message(H, src, MSG_SELF(span_notice("You finish unpacking %T%!")), \
-		MSG_OTHERS(span_infoplain(span_bold("%T%") + " finishes unpacking %T%!")), \
-		MSG_BLIND(span_infoplain("You hear the shuffling of cloth.")))
+/obj/item/storage/backpack/parachute/proc/unpack_it(datum/act/op/A)
+	set_packed(FALSE)
 	dq_set_parachute(src, FALSE)
-
-/obj/item/storage/backpack/parachute/proc/pack_parachute_timed_failed2(mob/living/carbon/human/H)
-	act_message(H, src, MSG_SELF(span_notice("You decide not to unpack %T%!")), \
-		MSG_OTHERS(span_infoplain(span_bold("%T%") + " decides not to unpack %T%!")))
+	return OP_OK
 
 /obj/item/storage/backpack/satchel/ranger
 	name = "ranger satchel"
@@ -734,18 +726,3 @@ TYPE_TABLE(/obj/item/storage/backpack/saddlebag_common, equip_spec, dq_spec_join
 	desc = "An armored vest with the armor modules replaced with various handy compartments with decent storage capacity. Useless for protection though. Holds more than its lighter cousin.."
 	max_storage_space = INVENTORY_DUFFLEBAG_SPACE
 	slowdown = 0.5
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/holding/duffle, \
-	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(duffle_tilt_effect), REQ_IN_INVENTORY), \
-)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/dufflebag, \
-	INTERACT_VERB("Adjust Duffelbag Angle", PROC_REF(dufflebag_tilt_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt)), \
-)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/storage/backpack/parachute, \
-	INTERACT_VERB("Pack/Unpack Parachute", PROC_REF(pack_parachute_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/storage/backpack/parachute/proc/can_pack)), \
-)

@@ -2163,11 +2163,13 @@ DECLARE_INTERACTIONS(/obj/item/toy/AI, INTERACT_USE(null, PROC_REF(interaction_s
 	starts_with = list(/obj/item/handcuffs/fake = 1, /obj/item/handcuffs/legcuffs/fake = 1)
 	foldable = null
 
+CAPABILITIES(/obj/item/storage/box/handcuffs/fake, \
+	configure(storage(accepts = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake))))
+
 /*
  * Toy nuke
  */
 
-TYPE_TABLE(/obj/item/storage/box/handcuffs/fake, hold_spec, list(HOLD_ONLY(list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/toy/nuke
 	name = "\improper Nuclear Fission Explosive toy"
 	desc = "A plastic model of a Nuclear Fission Explosive."
@@ -2570,11 +2572,13 @@ DECLARE_EMAG_REPEATABLE(/obj/item/toy/snake_popper, PROC_REF(on_emag), null)
 	drop_sound = SFX_ITEMS_DROP_ACCESSORY
 	pickup_sound = SFX_ITEMS_PICKUP_ACCESSORY
 
+CAPABILITIES(/obj/item/storage/box/timecap, \
+	configure(storage(accepts = list(/obj/item/toy/figure), max_size = ITEMSIZE_TINY)))
+
 /*
  * Action figures
  */
 
-TYPE_TABLE(/obj/item/storage/box/timecap, hold_spec, list(HOLD_ONLY(list(/obj/item/toy/figure)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 /obj/item/toy/figure/ranger
 	name = "Space Ranger action figure"
 	desc = "A \"Space Life\" brand Space Ranger action figure."

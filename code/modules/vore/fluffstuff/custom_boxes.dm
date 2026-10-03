@@ -178,9 +178,11 @@
 	w_class = ITEMSIZE_SMALL
 	has_items = list(/obj/item/clothing/under/swimsuit/fluff/penelope)
 
+CAPABILITIES(/obj/item/storage/box/fluff/penelope, \
+	configure(storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
+
 // JackNoir413: Mor Xaina
 
-TYPE_TABLE(/obj/item/storage/box/fluff/penelope, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/under/swimsuit/)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/box/fluff/morxaina
 	name = "Fashionable clothes set"
 	desc = "Set of custom-made, expensive attire elements."
@@ -245,7 +247,9 @@ Swimsuits, for general use, to avoid arriving to work with your swimsuit.
 	w_class = ITEMSIZE_SMALL
 	has_items = list(/obj/item/clothing/under/swimsuit/black)
 
-TYPE_TABLE(/obj/item/storage/box/fluff/swimsuit, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/under/swimsuit/)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/box/fluff/swimsuit, \
+	configure(storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/fluff/swimsuit/blue
 	name = "Blue Swimsuit capsule"

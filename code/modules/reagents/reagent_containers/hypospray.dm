@@ -12,7 +12,8 @@
 	unacidable = TRUE
 	volume = 30
 	max_transfer_amount = null
-	flags = OPENCONTAINER
+	/// Poured into until it is spent (an autoinjector shuts when it is used).
+	var/open_at_start = TRUE
 	slot_flags = SLOT_BELT
 	drop_sound = SFX_ITEMS_DROP_GUN
 	pickup_sound = SFX_ITEMS_PICKUP_GUN
@@ -29,41 +30,26 @@
 				reagents.add_reagent(r, LAZYACCESS(filled_reagents, r))
 	update_icon()
 
-/obj/item/reagent_containers/hypospray/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
-	if(!reagents.total_volume)
-		balloon_alert(user, "\the [src] is empty.")
-		return ITEM_INTERACT_FAILURE
-	if(!M.consume_liquid_belly)
-		if(liquid_belly_check())
-			to_chat(user, span_infoplain("[user == M ? "You can't" : "\The [M] can't"] take that, it contains something produced from a belly!"))
-			return ITEM_INTERACT_FAILURE
+// A hypospray is a holder of its volume that is poured into like any open container, and that puts one transfer into the blood of a person by a click
+// (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
+// resists in combat mode. Armour does not stop it. The sound, the transfer and the log are do_injection(), which a type may extend.
+CAPABILITIES(/obj/item/reagent_containers/hypospray, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		settable = FALSE, \
+		shows_contents = FALSE, \
+		lid = TRUE, \
+		lid_visible = FALSE, \
+		starts_open = nameof(open_at_start), \
+		transfer_default = nameof(amount_per_transfer_from_this)), \
+	injector(slow = nameof(prototype)), \
+	extend("injector.inject", then(PROC_REF(injected))), \
+	extend("injector.inject_slowly", then(PROC_REF(injected))))
 
-	var/mob/living/carbon/human/H = M
-	if(istype(H))
-		var/obj/item/organ/external/affected = H.get_organ(user.zone_sel.selecting)
-		if(!affected)
-			balloon_alert(user, "\the [H] is missing that limb!")
-			return ITEM_INTERACT_FAILURE
-		// P2-S9: the same can_inject() the syringe asks (missing limb, thick hide).
-		// Like the syringe, a thick suit doesn't refuse it: the nozzle finds a port.
-		if(!H.can_inject(user, TRUE, user.zone_sel.selecting, TRUE, INJECT_METHOD_HYPO))
-			return ITEM_INTERACT_FAILURE
-
-		if(H != user && prototype)
-			balloon_alert(user, "injecting [H] with \the [src]")
-			balloon_alert(H, "[user] is trying to inject you with \the [src]")
-			om_task_timed(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
-			return ITEM_INTERACT_SUCCESS
-		else if(!H.stat && !prototype)
-			if(H != user)
-				if(H.combat_mode)
-					balloon_alert(user, "[H] resists your attempt to inject them with \the [src].")
-					balloon_alert(H, "[user] is trying to inject you with \the [src]")
-					om_task_timed(user, 3 SECONDS, H, src, PROC_REF(do_injection), list(H, user))
-					return ITEM_INTERACT_SUCCESS
-
-	do_injection(H, user)
-	return ITEM_INTERACT_SUCCESS
+/// The injection: the transfer, the sound and the log.
+/obj/item/reagent_containers/hypospray/proc/injected(datum/act/op/A)
+	return do_injection(A.target, A.actor) ? OP_OK : OP_FAILED
 
 // This does the actual injection and transfer.
 /obj/item/reagent_containers/hypospray/proc/do_injection(mob/living/carbon/human/H, mob/living/user)
@@ -105,54 +91,52 @@ DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial"
 	volume = loaded_vial.volume
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/hypospray/vial, \
-	INTERACT_HAND(null, PROC_REF(interaction_hand)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+// The vial hypospray takes a 30-unit vial for its drug supply: a vial is loaded in three seconds (once), and an empty hand takes it out when the hypospray
+// is in the other hand. What the vial held is the hypospray's while it is in.
+CAPABILITIES(/obj/item/reagent_containers/hypospray/vial, \
+	configure(injector(slow = nameof(prototype), vial = nameof(loaded_vial))), \
+	op("load", item(/obj/item/reagent_containers/glass/beaker/vial), priority(OP_PRIORITY_PART + 5), label("Load the vial"), \
+		needs(req_is(nameof(loaded_vial), FALSE, because = MSG(hypo/has_vial))), \
+		begins(MSG(hypo/begin_load)), wait(3 SECONDS), then(PROC_REF(vial_loaded))), \
+	extend("injector.unload", then(PROC_REF(vial_unloaded))))
 
-/// Old attack_hand.
-/obj/item/reagent_containers/hypospray/vial/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	if(user.get_inactive_hand() == src)
-		if(loaded_vial)
-			reagents.trans_to_holder(loaded_vial.reagents,volume)
-			reagents.maximum_volume = 0
-			loaded_vial.update_icon()
-			user.put_in_hands(loaded_vial)
-			own_take(src, nameof(loaded_vial))
-			balloon_alert(user, "vial removed from \the [src]")
-			update_icon()
-			play_sfx(src, SFX_WEAPONS_FLIPBLADE)
-			return TRUE
-		return FALSE
-	else
-		return FALSE
+MSG_DEF_SELF(hypo/has_vial, "It already has a vial.")
+MSG_DEF(hypo/begin_load, "You begin loading %I% into %T%.", "%U% begins loading %I% into %T%.")
+MSG_DEF(hypo/loaded, "You load %I% into %T%.", "%U% has loaded %I% into %T%.")
+
+/// The empty hand takes the vial out: what was in it goes back.
+/obj/item/reagent_containers/hypospray/vial/proc/vial_unloaded(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!loaded_vial)
+		return OP_REFUSED
+	reagents.trans_to_holder(loaded_vial.reagents, volume)
+	reagents.maximum_volume = 0
+	loaded_vial.update_icon()
+	user.put_in_hands(loaded_vial)
+	own_take(src, nameof(loaded_vial))
+	balloon_alert(user, "vial removed from \the [src]")
+	update_icon()
+	play_sfx(src, SFX_WEAPONS_FLIPBLADE)
+	return OP_OK
 
 APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_state)}{loaded_vial?:_empty}")
 
-/obj/item/reagent_containers/hypospray/vial/proc/load_vial_done(mob/user, obj/item/reagent_containers/glass/beaker/vial/W)
+/// The vial goes in (the wait is over): its contents are the hypospray's.
+/obj/item/reagent_containers/hypospray/vial/proc/vial_loaded(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/glass/beaker/vial/W = A.held
 	if(loaded_vial || !(W in user))
-		return
+		return OP_REFUSED
 	if(W.is_open_container())
 		cap_key_set(W, REAGENT_CONTAINER_LID_OPEN, FALSE)
 	if(!own_set(src, nameof(src.loaded_vial), W, user = user))
-		return
+		return OP_REFUSED
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)
 	balloon_alert_visible("[user] has loaded [W] into \the [src].", "loaded [W] into \the [src].")
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_EMPTY)
-
-/// Old attackby.
-/obj/item/reagent_containers/hypospray/vial/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/reagent_containers/glass/beaker/vial))
-		if(!loaded_vial)
-			balloon_alert_visible("[user] begins loading [W] into \the [src].", "loading [W] into \the [src].")
-			om_task_timed(user, 3 SECONDS, src, src, PROC_REF(load_vial_done), list(user, W))
-		else
-			balloon_alert(user, "\the [src] already has a vial.")
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/reagent_containers/hypospray/autoinjector
 	name = "autoinjector"
@@ -177,13 +161,13 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 
 /obj/item/reagent_containers/hypospray/autoinjector/used/Initialize(mapload)
 	. = ..()
-	flags &= ~OPENCONTAINER
+	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 	icon_state = "[initial(icon_state)]0"
 
 /obj/item/reagent_containers/hypospray/autoinjector/do_injection(mob/living/carbon/human/H, mob/living/user)
 	. = ..()
 	if(.) // Will occur if successfully injected.
-		flags &= ~OPENCONTAINER
+		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 		update_icon()
 
 /// Appearance reader: TRUE while the autoinjector holds reagents.

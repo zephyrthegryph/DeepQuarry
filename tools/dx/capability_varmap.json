@@ -4,11 +4,5 @@
     "_default_bits": [],
     "p_open": "CAP_PANEL_OPEN",
     "welded": "CAP_WELDED"
-  },
-  "/obj/machinery/vending": {
-    "_default_bits": [],
-    "emagged": "CAP_EMAGGED",
-    "panel_open": "CAP_PANEL_OPEN",
-    "req_access": "keep"
   }
 }

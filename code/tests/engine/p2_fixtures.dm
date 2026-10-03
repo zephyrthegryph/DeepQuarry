@@ -121,11 +121,12 @@ MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
 	var/pressed_with = null
 	var/fitting_time = 20
 	var/fitted = 0
+	var/began = 0
 	var/label_shown = TRUE
 
 TRACKED(/obj/machinery/p2_box, label_shown)
 
-CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), then(PROC_REF(fitted_now))))
+CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), begins(PROC_REF(fit_begins)), then(PROC_REF(fitted_now))))
 
 /obj/machinery/p2_box/proc/emag_effect(datum/act/op/A)
 	emag_ran++
@@ -137,6 +138,11 @@ CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame =
 
 /obj/machinery/p2_box/proc/fit_wait(datum/act/A)
 	return fitting_time
+
+/// begins(): told when the wait starts (a fixture counts it; it tells nobody).
+/obj/machinery/p2_box/proc/fit_begins(datum/act/A)
+	began++
+	return null
 
 /obj/machinery/p2_box/proc/fitted_now(datum/act/op/A)
 	fitted++
@@ -250,5 +256,43 @@ CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_u
 /obj/p2_dragtarget/proc/was_dragged(datum/act/op/A)
 	dragged++
 	return OP_OK
+
+
+// ---- an asks() with a condition ----
+
+/// A holder whose op asks for a number only while `want` says so.
+/obj/p2_asker
+	name = "p2 asker"
+	var/want = FALSE
+	var/ran = 0
+	var/asked_value = null
+
+CAPABILITIES(/obj/p2_asker, 	op("ask", ui_act(), asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), then(PROC_REF(asked_done))))
+
+/obj/p2_asker/proc/ask_wanted(datum/act/op/A)
+	return want // ALLOW(reads): a test fixture's plain flag, read when the step is reached
+
+/obj/p2_asker/proc/asked_done(datum/act/op/A)
+	ran++
+	var/datum/prompt/P = A.answer
+	asked_value = P?.value
+	return OP_OK
+
+// ---- a subtype's own window ----
+
+/// A holder with a window.
+/obj/p2_windowed
+	name = "p2 windowed"
+
+CAPABILITIES(/obj/p2_windowed, 	interface("P2First"), 	op("p2_window_press", ui_act(), then(PROC_REF(window_pressed))))
+
+/obj/p2_windowed/proc/window_pressed(datum/act/op/A)
+	return OP_OK
+
+/// A subtype with its own window: the inherited open op goes, the new window is the one it opens.
+/obj/p2_windowed/second
+	name = "p2 windowed second"
+
+CAPABILITIES(/obj/p2_windowed/second, 	without("ui_open"), 	interface("P2Second"), 	op("p2_window_press_second", ui_act(), then(PROC_REF(window_pressed))))
 
 #endif

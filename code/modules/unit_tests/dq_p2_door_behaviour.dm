@@ -891,6 +891,33 @@
 	TEST_ASSERT(!p2_door_bolted(D), "through the bolts")
 	tidy(tile(2, 2))
 
+/datum/unit_test/dq_p2_door/airlock_strong_animal_breaks_into_a_bolted_dead_one
+
+/datum/unit_test/dq_p2_door/airlock_strong_animal_breaks_into_a_bolted_dead_one/run_gate()
+	var/obj/machinery/door/airlock/D = make_door()
+	p2_door_set_power(D, FALSE)
+	p2_door_set_bolts(D, TRUE)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, tile(3, 2))
+	D.attack_generic(M, 1)
+	test_time(11 SECONDS)
+	TEST_ASSERT(D.density, "a weak animal strains for nothing")
+	D.attack_generic(M, 50)
+	test_time(11 SECONDS)
+	TEST_ASSERT(!D.density, "a strong one breaks in")
+	TEST_ASSERT(!p2_door_bolted(D), "through the bolts")
+	tidy(tile(2, 2))
+
+/datum/unit_test/dq_p2_door/emag_target_subverts_a_door_without_a_card
+
+/datum/unit_test/dq_p2_door/emag_target_subverts_a_door_without_a_card/run_gate()
+	var/obj/machinery/door/airlock/D = make_door()
+	TEST_ASSERT(emag_target(D, 1) != EMAG_DECLINED, "an event's emag works on a door")
+	settle()
+	TEST_ASSERT(!D.density, "and the door gives way")
+	TEST_ASSERT(p2_door_emagged(D), "for good")
+	TEST_ASSERT_EQUAL(emag_target(D, 1), EMAG_DECLINED, "a second emag is declined")
+	tidy(tile(2, 2))
+
 /datum/unit_test/dq_p2_door/airlock_unpowered_door_pries_open_and_shut
 
 /datum/unit_test/dq_p2_door/airlock_unpowered_door_pries_open_and_shut/run_gate()
@@ -1666,7 +1693,7 @@
 /datum/unit_test/dq_p2_door/firedoor_silicon_uses_it_through_the_prompt/run_gate()
 	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
 	var/mob/living/silicon/ai/AI = make_ai()
-	D.attack_hand(AI)
+	D.silicon_use(AI)
 	p2_door_answer(AI, TRUE)
 	settle()
 	TEST_ASSERT(D.density, "an AI closes a firedoor through the same question")

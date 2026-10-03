@@ -108,6 +108,7 @@ GLOBAL_LIST_INIT(ui_reserved_arg_names, list("user", "src", "usr", "ui", "state"
 
 /// A number (or numeric text) clamped to [min_value, max_value]; null if it isn't one.
 /proc/ui_number(value, min_value = -INFINITY, max_value = INFINITY, round_to = 0)
+	READS_FROM()
 	if(istext(value))
 		value = text2num(value)
 	if(!isnum(value) || value != value)

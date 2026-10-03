@@ -490,37 +490,39 @@ UI_ACT_PROC(/mob/living/bot/medbot, ui_act_declaretreatment)
 
 /* Construction */
 
-EXTEND_INTERACTIONS(/obj/item/storage/firstaid, INTERACT_ITEM("Add robot arm", PROC_REF(interaction_medbot_arm)))
+MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.")
 
-/// Old attackby: a robot arm on an empty kit starts a medibot; anything else goes on to the storage.
-/obj/item/storage/firstaid/proc/interaction_medbot_arm(mob/user, obj/item/S, datum/interaction/interaction)
-	// Accept either a robotic arm part or a robotic external arm organ to build the assembly.
-	var/is_robot_arm = istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm)
-	var/is_robotic_organ = FALSE
-	if(istype(S, /obj/item/organ/external/arm))
-		var/obj/item/organ/external/arm/organ_arm = S
-		is_robotic_organ = (organ_arm.robotic == ORGAN_ROBOT)
+// A robot arm (a part, or a robotic arm organ) on an empty kit starts a medibot; on a kit with things in it the kit is to be emptied first; anything
+// else goes on to the storage.
+CAPABILITIES(/obj/item/storage/firstaid, \
+	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), priority(above("storage.put_in")), \
+		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"), \
+		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm))))
 
-	if(!is_robot_arm && !is_robotic_organ)
-		return FALSE
+/// A robot arm part, or an arm organ that is robotic.
+/obj/item/storage/firstaid/proc/arm_is_robotic(datum/act/op/A)
+	var/obj/item/S = A.held
+	if(istype(S, /obj/item/robot_parts/l_arm) || istype(S, /obj/item/robot_parts/r_arm))
+		return TRUE
+	var/obj/item/organ/external/arm/organ_arm = S
+	return istype(organ_arm) && organ_arm.robotic == ORGAN_ROBOT
 
-	if(contents_count(src) >= 1 || has_latent()) // ALLOW(latent): latent entries checked
-		to_chat(user, span_notice("You need to empty [src] out first."))
-		return INTERACTION_HANDLED_PASS
-
-	var/obj/item/firstaid_arm_assembly/A = new /obj/item/firstaid_arm_assembly
+/obj/item/storage/firstaid/proc/add_robot_arm(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/S = A.held
+	var/obj/item/firstaid_arm_assembly/assembly = new /obj/item/firstaid_arm_assembly
 	if(istype(src, /obj/item/storage/firstaid/fire))
-		A.skin = "ointment"
+		assembly.skin = "ointment"
 	else if(istype(src, /obj/item/storage/firstaid/toxin))
-		A.skin = "tox"
+		assembly.skin = "tox"
 	else if(istype(src, /obj/item/storage/firstaid/o2))
-		A.skin = "o2"
+		assembly.skin = "o2"
 
 	consume(S, user)
-	user.put_in_hands(A)
+	user.put_in_hands(assembly)
 	to_chat(user, span_notice("You add the robot arm to the first aid kit."))
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /obj/item/firstaid_arm_assembly
 	name = "first aid/robot arm assembly"

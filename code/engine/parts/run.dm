@@ -296,6 +296,12 @@
 	/// What the actor held when the op started (REF text: a keep compares it, nothing is kept alive).
 	var/start_hand_ref
 	var/turf/target_turf
+	/// Where the actor stood when the op started (the STAY keep).
+	var/turf/start_loc
+	/// The progress bar and the cog of the wait now running, and whether this wait was meant to draw one (a headless actor draws none).
+	var/datum/progressbar/progbar
+	var/datum/cogbar/cog
+	var/progress_planned = FALSE
 	var/steps_done = 0
 	/// The actor's pending slot, and whether the pending ended.
 	var/active = TRUE
@@ -305,6 +311,8 @@
 	var/started_at = 0
 	/// REF text of the target a claims() op holds while it waits.
 	var/claim_ref
+	/// TRUE once the begins() message has been told (it is told at the first wait only).
+	var/began = FALSE
 	/// The first suspension happened: captured fields are snapshotted.
 	var/captured_taken = FALSE
 	var/list/args_saved
@@ -317,7 +325,7 @@ CAPABILITIES(/datum/pending_op, \
 	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME), \
 	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME), \
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME), \
-	ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+	ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME), 	owns_one(nameof(progbar), /datum/progressbar), 	owns_one(nameof(cog), /datum/cogbar))
 
 /datum/pending_op
 	var/datum/holder
@@ -330,14 +338,11 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
 GLOBAL_LIST_EMPTY(op_pending_all)
 
-/// REF(atom) -> the waiting claiming op (claims()) that holds it.
-GLOBAL_LIST_EMPTY(op_claims)
-
 /// Is `target` claimed by an op that is waiting on it (claims())?
 /proc/op_claimed(datum/target)
 	if(!target)
 		return FALSE
-	var/datum/pending_op/P = GLOB.op_claims["[REF(target)]"]
+	var/datum/pending_op/P = target.rx?.claimed_by
 	return !!P && P.active && !QDELETED(P)
 
 /proc/op_pending_of(mob/actor)
@@ -363,6 +368,7 @@ GLOBAL_LIST_EMPTY(op_claims)
 	P.keeps = op_default_keeps(A, A.binding)
 	P.start_hand_ref = REF(A.actor?.get_active_hand())
 	var/atom/T = A.target
+	P.start_loc = A.actor?.loc // ALLOW(ownership): a turf or container: plain location data, never deleted by the op
 	P.target_turf = istype(T) ? get_turf(T) : null // ALLOW(ownership): a turf: plain location data, never deleted by the op
 	rel_set(P, nameof(P.holder), A.holder)
 	rel_set(P, nameof(P.target), A.target)
@@ -383,6 +389,8 @@ GLOBAL_LIST_EMPTY(op_claims)
 /// The keeps an op's waits run under by default: all four where they apply (no HELD without a held item, no ADJACENT without a spatial reach).
 /proc/op_default_keeps(datum/act/op/A, datum/entry/part/bind/B)
 	. = WAIT_KEEPS_DEFAULT
+	if(A.origin == ORIGIN_SYSTEM || !A.actor)
+		. &= ~STAY
 	if(isnull(A.held))
 		. &= ~HELD
 	if(!B || B.reach_policy() != REACH_ADJACENT || A.origin == ORIGIN_SYSTEM || !A.actor)
@@ -443,9 +451,13 @@ GLOBAL_LIST_EMPTY(op_claims)
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
 			var/delay = W.wait_time(A)
+			if(!began && oplan.begins && delay > 0)
+				began = TRUE
+				oplan.begins.feedback(A)
 			keeps = W.args["keeps"] & op_default_keeps(A, binding)
 			suspend_act()
 			if(delay > 0)
+				progress_begin(delay)
 				after(src, delay, TYPE_PROC_REF(/datum/pending_op, step_done), key = "op_wait")
 				return
 			continue
@@ -454,8 +466,11 @@ GLOBAL_LIST_EMPTY(op_claims)
 			cursor++
 			if(!resume_act())
 				return cancel(/datum/msg/op/target_gone)
+			if(!isnull(Q.args["when"]) && !op_cond(A, Q.args["when"]))
+				suspend_act()
+				continue // the step's own condition does not hold: no prompt, on to the next step
 			take_capture(A)
-			keeps = Q.args["keeps"] & op_default_keeps(A, binding)
+			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
 			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields)
 			if(!R)
@@ -472,10 +487,34 @@ GLOBAL_LIST_EMPTY(op_claims)
 		return cancel(/datum/msg/op/target_gone)
 	finish()
 
+/// A timed wait starts: its actor sees a progress bar fill over the delay and onlookers a cog, as a legacy timed action showed (silent_wait() opts out).
+/datum/pending_op/proc/progress_begin(delay)
+	progress_end(TRUE)
+	var/mob/user = actor
+	if(oplan.silent_wait || !istype(user) || origin == ORIGIN_SYSTEM)
+		return
+	progress_planned = TRUE
+	if(user.client)
+		var/atom/where = target
+		own_set(src, nameof(progbar), new /datum/progressbar(user, delay, istype(where) ? where : user))
+		progbar.animate_fill(delay)
+	if(delay >= 1 SECONDS)
+		own_set(src, nameof(cog), new /datum/cogbar(user, 'icons/effects/progressbar.dmi', "cog"))
+
+/// The bar and the cog go: filled on success, failed when the wait was broken.
+/datum/pending_op/proc/progress_end(success)
+	// both fade out and delete themselves: handed off, not owned
+	var/datum/progressbar/old_bar = own_take(src, nameof(progbar))
+	if(!QDELETED(old_bar))
+		old_bar.end_progress(success)
+	var/datum/cogbar/old_cog = own_take(src, nameof(cog))
+	old_cog?.remove()
+
 /// A timed wait ended.
 /datum/pending_op/proc/step_done()
 	if(!active)
 		return
+	progress_end(TRUE)
 	if(!resume_act())
 		return cancel(/datum/msg/op/target_gone)
 	var/why = recheck_reason()
@@ -584,6 +623,8 @@ GLOBAL_LIST_EMPTY(op_claims)
 	if((keeps & TARGET_PRESENT) && A.target_atom && target_turf && get_turf(A.target_atom) != target_turf)
 		return /datum/msg/op/stopped
 	if((keeps & ALIVE) && M && M.stat != CONSCIOUS)
+		return /datum/msg/op/stopped
+	if((keeps & STAY) && M && M.loc != start_loc)
 		return /datum/msg/op/stopped
 	return null
 
@@ -709,7 +750,7 @@ GLOBAL_LIST_EMPTY(op_claims)
 /// The target is claimed for the length of the wait: a claim is in the registry under the target's ref, and the target is told it changed.
 /datum/pending_op/proc/claim_target(datum/claimed)
 	claim_ref = "[REF(claimed)]"
-	GLOB.op_claims[claim_ref] = src
+	rx_of(claimed).claimed_by = src
 	op_changed(claimed)
 	var/atom/A = claimed
 	if(istype(A))
@@ -720,8 +761,8 @@ GLOBAL_LIST_EMPTY(op_claims)
 	if(!claim_ref)
 		return
 	var/datum/claimed = locate(claim_ref)
-	if(GLOB.op_claims[claim_ref] == src)
-		GLOB.op_claims -= claim_ref
+	if(claimed?.rx?.claimed_by == src)
+		claimed.rx.claimed_by = null // ALLOW(ownership): the claim ends with the waiting op that made it
 	claim_ref = null
 	if(claimed)
 		op_changed(claimed)
@@ -735,6 +776,7 @@ GLOBAL_LIST_EMPTY(op_claims)
 		return
 	active = FALSE
 	release_claim()
+	progress_end(FALSE)
 	var/datum/act/op/A = act
 	if(A)
 		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
@@ -963,6 +1005,14 @@ GLOBAL_LIST_EMPTY(op_claims)
 /datum/entry/part/says/proc/feedback(datum/act/op/A)
 	var/msg = src.args["msg"]
 	if(istext(msg)) // says(PROC_REF(x)) / says(CAP_PROC(x)): x(datum/act/A) returns the /datum/msg type this commit tells (a toggle says what it did)
+		msg = op_call(A, msg)
+	if(ispath(msg, /datum/msg) && A.actor)
+		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)
+
+/// What the actor and onlookers are told when the op starts waiting.
+/datum/entry/part/begins/proc/feedback(datum/act/op/A)
+	var/msg = src.args["msg"]
+	if(istext(msg))
 		msg = op_call(A, msg)
 	if(ispath(msg, /datum/msg) && A.actor)
 		act_message_t(A.actor, istype(A.target, /atom) ? A.target : null, msg, A.held)

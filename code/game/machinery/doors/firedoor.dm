@@ -184,13 +184,13 @@ CAPABILITIES(/obj/machinery/door/firedoor, \
 	if(lockdown)
 		return TRUE
 	for(var/area/A in areas_added)
-		if(A.firedoors_closed)
+		if(A.firedoors_closed) // ALLOW(reads): an area's alarm flag is read when the door is used and again when the question is answered
 			return TRUE
 	return FALSE
 
 /// It is not a shut door with no power (a shut door with none must be forced; one that is open can still be closed).
 /obj/machinery/door/firedoor/proc/can_work(datum/act/A)
-	return !density || operable() // ALLOW(reads): power is read when the question is asked and again when it is answered
+	return !density || operable()
 
 /// An alarm, a lockdown and no access keep a shut door shut (for whoever has no access).
 /obj/machinery/door/firedoor/proc/not_locked_out(datum/act/op/A)
@@ -222,7 +222,9 @@ CAPABILITIES(/obj/machinery/door/firedoor, \
 	return OP_OK
 
 /// An AI's use, a cyborg's use from afar and a pilot's mecha bumping a shut one all ask as a hand would: the same question, whoever is at the door.
-/obj/machinery/door/firedoor/attack_hand(mob/user)
+DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_REF(silicon_use)))
+
+/obj/machinery/door/firedoor/proc/silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	perform_op(user, src, "remote_use", origin = ORIGIN_SYSTEM)
 	return TRUE
 
@@ -238,7 +240,7 @@ CAPABILITIES(/obj/machinery/door/firedoor, \
 			var/mob/M = mecha?.slot_item(MECHA_SLOT_PILOT)
 			if(ELAPSED(M, last_bumped, CLOCK_WORLD) <= 1 SECOND) return //Can bump-open one airlock per second. This is to prevent popup message spam.
 			EXPIRY_STAMP(M, last_bumped, CLOCK_WORLD)
-			attack_hand(M)
+			perform_op(M, src, "remote_use", origin = ORIGIN_SYSTEM)
 	return 0
 
 // ---- forcing it ----
@@ -326,7 +328,7 @@ CAPABILITIES(/obj/machinery/door/firedoor, \
 
 /// A crowbar works a door with no power, or an open one.
 /obj/machinery/door/firedoor/proc/pry_free(datum/act/A)
-	return !operable() || !density // ALLOW(reads): power is read when the crowbar is tried and again when the work is done
+	return !operable() || !density
 
 /obj/machinery/door/firedoor/proc/tool_forced(datum/act/op/A)
 	var/mob/user = A.actor

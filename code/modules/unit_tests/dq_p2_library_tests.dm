@@ -162,10 +162,12 @@
 	var/obj/item/tool/wrench/wrench = allocate(/obj/item/tool/wrench)
 	var/datum/op_result/started = test_click(M, B, wrench)
 	TEST_ASSERT_NULL(started?.outcome, "the op waits")
+	TEST_ASSERT_EQUAL(B.began, 1, "begins() was told when the wait started, not when it ended")
 	test_time(1 SECOND)
 	TEST_ASSERT_EQUAL(B.fitted, 0, "a second in, the two-second wait is not over")
 	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(B.fitted, 1, "it ends on the time the proc gave")
+	TEST_ASSERT_EQUAL(B.began, 1, "and begins() is not told again at the end")
 	B.fitting_time = 50
 	test_click(M, B, wrench)
 	test_time(3 SECONDS)

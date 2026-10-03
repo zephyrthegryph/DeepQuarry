@@ -11,7 +11,7 @@
 	var/obj/machinery/vending/V = holder
 	if(iscarbon(user) && V.seconds_electrified && V.shock(user, 100))
 		return FALSE
-	return wires_exposed(V)
+	return panel_open(V)
 
 /datum/wires/vending/get_status()
 	var/obj/machinery/vending/V = holder
@@ -27,13 +27,11 @@
 		if(WIRE_THROW_ITEM)
 			V.set_shoot_inventory(!V.shoot_inventory)
 		if(WIRE_CONTRABAND)
-			V.categories ^= CAT_HIDDEN
+			V.set_categories(V.categories ^ CAT_HIDDEN)
 		if(WIRE_ELECTRIFY)
 			V.set_seconds_electrified(30)
 		if(WIRE_IDSCAN)
-			V.scan_id = !V.scan_id
-	if(V.shoot_inventory || V.seconds_electrified)
-		MACHINE_WAKE(V)
+			V.set_scan_id(!V.scan_id)
 	..()
 
 /datum/wires/vending/on_cut(wire, mend)
@@ -42,14 +40,12 @@
 		if(WIRE_THROW_ITEM)
 			V.set_shoot_inventory(!mend)
 		if(WIRE_CONTRABAND)
-			V.categories &= ~CAT_HIDDEN
+			V.set_categories(V.categories & ~CAT_HIDDEN)
 		if(WIRE_ELECTRIFY)
 			if(mend)
 				V.set_seconds_electrified(0)
 			else
 				V.set_seconds_electrified(-1)
 		if(WIRE_IDSCAN)
-			V.scan_id = 1
-	if(V.shoot_inventory || V.seconds_electrified)
-		MACHINE_WAKE(V)
+			V.set_scan_id(TRUE)
 	..()

@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Backpacks, bags, boxes, belts, pill bottles, toolboxes, lockboxes and the kits around them run on the storage capability: what each takes, putting things in, opening, quick-empty and quick-gather, the lockbox's ID lock and emag, the quickdraw case, the laundry basket, the secure safe's keypad and the parachute."
+  - bugfix: "An ID card without the access is no longer put into an unlocked lockbox after being refused."
+  - code_imp: "A held item's op that passes now lets the next candidate or the ordinary click go on; reading what a storage holds is no longer a write inside a condition or a look."

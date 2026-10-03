@@ -57,6 +57,7 @@
 	var/list/effects
 	var/early_effects = 0
 	var/datum/entry/part/says/says
+	var/datum/entry/part/begins/begins
 	var/datum/entry/part/plays/plays
 	var/datum/entry/part/verbs/verb_pair
 	var/datum/entry/part/flash/flash
@@ -66,6 +67,8 @@
 	/// claims(): the target is claimed while the op waits.
 	var/claims = FALSE
 	var/passes = FALSE
+	/// silent_wait(): the wait draws no progress bar.
+	var/silent_wait = FALSE
 	var/label
 	/// An explicit OP_PRIORITY_X, or null.
 	var/priority_tier
@@ -431,6 +434,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 /datum/entry/part/says/compile(datum/op_plan/P, level)
 	P.says = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
+/datum/entry/part/begins/compile(datum/op_plan/P, level)
+	P.begins = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
 /datum/entry/part/plays/compile(datum/op_plan/P, level)
 	P.plays = src // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
 
@@ -445,6 +451,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 
 /datum/entry/part/delayed/compile(datum/op_plan/P, level)
 	LAZYADD(P.delayed, src) // ALLOW(ownership): an engine record owned by its own end path (a flyweight, or a record the framework tears down)
+
+/datum/entry/part/silent_wait/compile(datum/op_plan/P, level)
+	P.silent_wait = TRUE
 
 /datum/entry/part/quiet/compile(datum/op_plan/P, level)
 	P.quiet = TRUE

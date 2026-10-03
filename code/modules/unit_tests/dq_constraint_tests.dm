@@ -308,8 +308,8 @@
 	TEST_ASSERT(findtext(too_big, "too big"), "box refusing a toolbox should say it's too big, said [too_big]")
 	TEST_ASSERT_NULL(toolbox.insert_refusal(wrench, null), "toolbox taking a wrench")
 
-	// The same answer through a C1 slot declaring the holder's constraint.
-	var/datum/om/relation/slot/dq_test_hold/def = dq_slot_def(/datum/om/relation/slot/dq_test_hold)
+	// The same answer through the storage slot: its refusal is the storage capability's.
+	var/datum/om/relation/slot/storage/def = dq_slot_def(/datum/om/relation/slot/storage)
 	TEST_ASSERT_EQUAL(def.refusal(wallet, wrench, null), wallet.insert_refusal(wrench, null), "slot_def and storage give the same reason")
 	var/obj/item/spacecash/cash = allocate(/obj/item/spacecash, T)
 	TEST_ASSERT_NULL(def.refusal(wallet, cash, null), "slot_def takes cash into a wallet")
@@ -321,14 +321,10 @@
 	new /obj/item/pen(fitted)
 	fitted.make_exact_fit()
 	var/obj/item/paper/paper = allocate(/obj/item/paper, T)
-	TEST_ASSERT_NOTNULL(dq_constraint_refusal(fitted, CONSTRAINT_HOLD, paper, null), "exact-fit box refuses paper")
+	TEST_ASSERT_NOTNULL(fitted.insert_refusal(paper, null), "exact-fit box refuses paper")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
-	TEST_ASSERT_NULL(dq_constraint_refusal(fitted, CONSTRAINT_HOLD, pen, null), "exact-fit box takes another pen")
-	TEST_ASSERT_NULL(dq_constraint_refusal(box, CONSTRAINT_HOLD, paper, null), "a plain box still takes paper")
-
-/datum/om/relation/slot/dq_test_hold
-	slot_id = "dq_test_hold"
-	holder_constraint = CONSTRAINT_HOLD
+	TEST_ASSERT(!findtext(fitted.insert_refusal(pen, null), "take that"), "exact-fit box takes another pen as far as its type goes (it is full)")
+	TEST_ASSERT_NULL(box.insert_refusal(paper, null), "a plain box still takes paper")
 
 /datum/unit_test/dq_constraint_equip_reasons/Run()
 	var/turf/T = run_loc_floor_bottom_left

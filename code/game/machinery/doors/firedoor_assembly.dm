@@ -37,14 +37,9 @@ CAPABILITIES(/obj/structure/firedoor_assembly, \
 		stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, item(/obj/item/circuitboard/airalarm), wait(0), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), then(PROC_REF(finish_firedoor)), undo = null), \
 		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
 	op("anchor", tool(TOOL_WRENCH), label("Bolt or unbolt"), wait(0), then(PROC_REF(anchor_toggled))), \
-	op("plate_glass", item(/obj/item/stack/material), label("Install windows"), when(req(PROC_REF(holding_rglass))), when(PROC_REF(unglazed)), wait(4 SECONDS), then(PROC_REF(glass_in))), \
+	op("plate_glass", item(/obj/item/stack/material/glass/reinforced), label("Install windows"), when(PROC_REF(unglazed)), wait(4 SECONDS), then(PROC_REF(glass_in))), \
 	op("unglaze", tool(TOOL_WELDER), label("Take the glass out"), when(nameof(glass)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(glass_out))), \
 	extend("construction.dismantle", needs(req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
-
-/// A sheet of reinforced glass in hand.
-/obj/structure/firedoor_assembly/proc/holding_rglass(datum/act/op/A)
-	var/obj/item/stack/material/S = A.held
-	return istype(S) && S.get_material_name() == MAT_RGLASS && S.get_amount() >= 1
 
 /// No glass is fitted.
 /obj/structure/firedoor_assembly/proc/unglazed(datum/act/A)

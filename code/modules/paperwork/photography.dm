@@ -116,7 +116,9 @@ UI_DATA_REPLACE(/obj/item/photo, "title=name:text", "size=photo_size:num", "merg
 	icon_state = "album"
 	item_state = "briefcase"
 
-TYPE_TABLE(/obj/item/storage/photo_album, hold_spec, list(HOLD_ONLY(list(/obj/item/photo)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/photo_album, \
+	configure(storage(accepts = list(/obj/item/photo))))
 
 /obj/item/storage/photo_album/MouseDrop(obj/over_object as obj)
 

@@ -14,7 +14,9 @@
 
 	var/original_name // Due to loadout customizations and such
 
-TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/wallet, \
+	configure(storage(accepts = list( \
 		/obj/item/spacecash, \
 		/obj/item/card, \
 		/obj/item/clothing/mask/smokable/cigarette/, \
@@ -47,8 +49,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/clothing/accessory/badge, \
 		/obj/item/makeover, \
 		/obj/item/pizzavoucher, \
-		/obj/item/card_fluff \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/card_fluff))))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
@@ -68,16 +69,23 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 			name = "[original_name] ([front_id()])"
 			update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/wallet, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/wallet/appearance_overlays()
-	. = list()
-	if(front_id())
-		var/tiny_state = "id-generic"
-		if(icon_exists(icon, "id-[front_id().icon_state]"))
-			tiny_state = "id-"+front_id().icon_state
-		var/image/tiny_image = new/image(icon, icon_state = tiny_state)
-		tiny_image.appearance_flags = RESET_COLOR
-		. += tiny_image
+/obj/item/storage/wallet/draw(datum/look/look)
+	. = ..()
+	look.overlay(id_overlay())
+
+/// The small picture of the ID at the front of the wallet, or null.
+/obj/item/storage/wallet/proc/id_overlay()
+	var/obj/item/card/id/front = front_id()
+	if(!front)
+		return null
+	var/tiny_state = "id-generic"
+	if(icon_exists(icon, "id-[front.icon_state]"))
+		tiny_state = "id-[front.icon_state]"
+	var/image/tiny_image = new/image(icon, icon_state = tiny_state)
+	tiny_image.appearance_flags = RESET_COLOR
+	return tiny_image
+
+READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 
 /obj/item/storage/wallet/GetID()
 	return front_id()

@@ -20,12 +20,12 @@
 
 	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
-/obj/machinery/vending/nifsoft_shop/capabilities()
-	. = ..()
-	. = replace(., /datum/capability/wires, cap_wires(/datum/wires/vending/no_contraband)) //These wires can't be hacked for contraband.
-	. = replace(., /datum/capability/emag, cap_emag(say = "You short out %T%'s access lock & stock restrictions.", effect = PROC_REF(on_emag), mode = EMAG_REPEATABLE)) //Yeees, YEEES! Give me that black market tech.
+MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
 
-/obj/machinery/vending/nifsoft_shop/tgui_data(mob/user, datum/tgui/ui, datum/tgui_state/state) // ALLOW(sys_tgui_data_override): the foundation UI form: tgui_data() with act_<action> procs; the sys UI_DATA declaration predates it
+// These wires can't be hacked for contraband; an emag can (Yeees, YEEES! Give me that black market tech).
+CAPABILITIES(/obj/machinery/vending/nifsoft_shop, 	configure(CAP_WIRES, kind = /datum/wires/vending/no_contraband), 	configure(CAP_EMAG, parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
+
+/obj/machinery/vending/nifsoft_shop/ui_data(datum/act/eval/A)
 	. = ..()
 	.["chargesMoney"] = TRUE
 
@@ -119,7 +119,7 @@
 		to_chat(user, span_warning("Purchase not allowed."))	//Unless emagged of course
 		flick("[icon_state]-deny",entopic.my_image)
 		return
-	vend_ready = 0 //One thing at a time!!
+	set_vend_ready(FALSE) //One thing at a time!!
 
 	if(R.category & CAT_COIN)
 		if(!coin)
@@ -131,10 +131,8 @@
 			else
 				to_chat(user, span_notice("You weren't able to pull the coin out fast enough, the machine ate it, string and all."))
 				own_clear(src, nameof(coin), OWN_DELETE)
-				categories &= ~CAT_COIN
 		else
 			own_clear(src, nameof(coin), OWN_DELETE)
-			categories &= ~CAT_COIN
 
 	if(!COOLDOWN_TIMELEFT(src, reply_cooldown) && vend_reply)
 		speak(vend_reply)
@@ -155,12 +153,12 @@
 	if(index != WIRE_CONTRABAND)
 		..(index)
 
-/// The emag's effect (it runs before the emagged bit is set): unlock the hidden stock, or decline when it already is.
-/obj/machinery/vending/nifsoft_shop/proc/on_emag(mob/user, obj/item/card/emag/card)
-	if(is_emagged(src) && (categories & CAT_HIDDEN))
-		return FALSE
-	categories |= CAT_HIDDEN
-	return TRUE
+/// The emag's effect (it runs before the emagged key is set): unlock the hidden stock, or decline when it already is.
+/obj/machinery/vending/nifsoft_shop/proc/on_emag(datum/act/op/A)
+	if(emag_emagged(src) && (categories & CAT_HIDDEN))
+		return OP_REFUSED
+	set_categories(categories | CAT_HIDDEN)
+	return OP_OK
 
 /obj/machinery/vending/nifsoft_shop/proc/lose_power()
 	entopic.hide()
@@ -173,5 +171,5 @@
 	if(has_logs)
 		do_logging(R, user, 1)
 
-	vend_ready = 1
+	set_vend_ready(TRUE)
 	rel_clear(src, nameof(currently_vending))

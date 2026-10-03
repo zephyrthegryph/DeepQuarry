@@ -20,7 +20,9 @@
 	var/unique_reskin = list("Soulless" = "RPED",
 							"Soulful" = "RPED_old")
 
-TYPE_TABLE(/obj/item/storage/part_replacer, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/part_replacer, \
+	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -35,7 +37,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 
 /// Old click_alt: the storage's own alt-click, then the one-time reskin menu.
 /obj/item/storage/part_replacer/proc/interaction_reskin_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	. = interaction_alt(user, held, interaction)
+	. = toggle_window(user)
 	if(!reskin_ran)
 		reskin_radial(user)
 		return TRUE
@@ -91,7 +93,11 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	storage_slots = 200
 	max_storage_space = 400
 
-TYPE_TABLE(/obj/item/storage/part_replacer/adv, hold_spec, list(HOLD_ONLY(list(/obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/part_replacer/adv, \
+	configure(storage(accepts = list( \
+		/obj/item/stock_parts, \
+		/obj/item/reagent_containers/glass/beaker))))
 
 /obj/item/storage/part_replacer/adv/discount_bluespace
 	name = "prototype bluespace rapid part exchange device"
