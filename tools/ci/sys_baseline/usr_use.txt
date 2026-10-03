@@ -172,7 +172,6 @@ usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon
 usr_outside_verb	code/game/machinery/feeder.dm	if(!isliving(usr))
 usr_outside_verb	code/game/machinery/feeder.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 usr_outside_verb	code/game/machinery/feeder.dm	act_message(usr, null, others = "%U% inserts the feeding tube into \the [over_object].")
-usr_outside_verb	code/game/machinery/gear_dispenser.dm	om_ask(usr, /datum/om/prompt/text, PROC_REF(gear_pack_entered), message = "Paste new gear pack JSON below. See example/code comments.", title = "Admin-load Dispenser", default = example, multiline = TRUE, requires = PROMPT_ADMIN(R_DEBUG|R_FUN))
 usr_outside_verb	code/game/machinery/iv_drip.dm	if(!isliving(usr))
 usr_outside_verb	code/game/machinery/iv_drip.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
 usr_outside_verb	code/game/machinery/iv_drip.dm	act_message(usr, src, others = "%U% attaches %T% to \the [over_object].")

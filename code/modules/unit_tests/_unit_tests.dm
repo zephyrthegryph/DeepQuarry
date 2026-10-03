@@ -639,6 +639,7 @@
 #include "interim_gravemarker_item_timed_dismantle.dm"
 #include "interim_ghost_query_actor.dm"
 #include "interim_shard_weld.dm"
+#include "interim_gear_pack_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
