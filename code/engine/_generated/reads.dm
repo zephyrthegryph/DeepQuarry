@@ -141,6 +141,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 10)),
 	"/obj/item/storage/belt::can_switch_layer" = list(0,
 		list(1, 0, 11)),
+	"/obj/item/storage/bible::chaplain_configured" = list(0),
+	"/obj/item/storage/bible::chaplain_unconfigured" = list(0),
 	"/obj/item/storage/box::cannot_fold" = list(0,
 		list(1, 0, 12)),
 	"/obj/item/storage/box::crumples" = list(0,

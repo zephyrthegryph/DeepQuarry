@@ -25,7 +25,9 @@ CAPABILITIES(/obj/eg2_asker, \
 	op("amount", menu(), asks(/datum/prompt/number, fields = list("min_value" = 1, "max_value" = 10, "step" = 1)), then(PROC_REF(answered))))
 
 /obj/eg2_asker/proc/computed_choices(datum/act/op/A)
-	var/static/list/names = list("alpha", "beta")
+	var/list/names = list()
+	names += "alpha"
+	names += "beta"
 	return names
 
 /obj/eg2_asker/proc/answered(datum/act/op/A)

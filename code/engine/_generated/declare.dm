@@ -545,12 +545,75 @@
 	into += entry_line(328)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
+/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
+/datum/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/parts/prompts.dm", 25, /datum/prompt)
+	into += entry_line(25)
+	into += list(global.ref_one(nameof(window), /datum))
+
+/// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:179
+/datum/radial_menu/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 179, /datum/radial_menu/prompt)
+	into += entry_line(179)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
 /datum/species/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/engine/parts/hands.dm", 53, /datum/species)
 	into += entry_line(54)
 	into += list(global.hands())
+
+/// CAPABILITIES(/datum/tgui_alert/prompt) at code/engine/present/prompt_windows.dm:27
+/datum/tgui_alert/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 27, /datum/tgui_alert/prompt)
+	into += entry_line(27)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_bitfield_input/prompt) at code/engine/present/prompt_windows.dm:153
+/datum/tgui_bitfield_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 153, /datum/tgui_bitfield_input/prompt)
+	into += entry_line(153)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_checkbox_input/prompt) at code/engine/present/prompt_windows.dm:132
+/datum/tgui_checkbox_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 132, /datum/tgui_checkbox_input/prompt)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_color_picker/prompt) at code/engine/present/prompt_windows.dm:111
+/datum/tgui_color_picker/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 111, /datum/tgui_color_picker/prompt)
+	into += entry_line(111)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_input_number/prompt) at code/engine/present/prompt_windows.dm:90
+/datum/tgui_input_number/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 90, /datum/tgui_input_number/prompt)
+	into += entry_line(90)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_input_text/prompt) at code/engine/present/prompt_windows.dm:69
+/datum/tgui_input_text/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 69, /datum/tgui_input_text/prompt)
+	into += entry_line(69)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_list_input/prompt) at code/engine/present/prompt_windows.dm:48
+/datum/tgui_list_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 48, /datum/tgui_list_input/prompt)
+	into += entry_line(48)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
 /// CAPABILITIES(/mob/living/carbon) at code/engine/parts/hands.dm:48
 /mob/living/carbon/declared_entries(list/into)
@@ -1202,12 +1265,16 @@
 	into += entry_line(208)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/cell, /obj/item/pipe_dispenser, /obj/item/rcd, /obj/item/quantum_pad_booster, /obj/item/inducer, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/pickaxe/plasmacutter, /obj/item/holosign_creator/combifan, /obj/item/reagent_scanner, /obj/item/lightpainter))))
 
-/// CAPABILITIES(/obj/item/storage/bible) at code/game/objects/items/weapons/storage/bible.dm:44
+/// CAPABILITIES(/obj/item/storage/bible) at code/game/objects/items/weapons/storage/bible.dm:41
 /obj/item/storage/bible/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/bible.dm", 44, /obj/item/storage/bible)
-	into += entry_line(45)
+	into += entry_block("code/game/objects/items/weapons/storage/bible.dm", 41, /obj/item/storage/bible)
+	into += entry_line(42)
 	into += list(global.op("page_turn", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.label("Put in"), global.then(PROC_REF(turn_page)), global.passes()))
+	into += entry_line(43)
+	into += list(global.op("skin", global.in_hand(), global.when(global.req(PROC_REF(chaplain_unconfigured))), global.label("Choose a bible"), global.asks(/datum/prompt/choice, fields = list("question" = "Choose a bible", "choices" = global.computed(PROC_REF(skin_choices)), "radial" = TRUE, "radius" = 40)), global.then(PROC_REF(skin_chosen))))
+	into += entry_line(46)
+	into += list(global.op("invoke", global.in_hand(), global.priority(global.above("skin")), global.when(global.req(PROC_REF(chaplain_configured))), global.label("Invoke"), global.then(PROC_REF(invoke_religion))))
 
 /// CAPABILITIES(/obj/item/storage/box) at code/game/objects/items/weapons/storage/boxes.dm:42
 /obj/item/storage/box/declared_entries(list/into)
@@ -1986,6 +2053,13 @@
 	into += entry_block("code/modules/casino/casino_items.dm", 8, /obj/item/storage/wallet/casino)
 	into += entry_line(9)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
+
+/// CAPABILITIES(/obj/item/storage/wallet/poly) at code/game/objects/items/weapons/storage/wallets.dm:119
+/obj/item/storage/wallet/poly/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/wallets.dm", 119, /obj/item/storage/wallet/poly)
+	into += entry_line(120)
+	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
 
 /// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
 /obj/machinery/button/remote/blast_door/declared_entries(list/into)
@@ -3258,6 +3332,27 @@
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED))
 	into += entry_line(39)
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
+
+/// CAPABILITIES(/obj/eg2_asker) at code/tests/engine/eg2_fixtures.dm:17
+/obj/eg2_asker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/eg2_fixtures.dm", 17, /obj/eg2_asker)
+	into += entry_line(18)
+	into += list(global.op("pick", global.menu(), global.asks(/datum/prompt/choice, fields = list("question" = "Which?", "choices" = list("red", "blue"))), global.then(PROC_REF(answered))))
+	into += entry_line(19)
+	into += list(global.op("pick_proc", global.menu(), global.asks(/datum/prompt/choice, fields = list("choices" = global.computed(PROC_REF(computed_choices)))), global.then(PROC_REF(answered))))
+	into += entry_line(20)
+	into += list(global.op("pick_none", global.menu(), global.asks(/datum/prompt/choice, fields = list("choices" = list())), global.then(PROC_REF(answered))))
+	into += entry_line(21)
+	into += list(global.op("tint", global.menu(), global.asks(/datum/prompt/color, fields = list("default" = nameof(tint))), global.then(PROC_REF(answered))))
+	into += entry_line(22)
+	into += list(global.op("boxes", global.menu(), global.asks(/datum/prompt/checklist, fields = list("choices" = list("a", "b", "c"), "min_picks" = 1, "max_picks" = 2)), global.then(PROC_REF(answered))))
+	into += entry_line(23)
+	into += list(global.op("flags", global.menu(), global.asks(/datum/prompt/bitfield, fields = list("default" = 5, "editable" = 3)), global.then(PROC_REF(answered))))
+	into += entry_line(24)
+	into += list(global.op("words", global.menu(), global.asks(/datum/prompt/text, fields = list("max_len" = 5)), global.then(PROC_REF(answered))))
+	into += entry_line(25)
+	into += list(global.op("amount", global.menu(), global.asks(/datum/prompt/number, fields = list("min_value" = 1, "max_value" = 10, "step" = 1)), global.then(PROC_REF(answered))))
 
 /// CAPABILITIES(/obj/eg2_waiter) at code/tests/engine/eg2_wait_fixtures.dm:10
 /obj/eg2_waiter/declared_entries(list/into)

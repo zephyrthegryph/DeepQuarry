@@ -173,10 +173,10 @@ UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/prompt, ui_act_submit)
 /// A radial ring that answers the prompt which opened it (kind choice with radial = TRUE).
 /datum/radial_menu/prompt
 	var/datum/prompt/prompt
-
-CAPABILITIES(/datum/radial_menu/prompt, ref_one(nameof(prompt), /datum/prompt))
 	/// The key GLOB.radial_menus holds it under: asking again while it is open toggles it shut.
 	var/menu_id
+
+CAPABILITIES(/datum/radial_menu/prompt, ref_one(nameof(prompt), /datum/prompt))
 
 /datum/radial_menu/prompt/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)
