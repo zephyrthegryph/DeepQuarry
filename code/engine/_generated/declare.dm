@@ -136,15 +136,16 @@
 /datum/capdef_decl/c_interior/spec()
 	return list(CAP_INTERIOR, /datum/capability/lib/interior, NONE, STACK, "interior", "escape_wait, escape_chance")
 
-/// CAPABILITY_TYPE(lock, CAP_LOCK) at code/library/access/lock.dm:19
+/// CAPABILITY_TYPE(lock, CAP_LOCK) at code/library/access/lock.dm:20
 /datum/capability/lib/lock
 	var/id_types = null
 	var/starts_locked = FALSE
-/proc/lock(id_types, starts_locked)
+	var/alt = TRUE
+/proc/lock(id_types, starts_locked, alt)
 	RETURN_TYPE(/datum/capability/lib/lock)
-	return cap_construct(CAP_LOCK, /datum/capability/lib/lock, list(id_types, starts_locked), "id_types, starts_locked")
+	return cap_construct(CAP_LOCK, /datum/capability/lib/lock, list(id_types, starts_locked, alt), "id_types, starts_locked, alt")
 /datum/capdef_decl/c_lock/spec()
-	return list(CAP_LOCK, /datum/capability/lib/lock, NONE, STACK, "lock", "id_types, starts_locked")
+	return list(CAP_LOCK, /datum/capability/lib/lock, NONE, STACK, "lock", "id_types, starts_locked, alt")
 
 /// CAPABILITY_DEF(machine_basics, CAP_MACHINE_BASICS) at code/library/machine/machine.dm:82
 /datum/capability/def/machine_basics
@@ -232,6 +233,15 @@
 /datum/capdef_decl/c_powered_by/spec()
 	return list(CAP_POWERED_BY, /datum/capability/lib/powered_by, "of_system", STACK, "powered_by", "of_system, role")
 
+/// CAPABILITY_TYPE(quickdraw, CAP_QUICKDRAW) at code/library/containers/quickdraw.dm:16
+/datum/capability/lib/quickdraw
+	var/starts = null
+/proc/quickdraw(starts)
+	RETURN_TYPE(/datum/capability/lib/quickdraw)
+	return cap_construct(CAP_QUICKDRAW, /datum/capability/lib/quickdraw, list(starts), "starts")
+/datum/capdef_decl/c_quickdraw/spec()
+	return list(CAP_QUICKDRAW, /datum/capability/lib/quickdraw, NONE, STACK, "quickdraw", "starts")
+
 /// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:37
 /datum/capability/lib/reagent_container
 	var/volume = 30
@@ -269,6 +279,24 @@
 /datum/capdef_decl/c_stackable/spec()
 	return list(CAP_STACKABLE, /datum/capability/lib/stackable, NONE, STACK, "stackable", "max_amount")
 
+/// CAPABILITY_TYPE(storage, CAP_STORAGE) at code/library/containers/storage.dm:40
+/datum/capability/lib/storage
+	var/space = null
+	var/slots = null
+	var/accepts = null
+	var/refuses = null
+	var/max_size = null
+	var/empties = null
+	var/gather_toggle = null
+	var/special = null
+	var/pocketable = null
+	var/quiet = null
+/proc/storage(space, slots, accepts, refuses, max_size, empties, gather_toggle, special, pocketable, quiet)
+	RETURN_TYPE(/datum/capability/lib/storage)
+	return cap_construct(CAP_STORAGE, /datum/capability/lib/storage, list(space, slots, accepts, refuses, max_size, empties, gather_toggle, special, pocketable, quiet), "space, slots, accepts, refuses, max_size, empties, gather_toggle, special, pocketable, quiet")
+/datum/capdef_decl/c_storage/spec()
+	return list(CAP_STORAGE, /datum/capability/lib/storage, NONE, STACK, "storage", "space, slots, accepts, refuses, max_size, empties, gather_toggle, special, pocketable, quiet")
+
 /// CAPABILITY_TYPE(subversion_reset, CAP_SUBVERSION_RESET) at code/library/access/subversion.dm:11
 /datum/capability/lib/subversion_reset
 	var/parts = null
@@ -295,6 +323,13 @@
 	return cap_construct(CAP_TRAIT, /datum/capability/lib/trait, list(trait, examine), "trait, examine")
 /datum/capdef_decl/c_trait/spec()
 	return list(CAP_TRAIT, /datum/capability/lib/trait, "trait", STACK, "trait", "trait, examine")
+
+/// CAPABILITY_TYPE(two_hands, CAP_TWO_HANDS) at code/library/items/two_hands.dm:13
+/proc/two_hands()
+	RETURN_TYPE(/datum/capability/lib/two_hands)
+	return cap_construct(CAP_TWO_HANDS, /datum/capability/lib/two_hands, list(), "")
+/datum/capdef_decl/c_two_hands/spec()
+	return list(CAP_TWO_HANDS, /datum/capability/lib/two_hands, NONE, STACK, "two_hands", "")
 
 /// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:101
 /datum/capability/def/wall_machine
@@ -346,12 +381,19 @@
 /proc/emag_emagged(datum/holder, selector)
 	return cap_key_get(holder, EMAG_EMAGGED, selector)
 
-/// cap_keys(CAP_LOCK) at code/library/access/lock.dm:20
+/// cap_keys(CAP_LOCK) at code/library/access/lock.dm:21
 /datum/cap_keys_decl/k_lock/spec()
 	return list(CAP_LOCK, list(LOCKED = MSG(lock/is_unlocked)))
 /// The state key LOCKED of lock, read on a holder (a granted capability with several selectors names the selector).
 /proc/lock_locked(datum/holder, selector)
 	return cap_key_get(holder, LOCK_LOCKED, selector)
+
+/// cap_keys(CAP_QUICKDRAW) at code/library/containers/quickdraw.dm:17
+/datum/cap_keys_decl/k_quickdraw/spec()
+	return list(CAP_QUICKDRAW, list(DRAWS = MSG(quickdraw/is_off)))
+/// The state key DRAWS of quickdraw, read on a holder (a granted capability with several selectors names the selector).
+/proc/quickdraw_draws(datum/holder, selector)
+	return cap_key_get(holder, QUICKDRAW_DRAWS, selector)
 
 /// cap_keys(CAP_COVER) at code/library/machine/cover.dm:21
 /datum/cap_keys_decl/k_cover/spec()
@@ -662,6 +704,1128 @@
 	into += list(global.extend("needle.draw_blood", global.needs(global.req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))))
 	into += entry_line(205)
 	into += list(global.extend("needle.take_blood", global.needs(global.req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))))
+
+/// CAPABILITIES(/obj/item/storage) at code/game/objects/items/weapons/storage/storage.dm:57
+/obj/item/storage/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 57, /obj/item/storage)
+	into += entry_line(58)
+	into += list(global.storage( space = nameof(/obj/item/storage::max_storage_space), slots = nameof(/obj/item/storage::storage_slots), max_size = ITEMSIZE_SMALL, empties = nameof(/obj/item/storage::allow_quick_empty), gather_toggle = nameof(/obj/item/storage::allow_quick_gather), special = nameof(/obj/item/storage::special_handling), pocketable = nameof(/obj/item/storage::pocketable), quiet = list(/obj/item/hand_labeler)))
+	into += entry_line(67)
+	into += list(global.op("feed_replacer", global.item(/obj/item/lightreplacer), global.priority(global.above("storage.put_in")), global.when(PROC_REF(has_bulbs_for)), global.label("Refill the light replacer"), global.then(PROC_REF(feed_replacer))))
+
+/// CAPABILITIES(/obj/item/storage/backpack) at code/game/objects/items/weapons/storage/backpack.dm:24
+/obj/item/storage/backpack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 24, /obj/item/storage/backpack)
+	into += entry_line(25)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_LARGE)))
+
+/// CAPABILITIES(/obj/item/storage/backpack/dufflebag) at code/game/objects/items/weapons/storage/backpack.dm:192
+/obj/item/storage/backpack/dufflebag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 192, /obj/item/storage/backpack/dufflebag)
+	into += entry_line(193)
+	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried(), global.req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), global.then(PROC_REF(dufflebag_tilt_effect))))
+
+/// CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff) at code/modules/vore/fluffstuff/custom_items.dm:1051
+/obj/item/storage/backpack/fluff/stunstaff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1051, /obj/item/storage/backpack/fluff/stunstaff)
+	into += entry_line(1052)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
+
+/// CAPABILITIES(/obj/item/storage/backpack/holding) at code/game/objects/items/weapons/storage/backpack.dm:94
+/obj/item/storage/backpack/holding/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 94, /obj/item/storage/backpack/holding)
+	into += entry_line(95)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/storage/backpack/holding))))
+	into += entry_line(96)
+	into += list(global.op("conflict", global.item(/obj/item/storage/backpack/holding), global.priority(global.above("storage.put_in")), global.label("Put in"), global.then(PROC_REF(bluespace_conflict))))
+
+/// CAPABILITIES(/obj/item/storage/backpack/holding/duffle) at code/game/objects/items/weapons/storage/backpack.dm:75
+/obj/item/storage/backpack/holding/duffle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 75, /obj/item/storage/backpack/holding/duffle)
+	into += entry_line(76)
+	into += list(global.op("tilt", global.menu(), global.label("Adjust Duffelbag Angle"), global.needs(global.carried()), global.then(PROC_REF(duffle_tilt_effect))))
+
+/// CAPABILITIES(/obj/item/storage/backpack/parachute) at code/game/objects/items/weapons/storage/backpack.dm:523
+/obj/item/storage/backpack/parachute/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 523, /obj/item/storage/backpack/parachute)
+	into += entry_line(524)
+	into += list(global.op("pack", global.menu(), global.when(PROC_REF(is_unpacked)), global.label("Pack Parachute"), global.needs(global.carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), global.wait(5 SECONDS), global.then(PROC_REF(pack_it)), global.says(MSG(parachute/packed), blind = span_infoplain("You hear the shuffling of cloth."))))
+	into += entry_line(527)
+	into += list(global.op("unpack", global.menu(), global.when(PROC_REF(is_packed)), global.label("Unpack Parachute"), global.needs(global.carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), global.wait(2.5 SECONDS), global.then(PROC_REF(unpack_it)), global.says(MSG(parachute/unpacked), blind = span_infoplain("You hear the shuffling of cloth."))))
+
+/// CAPABILITIES(/obj/item/storage/backpack/purse) at code/game/objects/items/weapons/storage/backpack.dm:491
+/obj/item/storage/backpack/purse/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/backpack.dm", 491, /obj/item/storage/backpack/purse)
+	into += entry_line(492)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/cash) at code/game/objects/items/weapons/storage/bags.dm:269
+/obj/item/storage/bag/cash/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 269, /obj/item/storage/bag/cash)
+	into += entry_line(270)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/coin, /obj/item/spacecash, /obj/item/spacecasinocash), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/chemistry) at code/game/objects/items/weapons/storage/bags.dm:289
+/obj/item/storage/bag/chemistry/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 289, /obj/item/storage/bag/chemistry)
+	into += entry_line(290)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/pill, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector))))
+
+/// CAPABILITIES(/obj/item/storage/bag/circuits) at code/modules/integrated_electronics/core/tools.dm:275
+/obj/item/storage/bag/circuits/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 275, /obj/item/storage/bag/circuits)
+	into += entry_line(276)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/integrated_circuit, /obj/item/storage/bag/circuits/mini, /obj/item/electronic_assembly, /obj/item/integrated_electronics, /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/multitool, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/integrated_electronics/detailer))))
+
+/// CAPABILITIES(/obj/item/storage/bag/circuits/mini) at code/modules/integrated_electronics/core/tools.dm:350
+/obj/item/storage/bag/circuits/mini/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/integrated_electronics/core/tools.dm", 350, /obj/item/storage/bag/circuits/mini)
+	into += entry_line(351)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/integrated_circuit))))
+
+/// CAPABILITIES(/obj/item/storage/bag/detective) at code/game/objects/items/weapons/storage/bags.dm:388
+/obj/item/storage/bag/detective/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 388, /obj/item/storage/bag/detective)
+	into += entry_line(389)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/forensics/swab, /obj/item/sample/print, /obj/item/sample/fibers, /obj/item/evidencebag), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/food) at code/game/objects/items/weapons/storage/bags.dm:344
+/obj/item/storage/bag/food/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 344, /obj/item/storage/bag/food)
+	into += entry_line(345)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks, /obj/item/reagent_containers/food/condiment), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/fossils) at code/modules/xenoarcheaology/tools/tools.dm:20
+/obj/item/storage/bag/fossils/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools.dm", 20, /obj/item/storage/bag/fossils)
+	into += entry_line(21)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/mail) at code/game/objects/mail.dm:394
+/obj/item/storage/bag/mail/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/mail.dm", 394, /obj/item/storage/bag/mail)
+	into += entry_line(395)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/mail, /obj/item/smallDelivery, /obj/item/paper, /obj/item/stolenpackage, /obj/item/contraband, /obj/item/mail_scanner, /obj/item/pen), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/plants) at code/game/objects/items/weapons/storage/bags.dm:113
+/obj/item/storage/bag/plants/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 113, /obj/item/storage/bag/plants)
+	into += entry_line(114)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/grown, /obj/item/seeds, /obj/item/grown), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/plasticbag) at code/game/objects/items/weapons/storage/bags.dm:96
+/obj/item/storage/bag/plasticbag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 96, /obj/item/storage/bag/plasticbag)
+	into += entry_line(97)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/disk/nuclear))))
+
+/// CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween) at code/modules/halloween/items.dm:7
+/obj/item/storage/bag/plasticbag/halloween/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/halloween/items.dm", 7, /obj/item/storage/bag/plasticbag/halloween)
+	into += entry_line(8)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/candy, /obj/item/reagent_containers/food/snacks/candy_corn, /obj/item/reagent_containers/food/snacks/chocolatebar, /obj/item/reagent_containers/food/snacks/chocolatepiece, /obj/item/reagent_containers/food/snacks/chocolatepiece/white, /obj/item/reagent_containers/food/snacks/chocolatepiece/truffle, /obj/item/reagent_containers/food/snacks/chocolateegg, /obj/item/reagent_containers/food/snacks/no_raisin, /obj/item/reagent_containers/food/snacks/butterscotch, /obj/item/reagent_containers/food/snacks/spicy_boys, /obj/item/reagent_containers/food/snacks/welders_original, /obj/item/reagent_containers/food/snacks/organ, /obj/item/reagent_containers/food/snacks/mint, /obj/item/storage/box/admints, /obj/item/reagent_containers/food/snacks/cookiesnack, /obj/item/reagent_containers/food/snacks/cb01, /obj/item/reagent_containers/food/snacks/cb02, /obj/item/reagent_containers/food/snacks/cb03, /obj/item/reagent_containers/food/snacks/cb04, /obj/item/reagent_containers/food/snacks/cb05, /obj/item/reagent_containers/food/snacks/cb06, /obj/item/reagent_containers/food/snacks/cb07, /obj/item/reagent_containers/food/snacks/cb08, /obj/item/reagent_containers/food/snacks/cb09, /obj/item/reagent_containers/food/snacks/cb10, /obj/item/reagent_containers/food/snacks/reishicup, /obj/item/reagent_containers/food/snacks/antball, /obj/item/reagent_containers/food/snacks/honey_candy, /obj/item/storage/box/winegum, /obj/item/storage/box/shrimpsandbananas, /obj/item/clothing/mask/chewable/candy/lolli), refuses = list(/obj/item/disk/nuclear))))
+
+/// CAPABILITIES(/obj/item/storage/bag/salvage) at code/modules/salvage/bags.dm:10
+/obj/item/storage/bag/salvage/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/salvage/bags.dm", 10, /obj/item/storage/bag/salvage)
+	into += entry_line(11)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/salvage), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/santabag) at code/game/objects/items/weapons/storage/bags.dm:411
+/obj/item/storage/bag/santabag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 411, /obj/item/storage/bag/santabag)
+	into += entry_line(412)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/serviceborg) at code/game/objects/items/weapons/storage/bags.dm:362
+/obj/item/storage/bag/serviceborg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 362, /obj/item/storage/bag/serviceborg)
+	into += entry_line(363)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks, /obj/item/reagent_containers/food/condiment, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/coin, /obj/item/spacecash, /obj/item/reagent_containers/food/snacks/grown, /obj/item/seeds, /obj/item/grown, /obj/item/reagent_containers/pill), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/sheetsnatcher) at code/game/objects/items/weapons/storage/bags.dm:145
+/obj/item/storage/bag/sheetsnatcher/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 145, /obj/item/storage/bag/sheetsnatcher)
+	into += entry_line(146)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/stack/material), max_size = null)))
+
+/// CAPABILITIES(/obj/item/storage/bag/trash) at code/game/objects/items/weapons/storage/bags.dm:54
+/obj/item/storage/bag/trash/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 54, /obj/item/storage/bag/trash)
+	into += entry_line(55)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/disk/nuclear))))
+
+/// CAPABILITIES(/obj/item/storage/bag/trash/holding) at code/game/objects/items/weapons/storage/bags.dm:77
+/obj/item/storage/bag/trash/holding/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 77, /obj/item/storage/bag/trash/holding)
+	into += entry_line(78)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/virology) at code/game/objects/items/weapons/storage/bags.dm:328
+/obj/item/storage/bag/virology/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 328, /obj/item/storage/bag/virology)
+	into += entry_line(329)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bag/xeno) at code/game/objects/items/weapons/storage/bags.dm:309
+/obj/item/storage/bag/xeno/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bags.dm", 309, /obj/item/storage/bag/xeno)
+	into += entry_line(310)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/slime_extract, /obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/bagoplanets) at code/modules/vore/smoleworld/smoleworld.dm:414
+/obj/item/storage/bagoplanets/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/smoleworld/smoleworld.dm", 414, /obj/item/storage/bagoplanets)
+	into += entry_line(415)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/belt) at code/game/objects/items/weapons/storage/belt.dm:25
+/obj/item/storage/belt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 25, /obj/item/storage/belt)
+	into += entry_line(26)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+	into += entry_line(27)
+	into += list(global.op("layer", global.menu(), global.label("Switch Belt Layer"), global.needs(global.carried(), global.req(PROC_REF(can_switch_layer), because = MSG(belt/under_suit))), global.then(PROC_REF(toggle_layer_effect))))
+
+/// CAPABILITIES(/obj/item/storage/belt/archaeology) at code/game/objects/items/weapons/storage/belt.dm:585
+/obj/item/storage/belt/archaeology/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 585, /obj/item/storage/belt/archaeology)
+	into += entry_line(586)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/stack/marker_beacon, /obj/item/clothing/glasses, /obj/item/storage/box/samplebags, /obj/item/xenoarch_multi_tool, /obj/item/core_sampler, /obj/item/beacon_locator, /obj/item/radio/beacon, /obj/item/gps, /obj/item/measuring_tape, /obj/item/flashlight, /obj/item/depth_scanner, /obj/item/camera, /obj/item/ano_scanner, /obj/item/geiger, /obj/item/cell/device, /obj/item/pickaxe, /obj/item/paper, /obj/item/paper_bundle, /obj/item/photo, /obj/item/folder, /obj/item/pen, /obj/item/folder, /obj/item/clipboard, /obj/item/anodevice, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/multitool, /obj/item/storage/excavation, /obj/item/anobattery, /obj/item/pickaxe))))
+
+/// CAPABILITIES(/obj/item/storage/belt/bandolier) at code/game/objects/items/weapons/storage/belt.dm:533
+/obj/item/storage/belt/bandolier/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 533, /obj/item/storage/belt/bandolier)
+	into += entry_line(534)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/ammo_casing/a12g, /obj/item/ammo_casing/a12g/pellet, /obj/item/ammo_casing/a12g/blank, /obj/item/ammo_casing/a12g/practice, /obj/item/ammo_casing/a12g/beanbag, /obj/item/ammo_casing/a12g/stunshell, /obj/item/ammo_casing/a12g/flash, /obj/item/ammo_casing/a12g/emp, /obj/item/ammo_casing/a12g/flechette), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/belt/champion) at code/game/objects/items/weapons/storage/belt.dm:480
+/obj/item/storage/belt/champion/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 480, /obj/item/storage/belt/champion)
+	into += entry_line(481)
+	into += list(global.configure(global.storage(accepts = list())))
+
+/// CAPABILITIES(/obj/item/storage/belt/dbandolier) at code/game/objects/items/weapons/storage/belt.dm:688
+/obj/item/storage/belt/dbandolier/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 688, /obj/item/storage/belt/dbandolier)
+	into += entry_line(689)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/ammo_casing/afoam_dart))))
+
+/// CAPABILITIES(/obj/item/storage/belt/detective) at code/game/objects/items/weapons/storage/belt.dm:352
+/obj/item/storage/belt/detective/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 352, /obj/item/storage/belt/detective)
+	into += entry_line(353)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/taperecorder, /obj/item/rectape, /obj/item/clothing/glasses, /obj/item/flashlight, /obj/item/cell/device, /obj/item/reagent_containers/spray/luminol, /obj/item/sample, /obj/item/forensics/sample_kit/powder, /obj/item/forensics/swab, /obj/item/uv_light, /obj/item/forensics/sample_kit, /obj/item/photo, /obj/item/camera_film, /obj/item/camera, /obj/item/autopsy_scanner, /obj/item/mass_spectrometer, /obj/item/clothing/accessory/badge, /obj/item/reagent_scanner, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/syringe, /obj/item/pda, /obj/item/hailer, /obj/item/megaphone, /obj/item/radio/headset, /obj/item/clothing/gloves, /obj/item/taperoll, /obj/item/reagent_containers/spray/pepper, /obj/item/handcuffs, /obj/item/flash, /obj/item/flame/lighter, /obj/item/reagent_containers/food/snacks/donut/, /obj/item/gun/energy/stunrevolver/detective, /obj/item/holowarrant, /obj/item/reagent_containers/food/drinks/flask, /obj/item/ticket_printer))))
+
+/// CAPABILITIES(/obj/item/storage/belt/explorer) at code/game/objects/items/weapons/storage/belt.dm:700
+/obj/item/storage/belt/explorer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 700, /obj/item/storage/belt/explorer)
+	into += entry_line(701)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/grenade, /obj/item/tool, /obj/item/weldingtool, /obj/item/pickaxe, /obj/item/multitool, /obj/item/stack/cable_coil, /obj/item/analyzer, /obj/item/flashlight, /obj/item/cell, /obj/item/gun, /obj/item/material, /obj/item/melee, /obj/item/shield, /obj/item/ammo_casing, /obj/item/ammo_magazine, /obj/item/healthanalyzer, /obj/item/robotanalyzer, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/stack/marker_beacon, /obj/item/extinguisher/mini, /obj/item/storage/quickdraw/syringe_case, /obj/item/photo, /obj/item/camera_film, /obj/item/camera, /obj/item/taperecorder, /obj/item/tape, /obj/item/geiger, /obj/item/gps, /obj/item/ano_scanner, /obj/item/cataloguer, /obj/item/radio, /obj/item/mapping_unit, /obj/item/binoculars, /obj/item/kinetic_crusher, /obj/item/analyzer, /obj/item/storage/sample_container))))
+
+/// CAPABILITIES(/obj/item/storage/belt/fannypack) at code/game/objects/items/weapons/storage/belt.dm:627
+/obj/item/storage/belt/fannypack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 627, /obj/item/storage/belt/fannypack)
+	into += entry_line(628)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/belt/hydro) at code/game/objects/items/weapons/storage/belt.dm:823
+/obj/item/storage/belt/hydro/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 823, /obj/item/storage/belt/hydro)
+	into += entry_line(824)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/analyzer/plant_analyzer, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/shovel/spade, /obj/item/tool/wirecutters, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/reagent_containers/spray/plantbgone, /obj/item/plantspray, /obj/item/gun/energy/floragun, /obj/item/seeds), max_size = ITEMSIZE_LARGE)))
+
+/// CAPABILITIES(/obj/item/storage/belt/janitor) at code/game/objects/items/weapons/storage/belt.dm:557
+/obj/item/storage/belt/janitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 557, /obj/item/storage/belt/janitor)
+	into += entry_line(558)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/glasses, /obj/item/flashlight, /obj/item/cell/device, /obj/item/grenade, /obj/item/pda, /obj/item/radio/headset, /obj/item/clothing/gloves, /obj/item/clothing/mask/surgical, /obj/item/assembly/mousetrap, /obj/item/light/bulb, /obj/item/light/tube, /obj/item/flame/lighter, /obj/item/megaphone, /obj/item/taperoll, /obj/item/reagent_containers/spray, /obj/item/soap, /obj/item/holosign_creator, /obj/item/lightreplacer, /obj/item/clothing/glasses/hud/janitor))))
+
+/// CAPABILITIES(/obj/item/storage/belt/medical) at code/game/objects/items/weapons/storage/belt.dm:257
+/obj/item/storage/belt/medical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 257, /obj/item/storage/belt/medical)
+	into += entry_line(258)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/healthanalyzer, /obj/item/dnainjector, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/pill, /obj/item/reagent_containers/syringe, /obj/item/storage/quickdraw/syringe_case, /obj/item/flame/lighter/zippo, /obj/item/storage/fancy/cigarettes, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/radio/headset, /obj/item/pda, /obj/item/taperoll, /obj/item/megaphone, /obj/item/clothing/mask/surgical, /obj/item/clothing/head/surgery, /obj/item/clothing/gloves, /obj/item/reagent_containers/hypospray, /obj/item/clothing/glasses, /obj/item/tool/crowbar, /obj/item/flashlight, /obj/item/cell/device, /obj/item/extinguisher/mini, /obj/item/ammo_casing/macrobattery, /obj/item/sleevemate, /obj/item/mass_spectrometer, /obj/item/surgical, /obj/item/clothing/mask/chewable/candy/lolli, /obj/item/extrapolator, /obj/item/gene_scanner))))
+
+/// CAPABILITIES(/obj/item/storage/belt/medical/alien) at code/game/objects/items/weapons/storage/belt.dm:430
+/obj/item/storage/belt/medical/alien/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 430, /obj/item/storage/belt/medical/alien)
+	into += entry_line(431)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/healthanalyzer, /obj/item/dnainjector, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/pill, /obj/item/reagent_containers/syringe, /obj/item/flame/lighter/zippo, /obj/item/storage/fancy/cigarettes, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/radio/headset, /obj/item/pda, /obj/item/taperoll, /obj/item/megaphone, /obj/item/clothing/mask/surgical, /obj/item/clothing/head/surgery, /obj/item/clothing/gloves, /obj/item/reagent_containers/hypospray, /obj/item/clothing/glasses, /obj/item/tool/crowbar, /obj/item/flashlight, /obj/item/cell/device, /obj/item/extinguisher/mini, /obj/item/surgical))))
+
+/// CAPABILITIES(/obj/item/storage/belt/miner) at code/game/objects/items/weapons/storage/belt.dm:760
+/obj/item/storage/belt/miner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 760, /obj/item/storage/belt/miner)
+	into += entry_line(761)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/fulton_core, /obj/item/extraction_pack, /obj/item/resonator, /obj/item/stack/marker_beacon, /obj/item/stack/flag, /obj/item/modular_computer/tablet, /obj/item/clothing/glasses, /obj/item/clothing/shoes/bhop, /obj/item/multitool, /obj/item/core_sampler, /obj/item/beacon_locator, /obj/item/radio, /obj/item/measuring_tape, /obj/item/flashlight, /obj/item/depth_scanner, /obj/item/camera, /obj/item/ano_scanner, /obj/item/xenoarch_multi_tool, /obj/item/geiger, /obj/item/gps, /obj/item/laser_pointer, /obj/item/survivalcapsule, /obj/item/perfect_tele/one_beacon, /obj/item/binoculars, /obj/item/storage/box/samplebags, /obj/item/cell/device, /obj/item/pickaxe, /obj/item/shovel, /obj/item/paper, /obj/item/paper_bundle, /obj/item/photo, /obj/item/folder, /obj/item/pen, /obj/item/folder, /obj/item/clipboard, /obj/item/anodevice, /obj/item/tool/wrench, /obj/item/tool/screwdriver, /obj/item/tool/transforming/powerdrill, /obj/item/storage/excavation, /obj/item/anobattery, /obj/item/reagent_containers/hypospray/autoinjector, /obj/item/plastique/seismic/locked, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/storage/bag/sheetsnatcher, /obj/item/melee, /obj/item/kinetic_crusher, /obj/item/mining_scanner, /obj/item/ore_bag, /obj/item/storage/sample_container), max_size = ITEMSIZE_LARGE)))
+
+/// CAPABILITIES(/obj/item/storage/belt/security) at code/game/objects/items/weapons/storage/belt.dm:310
+/obj/item/storage/belt/security/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 310, /obj/item/storage/belt/security)
+	into += entry_line(311)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/grenade, /obj/item/reagent_containers/spray/pepper, /obj/item/handcuffs, /obj/item/flash, /obj/item/clothing/glasses, /obj/item/ammo_casing/a12g, /obj/item/ammo_magazine, /obj/item/cell/device, /obj/item/reagent_containers/food/snacks/donut/, /obj/item/melee/baton, /obj/item/gun/energy/taser, /obj/item/gun/energy/stunrevolver, /obj/item/gun/energy/stunrevolver/vintage, /obj/item/gun/magnetic/railgun/heater/pistol, /obj/item/gun/energy/gun, /obj/item/flame/lighter, /obj/item/flashlight, /obj/item/taperecorder, /obj/item/rectape, /obj/item/pda, /obj/item/radio/headset, /obj/item/clothing/gloves, /obj/item/hailer, /obj/item/megaphone, /obj/item/melee, /obj/item/clothing/accessory/badge, /obj/item/gun/projectile/sec, /obj/item/gun/projectile/p92x, /obj/item/taperoll, /obj/item/gun/projectile/colt/detective, /obj/item/holowarrant, /obj/item/ticket_printer))))
+
+/// CAPABILITIES(/obj/item/storage/belt/security/tactical) at code/game/objects/items/weapons/storage/belt.dm:491
+/obj/item/storage/belt/security/tactical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 491, /obj/item/storage/belt/security/tactical)
+	into += entry_line(492)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/grenade, /obj/item/reagent_containers/spray/pepper, /obj/item/handcuffs, /obj/item/flash, /obj/item/clothing/glasses, /obj/item/ammo_casing/a12g, /obj/item/ammo_magazine, /obj/item/cell/device, /obj/item/reagent_containers/food/snacks/donut/, /obj/item/melee/baton, /obj/item/gun/energy/taser, /obj/item/gun/energy/stunrevolver, /obj/item/gun/energy/stunrevolver/vintage, /obj/item/gun/magnetic/railgun/heater/pistol, /obj/item/gun/energy/gun, /obj/item/flame/lighter, /obj/item/flashlight, /obj/item/taperecorder, /obj/item/rectape, /obj/item/pda, /obj/item/radio/headset, /obj/item/clothing/gloves, /obj/item/hailer, /obj/item/megaphone, /obj/item/melee, /obj/item/clothing/accessory/badge, /obj/item/gun/projectile/sec, /obj/item/gun/projectile/p92x, /obj/item/taperoll, /obj/item/gun/projectile/colt/detective, /obj/item/holowarrant, /obj/item/ticket_printer))))
+
+/// CAPABILITIES(/obj/item/storage/belt/soulstone) at code/game/objects/items/weapons/storage/belt.dm:397
+/obj/item/storage/belt/soulstone/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 397, /obj/item/storage/belt/soulstone)
+	into += entry_line(398)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/soulstone))))
+
+/// CAPABILITIES(/obj/item/storage/belt/utility) at code/game/objects/items/weapons/storage/belt.dm:58
+/obj/item/storage/belt/utility/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 58, /obj/item/storage/belt/utility)
+	into += entry_line(59)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/pipe_dispenser, /obj/item/holosign_creator/combifan, /obj/item/rcd, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/geiger, /obj/item/reagent_scanner, /obj/item/lightpainter, /obj/item/anomaly_releaser, /obj/item/anomaly_scanner))))
+
+/// CAPABILITIES(/obj/item/storage/belt/utility/chief) at code/game/objects/items/weapons/storage/belt.dm:148
+/obj/item/storage/belt/utility/chief/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 148, /obj/item/storage/belt/utility/chief)
+	into += entry_line(149)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/rcd, /obj/item/pipe_dispenser, /obj/item/holosign_creator/combifan, /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/geiger, /obj/item/areaeditor/blueprints, /obj/item/wire_reader, /obj/item/holosign_creator/combifan))))
+
+/// CAPABILITIES(/obj/item/storage/belt/utility/holding) at code/game/objects/items/weapons/storage/belt.dm:207
+/obj/item/storage/belt/utility/holding/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/belt.dm", 207, /obj/item/storage/belt/utility/holding)
+	into += entry_line(208)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/cell, /obj/item/pipe_dispenser, /obj/item/rcd, /obj/item/quantum_pad_booster, /obj/item/inducer, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/pickaxe/plasmacutter, /obj/item/holosign_creator/combifan, /obj/item/reagent_scanner, /obj/item/lightpainter))))
+
+/// CAPABILITIES(/obj/item/storage/bible) at code/game/objects/items/weapons/storage/bible.dm:44
+/obj/item/storage/bible/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/bible.dm", 44, /obj/item/storage/bible)
+	into += entry_line(45)
+	into += list(global.op("page_turn", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.label("Put in"), global.then(PROC_REF(turn_page)), global.passes()))
+
+/// CAPABILITIES(/obj/item/storage/box) at code/game/objects/items/weapons/storage/boxes.dm:42
+/obj/item/storage/box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 42, /obj/item/storage/box)
+	into += entry_line(43)
+	into += list(global.op("fold", global.in_hand(), global.when(global.cond_all(PROC_REF(folds), req_storage_empty())), global.label("Fold"), global.then(PROC_REF(fold_up))))
+	into += entry_line(44)
+	into += list(global.op("crush", global.in_hand(), global.stance(I_HURT), global.priority(OP_PRIORITY_ATTACK), global.when(global.cond_all(PROC_REF(crumples), global.cond_not(req_storage_empty()))), global.label("Crush"), global.then(PROC_REF(crush_it))))
+	into += entry_line(45)
+	into += list(global.op("crumple", global.in_hand(), global.priority(global.below("fold")), global.when(global.cond_all(PROC_REF(crumples), global.cond_any(PROC_REF(cannot_fold), global.cond_not(req_storage_empty())))), global.label("Crumple"), global.then(PROC_REF(crumple_up))))
+
+/// CAPABILITIES(/obj/item/storage/box/admints) at code/modules/food/food/snacks.dm:5993
+/obj/item/storage/box/admints/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 5993, /obj/item/storage/box/admints)
+	into += entry_line(5994)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints))))
+
+/// CAPABILITIES(/obj/item/storage/box/bourbon) at code/modules/food/food/snacks.dm:8391
+/obj/item/storage/box/bourbon/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8391, /obj/item/storage/box/bourbon)
+	into += entry_line(8392)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon))))
+
+/// CAPABILITIES(/obj/item/storage/box/brainzsnax) at code/game/objects/items/weapons/storage/boxes.dm:670
+/obj/item/storage/box/brainzsnax/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 670, /obj/item/storage/box/brainzsnax)
+	into += entry_line(671)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/canned))))
+
+/// CAPABILITIES(/obj/item/storage/box/capguntoy) at code/game/objects/items/weapons/storage/boxes.dm:585
+/obj/item/storage/box/capguntoy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 585, /obj/item/storage/box/capguntoy)
+	into += entry_line(586)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/box/custardcream) at code/modules/food/food/snacks.dm:8363
+/obj/item/storage/box/custardcream/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8363, /obj/item/storage/box/custardcream)
+	into += entry_line(8364)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream))))
+
+/// CAPABILITIES(/obj/item/storage/box/donut) at code/game/objects/items/weapons/storage/misc.dm:43
+/obj/item/storage/box/donut/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/misc.dm", 43, /obj/item/storage/box/donut)
+	into += entry_line(44)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut))))
+
+/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:412
+/obj/item/storage/box/dosimeter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 412, /obj/item/storage/box/dosimeter)
+	into += entry_line(413)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film))))
+
+/// CAPABILITIES(/obj/item/storage/box/evidence) at code/modules/detectivework/tools/storage.dm:23
+/obj/item/storage/box/evidence/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/detectivework/tools/storage.dm", 23, /obj/item/storage/box/evidence)
+	into += entry_line(24)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/evidencebag))))
+
+/// CAPABILITIES(/obj/item/storage/box/fingerprints) at code/modules/detectivework/tools/storage.dm:39
+/obj/item/storage/box/fingerprints/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/detectivework/tools/storage.dm", 39, /obj/item/storage/box/fingerprints)
+	into += entry_line(40)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/sample/print))))
+
+/// CAPABILITIES(/obj/item/storage/box/fluff/penelope) at code/modules/vore/fluffstuff/custom_boxes.dm:181
+/obj/item/storage/box/fluff/penelope/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 181, /obj/item/storage/box/fluff/penelope)
+	into += entry_line(182)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/box/fluff/swimsuit) at code/modules/vore/fluffstuff/custom_boxes.dm:251
+/obj/item/storage/box/fluff/swimsuit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_boxes.dm", 251, /obj/item/storage/box/fluff/swimsuit)
+	into += entry_line(252)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/under/swimsuit/), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/box/freezer) at code/game/objects/items/weapons/storage/boxes.dm:537
+/obj/item/storage/box/freezer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 537, /obj/item/storage/box/freezer)
+	into += entry_line(538)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/box/glass_extras) at code/modules/food/drinkingglass/glass_boxes.dm:81
+/obj/item/storage/box/glass_extras/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/drinkingglass/glass_boxes.dm", 81, /obj/item/storage/box/glass_extras)
+	into += entry_line(82)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/glass_extra))))
+
+/// CAPABILITIES(/obj/item/storage/box/glasses) at code/modules/food/drinkingglass/glass_boxes.dm:27
+/obj/item/storage/box/glasses/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/drinkingglass/glass_boxes.dm", 27, /obj/item/storage/box/glasses)
+	into += entry_line(28)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/drinks/glass2, /obj/item/reagent_containers/food/drinks/cup, /obj/item/reagent_containers/food/drinks/tall, /obj/item/reagent_containers/food/drinks/grande, /obj/item/reagent_containers/food/drinks/venti))))
+
+/// CAPABILITIES(/obj/item/storage/box/gum) at code/game/objects/items/weapons/chewables.dm:253
+/obj/item/storage/box/gum/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 253, /obj/item/storage/box/gum)
+	into += entry_line(254)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/chewable/candy/gum, /obj/item/trash/spitgum))))
+
+/// CAPABILITIES(/obj/item/storage/box/handcuffs/fake) at code/game/objects/items/toys/toys.dm:2166
+/obj/item/storage/box/handcuffs/fake/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/toys/toys.dm", 2166, /obj/item/storage/box/handcuffs/fake)
+	into += entry_line(2167)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake))))
+
+/// CAPABILITIES(/obj/item/storage/box/jaffacake) at code/modules/food/food/snacks.dm:8236
+/obj/item/storage/box/jaffacake/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8236, /obj/item/storage/box/jaffacake)
+	into += entry_line(8237)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
+
+/// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:651
+/obj/item/storage/box/khcrystal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 651, /obj/item/storage/box/khcrystal)
+	into += entry_line(652)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal))))
+
+/// CAPABILITIES(/obj/item/storage/box/lights) at code/game/objects/items/weapons/storage/boxes.dm:499
+/obj/item/storage/box/lights/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 499, /obj/item/storage/box/lights)
+	into += entry_line(500)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/light/tube, /obj/item/light/bulb))))
+
+/// CAPABILITIES(/obj/item/storage/box/matches) at code/game/objects/items/weapons/storage/boxes.dm:466
+/obj/item/storage/box/matches/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 466, /obj/item/storage/box/matches)
+	into += entry_line(467)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/flame/match))))
+	into += entry_line(468)
+	into += list(global.op("strike", global.item(/obj/item/flame/match), global.priority(global.above("storage.put_in")), global.label("Strike"), global.then(PROC_REF(strike_match))))
+
+/// CAPABILITIES(/obj/item/storage/box/mixedglasses) at code/modules/food/drinkingglass/glass_boxes.dm:19
+/obj/item/storage/box/mixedglasses/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/drinkingglass/glass_boxes.dm", 19, /obj/item/storage/box/mixedglasses)
+	into += entry_line(20)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/drinks/glass2))))
+
+/// CAPABILITIES(/obj/item/storage/box/monkeycubes) at code/game/objects/items/weapons/storage/boxes.dm:344
+/obj/item/storage/box/monkeycubes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 344, /obj/item/storage/box/monkeycubes)
+	into += entry_line(345)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/monkeycube))))
+
+/// CAPABILITIES(/obj/item/storage/box/pocky) at code/game/objects/items/weapons/chewables.dm:362
+/obj/item/storage/box/pocky/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/chewables.dm", 362, /obj/item/storage/box/pocky)
+	into += entry_line(363)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
+
+/// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8491
+/obj/item/storage/box/rhubarbcustard/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8491, /obj/item/storage/box/rhubarbcustard)
+	into += entry_line(8492)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard))))
+
+/// CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat) at code/modules/casino/boxes_casino.dm:102
+/obj/item/storage/box/roulette_balls_cheat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/boxes_casino.dm", 102, /obj/item/storage/box/roulette_balls_cheat)
+	into += entry_line(103)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/roulette_ball))))
+
+/// CAPABILITIES(/obj/item/storage/box/roulette_balls_fancy) at code/modules/casino/boxes_casino.dm:84
+/obj/item/storage/box/roulette_balls_fancy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/boxes_casino.dm", 84, /obj/item/storage/box/roulette_balls_fancy)
+	into += entry_line(85)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/roulette_ball))))
+
+/// CAPABILITIES(/obj/item/storage/box/roulette_balls_normal) at code/modules/casino/boxes_casino.dm:63
+/obj/item/storage/box/roulette_balls_normal/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/boxes_casino.dm", 63, /obj/item/storage/box/roulette_balls_normal)
+	into += entry_line(64)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/roulette_ball))))
+
+/// CAPABILITIES(/obj/item/storage/box/saucer) at code/modules/food/food/snacks.dm:8335
+/obj/item/storage/box/saucer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8335, /obj/item/storage/box/saucer)
+	into += entry_line(8336)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer))))
+
+/// CAPABILITIES(/obj/item/storage/box/shrimpsandbananas) at code/modules/food/food/snacks.dm:8455
+/obj/item/storage/box/shrimpsandbananas/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8455, /obj/item/storage/box/shrimpsandbananas)
+	into += entry_line(8456)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/foam_banana, /obj/item/reagent_containers/food/snacks/foam_shrimp))))
+
+/// CAPABILITIES(/obj/item/storage/box/snappops) at code/game/objects/items/weapons/storage/boxes.dm:451
+/obj/item/storage/box/snappops/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/boxes.dm", 451, /obj/item/storage/box/snappops)
+	into += entry_line(452)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/toy/snappop))))
+
+/// CAPABILITIES(/obj/item/storage/box/swabs) at code/modules/detectivework/tools/storage.dm:9
+/obj/item/storage/box/swabs/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/detectivework/tools/storage.dm", 9, /obj/item/storage/box/swabs)
+	into += entry_line(10)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/forensics/swab))))
+
+/// CAPABILITIES(/obj/item/storage/box/tgmc_mre) at code/game/objects/items/weapons/storage/mre.dm:317
+/obj/item/storage/box/tgmc_mre/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/mre.dm", 317, /obj/item/storage/box/tgmc_mre)
+	into += entry_line(318)
+	into += list(global.configure(global.storage(max_size = 0)))
+
+/// CAPABILITIES(/obj/item/storage/box/timecap) at code/game/objects/items/toys/toys.dm:2575
+/obj/item/storage/box/timecap/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/toys/toys.dm", 2575, /obj/item/storage/box/timecap)
+	into += entry_line(2576)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/toy/figure), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/box/winegum) at code/modules/food/food/snacks.dm:8290
+/obj/item/storage/box/winegum/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 8290, /obj/item/storage/box/winegum)
+	into += entry_line(8291)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum))))
+
+/// CAPABILITIES(/obj/item/storage/box/wings) at code/modules/food/food/snacks.dm:7457
+/obj/item/storage/box/wings/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 7457, /obj/item/storage/box/wings)
+	into += entry_line(7458)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing))))
+
+/// CAPABILITIES(/obj/item/storage/box/wings/bucket) at code/modules/food/food/snacks.dm:7917
+/obj/item/storage/box/wings/bucket/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 7917, /obj/item/storage/box/wings/bucket)
+	into += entry_line(7918)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub))))
+
+/// CAPABILITIES(/obj/item/storage/box/wings/tray) at code/modules/food/food/snacks.dm:7830
+/obj/item/storage/box/wings/tray/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/snacks.dm", 7830, /obj/item/storage/box/wings/tray)
+	into += entry_line(7831)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/cube/protein, /obj/item/reagent_containers/food/snacks/cube/nutriment))))
+
+/// CAPABILITIES(/obj/item/storage/box/wormcan) at code/game/objects/items/weapons/storage/misc.dm:83
+/obj/item/storage/box/wormcan/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/misc.dm", 83, /obj/item/storage/box/wormcan)
+	into += entry_line(84)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/wormsickly, /obj/item/reagent_containers/food/snacks/worm, /obj/item/reagent_containers/food/snacks/wormdeluxe))))
+
+/// CAPABILITIES(/obj/item/storage/briefcase) at code/game/objects/items/weapons/storage/briefcase.dm:15
+/obj/item/storage/briefcase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/briefcase.dm", 15, /obj/item/storage/briefcase)
+	into += entry_line(16)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/briefcase/clutch) at code/game/objects/items/weapons/storage/briefcase.dm:28
+/obj/item/storage/briefcase/clutch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/briefcase.dm", 28, /obj/item/storage/briefcase/clutch)
+	into += entry_line(29)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/briefcase/inflatable) at code/game/objects/structures/inflatable.dm:292
+/obj/item/storage/briefcase/inflatable/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/structures/inflatable.dm", 292, /obj/item/storage/briefcase/inflatable)
+	into += entry_line(293)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/inflatable))))
+
+/// CAPABILITIES(/obj/item/storage/dicecup) at code/modules/games/dice.dm:218
+/obj/item/storage/dicecup/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/games/dice.dm", 218, /obj/item/storage/dicecup)
+	into += entry_line(219)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/dice))))
+
+/// CAPABILITIES(/obj/item/storage/excavation) at code/modules/xenoarcheaology/tools/tools_pickaxe.dm:122
+/obj/item/storage/excavation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/tools/tools_pickaxe.dm", 122, /obj/item/storage/excavation)
+	into += entry_line(123)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/pickaxe/brush, /obj/item/pickaxe/one_pick, /obj/item/pickaxe/two_pick, /obj/item/pickaxe/three_pick, /obj/item/pickaxe/four_pick, /obj/item/pickaxe/five_pick, /obj/item/pickaxe/six_pick, /obj/item/pickaxe/hand))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/blackcandle_box) at code/game/objects/items/weapons/storage/fancy.dm:147
+/obj/item/storage/fancy/blackcandle_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 147, /obj/item/storage/fancy/blackcandle_box)
+	into += entry_line(148)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/flame/candle))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/candle_box) at code/game/objects/items/weapons/storage/fancy.dm:115
+/obj/item/storage/fancy/candle_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 115, /obj/item/storage/fancy/candle_box)
+	into += entry_line(116)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/flame/candle))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/cigar) at code/game/objects/items/weapons/storage/fancy.dm:416
+/obj/item/storage/fancy/cigar/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 416, /obj/item/storage/fancy/cigar)
+	into += entry_line(417)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette/cigar, /obj/item/trash/cigbutt/cigarbutt))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/cigarettes) at code/game/objects/items/weapons/storage/fancy.dm:266
+/obj/item/storage/fancy/cigarettes/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 266, /obj/item/storage/fancy/cigarettes)
+	into += entry_line(267)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/crackers) at code/game/objects/items/weapons/storage/fancy.dm:243
+/obj/item/storage/fancy/crackers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 243, /obj/item/storage/fancy/crackers)
+	into += entry_line(244)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/cracker), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/fancy/crayons) at code/game/objects/items/weapons/storage/fancy.dm:191
+/obj/item/storage/fancy/crayons/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 191, /obj/item/storage/fancy/crayons)
+	into += entry_line(192)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/egg_box) at code/game/objects/items/weapons/storage/fancy.dm:64
+/obj/item/storage/fancy/egg_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 64, /obj/item/storage/fancy/egg_box)
+	into += entry_line(65)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/egg, /obj/item/reagent_containers/food/snacks/boiledegg))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte) at code/modules/vore/fluffstuff/custom_items.dm:1352
+/obj/item/storage/fancy/fluff/charlotte/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/fluffstuff/custom_items.dm", 1352, /obj/item/storage/fancy/fluff/charlotte)
+	into += entry_line(1353)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/heartbox) at code/game/objects/items/weapons/storage/fancy.dm:572
+/obj/item/storage/fancy/heartbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 572, /obj/item/storage/fancy/heartbox)
+	into += entry_line(573)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/chocolatepiece, /obj/item/reagent_containers/food/snacks/chocolatepiece/white, /obj/item/reagent_containers/food/snacks/chocolatepiece/truffle))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/markers) at code/game/objects/items/weapons/storage/fancy.dm:228
+/obj/item/storage/fancy/markers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 228, /obj/item/storage/fancy/markers)
+	into += entry_line(229)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/pen/crayon/marker))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/vials) at code/game/objects/items/weapons/storage/fancy.dm:520
+/obj/item/storage/fancy/vials/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 520, /obj/item/storage/fancy/vials)
+	into += entry_line(521)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial))))
+
+/// CAPABILITIES(/obj/item/storage/fancy/whitecandle_box) at code/game/objects/items/weapons/storage/fancy.dm:131
+/obj/item/storage/fancy/whitecandle_box/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 131, /obj/item/storage/fancy/whitecandle_box)
+	into += entry_line(132)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/flame/candle))))
+
+/// CAPABILITIES(/obj/item/storage/firstaid) at code/modules/mob/living/bot/medbot.dm:497
+/obj/item/storage/firstaid/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/bot/medbot.dm", 497, /obj/item/storage/firstaid)
+	into += entry_line(498)
+	into += list(global.op("add_arm", global.inputs(global.item(/obj/item/robot_parts/l_arm), global.item(/obj/item/robot_parts/r_arm), global.item(/obj/item/organ/external/arm)), global.priority(global.above("storage.put_in")), global.when(global.req(PROC_REF(arm_is_robotic))), global.label("Add robot arm"), global.needs(req_storage_empty(because = MSG(medbot/empty_first))), global.then(PROC_REF(add_robot_arm))))
+
+/// CAPABILITIES(/obj/item/storage/firstaid/surgery) at code/game/objects/items/weapons/storage/firstaid.dm:68
+/obj/item/storage/firstaid/surgery/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 68, /obj/item/storage/firstaid/surgery)
+	into += entry_line(69)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/surgical/bone_clamp, /obj/item/surgical/bonesetter, /obj/item/surgical/cautery, /obj/item/surgical/circular_saw, /obj/item/surgical/hemostat, /obj/item/surgical/retractor, /obj/item/surgical/scalpel, /obj/item/surgical/surgicaldrill, /obj/item/surgical/bonegel, /obj/item/surgical/FixOVein, /obj/item/stack/medical/advanced/bruise_pack, /obj/item/stack/nanopaste, /obj/item/healthanalyzer, /obj/item/autopsy_scanner, /obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/internal/gripper) at code/modules/mob/living/silicon/robot/robot_simple_items.dm:592
+/obj/item/storage/internal/gripper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/robot_simple_items.dm", 592, /obj/item/storage/internal/gripper)
+	into += entry_line(593)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_HUGE)))
+
+/// CAPABILITIES(/obj/item/storage/laundry_basket) at code/game/objects/items/weapons/storage/laundry_basket.dm:26
+/obj/item/storage/laundry_basket/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/laundry_basket.dm", 26, /obj/item/storage/laundry_basket)
+	into += entry_line(27)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_LARGE)))
+	into += entry_line(28)
+	into += list(global.two_hands())
+
+/// CAPABILITIES(/obj/item/storage/lockbox) at code/game/objects/items/weapons/storage/lockbox.dm:24
+/obj/item/storage/lockbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/lockbox.dm", 24, /obj/item/storage/lockbox)
+	into += entry_line(25)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+	into += entry_line(26)
+	into += list(global.lock(id_types = list(/obj/item/card/id), starts_locked = TRUE, alt = FALSE))
+	into += entry_line(27)
+	into += list(global.emag(global.then(PROC_REF(on_emag)), repeatable = TRUE))
+	into += entry_line(28)
+	into += list(global.extend("lock.toggle", global.needs(global.req(PROC_REF(lock_works), because = MSG(lockbox/broken)))))
+	into += entry_line(29)
+	into += list(global.extend("lock.toggle", global.priority(global.above("storage.put_in"))))
+	into += entry_line(30)
+	into += list(global.extend("storage.put_in", global.when(global.cond_not(LOCK_LOCKED))))
+	into += entry_line(31)
+	into += list(global.extend("storage.refuse", global.when(global.cond_not(LOCK_LOCKED))))
+	into += entry_line(32)
+	into += list(global.on_change(LOCK_LOCKED, ANY, global.then(PROC_REF(lock_changed))))
+	into += entry_line(33)
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.priority(global.above("storage.put_in")), global.when(PROC_REF(blade_can_slice)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
+	into += entry_line(34)
+	into += list(global.op("locked_click", global.item(/obj/item), global.priority(global.below("storage.put_in")), global.when(LOCK_LOCKED), global.label("Put in"), global.says(MSG(lockbox/locked)), global.passes()))
+
+/// CAPABILITIES(/obj/item/storage/lockbox/vials) at code/game/objects/items/weapons/storage/fancy.dm:534
+/obj/item/storage/lockbox/vials/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 534, /obj/item/storage/lockbox/vials)
+	into += entry_line(535)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/mre) at code/game/objects/items/weapons/storage/mre.dm:37
+/obj/item/storage/mre/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/mre.dm", 37, /obj/item/storage/mre)
+	into += entry_line(38)
+	into += list(global.op("tear_open", global.in_hand(), global.label("Open"), global.then(PROC_REF(tear_open))))
+
+/// CAPABILITIES(/obj/item/storage/mrebag) at code/game/objects/items/weapons/storage/mre.dm:242
+/obj/item/storage/mrebag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/mre.dm", 242, /obj/item/storage/mrebag)
+	into += entry_line(243)
+	into += list(global.op("tear_open", global.in_hand(), global.label("Open"), global.then(PROC_REF(tear_open))))
+
+/// CAPABILITIES(/obj/item/storage/mrebag/pill) at code/game/objects/items/weapons/storage/firstaid.dm:465
+/obj/item/storage/mrebag/pill/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 465, /obj/item/storage/mrebag/pill)
+	into += entry_line(466)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/part_replacer) at code/modules/research/part_replacer.dm:24
+/obj/item/storage/part_replacer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/part_replacer.dm", 24, /obj/item/storage/part_replacer)
+	into += entry_line(25)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/part_replacer/adv) at code/modules/research/part_replacer.dm:97
+/obj/item/storage/part_replacer/adv/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/research/part_replacer.dm", 97, /obj/item/storage/part_replacer/adv)
+	into += entry_line(98)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/stock_parts, /obj/item/reagent_containers/glass/beaker))))
+
+/// CAPABILITIES(/obj/item/storage/photo_album) at code/modules/paperwork/photography.dm:120
+/obj/item/storage/photo_album/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/paperwork/photography.dm", 120, /obj/item/storage/photo_album)
+	into += entry_line(121)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/photo))))
+
+/// CAPABILITIES(/obj/item/storage/pill_bottle) at code/game/objects/items/weapons/storage/firstaid.dm:138
+/obj/item/storage/pill_bottle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 138, /obj/item/storage/pill_bottle)
+	into += entry_line(139)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/pill, /obj/item/dice, /obj/item/paper), max_size = ITEMSIZE_TINY)))
+	into += entry_line(143)
+	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.priority(global.above("storage.put_in")), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
+
+/// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:22
+/obj/item/storage/pouch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 22, /obj/item/storage/pouch)
+	into += entry_line(23)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/pouch/ammo) at code/game/objects/items/weapons/storage/pouches.dm:91
+/obj/item/storage/pouch/ammo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 91, /obj/item/storage/pouch/ammo)
+	into += entry_line(92)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/baton) at code/game/objects/items/weapons/storage/pouches.dm:263
+/obj/item/storage/pouch/baton/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 263, /obj/item/storage/pouch/baton)
+	into += entry_line(264)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/melee, /obj/item/material, /obj/item/tool/wrench))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/eng_parts) at code/game/objects/items/weapons/storage/pouches.dm:170
+/obj/item/storage/pouch/eng_parts/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 170, /obj/item/storage/pouch/eng_parts)
+	into += entry_line(171)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/stock_parts, /obj/item/stack/cable_coil, /obj/item/circuitboard))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/eng_supply) at code/game/objects/items/weapons/storage/pouches.dm:146
+/obj/item/storage/pouch/eng_supply/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 146, /obj/item/storage/pouch/eng_supply)
+	into += entry_line(147)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/taperoll, /obj/item/extinguisher, /obj/item/tape_roll, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/cell))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/eng_tool) at code/game/objects/items/weapons/storage/pouches.dm:106
+/obj/item/storage/pouch/eng_tool/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 106, /obj/item/storage/pouch/eng_tool)
+	into += entry_line(107)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/geiger))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/flares) at code/game/objects/items/weapons/storage/pouches.dm:224
+/obj/item/storage/pouch/flares/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 224, /obj/item/storage/pouch/flares)
+	into += entry_line(225)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/holster) at code/game/objects/items/weapons/storage/pouches.dm:244
+/obj/item/storage/pouch/holster/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 244, /obj/item/storage/pouch/holster)
+	into += entry_line(245)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/gun))))
+
+/// CAPABILITIES(/obj/item/storage/pouch/medical) at code/game/objects/items/weapons/storage/pouches.dm:190
+/obj/item/storage/pouch/medical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 190, /obj/item/storage/pouch/medical)
+	into += entry_line(191)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/healthanalyzer, /obj/item/dnainjector, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/pill, /obj/item/reagent_containers/syringe, /obj/item/storage/quickdraw/syringe_case, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/reagent_containers/hypospray, /obj/item/storage/quickdraw/syringe_case, /obj/item/syringe_cartridge, /obj/item/clothing/gloves/sterile, /obj/item/sleevemate, /obj/item/bodybag, /obj/item/clothing/mask/surgical, /obj/item/soap, /obj/item/stack/nanopaste, /obj/item/taperoll/medical, /obj/item/storage/box/freezer, /obj/item/clothing/mask/chewable/candy/lolli, /obj/item/extrapolator, /obj/item/gene_scanner))))
+
+/// CAPABILITIES(/obj/item/storage/quickdraw) at code/game/objects/items/weapons/storage/quickdraw.dm:17
+/obj/item/storage/quickdraw/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/quickdraw.dm", 17, /obj/item/storage/quickdraw)
+	into += entry_line(18)
+	into += list(global.quickdraw(starts = nameof(/obj/item/storage/quickdraw::quickmode)))
+
+/// CAPABILITIES(/obj/item/storage/quickdraw/syringe_case) at code/game/objects/items/weapons/storage/quickdraw.dm:48
+/obj/item/storage/quickdraw/syringe_case/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/quickdraw.dm", 48, /obj/item/storage/quickdraw/syringe_case)
+	into += entry_line(49)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, /obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/bonemed) at code/game/objects/items/weapons/storage/quickdraw.dm:84
+/obj/item/storage/quickdraw/syringe_case/bonemed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/quickdraw.dm", 84, /obj/item/storage/quickdraw/syringe_case/bonemed)
+	into += entry_line(85)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, /obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clonemed) at code/game/objects/items/weapons/storage/quickdraw.dm:102
+/obj/item/storage/quickdraw/syringe_case/clonemed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/quickdraw.dm", 102, /obj/item/storage/quickdraw/syringe_case/clonemed)
+	into += entry_line(103)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, /obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clotting) at code/game/objects/items/weapons/storage/quickdraw.dm:66
+/obj/item/storage/quickdraw/syringe_case/clotting/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/quickdraw.dm", 66, /obj/item/storage/quickdraw/syringe_case/clotting)
+	into += entry_line(67)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, /obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/rollingpapers) at code/game/objects/items/weapons/storage/fancy.dm:493
+/obj/item/storage/rollingpapers/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 493, /obj/item/storage/rollingpapers)
+	into += entry_line(494)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/rollingpaper))))
+
+/// CAPABILITIES(/obj/item/storage/rollingpapers/blunt) at code/game/objects/items/weapons/storage/fancy.dm:503
+/obj/item/storage/rollingpapers/blunt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/fancy.dm", 503, /obj/item/storage/rollingpapers/blunt)
+	into += entry_line(504)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/rollingpaper/blunt))))
+
+/// CAPABILITIES(/obj/item/storage/sample_container) at code/modules/samples/container.dm:21
+/obj/item/storage/sample_container/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/samples/container.dm", 21, /obj/item/storage/sample_container)
+	into += entry_line(22)
+	into += list(global.configure(global.storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY)))
+
+/// CAPABILITIES(/obj/item/storage/secure) at code/game/objects/items/weapons/storage/secure.dm:45
+/obj/item/storage/secure/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/secure.dm", 45, /obj/item/storage/secure)
+	into += entry_line(46)
+	into += list(global.interface("SecureSafe"))
+	into += entry_line(47)
+	into += list(global.emag(global.then(PROC_REF(on_emag))))
+	into += entry_line(48)
+	into += list(global.extend("storage.put_in", global.when(global.cond_not(nameof(locked)))))
+	into += entry_line(49)
+	into += list(global.extend("storage.refuse", global.when(global.cond_not(nameof(locked)))))
+	into += entry_line(50)
+	into += list(global.op("slice", global.item(/obj/item/melee/energy/blade), global.priority(global.above("storage.put_in")), global.when(nameof(locked)), global.label("Slice open"), global.then(PROC_REF(slice_open)), global.passes()))
+	into += entry_line(51)
+	into += list(global.op("locked_click", global.item(/obj/item), global.priority(global.below("storage.put_in")), global.when(nameof(locked)), global.label("Put in"), global.passes()))
+	into += entry_line(52)
+	into += list(global.op("alt_open", global.hand(), global.answers(INTENT_TOGGLE), global.priority(global.above("storage.toggle_open")), global.label("Open"), global.then(PROC_REF(alt_open))))
+	into += entry_line(53)
+	into += list(global.op("type", global.ui_act("type", global.arg("digit", global.schema_text(1))), global.then(PROC_REF(type_digit))))
+	into += entry_line(54)
+	into += list(global.op("service_panel", global.tool(TOOL_SCREWDRIVER), global.when(nameof(locked)), global.label("Service panel"), global.then(PROC_REF(toggle_service_panel))))
+	into += entry_line(55)
+	into += list(global.op("reset_memory", global.tool(TOOL_MULTITOOL), global.when(global.cond_all(nameof(locked), nameof(open))), global.wait(10 SECONDS), global.label("Reset memory"), global.then(PROC_REF(reset_memory))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase) at code/game/objects/items/weapons/storage/secure.dm:189
+/obj/item/storage/secure/briefcase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/secure.dm", 189, /obj/item/storage/secure/briefcase)
+	into += entry_line(190)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+	into += entry_line(191)
+	into += list(global.extend("ui_open", global.inputs(global.in_hand(), global.remote())))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/fuelrod) at code/game/objects/items/weapons/storage/uplink_kits.dm:342
+/obj/item/storage/secure/briefcase/fuelrod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/uplink_kits.dm", 342, /obj/item/storage/secure/briefcase/fuelrod)
+	into += entry_line(343)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/cell, /obj/item/stock_parts, /obj/item/tool/screwdriver))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:75
+/obj/item/storage/secure/briefcase/nerd_pack_cmo/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 75, /obj/item/storage/secure/briefcase/nerd_pack_cmo)
+	into += entry_line(76)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/medical, /obj/item/ammo_magazine/cell_mag/medical, /obj/item/ammo_casing/microbattery/medical))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med) at code/modules/projectiles/guns/energy/cell_loaded/nerd.dm:54
+/obj/item/storage/secure/briefcase/nerd_pack_med/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nerd.dm", 54, /obj/item/storage/secure/briefcase/nerd_pack_med)
+	into += entry_line(55)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/medical, /obj/item/ammo_magazine/cell_mag/medical, /obj/item/ammo_casing/microbattery/medical))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack) at code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm:50
+/obj/item/storage/secure/briefcase/nsfw_pack/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm", 50, /obj/item/storage/secure/briefcase/nsfw_pack)
+	into += entry_line(51)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/combat, /obj/item/ammo_magazine/cell_mag/combat, /obj/item/ammo_casing/microbattery/combat))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos) at code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm:69
+/obj/item/storage/secure/briefcase/nsfw_pack_hos/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/nsfw.dm", 69, /obj/item/storage/secure/briefcase/nsfw_pack_hos)
+	into += entry_line(70)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded/combat, /obj/item/ammo_magazine/cell_mag/combat, /obj/item/ammo_casing/microbattery/combat))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:247
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 247, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
+	into += entry_line(248)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded, /obj/item/ammo_magazine/cell_mag, /obj/item/ammo_casing/microbattery))))
+
+/// CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat) at code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm:274
+/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/projectiles/guns/energy/cell_loaded/cell_loaded.dm", 274, /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
+	into += entry_line(275)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/cell_loaded, /obj/item/ammo_magazine/cell_mag, /obj/item/ammo_casing/microbattery))))
+
+/// CAPABILITIES(/obj/item/storage/secure/safe) at code/game/objects/items/weapons/storage/secure.dm:216
+/obj/item/storage/secure/safe/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/secure.dm", 216, /obj/item/storage/secure/safe)
+	into += entry_line(217)
+	into += list(global.configure(global.storage(refuses = list(/obj/item/storage/secure/briefcase), max_size = ITEMSIZE_LARGE)))
+
+/// CAPABILITIES(/obj/item/storage/smolebrickcase) at code/modules/vore/smoleworld/smoleworld.dm:67
+/obj/item/storage/smolebrickcase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/vore/smoleworld/smoleworld.dm", 67, /obj/item/storage/smolebrickcase)
+	into += entry_line(68)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/toolbox) at code/game/objects/items/weapons/storage/toolbox.dm:23
+/obj/item/storage/toolbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/toolbox.dm", 23, /obj/item/storage/toolbox)
+	into += entry_line(24)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+
+/// CAPABILITIES(/obj/item/storage/toolbox/lunchbox) at code/game/objects/items/weapons/storage/toolbox.dm:155
+/obj/item/storage/toolbox/lunchbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/toolbox.dm", 155, /obj/item/storage/toolbox/lunchbox)
+	into += entry_line(156)
+	into += list(global.configure(global.storage(max_size = ITEMSIZE_SMALL)))
+
+/// CAPABILITIES(/obj/item/storage/toolbox/mechanical) at code/modules/mob/living/bot/floorbot.dm:336
+/obj/item/storage/toolbox/mechanical/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/bot/floorbot.dm", 336, /obj/item/storage/toolbox/mechanical)
+	into += entry_line(337)
+	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.priority(global.above("storage.put_in")), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
+
+/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:940
+/obj/item/storage/trinketbox/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 940, /obj/item/storage/trinketbox)
+	into += entry_line(941)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/accessory/ring, /obj/item/coin, /obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)))
+	into += entry_line(945)
+	into += list(global.op("lid", global.in_hand(), global.label("Open"), global.then(PROC_REF(flip_lid))))
+
+/// CAPABILITIES(/obj/item/storage/vore_egg) at code/game/objects/items/weapons/storage/egg.dm:19
+/obj/item/storage/vore_egg/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/egg.dm", 19, /obj/item/storage/vore_egg)
+	into += entry_line(20)
+	into += list(global.configure(global.storage(max_size = 0)))
+
+/// CAPABILITIES(/obj/item/storage/wallet) at code/game/objects/items/weapons/storage/wallets.dm:18
+/obj/item/storage/wallet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/storage/wallets.dm", 18, /obj/item/storage/wallet)
+	into += entry_line(19)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/rectape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/pizzavoucher, /obj/item/card_fluff))))
+
+/// CAPABILITIES(/obj/item/storage/wallet/casino) at code/modules/casino/casino_items.dm:8
+/obj/item/storage/wallet/casino/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/casino/casino_items.dm", 8, /obj/item/storage/wallet/casino)
+	into += entry_line(9)
+	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -2016,6 +3180,33 @@
 	into += list(global.interface("P2Second"))
 	into += entry_line(276)
 	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
+
+/// CAPABILITIES(/obj/p2s_chain) at code/tests/engine/p2_storage_fixtures.dm:12
+/obj/p2s_chain/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_storage_fixtures.dm", 12, /obj/p2s_chain)
+	into += entry_line(13)
+	into += list(global.op("first", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.then(PROC_REF(ran_first)), global.passes()))
+	into += entry_line(14)
+	into += list(global.op("second", global.item(/obj/item), global.then(PROC_REF(ran_second))))
+
+/// CAPABILITIES(/obj/p2s_chain_refused) at code/tests/engine/p2_storage_fixtures.dm:50
+/obj/p2s_chain_refused/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_storage_fixtures.dm", 50, /obj/p2s_chain_refused)
+	into += entry_line(51)
+	into += list(global.op("first", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.needs(global.req(PROC_REF(never), because = MSG(p2s/never))), global.then(PROC_REF(ran_first)), global.passes()))
+	into += entry_line(52)
+	into += list(global.op("second", global.item(/obj/item), global.then(PROC_REF(ran_second))))
+
+/// CAPABILITIES(/obj/p2s_chain_stop) at code/tests/engine/p2_storage_fixtures.dm:30
+/obj/p2s_chain_stop/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_storage_fixtures.dm", 30, /obj/p2s_chain_stop)
+	into += entry_line(31)
+	into += list(global.op("first", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.then(PROC_REF(ran_first))))
+	into += entry_line(32)
+	into += list(global.op("second", global.item(/obj/item), global.then(PROC_REF(ran_second))))
 
 /// CAPABILITIES(/obj/s1_fixture/bare_meter) at code/tests/engine/s1_fixtures.dm:254
 /obj/s1_fixture/bare_meter/declared_entries(list/into)
