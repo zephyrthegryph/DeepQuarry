@@ -31,7 +31,7 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
    type's name. Add what the type itself must say as `extend(...)`, own ops and hooks in its `CAPABILITIES` list.
 4. **Convert the type**, in this order, compiling and running `analyze gen` between steps:
    1. vars and tracked state: `TRACKED`, `STAT`, `SOURCE_DEF`, `STAGE_DEF`; one `var/x` per fact, defaults on the var line;
-   2. the `CAPABILITIES(T, ...)` list: bundles first (`wall_machine`, `maintenance_hatch`, `cell_bay`, `powered_by`), then links and relations
+   2. the `CAPABILITIES(T)` block: bundles first (`wall_machine`, `maintenance_hatch`, `cell_bay`, `powered_by`), then links and relations
       (`owns_one`, `link`), then `interface()`, then ops, then `extend`s, then hooks (`on_notice`, `on_change`, `extend(/datum/act/hit/x, ...)`);
    3. each old interaction becomes an op, each old condition a requirement, each old effect `then(PROC_REF(x))` with `x(datum/act/op/A, args...)`;
    4. timers become `after(src, delay, PROC_REF(x), key = "k", with = list(...))`, holds become `hold`/`release` with a `SOURCE_DEF`;
@@ -72,7 +72,7 @@ was one until phase 2, `joins`, `needs`, `log`, ...). Op keys are namespaced by 
 
 ## 4. Before and after: the APC
 
-The full list is `CAPABILITIES(/obj/machinery/power/apc, ...)` in `code/modules/power/apc.dm`; these are the shapes that carry over.
+The full list is the `CAPABILITIES(/obj/machinery/power/apc)` block in `code/modules/power/apc.dm`; these are the shapes that carry over.
 
 **The hatch.** Before: a `capabilities()` proc listing `wall_machine(...)`, `maintenance_hatch(cover_holds = PROC_REF(cover_holds), wires = ...)`,
 `cap_require(CAP_LOCK, needs = list(req_not_subverted(), req_wire(WIRE_IDSCAN), req_working()))`, `refine(CAP_EMAG, delay =, effect =)`. After:
@@ -153,8 +153,7 @@ The full suite is one integration run per merge batch, not per worker.
 
 * **A name that is both a var and a global proc is fine, but a param named like a reserved capability var silently stays null.** `at` was one
   (`cap_build()` skips `GLOB.cap_reserved_vars`): the bay opened for everyone. The legacy `/datum/capability/var/at` became `bay_at`.
-* **Heredocs through the shell halve backslashes.** `\` line continuations of a `CAPABILITIES(...)` marker, `\improper`, and Python regexes written
-  in one all break silently. Write DM and doc files with the Write/Edit tools.
+* **Heredocs through the shell halve backslashes.** `\improper` and Python regexes written in one break silently. Write DM and doc files with the Write/Edit tools. (The `CAPABILITIES` marker no longer uses backslash continuations; it is a block, below.)
 * **Unit-test compiles are stale until `analyze gen` ran.** A fixture that names a renamed constructor compiles against the old `declare.dm`.
 * **A param default must be a constant.** `open = tool(TOOL_CROWBAR)` cannot be a var initialiser: the param is `null` and `entries()` says
   `open || tool(TOOL_CROWBAR)`.
@@ -209,3 +208,21 @@ door's own ops (strike, reinforce, repair). A kind of door `without()`s what it 
 * Overriding a legacy proc the old engine bypassed (`on_emag` of a lift door) was dead code for a whole step; grep for overrides of what you replaced.
 * `TEST_ASSERT(FALSE, ...)` inside an `if` is an "always true" DreamChecker error; assert the condition instead.
 * The xeno claw ops reference `/datum/species/xenos`, which no longer exists; they are kept for parity and can never run.
+
+
+## The block form
+
+`CAPABILITIES(T)` is a header and its entries are the indented statements under it, one per line, no trailing commas and no backslashes:
+
+```dm
+CAPABILITIES(/obj/machinery/button)
+	op("press", hand(), then(PROC_REF(pressed)))
+	extend("ui_open",
+		needs(req_is(STAT_OPERABLE)))
+```
+
+`STATE_GRAPH(graph)` is the same. The entries compile (nothing calls them) so a misspelt part or a bad named argument is a compile or DreamChecker
+error. Differences from the old marker list: `link(A::a, B::b)` is `links(A::a, B::b)`; `configure(CAP_X, param = v)` is
+`configure(constructor(param = v))`; `adjusts(packet.amount, ...)` names the path as text, `adjusts("packet.amount", ...)`; and an `ALLOW(...)`
+annotation sits on the line above the entry it covers, not above the header. `python tools/dx/codemods/capabilities_block.py` converts a tree still
+written as backslash lists.

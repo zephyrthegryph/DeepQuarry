@@ -36,6 +36,83 @@ pub const MARKERS: &[&str] = &[
     "READS_FROM",
 ];
 
+/// Markers whose entries may follow as an indented block (doc/rewrite/final_api.html section 1).
+pub const BLOCK_MARKERS: &[&str] = &["CAPABILITIES", "CAPABILITY_DEF", "BUNDLE", "STATE_GRAPH"];
+
+/// The end offset (exclusive, trailing blanks trimmed) of the indented block that follows the marker whose `)` is at `close`,
+/// or None when no indented line follows it (the legacy single-macro form, or a header with no entries).
+pub fn block_extent(text: &str, close: usize) -> Option<usize> {
+    let rest = &text[close + 1..];
+    let eol = rest.find('\n').unwrap_or(rest.len());
+    if !rest[..eol].trim().is_empty() {
+        return None;
+    }
+    let mut pos = close + 1 + eol;
+    let mut end: Option<usize> = None;
+    while pos < text.len() {
+        // `pos` is at a newline; the next line starts after it.
+        let ls = pos + 1;
+        if ls > text.len() {
+            break;
+        }
+        let le = text[ls..].find('\n').map(|i| ls + i).unwrap_or(text.len());
+        let line = &text[ls..le];
+        if line.trim().is_empty() {
+            pos = le;
+            continue;
+        }
+        if !line.starts_with(|c: char| c.is_whitespace()) {
+            break;
+        }
+        end = Some(ls + line.trim_end().len());
+        pos = le;
+    }
+    end
+}
+
+/// The marker body of a block: `text[from..end]` with the header's `)` and each top-level entry-ending newline replaced by a comma
+/// (same length, so offsets and lines are unchanged). The engine then reads one argument list in either form.
+pub fn block_body(text: &str, from: usize, close: usize, end: usize) -> String {
+    let b = text.as_bytes();
+    let mut out: Vec<u8> = b[from..end].to_vec();
+    out[close - from] = b',';
+    let mut depth = 0i32;
+    let mut in_str = false;
+    let mut pending: Option<usize> = None; // the last depth-0 newline since the previous entry's text
+    let mut seen_entry = false;
+    let mut i = close + 1;
+    while i < end {
+        let c = b[i];
+        if in_str {
+            if c == b'\\' {
+                i += 1;
+            } else if c == b'"' {
+                in_str = false;
+            }
+            i += 1;
+            continue;
+        }
+        if depth == 0 && !c.is_ascii_whitespace() {
+            // An entry starts here: the newline before it ended the previous one.
+            if let Some(nl) = pending.take() {
+                if seen_entry {
+                    out[nl - from] = b',';
+                }
+            }
+            seen_entry = true;
+        }
+        match c {
+            b'"' => in_str = true,
+            b'(' | b'[' | b'{' => depth += 1,
+            b')' | b']' | b'}' => depth -= 1,
+            b'\n' if depth == 0 => pending = Some(i),
+            _ => {}
+        }
+        i += 1;
+    }
+    String::from_utf8(out).unwrap_or_default()
+}
+
 /// One marker call: its name, raw argument text and top-level arguments, and where it starts.
 #[derive(Clone, Debug)]
 pub struct Marker {
@@ -141,7 +218,7 @@ impl Decls {
             // The relation entries of CAPABILITIES(T, ...) blocks (E1's declaration forms) declare their vars relations of T; link(/A::a, /B::b)
             // declares `a` on /A and `b` on /B.
             let own = regex::Regex::new(r"\b(?:owns_one|owns_many|ref_one|ref_many)\(\s*nameof\((\w+)\)").expect("relation entry pattern");
-            let link = regex::Regex::new(r"\blink\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
+            let link = regex::Regex::new(r"\blinks?\(\s*(/[\w/]+)::(\w+)\s*,\s*(/[\w/]+)::(\w+)").expect("link entry pattern");
             let mut found: Vec<(String, String)> = Vec::new();
             for m in d.markers.iter().filter(|m| m.name == "CAPABILITIES") {
                 if let Some(ty) = m.args.first() {
@@ -410,7 +487,14 @@ fn scan_file(f: &SourceFile) -> FileDecls {
             let col = line.len() - t.len() + name_end;
             let open = line_off + col + t[name_end..].find('(').unwrap();
             if let Some(close) = matching_paren(&stripped, open) {
-                let body = stripped[open + 1..close].to_string();
+                // Block form (`CAPABILITIES(T)` followed by indented entry statements): the body is the header's arguments and
+                // the entries, joined with commas in place of the entry-ending newlines, so every byte keeps its offset.
+                let at_col0 = line.len() == t.len();
+                let block_end = if at_col0 && BLOCK_MARKERS.contains(&name) { block_extent(&stripped, close) } else { None };
+                let body = match block_end {
+                    Some(end) => block_body(&stripped, open + 1, close, end),
+                    None => stripped[open + 1..close].to_string(),
+                };
                 fd.markers.push(Marker {
                     name: name.to_string(),
                     rel: f.rel.clone(),
@@ -515,5 +599,47 @@ mod tests {
         assert_eq!(d.markers.len(), 1);
         assert_eq!(d.markers[0].args, vec!["/obj", "foo", "ALL", "base = 1"]);
         assert_eq!(d.markers[0].line, 1);
+    }
+}
+
+#[cfg(test)]
+mod block_tests {
+    use super::*;
+
+    fn legacy_text() -> String {
+        let bs = char::from(92u8);
+        format!("CAPABILITIES(/obj/thing, {bs}\n\ta(1, 2), {bs}\n\tb(\"x,y\",\n\t\tc()))\n/obj/thing/proc/x()\n\treturn 1\n")
+    }
+
+    #[test]
+    fn a_block_marker_reads_like_the_legacy_list() {
+        let legacy = SourceFile::from_text("code/a.dm", &legacy_text());
+        let block = SourceFile::from_text("code/a.dm", "CAPABILITIES(/obj/thing)\n\ta(1, 2)\n\tb(\"x,y\",\n\t\tc())\n\n/obj/thing/proc/x()\n\treturn 1\n");
+        let (l, b) = (scan_file(&legacy), scan_file(&block));
+        assert_eq!(l.markers.len(), 1);
+        assert_eq!(b.markers.len(), 1);
+        assert_eq!(b.markers[0].line, 1);
+        let strip = |a: &[String]| -> Vec<String> { a.iter().map(|s| s.trim_start_matches(|c: char| c == char::from(92u8) || c.is_whitespace()).to_string()).collect() };
+        assert_eq!(strip(&l.markers[0].args), strip(&b.markers[0].args));
+        assert_eq!(b.markers[0].args.len(), 3, "{:?}", b.markers[0].args);
+        // Offsets still map to the real lines: the third entry starts on line 3.
+        let body = &b.markers[0].body;
+        let off = body.find("b(").unwrap();
+        assert_eq!(b.markers[0].line_at(off), 3);
+    }
+
+    #[test]
+    fn no_indented_line_is_no_block() {
+        let f = SourceFile::from_text("code/a.dm", "CAPABILITY_DEF(x, CAP_X, key = NONE)\n\n/datum/capability/def/x/entries()\n\treturn list()\n");
+        let d = scan_file(&f);
+        assert_eq!(d.markers.len(), 1);
+        assert_eq!(d.markers[0].args, vec!["x", "CAP_X", "key = NONE"]);
+    }
+
+    #[test]
+    fn a_block_ends_at_the_next_column_zero_line() {
+        let f = SourceFile::from_text("code/a.dm", "STATE_GRAPH(GRAPH_X)\n\tstart(STAGE_A)\n\n\tstage(STAGE_B, then(PROC_REF(y)))\n/obj/thing/proc/x()\n\treturn 1\n");
+        let d = scan_file(&f);
+        assert_eq!(d.markers[0].args, vec!["GRAPH_X", "start(STAGE_A)", "stage(STAGE_B, then(PROC_REF(y)))"]);
     }
 }

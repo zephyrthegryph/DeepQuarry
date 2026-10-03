@@ -69,7 +69,7 @@ yet; write the legacy form in the last column until it does.
 
 | Need | Target form | Doc | On master | Write today |
 |---|---|---|---|---|
-| Declare a type | One inheriting list: `CAPABILITIES(T, entries...)` | §1 | **new** | `capabilities()`/`reactions()`/`relations()` table procs |
+| Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | **new** | `capabilities()`/`reactions()`/`relations()` table procs |
 | Reusable behaviour | A capability (`cover()`, `powered()`, bundles) | §11 | **new** | library capabilities in `code/datums/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | **new** | `DECLARE_INTERACTIONS`, `DECLARE_UI`/`UI_ACT`, `om_ask` |
 | Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | **new** | `REQ_*`, `needs = PROC_REF(x)` |
