@@ -688,7 +688,6 @@ qdel	code/modules/mob/living/carbon/alien/diona/progression.dm	qdel(L)
 qdel	code/modules/mob/living/carbon/brain/death.dm	qdel(container)//Gets rid of the MMI if there is one
 qdel	code/modules/mob/living/carbon/brain/death.dm	qdel(loc)//Gets rid of the brain item
 qdel	code/modules/mob/living/carbon/human/examine.dm	qdel(glance)
-qdel	code/modules/mob/living/carbon/human/human.dm	qdel(o)
 qdel	code/modules/mob/living/carbon/human/human.dm	qdel(internal)
 qdel	code/modules/mob/living/carbon/human/human.dm	qdel(H) // delete the hair after it's all done
 qdel	code/modules/mob/living/carbon/human/human.dm	qdel(H)

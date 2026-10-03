@@ -32,14 +32,6 @@ usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!isobserver(usr) && hove
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!usr.checkClickCooldown())
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!usr.checkClickCooldown())
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr << get_sfx(SFX_BUTTON)
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!usr.checkClickCooldown())
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr << get_sfx(SFX_BUTTON)
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	var/mob/user = usr
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	closeToolTip(usr, src)

@@ -12,3 +12,5 @@ changes:
   - code_imp: "Resonators, shovels, translators and folding equipment use native operations."
   - bugfix: "Unsupported translator language choices leave its selected language unchanged."
   - bugfix: "Attaching an organ disposes of every incompatible carried affliction."
+  - code_imp: "Camera circuit boards, handheld scanners, speech devices and printers use native controls."
+  - code_imp: "Cosmetics and folding shields use native operations."
