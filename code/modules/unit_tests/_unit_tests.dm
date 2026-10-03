@@ -674,6 +674,7 @@
 #include "interim_manifest_data.dm"
 #include "interim_turret_controller_emag_locks.dm"
 #include "interim_portable_turret_emag_grace.dm"
+#include "interim_cell_emp_charge_recovery.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

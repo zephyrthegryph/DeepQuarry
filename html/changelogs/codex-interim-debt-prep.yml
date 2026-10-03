@@ -76,3 +76,4 @@ changes:
   - bugfix: "Cell bays respect source release rules and preserve inventory bookkeeping during insertion."
   - admin: "Ban validation and player-note reports retain their supplied actor."
   - bugfix: "Emagging an unopened atmos console creates and subverts its controller safely."
+  - admin: "Delayed Highlander and redspace actions retain their initiating actor, and artillery reports its actual user."
