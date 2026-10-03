@@ -572,6 +572,14 @@
 	part_name = "delayed"
 	stages = PART_STAGE_DO
 
+/// silent_wait(): the op's wait() draws no progress bar (an op whose wait is not a visible action). Without it a timed wait shows the actor a bar and onlookers a cog.
+/proc/silent_wait()
+	return part_make(/datum/entry/part/silent_wait)
+
+/datum/entry/part/silent_wait
+	part_name = "silent_wait"
+	stages = PART_STAGE_WAIT
+
 /// quiet(): no op_done notice.
 /proc/quiet()
 	return part_make(/datum/entry/part/quiet)

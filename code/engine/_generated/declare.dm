@@ -503,18 +503,22 @@
 /datum/source_def/power_failure/spec()
 	return list(SRC_POWER_FAILURE, "power_failure")
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:314
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:320
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 314, /datum/pending_op)
-	into += entry_line(315)
+	into += entry_block("code/engine/parts/run.dm", 320, /datum/pending_op)
+	into += entry_line(321)
 	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(316)
+	into += entry_line(322)
 	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(317)
+	into += entry_line(323)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(318)
+	into += entry_line(324)
 	into += list(global.ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+	into += entry_line(324)
+	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
+	into += entry_line(324)
+	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
 /datum/species/declared_entries(list/into)
@@ -3050,6 +3054,15 @@
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED))
 	into += entry_line(39)
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
+
+/// CAPABILITIES(/obj/eg2_waiter) at code/tests/engine/eg2_wait_fixtures.dm:10
+/obj/eg2_waiter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/eg2_wait_fixtures.dm", 10, /obj/eg2_waiter)
+	into += entry_line(11)
+	into += list(global.op("slow", global.menu(), global.wait(3 SECONDS), global.then(PROC_REF(finished))))
+	into += entry_line(12)
+	into += list(global.op("hush", global.menu(), global.wait(3 SECONDS), global.silent_wait(), global.then(PROC_REF(finished))))
 
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)
