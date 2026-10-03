@@ -589,6 +589,7 @@
 #include "interim_sheet_sign_consumption.dm"
 #include "interim_water_tank_refill.dm"
 #include "interim_airlock_unpowered_motion.dm"
+#include "interim_surplus_redemption.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
