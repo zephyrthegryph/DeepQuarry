@@ -113,8 +113,9 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 			new	/obj/item/material/butterfly/switchblade(capsuleowner.loc)
 			capsuleowner.injure(INJURY_CUT, 10, source = src) //Loss Damaging! WIN KNIVE!
 		if(9)
-			new	/obj/item/gun/energy/sizegun/not_advanced(capsuleowner.loc)
-			qdel(src)
+			var/atom/product_location = capsuleowner.loc
+			if(consume(src, capsuleowner))
+				new /obj/item/gun/energy/sizegun/not_advanced(product_location)
 			return
 		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
 		else luckynumber7 = (rand(0,10))
