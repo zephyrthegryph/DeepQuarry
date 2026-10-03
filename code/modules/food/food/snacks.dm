@@ -2005,10 +2005,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/monkeycube, INTERAC
 	wrapped = 1
 
 /obj/item/reagent_containers/food/snacks/monkeycube/pet/Expand()
+	var/mob/holder
+	if(ismob(loc))
+		holder = loc
+	if(loc?.release_refusal(src, holder))
+		return 0
 	src.visible_message("<b>\The [src]</b> expands!")
 	if(pet_path)
 		new pet_path(get_turf(src))
-	qdel(src)
+	consume(src, holder)
 	return 1
 
 /obj/item/reagent_containers/food/snacks/spellburger

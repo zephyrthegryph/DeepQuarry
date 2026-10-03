@@ -773,6 +773,7 @@
 #include "interim_custom_sandwich_sticky_shard.dm"
 #include "interim_customizable_food_sticky_ingredient.dm"
 #include "interim_fulton_landing_release.dm"
+#include "interim_pet_cube_expansion_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
