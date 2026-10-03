@@ -576,35 +576,42 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	volume = 45
 	crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint/blunt
 
-/// Old attackby.
-/obj/item/reagent_containers/rollingpaper/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if (istype(W, /obj/item/reagent_containers/food/snacks))
-		var/obj/item/reagent_containers/food/snacks/grown/G = W
-		if (!G.dry)                                                                                          //This prevents people from just stuffing cheeseburgers into their joint
-			to_chat(user, span_notice("[G.name] must be dried before you add it to [src]."))
-			return INTERACTION_HANDLED_PASS
-		if (G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume)               //Check that we don't have too much already in the paper before adding things
-			to_chat(user, span_warning("The [src] is too full to add [G.name]."))
-			return INTERACTION_HANDLED_PASS
-		if (src.reagents.total_volume == 0)
-			if (istype(src, /obj/item/reagent_containers/rollingpaper/blunt))                         //update the icon if this is the first thing we're adding to the paper
-				src.icon_state = "blunt_full"
-			else
-				src.icon_state = "paper_full"
-		to_chat(user, span_notice("You add the [G.name] to the [src.name]."))
-		src.add_fingerprint(user)
-		if(G.reagents)
-			G.reagents.trans_to_obj(src, G.reagents.total_volume)                                            //adds the reagents from the plant into the paper
-		consume(G, user)
-	return INTERACTION_HANDLED_PASS
+// A rolling paper is a sealed holder of its volume: a dried plant used on it is added (if it fits), and using it in hand rolls what is in it into a joint.
+CAPABILITIES(/obj/item/reagent_containers/rollingpaper, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		sealed = TRUE, \
+		settable = FALSE, \
+		shows_contents = FALSE), \
+	op("add", item(/obj/item/reagent_containers/food/snacks), label("Add it to the paper"), then(PROC_REF(plant_added))), \
+	op("roll", in_hand(), label("Roll it"), then(PROC_REF(rolled))))
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
-	INTERACT_USE(null, PROC_REF(interaction_self), REQ_BECAUSE(REQ_FIELD("reagents"), "there is nothing in it, add something to it first")), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+/// A plant is added (it must be dried, and fit).
+/obj/item/reagent_containers/rollingpaper/proc/plant_added(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/grown/G = A.held
+	if (!G.dry)                                                                                          //This prevents people from just stuffing cheeseburgers into their joint
+		to_chat(user, span_notice("[G.name] must be dried before you add it to [src]."))
+		return OP_REFUSED
+	if (G.reagents.total_volume + src.reagents.total_volume > src.reagents.maximum_volume)               //Check that we don't have too much already in the paper before adding things
+		to_chat(user, span_warning("The [src] is too full to add [G.name]."))
+		return OP_REFUSED
+	if (src.reagents.total_volume == 0)
+		if (istype(src, /obj/item/reagent_containers/rollingpaper/blunt))                         //update the icon if this is the first thing we're adding to the paper
+			src.icon_state = "blunt_full"
+		else
+			src.icon_state = "paper_full"
+	to_chat(user, span_notice("You add the [G.name] to the [src.name]."))
+	src.add_fingerprint(user)
+	if(G.reagents)
+		G.reagents.trans_to_obj(src, G.reagents.total_volume)                                            //adds the reagents from the plant into the paper
+	consume(G, user)
+	return OP_OK
 
-/// Old attack_self.
-/obj/item/reagent_containers/rollingpaper/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// Rolled into a joint that holds what was in it.
+/obj/item/reagent_containers/rollingpaper/proc/rolled(datum/act/op/A)
+	var/mob/living/user = A.actor
 	var/obj/item/clothing/mask/smokable/cigarette/J = new crafted_type()
 	to_chat(user,span_notice("You roll the [src] into a blunt!"))
 	J.add_fingerprint(user)
@@ -613,7 +620,7 @@ DECLARE_INTERACTIONS(/obj/item/reagent_containers/rollingpaper, \
 	user.drop_from_inventory(src)
 	user.put_in_hands(J)
 	consume(src, user)
-	return TRUE
+	return OP_OK
 
 /////////
 //CHEAP//

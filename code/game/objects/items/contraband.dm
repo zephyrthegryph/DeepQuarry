@@ -58,6 +58,8 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 	min_transfer_amount = 1
 	w_class = ITEMSIZE_TINY
 	volume = 50
+	/// The old Set transfer amount entry is the capability's.
+	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/powder/examine(mob/user)
 	if(reagents)
@@ -79,26 +81,35 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 
 /// Snorting.
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/powder, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+// A powder is a sealed holder of its volume; a straw or a rolling paper used on it snorts a little (two units, into the blood of somebody who is flesh).
+CAPABILITIES(/obj/item/reagent_containers/powder, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		sealed = TRUE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this), \
+		transfer_min = nameof(min_transfer_amount), \
+		transfer_max = nameof(max_transfer_amount)), \
+	op("snort", inputs(item(/obj/item/glass_extra/straw), item(/obj/item/reagent_containers/rollingpaper)), label("Snort it"), \
+		needs(req(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), then(PROC_REF(snorted))))
 
-/// Old attackby.
-/obj/item/reagent_containers/powder/proc/interaction_item(mob/living/user, obj/item/W, datum/interaction/interaction)
+MSG_DEF_SELF(powder/not_flesh, "You have to be fleshy to snort the naughty drugs.")
 
-	if(!ishuman(user)) /// You gotta be fleshy to snort the naughty drugs.
-		return FALSE
+/obj/item/reagent_containers/powder/proc/snorter_is_human(datum/act/op/A)
+	return ishuman(A.actor)
 
-	if(!istype(W, /obj/item/glass_extra/straw) && !istype(W, /obj/item/reagent_containers/rollingpaper))
-		return FALSE
-
+/// A little is snorted: into the blood; the powder is used up with the last of it.
+/obj/item/reagent_containers/powder/proc/snorted(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/W = A.held
 	act_message(user, src, others = span_warning("%U% snorts %T% with [W]!"))
 	play_sfx(loc, SFX_EFFECTS_SNORT)
-
 	if(reagents)
 		reagents.trans_to_mob(user, amount_per_transfer_from_this, CHEM_BLOOD)
-
 	if(!reagents.total_volume) /// Did we use all of it?
 		consume(src, user)
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 ////// End powder. /////////
 

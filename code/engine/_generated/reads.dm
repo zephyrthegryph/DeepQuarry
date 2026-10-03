@@ -129,6 +129,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/item/airlock_electronics::user_may_open" = list(0),
 	"/obj/item/p2_op_item::p2_never" = list(0),
 	"/obj/item/reagent_containers/glass/bucket/wood::electronics_welcome" = list(0),
+	"/obj/item/reagent_containers/powder::snorter_is_human" = list(0),
 	"/obj/item/reagent_containers/syringe/ld50_syringe::no_blood_draw" = list(0),
 	"/obj/item/reagent_containers/syringe::may_stab" = list(0),
 	"/obj/item/storage/backpack/dufflebag::can_adjust_tilt" = list(0,

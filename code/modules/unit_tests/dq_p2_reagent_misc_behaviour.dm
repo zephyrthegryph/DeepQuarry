@@ -7,9 +7,8 @@
 
 /// The person sets the cartridge's label (the menu entry), giving `text` when asked (a re-run answer today).
 /proc/rc_label_cartridge(mob/actor, obj/item/reagent_containers/chem_disp_cartridge/C, text)
-	GLOB.om_rerun_answers["[REF(C)]:cartridge_set_label"] = list("label" = text)
-	C.cartridge_set_label(actor, null, null)
-	GLOB.om_rerun_answers -= "[REF(C)]:cartridge_set_label"
+	test_menu(actor, C, "label")
+	test_answer(actor, text)
 
 /// The label the cartridge keeps.
 /proc/rc_cartridge_label(obj/item/reagent_containers/chem_disp_cartridge/C)

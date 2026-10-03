@@ -114,6 +114,17 @@ and unchanged after the conversion; the vial test was red on master before this 
   seconds and the one who begins an injection being seen to are the op engine's `begins()`; no progress bar.
 * **Blood packs:** the label question is the library's text prompt, and the label rules (fifty characters at most, ten shown in the name) are unchanged.
 
+## Reagent containers: cartridges, powder, rolling paper, e-cigarette cartridges
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_misc_behaviour.dm` (11 tests, green on the legacy code first and unchanged after the conversion). The chemical
+canister is not converted: it refills the matching cartridge inside a dispenser machine (a machine-side rule) and is left as it was.
+
+* **A dispenser cartridge's cap is the lid:** "Open or close the lid" in hand or from the menu, "Set transfer amount" (50 to 500), and the label is a menu
+  entry (the text prompt is the library's). It examines as "It contains 500 of 500 units." / "Its lid is closed." A cartridge fills only from a tank whose
+  top is shut, and pours into an open tank (the old code filled from any tank).
+* **A powder is snorted by a straw or a rolling paper** as before; somebody who is not flesh is told so and the click ends (it used to fall through).
+* **A rolling paper takes a dried plant as before;** the old "nothing in it" requirement on rolling an empty paper never applied, and still does not (pinned).
+
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
 Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).

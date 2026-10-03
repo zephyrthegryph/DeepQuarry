@@ -163,8 +163,15 @@ MATERIAL_MIX(/obj/item/reagent_containers/ecig_cartridge, list(MAT_STEEL = 50, M
 	icon = 'icons/obj/ecig.dmi'
 	icon_state = "ecartridge"
 	volume = 20
-	flags = OPENCONTAINER
 	max_transfer_amount = null
+
+// A cartridge is an open holder of its volume (poured into; its contents are told by its own examine).
+CAPABILITIES(/obj/item/reagent_containers/ecig_cartridge, \
+	reagent_container( \
+		volume = nameof(volume), \
+		settable = FALSE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this)))
 
 /obj/item/reagent_containers/ecig_cartridge/examine(mob/user as mob)//to see how much left
 	. = ..()
