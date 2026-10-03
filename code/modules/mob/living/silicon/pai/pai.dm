@@ -106,6 +106,7 @@
 
 CAPABILITIES(/mob/living/silicon/pai)
 	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)
+	owns_one(nameof(pai_ui_chassis), /datum/tgui_module/pai_chassis, starts = /datum/tgui_module/pai_chassis)
 
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
@@ -686,5 +687,4 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "sradio", /obj/item/radio/integrated/signal)
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "communicator", /obj/item/communicator/integrated)
-DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pai_ui_chassis", /datum/tgui_module/pai_chassis)
 DECLARE_DEFAULT_CHILD(/mob/living/silicon/pai, "pda", /obj/item/pda/ai/pai)

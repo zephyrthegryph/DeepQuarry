@@ -27,7 +27,8 @@
 	var/kickstand = 1
 
 DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "cell", /obj/item/cell/high)
-DECLARE_DEFAULT_CHILD(/obj/vehicle/bike, "ion", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/vehicle/bike)
+	owns_one(nameof(ion), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/vehicle/bike/Initialize(mapload)
 	. = ..()

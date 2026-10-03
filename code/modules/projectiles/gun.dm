@@ -131,7 +131,8 @@
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 25, vary = FALSE)
 	update_icon()
 
-DECLARE_DEFAULT_CHILD(/obj/item/gun, "firemode_selector", /datum/gun_firemode_selector)
+CAPABILITIES(/obj/item/gun)
+	owns_one(nameof(firemode_selector), /datum/gun_firemode_selector, starts = /datum/gun_firemode_selector)
 
 /obj/item/gun/Initialize(mapload)
 	. = ..()

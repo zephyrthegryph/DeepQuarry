@@ -56,7 +56,8 @@
 	color = material().icon_colour
 	return INITIALIZE_HINT_NORMAL
 
-DECLARE_DEFAULT_CHILD(/obj/vehicle/boat, "riding_datum", "riding_datum_type")
+CAPABILITIES(/obj/vehicle/boat)
+	owns_one(nameof(riding_datum), /datum/riding, starts = nameof(riding_datum_type))
 
 /obj/vehicle/boat/Initialize(mapload, material_name)
 	..(mapload)
