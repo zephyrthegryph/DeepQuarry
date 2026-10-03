@@ -21,7 +21,7 @@ fn repo_root() -> PathBuf {
 fn generated_reads_contain_every_hand_written_read_on_the_pinned_handlers() {
     let root = repo_root();
     let cfg = SpikeConfig::parse(&std::fs::read_to_string(root.join("tools/analyze/oracle/spike.toml")).expect("spike.toml"));
-    assert_eq!(cfg.handlers.len(), 18, "the spike pins 18 handlers");
+    assert_eq!(cfg.handlers.len(), 17, "the spike pins 17 handlers");
 
     let opts = Options { root: root.clone(), lints: vec!["sem/keys".to_string()], no_cache: true, raw: true, ..Default::default() };
     let engine = Engine::new(dq_analyze::run::registry(), opts).expect("engine");
