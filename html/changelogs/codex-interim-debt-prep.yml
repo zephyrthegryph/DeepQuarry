@@ -45,3 +45,4 @@ changes:
   - bugfix: "Direct file transfers update the original drive capacity as well as the destination."
   - admin: "Administrative paper editing uses its intended writer and retains the editing user."
   - bugfix: "Supply talisman choices retain the invoking user across successive selections."
+  - admin: "Event selection retains the user through queued choices."

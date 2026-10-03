@@ -614,7 +614,6 @@ usr_outside_verb	code/modules/error_handler/error_handler.dm	locinfo = loc_name(
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	if (usr)
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	usr_ref = "[REF(usr)]"
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	rel_set(src, nameof(usr_loc), get_turf(usr))
-usr_outside_verb	code/modules/events/event_container.dm	om_ask(usr, /datum/om/prompt/choice/queue_event, PROC_REF(event_selected), choices = available_events, subject = src)
 usr_outside_verb	code/modules/examine/examine.dm	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
 usr_outside_verb	code/modules/food/food/drinks.dm	if(over_object.Adjacent(usr))
 usr_outside_verb	code/modules/food/food/drinks.dm	to_chat(usr, span_notice("You put the [src] in the cup dispenser."))
