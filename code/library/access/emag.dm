@@ -25,8 +25,11 @@ cap_keys(CAP_EMAG, EMAGGED = MSG(emag/already))
 /datum/capability/lib/emag/entries()
 	var/list/use = list(op("use", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), \
 		needs(req_emag_card()), parts, then(CAP_PROC(finish)), logs(LOG_ADMIN)))
+	// The same subversion with no card in hand: what emag_target() (an event, a changeling's pick, a spirit) reaches by key.
+	use += op("subvert", ai(), parts, then(CAP_PROC(finish)), logs(LOG_ADMIN))
 	if(!repeatable)
 		use += extend("emag.use", needs(req_is(EMAG_EMAGGED, FALSE, because = MSG(emag/already))))
+		use += extend("emag.subvert", needs(req_is(EMAG_EMAGGED, FALSE, because = MSG(emag/already))))
 	return use
 
 /// The part of an emag every holder shares, after the type's parts went through: subverted, told, the card paid.

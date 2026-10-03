@@ -75,7 +75,9 @@ GLOBAL_LIST_INIT(generated_read_names, list(
 	"glass",
 	"module",
 	"names_assemblies",
-	"material"
+	"material",
+	"electronics",
+	"locs"
 ))
 
 /// The roots a read starts from (READ_ROOT_*): the holder, or a context hop. Id = index in this list.
@@ -116,6 +118,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 8)),
 	"/obj/machinery/door/airlock/external::can_freeze" = list(0),
 	"/obj/machinery/door/airlock/glass_external::can_freeze" = list(0),
+	"/obj/machinery/door/airlock/lift::emag_welcome" = list(0),
 	"/obj/machinery/door/airlock::can_remove_electronics" = list(0,
 		list(1, 0, 11),
 		list(1, 0, 12),
@@ -213,6 +216,13 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(3, 0, 37)),
 	"/obj/machinery/door/unpowered::item_blocked" = list(0,
 		list(1, 0, 4)),
+	"/obj/machinery/door/window::claws_shred" = list(0,
+		list(2, 0, 19)),
+	"/obj/machinery/door/window::damaged_now" = list(0,
+		list(1, 0, 20),
+		list(1, 0, 21)),
+	"/obj/machinery/door/window::not_swinging" = list(0,
+		list(1, 0, 15)),
 	"/obj/machinery/door::not_damaged" = list(0,
 		list(1, 0, 20),
 		list(1, 0, 21),
@@ -282,5 +292,12 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(3, 0, 35),
 		list(3, 0, 36)),
 	"/obj/structure/firedoor_assembly::unglazed" = list(0,
-		list(1, 0, 61))
+		list(1, 0, 61)),
+	"/obj/structure/windoor_assembly::board_whole" = list(0,
+		list(1, 0, 65)),
+	"/obj/structure/windoor_assembly::robot_may_rename" = list(0,
+		list(2, 0, 62),
+		list(2, 0, 63, 62),
+		list(1, 0, 10),
+		list(1, 0, 66))
 ))

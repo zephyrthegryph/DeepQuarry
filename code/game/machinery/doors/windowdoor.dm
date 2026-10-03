@@ -1,8 +1,4 @@
-/// welder_act(): the windoor's stance-declared weld repair.
-#define WINDOOR_ENTRY_WELD "windoor_weld"
-
 /obj/machinery/door/window
-	legacy_door_ops = TRUE
 	name = "interior door"
 	desc = "A strong door."
 	icon = 'icons/obj/doors/windoor.dmi'
@@ -60,13 +56,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		if(istype(bot))
 			if(density && src.check_access(bot.botcard))
 				open()
-				om_after(src, 50, PROC_REF(close))
+				after(src, 5 SECONDS, PROC_REF(close), key = "autoclose", clock = CLOCK_WORLD)
 		else if(istype(AM, /obj/mecha))
 			var/obj/mecha/mecha = AM
 			if(density)
 				if(mecha?.slot_item(MECHA_SLOT_PILOT) && src.allowed(mecha?.slot_item(MECHA_SLOT_PILOT)))
 					open()
-					om_after(src, 50, PROC_REF(close))
+					after(src, 5 SECONDS, PROC_REF(close), key = "autoclose", clock = CLOCK_WORLD)
 		return
 	if (!( SSticker ))
 		return
@@ -74,7 +70,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		return
 	if (density && allowed(AM))
 		open()
-		om_after(src, check_access(null)? 50 : 20, PROC_REF(close))
+		after(src, check_access(null) ? 5 SECONDS : 2 SECONDS, PROC_REF(close), key = "autoclose", clock = CLOCK_WORLD)
 
 /obj/machinery/door/window/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -110,7 +106,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		set_operating(1)
 	flick(text("[src.base_state]opening"), src)
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
-	om_after(src, 1 SECONDS, PROC_REF(finish_open))
+	after(src, 1 SECONDS, PROC_REF(finish_open), key = "swing", clock = CLOCK_WORLD)
 
 /obj/machinery/door/window/proc/finish_open()
 	PRIVATE_PROC(TRUE)
@@ -133,7 +129,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	set_density(TRUE)
 	explosion_resistance = initial(explosion_resistance)
 	update_nearby_tiles()
-	om_after(src, 1 SECONDS, PROC_REF(finish_close))
+	after(src, 1 SECONDS, PROC_REF(finish_close), key = "swing", clock = CLOCK_WORLD)
 
 /obj/machinery/door/window/proc/finish_close()
 	PRIVATE_PROC(TRUE)
@@ -149,183 +145,92 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	SHOULD_CALL_PARENT(FALSE)
 	shatter()
 
-/obj/machinery/door/window/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/windowdoor_emag,
-		/datum/interaction/machine_item/windowdoor_smash,
-		/datum/interaction/machine_item/windowdoor_item_toggle,
-		/datum/interaction/machine_hand/windowdoor_shred,
-		/datum/interaction/machine_hand/windowdoor_toggle,
-	)
-	..()
+// ---- what a windoor is, declared ----
+//
+// A door of reinforced glass: the base door's touch (a hand or any held thing works it by the door's access, a refused one flashes its denial) and
+// its emag, with a few ops of its own: a hostile claw that smashes it, an energy blade that slices it open, a welder's repair (a slow one, outside
+// combat), and a crowbar that pries an open one out of its frame into an assembly. A weapon's blow dents it by the force of the weapon (no minimum). The
+// plasteel fitting and the base door's repair are not offered; a windoor does not take them.
 
-/datum/interaction/machine_hand/windowdoor_shred
-	id = "windowdoor_shred"
-	name = "Smash"
-	category = INTERACTION_CAT_ATTACK
-	behind_gate = FALSE
-	tags = list(INTERACTION_TAG_HOSTILE)
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/door/window/proc/actor_can_shred, null))
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/door/window/proc/interaction_shred
+MSG_DEF_SELF(windoor/good_condition, "It's already in good condition.")
+MSG_DEF(windoor/repaired, "You repair %T%.", "%U% repairs %T%.")
 
-/obj/machinery/door/window/proc/actor_can_shred(mob/actor, atom/target, obj/item/held)
-	if(!ishuman(actor))
-		return FALSE
-	var/mob/living/carbon/human/H = actor
-	return H.species.can_shred(H, FALSE, 15)
+CAPABILITIES(/obj/machinery/door/window, \
+	without("reinforce"), \
+	without("weld_plasteel"), \
+	without("unreinforce"), \
+	without("repair"), \
+	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
+	op("slice", item(/obj/item/melee/energy/blade), label("Slice open"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_TAKE_OUT), wait(0), then(PROC_REF(sliced_open))), \
+	op("shred", hand(), hostile(), label("Smash"), when(req(PROC_REF(claws_shred))), wait(0), then(PROC_REF(shredded))), \
+	op("weld_repair", tool(TOOL_WELDER), stance(I_HELP), label("Repair"), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), costs(RES_FUEL, 1), \
+		needs(req(PROC_REF(damaged_now), because = MSG(windoor/good_condition))), then(PROC_REF(repaired)), says(MSG(windoor/repaired))), \
+	op("pry_out", tool(TOOL_CROWBAR), label("Pry out of the frame"), when(cond_not(nameof(density))), when(PROC_REF(not_swinging)), priority(OP_PRIORITY_PART), wait(4 SECONDS), \
+		then(PROC_REF(pried_out))))
 
-/obj/machinery/door/window/proc/interaction_shred(mob/user, obj/item/held, datum/interaction/interaction)
+/// It is not mid-swing (a windoor that an emag keeps open for good still answers).
+/obj/machinery/door/window/proc/not_swinging(datum/act/A)
+	return operating != 1
+
+/// It has taken damage a welder can mend.
+/obj/machinery/door/window/proc/damaged_now(datum/act/A)
+	return get_integrity() < max_integrity // ALLOW(reads): a door's max_integrity is its type's constant
+
+/// An energy blade slices through the glass: the door gives way as to an emag (it stays open for good).
+/obj/machinery/door/window/proc/sliced_open(datum/act/op/A)
+	if(emag_target(src, 10, A.actor))
+		fx_sparks(src.loc, 5, FALSE)
+		play_sfx(src, SFX_SPARKS)
+		play_sfx(src, SFX_WEAPONS_BLADE1)
+		act_message(A.actor, null, others = span_warning("The glass door was sliced open by %U%!"))
+	return OP_OK
+
+/// A hostile body with claws (a species that can shred) smashes at the glass.
+/obj/machinery/door/window/proc/claws_shred(datum/act/op/A)
+	var/mob/living/carbon/human/H = A.actor
+	return istype(H) && H.species.can_shred(H, FALSE, 15) // ALLOW(reads): a species' claws are fixed for the touch's life; the click re-evaluates it
+
+/obj/machinery/door/window/proc/shredded(datum/act/op/A)
+	var/mob/user = A.actor
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	act_message(user, null, others = span_danger("%U% smashes against the [src.name]."))
 	user.do_attack_animation(src)
 	user.setClickCooldown(user.get_attack_speed())
 	take_damage(25, BRUTE, MELEE)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_hand/windowdoor_toggle
-	id = "windowdoor_toggle"
-	name = "Open/close"
-	category = INTERACTION_CAT_TOGGLE
-	behind_gate = FALSE
-	requires = list(REQ_INTERACTION_REACH)
-	effect = /obj/machinery/door/window/proc/interaction_toggle
-
-/obj/machinery/door/window/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-
-	if (src.allowed(user))
-		if (src.density)
-			open()
-		else
-			close()
-
-	else if (src.density)
-		flick(text("[]deny", src.base_state), src)
-
-	return TRUE
-
-/obj/machinery/door/window/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if (density && operable())
-		set_operating(-1)
-		flick("[src.base_state]spark", src)
-		om_after(src, 6, PROC_REF(open))
-		return 1
-
-/datum/interaction/machine_item/windowdoor_emag
-	id = "windowdoor_emag"
-	name = "Slice open"
-	held_type = /obj/item/melee/energy/blade
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null))
-	effect = /obj/machinery/door/window/proc/interaction_emag_slice
-
-/obj/machinery/door/window/proc/not_operating(mob/actor, atom/target, obj/item/held)
-	return operating != 1
-
-/obj/machinery/door/window/proc/interaction_emag_slice(mob/user, obj/item/I, datum/interaction/interaction)
-	if(emag_target(src, 10, user))
-		fx_sparks(src.loc, 5, FALSE)
-		play_sfx(src, SFX_SPARKS)
-		play_sfx(src, SFX_WEAPONS_BLADE1)
-		act_message(user, null, others = span_warning("The glass door was sliced open by %U%!"))
-	return TRUE
-
-/datum/interaction/machine_item/windowdoor_smash
-	id = "windowdoor_smash"
-	name = "Smash"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	tags = list(INTERACTION_TAG_HOSTILE)
-	offered_when = list(
-		REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null),
-		REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/is_open_or_closed_smashable, null),
-	)
-	effect = /obj/machinery/door/window/proc/interaction_smash
-
-/// density && !istype(card): whether the held item can smash the windoor.
-/obj/machinery/door/window/proc/is_open_or_closed_smashable(mob/actor, atom/target, obj/item/held)
-	return density && istype(held, /obj/item) && !istype(held, /obj/item/card)
-
-/obj/machinery/door/window/proc/interaction_smash(mob/user, obj/item/I, datum/interaction/interaction)
+/// A weapon's blow on the glass dents it by the weapon's force, whatever it is (there is no minimum force).
+/obj/machinery/door/window/strike_with(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	user.setClickCooldown(user.get_attack_speed(I))
 	var/aforce = I.force
 	play_sfx(src, SFX_EFFECTS_GLASSHIT)
 	visible_message(span_danger("[src] was hit by [I]."))
 	if(I.obj_damage_type())
 		take_damage(aforce, I.obj_damage_type(), MELEE)
-	return TRUE
+	return OP_OK
 
-/datum/interaction/machine_item/windowdoor_item_toggle
-	id = "windowdoor_item_toggle"
-	name = "Open/close"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/proc/not_operating, null))
-	effect = /obj/machinery/door/window/proc/interaction_item_toggle
-
-/obj/machinery/door/window/proc/interaction_item_toggle(mob/user, obj/item/I, datum/interaction/interaction)
-	src.add_fingerprint(user)
-
-	if (src.allowed(user))
-		if (src.density)
-			open()
-		else
-			close()
-
-	else if (src.density)
-		flick(text("[]deny", src.base_state), src)
-
-	return TRUE
-
-/obj/machinery/door/window/welder_act(mob/user, obj/item/tool)
-	if(operating == 1)
-		return FALSE
-	// Outside combat mode only (the stance-declared repair); otherwise the welder goes on to strike.
-	if(run_interaction_entry(user, src, tool, WINDOOR_ENTRY_WELD))
-		return TRUE
-	return FALSE
-
-/// Weld-repair the windoor, outside combat mode (run from welder_act()).
-/datum/interaction/windowdoor_repair
-	id = "windowdoor_repair"
-	name = "Repair"
-	entry = WINDOOR_ENTRY_WELD
-	default_action = INPUT_ACTION_USE
-	category = INTERACTION_CAT_REPAIR
-	stance = I_HELP
-	tool = TOOL_WELDER
-	tool_volume = 0
-	requires = list(REQ_REACH_ADJACENT, REQ_TARGET_STATE(/obj/machinery/door/window/proc/can_repair))
-	effect = /obj/machinery/door/window/proc/interaction_repair
-
-/obj/machinery/door/window/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/windowdoor_repair,
-	)
-	..()
-
-/// Requirement: only a damaged door needs repair.
-/obj/machinery/door/window/proc/can_repair(mob/user, atom/target, obj/item/tool)
-	if(get_integrity() >= max_integrity)
-		return "it's already in good condition"
-	return TRUE
-
-/obj/machinery/door/window/proc/interaction_repair(mob/user, obj/item/tool, datum/interaction/interaction)
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 1, start_self = "You begin repairing [src]...", receiver = src, on_done = PROC_REF(welder_act_tool_done_windoor), done_args = list(user))
-	return TRUE
-
-/obj/machinery/door/window/proc/welder_act_tool_done_windoor(mob/user)
+/// A welder has mended it in full.
+/obj/machinery/door/window/proc/repaired(datum/act/op/A)
 	repair_damage(max_integrity)
 	update_icon()
-	to_chat(user, span_notice("You repair [src]."))
+	return OP_OK
 
-/obj/machinery/door/window/crowbar_act(mob/user, obj/item/tool)
-	if(operating == 1 || density)
-		return FALSE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 50, start_self = "You start to pry the windoor out of the frame.", start_others = "[user] begins prying the windoor out of the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	return ITEM_INTERACT_SUCCESS
+/// What it flashes: its own sprites for the spark and the denial.
+/obj/machinery/door/window/do_animate(animation)
+	switch(animation)
+		if("spark")
+			if(density)
+				flick("[base_state]spark", src)
+		if("deny")
+			if(density)
+				flick("[base_state]deny", src)
+	return
 
-/obj/machinery/door/window/proc/crowbar_act_tool_done(mob/user)
-	to_chat(user, span_notice("You pried the windoor out of the frame!"))
+/// A crowbar pries the open door out of its frame: an assembly stands there, with the door's electronics in it.
+/obj/machinery/door/window/proc/pried_out(datum/act/op/A)
+	to_chat(A.actor, span_notice("You pried the windoor out of the frame!"))
 	var/obj/structure/windoor_assembly/assembly = new(loc)
 	if(istype(src, /obj/machinery/door/window/brigdoor))
 		assembly.secure = "secure_"
@@ -334,9 +239,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	assembly.set_dir(dir)
 	assembly.set_anchored(TRUE)
 	assembly.created_name = name
-	assembly.state = "02"
-	assembly.step = 2
-	assembly.update_state()
+	graph_place(assembly, STAGE_WINDOOR_ASSEMBLY_BOARDED)
 	if(operating == -1)
 		own_set(assembly, nameof(assembly.electronics), new /obj/item/circuitboard/broken(assembly))
 	else if(!electronics)
@@ -350,9 +253,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		var/obj/item/airlock_electronics/door_electronics = electronics
 		door_electronics.forceMove(assembly)
 		own_move(door_electronics, assembly, nameof(assembly.electronics)) // from the door to the assembly
+	assembly.update_state()
 	set_operating(0)
 	qdel(src)
-	return TRUE
+	return OP_OK
 
 /obj/machinery/door/window/brigdoor
 	name = "secure door"
@@ -430,12 +334,3 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	dir = SOUTH
 	icon_state = "rightsecure"
 	base_state = "rightsecure"
-
-/obj/machinery/door/window/ownership()
-	. = ..()
-	. += owns(nameof(electronics), policy = OWN_CONTAINED)
-
-// Brig timers find their doors by id (REL_KEYED sources).
-/obj/machinery/door/window/brigdoor/relations()
-	. = ..()
-	. += rel_key(nameof(id))

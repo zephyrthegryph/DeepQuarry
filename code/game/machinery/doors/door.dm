@@ -52,8 +52,6 @@
 	var/id_tint
 
 	var/update_adjacent_tiles = TRUE
-	/// TRUE on the door types that still answer touch, strike, plasteel, repair and emag with the legacy procs of door_legacy_bridge.dm.
-	var/legacy_door_ops = FALSE
 
 TRACKED(/obj/machinery/door, operating)
 TRACKED(/obj/machinery/door, reinforcing)

@@ -237,62 +237,6 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	qdel(src)
 	return
 
-/obj/machinery/door/window/holowindoor/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_item/holowindoor_hit,
-		/datum/interaction/machine_item/holowindoor_toggle,
-	)
-	..()
-
-/// Old attackby: hitting the door with a weapon while it's still open/closed and not a card.
-/datum/interaction/machine_item/holowindoor_hit
-	id = "holowindoor_hit"
-	name = "Hit"
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/hit_offered, null))
-	effect = /obj/machinery/door/window/holowindoor/proc/interaction_hit
-
-/obj/machinery/door/window/holowindoor/proc/hit_offered(mob/actor, atom/target, obj/item/held)
-	if(operating == 1)
-		return FALSE
-	return density && istype(held, /obj/item) && !istype(held, /obj/item/card)
-
-/obj/machinery/door/window/holowindoor/proc/interaction_hit(mob/user, obj/item/I, datum/interaction/interaction)
-	var/aforce = I.force
-	play_sfx(src, SFX_EFFECTS_GLASSHIT)
-	visible_message(span_bolddanger("[src] was hit by [I]."))
-	if(I.obj_damage_type())
-		take_damage(aforce, I.obj_damage_type(), MELEE)
-	return TRUE
-
-/// Old attackby: any other item toggles the door open/closed if allowed.
-/datum/interaction/machine_item/holowindoor_toggle
-	id = "holowindoor_toggle"
-	name = "Use"
-	held_type = /obj/item
-	offered_when = list(REQ_ON(PRED_TARGET, /obj/machinery/door/window/holowindoor/proc/toggle_offered, null))
-	effect = /obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl
-
-/obj/machinery/door/window/holowindoor/proc/toggle_offered(mob/actor, atom/target, obj/item/held)
-	return operating != 1
-
-/obj/machinery/door/window/holowindoor/proc/interaction_toggle_impl(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	if (!src.requiresID())
-		user = null
-
-	if (src.allowed(user))
-		if (src.density)
-			open()
-		else
-			close()
-
-	else if (src.density)
-		flick(text("[]deny", src.base_state), src)
-
-	return TRUE
-
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
 	set_density(FALSE)
 	play_sfx(src, SFX_SHATTER)

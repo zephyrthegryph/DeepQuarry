@@ -23,8 +23,6 @@
 	//Vars to help with the icon's name
 	var/facing = "l"	//Does the windoor open to the left or right?
 	var/secure = ""		//Whether or not this creates a secure windoor
-	var/state = "01"	//How far the door assembly has progressed in terms of sprites
-	var/step = null		//How far the door assembly has progressed in terms of steps
 
 /obj/structure/windoor_assembly/secure
 	name = "secure windoor assembly"
@@ -34,7 +32,6 @@
 /obj/structure/windoor_assembly/Initialize(mapload, start_dir=NORTH, constructed=0)
 	. = ..()
 	if(constructed)
-		state = "01"
 		set_anchored(FALSE)
 	switch(start_dir)
 		if(NORTH, SOUTH, EAST, WEST)
@@ -46,7 +43,6 @@
 	update_nearby_tiles(need_rebuild=1)
 	make_rotatable()
 
-APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_assembly{state}")
 
 /obj/structure/windoor_assembly/CanPass(atom/movable/mover, turf/target)
 	if(istype(mover) && mover.checkpass(PASSGLASS))
@@ -63,257 +59,175 @@ APPEARANCE_TEMPLATE(/obj/structure/windoor_assembly, "{facing}_{secure}windoor_a
 	else
 		return TRUE
 
-/obj/structure/windoor_assembly/proc/rename_door(mob/living/user)
-	om_ask(user, /datum/om/prompt/text, PROC_REF(windoor_named), title = name, message = "Enter the name for the windoor.", default = created_name, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+// ---- what a windoor assembly is, declared ----
+//
+// The build ladder is a state graph: a loose frame, bolted to the floor (a wrench), wired (a length of cable), with its electronics in, finished (a
+// crowbar pries the windoor into the frame: the real door takes its place, open for a moment and then closing). A screwdriver takes the electronics
+// out, wirecutters the wiring, a wrench frees it again; a welder takes a loose frame apart into its glass. A pen names it, and any of its steps shows
+// in its name and picture (update_state()).
 
-/obj/structure/windoor_assembly/proc/windoor_named(datum/om/prompt/text/ask)
-	created_name = sanitizeSafe(ask.text, MAX_NAME_LEN)
-	update_state()
+STAGE_DEF(windoor_assembly, frame)
+STAGE_DEF(windoor_assembly, secured)
+STAGE_DEF(windoor_assembly, wired)
+STAGE_DEF(windoor_assembly, boarded)
+STAGE_DEF(windoor_assembly, finished)
 
-/// Old attack_robot: drones and engineering borgs rename the assembly. Never fell through.
-/obj/structure/windoor_assembly/proc/windoor_robot_rename(mob/living/silicon/robot/user, obj/item/held, datum/interaction/interaction)
-	if(Adjacent(user) && user.module?.names_assemblies) //Only drones and engineering borgs need this.
-		rename_door(user)
-	return TRUE
+MSG_DEF_SELF(stage/windoor_assembly/frame, "It is a bare frame.")
+MSG_DEF_SELF(stage/windoor_assembly/secured, "It is bolted to the floor.")
+MSG_DEF_SELF(stage/windoor_assembly/wired, "It is wired.")
+MSG_DEF_SELF(stage/windoor_assembly/boarded, "Its electronics are in.")
+MSG_DEF_SELF(stage/windoor_assembly/finished, "It is finished.")
 
-/obj/structure/windoor_assembly/declare_interactions(list/into)
-	var/static/list/actor_specs = list(
-		INTERACT_ROBOT("Rename", PROC_REF(windoor_robot_rename)),
-		INTERACT_VERB("Flip Windoor Assembly", PROC_REF(windoor_assembly_flip_effect)),
-	)
-	for(var/actor_spec in actor_specs)
-		into += dq_interaction_from_spec(type, actor_spec)
-	into += list(
-		/datum/interaction/entry_item/windoor_assembly_item,
-	)
-	..()
+MSG_DEF_SELF(windoor_assembly/bolted_down, "Unbolt it from the floor first.")
+MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock electronics.")
 
-/// Old attackby: rename with a pen, wire, or install electronics.
-/datum/interaction/entry_item/windoor_assembly_item
-	id = "windoor_assembly_item"
-	name = "Use"
-	effect = /obj/structure/windoor_assembly/proc/interaction_item
+CAPABILITIES(/obj/structure/windoor_assembly, \
+	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME), \
+		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))), \
+		stage(STAGE_WINDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))), \
+		stage(STAGE_WINDOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS))), \
+		stage(STAGE_WINDOOR_ASSEMBLY_FINISHED, tool(TOOL_CROWBAR), wait(4 SECONDS), needs(req(PROC_REF(board_whole), because = MSG(windoor_assembly/broken_board))), then(PROC_REF(finish_windoor)), undo = null), \
+		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
+	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
+	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed))), \
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed))), \
+	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped))), \
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down)))))
 
-/obj/structure/windoor_assembly/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen))
-		rename_door(user)
-		return TRUE
-
-	if(state == "01")
-		//Adding cable to the assembly. Step 5 complete.
-		if(istype(W, /obj/item/stack/cable_coil) && anchored)
-			act_message(user, null, MSG_SELF("You start to wire the windoor assembly."), MSG_OTHERS("%U% wires the windoor assembly."))
-
-			var/obj/item/stack/cable_coil/CC = W
-			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, CC))
-
-	else if(state == "02")
-		//Adding airlock electronics for access. Step 6 complete.
-		if(istype(W, /obj/item/airlock_electronics))
-			play_sfx(src, SFX_ITEMS_SCREWDRIVER, 2)
-			act_message(user, null, MSG_SELF("You start to install electronics into the airlock assembly."), \
-				MSG_OTHERS("%U% installs the electronics into the airlock assembly."))
-
-			om_task_start(/datum/om/task/timed/windoor_assembly_attackby, user, src, W = W)
-
-	//Update to reflect changes(if applicable)
-	update_state()
-	return TRUE
-
-/obj/structure/windoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/CC)
-	if (CC.use(1))
-		to_chat(user,span_notice("You wire the windoor!"))
-		src.state = "02"
-		step = 1
-/datum/om/task/timed/windoor_assembly_attackby
-	duration = 4 SECONDS
-	complete_proc = /obj/structure/windoor_assembly/proc/attackby_timed_done2
-	cancel_proc = /obj/structure/windoor_assembly/proc/attackby_timed_failed2
-	var/obj/item/W
-
-/obj/structure/windoor_assembly/proc/attackby_timed_done2(datum/om/task/timed/windoor_assembly_attackby/task)
-	var/obj/item/W = task.W
-	var/mob/user = task.actor
-	if(!src) return
-
-	to_chat(user,span_notice("You've installed the airlock electronics!"))
-	step = 2
-	own_set(src, nameof(src.electronics), W, user = user)
-
-/obj/structure/windoor_assembly/proc/attackby_timed_failed2(datum/om/task/timed/windoor_assembly_attackby/task)
-	var/obj/item/W = task.W
-	W.forceMove(src.loc)
-
-/obj/structure/windoor_assembly/welder_act(mob/user, obj/item/W)
-	if(state != "01" || anchored)
+/obj/structure/windoor_assembly/proc/renamed(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!isnull(R?.value))
+		created_name = sanitizeSafe(R.value, MAX_NAME_LEN)
 		update_state()
-		return NONE
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, start_self = "You start to disassemble the windoor assembly.", start_others = "[user] disassembles the windoor assembly.", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-	update_state()
-	return ITEM_INTERACT_SUCCESS
+	return OP_OK
 
-/obj/structure/windoor_assembly/proc/welder_act_tool_done(mob/user)
-	to_chat(user, span_notice("You disassembled the windoor assembly!"))
+/// Drones and engineering borgs next to it rename it.
+/obj/structure/windoor_assembly/proc/robot_may_rename(datum/act/op/A)
+	var/mob/living/silicon/robot/user = A.actor
+	return istype(user) && Adjacent(user) && user.module?.names_assemblies
+
+/obj/structure/windoor_assembly/proc/secured_down(datum/act/op/A)
+	to_chat(A.actor, span_notice("You've secured the windoor assembly!"))
+	set_anchored(TRUE)
+	update_state()
+	return OP_OK
+
+/obj/structure/windoor_assembly/proc/unsecured(datum/act/op/A)
+	to_chat(A.actor, span_notice("You've unsecured the windoor assembly!"))
+	set_anchored(FALSE)
+	update_state()
+	return OP_OK
+
+/obj/structure/windoor_assembly/proc/wired_up(datum/act/op/A)
+	to_chat(A.actor, span_notice("You wire the windoor!"))
+	update_state()
+	return OP_OK
+
+/obj/structure/windoor_assembly/proc/unwired(datum/act/op/A)
+	to_chat(A.actor, span_notice("You cut the windoor wires.!"))
+	new /obj/item/stack/cable_coil(get_turf(A.actor), 1)
+	update_state()
+	return OP_OK
+
+/obj/structure/windoor_assembly/proc/board_seated(datum/act/op/A)
+	to_chat(A.actor, span_notice("You've installed the airlock electronics!"))
+	own_set(src, nameof(electronics), A.held, user = A.actor)
+	update_state()
+	return OP_OK
+
+/obj/structure/windoor_assembly/proc/board_taken(datum/act/op/A)
+	to_chat(A.actor, span_notice("You've removed the airlock electronics!"))
+	if(electronics)
+		var/obj/item/airlock_electronics/ae = electronics
+		own_take(src, nameof(electronics))
+		ae.forceMove(loc)
+	update_state()
+	return OP_OK
+
+/// The electronics in it are not a burnt out board.
+/obj/structure/windoor_assembly/proc/board_whole(datum/act/A)
+	return !istype(electronics, /obj/item/circuitboard/broken) // ALLOW(reads): the board in it is read when the crowbar is tried; it cannot change while the assembly is finished
+
+/// A loose bare frame comes apart into its glass.
+/obj/structure/windoor_assembly/proc/disassembled(datum/act/op/A)
+	to_chat(A.actor, span_notice("You disassembled the windoor assembly!"))
 	if(secure)
 		new /obj/item/stack/material/glass/reinforced(get_turf(src), 2)
 	else
 		new /obj/item/stack/material/glass(get_turf(src), 2)
 	qdel(src)
+	return OP_OK
 
-/obj/structure/windoor_assembly/wrench_act(mob/user, obj/item/W)
-	if(state != "01")
-		update_state()
-		return NONE
-	if(!anchored)
-		//Wrenching an unsecure assembly anchors it in place. Step 4 complete
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You start to secure the windoor assembly to the floor.", start_others = "[user] secures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done), done_args = list(user))
-	else
-		//Unwrenching an unsecure assembly un-anchors it. Step 4 undone
-		use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WRENCH, volume = 100, start_self = "You start to unsecure the windoor assembly to the floor.", start_others = "[user] unsecures the windoor assembly to the floor.", receiver = src, on_done = PROC_REF(wrench_act_tool_done2), done_args = list(user))
-	update_state()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/windoor_assembly/proc/wrench_act_tool_done(mob/user)
-	to_chat(user,span_notice("You've secured the windoor assembly!"))
-	set_anchored(TRUE)
-	step = 0
-/obj/structure/windoor_assembly/proc/wrench_act_tool_done2(mob/user)
-	to_chat(user,span_notice("You've unsecured the windoor assembly!"))
-	set_anchored(FALSE)
-	step = null
-
-/obj/structure/windoor_assembly/wirecutter_act(mob/user, obj/item/W)
-	if(state != "02" || src.electronics)
-		update_state()
-		return NONE
-	//Removing wire from the assembly. Step 5 undone.
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_WIRECUTTER, volume = 100, start_self = "You start to cut the wires from airlock assembly.", start_others = "[user] cuts the wires from the airlock assembly.", receiver = src, on_done = PROC_REF(wirecutter_act_tool_done), done_args = list(user))
-	update_state()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/windoor_assembly/proc/wirecutter_act_tool_done(mob/user)
-	to_chat(user,span_notice("You cut the windoor wires.!"))
-	new/obj/item/stack/cable_coil(get_turf(user), 1)
-	src.state = "01"
-	step = 0
-
-/obj/structure/windoor_assembly/screwdriver_act(mob/user, obj/item/W)
-	if(state != "02" || !src.electronics)
-		update_state()
-		return NONE
-	//Screwdriver to remove airlock electronics. Step 6 undone.
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_SCREWDRIVER, volume = 100, start_self = "You start to uninstall electronics from the airlock assembly.", start_others = "[user] removes the electronics from the airlock assembly.", receiver = src, on_done = PROC_REF(screwdriver_act_tool_done), done_args = list(user))
-	update_state()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/windoor_assembly/proc/screwdriver_act_tool_done(mob/user)
-	if(!src.electronics) return ITEM_INTERACT_SUCCESS
-	to_chat(user,span_notice("You've removed the airlock electronics!"))
-	step = 1
-	var/obj/item/airlock_electronics/ae = electronics
-	own_take(src, nameof(electronics))
-	ae.forceMove(src.loc)
-
-/obj/structure/windoor_assembly/crowbar_act(mob/user, obj/item/W)
-	if(state != "02")
-		update_state()
-		return NONE
-	//Crowbar to complete the assembly, Step 7 complete.
-	if(!src.electronics)
-		to_chat(user,span_warning("The assembly is missing electronics."))
-		return ITEM_INTERACT_SUCCESS
-	if(src.electronics && istype(src.electronics, /obj/item/circuitboard/broken))
-		to_chat(user,span_warning("The assembly has broken airlock electronics."))
-		return ITEM_INTERACT_SUCCESS
-	// close TGUI panel (legacy browse(null))
+/// The crowbar pries the windoor into the frame: the door takes the assembly's place, open, and closes at once.
+/obj/structure/windoor_assembly/proc/finish_windoor(datum/act/op/A)
+	to_chat(A.actor, span_notice("You finish the windoor!"))
 	SStgui.close_uis(src)
-	use_tool(user, W, src, delay = 4 SECONDS, quality = TOOL_CROWBAR, volume = 100, start_self = "You start prying the windoor into the frame.", start_others = "[user] pries the windoor into the frame.", receiver = src, on_done = PROC_REF(crowbar_act_tool_done), done_args = list(user))
-	update_state()
-	return ITEM_INTERACT_SUCCESS
-
-/obj/structure/windoor_assembly/proc/crowbar_act_tool_done(mob/user)
 	set_density(TRUE) //Shouldn't matter but just incase
-	to_chat(user,span_notice("You finish the windoor!"))
-
-	if(secure)
-		var/obj/machinery/door/window/brigdoor/windoor = new /obj/machinery/door/window/brigdoor(src.loc)
-		if(src.facing == "l")
-			windoor.icon_state = "leftsecureopen"
-			windoor.base_state = "leftsecure"
-		else
-			windoor.icon_state = "rightsecureopen"
-			windoor.base_state = "rightsecure"
-		windoor.set_dir(src.dir)
-		windoor.set_density(FALSE)
-		if(created_name)
-			windoor.name = created_name
-		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
-
-		if(src.electronics.one_access)
-			windoor.req_access = null
-			windoor.req_one_access = src.electronics.conf_access
-		else
-			windoor.req_access = src.electronics.conf_access
-		src.electronics.forceMove(windoor)
-		own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
+	var/obj/machinery/door/window/windoor = replace_with(src, secure ? /obj/machinery/door/window/brigdoor : /obj/machinery/door/window)
+	if(!windoor)
+		return OP_FAILED
+	var/side = facing == "l" ? "left" : "right"
+	var/open_state = secure ? "[side]secure" : side
+	windoor.icon_state = "[open_state]open"
+	windoor.base_state = open_state
+	windoor.set_dir(dir)
+	windoor.set_density(FALSE)
+	if(created_name)
+		windoor.name = created_name
+	after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close), key = "autoclose", clock = CLOCK_WORLD)
+	if(electronics.one_access)
+		windoor.req_access = null
+		windoor.req_one_access = electronics.conf_access
 	else
-		var/obj/machinery/door/window/windoor = new /obj/machinery/door/window(src.loc)
-		if(src.facing == "l")
-			windoor.icon_state = "leftopen"
-			windoor.base_state = "left"
-		else
-			windoor.icon_state = "rightopen"
-			windoor.base_state = "right"
-		windoor.set_dir(src.dir)
-		windoor.set_density(FALSE)
-		if(created_name)
-			windoor.name = created_name
-		om_after(windoor, 0, TYPE_PROC_REF(/obj/machinery/door, close))
+		windoor.req_access = electronics.conf_access
+	electronics.forceMove(windoor)
+	own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
+	return OP_OK
 
-		if(src.electronics.one_access)
-			windoor.req_access = null
-			windoor.req_one_access = src.electronics.conf_access
-		else
-			windoor.req_access = src.electronics.conf_access
-		src.electronics.forceMove(windoor)
-		own_transfer(src, nameof(electronics), windoor, nameof(windoor.electronics))
+/// How far the assembly is built, as the number its picture is made from: 01 loose or bolted down, 02 wired or beyond.
+/obj/structure/windoor_assembly/proc/sprite_state()
+	return built(src, STAGE_WINDOOR_ASSEMBLY_WIRED) ? "02" : "01"
 
-	qdel(src)
-
+/// The name follows the step: anchored, wired, near finished.
 /obj/structure/windoor_assembly/proc/update_state()
 	update_icon()
 	name = ""
-	switch(step)
-		if (0)
-			name = "anchored "
-		if (1)
-			name = "wired "
-		if (2)
-			name = "near finished "
+	if(built(src, STAGE_WINDOOR_ASSEMBLY_BOARDED))
+		name = "near finished "
+	else if(built(src, STAGE_WINDOOR_ASSEMBLY_WIRED))
+		name = "wired "
+	else if(built(src, STAGE_WINDOOR_ASSEMBLY_SECURED))
+		name = "anchored "
 	name += "[secure ? "secure " : ""]windoor assembly[created_name ? " ([created_name])" : ""]"
 
+// The assembly's own template does not apply: draw() below is the look, and update_icon() marks it for it.
+APPEARANCE_NONE(/obj/structure/windoor_assembly)
+
+// ALLOW(sys_update_icon): bridge only; it draws nothing, it marks the assembly so draw() runs
+/obj/structure/windoor_assembly/update_icon()
+	changed(src)
+
+/obj/structure/windoor_assembly/draw(datum/look/look)
+	..()
+	look.state("[facing]_[secure]windoor_assembly[sprite_state()]")
+
 /obj/structure/windoor_assembly/handle_rotation_verbs(angle, mob/user)
-	if(state != "01")
+	var/wired = built(src, STAGE_WINDOOR_ASSEMBLY_WIRED)
+	if(wired)
 		update_nearby_tiles(need_rebuild=1) //Compel updates before
 	. = ..()
 	if(.)
-		if(state != "01")
+		if(wired)
 			update_nearby_tiles(need_rebuild=1)
 		update_icon()
 
-//Flips the windoor assembly, determines whather the door opens to the left or the right
-/obj/structure/windoor_assembly/proc/windoor_assembly_flip_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(src.facing == "l")
-		to_chat(user,"The windoor will now slide to the right.")
-		src.facing = "r"
+/// Flips the windoor assembly: whether the door opens to the left or the right.
+/obj/structure/windoor_assembly/proc/flipped(datum/act/op/A)
+	if(facing == "l")
+		to_chat(A.actor, "The windoor will now slide to the right.")
+		facing = "r"
 	else
-		src.facing = "l"
-		to_chat(user,"The windoor will now slide to the left.")
-
+		facing = "l"
+		to_chat(A.actor, "The windoor will now slide to the left.")
 	update_icon()
-	return
-
-/obj/structure/windoor_assembly/ownership()
-	. = ..()
-	. += owns(nameof(electronics), policy = OWN_CONTAINED)
+	return OP_OK
