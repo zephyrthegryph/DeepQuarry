@@ -268,4 +268,60 @@
 	TEST_ASSERT_EQUAL(SSexplosions.explosion_step(0), STEP_PARK, "a finished epoch must park the item")
 	W.parked = FALSE
 
+/// The antagonist templates: boots after atoms, holds one template per antagonist type and the syndicate code phrases.
+/datum/unit_test/dq_system_antag
+
+/datum/unit_test/dq_system_antag/Run()
+	assert_system_ported(SSantag, /datum/system/antag)
+	TEST_ASSERT(/datum/system/atoms in SSantag.needs, "the antag system boots after atoms")
+	TEST_ASSERT(length(SSantag.all_antag_types), "the antag system has no templates")
+	TEST_ASSERT(length(SSantag.syndicate_code_phrase), "the syndicate code phrase was not generated")
+	var/id = SSantag.all_antag_types[1]
+	TEST_ASSERT_EQUAL(SSantag.get_antag_data(id), SSantag.all_antag_types[id], "get_antag_data() did not return the template")
+	TEST_ASSERT(islist(SSantag.get_antags(id)), "get_antags() must always answer a list")
+	TEST_ASSERT(!SSantag.player_is_antag(null), "no mind is an antagonist")
+
+/// The event system: boots after atoms, three containers on the slow lane, finished events are owned.
+/datum/unit_test/dq_system_events
+
+/datum/unit_test/dq_system_events/Run()
+	assert_system_ported(SSevents, /datum/system/events)
+	TEST_ASSERT(/datum/system/atoms in SSevents.needs, "the event system boots after atoms")
+	TEST_ASSERT(length(SSevents.allEvents), "the event system lists no event types")
+	TEST_ASSERT_EQUAL(length(SSevents.event_containers), 3, "the event system lost a container")
+	TEST_ASSERT(islist(SSevents.active_events()), "active_events() must answer a list")
+
+/// The emergency shuttle: boots after the shuttles, counts down every second, parks when nothing is in flight, wakes on a countdown.
+/datum/unit_test/dq_system_emergency_shuttle
+
+/datum/unit_test/dq_system_emergency_shuttle/Run()
+	assert_system_ported(SSemergency_shuttle, /datum/system/emergency_shuttle)
+	TEST_ASSERT(/datum/system/shuttles in SSemergency_shuttle.needs, "the emergency shuttle boots after the shuttles")
+	var/datum/work_item/W = assert_work_declared(SSemergency_shuttle, nameof(/datum/system/emergency_shuttle/proc/shuttle_step), 1 SECOND, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSemergency_shuttle.periodic_runlevels, RUNLEVEL_GAME, "the launch countdown runs outside the game")
+	var/waiting = SSemergency_shuttle.wait_for_launch
+	SSemergency_shuttle.wait_for_launch = FALSE
+	TEST_ASSERT_EQUAL(SSemergency_shuttle.shuttle_step(0), STEP_PARK, "an idle emergency shuttle must park the item")
+	W.parked = TRUE
+	SSemergency_shuttle.set_launch_countdown(60)
+	TEST_ASSERT(!W.parked, "starting a countdown did not wake the parked item")
+	SSemergency_shuttle.stop_launch_countdown()
+	var/autopilot = SSemergency_shuttle.autopilot
+	SSemergency_shuttle.set_autopilot(FALSE)
+	TEST_ASSERT(!SSemergency_shuttle.autopilot, "set_autopilot() did not hold the shuttle")
+	SSemergency_shuttle.set_autopilot(autopilot)
+	SSemergency_shuttle.wait_for_launch = waiting
+	W.parked = FALSE
+
+/// The pAI candidate list: boots after atoms, refreshed every 4 s from the observers in one pass.
+/datum/unit_test/dq_system_pai
+
+/datum/unit_test/dq_system_pai/Run()
+	assert_system_ported(SSpai, /datum/system/pai)
+	TEST_ASSERT(/datum/system/atoms in SSpai.needs, "the pAI system boots after atoms")
+	assert_work_declared(SSpai, nameof(/datum/system/pai/proc/refresh_candidates), 4 SECONDS, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSpai.periodic_runlevels, RUNLEVELS_DEFAULT, "the pAI refresh runs in the lobby")
+	TEST_ASSERT(length(SSpai.get_chassis_list()), "the pAI system has no chassis")
+	TEST_ASSERT_EQUAL(SSpai.refresh_candidates(0), STEP_DONE, "the candidate refresh did not finish in one pass")
+
 #endif
