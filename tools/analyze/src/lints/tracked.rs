@@ -34,8 +34,8 @@
 
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
-use rayon::prelude::*;
 
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat::Pat;
@@ -263,31 +263,41 @@ impl Lint for Tracker {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        // Facts: the vars each file declares tracked (cached by content); merged into one index.
+        let all = cx.all_files();
+        let facts: Vec<Vec<(String, String)>> = incr::facts("tracked-facts", &all, |f| {
+            let mut t: Tracked = BTreeMap::new();
+            tracked_from_text(f, &mut t);
+            t.into_iter().flat_map(|(v, set)| set.into_iter().map(move |ty| (v.clone(), ty))).collect()
+        });
         let mut tracked: Tracked = BTreeMap::new();
-        for f in cx.all_files() {
-            tracked_from_text(f, &mut tracked);
+        for fs in &facts {
+            for (v, ty) in fs {
+                tracked.entry(v.clone()).or_default().insert(ty.clone());
+            }
         }
         let mut total = 0usize;
         if let Some(pats) = build_pats(&tracked) {
             let files = cx.files();
-            let results: Vec<(Vec<Hit>, Sink)> = files
-                .par_iter()
-                .map(|f| {
-                    let mut sink = Sink::new();
-                    sink.cur = f.rel.clone();
-                    let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink);
-                    (hits, sink)
-                })
-                .collect();
-            for (f, (hits, sink)) in files.iter().zip(results) {
-                for h in hits {
-                    total += 1;
-                    out.site_in_msg("outside_setter", &f.rel, h.line, h.msg);
-                }
+            // Judge: each file's hits, cached while the merged index is unchanged.
+            let results: Vec<Vec<(u32, String)>> = incr::keyed("tracked-judge", incr::ctx_key(&tracked), &files, |f| {
+                let mut sink = Sink::new();
+                sink.cur = f.rel.clone();
+                let (hits, _setters) = scan_one(&tracked, &pats, f, &mut sink);
                 for u in sink.allow_used {
-                    if !out.allow_used.contains(&u) {
-                        out.allow_used.push(u);
-                    }
+                    crate::dm::sys::replay_recorded(vec![u]);
+                }
+                hits.into_iter().map(|h| (h.line as u32, h.msg)).collect()
+            });
+            for (f, hits) in files.iter().zip(results) {
+                for (line, msg) in hits {
+                    total += 1;
+                    out.site_in_msg("outside_setter", &f.rel, line as usize, msg);
+                }
+            }
+            for u in crate::dm::sys::take_recorded() {
+                if !out.allow_used.contains(&u) {
+                    out.allow_used.push(u);
                 }
             }
         }

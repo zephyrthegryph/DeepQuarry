@@ -7,7 +7,7 @@
 
 use std::collections::{HashMap, HashSet};
 
-use crate::dm::dx::{self, call_args, match_paren, Proc, DxIndex};
+use crate::dm::dx::{self, call_args, match_paren, DxFacts, Proc};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
 use crate::util::{py_lstrip, py_rstrip, py_strip};
@@ -426,73 +426,169 @@ pub const RULE_WRITE: &str = "dx_reactive_write";
 pub const RULE_CAPS: &str = "dx_caps_instance_read";
 pub const RULE_TIMED: &str = "dx_timed_write";
 
-/// `analyse`: every site of the four rules, in the Python's emission order.
-pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let idx = DxIndex::get(tree, files);
+/// One file's contribution to the shared context of [`analyse`]: the proc names it names as a
+/// `needs =` handler, the vars it declares tracked, the relation vars it watches, and the
+/// `timed_set` vars it writes (`(var, owning type)`). All sorted and deduplicated.
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct ReactiveFacts {
+    needs: Vec<String>,
+    tracked: Vec<String>,
+    watched: Vec<String>,
+    timed: Vec<(String, String)>,
+}
+
+fn reactive_facts(tree: &Tree, f: &SourceFile, procs: &[Proc]) -> ReactiveFacts {
     let needs_re = pat!(r"\bneeds\s*=\s*(?:PROC_REF\(\s*(\w+)\s*\)|TYPE_PROC_REF\(\s*[/\w]+\s*,\s*(\w+)\s*\))");
     let tracked_re = pat_match!(r"\s*(?:TRACKED(?:_BRIDGED)?\(\s*/[\w/]+\s*,\s*(\w+)\s*[,)]|SETTER\(\s*/[\w/]+\s*,\s*(\w+)\s*\))");
     let watch_re = pat!(r"^\s*REL\w*\(\s*/[\w/]+\s*,\s*(\w+)\b[^\n]*\bWATCH\w*|\brel\(\s*nameof\(\s*(?:[\w.]+\.|/[\w/]+::)?(\w+)\s*\)[^\n]*\bwatch\s*=");
-    let mut needs_names: HashSet<String> = HashSet::new();
+    let mut needs: HashSet<String> = HashSet::new();
     let mut tracked: HashSet<String> = HashSet::new();
     let mut watched: HashSet<String> = HashSet::new();
-    for f in files {
-        for line in f.clean().lines() {
-            if line.contains("needs") {
-                for m in needs_re.captures_iter(line) {
-                    let n = if m.matched(1) { m.s(1) } else { m.s(2) };
-                    needs_names.insert(n.to_string());
-                }
+    for line in f.clean().lines() {
+        if line.contains("needs") {
+            for m in needs_re.captures_iter(line) {
+                let n = if m.matched(1) { m.s(1) } else { m.s(2) };
+                needs.insert(n.to_string());
             }
-            if line.contains("TRACKED") || line.contains("SETTER(") {
-                if let Some(t) = tracked_re.captures(line) {
-                    let n = if m_nonempty(&t, 1) { t.s(1) } else { t.s(2) };
-                    tracked.insert(n.to_string());
-                }
+        }
+        if line.contains("TRACKED") || line.contains("SETTER(") {
+            if let Some(t) = tracked_re.captures(line) {
+                let n = if m_nonempty(&t, 1) { t.s(1) } else { t.s(2) };
+                tracked.insert(n.to_string());
             }
-            if line.contains("REL") || line.contains("rel(") {
-                if let Some(w) = watch_re.captures(line) {
-                    let n = if m_nonempty(&w, 1) { w.s(1) } else { w.s(2) };
-                    watched.insert(n.to_string());
-                }
+        }
+        if line.contains("REL") || line.contains("rel(") {
+            if let Some(w) = watch_re.captures(line) {
+                let n = if m_nonempty(&w, 1) { w.s(1) } else { w.s(2) };
+                watched.insert(n.to_string());
             }
         }
     }
-    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let mut writes: Vec<(&'static str, String, usize)> = Vec::new();
-    let mut caps: Vec<(&'static str, String, usize)> = Vec::new();
+    let sorted = |s: HashSet<String>| -> Vec<String> {
+        let mut v: Vec<String> = s.into_iter().collect();
+        v.sort();
+        v
+    };
+    let mut timed: Vec<(String, String)> = timed_vars(tree, procs).into_iter().flat_map(|(n, set)| set.into_iter().map(move |p| (n.clone(), p))).collect();
+    timed.sort();
+    ReactiveFacts { needs: sorted(needs), tracked: sorted(tracked), watched: sorted(watched), timed }
+}
+
+/// What the per-file judge reads (everything except the type-var table).
+#[derive(serde::Serialize)]
+struct ReactiveCtx {
+    needs: std::collections::BTreeSet<String>,
+    tracked: std::collections::BTreeSet<String>,
+    watched: std::collections::BTreeSet<String>,
+    timed: std::collections::BTreeMap<String, std::collections::BTreeSet<String>>,
+}
+
+/// One file's findings by emission group: reads, writes, timed.
+type FileSites = (Vec<u32>, Vec<u32>, Vec<u32>);
+
+/// `analyse`: every site of the four rules, in the Python's emission order.
+///
+/// Incremental: per-file facts (cached by content) merge into the shared name sets; each file's
+/// reactive/timed findings are cached while those sets are unchanged, and the capabilities()
+/// instance reads (the only rule that reads the type-var table) while the file facts that feed that
+/// table are unchanged.
+pub fn analyse(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let dxf = DxFacts::all(tree);
+    let facts: Vec<ReactiveFacts> = crate::incr::facts("dx-reactive-facts", files, |f| reactive_facts(tree, f, &dxf.of(f).procs));
+    let mut ctx = ReactiveCtx { needs: Default::default(), tracked: Default::default(), watched: Default::default(), timed: Default::default() };
+    for fs in &facts {
+        ctx.needs.extend(fs.needs.iter().cloned());
+        ctx.tracked.extend(fs.tracked.iter().cloned());
+        ctx.watched.extend(fs.watched.iter().cloned());
+        for (n, p) in &fs.timed {
+            ctx.timed.entry(n.clone()).or_default().insert(p.clone());
+        }
+    }
+    let needs_names: HashSet<String> = ctx.needs.iter().cloned().collect();
+    let tracked: HashSet<String> = ctx.tracked.iter().cloned().collect();
+    let watched: HashSet<String> = ctx.watched.iter().cloned().collect();
+    let timed: HashMap<String, HashSet<String>> = ctx.timed.iter().map(|(n, ps)| (n.clone(), ps.iter().cloned().collect())).collect();
     let marking: HashSet<String> = MARKING_RELATIONS.iter().map(|s| s.to_string()).collect();
-    for proc in &idx.procs {
-        if is_reactive(proc, &needs_names) {
-            let mut relations: HashSet<String> = watched.union(&marking).cloned().collect();
-            let (own_roots, context, local_rels) = own_roots_of(proc, tree, &relations);
-            relations.extend(local_rels);
-            for (number, text) in proc.lines(tree) {
-                let text = blank_calls(text, initial_call()); // initial(x.y) is a compile-time default
-                let bad = foreign_reads(&text, &own_roots, &context, &relations).into_iter().any(|n| !tracked.contains(n));
-                if bad {
-                    out.push((RULE_READ, proc.rel.clone(), number));
+    let base_relations: HashSet<String> = watched.union(&marking).cloned().collect();
+
+    let sites: Vec<FileSites> = crate::incr::keyed("dx-reactive-judge", crate::incr::ctx_key(&ctx), files, |f| {
+        let fd = dxf.of(f);
+        let mut reads: Vec<u32> = Vec::new();
+        let mut writes: Vec<u32> = Vec::new();
+        let mut timed_out: Vec<u32> = Vec::new();
+        for proc in &fd.procs {
+            if is_reactive(proc, &needs_names) {
+                let mut relations = base_relations.clone();
+                let (own_roots, context, local_rels) = own_roots_of(proc, tree, &relations);
+                relations.extend(local_rels);
+                for (number, text) in proc.lines(tree) {
+                    let text = blank_calls(text, initial_call()); // initial(x.y) is a compile-time default
+                    let bad = foreign_reads(&text, &own_roots, &context, &relations).into_iter().any(|n| !tracked.contains(n));
+                    if bad {
+                        reads.push(number as u32);
+                    }
+                }
+                for number in reactive_writes(proc, tree) {
+                    writes.push(number as u32);
                 }
             }
-            for number in reactive_writes(proc, tree) {
-                writes.push((RULE_WRITE, proc.rel.clone(), number));
+        }
+        if !timed.is_empty() {
+            let mut cache: HashMap<String, TimedPats> = HashMap::new();
+            for proc in &fd.procs {
+                for number in timed_writes(proc, tree, &timed, &mut cache) {
+                    timed_out.push(number as u32);
+                }
             }
         }
-        if proc.name == "capabilities" && proc.path != "/atom" {
-            for (number, _name) in caps_reads(proc, tree, &idx.type_vars) {
-                caps.push((RULE_CAPS, proc.rel.clone(), number));
+        (reads, writes, timed_out)
+    });
+
+    // capabilities() instance reads: the one rule that reads the `{type: vars}` table. Keyed by the
+    // files' var facts; the merged table is only built when a capabilities() file must be judged.
+    let vars_key = {
+        let cows: Vec<std::borrow::Cow<'_, dx::FileDx>> = files.iter().map(|f| dxf.of(f)).collect();
+        let all: Vec<&Vec<(String, Vec<String>)>> = cows.iter().map(|c| &c.vars).filter(|v| !v.is_empty()).collect();
+        crate::incr::ctx_key(&all)
+    };
+    let table: std::sync::OnceLock<HashMap<String, HashSet<String>>> = std::sync::OnceLock::new();
+    let caps: Vec<Vec<u32>> = crate::incr::keyed("dx-reactive-caps", vars_key, files, |f| {
+        let fd = dxf.of(f);
+        if !fd.procs.iter().any(|p| p.name == "capabilities" && p.path != "/atom") {
+            return Vec::new();
+        }
+        let table = table.get_or_init(|| {
+            let mut t: HashMap<String, HashSet<String>> = HashMap::new();
+            for g in files {
+                for (ty, vs) in &dxf.of(g).vars {
+                    t.entry(ty.clone()).or_default().extend(vs.iter().cloned());
+                }
+            }
+            t
+        });
+        let mut out = Vec::new();
+        for proc in &fd.procs {
+            if proc.name == "capabilities" && proc.path != "/atom" {
+                for (number, _name) in caps_reads(proc, tree, table) {
+                    out.push(number as u32);
+                }
             }
         }
+        out
+    });
+
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    for (f, s) in files.iter().zip(&sites) {
+        out.extend(s.0.iter().map(|&n| (RULE_READ, f.rel.clone(), n as usize)));
     }
-    out.extend(writes);
-    out.extend(caps);
-    let timed = timed_vars(tree, &idx.procs);
-    if !timed.is_empty() {
-        let mut cache: HashMap<String, TimedPats> = HashMap::new();
-        for proc in &idx.procs {
-            for number in timed_writes(proc, tree, &timed, &mut cache) {
-                out.push((RULE_TIMED, proc.rel.clone(), number));
-            }
-        }
+    for (f, s) in files.iter().zip(&sites) {
+        out.extend(s.1.iter().map(|&n| (RULE_WRITE, f.rel.clone(), n as usize)));
+    }
+    for (f, c) in files.iter().zip(&caps) {
+        out.extend(c.iter().map(|&n| (RULE_CAPS, f.rel.clone(), n as usize)));
+    }
+    for (f, s) in files.iter().zip(&sites) {
+        out.extend(s.2.iter().map(|&n| (RULE_TIMED, f.rel.clone(), n as usize)));
     }
     out
 }
