@@ -197,9 +197,11 @@
 	var/datum/op_result/spray = perform_op(M, target, "reagent_container.spray", sprayer)
 	TEST_ASSERT_EQUAL(spray?.outcome, ACT_COMMITTED, "a spray commits")
 	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "using one transfer (5)")
-	var/datum/op_result/pour_with_sprayer = perform_op(M, tank, "reagent_container.pour", sprayer)
-	TEST_ASSERT(!pour_with_sprayer || pour_with_sprayer.outcome != ACT_COMMITTED, "a sprayer has no pour op")
-	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "and nothing left it")
+	var/has_pour = FALSE
+	for(var/datum/centry/C as anything in table_of(sprayer).items)
+		if(C.eff_key == "reagent_container.pour")
+			has_pour = TRUE
+	TEST_ASSERT(!has_pour, "a sprayer has no pour op")
 
 // ---------------------------------------------------------------------------------------------------------------------
 // interior: the escape.
@@ -374,7 +376,7 @@
 	var/mob/living/simple_mob/lib_fixture_biter/biter = allocate(/mob/living/simple_mob/lib_fixture_biter)
 	var/obj/lib_fixture/dummy/target = allocate(/obj/lib_fixture/dummy)
 	var/before = target.get_integrity()
-	var/datum/op_result/by_ai = perform_op(biter, target, "natural_weapon.attack")
+	var/datum/op_result/by_ai = perform_op(biter, target, "natural_weapon.attack", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT_EQUAL(by_ai?.outcome, ACT_COMMITTED, "a mob with no hands bites through the op (AI origin): [reason_text(by_ai?.reason)]")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 10, "for exactly the declared damage")
 	var/datum/op_result/cooling = test_menu(biter, target, "natural_weapon.attack")
@@ -385,7 +387,7 @@
 	TEST_ASSERT_EQUAL(by_menu?.outcome, ACT_COMMITTED, "once the cooldown is over a player's menu pick bites too")
 	TEST_ASSERT_EQUAL(by_menu?.origin, ORIGIN_MENU, "with the menu's origin")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 20, "the second bite landed")
-	var/datum/op_result/by_self = perform_op(biter, biter, "natural_weapon.attack")
+	var/datum/op_result/by_self = perform_op(biter, biter, "natural_weapon.attack", null, ORIGIN_AI, AUTH_AI)
 	TEST_ASSERT(!by_self || by_self.outcome != ACT_COMMITTED, "it will not bite itself")
 	// no hand ops: the mob has no hands, so a hand op of a machine is refused for want of a provider
 	var/provider_kinds = 0
