@@ -74,9 +74,9 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_modify_filter_value)
 
 UI_ACT(/datum/filter_editor, "modify_color_value", ui_act_modify_color_value, UI_ARG_TEXT("name"))
 UI_ACT_PROC(/datum/filter_editor, ui_act_modify_color_value)
-	var/new_color = act_ask(usr, action, params, ui, "color", /datum/om/prompt/color, message = "Pick new filter color", title = "Filteriffic Colors!")
+	var/new_color = act_ask(user, action, params, ui, "color", /datum/om/prompt/color, message = "Pick new filter color", title = "Filteriffic Colors!")
 	if(new_color)
-		target().transition_filter(params["name"], list("color" = new_color), 4)
+		target().transition_filter(params["name"], list("color" = new_color), 0.4 SECONDS)
 		. = TRUE
 
 UI_ACT(/datum/filter_editor, "modify_icon_value", ui_act_modify_icon_value, UI_ARG_TEXT("name"))
@@ -91,8 +91,8 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_modify_icon_value)
 
 UI_ACT(/datum/filter_editor, "mass_apply", ui_act_mass_apply, UI_ARG_PATH("path", /datum))
 UI_ACT_PROC(/datum/filter_editor, ui_act_mass_apply)
-	if(!check_rights_for(usr.client, R_FUN))
-		to_chat(usr, span_userdanger("Stay in your lane, jannie."))
+	if(!check_rights_for(user?.client, R_FUN))
+		to_chat(user, span_userdanger("Stay in your lane, jannie."))
 		return
 	var/target_path = params["path"]
 	if(!target_path)
@@ -107,8 +107,8 @@ UI_ACT_PROC(/datum/filter_editor, ui_act_mass_apply)
 			thing_at.filters = filters_to_copy
 			thing_at.filter_data = filter_data_to_copy
 			count += 1
-	message_admins("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
-	log_admin("LOCAL CLOWN [usr.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
+	message_admins("LOCAL CLOWN [user.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
+	log_admin("LOCAL CLOWN [user.ckey] JUST MASS FILTER EDITED [count] WITH PATH OF [params["path"]]!")
 
 /// The target this refers to (a relation view: null once that is deleted).
 /datum/filter_editor/proc/target() as /atom

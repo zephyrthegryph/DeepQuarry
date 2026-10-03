@@ -605,6 +605,7 @@
 #include "interim_alien_acid_completion.dm"
 #include "interim_toy_sword_holder_appearance.dm"
 #include "interim_shoes_holder_appearance.dm"
+#include "interim_filter_editor_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
