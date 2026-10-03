@@ -92,7 +92,7 @@
 	to_chat(user, span_notice("You have finished digging!"))
 	for(var/i=0;i<(rand(mindrop,upperdrop));i++)
 		new outcropdrop(get_turf(src))
-	qdel(src)
+	consume(src, user)
 
 DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
@@ -115,7 +115,7 @@ DECLARE_INTERACTIONS(/obj/structure/outcrop, INTERACT_ITEM(null, PROC_REF(intera
 		S.deductcharge()
 		S.status = 0
 		S.update_held_icon()
-		qdel(src)
+		consume(src, user)
 		return INTERACTION_HANDLED_PASS
 	return INTERACTION_HANDLED_PASS
 
