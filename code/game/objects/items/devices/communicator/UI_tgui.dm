@@ -89,7 +89,7 @@
 	cam_background.fill_rect(1, 1, (video_range * 2), (video_range * 2))
 
 	local_skybox.cut_overlays()
-	local_skybox.add_overlay(skybox_service().get_skybox(get_z(last_camera_turf())))
+	local_skybox.add_overlay(SSskybox.ready().get_skybox(get_z(last_camera_turf())))
 	local_skybox.scale_to_view(video_range * 2)
 	local_skybox.set_position("CENTER", "CENTER", (world.maxx>>1) - last_camera_turf().x, (world.maxy>>1) - last_camera_turf().y)
 

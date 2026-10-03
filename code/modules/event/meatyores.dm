@@ -33,7 +33,7 @@
 
 /datum/event/meteor_wave/meatyores/end()
 	if(has_skybox_image)
-		skybox_service().rebuild_skyboxes(affecting_z)
+		SSskybox.ready().rebuild_skyboxes(affecting_z)
 	if(!victim())
 		switch(severity)
 			if(EVENT_LEVEL_MAJOR)

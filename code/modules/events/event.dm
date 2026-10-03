@@ -89,7 +89,7 @@
 //Only called once.
 /datum/event/proc/start()
 	if(has_skybox_image)
-		skybox_service().rebuild_skyboxes(affecting_z)
+		SSskybox.ready().rebuild_skyboxes(affecting_z)
 	return
 
 //Called when the tick is equal to the announceWhen variable.
@@ -113,7 +113,7 @@
 //Only called once.
 /datum/event/proc/end()
 	if(has_skybox_image)
-		skybox_service().rebuild_skyboxes(affecting_z)
+		SSskybox.ready().rebuild_skyboxes(affecting_z)
 	return
 
 //Returns the latest point of event processing.

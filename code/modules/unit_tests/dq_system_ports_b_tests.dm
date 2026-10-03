@@ -107,4 +107,72 @@
 	TEST_ASSERT_NULL(SSvote.get_active_vote(), "an ended vote is still the running one")
 	W.parked = FALSE
 
+/// Time tracking: boots after the database, samples every 10 s in every runlevel, a disabled sampler does nothing.
+/datum/unit_test/dq_system_time_track
+
+/datum/unit_test/dq_system_time_track/Run()
+	assert_system_ported(SStime_track, /datum/system/time_track)
+	TEST_ASSERT(/datum/system/dbcore in SStime_track.needs, "time tracking boots after the database")
+	assert_work_declared(SStime_track, nameof(/datum/system/time_track/proc/sample_time), 10 SECONDS, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SStime_track.periodic_runlevels, RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT, "time tracking lost its lobby runlevel")
+	var/disabled = SStime_track.disabled
+	SStime_track.disabled = TRUE
+	TEST_ASSERT_EQUAL(SStime_track.sample_time(0), STEP_DONE, "a disabled sampler must finish at once")
+	SStime_track.disabled = disabled
+	TEST_ASSERT(isnum(SStime_track.time_dilation_current), "the time dilation reading is not a number")
+
+/// Server housekeeping: boots after the garbage system, one pass every SERVER_MAINT_INTERVAL ticks, finishes with no clients.
+/datum/unit_test/dq_system_server_maint
+
+/datum/unit_test/dq_system_server_maint/Run()
+	assert_system_ported(SSserver_maint, /datum/system/server_maint)
+	TEST_ASSERT(/datum/system/garbage in SSserver_maint.needs, "server maintenance boots after the garbage system")
+	assert_work_declared(SSserver_maint, nameof(/datum/system/server_maint/proc/maintain), 6, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSserver_maint.periodic_runlevels, RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT, "server maintenance lost its lobby runlevel")
+	TEST_ASSERT(length(SSserver_maint.lists_to_clear), "the lists to clear were not set up at boot")
+	var/saved = SSserver_maint.cleanup_ticker
+	TEST_ASSERT_EQUAL(SSserver_maint.maintain(0), STEP_DONE, "a maintenance pass with no clients must finish")
+	TEST_ASSERT_EQUAL(SSserver_maint.cleanup_ticker, saved + 1, "the maintenance pass did not advance its list clearing")
+	SSserver_maint.cleanup_ticker = saved
+
+/// Solars: a pass every minute during the game; with no controllers it finishes, and an angle query in space is the sun's.
+/datum/unit_test/dq_system_solars
+
+/datum/unit_test/dq_system_solars/Run()
+	assert_system_ported(SSsolars, /datum/system/solars)
+	assert_work_declared(SSsolars, nameof(/datum/system/solars/proc/update_solars), 1 MINUTE, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSsolars.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "solars update outside the game")
+	var/result = SSsolars.update_solars(0)
+	for(var/i in 1 to 50) // a test tick is always over budget: the pass yields between controllers
+		if(result != STEP_YIELD)
+			break
+		result = SSsolars.update_solars(0)
+	TEST_ASSERT_EQUAL(result, STEP_DONE, "the solar pass did not finish")
+	TEST_ASSERT_EQUAL(SSsolars.get_solar_angle(null), GLOB.sun.angle, "a turf-less angle query must answer the sun's angle")
+
+/// Xenoarch: boots after atoms, has no periodic work, placed its digsites and artifacts at boot.
+/datum/unit_test/dq_system_xenoarch
+
+/datum/unit_test/dq_system_xenoarch/Run()
+	assert_system_ported(SSxenoarch, /datum/system/xenoarch)
+	TEST_ASSERT(/datum/system/atoms in SSxenoarch.needs, "xenoarch boots after atoms")
+	TEST_ASSERT_NULL(dq_system_work(SSxenoarch, nameof(/datum/system/xenoarch/proc/continual_generation)), "xenoarch has no periodic work")
+	TEST_ASSERT(islist(SSxenoarch.artifact_spawning_turfs), "the artifact turf list is not a list")
+	TEST_ASSERT(islist(SSxenoarch.digsite_spawning_turfs), "the digsite turf list is not a list")
+
+/// The skybox: lazy (outside the boot DAG), built on the first ready(), caches the per-z skybox.
+/datum/unit_test/dq_system_skybox
+
+/datum/unit_test/dq_system_skybox/Run()
+	TEST_ASSERT(!SSskybox.boots_in_dag(), "a lazy system must stay out of the boot DAG")
+	TEST_ASSERT(!(SSskybox in kernel_boot_systems()), "the lazy skybox system is a boot node")
+	TEST_ASSERT_EQUAL(SSskybox.ready(), SSskybox, "ready() must return the system")
+	assert_system_ported(SSskybox, /datum/system/skybox)
+	TEST_ASSERT_EQUAL(length(SSskybox.dust_cache), 26, "the dust appearances were not built")
+	TEST_ASSERT(SSskybox.normal_space, "the normal space appearance was not built")
+	var/z = run_loc_floor_bottom_left.z
+	var/sky = SSskybox.get_skybox(z)
+	TEST_ASSERT_NOTNULL(sky, "get_skybox() built nothing for the test z-level")
+	TEST_ASSERT_EQUAL(SSskybox.get_skybox(z), sky, "get_skybox() did not cache the skybox")
+
 #endif

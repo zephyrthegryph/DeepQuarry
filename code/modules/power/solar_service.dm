@@ -1,20 +1,26 @@
-// The solar world service (fold wave F4; was SSsun + SSsolars). Every minute
-// /datum/om/behaviour/world/solars (code/datums/om/world_lanes.dm) steps the sun and then updates
-// every solar controller and its panels, yielding across ticks over budget.
+// The solar system (was SSsun + SSsolars). Every minute it steps the sun and then updates every solar controller
+// and its panels, yielding across ticks over budget.
 GLOBAL_DATUM_INIT(sun, /datum/sun, new)
-GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 
-/datum/world_service/solars
+SYSTEM_DEF(solars)
 	name = "Solars"
-	lane = /datum/om/behaviour/world/solars
+	periodic_runlevels = RUNLEVEL_GAME | RUNLEVEL_POSTGAME
 	// List of solar controllers that need to be prepared for the second half of processing
-	var/list/current_run
+	VAR_PRIVATE/list/current_run
 
 	// Relation list: controllers collected for the second half of this pass. Each controller
 	// carries its own pending panels (solar_pending) and running sum (solar_pending_sum).
-	var/list/controller_run
+	VAR_PRIVATE/list/controller_run
+	/// TRUE while a pass that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 
-/datum/world_service/solars/service_step(resumed)
+/datum/system/solars/reactions()
+	. = ..()
+	. += every(1 MINUTE, PROC_REF(update_solars), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/solars/proc/update_solars(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	if(!resumed)
 		GLOB.sun.calc_position()
 		// Get the list of controllers we need to process
@@ -34,8 +40,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		// Controllers with no network are ignored
 		if(!SC.power_region)
 			registry_leave(REGISTRY_SOLAR_CONTROLS, SC)
-			if(TICK_CHECK)
-				return FALSE
+			if(KERNEL_OVER_BUDGET)
+				resuming = TRUE
+				return STEP_YIELD
 			continue
 
 		// Update the controller and prepare each of the solar array lists it needs
@@ -46,8 +53,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 			rel_add(SC, nameof(SC.solar_pending), panel)
 		SC.solar_pending_sum = 0
 
-		if(TICK_CHECK)
-			return FALSE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
 
 	////////////////////////////////////////////////////////////////////////////////
 	// Second processing cycle handles all of the panels for each controller!
@@ -61,8 +69,9 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 			SC.solar_pending_sum += S.update_power_generation(SC)
 			rel_remove(SC, nameof(SC.solar_pending), S)
 
-			if(TICK_CHECK)
-				return FALSE
+			if(KERNEL_OVER_BUDGET)
+				resuming = TRUE
+				return STEP_YIELD
 
 		// Update the controller
 		SC.connected_power = SC.solar_pending_sum
@@ -70,14 +79,15 @@ GLOBAL_DATUM_INIT(solar_service, /datum/world_service/solars, new)
 		SC.update_icon()
 		rel_remove(src, nameof(controller_run), SC)
 
-		if(TICK_CHECK)
-			return FALSE
-	return TRUE
+		if(KERNEL_OVER_BUDGET)
+			resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-/datum/world_service/solars/stat_line()
-	return "Controllers: [length(controller_run)]"
+/datum/system/solars/stat_entry(msg)
+	return "[msg]Controllers: [length(controller_run)]"
 
-/datum/world_service/solars/proc/get_solar_angle(turf/our_t)
+/datum/system/solars/proc/get_solar_angle(turf/our_t)
 	if(!our_t || our_t.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_t.z])
 		return GLOB.sun.angle // standard in space solar panels use the global sun angle
 

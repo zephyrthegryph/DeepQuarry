@@ -51,7 +51,7 @@
 	TEST_ASSERT(SSpai.initialized, "the pAI service never initialized (SSatoms)")
 	TEST_ASSERT(length(SSpai.get_chassis_list()), "the pAI service has no chassis")
 	TEST_ASSERT(length(GLOB.pai_software_by_key), "the pAI service registered no software")
-	TEST_ASSERT(GLOB.xenoarch_service.initialized, "the xenoarch service never initialized (SSatoms)")
+	TEST_ASSERT(SSxenoarch.initialized, "the xenoarch service never initialized (SSatoms)")
 	TEST_ASSERT(SSevents.initialized, "the event service never initialized (SSatoms)")
 	for(var/i = EVENT_LEVEL_MUNDANE to EVENT_LEVEL_MAJOR)
 		var/datum/event_container/EC = SSevents.event_containers[i]

@@ -1,10 +1,8 @@
 // Time dilation and sendmaps tracking (was SStime_track): sampled every 10 s into the perf log.
-GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
-
-/datum/world_service/time_track
+SYSTEM_DEF(time_track)
 	name = "Time Tracking"
-	lane = /datum/om/behaviour/world/time_track
 	needs = list(/datum/system/dbcore)
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
 	var/time_dilation_current = 0
 
@@ -45,7 +43,12 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		"SendMaps: Per client: Map data: Look for movable changes: Movables examined" = "movables_examined",
 	)
 
-/datum/world_service/time_track/initialize()
+/// Samples every 10 s.
+/datum/system/time_track/reactions()
+	. = ..()
+	. += every(10 SECONDS, PROC_REF(sample_time), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/time_track/initialize()
 	initialized = TRUE
 	//GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[SSmapping.current_map.map_name].csv"
 	GLOB.perf_log = "[GLOB.log_directory]/perf-[GLOB.round_id ? GLOB.round_id : "NULL"]-[using_map.name].csv"
@@ -104,9 +107,9 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		) + sendmaps_headers
 	)
 
-/datum/world_service/time_track/service_step(resumed)
+/datum/system/time_track/proc/sample_time(dt)
 	if(disabled)
-		return TRUE
+		return STEP_DONE
 
 	var/current_realtime = REALTIMEOFDAY
 	var/current_byondtime = world.time
@@ -135,7 +138,7 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		text2file(sendmaps_json,"bad_sendmaps.json")
 		disabled = TRUE
 		log_world("Time tracking stopped: malformed sendmaps profile JSON (bad_sendmaps.json).")
-		return TRUE
+		return STEP_DONE
 	var/send_maps_sort = send_maps_data.Copy() //Doing it like this guarantees us a properly sorted list
 
 	for(var/list/packet in send_maps_data)
@@ -200,23 +203,11 @@ GLOBAL_DATUM_INIT(time_track_service, /datum/world_service/time_track, new)
 		) + send_maps_values
 	)
 
-	return TRUE
-
-/// time_track (was SStime_track).
-/datum/om/behaviour/world/time_track
-	name = "world: time_track"
-	every = 10 SECONDS
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/time_track/service()
-	return GLOB.time_track_service
+	return STEP_DONE
 
 /// Time dilation for the server metrics (code/modules/metrics/): how far game time falls behind real time.
 /datum/metrics_source/time_dilation
 
 /datum/metrics_source/time_dilation/collect(datum/world_service/server_metrics/M, dt)
-	var/datum/world_service/time_track/T = GLOB.time_track_service
-	if(!T)
-		return
-	M.gauge("server/time_dilation/current", T.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
-	M.gauge("server/time_dilation/avg", T.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")
+	M.gauge("server/time_dilation/current", SStime_track.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
+	M.gauge("server/time_dilation/avg", SStime_track.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")

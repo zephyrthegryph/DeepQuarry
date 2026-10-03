@@ -135,7 +135,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 		return
 
 	//find the smaller angle between the direction the panel is facing and the direction of the sun (the sign is not important here)
-	var/source_angle = GLOB.solar_service.get_solar_angle(get_turf(src))
+	var/source_angle = SSsolars.get_solar_angle(get_turf(src))
 	var/p_angle = min(abs(adir - source_angle), 360 - abs(adir - source_angle))
 	if(p_angle > 90) // if facing more than 90deg from sun, zero output
 		sunfrac = 0
@@ -338,7 +338,7 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 		track = 2 // Auto tracking mode.
 		search_for_connected()
 		if(connected_tracker())
-			connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
+			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 		set_panels(cdir)
 
 /obj/machinery/power/solar_control/proc/add_panel(obj/machinery/power/solar/P)
@@ -410,7 +410,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/solar_control, REGISTRY_SOLAR_CONTROLS)
 				cdir = targetdir //...the current direction is the targetted one (and rotates panels to it)
 		if(2) // auto-tracking
 			if(connected_tracker())
-				connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
+				connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar_control, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/solar_control/appearance_overlays()
@@ -443,7 +443,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 	data["generated"] = round(connected_power)
 	data["generated_ratio"] = data["generated"] / round(max(length(connected_panels), 1) * GLOB.solar_gen_rate)
 
-	data["sun_angle"] = GLOB.solar_service.get_solar_angle(get_turf(src))
+	data["sun_angle"] = SSsolars.get_solar_angle(get_turf(src))
 	data["max_rotation_rate"] = 7200
 
 	data["connected_panels"] = length(connected_panels)
@@ -534,7 +534,7 @@ UI_ACT_PROC(/obj/machinery/power/solar_control, ui_act_tracking)
 	track = mode
 	if(track == 2)
 		if(connected_tracker())
-			connected_tracker().set_angle(GLOB.solar_service.get_solar_angle(get_turf(src)))
+			connected_tracker().set_angle(SSsolars.get_solar_angle(get_turf(src)))
 			set_panels(cdir)
 	else if(track == 1) //begin manual tracking
 		targetdir = cdir

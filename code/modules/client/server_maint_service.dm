@@ -1,15 +1,15 @@
 #define PING_BUFFER_TIME 25
-/// Lane cadence, in ticks (was the subsystem's wait).
+/// Cadence of the every() item, in ticks (was the subsystem's wait).
 #define SERVER_MAINT_INTERVAL 6
 
 // Server housekeeping (was SSserver_maint): wipes tmp/ at boot and shutdown, clears nulls from the
 // global mob lists and refreshes client pings every 6 ticks.
-GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
-
-/datum/world_service/server_maint
+SYSTEM_DEF(server_maint)
 	name = "Server Tasks"
-	lane = /datum/om/behaviour/world/server_maint
 	needs = list(/datum/system/garbage)
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
+	/// TRUE while a pass that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 	var/list/currentrun
 	///Associated list of list names to lists to clear of nulls
 	var/list/lists_to_clear
@@ -17,10 +17,11 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 	var/delay = 5
 	var/cleanup_ticker = 0
 
-/*/datum/world_service/server_maint/PreInit()
-	world.hub_password = "" *///quickly! before the hubbies see us.
+/datum/system/server_maint/reactions()
+	. = ..()
+	. += every(SERVER_MAINT_INTERVAL, PROC_REF(maintain), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/world_service/server_maint/initialize()
+/datum/system/server_maint/initialize()
 	initialized = TRUE
 	// A sharded dm-test run boots N worlds sharing this worktree's tmp/, each
 	// still actively using it (icon2base64's dummy savefiles, universal_icon's
@@ -56,7 +57,9 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 		SSblackbox.record_feedback("text", "server_tools", 1, tgsversion.raw_parameter)*/
 
 
-/datum/world_service/server_maint/service_step(resumed)
+/datum/system/server_maint/proc/maintain(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	if(!resumed)
 		if(list_clear_nulls(GLOB.clients))
 			log_world("Found a null in clients list!")
@@ -84,11 +87,12 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 		if (!(!C || ELAPSED_SINCE(src, C.connection_time, CLOCK_WORLD) < PING_BUFFER_TIME || C.inactivity >= (SERVER_MAINT_INTERVAL - 1)))
 			winset(C, null, "command=.update_ping+[num2text(world.time+world.tick_lag*TICK_USAGE_REAL/100, 32)]")
 
-		if(TICK_CHECK) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this tick check
-			return FALSE
-	return TRUE
+		if(KERNEL_OVER_BUDGET) //one day, when ss13 has 1000 people per server, you guys are gonna be glad I added this budget check
+			resuming = TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-/datum/world_service/server_maint/on_shutdown()
+/datum/system/server_maint/on_shutdown()
 	// See the matching guard in initialize(): a sharded run's worlds share tmp/
 	// with siblings that may still be running.
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
@@ -108,14 +112,5 @@ GLOBAL_DATUM_INIT(server_maint_service, /datum/world_service/server_maint, new)
 			C << link("byond://[server]")
 
 #undef PING_BUFFER_TIME
-
-/// server_maint (was SSserver_maint).
-/datum/om/behaviour/world/server_maint
-	name = "world: server_maint"
-	every = SERVER_MAINT_INTERVAL
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/server_maint/service()
-	return GLOB.server_maint_service
 
 #undef SERVER_MAINT_INTERVAL

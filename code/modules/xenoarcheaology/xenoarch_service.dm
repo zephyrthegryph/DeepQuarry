@@ -9,30 +9,27 @@
 #define PROCEDURAL_LOWER 5			//These are high as the generation of them can could be laggy if spammed. This ONLY happens if the entire Z level has been depleted of large artifacts.
 #define PROCEDURAL_UPPER 10			//It's easier to just go 'Here's more artifacts to dig up' and give xenoarch more to do.
 
-// The xenoarchaeology world service (fold wave F3; was SSxenoarch): places digsites and large
-// artifacts on the initialized map, and generates more when a z-level runs out. It has no periodic
-// work. It needs the map's mineral turfs initialized, so SSatoms.Initialize() calls initialize()
-// once the map load finishes (the slot the subsystem's atoms dependency gave it).
-GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
-
-/datum/world_service/xenoarch
+// The xenoarchaeology system (was SSxenoarch): places digsites and large artifacts on the initialized map, and
+// generates more when a z-level runs out. It has no periodic work. It needs the map's mineral turfs initialized, so
+// it boots after SSatoms (its `needs`). The API is in xenoarch_api.dm.
+SYSTEM_DEF(xenoarch)
 	name = "Xenoarch"
 	needs = list(/datum/system/atoms)
 	var/list/artifact_spawning_turfs = list()
 	var/list/digsite_spawning_turfs = list()
 
-/datum/world_service/xenoarch/initialize()
+/datum/system/xenoarch/initialize()
 	if(initialized)
 		return
 	initialized = TRUE
 	var/started = REALTIMEOFDAY
 	SetupXenoarch()
-	log_world("Xenoarch service initialized: [length(digsite_spawning_turfs)] digsites, [length(artifact_spawning_turfs)] large artifacts in [(REALTIMEOFDAY - started) / 10]s.")
+	log_world("Xenoarch system initialized: [length(digsite_spawning_turfs)] digsites, [length(artifact_spawning_turfs)] large artifacts in [(REALTIMEOFDAY - started) / 10]s.")
 
-/datum/world_service/xenoarch/stat_line()
-	return "Digsites: [length(digsite_spawning_turfs)] | Artifacts: [length(artifact_spawning_turfs)]"
+/datum/system/xenoarch/stat_entry(msg)
+	return "[msg]Digsites: [length(digsite_spawning_turfs)] | Artifacts: [length(artifact_spawning_turfs)]"
 
-/datum/world_service/xenoarch/proc/SetupXenoarch()
+/datum/system/xenoarch/proc/SetupXenoarch()
 	for(var/turf/simulated/mineral/M in world) //This selects every mineral turf in the world
 		if(!M.density) //Checks to see if it's a mineral wall
 			continue
@@ -115,7 +112,7 @@ GLOBAL_DATUM_INIT(xenoarch_service, /datum/world_service/xenoarch, new)
 		own_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
 
 /// This is the proc that is used when a Z level runs out of artifacts. This means you have 'completed' your job and now you get bonus goodies to keep you occupied.
-/datum/world_service/xenoarch/proc/continual_generation(mob/living/user)
+/datum/system/xenoarch/proc/generate_more_artifacts(mob/living/user)
 
 	/// So, to preface this, I had to do a lot of testing with this to ensure it wouldn't cause mass lag and that it properly functioned.
 	/// At first, I tried to make it scan mineral in the user's Z. There's not really any preexisting functionality for this that I could find, so that was a negative.

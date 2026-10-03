@@ -50,7 +50,7 @@
 		edge |= EAST
 
 	// ~310 k space turfs run this at boot: one service lookup per turf.
-	var/datum/world_service/skybox/sky = skybox_service()
+	var/datum/system/skybox/sky = SSskybox.ready()
 	if(edge) //Magic edges
 		appearance = sky.mapedge_cache["[edge]"]
 	else //Dust
@@ -65,16 +65,17 @@
 	if(edge) //Not a great way to do this yet. Maybe we'll come up with one. We could pre-make sprites... or tile the overlay over it?
 		return
 
+	var/datum/system/skybox/sky = SSskybox.ready()
 	if(!direction) //Stopping our transit
-		appearance = skybox_service().dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
+		appearance = sky.dust_cache["[((x + y) ^ ~(x * y) + z) % 25]"]
 	else if(direction & (NORTH|SOUTH)) //Starting transit vertically
-		var/x_shift = skybox_service().phase_shift_by_x[src.x % (skybox_service().phase_shift_by_x.len - 1) + 1]
+		var/x_shift = sky.phase_shift_by_x[src.x % (sky.phase_shift_by_x.len - 1) + 1]
 		var/transit_state = ((direction & SOUTH ? world.maxy - src.y : src.y) + x_shift)%15
-		appearance = skybox_service().speedspace_cache["NS_[transit_state]"]
+		appearance = sky.speedspace_cache["NS_[transit_state]"]
 	else if(direction & (EAST|WEST)) //Starting transit horizontally
-		var/y_shift = skybox_service().phase_shift_by_y[src.y % (skybox_service().phase_shift_by_y.len - 1) + 1]
+		var/y_shift = sky.phase_shift_by_y[src.y % (sky.phase_shift_by_y.len - 1) + 1]
 		var/transit_state = ((direction & WEST ? world.maxx - src.x : src.x) + y_shift)%15
-		appearance = skybox_service().speedspace_cache["EW_[transit_state]"]
+		appearance = sky.speedspace_cache["EW_[transit_state]"]
 
 	for(var/atom/movable/AM in turf_contents_of_type(src, /atom/movable))
 		if (!AM.simulated)

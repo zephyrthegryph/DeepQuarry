@@ -173,14 +173,6 @@
 
 // ---------------------------------------------------------------- fold wave F4 lanes
 
-/// Sun position and the solar controllers and panels (was SSsun + SSsolars, 1 min).
-/datum/om/behaviour/world/solars
-	name = "world: solars"
-	every = 1 MINUTE
-
-/datum/om/behaviour/world/solars/service()
-	return GLOB.solar_service
-
 /// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
 /datum/om/behaviour/world/planets
 	name = "world: planets"

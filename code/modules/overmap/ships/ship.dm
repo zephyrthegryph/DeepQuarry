@@ -312,7 +312,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 
 /obj/effect/overmap/visitable/ship/proc/eaten_by(mob/living/L, obj/belly/bellychoice)
 	forceMove(bellychoice)
-	skybox_service().rebuild_skyboxes(map_z)
+	SSskybox.ready().rebuild_skyboxes(map_z)
 	act_message(L, null, MSG_SELF("You eat the the spaceship! Yum, metal."), MSG_OTHERS(span_warning("%U% eats a spaceship! This is totally normal.")))
 
 /obj/effect/overmap/visitable/ship/proc/get_people_in_ship()

@@ -87,15 +87,15 @@
 		artifact_distance = rand()
 		artifact_id = container.artifact_find.artifact_id
 	else
-		if(GLOB.xenoarch_service) //Sanity check due to runtimes ~Z
-			for(var/turf/simulated/mineral/T in GLOB.xenoarch_service.artifact_spawning_turfs)
+		if(SSxenoarch) //Sanity check due to runtimes ~Z
+			for(var/turf/simulated/mineral/T in SSxenoarch.artifact_spawning_turfs)
 				if(T.artifact_find)
 					var/cur_dist = get_dist(container, T) * 2
 					if( (artifact_distance < 0 || cur_dist < artifact_distance))
 						artifact_distance = cur_dist + rand() * 2 - 1
 						artifact_id = T.artifact_find.artifact_id
 				else
-					rel_remove(GLOB.xenoarch_service, nameof(/datum/world_service/xenoarch::artifact_spawning_turfs), T)
+					rel_remove(SSxenoarch, nameof(/datum/system/xenoarch::artifact_spawning_turfs), T)
 
 /obj/item/core_sampler
 	name = "core sampler"

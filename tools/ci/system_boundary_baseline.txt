@@ -161,9 +161,9 @@ B1:code/modules/client/client%20procs.dm:SSassets 2
 B1:code/modules/client/preferences/editors/occupation.dm:SSjob 3
 B1:code/modules/client/preferences/editors/robot_chassis.dm:SSrobot_sprites 1
 B1:code/modules/client/preferences/types/character/job_priorities.dm:SSjob 1
-B1:code/modules/client/statpanel_service.dm:GLOB.time_track_service 4
 B1:code/modules/client/statpanel_service.dm:SSemergency_shuttle 1
 B1:code/modules/client/statpanel_service.dm:SSticker 1
+B1:code/modules/client/statpanel_service.dm:SStime_track 4
 B1:code/modules/contracts/agent_fieldwork.dm:SScontracts 5
 B1:code/modules/contracts/contract_admin.dm:SScontracts 11
 B1:code/modules/contracts/department_outcomes.dm:SScontracts 6
@@ -265,7 +265,7 @@ B1:code/modules/projectiles/guns/energy/special.dm:GLOB.plant_service 2
 B1:code/modules/random_map/drop/droppod.dm:SSantag 2
 B1:code/modules/reagents/machinery/chemalyzer.dm:GLOB.supply_service 1
 B1:code/modules/rogueminer/zone_console.dm:SSshuttles 2
-B1:code/modules/rogueminer/zonemaster.dm:GLOB.xenoarch_service 5
+B1:code/modules/rogueminer/zonemaster.dm:SSxenoarch 5
 B1:code/modules/security%20levels/keycard%20authentication.dm:SSticker 2
 B1:code/modules/shuttles/emergency_shuttle_service.dm:SSticker 2
 B1:code/modules/shuttles/escape_pods.dm:SSshuttles 2
