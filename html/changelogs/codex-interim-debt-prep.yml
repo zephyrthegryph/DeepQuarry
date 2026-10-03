@@ -109,3 +109,6 @@ changes:
   - bugfix: "ATM deposits require consuming cash, and stuck hailer masks and electrohelmets retain their parts when disassembly is refused."
   - bugfix: "Sandwiches and custom food plates preserve stuck ingredients and their reagents; stuck pet cubes cannot create duplicate pets."
   - bugfix: "Teleporter coordinate cards must be consumed before granting a destination."
+  - bugfix: "Photocopiers and fax machines require consuming a toner cartridge before receiving its supply."
+  - bugfix: "PDAs and clipboards respect pens and paper that cannot leave your hand."
+  - bugfix: "Paper bins respect stuck sheets, and camera refills require consuming their film."

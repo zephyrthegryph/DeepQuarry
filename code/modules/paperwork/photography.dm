@@ -202,9 +202,10 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 		if(pictures_left)
 			to_chat(user, span_notice("[src] still has some film in it!"))
 			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_notice("You insert [I] into [src]."))
-		user.drop_item()
-		consume(I, user)
+		var/film_name = "[I]"
+		if(!consume(I, user))
+			return INTERACTION_HANDLED_PASS
+		to_chat(user, span_notice("You insert [film_name] into [src]."))
 		pictures_left = pictures_max
 		return INTERACTION_HANDLED_PASS
 	return FALSE
