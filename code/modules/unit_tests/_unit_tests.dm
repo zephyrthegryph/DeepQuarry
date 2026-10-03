@@ -707,6 +707,7 @@
 #include "interim_gibber_init.dm"
 #include "interim_gaiter_sticky_mask.dm"
 #include "interim_gaiter_mask_replacement_refund.dm"
+#include "interim_toilet_cistern_sticky_item.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
