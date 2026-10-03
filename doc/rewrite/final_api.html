@@ -253,7 +253,7 @@ html { scroll-behavior: smooth; }
   <div class="sig">#define CAPABILITIES(T) ##T/__capabilities()   <span class="c">// a block: the header registers T's entry list with the table builder, the entries are its indented statements; no instance is created, and there is no ..() to forget</span></div>
   <pre><code>CAPABILITIES(/obj/machinery/thing)
 	op("press", hand(), then(PROC_REF(pressed)))             <span class="c">// one entry per line: no trailing commas, no backslashes</span>
-	extend("ui_open", needs(req_is(STAT_OPERABLE)))          <span class="c">// an entry may span lines inside its own parentheses</span></code></pre>
+	extend("ui_open", needs(req_operable()))          <span class="c">// an entry may span lines inside its own parentheses</span></code></pre>
   <div class="prose">
     <ul>
       <li><strong>One composition root per type.</strong> A type's entries are in one <code>CAPABILITIES</code> list. A second list for the same type is a build error. A data-only subtype is a header and one line: <code>CAPABILITIES(T)</code> then <code>configure(...)</code>. The root may name <code>BUNDLE</code>s (below), so it can be a short list of calls, and what it names lives wherever it is maintained: there is no one-file-per-type rule.</li>
@@ -273,7 +273,7 @@ html { scroll-behavior: smooth; }
       <tr><td>Ops</td><td><code>op(key, binding | inputs(bindings...), parts...)</code>; <code>construction(...)</code> and <code>deployment(...)</code> with <code>stage(STAGE_X, parts..., from =, undo =)</code>, each a state graph</td><td><a href="#parts">9</a>, <a href="#construction">12</a></td></tr>
       <tr><td>State</td><td><code>contributes(STAT_X, cond | value | STAT_Y, priority =, reason =)</code>; <code>contributes_to(nameof(rel), STAT_X, cond | value, priority =)</code> for a stat on a related entity; <code>cap_keys(CAP_X, KEY = MSG(...))</code> for capability state. Stats, tracked vars and lists are declared with their own macros (below)</td><td><a href="#stats">5</a>, <a href="#state">4</a>, <a href="#caps">11</a></td></tr>
       <tr><td>Conditional</td><td><code>when(condition, entries...)</code></td><td><a href="#stats">5</a></td></tr>
-      <tr><td>References</td><td><code>ref_one(...)</code>, <code>ref_many(...)</code>, <code>owns_one(...)</code>, <code>owns_many(...)</code>, <code>link(A::a, B::b)</code>, <code>slot(...)</code>, <code>membership(joins)</code></td><td><a href="#refs">6</a></td></tr>
+      <tr><td>References</td><td><code>ref_one(...)</code>, <code>ref_many(...)</code>, <code>owns_one(...)</code>, <code>owns_many(...)</code>, <code>links(A::a, B::b)</code>, <code>slot(...)</code>, <code>membership(joins)</code></td><td><a href="#refs">6</a></td></tr>
       <tr><td>Initial contents</td><td><code>starts = T | list(T...) | pick_one(list) | PROC_REF(x) | when(cond, T)</code> and <code>starts_args = list(...)</code>, on <code>owns_one</code>, <code>slot</code> and the capabilities built on them; the capability hook <code>on_holder_preinit(A)</code> for work that must run before the parent's init</td><td><a href="#refs">6</a>, <a href="#caps">11</a></td></tr>
       <tr><td>Hooks</td><td><code>extend(/datum/act/x, needs(...) | instead(...) | adjusts(...))</code>, <code>on_notice(/datum/notice/x, parts..., outcome =)</code>, <code>on_op("key", parts..., outcome =)</code>, <code>on_change(cond, ENTER | EXIT, parts...)</code>, <code>on_change(key, ANY, parts...)</code>, <code>while_slotted(SLOT_X, entries..., on = ON_CONTENTS | ON_HOLDER)</code>. <code>observe()</code> is the same thing granted at runtime</td><td><a href="#hooks">10</a></td></tr>
       <tr><td>Timed and native work</td><td><code>every(interval, parts..., when =, lane =, key =)</code>, <code>after_init(delay, parts...)</code>, <code>on_cross(native(key), bands, parts..., urgent =)</code>, <code>seq_step(PROC_REF(x), runs_after =, when =, should_run =)</code> (a step of a sequence such as Life), <code>world_query(KEY, PROC_REF(x))</code> (a system's reply to a <code>world/Topic</code> query)</td><td><a href="#time">3</a>, <a href="#hooks">10</a>, <a href="#domains">14</a></td></tr>
@@ -281,7 +281,7 @@ html { scroll-behavior: smooth; }
       <tr><td>Presentation</td><td><code>look_layer(name, when =)</code>, <code>sound_loop(sfx, when =)</code>, <code>examine_line(text | PROC_REF, when =)</code>, <code>interface(window, title =, rights =, host =, input = hand())</code> (declaring it adds the open op, with <code>remote()</code> beside the input you give), <code>ui_shape(field | field = schema, ...)</code> (the window's data fields and their schemas), <code>menu(button =, bind =)</code> as an op binding for abilities, <code>verb_entry(path, login =, when =)</code> for client, OOC and admin commands only</td><td><a href="#present">13</a></td></tr>
       <tr><td>Providers</td><td><code>provides(AFF_X, reach =, line_of_sight =, authority =, accepts =)</code>: what a hand, a held item, a module or a granted power can do, how far it reaches in tiles and under what authority</td><td><a href="#actions">8</a>, <a href="#caps">11</a></td></tr>
       <tr><td>Map load</td><td><code>map_resolver(PROC_REF(x))</code> (today's <code>MAP_RESOLVER</code>)</td><td><a href="#refs">6</a></td></tr>
-      <tr><td>Bundles</td><td>A named list of entries or parts: <code>BUNDLE(name, entries...)</code>, in its own file; a bundle with params is a proc returning entries. <code>CAPABILITIES(T, name(), ...)</code> names them</td><td><a href="#caps">11</a></td></tr>
+      <tr><td>Bundles</td><td>A named list of entries or parts: <code>BUNDLE(name, entries...)</code>, in its own file; a bundle with params is a proc returning entries. <code>CAPABILITIES(T)</code> with a <code>name()</code> entry names them</td><td><a href="#caps">11</a></td></tr>
     </tbody>
   </table></div>
   <h3>Declared identifiers</h3>
@@ -299,7 +299,7 @@ html { scroll-behavior: smooth; }
       <tr><td>Tag</td><td>a <code>TAG_X</code> define</td><td><code>TAG_X</code></td><td><a href="#parts">9</a></td></tr>
       <tr><td>Source</td><td>a datum, or <code>SOURCE_DEF(name)</code></td><td><code>SRC_NAME</code></td><td><a href="#stats">5</a></td></tr>
       <tr><td>Build stage</td><td><code>STAGE_DEF(apc, secured)</code></td><td><code>STAGE_APC_SECURED</code></td><td><a href="#construction">12</a></td></tr>
-      <tr><td>State graph</td><td><code>STATE_GRAPH(GRAPH_X, entries...)</code>: a named, reusable graph of stages</td><td><code>GRAPH_X</code></td><td><a href="#stategraphs">12</a></td></tr>
+      <tr><td>State graph</td><td><code>STATE_GRAPH(GRAPH_X)</code> and its indented entries: a named, reusable graph of stages</td><td><code>GRAPH_X</code></td><td><a href="#stategraphs">12</a></td></tr>
       <tr><td>Resource</td><td><code>RESOURCE_DEF(RES_X, adapter = /datum/resource/x, schema =)</code></td><td><code>RES_X</code></td><td><a href="#resources">9</a></td></tr>
       <tr><td>System accessor</td><td><code>SYSTEM_ACCESSOR(system, name, nameof(var))</code> in <code>code/contracts/accessors</code>, names only: the generator emits the accessor proc and a reactive read of private system state</td><td><code>night_shift_active()</code></td><td><a href="#change">7</a></td></tr>
       <tr><td>Action</td><td><code>ACTION(fall, turf/landing, mob/living/landed_on)</code></td><td><code>/datum/act/fall</code>, <code>act_fall()</code>, <code>/datum/notice/fell</code></td><td><a href="#actions">8</a></td></tr>
@@ -390,11 +390,10 @@ act_done(F)                                          <span class="c">// ends it 
 	lane = LANE_SIMULATION
 	latency_class = LATENCY_L2
 
-CAPABILITIES(/datum/system/power,
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(balance))),          <span class="c">// world-level periodic work</span>
-	every(2 SECONDS, then(PROC_REF(step_member)), members = CAP_POWERED_BY), <span class="c">// once per member; the member is A.target</span>
-	on_notice(/datum/notice/round_started, then(PROC_REF(reset_grid))),
-)
+CAPABILITIES(/datum/system/power)
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(balance)))   <span class="c">// world-level periodic work</span>
+	every(2 SECONDS, then(PROC_REF(step_member)), members = CAP_POWERED_BY)   <span class="c">// once per member; the member is A.target</span>
+	on_notice(/datum/notice/round_started, then(PROC_REF(reset_grid)))
 
 /datum/system/power/proc/balance(datum/act/A)
 /datum/system/power/proc/step_member(datum/act/A)
@@ -580,10 +579,9 @@ request(bot, /datum/io/path, then(PROC_REF(have_path)), from = start, to = goal)
 	placed = isturf(holder.loc)
 	alive = holder.stat != DEAD
 
-CAPABILITIES(/mob/living/carbon/human,                 <span class="c">// excerpt: the full list is in 16.4</span>
+CAPABILITIES(/mob/living/carbon/human)   <span class="c">// excerpt: the full list is in 16.4</span>
 	seq_step(PROC_REF(life_breathing), runs_after = LIFE_INPUT, when = PROC_REF(placed_and_alive),
-		should_run = PROC_REF(life_breathing_due)),          <span class="c">// the reads of both are generated</span>
-)
+		should_run = PROC_REF(life_breathing_due))   <span class="c">// the reads of both are generated</span>
 
 /mob/living/carbon/human/proc/placed_and_alive(datum/act/A)
 	var/datum/seq_frame/life/F = A
@@ -674,11 +672,10 @@ LIST_STATE(T, var, alloc = LAZY | EAGER, kind = LIST | SET | MAP, owns = NONE | 
   </table></div>
   <pre><code>TRACKED(/obj/machinery/atmospherics/pump, target_pressure, schema = num(0, MAX_PUMP_PRESSURE, step = 1), default = ONE_ATMOSPHERE)
 
-CAPABILITIES(/obj/machinery/atmospherics/pump,
-	interface("Pump", title = "Gas Pump"),
-	ui_shape(target_pressure),                                         <span class="c">// a var named here takes its schema</span>
-	op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure))),
-)
+CAPABILITIES(/obj/machinery/atmospherics/pump)
+	interface("Pump", title = "Gas Pump")
+	ui_shape(target_pressure)   <span class="c">// a var named here takes its schema</span>
+	op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure)))
 /obj/machinery/atmospherics/pump/proc/set_pressure(datum/act/A, pressure)   <span class="c">// pressure is already valid and typed</span>
 	set_target_pressure(pressure)
 <span class="c">// A UI write of 99999 reaches the handler as MAX_PUMP_PRESSURE and is logged; a text value is refused with the schema's reason.
@@ -813,21 +810,17 @@ STAT(/obj/machinery/power/apc, charge_percent, FORMULA, formula = PROC_REF(compu
       <li><strong>Reads</strong> are plain var reads. A stat on the written entity, or one single-valued edge away, is settled before the setter that changed its inputs returns, so the next line reads the new value. A stat reached through a collection or membership edge, a <code>SYSTEM_ACCESSOR</code> or two or more edges is marked for the next marked drain (<a href="#change">section 7</a>).</li>
     </ul>
   </div>
-  <pre><code>CAPABILITIES(/obj/machinery,
-	contributes(STAT_OPERABLE, PROC_REF(has_power)),            <span class="c">// a condition: x(datum/act/A) returns TRUE or FALSE; reads generated</span>
-	contributes(STAT_OPERABLE, not(nameof(broken))),
-	contributes(STAT_OPERABLE, req_built_final()),              <span class="c">// a library requirement's boolean view; its reason is not used here</span>
-)
-CAPABILITIES(/obj/machinery/porta_turret,                    <span class="c">// excerpt: the full list is in 16.3</span>
-	contributes(STAT_ARMED, nameof(enabled)),                   <span class="c">// a tracked setting</span>
-	contributes(STAT_ARMED, STAT_OPERABLE),                     <span class="c">// another stat</span>
-)
-CAPABILITIES(/obj/machinery/floodlight,
-	contributes(STAT_LIGHT_RANGE, 4),                           <span class="c">// a fixed value on a numeric stat</span>
-)
-CAPABILITIES(/obj/machinery/door,
-	when(DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)),   <span class="c">// TOP stat: an open door is not solid. DOOR_OPEN is an input of the stat, so density is right the moment the door opens</span>
-)
+  <pre><code>CAPABILITIES(/obj/machinery)
+	contributes(STAT_OPERABLE, PROC_REF(has_power))   <span class="c">// a condition: x(datum/act/A) returns TRUE or FALSE; reads generated</span>
+	contributes(STAT_OPERABLE, not(nameof(broken)))
+	contributes(STAT_OPERABLE, req_built_final())   <span class="c">// a library requirement's boolean view; its reason is not used here</span>
+CAPABILITIES(/obj/machinery/porta_turret)   <span class="c">// excerpt: the full list is in 16.3</span>
+	contributes(STAT_ARMED, nameof(enabled))   <span class="c">// a tracked setting</span>
+	contributes(STAT_ARMED, STAT_OPERABLE)   <span class="c">// another stat</span>
+CAPABILITIES(/obj/machinery/floodlight)
+	contributes(STAT_LIGHT_RANGE, 4)   <span class="c">// a fixed value on a numeric stat</span>
+CAPABILITIES(/obj/machinery/door)
+	when(DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))   <span class="c">// TOP stat: an open door is not solid. DOOR_OPEN is an input of the stat, so density is right the moment the door opens</span>
 <span class="c">// inside the absorbed capability that a belly grants:</span>
 contributes(STAT_ACTS_VIA, ORIGIN_NONE, reason = MSG(vore/absorbed))   <span class="c">// MASK_AND: no input at all; the actor gate (section 8) shows the reason</span>
 </code></pre>
@@ -1092,15 +1085,15 @@ granted(E, what)</div>
 ref_many(nameof(v), type, ...same...)
 owns_one(nameof(v), type, starts =, on_destroy = DELETE | SPILL | PRIVATE_COPY, copy_on_write = FALSE)
 owns_many(nameof(v), type, ...same...)
-link(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)   <span class="c">// paired, declared once for both types</span>
-link(..., hot = TRUE)                                                          <span class="c">// engine hot-path pair (lighting): no index, no publish</span></div>
+links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)   <span class="c">// paired, declared once for both types</span>
+links(..., hot = TRUE)                                                          <span class="c">// engine hot-path pair (lighting): no index, no publish</span></div>
   <div class="tbl"><table>
     <thead><tr><th>Declaration</th><th>Meaning</th><th>When the holder is destroyed</th><th>When the other end is deleted</th></tr></thead>
     <tbody>
       <tr><td><code>ref_one</code>, <code>ref_many</code></td><td>A reference. The holder doesn't own the value</td><td>The view is cleared</td><td><code>on_other_deleted = CLEAR</code> (default) drops it. <code>DELETE_ME</code> deletes the holder too. <code>on_unlink = PROC_REF(x)</code> runs <code>x(datum/act/A)</code>, with <code>A.target</code> the other end, whenever a link goes: unlinked, replaced, or the other end died. It does not run for a holder being destroyed</td></tr>
       <tr><td><code>owns_one</code>, <code>owns_many</code></td><td>The holder owns the value or values. <code>starts =</code> is the starting occupant (below)</td><td><code>on_destroy = DELETE</code> (default) deletes it. <code>SPILL</code> drops an owned atom to the holder's location. <code>PRIVATE_COPY</code> deletes only a private copy and leaves a shared prototype alone</td><td>An owned value has one owner. Deleting it from elsewhere clears the var</td></tr>
-      <tr><td><code>link(A::v, B::w)</code></td><td>Both ends name each other. The pair is declared once, and the cardinality comes from the two vars (a list var is a "many" end). One write links both ends, and linking a new partner to a single end unlinks the old one on both sides</td><td>Both sides are cleared</td><td>The other end clears</td></tr>
-      <tr><td><code>link(..., hot = TRUE)</code></td><td>An engine hot-path pair (lighting corners and sources): direct lists on both sides, not indexed, nothing published, symmetric teardown declared once. A read through it is not reactive, and a lint allows it only under the engine and domain directories</td><td>Both sides are cleared</td><td>The other end clears</td></tr>
+      <tr><td><code>links(A::v, B::w)</code></td><td>Both ends name each other. The pair is declared once, and the cardinality comes from the two vars (a list var is a "many" end). One write links both ends, and linking a new partner to a single end unlinks the old one on both sides</td><td>Both sides are cleared</td><td>The other end clears</td></tr>
+      <tr><td><code>links(..., hot = TRUE)</code></td><td>An engine hot-path pair (lighting corners and sources): direct lists on both sides, not indexed, nothing published, symmetric teardown declared once. A read through it is not reactive, and a lint allows it only under the engine and domain directories</td><td>Both sides are cleared</td><td>The other end clears</td></tr>
     </tbody>
   </table></div>
   <div class="prose">
@@ -1622,24 +1615,19 @@ act_done(F)                      <span class="c">// ends it ACT_COMMITTED, publi
     <p><strong>Which provider performs an op.</strong> When several providers give the affordance an op accepts and reach the target, the held item's provider comes first, then the actor's hand (the provider its species grants), then any other provider by the shortest reach that reaches. That is the provider in <code>A.provider</code>. Telekinesis is therefore used only when nothing nearer reaches.</p>
     <p><strong>Telekinesis.</strong> Telekinesis is a provider of <code>AFF_MANIPULATE</code> with a reach of <code>TK_RANGE</code> tiles and <code>line_of_sight = TRUE</code>, so it can do any hand op on a target it can see within range: open a door, press a button, take an item off a table, pull a cell from an open APC. Everything else still applies. It provides no tool or attack affordances, so tool ops and attacks need the real thing. Compartments still gate it (a closed or locked cover keeps the bay unexposed), and every requirement still runs (a locked APC refuses with its reason). An op that means body contact (a grab, CPR, a surgery step) says <code>reach(REACH_RANGE(1))</code>.</p>
   </div>
-  <pre><code>CAPABILITIES(/obj/item/gripper,                           <span class="c">// excerpt: the same list is in 16.8</span>
-	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1, accepts = list(/obj/item/cell, /obj/item/circuitboard)),
-)
-CAPABILITIES(/obj/item/melee/spear,
-	provides(AFF_ATTACK, reach = 2),                          <span class="c">// an item that extends reach</span>
-)
-CAPABILITIES(/datum/mutation/telekinesis,                <span class="c">// granted to the mob while the mutation is active</span>
-	provides(AFF_MANIPULATE, reach = TK_RANGE, line_of_sight = TRUE),   <span class="c">// no tool or attack affordances</span>
-)
-CAPABILITIES(/mob/living/silicon/ai,
-	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS),   <span class="c">// no tile reach: its remote() ops use REACH_VIEW or REACH_ANY. Authority defaults to AUTH_PHYSICAL</span>
-)
+  <pre><code>CAPABILITIES(/obj/item/gripper)   <span class="c">// excerpt: the same list is in 16.8</span>
+	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1, accepts = list(/obj/item/cell, /obj/item/circuitboard))
+CAPABILITIES(/obj/item/melee/spear)
+	provides(AFF_ATTACK, reach = 2)   <span class="c">// an item that extends reach</span>
+CAPABILITIES(/datum/mutation/telekinesis)   <span class="c">// granted to the mob while the mutation is active</span>
+	provides(AFF_MANIPULATE, reach = TK_RANGE, line_of_sight = TRUE)   <span class="c">// no tool or attack affordances</span>
+CAPABILITIES(/mob/living/silicon/ai)
+	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS)   <span class="c">// no tile reach: its remote() ops use REACH_VIEW or REACH_ANY. Authority defaults to AUTH_PHYSICAL</span>
 SPECIES_CAPABILITIES(/datum/species/human,                 <span class="c">// excerpt: the human's whole list is in 16.4</span>
 	hands(),                                                   <span class="c">// the hand provider: provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1). /mob/living declares none</span>
 )
-CAPABILITIES(/mob/living/simple_mob/animal/space/carp,     <span class="c">// excerpt: the full list is in 16.7. No species, so no hands: its own provider is its bite</span>
-	natural_weapon(/datum/natural_weapon/bite, damage = 10),
-)</code></pre>
+CAPABILITIES(/mob/living/simple_mob/animal/space/carp)   <span class="c">// excerpt: the full list is in 16.7. No species, so no hands: its own provider is its bite</span>
+	natural_weapon(/datum/natural_weapon/bite, damage = 10)</code></pre>
 
   <h3>Who may act, and what they can reach</h3>
   <div class="prose">
@@ -1911,7 +1899,7 @@ without(key)</div>
       <tr><td>Add a requirement</td><td><code>extend("pry", needs(...))</code>, or on <code>CAP_X</code>, <code>TAG_X</code> or an action</td></tr>
       <tr><td>Relax one inherited requirement</td><td>The requirement is declared with <code>id = "x"</code>; <code>extend("cover.open", drop = "x")</code></td></tr>
       <tr><td>Swap an op's effects</td><td><code>extend("pry", replaces(then(PROC_REF(do_open))))</code></td></tr>
-      <tr><td>Retune an entry's named args</td><td><code>configure("scan", interval = 10 SECONDS)</code> for an entry with a key; <code>configure(CAP_X, param = v)</code> for a capability: its params are the constructor's named args, the entries are rebuilt, and <code>variant = subtype</code> swaps the datum type. An unknown key or param is a build error</td></tr>
+      <tr><td>Retune an entry's named args</td><td><code>configure("scan", interval = 10 SECONDS)</code> for an entry with a key; <code>configure(x(param = v))</code> for a capability: its params are the constructor's named args, the entries are rebuilt, and <code>variant = subtype</code> swaps the datum type. An unknown key or param is a build error</td></tr>
       <tr><td>Remove something inherited</td><td><code>without(key)</code>: an op, an entry or a capability, applied at its position in the list</td></tr>
     </tbody>
   </table></div>
@@ -2103,13 +2091,11 @@ on_notice(/datum/notice/hit/projectile, then(PROC_REF(deflected)), outcome = ACT
     </ul>
   </div>
   <h3>While something is in a slot</h3>
-  <pre><code>CAPABILITIES(/obj/machinery/stasis,                <span class="c">// excerpt: the full list is in 16.4</span>
-	buckle(slots = 1),
-	while_slotted(SLOT_BUCKLE, holds(STAT_CLOCK_RATE_BIO, 0.1), on = ON_CONTENTS),   <span class="c">// the occupant, while buckled in</span>
-)
-CAPABILITIES(/obj/item/shield/mirror,
-	while_slotted(SLOT_ANY_WORN, blocks(25), reflects(PROJECTILES, 30), on = ON_HOLDER),   <span class="c">// the wearer, while it is worn</span>
-)</code></pre>
+  <pre><code>CAPABILITIES(/obj/machinery/stasis)   <span class="c">// excerpt: the full list is in 16.4</span>
+	buckle(slots = 1)
+	while_slotted(SLOT_BUCKLE, holds(STAT_CLOCK_RATE_BIO, 0.1), on = ON_CONTENTS)   <span class="c">// the occupant, while buckled in</span>
+CAPABILITIES(/obj/item/shield/mirror)
+	while_slotted(SLOT_ANY_WORN, blocks(25), reflects(PROJECTILES, 30), on = ON_HOLDER)   <span class="c">// the wearer, while it is worn</span></code></pre>
   <div class="prose">
     <ul>
       <li><strong><code>on = ON_CONTENTS</code></strong>, declared on the type that owns the slot, grants the entries to what is in the slot: a stasis bed's occupant, a belly's prey (absorption), cryo, a borg dock.</li>
@@ -2181,13 +2167,13 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
 	return M.power_area?.channel_on(channel)         <span class="c">// the hop through power_area is a generated read</span></code></pre>
   <div class="prose">
     <ul>
-      <li><strong>Params are the settings.</strong> A definition's params are what <code>configure()</code> can change: <code>configure(CAP_COVER, remove = force_pry())</code> re-runs the body with that param replaced. An unknown param is a build error. There is no <code>settings = list()</code> to keep in step with the constructor. A param can name a var or a proc (<code>PROC_REF</code>), which is resolved per instance at runtime, and it can declare a schema (X5): <code>recharge = num(1 SECOND, 5 MINUTES, default = 30 SECONDS)</code>, checked when <code>configure()</code> is built. <strong>A param's default has one home.</strong> With a schema it is the schema's <code>default =</code>, and without one it is the <code>param = default</code> of the definition line (<code>channel = POWER_CHANNEL_EQUIPMENT</code>). Either way <code>CAPABILITY_TYPE</code> declares <code>var/&lt;param&gt;</code> on the datum itself, as it does for a schema'd param, so the datum body never repeats a param's var line, and the schemas lint rejects one.</li>
+      <li><strong>Params are the settings.</strong> A definition's params are what <code>configure()</code> can change: <code>configure(cover(remove = force_pry()))</code> re-runs the body with that param replaced. An unknown param is a build error. There is no <code>settings = list()</code> to keep in step with the constructor. A param can name a var or a proc (<code>PROC_REF</code>), which is resolved per instance at runtime, and it can declare a schema (X5): <code>recharge = num(1 SECOND, 5 MINUTES, default = 30 SECONDS)</code>, checked when <code>configure()</code> is built. <strong>A param's default has one home.</strong> With a schema it is the schema's <code>default =</code>, and without one it is the <code>param = default</code> of the definition line (<code>channel = POWER_CHANNEL_EQUIPMENT</code>). Either way <code>CAPABILITY_TYPE</code> declares <code>var/&lt;param&gt;</code> on the datum itself, as it does for a schema'd param, so the datum body never repeats a param's var line, and the schemas lint rejects one.</li>
       <li><strong>Two definition forms.</strong> <code>CAPABILITY_DEF</code> is entries only; its body is a generated global proc, so a holder proc it names is <code>TYPE_PROC_REF(/type, x)</code>, as in any bundle. <code>CAPABILITY_TYPE</code> is for a capability that needs code: its vars are the params, <code>entries()</code> re-runs on <code>configure</code>, its procs are <code>CAP_PROC(x)</code>, and the macro sets <code>key = CAP_X</code> on the datum. <code>configure(CAP_X, variant = /datum/capability/x/other)</code> swaps the datum type and keeps the params.</li>
       <li><strong>Op keys are namespaced.</strong> The ops a capability brings are prefixed with its name, the first argument of its definition: <code>cover</code>'s <code>"open"</code> is <code>"cover.open"</code>, and <code>CAPABILITY_DEF(reagent_container, CAP_REAGENT_CONTAINER, ...)</code> brings <code>"reagent_container.inject"</code>. A capability that has a selector (below) adds it: <code>"cell_bay.cell.insert"</code>; a selector at its default value adds nothing, so <code>cover()</code> is <code>"cover.open"</code> and <code>cover("hatch")</code> is <code>"cover.hatch.open"</code>. The prefix is the capability that declares the op, not the bundle that included it, so a hatch's cover still opens as <code>"cover.open"</code>. <code>extend("cover.open", ...)</code> changes one op and <code>extend(CAP_COVER, ...)</code> all of them.</li>
       <li><strong>State keys are generated.</strong> <code>cap_keys</code> declares a capability's state, and each key is a boolean the capability's ops set (<code>toggles()</code>, <code>sets()</code>). Each key's accessor is <code>&lt;cap&gt;_&lt;key&gt;(holder)</code>: <code>cover_open</code>, <code>cover_removed</code>, <code>panel_open</code>, <code>lock_locked</code>, <code>emag_emagged</code>. <code>cap_keys()</code> allocates one word per capability, and a word holds at most 24 keys; more is a build error naming the capability. A fact that several sources can force is a <code>STAT</code>, not a key. Each row's <code>MSG</code> is the default reason for the requirement the library itself writes on that key: <code>req_is(COVER_OPEN)</code> says the cover is closed, and <code>req_is(COVER_REMOVED, FALSE)</code> says it has been removed. A requirement written the other way round gives <code>because =</code>. <code>READS_AS</code> stays only for producer keys that aren't capability state, and the build checks that the accessor's own reads are covered by the key it names.</li>
       <li><strong>Lifecycle hooks:</strong> <code>on_holder_preinit(A)</code>, <code>on_holder_init(A)</code> and <code>on_holder_destroy(A)</code>, all <code>x(datum/act/A)</code> with <code>A.holder</code> and <code>A.cap</code> set, and <code>A.mapload</code> while the map loads. The order inside <code>Initialize</code> is: <code>on_holder_preinit</code> (before the base body runs, for work the parent's init reads: a part made in nullspace, an inherited icon cleared), the base body, <code>on_holder_init</code>, then the type's own code after its <code>..()</code>. A granted capability has <code>on_activate(A)</code> when its activation attaches and <code>on_deactivate(A)</code> when it is removed, the cleanup hook of the one teardown path (below).</li>
       <li><strong>Per-activation data:</strong> <code>cap_data(A)</code> returns the typed <code>/datum/cap_data/&lt;cap&gt;</code> of <code>A.activation</code>, allocated on first use: for a type-level capability <code>A.activation</code> is null until it has state, and <code>cap_data(A)</code> creates the activation and the data together. Two activations of one capability on one holder have separate data. Declare the data type next to the capability (<code>/datum/cap_data/cover</code>, whose state keys live in it), and assign the result to a typed var: <code>cap_data()</code> is <code>RETURN_TYPE(/datum/cap_data)</code>, and test builds check that var's type against the capability's declared data type. No more <code>cap_data(holder, KEY)["x"]</code>. A field a condition reads is a declared tracked field of that data type (<a href="#graphcontract">section 7</a>). Code outside a trigger reaches a capability with <code>cap_of(E, CAP_X)</code>, an indexed lookup that returns the datum of the type-level activation, or null. The accessors <code>&lt;cap&gt;_&lt;key&gt;(holder)</code> address the type-level activation too, so neither can say which of several grants is meant. A capability that is granted at runtime (named by <code>grant()</code>, <code>while_slotted</code>, <code>species_capabilities</code> or <code>observe</code>) and has state (<code>cap_keys</code> or a <code>cap_data</code> type) therefore declares a selector other than <code>NONE</code>, which the accessors and <code>cap_of(E, CAP_X, selector)</code> take; the table builder checks the literal grant sites. Its own handlers always reach their own state through <code>A.activation</code>.</li>
-      <li><strong>Changing one:</strong> <code>configure(CAP_X, param = v)</code> rebuilds its entries from the new params; <code>extend("cover.open", ...)</code> changes one op and <code>extend(CAP_X, ...)</code> all of them (<code>drop = "id"</code> relaxes a requirement the capability named, <code>replaces(parts...)</code> swaps an effect list); <code>without(CAP_X)</code> drops it. Any entry inside a capability can carry <code>key =</code>, so these can address it.</li>
+      <li><strong>Changing one:</strong> <code>configure(x(param = v))</code> rebuilds its entries from the new params; <code>extend("cover.open", ...)</code> changes one op and <code>extend(CAP_X, ...)</code> all of them (<code>drop = "id"</code> relaxes a requirement the capability named, <code>replaces(parts...)</code> swaps an effect list); <code>without(CAP_X)</code> drops it. Any entry inside a capability can carry <code>key =</code>, so these can address it.</li>
       <li><strong>Granting one:</strong> <code>grant(E, what, source, lasts)</code> creates an activation of a capability (a type, or a constructor call such as <code>cover()</code>) on one instance at runtime, and returns it, or null with the reason logged when the attach fails (<a href="#activation">section 5</a>). Activations are a second table beside the type's own, interned by (type table, sorted definitions), so a grant or revoke swaps a table id. Type-level <code>extend(CAP_X, ...)</code> and <code>without(CAP_X)</code> address a capability by key, so they apply to a granted one the same way.</li>
       <li><strong>A hook capability</strong> is <code>hook_capability(entries...)</code>: a capability of triggers only, with no key of its own. <code>observe()</code> activates one on the observed entity with the listener as its source (<a href="#hooks">section 10</a>).</li>
     </ul>
@@ -2195,7 +2181,7 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
   <h3>Keys and repeats</h3>
   <div class="prose">
     <p>A capability's key is (<code>CAP_X</code>, selector). The definition declares its selector explicitly with <code>key =</code>: the name of the param that tells two uses of the capability on one type apart, or <code>NONE</code> when there is only ever one. Nothing is inferred from parameter order, so changing a constructor's signature never changes its identity. An identical repeat (the same interned signature) dedupes. The same key with different params is a build error naming both lines, which the table builder knows because it records <code>__FILE__:__LINE__</code> for every entry. (A second <code>CAPABILITIES</code> list for a type is a build error too.)</p>
-    <p>A selector is written as the first argument: <code>cover("panel")</code> and <code>cover("hatch")</code> are two covers on one type. <code>configure(CAP_COVER, "hatch", remove = force_pry())</code>, <code>without(CAP_COVER, "panel")</code>, the state accessors <code>cover_open(holder, "hatch")</code> and the key id of a non-default selector, all take it. A bare <code>COVER_OPEN</code> is always the id of the default selector's key. A non-default selector's id is the generated <code>COVER_HATCH_OPEN</code>, or in function form <code>cover_key(COVER_OPEN, "hatch")</code>: no macro is ever written both with and without arguments. With one instance of the capability the selector may be left out.</p>
+    <p>A selector is written as the first argument: <code>cover("panel")</code> and <code>cover("hatch")</code> are two covers on one type. <code>configure(cover("hatch", remove = force_pry()))</code>, <code>without(CAP_COVER, "panel")</code>, the state accessors <code>cover_open(holder, "hatch")</code> and the key id of a non-default selector, all take it. A bare <code>COVER_OPEN</code> is always the id of the default selector's key. A non-default selector's id is the generated <code>COVER_HATCH_OPEN</code>, or in function form <code>cover_key(COVER_OPEN, "hatch")</code>: no macro is ever written both with and without arguments. With one instance of the capability the selector may be left out.</p>
   </div>
   <div class="tbl"><table>
     <thead><tr><th>Capability</th><th><code>key =</code></th><th>A second one is</th></tr></thead>
@@ -2274,12 +2260,12 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
   </table></div>
   <h3>Bundles and capabilities</h3>
   <div class="prose">
-    <p>A <strong>bundle</strong> is any proc that returns entries or parts. Wrap it in a capability only when someone must address it: <code>configure</code>, <code>extend</code>, <code>without</code> or <code>grant</code> it as a unit. These three wire other capabilities together, and are capabilities, so <code>without(CAP_MACHINE_BASICS)</code> and <code>configure(CAP_MACHINE_BASICS, frame = NONE)</code> work:</p>
+    <p>A <strong>bundle</strong> is any proc that returns entries or parts. Wrap it in a capability only when someone must address it: <code>configure</code>, <code>extend</code>, <code>without</code> or <code>grant</code> it as a unit. These three wire other capabilities together, and are capabilities, so <code>without(CAP_MACHINE_BASICS)</code> and <code>configure(machine_basics(frame = NONE))</code> work:</p>
   </div>
   <div class="tbl"><table>
     <thead><tr><th>Capability</th><th>Contents</th></tr></thead>
     <tbody>
-      <tr><td><code>machine_basics(board, anchored_by =, repair =, frame =, powered =)</code></td><td><code>breakable</code>, <code>powered</code>, <code>anchor</code>, the construction ladder <code>frame</code> (default <code>machine_frame(board)</code>, <code>NONE</code> for no ladder), and <code>extend(TAG_CONTROL, needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))</code>. The panel comes from whatever owns maintenance access (<code>maintenance_hatch</code>, <code>service_panel(wires)</code> or <code>panel()</code>), so declaring both here and in a hatch can't clash; <code>machine_frame</code> needs a panel and says so at boot if there isn't one</td></tr>
+      <tr><td><code>machine_basics(board, anchored_by =, repair =, frame =, powered =)</code></td><td><code>breakable</code>, <code>powered</code>, <code>anchor</code>, the construction ladder <code>frame</code> (default <code>machine_frame(board)</code>, <code>NONE</code> for no ladder), and <code>extend(TAG_CONTROL, needs(req_operable()))</code>. The panel comes from whatever owns maintenance access (<code>maintenance_hatch</code>, <code>service_panel(wires)</code> or <code>panel()</code>), so declaring both here and in a hatch can't clash; <code>machine_frame</code> needs a panel and says so at boot if there isn't one</td></tr>
       <tr><td><code>wall_machine(...)</code></td><td><code>machine_basics</code> without anchoring, plus <code>wall_mount</code></td></tr>
       <tr><td><code>maintenance_hatch(cover =, wires =, emag =, lock = TRUE, panel_needs_cover_closed = FALSE)</code></td><td><code>compartment(BAY_HATCH, door = CAP_COVER)</code>, the <code>cover</code> you pass (default <code>cover()</code>), <code>panel</code>, <code>wires(wires)</code> when given, <code>lock</code>, <code>emag(emag)</code> when given, and the rules between them (the ID lock works only with the cover and panel closed; the panel opens only with the cover closed when <code>panel_needs_cover_closed</code>). A machine passes its wire set and its emag effect here instead of declaring <code>wires</code> and <code>emag</code> again</td></tr>
     </tbody>
@@ -2302,7 +2288,11 @@ CAPABILITY_TYPE(powered, CAP_POWERED, /datum/capability/powered, key = NONE, cha
 
 <section id="construction">
   <h2><span class="num">12</span>Construction</h2>
-  <div class="sig">STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(STAGE_X, parts..., from =, undo =, key =), ..., dismantle(...), at(BAY_X))   <span class="c">// a named, reusable graph</span>
+  <div class="sig">STATE_GRAPH(GRAPH_X)
+	start(STAGE_X)
+	stage(STAGE_X, parts..., from =, undo =, key =)   <span class="c">// one per stage</span>
+	dismantle(...)
+	at(BAY_X)   <span class="c">// a named, reusable graph</span>
 construction(GRAPH_X | start(STAGE_X), stage(...), ..., dismantle(parts..., ruined(condition, parts...)), at(BAY_X))   <span class="c">// a build ladder: a graph with a ledger and an operability contribution</span>
 deployment(GRAPH_X | start(STAGE_X), stage(...), ...)    <span class="c">// a deployable (a barricade, a folding bed, a turret): the same graph under its own key CAP_DEPLOYMENT, its ledger refunding like a build's</span>
 STAGE_DEF(group, name)    <span class="c">// defines STAGE_&lt;GROUP&gt;_&lt;NAME&gt; and the stage key "&lt;group&gt;_&lt;name&gt;"; its text is MSG_DEF(stage/&lt;group&gt;/&lt;name&gt;, ...)</span>
@@ -2325,9 +2315,9 @@ STAGE_DEF(intercom, secured)
 		stage(STAGE_INTERCOM_SECURED, tool(TOOL_SCREWDRIVER)),
 		dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/intercom)))
 
-CAPABILITIES(/obj/item/radio/intercom,
-	intercom_frame(),
-	extend("construction.build:intercom_wired", wait(4 SECONDS)))         <span class="c">// the stage key is the STAGE_ id without its prefix, lowercase</span></code></pre>
+CAPABILITIES(/obj/item/radio/intercom)
+	intercom_frame()
+	extend("construction.build:intercom_wired", wait(4 SECONDS))         <span class="c">// the stage key is the STAGE_ id without its prefix, lowercase</span></code></pre>
   <div class="tbl"><table>
     <thead><tr><th>Forward</th><th>Derived undo</th><th>Refund (the ledger entry of the transition being undone)</th></tr></thead>
     <tbody>
@@ -2346,7 +2336,7 @@ CAPABILITIES(/obj/item/radio/intercom,
       <li><strong>Branches:</strong> <code>from = STAGE_X</code> or <code>from = list(STAGE_X, STAGE_Y)</code> lets one edge leave from several stages (girder to wall, or girder to reinforced wall). A stage reached by different inputs gets one <code>stage()</code> entry per way in, the second and later with <code>key =</code>. A stage that works at any point is <code>from = ANY_STAGE</code>. A <code>from</code> that names a stage the graph doesn't declare is a boot error.</li>
       <li><strong>Keys:</strong> the build op of an edge is <code>"construction.build:&lt;stage&gt;"</code> (<code>".&lt;key&gt;"</code> appended for a second way in), the undo op is one per stage, <code>"construction.undo:&lt;stage&gt;"</code>, and the teardown <code>"construction.dismantle"</code>. A deployment graph uses its own prefix, <code>"deployment.deploy:&lt;stage&gt;"</code>, <code>"deployment.undeploy:&lt;stage&gt;"</code> and <code>"deployment.dismantle"</code>. <code>extend</code>, <code>without</code> and <code>perform_op</code> address them, and the build resolves each literal against the declared stages.</li>
       <li><strong>Priority:</strong> when the same tool both builds and undoes from a stage, build wins a click and the menu offers both. A graph that wants the undo to win a click says so on that stage with <code>extend("construction.undo:&lt;stage&gt;", priority(above("construction.build:&lt;other&gt;")))</code>.</li>
-      <li><strong>State:</strong> per instance, in the activation's data, the graph keeps the current stage (a <code>STAGE_*</code> id), the history stack and the ledger. <code>built(E, STAGE_X)</code> and <code>req_built(STAGE_X)</code> read them, so a typo can't compile. <code>start(STAGE_X)</code> is the graph's starting stage, and a subtype that begins part-built writes <code>configure(CAP_CONSTRUCTION, start = STAGE_X)</code> for the stage it is placed at. The instance then stores only its current stage: the history is seeded lazily, the first time something reads or pops it, along the path that leads from the graph's start to the placed stage. If exactly one path leads there, that path is seeded. If several do (a stage with two ways in, like the finished door below), the type must name the one it stands for, <code>configure(CAP_CONSTRUCTION, start = STAGE_X, via = list(STAGE_A, STAGE_B))</code>, the stages passed in order between the graph's start and the placed stage, and a placed stage with several paths and no <code>via =</code> is a build error. Seeded entries carry empty ledger entries, so undoing past the seed refunds nothing, and a map-placed finished machine allocates no history until then.</li>
+      <li><strong>State:</strong> per instance, in the activation's data, the graph keeps the current stage (a <code>STAGE_*</code> id), the history stack and the ledger. <code>built(E, STAGE_X)</code> and <code>req_built(STAGE_X)</code> read them, so a typo can't compile. <code>start(STAGE_X)</code> is the graph's starting stage, and a subtype that begins part-built writes <code>configure(construction_graph(start = STAGE_X))</code> for the stage it is placed at. The instance then stores only its current stage: the history is seeded lazily, the first time something reads or pops it, along the path that leads from the graph's start to the placed stage. If exactly one path leads there, that path is seeded. If several do (a stage with two ways in, like the finished door below), the type must name the one it stands for, <code>configure(construction_graph(start = STAGE_X, via = list(STAGE_A, STAGE_B)))</code>, the stages passed in order between the graph's start and the placed stage, and a placed stage with several paths and no <code>via =</code> is a build error. Seeded entries carry empty ledger entries, so undoing past the seed refunds nothing, and a map-placed finished machine allocates no history until then.</li>
       <li><strong>Operability:</strong> a <code>construction</code> contributes <code>req_built_final()</code> to <code>STAT_OPERABLE</code>, so an unfinished machine doesn't work, and no type keeps its own maintenance flag.</li>
       <li><strong>Text:</strong> a stage's description is the <code>MSG_DEF(stage/&lt;group&gt;/&lt;name&gt;, ...)</code> that <code>STAGE_DEF</code> requires, and messages come from the tool profile's verbs. "Next: wrench it into place" is the next stage's message.</li>
       <li><strong>Bay:</strong> <code>at(BAY_X)</code> says which compartment's bay the graph works inside, so a stage that moves an item in or out of <code>SLOT_CONSTRUCTION</code> needs that bay open, with the compartment's reason (<a href="#actions">section 8</a>).</li>
@@ -2381,23 +2371,24 @@ STAGE_DEF(door, wired)
 STAGE_DEF(door, boarded)
 STAGE_DEF(door, finished)
 
-STATE_GRAPH(GRAPH_DOOR_ASSEMBLY,
-	start(STAGE_DOOR_FRAME),
-	stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5)),
-	stage(STAGE_DOOR_BOARDED, item(/obj/item/circuitboard/airlock), put_in(SLOT_CONSTRUCTION)),
-	stage(STAGE_DOOR_FINISHED, tool(TOOL_SCREWDRIVER), from = STAGE_DOOR_BOARDED),                   <span class="c">// "construction.build:door_finished"</span>
+STATE_GRAPH(GRAPH_DOOR_ASSEMBLY)
+	start(STAGE_DOOR_FRAME)
+	stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5))
+	stage(STAGE_DOOR_BOARDED, item(/obj/item/circuitboard/airlock), put_in(SLOT_CONSTRUCTION))
+	stage(STAGE_DOOR_FINISHED, tool(TOOL_SCREWDRIVER), from = STAGE_DOOR_BOARDED)   <span class="c">// "construction.build:door_finished"</span>
 	stage(STAGE_DOOR_FINISHED, item(/obj/item/door_kit), consumes(), from = STAGE_DOOR_WIRED, key = "kit",    <span class="c">// a prefab kit skips the board: "...door_finished.kit"</span>
-		undo = list(tool(TOOL_CROWBAR))),                                                                   <span class="c">// a consumed kit names no tool, so the way back is written: pry the kit out</span>
-	dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/door)))
+		undo = list(tool(TOOL_CROWBAR)))   <span class="c">// a consumed kit names no tool, so the way back is written: pry the kit out</span>
+	dismantle(tool(TOOL_WELDER), becomes(/obj/item/frame/door))
 
 <span class="c">// History (oldest first)                    built(E, STAGE_DOOR_BOARDED)   "construction.undo:door_finished" (screwdriver or crowbar) goes to
 // frame > wired > boarded > finished         TRUE                           boarded: the board stays in its slot, nothing is refunded
 // frame > wired > finished (kit)             FALSE                          wired: the ledger entry of the kit edge refunds one door kit
 //
 // A door assembly placed finished by a map has two paths to that stage, so its type names the one it stands for:
-//   CAPABILITIES(/obj/structure/door_assembly, construction(GRAPH_DOOR_ASSEMBLY))
-//   CAPABILITIES(/obj/structure/door_assembly/finished, configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED,
-//       via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))      // seeded lazily as frame > wired > boarded > finished: built(E, STAGE_DOOR_BOARDED) is TRUE</span></code></pre>
+//   CAPABILITIES(/obj/structure/door_assembly)
+//       construction(GRAPH_DOOR_ASSEMBLY)
+//   CAPABILITIES(/obj/structure/door_assembly/finished)
+//       configure(construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))      // seeded lazily as frame > wired > boarded > finished: built(E, STAGE_DOOR_BOARDED) is TRUE</span></code></pre>
   <div class="note"><p><strong>Replaces:</strong> <code>cap_construction</code> with <code>stage()</code> (24 parameters), <code>branch()</code> (16) and <code>ladder_options()</code> (21); the construction <code>step()</code> and string stage names; <code>insert(T)</code> as a construction input (now <code>item(T)</code> with <code>put_in()</code>); <code>build_insert</code>/<code>build_wire</code>/<code>build_fasten</code>/<code>build_weld</code>/<code>build_step</code>/<code>build_any_order</code>; <code>ladder_dismantle</code>; <code>/datum/construction_graph</code> (16 files); state-var ladders in tool-act overrides; stage-name comparisons in hooks; hand-written refund hooks and "at or past" comparisons of stage order; a separate deployable state machine per type.</p></div>
 </section>
 <section id="present">
@@ -2408,10 +2399,9 @@ STATE_GRAPH(GRAPH_DOOR_ASSEMBLY,
 	look.layer("charging", charging)
 	look.glow("screen", operable ? "on" : null)
 
-CAPABILITIES(/obj/machinery/light,                                <span class="c">// excerpt: the full list is in 16.11</span>
-	look_layer("bulb-broken", when = nameof(bulb_broken)),          <span class="c">// declarative layers need no draw() at all</span>
-	sound_loop(SFX_LIGHT_HUM, when = nameof(on)),
-)
+CAPABILITIES(/obj/machinery/light)   <span class="c">// excerpt: the full list is in 16.11</span>
+	look_layer("bulb-broken", when = nameof(bulb_broken))   <span class="c">// declarative layers need no draw() at all</span>
+	sound_loop(SFX_LIGHT_HUM, when = nameof(on))
 
 <span class="c">// A disguise rewrites what the thing is called; a body is one composite of named layers, cached by what changes it.</span>
 /obj/item/clothing/mask/chameleon/draw(datum/look/look)
@@ -2432,13 +2422,12 @@ CAPABILITIES(/obj/machinery/light,                                <span class="c
   <h3>Examine</h3>
   <div class="prose"><p><code>examine_line(text | PROC_REF, when =)</code> entries, plus <code>examine(datum/act/A)</code> as an on-demand output for anything computed (<code>A.actor</code> is the examiner). Capabilities contribute their own lines (cover state, construction progress, "Next: wrench it into place"), and the engine adds them before the type's <code>examine()</code> runs.</p></div>
   <h3>UI</h3>
-  <pre><code>CAPABILITIES(/obj/machinery/power/apc,                          <span class="c">// excerpt: the full list is in 16.1</span>
-	interface("APC", title = "Area Power Controller"),            <span class="c">// declares the window and adds its open op</span>
-	ui_shape(operating, channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES)))),   <span class="c">// a var named here takes its schema (section 4)</span>
+  <pre><code>CAPABILITIES(/obj/machinery/power/apc)   <span class="c">// excerpt: the full list is in 16.1</span>
+	interface("APC", title = "Area Power Controller")   <span class="c">// declares the window and adds its open op</span>
+	ui_shape(operating, channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES))))   <span class="c">// a var named here takes its schema (section 4)</span>
 	op("set_channel", ui_act(arg("channel", enum(APC_CHANNELS)), arg("mode", enum(POWERCHAN_MODES))),
-		then(PROC_REF(set_channel_mode))),
-	op("breaker", ui_act(), toggles(nameof(operating))),         <span class="c">// ui_act() takes the op's key as its action name</span>
-)
+		then(PROC_REF(set_channel_mode)))
+	op("breaker", ui_act(), toggles(nameof(operating)))   <span class="c">// ui_act() takes the op's key as its action name</span>
 <span class="c">// No lock clause: lock() gates every TAG_UI op (section 11).</span>
 
 /obj/machinery/power/apc/proc/set_channel_mode(datum/act/A, channel, mode)   <span class="c">// UI args arrive validated, as typed parameters; the build checks the names against arg()</span>
@@ -2586,11 +2575,11 @@ request(src, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), val
     </ol>
     <p>Integrity's broken state is tracked; <code>atom_break()</code> and <code>atom_fix()</code> publish it. Library pieces: <code>emp_disable()</code>, <code>reflects()</code>, <code>blocks()</code>. Repair is a <code>fixes()</code> part, or <code>repair_damage()</code>. A worn piece of kit reaches the wearer through <code>while_slotted</code>, not through a hand-written hook on the mob:</p>
   </div>
-  <pre><code>CAPABILITIES(/obj/item/clothing/suit/armor/reflective,
+  <pre><code>CAPABILITIES(/obj/item/clothing/suit/armor/reflective)
 	while_slotted(SLOT_ANY_WORN,                         <span class="c">// declared on the item: while it's worn, its wearer gets these</span>
 		blocks(10),
 		reflects(PROJECTILES, 30),
-		on = ON_HOLDER))</code></pre>
+		on = ON_HOLDER)</code></pre>
   <div class="prose"><p><code>SLOT_ANY_WORN</code> matches any worn equipment slot. <code>on = ON_HOLDER</code> grants the entries to the entity whose slot the item sits in, and the grant is released when the item leaves the slot, is deleted or its wearer is. A container type uses the other end, <code>on = ON_CONTENTS</code>, to give something to whatever it holds (stasis beds, cryo, bellies, borg docks).</p></div>
   <h3>Body and medical</h3>
   <div class="prose">
@@ -2637,14 +2626,14 @@ request(src, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), val
       <li><strong>Bindings:</strong> the generated <code>vg_*</code> procs and the ABI handshake stay.</li>
       <li><strong>Scheduling:</strong> DM timers and keys live only in the kernel. The Rust world scheduler keeps native watches and rate models.</li>
       <li><strong>Budgets:</strong> phase <code>S</code> is <code>L0</code>. Marked fan-out (collection edges, accessors, two or more edges) is spread over the marked drains of D, P and R under the budget of its stat's lane (<a href="#change">section 7</a>), and the input that feeds it is bounded per client (<a href="#kernel">section 2</a>).</li>
-      <li><strong>Lighting</strong> is a host system with a hot <code>link()</code> (below).</li>
+      <li><strong>Lighting</strong> is a host system with a hot <code>links()</code> (below).</li>
     </ul>
   </div>
   <h3>Host systems</h3>
   <div class="prose">
     <p>The machinery that wraps BYOND (the input inbox, the database, the tgui transport, garbage, the ticker, air, verdigris and lighting) is made of ordinary systems, defined in <a href="#kernel">section 2</a>. What the domains add:</p>
     <ul>
-      <li><strong>Lighting</strong> stays on the DM side. Its corner and source graph is the one place the relation rules would cost too much, so it declares <code>link(/datum/light_source::effect_str, /datum/lighting_corner::affecting, hot = TRUE)</code>: a symmetric pair with no index and no publish, torn down from both ends by that one line. A hot link is for engine graphs like this one, not for content.</li>
+      <li><strong>Lighting</strong> stays on the DM side. Its corner and source graph is the one place the relation rules would cost too much, so it declares <code>links(/datum/light_source::effect_str, /datum/lighting_corner::affecting, hot = TRUE)</code>: a symmetric pair with no index and no publish, torn down from both ends by that one line. A hot link is for engine graphs like this one, not for content.</li>
       <li><strong>The tgui transport</strong> owns window delivery, and the windows themselves are declared with <code>interface()</code> (see UI above).</li>
       <li><strong>World queries.</strong> <code>world/Topic</code> belongs to the input system, which routes the status, ping and server-tool queries to registered handlers: <code>world_query(KEY, PROC_REF(x))</code> on a system, with <code>x(datum/act/A)</code> reading the parsed query from <code>A.args</code> and returning the reply.</li>
     </ul>
@@ -2722,7 +2711,7 @@ request(src, /datum/prompt/yes_no/ghost_role, then(PROC_REF(role_answered)), val
       <tr><td><code>base_vars</code></td><td>No new vars on <code>/atom</code>, <code>/obj</code>, <code>/mob</code>, ...</td><td>1,509 rows, 495 of them <code>list()</code> inits that the instance-list lint also counts</td><td>A raw <code>var/</code> on a base type is the violation. <code>STAT</code>, <code>TRACKED</code> and <code>LIST_STATE</code> declarations pass, and live under <code>code/base/</code>. Capability state lives in <code>cap_data</code> and <code>cap_keys</code>, never on a base type. The list rows move to the instance-list lint alone</td></tr>
       <tr><td><code>lifecycle_counts</code> (with <code>qdel_src</code>)</td><td>Deleting through the lifecycle verbs</td><td>1,868 <code>qdel(</code> sites, and 711 <code>qdel(src)</code> rows counted a second time</td><td>One lint. <code>qdel(src)</code> is banned (use <code>consume()</code>, <code>expire()</code>, <code>replace_with()</code> or <code>slot_clear()</code>). Any other <code>qdel</code> carries a reason code</td></tr>
       <tr><td><code>instance_list</code></td><td>A per-instance list costs memory</td><td>480 <code>ALLOW</code>s, 361 of them generated <code>d:</code> codes</td><td><code>LIST_STATE(T, var, alloc =, kind =, owns =, share =)</code> passes, an undeclared <code>list()</code> var fails, system types and test directories are exempt by scope</td></tr>
-      <tr><td><code>ownership</code> (relations)</td><td>Object-typed vars are written through <code>rel_*</code></td><td>230 <code>ALLOW</code>s</td><td>The engine layer is exempt by directory, <code>/client</code> state moves onto <code>client_session</code> relations, a hot pair is <code>link(..., hot = TRUE)</code>, and fixtures use <code>TEST_RAW_SET</code></td></tr>
+      <tr><td><code>ownership</code> (relations)</td><td>Object-typed vars are written through <code>rel_*</code></td><td>230 <code>ALLOW</code>s</td><td>The engine layer is exempt by directory, <code>/client</code> state moves onto <code>client_session</code> relations, a hot pair is <code>links(..., hot = TRUE)</code>, and fixtures use <code>TEST_RAW_SET</code></td></tr>
       <tr><td><code>spatial</code>, <code>containment</code>, <code>latent</code></td><td>Reads and writes of contents and <code>loc</code>, and latent entries</td><td>23 + 15 + 83 <code>ALLOW</code>s, about 70 of the <code>latent</code> ones false positives</td><td>Commit points live in <code>code/engine/containment</code> (exempt by directory); <code>latent</code> learns typed mob loops, <code>has_latent()</code> and an earlier materialize; what remains is a real exception</td></tr>
       <tr><td><code>scheduler</code></td><td>No <code>spawn</code>, gameplay <code>sleep</code>, <code>INVOKE_ASYNC</code>, <code>stoplag</code> or <code>set waitfor</code></td><td>179 <code>ALLOW</code>s on a zero baseline</td><td>Zero outside the kernel, the request layer, vendored code and tests, all exempt by directory. The rest become <code>request()</code>, <code>job()</code>, <code>after()</code> and the tgui transport</td></tr>
       <tr><td><code>silent_catch</code> (catch)</td><td>No bare <code>try</code>/<code>catch</code></td><td>65 <code>ALLOW</code>s</td><td>Bare <code>catch</code> lives only in the kernel and the two helpers: <code>safe_call(PROC_REF(x), ...)</code>, a kernel utility that returns a <code>/datum/result</code> (<code>ok</code>, <code>value</code>, <code>error</code>), and <code>try_parse_json(text)</code>. Tests use <code>EXPECT_RUNTIME</code></td></tr>
@@ -2835,41 +2824,40 @@ STAGE_DEF(apc, board)
 STAGE_DEF(apc, wired)
 STAGE_DEF(apc, secured)
 
-CAPABILITIES(/obj/machinery/power/apc,
-	wall_machine(/obj/item/module/power_control, frame = apc_frame(), powered = FALSE),
+CAPABILITIES(/obj/machinery/power/apc)
+	wall_machine(/obj/item/module/power_control, frame = apc_frame(), powered = FALSE)
 	maintenance_hatch(                                        <span class="c">// compartment BAY_HATCH, cover, panel, wires, lock and emag, with the rules between them</span>
 		cover = cover(remove = force_pry(), replace = component_swap(/obj/item/frame/apc)),
 		wires = /datum/wires/apc,
 		emag = list(wait(0.6 SECONDS), sets(LOCK_LOCKED, FALSE)),
-		panel_needs_cover_closed = TRUE),
-	cell_bay(nameof(cell), at = BAY_HATCH, starts = nameof(cell_type)),
-	powered_by(/datum/system/power, role = POWER_ROLE_SOURCE),
-	emp_disable(between(24 SECONDS, 36 SECONDS)),
-	subversion_reset(tool(TOOL_MULTITOOL), at(BAY_HATCH)),
-	link(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master),
-	link(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs),
-	link(/obj/machinery/power/apc::area, /area::apc),
-	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights)),   <span class="c">// 16.11</span>
+		panel_needs_cover_closed = TRUE)
+	cell_bay(nameof(cell), at = BAY_HATCH, starts = nameof(cell_type))
+	powered_by(/datum/system/power, role = POWER_ROLE_SOURCE)
+	emp_disable(between(24 SECONDS, 36 SECONDS))
+	subversion_reset(tool(TOOL_MULTITOOL), at(BAY_HATCH))
+	links(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master)
+	links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)
+	links(/obj/machinery/power/apc::area, /area::apc)
+	contributes_to(nameof(area), STAT_LIGHTS_NIGHTSHIFT, PROC_REF(wants_night_lights))   <span class="c">// 16.11</span>
 
-	interface("APC", title = "Area Power Controller"),       <span class="c">// the window, and its open op "interface.APC.open"</span>
+	interface("APC", title = "Area Power Controller")   <span class="c">// the window, and its open op "interface.APC.open"</span>
 	ui_shape(operating, chargemode, coverlocked,                     <span class="c">// vars named here take their schemas</span>
-		channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES)))),
-	op("breaker", ui_act(), toggles(nameof(operating))),      <span class="c">// no lock clause: lock() gates every TAG_UI op</span>
-	op("chargemode", ui_act(), toggles(nameof(chargemode))),
-	op("coverlock", ui_act(), toggles(nameof(coverlocked))),
+		channels = list_of(row(name = text(24), mode = enum(POWERCHAN_MODES))))
+	op("breaker", ui_act(), toggles(nameof(operating)))   <span class="c">// no lock clause: lock() gates every TAG_UI op</span>
+	op("chargemode", ui_act(), toggles(nameof(chargemode)))
+	op("coverlock", ui_act(), toggles(nameof(coverlocked)))
 	op("set_channel", ui_act(arg("channel", enum(APC_CHANNELS)), arg("mode", enum(POWERCHAN_MODES))),
-		then(PROC_REF(set_channel_mode))),
+		then(PROC_REF(set_channel_mode)))
 
-	extend("cover.open", needs(req(PROC_REF(cover_unlocked), because = MSG(apc/cover_locked)))),
-	extend("cover.replace", needs(req_empty(nameof(cell)))),
-	extend("cell_bay.cell.take", when(COVER_OPEN)),           <span class="c">// silent while closed, so an empty hand opens the window instead (16.1a)</span>
-	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED))),
-	extend("construction.undo:apc_secured", needs(req_empty(nameof(cell)))),
-	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN))),
+	extend("cover.open", needs(req(PROC_REF(cover_unlocked), because = MSG(apc/cover_locked))))
+	extend("cover.replace", needs(req_empty(nameof(cell))))
+	extend("cell_bay.cell.take", when(COVER_OPEN))   <span class="c">// silent while closed, so an empty hand opens the window instead (16.1a)</span>
+	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED)))
+	extend("construction.undo:apc_secured", needs(req_empty(nameof(cell))))
+	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN)))
 
-	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE), order = ORDER_EARLY)),
-	on_notice(/datum/notice/slashed, then(PROC_REF(lights_out))),
-)
+	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE), order = ORDER_EARLY))
+	on_notice(/datum/notice/slashed, then(PROC_REF(lights_out)))
 
 /proc/apc_frame()                         <span class="c">// a plain bundle. It is a global proc, so holder procs are named with TYPE_PROC_REF</span>
 	return construction(start(STAGE_APC_FRAME),
@@ -2916,7 +2904,7 @@ CAPABILITIES(/obj/machinery/power/apc,
       <li><code>power_failed</code> and its timed revert: <code>emp_disable</code> contributes to <code>operable</code>.</li>
       <li><code>TRACKED_BRIDGED</code> channel bridges and the manual <code>changed(src)</code> calls.</li>
       <li>The <code>UI_ACT</code> table, and the lock check written into each handler.</li>
-      <li>The starting-cell <code>Initialize</code>, and <code>configure(CAP_CELL_BAY, starts =)</code> on subtypes beside the var.</li>
+      <li>The starting-cell <code>Initialize</code>, and <code>configure(cell_bay(starts =))</code> on subtypes beside the var.</li>
       <li><code>set_nightshift()</code>, called by the night-shift service on every APC (16.11).</li>
       <li>The three damage rows and <code>emag_act()</code>.</li>
     </ul>
@@ -2977,41 +2965,48 @@ STAT(/obj/machinery/door/airlock, electrified, ANY)     <span class="c">// timed
 SOURCE_DEF(shock_wire)                                   <span class="c">// the wires' shock pulse: hold(src, STAT_ELECTRIFIED, source = SRC_SHOCK_WIRE, lasts = 30 SECONDS)</span>
 SOURCE_DEF(lockdown)                                     <span class="c">// a security lockdown: hold(door, STAT_BOLTED, source = SRC_LOCKDOWN)</span>
 
-CAPABILITIES(/obj/machinery/door/airlock,
-	doors(open = PROC_REF(do_open), close = PROC_REF(do_close), autoclose = 15 SECONDS),   <span class="c">// "doors.open", "doors.close", DOOR_OPEN</span>
-	powered(POWER_CHANNEL_ENVIRON),
-	access(),
+CAPABILITIES(/obj/machinery/door/airlock)
+	doors(open = PROC_REF(do_open), close = PROC_REF(do_close), autoclose = 15 SECONDS)   <span class="c">// "doors.open", "doors.close", DOOR_OPEN</span>
+	powered(POWER_CHANNEL_ENVIRON)
+	access()
 	maintenance_hatch(
 		cover = cover(open = tool(TOOL_SCREWDRIVER)),
 		wires = /datum/wires/airlock,
 		emag = list(then(PROC_REF(emag_open))),
-		lock = FALSE),                                      <span class="c">// the door's ID check is access(), not a hatch lock</span>
-	contributes(STAT_BOLTED, req_wire_cut(WIRE_DOOR_BOLTS)),   <span class="c">// a cut bolt wire bolts the door</span>
-	extend(list("doors.open", "doors.close", "pry"), needs(
+		lock = FALSE)   <span class="c">// the door's ID check is access(), not a hatch lock</span>
+	contributes(STAT_BOLTED, req_wire_cut(WIRE_DOOR_BOLTS))   <span class="c">// a cut bolt wire bolts the door</span>
+	extend("doors.open", needs(
 		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
-		req_is(nameof(welded), FALSE, because = MSG(door/welded)))),
-	extend(list("doors.open", "doors.close"), needs(req_is(STAT_OPERABLE, because = MSG(door/unpowered)))),
+		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
+	extend("doors.close", needs(
+		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
+		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
+	extend("pry", needs(
+		req_is(STAT_BOLTED, FALSE, because = MSG(door/bolted)),
+		req_is(nameof(welded), FALSE, because = MSG(door/welded))))
+	extend("doors.open", needs(req_is(STAT_OPERABLE, because = MSG(door/unpowered))))
+	extend("doors.close", needs(req_is(STAT_OPERABLE, because = MSG(door/unpowered))))
 
 	<span class="c">// Silicon control, in the door's own window. Each AI's holds have that AI as their source.</span>
-	interface("AiAirlock", title = "Airlock Control"),
-	extend("interface.AiAirlock.open", inputs(remote())),   <span class="c">// silicons only: remote() replaces the hand binding</span>
-	ui_shape(bolted = bool, electrified = bool),
-	op("bolts", ui_act(), toggles_hold(STAT_BOLTED, source = ON_ACTOR)),
-	op("shock_off", ui_act(), releases(STAT_ELECTRIFIED, source = ON_ACTOR)),
-	op("shock_30s", ui_act(), holds(STAT_ELECTRIFIED, lasts = 30 SECONDS, source = ON_ACTOR)),
-	op("shock_on", ui_act(), holds(STAT_ELECTRIFIED, source = ON_ACTOR)),
-	extend(TAG_UI, needs(req_wire(WIRE_AI_CONTROL))),
-	extend(list("shock_30s", "shock_on"), needs(req_wire(WIRE_SHOCK))),
+	interface("AiAirlock", title = "Airlock Control")
+	extend("interface.AiAirlock.open", inputs(remote()))   <span class="c">// silicons only: remote() replaces the hand binding</span>
+	ui_shape(bolted = bool, electrified = bool)
+	op("bolts", ui_act(), toggles_hold(STAT_BOLTED, source = ON_ACTOR))
+	op("shock_off", ui_act(), releases(STAT_ELECTRIFIED, source = ON_ACTOR))
+	op("shock_30s", ui_act(), holds(STAT_ELECTRIFIED, lasts = 30 SECONDS, source = ON_ACTOR))
+	op("shock_on", ui_act(), holds(STAT_ELECTRIFIED, source = ON_ACTOR))
+	extend(TAG_UI, needs(req_wire(WIRE_AI_CONTROL)))
+	extend("shock_30s", needs(req_wire(WIRE_SHOCK)))
+	extend("shock_on", needs(req_wire(WIRE_SHOCK)))
 
 	op("pry", label("Pry open"), force_pry(), wait(5 SECONDS), when(not(DOOR_OPEN)),
 		needs(req_is(STAT_OPERABLE, FALSE, because = MSG(door/powered_shut))),
-		then(PROC_REF(do_open))),
-	op("weld", tool(TOOL_WELDER), when(not(DOOR_OPEN)), toggles(nameof(welded))),
+		then(PROC_REF(do_open)))
+	op("weld", tool(TOOL_WELDER), when(not(DOOR_OPEN)), toggles(nameof(welded)))
 
 	<span class="c">// Touching a live door shocks you instead of doing what you meant. Remote and UI ops are not touches.</span>
 	extend(/datum/act/op, instead(when(STAT_ELECTRIFIED, req_on_origin(ORIGIN_CLICK)),
-		then(PROC_REF(shock_toucher)), order = ORDER_EARLY)),
-)
+		then(PROC_REF(shock_toucher)), order = ORDER_EARLY))
 
 /obj/machinery/door/airlock/proc/shock_toucher(datum/act/A)
 	shock(A.actor, 100)
@@ -3028,26 +3023,24 @@ CAPABILITIES(/obj/machinery/door/airlock,
 TRACKED(/obj/machinery/porta_turret, lethal, schema = bool, default = FALSE)
 STAT(/obj/machinery/porta_turret, armed, ALL)          <span class="c">// effective: whether it fires now</span>
 
-CAPABILITIES(/obj/machinery/porta_turret,
-	powered(),
-	breakable(),
-	lock(),                                               <span class="c">// gates every TAG_CONTROL and TAG_UI op below</span>
-	contributes(STAT_ARMED, nameof(enabled)),
-	contributes(STAT_ARMED, STAT_OPERABLE),               <span class="c">// power, damage, EMP and the emag's disable all arrive through operable</span>
-	emp_disable(between(6 SECONDS, 60 SECONDS)),
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings))),
-	emag(then(PROC_REF(go_haywire)), disables_for = 6 SECONDS),
-	popup_cover(raised_while = STAT_ARMED),
-	every(PROC_REF(scan_interval), then(PROC_REF(scan)), when = STAT_ARMED, key = "scan"),
-	interface("PortableTurret", title = "Turret Control"),
-	ui_shape(enabled, lethal),
-	op("enabled", ui_act(), toggles(nameof(enabled))),
-	op("lethal", ui_act(), toggles(nameof(lethal))),
-)
-CAPABILITIES(/obj/machinery/porta_turret/alien,
-	configure(CAP_EMP_DISABLE, lasts = between(1 MINUTE, 2 MINUTES), resist = 75),
-	configure("scan", interval = 1 SECOND),
-)
+CAPABILITIES(/obj/machinery/porta_turret)
+	powered()
+	breakable()
+	lock()   <span class="c">// gates every TAG_CONTROL and TAG_UI op below</span>
+	contributes(STAT_ARMED, nameof(enabled))
+	contributes(STAT_ARMED, STAT_OPERABLE)   <span class="c">// power, damage, EMP and the emag's disable all arrive through operable</span>
+	emp_disable(between(6 SECONDS, 60 SECONDS))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(scramble_settings)))
+	emag(then(PROC_REF(go_haywire)), disables_for = 6 SECONDS)
+	popup_cover(raised_while = STAT_ARMED)
+	every(PROC_REF(scan_interval), then(PROC_REF(scan)), when = STAT_ARMED, key = "scan")
+	interface("PortableTurret", title = "Turret Control")
+	ui_shape(enabled, lethal)
+	op("enabled", ui_act(), toggles(nameof(enabled)))
+	op("lethal", ui_act(), toggles(nameof(lethal)))
+CAPABILITIES(/obj/machinery/porta_turret/alien)
+	configure(emp_disable(lasts = between(1 MINUTE, 2 MINUTES), resist = 75))
+	configure("scan", interval = 1 SECOND)
 
 /obj/machinery/porta_turret/proc/scan_interval(datum/act/A)     <span class="c">// computed each run: fast while it has targets</span>
 	return length(targets) ? 1 SECOND : 3 SECONDS
@@ -3066,26 +3059,24 @@ CAPABILITIES(/obj/machinery/porta_turret/alien,
 
   <h3 id="ex-human">16.4 A human: Life, a stun, stasis, species, spontaneous vore</h3>
   <pre><code><span class="c">// /mob/living. Its vars and stats are in code/base (the base table in section 5); this one list composes it, in the library area (section 22).</span>
-CAPABILITIES(/mob/living,                            <span class="c">// no provider here: hands come from the species (below), and a mob with none declares its own (section 8)</span>
-	contributes(STAT_CAN_ACT, not(STAT_STUN)),           <span class="c">// the one stun path: nothing holds can_act by hand</span>
-	contributes(STAT_CAN_ACT, not(STAT_PARALYSIS)),
-	contributes(STAT_CAN_MOVE, STAT_CAN_ACT),
-	outputs(PROC_REF(life_hud), at_most = LIFE_PRESENT_MIN_INTERVAL, when = nameof(client)),
-	outputs(PROC_REF(life_vision), at_most = LIFE_PRESENT_MIN_INTERVAL, when = nameof(client)),
-)
+CAPABILITIES(/mob/living)   <span class="c">// no provider here: hands come from the species (below), and a mob with none declares its own (section 8)</span>
+	contributes(STAT_CAN_ACT, not(STAT_STUN))   <span class="c">// the one stun path: nothing holds can_act by hand</span>
+	contributes(STAT_CAN_ACT, not(STAT_PARALYSIS))
+	contributes(STAT_CAN_MOVE, STAT_CAN_ACT)
+	outputs(PROC_REF(life_hud), at_most = LIFE_PRESENT_MIN_INTERVAL, when = nameof(client))
+	outputs(PROC_REF(life_vision), at_most = LIFE_PRESENT_MIN_INTERVAL, when = nameof(client))
 
 TRACKED(/datum/vore_preferences, can_be_drop_pred, can_be_drop_prey, schema = bool, persist = TRUE)
 
-CAPABILITIES(/mob/living/carbon/human,
-	ref_one(nameof(species), /datum/species),             <span class="c">// the relation species_capabilities() follows: rel_set(M, nameof(species), S) changes it, and the species' activation follows</span>
+CAPABILITIES(/mob/living/carbon/human)
+	ref_one(nameof(species), /datum/species)   <span class="c">// the relation species_capabilities() follows: rel_set(M, nameof(species), S) changes it, and the species' activation follows</span>
 	seq_step(PROC_REF(life_breathing), runs_after = LIFE_INPUT, when = PROC_REF(placed_and_alive),
-		should_run = PROC_REF(life_breathing_due)),
+		should_run = PROC_REF(life_breathing_due))
 	seq_step(PROC_REF(life_chemicals), runs_after = LIFE_BODY, when = PROC_REF(placed_and_alive),
-		should_run = PROC_REF(has_reagents_to_process)),
-	species_capabilities(),                               <span class="c">// the species' capabilities (its hands, its immunities, its abilities), granted while it is set</span>
-	owns_one(nameof(vore_prefs), /datum/vore_preferences),
-	when(PROC_REF(spont_vore_on), spontaneous_vore()),    <span class="c">// takeovers of fall, stumbled_into and thrown_hit, attached while the prefs allow them</span>
-)
+		should_run = PROC_REF(has_reagents_to_process))
+	species_capabilities()   <span class="c">// the species' capabilities (its hands, its immunities, its abilities), granted while it is set</span>
+	owns_one(nameof(vore_prefs), /datum/vore_preferences)
+	when(PROC_REF(spont_vore_on), spontaneous_vore())   <span class="c">// takeovers of fall, stumbled_into and thrown_hit, attached while the prefs allow them</span>
 SPECIES_CAPABILITIES(/datum/species/human, hands())                       <span class="c">// the hand provider: provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1)</span>
 SPECIES_CAPABILITIES(/datum/species/shadekin, hands(), phase_shift())     <span class="c">// the phase shift of 16.9: removed with the species</span>
 
@@ -3100,22 +3091,20 @@ SPECIES_CAPABILITIES(/datum/species/shadekin, hands(), phase_shift())     <span 
 <span class="c">// A stun baton. Its stun op has the baton as holder and the struck mob as target.</span>
 TRACKED(/obj/item/melee/baton, on, schema = bool, default = FALSE)
 
-CAPABILITIES(/obj/item/melee/baton,
-	cell_holder(),
-	op("toggle", in_hand(), toggles(nameof(on))),
+CAPABILITIES(/obj/item/melee/baton)
+	cell_holder()
+	op("toggle", in_hand(), toggles(nameof(on)))
 	op("stun", at_target(/mob/living), hostile(), costs(RES_CHARGE, BATON_HIT_COST),
 		needs(req_is(nameof(on), because = MSG(baton/off))),
-		then(PROC_REF(stun)), plays(SFX_BATON_HIT), logs(LOG_ADMIN)),
-)
+		then(PROC_REF(stun)), plays(SFX_BATON_HIT), logs(LOG_ADMIN))
 /obj/item/melee/baton/proc/stun(datum/act/A)
 	status_at_least(A.target_atom, STATUS_STUN, BATON_STUN_UNITS, source = src)   <span class="c">// its own timer; a timed hold outlives the baton</span>
 
 <span class="c">// A stasis bed: while it works, its occupant's biology runs at a tenth of the speed.</span>
-CAPABILITIES(/obj/machinery/stasis,
-	powered(),
-	buckle(slots = 1),
-	when(STAT_OPERABLE, while_slotted(SLOT_BUCKLE, holds(STAT_CLOCK_RATE_BIO, 0.1), on = ON_CONTENTS)),
-)</code></pre>
+CAPABILITIES(/obj/machinery/stasis)
+	powered()
+	buckle(slots = 1)
+	when(STAT_OPERABLE, while_slotted(SLOT_BUCKLE, holds(STAT_CLOCK_RATE_BIO, 0.1), on = ON_CONTENTS))</code></pre>
   <div class="prose">
     <p><strong>A baton hit, then the bed:</strong></p>
     <ol>
@@ -3128,27 +3117,23 @@ CAPABILITIES(/obj/machinery/stasis,
   </div>
 
   <h3 id="ex-reagents">16.5 Reagents: a beaker, a syringe, a donut</h3>
-  <pre><code>CAPABILITIES(/obj/item/reagent_containers/glass/beaker,
-	reagent_container(volume = 60, transfer = list(5, 10, 15, 30, 60), lid = TRUE),
-)
-CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large,
-	configure(CAP_REAGENT_CONTAINER, volume = 120),     <span class="c">// re-runs the body: the holder, the fill look and the transfer prompt follow</span>
-)
+  <pre><code>CAPABILITIES(/obj/item/reagent_containers/glass/beaker)
+	reagent_container(volume = 60, transfer = list(5, 10, 15, 30, 60), lid = TRUE)
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/large)
+	configure(reagent_container(volume = 120))   <span class="c">// re-runs the body: the holder, the fill look and the transfer prompt follow</span>
 
-CAPABILITIES(/obj/item/reagent_containers/syringe,
-	reagent_container(volume = 15, transfer = list(5, 10, 15)),
+CAPABILITIES(/obj/item/reagent_containers/syringe)
+	reagent_container(volume = 15, transfer = list(5, 10, 15))
 	extend("reagent_container.inject", wait(3 SECONDS),
 		needs(req(PROC_REF(skin_reachable), because = MSG(syringe/armour_blocks))),
-		says(MSG(syringe/inject)), logs(LOG_ADMIN)),
-)
+		says(MSG(syringe/inject)), logs(LOG_ADMIN))
 /obj/item/reagent_containers/syringe/proc/skin_reachable(datum/act/A)   <span class="c">// reads the target's suit through A.target: a typed hop</span>
 	var/mob/living/carbon/human/H = A.target
 	return !istype(H) || H.can_inject(A.actor, FALSE)
 
-CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
-	edible(bites = 3),
-	reagents(20, add = list(REAGENT_ID_NUTRIMENT = 3, REAGENT_ID_SUGAR = 2)),   <span class="c">// the keys are defines, which expand to reagent ids</span>
-)</code></pre>
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut)
+	edible(bites = 3)
+	reagents(20, add = list(REAGENT_ID_NUTRIMENT = 3, REAGENT_ID_SUGAR = 2))   <span class="c">// the keys are defines, which expand to reagent ids</span></code></pre>
   <div class="prose">
     <p><strong>What this shows.</strong> The library owns the ops: <code>reagent_container()</code> brings pour, fill, splash, drink, inject, spray, the transfer-amount prompt and the fill look. The large beaker changes one param. The syringe keeps all of that and changes one op with <code>extend</code>: a wait, a requirement with a reason, feedback and an admin log. Because the requirement reads the target through <code>A.target</code>, the pending injection re-checks when the target puts a suit on, and is cancelled only if it now refuses. A pour or an injection is a transfer: the library reserves the volume on the source and the capacity on the target and commits both together (X2), so a full target refuses before anything leaves the beaker.</p>
     <p><strong>What it replaces:</strong> hand-written inject, draw and set-amount ops beside the library's; <code>afterattack</code> overrides; <code>Initialize</code> procs that only add reagents.</p>
@@ -3158,16 +3143,15 @@ CAPABILITIES(/obj/item/reagent_containers/food/snacks/donut,
   <pre><code>TRACKED(/obj/belly, digest_mode, schema = enum(DIGEST_MODES), default = DM_HOLD)   <span class="c">// a setting: the vore panel's UI op writes it through set_digest_mode()</span>
 TRACKED(/obj/belly, escapechance, schema = int(0, 100), default = 0)
 
-CAPABILITIES(/obj/belly,
-	interior(escape_wait = between(10 SECONDS, 60 SECONDS), escape_chance = nameof(escapechance)),   <span class="c">// SLOT_BELLY_INTERIOR and "interior.escape"</span>
-	slot(SLOT_BELLY_ABSORBED, accepts = list(/mob/living)),
-	while_slotted(SLOT_BELLY_ABSORBED, absorbed(), on = ON_CONTENTS),
+CAPABILITIES(/obj/belly)
+	interior(escape_wait = between(10 SECONDS, 60 SECONDS), escape_chance = nameof(escapechance))   <span class="c">// SLOT_BELLY_INTERIOR and "interior.escape"</span>
+	slot(SLOT_BELLY_ABSORBED, accepts = list(/mob/living))
+	while_slotted(SLOT_BELLY_ABSORBED, absorbed(), on = ON_CONTENTS)
 	op("struggle", inside(), cooldown(2 SECONDS), priority(above("interior.escape")),
-		then(PROC_REF(struggle))),                     <span class="c">// the click from inside; the escape is picked from the context menu (ORIGIN_MENU, which inside() accepts)</span>
-	extend(/datum/act/insert, needs(req(PROC_REF(prey_consents), because = MSG(vore/no_consent)))),
-	on_notice(/datum/notice/inserted, then(PROC_REF(prey_entered))),
-	every(VORE_TICK, then(PROC_REF(process_prey)), when = PROC_REF(has_prey_to_process)),
-)
+		then(PROC_REF(struggle)))   <span class="c">// the click from inside; the escape is picked from the context menu (ORIGIN_MENU, which inside() accepts)</span>
+	extend(/datum/act/insert, needs(req(PROC_REF(prey_consents), because = MSG(vore/no_consent))))
+	on_notice(/datum/notice/inserted, then(PROC_REF(prey_entered)))
+	every(VORE_TICK, then(PROC_REF(process_prey)), when = PROC_REF(has_prey_to_process))
 
 /obj/belly/proc/has_prey_to_process(datum/act/A)      <span class="c">// the digestion work parks while this is false</span>
 	return digest_mode != DM_HOLD &amp;&amp; contents_count(src)
@@ -3195,11 +3179,10 @@ CAPABILITY_TYPE(absorbed, CAP_ABSORBED, /datum/capability/absorbed, key = NONE) 
   </div>
 
   <h3 id="ex-ai">16.7 Simple mob AI: the same ops a player uses</h3>
-  <pre><code>CAPABILITIES(/mob/living/simple_mob/animal/space/carp,
+  <pre><code>CAPABILITIES(/mob/living/simple_mob/animal/space/carp)
 	ai(list(/datum/ai_behavior/idle_wander, /datum/ai_behavior/approach_threat,
-		/datum/ai_behavior/melee_attack, /datum/ai_behavior/flee_low_hp)),
-	natural_weapon(/datum/natural_weapon/bite, damage = 10),   <span class="c">// gives AFF_ATTACK, and the bite op a player-controlled carp uses too. The carp has no species and so no hands: its bite is its whole provider set</span>
-)
+		/datum/ai_behavior/melee_attack, /datum/ai_behavior/flee_low_hp))
+	natural_weapon(/datum/natural_weapon/bite, damage = 10)   <span class="c">// gives AFF_ATTACK, and the bite op a player-controlled carp uses too. The carp has no species and so no hands: its bite is its whole provider set</span>
 
 <span class="c">// The behaviours stay the flyweights of code/modules/combat_ai. The brain scores them with evaluate() and runs the
 // winner through start(), tick() and stop(). Those are the brain's calls, not the engine's, so they keep their signatures.</span>
@@ -3225,15 +3208,12 @@ CAPABILITY_TYPE(absorbed, CAP_ABSORBED, /datum/capability/absorbed, key = NONE) 
   </div>
 
   <h3 id="ex-borg">16.8 A cyborg: providers and affordances</h3>
-  <pre><code>CAPABILITIES(/obj/item/gripper,
-	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1, accepts = list(/obj/item/cell, /obj/item/circuitboard)),
-)
-CAPABILITIES(/obj/item/borg/welder_module,                <span class="c">// a welder module: a tool, and nothing that handles things</span>
-	tool_quality(TOOL_WELDER),                             <span class="c">// provides AFF_TOOL_WELDER, reach 1: not AFF_MANIPULATE</span>
-)
-CAPABILITIES(/mob/living/silicon/robot,
-	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS, reach = BORG_INTERFACE_REACH),   <span class="c">// it operates machines it can see. It has no hands: /mob/living declares no hand provider, a robot has no species to grant one, and a gripper or a module provides what it declares. The tile reach matters only to a remote() op that narrows itself to REACH_ADJACENT</span>
-)
+  <pre><code>CAPABILITIES(/obj/item/gripper)
+	provides(AFF_MANIPULATE | AFF_HOLD_SMALL, reach = 1, accepts = list(/obj/item/cell, /obj/item/circuitboard))
+CAPABILITIES(/obj/item/borg/welder_module)   <span class="c">// a welder module: a tool, and nothing that handles things</span>
+	tool_quality(TOOL_WELDER)   <span class="c">// provides AFF_TOOL_WELDER, reach 1: not AFF_MANIPULATE</span>
+CAPABILITIES(/mob/living/silicon/robot)
+	provides(AFF_CONTROL, authority = AUTH_REMOTE_ACCESS, reach = BORG_INTERFACE_REACH)   <span class="c">// it operates machines it can see. It has no hands: /mob/living declares no hand provider, a robot has no species to grant one, and a gripper or a module provides what it declares. The tile reach matters only to a remote() op that narrows itself to REACH_ADJACENT</span>
 <span class="c">// A borg-only op adds  when(req(/mob/living/silicon/robot, of = ON_ACTOR))  to hide it from everyone else,
 // or  needs(req(/mob/living/silicon/robot, of = ON_ACTOR))  to refuse them with the library's reason.</span></code></pre>
   <div class="tbl"><table>
@@ -3326,10 +3306,9 @@ STAGE_DEF(girder, wall)
 			from = list(STAGE_GIRDER_STANDING, STAGE_GIRDER_REINFORCED), undo = null),
 		dismantle(any_of_tools(TOOL_WELDER, TOOL_PLASMA_CUTTER, TOOL_DIAMOND_DRILL), spawns(/obj/item/stack/material/steel, 2)))
 
-CAPABILITIES(/obj/structure/girder,
-	girder(),
-	extend("construction.build:girder_reinforced", needs(req(PROC_REF(stack_can_reinforce), because = MSG(girder/too_soft)))),
-)
+CAPABILITIES(/obj/structure/girder)
+	girder()
+	extend("construction.build:girder_reinforced", needs(req(PROC_REF(stack_can_reinforce), because = MSG(girder/too_soft))))
 
 /obj/structure/girder/proc/stack_can_reinforce(datum/act/A)   <span class="c">// reads the held stack through A.held: a typed hop</span>
 	var/obj/item/stack/material/S = A.held
@@ -3350,10 +3329,9 @@ CAPABILITIES(/obj/structure/girder,
 TRACKED(/datum/system/nightshift, night, schema = bool)           <span class="c">// declares var/night, FALSE by default (the schema's zero value)</span>
 SYSTEM_ACCESSOR(nightshift, night_shift_active, nameof(night))     <span class="c">// declared in code/contracts/accessors: the one reactive way to read the system's private state</span>
 
-CAPABILITIES(/datum/system/nightshift,
-	every(1 MINUTE, then(PROC_REF(check_time))),
-	on_change(nameof(night), then(PROC_REF(announce_change))),
-)
+CAPABILITIES(/datum/system/nightshift)
+	every(1 MINUTE, then(PROC_REF(check_time)))
+	on_change(nameof(night), then(PROC_REF(announce_change)))
 /datum/system/nightshift/proc/check_time(datum/act/A)
 	set_night(using_map.get_nightshift())          <span class="c">// the setter compares: on most minutes nothing changes and nothing else runs</span>
 
@@ -3371,11 +3349,10 @@ STAT(/area, lights_nightshift, ANY)                 <span class="c">// fed by th
 			return night_shift_active()
 	return FALSE
 
-CAPABILITIES(/obj/machinery/light,
-	look_layer("bulb-broken", when = nameof(bulb_broken)),      <span class="c">// section 13's two entries: one list per type</span>
-	sound_loop(SFX_LIGHT_HUM, when = nameof(on)),
-	contributes(STAT_LIGHT_RANGE, PROC_REF(lit_range)),          <span class="c">// a numeric contribution: the proc returns the range</span>
-)
+CAPABILITIES(/obj/machinery/light)
+	look_layer("bulb-broken", when = nameof(bulb_broken))   <span class="c">// section 13's two entries: one list per type</span>
+	sound_loop(SFX_LIGHT_HUM, when = nameof(on))
+	contributes(STAT_LIGHT_RANGE, PROC_REF(lit_range))   <span class="c">// a numeric contribution: the proc returns the range</span>
 /obj/machinery/light/proc/lit_range(datum/act/A)                 <span class="c">// the hop through power_area is a generated read</span>
 	if(!on)
 		return 0
@@ -3406,12 +3383,10 @@ CAPABILITIES(/obj/machinery/light,
 	var/obj/item/projectile/P = H.packet.source
 	P.redirect(P.starting.x, P.starting.y, get_turf(A.holder), A.holder)   <span class="c">// back where it came from: if it lands, that is a new hit</span>
 
-CAPABILITIES(/obj/item/clothing/suit/armor/laserproof,
-	while_slotted(SLOT_ANY_WORN, mirror_plating(), on = ON_HOLDER),                       <span class="c">// 30%: its wearer gets the hooks</span>
-)
-CAPABILITIES(/obj/item/shield/mirror,
-	while_slotted(SLOT_ANY_WORN, mirror_plating(reflect_chance = 45), on = ON_HOLDER),    <span class="c">// 45%</span>
-)</code></pre>
+CAPABILITIES(/obj/item/clothing/suit/armor/laserproof)
+	while_slotted(SLOT_ANY_WORN, mirror_plating(), on = ON_HOLDER)   <span class="c">// 30%: its wearer gets the hooks</span>
+CAPABILITIES(/obj/item/shield/mirror)
+	while_slotted(SLOT_ANY_WORN, mirror_plating(reflect_chance = 45), on = ON_HOLDER)   <span class="c">// 45%</span></code></pre>
   <div class="prose">
     <p><strong>What this shows.</strong> Each item declares <code>while_slotted(..., on = ON_HOLDER)</code>, so while it is worn its wearer has an activation of the plating capability, with the item as its source (X1). A granted capability's hooks are candidates for actions on the wearer, so a projectile hitting the wearer meets the takeover first (<code>ORDER_EARLY</code>). <code>when()</code> gates it to beams and <code>chance()</code> makes it take over some of the time. When it does not, the hit goes on, and <code>adjusts</code> scales its damage before mitigation and the sink, without starting the action again. Taking an item off ends its activation.</p>
     <p><strong>Two mirrors.</strong> A wearer in the vest (30%) who also wears the shield (45%) has two activations of one capability. <code>stacks = BEST(reflect_chance)</code> runs only the stronger: one roll, at 45%, not two rolls that compound to about 62%, and <code>A.source</code> in <code>reflect</code> is the shield. The vest's activation is shadowed, not removed, so taking the shield off hands the roll back to the vest. The absorb adjustment comes from the winner as well. The library's <code>reflects()</code> and <code>blocks()</code> are built this way.</p>
@@ -3437,18 +3412,17 @@ SCHEMA(/datum/io/sql/row/library_book, content, text(MAX_BOOK_LENGTH))
 	var/book_id
 SCHEMA(/datum/io/sql/library_book, book_id, int(1))
 
-CAPABILITIES(/obj/machinery/librarycomp,
-	interface("LibraryComp", title = "Book Inventory Management"),
-	ui_shape(selected_id),
-	op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row))),
+CAPABILITIES(/obj/machinery/librarycomp)
+	interface("LibraryComp", title = "Book Inventory Management")
+	ui_shape(selected_id)
+	op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row)))
 	op("print", ui_act(),
 		needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))),
 		captures(nameof(selected_id)),                                      <span class="c">// the id the player is about to confirm: snapshotted when the op first suspends, whichever step names it</span>
 		confirms("Print the selected book?"),                               <span class="c">// step 1: the yes/no window. Its prompt names no field, so the capture above is what holds the id</span>
 		asks(/datum/io/sql/library_book, book_id = nameof(selected_id), resume = CAPTURE),   <span class="c">// step 2: the archive query, bound to the captured id (CAPTURE is the default)</span>
 		cooldown(6 SECONDS),                                                <span class="c">// a cost: reserved only after the last answer</span>
-		then(PROC_REF(print_book))),
-)
+		then(PROC_REF(print_book)))
 
 /obj/machinery/librarycomp/proc/select_row(datum/act/A, id)
 	set_selected_id(id)
@@ -3475,14 +3449,13 @@ CAPABILITIES(/obj/machinery/librarycomp,
   </div>
 
   <h3 id="ex-commit">16.14 A hopper that fills up during the wait</h3>
-  <pre><code>CAPABILITIES(/obj/machinery/fabricator,
-	powered(),
-	slot(SLOT_HOPPER, accepts = list(/obj/item/stack/material), capacity = HOPPER_SHEETS),   <span class="c">// RES_SLOT_CAPACITY reads this</span>
+  <pre><code>CAPABILITIES(/obj/machinery/fabricator)
+	powered()
+	slot(SLOT_HOPPER, accepts = list(/obj/item/stack/material), capacity = HOPPER_SHEETS)   <span class="c">// RES_SLOT_CAPACITY reads this</span>
 	op("load", stack(/obj/item/stack/material, SHEETS_PER_LOAD), wait(2 SECONDS),
 		put_in(SLOT_HOPPER),                       <span class="c">// declares the insert action's pre-check. stack() reserves the sheets (RES_STACK), and put_in() splits off exactly those sheets and moves the split</span>
-		says(MSG(fab/loaded)), logs(LOG_GAME)),
-	extend(/datum/act/insert, needs(req(PROC_REF(material_known), because = MSG(fab/unknown_material)))),
-)</code></pre>
+		says(MSG(fab/loaded)), logs(LOG_GAME))
+	extend(/datum/act/insert, needs(req(PROC_REF(material_known), because = MSG(fab/unknown_material))))</code></pre>
   <div class="prose">
     <p><strong>Rae loads steel while Kai loads the same hopper.</strong></p>
     <ol>
@@ -3600,7 +3573,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tr><td><code>own_set</code></td><td class="n">1281</td><td>replaced</td><td><code>rel_set(src, nameof(v), value)</code>; a call that passed <code>into =</code> or <code>slot =</code> was placing an atom, which is a <code>slot()</code> written with <code>move_into(holder, slot_id, item, actor =)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>QDELETED</code>, <code>QDESTROYING</code></td><td class="n">883<br><span class="c">837, 46</span></td><td>kept</td><td>qdel state reads (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>REGISTRY_MEMBERS</code></td><td class="n">789</td><td>replaced</td><td><code>members_of(REGISTRY_X)</code></td><td class="n">1 (E1)</td></tr>
-    <tr><td><code>/mob/proc/buckled_to</code>, <code>/obj/item/grab/proc/grab_target</code>, <code>/atom/movable/proc/buckled_mob_list</code>, <code>/mob/proc/active_eye</code>, <code>/atom/movable/proc/pulled_by_mob</code>, <code>/mob/proc/grabbed_by_list</code>, <code>/obj/item/grab/proc/grab_assailant</code>, <code>/mob/living/simple_mob/animal/borer/proc/borer_host</code></td><td class="n">716<br><span class="c">273, 158, 105, 58, 37, 32, ...</span></td><td>replaced</td><td>a plain read of the declared relation var of the same name, without the parentheses (for example <code>M.buckled_to</code>); the pair is declared once with <code>link(/mob::buckled_to, /atom/movable::buckled_mob_list)</code></td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>/mob/proc/buckled_to</code>, <code>/obj/item/grab/proc/grab_target</code>, <code>/atom/movable/proc/buckled_mob_list</code>, <code>/mob/proc/active_eye</code>, <code>/atom/movable/proc/pulled_by_mob</code>, <code>/mob/proc/grabbed_by_list</code>, <code>/obj/item/grab/proc/grab_assailant</code>, <code>/mob/living/simple_mob/animal/borer/proc/borer_host</code></td><td class="n">716<br><span class="c">273, 158, 105, 58, 37, 32, ...</span></td><td>replaced</td><td>a plain read of the declared relation var of the same name, without the parentheses (for example <code>M.buckled_to</code>); the pair is declared once with <code>links(/mob::buckled_to, /atom/movable::buckled_mob_list)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>consume</code></td><td class="n">475</td><td>kept</td><td><code>consume(item, actor)</code>: the lifecycle verb for deleting a used-up thing (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>/atom/proc/slot_item</code>, <code>/atom/proc/slot_contents</code></td><td class="n">433<br><span class="c">312, 121</span></td><td>kept</td><td>slot and latent reads (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>own_take</code></td><td class="n">368</td><td>replaced</td><td><code>rel_take(src, nameof(v))</code>: detaches and returns the value, now unowned</td><td class="n">1 (E1)</td></tr>
@@ -3608,9 +3581,9 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tr><td><code>owns</code></td><td class="n">208</td><td>replaced</td><td><code>owns_one(nameof(v), type, starts =, on_destroy = DELETE | SPILL | PRIVATE_COPY, copy_on_write =)</code> / <code>owns_many(...)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>own_put</code></td><td class="n">178</td><td>replaced</td><td><code>rel_add(src, nameof(v), value, key = k)</code> on an associative <code>owns_many</code> var (replacing a key disposes of the old value)</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>own_take_member</code></td><td class="n">140</td><td>replaced</td><td><code>rel_take(src, nameof(v), member = x)</code></td><td class="n">1 (E1)</td></tr>
-    <tr><td><code>rel_one</code></td><td class="n">138</td><td>replaced</td><td><code>ref_one(nameof(v), type, on_other_deleted =, on_unlink =, by =)</code> for a reference; <code>owns_one(...)</code> for an owned value; <code>link(a::v, b::w)</code> for a paired one<br><em>Choose:</em> the old <code>kind</code> picks the form: RELK_REF is <code>ref_one</code>, RELK_OWNED is <code>owns_one</code>, RELK_PAIRED is <code>link</code></td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>rel_one</code></td><td class="n">138</td><td>replaced</td><td><code>ref_one(nameof(v), type, on_other_deleted =, on_unlink =, by =)</code> for a reference; <code>owns_one(...)</code> for an owned value; <code>links(a::v, b::w)</code> for a paired one<br><em>Choose:</em> the old <code>kind</code> picks the form: RELK_REF is <code>ref_one</code>, RELK_OWNED is <code>owns_one</code>, RELK_PAIRED is <code>link</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>replace_with</code></td><td class="n">136</td><td>kept</td><td><code>replace_with(new_type, args...)</code>: the lifecycle verb for swapping a thing for another, obj to turf included (kept, section 6)</td><td class="n">&mdash;</td></tr>
-    <tr><td><code>rel_many</code></td><td class="n">133</td><td>replaced</td><td><code>ref_many(nameof(v), type, ...)</code> for references; <code>owns_many(...)</code> for owned values; <code>link(a::v, b::w)</code> for a paired list</td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>rel_many</code></td><td class="n">133</td><td>replaced</td><td><code>ref_many(nameof(v), type, ...)</code> for references; <code>owns_many(...)</code> for owned values; <code>links(a::v, b::w)</code> for a paired list</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>REGISTRY_MEMBERSHIP</code></td><td class="n">121</td><td>replaced</td><td><code>membership(joins = REGISTRY_X)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>/atom/movable/proc/move_into</code>, <code>/atom/proc/slot_remove</code></td><td class="n">102<br><span class="c">65, 37</span></td><td>kept</td><td><code>move_into(holder, slot_id, item, actor =)</code> / <code>slot_remove(holder, slot_id, actor =)</code> (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>own_take_all</code></td><td class="n">97</td><td>replaced</td><td><code>rel_take(src, nameof(v))</code> on an <code>owns_many</code> var returns every member, now unowned</td><td class="n">1 (E1)</td></tr>
@@ -3625,7 +3598,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tr><td><code>REGISTRY_DECLARE_CONDITIONAL</code></td><td class="n">30</td><td>replaced</td><td><code>when(cond, membership(joins = REGISTRY_X))</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>proto_private</code></td><td class="n">29</td><td>renamed</td><td><code>rel_private(src, nameof(v))</code>: returns the holder's private copy of an <code>owns_one(..., copy_on_write = TRUE)</code> var, made on the first call</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>om_unlink</code></td><td class="n">28</td><td>replaced</td><td><code>rel_remove(source, nameof(v), target)</code> / <code>rel_set(source, nameof(v), null)</code></td><td class="n">1 (E1)</td></tr>
-    <tr><td><code>om_link</code></td><td class="n">27</td><td>replaced</td><td><code>rel_set(source, nameof(v), target)</code> on a <code>link()</code> pair (writing one end writes both)</td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>om_link</code></td><td class="n">27</td><td>replaced</td><td><code>rel_set(source, nameof(v), target)</code> on a <code>links()</code> pair (writing one end writes both)</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>FOR_REAL_CONTENTS</code></td><td class="n">22</td><td>kept</td><td>spatial and contents API (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>dq_ledger</code></td><td class="n">20</td><td>internal</td><td>containment ledger internals</td><td class="n">n/a</td></tr>
     <tr><td><code>lifecycle_decls_init</code></td><td class="n">20</td><td>internal</td><td>destroy transaction and pool internals</td><td class="n">n/a</td></tr>
@@ -3642,8 +3615,8 @@ CAPABILITIES(/obj/machinery/librarycomp,
   </tbody></table></div>
   <h3>Ops, input parts, requirements, tools (sections 8 and 9) <span class="c" style="font-weight:400;font-size:0.85rem">(32 forms)</span></h3>
   <div class="tbl"><table><thead><tr><th>Old form</th><th>Uses</th><th>Verdict</th><th>New form</th><th>Lint on in phase</th></tr></thead><tbody>
-    <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">610</td><td>replaced</td><td><code>CAPABILITIES(T, op(...), ...)</code> on the subtype</td><td class="n">2</td></tr>
-    <tr><td><code>DECLARE_INTERACTIONS</code></td><td class="n">461</td><td>replaced</td><td><code>CAPABILITIES(T, op("key", label("Name"), ...), ...)</code>; entries accumulate down the type tree, so an old replacing declaration adds <code>without("key")</code> for each inherited op it replaced</td><td class="n">2</td></tr>
+    <tr><td><code>EXTEND_INTERACTIONS</code></td><td class="n">610</td><td>replaced</td><td><code>CAPABILITIES(T)</code> with an <code>op(...)</code> entry on the subtype</td><td class="n">2</td></tr>
+    <tr><td><code>DECLARE_INTERACTIONS</code></td><td class="n">461</td><td>replaced</td><td><code>CAPABILITIES(T)</code> with <code>op("key", label("Name"), ...)</code> entries; entries accumulate down the type tree, so an old replacing declaration adds <code>without("key")</code> for each inherited op it replaced</td><td class="n">2</td></tr>
     <tr><td><code>INTERACT_ITEM</code></td><td class="n">451</td><td>replaced</td><td><code>op("key", label("Name"), item(/obj/item), needs(req...), then(PROC_REF(x)))</code>; <code>x(datum/act/A)</code> reads <code>A.actor</code> and <code>A.held</code><br><em>Choose:</em> an effect that returned FALSE to fall through becomes a <code>when(req...)</code> (silently not a candidate) or a <code>passes()</code> part</td><td class="n">2</td></tr>
     <tr><td><code>INTERACT_USE</code>, <code>INTERACT_SELF</code></td><td class="n">430<br><span class="c">376, 54</span></td><td>replaced</td><td><code>op("key", label("Name"), in_hand(), then(PROC_REF(x)))</code>: the held item used on itself; an effect that fell through on FALSE adds <code>passes()</code></td><td class="n">2</td></tr>
     <tr><td><code>HOLD_ONLY</code></td><td class="n">299</td><td>replaced</td><td>the slot's <code>accepts = list(types)</code></td><td class="n">2</td></tr>
@@ -3654,7 +3627,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tr><td><code>INTERACT_HAND_UNGATED_AS</code>, <code>INTERACT_ITEM_AS</code>, <code>INTERACT_USE_AS</code>, <code>INTERACT_SELF_AS</code></td><td class="n">143<br><span class="c">61, 29, 28, 25</span></td><td>replaced</td><td>the same <code>op(...)</code> with <code>stance(I_X)</code> added</td><td class="n">2</td></tr>
     <tr><td><code>INTERACT_HAND_UNGATED</code></td><td class="n">121</td><td>replaced</td><td><code>op("key", label("Name"), hand(), then(PROC_REF(x)))</code> with no control tag (it ran ahead of <code>hand_gate()</code>)</td><td class="n">2</td></tr>
     <tr><td><code>use_tool</code></td><td class="n">121</td><td>replaced</td><td>an op with a <code>tool(Q)</code> input and a <code>wait()</code> (the tool profile supplies the wait and verbs)</td><td class="n">2</td></tr>
-    <tr><td><code>INTERACT_HAND</code></td><td class="n">87</td><td>replaced</td><td><code>op("key", label("Name"), hand(), tag(TAG_CONTROL), then(PROC_REF(x)))</code> on machinery (the operability check comes from <code>extend(TAG_CONTROL, needs(req_is(STAT_OPERABLE)))</code> in <code>machine_basics</code>); off machinery, <code>hand()</code> alone</td><td class="n">2</td></tr>
+    <tr><td><code>INTERACT_HAND</code></td><td class="n">87</td><td>replaced</td><td><code>op("key", label("Name"), hand(), tag(TAG_CONTROL), then(PROC_REF(x)))</code> on machinery (the operability check comes from <code>extend(TAG_CONTROL, needs(req_operable()))</code> in <code>machine_basics</code>); off machinery, <code>hand()</code> alone</td><td class="n">2</td></tr>
     <tr><td><code>REQ_FITS_BODYTYPES</code></td><td class="n">73</td><td>replaced</td><td><code>extend(/datum/act/equip, needs(req_fits_bodytype()))</code></td><td class="n">2</td></tr>
     <tr><td><code>dq_interaction_from_spec</code></td><td class="n">70</td><td>replaced</td><td><code>op()</code> (compact specs are ops)</td><td class="n">2</td></tr>
     <tr><td><code>REQ_BECAUSE</code></td><td class="n">63</td><td>replaced</td><td><code>because = MSG(y)</code> on the requirement</td><td class="n">1 (E2)</td></tr>
@@ -3733,12 +3706,12 @@ CAPABILITIES(/obj/machinery/librarycomp,
   <div class="tbl"><table><thead><tr><th>Old form</th><th>Uses</th><th>Verdict</th><th>New form</th><th>Lint on in phase</th></tr></thead><tbody>
     <tr><td><code>TYPE_TABLE</code>, <code>TYPE_TABLE_GET</code>, <code>TYPE_TABLE_DECLARE</code>, <code>GLOBAL_TABLE_GET</code>, <code>GLOBAL_TABLE</code></td><td class="n">1603<br><span class="c">1145, 240, 138, 57, 23</span></td><td>kept</td><td>per-type and global constant tables (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>LOOT_SUB</code>, <code>DECLARE_LOOT</code>, <code>LOOT_SET</code>, <code>LOOT_TABLE</code>, <code>LOOT_STACK</code>, <code>LOOT_CHANCE</code>, <code>LOOT_REF</code>, <code>LOOT_UNCOMMON</code>, <code>LOOT_ALL</code>, <code>LOOT_RARE</code>, <code>LOOT_DEPLETION</code></td><td class="n">1449<br><span class="c">331, 306, 304, 272, 70, 48, ...</span></td><td>kept</td><td>loot tables (kept, section 6)</td><td class="n">&mdash;</td></tr>
-    <tr><td><code>DECLARE_REAGENTS</code></td><td class="n">642</td><td>replaced</td><td><code>reagents(volume, starts =)</code>; subtypes use <code>configure(CAP_REAGENTS, add = ...)</code></td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>DECLARE_REAGENTS</code></td><td class="n">642</td><td>replaced</td><td><code>reagents(volume, starts =)</code>; subtypes use <code>configure(reagents(add = ...))</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>DECLARE_DEFAULT_CHILD</code></td><td class="n">270</td><td>replaced</td><td><code>owns_one(nameof(v), type, starts = T)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>MAP_VAR</code>, <code>MAP_RESOLVER_VARS</code></td><td class="n">105<br><span class="c">81, 24</span></td><td>kept</td><td>map-time resolver helpers (kept, section 6)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>/obj/item/proc/apply_variant</code></td><td class="n">59</td><td>kept</td><td>variants (kept; <code>code/datums/variants/README.md</code>)</td><td class="n">&mdash;</td></tr>
     <tr><td><code>CACHED_KEY</code>, <code>DECLARE_SHARED_CACHE</code></td><td class="n">57<br><span class="c">30, 27</span></td><td>kept</td><td>caching tools (kept, section 6)</td><td class="n">&mdash;</td></tr>
-    <tr><td><code>/datum/proc/relations</code></td><td class="n">55</td><td>replaced</td><td><code>CAPABILITIES(T, ref_one(...), owns_one(...), link(...))</code></td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>/datum/proc/relations</code></td><td class="n">55</td><td>replaced</td><td><code>CAPABILITIES(T)</code> with <code>ref_one(...)</code>, <code>owns_one(...)</code> and <code>links(...)</code> entries</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>DECLARE_REAGENTS_TINTED</code></td><td class="n">51</td><td>replaced</td><td><code>reagents(..., tint = TRUE)</code></td><td class="n">1 (E1)</td></tr>
     <tr><td><code>MAP_RESOLVER</code></td><td class="n">34</td><td>renamed</td><td>written as the <code>map_resolver(PROC_REF(x))</code> entry (section 6); resolved atoms are never initialized</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>DECLARE_GAS</code></td><td class="n">25</td><td>replaced</td><td><code>gas_store(var, volume, temp, gases)</code></td><td class="n">1 (E1)</td></tr>
@@ -3798,7 +3771,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tr><td><code>PRED_CMP_*</code></td><td class="n">32</td><td>replaced</td><td><code>req_is(KEY, value)</code> / <code>req_at_least(KEY, n)</code></td><td class="n">1 (E2)</td></tr>
     <tr><td><code>STEP_DONE, STEP_NEXT</code></td><td class="n">31</td><td>replaced</td><td>job step results: <code>JOB_DONE</code> and <code>JOB_MORE</code></td><td class="n">1 (E6)</td></tr>
     <tr><td><code>PRED_OP_*, PRED_WATCH_*</code></td><td class="n">29</td><td>internal</td><td>requirement compiler tags (internal)</td><td class="n">n/a</td></tr>
-    <tr><td><code>RELK_*</code></td><td class="n">28</td><td>replaced</td><td><code>owns_one</code> / <code>owns_many</code> (owned), <code>link()</code> (paired), <code>ref_one</code> / <code>ref_many</code> (reference)</td><td class="n">1 (E1)</td></tr>
+    <tr><td><code>RELK_*</code></td><td class="n">28</td><td>replaced</td><td><code>owns_one</code> / <code>owns_many</code> (owned), <code>links()</code> (paired), <code>ref_one</code> / <code>ref_many</code> (reference)</td><td class="n">1 (E1)</td></tr>
     <tr><td><code>STAGE_IDLE</code></td><td class="n">27</td><td>replaced</td><td>the work's <code>when</code> condition turning false parks it (<code>every(when =)</code>); <code>should_run</code> returning FALSE for a sequence step</td><td class="n">1 (E3)</td></tr>
     <tr><td><code>STATUS_EFFECT_*</code></td><td class="n">26</td><td>replaced</td><td>body effects: <code>apply_body_effect()</code>, kept as sugar over holds and granted capabilities (section 5)</td><td class="n">1 (E3)</td></tr>
     <tr><td><code>DQAI_TRIGGER_*</code></td><td class="n">23</td><td>replaced</td><td>notice types in a behaviour's <code>eval_triggers</code> (<code>DQAI_TRIGGER_DAMAGE_TAKEN</code> is <code>/datum/notice/injured</code>); <code>ai()</code> hooks each with <code>on_notice</code></td><td class="n">2</td></tr>
@@ -4006,7 +3979,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
       <tr><td>6</td><td>Invoke one op by click, by UI and by AI with identical outcomes and logs</td><td>Input bindings; origin, reach, provider and authority (section 8)</td><td><code>test_click</code>, <code>test_ui</code> and <code>perform_op(origin = ORIGIN_AI)</code> on three identical fixtures, each under <code>test_record()</code>. The op has <code>hand()</code> and <code>ui_act()</code> bindings, so the AI call goes through <code>hand()</code>, which accepts <code>ORIGIN_AI</code>, with the hand's provider and reach exactly as the click. Each run's <code>/datum/op_result</code> (outcome, reason, rolled), <code>test_recorded()</code> (state deltas, slot transfers, resource reserve, commit and release, notices) and <code>test_logs()</code> are compared with the others minus the <code>origin</code> field, which differs by design</td></tr>
       <tr><td>7</td><td>Change reach, containment and capability state while cached menus and waits exist: the caches update</td><td>The graph contract (section 7)</td><td><code>action_options</code> and <code>screentip_for</code> for the menus of one target, read by two actors (a key of counters alone would let them share an entry), <code>test_click</code> or <code>test_menu</code> into a wait for the pending op; then <code>grant</code> and <code>revoke</code> of a <code>provides</code> capability (the provider set generation), a cover closing and a slot change; <code>test_drain()</code> and a second read</td></tr>
       <tr><td>8</td><td>A station-wide cascade (a night-shift flip, a large reaction chain) under budget, with no lost effects and no dropped notices</td><td>Marked fan-out, phase S and the notice queue (sections 2, 7, 8). It measures whether membership edges can be promoted to inline</td><td>A test <code>SYSTEM_DEF</code> (lane <code>LANE_WORLD</code>) with a <code>SYSTEM_ACCESSOR</code> that the stats of test entities read (those stats are charged to <code>LANE_SIMULATION</code>), and a test-only notice chain whose <code>on_notice</code> handler publishes the next notice and counts itself. <code>test_budget(LANE_SIMULATION, units)</code> for the marked stats (the system's own <code>LANE_WORLD</code> budgets only its <code>every()</code> work), a flip, then <code>test_time</code> over successive ticks (each tick's D, P and R drains recompute what the budget allows) and <code>test_drain()</code>; <code>test_spill_count()</code> for the spills, the handler's own counter against <code>test_notice_count()</code> for "no dropped notices" (the engine's count is of notices published and queued, not delivered), and every entity's stat read at the end</td></tr>
-      <tr><td>9</td><td>A construction with two predecessors undoes to the actual one, with the right refund</td><td>State graphs, history and the ledger (X4, section 12)</td><td>A test-only type with <code>construction(GRAPH_DOOR_ASSEMBLY)</code> (12), and a subtype placed finished with <code>configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))</code>. <code>test_click</code> for each build and undo edge, then <code>built()</code>, <code>built_material()</code> and the refunded item, with <code>test_recorded()</code> for the slot transfers and resource commits each edge made, which is what the ledger refunds</td></tr>
+      <tr><td>9</td><td>A construction with two predecessors undoes to the actual one, with the right refund</td><td>State graphs, history and the ledger (X4, section 12)</td><td>A test-only type with <code>construction(GRAPH_DOOR_ASSEMBLY)</code> (12), and a subtype placed finished with <code>configure(construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))</code>. <code>test_click</code> for each build and undo edge, then <code>built()</code>, <code>built_material()</code> and the refunded item, with <code>test_recorded()</code> for the slot transfers and resource commits each edge made, which is what the ledger refunds</td></tr>
       <tr><td>10</td><td>A tracked setting with a schema clamps a bad UI write, and the generated UI type matches</td><td>Value schemas (X5, section 4)</td><td><code>test_ui</code> with 99999, a read of the setting, <code>test_logs()</code> for the clamp line; then the file <code>build.sh ui-types</code> writes: the doc comment on the field (<code>/** num 0..MAX_PUMP_PRESSURE step 1 */</code>) must equal the schema's own range text, while the TypeScript type stays <code>number</code></td></tr>
     </tbody>
   </table></div>
@@ -4123,7 +4096,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <tbody>
       <tr><td colspan="4"><strong>Group A: declarations and state</strong> (independent of the op skeleton)</td></tr>
       <tr><td>A1</td><td>Timers: <code>om_after</code> and variants (1,310); raw-decisecond delays (336)</td><td><code>after()</code>; time defines</td><td>E6</td></tr>
-      <tr><td>A2</td><td>Declaration procs <code>capabilities()</code>, <code>reactions()</code>, <code>relations()</code>, <code>ownership()</code></td><td><code>CAPABILITIES(T, ...)</code>, entries unchanged inside</td><td>E1; the legacy constructor list</td></tr>
+      <tr><td>A2</td><td>Declaration procs <code>capabilities()</code>, <code>reactions()</code>, <code>relations()</code>, <code>ownership()</code></td><td><code>CAPABILITIES(T)</code> and its indented entries, entries unchanged inside</td><td>E1; the legacy constructor list</td></tr>
       <tr><td>A3</td><td>Relations: <code>own_*</code>/<code>proto_*</code> writers; <code>OWN</code>/<code>REL</code>/<code>PROTO</code> macros; <code>DECLARE_DEFAULT_CHILD</code> (270); <code>REGISTRY_MEMBERS</code> (789), <code>REGISTRY_MEMBERSHIP</code> (121); <code>HOLD_ONLY</code> (299), <code>HOLD_MAX_SIZE</code> (147), <code>REQ_FITS_BODYTYPES</code> (73); the 480 <code>ALLOW(instance_list)</code> lists</td><td><code>rel_*</code>; <code>ref_*</code>, <code>owns_*</code>, <code>link</code>, <code>slot(accepts =)</code>; <code>starts =</code>; <code>on_unlink =</code> or <code>on_change</code>; <code>members_of</code>, <code>membership</code>; <code>LIST_STATE</code> (mechanical for the <code>d:</code>-coded reasons, a wave for the rest)</td><td>E1; A2</td></tr>
       <tr><td>A4</td><td>Fields and derived values: <code>OM_FIELD</code> family (174 for the base macro), 3-argument <code>TRACKED</code>; <code>derived()</code> and <code>OM_DERIVE_FIELD</code> (51 uses in 46 files); hand-written read lists (<code>drawn_from</code>, <code>ui_from</code>, <code>rust_push</code>)</td><td>Variadic <code>TRACKED</code>; <code>STAT(..., FORMULA)</code>. The hand-written lists are deleted only after the E5 oracle shows zero diff on every handler that uses them.</td><td>E3; E5 oracle</td></tr>
       <tr><td>A5</td><td>Lifecycle declarations: <code>DECLARE_REAGENTS</code> (642), <code>DECLARE_GAS</code>, <code>DECLARE_REGISTRY</code>, <code>DECLARE_START_TIMER</code></td><td><code>reagents(volume, starts =)</code>, <code>gas_store()</code>, <code>membership()</code>, <code>after_init()</code></td><td>A3</td></tr>
@@ -4519,7 +4492,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
       <tr><td>Every string key is declared</td><td>Build stages are <code>STAGE_DEF</code> ids, sources <code>SOURCE_DEF</code>, messages <code>MSG_DEF</code>; sequence facts are typed vars on the context; prompt and request payloads are typed vars set by named args; UI args arrive as typed proc parameters. An unresolved identifier is a build error and no key is computed.</td><td>Free-text keys resolved at runtime</td></tr>
       <tr><td>Typed actions</td><td><code>ACTION(fall, turf/landing, mob/living/landed_on)</code> is a generator marker producing <code>/datum/act/fall</code>, <code>act_fall(...)</code> and the notice <code>/datum/notice/fell</code>, always in the past tense. Call sites use <code>ACT_TRY</code> (the final act, after every <code>adjusts()</code>; the caller executes with its fields through <code>ACT_FINAL</code>), <code>ACT_PASS</code> (a shared constant, nothing allocated, returned only when nothing hooks the action and no listener wants its notice), <code>act_done</code>, <code>act_cancel</code>; a lint requires one of the last two on every path. The op action's notice is <code>/datum/notice/op_done</code>; <code>ACTION(move, ...)</code> has <code>origin</code>, <code>destination</code>, <code>direction</code>; <code>ACTION(insert, atom/movable/item, ...)</code> takes any movable. Every action has one outcome (<code>ACT_COMMITTED</code>, <code>ACT_REFUSED</code>, <code>ACT_REPLACED</code>).</td><td>Hand-written act and notice pairs; <code>slashed</code>, <code>ui_opened</code> and other hand-named notices; executing from locals after hooks changed the act</td></tr>
       <tr><td>Defining a capability</td><td><code>CAPABILITY_DEF(name, CAP_X, params...)</code> for the function form and <code>CAPABILITY_TYPE(name, CAP_X, /datum/capability/x, params...)</code> for the datum form. The params are the settings, <code>configure(CAP_X, p = v)</code> re-runs the body, and an unknown param is a build error. Bundles are plain procs returning entries; wrap one in a capability when something must address it. There is one definition of <code>powered</code>, a capability over <code>powered_by(system, role)</code>.</td><td><code>capability(KEY, settings...)</code> with free settings, two definitions of <code>powered</code>, type procs as bundles</td></tr>
-      <tr><td>One composition root per type</td><td>One <code>CAPABILITIES(T, ...)</code> list; a second on the same type is a build error. It may name <code>BUNDLE(name, entries...)</code>s defined in their own files, so the root is a short list of calls and there is no one-file-per-type rule. The table builder records <code>__FILE__:__LINE__</code> per entry in every build.</td><td><code>capabilities()</code>, <code>reactions()</code>, <code>relations()</code>, <code>derived()</code>, <code>CAPABILITY()</code> (the docs' "three table procs" rule); lists merged by include order; origin lists as debug-only data</td></tr>
+      <tr><td>One composition root per type</td><td>One <code>CAPABILITIES(T)</code> block; a second on the same type is a build error. It may name <code>BUNDLE(name, entries...)</code>s defined in their own files, so the root is a short list of calls and there is no one-file-per-type rule. The table builder records <code>__FILE__:__LINE__</code> per entry in every build.</td><td><code>capabilities()</code>, <code>reactions()</code>, <code>relations()</code>, <code>derived()</code>, <code>CAPABILITY()</code> (the docs' "three table procs" rule); lists merged by include order; origin lists as debug-only data</td></tr>
       <tr><td>Capability data</td><td><code>cap_data(A)</code> returns the typed <code>/datum/cap_data/&lt;cap&gt;</code> (<code>RETURN_TYPE</code>) of <code>A.activation</code>: one per activation, not one per holder. A field a condition reads is a declared tracked field. A type-level capability allocates its activation lazily, on the first state write or <code>cap_data</code> read. Accessors and <code>cap_of</code> address the type-level activation; a granted capability with state declares a selector.</td><td><code>cap_data(holder, KEY)["x"]</code>, per-holder capability data, an activation allocated per instance for every type-level capability</td></tr>
       <tr><td>Grant values</td><td><code>granted_trait()</code>, <code>granted_language()</code>, <code>granted_access()</code>, <code>granted_verb()</code>, <code>hidden_verb()</code>; a granted verb is <code>grant(E, granted_verb(path), source)</code>.</td><td>Separate grant stores per kind</td></tr>
       <tr><td>Busy state</td><td>An actor's busy state is its pending op (busy policy <code>BUSY_REPLACE</code> or <code>BUSY_REFUSE</code>); there is no base busy stat. A thing occupied for a while (a slot machine spinning) declares a stat named for that state and holds it with <code>lasts =</code>.</td><td><code>om_hold_busy</code>, <code>om_in_use</code>, a shared <code>STAT_BUSY</code></td></tr>
@@ -4531,7 +4504,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
     <thead><tr><th>Question</th><th>Settled as</th><th>Losing form(s)</th></tr></thead>
     <tbody>
       <tr><td>Two state concepts</td><td><code>TRACKED(T, a, b, c)</code> (variadic: settings and plain state) and <code>STAT</code> (composed, including <code>FORMULA</code>). Capability state is <code>cap_keys()</code>. <code>TRACKED_BRIDGED</code> survives only as the build-time shim table of <a href="#plan">section 19</a>, until the machine and Life pipelines go.</td><td>3-argument <code>TRACKED</code>, <code>setting(nameof(v), choices =)</code>, <code>from =</code>, <code>derive()</code>, <code>OM_FIELD</code> and its relatives</td></tr>
-      <tr><td>Declaring links and ownership</td><td>Four relation entries in <code>CAPABILITIES</code>: <code>ref_one</code>/<code>ref_many</code> (a reference, with <code>on_other_deleted = CLEAR | DELETE_ME</code>), <code>owns_one</code>/<code>owns_many</code> (<code>on_destroy = DELETE | SPILL | PRIVATE_COPY</code>, <code>copy_on_write =</code>), <code>link(a::x, b::y)</code> (paired, declared once; <code>hot = TRUE</code> for the engine's hot paths), and <code>slot(...)</code>. Writes are <code>rel_set</code>, <code>rel_add</code>, <code>rel_remove</code>, <code>rel_clear</code>, <code>rel_move</code>, <code>rel_take</code> (the last two pick a member with <code>member =</code> or <code>key =</code>), dispatching on the declared kind; <code>own_*</code> and <code>proto_*</code> merge into them. A copy-on-write var holds a shared prototype until <code>rel_private(E, nameof(v))</code> returns the holder's private copy, made on the first call; <code>rel_is_private</code> asks.</td><td><code>ownership()</code>, <code>owns</code>/<code>shares</code>/<code>proto</code>, the 16 <code>OWN</code>/<code>REL</code>/<code>PROTO</code> macros, the ten-parameter <code>rel_one</code>, the ten <code>own_*</code> writers, <code>OWN_SPILL</code>/<code>OWN_CONTAINED</code></td></tr>
+      <tr><td>Declaring links and ownership</td><td>Four relation entries in <code>CAPABILITIES</code>: <code>ref_one</code>/<code>ref_many</code> (a reference, with <code>on_other_deleted = CLEAR | DELETE_ME</code>), <code>owns_one</code>/<code>owns_many</code> (<code>on_destroy = DELETE | SPILL | PRIVATE_COPY</code>, <code>copy_on_write =</code>), <code>links(a::x, b::y)</code> (paired, declared once; <code>hot = TRUE</code> for the engine's hot paths), and <code>slot(...)</code>. Writes are <code>rel_set</code>, <code>rel_add</code>, <code>rel_remove</code>, <code>rel_clear</code>, <code>rel_move</code>, <code>rel_take</code> (the last two pick a member with <code>member =</code> or <code>key =</code>), dispatching on the declared kind; <code>own_*</code> and <code>proto_*</code> merge into them. A copy-on-write var holds a shared prototype until <code>rel_private(E, nameof(v))</code> returns the holder's private copy, made on the first call; <code>rel_is_private</code> asks.</td><td><code>ownership()</code>, <code>owns</code>/<code>shares</code>/<code>proto</code>, the 16 <code>OWN</code>/<code>REL</code>/<code>PROTO</code> macros, the ten-parameter <code>rel_one</code>, the ten <code>own_*</code> writers, <code>OWN_SPILL</code>/<code>OWN_CONTAINED</code></td></tr>
       <tr><td>Slot declarations</td><td><code>slot(id, accepts =, capacity =, exposure =, at = BAY_X, on_destroy =)</code> over the containment ledger.</td><td><code>/datum/slot_def</code>, <code>/datum/om/relation/slot</code>, <code>SLOT_DROP_HOLDER</code></td></tr>
       <tr><td>Moving an item between slots</td><td><code>slot_transfer(item, to_holder, slot_id, actor =, authority =)</code> always runs the <code>remove</code> and <code>insert</code> actions and their hooks. A forced transfer needs an authority datum (<code>authority = A</code>).</td><td>A transfer as one ledger write that bypasses the actions and their requirements</td></tr>
       <tr><td>Lasting effects while something is in a slot</td><td><code>while_slotted(SLOT_X, entries..., on = ON_CONTENTS | ON_HOLDER)</code> grants the entries to the contained item (or to the holder), sourced by the occupying item for <code>ON_HOLDER</code> and by the slot entry for <code>ON_CONTENTS</code>, released on exit, delete or holder delete. The slot owner declares <code>ON_CONTENTS</code> (stasis beds, bellies, cryo, borg docks); the item declares <code>ON_HOLDER</code> (worn shields and mirrors).</td><td>Loose per-stat holds placed by the effect's owner and released by hand (the belly's two prey holds), a buckle notice pair for stasis</td></tr>
@@ -4671,7 +4644,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
       <tr><td>X1 Scoped activation</td><td>Everything applied to a holder for a while is an activation: <code>grant()</code>, entry-level <code>when()</code>, <code>while_slotted</code>, <code>observe()</code>, memberships and <code>join()</code>, species capabilities, worn and held item effects, timed holds and timed grants. One record (definition, source, holder, params, state, contributions, scope, stacking), one attach path (build and validate, then apply: a failure applies nothing and <code>grant()</code> returns null), one teardown path (end owned dependents, remove contributions, run <code>on_deactivate</code>); detach marks the record dead at once. Type-level entries allocate lazily. Scope changes are tracked graph edges (a species change is a write to the <code>species</code> relation); <code>explain_activations(E)</code> lists them.</td><td>Per-mechanism lifetime rules and release code</td></tr>
       <tr><td>X2 Resource transactions</td><td><code>RESOURCE_DEF(RES_X, adapter =, schema =)</code> with <code>holder_of</code>, <code>available</code>, <code>reserve</code>, <code>commit</code> and <code>release</code> over a <code>/datum/reservation(resource, holder, amount, op)</code>. <code>costs()</code>, <code>consumes()</code> (<code>RES_ITEM</code>), <code>cooldown()</code> (<code>RES_COOLDOWN</code>), fuel, charge, stacks, blood, dark energy, reagent transfers, slot and storage capacity and the state-graph ledger are reservations that expire with the op. <code>put_in()</code> under <code>stack(T, n)</code> splits off exactly the reserved units. Continuous draw (<code>power_draw</code>, a per-tick drain) stays a stat; only discrete spends are transactions.</td><td>Spend-then-effect sequences with hand-written refunds</td></tr>
       <tr><td>X3 Workflows</td><td>A workflow is an ordered set of typed steps (prompts, SQL, path, transport, <code>job()</code>) with one outcome enum, captured fields (the resume policy), one cancellation list and one resumption rule: the op's context, requirements re-checked, captured fields restored. An op's workflow runs in its Wait stage, before the reservation. <code>asks()</code>, <code>confirms()</code>, <code>request()</code>, DB queries, interface modals and prompt chains (<code>step =</code>, <code>A.step("name")</code>) are defined on it. <code>db_query_now</code> stays the narrow exception. A workflow is not a general scripting system.</td><td>Separate prompt, flow and I/O engines</td></tr>
-      <tr><td>X4 State graphs</td><td><code>STATE_GRAPH(GRAPH_X, ...)</code> with <code>STAGE_DEF</code> nodes and ops as edges; per instance a current stage, a history stack and a ledger. <code>construction</code> and <code>deployment</code> are graphs, each with its own capability key and op prefix: undo pops the history and refunds that transition's ledger entry (written at reserve time, finalised at commit); the one undo op of a stage takes the union of its ways in; "at or past a stage" is reachability from the start through the history; a part-built start seeds its history lazily along the one path that leads to it, or along the <code>via =</code> path when several do (a build error without one). Machine modes stay plain tracked enums.</td><td>"At or past" by stage order; undo to a declared predecessor; one-off deployable state machines; a deployment with no ledger refund</td></tr>
+      <tr><td>X4 State graphs</td><td><code>STATE_GRAPH(GRAPH_X)</code> with <code>STAGE_DEF</code> nodes and ops as edges; per instance a current stage, a history stack and a ledger. <code>construction</code> and <code>deployment</code> are graphs, each with its own capability key and op prefix: undo pops the history and refunds that transition's ledger entry (written at reserve time, finalised at commit); the one undo op of a stage takes the union of its ways in; "at or past a stage" is reachability from the start through the history; a part-built start seeds its history lazily along the one path that leads to it, or along the <code>via =</code> path when several do (a build error without one). Machine modes stay plain tracked enums.</td><td>"At or past" by stage order; undo to a declared predecessor; one-off deployable state machines; a deployment with no ledger refund</td></tr>
       <tr><td>X5 Value schemas</td><td><code>schema =</code> on <code>TRACKED</code>, <code>STAT</code>, capability params, op args (<code>arg(name, schema)</code>), <code>ui_shape</code> fields, prompt and request input (a prompt kind states it with <code>SCHEMA(kind, value, ...)</code>), SQL row columns (<code>SCHEMA</code>), preferences and persistence, and VV edits. Kinds: <code>bool</code>, <code>int</code>, <code>num</code>, <code>enum</code>, <code>flags</code>, <code>text</code>, <code>ref</code>, <code>path</code>, <code>list_of</code>, <code>map_of</code>, <code>row</code>; options <code>normalize</code> (<code>x(A, value)</code>), <code>default</code> (its one home; <code>TRACKED</code> declares the var), <code>persist</code>, <code>on_invalid = CLAMP | REJECT</code>. A numeric write clamps and any other failure rejects; an <code>int</code> rejects a non-integer from input and rounds one from an internal write; player input is checked before Match and a failure ends the op <code>ACT_REFUSED</code> with the schema's reason.</td><td>Stats as the answer to validation; hand-written clamps and <code>sanitize</code>; <code>arg_*</code> as a second validator; a default written in two places</td></tr>
     </tbody>
   </table></div>
@@ -4728,7 +4701,7 @@ CAPABILITIES(/obj/machinery/librarycomp,
       <tr><td>Hands</td><td>There is no hand provider on <code>/mob/living</code>. A species with hands grants <code>hands()</code> (<code>provides(AFF_MANIPULATE | AFF_ATTACK | AFF_HOLD, reach = 1)</code>) in its <code>SPECIES_CAPABILITIES</code>, and <code>species_capabilities()</code> grants it while the mob's species relation names that species; a mob with no species declares its own providers (a carp's bite, a borg's modules and interface, the AI's remote control). A restraint refuses through the implicit <code>req_capable()</code>; a lost last hand drops the provider through a <code>when()</code> over the body.</td><td>A base hand provider every mob inherited, with no way to take it away (a borg that could still open cells, a carp that could open airlocks)</td></tr>
       <tr><td>The outcome filter</td><td>One vocabulary for <code>on_notice</code> and <code>on_op</code>: <code>ACT_COMMITTED | ACT_REFUSED | ACT_REPLACED | ACT_ROLL_FAILED | ACT_ANY</code>. <code>ACT_ROLL_FAILED</code> is a filter value only (a failed roll still ends <code>ACT_COMMITTED</code> with <code>A.rolled = FALSE</code>); <code>ACT_COMMITTED</code> hears committed ops whose roll succeeded; <code>ACT_ANY</code> is all four. <code>OP_*</code> is the vocabulary of an effect's report and nothing else.</td><td><code>OP_ROLL_FAILED</code> and <code>OP_ANY</code> as filter names, with no statement of what <code>OP_ANY</code> covered</td></tr>
       <tr><td><code>perform_op</code> and bindings</td><td><code>perform_op()</code> by key runs through whichever binding of the op accepts the origin given (<code>ORIGIN_AI</code> by default). Every physical binding accepts <code>ORIGIN_AI</code> and runs with the click's provider and reach gate; <code>ai()</code> accepts it for an op with no physical binding and uses the op's own reach and no provider. An op whose bindings accept the origin given is refused with a reason; a controller passes <code>ORIGIN_VERB</code> for a <code>menu()</code> ability, or the ability declares <code>ai()</code>.</td><td>"<code>perform_op</code> reaches an op only if it has <code>ai()</code>" beside physical bindings that accept <code>ORIGIN_AI</code></td></tr>
-      <tr><td>Seeding a placed instance</td><td>If exactly one path leads from the graph's start to the placed stage, that path is seeded lazily with empty ledger entries. If several do, the type says <code>configure(CAP_CONSTRUCTION, start = STAGE_X, via = list(STAGE_A, ...))</code> and a missing <code>via =</code> is a build error. An edge with no derivable undo and no <code>undo =</code> contributes no input to the stage's union undo; the door kit names <code>undo = list(tool(TOOL_CROWBAR))</code>.</td><td>"The shortest path from the start", which marked a boarded door as never boarded</td></tr>
+      <tr><td>Seeding a placed instance</td><td>If exactly one path leads from the graph's start to the placed stage, that path is seeded lazily with empty ledger entries. If several do, the type says <code>configure(construction_graph(start = STAGE_X, via = list(STAGE_A, ...)))</code> and a missing <code>via =</code> is a build error. An edge with no derivable undo and no <code>undo =</code> contributes no input to the stage's union undo; the door kit names <code>undo = list(tool(TOOL_CROWBAR))</code>.</td><td>"The shortest path from the start", which marked a boarded door as never boarded</td></tr>
       <tr><td>Marked recompute: where, and which lane</td><td>Marked stats recompute only in the marked drains, the drains at the start of phases D, P and R, in rank order, each evaluation charged to the stat's own lane: <code>LANE_SIMULATION</code> for an entity's stat, the system's declared lane for a stat on the system. The budget bounds this evaluation only; hook attachment, <code>on_change</code> and queueing always complete at their drain point. The end-of-trigger drain and phase S's recompute nothing marked, so a click never carries a cascade and S is never shed. <code>test_budget(lane, units)</code> sets a lane's per-tick budget for the marked drains.</td><td>"The lane's budget" with no lane named; a budget that might stop hooks; a budgeted drain in phase S</td></tr>
       <tr><td>Edge kinds follow capacity</td><td>A slot of capacity 1 is a single-valued edge in both directions (a bed's buckle slot); a slot that holds several (a locker, a belly) is a collection edge from its container to its occupants.</td><td>"An occupant reading its container" as single-valued for every slot</td></tr>
       <tr><td>The species relation</td><td>The mob type declares <code>ref_one(nameof(species), /datum/species)</code> (the human's list in 16.4), and a species change is <code>rel_set(M, nameof(species), S)</code>. <code>SPECIES_CAPABILITIES</code> lines for the human and the shadekin are in 16.4.</td><td>A species change that no example declared a relation for</td></tr>

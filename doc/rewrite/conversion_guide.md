@@ -32,7 +32,7 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
 4. **Convert the type**, in this order, compiling and running `analyze gen` between steps:
    1. vars and tracked state: `TRACKED`, `STAT`, `SOURCE_DEF`, `STAGE_DEF`; one `var/x` per fact, defaults on the var line;
    2. the `CAPABILITIES(T)` block: bundles first (`wall_machine`, `maintenance_hatch`, `cell_bay`, `powered_by`), then links and relations
-      (`owns_one`, `link`), then `interface()`, then ops, then `extend`s, then hooks (`on_notice`, `on_change`, `extend(/datum/act/hit/x, ...)`);
+      (`owns_one`, `links`), then `interface()`, then ops, then `extend`s, then hooks (`on_notice`, `on_change`, `extend(/datum/act/hit/x, ...)`);
    3. each old interaction becomes an op, each old condition a requirement, each old effect `then(PROC_REF(x))` with `x(datum/act/op/A, args...)`;
    4. timers become `after(src, delay, PROC_REF(x), key = "k", with = list(...))`, holds become `hold`/`release` with a `SOURCE_DEF`;
    5. presentation: `look_layer()` and `examine_line()` for plain layers and lines, `draw(look)` for computed ones, `ui_data(A)` for the window;
@@ -84,9 +84,9 @@ maintenance_hatch(
 	emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
 	emag_say = MSG(apc/emagged),
 	panel_needs_cover_closed = TRUE,
-	starts_locked = nameof(lock_at_start)),
-extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))),
-extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))),   // one extend per key: a list target is not supported
+	starts_locked = nameof(lock_at_start))
+extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_operable()))
+extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason))))   // one extend per key: a list target is not supported
 ```
 
 A condition is `x(datum/act/A)` (or `datum/act/op/A` when it reads `A.actor`/`A.held`), returns TRUE/FALSE, and **never writes, publishes or talks** (the
@@ -118,7 +118,7 @@ on_change(nameof(power_failed), ANY, then(PROC_REF(power_failed_changed))),
 
 **Construction.** Before: `cap_construction(ladder_options(...), stage("frame"), build_insert(...), build_wire(10, ...), build_fasten(...))`. After a
 bundle (`apc_frame()`) of `construction(start(STAGE_APC_FRAME), stage(...), ..., dismantle(tool(TOOL_WELDER), becomes(...), ruined(cond, becomes(...))), at(BAY_HATCH))`,
-a `STAGE_DEF` + `MSG_DEF(stage/apc/<name>)` per stage, a slot relation for `SLOT_CONSTRUCTION`, and `configure(CAP_CONSTRUCTION, start = STAGE_APC_SECURED)` on the type
+a `STAGE_DEF` + `MSG_DEF(stage/apc/<name>)` per stage, a slot relation for `SLOT_CONSTRUCTION`, and `configure(construction_graph(start = STAGE_APC_SECURED))` on the type
 placed finished. Code that makes the thing part-built (the frame item) calls `graph_place(src, STAGE_APC_FRAME)`.
 
 **Hits.** Before: `DAMAGE_REACTION(...)`/`before_op(damage(...))`. After: `extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))`
@@ -218,7 +218,7 @@ door's own ops (strike, reinforce, repair). A kind of door `without()`s what it 
 CAPABILITIES(/obj/machinery/button)
 	op("press", hand(), then(PROC_REF(pressed)))
 	extend("ui_open",
-		needs(req_is(STAT_OPERABLE)))
+		needs(req_operable()))
 ```
 
 `STATE_GRAPH(graph)` is the same. The entries compile (nothing calls them) so a misspelt part or a bad named argument is a compile or DreamChecker
