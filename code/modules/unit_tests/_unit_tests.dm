@@ -819,6 +819,7 @@
 #include "interim_camera_monitor_actor.dm"
 #include "interim_dragon_projectile_range_cleanup.dm"
 #include "interim_slime_potion_sticky_mimic.dm"
+#include "interim_ore_box_sticky_ore.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
