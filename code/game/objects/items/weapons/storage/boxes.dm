@@ -37,49 +37,60 @@
 
 // BubbleWrap - A box can be folded up to make card
 
-TYPE_TABLE(/obj/item/storage/box, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
-EXTEND_INTERACTIONS(/obj/item/storage/box, \
-	INTERACT_USE_AS(I_HELP, "Fold", PROC_REF(interaction_fold)), \
-	INTERACT_USE_AS(I_DISARM, "Fold", PROC_REF(interaction_fold)), \
-	INTERACT_USE_AS(I_GRAB, "Fold", PROC_REF(interaction_fold)), \
-	INTERACT_USE_AS(I_HURT, "Fold or crush", PROC_REF(interaction_fold)), \
-)
+TRACKED(/obj/item/storage/box, trash)
 
-/// Old attack_self: after the storage's own self-use, fold the box flat or crumple it.
-/obj/item/storage/box/proc/interaction_fold(mob/user, obj/item/held, datum/interaction/interaction)
-	if(interaction_self(user, held, interaction))
-		return TRUE
+CAPABILITIES(/obj/item/storage/box, \
+	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up))), \
+	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it))), \
+	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up))))
 
-	//try to fold it
-	if(ispath(foldable))
-		if (length(slot_contents(CONTAINER_SLOT_STORAGE)))
-			return
-		var/found = 0
-		// Close any open UI windows first
-		for(var/mob/M in range(1))
-			if (M.s_active == src)
-				close(M)
-			if (M == user)
-				found = 1
-		if (!found)	// User is too far away
-			return
-		// Now make the cardboard
-		to_chat(user, span_notice("You fold [src] flat."))
-		play_sfx(src, SFX_ITEMS_STORAGE_BOXFOLD)
-		replace_with(src, foldable)
+/// Used in hand, a box that dumps its contents does that and nothing else.
+/obj/item/storage/box/proc/used_to_empty()
+	return allow_quick_empty && !special_handling
 
-	//try to crush it
-	if(ispath(trash))
-		if(length(slot_contents(CONTAINER_SLOT_STORAGE)) && interaction.stance == I_HURT)  // only crush with things inside in combat mode.
-			act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
-			spill()
-		else
-			to_chat(user, span_notice("You crumple up \the [src].")) //make trash
-		play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER, 0.6)
-		var/obj/item/trash = new src.trash()
-		qdel(src)
-		user.put_in_hands(trash)
+/// A box that folds flat into something when it is empty.
+/obj/item/storage/box/proc/folds(datum/act/op/A)
+	return ispath(foldable) && !used_to_empty()
 
+/// A box that crumples into trash, with its contents or without.
+/obj/item/storage/box/proc/crumples(datum/act/op/A)
+	return ispath(trash) && !used_to_empty()
+
+/obj/item/storage/box/proc/cannot_fold(datum/act/op/A)
+	return !ispath(foldable)
+
+/obj/item/storage/box/proc/fold_up(datum/act/op/A)
+	var/mob/user = A.actor
+	// Close any open UI windows first
+	for(var/mob/M in range(1))
+		if (M.s_active == src)
+			close(M)
+	to_chat(user, span_notice("You fold [src] flat."))
+	play_sfx(src, SFX_ITEMS_STORAGE_BOXFOLD)
+	replace_with(src, foldable)
+	return OP_OK
+
+/// Only in combat mode, and with things inside: the box is crushed and its contents spill.
+/obj/item/storage/box/proc/crush_it(datum/act/op/A)
+	var/mob/user = A.actor
+	make_contents_real()
+	act_message(user, src, MSG_SELF(span_danger("You crush %T%, spilling its contents everywhere!")), MSG_OTHERS(span_danger("%U% crushes %T%, spilling its contents everywhere!")))
+	spill()
+	make_trash(user)
+	return OP_OK
+
+/obj/item/storage/box/proc/crumple_up(datum/act/op/A)
+	var/mob/user = A.actor
+	to_chat(user, span_notice("You crumple up \the [src].")) //make trash
+	make_trash(user)
+	return OP_OK
+
+/// The box is gone and its trash is in the hand.
+/obj/item/storage/box/proc/make_trash(mob/user)
+	play_sfx(src.loc, SFX_ITEMS_DROP_WRAPPER, 0.6)
+	var/obj/item/crumpled = new src.trash()
+	qdel(src)
+	user.put_in_hands(crumpled)
 
 /obj/item/storage/box/survival
 	name = "emergency supply box"
@@ -329,7 +340,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/box, \
 	icon_state = "monkeycubebox"
 	starts_with = list(/obj/item/reagent_containers/food/snacks/monkeycube/wrapped = 4)
 
-TYPE_TABLE(/obj/item/storage/box/monkeycubes, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/monkeycube)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/monkeycubes, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/monkeycube))))
 
 /obj/item/storage/box/monkeycubes/farwacubes
 	name = "farwa cube box"
@@ -434,7 +447,9 @@ TYPE_TABLE(/obj/item/storage/box/monkeycubes, hold_spec, list(HOLD_ONLY(list(/ob
 	icon_state = "spbox"
 	starts_with = list(/obj/item/toy/snappop = 8)
 
-TYPE_TABLE(/obj/item/storage/box/snappops, hold_spec, list(HOLD_ONLY(list(/obj/item/toy/snappop)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/snappops, \
+	configure(storage(accepts = list(/obj/item/toy/snappop))))
 
 /obj/item/storage/box/matches
 	name = "matchbox"
@@ -447,20 +462,22 @@ TYPE_TABLE(/obj/item/storage/box/snappops, hold_spec, list(HOLD_ONLY(list(/obj/i
 	drop_sound = SFX_ITEMS_DROP_MATCHBOX
 	pickup_sound =  SFX_ITEMS_PICKUP_MATCHBOX
 
-TYPE_TABLE(/obj/item/storage/box/matches, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/match)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
-EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_REF(interaction_strike)))
+CAPABILITIES(/obj/item/storage/box/matches, \
+	configure(storage(accepts = list(/obj/item/flame/match))), \
+	op("strike", item(/obj/item/flame/match), priority(above("storage.put_in")), label("Strike"), then(PROC_REF(strike_match))))
 
-/// Old attackby: strike a match. It never reached the storage's insertion.
-/obj/item/storage/box/matches/proc/interaction_strike(mob/user, obj/item/flame/match/W, datum/interaction/interaction)
-	if(istype(W) && !W.lit && !W.burnt)
+/// A match struck on the box: it never goes in, and it may light.
+/obj/item/storage/box/matches/proc/strike_match(datum/act/op/A)
+	var/obj/item/flame/match/W = A.held
+	if(!W.lit && !W.burnt)
 		if(prob(25))
-			W.light(user)
-			act_message(user, null, others = span_notice("%U% manages to light the match on the matchbox."))
+			W.light(A.actor)
+			act_message(A.actor, null, others = span_notice("%U% manages to light the match on the matchbox."))
 		else
 			play_sfx(src, SFX_ITEMS_CIGS_LIGHTERS_MATCHSTICK_HIT)
 	W.update_icon()
-	return INTERACTION_HANDLED_PASS
+	return OP_OK
 
 /obj/item/storage/box/autoinjectors
 	name = "box of injectors"
@@ -478,7 +495,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/box/matches, INTERACT_ITEM("Strike", PROC_
 	max_storage_space = ITEMSIZE_COST_SMALL * 24 //holds 24 items of w_class 2
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-TYPE_TABLE(/obj/item/storage/box/lights, hold_spec, list(HOLD_ONLY(list(/obj/item/light/tube, /obj/item/light/bulb)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/lights, \
+	configure(storage(accepts = list(/obj/item/light/tube, /obj/item/light/bulb))))
 
 /obj/item/storage/box/lights/bulbs
 	starts_with = list(
@@ -514,7 +533,13 @@ TYPE_TABLE(/obj/item/storage/box/lights, hold_spec, list(HOLD_ONLY(list(/obj/ite
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5 // Formally 21.  Odd numbers are bad.
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
-TYPE_TABLE(/obj/item/storage/box/freezer, hold_spec, list(HOLD_ONLY(list(/obj/item/organ, /obj/item/reagent_containers/blood, /obj/item/reagent_containers/glass, /obj/item/reagent_containers/food)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/box/freezer, \
+	configure(storage(accepts = list( \
+		/obj/item/organ, \
+		/obj/item/reagent_containers/blood, \
+		/obj/item/reagent_containers/glass, \
+		/obj/item/reagent_containers/food), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/box/freezer/red
 	icon_state = "portafreezer_red"
@@ -557,9 +582,13 @@ TYPE_TABLE(/obj/item/storage/box/freezer, hold_spec, list(HOLD_ONLY(list(/obj/it
 		/obj/item/ammo_magazine/ammo_box/cap = 1
 	)
 
+CAPABILITIES(/obj/item/storage/box/capguntoy, \
+	configure(storage(accepts = list( \
+		/obj/item/gun/projectile/revolver/capgun, \
+		/obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL)))
+
 //Donk-pockets
 
-TYPE_TABLE(/obj/item/storage/box/capguntoy, hold_spec, list(HOLD_ONLY(list(/obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/box/donkpockets
 	name = "box of donk-pockets"
 	desc = span_bold("Instructions:") + " " + span_italics("Heat in microwave. Product will cool if not eaten within seven minutes.")
@@ -637,7 +666,9 @@ TYPE_TABLE(/obj/item/storage/box/capguntoy, hold_spec, list(HOLD_ONLY(list(/obj/
 	max_storage_space = ITEMSIZE_COST_NORMAL * 6
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax = 6)
 
-TYPE_TABLE(/obj/item/storage/box/brainzsnax, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/canned)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/brainzsnax, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/canned))))
 
 /obj/item/storage/box/brainzsnax/red
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red = 6)

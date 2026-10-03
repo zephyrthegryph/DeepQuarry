@@ -5,7 +5,9 @@
 	icon_state = "dnakit"
 	storage_slots = 14
 
-TYPE_TABLE(/obj/item/storage/box/swabs, hold_spec, list(HOLD_ONLY(list(/obj/item/forensics/swab)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/swabs, \
+	configure(storage(accepts = list(/obj/item/forensics/swab))))
 
 /obj/item/storage/box/swabs/Initialize(mapload)
 	. = ..()
@@ -17,7 +19,9 @@ TYPE_TABLE(/obj/item/storage/box/swabs, hold_spec, list(HOLD_ONLY(list(/obj/item
 	desc = "A box claiming to contain evidence bags."
 	storage_slots = 7
 
-TYPE_TABLE(/obj/item/storage/box/evidence, hold_spec, list(HOLD_ONLY(list(/obj/item/evidencebag)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/evidence, \
+	configure(storage(accepts = list(/obj/item/evidencebag))))
 
 /obj/item/storage/box/evidence/Initialize(mapload)
 	. = ..()
@@ -31,7 +35,9 @@ TYPE_TABLE(/obj/item/storage/box/evidence, hold_spec, list(HOLD_ONLY(list(/obj/i
 	icon_state = "dnakit"
 	storage_slots = 14
 
-TYPE_TABLE(/obj/item/storage/box/fingerprints, hold_spec, list(HOLD_ONLY(list(/obj/item/sample/print)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/fingerprints, \
+	configure(storage(accepts = list(/obj/item/sample/print))))
 
 /obj/item/storage/box/fingerprints/Initialize(mapload)
 	. = ..()

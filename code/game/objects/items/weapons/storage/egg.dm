@@ -15,7 +15,9 @@
 	use_sound = SFX_ITEMS_DROP_FLESH
 	var/egg_name = null
 
-TYPE_TABLE(/obj/item/storage/vore_egg, hold_spec, list(HOLD_MAX_SIZE(0)))
+
+CAPABILITIES(/obj/item/storage/vore_egg, \
+	configure(storage(max_size = 0)))
 
 /obj/item/storage/vore_egg/Initialize(mapload)
 	. = ..()

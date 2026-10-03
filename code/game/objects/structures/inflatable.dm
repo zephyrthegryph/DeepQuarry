@@ -288,4 +288,6 @@ EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
 	starts_with = list(/obj/item/inflatable/door = 3, /obj/item/inflatable = 4)
 
-TYPE_TABLE(/obj/item/storage/briefcase/inflatable, hold_spec, list(HOLD_ONLY(list(/obj/item/inflatable)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/briefcase/inflatable, \
+	configure(storage(accepts = list(/obj/item/inflatable))))

@@ -50,7 +50,9 @@
 	max_storage_space = ITEMSIZE_SMALL * 21
 	resistance_flags = FLAMMABLE
 
-TYPE_TABLE(/obj/item/storage/bag/trash, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/bag/trash, \
+	configure(storage(refuses = list(/obj/item/disk/nuclear))))
 
 DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/bag/trash/appearance_overlays()
@@ -70,7 +72,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/trash, TYPE_PROC_REF(/atom, appear
 	max_storage_space = ITEMSIZE_COST_NORMAL * 10 // Slightly less than BoH
 	resistance_flags = FIRE_PROOF
 
-TYPE_TABLE(/obj/item/storage/bag/trash/holding, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bag/trash/holding, \
+	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
 
 APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
 
@@ -88,11 +92,13 @@ APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
 	w_class = ITEMSIZE_LARGE
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/plasticbag, \
+	configure(storage(refuses = list(/obj/item/disk/nuclear))))
+
 // -----------------------------
 //          Plant bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/plasticbag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/bag/plants
 	name = "plant bag"
 	icon = 'icons/obj/hydroponics_machines.dmi'
@@ -102,7 +108,12 @@ TYPE_TABLE(/obj/item/storage/bag/plasticbag, hold_spec, list(HOLD_NOT(list(/obj/
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-TYPE_TABLE(/obj/item/storage/bag/plants, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bag/plants, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/snacks/grown, \
+		/obj/item/seeds, \
+		/obj/item/grown), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/bag/plants/large
 	name = "large plant bag"
@@ -129,7 +140,9 @@ TYPE_TABLE(/obj/item/storage/bag/plants, hold_spec, list(HOLD_ONLY(list(/obj/ite
 	allow_quick_empty = 1 // this function is superceded
 	resistance_flags = FIRE_PROOF
 
-TYPE_TABLE(/obj/item/storage/bag/sheetsnatcher, hold_spec, list(HOLD_ONLY(list(/obj/item/stack/material))))
+
+CAPABILITIES(/obj/item/storage/bag/sheetsnatcher, \
+	configure(storage(accepts = list(/obj/item/stack/material), max_size = null)))
 
 /// Sheets only, counted by the sheet rather than by size or slot.
 /datum/om/relation/slot/storage/sheets
@@ -252,11 +265,16 @@ TYPE_TABLE(/obj/item/storage/bag/sheetsnatcher, hold_spec, list(HOLD_ONLY(list(/
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/cash, \
+	configure(storage(accepts = list( \
+		/obj/item/coin, \
+		/obj/item/spacecash, \
+		/obj/item/spacecasinocash), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //         Chemistry Bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/cash, hold_spec, list(HOLD_ONLY(list(/obj/item/coin,/obj/item/spacecash,/obj/item/spacecasinocash)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/chemistry
 	name = "chemistry bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -267,11 +285,17 @@ TYPE_TABLE(/obj/item/storage/bag/cash, hold_spec, list(HOLD_ONLY(list(/obj/item/
 	slowdown = 1 //you probably shouldn't be running with chemicals
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/chemistry, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/reagent_containers/hypospray/autoinjector))))
+
 // -----------------------------
 //           Xeno Bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/chemistry, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill,/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/hypospray/autoinjector)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/bag/xeno
 	name = "xenobiology bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -281,11 +305,16 @@ TYPE_TABLE(/obj/item/storage/bag/chemistry, hold_spec, list(HOLD_ONLY(list(/obj/
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/xeno, \
+	configure(storage(accepts = list( \
+		/obj/item/slime_extract, \
+		/obj/item/slimepotion, \
+		/obj/item/reagent_containers/food/snacks/monkeycube), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //         Virology Bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/xeno, hold_spec, list(HOLD_ONLY(list(/obj/item/slime_extract,/obj/item/slimepotion, /obj/item/reagent_containers/food/snacks/monkeycube)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/virology
 	name = "virology bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -295,11 +324,13 @@ TYPE_TABLE(/obj/item/storage/bag/xeno, hold_spec, list(HOLD_ONLY(list(/obj/item/
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/virology, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //           Food Bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/virology, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/food
 	name = "food bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -309,11 +340,15 @@ TYPE_TABLE(/obj/item/storage/bag/virology, hold_spec, list(HOLD_ONLY(list(/obj/i
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/food, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/snacks, \
+		/obj/item/reagent_containers/food/condiment), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //    Food Bag (Service Hound)
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/food, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/serviceborg
 	name = "service bag"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -323,13 +358,23 @@ TYPE_TABLE(/obj/item/storage/bag/food, hold_spec, list(HOLD_ONLY(list(/obj/item/
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FIRE_PROOF
 
+CAPABILITIES(/obj/item/storage/bag/serviceborg, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/snacks, \
+		/obj/item/reagent_containers/food/condiment, \
+		/obj/item/reagent_containers/glass/beaker, \
+		/obj/item/reagent_containers/glass/bottle, \
+		/obj/item/coin, \
+		/obj/item/spacecash, \
+		/obj/item/reagent_containers/food/snacks/grown, \
+		/obj/item/seeds, \
+		/obj/item/grown, \
+		/obj/item/reagent_containers/pill), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //           Evidence Bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/serviceborg, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks,/obj/item/reagent_containers/food/condiment, \
-	/obj/item/reagent_containers/glass/beaker,/obj/item/reagent_containers/glass/bottle,/obj/item/coin,/obj/item/spacecash, \
-	/obj/item/reagent_containers/food/snacks/grown,/obj/item/seeds,/obj/item/grown,/obj/item/reagent_containers/pill)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/detective
 	name = "secure satchel"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -339,11 +384,17 @@ TYPE_TABLE(/obj/item/storage/bag/serviceborg, hold_spec, list(HOLD_ONLY(list(/ob
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/storage/bag/detective, \
+	configure(storage(accepts = list( \
+		/obj/item/forensics/swab, \
+		/obj/item/sample/print, \
+		/obj/item/sample/fibers, \
+		/obj/item/evidencebag), max_size = ITEMSIZE_NORMAL)))
+
 // -----------------------------
 //          Santa bag
 // -----------------------------
 
-TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/item/forensics/swab,/obj/item/sample/print,/obj/item/sample/fibers,/obj/item/evidencebag)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/bag/santabag
 	name = "\improper Santa's gift bag"
 	desc = "Space Santa uses this to deliver toys to all the nice children in space in Christmas! Wow, it's pretty big!"
@@ -355,7 +406,9 @@ TYPE_TABLE(/obj/item/storage/bag/detective, hold_spec, list(HOLD_ONLY(list(/obj/
 	max_storage_space = ITEMSIZE_COST_NORMAL * 100 // can store a ton of shit!
 	resistance_flags = FIRE_PROOF //ho ho ho
 
-TYPE_TABLE(/obj/item/storage/bag/santabag, hold_spec, list(HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/bag/santabag, \
+	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
 
 DECLARE_APPEARANCE_PROC(/obj/item/storage/bag/santabag, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/bag/santabag/appearance_overlays()

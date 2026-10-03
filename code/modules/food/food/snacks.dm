@@ -5989,7 +5989,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mint, null, list(REAGE
 	foldable = null
 	trash = /obj/item/trash/admints
 
-TYPE_TABLE(/obj/item/storage/box/admints, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/mint/admints)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/admints, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints))))
 
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
@@ -7449,7 +7451,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/reishicup, null, list(
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/wings, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/chickenwing)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/wings
+
+
+CAPABILITIES(/obj/item/storage/box/wings, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing))))
 
 /obj/item/storage/box/wings/Initialize(mapload)
 	. = ..()
@@ -7822,8 +7828,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/nutriment, null, 
 		/obj/item/reagent_containers/food/snacks/cube/nutriment = 4
 	)
 
-TYPE_TABLE(/obj/item/storage/box/wings/tray, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/cube/protein, \
-					/obj/item/reagent_containers/food/snacks/cube/nutriment)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/wings/tray
+
+
+CAPABILITIES(/obj/item/storage/box/wings/tray, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/snacks/cube/protein, \
+		/obj/item/reagent_containers/food/snacks/cube/nutriment))))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/sif //Making fish meat non-toxic!  As advised by Ascian!
 	toxin_type = null
@@ -7906,7 +7917,9 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(
 		/obj/item/reagent_containers/food/snacks/grub = 6
 	)
 
-TYPE_TABLE(/obj/item/storage/box/wings/bucket, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/grub)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/wings/bucket, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub))))
 
 /obj/item/reagent_containers/food/snacks/grub
 	name = "grub"
@@ -8221,7 +8234,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/jaffacake, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/jaffacake)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/jaffacake
+
+
+CAPABILITIES(/obj/item/storage/box/jaffacake, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
 
 /obj/item/reagent_containers/food/snacks/winegum
 	name = "wine gum"
@@ -8271,7 +8288,11 @@ TYPE_TABLE(/obj/item/storage/box/jaffacake, hold_spec, list(HOLD_ONLY(list(/obj/
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/winegum, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/winegum)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/winegum
+
+
+CAPABILITIES(/obj/item/storage/box/winegum, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum))))
 
 /obj/item/reagent_containers/food/snacks/packaged/pasty
 	name = "Terran Pasty"
@@ -8312,7 +8333,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/saucer, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/saucer)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/saucer
+
+
+CAPABILITIES(/obj/item/storage/box/saucer, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer))))
 
 /obj/item/reagent_containers/food/snacks/custardcream
 	name = "Custard Cream"
@@ -8336,7 +8361,11 @@ TYPE_TABLE(/obj/item/storage/box/saucer, hold_spec, list(HOLD_ONLY(list(/obj/ite
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/custardcream, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/custardcream)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/custardcream
+
+
+CAPABILITIES(/obj/item/storage/box/custardcream, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream))))
 
 /obj/item/reagent_containers/food/snacks/bourbon
 	name = "Bourbon Biscuit"
@@ -8360,7 +8389,11 @@ TYPE_TABLE(/obj/item/storage/box/custardcream, hold_spec, list(HOLD_ONLY(list(/o
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/bourbon, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/bourbon)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/bourbon
+
+
+CAPABILITIES(/obj/item/storage/box/bourbon, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon))))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bourbon, null, list(REAGENT_ID_COCO = 2))
 
@@ -8420,7 +8453,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, nu
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/foam_banana,/obj/item/reagent_containers/food/snacks/foam_shrimp)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/shrimpsandbananas
+
+
+CAPABILITIES(/obj/item/storage/box/shrimpsandbananas, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/snacks/foam_banana, \
+		/obj/item/reagent_containers/food/snacks/foam_shrimp))))
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard
 	name = "Rhubarb and Custard Sweet"
@@ -8450,7 +8489,11 @@ TYPE_TABLE(/obj/item/storage/box/shrimpsandbananas, hold_spec, list(HOLD_ONLY(li
 	)
 	foldable = null
 
-TYPE_TABLE(/obj/item/storage/box/rhubarbcustard, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+/obj/item/storage/box/rhubarbcustard
+
+
+CAPABILITIES(/obj/item/storage/box/rhubarbcustard, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard))))
 
 /obj/item/reagent_containers/food/snacks/packaged/porkpie
 	name = "Pork Pie"

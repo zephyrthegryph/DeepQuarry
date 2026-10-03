@@ -64,7 +64,9 @@
 	icon_state = "surgerykit"
 	item_state = "firstaid-surgery"
 
-TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/firstaid/surgery, \
+	configure(storage(accepts = list( \
 		/obj/item/surgical/bone_clamp, \
 		/obj/item/surgical/bonesetter, \
 		/obj/item/surgical/cautery, \
@@ -79,8 +81,7 @@ TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/stack/nanopaste, \
 		/obj/item/healthanalyzer, \
 		/obj/item/autopsy_scanner, \
-		/obj/item/surgical/bioregen \
-		)), HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+		/obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
@@ -118,7 +119,6 @@ TYPE_TABLE(/obj/item/storage/firstaid/surgery, hold_spec, list(HOLD_ONLY(list( \
 	var/base_name = " "
 	var/base_desc = " "
 
-TYPE_TABLE(/obj/item/storage/pill_bottle, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill,/obj/item/dice,/obj/item/paper)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/pill_bottle/Initialize(mapload)
 	. = ..()
@@ -134,28 +134,29 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/pill_bottle, TYPE_PROC_REF(/atom, appe
 		I.color = wrapper_color
 		. += I
 
-EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_REF(interaction_label)))
+CAPABILITIES(/obj/item/storage/pill_bottle, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/dice, \
+		/obj/item/paper), max_size = ITEMSIZE_TINY)),, \
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), priority(above("storage.put_in")), label("Label"), \
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied))))
 
-/// Old attackby: a pen labels the bottle; anything else goes on to the storage's insertion.
-/obj/item/storage/pill_bottle/proc/interaction_label(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!istype(W, /obj/item/pen) && !istype(W, /obj/item/flashlight/pen))
-		return FALSE
-	om_ask(user, /datum/om/prompt/text, PROC_REF(label_entered), title = "Label", message = "Enter a label for [name]", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return INTERACTION_HANDLED_PASS
-
-/obj/item/storage/pill_bottle/proc/label_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/tmp_label = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).
+/obj/item/storage/pill_bottle/proc/label_applied(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/user = A.actor
+	var/tmp_label = sanitizeSafe("[R?.value]", MAX_NAME_LEN)
 	if(length(tmp_label) > 50)
 		to_chat(user, span_notice("The label can be at most 50 characters long."))
-	else if(length(tmp_label) > 10)
+		return OP_REFUSED
+	if(length(tmp_label) > 10)
 		to_chat(user, span_notice("You set the label."))
-		label_text = tmp_label
-		update_name_label()
 	else
 		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-		label_text = tmp_label
-		update_name_label()
+	label_text = tmp_label
+	update_name_label()
+	return OP_OK
 
 /obj/item/storage/pill_bottle/proc/update_name_label()
 	if(!label_text)
@@ -460,6 +461,9 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	icon_state = "pouch_small"
 
+CAPABILITIES(/obj/item/storage/mrebag/pill, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY)))
+
 /*
 /obj/item/storage/mrebag/pill/sleevingcure
 	name = "vacuum-sealed pill (" + REAGENT_SLEEVINGCURE + ")"
@@ -467,7 +471,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/pill_bottle, INTERACT_ITEM("Label", PROC_R
 	starts_with = list(/obj/item/reagent_containers/pill/sleevingcure)
 */
 
-TYPE_TABLE(/obj/item/storage/mrebag/pill, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/pill)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
 /obj/item/storage/pill_bottle/paracetamol
 	name = "pill bottle (" + REAGENT_PARACETAMOL + ")"

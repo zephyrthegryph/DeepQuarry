@@ -9,54 +9,13 @@
 	desc = "This object should not appear"
 	icon = 'icons/obj/storage_vr.dmi'
 
-	//Quickmode
+	//Quickmode, as the case starts out (the mode itself is the quickdraw() capability's state QUICKDRAW_DRAWS)
 	//When set to 0, this storage will operate as a regular storage, and clicking on it while equipped will open it as a storage
 	//When set to 1, a click while it is equipped will instead move the first item inside it to your hand
 	var/quickmode = 0
 
-EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
-	INTERACT_HAND_UNGATED("Draw", PROC_REF(interaction_quickdraw)), \
-	INTERACT_ALT("Switch quickdraw mode", PROC_REF(interaction_quickdraw_alt)), \
-	INTERACT_VERB("Switch Quickdraw Mode", PROC_REF(toggle_quickdraw_effect), REQ_IN_INVENTORY), \
-)
-
-/// Old attack_hand: in quickdraw mode a worn case hands over its first item; a pocketed one opens.
-/obj/item/storage/quickdraw/proc/interaction_quickdraw(mob/user, obj/item/held, datum/interaction/interaction)
-	if(loc == user) //If they aren't holding us, we do nothing special
-		if(ishuman(user))
-			var/mob/living/carbon/human/H = user
-			if(quickmode)
-				if(length(slot_contents(CONTAINER_SLOT_STORAGE)))
-					var/first_item = slot_contents(CONTAINER_SLOT_STORAGE)[1]
-					if(first_item && !H.get_active_hand()) //Do we have anything to give you?
-						H.put_in_hands(first_item)
-						return TRUE
-
-			if(H.get_equipped_item(SLOT_ID_POCKET_L) == src && !H.get_active_hand()) //overrides
-				open(user)
-				return TRUE
-			if(H.get_equipped_item(SLOT_ID_POCKET_R) == src && !H.get_active_hand())
-				open(user)
-				return TRUE
-	return FALSE //Nothing special happened: the storage's own touch
-
-
-/obj/item/storage/quickdraw/proc/toggle_quickdraw_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	quickmode = !quickmode
-	switch (quickmode)
-		if(1)
-			to_chat(user, "[src] now draws the first object inside.")
-		if(0)
-			to_chat(user, "[src] now opens as a container.")
-
-/// Old click_alt: the storage's own alt-click, then a carried case switches mode.
-/obj/item/storage/quickdraw/proc/interaction_quickdraw_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	. = interaction_alt(user, held, interaction)
-	if(src.loc == user) //Are they carrying us?
-		toggle_quickdraw_effect(user)
-		return TRUE
-
+CAPABILITIES(/obj/item/storage/quickdraw, \
+	quickdraw(starts = nameof(/obj/item/storage/quickdraw::quickmode)))
 
 // If we start adding more of these, we'll need to make them their own folder. 'til then, this one should be fine.
 
@@ -85,8 +44,15 @@ EXTEND_INTERACTIONS(/obj/item/storage/quickdraw, \
 		/obj/item/reagent_containers/syringe
 	)
 
-TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
+
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/reagent_containers/hypospray/autoinjector, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/pen, \
+		/obj/item/flashlight/pen, \
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_TINY)))
 
 /obj/item/storage/quickdraw/syringe_case/clotting
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -96,8 +62,15 @@ TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case, hold_spec, list(HOLD_ONLY(l
 		/obj/item/reagent_containers/hypospray/autoinjector/biginjector/clotting
 	)
 
-TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/clotting, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clotting, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/reagent_containers/hypospray/autoinjector, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/pen, \
+		/obj/item/flashlight/pen, \
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
 
 /obj/item/storage/quickdraw/syringe_case/bonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -107,8 +80,15 @@ TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/clotting, hold_spec, list(HO
 		/obj/item/reagent_containers/hypospray/autoinjector/bonemed
 	)
 
-TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/bonemed, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/bonemed, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/reagent_containers/hypospray/autoinjector, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/pen, \
+		/obj/item/flashlight/pen, \
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
 
 /obj/item/storage/quickdraw/syringe_case/clonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -118,5 +98,12 @@ TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/bonemed, hold_spec, list(HOL
 		/obj/item/reagent_containers/hypospray/autoinjector/clonemed
 	)
 
-TYPE_TABLE(/obj/item/storage/quickdraw/syringe_case/clonemed, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/syringe, /obj/item/reagent_containers/hypospray/autoinjector, \
-					/obj/item/reagent_containers/pill, /obj/item/pen, /obj/item/flashlight/pen, /obj/item/clothing/mask/smokable/cigarette)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clonemed, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/syringe, \
+		/obj/item/reagent_containers/hypospray/autoinjector, \
+		/obj/item/reagent_containers/pill, \
+		/obj/item/pen, \
+		/obj/item/flashlight/pen, \
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))

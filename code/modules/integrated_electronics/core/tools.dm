@@ -272,10 +272,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 	w_class = ITEMSIZE_NORMAL
 	display_contents_with_number = 0
 
-//Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
-//Which is enough to trigger byond's recursion level protection
-
-TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
+CAPABILITIES(/obj/item/storage/bag/circuits, \
+	configure(storage(accepts = list( \
 		/obj/item/integrated_circuit, \
 		/obj/item/storage/bag/circuits/mini, \
 		/obj/item/electronic_assembly, \
@@ -285,8 +283,11 @@ TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/multitool, \
 		/obj/item/integrated_electronics/wirer, \
 		/obj/item/integrated_electronics/debugger, \
-		/obj/item/integrated_electronics/detailer, \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/integrated_electronics/detailer))))
+
+//Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
+//Which is enough to trigger byond's recursion level protection
+
 /obj/item/storage/bag/circuits/basic/Initialize(mapload)
 	emp_protection_flags |= EMP_PROTECT_SELF
 	new /obj/item/storage/bag/circuits/mini/arithmetic(src)
@@ -345,7 +346,9 @@ TYPE_TABLE(/obj/item/storage/bag/circuits, hold_spec, list(HOLD_ONLY(list( \
 	display_contents_with_number = 1
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
 
-TYPE_TABLE(/obj/item/storage/bag/circuits/mini, hold_spec, list(HOLD_ONLY(list(/obj/item/integrated_circuit)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/bag/circuits/mini, \
+	configure(storage(accepts = list(/obj/item/integrated_circuit))))
 
 /obj/item/storage/bag/circuits/mini/arithmetic
 	name = "arithmetic circuit box"

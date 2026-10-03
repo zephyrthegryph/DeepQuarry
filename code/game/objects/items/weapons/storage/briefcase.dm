@@ -11,7 +11,9 @@
 	drop_sound = SFX_ITEMS_DROP_BACKPACK
 	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
-TYPE_TABLE(/obj/item/storage/briefcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
+
+CAPABILITIES(/obj/item/storage/briefcase, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)))
 
 /obj/item/storage/briefcase/clutch
 	name = "clutch purse"
@@ -22,7 +24,9 @@ TYPE_TABLE(/obj/item/storage/briefcase, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_N
 	w_class = ITEMSIZE_NORMAL
 	max_storage_space = ITEMSIZE_COST_SMALL * 4
 
-TYPE_TABLE(/obj/item/storage/briefcase/clutch, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/briefcase/clutch, \
+	configure(storage(max_size = ITEMSIZE_SMALL)))
 
 /obj/item/storage/briefcase/bookbag
 	name = "bookbag"
@@ -32,4 +36,3 @@ TYPE_TABLE(/obj/item/storage/briefcase/clutch, hold_spec, list(HOLD_MAX_SIZE(ITE
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 
-TYPE_TABLE(/obj/item/storage/briefcase/bookbag, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))

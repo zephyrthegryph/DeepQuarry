@@ -15,17 +15,22 @@
 		/obj/item/reagent_containers/food/drinks/metaglass/metapint
 	)
 
-TYPE_TABLE(/obj/item/storage/box/mixedglasses, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/drinks/glass2)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/mixedglasses, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/drinks/glass2))))
 
 /obj/item/storage/box/glasses
 	name = "box of glasses"
 	starts_with = list(/obj/item/reagent_containers/food/drinks/glass2 = 7)
 
-TYPE_TABLE(/obj/item/storage/box/glasses, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/drinks/glass2, \
+
+CAPABILITIES(/obj/item/storage/box/glasses, \
+	configure(storage(accepts = list( \
+		/obj/item/reagent_containers/food/drinks/glass2, \
 		/obj/item/reagent_containers/food/drinks/cup, \
 		/obj/item/reagent_containers/food/drinks/tall, \
 		/obj/item/reagent_containers/food/drinks/grande, \
-		/obj/item/reagent_containers/food/drinks/venti)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/reagent_containers/food/drinks/venti))))
 
 /obj/item/storage/box/glasses/square
 	name = "box of half-pint glasses"
@@ -72,7 +77,9 @@ TYPE_TABLE(/obj/item/storage/box/glasses, hold_spec, list(HOLD_ONLY(list(/obj/it
 	storage_slots = 14
 	starts_with = list(/obj/item/glass_extra = 14)
 
-TYPE_TABLE(/obj/item/storage/box/glass_extras, hold_spec, list(HOLD_ONLY(list(/obj/item/glass_extra)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/glass_extras, \
+	configure(storage(accepts = list(/obj/item/glass_extra))))
 
 /obj/item/storage/box/glass_extras/straws
 	name = "box of straws"

@@ -30,6 +30,24 @@
 	if(!holder)
 		return null
 	var/datum/ledger/L = holder.ledger
+	if(L && length(holder.contents) == L.tracked)
+		return L
+	// Building the ledger and adopting contents that arrived without a move are the ledger's own bookkeeping, done once and the same whoever asks: a
+	// condition or an output that reads the contents of a holder it is the first to ask about is not writing the holder's state, so the purity
+	// guard (code/engine/parts/purity.dm) is lifted for it.
+	var/pure_depth = GLOB.op_pure_depth
+	var/derived_depth = GLOB.derived_evaluating
+	GLOB.op_pure_depth = 0
+	GLOB.derived_evaluating = 0
+	L = dq_ledger_open(holder, destroying)
+	GLOB.op_pure_depth = pure_depth
+	GLOB.derived_evaluating = derived_depth
+	return L
+
+/// dq_ledger()'s slow path: the ledger built if there is none, and synced.
+/proc/dq_ledger_open(atom/holder, destroying = FALSE)
+	RETURN_TYPE(/datum/ledger)
+	var/datum/ledger/L = holder.ledger
 	if(!L)
 		var/list/defs = dq_slot_defs_for(holder)
 		if(!defs || (QDELETED(holder) && !(destroying && holder.gc_destroyed == GC_CURRENTLY_BEING_QDELETED)))

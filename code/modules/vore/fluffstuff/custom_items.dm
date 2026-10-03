@@ -647,7 +647,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	max_storage_space = ITEMSIZE_COST_SMALL * 2
 	w_class = ITEMSIZE_SMALL
 
-TYPE_TABLE(/obj/item/storage/box/khcrystal, hold_spec, list(HOLD_ONLY(list(/obj/item/paper/khcrystal_manual, /obj/item/clothing/accessory/collar/khcrystal)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/box/khcrystal, \
+	configure(storage(accepts = list( \
+		/obj/item/paper/khcrystal_manual, \
+		/obj/item/clothing/accessory/collar/khcrystal))))
 
 /obj/item/storage/box/khcrystal/Initialize(mapload)
 	. = ..()
@@ -1043,7 +1047,9 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	w_class = ITEMSIZE_HUGE
 	max_storage_space = 16
 
-TYPE_TABLE(/obj/item/storage/backpack/fluff/stunstaff, hold_spec, list(HOLD_ONLY(list(/obj/item/melee/baton/fluff/stunstaff)), HOLD_MAX_SIZE(ITEMSIZE_HUGE)))
+
+CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff, \
+	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
 
 /obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
 	. = ..()
@@ -1342,7 +1348,12 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/cl
 	w_class = ITEMSIZE_TINY
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
-TYPE_TABLE(/obj/item/storage/fancy/fluff/charlotte, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte, \
+	configure(storage(accepts = list( \
+		/obj/item/clothing/mask/smokable/cigarette, \
+		/obj/item/flame/lighter, \
+		/obj/item/trash/cigbutt))))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)

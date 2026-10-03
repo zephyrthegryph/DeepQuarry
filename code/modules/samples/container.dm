@@ -16,8 +16,10 @@
 	drop_sound = SFX_ITEMS_DROP_GASCAN
 	pickup_sound = SFX_ITEMS_PICKUP_GASCAN
 
-TYPE_TABLE(/obj/item/storage/sample_container, hold_spec, list(HOLD_ONLY(list(/obj/item/research_sample)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 
+
+CAPABILITIES(/obj/item/storage/sample_container, \
+	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY)))
 
 DECLARE_APPEARANCE_PROC(/obj/item/storage/sample_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/item/storage/sample_container/appearance_overlays()

@@ -1,5 +1,9 @@
 // The cell holder and charger capabilities (code/datums/capabilities/library/cell_holder.dm).
 
+/// Whether A's applied look carries the overlay `name`.
+/proc/dxs_has_layer(atom/A, name)
+	return dx_look_shows(A, name) ? TRUE : FALSE
+
 /// A cell behind the cover.
 /obj/cap_fixture/cell_box
 	var/obj/item/cell/cell

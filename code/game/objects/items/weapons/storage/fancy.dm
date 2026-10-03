@@ -61,10 +61,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy, TYPE_PROC_REF(/atom, appearance
 	storage_slots = 12
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
-TYPE_TABLE(/obj/item/storage/fancy/egg_box, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/fancy/egg_box, \
+	configure(storage(accepts = list( \
 		/obj/item/reagent_containers/food/snacks/egg, \
-		/obj/item/reagent_containers/food/snacks/boiledegg \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/reagent_containers/food/snacks/boiledegg))))
 
 /obj/item/storage/fancy/egg_box/Initialize(mapload)
 	if(!open_state)
@@ -112,7 +113,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/egg_box, TYPE_PROC_REF(/atom, ap
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle = 5)
 
-TYPE_TABLE(/obj/item/storage/fancy/candle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/candle_box, \
+	configure(storage(accepts = list(/obj/item/flame/candle))))
 
 /obj/item/storage/fancy/whitecandle_box
 	name = "white candle pack"
@@ -126,7 +129,9 @@ TYPE_TABLE(/obj/item/storage/fancy/candle_box, hold_spec, list(HOLD_ONLY(list(/o
 	max_storage_space = ITEMSIZE_COST_TINY * 5
 	starts_with = list(/obj/item/flame/candle/white = 5)
 
-TYPE_TABLE(/obj/item/storage/fancy/whitecandle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/whitecandle_box, \
+	configure(storage(accepts = list(/obj/item/flame/candle))))
 
 /obj/item/storage/fancy/blackcandle_box
 	name = "black candle pack"
@@ -141,11 +146,13 @@ TYPE_TABLE(/obj/item/storage/fancy/whitecandle_box, hold_spec, list(HOLD_ONLY(li
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
 
+CAPABILITIES(/obj/item/storage/fancy/blackcandle_box, \
+	configure(storage(accepts = list(/obj/item/flame/candle))))
+
 /*
  * Crayon Box
  */
 
-TYPE_TABLE(/obj/item/storage/fancy/blackcandle_box, hold_spec, list(HOLD_ONLY(list(/obj/item/flame/candle)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/fancy/crayons
 	name = "box of crayons"
 	desc = "A box of crayons for all your rune drawing needs."
@@ -158,9 +165,6 @@ TYPE_TABLE(/obj/item/storage/fancy/blackcandle_box, hold_spec, list(HOLD_ONLY(li
 	// collapsed into the parent type with a `variant` arg.
 	starts_with = list()
 
-TYPE_TABLE(/obj/item/storage/fancy/crayons, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/pen/crayon \
-	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/fancy/crayons/Initialize(mapload)
 	. = ..()
@@ -180,18 +184,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/crayons, TYPE_PROC_REF(/atom, ap
 		. += image('icons/obj/crayons.dmi',crayon.colourName)
 	appearance = ma
 
-EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/pen/crayon, PROC_REF(interaction_crayon), "Put in"))
-
-/// Old attackby: the mime and rainbow crayons refuse the box; the rest go on to the storage's insertion.
-/obj/item/storage/fancy/crayons/proc/interaction_crayon(mob/user, obj/item/pen/crayon/W, datum/interaction/interaction)
-	switch(W.colourName)
-		if("mime")
-			to_chat(user, "This crayon is too sad to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-		if("rainbow")
-			to_chat(user, "This crayon is too powerful to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+// The mime and rainbow crayons are too sad and too powerful for the box.
+CAPABILITIES(/obj/item/storage/fancy/crayons, \
+	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow))))
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -203,9 +198,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/crayons, INTERACT_INSERT(/obj/item/p
 	// variant-based marker spawn (see code/datums/variants/crayon_variants.dm).
 	starts_with = list()
 
-TYPE_TABLE(/obj/item/storage/fancy/markers, hold_spec, list(HOLD_ONLY(list( \
-		/obj/item/pen/crayon/marker \
-	)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 
 /obj/item/storage/fancy/markers/Initialize(mapload)
 	. = ..()
@@ -225,18 +217,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/markers, TYPE_PROC_REF(/atom, ap
 		ma.add_overlay(image('icons/obj/crayons.dmi',"m"+marker.colourName))
 	appearance = ma
 
-EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/pen/crayon/marker, PROC_REF(interaction_marker), "Put in"))
-
-/// Old attackby: the mime and rainbow markers refuse the box; the rest go on to the storage's insertion.
-/obj/item/storage/fancy/markers/proc/interaction_marker(mob/user, obj/item/pen/crayon/marker/W, datum/interaction/interaction)
-	switch(W.colourName)
-		if("mime")
-			to_chat(user, "This marker is too depressing to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-		if("rainbow")
-			to_chat(user, "This marker is too childish to be contained in this box.")
-			return INTERACTION_HANDLED_PASS
-	return FALSE
+CAPABILITIES(/obj/item/storage/fancy/markers, \
+	configure(storage(accepts = list(/obj/item/pen/crayon/marker))))
 
 /*
  * Cracker Pack
@@ -250,11 +232,13 @@ EXTEND_INTERACTIONS(/obj/item/storage/fancy/markers, INTERACT_INSERT(/obj/item/p
 	w_class = ITEMSIZE_SMALL
 	starts_with = list(/obj/item/reagent_containers/food/snacks/cracker = 6)
 
+CAPABILITIES(/obj/item/storage/fancy/crackers, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/cracker), max_size = ITEMSIZE_TINY)))
+
 /*
  * Cigarette Pack
  */
 
-TYPE_TABLE(/obj/item/storage/fancy/crackers, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/food/snacks/cracker)), HOLD_MAX_SIZE(ITEMSIZE_TINY)))
 /obj/item/storage/fancy/cigarettes
 	name = "\improper pack of Trans-Stellar Duty-frees"
 	desc = "A ubiquitous brand of cigarettes, found in every major spacefaring corporation in the universe. As mild and flavorless as it gets."
@@ -270,7 +254,12 @@ TYPE_TABLE(/obj/item/storage/fancy/crackers, hold_spec, list(HOLD_ONLY(list(/obj
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 6)
 	var/brand = "\improper Trans-Stellar Duty-free"
 
-TYPE_TABLE(/obj/item/storage/fancy/cigarettes, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette, /obj/item/flame/lighter, /obj/item/trash/cigbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/cigarettes, \
+	configure(storage(accepts = list( \
+		/obj/item/clothing/mask/smokable/cigarette, \
+		/obj/item/flame/lighter, \
+		/obj/item/trash/cigbutt))))
 
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
 	if(!open_state)
@@ -416,7 +405,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigarettes, TYPE_PROC_REF(/atom,
 	icon_type = "cigar"
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
 
-TYPE_TABLE(/obj/item/storage/fancy/cigar, hold_spec, list(HOLD_ONLY(list(/obj/item/clothing/mask/smokable/cigarette/cigar, /obj/item/trash/cigbutt/cigarbutt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/cigar, \
+	configure(storage(accepts = list( \
+		/obj/item/clothing/mask/smokable/cigarette/cigar, \
+		/obj/item/trash/cigbutt/cigarbutt))))
 
 /obj/item/storage/fancy/cigar/Initialize(mapload)
 	if(!open_state)
@@ -490,7 +483,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/storage/fancy/cigar, TYPE_PROC_REF(/atom, appe
 	storage_slots = 14
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
 
-TYPE_TABLE(/obj/item/storage/rollingpapers, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/rollingpaper)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/rollingpapers, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper))))
 
 /obj/item/storage/rollingpapers/blunt
 	name = "blunt wrap pack"
@@ -499,11 +494,13 @@ TYPE_TABLE(/obj/item/storage/rollingpapers, hold_spec, list(HOLD_ONLY(list(/obj/
 	storage_slots = 7
 	starts_with = list(/obj/item/reagent_containers/rollingpaper/blunt = 7)
 
+CAPABILITIES(/obj/item/storage/rollingpapers/blunt, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper/blunt))))
+
 /*
  * Vial Box
  */
 
-TYPE_TABLE(/obj/item/storage/rollingpapers/blunt, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/rollingpaper/blunt)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
 /obj/item/storage/fancy/vials
 	icon = 'icons/obj/vialbox.dmi'
 	icon_state = "vialbox6"
@@ -513,7 +510,9 @@ TYPE_TABLE(/obj/item/storage/rollingpapers/blunt, hold_spec, list(HOLD_ONLY(list
 	storage_slots = 6
 	starts_with = list(/obj/item/reagent_containers/glass/beaker/vial = 6)
 
-TYPE_TABLE(/obj/item/storage/fancy/vials, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/fancy/vials, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial))))
 
 /obj/item/storage/lockbox/vials
 	name = "secure vial storage box"
@@ -525,30 +524,24 @@ TYPE_TABLE(/obj/item/storage/fancy/vials, hold_spec, list(HOLD_ONLY(list(/obj/it
 	storage_slots = 6
 	req_access = list(ACCESS_VIROLOGY)
 
-TYPE_TABLE(/obj/item/storage/lockbox/vials, hold_spec, list(HOLD_ONLY(list(/obj/item/reagent_containers/glass/beaker/vial)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/lockbox/vials, \
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL)))
 
 /obj/item/storage/lockbox/vials/Initialize(mapload)
 	. = ..()
 	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/item/storage/lockbox/vials, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/storage/lockbox/vials/appearance_overlays()
-	. = list()
-	var/total_contents = length(slot_contents(CONTAINER_SLOT_STORAGE))
-	icon_state = "vialbox[total_contents]"
-	if (!broken)
-		. += "led[locked]"
-		if(locked)
-			. += "cover"
-	else
-		. += "ledb"
-
-EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PROC_REF(interaction_vials_item)))
-
-/// Old attackby: the lockbox's handling, then the vial display updates.
-/obj/item/storage/lockbox/vials/proc/interaction_vials_item(mob/user, obj/item/W, datum/interaction/interaction)
-	. = interaction_lockbox_item(user, W, interaction)
-	update_icon()
+/// The box shows how many vials it holds, its lock's light, and the cover while it is locked.
+/obj/item/storage/lockbox/vials/draw(datum/look/look)
+	. = ..()
+	look.state("vialbox[length(slot_contents(CONTAINER_SLOT_STORAGE))]")
+	if(broken)
+		look.overlay("ledb")
+		return
+	var/locked = lock_locked(src)
+	look.overlay("led[locked ? 1 : 0]")
+	look.overlay("cover", when = locked)
 
 /*
  * Box of Chocolates
@@ -569,11 +562,12 @@ EXTEND_INTERACTIONS(/obj/item/storage/lockbox/vials, INTERACT_ITEM("Put in", PRO
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle
 	)
 
-TYPE_TABLE(/obj/item/storage/fancy/heartbox, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/fancy/heartbox, \
+	configure(storage(accepts = list( \
 		/obj/item/reagent_containers/food/snacks/chocolatepiece, \
 		/obj/item/reagent_containers/food/snacks/chocolatepiece/white, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle))))
 
 /obj/item/storage/fancy/heartbox/Initialize(mapload)
 	. = ..()

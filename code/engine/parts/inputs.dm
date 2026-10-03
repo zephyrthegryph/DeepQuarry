@@ -56,7 +56,29 @@
 		return null
 	if(defer_legacy && winner.legacy)
 		return null
-	return op_begin(winner, R, null, FALSE)
+	return op_passes_chain(winner, op_begin(winner, R, null, FALSE), R, defer_legacy)
+
+/// passes(): an op that ends committed and passes does not use the input up. The next candidate whose conditions hold runs, then the next, until one
+/// does not pass or commits nothing. When the chain ends on a pass (and a player's click, which has the legacy handling to go on to), the result is
+/// null: the mob's own click handling takes the input from there, as it did before the type declared an op. A driver-built click returns the last result.
+/proc/op_passes_chain(datum/op_cand/winner, datum/op_result/result, datum/op_resolution/R, defer_legacy)
+	RETURN_TYPE(/datum/op_result)
+	var/datum/op_cand/last = winner
+	while(last.oplan.passes && result?.outcome == ACT_COMMITTED)
+		var/datum/op_cand/next = null
+		var/seen = FALSE
+		for(var/datum/op_cand/C as anything in R.ordered)
+			if(C == last)
+				seen = TRUE
+				continue
+			if(seen && op_cand_when(R, C))
+				next = C
+				break
+		if(!next || next.legacy)
+			return defer_legacy ? null : result
+		result = op_begin(next, R, null, FALSE)
+		last = next
+	return result
 
 /// Shows a gate refusal to an actor, at most once per GATE_FEEDBACK_INTERVAL.
 /proc/op_gate_feedback(mob/actor, reason)

@@ -3,7 +3,9 @@
 	icon = 'icons/obj/halloween/trash.dmi'
 	icon_state = "halloween_bag"
 
-TYPE_TABLE(/obj/item/storage/bag/plasticbag/halloween, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween, \
+	configure(storage(accepts = list( \
 		/obj/item/reagent_containers/food/snacks/candy, \
 		/obj/item/reagent_containers/food/snacks/candy_corn, \
 		/obj/item/reagent_containers/food/snacks/chocolatebar, \
@@ -34,8 +36,7 @@ TYPE_TABLE(/obj/item/storage/bag/plasticbag/halloween, hold_spec, list(HOLD_ONLY
 		/obj/item/reagent_containers/food/snacks/honey_candy, \
 		/obj/item/storage/box/winegum, \
 		/obj/item/storage/box/shrimpsandbananas, \
-		/obj/item/clothing/mask/chewable/candy/lolli \
-	)), HOLD_NOT(list(/obj/item/disk/nuclear)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/clothing/mask/chewable/candy/lolli), refuses = list(/obj/item/disk/nuclear))))
 
 /obj/structure/candybowl
 	name = "candy bowl"

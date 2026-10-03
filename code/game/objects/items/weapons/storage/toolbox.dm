@@ -20,9 +20,11 @@
 	drop_sound = SFX_ITEMS_DROP_TOOLBOX
 	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
+CAPABILITIES(/obj/item/storage/toolbox, \
+	configure(storage(max_size = ITEMSIZE_NORMAL)))
+
 //Emergency
 
-TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NORMAL)))
 /obj/item/storage/toolbox/emergency
 	name = "emergency toolbox"
 	icon = 'icons/obj/storage_vr.dmi'
@@ -149,7 +151,9 @@ TYPE_TABLE(/obj/item/storage/toolbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_NOR
 	var/filled = FALSE
 	attack_verb = list("lunched")
 
-TYPE_TABLE(/obj/item/storage/toolbox/lunchbox, hold_spec, list(HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+
+CAPABILITIES(/obj/item/storage/toolbox/lunchbox, \
+	configure(storage(max_size = ITEMSIZE_SMALL)))
 
 /obj/item/storage/toolbox/lunchbox/Initialize(mapload)
 	if(filled)

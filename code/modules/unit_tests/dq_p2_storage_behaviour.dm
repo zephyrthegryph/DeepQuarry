@@ -48,7 +48,10 @@
 
 /// The person switches the gathering method of the storage.
 /proc/sb_toggle_gathering(mob/M, obj/item/storage/S)
-	S.toggle_gathering_mode_effect(M)
+	M.drop_item()
+	M.put_in_active_hand(S) // the menu entry is for a storage the person carries
+	test_menu(M, S, "storage.gather_mode")
+	test_time(10 SECONDS)
 
 /// Every item inside, nested storage included.
 /proc/sb_all_inside(obj/item/storage/S)
@@ -56,7 +59,7 @@
 
 /// The lockbox is locked.
 /proc/sb_locked(obj/item/storage/lockbox/L)
-	return !!L.locked
+	return !!lock_locked(L)
 
 /// The lockbox's lock is broken for good.
 /proc/sb_broken(obj/item/storage/lockbox/L)
@@ -72,7 +75,7 @@
 
 /// The quickdraw case draws the first item to the hand instead of opening.
 /proc/sb_quickmode(obj/item/storage/quickdraw/Q)
-	return !!Q.quickmode
+	return !!quickdraw_draws(Q)
 
 /// The trinket box lid is open.
 /proc/sb_lid_open(obj/item/storage/trinketbox/T)
@@ -80,10 +83,7 @@
 
 /// The person writes `text` on the pill bottle's label after a pen was used on it (the prompt the click opened is answered).
 /proc/sb_write_label(mob/M, obj/item/storage/pill_bottle/B, text)
-	var/datum/om/prompt/text/ask = new
-	ask.answerer = M
-	ask.text = text
-	B.label_entered(ask)
+	test_answer(M, text)
 
 /// The MRE has been torn open.
 /proc/sb_torn_open(obj/item/storage/mre/M)
@@ -883,3 +883,16 @@
 	var/obj/item/p2_storage_probe/tiny/junk = sb_make(/obj/item/p2_storage_probe/tiny)
 	sb_click(H, L, junk)
 	TEST_ASSERT(junk.loc != L, "and nothing else")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The types that add ops to the storage ones declare cleanly
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Every type that has ops of its own beside the storage ones builds its table: an op clash between them is a declaration error that a type
+/// no other test clicks would hide.
+/datum/unit_test/dq_p2_storage/declared_types
+/datum/unit_test/dq_p2_storage/declared_types/run_gate()
+	var/list/types = list(/obj/item/storage/backpack/holding, /obj/item/storage/backpack/holding/duffle, /obj/item/storage/backpack/dufflebag, /obj/item/storage/backpack/parachute, 		/obj/item/storage/belt, /obj/item/storage/bible, /obj/item/storage/box, /obj/item/storage/box/matches, /obj/item/storage/fancy/crayons, /obj/item/storage/fancy/markers, 		/obj/item/storage/laundry_basket, /obj/item/storage/lockbox, /obj/item/storage/lockbox/vials, /obj/item/storage/mre, /obj/item/storage/mrebag, 		/obj/item/storage/pill_bottle, /obj/item/storage/quickdraw/syringe_case, /obj/item/storage/secure/briefcase, /obj/item/storage/secure/safe, /obj/item/storage/trinketbox)
+	for(var/path in types)
+		var/datum/type_table/T = table_of_type(path)
+		TEST_ASSERT(!isnull(T), "[path] builds a table")

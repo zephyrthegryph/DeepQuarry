@@ -61,6 +61,18 @@
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
 
+/obj/item/storage/lockbox/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(broken), nameof(icon_broken), nameof(icon_closed), nameof(icon_locked))
+
+/obj/item/storage/lockbox/vials/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(broken))
+
+/obj/item/storage/secure/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(emagged), nameof(icon_locking), nameof(icon_opened), nameof(icon_sparking), nameof(locked), nameof(sparking))
+
 /obj/machinery/atmospherics/binary/dp_vent_pump/generated_reads()
 	. = ..()
 	. += rust_push(nameof(external_pressure_bound), nameof(input_pressure_min), nameof(node1), nameof(node2), nameof(output_pressure_max), nameof(power_rating), nameof(pressure_checks), nameof(pump_direction), nameof(use_power))

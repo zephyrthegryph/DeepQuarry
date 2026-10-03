@@ -14,7 +14,9 @@
 
 	var/original_name // Due to loadout customizations and such
 
-TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
+
+CAPABILITIES(/obj/item/storage/wallet, \
+	configure(storage(accepts = list( \
 		/obj/item/spacecash, \
 		/obj/item/card, \
 		/obj/item/clothing/mask/smokable/cigarette/, \
@@ -47,8 +49,7 @@ TYPE_TABLE(/obj/item/storage/wallet, hold_spec, list(HOLD_ONLY(list( \
 		/obj/item/clothing/accessory/badge, \
 		/obj/item/makeover, \
 		/obj/item/pizzavoucher, \
-		/obj/item/card_fluff \
-		)), HOLD_MAX_SIZE(ITEMSIZE_SMALL)))
+		/obj/item/card_fluff))))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
