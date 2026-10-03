@@ -70,7 +70,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 
 /client/proc/vv_topic_delete(mob/user, list/args)
 	var/datum/target = args[VV_HK_TARGET]
-	admin_delete(target)
+	admin_delete(target, user)
 	if (isturf(target)) // show the turf that took its place
 		debug_variables(target)
 	return TRUE
