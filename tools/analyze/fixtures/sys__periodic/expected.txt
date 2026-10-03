@@ -17,6 +17,10 @@ om_after_rearm	code/game/machinery/rearm.dm	7
 om_after_rearm	code/game/machinery/rearm.dm	32
 om_after_rearm	code/game/machinery/rearm.dm	47
 om_after_rearm	code/game/machinery/rearm.dm	54
+om_after_rearm	code/game/machinery/rearm_after.dm	3
+om_after_rearm	code/game/machinery/rearm_after.dm	6
+om_after_rearm	code/game/machinery/rearm_after.dm	7
+om_after_rearm	code/game/machinery/rearm_after.dm	8
 periodic_guard	code/game/machinery/steps.dm	2
 periodic_guard	code/game/machinery/steps.dm	6
 periodic_guard	code/game/machinery/steps.dm	11

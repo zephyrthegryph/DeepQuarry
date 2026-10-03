@@ -2193,24 +2193,24 @@
 	into += entry_line(121)
 	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
 
-/// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:325
+/// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:326
 /obj/machinery/access_button/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/airlock_control.dm", 325, /obj/machinery/access_button)
-	into += entry_line(326)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 326, /obj/machinery/access_button)
+	into += entry_line(327)
 	into += list(global.multitool_settings(list( list("Tag", "master_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'."))))
-	into += entry_line(330)
-	into += list(global.op("press", global.inputs(global.hand(), global.item(/obj/item/card/id), global.item(/obj/item/pda)), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(button_allows), because = MSG(access_button/denied))), global.then(PROC_REF(pressed))))
 	into += entry_line(331)
+	into += list(global.op("press", global.inputs(global.hand(), global.item(/obj/item/card/id), global.item(/obj/item/pda)), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(button_allows), because = MSG(access_button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(332)
 	into += list(global.on_op("press", global.then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
 
-/// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:190
+/// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:191
 /obj/machinery/airlock_sensor/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/airlock_control.dm", 190, /obj/machinery/airlock_sensor)
-	into += entry_line(191)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 191, /obj/machinery/airlock_sensor)
+	into += entry_line(192)
 	into += list(global.multitool_settings(list( list("Master Tag", "master_tag", "text", 30), list("ID Tag", "id_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior."))))
-	into += entry_line(196)
+	into += entry_line(197)
 	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34

@@ -9,7 +9,7 @@
 /obj/effect/calldown_attack/Initialize(mapload)
 	. = ..()
 	var/delay = rand(2.5 SECONDS, 3 SECONDS)
-	after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object))
+	after(src, delay - 0.7 SECONDS, PROC_REF(spawn_object)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 
 /obj/effect/calldown_attack/proc/spawn_object()
 	new /obj/effect/falling_effect/calldown_attack(loc)

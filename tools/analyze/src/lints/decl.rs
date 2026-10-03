@@ -88,7 +88,7 @@ impl Decl {
                 ("init_registry", Pat::new(r"\bregistry_join\s*\([^)]*\bsrc\b|\bGLOB\.\w+\[[^\]]*\]\s*=\s*src\b")),
                 ("init_service", Pat::new(r"\bGLOB\.\w+_service\.\w+\(\s*src\b")),
                 ("init_bind", Pat::new(r"\bconnect_to_network\s*\(\s*\)|\bvg_\w*bind\w*\s*\(|\bheat_body_create\s*\(")),
-                ("init_scheduling", Pat::new(r"\bom_task_periodic\s*\(\s*src\s*,|\bom_attach\s*\(\s*src\s*,|\bom_after\s*\(\s*src\s*,")),
+                ("init_scheduling", Pat::new(r"\bom_task_periodic\s*\(\s*src\s*,|\bom_attach\s*\(\s*src\s*,|\b(?:om_after|after)\s*\(\s*src\s*,")),
                 ("init_visuals", Pat::new(r"\badd_overlay\s*\(|\bcut_overlays\s*\(|^\s*(?:src\.)?icon_state\s*=")),
             ],
             destroy_rules: vec![

@@ -215,7 +215,7 @@ fn unchanged(arg: &str, k: usize, params: &[String]) -> bool {
 
 fn scan_rearm(name: &str, params: &[String], stmts: &[(usize, usize, String)], hits: &mut Vec<usize>) {
     for (number, _indent, code) in stmts {
-        let Some(m) = pat!(r"\bom_after(?:_slot)?\s*\(\s*src\s*,(.*)$").captures(code) else { continue };
+        let Some(m) = pat!(r"\b(?:om_after|after)(?:_slot)?\s*\(\s*src\s*,(.*)$").captures(code) else { continue };
         let args = split_args(m.s(1));
         let mut target: Option<String> = None;
         let mut rest: &[String] = &[];
@@ -229,7 +229,16 @@ fn scan_rearm(name: &str, params: &[String], stmts: &[(usize, usize, String)], h
         if target.as_deref() != Some(name) {
             continue;
         }
-        if rest.iter().enumerate().all(|(k, a)| unchanged(a, k, params)) {
+        // after(): the extra arguments ride in `with = list(...)`; `key = ...` is not one.
+        let mut flat: Vec<String> = Vec::new();
+        for a in rest {
+            if let Some(w) = pat!(r"^with\s*=\s*list\s*\((.*)\)\s*$").captures(a) {
+                flat.extend(split_args(w.s(1)));
+            } else if !pat_match!(r"^key\s*=").is_match(a) {
+                flat.push(a.clone());
+            }
+        }
+        if flat.iter().enumerate().all(|(k, a)| unchanged(a, k, params)) {
             hits.push(*number);
         }
     }
@@ -387,7 +396,7 @@ fn pure_sites(f: &SourceFile) -> Vec<(u8, u32)> {
         return out;
     }
     let text = f.raw().text.as_str();
-    if !["PROCESS_KILL", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP"].iter().any(|k| text.contains(k)) {
+    if !["PROCESS_KILL", "after(", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP"].iter().any(|k| text.contains(k)) {
         return out;
     }
     let lines = f.raw().lines_vec();

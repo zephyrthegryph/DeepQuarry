@@ -75,3 +75,8 @@ var/global/x = 1
 	create_reagents(7)
 #define FOO 1
 	create_reagents(8)
+/obj/afterthing/Initialize(mapload)
+	after(src, 1 SECONDS, PROC_REF(y))
+	after(other, 1 SECONDS, PROC_REF(y))
+	after(src, 1 SECONDS, PROC_REF(y), with = list(1)) // ALLOW(decl): a counted retry the declaration cannot express
+	om_after(src, 1 SECONDS, PROC_REF(y))

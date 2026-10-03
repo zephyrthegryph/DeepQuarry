@@ -75,6 +75,8 @@ init_scheduling	code/modules/decl/init.dm	64
 init_scheduling	code/modules/decl/init.dm	65
 init_scheduling	code/modules/decl/init.dm	66
 init_scheduling	code/modules/decl/init.dm	70
+init_scheduling	code/modules/decl/init.dm	79
+init_scheduling	code/modules/decl/init.dm	82
 init_service	code/modules/decl/init.dm	12
 init_service	code/modules/decl/init.dm	63
 init_visuals	code/modules/decl/crlf.dm	3
