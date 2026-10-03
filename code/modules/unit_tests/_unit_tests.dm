@@ -830,6 +830,8 @@
 #include "interim_energy_segment_orphan_cleanup.dm"
 #include "interim_paicard_cell_repair_refusal.dm"
 #include "interim_paicard_cell_repair_consumption.dm"
+#include "interim_beehive_assembly_refusal.dm"
+#include "interim_beehive_assembly_consumption.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
