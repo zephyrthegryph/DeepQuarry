@@ -1,0 +1,31 @@
+/// Actual board insertion must refuse a sticky held board without advancing an empty frame; the same board succeeds once its actor can release it.
+/datum/unit_test/interim_frame_board_release_refusal/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/structure/frame/frame = allocate(/obj/structure/frame, T)
+	var/obj/item/circuitboard/autolathe/board = allocate(/obj/item/circuitboard/autolathe, T)
+	TEST_ASSERT(interim_construction_step(frame, user, /datum/interaction/construction/frame/anchor), "the actual empty machine frame can be anchored")
+	TEST_ASSERT(user.put_in_active_hand(board), "the actual actor holds the real matching autolathe board")
+	var/datum/interaction/construction/insertion
+	for(var/datum/interaction/construction/edge as anything in construction_edges_for(frame))
+		if(edge.type == /datum/interaction/construction/frame/insert_board)
+			insertion = edge
+			break
+	TEST_ASSERT_NOTNULL(insertion, "the actual empty frame exposes its real board-insertion edge")
+	add_trait(board, TRAIT_NODROP, "interim_frame_board_release_refusal")
+	TEST_ASSERT(user.release_refusal(board, user), "the actual actor genuinely cannot release the sticky board")
+	TEST_ASSERT_NOTNULL(insertion.why_not(user, frame, board), "the actual board-insertion requirement refuses the unreleasable board")
+	TEST_ASSERT(!insertion.perform(user, frame, board), "the actual interaction boundary refuses sticky board insertion")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_PLACED, "actual refusal preserves the empty frame's placed stage")
+	TEST_ASSERT_NULL(frame.circuit, "actual refusal cannot create a board ownership reference")
+	TEST_ASSERT_EQUAL(board.loc, user, "actual refusal preserves the board's original actor")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), board, "actual refusal preserves the board's exact active hand")
+	TEST_ASSERT(!LAZYLEN(user.do_afters), "actual refusal schedules no insertion task")
+	remove_trait(board, TRAIT_NODROP, "interim_frame_board_release_refusal")
+	TEST_ASSERT_NULL(insertion.why_not(user, frame, board), "the exact actual board is allowed when release becomes possible")
+	TEST_ASSERT(insertion.perform(user, frame, board), "the same actual board enters through its public construction edge")
+	TEST_ASSERT_EQUAL(frame.state, FRAME_UNFASTENED, "actual accepted insertion advances only after adopting the board")
+	TEST_ASSERT_EQUAL(frame.circuit, board, "actual accepted insertion adopts the exact original board")
+	TEST_ASSERT_EQUAL(board.loc, frame, "actual accepted insertion physically contains the board")
+	TEST_ASSERT_NULL(user.get_active_hand(), "actual accepted insertion clears the original hand")
+	TEST_ASSERT(frame.req_components[/obj/item/stock_parts/matter_bin] > 0, "actual accepted insertion establishes real autolathe part requirements")

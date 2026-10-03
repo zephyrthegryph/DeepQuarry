@@ -280,14 +280,20 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 /// checked the move (a one-call transfer, code/datums/ownership/transfer.dm), so it commits straight
 /// into `slot` with `flags`; otherwise slot_remove() checks it.
 /obj/item/storage/proc/storage_exit(obj/item/W, atom/destination, mob/user, slot = null, flags = 0, checked = FALSE)
+	var/previous_plane = W.plane
+	var/previous_layer = W.layer
 	if(ismob(destination))
 		W.hud_layerise()
 	else
 		W.reset_plane_and_layer()
+	var/moved
 	if(checked)
-		if(!dq_ledger_force_move(W, destination, flags, slot))
-			return FALSE
-	else if(!slot_remove(W, destination, user))
+		moved = dq_ledger_force_move(W, destination, flags, slot)
+	else
+		moved = slot_remove(W, destination, user)
+	if(!moved)
+		W.plane = previous_plane
+		W.layer = previous_layer
 		return FALSE
 	if(W.maptext)
 		W.maptext = ""

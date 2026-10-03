@@ -621,6 +621,9 @@
 #include "interim_rig_stat_control_data.dm"
 #include "interim_mining_conflict_data.dm"
 #include "interim_fixed_manual_data.dm"
+#include "interim_frame_board_release_refusal.dm"
+#include "interim_frame_unwire_component_refund.dm"
+#include "interim_storage_transfer_full_hud.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

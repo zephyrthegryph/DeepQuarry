@@ -135,10 +135,10 @@
 
 /datum/interaction/construction/frame/insert_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
+	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
+		return FALSE
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
-	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
-		return TRUE
 	if(frame.frame_type.frame_class == FRAME_CLASS_MACHINE)
 		frame.check_components()
 		frame.update_desc()
@@ -152,6 +152,9 @@
 	var/datum/frame/frame_types/board_type = board.board_type
 	if(board_type?.name != frame_type.name)
 		return "this frame does not accept circuit boards of this type"
+	var/refusal = board.loc?.release_refusal(board, actor)
+	if(refusal)
+		return refusal
 	return TRUE
 
 /datum/interaction/construction/frame/remove_board
