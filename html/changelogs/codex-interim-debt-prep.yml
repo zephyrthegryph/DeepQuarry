@@ -134,3 +134,4 @@ changes:
   - bugfix: "RIG and mech air controls retain the actual wearer or pilot; backpack pickup checks the initiating actor."
   - bugfix: "Seismic-charge upgrades consume their original laser before granting stronger blast settings."
   - bugfix: "Returned paper cups must leave their holder before restoring dispenser stock."
+  - bugfix: "Flamethrower recovery and sunflower seed harvesting respect sources that cannot leave your hand."

@@ -860,6 +860,7 @@
 #include "interim_balloon_mixed_capacity_refill.dm"
 #include "interim_cup_return_actor.dm"
 #include "interim_flamethrower_recovery.dm"
+#include "interim_sunflower_sticky_seed_harvest.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
