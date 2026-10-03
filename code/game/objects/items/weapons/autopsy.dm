@@ -59,8 +59,7 @@
 			else
 				D.organ_names += ", [O.name]"
 
-		qdel(LAZYACCESS(D.organs_scanned, O.name))
-		LAZYSET(D.organs_scanned, O.name, W.copy())
+		own_put(D, nameof(D.organs_scanned), O.name, W.copy())
 
 	for(var/V in O.trace_chemicals)
 		if(O.trace_chemicals[V] > 0 && !LAZYFIND(chemtraces, V))
