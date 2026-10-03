@@ -19,7 +19,6 @@
 #define LOOK_EMAGGED "emagged"
 #define LOOK_DARK "dark"
 #define LOOK_POWER "power"
-#define LOOK_LID "lid"
 #define LOOK_WIRES "wires"
 #define LOOK_CELL "cell"
 #define LOOK_BOLTS "bolts"
