@@ -196,7 +196,7 @@
 	act_message(user, src, MSG_SELF(span_notice("You pry open %T%.")), \
 		MSG_OTHERS(span_notice("%U% pries %T% open.")), \
 		MSG_BLIND(span_notice("You hear splitting wood.")))
-	qdel(src)
+	consume(src, user)
 	return TRUE
 
 /obj/structure/largecrate/animal/pred
