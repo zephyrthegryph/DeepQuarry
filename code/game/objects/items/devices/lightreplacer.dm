@@ -70,15 +70,20 @@
 /// The replacer is declared (doc/rewrite/conversion_guide.md): glass and lights fill it, a light fixture is its target, an emag card
 /// turns it on and off. Using it in the hand asks for a colour through the legacy prompt until the prompt kinds land.
 TRACKED(/obj/item/lightreplacer, emagged)
+TRACKED(/obj/item/lightreplacer, uses)
+TRACKED(/obj/item/lightreplacer, max_uses)
+TRACKED(/obj/item/lightpainter, resetmode)
 
 CAPABILITIES(/obj/item/lightreplacer, \
 	emag(then(PROC_REF(on_emag)), repeatable = TRUE), \
-	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), when(PROC_REF(plain_glass)), wait(0), \
-		needs(req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in))), \
+	op("add_glass", inputs(stack(/obj/item/stack/material/glass, 1), stack(/obj/item/stack/material/cyborg/glass, 1)), wait(0), \
+		needs(req(PROC_REF(plain_glass), because = MSG(lightreplacer/bad_glass)), req(PROC_REF(has_room), because = MSG(lightreplacer/full))), then(PROC_REF(glass_in))), \
 	op("add_light", item(/obj/item/light), wait(0), then(PROC_REF(light_in))), \
 	op("fill_from_box", item(/obj/item/storage), wait(0), then(PROC_REF(fill_from_box))), \
-	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at))))
+	op("replace", at_target(/obj/machinery/light), wait(0), then(PROC_REF(replace_light_at))), \
+	op("colour", in_hand(), when(PROC_REF(say_uses)), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", "default" = nameof(selected_color))), then(PROC_REF(colour_asked))))
 
+MSG_DEF_SELF(lightreplacer/bad_glass, "That is not glass.")
 MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 
 /// Old attackby never called ..() regardless of item type, so every click was swallowed.
@@ -86,9 +91,9 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 	..()
 	look.state("lightreplacer[emagged]")
 
+/// Reinforced glass is no glass for the replacer.
 /obj/item/lightreplacer/proc/plain_glass(datum/act/op/A)
-	var/obj/item/stack/W = A.held
-	return istype(W, /obj/item/stack/material/cyborg/glass) || (istype(W, /obj/item/stack/material) && W.get_material_name() == MAT_GLASS)
+	return !istype(A.held, /obj/item/stack/material/glass/reinforced)
 
 /obj/item/lightreplacer/proc/has_room(datum/act/op/A)
 	return uses < max_uses
@@ -161,18 +166,23 @@ MSG_DEF_SELF(lightreplacer/full, "The light replacer is full.")
 		ReplaceLight(A.target, A.actor)
 	return OP_OK
 
+/// Using it in the hand says how many lights it has and asks for the colour of the lights it makes.
+/obj/item/lightreplacer/proc/colour_asked(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(R?.value)
+		selected_color = R.value
+		to_chat(A.actor, "The light color has been changed.")
+	return OP_OK
+
+/obj/item/lightreplacer/proc/say_uses(datum/act/op/A)
+	return !special_handling
+
+/// The cyborg variant (dogborg_modules.dm) still answers its own use in the hand through the legacy table and calls up to this: the ordinary
+/// replacer's use is the colour op, so there is nothing for it to do.
 DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(interaction_self)))
 
 /obj/item/lightreplacer/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-	to_chat(user, "It has [uses] lights remaining.")
-	om_ask(user, /datum/om/prompt/color, PROC_REF(replacer_color_picked), message = "Choose a color to set the light to! (Default is [LIGHT_COLOR_INCANDESCENT_TUBE])", default = selected_color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/lightreplacer/proc/replacer_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		selected_color = ask.picked_color
-		to_chat(ask.answerer, "The light color has been changed.")
+	return FALSE
 
 /obj/item/lightreplacer/proc/Use(mob/user)
 
@@ -182,7 +192,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(intera
 
 // Negative numbers will subtract
 /obj/item/lightreplacer/proc/add_uses(amount = 1)
-	uses = min(max(uses + amount, 0), max_uses)
+	set_uses(min(max(uses + amount, 0), max_uses))
 
 /obj/item/lightreplacer/proc/AddShards(amount = 1)
 	bulb_shards += amount
@@ -212,7 +222,7 @@ DECLARE_INTERACTIONS(/obj/item/lightreplacer, INTERACT_USE(null, PROC_REF(intera
 					play_sfx(src, SFX_MACHINES_DING)
 				target.set_status(LIGHT_EMPTY)
 				rel_clear(target, nameof(target.installed_light)) //Remove the light! (its glass went into the shards)
-				target.latent_bulb = FALSE
+				target.set_latent_bulb(FALSE)
 				target.refresh_light()
 
 			var/obj/item/light/L2 = new target.light_type()
@@ -277,7 +287,8 @@ MATERIAL_MIX(/obj/item/lightpainter, list(MAT_STEEL = 5000,MAT_GLASS = 1500))
 			. += "It is currently coloring lights."
 
 CAPABILITIES(/obj/item/lightpainter, \
-	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light))))
+	op("paint", at_target(/obj/machinery/light), wait(0), then(PROC_REF(paint_light))), \
+	op("use", in_hand(), wait(0), asks(/datum/prompt/color, fields = list("question" = "Choose Light Color", "default" = nameof(setcolor)), when = PROC_REF(not_painting)), then(PROC_REF(used_in_hand))))
 
 /// The painter used on a fixture.
 /obj/item/lightpainter/proc/paint_light(datum/act/op/A)
@@ -285,26 +296,27 @@ CAPABILITIES(/obj/item/lightpainter, \
 		ColorLight(A.target, A.actor)
 	return OP_OK
 
-DECLARE_INTERACTIONS(/obj/item/lightpainter, INTERACT_USE(null, PROC_REF(interaction_self)))
+/// Using the painter in the hand: while it paints it goes back to reset mode; in reset mode it asks for the colour it paints.
+/obj/item/lightpainter/proc/not_painting(datum/act/A)
+	return !!resetmode
 
-/obj/item/lightpainter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!resetmode)
-		resetmode = 1
-		to_chat(user, span_infoplain("Painter reset."))
-	else
-		om_ask(user, /datum/om/prompt/color, PROC_REF(painter_color_picked), title = "Choose Light Color", message = "", default = setcolor, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/lightpainter/proc/painter_color_picked(datum/om/prompt/color/ask)
-	if(!ask.picked_color)
-		return
-	setcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/lightpainter/proc/used_in_hand(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	if(!R)
+		set_resetmode(1)
+		to_chat(A.actor, span_infoplain("Painter reset."))
+		return OP_OK
+	if(!R.value)
+		return OP_OK
+	setcolor = sanitize_hexcolor(R.value)
 	var/list/setcolorRGB = hex2rgb(setcolor)
 	var/setcolorR = num2hex(setcolorRGB[1] * dimming, 2)
 	var/setcolorG = num2hex(setcolorRGB[2] * dimming, 2)
 	var/setcolorB = num2hex(setcolorRGB[3] * dimming, 2)
 	setnightcolor = addtext("#", setcolorR, setcolorG, setcolorB)
-	resetmode = 0
-	to_chat(ask.answerer, span_infoplain("Painter color set."))
+	set_resetmode(0)
+	to_chat(A.actor, span_infoplain("Painter color set."))
+	return OP_OK
 
 /obj/item/lightpainter/proc/ColorLight(obj/machinery/light/target, mob/living/U)
 

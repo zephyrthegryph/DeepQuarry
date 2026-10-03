@@ -95,7 +95,7 @@ MSG_DEF_SELF(lightswitch/fastened_first, "You have to unscrew the case first.")
 
 /obj/structure/construction/proc/stage_changed(datum/act/op/A)
 	update_state()
-	playsound(src, 'sound/items/Screwdriver.ogg', 75, TRUE)
+	play_sfx(src, SFX_ITEMS_SCREWDRIVER, 75)
 	return OP_OK
 
 /obj/structure/construction/proc/wired(datum/act/op/A)

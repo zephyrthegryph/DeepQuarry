@@ -75,7 +75,7 @@ MSG_DEF_SELF(light/wrong_kind, "This type of light requires another kind.")
 	var/auto_flicker = FALSE // If true, will constantly flicker, so long as someone is around to see it (otherwise its a waste of CPU).
 	var/obj/item/cell/emergency_light/cell
 	/// World time the emergency discharge was last settled (0 for none).
-	var/emergency_discharge_started = 0
+	EXPIRY_DECLARE(emergency_discharge_started)
 	var/start_with_cell = TRUE	// if true, this fixture generates a very weak cell at roundstart
 	var/emergency_mode = FALSE	// if true, the light is in emergency mode
 	var/no_emergency = FALSE	// if true, this light cannot ever have an emergency mode
@@ -101,6 +101,8 @@ TRACKED(/obj/machinery/light, overlay_color)
 TRACKED(/obj/machinery/light, emergency_mode)
 TRACKED(/obj/machinery/light, nightshift_allowed)
 TRACKED(/obj/machinery/light, flickering)
+TRACKED(/obj/machinery/light, latent_bulb)
+TRACKED(/obj/machinery/light, auto_flicker)
 
 CAPABILITIES(/obj/machinery/light, \
 	powered(POWER_CHANNEL_LIGHTING), \
@@ -111,9 +113,10 @@ CAPABILITIES(/obj/machinery/light, \
 	contributes(STAT_AREA_EMERGENCY_OFF, PROC_REF(emergency_switched_off)), \
 	op("insert", item(/obj/item/light), label("Insert bulb"), wait(0), \
 		needs(req(PROC_REF(can_take_bulb), because = PROC_REF(bulb_refusal))), then(PROC_REF(insert_held))), \
-	op("remove", hand(), when(PROC_REF(bare_hand)), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb))), \
+	op("remove", hand(), when(req_empty_hand()), label("Remove bulb"), wait(0), then(PROC_REF(take_bulb))), \
 	op("hit", item(/obj/item), hostile(), wait(0), then(PROC_REF(hit_by))), \
 	op("open_casing", tool(TOOL_SCREWDRIVER), when(PROC_REF(socket_empty)), wait(0), then(PROC_REF(open_casing))), \
+	op("tune", tool(TOOL_MULTITOOL), when(PROC_REF(bulb_can_be_tuned)), light_tune_parts(TYPE_PROC_REF(/obj/machinery/light, tune_needs_number), TYPE_PROC_REF(/obj/machinery/light, tune_needs_color)), then(PROC_REF(tuned))), \
 	examine_line(PROC_REF(examine_status)), \
 	examine_line(PROC_REF(examine_charge)), \
 	on_change(nameof(status), ANY, then(PROC_REF(status_changed))), \
@@ -121,10 +124,6 @@ CAPABILITIES(/obj/machinery/light, \
 	on_change(nameof(area_emergency_off), ANY, then(PROC_REF(area_lighting_changed))), \
 	every(PROC_REF(flicker_delay), then(PROC_REF(do_flicker)), when = nameof(flickering)), \
 	every(2 SECONDS, then(PROC_REF(auto_flicker_check)), when = PROC_REF(flicker_watching)))
-
-/// The actor's hand is empty.
-/obj/machinery/light/proc/bare_hand(datum/act/op/A)
-	return isnull(A.held)
 
 /// The area's night shift reaches a fixture through its area (the area's stat is fed by its APC); a fixture that does not allow it ignores it.
 /obj/machinery/light/proc/wants_nightshift(datum/act/A)
@@ -407,7 +406,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /obj/machinery/light/proc/bulb()
 	RETURN_TYPE(/obj/item/light)
 	if(latent_bulb)
-		latent_bulb = FALSE
+		set_latent_bulb(FALSE)
 		var/obj/item/light/made = new light_type(src)
 		rel_set(src, nameof(installed_light), made)
 		made.set_status(status)
@@ -480,7 +479,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 	rel_set(src, nameof(installed_light), L)
 	. = TRUE
 	update_from_bulb(L)
-	latent_bulb = FALSE
+	set_latent_bulb(FALSE)
 
 	set_on(powered() && !turned_off()) // Do not instantly turn on lights if the area lightswitch is off
 	refresh_light()
@@ -495,7 +494,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 /obj/machinery/light/proc/remove_bulb()
 	switchcount = 0
 	rel_take(src, nameof(installed_light))
-	latent_bulb = FALSE
+	set_latent_bulb(FALSE)
 	set_bulb_status(LIGHT_EMPTY)
 	refresh_light()
 
@@ -835,7 +834,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 		return
 	// Charging is time based. Preserve the historical rate of 0.4 charge every two seconds while stable power is available.
 	var/charge_steps = CEILING((cell.maxcharge - cell.charge) / (LIGHT_EMERGENCY_POWER_USE * 2), 1)
-	after(src, max(1, charge_steps * (2 SECONDS)), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_WORLD)
+	after(src, charge_steps * (2 SECONDS), PROC_REF(finish_emergency_recharge), key = "recharge", clock = CLOCK_WORLD)
 
 /obj/machinery/light/proc/finish_emergency_recharge(datum/act/A)
 	if(QDELETED(src) || !cell || !has_power())
@@ -853,7 +852,7 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 
 /obj/machinery/light/proc/explode()
 	broken()	// break it first to give a warning
-	after(src, 2, PROC_REF(explode_now))
+	after(src, 0.2 SECONDS, PROC_REF(explode_now))
 
 /obj/machinery/light/proc/explode_now(datum/act/A)
 	if(QDELETED(src))
@@ -1016,8 +1015,9 @@ TRACKED(/obj/machinery/light/flamp, lamp_shade)
 TRACKED(/obj/item/light, status)
 
 CAPABILITIES(/obj/item/light, \
+	op("tune", tool(TOOL_MULTITOOL), light_tune_parts(TYPE_PROC_REF(/obj/item/light, tune_needs_number), TYPE_PROC_REF(/obj/item/light, tune_needs_color)), then(PROC_REF(tuned))), \
 	op("rig", item(/obj/item/reagent_containers/syringe), wait(0), then(PROC_REF(rigged_by_syringe))), \
-	op("shatter", at_target(), hostile(), when(PROC_REF(target_is_no_fixture)), wait(0), then(PROC_REF(shatter_on_hit))), \
+	op("shatter", at_target(), hostile(), when(cond_not(req(/obj/machinery/light, of = ON_TARGET))), wait(0), then(PROC_REF(shatter_on_hit))), \
 	on_change(nameof(status), ANY, then(PROC_REF(status_changed))))
 
 /// The picture of a light shows its state.
@@ -1054,69 +1054,118 @@ CAPABILITIES(/obj/item/light, \
 		brightness_power = fixture.brightness_power
 		brightness_color = fixture.brightness_color
 
-// attack bulb/tube with object
-// if a syringe, can inject phoron to make it explode
-/obj/item/light/multitool_act(mob/user, obj/item/tool)
-	var/static/list/menu_list = list(
-		"Normal Range",
-		"Normal Brightness",
-		"Normal Color",
-		"Nightshift Range",
-		"Nightshift Brightness",
-		"Nightshift Color",
-		)
+// ---- tuning a light with a multitool ----
+//
+// A multitool asks what to change, then asks for the new number or colour. The second question depends on the first answer, so each kind of
+// answer is a prompt of its own that fills itself from the first (prepare()) and is asked only for its choice (asks(when =)).
 
-	var/modification_decision = rerun_ask(user, "k1365", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/choice, message = "What do you wish to change about this light?", title = "Light Adjustment", choices = menu_list)
-	if(isnull(modification_decision))
-		return ITEM_INTERACT_BLOCKING
-	if(!modification_decision)
-		return ITEM_INTERACT_BLOCKING
-	switch(modification_decision)
-		if("Normal Range")
-			var/new_range = rerun_ask(user, "k1370", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new range of the light! (1-[init_brightness_range])", default = init_brightness_range, max = init_brightness_range, min = 1, timeout = 0)
-			if(isnull(new_range))
-				return ITEM_INTERACT_BLOCKING
-			if(new_range)
-				brightness_range = new_range
+#define LIGHT_TUNE_RANGE "Normal Range"
+#define LIGHT_TUNE_POWER "Normal Brightness"
+#define LIGHT_TUNE_COLOR "Normal Color"
+#define LIGHT_TUNE_NIGHT_RANGE "Nightshift Range"
+#define LIGHT_TUNE_NIGHT_POWER "Nightshift Brightness"
+#define LIGHT_TUNE_NIGHT_COLOR "Nightshift Color"
 
-		if("Normal Brightness")
-			var/new_power = rerun_ask(user, "k1375", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new brightness of the light! (0.01 - [init_brightness_power])", default = init_brightness_power, max = init_brightness_power, min = 0.01, round_entry = FALSE)
-			if(isnull(new_power))
-				return ITEM_INTERACT_BLOCKING
-			if(new_power)
-				brightness_power = new_power
+/// What the multitool does to a light (the bulb's own, or the fixture's, the same list): the choice, then the value it needs.
+/proc/light_tune_parts(needs_number, needs_color)
+	return list(
+		wait(0),
+		asks(/datum/prompt/choice, fields = list("question" = "What do you wish to change about this light?", "title" = "Light Adjustment", "choices" = list(LIGHT_TUNE_RANGE, LIGHT_TUNE_POWER, LIGHT_TUNE_COLOR, LIGHT_TUNE_NIGHT_RANGE, LIGHT_TUNE_NIGHT_POWER, LIGHT_TUNE_NIGHT_COLOR)), step = "what"),
+		asks(/datum/prompt/number/light_tune, step = "number", when = needs_number),
+		asks(/datum/prompt/color/light_tune, step = "color", when = needs_color))
 
-		if("Normal Color")
-			om_ask(user, /datum/om/prompt/color/light_bulb, PROC_REF(bulb_color_picked), default = brightness_color, nightshift = FALSE)
-			return ITEM_INTERACT_SUCCESS
+/// The multitool's second question for a number: the bounds and the start follow what was chosen.
+/datum/prompt/number/light_tune
+	title = "Light Adjustment"
 
-		if("Nightshift Range")
-			var/new_range = rerun_ask(user, "k1385", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new range of the light! (1-[init_nightshift_range])", default = init_nightshift_range, max = init_nightshift_range, min = 1)
-			if(isnull(new_range))
-				return ITEM_INTERACT_BLOCKING
-			if(new_range)
-				nightshift_range = new_range
+/datum/prompt/number/light_tune/prepare(datum/act/A)
+	var/datum/act/op/O = A
+	var/obj/item/light/B = light_tuned_bulb(O?.holder)
+	var/datum/prompt/choice = O?.step_answer("what")
+	if(!B || !choice)
+		return
+	switch(choice.value)
+		if(LIGHT_TUNE_RANGE)
+			question = "Choose the new range of the light! (1-[B.init_brightness_range])"
+			default = B.init_brightness_range
+			min_value = 1
+			max_value = B.init_brightness_range
+			step = 1
+		if(LIGHT_TUNE_POWER)
+			question = "Choose the new brightness of the light! (0.01 - [B.init_brightness_power])"
+			default = B.init_brightness_power
+			min_value = 0.01
+			max_value = B.init_brightness_power
+		if(LIGHT_TUNE_NIGHT_RANGE)
+			question = "Choose the new range of the light! (1-[B.init_nightshift_range])"
+			default = B.init_nightshift_range
+			min_value = 1
+			max_value = B.init_nightshift_range
+			step = 1
+		if(LIGHT_TUNE_NIGHT_POWER)
+			question = "Choose the new brightness of the light! (0.01 - [B.init_nightshift_power])"
+			default = B.init_nightshift_power
+			min_value = 0.01
+			max_value = B.init_nightshift_power
 
-		if("Nightshift Brightness")
-			var/new_power = rerun_ask(user, "k1390", TYPE_PROC_REF(/atom, multitool_act), args, /datum/om/prompt/number, message = "Choose the new brightness of the light! (0.01 - [init_nightshift_power])", default = init_nightshift_power, max = init_nightshift_power, min = 0.01, round_entry = FALSE)
-			if(isnull(new_power))
-				return ITEM_INTERACT_BLOCKING
-			if(new_power)
-				nightshift_power = new_power
+/// The multitool's second question for a colour.
+/datum/prompt/color/light_tune
+	question = "Choose a color to set the light to!"
+	title = "Light Adjustment"
 
-		if("Nightshift Color")
-			om_ask(user, /datum/om/prompt/color/light_bulb, PROC_REF(bulb_color_picked), default = nightshift_color, nightshift = TRUE)
-			return ITEM_INTERACT_SUCCESS
+/datum/prompt/color/light_tune/prepare(datum/act/A)
+	var/datum/act/op/O = A
+	var/obj/item/light/B = light_tuned_bulb(O?.holder)
+	var/datum/prompt/choice = O?.step_answer("what")
+	if(!B || !choice)
+		return
+	default = (choice.value == LIGHT_TUNE_NIGHT_COLOR) ? B.nightshift_color : B.brightness_color
 
-		else //Should never happen.
-			return ITEM_INTERACT_BLOCKING
+/// The bulb a multitool works on: the holder itself, or the bulb in a fixture.
+/proc/light_tuned_bulb(datum/holder)
+	var/obj/item/light/B = holder
+	if(istype(B))
+		return B
+	var/obj/machinery/light/L = holder
+	return istype(L) ? L.bulb() : null
+
+/// The first answer is one of the number choices.
+/obj/item/light/proc/tune_needs_number(datum/act/op/A)
+	var/datum/prompt/choice = A.step_answer("what")
+	return choice && (choice.value in list(LIGHT_TUNE_RANGE, LIGHT_TUNE_POWER, LIGHT_TUNE_NIGHT_RANGE, LIGHT_TUNE_NIGHT_POWER))
+
+/obj/item/light/proc/tune_needs_color(datum/act/op/A)
+	var/datum/prompt/choice = A.step_answer("what")
+	return choice && (choice.value in list(LIGHT_TUNE_COLOR, LIGHT_TUNE_NIGHT_COLOR))
+
+/// Applies the answers to this bulb; a bulb in a fixture tells the fixture.
+/obj/item/light/proc/apply_tune(datum/act/op/A)
+	var/datum/prompt/choice = A.step_answer("what")
+	var/datum/prompt/value = A.step_answer("number") || A.step_answer("color")
+	if(!choice || !value || isnull(value.value))
+		return OP_REFUSED
+	switch(choice.value)
+		if(LIGHT_TUNE_RANGE)
+			brightness_range = value.value
+		if(LIGHT_TUNE_POWER)
+			brightness_power = value.value
+		if(LIGHT_TUNE_COLOR)
+			brightness_color = value.value
+		if(LIGHT_TUNE_NIGHT_RANGE)
+			nightshift_range = value.value
+		if(LIGHT_TUNE_NIGHT_POWER)
+			nightshift_power = value.value
+		if(LIGHT_TUNE_NIGHT_COLOR)
+			nightshift_color = value.value
 	if(istype(loc, /obj/machinery/light))
 		var/obj/machinery/light/fixture = loc
 		fixture.update_from_bulb(src)
 		fixture.refresh_light()
 		fixture.refresh_light() //Yes it has to double update...Don't ask me why. I think it's stupid.
+	return OP_OK
 
-	return ITEM_INTERACT_SUCCESS
+/obj/item/light/proc/tuned(datum/act/op/A)
+	return apply_tune(A)
 
 /// A syringe emptied into a light: phoron rigs it to explode.
 /obj/item/light/proc/rigged_by_syringe(datum/act/op/A)
@@ -1136,9 +1185,6 @@ CAPABILITIES(/obj/item/light, \
 	return OP_OK
 
 /// A light used to hit anything but a fixture shatters (it was an attempt to put it in a socket otherwise).
-/obj/item/light/proc/target_is_no_fixture(datum/act/op/A)
-	return !istype(A.target, /obj/machinery/light)
-
 /obj/item/light/proc/shatter_on_hit(datum/act/op/A)
 	shatter()
 	return OP_OK
@@ -1192,7 +1238,7 @@ CAPABILITIES(/obj/item/light, \
 		construct.transfer_fingerprints_to(src)
 		set_dir(construct.dir)
 	else
-		latent_bulb = TRUE // the bulb is data until someone takes it (C5)
+		set_latent_bulb(TRUE) // the bulb is data until someone takes it (C5)
 		var/obj/item/light/L = get_light_type_instance(light_type) //This is fine, but old code.
 		update_from_bulb(L)
 		if(prob(L.broken_chance))
@@ -1365,7 +1411,7 @@ CAPABILITIES(/obj/machinery/light/flamp, \
 	anchor(), \
 	op("add_shade", item(/obj/item/lampshade), when(cond_not(nameof(lamp_shade))), wait(0), then(PROC_REF(shade_on))), \
 	op("remove_shade", tool(TOOL_SCREWDRIVER), when(nameof(lamp_shade)), priority(above("open_casing")), wait(0), then(PROC_REF(shade_off))), \
-	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(PROC_REF(bare_hand)), priority(above("remove")), wait(0), \
+	op("toggle", hand(), label("Toggle"), when(nameof(lamp_shade)), when(req_empty_hand()), priority(above("remove")), wait(0), \
 		needs(req(PROC_REF(has_light_in_fitting), because = PROC_REF(no_light_reason))), then(PROC_REF(toggle_lamp))), \
 	extend("open_casing", when(cond_not(nameof(lamp_shade)))))
 
@@ -1398,28 +1444,18 @@ MSG_DEF_SELF(light/no_bulb, "There is no bulb in this light.")
 		refresh_light()
 	return OP_OK
 
-/// The multitool still answers through the legacy prompts (the prompt kinds are another branch's): until it is an op the tool act stays.
-/obj/machinery/light/multitool_act(mob/user, obj/item/tool)
-	if(status == LIGHT_BROKEN || status == LIGHT_EMPTY || !has_bulb())
-		return NONE
-	return bulb().multitool_act(user, tool)
+/// A multitool on a fixture with a working bulb tunes that bulb.
+/obj/machinery/light/proc/bulb_can_be_tuned(datum/act/A)
+	return status != LIGHT_BROKEN && status != LIGHT_EMPTY && has_bulb()
 
-/// A multitool recolouring a bulb (normal or nightshift colour).
-/datum/om/prompt/color/light_bulb
-	message = "Choose a color to set the light to!"
-	ask_flags = ASK_CAPABLE
-	var/nightshift = FALSE
+/obj/machinery/light/proc/tune_needs_number(datum/act/op/A)
+	var/datum/prompt/choice = A.step_answer("what")
+	return choice && (choice.value in list(LIGHT_TUNE_RANGE, LIGHT_TUNE_POWER, LIGHT_TUNE_NIGHT_RANGE, LIGHT_TUNE_NIGHT_POWER))
 
-/obj/item/light/proc/bulb_color_picked(datum/om/prompt/color/light_bulb/ask)
-	var/new_color = ask.picked_color
-	if(!new_color)
-		return
-	if(ask.nightshift)
-		nightshift_color = new_color
-	else
-		brightness_color = new_color
-	if(istype(loc, /obj/machinery/light))
-		var/obj/machinery/light/fixture = loc
-		fixture.update_from_bulb(src)
-		fixture.refresh_light()
-		fixture.refresh_light()
+/obj/machinery/light/proc/tune_needs_color(datum/act/op/A)
+	var/datum/prompt/choice = A.step_answer("what")
+	return choice && (choice.value in list(LIGHT_TUNE_COLOR, LIGHT_TUNE_NIGHT_COLOR))
+
+/obj/machinery/light/proc/tuned(datum/act/op/A)
+	var/obj/item/light/B = bulb()
+	return B ? B.apply_tune(A) : OP_REFUSED

@@ -1615,7 +1615,7 @@
 /// A light replacer with `uses` lights.
 /datum/unit_test/dq_p2_lights/proc/replacer(uses = 10)
 	var/obj/item/lightreplacer/R = allocate(/obj/item/lightreplacer, tile(3, 3))
-	R.uses = uses
+	R.set_uses(uses)
 	return R
 
 /// A glass sheet makes sixteen lights, up to the replacer's limit.
@@ -1628,7 +1628,7 @@
 	click(H, R, G)
 	TEST_ASSERT_EQUAL(R.uses, 24, "sixteen lights for a sheet")
 	TEST_ASSERT_EQUAL(G.amount, 2, "one sheet used")
-	R.uses = R.max_uses
+	R.set_uses(R.max_uses)
 	click(H, R, G)
 	TEST_ASSERT_EQUAL(G.amount, 2, "a full replacer takes no glass")
 
@@ -1642,7 +1642,7 @@
 	click(H, R, B)
 	TEST_ASSERT_EQUAL(R.uses, 11, "one more light")
 	TEST_ASSERT(QDELETED(B), "the tube was taken in")
-	R.uses = R.max_uses
+	R.set_uses(R.max_uses)
 	var/obj/item/light/C = bulb()
 	click(H, R, C)
 	TEST_ASSERT(!QDELETED(C), "a full replacer leaves the tube alone")
@@ -1715,7 +1715,7 @@
 	TEST_ASSERT(p2l_bulb(L) == first, "the working tube is kept")
 	L.broken()
 	settle()
-	R.uses = 0
+	R.set_uses(0)
 	click(H, L, R)
 	TEST_ASSERT_EQUAL(p2l_status(L), LIGHT_BROKEN, "no lights, no replacement")
 
@@ -1787,6 +1787,6 @@
 /datum/unit_test/dq_p2_lights/using_a_painting_painter_resets_it/run_gate()
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/lightpainter/P = allocate(/obj/item/lightpainter, tile(0, 1))
-	P.resetmode = 0
+	P.set_resetmode(0)
 	click(H, P, P)
 	TEST_ASSERT(P.resetmode, "reset mode")

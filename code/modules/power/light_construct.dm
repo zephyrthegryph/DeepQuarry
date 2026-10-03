@@ -38,10 +38,11 @@ CAPABILITIES(/obj/machinery/light_construct, \
 	extend("construction.dismantle", needs(req_not(req_built(STAGE_LIGHT_FRAME_WIRED, because = MSG(light_frame/unwire_first)), because = MSG(light_frame/unwire_first)))), \
 	owns_one(nameof(cell), /obj/item/cell/emergency_light), \
 	cell_bay(nameof(cell), accepts = /obj/item/cell/emergency_light), \
-	extend("cell_bay.cell.take", when(PROC_REF(empty_handed))), \
+	extend("cell_bay.cell.take", when(req_empty_hand())), \
 	extend("cell_bay.cell.insert", needs(req(PROC_REF(takes_cells), because = MSG(light_frame/no_cells)), req_empty(nameof(cell), because = MSG(bay/full)))), \
 	examine_line(PROC_REF(examine_cell)))
 
+// INIT: fixture_type, facing and build stage taken from the fixture it was opened from
 /obj/machinery/light_construct/Initialize(mapload, newdir, building = 0, datum/frame/frame_types/frame_type, obj/machinery/light/fixture = null)
 	. = ..()
 	if(fixture)
@@ -56,10 +57,6 @@ CAPABILITIES(/obj/machinery/light_construct, \
 /// The picture follows how far the frame is built.
 /obj/machinery/light_construct/proc/update_state()
 	icon_state = built(src, STAGE_LIGHT_FRAME_WIRED) ? "[construct_state]-construct-stage2" : "[construct_state]-construct-stage1"
-
-/// Only an empty hand takes the cell out (a held item is used on the frame: cable, a tool, another cell).
-/obj/machinery/light_construct/proc/empty_handed(datum/act/op/A)
-	return isnull(A.held)
 
 /obj/machinery/light_construct/proc/takes_cells(datum/act/A)
 	return cell_connectors
@@ -135,6 +132,7 @@ CAPABILITIES(/obj/machinery/light_construct, \
 	fixture_type = /obj/machinery/light/floortube
 	sheets_refunded = 2
 
+// INIT: rotatable by hand
 /obj/machinery/light_construct/floortube/Initialize(mapload, newdir, building, datum/frame/frame_types/frame_type, obj/machinery/light/fixture)
 	. = ..()
 	make_rotatable()

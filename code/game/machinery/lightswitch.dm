@@ -38,7 +38,7 @@
 // the power_change() dispatch (an area calls it on every channel change and on every switch use).
 CAPABILITIES(/obj/machinery/light_switch, \
 	powered(POWER_CHANNEL_LIGHTING), \
-	op("toggle", hand(), when(PROC_REF(bare_hand)), label("Toggle"), wait(0), then(PROC_REF(toggle_lights))), \
+	op("toggle", hand(), when(req_empty_hand()), label("Toggle"), wait(0), then(PROC_REF(toggle_lights))), \
 	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes()), \
 	examine_line(PROC_REF(examine_state)), \
 	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_reread))))
@@ -52,10 +52,6 @@ CAPABILITIES(/obj/machinery/light_switch, \
 	look.state("light[on]")
 	look.light(2, 0.1, on ? "#82FF4C" : "#F86060")
 	look.glow("overlay")
-
-/// The actor's hand is empty (any other item used on it is only a touch).
-/obj/machinery/light_switch/proc/bare_hand(datum/act/op/A)
-	return isnull(A.held)
 
 /// Within reach it says what it is set to.
 /obj/machinery/light_switch/proc/examine_state(datum/act/op/A)
