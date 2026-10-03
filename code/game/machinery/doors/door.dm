@@ -65,21 +65,21 @@ MSG_DEF(door/reinforced, "You finish reinforcing %T%.", "%U% finishes reinforcin
 MSG_DEF(door/repaired, "You finish repairing the damage to %T%.", "%U% repairs %T%.")
 MSG_DEF(door/unreinforced, "You remove the plasteel from %T%.", "%U% removes the plasteel from %T%.")
 
-CAPABILITIES(/obj/machinery/door, \
-	machine_basics(null, repair = NONE, frame = NONE), \
-	doors(), \
-	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first)), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), then(PROC_REF(door_emag))), repeatable = TRUE), \
-	op("strike", item(/obj/item), hostile(), when(nameof(density)), when(cond_not(req(/obj/item/card))), when(cond_not(req(/obj/item/stack/material/plasteel))), then(PROC_REF(strike_with))), \
-	op("reinforce", item(/obj/item/stack/material/plasteel), priority(OP_PRIORITY_PART), then(PROC_REF(add_plasteel)), \
-		needs(req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), req(PROC_REF(not_damaged), because = MSG(door/repair_first)), req_is(nameof(density), because = MSG(door/close_first)))), \
-	op("weld_plasteel", tool(TOOL_WELDER), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(1 SECOND), costs(RES_FUEL, 0), \
-		needs(req_is(nameof(density), because = MSG(door/close_first)), req_at_least(nameof(reinforcing), 2, because = MSG(door/need_more_plasteel))), \
-		then(PROC_REF(plasteel_welded)), says(MSG(door/reinforced))), \
-	op("unreinforce", tool(TOOL_CROWBAR), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(remove_plasteel))), \
-	op("repair", tool(TOOL_WELDER), when(PROC_REF(repairable)), priority(OP_PRIORITY_PART), wait(PROC_REF(repair_time)), \
-		needs(req_is(nameof(density), because = MSG(door/close_first))), fixes(), says(MSG(door/repaired))), \
-	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at))), \
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp))))
+CAPABILITIES(/obj/machinery/door)
+	machine_basics(null, repair = NONE, frame = NONE)
+	doors()
+	emag(list(needs(req_is(nameof(density), because = MSG(door/close_first)), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), then(PROC_REF(door_emag))), repeatable = TRUE)
+	op("strike", item(/obj/item), hostile(), when(nameof(density)), when(cond_not(req(/obj/item/card))), when(cond_not(req(/obj/item/stack/material/plasteel))), then(PROC_REF(strike_with)))
+	op("reinforce", item(/obj/item/stack/material/plasteel), priority(OP_PRIORITY_PART), then(PROC_REF(add_plasteel)),
+		needs(req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), req(PROC_REF(not_damaged), because = MSG(door/repair_first)), req_is(nameof(density), because = MSG(door/close_first))))
+	op("weld_plasteel", tool(TOOL_WELDER), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(1 SECOND), costs(RES_FUEL, 0),
+		needs(req_is(nameof(density), because = MSG(door/close_first)), req_at_least(nameof(reinforcing), 2, because = MSG(door/need_more_plasteel))),
+		then(PROC_REF(plasteel_welded)), says(MSG(door/reinforced)))
+	op("unreinforce", tool(TOOL_CROWBAR), when(nameof(reinforcing)), priority(OP_PRIORITY_PART + 2), wait(0), then(PROC_REF(remove_plasteel)))
+	op("repair", tool(TOOL_WELDER), when(PROC_REF(repairable)), priority(OP_PRIORITY_PART), wait(PROC_REF(repair_time)),
+		needs(req_is(nameof(density), because = MSG(door/close_first))), fixes(), says(MSG(door/repaired)))
+	on_notice(/datum/notice/hit, then(PROC_REF(door_thrown_at)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(door_emp)))
 
 /obj/machinery/door/attack_generic(mob/user, damage)
 	if(isanimal(user))

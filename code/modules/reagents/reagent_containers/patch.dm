@@ -21,5 +21,5 @@
 
 // A patch is a pill that goes on the skin: on the limb aimed at, at once on yourself and in three seconds on somebody else. A missing or robotic limb refuses
 // it, and so does thick material (unless it pierces).
-CAPABILITIES(/obj/item/reagent_containers/pill/patch, \
-	configure(dose(route = CHEM_TOUCH, pierces = nameof(pierce_material))))
+CAPABILITIES(/obj/item/reagent_containers/pill/patch)
+	configure(dose(route = CHEM_TOUCH, pierces = nameof(pierce_material)))

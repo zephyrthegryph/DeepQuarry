@@ -9,9 +9,9 @@
 	var/first = 0
 	var/second = 0
 
-CAPABILITIES(/obj/p2s_chain, \
-	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(ran_first)), passes()), \
-	op("second", item(/obj/item), then(PROC_REF(ran_second))))
+CAPABILITIES(/obj/p2s_chain)
+	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(ran_first)), passes())
+	op("second", item(/obj/item), then(PROC_REF(ran_second)))
 
 /obj/p2s_chain/proc/ran_first(datum/act/op/A)
 	first++
@@ -27,9 +27,9 @@ CAPABILITIES(/obj/p2s_chain, \
 	var/first = 0
 	var/second = 0
 
-CAPABILITIES(/obj/p2s_chain_stop, \
-	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(ran_first))), \
-	op("second", item(/obj/item), then(PROC_REF(ran_second))))
+CAPABILITIES(/obj/p2s_chain_stop)
+	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), then(PROC_REF(ran_first)))
+	op("second", item(/obj/item), then(PROC_REF(ran_second)))
 
 /obj/p2s_chain_stop/proc/ran_first(datum/act/op/A)
 	first++
@@ -47,9 +47,9 @@ MSG_DEF_SELF(p2s/never, "Never.")
 	var/first = 0
 	var/second = 0
 
-CAPABILITIES(/obj/p2s_chain_refused, \
-	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(never), because = MSG(p2s/never))), then(PROC_REF(ran_first)), passes()), \
-	op("second", item(/obj/item), then(PROC_REF(ran_second))))
+CAPABILITIES(/obj/p2s_chain_refused)
+	op("first", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), needs(req(PROC_REF(never), because = MSG(p2s/never))), then(PROC_REF(ran_first)), passes())
+	op("second", item(/obj/item), then(PROC_REF(ran_second)))
 
 /obj/p2s_chain_refused/proc/never(datum/act/op/A)
 	return FALSE

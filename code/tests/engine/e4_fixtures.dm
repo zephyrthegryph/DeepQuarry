@@ -31,12 +31,12 @@ ACTION(e4_nest, notice = /datum/notice/e4_nested)
 
 /obj/e4_fixture/target
 
-CAPABILITIES(/obj/e4_fixture/target, \
-	extend(/datum/act/e4_strike, adjusts(amount, scale = 0.5)), \
-	extend(/datum/act/e4_strike, instead(when(nameof(shield)), then(PROC_REF(absorb)))), \
-	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard))), \
-	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED), \
-	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
+CAPABILITIES(/obj/e4_fixture/target)
+	extend(/datum/act/e4_strike, adjusts("amount", scale = 0.5))
+	extend(/datum/act/e4_strike, instead(when(nameof(shield)), then(PROC_REF(absorb))))
+	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard)))
+	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_when_replaced)), outcome = ACT_REPLACED)
+	on_notice(/datum/notice/e4_struck, then(PROC_REF(heard_whatever)), outcome = ACT_ANY)
 
 /obj/e4_fixture/target/proc/absorb(datum/act/A)
 	absorbed++
@@ -61,8 +61,8 @@ CAPABILITIES(/obj/e4_fixture/target, \
 /// Only a committed listener.
 /obj/e4_fixture/quiet
 
-CAPABILITIES(/obj/e4_fixture/quiet, \
-	on_notice(/datum/notice/e4_hushed, then(PROC_REF(heard))))
+CAPABILITIES(/obj/e4_fixture/quiet)
+	on_notice(/datum/notice/e4_hushed, then(PROC_REF(heard)))
 
 /obj/e4_fixture/quiet/proc/heard(datum/act/A)
 	heard_committed++
@@ -72,8 +72,8 @@ CAPABILITIES(/obj/e4_fixture/quiet, \
 	var/runs = 0
 	var/refused = 0
 
-CAPABILITIES(/obj/e4_fixture/nester, \
-	extend(/datum/act/e4_nest, instead(then(PROC_REF(again)))))
+CAPABILITIES(/obj/e4_fixture/nester)
+	extend(/datum/act/e4_nest, instead(then(PROC_REF(again))))
 
 /obj/e4_fixture/nester/proc/again(datum/act/A)
 	runs++
@@ -92,14 +92,14 @@ CAPABILITIES(/obj/e4_fixture/nester, \
 
 /obj/item/e4_fixture/amulet
 
-CAPABILITIES(/obj/item/e4_fixture/amulet, \
-	while_slotted("e4_slot", extend(/datum/act/e4_strike, adjusts(amount, by = 1)), on = ON_HOLDER))
+CAPABILITIES(/obj/item/e4_fixture/amulet)
+	while_slotted("e4_slot", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER)
 
 /// A bed whose occupant gets +2 while buckled in.
 /obj/e4_fixture/bed
 
-CAPABILITIES(/obj/e4_fixture/bed, \
-	while_slotted("e4_bed", extend(/datum/act/e4_strike, adjusts(amount, by = 2)), on = ON_CONTENTS))
+CAPABILITIES(/obj/e4_fixture/bed)
+	while_slotted("e4_bed", extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_CONTENTS)
 
 /// A listener that observes another entity at runtime: observe(source, notice, listener, parts...).
 /obj/e4_fixture/listener
@@ -128,8 +128,12 @@ CAPABILITIES(/obj/e4_fixture/bed, \
 TRACKED(/obj/e4_fixture/switch, powered)
 TRACKED(/obj/e4_fixture/switch, charge_level)
 
-// ALLOW(keys): the op key is published by hand in the test; no op declares it
-CAPABILITIES(/obj/e4_fixture/switch, 	on_change(nameof(powered), ENTER, then(PROC_REF(power_on))), 	on_change(nameof(powered), EXIT, then(PROC_REF(power_off))), 	on_change(nameof(charge_level), ANY, then(PROC_REF(charge_level_changed))), 	on_op("e4.toggle", then(PROC_REF(op_heard))))
+CAPABILITIES(/obj/e4_fixture/switch)
+	on_change(nameof(powered), ENTER, then(PROC_REF(power_on)))
+	on_change(nameof(powered), EXIT, then(PROC_REF(power_off)))
+	on_change(nameof(charge_level), ANY, then(PROC_REF(charge_level_changed)))
+	// ALLOW(keys): the op key is published by hand in the test; no op declares it
+	on_op("e4.toggle", then(PROC_REF(op_heard)))
 
 /obj/e4_fixture/switch/proc/power_on(datum/act/A)
 	entered++
@@ -148,8 +152,8 @@ CAPABILITIES(/obj/e4_fixture/switch, 	on_change(nameof(powered), ENTER, then(PRO
 	var/notices_heard = 0
 	var/last_bumped
 
-CAPABILITIES(/datum/om_test_entity/e4_twin, \
-	on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard))))
+CAPABILITIES(/datum/om_test_entity/e4_twin)
+	on_notice(/datum/notice/atom_bumped, then(PROC_REF(notice_heard)))
 
 /datum/om_test_entity/e4_twin/proc/notice_heard(datum/act/A)
 	var/datum/notice/atom_bumped/N = A

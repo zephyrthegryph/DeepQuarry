@@ -65,23 +65,23 @@
 	item_state = "firstaid-surgery"
 
 
-CAPABILITIES(/obj/item/storage/firstaid/surgery, \
-	configure(storage(accepts = list( \
-		/obj/item/surgical/bone_clamp, \
-		/obj/item/surgical/bonesetter, \
-		/obj/item/surgical/cautery, \
-		/obj/item/surgical/circular_saw, \
-		/obj/item/surgical/hemostat, \
-		/obj/item/surgical/retractor, \
-		/obj/item/surgical/scalpel, \
-		/obj/item/surgical/surgicaldrill, \
-		/obj/item/surgical/bonegel, \
-		/obj/item/surgical/FixOVein, \
-		/obj/item/stack/medical/advanced/bruise_pack, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/healthanalyzer, \
-		/obj/item/autopsy_scanner, \
-		/obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/firstaid/surgery)
+	configure(storage(accepts = list(
+		/obj/item/surgical/bone_clamp,
+		/obj/item/surgical/bonesetter,
+		/obj/item/surgical/cautery,
+		/obj/item/surgical/circular_saw,
+		/obj/item/surgical/hemostat,
+		/obj/item/surgical/retractor,
+		/obj/item/surgical/scalpel,
+		/obj/item/surgical/surgicaldrill,
+		/obj/item/surgical/bonegel,
+		/obj/item/surgical/FixOVein,
+		/obj/item/stack/medical/advanced/bruise_pack,
+		/obj/item/stack/nanopaste,
+		/obj/item/healthanalyzer,
+		/obj/item/autopsy_scanner,
+		/obj/item/surgical/bioregen), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/firstaid/clotting
 	name = "clotting kit"
@@ -135,13 +135,14 @@ CAPABILITIES(/obj/item/storage/firstaid/surgery, \
 	. = ..()
 	look.overlay(wrapper_image)
 
-CAPABILITIES(/obj/item/storage/pill_bottle, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/dice, \
-		/obj/item/paper), max_size = ITEMSIZE_TINY)),, \
-	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), priority(above("storage.put_in")), label("Label"), \
-		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied))))
+CAPABILITIES(/obj/item/storage/pill_bottle)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/pill,
+		/obj/item/dice,
+		/obj/item/paper), max_size = ITEMSIZE_TINY))
+	
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), priority(above("storage.put_in")), label("Label"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
 
 /// A pen wrote `value` on the bottle: the label (up to 50 letters; the name shows 10).
 /obj/item/storage/pill_bottle/proc/label_applied(datum/act/op/A)
@@ -462,8 +463,8 @@ CAPABILITIES(/obj/item/storage/pill_bottle, \
 	desc = "A small vacuum-sealed package containing a singular pill. For emergencies only."
 	icon_state = "pouch_small"
 
-CAPABILITIES(/obj/item/storage/mrebag/pill, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY)))
+CAPABILITIES(/obj/item/storage/mrebag/pill)
+	configure(storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY))
 
 /*
 /obj/item/storage/mrebag/pill/sleevingcure

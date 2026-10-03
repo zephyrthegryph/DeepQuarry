@@ -444,78 +444,78 @@ MSG_DEF(airlock/holds_open, "You begin holding %T% open.", "%U% begins holding %
 // of its electronics, a claw's tear, what a taped, signalling or cabled touch does, the ice, the hammer and the held-open door, the remote control
 // window and a cyborg's use, and the shock an electrified door gives whoever touches it (an early effect of every touch).
 
-CAPABILITIES(/obj/machinery/door/airlock, \
-	panel(), \
-	wires(PROC_REF(wires_type)), \
-	bolts(starts = nameof(bolted_at_start)), \
-	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start)), \
-	door_emergency(), \
-	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
-	interface("AiAirlock"), \
-	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0), \
-		needs(req(PROC_REF(pry_free), because = PROC_REF(pry_reason))), then(PROC_REF(pry_forced))), \
-	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")), \
-		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done))), \
-	op("wires_window", hand(), when(PANEL_OPEN), priority(OP_PRIORITY_PART), wait(0), \
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires))), \
-	op("tear", hand(), label("Tear"), when(req(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)), \
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done))), \
-	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held))), \
-	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch))), \
-	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin))), \
-	op("pry_weapon", item(/obj/item), when(req(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced))), \
-	op("hammer", menu(), stance(I_HURT), label("Hammer on the door"), wait(0), then(PROC_REF(hammer_on_door))), \
-	op("hold_open", menu(), stance(I_GRAB), label("Hold the door open"), wait(0), then(PROC_REF(hold_door_open))), \
-	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done))), \
-	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done))), \
-	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen), \
-		priority(OP_PRIORITY_SUBVERT + 1), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done))), \
-	op("disrupt_main", ui_act("disrupt-main"), then(PROC_REF(ui_disrupt_main))), \
-	op("disrupt_backup", ui_act("disrupt-backup"), then(PROC_REF(ui_disrupt_backup))), \
-	op("shock_restore", ui_act("shock-restore"), then(PROC_REF(ui_shock_restore))), \
-	op("shock_temp", ui_act("shock-temp"), then(PROC_REF(ui_shock_temp)), logs(LOG_GAME)), \
-	op("shock_perm", ui_act("shock-perm"), then(PROC_REF(ui_shock_perm)), logs(LOG_GAME)), \
-	op("idscan_toggle", ui_act("idscan-toggle"), then(PROC_REF(ui_idscan_toggle))), \
-	op("emergency_toggle", ui_act("emergency-toggle"), then(PROC_REF(ui_emergency_toggle)), logs(LOG_GAME)), \
-	op("bolt_toggle", ui_act("bolt-toggle"), then(PROC_REF(ui_bolt_toggle)), logs(LOG_GAME)), \
-	op("light_toggle", ui_act("light-toggle"), then(PROC_REF(ui_light_toggle))), \
-	op("safe_toggle", ui_act("safe-toggle"), then(PROC_REF(ui_safe_toggle))), \
-	op("speed_toggle", ui_act("speed-toggle"), then(PROC_REF(ui_speed_toggle))), \
-	op("open_close", ui_act("open-close"), then(PROC_REF(ui_open_close))), \
-	extend(TAG_UI, needs(req(PROC_REF(ui_user_allowed), because = MSG(airlock/not_for_you)))), \
-	extend("ui_open", when(req(PROC_REF(silicon_or_ghost)))), \
-	extend("panel.open", wait(0)), \
-	extend("panel.open", needs(req(PROC_REF(panel_closable), because = MSG(airlock/panel_broken)))), \
-	extend("panel.open", then(PROC_REF(panel_toggled))), \
-	extend("weld_shut.toggle", priority(above("repair"))), \
-	extend("weld_shut.toggle", when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP))))), \
-	extend("doors.open", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("doors.close", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("panel.open", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("wires.pulse", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("wires.cut", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("weld_shut.toggle", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("pry", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("remove_electronics", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("wires_window", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("tear", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("tape", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("signaler", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("pai_cable", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("pry_weapon", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("strike", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("reinforce", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("weld_plasteel", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("unreinforce", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("repair", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("emag.use", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("hold_open", then(PROC_REF(shock_toucher), early = TRUE)), \
-	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE)), \
-	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE)), \
-	extend("doors.open", then(PROC_REF(touched_early), early = TRUE)), \
-	extend("doors.close", then(PROC_REF(touched_early), early = TRUE)), \
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(airlock_emp))), \
-	every(1 SECOND, then(PROC_REF(command_step)), when = nameof(cur_command)))
+CAPABILITIES(/obj/machinery/door/airlock)
+	panel()
+	wires(PROC_REF(wires_type))
+	bolts(starts = nameof(bolted_at_start))
+	weld_shut(offered = PROC_REF(weld_offered), starts = nameof(welded_at_start))
+	door_emergency()
+	owns_one(nameof(electronics), /obj/item/airlock_electronics)
+	interface("AiAirlock")
+	op("pry", tool(TOOL_CROWBAR), stance(I_HELP, I_DISARM, I_GRAB), wait(0),
+		needs(req(PROC_REF(pry_free), because = PROC_REF(pry_reason))), then(PROC_REF(pry_forced)))
+	op("remove_electronics", tool(TOOL_CROWBAR), label("Remove electronics"), when(PROC_REF(can_remove_electronics)), priority(above("pry")),
+		wait(4 SECONDS), then(PROC_REF(crowbar_act_tool_done)))
+	op("wires_window", hand(), when(PANEL_OPEN), priority(OP_PRIORITY_PART), wait(0),
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(show_wires)))
+	op("tear", hand(), label("Tear"), when(req(PROC_REF(claws_tear))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(tear_wait)),
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(tear_done)))
+	op("tape", item(/obj/item/taperoll), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(touched_by_held)))
+	op("signaler", item(/obj/item/assembly/signaler), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(signaler_touch)))
+	op("pai_cable", item(/obj/item/pai_cable), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pai_cable_plugin)))
+	op("pry_weapon", item(/obj/item), when(req(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced)))
+	op("hammer", menu(), stance(I_HURT), label("Hammer on the door"), wait(0), then(PROC_REF(hammer_on_door)))
+	op("hold_open", menu(), stance(I_GRAB), label("Hold the door open"), wait(0), then(PROC_REF(hold_door_open)))
+	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done)))
+	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
+	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen),
+		priority(OP_PRIORITY_SUBVERT + 1), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done)))
+	op("disrupt_main", ui_act("disrupt-main"), then(PROC_REF(ui_disrupt_main)))
+	op("disrupt_backup", ui_act("disrupt-backup"), then(PROC_REF(ui_disrupt_backup)))
+	op("shock_restore", ui_act("shock-restore"), then(PROC_REF(ui_shock_restore)))
+	op("shock_temp", ui_act("shock-temp"), then(PROC_REF(ui_shock_temp)), logs(LOG_GAME))
+	op("shock_perm", ui_act("shock-perm"), then(PROC_REF(ui_shock_perm)), logs(LOG_GAME))
+	op("idscan_toggle", ui_act("idscan-toggle"), then(PROC_REF(ui_idscan_toggle)))
+	op("emergency_toggle", ui_act("emergency-toggle"), then(PROC_REF(ui_emergency_toggle)), logs(LOG_GAME))
+	op("bolt_toggle", ui_act("bolt-toggle"), then(PROC_REF(ui_bolt_toggle)), logs(LOG_GAME))
+	op("light_toggle", ui_act("light-toggle"), then(PROC_REF(ui_light_toggle)))
+	op("safe_toggle", ui_act("safe-toggle"), then(PROC_REF(ui_safe_toggle)))
+	op("speed_toggle", ui_act("speed-toggle"), then(PROC_REF(ui_speed_toggle)))
+	op("open_close", ui_act("open-close"), then(PROC_REF(ui_open_close)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_user_allowed), because = MSG(airlock/not_for_you))))
+	extend("ui_open", when(req(PROC_REF(silicon_or_ghost))))
+	extend("panel.open", wait(0))
+	extend("panel.open", needs(req(PROC_REF(panel_closable), because = MSG(airlock/panel_broken))))
+	extend("panel.open", then(PROC_REF(panel_toggled)))
+	extend("weld_shut.toggle", priority(above("repair")))
+	extend("weld_shut.toggle", when(cond_any(cond_not(PROC_REF(damaged)), cond_not(req_stance(I_HELP)))))
+	extend("doors.open", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("doors.close", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("panel.open", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("wires.pulse", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("wires.cut", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("weld_shut.toggle", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("pry", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("remove_electronics", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("wires_window", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("tear", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("tape", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("signaler", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("pai_cable", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("pry_weapon", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("strike", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("reinforce", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("weld_plasteel", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("unreinforce", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("repair", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("emag.use", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("hold_open", then(PROC_REF(shock_toucher), early = TRUE))
+	extend("doors.open", then(PROC_REF(hold_release_touch), early = TRUE))
+	extend("doors.close", then(PROC_REF(hold_release_touch), early = TRUE))
+	extend("doors.open", then(PROC_REF(touched_early), early = TRUE))
+	extend("doors.close", then(PROC_REF(touched_early), early = TRUE))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(airlock_emp)))
+	every(1 SECOND, then(PROC_REF(command_step)), when = nameof(cur_command))
 
 /obj/machinery/door/airlock/draw(datum/look/look)
 	..()

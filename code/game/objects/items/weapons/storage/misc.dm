@@ -40,8 +40,8 @@ GLOBAL_LIST_INIT(random_weighted_donuts, list(
 	//starts_with = list(/obj/item/reagent_containers/food/snacks/donut/normal = 6)
 
 
-CAPABILITIES(/obj/item/storage/box/donut, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut))))
+CAPABILITIES(/obj/item/storage/box/donut)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut)))
 
 /obj/item/storage/box/donut/Initialize(mapload)
 	if(!empty)
@@ -80,11 +80,11 @@ READS_AS(/obj/item/storage/box/donut/proc/donut_overlays, STORAGE_CONTENTS_KEY)
 	starts_with = list(/obj/item/reagent_containers/food/snacks/worm = 6)
 
 
-CAPABILITIES(/obj/item/storage/box/wormcan, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/wormsickly, \
-		/obj/item/reagent_containers/food/snacks/worm, \
-		/obj/item/reagent_containers/food/snacks/wormdeluxe))))
+CAPABILITIES(/obj/item/storage/box/wormcan)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/wormsickly,
+		/obj/item/reagent_containers/food/snacks/worm,
+		/obj/item/reagent_containers/food/snacks/wormdeluxe)))
 
 /obj/item/storage/box/wormcan/Initialize(mapload)
 	. = ..()

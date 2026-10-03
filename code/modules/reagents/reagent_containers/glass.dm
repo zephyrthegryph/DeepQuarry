@@ -61,9 +61,9 @@ CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER, key = NONE)
 		op("milk", at_target(/mob/living), answers(INTENT_ATTACK, INTENT_USE), priority(OP_PRIORITY_ATTACK), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Milk venom"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, venom_milked))))
 
-CAPABILITIES(/obj/item/reagent_containers/glass, \
-	glass_handling(), \
-	glass_container())
+CAPABILITIES(/obj/item/reagent_containers/glass)
+	glass_handling()
+	glass_container()
 
 MSG_DEF_SELF(glass/label_too_long, "The label can be at most 50 characters long.")
 MSG_DEF_SELF(glass/no_venom, "That creature has no venom you can express. Open the container to drink from it.")
@@ -293,12 +293,12 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	draw_glass(look, initial(icon_state), FALSE, FALSE)
 
 // A bucket is wetted into a mop, a bar of soap, made into a bucket sensor with a proximity sensor, armed with a sheet of steel, and cut into a helmet.
-CAPABILITIES(/obj/item/reagent_containers/glass/bucket, \
-	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added))), \
-	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed))), \
-	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"), \
-		needs(req_reagents(1, because = MSG(glass/bucket_empty))), then(PROC_REF(wetted))), \
-	op("cut_helmet", tool(TOOL_WIRECUTTER), wait(0), label("Cut a hole in it"), then(PROC_REF(cut_into_helmet))))
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket)
+	op("sensor", item(/obj/item/assembly/prox_sensor), priority(OP_PRIORITY_PART), label("Add the sensor"), then(PROC_REF(sensor_added)))
+	op("robot_frame", stack(/obj/item/stack/material/steel, 1), priority(OP_PRIORITY_PART), label("Arm the robot frame"), then(PROC_REF(frame_armed)))
+	op("wet", inputs(item(/obj/item/mop), item(/obj/item/soap)), priority(OP_PRIORITY_PART), label("Wet it"),
+		needs(req_reagents(1, because = MSG(glass/bucket_empty))), then(PROC_REF(wetted)))
+	op("cut_helmet", tool(TOOL_WIRECUTTER), wait(0), label("Cut a hole in it"), then(PROC_REF(cut_into_helmet)))
 
 MSG_DEF_SELF(glass/bucket_empty, "The bucket is empty!")
 MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with electronics.")
@@ -358,9 +358,9 @@ MSG_DEF_SELF(glass/no_electronics, "This wooden bucket doesn't play well with el
 	pickup_sound = SFX_ITEMS_PICKUP_WOODEN
 
 // A wooden bucket takes no electronics, and a hatchet cuts it into a helmet.
-CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood, \
-	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet))), \
-	extend("sensor", needs(req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics)))))
+CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood)
+	op("hatchet_helmet", item(/obj/item/material/knife/machete/hatchet), priority(OP_PRIORITY_PART), label("Cut a hole in it"), then(PROC_REF(cut_into_wood_helmet)))
+	extend("sensor", needs(req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics))))
 
 /// A wooden bucket does not take electronics.
 /obj/item/reagent_containers/glass/bucket/wood/proc/electronics_welcome(datum/act/op/A)
@@ -385,8 +385,8 @@ CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood, \
 	volume = 2000
 	slowdown = 2
 
-CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle, \
-	configure(reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
+CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle)
+	configure(reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER))
 
 /obj/item/reagent_containers/glass/pint_mug
 	desc = "A rustic pint mug designed for drinking ale."

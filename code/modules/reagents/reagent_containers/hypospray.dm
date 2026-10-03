@@ -33,19 +33,19 @@
 // A hypospray is a holder of its volume that is poured into like any open container, and that puts one transfer into the blood of a person by a click
 // (injector(), code/library/reagents/injector.dm): at once, or after three seconds when the hypospray is the prototype or the one injected is awake and
 // resists in combat mode. Armour does not stop it. The sound, the transfer and the log are do_injection(), which a type may extend.
-CAPABILITIES(/obj/item/reagent_containers/hypospray, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		lid = TRUE, \
-		lid_visible = FALSE, \
-		starts_open = nameof(open_at_start), \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	injector(slow = nameof(prototype)), \
-	extend("injector.inject", then(PROC_REF(injected))), \
-	extend("injector.inject_slowly", then(PROC_REF(injected))))
+CAPABILITIES(/obj/item/reagent_containers/hypospray)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		lid = TRUE,
+		lid_visible = FALSE,
+		starts_open = nameof(open_at_start),
+		transfer_default = nameof(amount_per_transfer_from_this))
+	injector(slow = nameof(prototype))
+	extend("injector.inject", then(PROC_REF(injected)))
+	extend("injector.inject_slowly", then(PROC_REF(injected)))
 
 /// The injection: the transfer, the sound and the log.
 /obj/item/reagent_containers/hypospray/proc/injected(datum/act/op/A)
@@ -93,12 +93,12 @@ DECLARE_DEFAULT_CHILD(/obj/item/reagent_containers/hypospray/vial, "loaded_vial"
 
 // The vial hypospray takes a 30-unit vial for its drug supply: a vial is loaded in three seconds (once), and an empty hand takes it out when the hypospray
 // is in the other hand. What the vial held is the hypospray's while it is in.
-CAPABILITIES(/obj/item/reagent_containers/hypospray/vial, \
-	configure(injector(slow = nameof(prototype), vial = nameof(loaded_vial))), \
-	op("load", item(/obj/item/reagent_containers/glass/beaker/vial), priority(OP_PRIORITY_PART + 5), label("Load the vial"), \
-		needs(req_is(nameof(loaded_vial), FALSE, because = MSG(hypo/has_vial))), \
-		begins(MSG(hypo/begin_load)), wait(3 SECONDS), then(PROC_REF(vial_loaded))), \
-	extend("injector.unload", then(PROC_REF(vial_unloaded))))
+CAPABILITIES(/obj/item/reagent_containers/hypospray/vial)
+	configure(injector(slow = nameof(prototype), vial = nameof(loaded_vial)))
+	op("load", item(/obj/item/reagent_containers/glass/beaker/vial), priority(OP_PRIORITY_PART + 5), label("Load the vial"),
+		needs(req_is(nameof(loaded_vial), FALSE, because = MSG(hypo/has_vial))),
+		begins(MSG(hypo/begin_load)), wait(3 SECONDS), then(PROC_REF(vial_loaded)))
+	extend("injector.unload", then(PROC_REF(vial_unloaded)))
 
 MSG_DEF_SELF(hypo/has_vial, "It already has a vial.")
 MSG_DEF(hypo/begin_load, "You begin loading %I% into %T%.", "%U% begins loading %I% into %T%.")

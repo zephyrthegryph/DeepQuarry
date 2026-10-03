@@ -188,13 +188,13 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 // It reads the pressure where it stands and sends it to its airlock controller whenever the reading (to a tenth of a kilopascal) changes: it waits on a gas
 // watch (woken only when the reading would differ) and never polls. A hand on it asks the controller to cycle the airlock (the master tag and the command it is set to). A multitool sets its tags, its frequency and its command.
 
-CAPABILITIES(/obj/machinery/airlock_sensor, \
-	multitool_settings(list( \
-		list("Master Tag", "master_tag", "text", 30), \
-		list("ID Tag", "id_tag", "text", 30), \
-		list("Frequency", "frequency", "frequency"), \
-		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior."))), \
-	op("cycle", hand(), label("Use"), wait(0), then(PROC_REF(cycle_asked))))
+CAPABILITIES(/obj/machinery/airlock_sensor)
+	multitool_settings(list(
+		list("Master Tag", "master_tag", "text", 30),
+		list("ID Tag", "id_tag", "text", 30),
+		list("Frequency", "frequency", "frequency"),
+		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior.")))
+	op("cycle", hand(), label("Use"), wait(0), then(PROC_REF(cycle_asked)))
 
 /// A hand on the sensor asks the controller to cycle.
 /obj/machinery/airlock_sensor/proc/cycle_asked(datum/act/op/A)
@@ -323,13 +323,13 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 
 MSG_DEF_SELF(access_button/denied, "Access Denied")
 
-CAPABILITIES(/obj/machinery/access_button, \
-	multitool_settings(list( \
-		list("Tag", "master_tag", "text", 30), \
-		list("Frequency", "frequency", "frequency"), \
-		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'."))), \
-	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req(PROC_REF(button_allows), because = MSG(access_button/denied))), then(PROC_REF(pressed))), \
-	on_op("press", then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
+CAPABILITIES(/obj/machinery/access_button)
+	multitool_settings(list(
+		list("Tag", "master_tag", "text", 30),
+		list("Frequency", "frequency", "frequency"),
+		list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'.")))
+	op("press", inputs(hand(), item(/obj/item/card/id), item(/obj/item/pda)), label("Use"), wait(0), needs(req(PROC_REF(button_allows), because = MSG(access_button/denied))), then(PROC_REF(pressed)))
+	on_op("press", then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED)
 
 /// Whoever has access presses it.
 /obj/machinery/access_button/proc/button_allows(datum/act/op/A)

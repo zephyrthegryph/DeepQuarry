@@ -163,65 +163,65 @@ MSG_DEF(apc/emagged, "You emag the APC interface.", "")
 MSG_DEF(apc/replaced_cover, "You replace the damaged APC cover with a new one.", "%U% has replaced the damaged APC cover with a new one.")
 MSG_DEF(apc/reset_done, "You finish resetting the APC.", "%U% resets the APC with a beep from %I%.")
 
-CAPABILITIES(/obj/machinery/power/apc, \
-	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE), \
-	configure(CAP_CONSTRUCTION, start = STAGE_APC_SECURED), \
-	maintenance_hatch( \
-		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), at(BAY_HATCH))), \
-		wires = /datum/wires/apc, \
-		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)), \
-		emag_say = MSG(apc/emagged), \
-		panel_needs_cover_closed = TRUE, \
-		starts_locked = nameof(lock_at_start)), \
-	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL), \
-	cell_bay(nameof(cell), at = BAY_HATCH), \
-	powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY), \
-	subversion_reset(list(tool(TOOL_MULTITOOL), at(BAY_HATCH)), done = MSG(apc/reset_done)), \
-	link(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master), \
-	link(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs), \
-	interface("APC"), \
-	op("breaker", ui_act(), toggles(nameof(operating)), then(PROC_REF(settings_applied)), logs(LOG_GAME)), \
-	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME)), \
-	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME)), \
-	op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), then(PROC_REF(ui_set_channel))), \
-	op("nightshift", ui_act(arg("nightshift", int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), cooldown(1 SECOND), then(PROC_REF(ui_set_nightshift)), logs(LOG_GAME)), \
-	op("emergency_lighting", ui_act(), toggles(nameof(emergency_lights)), logs(LOG_GAME)), \
-	op("reboot", ui_act(), then(PROC_REF(ui_reboot)), logs(LOG_GAME)), \
-	op("overload", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), then(PROC_REF(ui_overload)), logs(LOG_GAME)), \
-	op("lock", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), toggles(LOCK_LOCKED), logs(LOG_GAME)), \
-	op("open_wires", hand(), when(PANEL_OPEN), priority(above("ui_open")), then(PROC_REF(open_wire_window))), \
-	extend("ui_open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
-	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason)))), \
-	extend("nightshift", drop = "lock"), \
-	extend("construction.undo:apc_board", when(COVER_OPEN)), \
-	extend("construction.undo:apc_wired", when(COVER_OPEN)), \
-	extend("construction.undo:apc_wired", priority(above("wires.cut"))), \
-	extend("construction.undo:apc_secured", when(COVER_OPEN)), \
-	extend("construction.build:apc_secured", priority(above("panel.open"))), \
-	extend("construction.dismantle", needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first)))), \
-	extend("construction.undo:apc_secured", priority(above("panel.open"))), \
-	extend("construction.undo:apc_board", priority(above("open_wires"))), \
-	extend("subversion_reset.use", priority(above("wires.pulse"))), \
-	extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
-	extend("cover.remove", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason)))), \
-	extend("cover.replace", needs(req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason)))), \
-	extend("cover.replace", then(PROC_REF(cover_replaced))), \
-	extend("cell_bay.cell.take", when(COVER_OPEN)), \
-	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason)))), \
-	extend("construction.undo:apc_secured", needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first)))), \
-	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
-	extend("emag.use", needs(req_not_subverted(), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
-	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE))), \
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(apc_emp_fail))), \
-	on_notice(/datum/notice/hit/explosion, then(PROC_REF(apc_blast_wake))), \
-	on_notice(/datum/notice/legacy_hit, then(PROC_REF(apc_hit))), \
-	on_notice(/datum/notice/slashed, then(PROC_REF(apc_slashed))), \
-	on_change(nameof(cell), ANY, then(PROC_REF(cell_changed))), \
-	on_change(nameof(power_failed), ANY, then(PROC_REF(power_failed_changed))))
+CAPABILITIES(/obj/machinery/power/apc)
+	wall_machine(/obj/item/module/power_control, repair = NONE, frame = apc_frame(), powered = FALSE)
+	configure(construction_graph(start = STAGE_APC_SECURED))
+	maintenance_hatch(
+		cover = cover(remove = force_pry(), replace = list(component_swap(/obj/item/frame/apc), at(BAY_HATCH))),
+		wires = /datum/wires/apc,
+		emag = list(wait(0.6 SECONDS), then(PROC_REF(emag_sparks)), sets(LOCK_LOCKED, FALSE)),
+		emag_say = MSG(apc/emagged),
+		panel_needs_cover_closed = TRUE,
+		starts_locked = nameof(lock_at_start))
+	owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell_type), on_destroy = ON_DESTROY_SPILL)
+	cell_bay(nameof(cell), at = BAY_HATCH)
+	powered_by(/datum/system/power, role = POWER_ROLE_AREA_SUPPLY)
+	subversion_reset(list(tool(TOOL_MULTITOOL), at(BAY_HATCH)), done = MSG(apc/reset_done))
+	links(/obj/machinery/power/apc::terminal, /obj/machinery/power/terminal::master)
+	links(/obj/machinery/power/apc::hacker, /mob/living/silicon/ai::hacked_apcs)
+	interface("APC")
+	op("breaker", ui_act(), toggles(nameof(operating)), then(PROC_REF(settings_applied)), logs(LOG_GAME))
+	op("chargemode", ui_act("charge"), toggles(nameof(chargemode)), then(PROC_REF(chargemode_applied)), logs(LOG_GAME))
+	op("coverlock", ui_act("cover"), toggles(nameof(coverlocked)), logs(LOG_GAME))
+	op("set_channel", ui_act("channel", arg("channel", int(POWER_CHANNEL_EQUIPMENT, POWER_CHANNEL_ENVIRON)), arg("mode", int(POWERCHAN_OFF, POWERCHAN_ON_AUTO))), then(PROC_REF(ui_set_channel)))
+	op("nightshift", ui_act(arg("nightshift", int(NIGHTSHIFT_AUTO, NIGHTSHIFT_ALWAYS))), cooldown(1 SECOND), then(PROC_REF(ui_set_nightshift)), logs(LOG_GAME))
+	op("emergency_lighting", ui_act(), toggles(nameof(emergency_lights)), logs(LOG_GAME))
+	op("reboot", ui_act(), then(PROC_REF(ui_reboot)), logs(LOG_GAME))
+	op("overload", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only))), then(PROC_REF(ui_overload)), logs(LOG_GAME))
+	op("lock", ui_act(), needs(req(PROC_REF(actor_works_locked), because = MSG(apc/silicons_only)), req_not_subverted(), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), toggles(LOCK_LOCKED), logs(LOG_GAME))
+	op("open_wires", hand(), when(PANEL_OPEN), priority(above("ui_open")), then(PROC_REF(open_wire_window)))
+	extend("ui_open", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	extend(TAG_UI, needs(req(PROC_REF(ui_usable), because = PROC_REF(ui_unusable_reason))))
+	extend("nightshift", drop = "lock")
+	extend("construction.undo:apc_board", when(COVER_OPEN))
+	extend("construction.undo:apc_wired", when(COVER_OPEN))
+	extend("construction.undo:apc_wired", priority(above("wires.cut")))
+	extend("construction.undo:apc_secured", when(COVER_OPEN))
+	extend("construction.build:apc_secured", priority(above("panel.open")))
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_APC_BOARD, because = MSG(apc/board_first)), because = MSG(apc/board_first))))
+	extend("construction.undo:apc_secured", priority(above("panel.open")))
+	extend("construction.undo:apc_board", priority(above("open_wires")))
+	extend("subversion_reset.use", priority(above("wires.pulse")))
+	extend("cover.open", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason))))
+	extend("cover.remove", needs(req(PROC_REF(cover_free), because = PROC_REF(cover_hold_reason))))
+	extend("cover.replace", needs(req(PROC_REF(cover_replaceable), because = PROC_REF(cover_replace_reason))))
+	extend("cover.replace", then(PROC_REF(cover_replaced)))
+	extend("cell_bay.cell.take", when(COVER_OPEN))
+	extend("cell_bay.cell.insert", needs(req_built(STAGE_APC_SECURED, because = MSG(apc/needs_electronics)), req(PROC_REF(cell_fits), because = PROC_REF(cell_fit_reason))))
+	extend("construction.undo:apc_secured", needs(req_empty(nameof(/obj/machinery/power/apc::cell), because = MSG(apc/cell_first))))
+	extend(CAP_LOCK, needs(req_not_subverted(), req_wire(WIRE_IDSCAN), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	extend("emag.use", needs(req_not_subverted(), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	extend(/datum/act/hit/blob, instead(cuts_all_wires(), sets(PANEL_OPEN, TRUE)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(apc_emp_fail)))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(apc_blast_wake)))
+	on_notice(/datum/notice/legacy_hit, then(PROC_REF(apc_hit)))
+	on_notice(/datum/notice/slashed, then(PROC_REF(apc_slashed)))
+	on_change(nameof(cell), ANY, then(PROC_REF(cell_changed)))
+	on_change(nameof(power_failed), ANY, then(PROC_REF(power_failed_changed)))
 
 /// The angled APC's sprite sits closer to the wall.
-CAPABILITIES(/obj/machinery/power/apc/angled, \
-	configure(CAP_WALL_MOUNT, offset = 24, offset_ns = 20))
+CAPABILITIES(/obj/machinery/power/apc/angled)
+	configure(wall_mount(offset = 24, offset_ns = 20))
 
 /// The build ladder of an APC: an empty frame, the board, ten lengths of cable (the floor plating off) and a screwdriver. The ledger refunds the board
 /// and the cable; the welder takes the frame down into its item, or into scrap when it is ruined. A global bundle names holder procs by type.

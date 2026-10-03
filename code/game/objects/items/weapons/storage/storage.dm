@@ -54,18 +54,18 @@
 	/// Used for attack_self chain
 	var/special_handling = FALSE
 
-CAPABILITIES(/obj/item/storage, \
-	storage( \
-		space = nameof(/obj/item/storage::max_storage_space), \
-		slots = nameof(/obj/item/storage::storage_slots), \
-		max_size = ITEMSIZE_SMALL, \
-		empties = nameof(/obj/item/storage::allow_quick_empty), \
-		gather_toggle = nameof(/obj/item/storage::allow_quick_gather), \
-		special = nameof(/obj/item/storage::special_handling), \
-		pocketable = nameof(/obj/item/storage::pocketable), \
-		quiet = list(/obj/item/hand_labeler)), \
-	op("feed_replacer", item(/obj/item/lightreplacer), priority(above("storage.put_in")), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"), \
-		then(PROC_REF(feed_replacer))))
+CAPABILITIES(/obj/item/storage)
+	storage(
+		space = nameof(/obj/item/storage::max_storage_space),
+		slots = nameof(/obj/item/storage::storage_slots),
+		max_size = ITEMSIZE_SMALL,
+		empties = nameof(/obj/item/storage::allow_quick_empty),
+		gather_toggle = nameof(/obj/item/storage::allow_quick_gather),
+		special = nameof(/obj/item/storage::special_handling),
+		pocketable = nameof(/obj/item/storage::pocketable),
+		quiet = list(/obj/item/hand_labeler))
+	op("feed_replacer", item(/obj/item/lightreplacer), priority(above("storage.put_in")), when(PROC_REF(has_bulbs_for)), label("Refill the light replacer"),
+		then(PROC_REF(feed_replacer)))
 
 /// A held light replacer that has room takes the good bulbs out of a storage.
 /obj/item/storage/proc/has_bulbs_for(datum/act/op/A)
@@ -910,12 +910,13 @@ DECLARE_SHARED_CACHE(type_storage_costs, GLOBAL_PROC_REF(build_type_storage_cost
 
 TRACKED(/obj/item/storage/trinketbox, open)
 
-CAPABILITIES(/obj/item/storage/trinketbox, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/accessory/ring, \
-		/obj/item/coin, \
-		/obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)),, \
-	op("lid", in_hand(), label("Open"), then(PROC_REF(flip_lid))))
+CAPABILITIES(/obj/item/storage/trinketbox)
+	configure(storage(accepts = list(
+		/obj/item/clothing/accessory/ring,
+		/obj/item/coin,
+		/obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL))
+	
+	op("lid", in_hand(), label("Open"), then(PROC_REF(flip_lid)))
 
 /obj/item/storage/trinketbox/draw(datum/look/look)
 	. = ..()

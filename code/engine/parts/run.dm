@@ -321,11 +321,13 @@
 	var/list/step_answers_saved
 	var/list/captured_saved
 
-CAPABILITIES(/datum/pending_op, \
-	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME), \
-	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME), \
-	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME), \
-	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME), 	owns_one(nameof(progbar), /datum/progressbar), 	owns_one(nameof(cog), /datum/cogbar))
+CAPABILITIES(/datum/pending_op)
+	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME)
+	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME)
+	owns_one(nameof(progbar), /datum/progressbar)
+	owns_one(nameof(cog), /datum/cogbar)
 
 /datum/pending_op
 	var/datum/holder

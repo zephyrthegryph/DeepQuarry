@@ -7,8 +7,8 @@
 	storage_slots = 15
 
 
-CAPABILITIES(/obj/item/storage/bag/salvage, \
-	configure(storage(accepts = list(/obj/item/salvage), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/salvage)
+	configure(storage(accepts = list(/obj/item/salvage), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/salvage/bluespace
 	name = "bluespace treasure satchel"

@@ -6,8 +6,8 @@
 	var/reagent = ""
 
 // The robot's internal bottle is open.
-CAPABILITIES(/obj/item/reagent_containers/glass/bottle/robot, \
-	configure(reagent_container(starts_open = TRUE)))
+CAPABILITIES(/obj/item/reagent_containers/glass/bottle/robot)
+	configure(reagent_container(starts_open = TRUE))
 
 
 /obj/item/reagent_containers/glass/bottle/robot/inaprovaline

@@ -176,18 +176,21 @@ MSG_DEF_SELF(door_assembly/more_sheets, "You need more sheets than that.")
 MSG_DEF_SELF(door_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(door_assembly/plated, "Take the plating off first.")
 
-CAPABILITIES(/obj/structure/door_assembly, \
-	construction(start(STAGE_DOOR_ASSEMBLY_FRAME), \
-		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))), \
-		stage(STAGE_DOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))), \
-		stage(STAGE_DOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_CROWBAR), wait(4 SECONDS))), \
-		stage(STAGE_DOOR_ASSEMBLY_FINISHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), then(PROC_REF(finish_airlock)), undo = null), \
-		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
-	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
-	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed))), \
-	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed))), \
-	op("plate_glass", stack(/obj/item/stack/material/glass/reinforced, 1), label("Install windows"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(glass_in))), 	op("plate", inputs(stack(/obj/item/stack/material/gold, 2), stack(/obj/item/stack/material/silver, 2), stack(/obj/item/stack/material/diamond, 2), stack(/obj/item/stack/material/uranium, 2), stack(/obj/item/stack/material/phoron, 2), stack(/obj/item/stack/material/sandstone, 2)), label("Install plating"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(plated_in))), 	op("plate_bad", item(/obj/item/stack/material), label("Install plating"), when(PROC_REF(unplated)), when(cond_not(req(/obj/item/stack/material/glass/reinforced))), when(cond_not(req(/obj/item/stack/material/gold))), when(cond_not(req(/obj/item/stack/material/silver))), when(cond_not(req(/obj/item/stack/material/diamond))), when(cond_not(req(/obj/item/stack/material/uranium))), when(cond_not(req(/obj/item/stack/material/phoron))), when(cond_not(req(/obj/item/stack/material/sandstone))), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(plating_refused))), 	op("unplate", tool(TOOL_WELDER), label("Take the plating off"), when(PROC_REF(plated)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(plating_off))), \
-	extend("construction.dismantle", needs(req_not(req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down)))))
+CAPABILITIES(/obj/structure/door_assembly)
+	construction(start(STAGE_DOOR_ASSEMBLY_FRAME),
+		stage(STAGE_DOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
+		stage(STAGE_DOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),
+		stage(STAGE_DOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_CROWBAR), wait(4 SECONDS))),
+		stage(STAGE_DOOR_ASSEMBLY_FINISHED, tool(TOOL_SCREWDRIVER), wait(4 SECONDS), then(PROC_REF(finish_airlock)), undo = null),
+		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
+	owns_one(nameof(electronics), /obj/item/airlock_electronics)
+	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), then(PROC_REF(renamed)))
+	op("plate_glass", stack(/obj/item/stack/material/glass/reinforced, 1), label("Install windows"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(glass_in)))
+	op("plate", inputs(stack(/obj/item/stack/material/gold, 2), stack(/obj/item/stack/material/silver, 2), stack(/obj/item/stack/material/diamond, 2), stack(/obj/item/stack/material/uranium, 2), stack(/obj/item/stack/material/phoron, 2), stack(/obj/item/stack/material/sandstone, 2)), label("Install plating"), when(PROC_REF(unplated)), wait(4 SECONDS), then(PROC_REF(plated_in)))
+	op("plate_bad", item(/obj/item/stack/material), label("Install plating"), when(PROC_REF(unplated)), when(cond_not(req(/obj/item/stack/material/glass/reinforced))), when(cond_not(req(/obj/item/stack/material/gold))), when(cond_not(req(/obj/item/stack/material/silver))), when(cond_not(req(/obj/item/stack/material/diamond))), when(cond_not(req(/obj/item/stack/material/uranium))), when(cond_not(req(/obj/item/stack/material/phoron))), when(cond_not(req(/obj/item/stack/material/sandstone))), priority(OP_PRIORITY_NORMAL), wait(0), then(PROC_REF(plating_refused)))
+	op("unplate", tool(TOOL_WELDER), label("Take the plating off"), when(PROC_REF(plated)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(plating_off)))
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down))))
 
 /// Neither windows nor plating are fitted, and the type takes them (glass is -1 for the ones that do not).
 /obj/structure/door_assembly/proc/unplated(datum/act/A)

@@ -117,46 +117,46 @@ TRACKED(/obj/machinery/vending, shut_up)
 TRACKED(/obj/machinery/vending, seconds_electrified)
 TRACKED(/obj/machinery/vending, shoot_inventory)
 
-CAPABILITIES(/obj/machinery/vending, \
-	machine_basics(repair = NONE), \
-	panel(), \
-	extend("panel.open", wait(0)), \
-	wires(/datum/wires/vending), \
-	emag(say = MSG(vending/shorted), repeatable = TRUE), \
-	anchor(), \
-	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)))), \
-	owns_one(nameof(coin), /obj/item/coin), \
-	owns_many(nameof(product_records), /datum/stored_item/vending_product), \
-	ref_one(nameof(currently_vending), /datum/stored_item/vending_product), \
-	interface("Vending"), \
-	op("vend", ui_act(arg("vend")), \
-		needs(req(PROC_REF(vend_listed), because = MSG(vending/unavailable)), req(PROC_REF(vend_idle), because = MSG(vending/busy)), req(PROC_REF(vend_shut), because = MSG(vending/panel_open))), \
-		asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)), \
-		then(PROC_REF(vend_access), early = TRUE), \
-		then(PROC_REF(ui_vend)), logs(LOG_GAME)), \
-	op("remove_coin", ui_act(), needs(req_full(nameof(coin), because = MSG(vending/no_coin)), req(PROC_REF(actor_is_no_silicon), because = MSG(op/failed))), take_out(nameof(coin))), \
-	op("toggle_voice", ui_act(), when(PANEL_OPEN), toggles(nameof(shut_up))), \
-	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin))), \
-	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), then(PROC_REF(fake_coin_rejected))), \
-	op("refill", item(/obj/item/refill_cartridge), \
-		needs(req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))), \
-		then(PROC_REF(refilled)), consumes()), \
-	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked))), \
-	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), opens_ui()), \
-	op("check_logs", hand(), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")), then(PROC_REF(check_logs_op))), \
-	extend("ui_open", when(PROC_REF(bare_touch))), \
-	extend("ui_open", needs(req_on_authority(AUTH_PHYSICAL), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
-	extend("ui_open", then(PROC_REF(shock_guard), early = TRUE)), \
-	extend("ui_open", then(PROC_REF(open_wires_beside_the_window))), \
-	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE)), \
-	extend("open_with_item", then(PROC_REF(open_wires_beside_the_window))), \
-	extend(TAG_UI, needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req(PROC_REF(customer_capable), because = MSG(op/failed)))), \
-	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vending_blast_malfunction))), \
-	on_change(nameof(coin), ANY, then(PROC_REF(coin_changed))), \
-	on_change(nameof(shut_up), ANY, then(PROC_REF(timed_work_changed))), \
-	on_change(nameof(seconds_electrified), ANY, then(PROC_REF(timed_work_changed))), \
-	on_change(nameof(shoot_inventory), ANY, then(PROC_REF(timed_work_changed))), \
-	on_change(nameof(stat), ANY, then(PROC_REF(timed_work_changed))))
+CAPABILITIES(/obj/machinery/vending)
+	machine_basics(repair = NONE)
+	panel()
+	extend("panel.open", wait(0))
+	wires(/datum/wires/vending)
+	emag(say = MSG(vending/shorted), repeatable = TRUE)
+	anchor()
+	extend("anchor.toggle", wait(2 SECONDS), needs(req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel))))
+	owns_one(nameof(coin), /obj/item/coin)
+	owns_many(nameof(product_records), /datum/stored_item/vending_product)
+	ref_one(nameof(currently_vending), /datum/stored_item/vending_product)
+	interface("Vending")
+	op("vend", ui_act(arg("vend")),
+		needs(req(PROC_REF(vend_listed), because = MSG(vending/unavailable)), req(PROC_REF(vend_idle), because = MSG(vending/busy)), req(PROC_REF(vend_shut), because = MSG(vending/panel_open))),
+		asks(/datum/prompt/number, fields = list("question" = "Enter pin code"), when = PROC_REF(pin_wanted)),
+		then(PROC_REF(vend_access), early = TRUE),
+		then(PROC_REF(ui_vend)), logs(LOG_GAME))
+	op("remove_coin", ui_act(), needs(req_full(nameof(coin), because = MSG(vending/no_coin)), req(PROC_REF(actor_is_no_silicon), because = MSG(op/failed))), take_out(nameof(coin)))
+	op("toggle_voice", ui_act(), when(PANEL_OPEN), toggles(nameof(shut_up)))
+	op("insert_coin", item(/obj/item/coin), when(nameof(has_premium)), needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req_empty(nameof(coin), because = MSG(bay/full))), put_in(nameof(coin)))
+	op("reject_fake_coin", item(/obj/item/fake_coin), when(nameof(has_premium)), then(PROC_REF(fake_coin_rejected)))
+	op("refill", item(/obj/item/refill_cartridge),
+		needs(req_is(PANEL_OPEN, FALSE, because = MSG(hatch/close_panel)), req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))),
+		then(PROC_REF(refilled)), consumes())
+	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
+	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), opens_ui())
+	op("check_logs", hand(), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")), then(PROC_REF(check_logs_op)))
+	extend("ui_open", when(PROC_REF(bare_touch)))
+	extend("ui_open", needs(req_on_authority(AUTH_PHYSICAL), req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	extend("ui_open", then(PROC_REF(shock_guard), early = TRUE))
+	extend("ui_open", then(PROC_REF(open_wires_beside_the_window)))
+	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE))
+	extend("open_with_item", then(PROC_REF(open_wires_beside_the_window)))
+	extend(TAG_UI, needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)), req(PROC_REF(customer_capable), because = MSG(op/failed))))
+	on_notice(/datum/notice/hit/explosion, then(PROC_REF(vending_blast_malfunction)))
+	on_change(nameof(coin), ANY, then(PROC_REF(coin_changed)))
+	on_change(nameof(shut_up), ANY, then(PROC_REF(timed_work_changed)))
+	on_change(nameof(seconds_electrified), ANY, then(PROC_REF(timed_work_changed)))
+	on_change(nameof(shoot_inventory), ANY, then(PROC_REF(timed_work_changed)))
+	on_change(nameof(stat), ANY, then(PROC_REF(timed_work_changed)))
 
 /// Active with something time-dependent to do: electrified, shooting inventory, or advertising.
 /// slogan_list is filled once in Initialize() and never changes afterwards, so it is not an input.

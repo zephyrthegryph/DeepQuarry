@@ -339,8 +339,8 @@
 	)
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/fuelrod, \
-	configure(storage(accepts = list( \
-		/obj/item/cell, \
-		/obj/item/stock_parts, \
-		/obj/item/tool/screwdriver))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/fuelrod)
+	configure(storage(accepts = list(
+		/obj/item/cell,
+		/obj/item/stock_parts,
+		/obj/item/tool/screwdriver)))

@@ -7,9 +7,10 @@
 	name = "eg2 waiter"
 	var/done = 0
 
-CAPABILITIES(/obj/eg2_waiter, \
-	op("slow", menu(), wait(3 SECONDS), then(PROC_REF(finished))), \
-	op("hush", menu(), wait(3 SECONDS), silent_wait(), then(PROC_REF(finished))), 	op("careful", menu(), wait(3 SECONDS), on_interrupt(PROC_REF(broken)), then(PROC_REF(finished))))
+CAPABILITIES(/obj/eg2_waiter)
+	op("slow", menu(), wait(3 SECONDS), then(PROC_REF(finished)))
+	op("hush", menu(), wait(3 SECONDS), silent_wait(), then(PROC_REF(finished)))
+	op("careful", menu(), wait(3 SECONDS), on_interrupt(PROC_REF(broken)), then(PROC_REF(finished)))
 
 /// How often a broken wait called back, and why the last one broke.
 /obj/eg2_waiter/var/broke = 0

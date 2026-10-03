@@ -20,9 +20,9 @@
 
 
 // A slow pouch takes what is put into it after a wait: the wait is this op's (a progress bar, and walking away cancels it), run by stall_insertion().
-CAPABILITIES(/obj/item/storage/pouch, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)), \
-	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert))))
+CAPABILITIES(/obj/item/storage/pouch)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
+	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert)))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -95,13 +95,13 @@ CAPABILITIES(/obj/item/storage/pouch, \
 	max_storage_space = INVENTORY_POUCH_SPACE
 
 
-CAPABILITIES(/obj/item/storage/pouch/ammo, \
-	configure(storage(accepts = list( \
-		/obj/item/ammo_magazine, \
-		/obj/item/ammo_casing, \
-		/obj/item/cell/device, \
-		/obj/item/grenade, \
-		/obj/item/plastique))))
+CAPABILITIES(/obj/item/storage/pouch/ammo)
+	configure(storage(accepts = list(
+		/obj/item/ammo_magazine,
+		/obj/item/ammo_casing,
+		/obj/item/cell/device,
+		/obj/item/grenade,
+		/obj/item/plastique)))
 
 /obj/item/storage/pouch/eng_tool
 	name = "storage pouch (tools)"
@@ -110,38 +110,38 @@ CAPABILITIES(/obj/item/storage/pouch/ammo, \
 	max_storage_space = INVENTORY_POUCH_SPACE
 
 
-CAPABILITIES(/obj/item/storage/pouch/eng_tool, \
-	configure(storage(accepts = list( \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/weldingtool, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/tool/transforming/jawsoflife, \
-		/obj/item/multitool, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/t_scanner, \
-		/obj/item/analyzer, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/gloves, \
-		/obj/item/pda, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/radio/headset, \
-		/obj/item/robotanalyzer, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/tape_roll, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/shovel/spade, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/geiger))))
+CAPABILITIES(/obj/item/storage/pouch/eng_tool)
+	configure(storage(accepts = list(
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/weldingtool,
+		/obj/item/tool/wirecutters,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/tool/transforming/jawsoflife,
+		/obj/item/multitool,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/t_scanner,
+		/obj/item/analyzer,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/gloves,
+		/obj/item/pda,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/radio/headset,
+		/obj/item/robotanalyzer,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/extinguisher/mini,
+		/obj/item/tape_roll,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/shovel/spade,
+		/obj/item/stack/nanopaste,
+		/obj/item/geiger)))
 
 /obj/item/storage/pouch/eng_supply
 	name = "storage pouch (supplies)"
@@ -150,17 +150,17 @@ CAPABILITIES(/obj/item/storage/pouch/eng_tool, \
 	max_storage_space = INVENTORY_POUCH_SPACE
 
 
-CAPABILITIES(/obj/item/storage/pouch/eng_supply, \
-	configure(storage(accepts = list( \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/taperoll, \
-		/obj/item/extinguisher, \
-		/obj/item/tape_roll, \
-		/obj/item/stack/material/steel, \
-		/obj/item/stack/material/glass, \
-		/obj/item/lightreplacer, \
-		/obj/item/cell))))
+CAPABILITIES(/obj/item/storage/pouch/eng_supply)
+	configure(storage(accepts = list(
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/taperoll,
+		/obj/item/extinguisher,
+		/obj/item/tape_roll,
+		/obj/item/stack/material/steel,
+		/obj/item/stack/material/glass,
+		/obj/item/lightreplacer,
+		/obj/item/cell)))
 
 /obj/item/storage/pouch/eng_parts
 	name = "storage pouch (parts)"
@@ -174,11 +174,11 @@ CAPABILITIES(/obj/item/storage/pouch/eng_supply, \
 	collection_mode = TRUE
 
 
-CAPABILITIES(/obj/item/storage/pouch/eng_parts, \
-	configure(storage(accepts = list( \
-		/obj/item/stock_parts, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/circuitboard))))
+CAPABILITIES(/obj/item/storage/pouch/eng_parts)
+	configure(storage(accepts = list(
+		/obj/item/stock_parts,
+		/obj/item/stack/cable_coil,
+		/obj/item/circuitboard)))
 
 /obj/item/storage/pouch/eng_parts/borg
 	name = "parts storage unit"
@@ -194,32 +194,32 @@ CAPABILITIES(/obj/item/storage/pouch/eng_parts, \
 	remove_delay = 5 // .5 second delay, get the medical things faster because there is no reason to use this otherwise. still gotta stop moving to take things out.
 
 
-CAPABILITIES(/obj/item/storage/pouch/medical, \
-	configure(storage(accepts = list( \
-		/obj/item/healthanalyzer, \
-		/obj/item/dnainjector, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/storage/pill_bottle, \
-		/obj/item/stack/medical, \
-		/obj/item/reagent_containers/hypospray, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/syringe_cartridge, \
-		/obj/item/clothing/gloves/sterile, \
-		/obj/item/sleevemate, \
-		/obj/item/bodybag, \
-		/obj/item/clothing/mask/surgical, \
-		/obj/item/soap, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/taperoll/medical, \
-		/obj/item/storage/box/freezer, \
-		/obj/item/clothing/mask/chewable/candy/lolli, \
-		/obj/item/extrapolator, \
-		/obj/item/gene_scanner))))
+CAPABILITIES(/obj/item/storage/pouch/medical)
+	configure(storage(accepts = list(
+		/obj/item/healthanalyzer,
+		/obj/item/dnainjector,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/pill,
+		/obj/item/reagent_containers/syringe,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/storage/pill_bottle,
+		/obj/item/stack/medical,
+		/obj/item/reagent_containers/hypospray,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/syringe_cartridge,
+		/obj/item/clothing/gloves/sterile,
+		/obj/item/sleevemate,
+		/obj/item/bodybag,
+		/obj/item/clothing/mask/surgical,
+		/obj/item/soap,
+		/obj/item/stack/nanopaste,
+		/obj/item/taperoll/medical,
+		/obj/item/storage/box/freezer,
+		/obj/item/clothing/mask/chewable/candy/lolli,
+		/obj/item/extrapolator,
+		/obj/item/gene_scanner)))
 
 /obj/item/storage/pouch/flares
 	name = "storage pouch (flares)"
@@ -228,8 +228,8 @@ CAPABILITIES(/obj/item/storage/pouch/medical, \
 	storage_slots = 14 // Full box of flares.
 	remove_delay = 0 // Quick access to light sources.
 
-CAPABILITIES(/obj/item/storage/pouch/flares, \
-	configure(storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick))))
+CAPABILITIES(/obj/item/storage/pouch/flares)
+	configure(storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick)))
 
 /obj/item/storage/pouch/flares/full_flare
 	starts_with = list(/obj/item/flashlight/flare = 14) // Full box of flares.
@@ -248,8 +248,8 @@ CAPABILITIES(/obj/item/storage/pouch/flares, \
 	storage_slots = 1
 	remove_delay = 0
 
-CAPABILITIES(/obj/item/storage/pouch/holster, \
-	configure(storage(accepts = list(/obj/item/gun))))
+CAPABILITIES(/obj/item/storage/pouch/holster)
+	configure(storage(accepts = list(/obj/item/gun)))
 
 /obj/item/storage/pouch/holster/full_stunrevolver
 	starts_with = list(/obj/item/gun/energy/stunrevolver)
@@ -267,11 +267,11 @@ CAPABILITIES(/obj/item/storage/pouch/holster, \
 	storage_slots = 1
 	remove_delay = 0
 
-CAPABILITIES(/obj/item/storage/pouch/baton, \
-	configure(storage(accepts = list( \
-		/obj/item/melee, \
-		/obj/item/material, \
-		/obj/item/tool/wrench))))
+CAPABILITIES(/obj/item/storage/pouch/baton)
+	configure(storage(accepts = list(
+		/obj/item/melee,
+		/obj/item/material,
+		/obj/item/tool/wrench)))
 
 /obj/item/storage/pouch/baton/full
 	starts_with = list(/obj/item/melee/baton)

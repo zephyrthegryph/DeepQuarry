@@ -60,8 +60,8 @@
 		/obj/item/roulette_ball/hollow = 2)
 
 
-CAPABILITIES(/obj/item/storage/box/roulette_balls_normal, \
-	configure(storage(accepts = list(/obj/item/roulette_ball))))
+CAPABILITIES(/obj/item/storage/box/roulette_balls_normal)
+	configure(storage(accepts = list(/obj/item/roulette_ball)))
 
 /obj/item/storage/box/roulette_balls_fancy
 	name = "fancy roulette ball box"
@@ -81,8 +81,8 @@ CAPABILITIES(/obj/item/storage/box/roulette_balls_normal, \
 		/obj/item/roulette_ball/gold)
 
 
-CAPABILITIES(/obj/item/storage/box/roulette_balls_fancy, \
-	configure(storage(accepts = list(/obj/item/roulette_ball))))
+CAPABILITIES(/obj/item/storage/box/roulette_balls_fancy)
+	configure(storage(accepts = list(/obj/item/roulette_ball)))
 
 /obj/item/storage/box/roulette_balls_cheat
 	name = "special roulette ball box"
@@ -99,5 +99,5 @@ CAPABILITIES(/obj/item/storage/box/roulette_balls_fancy, \
 		/obj/item/roulette_ball/cheat/even)
 
 
-CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat, \
-	configure(storage(accepts = list(/obj/item/roulette_ball))))
+CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat)
+	configure(storage(accepts = list(/obj/item/roulette_ball)))

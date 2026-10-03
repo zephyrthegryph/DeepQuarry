@@ -215,8 +215,8 @@ DECLARE_INTERACTIONS(/obj/item/dice, \
 	special_handling = TRUE
 
 
-CAPABILITIES(/obj/item/storage/dicecup, \
-	configure(storage(accepts = list(/obj/item/dice))))
+CAPABILITIES(/obj/item/storage/dicecup)
+	configure(storage(accepts = list(/obj/item/dice)))
 
 EXTEND_INTERACTIONS(/obj/item/storage/dicecup, \
 	INTERACT_USE("Shake", PROC_REF(interaction_shake)), \

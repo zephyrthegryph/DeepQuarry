@@ -244,11 +244,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing/microbattery, TYPE_PROC_REF(/atom,
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded, \
-		/obj/item/ammo_magazine/cell_mag, \
-		/obj/item/ammo_casing/microbattery))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded,
+		/obj/item/ammo_magazine/cell_mag,
+		/obj/item/ammo_casing/microbattery)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid/Initialize(mapload)
 	. = ..()
@@ -271,11 +271,11 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid, \
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded, \
-		/obj/item/ammo_magazine/cell_mag, \
-		/obj/item/ammo_casing/microbattery))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded,
+		/obj/item/ammo_magazine/cell_mag,
+		/obj/item/ammo_casing/microbattery)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hybrid_combat/Initialize(mapload)
 	. = ..()

@@ -80,23 +80,23 @@ MSG_DEF_SELF(blast_door/more_sheets, "You don't have enough sheets to repair thi
 MSG_DEF(blast_door/repaired, "You have repaired %T%.", "%U% repairs %T%.")
 MSG_DEF(blast_door/emagged, "You subvert %T%'s motors with %I%.", "")
 
-CAPABILITIES(/obj/machinery/door/blast, \
-	without(CAP_EMAG), \
-	without("reinforce"), \
-	without("weld_plasteel"), \
-	without("unreinforce"), \
-	emag(then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged)), \
-	op("swallow", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), wait(0), then(PROC_REF(item_swallowed))), \
-	op("force_xeno", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), \
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(claws_forced))), \
-	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced))), \
-	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(req(PROC_REF(prying_item))), priority(OP_PRIORITY_PART), wait(0), \
-		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced))), \
-	op("pry_broken", item(/obj/item), stance(I_HURT), when(req(PROC_REF(prying_item))), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0), \
-		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced))), \
-	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS), \
-		needs(req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired))), \
-		then(PROC_REF(mended)), says(MSG(blast_door/repaired))))
+CAPABILITIES(/obj/machinery/door/blast)
+	without(CAP_EMAG)
+	without("reinforce")
+	without("weld_plasteel")
+	without("unreinforce")
+	emag(then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged))
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), wait(0), then(PROC_REF(item_swallowed)))
+	op("force_xeno", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)),
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(claws_forced)))
+	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced)))
+	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(req(PROC_REF(prying_item))), priority(OP_PRIORITY_PART), wait(0),
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
+	op("pry_broken", item(/obj/item), stance(I_HURT), when(req(PROC_REF(prying_item))), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0),
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced)))
+	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS),
+		needs(req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired))),
+		then(PROC_REF(mended)), says(MSG(blast_door/repaired)))
 
 /// Emag: the motors are subverted and the door throws twice as hard.
 /obj/machinery/door/blast/proc/blast_emag(datum/act/op/A)

@@ -51,22 +51,22 @@ TRACKED(/obj/machinery/power/smes/batteryrack, equalise)
 TRACKED(/obj/machinery/power/smes/batteryrack, ui_tick)
 TRACKED(/obj/machinery/power/smes/batteryrack, shown_overlays)
 
-CAPABILITIES(/obj/machinery/power/smes/batteryrack, \
-	without("tryinput"), \
-	without("tryoutput"), \
-	without("input"), \
-	without("output"), \
-	without("ui_open"), \
-	owns_many(nameof(internal_cells), /obj/item/cell), \
-	part_replacement(), \
-	interface("Batteryrack"), \
-	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room), because = MSG(batteryrack/full))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted))), \
-	op("disable", ui_act(), then(PROC_REF(ui_disable))), \
-	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable))), \
-	op("equaliseon", ui_act(), sets(nameof(equalise), TRUE)), \
-	op("equaliseoff", ui_act(), sets(nameof(equalise), FALSE)), \
-	op("ejectcell", ui_act(arg("ejectcell")), then(PROC_REF(ui_eject_cell))), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(power_frame))))
+CAPABILITIES(/obj/machinery/power/smes/batteryrack)
+	without("tryinput")
+	without("tryoutput")
+	without("input")
+	without("output")
+	without("ui_open")
+	owns_many(nameof(internal_cells), /obj/item/cell)
+	part_replacement()
+	interface("Batteryrack")
+	op("insert_cell", item(/obj/item/cell), needs(req(PROC_REF(cell_room), because = MSG(batteryrack/full))), then(PROC_REF(cell_inserted)), says(MSG(batteryrack/inserted)))
+	op("disable", ui_act(), then(PROC_REF(ui_disable)))
+	op("enable", ui_act(arg("enable")), then(PROC_REF(ui_enable)))
+	op("equaliseon", ui_act(), sets(nameof(equalise), TRUE))
+	op("equaliseoff", ui_act(), sets(nameof(equalise), FALSE))
+	op("ejectcell", ui_act(arg("ejectcell")), then(PROC_REF(ui_eject_cell)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(power_frame)))
 
 /obj/machinery/power/smes/batteryrack/Initialize(mapload)
 	. = ..()

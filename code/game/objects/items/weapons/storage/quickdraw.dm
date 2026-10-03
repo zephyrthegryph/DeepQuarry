@@ -14,8 +14,8 @@
 	//When set to 1, a click while it is equipped will instead move the first item inside it to your hand
 	var/quickmode = 0
 
-CAPABILITIES(/obj/item/storage/quickdraw, \
-	quickdraw(starts = nameof(/obj/item/storage/quickdraw::quickmode)))
+CAPABILITIES(/obj/item/storage/quickdraw)
+	quickdraw(starts = nameof(/obj/item/storage/quickdraw::quickmode))
 
 // If we start adding more of these, we'll need to make them their own folder. 'til then, this one should be fine.
 
@@ -45,14 +45,14 @@ CAPABILITIES(/obj/item/storage/quickdraw, \
 	)
 
 
-CAPABILITIES(/obj/item/storage/quickdraw/syringe_case, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/reagent_containers/hypospray/autoinjector, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/pen, \
-		/obj/item/flashlight/pen, \
-		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_TINY)))
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/syringe,
+		/obj/item/reagent_containers/hypospray/autoinjector,
+		/obj/item/reagent_containers/pill,
+		/obj/item/pen,
+		/obj/item/flashlight/pen,
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_TINY))
 
 /obj/item/storage/quickdraw/syringe_case/clotting
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -63,14 +63,14 @@ CAPABILITIES(/obj/item/storage/quickdraw/syringe_case, \
 	)
 
 
-CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clotting, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/reagent_containers/hypospray/autoinjector, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/pen, \
-		/obj/item/flashlight/pen, \
-		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clotting)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/syringe,
+		/obj/item/reagent_containers/hypospray/autoinjector,
+		/obj/item/reagent_containers/pill,
+		/obj/item/pen,
+		/obj/item/flashlight/pen,
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/quickdraw/syringe_case/bonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -81,14 +81,14 @@ CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clotting, \
 	)
 
 
-CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/bonemed, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/reagent_containers/hypospray/autoinjector, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/pen, \
-		/obj/item/flashlight/pen, \
-		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/bonemed)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/syringe,
+		/obj/item/reagent_containers/hypospray/autoinjector,
+		/obj/item/reagent_containers/pill,
+		/obj/item/pen,
+		/obj/item/flashlight/pen,
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/quickdraw/syringe_case/clonemed
 	desc = "A small case for safely carrying sharps around. This one is deluxe!"
@@ -99,11 +99,11 @@ CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/bonemed, \
 	)
 
 
-CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clonemed, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/reagent_containers/hypospray/autoinjector, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/pen, \
-		/obj/item/flashlight/pen, \
-		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/quickdraw/syringe_case/clonemed)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/syringe,
+		/obj/item/reagent_containers/hypospray/autoinjector,
+		/obj/item/reagent_containers/pill,
+		/obj/item/pen,
+		/obj/item/flashlight/pen,
+		/obj/item/clothing/mask/smokable/cigarette), max_size = ITEMSIZE_SMALL))

@@ -577,23 +577,23 @@
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(328)
 	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(328)
+	into += entry_line(329)
 	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
-	into += entry_line(328)
+	into += entry_line(330)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
 /// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
 /datum/prompt/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/engine/parts/prompts.dm", 25, /datum/prompt)
-	into += entry_line(25)
+	into += entry_line(26)
 	into += list(global.ref_one(nameof(window), /datum))
 
-/// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:179
+/// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:186
 /datum/radial_menu/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 179, /datum/radial_menu/prompt)
-	into += entry_line(179)
+	into += entry_block("code/engine/present/prompt_windows.dm", 186, /datum/radial_menu/prompt)
+	into += entry_line(187)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
@@ -607,49 +607,49 @@
 /datum/tgui_alert/prompt/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/engine/present/prompt_windows.dm", 27, /datum/tgui_alert/prompt)
-	into += entry_line(27)
+	into += entry_line(28)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_bitfield_input/prompt) at code/engine/present/prompt_windows.dm:153
+/// CAPABILITIES(/datum/tgui_bitfield_input/prompt) at code/engine/present/prompt_windows.dm:159
 /datum/tgui_bitfield_input/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 153, /datum/tgui_bitfield_input/prompt)
-	into += entry_line(153)
+	into += entry_block("code/engine/present/prompt_windows.dm", 159, /datum/tgui_bitfield_input/prompt)
+	into += entry_line(160)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_checkbox_input/prompt) at code/engine/present/prompt_windows.dm:132
+/// CAPABILITIES(/datum/tgui_checkbox_input/prompt) at code/engine/present/prompt_windows.dm:137
 /datum/tgui_checkbox_input/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 132, /datum/tgui_checkbox_input/prompt)
-	into += entry_line(132)
+	into += entry_block("code/engine/present/prompt_windows.dm", 137, /datum/tgui_checkbox_input/prompt)
+	into += entry_line(138)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_color_picker/prompt) at code/engine/present/prompt_windows.dm:111
+/// CAPABILITIES(/datum/tgui_color_picker/prompt) at code/engine/present/prompt_windows.dm:115
 /datum/tgui_color_picker/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 111, /datum/tgui_color_picker/prompt)
-	into += entry_line(111)
+	into += entry_block("code/engine/present/prompt_windows.dm", 115, /datum/tgui_color_picker/prompt)
+	into += entry_line(116)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_input_number/prompt) at code/engine/present/prompt_windows.dm:90
+/// CAPABILITIES(/datum/tgui_input_number/prompt) at code/engine/present/prompt_windows.dm:93
 /datum/tgui_input_number/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 90, /datum/tgui_input_number/prompt)
-	into += entry_line(90)
+	into += entry_block("code/engine/present/prompt_windows.dm", 93, /datum/tgui_input_number/prompt)
+	into += entry_line(94)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_input_text/prompt) at code/engine/present/prompt_windows.dm:69
+/// CAPABILITIES(/datum/tgui_input_text/prompt) at code/engine/present/prompt_windows.dm:71
 /datum/tgui_input_text/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 69, /datum/tgui_input_text/prompt)
-	into += entry_line(69)
+	into += entry_block("code/engine/present/prompt_windows.dm", 71, /datum/tgui_input_text/prompt)
+	into += entry_line(72)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
-/// CAPABILITIES(/datum/tgui_list_input/prompt) at code/engine/present/prompt_windows.dm:48
+/// CAPABILITIES(/datum/tgui_list_input/prompt) at code/engine/present/prompt_windows.dm:49
 /datum/tgui_list_input/prompt/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/present/prompt_windows.dm", 48, /datum/tgui_list_input/prompt)
-	into += entry_line(48)
+	into += entry_block("code/engine/present/prompt_windows.dm", 49, /datum/tgui_list_input/prompt)
+	into += entry_line(50)
 	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
 /// CAPABILITIES(/mob/living/carbon) at code/engine/parts/hands.dm:48
@@ -663,14 +663,14 @@
 /mob/living/carbon/human/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/library/mob/hands.dm", 5, /mob/living/carbon/human)
-	into += entry_line(5)
+	into += entry_line(6)
 	into += list(global.hands())
 
-/// CAPABILITIES(/mob/living/silicon/robot) at code/library/mob/hands.dm:7
+/// CAPABILITIES(/mob/living/silicon/robot) at code/library/mob/hands.dm:8
 /mob/living/silicon/robot/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/library/mob/hands.dm", 7, /mob/living/silicon/robot)
-	into += entry_line(7)
+	into += entry_block("code/library/mob/hands.dm", 8, /mob/living/silicon/robot)
+	into += entry_line(9)
 	into += list(global.hands())
 
 /// CAPABILITIES(/obj/item/airlock_electronics) at code/game/machinery/doors/airlock_electronics.dm:30
@@ -1878,11 +1878,11 @@
 	into += entry_line(243)
 	into += list(global.op("tear_open", global.in_hand(), global.label("Open"), global.then(PROC_REF(tear_open))))
 
-/// CAPABILITIES(/obj/item/storage/mrebag/pill) at code/game/objects/items/weapons/storage/firstaid.dm:465
+/// CAPABILITIES(/obj/item/storage/mrebag/pill) at code/game/objects/items/weapons/storage/firstaid.dm:466
 /obj/item/storage/mrebag/pill/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 465, /obj/item/storage/mrebag/pill)
-	into += entry_line(466)
+	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 466, /obj/item/storage/mrebag/pill)
+	into += entry_line(467)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/pill), max_size = ITEMSIZE_TINY)))
 
 /// CAPABILITIES(/obj/item/storage/part_replacer) at code/modules/research/part_replacer.dm:24
@@ -1912,7 +1912,7 @@
 	into += entry_block("code/game/objects/items/weapons/storage/firstaid.dm", 138, /obj/item/storage/pill_bottle)
 	into += entry_line(139)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/pill, /obj/item/dice, /obj/item/paper), max_size = ITEMSIZE_TINY)))
-	into += entry_line(143)
+	into += entry_line(144)
 	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.priority(global.above("storage.put_in")), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
 
 /// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:23
@@ -2160,7 +2160,7 @@
 	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 913, /obj/item/storage/trinketbox)
 	into += entry_line(914)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/accessory/ring, /obj/item/coin, /obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)))
-	into += entry_line(918)
+	into += entry_line(919)
 	into += list(global.op("lid", global.in_hand(), global.label("Open"), global.then(PROC_REF(flip_lid))))
 
 /// CAPABILITIES(/obj/item/storage/vore_egg) at code/game/objects/items/weapons/storage/egg.dm:19
@@ -2467,14 +2467,14 @@
 /obj/machinery/door/airlock/external/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/doors/airlock_subtypes.dm", 110, /obj/machinery/door/airlock/external)
-	into += entry_line(110)
+	into += entry_line(111)
 	into += list(global.every(15 SECONDS, global.then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
 
-/// CAPABILITIES(/obj/machinery/door/airlock/glass_external) at code/game/machinery/doors/airlock_subtypes.dm:133
+/// CAPABILITIES(/obj/machinery/door/airlock/glass_external) at code/game/machinery/doors/airlock_subtypes.dm:134
 /obj/machinery/door/airlock/glass_external/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/airlock_subtypes.dm", 133, /obj/machinery/door/airlock/glass_external)
-	into += entry_line(133)
+	into += entry_block("code/game/machinery/doors/airlock_subtypes.dm", 134, /obj/machinery/door/airlock/glass_external)
+	into += entry_line(135)
 	into += list(global.every(15 SECONDS, global.then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
 
 /// CAPABILITIES(/obj/machinery/door/airlock/lift) at code/modules/turbolift/turbolift_door.dm:49
@@ -2802,9 +2802,9 @@
 /obj/machinery/power/smes/buildable/hybrid/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/power/smes.dm", 616, /obj/machinery/power/smes/buildable/hybrid)
-	into += entry_line(616)
+	into += entry_line(617)
 	into += list(global.without("cut_terminal"))
-	into += entry_line(616)
+	into += entry_line(618)
 	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(hybrid_charge))))
 
 /// CAPABILITIES(/obj/machinery/recharger) at code/game/machinery/recharger.dm:88
@@ -2918,9 +2918,9 @@
 /obj/machinery/vending/nifsoft_shop/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/nifsoft/nif_softshop.dm", 26, /obj/machinery/vending/nifsoft_shop)
-	into += entry_line(26)
+	into += entry_line(27)
 	into += list(global.configure(global.wires(kind = /datum/wires/vending/no_contraband)))
-	into += entry_line(26)
+	into += entry_line(28)
 	into += list(global.configure(global.emag(parts = global.then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted))))
 
 /// CAPABILITIES(/obj/structure/door_assembly) at code/game/objects/structures/door_assembly.dm:179
@@ -2937,13 +2937,13 @@
 	into += list(global.op("rename_robot", global.hand(), global.label("Rename"), global.when(global.req(PROC_REF(robot_may_rename))), global.wait(0), global.asks(/datum/prompt/text, fields = list("question" = "Enter the name for the airlock.")), global.then(PROC_REF(renamed))))
 	into += entry_line(189)
 	into += list(global.op("plate_glass", global.stack(/obj/item/stack/material/glass/reinforced, 1), global.label("Install windows"), global.when(PROC_REF(unplated)), global.wait(4 SECONDS), global.then(PROC_REF(glass_in))))
-	into += entry_line(189)
-	into += list(global.op("plate", global.inputs(global.stack(/obj/item/stack/material/gold, 2), global.stack(/obj/item/stack/material/silver, 2), global.stack(/obj/item/stack/material/diamond, 2), global.stack(/obj/item/stack/material/uranium, 2), global.stack(/obj/item/stack/material/phoron, 2), global.stack(/obj/item/stack/material/sandstone, 2)), global.label("Install plating"), global.when(PROC_REF(unplated)), global.wait(4 SECONDS), global.then(PROC_REF(plated_in))))
-	into += entry_line(189)
-	into += list(global.op("plate_bad", global.item(/obj/item/stack/material), global.label("Install plating"), global.when(PROC_REF(unplated)), global.when(global.cond_not(global.req(/obj/item/stack/material/glass/reinforced))), global.when(global.cond_not(global.req(/obj/item/stack/material/gold))), global.when(global.cond_not(global.req(/obj/item/stack/material/silver))), global.when(global.cond_not(global.req(/obj/item/stack/material/diamond))), global.when(global.cond_not(global.req(/obj/item/stack/material/uranium))), global.when(global.cond_not(global.req(/obj/item/stack/material/phoron))), global.when(global.cond_not(global.req(/obj/item/stack/material/sandstone))), global.priority(OP_PRIORITY_NORMAL), global.wait(0), global.then(PROC_REF(plating_refused))))
-	into += entry_line(189)
-	into += list(global.op("unplate", global.tool(TOOL_WELDER), global.label("Take the plating off"), global.when(PROC_REF(plated)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(plating_off))))
 	into += entry_line(190)
+	into += list(global.op("plate", global.inputs(global.stack(/obj/item/stack/material/gold, 2), global.stack(/obj/item/stack/material/silver, 2), global.stack(/obj/item/stack/material/diamond, 2), global.stack(/obj/item/stack/material/uranium, 2), global.stack(/obj/item/stack/material/phoron, 2), global.stack(/obj/item/stack/material/sandstone, 2)), global.label("Install plating"), global.when(PROC_REF(unplated)), global.wait(4 SECONDS), global.then(PROC_REF(plated_in))))
+	into += entry_line(191)
+	into += list(global.op("plate_bad", global.item(/obj/item/stack/material), global.label("Install plating"), global.when(PROC_REF(unplated)), global.when(global.cond_not(global.req(/obj/item/stack/material/glass/reinforced))), global.when(global.cond_not(global.req(/obj/item/stack/material/gold))), global.when(global.cond_not(global.req(/obj/item/stack/material/silver))), global.when(global.cond_not(global.req(/obj/item/stack/material/diamond))), global.when(global.cond_not(global.req(/obj/item/stack/material/uranium))), global.when(global.cond_not(global.req(/obj/item/stack/material/phoron))), global.when(global.cond_not(global.req(/obj/item/stack/material/sandstone))), global.priority(OP_PRIORITY_NORMAL), global.wait(0), global.then(PROC_REF(plating_refused))))
+	into += entry_line(192)
+	into += list(global.op("unplate", global.tool(TOOL_WELDER), global.label("Take the plating off"), global.when(PROC_REF(plated)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(plating_off))))
+	into += entry_line(193)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_not(global.req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down)))))
 
 /// CAPABILITIES(/obj/structure/firedoor_assembly) at code/game/machinery/doors/firedoor_assembly.dm:34
@@ -3023,7 +3023,7 @@
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
-/// CAPABILITY_TYPE(e0_door, CAP_E0_DOOR) at code/tests/engine/fixtures.dm:144
+/// CAPABILITY_TYPE(e0_door, CAP_E0_DOOR) at code/tests/engine/fixtures.dm:145
 /proc/e0_door()
 	RETURN_TYPE(/datum/capability/e0_door)
 	return cap_construct(CAP_E0_DOOR, /datum/capability/e0_door, list(), "")
@@ -3099,7 +3099,7 @@
 /datum/capdef_decl/c_p1_ticker/spec()
 	return list(CAP_P1_TICKER, /datum/capability/p1_ticker, NONE, BEST(power), "p1_ticker", "power")
 
-/// CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE) at code/tests/engine/p2_fixtures.dm:196
+/// CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE) at code/tests/engine/p2_fixtures.dm:205
 /proc/p2_bundle()
 	RETURN_TYPE(/datum/capability/def/p2_bundle)
 	return cap_construct(CAP_P2_BUNDLE, /datum/capability/def/p2_bundle, list(), "")
@@ -3116,172 +3116,172 @@
 /proc/e1_solo_lit(datum/holder, selector)
 	return cap_key_get(holder, E1_SOLO_LIT, selector)
 
-/// cap_keys(CAP_E0_DOOR) at code/tests/engine/fixtures.dm:145
+/// cap_keys(CAP_E0_DOOR) at code/tests/engine/fixtures.dm:146
 /datum/cap_keys_decl/k_e0_door/spec()
 	return list(CAP_E0_DOOR, list(OPEN = null))
 /// The state key OPEN of e0_door, read on a holder (a granted capability with several selectors names the selector).
 /proc/e0_door_open(datum/holder, selector)
 	return cap_key_get(holder, E0_DOOR_OPEN, selector)
 
-/// STATE_GRAPH(GRAPH_DOOR_ASSEMBLY) at code/tests/engine/e1_fixtures.dm:179
+/// STATE_GRAPH(GRAPH_DOOR_ASSEMBLY) at code/tests/engine/e1_fixtures.dm:182
 /datum/graph_decl/g_graph_door_assembly/spec()
 	return list(GRAPH_DOOR_ASSEMBLY, global.start(STAGE_DOOR_FRAME), global.stage(STAGE_DOOR_WIRED, global.stack(/obj/item/stack/cable_coil, 5)), global.stage(STAGE_DOOR_BOARDED, global.item(/obj/item/e0_fixture/board), global.put_in(SLOT_CONSTRUCTION)), global.stage(STAGE_DOOR_FINISHED, global.tool(TOOL_SCREWDRIVER), global.wait(0), from = STAGE_DOOR_BOARDED), global.stage(STAGE_DOOR_FINISHED, global.item(/obj/item/e0_fixture/door_kit), global.consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(global.tool(TOOL_CROWBAR), global.wait(0))), global.dismantle(global.tool(TOOL_WELDER)))
 
-/// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:319
+/// CAPABILITIES(/datum/e0_chain_node) at code/tests/engine/fixtures.dm:320
 /datum/e0_chain_node/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 319, /datum/e0_chain_node)
-	into += entry_line(319)
+	into += entry_block("code/tests/engine/fixtures.dm", 320, /datum/e0_chain_node)
+	into += entry_line(321)
 	into += list(global.on_notice(/datum/notice/e0_chain, global.then(PROC_REF(hear))))
 
 /// CAPABILITIES(/datum/e0_species/shifter) at code/tests/engine/fixtures.dm:92
 /datum/e0_species/shifter/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/fixtures.dm", 92, /datum/e0_species/shifter)
-	into += entry_line(92)
+	into += entry_line(93)
 	into += list(global.e0_phase_shift())
 
 /// CAPABILITIES(/datum/e1_species/alpha) at code/tests/engine/e1_fixtures.dm:61
 /datum/e1_species/alpha/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/e1_fixtures.dm", 61, /datum/e1_species/alpha)
-	into += entry_line(61)
+	into += entry_line(62)
 	into += list(global.e1_widget("species", power = 5))
-	into += entry_line(61)
+	into += entry_line(63)
 	into += list(global.e1_beacon())
 
-/// CAPABILITIES(/datum/e1_species/beta) at code/tests/engine/e1_fixtures.dm:66
+/// CAPABILITIES(/datum/e1_species/beta) at code/tests/engine/e1_fixtures.dm:68
 /datum/e1_species/beta/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 66, /datum/e1_species/beta)
-	into += entry_line(66)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 68, /datum/e1_species/beta)
+	into += entry_line(69)
 	into += list(global.e1_solo())
 
-/// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:151
+/// CAPABILITIES(/datum/om_test_entity/e4_twin) at code/tests/engine/e4_fixtures.dm:155
 /datum/om_test_entity/e4_twin/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e4_fixtures.dm", 151, /datum/om_test_entity/e4_twin)
-	into += entry_line(152)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 155, /datum/om_test_entity/e4_twin)
+	into += entry_line(156)
 	into += list(global.on_notice(/datum/notice/atom_bumped, global.then(PROC_REF(notice_heard))))
 
-/// CAPABILITIES(/datum/s1_species/brawler) at code/tests/engine/s1_fixtures.dm:165
+/// CAPABILITIES(/datum/s1_species/brawler) at code/tests/engine/s1_fixtures.dm:166
 /datum/s1_species/brawler/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 165, /datum/s1_species/brawler)
-	into += entry_line(166)
-	into += list(global.hands())
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 166, /datum/s1_species/brawler)
 	into += entry_line(167)
+	into += list(global.hands())
+	into += entry_line(168)
 	into += list(global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 6)))
 
-/// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:112
+/// CAPABILITIES(/mob/living/simple_mob/e0_fixture) at code/tests/engine/fixtures.dm:113
 /mob/living/simple_mob/e0_fixture/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 112, /mob/living/simple_mob/e0_fixture)
-	into += entry_line(113)
-	into += list(global.ref_one(nameof(species), /datum/e0_species))
+	into += entry_block("code/tests/engine/fixtures.dm", 113, /mob/living/simple_mob/e0_fixture)
 	into += entry_line(114)
-	into += list(global.rel_grants(nameof(species)))
+	into += list(global.ref_one(nameof(species), /datum/e0_species))
 	into += entry_line(115)
+	into += list(global.rel_grants(nameof(species)))
+	into += entry_line(116)
 	into += list(global.hands())
 
-/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:128
+/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:129
 /mob/living/simple_mob/lib_fixture_biter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 128, /mob/living/simple_mob/lib_fixture_biter)
-	into += entry_line(129)
+	into += entry_block("code/tests/library/fixtures.dm", 129, /mob/living/simple_mob/lib_fixture_biter)
+	into += entry_line(130)
 	into += list(global.natural_weapon(/datum/natural_weapon/bite, damage = 10))
 
-/// CAPABILITIES(/mob/living/simple_mob/s1_fixture) at code/tests/engine/s1_fixtures.dm:179
+/// CAPABILITIES(/mob/living/simple_mob/s1_fixture) at code/tests/engine/s1_fixtures.dm:180
 /mob/living/simple_mob/s1_fixture/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 179, /mob/living/simple_mob/s1_fixture)
-	into += entry_line(180)
-	into += list(global.ref_one(nameof(species), /datum/s1_species))
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 180, /mob/living/simple_mob/s1_fixture)
 	into += entry_line(181)
+	into += list(global.ref_one(nameof(species), /datum/s1_species))
+	into += entry_line(182)
 	into += list(global.rel_grants(nameof(species)))
 
-/// CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless) at code/tests/engine/s1_fixtures.dm:189
+/// CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless) at code/tests/engine/s1_fixtures.dm:190
 /mob/living/simple_mob/s1_fixture_handless/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 189, /mob/living/simple_mob/s1_fixture_handless)
-	into += entry_line(190)
-	into += list(global.ref_one(nameof(species), /datum/s1_species))
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 190, /mob/living/simple_mob/s1_fixture_handless)
 	into += entry_line(191)
+	into += list(global.ref_one(nameof(species), /datum/s1_species))
+	into += entry_line(192)
 	into += list(global.rel_grants(nameof(species)))
 
-/// CAPABILITIES(/obj/belly/s1_test) at code/tests/engine/s1_fixtures.dm:135
+/// CAPABILITIES(/obj/belly/s1_test) at code/tests/engine/s1_fixtures.dm:136
 /obj/belly/s1_test/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 135, /obj/belly/s1_test)
-	into += entry_line(136)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 136, /obj/belly/s1_test)
+	into += entry_line(137)
 	into += list(global.while_slotted(BELLY_SLOT_INTERIOR, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 5)), on = ON_CONTENTS))
 
-/// CAPABILITIES(/obj/e0_fixture/cabinet) at code/tests/engine/fixtures.dm:257
+/// CAPABILITIES(/obj/e0_fixture/cabinet) at code/tests/engine/fixtures.dm:258
 /obj/e0_fixture/cabinet/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 257, /obj/e0_fixture/cabinet)
-	into += entry_line(258)
-	into += list(global.cover(open = global.hand(), starts_open = TRUE))
+	into += entry_block("code/tests/engine/fixtures.dm", 258, /obj/e0_fixture/cabinet)
 	into += entry_line(259)
-	into += list(global.compartment(BAY_CABINET, door = CAP_COVER))
+	into += list(global.cover(open = global.hand(), starts_open = TRUE))
 	into += entry_line(260)
-	into += list(global.cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell))
+	into += list(global.compartment(BAY_CABINET, door = CAP_COVER))
 	into += entry_line(261)
+	into += list(global.cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell))
+	into += entry_line(262)
 	into += list(global.op("pry_panel", global.tool(TOOL_CROWBAR), global.priority(global.above("cell_bay.cell.take")), global.wait(5 SECONDS), global.toggles(nameof(panel_open))))
 
-/// CAPABILITIES(/obj/e0_fixture/door) at code/tests/engine/fixtures.dm:160
+/// CAPABILITIES(/obj/e0_fixture/door) at code/tests/engine/fixtures.dm:161
 /obj/e0_fixture/door/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 160, /obj/e0_fixture/door)
-	into += entry_line(161)
-	into += list(global.e0_door())
+	into += entry_block("code/tests/engine/fixtures.dm", 161, /obj/e0_fixture/door)
 	into += entry_line(162)
+	into += list(global.e0_door())
+	into += entry_line(163)
 	into += list(global.when(E0_DOOR_OPEN, global.contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))
 
-/// CAPABILITIES(/obj/e0_fixture/door_assembly) at code/tests/engine/fixtures.dm:348
+/// CAPABILITIES(/obj/e0_fixture/door_assembly) at code/tests/engine/fixtures.dm:350
 /obj/e0_fixture/door_assembly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 348, /obj/e0_fixture/door_assembly)
-	into += entry_line(349)
+	into += entry_block("code/tests/engine/fixtures.dm", 350, /obj/e0_fixture/door_assembly)
+	into += entry_line(351)
 	into += list(global.construction(GRAPH_DOOR_ASSEMBLY))
 
-/// CAPABILITIES(/obj/e0_fixture/door_assembly/finished) at code/tests/engine/fixtures.dm:365
+/// CAPABILITIES(/obj/e0_fixture/door_assembly/finished) at code/tests/engine/fixtures.dm:367
 /obj/e0_fixture/door_assembly/finished/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 365, /obj/e0_fixture/door_assembly/finished)
-	into += entry_line(366)
+	into += entry_block("code/tests/engine/fixtures.dm", 367, /obj/e0_fixture/door_assembly/finished)
+	into += entry_line(368)
 	into += list(global.configure(global.construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))))
 
-/// CAPABILITIES(/obj/e0_fixture/hopper) at code/tests/engine/fixtures.dm:216
+/// CAPABILITIES(/obj/e0_fixture/hopper) at code/tests/engine/fixtures.dm:217
 /obj/e0_fixture/hopper/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 216, /obj/e0_fixture/hopper)
-	into += entry_line(217)
-	into += list(global.slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY))
+	into += entry_block("code/tests/engine/fixtures.dm", 217, /obj/e0_fixture/hopper)
 	into += entry_line(218)
+	into += list(global.slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY))
+	into += entry_line(219)
 	into += list(global.op("load", global.stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), global.wait(2 SECONDS), global.put_in(SLOT_HOPPER), global.says(MSG(fab/loaded)), global.logs(LOG_GAME)))
 
-/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:289
+/// CAPABILITIES(/obj/e0_fixture/lamp) at code/tests/engine/fixtures.dm:290
 /obj/e0_fixture/lamp/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 289, /obj/e0_fixture/lamp)
-	into += entry_line(290)
+	into += entry_block("code/tests/engine/fixtures.dm", 290, /obj/e0_fixture/lamp)
+	into += entry_line(291)
 	into += list(global.contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
 
-/// CAPABILITIES(/obj/e0_fixture/library) at code/tests/engine/fixtures.dm:177
+/// CAPABILITIES(/obj/e0_fixture/library) at code/tests/engine/fixtures.dm:178
 /obj/e0_fixture/library/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 177, /obj/e0_fixture/library)
-	into += entry_line(178)
-	into += list(global.op("select", global.ui_act(global.arg("id", global.int(1))), global.then(PROC_REF(select_row))))
+	into += entry_block("code/tests/engine/fixtures.dm", 178, /obj/e0_fixture/library)
 	into += entry_line(179)
+	into += list(global.op("select", global.ui_act(global.arg("id", global.int(1))), global.then(PROC_REF(select_row))))
+	into += entry_line(180)
 	into += list(global.op("print", global.ui_act(), global.needs(global.req_is(nameof(selected_id), because = MSG(library/nothing_selected))), global.confirms("Print the selected book?"), global.captures(nameof(selected_id)), global.then(PROC_REF(print_book)), global.logs(LOG_GAME)))
 
-/// CAPABILITIES(/obj/e0_fixture/library/strict) at code/tests/engine/fixtures.dm:198
+/// CAPABILITIES(/obj/e0_fixture/library/strict) at code/tests/engine/fixtures.dm:199
 /obj/e0_fixture/library/strict/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 198, /obj/e0_fixture/library/strict)
-	into += entry_line(199)
+	into += entry_block("code/tests/engine/fixtures.dm", 199, /obj/e0_fixture/library/strict)
+	into += entry_line(200)
 	into += list(global.extend("print", global.captures(nameof(selected_id), resume = CANCEL_IF_CHANGED)))
 
 /// CAPABILITIES(/obj/e0_fixture/p1_impure) at code/tests/engine/p1_fixtures.dm:45
@@ -3302,86 +3302,86 @@
 	into += entry_line(76)
 	into += list(global.op("press", global.hand(), global.needs(global.req_is(nameof(ready), because = MSG(p1/not_ready))), global.wait(5 SECONDS), global.then(PROC_REF(done))))
 
-/// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:384
+/// CAPABILITIES(/obj/e0_fixture/pump) at code/tests/engine/fixtures.dm:386
 /obj/e0_fixture/pump/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/fixtures.dm", 384, /obj/e0_fixture/pump)
-	into += entry_line(385)
-	into += list(global.interface("E0Pump", title = "Gas Pump"))
-	into += entry_line(386)
-	into += list(global.ui_shape(target_pressure))
+	into += entry_block("code/tests/engine/fixtures.dm", 386, /obj/e0_fixture/pump)
 	into += entry_line(387)
+	into += list(global.interface("E0Pump", title = "Gas Pump"))
+	into += entry_line(388)
+	into += list(global.ui_shape(target_pressure))
+	into += entry_line(389)
 	into += list(global.op("set_pressure", global.ui_act(global.arg("pressure", from = nameof(target_pressure))), global.then(PROC_REF(set_pressure))))
 
-/// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:190
+/// CAPABILITIES(/obj/e1_assembly) at code/tests/engine/e1_fixtures.dm:193
 /obj/e1_assembly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 190, /obj/e1_assembly)
-	into += entry_line(190)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 193, /obj/e1_assembly)
+	into += entry_line(194)
 	into += list(global.construction(GRAPH_DOOR_ASSEMBLY))
 
-/// CAPABILITIES(/obj/e1_assembly/finished) at code/tests/engine/e1_fixtures.dm:196
+/// CAPABILITIES(/obj/e1_assembly/finished) at code/tests/engine/e1_fixtures.dm:200
 /obj/e1_assembly/finished/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 196, /obj/e1_assembly/finished)
-	into += entry_line(196)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 200, /obj/e1_assembly/finished)
+	into += entry_line(201)
 	into += list(global.configure(global.construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED))))
 
-/// CAPABILITIES(/obj/e1_fixture) at code/tests/engine/e1_fixtures.dm:93
+/// CAPABILITIES(/obj/e1_fixture) at code/tests/engine/e1_fixtures.dm:96
 /obj/e1_fixture/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 93, /obj/e1_fixture)
-	into += entry_line(94)
-	into += list(global.e1_solo())
-	into += entry_line(95)
-	into += list(global.e1_widget("a", power = 2))
-	into += entry_line(96)
-	into += list(global.ref_one(nameof(species), /datum/e1_species))
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 96, /obj/e1_fixture)
 	into += entry_line(97)
-	into += list(global.rel_grants(nameof(species)))
+	into += list(global.e1_solo())
 	into += entry_line(98)
-	into += list(global.owns_one(nameof(gizmo), /obj/item/e1_part, starts = /obj/item/e1_part))
+	into += list(global.e1_widget("a", power = 2))
 	into += entry_line(99)
-	into += list(global.owns_many(nameof(gizmos), /obj/item/e1_part))
+	into += list(global.ref_one(nameof(species), /datum/e1_species))
 	into += entry_line(100)
-	into += list(global.ref_many(nameof(watchers), /mob))
+	into += list(global.rel_grants(nameof(species)))
 	into += entry_line(101)
-	into += list(global.entry_link("/obj/e1_fixture::partner", "/obj/e1_fixture::partner"))
+	into += list(global.owns_one(nameof(gizmo), /obj/item/e1_part, starts = /obj/item/e1_part))
 	into += entry_line(102)
-	into += list(global.slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1))
+	into += list(global.owns_many(nameof(gizmos), /obj/item/e1_part))
 	into += entry_line(103)
-	into += list(global.while_slotted("e1_slot", global.e1_beacon(), on = ON_HOLDER))
+	into += list(global.ref_many(nameof(watchers), /mob))
 	into += entry_line(104)
-	into += list(global.when(nameof(e1_armed), global.entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4)))
+	into += list(global.entry_link("/obj/e1_fixture::partner", "/obj/e1_fixture::partner"))
 	into += entry_line(105)
+	into += list(global.slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1))
+	into += entry_line(106)
+	into += list(global.while_slotted("e1_slot", global.e1_beacon(), on = ON_HOLDER))
+	into += entry_line(107)
+	into += list(global.when(nameof(e1_armed), global.entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4)))
+	into += entry_line(108)
 	into += list(global.entry_of("op", "toggle"))
 
-/// CAPABILITIES(/obj/e1_fixture/changed) at code/tests/engine/e1_fixtures.dm:114
+/// CAPABILITIES(/obj/e1_fixture/changed) at code/tests/engine/e1_fixtures.dm:117
 /obj/e1_fixture/changed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 114, /obj/e1_fixture/changed)
-	into += entry_line(115)
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 117, /obj/e1_fixture/changed)
+	into += entry_line(118)
 	into += list(global.extend("toggle", global.entry_of("part", "needs")))
-	into += entry_line(116)
+	into += entry_line(119)
 	into += list(global.configure(global.e1_widget("a", power = 9)))
-	into += entry_line(117)
+	into += entry_line(120)
 	into += list(global.without(CAP_E1_SOLO))
 
-/// CAPABILITIES(/obj/e1_starts) at code/tests/engine/e1_fixtures.dm:143
+/// CAPABILITIES(/obj/e1_starts) at code/tests/engine/e1_fixtures.dm:146
 /obj/e1_starts/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e1_fixtures.dm", 143, /obj/e1_starts)
-	into += entry_line(144)
-	into += list(global.owns_one(nameof(picked), /obj/item/e1_part, starts = global.pick_one(list(/obj/item/e1_part/tarnished = 1))))
-	into += entry_line(145)
-	into += list(global.owns_one(nameof(conditional), /obj/item/e1_part, starts = global.when(nameof(flag), /obj/item/e1_part/tarnished)))
-	into += entry_line(146)
-	into += list(global.owns_one(nameof(skipped), /obj/item/e1_part, starts = global.when(nameof(off_flag), /obj/item/e1_part/tarnished)))
+	into += entry_block("code/tests/engine/e1_fixtures.dm", 146, /obj/e1_starts)
 	into += entry_line(147)
-	into += list(global.owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2)))
+	into += list(global.owns_one(nameof(picked), /obj/item/e1_part, starts = global.pick_one(list(/obj/item/e1_part/tarnished = 1))))
 	into += entry_line(148)
-	into += list(global.owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")))
+	into += list(global.owns_one(nameof(conditional), /obj/item/e1_part, starts = global.when(nameof(flag), /obj/item/e1_part/tarnished)))
 	into += entry_line(149)
+	into += list(global.owns_one(nameof(skipped), /obj/item/e1_part, starts = global.when(nameof(off_flag), /obj/item/e1_part/tarnished)))
+	into += entry_line(150)
+	into += list(global.owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2)))
+	into += entry_line(151)
+	into += list(global.owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")))
+	into += entry_line(152)
 	into += list(global.owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
 
 /// CAPABILITIES(/obj/e2_bench_stack) at code/tests/engine/e2_bench_fixtures.dm:41
@@ -3568,17 +3568,17 @@
 	into += entry_line(65)
 	into += list(global.on_notice(/datum/notice/e4_hushed, global.then(PROC_REF(heard))))
 
-/// CAPABILITIES(/obj/e4_fixture/switch) at code/tests/engine/e4_fixtures.dm:132
+/// CAPABILITIES(/obj/e4_fixture/switch) at code/tests/engine/e4_fixtures.dm:131
 /obj/e4_fixture/switch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/e4_fixtures.dm", 132, /obj/e4_fixture/switch)
+	into += entry_block("code/tests/engine/e4_fixtures.dm", 131, /obj/e4_fixture/switch)
 	into += entry_line(132)
 	into += list(global.on_change(nameof(powered), ENTER, global.then(PROC_REF(power_on))))
-	into += entry_line(132)
+	into += entry_line(133)
 	into += list(global.on_change(nameof(powered), EXIT, global.then(PROC_REF(power_off))))
-	into += entry_line(132)
+	into += entry_line(134)
 	into += list(global.on_change(nameof(charge_level), ANY, global.then(PROC_REF(charge_level_changed))))
-	into += entry_line(132)
+	into += entry_line(136)
 	into += list(global.on_op("e4.toggle", global.then(PROC_REF(op_heard))))
 
 /// CAPABILITIES(/obj/e4_fixture/target) at code/tests/engine/e4_fixtures.dm:34
@@ -3634,7 +3634,7 @@
 	into += list(global.op("slow", global.menu(), global.wait(3 SECONDS), global.then(PROC_REF(finished))))
 	into += entry_line(12)
 	into += list(global.op("hush", global.menu(), global.wait(3 SECONDS), global.silent_wait(), global.then(PROC_REF(finished))))
-	into += entry_line(12)
+	into += entry_line(13)
 	into += list(global.op("careful", global.menu(), global.wait(3 SECONDS), global.on_interrupt(PROC_REF(broken)), global.then(PROC_REF(finished))))
 
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
@@ -3672,11 +3672,11 @@
 	into += entry_line(28)
 	into += list(global.reagent_container(volume = 30, transfer = list(5, 10, 15, 30), taps = list(/obj/lib_fixture/tap)))
 
-/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:120
+/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:121
 /obj/item/lib_fixture/hazmat/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 120, /obj/item/lib_fixture/hazmat)
-	into += entry_line(121)
+	into += entry_block("code/tests/library/fixtures.dm", 121, /obj/item/lib_fixture/hazmat)
+	into += entry_line(122)
 	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = "A hazmat patch is sewn on."))
 
 /// CAPABILITIES(/obj/item/lib_fixture/jug) at code/tests/library/fixtures.dm:47
@@ -3686,11 +3686,11 @@
 	into += entry_line(48)
 	into += list(global.reagent_container(volume = nameof(capacity), transfer_default = nameof(per_transfer), transfer_min = nameof(least), transfer_max = nameof(most), starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1))
 
-/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:92
+/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:93
 /obj/item/lib_fixture/sheets/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 92, /obj/item/lib_fixture/sheets)
-	into += entry_line(93)
+	into += entry_block("code/tests/library/fixtures.dm", 93, /obj/item/lib_fixture/sheets)
+	into += entry_line(94)
 	into += list(global.stackable(max_amount = 10))
 
 /// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:66
@@ -3718,158 +3718,158 @@
 	into += entry_line(91)
 	into += list(global.op("stash", global.item(/obj/item/e2_key), global.put_in("p1_slot"), global.menu()))
 
-/// CAPABILITIES(/obj/item/p2_op_item) at code/tests/engine/p2_fixtures.dm:179
+/// CAPABILITIES(/obj/item/p2_op_item) at code/tests/engine/p2_fixtures.dm:188
 /obj/item/p2_op_item/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 179, /obj/item/p2_op_item)
-	into += entry_line(180)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 188, /obj/item/p2_op_item)
+	into += entry_line(189)
 	into += list(global.op("p2_idle", global.at_target(/obj/p2_legacy_target), global.when(PROC_REF(p2_never)), global.then(PROC_REF(p2_idle))))
-	into += entry_line(181)
+	into += entry_line(190)
 	into += list(global.op("p2_turf", global.at_target(/turf), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(p2_tapped))))
 
-/// CAPABILITIES(/obj/item/s1_fixture/charm) at code/tests/engine/s1_fixtures.dm:122
+/// CAPABILITIES(/obj/item/s1_fixture/charm) at code/tests/engine/s1_fixtures.dm:123
 /obj/item/s1_fixture/charm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 122, /obj/item/s1_fixture/charm)
-	into += entry_line(123)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 123, /obj/item/s1_fixture/charm)
+	into += entry_line(124)
 	into += list(global.while_slotted(SLOT_ANY_WORN, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 2)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/item/s1_fixture/gauntlet) at code/tests/engine/s1_fixtures.dm:152
+/// CAPABILITIES(/obj/item/s1_fixture/gauntlet) at code/tests/engine/s1_fixtures.dm:153
 /obj/item/s1_fixture/gauntlet/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 152, /obj/item/s1_fixture/gauntlet)
-	into += entry_line(153)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 153, /obj/item/s1_fixture/gauntlet)
+	into += entry_line(154)
 	into += list(global.while_slotted(SLOT_ANY_WORN, global.provides(AFF_MANIPULATE, reach = 1), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/item/s1_fixture/gizmo) at code/tests/engine/s1_fixtures.dm:110
+/// CAPABILITIES(/obj/item/s1_fixture/gizmo) at code/tests/engine/s1_fixtures.dm:111
 /obj/item/s1_fixture/gizmo/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 110, /obj/item/s1_fixture/gizmo)
-	into += entry_line(111)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 111, /obj/item/s1_fixture/gizmo)
+	into += entry_line(112)
 	into += list(global.while_slotted("s1_main", global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 1)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/item/s1_fixture/spear) at code/tests/engine/s1_fixtures.dm:144
+/// CAPABILITIES(/obj/item/s1_fixture/spear) at code/tests/engine/s1_fixtures.dm:145
 /obj/item/s1_fixture/spear/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 144, /obj/item/s1_fixture/spear)
-	into += entry_line(145)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 145, /obj/item/s1_fixture/spear)
+	into += entry_line(146)
 	into += list(global.provides(AFF_ATTACK, reach = 2))
 
-/// CAPABILITIES(/obj/item/s1_fixture/torch) at code/tests/engine/s1_fixtures.dm:129
+/// CAPABILITIES(/obj/item/s1_fixture/torch) at code/tests/engine/s1_fixtures.dm:130
 /obj/item/s1_fixture/torch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 129, /obj/item/s1_fixture/torch)
-	into += entry_line(130)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 130, /obj/item/s1_fixture/torch)
+	into += entry_line(131)
 	into += list(global.while_slotted(SLOT_ANY_HELD, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 3)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:144
+/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:145
 /obj/lib_fixture/glow_box/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 144, /obj/lib_fixture/glow_box)
-	into += entry_line(145)
-	into += list(global.examine_line("It is a box."))
+	into += entry_block("code/tests/library/fixtures.dm", 145, /obj/lib_fixture/glow_box)
 	into += entry_line(146)
-	into += list(global.examine_line(PROC_REF(note_line)))
+	into += list(global.examine_line("It is a box."))
 	into += entry_line(147)
-	into += list(global.examine_line("It glows.", when = nameof(lit)))
+	into += list(global.examine_line(PROC_REF(note_line)))
 	into += entry_line(148)
-	into += list(global.look_layer("glow", when = nameof(lit)))
+	into += list(global.examine_line("It glows.", when = nameof(lit)))
 	into += entry_line(149)
+	into += list(global.look_layer("glow", when = nameof(lit)))
+	into += entry_line(150)
 	into += list(global.look_layer("box"))
 
-/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:101
+/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:102
 /obj/lib_fixture/pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 101, /obj/lib_fixture/pod)
-	into += entry_line(102)
+	into += entry_block("code/tests/library/fixtures.dm", 102, /obj/lib_fixture/pod)
+	into += entry_line(103)
 	into += list(global.interior(escape_wait = 10 SECONDS, escape_chance = 100))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:113
+/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:114
 /obj/lib_fixture/pod/by_var/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 113, /obj/lib_fixture/pod/by_var)
-	into += entry_line(114)
+	into += entry_block("code/tests/library/fixtures.dm", 114, /obj/lib_fixture/pod/by_var)
+	into += entry_line(115)
 	into += list(global.configure(global.interior(escape_chance = nameof(chance_var))))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:107
+/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:108
 /obj/lib_fixture/pod/stubborn/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 107, /obj/lib_fixture/pod/stubborn)
-	into += entry_line(108)
+	into += entry_block("code/tests/library/fixtures.dm", 108, /obj/lib_fixture/pod/stubborn)
+	into += entry_line(109)
 	into += list(global.configure(global.interior(escape_chance = 0)))
 
 /// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:77
 /obj/lib_fixture/tank/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/library/fixtures.dm", 77, /obj/lib_fixture/tank)
-	into += entry_line(77)
+	into += entry_line(78)
 	into += list(global.reagent_container(volume = 100, transfer = list(5, 10)))
 
-/// CAPABILITIES(/obj/lib_fixture/tap) at code/tests/library/fixtures.dm:83
+/// CAPABILITIES(/obj/lib_fixture/tap) at code/tests/library/fixtures.dm:84
 /obj/lib_fixture/tap/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 83, /obj/lib_fixture/tap)
-	into += entry_line(84)
+	into += entry_block("code/tests/library/fixtures.dm", 84, /obj/lib_fixture/tap)
+	into += entry_line(85)
 	into += list(global.reagent_container(volume = 100, transfer = list(10), lid = TRUE))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:129
 /obj/machinery/p2_box/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/p2_fixtures.dm", 129, /obj/machinery/p2_box)
-	into += entry_line(129)
+	into += entry_line(130)
 	into += list(global.machine_basics(null, repair = NONE, frame = NONE, powered = FALSE))
-	into += entry_line(129)
+	into += entry_line(131)
 	into += list(global.maintenance_hatch( cover = global.cover(open = global.tool(TOOL_CROWBAR)), wires = /datum/wires/p2_box, emag = list(global.then(PROC_REF(emag_effect))), panel_needs_cover_closed = TRUE, starts_locked = nameof(lock_at_start)))
-	into += entry_line(129)
+	into += entry_line(132)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL))
-	into += entry_line(129)
+	into += entry_line(133)
 	into += list(global.cell_bay(nameof(cell), at = BAY_HATCH))
-	into += entry_line(129)
+	into += entry_line(134)
 	into += list(global.interface("P2Box"))
-	into += entry_line(129)
+	into += entry_line(135)
 	into += list(global.look_layer("p2-label", when = nameof(label_shown)))
-	into += entry_line(129)
+	into += entry_line(136)
 	into += list(global.examine_line(MSG(p2/ui_forbidden), when = global.cond_not(nameof(label_shown))))
-	into += entry_line(129)
+	into += entry_line(137)
 	into += list(global.op("press", global.ui_act(global.arg("n", global.int(0, 9))), global.then(PROC_REF(pressed))))
-	into += entry_line(129)
+	into += entry_line(138)
 	into += list(global.op("fit", global.tool(TOOL_WRENCH), global.wait(PROC_REF(fit_wait)), global.begins(PROC_REF(fit_begins)), global.then(PROC_REF(fitted_now))))
 
-/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:236
+/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:245
 /obj/machinery/p2_box/slasher/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 236, /obj/machinery/p2_box/slasher)
-	into += entry_line(236)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 245, /obj/machinery/p2_box/slasher)
+	into += entry_line(246)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
-/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:274
+/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:286
 /obj/p2_asker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 274, /obj/p2_asker)
-	into += entry_line(274)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 286, /obj/p2_asker)
+	into += entry_line(287)
 	into += list(global.op("ask", global.ui_act(), global.asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), global.then(PROC_REF(asked_done))))
 
-/// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:204
+/// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:213
 /obj/p2_bundled/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 204, /obj/p2_bundled)
-	into += entry_line(205)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 213, /obj/p2_bundled)
+	into += entry_line(214)
 	into += list(global.p2_bundle())
 
-/// CAPABILITIES(/obj/p2_bundled/stripped) at code/tests/engine/p2_fixtures.dm:211
+/// CAPABILITIES(/obj/p2_bundled/stripped) at code/tests/engine/p2_fixtures.dm:220
 /obj/p2_bundled/stripped/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 211, /obj/p2_bundled/stripped)
-	into += entry_line(212)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 220, /obj/p2_bundled/stripped)
+	into += entry_line(221)
 	into += list(global.without(CAP_P2_BUNDLE))
 
-/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:252
+/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:262
 /obj/p2_dragtarget/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 252, /obj/p2_dragtarget)
-	into += entry_line(252)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 262, /obj/p2_dragtarget)
+	into += entry_line(263)
 	into += list(global.op("use", global.item(/obj/item), global.then(PROC_REF(was_used))))
-	into += entry_line(252)
+	into += entry_line(264)
 	into += list(global.op("drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(was_dragged))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91
@@ -3909,24 +3909,24 @@
 	into += entry_line(27)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
 
-/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:291
+/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:304
 /obj/p2_windowed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 291, /obj/p2_windowed)
-	into += entry_line(291)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 304, /obj/p2_windowed)
+	into += entry_line(305)
 	into += list(global.interface("P2First"))
-	into += entry_line(291)
+	into += entry_line(306)
 	into += list(global.op("p2_window_press", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
-/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:300
+/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:315
 /obj/p2_windowed/second/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 300, /obj/p2_windowed/second)
-	into += entry_line(300)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 315, /obj/p2_windowed/second)
+	into += entry_line(316)
 	into += list(global.without("ui_open"))
-	into += entry_line(300)
+	into += entry_line(317)
 	into += list(global.interface("P2Second"))
-	into += entry_line(300)
+	into += entry_line(318)
 	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
 /// CAPABILITIES(/obj/p2s_chain) at code/tests/engine/p2_storage_fixtures.dm:12
@@ -3956,37 +3956,37 @@
 	into += entry_line(32)
 	into += list(global.op("second", global.item(/obj/item), global.then(PROC_REF(ran_second))))
 
-/// CAPABILITIES(/obj/s1_fixture/bare_meter) at code/tests/engine/s1_fixtures.dm:254
+/// CAPABILITIES(/obj/s1_fixture/bare_meter) at code/tests/engine/s1_fixtures.dm:255
 /obj/s1_fixture/bare_meter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 254, /obj/s1_fixture/bare_meter)
-	into += entry_line(255)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 255, /obj/s1_fixture/bare_meter)
+	into += entry_line(256)
 	into += list(global.ref_one(nameof(terminal), /obj/s1_fixture/terminal))
 
-/// CAPABILITIES(/obj/s1_fixture/meter) at code/tests/engine/s1_fixtures.dm:239
+/// CAPABILITIES(/obj/s1_fixture/meter) at code/tests/engine/s1_fixtures.dm:240
 /obj/s1_fixture/meter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 239, /obj/s1_fixture/meter)
-	into += entry_line(240)
-	into += list(global.ref_one(nameof(terminal), /obj/s1_fixture/terminal))
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 240, /obj/s1_fixture/meter)
 	into += entry_line(241)
+	into += list(global.ref_one(nameof(terminal), /obj/s1_fixture/terminal))
+	into += entry_line(242)
 	into += list(global.on_change("terminal.charge", ANY, global.then(PROC_REF(charge_changed))))
 
 /// CAPABILITIES(/obj/s1_fixture/picky) at code/tests/engine/s1_fixtures.dm:74
 /obj/s1_fixture/picky/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/tests/engine/s1_fixtures.dm", 74, /obj/s1_fixture/picky)
-	into += entry_line(74)
-	into += list(global.ref_one(nameof(steward), /mob))
 	into += entry_line(75)
-	into += list(global.extend(/datum/act/insert, global.needs(global.req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets)))))
+	into += list(global.ref_one(nameof(steward), /mob))
 	into += entry_line(76)
-	into += list(global.extend(/datum/act/insert, global.needs(global.req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward)))))
+	into += list(global.extend(/datum/act/insert, global.needs(global.req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets)))))
 	into += entry_line(77)
-	into += list(global.extend(/datum/act/remove, global.needs(global.req(PROC_REF(not_welded), because = MSG(s1/welded)))))
+	into += list(global.extend(/datum/act/insert, global.needs(global.req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward)))))
 	into += entry_line(78)
-	into += list(global.on_notice(/datum/notice/removed, global.then(PROC_REF(heard_removed))))
+	into += list(global.extend(/datum/act/remove, global.needs(global.req(PROC_REF(not_welded), because = MSG(s1/welded)))))
 	into += entry_line(79)
+	into += list(global.on_notice(/datum/notice/removed, global.then(PROC_REF(heard_removed))))
+	into += entry_line(80)
 	into += list(global.on_notice(/datum/notice/inserted, global.then(PROC_REF(heard_inserted))))
 
 /// CAPABILITIES(/obj/s1_fixture/rack) at code/tests/engine/s1_fixtures.dm:41
@@ -4002,20 +4002,20 @@
 	into += entry_line(45)
 	into += list(global.on_notice(/datum/notice/inserted, global.then(PROC_REF(heard_inserted))))
 
-/// CAPABILITIES(/obj/s1_fixture/ticker) at code/tests/engine/s1_fixtures.dm:202
+/// CAPABILITIES(/obj/s1_fixture/ticker) at code/tests/engine/s1_fixtures.dm:203
 /obj/s1_fixture/ticker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 202, /obj/s1_fixture/ticker)
-	into += entry_line(203)
-	into += list(global.every(1 SECOND, global.then(PROC_REF(tick))))
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 203, /obj/s1_fixture/ticker)
 	into += entry_line(204)
+	into += list(global.every(1 SECOND, global.then(PROC_REF(tick))))
+	into += entry_line(205)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(slow_tick)), when = "powered"))
 
-/// CAPABILITIES(/obj/s1_fixture/ticker/fast) at code/tests/engine/s1_fixtures.dm:217
+/// CAPABILITIES(/obj/s1_fixture/ticker/fast) at code/tests/engine/s1_fixtures.dm:218
 /obj/s1_fixture/ticker/fast/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/s1_fixtures.dm", 217, /obj/s1_fixture/ticker/fast)
-	into += entry_line(218)
+	into += entry_block("code/tests/engine/s1_fixtures.dm", 218, /obj/s1_fixture/ticker/fast)
+	into += entry_line(219)
 	into += list(global.every(5, global.then(PROC_REF(fast_tick))))
 
 #endif

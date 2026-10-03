@@ -589,8 +589,8 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	max_storage_space = ITEMSIZE_COST_HUGE
 
 
-CAPABILITIES(/obj/item/storage/internal/gripper, \
-	configure(storage(max_size = ITEMSIZE_HUGE)))
+CAPABILITIES(/obj/item/storage/internal/gripper)
+	configure(storage(max_size = ITEMSIZE_HUGE))
 
 /obj/item/gripper/Initialize(mapload)
 	. = ..()

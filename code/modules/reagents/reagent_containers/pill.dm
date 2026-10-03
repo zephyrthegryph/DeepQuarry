@@ -24,15 +24,15 @@
 
 // A pill is a sealed holder of its volume that is taken whole and used up (dose(), code/library/reagents/dose.dm): swallowed at once by yourself, forced down
 // somebody else's throat in three seconds, dissolved in an open container. A sharp thing or an ID card cuts it up into a powder.
-CAPABILITIES(/obj/item/reagent_containers/pill, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder))
+CAPABILITIES(/obj/item/reagent_containers/pill)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Pills. END

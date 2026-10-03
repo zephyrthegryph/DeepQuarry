@@ -34,8 +34,8 @@ TRACKED(/obj/item/storage/mre, opened)
 	if(opened)
 		look.state("[initial(icon_state)][opened]")
 
-CAPABILITIES(/obj/item/storage/mre, \
-	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open))))
+CAPABILITIES(/obj/item/storage/mre)
+	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open)))
 
 /// Used in hand: it is torn open and shows what is inside.
 /obj/item/storage/mre/proc/tear_open(datum/act/op/A)
@@ -239,8 +239,8 @@ TRACKED(/obj/item/storage/mrebag, opened)
 	if(opened)
 		look.state("[initial(icon_state)][opened]")
 
-CAPABILITIES(/obj/item/storage/mrebag, \
-	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open))))
+CAPABILITIES(/obj/item/storage/mrebag)
+	op("tear_open", in_hand(), label("Open"), then(PROC_REF(tear_open)))
 
 /// Used in hand: it is torn open and shows what is inside.
 /obj/item/storage/mrebag/proc/tear_open(datum/act/op/A)
@@ -314,8 +314,8 @@ CAPABILITIES(/obj/item/storage/mrebag, \
 	var/isopened = 0
 
 
-CAPABILITIES(/obj/item/storage/box/tgmc_mre, \
-	configure(storage(max_size = 0)))
+CAPABILITIES(/obj/item/storage/box/tgmc_mre)
+	configure(storage(max_size = 0))
 
 /obj/item/storage/box/tgmc_mre/Initialize(mapload)
 	. = ..()

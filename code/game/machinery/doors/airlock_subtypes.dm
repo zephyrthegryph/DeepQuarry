@@ -107,7 +107,8 @@
 /obj/machinery/door/airlock/external/can_freeze(datum/act/A)
 	return TRUE
 
-CAPABILITIES(/obj/machinery/door/airlock/external, every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
+CAPABILITIES(/obj/machinery/door/airlock/external)
+	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/external/bolted
 	icon_state = "door_locked" // So it looks visibly bolted in map editor
@@ -130,7 +131,8 @@ CAPABILITIES(/obj/machinery/door/airlock/external, every(15 SECONDS, then(PROC_R
 /obj/machinery/door/airlock/glass_external/can_freeze(datum/act/A)
 	return TRUE
 
-CAPABILITIES(/obj/machinery/door/airlock/glass_external, every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
+CAPABILITIES(/obj/machinery/door/airlock/glass_external)
+	every(15 SECONDS, then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze))
 
 /obj/machinery/door/airlock/glass
 	name = "Glass Airlock"

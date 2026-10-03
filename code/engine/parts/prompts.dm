@@ -22,7 +22,8 @@
 	/// The tgui window or radial ring showing it, while it is open. Closing it is a cancellation.
 	var/datum/window
 
-CAPABILITIES(/datum/prompt, ref_one(nameof(window), /datum))
+CAPABILITIES(/datum/prompt)
+	ref_one(nameof(window), /datum)
 
 /// The prompt asks its answerer: a player with a client sees the kind's window; anything else (a test driver, an AI) answers through request_answer().
 /datum/prompt/begin()

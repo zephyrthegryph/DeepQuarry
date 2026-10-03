@@ -81,18 +81,18 @@ MSG_DEF_SELF(stage/windoor_assembly/finished, "It is finished.")
 MSG_DEF_SELF(windoor_assembly/bolted_down, "Unbolt it from the floor first.")
 MSG_DEF_SELF(windoor_assembly/broken_board, "The assembly has broken airlock electronics.")
 
-CAPABILITIES(/obj/structure/windoor_assembly, \
-	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME), \
-		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))), \
-		stage(STAGE_WINDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))), \
-		stage(STAGE_WINDOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS))), \
-		stage(STAGE_WINDOOR_ASSEMBLY_FINISHED, tool(TOOL_CROWBAR), wait(4 SECONDS), needs(req(PROC_REF(board_whole), because = MSG(windoor_assembly/broken_board))), then(PROC_REF(finish_windoor)), undo = null), \
-		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
-	owns_one(nameof(electronics), /obj/item/airlock_electronics), \
-	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed))), \
-	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed))), \
-	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped))), \
-	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down)))))
+CAPABILITIES(/obj/structure/windoor_assembly)
+	construction(start(STAGE_WINDOOR_ASSEMBLY_FRAME),
+		stage(STAGE_WINDOOR_ASSEMBLY_SECURED, tool(TOOL_WRENCH), wait(4 SECONDS), then(PROC_REF(secured_down)), undone(PROC_REF(unsecured)), undo = list(tool(TOOL_WRENCH), wait(4 SECONDS))),
+		stage(STAGE_WINDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))),
+		stage(STAGE_WINDOOR_ASSEMBLY_BOARDED, item(/obj/item/airlock_electronics), wait(4 SECONDS), then(PROC_REF(board_seated)), undone(PROC_REF(board_taken)), undo = list(tool(TOOL_SCREWDRIVER), wait(4 SECONDS))),
+		stage(STAGE_WINDOOR_ASSEMBLY_FINISHED, tool(TOOL_CROWBAR), wait(4 SECONDS), needs(req(PROC_REF(board_whole), because = MSG(windoor_assembly/broken_board))), then(PROC_REF(finish_windoor)), undo = null),
+		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled))))
+	owns_one(nameof(electronics), /obj/item/airlock_electronics)
+	op("rename", item(/obj/item/pen), label("Rename"), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
+	op("rename_robot", hand(), label("Rename"), when(req(PROC_REF(robot_may_rename))), wait(0), asks(/datum/prompt/text, fields = list("question" = "Enter the name for the windoor.")), then(PROC_REF(renamed)))
+	op("flip", menu(), label("Flip Windoor Assembly"), wait(0), then(PROC_REF(flipped)))
+	extend("construction.dismantle", needs(req_not(req_built(STAGE_WINDOOR_ASSEMBLY_SECURED, because = MSG(windoor_assembly/bolted_down)), because = MSG(windoor_assembly/bolted_down))))
 
 /obj/structure/windoor_assembly/proc/renamed(datum/act/op/A)
 	var/datum/prompt/R = A.answer

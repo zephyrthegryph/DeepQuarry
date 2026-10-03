@@ -42,10 +42,10 @@ TRACKED(/obj/e0_fixture/p1_impure, touched)
 TRACKED(/obj/e0_fixture/p1_impure, locked)
 TRACKED(/obj/e0_fixture/p1_impure, steady)
 
-CAPABILITIES(/obj/e0_fixture/p1_impure, \
-	op("writes", hand(), when(PROC_REF(writes_in_condition)), then(PROC_REF(ran))), \
-	op("touches", menu(), needs(req(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), then(PROC_REF(ran))), \
-	op("clean", item(/obj/item/e2_key), when(PROC_REF(reads_only)), then(PROC_REF(ran))))
+CAPABILITIES(/obj/e0_fixture/p1_impure)
+	op("writes", hand(), when(PROC_REF(writes_in_condition)), then(PROC_REF(ran)))
+	op("touches", menu(), needs(req(PROC_REF(writes_in_requirement), because = MSG(p1/not_ready))), then(PROC_REF(ran)))
+	op("clean", item(/obj/item/e2_key), when(PROC_REF(reads_only)), then(PROC_REF(ran)))
 
 /obj/e0_fixture/p1_impure/proc/writes_in_condition(datum/act/A)
 	set_touched(!touched) // ALLOW(handlers): a condition that writes, on purpose: the purity guard must report it
@@ -72,8 +72,8 @@ CAPABILITIES(/obj/e0_fixture/p1_impure, \
 
 TRACKED(/obj/e0_fixture/p1_waiter, ready)
 
-CAPABILITIES(/obj/e0_fixture/p1_waiter, \
-	op("press", hand(), needs(req_is(nameof(ready), because = MSG(p1/not_ready))), wait(5 SECONDS), then(PROC_REF(done))))
+CAPABILITIES(/obj/e0_fixture/p1_waiter)
+	op("press", hand(), needs(req_is(nameof(ready), because = MSG(p1/not_ready))), wait(5 SECONDS), then(PROC_REF(done)))
 
 /obj/e0_fixture/p1_waiter/proc/done(datum/act/op/A)
 	finished++
@@ -86,9 +86,9 @@ CAPABILITIES(/obj/e0_fixture/p1_waiter, \
 	name = "p1 telecube"
 	var/captured = 0
 
-CAPABILITIES(/obj/item/p1_telecube, \
-	op("zap", hand(), cooldown(5 SECONDS), flash("p1"), says(MSG(p1/not_ready)), label("Zap")), \
-	op("stash", item(/obj/item/e2_key), put_in("p1_slot"), menu()))
+CAPABILITIES(/obj/item/p1_telecube)
+	op("zap", hand(), cooldown(5 SECONDS), flash("p1"), says(MSG(p1/not_ready)), label("Zap"))
+	op("stash", item(/obj/item/e2_key), put_in("p1_slot"), menu())
 
 /obj/item/p1_telecube/proc/cooldown(...)
 	captured++

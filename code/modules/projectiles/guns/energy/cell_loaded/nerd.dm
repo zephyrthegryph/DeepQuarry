@@ -51,11 +51,11 @@
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded/medical, \
-		/obj/item/ammo_magazine/cell_mag/medical, \
-		/obj/item/ammo_casing/microbattery/medical))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/medical,
+		/obj/item/ammo_magazine/cell_mag/medical,
+		/obj/item/ammo_casing/microbattery/medical)))
 
 /obj/item/storage/secure/briefcase/nerd_pack_med/Initialize(mapload)
 	. = ..()
@@ -72,11 +72,11 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_med, \
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded/medical, \
-		/obj/item/ammo_magazine/cell_mag/medical, \
-		/obj/item/ammo_casing/microbattery/medical))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nerd_pack_cmo)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/medical,
+		/obj/item/ammo_magazine/cell_mag/medical,
+		/obj/item/ammo_casing/microbattery/medical)))
 
 /obj/item/storage/secure/briefcase/nerd_pack_cmo/Initialize(mapload)
 	. = ..()

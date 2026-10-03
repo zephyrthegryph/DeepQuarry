@@ -19,21 +19,21 @@
 // A dropper is a sealed container of its volume that draws from open containers and tanks while it is empty and squirts what it holds into open
 // containers, food and cigarettes, or into a person's eyes (two seconds; glasses or a mask over the eyes take the squirt instead). The amount it
 // moves is set from 1 to its largest. What it holds is told to two tiles.
-CAPABILITIES(/obj/item/reagent_containers/dropper, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		transfer_min = nameof(min_transfer_amount), \
-		transfer_max = nameof(max_transfer_amount), \
-		examine_range = 2), \
-	needle( \
-		draws_from = list(/obj/structure/reagent_dispensers), \
-		fills = list(/obj/item/reagent_containers/food, /obj/item/clothing/mask/smokable/cigarette)), \
-	op("squirt", at_target(/mob/living), label("Squirt into eyes"), begins(MSG(dropper/begin)), wait(2 SECONDS), \
-		needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))), \
-		then(PROC_REF(squirted))))
+CAPABILITIES(/obj/item/reagent_containers/dropper)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount),
+		examine_range = 2)
+	needle(
+		draws_from = list(/obj/structure/reagent_dispensers),
+		fills = list(/obj/item/reagent_containers/food, /obj/item/clothing/mask/smokable/cigarette))
+	op("squirt", at_target(/mob/living), label("Squirt into eyes"), begins(MSG(dropper/begin)), wait(2 SECONDS),
+		needs(req_reagents(1, because = MSG(dropper/empty)), req_reagent_room(because = MSG(needle/target_full))),
+		then(PROC_REF(squirted)))
 
 MSG_DEF_SELF(dropper/empty, "The dropper is empty.")
 MSG_DEF(dropper/begin, null, "%U% is trying to squirt something into %T%'s eyes!")

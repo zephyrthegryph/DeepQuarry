@@ -640,9 +640,9 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	var/tmp/obj/machinery/door/airlock/voidcraft/survival_pod/door
 
 // A hand on it works the glass of the pod's door (it does not press the remote button: the airlocks it names are a placeholder).
-CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod, \
-	without("press_hand"), \
-	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(pod_used))))
+CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod)
+	without("press_hand")
+	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(pod_used)))
 
 /obj/machinery/button/remote/airlock/survival_pod/proc/pod_used(datum/act/op/A)
 	pod_glass()

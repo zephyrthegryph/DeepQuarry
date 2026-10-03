@@ -577,15 +577,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/pipe, \
 	crafted_type = /obj/item/clothing/mask/smokable/cigarette/joint/blunt
 
 // A rolling paper is a sealed holder of its volume: a dried plant used on it is added (if it fits), and using it in hand rolls what is in it into a joint.
-CAPABILITIES(/obj/item/reagent_containers/rollingpaper, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE), \
-	op("add", item(/obj/item/reagent_containers/food/snacks), label("Add it to the paper"), then(PROC_REF(plant_added))), \
-	op("roll", in_hand(), label("Roll it"), then(PROC_REF(rolled))))
+CAPABILITIES(/obj/item/reagent_containers/rollingpaper)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE)
+	op("add", item(/obj/item/reagent_containers/food/snacks), label("Add it to the paper"), then(PROC_REF(plant_added)))
+	op("roll", in_hand(), label("Roll it"), then(PROC_REF(rolled)))
 
 /// A plant is added (it must be dried, and fit).
 /obj/item/reagent_containers/rollingpaper/proc/plant_added(datum/act/op/A)

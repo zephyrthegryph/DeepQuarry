@@ -20,8 +20,8 @@
 	drop_sound = SFX_ITEMS_DROP_TOOLBOX
 	pickup_sound = SFX_ITEMS_PICKUP_TOOLBOX
 
-CAPABILITIES(/obj/item/storage/toolbox, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/toolbox)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Emergency
 
@@ -152,8 +152,8 @@ CAPABILITIES(/obj/item/storage/toolbox, \
 	attack_verb = list("lunched")
 
 
-CAPABILITIES(/obj/item/storage/toolbox/lunchbox, \
-	configure(storage(max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/toolbox/lunchbox)
+	configure(storage(max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/toolbox/lunchbox/Initialize(mapload)
 	if(filled)

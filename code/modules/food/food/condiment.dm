@@ -23,22 +23,22 @@
 
 // A condiment is a holder of its volume that is always open: sipped by yourself and fed to others in three seconds (in any stance), poured into an open container,
 // filled from a tank, and added to a solid food (which is not open) by the amount set.
-CAPABILITIES(/obj/item/reagent_containers/food/condiment, \
-	reagent_container( \
-		volume = nameof(volume), \
-		taps = list(/obj/structure/reagent_dispensers), \
-		feed = TRUE, \
-		splash = FALSE, \
-		ingest_hostile = TRUE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		transfer_min = nameof(min_transfer_amount), \
-		transfer_max = nameof(max_transfer_amount)), \
-	op("season", at_target(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add to it"), \
-		needs(req_reagents(1, because = MSG(condiment/none_left)), req_reagent_room(because = MSG(condiment/no_room))), \
-		costs(RES_REAGENTS, PROC_REF(season_amount)), says(MSG(condiment/season))), \
-	extend("reagent_container.drink", says(MSG(condiment/swallow)), then(PROC_REF(swallowed))), \
-	extend("reagent_container.feed", then(PROC_REF(swallowed))))
+CAPABILITIES(/obj/item/reagent_containers/food/condiment)
+	reagent_container(
+		volume = nameof(volume),
+		taps = list(/obj/structure/reagent_dispensers),
+		feed = TRUE,
+		splash = FALSE,
+		ingest_hostile = TRUE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount))
+	op("season", at_target(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add to it"),
+		needs(req_reagents(1, because = MSG(condiment/none_left)), req_reagent_room(because = MSG(condiment/no_room))),
+		costs(RES_REAGENTS, PROC_REF(season_amount)), says(MSG(condiment/season)))
+	extend("reagent_container.drink", says(MSG(condiment/swallow)), then(PROC_REF(swallowed)))
+	extend("reagent_container.feed", then(PROC_REF(swallowed)))
 
 MSG_DEF_SELF(condiment/none_left, "There is no condiment left in it.")
 MSG_DEF_SELF(condiment/no_room, "You can't add more condiment to it.")

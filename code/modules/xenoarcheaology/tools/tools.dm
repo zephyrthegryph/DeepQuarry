@@ -17,8 +17,8 @@
 	max_storage_space = ITEMSIZE_COST_NORMAL * 50
 
 
-CAPABILITIES(/obj/item/storage/bag/fossils, \
-	configure(storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/fossils)
+	configure(storage(accepts = list(/obj/item/fossil), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/samplebags
 	name = "sample bag box"

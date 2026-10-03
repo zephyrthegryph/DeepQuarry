@@ -15,41 +15,41 @@
 	var/original_name // Due to loadout customizations and such
 
 
-CAPABILITIES(/obj/item/storage/wallet, \
-	configure(storage(accepts = list( \
-		/obj/item/spacecash, \
-		/obj/item/card, \
-		/obj/item/clothing/mask/smokable/cigarette/, \
-		/obj/item/flashlight/pen, \
-		/obj/item/rectape, \
-		/obj/item/cartridge, \
-		/obj/item/encryptionkey, \
-		/obj/item/seeds, \
-		/obj/item/stack/medical, \
-		/obj/item/coin, \
-		/obj/item/dice, \
-		/obj/item/disk, \
-		/obj/item/implanter, \
-		/obj/item/flame/lighter, \
-		/obj/item/flame/match, \
-		/obj/item/forensics, \
-		/obj/item/glass_extra, \
-		/obj/item/haircomb, \
-		/obj/item/hand, \
-		/obj/item/key, \
-		/obj/item/lipstick, \
-		/obj/item/paper, \
-		/obj/item/pen, \
-		/obj/item/photo, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/sample, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/stamp, \
-		/obj/item/clothing/accessory/permit, \
-		/obj/item/clothing/accessory/badge, \
-		/obj/item/makeover, \
-		/obj/item/pizzavoucher, \
-		/obj/item/card_fluff))))
+CAPABILITIES(/obj/item/storage/wallet)
+	configure(storage(accepts = list(
+		/obj/item/spacecash,
+		/obj/item/card,
+		/obj/item/clothing/mask/smokable/cigarette/,
+		/obj/item/flashlight/pen,
+		/obj/item/rectape,
+		/obj/item/cartridge,
+		/obj/item/encryptionkey,
+		/obj/item/seeds,
+		/obj/item/stack/medical,
+		/obj/item/coin,
+		/obj/item/dice,
+		/obj/item/disk,
+		/obj/item/implanter,
+		/obj/item/flame/lighter,
+		/obj/item/flame/match,
+		/obj/item/forensics,
+		/obj/item/glass_extra,
+		/obj/item/haircomb,
+		/obj/item/hand,
+		/obj/item/key,
+		/obj/item/lipstick,
+		/obj/item/paper,
+		/obj/item/pen,
+		/obj/item/photo,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/sample,
+		/obj/item/tool/screwdriver,
+		/obj/item/stamp,
+		/obj/item/clothing/accessory/permit,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/makeover,
+		/obj/item/pizzavoucher,
+		/obj/item/card_fluff)))
 
 /obj/item/storage/wallet/remove_from_storage(obj/item/W, atom/new_location, mob/user)
 	. = ..()
@@ -116,11 +116,11 @@ READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 	icon_state = "wallet-white"
 
 // The colour is chosen from a window: an op of the wallet, reached from the verb a carrier has.
-CAPABILITIES(/obj/item/storage/wallet/poly, \
-	held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED), \
-	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"), \
-		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), \
-		then(PROC_REF(recolored))))
+CAPABILITIES(/obj/item/storage/wallet/poly)
+	held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED)
+	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"),
+		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))),
+		then(PROC_REF(recolored)))
 
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()

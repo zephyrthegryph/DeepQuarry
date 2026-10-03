@@ -250,10 +250,10 @@ DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy, null, list(REAGENT_ID_S
 	trash = /obj/item/trash/gumpack
 
 
-CAPABILITIES(/obj/item/storage/box/gum, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/mask/chewable/candy/gum, \
-		/obj/item/trash/spitgum))))
+CAPABILITIES(/obj/item/storage/box/gum)
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/chewable/candy/gum,
+		/obj/item/trash/spitgum)))
 
 /obj/item/clothing/mask/chewable/candy/lolli
 	name = "lollipop"
@@ -359,8 +359,8 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 	trash = /obj/item/trash/pocky
 
 
-CAPABILITIES(/obj/item/storage/box/pocky, \
-	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
+CAPABILITIES(/obj/item/storage/box/pocky)
+	configure(storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky)))
 
 /obj/item/clothing/mask/chewable/candy/pocky
 	name = "chocolate pocky"

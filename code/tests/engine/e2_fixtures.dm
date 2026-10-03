@@ -25,8 +25,8 @@ MSG_DEF_SELF(e2/no_name, "It needs a name first.")
 /obj/item/e2_cloth
 	var/polished = 0
 
-CAPABILITIES(/obj/item/e2_cloth, \
-	op("polish", in_hand(), then(PROC_REF(note_polish))))
+CAPABILITIES(/obj/item/e2_cloth)
+	op("polish", in_hand(), then(PROC_REF(note_polish)))
 
 /// One type with an op for every input kind of the table in section 8.
 /obj/e2_box
@@ -42,15 +42,15 @@ CAPABILITIES(/obj/item/e2_cloth, \
 
 TRACKED(/obj/e2_box, opened)
 
-CAPABILITIES(/obj/e2_box, \
-	op("open", hand(), toggles(nameof(opened)), logs(LOG_GAME)), \
-	op("pry", tool(TOOL_CROWBAR), then(PROC_REF(note_pry))), \
-	op("insert_key", item(/obj/item/e2_key), consumes(), then(PROC_REF(note_key))), \
-	op("slide_in", item(/obj/item/e2_cloth), answers(INTENT_DROP_ONTO), then(PROC_REF(note_slide))), \
-	op("peek", menu(), then(PROC_REF(note_peek))), \
-	op("set_label", ui_act("set_label", arg("text", schema_text(8))), then(PROC_REF(apply_label))), \
-	op("ping", topic("ping", arg("n", int(0, 9))), then(PROC_REF(note_ping))), \
-	op("escape", inside(), priority(above("open")), then(PROC_REF(note_escape))))
+CAPABILITIES(/obj/e2_box)
+	op("open", hand(), toggles(nameof(opened)), logs(LOG_GAME))
+	op("pry", tool(TOOL_CROWBAR), then(PROC_REF(note_pry)))
+	op("insert_key", item(/obj/item/e2_key), consumes(), then(PROC_REF(note_key)))
+	op("slide_in", item(/obj/item/e2_cloth), answers(INTENT_DROP_ONTO), then(PROC_REF(note_slide)))
+	op("peek", menu(), then(PROC_REF(note_peek)))
+	op("set_label", ui_act("set_label", arg("text", schema_text(8))), then(PROC_REF(apply_label)))
+	op("ping", topic("ping", arg("n", int(0, 9))), then(PROC_REF(note_ping)))
+	op("escape", inside(), priority(above("open")), then(PROC_REF(note_escape)))
 
 /obj/e2_box/proc/note_pry(datum/act/op/A)
 	pried++
@@ -89,16 +89,16 @@ CAPABILITIES(/obj/e2_box, \
 TRACKED(/obj/e2_vault, locked)
 TRACKED(/obj/e2_vault, opened)
 
-CAPABILITIES(/obj/e2_vault, \
-	op("open", hand(), needs(req_is(nameof(locked), FALSE, because = MSG(e2/locked))), toggles(nameof(opened))))
+CAPABILITIES(/obj/e2_vault)
+	op("open", hand(), needs(req_is(nameof(locked), FALSE, because = MSG(e2/locked))), toggles(nameof(opened)))
 
 /// A machine whose op spends and asks: costs are reserved only after the answer.
 /obj/e2_machine
 	name = "e2 machine"
 	var/label_text
 
-CAPABILITIES(/obj/e2_machine, \
-	op("rename", ui_act("rename"), costs(RES_DARK_ENERGY, 5), asks(/datum/prompt/text, fields = list("question" = "What is it called?")), then(PROC_REF(apply_name)), logs(LOG_GAME)))
+CAPABILITIES(/obj/e2_machine)
+	op("rename", ui_act("rename"), costs(RES_DARK_ENERGY, 5), asks(/datum/prompt/text, fields = list("question" = "What is it called?")), then(PROC_REF(apply_name)), logs(LOG_GAME))
 
 /obj/e2_machine/proc/apply_name(datum/act/op/A)
 	var/datum/prompt/R = A.answer
@@ -112,8 +112,8 @@ CAPABILITIES(/obj/e2_machine, \
 
 TRACKED(/obj/e2_lever, pulled)
 
-CAPABILITIES(/obj/e2_lever, \
-	op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME)))
+CAPABILITIES(/obj/e2_lever)
+	op("pull_slow", hand(), wait(2 SECONDS), toggles(nameof(pulled)), logs(LOG_GAME))
 
 /// A new op and a legacy DECLARE_INTERACTIONS entry on one type: a plain click is the new op's, an alt-click the legacy entry's.
 /obj/e2_mixed
@@ -122,8 +122,8 @@ CAPABILITIES(/obj/e2_lever, \
 	var/legacy_alt_by
 	var/legacy_used = 0
 
-CAPABILITIES(/obj/e2_mixed, \
-	op("wave", hand(), then(PROC_REF(note_wave))))
+CAPABILITIES(/obj/e2_mixed)
+	op("wave", hand(), then(PROC_REF(note_wave)))
 
 DECLARE_INTERACTIONS(/obj/e2_mixed, \
 	INTERACT_ALT(null, PROC_REF(legacy_alt)))

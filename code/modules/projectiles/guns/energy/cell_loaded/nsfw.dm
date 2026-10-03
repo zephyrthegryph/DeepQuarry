@@ -47,11 +47,11 @@
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded/combat, \
-		/obj/item/ammo_magazine/cell_mag/combat, \
-		/obj/item/ammo_casing/microbattery/combat))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/combat,
+		/obj/item/ammo_magazine/cell_mag/combat,
+		/obj/item/ammo_casing/microbattery/combat)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack/Initialize(mapload)
 	. = ..()
@@ -66,11 +66,11 @@ CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack, \
 	w_class = ITEMSIZE_NORMAL
 
 
-CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/cell_loaded/combat, \
-		/obj/item/ammo_magazine/cell_mag/combat, \
-		/obj/item/ammo_casing/microbattery/combat))))
+CAPABILITIES(/obj/item/storage/secure/briefcase/nsfw_pack_hos)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/cell_loaded/combat,
+		/obj/item/ammo_magazine/cell_mag/combat,
+		/obj/item/ammo_casing/microbattery/combat)))
 
 /obj/item/storage/secure/briefcase/nsfw_pack_hos/Initialize(mapload)
 	. = ..()

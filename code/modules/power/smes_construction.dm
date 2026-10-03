@@ -119,16 +119,16 @@ MSG_DEF_SELF(smes/turn_it_off, "Turn it off first.")
 MSG_DEF_SELF(smes/coils_full, "You can't insert more coils into this SMES unit!")
 MSG_DEF_SELF(smes/tag_taken, "That RCON tag already exists.")
 
-CAPABILITIES(/obj/machinery/power/smes/buildable, \
-	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), then(PROC_REF(failing_refusal))), \
-	op("install_coil", item(/obj/item/smes_coil), when(nameof(panel_open)), then(PROC_REF(coil_installed))), \
-	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), when(nameof(panel_open)), \
-		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))), \
-		asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")), \
-		then(PROC_REF(rcon_tag_answered))), \
-	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut))))), \
-	extend("ui_open", then(PROC_REF(open_wires_beside_the_window))), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = cond_not(nameof(grounding))))
+CAPABILITIES(/obj/machinery/power/smes/buildable)
+	op("failing", item(/obj/item), when(nameof(failing)), priority(OP_PRIORITY_PART + 2), then(PROC_REF(failing_refusal)))
+	op("install_coil", item(/obj/item/smes_coil), when(nameof(panel_open)), then(PROC_REF(coil_installed)))
+	op("rcon_tag", tool(TOOL_MULTITOOL), wait(0), when(nameof(panel_open)),
+		needs(req_is(nameof(failing), FALSE, because = MSG(smes/overloaded))),
+		asks(/datum/prompt/text, fields = list("question" = "Enter new RCON tag. Use \"NO_TAG\" to disable RCON or leave empty to cancel.")),
+		then(PROC_REF(rcon_tag_answered)))
+	extend("ui_open", needs(req_on_authority(AUTH_REMOTE_ACCESS, req_is(nameof(RCon), TRUE, because = MSG(smes/rcon_cut)))))
+	extend("ui_open", then(PROC_REF(open_wires_beside_the_window)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(grounding_frame)), when = cond_not(nameof(grounding)))
 
 /// With the grounding wire cut, sparks fly every frame and the unit discharges quickly, with a small chance of breaking lights on the APCs of its
 /// powernet. It carries on until grounded or nearly empty.

@@ -61,10 +61,10 @@ TRACKED(/obj/item/storage/fancy, open)
 	starts_with = list(/obj/item/reagent_containers/food/snacks/egg = 12)
 
 
-CAPABILITIES(/obj/item/storage/fancy/egg_box, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/egg, \
-		/obj/item/reagent_containers/food/snacks/boiledegg))))
+CAPABILITIES(/obj/item/storage/fancy/egg_box)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/egg,
+		/obj/item/reagent_containers/food/snacks/boiledegg)))
 
 /obj/item/storage/fancy/egg_box/Initialize(mapload)
 	if(!open_state)
@@ -112,8 +112,8 @@ CAPABILITIES(/obj/item/storage/fancy/egg_box, \
 	starts_with = list(/obj/item/flame/candle = 5)
 
 
-CAPABILITIES(/obj/item/storage/fancy/candle_box, \
-	configure(storage(accepts = list(/obj/item/flame/candle))))
+CAPABILITIES(/obj/item/storage/fancy/candle_box)
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/whitecandle_box
 	name = "white candle pack"
@@ -128,8 +128,8 @@ CAPABILITIES(/obj/item/storage/fancy/candle_box, \
 	starts_with = list(/obj/item/flame/candle/white = 5)
 
 
-CAPABILITIES(/obj/item/storage/fancy/whitecandle_box, \
-	configure(storage(accepts = list(/obj/item/flame/candle))))
+CAPABILITIES(/obj/item/storage/fancy/whitecandle_box)
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /obj/item/storage/fancy/blackcandle_box
 	name = "black candle pack"
@@ -144,8 +144,8 @@ CAPABILITIES(/obj/item/storage/fancy/whitecandle_box, \
 	starts_with = list(/obj/item/flame/candle/black = 5)
 
 
-CAPABILITIES(/obj/item/storage/fancy/blackcandle_box, \
-	configure(storage(accepts = list(/obj/item/flame/candle))))
+CAPABILITIES(/obj/item/storage/fancy/blackcandle_box)
+	configure(storage(accepts = list(/obj/item/flame/candle)))
 
 /*
  * Crayon Box
@@ -188,8 +188,8 @@ CAPABILITIES(/obj/item/storage/fancy/blackcandle_box, \
 READS_AS(/obj/item/storage/fancy/crayons/proc/crayon_colours, STORAGE_CONTENTS_KEY)
 
 // The mime and rainbow crayons are too sad and too powerful for the box.
-CAPABILITIES(/obj/item/storage/fancy/crayons, \
-	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow))))
+CAPABILITIES(/obj/item/storage/fancy/crayons)
+	configure(storage(accepts = list(/obj/item/pen/crayon), refuses = list(/obj/item/pen/crayon/mime, /obj/item/pen/crayon/rainbow)))
 
 /obj/item/storage/fancy/markers
 	name = "box of markers"
@@ -225,8 +225,8 @@ CAPABILITIES(/obj/item/storage/fancy/crayons, \
 
 READS_AS(/obj/item/storage/fancy/markers/proc/marker_colours, STORAGE_CONTENTS_KEY)
 
-CAPABILITIES(/obj/item/storage/fancy/markers, \
-	configure(storage(accepts = list(/obj/item/pen/crayon/marker))))
+CAPABILITIES(/obj/item/storage/fancy/markers)
+	configure(storage(accepts = list(/obj/item/pen/crayon/marker)))
 
 /*
  * Cracker Pack
@@ -240,8 +240,8 @@ CAPABILITIES(/obj/item/storage/fancy/markers, \
 	w_class = ITEMSIZE_SMALL
 	starts_with = list(/obj/item/reagent_containers/food/snacks/cracker = 6)
 
-CAPABILITIES(/obj/item/storage/fancy/crackers, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/cracker), max_size = ITEMSIZE_TINY)))
+CAPABILITIES(/obj/item/storage/fancy/crackers)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/cracker), max_size = ITEMSIZE_TINY))
 
 /*
  * Cigarette Pack
@@ -263,11 +263,11 @@ CAPABILITIES(/obj/item/storage/fancy/crackers, \
 	var/brand = "\improper Trans-Stellar Duty-free"
 
 
-CAPABILITIES(/obj/item/storage/fancy/cigarettes, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/mask/smokable/cigarette, \
-		/obj/item/flame/lighter, \
-		/obj/item/trash/cigbutt))))
+CAPABILITIES(/obj/item/storage/fancy/cigarettes)
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette,
+		/obj/item/flame/lighter,
+		/obj/item/trash/cigbutt)))
 
 /obj/item/storage/fancy/cigarettes/Initialize(mapload)
 	if(!open_state)
@@ -413,10 +413,10 @@ CAPABILITIES(/obj/item/storage/fancy/cigarettes, \
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette/cigar = 5)
 
 
-CAPABILITIES(/obj/item/storage/fancy/cigar, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/mask/smokable/cigarette/cigar, \
-		/obj/item/trash/cigbutt/cigarbutt))))
+CAPABILITIES(/obj/item/storage/fancy/cigar)
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette/cigar,
+		/obj/item/trash/cigbutt/cigarbutt)))
 
 /obj/item/storage/fancy/cigar/Initialize(mapload)
 	if(!open_state)
@@ -490,8 +490,8 @@ CAPABILITIES(/obj/item/storage/fancy/cigar, \
 	starts_with = list(/obj/item/reagent_containers/rollingpaper = 14)
 
 
-CAPABILITIES(/obj/item/storage/rollingpapers, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper))))
+CAPABILITIES(/obj/item/storage/rollingpapers)
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper)))
 
 /obj/item/storage/rollingpapers/blunt
 	name = "blunt wrap pack"
@@ -500,8 +500,8 @@ CAPABILITIES(/obj/item/storage/rollingpapers, \
 	storage_slots = 7
 	starts_with = list(/obj/item/reagent_containers/rollingpaper/blunt = 7)
 
-CAPABILITIES(/obj/item/storage/rollingpapers/blunt, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper/blunt))))
+CAPABILITIES(/obj/item/storage/rollingpapers/blunt)
+	configure(storage(accepts = list(/obj/item/reagent_containers/rollingpaper/blunt)))
 
 /*
  * Vial Box
@@ -517,8 +517,8 @@ CAPABILITIES(/obj/item/storage/rollingpapers/blunt, \
 	starts_with = list(/obj/item/reagent_containers/glass/beaker/vial = 6)
 
 
-CAPABILITIES(/obj/item/storage/fancy/vials, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial))))
+CAPABILITIES(/obj/item/storage/fancy/vials)
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial)))
 
 /obj/item/storage/lockbox/vials
 	name = "secure vial storage box"
@@ -531,8 +531,8 @@ CAPABILITIES(/obj/item/storage/fancy/vials, \
 	req_access = list(ACCESS_VIROLOGY)
 
 
-CAPABILITIES(/obj/item/storage/lockbox/vials, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/lockbox/vials)
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/lockbox/vials/Initialize(mapload)
 	. = ..()
@@ -569,11 +569,11 @@ CAPABILITIES(/obj/item/storage/lockbox/vials, \
 	)
 
 
-CAPABILITIES(/obj/item/storage/fancy/heartbox, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/white, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle))))
+CAPABILITIES(/obj/item/storage/fancy/heartbox)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/chocolatepiece,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle)))
 
 /obj/item/storage/fancy/heartbox/Initialize(mapload)
 	. = ..()

@@ -24,19 +24,19 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 // A spray bottle sprays one amount at what it is clicked on, near or far (a puff of it at the floor and at the air, a splash over a dense thing next to
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
 // closet, a sink, a janitor's cart, storage and other containers. The Empty verb pours it out over the floor. Its amount is fixed.
-CAPABILITIES(/obj/item/reagent_containers/spray, \
-	reagent_container( \
-		volume = nameof(volume), \
-		spray = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		taps = list(/obj/structure/reagent_dispensers), \
-		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart)), \
-	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied))), \
-	examine_line(PROC_REF(units_left)), \
-	extend("reagent_container.spray", reach(REACH_ANY)), \
-	extend("reagent_container.spray", then(PROC_REF(spray_logged))))
+CAPABILITIES(/obj/item/reagent_containers/spray)
+	reagent_container(
+		volume = nameof(volume),
+		spray = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		taps = list(/obj/structure/reagent_dispensers),
+		rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart))
+	op("empty", menu(), label("Empty Spray Bottle"), confirms("Are you sure you want to empty that?"), then(PROC_REF(emptied)))
+	examine_line(PROC_REF(units_left))
+	extend("reagent_container.spray", reach(REACH_ANY))
+	extend("reagent_container.spray", then(PROC_REF(spray_logged)))
 
 MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 
@@ -114,11 +114,11 @@ MSG_DEF_SELF(spray/safety_on, "The safety is on!")
 	var/safety = TRUE
 
 // The pepper spray has a safety, worked in hand: while it is on nothing comes out. It is loaded with 40 units of condensed capsaicin.
-CAPABILITIES(/obj/item/reagent_containers/spray/pepper, \
-	configure(reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40))), \
-	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled))), \
-	examine_line(PROC_REF(safety_text)), \
-	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on)))))
+CAPABILITIES(/obj/item/reagent_containers/spray/pepper)
+	configure(reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40)))
+	op("safety", in_hand(), label("Toggle safety"), toggles(nameof(safety)), then(PROC_REF(safety_toggled)))
+	examine_line(PROC_REF(safety_text))
+	extend("reagent_container.spray", needs(req_is(nameof(safety), FALSE, because = MSG(spray/safety_on))))
 
 /obj/item/reagent_containers/spray/pepper/proc/safety_toggled(datum/act/op/A)
 	balloon_alert(A.actor, "safety [safety ? "on" : "off"].")
@@ -142,8 +142,8 @@ CAPABILITIES(/obj/item/reagent_containers/spray/pepper, \
 	drop_sound = SFX_ITEMS_DROP_HERB
 	pickup_sound = SFX_ITEMS_PICKUP_HERB
 
-CAPABILITIES(/obj/item/reagent_containers/spray/waterflower, \
-	configure(reagent_container(starts = list(REAGENT_ID_WATER = 10))))
+CAPABILITIES(/obj/item/reagent_containers/spray/waterflower)
+	configure(reagent_container(starts = list(REAGENT_ID_WATER = 10)))
 
 /obj/item/reagent_containers/spray/chemsprayer
 	name = "chem sprayer"
@@ -187,8 +187,8 @@ CAPABILITIES(/obj/item/reagent_containers/spray/waterflower, \
 	item_state = "plantbgone"
 	volume = 100
 
-CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone, \
-	configure(reagent_container(starts = list(REAGENT_ID_PLANTBGONE = 100))))
+CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone)
+	configure(reagent_container(starts = list(REAGENT_ID_PLANTBGONE = 100)))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed
 	name = "hose nozzle"
@@ -224,9 +224,9 @@ CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone, \
 			break
 
 // The dial is turned by an alt-click (1, 2, 3 streams of a heavy spray), and a control-click, held, switches between the light spray and the heavy one.
-CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed, \
-	op("dial", hand(), answers(INTENT_TOGGLE), label("Turn dial"), then(PROC_REF(dial_turned))), \
-	op("heavy", in_hand(), gesture(GESTURE_CTRL), label("Switch the spray"), then(PROC_REF(spray_switched))))
+CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed)
+	op("dial", hand(), answers(INTENT_TOGGLE), label("Turn dial"), then(PROC_REF(dial_turned)))
+	op("heavy", in_hand(), gesture(GESTURE_CTRL), label("Switch the spray"), then(PROC_REF(spray_switched)))
 
 /obj/item/reagent_containers/spray/chemsprayer/hosed/proc/dial_turned(datum/act/op/A)
 	if(++spray_particles > 3) spray_particles = 1
@@ -293,5 +293,5 @@ CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed, \
 	max_transfer_amount = null
 	volume = 80
 
-CAPABILITIES(/obj/item/reagent_containers/spray/windowsealant, \
-	configure(reagent_container(starts = list(REAGENT_ID_SILICATE = 80))))
+CAPABILITIES(/obj/item/reagent_containers/spray/windowsealant)
+	configure(reagent_container(starts = list(REAGENT_ID_SILICATE = 80)))

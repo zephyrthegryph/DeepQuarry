@@ -4,39 +4,39 @@
 	icon_state = "halloween_bag"
 
 
-CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/candy, \
-		/obj/item/reagent_containers/food/snacks/candy_corn, \
-		/obj/item/reagent_containers/food/snacks/chocolatebar, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/white, \
-		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle, \
-		/obj/item/reagent_containers/food/snacks/chocolateegg, \
-		/obj/item/reagent_containers/food/snacks/no_raisin, \
-		/obj/item/reagent_containers/food/snacks/butterscotch, \
-		/obj/item/reagent_containers/food/snacks/spicy_boys, \
-		/obj/item/reagent_containers/food/snacks/welders_original, \
-		/obj/item/reagent_containers/food/snacks/organ, \
-		/obj/item/reagent_containers/food/snacks/mint, \
-		/obj/item/storage/box/admints, \
-		/obj/item/reagent_containers/food/snacks/cookiesnack, \
-		/obj/item/reagent_containers/food/snacks/cb01, \
-		/obj/item/reagent_containers/food/snacks/cb02, \
-		/obj/item/reagent_containers/food/snacks/cb03, \
-		/obj/item/reagent_containers/food/snacks/cb04, \
-		/obj/item/reagent_containers/food/snacks/cb05, \
-		/obj/item/reagent_containers/food/snacks/cb06, \
-		/obj/item/reagent_containers/food/snacks/cb07, \
-		/obj/item/reagent_containers/food/snacks/cb08, \
-		/obj/item/reagent_containers/food/snacks/cb09, \
-		/obj/item/reagent_containers/food/snacks/cb10, \
-		/obj/item/reagent_containers/food/snacks/reishicup, \
-		/obj/item/reagent_containers/food/snacks/antball, \
-		/obj/item/reagent_containers/food/snacks/honey_candy, \
-		/obj/item/storage/box/winegum, \
-		/obj/item/storage/box/shrimpsandbananas, \
-		/obj/item/clothing/mask/chewable/candy/lolli), refuses = list(/obj/item/disk/nuclear))))
+CAPABILITIES(/obj/item/storage/bag/plasticbag/halloween)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/candy,
+		/obj/item/reagent_containers/food/snacks/candy_corn,
+		/obj/item/reagent_containers/food/snacks/chocolatebar,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/white,
+		/obj/item/reagent_containers/food/snacks/chocolatepiece/truffle,
+		/obj/item/reagent_containers/food/snacks/chocolateegg,
+		/obj/item/reagent_containers/food/snacks/no_raisin,
+		/obj/item/reagent_containers/food/snacks/butterscotch,
+		/obj/item/reagent_containers/food/snacks/spicy_boys,
+		/obj/item/reagent_containers/food/snacks/welders_original,
+		/obj/item/reagent_containers/food/snacks/organ,
+		/obj/item/reagent_containers/food/snacks/mint,
+		/obj/item/storage/box/admints,
+		/obj/item/reagent_containers/food/snacks/cookiesnack,
+		/obj/item/reagent_containers/food/snacks/cb01,
+		/obj/item/reagent_containers/food/snacks/cb02,
+		/obj/item/reagent_containers/food/snacks/cb03,
+		/obj/item/reagent_containers/food/snacks/cb04,
+		/obj/item/reagent_containers/food/snacks/cb05,
+		/obj/item/reagent_containers/food/snacks/cb06,
+		/obj/item/reagent_containers/food/snacks/cb07,
+		/obj/item/reagent_containers/food/snacks/cb08,
+		/obj/item/reagent_containers/food/snacks/cb09,
+		/obj/item/reagent_containers/food/snacks/cb10,
+		/obj/item/reagent_containers/food/snacks/reishicup,
+		/obj/item/reagent_containers/food/snacks/antball,
+		/obj/item/reagent_containers/food/snacks/honey_candy,
+		/obj/item/storage/box/winegum,
+		/obj/item/storage/box/shrimpsandbananas,
+		/obj/item/clothing/mask/chewable/candy/lolli), refuses = list(/obj/item/disk/nuclear)))
 
 /obj/structure/candybowl
 	name = "candy bowl"
