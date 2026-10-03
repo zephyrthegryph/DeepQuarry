@@ -255,9 +255,9 @@ DECLARE_INTERACTIONS(/obj/item/solar_assembly, \
 
 	if(!tracker)
 		if(istype(W, /obj/item/tracker_electronics))
+			if(!consume(W, user))
+				return INTERACTION_HANDLED_PASS
 			tracker = 1
-			user.drop_item()
-			consume(W, user)
 			act_message(user, null, others = span_notice("%U% inserts the electronics into the solar assembly."))
 			return 1
 	return FALSE
