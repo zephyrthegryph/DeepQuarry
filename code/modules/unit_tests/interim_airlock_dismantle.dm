@@ -1,13 +1,14 @@
 /// Real airlock dismantling leaves one assembly and separately released electronics on the floor.
 /datum/unit_test/interim_airlock_dismantle
+	parent_type = /datum/unit_test/dq_p2_door
 	var/has_installed_board = TRUE
 
 /datum/unit_test/interim_airlock_dismantle/generated_electronics
 	has_installed_board = FALSE
 
-/datum/unit_test/interim_airlock_dismantle/Run()
-	var/turf/T = test_floor()
-	var/mob/living/carbon/human/actor = allocate(/mob/living/carbon/human, T)
+/datum/unit_test/interim_airlock_dismantle/run_gate()
+	var/turf/T = tile(2, 2)
+	var/mob/living/carbon/human/actor = make_person(null, tile(3, 2))
 	var/obj/machinery/door/airlock/door = allocate(/obj/machinery/door/airlock, T)
 	door.set_anchored(TRUE)
 	door.name = "Configured airlock"
@@ -25,9 +26,19 @@
 	var/door_handle = om_handle(door)
 	var/list/before_frames = turf_contents_of_type(T, /obj/structure/door_assembly)
 	var/list/before_boards = turf_contents_of_type(T, /obj/item/airlock_electronics)
-	door.crowbar_act_tool_done(actor)
+	var/obj/item/tool/screwdriver/screwdriver = give_tool(actor, /obj/item/tool/screwdriver)
+	p2_door_click(actor, door, screwdriver)
+	test_time(1 SECOND)
+	TEST_ASSERT(p2_door_panel_open(door), "the real screwdriver click opens the actual maintenance panel")
+	p2_door_set_welded(door, TRUE)
+	p2_door_set_power(door, FALSE)
+	TEST_ASSERT(p2_door_welded(door) && !p2_door_powered(door) && door.density, "the actual dismantling fixture has a welded unpowered closed mechanism")
+	var/obj/item/tool/crowbar/crowbar = give_tool(actor, /obj/item/tool/crowbar)
+	p2_door_click(actor, door, crowbar)
+	TEST_ASSERT(!QDELETED(door), "the real crowbar operation preserves the original airlock until its wait finishes")
+	test_time(5 SECONDS)
 	own_turf_contents(T)
-	TEST_ASSERT(QDELETED(door), "The real completion callback must remove the airlock")
+	TEST_ASSERT(QDELETED(door), "The real timed crowbar operation must remove the airlock")
 	var/list/frames = turf_contents_of_type(T, /obj/structure/door_assembly) - before_frames
 	TEST_ASSERT_EQUAL(length(frames), 1, "Dismantling must produce exactly one assembly")
 	var/obj/structure/door_assembly/frame = frames[1]
@@ -35,7 +46,7 @@
 	TEST_ASSERT_EQUAL(frame.loc, T, "The prepared assembly must stay on the airlock floor")
 	TEST_ASSERT_EQUAL(frame.anchored, TRUE, "The prepared assembly must remain secured")
 	TEST_ASSERT_EQUAL(frame.glass, 1, "The glass configuration must survive dismantling")
-	TEST_ASSERT_EQUAL(frame.state, 1, "The prepared assembly must retain the wired state")
+	TEST_ASSERT_EQUAL(frame.assembly_state(), 1, "The prepared assembly must retain the wired state")
 	TEST_ASSERT_EQUAL(frame.created_name, "Configured airlock", "The configured name must survive dismantling")
 	TEST_ASSERT_NULL(frame.electronics, "The released board must remain separate from the prepared assembly")
 	var/list/boards = turf_contents_of_type(T, /obj/item/airlock_electronics) - before_boards
