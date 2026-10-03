@@ -130,7 +130,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/vehiclecage, TYPE_PROC_REF(/atom, appeara
 	act_message(user, src, MSG_SELF(span_notice("You finally release %T%.")), \
 		MSG_OTHERS(span_notice("%U% release %T%.")), \
 		MSG_BLIND(span_notice("You hear creaking metal.")))
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/vehiclecage/spacebike
 	my_vehicle_type = /obj/vehicle/bike/random
