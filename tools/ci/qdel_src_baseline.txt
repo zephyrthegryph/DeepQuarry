@@ -574,8 +574,6 @@ qdel_src	code/modules/vore/eating/digest_act.dm	qdel(src)
 qdel_src	code/modules/vore/eating/digest_act.dm	qdel(src)
 qdel_src	code/modules/vore/eating/living.dm	qdel(src)
 qdel_src	code/modules/vore/eating/living.dm	qdel(src)
-qdel_src	code/modules/vore/fluffstuff/custom_items.dm	qdel(src) //One time use.
-qdel_src	code/modules/vore/fluffstuff/custom_items.dm	qdel(src) //One time use.
 qdel_src	code/modules/vore/mob_tf.dm	qdel(src)
 qdel_src	code/modules/vore/resizing/holder.dm	qdel(src)
 qdel_src	code/modules/vore/smoleworld/smoleworld.dm	qdel(src)

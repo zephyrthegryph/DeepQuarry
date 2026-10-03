@@ -915,9 +915,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //If so, monkify them.
+			if(!consume(src, user))
+				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
 			H.monkeyize()
-			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
 		to_chat(user, span_warning("You are unable to inject other people."))
@@ -931,10 +932,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo/detective/ruda, INTE
 
 	if(user == M) //Is the person using it on theirself?
 		if(ishuman(M)) //Give them numbing bites.
+			if(!consume(src, user))
+				return ITEM_INTERACT_FAILURE
 			var/mob/living/carbon/human/H = user
 			var/datum/species/own_species = proto_private(H, nameof(H.species))
 			own_species.give_numbing_bite() //This was annoying, but this is the easiest way of performing it.
-			qdel(src) //One time use.
 			return ITEM_INTERACT_SUCCESS
 	else //If not, do nothing.
 		to_chat(user, span_warning("You are unable to inject other people."))

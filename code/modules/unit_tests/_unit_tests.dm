@@ -652,6 +652,7 @@
 #include "interim_nif_size_actor.dm"
 #include "interim_anomaly_cleanup.dm"
 #include "interim_dark_growth_cleanup.dm"
+#include "interim_fluff_injector_consumption.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
