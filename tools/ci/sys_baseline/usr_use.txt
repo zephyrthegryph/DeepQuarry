@@ -272,7 +272,6 @@ usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/A
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/mob/living/inventory.dm	if(istype(L) && L != src && L == usr && Adjacent(L))
 usr_outside_verb	code/modules/mob/mob.dm	if(usr != src && will_show_tooltip())
 usr_outside_verb	code/modules/mob/mob.dm	if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
 usr_outside_verb	code/modules/mob/mob.dm	openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))

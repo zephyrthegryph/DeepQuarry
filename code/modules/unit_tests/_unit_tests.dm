@@ -876,6 +876,7 @@
 #include "interim_holosign_checked_cleanup.dm"
 #include "interim_crate_sticky_electropack.dm"
 #include "interim_autopsy_snapshot_ownership.dm"
+#include "interim_living_inventory_drag_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
