@@ -158,12 +158,14 @@ fn main() -> ExitCode {
                 let stamp = format!("{}|{}", dq_analyze::cache::ENGINE_HASH, names.join(","));
                 let known = marker.as_ref().and_then(|m| std::fs::read_to_string(m).ok()).map(|t| t == stamp).unwrap_or(false);
                 if !known {
+                    dq_analyze::incr::suspend(true);
                     for lint in run::selected(&engine.reg, &engine.opts.lints) {
                         if let Err(e) = lint.selftest() {
                             println!("selftest FAILED: {}: {}", lint.meta().name, e);
                             failed.push(format!("{} --selftest", lint.meta().name));
                         }
                     }
+                    dq_analyze::incr::suspend(false);
                     if failed.is_empty() {
                         if let Some(m) = &marker {
                             let _ = std::fs::create_dir_all(m.parent().unwrap());

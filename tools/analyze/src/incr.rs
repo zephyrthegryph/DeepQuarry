@@ -70,7 +70,18 @@ fn store_path(dir: &std::path::Path, name: &str, shard: Option<usize>) -> PathBu
     }
 }
 
+static SUSPENDED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Turns the on-disk stores off (selftests run fixture trees through lints that use them: their
+/// entries must not replace the real tree's).
+pub fn suspend(on: bool) {
+    SUSPENDED.store(on, std::sync::atomic::Ordering::SeqCst);
+}
+
 fn config() -> Option<(PathBuf, String)> {
+    if SUSPENDED.load(std::sync::atomic::Ordering::SeqCst) {
+        return None;
+    }
     let g = cfg().lock().unwrap();
     g.as_ref().filter(|c| c.enabled).map(|c| (c.dir.clone(), c.stamp.clone()))
 }
@@ -106,12 +117,12 @@ fn save(path: &std::path::Path, st: &StoreFile) {
 
 /// The cache directory of this run, when caching is on.
 pub fn dir() -> Option<PathBuf> {
-    cfg().lock().unwrap().as_ref().filter(|c| c.enabled).map(|c| c.dir.clone())
+    config().map(|c| c.0)
 }
 
 /// The engine/scope stamp of this run, when caching is on.
 pub fn stamp() -> Option<String> {
-    cfg().lock().unwrap().as_ref().filter(|c| c.enabled).map(|c| c.stamp.clone())
+    config().map(|c| c.1)
 }
 
 /// One value cached under `key`: `compute()` runs only when the stored key differs.
