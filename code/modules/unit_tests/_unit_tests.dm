@@ -582,6 +582,7 @@
 #include "interim_dropper_container_dose.dm"
 #include "interim_event_queue_actor.dm"
 #include "interim_projectile_endings.dm"
+#include "interim_beaker_lid_transfer.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
