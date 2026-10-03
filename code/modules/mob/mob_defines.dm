@@ -286,6 +286,35 @@
 	var/is_slipping = FALSE
 	COOLDOWN_DECLARE(slip_protect)
 
+CAPABILITIES(/mob)
+	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master)
+	owns_one(nameof(autowhisper_display), /atom/movable/screen)
+	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
+	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
+	owns_one(nameof(dna), /datum/dna)
+	owns_one(nameof(gun_move_icon), /atom/movable/screen/gun/move)
+	owns_one(nameof(gun_setting_icon), /atom/movable/screen/gun/mode)
+	owns_one(nameof(hands), /atom/movable/screen)
+	owns_one(nameof(healths), /atom/movable/screen)
+	owns_one(nameof(hud_used), /datum/hud)
+	owns_one(nameof(internals), /atom/movable/screen)
+	owns_one(nameof(item_use_icon), /atom/movable/screen/gun/item)
+	owns_one(nameof(ling_chem_display), /atom/movable/screen/ling/chems)
+	owns_one(nameof(lleill_display), /atom/movable/screen/shadekin)
+	owns_one(nameof(machine_shim), /datum/using_machine_shim)
+	owns_one(nameof(pain), /atom/movable/screen)
+	owns_one(nameof(plane_holder), /datum/plane_holder)
+	owns_one(nameof(pullin), /atom/movable/screen)
+	owns_one(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
+	owns_one(nameof(remote_view), /datum/remote_view)
+	owns_one(nameof(shadekin_display), /atom/movable/screen/shadekin)
+	owns_one(nameof(throw_icon), /atom/movable/screen)
+	owns_one(nameof(vorePanel), /datum/vore_look)
+	owns_one(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
+	owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
+	owns_one(nameof(xenochimera_danger_display), /atom/movable/screen/xenochimera/danger_level)
+	owns_one(nameof(zone_sel), /atom/movable/screen/zone_sel)
+
 
 /mob
 	var/vantag_hud = 0			// Do I have the HUD enabled?

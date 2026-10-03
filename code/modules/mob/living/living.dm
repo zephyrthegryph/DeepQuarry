@@ -1084,7 +1084,7 @@ SETTER(/mob/living, nutrition)
 /// Gives the mob its character setup HUD button if it has none.
 /mob/living/proc/add_character_setup_button()
 	if(!character_setup_button)
-		own_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
+		rel_set(src, nameof(character_setup_button), new /datum/character_setup_button(src))
 	return character_setup_button
 
 /datum/character_setup_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)
@@ -1175,8 +1175,8 @@ SETTER(/mob/living, nutrition)
 
 	selected_image = image(icon = GLOB.buildmode_hud, loc = src, icon_state = "ai_sel")
 
-	own_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
-	own_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	rel_set(src, nameof(deaf_loop), new /datum/looping_sound/mob/deafened(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
+	rel_set(src, nameof(firesoundloop), new /datum/looping_sound/mob/on_fire(list(src), FALSE)) // ALLOW(decl): looping_sound takes constructor args
 	// stunnedloop = new(list(src), FALSE)
 	if(firesoundloop) // Partly safety, partly so we can have different probs for randomization
 		if(prob(40)) // Randomize our end_sound. Can't really do this easily in looping_sound without some work

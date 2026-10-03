@@ -5,7 +5,7 @@
 
 /mob/living/silicon/proc/laws_sanity_check()
 	if (!src.laws)
-		own_set(src, nameof(laws), new using_map.default_law_type)
+		rel_set(src, nameof(laws), new using_map.default_law_type)
 
 /mob/living/silicon/proc/has_zeroth_law()
 	return laws.zeroth_law != null

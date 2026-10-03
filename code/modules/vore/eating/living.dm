@@ -46,7 +46,7 @@
 		om_attach(src, /datum/om/behaviour/slosh)
 	if(LAZYLEN(vore_organs))
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 		return TRUE
 
 	//We'll load our client's organs if we have one
@@ -71,7 +71,7 @@
 			if(istype(H.species,/datum/species/monkey))
 				allow_spontaneous_tf = TRUE
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 		return TRUE
 
 /mob/living/init_vore(force)
@@ -373,11 +373,11 @@
 			own_clear(src, nameof(soulgem), OWN_DELETE)
 		if(length(P.soulcatcher_prefs))
 			var/list/errors = list()
-			own_set(src, nameof(soulgem), state_materialize(P.soulcatcher_prefs, src, NONE, errors))
+			rel_set(src, nameof(soulgem), state_materialize(P.soulcatcher_prefs, src, NONE, errors))
 			if(!soulgem)
 				log_state("copy_from_prefs_vr: the soulgem of [src] did not load: [jointext(errors, "; ")]")
 		if(!soulgem)
-			own_set(src, nameof(soulgem), new /obj/soulgem(src))
+			rel_set(src, nameof(soulgem), new /obj/soulgem(src))
 
 	return TRUE
 
@@ -1410,7 +1410,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 		create_mob_button(owner)
 	om_grant(owner, GRANT_VERB, /mob/proc/insidePanel, src)
 	if(!owner.vorePanel)
-		own_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
+		rel_set(owner, nameof(owner.vorePanel), new /datum/vore_look(owner))
 
 // takes the panel back from its owner (the panel verb is granted with this button as
 // source, so its deletion revokes it). Hooks, the screen icon
@@ -1430,7 +1430,7 @@ TOPIC_ACTION(/mob/living, "print_ooc_notes_chat", PROC_REF(topic_print_ooc_notes
 /// Gives the mob its vore panel HUD button if it has none.
 /mob/living/proc/add_vore_panel_button()
 	if(!vore_panel_button)
-		own_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
+		rel_set(src, nameof(vore_panel_button), new /datum/vore_panel_button(src))
 	return vore_panel_button
 
 /datum/vore_panel_button/proc/on_client_login(datum/source, datum/om/event/mob_client_login/event)

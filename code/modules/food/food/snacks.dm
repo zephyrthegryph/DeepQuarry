@@ -273,7 +273,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 /// The clicked thing is an open container (not a food) with a coating (batter) in it.
 /obj/item/reagent_containers/food/snacks/proc/target_has_coating(datum/act/op/A)
 	var/atom/target = A.target
-	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food)) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food))
 		return FALSE
 	for(var/datum/reagent/R as anything in target.reagents.reagent_list) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 		if(istype(R, /datum/reagent/nutriment/coating))
@@ -295,7 +295,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 /// The snack opens into the open container it is held to (a microwave is not one: it takes the snack itself).
 /obj/item/reagent_containers/food/snacks/proc/pours_into_target(datum/act/op/A)
 	var/atom/target = A.target
-	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave)
 
 /// All of it that fits.
 /obj/item/reagent_containers/food/snacks/proc/pour_amount(datum/act/op/A)
@@ -3875,32 +3875,32 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	return OP_OK
 
 /obj/item/pizzabox/margherita/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/margherita(src))
 	boxtag = "Margherita Deluxe"
 	. = ..()
 
 /obj/item/pizzabox/vegetable/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/vegetablepizza(src))
 	boxtag = "Gourmet Vegatable"
 	. = ..()
 
 /obj/item/pizzabox/mushroom/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/mushroompizza(src))
 	boxtag = "Mushroom Special"
 	. = ..()
 
 /obj/item/pizzabox/meat/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/meatpizza(src))
 	boxtag = "Meatlover's Supreme"
 	. = ..()
 
 /obj/item/pizzabox/pineapple/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/pineapple(src))
 	boxtag = "Hawaiian Sunrise"
 	. = ..()
 
 /obj/item/pizzabox/old/Initialize(mapload)
-	own_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
+	rel_set(src, nameof(pizza), new /obj/item/reagent_containers/food/snacks/sliceable/pizza/oldpizza(src))
 	boxtag = "Deluxe Gourmet"
 	. = ..()
 

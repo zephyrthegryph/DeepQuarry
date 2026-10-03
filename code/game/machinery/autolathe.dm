@@ -41,9 +41,13 @@
 	//looping sound for printing items
 	var/datum/looping_sound/lathe_print/print_sound
 
+CAPABILITIES(/obj/machinery/autolathe)
+	owns_one(nameof(materials), /datum/material_container)
+	owns_one(nameof(print_sound), /datum/looping_sound/lathe_print)
+
 /obj/machinery/autolathe/Initialize(mapload)
-	own_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
-	own_set(src, nameof(materials), new /datum/material_container( \
+	rel_set(src, nameof(print_sound), new /datum/looping_sound/lathe_print(list(src), FALSE, TRUE))
+	rel_set(src, nameof(materials), new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		0, \

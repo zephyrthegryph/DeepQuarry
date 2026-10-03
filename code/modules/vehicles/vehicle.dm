@@ -49,6 +49,9 @@
 	/// Whether it was running when the EMP took it down (it restarts when the outage lapses).
 	var/emp_was_on = FALSE
 
+CAPABILITIES(/obj/vehicle)
+	owns_one(nameof(soundloop), /datum/looping_sound/idle_carengine)
+
 CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
 
 //-------------------------------------------
@@ -56,7 +59,7 @@ CAPABILITY(/obj/vehicle, emp_disable(30 SECONDS))
 //-------------------------------------------
 /obj/vehicle/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/idle_carengine(list(src), FALSE))
 
 ///obj/vehicle/New()
 //	..()

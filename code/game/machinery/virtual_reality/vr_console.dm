@@ -34,6 +34,9 @@
 	active_power_usage = 200
 	light_color = "#FF0000"
 
+CAPABILITIES(/obj/machinery/vr_sleeper)
+	owns_one(nameof(smoke), /datum/effect/effect/system/smoke_spread/bad)
+
 /obj/machinery/vr_sleeper/perfect
 	perfect_replica = TRUE
 
@@ -55,7 +58,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/vr_sleeper, MACHINE_PIPELINE, "vr_occupied
 /obj/machinery/vr_sleeper/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
+	rel_set(src, nameof(smoke), new /datum/effect/effect/system/smoke_spread/bad)
 	update_icon()
 
 // its occupant exits VR (phase 2, while the slot still holds them; phase 3 spills them).

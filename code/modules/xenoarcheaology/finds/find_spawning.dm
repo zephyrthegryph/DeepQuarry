@@ -848,7 +848,7 @@
 		new_item.desc = src.desc
 
 		if(talkative)
-			own_set(new_item, nameof(new_item.talking_atom), new /datum/talking_atom(new_item))
+			rel_set(new_item, nameof(new_item.talking_atom), new /datum/talking_atom(new_item))
 
 		if(become_anomalous)
 			new_item.become_anomalous()
@@ -861,7 +861,7 @@
 			T.last_find_name = new_item.name
 		if(secondary_item) //Is this part of a set?
 			if(talkative)
-				own_set(secondary_item, nameof(secondary_item.talking_atom), new /datum/talking_atom(secondary_item))
+				rel_set(secondary_item, nameof(secondary_item.talking_atom), new /datum/talking_atom(secondary_item))
 
 			if(become_anomalous)
 				secondary_item.become_anomalous()
@@ -869,7 +869,7 @@
 		return INITIALIZE_HINT_QDEL
 
 	else if(talkative)
-		own_set(src, nameof(talking_atom), new /datum/talking_atom(src))
+		rel_set(src, nameof(talking_atom), new /datum/talking_atom(src))
 
 	if(become_anomalous)
 		become_anomalous()

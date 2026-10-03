@@ -7,9 +7,12 @@
 	var/effect_cardinals_only = FALSE	// If true, effects only move in GLOB.cardinal directions.
 	var/effect_forced_dir = null		// If set, effects emitted will always move in this direction.
 
+CAPABILITIES(/obj/effect/map_effect/interval/effect_emitter)
+	owns_one(nameof(effect_system), /datum/effect/effect/system)
+
 /obj/effect/map_effect/interval/effect_emitter/Initialize(mapload)
 	if(effect_system_type)
-		own_set(src, nameof(effect_system), new effect_system_type())
+		rel_set(src, nameof(effect_system), new effect_system_type())
 		effect_system.attach(src)
 		configure_effects()
 	return ..()

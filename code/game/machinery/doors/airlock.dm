@@ -987,7 +987,7 @@ CAPABILITIES(/obj/machinery/door/airlock)
 
 /obj/machinery/door/airlock/proc/user_allowed(mob/user)
 	var/mob/living/silicon/robot/R = user
-	if(istype(R) && !check_access(R.idcard)) // ALLOW(reads): a cyborg's ID card is fixed for its life; the window button re-checks it
+	if(istype(R) && !check_access(R.idcard))
 		return FALSE
 	var/allowed = (issilicon(user) && canAIControl(user))
 	if(!allowed && isobserver(user))
@@ -1343,9 +1343,9 @@ CAPABILITIES(/obj/machinery/door/airlock)
 /obj/machinery/door/airlock/proc/create_electronics()
 	//create new electronics
 	if (secured_wires)
-		own_set(src, nameof(electronics), new/obj/item/airlock_electronics/secure(src))
+		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics/secure(src))
 	else
-		own_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
+		rel_set(src, nameof(electronics), new/obj/item/airlock_electronics(src))
 
 	//update the electronics to match the door's access
 	if(LAZYLEN(req_access))

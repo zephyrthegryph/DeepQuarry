@@ -69,7 +69,7 @@ GLOBAL_TABLE(material_corrosive_gases, GLOBAL_PROC_REF(build_material_corrosive_
 	var/first_sample = 0
 	var/datum/material_assembly/assembly = material_assembly(src)
 	if(!assembly.service)
-		own_set(assembly, nameof(assembly.service), new /datum/material_service(src))
+		rel_set(assembly, nameof(assembly.service), new /datum/material_service(src))
 		// Services admitted while the world initializes (every power cell, pipes seeing their
 		// first pressure) take their baseline sample spread over the first seconds after boot
 		// rather than all on the first tick.

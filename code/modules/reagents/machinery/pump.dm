@@ -46,7 +46,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/pump, MACHINE_PIPELINE, "on")
 	// New holder might have different volume. Transfer everything to a new holder to account for this.
 	var/datum/reagents/R = new(round(initial(reagents.maximum_volume) + 100 * bin_size), src)
 	src.reagents.trans_to_holder(R, src.reagents.total_volume)
-	own_set(src, nameof(reagents), R)
+	rel_set(src, nameof(reagents), R)
 
 	rel_set(src, nameof(cell), locate_in_list(component_parts, /obj/item/cell)) // component_parts owns the cell; this is a view onto it
 

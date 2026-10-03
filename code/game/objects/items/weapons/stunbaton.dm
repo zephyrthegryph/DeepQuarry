@@ -26,6 +26,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/melee/baton)
+	owns_one(nameof(bcell), /obj/item/cell)
+
 /obj/item/melee/baton/Initialize(mapload)
 	. = ..()
 	update_icon()

@@ -5,6 +5,14 @@
 /mob/new_player
 	var/datum/news_panel/dq_news_panel_cache
 
+CAPABILITIES(/mob/new_player)
+	owns_one(nameof(dq_news_panel_cache), /datum/news_panel)
+	owns_one(nameof(late_choices_dialog), /datum/tgui_module/late_choices)
+	owns_one(nameof(lobby_window), /datum/tgui_window)
+	owns_one(nameof(manifest_dialog), /datum/tgui_module/crew_manifest/new_player)
+	owns_one(nameof(poll_browser_dialog), /datum/poll_browser_dialog)
+	owns_one(nameof(privacy_poll_dialog), /datum/privacy_poll_dialog)
+
 /datum/news_panel
 	var/mob/new_player/host
 	var/datum/feed_channel/channel
@@ -69,7 +77,7 @@ UI_ACT_PROC(/datum/news_panel, ui_act_prev)
 	if(!GLOB.news_data || !GLOB.news_data.station_newspaper())
 		return
 	if(!dq_news_panel_cache)
-		own_set(src, nameof(dq_news_panel_cache), new /datum/news_panel(src, CHANNEL))
+		rel_set(src, nameof(dq_news_panel_cache), new /datum/news_panel(src, CHANNEL))
 	else
 		rel_set(dq_news_panel_cache, nameof(dq_news_panel_cache.channel), CHANNEL)
 	if(!current_news_page && length(CHANNEL.messages))

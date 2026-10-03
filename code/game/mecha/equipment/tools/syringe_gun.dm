@@ -325,6 +325,9 @@ UI_ACT_PROC(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, ui_act_purge
 
 	equip_type = EQUIP_HULL
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/crisis_drone)
+	owns_one(nameof(MyBeam), /datum/beam)
+
 /// Jammed by a critical failure: the drone stays down until it is detached (and so reset).
 OM_FIELD(/obj/item/mecha_parts/mecha_equipment/crisis_drone, jammed, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE_ALL(/obj/item/mecha_parts/mecha_equipment/crisis_drone, PERIODIC_SLOW, list("chassis", "!jammed"))
@@ -388,7 +391,7 @@ TYPE_TABLE_DECLARE(/obj/item/mecha_parts/mecha_equipment/crisis_drone, drone_tre
 
 			if(valid_target(Target))
 				if(!MyBeam)
-					own_set(src, nameof(MyBeam), chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
+					rel_set(src, nameof(MyBeam), chassis.Beam(Target,icon='icons/effects/beam.dmi',icon_state=beam_state,time=3 SECONDS,maxdistance=max_distance,beam_type = /obj/effect/ebeam,beam_sleep_time=2))
 				heal_target(Target)
 
 	else

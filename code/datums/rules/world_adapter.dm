@@ -152,7 +152,7 @@
 /// A heat node for atom `A`.
 /proc/dq_rx_node_new(atom/A)
 	if(!A.rx_node)
-		own_set(A, nameof(/atom::rx_node), new /datum/dq_rx_node(A))
+		rel_set(A, nameof(/atom::rx_node), new /datum/dq_rx_node(A))
 	return A.rx_node
 
 /// Sets the node's temperature (tests and DM authority): the atom gets a body

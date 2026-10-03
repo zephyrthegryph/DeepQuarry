@@ -277,6 +277,9 @@
 	var/material_pending_heat_elapsed = 0
 	EXPIRY_DECLARE(last_material_process)
 
+CAPABILITIES(/datum/material_power_overlay)
+	owns_one(nameof(material_graph), /datum/material_power_graph)
+
 /datum/material_power_overlay/New(id)
 	region_id = id
 	..()
@@ -320,7 +323,7 @@
 				rel_add(src, nameof(cables), C)
 	// Demand booked so far is keyed by the old graph's vertices: it can't carry over.
 	material_consumers = null
-	own_set(src, nameof(material_graph), new /datum/material_power_graph)
+	rel_set(src, nameof(material_graph), new /datum/material_power_graph)
 	material_graph.build(cables, region_id)
 
 /// Supply by vertex for the solver: each bound machine's registered rate, at its vertex.

@@ -61,7 +61,7 @@ REGISTRY_MEMBERSHIP(/obj/item, REGISTRY_RADIOVOLTAIC_ITEMS)
 		return
 	rel_set(src, nameof(parent), new_parent)
 	var/datum/material_build/build = material_build(new_parent)
-	own_set(build, nameof(build.response), src)
+	rel_set(build, nameof(build.response), src)
 	material_id = material.name
 	electrical_form = !!_electrical_form
 	medical_form = !!_medical_form

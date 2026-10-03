@@ -72,6 +72,9 @@
 	/// The physiology, or null (simple and machine plans).
 	var/datum/physiology/physiology
 
+CAPABILITIES(/datum/body)
+	owns_one(nameof(physiology), /datum/physiology)
+
 
 /// A floor on `factor_id` from `source` for `duration` (0 = until removed or
 /// `still_valid` fails). Re-adding from the same source refreshes it.

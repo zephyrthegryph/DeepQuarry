@@ -173,7 +173,7 @@
 
 	set_wires(new /datum/wires/robot(src))
 
-	own_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
+	rel_set(src, nameof(robot_modules_background), new /atom/movable/screen()) // ALLOW(decl): screen object made in nullspace, configured before parent init
 	robot_modules_background.icon_state = "block"
 	ident = rand(1, 999)
 	updatename(modtype)
@@ -210,15 +210,15 @@
 	update_icon()
 
 /mob/living/silicon/robot/proc/setup_radio()
-	own_set(src, nameof(radio), new /obj/item/radio/borg(src))
+	rel_set(src, nameof(radio), new /obj/item/radio/borg(src))
 	rel_set(src, nameof(common_radio), radio) // an alias of the owned radio
 
 /// The photo camera and the machinery camera that feeds the robots network.
 /mob/living/silicon/robot/proc/setup_camera()
 	if(photo_camera_type)
-		own_set(src, nameof(aiCamera), new photo_camera_type(src))
+		rel_set(src, nameof(aiCamera), new photo_camera_type(src))
 	if(!scrambledcodes && !camera)
-		own_set(src, nameof(camera), new /obj/machinery/camera(src))
+		rel_set(src, nameof(camera), new /obj/machinery/camera(src))
 		camera.c_tag = real_name
 		camera.replace_networks(list(NETWORK_DEFAULT,NETWORK_ROBOTS))
 		if(wires.is_cut(WIRE_BORG_CAMERA))
@@ -230,7 +230,7 @@
 	return
 
 /mob/living/silicon/robot/proc/setup_laws()
-	own_set(src, nameof(laws), new using_map.default_law_type) //use map's default
+	rel_set(src, nameof(laws), new using_map.default_law_type) //use map's default
 	additional_law_channels["Binary"] = "#b"
 	if(!lawupdate || scrambledcodes)
 		return
@@ -581,13 +581,13 @@
 // setup the PDA and its name
 /mob/living/silicon/robot/proc/setup_PDA()
 	if (!rbPDA)
-		own_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
+		rel_set(src, nameof(rbPDA), new/obj/item/pda/ai(src))
 	rbPDA.set_name_and_job(name,"[modtype] [braintype]")
 	om_grant(src, GRANT_VERB, /obj/item/pda/ai/verb/cmd_pda_open_ui, src)
 
 /mob/living/silicon/robot/proc/setup_communicator()
 	if (!communicator)
-		own_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
+		rel_set(src, nameof(communicator), new/obj/item/communicator/integrated(src))
 	communicator.register_device(name, "[modtype] [braintype]")
 	om_grant(src, GRANT_VERB, /obj/item/communicator/integrated/verb/activate, src)
 
@@ -961,10 +961,10 @@ EXTEND_INTERACTIONS(/mob/living/silicon/robot, \
 		return FALSE
 	to_chat(user, span_filter_notice("You damage some parts of the chassis, but eventually manage to rip out [mmi]!"))
 	var/obj/item/robot_parts/robot_suit/C = new/obj/item/robot_parts/robot_suit(loc)
-	own_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
-	own_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
-	own_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
-	own_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
+	rel_set(C, nameof(C.l_leg), new/obj/item/robot_parts/l_leg(C))
+	rel_set(C, nameof(C.r_leg), new/obj/item/robot_parts/r_leg(C))
+	rel_set(C, nameof(C.l_arm), new/obj/item/robot_parts/l_arm(C))
+	rel_set(C, nameof(C.r_arm), new/obj/item/robot_parts/r_arm(C))
 	C.update_icon()
 	new/obj/item/robot_parts/chest(loc)
 	qdel(src)
@@ -1392,7 +1392,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/robot, TYPE_PROC_REF(/atom, appearan
 /mob/living/silicon/robot/proc/place_on_head(obj/item/new_hat)
 	if(hat)
 		remove_hat(get_turf(src))
-	own_set(src, nameof(hat), new_hat)
+	rel_set(src, nameof(hat), new_hat)
 	new_hat.forceMove(src)
 	update_icon()
 
@@ -1618,7 +1618,7 @@ TOPIC_ACTION(/mob/living/silicon/robot, "showalerts", PROC_REF(topic_showalerts)
 	disconnect_from_ai(TRUE)
 	clear_supplied_laws()
 	clear_inherent_laws()
-	own_set(src, nameof(laws), new /datum/ai_laws/syndicate_override)
+	rel_set(src, nameof(laws), new /datum/ai_laws/syndicate_override)
 	var/time = time2text(world.realtime,"hh:mm:ss")
 	GLOB.lawchanges.Add("[time] <B>:</B> [user.name]([user.key]) emagged [name]([key])")
 	set_zeroth_law("Only [user.real_name] and people [user.p_they()] designate[user.p_s()] as being such are operatives.")
@@ -1868,7 +1868,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 /obj/proc/siliconaccess(mob/user)
 	var/mob/living/silicon/robot/R = user
 	if(istype(R))
-		return check_access(R.idcard) // ALLOW(reads): a cyborg's ID card is fixed for its life, so a cached answer cannot go stale
+		return check_access(R.idcard)
 	if(issilicon(user))
 		return TRUE
 	return FALSE

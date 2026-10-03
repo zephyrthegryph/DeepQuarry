@@ -12,7 +12,7 @@
 /obj/item/rig_module/device/Initialize(mapload)
 	. = ..()
 	if(device_type)
-		own_set(src, nameof(device), new device_type(src))
+		rel_set(src, nameof(device), new device_type(src))
 
 /obj/item/rig_module/device/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
@@ -163,8 +163,8 @@
 
 /obj/item/rig_module/device/stamp/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
-	own_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
+	rel_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
+	rel_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
 
 /obj/item/rig_module/device/stamp/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
@@ -175,8 +175,8 @@
 			return 1
 		var/obj/item/mounted = own_take(src, nameof(device))
 		var/obj/item/spare = own_take(src, nameof(spare_stamp))
-		own_set(src, nameof(device), spare)
-		own_set(src, nameof(spare_stamp), mounted)
+		rel_set(src, nameof(device), spare)
+		rel_set(src, nameof(spare_stamp), mounted)
 		if(istype(device, /obj/item/stamp/denied))
 			to_chat(holder.wearer(), span_notice("Switched to denied stamp."))
 		else

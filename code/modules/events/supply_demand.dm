@@ -246,6 +246,9 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	name = "gas mixture"
 	var/datum/gas_mixture/mixture
 
+CAPABILITIES(/datum/supply_demand_order/gas)
+	owns_one(nameof(mixture), /datum/gas_mixture)
+
 /datum/supply_demand_order/gas/describe()
 	var/pressure = mixture.return_pressure()
 	var/total_moles = mixture.total_moles()
@@ -341,7 +344,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 		if(_gtype) mixture.set_moles(_gtype, (rand(1,1000) * mixture.return_volume()) / (R_IDEAL_GAS_EQUATION * mixture.return_temperature()))
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
-	own_set(O, nameof(O.mixture), mixture)
+	rel_set(O, nameof(O.mixture), mixture)
 	own_add(src, nameof(required_items), O)
 	return
 

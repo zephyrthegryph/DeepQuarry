@@ -92,6 +92,9 @@
 	projectilesound = SFX_WEAPONS_WAVE
 	var/obj/effect/overlay/energy_ball/energy_ball = null
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced)
+	owns_one(nameof(energy_ball), /obj/effect/overlay/energy_ball)
+
 
 /mob/living/simple_mob/mechanical/mecha/combat/gygax/dark/advanced/do_special_attack(atom/A, stance)
 	. = TRUE // So we don't fire a bolt as well.
@@ -128,7 +131,7 @@
 	shock_resist = 1
 
 	// Make the energy ball. This is purely visual since the tesla ball is hyper-deadly.
-	own_set(src, nameof(energy_ball), new /obj/effect/overlay/energy_ball(loc))
+	rel_set(src, nameof(energy_ball), new /obj/effect/overlay/energy_ball(loc))
 	energy_ball.adjust_scale(0.5)
 	energy_ball.orbit(src, 32, TRUE, 1 SECOND)
 

@@ -44,6 +44,9 @@
 	var/visible_action = "turns on"
 	var/audible_action = null
 
+CAPABILITIES(/obj/machinery/microwave)
+	owns_one(nameof(soundloop), /datum/looping_sound/microwave)
+
 /obj/machinery/microwave/advanced
 	name = "deluxe microwave"
 	icon = 'icons/obj/deluxemicrowave.dmi'
@@ -86,7 +89,7 @@
 
 	default_apply_parts()
 
-	own_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/microwave(list(src), FALSE))
 	update_icon()
 
 

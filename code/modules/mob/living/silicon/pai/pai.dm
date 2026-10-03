@@ -104,6 +104,9 @@
 	vore_capacity = 1
 	vore_capacity_ex = list("stomach" = 1)
 
+CAPABILITIES(/mob/living/silicon/pai)
+	owns_one(nameof(pai_fold_display), /atom/movable/screen/pai)
+
 //////////////////////////////////////////////////////////////////////////////////////////////////
 // Init and destroy
 //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +132,7 @@ DECLARE_VERB_HIDE(/mob/living/silicon/pai, /mob/verb/toggle_gun_mode) // no gun 
 
 	if(card)
 		if(!card.radio)
-			own_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
+			rel_set(card, nameof(card.radio), new /obj/item/radio/borg/pai(src.card))
 		rel_set(src, nameof(radio), card.radio)
 
 	//Default languages without universal translator software

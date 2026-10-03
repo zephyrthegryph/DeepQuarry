@@ -14,6 +14,10 @@ SYSTEM_DEF(events)
 
 	var/datum/event_meta/new_event = new
 
+CAPABILITIES(/datum/system/events)
+	owns_one(nameof(new_event), /datum/event_meta)
+	owns_one(nameof(tgui_event_manager_panel), /datum/event_manager_panel)
+
 /datum/system/events/initialize()
 	if(initialized)
 		return

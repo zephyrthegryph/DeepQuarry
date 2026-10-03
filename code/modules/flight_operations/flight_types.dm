@@ -76,6 +76,9 @@
 	/// Reserved port occupied by the vessel, if physically docked.
 	var/docked_port_id
 
+CAPABILITIES(/datum/flight_vessel)
+	owns_one(nameof(active_plan), /datum/flight_plan)
+
 
 /datum/flight_vessel/proc/has_capabilities(required)
 	return (capabilities & required) == required

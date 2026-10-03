@@ -8,9 +8,12 @@
 	var/list/valid_actions
 	on = 1
 
+CAPABILITIES(/obj/machinery/embedded_controller)
+	owns_one(nameof(program), /datum/embedded_program)
+
 /obj/machinery/embedded_controller/Initialize(mapload)
 	if(ispath(program))
-		own_set(src, nameof(program), new program(src))
+		rel_set(src, nameof(program), new program(src))
 	return ..()
 
 

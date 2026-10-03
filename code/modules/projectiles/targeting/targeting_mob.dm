@@ -9,7 +9,7 @@
 	if(isliving(src))
 		var/mob/living/M = src
 		if(!M.aiming)
-			own_set(M, nameof(M.aiming), new /obj/aiming_overlay(src))
+			rel_set(M, nameof(M.aiming), new /obj/aiming_overlay(src))
 		M.aiming.toggle_active()
 	else
 		to_chat(src, span_warning("This verb may only be used by living mobs, sorry."))

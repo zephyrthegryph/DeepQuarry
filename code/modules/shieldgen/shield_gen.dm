@@ -27,6 +27,9 @@
 	var/id //for button usage
 	var/datum/looping_sound/shield_generator/shield_hum
 
+CAPABILITIES(/obj/machinery/shield_gen)
+	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
+
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
 	desc = "A machine that generates a field of energy optimized for blocking meteorites when activated.  This version comes with a more efficent shield matrix."
@@ -48,7 +51,7 @@
 				continue
 			if(get_dir(cap, src) == cap.dir)
 				rel_set(cap, nameof(cap.owned_gen), src)
-	own_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
+	rel_set(src, nameof(shield_hum), new /datum/looping_sound/shield_generator(list(src), FALSE))
 	. = ..()
 	make_climbable()
 

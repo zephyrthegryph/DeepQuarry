@@ -28,7 +28,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	if(species.flags & NO_BLOOD)
 		return
 
-	own_set(src, nameof(vessel), new/datum/reagents(species.blood_volume))
+	rel_set(src, nameof(vessel), new/datum/reagents(species.blood_volume))
 	rel_set(vessel, nameof(vessel.my_atom), src)
 
 	if(!should_have_organ(O_HEART)) //We want the var for safety but we can do without the actual blood.

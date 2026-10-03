@@ -46,7 +46,7 @@
 		real_name = identity().real_name
 		name = real_name
 	if(identity().get_dna())
-		own_set(src, nameof(dna), identity().get_dna().Clone())
+		rel_set(src, nameof(dna), identity().get_dna().Clone())
 	if(identity().languages)
 		languages = identity().languages
 	else

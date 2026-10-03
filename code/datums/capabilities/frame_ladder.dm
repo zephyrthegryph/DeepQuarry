@@ -23,6 +23,9 @@
 	/// The dismantle entry, built once.
 	var/tmp/datum/interaction/capability/dismantle
 
+CAPABILITIES(/datum/capability/deconstruct)
+	owns_one(nameof(dismantle), /datum/interaction/capability)
+
 /**
  * cap_deconstruct(board = /obj/item/circuitboard/x, needs = req_set(PANEL)): with the panel open, a crowbar
  * dismantles the machine into its frame. Works broken and unpowered.
@@ -48,7 +51,7 @@
 		entry.apply_stance_tags()
 		// A real op (the router ranks it): the crowbar that takes the machine apart, a structural part op.
 		op_attach(entry, "dismantle", ACT_USE, OP_PRIORITY_NORMAL, OP_STRUCTURAL)
-		own_set(src, nameof(src.dismantle), entry)
+		rel_set(src, nameof(src.dismantle), entry)
 	return list(dismantle)
 
 /datum/capability/deconstruct/examine(atom/holder, mob/user)
@@ -180,7 +183,7 @@
 
 /// The board went in (the cap_insert() cost moved it into the frame).
 /obj/structure/frame/proc/frame_ladder_board_in(mob/user, obj/item/held, from)
-	own_set(src, nameof(src.circuit), held)
+	rel_set(src, nameof(src.circuit), held)
 	if(frame_type.frame_class == FRAME_CLASS_MACHINE)
 		check_components()
 		update_desc()

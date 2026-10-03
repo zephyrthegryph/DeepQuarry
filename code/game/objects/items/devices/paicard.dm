@@ -42,6 +42,11 @@
 	var/static/list/systems_list = list("pAI","MultiTool","Emag","Signaler")
 	var/selected_system = "pAI"
 
+CAPABILITIES(/obj/item/paicard)
+	owns_one(nameof(multitool), /obj/item/multitool)
+	owns_one(nameof(radio), /obj/item/radio/borg/pai)
+	owns_one(nameof(signaler), /obj/item/assembly/signaler)
+
 /obj/item/paicard/relaymove(mob/user, direction)
 	if(user.stat || user.has_status(EFFECT_STUNNED))
 		return
@@ -809,8 +814,8 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		emagged = TRUE
 		// Add tools
 		if(has_emag_toolkit)
-			own_set(src, nameof(multitool), new /obj/item/multitool(src))
-			own_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
+			rel_set(src, nameof(multitool), new /obj/item/multitool(src))
+			rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
 		return 1
 
 ///////////////////////////////

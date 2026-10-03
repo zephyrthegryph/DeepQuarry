@@ -52,6 +52,9 @@
 	/// The ladder, built on first use.
 	var/tmp/datum/construction_ladder/ladder
 
+CAPABILITIES(/datum/capability/construction)
+	owns_one(nameof(ladder), /datum/construction_ladder)
+
 /// Per-instance construction state.
 /datum/ladder_progress
 	/// The holder's stage name.
@@ -79,7 +82,7 @@
 /// and its steps are the capability's only owned entities: built once, on the kept (interned) capability.
 /datum/capability/construction/proc/ladder_for(atom/holder)
 	if(!ladder)
-		own_set(src, nameof(src.ladder), new /datum/construction_ladder(src, holder.type))
+		rel_set(src, nameof(src.ladder), new /datum/construction_ladder(src, holder.type))
 	return ladder
 
 /datum/capability/construction/interactions(atom/holder)

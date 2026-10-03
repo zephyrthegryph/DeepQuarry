@@ -24,6 +24,10 @@
 	var/tmp/datum/computer_file/data/email_account/current_account
 	var/tmp/datum/computer_file/data/email_message/current_message
 
+CAPABILITIES(/datum/tgui_module/email_client)
+	owns_one(nameof(downloading), /datum/computer_file)
+	owns_one(nameof(msg_attachment), /datum/computer_file)
+
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
 		if(!account.can_login)
@@ -350,7 +354,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_send)
 	message.title = msg_title
 	message.stored_data = msg_body
 	message.source = current_account().login
-	own_set(message, nameof(/datum/computer_file/data/email_message::attachment), msg_attachment)
+	rel_set(message, nameof(/datum/computer_file/data/email_message::attachment), msg_attachment)
 	if(!current_account().send_mail(msg_recipient, message, FALSE, user))
 		error = "Error sending email: this address doesn't exist."
 		return 1
@@ -476,7 +480,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_addattachment)
 		if(CF.unsendable)
 			continue
 		if(CF.filename == picked_file)
-			own_set(src, nameof(/datum/tgui_module/email_client::msg_attachment), CF.clone())
+			rel_set(src, nameof(/datum/tgui_module/email_client::msg_attachment), CF.clone())
 			break
 	if(!istype(msg_attachment))
 		own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
@@ -499,7 +503,7 @@ UI_ACT_PROC(/datum/tgui_module/email_client, ui_act_downloadattachment)
 		error = "Error downloading file. Are you using a functional and NTOSv2-compliant device?"
 		return 1
 
-	own_set(src, nameof(/datum/tgui_module/email_client::downloading), current_message().attachment.clone())
+	rel_set(src, nameof(/datum/tgui_module/email_client::downloading), current_message().attachment.clone())
 	download_progress = 0
 	return 1
 

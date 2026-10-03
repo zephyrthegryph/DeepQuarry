@@ -39,16 +39,19 @@
 	/// Nodes P4 can turn into reactor watches.
 	var/list/watchable
 
+CAPABILITIES(/datum/predicate)
+	owns_one(nameof(root), /datum/pred_node)
+
 /// Compile `spec` against `registry` (default: the global one). Called once.
 /datum/predicate/proc/compile(datum/property_registry/registry)
 	var/datum/predicate_compiler/compiler = new(registry || dq_property_registry(), name || "[type]")
-	own_set(src, nameof(root), compiler.compile_spec(spec))
+	rel_set(src, nameof(root), compiler.compile_spec(spec))
 	errors = length(compiler.errors) ? compiler.errors : null
 	rel_clear(src, nameof(watchable))
 	for(var/datum/pred_node/node as anything in compiler.watchable)
 		rel_add(src, nameof(watchable), node) // nodes are owned by the tree under root
 	if(errors)
-		own_set(src, nameof(root), new /datum/pred_node/invalid)
+		rel_set(src, nameof(root), new /datum/pred_node/invalid)
 	return !errors
 
 /// TRUE if every clause passes.

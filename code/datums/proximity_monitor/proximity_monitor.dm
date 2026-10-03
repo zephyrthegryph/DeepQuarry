@@ -18,6 +18,10 @@
 	/// Hooks the turfs in range of the host (owned).
 	var/datum/connect_range/range_connector
 
+CAPABILITIES(/datum/proximity_monitor)
+	owns_one(nameof(containers_connector), /datum/connect_containers)
+	owns_one(nameof(range_connector), /datum/connect_range)
+
 
 /datum/proximity_monitor/New(atom/_host, range, _ignore_if_not_on_turf = TRUE)
 	ignore_if_not_on_turf = _ignore_if_not_on_turf
@@ -43,7 +47,7 @@
 	if(containers_connector && !QDELETED(containers_connector))
 		containers_connector.update(host(), containers_connections)
 	else if(ismovable(host()))
-		own_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
+		rel_set(src, nameof(containers_connector), new /datum/connect_containers(src, host(), containers_connections))
 	om_hook(host(), /datum/om/event/moved, src, PROC_REF(on_moved))
 	om_hook(host(), /datum/om/event/before/movable_z_changed, src, PROC_REF(on_z_change))
 	set_range(current_range, TRUE)
@@ -66,7 +70,7 @@
 	if(range_connector && !QDELETED(range_connector))
 		range_connector.update(host(), loc_connections, current_range, works_in_containers)
 		return
-	own_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
+	rel_set(src, nameof(range_connector), new /datum/connect_range(src, host(), loc_connections, current_range, works_in_containers))
 
 /datum/proximity_monitor/proc/on_moved(atom/movable/source, datum/om/event/moved/event)
 	EVENT_HANDLER

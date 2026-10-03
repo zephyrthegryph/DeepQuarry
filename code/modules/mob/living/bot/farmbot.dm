@@ -364,7 +364,7 @@ UI_ACT_PROC(/mob/living/bot/farmbot, ui_act_replacenutri)
 /obj/item/farmbot_arm_assembly/Initialize(mapload, theTank)
 	. = ..()
 	if(!theTank) // If an admin spawned it, it won't have a watertank it, so lets make one for em!
-		own_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
+		rel_set(src, nameof(tank), new /obj/structure/reagent_dispensers/watertank(src))
 	else
 		var/obj/O = theTank
 		O.forceMove(src)

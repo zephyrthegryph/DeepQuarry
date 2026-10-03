@@ -9,6 +9,9 @@
 	var/datum/tgui_module/alarm_monitor/alarm_monitor
 	var/monitor_type = /datum/tgui_module/alarm_monitor/engineering
 
+CAPABILITIES(/obj/machinery/computer/station_alert)
+	owns_one(nameof(alarm_monitor), /datum/tgui_module/alarm_monitor)
+
 /obj/machinery/computer/station_alert/security
 	monitor_type = /datum/tgui_module/alarm_monitor/security
 	circuit = /obj/item/circuitboard/stationalert_security
@@ -18,7 +21,7 @@
 	circuit = /obj/item/circuitboard/stationalert_all
 
 /obj/machinery/computer/station_alert/Initialize(mapload)
-	own_set(src, nameof(alarm_monitor), new monitor_type(src))
+	rel_set(src, nameof(alarm_monitor), new monitor_type(src))
 	alarm_monitor.register_alarm(src, "update_console_icon")
 	. = ..()
 

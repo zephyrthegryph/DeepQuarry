@@ -7,6 +7,9 @@
 	var/wait = 0
 	var/datum/effect/effect/system/ion_trail_follow/ion_trail
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/jetpack)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+
 
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/can_attach(obj/mecha/M as obj)
 	if(!(locate_in_list(M.equipment, src.type)) && !M.active_jetpack)
@@ -21,7 +24,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/jetpack/attach(obj/mecha/M as obj)
 	..()
 	if(!ion_trail)
-		own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow)
+		rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow)
 	ion_trail.set_up(chassis)
 	return
 

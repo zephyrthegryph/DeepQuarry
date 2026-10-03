@@ -13,6 +13,9 @@
 	VAR_PRIVATE/initial_distance = HOSE_MAX_DISTANCE
 	VAR_PRIVATE/datum/beam/current_beam = null
 
+CAPABILITIES(/datum/hose)
+	owns_one(nameof(current_beam), /datum/beam)
+
 /// Set once both ends are attached and the hose formed; periodic_step() moves reagents while it is (DECLARE_PERIODIC_WHILE).
 OM_FIELD_TYPED(/datum/hose, tmp, hose_formed, FALSE, CHANGE_DATUM_A)
 DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
@@ -113,7 +116,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose, PERIODIC_FAST, "hose_formed")
 			new_col = reagent_node2.get_color()
 
 		// We are in the beam!
-		own_set(src, nameof(current_beam), A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
+		rel_set(src, nameof(current_beam), A.Beam(B, icon_state = "hose", beam_color = new_col, maxdistance = (HOSE_MAX_DISTANCE + 1), beam_type = /obj/effect/ebeam/hose))
 
 	return TRUE
 

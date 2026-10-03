@@ -27,19 +27,24 @@
 	var/atom/movable/sun_vis_simple/vis_shade
 	var/list/shandlers
 
+CAPABILITIES(/datum/planet_sunlight_handler)
+	owns_one(nameof(owned_sun), /datum/simple_sun)
+	owns_one(nameof(vis_overhead), /atom/movable/sun_vis_simple)
+	owns_one(nameof(vis_shade), /atom/movable/sun_vis_simple)
+
 /datum/planet_sunlight_handler/New(planet)
 	. = ..()
 	var/datum/planet/P = planet
 	var/datum/simple_sun/S = planet
 	if(istype(P))
-		own_set(src, nameof(owned_sun), new /datum/simple_sun/planetary(P))
+		rel_set(src, nameof(owned_sun), new /datum/simple_sun/planetary(P))
 		rel_set(src, nameof(sun), owned_sun)
 
 	if(istype(S))
 		rel_set(src, nameof(sun), S)
 
-	own_set(src, nameof(vis_overhead), new /atom/movable/sun_vis_simple(null))
-	own_set(src, nameof(vis_shade), new /atom/movable/sun_vis_simple(null))
+	rel_set(src, nameof(vis_overhead), new /atom/movable/sun_vis_simple(null))
+	rel_set(src, nameof(vis_shade), new /atom/movable/sun_vis_simple(null))
 
 /datum/planet_sunlight_handler/proc/update_sun()
 	sun().update()

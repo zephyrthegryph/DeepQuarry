@@ -70,7 +70,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/leopardmander, /mob/living/proc/t
 /mob/living/simple_mob/vore/leopardmander/Login()
 	. = ..()
 	if(!riding_datum)
-		own_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
+		rel_set(src, nameof(riding_datum), new /datum/riding/simple_mob(src))
 	movement_cooldown = -1 // 2 on Downstream
 	plane_holder.set_vis(VIS_CH_HEALTH_VR, 1)
 	plane_holder.set_vis(VIS_CH_ID, 1)

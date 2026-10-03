@@ -210,6 +210,9 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 	var/datum/looping_sound/small_motor/soundloop
 	COOLDOWN_DECLARE(stop_lockout_cooldown) //to keep the soundloop from being "stopped" too soon and playing indefinitely
 
+CAPABILITIES(/obj/item/gun/magnetic/matfed/phoronbore)
+	owns_one(nameof(soundloop), /datum/looping_sound/small_motor)
+
 /// Generator stage (GEN_OFF/STARTING/IDLE/ACTIVE).
 OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHANGE_EXPLICIT)
 
@@ -232,7 +235,7 @@ OM_FIELD(/obj/item/gun/magnetic/matfed/phoronbore, generator_state, GEN_OFF, CHA
 
 /obj/item/gun/magnetic/matfed/phoronbore/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/small_motor(list(src), 0))
 
 
 /obj/item/gun/magnetic/matfed/phoronbore/ui_action_click(mob/user, actiontype)

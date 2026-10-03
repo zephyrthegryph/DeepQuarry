@@ -33,11 +33,16 @@ SYSTEM_DEF(emergency_shuttle)
 	/// TRUE while a launch step that ran out of budget waits to resume.
 	VAR_PRIVATE/shuttle_resuming = FALSE
 
+CAPABILITIES(/datum/system/emergency_shuttle)
+	owns_one(nameof(emergency_shuttle_called), /datum/announcement/priority)
+	owns_one(nameof(emergency_shuttle_docked), /datum/announcement/priority)
+	owns_one(nameof(emergency_shuttle_recalled), /datum/announcement/priority)
+
 /datum/system/emergency_shuttle/initialize()
 	initialized = TRUE
-	own_set(src, nameof(emergency_shuttle_docked), new /datum/announcement/priority())
-	own_set(src, nameof(emergency_shuttle_called), new /datum/announcement/priority())
-	own_set(src, nameof(emergency_shuttle_recalled), new /datum/announcement/priority())
+	rel_set(src, nameof(emergency_shuttle_docked), new /datum/announcement/priority())
+	rel_set(src, nameof(emergency_shuttle_called), new /datum/announcement/priority())
+	rel_set(src, nameof(emergency_shuttle_recalled), new /datum/announcement/priority())
 	log_world("World service [name] initialized: [length(escape_pods)] escape pods registered.")
 
 /datum/system/emergency_shuttle/reactions()

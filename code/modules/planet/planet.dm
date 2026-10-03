@@ -30,11 +30,16 @@
 	var/moon_name = null // Purely for flavor. Null means no moon exists.
 	var/moon_phase = null // Set if above is defined.
 
+CAPABILITIES(/datum/planet)
+	owns_one(nameof(current_time), /datum/time)
+	owns_one(nameof(sun_holder), /datum/sun_holder)
+	owns_one(nameof(weather_holder), /datum/weather_holder)
+
 /datum/planet/New()
 	..()
-	own_set(src, nameof(weather_holder), new /datum/weather_holder(src))
-	own_set(src, nameof(sun_holder), new /datum/sun_holder(src))
-	own_set(src, nameof(current_time), current_time.make_random_time())
+	rel_set(src, nameof(weather_holder), new /datum/weather_holder(src))
+	rel_set(src, nameof(sun_holder), new /datum/sun_holder(src))
+	rel_set(src, nameof(current_time), current_time.make_random_time())
 	if(moon_name)
 		moon_phase = pick(list(
 			MOON_PHASE_NEW_MOON,
@@ -53,7 +58,7 @@
 /datum/planet/periodic_step(delta)
 	if(current_time)
 		var/difference = last_step ? world.time - last_step : delta
-		own_set(src, nameof(current_time), current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
+		rel_set(src, nameof(current_time), current_time.add_seconds((difference / 10) * PLANET_TIME_MODIFIER))
 	EXPIRY_STAMP(src, last_step, CLOCK_WORLD)
 	update_weather() // We update this first, because some weather types decease the brightness of the sun.
 	if(COOLDOWN_FINISHED(src, next_sun_process))

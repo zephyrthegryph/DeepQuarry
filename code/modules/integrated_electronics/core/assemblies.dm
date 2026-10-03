@@ -22,6 +22,9 @@
 	var/tmp/obj/item/card/id/access_card	// ID card for door access
 	var/list/component_positions // Stores circuit positions as list of lists: list("ref" = ref, "x" = x, "y" = y)
 
+CAPABILITIES(/obj/item/electronic_assembly)
+	owns_one(nameof(export_view), /datum/ic_export_view)
+
 /// Cached flag: TRUE when this assembly has at least one circuit that draws or makes power (so
 /// handle_idle_power() actually has work to do). Recomputed on circuit/cell add/remove via
 /// Entered()/Exited(); null until first computed.
@@ -146,7 +149,7 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_export_circuit)
 		to_chat(ui.user, span_warning("There's nothing in the [src] to export!"))
 		return TRUE
 	if(!export_view)
-		own_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
+		rel_set(src, nameof(/obj/item/electronic_assembly::export_view), new /datum/ic_export_view(src))
 	export_view.tgui_interact(user)
 	return TRUE
 

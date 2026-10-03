@@ -10,6 +10,9 @@
 	// How 'severe' the legacy event should be. This should only be used for legacy events, as severity is an outdated concept for the GM system.
 	var/severity = EVENT_LEVEL_MODERATE
 
+CAPABILITIES(/datum/event2/event/legacy)
+	owns_one(nameof(legacy_event), /datum/event)
+
 /datum/event2/meta/legacy/get_weight()
 	return 50
 
@@ -18,7 +21,7 @@
 	tick_count++
 
 /datum/event2/event/legacy/set_up()
-	own_set(src, nameof(legacy_event), new legacy_event(null, external_use = TRUE))
+	rel_set(src, nameof(legacy_event), new legacy_event(null, external_use = TRUE))
 	legacy_event.severity = severity
 	legacy_event.setup()
 

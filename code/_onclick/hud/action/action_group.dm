@@ -21,6 +21,9 @@
 	/// Our landing screen object
 	var/atom/movable/screen/action_landing/landing
 
+CAPABILITIES(/datum/action_group)
+	owns_one(nameof(landing), /atom/movable/screen/action_landing)
+
 /datum/action_group/New(datum/hud/owner)
 	..()
 	rel_set(src, nameof(owner), owner)
@@ -128,7 +131,7 @@
 /datum/action_group/proc/generate_landing()
 	if(landing)
 		return
-	own_set(src, nameof(landing), new /atom/movable/screen/action_landing())
+	rel_set(src, nameof(landing), new /atom/movable/screen/action_landing())
 	landing.set_owner(src)
 	refresh_actions()
 

@@ -114,9 +114,12 @@
 
 	var/datum/entopic/ent_debug
 
+CAPABILITIES(/obj/item/entopic_debug)
+	owns_one(nameof(ent_debug), /datum/entopic)
+
 /obj/item/entopic_debug/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(ent_debug), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
+	rel_set(src, nameof(ent_debug), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "holo_Jin"))
 
 /proc/entopic_icon_helper(atom/A,holo = TRUE)
 	ASSERT(A)

@@ -14,6 +14,9 @@
 		GAME_TIC_TAC_TOE = /datum/board_game/four_row/tic_tac_toe
 	)
 
+CAPABILITIES(/obj/structure/casino_table/board_game)
+	owns_one(nameof(game_ui), /datum/board_game)
+
 DECLARE_DEFAULT_CHILD(/obj/structure/casino_table/board_game, "game_ui", "game_ui")
 
 
@@ -47,7 +50,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/board_game, \
 	new_game = possible_games[new_game]
 	if(game_ui)
 		own_clear(src, nameof(game_ui), OWN_DELETE)
-	own_set(src, nameof(game_ui), new new_game(src))
+	rel_set(src, nameof(game_ui), new new_game(src))
 	icon_state = game_ui.table_icon
 
 /datum/board_game

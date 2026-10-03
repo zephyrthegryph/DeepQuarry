@@ -193,7 +193,7 @@
 		return FALSE
 
 	if(!inventory_panel)
-		own_set(src, nameof(inventory_panel), new inventory_panel_type(src))
+		rel_set(src, nameof(inventory_panel), new inventory_panel_type(src))
 	inventory_panel.tgui_interact(user, custom_state = state)
 
 	return TRUE

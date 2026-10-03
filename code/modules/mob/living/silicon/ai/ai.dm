@@ -103,6 +103,15 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	can_be_antagged = TRUE
 
+CAPABILITIES(/mob/living/silicon/ai)
+	owns_one(nameof(aiCommunicator), /obj/item/communicator)
+	owns_one(nameof(aiPDA), /obj/item/pda/ai)
+	owns_one(nameof(aiRadio), /obj/item/radio/headset/heads/ai_integrated)
+	owns_one(nameof(announcement), /datum/announcement/priority)
+	owns_one(nameof(psupply), /obj/machinery/ai_powersupply)
+	owns_one(nameof(research), /datum/malf_research)
+	owns_one(nameof(track), /datum/trackable)
+
 /mob/living/silicon/ai/proc/add_ai_verbs()
 	om_grant_each(src, GRANT_VERB, GLOB.ai_verbs_default, src)
 	om_grant_each(src, GRANT_VERB, silicon_subsystems, src)
@@ -114,7 +123,7 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 /mob/living/silicon/ai/Initialize(mapload, is_decoy, datum/ai_laws/L, obj/item/mmi/B, safety = FALSE)
 	var/mob/observer/eye/eyeobj = src?.active_eye()
 
-	own_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
+	rel_set(src, nameof(announcement), new /datum/announcement/priority()) // ALLOW(decl): configured before parent init
 	announcement.title = "A.I. Announcement"
 	announcement.announcement_type = "A.I. Announcement"
 	announcement.newscast = 1
@@ -130,14 +139,14 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 				pickedName = null
 
 	if(!is_dummy)
-		own_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
+		rel_set(src, nameof(aiPDA), new/obj/item/pda/ai(src)) // ALLOW(decl): conditional on is_dummy
 	SetName(pickedName)
 	set_anchored(TRUE)
 	canmove = 0
 	set_density(TRUE)
 
 	if(!is_dummy)
-		own_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
+		rel_set(src, nameof(aiCommunicator), new /obj/item/communicator/integrated(src)) // ALLOW(decl): conditional on is_dummy
 
 	holo_icon = getHologramIcon(icon('icons/mob/AI.dmi',"holo1"))
 
@@ -145,11 +154,11 @@ GLOBAL_LIST_INIT(ai_verbs_default, list(
 
 	if(L)
 		if (istype(L, /datum/ai_laws))
-			own_set(src, nameof(laws), L)
+			rel_set(src, nameof(laws), L)
 	else
-		own_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
+		rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): only when no laws were passed in
 
-	own_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
+	rel_set(src, nameof(aiRadio), new /obj/item/radio/headset/heads/ai_integrated(src)) // ALLOW(decl): wired to common_radio before parent init
 	rel_set(src, nameof(common_radio), aiRadio) // an alias of the owned aiRadio
 	rel_set(aiRadio, nameof(aiRadio.myAi), src)
 	additional_law_channels["Binary"] = "#b"
@@ -337,7 +346,7 @@ DECLARE_DEFAULT_CHILD(/mob/living/silicon/ai, "aiCamera", /obj/item/camera/silic
 	rel_set(src, nameof(powered_ai), loc)
 	if(!istype(powered_ai))
 		return INITIALIZE_HINT_QDEL
-	own_set(powered_ai, nameof(powered_ai.psupply), src)
+	rel_set(powered_ai, nameof(powered_ai.psupply), src)
 	if(istype(powered_ai,/mob/living/silicon/ai/announcer))	//Don't try to get a loc for a nullspace announcer mob, just put it into it
 		forceMove(powered_ai)
 	else

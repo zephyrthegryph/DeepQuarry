@@ -178,7 +178,7 @@
 		tgui_alert_async(user, "The game hasn't started yet!")
 		return
 	if(!round_status_panel)
-		own_set(src, nameof(round_status_panel), new /datum/round_status_panel(src))
+		rel_set(src, nameof(round_status_panel), new /datum/round_status_panel(src))
 	round_status_panel.tgui_interact(user)
 
 #undef SHUTTLE_STATE_IDLE

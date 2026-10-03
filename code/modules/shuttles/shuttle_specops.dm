@@ -21,9 +21,12 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	var/cancel_countdown = 0
 	category = /datum/shuttle/autodock/ferry/specops
 
+CAPABILITIES(/datum/shuttle/autodock/ferry/specops)
+	owns_one(nameof(announcer), /obj/item/radio/intercom)
+
 /datum/shuttle/autodock/ferry/specops/New()
 	..()
-	own_set(src, nameof(announcer), new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
+	rel_set(src, nameof(announcer), new /obj/item/radio/intercom(null)) //We need a fake AI to announce some stuff below. Otherwise it will be wonky.
 	announcer.config(list(CHANNEL_RESPONSE_TEAM = 0))
 
 /datum/shuttle/autodock/ferry/specops/proc/radio_announce(message)

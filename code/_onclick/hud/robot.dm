@@ -85,7 +85,7 @@
 	rel_set(HUD, nameof(HUD.move_intent), using)
 
 //Health
-	own_set(src, nameof(healths), new /atom/movable/screen())
+	rel_set(src, nameof(healths), new /atom/movable/screen())
 	healths.icon = HUD.ui_style
 	healths.icon_state = "health0"
 	healths.alpha = HUD.ui_alpha
@@ -134,7 +134,7 @@
 	own_add(HUD, nameof(HUD.other), aw)
 
 //Installed Module
-	own_set(src, nameof(hands), new /atom/movable/screen())
+	rel_set(src, nameof(hands), new /atom/movable/screen())
 	hands.icon = HUD.ui_style
 	hands.icon_state = "nomod"
 	hands.alpha = HUD.ui_alpha
@@ -152,7 +152,7 @@
 	own_add(HUD, nameof(HUD.adding), using)
 
 //Store
-	own_set(src, nameof(throw_icon), new /atom/movable/screen())
+	rel_set(src, nameof(throw_icon), new /atom/movable/screen())
 	throw_icon.icon = HUD.ui_style
 	throw_icon.icon_state = "store"
 	throw_icon.alpha = HUD.ui_alpha
@@ -170,7 +170,7 @@
 	robot_inventory.screen_loc = ui_borg_inventory
 	own_add(HUD, nameof(HUD.other), robot_inventory)
 
-	own_set(src, nameof(pullin), new /atom/movable/screen())
+	rel_set(src, nameof(pullin), new /atom/movable/screen())
 	pullin.icon = HUD.ui_style
 	pullin.icon_state = "pull0"
 	pullin.alpha = HUD.ui_alpha
@@ -178,23 +178,23 @@
 	pullin.name = "pull"
 	pullin.screen_loc = ui_borg_pull
 
-	own_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel())
+	rel_set(src, nameof(zone_sel), new /atom/movable/screen/zone_sel())
 	zone_sel.icon = HUD.ui_style
 	zone_sel.alpha = HUD.ui_alpha
 	zone_sel.cut_overlays()
 	zone_sel.update_icon()
 
 	//Handle the gun settings buttons
-	own_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
+	rel_set(src, nameof(gun_setting_icon), new /atom/movable/screen/gun/mode(null))
 	gun_setting_icon.icon = HUD.ui_style
 	gun_setting_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
+	rel_set(src, nameof(item_use_icon), new /atom/movable/screen/gun/item(null))
 	item_use_icon.icon = HUD.ui_style
 	item_use_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
+	rel_set(src, nameof(gun_move_icon), new /atom/movable/screen/gun/move(null))
 	gun_move_icon.icon = HUD.ui_style
 	gun_move_icon.alpha = HUD.ui_alpha
-	own_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
+	rel_set(src, nameof(radio_use_icon), new /atom/movable/screen/gun/radio(null))
 	radio_use_icon.icon = HUD.ui_style
 	radio_use_icon.alpha = HUD.ui_alpha
 
@@ -221,7 +221,7 @@
 				using.icon_state = "speed_1"
 			else if(speed == -1)
 				using.icon_state = "speed_2"
-			own_set(HUD, nameof(HUD.control_vtec), using)
+			rel_set(HUD, nameof(HUD.control_vtec), using)
 			m_intent = I_RUN
 			HUD.move_intent.icon_state = "running"
 			client.screen += HUD.control_vtec
@@ -238,7 +238,7 @@
 		using.screen_loc = ui_vtec_control
 		using.color = ui_color
 		using.alpha = ui_alpha
-		own_set(src, nameof(control_vtec), using)
+		rel_set(src, nameof(control_vtec), using)
 	if(R.vtec_active)
 		if(R.speed == 0)
 			control_vtec.icon_state = "speed_0"

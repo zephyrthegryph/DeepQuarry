@@ -51,6 +51,9 @@
 	pass_flags = PASSTABLE | PASSMOB
 	mob_size = MOB_TINY
 
+CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
+	owns_one(nameof(base_disease), /datum/affliction/contagion)
+
 
 /mob/living/simple_mob/vore/aggressive/macrophage/giant
 	name = "Giant Germ"
@@ -68,7 +71,7 @@
 	endurance += D.resistance
 	melee_damage_lower += max(0, D.resistance)
 	melee_damage_upper += max(0, D.resistance)
-	own_set(src, nameof(base_disease), D)
+	rel_set(src, nameof(base_disease), D)
 
 /mob/living/simple_mob/vore/aggressive/macrophage/extrapolator_act(mob/living/user, obj/item/extrapolator/extrapolator, dry_run = FALSE)
 	. = ..()

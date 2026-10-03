@@ -1498,12 +1498,12 @@ CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
 
 /obj/item/modular_computer/tablet/preset/custom_loadout/nettie/install_default_hardware()
 	..()
-	own_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit/small(src))
-	own_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
-	own_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/(src))
-	own_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/advanced(src))
-	own_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
-	own_set(src, nameof(battery_module), new/obj/item/computer_hardware/battery_module(src))
+	rel_set(src, nameof(processor_unit), new/obj/item/computer_hardware/processor_unit/small(src))
+	rel_set(src, nameof(tesla_link), new/obj/item/computer_hardware/tesla_link(src))
+	rel_set(src, nameof(hard_drive), new/obj/item/computer_hardware/hard_drive/(src))
+	rel_set(src, nameof(network_card), new/obj/item/computer_hardware/network_card/advanced(src))
+	rel_set(src, nameof(nano_printer), new/obj/item/computer_hardware/nano_printer(src))
+	rel_set(src, nameof(battery_module), new/obj/item/computer_hardware/battery_module(src))
 	battery_module.charge_to_full()
 
 //Stobarico - Kyu Comet

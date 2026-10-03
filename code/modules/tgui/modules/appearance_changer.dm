@@ -48,6 +48,12 @@
 	var/list/markings = null
 	var/cooldown //Anti-spam. If spammed, this can be REALLY laggy.
 
+CAPABILITIES(/datum/tgui_module/appearance_changer)
+	owns_one(nameof(cam_background), /atom/movable/screen/background)
+	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
+	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
+	owns_one(nameof(mannequin), /mob/living/carbon/human)
+
 /datum/tgui_module/appearance_changer/New(
 		host,
 		mob/living/carbon/human/H,
@@ -58,7 +64,7 @@
 
 	map_name = "appearance_changer_[REF(src)]_map"
 	// Initialize map objects
-	own_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
+	rel_set(src, nameof(cam_screen), new /atom/movable/screen/map_view)
 
 	cam_screen.name = "screen"
 	cam_screen.assigned_map = map_name
@@ -73,13 +79,13 @@
 		instance.del_on_map_removal = FALSE
 		instance.screen_loc = "[map_name]:CENTER"
 
-	own_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
+	rel_set(src, nameof(local_skybox), new /atom/movable/screen/skybox())
 	local_skybox.assigned_map = map_name
 	local_skybox.del_on_map_removal = FALSE
 	local_skybox.screen_loc = "[map_name]:CENTER,CENTER"
 
 	rel_set(src, nameof(owner), H)
-	own_set(src, nameof(cam_background), new /atom/movable/screen/background)
+	rel_set(src, nameof(cam_background), new /atom/movable/screen/background)
 	cam_background.assigned_map = map_name
 	cam_background.del_on_map_removal = FALSE
 	check_whitelist = check_species_whitelist
@@ -662,7 +668,7 @@ UI_ACT_PROC(/datum/tgui_module/appearance_changer, ui_act_view_stock_brec)
 	if(S && (S.spawn_flags & (SPECIES_IS_WHITELISTED|SPECIES_CAN_JOIN)) == SPECIES_CAN_JOIN)
 		// Generate body record from species!
 		own_clear(src, nameof(/datum/tgui_module/appearance_changer::mannequin), OWN_DELETE)
-		own_set(src, nameof(/datum/tgui_module/appearance_changer::mannequin), new /mob/living/carbon/human(null, S.name))
+		rel_set(src, nameof(/datum/tgui_module/appearance_changer::mannequin), new /mob/living/carbon/human(null, S.name))
 		rel_set(src, nameof(/datum/action_group::owner), mannequin)
 		owner().real_name = "Stock [S.name] Body"
 		owner().name = owner().real_name
@@ -1233,7 +1239,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		own_clear(src, nameof(mannequin), OWN_DELETE)
 		rel_clear(src, nameof(owner))
-	own_set(src, nameof(mannequin), new /mob/living/carbon/human(src))
+	rel_set(src, nameof(mannequin), new /mob/living/carbon/human(src))
 	rel_set(src, nameof(owner), mannequin)
 	owner().set_species(SPECIES_LLEILL)
 	owner().species.produceCopy(owner().species.traits.Copy(),owner(),null,FALSE)
@@ -1247,7 +1253,7 @@ DECLARE_UI_STATE(/datum/tgui_module/appearance_changer/vore, GLOB.tgui_conscious
 		om_unhook(owner(), /datum/om/event/movable_attempted_move, src)
 		own_clear(src, nameof(mannequin), OWN_DELETE)
 		rel_clear(src, nameof(owner))
-	own_set(src, nameof(mannequin), current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
+	rel_set(src, nameof(mannequin), current_project.produce_human_mob(src,FALSE,FALSE,"Designer [rand(999)]"))
 	rel_set(src, nameof(owner), mannequin)
 	// Update some specifics from the current record
 	owner().dna.blood_reagents = current_project.mydna.dna.blood_reagents

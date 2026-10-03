@@ -31,6 +31,9 @@
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
 
+CAPABILITIES(/obj/machinery/slot_machine)
+	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
+
 DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/slot_machine/appearance_overlays()
 	. = list()
@@ -176,6 +179,9 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 
 	var/datum/effect/effect/system/confetti_spread
 	var/confetti_strength = 8
+
+CAPABILITIES(/obj/machinery/station_slot_machine)
+	owns_one(nameof(confetti_spread), /datum/effect/effect/system)
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/station_slot_machine/appearance_overlays()
@@ -351,7 +357,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
 	if(celebrate) // Happy celebrations!
-		own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
+		rel_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 
@@ -422,7 +428,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
 	if(celebrate) // Happy celebrations!
-		own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
+		rel_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
 		src.confetti_spread.attach(src) //If somehow people start dragging slot machine
 		confetti_spread.start_repeatedly(confetti_strength, 1 SECOND)
 

@@ -116,10 +116,13 @@ UI_ACT_PROC(/datum/game_mode_panel, ui_act_refresh)
 /datum/game_mode
 	var/datum/game_mode_panel/tgui_game_mode_panel
 
+CAPABILITIES(/datum/game_mode)
+	owns_one(nameof(tgui_game_mode_panel), /datum/game_mode_panel)
+
 /proc/open_game_mode_panel(mob/user)
 	if(!SSticker || !SSticker.mode)
 		tgui_alert_async(user, "Not before roundstart!", "Alert")
 		return
 	if(!SSticker.mode.tgui_game_mode_panel)
-		own_set(SSticker.mode, nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(SSticker.mode))
+		rel_set(SSticker.mode, nameof(/datum/game_mode::tgui_game_mode_panel), new /datum/game_mode_panel(SSticker.mode))
 	SSticker.mode.tgui_game_mode_panel.tgui_interact(user)

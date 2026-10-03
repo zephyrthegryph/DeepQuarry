@@ -19,6 +19,9 @@
 	/// may request deletion, but only the Rust commit may actually retire it.
 	var/rust_authoritative = FALSE
 
+CAPABILITIES(/datum/pipe_network)
+	owns_one(nameof(air), /datum/gas_mixture)
+
 
 // Rust-owned networks refuse deletion.
 /datum/pipe_network/lifecycle_keep(force)
@@ -129,7 +132,7 @@
 	var/giver_volume = giver.volume()
 	var/combined_volume = volume() + giver_volume
 	if(!air)
-		own_set(src, nameof(air), new /datum/gas_mixture(max(giver_volume, 1)))
+		rel_set(src, nameof(air), new /datum/gas_mixture(max(giver_volume, 1)))
 	if(giver.air)
 		air.merge(giver.air)
 	air.set_volume(max(combined_volume, 1))
@@ -193,7 +196,7 @@
 	// own_set() doesn't dispose of it while members still name it; it goes below.
 	if(air)
 		own_take(src, nameof(air))
-	own_set(src, nameof(air), network_air)
+	rel_set(src, nameof(air), network_air)
 	// Binding deletes each port's private mixture (atmos_air_set()); what is left over
 	// (the previous network mixture) is unowned now and released here.
 	for(var/datum/pipeline/line_member in line_members)
@@ -212,7 +215,7 @@
 		return FALSE
 	var/base_volume = volume()
 	if(!air)
-		own_set(src, nameof(air), new /datum/gas_mixture(1))
+		rel_set(src, nameof(air), new /datum/gas_mixture(1))
 	var/external_volume = external_air.return_volume()
 	air.merge(external_air)
 	air.set_volume(max(base_volume + external_volume, 1))

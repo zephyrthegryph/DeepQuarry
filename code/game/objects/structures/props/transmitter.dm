@@ -8,8 +8,11 @@
 	var/datum/looping_sound/sequence/morse/soundloop
 	var/message_to_play = "The quick brown fox jumps over the lazy dog."
 
+CAPABILITIES(/obj/structure/prop/transmitter)
+	owns_one(nameof(soundloop), /datum/looping_sound/sequence/morse)
+
 /obj/structure/prop/transmitter/Initialize(mapload)
-	own_set(src, nameof(soundloop), new /datum/looping_sound/sequence/morse(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/sequence/morse(list(src), FALSE))
 	set_new_message(message_to_play)
 	soundloop.start()
 	interaction_message = "On the monitor it displays '[uppertext(message_to_play)]'."

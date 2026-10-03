@@ -688,7 +688,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	. = ..()
 	mob_radio.set_frequency(PUB_FREQ)
 	mob_radio.ks2type = /obj/item/encryptionkey/heads/captain 		//Might not be able to speak, but the catslug can listen.
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
+	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/heads/captain(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 
 //=============================================================================
@@ -754,7 +754,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	mob_radio.set_frequency(SYND_FREQ)
 	mob_radio.syndie = TRUE
 	mob_radio.ks2type = /obj/item/encryptionkey/syndicate
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
+	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/syndicate(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 
@@ -788,7 +788,7 @@ DECLARE_VERB_HIDE(/mob/living/simple_mob/vore/alienanimals/catslug/custom, /mob/
 	mob_radio.set_frequency(ERT_FREQ)
 	mob_radio.centComm = 1
 	mob_radio.ks2type = /obj/item/encryptionkey/ert
-	own_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
+	rel_set(mob_radio, nameof(mob_radio.keyslot2), new /obj/item/encryptionkey/ert(mob_radio))
 	mob_radio.recalculateChannels(TRUE)
 	myid.access |= SSaccess.get_all_station_access()
 

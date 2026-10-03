@@ -16,6 +16,9 @@
 	var/deployed = FALSE
 	var/obj/item/radio/intercom/science/ghost_reporter
 
+CAPABILITIES(/obj/item/ghost_trap)
+	owns_one(nameof(ghost_reporter), /obj/item/radio/intercom/science)
+
 ///The entity we currently have captured (a relation view).
 OM_FIELD_VIEW(/obj/item/ghost_trap, mob, captured_entity, CHANGE_EXPLICIT)
 /// Watches its catch every 2 s while it holds one; empty, it sleeps.
@@ -25,7 +28,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ghost_trap, PERIODIC_SLOW, "captured_entity")
 	. = ..()
 	if(deployed)
 		update_icon()
-	own_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
+	rel_set(src, nameof(ghost_reporter), new /obj/item/radio/intercom/science(null)) // ALLOW(decl): made in nullspace, not in src
 
 	var/static/list/ghost_events = list(
 		/datum/om/event/world_ghost_captured = TYPE_PROC_REF(/datum/experiment_handler, try_run_spectral_experiment),

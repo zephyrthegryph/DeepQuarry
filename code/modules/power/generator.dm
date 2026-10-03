@@ -31,10 +31,13 @@
 	var/lastgenlev = 0
 	var/datum/looping_sound/generator/soundloop
 
+CAPABILITIES(/obj/machinery/power/generator)
+	owns_one(nameof(soundloop), /datum/looping_sound/generator)
+
 REGISTRY_MEMBERSHIP(/obj/machinery/power/generator, REGISTRY_TURBINES)
 
 /obj/machinery/power/generator/Initialize(mapload)
-	own_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/generator(list(src), FALSE))
 	desc = initial(desc) + " Rated for [round(max_power/1000)] kW."
 	make_rotatable()
 	..() //Not returned, because...

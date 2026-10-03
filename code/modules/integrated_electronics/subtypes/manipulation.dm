@@ -168,6 +168,9 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/weapon_firing, \
 	var/obj/item/grenade/attached_grenade
 	var/pre_attached_grenade_type
 
+CAPABILITIES(/obj/item/integrated_circuit/manipulation/grenade)
+	owns_one(nameof(attached_grenade), /obj/item/grenade)
+
 /obj/item/integrated_circuit/manipulation/grenade/Initialize(mapload)
 	. = ..()
 	if(pre_attached_grenade_type)
@@ -221,7 +224,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/manipulation/grenade, \
 
 // These procs do not relocate the grenade, that's the callers responsibility
 /obj/item/integrated_circuit/manipulation/grenade/proc/attach_grenade(obj/item/grenade/G)
-	own_set(src, nameof(attached_grenade), G)
+	rel_set(src, nameof(attached_grenade), G)
 	om_hook(attached_grenade, /datum/om/event/qdeleting, src, PROC_REF(detach_grenade))
 	size += G.w_class
 	desc += " \An [attached_grenade] is attached to it!"

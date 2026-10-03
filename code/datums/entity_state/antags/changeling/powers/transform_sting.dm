@@ -43,7 +43,7 @@
 		return FALSE
 	add_attack_logs(src,T,"Transformation sting (changeling)")
 	act_message(T, null, others = span_warning("%U% transforms!"))
-	own_set(T, nameof(T.dna), chosen_dna.dna.Clone())
+	rel_set(T, nameof(T.dna), chosen_dna.dna.Clone())
 	T.real_name = chosen_dna.dna.real_name
 	T.UpdateAppearance()
 	domutcheck(T, null)

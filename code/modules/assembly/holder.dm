@@ -204,8 +204,8 @@ DECLARE_APPEARANCE_PROC(/obj/item/assembly_holder, TYPE_PROC_REF(/atom, appearan
 	tmr.set_secured(TRUE)
 	rel_set(tmr, nameof(tmr.holder), src)
 
-	own_set(src, nameof(a_left), tmr)
-	own_set(src, nameof(a_right), ign)
+	rel_set(src, nameof(a_left), tmr)
+	rel_set(src, nameof(a_right), ign)
 	secured = 1
 	update_icon()
 	name = initial(name) + " ([tmr.time] secs)"

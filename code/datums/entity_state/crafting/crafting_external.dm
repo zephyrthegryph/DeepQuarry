@@ -17,7 +17,7 @@
 			if(istype(reagents))
 				RG.trans_to_holder(reagents, RG.total_volume)
 			else
-				own_set(src, nameof(reagents), RG)
+				rel_set(src, nameof(reagents), RG)
 				rel_set(RG, nameof(RG.my_atom), src)
 			reagents.conditional_update()
 

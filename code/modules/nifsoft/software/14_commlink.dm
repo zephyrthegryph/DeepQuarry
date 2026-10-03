@@ -11,7 +11,7 @@
 
 /datum/nifsoft/commlink/install()
 	if((. = ..()))
-		own_set(nif(), nameof(/mob/living/voice::comm), new /obj/item/communicator/commlink(nif(),src))
+		rel_set(nif(), nameof(/mob/living/voice::comm), new /obj/item/communicator/commlink(nif(),src))
 		if(nif().human?.client?.prefs?.read_preference(/datum/preference/toggle/human/communicator_visibility)) // migrated
 			nif().comm.initialize_exonet(nif().human) //no harm in running this twice.
 

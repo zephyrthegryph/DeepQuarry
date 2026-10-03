@@ -319,7 +319,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable/candy/lolli, INTERACT_ITEM(
 		var/obj/item/holder/H = W
 
 		if(!victims)
-			own_set(src, nameof(victims), list())
+			rel_set(src, nameof(victims), list())
 
 		var/mob/living/M = H.held_mob
 

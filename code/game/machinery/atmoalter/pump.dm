@@ -24,7 +24,7 @@
 	. = ..()
 
 	if(!skip_cell)
-		own_set(src, nameof(cell), new/obj/item/cell/apc(src))
+		rel_set(src, nameof(cell), new/obj/item/cell/apc(src))
 
 	var/list/air_mix = StandardAirMix()
 	src.air_contents.adjust_multi(GAS_O2, air_mix[GAS_O2], GAS_N2, air_mix[GAS_N2])

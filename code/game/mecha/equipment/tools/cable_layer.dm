@@ -9,7 +9,7 @@
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
+	rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, 0))
 
 /obj/item/mecha_parts/mecha_equipment/tool/cable_layer/MoveAction()
 	layCable()
@@ -65,7 +65,7 @@ TOPIC_ACTION(/obj/item/mecha_parts/mecha_equipment/tool/cable_layer, "cut", PROC
 		if(to_load)
 			to_load = min(CC.get_amount(), to_load)
 			if(!cable)
-				own_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, to_load))
+				rel_set(src, nameof(cable), new /obj/item/stack/cable_coil(src, to_load))
 			else
 				cable.add(to_load)
 			CC.use(to_load)

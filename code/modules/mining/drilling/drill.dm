@@ -93,6 +93,9 @@
 	var/need_update_field = 0
 	var/need_player_check = 0
 
+CAPABILITIES(/obj/machinery/mining/drill)
+	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
+
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
 	if(Adjacent(user))
@@ -116,7 +119,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/mining/drill, "cell", "cell")
 /obj/machinery/mining/drill/Initialize(mapload)
 	. = ..()
 	default_apply_parts()
-	own_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
+	rel_set(src, nameof(faultreporter), new /obj/item/radio/intercom{channels=list("Supply")}(null))
 	make_climbable()
 
 

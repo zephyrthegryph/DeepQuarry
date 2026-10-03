@@ -563,7 +563,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/material/processed_alloy, INTERACT_ITEM(null
 	batch.homogeneity = clamp(batch.homogeneity + round(strength / 8), 0, 100)
 	batch.record_electricity(300)
 	batch.recalculate()
-	own_set(src, nameof(target), replace_processed_stack(stock, batch, src))
+	rel_set(src, nameof(target), replace_processed_stack(stock, batch, src))
 	set_energy(max(0, energy - 300))
 	qdel(batch) // ALLOW(lifecycle): a material batch is a plain datum with no holder or slot; the lifecycle verbs only take atoms
 	return TRUE

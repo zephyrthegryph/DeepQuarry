@@ -129,7 +129,7 @@ TYPE_TABLE(/mob/living/silicon/robot/platform, robot_component_types, list( \
 /mob/living/silicon/robot/platform/setup_module()
 	..()
 	if(ispath(module, /obj/item/robot_module))
-		own_set(src, nameof(module), new module(src))
+		rel_set(src, nameof(module), new module(src))
 
 /mob/living/silicon/robot/platform/module_reset(notify = TRUE)
 	return FALSE

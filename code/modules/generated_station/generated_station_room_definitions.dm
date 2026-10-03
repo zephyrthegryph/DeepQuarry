@@ -793,6 +793,9 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 	var/list/variant_options
 	var/datum/generated_room_style/room_style
 
+CAPABILITIES(/datum/generated_room_definition)
+	owns_one(nameof(room_style), /datum/generated_room_style)
+
 /datum/generated_room_definition/New()
 	..()
 	required_features = TYPE_TABLE_GET(src, build_required_features)
@@ -802,7 +805,7 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
 		own_add(src, nameof(constraints), built_constraint)
 	variant_options = TYPE_TABLE_GET(src, build_variant_options)
-	own_set(src, nameof(room_style), build_room_style())
+	rel_set(src, nameof(room_style), build_room_style())
 
 
 TYPE_TABLE_DECLARE(/datum/generated_room_definition, build_required_features, list())
@@ -1275,21 +1278,21 @@ TYPE_TABLE(/datum/generated_room_definition/docking_berth, build_required_groups
 	own_clear(fallback, nameof(fallback.room_style), OWN_DELETE)
 	switch(department_id)
 		if("command")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/command)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/command)
 		if("ai")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/ai/support)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/ai/support)
 		if("security")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/security)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/security)
 		if("medical")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/medical)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/medical)
 		if("engineering")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/engineering)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/engineering)
 		if("logistics")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/cargo)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/cargo)
 		if("docking")
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/docking)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style/docking)
 		else
-			own_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style)
+			rel_set(fallback, nameof(fallback.room_style), new /datum/generated_room_style)
 	fallback.density_min = 0.2
 	fallback.density_max = 0.5
 	switch("[department_id]/[role]")

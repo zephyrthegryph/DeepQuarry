@@ -96,7 +96,7 @@
 			CI.icon = 'icons/obj/grenade.dmi'
 			CI.icon_state = "flashbang1"
 			CI.name = "Flashbang"
-	own_set(src, nameof(halitem), CI)
+	rel_set(src, nameof(halitem), CI)
 	rel_set(src, nameof(halitem_client), our_human.client)
 	our_human.client.screen += CI
 	after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))

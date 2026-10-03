@@ -27,6 +27,9 @@
 
 	var/tmp/datum/language/default_language_static
 
+CAPABILITIES(/mob/observer/blob)
+	owns_one(nameof(blob_type), /datum/blob_type)
+
 /mob/observer/blob/get_default_language()
 	return default_language()
 
@@ -42,10 +45,10 @@ TYPE_TABLE_DECLARE(/mob/observer/blob, blob_langs, list(LANGUAGE_ANIMAL))
 	name = new_name
 	real_name = new_name
 	if(desired_blob_type)
-		own_set(src, nameof(blob_type), new desired_blob_type())
+		rel_set(src, nameof(blob_type), new desired_blob_type())
 	else
 		var/datum/blob_type/BT = pick(subtypesof(/datum/blob_type))
-		own_set(src, nameof(blob_type), new BT())
+		rel_set(src, nameof(blob_type), new BT())
 	color = blob_type.complementary_color
 	if(blob_core())
 		blob_core().update_icon()

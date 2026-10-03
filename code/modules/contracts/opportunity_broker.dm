@@ -44,13 +44,16 @@
 	/// field -> minimum number of distinct values
 	var/list/diversity_targets
 
+CAPABILITIES(/datum/contract_opportunity_signal)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_opportunity_signal/New(_id, _event_type, _target = 1, _value_field = null)
 	. = ..()
 	id = _id
 	event_type = _event_type
 	target = _target
 	value_field = _value_field
-	own_set(src, nameof(filter), new /datum/contract_event_filter)
+	rel_set(src, nameof(filter), new /datum/contract_event_filter)
 	diversity_targets = list()
 
 

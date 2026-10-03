@@ -15,9 +15,12 @@
 	/// How far away our song datum can be heard.
 	var/instrument_range = 15
 
+CAPABILITIES(/obj/item/instrument)
+	owns_one(nameof(song), /datum/song/handheld)
+
 /obj/item/instrument/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
+	rel_set(src, nameof(song), new /datum/song/handheld(src, allowed_instrument_ids, instrument_range))
 	allowed_instrument_ids = null //We don't need this clogging memory after its used.
 
 

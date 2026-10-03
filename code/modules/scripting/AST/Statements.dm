@@ -26,6 +26,9 @@
 	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 	var/datum/node/BlockDefinition/FunctionBlock/block
 
+CAPABILITIES(/datum/node/statement/FunctionDefinition)
+	owns_one(nameof(block), /datum/node/BlockDefinition/FunctionBlock)
+
 /*
 	Class: VariableAssignment
 	Sets a variable in an accessible scope to the given value if one exists, otherwise initializes a new local variable to the given value.
@@ -42,6 +45,10 @@
 	var/tmp/datum/node/identifier/object_owned
 	var/datum/node/identifier/var_name
 	var/datum/node/expression/value
+
+CAPABILITIES(/datum/node/statement/VariableAssignment)
+	owns_one(nameof(value), /datum/node/expression)
+	owns_one(nameof(var_name), /datum/node/identifier)
 
 /*
 	Class: VariableDeclaration
@@ -64,6 +71,11 @@
 	var/datum/node/BlockDefinition/else_block // may be null
 	var/datum/node/expression/cond
 
+CAPABILITIES(/datum/node/statement/IfStatement)
+	owns_one(nameof(block), /datum/node/BlockDefinition)
+	owns_one(nameof(cond), /datum/node/expression)
+	owns_one(nameof(else_block), /datum/node/BlockDefinition)
+
 /*
 	Class: WhileLoop
 	Loops while a given condition is true.
@@ -72,6 +84,10 @@
 /datum/node/statement/WhileLoop
 	var/datum/node/BlockDefinition/block
 	var/datum/node/expression/cond
+
+CAPABILITIES(/datum/node/statement/WhileLoop)
+	owns_one(nameof(block), /datum/node/BlockDefinition)
+	owns_one(nameof(cond), /datum/node/expression)
 
 /*
 	Class: ForLoop
@@ -104,6 +120,9 @@
 //
 /datum/node/statement/ReturnStatement
 	var/datum/node/expression/value
+
+CAPABILITIES(/datum/node/statement/ReturnStatement)
+	owns_one(nameof(value), /datum/node/expression)
 
 
 

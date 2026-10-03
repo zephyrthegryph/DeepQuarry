@@ -34,6 +34,9 @@
 	/// Type of view mob to create.
 	var/view_type = /mob/living/carbon/brain
 
+CAPABILITIES(/datum/mind_host)
+	owns_one(nameof(view), /mob/living/carbon/brain)
+
 /datum/mind_host/New(obj/item/new_owner, obj/item/organ/internal/brain/tissue)
 	..()
 	if(!isitem(new_owner))
@@ -46,7 +49,7 @@
 /obj/item/proc/make_mind_host(obj/item/organ/internal/brain/tissue) as /datum/mind_host
 	if(mind_host)
 		own_clear(src, nameof(mind_host), OWN_DELETE)
-	own_set(src, nameof(mind_host), new /datum/mind_host(src, tissue))
+	rel_set(src, nameof(mind_host), new /datum/mind_host(src, tissue))
 	return mind_host
 
 /// Owned: this item's mind host, if it holds minds.
@@ -95,7 +98,7 @@
 	return view
 
 /datum/mind_host/proc/attach_view(mob/living/carbon/brain/new_view)
-	own_set(src, nameof(view), new_view)
+	rel_set(src, nameof(view), new_view)
 	rel_set(new_view, nameof(new_view.host), src)
 	rel_set(new_view, nameof(new_view.container), owner) // the item holding the view (it owns us, not the view)
 	if(new_view.loc != owner)

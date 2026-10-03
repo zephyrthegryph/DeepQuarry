@@ -67,10 +67,16 @@
 
 	var/datum/religion/my_religion
 
+CAPABILITIES(/datum/mind)
+	owns_one(nameof(antag_holder), /datum/antag_holder)
+	owns_one(nameof(identity), /datum/character_identity)
+	owns_one(nameof(my_religion), /datum/religion)
+	owns_one(nameof(tgui_edit_memory_panel), /datum/edit_memory_panel)
+
 /datum/mind/New(key)
 	src.key = key
 	purchase_log = list()
-	own_set(src, nameof(antag_holder), new /datum/antag_holder)
+	rel_set(src, nameof(antag_holder), new /datum/antag_holder)
 	..()
 
 /// Low level: link this mind to `new_character`. Use transfer_mind() (or
@@ -84,7 +90,7 @@
 	var/datum/character_identity/carried_identity = get_identity()
 	if(!carried_identity && isliving(new_character))
 		carried_identity = new_character.identity()
-	own_set(src, nameof(identity), carried_identity)
+	rel_set(src, nameof(identity), carried_identity)
 	var/datum/changeling/changeling_comp
 	var/mob/living/old_character = current
 	if(current)
@@ -138,7 +144,7 @@
 	// fully structured TGUI panel; see
 	// code/modules/admin/edit_memory_panel.dm.
 	if(!tgui_edit_memory_panel)
-		own_set(src, nameof(tgui_edit_memory_panel), new /datum/edit_memory_panel(src, user))
+		rel_set(src, nameof(tgui_edit_memory_panel), new /datum/edit_memory_panel(src, user))
 	tgui_edit_memory_panel.tgui_interact(user)
 
 // The traitor antag panel's "set crystals" link (/datum/antagonist/traitor/get_extra_panel_options()).
@@ -422,7 +428,7 @@ TOPIC_ACTION(/datum/mind, "common=crystals", PROC_REF(topic_set_crystals), TOPIC
 	if(mind.identity)
 		bind_identity(mind.identity)
 	else
-		own_set(mind, nameof(mind.identity), identity())
+		rel_set(mind, nameof(mind.identity), identity())
 	if(SSantag.player_is_antag(mind))
 		om_grant(src.client, GRANT_VERB, /client/proc/aooc, mind) // the mind grants its player aooc while it is an antag
 	if (client?.prefs)

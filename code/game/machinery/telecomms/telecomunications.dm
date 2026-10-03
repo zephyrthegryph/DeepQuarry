@@ -52,6 +52,9 @@
 	/// keeping every network node in the two-second machinery roster.
 	EXPIRY_DECLARE(last_thermal_check)
 
+CAPABILITIES(/obj/machinery/telecomms)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
 
@@ -151,7 +154,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 		else
 			for(var/obj/machinery/telecomms/T in REGISTRY_MEMBERS(REGISTRY_TELECOMMS))
 				add_link(T)
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)
@@ -541,10 +544,14 @@ CAPABILITY(/obj/machinery/telecomms, emp_disable(300 SECONDS))
 							// would add up to md5("password123comsat")
 	var/obj/item/radio/headset/server_radio = null
 
+CAPABILITIES(/obj/machinery/telecomms/server)
+	owns_one(nameof(Compiler), /datum/TCS_Compiler)
+	owns_one(nameof(server_radio), /obj/item/radio/headset)
+
 /obj/machinery/telecomms/server/Initialize(mapload)
-	own_set(src, nameof(Compiler), new /datum/TCS_Compiler())
+	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())
 	rel_set(Compiler, nameof(Compiler.Holder), src)
-	own_set(src, nameof(server_radio), new /obj/item/radio/headset())
+	rel_set(src, nameof(server_radio), new /obj/item/radio/headset())
 	. = ..()
 
 /obj/machinery/telecomms/server/receive_information(datum/signal/signal, obj/machinery/telecomms/machine_from)

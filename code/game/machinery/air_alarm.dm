@@ -126,6 +126,9 @@
 	/// Monotonic revision for correction-aware contract atmosphere telemetry.
 	var/contract_atmos_revision = 0
 
+CAPABILITIES(/obj/machinery/alarm)
+	owns_one(nameof(soundloop), /datum/looping_sound/alarm/decompression_alarm)
+
 /obj/machinery/alarm/nobreach
 	breach_detection = 0
 
@@ -157,7 +160,7 @@
 	if(!alarm_area_ref().main_air_alarm_is_operating()) // select main alarm
 		alarm_area_ref().elect_main_air_alarm()
 	set_initial_TLV()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/alarm/decompression_alarm(list(src), FALSE))
 
 
 /// Phase 2: leaves its area's alarm list; the area elects a new main alarm.

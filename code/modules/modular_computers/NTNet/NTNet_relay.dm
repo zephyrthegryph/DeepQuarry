@@ -22,6 +22,9 @@
 	var/datum/looping_sound/tcomms/soundloop
 	var/noisy = TRUE
 
+CAPABILITIES(/obj/machinery/ntnet_relay)
+	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+
 // TODO: Implement more logic here. For now it's only a placeholder.
 /obj/machinery/ntnet_relay/operable(additional_flags = 0)
 	if(!..(additional_flags))
@@ -105,7 +108,7 @@ UI_ACT_PROC(/obj/machinery/ntnet_relay, ui_act_purge)
 		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::relays), src)
 		NTNet_static = GLOB.ntnet_global // a registered singleton: shared
 		GLOB.ntnet_global.add_log("New quantum relay activated. Current amount of linked relays: [length(NTNet().relays)]")
-	own_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/tcomms(list(src), FALSE))
 	if(prob(60)) // 60% chance to change the midloop
 		if(prob(40))
 			soundloop.mid_sounds = list('sound/machines/tcomms/tcomms_02.ogg' = 1)

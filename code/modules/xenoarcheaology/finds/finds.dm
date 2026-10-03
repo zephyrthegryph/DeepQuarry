@@ -16,6 +16,9 @@
 	var/datum/geosample/geologic_data
 	w_class = ITEMSIZE_SMALL
 
+CAPABILITIES(/obj/item/strangerock)
+	owns_one(nameof(geologic_data), /datum/geosample)
+
 /obj/item/strangerock/Initialize(mapload, inside_item_type = 0)
 	. = ..()
 	pixel_x = rand(0,16)-8

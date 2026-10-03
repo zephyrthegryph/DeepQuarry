@@ -18,7 +18,7 @@
 /obj/machinery/vending/nifsoft_shop/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
+	rel_set(src, nameof(entopic), new /datum/entopic(aholder = src, aicon = icon, aicon_state = "beacon"))
 
 MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
 
@@ -26,6 +26,7 @@ MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restricti
 CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
 	configure(wires(kind = /datum/wires/vending/no_contraband))
 	configure(emag(parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
+	owns_one(nameof(entopic), /datum/entopic)
 
 /obj/machinery/vending/nifsoft_shop/ui_data(datum/act/eval/A)
 	. = ..()

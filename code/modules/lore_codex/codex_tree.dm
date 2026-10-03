@@ -8,6 +8,9 @@
 	/// "[user]" -> /datum/codex_reader (owned): each reader's current page and history.
 	var/list/readers
 
+CAPABILITIES(/datum/codex_tree)
+	owns_one(nameof(home), /datum/lore/codex)
+
 /datum/codex_tree/New(new_holder, new_root_type)
 	rel_set(src, nameof(holder), new_holder)
 	root_type = new_root_type
@@ -41,7 +44,7 @@
 	return R?.page
 
 /datum/codex_tree/proc/generate_pages()
-	own_set(src, nameof(home), new root_type(src)) // This will also generate the others.
+	rel_set(src, nameof(home), new root_type(src)) // This will also generate the others.
 	indexed_pages = home.index_page() // changed from current_page to home.
 
 // Changes current_page to its parent, assuming one exists.

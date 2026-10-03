@@ -70,7 +70,7 @@
 		if(health > max_health)
 			health = max_health
 	else if(health == max_health && !plant)
-		own_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
+		rel_set(src, nameof(plant), new /obj/machinery/portable_atmospherics/hydroponics/soil/invisible(T,seed()))
 		plant.dir = src.dir
 		plant.transform = src.transform
 		plant.age = seed().get_trait(TRAIT_MATURATION)-1

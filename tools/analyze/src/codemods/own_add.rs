@@ -33,7 +33,7 @@ impl Codemod for OwnAdd {
             ("dynamic_var", "the var is not written as nameof(x) or a literal, so its type cannot be read"),
             ("unresolved_receiver", "the static type of the holder is unknown (an untyped local, a chain, a call spanning lines): declare the var by hand"),
             ("unknown_var", "the holder's type has no such var"),
-            ("untyped_var", "the var has no declared entity type, so there is nothing to declare it as"),
+            ("untyped_var", "the var has no declared entity type (untyped, or a value type), or its type is declared in the vendored TGS API or the defines: nothing to declare it as"),
             ("scalar_var", "own_add on a var that is not a list"),
             ("extra_args", "a transfer argument (rel_add takes none): becomes move_into(holder, slot, item, actor =) in the transfers wave"),
         ]

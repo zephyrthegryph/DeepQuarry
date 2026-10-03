@@ -108,6 +108,13 @@
 	permeability_coefficient = 0  //Protect the squishies, after all this shit should be waterproof.
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
+CAPABILITIES(/obj/item/rig)
+	owns_one(nameof(boots), /obj/item/clothing/shoes)
+	owns_one(nameof(chest), /obj/item/clothing/suit/space/rig)
+	owns_one(nameof(gloves), /obj/item/clothing/gloves/gauntlets/rig)
+	owns_one(nameof(helmet), /obj/item/clothing/head/helmet/space/rig)
+	owns_one(nameof(minihud), /datum/mini_hud/rig)
+
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "power_system", /datum/rig_power_system)
 DECLARE_DEFAULT_CHILD(/obj/item/rig, "component_registry", /datum/rig_component_registry)
 
@@ -418,7 +425,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 		if(canremove)
 			own_clear(src, nameof(minihud), OWN_DELETE)
 		else
-			own_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
+			rel_set(src, nameof(minihud), new /datum/mini_hud/rig (M.hud_used, src))
 	to_chat(M, span_boldnotice("Your entire suit [canremove ? "loosens as the components relax" : "tightens around you as the components lock into place"]."))
 	play_sfx(src, SFX_MACHINES_RIG_RIGSTARTED)
 	M.client?.screen -= booting_L
@@ -665,7 +672,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/rig, TYPE_PROC_REF(/atom, appearance_overlays)
 	if(istype(M) && (M.get_equipped_item(SLOT_ID_BACK) == src || M.get_equipped_item(SLOT_ID_BELT) == src))
 		act_message(M, src, MSG_SELF(span_boldnotice("You struggle into %T%.")), MSG_OTHERS(span_boldnotice("%U% struggles into %T%.")))
 		rel_set(src, nameof(wearer), M)
-		own_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
+		rel_set(wearer(), nameof(/mob/living/carbon/human::wearing_rig), src)
 		update_icon()
 
 /obj/item/rig/proc/toggle_piece(piece, mob/living/carbon/human/H, deploy_mode, forced = FALSE)

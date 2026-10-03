@@ -15,17 +15,22 @@
 	var/sounds = null
 	var/datum/looping_sound/loop_sounds = null
 
+CAPABILITIES(/datum/anomalous_weather)
+	owns_one(nameof(loop_sounds), /datum/looping_sound)
+	owns_one(nameof(reagent_holder), /datum/reagents)
+	owns_one(nameof(visuals), /atom/movable/weather_visuals)
+
 /datum/anomalous_weather/New()
 	..()
-	own_set(src, nameof(visuals), new /atom/movable/weather_visuals())
+	rel_set(src, nameof(visuals), new /atom/movable/weather_visuals())
 
 	visuals.icon = icon
 	visuals.icon_state = icon_state
 
-	own_set(src, nameof(loop_sounds), new sounds(list(), FALSE, TRUE))
+	rel_set(src, nameof(loop_sounds), new sounds(list(), FALSE, TRUE))
 
 	if(reagent_id)
-		own_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
+		rel_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
 		reagent_holder.add_reagent(reagent_id, 10000)
 		weather_colour = reagent_holder.get_color()
 
@@ -37,7 +42,7 @@
 		return FALSE
 
 	if(!reagent_holder)
-		own_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
+		rel_set(src, nameof(reagent_holder), new /datum/reagents(10000, null))
 
 	reagent_id = reagent
 	reagent_holder.clear_reagents()

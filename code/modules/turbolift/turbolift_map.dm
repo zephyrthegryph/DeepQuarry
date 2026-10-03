@@ -238,7 +238,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 
 	// Place lift panel.
 	var/turf/T = locate(int_panel_x, int_panel_y, uz)
-	own_set(lift, nameof(lift.control_panel_interior), new /obj/structure/lift/panel(T, lift))
+	rel_set(lift, nameof(lift.control_panel_interior), new /obj/structure/lift/panel(T, lift))
 	lift.control_panel_interior.set_dir(udir)
 	rel_set(lift, nameof(lift.current_floor), lift.floors[1])
 

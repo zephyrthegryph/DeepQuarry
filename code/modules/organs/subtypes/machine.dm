@@ -37,16 +37,19 @@
 	robotic = ORGAN_ASSISTED
 	butcherable = FALSE
 
+CAPABILITIES(/obj/item/organ/internal/mmi_holder)
+	owns_one(nameof(stored_mmi), /obj/item/mmi)
+
 
 /obj/item/organ/internal/mmi_holder/Initialize(mapload, internal, obj/item/mmi/installed)
 	. = ..(mapload, internal)
 	if(!ishuman(owner) || ismannequin(owner))
 		return
 	if(installed)
-		own_set(src, nameof(stored_mmi), installed)
+		rel_set(src, nameof(stored_mmi), installed)
 		installed.forceMove(src)
 	else
-		own_set(src, nameof(stored_mmi), new brain_type(src))
+		rel_set(src, nameof(stored_mmi), new brain_type(src))
 	return INITIALIZE_HINT_LATELOAD
 
 /// THE way an MMI goes into a human's brain slot (surgery, vore reform): born in `target`, a

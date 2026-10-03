@@ -15,10 +15,17 @@
 
 	var/mutable_appearance/standard_background
 
+CAPABILITIES(/atom/movable/screen/movable/pic_in_pic)
+	owns_one(nameof(button_expand), /atom/movable/screen/component_button)
+	owns_one(nameof(button_pop), /atom/movable/screen/component_button)
+	owns_one(nameof(button_shrink), /atom/movable/screen/component_button)
+	owns_one(nameof(button_x), /atom/movable/screen/component_button)
+	owns_one(nameof(popup_screen), /atom/movable/screen/map_view_tg)
+
 /atom/movable/screen/movable/pic_in_pic/Initialize(mapload)
 	. = ..()
 	make_backgrounds()
-	own_set(src, nameof(popup_screen), new /atom/movable/screen/map_view_tg)
+	rel_set(src, nameof(popup_screen), new /atom/movable/screen/map_view_tg)
 	popup_screen.generate_view("camera-[REF(src)]_map")
 
 
@@ -62,7 +69,7 @@
 	add_overlay(move_tab)
 
 	if(!button_x)
-		own_set(src, nameof(button_x), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_x), new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "close"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -75,7 +82,7 @@
 	vis_contents += button_x
 
 	if(!button_expand)
-		own_set(src, nameof(button_expand), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_expand), new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "expand"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -88,7 +95,7 @@
 	vis_contents += button_expand
 
 	if(!button_shrink)
-		own_set(src, nameof(button_shrink), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_shrink), new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "shrink"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'
@@ -101,7 +108,7 @@
 	vis_contents += button_shrink
 
 	if(!button_pop)
-		own_set(src, nameof(button_pop), new /atom/movable/screen/component_button(null, src))
+		rel_set(src, nameof(button_pop), new /atom/movable/screen/component_button(null, src))
 		var/mutable_appearance/MA = new /mutable_appearance()
 		MA.name = "pop"
 		MA.icon = 'icons/hud/pic_in_pic.dmi'

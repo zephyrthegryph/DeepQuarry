@@ -33,9 +33,12 @@
 	var/measurement_field
 	var/unit
 
+CAPABILITIES(/datum/contract_requirement/recorded_stages)
+	owns_one(nameof(filter), /datum/contract_event_filter)
+
 /datum/contract_requirement/recorded_stages/New(kind, field, _unit, list/thresholds)
 	..()
-	own_set(src, nameof(filter), new /datum/contract_event_filter(CONTRACT_EVIDENCE_SCOPE_ANY))
+	rel_set(src, nameof(filter), new /datum/contract_event_filter(CONTRACT_EVIDENCE_SCOPE_ANY))
 	filter.require_value("kind", kind)
 	filter.require_value("destination", CONTRACT_FAX_ENGINEERING)
 	filter.require_number("duration", CONTRACT_EVIDENCE_COMPARE_AT_LEAST, 45)

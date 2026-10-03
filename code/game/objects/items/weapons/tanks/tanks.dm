@@ -50,10 +50,13 @@ DECLARE_SHARED_CACHE(tank_gauge_overlays, GLOBAL_PROC_REF(build_tank_gauge_overl
 	Wired and assembled tanks may be disarmed with a set of wirecutters. Any exploding or rupturing tank will generate shrapnel, assuming their relief valves have been welded beforehand. Even if not, they can be incited to expel hot gas on ignition if pushed above 173ºC. \
 	Relatively easy to make, the single tank bomb requries no tank transfer valve, and is still a fairly formidable weapon that can be manufactured from any tank."
 
+CAPABILITIES(/obj/item/tank)
+	owns_one(nameof(proxyassembly), /obj/item/tankassemblyproxy)
+
 /obj/item/tank/proc/init_proxy()
 	var/obj/item/tankassemblyproxy/proxy = new /obj/item/tankassemblyproxy(src)
 	rel_set(proxy, nameof(proxy.tank), src)
-	own_set(src, nameof(proxyassembly), proxy)
+	rel_set(src, nameof(proxyassembly), proxy)
 
 /obj/item/tank/Initialize(mapload)
 	. = ..()

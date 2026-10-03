@@ -746,14 +746,14 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 			return
 
 	if(istype(hasMMI))
-		own_set(hasMMI, nameof(hasMMI.body_backup), M)
+		rel_set(hasMMI, nameof(hasMMI.body_backup), M)
 		om_suspend(M, M)
 		slot_remove(M, hasMMI)
 	else
 		var/mob/observer/G = M.ghostize(FALSE) // Make sure they're out, so we can copy attack logs and such.
 		if(G)
 			belly_insert(G)
-			own_set(G, nameof(G.body_backup), M)
+			rel_set(G, nameof(G.body_backup), M)
 			om_suspend(M, M)
 			slot_remove(M, G)
 		else

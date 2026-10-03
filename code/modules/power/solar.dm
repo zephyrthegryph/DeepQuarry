@@ -465,7 +465,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
-		own_set(A, nameof(A.circuit), M)
+		rel_set(A, nameof(A.circuit), M)
 		A.state = 3
 		A.icon_state = "computer_3"
 		A.set_anchored(TRUE)
@@ -477,7 +477,7 @@ UI_DATA_REPLACE(/obj/machinery/power/solar_control, "array_angle=cdir:num", "rot
 		latent_materialize_all() // a walk needs real things (C5)
 		for(var/obj/C in contents_of(src)) // ALLOW(latent): the contents were materialized by an earlier latent_materialize_all() in this proc, so this scan sees real objects
 			C.forceMove(src.loc)
-		own_set(A, nameof(A.circuit), M)
+		rel_set(A, nameof(A.circuit), M)
 		A.state = 4
 		A.icon_state = "computer_4"
 		A.set_anchored(TRUE)

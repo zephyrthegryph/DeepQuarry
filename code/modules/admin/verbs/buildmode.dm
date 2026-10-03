@@ -39,10 +39,10 @@
 			var/obj/effect/bmode/buildquit/D = new/obj/effect/bmode/buildquit(H)
 			rel_set(D, nameof(D.master), H)
 
-			own_set(H, nameof(H.builddir), A)
-			own_set(H, nameof(H.buildhelp), B)
-			own_set(H, nameof(H.buildmode), C)
-			own_set(H, nameof(H.buildquit), D)
+			rel_set(H, nameof(H.builddir), A)
+			rel_set(H, nameof(H.buildhelp), B)
+			rel_set(H, nameof(H.buildmode), C)
+			rel_set(H, nameof(H.buildquit), D)
 			M.client.screen += A
 			M.client.screen += B
 			M.client.screen += C
@@ -208,6 +208,12 @@
 	var/list/selected_mobs
 	var/copied_faction = null
 	var/warned = 0
+
+CAPABILITIES(/obj/effect/bmode/buildholder)
+	owns_one(nameof(builddir), /obj/effect/bmode/builddir)
+	owns_one(nameof(buildhelp), /obj/effect/bmode/buildhelp)
+	owns_one(nameof(buildmode), /obj/effect/bmode/buildmode)
+	owns_one(nameof(buildquit), /obj/effect/bmode/buildquit)
 
 REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 

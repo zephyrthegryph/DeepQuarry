@@ -12,9 +12,12 @@
 	var/glass = 1
 	var/datum/tgui_module/appearance_changer/mirror/M
 
+CAPABILITIES(/obj/structure/mirror)
+	owns_one(nameof(M), /datum/tgui_module/appearance_changer/mirror)
+
 /obj/structure/mirror/Initialize(mapload, dir, building = 0)
 	. = ..()
-	own_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
+	rel_set(src, nameof(M), new /datum/tgui_module/appearance_changer/mirror(src, null))
 	if(building)
 		glass = 0
 		icon_state = "mirror_frame"

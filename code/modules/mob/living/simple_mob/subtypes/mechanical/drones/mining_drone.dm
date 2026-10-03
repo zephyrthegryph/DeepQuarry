@@ -67,8 +67,11 @@
 	var/ignoreunarmed = TRUE
 	var/allowedtools = list(/obj/item/pickaxe, /obj/item/gun/energy/kinetic_accelerator, /obj/item/gun/magnetic/matfed/phoronbore, /obj/item/kinetic_crusher, /obj/item/melee/shock_maul)
 
+CAPABILITIES(/mob/living/simple_mob/mechanical/mining_drone)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow)
+
 /mob/living/simple_mob/mechanical/mining_drone/Initialize(mapload)
-	own_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
+	rel_set(src, nameof(ion_trail), new /datum/effect/effect/system/ion_trail_follow) // ALLOW(decl): configured and started before parent init
 	ion_trail.set_up(src)
 	ion_trail.start()
 	return ..()

@@ -17,6 +17,9 @@
 	var/mind=null
 	var/gender = null
 
+CAPABILITIES(/datum/dna2/record)
+	owns_one(nameof(dna), /datum/dna)
+
 /datum/dna2/record/proc/GetData()
 	var/list/ser=list("data" = null, "owner" = null, "label" = null, "type" = null, "ue" = 0)
 	if(dna)
@@ -366,7 +369,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	for(var/i=0;i<3;i++)
 		// Traitgenes Use bodyrecords
 		var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-		own_set(R, nameof(R.mydna), new /datum/dna2/record)
+		rel_set(R, nameof(R.mydna), new /datum/dna2/record)
 		R.mydna.dna = new
 		R.mydna.dna.ResetUI()
 		R.mydna.dna.ResetSE()
@@ -389,7 +392,7 @@ DECLARE_START_TIMER(/obj/machinery/computer/scan_consolenew, 25 SECONDS, PROC_RE
 	var/id = text2num(copytext(blk,1,pos))
 	if(!id) return 0
 	I.block = id
-	own_set(I, nameof(I.buf), buffer)
+	rel_set(I, nameof(I.buf), buffer)
 	return 1
 
 /obj/machinery/computer/scan_consolenew
@@ -626,7 +629,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			play_sfx(src, SFX_KEYBOARD)
 			// Traitgenes Storing the entire body record
 			var/datum/transhuman/body_record/R = new /datum/transhuman/body_record()
-			own_set(R, nameof(/datum/transhuman/body_record::mydna), new /datum/dna2/record)
+			rel_set(R, nameof(/datum/transhuman/body_record::mydna), new /datum/dna2/record)
 			R.mydna.dna = new
 			R.mydna.dna.ResetUI()
 			R.mydna.dna.ResetSE()
@@ -722,7 +725,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 	I.forceMove(loc)
 	I.name += " ([buf.mydna.name])"
 	if(copy_buffer)
-		own_set(I, nameof(I.buf), buf.mydna.copy())
+		rel_set(I, nameof(I.buf), buf.mydna.copy())
 	return I
 
 /**

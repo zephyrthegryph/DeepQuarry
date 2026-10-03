@@ -15,7 +15,7 @@
 	RETURN_TYPE(/datum/disposal_system_connection)
 	if(disposal_connection)
 		qdel(disposal_connection)
-	own_set(src, nameof(disposal_connection), new /datum/disposal_system_connection(src, visibly_connects))
+	rel_set(src, nameof(disposal_connection), new /datum/disposal_system_connection(src, visibly_connects))
 	return disposal_connection
 
 /datum/disposal_system_connection/New(obj/new_owner, visibly_connects = TRUE)

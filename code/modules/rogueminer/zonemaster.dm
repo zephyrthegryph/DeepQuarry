@@ -189,7 +189,7 @@
 		return
 
 	if(isnull(M.geologic_data))
-		own_set(M, nameof(M.geologic_data), new /datum/geosample(M))
+		rel_set(M, nameof(M.geologic_data), new /datum/geosample(M))
 
 	if(!prob(XENOARCH_SPAWN_CHANCE))
 		return
@@ -259,7 +259,7 @@
 	var/list/artifacts_spawnturf_temp = length(SSxenoarch.artifact_spawning_turfs) ? SSxenoarch.artifact_spawning_turfs.Copy() : list()
 	while(artifacts_spawnturf_temp.len > 0)
 		var/turf/simulated/mineral/artifact_turf = pop(artifacts_spawnturf_temp)
-		own_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
+		rel_set(artifact_turf, nameof(artifact_turf.artifact_find), new /datum/artifact_find())
 
 	#undef XENOARCH_SPAWN_CHANCE
 	#undef DIGSITESIZE_LOWER

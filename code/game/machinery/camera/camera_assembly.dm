@@ -135,7 +135,7 @@ MATERIAL_MIX(/obj/item/camera_assembly, list(MAT_STEEL = 700,MAT_GLASS = 300))
 	state = 4
 	var/obj/machinery/camera/C = new(loc)
 	forceMove(C)
-	own_set(C, nameof(C.assembly), src)
+	rel_set(C, nameof(C.assembly), src)
 	C.auto_turn()
 	C.replace_networks(uniqueList(ask.networks))
 	C.c_tag = sanitizeSafe(ask.text, MAX_NAME_LEN)

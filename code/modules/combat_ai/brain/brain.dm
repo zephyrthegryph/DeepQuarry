@@ -70,13 +70,16 @@
 	/// While hibernating: the chunks it watches (watch_mob_chunks()).
 	var/tmp/list/react_sleep_tokens
 
+CAPABILITIES(/datum/ai_brain)
+	owns_one(nameof(model), /datum/world_model)
+
 /datum/ai_brain/New(mob/living/owner)
 	if(!owner)
 		stack_trace("ai_brain instantiated with no owner")
 		qdel(src)
 		return
 	rel_set(src, nameof(holder), owner)
-	own_set(src, nameof(model), new /datum/world_model(owner))
+	rel_set(src, nameof(model), new /datum/world_model(owner))
 	target_selector_chain = list(/datum/target_selector/closest)
 	rel_set(src, nameof(home_turf), get_turf(owner))
 	manage_processing(DQAI_PROCESSING)

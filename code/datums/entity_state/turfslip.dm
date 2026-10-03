@@ -20,7 +20,7 @@
 /// The mob's slide, starting one if it has none (was LoadComponent).
 /mob/living/proc/get_or_start_turfslip() as /datum/turfslip
 	if(!turfslip)
-		own_set(src, nameof(turfslip), new /datum/turfslip(src))
+		rel_set(src, nameof(turfslip), new /datum/turfslip(src))
 	return turfslip
 
 /// Ends the slide: detaches from the mob and deletes this datum (was qdel(src) on the component).

@@ -300,6 +300,10 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	var/obj/effect/statclick/SDQL2_delete/delete_click
 	var/obj/effect/statclick/SDQL2_action/action_click
 
+CAPABILITIES(/datum/SDQL2_query)
+	owns_one(nameof(action_click), /obj/effect/statclick/SDQL2_action)
+	owns_one(nameof(delete_click), /obj/effect/statclick/SDQL2_delete)
+
 /datum/SDQL2_query/New(list/tree, SU = FALSE, admin_interact = TRUE, _options = SDQL2_OPTIONS_DEFAULT, finished_qdel = FALSE, mob/user = null)
 	rel_set(src, nameof(requester), user)
 	join_registries()
@@ -378,9 +382,9 @@ GLOBAL_DATUM_INIT(sdql2_vv_statobj, /obj/effect/statclick/SDQL2_VV_all, new(null
 	if(!allow_admin_interact)
 		return
 	if(!delete_click)
-		own_set(src, nameof(delete_click), new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
+		rel_set(src, nameof(delete_click), new /obj/effect/statclick/SDQL2_delete(null, "INITIALIZING", src))
 	if(!action_click)
-		own_set(src, nameof(action_click), new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
+		rel_set(src, nameof(action_click), new /obj/effect/statclick/SDQL2_action(null, "INITIALIZNG", src))
 	var/list/L = list()
 	L[++L.len] = list("[id] ", "[delete_click.update("DELETE QUERY | STATE : [text_state()] | ALL/ELIG/FIN \
 	[islist(obj_count_all)? length(obj_count_all) : (isnull(obj_count_all)? "0" : obj_count_all)]/\

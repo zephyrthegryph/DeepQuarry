@@ -40,10 +40,13 @@
 		"Donut" = /obj/item/reagent_containers/food/snacks/variable/donut,
 		)
 
+CAPABILITIES(/obj/machinery/appliance/cooker/oven)
+	owns_one(nameof(oven_loop), /datum/looping_sound/oven)
+
 /obj/machinery/appliance/cooker/oven/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
+	rel_set(src, nameof(oven_loop), new /datum/looping_sound/oven(list(src), FALSE))
 
 
 UI_DATA(/obj/machinery/appliance/cooker/oven, "is_open=open:num")

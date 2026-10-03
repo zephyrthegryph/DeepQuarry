@@ -29,6 +29,9 @@
 
 	var/tmp/obj/item/modular_computer/my_computer
 
+CAPABILITIES(/datum/computer_file/program/ntnetdownload)
+	owns_one(nameof(downloaded_file), /datum/computer_file/program)
+
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
 	abort_file_download()
@@ -54,7 +57,7 @@
 		generate_network_log("Began downloading file [PRG.filename].[PRG.filetype] from unspecified server.")
 		hacked_download = 0
 
-	own_set(src, nameof(downloaded_file), PRG.clone())
+	rel_set(src, nameof(downloaded_file), PRG.clone())
 
 /datum/computer_file/program/ntnetdownload/proc/check_file_download(filename)
 	//returns 1 if file can be downloaded, returns 0 if download prohibited

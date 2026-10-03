@@ -38,7 +38,7 @@
 
 /mob/living/carbon/human/Initialize(mapload, new_species = null)
 	if(!dna)
-		own_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
+		rel_set(src, nameof(dna), new /datum/dna(null)) // ALLOW(decl): needed before parent init by set_species(); ctor takes an arg
 		// Species name is handled by set_species()
 
 	if(!species)
@@ -1297,11 +1297,11 @@ TYPE_TABLE_DECLARE(/mob/living/carbon/human, hud_record_kinds, list( \
 	if(!keep_organs)
 		body_type = species.body_plan
 	if(!body)
-		own_set(src, nameof(body), new body_type(src))
+		rel_set(src, nameof(body), new body_type(src))
 	else if(!keep_organs && body.type != body_type)
 		log_game("BODY: [key_name(src)] body plan [body.type] -> [body_type] on species change to [species.name].")
 		own_clear(src, nameof(body), OWN_DELETE)
-		own_set(src, nameof(body), new body_type(src))
+		rel_set(src, nameof(body), new body_type(src))
 		// The slot set is keyed by body plan.
 		rebuild_slot_ledger()
 		// So is the Life plan (physiology applies by body plan).

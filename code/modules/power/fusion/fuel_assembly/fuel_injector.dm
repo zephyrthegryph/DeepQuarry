@@ -86,7 +86,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/fusion_fuel_injector, MACHINE_PIPELINE, "i
 
 	var/obj/item/fuel_assembly/old_assembly = own_take(src, nameof(src.cur_assembly)) // swapped out to the user
 	if(!own_set(src, nameof(src.cur_assembly), held, user = user))
-		own_set(src, nameof(src.cur_assembly), old_assembly)
+		rel_set(src, nameof(src.cur_assembly), old_assembly)
 		return TRUE
 	if(old_assembly)
 		old_assembly.forceMove(get_turf(src))

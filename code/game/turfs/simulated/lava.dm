@@ -17,6 +17,9 @@
 	flags = TURF_ACID_IMMUNE
 	var/datum/looping_sound/lava/soundloop
 
+CAPABILITIES(/turf/simulated/floor/lava)
+	owns_one(nameof(soundloop), /datum/looping_sound/lava)
+
 /turf/simulated/floor/lava/outdoors
 	outdoors = OUTDOORS_YES
 
@@ -26,7 +29,7 @@
 		name = "magma"
 	update_icon()
 	update_light()
-	own_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/lava(list(src), FALSE))
 	soundloop.start()
 	return ..()
 

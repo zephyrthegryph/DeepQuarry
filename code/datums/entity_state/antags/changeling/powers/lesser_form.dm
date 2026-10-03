@@ -67,7 +67,7 @@
 	changeling.chem_charges--
 	C.remove_changeling_powers()
 	act_message(C, null, others = span_warning("%U% transforms!"))
-	own_set(C, nameof(C.dna), chosen_dna.Clone())
+	rel_set(C, nameof(C.dna), chosen_dna.Clone())
 
 	var/list/implants = list()
 	for (var/obj/item/implant/I in C) //Still preserving implants
@@ -100,7 +100,7 @@
 		O.gender = FEMALE
 	else
 		O.gender = MALE
-	own_set(O, nameof(O.dna), C.dna.Clone())
+	rel_set(O, nameof(O.dna), C.dna.Clone())
 	own_clear(C, nameof(C.dna), OWN_DELETE)
 	O.real_name = chosen_dna.real_name
 

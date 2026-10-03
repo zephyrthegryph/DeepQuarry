@@ -42,6 +42,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 	/// A relation view of the action circuit inside IC (IC's contents own it). This gets pulsed when someone clicks the button on the hud.
 	var/obj/item/integrated_circuit/built_in/action_button/action_circuit = null
 
+CAPABILITIES(/obj/item/clothing)
+	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)
+
 /obj/item/clothing/examine(mob/user)
 	. = ..()
 	if(IC)
@@ -80,7 +83,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 // Does most of the repeatative setup.
 /obj/item/clothing/proc/setup_integrated_circuit(new_type)
 	// Set up the internal circuit holder.
-	own_set(src, nameof(IC), new new_type(src))
+	rel_set(src, nameof(IC), new new_type(src))
 	rel_set(IC, nameof(IC.clothing), src)
 	IC.name = name
 

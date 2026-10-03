@@ -118,11 +118,14 @@ EXTEND_INTERACTIONS(/obj/effect/hoist_hook, \
 	var/movedir = UP
 	var/obj/effect/hoist_hook/source_hook
 
+CAPABILITIES(/obj/structure/hoist)
+	owns_one(nameof(source_hook), /obj/effect/hoist_hook)
+
 /obj/structure/hoist/Initialize(mapload, ndir)
 	. = ..()
 	dir = ndir
 	var/turf/newloc = get_step(src, dir)
-	own_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
+	rel_set(src, nameof(source_hook), new /obj/effect/hoist_hook(newloc))
 	rel_set(source_hook, nameof(source_hook.source_hoist), src)
 
 

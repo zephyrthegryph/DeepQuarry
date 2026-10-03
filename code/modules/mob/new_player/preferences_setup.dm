@@ -165,7 +165,7 @@
 
 /datum/preferences/proc/dress_preview_mob(mob/living/carbon/human/mannequin)
 	if(!mannequin.dna) // Special handling for preview icons before SSAtoms has initailized.
-		own_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
+		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	copy_to(mannequin, TRUE)
 
 	// equip_preview_mob bitfield replaced by two toggles. Keep the same
@@ -339,7 +339,7 @@
 		return
 	var/mob/living/carbon/human/dummy/mannequin/mannequin = get_mannequin(client_ckey)
 	if(!mannequin.dna)
-		own_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
+		rel_set(mannequin, nameof(mannequin.dna), new /datum/dna(null))
 	mannequin.delete_inventory(TRUE)
 	dress_preview_mob(mannequin)
 	mannequin.update_transform()

@@ -104,7 +104,7 @@ CAPABILITIES(/obj/structure/windoor_assembly)
 /// Drones and engineering borgs next to it rename it.
 /obj/structure/windoor_assembly/proc/robot_may_rename(datum/act/op/A)
 	var/mob/living/silicon/robot/user = A.actor
-	return istype(user) && user.module?.names_assemblies // ALLOW(reads): a cyborg's module is fixed between modules; the click re-evaluates it
+	return istype(user) && user.module?.names_assemblies
 
 /obj/structure/windoor_assembly/proc/secured_down(datum/act/op/A)
 	to_chat(A.actor, span_notice("You've secured the windoor assembly!"))

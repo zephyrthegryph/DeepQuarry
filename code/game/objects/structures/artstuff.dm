@@ -604,7 +604,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, nameof(current_canvas), new_canvas)
+	rel_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
 
@@ -695,7 +695,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	new_canvas.author_name = author_name
 	new_canvas.author_ckey = author_ckey
 	new_canvas.name = "painting - [title]"
-	own_set(src, nameof(current_canvas), new_canvas)
+	rel_set(src, nameof(current_canvas), new_canvas)
 	loaded = TRUE
 	update_appearance()
 	log_and_message_admins("spawned painting from [author_ckey] with title [title]", ask.answerer)

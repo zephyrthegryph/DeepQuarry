@@ -571,7 +571,7 @@
 	var/datum/gas_mixture/region_air = transition["air"]
 	var/datum/pipe_network/network = new
 	network.rust_authoritative = TRUE
-	own_set(network, nameof(network.air), region_air)
+	rel_set(network, nameof(network.air), region_air)
 	network.update = FALSE
 	rust_pipe_region_networks[region] = network
 
@@ -621,7 +621,7 @@
 	if(parent?.air)
 		return parent.air
 	if(!air_temporary)
-		own_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
+		rel_set(src, nameof(air_temporary), new /datum/gas_mixture(max(volume, 1)))
 	return air_temporary
 
 /obj/machinery/atmospherics/pipe/rust_pipe_port_volume(index)

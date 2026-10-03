@@ -141,6 +141,9 @@ Class Procs:
 
 	blocks_emissive = EMISSIVE_BLOCK_GENERIC
 
+CAPABILITIES(/obj/machinery)
+	owns_one(nameof(circuit), /obj/item/circuitboard)
+
 REGISTRY_MEMBERSHIP(/obj/machinery, REGISTRY_MACHINES)
 
 /// The board plus its req_components, as a spawn list (roadmap C6): resolved
@@ -409,7 +412,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery, PERIODIC_FAST, "speed_process")
 		if(owner_of(I)) // already held by a var (an APC's cell, a camera's assembly): not a loose part
 			continue
 		if(istype(I, /obj/item/circuitboard))
-			own_set(src, nameof(circuit), I)
+			rel_set(src, nameof(circuit), I)
 		else
 			own_add(src, nameof(component_parts), I)
 
@@ -640,7 +643,7 @@ MSG_DEF_SELF(machine/no_dexterity, "You don't have the dexterity.")
 	M.forceMove(A)
 	own_move(M, A, nameof(A.circuit)) // the board moves from the machine to the frame (CONTAINED there)
 	A.set_anchored(TRUE)
-	own_set(A, nameof(A.frame_type), frame_type_copy(M.board_type)) // the board keeps its own
+	rel_set(A, nameof(A.frame_type), frame_type_copy(M.board_type)) // the board keeps its own
 	if(A.frame_type.circuit)
 		A.need_circuit = 0
 

@@ -25,9 +25,12 @@
 
 	var/datum/reagents/udder = null
 
+CAPABILITIES(/mob/living/simple_mob/animal/goat)
+	owns_one(nameof(udder), /datum/reagents)
+
 /mob/living/simple_mob/animal/goat/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
+	rel_set(src, nameof(udder), new /datum/reagents(50)) // ALLOW(decl): holder takes constructor args
 	rel_set(udder, nameof(udder.my_atom), src)
 
 /datum/om/stage/life/type_post/simple_mob/animal/goat

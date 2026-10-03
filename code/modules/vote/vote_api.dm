@@ -5,7 +5,7 @@
 //   SSvote.forget_vote(vote)      `vote` ended: the system stops tracking it
 
 /datum/system/vote/proc/start_vote(datum/vote/V, mob/user)
-	own_set(src, nameof(active_vote), V)
+	rel_set(src, nameof(active_vote), V)
 	active_vote.start(user)
 	wake_work_item(PROC_REF(tick_vote))
 

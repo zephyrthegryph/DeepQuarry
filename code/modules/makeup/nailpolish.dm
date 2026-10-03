@@ -1,5 +1,8 @@
 /obj/item/organ/external/var/datum/nail_polish/nail_polish
 
+CAPABILITIES(/obj/item/organ/external)
+	owns_one(nameof(nail_polish), /datum/nail_polish)
+
 /obj/item/nailpolish
 	name = "nail polish"
 	desc = "to paint your nails with. Or someone else's!"
@@ -110,7 +113,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/nailpolish, TYPE_PROC_REF(/atom, appearance_ov
 	body_part.set_polish(polish)
 
 /obj/item/organ/external/proc/set_polish(datum/nail_polish/polish)
-	own_set(src, nameof(nail_polish), polish)
+	rel_set(src, nameof(nail_polish), polish)
 	owner?.update_icons_body()
 
 /obj/item/nailpolish_remover

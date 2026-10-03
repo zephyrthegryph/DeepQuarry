@@ -10,7 +10,7 @@
 // Premade AI shell, for roundstart shells.
 /mob/living/silicon/robot/ai_shell/Initialize(mapload)
 	om_grant(src, GRANT_VERB, /mob/living/silicon/robot/proc/transfer_shell_act, src) // TGPanel // add sideloader
-	own_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
+	rel_set(src, nameof(mmi), new /obj/item/mmi/inert/ai_remote(src)) // ALLOW(decl): set up by post_mmi_setup() before parent init
 	post_mmi_setup()
 	return ..()
 
@@ -30,7 +30,7 @@ REGISTRY_MEMBERSHIP(/mob/living/silicon/robot, REGISTRY_AI_SHELLS)
 	shell = TRUE
 	braintype = "AI Shell"
 	SetName("[modtype] AI Shell [num2text(ident)]")
-	own_set(src, nameof(rbPDA), new /obj/item/pda/ai/shell(src))
+	rel_set(src, nameof(rbPDA), new /obj/item/pda/ai/shell(src))
 	setup_PDA()
 	registry_join(REGISTRY_AI_SHELLS, src)
 	if(!QDELETED(camera))

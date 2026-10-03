@@ -123,6 +123,9 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	/// Most recent synchronous mannequin composition cost in milliseconds.
 	var/dq_last_preview_render_ms = 0
 
+CAPABILITIES(/datum/preferences)
+	owns_one(nameof(savefile), /datum/json_savefile)
+
 /datum/preferences/New(client/C)
 	rel_set(src, nameof(client), C)
 

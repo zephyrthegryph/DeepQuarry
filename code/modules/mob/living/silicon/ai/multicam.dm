@@ -6,9 +6,12 @@
 	var/highlighted = FALSE
 	var/mob/observer/eye/aiEye/pic_in_pic/aiEye
 
+CAPABILITIES(/atom/movable/screen/movable/pic_in_pic/ai)
+	owns_one(nameof(aiEye), /mob/observer/eye/aiEye/pic_in_pic)
+
 /atom/movable/screen/movable/pic_in_pic/ai/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
+	rel_set(src, nameof(aiEye), new /mob/observer/eye/aiEye/pic_in_pic()) // created in nullspace, owned by the window
 	rel_set(aiEye, nameof(aiEye.screen), src)
 
 // No ownership cycle: a pic_in_pic window is never one of its own eye's hud elements.

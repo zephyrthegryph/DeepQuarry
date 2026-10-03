@@ -43,6 +43,11 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/mapping_unit)
+	owns_one(nameof(cell), /obj/item/cell)
+	owns_one(nameof(extras_holder), /atom/movable/screen/mapper/extras_holder)
+	owns_one(nameof(hud_datum), /datum/mini_hud/mapper)
+
 /obj/item/mapping_unit/deathsquad
 	name = "deathsquad mapping unit"
 	icon_state = "mapping_unit_ds"
@@ -85,7 +90,7 @@
 	if(!mask_icon)
 		mask_icon = icon('icons/effects/64x64.dmi', "mapper_mask")
 
-	own_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
+	rel_set(src, nameof(extras_holder), new /atom/movable/screen/mapper/extras_holder())
 
 	var/atom/movable/screen/mapper/marker/mark = new()
 	mark.icon = 'icons/effects/64x64.dmi'
@@ -101,7 +106,7 @@
 	own_put(src, nameof(map_image_cache), "bad", tmp)
 
 	if(uses_power && cell_type)
-		own_set(src, nameof(cell), new cell_type(src))
+		rel_set(src, nameof(cell), new cell_type(src))
 
 	debug_mappers_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_UNITS)
 	debug_beacons_list = REGISTRY_MEMBERS(REGISTRY_MAPPING_BEACONS)
@@ -171,7 +176,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 	return INTERACTION_HANDLED_PASS
 
 /obj/item/mapping_unit/proc/first_run(mob/user)
-	own_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))
+	rel_set(src, nameof(hud_datum), new /datum/mini_hud/mapper(user.hud_used, src))
 	rel_set(src, nameof(hud_item), hud_datum.screenobjs[1])
 
 /obj/item/mapping_unit/proc/show_device(mob/user)

@@ -4,6 +4,17 @@
 
 CAPABILITIES(/mob/living/carbon/human)
 	hands()
+	owns_one(nameof(character_forms), /datum/forms)
+	owns_one(nameof(vessel), /datum/reagents)
+	owns_one(nameof(xenochimera), /datum/xenochimera)
 
 CAPABILITIES(/mob/living/silicon/robot)
 	hands()
+	owns_one(nameof(camera), /obj/machinery/camera)
+	owns_one(nameof(communicator), /obj/item/communicator/integrated)
+	owns_one(nameof(decal_control), /datum/tgui_module/robot_ui_decals)
+	owns_one(nameof(module), /obj/item/robot_module)
+	owns_one(nameof(radio), /obj/item/radio/borg)
+	owns_one(nameof(rbPDA), /obj/item/pda/ai)
+	owns_one(nameof(robot_belly), /datum/robot_belly)
+	owns_one(nameof(robot_modules_background), /atom/movable/screen)

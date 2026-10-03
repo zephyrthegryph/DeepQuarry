@@ -109,6 +109,9 @@ GLOBAL_LIST_EMPTY(radial_menus)
 	///A replacement icon state for the generic radial slice bg icon. Doesn't affect the next page nor the center buttons
 	var/radial_slice_icon
 
+CAPABILITIES(/datum/radial_menu)
+	owns_one(nameof(close_button), /atom/movable/screen/radial/center)
+
 //If we swap to vis_contens inventory these will need a redo
 /datum/radial_menu/proc/check_screen_border(mob/user)
 	var/atom/movable/AM = anchor()
@@ -258,7 +261,7 @@ GLOBAL_LIST_EMPTY(radial_menus)
 			E.vis_contents += info_button
 
 /datum/radial_menu/New()
-	own_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
+	rel_set(src, nameof(close_button), new /atom/movable/screen/radial/center)
 	close_button.set_parent(src)
 
 /datum/radial_menu/proc/Reset()

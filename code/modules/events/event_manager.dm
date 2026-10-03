@@ -9,7 +9,7 @@
 	// the per-subsystem panel datum so a second open just updates the
 	// open window via SStgui.update_uis instead of opening a duplicate.
 	if(!tgui_event_manager_panel)
-		own_set(src, nameof(tgui_event_manager_panel), new /datum/event_manager_panel)
+		rel_set(src, nameof(tgui_event_manager_panel), new /datum/event_manager_panel)
 	tgui_event_manager_panel.tgui_interact(user)
 	SStgui.update_uis(tgui_event_manager_panel)
 

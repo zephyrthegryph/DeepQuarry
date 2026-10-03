@@ -173,11 +173,11 @@
 	O.job = JOB_CYBORG
 	if(O.mind && O.mind.assigned_role == JOB_CYBORG)
 		if(O.mind.role_alt_title == JOB_ALT_ROBOT)
-			own_set(O, nameof(O.mmi), new /obj/item/mmi/digital/posibrain(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi/digital/posibrain(O))
 		else if(O.mind.role_alt_title == JOB_ALT_DRONE)
-			own_set(O, nameof(O.mmi), new /obj/item/mmi/digital/robot(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi/digital/robot(O))
 		else
-			own_set(O, nameof(O.mmi), new /obj/item/mmi(O))
+			rel_set(O, nameof(O.mmi), new /obj/item/mmi(O))
 
 		O.mmi.take_identity(src) // the MMI holds the character by reference; the mind is in the borg
 

@@ -36,6 +36,20 @@ GLOBAL_LIST_INIT(global_huds, list(
 	var/atom/movable/screen/material
 	var/atom/movable/screen/holomap
 
+CAPABILITIES(/datum/global_hud)
+	owns_one(nameof(blurry), /atom/movable/screen)
+	owns_one(nameof(centermarker), /atom/movable/screen)
+	owns_one(nameof(darksight), /atom/movable/screen)
+	owns_one(nameof(druggy), /atom/movable/screen)
+	owns_one(nameof(heavy_whitense), /atom/movable/screen)
+	owns_one(nameof(holomap), /atom/movable/screen)
+	owns_one(nameof(material), /atom/movable/screen)
+	owns_one(nameof(meson), /atom/movable/screen)
+	owns_one(nameof(nvg), /atom/movable/screen)
+	owns_one(nameof(science), /atom/movable/screen)
+	owns_one(nameof(thermal), /atom/movable/screen)
+	owns_one(nameof(whitense), /atom/movable/screen)
+
 /datum/global_hud/proc/setup_overlay(icon_state)
 	var/atom/movable/screen/screen = new /atom/movable/screen()
 	screen.alpha = 30 // Adjut this if you want goggle overlays to be thinner or thicker. //
@@ -55,48 +69,48 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 /datum/global_hud/New()
 	//420erryday psychedellic colours screen overlay for when you are high
-	own_set(src, nameof(druggy), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(druggy), new /atom/movable/screen/global_screen())
 	druggy.icon_state = "druggy"
 
 	//that white blurry effect you get when you eyes are damaged
-	own_set(src, nameof(blurry), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(blurry), new /atom/movable/screen/global_screen())
 	blurry.icon_state = "blurry"
 
 	//static overlay effect for cameras and the like
-	own_set(src, nameof(whitense), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(whitense), new /atom/movable/screen/global_screen())
 	whitense.icon = 'icons/effects/static.dmi'
 	whitense.icon_state = "1 light"
 
 	//static overlay effect for cameras and the like
-	own_set(src, nameof(heavy_whitense), new /atom/movable/screen/global_screen())
+	rel_set(src, nameof(heavy_whitense), new /atom/movable/screen/global_screen())
 	heavy_whitense.icon = 'icons/effects/static.dmi'
 	heavy_whitense.icon_state = "1 heavy"
 
 	//darksight 'hanger' for attached icons
-	own_set(src, nameof(darksight), new /atom/movable/screen())
+	rel_set(src, nameof(darksight), new /atom/movable/screen())
 	darksight.icon = null
 	darksight.screen_loc = "1,1"
 	darksight.plane = PLANE_LIGHTING
 
 	//Marks the center of the screen, for things like ventcrawl
-	own_set(src, nameof(centermarker), new /atom/movable/screen())
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
 	//Marks the center of the screen, for things like ventcrawl
-	own_set(src, nameof(centermarker), new /atom/movable/screen())
+	rel_set(src, nameof(centermarker), new /atom/movable/screen())
 	centermarker.icon = 'icons/mob/screen1.dmi'
 	centermarker.icon_state = "centermarker"
 	centermarker.screen_loc = "CENTER,CENTER"
 
-	own_set(src, nameof(nvg), setup_overlay("nvg_hud"))
-	own_set(src, nameof(thermal), setup_overlay("thermal_hud"))
-	own_set(src, nameof(meson), setup_overlay("meson_hud"))
-	own_set(src, nameof(science), setup_overlay("science_hud"))
-	own_set(src, nameof(material), setup_overlay("material_hud"))
+	rel_set(src, nameof(nvg), setup_overlay("nvg_hud"))
+	rel_set(src, nameof(thermal), setup_overlay("thermal_hud"))
+	rel_set(src, nameof(meson), setup_overlay("meson_hud"))
+	rel_set(src, nameof(science), setup_overlay("science_hud"))
+	rel_set(src, nameof(material), setup_overlay("material_hud"))
 
-	own_set(src, nameof(holomap), new /atom/movable/screen())
+	rel_set(src, nameof(holomap), new /atom/movable/screen())
 	holomap.name = "holomap"
 	holomap.icon = null
 	holomap.screen_loc = ui_holomap
@@ -209,11 +223,19 @@ GLOBAL_LIST_INIT(global_huds, list(
 
 	var/list/minihuds
 
+CAPABILITIES(/datum/hud)
+	owns_one(nameof(control_vtec), /atom/movable/screen)
+	owns_one(nameof(listed_actions), /datum/action_group/listed)
+	owns_one(nameof(palette_actions), /datum/action_group/palette)
+	owns_one(nameof(palette_down), /atom/movable/screen/palette_scroll/down)
+	owns_one(nameof(palette_up), /atom/movable/screen/palette_scroll/up)
+	owns_one(nameof(toggle_palette), /atom/movable/screen/button_palette)
+
 /datum/hud/New(mob/owner)
 	rel_set(src, nameof(mymob), owner)
 	// The mob owns its hud (hud_used); a replaced hud is deleted.
 	if(owner)
-		own_set(owner, nameof(/mob::hud_used), src)
+		rel_set(owner, nameof(/mob::hud_used), src)
 	instantiate()
 	..()
 
@@ -309,9 +331,9 @@ GLOBAL_LIST_INIT(global_huds, list(
 	if(!ismob(mymob()))
 		return 0
 
-	own_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
-	own_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
-	own_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
+	rel_set(src, nameof(toggle_palette), new /atom/movable/screen/button_palette())
+	rel_set(src, nameof(palette_down), new /atom/movable/screen/palette_scroll/down())
+	rel_set(src, nameof(palette_up), new /atom/movable/screen/palette_scroll/up())
 	mymob().create_mob_hud(src)
 
 	// Past this point, mymob.hud_used is set
@@ -335,7 +357,7 @@ GLOBAL_LIST_INIT(global_huds, list(
 	set_hud_used(HUD)
 
 /mob/proc/set_hud_used(datum/hud/new_hud)
-	own_set(src, nameof(hud_used), new_hud)
+	rel_set(src, nameof(hud_used), new_hud)
 	new_hud.build_action_groups()
 
 /mob/proc/update_ui_style(UI_style_new, UI_style_alpha_new, UI_style_color_new)
@@ -521,17 +543,17 @@ GLOBAL_LIST_INIT(global_huds, list(
 	..()
 
 	var/list/hud_elements = list()
-	own_set(src, nameof(shadekin_display), new /atom/movable/screen/shadekin())
+	rel_set(src, nameof(shadekin_display), new /atom/movable/screen/shadekin())
 	shadekin_display.screen_loc = ui_shadekin_display
 	shadekin_display.icon_state = "shadekin"
 	hud_elements |= shadekin_display
 
-	own_set(src, nameof(xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
+	rel_set(src, nameof(xenochimera_danger_display), new /atom/movable/screen/xenochimera/danger_level())
 	xenochimera_danger_display.screen_loc = ui_xenochimera_danger_display
 	xenochimera_danger_display.icon_state = "danger00"
 	hud_elements |= xenochimera_danger_display
 
-	own_set(src, nameof(lleill_display), new /atom/movable/screen/lleill())
+	rel_set(src, nameof(lleill_display), new /atom/movable/screen/lleill())
 	lleill_display.screen_loc = ui_lleill_display
 	lleill_display.icon_state = "lleill"
 	hud_elements |= lleill_display

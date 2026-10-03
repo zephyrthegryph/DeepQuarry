@@ -8,9 +8,12 @@
 	/// Our song datum.
 	var/datum/song/stationary/song
 
+CAPABILITIES(/obj/structure/musician)
+	owns_one(nameof(song), /datum/song/stationary)
+
 /obj/structure/musician/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(song), new /datum/song/stationary(src, allowed_instrument_ids))
+	rel_set(src, nameof(song), new /datum/song/stationary(src, allowed_instrument_ids))
 	allowed_instrument_ids = null
 
 

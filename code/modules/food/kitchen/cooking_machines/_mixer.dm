@@ -16,6 +16,9 @@ fundamental differences
 	var/datum/looping_sound/mixer/mixer_loop
 	tgui_id = "KitchenMixer"
 
+CAPABILITIES(/obj/machinery/appliance/mixer)
+	owns_one(nameof(mixer_loop), /datum/looping_sound/mixer)
+
 /obj/machinery/appliance/mixer/examine(mob/user)
 	. = ..()
 	if(Adjacent(user))
@@ -29,7 +32,7 @@ fundamental differences
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)
 	CI.combine_target = selected_option
 
-	own_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
+	rel_set(src, nameof(mixer_loop), new /datum/looping_sound/mixer(list(src), FALSE))
 
 
 //Mixers cannot-not do combining mode. So the default option is removed from this. A combine target must be chosen

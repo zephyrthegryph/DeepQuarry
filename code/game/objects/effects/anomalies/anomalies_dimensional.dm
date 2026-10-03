@@ -20,6 +20,9 @@
 	/// Maximum teleports it will do before going away permanently
 	var/maximum_teleports = 4
 
+CAPABILITIES(/obj/effect/anomaly/dimensional)
+	owns_one(nameof(theme), /datum/dimension_theme)
+
 /obj/effect/anomaly/dimensional/Initialize(mapload, new_lifespan, drops_core)
 	. = ..()
 	overlays += mutable_appearance('icons/effects/effects.dmi', "dimensional_overlay")
@@ -54,7 +57,7 @@
 	if(!new_theme_path)
 		new_theme_path = pick(subtypesof(/datum/dimension_theme))
 
-	own_set(src, nameof(theme), new new_theme_path)
+	rel_set(src, nameof(theme), new new_theme_path)
 
 	apply_theme_icon()
 

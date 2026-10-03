@@ -60,7 +60,7 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/biogenerator, "beaker", /obj/item/reagent_c
 /obj/machinery/biogenerator/Initialize(mapload)
 	. = ..()
 	var/datum/reagents/R = new/datum/reagents(1000)
-	own_set(src, nameof(reagents), R)
+	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 
 	default_apply_parts()

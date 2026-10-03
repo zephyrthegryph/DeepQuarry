@@ -15,6 +15,9 @@
 	var/delay_to_self_open = 0 // How long to wait for first attempt.  Note that the timer by default starts when the pod is created.
 	var/delay_to_try_again = 0 // How long to wait if first attempt fails.  Set to 0 to never try again.
 
+CAPABILITIES(/obj/structure/ghost_pod)
+	owns_one(nameof(Q), /datum/ghost_query)
+
 // Call this to get a ghost volunteer.
 /obj/structure/ghost_pod/proc/trigger(mob/user, alert, adminalert)
 	if(!ghost_query_type)
@@ -28,7 +31,7 @@
 	if(adminalert)
 		log_and_message_admins(adminalert, user)
 	busy = TRUE
-	own_set(src, nameof(Q), new ghost_query_type())
+	rel_set(src, nameof(Q), new ghost_query_type())
 	om_hook(Q, /datum/om/event/ghost_query_complete, src, PROC_REF(get_winner))
 	Q.query()
 

@@ -54,7 +54,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/kitchen/utensil, TYPE_PROC_REF(/atom,
 
 	if(loading.food_inserted_micros && loading.food_inserted_micros.len)
 		if(!food_inserted_micros)
-			own_set(src, nameof(food_inserted_micros), list())
+			rel_set(src, nameof(food_inserted_micros), list())
 
 		for(var/mob/living/F in loading.food_inserted_micros)
 			var/do_transfer = FALSE

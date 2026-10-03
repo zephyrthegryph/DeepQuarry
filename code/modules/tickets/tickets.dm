@@ -242,6 +242,9 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/static/ticket_counter = 0
 
+CAPABILITIES(/datum/ticket)
+	owns_one(nameof(statclick), /obj/effect/statclick/ticket)
+
 /**
  * public
  *
@@ -278,7 +281,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 
 	var/parsed_message = keywords_lookup(msg)
 
-	own_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
+	rel_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
 	_interactions = list()
 
 	if(is_bwoink)
@@ -405,7 +408,7 @@ INITIALIZE_IMMEDIATE(/obj/effect/statclick/ticket_list)
 		to_chat(user, span_warning("This user already has an active ticket, cannot reopen this one."))
 		return
 
-	own_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
+	rel_set(src, nameof(statclick), new /obj/effect/statclick/ticket(null, src))
 	switch(state)
 		if(AHELP_CLOSED)
 			feedback_dec("ticket_close")

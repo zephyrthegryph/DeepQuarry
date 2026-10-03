@@ -184,7 +184,7 @@
 		else if(istype(W,/obj/item/stack/rods))
 			var/obj/item/stack/rods/R = W
 			if (R.use(1))
-				own_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
+				rel_set(src, nameof(bolt), new /obj/item/arrow/rod(src))
 				bolt.add_fingerprint(user)
 				bolt.forceMove(src)
 				update_icon()

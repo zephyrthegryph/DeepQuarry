@@ -178,9 +178,12 @@ APPEARANCE_TEMPLATE(/obj/item/gun/projectile/automatic/wt550, "wt550{appearance_
 	var/use_launcher = 0
 	var/obj/item/gun/launcher/grenade/underslung/launcher
 
+CAPABILITIES(/obj/item/gun/projectile/automatic/z8)
+	owns_one(nameof(launcher), /obj/item/gun/launcher/grenade/underslung)
+
 /obj/item/gun/projectile/automatic/z8/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
+	rel_set(src, nameof(launcher), new /obj/item/gun/launcher/grenade/underslung(src))
 
 /// Old attackby.
 /obj/item/gun/projectile/automatic/z8/gun_item(mob/user, obj/item/I, datum/interaction/interaction)

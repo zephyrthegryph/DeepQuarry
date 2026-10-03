@@ -14,10 +14,13 @@
 	/// Material Container
 	var/datum/material_container/materials
 
+CAPABILITIES(/obj/machinery/ore_silo)
+	owns_one(nameof(materials), /datum/material_container)
+
 /obj/machinery/ore_silo/Initialize(mapload)
 	. = ..()
 
-	own_set(src, nameof(materials), new /datum/material_container( \
+	rel_set(src, nameof(materials), new /datum/material_container( \
 		src, \
 		subtypesof(/datum/material), \
 		INFINITY, \

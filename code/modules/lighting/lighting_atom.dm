@@ -30,6 +30,13 @@
 	///Internal holder for emissive blocker object, do not use directly use blocks_emissive
 	var/tmp/atom/movable/emissive_blocker/em_block
 
+CAPABILITIES(/atom/movable)
+	owns_one(nameof(em_block), /atom/movable/emissive_blocker)
+	owns_one(nameof(experiment_handler), /datum/experiment_handler)
+	owns_one(nameof(overlay_light), /datum/overlay_lighting)
+	owns_one(nameof(recursive_move), /datum/recursive_move)
+	owns_one(nameof(riding_datum), /datum/riding)
+
 // The proc you should always use to set the light of this atom.
 // Nonesensical value for l_color default, so we can detect if it gets set to null.
 #define NONSENSICAL_VALUE -99999
@@ -86,7 +93,7 @@
 		if (light) // Update the light or create it if it does not exist.
 			light.update(.)
 		else
-			own_set(src, nameof(light), new/datum/light_source(src, .))
+			rel_set(src, nameof(light), new/datum/light_source(src, .))
 
 
 /**

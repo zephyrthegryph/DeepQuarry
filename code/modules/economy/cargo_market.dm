@@ -285,6 +285,9 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/reservation_key
 	var/reserved_account = 0
 
+CAPABILITIES(/datum/cargo_market_bid)
+	owns_one(nameof(profile), /datum/cargo_market_profile)
+
 
 /datum/cargo_market_bid/proc/remaining_units()
 	return max(0, target_units - fulfilled_units)
@@ -426,7 +429,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			var/datum/cargo_market_bid/bid = new
 			bid.id = "MKT-B-[next_market_id++]"
 			bid.counterparty_id = counterparty.id
-			own_set(bid, nameof(bid.profile), profile)
+			rel_set(bid, nameof(bid.profile), profile)
 			bid.target_units = rand(profile.minimum_units, profile.maximum_units)
 			bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 			bid.expires_at = expiry
@@ -747,7 +750,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/datum/cargo_market_bid/bid = new
 	bid.id = "MKT-B-[next_market_id++]"
 	bid.counterparty_id = counterparty.id
-	own_set(bid, nameof(bid.profile), profile)
+	rel_set(bid, nameof(bid.profile), profile)
 	bid.target_units = max(profile.minimum_units, target_units)
 	bid.price_multiplier = cargo_market_buyer_multiplier(counterparty, profile)
 	bid.expires_at = expires_at

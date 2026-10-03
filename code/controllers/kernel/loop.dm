@@ -13,6 +13,9 @@
 	var/static/restart_timeout = 0
 	var/static/restart_count = 0
 
+CAPABILITIES(/datum/controller/kernel)
+	owns_one(nameof(stack_end_detector), /datum/stack_end_detector)
+
 /// Starts the loop after `delay`, and sticks around to restart it if it ever ends: it runs once per init stage (a later
 /// stage completing ends a loop with KERNEL_LOOP_RTN_NEWSTAGES and the next one takes up the new stage's hosts).
 /datum/controller/kernel/proc/start_loop(delay)
@@ -86,7 +89,7 @@
 	var/sleep_delta = 1
 
 	//setup the stack overflow detector
-	own_set(src, nameof(stack_end_detector), new /datum/stack_end_detector())
+	rel_set(src, nameof(stack_end_detector), new /datum/stack_end_detector())
 	var/datum/stack_canary/canary = stack_end_detector.prime_canary()
 	canary.use_variable()
 	//the actual loop.

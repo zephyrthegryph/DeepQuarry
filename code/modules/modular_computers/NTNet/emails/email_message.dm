@@ -7,6 +7,9 @@
 	var/timestamp = ""
 	var/datum/computer_file/attachment = null
 
+CAPABILITIES(/datum/computer_file/data/email_message)
+	owns_one(nameof(attachment), /datum/computer_file)
+
 /datum/computer_file/data/email_message/clone()
 	var/datum/computer_file/data/email_message/temp = ..()
 	temp.title = title
@@ -14,7 +17,7 @@
 	temp.spam = spam
 	temp.timestamp = timestamp
 	if(attachment)
-		own_set(temp, nameof(temp.attachment), attachment.clone())
+		rel_set(temp, nameof(temp.attachment), attachment.clone())
 	return temp
 
 

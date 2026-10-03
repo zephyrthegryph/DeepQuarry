@@ -46,6 +46,9 @@
 	var/obj/effect/overlay/closet_door/door_obj
 	var/vore_sound = SFX_EFFECTS_METALSCRAPE2
 
+CAPABILITIES(/obj/structure/closet)
+	owns_one(nameof(door_obj), /obj/effect/overlay/closet_door)
+
 /obj/structure/closet/Initialize(mapload)
 	add_trait(src, TRAIT_ALT_CLICK_BLOCKER, ROUNDSTART_TRAIT)
 	..()
@@ -559,7 +562,7 @@ DECLARE_APPEARANCE(/obj/structure/closet, "opened", list("1" = list(APPEARANCE_I
 		update_icon()
 		return
 	if(!door_obj)
-		own_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
+		rel_set(src, nameof(door_obj), new /obj/effect/overlay/closet_door)
 	vis_contents |= door_obj
 	door_obj.icon = icon
 	door_obj.icon_state = "door_front"

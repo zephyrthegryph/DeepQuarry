@@ -323,6 +323,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		ACCESSORY_SLOT_RING\
 		|ACCESSORY_SLOT_WRIST)
 
+CAPABILITIES(/obj/item/clothing/gloves)
+	owns_one(nameof(gloves), /obj/item/clothing/gloves)
+	owns_one(nameof(ring), /obj/item/clothing/accessory)
+
 /obj/item/clothing/gloves/ownership()
 	. = ..()
 	. += owns(nameof(contents), policy = OWN_SPILL)
@@ -364,11 +368,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/ears, INTERACT_HAND_UNGATED(null, PROC_RE
 		if(istype(G))
 			to_chat(user, "You slip \the [src] on over \the [H.get_equipped_item(SLOT_ID_GLOVES)].")
 			if(istype(G, /obj/item/clothing/gloves))
-				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES))
+				rel_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES))
 			else if(istype(G, /obj/item/clothing/accessory))
-				own_set(src, nameof(ring), H.get_equipped_item(SLOT_ID_GLOVES))
+				rel_set(src, nameof(ring), H.get_equipped_item(SLOT_ID_GLOVES))
 			else
-				own_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
+				rel_set(src, nameof(gloves), H.get_equipped_item(SLOT_ID_GLOVES)) //Fallback
 			H.unEquip(H.get_equipped_item(SLOT_ID_GLOVES), TRUE, src)
 			if(!(flags & THICKMATERIAL))
 				if(istype(G, /obj/item/clothing/gloves) || istype(G, /obj/item/clothing/accessory)) //Because sometimes you can wear non-glove items on your hands.
@@ -629,6 +633,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 	update_icon_define_digi = "icons/inventory/feet/mob_digi.dmi"
 	var/list/inside_emotes
 	COOLDOWN_DECLARE(recent_squish)
+
+CAPABILITIES(/obj/item/clothing/shoes)
+	owns_one(nameof(shoes), /obj/item/clothing/shoes)
+	owns_one(nameof(squeak), /datum/squeak)
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -923,6 +931,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 
 	update_icon_define_digi = "icons/inventory/suit/mob_digi.dmi"
 
+CAPABILITIES(/obj/item/clothing/suit)
+	owns_one(nameof(hood), /obj/item/clothing/head)
+
 TYPE_TABLE(/obj/item/clothing/suit, suit_storage_spec, list(HOLD_ONLY(list(POCKET_EMERGENCY))))
 
 /obj/item/clothing/suit/Initialize(mapload)
@@ -952,7 +963,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/suit, TYPE_PROC_REF(/atom, appearance
 	if(!hoodtype)
 		return
 	var/obj/item/clothing/head/hood/H = new hoodtype(src)
-	own_set(src, nameof(hood), H)
+	rel_set(src, nameof(hood), H)
 	if(!actions_types.len) //If we don't already have a special action type, let's add it.
 		actions_types |= /datum/action/item_action/toggle_hood
 

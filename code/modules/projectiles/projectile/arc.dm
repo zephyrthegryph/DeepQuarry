@@ -18,11 +18,14 @@
 	var/obj/effect/projectile_shadow/shadow = null // Visual indicator for the projectile's 'true' position. Needed due to being bound to two dimensions in reality.
 	var/arc_height_multiplier = 1 // Modifies how 'high' the projectile flies.
 
+CAPABILITIES(/obj/item/projectile/arc)
+	owns_one(nameof(shadow), /obj/effect/projectile_shadow)
+
 /obj/item/projectile/arc/Bump()
 	return
 
 /obj/item/projectile/arc/Initialize(mapload)
-	own_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
+	rel_set(src, nameof(shadow), new /obj/effect/projectile_shadow(get_turf(src)))
 	return ..()
 
 

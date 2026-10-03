@@ -123,9 +123,12 @@
 	var/causalitywarn = FALSE
 	var/stationcrystal = FALSE
 
+CAPABILITIES(/obj/machinery/power/supermatter)
+	owns_one(nameof(soundloop), /datum/looping_sound/supermatter)
+
 /obj/machinery/power/supermatter/Initialize(mapload)
 	uid = gl_uid++
-	own_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
+	rel_set(src, nameof(soundloop), new /datum/looping_sound/supermatter(list(src), TRUE))
 	if(src.z in using_map.station_levels) // Looping Alarms
 		stationcrystal = TRUE // Looping Alarms
 	return ..()

@@ -71,6 +71,9 @@
 	var/tmp/can_read_view = TRUE
 	resistance_flags = FLAMMABLE
 
+CAPABILITIES(/obj/item/paper)
+	owns_one(nameof(contract_document), /datum/contract_document)
+
 /obj/item/paper/card
 	name = "blank card"
 	desc = "A gift card with space to write on the cover."

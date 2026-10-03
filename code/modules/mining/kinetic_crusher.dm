@@ -225,6 +225,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearan
 	var/obj/item/offhand/crushergauntlets/offhand
 	slot_flags = null
 
+CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
+	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
+
 /// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
 OM_FIELD(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SECOND, "gauntlets_worn")
@@ -270,7 +273,7 @@ DECLARE_INTERACTIONS(/obj/item/kinetic_crusher/machete/gauntlets, INTERACT_USE(n
 	O.desc = "As much as you'd like to punch things with one hand, [src] is far too unwieldy for that."
 	rel_set(O, nameof(O.linked), src)
 	M.put_in_inactive_hand(O)
-	own_set(src, nameof(offhand), O)
+	rel_set(src, nameof(offhand), O)
 
 /obj/item/kinetic_crusher/machete/gauntlets/proc/unwield(mob/living/M)
 	to_chat(M, span_notice("You unready [src]."))

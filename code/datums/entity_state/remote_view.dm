@@ -9,6 +9,9 @@
 	VAR_PROTECTED/mob/host_mob
 	VAR_PROTECTED/atom/remote_view_target
 
+CAPABILITIES(/datum/remote_view)
+	owns_one(nameof(settings), /datum/remote_view_config)
+
 /mob
 	/// The active remote view of this mob, if any (see begin_remote_view()).
 	var/tmp/datum/remote_view/remote_view
@@ -33,7 +36,7 @@
 	// Like the old component's highlander replace: the previous view goes after the new one began.
 	if(old_view && old_view != new_view && !QDELETED(old_view))
 		qdel(old_view)
-	own_set(src, nameof(remote_view), new_view)
+	rel_set(src, nameof(remote_view), new_view)
 	new_view.attach()
 	return new_view
 
@@ -52,7 +55,7 @@
 	// Set config
 	if(!vconfig_path)
 		vconfig_path = /datum/remote_view_config
-	own_set(src, nameof(settings), new vconfig_path)
+	rel_set(src, nameof(settings), new vconfig_path)
 	// Safety check, focus on ourselves if the target is deleted, and flag any movement to end the view.
 	if(QDELETED(focused_on))
 		focused_on = host_mob

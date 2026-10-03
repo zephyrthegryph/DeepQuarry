@@ -95,7 +95,7 @@ TYPE_TABLE(/obj/item/clothing/shoes/magboots, equip_spec, dq_spec_join(..(), lis
 	//Equipping shoes. If you put it so you can put your shoes somewhere BUT your shoe slot, make sure this shit works.
 	if(equipping && (slot == SLOT_ID_SHOES))
 		if(H.get_equipped_item(SLOT_ID_SHOES) && H.get_equipped_item(SLOT_ID_SHOES) != src)
-			own_set(src, nameof(shoes), H.get_equipped_item(SLOT_ID_SHOES))
+			rel_set(src, nameof(shoes), H.get_equipped_item(SLOT_ID_SHOES))
 			H.unEquip(shoes, TRUE, src)
 			to_chat(user, "You slip \the [src] on over \the [shoes].")
 		return

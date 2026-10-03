@@ -52,6 +52,22 @@ GLOBAL_PROTECT(href_token)
 
 	var/given_profiling = FALSE
 
+CAPABILITIES(/datum/admins)
+	owns_one(nameof(access_view_menu), /datum/access_viewer)
+	owns_one(nameof(admincaster_feed_message), /datum/feed_message)
+	owns_one(nameof(admincaster_scratch_channel), /datum/feed_channel)
+	owns_one(nameof(custom_rank), /datum/admin_rank)
+	owns_one(nameof(dq_newscaster_panel), /datum/newscaster_panel)
+	owns_one(nameof(dq_permissions_panel), /datum/permissions_panel)
+	owns_one(nameof(faxreply), /obj/item/paper/admin)
+	owns_one(nameof(filteriffic), /datum/filter_editor)
+	owns_one(nameof(particle_test), /datum/particle_editor)
+	owns_one(nameof(round_status_panel), /datum/round_status_panel)
+	owns_one(nameof(spawn_menu), /datum/spawn_menu)
+	owns_one(nameof(spawn_panel), /datum/spawnpanel)
+	owns_one(nameof(tgui_game_panel), /datum/game_panel)
+	owns_one(nameof(tgui_player_panel), /datum/player_panel)
+
 /datum/admins/New(list/datum/admin_rank/ranks, ckey, force_active = FALSE, protected)
 	if(IsAdminAdvancedProcCall())
 		alert_to_permissions_elevation_attempt(usr)

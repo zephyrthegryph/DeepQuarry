@@ -35,7 +35,7 @@
 	to_chat(user, "You remove the faceplate from the [src]")
 	var/obj/structure/frame/A = new /obj/structure/frame(loc)
 	var/obj/item/circuitboard/board = circuit
-	own_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
+	rel_set(A, nameof(A.frame_type), frame_type_copy(board.board_type)) // the board owns its frame type; the frame takes a copy
 	board.forceMove(A)
 	own_move(board, A, nameof(A.circuit)) // the board goes from this machine to the frame
 	A.need_circuit = FALSE

@@ -31,6 +31,9 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/appliance/cooker, MACHINE_PIPELINE, "cooke
 
 	tgui_id = "CookingAppliance"
 
+CAPABILITIES(/obj/machinery/appliance/cooker)
+	owns_one(nameof(thermostat_watch), /datum/native_watch/heat)
+
 UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_cooker{temperature:num,optimalTemp:num,temperatureEnough:bool,efficiency:num}")
 
 /// The computed part of /obj/machinery/appliance/cooker's window data (declared on its UI_DATA row).
@@ -182,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/appliance/cooker, TYPE_PROC_REF(/atom, ap
 /obj/machinery/appliance/cooker/proc/arm_thermostat()
 	if(!isnull(thermostat_watch))
 		return TRUE
-	own_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
+	rel_set(src, nameof(thermostat_watch), heat_watch_threshold(src, src, optimal_temp - COOKER_THERMOSTAT_BAND, FALSE, PROC_REF(on_thermostat)))
 	return !isnull(thermostat_watch)
 
 /// Cooled below the thermostat band (thermostat_watch): heat again.

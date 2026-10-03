@@ -58,6 +58,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	COOLDOWN_DECLARE(neighbor_refresh_cooldown)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
+CAPABILITIES(/obj/effect/plant)
+	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
+
 // neighbouring plants resume spreading.
 /obj/effect/plant/on_destroy(force)
 	if(seed() && seed().get_trait(TRAIT_SPREAD)==2)

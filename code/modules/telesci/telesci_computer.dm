@@ -30,6 +30,9 @@
 	var/obj/item/gps/inserted_gps
 	var/overmap_range = 3
 
+CAPABILITIES(/obj/machinery/computer/telescience)
+	owns_one(nameof(last_tele_data), /datum/projectile_data)
+
 /obj/machinery/computer/telescience/ownership()
 	. = ..()
 	. += owns(nameof(inserted_gps), policy = OWN_SPILL)
@@ -266,7 +269,7 @@ UI_ACT_PROC(/obj/machinery/computer/telescience, ui_act_eject)
 		var/trueRotation = rotation + rotation_off
 
 		var/datum/projectile_data/proj_data = simple_projectile_trajectory(telepad().x, telepad().y, trueRotation, trueDistance)
-		own_set(src, nameof(last_tele_data), proj_data)
+		rel_set(src, nameof(last_tele_data), proj_data)
 
 		var/trueX = proj_data.dest_x
 		var/trueY = proj_data.dest_y

@@ -21,7 +21,7 @@
 	if(..())
 		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_MOVE)
 		return 1
 	return 0
@@ -35,7 +35,7 @@
 	if(..())
 		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_CLICK)
 		return 1
 	return 0
@@ -49,7 +49,7 @@
 	if(..())
 		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_active()
 		return 1
 	return 0
@@ -63,7 +63,7 @@
 	if(..())
 		var/mob/living/user = actor
 		if(istype(user))
-			if(!user.aiming) own_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
+			if(!user.aiming) rel_set(user, nameof(user.aiming), new /obj/aiming_overlay(user))
 			user.aiming.toggle_permission(TARGET_CAN_RADIO)
 		return 1
 	return 0

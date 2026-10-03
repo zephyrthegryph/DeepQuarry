@@ -17,7 +17,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/chainsaw, PERIODIC_SLOW, "on")
 
 /obj/item/chainsaw/Initialize(mapload)
 	var/datum/reagents/R = new/datum/reagents(max_fuel)
-	own_set(src, nameof(reagents), R)
+	rel_set(src, nameof(reagents), R)
 	rel_set(R, nameof(R.my_atom), src)
 	R.add_reagent(REAGENT_ID_FUEL, max_fuel)
 	. = ..()

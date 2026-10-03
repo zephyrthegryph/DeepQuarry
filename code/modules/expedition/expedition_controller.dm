@@ -250,7 +250,7 @@ SYSTEM_DEF(expedition)
 				materialization.floor_count++
 			ChangeArea(T, emergency_area)
 	var/turf/arrival = materialization.world_turf(round(spec.grid_width / 2), round(spec.grid_height / 2))
-	own_set(materialization, nameof(materialization.entry), new /obj/effect/landmark/generated_station_entry(arrival))
+	rel_set(materialization, nameof(materialization.entry), new /obj/effect/landmark/generated_station_entry(arrival))
 	materialization.entry().station_id = spec.id
 	generated_station_emergency_utilities(spec, materialization, emergency_area)
 	materialization.degradation_events += "rich station generation exhausted; published sealed emergency annex"
@@ -421,8 +421,8 @@ SYSTEM_DEF(expedition)
 
 	var/datum/expedition_site/site = new(z, difficulty)
 	site.generation_seed = generation_seed
-	own_set(site, nameof(site.station_spec), station_spec)
-	own_set(site, nameof(site.station_materialization), station_materialization)
+	rel_set(site, nameof(site.station_spec), station_spec)
+	rel_set(site, nameof(site.station_materialization), station_materialization)
 	if(!site.initialize_generated_station_utilities())
 		station_materialization.degradation_events += "utility initialization failed; station published with local emergency services"
 	if(!site.initialize_generated_station_runtime())
@@ -451,7 +451,7 @@ SYSTEM_DEF(expedition)
 	rel_set(site, nameof(site.landing), get_turf(station_materialization.entry()))
 	if(!site.landing() || site.landing().density)
 		rel_set(site, nameof(site.landing), site.floors[1])
-		own_set(station_materialization, nameof(station_materialization.entry), new /obj/effect/landmark/generated_station_entry(site.landing()))
+		rel_set(station_materialization, nameof(station_materialization.entry), new /obj/effect/landmark/generated_station_entry(site.landing()))
 		station_materialization.entry().station_id = station_spec.id
 		station_materialization.degradation_events += "planned docking entry was unusable; moved arrival to the first walkable floor"
 	site.name = station_spec.name
@@ -462,7 +462,7 @@ SYSTEM_DEF(expedition)
 
 	var/obj/effect/shuttle_landmark/automatic/clearing/expedition/waypoint = new(site.landing())
 	rel_set(waypoint, nameof(waypoint.site), site)
-	own_set(site, nameof(site.landing_waypoint), waypoint)
+	rel_set(site, nameof(site.landing_waypoint), waypoint)
 
 	// Let the mission lay down its objective content.
 	if(mission)

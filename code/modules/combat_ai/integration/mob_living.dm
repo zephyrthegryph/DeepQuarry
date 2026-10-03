@@ -18,6 +18,20 @@
 	/// /mob/living/simple_mob, FALSE everywhere else.
 	var/use_modern_ai = FALSE
 
+CAPABILITIES(/mob/living)
+	owns_one(nameof(ai_brain), /datum/ai_brain)
+	owns_one(nameof(aiming), /obj/aiming_overlay)
+	owns_one(nameof(body), /datum/body)
+	owns_one(nameof(changeling_state), /datum/changeling)
+	owns_one(nameof(character_setup_button), /datum/character_setup_button)
+	owns_one(nameof(deaf_loop), /datum/looping_sound/mob/deafened)
+	owns_one(nameof(firesoundloop), /datum/looping_sound/mob/on_fire)
+	owns_one(nameof(inventory_panel), /datum/inventory_panel)
+	owns_one(nameof(say_list), /datum/say_list)
+	owns_one(nameof(shadekin), /datum/shadekin)
+	owns_one(nameof(turfslip), /datum/turfslip)
+	owns_one(nameof(vore_panel_button), /datum/vore_panel_button)
+
 /mob/living/simple_mob
 	/// If TRUE, the brain treats non-faction-mate mobs (including players) as
 	/// hostile even when the faction registry says NEUTRAL. Covers the
@@ -45,7 +59,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		return FALSE
 	if(ai_brain)
 		own_clear(src, nameof(ai_brain), OWN_DELETE)
-	own_set(src, nameof(ai_brain), new /datum/ai_brain(src))
+	rel_set(src, nameof(ai_brain), new /datum/ai_brain(src))
 	var/list/sels = TYPE_TABLE_GET(src, get_ai_target_selectors)
 	if(sels && length(sels))
 		ai_brain.target_selector_chain = sels.Copy()
@@ -82,7 +96,7 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 	// no allocation, which matters at world-init when thousands of simple_mobs
 	// spawn. Callers (idle_speak behavior, hear_say) already handle null.
 	if(say_list_type && say_list_type != /datum/say_list)
-		own_set(src, nameof(say_list), new say_list_type(src))
+		rel_set(src, nameof(say_list), new say_list_type(src))
 	if(!ai_brain)
 		initialize_ai_brain()
 

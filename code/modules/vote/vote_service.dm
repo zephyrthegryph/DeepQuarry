@@ -6,6 +6,9 @@ SYSTEM_DEF(vote)
 
 	VAR_PRIVATE/datum/vote/active_vote
 
+CAPABILITIES(/datum/system/vote)
+	owns_one(nameof(active_vote), /datum/vote)
+
 /datum/system/vote/reactions()
 	. = ..()
 	. += every(1 SECOND, PROC_REF(tick_vote), when = PROC_REF(work_ready), lane = LANE_SIMULATION)

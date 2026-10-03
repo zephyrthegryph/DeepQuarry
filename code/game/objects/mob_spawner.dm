@@ -130,9 +130,12 @@ It also makes it so a ghost wont know where all the goodies/mobs are.
 	var/datum/proximity_monitor/mobspawner/prox
 	var/list/mobs_in_range
 
+CAPABILITIES(/obj/structure/mob_spawner/scanner)
+	owns_one(nameof(prox), /datum/proximity_monitor/mobspawner)
+
 /obj/structure/mob_spawner/scanner/Initialize(mapload)
 	. = ..()
-	own_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
+	rel_set(src, nameof(prox), new /datum/proximity_monitor/mobspawner(src, range))
 
 /obj/structure/mob_spawner/scanner/do_spawn(mob_path)
 	if(!ispath(mob_path))
