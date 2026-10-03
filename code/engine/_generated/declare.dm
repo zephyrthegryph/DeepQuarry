@@ -724,6 +724,13 @@
 	into += entry_line(18)
 	into += list(global.op("zoom", global.in_hand(), global.label("Zoom"), global.needs(global.req(PROC_REF(view_available), because = MSG(binoculars/distracted))), global.then(PROC_REF(zoomed))))
 
+/// CAPABILITIES(/obj/item/cane/white/collapsible) at code/game/objects/items/weapons/canes.dm:100
+/obj/item/cane/white/collapsible/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/canes.dm", 100, /obj/item/cane/white/collapsible)
+	into += entry_line(101)
+	into += list(global.op("toggle", global.in_hand(), global.label("Extend or collapse cane"), global.then(PROC_REF(collapsed_toggled))))
+
 /// CAPABILITIES(/obj/item/clothing/accessory/permit) at code/modules/clothing/accessories/permits.dm:18
 /obj/item/clothing/accessory/permit/declared_entries(list/into)
 	..(into)
@@ -732,6 +739,20 @@
 	into += list(global.op("register", global.in_hand(), global.label("Register"), global.needs(global.req(/mob/living, of = ON_ACTOR), global.req_is(nameof(owner), FALSE, because = MSG(permit/already_registered))), global.then(PROC_REF(registered))))
 	into += entry_line(21)
 	into += list(global.emag(global.then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE))
+
+/// CAPABILITIES(/obj/item/melee/telebaton) at code/game/objects/items/weapons/swords_axes_etc.dm:60
+/obj/item/melee/telebaton/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/swords_axes_etc.dm", 60, /obj/item/melee/telebaton)
+	into += entry_line(61)
+	into += list(global.op("toggle", global.in_hand(), global.label("Extend or collapse baton"), global.then(PROC_REF(baton_toggled))))
+
+/// CAPABILITIES(/obj/item/melee/umbrella) at code/game/objects/items/weapons/melee/misc.dm:44
+/obj/item/melee/umbrella/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/melee/misc.dm", 44, /obj/item/melee/umbrella)
+	into += entry_line(45)
+	into += list(global.op("toggle", global.in_hand(), global.label("Open or close umbrella"), global.then(PROC_REF(umbrella_toggled))))
 
 /// CAPABILITIES(/obj/item/mining_scanner) at code/modules/mining/drilling/scanner.dm:18
 /obj/item/mining_scanner/declared_entries(list/into)
@@ -1128,6 +1149,22 @@
 	into += list(global.extend("needle.draw_blood", global.needs(global.req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))))
 	into += entry_line(205)
 	into += list(global.extend("needle.take_blood", global.needs(global.req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))))
+
+/// CAPABILITIES(/obj/item/resonator) at code/modules/mining/resonator.dm:89
+/obj/item/resonator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/resonator.dm", 89, /obj/item/resonator)
+	into += entry_line(90)
+	into += list(global.op("settings", global.in_hand(), global.label("Settings"), global.asks(/datum/prompt/choice, fields = list("question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))), global.then(PROC_REF(settings_picked))))
+	into += entry_line(93)
+	into += list(global.op("resonate", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Create resonance field"), global.needs(global.req_adjacent(), global.req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), global.then(PROC_REF(resonated))))
+
+/// CAPABILITIES(/obj/item/shovel) at code/modules/mining/mine_items.dm:149
+/obj/item/shovel/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/mine_items.dm", 149, /obj/item/shovel)
+	into += entry_line(150)
+	into += list(global.op("toggle_grave_mode", global.hand(), global.gesture(GESTURE_ALT), global.label("Toggle digging mode"), global.needs(global.req_adjacent()), global.then(PROC_REF(grave_mode_toggled))))
 
 /// CAPABILITIES(/obj/item/storage) at code/game/objects/items/weapons/storage/storage.dm:57
 /obj/item/storage/declared_entries(list/into)
@@ -2263,6 +2300,15 @@
 	into += list(held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED))
 	into += entry_line(121)
 	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
+
+/// CAPABILITIES(/obj/item/universal_translator) at code/game/objects/items/devices/translator.dm:19
+/obj/item/universal_translator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/translator.dm", 19, /obj/item/universal_translator)
+	into += entry_line(20)
+	into += list(global.op("enable", global.in_hand(), global.label("Enable translator"), global.when(global.cond_not(nameof(translation_enabled))), global.needs(global.carried(), global.req(PROC_REF(language_supported), because = PROC_REF(language_refusal))), global.asks(/datum/prompt/choice/translator_language), global.then(PROC_REF(language_picked))))
+	into += entry_line(24)
+	into += list(global.op("disable", global.in_hand(), global.label("Disable translator"), global.when(nameof(translation_enabled)), global.then(PROC_REF(disabled))))
 
 /// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:326
 /obj/machinery/access_button/declared_entries(list/into)

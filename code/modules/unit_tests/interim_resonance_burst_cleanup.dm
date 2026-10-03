@@ -1,11 +1,12 @@
 /// The actual resonator weapon constructs its real delayed field; ordinary floor bursting injures real victims and consumes only that original source.
 /datum/unit_test/om/interim_resonance_burst_cleanup
+	parent_type = /datum/unit_test/dq_p2_engine
 	var/with_victim = TRUE
 
 /datum/unit_test/om/interim_resonance_burst_cleanup/empty
 	with_victim = FALSE
 
-/datum/unit_test/om/interim_resonance_burst_cleanup/run_om(list/made)
+/datum/unit_test/om/interim_resonance_burst_cleanup/run_gate()
 	var/turf/T = test_floor()
 	var/turf/actor_floor = get_step(T, EAST)
 	TEST_ASSERT(actor_floor && !actor_floor.density, "The real creator has an adjacent floor outside the actual resonance impact")
@@ -21,19 +22,23 @@
 		TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), 0, "The real unprotected floor victim starts without physical injuries")
 	var/obj/item/pen/pen = allocate(/obj/item/pen, T)
 	var/list/visuals_before = turf_contents_of_type(T, /obj/effect/temp_visual/resonance_crush)
-	tool.CreateResonance(T, actor)
+	TEST_ASSERT(assert_resolves(actor, T, tool, GESTURE_CLICK, "resonate"), "The actual held resonator resolves its native field operation: [explain_click(actor, T, tool)]")
+	actor.next_click = 0
+	var/datum/input_event/click/click = new(actor, T, null, "mapwindow.map", "left=1")
+	input_submit(click)
+	TEST_ASSERT_EQUAL(click.result?.key, "resonate", "The actual player click selects the native resonator operation")
 	own_turf_contents(T)
 	var/list/fields = turf_contents_of_type(T, /obj/effect/resonance)
 	TEST_ASSERT_EQUAL(length(fields), 1, "The actual weapon creates exactly one real floor resonance field")
 	var/obj/effect/resonance/field = fields[1]
 	TEST_ASSERT(!QDELETED(field) && field.loc == T, "The actual constructed field retains its original target floor")
 	TEST_ASSERT_EQUAL(field.creator, actor, "The real field preserves its exact original creator for attack logging")
-	scheduler_advance((4.9 SECONDS) / (1 SECOND))
+	test_time(4.9 SECONDS)
 	TEST_ASSERT(!QDELETED(field), "The original actual field survives until its original five-second deadline")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/effect/temp_visual/resonance_crush)), length(visuals_before), "Actual resonance creates no collapse visual before its original deadline")
 	if(victim)
 		TEST_ASSERT_EQUAL(victim.injury_load(INJURY_CATEGORY_PHYSICAL), 0, "The actual delayed resonance does not physically injure its victim early")
-	scheduler_advance((0.2 SECONDS) / (1 SECOND))
+	test_time(0.2 SECONDS)
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(field), "The actual timed floor burst consumes the original field")
 	var/list/visuals = turf_contents_of_type(T, /obj/effect/temp_visual/resonance_crush) - visuals_before

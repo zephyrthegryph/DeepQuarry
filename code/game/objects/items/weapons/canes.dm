@@ -95,11 +95,15 @@ DECLARE_APPEARANCE_PROC(/obj/item/cane/concealed, TYPE_PROC_REF(/atom, appearanc
 	force = 3
 	var/on = 0
 
-DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/cane/white/collapsible, on)
 
-/// Old attack_self.
-/obj/item/cane/white/collapsible/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	on = !on
+CAPABILITIES(/obj/item/cane/white/collapsible)
+	op("toggle", in_hand(), label("Extend or collapse cane"), then(PROC_REF(collapsed_toggled)))
+
+/// The native held-item activation preserves the complete equipment change.
+/obj/item/cane/white/collapsible/proc/collapsed_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_on(!on)
 	if(on)
 		act_message(user, null, MSG_SELF(span_warning("You extend the white cane.")), \
 			MSG_OTHERS(span_infoplain(span_bold("%U%") + " extends the white cane.")), \
@@ -126,7 +130,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/white/collapsible, INTERACT_USE(null, PROC_R
 
 	play_sfx(src, SFX_WEAPONS_EMPTY)
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/cane/concealed/ownership()
 	. = ..()

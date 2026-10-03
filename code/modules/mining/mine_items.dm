@@ -144,13 +144,16 @@ MATERIAL_MIX(/obj/item/pickaxe/plasmacutter, list(MAT_STEEL = 3000, MAT_PLASTEEL
 	var/digspeed = 40
 	var/grave_mode = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/shovel, INTERACT_ALT(null, PROC_REF(interaction_alt)))
+TRACKED(/obj/item/shovel, grave_mode)
 
-/// Old click_alt.
-/obj/item/shovel/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
-	grave_mode = !grave_mode
-	to_chat(user, span_notice("You'll now dig [grave_mode ? "out graves" : "for loot"]."))
-	return FALSE
+CAPABILITIES(/obj/item/shovel)
+	op("toggle_grave_mode", hand(), gesture(GESTURE_ALT), label("Toggle digging mode"),
+		needs(req_adjacent()), then(PROC_REF(grave_mode_toggled)))
+
+/obj/item/shovel/proc/grave_mode_toggled(datum/act/op/A)
+	set_grave_mode(!grave_mode)
+	to_chat(A.actor, span_notice("You'll now dig [grave_mode ? "out graves" : "for loot"]."))
+	return OP_OK
 
 /obj/item/shovel/wood
 	icon_state = "whiteshovel"
