@@ -629,6 +629,8 @@
 #include "interim_storage_transfer_full_hud.dm"
 #include "interim_icon_picker_actor.dm"
 #include "interim_windoor_emag_disabled_open.dm"
+#include "interim_mre_wrapper_consumption.dm"
+#include "interim_condiment_food_transfer.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
