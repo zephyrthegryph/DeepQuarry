@@ -31,70 +31,69 @@
 		name = "light switch ([area().name])"
 
 	set_on(area().lightswitch)
-	update_icon()
 
-DECLARE_APPEARANCE_PROC(/obj/machinery/light_switch, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/machinery/light_switch/appearance_overlays()
-	. = list()
-	if(has_stat(NOPOWER))
-		icon_state = "light-p"
-		set_light(0)
-	else
-		icon_state = "light[on]"
-		set_light(2, 0.1, on ? "#82FF4C" : "#F86060")
-		. = list()
-		. += emissive_appearance(icon, "light[on]-overlay")
+// The light switch is declared (doc/rewrite/conversion_guide.md): a touch of the hand turns the lights of its area off and on whether the
+// switch has power or not (so no machine_basics(): nothing here needs a working casing), any other item used on it leaves its prints, an
+// electromagnetic pulse makes it read its power again. What the machine core keeps until the machine track (phase 4): the NOPOWER bit and
+// the power_change() dispatch (an area calls it on every channel change and on every switch use).
+CAPABILITIES(/obj/machinery/light_switch, \
+	powered(POWER_CHANNEL_LIGHTING), \
+	op("toggle", hand(), label("Toggle"), wait(0), then(PROC_REF(toggle_lights))), \
+	op("touch", item(/obj/item), priority(OP_PRIORITY_DEFAULT), wait(0), then(PROC_REF(touched_with)), passes()), \
+	examine_line(PROC_REF(examine_state)), \
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_reread))))
 
-	return .
-
-/obj/machinery/light_switch/examine(mob/user)
-	. = ..()
-	if(Adjacent(user))
-		. += "A light switch. It is [on? "on" : "off"]."
-
-/obj/machinery/light_switch/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/ungated/lightswitch_toggle,
-		/datum/interaction/machine_item/lightswitch_fingerprint,
-	)
+/// What the switch shows: dark without power, else its state, lit in the colour of the state.
+/obj/machinery/light_switch/draw(datum/look/look)
 	..()
+	if(has_stat(NOPOWER))
+		look.state("light-p")
+		return
+	look.state("light[on]")
+	look.light(2, 0.1, on ? "#82FF4C" : "#F86060")
+	look.glow("overlay")
 
-/// The old attack_hand: never called ..(), toggled the lights for the whole area.
-/datum/interaction/machine_hand/ungated/lightswitch_toggle
-	id = "lightswitch_toggle"
-	name = "Toggle"
-	category = INTERACTION_CAT_TOGGLE
-	effect = /obj/machinery/light_switch/proc/interaction_toggle
+/// Within reach it says what it is set to.
+/obj/machinery/light_switch/proc/examine_state(datum/act/op/A)
+	var/mob/user = A.actor
+	if(!user || !Adjacent(user))
+		return null
+	return "A light switch. It is [on ? "on" : "off"]."
 
-/obj/machinery/light_switch/proc/interaction_toggle(mob/user, obj/item/held, datum/interaction/interaction)
+/// The touch: the area's lights, and every switch of the area, follow the switch.
+/obj/machinery/light_switch/proc/toggle_lights(datum/act/op/A)
 	set_on(!on)
 
 	area().lightswitch = on
 	area().update_icon()
 	play_sfx(src, SFX_MACHINES_BUTTON, volume = 100)
 
-	for(var/obj/machinery/light_switch/L in area())
+	for(var/obj/machinery/light_switch/L as anything in area_contents_of_type(area(), /obj/machinery/light_switch))
 		L.set_on(on)
 
 	area().power_change()
 	GLOB.lights_switched_on_roundstat++
-	return TRUE
+	return OP_OK
+
+/// Any other item used on it leaves the user's prints, and the click goes on.
+/obj/machinery/light_switch/proc/touched_with(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return OP_OK
+
+/// An EMP makes the switch re-read its power.
+/obj/machinery/light_switch/proc/emp_reread(datum/act/A)
+	if(!operable())
+		return
+	power_change()
 
 /obj/machinery/light_switch/allow_pai_interaction(mob/living/silicon/pai/user, proximity_flag)
 	return proximity_flag
 
+/// A switch pointed at another area leaves its power alone; every other one follows the light channel like any machine on it.
 /obj/machinery/light_switch/power_change()
-
-	if(!otherarea)
-		set_powered(powered(LIGHT))
-
-
-DAMAGE_REACTION(/obj/machinery/light_switch, DAMAGE_EMP, PROC_REF(light_switch_emp))
-/// An EMP makes the switch re-read its power.
-/obj/machinery/light_switch/proc/light_switch_emp(datum/damage_packet/packet)
-	if(!operable())
-		return
-	power_change()
+	if(otherarea)
+		return FALSE
+	return ..()
 
 //Breakers for event maps
 

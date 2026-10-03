@@ -88,7 +88,7 @@
 
 /// The light switch's frame stage: FRAME_UNFASTENED, FRAME_FASTENED or FRAME_WIRED.
 /proc/p2l_switch_stage(obj/structure/construction/C)
-	return C.stage
+	return C.frame_stage()
 
 /// The light switch has no power (the NOPOWER state its own power change keeps).
 /proc/p2l_switch_unpowered(obj/machinery/light_switch/S)
