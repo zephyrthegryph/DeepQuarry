@@ -1276,7 +1276,7 @@ MSG_DEF_SELF(airlock/no_dexterity, "You don't have the dexterity.")
 			killthis.ex_act(2)//Smashin windows
 	. = ..()
 
-/// Drops the bolts (cap_bolts(): CAP_BOLTED). forced drops them mid-swing.
+/// Drops the bolts (the key BOLTS_BOLTED). forced drops them mid-swing.
 /obj/machinery/door/airlock/proc/lock(forced=0)
 	if(bolts_bolted(src))
 		return FALSE
