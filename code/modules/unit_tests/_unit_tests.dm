@@ -460,6 +460,7 @@
 #include "dq_p2_chargers_behaviour.dm"
 #include "dq_p2_smes_behaviour.dm"
 #include "dq_p2_batteryrack_behaviour.dm"
+#include "dq_p2_vending_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
 #include "dq_p2_reagent_behaviour.dm"
