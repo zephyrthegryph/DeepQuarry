@@ -672,6 +672,7 @@
 #include "interim_redspace_abduction_actor_refusal.dm"
 #include "interim_holocarp_cleanup.dm"
 #include "interim_manifest_data.dm"
+#include "interim_turret_controller_emag_locks.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
