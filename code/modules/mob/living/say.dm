@@ -410,7 +410,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	// Remove the speech images later. The global owner: the images must leave the clients'
 	// screens even if the speaker is deleted first.
-	om_after(null, 3 SECONDS, /proc/remove_speech_images, images_to_clients)
+	queue_speech_images(images_to_clients)
 
 	//Log the message to file
 	if(message_mode)
@@ -507,12 +507,29 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /mob/proc/speech_bubble_appearance()
 	return "normal"
 
-/// Takes speech bubble images off the clients they were shown to, then deletes them.
-/proc/remove_speech_images(list/images_to_clients)
+/// Keeps generated images alive independently of the speaker until their global cleanup.
+/datum/om/global_owner/var/list/pending_speech_images
+
+/// Capture images as positional values; retain them through their weak timer arguments.
+/proc/queue_speech_images(list/images_to_clients)
+	var/datum/om/global_owner/owner = om_global_owner()
+	var/list/speech_image_pairs = list()
 	for(var/image/I as anything in images_to_clients)
-		var/list/clients_from_image = images_to_clients[I]
+		own_add(owner, nameof(owner.pending_speech_images), I)
+		speech_image_pairs += list(list(I, images_to_clients[I]))
+	var/timer_id = om_after(null, 3 SECONDS, GLOBAL_PROC_REF(remove_speech_images), speech_image_pairs)
+	if(!timer_id)
+		remove_speech_images(speech_image_pairs)
+	return timer_id
+
+/// Takes speech bubble images off the clients they were shown to, then releases and deletes them.
+/proc/remove_speech_images(list/speech_image_pairs)
+	for(var/list/pair as anything in speech_image_pairs)
+		var/image/I = pair[1]
+		var/list/clients_from_image = pair[2]
 		for(var/client/C as anything in clients_from_image)
 			if(C) //Could have disconnected after message sent, before removing bubble.
 				C.images -= I
+		own_take_member(om_global_owner(), nameof(/datum/om/global_owner::pending_speech_images), I)
 		qdel(I)
 

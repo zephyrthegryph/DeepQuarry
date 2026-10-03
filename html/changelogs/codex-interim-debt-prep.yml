@@ -50,3 +50,7 @@ changes:
   - bugfix: "Cutting bedsheets and refastening signs preserve items that cannot be released."
   - bugfix: "Surplus vouchers preserve items that cannot be released and deliver rewards only after successful consumption."
   - bugfix: "HUD controls retain the clicking user and safely ignore unsupported robot controls."
+  - bugfix: "Speech bubbles stay alive until their cleanup timer and are removed even after their speaker disappears."
+  - bugfix: "Legacy item action buttons pass the clicking player to the item action."
+  - bugfix: "Toy sword and shoe appearance changes redraw their actual holder instead of an unrelated player."
+  - admin: "Filter editor choices and permission checks retain the editing player."
