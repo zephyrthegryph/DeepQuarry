@@ -183,6 +183,12 @@
 /obj/machinery/button/remote/driver/p2_test
 	id = "p2_blast_test"
 
+/obj/machinery/door/window/brigdoor/p2_test
+	id = "p2_cell"
+
+/obj/machinery/door_timer/p2_test
+	id = "p2_cell"
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Base: the kernel on its injected clock around the test (unless the test runs live), a clean driver after.
 // ---------------------------------------------------------------------------------------------------------------------
@@ -2347,11 +2353,10 @@
 
 /// A timer, a brig windoor and a cell closet of one id, at (2, 2), (1, 2) and (4, 2); the door is open.
 /datum/unit_test/dq_p2_door/proc/timer_setup(list/access)
-	var/obj/machinery/door/window/brigdoor/D = allocate(/obj/machinery/door/window/brigdoor, tile(1, 2))
-	D.id = "p2_cell"
+	var/obj/machinery/door/window/brigdoor/D = allocate(/obj/machinery/door/window/brigdoor/p2_test, tile(1, 2))
 	p2_door_set_power(D, TRUE)
-	var/obj/machinery/door_timer/T = allocate(/obj/machinery/door_timer, tile(2, 2))
-	T.id = "p2_cell"
+	var/obj/machinery/door_timer/T = allocate(/obj/machinery/door_timer/p2_test, tile(2, 2))
+	T.atom_fix() // it broke itself at LateInitialize, before its keyed doors had linked
 	p2_door_set_power(T, TRUE)
 	if(access)
 		T.req_access = access
@@ -2367,10 +2372,10 @@
 	test_time(2 SECONDS)
 	TEST_ASSERT(!D.density, "the cell door is open")
 	var/mob/living/carbon/human/H = make_person(list(ACCESS_BRIG), tile(3, 2))
-	var/datum/op_result/R1 = p2_door_ui(H, T, "time", list("time" = 6))
-	var/datum/op_result/R2 = p2_door_ui(H, T, "start")
+	p2_door_ui(H, T, "time", list("time" = 6))
+	p2_door_ui(H, T, "start")
 	test_time(2 SECONDS)
-	TEST_ASSERT(T.timing, "it is counting [R1?.outcome] [R1?.reason] [R2?.outcome] [R2?.reason] [T.timer_duration]")
+	TEST_ASSERT(T.timing, "it is counting")
 	TEST_ASSERT(D.density, "and the cell door is shut")
 	test_time(10 SECONDS)
 	TEST_ASSERT(!T.timing, "when the time is up it stops")

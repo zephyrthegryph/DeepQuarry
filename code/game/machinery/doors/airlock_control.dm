@@ -306,7 +306,7 @@ CAPABILITIES(/obj/machinery/access_button, \
 
 /// Whoever has access presses it.
 /obj/machinery/access_button/proc/button_allows(datum/act/op/A)
-	return allowed(A.actor) // ALLOW(reads): access is read when the press is tried
+	return allowed(A.actor)
 
 /// The press: its signal goes to the controller.
 /obj/machinery/access_button/proc/pressed(datum/act/op/A)

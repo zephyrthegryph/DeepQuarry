@@ -66,11 +66,11 @@ DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PR
 
 /// Its network wire is whole (a silicon cannot reach it otherwise).
 /obj/machinery/button/remote/proc/has_network(datum/act/A)
-	return !!(wires_num & 2) // ALLOW(reads): the wire count is a map-set constant no code changes
+	return !!(wires_num & 2)
 
 /// Whoever has access presses it, and anyone does while its check wire is cut.
 /obj/machinery/button/remote/proc/may_press(datum/act/op/A)
-	return allowed(A.actor) || !(wires_num & 1) // ALLOW(reads): access and the wire count are read when the press is tried
+	return allowed(A.actor) || !(wires_num & 1)
 
 /// A refusal flashes the denial on a working button that is not spent and checks access (what refused it, then, was its lock).
 /obj/machinery/button/remote/proc/denied_flash(datum/act/A)

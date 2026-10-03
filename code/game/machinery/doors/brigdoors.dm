@@ -26,7 +26,6 @@
 	density = FALSE       		// can walk through it.
 	flags = WALL_ITEM
 	var/id = null     		// id of door it controls.
-	EXPIRY_DECLARE(activation_time)
 	var/timer_duration = 0
 	/// Counting down: true while the timer runs.
 	var/timing = FALSE
@@ -53,7 +52,7 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig), \
 	ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id)), \
 	ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id)), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(count_down)), when = nameof(timing)), \
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(redraw)), when = nameof(timing)), \
 	interface("BrigTimer", title = "Door Timer"), \
 	op("time", ui_act("time", arg("time", int(0, MAX_TIMER))), then(PROC_REF(ui_time))), \
 	op("start", ui_act("start"), then(PROC_REF(ui_start))), \
@@ -64,7 +63,7 @@ CAPABILITIES(/obj/machinery/door_timer, \
 
 /// Whoever has access works its window.
 /obj/machinery/door_timer/proc/timer_access(datum/act/op/A)
-	return allowed(A.actor) // ALLOW(reads): access is read when the button is pressed
+	return allowed(A.actor)
 
 /obj/machinery/door_timer/Initialize(mapload)
 	..()
@@ -83,13 +82,20 @@ CAPABILITIES(/obj/machinery/door_timer, \
 //Main door timer loop, if it's timing and time is >0 reduce time by 1.
 // if it's less than 0, open door, reset timer
 // update the door_timer window and the icon
-/// Counts down (and redraws its display) while timing: when the time is up the doors open and the timer resets. A timer with no power waits.
-/obj/machinery/door_timer/proc/count_down(datum/act/A)
-	if(!operable())
-		return
-	if(ELAPSED(src, activation_time, CLOCK_WORLD) >= timer_duration)
-		timer_end() // open doors, reset timer, clear status screen
+/// Redraws its display while it counts (the time left shows on it).
+/obj/machinery/door_timer/proc/redraw(datum/act/A)
 	update_icon()
+
+/// The time is set to run out `timer_duration` from now.
+/obj/machinery/door_timer/proc/arm_end()
+	after(src, timer_duration, PROC_REF(timer_due), key = "end", clock = CLOCK_WORLD)
+
+/// The time is up: the doors open and the timer resets. A timer with no power waits for it.
+/obj/machinery/door_timer/proc/timer_due()
+	if(!operable())
+		after(src, MACHINE_SERVICE_INTERVAL, PROC_REF(timer_due), key = "end", clock = CLOCK_WORLD)
+		return
+	timer_end() // open doors, reset timer, clear status screen
 
 // open/closedoor checks if door_timer has power, if so it checks if the
 // linked door is open/closed (by density) then opens it/closes it.
@@ -99,8 +105,8 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	if(!operable())
 		return 0
 
-	EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 	set_timing(TRUE)
+	arm_end()
 
 	for(var/obj/machinery/door/window/brigdoor/door as anything in brig_doors)
 		if(door.density)
@@ -122,7 +128,7 @@ CAPABILITIES(/obj/machinery/door_timer, \
 		return 0
 
 	set_timing(FALSE)
-	activation_time = null
+	cancel_after(src, "end")
 	set_timer(0)
 	update_icon()
 
@@ -142,7 +148,7 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	return 1
 
 /obj/machinery/door_timer/proc/time_left(seconds = FALSE)
-	. = max(0, timer_duration - (activation_time ? (world.time - activation_time) : 0))
+	. = timing ? max(0, after_left(src, "end")) : timer_duration
 	if(seconds)
 		. /= 10
 
@@ -150,8 +156,8 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	var/new_time = clamp(value, 0, MAX_TIMER)
 	. = new_time == timer_duration //return 1 on no change
 	timer_duration = new_time
-	if(timer_duration && activation_time && timing) // Setting it while active will reset the activation time
-		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
+	if(timer_duration && timing) // Setting it while active starts the time over
+		arm_end()
 
 /// The computed part of the window data.
 /obj/machinery/door_timer/ui_data(datum/act/eval/A)
@@ -172,8 +178,7 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	return data
 
 /// Sets the time, in seconds.
-/obj/machinery/door_timer/proc/ui_time(datum/act/op/A)
-	var/new_time = A.args["time"]
+/obj/machinery/door_timer/proc/ui_time(datum/act/op/A, new_time)
 	if(isnum(new_time) && new_time)
 		set_timer(new_time * 10)
 	return OP_OK
@@ -192,9 +197,9 @@ CAPABILITIES(/obj/machinery/door_timer, \
 	return OP_OK
 
 /// A preset is added to the time left.
-/obj/machinery/door_timer/proc/ui_preset(datum/act/op/A)
+/obj/machinery/door_timer/proc/ui_preset(datum/act/op/A, preset)
 	var/preset_time = time_left()
-	switch(A.args["preset"])
+	switch(preset)
 		if("short")
 			preset_time = PRESET_SHORT
 		if("medium")
@@ -202,8 +207,6 @@ CAPABILITIES(/obj/machinery/door_timer, \
 		if("long")
 			preset_time = PRESET_LONG
 	set_timer(timer_duration + preset_time)
-	if(timing)
-		EXPIRY_STAMP(src, activation_time, CLOCK_WORLD)
 	return OP_OK
 
 //icon update function

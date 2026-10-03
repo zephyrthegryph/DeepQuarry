@@ -168,3 +168,44 @@ The full suite is one integration run per merge batch, not per worker.
 * **Op clashes are a build error**: two ops with the same binding and tier need exclusive `when()`s, different tiers or `priority(above(key))`.
 * **Tool ops wait.** `tool(Q)` brings the profile's wait; an op that only opens a window says `wait(0)`.
 * **`options that names a state-dependent message`**: `says(CAP_PROC(x))` with `x(A)` returning a `/datum/msg` type; a toggle says what it did.
+
+## 9. Doors: what the second conversion taught
+
+The doors (`code/game/machinery/doors/`, the library `doors()`, `bolts()`, `weld_shut()`, `door_emergency()`, `multitool_settings()`) were converted in three
+steps (base door, airlock, then firedoors, blast doors, windoors, unpowered doors, the assemblies, the buttons, sensors and the brig timer), each a merge of
+its own, with 140 behaviour tests written against the legacy code first (`dq_p2_door/*`; the legacy tree is `rewrite/p2-tests-doors`: run a test there when
+you must know what the old code did, rather than guess).
+
+**The shape.** The base door (`door.dm`) brings `machine_basics`, `doors()` (the touch: a hand or any held thing, by the door's access), the emag and the base
+door's own ops (strike, reinforce, repair). A kind of door `without()`s what it does not have and adds its own ops beside its type. The mechanism
+(`open()`, `close()`, the swing, the timers) stays plain procs of the door, run by `then()` handlers; timers are keyed `after()` on `CLOCK_WORLD`
+(`autoclose`, `swing`, `main_power`, `end`), polling is `every(when =)`, and a thing that must not poll waits on a gas watch (the firedoor).
+
+**Recipes that came out of it.**
+
+* *A refusal that says nothing and does nothing* (a blast door swallowing a held thing, a lift door refusing a sequencer, a windoor ignoring a crowbar):
+  an op of the same input at the right tier whose `needs()` can never hold, or whose effect is empty. Never let the click fall through to a touch.
+* *Tiers for held things*: emag 50, busy-swallow 48, tools 46, tape 45, welded refusal 44, prying item 43, strike (hostile) 20, the base door's ops 10, the
+  doors() touch 0. A click that has two ops at one tier is a build error (`op_clash`); give a different tier, not `priority(above())` across kinds.
+* *Dynamic prompt text*: `asks(/datum/prompt/yes_no, fields = list("question" = computed(PROC_REF(x))))`. `x(datum/act/A)` is read when the question opens.
+* *A choice and then a question* (multitool settings): the choice op's effect `perform_op(..., ORIGIN_SYSTEM)`s the setting's own op, which asks its own
+  question (`multitool_settings()` does this for any machine).
+* *Key-only ops* (a simple mob forcing a door, a pilot's mecha bumping one): `op("x", ai(), wait(...), ...)` called as `perform_op(user, src, "x", origin = ORIGIN_SYSTEM)`.
+  An op with no input, or a `perform_op()` at the default origin, finds no candidate and says "You can't do that that way".
+* *A second worker on the same thing*: `claims()` on the op (it holds the target while it waits; `op_claimed(target)` for the look) and `req_unclaimed()` for
+  an op that must not run over one.
+* *A construction ladder that ends by replacing itself* (an assembly finishing into a door): build the thing, move what it owns (`own_transfer`), then
+  `qdel(src)` in the stage's `then()`; `graph_advance` now skips a holder that is already gone. `replace_with()` deletes what the old holder owned.
+* *Emags*: a door that takes none is `without(CAP_EMAG)` plus a refusing op; `emag_target()` (events, a changeling's pick) reaches a capability's emag through
+  the cardless `emag.subvert` op.
+* *Keyed relations*: `ref_many(nameof(v), /type, by = nameof(id))` on the holder; the target needs nothing (the generator lists every keyed target
+  so a table built first knows its key). It cannot name two different vars (a button's `id`, an airlock's `id_tag`): that bridge stays `rel_key()`.
+
+**Pitfalls found.**
+
+* A test that the kernel clock passes must not read `world.time` or `ELAPSED(.., CLOCK_WORLD)`; the code under test must use the timers.
+* A legacy hibernation (`om_watch_arm_value` on the air) is kept where a test pins that a closed door is event-driven (`dq_closed_firedoor_is_event_driven`):
+  no `every()` over a shut firedoor.
+* Overriding a legacy proc the old engine bypassed (`on_emag` of a lift door) was dead code for a whole step; grep for overrides of what you replaced.
+* `TEST_ASSERT(FALSE, ...)` inside an `if` is an "always true" DreamChecker error; assert the condition instead.
+* The xeno claw ops reference `/datum/species/xenos`, which no longer exists; they are kept for parity and can never run.

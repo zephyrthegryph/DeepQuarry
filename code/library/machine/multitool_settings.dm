@@ -14,7 +14,7 @@ CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS, /datum/capability/li
 
 /datum/capability/lib/multitool_settings/entries()
 	var/list/out = list(op("configure", tool(TOOL_MULTITOOL), label("Configure"), wait(0), \
-		asks(/datum/prompt/choice, fields = list("question" = "What would you like to configure?", "choices" = computed(CAP_PROC(choices)))), then(CAP_PROC(chosen))))
+		asks(/datum/prompt/choice, fields = list("question" = "What would you like to configure?", "choices" = computed(CAP_PROC(choices)), "buttons" = TRUE)), then(CAP_PROC(chosen))))
 	for(var/list/setting in settings)
 		var/kind = setting[3]
 		out += op("set_[setting[2]]", ai(), wait(0), \
