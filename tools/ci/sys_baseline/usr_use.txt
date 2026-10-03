@@ -194,9 +194,6 @@ usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_list, PROC_REF(lateload_list_confirmed))
 usr_outside_verb	code/game/objects/structures/medical_stand.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/structures/stasis_cage.dm	var/mob/user = usr
-usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/bed.dm	if(!ishuman(usr)) return
-usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/bed.dm	act_message(usr, null, others = "%U% collapses \the [src.name].")
 usr_outside_verb	code/game/objects/structures/stool_bed_chair_nest/wheelchair.dm	var/mob/user = usr
 usr_outside_verb	code/game/world.dm	if (usr)
 usr_outside_verb	code/game/world.dm	log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
