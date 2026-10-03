@@ -64,8 +64,10 @@
 	message.source = "interim-broadcast-sender"
 	message.spam = TRUE // Do not emit an unrelated admin announcement from this fixture.
 	TEST_ASSERT(broadcaster.receive_mail(message, FALSE, actor), "the actual broadcaster schedules accepted mail")
+	TEST_ASSERT_EQUAL(length(broadcaster.pending_messages), length(GLOB.ntnet_global.email_accounts), "the broadcaster owns every scheduled clone before any timer runs")
 	TEST_ASSERT_EQUAL(recipient.deliveries, 0, "the broadcaster does not deliver before its timer runs")
 	test_time((length(GLOB.ntnet_global.email_accounts) + 1) * (0.2 SECONDS))
+	TEST_ASSERT_NULL(broadcaster.pending_messages, "successful and rejected fixture deliveries drain the owned pending queue")
 	TEST_ASSERT_EQUAL(broadcaster.fixture_relays, 1, "the actual broadcaster schedules this mailbox exactly once")
 	TEST_ASSERT_EQUAL(broadcaster.relay_actor_ref, REF(actor), "the scheduled send retains the originating actor")
 	TEST_ASSERT_EQUAL(recipient.delivery_actor_ref, REF(actor), "the real receive chain retains the actor after the timer")
@@ -73,6 +75,7 @@
 	var/list/messages = recipient.all_emails()
 	TEST_ASSERT_EQUAL(length(messages), 1, "the real mailbox holds the broadcast clone")
 	var/datum/computer_file/data/email_message/clone = messages[1]
+	TEST_ASSERT_NULL(owner_of(clone), "successful delivery releases broadcaster ownership while retaining the real mailbox relation")
 	own(clone)
 	TEST_ASSERT(clone != message, "broadcast delivery creates a distinct real email")
 	TEST_ASSERT_EQUAL(clone.title, message.title, "the actual clone preserves the title")
@@ -81,3 +84,30 @@
 	TEST_ASSERT(clone.spam, "the relay preserves the spam marker")
 	TEST_ASSERT(!broadcaster.receive_mail(message, TRUE, actor), "a relayed broadcast cannot recurse")
 	TEST_ASSERT_EQUAL(broadcaster.fixture_relays, 1, "rejecting recursion creates no new fixture relay")
+
+/// A disappeared mailbox must discard its queued clone rather than retain it forever.
+/datum/unit_test/interim_email_broadcast_missing_recipient/Run()
+	var/datum/computer_file/data/email_account/service/broadcaster/broadcaster = allocate(/datum/computer_file/data/email_account/service/broadcaster, TRUE)
+	var/datum/computer_file/data/email_message/message = allocate(/datum/computer_file/data/email_message)
+	TEST_ASSERT(own_add(broadcaster, nameof(broadcaster.pending_messages), message), "the broadcaster owns the actual queued clone")
+	TEST_ASSERT_EQUAL(owner_of(message), broadcaster, "the queued clone is strongly owned by its broadcaster")
+	TEST_ASSERT(!broadcaster.deliver_broadcast("interim-missing-[REF(broadcaster)]", message, null), "a nonexistent mailbox rejects the real send")
+	TEST_ASSERT(QDELETED(message), "failed delivery deletes the undelivered clone")
+	TEST_ASSERT_NULL(broadcaster.pending_messages, "failed delivery drains the pending queue")
+
+/// Deleting the broadcaster cancels its timers and disposes every not-yet-delivered clone.
+/datum/unit_test/interim_email_broadcast_cancelled/Run()
+	test_driver_begin()
+	var/datum/computer_file/data/email_account/service/broadcaster/interim_actor/broadcaster = allocate(/datum/computer_file/data/email_account/service/broadcaster/interim_actor, TRUE)
+	var/datum/computer_file/data/email_message/message = allocate(/datum/computer_file/data/email_message)
+	message.spam = TRUE
+	TEST_ASSERT(broadcaster.receive_mail(message, FALSE, null), "the actual broadcaster queues a broadcast")
+	TEST_ASSERT(length(broadcaster.pending_messages), "the real pending queue contains cloned messages")
+	var/list/pending = broadcaster.pending_messages.Copy()
+	for(var/datum/computer_file/data/email_message/clone in pending)
+		TEST_ASSERT_EQUAL(owner_of(clone), broadcaster, "every queued clone has broadcaster ownership")
+	qdel(broadcaster)
+	for(var/datum/computer_file/data/email_message/clone in pending)
+		TEST_ASSERT(QDELETED(clone), "broadcaster deletion destroys the actual queued clone")
+	TEST_ASSERT(!QDELETED(message), "cancellation preserves the original independently held message")
+	test_time((length(GLOB.ntnet_global.email_accounts) + 1) * (0.2 SECONDS))
