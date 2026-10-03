@@ -196,14 +196,6 @@ usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if ((src.loc == us
 usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	usr.put_in_r_hand(src)
 usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	usr.put_in_l_hand(src)
 usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/tools/weldingtool.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
