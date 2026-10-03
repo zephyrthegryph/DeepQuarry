@@ -29,6 +29,7 @@
 
 pub mod helpers;
 pub mod keys;
+pub mod om_ask;
 pub mod om_hook;
 pub mod own_decl;
 pub mod report;
@@ -167,6 +168,11 @@ pub trait Codemod: Send + Sync {
         default_excluded(rel)
     }
     fn rewrite(&self, cx: &Ctx) -> Outcome;
+    /// A legacy form that is a macro: `(name the parser sees in the expansion, name the text writes)`. The parser reports the expanded
+    /// call, so the site is found by the first and read, and rewritten, as the second; its argument count is the text's own.
+    fn ast_alias(&self) -> &'static [(&'static str, &'static str)] {
+        &[]
+    }
     /// Facts the rewrite of every site shares, built once from the whole tree.
     fn prepare(&self, _tree: &Tree, _sem: &Sem) -> Arc<dyn Any + Send + Sync> {
         Arc::new(())
@@ -421,7 +427,16 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
     let (tree, _meta) = Tree::load(root, &plan, &Default::default(), false);
     let sem = crate::sem::sem_for(&tree).ok_or_else(|| "the semantic model did not build".to_string())?;
     let names = cm.callees();
-    let cands = candidates(&sem, names);
+    let alias = cm.ast_alias();
+    let mut ast_names: Vec<&str> = names.to_vec();
+    ast_names.extend(alias.iter().map(|(a, _)| *a));
+    let mut cands = candidates(&sem, &ast_names);
+    for c in cands.iter_mut() {
+        if let Some((_, text_name)) = alias.iter().find(|(a, _)| *a == c.callee) {
+            c.callee = text_name.to_string();
+            c.argc = usize::MAX;
+        }
+    }
     let prep = cm.prepare(&tree, &sem);
 
     let mut res = RunResult { name: cm.name().to_string(), ..Default::default() };
@@ -496,7 +511,7 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
                     continue;
                 }
             };
-            if node.args.len() != c.argc {
+            if c.argc != usize::MAX && node.args.len() != c.argc {
                 pending.push(ResidueSite { file: rel.clone(), line, reason: "arg_count_mismatch".into(), text: snippet(&text, *off) });
                 continue;
             }
@@ -566,7 +581,12 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
                 continue;
             }
             match file_edits.get_mut(&rel) {
-                Some(entry) => entry.1.extend(edits),
+                Some(entry) => {
+                    // A definition edit inside text a call-site edit already replaces (an om_ask in a handler reading the old answer) is the call
+                    // site's to translate: it would overlap.
+                    let spans: Vec<(usize, usize)> = entry.1.iter().filter(|e| e.end > e.start).map(|e| (e.start, e.end)).collect();
+                    entry.1.extend(edits.into_iter().filter(|f| !spans.iter().any(|(s, e)| *s <= f.start && f.end <= *e && f.end > f.start)));
+                }
                 None => {
                     if let Ok(text) = std::fs::read_to_string(root.join(&rel)) {
                         file_edits.insert(rel, (text, edits, 0));
@@ -595,7 +615,13 @@ pub fn run(root: &Path, cm: &dyn Codemod, opts: &RunOpts) -> Result<RunResult, S
         }
         res.declared = needs;
     }
-    for (rel, (text, edits, n_sites)) in file_edits {
+    for (rel, (text, mut edits, n_sites)) in file_edits {
+        edits.sort_by_key(|e| (e.start, e.end));
+        for w in edits.windows(2) {
+            if w[1].start < w[0].end {
+                return Err(format!("{}: two edits overlap ({}..{} and {}..{}): a definition rewrite met a call-site rewrite", rel, w[0].start, w[0].end, w[1].start, w[1].end));
+            }
+        }
         let (after, inverse) = apply_edits(&text, edits);
         if after != text {
             res.changes.push(FileChange { rel, before: text, after, inverse, sites: n_sites });

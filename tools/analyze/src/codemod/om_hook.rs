@@ -45,7 +45,7 @@ fn convertible(event: &str) -> Option<&'static Row> {
     (row.target.starts_with("/datum/notice/") && !row.reads_result).then_some(row)
 }
 
-fn related(a: &str, b: &str) -> bool {
+pub(crate) fn related(a: &str, b: &str) -> bool {
     if a.is_empty() || b.is_empty() {
         return true; // an unknown type may be anything
     }
@@ -144,22 +144,22 @@ fn handler_of(arg: &str, owner: &str, listener: &str) -> Result<HKey, &'static s
 }
 
 /// True when the call starts its line (only blanks before it): the form an event list can expand in.
-fn starts_line(text: &str, off: usize) -> bool {
+pub(crate) fn starts_line(text: &str, off: usize) -> bool {
     let ls = text[..off].rfind('\n').map(|p| p + 1).unwrap_or(0);
     text[ls..off].chars().all(|c| c == ' ' || c == '\t')
 }
 
 /// One mention of a handler name that is not its definition: how it is written and where.
 #[derive(Clone, Debug)]
-struct Occ {
-    rel: String,
-    line: u32,
-    owner: String,
-    kind: OccKind,
+pub(crate) struct Occ {
+    pub rel: String,
+    pub line: u32,
+    pub owner: String,
+    pub kind: OccKind,
 }
 
 #[derive(Clone, Debug)]
-enum OccKind {
+pub(crate) enum OccKind {
     /// `name(...)` with no receiver.
     Bare,
     /// `recv.name(...)`.
@@ -168,7 +168,7 @@ enum OccKind {
     ProcRef(Option<String>),
 }
 
-fn collect_refs(files: &[&SourceFile], names: &HashSet<String>) -> HashMap<String, Vec<Occ>> {
+pub(crate) fn collect_refs(files: &[&SourceFile], names: &HashSet<String>) -> HashMap<String, Vec<Occ>> {
     let mut alt: Vec<&str> = names.iter().map(|s| s.as_str()).collect();
     alt.sort();
     let alt = alt.join("|");
@@ -419,12 +419,12 @@ fn site_of(rel: &str, text: &str, off: usize, callee: &str, owner: &str, node: &
 // ---------------------------------------------------------------------------------------------------------
 // the handler definition
 
-fn is_ident_byte(b: u8) -> bool {
+pub(crate) fn is_ident_byte(b: u8) -> bool {
     b.is_ascii_alphanumeric() || b == b'_'
 }
 
 /// The `(offset, len)` of every whole-word `name` in `s`.
-fn words(s: &str, name: &str) -> Vec<usize> {
+pub(crate) fn words(s: &str, name: &str) -> Vec<usize> {
     let b = s.as_bytes();
     let mut out = Vec::new();
     let mut from = 0;
