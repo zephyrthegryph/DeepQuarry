@@ -42,6 +42,9 @@ pub struct FileFacts {
     pub shape: Hash,
     pub writes: Vec<String>,
     pub directive: bool,
+    /// Digest of the file's single-token lines (`/datum/foo`, `foo`): a type header with no body defines a type
+    /// and leaves no var or proc entry in the shape, so a change to these lines is treated as a structure change.
+    pub bare: Hash,
 }
 
 #[derive(Serialize, Deserialize, Default, Clone)]
@@ -83,6 +86,26 @@ fn save(r: &Record) {
 
 fn h128(bytes: &[u8]) -> Hash {
     u128::from_le_bytes(blake3::hash(bytes).as_bytes()[..16].try_into().unwrap())
+}
+
+/// A digest of the lines that may declare a type with no body (see [`FileFacts::bare`]).
+fn bare_hash(f: &crate::tree::SourceFile) -> Hash {
+    const STATEMENTS: &[&str] = &["return", "break", "continue", "else", "do", "sleep", "goto", "try", "catch", "finally", "spawn", "set", "new", "null"];
+    let mut lines: Vec<String> = Vec::new();
+    for line in f.code().lines() {
+        let t = line.trim_end();
+        let body = t.trim_start();
+        if body.is_empty() || !body.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'/') {
+            continue;
+        }
+        if !body.starts_with('/') && STATEMENTS.contains(&body) {
+            continue;
+        }
+        lines.push(t.to_string());
+    }
+    lines.sort();
+    h128(lines.join("
+").as_bytes())
 }
 
 fn has_directive(text: &str) -> bool {
@@ -221,6 +244,9 @@ fn validate(tree: &Tree) -> Option<Record> {
             return miss(3);
         }
         let f = tree.get(rel)?;
+        if bare_hash(f) != rec.files[rel].bare {
+            return miss(9);
+        }
         if has_directive(f.text()) {
             return miss(4);
         }
@@ -237,6 +263,9 @@ fn validate(tree: &Tree) -> Option<Record> {
             return miss(6);
         }
         let made = got.types.get(rel).cloned().unwrap_or_default();
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: sem partial {}: {} types made", rel, made.len());
+        }
         if made.iter().any(|t| !rec.type_loc.contains_key(t)) {
             return miss(7);
         }
@@ -278,6 +307,7 @@ pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
                 shape: shape_hash(col.shape.get(&rel)),
                 writes: col.writes.get(&rel).map(|s| s.iter().cloned().collect()).unwrap_or_default(),
                 directive: f.map(|f| has_directive(f.text())).unwrap_or(true),
+                bare: f.map(bare_hash).unwrap_or(0),
             },
         );
     }

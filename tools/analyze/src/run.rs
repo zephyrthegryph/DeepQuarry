@@ -396,31 +396,13 @@ impl Engine {
         outcomes
     }
 
-    /// On the main thread, before the parallel run: when some whole-tree lint will have to scan
-    /// (its memo missed), load every file once in parallel so the sequential lints don't each wait
-    /// on a single thread reading and stripping the tree.
+    /// On the main thread, before the parallel run: when many files are new or changed (a cold run,
+    /// a branch switch), load every file once in parallel so the sequential lints don't each wait on
+    /// a single thread reading and stripping the tree. After a small edit nothing is read up front:
+    /// the per-file caches answer for every unchanged file, and a lint that does need a file loads it.
     pub fn prepare(&self, lints: &[&dyn Lint]) {
-        let mut miss = false;
-        for lint in lints {
-            let meta = lint.meta();
-            if !matches!(meta.scan, ScanKind::Tree | ScanKind::Both) {
-                continue;
-            }
-            let scope = self.scopes.for_lint(meta.name, meta.group);
-            let cx = Cx { tree: &self.tree, meta, scope: &scope };
-            let lc = self.cache.load_lint(meta.name);
-            let mut h = blake3::Hasher::new();
-            h.update(meta.name.as_bytes());
-            for f in cx.all_files() {
-                h.update(&f.fkey.to_le_bytes());
-            }
-            let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
-            if !matches!(&lc.tree, Some((k, _)) if *k == key) {
-                miss = true;
-                break;
-            }
-        }
-        if miss {
+        let wants_tree = lints.iter().any(|l| matches!(l.meta().scan, ScanKind::Tree | ScanKind::Both));
+        if wants_tree && self.tree.fresh_count() > 64 {
             self.tree.prewarm();
         }
     }

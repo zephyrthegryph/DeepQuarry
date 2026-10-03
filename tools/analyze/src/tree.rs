@@ -434,6 +434,12 @@ impl Tree {
         });
     }
 
+    /// How many files were read at load time (new or changed since the last run): the cue for
+    /// whether reading the whole tree up front is worth it.
+    pub fn fresh_count(&self) -> usize {
+        self.files.iter().filter(|f| f.data.get().is_some()).count()
+    }
+
     pub fn get(&self, rel: &str) -> Option<&SourceFile> {
         self.index.get(rel).map(|&i| &self.files[i])
     }
