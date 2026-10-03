@@ -55,15 +55,6 @@
 			log_world("Shutting down [S.name] world service...")
 			S.on_shutdown()
 
-/// Lazy services: initializes on first use and returns the service (LAZY_SERVICE() in __defines/om.dm).
-/datum/world_service/proc/ready()
-	RETURN_TYPE(/datum/world_service)
-	if(!initialized)
-		var/started = REALTIMEOFDAY
-		initialize()
-		log_world("World service [name] initialized lazily in [(REALTIMEOFDAY - started) / 10]s.")
-	return src
-
 /// World-level periodic work. `resumed`: continuing a step that yielded. Return FALSE to yield
 /// (the lane resumes next tick), TRUE when the step is complete.
 /datum/world_service/proc/service_step(resumed)
