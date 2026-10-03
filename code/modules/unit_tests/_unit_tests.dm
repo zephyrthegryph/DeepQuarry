@@ -776,6 +776,7 @@
 #include "interim_pet_cube_expansion_cleanup.dm"
 #include "interim_storage_drop_actor.dm"
 #include "interim_evidence_bag_actor.dm"
+#include "interim_hallucination_target_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

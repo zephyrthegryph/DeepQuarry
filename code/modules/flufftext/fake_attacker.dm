@@ -164,15 +164,15 @@ DECLARE_PERIODIC(/obj/effect/fake_attacker/human, PERIODIC_SLOW)
 	// check if valid
 	var/mob/living/M = QDELETED(target) ? null : target
 	if(!M)
-		qdel(src)
+		consume(src)
 		return null
 	if(requires_hallucinating)
 		if(!ishuman(M))
-			qdel(src)
+			consume(src)
 			return null
 		var/mob/living/carbon/human/H = M
 		if(!H.has_status(EFFECT_HALLUCINATING))
-			qdel(src)
+			consume(src)
 			return null
 
 	return M
