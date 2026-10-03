@@ -458,7 +458,7 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 	if(path)
 		var/obj/item/I = new path(source)
 		GLOB.allocated_gamma_loot |= path
-		rel_add(GLOB.poi_service, nameof(/datum/world_service/pois::allocated_gamma_items), I)
+		SSpois.allocate_gamma_item(I)
 		return I
 	if(decl.rare)
 		var/list/made = list()
@@ -471,12 +471,12 @@ MAP_RESOLVER_VARS(/obj/random, "drop_get_turf")
 	GLOB.allocated_gamma_loot -= w_type
 	var/obj/item/I = allocated_gamma_item(w_type)
 	if(I)
-		rel_remove(GLOB.poi_service, nameof(/datum/world_service/pois::allocated_gamma_items), I)
+		SSpois.release_gamma_item(I)
 	GLOB.unique_gamma_loot += w_type
 
 /// The live item spawned for gamma loot path `w_type`, or null (it was deleted, or never spawned).
 /proc/allocated_gamma_item(w_type)
-	for(var/obj/item/I as anything in GLOB.poi_service.allocated_gamma_items)
+	for(var/obj/item/I as anything in SSpois.gamma_items())
 		if(I.type == w_type)
 			return I
 	return null

@@ -8,5 +8,5 @@
 INITIALIZE_IMMEDIATE(/obj/effect/landmark/poi_loader)
 
 /obj/effect/landmark/poi_loader/Initialize(mapload)
-	GLOB.poi_service.enqueue(src)
+	SSpois.enqueue(src)
 	return ..()

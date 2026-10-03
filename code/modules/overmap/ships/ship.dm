@@ -158,7 +158,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	// If it is now still, stopped moving
 	if(still)
 		for(var/zz in map_z)
-			GLOB.starmover_service.toggle_move_stars(zz)
+			SSstarmover.toggle_move_stars(zz)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)
@@ -170,7 +170,7 @@ DECLARE_PERIODIC_WHILE(/obj/effect/overmap/visitable/ship, PERIODIC_SECOND, "is_
 	else
 		glide_size = WORLD_ICON_SIZE/max(DS2TICKS(1 SECOND), 1) //Down to whatever decimal
 		for(var/zz in map_z)
-			GLOB.starmover_service.toggle_move_stars(zz, fore_dir)
+			SSstarmover.toggle_move_stars(zz, fore_dir)
 		if(!COOLDOWN_FINISHED(src, sound_cooldown_until))
 			return
 		COOLDOWN_START(src, sound_cooldown_until, sound_cooldown)

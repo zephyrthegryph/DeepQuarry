@@ -21,7 +21,7 @@
 	var/vote_time = 60 SECONDS
 
 /datum/vote/New(_initiator, _question, list/_choices, _is_custom = FALSE)
-	if(GLOB.vote_service.active_vote)
+	if(SSvote.get_active_vote())
 		CRASH("Attempted to start another vote with one already in progress!")
 
 	if(_initiator)
@@ -133,11 +133,10 @@ TOPIC_ACTION(/datum/vote, "vote=open", PROC_REF(topic_open))
 		handle_result(result)
 		qdel(src)
 
-// GLOB.vote_service forgets it.
+// SSvote forgets it.
 /datum/vote/lifecycle_dematerialize()
 	..()
-	if(GLOB.vote_service.active_vote == src)
-		rel_clear(GLOB.vote_service, nameof(/datum/world_service/vote::active_vote))
+	SSvote.forget_vote(src)
 
 /datum/vote/proc/handle_result(result)
 	return

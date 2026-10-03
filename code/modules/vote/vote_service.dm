@@ -1,33 +1,17 @@
-// The vote world service (was SSvote): the running vote counts down every second, parked while
-// no vote is running.
-GLOBAL_DATUM_INIT(vote_service, /datum/world_service/vote, new)
-
-/datum/world_service/vote
+// The vote system (was SSvote): the running vote counts down every second, parked while no vote is running.
+// The API is in vote_api.dm.
+SYSTEM_DEF(vote)
 	name = "Vote"
-	lane = /datum/om/behaviour/world/vote
-	on_demand = TRUE
+	periodic_runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
 
-	var/datum/vote/active_vote
+	VAR_PRIVATE/datum/vote/active_vote
 
-/datum/world_service/vote/service_step(resumed)
-	if(active_vote)
-		active_vote.tick()
-	return TRUE
+/datum/system/vote/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(tick_vote), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
 
-/datum/world_service/vote/proc/start_vote(datum/vote/V, mob/user)
-	own_set(src, nameof(active_vote), V)
-	active_vote.start(user)
-	demand()
-
-/datum/world_service/vote/has_work()
-	return !isnull(active_vote)
-
-/// vote
-/datum/om/behaviour/world/vote
-	name = "world: vote"
-	every = 1 SECOND
-	runlevels = RUNLEVEL_LOBBY | RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/vote/service()
-	return GLOB.vote_service
-
+/datum/system/vote/proc/tick_vote(dt)
+	if(!active_vote)
+		return STEP_PARK
+	active_vote.tick()
+	return isnull(active_vote) ? STEP_PARK : STEP_DONE

@@ -2383,7 +2383,6 @@ world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome1 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome2 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
-world_reads	code/game/objects/effects/landmarks_poi.dm	GLOB.poi_service.enqueue(src)
 world_reads	code/game/objects/items/devices/communicator/cartridge.dm	GLOB.radio_service.add_object(src, 1435)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)

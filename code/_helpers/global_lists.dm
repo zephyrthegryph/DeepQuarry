@@ -589,7 +589,7 @@ GLOBAL_LIST_EMPTY(emotes_by_key)
 GLOBAL_LIST_EMPTY(random_maps)
 GLOBAL_LIST_EMPTY(map_count)
 GLOBAL_LIST_EMPTY(id_card_states)
-/// Gamma loot paths handed out (their items are in GLOB.poi_service.allocated_gamma_items).
+/// Gamma loot paths handed out (their items are in SSpois.gamma_items()).
 GLOBAL_LIST_EMPTY(allocated_gamma_loot)
 
 GLOBAL_LIST_INIT(unique_gamma_loot, list(
