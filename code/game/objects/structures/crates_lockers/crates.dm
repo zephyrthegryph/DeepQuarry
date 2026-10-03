@@ -1,4 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:32
 
 /obj/structure/closet/crate
 	name = "crate"
@@ -84,7 +83,7 @@
 			return TRUE
 		if(W.loc != user) // This should stop mounted modules ending up outside the module.
 			return TRUE
-		if(istype(W, /obj/item/grab)) //VOREstation edit: we don't want to drop grabs into the crate
+		if(istype(W, /obj/item/grab)) // Grabs are not dropped into the crate.
 			return TRUE
 		user.drop_item()
 		if(W)
@@ -102,9 +101,9 @@
 			return TRUE
 	else if(istype(W, /obj/item/radio/electropack))
 		if(rigged)
+			if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+				return TRUE
 			to_chat(user , span_notice("You attach [W] to [src]."))
-			user.drop_item()
-			W.forceMove(src)
 			return TRUE
 	else
 		return ..()
