@@ -80,3 +80,7 @@ changes:
   - bugfix: "Rechargers and heavy-duty cell chargers respect source release rules and preserve returned cells."
   - bugfix: "Gun HUD controls update the clicking actor consistently."
   - admin: "Save PNG delivers the object image to the invoking client explicitly."
+  - bugfix: "Washers respect dye release rules and return dye when opened."
+  - bugfix: "Nuclear authentication insertion respects held disk release rules."
+  - bugfix: "Clonepods respect container release rules after loading delays."
+  - bugfix: "Camera upgrades respect release restrictions and can be removed after first insertion."
