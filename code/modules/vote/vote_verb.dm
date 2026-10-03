@@ -28,7 +28,7 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 
 	if(choice != "\[CUSTOM]")
 		var/datum/votetype = votemap["[choice]"]
-		GLOB.vote_service.start_vote(new votetype(user.ckey))
+		GLOB.vote_service.start_vote(new votetype(user.ckey), user.mob)
 		return
 
 	var/question = verb_ask(user, "k32", args, /datum/om/prompt/text, message = "What is the vote for?", title = "Create Vote")
@@ -58,4 +58,4 @@ ADMIN_VERB(start_vote, R_HOLDER, "Start Vote", "Start a vote on the server.", AD
 	V.show_counts = (c2 == "Yes")
 	if(c3)
 		V.vote_result_type = c3
-	GLOB.vote_service.start_vote(V)
+	GLOB.vote_service.start_vote(V, user.mob)

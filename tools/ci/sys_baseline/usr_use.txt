@@ -737,10 +737,6 @@ usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(!Adjacent(usr)) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
-usr_outside_verb	code/modules/vote/vote_datum.dm	if(usr)
-usr_outside_verb	code/modules/vote/vote_datum.dm	log_admin("[capitalize(vote_type_text)] ([question]) vote started by [key_name(usr)].")
-usr_outside_verb	code/modules/vote/vote_datum.dm	else if(usr)
-usr_outside_verb	code/modules/vote/vote_datum.dm	log_admin("[capitalize(vote_type_text)] vote started by [key_name(usr)].")
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	Bumped(usr)
 usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))

@@ -37,3 +37,4 @@ changes:
   - admin: "Broadcast email delivery retains the initiating sender across scheduled relays."
   - bugfix: "Picnic blankets release their held source before unfolding and preserve inventory when removal is refused."
   - bugfix: "Broadcast emails retain queued messages until delivery and discard failed or cancelled clones."
+  - admin: "Vote startup retains the initiating administrator through the vote service."

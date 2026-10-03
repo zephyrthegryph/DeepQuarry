@@ -14,9 +14,9 @@ GLOBAL_DATUM_INIT(vote_service, /datum/world_service/vote, new)
 		active_vote.tick()
 	return TRUE
 
-/datum/world_service/vote/proc/start_vote(datum/vote/V)
+/datum/world_service/vote/proc/start_vote(datum/vote/V, mob/user)
 	own_set(src, nameof(active_vote), V)
-	active_vote.start()
+	active_vote.start(user)
 	demand()
 
 /datum/world_service/vote/has_work()

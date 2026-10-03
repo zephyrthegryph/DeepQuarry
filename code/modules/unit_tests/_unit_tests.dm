@@ -560,6 +560,7 @@
 #include "interim_spell_explicit_caster.dm"
 #include "interim_girder_windoor_recovery.dm"
 #include "interim_emitter_emag_lock.dm"
+#include "interim_vote_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
