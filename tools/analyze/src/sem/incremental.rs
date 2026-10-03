@@ -56,6 +56,14 @@ pub struct Record {
     pub type_loc: BTreeMap<String, String>,
     pub footprint: Vec<String>,
     pub sinks: BTreeMap<String, Sink>,
+    /// Generator name -> (text, diagnostics) of a generator that used the full model.
+    pub gens: BTreeMap<String, GenCache>,
+}
+
+#[derive(Serialize, Deserialize, Default, Clone)]
+pub struct GenCache {
+    pub text: String,
+    pub diags: Vec<(String, u32, String)>,
 }
 
 fn path() -> Option<std::path::PathBuf> {
@@ -89,10 +97,14 @@ fn h128(bytes: &[u8]) -> Hash {
 }
 
 /// A digest of the lines that may declare a type with no body (see [`FileFacts::bare`]).
-fn bare_hash(f: &crate::tree::SourceFile) -> Hash {
+fn bare_hash(tree: &Tree, rel: &str) -> Hash {
     const STATEMENTS: &[&str] = &["return", "break", "continue", "else", "do", "sleep", "goto", "try", "catch", "finally", "spawn", "set", "new", "null"];
     let mut lines: Vec<String> = Vec::new();
-    for line in f.code().lines() {
+    let code: String = match tree.get(rel) {
+        Some(f) => f.code().text.clone(),
+        None => crate::strip::code_only(&text_of(tree, rel)),
+    };
+    for line in code.lines() {
         let t = line.trim_end();
         let body = t.trim_start();
         if body.is_empty() || !body.bytes().all(|b| b.is_ascii_alphanumeric() || b == b'_' || b == b'/') {
@@ -106,6 +118,14 @@ fn bare_hash(f: &crate::tree::SourceFile) -> Hash {
     lines.sort();
     h128(lines.join("
 ").as_bytes())
+}
+
+/// The text of an included file, from the tree or (a file no lint selected) from disk.
+fn text_of(tree: &Tree, rel: &str) -> String {
+    match tree.get(rel) {
+        Some(f) => f.text().to_string(),
+        None => tree.read_extra(rel).map(|t| t.as_ref().clone()).unwrap_or_default(),
+    }
 }
 
 fn has_directive(text: &str) -> bool {
@@ -129,23 +149,21 @@ fn included(tree: &Tree) -> Option<(Vec<String>, Hash)> {
     Some((out, h128(text.as_bytes())))
 }
 
-/// The environment key and the per-file keys of every included file the tree holds.
+/// The environment key and the content hash of every included `.dm` (whether or not the tree holds
+/// it, so the key does not depend on which lints this run selected).
 fn environment(tree: &Tree) -> Option<(Hash, BTreeMap<String, Hash>)> {
     let (inc, dme) = included(tree)?;
     let decls = super::decls::Decls::get(tree);
     let mut files = BTreeMap::new();
-    let mut ext: Vec<(String, Hash)> = Vec::new();
     for rel in inc {
-        match tree.get(&rel) {
-            Some(f) => {
-                files.insert(rel, f.fkey);
-            }
-            None => ext.push((rel.clone(), h128(&std::fs::read(tree.root.join(&rel)).unwrap_or_default()))),
-        }
+        let h = match tree.get(&rel) {
+            Some(f) => f.hash,
+            None => h128(&std::fs::read(tree.root.join(&rel)).unwrap_or_default()),
+        };
+        files.insert(rel, h);
     }
-    ext.sort();
-    let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.fkey)).collect();
-    let env = crate::incr::ctx_key(&(dme, decls.key, ext, defines));
+    let defines: Vec<(&str, Hash)> = tree.select(&CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.hash)).collect();
+    let env = crate::incr::ctx_key(&(dme, decls.key, defines));
     Some((env, files))
 }
 
@@ -243,11 +261,10 @@ fn validate(tree: &Tree) -> Option<Record> {
         if footprint.contains(rel.as_str()) || rel.starts_with("code/__defines/") || rec.files[rel].directive {
             return miss(3);
         }
-        let f = tree.get(rel)?;
-        if bare_hash(f) != rec.files[rel].bare {
+        if bare_hash(tree, rel) != rec.files[rel].bare {
             return miss(9);
         }
-        if has_directive(f.text()) {
+        if has_directive(&text_of(tree, rel)) {
             return miss(4);
         }
     }
@@ -292,27 +309,51 @@ fn pending(tree: &Tree) -> Arc<Pending> {
     tree.memo("sem/pending", || Mutex::new(None))
 }
 
-/// After a full analysis: the facts of every included file, to be completed by [`store`].
+/// After a full analysis: the facts of every included file, to be completed by [`store`]. When the
+/// stored record describes exactly this tree already (another consumer of the model ran first) its
+/// results are kept and the footprint is widened by what this run consulted.
 pub fn capture(tree: &Tree, sem: &Sem, footprint: Vec<String>) {
     let Some((env, now)) = environment(tree) else { return };
     let Some(stamp) = crate::incr::stamp() else { return };
+    let same = |r: &Record| r.env == env && r.files.len() == now.len() && r.files.iter().all(|(k, f)| now.get(k) == Some(&f.fkey));
+    if let Some(mut rec) = load().filter(|r| same(r)) {
+        let mut fp: BTreeSet<String> = rec.footprint.iter().cloned().collect();
+        fp.extend(footprint);
+        rec.footprint = fp.into_iter().collect();
+        *pending(tree).lock().unwrap() = Some(rec);
+        return;
+    }
     let col = collect(sem);
     let mut files = BTreeMap::new();
     for (rel, fkey) in now {
-        let f = tree.get(&rel);
         files.insert(
             rel.clone(),
             FileFacts {
                 fkey,
                 shape: shape_hash(col.shape.get(&rel)),
                 writes: col.writes.get(&rel).map(|s| s.iter().cloned().collect()).unwrap_or_default(),
-                directive: f.map(|f| has_directive(f.text())).unwrap_or(true),
-                bare: f.map(bare_hash).unwrap_or(0),
+                directive: has_directive(&text_of(tree, &rel)),
+                bare: bare_hash(tree, &rel),
             },
         );
     }
     let type_loc: BTreeMap<String, String> = sem.type_loc.iter().map(|(k, v)| (k.clone(), v.clone())).collect();
-    *pending(tree).lock().unwrap() = Some(Record { stamp, env, files, type_loc, footprint, sinks: BTreeMap::new() });
+    *pending(tree).lock().unwrap() = Some(Record { stamp, env, files, type_loc, footprint, sinks: BTreeMap::new(), gens: BTreeMap::new() });
+}
+
+/// The stored output of a generator that used the full model, when the record is valid.
+pub fn cached_gen(tree: &Tree, name: &str) -> Option<GenCache> {
+    lookup(tree)?.gens.get(name).cloned()
+}
+
+/// Records a generator's output (after [`capture`] ran for the model it used).
+pub fn store_gen(tree: &Tree, name: &str, g: GenCache) {
+    let p = pending(tree);
+    let mut guard = p.lock().unwrap();
+    if let Some(rec) = guard.as_mut() {
+        rec.gens.insert(name.to_string(), g);
+        save(rec);
+    }
 }
 
 /// Records a lint's semantic result next to the facts captured by the run that computed it.

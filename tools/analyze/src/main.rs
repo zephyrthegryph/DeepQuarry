@@ -175,7 +175,7 @@ fn main() -> ExitCode {
             let t_run = Instant::now();
             let outcomes = engine.run_all();
             if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
-                eprintln!("analyze: startup {:.0?}, selftests {:.0?}, lints {:.0?}", t_self.duration_since(t0), t_run.duration_since(t_self), t_run.elapsed());
+                eprintln!("analyze: startup {:.0?}, selftests {:.0?}, lints {:.0?}, files loaded {}", t_self.duration_since(t0), t_run.duration_since(t_self), t_run.elapsed(), engine.tree.fresh_count());
             }
             let (text, lint_failed) = run::render(&outcomes, engine.opts.ci);
             failed.extend(lint_failed);

@@ -193,13 +193,22 @@ pub fn unused(tree: &Tree, used: &[AllowUse], extra_used: &[(String, String, u32
     }
     let mut problems = Vec::new();
     let mut quiet: BTreeMap<String, usize> = BTreeMap::new();
-    for f in tree.select(&CODE_MAPS_DM) {
+    // The annotations of each file, read once per content change (not per run).
+    let files = tree.select(&CODE_MAPS_DM);
+    let per_file: Vec<Vec<(u32, Vec<String>)>> = crate::incr::facts("allow-annotations", &files, |f| {
+        let mut out: Vec<(u32, Vec<String>)> = Vec::new();
         if !f.text().contains("ALLOW(") {
-            continue;
+            return out;
         }
         for (number, line) in f.raw().numbered() {
             let Some(a) = (if line.contains("ALLOW(") { allow::parse(line) } else { None }) else { continue };
-            for name in a.names.iter().filter(|n| known.contains(*n)) {
+            out.push((number as u32, a.names.iter().cloned().collect()));
+        }
+        out
+    });
+    for (f, anns) in files.iter().zip(per_file) {
+        for (number, names) in anns {
+            for name in names.iter().filter(|n| known.contains(*n)) {
                 if UNOBSERVED.contains(&name.as_str()) {
                     continue;
                 }
@@ -207,7 +216,7 @@ pub fn unused(tree: &Tree, used: &[AllowUse], extra_used: &[(String, String, u32
                     *quiet.entry(name.clone()).or_insert(0) += 1;
                     continue;
                 }
-                if !used_set.contains(&(name.clone(), f.rel.clone(), number as u32)) {
+                if !used_set.contains(&(name.clone(), f.rel.clone(), number)) {
                     problems.push(format!(
                         "{}:{}: ALLOW({}) is unused: no longer triggers the {} lint; delete the annotation (or the site's reason is stale)",
                         f.rel, number, name, name
