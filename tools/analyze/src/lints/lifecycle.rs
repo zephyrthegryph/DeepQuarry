@@ -118,25 +118,38 @@ impl Lint for Lifecycle {
             ancestors.extend(chain(t));
         }
 
-        let mut checked = 0usize;
-        let mut problems = 0usize;
-        for f in cx.files() {
+        let files = cx.files();
+        let facts: Vec<Vec<(String, Vec<(u32, u8)>)>> = crate::dm::ownership_index::sharded_facts("lifecycle-facts", &files, |f| {
             let code = f.code();
+            let mut bodies = Vec::new();
             if !code.text.contains("Initialize(") {
-                continue;
+                return bodies;
             }
             for (owner, _line, body) in initialize_bodies(code) {
+                let mut hits: Vec<(u32, u8)> = Vec::new();
+                for (number, source) in body {
+                    for (i, (_, _, pattern)) in self.forbidden.iter().enumerate() {
+                        if pattern.is_match(source) {
+                            hits.push((number as u32, i as u8));
+                        }
+                    }
+                }
+                bodies.push((owner, hits));
+            }
+            bodies
+        });
+        let mut checked = 0usize;
+        let mut problems = 0usize;
+        for (f, bodies) in files.iter().zip(facts) {
+            for (owner, hits) in bodies {
                 if !ancestors.contains(&owner) && !schema.effective_latent(&owner) {
                     continue;
                 }
                 checked += 1;
-                for (number, source) in body {
-                    for (rule, label, pattern) in &self.forbidden {
-                        if pattern.is_match(source) {
-                            problems += 1;
-                            out.site_in_msg(rule, &f.rel, number, format!("{} in {}/Initialize()", label, owner));
-                        }
-                    }
+                for (number, rule) in hits {
+                    let (name, label, _) = &self.forbidden[rule as usize];
+                    problems += 1;
+                    out.site_in_msg(name, &f.rel, number as usize, format!("{} in {}/Initialize()", label, owner));
                 }
             }
         }

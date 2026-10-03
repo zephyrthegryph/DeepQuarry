@@ -12,7 +12,9 @@
 
 use std::collections::BTreeMap;
 
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use serde::{Deserialize, Serialize};
+
+use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
 use crate::tree::CODE_DM;
@@ -33,6 +35,13 @@ static META: Meta = Meta {
     lists: &[],
 };
 
+/// One file's `DECLARE_INTERACTIONS` / `get_interactions()` sites: `(type path, line, allowed)`.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    decls: Vec<(String, u32, bool)>,
+    uses: Vec<AllowUse>,
+}
+
 struct Interactions;
 
 impl Lint for Interactions {
@@ -43,15 +52,30 @@ impl Lint for Interactions {
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         // type path -> (rel, line, allowed)
         let mut sites: BTreeMap<String, (String, usize, bool)> = BTreeMap::new();
-        for f in cx.files() {
+        let files = cx.files();
+        let facts: Vec<Facts> = crate::dm::ownership_index::sharded_facts("interactions-facts", &files, |f| {
+            let mut sink = Sink::new();
+            let mut x = Facts::default();
             for (number, line) in f.raw().numbered() {
                 let m = pat!(r"^\s*DECLARE_INTERACTIONS\(\s*(/[\w/]+)")
                     .captures(line)
                     .or_else(|| pat!(r"^(/[\w/]+)/get_interactions\(\)").captures(line));
                 if let Some(m) = m {
-                    let ok = out.allowed(f, number, "interactions");
-                    sites.insert(m.s(1).to_string(), (f.rel.clone(), number, ok));
+                    let ok = sink.allowed(f, number, "interactions");
+                    x.decls.push((m.s(1).to_string(), number as u32, ok));
                 }
+            }
+            x.uses = sink.allow_used;
+            x
+        });
+        for (f, x) in files.iter().zip(facts) {
+            for u in x.uses {
+                if !out.allow_used.contains(&u) {
+                    out.allow_used.push(u);
+                }
+            }
+            for (path, number, ok) in x.decls {
+                sites.insert(path, (f.rel.clone(), number as usize, ok));
             }
         }
         let mut bad = 0;
