@@ -83,9 +83,9 @@
 /obj/item/organ/external/proc/remove_wound(datum/affliction/wound/W)
 	if(W.body)
 		W.body.remove_affliction(W)
-	own_take_member(src, nameof(detached_afflictions), W)
 	integrity_dirty = TRUE
-	qdel(W)
+	if(!own_remove(src, nameof(detached_afflictions), W))
+		qdel(W)
 
 /// Apply a located injury to this limb. Returns the amount applied.
 /// Organic limbs grow cuts/punctures/bruises/burns; synthetic limbs dents,
@@ -166,11 +166,11 @@
 /// The organ joined this body: adopt what it carries. Called only by
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.
 /datum/body/proc/attach_part(obj/item/organ/O)
-	for(var/datum/affliction/A as anything in O.detached_afflictions)
+	for(var/datum/affliction/A as anything in O.detached_afflictions?.Copy())
 		// C23: a carried affliction that can't exist on this body (plan or the part's biology
 		// here) is dropped, not smuggled in past can_afflict().
 		if(!A.can_afflict(src, O))
-			qdel(A)
+			own_remove(O, nameof(O.detached_afflictions), A)
 			continue
 		add_affliction(A, O)
 		A.last_reroll_band = -1

@@ -814,7 +814,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 /obj/item/projectile/proc/launch_projectile(atom/target, target_zone, mob/user, params, angle_override, forced_spread = 0)
 
 	if(!get_turf(user) && !get_turf(src)) // if both the user of the projectile AND the projectile itself are in nullspace, don't fire, just remove ourselves
-		om_qdel_after(src, 1)
+		expire(0.1 SECONDS)
 		return //fire returns nothing, so neither do we need to
 
 	rel_set(src, nameof(original), target)
