@@ -1,0 +1,23 @@
+/// Recycling actual held pipes respects inventory release and credits only successfully consumed inputs.
+/datum/unit_test/interim_pipelayer_sticky_recycling/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/pipelayer/layer = allocate(/obj/machinery/pipelayer, T)
+	var/obj/item/pipe/pipe = allocate(/obj/item/pipe, T)
+	var/original_metal = layer.metal
+	TEST_ASSERT(layer.pipe_cost > 0, "the actual pipe recycler has a positive material credit")
+	TEST_ASSERT(pipe.get_material_total() >= layer.pipe_cost * SHEET_MATERIAL_AMOUNT, "the actual material-built input pipe has enough recyclable material")
+	TEST_ASSERT(original_metal + layer.pipe_cost <= layer.max_metal, "the actual recycler has room for its real pipe credit")
+	TEST_ASSERT(user.put_in_active_hand(pipe), "the actor holds the actual material-built pipe")
+	add_trait(pipe, TRAIT_NODROP, "interim_pipelayer_sticky_pipe")
+	TEST_ASSERT(user.release_refusal(pipe, user), "the actual inventory refuses release of the sticky pipe")
+	layer.interaction_recycle_pipe(user, pipe, null)
+	TEST_ASSERT(!QDELETED(pipe), "refused recycling preserves the original input pipe")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), pipe, "refused recycling preserves the exact source hand")
+	TEST_ASSERT_EQUAL(pipe.loc, user, "refused recycling preserves actual inventory containment")
+	TEST_ASSERT_EQUAL(layer.metal, original_metal, "refused input consumption grants no internal metal")
+	remove_trait(pipe, TRAIT_NODROP, "interim_pipelayer_sticky_pipe")
+	layer.interaction_recycle_pipe(user, pipe, null)
+	TEST_ASSERT(QDELETED(pipe), "allowed actual recycling consumes the original pipe")
+	TEST_ASSERT_NULL(user.get_active_hand(), "allowed recycling clears the source hand")
+	TEST_ASSERT_EQUAL(layer.metal, original_metal + layer.pipe_cost, "allowed recycling credits exactly the actual configured pipe cost")

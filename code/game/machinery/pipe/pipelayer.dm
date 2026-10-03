@@ -106,10 +106,11 @@ DECLARE_DEFAULT_CHILD(/obj/machinery/pipelayer, "W", /obj/item/tool/wrench)
 	else if(metal + pipe_cost > max_metal)
 		to_chat(user, span_notice("\The [src] is full."))
 	else
-		user.drop_from_inventory(W)
+		var/pipe_name = "\the [W]"
+		if(!consume(W, user))
+			return TRUE
 		metal += pipe_cost
-		to_chat(user, span_notice("You recycle \the [W]."))
-		consume(W, user)
+		to_chat(user, span_notice("You recycle [pipe_name]."))
 	return TRUE
 
 /// Load steel stacks into internal storage.
