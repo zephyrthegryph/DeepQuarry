@@ -106,7 +106,7 @@
 		var/datum/own_audit_probe/probe = new
 		// Armed like the entities the audit looks for (a pending timer), so the scheduler's own
 		// references to it (its deadline) are part of the measured overhead.
-		om_after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
+		after(probe, 1 HOURS, TYPE_PROC_REF(/datum/own_audit_probe, noop))
 		var/datum/om/rec/rec = om_rec_of(probe)
 		var/internal = 1
 		for(var/name in rec.vars)
@@ -128,7 +128,7 @@
 /proc/own_audit_periodic()
 	// Re-armed first: each finding is reported as a runtime (OWN_REPORT), which unwinds this proc,
 	// and a finding must not end the periodic audit for the rest of the run.
-	om_after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
+	after(om_global_owner(), OWN_AUDIT_INTERVAL, GLOBAL_PROC_REF(own_audit_periodic))
 	var/list/lines = own_audit()
 	log_world("OWN AUDIT: [length(lines)] finding\s")
 

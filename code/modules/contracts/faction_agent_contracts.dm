@@ -193,7 +193,7 @@
 
 /datum/contract/covert_market_investigation/on_accepted(mob/living/user, atom/source)
 	. = ..()
-	om_after(GLOB.supply_service, 1, TYPE_PROC_REF(/datum/world_service/supply, replay_market_audit_evidence), src)
+	after(GLOB.supply_service, 1, TYPE_PROC_REF(/datum/world_service/supply, replay_market_audit_evidence), with = list(src))
 
 /datum/contract_definition/covert_market_investigation
 	id = "covert_market_investigation"
@@ -359,11 +359,11 @@
 		else
 			if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 				record.contracts_failed++
-			om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), contract.owner_account_number, contract.agent_faction)
+			after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_vetting), with = list(contract.owner_account_number, contract.agent_faction))
 		return
 	if(contract.closure_code == CONTRACT_CLOSE_COMPLETED)
 		record.contracts_completed++
 	else if(contract.closure_code == CONTRACT_CLOSE_FAILED)
 		record.contracts_failed++
 	GLOB.station_faction_relations.refresh_agent_tier(record)
-	om_after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), contract.owner_account_number, contract.agent_faction)
+	after(src, CARGO_MARKET_AGENT_OFFER_DELAY, PROC_REF(queue_agent_offers), with = list(contract.owner_account_number, contract.agent_faction))

@@ -78,7 +78,7 @@
 
 /obj/effect/dark/proc/unlinked()
 	rel_clear(src, nameof(linked_node)) // the pair takes us out of the node's children_effects
-	om_after(src, rand(20, 70), PROC_REF(perform_unlink))
+	after(src, rand(20, 70), PROC_REF(perform_unlink))
 
 /obj/effect/dark/proc/perform_unlink()
 	PRIVATE_PROC(TRUE)

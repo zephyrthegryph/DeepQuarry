@@ -143,7 +143,7 @@
 
 	var/req_time = world.time
 	nif.notify("Transient mindstate detected, analyzing...")
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), user, req_time)
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, nif_soulcatcher_spawn_prompt), with = list(user, req_time))
 
 /datum/tgui_module/ghost_spawn_menu/proc/soulcatcher_vore_spawn(mob/observer/dead/user, selected_player)
 	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
@@ -165,7 +165,7 @@
 
 	var/req_time = world.time
 	gem.notify_holder("Transient mindstate detected, analyzing...")
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), user, req_time)
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, soulcatcher_spawn_prompt), with = list(user, req_time))
 
 /datum/tgui_module/ghost_spawn_menu/proc/vore_belly_spawn(mob/observer/dead/user, selected_player)
 	var/mob/living/target = locate_in_list(REGISTRY_MEMBERS(REGISTRY_PLAYERS), selected_player)
@@ -176,7 +176,7 @@
 
 	to_chat(user, span_notice("Inbelly spawn request sent to predator."))
 	to_chat(target, span_notice("Incoming belly spawn request."))
-	om_after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, inbelly_spawn_prompt), user.client) // Hand reins over to them
+	after(target, 1.5 SECONDS, TYPE_PROC_REF(/mob/living, inbelly_spawn_prompt), with = list(user.client)) // Hand reins over to them
 
 /datum/tgui_module/ghost_spawn_menu/proc/join_corgi(mob/observer/dead/user)
 	if(jobban_isbanned(user, JOB_GHOSTROLES))

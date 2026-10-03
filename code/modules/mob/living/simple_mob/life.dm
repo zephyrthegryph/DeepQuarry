@@ -275,7 +275,7 @@
 			if(prob(loot_list[path]))
 				new path(get_turf(src))
 
-	after_slot(src, "update_icon_timer", 0.3 SECONDS, PROC_REF(callback_update_icon))
+	after(src, 0.3 SECONDS, PROC_REF(callback_update_icon), key = "update_icon_timer")
 
 	ghostjoin = 0
 	registry_leave(REGISTRY_GHOST_PODS, src)

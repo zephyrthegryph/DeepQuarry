@@ -45,7 +45,7 @@
 	var/mob/living/carbon/human/C = src
 	C.mend(TREAT_ANTITOXIN, heal_amount)
 	if(left > 1)
-		om_after(src, 1 SECOND, PROC_REF(changeling_panacea_pulse), heal_amount, left - 1)
+		after(src, 1 SECOND, PROC_REF(changeling_panacea_pulse), with = list(heal_amount, left - 1))
 		return
 
 	for(var/obj/item/organ/external/E in C.organs)

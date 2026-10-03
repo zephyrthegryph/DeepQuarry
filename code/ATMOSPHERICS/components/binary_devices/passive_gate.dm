@@ -149,10 +149,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearanc
 		set_set_flow_rate(between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume()))
 
 	if("status" in signal.data)
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

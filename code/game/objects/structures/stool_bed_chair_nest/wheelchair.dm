@@ -127,7 +127,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bed/chair/wheelchair, TYPE_PROC_REF(/atom
 		if(pulling.loc == src.loc) // We moved onto the wheelchair? Revert!
 			pulling.forceMove(T)
 		else
-			om_after(src, 0, PROC_REF(check_pulled_along))
+			after(src, 0, PROC_REF(check_pulled_along))
 	if(bloodiness)
 		create_track()
 	driving = 0

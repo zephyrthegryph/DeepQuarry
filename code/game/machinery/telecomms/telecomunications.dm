@@ -227,7 +227,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 /obj/machinery/telecomms/proc/schedule_thermal_check()
 	if(om_timer_slot_pending(src, "thermal_timer") || QDELETED(src))
 		return
-	after_slot(src, "thermal_timer", max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due))
+	after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due), key = "thermal_timer")
 
 /obj/machinery/telecomms/proc/thermal_check_due()
 	MACHINE_WAKE(src)

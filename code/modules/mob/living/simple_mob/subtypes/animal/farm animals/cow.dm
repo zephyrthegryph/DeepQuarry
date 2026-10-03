@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/cow, \
 		act_message(M, src, MSG_SELF(span_notice("You tip over %T%.")), MSG_OTHERS(span_warning("%U% tips over %T%.")))
 		status_at_least(EFFECT_WEAKENED, 30)
 		icon_state = icon_dead
-		om_after(src, rand(20, 50), PROC_REF(get_up_after_tipping), M)
+		after(src, rand(20, 50), PROC_REF(get_up_after_tipping), with = list(M))
 	else
 		return FALSE
 

@@ -350,7 +350,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 		inline_js = file2text('html/statbrowser.js'),
 		inline_css = file2text('html/statbrowser.css'),
 	)
-	om_after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
+	after(src, 30 SECONDS, PROC_REF(check_panel_loaded))
 
 	acquire_dpi()
 

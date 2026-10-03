@@ -141,10 +141,10 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 						rel_set(self, nameof(self.movement_target), S)
 						break
 			if(self.movement_target)
-				om_after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
+				after(self, 0, TYPE_PROC_REF(/mob/living/simple_mob, chase_target))
 
 		if(prob(1))
-			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases their tail"))
+			after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases their tail")))
 			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //LISA! SQUEEEEEEEEE~
@@ -193,7 +193,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/dog, INTERACT_ITEM(nul
 				new /mob/living/simple_mob/animal/passive/dog/corgi/puppy(self.loc)
 
 		if(prob(1))
-			om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("dances around","chases her tail"))
+			after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("dances around","chases her tail")))
 			self.dir_sequence(list(1,2,4,8,4,2,1,2,4,8,4,2,1,2,4,8,4,2))
 
 //NARSIAN HAS COME

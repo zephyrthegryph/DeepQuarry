@@ -551,7 +551,7 @@
 
 /datum/lore/organization/tsc/nanotrasen/New()
 	..()
-	om_after(src, 1, PROC_REF(forget_current_map_destination)) // BYOND shenanigans means using_map is not initialized yet.  Wait a tick.
+	after(src, 1, PROC_REF(forget_current_map_destination)) // BYOND shenanigans means using_map is not initialized yet.  Wait a tick.
 
 /datum/lore/organization/tsc/hephaestus
 	name = "Hephaestus Industries"

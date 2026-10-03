@@ -55,7 +55,7 @@ MATERIAL_MIX(/obj/item/mecha_parts/mecha_equipment/weapon, list(MAT_STEEL = 6000
 		var/P = new projectile(projectile_turf)
 		if(i > 1 && fire_cooldown)
 			// Later shots of the burst follow fire_cooldown apart.
-			om_after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), P, target, params)
+			after(src, fire_cooldown * (i - 1), PROC_REF(burst_fire), with = list(P, target, params))
 		else
 			Fire(P, target, params)
 		if(i == 1)

@@ -110,7 +110,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/togg
 	to_chat(L, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), L) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(L)) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_1(mob/living/L)
@@ -125,7 +125,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/cryptdrake, /mob/living/proc/togg
 	throw_at(get_step(L, get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2), L) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 5, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 /mob/living/simple_mob/vore/cryptdrake/proc/do_special_attack_2(mob/living/L)
 

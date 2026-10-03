@@ -288,7 +288,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/syringe/steroid, null, list(REAGEN
 	set_used(TRUE)
 
 /obj/item/reagent_containers/syringe/proc/infect_limb(obj/item/organ/external/eo)
-	om_after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))
+	after(eo, rand(5 MINUTES,10 MINUTES), TYPE_PROC_REF(/obj/item/organ/external, syringe_infection))
 
 //Allow for capped syringe mode
 

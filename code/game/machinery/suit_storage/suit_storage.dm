@@ -56,7 +56,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/suit_storage_unit, "suitstorage{appearance_he
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		om_after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0, 15), PROC_REF(lose_power))
 
 DAMAGE_REACTION(/obj/machinery/suit_storage_unit, DAMAGE_EXPLOSION, PROC_REF(suit_storage_blast))
 /// A heavy blast may throw the unit's contents out.
@@ -294,7 +294,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 		islocked = 1 //Let's lock it for good measure
 	update_icon()
 
-	om_after(src, 5 SECONDS, PROC_REF(uv_cycle_step), 0)
+	after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(0))
 
 /// One five-second pass of the cauterisation cycle; pass 3 ends it.
 /obj/machinery/suit_storage_unit/proc/uv_cycle_step(i)
@@ -336,7 +336,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 			eject_occupant(OCCUPANT) //Mixing up these two lines causes bug. DO NOT DO IT.
 		isUV = 0 //Cycle ends
 	if(i < 3)
-		om_after(src, 5 SECONDS, PROC_REF(uv_cycle_step), i + 1)
+		after(src, 5 SECONDS, PROC_REF(uv_cycle_step), with = list(i + 1))
 		return
 	update_icon()
 

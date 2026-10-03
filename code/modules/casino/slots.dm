@@ -54,7 +54,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		om_after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))
@@ -146,7 +146,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/slot_machine, TYPE_PROC_REF(/atom, appear
 		if(8 to 8) symbol3 = "diamond"
 		if(9 to 9) symbol3 = "platinum coin"
 
-	om_after(src, 5 SECONDS, PROC_REF(show_result), user, symbol1, symbol2, symbol3)
+	after(src, 5 SECONDS, PROC_REF(show_result), with = list(user, symbol1, symbol2, symbol3))
 
 /*
  * Station Slot Machine (takes space cash instead of chips)
@@ -200,7 +200,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	if(!has_stat(NOPOWER))
 		ispowered = 1
 	else
-		om_after(src, rand(0, 15), PROC_REF(lose_power))
+		after(src, rand(0, 15), PROC_REF(lose_power))
 
 /obj/machinery/station_slot_machine/wrench_act(mob/user, obj/item/tool)
 	if(om_busy(src))
@@ -292,7 +292,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 		if(8 to 8) symbol3 = "diamond"
 		if(9 to 9) symbol3 = "platinum coin"
 
-	om_after(src, 5 SECONDS, PROC_REF(show_result), user, symbol1, symbol2, symbol3)
+	after(src, 5 SECONDS, PROC_REF(show_result), with = list(user, symbol1, symbol2, symbol3))
 
 /obj/machinery/slot_machine/proc/show_result(mob/user, symbol1, symbol2, symbol3)
 	var/output //Output variable to send out in chat after the large if statement.
@@ -348,7 +348,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	if(winnings) //Did the person win?
 		icon_state = "slotmachine_winning"
 		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
-		om_after(src, delaytime, PROC_REF(pay_out), winnings)
+		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
 	if(celebrate) // Happy celebrations!
 		own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())
@@ -419,7 +419,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/station_slot_machine, TYPE_PROC_REF(/atom
 	if(winnings) //Did the person win?
 		icon_state = "ntslotmachine_winning"
 		play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)
-		om_after(src, delaytime, PROC_REF(pay_out), winnings)
+		after(src, delaytime, PROC_REF(pay_out), with = list(winnings))
 
 	if(celebrate) // Happy celebrations!
 		own_set(src, nameof(confetti_spread), new /datum/effect/effect/system/confetti_spread())

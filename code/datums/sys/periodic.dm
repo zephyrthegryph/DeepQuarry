@@ -215,7 +215,7 @@ REGISTRY_TYPE(/datum/sys_periodic_def, GLOBAL_PROC_REF(registry_sys_periodic_def
 	var/delay = R.delay
 	if(istext(delay))
 		delay = (delay in E.vars) ? E.vars[delay] : call(E, delay)()
-	after_slot(E, "sys_repeat:[R.repeat_proc]", max(delay, 0), GLOBAL_PROC_REF(sys_repeat_fire), E, R.repeat_proc)
+	after(E, max(delay, 0), GLOBAL_PROC_REF(sys_repeat_fire), key = "sys_repeat:[R.repeat_proc]", with = list(E, R.repeat_proc))
 
 /proc/sys_repeat_fire(datum/E, proc_name)
 	if(QDELETED(E))

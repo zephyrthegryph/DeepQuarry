@@ -676,7 +676,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	charges -= 5
 
-	om_after(src, 5, "interact")
+	after(src, 5, "interact")
 	return
 
 /proc/move_turfs_to_area(list/turf/turfs, area/A)

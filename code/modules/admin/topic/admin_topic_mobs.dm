@@ -196,7 +196,7 @@ GLOBAL_LIST_INIT(admin_simplemake_types, list( \
 	M.status_at_least(EFFECT_PARALYZED, 5)
 	M.status_at_least(EFFECT_SLEEPING, 5)
 	M.forceMove(pick(destinations))
-	om_after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), M, span_filter_system(span_notice("You have been sent to the Thunderdome.")))
+	after(M, 5 SECONDS, GLOBAL_PROC_REF(to_chat), with = list(M, span_filter_system(span_notice("You have been sent to the Thunderdome."))))
 	log_admin("[key_name(user)] has sent [key_name(M)] to the thunderdome. ([team_label])")
 	message_admins("[key_name_admin(user)] has sent [key_name_admin(M)] to the thunderdome. ([team_label])")
 

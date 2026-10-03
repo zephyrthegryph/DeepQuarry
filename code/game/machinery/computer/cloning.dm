@@ -235,7 +235,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_scan)
 	set_scan_temp("Scanner ready.", "good")
 	loading = TRUE
 
-	om_after(src, 2 SECONDS, PROC_REF(delayed_scan), scanner_occupant)
+	after(src, 2 SECONDS, PROC_REF(delayed_scan), with = list(scanner_occupant))
 	add_fingerprint(ui.user)
 
 UI_ACT(/obj/machinery/computer/cloning, "autoprocess", ui_act_autoprocess, UI_ARG_NUM("on"))

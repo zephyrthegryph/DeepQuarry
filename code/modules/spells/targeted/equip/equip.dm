@@ -28,7 +28,7 @@
 				own_add(src, nameof(summoned_items), new_item) // the spell made it and disposes of it when the spell runs out
 
 	if(duration)
-		om_after(src, duration, PROC_REF(unsummon_items))
+		after(src, duration, PROC_REF(unsummon_items))
 
 /datum/spell/targeted/equip_item/proc/unsummon_items()
 	for(var/obj/item/to_remove in summoned_items)

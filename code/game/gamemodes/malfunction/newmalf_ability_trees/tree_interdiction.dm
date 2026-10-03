@@ -119,7 +119,7 @@
 		return
 	user.hacking = 1
 	to_chat(user, "Attempting to unlock cyborg. This will take approximately 30 seconds.")
-	om_after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), user, target)
+	after(user, 30 SECONDS, GLOBAL_PROC_REF(malf_unlock_cyborg_done), with = list(user, target))
 
 /proc/malf_unlock_cyborg_done(mob/living/silicon/ai/user, mob/living/silicon/robot/target)
 	if(target && target.lockcharge)

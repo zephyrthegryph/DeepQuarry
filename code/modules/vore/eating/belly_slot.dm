@@ -96,7 +96,7 @@
 		if(!om_timer_slot_pending(src, "liquid_timer"))
 			var/cycles_left = max(gen_time + 1 - gen_interval, 1)
 			om_attach(src, /datum/om/behaviour/sleeper/timed)
-			after_slot(src, "liquid_timer", cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due))
+			after(src, cycles_left * belly_cycle_period(), PROC_REF(liquid_batch_due), key = "liquid_timer")
 	else if(om_timer_slot_pending(src, "liquid_timer"))
 		om_cancel_timer_slot(src, "liquid_timer")
 

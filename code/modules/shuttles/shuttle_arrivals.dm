@@ -45,8 +45,8 @@
 				warmup_time = initial(warmup_time)
 				launch()
 				message_passengers("Arriving at [using_map.station_name] in thirty seconds...")
-				om_after(src, 10 SECONDS, PROC_REF(message_passengers), "Arriving at [using_map.station_name] in twenty seconds.")
-				om_after(src, 20 SECONDS, PROC_REF(message_passengers), "Arriving at [using_map.station_name] in ten seconds.  Please buckle up.")
+				after(src, 10 SECONDS, PROC_REF(message_passengers), with = list("Arriving at [using_map.station_name] in twenty seconds."))
+				after(src, 20 SECONDS, PROC_REF(message_passengers), with = list("Arriving at [using_map.station_name] in ten seconds.  Please buckle up."))
 
 		else // We are at the station.
 			if(!check_for_passengers()) // Don't leave with anyone.

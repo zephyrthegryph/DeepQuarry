@@ -107,7 +107,7 @@
 		om_cancel_timer_slot(src, "lifecycle_lifetime_timer")
 	if(isnull(after) || QDELETED(src))
 		return
-	after_slot(src, "lifecycle_lifetime_timer", max(after, 0), PROC_REF(lifecycle_expire_now))
+	after(src, max(after, 0), PROC_REF(lifecycle_expire_now), key = "lifecycle_lifetime_timer")
 
 /atom/movable/proc/lifecycle_expire_now()
 	PRIVATE_PROC(TRUE)

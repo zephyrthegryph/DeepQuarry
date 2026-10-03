@@ -85,7 +85,7 @@
 		if(istype(T))
 			explosion(T, placement_explosion_dev, placement_explosion_heavy, placement_explosion_light, placement_explosion_flash)
 			// Let the explosion finish proccing before we ChangeTurf(), otherwise it might destroy our spawned objects.
-			om_after(src, 1.5 SECONDS, PROC_REF(apply_cells))
+			after(src, 1.5 SECONDS, PROC_REF(apply_cells))
 			return
 	return ..()
 

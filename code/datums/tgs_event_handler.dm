@@ -23,7 +23,7 @@
 			to_chat(world, span_boldannounce("Server updated, changes will be applied on the next round..."))
 		if(TGS_EVENT_WATCHDOG_DETACH)
 			message_admins("TGS restarting...")
-			after_slot(src, "reattach_timer", 1 MINUTES, PROC_REF(LateOnReattach))
+			after(src, 1 MINUTES, PROC_REF(LateOnReattach), key = "reattach_timer")
 		if(TGS_EVENT_WATCHDOG_REATTACH)
 			var/datum/tgs_version/old_version = world.TgsVersion()
 			var/datum/tgs_version/new_version = args[2]

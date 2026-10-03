@@ -55,7 +55,7 @@
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
 
 
 

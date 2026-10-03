@@ -83,7 +83,7 @@
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), src)
 	flick("monkey2h", animation)
-	om_after(src, 4.8 SECONDS, PROC_REF(changeling_lesser_transform_finish), animation, chosen_dna, implants)
+	after(src, 4.8 SECONDS, PROC_REF(changeling_lesser_transform_finish), with = list(animation, chosen_dna, implants))
 	return 1
 
 /// The transformation, once its animation has played.

@@ -55,7 +55,7 @@ UI_DATA(/obj/machinery/photocopier, "current_toner=toner:num", "num_copies=copie
 
 UI_ACT(/obj/machinery/photocopier, "make_copy", ui_act_make_copy)
 UI_ACT_PROC(/obj/machinery/photocopier, ui_act_make_copy)
-	om_after(src, 0, PROC_REF(copy_operation), ui.user)
+	after(src, 0, PROC_REF(copy_operation), with = list(ui.user))
 	. = TRUE
 
 UI_ACT(/obj/machinery/photocopier, "remove", ui_act_remove)
@@ -113,14 +113,14 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		return
 	if (istype(copyitem, /obj/item/paper) || istype(copyitem, /obj/item/photo))
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
-		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+		after(src, 1.1 SECONDS, PROC_REF(copy_print), with = list(user, left, copyitem.type))
 	else if (istype(copyitem, /obj/item/paper_bundle))
-		om_after(src, 1.1 SECONDS, PROC_REF(copy_print), user, left, copyitem.type)
+		after(src, 1.1 SECONDS, PROC_REF(copy_print), with = list(user, left, copyitem.type))
 	else if (has_buckled_mobs()) // EDIT: For ass-copying.
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		audible_message(span_notice("You can hear [src] whirring as it attempts to scan."), runemessage = "whirr")
 		// Sit with your bare ass on the copier for a random time, feel like a fool, get stared at.
-		om_after(src, rand(20,45), PROC_REF(copy_ass_scan), user, left)
+		after(src, rand(20,45), PROC_REF(copy_ass_scan), with = list(user, left))
 	else
 		to_chat(user, span_warning("\The [copyitem] can't be copied by [src]."))
 		playsound(src, "sound/machines/buzz-two.ogg", 100)
@@ -139,11 +139,11 @@ UI_ACT_PROC(/obj/machinery/photocopier, ui_act_ai_photo)
 		playsound(src, "sound/machines/copier.ogg", 100, 1)
 		var/obj/item/paper_bundle/B = bundlecopy(copyitem)
 		finish_delay = 1.1 SECONDS * length(B?.pages)
-	om_after(src, finish_delay, PROC_REF(copy_finished), user, left)
+	after(src, finish_delay, PROC_REF(copy_finished), with = list(user, left))
 
 /obj/machinery/photocopier/proc/copy_ass_scan(mob/user, left)
 	copyass(user)
-	om_after(src, 1.5 SECONDS, PROC_REF(copy_finished), user, left)
+	after(src, 1.5 SECONDS, PROC_REF(copy_finished), with = list(user, left))
 
 /obj/machinery/photocopier/proc/copy_finished(mob/user, left)
 	audible_message(span_notice("You can hear [src] whirring as it finishes printing."), runemessage = "whirr")

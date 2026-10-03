@@ -101,7 +101,7 @@
 	rel_set(F, nameof(F.rig), src)
 	rel_set(src, nameof(myprotean), P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
-		om_after(src, 3, PROC_REF(AssimilateBag), P, 1, P.get_equipped_item(SLOT_ID_BACK)) // ALLOW(decl): conditional, extra args
+		after(src, 3, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 

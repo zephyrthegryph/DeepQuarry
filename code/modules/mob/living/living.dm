@@ -400,7 +400,7 @@
 /mob/living/flash_eyes(intensity = FLASH_PROTECTION_MODERATE, override_blindness_check = FALSE, affect_silicon = FALSE, visual = FALSE, type = /atom/movable/screen/fullscreen/flash)
 	if(override_blindness_check || !(disabilities & BLIND))
 		overlay_fullscreen("flash", type)
-		om_after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), "flash", 25)
+		after(src, 25, TYPE_PROC_REF(/mob, clear_fullscreen), with = list("flash", 25))
 		return 1
 
 /mob/living/proc/cannot_use_vents()
@@ -479,8 +479,8 @@
 	if(!lastpuke)
 		lastpuke = TRUE
 		to_chat(src, span_warning("You feel nauseous..."))
-		om_after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), span_warning("You feel like you're about to throw up!"))
-		om_after(src, 25 SECONDS, PROC_REF(do_vomit), lost_nutrition, blood, stun, distance, message, toxic, purge)
+		after(src, 15 SECONDS, TYPE_PROC_REF(/datum, om_chat), with = list(span_warning("You feel like you're about to throw up!")))
+		after(src, 25 SECONDS, PROC_REF(do_vomit), with = list(lost_nutrition, blood, stun, distance, message, toxic, purge))
 
 /// om_after() target: able to vomit again.
 /mob/living/proc/puke_recovered()
@@ -496,7 +496,7 @@
 		var/antiemetic = H.factor(BF_ANTIEMETIC)
 		if(antiemetic)
 			if(prob(min(90, antiemetic * 15)))
-				om_after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
+				after(src, rand(30 SECONDS, 2 MINUTES), PROC_REF(puke_recovered))
 			return FALSE
 
 	if(nutrition < 100 && !blood)
@@ -581,7 +581,7 @@
 				T.add_vomit_floor(src, vomit_type, purge)
 			T = get_step(T, dir)
 
-	om_after(src, 10 SECONDS, PROC_REF(puke_recovered))
+	after(src, 10 SECONDS, PROC_REF(puke_recovered))
 
 	return TRUE
 

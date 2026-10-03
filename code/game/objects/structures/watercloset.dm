@@ -309,7 +309,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 			bowl_contents += L
 
 	if(!length(bowl_contents)) //Reduced recharge if nothing is being flushed
-		om_after(src, 7.5 SECONDS, PROC_REF(refill_done), TRUE)
+		after(src, 7.5 SECONDS, PROC_REF(refill_done), with = list(TRUE))
 		return
 
 	begin_flush(bowl_contents[1], bowl_contents)
@@ -324,19 +324,19 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 ///Timer proc that takes the object given and begins the flush process. Makes the object spin.
 /obj/structure/toilet/proc/begin_flush(atom/movable/flushed, list/pick_list)
 	flushed.SpinAnimation(5,3)
-	om_after(src, 0.2 SECONDS, PROC_REF(secondary_flush), flushed, pick_list)
+	after(src, 0.2 SECONDS, PROC_REF(secondary_flush), with = list(flushed, pick_list))
 
 ///Timer proc that takes the object given and removes it from the list, beginning to spin the next object if there is one.
 /obj/structure/toilet/proc/secondary_flush(atom/movable/flushed, list/pick_list)
 	pick_list -= flushed
 
 	if(!length(pick_list)) //All flushed.
-		om_after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), flushed, TRUE)
+		after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, TRUE))
 		return
-	om_after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), flushed, FALSE) //Put the object in the bin.
+	after(src, 1.5 SECONDS, PROC_REF(tertiary_flush), with = list(flushed, FALSE)) //Put the object in the bin.
 
 	var/obj_to_be_flushed = pick_list[1]
-	om_after(src, 0.2 SECONDS, PROC_REF(begin_flush), obj_to_be_flushed, pick_list)
+	after(src, 0.2 SECONDS, PROC_REF(begin_flush), with = list(obj_to_be_flushed, pick_list))
 
 ///Adds the object to the toilet's current_flush list.
 /obj/structure/toilet/proc/tertiary_flush(atom/movable/flushed, flush_completed)
@@ -345,8 +345,8 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 		rel_add(src, nameof(currently_held_objects), flushed)
 
 	if(flush_completed) //Flushed it all.
-		om_after(src, 1 SECOND, PROC_REF(flush_send), currently_held_objects)
-		om_after(src, 20 SECONDS, PROC_REF(refill_done), FALSE)
+		after(src, 1 SECOND, PROC_REF(flush_send), with = list(currently_held_objects))
+		after(src, 20 SECONDS, PROC_REF(refill_done), with = list(FALSE))
 		return
 
 /obj/structure/toilet/proc/flush_send(list/to_send)
@@ -644,10 +644,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/shower, TYPE_PROC_REF(/atom, appearance_o
 	// If there was already mist, and the shower was turned off (or made cold): remove the existing mist in 25 sec
 	var/obj/effect/mist/mist = locate_on(loc, /obj/effect/mist)
 	if(!mist && on && current_temperature != SHOWER_FREEZING)
-		om_after(src, 5 SECONDS, PROC_REF(make_mist))
+		after(src, 5 SECONDS, PROC_REF(make_mist))
 
 	if(mist && (!on || current_temperature == SHOWER_FREEZING))
-		om_after(src, 25 SECONDS, PROC_REF(clear_mist))
+		after(src, 25 SECONDS, PROC_REF(clear_mist))
 
 /obj/machinery/shower/proc/make_mist()
 	PRIVATE_PROC(TRUE)

@@ -81,7 +81,7 @@
 	if(n >= 4)
 		interference = FALSE
 		return
-	om_after(src, rand(2,4), PROC_REF(flicker_step), n + 1)
+	after(src, rand(2,4), PROC_REF(flicker_step), with = list(n + 1))
 
 /obj/machinery/holoplant/proc/prepare_icon(state)
 	if(!state)

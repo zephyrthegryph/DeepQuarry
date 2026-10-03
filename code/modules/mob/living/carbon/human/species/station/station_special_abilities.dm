@@ -159,8 +159,8 @@
 	else //Otherwise, we're letting blood drop to the floor
 		B.drip(80) //Remove enough blood to make them a bit woozy, but not take oxyloss.
 		adjust_nutrition(400)
-		om_after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
-		om_after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), 1)
+		after(B, 5 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
+		after(B, 10 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, drip), with = list(1))
 
 /// One stage of a drain through a grab (succubus_drain(), slime_feed()): five seconds holding
 /// the target, then the next stage.
@@ -686,7 +686,7 @@
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))
-		om_after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), FALSE) //.6 seconds.
+		after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
 	else
 		return
 
@@ -1114,7 +1114,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	to_chat(target, span_danger("\The [src] focuses on you!"))
 	// Telegraph, since getting stunned suddenly feels bad.
 	do_windup_animation(target, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(target_lunge_leap), target, ask.leap_sound) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(target_lunge_leap), with = list(target, ask.leap_sound)) // For the telegraphing.
 
 /mob/living/proc/target_lunge_leap(mob/living/target, leap_sound)
 	if(target.z != z)	//Make sure you haven't disappeared to somewhere we can't go
@@ -1125,7 +1125,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	visible_message(span_critical("\The [src] leaps at \the [target]!"))
 	throw_at(get_step(target, get_turf(src)), 7, 1, src)
 	playsound(src, leap_sound, 75, 1)
-	om_after(src, 5, PROC_REF(target_lunge_land), target) // For the throw to complete.
+	after(src, 5, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
 
 /mob/living/proc/target_lunge_land(mob/living/target)
 	if(status_flags & LEAPING)

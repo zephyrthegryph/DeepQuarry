@@ -130,7 +130,7 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	om_after(src, delay, PROC_REF(explode))
+	after(src, delay, PROC_REF(explode))
 	return ..()
 
 /mob/living/simple_mob/animal/tyr/mineral_ants/agate/do_special_attack(atom/A, stance)
@@ -349,7 +349,7 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	animate(src, color = "#000000", time = 0.1 SECONDS, loop = ceil(delay/2))
 	animate(color = "#FF0000", time = 0.1 SECONDS)
-	om_after(src, delay, PROC_REF(explode))
+	after(src, delay, PROC_REF(explode))
 	return ..()
 
 

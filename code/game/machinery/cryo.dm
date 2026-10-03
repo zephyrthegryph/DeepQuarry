@@ -381,7 +381,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/cryo_cell, TYPE_PROC_R
 		if(user.stat == 2)//and he's not dead....
 			return
 		to_chat(user, span_notice("Release sequence activated. This will take two minutes."))
-		om_after(src, 2 MINUTES, PROC_REF(release_sequence_done), user)
+		after(src, 2 MINUTES, PROC_REF(release_sequence_done), with = list(user))
 	else
 		if(user.stat != 0)
 			return

@@ -205,14 +205,14 @@ DECLARE_INTERACTIONS(/obj/structure/portal_event, \
 							MI.drop_from_inventory(II, dest.loc)
 					var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 					MI.forceMove(finaldest.loc)
-					om_after(MI, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
+					after(MI, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
 				for(var/obj/item/I in L)
 					if(istype(I,/obj/item/implant) || istype(I,/obj/item/nif))
 						continue
 					L.drop_from_inventory(I, dest.loc)
 			var/obj/effect/landmark/finaldest = pick(GLOB.awayabductors)
 			L.forceMove(finaldest.loc)
-			om_after(L, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
+			after(L, 0.1 SECONDS, TYPE_PROC_REF(/mob/living, abduction_arrived))
 	return
 
 /// Knocked out on arrival from an abductor portal.

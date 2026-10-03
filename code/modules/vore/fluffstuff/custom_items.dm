@@ -588,7 +588,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	if((state == 1) && owner && (owner.stat == DEAD))
 		update_state(2)
 		visible_message(span_warning("The [name] begins flashing red."))
-		om_after(src, 3 SECONDS, PROC_REF(shatter_into_dust))
+		after(src, 3 SECONDS, PROC_REF(shatter_into_dust))
 
 /obj/item/clothing/accessory/collar/khcrystal/proc/shatter_into_dust()
 	SHOULD_NOT_OVERRIDE(TRUE)

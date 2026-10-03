@@ -257,4 +257,4 @@
 		return
 	user.visible_message(span_danger("Something beeps inside [target]'s [part.name]!"))
 	play_sfx(imp, SFX_ITEMS_COUNTDOWN)
-	om_after(imp, 2.5 SECONDS, TYPE_PROC_REF(/obj/item/implant, activate))
+	after(imp, 2.5 SECONDS, TYPE_PROC_REF(/obj/item/implant, activate))

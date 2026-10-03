@@ -322,7 +322,7 @@ UI_ACT_PROC(/datum/trait_state/radiation_effects, ui_act_toggle_nutrition)
 		return
 
 	parent_movable.add_filter("rad_glow", 2, list("type" = "outline", "color" = "#39ff1430", "size" = 2))
-	om_after(src, rand(0.1 SECONDS, 1.9 SECONDS), PROC_REF(toony_glow_loop), parent_movable) // Things should look uneven
+	after(src, rand(0.1 SECONDS, 1.9 SECONDS), PROC_REF(toony_glow_loop), with = list(parent_movable)) // Things should look uneven
 
 /datum/trait_state/radiation_effects/proc/toony_glow_loop(atom/movable/parent_movable)
 	var/filter = parent_movable.get_filter("rad_glow")

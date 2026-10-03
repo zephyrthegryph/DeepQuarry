@@ -349,7 +349,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob, /mob/living/simple_mob/proc/pick_colo
 
 	if(ticker < 10 && (get_dist(src, movement_target) > 1)) //We only chase our target for 10 tiles or until we are next to them.
 		step_to(src,movement_target,1)
-		om_after(src, 3, PROC_REF(chase_target), ++ticker)
+		after(src, 3, PROC_REF(chase_target), with = list(++ticker))
 		return
 
 	face_atom(movement_target)
@@ -426,7 +426,7 @@ TYPE_TABLE_DECLARE(/datum/decl/mob_organ_names, mob_organ_hit_zones, list("body"
 		to_chat(src, "You can sense other creatures by focusing carefully on your surroundings.")
 		sight |= SEE_MOBS
 		COOLDOWN_START(src, hunting_cooldown, 5 MINUTES)
-		om_after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
+		after(src, 1 MINUTE, PROC_REF(hunting_vision_ends))
 	else if(COOLDOWN_TIMELEFT(src, hunting_cooldown))
 		to_chat(src, "You must wait for a while before using this again.")
 
@@ -919,7 +919,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 	throw_at(get_step(get_turf(T),get_turf(src)), 4, 1, src)
 	play_sfx(src, SFX_EFFECTS_BODYFALL1)
 	pixel_y = default_pixel_y
-	om_after(src, 5, PROC_REF(leap_land), T)
+	after(src, 5, PROC_REF(leap_land), with = list(T))
 
 /mob/living/simple_mob/proc/leap_land(mob/living/T)
 	if(status_flags & LEAPING) set_status_flags(status_flags & ~LEAPING)

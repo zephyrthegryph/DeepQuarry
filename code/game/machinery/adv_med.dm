@@ -345,7 +345,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	update_icon()
 
 /obj/machinery/body_scanconsole/proc/findscanner()
-	om_after(src, 5, PROC_REF(findscanner_now))
+	after(src, 5, PROC_REF(findscanner_now))
 
 /// Old attack_ghost: a ghost gets the hand's view (and no examine).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_observer(mob/user, obj/item/held, datum/interaction/interaction)

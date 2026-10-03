@@ -65,7 +65,7 @@
 	Q.throw_at(target,10,30)
 	quills--
 
-	om_after(src, 10 SECONDS, PROC_REF(regrow_quill))
+	after(src, 10 SECONDS, PROC_REF(regrow_quill))
 
 /mob/living/simple_mob/vox/armalis/verb/message_mob()
 	set category = VERB_CAT_ALIEN

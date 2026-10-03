@@ -79,7 +79,7 @@
 	self.status_set(EFFECT_PARALYZED, 0)
 
 	if(self.on && !self.client && !om_busy(self) && !self.paicard && !self.ai_running)
-		om_after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
+		after(self, 0, TYPE_PROC_REF(/mob/living/bot, start_ai)) // deferred off the Life stage (was spawn)
 
 /datum/om/stage/life/type_post/bot
 	of = /mob/living/bot
@@ -194,7 +194,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 /mob/living/bot/proc/bot_steps(count, delay, step_proc)
 	if(count <= 0)
 		return
-	om_after(src, delay, PROC_REF(bot_step), count, delay, step_proc)
+	after(src, delay, PROC_REF(bot_step), with = list(count, delay, step_proc))
 
 /// OM callback: a step can path (calcTargetPath/startPatrol sleep on the pathfinder), so it runs detached.
 /mob/living/bot/proc/bot_step(count, delay, step_proc)

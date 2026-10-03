@@ -675,7 +675,7 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 			flick("nt_pod_emptying", fluid) // 8ds
 
 			// Door opens
-			om_after(src, 0.8 SECONDS, PROC_REF(delayed_flick), door, "nothing", "nt_pod_opening", 0.9 SECONDS) // 9ds
+			after(src, 0.8 SECONDS, PROC_REF(delayed_flick), with = list(door, "nothing", "nt_pod_opening", 0.9 SECONDS)) // 9ds
 
 		if("closed")
 			changing_state = TRUE
@@ -688,7 +688,7 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 			door.icon_state = "nt_pod_glass"
 			flick("nt_pod_closing", door) // 9ds
 			// Fluid fills
-			om_after(src, 0.9 SECONDS, PROC_REF(delayed_flick), fluid, "nt_pod_liquid", "nt_pod_filling") // 8ds
+			after(src, 0.9 SECONDS, PROC_REF(delayed_flick), with = list(fluid, "nt_pod_liquid", "nt_pod_filling")) // 8ds
 
 		if("panel_open")
 			cut_overlay("nt_pod_panel")
@@ -703,7 +703,7 @@ EXTEND_INTERACTIONS(/obj/structure/prop/machine/nt_pod, INTERACT_DRAG(null, PROC
 	flick(flicked, ovrl)
 	// GET OUT
 	if(get_out_time)
-		om_after(src, get_out_time, PROC_REF(get_out))
+		after(src, get_out_time, PROC_REF(get_out))
 		return
 	changing_state = FALSE
 

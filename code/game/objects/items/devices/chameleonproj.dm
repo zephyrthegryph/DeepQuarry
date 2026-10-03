@@ -77,7 +77,7 @@ DECLARE_INTERACTIONS(/obj/item/chameleon, INTERACT_USE(null, PROC_REF(toggle)))
 		else
 			own_take(src, nameof(active_dummy)) // the dummy is already being destroyed
 		can_use = 0
-		om_after(src, 5 SECONDS, PROC_REF(allow_use))
+		after(src, 5 SECONDS, PROC_REF(allow_use))
 
 /obj/item/chameleon/proc/allow_use()
 	can_use = 1
@@ -136,15 +136,15 @@ DAMAGE_REACTION(/obj/effect/dummy/chameleon, DAMAGE_PROJECTILE, PROC_REF(chamele
 		can_move = 0
 		switch(user.bodytemperature)
 			if(300 to INFINITY)
-				om_after(src, 1 SECOND, PROC_REF(allow_move))
+				after(src, 1 SECOND, PROC_REF(allow_move))
 			if(295 to 300)
-				om_after(src, 1.3 SECONDS, PROC_REF(allow_move))
+				after(src, 1.3 SECONDS, PROC_REF(allow_move))
 			if(280 to 295)
-				om_after(src, 1.6 SECONDS, PROC_REF(allow_move))
+				after(src, 1.6 SECONDS, PROC_REF(allow_move))
 			if(260 to 280)
-				om_after(src, 2 SECONDS, PROC_REF(allow_move))
+				after(src, 2 SECONDS, PROC_REF(allow_move))
 			else
-				om_after(src, 2.5 SECONDS, PROC_REF(allow_move))
+				after(src, 2.5 SECONDS, PROC_REF(allow_move))
 		step(src, direction)
 	return
 

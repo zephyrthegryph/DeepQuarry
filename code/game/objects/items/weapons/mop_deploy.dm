@@ -78,11 +78,11 @@ DECLARE_INTERACTIONS(/obj/item/mop_deploy, INTERACT_USE(null, PROC_REF(interacti
 
 /obj/item/mop_deploy/dropped(mob/user, equipping, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
 /obj/item/mop_deploy/equipped(mob/user, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
 /// Relation view: creator (reads null once it is gone).
 /obj/item/mop_deploy/proc/creator() as /mob/living

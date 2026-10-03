@@ -202,7 +202,7 @@ TYPE_TABLE(/datum/ai_behavior/ddraig_tfbeam, get_player_verb_info, list( \
 	if(target)
 		for(var/i in 1 to 5)
 			step_away(D, target, bolt_distance)
-	om_after(D, cloak_duration, TYPE_PROC_REF(/atom/movable, uncloak))
+	after(D, cloak_duration, TYPE_PROC_REF(/atom/movable, uncloak))
 	return DQ_BEHAVIOR_DONE
 
 // ---------------------------------------------------------------------------

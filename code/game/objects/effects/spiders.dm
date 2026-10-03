@@ -93,7 +93,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 /obj/effect/spider/eggcluster/Initialize(mapload, atom/parent)
 	pixel_x = rand(3,-3)
 	pixel_y = rand(3,-3)
-	om_after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
+	after(src, egg_hatch_steps() * 2 SECONDS, PROC_REF(hatch))
 	. = ..()
 	get_light_and_color(parent)
 
@@ -216,12 +216,12 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 		amount_grown += rand(0,2)
 
 /obj/effect/spider/spiderling/proc/vent_crawl_async(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
-	om_after(src, rand(20,60), PROC_REF(vent_crawl_enter), entry, exit_vent)
+	after(src, rand(20,60), PROC_REF(vent_crawl_enter), with = list(entry, exit_vent))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_enter(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	forceMove(exit_vent)
 	var/travel_time = round(get_dist(loc, exit_vent.loc) / 2)
-	om_after(src, travel_time, PROC_REF(vent_crawl_midway), entry, exit_vent, travel_time)
+	after(src, travel_time, PROC_REF(vent_crawl_midway), with = list(entry, exit_vent, travel_time))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_midway(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent, travel_time)
 	if(!exit_vent || exit_vent.welded)
@@ -232,7 +232,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 	if(prob(50))
 		src.visible_message(span_notice("You hear something squeezing through the ventilation ducts."),2)
 		SSmotiontracker.ping(src,10)
-	om_after(src, travel_time, PROC_REF(vent_crawl_exit), entry, exit_vent)
+	after(src, travel_time, PROC_REF(vent_crawl_exit), with = list(entry, exit_vent))
 
 /obj/effect/spider/spiderling/proc/vent_crawl_exit(obj/machinery/atmospherics/unary/vent_pump/entry, obj/machinery/atmospherics/unary/vent_pump/exit_vent)
 	if(!exit_vent || exit_vent.welded)
@@ -267,7 +267,7 @@ DECLARE_PERIODIC(/obj/effect/spider/spiderling, PERIODIC_SLOW)
 			var/mob/living/simple_mob/animal/giant_spider/GS = new spawn_type(src.loc, src)
 			GS.faction = faction
 			if(stunted)
-				om_after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
+				after(GS, 2, TYPE_PROC_REF(/mob/living/simple_mob/animal/giant_spider, make_spiderling))
 			replace_with(src, GS)
 
 /obj/effect/spider/spiderling/stunted

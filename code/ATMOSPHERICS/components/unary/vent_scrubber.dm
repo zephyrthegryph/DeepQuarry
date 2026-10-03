@@ -278,10 +278,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/unary/vent_scrubber, TYPE_PR
 		return
 
 	if(signal.data["status"] != null)
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

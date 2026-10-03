@@ -40,10 +40,10 @@
 		if(WIRE_LATHE_HACK)
 			A.hacked = !A.hacked
 			A.update_tgui_static_data(user)
-			om_after(src, 5 SECONDS, PROC_REF(reset_hacked), WIRE_LATHE_HACK, user)
+			after(src, 5 SECONDS, PROC_REF(reset_hacked), with = list(WIRE_LATHE_HACK, user))
 		if(WIRE_LATHE_DISABLE)
 			A.disabled = !A.disabled
-			om_after(src, 5 SECONDS, PROC_REF(reset_disable), WIRE_LATHE_DISABLE)
+			after(src, 5 SECONDS, PROC_REF(reset_disable), with = list(WIRE_LATHE_DISABLE))
 	..()
 
 /datum/wires/protolathe/proc/reset_hacked(wire, mob/user)

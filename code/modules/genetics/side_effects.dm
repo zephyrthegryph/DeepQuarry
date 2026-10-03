@@ -11,8 +11,8 @@
 	var/datum/genetics/side_effect/S = new tp
 
 	S.start(H)
-	om_after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 4)
-	om_after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
+	after(H, 2 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(EFFECT_WEAKENED, 4))
+	after(S, S.duration, TYPE_PROC_REF(/datum/genetics/side_effect, complete))
 	//above is doing: Call S.finish() in S.duration (dropped if H, and so S, is deleted first)
 
 /datum/genetics/side_effect/proc/start(mob/living/carbon/human/H)

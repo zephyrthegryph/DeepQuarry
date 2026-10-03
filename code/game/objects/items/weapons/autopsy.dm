@@ -142,7 +142,7 @@
 	for(var/mob/O in viewers(user))
 		O.show_message(span_notice("\The [src] rattles and prints out a sheet of paper."), 1)
 
-	om_after(src, 1 SECOND, PROC_REF(print_report), user, scan_data)
+	after(src, 1 SECOND, PROC_REF(print_report), with = list(user, scan_data))
 
 /obj/item/autopsy_scanner/proc/print_report(mob/usr_mob, scan_data)
 	var/obj/item/paper/P = new(usr_mob.loc)

@@ -110,7 +110,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/mechanical/mecha, TYPE_PROC_REF(/
 /mob/living/simple_mob/mechanical/mecha/proc/deflect_sprite()
 	var/image/deflect_image = image('icons/effects/effects.dmi', "deflect_static")
 	add_overlay(deflect_image)
-	om_after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), deflect_image)
+	after(src, 1 SECOND, TYPE_PROC_REF(/atom, cut_overlay), with = list(deflect_image))
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/mechanical/mecha, INTERACT_ITEM(null, PROC_REF(mecha_interaction_item)))
 

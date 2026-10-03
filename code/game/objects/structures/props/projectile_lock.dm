@@ -45,4 +45,4 @@
 
 		if(timed)
 			timing = 1
-			om_after(src, time_limit, PROC_REF(toggle_lock))
+			after(src, time_limit, PROC_REF(toggle_lock))

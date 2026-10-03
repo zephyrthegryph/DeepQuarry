@@ -142,7 +142,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	var/delay = rand(1, 3)
 	color_sequence(mouse_warning_flash(delay))
 
-	om_after(src, rand(1, 5), PROC_REF(rupture))
+	after(src, rand(1, 5), PROC_REF(rupture))
 	return ..()
 
 //Ammo Mouse
@@ -178,7 +178,7 @@ DECLARE_VERB(/mob/living/simple_mob/animal/space/mouse_army, /mob/living/proc/hi
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(mouse_warning_flash(delay))
 
-	om_after(src, rand(1, 5), PROC_REF(detonate))
+	after(src, rand(1, 5), PROC_REF(detonate))
 	return ..()
 
 /mob/living/simple_mob/animal/space/mouse_army/stealth

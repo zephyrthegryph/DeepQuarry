@@ -18,7 +18,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_cube, INTERACT_USE(null, PROC_REF(interacti
 		icon_state = "slime cube active"
 		searching = 1
 		request_player()
-		om_after(src, 60 SECONDS, PROC_REF(reset_search))
+		after(src, 60 SECONDS, PROC_REF(reset_search))
 	return TRUE
 
 // Sometime down the road it would be great to make all of these 'ask ghosts if they want to be X' procs into a generic datum.

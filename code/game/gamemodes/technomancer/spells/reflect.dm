@@ -62,7 +62,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
+					after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 
 				return PROJECTILE_CONTINUE // complete projectile permutation
 
@@ -80,7 +80,7 @@
 
 				if(!reflecting)
 					reflecting = 1
-					om_after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
+					after(src, 2 SECONDS, PROC_REF(expire_reflect)) //To ensure that most or all of a burst fire cycle is reflected.
 		return 1
 	return 0
 

@@ -170,7 +170,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	if(register)
 		if(!GLOB.radio_service && initial_run)
 			// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the headset broken); it waits on the global radio service, not on state of this headset.
-			om_after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), setDescription, FALSE)
+			after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), with = list(setDescription, FALSE))
 			return
 		if(!GLOB.radio_service && !initial_run)
 			name = "broken radio headset"

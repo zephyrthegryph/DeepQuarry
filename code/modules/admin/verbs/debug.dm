@@ -107,7 +107,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_robotize, R_ADMIN|R_EVENT|R_DEBUG, "Make R
 		return
 
 	log_admin("[key_name(user)] has robotized [target_human.key].")
-	om_after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Robotize))
+	after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Robotize))
 
 ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make Simple Animal", "Spawns a new player directly as animal.", ADMIN_CATEGORY_FUN_EVENT_KIT, mob/target_mob in REGISTRY_MEMBERS(REGISTRY_MOBS))
 	if(!SSticker)
@@ -123,7 +123,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make 
 		return
 
 	log_admin("[key_name(user)] has animalized [target_mob.key].")
-	om_after(target_mob, 1 SECOND, TYPE_PROC_REF(/mob, Animalize))
+	after(target_mob, 1 SECOND, TYPE_PROC_REF(/mob, Animalize))
 
 ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a pAI!", ADMIN_CATEGORY_FUN_EVENT_KIT)
 	var/turf/target_turf = get_turf(user.mob)
@@ -170,7 +170,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make A
 		return
 
 	log_admin("[key_name(user)] has alienized [target_human.key].")
-	om_after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Alienize))
+	after(target_human, 1 SECOND, TYPE_PROC_REF(/mob/living/carbon/human, Alienize))
 	feedback_add_details("admin_verb","MKAL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 	log_admin("[key_name(user)] made [key_name(target_human)] into an alien.")
 	message_admins(span_notice("[key_name_admin(user)] made [key_name(target_human)] into an alien."))
@@ -482,7 +482,7 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 			// rad_collector and ZAS binary/pump removed; supermatter only.
 			if(istype(M,/obj/machinery/power/supermatter))
 				SM = M
-				om_after(SM, 5 SECONDS, GLOBAL_PROC_REF(admin_boost_supermatter), SM)
+				after(SM, 5 SECONDS, GLOBAL_PROC_REF(admin_boost_supermatter), with = list(SM))
 
 			else if(istype(M,/obj/machinery/power/smes))	//This is the SMES inside the engine room.  We don't need much power.
 				var/obj/machinery/power/smes/SMES = M

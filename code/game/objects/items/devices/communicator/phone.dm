@@ -41,7 +41,7 @@
 	if(user)
 		comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connecting to [src]."))
 		to_chat(user, span_notice("[icon2html(src,user.client)] Attempting to call [comm]."))
-		om_after(src, 1 SECOND, PROC_REF(dial_communicator), user, comm, 1)
+		after(src, 1 SECOND, PROC_REF(dial_communicator), with = list(user, comm, 1))
 		return
 
 	src.add_communicating(comm)
@@ -52,14 +52,14 @@
 	switch(stage)
 		if(1)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Dialing internally from [station_name()], [system_name()]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 2)
+			after(src, 2 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 2))
 		if(2)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Connection re-routed to [comm] at [comm.exonet.address]."))
-			om_after(src, 4 SECONDS, PROC_REF(dial_communicator), user, comm, 3)
+			after(src, 4 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 3))
 		if(3)
 			to_chat(user, span_notice("[icon2html(src,user.client)] Connection to [comm] at [comm.exonet.address] established."))
 			comm.visible_message(span_notice("[icon2html(src,viewers(src))] Connection to [src] at [exonet.address] established."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_communicator), user, comm, 4)
+			after(src, 2 SECONDS, PROC_REF(dial_communicator), with = list(user, comm, 4))
 		if(4)
 			src.add_communicating(comm)
 			comm.add_communicating(src)
@@ -99,20 +99,20 @@
 	if(user)
 		to_chat(user, span_notice("[icon2html(src,user.client)] Connecting to [candidate]."))
 	to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Attempting to call [src]."))
-	om_after(src, 1 SECOND, PROC_REF(dial_ghost), user, new_voice, blackness, candidate ? "[candidate]" : "someone", 1)
+	after(src, 1 SECOND, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate ? "[candidate]" : "someone", 1))
 
 /// The ghost's dial-up: a black screen while the fluff plays, then the call opens.
 /obj/item/communicator/proc/dial_ghost(mob/user, mob/living/voice/new_voice, atom/movable/screen/blackness, candidate_name, stage)
 	switch(stage)
 		if(1)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Dialing to [station_name()], Kara Subsystem, [system_name()]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 2)
+			after(src, 2 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 2))
 		if(2)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connecting to [station_name()] telecommunications array."))
-			om_after(src, 4 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 3)
+			after(src, 4 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 3))
 		if(3)
 			to_chat(new_voice, span_notice("[icon2html(src,new_voice.client)] Connection to [station_name()] telecommunications array established.  Redirecting signal to [src]."))
-			om_after(src, 2 SECONDS, PROC_REF(dial_ghost), user, new_voice, blackness, candidate_name, 4)
+			after(src, 2 SECONDS, PROC_REF(dial_ghost), with = list(user, new_voice, blackness, candidate_name, 4))
 		if(4)
 			//We're connected, no need to hide everything.
 			new_voice.client?.screen.Remove(blackness)
@@ -366,7 +366,7 @@
 		return
 
 	to_chat(user, span_notice("[icon2html(src, user.client)] Attempting to start video over existing call."))
-	om_after(src, 3 SECONDS, PROC_REF(connect_video_done), user, comm)
+	after(src, 3 SECONDS, PROC_REF(connect_video_done), with = list(user, comm))
 
 /obj/item/communicator/proc/connect_video_done(mob/user, obj/item/communicator/comm)
 	if(video_source || !(src in comm.communicating) || !comm.camera)

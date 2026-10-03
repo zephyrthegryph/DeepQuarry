@@ -178,7 +178,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 			locked = target
 			locked_name = target.name
 			icon_state = "minion1"
-			om_after(src, 5 MINUTES, PROC_REF(check_to_close), target)
+			after(src, 5 MINUTES, PROC_REF(check_to_close), with = list(target))
 			return TRUE
 		var/list/L = list()
 		for(var/obj/structure/dark_portal/hub/H in REGISTRY_MEMBERS(REGISTRY_DARKPORTAL_HUBS))
@@ -191,7 +191,7 @@ DECLARE_INTERACTIONS(/obj/structure/dark_portal/minion, INTERACT_HAND_UNGATED(nu
 		locked = L[desc]
 		locked_name = desc
 		icon_state = "minion1"
-		om_after(src, 5 MINUTES, PROC_REF(check_to_close_desc), locked)
+		after(src, 5 MINUTES, PROC_REF(check_to_close_desc), with = list(locked))
 		return TRUE
 	else if(!istype(user, /mob/living))
 		return TRUE

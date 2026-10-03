@@ -235,7 +235,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/capture_crystal, TYPE_PROC_REF(/atom, appearan
 /// Starts the activation cooldown; the busy sprite is fixed once, when it ends.
 /obj/item/capture_crystal/proc/start_activate_cooldown()
 	COOLDOWN_START(src, activate_cooldown_until, activate_cooldown)
-	after_slot(src, "cooldown_icon", activate_cooldown, TYPE_PROC_REF(/atom, update_icon))
+	after(src, activate_cooldown, TYPE_PROC_REF(/atom, update_icon), key = "cooldown_icon")
 
 /obj/item/capture_crystal/proc/cooldown_check()
 	if(!COOLDOWN_FINISHED(src, activate_cooldown_until))
@@ -575,7 +575,7 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 	var/image/coolanimation = image('icons/obj/capture_crystal_vr.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	thing.overlays += coolanimation
-	om_after(src, 1.1 SECOND, PROC_REF(animate_action_finished), thing, coolanimation)
+	after(src, 1.1 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
 
 /obj/item/capture_crystal/proc/animate_action_finished(atom/thing,image/coolanimation)
 	SHOULD_NOT_OVERRIDE(TRUE)
@@ -603,14 +603,14 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(!active)					//The ball isn't set up, let's try to set it up.
 		if(isliving(target))	//We're hitting a mob, let's try to capture it.
-			om_after(src, 10, PROC_REF(activate), thrower, target)
+			after(src, 10, PROC_REF(activate), with = list(thrower, target))
 			return
-		om_after(src, 10, PROC_REF(activate), thrower, src)
+		after(src, 10, PROC_REF(activate), with = list(thrower, src))
 	else if(!bound_mob)				//We hit something else, and we don't have a mob, so we can't really do anything!
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 	else if(bound_mob in contents)	//We have our mob! Let's try to let it out.
-		om_after(src, 10, PROC_REF(unleash), thrower, src)
+		after(src, 10, PROC_REF(unleash), with = list(thrower, src))
 	else						//Our mob isn't here, we can't do anything.
 		to_chat(thrower, span_notice("\The [src] clicks unpleasantly..."))
 		play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)

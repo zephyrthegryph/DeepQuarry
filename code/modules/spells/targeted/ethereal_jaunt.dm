@@ -38,7 +38,7 @@
 		target.forceMove(holder)
 		target.set_transforming(0) //mob is safely inside holder now, no need for protection.
 		jaunt_steam(mobloc)
-		om_after(src, duration, PROC_REF(jaunt_resurface), target, holder, animation)
+		after(src, duration, PROC_REF(jaunt_resurface), with = list(target, holder, animation))
 
 /// The jaunt ends: steam where the jaunter will come out.
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_resurface(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
@@ -47,11 +47,11 @@
 	jaunt_steam(mobloc)
 	target.canmove = 0
 	holder.reappearing = 1
-	om_after(src, 2 SECONDS, PROC_REF(jaunt_reform), target, holder, animation)
+	after(src, 2 SECONDS, PROC_REF(jaunt_reform), with = list(target, holder, animation))
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_reform(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	jaunt_reappear(animation, target)
-	om_after(src, 5, PROC_REF(jaunt_finish), target, holder, animation)
+	after(src, 5, PROC_REF(jaunt_finish), with = list(target, holder, animation))
 
 /datum/spell/targeted/ethereal_jaunt/proc/jaunt_finish(mob/living/target, obj/effect/dummy/spell_jaunt/holder, atom/movable/overlay/animation)
 	var/mobloc = holder.last_valid_turf()
@@ -108,7 +108,7 @@
 	else
 		to_chat(user, span_warning("Some strange aura is blocking the way!"))
 	src.canmove = 0
-	om_after(src, 2, PROC_REF(allow_move))
+	after(src, 2, PROC_REF(allow_move))
 
 DAMAGE_REACTION(/obj/effect/dummy/spell_jaunt, DAMAGE_PROJECTILE, TYPE_PROC_REF(/atom, damage_reaction_block))
 

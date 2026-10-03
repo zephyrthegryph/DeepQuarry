@@ -26,7 +26,7 @@
 
 		if(floor.density)
 			if(!isnull(seed().chems[REAGENT_ID_PACID]))
-				om_after(floor, rand(5,25), TYPE_PROC_REF(/atom, ex_act), 3)
+				after(floor, rand(5,25), TYPE_PROC_REF(/atom, ex_act), with = list(3))
 			continue
 
 		if(!Adjacent(floor) || !floor.Enter(src))
@@ -115,7 +115,7 @@
 			for(var/i in 1 to max_spread)
 				if(prob(spread_chance))
 					spread_delay += rand(3,5)
-					om_after(src, spread_delay, PROC_REF(spread_once))
+					after(src, spread_delay, PROC_REF(spread_once))
 
 	// We shouldn't have spawned if the controller doesn't exist.
 	check_health()
@@ -130,7 +130,7 @@
 		return
 	var/obj/effect/plant/child = new(get_turf(src),seed(),parent())
 
-	om_after(src, 1, PROC_REF(spread_child_settles), child, target_turf) // This should do a little bit of animation.
+	after(src, 1, PROC_REF(spread_child_settles), with = list(child, target_turf)) // This should do a little bit of animation.
 
 /obj/effect/plant/proc/die_off()
 	// Kill off our plant.

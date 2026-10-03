@@ -566,7 +566,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/alarm, TYPE_PROC_REF(/atom, appearance_ov
 		LAZYSET(alarm_area_ref().air_scrub_names, m_id, new_name)
 	else
 		return
-	om_after(src, 10, PROC_REF(send_signal), m_id, list("init" = new_name))
+	after(src, 10, PROC_REF(send_signal), with = list(m_id, list("init" = new_name)))
 
 /obj/machinery/alarm/proc/refresh_all()
 	for(var/id_tag in alarm_area_ref().air_vent_names)
@@ -1093,7 +1093,7 @@ UI_ACT_PROC(/obj/machinery/alarm, ui_act_reset)
 		return
 	var/delay_time = rand(0,15)
 	if(delay_time)
-		after_slot(src, "power_settle", delay_time, PROC_REF(process_power_change))
+		after(src, delay_time, PROC_REF(process_power_change), key = "power_settle")
 		return
 	process_power_change()
 

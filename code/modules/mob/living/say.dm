@@ -410,7 +410,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 
 	// Remove the speech images later. The global owner: the images must leave the clients'
 	// screens even if the speaker is deleted first.
-	om_after(null, 3 SECONDS, /proc/remove_speech_images, images_to_clients)
+	after(null, 3 SECONDS, /proc/remove_speech_images, with = list(images_to_clients))
 
 	//Log the message to file
 	if(message_mode)
@@ -458,7 +458,7 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 	for(var/i in 1 to bloopers)
 		if(total_delay > BLOOPER_MAX_TIME)
 			break
-		om_after(src, total_delay, PROC_REF(blooper), extrarange, volume, bloop_preference)
+		after(src, total_delay, PROC_REF(blooper), with = list(extrarange, volume, bloop_preference))
 		total_delay += rand(\
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE), \
 			DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE) + DS2TICKS(BLOOPER_SPEED / BLOOPER_SPEED_BASELINE)) TICKS

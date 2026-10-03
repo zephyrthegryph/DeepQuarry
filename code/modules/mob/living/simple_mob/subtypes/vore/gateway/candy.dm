@@ -354,7 +354,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vore/candy/marshmellowserpent, /mob/li
 /mob/living/simple_mob/vore/candy/marshmellowserpent/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, 20)
-	om_after(src, 20, PROC_REF(chargeend), A)
+	after(src, 20, PROC_REF(chargeend), with = list(A))
 
 /mob/living/simple_mob/vore/candy/marshmellowserpent/proc/chargeend(atom/A)
 	if(stat) //you are dead
@@ -465,7 +465,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
+	after(src, 2.0 SECONDS, PROC_REF(summon_combo_1))
 
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_1()
@@ -473,7 +473,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
+	after(src, 1.5 SECONDS, PROC_REF(summon_combo_2))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_2()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
@@ -481,7 +481,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
-	om_after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
+	after(src, 1.0 SECONDS, PROC_REF(summon_combo_3))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_3()
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% calls for help!")))
@@ -491,7 +491,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	new /obj/random/mob/candycritter (src.loc)
 	new /obj/random/mob/candycritter (src.loc)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% begins to heal!")))
-	om_after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
+	after(src, 3.5 SECONDS, PROC_REF(summon_combo_4))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/summon_combo_4()
 	mend(TREAT_TISSUE_REPAIR, 35)
@@ -503,7 +503,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_combo(atom/target)
 	var/first = prob(50) ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast
 	var/second = prob(50) ? "critters" : (first == /obj/item/projectile/bullet/cmblast ? /obj/item/projectile/arc/fragmentation/cherrybomb : /obj/item/projectile/bullet/cmblast)
-	om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, first, second)
+	after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, first, second))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/barrage_shot(atom/target, shot, next_shot)
 	if(shot == "critters")
@@ -514,11 +514,11 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 		var/obj/item/projectile/P = new shot(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
 	if(next_shot)
-		om_after(src, 0.5 SECONDS, PROC_REF(barrage_shot), target, next_shot, null)
+		after(src, 0.5 SECONDS, PROC_REF(barrage_shot), with = list(target, next_shot, null))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_combo(atom/target)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares to let out a thunderous roar!")))
-	om_after(src, 2.5 SECONDS, PROC_REF(debuff_roar), target)
+	after(src, 2.5 SECONDS, PROC_REF(debuff_roar), with = list(target))
 
 /mob/living/simple_mob/vore/candy/ouroboros/proc/debuff_roar(atom/target)
 	var/obj/item/grenade/G = new grenade_type(get_turf(src))
@@ -532,7 +532,7 @@ DAMAGE_REACTION(/mob/living/simple_mob/vore/candy/ouroboros, DAMAGE_PROJECTILE, 
 	else
 		var/obj/item/projectile/P = new /obj/item/projectile/bullet/cmblast(get_turf(src))
 		P.launch_projectile(target, BP_TORSO, src)
-		om_after(P, 0.5, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), target, BP_TORSO, src)
+		after(P, 0.5, TYPE_PROC_REF(/obj/item/projectile, launch_projectile), with = list(target, BP_TORSO, src))
 
 
 /obj/random/mob/candycritter

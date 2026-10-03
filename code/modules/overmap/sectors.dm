@@ -262,7 +262,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	I.appearance_flags = KEEP_APART|RESET_TRANSFORM|RESET_COLOR
 	add_overlay(I)
 
-	om_after(src, 5 MINUTES, PROC_REF(distress_update))
+	after(src, 5 MINUTES, PROC_REF(distress_update))
 	return TRUE
 
 /obj/effect/overmap/visitable/proc/get_distress_info()

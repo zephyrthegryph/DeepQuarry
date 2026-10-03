@@ -270,7 +270,7 @@
 	playsound(src,angry_sounds,80)
 	set_screen_state("screen_mad",30)
 
-	om_after(src, 0.3 SECONDS, PROC_REF(shoot_at), user)
+	after(src, 0.3 SECONDS, PROC_REF(shoot_at), with = list(user))
 
 	credit_user(user,-10) //get fucked
 
@@ -279,14 +279,14 @@
 	door_moving = TRUE
 	flick("door closing",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHCLOSE)
-	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), FALSE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(FALSE))
 
 /obj/machinery/maint_recycler/proc/open_door(mob/user)
 	if(door_open || door_locked) return
 	door_moving = TRUE
 	flick("door opening",hatch)
 	play_sfx(src, SFX_RECYCLER_HATCHOPEN)
-	om_after(src, 1 SECOND, PROC_REF(door_finished_moving), TRUE)
+	after(src, 1 SECOND, PROC_REF(door_finished_moving), with = list(TRUE))
 
 /obj/machinery/maint_recycler/proc/door_finished_moving(open)
 	door_moving = FALSE
@@ -299,7 +299,7 @@
 /obj/machinery/maint_recycler/proc/shoot_at(mob/victim, burst = 3)
 	if(victim == null) return
 	for(var/i = 1 to burst)
-		om_after(src, (0.3 * i SECONDS), PROC_REF(shoot), victim)
+		after(src, (0.3 * i SECONDS), PROC_REF(shoot), with = list(victim))
 
 /obj/machinery/maint_recycler/proc/shoot(mob/victim)
 	var/projectile = /obj/item/projectile/beam/stun
@@ -315,7 +315,7 @@
 	if(inserted_item)
 		if(!door_open)
 			open_door(user)
-			om_after(src, 1 SECOND, PROC_REF(eject_item_act), user)
+			after(src, 1 SECOND, PROC_REF(eject_item_act), with = list(user))
 		else
 			eject_item_act(user)
 
@@ -332,7 +332,7 @@
 	if(inserted_item)
 		if(door_open)
 			close_door(user)
-			om_after(src, 1 SECOND, PROC_REF(recycle_act), user)
+			after(src, 1 SECOND, PROC_REF(recycle_act), with = list(user))
 		else
 			recycle_act(user)
 
@@ -343,7 +343,7 @@
 	door_locked = TRUE
 	play_sfx(src, SFX_RECYCLER_RECYCLE_ACT)
 	set_screen_state("screen_recycle",20)
-	om_after(src, 2 SECONDS, PROC_REF(post_recycle), user)
+	after(src, 2 SECONDS, PROC_REF(post_recycle), with = list(user))
 
 /obj/machinery/maint_recycler/proc/post_recycle(mob/user)
 	var/value = try_get_obj_value(inserted_item)
@@ -535,7 +535,7 @@ UTILITY PROCS
 /obj/machinery/maint_recycler/proc/set_screen_state(state, duration = 10)
 	if(!is_on) return
 	monitor_screen.icon_state = state
-	om_after(src, duration, PROC_REF(reset_screen_state))
+	after(src, duration, PROC_REF(reset_screen_state))
 
 /obj/machinery/maint_recycler/proc/reset_screen_state()
 	if(!is_on)

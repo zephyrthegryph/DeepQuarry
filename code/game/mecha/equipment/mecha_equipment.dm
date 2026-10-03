@@ -27,14 +27,14 @@ OM_FIELD_VIEW(/obj/item/mecha_parts/mecha_equipment, obj/mecha, chassis, CHANGE_
 /// Starts the equipment cooldown (ready again after equip_cooldown). TRUE while it can act on
 /// `target`: the act no longer waits for the cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/do_after_cooldown(target=1)
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 	if(target && chassis)
 		return 1
 	return 0
 
 /// The cooldown without waiting for it: ready again after equip_cooldown.
 /obj/item/mecha_parts/mecha_equipment/proc/start_cooldown()
-	om_after(src, equip_cooldown, PROC_REF(cooldown_over))
+	after(src, equip_cooldown, PROC_REF(cooldown_over))
 
 /obj/item/mecha_parts/mecha_equipment/proc/cooldown_over()
 	set_ready_state(TRUE)

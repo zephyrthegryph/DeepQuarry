@@ -142,10 +142,10 @@
 		return
 	play_sfx(get_turf(src), SFX_WEAPONS_FLASH, 0.25)
 	teleporting = 1
-	om_after(src, teleport_speed, PROC_REF(doteleport), user)
+	after(src, teleport_speed, PROC_REF(doteleport), with = list(user))
 	var/speed = teleport_speed/8
 	for(var/obj/machinery/hyperpad/P in linked)
-		om_after(src, speed, PROC_REF(animate_discharge), P)
+		after(src, speed, PROC_REF(animate_discharge), with = list(P))
 		speed += teleport_speed/8
 
 /obj/machinery/hyperpad/centre/proc/animate_discharge(obj/machinery/hyperpad/Pad)
@@ -205,7 +205,7 @@
 	color_overlay.color = newcolor
 	var/timer = teleport_cooldown/8
 	for(var/obj/machinery/hyperpad/P in linked)
-		om_after(src, timer, PROC_REF(animate_charge), P, color_overlay)
+		after(src, timer, PROC_REF(animate_charge), with = list(P, color_overlay))
 		timer += teleport_cooldown/8
 
 /obj/machinery/hyperpad/centre/proc/animate_charge(obj/machinery/hyperpad/Pad, mutable_appearance/color)

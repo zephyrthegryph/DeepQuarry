@@ -40,7 +40,7 @@ DECLARE_PERIODIC(/obj/effect/map_effect/interval, PERIODIC_SLOW)
 		return sleep_until_mob_near(proximity_needed, TRUE)
 	EXPIRY_SET(src, next_attempt, rand(interval_lower_bound, interval_upper_bound), CLOCK_WORLD)
 	trigger()
-	om_after(src, max(next_attempt - world.time, 1), /datum/proc/periodic_resume)
+	after(src, max(next_attempt - world.time, 1), /datum/proc/periodic_resume)
 	return PROCESS_KILL
 
 // Helper proc to optimize the use of effects by making sure they do not run if nobody is around to perceive it.

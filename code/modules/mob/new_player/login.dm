@@ -22,7 +22,7 @@ REGISTRY_MEMBERSHIP(/mob/new_player, REGISTRY_NEW_PLAYERS)
 	created_for = ckey
 	client.persistent_client.set_mob(src)
 
-	om_after(src, 4 SECONDS, PROC_REF(do_after_login))
+	after(src, 4 SECONDS, PROC_REF(do_after_login))
 	initialize_lobby_screen()
 
 /mob/new_player/proc/do_after_login()

@@ -171,7 +171,7 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 		if(4)
 			delay = rand(0.5*60*10,1*60*10)	//from .5 to 1 minutes of free time
 
-	om_after(src, delay, PROC_REF(malfunction_recover))
+	after(src, delay, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Death Explosive Implant
@@ -271,7 +271,7 @@ DAMAGE_REACTION(/obj/item/implant/tracking, DAMAGE_EMP, PROC_REF(tracking_implan
 				if(part) //For some reason, small_boom() didn't work. So have this bit of working copypaste.
 					imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 					play_sfx(src, SFX_ITEMS_COUNTDOWN)
-					om_after(src, 2.5 SECONDS, PROC_REF(limb_boom))
+					after(src, 2.5 SECONDS, PROC_REF(limb_boom))
 			if (elevel == "Destroy Body")
 				explosion(get_turf(T), -1, 0, 1, 6)
 				T.gib()
@@ -347,7 +347,7 @@ DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_impl
 						activate()		//50% chance of bye bye
 					else
 						meltdown()		//50% chance of implant disarming
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/explosive/islegal()
 	return 0
@@ -356,7 +356,7 @@ DAMAGE_REACTION(/obj/item/implant/explosive, DAMAGE_EMP, PROC_REF(explosive_impl
 	if (ishuman(imp_in()) && part)
 		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 		play_sfx(src, SFX_ITEMS_COUNTDOWN)
-		om_after(src, 25, PROC_REF(small_boom_goes))
+		after(src, 25, PROC_REF(small_boom_goes))
 
 //////////////////////////////
 //	Chemical Implant
@@ -430,7 +430,7 @@ DAMAGE_REACTION(/obj/item/implant/chem, DAMAGE_EMP, PROC_REF(chem_implant_emp))
 			if(prob(20))
 				activate(5)
 
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 //////////////////////////////
 //	Loyalty Implant
@@ -583,7 +583,7 @@ DAMAGE_REACTION(/obj/item/implant/death_alarm, DAMAGE_EMP, PROC_REF(death_alarm_
 			malfunction = MALFUNCTION_PERMANENT
 		set_alarm_armed(FALSE)
 
-	om_after(src, 2 SECONDS, PROC_REF(malfunction_recover))
+	after(src, 2 SECONDS, PROC_REF(malfunction_recover))
 
 /obj/item/implant/death_alarm/post_implant(mob/source as mob)
 	mobname = source.real_name

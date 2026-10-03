@@ -324,13 +324,13 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperionblaster(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_1), target)
+	after(src, 1.5 SECONDS, PROC_REF(launch_rockets_1), with = list(target))
 
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_1(atom/target)
 	var/obj/item/projectile/B = new /obj/item/projectile/bullet/imperionspear(get_turf(src))
 	B.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5 SECONDS, PROC_REF(launch_rockets_2), target)
+	after(src, 1.5 SECONDS, PROC_REF(launch_rockets_2), with = list(target))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/launch_rockets_2(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
@@ -347,7 +347,7 @@
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_followup(atom/target)
 	var/obj/item/projectile/P = new /obj/item/projectile/bullet/imperiontesla(get_turf(src))
 	P.launch_projectile(target, BP_TORSO, src)
-	om_after(src, 1.5, PROC_REF(microsingularity_second), target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear)
+	after(src, 1.5, PROC_REF(microsingularity_second), with = list(target, prob(50) ? /obj/item/projectile/bullet/imperionblaster : /obj/item/projectile/bullet/imperionspear))
 
 /mob/living/simple_mob/mechanical/mecha/imperion/phase5/proc/microsingularity_second(atom/target, shot_type)
 	var/obj/item/projectile/B = new shot_type(get_turf(src))

@@ -1,7 +1,7 @@
 /mob/living/silicon/decoy/on_death(gibbed)
 	. = ..()
 	icon_state = "ai-crash"
-	om_after(src, 1 SECOND, PROC_REF(crash_explode))
+	after(src, 1 SECOND, PROC_REF(crash_explode))
 	for(var/obj/machinery/ai_status_display/O in REGISTRY_MEMBERS(REGISTRY_MACHINES)) //change status
 		O.set_mode(2)
 

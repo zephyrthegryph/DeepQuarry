@@ -677,7 +677,7 @@ CAPABILITY(/mob/living/simple_mob/slime/xenobio/silver, reflects(list(/obj/item/
 		// Otherwise blow ourselves up.
 		say(pick("Sacrifice...!", "Sssss...", "Boom...!"))
 		ai_busy_begin()
-		om_after(src, 2 SECONDS, PROC_REF(suicide_bomb), L)
+		after(src, 2 SECONDS, PROC_REF(suicide_bomb), with = list(L))
 
 	return ..()
 

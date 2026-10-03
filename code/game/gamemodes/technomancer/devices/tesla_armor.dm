@@ -43,7 +43,7 @@
 		//Deal with protecting our wearer now.
 		if(ready)
 			ready = 0
-			after_slot(src, "recharge_timer", cooldown_to_charge, PROC_REF(recharge_ready), user)
+			after(src, cooldown_to_charge, PROC_REF(recharge_ready), key = "recharge_timer", with = list(user))
 			act_message(user, null, others = span_danger("%U%'s [src.name] blocks [attack_text]!"))
 			update_icon()
 			return 1

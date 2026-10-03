@@ -281,7 +281,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 		unique_dispense_list |= user.ckey
 
 	animate_dispensing()
-	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
 
 /// The dispensing animation is over: hand the gear out.
 /obj/machinery/gear_dispenser/proc/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
@@ -303,7 +303,7 @@ GLOBAL_LIST_EMPTY(dispenser_presets)
 /obj/machinery/gear_dispenser/proc/animate_dispensing()
 	flick("[icon_state]-scan",src)
 	visible_message("\The [src] scans its user.", runemessage = "hums")
-	om_after(src, 3 SECONDS, PROC_REF(animate_dispensing_flick))
+	after(src, 3 SECONDS, PROC_REF(animate_dispensing_flick))
 
 /obj/machinery/gear_dispenser/proc/animate_dispensing_flick()
 	flick("[icon_state]-dispense",src)
@@ -400,7 +400,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 	rel_set(src, nameof(held_gear_disp), S)
 
 	animate_dispensing()
-	om_after(src, dispense_anim_time, PROC_REF(dispense_finish), S, user, greet)
+	after(src, dispense_anim_time, PROC_REF(dispense_finish), with = list(S, user, greet))
 
 /obj/machinery/gear_dispenser/suit_fancy/dispense_finish(datum/gear_disp/S, mob/living/carbon/human/user, greet)
 	dispenser_flags &= ~GD_BUSY
@@ -414,13 +414,13 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/gear_dispenser/suit_fancy, TYPE_PROC_REF(
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing()
 	add_overlay("working")
-	om_after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
+	after(src, 5 SECONDS, PROC_REF(animate_dispensing_flick))
 
 /obj/machinery/gear_dispenser/suit_fancy/animate_dispensing_flick()
 	add_overlay("fullsuit")
 	door.icon_state = "open"
 	flick("anim_open", door)
-	om_after(src, 10.5, PROC_REF(animate_dispensing_lit))
+	after(src, 10.5, PROC_REF(animate_dispensing_lit))
 
 /obj/machinery/gear_dispenser/suit_fancy/proc/animate_dispensing_lit()
 	add_overlay("light2")

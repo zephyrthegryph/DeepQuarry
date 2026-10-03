@@ -46,7 +46,7 @@
 		var/mob/living/carbon/human/host = B?.borer_host()
 		to_chat(src, span_danger("You begin doggedly resisting the parasite's control (this will take approximately sixty seconds)."))
 		to_chat(host, span_danger("You feel the captive mind of [src] begin to resist your control."))
-		om_after(src, (rand(20,25) + (host ? host.injury_load(INJURY_CATEGORY_NEURAL)/10 : 0)) SECONDS, PROC_REF(break_control_of_borer))
+		after(src, (rand(20,25) + (host ? host.injury_load(INJURY_CATEGORY_NEURAL)/10 : 0)) SECONDS, PROC_REF(break_control_of_borer))
 		return
 	. = ..()
 

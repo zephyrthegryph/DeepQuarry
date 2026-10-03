@@ -80,7 +80,7 @@
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	if(sched)
 		sched.type_costs = list()
-	om_after(null, duration, GLOBAL_PROC_REF(metrics_finish_profile_capture))
+	after(null, duration, GLOBAL_PROC_REF(metrics_finish_profile_capture))
 	return TRUE
 
 /proc/metrics_finish_profile_capture()

@@ -581,11 +581,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/energy/sword/altevian, TYPE_PROC_REF(/at
 
 /obj/item/melee/energy/blade/dropped(mob/user, equipping, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
 /obj/item/melee/energy/blade/equipped(mob/user, slot)
 	. = ..()
-	om_after(src, 0, PROC_REF(check_held))
+	after(src, 0, PROC_REF(check_held))
 
 /obj/item/melee/energy/ownership()
 	. = ..()

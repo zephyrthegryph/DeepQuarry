@@ -693,13 +693,13 @@ UI_ACT_PROC(/obj/machinery/libraryscanner, ui_act_eject)
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		om_after(src, rand(200,400), PROC_REF(bind_paper), held)
+		after(src, rand(200,400), PROC_REF(bind_paper), with = list(held))
 	else
 		user.drop_item()
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		om_after(src, rand(300,500), PROC_REF(bind_bundle), held)
+		after(src, rand(300,500), PROC_REF(bind_bundle), with = list(held))
 	return TRUE
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)

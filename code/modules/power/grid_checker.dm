@@ -104,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/grid_checker, TYPE_PROC_REF(/atom, 
 
 	update_icon()
 
-	om_after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
+	after(src, rand(4 MINUTES, 10 MINUTES), PROC_REF(power_failure_times_out))
 
 /obj/machinery/power/grid_checker/proc/end_power_failure(announce = TRUE)
 	if(announce)

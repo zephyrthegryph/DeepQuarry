@@ -488,7 +488,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
 	if(reagents)
 		reagents.trans_to_mob(user, bitesize, CHEM_INGEST)
 	// On_Consume() deletes the food once it is empty: the emote fires for a finished meal.
-	om_after(user, 5, /proc/food_finished_emote, user, !reagents?.total_volume)
+	after(user, 5, /proc/food_finished_emote, with = list(user, !reagents?.total_volume))
 	On_Consume(user)
 
 //////////////////////////////////////////////////
@@ -1227,7 +1227,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/donkpocket, null, list
 
 /obj/item/reagent_containers/food/snacks/donkpocket/proc/cooltime()
 	if (src.warm)
-		om_after(src, 420 SECONDS, PROC_REF(cool_down))
+		after(src, 420 SECONDS, PROC_REF(cool_down))
 	return
 
 /obj/item/reagent_containers/food/snacks/donkpocket/spicy
@@ -1297,7 +1297,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/donkpocket/sinpocke
 	has_been_heated = TRUE
 	act_message(user, src, MSG_SELF("You crush %T% package and feel a comfortable heat build up. Now just to wait for it to be ready."), \
 		MSG_OTHERS(span_notice("%U% crushes %T% package.")))
-	om_after(src, 20 SECONDS, PROC_REF(self_heated), user)
+	after(src, 20 SECONDS, PROC_REF(self_heated), with = list(user))
 	return TRUE
 
 /obj/item/reagent_containers/food/snacks/brainburger

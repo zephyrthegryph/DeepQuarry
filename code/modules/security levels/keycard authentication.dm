@@ -168,7 +168,7 @@ UI_ACT_PROC(/obj/machinery/keycard_auth, ui_act_reset)
 		KA.reset()
 		KA.receive_request(src)
 
-	om_after(src, confirm_delay, PROC_REF(request_window_closed), user)
+	after(src, confirm_delay, PROC_REF(request_window_closed), with = list(user))
 
 /// The confirmation window is over: fire the event if someone confirmed it.
 /obj/machinery/keycard_auth/proc/request_window_closed(mob/user)

@@ -52,7 +52,7 @@
 	client << browse({"<script>window.location.href="byond://?asset_cache_confirm_arrival=[job]"</script>"}, "window=asset_cache_browser&file=asset_cache_send_verify.htm")
 	if(target && proc_ref)
 		LAZYSET(asset_waiters, "[job]", list(target, proc_ref, length(args) > 2 ? args.Copy(3) : null))
-		om_after(src, ASSET_FLUSH_TIMEOUT, PROC_REF(asset_job_finished), job)
+		after(src, ASSET_FLUSH_TIMEOUT, PROC_REF(asset_job_finished), with = list(job))
 	return job
 
 /// A job's ack arrived, or its timeout fired: runs the waiter, once.

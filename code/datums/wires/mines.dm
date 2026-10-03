@@ -43,7 +43,7 @@
 
 		if(WIRE_BADDISARM)
 			C.visible_message("[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*", "[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*")
-			om_after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
+			after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
 
 		if(WIRE_TRAP)
 			C.visible_message("[icon2html(C,viewers(holder))] *click!*", "[icon2html(C,viewers(holder))] *click!*")
@@ -65,7 +65,7 @@
 
 		if(WIRE_EXPLODE_DELAY)
 			C.visible_message("[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*", "[icon2html(C,viewers(holder))] *BEEPBEEPBEEP*")
-			om_after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
+			after(C, 2 SECONDS, TYPE_PROC_REF(/obj/effect/mine, explode))
 
 		if(WIRE_DISARM)
 			C.visible_message("[icon2html(C,viewers(holder))] *ping*", "[icon2html(C,viewers(holder))] *ping*")

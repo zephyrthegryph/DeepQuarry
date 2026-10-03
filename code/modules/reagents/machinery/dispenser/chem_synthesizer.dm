@@ -691,7 +691,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 		step = 1
 
 	// The time between each step is the volume required by a step multiplied by the delay_modifier (in ticks/deciseconds).
-	om_after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), r_id, step)
+	after(src, recipes[r_id][step + 1] * delay_modifier, PROC_REF(perform_reaction), with = list(r_id, step))
 
 // This proc carries out the actual steps in each reaction.
 /obj/machinery/chemical_synthesizer/proc/perform_reaction(r_id, step as num)
@@ -726,7 +726,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 	if(quantity > C.reagents.total_volume)
 		visible_message(span_notice("The [src] flashes an 'insufficient reagents' warning."))
 		// ALLOW(sys_om_after_rearm): a one-minute retry of the current step of a finite recipe sequence (step advances further down this proc), not periodic work over a state
-		om_after(src, 1 MINUTE, PROC_REF(perform_reaction), r_id, step)
+		after(src, 1 MINUTE, PROC_REF(perform_reaction), with = list(r_id, step))
 		return
 
 	// After all this mess of code, we reach the line where the magic happens.
@@ -751,7 +751,7 @@ UI_ACT_PROC(/obj/machinery/chemical_synthesizer, ui_act_drug_form)
 		var/delay = reagents.total_volume
 		update_icon() // Update the icon first to remove underlays, then switch to the new icon_state.
 		icon_state = "synth_finished"
-		om_after(src, delay, PROC_REF(bottle_product), r_id)
+		after(src, delay, PROC_REF(bottle_product), with = list(r_id))
 
 	else
 		follow_recipe(r_id, step)

@@ -714,7 +714,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(!GLOB.radio_service && initial_run)
 		// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the radio broken); it waits on the global radio service, not on state of this radio.
-		om_after(src, 3 SECONDS, PROC_REF(controller_check), FALSE)
+		after(src, 3 SECONDS, PROC_REF(controller_check), with = list(FALSE))
 		return
 	if(!GLOB.radio_service && !initial_run)
 		name = "broken radio headset"

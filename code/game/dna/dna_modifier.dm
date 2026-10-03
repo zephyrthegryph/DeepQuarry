@@ -524,7 +524,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseradiation)
 	irradiating = radiation_duration
 	var/lock_state = connected().locked
 	connected().locked = TRUE //lock it
-	om_after(src, radiation_duration SECONDS, PROC_REF(do_pulse), lock_state)
+	after(src, radiation_duration SECONDS, PROC_REF(do_pulse), with = list(lock_state))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/scan_consolenew, "radiationDuration", ui_act_radiationduration, UI_ARG_NUM("value", 1, 20))
@@ -575,7 +575,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_pulseseradiation)
 	connected().locked = TRUE //lock it
 
 	//We call the do_irradiate proc here after radation_duration SECONDS
-	om_after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), lock_state, block)
+	after(src, radiation_duration SECONDS, PROC_REF(do_irradiate), with = list(lock_state, block))
 	return TRUE
 
 UI_ACT(/obj/machinery/computer/scan_consolenew, "ejectBeaker", ui_act_ejectbeaker)
@@ -643,7 +643,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_bufferoption)
 			irradiating = 2
 			var/lock_state = connected().locked
 			connected().locked = 1//lock it
-			om_after(src, 2 SECONDS, PROC_REF(do_transfer), lock_state, bufferId)
+			after(src, 2 SECONDS, PROC_REF(do_transfer), with = list(lock_state, bufferId))
 			return TRUE
 		if("createInjector")
 			if(!injector_ready)
@@ -713,7 +713,7 @@ UI_ACT_PROC(/obj/machinery/computer/scan_consolenew, ui_act_ejectdisk)
 
 	// Cooldown
 	injector_ready = FALSE
-	om_after(src, 5 SECONDS, PROC_REF(injector_cooldown_finish))
+	after(src, 5 SECONDS, PROC_REF(injector_cooldown_finish))
 
 	// Create it
 	var/datum/transhuman/body_record/buf = buffers[buffer_id] // Traitgenes Use bodyrecords

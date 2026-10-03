@@ -141,7 +141,7 @@
 	var/temploc = src.loc//Saves the current location to know where to step away from
 	walk_away(src,temploc,stepdist)//I must go, my people need me
 
-	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
+	after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 
 /obj/item/grenade/flashbang/cluster
 	icon_state = "flashbang_active" // only exists primed
@@ -154,7 +154,7 @@
 	var/temploc = src.loc
 	walk_away(src,temploc,stepdist)
 
-	om_after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
+	after(src, rand(15, 60), PROC_REF(detonate)) // ALLOW(decl): the delay is rolled at random per instance, which a declaration cannot express
 
 /obj/item/grenade/flashbang/clusterbang/primed
 	desc = "This clusterbang seems to have already been activated. Uhoh."

@@ -95,7 +95,7 @@ DECLARE_PERIODIC_WHILE(/obj/aiming_overlay, PERIODIC_SLOW, "aiming_with")
 	. += rel_many(nameof(aimed), back = nameof(/obj/aiming_overlay::aiming_at))
 
 /obj/aiming_overlay/proc/update_aiming_deferred()
-	om_after(src, 0, PROC_REF(update_aiming))
+	after(src, 0, PROC_REF(update_aiming))
 
 /obj/aiming_overlay/proc/update_aiming()
 

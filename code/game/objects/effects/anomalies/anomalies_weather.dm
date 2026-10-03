@@ -44,7 +44,7 @@
 
 	apply_wibbly_filters(src)
 
-	om_after(src, telegraph, PROC_REF(start_weather))
+	after(src, telegraph, PROC_REF(start_weather))
 
 /obj/effect/anomaly/weather/proc/add_turfs(list/turf/to_add)
 	for(var/turf/turf in to_add)

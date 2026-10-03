@@ -710,7 +710,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 		user.audible_message("[user] jingles the [src]'s bell.", runemessage = "jingle")
 		play_sfx(src, SFX_ITEMS_PICKUP_RING)
 		jingled = 1
-		om_after(src, 50, PROC_REF(jingledreset))
+		after(src, 50, PROC_REF(jingledreset))
 	return
 
 /obj/item/clothing/accessory/collar/bell/proc/jingledreset()

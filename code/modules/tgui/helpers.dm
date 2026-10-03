@@ -8,7 +8,7 @@
 			return null
 
 		partial_packets = list("chunks" = new /list(total))
-		after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+		after(src, 10 SECONDS, PROC_REF(clear_oversized_payload), key = "packet_timeout")
 
 	if(!partial_packets)
 		return null
@@ -17,7 +17,7 @@
 
 	if(id != total)
 		if(id > 1)
-			after_slot(src, "packet_timeout", 10 SECONDS, PROC_REF(clear_oversized_payload))
+			after(src, 10 SECONDS, PROC_REF(clear_oversized_payload), key = "packet_timeout")
 		return null
 
 	var/assembled_payload = ""

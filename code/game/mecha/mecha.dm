@@ -883,7 +883,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 				float_direction = direction
 				start_process(MECHA_PROC_MOVEMENT)
 				src.mecha_log_message(span_warning("Movement control lost. Inertial movement started."))
-		om_after(src, get_step_delay(), PROC_REF(reset_can_move))
+		after(src, get_step_delay(), PROC_REF(reset_can_move))
 		return 1
 	return 0
 
@@ -934,7 +934,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		if(istype(O, /obj/effect/portal))	//derpfix
 			set_anchored(0) // Portals can only move unanchored objects.
 			O.Crossed(src)
-			om_after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), TRUE) //countering the portal's deferred teleport
+			after(src, 0, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(TRUE)) //countering the portal's deferred teleport
 		if(O.anchored)
 			obstacle.Bumped(src)
 		else
@@ -949,7 +949,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 		can_phase = FALSE
 		flick("[initial_icon]-phase", src)
 		forceMove(get_step(src,src.dir))
-		om_after(src, get_step_delay() * 3, PROC_REF(phase_ready))
+		after(src, get_step_delay() * 3, PROC_REF(phase_ready))
 		return TRUE	// In the event this is sequenced
 	return FALSE
 

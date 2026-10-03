@@ -20,7 +20,7 @@
 
 	// Then wait awhile.
 	if(wait_time)
-		om_after(src, wait_time, PROC_REF(finish_query))
+		after(src, wait_time, PROC_REF(finish_query))
 		return
 
 /// Once, `wait_time` after query(): drop candidates that no longer qualify and report.

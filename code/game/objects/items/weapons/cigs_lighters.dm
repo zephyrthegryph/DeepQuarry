@@ -56,7 +56,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/flame, PERIODIC_SLOW, "lit")
 	//If dropped, put ourselves out
 	//not before lighting up the turf we land on, though.
 	if(lit)
-		om_after(src, 0, PROC_REF(burn_out_where_dropped))
+		after(src, 0, PROC_REF(burn_out_where_dropped))
 	return ..()
 
 /obj/item/flame/match/proc/light(mob/user)

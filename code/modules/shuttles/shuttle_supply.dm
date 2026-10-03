@@ -23,11 +23,11 @@
 	//it would be cool to play a sound here
 	moving_status = SHUTTLE_WARMUP
 	publish_schedule()
-	om_after(src, warmup_time*10, PROC_REF(supply_warmed_up), destination)
+	after(src, warmup_time*10, PROC_REF(supply_warmed_up), with = list(destination))
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_warmed_up(obj/effect/shuttle_landmark/destination)
 	make_sounds(HYPERSPACE_WARMUP)
-	om_after(src, 5 SECONDS, PROC_REF(supply_depart), destination) // so the sound finishes.
+	after(src, 5 SECONDS, PROC_REF(supply_depart), with = list(destination)) // so the sound finishes.
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_depart(obj/effect/shuttle_landmark/destination)
 	if (moving_status == SHUTTLE_IDLE)
@@ -57,7 +57,7 @@
 	var/wait = GLOB.supply_service.movetime
 	if (next_location() != away_waypoint && prob(late_chance))
 		wait += rand(0,max_late_time)
-	om_after(src, wait, PROC_REF(supply_arrive), destination, away_waypoint)
+	after(src, wait, PROC_REF(supply_arrive), with = list(destination, away_waypoint))
 
 /datum/shuttle/autodock/ferry/supply/proc/supply_arrive(obj/effect/shuttle_landmark/destination, obj/effect/shuttle_landmark/away_waypoint)
 	if (next_location() != away_waypoint)

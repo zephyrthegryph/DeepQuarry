@@ -61,7 +61,7 @@ ADMIN_VERB(trader_ship, R_ADMIN|R_EVENT, "Dispatch Beruang Trader Ship", "Invite
 	GLOB.send_beruang = TRUE
 	consider_trader_load()
 
-	om_after(null, 300 SECONDS, GLOBAL_PROC_REF(close_trader_visit))
+	after(null, 300 SECONDS, GLOBAL_PROC_REF(close_trader_visit))
 
 /proc/trader_load_finished(z)
 	log_and_message_admins("Loaded the trade shuttle just now.")

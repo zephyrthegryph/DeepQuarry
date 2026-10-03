@@ -88,12 +88,12 @@
 
 /datum/tgui_module/appearance_changer/proc/jiggle_map()
 	// Fix for weird byond bug, jiggles the map around a little
-	om_after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), 1)
+	after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), with = list(1))
 
 /datum/tgui_module/appearance_changer/proc/jiggle_map_step(step)
 	if(step == 1)
 		cam_screen.screen_loc = "[map_name]:1,1"
-		om_after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), 2)
+		after(src, 0.1 SECONDS, PROC_REF(jiggle_map_step), with = list(2))
 		return
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48" // Align for larger icons and scales
 

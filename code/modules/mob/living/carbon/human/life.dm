@@ -858,7 +858,7 @@
 
 	playsound_local(get_turf(src), suit_inhale_sound, 100, pressure_affected = FALSE, volume_channel = VOLUME_CHANNEL_AMBIENCE)
 	if(!exhale) // Did we fail exhale? If no, play it after inhale finishes.
-		om_after(src, 5 SECONDS, PROC_REF(play_exhale), M)
+		after(src, 5 SECONDS, PROC_REF(play_exhale), with = list(M))
 
 /mob/living/carbon/human/proc/play_exhale(mob/living/M)
 	var/suit_exhale_sound

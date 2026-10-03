@@ -225,7 +225,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 			playsound(src, clicksound, 50, 1)
 		nanomass_reserve -= nanomass_required
 		log_game("PROTEAN: [key_name(user)] started a reconstitution cycle at [AREACOORD(src)]")
-		om_after(src, base_cook_time, PROC_REF(reconstitute_begin))
+		after(src, base_cook_time, PROC_REF(reconstitute_begin))
 	update_icon()
 	return TRUE
 
@@ -247,7 +247,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	if(!length(organs))
 		reconstitute_organs_done(P)
 		return
-	om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, 1)
+	after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, 1))
 
 /// Reconstitution step 2: one organ per per_organ_delay.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_organ(mob/living/carbon/human/protean/P, list/organs, index)
@@ -322,7 +322,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 		var/datum/mind_host/core_host = get_mind_host(salvaged_brain)
 		core_host.release_mind(P, "protean reconstitution")
 	if(index < length(organs))
-		om_after(src, per_organ_delay, PROC_REF(reconstitute_organ), P, organs, index + 1)
+		after(src, per_organ_delay, PROC_REF(reconstitute_organ), with = list(P, organs, index + 1))
 		return
 	reconstitute_organs_done(P)
 
@@ -330,7 +330,7 @@ EXTEND_INTERACTIONS(/obj/machinery/protean_reconstitutor, \
 	own_take(src, nameof(protean_refactory))
 	own_take(src, nameof(protean_brain))
 	own_take(src, nameof(protean_orchestrator))
-	om_after(src, finalize_time, PROC_REF(reconstitute_finish), P)
+	after(src, finalize_time, PROC_REF(reconstitute_finish), with = list(P))
 
 /// Reconstitution step 3: revive and release the finished protean.
 /obj/machinery/protean_reconstitutor/proc/reconstitute_finish(mob/living/carbon/human/protean/P)

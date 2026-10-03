@@ -1310,7 +1310,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 				if(prob(25))
 					to_chat(M, span_danger("Your pneumatic fluids seize for a moment."))
 				M.status_at_least(EFFECT_STUNNED, 2)
-				om_after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), EFFECT_WEAKENED, 2)
+				after(M, 3 SECONDS, TYPE_PROC_REF(/datum, status_at_least), with = list(EFFECT_WEAKENED, 2))
 		if(dose >= 10 || toxic_load >= 25) //Internal skeletal tubes are rupturing, allowing the chemical to breach them.
 			M.injure(INJURY_TOXIN, removed * 4, source = src)
 			M.status_adjust(EFFECT_JITTERY, 5)
@@ -2216,7 +2216,7 @@ TYPE_TABLE(/datum/reagent/cordradaxon, daxon_partners, list(REAGENT_ID_HYRONALIN
 		act_message(M, null, MSG_SELF(span_notice("You lose focus as warmth spreads throughout your chest and abdomen.")), \
 			MSG_OTHERS(span_notice("%U% suddenly twitches as some of their features seem to contort and reshape.")))
 		//wait 30 seconds, growth takes time yo
-		om_after(M, 30 SECONDS, GLOBAL_PROC_REF(change_drug_ask), M, gender_change)
+		after(M, 30 SECONDS, GLOBAL_PROC_REF(change_drug_ask), with = list(M, gender_change))
 
 /// The gender change drug asks before it acts, for pref sake.
 /proc/change_drug_ask(mob/living/carbon/human/M, gender_change)

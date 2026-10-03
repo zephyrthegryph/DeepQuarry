@@ -100,7 +100,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 /obj/structure/inflatable/proc/deflate()
 	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
-	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
+	after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
 /obj/structure/inflatable/proc/deflate_finish()
 	var/obj/item/inflatable/R = new /obj/item/inflatable(loc)
@@ -212,7 +212,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 /obj/structure/inflatable/door/proc/Open()
 	isSwitchingStates = 1
 	flick("door_opening",src)
-	om_after(src, 1 SECOND, PROC_REF(open_finish))
+	after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/inflatable/door/proc/open_finish()
 	set_density(FALSE)
@@ -224,7 +224,7 @@ DAMAGE_REACTION(/obj/structure/inflatable, DAMAGE_BLOB, PROC_REF(inflatable_blob
 /obj/structure/inflatable/door/proc/Close()
 	isSwitchingStates = 1
 	flick("door_closing",src)
-	om_after(src, 1 SECOND, PROC_REF(close_finish))
+	after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/inflatable/door/proc/close_finish()
 	set_density(TRUE)
@@ -238,7 +238,7 @@ APPEARANCE_TEMPLATE(/obj/structure/inflatable/door, "door_{state?open:closed}")
 /obj/structure/inflatable/door/deflate()
 	play_sfx(src, SFX_MACHINES_HISS, 1.5, vary = TRUE)
 	visible_message("[src] slowly deflates.")
-	om_after(src, 5 SECONDS, PROC_REF(deflate_finish))
+	after(src, 5 SECONDS, PROC_REF(deflate_finish))
 
 /obj/structure/inflatable/door/deflate_finish()
 	var/obj/item/inflatable/door/R = new /obj/item/inflatable/door(loc)

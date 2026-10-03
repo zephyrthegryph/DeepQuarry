@@ -12,7 +12,7 @@
 								HUD_HALLUCINATION_OXY,
 								HUD_HALLUCINATION_ONFIRE
 							))
-	om_after(src, rand(15,35) SECONDS, PROC_REF(clear_screwyhud))
+	after(src, rand(15,35) SECONDS, PROC_REF(clear_screwyhud))
 
 /datum/hallucinations/proc/event_painmessage()
 	PROTECTED_PROC(TRUE)
@@ -99,7 +99,7 @@
 	own_set(src, nameof(halitem), CI)
 	rel_set(src, nameof(halitem_client), our_human.client)
 	our_human.client.screen += CI
-	om_after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
+	after(src, rand(10,25) SECONDS, PROC_REF(remove_hallucination_item))
 
 /datum/hallucinations/proc/remove_hallucination_item()
 	// I can't manage this with /image/client_only due to screenloc, so an owned item plus its client it is! Called on both timer and destroying this component.
@@ -139,13 +139,13 @@
 		if(9)
 			//To make it more realistic, I added two gunshots (enough to kill)
 			send_sound = 'sound/weapons/gunshot1.ogg'
-			om_after(src, rand(1,3) SECONDS, PROC_REF(secondary_sound), 'sound/weapons/gunshot2.ogg')
+			after(src, rand(1,3) SECONDS, PROC_REF(secondary_sound), with = list('sound/weapons/gunshot2.ogg'))
 		if(10)
 			send_sound = 'sound/weapons/smash.ogg'
 		if(11)
 			//Same as above, but with tasers.
 			send_sound = 'sound/weapons/taser.ogg'
-			om_after(src, rand(1,3) SECONDS, PROC_REF(secondary_sound), 'sound/weapons/taser.ogg')
+			after(src, rand(1,3) SECONDS, PROC_REF(secondary_sound), with = list('sound/weapons/taser.ogg'))
 	//Rare audio
 		if(12)
 //These sounds are (mostly) taken from Hidden: Source
@@ -225,7 +225,7 @@
 	our_human.status_set(EFFECT_SLEEPING, 20)
 	hal_crit = TRUE
 	hal_screwyhud = HUD_HALLUCINATION_CRIT
-	om_after(src, rand(5,10) SECONDS, PROC_REF(reset_hallucination_sleeping))
+	after(src, rand(5,10) SECONDS, PROC_REF(reset_hallucination_sleeping))
 
 /datum/hallucinations/proc/clear_screwyhud()
 	hal_screwyhud = HUD_HALLUCINATION_NONE

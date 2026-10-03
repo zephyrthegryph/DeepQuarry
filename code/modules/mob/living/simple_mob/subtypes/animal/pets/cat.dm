@@ -76,7 +76,7 @@ GLOBAL_LIST_INIT(cat_default_emotes, list(
 					visible += O
 			if(visible.len)
 				var/atom/A = pick(visible)
-				om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), "suddenly stops and stares at something unseen[istype(A) ? " near [A]":""].")
+				after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list("suddenly stops and stares at something unseen[istype(A) ? " near [A]":""]."))
 
 // Instakills mice.
 /mob/living/simple_mob/animal/passive/cat/apply_melee_effects(atom/A)
@@ -362,17 +362,17 @@ DECLARE_INTERACTIONS(/obj/item/cat_box, INTERACT_USE(null, PROC_REF(interaction_
 			if (self.friend.stat >= DEAD || self.friend.is_critical())
 				if (prob((self.friend.stat < DEAD)? 50 : 15))
 					var/verb = pick("meows", "mews", "mrowls")
-					om_after(self, 0, TYPE_PROC_REF(/mob, audible_emote), pick("[verb] in distress.", "[verb] anxiously."))
+					after(self, 0, TYPE_PROC_REF(/mob, audible_emote), with = list(pick("[verb] in distress.", "[verb] anxiously.")))
 			else
 				if (prob(5))
-					om_after(self, 0, TYPE_PROC_REF(/mob, visible_emote), pick("nuzzles [self.friend].",
+					after(self, 0, TYPE_PROC_REF(/mob, visible_emote), with = list(pick("nuzzles [self.friend].",
 									"brushes against [self.friend].",
 									"rubs against [self.friend].",
-									"purrs."))
+									"purrs.")))
 		else if (self.friend.vitality() <= 0.5)
 			if (prob(10))
 				var/verb = pick("meows", "mews", "mrowls")
-				om_after(self, 0, TYPE_PROC_REF(/mob, audible_emote), "[verb] anxiously.")
+				after(self, 0, TYPE_PROC_REF(/mob, audible_emote), with = list("[verb] anxiously."))
 
 //Emergency teleport - Until a spriter makes something better
 /mob/living/simple_mob/animal/passive/cat/tabiranth

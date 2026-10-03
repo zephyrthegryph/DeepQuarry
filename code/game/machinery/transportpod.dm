@@ -45,16 +45,16 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/transportpod, MACHINE_PIPELINE, "in_transi
 	limit_x = xc[locNum]+1
 	limit_y = yc[locNum]+1
 	build()
-	om_after(src, 2 SECONDS, PROC_REF(arrive), L) //Give explosion time so the pod itself doesn't go boom
+	after(src, 2 SECONDS, PROC_REF(arrive), with = list(L)) //Give explosion time so the pod itself doesn't go boom
 
 /obj/machinery/transportpod/proc/arrive(turf/L)
 	src.forceMove(L)
 	play_sfx(src, SFX_EFFECTS_EXPLOSION, volume = 0)
-	om_after(src, 2, PROC_REF(arrive_unload))
+	after(src, 2, PROC_REF(arrive_unload))
 
 /obj/machinery/transportpod/proc/arrive_unload()
 	occupant_eject(src)
-	om_after(src, 2, TYPE_PROC_REF(/datum, om_qdel_self))
+	after(src, 2, TYPE_PROC_REF(/datum, om_qdel_self))
 
 /obj/machinery/transportpod/relaymove(mob/user as mob)
 	if(user.stat)

@@ -90,7 +90,7 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 				if(!robotic_brain)
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
-	om_after(src, delay, PROC_REF(malfunction_recover))
+	after(src, delay, PROC_REF(malfunction_recover))
 
 /obj/item/implant/neural/meltdown()
 	..()

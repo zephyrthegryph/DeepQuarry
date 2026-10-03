@@ -436,7 +436,7 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	pixel_y = default_pixel_y
 
 	if(!bluespace)
-		om_after(src, 5, PROC_REF(leap_land), T)
+		after(src, 5, PROC_REF(leap_land), with = list(T))
 		return
 	leap_land(T)
 

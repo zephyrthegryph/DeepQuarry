@@ -72,7 +72,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/power/fusion_core, MACHINE_PIPELINE, "owne
 	process_material_sample()
 
 	if(!QDELETED(owned_field))
-		om_after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
+		after(owned_field, 1, TYPE_PROC_REF(/obj/effect/fusion_em_field, core_tick))
 
 TOPIC_ACTION(/obj/machinery/power/fusion_core, "str", PROC_REF(topic_str), TOPIC_NUM("str"))
 

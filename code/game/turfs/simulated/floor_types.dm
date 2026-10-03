@@ -398,7 +398,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/flesh, INTERACT_ITEM("Nothing", TYPE_P
 	if(isliving(AM))
 		icon_state = "floor-on"
 		set_light(3,3,"#26c5a9")
-		om_after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
+		after(src, 5 SECONDS, PROC_REF(crossing_glow_off))
 
 EXTEND_INTERACTIONS(/turf/simulated/shuttle/plating/airless/carry, INTERACT_ITEM("Build", PROC_REF(carry_plating_item)))
 

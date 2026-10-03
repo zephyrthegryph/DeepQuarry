@@ -78,7 +78,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 /datum/shuttle/autodock/ferry/specops/perform_shuttle_move()
 	..()
 
-	om_after(src, 2 SECONDS, PROC_REF(announce_arrival))
+	after(src, 2 SECONDS, PROC_REF(announce_arrival))
 
 /datum/shuttle/autodock/ferry/specops/cancel_launch()
 	if (!can_cancel())
@@ -114,8 +114,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	for(var/seconds in message_tracker)
 		var/delay = specops_countdown_time - seconds * 10
 		if(delay >= 0 && seconds * 10 < specops_countdown_time)
-			om_after(src, delay, PROC_REF(announce_countdown), seconds)
-	om_after(src, specops_countdown_time, PROC_REF(countdown_ended), user)
+			after(src, delay, PROC_REF(announce_countdown), with = list(seconds))
+	after(src, specops_countdown_time, PROC_REF(countdown_ended), with = list(user))
 
 /datum/shuttle/autodock/ferry/specops/proc/announce_countdown(seconds)
 	if(cancel_countdown || !launch_prep)
@@ -142,8 +142,8 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
-			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
-	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_portals), special_ops)
+			after(M, delay, TYPE_PROC_REF(/obj/machinery/door, open))
+	after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_portals), with = list(special_ops))
 
 /proc/mauraders_portals(area/centcom/specops/special_ops)
 	var/spawn_marauder[] = new()
@@ -157,14 +157,14 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/shuttle_control/specops, INTERACT_SI
 			P.failchance = 0//So it has no fail chance when teleporting.
 			rel_set(P, nameof(P.target), pick(spawn_marauder))//Where the marauder will arrive.
 			spawn_marauder.Remove(P.target_ref())
-	om_after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), special_ops)
+	after(null, 1 SECOND, GLOBAL_PROC_REF(mauraders_drive), with = list(special_ops))
 
 /proc/mauraders_drive(area/centcom/specops/special_ops)
 	for(var/obj/machinery/mass_driver/M in special_ops)
 		var/delay = marauder_bay_delay(M.id)
 		if(delay)
-			om_after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
-	om_after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), special_ops) //Doors remain open for 5 seconds.
+			after(M, delay, TYPE_PROC_REF(/obj/machinery/mass_driver, drive))
+	after(null, 5 SECONDS, GLOBAL_PROC_REF(mauraders_close), with = list(special_ops)) //Doors remain open for 5 seconds.
 
 /proc/mauraders_close(area/centcom/specops/special_ops)
 	for(var/obj/machinery/door/blast/M in area_contents_of_type(special_ops, /obj/machinery/door/blast))

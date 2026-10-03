@@ -50,7 +50,7 @@
 
 	if(current_size >= STAGE_FOUR)
 		step_towards(src,S)
-		om_after(src, 0.1 SECONDS, PROC_REF(singularity_step), S)
+		after(src, 0.1 SECONDS, PROC_REF(singularity_step), with = list(S))
 	else if(current_size > STAGE_ONE)
 		step_towards(src,S)
 	else ..()

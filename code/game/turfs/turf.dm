@@ -278,7 +278,7 @@ DECLARE_INTERACTIONS(/turf, \
 		animate(O, transform = turn(O.transform, 20), time = 2)
 		animate(transform = turn(O.transform, -20), time = 4)
 		animate(transform = O.transform, time = 2)
-		om_after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
+		after(O, 0.8 SECONDS, TYPE_PROC_REF(/atom/movable, update_transform))
 
 /turf/CanPass(atom/movable/mover, turf/target)
 	if(!target)
@@ -395,7 +395,7 @@ DECLARE_INTERACTIONS(/turf, \
 		return
 
 	if(!get_gravity(source)) //Checked a different codebase for reference. Turns out it's only supposed to happen in no-gravity
-		om_after(source, 2, TYPE_PROC_REF(/atom/movable, om_step), turn(source.last_move, 180)) //This makes it float away after hitting a wall in 0G
+		after(source, 2, TYPE_PROC_REF(/atom/movable, om_step), with = list(turn(source.last_move, 180))) //This makes it float away after hitting a wall in 0G
 	if(isliving(source))
 		var/mob/living/M = source
 		M.turf_collision(src, throwingdatum?.speed)

@@ -109,7 +109,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast(atom/target)
 	Beam(target, icon_state = "sat_beam", time = 1.5 SECONDS, maxdistance = INFINITY)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a pouch of vials!")))
-	om_after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), target)
+	after(src, 0.5 SECONDS, PROC_REF(chemblast_throw), with = list(target))
 
 /mob/living/simple_mob/vr/alchemistbee/proc/chemblast_throw(atom/target)
 
@@ -142,7 +142,7 @@ DECLARE_LOGIN_VERB(/mob/living/simple_mob/vr/alchemistbee, /mob/living/proc/togg
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt(atom/target)
 	act_message(src, null, null, MSG_OTHERS(span_warning("%U% prepares a powerful spell!")))
 	Beam(target, icon_state = "sat_beam", time = 2.0 SECONDS, maxdistance = INFINITY)
-	om_after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), target)
+	after(src, 1.5 SECONDS, PROC_REF(dangerbolt_fire), with = list(target))
 
 /mob/living/simple_mob/vr/alchemistbee/proc/dangerbolt_fire(atom/target)
 	var/obj/item/projectile/A = new /obj/item/projectile/energy/nuclearblast(get_turf(src))

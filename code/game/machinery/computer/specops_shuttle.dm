@@ -156,7 +156,7 @@ GLOBAL_VAR_INIT(specops_shuttle_timeleft, 0)
 				message = "\"ALERT: TAKEOFF\""
 			announcer.autosay(message, "A.L.I.C.E.", CHANNEL_RESPONSE_TEAM)
 			message_tracker -= rounded_time_left//Remove the number from the list so it won't be called again next cycle.
-	om_after(null, 5, /proc/specops_countdown, message_tracker, announcer, done_proc)
+	after(null, 5, /proc/specops_countdown, with = list(message_tracker, announcer, done_proc))
 
 /proc/specops_can_move()
 	if(GLOB.specops_shuttle_moving_to_station || GLOB.specops_shuttle_moving_to_centcom)

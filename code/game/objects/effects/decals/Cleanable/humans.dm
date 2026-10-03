@@ -40,7 +40,7 @@
 		return INITIALIZE_HINT_QDEL
 	update_icon()
 	if(!mapload)
-		om_after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
+		after(src, DRYING_TIME * (amount+1), PROC_REF(dry))
 	if(istype(src, /obj/effect/decal/cleanable/blood/gibs))
 		return
 	if(src.type == /obj/effect/decal/cleanable/blood)
@@ -237,7 +237,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	streak_async(directions)
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_async(list/directions)
-	om_after(src, 3, PROC_REF(streak_step), pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4))
+	after(src, 3, PROC_REF(streak_step), with = list(pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4)))
 
 /// One streak step every 0.3 s: splatter behind (after the first), slide on.
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_step(direction, i, steps)
@@ -246,7 +246,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	if (step_to(src, get_step(src, direction), 0))
 		return
 	if (i + 1 < steps)
-		om_after(src, 3, PROC_REF(streak_step), direction, i + 1, steps)
+		after(src, 3, PROC_REF(streak_step), with = list(direction, i + 1, steps))
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_splat()
 	var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)

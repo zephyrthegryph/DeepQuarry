@@ -407,7 +407,7 @@ DECLARE_SHARED_CACHE(lifecycle_decls, GLOBAL_PROC_REF(build_lifecycle_decls), SC
 	if(decls.periodic)
 		om_task_periodic(A, decls.periodic)
 	for(var/list/timer in decls.timers)
-		om_after(A, lifecycle_decl_value(A, timer[1]), timer[2])
+		after(A, lifecycle_decl_value(A, timer[1]), timer[2])
 	for(var/hook_var in decls.expiry_hooks)
 		expiry_arm(A, hook_var, A.vars[hook_var], TRUE)
 	if(decls.sys_periodic)

@@ -102,7 +102,7 @@
 	..()
 	if(!attacked && !emagged)
 		attacked = TRUE
-		om_after(src, 6 SECONDS, PROC_REF(calm_down))
+		after(src, 6 SECONDS, PROC_REF(calm_down))
 
 // space_heater (spaceheater.dm) deleted with ZAS atmos machinery;
 // stumble override removed.

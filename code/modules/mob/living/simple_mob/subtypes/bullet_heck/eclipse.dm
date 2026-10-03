@@ -16,40 +16,40 @@
 			switch(attackcycle)
 				if(1)
 					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
-					om_after(src, 0.5 SECONDS, PROC_REF(rising_star), A, rng_cycle, 7)
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, rng_cycle, 7))
 					attackcycle = 0
 				if(2)
 					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
-					om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, rng_cycle, 18)
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, rng_cycle, 18))
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
 					attackcycle = 0
 		if(I_GRAB) //phase2
 			switch(attackcycle)
 				if(1)
 					specialattackprojectile = /obj/item/projectile/energy/eclipse_boss/chillingwind
-					om_after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), A, 3, 8)
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, 3, 8))
 					attackcycle = 0
 				if(2)
 					specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
-					om_after(src, 0.5 SECONDS, PROC_REF(chain_burst), A, rng_cycle, 6)
+					after(src, 0.5 SECONDS, PROC_REF(chain_burst), with = list(A, rng_cycle, 6))
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
 					attackcycle = 0
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball)
+					after(src, 0.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/eclipse_iceball))
 					attackcycle = 0
 				if(2)
 					specialattackprojectile = /obj/item/projectile/arc/blue_energy/precusor
-					om_after(src, 0.5 SECONDS, PROC_REF(checker_board), A, rng_cycle)
+					after(src, 0.5 SECONDS, PROC_REF(checker_board), with = list(A, rng_cycle))
 					attackcycle = 0
 				if(3)
 					projectiletype = /obj/item/projectile/energy/eclipse_boss/chillingwind
-					om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, rng_cycle, 8)
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, rng_cycle, 8))
 					attackcycle = 0
 
 
@@ -84,49 +84,49 @@
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(cross_spin), A, 2, 5)
+					after(src, 0.5 SECONDS, PROC_REF(cross_spin), with = list(A, 2, 5))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(rising_star), A, 3, 7)
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, 3, 7))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(random_firing), A, 10, 1, 7)
+					after(src, 0.5 SECONDS, PROC_REF(random_firing), with = list(A, 10, 1, 7))
 					attackcycle = 0
 					icon_state = "shield_mecha"
 		if(I_GRAB) //phase2
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 2, 5)
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 5))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), A, 3, 8)
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, 3, 8))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 10, 1, 7)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 7))
 					attackcycle = 0
 					icon_state = "shield_mecha"
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(dual_spin), A, 2, 4)
+					after(src, 0.5 SECONDS, PROC_REF(dual_spin), with = list(A, 2, 4))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, 3, 15)
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, 3, 15))
 					attackcycle = 0
 					parry_chance = 100
 					icon_state = "UPshield_mecha"
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 10, 1, 5)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 10, 1, 5))
 					attackcycle = 0
 					parry_chance = 0
 					icon_state = "shield_mecha"
@@ -148,33 +148,33 @@
 		if(I_HURT) //phase1
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(gattlingfire), A, rng_cycle, 4, 7)
+					after(src, 0.5 SECONDS, PROC_REF(gattlingfire), with = list(A, rng_cycle, 4, 7))
 					attackcycle = 0
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(rising_star), A, rng_cycle, 7)
+					after(src, 0.5 SECONDS, PROC_REF(rising_star), with = list(A, rng_cycle, 7))
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), A, 4, rng_cycle, 5)
+					after(src, 0.5 SECONDS, PROC_REF(quad_random_firing), with = list(A, 4, rng_cycle, 5))
 					attackcycle = 0
 		if(I_GRAB) //phase2
 			switch(attackcycle)
 				if(1)
-					om_after(src, 0.5 SECONDS, PROC_REF(death_wall), A, rng_cycle, 9)
+					after(src, 0.5 SECONDS, PROC_REF(death_wall), with = list(A, rng_cycle, 9))
 					attackcycle = 0
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), A, rng_cycle)
+					after(src, 0.5 SECONDS, PROC_REF(bomb_chaos), with = list(A, rng_cycle))
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), A, rng_cycle, 7)
+					after(src, 0.5 SECONDS, PROC_REF(bullet_blossom), with = list(A, rng_cycle, 7))
 					attackcycle = 0
 		if(I_DISARM) //phase3
 			switch(attackcycle)
 				if(1)
-					om_after(src, 2.5 SECONDS, PROC_REF(summon_puddles), A, rng_cycle, /datum/body_effect/mmo_drop/blade_boss_short)
+					after(src, 2.5 SECONDS, PROC_REF(summon_puddles), with = list(A, rng_cycle, /datum/body_effect/mmo_drop/blade_boss_short))
 					attackcycle = 0
 				if(2)
-					om_after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), A, 3, 12)
+					after(src, 0.5 SECONDS, PROC_REF(hole_in_wall), with = list(A, 3, 12))
 					attackcycle = 0
 				if(3)
-					om_after(src, 0.5 SECONDS, PROC_REF(cross_spin), A, rng_cycle, 3)
+					after(src, 0.5 SECONDS, PROC_REF(cross_spin), with = list(A, rng_cycle, 3))
 					attackcycle = 0

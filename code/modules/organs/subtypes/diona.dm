@@ -7,13 +7,13 @@
 	if(!diona)
 		return 0
 
-	om_after(target, 1, /proc/diona_nymph_splits_off, target) // So it has time to be thrown about by the gib() proc.
+	after(target, 1, /proc/diona_nymph_splits_off, with = list(target)) // So it has time to be thrown about by the gib() proc.
 
 /proc/diona_nymph_splits_off(turf/target)
 	var/mob/living/carbon/alien/diona/D = new(target)
 	var/datum/ghosttrap/plant/P = get_ghost_trap("living plant")
 	P.request_player(D, "A diona nymph has split off from its gestalt. ")
-	om_after(D, 6 SECONDS, TYPE_PROC_REF(/mob/living/carbon/alien/diona, die_unless_claimed))
+	after(D, 6 SECONDS, TYPE_PROC_REF(/mob/living/carbon/alien/diona, die_unless_claimed))
 
 /// A split-off nymph nobody took over dies.
 /mob/living/carbon/alien/diona/proc/die_unless_claimed()

@@ -203,7 +203,7 @@ DECLARE_APPEARANCE(/obj/machinery/organ_printer, "printing", list("1" = list(APP
 
 	visible_message(span_infoplain(span_bold("\The [src]") + " begins churning."))
 
-	om_after(src, print_delay, PROC_REF(printing_done), possible_list[choice][1])
+	after(src, print_delay, PROC_REF(printing_done), with = list(possible_list[choice][1]))
 
 /// The print delay is over: the organ comes out unless the printer lost power.
 /obj/machinery/organ_printer/proc/printing_done(organ_path)

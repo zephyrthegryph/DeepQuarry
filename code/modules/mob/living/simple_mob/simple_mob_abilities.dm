@@ -330,7 +330,7 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob, TYPE_PROC_REF(/atom, appearance_
 		var/atom/movable/AM = am
 		if(AM == src || AM.anchored)
 			continue
-		om_after(src, 1, PROC_REF(speen_throw), am)
+		after(src, 1, PROC_REF(speen_throw), with = list(am))
 	playsound(src, "sound/weapons/punchmiss.ogg", 50, 1)
 
 /mob/living/simple_mob/proc/speen_throw(atom/movable/AM, gentle = 0, damage = 10)

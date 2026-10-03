@@ -36,13 +36,13 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/computer/pod, MACHINE_PIPELINE, list("
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)
 		M.open()
 
-	om_after(src, 2 SECONDS, PROC_REF(alarm_drive))
+	after(src, 2 SECONDS, PROC_REF(alarm_drive))
 
 /obj/machinery/computer/pod/proc/alarm_drive()
 	for(var/obj/machinery/mass_driver/M as anything in pod_drivers)
 		M.power = connected()?.power
 		M.drive()
-	om_after(src, 5 SECONDS, PROC_REF(alarm_close))
+	after(src, 5 SECONDS, PROC_REF(alarm_close))
 
 /obj/machinery/computer/pod/proc/alarm_close()
 	for(var/obj/machinery/door/blast/M as anything in pod_doors)

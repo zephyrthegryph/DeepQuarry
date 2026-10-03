@@ -11,7 +11,7 @@
 /proc/dq_voice_reply(mob/living/who, list/options, mob/listener)
 	if(!who || !length(options))
 		return
-	om_after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), pick(options))
+	after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
 
 // ---------------------------------------------------------------------------
 // Parrot — repeat-everything mimicry.

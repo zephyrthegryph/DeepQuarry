@@ -31,7 +31,7 @@
 	target.bloodstr.clear_reagents() //instantly clears reagents afterwards
 	target.ingested.clear_reagents()
 	target.touching.clear_reagents()
-	om_after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
+	after(target, 1 MINUTE, TYPE_PROC_REF(/mob/living, glamour_cloak_expires))
 
 //Shrinking Glamour (scaling potion)
 
@@ -117,7 +117,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	thing.overlays += coolanimation
-	om_after(src, 1.4 SECOND, PROC_REF(animate_action_finished), thing, coolanimation)
+	after(src, 1.4 SECOND, PROC_REF(animate_action_finished), with = list(thing, coolanimation))
 
 //Face of Glamour (creates a clone of a target)
 

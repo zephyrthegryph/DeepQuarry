@@ -37,7 +37,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/floodlight, "flood{open?o:}{appearance_batter
 	if((cell.percent() < 10) && prob(5))
 		set_light_range(brightness_on/2)
 		set_light_power(brightness_on/4)
-		om_after(src, 20, PROC_REF(flicker_restore))
+		after(src, 20, PROC_REF(flicker_restore))
 
 /obj/machinery/floodlight/proc/flicker_restore()
 	if(on)

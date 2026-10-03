@@ -271,7 +271,7 @@ UI_ACT(/obj/machinery/computer/card, "print", ui_act_print)
 UI_ACT_PROC(/obj/machinery/computer/card, ui_act_print)
 	if(!printing)
 		printing = 1
-		om_after(src, 5 SECONDS, PROC_REF(finish_printing))
+		after(src, 5 SECONDS, PROC_REF(finish_printing))
 		. = TRUE
 	if(modify)
 		modify.name = "[modify.registered_name]'s ID Card ([modify.assignment])"

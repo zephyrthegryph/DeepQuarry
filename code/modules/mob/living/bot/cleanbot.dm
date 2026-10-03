@@ -43,7 +43,7 @@
 		act_message(src, null, others = "Something flies out of %U%. It seems to be acting oddly.")
 		var/obj/effect/decal/cleanable/blood/gibs/gib = new /obj/effect/decal/cleanable/blood/gibs(get_turf(src))
 		rel_add(src, nameof(ignore_list), gib)
-		om_after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), gib)
+		after(src, 1 MINUTE, PROC_REF(clear_ignored_gib), with = list(gib))
 
 /mob/living/bot/cleanbot/proc/clear_ignored_gib(obj/gibref)
 	SHOULD_NOT_OVERRIDE(TRUE)

@@ -180,7 +180,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 				act_message(C, null, MSG_SELF(span_warning("You pounce on the light!")), MSG_OTHERS(span_warning("%U% pounces on the light!")))
 				step_towards(C, targloc)
 				C.lay_down()
-				om_after(C, 1 SECOND, "lay_down")
+				after(C, 1 SECOND, "lay_down")
 			else
 				C.set_dir(get_dir(C,targloc))
 				act_message(C, null, MSG_SELF(span_notice("Your attention is drawn to the mysterious glowing dot.")), MSG_OTHERS(span_notice("%U% watches the light.")))
@@ -211,7 +211,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 			recharge_locked = TRUE
 
 	flick_overlay(I, showto, cooldown)
-	om_after(src, cooldown, PROC_REF(reset_laser_icon))
+	after(src, cooldown, PROC_REF(reset_laser_icon))
 
 /obj/item/laser_pointer/proc/reset_laser_icon()
 	icon_state = initial(icon_state)

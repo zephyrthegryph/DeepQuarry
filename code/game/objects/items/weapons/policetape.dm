@@ -369,7 +369,7 @@ DECLARE_INTERACTIONS(/obj/item/tape, \
 	lifted = 1
 	plane = MOB_PLANE
 	layer = ABOVE_MOB_LAYER
-	om_after(src, time, PROC_REF(settle))
+	after(src, time, PROC_REF(settle))
 
 // Returns a list of all tape objects connected to src, including itself.
 /obj/item/tape/proc/gettapeline()

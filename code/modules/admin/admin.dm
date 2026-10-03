@@ -308,7 +308,7 @@ ADMIN_VERB(intercom_convo, R_ADMIN|R_EVENT, "Intercom Convo", "Send an intercom 
 			var/this_message = decomposed[++i]
 			var/this_wait = decomposed[++i]
 			// Each line is a timer at its cumulative offset (no sleeping in the verb).
-			om_after(null, delay, GLOBAL_PROC_REF(admin_intercom_line), "[this_message]", "[this_sender]", "[channel == "Common" ? null : channel]", speech_verb) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
+			after(null, delay, GLOBAL_PROC_REF(admin_intercom_line), with = list("[this_message]", "[this_sender]", "[channel == "Common" ? null : channel]", speech_verb)) //Common is a weird case, as it's not a "channel", it's just talking into a radio without a channel set.
 			delay += this_wait SECONDS
 
 /proc/admin_intercom_line(message, sender, channel, speech_verb)

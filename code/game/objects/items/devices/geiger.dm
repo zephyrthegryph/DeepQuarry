@@ -199,13 +199,13 @@ EXTEND_INTERACTIONS(/obj/item/geiger/wall, \
 /// Old attack_ai: toggle it remotely.
 /obj/item/geiger/wall/proc/geiger_wall_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	om_after(src, 0, PROC_REF(attack_self), user)
+	after(src, 0, PROC_REF(attack_self), with = list(user))
 	return TRUE
 
 /// Old attack_hand.
 /obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	src.add_fingerprint(user)
-	om_after(src, 0, PROC_REF(attack_self), user)
+	after(src, 0, PROC_REF(attack_self), with = list(user))
 	return TRUE
 
 /obj/item/geiger/wall/north

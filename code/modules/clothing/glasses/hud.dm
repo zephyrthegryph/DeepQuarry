@@ -107,7 +107,7 @@ DAMAGE_REACTION(/obj/item/clothing/glasses/omnihud, DAMAGE_EMP, PROC_REF(omnihud
 		SStgui.close_uis(src)
 	if(tgarscreen && !offline_tgarscreen)
 		own_transfer(src, nameof(tgarscreen), src, nameof(offline_tgarscreen))
-		om_after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
+		after(src, 20 SECONDS, PROC_REF(reconnect_tgar))
 
 	//extra fun for non-sci variants; a small chance flip the state to the dumb 3d glasses when EMP'd
 	if(icon_state == "glasses" || icon_state == "sun")

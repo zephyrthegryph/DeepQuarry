@@ -153,7 +153,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 
 /obj/effect/gateway/active/Initialize(mapload)
 	. = ..()
-	om_after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
+	after(src, rand(30, 60) SECONDS, PROC_REF(spawn_and_qdel))
 
 /obj/effect/gateway/active/proc/spawn_and_qdel()
 	if(LAZYLEN(spawnable))

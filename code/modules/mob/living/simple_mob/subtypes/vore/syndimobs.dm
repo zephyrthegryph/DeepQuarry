@@ -82,7 +82,7 @@
 /mob/living/simple_mob/vore/otie/syndicate/do_special_attack(atom/A, stance)
 	ai_busy_begin()
 	do_windup_animation(A, leap_warmup)
-	om_after(src, leap_warmup, PROC_REF(do_special_attack_1), A) // For the telegraphing.
+	after(src, leap_warmup, PROC_REF(do_special_attack_1), with = list(A)) // For the telegraphing.
 
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_1(atom/A)
@@ -92,7 +92,7 @@
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	om_after(src, 5, PROC_REF(do_special_attack_2))
+	after(src, 5, PROC_REF(do_special_attack_2))
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 
@@ -224,7 +224,7 @@
 	var/delay = rand(explosion_delay_lower, explosion_delay_upper)
 	color_sequence(syndimob_warning_flash(delay))
 
-	om_after(src, delay, PROC_REF(implant_detonates))
+	after(src, delay, PROC_REF(implant_detonates))
 	return ..()
 
 /mob/living/simple_mob/vore/wolftaur/syndicate/alt1

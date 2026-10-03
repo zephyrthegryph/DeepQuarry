@@ -288,7 +288,7 @@ GLOBAL_LIST_INIT(unverified_custody_snapshot, list("verified" = FALSE, "duration
 	// Pass only the key: om_after() drops a call whose captured datum is gone, and a subject
 	// deleted before the timer fires would then leave its key pending forever (blocking every
 	// later reconciliation for that key). The handler resolves the key and copes with a gone subject.
-	om_after(src, 0, PROC_REF(reconcile_subject_availability), key)
+	after(src, 0, PROC_REF(reconcile_subject_availability), with = list(key))
 
 /datum/system/contracts/proc/reconcile_subject_availability(key)
 	pending_subject_reconciliations -= key

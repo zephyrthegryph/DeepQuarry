@@ -62,12 +62,12 @@
 				for(var/obj/machinery/alarm/AA in A.alarm_area_ref())
 					AA.update_icon()
 				changed(A, CHANGE_MACHINE_SETTINGS)
-			om_after(src, 20 MINUTES, PROC_REF(clear_short))
+			after(src, 20 MINUTES, PROC_REF(clear_short))
 
 		if(WIRE_AI_CONTROL)
 			if(!A.aidisabled)
 				A.aidisabled = TRUE
-			om_after(src, 10 SECONDS, PROC_REF(clear_ai_disabled))
+			after(src, 10 SECONDS, PROC_REF(clear_ai_disabled))
 
 		if(WIRE_SYPHON)
 			if(A.mode == 1) // MODE_SCRUB

@@ -77,7 +77,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/electropack, \
 			if(!dq_get_moved_recently(M) && M.last_move)
 				dq_set_moved_recently(M, TRUE)
 				step(M, M.last_move)
-				om_after(M, 5 SECONDS, GLOBAL_PROC_REF(dq_set_moved_recently), M, FALSE)
+				after(M, 5 SECONDS, GLOBAL_PROC_REF(dq_set_moved_recently), with = list(M, FALSE))
 		to_chat(M, span_danger("You feel a sharp shock!"))
 		fx_sparks(M, 3)
 

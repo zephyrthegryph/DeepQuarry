@@ -104,7 +104,7 @@ EXTEND_INTERACTIONS(/obj/structure/casino_table/roulette_table, \
 			color="red"
 	if(result == 37)
 		result = "00"
-	om_after(src, 5 SECONDS, PROC_REF(roulette_stops), result, color)
+	after(src, 5 SECONDS, PROC_REF(roulette_stops), with = list(result, color))
 	return TRUE
 
 /// Old attackby: load a ball into an empty wheel; with one already in, it goes on the table.
@@ -554,7 +554,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 		icon_state = "wheel_of_fortune_spinning"
 		result = rand(1,interval)
 
-		om_after(src, 5 SECONDS, PROC_REF(wheel_stops), "The wheel of fortune stops spinning, the number is [result]!")
+		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, the number is [result]!"))
 
 	if(mode == "lottery")
 		if(lottery_entries == 0)
@@ -565,7 +565,7 @@ DECLARE_INTERACTIONS(/obj/item/roulette_ball/hollow, \
 		icon_state = "wheel_of_fortune_spinning"
 		result = pick(lottery_tickets)
 
-		om_after(src, 5 SECONDS, PROC_REF(wheel_stops), "The wheel of fortune stops spinning, and the winner is [result]!")
+		after(src, 5 SECONDS, PROC_REF(wheel_stops), with = list("The wheel of fortune stops spinning, and the winner is [result]!"))
 
 /datum/interaction/machine_verb/wheel_of_fortune_setinterval
 	id = "wheel_of_fortune_setinterval"

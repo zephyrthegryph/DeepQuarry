@@ -91,7 +91,7 @@
 	var/delay = 0
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		var/datum/computer_file/data/email_message/new_message = received_message.clone()
-		om_after(src, delay, PROC_REF(send_mail), email_account.login, new_message, 1)
+		after(src, delay, PROC_REF(send_mail), with = list(email_account.login, new_message, 1))
 		delay += 2
 
 	return TRUE

@@ -118,7 +118,7 @@ APPEARANCE_TEMPLATE(/obj/effect/blob, "{appearance_state}")
 	regen()
 	animate(src, color = "#FF0000", time=1)
 	animate(color = "#FFFFFF", time=4, easing=ELASTIC_EASING)
-	om_after(src, 0.5 SECONDS, PROC_REF(pulse_on), forceLeft, dirs)
+	after(src, 0.5 SECONDS, PROC_REF(pulse_on), with = list(forceLeft, dirs))
 
 /// The rest of a pulse, after its flash.
 /obj/effect/blob/proc/pulse_on(forceLeft, list/dirs)

@@ -45,7 +45,7 @@
 		return FALSE
 	if(length(choices) == 1 && autopick_single_option)
 		// Nothing to pick: answer with the one choice (after om_ask_begin() finishes parking).
-		om_after(src, 0, PROC_REF(autopick))
+		after(src, 0, PROC_REF(autopick))
 		return TRUE
 	var/id = uniqueid || "defmenu_[REF(user)]_[REF(where)]"
 	var/datum/radial_menu/om/open_menu = GLOB.radial_menus[id]

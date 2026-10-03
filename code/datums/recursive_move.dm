@@ -32,7 +32,7 @@
 /datum/recursive_move/New(atom/movable/new_holder)
 	..()
 	rel_set(src, nameof(holder), new_holder)
-	om_after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
+	after(src, 0, PROC_REF(setup_parents)) // Delayed action if our holder is spawned in nullspace and then loc = target, hopefully this catches it. VV Add item does this, for example.
 
 /datum/recursive_move/proc/setup_parents()
 	if(QDELETED(src) || QDELETED(holder))

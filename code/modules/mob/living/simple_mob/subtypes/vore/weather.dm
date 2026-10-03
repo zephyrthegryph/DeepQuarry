@@ -187,17 +187,17 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 /mob/living/simple_mob/vore/boss_jellyfish/do_special_attack(atom/A, stance)
 	if(nutrition > 500)
 		Beam(A, icon_state = "sat_beam", time = 3.5 SECONDS, maxdistance = INFINITY)
-		om_after(src, 4 SECONDS, PROC_REF(sniper_shot), A)
+		after(src, 4 SECONDS, PROC_REF(sniper_shot), with = list(A))
 	else if(vitality() < 0.25) //phase 4 where it teleports then chains 3 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(3)
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.5) //teleports then chains 2 attacks
 		rel_set(src, nameof(chain_target), A)
 		set_chain_number(2)
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
 	else if(vitality() < 0.75) //teleports then attacks
@@ -205,16 +205,16 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 		set_chain_number(1)
 		icon_state = "jellyfish_blue"
 		icon_living = "jellyfish_blue"
-		om_after(src, 3 SECONDS, PROC_REF(astral_sea_warp), A)
+		after(src, 3 SECONDS, PROC_REF(astral_sea_warp), with = list(A))
 	else //attacks once
 		if(prob(50))
 			icon_state = "jellyfish_yellow"
 			icon_living = "jellyfish_yellow"
-			om_after(src, 4 SECONDS, PROC_REF(dash_attack), A)
+			after(src, 4 SECONDS, PROC_REF(dash_attack), with = list(A))
 		else
 			icon_state = "jellyfish_red"
 			icon_living = "jellyfish_red"
-			om_after(src, 4 SECONDS, PROC_REF(summon_puddles), A)
+			after(src, 4 SECONDS, PROC_REF(summon_puddles), with = list(A))
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack(atom/A) //spider dash attack
 	ai_busy_begin()
@@ -225,7 +225,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/boss_jellyfish, 4 SECONDS, chain_atta
 	act_message(src, A, null, MSG_OTHERS(span_danger("%U% leaps at %T%!")))
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 
-	om_after(src, 5, PROC_REF(dash_attack_1), A) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
+	after(src, 5, PROC_REF(dash_attack_1), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 
 
 /mob/living/simple_mob/vore/boss_jellyfish/proc/dash_attack_1(atom/A)

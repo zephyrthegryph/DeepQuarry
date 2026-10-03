@@ -117,7 +117,7 @@ TYPE_TABLE(/obj/mecha/combat/marauder, mecha_starting_components, list( \
 					tmp_step_energy_drain = step_energy_drain*2
 
 		can_move = 0
-		om_after(src, tmp_step_in, PROC_REF(reset_can_move))
+		after(src, tmp_step_in, PROC_REF(reset_can_move))
 		use_power(tmp_step_energy_drain)
 		return 1
 	return 0

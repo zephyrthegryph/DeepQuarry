@@ -146,7 +146,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 		rel_set(src, nameof(partial_scanned), target)
 	partial_scan_time += world.time - scan_start_time // This is added to the existing value so two partial scans will add up correctly.
 	om_hold_busy(src, 0.3 SECONDS, TYPE_PROC_REF(/atom, update_icon)) // still busy while the box flashes red
-	om_after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), effects, target ? REF(target) : null, user ? REF(user) : null)
+	after(src, 0.3 SECONDS, PROC_REF(scan_cleanup_late), with = list(effects, target ? REF(target) : null, user ? REF(user) : null))
 
 /obj/item/cataloguer/proc/scan_cleanup_late(list/effects, target_ref, user_ref)
 	scan_cleanup(locate(target_ref), locate(user_ref), effects)
@@ -234,7 +234,7 @@ APPEARANCE_TEMPLATE(/obj/item/cataloguer, "{initial(icon_state)}{appearance_busy
 	for(var/atom/A as anything in scannable_atoms)
 		A.filters += filter
 	to_chat(user, span_notice("\The [src] is highlighting scannable objects in green, if any exist."))
-	om_after(src, 2 SECONDS, PROC_REF(pulse_scan_end), user, list(scannable_atoms, filter))
+	after(src, 2 SECONDS, PROC_REF(pulse_scan_end), with = list(user, list(scannable_atoms, filter)))
 
 /obj/item/cataloguer/proc/pulse_scan_end(mob/user, list/state)
 	var/list/scannable_atoms = state[1]

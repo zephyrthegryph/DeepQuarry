@@ -176,7 +176,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/energy_field, TYPE_PROC_REF(/atom, appearanc
 	affected_shields |= src
 	i--
 	if(i)
-		om_after(src, 2, PROC_REF(spread_impact), i, affected_shields)
+		after(src, 2, PROC_REF(spread_impact), with = list(i, affected_shields))
 
 /obj/effect/energy_field/proc/spread_impact(i, list/affected_shields)
 	for(var/direction in GLOB.cardinal)

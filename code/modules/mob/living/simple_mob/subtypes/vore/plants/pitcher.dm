@@ -207,7 +207,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/pitcher_plant, \
 		act_message(user, H, MSG_SELF(span_infoplain("You heft %T% free from \the [src].")), MSG_OTHERS(span_notice("%U% pulls a sticky %T% free from \the [src].")))
 		rel_add(src, nameof(prey_excludes), H)
 		vore_selected.release_specific_contents(H)
-		om_after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), H)
+		after(src, 1 MINUTES, PROC_REF(removeMobFromPreyExcludes), with = list(H))
 	else
 		to_chat(user, span_notice("The victim slips from your grasp!"))
 

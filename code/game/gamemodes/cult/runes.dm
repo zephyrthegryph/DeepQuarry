@@ -180,7 +180,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			om_ask(target, /datum/om/prompt/confirm/cult_convert, PROC_REF(convert_answered), waiting = waiting_for_input)
 
 	if(target in converting)
-		om_after(src, 10 SECONDS, PROC_REF(convert_tick), attacker, target, waiting_for_input, 1) //proc once every 10 seconds
+		after(src, 10 SECONDS, PROC_REF(convert_tick), with = list(attacker, target, waiting_for_input, 1)) //proc once every 10 seconds
 
 /// The convert rune's offer. Closing it is resisting; `waiting` is the rune's asked-already list.
 /datum/om/prompt/confirm/cult_convert
@@ -223,7 +223,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			SetUniversalState(/datum/universal_state/hell)
 			GLOB.narsie_cometh = 1
 
-			om_after(null, 10 SECONDS, /proc/narsie_call_evac) // the global owner: a round event, and the rune goes
+			after(null, 10 SECONDS, /proc/narsie_call_evac) // the global owner: a round event, and the rune goes
 
 		log_and_message_admins_many(cultists, "summoned the end of days.")
 		return
@@ -273,11 +273,11 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 			MSG_OTHERS(span_danger("%U%'s eyes give off eerie red glow!")), \
 			MSG_BLIND(span_warning("You hear a heartbeat.")))
 		user.bhunger += drain
-		om_after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), user)
+		after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
 		return
 	user.mend(TREAT_TISSUE_REPAIR, drain%5)
 	drain-=drain%5
-	om_after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), user, drain)
+	after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), with = list(user, drain))
 	return
 
 /// Blood hunger bites every 5 seconds until it is gone.
@@ -286,7 +286,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		return
 	user.injure(INJURY_BLUNT, 3)
 	user.bhunger--
-	om_after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), user)
+	after(user, 5 SECONDS, GLOBAL_PROC_REF(cult_blood_hunger), with = list(user))
 
 /// Drained blood mends 5 at a time, 0.2 seconds apart.
 /proc/cult_drain_mend(mob/living/user, drain)
@@ -306,7 +306,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				affected.mend_fracture()
 			for(var/datum/affliction/wound/internal_bleeding/W in affected.get_wounds())
 				affected.remove_wound(W)
-	om_after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), user, drain - 5)
+	after(user, 0.2 SECONDS, GLOBAL_PROC_REF(cult_drain_mend), with = list(user, drain - 5))
 
 
 
@@ -388,7 +388,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 				(Verbs -> Ghost -> Re-enter corpse)")))
 				break
 
-	om_after(src, 10 SECONDS, PROC_REF(raise_finish), user, corpse_to_raise, body_to_sacrifice)
+	after(src, 10 SECONDS, PROC_REF(raise_finish), with = list(user, corpse_to_raise, body_to_sacrifice))
 
 /obj/effect/rune/proc/raise_finish(mob/living/user, mob/living/carbon/human/corpse_to_raise, mob/living/carbon/human/body_to_sacrifice)
 	if(corpse_to_raise.client)
@@ -463,7 +463,7 @@ REGISTRY_MEMBERSHIP(/datum/mind, REGISTRY_SACRIFICED)
 		L.ajourn=0
 		return
 	L.injure(INJURY_BLUNT, 3)
-	om_after(L, 10 SECONDS, GLOBAL_PROC_REF(cult_ajourney_tick), L)
+	after(L, 10 SECONDS, GLOBAL_PROC_REF(cult_ajourney_tick), with = list(L))
 
 
 
@@ -640,13 +640,13 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 	act_message(user, null, MSG_SELF(span_danger("In the last moment of your humble life, you feel an immense pain as fabric of reality mends... with your blood.")), \
 		MSG_OTHERS(span_danger("%U% keels over dead, %THEIR% blood glowing blue as it escapes %THEIR% body and dissipates into thin air.")), \
 		MSG_BLIND(span_warning("You hear faint rustle.")))
-	om_after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), user)
+	after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user))
 	return
 
 /// The mend rune's strain on reality lasts while its caster stays dead (checked every minute).
 /proc/cult_mend_rune_wait(mob/living/user)
 	if(user?.stat == DEAD)
-		om_after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), user)
+		after(null, 1 MINUTE, GLOBAL_PROC_REF(cult_mend_rune_wait), with = list(user))
 		return
 	GLOB.runedec-=10
 
@@ -1090,7 +1090,7 @@ DECLARE_REPEAT(/obj/effect/rune, 3 SECONDS, manifest_tick, "manifest_user")
 			to_chat(M, span_danger("Your blood boils!"))
 			victims += M
 			if(prob(5))
-				om_after(M, 5, TYPE_PROC_REF(/mob, gib))
+				after(M, 5, TYPE_PROC_REF(/mob, gib))
 		for(var/obj/effect/rune/R in view(src))
 			if(prob(10))
 				explosion(R.loc, -1, 0, 1, 5)

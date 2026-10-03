@@ -131,7 +131,7 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]opening",src)
-	om_after(src, 1 SECOND, PROC_REF(open_finish))
+	after(src, 1 SECOND, PROC_REF(open_finish))
 
 /obj/structure/simple_door/proc/open_finish()
 	set_density(FALSE)
@@ -145,7 +145,7 @@
 	isSwitchingStates = 1
 	playsound(src, material.dooropen_noise, 100, 1)
 	flick("[material.door_icon_base]closing",src)
-	om_after(src, 1 SECOND, PROC_REF(close_finish))
+	after(src, 1 SECOND, PROC_REF(close_finish))
 
 /obj/structure/simple_door/proc/close_finish()
 	set_density(TRUE)

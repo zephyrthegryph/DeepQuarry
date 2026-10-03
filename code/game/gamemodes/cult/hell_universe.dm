@@ -52,7 +52,7 @@ In short:
 		A.update_icon()
 
 /datum/universal_state/hell/OverlayAndAmbientSet()
-	om_after(src, 0, PROC_REF(relight_world))
+	after(src, 0, PROC_REF(relight_world))
 
 /datum/universal_state/hell/proc/relight_world()
 	for(var/datum/lighting_corner/L in world)

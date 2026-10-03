@@ -9,7 +9,7 @@
 	..()
 	om_task_periodic(src, PERIODIC_SLOW)
 	EXPIRY_SET(src, implode_at, 10 SECONDS, CLOCK_WORLD)
-	om_after(src, 10 SECONDS, PROC_REF(implode))
+	after(src, 10 SECONDS, PROC_REF(implode))
 	update_icon()
 	play_sfx(src, SFX_WEAPONS_WAVE, volume = 100)
 

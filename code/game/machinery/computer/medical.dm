@@ -386,7 +386,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_print_p)
 	if(!printing)
 		printing = TRUE
 		SStgui.update_uis(src)
-		om_after(src, 5 SECONDS, PROC_REF(print_finish))
+		after(src, 5 SECONDS, PROC_REF(print_finish))
 
 /obj/machinery/computer/med_data/proc/record_notes_entered(datum/om/prompt/text/record_notes/ask)
 	var/new_notes = strip_html_simple(ask.text, MAX_RECORD_LENGTH)

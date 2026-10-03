@@ -54,7 +54,7 @@
 				if(power_fields)
 					A.arfgs_activate()
 				if(auto_cancel)
-					om_after(src, cooldown, PROC_REF(auto_cancel_lockdown), A)
+					after(src, cooldown, PROC_REF(auto_cancel_lockdown), with = list(A))
 
 	..()
 

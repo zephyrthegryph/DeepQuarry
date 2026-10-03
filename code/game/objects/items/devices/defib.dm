@@ -184,7 +184,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/defib_kit, PROC_REF(on_emag), null)
 	cooldown = 1
 	update_icon()
 
-	om_after(src, delay, PROC_REF(recharged))
+	after(src, delay, PROC_REF(recharged))
 
 /obj/item/shockpaddles/update_held_icon()
 	var/mob/living/M = loc

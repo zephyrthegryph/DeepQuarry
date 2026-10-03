@@ -17,7 +17,7 @@
 			rel_set(src, nameof(apc), locate_within(get_step(H,0), /obj/machinery/power/apc))
 		if(!apc())
 			nif().notify("You must be facing an APC to connect to.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 		act_message(H, null, MSG_SELF(span_notice("Thin snakelike tendrils grow from you and connect to \the [apc()].")), \
@@ -67,7 +67,7 @@
 	if((. = ..()))
 		if(used >= 1500)
 			nif().notify("Heat sinks not safe to operate again yet! Max 75% on activation.",TRUE)
-			om_after(src, 0, PROC_REF(deactivate))
+			after(src, 0, PROC_REF(deactivate))
 			return FALSE
 
 /datum/nifsoft/heatsinks/stat_text()
@@ -139,7 +139,7 @@
 			if(nif().human.resize(new_size/100, uncapped=nif().human.has_large_resize_bounds(), ignore_prefs = TRUE))
 				to_chat(nif().human,span_notice("You set the size to [new_size]%"))
 				nif().human.visible_message(span_warning("Swirling grey mist envelops [nif().human] as they change size!"),span_notice("Swirling streams of nanites wrap around you as you change size!"))
-		om_after(src, 0, PROC_REF(deactivate))
+		after(src, 0, PROC_REF(deactivate))
 
 /datum/nifsoft/sizechange/deactivate(force = FALSE)
 	if((. = ..()))

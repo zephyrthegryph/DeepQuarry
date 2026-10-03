@@ -178,10 +178,10 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
-		om_after(src, 2, PROC_REF(broadcast_status))
+		after(src, 2, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	om_after(src, 2, PROC_REF(broadcast_status))
+	after(src, 2, PROC_REF(broadcast_status))
 	update_icon()
 	return
 

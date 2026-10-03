@@ -25,7 +25,7 @@
 	icon_state = "dbchime-active"
 	set_light(2, 0.5, "#33FF33")
 	visible_message("\The [src]'s light flashes.")
-	om_after(src, 3 SECONDS, PROC_REF(chime_end))
+	after(src, 3 SECONDS, PROC_REF(chime_end))
 
 /obj/machinery/doorbell_chime/proc/chime_end()
 	set_light(0)

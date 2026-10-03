@@ -114,7 +114,7 @@
 /// Arms the loop's one timer (the next loop, the start delay or the dormant recheck).
 /datum/looping_sound/proc/set_loop_timer(delay)
 	cancel_loop_timer()
-	after_slot(src, "loop_token", delay, PROC_REF(loop_timer_fired))
+	after(src, delay, PROC_REF(loop_timer_fired), key = "loop_token")
 
 /datum/looping_sound/proc/loop_timer_fired()
 	if(!running)

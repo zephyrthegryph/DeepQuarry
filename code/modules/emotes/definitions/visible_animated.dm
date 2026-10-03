@@ -16,7 +16,7 @@
 /datum/decl/emote/visible/sidestep/do_extra(mob/user)
 	if(istype(user))
 		animate(user, pixel_x = 5, time = 5)
-		om_after(user, 0.3 SECONDS, GLOBAL_PROC_REF(emote_sidestep_back), user)
+		after(user, 0.3 SECONDS, GLOBAL_PROC_REF(emote_sidestep_back), with = list(user))
 
 /datum/decl/emote/visible/flip
 	key = "flip"
@@ -67,7 +67,7 @@
 	om_after_stagger(user, spin_dirs, 0.1 SECONDS, TYPE_PROC_REF(/atom, set_dir))
 
 /datum/decl/emote/visible/floorspin/proc/spin_anim(mob/user)
-	om_after(user, 0.1 SECONDS, TYPE_PROC_REF(/atom, SpinAnimation), 10, 1)
+	after(user, 0.1 SECONDS, TYPE_PROC_REF(/atom, SpinAnimation), with = list(10, 1))
 
 /proc/emote_sidestep_back(mob/user)
 	animate(user, pixel_x = -5, time = 5)

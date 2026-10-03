@@ -32,7 +32,7 @@
 
 	om_qdel_after(animation, DISINTEGRATE_DELAY)
 	// The body and whatever is still inside it go as one batched destroy.
-	om_after(src, DISINTEGRATE_DELAY, /datum/proc/om_qdel_batch_self)
+	after(src, DISINTEGRATE_DELAY, /datum/proc/om_qdel_batch_self)
 #undef DISINTEGRATE_DELAY
 
 /// Gib: burst into gibs. Cannot gib ghosts.

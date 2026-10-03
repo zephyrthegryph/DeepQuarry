@@ -210,7 +210,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 				if(suckanim)
 					if(vac_conga < 100)
 						vac_conga += 3
-					om_after(src, 0.3 SECONDS + vac_conga, PROC_REF(prepare_sucking), F, user, target)
+					after(src, 0.3 SECONDS + vac_conga, PROC_REF(prepare_sucking), with = list(F, user, target))
 				else if(is_allowed_suck(target, user, output_atom))
 					handle_consumption(F, user, auto_setting)
 			if(vac_conga > 0)
@@ -243,7 +243,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				I.SpinAnimation(5,1)
-			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), I, user, auto_setting)
+			after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(I, user, auto_setting))
 			return
 
 	if(istype(target,/obj/effect/decal/cleanable))
@@ -269,7 +269,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 			act_message(user, null, MSG_SELF(span_notice("You [suckverb] up \the [target.name]...")), MSG_OTHERS(span_filter_notice("%U% [suckverb]s up \the [target.name].")))
 			if(suckanim)
 				L.SpinAnimation(5,1)
-			om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), L, user, auto_setting)
+			after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(L, user, auto_setting))
 
 /obj/item/vac_attachment/proc/prepare_sucking(atom/movable/target, mob/user, turf/target_turf)
 	var/atom/movable/output_atom = output_dest
@@ -284,7 +284,7 @@ DECLARE_INTERACTIONS(/obj/item/vac_attachment, INTERACT_USE(null, PROC_REF(inter
 	if(!is_allowed_suck(target, user, output_atom)) //cancel if you're not allowed
 		return
 	target.SpinAnimation(5,1)
-	om_after(src, 0.5 SECONDS, PROC_REF(handle_consumption), target, user, target_turf)
+	after(src, 0.5 SECONDS, PROC_REF(handle_consumption), with = list(target, user, target_turf))
 
 /obj/item/vac_attachment/proc/handle_consumption(atom/movable/target, mob/user, auto_setting, turf/target_turf)
 	if(target_turf && target.loc != target_turf)

@@ -287,7 +287,7 @@ DECLARE_INTERACTIONS(/obj/item/camera, \
 	to_chat(user, span_notice("[pictures_left] photos left."))
 	icon_state = icon_off
 	on = 0
-	om_after(src, 64, PROC_REF(recharged))
+	after(src, 64, PROC_REF(recharged))
 
 /obj/item/camera/proc/can_capture_turf(turf/T, mob/user)
 	var/viewer = user

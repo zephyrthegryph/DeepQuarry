@@ -76,7 +76,7 @@
 				shadekin.ai_brain.mauling = TRUE
 			om_run_frame_now(shadekin, /datum/om/pipeline/life)
 			//Remove when done
-			om_after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
+			after(shadekin, 10 SECONDS, TYPE_PROC_REF(/mob, death))
 
 		if(SMITE_SHADEKIN_NOMF)
 			var/static/list/kin_types = list(
@@ -242,7 +242,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	target.set_transforming(TRUE)
 	to_chat(target,span_danger("You feel a strange tug, deep inside. You're frozen in momentarily..."))
 	to_chat(user,span_notice("Beginning vis_contents copy to abduction site, player mob is frozen."))
-	om_after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), target, user, size_of_square, halfbox)
+	after(target, 1 SECOND, GLOBAL_PROC_REF(redspace_abduction_copy), with = list(target, user, size_of_square, halfbox))
 
 /// redspace_abduction() a second after the target freezes.
 /proc/redspace_abduction_copy(mob/living/target, client/user, size_of_square, halfbox)
@@ -337,7 +337,7 @@ GLOBAL_VAR(redspace_abduction_z)
 	loader.screen_loc = "NORTH-1, EAST-1"
 	target.client.screen += loader
 
-	om_after(target, 10 SECONDS, GLOBAL_PROC_REF(smite_autosave_complete), target, loader)
+	after(target, 10 SECONDS, GLOBAL_PROC_REF(smite_autosave_complete), with = list(target, loader))
 
 /// The autosave smite's second half: tell the victim it finished and take the disc off their screen.
 /proc/smite_autosave_complete(mob/target, atom/movable/screen/loader)
@@ -376,12 +376,12 @@ GLOBAL_VAR(redspace_abduction_z)
 					qdel(target)
 				qdel(shadekin)
 			return
-	om_after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), shadekin, target, controller_ckey, step + 1)
+	after(shadekin, step == 5 ? 2 SECONDS : 1 SECOND, GLOBAL_PROC_REF(shadekin_smite_step), with = list(shadekin, target, controller_ckey, step + 1))
 
 /// The hot dog smite: a whistle, then two seconds later the costume, gone again after five.
 /proc/hotdog_smite(mob/living/target)
 	play_sfx(target, SFX_EFFECTS_WHISTLE, extrarange = get_rand_frequency())
-	om_after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), target)
+	after(target, 2 SECONDS, GLOBAL_PROC_REF(hotdog_smite_dress), with = list(target))
 
 /proc/hotdog_smite_dress(mob/living/target)
 	target.status_at_least(EFFECT_STUNNED, 10)

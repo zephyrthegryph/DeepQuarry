@@ -309,7 +309,7 @@ DAMAGE_REACTION(/obj/machinery/turretid, DAMAGE_EMP, PROC_REF(turretid_emp))
 		enabled = FALSE
 		updateTurrets()
 
-		om_after(src, rand(60, 600), PROC_REF(emp_reenable))
+		after(src, rand(60, 600), PROC_REF(emp_reenable))
 
 /obj/machinery/turretid/proc/emp_reenable()
 	if(!enabled)

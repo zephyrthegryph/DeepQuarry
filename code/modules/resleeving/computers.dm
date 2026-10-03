@@ -268,7 +268,7 @@ UI_ACT(/obj/machinery/computer/transhuman/resleeving, "coredump", ui_act_coredum
 UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, ui_act_coredump)
 	if(disk())
 		our_db().core_dump(disk())
-		om_after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
+		after(src, 0.5 SECONDS, PROC_REF(eject_dump_disk))
 		. = TRUE
 
 UI_ACT(/obj/machinery/computer/transhuman/resleeving, "ejectdisk", ui_act_ejectdisk)
@@ -485,7 +485,7 @@ UI_ACT_PROC(/obj/machinery/computer/transhuman/resleeving, act_sleeve)
 		I.buf.types = DNA2_BUF_SE
 		I.has_radiation = FALSE // SAFE!
 		atom_say("Beginning injector synthesis.")
-		om_after(src, 10 SECONDS, PROC_REF(dispense_injector), I)
+		after(src, 10 SECONDS, PROC_REF(dispense_injector), with = list(I))
 	rel_clear(src, nameof(current_br))
 
 /obj/machinery/computer/transhuman/resleeving/proc/dispense_injector(obj/item/dnainjector/I)

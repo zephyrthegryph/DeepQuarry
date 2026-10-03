@@ -159,7 +159,7 @@
 	refresh_at = at
 	if(at)
 		om_attach(src, /datum/om/behaviour/sleeper/status_display) // for the audit
-		after_slot(src, "refresh_token", delay, PROC_REF(refresh_timer_fired))
+		after(src, delay, PROC_REF(refresh_timer_fired), key = "refresh_token")
 
 /obj/machinery/status_display/proc/refresh_timer_fired()
 	refresh_at = 0

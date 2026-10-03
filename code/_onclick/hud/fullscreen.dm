@@ -32,7 +32,7 @@
 
 	if(animated)
 		animate(screen, alpha = 0, time = animated)
-		om_after(src, animated, PROC_REF(remove_faded_fullscreen), screen)
+		after(src, animated, PROC_REF(remove_faded_fullscreen), with = list(screen))
 	else
 		if(client)
 			client.screen -= screen

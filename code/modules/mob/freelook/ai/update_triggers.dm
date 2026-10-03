@@ -12,7 +12,7 @@
 		return
 	if(!updating)
 		updating = 1
-		om_after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), old_loc)
+		after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), with = list(old_loc))
 
 /mob/living/silicon/robot/proc/camera_moved_settle(atom/old_loc)
 	updating = 0
@@ -25,7 +25,7 @@
 		return
 	if(!updating)
 		updating = 1
-		om_after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), old_loc)
+		after(src, BORG_CAMERA_BUFFER, PROC_REF(camera_moved_settle), with = list(old_loc))
 
 /mob/living/silicon/ai/proc/camera_moved_settle(atom/old_loc)
 	updating = 0

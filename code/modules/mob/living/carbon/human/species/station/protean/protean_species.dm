@@ -178,7 +178,7 @@
 		H.equip_to_slot_or_del(permit, SLOT_ID_IN_BACKPACK)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_IN_BACKPACK)
 
-	om_after(src, 1, PROC_REF(finish_survival_gear), H) //Let their real nif load if they have one
+	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 
 /datum/species/protean/proc/finish_survival_gear(mob/living/carbon/human/H)
 	if(QDELETED(H)) //Observing, mannequins, etc. can delete the human first.

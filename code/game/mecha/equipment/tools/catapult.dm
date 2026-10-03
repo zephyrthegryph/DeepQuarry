@@ -17,7 +17,7 @@
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/proc/catapult_push(atom/movable/A, atom/target, left)
 	step_away(A,target)
 	if(left > 0)
-		om_after(src, 0.2 SECONDS, PROC_REF(catapult_push), A, target, left - 1)
+		after(src, 0.2 SECONDS, PROC_REF(catapult_push), with = list(A, target, left - 1))
 
 /obj/item/mecha_parts/mecha_equipment/gravcatapult/action(atom/movable/target)
 

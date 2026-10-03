@@ -340,7 +340,7 @@
 					D.periodic_parked = TRUE
 			return TRUE
 		if(STEP_YIELD)
-			after_slot(E, "step_yield", world.tick_lag, GLOBAL_PROC_REF(periodic_step_resume), E, delta)
+			after(E, world.tick_lag, GLOBAL_PROC_REF(periodic_step_resume), key = "step_yield", with = list(E, delta))
 	return FALSE
 
 /// Resumes a yielded step next tick, unless the datum left the cadence meanwhile.

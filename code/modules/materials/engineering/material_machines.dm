@@ -209,7 +209,7 @@ DECLARE_REAGENTS(/obj/machinery/material_furnace, 120, null)
 		chamber_air.react()
 	set_light(3, 3, "#ff7b22")
 	visible_message(span_notice("[src] seals its chamber and begins heating the charge."))
-	after_slot(src, "firing_timer", 6 SECONDS, PROC_REF(finish_firing))
+	after(src, 6 SECONDS, PROC_REF(finish_firing), key = "firing_timer")
 	return TRUE
 
 /// The old "Eject contents" object verb.

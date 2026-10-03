@@ -378,7 +378,7 @@ DECLARE_INTERACTIONS(/obj/item/taskmanager, INTERACT_USE(null, PROC_REF(interact
 		consume(P)
 		to_chat(user, span_notice("Format accepted, printing voucher!"))
 		ready = 0
-		om_after(src, 300 SECONDS, PROC_REF(set_ready))
+		after(src, 300 SECONDS, PROC_REF(set_ready))
 		return
 	if(!findtext(P.info,format))
 		to_chat(user, span_notice("Incorrect format!"))

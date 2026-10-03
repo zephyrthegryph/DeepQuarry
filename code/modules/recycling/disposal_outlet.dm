@@ -91,9 +91,9 @@ DECLARE_INTERACTIONS(/obj/structure/disposaloutlet, INTERACT_ITEM(null, PROC_REF
 	if(ELAPSED(src, start_eject, CLOCK_WORLD) > 3 SECONDS)
 		EXPIRY_STAMP(src, start_eject, CLOCK_WORLD)
 		play_sfx(src, SFX_MACHINES_WARNING_BUZZER)
-		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas, TRUE)
+		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas, TRUE))
 	else
-		om_after(src, 2 SECONDS, PROC_REF(expel_contents), received_items, gas)
+		after(src, 2 SECONDS, PROC_REF(expel_contents), with = list(received_items, gas))
 
 /obj/structure/disposaloutlet/proc/expel_contents(list/ejected_items, datum/gas_mixture/gas, playsound = FALSE)
 	if(playsound)

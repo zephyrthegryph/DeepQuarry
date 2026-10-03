@@ -15,7 +15,7 @@
 /datum/spell/aoe_turf/knock/cast(list/targets)
 	for(var/turf/T in targets)
 		for(var/obj/machinery/door/door in contents_of(T))
-			om_after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
+			after(door, 1, TYPE_PROC_REF(/obj/machinery/door, knocked_open))
 	return
 
 

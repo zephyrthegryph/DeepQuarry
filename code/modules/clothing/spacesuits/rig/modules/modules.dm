@@ -185,7 +185,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 		return 0
 	active = 1
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 
@@ -197,7 +197,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 	active = 0
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	return 1
 

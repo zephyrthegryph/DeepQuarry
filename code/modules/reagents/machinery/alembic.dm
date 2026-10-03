@@ -113,7 +113,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/alembic, "alembic{appearance_stage}")
 		bubbling = 1
 		update_icon()
 		to_chat(user, span_notice("The alembic begins boiling the [potion_reagent] in the [base_reagent]."))
-		om_after(src, 3 SECONDS, PROC_REF(brew_done), user)
+		after(src, 3 SECONDS, PROC_REF(brew_done), with = list(user))
 		return TRUE
 	else if(bubbling)
 		to_chat(user, span_warning("The alembic is already boiling!"))

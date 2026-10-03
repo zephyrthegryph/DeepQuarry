@@ -37,7 +37,7 @@
 					damage += 5
 					status_at_least(EFFECT_PARALYZED, 1)
 					step_away(src,M,15)
-					om_after(src, 3, PROC_REF(knocked_away_from), M)
+					after(src, 3, PROC_REF(knocked_away_from), with = list(M))
 				play_sfx(src, SFX_PUNCH, 0.5, extrarange = -1)
 				for(var/mob/O in viewers(src, null))
 					if ((O.client && !( O.blinded )))

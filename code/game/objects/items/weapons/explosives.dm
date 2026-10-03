@@ -84,7 +84,7 @@ DECLARE_INTERACTIONS(/obj/item/plastique, \
 
 	target.add_overlay(image_overlay)
 	to_chat(user, "Bomb has been planted. Timer counting down from [timer].")
-	om_after(src, timer SECONDS, PROC_REF(explode), get_turf(target))
+	after(src, timer SECONDS, PROC_REF(explode), with = list(get_turf(target)))
 
 /obj/item/plastique/proc/explode(location)
 	if(!target_ref())

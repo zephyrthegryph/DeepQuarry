@@ -160,38 +160,38 @@
 		specialattackprojectile = /obj/item/projectile/beam/midlaser/shortrange
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: LASER. BLADE.")
-		om_after(src, 2 SECONDS, PROC_REF(giant_burst), A, rng_cycle)
+		after(src, 2 SECONDS, PROC_REF(giant_burst), with = list(A, rng_cycle))
 		attackcycle = 0
 	else if(attackcycle == 2)
 		specialattackprojectile = /obj/item/projectile/energy/wallbreaker/boss
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: RANDOM. SWEEP")
-		om_after(src, 1 SECOND, PROC_REF(quad_random_firing), A, 12, 1, 0.5 SECONDS)
+		after(src, 1 SECOND, PROC_REF(quad_random_firing), with = list(A, 12, 1, 0.5 SECONDS))
 		attackcycle = 0
 	else if(attackcycle == 3)
 		specialattackprojectile = /obj/item/projectile/energy/lightingspark/nanoweave
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: WARP. DRIVE.")
-		om_after(src, 2 SECONDS, PROC_REF(teleport_attack), A, rng_cycle, 3)
+		after(src, 2 SECONDS, PROC_REF(teleport_attack), with = list(A, rng_cycle, 3))
 		attackcycle = 0
 	else if(attackcycle == 4)
 		specialattackprojectile = /obj/item/projectile/knockback
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: SHOCKWAVE.")
-		om_after(src, 2 SECONDS, PROC_REF(giant_burst), A, rng_cycle)
+		after(src, 2 SECONDS, PROC_REF(giant_burst), with = list(A, rng_cycle))
 		attackcycle = 0
 	else if(attackcycle == 5)
 		specialattackprojectile = /obj/item/projectile/metalball
 		Beam(A, icon_state = "solar_beam", time = 0.5 SECONDS, maxdistance = INFINITY)
 		say("PROTOCOL: RESTRAIN.")
-		om_after(src, 1 SECOND, PROC_REF(singleproj), A, 6)
+		after(src, 1 SECOND, PROC_REF(singleproj), with = list(A, 6))
 		attackcycle = 0
 	else if(attackcycle == 6)
 		specialattackprojectile = /obj/item/projectile/beam/heavylaser
 		Beam(A, icon_state = "solar_beam", time = 0.5 SECONDS, maxdistance = INFINITY)
 		rng_cycle = rand(1,5)
 		say("PROTOCOL: DESTROY.")
-		om_after(src, 2 SECONDS, PROC_REF(singleproj), A, rng_cycle)
+		after(src, 2 SECONDS, PROC_REF(singleproj), with = list(A, rng_cycle))
 		attackcycle = 0
 
 

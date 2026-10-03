@@ -48,7 +48,7 @@
 		while(fields < fieldlimit)
 			for(var/i=0, i<=2, i++)
 				if(fields >= fieldlimit)
-					om_after(src, burst_time, PROC_REF(end_cascade))
+					after(src, burst_time, PROC_REF(end_cascade))
 					return
 				switch(i) //Using a switch statement rather than (-90 + i * 90) to favour going straight ahead
 					if(0)
@@ -78,7 +78,7 @@
 		play_sfx(src, SFX_WEAPONS_RESONATOR_FIRE)
 		new /obj/effect/resonance(T, creator, burst_time)
 		fieldsactive++
-		om_after(src, burst_time, PROC_REF(field_burst))
+		after(src, burst_time, PROC_REF(field_burst))
 
 DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interaction_self)))
 
@@ -125,7 +125,7 @@ DECLARE_INTERACTIONS(/obj/item/resonator, INTERACT_USE(null, PROC_REF(interactio
 	animate(src, transform = matrix()*1.5, time = timetoburst)
 	// Queue the actual bursting
 	rel_set(src, nameof(creator), new_creator)
-	om_after(src, timetoburst, PROC_REF(burst))
+	after(src, timetoburst, PROC_REF(burst))
 
 /obj/effect/resonance/proc/burst()
 	var/turf/T = get_turf(src)

@@ -21,7 +21,7 @@
 	victim.fire_act() // Burn them.
 
 /datum/blob_type/blazing_oil/on_water(obj/structure/blob/B, amount)
-	om_after(B, 1, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), -(amount * 5))
+	after(B, 1, TYPE_PROC_REF(/obj/structure/blob, adjust_integrity), with = list(-(amount * 5)))
 
 /datum/blob_type/blazing_oil/on_pulse(obj/structure/blob/B)
 	var/turf/T = get_turf(B)

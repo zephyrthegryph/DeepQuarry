@@ -149,7 +149,7 @@ DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_
 	icon_state = "wallet-emp"
 	update_icon()
 
-	om_after(src, 20 SECONDS, PROC_REF(emp_recovered), original_state)
+	after(src, 20 SECONDS, PROC_REF(emp_recovered), with = list(original_state))
 
 /obj/item/storage/wallet/womens
 	name = "women's wallet"

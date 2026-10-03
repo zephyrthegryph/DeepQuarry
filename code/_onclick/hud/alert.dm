@@ -52,7 +52,7 @@
 	animate(alert, transform = matrix(), time = 2.5, easing = CUBIC_EASING)
 
 	if(alert.timeout)
-		om_after(src, alert.timeout, PROC_REF(alert_timeout), alert, category)
+		after(src, alert.timeout, PROC_REF(alert_timeout), with = list(alert, category))
 		EXPIRY_SET(alert, timeout, alert.timeout - world.tick_lag, CLOCK_WORLD)
 	return alert
 

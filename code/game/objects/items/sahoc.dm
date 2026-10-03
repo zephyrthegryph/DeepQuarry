@@ -25,7 +25,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 /obj/item/buttonofnormal/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(colorindex)
 		nonrandom()
-	om_after(src, 10, PROC_REF(do_size_effect), capsuleowner())
+	after(src, 10, PROC_REF(do_size_effect), with = list(capsuleowner()))
 	return TRUE
 
 /obj/item/buttonofnormal/throw_impact(atom/A, speed, mob/user)
@@ -33,7 +33,7 @@ DECLARE_INTERACTIONS(/obj/item/buttonofnormal, \
 	if(isliving(A))
 		if(colorindex)
 			nonrandom()
-		om_after(src, 5, PROC_REF(do_size_effect), A)
+		after(src, 5, PROC_REF(do_size_effect), with = list(A))
 
 /obj/item/buttonofnormal/proc/do_size_effect(atom/A)
 	var/mob/living/capsulehit = A
@@ -99,7 +99,7 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 	var/mob/living/capsuleowner = user
 	play_sfx(src, SFX_EFFECTS_SPLAT, 0.6)
 	var/item = pick(winitems)
-	om_after(src, 10 SECONDS, PROC_REF(capsule_result), capsuleowner, item)
+	after(src, 10 SECONDS, PROC_REF(capsule_result), with = list(capsuleowner, item))
 	return TRUE
 
 /obj/item/daredevice/proc/capsule_result(mob/living/capsuleowner, item)
@@ -119,7 +119,7 @@ DECLARE_INTERACTIONS(/obj/item/daredevice, \
 		if(777)	new	/obj/item/spacecash/c1000(capsuleowner.loc) //for rigging
 		else luckynumber7 = (rand(0,10))
 	luckynumber7 = rand(0,10)
-	om_after(src, 10 SECONDS, PROC_REF(capsule_reset))
+	after(src, 10 SECONDS, PROC_REF(capsule_reset))
 
 /obj/item/daredevice/proc/capsule_reset()
 	play_sfx(src.loc, SFX_MACHINES_SLOTMACHINE)

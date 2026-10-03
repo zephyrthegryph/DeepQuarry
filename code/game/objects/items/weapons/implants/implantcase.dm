@@ -49,7 +49,7 @@ DECLARE_INTERACTIONS(/obj/item/implantcase, INTERACT_ITEM(null, PROC_REF(interac
 		if(imp.reagents.total_volume >= imp.reagents.maximum_volume)
 			to_chat(user, span_warning("\The [src] is full."))
 		else
-			om_after(src, 5, PROC_REF(inject_from), I, user)
+			after(src, 5, PROC_REF(inject_from), with = list(I, user))
 	else if (istype(I, /obj/item/implanter))
 		var/obj/item/implanter/M = I
 		if (M.imp)

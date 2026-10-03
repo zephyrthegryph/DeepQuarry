@@ -591,7 +591,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	om_after(src, 1 SECOND, PROC_REF(finish_beast_shift), coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost)
+	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost))
 	species.update_lleill_hud(src)
 
 /mob/living/carbon/human/proc/lleill_beast_form_human_failed(datum/om/task/timed/human_lleill_beast_form_human/task)
@@ -755,7 +755,7 @@
 	var/image/coolanimation = image('icons/obj/glamour.dmi', null, "animation")
 	coolanimation.plane = PLANE_LIGHTING_ABOVE
 	src.overlays += coolanimation
-	om_after(src, 1 SECOND, PROC_REF(finish_beast_shift), coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost)
+	after(src, 1 SECOND, PROC_REF(finish_beast_shift), with = list(coolanimation, chosen_beast, beast_options[chosen_beast], energy_cost))
 
 /// The end of a beast shift, a second after the animation starts.
 /mob/living/carbon/human/proc/finish_beast_shift(image/coolanimation, chosen_beast, beast_type, energy_cost)

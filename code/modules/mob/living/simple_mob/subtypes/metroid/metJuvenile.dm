@@ -49,7 +49,7 @@
 		status_set(EFFECT_PARALYZED, 7998)
 		play_sfx(src, SFX_METROID_METROIDGROW)
 		act_message(src, null, null, MSG_OTHERS(span_notice("%U% begins to lay an egg.")))
-		om_after(src, 5 SECONDS, PROC_REF(lay_egg))
+		after(src, 5 SECONDS, PROC_REF(lay_egg))
 		return
 
 	if(nutrition >= evo_point && !src?.buckled_to() && vore_fullness == 0 && !victim)
@@ -58,7 +58,7 @@
 			return
 		play_sfx(src, SFX_METROID_METROIDGROW)
 		status_set(EFFECT_PARALYZED, 7998)
-		om_after(src, 5 SECONDS, PROC_REF(expand_troid))
+		after(src, 5 SECONDS, PROC_REF(expand_troid))
 
 	if(nutrition >= evo_limit && (src?.buckled_to() || vore_fullness == 1)) //spit dat crap out if nutrition gets too high!
 		release_vore_contents()

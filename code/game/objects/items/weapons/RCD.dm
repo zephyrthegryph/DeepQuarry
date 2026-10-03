@@ -422,14 +422,14 @@ APPEARANCE_NONE(/obj/item/rcd/electric)
 		icon_state += "_short"
 	if (status == RCD_DECONSTRUCT)
 		icon_state += "_reverse"
-	om_after(src, delay, PROC_REF(end_animation), status)
+	after(src, delay, PROC_REF(end_animation), with = list(status))
 
 /obj/effect/constructing_effect/proc/end_animation(status)
 	if (status == RCD_DECONSTRUCT)
 		icon_state = "rcd_end_reverse"
 	else
 		icon_state = "rcd_end"
-	om_after(src, 15, PROC_REF(end))
+	after(src, 15, PROC_REF(end))
 
 /obj/effect/constructing_effect/proc/end()
 	qdel(src)

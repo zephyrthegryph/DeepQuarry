@@ -271,7 +271,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	update_brightness()
 	if(!on) // Only play when the light turns off.
 		play_sfx(src, SFX_EFFECTS_LIGHT_FLICKER)
-	om_after(src, rand(5,15), PROC_REF(do_flicker), amount, flicker_color, original_color, original_on, OL, ++ticker)
+	after(src, rand(5,15), PROC_REF(do_flicker), with = list(amount, flicker_color, original_color, original_on, OL, ++ticker))
 
 /obj/item/flashlight/proc/finish_flicker(original_color, original_on, datum/overlay_lighting/OL)
 	set_light_color(original_color)

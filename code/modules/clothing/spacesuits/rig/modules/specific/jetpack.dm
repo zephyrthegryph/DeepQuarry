@@ -33,7 +33,7 @@
 
 	active = 1
 
-	om_after(src, 1, PROC_REF(refresh_suit_overlay))
+	after(src, 1, PROC_REF(refresh_suit_overlay))
 
 	if(!jets.on)
 		jets.jetpack_toggle_effect(holder?.wearer())

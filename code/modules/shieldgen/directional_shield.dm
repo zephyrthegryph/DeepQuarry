@@ -103,7 +103,7 @@
 	dq_add_recursive_move(src)
 	om_hook(src, /datum/om/event/movable_attempted_move, src, PROC_REF(moved_event))
 	if(always_on)
-		om_after(src, 0, PROC_REF(create_shields))
+		after(src, 0, PROC_REF(create_shields))
 	return ..()
 
 // its shields come down.

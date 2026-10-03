@@ -151,7 +151,7 @@
 		M.adjust_fire_stacks(removed * 10)
 		if(prob(10))
 			to_chat(M, span_critical("You feel something boiling within you!"))
-			om_after(M, rand(3, 6) SECONDS, TYPE_PROC_REF(/mob/living, ignite_mob))
+			after(M, rand(3, 6) SECONDS, TYPE_PROC_REF(/mob/living, ignite_mob))
 
 /datum/reagent/toxin/lead
 	name = REAGENT_LEAD
@@ -716,7 +716,7 @@
 		var/mob/living/carbon/human/H = M
 		if(alien == IS_SLIME && prob(25))
 			var/color_shift = rand(-100, 100)
-			om_after(H, 1 TICK, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), color_shift)
+			after(H, 1 TICK, TYPE_PROC_REF(/mob/living/carbon/human, slime_color_shift), with = list(color_shift))
 		if(H.species.flags & NO_DNA)
 			return
 

@@ -52,7 +52,7 @@
 	play_sfx(src, SFX_WEAPONS_ARMBOMB, extrarange = 0)
 	for(var/mob/O in hearers(src, null))
 		O.show_message("[icon2html(src, O.client)] " + span_warning(" The [src.name] beeps!"))
-	om_after(src, 5 SECONDS, PROC_REF(do_detonate))
+	after(src, 5 SECONDS, PROC_REF(do_detonate))
 
 /obj/item/syndie/c4explosive/proc/do_detonate()
 	SHOULD_NOT_OVERRIDE(TRUE)

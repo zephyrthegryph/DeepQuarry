@@ -41,7 +41,7 @@
 			return TRUE
 		add_overlay("fab-load-metal")
 		inserting = TRUE
-		om_after(src, 0.9 SECONDS, PROC_REF(complete_insertion), user, supplied_stack)
+		after(src, 0.9 SECONDS, PROC_REF(complete_insertion), with = list(user, supplied_stack))
 		return TRUE
 	to_chat(user, "The robot part maker is full. Please remove metal from the robot part maker in order to insert more.")
 	return TRUE
@@ -127,7 +127,7 @@ UI_ACT_PROC(/obj/machinery/robotic_fabricator, ui_act_build_frame)
 	metal_amount = max(0, metal_amount - build_cost)
 	add_overlay("fab-active")
 
-	om_after(src, build_time, PROC_REF(complete_building), building)
+	after(src, build_time, PROC_REF(complete_building), with = list(building))
 	return TRUE
 
 /obj/machinery/robotic_fabricator/proc/complete_building(building)

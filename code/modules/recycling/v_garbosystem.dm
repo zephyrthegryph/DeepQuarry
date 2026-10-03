@@ -84,7 +84,7 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/machinery/v_garbosystem, MACHINE_PIPELINE, list(
 	icon_state = "cronchy_active"
 
 	affecting = loc.contents - src
-	om_after(src, 1, PROC_REF(grind_affecting))
+	after(src, 1, PROC_REF(grind_affecting))
 
 DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 /obj/machinery/v_garbosystem/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
@@ -202,11 +202,11 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/v_garbosystem, PROC_REF(on_emag), null)
 					C.forceMove(loc)
 				if(isitem(A))
 					A.SpinAnimation(5,3)
-					om_after(src, 15, PROC_REF(crunch_item), A)
+					after(src, 15, PROC_REF(crunch_item), with = list(A))
 					items_taken++
 				else
 					A.SpinAnimation(5,3)
-					om_after(src, 15, PROC_REF(crunch_thing), A)
+					after(src, 15, PROC_REF(crunch_thing), with = list(A))
 					items_taken++
 		if(items_taken >= voracity)
 			break

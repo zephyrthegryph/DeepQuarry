@@ -46,7 +46,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 			SetUniversalState(/datum/universal_state/hell)
 		GLOB.narsie_cometh = 1
 
-		om_after(src, 10 SECONDS, /proc/narsie_call_evac)
+		after(src, 10 SECONDS, /proc/narsie_call_evac)
 
 /obj/singularity/narsie/periodic_step()
 	eat()
@@ -99,7 +99,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 		movement_dir = get_dir(src,target)
 
 	step(src, movement_dir)
-	om_after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), movement_dir)
+	after(src, 1, TYPE_PROC_REF(/atom/movable, om_step), with = list(movement_dir))
 	return 1
 
 /obj/singularity/narsie/large/move(force_move = 0)
@@ -114,7 +114,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	if(target && prob(60))
 		movement_dir = get_dir(src,target)
 	large_step(movement_dir)
-	om_after(src, 1 SECOND, PROC_REF(large_step), movement_dir)
+	after(src, 1 SECOND, PROC_REF(large_step), with = list(movement_dir))
 	return 1
 
 /obj/singularity/narsie/large/proc/large_step(movement_dir)
@@ -342,7 +342,7 @@ REGISTRY_MEMBERSHIP(/obj/singularity/narsie, REGISTRY_NARSIE)
 	dir = SOUTH
 	move_self = 0
 	flick("narsie_spawn_anim",src)
-	om_after(src, 1.1 SECONDS, PROC_REF(after_animation))
+	after(src, 1.1 SECONDS, PROC_REF(after_animation))
 
 /obj/singularity/narsie/proc/after_animation()
 	move_self = 1
