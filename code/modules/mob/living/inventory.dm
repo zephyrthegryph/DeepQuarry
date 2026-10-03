@@ -81,6 +81,9 @@
 /mob/living/proc/hands_are_full()
 	return (get_right_hand() && get_left_hand())
 
+/// Hand membership follows ledger reslots as well as physical enter/exit moves.
+READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
+
 /mob/living/proc/item_is_in_hands(obj/item/I)
 	var/id = inventory_slot_id(I)
 	return id == SLOT_ID_HAND_L || id == SLOT_ID_HAND_R
@@ -106,6 +109,8 @@
 
 /mob/living/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
+	// Reslotting can change hand membership without changing the item's loc.
+	op_keep_poke(src, OP_KEEP_HAND)
 	// A hand emptied: the other hand's item may stop being two-handed.
 	if(!inserted && (slot_id == SLOT_ID_HAND_L || slot_id == SLOT_ID_HAND_R))
 		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_HAND_L ? SLOT_ID_HAND_R : SLOT_ID_HAND_L)

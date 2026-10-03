@@ -115,13 +115,13 @@ CAPABILITIES(/obj/item/floor_painter)
 	held_verb(/obj/item/floor_painter/proc/choose_decal, SLOT_ANY_CARRIED)
 	held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED)
 	op("configure", in_hand(), label("Configure paint sprayer"), needs(carried(), req_capable()),
-		asks(/datum/prompt/choice, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
-		asks(/datum/prompt/choice/floor_painter_decal, step = "decal", when = PROC_REF(changing_decal)),
-		asks(/datum/prompt/choice/floor_painter_direction, step = "direction", when = PROC_REF(changing_direction)),
-		asks(/datum/prompt/color/floor_painter, step = "colour", when = PROC_REF(changing_colour)), then(PROC_REF(setting_chosen)))
-	op("decal", menu(), label("Choose Decal"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_decal, step = "decal"), then(PROC_REF(decal_chosen)))
-	op("direction", menu(), label("Choose Direction"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_direction, step = "direction"), then(PROC_REF(direction_chosen)))
-	op("colour", menu(), label("Choose Colour"), needs(carried(), req_capable()), asks(/datum/prompt/color/floor_painter, step = "colour"), then(PROC_REF(colour_chosen)))
+		asks(/datum/prompt/choice, keeps = 0, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
+		asks(/datum/prompt/choice/floor_painter_decal, fields = list("timeout" = 0), keeps = 0, step = "decal", when = PROC_REF(changing_decal)),
+		asks(/datum/prompt/choice/floor_painter_direction, fields = list("timeout" = 0), keeps = 0, step = "direction", when = PROC_REF(changing_direction)),
+		asks(/datum/prompt/color/floor_painter, fields = list("timeout" = 0), keeps = 0, step = "colour", when = PROC_REF(changing_colour)), then(PROC_REF(setting_chosen)))
+	op("decal", menu(), label("Choose Decal"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_decal, fields = list("timeout" = 0), keeps = 0, step = "decal"), then(PROC_REF(decal_chosen)))
+	op("direction", menu(), label("Choose Direction"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_direction, fields = list("timeout" = 0), keeps = 0, step = "direction"), then(PROC_REF(direction_chosen)))
+	op("colour", menu(), label("Choose Colour"), needs(carried(), req_capable()), asks(/datum/prompt/color/floor_painter, fields = list("timeout" = 0), keeps = 0, step = "colour"), then(PROC_REF(colour_chosen)))
 
 /obj/item/floor_painter/proc/changing_decal(datum/act/op/A)
 	var/datum/prompt/choice/R = A.step_answer("setting")

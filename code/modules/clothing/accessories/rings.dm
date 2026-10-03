@@ -29,10 +29,11 @@
 	icon_state = "diamond"
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/engagement, INTERACT_USE("Present", PROC_REF(engagement_ring_present_self)))
+CAPABILITIES(/obj/item/clothing/accessory/ring/engagement)
+	op("present", in_hand(), label("Present"), then(PROC_REF(ring_presented)))
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/engagement/proc/engagement_ring_present_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/ring/engagement/proc/ring_presented(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_warning("You get down on one knee, presenting %T%.")), \
 		MSG_OTHERS(span_warning("%U% gets down on one knee, presenting %T%.")))
 
@@ -99,13 +100,18 @@ DECLARE_REAGENTS(/obj/item/clothing/accessory/ring/reagent/sleepy, null, list(RE
 	var/nameset = FALSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE("Claim", PROC_REF(signet_ring_claim_self), REQ_FIELD_NOT("nameset", "it has already been claimed")))
+TRACKED(/obj/item/clothing/accessory/ring/seal/signet, nameset)
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/seal/signet/proc/signet_ring_claim_self(mob/user, obj/item/held, datum/interaction/interaction)
+MSG_DEF_SELF(signet/claimed, "it has already been claimed")
+
+CAPABILITIES(/obj/item/clothing/accessory/ring/seal/signet)
+	op("claim", in_hand(), label("Claim"), needs(req_is(nameof(nameset), FALSE, because = MSG(signet/claimed))), then(PROC_REF(ring_claimed)))
+
+/obj/item/clothing/accessory/ring/seal/signet/proc/ring_claimed(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You claim the [src] as your own!"))
 	change_name(user)
-	nameset = TRUE
+	set_nameset(TRUE)
 
 /obj/item/clothing/accessory/ring/seal/signet/proc/change_name(signet_name = "Unknown")
 	name = "[signet_name]'s signet ring"
@@ -120,17 +126,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/seal/signet, INTERACT_USE(
 	var/partnername = ""
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/ring/wedding, INTERACT_USE("Engrave", PROC_REF(wedding_ring_engrave_self)))
+TRACKED(/obj/item/clothing/accessory/ring/wedding, partnername)
 
-/// Old attack_self.
-/obj/item/clothing/accessory/ring/wedding/proc/wedding_ring_engrave_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/input = rerun_ask(user, "a1", PROC_REF(wedding_ring_engrave_self), args, /datum/om/prompt/text, message = "Would you like to change the holoengraving on the ring?", title = "Name your spouse", default = "Bae", max_length = MAX_NAME_LEN)
-	if(isnull(input))
-		return TRUE
-	if(!input)
-		return
-	partnername = input
-	name = "[initial(name)] - [partnername]"
+CAPABILITIES(/obj/item/clothing/accessory/ring/wedding)
+	op("engrave", in_hand(), label("Engrave"),
+		asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), then(PROC_REF(engraving_picked)))
+
+/obj/item/clothing/accessory/ring/wedding/proc/engraving_picked(datum/act/op/A)
+	var/datum/prompt/text/picked = A.answer
+	if(picked.value)
+		set_partnername(picked.value)
+		name = "[initial(name)] - [partnername]"
+	return OP_OK
 
 /obj/item/clothing/accessory/ring/wedding/silver
 	name = "silver wedding ring"

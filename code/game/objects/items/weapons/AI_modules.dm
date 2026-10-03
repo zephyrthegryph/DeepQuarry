@@ -160,7 +160,7 @@ CAPABILITIES(/obj/item/aiModule)
 TRACKED(/obj/item/aiModule/safeguard, targetName)
 
 CAPABILITIES(/obj/item/aiModule/safeguard)
-	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/safeguard), then(PROC_REF(target_named)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/safeguard, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
 
 /// Native text configuration; the operation rechecks the original actor's carried module on answer.
 /datum/prompt/text/ai_module
@@ -227,7 +227,7 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 TRACKED(/obj/item/aiModule/oneHuman, targetName)
 
 CAPABILITIES(/obj/item/aiModule/oneHuman)
-	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/oneHuman), then(PROC_REF(target_named)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/oneHuman, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
 
 /obj/item/aiModule/oneHuman/proc/target_named(datum/act/op/A)
 	var/datum/prompt/text/R = A.answer
@@ -426,7 +426,7 @@ DECLARE_INTERACTIONS(/obj/item/aiModule/freeform, INTERACT_USE(null, PROC_REF(in
 TRACKED(/obj/item/aiModule/freeformcore, newFreeFormLaw)
 
 CAPABILITIES(/obj/item/aiModule/freeformcore)
-	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/freeformcore), then(PROC_REF(law_entered)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/freeformcore, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))
 
 /obj/item/aiModule/freeformcore/proc/law_entered(datum/act/op/A)
 	var/datum/prompt/text/R = A.answer
@@ -453,7 +453,7 @@ CAPABILITIES(/obj/item/aiModule/freeformcore)
 TRACKED(/obj/item/aiModule/syndicate, newFreeFormLaw)
 
 CAPABILITIES(/obj/item/aiModule/syndicate)
-	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/syndicate), then(PROC_REF(law_entered)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/syndicate, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))
 
 /obj/item/aiModule/syndicate/proc/law_entered(datum/act/op/A)
 	var/datum/prompt/text/R = A.answer

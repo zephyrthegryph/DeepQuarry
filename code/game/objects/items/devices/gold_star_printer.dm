@@ -12,8 +12,8 @@
 
 CAPABILITIES(/obj/item/gold_star_printer)
 	op("print", in_hand(), label("Print gold star"), cooldown(print_cooldown), needs(carried()),
-		asks(/datum/prompt/text, step = "title", fields = list("title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32)),
-		asks(/datum/prompt/text/gold_star_description, step = "description", when = PROC_REF(has_title)),
+		asks(/datum/prompt/text, keeps = 0, step = "title", fields = list("timeout" = 0, "title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32, "name_text" = TRUE)),
+		asks(/datum/prompt/text/gold_star_description, fields = list("timeout" = 0), keeps = 0, step = "description", when = PROC_REF(has_title)),
 		then(PROC_REF(star_printed)))
 
 /obj/item/gold_star_printer/proc/has_title(datum/act/op/A)

@@ -42,21 +42,26 @@
 	wires.Interact(user)
 	return ITEM_INTERACT_SUCCESS
 
-DECLARE_INTERACTIONS(/obj/item/plastique, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
+DECLARE_INTERACTIONS(/obj/item/plastique, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
-/// Old attack_self.
-/obj/item/plastique/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/number, PROC_REF(timer_set), title = "Timer", message = "Please set the timer.", default = 10, max = 60000, min = 10, ask_flags = ASK_HELD | ASK_CAPABLE)
-	return TRUE
+TRACKED(/obj/item/plastique, timer)
 
-/obj/item/plastique/proc/timer_set(datum/om/prompt/number/ask)
-	var/mob/user = ask.answerer
-	var/newtime = CLAMP(ask.number, 10, 60000)
-	timer = newtime
-	to_chat(user, "Timer set for [timer] seconds.")
+CAPABILITIES(/obj/item/plastique)
+	op("timer", in_hand(), needs(req_self_held(), req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), req_capable()), label("Set explosive timer"),
+		asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), then(PROC_REF(timer_set)))
+
+/// ASK_HELD used either actual hand, not the input event's saved held reference.
+/obj/item/plastique/proc/timer_item_in_hands(datum/act/op/A)
+	var/mob/living/actor = A.actor
+	if(!istype(actor))
+		return FALSE
+	return actor.item_is_in_hands(src)
+
+/obj/item/plastique/proc/timer_set(datum/act/op/A)
+	var/datum/prompt/number/R = A.answer
+	set_timer(CLAMP(R.value, 10, 60000))
+	to_chat(A.actor, "Timer set for [timer] seconds.")
+	return OP_OK
 
 /obj/item/plastique/afterattack(atom/movable/target, mob/user, flag)
 	if (!flag)

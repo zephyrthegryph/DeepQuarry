@@ -20,6 +20,10 @@
 			TEST_ASSERT_EQUAL(question.default, user.name, "real safeguard default snapshots actual actor name")
 		if(istype(module, /obj/item/aiModule/oneHuman))
 			TEST_ASSERT_EQUAL(question.default, user.real_name, "real one-human default snapshots actual actor identity")
+		var/turf/answer_location = get_turf(user) == T ? get_step(T, EAST) : T
+		TEST_ASSERT_NOTNULL(answer_location, "real carried request has another location for its actor")
+		user.forceMove(answer_location)
+		TEST_ASSERT_EQUAL(get_turf(module), answer_location, "actual actor movement moves the original carried module")
 		var/answer = "Round2 configured law"
 		test_answer(user, answer)
 		test_time(1 SECOND)

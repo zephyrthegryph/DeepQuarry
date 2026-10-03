@@ -11,7 +11,7 @@ TRACKED(/obj/item/text_to_speech, named)
 CAPABILITIES(/obj/item/text_to_speech)
 	op("speak", inputs(in_hand(), hand()), answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), label("Speak a message"),
 		needs(carried(), req_capable()), then(PROC_REF(speech_started), early = TRUE),
-		asks(/datum/prompt/text/tts_message, fields = list("question" = "Choose a message to relay to those around you.", "default" = "")), then(PROC_REF(message_spoken)))
+		asks(/datum/prompt/text/tts_message, keeps = 0, fields = list("timeout" = 0, "question" = "Choose a message to relay to those around you.", "default" = "")), then(PROC_REF(message_spoken)))
 
 /obj/item/text_to_speech/proc/speech_started(datum/act/op/A)
 	var/mob/user = A.actor

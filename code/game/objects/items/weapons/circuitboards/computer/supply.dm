@@ -22,8 +22,8 @@ TRACKED(/obj/item/circuitboard/supplycomp, contraband_enabled)
 		set_contraband_enabled(SC.can_order_contraband)
 
 CAPABILITIES(/obj/item/circuitboard/supplycomp)
-	op("spectrum", tool(TOOL_MULTITOOL), needs(req_capable()), label("Configure receiver spectrum"), wait(0),
-		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(spectrum_question)), "title" = "Multitool-Circuitboard interface", "choices" = computed(PROC_REF(spectrum_choices)), "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(spectrum_chosen)), passes())
+	op("spectrum", tool(TOOL_MULTITOOL), needs(req_adjacent(), req_capable()), label("Configure receiver spectrum"), wait(0),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("question" = computed(PROC_REF(spectrum_question)), "title" = "Multitool-Circuitboard interface", "choices" = computed(PROC_REF(spectrum_choices)), "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(spectrum_chosen)), passes())
 
 /obj/item/circuitboard/supplycomp/proc/spectrum_question(datum/act/op/A)
 	return "Current receiver spectrum is set to: [contraband_enabled ? "BROAD" : "STANDARD"]"

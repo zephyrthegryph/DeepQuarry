@@ -11,8 +11,8 @@
 
 CAPABILITIES(/obj/item/ticket_printer)
 	op("print", in_hand(), label("Print ticket"), cooldown(print_cooldown), needs(carried()),
-		asks(/datum/prompt/text, step = "recipient", fields = list("title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)),
-		asks(/datum/prompt/text/ticket_printer_details, step = "details", when = PROC_REF(has_recipient)),
+		asks(/datum/prompt/text, keeps = 0, step = "recipient", fields = list("timeout" = 0, "title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)),
+		asks(/datum/prompt/text/ticket_printer_details, fields = list("timeout" = 0), keeps = 0, step = "details", when = PROC_REF(has_recipient)),
 		then(PROC_REF(ticket_printed)))
 
 /obj/item/ticket_printer/proc/has_recipient(datum/act/op/A)

@@ -3104,28 +3104,28 @@
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 428, /obj/item/aiModule/freeformcore)
 	into += entry_line(429)
-	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/freeformcore), global.then(PROC_REF(law_entered))))
+	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/freeformcore, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(law_entered))))
 
 /// CAPABILITIES(/obj/item/aiModule/oneHuman) at code/game/objects/items/weapons/AI_modules.dm:229
 /obj/item/aiModule/oneHuman/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 229, /obj/item/aiModule/oneHuman)
 	into += entry_line(230)
-	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/oneHuman), global.then(PROC_REF(target_named))))
+	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/oneHuman, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(target_named))))
 
 /// CAPABILITIES(/obj/item/aiModule/safeguard) at code/game/objects/items/weapons/AI_modules.dm:162
 /obj/item/aiModule/safeguard/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 162, /obj/item/aiModule/safeguard)
 	into += entry_line(163)
-	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/safeguard), global.then(PROC_REF(target_named))))
+	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/safeguard, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(target_named))))
 
 /// CAPABILITIES(/obj/item/aiModule/syndicate) at code/game/objects/items/weapons/AI_modules.dm:455
 /obj/item/aiModule/syndicate/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/AI_modules.dm", 455, /obj/item/aiModule/syndicate)
 	into += entry_line(456)
-	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/syndicate), global.then(PROC_REF(law_entered))))
+	into += list(global.op("configure", global.in_hand(), global.label("Configure law module"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/text/ai_module/syndicate, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(law_entered))))
 
 /// CAPABILITIES(/obj/item/airlock_electronics) at code/game/machinery/doors/airlock_electronics.dm:30
 /obj/item/airlock_electronics/declared_entries(list/into)
@@ -3253,7 +3253,7 @@
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/id cards/cards.dm", 212, /obj/item/card_fluff)
 	into += entry_line(213)
-	into += list(global.op("customize", global.in_hand(), global.label("Customize card"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)), global.asks(/datum/prompt/choice, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)), global.asks(/datum/prompt/choice, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)), global.then(PROC_REF(customize_chosen))))
+	into += list(global.op("customize", global.in_hand(), global.label("Customize card"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, keeps = 0, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)), global.asks(/datum/prompt/choice, keeps = 0, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)), global.then(PROC_REF(customize_chosen))))
 
 /// CAPABILITIES(/obj/item/chameleon) at code/game/objects/items/devices/chameleonproj.dm:21
 /obj/item/chameleon/declared_entries(list/into)
@@ -3269,7 +3269,7 @@
 	into += entry_line(24)
 	into += list(global.op("lock", global.item(/obj/item/card/id), global.needs(global.req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), global.label("Lock or unlock circuit controls"), global.then(PROC_REF(lock_toggled)), global.passes()))
 	into += entry_line(25)
-	into += list(global.op("networks", global.tool(TOOL_MULTITOOL), global.needs(global.req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), global.label("Configure camera networks"), global.wait(0), global.asks(/datum/prompt/text, fields = list("question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = global.computed(PROC_REF(networks_default)))), global.then(PROC_REF(networks_entered)), global.passes()))
+	into += list(global.op("networks", global.tool(TOOL_MULTITOOL), global.needs(global.req_adjacent(), global.req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), global.label("Configure camera networks"), global.wait(0), global.asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = global.computed(PROC_REF(networks_default)))), global.then(PROC_REF(networks_entered)), global.passes()))
 	into += entry_line(27)
 	into += list(global.emag(global.then(PROC_REF(on_emag)), say = MSG(camera_board/emagged)))
 	into += entry_line(28)
@@ -3282,7 +3282,7 @@
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/circuitboards/computer/supply.dm", 24, /obj/item/circuitboard/supplycomp)
 	into += entry_line(25)
-	into += list(global.op("spectrum", global.tool(TOOL_MULTITOOL), global.needs(global.req_capable()), global.label("Configure receiver spectrum"), global.wait(0), global.asks(/datum/prompt/choice, fields = list("question" = global.computed(PROC_REF(spectrum_question)), "title" = "Multitool-Circuitboard interface", "choices" = global.computed(PROC_REF(spectrum_choices)), "buttons" = TRUE, "timeout" = 0)), global.then(PROC_REF(spectrum_chosen)), global.passes()))
+	into += list(global.op("spectrum", global.tool(TOOL_MULTITOOL), global.needs(global.req_adjacent(), global.req_capable()), global.label("Configure receiver spectrum"), global.wait(0), global.asks(/datum/prompt/choice, keeps = 0, fields = list("question" = global.computed(PROC_REF(spectrum_question)), "title" = "Multitool-Circuitboard interface", "choices" = global.computed(PROC_REF(spectrum_choices)), "buttons" = TRUE, "timeout" = 0)), global.then(PROC_REF(spectrum_chosen)), global.passes()))
 
 /// CAPABILITIES(/obj/item/clothing) at code/modules/integrated_electronics/core/assemblies/clothing.dm:45
 /obj/item/clothing/declared_entries(list/into)
@@ -3302,6 +3302,27 @@
 	into += entry_line(21)
 	into += list(global.emag(global.then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE))
 
+/// CAPABILITIES(/obj/item/clothing/accessory/ring/engagement) at code/modules/clothing/accessories/rings.dm:32
+/obj/item/clothing/accessory/ring/engagement/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/rings.dm", 32, /obj/item/clothing/accessory/ring/engagement)
+	into += entry_line(33)
+	into += list(global.op("present", global.in_hand(), global.label("Present"), global.then(PROC_REF(ring_presented))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/ring/seal/signet) at code/modules/clothing/accessories/rings.dm:107
+/obj/item/clothing/accessory/ring/seal/signet/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/rings.dm", 107, /obj/item/clothing/accessory/ring/seal/signet)
+	into += entry_line(108)
+	into += list(global.op("claim", global.in_hand(), global.label("Claim"), global.needs(global.req_is(nameof(nameset), FALSE, because = MSG(signet/claimed))), global.then(PROC_REF(ring_claimed))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/ring/wedding) at code/modules/clothing/accessories/rings.dm:131
+/obj/item/clothing/accessory/ring/wedding/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/rings.dm", 131, /obj/item/clothing/accessory/ring/wedding)
+	into += entry_line(132)
+	into += list(global.op("engrave", global.in_hand(), global.label("Engrave"), global.asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your spouse", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), global.then(PROC_REF(engraving_picked))))
+
 /// CAPABILITIES(/obj/item/clothing/gloves) at code/modules/clothing/clothing.dm:326
 /obj/item/clothing/gloves/declared_entries(list/into)
 	..(into)
@@ -3312,6 +3333,13 @@
 	into += list(global.owns_one(nameof(ring), /obj/item/clothing/accessory))
 	into += entry_line(329)
 	into += list(global.owns_one(nameof(special_attack), /datum/unarmed_attack, starts = nameof(special_attack_type)))
+
+/// CAPABILITIES(/obj/item/clothing/gloves/weddingring) at code/modules/clothing/gloves/miscellaneous.dm:175
+/obj/item/clothing/gloves/weddingring/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/gloves/miscellaneous.dm", 175, /obj/item/clothing/gloves/weddingring)
+	into += entry_line(176)
+	into += list(global.op("engrave", global.in_hand(), global.label("Engrave"), global.asks(/datum/prompt/text, keeps = 0, fields = list("question" = "Would you like to change the holoengraving on the ring?", "title" = "Name your betrothed", "default" = "Bae", "max_len" = MAX_NAME_LEN, "name_text" = TRUE, "timeout" = 0)), global.then(PROC_REF(engraving_picked))))
 
 /// CAPABILITIES(/obj/item/clothing/head/fluff/nikki) at code/modules/vore/fluffstuff/custom_clothes.dm:1972
 /obj/item/clothing/head/fluff/nikki/declared_entries(list/into)
@@ -3356,6 +3384,13 @@
 	into += entry_block("code/modules/clothing/clothing.dm", 934, /obj/item/clothing/suit)
 	into += entry_line(935)
 	into += list(global.owns_one(nameof(hood), /obj/item/clothing/head))
+
+/// CAPABILITIES(/obj/item/clothing/suit/armor/reactive) at code/modules/clothing/suits/reactive_armour.dm:62
+/obj/item/clothing/suit/armor/reactive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/suits/reactive_armour.dm", 62, /obj/item/clothing/suit/armor/reactive)
+	into += entry_line(63)
+	into += list(global.op("toggle", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(reactive_toggled))))
 
 /// CAPABILITIES(/obj/item/clothing/suit/space) at code/modules/clothing/spacesuits/breaches.dm:24
 /obj/item/clothing/suit/space/declared_entries(list/into)
@@ -3471,13 +3506,13 @@
 	into += entry_line(116)
 	into += list(held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED))
 	into += entry_line(117)
-	into += list(global.op("configure", global.in_hand(), global.label("Configure paint sprayer"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)), global.asks(/datum/prompt/choice/floor_painter_decal, step = "decal", when = PROC_REF(changing_decal)), global.asks(/datum/prompt/choice/floor_painter_direction, step = "direction", when = PROC_REF(changing_direction)), global.asks(/datum/prompt/color/floor_painter, step = "colour", when = PROC_REF(changing_colour)), global.then(PROC_REF(setting_chosen))))
+	into += list(global.op("configure", global.in_hand(), global.label("Configure paint sprayer"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice, keeps = 0, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)), global.asks(/datum/prompt/choice/floor_painter_decal, fields = list("timeout" = 0), keeps = 0, step = "decal", when = PROC_REF(changing_decal)), global.asks(/datum/prompt/choice/floor_painter_direction, fields = list("timeout" = 0), keeps = 0, step = "direction", when = PROC_REF(changing_direction)), global.asks(/datum/prompt/color/floor_painter, fields = list("timeout" = 0), keeps = 0, step = "colour", when = PROC_REF(changing_colour)), global.then(PROC_REF(setting_chosen))))
 	into += entry_line(122)
-	into += list(global.op("decal", global.menu(), global.label("Choose Decal"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice/floor_painter_decal, step = "decal"), global.then(PROC_REF(decal_chosen))))
+	into += list(global.op("decal", global.menu(), global.label("Choose Decal"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice/floor_painter_decal, fields = list("timeout" = 0), keeps = 0, step = "decal"), global.then(PROC_REF(decal_chosen))))
 	into += entry_line(123)
-	into += list(global.op("direction", global.menu(), global.label("Choose Direction"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice/floor_painter_direction, step = "direction"), global.then(PROC_REF(direction_chosen))))
+	into += list(global.op("direction", global.menu(), global.label("Choose Direction"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/choice/floor_painter_direction, fields = list("timeout" = 0), keeps = 0, step = "direction"), global.then(PROC_REF(direction_chosen))))
 	into += entry_line(124)
-	into += list(global.op("colour", global.menu(), global.label("Choose Colour"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/color/floor_painter, step = "colour"), global.then(PROC_REF(colour_chosen))))
+	into += list(global.op("colour", global.menu(), global.label("Choose Colour"), global.needs(global.carried(), global.req_capable()), global.asks(/datum/prompt/color/floor_painter, fields = list("timeout" = 0), keeps = 0, step = "colour"), global.then(PROC_REF(colour_chosen))))
 
 /// CAPABILITIES(/obj/item/geiger) at code/game/objects/items/devices/geiger.dm:83
 /obj/item/geiger/declared_entries(list/into)
@@ -3490,11 +3525,11 @@
 	into += entry_line(86)
 	into += list(global.op("reset", global.inputs(global.hand(), global.in_hand()), global.answers(INTENT_TOGGLE), global.label("Reset"), global.needs(global.req_adjacent(), global.req_is(nameof(scanning), TRUE, because = MSG(geiger/off))), global.then(PROC_REF(counter_reset))))
 
-/// CAPABILITIES(/obj/item/geiger/wall) at code/game/objects/items/devices/geiger.dm:201
+/// CAPABILITIES(/obj/item/geiger/wall) at code/game/objects/items/devices/geiger.dm:203
 /obj/item/geiger/wall/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/geiger.dm", 201, /obj/item/geiger/wall)
-	into += entry_line(202)
+	into += entry_block("code/game/objects/items/devices/geiger.dm", 203, /obj/item/geiger/wall)
+	into += entry_line(204)
 	into += list(global.op("toggle_mounted", global.inputs(global.hand(), global.ai()), global.label("Toggle counter"), global.then(PROC_REF(mounted_toggled))))
 
 /// CAPABILITIES(/obj/item/gene_scanner) at code/game/objects/items/devices/scanners/gene.dm:10
@@ -3516,7 +3551,7 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/gold_star_printer.dm", 13, /obj/item/gold_star_printer)
 	into += entry_line(14)
-	into += list(global.op("print", global.in_hand(), global.label("Print gold star"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, step = "title", fields = list("title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32)), global.asks(/datum/prompt/text/gold_star_description, step = "description", when = PROC_REF(has_title)), global.then(PROC_REF(star_printed))))
+	into += list(global.op("print", global.in_hand(), global.label("Print gold star"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, keeps = 0, step = "title", fields = list("timeout" = 0, "title" = "Title", "question" = "Choose a title for the star, this can be an action or name. The name of the star will read Gold Star for 'Title'.", "max_len" = 32, "name_text" = TRUE)), global.asks(/datum/prompt/text/gold_star_description, fields = list("timeout" = 0), keeps = 0, step = "description", when = PROC_REF(has_title)), global.then(PROC_REF(star_printed))))
 
 /// CAPABILITIES(/obj/item/grenade/chem_grenade) at code/game/objects/items/weapons/grenades/chem_grenade.dm:21
 /obj/item/grenade/chem_grenade/declared_entries(list/into)
@@ -3608,7 +3643,7 @@
 	into += entry_line(21)
 	into += list(global.op("hail", global.in_hand(), global.label("Hail"), global.cooldown(2 SECONDS), global.then(PROC_REF(hailed))))
 	into += entry_line(22)
-	into += list(global.op("set_message", global.menu(), global.label("Set Hailer Message"), global.needs(global.carried(), global.req(PROC_REF(unfried), because = PROC_REF(settings_refusal))), global.asks(/datum/prompt/text, fields = list("question" = "Please enter new message (leave blank to reset).")), global.then(PROC_REF(message_picked))))
+	into += list(global.op("set_message", global.menu(), global.label("Set Hailer Message"), global.needs(global.carried(), global.req_capable(), global.req(PROC_REF(unfried), because = PROC_REF(settings_refusal))), global.asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Please enter new message (leave blank to reset).")), global.then(PROC_REF(message_picked))))
 	into += entry_line(24)
 	into += list(global.emag(list(global.needs(global.req(PROC_REF(unfried), because = PROC_REF(emag_refusal))), global.then(PROC_REF(overloaded))), repeatable = TRUE))
 
@@ -3865,14 +3900,14 @@
 	into += entry_line(130)
 	into += list(held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED))
 	into += entry_line(131)
-	into += list(global.op("set_range", global.inputs(global.hand(), global.menu()), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.needs(global.req_adjacent(), global.req_on_origin(ORIGIN_VERB | ORIGIN_MENU, global.carried())), global.asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
+	into += list(global.op("set_range", global.inputs(global.hand(), global.menu()), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.needs(global.req_adjacent(), global.req_on_origin(ORIGIN_VERB | ORIGIN_MENU, global.carried())), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
 
 /// CAPABILITIES(/obj/item/mining_scanner/robot) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:494
 /obj/item/mining_scanner/robot/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 494, /obj/item/mining_scanner/robot)
 	into += entry_line(495)
-	into += list(global.op("set_range", global.hand(), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.when(nameof(exact)), global.needs(global.carried()), global.asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
+	into += list(global.op("set_range", global.hand(), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.when(nameof(exact)), global.needs(global.carried()), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
 
 /// CAPABILITIES(/obj/item/mmi) at code/modules/mob/living/carbon/brain/MMI.dm:24
 /obj/item/mmi/declared_entries(list/into)
@@ -4006,7 +4041,7 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/pipe_painter.dm", 19, /obj/item/pipe_painter)
 	into += entry_line(20)
-	into += list(global.op("choose_mode", global.in_hand(), global.label("Choose paint colour"), global.needs(global.carried()), global.asks(/datum/prompt/choice/pipe_painter_mode), global.then(PROC_REF(mode_picked))))
+	into += list(global.op("choose_mode", global.in_hand(), global.label("Choose paint colour"), global.needs(global.carried()), global.asks(/datum/prompt/choice/pipe_painter_mode, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(mode_picked))))
 	into += entry_line(22)
 	into += list(global.op("paint", global.at_target(/obj/machinery/atmospherics/pipe), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Paint pipe"), global.needs(global.req_adjacent(), global.req(PROC_REF(paintable_pipe), because = MSG(op/not_available))), global.then(PROC_REF(pipe_painted))))
 
@@ -4028,6 +4063,13 @@
 	into += list(global.op("put_pizza", global.item(/obj/item/reagent_containers/food/snacks/sliceable/pizza), global.priority(OP_PRIORITY_PART), global.needs(global.req(PROC_REF(is_open), because = MSG(pizzabox/lid_shut))), global.then(PROC_REF(pizza_put_in))))
 	into += entry_line(3725)
 	into += list(global.op("write_tag", global.item(/obj/item/pen), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(is_shut))), global.label("Write on the tag"), global.asks(/datum/prompt/text, fields = list("question" = "Enter what you want to add to the tag:", "title" = "Write", "max_len" = 30)), global.then(PROC_REF(tag_written))))
+
+/// CAPABILITIES(/obj/item/plastique) at code/game/objects/items/weapons/explosives.dm:49
+/obj/item/plastique/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/explosives.dm", 49, /obj/item/plastique)
+	into += entry_line(50)
+	into += list(global.op("timer", global.in_hand(), global.needs(req_self_held(), global.req(PROC_REF(timer_item_in_hands), because = MSG(op/not_available)), global.req_capable()), global.label("Set explosive timer"), global.asks(/datum/prompt/number, keeps = 0, fields = list("title" = "Timer", "question" = "Please set the timer.", "default" = 10, "min_value" = 10, "max_value" = 60000, "step" = 1, "timeout" = 0)), global.then(PROC_REF(timer_set))))
 
 /// CAPABILITIES(/obj/item/projectile) at code/modules/projectiles/projectile.dm:162
 /obj/item/projectile/declared_entries(list/into)
@@ -4620,7 +4662,7 @@
 	..(into)
 	into += entry_block("code/modules/mining/resonator.dm", 89, /obj/item/resonator)
 	into += entry_line(90)
-	into += list(global.op("settings", global.in_hand(), global.label("Settings"), global.asks(/datum/prompt/choice, fields = list("question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))), global.then(PROC_REF(settings_picked))))
+	into += list(global.op("settings", global.in_hand(), global.label("Settings"), global.asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))), global.then(PROC_REF(settings_picked))))
 	into += entry_line(93)
 	into += list(global.op("resonate", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Create resonance field"), global.needs(global.req_adjacent(), global.req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), global.then(PROC_REF(resonated))))
 
@@ -4714,20 +4756,34 @@
 	into += entry_line(320)
 	into += list(global.op("deploy", global.in_hand(), global.label("Deploy"), global.when(nameof(held)), global.then(PROC_REF(deployed))))
 
-/// CAPABILITIES(/obj/item/shield/energy) at code/game/objects/items/weapons/shields.dm:159
+/// CAPABILITIES(/obj/item/shield/energy) at code/game/objects/items/weapons/shields.dm:156
 /obj/item/shield/energy/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/shields.dm", 159, /obj/item/shield/energy)
-	into += entry_line(160)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 156, /obj/item/shield/energy)
+	into += entry_line(157)
 	into += list(global.op("toggle", global.in_hand(), global.label("Toggle shield"), global.then(PROC_REF(shield_toggled))))
-	into += entry_line(161)
-	into += list(global.op("recolor", global.inputs(global.hand(), global.in_hand()), global.answers(INTENT_TOGGLE), global.label("Recolor shield"), global.needs(global.req_adjacent()), global.confirms("Are you sure you want to recolor your shield?"), global.asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor))), global.then(PROC_REF(shield_recolored))))
+	into += entry_line(158)
+	into += list(global.op("recolor", global.inputs(global.hand(), global.in_hand()), global.answers(INTENT_TOGGLE), global.label("Recolor shield"), global.needs(global.req_adjacent()), global.part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = "Are you sure you want to recolor your shield?", "title" = "Confirm Recolor", "timeout" = 0), "step" = "confirm", "resume" = CAPTURE, "keeps" = 0, "confirms" = TRUE)), global.asks(/datum/prompt/color/energy_shield, keeps = 0), global.then(PROC_REF(shield_recolored))))
 
-/// CAPABILITIES(/obj/item/shield/riot/tele) at code/game/objects/items/weapons/shields.dm:249
+/// CAPABILITIES(/obj/item/shield/riot) at code/game/objects/items/weapons/shields.dm:100
+/obj/item/shield/riot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 100, /obj/item/shield/riot)
+	into += entry_line(101)
+	into += list(global.op("baton_bash", global.item(/obj/item/melee/baton), global.label("Bash shield"), global.then(PROC_REF(baton_bashed)), global.passes()))
+
+/// CAPABILITIES(/obj/item/shield/riot/explorer) at code/game/objects/items/weapons/shields.dm:371
+/obj/item/shield/riot/explorer/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 371, /obj/item/shield/riot/explorer)
+	into += entry_line(372)
+	into += list(global.op("machete_bash", global.item(/obj/item/material/knife/machete), global.label("Bash shield"), global.then(PROC_REF(machete_bashed)), global.passes()))
+
+/// CAPABILITIES(/obj/item/shield/riot/tele) at code/game/objects/items/weapons/shields.dm:260
 /obj/item/shield/riot/tele/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/shields.dm", 249, /obj/item/shield/riot/tele)
-	into += entry_line(250)
+	into += entry_block("code/game/objects/items/weapons/shields.dm", 260, /obj/item/shield/riot/tele)
+	into += entry_line(261)
 	into += list(global.op("toggle", global.in_hand(), global.label("Extend or retract shield"), global.then(PROC_REF(shield_toggled))))
 
 /// CAPABILITIES(/obj/item/shield_projector) at code/modules/shieldgen/directional_shield.dm:101
@@ -5968,14 +6024,14 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/text_to_speech.dm", 11, /obj/item/text_to_speech)
 	into += entry_line(12)
-	into += list(global.op("speak", global.inputs(global.in_hand(), global.hand()), global.answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), global.label("Speak a message"), global.needs(global.carried(), global.req_capable()), global.then(PROC_REF(speech_started), early = TRUE), global.asks(/datum/prompt/text/tts_message, fields = list("question" = "Choose a message to relay to those around you.", "default" = "")), global.then(PROC_REF(message_spoken))))
+	into += list(global.op("speak", global.inputs(global.in_hand(), global.hand()), global.answers(INTENT_USE, INTENT_TOGGLE, INTENT_OPEN, INTENT_EJECT), global.label("Speak a message"), global.needs(global.carried(), global.req_capable()), global.then(PROC_REF(speech_started), early = TRUE), global.asks(/datum/prompt/text/tts_message, keeps = 0, fields = list("timeout" = 0, "question" = "Choose a message to relay to those around you.", "default" = "")), global.then(PROC_REF(message_spoken))))
 
 /// CAPABILITIES(/obj/item/ticket_printer) at code/game/objects/items/devices/ticket_printer.dm:12
 /obj/item/ticket_printer/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/objects/items/devices/ticket_printer.dm", 12, /obj/item/ticket_printer)
 	into += entry_line(13)
-	into += list(global.op("print", global.in_hand(), global.label("Print ticket"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, step = "recipient", fields = list("title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)), global.asks(/datum/prompt/text/ticket_printer_details, step = "details", when = PROC_REF(has_recipient)), global.then(PROC_REF(ticket_printed))))
+	into += list(global.op("print", global.in_hand(), global.label("Print ticket"), global.cooldown(print_cooldown), global.needs(global.carried()), global.asks(/datum/prompt/text, keeps = 0, step = "recipient", fields = list("timeout" = 0, "title" = "Name", "question" = "The Name of the person you are issuing the ticket to.", "max_len" = 100)), global.asks(/datum/prompt/text/ticket_printer_details, fields = list("timeout" = 0), keeps = 0, step = "details", when = PROC_REF(has_recipient)), global.then(PROC_REF(ticket_printed))))
 
 /// CAPABILITIES(/obj/item/tool/transforming) at code/game/objects/items/weapons/tools/transforming.dm:11
 /obj/item/tool/transforming/declared_entries(list/into)
@@ -6014,7 +6070,7 @@
 	..(into)
 	into += entry_block("code/game/objects/items/devices/translator.dm", 19, /obj/item/universal_translator)
 	into += entry_line(20)
-	into += list(global.op("enable", global.in_hand(), global.label("Enable translator"), global.when(global.cond_not(nameof(translation_enabled))), global.needs(global.carried(), global.req(PROC_REF(language_supported), because = PROC_REF(language_refusal))), global.asks(/datum/prompt/choice/translator_language), global.then(PROC_REF(language_picked))))
+	into += list(global.op("enable", global.in_hand(), global.label("Enable translator"), global.when(global.cond_not(nameof(translation_enabled))), global.needs(global.carried(), global.req(PROC_REF(language_supported), because = PROC_REF(language_refusal))), global.asks(/datum/prompt/choice/translator_language, fields = list("timeout" = 0), keeps = 0), global.then(PROC_REF(language_picked))))
 	into += entry_line(24)
 	into += list(global.op("disable", global.in_hand(), global.label("Disable translator"), global.when(nameof(translation_enabled)), global.then(PROC_REF(disabled))))
 
@@ -6957,11 +7013,11 @@
 	into += entry_line(34)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/media/jukebox/ghost) at code/game/machinery/jukebox.dm:351
+/// CAPABILITIES(/obj/machinery/media/jukebox/ghost) at code/game/machinery/jukebox.dm:352
 /obj/machinery/media/jukebox/ghost/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/jukebox.dm", 351, /obj/machinery/media/jukebox/ghost)
-	into += entry_line(352)
+	into += entry_block("code/game/machinery/jukebox.dm", 352, /obj/machinery/media/jukebox/ghost)
+	into += entry_line(353)
 	into += list(global.owns_many(nameof(custom_tracks)))
 
 /// CAPABILITIES(/obj/machinery/message_server) at code/modules/research/message_server.dm:78

@@ -88,7 +88,7 @@ TRACKED(/obj/item/resonator, fieldlimit)
 
 CAPABILITIES(/obj/item/resonator)
 	op("settings", in_hand(), label("Settings"),
-		asks(/datum/prompt/choice, fields = list("question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Change Detonation Time or toggle Cascading?", "title" = "Setting", "choices" = list("Toggle Cascade", "Resonance Time"))),
 		then(PROC_REF(settings_picked)))
 	op("resonate", at_target(), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Create resonance field"),
 		needs(req_adjacent(), req(PROC_REF(resonance_allowed), because = PROC_REF(resonance_refusal))), then(PROC_REF(resonated)))

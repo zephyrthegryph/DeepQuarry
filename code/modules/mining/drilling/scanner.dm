@@ -130,7 +130,7 @@ CAPABILITIES(/obj/item/mining_scanner/advanced)
 	held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED)
 	op("set_range", inputs(hand(), menu()), gesture(GESTURE_ALT), label("Set Scanner Range"),
 		needs(req_adjacent(), req_on_origin(ORIGIN_VERB | ORIGIN_MENU, carried())),
-		asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
+		asks(/datum/prompt/choice, keeps = 0, fields = list("timeout" = 0, "question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
 /obj/item/mining_scanner/advanced/proc/set_scanner_range()
 	set name = "Set Scanner Range"

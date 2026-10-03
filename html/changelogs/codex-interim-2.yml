@@ -17,3 +17,7 @@ changes:
   - code_imp: "Patient monitors, fabricator controls, AI module configuration, decorative cards, supply boards, Geiger controls and folding blades use native operations."
   - bugfix: "Robot fabricators credit steel only after consuming it successfully, and cancel insertion when its source stack has been deleted."
   - code_imp: "Floor painter settings, transforming tools, hat controls, towels and security electronics use native operations."
+  - code_imp: "Personal clothing controls and explosive timer settings use native operations; finite item timers use native scheduling."
+  - bugfix: "Reactive armour shells require successful consumption of their anomaly core before producing armour."
+  - bugfix: "Migrated configuration prompts preserve their original cancellation, defaults and unlimited response time."
+  - bugfix: "Native hand requirements update when an item moves between hands and worn slots within the same inventory."

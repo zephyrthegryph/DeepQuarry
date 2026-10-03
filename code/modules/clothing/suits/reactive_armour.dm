@@ -25,9 +25,11 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 		var/armour_path = is_path_in_list(anomaly.anomaly_type, anomaly_armour_types, TRUE)
 		if(!armour_path)
 			armour_path = /obj/item/clothing/suit/armor/reactive/stealth
-		to_chat(user, span_notice("You insert [anomaly] into the chest plate, and the armour gently hums to life."))
+		var/anomaly_name = "[anomaly]"
+		if(!consume(anomaly, user))
+			return TRUE
+		to_chat(user, span_notice("You insert [anomaly_name] into the chest plate, and the armour gently hums to life."))
 		replace_with(src, armour_path)
-		consume(anomaly, user)
 		return TRUE
 	return FALSE
 
@@ -55,11 +57,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive_armor_shell, INTERACT
 
 APPEARANCE_TEMPLATE(/obj/item/clothing/suit/armor/reactive, "reactive{active?:off}")
 
-EXTEND_INTERACTIONS(/obj/item/clothing/suit/armor/reactive, INTERACT_USE("Toggle", PROC_REF(reactive_armor_toggle_self)))
+TRACKED(/obj/item/clothing/suit/armor/reactive, active)
 
-/// Old attack_self.
-/obj/item/clothing/suit/armor/reactive/proc/reactive_armor_toggle_self(mob/user, obj/item/held, datum/interaction/interaction)
-	active = !active
+CAPABILITIES(/obj/item/clothing/suit/armor/reactive)
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(reactive_toggled)))
+
+/obj/item/clothing/suit/armor/reactive/proc/reactive_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_active(!active)
 	to_chat(user, span_notice("[src] is now [active ? "active" : "inactive"]."))
 	update_icon()
 	add_fingerprint(user)

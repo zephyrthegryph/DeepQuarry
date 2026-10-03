@@ -22,8 +22,8 @@ MSG_DEF_SELF(camera_board/emagged, "You override the circuit lock and open contr
 
 CAPABILITIES(/obj/item/circuitboard/security)
 	op("lock", item(/obj/item/card/id), needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/broken)), req_credential_in_hand(list(/obj/item/card/id), because = MSG(camera_board/denied))), label("Lock or unlock circuit controls"), then(PROC_REF(lock_toggled)), passes())
-	op("networks", tool(TOOL_MULTITOOL), needs(req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), label("Configure camera networks"), wait(0),
-		asks(/datum/prompt/text, fields = list("question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = computed(PROC_REF(networks_default)))), then(PROC_REF(networks_entered)), passes())
+	op("networks", tool(TOOL_MULTITOOL), needs(req_adjacent(), req_is(nameof(locked), FALSE, because = MSG(camera_board/locked))), label("Configure camera networks"), wait(0),
+		asks(/datum/prompt/text, keeps = 0, fields = list("timeout" = 0, "question" = "Which networks would you like to connect this camera console circuit to? Separate networks with a comma. No Spaces!\nFor example: SS13,Security,Secret ", "title" = "Multitool-Circuitboard interface", "default" = computed(PROC_REF(networks_default)))), then(PROC_REF(networks_entered)), passes())
 	emag(then(PROC_REF(on_emag)), say = MSG(camera_board/emagged))
 	extend("emag.use", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))
 	extend("emag.subvert", needs(req_is(nameof(emagged), FALSE, because = MSG(camera_board/already))))

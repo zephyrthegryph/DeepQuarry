@@ -97,18 +97,15 @@ MATERIAL_MIX(/obj/item/shield/riot, list(MAT_GLASS = 7500, MAT_STEEL = 1000))
 			return 1
 	return 0
 
-DECLARE_INTERACTIONS(/obj/item/shield/riot, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/shield/riot)
+	op("baton_bash", item(/obj/item/melee/baton), label("Bash shield"), then(PROC_REF(baton_bashed)), passes())
 
-/// Old attackby.
-/obj/item/shield/riot/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/melee/baton))
-		if(COOLDOWN_FINISHED(src, cooldown))
-			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
-			play_sfx(src, SFX_EFFECTS_SHIELDBASH)
-			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+/obj/item/shield/riot/proc/baton_bashed(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		act_message(A.actor, src, others = span_warning("%U% bashes %T% with [A.held]!"))
+		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
+		COOLDOWN_START(src, cooldown, 2.5 SECONDS)
+	return OP_OK
 
 /*
  * Energy Shield
@@ -159,8 +156,22 @@ TRACKED(/obj/item/shield/energy, lcolor)
 CAPABILITIES(/obj/item/shield/energy)
 	op("toggle", in_hand(), label("Toggle shield"), then(PROC_REF(shield_toggled)))
 	op("recolor", inputs(hand(), in_hand()), answers(INTENT_TOGGLE), label("Recolor shield"),
-		needs(req_adjacent()), confirms("Are you sure you want to recolor your shield?"),
-		asks(/datum/prompt/color, fields = list("title" = "Choose Energy Color", "default" = nameof(lcolor))), then(PROC_REF(shield_recolored)))
+		needs(req_adjacent()),
+		part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = "Are you sure you want to recolor your shield?", "title" = "Confirm Recolor", "timeout" = 0), "step" = "confirm", "resume" = CAPTURE, "keeps" = 0, "confirms" = TRUE)),
+		asks(/datum/prompt/color/energy_shield, keeps = 0), then(PROC_REF(shield_recolored)))
+
+/// The color starts from the live shield state when this second request opens, after confirmation.
+/datum/prompt/color/energy_shield
+	title = "Choose Energy Color"
+	timeout = 0
+
+/datum/prompt/color/energy_shield/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/shield/energy/shield = asking.target
+		if(istype(shield))
+			default = shield.lcolor
 
 /obj/item/shield/energy/proc/shield_toggled(datum/act/op/A)
 	var/mob/living/user = A.actor
@@ -321,7 +332,6 @@ CAPABILITIES(/obj/item/shield/riot/tele)
 
 EXTEND_INTERACTIONS(/obj/item/shield/riot/explorer, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(explorer_interaction_item)), \
 )
 
 /// Old attack_self.
@@ -358,16 +368,15 @@ APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer, "explorer_shield{on?_lighted
 	desc = "A shield issued to exploration teams to help protect them when advancing into the unknown. It is lighter and cheaper but less protective than some of its counterparts. It has a flashlight straight in the middle to help draw attention. This one is POURPEL"
 	icon_state = "explorer_shield_P"
 
-/// Old attackby.
-/obj/item/shield/riot/explorer/proc/explorer_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/material/knife/machete))
-		if(COOLDOWN_FINISHED(src, cooldown))
-			act_message(user, src, others = span_warning("%U% bashes %T% with [W]!"))
-			play_sfx(src, SFX_EFFECTS_SHIELDBASH)
-			COOLDOWN_START(src, cooldown, 2.5 SECONDS)
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+CAPABILITIES(/obj/item/shield/riot/explorer)
+	op("machete_bash", item(/obj/item/material/knife/machete), label("Bash shield"), then(PROC_REF(machete_bashed)), passes())
+
+/obj/item/shield/riot/explorer/proc/machete_bashed(datum/act/op/A)
+	if(COOLDOWN_FINISHED(src, cooldown))
+		act_message(A.actor, src, others = span_warning("%U% bashes %T% with [A.held]!"))
+		play_sfx(src, SFX_EFFECTS_SHIELDBASH)
+		COOLDOWN_START(src, cooldown, 2.5 SECONDS)
+	return OP_OK
 
 APPEARANCE_TEMPLATE(/obj/item/shield/riot/explorer/purple, "explorer_shield_P{on?_lighted:}")
 

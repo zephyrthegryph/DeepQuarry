@@ -896,6 +896,8 @@
 #include "round2_floor_painter_config_native.dm"
 #include "round2_transforming_tools_native.dm"
 #include "round2_towel_native.dm"
+#include "round2_plastique_timer_native.dm"
+#include "round2_shield_recolor_request.dm"
 #include "round2_ai_module_configuration.dm"
 #include "round2_supply_board_native.dm"
 #include "round2_decorative_card_native.dm"
@@ -924,6 +926,8 @@
 #include "interim2_artifact_configured_effect_rejection.dm"
 
 #include "round2_robot_fabricator_consumption.dm"
+
+#include "round2_reactive_shell_core_consumption.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

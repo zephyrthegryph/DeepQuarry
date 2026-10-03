@@ -18,7 +18,7 @@ TRACKED(/obj/item/pipe_painter, mode)
 
 CAPABILITIES(/obj/item/pipe_painter)
 	op("choose_mode", in_hand(), label("Choose paint colour"), needs(carried()),
-		asks(/datum/prompt/choice/pipe_painter_mode), then(PROC_REF(mode_picked)))
+		asks(/datum/prompt/choice/pipe_painter_mode, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(mode_picked)))
 	op("paint", at_target(/obj/machinery/atmospherics/pipe), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Paint pipe"),
 		needs(req_adjacent(), req(PROC_REF(paintable_pipe), because = MSG(op/not_available))), then(PROC_REF(pipe_painted)))
 
