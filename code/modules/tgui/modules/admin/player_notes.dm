@@ -150,7 +150,7 @@ UI_ACT_PROC(/datum/tgui_module/player_notes_info, ui_act_remove_player_info)
 	var/key = params["ckey"]
 	var/index = params["index"]
 
-	notes_del(key, index)
+	notes_del(key, index, ui.user)
 	return TRUE
 
 UI_DATA_REPLACE(/datum/tgui_module/player_notes_info, "ckey=key:text", "merge:ui_data_datum_tgui_module_player_notes_info{entries:list,age:text}")
@@ -318,7 +318,7 @@ TOPIC_ACTION(/datum/admins, "notes_legacy=filter", PROC_REF(topic_notes_legacy_f
 
 /datum/admins/proc/topic_remove_player_info_legacy(mob/user, list/args)
 	var/key = args["remove_player_info_legacy"]
-	notes_del(key, args["remove_index"])
+	notes_del(key, args["remove_index"], user)
 	show_player_info_legacy(user, key)
 	return TRUE
 

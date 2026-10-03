@@ -287,9 +287,6 @@ usr_outside_verb	code/modules/admin/holder2.dm	if(check_rights_for(usr.client, R
 usr_outside_verb	code/modules/admin/holder2.dm	return usr.client.holder.check_if_greater_rights_than_holder(other.holder)
 usr_outside_verb	code/modules/admin/holder2.dm	if(!forceGlobal && usr)
 usr_outside_verb	code/modules/admin/holder2.dm	var/client/C = usr.client
-usr_outside_verb	code/modules/admin/player_notes.dm	message_admins(span_blue("[key_name_admin(usr)] deleted one of [key]'s notes."))
-usr_outside_verb	code/modules/admin/player_notes.dm	log_admin("[key_name(usr)] deleted one of [key]'s notes.")
-usr_outside_verb	code/modules/admin/player_notes.dm	admin_action_message(usr.key, key, "deleted note on", "\[Note gone\]", 0)
 usr_outside_verb	code/modules/admin/topic.dm	message_admins("[key_name_admin(usr)] clicked an href with [msg] authorization key!")
 usr_outside_verb	code/modules/admin/topic.dm	log_admin("[key_name(usr)] clicked an href with [msg] authorization key! [href]")
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2.dm	admin_del(usr)

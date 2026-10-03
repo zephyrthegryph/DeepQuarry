@@ -689,6 +689,7 @@
 #include "interim_clonepod_sticky_container.dm"
 #include "interim_pulse_exhaustion.dm"
 #include "interim_camera_sticky_upgrade.dm"
+#include "interim_player_notes_delete_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
