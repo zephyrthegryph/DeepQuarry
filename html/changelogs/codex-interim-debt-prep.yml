@@ -63,3 +63,5 @@ changes:
   - admin: "Media track controls retain the editing player through rights checks and prompts."
   - bugfix: "Dismantling a grave marker that cannot be released preserves it without refunding material."
   - bugfix: "Ghost-role replies retain the observer who received the question across asynchronous answers."
+  - bugfix: "Welding a shard that cannot be released preserves it without duplicating sheets."
+  - admin: "Gear dispenser editor prompts and rights checks retain the supplied player."
