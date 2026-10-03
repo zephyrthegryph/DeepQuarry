@@ -692,6 +692,7 @@
 #include "interim_player_notes_delete_actor.dm"
 #include "interim_biogenerator_sticky_produce.dm"
 #include "interim_biogenerator_bulk_storage_release.dm"
+#include "interim_effect_location_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

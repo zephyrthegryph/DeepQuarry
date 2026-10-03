@@ -42,7 +42,7 @@ DECLARE_REPEAT(/obj/effect/effect/water, "step_delay", step_process, "spray_targ
 		return REPEAT_STOP
 	steps_left--
 	if(!loc)
-		qdel(src)
+		consume(src)
 		return REPEAT_STOP
 	step_towards(src, target)
 	var/turf/T = get_turf(src)
