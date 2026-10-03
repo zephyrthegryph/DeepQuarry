@@ -1,4 +1,4 @@
 author: "zephyrthegryph"
 delete-after: true
 changes:
-  - refactor: "World services (mail, inactivity, ping, persist, lobby monitor, chat, asset loading, character setup, instruments, circuit, chemistry, motion tracker, night shift, explosions, antag, events, emergency shuttle, pAI) are now systems"
+  - refactor: "World services (mail, inactivity, ping, persist, lobby monitor, chat, asset loading, character setup, instruments, circuit, chemistry, motion tracker, night shift, explosions, antag, events, emergency shuttle, pAI, expedition, flight, mobs, machines) are now systems"
