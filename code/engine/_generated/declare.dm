@@ -5866,19 +5866,14 @@
 	into += entry_block("code/game/objects/structures/pillows.dm", 55, /obj/structure/bed/pillowpile)
 	into += entry_line(56)
 	into += list(global.owns_one(nameof(front), /obj/structure/bed/pillowpilefront))
-
-/// CAPABILITIES(/obj/structure/bed/pillowpile) at code/game/objects/structures/pillows.dm:82
-/obj/structure/bed/pillowpile/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/objects/structures/pillows.dm", 82, /obj/structure/bed/pillowpile)
-	into += entry_line(83)
+	into += entry_line(57)
 	into += list(bed_hands_off())
 
-/// CAPABILITIES(/obj/structure/bed/pillowpilefront) at code/game/objects/structures/pillows.dm:84
+/// CAPABILITIES(/obj/structure/bed/pillowpilefront) at code/game/objects/structures/pillows.dm:83
 /obj/structure/bed/pillowpilefront/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/pillows.dm", 84, /obj/structure/bed/pillowpilefront)
-	into += entry_line(85)
+	into += entry_block("code/game/objects/structures/pillows.dm", 83, /obj/structure/bed/pillowpilefront)
+	into += entry_line(84)
 	into += list(bed_hands_off())
 
 /// CAPABILITIES(/obj/structure/bed/roller) at code/game/objects/structures/stool_bed_chair_nest/bed.dm:250

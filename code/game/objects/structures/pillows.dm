@@ -54,6 +54,7 @@ EXTEND_INTERACTIONS(/obj/item/bedsheet/pillow, \
 
 CAPABILITIES(/obj/structure/bed/pillowpile)
 	owns_one(nameof(front), /obj/structure/bed/pillowpilefront)
+	bed_hands_off()
 
 /obj/structure/bed/pillowpilefront
 	name = "pillow pile"
@@ -79,8 +80,6 @@ APPEARANCE_NONE(/obj/structure/bed/pillowpilefront)
 
 APPEARANCE_NONE(/obj/structure/bed/pillowpile)
 
-CAPABILITIES(/obj/structure/bed/pillowpile)
-	bed_hands_off()
 CAPABILITIES(/obj/structure/bed/pillowpilefront)
 	bed_hands_off()
 
