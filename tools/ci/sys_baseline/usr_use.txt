@@ -295,7 +295,6 @@ usr_outside_verb	code/game/antagonist/station/highlander.dm	message_admins(span_
 usr_outside_verb	code/game/antagonist/station/highlander.dm	log_admin("[key_name(usr)] used delayed THERE CAN BE ONLY ONE.")
 usr_outside_verb	code/game/antagonist/station/renegade.dm	to_chat(usr, span_infoplain(span_bold("You summoned guns!")))
 usr_outside_verb	code/game/antagonist/station/renegade.dm	message_admins("[key_name_admin(usr, 1)] summoned guns!")
-usr_outside_verb	code/game/gamemodes/cult/talisman.dm	om_ask(usr, /datum/om/prompt/choice/carried_item, PROC_REF(talisman_chant_chosen), title = "Talisman", message = "There are [uses] bloody runes on the parchment. Choose the chant to imbue into the fabric of reality.", choices = rune_options)
 usr_outside_verb	code/game/gamemodes/technomancer/core_obj.dm	if(ishuman(usr))
 usr_outside_verb	code/game/gamemodes/technomancer/core_obj.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/game/machinery/atmoalter/clamp.dm	if(!usr)

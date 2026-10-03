@@ -44,3 +44,4 @@ changes:
   - bugfix: "Stool dismantling preserves items that cannot be released and returns materials only on success."
   - bugfix: "Direct file transfers update the original drive capacity as well as the destination."
   - admin: "Administrative paper editing uses its intended writer and retains the editing user."
+  - bugfix: "Supply talisman choices retain the invoking user across successive selections."
