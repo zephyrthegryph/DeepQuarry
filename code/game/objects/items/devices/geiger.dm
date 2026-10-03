@@ -76,13 +76,19 @@ DECLARE_APPEARANCE(/obj/item/geiger, "appearance_geiger_level", list( \
 	"5" = list(APPEARANCE_ICON_STATE = "geiger_on_5") \
 ))
 
-DECLARE_INTERACTIONS(/obj/item/geiger, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT("Reset", PROC_REF(interaction_alt), REQ_BECAUSE(REQ_FIELD("scanning"), "it must be on to reset its radiation level")), \
-)
+TRACKED(/obj/item/geiger, scanning)
 
-/obj/item/geiger/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	scanning = !scanning
+MSG_DEF_SELF(geiger/off, "it must be on to reset its radiation level")
+
+CAPABILITIES(/obj/item/geiger)
+	owns_one(nameof(geiger_sound), /datum/geiger_sound)
+	op("toggle", in_hand(), label("Toggle counter"), then(PROC_REF(counter_toggled)))
+	op("reset", inputs(hand(), in_hand()), answers(INTENT_TOGGLE), label("Reset"),
+		needs(req_adjacent(), req_is(nameof(scanning), TRUE, because = MSG(geiger/off))), then(PROC_REF(counter_reset)))
+
+/obj/item/geiger/proc/counter_toggled(datum/act/op/A)
+	var/mob/user = A.actor
+	set_scanning(!scanning)
 
 	if (scanning)
 		if(!geiger_sound)
@@ -152,7 +158,8 @@ DECLARE_INTERACTIONS(/obj/item/geiger, \
 
 	to_chat(user, span_notice("[icon2html(src, user)] [isliving(target) ? "Subject" : "Target"] is free of radioactive contamination."))
 
-/obj/item/geiger/proc/interaction_alt(mob/living/user, obj/item/held, datum/interaction/interaction)
+/obj/item/geiger/proc/counter_reset(datum/act/op/A)
+	var/mob/user = A.actor
 	to_chat(user, span_notice("You flush [src]'s radiation counts, resetting it to normal."))
 	last_perceived_radiation_danger = null
 	update_icon()
@@ -191,22 +198,12 @@ DECLARE_APPEARANCE(/obj/item/geiger/wall, "appearance_geiger_level", list( \
 	"5" = list(APPEARANCE_ICON_STATE = "geiger_level_5") \
 ))
 
-EXTEND_INTERACTIONS(/obj/item/geiger/wall, \
-	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
-	INTERACT_SILICON("Toggle", PROC_REF(geiger_wall_silicon_use)), \
-)
+CAPABILITIES(/obj/item/geiger/wall)
+	op("toggle_mounted", inputs(hand(), ai()), label("Toggle counter"), then(PROC_REF(mounted_toggled)))
 
-/// Old attack_ai: toggle it remotely.
-/obj/item/geiger/wall/proc/geiger_wall_silicon_use(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	after(src, 0, PROC_REF(attack_self), with = list(user))
-	return TRUE
-
-/// Old attack_hand.
-/obj/item/geiger/wall/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	after(src, 0, PROC_REF(attack_self), with = list(user))
-	return TRUE
+/obj/item/geiger/wall/proc/mounted_toggled(datum/act/op/A)
+	add_fingerprint(A.actor)
+	return counter_toggled(A)
 
 /obj/item/geiger/wall/north
 	pixel_y = 28

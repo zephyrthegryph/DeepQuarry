@@ -7,6 +7,8 @@
 	build_path = /obj/machinery/computer/supplycomp
 	var/contraband_enabled = 0
 
+TRACKED(/obj/item/circuitboard/supplycomp, contraband_enabled)
+
 /obj/item/circuitboard/supplycomp/control
 	name = T_BOARD("supply ordering console")
 	build_path = /obj/machinery/computer/supplycomp/control
@@ -17,25 +19,20 @@
 
 /obj/item/circuitboard/supplycomp/atom_deconstruct(disassembled = TRUE, obj/machinery/computer/supplycomp/SC)
 	if (..(SC))
-		contraband_enabled = SC.can_order_contraband
+		set_contraband_enabled(SC.can_order_contraband)
 
-DECLARE_INTERACTIONS(/obj/item/circuitboard/supplycomp, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/circuitboard/supplycomp)
+	op("spectrum", tool(TOOL_MULTITOOL), needs(req_capable()), label("Configure receiver spectrum"), wait(0),
+		asks(/datum/prompt/choice, fields = list("question" = computed(PROC_REF(spectrum_question)), "title" = "Multitool-Circuitboard interface", "choices" = computed(PROC_REF(spectrum_choices)), "buttons" = TRUE, "timeout" = 0)), then(PROC_REF(spectrum_chosen)), passes())
 
-/// Old attackby.
-/obj/item/circuitboard/supplycomp/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(I.has_tool_quality(TOOL_MULTITOOL))
-		var/catastasis = src.contraband_enabled
-		var/opposite_catastasis
-		if(catastasis)
-			opposite_catastasis = "STANDARD"
-			catastasis = "BROAD"
-		else
-			opposite_catastasis = "BROAD"
-			catastasis = "STANDARD"
+/obj/item/circuitboard/supplycomp/proc/spectrum_question(datum/act/op/A)
+	return "Current receiver spectrum is set to: [contraband_enabled ? "BROAD" : "STANDARD"]"
 
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(spectrum_chosen), title = "Multitool-Circuitboard interface", message = "Current receiver spectrum is set to: [catastasis]", yes_text = "Switch to [opposite_catastasis]", no_text = "Cancel", ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
-	return INTERACTION_HANDLED_PASS
+/obj/item/circuitboard/supplycomp/proc/spectrum_choices(datum/act/op/A)
+	return list("Switch to [contraband_enabled ? "STANDARD" : "BROAD"]", "Cancel")
 
-/obj/item/circuitboard/supplycomp/proc/spectrum_chosen(datum/om/prompt/confirm/ask)
-	if(ask.yes)
-		src.contraband_enabled = !src.contraband_enabled
+/obj/item/circuitboard/supplycomp/proc/spectrum_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.answer
+	if(R.value != "Cancel")
+		set_contraband_enabled(!contraband_enabled)
+	return OP_OK

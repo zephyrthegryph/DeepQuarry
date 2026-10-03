@@ -16,9 +16,6 @@ CAPABILITIES(/datum/geiger_sound)
 /// Owned: the active geiger sound loop while the counter is scanning.
 /obj/item/geiger/var/datum/geiger_sound/geiger_sound
 
-CAPABILITIES(/obj/item/geiger)
-	owns_one(nameof(geiger_sound), /datum/geiger_sound)
-
 /datum/geiger_sound/New(atom/new_owner)
 	..()
 	if(!isatom(new_owner))
@@ -147,4 +144,3 @@ CAPABILITIES(/obj/item/geiger)
 /// A strong internal reference (tmp): this holder is what keeps it alive.
 /datum/looping_sound/geiger/proc/last_radiation_pulse() as /datum/radiation_pulse_information
 	return last_radiation_pulse_ref
-

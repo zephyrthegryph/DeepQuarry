@@ -892,6 +892,10 @@
 #include "round2_rig_grenade_checked_load.dm"
 #include "round2_translator_native_choice.dm"
 #include "round2_camera_board_native.dm"
+#include "round2_folding_blades_native.dm"
+#include "round2_ai_module_configuration.dm"
+#include "round2_supply_board_native.dm"
+#include "round2_decorative_card_native.dm"
 #include "interim2_caseless_chamber_disposal.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
@@ -915,6 +919,8 @@
 #endif
 
 #include "interim2_artifact_configured_effect_rejection.dm"
+
+#include "round2_robot_fabricator_consumption.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

@@ -179,13 +179,15 @@ DECLARE_INTERACTIONS(/obj/item/card/emag, INTERACT_ITEM(null, PROC_REF(interacti
 
 	var/list/initial_sprite_stack = list("") // ALLOW(instance_list): d: replaced per instance at runtime (2 assignments)
 	var/base_icon = 'icons/obj/card_fluff.dmi'
-	var/list/sprite_stack = list("") // ALLOW(instance_list): d: edited in place per instance (22 writers)
+	var/list/sprite_stack = list("") // ALLOW(instance_list): each decorative card starts with its own mutable appearance stack
 
 	drop_sound = SFX_ITEMS_DROP_CARD
 	pickup_sound = SFX_ITEMS_PICKUP_CARD
 
+TRACKED(/obj/item/card_fluff, sprite_stack)
+
 /obj/item/card_fluff/proc/reset_icon()
-	sprite_stack = list("")
+	set_sprite_stack(list(""))
 	update_icon()
 
 /// The sprite stack as layers: the first state is the base, the rest overlays on it (was a
@@ -207,74 +209,90 @@ DECLARE_APPEARANCE_PROC(/obj/item/card_fluff, TYPE_PROC_REF(/atom, appearance_ov
 		else
 			. += image(base_icon, iconstate)
 
-DECLARE_INTERACTIONS(/obj/item/card_fluff, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/card_fluff)
+	op("customize", in_hand(), label("Customize card"), needs(carried(), req_capable()),
+		asks(/datum/prompt/choice, step = "element", fields = list("title" = "Customize Card", "question" = "What element would you like to customize?", "choices" = list("Band", "Stamp", "Reset"), "timeout" = 0)),
+		asks(/datum/prompt/choice, step = "band", when = PROC_REF(customizing_band), fields = list("title" = "Band colour", "question" = "Select colour", "choices" = list("red", "orange", "green", "dark green", "medical blue", "dark blue", "purple", "tan", "pink", "gold", "white", "black"), "timeout" = 0)),
+		asks(/datum/prompt/choice, step = "stamp", when = PROC_REF(customizing_stamp), fields = list("title" = "Stamp image", "question" = "Select image", "choices" = list("ship", "cross", "big ears", "shield", "circle-cross", "target", "smile", "frown", "peace", "exclamation"), "timeout" = 0)),
+		then(PROC_REF(customize_chosen)))
 
-/// Old attack_self.
-/obj/item/card_fluff/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(customize_chosen), title = "Customize Card", message = "What element would you like to customize?", choices = list("Band","Stamp","Reset"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
-	return TRUE
+/obj/item/card_fluff/proc/customizing_band(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	return R?.value == "Band"
 
-/obj/item/card_fluff/proc/customize_chosen(datum/om/prompt/choice/ask)
-	switch(ask.choice)
+/obj/item/card_fluff/proc/customizing_stamp(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	return R?.value == "Stamp"
+
+/obj/item/card_fluff/proc/customize_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("element")
+	switch(R.value)
 		if("Band")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(band_chosen), title = "Band colour", message = "Select colour", choices = list("red","orange","green","dark green","medical blue","dark blue","purple","tan","pink","gold","white","black"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			band_chosen(A)
 		if("Stamp")
-			om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(stamp_chosen), title = "Stamp image", message = "Select image", choices = list("ship","cross","big ears","shield","circle-cross","target","smile","frown","peace","exclamation"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			stamp_chosen(A)
 		if("Reset")
 			reset_icon()
+	return OP_OK
 
-/obj/item/card_fluff/proc/band_chosen(datum/om/prompt/choice/ask)
-	var/bandchoice = ask.choice
+/obj/item/card_fluff/proc/band_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("band")
+	var/bandchoice = R.value
+	var/list/changed_stack = sprite_stack.Copy()
 	if(bandchoice == "red")
-		sprite_stack.Add("bar-red")
+		changed_stack.Add("bar-red")
 	else if(bandchoice == "orange")
-		sprite_stack.Add("bar-orange")
+		changed_stack.Add("bar-orange")
 	else if(bandchoice == "green")
-		sprite_stack.Add("bar-green")
+		changed_stack.Add("bar-green")
 	else if(bandchoice == "dark green")
-		sprite_stack.Add("bar-darkgreen")
+		changed_stack.Add("bar-darkgreen")
 	else if(bandchoice == "medical blue")
-		sprite_stack.Add("bar-medblue")
+		changed_stack.Add("bar-medblue")
 	else if(bandchoice == "dark blue")
-		sprite_stack.Add("bar-blue")
+		changed_stack.Add("bar-blue")
 	else if(bandchoice == "purple")
-		sprite_stack.Add("bar-purple")
+		changed_stack.Add("bar-purple")
 	else if(bandchoice == "tan")
-		sprite_stack.Add("bar-tan")
+		changed_stack.Add("bar-tan")
 	else if(bandchoice == "pink")
-		sprite_stack.Add("bar-pink")
+		changed_stack.Add("bar-pink")
 	else if(bandchoice == "gold")
-		sprite_stack.Add("bar-gold")
+		changed_stack.Add("bar-gold")
 	else if(bandchoice == "white")
-		sprite_stack.Add("bar-white")
+		changed_stack.Add("bar-white")
 	else if(bandchoice == "black")
-		sprite_stack.Add("bar-black")
+		changed_stack.Add("bar-black")
 
+	set_sprite_stack(changed_stack)
 	update_icon()
 
-/obj/item/card_fluff/proc/stamp_chosen(datum/om/prompt/choice/ask)
-	var/stampchoice = ask.choice
+/obj/item/card_fluff/proc/stamp_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("stamp")
+	var/stampchoice = R.value
+	var/list/changed_stack = sprite_stack.Copy()
 	if(stampchoice == "ship")
-		sprite_stack.Add("stamp-starship")
+		changed_stack.Add("stamp-starship")
 	else if(stampchoice == "cross")
-		sprite_stack.Add("stamp-cross")
+		changed_stack.Add("stamp-cross")
 	else if(stampchoice == "big ears")
-		sprite_stack.Add("stamp-bigears")	//get 'em outta the caption, wiseguy!!
+		changed_stack.Add("stamp-bigears")	//get 'em outta the caption, wiseguy!!
 	else if(stampchoice == "shield")
-		sprite_stack.Add("stamp-shield")
+		changed_stack.Add("stamp-shield")
 	else if(stampchoice == "circle-cross")
-		sprite_stack.Add("stamp-circlecross")
+		changed_stack.Add("stamp-circlecross")
 	else if(stampchoice == "target")
-		sprite_stack.Add("stamp-target")
+		changed_stack.Add("stamp-target")
 	else if(stampchoice == "smile")
-		sprite_stack.Add("stamp-smile")
+		changed_stack.Add("stamp-smile")
 	else if(stampchoice == "frown")
-		sprite_stack.Add("stamp-frown")
+		changed_stack.Add("stamp-frown")
 	else if(stampchoice == "peace")
-		sprite_stack.Add("stamp-peace")
+		changed_stack.Add("stamp-peace")
 	else if(stampchoice == "exclamation")
-		sprite_stack.Add("stamp-exclaim")
+		changed_stack.Add("stamp-exclaim")
 
+	set_sprite_stack(changed_stack)
 	update_icon()
 
 /obj/item/card/id/synthetic/borg
