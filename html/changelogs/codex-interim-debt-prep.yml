@@ -77,3 +77,6 @@ changes:
   - admin: "Ban validation and player-note reports retain their supplied actor."
   - bugfix: "Emagging an unopened atmos console creates and subverts its controller safely."
   - admin: "Delayed Highlander and redspace actions retain their initiating actor, and artillery reports its actual user."
+  - bugfix: "Rechargers and heavy-duty cell chargers respect source release rules and preserve returned cells."
+  - bugfix: "Gun HUD controls update the clicking actor consistently."
+  - admin: "Save PNG delivers the object image to the invoking client explicitly."

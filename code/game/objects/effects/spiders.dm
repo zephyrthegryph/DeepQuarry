@@ -55,7 +55,7 @@ EXTEND_INTERACTIONS(/obj/effect/spider/spiderling, \
 	die()
 
 /obj/effect/spider/proc/die()
-	qdel(src)
+	consume(src)
 
 /obj/effect/spider/atom_destruction(damage_flag)
 	die()
