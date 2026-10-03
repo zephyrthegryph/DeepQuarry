@@ -79,6 +79,8 @@
 	TEST_ASSERT_EQUAL(rc_capacity(egg), 10, "an egg holds 10")
 	var/obj/item/reagent_containers/food/snacks/donut/plain/donut = sn_snack(/obj/item/reagent_containers/food/snacks/donut/plain)
 	TEST_ASSERT_EQUAL(donut.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 9, "a plain donut's extra nutriment is in")
+	var/obj/item/reagent_containers/food/snacks/donut/plain/jelly/jelly = sn_snack(/obj/item/reagent_containers/food/snacks/donut/plain/jelly)
+	TEST_ASSERT_EQUAL(jelly.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 12, "a jelly donut's extra was added twice")
 	var/obj/item/reagent_containers/food/snacks/donut/meat/meat_donut = sn_snack(/obj/item/reagent_containers/food/snacks/donut/meat)
 	TEST_ASSERT_EQUAL(meat_donut.reagents.get_reagent_amount(REAGENT_ID_PROTEIN), 3, "a meat donut's extra is protein")
 
@@ -339,7 +341,8 @@
 /datum/unit_test/dq_p2_reagents/egg_is_coloured/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/food/snacks/egg/egg = sn_snack(/obj/item/reagent_containers/food/snacks/egg)
-	var/obj/item/pen/crayon/crayon = allocate(/obj/item/pen/crayon/red, run_loc_floor_bottom_left)
+	var/obj/item/pen/crayon/crayon = allocate(/obj/item/pen/crayon/rainbow, run_loc_floor_bottom_left)
+	crayon.colourName = "red"
 	rc_click(H, egg, crayon, I_HELP)
 	TEST_ASSERT_EQUAL(egg.icon_state, "egg-red", "the egg is red")
 	crayon.colourName = "black"
