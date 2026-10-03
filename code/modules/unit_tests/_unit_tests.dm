@@ -457,6 +457,7 @@
 #include "dq_e4_actions_tests.dm"
 #include "dq_e2_parts_tests.dm"
 #include "dq_lib_tests.dm"
+#include "dq_lib_structures_tests.dm"
 #include "dq_p1_close_tests.dm"
 #include "dq_p2_library_tests.dm"
 #include "dq_p2_engine_tests.dm"

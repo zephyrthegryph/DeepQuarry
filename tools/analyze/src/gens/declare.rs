@@ -672,6 +672,16 @@ CAPABILITIES(/obj/thing, \
     }
 
     #[test]
+    fn one_extend_carries_every_part_of_its_key() {
+        let (_, decl, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/thing)
+	extend(\"construction.undo:x\", when(COVER_OPEN), priority(above(\"panel.open\")), needs(req(PROC_REF(y))))
+")]);
+        assert!(diags.is_empty(), "{:?}", diags);
+        assert!(decl.contains("extend(\"construction.undo:x\", when(COVER_OPEN), priority(above(\"panel.open\")), needs(req(PROC_REF(y))))"), "{}", decl);
+        assert_eq!(decl.matches("extend(").count(), 1, "one entry for the key: {}", decl);
+    }
+
+    #[test]
     fn a_second_capabilities_list_for_a_type_is_reported() {
         let (_, _, diags) = gen(vec![("code/a.dm", "CAPABILITIES(/obj/x, a())\nCAPABILITIES(/obj/x, b())\n")]);
         assert_eq!(diags.len(), 1, "{:?}", diags);
