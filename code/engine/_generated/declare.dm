@@ -314,7 +314,7 @@
 /datum/capdef_decl/c_stackable/spec()
 	return list(CAP_STACKABLE, /datum/capability/lib/stackable, NONE, STACK, "stackable", "max_amount")
 
-/// CAPABILITY_TYPE(storage, CAP_STORAGE) at code/library/containers/storage.dm:40
+/// CAPABILITY_TYPE(storage, CAP_STORAGE) at code/library/containers/storage.dm:41
 /datum/capability/lib/storage
 	var/space = null
 	var/slots = null
@@ -417,6 +417,17 @@
 	return cap_construct(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, list(offered, starts), "offered, starts")
 /datum/capdef_decl/c_weld_shut/spec()
 	return list(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, NONE, STACK, "weld_shut", "offered, starts")
+
+/// CAPABILITY_TYPE(wiper, CAP_WIPER) at code/library/reagents/wiper.dm:17
+/datum/capability/lib/wiper
+	var/soaks_from = null
+	var/burning = null
+	var/wipe_time = 30
+/proc/wiper(soaks_from, burning, wipe_time)
+	RETURN_TYPE(/datum/capability/lib/wiper)
+	return cap_construct(CAP_WIPER, /datum/capability/lib/wiper, list(soaks_from, burning, wipe_time), "soaks_from, burning, wipe_time")
+/datum/capdef_decl/c_wiper/spec()
+	return list(CAP_WIPER, /datum/capability/lib/wiper, NONE, STACK, "wiper", "soaks_from, burning, wipe_time")
 
 /// CAPABILITY_TYPE(wires, CAP_WIRES) at code/library/machine/wires.dm:21
 /datum/capability/lib/wires
@@ -565,7 +576,7 @@
 	into += entry_line(327)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(328)
-	into += list(global.ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
+	into += list(global.ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME))
 	into += entry_line(328)
 	into += list(global.owns_one(nameof(progbar), /datum/progressbar))
 	into += entry_line(328)
@@ -845,12 +856,28 @@
 	into += entry_line(22)
 	into += list(global.op("paint", global.at_target(/turf/simulated), global.answers(INTENT_ATTACK, INTENT_USE), global.priority(OP_PRIORITY_ATTACK), global.priority(global.above("reagent_container.splash")), global.when(req_reagents(5, more = TRUE)), global.label("Paint"), global.then(PROC_REF(painted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/rag) at code/modules/detectivework/tools/rag.dm:35
+/// CAPABILITIES(/obj/item/reagent_containers/glass/rag) at code/modules/detectivework/tools/rag.dm:36
 /obj/item/reagent_containers/glass/rag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
-	into += entry_line(36)
+	into += entry_block("code/modules/detectivework/tools/rag.dm", 36, /obj/item/reagent_containers/glass/rag)
+	into += entry_line(37)
 	into += list(global.without(CAP_GLASS_CONTAINER))
+	into += entry_line(38)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(44)
+	into += list(global.wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit)))
+	into += entry_line(45)
+	into += list(global.extend("wiper.soak", global.then(PROC_REF(name_refreshed))))
+	into += entry_line(46)
+	into += list(global.extend("wiper.wring_into", global.then(PROC_REF(name_refreshed))))
+	into += entry_line(47)
+	into += list(global.op("stamp_out", global.in_hand(), global.when(nameof(rag_lit)), global.label("Stamp it out"), global.then(PROC_REF(stamped_out))))
+	into += entry_line(48)
+	into += list(global.op("wring_out", global.in_hand(), global.when(global.cond_not(nameof(rag_lit))), global.label("Wring it out"), global.needs(req_reagents(1, because = MSG(wiper/dry))), global.begins(MSG(rag/begin_wring_floor)), global.wait(PROC_REF(wring_floor_time)), global.then(PROC_REF(wrung_out))))
+	into += entry_line(50)
+	into += list(global.op("light", global.item(/obj/item/flame), global.when(global.cond_not(nameof(rag_lit))), global.label("Light it"), global.then(PROC_REF(lit_by_flame))))
+	into += entry_line(51)
+	into += list(global.op("rub", global.at_target(/mob/living), global.priority(OP_PRIORITY_PART), global.label("Use on"), global.begins(PROC_REF(rub_begins)), global.wait(PROC_REF(rub_wait)), global.then(PROC_REF(rubbed))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/hypospray) at code/modules/reagents/reagent_containers/hypospray.dm:36
 /obj/item/reagent_containers/hypospray/declared_entries(list/into)
@@ -2088,13 +2115,13 @@
 	into += entry_line(337)
 	into += list(global.op("add_tiles", global.item(/obj/item/stack/tile/floor), global.priority(global.above("storage.put_in")), global.when(req_storage_empty()), global.label("Add tiles"), global.then(PROC_REF(add_floorbot_tiles))))
 
-/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:940
+/// CAPABILITIES(/obj/item/storage/trinketbox) at code/game/objects/items/weapons/storage/storage.dm:903
 /obj/item/storage/trinketbox/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 940, /obj/item/storage/trinketbox)
-	into += entry_line(941)
+	into += entry_block("code/game/objects/items/weapons/storage/storage.dm", 903, /obj/item/storage/trinketbox)
+	into += entry_line(904)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/clothing/accessory/ring, /obj/item/coin, /obj/item/clothing/accessory/medal), max_size = ITEMSIZE_SMALL)))
-	into += entry_line(945)
+	into += entry_line(908)
 	into += list(global.op("lid", global.in_hand(), global.label("Open"), global.then(PROC_REF(flip_lid))))
 
 /// CAPABILITIES(/obj/item/storage/vore_egg) at code/game/objects/items/weapons/storage/egg.dm:19
@@ -3552,6 +3579,15 @@
 	into += list(global.op("words", global.menu(), global.asks(/datum/prompt/text, fields = list("max_len" = 5)), global.then(PROC_REF(answered))))
 	into += entry_line(25)
 	into += list(global.op("amount", global.menu(), global.asks(/datum/prompt/number, fields = list("min_value" = 1, "max_value" = 10, "step" = 1)), global.then(PROC_REF(answered))))
+
+/// CAPABILITIES(/obj/eg2_dragtarget) at code/tests/engine/eg2_fixtures.dm:52
+/obj/eg2_dragtarget/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/eg2_fixtures.dm", 52, /obj/eg2_dragtarget)
+	into += entry_line(53)
+	into += list(global.op("mob_in", global.item(/mob/living), global.gesture(GESTURE_DRAG), global.then(PROC_REF(mob_dropped))))
+	into += entry_line(54)
+	into += list(global.op("item_in", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(item_dropped))))
 
 /// CAPABILITIES(/obj/eg2_waiter) at code/tests/engine/eg2_wait_fixtures.dm:10
 /obj/eg2_waiter/declared_entries(list/into)

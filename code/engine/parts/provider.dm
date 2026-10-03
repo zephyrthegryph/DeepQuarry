@@ -94,7 +94,7 @@
 	. = list()
 	if(actor && !QDELETED(actor))
 		provider_collect(actor, actor, .)
-	if(held && !QDELETED(held))
+	if(held && !QDELETED(held) && isitem(held)) // a dragged mob is no provider
 		provider_collect(held, held, .)
 
 /proc/provider_collect(datum/D, datum/source, list/into)
@@ -220,6 +220,11 @@
 		if(REACH_ADJACENT)
 			// Each provider reaches the surface when its reach covers the distance (and a clear line when it asks for one).
 			var/list/able = list()
+			if(!need && !length(fits))
+				// an op that needs nothing of its provider (by(0): a mouse climbing into a bag) reaches what is next to the actor
+				if(dist > 1)
+					return /datum/msg/op/unreachable
+				able = null
 			for(var/datum/prov/V as anything in fits)
 				var/range = V.reach()
 				if(isnull(range) || range < dist)
@@ -227,9 +232,10 @@
 				if(V.entry.args["los"] && dist > 0 && !reach_line_clear(actor, surface))
 					continue
 				able += V
-			if(!length(able))
-				return /datum/msg/op/unreachable
-			fits = able
+			if(!isnull(able))
+				if(!length(able))
+					return /datum/msg/op/unreachable
+				fits = able
 		if(REACH_INSIDE)
 			var/inside = FALSE
 			if(isatom(target) && actor)
@@ -334,6 +340,8 @@
 			return ORIGIN_UI
 		if(BIND_AI)
 			return ORIGIN_AI
+		if(BIND_CLICKS)
+			return ORIGIN_CLICK
 	return ORIGIN_NONE
 
 /datum/entry/part/bind/proc/reach_policy()
@@ -369,7 +377,7 @@
 
 /// Is this a physical binding (hand, tool, item, stack, in_hand, at_target, inside)?
 /datum/entry/part/bind/proc/physical()
-	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE)
+	return bind_kind in list(BIND_HAND, BIND_TOOL, BIND_ITEM, BIND_STACK, BIND_IN_HAND, BIND_AT_TARGET, BIND_INSIDE, BIND_CLICKS)
 
 /// The origins the op accepts through this binding: the select origin() when the op names one.
 /proc/op_accepts_origin(datum/op_plan/P, datum/entry/part/bind/B, origin)

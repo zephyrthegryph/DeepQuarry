@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Player-controlled mobs with a natural weapon attack with it on a click (clicks() binding)"

@@ -31,6 +31,7 @@
 //   empty_out       the held storage used in hand (quick-empty types): dumps everything on the floor
 //   empty           the menu entry "Empty Contents"
 //   gather_mode     the menu entry "Switch Gathering Method"
+//   climb_in        a small mob dragged onto the storage by itself (a micro, a mouse) climbs in as a held creature
 //
 // Picking the storage up closes the windows of whoever was looking inside (/obj/item/storage/pickup()); taking an item out is the item's own
 // pickup (remove_from_storage()).
@@ -54,7 +55,48 @@ CAPABILITY_TYPE(storage, CAP_STORAGE, /datum/capability/lib/storage, key = NONE,
 		op("toggle_open", hand(), answers(INTENT_TOGGLE), label("Open"), then(CAP_PROC(toggle_window))),
 		op("empty_out", in_hand(), priority(OP_PRIORITY_PART), when(CAP_PROC(empties_in_hand)), label("Empty out"), then(CAP_PROC(empty_it))),
 		op("empty", menu(), when(CAP_PROC(empties_by_menu)), label("Empty contents"), then(CAP_PROC(empty_it))),
-		op("gather_mode", menu(), when(CAP_PROC(switches_gathering)), label("Switch gathering method"), needs(carried()), then(CAP_PROC(switch_gathering))))
+		op("gather_mode", menu(), when(CAP_PROC(switches_gathering)), label("Switch gathering method"), needs(carried()), then(CAP_PROC(switch_gathering))), 		op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(CAP_PROC(small_self_drag)), label("Climb in"), then(CAP_PROC(climb_in))))
+
+// ---- a micro climbing in ----
+
+MSG_DEF_SELF(storage/too_big_to_climb, "You don't fit in there.")
+
+/// The dragged mob is the actor itself, small enough for a bag (a player at a quarter of normal size or less, a mouse at normal size or less), free to move,
+/// and not wearing the storage. What it takes beyond that (room, what the storage accepts) is asked when it climbs.
+/datum/capability/lib/storage/proc/small_self_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(!istype(user) || A.held != user)
+		return FALSE
+	if(user.buckled_to() || get_holder_of_type(A.holder, /mob/living/carbon/human) == user)
+		return FALSE
+	if(ishuman(user))
+		return user.get_effective_size(TRUE) <= 0.25
+	if(ismouse(user))
+		return user.get_effective_size(TRUE) <= 1
+	return FALSE
+
+/// A stand-in for a creature in a bag, made to ask whether the bag would take one of that size (a holder cannot be made without its mob).
+/obj/item/size_probe
+	name = "creature"
+
+/// The mob is scooped into a holder the size of its kind, which goes into the storage, if the storage would take one.
+/datum/capability/lib/storage/proc/climb_in(datum/act/op/A)
+	var/mob/living/user = A.actor
+	var/obj/item/storage/bag = A.holder
+	bag.make_contents_real()
+	var/obj/item/size_probe/probe = new
+	probe.w_class = ismouse(user) ? ITEMSIZE_TINY : ITEMSIZE_SMALL
+	var/refused = bag.insert_refusal(probe, user)
+	qdel(probe) // ALLOW(lifecycle): a probe made to measure the fit is dropped at once, it never held anything
+	if(refused)
+		A.reason = /datum/msg/storage/too_big_to_climb
+		return OP_REFUSED
+	var/obj/item/holder/H = new user.holder_type(get_turf(user), user)
+	if(!bag.insert_item(H, null, TRUE))
+		A.reason = /datum/msg/storage/too_big_to_climb
+		return OP_REFUSED
+	to_chat(user, span_notice("You climb into 	he [bag]."))
+	return OP_OK
 
 // ---- conditions about the contents ----
 

@@ -28,6 +28,8 @@
 #define BIND_UI "ui_act"
 #define BIND_TOPIC "topic"
 #define BIND_AI "ai"
+/// The actor's own op, reached by the actor clicking something (a natural weapon): the op sits on the actor, and the clicked thing is its target.
+#define BIND_CLICKS "clicks"
 
 /// The op tiers (section 8), highest first. OP_PRIORITY_* master values are kept; ATTACK is the one master lacks.
 #ifndef OP_PRIORITY_ATTACK

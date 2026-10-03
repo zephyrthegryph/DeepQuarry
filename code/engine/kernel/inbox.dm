@@ -118,6 +118,38 @@ MSG_DEF_SELF(input/client_gone, "Your connection is gone.")
 /datum/input_event/click/resolve()
 	return input_resolve_click(src)
 
+/// An atom (an item, or a mob dragging itself) dragged onto another: the Drag action. The ops of the target see the dragged atom as A.held (gesture GESTURE_DRAG);
+/// what no op answers goes on to the legacy MouseDrop_T chain, as it did before the target declared one.
+/datum/input_event/drag
+	resolve_threshold = INPUT_CLICK_THRESHOLD
+	metered_as_click = TRUE
+	var/atom/dragged
+	var/atom/over
+	/// What the legacy chain takes on (the locations, the controls and the params of the drag).
+	var/list/legacy_args
+
+/datum/input_event/drag/New(mob/user, atom/dragged_atom, atom/dropped_on, list/legacy)
+	..(user)
+	if(dragged_atom)
+		dragged = dragged_atom // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	if(dropped_on)
+		over = dropped_on // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	legacy_args = legacy
+
+/datum/input_event/drag/subject()
+	return over
+
+/datum/input_event/drag/gate()
+	if(dragged && QDELETED(dragged))
+		return /datum/msg/input/stale_target
+	return ..()
+
+/datum/input_event/drag/event_key()
+	return "input.drag"
+
+/datum/input_event/drag/resolve()
+	return input_resolve_drag(src)
+
 /// A pick from a target's context menu (origin ORIGIN_MENU).
 /datum/input_event/menu
 	origin = ORIGIN_MENU
@@ -517,6 +549,14 @@ SYSTEM_DEF(input)
 	E.origin = origin || ORIGIN_CLICK
 	E.gesture = gesture
 	E.held = held // ALLOW(ownership): a transient input record: the inbox drops it once resolved, and a relation would allocate an OM record per input
+	input_submit(E)
+	return E.result
+
+/// Drags `dragged` onto `over` through the input inbox as a player's drag would: the target's ops see it as the held atom. Returns the op's /datum/op_result.
+/proc/inbox_drag(mob/actor, atom/dragged, atom/over)
+	RETURN_TYPE(/datum/op_result)
+	var/datum/input_event/drag/E = new(actor, dragged, over)
+	E.driven = TRUE
 	input_submit(E)
 	return E.result
 

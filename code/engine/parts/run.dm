@@ -325,13 +325,13 @@ CAPABILITIES(/datum/pending_op, \
 	ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME), \
 	ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME), \
 	ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME), \
-	ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME), 	owns_one(nameof(progbar), /datum/progressbar), 	owns_one(nameof(cog), /datum/cogbar))
+	ref_one(nameof(held), /atom/movable, on_other_deleted = OTHER_DELETE_ME), 	owns_one(nameof(progbar), /datum/progressbar), 	owns_one(nameof(cog), /datum/cogbar))
 
 /datum/pending_op
 	var/datum/holder
 	var/datum/target
 	var/mob/actor
-	var/obj/item/held
+	var/atom/movable/held
 
 /// actor ref text -> its pending op: an actor has one wait at a time.
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
