@@ -612,6 +612,7 @@
 #include "interim_filter_editor_actor.dm"
 #include "interim_hypospray_vial_transfer.dm"
 #include "interim_airlock_emag_capability.dm"
+#include "interim_donut_nutriment_amounts.dm"
 #include "interim_floor_decal_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
