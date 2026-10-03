@@ -16,7 +16,7 @@
 //! The declared type is the var's own type, so `own_type_ok()` accepts what the code already stores.
 
 use std::any::Any;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -38,6 +38,9 @@ pub struct Prep {
     idx: Arc<Index>,
     decls: Arc<Decls>,
     events: HashMap<(String, u32), Vec<Ev>>,
+    /// Names of list vars something assigns a whole list to with `own_set`: `own_type_ok()` would refuse that list under an element
+    /// type, so such a var is declared `owns_many` without one.
+    list_set_vars: HashSet<String>,
 }
 
 impl Prep {
@@ -61,7 +64,15 @@ impl Prep {
                 }
             });
         }
-        Prep { idx, decls, events }
+        let mut list_set_vars: HashSet<String> = HashSet::new();
+        for evs in events.values() {
+            for e in evs {
+                if e.func == "own_set" && !e.rtype.is_empty() && idx.member(&e.rtype, &e.var).map(|m| m.is_list).unwrap_or(false) {
+                    list_set_vars.insert(e.var.clone());
+                }
+            }
+        }
+        Prep { idx, decls, events, list_set_vars }
     }
 }
 
@@ -140,6 +151,7 @@ pub fn rewrite(cx: &Ctx, new: &str, many: bool) -> Outcome {
     if !vtype.is_empty() && !prep.idx.is_entity(&vtype) {
         return Outcome::Residue("untyped_var", format!("{} is not an entity type: nothing to own", vtype));
     }
+    let vtype = if many && prep.list_set_vars.contains(&var) { String::new() } else { vtype };
     Outcome::Rewrite(Rewrite { edits, keys, needs: vec![Need { holder: owner, var, many, vtype, origin: cx.origin() }] })
 }
 
