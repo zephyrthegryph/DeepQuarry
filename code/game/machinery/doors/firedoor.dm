@@ -32,6 +32,8 @@
 	var/nextstate = null
 	var/net_id
 	var/list/areas_added
+	/// The mixture ids of the air watches a shut door has armed (null while it has none).
+	var/list/sleeping_mixture_ids
 	/// Lazy list of names who opened this door during an alert.
 	var/list/users_to_open
 
@@ -148,7 +150,6 @@ MSG_DEF_SELF(firedoor/busy_prying, "Someone's busy prying at it!")
 
 CAPABILITIES(/obj/machinery/door/firedoor, \
 	ref_one(nameof(turbolift_floor), /datum/turbolift_floor), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(air_check)), when = nameof(density)), \
 	op("busy", inputs(hand(), item(/obj/item)), priority(OP_PRIORITY_CLAW + 8), when(nameof(operating)), wait(0), then(PROC_REF(nothing_done))), \
 	op("use", hand(), label("Use"), priority(OP_PRIORITY_PART), wait(0), \
 		needs(req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), req_capable(), req(PROC_REF(can_work), because = MSG(firedoor/dead)), \
@@ -391,6 +392,74 @@ DECLARE_INTERACTIONS(/obj/machinery/door/firedoor, INTERACT_SILICON("Use", PROC_
 	return OP_OK
 
 // ---- the air it guards ----
+
+/// A door that shuts reads the air once and then waits on it: an open one watches nothing.
+/obj/machinery/door/firedoor/set_density(new_density)
+	. = ..()
+	if(.)
+		density_changed()
+
+/obj/machinery/door/firedoor/proc/density_changed()
+	if(density)
+		air_check()
+		hibernate_until_air_changes()
+	else
+		clear_gas_dependencies()
+
+/// Arms one gas value watch (code/datums/om/watch.dm) per dependency turf (the door's own plus its four cardinal neighbours), all sharing
+/// firedoor_atmos_signature() as their getter: whichever one notices a change first recomputes the full signature and wakes the door if it
+/// actually crossed a pressure or temperature band edge, not on every harmless diffusion tick. A shut door never polls the air.
+/obj/machinery/door/firedoor/proc/hibernate_until_air_changes()
+	clear_gas_dependencies()
+	var/list/dependency_turfs = list(get_turf(src))
+	for(var/direction in GLOB.cardinal)
+		dependency_turfs += get_step(src, direction)
+	var/list/getter = om_callable(src, PROC_REF(firedoor_atmos_signature))
+	var/list/wake = om_callable(src, PROC_REF(wake_from_air))
+	// One signature for all five watches: it reads the same five turfs' air whichever mixture woke it.
+	var/signature = firedoor_atmos_signature()
+	for(var/index in 1 to length(dependency_turfs))
+		var/turf/T = dependency_turfs[index]
+		var/datum/gas_mixture/air = T?.return_air()
+		var/mixture_id = air?.arena_id()
+		if(isnull(mixture_id))
+			continue
+		LAZYSET(sleeping_mixture_ids, "turf[index]", mixture_id)
+		om_watch_arm_value(src, "turf[index]", mixture_id, GAS_DEPENDENCY_PRESSURE | GAS_DEPENDENCY_TEMPERATURE, getter, wake_callback = wake, current_value = signature)
+
+/obj/machinery/door/firedoor/proc/clear_gas_dependencies()
+	for(var/key in sleeping_mixture_ids)
+		om_watch_disarm(src, key)
+	sleeping_mixture_ids = null
+
+/// The air crossed a band edge: the door reads it and goes back to waiting.
+/obj/machinery/door/firedoor/proc/wake_from_air()
+	clear_gas_dependencies()
+	if(density)
+		air_check()
+		hibernate_until_air_changes()
+
+/obj/machinery/door/firedoor/proc/firedoor_atmos_signature()
+	var/signature = getOPressureDifferential(src.loc) >= FIREDOOR_MAX_PRESSURE_DIFF
+	var/datum/gas_mixture/local_air = loc?.return_air()
+	signature = (signature << 2) | (local_air ? firedoor_temperature_band(local_air.return_temperature()) : 0)
+	var/list/cardinal_air = getCardinalAirInfo(src.loc, list("temperature", "pressure"))
+	for(var/index = 1; index <= 4; index++)
+		var/list/tileinfo = cardinal_air[index]
+		signature = (signature << 2) | (tileinfo ? firedoor_temperature_band(tileinfo[1]) : 0)
+	return signature
+
+// Gas subscriptions are keyed by the mixtures of the turf the door sat on and its neighbours. After a move those ids are stale, so they are re-armed.
+/obj/machinery/door/firedoor/Moved(atom/old_loc, direction, forced = FALSE)
+	. = ..()
+	if(sleeping_mixture_ids)
+		hibernate_until_air_changes()
+
+/// A shut door on the map waits on its air from the moment the world is up.
+/obj/machinery/door/firedoor/on_materialize()
+	. = ..()
+	if(density)
+		hibernate_until_air_changes()
 
 /// Reads the air around a shut door: a pressure difference past the limit or a band of temperature on any side is an alert, and any alert is a lockdown.
 /obj/machinery/door/firedoor/proc/air_check(datum/act/A)

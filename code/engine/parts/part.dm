@@ -585,6 +585,16 @@
 	part_name = "silent_wait"
 	stages = PART_STAGE_WAIT
 
+/// on_interrupt(PROC_REF(x)): x(datum/act/op/A) runs when the op's wait or question is broken before the effects (a keep broke, a requirement refused, the
+/// answerer said no or ran out of time), with the reason in A.reason and the actor, holder and held item still named. It does not run when the op is
+/// refused before it waits, when it completes, or when its holder or target is gone. A cleanup, never a second try: nothing was spent.
+/proc/on_interrupt(handler)
+	return part_make(/datum/entry/part/on_interrupt, list("handler" = handler))
+
+/datum/entry/part/on_interrupt
+	part_name = "on_interrupt"
+	stages = PART_STAGE_WAIT
+
 /// quiet(): no op_done notice.
 /proc/quiet()
 	return part_make(/datum/entry/part/quiet)

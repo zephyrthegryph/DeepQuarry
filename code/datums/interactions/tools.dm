@@ -195,17 +195,6 @@ GLOBAL_LIST_EMPTY(dq_tool_last_use)
 	var/obj/structure/disposalconstruct/C = target
 	C.welder_act_tool_done(actor, nicetype, ispipe)
 
-/// Removing a table's material or reinforcement layer.
-/datum/om/task/timed/tool_job/table_layer_remove
-	claims = TRUE
-	var/datum/material/material
-	var/what
-	var/which
-
-/datum/om/task/timed/tool_job/table_layer_remove/tool_done()
-	var/obj/structure/table/T = target
-	T.common_material_remove_tool_done(actor, material, what, which)
-
 /// Why `tool` can't be used as `quality` at `tier`, or null if it can.
 /proc/tool_quality_failure(obj/item/tool, quality, tier = 1)
 	var/noun = dq_pred_article(dq_pred_tool_name(quality))

@@ -129,7 +129,7 @@ SYSTEM_DEF(requests)
 /// arguments, each a var of the request type (`answerer = M`, `timeout = 30 SECONDS`, `role = R`) or `valid`, a PROC_REF on
 /// `owner`; an unknown name is a CRASH. `handler` is a PROC_REF on `owner`. Returns the open request, or null when it could not
 /// open (the owner is already gone).
-/proc/request_open(datum/owner, request_type, handler, list/fields)
+/proc/request_open(datum/owner, request_type, handler, list/fields, datum/act/context = null)
 	RETURN_TYPE(/datum/request)
 	if(!ispath(request_type, /datum/request))
 		CRASH("open_request(): [request_type] is not a request kind (/datum/prompt, /datum/io, /datum/client_query)")
@@ -163,8 +163,25 @@ SYSTEM_DEF(requests)
 	registry.opened++
 	if(R.timeout > 0)
 		after(R, R.timeout, TYPE_PROC_REF(/datum/request, timed_out), key = "request_timeout")
+	R.prepare(context)
 	R.begin()
 	return R
+
+/// A player's answer to prompt `R` (a window): normalised and checked first. Returns null when it ended the request answered, else the reason it was
+/// refused (the prompt stays open for another try). The test driver's request_answer() goes through here too.
+/proc/request_submit(datum/request/R, answer)
+	if(!istype(R) || !R.is_open())
+		return "that question is closed"
+	var/datum/prompt/P = R
+	if(istype(P))
+		answer = P.normalize(answer)
+		var/why = P.refusal(answer)
+		if(why)
+			P.last_error = why
+			log_game("prompt: [P.type] refused an answer: [why]")
+			return why
+	request_end(R, REQ_ANSWERED, answer)
+	return null
 
 /// Ends `R` with `outcome` and runs its handler. Returns TRUE when this call ended it, FALSE when it had already ended.
 /// An answer that no longer passes its valid() check ends as REQ_CANCELLED.
@@ -178,6 +195,11 @@ SYSTEM_DEF(requests)
 		if(R.valid && R.owner && !call(R.owner, R.valid)(R))
 			outcome = REQ_CANCELLED
 	R.outcome = outcome
+	if(istype(R, /datum/prompt))
+		var/datum/prompt/prompt_ended = R
+		if(outcome == REQ_ANSWERED)
+			prompt_ended.value = R.answer_value
+		prompt_ended.dismiss()
 	switch(outcome)
 		if(REQ_ANSWERED)
 			registry.answered++
@@ -214,5 +236,8 @@ SYSTEM_DEF(requests)
 	if(!R)
 		return null
 	var/datum/op_result/waiting = R.waiting
-	request_end(R, outcome, value)
+	if(outcome == REQ_ANSWERED)
+		request_submit(R, value) // a refused answer leaves the prompt (and the op waiting on it) open
+	else
+		request_end(R, outcome, value)
 	return waiting

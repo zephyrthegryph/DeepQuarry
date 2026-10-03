@@ -8,7 +8,8 @@
 	drop_sound = SFX_ITEMS_DROP_DRINKGLASS
 	pickup_sound =  SFX_ITEMS_PICKUP_DRINKGLASS
 	icon_state = null
-	flags = OPENCONTAINER
+	/// Open from the start (a can is shut until it is opened).
+	var/open_at_start = TRUE
 	amount_per_transfer_from_this = 5
 	max_transfer_amount = 50
 	volume = 50
@@ -25,6 +26,8 @@
 
 	///Var for attack_self chain
 	var/special_handling = FALSE
+	/// The old Set transfer amount entry is the capability's.
+	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/food/drinks/Initialize(mapload)
 	. = ..()
@@ -67,9 +70,59 @@
 
 	return FALSE
 
+// A drink is a holder of its volume that is open or shut (a lid that is only a state: a can is opened by using it, once), that is sipped from by yourself and
+// fed to others in three seconds (in any stance unless it is a blow), poured from and into, and filled from a tank. What a sip tells and leaves behind is
+// sipped() and, a moment after the transfer, On_Consume(). Micros dropped in or climbing in are legacy entries still (the drag and the item).
+CAPABILITIES(/obj/item/reagent_containers/food/drinks, \
+	reagent_container( \
+		volume = nameof(volume), \
+		lid = TRUE, \
+		lid_visible = FALSE, \
+		starts_open = nameof(open_at_start), \
+		taps = list(/obj/structure/reagent_dispensers), \
+		rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
+		feed = TRUE, \
+		splash = FALSE, \
+		ingest_hostile = TRUE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this), \
+		transfer_min = nameof(min_transfer_amount), \
+		transfer_max = nameof(max_transfer_amount)), \
+	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand))), \
+	extend("reagent_container.drink", then(PROC_REF(sipped))), \
+	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped))))
+
+/// Used in hand while it is shut: it is opened (or found to have no ring pull).
+/obj/item/reagent_containers/food/drinks/proc/opened_in_hand(datum/act/op/A)
+	open(A.actor)
+	return OP_OK
+
+/// The one who feeds another is seen to begin.
+/obj/item/reagent_containers/food/drinks/proc/feeding_begins(datum/act/A)
+	var/datum/act/op/O = A
+	other_feed_message_start(O.actor, O.target)
+	return null
+
+/// A sip: what the one drinking is told and hears, and (a moment after it has been taken) what it did to the drink.
+/obj/item/reagent_containers/food/drinks/proc/sipped(datum/act/op/A)
+	var/mob/living/eater = A.target
+	var/mob/feeder = A.actor
+	if(eater == feeder)
+		self_feed_message(feeder)
+	else
+		other_feed_message_finish(feeder, eater)
+	feed_sound(feeder)
+	after(src, 1 TICK, TYPE_PROC_REF(/obj/item/reagent_containers/food/drinks, sipped_after), key = "sipped", with = list(eater, feeder, reagents.total_volume))
+	return OP_OK
+
+/// The sip has been taken: it counts if the drink lost anything.
+/obj/item/reagent_containers/food/drinks/proc/sipped_after(mob/living/eater, mob/feeder, volume_before)
+	if(QDELETED(src))
+		return
+	On_Consume(eater, feeder, reagents.total_volume != volume_before)
+
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_SELF(null, PROC_REF(drinks_self)), \
 	INTERACT_ITEM(null, PROC_REF(drinks_item)), \
 )
 
@@ -147,50 +200,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 		play_sfx(src, SFX_CANOPEN, volume = rand(10,50))
 		GLOB.cans_opened_roundstat++
 		to_chat(user, span_notice("You open [src] with an audible pop!"))
-		flags |= OPENCONTAINER
+		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, TRUE)
 	else
 		to_chat(user, span_warning("...wait a second, this one doesn't have a ring pull. It's not a <b>can</b>, it's a <b>can't!</b>"))
 		name = "\improper can't of [initial(name)]"	//don't update the name until they try to open it
-
-/obj/item/reagent_containers/food/drinks/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(force && !(flags & NOBLUDGEON) && stance == I_HURT)
-		return ..()
-
-	if(standard_feed_mob(user, M))
-		return ITEM_INTERACT_SUCCESS
-
-	return ITEM_INTERACT_FAILURE
-
-/obj/item/reagent_containers/food/drinks/afterattack(obj/target, mob/user, proximity)
-	if(!proximity) return
-
-	if(standard_dispenser_refill(user, target))
-		return
-	if(standard_pour_into(user, target))
-		return
-	return ..()
-
-/obj/item/reagent_containers/food/drinks/standard_feed_mob(mob/user, mob/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	var/original_volume = reagents.total_volume
-	.=..()
-	var/changed = !(reagents.total_volume == original_volume)
-	On_Consume(target, user, changed)
-	return
-
-/obj/item/reagent_containers/food/drinks/standard_dispenser_refill(mob/user, obj/structure/reagent_dispensers/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	return ..()
-
-/obj/item/reagent_containers/food/drinks/standard_pour_into(mob/user, atom/target)
-	if(!is_open_container())
-		to_chat(user, span_notice("You need to open [src]!"))
-		return TRUE
-	return ..()
 
 /obj/item/reagent_containers/food/drinks/self_feed_message(mob/user)
 	if(amount_per_transfer_from_this == volume)	//I wanted to use a switch, but switch statements can't use vars and the maximum volume of containers varies
@@ -244,7 +257,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
 	amount_per_transfer_from_this = 20
 	max_transfer_amount = null
 	volume = 150
-	flags = OPENCONTAINER
 
 /obj/item/reagent_containers/food/drinks/golden_cup/on_reagent_change()
 	..()

@@ -132,6 +132,18 @@ Pinned by the `borghypo_*`, `drink_synthesizer_*` tests of `dq_p2_reagent_hypo_b
 * **A click is the same; the window and the recharge are not converted** (`DECLARE_UI`/`UI_ACT`, `periodic_step()` and the old set-amount entry stay: the tgui
   window needs its own wave). The drink synthesizer clicked on a person now refuses silently (it used to fall through to nothing).
 
+## Reagent containers: drinks
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_drink_behaviour.dm` (cartons, cans, cups, the golden cup; green on the legacy code first, unchanged after).
+Condiments, the cooking containers and solid food (`snacks`) are not converted; bottles keep their own smash, rag and spin rules and their `bottle_self` entry.
+
+* **A glass in combat mode splashes a person or a thing, not an open container** (a hostile click on an open container pours, as for a beaker; the old glass
+  splashed over the container). A drink that does no harm feeds in any stance as before; a drink with force (the golden cup) hits.
+* **A drink says it is being fed to someone** ("is trying to feed ... from the carton") when the three seconds begin, and the ones who finish are told one tick
+  after the sip (`On_Consume` follows the transfer); a drink finished by the sip still leaves its trash.
+* **"Open or close the lid" is gone from drinks** (a lid that is only a state): a can is opened by using it, a closed one is told it is shut.
+* **A cap on a tank the cup is filled from:** a drink fills only from a tank whose top is shut (the old drink filled from any tank).
+
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
 Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).
@@ -200,3 +212,22 @@ Pinned by `code/modules/unit_tests/dq_p2_storage_behaviour.dm` (written and gree
 * **The 85 percent tray slip, the hand labeler's silence and the light replacer's refill are the same behaviours in new places** (`storage_balks()` of the tray, the labeler in the storage's `quiet` list, an op of the storage type).
 * **The bot assemblies (a toolbox with ten floor tiles, a first aid kit with a robot arm) are ops of their storage types** in `floorbot.dm` and `medbot.dm`: on an empty toolbox the tiles start the kit and on one with tools they go in like any item; a robot arm on a kit with things in it says to empty it first.
 * The old `cap_storage()` library, its tests and the `HOLDS_*` bits are deleted (nothing used them); the slot's hold constraint and `restrict_hold()` of a storage are the capability's.
+
+## Tables (tables, benches, racks and the shelves)
+
+Pinned by `code/modules/unit_tests/dq_p2_table_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong plating time, a wrong strength, no flipped check on reinforcing, the carpet no longer blocking the wrench, no carpet dropped, a wrong unreinforcing time, a wrong dismantle sheet, a wrong repair amount, a flip that takes tables of any material, a movement check that ignores the side, no carpet in a full break, no brittle multiplier, a slam that does no harm, no one-table-per-tile rule, a frame that takes items, a drag that pushes the wrong sizes, a second carpet, a flip that does not shake climbers off, a look without the reinforcement layer and a description without the reinforcement's name are each caught by a test). Only the adapter block of the file changed with the conversion (the menu and drag adapters, and two tests that wrote the old layer vars now call `set_layers()`).
+
+* **A tool with no job on a table is put on it, like any item.** The old tool handlers answered every tool (a crowbar on an uncarpeted table, a wrench on a reinforced or carpeted one, a screwdriver on a table with no reinforcement, a welder on an undamaged table) by swallowing the click: the tool stayed in the hand and nothing was said. A tool that has no job here is an item, and an item clicked on a table is put on it.
+* **A reinforcing drag may come from either hand.** The old drag handler asked for the stack in the active hand; the drop asks that the stack is carried by the person dragging it (the reach gate still wants them beside the table).
+* **Refusals say what they did not before.** A wrench on a carpeted table says to take the carpet off first, on a reinforced one it is the item click above; a flip refused for busy hands or a won't-budge row, a put back refused for something in the way, a grab that is too loose and a table that cannot be reinforced all name their reason (the old code was silent or said it in its own words). The words are the library's; what is refused, and when, is unchanged.
+* **Taking the plating off gives back the sheet the plating was made of.** The old code gave a sheet of the material's stack type; a built table now gives back the stack that went on (the same type, with the runtime material a processed alloy carries), and a preset table gives one sheet of its material's stack type, as before. A material with no stack type still cannot be unbolted.
+* **Two people plating at once spend one sheet between them.** The old timed job claimed the table; now both waits run and the second finds the table already plated when its own ends, so it spends nothing (pinned: the sheet count).
+* **A preset's material is a var.** `plating_id` and `reinforcement_id` (a material id) replace the forty `Initialize()` overrides; `set_layers(plating, reinforcement)` is the one writer (a spell, a theme, a cultified table), and it builds the layers into the graph with a ledger of one sheet each, so the same refund applies. The dead `material_static`/`reinforced_static` vars are gone.
+* **Dead code is gone:** the old interaction table, `common_material_add/remove`, the table task types and tool job, `cap_flip()` and its test (tables were its only user).
+
+## Engine pieces tables added
+
+* **The click's parameters reach the ops it runs** (`op_resolve_click_with_params()`, `code/engine/parts/inputs.dm`): `dq_interaction_click_params(actor)` answers inside an effect, so an item put on a table is aligned to where it was clicked. Test: `dq_p2_engine/a_players_click_carries_its_parameters`.
+* **A player's drag of an item onto something with ops reaches the op that answers a drag** (`/datum/input_adapter/proc/drag`, `code/modules/keybindings/adapters.dm`): until now only a driver-built drag did; the real mouse drag went to the old `MouseDrop_T`. When no op takes it, `MouseDrop_T` runs as before. Tests: `dq_p2_engine/a_players_drag_reaches_an_op`, `a_drag_onto_a_thing_without_ops_is_left_to_it`. (A drag of a mob is the engine-gaps branch's.)
+* `built_material()` is annotated `READS_FROM(E)` like `built()`, so a condition may read it.
+

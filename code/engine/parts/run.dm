@@ -472,7 +472,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 			take_capture(A)
 			keeps = Q.args["keeps"] & op_default_keeps(A, binding) & ~STAY // an open question outlives a step the actor takes
 			var/list/fields = op_request_fields(A, Q)
-			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields)
+			var/datum/request/R = request_open(src, Q.args["type"], TYPE_PROC_REF(/datum/pending_op, request_done), fields, A)
 			if(!R)
 				suspend_act()
 				return cancel(/datum/msg/op/failed)
@@ -812,6 +812,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		active = FALSE
 		return
 	var/mob/M = actor
+	if(oplan.interrupted && resume_act())
+		A.reason = reason
+		op_call(A, oplan.interrupted)
+		suspend_act()
 	end_pending()
 	// the actor's relation may already be gone: the act's snapshot names carry the feedback
 	op_end(A, ACT_REFUSED, reason, M)

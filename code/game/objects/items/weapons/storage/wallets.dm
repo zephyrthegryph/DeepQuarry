@@ -115,7 +115,12 @@ READS_AS(/obj/item/storage/wallet/proc/id_overlay, STORAGE_CONTENTS_KEY)
 	desc = "You can recolor it! Fancy! The future is NOW!"
 	icon_state = "wallet-white"
 
-DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/change_color)
+// The colour is chosen from a window: an op of the wallet, reached from the verb a carrier has.
+CAPABILITIES(/obj/item/storage/wallet/poly, \
+	held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED), \
+	op("recolor", menu(), needs(carried(), req_capable()), label("Change wallet color"), \
+		asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), \
+		then(PROC_REF(recolored))))
 
 /obj/item/storage/wallet/poly/Initialize(mapload)
 	. = ..()
@@ -128,14 +133,14 @@ DECLARE_VERB(/obj/item/storage/wallet/poly, /obj/item/storage/wallet/poly/proc/c
 	set desc = "Change the color of the wallet."
 	set src in usr
 
-	if(usr.stat || usr.restrained() || usr.incapacitated())
-		return
+	perform_op(usr, src, "recolor", null, ORIGIN_VERB)
 
-	om_ask(usr, /datum/om/prompt/color, PROC_REF(wallet_color_chosen), title = "Wallet Color", message = "Pick a new color", default = color, ask_flags = ASK_CARRIED | ASK_CAPABLE)
-
-/obj/item/storage/wallet/poly/proc/wallet_color_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color && (ask.picked_color != color))
-		color = ask.picked_color
+/// The picked colour becomes the wallet's.
+/obj/item/storage/wallet/poly/proc/recolored(datum/act/op/A)
+	var/datum/prompt/color/picked = A.answer
+	if(picked.value != color)
+		color = picked.value
+	return OP_OK
 
 DAMAGE_REACTION(/obj/item/storage/wallet/poly, DAMAGE_EMP, PROC_REF(poly_wallet_emp))
 /// An EMP glitches the wallet's colour display for a while.

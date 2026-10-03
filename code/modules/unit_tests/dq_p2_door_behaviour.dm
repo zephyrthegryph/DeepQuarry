@@ -2380,10 +2380,8 @@
 	if(!isnull(last_close))
 		TEST_ASSERT(last_close, "the closing record ends with density on")
 	for(var/datum/test_event/E in denied)
-		if(E.kind == TEST_EVENT_DELTA && E.key == "density")
-			TEST_ASSERT(FALSE, "a refused attempt records no change of density")
-		if(E.kind == TEST_EVENT_DELTA && E.key == "operating")
-			TEST_ASSERT(FALSE, "a refused attempt records no change of operating")
+		TEST_ASSERT(!(E.kind == TEST_EVENT_DELTA && E.key == "density"), "a refused attempt records no change of density")
+		TEST_ASSERT(!(E.kind == TEST_EVENT_DELTA && E.key == "operating"), "a refused attempt records no change of operating")
 	var/moved_open = 0
 	for(var/datum/test_event/E in opening)
 		if(E.kind == TEST_EVENT_DELTA && E.entity == D)

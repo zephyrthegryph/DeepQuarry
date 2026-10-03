@@ -106,6 +106,10 @@
 	act_message(user, src, others = span_danger("%U% smashed %T% on \the [choice]!"))
 	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
 
+// A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle, \
+	without("open"))
+
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	INTERACT_SELF(null, PROC_REF(bottle_self)), \
 	INTERACT_ITEM(null, PROC_REF(bottle_item)), \
@@ -143,14 +147,14 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	if(!isGlass || rag) return
 	if(own_set(src, nameof(src.rag), R, user = user))
 		to_chat(user, span_notice("You stuff [R] into [src]."))
-		flags &= ~OPENCONTAINER
+		cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, FALSE)
 		update_icon()
 
 /obj/item/reagent_containers/food/drinks/bottle/proc/remove_rag(mob/user)
 	if(!rag) return
 	user.put_in_hands(rag)
 	own_take(src, nameof(rag))
-	flags |= (initial(flags) & OPENCONTAINER)
+	cap_key_set(src, REAGENT_CONTAINER_LID_OPEN, open_at_start)
 	update_icon()
 
 /obj/item/reagent_containers/food/drinks/bottle/open(mob/user)
@@ -621,7 +625,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/drinks/bottle/grapejuice, nul
 /obj/item/reagent_containers/food/drinks/bottle/small
 	volume = 50
 	smash_duration = 1
-	flags = NONE //starts closed
+	open_at_start = FALSE //starts closed
 	rag_underlay = "rag_small"
 
 /obj/item/reagent_containers/food/drinks/bottle/small/beer

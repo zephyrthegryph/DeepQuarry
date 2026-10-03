@@ -15,6 +15,7 @@
 //   pour         the held container into the clicked one: an open holder of liquid that the container is not put on (`rests_on`) and that is
 //                not a tap with its top shut
 //   fill         (`taps` = types) the held container takes from a tap, a closed tank of those types, by the tap's own amount
+//   (`splash` = FALSE leaves out splash; `ingest_hostile` = TRUE lets drink and feed answer a hostile click too, unless it is a blow.)
 //   splash       the same click in a hostile stance, on what cannot be poured into: everything in the held container is splashed over it
 //   drink        a click on yourself in a stance that is not hostile: one transfer, swallowed (ingested); half of it for a small mob
 //   feed         (feed = TRUE) the same click on somebody else, after `feed_wait`: the mouth, a gag, a mask or a belly can refuse
@@ -36,7 +37,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, sealed = FALSE, lid_visible = TRUE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, injects = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, sealed = FALSE, lid_visible = TRUE, splash = TRUE, ingest_hostile = FALSE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -53,6 +54,7 @@ MSG_DEF(reagent_container/pour, "You pour from %I% into %T%.", "%U% pours from %
 MSG_DEF(reagent_container/fill, "You fill %I% from %T%.", "%U% fills %I% from %T%.")
 MSG_DEF(reagent_container/splash, "You splash %I% over %T%.", "%U% splashes %I% over %T%!")
 MSG_DEF(reagent_container/drink, "You drink from %I%.", "%U% drinks from %I%.")
+MSG_DEF(reagent_container/begin_feed, "You begin to feed %T% from %I%.", "%U% is trying to feed %T% from %I%!")
 MSG_DEF(reagent_container/feed, "You feed %T% from %I%.", "%U% feeds %T% from %I%.")
 MSG_DEF(reagent_container/inject, "You inject %T% with %I%.", "%U% injects %T% with %I%.")
 MSG_DEF(reagent_container/spray, "You spray %I% at %T%.", "%U% sprays %I% at %T%.")
@@ -71,7 +73,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /datum/capability/lib/reagent_container/entries()
 	return list(
 		(lid && lid_visible) ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
-		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), label("Set transfer amount"),
+		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), when(CAP_PROC(range_known)), label("Set transfer amount"),
 			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
 		(spray || needle) ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
@@ -81,16 +83,16 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			needs(req(CAP_PROC(sink_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/fill))) : null,
-		(spray || needle) ? null : op("splash", at_target(), hostile(), stance(I_HURT), when(CAP_PROC(target_splashable)), label("Splash"),
+		(spray || needle || !splash) ? null : op("splash", at_target(), hostile(), stance(I_HURT), when(CAP_PROC(target_splashable)), label("Splash"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/splash))),
-		(spray || needle) ? null : op("drink", at_target(/mob/living), when(CAP_PROC(targets_self)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Drink"),
+		(spray || needle) ? null : op("drink", at_target(/mob/living), when(cond_all(CAP_PROC(targets_self), CAP_PROC(blow_free))), stance(ingest_hostile ? list(I_HELP, I_DISARM, I_GRAB, I_HURT) : list(I_HELP, I_DISARM, I_GRAB)), priority(OP_PRIORITY_PART), label("Drink"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
 				req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/drink))),
-		(feed && !spray && !needle) ? op("feed", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Feed"),
-			wait(feed_wait),
+		(feed && !spray && !needle) ? op("feed", at_target(/mob/living), when(cond_all(cond_not(CAP_PROC(targets_self)), CAP_PROC(blow_free))), stance(ingest_hostile ? list(I_HELP, I_DISARM, I_GRAB, I_HURT) : list(I_HELP, I_DISARM, I_GRAB)), priority(OP_PRIORITY_PART + 1), label("Feed"),
+			begins(MSG(reagent_container/begin_feed)), wait(feed_wait),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
 				req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
@@ -140,6 +142,11 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 	if(isnum(default))
 		return default
 	return length(transfer) ? transfer[1] : 5
+
+/// The holder says how much a person may choose: its max var, if the capability names one, is a number (a golden cup has none: its amount is fixed).
+/datum/capability/lib/reagent_container/proc/range_known(datum/act/op/A)
+	var/atom/holder = A.holder
+	return !istext(transfer_max) || isnum(holder.vars[transfer_max])
 
 /// Whether `value` is an amount a person may choose: one of `transfer`, or (with a range declared) a whole number inside it.
 /datum/capability/lib/reagent_container/proc/amount_allowed(atom/holder, value)
@@ -248,6 +255,15 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 
 /datum/capability/lib/reagent_container/proc/targets_self(datum/act/op/A)
 	return !isnull(A.target) && A.target == A.actor
+
+/// A hostile click with something that hits (force, not a no-bludgeon item) is a blow, not a drink or a feeding (`ingest_hostile` containers: a carton feeds in
+/// any stance, a golden cup hits).
+/datum/capability/lib/reagent_container/proc/blow_free(datum/act/op/A)
+	if(!ingest_hostile)
+		return TRUE
+	var/obj/item/holder = A.holder
+	var/mob/user = A.actor
+	return !(user?.combat_mode && !user.attack_variant && holder.force && !(holder.flags & NOBLUDGEON)) // a hostile stance is combat mode with no disarm or grab variant
 
 // ---- requirements (x(datum/act/A), pure) ----
 

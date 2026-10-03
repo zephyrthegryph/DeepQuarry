@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - code_imp: "Drinks (cartons, cans, cups, glasses) run on the reagent_container capability"
+  - qol: "The one who is fed a drink is told it is coming"

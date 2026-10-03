@@ -29,17 +29,25 @@
 	var/mob/actor = E.actor
 	var/atom/target = E.target
 	if(E.driven)
-		return op_resolve_click(actor, target, E.held, E.gesture, E.origin || ORIGIN_CLICK)
+		return op_resolve_click_with_params(actor, target, E.held, E.gesture, E.origin || ORIGIN_CLICK, E.params)
 	// The click event (hooks on the target see it), then the new resolver when something of the click has an op, else the mob's click handling.
 	OM_EMIT(E.target, /datum/om/event/click, E.location, E.control, E.params, E.actor)
 	var/gesture = op_gesture_of_params(E.params)
 	var/obj/item/held = actor?.get_active_hand()
 	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held)))
-		var/datum/op_result/result = op_resolve_click(actor, target, held, gesture, ORIGIN_CLICK, TRUE, TRUE)
+		var/datum/op_result/result = op_resolve_click_with_params(actor, target, held, gesture, ORIGIN_CLICK, E.params, TRUE, TRUE)
 		if(result)
 			return result
 	E.actor.ClickOn(E.target, E.params)
 	return null
+
+/// op_resolve_click() with the click's parameters readable by the effects it runs, through dq_interaction_click_params(actor): an item put on a table
+/// aligns to where it was clicked. The previous parameters come back when the resolution is done.
+/proc/op_resolve_click_with_params(mob/actor, atom/target, obj/item/held, gesture, origin, params, quiet = FALSE, defer_legacy = FALSE)
+	RETURN_TYPE(/datum/op_result)
+	var/saved_params = dq_interaction_set_click_params(actor, params)
+	. = op_resolve_click(actor, target, held, gesture, origin, quiet, defer_legacy)
+	dq_interaction_set_click_params(actor, saved_params)
 
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
 /// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain

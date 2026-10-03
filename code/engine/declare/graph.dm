@@ -479,6 +479,7 @@ CAPABILITY_TYPE(deployment_graph, CAP_DEPLOYMENT, /datum/capability/construction
 
 /// The material actually used at `stage`, from the ledger entry of the transition into it that is on the path; null if it took none.
 /proc/built_material(datum/E, stage)
+	READS_FROM(E)
 	for(var/cap_id in list(CAP_CONSTRUCTION, CAP_DEPLOYMENT))
 		var/datum/capability/construction/def = cap_of(E, cap_id)
 		if(!def?.graph)

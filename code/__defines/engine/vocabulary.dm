@@ -95,6 +95,8 @@
 #define SLOT_ANY_WORN "any_worn"
 /// Any hand of the holder.
 #define SLOT_ANY_HELD "any_held"
+/// Any body slot of the holder: a hand or anything worn, a pocket included.
+#define SLOT_ANY_CARRIED "any_carried"
 
 // ---- Request outcomes: one enum for every workflow step (section 13). ----
 #define REQ_ANSWERED 1

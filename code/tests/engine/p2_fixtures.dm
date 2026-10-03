@@ -246,15 +246,19 @@ CAPABILITIES(/obj/machinery/p2_box/slasher, on_notice(/datum/notice/slashed, the
 	name = "p2 drag target"
 	var/used = 0
 	var/dragged = 0
+	/// The click parameters the last op ran under (dq_interaction_click_params of its actor).
+	var/seen_params
 
 CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_used))), 	op("drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(was_dragged))))
 
 /obj/p2_dragtarget/proc/was_used(datum/act/op/A)
 	used++
+	seen_params = dq_interaction_click_params(A.actor)
 	return OP_OK
 
 /obj/p2_dragtarget/proc/was_dragged(datum/act/op/A)
 	dragged++
+	seen_params = dq_interaction_click_params(A.actor)
 	return OP_OK
 
 

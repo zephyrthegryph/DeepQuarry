@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Tables, benches and racks are declared with the construction graph; a tool with no job on a table is put on it"
+  - bugfix: "Dragging an item onto something with engine ops reaches its drag op, and clicks carry their parameters into the ops they run"

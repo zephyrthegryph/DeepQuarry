@@ -36,6 +36,7 @@ GLOBAL_LIST_EMPTY(trait_source_singletons)
 
 /// TRUE when `target` holds `trait` from any source.
 /proc/has_trait(datum/target, trait)
+	READS_FROM() // a trait is asked when a choice is made, never cached
 	if(!target?.om_rec)
 		return FALSE
 	return om_has_grant(target, GRANT_TRAIT, trait)

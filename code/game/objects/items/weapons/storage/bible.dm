@@ -36,49 +36,56 @@ GLOBAL_LIST_INIT(bibleitemstates, list(
 	drop_sound = SFX_BUREAUCRACY_BOOKCLOSE
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/storage/bible, \
-	INTERACT_USE(null, PROC_REF(interaction_bible_self)), \
-)
-
-// An item put into a bible turns a page first, and then goes on to the storage's insertion (passes()).
+// An item put into a bible turns a page first, and then goes on to the storage's insertion (passes()). Used in hand by a chaplain: the first use chooses the
+// skin from a ring around the user, a later one invokes the religion.
 CAPABILITIES(/obj/item/storage/bible, \
-	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes()))
+	op("page_turn", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), label("Put in"), then(PROC_REF(turn_page)), passes()), \
+	op("skin", in_hand(), when(req(PROC_REF(chaplain_unconfigured))), label("Choose a bible"), \
+		asks(/datum/prompt/choice, fields = list("question" = "Choose a bible", "choices" = computed(PROC_REF(skin_choices)), "radial" = TRUE, "radius" = 40)), \
+		then(PROC_REF(skin_chosen))), \
+	op("invoke", in_hand(), priority(above("skin")), when(req(PROC_REF(chaplain_configured))), label("Invoke"), then(PROC_REF(invoke_religion))))
 
-/// Used in hand: a chaplain configures their religion.
-/obj/item/storage/bible/proc/interaction_bible_self(mob/living/carbon/human/user, obj/item/held, datum/interaction/interaction)
-	if(user?.mind?.assigned_role != JOB_CHAPLAIN)
-		return FALSE
+/// What a bible asks of its user: 0 not a chaplain with a religion, 1 a religion whose bible is not yet chosen, 2 one that has it. The role and the religion
+/// are the mind's own state, read when the op resolves.
+/proc/chaplain_state(mob/living/carbon/human/user)
+	READS_FROM()
+	if(!istype(user) || user.mind?.assigned_role != JOB_CHAPLAIN || isnull(user.mind.my_religion))
+		return 0
+	return user.mind.my_religion.configured ? 2 : 1
 
-	if (!user.mind.my_religion)
-		return FALSE
+/// A chaplain with a religion whose bible is not yet chosen.
+/obj/item/storage/bible/proc/chaplain_unconfigured(datum/act/op/A)
+	return chaplain_state(A.actor) == 1
 
-	if (!user.mind.my_religion.configured)
-		var/list/skins = list()
-		for(var/i in 1 to GLOB.biblestates.len)
-			var/image/bible_image = image(icon = 'icons/obj/storage.dmi', icon_state = GLOB.biblestates[i])
-			skins += list("[GLOB.biblenames[i]]" = bible_image)
+/// A chaplain whose religion has its bible.
+/obj/item/storage/bible/proc/chaplain_configured(datum/act/op/A)
+	return chaplain_state(A.actor) == 2
 
-		om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(skin_chosen), choices = skins, anchor = src, radius = 40, require_near = TRUE)
-		return TRUE
+/// The ring's choices: each bible's name with its picture.
+/obj/item/storage/bible/proc/skin_choices(datum/act/op/A)
+	var/list/skins = list()
+	for(var/i in 1 to GLOB.biblestates.len)
+		var/image/bible_image = image(icon = 'icons/obj/storage.dmi', icon_state = GLOB.biblestates[i])
+		skins += list("[GLOB.biblenames[i]]" = bible_image)
+	return skins
 
-	apply_religion(user)
-	return TRUE
-
-/obj/item/storage/bible/proc/skin_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/carbon/human/user = ask.answerer
-	if(!istype(user) || !user.mind?.my_religion || !check_menu(user))
-		return
-	var/choice = ask.choice
-	if(!choice)
-		return
-	var/bible_index = GLOB.biblenames.Find(choice)
+/// The chosen skin becomes the religion's bible, and the bible takes it.
+/obj/item/storage/bible/proc/skin_chosen(datum/act/op/A)
+	var/mob/living/carbon/human/user = A.actor
+	var/datum/prompt/choice/picked = A.answer
+	var/bible_index = GLOB.biblenames.Find(picked.value)
 	if(!bible_index)
-		return
-
+		return OP_FAILED
 	user.mind.my_religion.bible_icon_state = GLOB.biblestates[bible_index]
 	user.mind.my_religion.bible_item_state = GLOB.bibleitemstates[bible_index]
 	user.mind.my_religion.configured = TRUE
 	apply_religion(user)
+	return OP_OK
+
+/// A later use: the bible takes the religion's name and look.
+/obj/item/storage/bible/proc/invoke_religion(datum/act/op/A)
+	apply_religion(A.actor)
+	return OP_OK
 
 /obj/item/storage/bible/proc/apply_religion(mob/living/carbon/human/user)
 	deity_name = user.mind.my_religion.deity
@@ -86,25 +93,6 @@ CAPABILITIES(/obj/item/storage/bible, \
 	icon_state = user.mind.my_religion.bible_icon_state
 	item_state = user.mind.my_religion.bible_item_state
 	to_chat(user, span_notice("You invoke [user.mind.my_religion.deity] and prepare a copy of [src]."))
-
-/**
- * Checks if we are allowed to interact with a radial menu
- *
- * Arguments:
- * * user The mob interacting with the menu
- */
-/obj/item/storage/bible/proc/check_menu(mob/living/carbon/human/user)
-	if(user.mind.my_religion.configured)
-		return FALSE
-	if(!istype(user))
-		return FALSE
-	if(user.get_active_hand() != src)
-		return FALSE
-	if(user.incapacitated())
-		return FALSE
-	if(user.mind.assigned_role != JOB_CHAPLAIN)
-		return FALSE
-	return TRUE
 
 /obj/item/storage/bible/booze
 	name = "bible"

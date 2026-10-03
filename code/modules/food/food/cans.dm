@@ -1,7 +1,7 @@
 /obj/item/reagent_containers/food/drinks/cans
 	volume = 40 //just over one and a half cups
 	amount_per_transfer_from_this = 5
-	flags = NONE //starts closed
+	open_at_start = FALSE //starts closed
 	drop_sound = SFX_ITEMS_DROP_SODA
 	pickup_sound = SFX_ITEMS_PICKUP_SODA
 	cant_chance = 1 //arbitrarily high for april fools; if it's not reverted in its entirety I suggest rolling it down to 2% or something
@@ -15,18 +15,22 @@ DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/food/drinks/cans, PERIODIC_S
 /obj/item/reagent_containers/food/drinks/cans/proc/is_shaken()
 	return shaken > 0
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/cans, INTERACT_SELF_AS(I_HURT, "Shake", PROC_REF(cans_self)), INTERACT_SELF(null, PROC_REF(cans_self)))
+// A can is opened by using it, except in a hostile stance, where it is shaken (shaking a shut can makes it foam when it is opened).
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans, \
+	extend("open", stance(I_HELP, I_DISARM, I_GRAB), then(PROC_REF(maybe_unlucky))), \
+	op("shake", in_hand(), stance(I_HURT), priority(OP_PRIORITY_NORMAL + 1), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Shake it"), then(PROC_REF(shaken_up))))
 
-/// Old attack_self: the drinks self-use (open) first, as the old ..() did, then the shaking.
-/obj/item/reagent_containers/food/drinks/cans/proc/cans_self(mob/user, obj/item/held, datum/interaction/interaction)
-	drinks_self(user, held, interaction)
-	if(interaction.stance == I_HURT && !is_open_container())
-		to_chat(user, span_warning("You shake [src]."))
-		set_shaken(shaken + 3)
-		return TRUE
-	if(has_trait(user, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
+/// The unlucky sometimes shake a can without meaning to.
+/obj/item/reagent_containers/food/drinks/cans/proc/maybe_unlucky(datum/act/op/A)
+	if(has_trait(A.actor, TRAIT_UNLUCKY) && prob(10)) // Because it's always funny
 		set_shaken(shaken + 10)
-	return TRUE
+	return OP_OK
+
+/// Shaken in a hostile stance.
+/obj/item/reagent_containers/food/drinks/cans/proc/shaken_up(datum/act/op/A)
+	to_chat(A.actor, span_warning("You shake [src]."))
+	set_shaken(shaken + 3)
+	return OP_OK
 
 /obj/item/reagent_containers/food/drinks/cans/open(mob/user)
 	. = ..()

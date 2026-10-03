@@ -17,6 +17,7 @@
 /// var/list/obj/machinery/door/doors = turf_contents_of_type(T, /obj/machinery/door)
 /// ```
 /proc/turf_contents_of_type(turf/T, type)
+	READS_FROM() // what stands on a tile is asked when a choice is made, never cached
 	. = list()
 	if(!T)
 		return
@@ -102,6 +103,7 @@
 /// The first direct content of `A` that is a `type`, or null. Equivalent to
 /// `locate(type) in A` (or `in A.contents`) for any atom, turf or not.
 /proc/locate_within(atom/A, type)
+	READS_FROM() // what a thing holds is asked when a choice is made, never cached
 	if(!A)
 		return null
 	return locate(type) in A.contents

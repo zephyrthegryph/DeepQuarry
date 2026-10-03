@@ -753,22 +753,16 @@ DECLARE_APPEARANCE_PROC(/obj/structure/window/reinforced/survival_pod, TYPE_PROC
 	name = "table"
 	icon = 'icons/obj/survival_pod.dmi'
 	icon_state = "table"
+	plating_id = MAT_STEEL
 	can_reinforce = FALSE
 	can_plate = FALSE
 	can_flip_verb = FALSE
+	can_dismantle = FALSE
 
 DECLARE_APPEARANCE_PROC(/obj/structure/table/survival_pod, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/structure/table/survival_pod/appearance_overlays()
 	. = list()
 	icon_state = "table"
-
-/obj/structure/table/survival_pod/Initialize(mapload)
-	material_static = get_material_by_name(MAT_STEEL)
-	. = ..()
-
-/obj/structure/table/survival_pod/dismantle(obj/item/tool/wrench/W, mob/user)
-	to_chat(user, span_warning("You cannot dismantle \the [src]."))
-	return
 
 //Sleeper
 /obj/machinery/sleeper/survival_pod

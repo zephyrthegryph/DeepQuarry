@@ -348,7 +348,6 @@
 #include "dx_operations_tests.dm"
 #include "dx_op_resolution_tests.dm"
 #include "dx_cap_item_entries_tests.dm"
-#include "dx_cap_flip_tests.dm"
 #include "dx_cap_label_tests.dm"
 #include "dx_cap_reach_tests.dm"
 #include "dx_cap_rotate_tests.dm"
@@ -462,6 +461,7 @@
 #include "dq_p2_vending_behaviour.dm"
 #include "dq_p2_door_behaviour.dm"
 #include "dq_p2_door_base_tests.dm"
+#include "dq_p2_table_behaviour.dm"
 #include "dq_p2_reagent_behaviour.dm"
 #include "dq_p2_reagent_spray_behaviour.dm"
 #include "dq_p2_lights_behaviour.dm"
@@ -472,6 +472,8 @@
 #include "dq_p2_reagent_pill_behaviour.dm"
 #include "dq_p2_reagent_hypo_behaviour.dm"
 #include "dq_p2_reagent_misc_behaviour.dm"
+#include "dq_eg2_gap_tests.dm"
+#include "dq_p2_reagent_drink_behaviour.dm"
 #include "dq_s1_slots_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)

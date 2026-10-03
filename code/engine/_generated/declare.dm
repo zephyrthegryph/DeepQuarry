@@ -197,15 +197,6 @@
 /datum/capdef_decl/c_maintenance_hatch/spec()
 	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say")
 
-/// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:13
-/datum/capability/lib/multitool_settings
-	var/settings = null
-/proc/multitool_settings(settings)
-	RETURN_TYPE(/datum/capability/lib/multitool_settings)
-	return cap_construct(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, list(settings), "settings")
-/datum/capdef_decl/c_multitool_settings/spec()
-	return list(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, NONE, STACK, "multitool_settings", "settings")
-
 /// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:10
 /datum/capability/lib/natural_weapon
 	var/weapon = /datum/natural_weapon
@@ -274,7 +265,7 @@
 /datum/capdef_decl/c_quickdraw/spec()
 	return list(CAP_QUICKDRAW, /datum/capability/lib/quickdraw, NONE, STACK, "quickdraw", "starts")
 
-/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:39
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:40
 /datum/capability/lib/reagent_container
 	var/volume = 30
 	var/transfer = list(5, 10, 15, 30)
@@ -297,11 +288,13 @@
 	var/shows_contents = TRUE
 	var/sealed = FALSE
 	var/lid_visible = TRUE
-/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible)
+	var/splash = TRUE
+	var/ingest_hostile = FALSE
+/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile)
 	RETURN_TYPE(/datum/capability/lib/reagent_container)
-	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile")
 /datum/capdef_decl/c_reagent_container/spec()
-	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile")
 
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
@@ -372,6 +365,15 @@
 	return cap_construct(CAP_TWO_HANDS, /datum/capability/lib/two_hands, list(), "")
 /datum/capdef_decl/c_two_hands/spec()
 	return list(CAP_TWO_HANDS, /datum/capability/lib/two_hands, NONE, STACK, "two_hands", "")
+
+/// CAPABILITY_TYPE(verb_grant, CAP_VERB_GRANT) at code/library/items/held_verb.dm:11
+/datum/capability/lib/verb_grant
+	var/verb_path = null
+/proc/verb_grant(verb_path)
+	RETURN_TYPE(/datum/capability/lib/verb_grant)
+	return cap_construct(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, list(verb_path), "verb_path")
+/datum/capdef_decl/c_verb_grant/spec()
+	return list(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, "verb_path", STACK, "verb_grant", "verb_path")
 
 /// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:101
 /datum/capability/def/wall_machine
@@ -475,7 +477,7 @@
 /proc/panel_open(datum/holder, selector)
 	return cap_key_get(holder, PANEL_OPEN, selector)
 
-/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:40
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:41
 /datum/cap_keys_decl/k_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
 /// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
@@ -524,6 +526,12 @@
 	return list(STAGE_APC_WIRED, "apc", "wired")
 /datum/stage_def/apc_secured/spec()
 	return list(STAGE_APC_SECURED, "apc", "secured")
+/datum/stage_def/table_frame/spec()
+	return list(STAGE_TABLE_FRAME, "table", "frame")
+/datum/stage_def/table_plated/spec()
+	return list(STAGE_TABLE_PLATED, "table", "plated")
+/datum/stage_def/table_reinforced/spec()
+	return list(STAGE_TABLE_REINFORCED, "table", "reinforced")
 /datum/source_def/status/spec()
 	return list(SRC_STATUS, "status")
 /datum/source_def/vv/spec()
@@ -554,12 +562,75 @@
 	into += entry_line(328)
 	into += list(global.owns_one(nameof(cog), /datum/cogbar))
 
+/// CAPABILITIES(/datum/prompt) at code/engine/parts/prompts.dm:25
+/datum/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/parts/prompts.dm", 25, /datum/prompt)
+	into += entry_line(25)
+	into += list(global.ref_one(nameof(window), /datum))
+
+/// CAPABILITIES(/datum/radial_menu/prompt) at code/engine/present/prompt_windows.dm:179
+/datum/radial_menu/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 179, /datum/radial_menu/prompt)
+	into += entry_line(179)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
 /datum/species/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/engine/parts/hands.dm", 53, /datum/species)
 	into += entry_line(54)
 	into += list(global.hands())
+
+/// CAPABILITIES(/datum/tgui_alert/prompt) at code/engine/present/prompt_windows.dm:27
+/datum/tgui_alert/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 27, /datum/tgui_alert/prompt)
+	into += entry_line(27)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_bitfield_input/prompt) at code/engine/present/prompt_windows.dm:153
+/datum/tgui_bitfield_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 153, /datum/tgui_bitfield_input/prompt)
+	into += entry_line(153)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_checkbox_input/prompt) at code/engine/present/prompt_windows.dm:132
+/datum/tgui_checkbox_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 132, /datum/tgui_checkbox_input/prompt)
+	into += entry_line(132)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_color_picker/prompt) at code/engine/present/prompt_windows.dm:111
+/datum/tgui_color_picker/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 111, /datum/tgui_color_picker/prompt)
+	into += entry_line(111)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_input_number/prompt) at code/engine/present/prompt_windows.dm:90
+/datum/tgui_input_number/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 90, /datum/tgui_input_number/prompt)
+	into += entry_line(90)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_input_text/prompt) at code/engine/present/prompt_windows.dm:69
+/datum/tgui_input_text/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 69, /datum/tgui_input_text/prompt)
+	into += entry_line(69)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
+
+/// CAPABILITIES(/datum/tgui_list_input/prompt) at code/engine/present/prompt_windows.dm:48
+/datum/tgui_list_input/prompt/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/engine/present/prompt_windows.dm", 48, /datum/tgui_list_input/prompt)
+	into += entry_line(48)
+	into += list(global.ref_one(nameof(prompt), /datum/prompt))
 
 /// CAPABILITIES(/mob/living/carbon) at code/engine/parts/hands.dm:48
 /mob/living/carbon/declared_entries(list/into)
@@ -662,6 +733,42 @@
 	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 169, /obj/item/reagent_containers/ecig_cartridge)
 	into += entry_line(170)
 	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks) at code/modules/food/food/drinks.dm:76
+/obj/item/reagent_containers/food/drinks/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/drinks.dm", 76, /obj/item/reagent_containers/food/drinks)
+	into += entry_line(77)
+	into += list(global.reagent_container( volume = nameof(volume), lid = TRUE, lid_visible = FALSE, starts_open = nameof(open_at_start), taps = list(/obj/structure/reagent_dispensers), rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, splash = FALSE, ingest_hostile = TRUE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount)))
+	into += entry_line(91)
+	into += list(global.op("open", global.in_hand(), global.when(global.cond_not(REAGENT_CONTAINER_LID_OPEN)), global.label("Open it"), global.then(PROC_REF(opened_in_hand))))
+	into += entry_line(92)
+	into += list(global.extend("reagent_container.drink", global.then(PROC_REF(sipped))))
+	into += entry_line(93)
+	into += list(global.extend("reagent_container.feed", global.begins(PROC_REF(feeding_begins)), global.then(PROC_REF(sipped))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle) at code/modules/food/food/drinks/bottle.dm:110
+/obj/item/reagent_containers/food/drinks/bottle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/drinks/bottle.dm", 110, /obj/item/reagent_containers/food/drinks/bottle)
+	into += entry_line(111)
+	into += list(global.without("open"))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans) at code/modules/food/food/cans.dm:19
+/obj/item/reagent_containers/food/drinks/cans/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/cans.dm", 19, /obj/item/reagent_containers/food/drinks/cans)
+	into += entry_line(20)
+	into += list(global.extend("open", global.stance(I_HELP, I_DISARM, I_GRAB), global.then(PROC_REF(maybe_unlucky))))
+	into += entry_line(21)
+	into += list(global.op("shake", global.in_hand(), global.stance(I_HURT), global.priority(OP_PRIORITY_NORMAL + 1), global.when(global.cond_not(REAGENT_CONTAINER_LID_OPEN)), global.label("Shake it"), global.then(PROC_REF(shaken_up))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2) at code/modules/food/drinkingglass/drinkingglass.dm:147
+/obj/item/reagent_containers/food/drinks/glass2/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/drinkingglass/drinkingglass.dm", 147, /obj/item/reagent_containers/food/drinks/glass2)
+	into += entry_line(148)
+	into += list(global.configure(global.reagent_container(splash = TRUE, ingest_hostile = FALSE)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass) at code/modules/reagents/reagent_containers/glass.dm:64
 /obj/item/reagent_containers/glass/declared_entries(list/into)
@@ -1211,12 +1318,16 @@
 	into += entry_line(208)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/cell, /obj/item/pipe_dispenser, /obj/item/rcd, /obj/item/quantum_pad_booster, /obj/item/inducer, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/pickaxe/plasmacutter, /obj/item/holosign_creator/combifan, /obj/item/reagent_scanner, /obj/item/lightpainter))))
 
-/// CAPABILITIES(/obj/item/storage/bible) at code/game/objects/items/weapons/storage/bible.dm:44
+/// CAPABILITIES(/obj/item/storage/bible) at code/game/objects/items/weapons/storage/bible.dm:41
 /obj/item/storage/bible/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/bible.dm", 44, /obj/item/storage/bible)
-	into += entry_line(45)
+	into += entry_block("code/game/objects/items/weapons/storage/bible.dm", 41, /obj/item/storage/bible)
+	into += entry_line(42)
 	into += list(global.op("page_turn", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.label("Put in"), global.then(PROC_REF(turn_page)), global.passes()))
+	into += entry_line(43)
+	into += list(global.op("skin", global.in_hand(), global.when(global.req(PROC_REF(chaplain_unconfigured))), global.label("Choose a bible"), global.asks(/datum/prompt/choice, fields = list("question" = "Choose a bible", "choices" = global.computed(PROC_REF(skin_choices)), "radial" = TRUE, "radius" = 40)), global.then(PROC_REF(skin_chosen))))
+	into += entry_line(46)
+	into += list(global.op("invoke", global.in_hand(), global.priority(global.above("skin")), global.when(global.req(PROC_REF(chaplain_configured))), global.label("Invoke"), global.then(PROC_REF(invoke_religion))))
 
 /// CAPABILITIES(/obj/item/storage/box) at code/game/objects/items/weapons/storage/boxes.dm:42
 /obj/item/storage/box/declared_entries(list/into)
@@ -1729,67 +1840,69 @@
 	into += entry_line(143)
 	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.priority(global.above("storage.put_in")), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
 
-/// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:22
+/// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:23
 /obj/item/storage/pouch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 22, /obj/item/storage/pouch)
-	into += entry_line(23)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 23, /obj/item/storage/pouch)
+	into += entry_line(24)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+	into += entry_line(25)
+	into += list(global.op("insert_delayed", global.ai(), global.wait(PROC_REF(insert_wait)), global.then(PROC_REF(stalled_insert))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/ammo) at code/game/objects/items/weapons/storage/pouches.dm:91
+/// CAPABILITIES(/obj/item/storage/pouch/ammo) at code/game/objects/items/weapons/storage/pouches.dm:98
 /obj/item/storage/pouch/ammo/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 91, /obj/item/storage/pouch/ammo)
-	into += entry_line(92)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 98, /obj/item/storage/pouch/ammo)
+	into += entry_line(99)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/baton) at code/game/objects/items/weapons/storage/pouches.dm:263
+/// CAPABILITIES(/obj/item/storage/pouch/baton) at code/game/objects/items/weapons/storage/pouches.dm:270
 /obj/item/storage/pouch/baton/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 263, /obj/item/storage/pouch/baton)
-	into += entry_line(264)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 270, /obj/item/storage/pouch/baton)
+	into += entry_line(271)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/melee, /obj/item/material, /obj/item/tool/wrench))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_parts) at code/game/objects/items/weapons/storage/pouches.dm:170
+/// CAPABILITIES(/obj/item/storage/pouch/eng_parts) at code/game/objects/items/weapons/storage/pouches.dm:177
 /obj/item/storage/pouch/eng_parts/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 170, /obj/item/storage/pouch/eng_parts)
-	into += entry_line(171)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 177, /obj/item/storage/pouch/eng_parts)
+	into += entry_line(178)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/stock_parts, /obj/item/stack/cable_coil, /obj/item/circuitboard))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_supply) at code/game/objects/items/weapons/storage/pouches.dm:146
+/// CAPABILITIES(/obj/item/storage/pouch/eng_supply) at code/game/objects/items/weapons/storage/pouches.dm:153
 /obj/item/storage/pouch/eng_supply/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 146, /obj/item/storage/pouch/eng_supply)
-	into += entry_line(147)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 153, /obj/item/storage/pouch/eng_supply)
+	into += entry_line(154)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/taperoll, /obj/item/extinguisher, /obj/item/tape_roll, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/cell))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_tool) at code/game/objects/items/weapons/storage/pouches.dm:106
+/// CAPABILITIES(/obj/item/storage/pouch/eng_tool) at code/game/objects/items/weapons/storage/pouches.dm:113
 /obj/item/storage/pouch/eng_tool/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 106, /obj/item/storage/pouch/eng_tool)
-	into += entry_line(107)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 113, /obj/item/storage/pouch/eng_tool)
+	into += entry_line(114)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/geiger))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/flares) at code/game/objects/items/weapons/storage/pouches.dm:224
+/// CAPABILITIES(/obj/item/storage/pouch/flares) at code/game/objects/items/weapons/storage/pouches.dm:231
 /obj/item/storage/pouch/flares/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 224, /obj/item/storage/pouch/flares)
-	into += entry_line(225)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 231, /obj/item/storage/pouch/flares)
+	into += entry_line(232)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/holster) at code/game/objects/items/weapons/storage/pouches.dm:244
+/// CAPABILITIES(/obj/item/storage/pouch/holster) at code/game/objects/items/weapons/storage/pouches.dm:251
 /obj/item/storage/pouch/holster/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 244, /obj/item/storage/pouch/holster)
-	into += entry_line(245)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 251, /obj/item/storage/pouch/holster)
+	into += entry_line(252)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/gun))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/medical) at code/game/objects/items/weapons/storage/pouches.dm:190
+/// CAPABILITIES(/obj/item/storage/pouch/medical) at code/game/objects/items/weapons/storage/pouches.dm:197
 /obj/item/storage/pouch/medical/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 190, /obj/item/storage/pouch/medical)
-	into += entry_line(191)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 197, /obj/item/storage/pouch/medical)
+	into += entry_line(198)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/healthanalyzer, /obj/item/dnainjector, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/pill, /obj/item/reagent_containers/syringe, /obj/item/storage/quickdraw/syringe_case, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/reagent_containers/hypospray, /obj/item/storage/quickdraw/syringe_case, /obj/item/syringe_cartridge, /obj/item/clothing/gloves/sterile, /obj/item/sleevemate, /obj/item/bodybag, /obj/item/clothing/mask/surgical, /obj/item/soap, /obj/item/stack/nanopaste, /obj/item/taperoll/medical, /obj/item/storage/box/freezer, /obj/item/clothing/mask/chewable/candy/lolli, /obj/item/extrapolator, /obj/item/gene_scanner))))
 
 /// CAPABILITIES(/obj/item/storage/quickdraw) at code/game/objects/items/weapons/storage/quickdraw.dm:17
@@ -1996,86 +2109,30 @@
 	into += entry_line(9)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
 
-/// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:299
-/obj/machinery/access_button/declared_entries(list/into)
+/// CAPABILITIES(/obj/item/storage/wallet/poly) at code/game/objects/items/weapons/storage/wallets.dm:119
+/obj/item/storage/wallet/poly/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/airlock_control.dm", 299, /obj/machinery/access_button)
-	into += entry_line(300)
-	into += list(global.multitool_settings(list( list("Tag", "master_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'."))))
-	into += entry_line(304)
-	into += list(global.op("press", global.inputs(global.hand(), global.item(/obj/item/card/id), global.item(/obj/item/pda)), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(button_allows), because = MSG(access_button/denied))), global.then(PROC_REF(pressed))))
-	into += entry_line(305)
-	into += list(global.on_op("press", global.then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
+	into += entry_block("code/game/objects/items/weapons/storage/wallets.dm", 119, /obj/item/storage/wallet/poly)
+	into += entry_line(120)
+	into += list(held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED))
+	into += entry_line(121)
+	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
 
-/// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:190
-/obj/machinery/airlock_sensor/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/doors/airlock_control.dm", 190, /obj/machinery/airlock_sensor)
-	into += entry_line(191)
-	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(sample_pressure)), when = nameof(on)))
-	into += entry_line(192)
-	into += list(global.multitool_settings(list( list("Master Tag", "master_tag", "text", 30), list("ID Tag", "id_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior."))))
-	into += entry_line(197)
-	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
-
-/// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
-/obj/machinery/button/remote/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 34, /obj/machinery/button/remote)
-	into += entry_line(35)
-	into += list(global.emag(global.then(PROC_REF(lock_scorched)), repeatable = TRUE))
-	into += entry_line(36)
-	into += list(global.extend("emag.use", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
-	into += entry_line(37)
-	into += list(global.extend("emag.subvert", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
-	into += entry_line(38)
-	into += list(global.op("press_hand", global.hand(), global.label("Toggle"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
-	into += entry_line(40)
-	into += list(global.op("press_item", global.item(/obj/item), global.label("Toggle"), global.when(global.req(PROC_REF(item_presses))), global.priority(OP_PRIORITY_NORMAL + 1), global.wait(0), global.needs(global.req(PROC_REF(button_works), because = MSG(button/dead)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
-	into += entry_line(42)
-	into += list(global.op("press_silicon", global.ai(), global.wait(0), global.needs(global.req(PROC_REF(has_network), because = MSG(button/no_route)), global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
-	into += entry_line(44)
-	into += list(global.on_op("press_hand", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
-	into += entry_line(45)
-	into += list(global.on_op("press_item", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
-	into += entry_line(46)
-	into += list(global.on_op("press_silicon", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
-
-/// CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod) at code/modules/mining/shelter_atoms.dm:643
-/obj/machinery/button/remote/airlock/survival_pod/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/modules/mining/shelter_atoms.dm", 643, /obj/machinery/button/remote/airlock/survival_pod)
-	into += entry_line(644)
-	into += list(global.without("press_hand"))
-	into += entry_line(645)
-	into += list(global.op("pod_use", global.hand(), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(pod_used))))
-
-/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:187
+/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
 /obj/machinery/button/remote/blast_door/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 187, /obj/machinery/button/remote/blast_door)
-	into += entry_line(188)
+	into += entry_block("code/game/machinery/door_control.dm", 176, /obj/machinery/button/remote/blast_door)
+	into += entry_line(177)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
 
-/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:238
+/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:227
 /obj/machinery/button/remote/driver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 238, /obj/machinery/button/remote/driver)
-	into += entry_line(239)
+	into += entry_block("code/game/machinery/door_control.dm", 227, /obj/machinery/button/remote/driver)
+	into += entry_line(228)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
-	into += entry_line(240)
+	into += entry_line(229)
 	into += list(global.ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
-	into += entry_line(241)
-	into += list(global.op("set_id", global.tool(TOOL_MULTITOOL), global.label("Set the id"), global.wait(0), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(id_question)))), global.then(PROC_REF(id_entered))))
-
-/// CAPABILITIES(/obj/machinery/button/remote/noemag) at code/game/machinery/buttons.dm:124
-/obj/machinery/button/remote/noemag/declared_entries(list/into)
-	..(into)
-	into += entry_block("code/game/machinery/buttons.dm", 124, /obj/machinery/button/remote/noemag)
-	into += entry_line(125)
-	into += list(global.without(CAP_EMAG))
-	into += entry_line(126)
-	into += list(global.op("emag_refused", global.item(/obj/item/card/emag), global.priority(OP_PRIORITY_SUBVERT), global.wait(0), global.needs(global.req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), global.then(PROC_REF(press_nothing))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -2318,37 +2375,35 @@
 	into += entry_line(97)
 	into += list(global.op("mend", global.item(/obj/item/stack/material/plasteel), global.label("Repair"), global.priority(OP_PRIORITY_PART), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired))), global.then(PROC_REF(mended)), global.says(MSG(blast_door/repaired))))
 
-/// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/firedoor.dm:149
+/// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/firedoor.dm:151
 /obj/machinery/door/firedoor/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/firedoor.dm", 149, /obj/machinery/door/firedoor)
-	into += entry_line(150)
-	into += list(global.ref_one(nameof(turbolift_floor), /datum/turbolift_floor))
-	into += entry_line(151)
-	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(air_check)), when = nameof(density)))
+	into += entry_block("code/game/machinery/doors/firedoor.dm", 151, /obj/machinery/door/firedoor)
 	into += entry_line(152)
-	into += list(global.op("busy", global.inputs(global.hand(), global.item(/obj/item)), global.priority(OP_PRIORITY_CLAW + 8), global.when(nameof(operating)), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += list(global.ref_one(nameof(turbolift_floor), /datum/turbolift_floor))
 	into += entry_line(153)
+	into += list(global.op("busy", global.inputs(global.hand(), global.item(/obj/item)), global.priority(OP_PRIORITY_CLAW + 8), global.when(nameof(operating)), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(154)
 	into += list(global.op("use", global.hand(), global.label("Use"), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
-	into += entry_line(157)
+	into += entry_line(158)
 	into += list(global.op("remote_use", global.ai(), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
-	into += entry_line(161)
-	into += list(global.op("force_claws", global.hand(), global.label("Force"), global.when(global.req(PROC_REF(claws_force))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(claws_wait)), global.then(PROC_REF(claws_forced))))
 	into += entry_line(162)
-	into += list(global.op("force_generic", global.ai(), global.wait(PROC_REF(generic_wait)), global.then(PROC_REF(generic_forced))))
+	into += list(global.op("force_claws", global.hand(), global.label("Force"), global.when(global.req(PROC_REF(claws_force))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(claws_wait)), global.then(PROC_REF(claws_forced))))
 	into += entry_line(163)
-	into += list(global.op("tape", global.item(/obj/item/taperoll), global.priority(OP_PRIORITY_CLAW + 5), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += list(global.op("force_generic", global.ai(), global.wait(PROC_REF(generic_wait)), global.then(PROC_REF(generic_forced))))
 	into += entry_line(164)
+	into += list(global.op("tape", global.item(/obj/item/taperoll), global.priority(OP_PRIORITY_CLAW + 5), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(165)
 	into += list(global.op("welded", global.item(/obj/item), global.priority(OP_PRIORITY_CLAW + 4), global.when(nameof(blocked)), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_shut))), global.then(PROC_REF(nothing_done))))
-	into += entry_line(166)
+	into += entry_line(167)
 	into += list(global.op("pry", global.item(/obj/item), global.label("Force"), global.when(global.req(PROC_REF(prying_item))), global.priority(OP_PRIORITY_CLAW + 3), global.wait(3 SECONDS), global.claims(), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), global.then(PROC_REF(item_forced))))
-	into += entry_line(168)
+	into += entry_line(169)
 	into += list(global.op("weld", global.tool(TOOL_WELDER), global.label("Weld"), global.when(global.cond_not(PROC_REF(repairable))), global.priority(OP_PRIORITY_CLAW + 6), global.wait(0), global.costs(RES_FUEL, 0), global.needs(global.req_unclaimed(because = MSG(firedoor/busy_prying))), global.then(PROC_REF(weld_toggled))))
-	into += entry_line(170)
-	into += list(global.op("hatch", global.tool(TOOL_SCREWDRIVER), global.label("Maintenance hatch"), global.when(nameof(density)), global.priority(OP_PRIORITY_CLAW + 6), global.wait(0), global.then(PROC_REF(hatch_toggled))))
 	into += entry_line(171)
+	into += list(global.op("hatch", global.tool(TOOL_SCREWDRIVER), global.label("Maintenance hatch"), global.when(nameof(density)), global.priority(OP_PRIORITY_CLAW + 6), global.wait(0), global.then(PROC_REF(hatch_toggled))))
+	into += entry_line(172)
 	into += list(global.op("remove_electronics", global.tool(TOOL_CROWBAR), global.label("Remove electronics"), global.when(nameof(blocked)), global.priority(OP_PRIORITY_CLAW + 6), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(hatch_reachable), because = MSG(firedoor/hatch_first))), global.then(PROC_REF(electronics_out))))
-	into += entry_line(173)
+	into += entry_line(174)
 	into += list(global.op("pry_tool", global.tool(TOOL_CROWBAR), global.label("Force"), global.when(global.cond_not(nameof(blocked))), global.priority(OP_PRIORITY_CLAW + 6), global.wait(3 SECONDS), global.claims(), global.needs(global.req(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), global.then(PROC_REF(tool_forced))))
 
 /// CAPABILITIES(/obj/machinery/door/unpowered) at code/game/machinery/doors/unpowered.dm:12
@@ -2740,6 +2795,49 @@
 	into += list(global.op("unglaze", global.tool(TOOL_WELDER), global.label("Take the glass out"), global.when(nameof(glass)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(glass_out))))
 	into += entry_line(42)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
+
+/// CAPABILITIES(/obj/structure/table) at code/modules/tables/tables.dm:76
+/obj/structure/table/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/tables/tables.dm", 76, /obj/structure/table)
+	into += entry_line(77)
+	into += list(table_frame())
+	into += entry_line(78)
+	into += list(global.extend("construction.dismantle", global.when(global.req_graph_at(list(STAGE_TABLE_FRAME))), global.needs(global.req(PROC_REF(dismantle_allowed), because = MSG(table/no_dismantle)))))
+	into += entry_line(79)
+	into += list(global.extend("construction.build:table_reinforced", global.priority(global.above("place_dragged"))))
+	into += entry_line(80)
+	into += list(global.op("repair", global.tool(TOOL_WELDER), global.wait(2 SECONDS), global.label("Repair"), global.when(global.req(PROC_REF(is_damaged))), global.then(PROC_REF(repaired)), global.says(MSG(table/repaired))))
+	into += entry_line(82)
+	into += list(global.op("carpet", global.stack(/obj/item/stack/tile/carpet, 1), global.wait(0), global.label("Carpet"), global.when(global.req(PROC_REF(can_carpet))), global.then(PROC_REF(carpet_laid)), global.says(MSG(table/carpeted))))
+	into += entry_line(84)
+	into += list(global.op("uncarpet", global.tool(TOOL_CROWBAR), global.wait(0), global.label("Remove carpet"), global.when(nameof(carpeted)), global.then(PROC_REF(carpet_lifted)), global.says(MSG(table/uncarpeted))))
+	into += entry_line(86)
+	into += list(global.op("flip", global.menu(), global.label("Flip table"), global.when(global.req(PROC_REF(is_flippable))), global.needs(global.req(PROC_REF(actor_can_flip), because = MSG(table/hands_busy)), global.req(PROC_REF(can_flip_away), because = MSG(table/wont_budge))), global.then(PROC_REF(flip_over)), global.says(MSG(table/flipped))))
+	into += entry_line(89)
+	into += list(global.op("put_back", global.menu(), global.label("Put table back"), global.when(global.req(PROC_REF(is_flipped_up))), global.needs(global.req(PROC_REF(actor_can_touch), because = MSG(table/hands_busy)), global.req(PROC_REF(can_put_back), because = PROC_REF(put_back_reason))), global.then(PROC_REF(put_back)), global.says(MSG(table/put_back))))
+	into += entry_line(92)
+	into += list(global.op("slice_blade", global.item(/obj/item/melee/energy/blade), global.then(PROC_REF(sliced_apart))))
+	into += entry_line(93)
+	into += list(global.op("slice_arm_blade", global.item(/obj/item/melee/changeling/arm_blade), global.then(PROC_REF(sliced_apart))))
+	into += entry_line(94)
+	into += list(global.op("claw", global.hand(), global.when(global.req(PROC_REF(actor_is_xeno))), global.then(PROC_REF(clawed_apart))))
+	into += entry_line(95)
+	into += list(global.op("slam", global.item(/obj/item/grab), global.hostile(), global.label("Slam against table"), global.when(global.req(PROC_REF(slam_applies))), global.then(PROC_REF(slam_face))))
+	into += entry_line(96)
+	into += list(global.op("put_on", global.item(/obj/item/grab), global.label("Put on table"), global.when(global.req(PROC_REF(person_grabbed))), global.needs(global.req(PROC_REF(person_can_go_on), because = PROC_REF(person_refusal))), global.then(PROC_REF(put_person_on))))
+	into += entry_line(98)
+	into += list(global.op("place", global.item(/obj/item), global.label("Place"), global.priority(OP_PRIORITY_NORMAL - 5), global.needs(global.req(PROC_REF(has_surface), because = MSG(table/needs_plating)), global.req(PROC_REF(held_is_carried), because = MSG(table/not_in_hand))), global.then(PROC_REF(place_held))))
+	into += entry_line(101)
+	into += list(global.op("place_dragged", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.label("Place"), global.needs(global.req(PROC_REF(not_a_reinforcing_drag), because = PROC_REF(reinforce_refusal))), global.then(PROC_REF(place_dragged))))
+	into += entry_line(103)
+	into += list(global.on_op("construction.build:table_plated", global.then(PROC_REF(layers_changed))))
+	into += entry_line(104)
+	into += list(global.on_op("construction.build:table_reinforced", global.then(PROC_REF(layers_changed))))
+	into += entry_line(105)
+	into += list(global.on_op("construction.undo:table_plated", global.then(PROC_REF(layers_changed))))
+	into += entry_line(106)
+	into += list(global.on_op("construction.undo:table_reinforced", global.then(PROC_REF(layers_changed))))
 
 /// CAPABILITIES(/obj/structure/windoor_assembly) at code/game/objects/structures/windoor_assembly.dm:84
 /obj/structure/windoor_assembly/declared_entries(list/into)
@@ -3333,6 +3431,27 @@
 	into += entry_line(39)
 	into += list(global.on_notice(/datum/notice/e4_struck, global.then(PROC_REF(heard_whatever)), outcome = ACT_ANY))
 
+/// CAPABILITIES(/obj/eg2_asker) at code/tests/engine/eg2_fixtures.dm:17
+/obj/eg2_asker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/eg2_fixtures.dm", 17, /obj/eg2_asker)
+	into += entry_line(18)
+	into += list(global.op("pick", global.menu(), global.asks(/datum/prompt/choice, fields = list("question" = "Which?", "choices" = list("red", "blue"))), global.then(PROC_REF(answered))))
+	into += entry_line(19)
+	into += list(global.op("pick_proc", global.menu(), global.asks(/datum/prompt/choice, fields = list("choices" = global.computed(PROC_REF(computed_choices)))), global.then(PROC_REF(answered))))
+	into += entry_line(20)
+	into += list(global.op("pick_none", global.menu(), global.asks(/datum/prompt/choice, fields = list("choices" = list())), global.then(PROC_REF(answered))))
+	into += entry_line(21)
+	into += list(global.op("tint", global.menu(), global.asks(/datum/prompt/color, fields = list("default" = nameof(tint))), global.then(PROC_REF(answered))))
+	into += entry_line(22)
+	into += list(global.op("boxes", global.menu(), global.asks(/datum/prompt/checklist, fields = list("choices" = list("a", "b", "c"), "min_picks" = 1, "max_picks" = 2)), global.then(PROC_REF(answered))))
+	into += entry_line(23)
+	into += list(global.op("flags", global.menu(), global.asks(/datum/prompt/bitfield, fields = list("default" = 5, "editable" = 3)), global.then(PROC_REF(answered))))
+	into += entry_line(24)
+	into += list(global.op("words", global.menu(), global.asks(/datum/prompt/text, fields = list("max_len" = 5)), global.then(PROC_REF(answered))))
+	into += entry_line(25)
+	into += list(global.op("amount", global.menu(), global.asks(/datum/prompt/number, fields = list("min_value" = 1, "max_value" = 10, "step" = 1)), global.then(PROC_REF(answered))))
+
 /// CAPABILITIES(/obj/eg2_waiter) at code/tests/engine/eg2_wait_fixtures.dm:10
 /obj/eg2_waiter/declared_entries(list/into)
 	..(into)
@@ -3341,6 +3460,8 @@
 	into += list(global.op("slow", global.menu(), global.wait(3 SECONDS), global.then(PROC_REF(finished))))
 	into += entry_line(12)
 	into += list(global.op("hush", global.menu(), global.wait(3 SECONDS), global.silent_wait(), global.then(PROC_REF(finished))))
+	into += entry_line(12)
+	into += list(global.op("careful", global.menu(), global.wait(3 SECONDS), global.on_interrupt(PROC_REF(broken)), global.then(PROC_REF(finished))))
 
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)
@@ -3547,11 +3668,11 @@
 	into += entry_line(236)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
-/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:270
+/// CAPABILITIES(/obj/p2_asker) at code/tests/engine/p2_fixtures.dm:274
 /obj/p2_asker/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 270, /obj/p2_asker)
-	into += entry_line(270)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 274, /obj/p2_asker)
+	into += entry_line(274)
 	into += list(global.op("ask", global.ui_act(), global.asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), global.then(PROC_REF(asked_done))))
 
 /// CAPABILITIES(/obj/p2_bundled) at code/tests/engine/p2_fixtures.dm:204
@@ -3568,13 +3689,13 @@
 	into += entry_line(212)
 	into += list(global.without(CAP_P2_BUNDLE))
 
-/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:250
+/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:252
 /obj/p2_dragtarget/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 250, /obj/p2_dragtarget)
-	into += entry_line(250)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 252, /obj/p2_dragtarget)
+	into += entry_line(252)
 	into += list(global.op("use", global.item(/obj/item), global.then(PROC_REF(was_used))))
-	into += entry_line(250)
+	into += entry_line(252)
 	into += list(global.op("drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(was_dragged))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91
@@ -3614,24 +3735,24 @@
 	into += entry_line(27)
 	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(take_over)))))
 
-/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:287
+/// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:291
 /obj/p2_windowed/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 287, /obj/p2_windowed)
-	into += entry_line(287)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 291, /obj/p2_windowed)
+	into += entry_line(291)
 	into += list(global.interface("P2First"))
-	into += entry_line(287)
+	into += entry_line(291)
 	into += list(global.op("p2_window_press", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
-/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:296
+/// CAPABILITIES(/obj/p2_windowed/second) at code/tests/engine/p2_fixtures.dm:300
 /obj/p2_windowed/second/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 296, /obj/p2_windowed/second)
-	into += entry_line(296)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 300, /obj/p2_windowed/second)
+	into += entry_line(300)
 	into += list(global.without("ui_open"))
-	into += entry_line(296)
+	into += entry_line(300)
 	into += list(global.interface("P2Second"))
-	into += entry_line(296)
+	into += entry_line(300)
 	into += list(global.op("p2_window_press_second", global.ui_act(), global.then(PROC_REF(window_pressed))))
 
 /// CAPABILITIES(/obj/p2s_chain) at code/tests/engine/p2_storage_fixtures.dm:12

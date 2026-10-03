@@ -935,6 +935,7 @@ Turf and target are seperate in case you want to teleport some distance from a t
 	return copiedobjs
 
 /proc/get_cardinal_dir(atom/A, atom/B)
+	READS_FROM() // two places on the map, asked when a choice is made
 	var/dx = abs(B.x - A.x)
 	var/dy = abs(B.y - A.y)
 	return get_dir(A, B) & (rand() * (dx+dy) < dy ? 3 : 12)

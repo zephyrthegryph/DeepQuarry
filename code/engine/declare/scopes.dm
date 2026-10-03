@@ -182,12 +182,14 @@ GLOBAL_LIST_INIT(relation_scope_kinds, list(ENTRY_PROVIDES, "contributes", ENTRY
 /proc/slot_matches(entry_slot, slot_id, atom/holder)
 	if(islist(entry_slot))
 		return slot_id in entry_slot
-	if(entry_slot == SLOT_ANY_WORN || entry_slot == SLOT_ANY_HELD)
+	if(entry_slot == SLOT_ANY_WORN || entry_slot == SLOT_ANY_HELD || entry_slot == SLOT_ANY_CARRIED)
 		var/datum/om/relation/slot/def = holder?.ledger?.def_by_id(slot_id)
 		if(!def)
 			return FALSE
 		if(entry_slot == SLOT_ANY_HELD)
 			return istype(def, /datum/om/relation/slot/body/hand)
+		if(entry_slot == SLOT_ANY_CARRIED)
+			return istype(def, /datum/om/relation/slot/body)
 		var/datum/om/relation/slot/body/body_def = def
 		return istype(body_def) && !!(body_def.roles & BODY_SLOT_WORN)
 	return entry_slot == slot_id
