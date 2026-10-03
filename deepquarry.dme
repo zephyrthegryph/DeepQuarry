@@ -5692,6 +5692,7 @@
 #include "code\library\machine\machine.dm"
 #include "code\library\machine\doors.dm"
 #include "code\library\machine\door_parts.dm"
+#include "code\library\machine\multitool_settings.dm"
 #include "code\library\access\lock.dm"
 #include "code\library\access\emag.dm"
 #include "code\library\access\subversion.dm"

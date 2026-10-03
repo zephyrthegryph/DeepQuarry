@@ -43,7 +43,6 @@
 		// parks until MACHINE_WAKE() (tools/ci/pollers_lint.py checks this list is complete).
 		/obj/machinery/abstract_grub_machine,
 		/obj/machinery/ai_powersupply,
-		/obj/machinery/airlock_sensor,
 		/obj/machinery/anomaly_harvester,
 		/obj/machinery/appliance,
 		/obj/machinery/artifact,

@@ -2249,6 +2249,99 @@
 	TEST_ASSERT(B.density, "and the old door no longer answers it")
 
 // =====================================================================================================================
+// AIRLOCK SENSORS AND ACCESS BUTTONS
+// =====================================================================================================================
+
+/// Hears what a sensor or a button sends on the airlock frequency.
+/obj/p2_radio_listener
+	var/list/heard
+
+/obj/p2_radio_listener/receive_signal(datum/signal/signal)
+	LAZYADD(heard, list(signal.data.Copy()))
+
+/// A listener on the airlock frequency, next to where a sensor or a button is put at (2, 2).
+/datum/unit_test/dq_p2_door/proc/radio_listener()
+	var/obj/p2_radio_listener/L = allocate(/obj/p2_radio_listener, tile(1, 2))
+	GLOB.radio_service.add_object(L, AIRLOCK_FREQ, RADIO_AIRLOCK)
+	return L
+
+/datum/unit_test/dq_p2_door/access_button_sends_its_command_to_whoever_has_access
+
+/datum/unit_test/dq_p2_door/access_button_sends_its_command_to_whoever_has_access/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	button.master_tag = "p2_controller"
+	button.req_access = list(ACCESS_ENGINE)
+	var/mob/living/carbon/human/stranger = make_person(null, tile(3, 2))
+	var/mob/living/carbon/human/engineer = make_person(list(ACCESS_ENGINE), tile(3, 3))
+	click(stranger, button, null)
+	TEST_ASSERT(!LAZYLEN(L.heard), "a stranger's press sends nothing")
+	click(engineer, button, null)
+	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an engineer's press sends one signal")
+	var/list/signal = L.heard[1]
+	TEST_ASSERT_EQUAL(signal["tag"], "p2_controller", "to its controller")
+	TEST_ASSERT_EQUAL(signal["command"], "cycle_interior", "with its command")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/access_button_takes_a_swiped_id
+
+/datum/unit_test/dq_p2_door/access_button_takes_a_swiped_id/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/access_button/airlock_interior/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	button.req_access = list(ACCESS_ENGINE)
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	var/obj/item/card/id/card = give_item(H, /obj/item/card/id)
+	card.access = list(ACCESS_ENGINE)
+	click(H, button, card)
+	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an ID swiped on it presses it")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure
+
+/datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure/run_gate()
+	var/obj/p2_radio_listener/L = radio_listener()
+	var/obj/machinery/airlock_sensor/sensor = allocate(/obj/machinery/airlock_sensor/airlock_interior, tile(2, 2))
+	p2_door_set_power(sensor, TRUE)
+	sensor.master_tag = "p2_controller"
+	sensor.id_tag = "p2_sensor"
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	click(H, sensor, null)
+	var/cycled = FALSE
+	var/reported = FALSE
+	for(var/list/signal in L.heard)
+		if(signal["command"] == "cycle_interior" && signal["tag"] == "p2_controller")
+			cycled = TRUE
+		if(signal["tag"] == "p2_sensor" && !isnull(signal["pressure"]))
+			reported = TRUE
+	TEST_ASSERT(cycled, "a hand on it asks the controller to cycle")
+	TEST_ASSERT(reported, "and it reports the pressure under its id tag")
+	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+
+/datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool
+
+/datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool/run_gate()
+	var/obj/machinery/access_button/button = allocate(/obj/machinery/access_button/airlock_interior, tile(2, 2))
+	p2_door_set_power(button, TRUE)
+	var/mob/living/carbon/human/H = make_person(null, tile(3, 2))
+	var/obj/item/tool = give_tool(H, /obj/item/multitool)
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "Tag")
+	p2_door_answer(H, "p2_new_tag")
+	settle()
+	TEST_ASSERT_EQUAL(button.master_tag, "p2_new_tag", "the multitool sets the tag")
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "Command")
+	p2_door_answer(H, "open")
+	settle()
+	TEST_ASSERT_EQUAL(button.command, "open", "and the command")
+	p2_door_click(H, button, tool)
+	p2_door_answer(H, "None")
+	settle()
+	TEST_ASSERT_EQUAL(button.command, "open", "None leaves it as it is")
+
+// =====================================================================================================================
 // THE RECORDER
 // =====================================================================================================================
 

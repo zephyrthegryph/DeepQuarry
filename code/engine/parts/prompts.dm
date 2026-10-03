@@ -26,3 +26,9 @@
 /datum/request
 	/// The workflow step name an asks() gave this request (A.step("name")).
 	var/step_name
+
+/// One of a list of choices: the `choices` field lists them (text), and the answer's value is the text picked.
+/datum/prompt/choice
+	question = "Choose one."
+	timeout = 60 SECONDS
+	var/list/choices

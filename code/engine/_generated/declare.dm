@@ -197,6 +197,15 @@
 /datum/capdef_decl/c_maintenance_hatch/spec()
 	return list(CAP_MAINTENANCE_HATCH, /datum/capability/lib/maintenance_hatch, NONE, STACK, "maintenance_hatch", "cover, wires, emag, lock, panel_needs_cover_closed, starts_locked, emag_say")
 
+/// CAPABILITY_TYPE(multitool_settings, CAP_MULTITOOL_SETTINGS) at code/library/machine/multitool_settings.dm:13
+/datum/capability/lib/multitool_settings
+	var/settings = null
+/proc/multitool_settings(settings)
+	RETURN_TYPE(/datum/capability/lib/multitool_settings)
+	return cap_construct(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, list(settings), "settings")
+/datum/capdef_decl/c_multitool_settings/spec()
+	return list(CAP_MULTITOOL_SETTINGS, /datum/capability/lib/multitool_settings, NONE, STACK, "multitool_settings", "settings")
+
 /// CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON) at code/library/providers/natural_weapon.dm:10
 /datum/capability/lib/natural_weapon
 	var/weapon = /datum/natural_weapon
@@ -1986,6 +1995,28 @@
 	into += entry_block("code/modules/casino/casino_items.dm", 8, /obj/item/storage/wallet/casino)
 	into += entry_line(9)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
+
+/// CAPABILITIES(/obj/machinery/access_button) at code/game/machinery/doors/airlock_control.dm:299
+/obj/machinery/access_button/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 299, /obj/machinery/access_button)
+	into += entry_line(300)
+	into += list(global.multitool_settings(list( list("Tag", "master_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: 'open', 'close', 'unlock', 'lock', 'secure_open', 'secure_close', and 'update', without the '. Additionally, some airlocks support 'cycle', 'cycle_interior', and 'cycle_exterior'."))))
+	into += entry_line(304)
+	into += list(global.op("press", global.inputs(global.hand(), global.item(/obj/item/card/id), global.item(/obj/item/pda)), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(button_allows), because = MSG(access_button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(305)
+	into += list(global.on_op("press", global.then(PROC_REF(flash_cycle)), outcome = ACT_REFUSED))
+
+/// CAPABILITIES(/obj/machinery/airlock_sensor) at code/game/machinery/doors/airlock_control.dm:190
+/obj/machinery/airlock_sensor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/airlock_control.dm", 190, /obj/machinery/airlock_sensor)
+	into += entry_line(191)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(sample_pressure)), when = nameof(on)))
+	into += entry_line(192)
+	into += list(global.multitool_settings(list( list("Master Tag", "master_tag", "text", 30), list("ID Tag", "id_tag", "text", 30), list("Frequency", "frequency", "frequency"), list("Command", "command", "text", MAX_TGUI_INPUT, "Valid options include: cycle, cycle_interior, cycle_exterior."))))
+	into += entry_line(197)
+	into += list(global.op("cycle", global.hand(), global.label("Use"), global.wait(0), global.then(PROC_REF(cycle_asked))))
 
 /// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
 /obj/machinery/button/remote/declared_entries(list/into)

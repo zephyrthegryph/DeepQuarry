@@ -263,12 +263,6 @@ GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
 /proc/om_watch_invalidate(datum/entity)
 	om_watch_fire_all(entity)
 
-/datum/world_service/machines/proc/hibernate_airlock_sensor(obj/machinery/airlock_sensor/S)
-	if(!S)
-		return
-	S.register_gas_dependencies()
-	MACHINE_SLEEP(S)
-
 /datum/world_service/machines/proc/hibernate_generator(obj/machinery/power/generator/G)
 	if(!G)
 		return
