@@ -12,7 +12,7 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 		return EMAG_DECLINED
 	var/list/decl = EMAG_DECL(target)
 	if(!decl)
-		return EMAG_DECLINED
+		return emag_target_by_capability(target, user)
 	var/gated = decl[EMAG_DECL_GATED]
 	if(gated && dq_req_field_value(target, "emagged"))
 		if(user && decl[EMAG_DECL_ALREADY])
@@ -28,6 +28,14 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 		if(user && decl[EMAG_DECL_MSG])
 			to_chat(user, span_warning(decl[EMAG_DECL_MSG]))
 	return used
+
+/// The emag of a target that declares it as a capability (emag(...)): the cardless subversion by key. One use is consumed, or EMAG_DECLINED when the
+/// target has none or its requirements refuse.
+/proc/emag_target_by_capability(atom/target, mob/user)
+	if(!op_known_anywhere(user, target, null, "emag.subvert"))
+		return EMAG_DECLINED
+	var/datum/op_result/result = perform_op(user, target, "emag.subvert", null, ORIGIN_SYSTEM)
+	return result?.outcome == ACT_COMMITTED ? 1 : EMAG_DECLINED
 
 /// Sets the `emagged` field after a gated emag, through the setter where the field has one.
 /proc/emag_mark_emagged(atom/target)

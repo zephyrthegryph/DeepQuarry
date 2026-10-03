@@ -1,0 +1,7 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "Firedoors, firedoor assemblies, blast doors and unpowered doors are rebuilt on the capability engine: the use prompt, the weld, the maintenance hatch, forcing, the air check, and the assembly ladder are declared parts."
+  - bugfix: "Plasteel now repairs a damaged blast door, as its code always meant it to."
+  - bugfix: "Lift doors refuse an emag with a word again, and an event's emag still works on doors."
+  - code_imp: "Engine: claims() marks a target as being worked on, computed() lets a prompt's question be read when it opens, and keyed relations know their targets before the first table builds."

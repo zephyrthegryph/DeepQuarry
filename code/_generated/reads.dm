@@ -113,6 +113,10 @@
 	. = ..()
 	. += drawn_from(nameof(frozen), nameof(lights), nameof(max_integrity))
 
+/obj/machinery/door/firedoor/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(ALERT_STATES), nameof(blocked), nameof(dir_alerts), nameof(hatch_open), nameof(pdiff_alert))
+
 /obj/machinery/light/generated_reads()
 	. = ..()
 	. += derive(nameof(area_emergency_off), nameof(power_area))

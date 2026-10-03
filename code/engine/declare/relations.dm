@@ -132,6 +132,7 @@
 
 GLOBAL_LIST_EMPTY(link_decls) // signature -> the link entry
 GLOBAL_LIST_EMPTY(keyed_targets) // target type -> the id var holders key on
+GLOBAL_LIST_INIT(keyed_targets_declared, declared_keyed_targets())
 
 /// Registers a paired relation. Both ends become declarations of their types' ownership tables: tables already built are patched,
 /// tables built later read GLOB.link_decls.
@@ -175,10 +176,7 @@ GLOBAL_LIST_EMPTY(keyed_targets) // target type -> the id var holders key on
 /// table first (a door placed on the map before its button), so a table asks this list, not only the holders' tables built so far. A static, not a
 /// global: tables are built while the globals are still being made.
 /proc/keyed_targets_declared()
-	var/static/list/declared
-	if(isnull(declared))
-		declared = declared_keyed_targets()
-	return declared
+	return GLOB.keyed_targets_declared
 
 /// The link ends and keyed-target declaration that apply to D's type: what build_own_table() adds after the type's own entries.
 /proc/link_entries_for(datum/own_decls/decl, datum/D, datum/own_table/T)

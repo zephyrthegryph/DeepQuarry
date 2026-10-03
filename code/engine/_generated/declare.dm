@@ -845,6 +845,15 @@
 	into += entry_line(133)
 	into += list(global.every(15 SECONDS, global.then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
 
+/// CAPABILITIES(/obj/machinery/door/airlock/lift) at code/modules/turbolift/turbolift_door.dm:49
+/obj/machinery/door/airlock/lift/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/turbolift/turbolift_door.dm", 49, /obj/machinery/door/airlock/lift)
+	into += entry_line(50)
+	into += list(global.without(CAP_EMAG))
+	into += entry_line(51)
+	into += list(global.op("emag_refused", global.item(/obj/item/card/emag), global.priority(OP_PRIORITY_SUBVERT), global.wait(0), global.needs(global.req(PROC_REF(emag_welcome), because = MSG(lift_door/internal))), global.then(PROC_REF(nothing_done))))
+
 /// CAPABILITIES(/obj/machinery/door/blast) at code/game/machinery/doors/blast_door.dm:83
 /obj/machinery/door/blast/declared_entries(list/into)
 	..(into)
@@ -870,7 +879,7 @@
 	into += entry_line(95)
 	into += list(global.op("pry_broken", global.item(/obj/item), global.stance(I_HURT), global.when(global.req(PROC_REF(prying_item))), global.when(PROC_REF(wrecked)), global.priority(OP_PRIORITY_CLAW), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
 	into += entry_line(97)
-	into += list(global.op("mend", global.item(/obj/item/stack/material/plasteel), global.label("Repair"), global.priority(OP_PRIORITY_PART), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired)), global.req(PROC_REF(enough_sheets), because = MSG(blast_door/more_sheets))), global.then(PROC_REF(mended)), global.says(MSG(blast_door/repaired))))
+	into += list(global.op("mend", global.item(/obj/item/stack/material/plasteel), global.label("Repair"), global.priority(OP_PRIORITY_PART), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired))), global.then(PROC_REF(mended)), global.says(MSG(blast_door/repaired))))
 
 /// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/firedoor.dm:149
 /obj/machinery/door/firedoor/declared_entries(list/into)
@@ -1156,7 +1165,7 @@
 	into += entry_line(39)
 	into += list(global.op("anchor", global.tool(TOOL_WRENCH), global.label("Bolt or unbolt"), global.wait(0), global.then(PROC_REF(anchor_toggled))))
 	into += entry_line(40)
-	into += list(global.op("plate_glass", global.item(/obj/item/stack/material), global.label("Install windows"), global.when(global.req(PROC_REF(holding_rglass))), global.when(PROC_REF(unglazed)), global.wait(4 SECONDS), global.then(PROC_REF(glass_in))))
+	into += list(global.op("plate_glass", global.item(/obj/item/stack/material/glass/reinforced), global.label("Install windows"), global.when(PROC_REF(unglazed)), global.wait(4 SECONDS), global.then(PROC_REF(glass_in))))
 	into += entry_line(41)
 	into += list(global.op("unglaze", global.tool(TOOL_WELDER), global.label("Take the glass out"), global.when(nameof(glass)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(glass_out))))
 	into += entry_line(42)

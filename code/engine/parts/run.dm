@@ -330,14 +330,11 @@ GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
 GLOBAL_LIST_EMPTY(op_pending_all)
 
-/// REF(atom) -> the waiting claiming op (claims()) that holds it.
-GLOBAL_LIST_EMPTY(op_claims)
-
 /// Is `target` claimed by an op that is waiting on it (claims())?
 /proc/op_claimed(datum/target)
 	if(!target)
 		return FALSE
-	var/datum/pending_op/P = GLOB.op_claims["[REF(target)]"]
+	var/datum/pending_op/P = target.rx?.claimed_by
 	return !!P && P.active && !QDELETED(P)
 
 /proc/op_pending_of(mob/actor)
@@ -709,7 +706,7 @@ GLOBAL_LIST_EMPTY(op_claims)
 /// The target is claimed for the length of the wait: a claim is in the registry under the target's ref, and the target is told it changed.
 /datum/pending_op/proc/claim_target(datum/claimed)
 	claim_ref = "[REF(claimed)]"
-	GLOB.op_claims[claim_ref] = src
+	rx_of(claimed).claimed_by = src
 	op_changed(claimed)
 	var/atom/A = claimed
 	if(istype(A))
@@ -720,8 +717,8 @@ GLOBAL_LIST_EMPTY(op_claims)
 	if(!claim_ref)
 		return
 	var/datum/claimed = locate(claim_ref)
-	if(GLOB.op_claims[claim_ref] == src)
-		GLOB.op_claims -= claim_ref
+	if(claimed?.rx?.claimed_by == src)
+		claimed.rx.claimed_by = null // ALLOW(ownership): the claim ends with the waiting op that made it
 	claim_ref = null
 	if(claimed)
 		op_changed(claimed)

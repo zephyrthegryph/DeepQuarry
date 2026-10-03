@@ -15,7 +15,7 @@ CAPABILITIES(/obj/machinery/door/unpowered, \
 
 /// Energy blades, and anything at all while the door is locked.
 /obj/machinery/door/unpowered/proc/item_blocked(datum/act/op/A)
-	return istype(A.held, /obj/item/melee/energy/blade) || locked // ALLOW(reads): the lock is a map-set flag no code ever changes
+	return istype(A.held, /obj/item/melee/energy/blade) || locked
 
 /obj/machinery/door/unpowered/proc/item_swallowed(datum/act/op/A)
 	return OP_OK

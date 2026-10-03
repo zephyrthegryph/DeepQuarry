@@ -288,10 +288,18 @@
 		var/file_name = "data/test-snapshots/[replacetext("[type]", "/", "_")].txt"
 		fdel(file_name)
 		text2file(jointext(actual, "\n"), file_name)
+	// Every mismatch is listed in one failure (and the whole current snapshot is in the file above), so one run is enough to regenerate the rows.
+	var/list/mismatches = list()
 	for(var/line in actual)
-		TEST_ASSERT(line in expected, "new or changed snapshot: [line]")
+		if(!(line in expected))
+			mismatches += "new or changed snapshot: [line]"
 	for(var/line in expected)
-		TEST_ASSERT(line in actual, "missing snapshot: [line]")
+		if(!(line in actual))
+			mismatches += "missing snapshot: [line]"
+	var/report = "[length(mismatches)] snapshot rows differ (the current rows are in data/test-snapshots):"
+	for(var/row in mismatches)
+		report += "\n[row]"
+	TEST_ASSERT(!length(mismatches), report)
 
 /// Every entry interaction id recorded in a domain snapshot: those need no dedicated test.
 /proc/dq_snapshot_covered_ids()
