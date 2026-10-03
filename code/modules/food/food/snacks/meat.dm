@@ -20,8 +20,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat, null, list(REAGE
 	if (name == initial(name))
 		name = "cooked [name]"
 
-CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat, \
-	op("cut_strips", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Cut it into strips"), then(PROC_REF(cut_into_strips))))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat)
+	op("cut_strips", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Cut it into strips"), then(PROC_REF(cut_into_strips)))
 
 /obj/item/reagent_containers/food/snacks/meat/proc/cut_into_strips(datum/act/op/A)
 	return turn_into(A, /obj/item/reagent_containers/food/snacks/rawcutlet, "You cut the meat into thin strips.", copies = 3)
@@ -174,8 +174,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/worm, null, list(
 
 
 // A knife on it also frees what is inside, and then cuts it as any meat is cut.
-CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/worm, \
-	op("free_chunks", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 2), label("Cut the tissue"), then(PROC_REF(chunks_freed)), passes()))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/worm)
+	op("free_chunks", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 2), label("Cut the tissue"), then(PROC_REF(chunks_freed)), passes())
 
 /obj/item/reagent_containers/food/snacks/meat/worm/proc/chunks_freed(datum/act/op/A)
 	var/mob/user = A.actor

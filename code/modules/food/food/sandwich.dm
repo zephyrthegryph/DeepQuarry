@@ -8,10 +8,10 @@
 	var/list/ingredients
 
 // A shard is hidden in it, and a food is layered on it until it would collapse.
-CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich, \
-	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden))), \
-	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"), \
-		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered))))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich)
+	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden)))
+	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"),
+		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered)))
 
 MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to collapse.")
 
