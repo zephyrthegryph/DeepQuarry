@@ -50,13 +50,16 @@
 
 CAPABILITIES(/datum/stock)
 	owns_one(nameof(industry), /datum/industry)
+	owns_many(nameof(articles))
+	owns_many(nameof(borrow_brokers))
+	owns_many(nameof(events))
 
 /datum/stock/proc/addEvent(datum/stockEvent/E)
-	own_add(src, nameof(events), E)
+	rel_add(src, nameof(events), E)
 
 /datum/stock/proc/addArticle(datum/article/A)
 	if (!(A in articles))
-		own_add(src, nameof(articles), A) // appended: newest article is last
+		rel_add(src, nameof(articles), A) // appended: newest article is last
 	EXPIRY_STAMP(A, ticks, CLOCK_WORLD)
 
 /datum/stock/proc/generateEvents()
@@ -242,7 +245,7 @@ CAPABILITIES(/datum/stock)
 	B.deposit = rand(20, 70) / 100
 	B.share_debt = B.share_amount
 	B.offer_expires = rand(5, 10) * 600 + world.time
-	own_add(src, nameof(borrow_brokers), B)
+	rel_add(src, nameof(borrow_brokers), B)
 
 /datum/stock/proc/modifyAccount(whose, by, force=0)
 	var/datum/money_account/account = GLOB.department_accounts[DEPARTMENT_CARGO]

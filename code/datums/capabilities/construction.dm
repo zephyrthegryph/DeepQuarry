@@ -410,6 +410,9 @@ CAPABILITIES(/datum/capability/construction)
 	/// Problems found while reading the declaration (validate() reports them).
 	var/tmp/list/row_errors
 
+CAPABILITIES(/datum/construction_ladder)
+	owns_many(nameof(edges))
+
 /datum/construction_ladder/New(datum/capability/construction/owner, declared_on)
 	..()
 	rel_set(src, nameof(src.cap), owner)
@@ -558,7 +561,7 @@ CAPABILITIES(/datum/capability/construction)
 		step_key = "[copytext(step_key, 1, findtext(step_key, "#") || 0)]#[n]"
 	edge_ids[edge.id] = TRUE
 	op_attach(edge, "step:[step_key]", ACT_USE, edge.priority, OP_STRUCTURAL, at = edge.at)
-	own_add(src, nameof(src.edges), edge)
+	rel_add(src, nameof(src.edges), edge)
 	var/index = length(edges)
 	if(edge.from_state == LADDER_ANY)
 		wildcard_edges += index

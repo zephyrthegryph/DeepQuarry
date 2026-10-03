@@ -6,6 +6,9 @@
 	/// FALSE-init nodes are private to this tree, not registered decls).
 	var/list/children
 
+CAPABILITIES(/datum/decl/hierarchy)
+	owns_many(nameof(children))
+
 /datum/decl/hierarchy/New(full_init = TRUE)
 	if(!full_init)
 		return
@@ -28,7 +31,7 @@
 		dd_insertObjectList(siblings, subtype_instance)
 	for(var/datum/decl/hierarchy/node as anything in sorted_children)
 		for(var/datum/decl/hierarchy/child as anything in sorted_children[node])
-			own_add(node, nameof(node.children), child)
+			rel_add(node, nameof(node.children), child)
 
 /datum/decl/hierarchy/proc/is_category()
 	return hierarchy_type == type || length(children)

@@ -138,7 +138,7 @@
 	var/datum/previous_holder = owner_of(A)
 	if(previous_holder && previous_holder != src)
 		own_take_member(previous_holder, A.own_slot, A)
-	own_add(src, nameof(afflictions), A)
+	rel_add(src, nameof(afflictions), A)
 	LAZYADDASSOCLIST(afflictions_by_type, A.type, A)
 	if(location)
 		LAZYADDASSOCLIST(afflictions_by_location, location, A)

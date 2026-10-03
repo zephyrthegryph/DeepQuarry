@@ -38,10 +38,13 @@
 	var/list/utility_requirements
 	var/list/variant_options
 
+CAPABILITIES(/datum/generated_room_feature)
+	owns_many(nameof(constraints))
+
 /datum/generated_room_feature/New()
 	..()
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	utility_requirements = TYPE_TABLE_GET(src, build_utility_requirements)
 	variant_options = build_variant_options()
 
@@ -269,11 +272,14 @@ TYPE_TABLE(/datum/generated_room_feature/operating_computer, build_utility_requi
 	/// Maximum walking distance between fixtures in one activity module.
 	var/cohesion_radius = 5
 
+CAPABILITIES(/datum/generated_room_feature_group)
+	owns_many(nameof(constraints))
+
 /datum/generated_room_feature_group/New()
 	..()
 	feature_types = TYPE_TABLE_GET(src, build_group_feature_types)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 
 
 TYPE_TABLE_DECLARE(/datum/generated_room_feature_group, build_group_feature_types, list())
@@ -444,12 +450,16 @@ TYPE_TABLE(/datum/generated_room_feature_group/cargo_workstation, build_group_fe
 	var/list/constraints
 	var/list/occupied_offsets
 
+CAPABILITIES(/datum/generated_room_fragment)
+	owns_many(nameof(constraints))
+	owns_many(nameof(sockets))
+
 /datum/generated_room_fragment/New()
 	..()
 	for(var/datum/generated_room_fragment_socket/built_socket in build_sockets())
-		own_add(src, nameof(sockets), built_socket)
+		rel_add(src, nameof(sockets), built_socket)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	occupied_offsets = TYPE_TABLE_GET(src, build_occupied_offsets)
 
 
@@ -495,7 +505,7 @@ TYPE_TABLE_DECLARE(/datum/generated_room_fragment, build_occupied_offsets, gener
 				continue
 			owner.register_furnishing(movable)
 			if(istype(movable, /obj/machinery/door))
-				own_add(owner, nameof(owner.doors), movable)
+				rel_add(owner, nameof(owner.doors), movable)
 			created = TRUE
 	qdel(template)
 	return created
@@ -541,7 +551,7 @@ TYPE_TABLE(/datum/generated_room_fragment/reception_corner, build_occupied_offse
 	var/obj/machinery/door/window/access = new(access_turf)
 	access.set_dir(EAST)
 	owner.register_furnishing(access)
-	own_add(owner, nameof(owner.doors), access)
+	rel_add(owner, nameof(owner.doors), access)
 	return TRUE
 
 /datum/generated_room_fragment/reception_corner/build_constraints()
@@ -795,6 +805,7 @@ TYPE_TABLE(/datum/generated_room_variant/salvage_industrial, build_style_ids, li
 
 CAPABILITIES(/datum/generated_room_definition)
 	owns_one(nameof(room_style), /datum/generated_room_style)
+	owns_many(nameof(constraints))
 
 /datum/generated_room_definition/New()
 	..()
@@ -803,7 +814,7 @@ CAPABILITIES(/datum/generated_room_definition)
 	optional_groups = TYPE_TABLE_GET(src, build_optional_groups)
 	fragment_options = TYPE_TABLE_GET(src, build_fragment_options)
 	for(var/datum/generated_room_constraint/built_constraint in build_constraints())
-		own_add(src, nameof(constraints), built_constraint)
+		rel_add(src, nameof(constraints), built_constraint)
 	variant_options = TYPE_TABLE_GET(src, build_variant_options)
 	rel_set(src, nameof(room_style), build_room_style())
 

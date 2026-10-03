@@ -33,12 +33,12 @@
 			var/t = pickweight(start_products || list())
 			var/i = new t(src)
 			LAZYREMOVE(start_products, t)
-			own_add(src, nameof(products), i)
+			rel_add(src, nameof(products), i)
 			pick_inventory_quantity --
 	else
 		for(var/item in start_products)
 			var/obj/p = new item(src)
-			own_add(src, nameof(products), p)
+			rel_add(src, nameof(products), p)
 			LAZYREMOVE(start_products, item)
 	if(move_trader)
 		move_trader()

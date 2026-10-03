@@ -43,29 +43,29 @@
 	var/datum/objective/absorb/absorb_objective = new
 	rel_set(absorb_objective, nameof(absorb_objective.owner), changeling)
 	absorb_objective.gen_amount_goal(2, 3)
-	own_add(changeling, nameof(changeling.objectives), absorb_objective)
+	rel_add(changeling, nameof(changeling.objectives), absorb_objective)
 
 	var/datum/objective/assassinate/kill_objective = new
 	rel_set(kill_objective, nameof(kill_objective.owner), changeling)
 	kill_objective.find_target()
-	own_add(changeling, nameof(changeling.objectives), kill_objective)
+	rel_add(changeling, nameof(changeling.objectives), kill_objective)
 
 	var/datum/objective/steal/steal_objective = new
 	rel_set(steal_objective, nameof(steal_objective.owner), changeling)
 	steal_objective.find_target()
-	own_add(changeling, nameof(changeling.objectives), steal_objective)
+	rel_add(changeling, nameof(changeling.objectives), steal_objective)
 
 	switch(rand(1,100))
 		if(1 to 80)
 			if (!(locate_in_list(changeling.objectives, /datum/objective/escape)))
 				var/datum/objective/escape/escape_objective = new
 				rel_set(escape_objective, nameof(escape_objective.owner), changeling)
-				own_add(changeling, nameof(changeling.objectives), escape_objective)
+				rel_add(changeling, nameof(changeling.objectives), escape_objective)
 		else
 			if (!(locate_in_list(changeling.objectives, /datum/objective/survive)))
 				var/datum/objective/survive/survive_objective = new
 				rel_set(survive_objective, nameof(survive_objective.owner), changeling)
-				own_add(changeling, nameof(changeling.objectives), survive_objective)
+				rel_add(changeling, nameof(changeling.objectives), survive_objective)
 	return
 
 /datum/antagonist/changeling/can_become_antag(datum/mind/player, ignore_role)

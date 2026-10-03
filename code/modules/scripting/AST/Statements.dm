@@ -16,6 +16,9 @@
 	var/tmp/datum/node/identifier/object_owned
 	var/list/parameters=list() // ALLOW(instance_list): d: script AST node state
 
+CAPABILITIES(/datum/node/statement/FunctionCall)
+	owns_many(nameof(parameters))
+
 /*
 	Class: FunctionDefinition
 	Defines a function.

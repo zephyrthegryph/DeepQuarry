@@ -332,7 +332,7 @@
 	var/datum/dq_preview_poll/poll = new
 	poll.state = list(generation, jobs, ready, scale_x, scale_y, had_client, list(), world.time + DQ_PREVIEW_JOB_TIMEOUT)
 	rel_set(poll, nameof(poll.prefs), src)
-	own_add(SScharacter_setup, nameof(/datum/system/character_setup::preview_polls), poll)
+	rel_add(SScharacter_setup, nameof(/datum/system/character_setup::preview_polls), poll)
 	// The declared repeat polls once a tick while this holds, starting next tick: never in the
 	// caller's frame, so a job that happens to finish at once still lands asynchronously (the
 	// caller keeps the old preview until then) instead of racing the first check.

@@ -17,6 +17,7 @@ SYSTEM_DEF(events)
 CAPABILITIES(/datum/system/events)
 	owns_one(nameof(new_event), /datum/event_meta)
 	owns_one(nameof(tgui_event_manager_panel), /datum/event_manager_panel)
+	owns_many(nameof(finished_events), /datum/event)
 
 /datum/system/events/initialize()
 	if(initialized)
@@ -50,7 +51,7 @@ CAPABILITIES(/datum/system/events)
 		log_game("Event of '[E.type]' with missing meta-data has completed.")
 		return
 
-	own_add(src, nameof(finished_events), E)
+	rel_add(src, nameof(finished_events), E)
 
 	// Add the event back to the list of available events
 	var/datum/event_container/EC = event_containers[E.severity]

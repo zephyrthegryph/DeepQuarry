@@ -547,6 +547,7 @@ CAPABILITY(/obj/machinery/telecomms, emp_disable(300 SECONDS))
 CAPABILITIES(/obj/machinery/telecomms/server)
 	owns_one(nameof(Compiler), /datum/TCS_Compiler)
 	owns_one(nameof(server_radio), /obj/item/radio/headset)
+	owns_many(nameof(log_entries))
 
 /obj/machinery/telecomms/server/Initialize(mapload)
 	rel_set(src, nameof(Compiler), new /datum/TCS_Compiler())
@@ -619,7 +620,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 					log.input_type = "Corrupt File"
 
 				// Log and store everything that needs to be logged
-				own_add(src, nameof(log_entries), log)
+				rel_add(src, nameof(log_entries), log)
 				if(!(signal.data["name"] in stored_names))
 					LAZYADD(stored_names, signal.data["name"])
 				logs++
@@ -667,7 +668,7 @@ CAPABILITIES(/obj/machinery/telecomms/server)
 	log.input_type = input
 	log.parameters["message"] = content
 	log.parameters["timecode"] = stationtime2text()
-	own_add(src, nameof(log_entries), log)
+	rel_add(src, nameof(log_entries), log)
 	update_logs()
 
 // Simple log entry datum

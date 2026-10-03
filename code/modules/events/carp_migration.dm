@@ -5,6 +5,9 @@
 	var/carp_cap	= 10
 	var/list/spawned_carp
 
+CAPABILITIES(/datum/event/carp_migration)
+	owns_many(nameof(spawned_carp))
+
 /datum/event/carp_migration/setup()
 	if(prob(50))
 		log_game("carp migration: event setup prob() failed, killing")
@@ -75,7 +78,7 @@
 /datum/event/carp_migration/proc/spawn_one_carp(loc)
 	var/mob/living/simple_mob/animal/carp_to_spawn = new /mob/living/simple_mob/animal/space/carp/event(loc)
 	om_hook(carp_to_spawn, /datum/om/event/qdeleting, src, PROC_REF(on_carp_destruction))
-	own_add(src, nameof(spawned_carp), carp_to_spawn)
+	rel_add(src, nameof(spawned_carp), carp_to_spawn)
 	return carp_to_spawn
 
 // Counts living carp spawned by this event.

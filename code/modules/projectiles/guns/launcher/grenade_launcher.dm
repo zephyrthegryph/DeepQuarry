@@ -32,7 +32,7 @@
 	if(length(grenades))
 		next = LAZYACCESS(grenades, 1) //get this first, so that the chambered grenade can still be removed if the grenades list is empty
 	if(chambered())
-		own_add(src, nameof(grenades), chambered()) //rotate the revolving magazine
+		rel_add(src, nameof(grenades), chambered()) //rotate the revolving magazine
 		rel_clear(src, nameof(chambered))
 	if(next)
 		own_take_member(src, nameof(grenades), next) //Remove grenade from loaded list (it stays in our contents, chambered).

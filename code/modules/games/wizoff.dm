@@ -23,7 +23,7 @@
 		P.name = "[cardtext]"
 		P.card_icon = "[icon_state]_card"
 		P.back_icon = "[icon_state]_card_back"
-		own_add(src, nameof(cards), P)
+		rel_add(src, nameof(cards), P)
 
 /obj/item/deck/wizoff/var/list/card_wiz_list = list(
 	"O1: Spell Cards",

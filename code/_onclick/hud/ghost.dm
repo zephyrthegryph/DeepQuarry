@@ -158,47 +158,47 @@
 	using = new /atom/movable/screen/ghost/returntomenu()
 	using.screen_loc = ui_ghost_returntomenu
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/jumptomob()
 	using.screen_loc = ui_ghost_jumptomob
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/orbit()
 	using.screen_loc = ui_ghost_orbit
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/reenter_corpse()
 	using.screen_loc = ui_ghost_reenter_corpse
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/teleport()
 	using.screen_loc = ui_ghost_teleport
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/pai()
 	using.screen_loc = ui_ghost_pai
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/up()
 	using.screen_loc = ui_ghost_updown
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/down()
 	using.screen_loc = ui_ghost_updown
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 
 	using = new /atom/movable/screen/ghost/vr()
 	using.screen_loc = ui_ghost_vr
 	rel_set(using, nameof(using.hud), HUD)
-	own_add(HUD, nameof(HUD.adding), using)
+	rel_add(HUD, nameof(HUD.adding), using)
 	if(client && apply_to_client)
 		client.screen = list()
 		if(length(HUD.adding))

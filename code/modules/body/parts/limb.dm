@@ -14,6 +14,9 @@
 	/// Afflictions carried while this organ is outside a body.
 	var/list/detached_afflictions
 
+CAPABILITIES(/obj/item/organ)
+	owns_many(nameof(detached_afflictions))
+
 /obj/item/organ/external
 	/// Cached sum of non-internal physical wound damage. Read via get_trauma().
 	var/tmp/trauma_cache = 0
@@ -75,7 +78,7 @@
 		owner.body.add_affliction(W, src)
 	else
 		rel_set(W, nameof(W.location), src)
-		own_add(src, nameof(detached_afflictions), W)
+		rel_add(src, nameof(detached_afflictions), W)
 	W.sync()
 	integrity_dirty = TRUE
 
@@ -161,7 +164,7 @@
 	for(var/datum/affliction/A as anything in afflictions_at(O))
 		remove_affliction(A)
 		rel_set(A, nameof(A.location), O)
-		own_add(O, nameof(O.detached_afflictions), A)
+		rel_add(O, nameof(O.detached_afflictions), A)
 
 /// The organ joined this body: adopt what it carries. Called only by
 /// adopt_part() (attach.dm), which invalidates the body once per subtree.

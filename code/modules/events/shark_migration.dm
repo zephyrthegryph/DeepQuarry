@@ -5,6 +5,9 @@
 	var/shark_cap	= 10
 	var/list/spawned_shark
 
+CAPABILITIES(/datum/event/shark_migration)
+	owns_many(nameof(spawned_shark))
+
 /datum/event/shark_migration/setup()
 	announceWhen = rand(30, 60) // 1 to 2 minutes
 	endWhen += severity * 25
@@ -71,7 +74,7 @@
 /datum/event/shark_migration/proc/spawn_one_shark(loc)
 	var/mob/living/simple_mob/animal/M = new /mob/living/simple_mob/animal/space/shark/event(loc)
 	om_hook(M, /datum/om/event/qdeleting, src, PROC_REF(on_shark_destruction))
-	own_add(src, nameof(spawned_shark), M)
+	rel_add(src, nameof(spawned_shark), M)
 	return M
 
 // Counts living shark spawned by this event.

@@ -107,7 +107,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 
 
 /obj/item/clothing/proc/attach_accessory(mob/user, obj/item/clothing/accessory/A)
-	own_add(src, nameof(accessories), A)
+	rel_add(src, nameof(accessories), A)
 	A.on_attached(src, user)
 	om_grant(src, GRANT_VERB, /obj/item/clothing/proc/removetie_verb, src)
 	update_accessory_slowdown()

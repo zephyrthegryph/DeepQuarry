@@ -36,6 +36,7 @@ CAPABILITIES(/atom/movable)
 	owns_one(nameof(overlay_light), /datum/overlay_lighting)
 	owns_one(nameof(recursive_move), /datum/recursive_move)
 	owns_one(nameof(riding_datum), /datum/riding)
+	owns_many(nameof(hose_connectors))
 
 // The proc you should always use to set the light of this atom.
 // Nonesensical value for l_color default, so we can detect if it gets set to null.

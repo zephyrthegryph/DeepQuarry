@@ -23,6 +23,9 @@
 	EXPIRY_DECLARE(end_time)//Used to set when this alarm should clear, in case the origin is lost.
 	var/hidden = FALSE				//If this alarm can be seen from consoles or other things.
 
+CAPABILITIES(/datum/alarm)
+	owns_many(nameof(sources))
+
 /datum/alarm/New(atom/origin, atom/source, duration, severity, hidden)
 	rel_set(src, nameof(origin), origin)
 
@@ -51,7 +54,7 @@
 	var/datum/alarm_source/AS = source_entry(source)
 	if(!AS)
 		AS = new/datum/alarm_source(source)
-		own_add(src, nameof(sources), AS)
+		rel_add(src, nameof(sources), AS)
 		src.hidden = hidden
 	// Currently only non-0 durations can be altered (normal alarms VS EMP blasts)
 	if(AS.duration)

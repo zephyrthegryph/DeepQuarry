@@ -363,6 +363,9 @@ TYPE_TABLE_DECLARE(/mob/living/silicon/robot, robot_component_types, list( \
 	var/obj/item/holder
 	var/list/afflictions
 
+CAPABILITIES(/datum/carried_afflictions)
+	owns_many(nameof(afflictions))
+
 /datum/carried_afflictions/New(obj/item/part)
 	..()
 	rel_set(src, nameof(holder), part)
@@ -374,11 +377,12 @@ CAPABILITIES(/obj/item)
 	owns_one(nameof(economic_adoption), /datum/economic_adoption)
 	owns_one(nameof(identity), /datum/identification)
 	owns_one(nameof(mind_host), /datum/mind_host)
+	owns_many(nameof(possessed_voice))
 /// Pinned in the saved state (code/datums/state/codecs.dm, /datum/state_codec/pinned).
 
 /datum/carried_afflictions/proc/take(list/incoming)
 	for(var/datum/affliction/A as anything in incoming)
-		own_add(src, nameof(afflictions), A)
+		rel_add(src, nameof(afflictions), A)
 
 /// Hand the afflictions back and forget them.
 /datum/carried_afflictions/proc/release()

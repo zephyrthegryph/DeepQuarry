@@ -59,7 +59,7 @@ DECLARE_PERIODIC_WHILE(/datum/hose_connector, PERIODIC_SLOW, "my_hose")
 		if(other.type == type)
 			same++
 	connector_number = same + 1
-	own_add(carrier, nameof(carrier.hose_connectors), src)
+	rel_add(carrier, nameof(carrier.hose_connectors), src)
 	om_hook(carrier, /datum/om/event/examine, src, PROC_REF(on_examine))
 	om_hook(carrier, /datum/om/event/moved, src, PROC_REF(move_react))
 	om_hook(carrier, /datum/om/event/hose_forcepump, src, PROC_REF(on_force_pump))

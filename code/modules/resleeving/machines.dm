@@ -13,7 +13,7 @@
 /obj/machinery/clonepod/transhuman/full/Initialize(mapload)
 	. = ..()
 	for(var/i = 1 to container_limit)
-		own_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
+		rel_add(src, nameof(containers), new /obj/item/reagent_containers/glass/bottle/biomass(src))
 
 /obj/machinery/clonepod/transhuman/growclone(datum/transhuman/body_record/current_project)
 	//Manage machine-specific stuff.

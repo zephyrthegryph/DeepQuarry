@@ -32,6 +32,10 @@
 	var/max_summons = 10			// Maximum allowed summoned entities.  Some cores will have different caps.
 	var/universal = FALSE // Allows non-technomancers to use the core -
 
+CAPABILITIES(/obj/item/technomancer_core)
+	owns_many(nameof(spells))
+	owns_many(nameof(summoned_mobs))
+
 /// Reference to the mob wearing the core. A field: it regenerates and keeps its wearer's upkeep while worn.
 OM_FIELD_VIEW(/obj/item/technomancer_core, mob/living, wearer, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
@@ -184,7 +188,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 		The path supplied was [path].")
 		return
 	var/obj/spellbutton/spell = new(src, path, new_name, ability_icon_state)
-	own_add(src, nameof(spells), spell)
+	rel_add(src, nameof(spells), spell)
 	if(wearer)
 		wearer.ability_master.add_technomancer_ability(spell, ability_icon_state)
 

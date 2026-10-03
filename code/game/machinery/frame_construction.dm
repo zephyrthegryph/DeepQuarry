@@ -418,7 +418,7 @@
 			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
 		else
 			O.moveToNullspace()
-		own_add(new_machine, nameof(new_machine.component_parts), O)
+		rel_add(new_machine, nameof(new_machine.component_parts), O)
 
 	circuit.moveToNullspace()
 	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)

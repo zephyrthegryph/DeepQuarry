@@ -74,6 +74,9 @@
 
 	var/list/symptoms // A list of symptoms that this job might have when we roll a dormant diseas.
 
+CAPABILITIES(/datum/job)
+	owns_many(nameof(symptoms))
+
 /datum/job/New()
 	. = ..()
 	department_accounts = department_accounts || departments_managed

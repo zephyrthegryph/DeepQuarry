@@ -7,6 +7,9 @@
 	var/list/datum/alarm/alarms
 	var/list/listeners				// A list of all objects interested in alarm changes.
 
+CAPABILITIES(/datum/alarm_handler)
+	owns_many(nameof(alarms))
+
 /// Expires alarms every 2 s while any is up (a raised alarm starts it); with none left it parks.
 /datum/alarm_handler/periodic_step()
 	for(var/datum/alarm/A in alarms)
@@ -31,7 +34,7 @@
 	else
 		existing = new/datum/alarm(origin, source, duration, severity, hidden)
 		new_alarm = 1
-		own_add(src, nameof(alarms), existing)
+		rel_add(src, nameof(alarms), existing)
 
 	om_task_periodic(src, PERIODIC_SLOW)
 	if(new_alarm)

@@ -27,6 +27,9 @@
 
 	var/list/integrated_tool_images
 
+CAPABILITIES(/obj/item/robotic_multibelt)
+	owns_many(nameof(cyborg_integrated_tools))
+
 /// The selected tool: one of cyborg_integrated_tools, which owns it.
 /obj/item/robotic_multibelt/relations()
 	. = ..()
@@ -428,7 +431,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	if(!amount)
 		return
 
-	own_add(module, nameof(module.synths), new synth_path(amount))
+	rel_add(module, nameof(module.synths), new synth_path(amount))
 	update_material_multibelts()
 
 /mob/living/silicon/robot/proc/update_material_multibelts()
@@ -522,7 +525,7 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 		var/obj/item/stack/current_stack = new stack_to_add(src)
 		for(var/datum/matter_synth/linked_synth as anything in possible_synths[stack_to_add])
 			rel_add(current_stack, nameof(current_stack.synths), linked_synth)
-		own_add(src, nameof(cyborg_integrated_tools), current_stack)
+		rel_add(src, nameof(cyborg_integrated_tools), current_stack)
 
 	. = ..()
 
@@ -579,6 +582,9 @@ EXTEND_INTERACTIONS(/obj/item/stack/cable_coil/cyborg, INTERACT_USE("Change colo
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/gripper)
+	owns_many(nameof(pockets))
+
 /// The selected pocket (one of `pockets`) or item.
 /obj/item/gripper/relations()
 	. = ..()
@@ -599,7 +605,7 @@ CAPABILITIES(/obj/item/storage/internal/gripper)
 		for(var/i = 1, i <= total_pockets, i++)
 			var/obj/new_pocket = new /obj/item/storage/internal/gripper(src)
 			new_pocket.name = "Pocket [i]"
-			own_add(src, nameof(pockets), new_pocket)
+			rel_add(src, nameof(pockets), new_pocket)
 	rel_set(src, nameof(current_pocket), peek(pockets))
 	if(isrobot(loc.loc)) //We're in the module.
 		rel_set(src, nameof(our_robot), loc.loc)

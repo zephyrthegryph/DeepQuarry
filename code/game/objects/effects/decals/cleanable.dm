@@ -19,6 +19,9 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 	///The type of cleaning required to clean the decal, CLEAN_TYPE_LIGHT_DECAL can be cleaned with mops and soap, CLEAN_TYPE_HARD_DECAL can be cleaned by soap, see __DEFINES/cleaning.dm for the others
 	var/clean_type = CLEAN_TYPE_LIGHT_DECAL
 
+CAPABILITIES(/obj/effect/decal/cleanable)
+	owns_many(nameof(viruses), /datum/affliction/contagion)
+
 /obj/effect/decal/cleanable/Initialize(mapload, _age)
 	if(islist(_age)) // new /obj/effect/decal/cleanable/vomit(loc, contagion_copies(...))
 		add_contagions(_age, copy = FALSE)
@@ -36,7 +39,7 @@ generic_filth = TRUE means when the decal is saved, it will be switched out for 
 /// never aliases (or mutates) its source's contagions.
 /obj/effect/decal/cleanable/proc/add_contagions(list/contagions, copy = TRUE)
 	for(var/datum/affliction/contagion/D in contagions)
-		own_add(src, nameof(viruses), (copy || owner_of(D)) ? D.Copy() : D)
+		rel_add(src, nameof(viruses), (copy || owner_of(D)) ? D.Copy() : D)
 
 /obj/effect/decal/cleanable/wash(clean_types)
 	. = ..()

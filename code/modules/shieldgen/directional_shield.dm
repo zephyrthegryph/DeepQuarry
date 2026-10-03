@@ -98,6 +98,9 @@
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/shield_projector)
+	owns_many(nameof(active_shields))
+
 /obj/item/shield_projector/Initialize(mapload)
 	max_integrity = max_integrity
 	dq_add_recursive_move(src)
@@ -118,7 +121,7 @@
 /obj/item/shield_projector/proc/create_shield(newloc, new_dir)
 	var/obj/effect/directional_shield/S = new(newloc, src)
 	S.dir = new_dir
-	own_add(src, nameof(active_shields), S)
+	rel_add(src, nameof(active_shields), S)
 
 /obj/item/shield_projector/proc/create_shields() // Override this for a specific shape.  Be sure to call ..() for the checks, however.
 	if(active) // Already made.

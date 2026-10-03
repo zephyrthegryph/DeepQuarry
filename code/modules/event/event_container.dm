@@ -14,7 +14,7 @@
 /datum/event_container/proc/add_disabled_events(list/disabled_events)
 	for(var/datum/event_meta/EM in disabled_events)
 		EM.enabled = 0
-		own_add(src, nameof(event_pool), EM)
+		rel_add(src, nameof(event_pool), EM)
 		rel_add(src, nameof(available_events), EM)
 
 /// Replaces the rotation with `metas`: the container owns each one (event_pool) and
@@ -22,7 +22,7 @@
 /datum/event_container/proc/set_available_events(list/metas)
 	rel_clear(src, nameof(available_events))
 	for(var/datum/event_meta/EM as anything in metas)
-		own_add(src, nameof(event_pool), EM)
+		rel_add(src, nameof(event_pool), EM)
 		rel_add(src, nameof(available_events), EM)
 
 /datum/event_container/mundane/New()

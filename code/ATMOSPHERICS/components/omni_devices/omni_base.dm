@@ -25,6 +25,9 @@
 	/// The device's four ports, in GLOB.cardinal order (owned: own_add in Initialize()).
 	var/list/datum/omni_port/ports
 
+CAPABILITIES(/obj/machinery/atmospherics/omni)
+	owns_many(nameof(ports), /datum/omni_port)
+
 DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "base")))
 
 /obj/machinery/atmospherics/omni/Initialize(mapload)
@@ -43,7 +46,7 @@ DECLARE_APPEARANCE(/obj/machinery/atmospherics/omni, null, list(APPEARANCE_ANY =
 				new_port.mode = tag_west
 		if(new_port.mode > 0)
 			initialize_directions |= d
-		own_add(src, nameof(ports), new_port)
+		rel_add(src, nameof(ports), new_port)
 
 	build_icons()
 

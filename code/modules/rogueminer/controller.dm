@@ -100,6 +100,11 @@ GLOBAL_DATUM(rm_controller, /datum/controller/rogue)
 						/mob/living/simple_mob/animal/space/carp/large/huge/roguemines = 1)
 	)
 
+CAPABILITIES(/datum/controller/rogue)
+	owns_many(nameof(all_zones), /datum/rogue/zonemaster)
+	owns_many(nameof(clean_zones), /datum/rogue/zonemaster)
+	owns_many(nameof(ready_zones), /datum/rogue/zonemaster)
+
 /// Difficulty decays every RM_DIFF_DECAY_TIME while set (DECLARE_REPEAT).
 OM_FIELD(/datum/controller/rogue, decaying, FALSE, CHANGE_DATUM_A)
 DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
@@ -109,7 +114,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	lifecycle_decls_init(src) // starts the declaration (a non-atom has no materialize)
 	//How many zones are we working with here
 	for(var/area/asteroid/rogue/A in world)
-		own_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
+		rel_add(src, nameof(all_zones), new /datum/rogue/zonemaster(A))
 	//set_decaying(TRUE) //Decay removed for now, since people aren't getting high scores as it is.
 
 /// One difficulty decay (DECLARE_REPEAT while decaying; may also be called by hand).
@@ -151,7 +156,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in ready_zones)
 		GLOB.rm_controller.dbg("RMC(mc): Finite state machine broken.")
 
-	own_add(src, nameof(clean_zones), ZM)
+	rel_add(src, nameof(clean_zones), ZM)
 
 /datum/controller/rogue/proc/mark_ready(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?
@@ -160,7 +165,7 @@ DECLARE_REPEAT(/datum/controller/rogue, RM_DIFF_DECAY_TIME, decay, "decaying")
 	if(ZM in clean_zones)
 		GLOB.rm_controller.dbg("RMC(mr): Finite state machine broken.")
 
-	own_add(src, nameof(ready_zones), ZM)
+	rel_add(src, nameof(ready_zones), ZM)
 
 /datum/controller/rogue/proc/unmark_clean(datum/rogue/zonemaster/ZM)
 	if(!(ZM in all_zones)) //What? Who?

@@ -26,7 +26,7 @@ CAPABILITIES(/obj/machinery/appliance/mixer)
 
 /obj/machinery/appliance/mixer/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
+	rel_add(src, nameof(cooking_objs), new /datum/cooking_item(new /obj/item/reagent_containers/cooking_container(src)))
 	set_cooking(FALSE)
 	selected_option = DEFAULTPICK(output_options, null)
 	var/datum/cooking_item/CI = LAZYACCESS(cooking_objs, 1)

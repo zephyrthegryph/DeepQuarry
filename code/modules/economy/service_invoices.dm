@@ -173,7 +173,7 @@
 			new /datum/economic_adoption(sale_item, invoice.id, customer?.account_number, customer_department, provider.department_id, credited_value)
 		remaining_personal_payment -= credited_value
 		remaining_by_name[sale_item.name]--
-	own_add(src, nameof(service_invoices), invoice)
+	rel_add(src, nameof(service_invoices), invoice)
 	emit_contract_event(CONTRACT_EVENT_SERVICE_INVOICE_CHANGED, list(
 		"actor_account" = customer?.account_number,
 		"actor_name" = invoice.customer_name,

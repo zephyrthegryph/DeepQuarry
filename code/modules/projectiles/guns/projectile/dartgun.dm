@@ -79,7 +79,7 @@
 		for(var/chem in starting_chems)
 			var/obj/B = new container_type(src)
 			B.reagents.add_reagent(chem, 60)
-			own_add(src, nameof(beakers), B)
+			rel_add(src, nameof(beakers), B)
 	update_icon()
 
 /// Declared icon_state suffix: "-empty", the tracked dart count, or nothing.

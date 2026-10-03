@@ -46,7 +46,7 @@
 	new_spell_master.add_spell(spell_to_add)
 	if(spell_base)
 		new_spell_master.icon_state = spell_base
-	own_add(src, nameof(spell_masters), new_spell_master)
+	rel_add(src, nameof(spell_masters), new_spell_master)
 	rel_add(src, nameof(spell_list), spell_to_add)
 	if(mind)
 		rel_add(mind, nameof(mind.learned_spells), spell_to_add)

@@ -126,6 +126,9 @@
 
 	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
+CAPABILITIES(/datum/species/lleill)
+	owns_many(nameof(lleill_ability_datums))
+
 // Shapeshifters have some behaviour that doesn't play well with this species so I have taken the main parts needed for here.
 
 TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "unarmed_types", "cold_discomfort_strings", "heat_discomfort_strings", "has_organ", "genders", "secondary_langs", "inherent_verbs", "default_emotes", "speech_sounds", "species_component", "valid_transform_species"))
@@ -194,7 +197,7 @@ TYPE_TABLE(/datum/species/lleill, shared_table_vars, list("assisted_langs", "una
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		own_add(src, nameof(lleill_ability_datums), LP)
+		rel_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/lleill/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))

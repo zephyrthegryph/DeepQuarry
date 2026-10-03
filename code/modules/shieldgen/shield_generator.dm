@@ -42,6 +42,10 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
+CAPABILITIES(/obj/machinery/power/shield_generator)
+	owns_many(nameof(field_segments))
+	owns_many(nameof(mode_list))
+
 DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/power/shield_generator/appearance_overlays()
 	. = list()
@@ -60,7 +64,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 	own_take_all(src, nameof(mode_list))
 	for(var/st in subtypesof(/datum/shield_mode))
 		var/datum/shield_mode/SM = new st()
-		own_add(src, nameof(mode_list), SM)
+		rel_add(src, nameof(mode_list), SM)
 	toggle_flag(initial_shield_modes)
 
 // its field shuts down.
@@ -110,7 +114,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/shield_generator, TYPE_PROC_REF(/at
 		var/obj/effect/shield/S = new(T)
 		rel_set(S, nameof(S.gen), src)
 		S.flags_updated()
-		own_add(src, nameof(field_segments), S)
+		rel_add(src, nameof(field_segments), S)
 
 	//Hull shield chaos icon generation
 	if(check_flag(MODEFLAG_HULL))

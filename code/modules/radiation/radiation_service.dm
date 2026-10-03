@@ -32,6 +32,9 @@ SYSTEM_DEF(radiation)
 	var/list/profile_source_cost_ms = list()
 	var/list/profile_source_targets = list()
 
+CAPABILITIES(/datum/system/radiation)
+	owns_many(nameof(processing), /datum/radiation_pulse_information)
+
 /datum/system/radiation/reactions()
 	. = ..()
 	. += every(0.5 SECONDS, PROC_REF(radiation_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)

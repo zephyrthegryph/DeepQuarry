@@ -63,7 +63,7 @@ GLOBAL_TABLE(dq_medical_effect_registry, GLOBAL_PROC_REF(build_dq_medical_effect
 	var/datum/medical_effect/new_effect = new prototype.type
 	new_effect.strength = strength
 	new_effect.start = life_tick
-	own_add(src, nameof(side_effects), new_effect)
+	rel_add(src, nameof(side_effects), new_effect)
 
 /// Reconcile once per Life cycle, and only when the reagent holder changed
 /// (BODY_DIRTY_CHEMS, consumed by dq_process_dirty_medical_conditions). The old architecture

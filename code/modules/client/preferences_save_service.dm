@@ -12,6 +12,9 @@ SYSTEM_DEF(character_setup)
 	var/list/save_queue
 	/// In-flight character preview renders (owned /datum/dq_preview_poll), see preview_async.dm.
 	var/list/preview_polls
+
+CAPABILITIES(/datum/system/character_setup)
+	owns_many(nameof(preview_polls))
 /*
 /datum/system/character_setup/Initialize()
 	while(length(prefs_awaiting_setup))

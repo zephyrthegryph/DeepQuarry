@@ -29,6 +29,7 @@
 
 CAPABILITIES(/obj/machinery/shield_gen)
 	owns_one(nameof(shield_hum), /datum/looping_sound/shield_generator)
+	owns_many(nameof(field))
 
 /obj/machinery/shield_gen/advanced
 	name = "advanced bubble shield generator"
@@ -265,7 +266,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		if(T in covered_turfs)
 			covered_turfs.Remove(T)
 		for(var/turf/O in covered_turfs)
-			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
+			rel_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 		covered_turfs = null
 
 		for(var/mob/M in view(5,src))
@@ -289,7 +290,7 @@ DAMAGE_REACTION(/obj/machinery/shield_gen, DAMAGE_EXPLOSION, PROC_REF(shield_gen
 		for(var/turf/O in covered_turfs)
 			if(locate(/obj/effect/energy_field, O) || locate(/obj/machinery/pointdefense, orange(2, O)))
 				continue
-			own_add(src, nameof(field), new /obj/effect/energy_field(O, src))
+			rel_add(src, nameof(field), new /obj/effect/energy_field(O, src))
 
 DECLARE_APPEARANCE_PROC(/obj/machinery/shield_gen, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/machinery/shield_gen/appearance_overlays()

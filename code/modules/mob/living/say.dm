@@ -510,12 +510,15 @@ GLOBAL_LIST_EMPTY(channel_to_radio_key)
 /// Keeps generated images alive independently of the speaker until their global cleanup.
 /datum/om/global_owner/var/list/pending_speech_images
 
+CAPABILITIES(/datum/om/global_owner)
+	owns_many(nameof(pending_speech_images))
+
 /// Capture images as positional values; retain them through their weak timer arguments.
 /proc/queue_speech_images(list/images_to_clients)
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/speech_image_pairs = list()
 	for(var/image/I as anything in images_to_clients)
-		own_add(owner, nameof(owner.pending_speech_images), I)
+		rel_add(owner, nameof(owner.pending_speech_images), I)
 		speech_image_pairs += list(list(I, images_to_clients[I]))
 	var/timer_id = after(null, 3 SECONDS, GLOBAL_PROC_REF(remove_speech_images), with = list(speech_image_pairs))
 	if(!timer_id)

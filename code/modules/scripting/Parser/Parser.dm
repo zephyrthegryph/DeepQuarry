@@ -38,6 +38,10 @@
 	var/datum/node/BlockDefinition/GlobalBlock/global_block=new
 	var/tmp/datum/node/BlockDefinition/curBlock_ref
 
+CAPABILITIES(/datum/n_Parser)
+	owns_many(nameof(errors))
+	owns_many(nameof(warnings))
+
 /*
 	Proc: Parse
 	Reads the tokens and returns the AST's <GlobalBlock> node. Be sure to populate the tokens list before calling this procedure.
@@ -88,42 +92,42 @@
 			if(/datum/token/word)
 				var/datum/token/ntok
 				if(index+1>tokens.len)
-					own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 					continue
 				ntok=tokens[index+1]
 				if(!istype(ntok, /datum/token/symbol))
-					own_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
+					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
 				if(ntok.value=="(")
 					ParseFunctionStatement()
 				else if(options().assign_operators.Find(ntok.value))
 					ParseAssignment()
 				else
-					own_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
+					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(ntok))
 					continue
 				if(!istype(curToken(), /datum/token/end))
-					own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(";", curToken()))
+					rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(";", curToken()))
 					continue
 			if(/datum/token/symbol)
 				if(curToken().value=="}")
 					if(!EndBlock())
-						own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+						rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 						continue
 				else
-					own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+					rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 					continue
 			if(/datum/token/end)
-				own_add(src, nameof(warnings), new/datum/scriptError/BadToken(curToken()))
+				rel_add(src, nameof(warnings), new/datum/scriptError/BadToken(curToken()))
 				continue
 			else
-				own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+				rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 				return
 	return global_block
 
 /datum/n_Parser/nS_Parser/proc/CheckToken(val, type, err=1, skip=1)
 	if(curToken().value!=val || !istype(curToken(),type))
 		if(err)
-			own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(val, curToken()))
+			rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(val, curToken()))
 		return 0
 	if(skip)NextToken()
 	return 1
@@ -140,7 +144,7 @@
 /datum/n_Parser/nS_Parser/proc/ParseAssignment()
 	var/name=curToken().value
 	if(!options().IsValidID(name))
-		own_add(src, nameof(errors), new/datum/scriptError/InvalidID(curToken()))
+		rel_add(src, nameof(errors), new/datum/scriptError/InvalidID(curToken()))
 		return
 	NextToken()
 	var/t=options().binary_operators[options().assign_operators[curToken().value]]
@@ -157,7 +161,7 @@
 
 /datum/n_Parser/nS_Parser/proc/ParseFunctionStatement()
 	if(!istype(curToken(), /datum/token/word))
-		own_add(src, nameof(errors), new/datum/scriptError("Bad identifier in function call."))
+		rel_add(src, nameof(errors), new/datum/scriptError("Bad identifier in function call."))
 		return
 	var/datum/node/statement/FunctionCall/stmt=new
 	stmt.func_name=curToken().value
@@ -171,14 +175,14 @@
 			CRASH("Something TERRIBLE has gone wrong in ParseFunctionStatement ;__;")
 
 		if(!curToken())
-			own_add(src, nameof(errors), new/datum/scriptError/EndOfFile())
+			rel_add(src, nameof(errors), new/datum/scriptError/EndOfFile())
 			return
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			LAZYADD(curBlock().statements, stmt)
 			NextToken() //Skip close parenthesis
 			return
 		var/datum/node/expression/P=ParseParamExpression()
-		own_add(stmt, nameof(stmt.parameters), P) // the parser made it: the call statement owns it
+		rel_add(stmt, nameof(stmt.parameters), P) // the parser made it: the call statement owns it
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==",") NextToken()
 
 

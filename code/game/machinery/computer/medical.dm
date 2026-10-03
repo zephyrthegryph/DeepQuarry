@@ -332,7 +332,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_new)
 		R.fields["cdi"] = "None"
 		R.fields["cdi_d"] = "No diseases have been diagnosed at the moment."
 		R.fields["notes"] = "No notes."
-		own_add(GLOB.data_core, nameof(/datum/datacore::medical), R)
+		rel_add(GLOB.data_core, nameof(/datum/datacore::medical), R)
 		rel_set(src, nameof(/obj/machinery/computer/med_data::active2), R)
 		screen = MED_DATA_RECORD
 		set_temp("Medical record created.", "success")

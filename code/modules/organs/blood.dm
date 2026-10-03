@@ -498,7 +498,7 @@ BLOOD_VOLUME_SURVIVE = 40
 	// Update virus information.
 	// Each holder owns its own contagion copies: never alias the reagent's list or its members.
 	for(var/datum/affliction/contagion/D in source.data["viruses"])
-		own_add(B, nameof(B.viruses), D.Copy())
+		rel_add(B, nameof(B.viruses), D.Copy())
 
 	dq_set_fluorescent(B, 0)
 	B.invisibility = INVISIBILITY_NONE

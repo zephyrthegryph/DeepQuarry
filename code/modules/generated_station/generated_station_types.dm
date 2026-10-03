@@ -8,6 +8,10 @@
 	var/list/provisions
 	var/critical = FALSE
 
+CAPABILITIES(/datum/generated_station_department_definition)
+	owns_many(nameof(provisions))
+	owns_many(nameof(requirements))
+
 /datum/generated_station_department_definition/New()
 	..()
 	own_take_all(src, nameof(requirements))
@@ -75,6 +79,11 @@
 	/// Semantic rooms partitioned from the remaining usable territory.
 	var/list/room_program
 
+CAPABILITIES(/datum/generated_station_layout_node)
+	owns_many(nameof(eva_vestibules))
+	owns_many(nameof(frontage_sockets))
+	owns_many(nameof(room_program))
+
 /datum/generated_station_layout_node/New()
 	..()
 	territory = list()
@@ -116,6 +125,9 @@
 	var/list/content_circulation
 	var/list/fixture_ids
 	var/occupancy_micros
+
+CAPABILITIES(/datum/generated_station_room_allocation)
+	owns_many(nameof(door_sockets))
 
 /datum/generated_station_room_allocation/New()
 	..()
@@ -198,6 +210,9 @@
 	var/list/tiles
 	var/list/door_sockets
 
+CAPABILITIES(/datum/generated_station_eva_vestibule)
+	owns_many(nameof(door_sockets))
+
 /datum/generated_station_eva_vestibule/New()
 	..()
 	tiles = list()
@@ -239,13 +254,16 @@
 /datum/generated_station_validation_result
 	var/list/issues
 
+CAPABILITIES(/datum/generated_station_validation_result)
+	owns_many(nameof(issues))
+
 /datum/generated_station_validation_result/New()
 	..()
 	own_take_all(src, nameof(issues))
 
 
 /datum/generated_station_validation_result/proc/add(severity, code, message, subject_id = null)
-	own_add(src, nameof(issues), new /datum/generated_station_validation_issue(severity, code, message, subject_id))
+	rel_add(src, nameof(issues), new /datum/generated_station_validation_issue(severity, code, message, subject_id))
 
 /datum/generated_station_validation_result/proc/is_valid()
 	for(var/datum/generated_station_validation_issue/issue in issues)
@@ -297,6 +315,14 @@
 	/// Stable Rust fixture ID -> compile-time DM type path. This registry never
 	/// crosses JSON; it is rebuilt from the authored catalog on the DM side.
 	var/list/fixture_type_registry
+
+CAPABILITIES(/datum/generated_station_spec)
+	owns_many(nameof(department_definitions))
+	owns_many(nameof(departments))
+	owns_many(nameof(fixture_blueprint))
+	owns_many(nameof(layout_edges))
+	owns_many(nameof(layout_nodes))
+	owns_many(nameof(network_blueprint))
 
 /datum/generated_station_spec/New()
 	..()

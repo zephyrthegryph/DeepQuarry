@@ -161,6 +161,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 
 CAPABILITIES(/obj/item/projectile)
 	owns_one(nameof(trajectory), /datum/point/vector)
+	owns_many(nameof(beam_segments))
 
 /obj/item/projectile/Initialize(mapload)
 	. = ..()
@@ -201,7 +202,7 @@ CAPABILITIES(/obj/item/projectile)
 /obj/item/projectile/proc/record_hitscan_start(datum/point/pcache)
 	if(pcache)
 		own_clear(src, nameof(beam_segments), OWN_DELETE)
-		own_add(src, nameof(beam_segments), pcache) //record start.
+		rel_add(src, nameof(beam_segments), pcache) //record start.
 		rel_set(src, nameof(beam_index), pcache)
 
 /obj/item/projectile/proc/process_hitscan()
@@ -406,7 +407,7 @@ CAPABILITIES(/obj/item/projectile)
 	return
 
 /obj/item/projectile/proc/store_hitscan_collision(datum/point/pcache)
-	own_add(src, nameof(beam_segments), pcache)
+	rel_add(src, nameof(beam_segments), pcache)
 	rel_set(src, nameof(beam_index), pcache)
 
 //Spread is FORCED!
@@ -514,7 +515,7 @@ CAPABILITIES(/obj/item/projectile)
 	var/datum/point/end_point
 	if(trajectory && beam_index())
 		end_point = trajectory.copy_to()
-		own_add(src, nameof(beam_segments), end_point) // refused while we are being destroyed (guard.dm)
+		rel_add(src, nameof(beam_segments), end_point) // refused while we are being destroyed (guard.dm)
 	generate_hitscan_tracers(null, null, impacting, end_point)
 
 /obj/item/projectile/proc/generate_hitscan_tracers(cleanup = TRUE, duration = 5, impacting = TRUE, datum/point/end_point)
@@ -539,7 +540,7 @@ CAPABILITIES(/obj/item/projectile)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(muzzle_flash_range, muzzle_flash_intensity, muzzle_flash_color_override? muzzle_flash_color_override : color)
-		own_add(drawn, nameof(drawn.beam_components), thing)
+		rel_add(drawn, nameof(drawn.beam_components), thing)
 	if(impacting && impact_type && duration > 0)
 		var/datum/point/p = points[length(points)]
 		var/atom/movable/thing = new impact_type
@@ -549,7 +550,7 @@ CAPABILITIES(/obj/item/projectile)
 		thing.transform = M
 		thing.color = color
 		thing.set_light(impact_light_range, impact_light_intensity, impact_light_color_override? impact_light_color_override : color)
-		own_add(drawn, nameof(drawn.beam_components), thing)
+		rel_add(drawn, nameof(drawn.beam_components), thing)
 	om_qdel_after(drawn, duration)
 
 //Returns true if the target atom is on our current turf and above the right layer

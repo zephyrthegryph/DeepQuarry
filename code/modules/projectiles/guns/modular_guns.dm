@@ -35,9 +35,9 @@
 
 /obj/item/gun/energy/modular/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
-	own_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
+	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/capacitor(src))
+	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/micro_laser(src))
+	rel_add(src, nameof(guncomponents), new /obj/item/stock_parts/manipulator(src))
 	CheckParts()
 	FireModeModify()
 
@@ -128,10 +128,10 @@
 		chargecost_lethal = 200
 
 	own_clear(src, nameof(firemodes), OWN_DELETE)
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
-	own_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="stun", projectile_type=beammode, charge_cost = chargecost)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot stun", projectile_type=beammode, charge_cost = chargecost, burst = burstmode)))
+	rel_add(src, nameof(firemodes), new /datum/firemode(src, list(mode_name="[burstmode] shot lethal", projectile_type=beammode_lethal, charge_cost = chargecost_lethal, burst = burstmode)))
 
 /obj/item/gun/energy/modular/load_ammo(obj/item/C, mob/user)
 	if(istype(C, cell_type))

@@ -15,6 +15,9 @@
 	/// The turf being searched
 	var/tmp/turf/source_turf
 
+CAPABILITIES(/datum/lootpanel)
+	owns_many(nameof(searchables), /datum/search_object)
+
 /datum/lootpanel/New(client/owner)
 	. = ..()
 

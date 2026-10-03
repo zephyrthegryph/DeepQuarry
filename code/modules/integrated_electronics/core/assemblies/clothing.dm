@@ -44,6 +44,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/electronic_assembly/clothing, TYPE_PROC_REF(/a
 
 CAPABILITIES(/obj/item/clothing)
 	owns_one(nameof(IC), /obj/item/electronic_assembly/clothing)
+	owns_many(nameof(accessories))
 
 /obj/item/clothing/examine(mob/user)
 	. = ..()

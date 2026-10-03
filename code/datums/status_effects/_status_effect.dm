@@ -52,7 +52,7 @@
 		qdel(src)
 		return
 	if(owner)
-		own_add(owner, nameof(owner.status_effects), src)
+		rel_add(owner, nameof(owner.status_effects), src)
 		om_hook(owner, /datum/om/event/living_aheal, src, PROC_REF(remove_effect_on_heal))
 
 	if(duration == INFINITY)

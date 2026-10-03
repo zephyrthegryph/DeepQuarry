@@ -1097,7 +1097,7 @@ SETTER(/mob/living, nutrition)
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/character_setup/button = new
-		own_add(HUD, nameof(HUD.other_important), button)
+		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(character_setup_click))
 	if(ispAI(user))

@@ -68,6 +68,9 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	var/list/ckeywhitelist	//restricted based on these ckeys?
 	var/list/character_name	//restricted to these character names?
 
+CAPABILITIES(/datum/gear)
+	owns_many(nameof(gear_tweaks))
+
 // Entity-level pickability rule. The single source of truth for "can this
 // player legitimately have this gear in their loadout?" Read at write time
 // (loadout editor) and at spawn time (preferences_setup / SSjob.equip_rank); both
@@ -136,11 +139,11 @@ GLOBAL_LIST_EMPTY_TYPED(gear_datums, /datum/gear)
 	// which packs tint / palette-swap / matrix into one mode-selectable tweak (see
 	// code/datums/gear/gear_tweak_recolor.dm).
 	own_clear(src, nameof(gear_tweaks), OWN_DELETE)
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_desc)
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/item_tf_spawn)
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/recolor)
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/toggle_digestable)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_name)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/custom_desc)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/item_tf_spawn)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/recolor)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/toggle_digestable)
 
 /datum/gear_data
 	var/path

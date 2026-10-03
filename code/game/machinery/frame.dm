@@ -312,6 +312,9 @@ GLOBAL_LIST(construction_frame_floor)
 	var/list/req_components = null
 	var/list/req_component_names = null
 
+CAPABILITIES(/obj/structure/frame)
+	owns_many(nameof(components))
+
 /obj/structure/frame/computer //used for maps
 	frame_type = new /datum/frame/frame_types/computer
 	anchored = TRUE
@@ -400,7 +403,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 					var/obj/item/stack/cable_coil/CC = new /obj/item/stack/cable_coil(src, camt)
 					CC.update_icon()
 					CP.use(camt)
-					own_add(src, nameof(components), CC)
+					rel_add(src, nameof(components), CC)
 					req_components[I] -= camt
 					update_desc()
 					break
@@ -436,7 +439,7 @@ DECLARE_INTERACTIONS(/obj/structure/frame, INTERACT_ITEM(null, PROC_REF(interact
 				var/obj/item/stack/NS = new ST.stacktype(src, camt)
 				NS.update_icon()
 				ST.use(camt)
-				own_add(src, nameof(components), NS)
+				rel_add(src, nameof(components), NS)
 				req_components[I] -= camt
 				break
 

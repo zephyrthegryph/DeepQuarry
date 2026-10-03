@@ -34,6 +34,9 @@
 	/// Optional: pin the enemy faction (EXP_FACTION_*). 0/null = roll one for the site.
 	var/faction_type = null
 
+CAPABILITIES(/datum/expedition_mission)
+	owns_many(nameof(objectives))
+
 /datum/expedition_mission/New(_difficulty = EXP_DIFF_LOW)
 	difficulty = _difficulty
 	reward_points = 80 + difficulty * 70
@@ -58,7 +61,7 @@
 	rel_set(src, nameof(site), S)
 	own_clear(src, nameof(objectives), OWN_DELETE)
 	for(var/datum/expedition_objective/built as anything in build_objectives())
-		own_add(src, nameof(objectives), built)
+		rel_add(src, nameof(objectives), built)
 	for(var/datum/expedition_objective/O in objectives)
 		O.populate(S)
 	if(time_limit)

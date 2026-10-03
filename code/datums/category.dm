@@ -6,6 +6,9 @@
 	var/list/categories                              // List of initialized categories (owned; untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/category_group/categories_by_name // Associative list of initialized categories, keyed by name
 
+CAPABILITIES(/datum/category_collection)
+	owns_many(nameof(categories))
+
 /datum/category_collection/New()
 	..()
 	// categories owns each group (built at boot, before the DEF freeze); categories_by_name is a plain index.
@@ -18,7 +21,7 @@
 			built += category
 			categories_by_name[category.name] = category
 	for(var/datum/category_group/sorted as anything in dd_sortedObjectList(built))
-		own_add(src, nameof(categories), sorted)
+		rel_add(src, nameof(categories), sorted)
 
 
 /******************
@@ -30,6 +33,9 @@
 	var/list/items                              // List of initialized items (owned; untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/category_item/items_by_name  // Associative list of initialized items, by name
 	var/datum/category_collection/collection_static	// The collection this group belongs to
+
+CAPABILITIES(/datum/category_group)
+	owns_many(nameof(items))
 
 /datum/category_group/New(datum/category_collection/cc)
 	..()
@@ -48,7 +54,7 @@
 	// For whatever reason dd_insertObjectList(items, item) doesn't insert in the correct order
 	// If you change this, confirm that character setup doesn't become completely unordered.
 	for(var/datum/category_item/sorted as anything in dd_sortedObjectList(built))
-		own_add(src, nameof(items), sorted)
+		rel_add(src, nameof(items), sorted)
 
 
 /datum/category_group/dd_SortValue()

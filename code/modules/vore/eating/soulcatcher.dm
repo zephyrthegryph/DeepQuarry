@@ -16,6 +16,9 @@
 	var/transfer_message = "Transfer Message"
 	var/delete_message = "Delete Message"
 
+CAPABILITIES(/obj/soulgem)
+	owns_many(nameof(brainmobs))
+
 // The soulgem's saved state is its saved vars (see code/datums/state/schema.dm);
 // the linked belly (a relation view) is saved as the belly's name.
 /obj/soulgem/state_codecs()
@@ -143,7 +146,7 @@
 	brainmob.ext_deaf = !flag_check(NIF_SC_ALLOW_EARS)
 	brainmob.ext_blind = !flag_check(NIF_SC_ALLOW_EYES)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, nameof(brainmobs), brainmob)
+	rel_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [src]") // identity (name, DNA, OOC notes) comes by reference
@@ -495,7 +498,7 @@
 	own_take_member(src, nameof(brainmobs), M)
 	rel_set(M, nameof(M.gem), gem)
 	rel_set(M, nameof(M.container), gem)
-	own_add(gem, nameof(gem.brainmobs), M)
+	rel_add(gem, nameof(gem.brainmobs), M)
 	if(M == selected_soul())
 		update_selected_soul()
 

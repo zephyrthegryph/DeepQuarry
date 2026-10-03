@@ -596,6 +596,8 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 
 CAPABILITIES(/datum/storage_hud)
 	owns_one(nameof(closer), /atom/movable/screen/close)
+	owns_many(nameof(backdrop))
+	owns_many(nameof(catchers))
 
 GLOBAL_VAR_INIT(storage_hud_count, 0)
 
@@ -606,11 +608,11 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	own_set(src, nameof(catchers), list())
 	var/obj/item/storage/master = S
 	if(S.storage_slots)
-		own_add(src, nameof(backdrop), new_backdrop(master, "block"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "block"))
 	else
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
-		own_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_start"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_continue"))
+		rel_add(src, nameof(backdrop), new_backdrop(master, "storage_end"))
 	rel_set(src, nameof(closer), new /atom/movable/screen/close())
 	rel_set(closer, nameof(closer.master_ref), master)
 	closer.icon_state = "storage_close"
@@ -680,7 +682,7 @@ GLOBAL_VAR_INIT(storage_hud_count, 0)
 	var/atom/movable/storage_slot/SS = new(null, I)
 	SS.screen_loc = I.screen_loc
 	SS.mouse_opacity = MOUSE_OPACITY_OPAQUE
-	own_add(src, nameof(catchers), SS)
+	rel_add(src, nameof(catchers), SS)
 	return SS
 
 /// Fixed-size storage (belts, boxes): a grid up to seven wide.

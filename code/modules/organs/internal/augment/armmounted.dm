@@ -175,6 +175,9 @@
 
 	var/list/synths
 
+CAPABILITIES(/obj/item/organ/internal/augment/armmounted/shoulder/multiple)
+	owns_many(nameof(synths))
+
 /// The tools this augment carries (constant per type).
 TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple, tool_types, list( \
 		/obj/item/tool/screwdriver, \
@@ -205,7 +208,7 @@ TYPE_TABLE_DECLARE(/obj/item/organ/internal/augment/armmounted/shoulder/multiple
 
 	var/list/synth_paths = TYPE_TABLE_GET(src, synth_types)
 	for(var/datumpath in synth_paths)
-		own_add(src, nameof(synths), new datumpath)
+		rel_add(src, nameof(synths), new datumpath)
 
 	for(var/obj/item/I as anything in tools)
 		I.canremove = FALSE

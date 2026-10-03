@@ -16,11 +16,14 @@
 	var/proj_trail_icon_state = "trail"
 	var/list/trails
 
+CAPABILITIES(/obj/item/projectile/spell_projectile)
+	owns_many(nameof(trails))
+
 
 /obj/item/projectile/spell_projectile/before_move()
 	if(proj_trail && src && src.loc) //pretty trails
 		var/obj/effect/overlay/trail = new /obj/effect/overlay(src.loc)
-		own_add(src, nameof(trails), trail)
+		rel_add(src, nameof(trails), trail)
 		trail.icon = proj_trail_icon
 		trail.icon_state = proj_trail_icon_state
 		trail.set_density(FALSE)

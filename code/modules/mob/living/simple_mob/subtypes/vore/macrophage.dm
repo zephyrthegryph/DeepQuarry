@@ -53,6 +53,7 @@
 
 CAPABILITIES(/mob/living/simple_mob/vore/aggressive/macrophage)
 	owns_one(nameof(base_disease), /datum/affliction/contagion)
+	owns_many(nameof(infections), /datum/affliction/contagion)
 
 
 /mob/living/simple_mob/vore/aggressive/macrophage/giant
@@ -154,7 +155,7 @@ DECLARE_REPEAT(/mob/living/simple_mob/vore/aggressive/macrophage, 3 MINUTES, dea
 		sick.update_icon()
 		sick.pixel_x = rand(-24, 24)
 		sick.pixel_y = rand(-24, 24)
-		own_add(sick, nameof(sick.viruses), base_disease.Copy())
+		rel_add(sick, nameof(sick.viruses), base_disease.Copy())
 
 /obj/belly/macrophage
 	name = "capsid"

@@ -78,6 +78,9 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 	can_speak = 1
 	var/list/voice_mobs //The curse of the sword is that it has someone trapped inside.
 
+CAPABILITIES(/obj/item/melee/cursedblade)
+	owns_many(nameof(voice_mobs))
+
 
 /obj/item/melee/cursedblade/handle_shield(mob/user, damage, atom/damage_source = null, mob/attacker = null, def_zone = null, attack_text = "the attack")
 	if(default_parry_check(user, attacker, damage_source) && prob(50))
@@ -97,7 +100,7 @@ DECLARE_INTERACTIONS(/obj/item/melee/umbrella, INTERACT_USE(null, PROC_REF(inter
 	new_voice.ckey = candidate.ckey			//Finally, bring the client over.
 	new_voice.name = "cursed sword"			//Cursed swords shouldn't be known characters.
 	new_voice.real_name = "cursed sword"
-	own_add(src, nameof(voice_mobs), new_voice)
+	rel_add(src, nameof(voice_mobs), new_voice)
 	registry_join(REGISTRY_LISTENING_OBJECTS, src)
 
 

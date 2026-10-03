@@ -53,6 +53,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
 	owns_one(nameof(local_skybox), /atom/movable/screen/skybox)
 	owns_one(nameof(mannequin), /mob/living/carbon/human)
+	owns_many(nameof(cam_plane_masters))
 
 /datum/tgui_module/appearance_changer/New(
 		host,
@@ -72,7 +73,7 @@ CAPABILITIES(/datum/tgui_module/appearance_changer)
 	cam_screen.screen_loc = "[map_name]:3:-32,3:-48"
 
 	for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-		own_add(src, nameof(cam_plane_masters), plane_master)
+		rel_add(src, nameof(cam_plane_masters), plane_master)
 
 	for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 		instance.assigned_map = map_name

@@ -213,19 +213,19 @@ GLOBAL_LIST_INIT(engineering_networks, list(
 // UPGRADE PROCS
 
 /obj/machinery/camera/proc/upgradeEmpProof()
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/stack/material/osmium(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/stack/material/osmium(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeXRay()
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/stock_parts/scanning_module(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/stock_parts/scanning_module(assembly))
 	setPowerUsage()
 	update_coverage()
 
 /obj/machinery/camera/proc/upgradeMotion()
 	if(!isturf(loc))
 		return //nooooo
-	own_add(assembly, nameof(assembly.upgrades), new /obj/item/assembly/prox_sensor(assembly))
+	rel_add(assembly, nameof(assembly.upgrades), new /obj/item/assembly/prox_sensor(assembly))
 	setPowerUsage()
 	sense_proximity(callback = TYPE_PROC_REF(/atom,HasProximity))
 	update_coverage()

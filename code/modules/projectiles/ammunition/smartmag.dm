@@ -210,7 +210,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/smart, \
 /obj/item/ammo_magazine/smart/proc/produce()
 	if(chargereduction())
 		var/obj/item/ammo_casing/W = new ammo_type(src)
-		own_add(src, nameof(stored_ammo), W)
+		rel_add(src, nameof(stored_ammo), W)
 		moveElement(stored_ammo, length(stored_ammo), 1) //to the head of the list
 		return 1
 	return 0

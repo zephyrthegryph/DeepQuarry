@@ -82,7 +82,7 @@ UI_DATA(/obj/machinery/appliance/cooker, "merge:ui_data_obj_machinery_appliance_
 	. = ..()
 	own_take_all(src, nameof(cooking_objs))
 	for (var/i = 0, i < max_contents, i++)
-		own_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
+		rel_add(src, nameof(cooking_objs), new /datum/cooking_item/(new container_type(src)))
 	set_cooking(FALSE)
 
 	update_icon() // this probably won't cause issues, but Aurora used SSIcons and queue_icon_update() instead

@@ -30,6 +30,7 @@
 
 CAPABILITIES(/obj/machinery/maint_vendor)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
+	owns_many(nameof(product_datums))
 
 /obj/machinery/maint_vendor/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
@@ -39,7 +40,7 @@ CAPABILITIES(/obj/machinery/maint_vendor)
 	for(var/t in subtypesof(/datum/maint_recycler_vendor_entry) - /datum/maint_recycler_vendor_entry)
 		var/datum/maint_recycler_vendor_entry/entry = new t()
 		entry.initialize()
-		own_add(src, nameof(product_datums), entry)
+		rel_add(src, nameof(product_datums), entry)
 	//move to relevant location
 	rel_set(src, nameof(monitor_screen), new /obj/effect/overlay/recycler)
 	monitor_screen.plane = PLANE_LIGHTING_ABOVE

@@ -171,6 +171,9 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 	var/turfsSkipped = 0
 	#endif
 
+CAPABILITIES(/datum/parsed_map)
+	owns_many(nameof(gridSets))
+
 /datum/parsed_map/proc/copy()
 	// Avoids duped work just in case
 	build_cache()
@@ -187,7 +190,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 		set_copy.ycrd = source_set.ycrd
 		set_copy.zcrd = source_set.zcrd
 		set_copy.gridLines = source_set.gridLines
-		own_add(newfriend, nameof(newfriend.gridSets), set_copy)
+		rel_add(newfriend, nameof(newfriend.gridSets), set_copy)
 	newfriend.modelCache = modelCache.Copy()
 	newfriend.parsed_bounds = parsed_bounds.Copy()
 	// Copy parsed bounds to reset to initial values
@@ -355,7 +358,7 @@ GLOBAL_LIST_EMPTY(cached_maps) // ALLOW(cache): parsed-map store, needs special 
 			if(!length(gridLines)) // Skip it if only blank lines exist.
 				continue
 
-			own_add(src, nameof(gridSets), gridSet)
+			rel_add(src, nameof(gridSets), gridSet)
 
 			if(gridLines[length(gridLines)] == "")
 				gridLines.Cut(length(gridLines)) // Remove only one blank line at the end.

@@ -12,6 +12,9 @@
 
 	var/mob/my_mob	// The mob that possesses this hud object.
 
+CAPABILITIES(/atom/movable/screen/movable/ability_master)
+	owns_many(nameof(ability_objects), /atom/movable/screen/ability)
+
 /atom/movable/screen/movable/ability_master/Initialize(mapload)
 	. = ..()
 	if(ismob(loc))
@@ -105,7 +108,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/movable/ability_master, TYPE_PROC_R
 	new_button.name = name_given
 	new_button.ability_icon_state = name_given
 	new_button.update_icon()
-	own_add(src, nameof(ability_objects), new_button)
+	rel_add(src, nameof(ability_objects), new_button)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -247,7 +250,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -271,7 +274,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 
@@ -301,7 +304,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 	rel_set(A, nameof(A.object), object_given)
 	A.ability_icon_state = ability_icon_given
 	A.name = object_given.name
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob().client)
 		toggle_open(2) //forces the icons to refresh on screen
 

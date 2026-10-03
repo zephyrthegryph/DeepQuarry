@@ -42,6 +42,6 @@
 	A.name = name_given
 	if(arguments)
 		A.arguments_to_use = arguments
-	own_add(src, nameof(ability_objects), A)
+	rel_add(src, nameof(ability_objects), A)
 	if(my_mob()?.client)
 		toggle_open(2)

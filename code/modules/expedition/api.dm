@@ -84,7 +84,7 @@
 	if(assigned_vessel)
 		rel_set(assigned_vessel, nameof(assigned_vessel.active_expedition), site)
 	site.status = EXP_STATUS_GENERATING
-	own_add(src, nameof(descriptors), site)
+	rel_add(src, nameof(descriptors), site)
 	SSflight?.register_expedition(site)
 	return site
 

@@ -103,11 +103,14 @@
 
 	var/list/lleill_ability_datums = list() // ALLOW(instance_list): d: New() fills it with this instance's power datums
 
+CAPABILITIES(/datum/species/shapeshifter/hanner)
+	owns_many(nameof(lleill_ability_datums))
+
 /datum/species/shapeshifter/hanner/New()
 	..()
 	for(var/power in lleill_abilities)
 		var/datum/power/lleill/LP = new power(src)
-		own_add(src, nameof(lleill_ability_datums), LP)
+		rel_add(src, nameof(lleill_ability_datums), LP)
 
 /datum/species/shapeshifter/hanner/proc/add_lleill_abilities(mob/living/carbon/human/H)
 	if(!H.ability_master || !istype(H.ability_master, /atom/movable/screen/movable/ability_master/lleill))

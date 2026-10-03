@@ -138,11 +138,11 @@ GLOBAL_DATUM(raiders, /datum/antagonist/raider)
 		else
 			O = new /datum/objective/heist/salvage()
 		O.choose_target()
-		own_add(src, nameof(global_objectives), O)
+		rel_add(src, nameof(global_objectives), O)
 
 		i++
 
-	own_add(src, nameof(global_objectives), new /datum/objective/heist/preserve_crew)
+	rel_add(src, nameof(global_objectives), new /datum/objective/heist/preserve_crew)
 	return 1
 
 /datum/antagonist/raider/check_victory()

@@ -77,6 +77,8 @@
 
 CAPABILITIES(/obj/machinery/message_server)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
+	owns_many(nameof(pda_msgs), /datum/data_pda_msg)
+	owns_many(nameof(rc_msgs), /datum/data_rc_msg)
 
 REGISTRY_MEMBERSHIP(/obj/machinery/message_server, REGISTRY_MESSAGE_SERVERS)
 
@@ -130,11 +132,11 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/message_server, MACHINE_PIPELINE, "active"
 		if (findtextEx(message,token))
 			message = span_red("[message]")	//Rejected messages will be indicated by red color.
 			result = token										//Token caused rejection (if there are multiple, last will be chosen>.
-	own_add(src, nameof(pda_msgs), new/datum/data_pda_msg(recipient,sender,message))
+	rel_add(src, nameof(pda_msgs), new/datum/data_pda_msg(recipient,sender,message))
 	return result
 
 /obj/machinery/message_server/proc/send_rc_message(recipient = "",sender = "",message = "",stamp = "", id_auth = "", priority = 1)
-	own_add(src, nameof(rc_msgs), new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
+	rel_add(src, nameof(rc_msgs), new/datum/data_rc_msg(recipient,sender,message,stamp,id_auth,priority))
 	var/authmsg = "[message]\n"
 	if (id_auth)
 		authmsg += "([id_auth])\n"
@@ -304,6 +306,9 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 	var/list/datum/feedback_variable/feedback = new() // ALLOW(instance_list): d: blackbox singleton; feedback datums fill it every round
 
 	//Only one can exist in the world!
+
+CAPABILITIES(/obj/machinery/blackbox_recorder)
+	owns_many(nameof(feedback), /datum/feedback_variable)
 /obj/machinery/blackbox_recorder/Initialize(mapload)
 	. = ..()
 	if(istype(GLOB.blackbox, /obj/machinery/blackbox_recorder))
@@ -330,7 +335,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		// The feedback datums move over one by one (the replacement takes the list over).
 		own_clear(BR, nameof(BR.feedback), OWN_DELETE)
 		for(var/datum/entry as anything in own_take_all(src, nameof(feedback)))
-			own_add(BR, nameof(BR.feedback), entry)
+			rel_add(BR, nameof(BR.feedback), entry)
 		BR.messages = messages
 		BR.messages_admin = messages_admin
 	return ..()
@@ -340,7 +345,7 @@ GLOBAL_DATUM(blackbox, /obj/machinery/blackbox_recorder)
 		if(FV.get_variable() == variable)
 			return FV
 	var/datum/feedback_variable/FV = new(variable)
-	own_add(src, nameof(feedback), FV)
+	rel_add(src, nameof(feedback), FV)
 	return FV
 
 /obj/machinery/blackbox_recorder/proc/get_round_feedback()

@@ -722,6 +722,9 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	var/teley = 16
 	var/telez = 0	//Set this in-round if you want a return point with fake health
 
+CAPABILITIES(/obj/item/radio/headset/event)
+	owns_many(nameof(remove_spells))
+
 /obj/item/radio/headset/event/equipped(mob/living/carbon/human/H, slot)
 	worn_factors = slowdown_to_set ? alist(BF_SLOWDOWN = slowdown_to_set) : null
 	. = ..()
@@ -739,7 +742,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 			for(var/thing in spells)
 				var/datum/spell/SP = new thing(H)
 				H.add_spell(SP)
-				own_add(src, nameof(remove_spells), SP)
+				rel_add(src, nameof(remove_spells), SP)
 
 /obj/item/radio/headset/event/dropped(mob/living/carbon/human/H, equipping, slot)
 	..()

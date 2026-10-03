@@ -65,7 +65,7 @@ EXTEND_INTERACTIONS(/obj/item/ammo_magazine/handful, \
 		var/moved = 0
 		while(length(other.stored_ammo) && length(stored_ammo) < max_ammo)
 			var/obj/item/ammo_casing/C = other.stored_ammo[length(other.stored_ammo)]
-			own_add(src, nameof(src.stored_ammo), C)
+			rel_add(src, nameof(src.stored_ammo), C)
 			moved++
 		if(moved)
 			to_chat(user, span_notice("You combine the rounds. \The [src] now holds [length(stored_ammo)]."))

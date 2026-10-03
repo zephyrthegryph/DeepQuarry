@@ -59,6 +59,9 @@
 	* @param goingdir Direction tracks are going to (or 0).
 	* @param bloodcolor Color of the blood when wet.
 	*/
+
+CAPABILITIES(/obj/effect/decal/cleanable/blood/tracks)
+	owns_many(nameof(stack), /datum/fluidtrack)
 /obj/effect/decal/cleanable/blood/tracks/proc/AddTracks(list/DNA, comingdir, goingdir, bloodcolor="#A10808")
 	var/updated=0
 	// Shift our goingdir 4 spaces to the left so it's in the GOING bitblock.
@@ -87,7 +90,7 @@
 				// Remove existing stack entry
 				own_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			own_add(src, nameof(stack), track)
+			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)
 			setdirs["[b]"] = track_idx
 			updatedtracks |= b
@@ -105,7 +108,7 @@
 				// Remove existing stack entry
 				own_remove(src, nameof(stack), track)
 			track=new /datum/fluidtrack(b,bloodcolor,t)
-			own_add(src, nameof(stack), track)
+			rel_add(src, nameof(stack), track)
 			var/track_idx = LAZYFIND(stack, track)
 			setdirs["[b]"] = track_idx
 			updatedtracks |= b

@@ -146,7 +146,7 @@ MAP_RESOLVER_VARS(/obj/turbolift_map_holder, "depth;door_type;firedoor_type;floo
 	for(var/cz = uz;cz<=ez;cz++)
 
 		var/datum/turbolift_floor/cfloor = new()
-		own_add(lift, nameof(lift.floors), cfloor)
+		rel_add(lift, nameof(lift.floors), cfloor)
 
 		var/list/floor_turfs = list()
 		// Update the appropriate turfs.

@@ -46,6 +46,9 @@ Possible to do for anyone motivated enough:
 	COOLDOWN_DECLARE(request_cooldown) //to prevent request spam. ~Carn
 	var/holo_range = 5 // Change to change how far the AI can move away from the holopad before deactivating.
 
+CAPABILITIES(/obj/machinery/hologram/holopad)
+	owns_many(nameof(holograms), /obj/effect/overlay/aiholo)
+
 /obj/machinery/hologram/holopad/declare_interactions(list/into)
 	into += list(
 		/datum/interaction/machine_item/holopad_request,
@@ -174,7 +177,7 @@ For the other part of the code, check silicon say.dm. Particularly robot talk.*/
 	for(var/obj/belly/B as anything in A.vore_organs)
 		B.forceMove(hologram)
 
-	own_add(src, nameof(holograms), hologram)
+	rel_add(src, nameof(holograms), hologram)
 	rel_add(src, nameof(masters), A)
 	set_light(2)			//pad lighting
 	icon_state = "holopad1"

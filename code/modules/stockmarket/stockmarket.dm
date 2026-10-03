@@ -5,6 +5,10 @@
 	var/list/stockBrokers
 	var/list/logs
 
+CAPABILITIES(/datum/stockMarket)
+	owns_many(nameof(logs))
+	owns_many(nameof(stocks))
+
 /datum/stockMarket/New()
 		..()
 		generateBrokers()
@@ -108,7 +112,7 @@
 		S.fluctuation_rate = rand(6, 20)
 		S.generateIndustry()
 		S.generateEvents()
-		own_add(src, nameof(stocks), S)
+		rel_add(src, nameof(stocks), S)
 		S.last_read = list()
 
 /datum/stockMarket/proc/market_tick()
@@ -125,7 +129,7 @@
 	L.shareprice = shareprice
 	L.money = money
 	L.time = time2text(world.timeofday, "hh:mm")
-	own_add(src, nameof(logs), L)
+	rel_add(src, nameof(logs), L)
 
 GLOBAL_DATUM_INIT(stockExchange, /datum/stockMarket, new)
 // plotBarGraph deleted; StockChart TGUI panel renders typed values directly.

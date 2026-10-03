@@ -183,7 +183,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 		if (cur_coils < max_coils)
 			var/obj/item/W = parts_found[i]
 			cur_coils++
-			own_add(src, nameof(component_parts), W)
+			rel_add(src, nameof(component_parts), W)
 			W.forceMove(src)
 	RefreshParts()
 

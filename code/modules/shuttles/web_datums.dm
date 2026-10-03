@@ -167,6 +167,10 @@
 	var/list/autopaths									// Potential autopaths the autopilot can use. The autopath's start var must equal current_destination to be viable.
 	var/autopath_class = null									// Similar to destination_class, used for typesof().
 
+CAPABILITIES(/datum/shuttle_web_master)
+	owns_many(nameof(autopaths))
+	owns_many(nameof(destinations))
+
 /datum/shuttle_web_master/New(new_shuttle, new_destination_class = null)
 	rel_set(src, nameof(my_shuttle), new_shuttle)
 	if(new_destination_class)
@@ -191,7 +195,7 @@
 			log_mapping("Web shuttle destination '[D.name]' ([new_type]) pruned: no landmark on this map.")
 			qdel(D)
 			continue
-		own_add(src, nameof(destinations), D)
+		rel_add(src, nameof(destinations), D)
 
 	// Now start the process of connecting all of them.
 	for(var/datum/shuttle_destination/D in destinations)
@@ -225,7 +229,7 @@
 // Autopilot stuff.
 /datum/shuttle_web_master/proc/build_autopaths()
 	for(var/datum/shuttle_autopath/built as anything in init_subtypes(autopath_class))
-		own_add(src, nameof(autopaths), built)
+		rel_add(src, nameof(autopaths), built)
 	for(var/datum/shuttle_autopath/P in autopaths)
 		rel_set(P, nameof(P.master), src)
 	// Drop autopaths that reference destinations pruned in build_destinations()

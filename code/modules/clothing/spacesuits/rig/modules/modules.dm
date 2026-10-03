@@ -55,6 +55,9 @@ MATERIAL_MIX(/obj/item/rig_module, list(MAT_STEEL = 20000, MAT_PLASTIC = 30000, 
 
 	var/list/stat_modules
 
+CAPABILITIES(/obj/item/rig_module)
+	owns_many(nameof(stat_modules))
+
 /obj/item/rig_module/examine()
 	. = ..()
 	switch(damage)
@@ -130,11 +133,11 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 
 		charges = processed_charges
 
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
-	own_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
+	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/activate(src))
+	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/deactivate(src))
+	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/engage(src))
+	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/select(src))
+	rel_add(src, nameof(stat_modules), new/atom/movable/stat_rig_module/charge(src))
 
 
 // Called when the module is installed into a suit.

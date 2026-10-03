@@ -10,6 +10,9 @@
 	startWhen = 2
 	endWhen = 1800 // Aproximately 1 hour in master controller ticks, refined by end_time
 
+CAPABILITIES(/datum/event/supply_demand)
+	owns_many(nameof(required_items))
+
 REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 
 /datum/event/supply_demand/setup()
@@ -288,7 +291,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 		types -= R // Don't pick the same thing twice
 		var/chosen_path = initial(R.result)
 		var/chosen_qty = rand(1, 5)
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 
 /datum/event/supply_demand/proc/choose_chemistry_items(differentTypes)
@@ -302,7 +305,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 		var/datum/reagent/R = pick(medicineReagents)
 		medicineReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_bar_items(differentTypes)
@@ -315,7 +318,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 		var/datum/reagent/R = pick(drinkReagents)
 		drinkReagents -= R // Don't pick the same thing twice
 		var/chosen_qty = rand(1, 20) * 5
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/reagent(chosen_qty, R))
 	return
 
 /datum/event/supply_demand/proc/choose_robotics_items(differentTypes)
@@ -328,7 +331,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 	for(var/i in 1 to differentTypes)
 		var/T = pick(types)
 		types -= T // Don't pick the same thing twice
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(rand(1, 2), T))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(rand(1, 2), T))
 	return
 
 /datum/event/supply_demand/proc/choose_atmos_items(differentTypes)
@@ -345,7 +348,7 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 	// mixture.update_values() removed; no-op under LINDA.
 	var/datum/supply_demand_order/gas/O = new(qty = 1)
 	rel_set(O, nameof(O.mixture), mixture)
-	own_add(src, nameof(required_items), O)
+	rel_add(src, nameof(required_items), O)
 	return
 
 /datum/event/supply_demand/proc/choose_alloy_items(differentTypes)
@@ -355,6 +358,6 @@ CAPABILITIES(/datum/supply_demand_order/gas)
 		types -= A // Don't pick the same thing twice
 		var/chosen_path = initial(A.product)
 		var/chosen_qty = FLOOR(rand(5, 100) * initial(A.product_mod), 1)
-		own_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
+		rel_add(src, nameof(required_items), new /datum/supply_demand_order/thing(chosen_qty, chosen_path))
 	return
 

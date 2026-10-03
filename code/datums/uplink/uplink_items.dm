@@ -5,20 +5,24 @@ GLOBAL_DATUM_INIT(uplink, /datum/uplink, new)
 	var/list/items // owned (untyped: the lint reads a registry-typed list as SHARED)
 	var/list/datum/uplink_category/categories
 
+CAPABILITIES(/datum/uplink)
+	owns_many(nameof(categories), /datum/uplink_category)
+	owns_many(nameof(items))
+
 
 /datum/uplink/New(type)
 	items_assoc = list()
 	// The uplink owns its categories (a sorted list) and its items (built at boot); items_assoc and
 	// each category's items are plain indexes into uplink.items.
 	for(var/datum/uplink_category/category as anything in dd_sortedObjectList(init_subtypes(/datum/uplink_category)))
-		own_add(src, nameof(categories), category)
+		rel_add(src, nameof(categories), category)
 
 	for(var/datum/uplink_item/item as anything in init_subtypes(/datum/uplink_item))
 		if(!item.name)
 			qdel(item) // ALLOW(lifecycle): init_subtypes() made an abstract uplink item nothing adopts; it goes at once
 			continue
 
-		own_add(src, nameof(items), item)
+		rel_add(src, nameof(items), item)
 		items_assoc[item.type] = item
 
 		for(var/datum/uplink_category/category in categories)

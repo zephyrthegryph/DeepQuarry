@@ -19,6 +19,7 @@
 
 CAPABILITIES(/datum/turbolift)
 	owns_one(nameof(control_panel_interior), /obj/structure/lift/panel)
+	owns_many(nameof(floors))
 
 /// Used for controller processing: periodic_step() drives the lift while set (DECLARE_PERIODIC_WHILE).
 OM_FIELD_TYPED(/datum/turbolift, tmp, busy_state, null, CHANGE_DATUM_A)

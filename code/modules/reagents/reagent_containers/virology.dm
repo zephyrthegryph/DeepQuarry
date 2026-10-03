@@ -4,13 +4,16 @@
 	var/list/data = list("donor" = null, "viruses" = null, "blood_DNA" = null, "blood_type" = null, "resistances" = null, "trace_chems" = null, "changeling"=FALSE) // ALLOW(instance_list): d: edited in place per instance (191 writers)
 	var/list/diseases
 
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/culture)
+	owns_many(nameof(diseases))
+
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold
 	name = "cold virus culture"
 	desc = "A bottle with the common cold culture"
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/cold/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/cold)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/cold)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -20,7 +23,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/flu/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/flu)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/flu)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -30,7 +33,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/blobspores/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/blobspores)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/blobspores)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -40,7 +43,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/macrophages/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/macrophage)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/macrophage)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -50,7 +53,7 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)
 
@@ -60,6 +63,6 @@
 
 /obj/item/reagent_containers/glass/beaker/vial/culture/random_virus/minor/Initialize(mapload)
 	. = ..()
-	own_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random/minor)
+	rel_add(src, nameof(diseases), new /datum/affliction/contagion/engineered/random/minor)
 	data["viruses"] = (diseases || list())
 	reagents.add_reagent(REAGENT_ID_BLOOD, 10, data)

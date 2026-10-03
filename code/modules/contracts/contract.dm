@@ -236,6 +236,10 @@
 	/// Additional station-level faction consequences selected by negotiation.
 	var/list/secondary_faction_reputation_rewards
 
+CAPABILITIES(/datum/contract)
+	owns_many(nameof(audit_log))
+	owns_many(nameof(requirements))
+
 /datum/contract/New()
 	. = ..()
 	contributions = list()
@@ -275,13 +279,13 @@
 		close(CONTRACT_CANCELLED, CONTRACT_AUDIT_CANCELLED, "The offer expired without acceptance.", CONTRACT_CLOSE_EXPIRED)
 
 /datum/contract/proc/audit(category, detail)
-	own_add(src, nameof(audit_log), new /datum/contract_audit_entry(category, detail))
+	rel_add(src, nameof(audit_log), new /datum/contract_audit_entry(category, detail))
 
 /datum/contract/proc/add_requirement(datum/contract_requirement/requirement)
 	if(!requirement || state != CONTRACT_OFFERED)
 		return FALSE
 	rel_set(requirement, nameof(requirement.contract), src)
-	own_add(src, nameof(requirements), requirement)
+	rel_add(src, nameof(requirements), requirement)
 	return TRUE
 
 /datum/contract/proc/add_child(datum/contract/child)

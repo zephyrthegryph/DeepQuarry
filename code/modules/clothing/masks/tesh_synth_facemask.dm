@@ -65,7 +65,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/synthfacemask, TYPE_PROC_REF(/at
 
 /datum/gear/mask/synthface/New()
 	..()
-	own_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
+	rel_add(src, nameof(gear_tweaks), new /datum/gear_tweak/color)
 
 /// the maskmaster this refers to (a relation view: null once it is deleted).
 /obj/item/clothing/mask/synthfacemask/proc/maskmaster() as /mob/living/carbon

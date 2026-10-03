@@ -65,7 +65,7 @@ CAPABILITIES(/obj/item/nif)
 	// (the old hud deleted its own, which cleared this relation).
 	if(!screen_icon)
 		var/atom/movable/screen/nif/button = new
-		own_add(HUD, nameof(HUD.other_important), button)
+		rel_add(HUD, nameof(HUD.other_important), button)
 		rel_set(src, nameof(screen_icon), button)
 		om_hook(screen_icon, /datum/om/event/click, src, PROC_REF(nif_menu_click))
 	screen_icon.icon = HUD.ui_style

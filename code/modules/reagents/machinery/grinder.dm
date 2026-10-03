@@ -18,6 +18,9 @@
 	var/static/radial_eject = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_eject")
 	var/static/radial_grind = image(icon = 'icons/mob/radial.dmi', icon_state = "radial_grind")
 
+CAPABILITIES(/obj/machinery/reagentgrinder)
+	owns_many(nameof(holdingitems))
+
 DECLARE_DEFAULT_CHILD(/obj/machinery/reagentgrinder, "beaker", /obj/item/reagent_containers/glass/beaker/large)
 
 /obj/machinery/reagentgrinder/Initialize(mapload)
@@ -90,7 +93,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/reagentgrinder, "juicer{beaker?1:0}")
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			own_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
+			rel_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
 			if(holdingitems && length(holdingitems) >= limit)
 				break
 

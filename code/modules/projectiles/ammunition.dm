@@ -171,6 +171,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_o
 	var/list/icon_keys		//keys
 	var/list/ammo_states	//values
 
+CAPABILITIES(/obj/item/ammo_magazine)
+	owns_many(nameof(stored_ammo))
+
 /obj/item/ammo_magazine/Initialize(mapload, material_key)
 	. = ..()
 	pixel_x = rand(-5, 5)
@@ -188,7 +191,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/ammo_casing, TYPE_PROC_REF(/atom, appearance_o
 			latent_rounds = initial_ammo
 		else
 			for(var/i in 1 to initial_ammo)
-				own_add(src, nameof(stored_ammo), new ammo_type(src))
+				rel_add(src, nameof(stored_ammo), new ammo_type(src))
 
 	// A lathe can forge a magazine from chosen construction materials,
 	// passing its key as the second Initialize arg — stamp the rounds with it.
@@ -290,7 +293,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 	// The new rounds go to the head of the list, in order.
 	var/head = 1
 	for(var/obj/item/ammo_casing/new_round as anything in rounds)
-		if(own_add(src, nameof(stored_ammo), new_round))
+		if(rel_add(src, nameof(stored_ammo), new_round))
 			moveElement(stored_ammo, length(stored_ammo), head++)
 
 /obj/item/ammo_magazine/pickup(mob/user)

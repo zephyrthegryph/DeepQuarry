@@ -57,6 +57,9 @@ DECLARE_PERIODIC(/obj/item/reagent_containers/glass/replenishing, PERIODIC_SLOW)
 	var/wight_check_index = 1
 	var/list/shadow_wights
 
+CAPABILITIES(/obj/item/vampiric)
+	owns_many(nameof(shadow_wights))
+
 DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
@@ -99,7 +102,7 @@ DECLARE_PERIODIC(/obj/item/vampiric, PERIODIC_SLOW)
 
 	if(charges >= 1)
 		if(length(shadow_wights) < 5 && prob(5))
-			own_add(src, nameof(shadow_wights), new /obj/effect/shadow_wight(src.loc))
+			rel_add(src, nameof(shadow_wights), new /obj/effect/shadow_wight(src.loc))
 			play_sfx(src, SFX_EFFECTS_GHOST)
 			charges -= 0.1
 

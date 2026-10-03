@@ -18,7 +18,7 @@
 	// The pile's own reference seed: the registered line, or a private snapshot of a packet's private copy.
 	var/datum/seed/S = O.seed()
 	proto_set(src, nameof(seed_type_static), (!S || is_registered(S)) ? S : S.copy_line())
-	own_add(src, nameof(seeds), O)
+	rel_add(src, nameof(seeds), O)
 	src.ID = ID
 
 /datum/seed_pile/proc/matches(obj/item/seeds/O)
@@ -46,6 +46,10 @@
 	var/smart = 0 //Used for hacking. Overrides the scanner.
 	var/hacked = 0
 	var/lockdown = 0
+
+CAPABILITIES(/obj/machinery/seed_storage)
+	owns_many(nameof(piles), /datum/seed_pile)
+	owns_many(nameof(piles_contra), /datum/seed_pile)
 
 /obj/machinery/seed_storage/Initialize(mapload)
 	. = ..()
@@ -513,22 +517,22 @@ DECLARE_EMAG(/obj/machinery/seed_storage, PROC_REF(on_emag), null, null)
 		for (var/datum/seed_pile/N in piles_contra)
 			if (N.matches(O))
 				++N.amount
-				own_add(N, nameof(N.seeds), (O))
+				rel_add(N, nameof(N.seeds), (O))
 				return
 			else if(N.ID >= newID)
 				newID = N.ID + 1
-		own_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
+		rel_add(src, nameof(piles_contra), new /datum/seed_pile(O, newID))
 		return
 
 	for (var/datum/seed_pile/N in piles)
 		if (N.matches(O))
 			++N.amount
-			own_add(N, nameof(N.seeds), (O))
+			rel_add(N, nameof(N.seeds), (O))
 			return
 		else if(N.ID >= newID)
 			newID = N.ID + 1
 
-	own_add(src, nameof(piles), new /datum/seed_pile(O, newID))
+	rel_add(src, nameof(piles), new /datum/seed_pile(O, newID))
 
 	return
 

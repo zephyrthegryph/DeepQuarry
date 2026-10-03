@@ -26,7 +26,7 @@
 
 /datum/computer_file/data/email_account/New(glob_load)
 	if(!glob_load)
-		own_add(GLOB.ntnet_global, nameof(/datum/ntnet::email_accounts), src) // NTNet owns every account; a dying account leaves the list in phase 2
+		rel_add(GLOB.ntnet_global, nameof(/datum/ntnet::email_accounts), src) // NTNet owns every account; a dying account leaves the list in phase 2
 	..()
 
 /datum/computer_file/data/email_account/proc/all_emails()
@@ -82,6 +82,9 @@
 	/// Own each cloned message until its scheduled delivery has finished.
 	var/list/pending_messages
 
+CAPABILITIES(/datum/computer_file/data/email_account/service/broadcaster)
+	owns_many(nameof(pending_messages))
+
 /datum/computer_file/data/email_account/service/broadcaster/receive_mail(datum/computer_file/data/email_message/received_message, relayed, mob/user)
 	if(suspended || !istype(received_message) || relayed)
 		return FALSE
@@ -93,7 +96,7 @@
 	var/delay = 0
 	for(var/datum/computer_file/data/email_account/email_account in GLOB.ntnet_global.email_accounts)
 		var/datum/computer_file/data/email_message/new_message = received_message.clone()
-		own_add(src, nameof(pending_messages), new_message)
+		rel_add(src, nameof(pending_messages), new_message)
 		if(!after(src, delay, PROC_REF(deliver_broadcast), with = list(email_account.login, new_message, user)))
 			own_remove(src, nameof(pending_messages), new_message)
 		delay += 0.2 SECONDS

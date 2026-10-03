@@ -131,7 +131,7 @@ of the val stack.
 	var/datum/node/expression/op/O=opr.Pop()
 	if(!O) return
 	if(!istype(O))
-		own_add(src, nameof(errors), new/datum/scriptError("Error reducing expression - invalid operator."))
+		rel_add(src, nameof(errors), new/datum/scriptError("Error reducing expression - invalid operator."))
 		return
 	//Take O and assign its operands, popping one or two values from the val stack
 	//depending on whether O is a binary or unary operator.
@@ -185,12 +185,12 @@ See Also:
 		if(EndOfExpression(end))
 			break
 		if(istype(curToken(), /datum/token/symbol) && ErrChars.Find(curToken().value))
-			own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+			rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 			break
 
 
 		if(index>tokens.len)																						//End of File
-			own_add(src, nameof(errors), new/datum/scriptError/EndOfFile())
+			rel_add(src, nameof(errors), new/datum/scriptError/EndOfFile())
 			break
 		var/datum/token/ntok
 		if(index+1<=tokens.len)
@@ -198,7 +198,7 @@ See Also:
 
 		if(istype(curToken(), /datum/token/symbol) && curToken().value=="(")			//Parse parentheses expression
 			if(expecting!=VALUE)
-				own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
+				rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
 				NextToken()
 				continue
 			val.Push(ParseParenExpression())
@@ -207,13 +207,13 @@ See Also:
 			if(src.expecting==OPERATOR)
 				curOperator=GetBinaryOperator(curToken())
 				if(!curOperator)
-					own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
+					rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
 					NextToken()
 					continue
 			else
 				curOperator=GetUnaryOperator(curToken())
 				if(!curOperator) 																						//given symbol isn't a unary operator
-					own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("expression", curToken()))
+					rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("expression", curToken()))
 					NextToken()
 					continue
 
@@ -228,7 +228,7 @@ See Also:
 			var/old_expect=src.expecting
 			var/fex=ParseFunctionExpression()
 			if(old_expect!=VALUE)
-				own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", preToken))
+				rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", preToken))
 				NextToken()
 				continue
 			val.Push(fex)
@@ -239,14 +239,14 @@ See Also:
 				if(!kw.Parse(src))
 					return
 			else
-				own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+				rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 		else if(istype(curToken(), /datum/token/end)) 													//semicolon found where it wasn't expected
-			own_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
+			rel_add(src, nameof(errors), new/datum/scriptError/BadToken(curToken()))
 			NextToken()
 			continue
 		else
 			if(expecting!=VALUE)
-				own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
+				rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken("operator", curToken()))
 				NextToken()
 				continue
 			val.Push(GetExpression(curToken()))
@@ -257,7 +257,7 @@ See Also:
 	.=val.Pop()                       																//Return what should be the last value on the stack
 	if(val.Top())                     																//
 		var/datum/node/N=val.Pop()
-		own_add(src, nameof(errors), new/datum/scriptError("Error parsing expression. Unexpected value left on stack: [N.ToString()]."))
+		rel_add(src, nameof(errors), new/datum/scriptError("Error parsing expression. Unexpected value left on stack: [N.ToString()]."))
 		return null
 
 /*
@@ -281,10 +281,10 @@ See Also:
 
 		if(istype(curToken(), /datum/token/symbol) && curToken().value==")")
 			return exp
-		own_add(exp, nameof(exp.parameters), ParseParamExpression())
+		rel_add(exp, nameof(exp.parameters), ParseParamExpression())
 		if(curToken().value==","&&istype(curToken(), /datum/token/symbol))NextToken()	//skip comma
 		if(istype(curToken(), /datum/token/end))																		//Prevents infinite loop...
-			own_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(")"))
+			rel_add(src, nameof(errors), new/datum/scriptError/ExpectedToken(")"))
 			return exp
 
 /*

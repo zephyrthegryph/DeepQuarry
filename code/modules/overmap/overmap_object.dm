@@ -37,6 +37,7 @@
 CAPABILITIES(/obj/effect/overmap)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
+	owns_many(nameof(cam_plane_masters))
 
 /obj/effect/overmap/Initialize(mapload)
 	. = ..()
@@ -52,7 +53,7 @@ CAPABILITIES(/obj/effect/overmap)
 		cam_screen.screen_loc = "[map_name]:1,1"
 
 		for(var/atom/movable/screen/plane_master as anything in get_tgui_plane_masters())
-			own_add(src, nameof(cam_plane_masters), plane_master)
+			rel_add(src, nameof(cam_plane_masters), plane_master)
 
 		for(var/atom/movable/screen/instance as anything in cam_plane_masters)
 			instance.assigned_map = map_name

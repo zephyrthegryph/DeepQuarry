@@ -85,6 +85,9 @@
 	var/can_hear_aooc = TRUE		// If FALSE, the antag can neither speak nor hear AOOC. If TRUE, they can at least hear it.
 	var/can_speak_aooc = TRUE		// If TRUE, the antag can freely spean in AOOC.
 
+CAPABILITIES(/datum/antagonist)
+	owns_many(nameof(global_objectives), /datum/objective)
+
 /datum/antagonist/New()
 	..()
 	cur_max = hard_cap

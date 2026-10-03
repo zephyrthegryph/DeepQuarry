@@ -18,6 +18,9 @@
 	var/affected_area = 3
 	special_handling = TRUE
 
+CAPABILITIES(/obj/item/grenade/chem_grenade)
+	owns_many(nameof(beakers))
+
 TYPE_TABLE_DECLARE(/obj/item/grenade/chem_grenade, chem_grenade_containers, list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle))
 
 DECLARE_REAGENTS(/obj/item/grenade/chem_grenade, 1000, null)

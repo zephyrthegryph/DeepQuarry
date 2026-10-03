@@ -28,6 +28,7 @@
 
 CAPABILITIES(/obj/machinery/computer/cloning)
 	owns_one(nameof(loaded_BR), /datum/transhuman/body_record)
+	owns_many(nameof(records))
 
 // Linked pods (two-sided with each pod's connected; a pod leaves when either end dies).
 /obj/machinery/computer/cloning/ownership()
@@ -476,7 +477,7 @@ UI_ACT_PROC(/obj/machinery/computer/cloning, ui_act_cleartemp)
 	if (!isnull(subject.mind)) //Save that mind so traitors can continue traitoring after cloning.
 		BR.mydna.mind = "\ref[subject.mind]"
 
-	own_add(src, nameof(records), BR)
+	rel_add(src, nameof(records), BR)
 	set_scan_temp("Subject successfully scanned.", "good")
 	SStgui.update_uis(src)
 

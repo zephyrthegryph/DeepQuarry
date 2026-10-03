@@ -617,7 +617,7 @@ CAPABILITIES(/datum/cargo_market_bid)
 		transaction.trace_strength = CLAMP(round((8 + sqrt(max(0, transaction.value)) / 3 + (reservation_key ? 5 : 0)) * risk_multiplier), 1, CARGO_MARKET_TRACE_LIMIT)
 		GLOB.station_faction_relations.add_agent_exposure(transaction.principal_account, counterparty.faction_id, max(1, round(transaction.trace_strength / 5)), "Encrypted market traffic accumulated forensic metadata.", transaction.id)
 	log_game("Cargo market [transaction.id]: [transaction_type] [transaction.value] Thalers with [counterparty?.name || counterparty_id] by account [account_number || "unknown"] (cover: [transaction.cover_name || "none"], reservation: [reservation_key || "none"]).")
-	own_add(src, nameof(market_transactions), transaction)
+	rel_add(src, nameof(market_transactions), transaction)
 	if(length(market_transactions) > CARGO_MARKET_TRANSACTION_LIMIT)
 		var/datum/cargo_market_transaction/oldest = market_transactions?[1]
 		own_remove(src, nameof(market_transactions), oldest)

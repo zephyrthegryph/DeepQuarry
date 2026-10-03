@@ -4,7 +4,7 @@
 
 /datum/mini_hud/mapper/New(datum/hud/other, owner)
 	rel_set(src, nameof(owner), owner)
-	own_add(src, nameof(screenobjs), new /atom/movable/screen/movable/mapper_holder(null, owner))
+	rel_add(src, nameof(screenobjs), new /atom/movable/screen/movable/mapper_holder(null, owner))
 	..()
 
 // The mapping unit owns us as its hud_datum and views our holder screen object as hud_item;

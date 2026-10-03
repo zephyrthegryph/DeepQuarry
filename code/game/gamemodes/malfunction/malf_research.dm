@@ -8,6 +8,9 @@
 	var/mob/living/silicon/ai/owner			// AI which owns this research datum.
 	var/datum/malf_research_ability/focus_static	// Currently researched item (a relation view into available_abilities)
 
+CAPABILITIES(/datum/malf_research)
+	owns_many(nameof(available_abilities))
+
 /datum/malf_research/New()
 	setup_abilities()
 	EXPIRY_STAMP(src, last_tick, CLOCK_WORLD)
@@ -20,9 +23,9 @@
 	own_clear(src, nameof(available_abilities), OWN_DELETE)
 	own_clear(src, nameof(unlocked_abilities), OWN_DELETE)
 
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/networking/basic_hack())
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/interdiction/recall_shuttle())
-	own_add(src, nameof(available_abilities), new/datum/malf_research_ability/manipulation/electrical_pulse())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/networking/basic_hack())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/interdiction/recall_shuttle())
+	rel_add(src, nameof(available_abilities), new/datum/malf_research_ability/manipulation/electrical_pulse())
 
 
 // Proc:		finish_research()

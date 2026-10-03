@@ -52,7 +52,7 @@
 			if(!G.reagents || !G.reagents.total_volume)
 				continue
 			failed = 0
-			own_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
+			rel_add(src, nameof(src.holdingitems), G) // out of the bag: a one-call transfer
 			if(holdingitems && holdingitems.len >= limit)
 				break
 

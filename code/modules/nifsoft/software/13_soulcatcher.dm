@@ -13,6 +13,9 @@
 	var/list/brainmobs
 	var/inside_flavor = "A small completely white room with a couch, and a window to what seems to be the outside world. A small sign in the corner says 'Configure Me'."
 
+CAPABILITIES(/datum/nifsoft/soulcatcher)
+	owns_many(nameof(brainmobs))
+
 /datum/nifsoft/soulcatcher/New()
 	..()
 	load_settings()
@@ -236,7 +239,7 @@
 	rel_set(brainmob, nameof(brainmob.container), src)
 	brainmob.status_set(EFFECT_MUTED, 0)
 	brainmob.add_language(LANGUAGE_GALCOM)
-	own_add(src, nameof(brainmobs), brainmob)
+	rel_add(src, nameof(brainmobs), brainmob)
 
 	//Put the mind and player into the mob
 	transfer_mind(M.mind, brainmob, "caught in [nif()]'s soulcatcher") // identity (DNA, OOC notes) comes by reference

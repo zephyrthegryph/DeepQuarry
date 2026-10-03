@@ -89,6 +89,9 @@
 	/// The node's watches (/datum/native_watch/heat).
 	var/list/watches
 
+CAPABILITIES(/datum/dq_rx_node)
+	owns_many(nameof(watches))
+
 /datum/dq_rx_node/New(atom/A)
 	..()
 	rel_set(src, nameof(node_atom), A)
@@ -137,7 +140,7 @@
 		for(var/datum/native_watch/old as anything in node.watches?.Copy())
 			if(QDELETED(old))
 				own_take_member(node, nameof(node.watches), old)
-		own_add(node, nameof(node.watches), W)
+		rel_add(node, nameof(node.watches), W)
 	return W
 
 /proc/dq_rx_when_threshold(datum/D, node, ch, above, level, edges)

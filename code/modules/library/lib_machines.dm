@@ -176,6 +176,9 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 	/// The External Archive's rows (refresh_external(): they arrive after it is asked).
 	var/list/external_rows
 
+CAPABILITIES(/obj/machinery/librarycomp)
+	owns_many(nameof(checkouts))
+
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
 
@@ -414,7 +417,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkout)
 	b.mobname = sanitize(buffer_mob)
 	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
-	own_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
+	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
 	return TRUE
 
 UI_ACT(/obj/machinery/librarycomp, "checkin", ui_act_checkin, UI_ARG_REF("ref", null, /datum/borrowbook))

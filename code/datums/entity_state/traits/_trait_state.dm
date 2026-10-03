@@ -83,7 +83,7 @@
 		log_game("TRAIT_STATE: [state_type] refused [key_name(src)] ([type]); not attached.")
 		qdel(S)
 		return null
-	own_add(src, nameof(trait_states), S)
+	rel_add(src, nameof(trait_states), S)
 	S.attach()
 	return S
 

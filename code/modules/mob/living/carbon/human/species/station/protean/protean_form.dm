@@ -329,11 +329,14 @@ GLOBAL_TABLE(protean_blob_styles, GLOBAL_PROC_REF(build_protean_blob_styles))
 	/// /datum/protean_blob_layer instances, in draw order.
 	var/list/layers
 
+CAPABILITIES(/datum/protean_blob_style/layered)
+	owns_many(nameof(layers))
+
 /datum/protean_blob_style/layered/New()
 	..()
 	own_take_all(src, nameof(layers))
 	for(var/list/spec as anything in TYPE_TABLE_GET(src, layer_specs))
-		own_add(src, nameof(layers), new /datum/protean_blob_layer(arglist(spec)))
+		rel_add(src, nameof(layers), new /datum/protean_blob_layer(arglist(spec)))
 
 /// Constructor arguments for each layer, in draw order.
 TYPE_TABLE_DECLARE(/datum/protean_blob_style/layered, layer_specs, list())

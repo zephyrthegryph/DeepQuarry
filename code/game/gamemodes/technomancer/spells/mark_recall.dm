@@ -33,6 +33,9 @@
 /// Every placed mark (owned by the antag service); one per caster.
 /datum/system/antag/var/list/datum/technomancer_marker/mark_spells
 
+CAPABILITIES(/datum/system/antag)
+	owns_many(nameof(mark_spells), /datum/technomancer_marker)
+
 /// `user`'s placed mark, or null.
 /proc/technomancer_marker_of(mob/user)
 	for(var/datum/technomancer_marker/marker as anything in SSantag.mark_spells)
@@ -60,7 +63,7 @@
 		//They don't have one yet
 		else
 			to_chat(user, span_notice("You mark \the [get_turf(user)] under you."))
-		own_add(SSantag, nameof(/datum/system/antag::mark_spells), new /datum/technomancer_marker(user))
+		rel_add(SSantag, nameof(/datum/system/antag::mark_spells), new /datum/technomancer_marker(user))
 		adjust_instability(5)
 		return 1
 	else
