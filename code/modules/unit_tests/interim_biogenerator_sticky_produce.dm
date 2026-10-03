@@ -1,0 +1,33 @@
+/// The real held-produce route respects inventory release before the original fruit can be processed into biomass points.
+/datum/unit_test/interim_biogenerator_sticky_produce/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/biogenerator/generator = allocate(/obj/machinery/biogenerator, T)
+	var/obj/item/reagent_containers/food/snacks/grown/fruit = allocate(/obj/item/reagent_containers/food/snacks/grown, T, PLANT_APPLE)
+	TEST_ASSERT(!QDELETED(fruit), "the actual apple seed creates a live grown fruit")
+	TEST_ASSERT_NOTNULL(fruit.seed(), "the actual grown fruit has its real seed data")
+	generator.set_stat(0)
+	var/points_before = generator.points
+	var/volume_before = fruit.reagents.total_volume
+	var/nutriment = fruit.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT)
+	var/expected_points = nutriment < 0.1 ? 1 : nutriment * 10 * generator.eat_eff
+	TEST_ASSERT(expected_points > 0, "the actual fruit has a positive biomass yield")
+	TEST_ASSERT(user.put_in_active_hand(fruit), "the actor holds the original grown fruit")
+	add_trait(fruit, TRAIT_NODROP, "interim_biogenerator_sticky_produce")
+	TEST_ASSERT(user.release_refusal(fruit, user), "the actual inventory refuses release of the sticky fruit")
+	generator.interaction_insert(user, fruit, null)
+	TEST_ASSERT_EQUAL(fruit.loc, user, "refused produce insertion preserves actual actor containment")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), fruit, "refused produce insertion preserves the original hand")
+	TEST_ASSERT_EQUAL(fruit.reagents.total_volume, volume_before, "refused produce insertion preserves its original mixture")
+	TEST_ASSERT_EQUAL(generator.points, points_before, "refused insertion creates no biomass points")
+	TEST_ASSERT(!generator.processing, "refused insertion starts no processing")
+	remove_trait(fruit, TRAIT_NODROP, "interim_biogenerator_sticky_produce")
+	generator.interaction_insert(user, fruit, null)
+	TEST_ASSERT_EQUAL(fruit.loc, generator, "allowed insertion physically contains the original fruit")
+	TEST_ASSERT_NULL(user.get_active_hand(), "allowed insertion clears the actual source hand")
+	TEST_ASSERT_EQUAL(fruit.reagents.total_volume, volume_before, "allowed insertion preserves the original mixture before activation")
+	TEST_ASSERT_NULL(owner_of(fruit), "ordinary produce containment adds no undeclared owned field")
+	generator.activate(user)
+	TEST_ASSERT(QDELETED(fruit), "actual generator activation consumes the original inserted fruit")
+	TEST_ASSERT(abs(generator.points - points_before - expected_points) < 0.001, "actual activation credits the original fruit's exact biomass yield")
+	TEST_ASSERT(generator.processing, "actual activation starts its real processing phase")

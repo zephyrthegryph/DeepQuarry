@@ -690,6 +690,8 @@
 #include "interim_pulse_exhaustion.dm"
 #include "interim_camera_sticky_upgrade.dm"
 #include "interim_player_notes_delete_actor.dm"
+#include "interim_biogenerator_sticky_produce.dm"
+#include "interim_biogenerator_bulk_storage_release.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
