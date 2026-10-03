@@ -50,8 +50,10 @@ DECLARE_PERIODIC_WHILE(/obj/item/technomancer_core, PERIODIC_SLOW, "wearer")
 
 // Removes the spell buttons from the HUD.
 /obj/item/technomancer_core/dropped(mob/user, equipping, slot)
-	for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
-		wearer.ability_master.remove_ability(A)
+	// The inventory equip path calls dropped() before an unworn core has its first wearer.
+	if(wearer)
+		for(var/atom/movable/screen/ability/obj_based/technomancer/A in wearer.ability_master.ability_objects)
+			wearer.ability_master.remove_ability(A)
 	rel_clear(src, nameof(wearer))
 	canremove = TRUE
 	..()

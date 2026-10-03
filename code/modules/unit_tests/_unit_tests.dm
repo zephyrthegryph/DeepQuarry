@@ -700,6 +700,7 @@
 #include "interim_empty_content_init.dm"
 #include "interim_pipelayer_sticky_recycling.dm"
 #include "interim_newscaster_sticky_photo_replacement.dm"
+#include "interim_technomancer_core_first_equip.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
