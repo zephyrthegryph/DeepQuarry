@@ -122,7 +122,6 @@ usr_outside_verb	code/game/objects/items/devices/defib.dm	src.add_fingerprint(us
 usr_outside_verb	code/game/objects/items/devices/personal_shield_generator.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/devices/radio/radiopack.dm	add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/ghost_hunting/weapons.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/toys/toys.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src.add_fingerprint(usr)
@@ -271,7 +270,6 @@ usr_outside_verb	code/modules/examine/examine.dm	return "[icon2html(GLOB.descrip
 usr_outside_verb	code/modules/food/food/drinks.dm	if(over_object.Adjacent(usr))
 usr_outside_verb	code/modules/food/food/drinks.dm	to_chat(usr, span_notice("You put the [src] in the cup dispenser."))
 usr_outside_verb	code/modules/food/food/snacks.dm	if(istype(user) && user == usr)
-usr_outside_verb	code/modules/games/cards.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(pin, usr)
 usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	debugger.write_data(pin, usr)
 usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)

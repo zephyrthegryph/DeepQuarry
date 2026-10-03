@@ -2660,8 +2660,11 @@ DECLARE_INTERACTIONS(/obj/item/toy/desk, \
 	return TRUE
 
 /obj/item/toy/desk/MouseDrop(mob/user as mob) // Code from Paper bin, so you can still pick up the deck
-	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
-		if(!isanimal(user))
+	return pickup_with_actor(usr, user) // ALLOW(sys_usr_outside_verb): Native tabletop-item drag captures its initiating actor separately from its drop destination.
+
+/obj/item/toy/desk/proc/pickup_with_actor(mob/user, mob/destination)
+	if((user && user == destination && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
+		if(ishuman(user))
 			if(!user.get_active_hand())		//if active hand is empty
 				var/mob/living/carbon/human/H = user
 				var/obj/item/organ/external/temp = H.organs_by_name[BP_R_HAND]

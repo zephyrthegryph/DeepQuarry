@@ -838,6 +838,7 @@
 #include "interim_ship_ingestion_prompt_actor.dm"
 #include "interim_gold_sticker_sticky_application.dm"
 #include "interim_homunculus_death_cleanup.dm"
+#include "interim_tabletop_pickup_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
