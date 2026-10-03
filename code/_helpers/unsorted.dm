@@ -437,9 +437,9 @@ Turf and target are seperate in case you want to teleport some distance from a t
 		if(M.low_sorting_priority && !M.client)
 			delaylist.Add(M)
 		else
-			if (!M.client && !M.disconnect_time) //ChompADD Start
+			if (!M.client && !M.disconnect_time)
 				after_simplemob_minded.Add(M)
-				continue //ChompADD End
+				continue
 			moblist.Add(M)
 	moblist.Add(delaylist)
 	for(var/mob/living/carbon/brain/M in sortmob)
@@ -1322,9 +1322,9 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 
 /// Asks for a type (typed filter, then a pick from the matches) inside a prompt flow
 /// (flow_ask()): null until answered. `key` keeps its answers apart.
-/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path")
+/proc/pick_closest_path(value, list/matches = GLOBAL_TABLE_GET(get_fancy_list_of_atom_types), key = "path", mob/user)
 	if (value == FALSE) //nothing should be calling us with a number, so this is safe
-		value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
+		value = flow_ask(user, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
 		if (isnull(value))
 			return
 	value = trim(value)
@@ -1338,7 +1338,7 @@ GLOBAL_DATUM(dview_mob, /mob/dview)
 	if(matches.len==1)
 		chosen = matches[1]
 	else
-		chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
+		chosen = flow_ask(user, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
 		if(!chosen || !(chosen in matches))
 			return
 	chosen = matches[chosen]

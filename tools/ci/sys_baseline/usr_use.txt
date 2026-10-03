@@ -9,8 +9,6 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
-usr_outside_verb	code/_helpers/unsorted.dm	value = flow_ask(usr, "[key]:filter", /datum/om/prompt/text, message = "Enter type to find (blank for all, cancel to cancel)", title = "Search for type")
-usr_outside_verb	code/_helpers/unsorted.dm	chosen = flow_ask(usr, "[key]:pick", /datum/om/prompt/choice, message = "Select a type", title = "Pick Type", choices = matches)
 usr_outside_verb	code/_onclick/click.dm	if(istype(usr, /mob/living/carbon))
 usr_outside_verb	code/_onclick/click.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/_onclick/click.dm	var/turf/T = get_turf(usr)
