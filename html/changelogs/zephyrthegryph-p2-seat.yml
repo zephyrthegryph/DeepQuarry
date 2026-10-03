@@ -1,0 +1,5 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Beds, chairs, sofas, stools, roller beds and wheelchairs are declared with the buckle() library capability; cap_buckle is deleted"
+  - bugfix: "A grab on a bed now buckles the grabbed person and lets go; roller beds, office and wooden chairs, wheelchairs and the alien bed refuse padding; a shock kit makes an electric chair; the roller rack collapses a roller bed"
