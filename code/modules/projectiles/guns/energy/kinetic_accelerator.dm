@@ -376,7 +376,8 @@ DECLARE_INTERACTIONS(/obj/item/borg/upgrade/modkit, INTERACT_ITEM(null, PROC_REF
 				break
 	if(KA.get_remaining_mod_capacity() >= cost)
 		if(.)
-			user.drop_from_inventory(src, KA)
+			if(!own_bring_in(KA, nameof(KA.modkits), src, null, user, TRUE, null, FALSE))
+				return FALSE
 			to_chat(user, span_notice("You install the modkit."))
 			play_sfx(loc, SFX_ITEMS_SCREWDRIVER, 2)
 			rel_add(KA, nameof(KA.modkits), src)
