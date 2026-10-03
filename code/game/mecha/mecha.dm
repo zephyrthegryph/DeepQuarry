@@ -178,6 +178,21 @@ CAPABILITIES(/obj/mecha)
 	owns_one(nameof(internal_tank), /obj/item/tank)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
 	owns_one(nameof(radio), /obj/item/radio)
+	owns_one(nameof(eject_action), /datum/action/innate/mecha/mech_eject, starts = /datum/action/innate/mecha/mech_eject)
+	owns_one(nameof(internals_action), /datum/action/innate/mecha/mech_toggle_internals, starts = /datum/action/innate/mecha/mech_toggle_internals)
+	owns_one(nameof(lights_action), /datum/action/innate/mecha/mech_toggle_lights, starts = /datum/action/innate/mecha/mech_toggle_lights)
+	owns_one(nameof(stats_action), /datum/action/innate/mecha/mech_view_stats, starts = /datum/action/innate/mecha/mech_view_stats)
+	owns_one(nameof(strafing_action), /datum/action/innate/mecha/strafe, starts = /datum/action/innate/mecha/strafe)
+	owns_one(nameof(defence_action), /datum/action/innate/mecha/mech_defence_mode, starts = /datum/action/innate/mecha/mech_defence_mode)
+	owns_one(nameof(overload_action), /datum/action/innate/mecha/mech_overload_mode, starts = /datum/action/innate/mecha/mech_overload_mode)
+	owns_one(nameof(smoke_action), /datum/action/innate/mecha/mech_smoke, starts = /datum/action/innate/mecha/mech_smoke)
+	owns_one(nameof(zoom_action), /datum/action/innate/mecha/mech_zoom, starts = /datum/action/innate/mecha/mech_zoom)
+	owns_one(nameof(thrusters_action), /datum/action/innate/mecha/mech_toggle_thrusters, starts = /datum/action/innate/mecha/mech_toggle_thrusters)
+	owns_one(nameof(cycle_action), /datum/action/innate/mecha/mech_cycle_equip, starts = /datum/action/innate/mecha/mech_cycle_equip)
+	owns_one(nameof(switch_damtype_action), /datum/action/innate/mecha/mech_switch_damtype, starts = /datum/action/innate/mecha/mech_switch_damtype)
+	owns_one(nameof(phasing_action), /datum/action/innate/mecha/mech_toggle_phasing, starts = /datum/action/innate/mecha/mech_toggle_phasing)
+	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
+	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
@@ -190,21 +205,6 @@ TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 
 // Actions and effect systems: declared children (new type(src)); an action's target is the mecha.
-DECLARE_DEFAULT_CHILD(/obj/mecha, "eject_action", /datum/action/innate/mecha/mech_eject)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "internals_action", /datum/action/innate/mecha/mech_toggle_internals)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "lights_action", /datum/action/innate/mecha/mech_toggle_lights)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "stats_action", /datum/action/innate/mecha/mech_view_stats)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "strafing_action", /datum/action/innate/mecha/strafe)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "defence_action", /datum/action/innate/mecha/mech_defence_mode)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "overload_action", /datum/action/innate/mecha/mech_overload_mode)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_action", /datum/action/innate/mecha/mech_smoke)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "zoom_action", /datum/action/innate/mecha/mech_zoom)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "thrusters_action", /datum/action/innate/mecha/mech_toggle_thrusters)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "cycle_action", /datum/action/innate/mecha/mech_cycle_equip)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "switch_damtype_action", /datum/action/innate/mecha/mech_switch_damtype)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "phasing_action", /datum/action/innate/mecha/mech_toggle_phasing)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "cloak_action", /datum/action/innate/mecha/mech_toggle_cloaking)
-DECLARE_DEFAULT_CHILD(/obj/mecha, "smoke_system", /datum/effect/effect/system/smoke_spread)
 
 
 /obj/mecha/Initialize(mapload)

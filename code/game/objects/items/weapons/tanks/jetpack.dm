@@ -28,7 +28,8 @@
 	. = ..()
 	ion_trail.set_up(src)
 
-DECLARE_DEFAULT_CHILD(/obj/item/tank/jetpack, "ion_trail", /datum/effect/effect/system/ion_trail_follow)
+CAPABILITIES(/obj/item/tank/jetpack)
+	owns_one(nameof(ion_trail), /datum/effect/effect/system/ion_trail_follow, starts = /datum/effect/effect/system/ion_trail_follow)
 
 /obj/item/tank/jetpack/examine(mob/user)
 	. = ..()

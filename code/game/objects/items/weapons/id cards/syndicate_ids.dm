@@ -20,7 +20,8 @@
 	. = ..() // Same as the normal Syndicate id, only already has all station access
 	access |= SSaccess.get_all_station_access()
 
-DECLARE_DEFAULT_CHILD(/obj/item/card/id/syndicate, "agentcard_module", /datum/tgui_module/agentcard)
+CAPABILITIES(/obj/item/card/id/syndicate)
+	owns_one(nameof(agentcard_module), /datum/tgui_module/agentcard, starts = /datum/tgui_module/agentcard)
 
 // the card's registered user is unset.
 /obj/item/card/id/syndicate/on_destroy(force)
