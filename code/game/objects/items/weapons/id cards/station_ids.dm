@@ -97,7 +97,7 @@ DECLARE_INTERACTIONS(/obj/item/card/id, INTERACT_SELF("Show", PROC_REF(interacti
 	return TRUE
 
 /obj/item/card/id/GetAccess()
-	return access
+	return access // ALLOW(reads): the card access list is read when a click asks (a door, an APC); a changed card is looked at again on the next click
 
 /obj/item/card/id/GetID()
 	return src

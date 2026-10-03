@@ -273,7 +273,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 /// The clicked thing is an open container (not a food) with a coating (batter) in it.
 /obj/item/reagent_containers/food/snacks/proc/target_has_coating(datum/act/op/A)
 	var/atom/target = A.target
-	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food)) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	if(isnull(target?.reagents) || !target.is_open_container() || istype(target, /obj/item/reagent_containers/food))
 		return FALSE
 	for(var/datum/reagent/R as anything in target.reagents.reagent_list) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
 		if(istype(R, /datum/reagent/nutriment/coating))
@@ -295,7 +295,7 @@ MSG_DEF(snack/tear_open, "You tear %I%'s sac open, pouring it into %T%.", "%U% t
 /// The snack opens into the open container it is held to (a microwave is not one: it takes the snack itself).
 /obj/item/reagent_containers/food/snacks/proc/pours_into_target(datum/act/op/A)
 	var/atom/target = A.target
-	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave) // ALLOW(reads): the food's own state is read when the click asks; it asks again at the end
+	return !isnull(opens_into) && !isnull(target?.reagents) && target.is_open_container() && !istype(target, /obj/machinery/microwave)
 
 /// All of it that fits.
 /obj/item/reagent_containers/food/snacks/proc/pour_amount(datum/act/op/A)

@@ -13,6 +13,15 @@
 		out += at ? copytext(line, 1, at) : line
 	return jointext(out, "\n")
 
+/// The fixture's own lines of an explain_type() dump: the entries it inherits from /atom, /obj and the rest (declared in their own files) are left out,
+/// so the golden does not change when an ancestor declares one more relation.
+/proc/e1_own_lines(text)
+	var/list/out = list()
+	for(var/line in splittext(text, "\n"))
+		if(copytext(line, 1, 2) == "/" || findtext(line, "e1_fixtures.dm:") || !findtext(line, " @ "))
+			out += line
+	return jointext(out, "\n")
+
 /datum/unit_test/dq_e1
 	abstract_type = /datum/unit_test/dq_e1
 
@@ -71,7 +80,7 @@
 /datum/unit_test/dq_e1/table_golden
 
 /datum/unit_test/dq_e1/table_golden/run_e1()
-	var/text = explain_type(/obj/e1_fixture)
+	var/text = e1_own_lines(explain_type(/obj/e1_fixture))
 	TEST_ASSERT_NOTNULL(text, "explain_type returns the dump")
 	TEST_ASSERT_EQUAL(e1_strip_origins(text), E1_GOLDEN_FIXTURE, "explain_type matches the golden dump of the fixture")
 	// Every line carries file:line, in every build.
@@ -88,7 +97,7 @@
 /datum/unit_test/dq_e1/table_inherits_extend_configure_without
 
 /datum/unit_test/dq_e1/table_inherits_extend_configure_without/run_e1()
-	var/text = explain_type(/obj/e1_fixture/changed)
+	var/text = e1_own_lines(explain_type(/obj/e1_fixture/changed))
 	TEST_ASSERT_NOTNULL(text, "explain_type of the subtype")
 	TEST_ASSERT_EQUAL(e1_strip_origins(text), E1_GOLDEN_CHANGED, "the subtype's table: the parent's, configured, extended, one capability dropped")
 	var/obj/e1_fixture/changed/F = allocate(/obj/e1_fixture/changed)
@@ -97,7 +106,7 @@
 	TEST_ASSERT_EQUAL(widget.power, 9, "configure(e1_widget(\"a\", power = 9)) changed the param")
 	TEST_ASSERT_NULL(cap_of(F, CAP_E1_SOLO), "without(CAP_E1_SOLO) dropped the solo")
 	// A parent's table is untouched by its subtype.
-	TEST_ASSERT_EQUAL(e1_strip_origins(explain_type(/obj/e1_fixture)), E1_GOLDEN_FIXTURE, "the parent's table is as it was")
+	TEST_ASSERT_EQUAL(e1_strip_origins(e1_own_lines(explain_type(/obj/e1_fixture))), E1_GOLDEN_FIXTURE, "the parent's table is as it was")
 
 /datum/unit_test/dq_e1/table_shared_when_a_type_adds_nothing
 

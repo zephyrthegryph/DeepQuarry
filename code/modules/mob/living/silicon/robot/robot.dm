@@ -1868,7 +1868,7 @@ DECLARE_EMAG_REPEATABLE(/mob/living/silicon/robot, PROC_REF(on_emag), null)
 /obj/proc/siliconaccess(mob/user)
 	var/mob/living/silicon/robot/R = user
 	if(istype(R))
-		return check_access(R.idcard) // ALLOW(reads): a cyborg's ID card is fixed for its life, so a cached answer cannot go stale
+		return check_access(R.idcard)
 	if(issilicon(user))
 		return TRUE
 	return FALSE

@@ -534,7 +534,7 @@
 
 // Aurora Cooking Port
 /datum/reagents/proc/get_reagent(id) // Returns reference to reagent matching passed ID
-	return reagent_by_id[id]
+	return reagent_by_id[id] // ALLOW(reads): the reagent lookup is read when a click asks (the blood test, a hot thing held to a container); the click asks again
 
 //Spreads the contents of this reagent holder all over the vicinity of the target turf.
 /datum/reagents/proc/splash_area(turf/epicentre, range = 3, portion = 1.0, multiplier = 1, copy = 0)
