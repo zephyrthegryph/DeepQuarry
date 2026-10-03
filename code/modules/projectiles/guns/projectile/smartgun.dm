@@ -81,7 +81,7 @@ DECLARE_INTERACTIONS(/obj/item/gun/projectile/smartgun, INTERACT_ALT(null, PROC_
 			icon_state = "[initial(icon_state)]_closed"
 			play_sfx(src, SFX_WEAPONS_SMARTGUNCLOSE)
 			to_chat(user, span_notice("You ready [src] so that it can be fired."))
-		om_after_unique(src, 2 SECONDS, PROC_REF(toggle_real_state))
+		after(src, 2 SECONDS, PROC_REF(toggle_real_state), key = "smartgun_cycle")
 	return TRUE
 
 /obj/item/gun/projectile/smartgun/proc/toggle_real_state()

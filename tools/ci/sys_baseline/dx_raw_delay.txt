@@ -77,7 +77,6 @@ dx_raw_delay	code/game/objects/items.dm	after(src, 5, PROC_REF(openTip), key = "
 dx_raw_delay	code/game/objects/items/blueprints.dm	after(src, 5, "interact")
 dx_raw_delay	code/game/objects/items/blueprints.dm	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
 dx_raw_delay	code/game/objects/items/devices/flashlight.dm	after(src, rand(5,15), PROC_REF(do_flicker), with = list(amount, flicker_color, original_color, original_on, OL, ++ticker))
-dx_raw_delay	code/game/objects/items/devices/geiger.dm	om_after_unique(src, 20, PROC_REF(scan), interacting_with, user) // Let's not have spamming GetAllContents
 dx_raw_delay	code/game/objects/items/devices/megaphone.dm	COOLDOWN_START(src, spamcheck, 20)
 dx_raw_delay	code/game/objects/items/devices/personal_shield_generator.dm	COOLDOWN_START(user, last_special, 10) //No spamming!
 dx_raw_delay	code/game/objects/items/devices/personal_shield_generator.dm	COOLDOWN_START(user, last_special, 10) //No spamming!
@@ -254,7 +253,6 @@ dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/scel.dm	after(src,
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/syndimobs.dm	after(src, 5, PROC_REF(do_special_attack_2))
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/vore_hostile.dm	after(src, 5, PROC_REF(do_special_attack_2), with = list(L)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
 dx_raw_delay	code/modules/mob/living/simple_mob/subtypes/vore/weather.dm	after(src, 5, PROC_REF(dash_attack_1), with = list(A)) // For the throw to complete. It won't hold up the AI ticker due to waitfor being false.
-dx_raw_delay	code/modules/mob/new_player/preferences_setup.dm	om_after_replace(src, 1, TYPE_PROC_REF(/datum/preferences, update_preview_icon))
 dx_raw_delay	code/modules/mob/transform_procs.dm	after(src, 48, PROC_REF(monkeyize_1), with = list(animation))
 dx_raw_delay	code/modules/nifsoft/nif.dm	after(src, 1, PROC_REF(quick_install), with = list(H))
 dx_raw_delay	code/modules/nifsoft/nif_softshop.dm	after(src, rand(0, 15), PROC_REF(lose_power))

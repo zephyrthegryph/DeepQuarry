@@ -252,8 +252,8 @@
 	..()
 
 /datum/affliction/core_dormancy/proc/release()
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	if(!held_mob)
 		return
 	om_unhook(held_mob, list(/datum/om/event/before/living_body_status, /datum/om/event/before/atom_tool_act, /datum/om/event/before/attackby), src)
@@ -407,8 +407,8 @@
 /// Reassembly finished: rebuild cohesion and what the revival steps repaired,
 /// then leave dormancy. Afflictions the revival didn't touch stay.
 /datum/affliction/core_dormancy/proc/complete_revival()
-	if(om_timer_slot_pending(src, "reboot_timer"))
-		om_cancel_timer_slot(src, "reboot_timer")
+	if(after_pending(src, "reboot_timer"))
+		cancel_after(src, "reboot_timer")
 	var/mob/living/patient = owner
 	var/datum/body/humanoid/nanoform/B = body
 	if(!patient || !istype(B))

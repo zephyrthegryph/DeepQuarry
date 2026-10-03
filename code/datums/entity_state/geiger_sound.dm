@@ -61,7 +61,7 @@ CAPABILITIES(/datum/geiger_sound)
 	rel_set(sound, nameof(sound.last_radiation_pulse_ref), pulse_information)
 	sound.start(source)
 
-	om_after_replace(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound,stop))
+	after(sound, TIME_WITHOUT_RADIATION_BEFORE_RESET, TYPE_PROC_REF(/datum/looping_sound, stop), key = "geiger_sound_stop")
 
 /datum/geiger_sound/proc/on_moved(atom/source, datum/om/event/moved/event)
 	EVENT_HANDLER

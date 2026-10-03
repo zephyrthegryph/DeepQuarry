@@ -245,7 +245,8 @@ UI_ACT_PROC(/obj/machinery/media/jukebox, ui_act_play)
 				M.status_at_least(EFFECT_PARALYZED, 4)
 			else
 				M.status_adjust(EFFECT_JITTERY, 500)
-		om_after_unique(src, 1.5 SECONDS, PROC_REF(explode))
+		if(!after_pending(src, "jukebox_emag_explosion"))
+			after(src, 1.5 SECONDS, PROC_REF(explode), key = "jukebox_emag_explosion")
 	else if(current_track() == null)
 		to_chat(ui.user, "No track selected.")
 	else

@@ -197,7 +197,7 @@ CAPABILITIES(/datum/preferences)
 	dq_open_requested_at = REALTIMEOFDAY
 	tgui_interact(user)
 	if(!character_preview_b64)
-		om_after_replace(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy))
+		after(src, 0, TYPE_PROC_REF(/datum/preferences, update_preview_icon_lazy), key = "preferences_preview_lazy")
 
 // asset-based character preview. update_character_previews
 // flattens the mannequin (one frame per cardinal direction) plus the BG
