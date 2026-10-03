@@ -126,8 +126,8 @@
 	var/list/rows = list(
 		// code/modules/mob/living/life/, code/modules/medical: the mob life pipelines and the observer upkeep.
 		"life" = list(/datum/om/pipeline/life, /datum/om/behaviour/observer_upkeep, /datum/om/behaviour/hud_on_vitals),
-		// code/game/machinery/, code/datums/om/world_lanes.dm (the machines lane).
-		"machines" = list(/datum/om/pipeline/machine, /datum/om/behaviour/world/machines),
+		// code/game/machinery/: the machine pipeline (the machine system is a kernel work item).
+		"machines" = list(/datum/om/pipeline/machine),
 		// code/ATMOSPHERICS/: fire and the shutoff valve.
 		"atmos" = list(/datum/om/behaviour/sleeper/shutoff_valve),
 		// code/modules/combat_ai/: strategic and tactical brains, and the sleeper that wakes them.

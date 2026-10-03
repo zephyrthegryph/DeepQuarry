@@ -197,7 +197,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/generator, TYPE_PROC_REF(/atom, app
 	set_power_supply(effective_gen)
 	if(!air1 && !air2 && stored_energy < 0.01 && effective_gen < 0.01)
 		set_power_supply(0)
-		GLOB.machine_service.hibernate_generator(src)
+		SSmachines.hibernate_generator(src)
 		return PROCESS_KILL
 
 /obj/machinery/power/generator/wrench_act(mob/user, obj/item/W)

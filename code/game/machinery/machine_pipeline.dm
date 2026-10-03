@@ -202,7 +202,7 @@ GLOBAL_VAR_INIT(machine_first_wakes_bulk, TRUE)
 /// Runs every queued machine's first wake (arm_wakes() and its start condition) in one pass. The kernel
 /// calls on_members_ready() once every boot node has initialized (pipenets and air exist, so gas
 /// watches can arm), before the first air fire. Machines that join later use their `first_wake` timer slot.
-/datum/world_service/machines/on_members_ready()
+/datum/system/machines/on_members_ready()
 	GLOB.machine_first_wakes_bulk = FALSE
 	var/datum/om/global_owner/owner = om_global_owner()
 	var/list/queued = owner.machine_first_wakes?.Copy() || list()

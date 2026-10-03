@@ -42,8 +42,8 @@
 /obj/machinery/generated_station_data_relay/atom_destruction(damage_flag)
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
 	var/datum/expedition_site/site
-	for(var/key in GLOB.expedition_service?.sites)
-		var/datum/expedition_site/candidate = GLOB.expedition_service.sites[key]
+	for(var/key in SSexpedition?.sites)
+		var/datum/expedition_site/candidate = SSexpedition.sites[key]
 		if(candidate.station_simulation == simulation)
 			site = candidate
 			break

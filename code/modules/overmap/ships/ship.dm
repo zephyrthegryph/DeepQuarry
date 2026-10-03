@@ -61,15 +61,15 @@ DECLARE_REGISTRY(/obj/effect/overmap/visitable/ship, REGISTRY_LISTENING_OBJECTS)
 	position_y = 0
 	rel_set(src, nameof(vector), add_vis_overlay("vector", dir = SOUTH, layer = 10, unique = TRUE))
 	vector_overlay().vis_flags = (VIS_INHERIT_PLANE|VIS_INHERIT_ID)
-	GLOB.flight_service?.register_vessel(src)
+	SSflight?.register_vessel(src)
 
 // leaves the ship list and its flight vessel.
 /obj/effect/overmap/visitable/ship/lifecycle_dematerialize()
 	SSshuttles.ships -= src
-	if(GLOB.flight_service && flight_vessel_id)
-		var/datum/flight_vessel/vessel = own_take_member(GLOB.flight_service, nameof(/datum/world_service/flight::vessels), flight_vessel_id)
+	if(SSflight && flight_vessel_id)
+		var/datum/flight_vessel/vessel = own_take_member(SSflight, nameof(/datum/system/flight::vessels), flight_vessel_id)
 		if(vessel)
-			GLOB.flight_service.vessel_by_ship -= REF(src)
+			SSflight.vessel_by_ship -= REF(src)
 			qdel(vessel)
 	return ..()
 
@@ -278,8 +278,8 @@ DECLARE_APPEARANCE_PROC(/obj/effect/overmap/visitable/ship, TYPE_PROC_REF(/atom,
 	return "This ship cannot land."
 
 /obj/effect/overmap/visitable/ship/get_distress_info()
-	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
-	var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+	var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
 	return "\[ORBIT:[orbit?.name || "unregistered"]\]"
 
 #undef SHIP_MOVE_RESOLUTION

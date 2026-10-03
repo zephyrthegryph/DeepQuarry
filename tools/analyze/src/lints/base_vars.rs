@@ -116,6 +116,14 @@ fn facts_of(f: &SourceFile, exempt_prefixes: &[String], exempt_files: &[String])
             }
             out.singles = set.into_iter().collect();
         }
+        if text.contains("SYSTEM_DEF(") {
+            // SYSTEM_DEF(x) declares the one instance of /datum/system/x.
+            let mut set: BTreeSet<String> = out.singles.iter().cloned().collect();
+            for m in pat!(r"(?m)^SYSTEM_DEF\((\w+)\)").captures_iter(text) {
+                set.insert(format!("/datum/system/{}", m.s(1)));
+            }
+            out.singles = set.into_iter().collect();
+        }
     }
     if f.hidden {
         return out; // the vars come from the non-hidden files only

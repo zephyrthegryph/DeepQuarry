@@ -140,7 +140,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	var/list/cables = dq_power_test_line(run)
 	var/obj/structure/cable/left_end = cables[1]
 	var/obj/structure/cable/right_end = cables[4]
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	var/before = left_end.get_power_region()
 	TEST_ASSERT(before, "the line should already have a region before the blast")
 	TEST_ASSERT(right_end.get_power_region() == before, "the run should start as one network")
@@ -149,7 +149,7 @@ GLOBAL_LIST_EMPTY(dq_blast_probe_log)
 	var/obj/structure/cable/cut_b = cables[3]
 	blast(list(cut_a, cut_b), 1)
 	TEST_ASSERT(QDELETED(cut_a) && QDELETED(cut_b), "a devastating blast should cut the cables")
-	GLOB.machine_service.process_power()
+	SSmachines.process_power()
 	var/left_after = left_end.get_power_region()
 	var/right_after = right_end.get_power_region()
 	TEST_ASSERT(left_after, "the left side lost its network after the batched cut")

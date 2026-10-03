@@ -109,8 +109,8 @@
 		return
 	uploaded = TRUE
 	var/datum/generated_station_simulation/simulation = generated_station_runtime(station_id)
-	for(var/key in GLOB.expedition_service?.sites)
-		var/datum/expedition_site/candidate = GLOB.expedition_service.sites[key]
+	for(var/key in SSexpedition?.sites)
+		var/datum/expedition_site/candidate = SSexpedition.sites[key]
 		if(candidate.station_simulation == simulation)
 			candidate.station_director?.set_department_connected("ai-1", FALSE)
 			break

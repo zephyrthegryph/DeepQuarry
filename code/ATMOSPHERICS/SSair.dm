@@ -126,7 +126,7 @@ SYSTEM_DEF(air)
 	map_loading = FALSE
 	// The machine world service's boot step (power, gas wakes, pump commit), where SSmachines
 	// used to initialize: before any atmos machinery setup below.
-	GLOB.machine_service.initialize()
+	kernel_boot_system(SSmachines)
 	init_phase_mark("machine_service")
 
 	// Register the gas roster in the Rust arena FIRST — reaction setup
@@ -524,7 +524,7 @@ GLOBAL_LIST_EMPTY(colored_images)
 
 
 // /tg/'s SSair.get_init_dirs(type, dir, init_dir) removed — CHOMP pipe
-// construction caches via GLOB.machine_service.get_init_dirs (game/machinery/pipe/
+// construction caches via SSmachines.get_init_dirs (game/machinery/pipe/
 // construction.dm:226) and atmospherics.dm's /obj/machinery/atmospherics/get_init_dirs.
 // LINDA's variant was unused.
 

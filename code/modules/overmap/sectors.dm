@@ -61,7 +61,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/overmap/visitable, REGISTRY_OVERMAP_VISITABLES)
 	find_z_levels() // This populates map_z and assigns z levels to the ship.
 	register_z_levels() // This makes external calls to update global z level information.
 
-	// Celestial and docking positions live in GLOB.flight_service. The object is
+	// Celestial and docking positions live in SSflight. The object is
 	// only an identity/z-ownership anchor and does not occupy a navigation grid.
 	moveToNullspace()
 

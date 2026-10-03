@@ -958,12 +958,12 @@ SUBSYSTEM_DEF(air)
 
 ```dm
 // game/machinery/machine_service.dm:10-13, 56-74 — gas watch dispatch + atmos pump commit + power step
-GLOBAL_DATUM_INIT(machine_service, /datum/world_service/machines, new)
-/datum/world_service/machines
+GLOBAL_DATUM_INIT(machine_service, /datum/system/machines, new)
+/datum/system/machines
 	name = "Machines"
 	lane = /datum/om/behaviour/world/machines
 ...
-/datum/world_service/machines/service_step(resumed)
+/datum/system/machines/service_step(resumed)
 	...
 	var/complete = wake_dirty_gas_subscribers(TRUE)
 	if(complete)
@@ -1014,7 +1014,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 ```dm
 // ATMOSPHERICS pumps reach into the machine service's queue directly (machine_service.dm:85)
-/datum/world_service/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, ...)
+/datum/system/machines/proc/queue_pump_transfer(obj/machinery/atmospherics/M, datum/gas_mixture/source, ...)
 ```
 
 **After:**
@@ -1136,10 +1136,10 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/floodlight, MACHINE_PIPELINE, "on")
 
 ```dm
 // modules/mob/mob_service.dm:17-19, 82-89 — the "mobs" service: a DECLARE_REPEAT, and death -> SSticker internals
-OM_FIELD(/datum/world_service/mobs, profiling, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
+OM_FIELD(/datum/system/mobs, profiling, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/system/mobs, 2 MINUTES, dump_profile, "profiling")
 ...
-/datum/world_service/mobs/proc/report_death(mob/living/L)
+/datum/system/mobs/proc/report_death(mob/living/L)
 	...
 	if(!SSticker || !SSticker.mode)
 		return
@@ -1200,7 +1200,7 @@ DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 ```
 
 **What changes:**
-- `/datum/om/decl/living` and `/datum/world_service/mobs` are deleted.
+- `/datum/om/decl/living` and `/datum/system/mobs` are deleted.
 - `DECLARE_REPEAT(... dump_profile ...)` moves into the kernel profiler, which is where stage cost
   already lives (`sched.stage_cost`).
 - The mobs→ticker edge becomes an event.
@@ -1211,13 +1211,13 @@ DECLARE_REPEAT(/datum/world_service/mobs, 2 MINUTES, dump_profile, "profiling")
 
 ```dm
 // modules/flight_operations/flight_controller.dm:6-12, 50-58
-/datum/world_service/flight
+/datum/system/flight
 	name = "Flight Operations"
 	lane = /datum/om/behaviour/world/flight
 	// The old subsystem depended on SSshuttles (it registers SSshuttles.ships); boot right after it.
 	boot_after = /datum/controller/subsystem/shuttles
 	// rebuild_registry() registers any live expedition sites.
-	order_after = list(/datum/world_service/expedition)
+	order_after = list(/datum/system/expedition)
 ...
 	for(var/key in GLOB.expedition_service?.sites)
 		var/datum/expedition_site/site = GLOB.expedition_service.sites[key]

@@ -103,7 +103,7 @@
 	window_start_ffi_calls = __verdigris_ffi_calls
 	window_subsystem_fires = list()
 	window_world_wakes = GLOB.om_live_sched?.world_wakes
-	window_machines_ms = GLOB.machine_service.total_ms
+	window_machines_ms = SSmachines.total_ms
 	window_om_deadlines = benchmark_om_deadline_count()
 	window_system_fires = kernel_system_fire_counts()
 	if(profiling)
@@ -153,7 +153,7 @@
 	// that subsystem's cadence, so totals only compare at equal length.
 	metric("[prefix]_air_ms_per_s", (air ? air["estimated_total_ms"] : 0) / elapsed_seconds, "ms/s")
 	// The machine world service runs on the OM scheduler: its measured step time, not an estimate.
-	metric("[prefix]_machines_ms_per_s", (GLOB.machine_service.total_ms - window_machines_ms) / elapsed_seconds, "ms/s")
+	metric("[prefix]_machines_ms_per_s", (SSmachines.total_ms - window_machines_ms) / elapsed_seconds, "ms/s")
 	metric("[prefix]_ffi_calls_per_s", (__verdigris_ffi_calls - window_start_ffi_calls) / elapsed_seconds, "calls/s")
 	// Rust world wakes by owner type (cumulative since boot) and this window's wake count.
 	// Wake count is load-independent (it's driven by game events, not wall clock).

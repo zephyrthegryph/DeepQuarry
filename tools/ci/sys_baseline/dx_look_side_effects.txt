@@ -462,7 +462,6 @@ dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(70 to 89) f
 dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(90 to 99) filling.icon_state = "[fillsource]90"
 dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	if(100 to INFINITY) filling.icon_state = "[fillsource]100"
 dx_appearance_side_effect	code/modules/food/drinkingglass/mugs.dm	filling.color = reagents.get_color()
-dx_appearance_side_effect	code/modules/food/food/condiment.dm	filling.icon_state = "[icon_state]-[clamp(round(100 * reagents.total_volume / volume, 25), 0, 100)]"
 dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	underlays.Cut()
 dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	set_light(rag.light_range, rag.light_power, rag.light_color)
 dx_appearance_side_effect	code/modules/food/food/drinks/bottle.dm	set_light(0)
@@ -486,12 +485,6 @@ dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_out
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "huge"
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	prefix = "massive"
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/_cooker_output.dm	name = "[prefix] [name]"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(0 to 2) filling.icon_state = "[icon_state]"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(3 to 24) filling.icon_state = "[icon_state]1"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(25 to 49) filling.icon_state = "[icon_state]2"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(50 to 74) filling.icon_state = "[icon_state]3"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(75 to 79) filling.icon_state = "[icon_state]4"
-dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/container.dm	if(80 to INFINITY) filling.icon_state = "[icon_state]5"
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_x = light_x
 dx_appearance_side_effect	code/modules/food/kitchen/cooking_machines/fryer.dm	light.pixel_y = light_y
 dx_appearance_side_effect	code/modules/games/cards.dm	qdel(src)

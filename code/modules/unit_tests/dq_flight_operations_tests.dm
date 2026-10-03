@@ -25,15 +25,15 @@
 
 /datum/unit_test/dq_expedition_is_metadata_until_departure/Run()
 	var/datum/expedition_mission/mission = new /datum/expedition_mission/survey(EXP_DIFF_LOW)
-	var/datum/expedition_site/site = own(GLOB.expedition_service.create_site_descriptor(mission, EXP_DIFF_LOW))
+	var/datum/expedition_site/site = own(SSexpedition.create_site_descriptor(mission, EXP_DIFF_LOW))
 	TEST_ASSERT_NOTNULL(site, "Expedition survey did not create a site descriptor")
 	if(site.flight_destination_id)
-		defer_cleanup(GLOB.flight_service, TYPE_PROC_REF(/datum/world_service/flight, unregister_destination), site.flight_destination_id)
+		defer_cleanup(SSflight, TYPE_PROC_REF(/datum/system/flight, unregister_destination), site.flight_destination_id)
 	TEST_ASSERT_EQUAL(site.z_level, 0, "Surveying an expedition allocated a physical z-level before departure")
 	TEST_ASSERT_NULL(site.landing(), "Surveying an expedition created a landing turf before departure")
 	TEST_ASSERT_NULL(site.overmap_sector(), "Surveying an expedition created a legacy overmap sector before departure")
 	TEST_ASSERT_NOTNULL(site.flight_destination_id, "Surveying an expedition did not register a stable flight destination")
-	var/datum/flight_destination/destination = GLOB.flight_service.destinations[site.flight_destination_id]
+	var/datum/flight_destination/destination = SSflight.destinations[site.flight_destination_id]
 	TEST_ASSERT(destination?.expedition() == site, "The flight destination did not retain the surveyed site descriptor")
 	qdel(site)
 
@@ -74,20 +74,20 @@
 /datum/unit_test/dq_flight_registry_has_single_authored_planet
 
 /datum/unit_test/dq_flight_registry_has_single_authored_planet/Run()
-	TEST_ASSERT_NOTNULL(GLOB.flight_service.planet_id_named("Sif"), "Flight registry omitted Sif")
-	TEST_ASSERT_NULL(GLOB.flight_service.planet_id_named("Kara"), "Removed Kara remains in the flight registry")
+	TEST_ASSERT_NOTNULL(SSflight.planet_id_named("Sif"), "Flight registry omitted Sif")
+	TEST_ASSERT_NULL(SSflight.planet_id_named("Kara"), "Removed Kara remains in the flight registry")
 
 /datum/unit_test/dq_live_carrier_independently_orbits_sif
 
 /datum/unit_test/dq_live_carrier_independently_orbits_sif/Run()
 	if(using_map?.name != "Southern Cross")
 		return
-	var/carrier_id = GLOB.flight_service.destination_id_named("Exploration Carrier")
-	var/datum/flight_destination/carrier = GLOB.flight_service.destinations[carrier_id]
+	var/carrier_id = SSflight.destination_id_named("Exploration Carrier")
+	var/datum/flight_destination/carrier = SSflight.destinations[carrier_id]
 	TEST_ASSERT_NOTNULL(carrier, "Flight registry omitted the Exploration Carrier")
-	TEST_ASSERT_EQUAL(carrier.orbit_parent_id, GLOB.flight_service.planet_id_named("Sif"), "The carrier does not independently orbit Sif")
+	TEST_ASSERT_EQUAL(carrier.orbit_parent_id, SSflight.planet_id_named("Sif"), "The carrier does not independently orbit Sif")
 	var/obj/effect/overmap/visitable/ship/carrier_ship = carrier.target()
-	var/datum/flight_vessel/carrier_vessel = GLOB.flight_service.vessel_for_ship(carrier_ship)
+	var/datum/flight_vessel/carrier_vessel = SSflight.vessel_for_ship(carrier_ship)
 	TEST_ASSERT_NULL(carrier_vessel?.docked_port_id, "The carrier was incorrectly registered as docked to another destination")
 
 /datum/unit_test/dq_live_flight_payload_preserves_carrier_hierarchy
@@ -96,8 +96,8 @@
 	if(using_map?.name != "Southern Cross")
 		return
 	var/datum/flight_vessel/viewing_vessel
-	for(var/id in GLOB.flight_service.vessels)
-		viewing_vessel = GLOB.flight_service.vessels[id]
+	for(var/id in SSflight.vessels)
+		viewing_vessel = SSflight.vessels[id]
 		if(viewing_vessel)
 			break
 	TEST_ASSERT_NOTNULL(viewing_vessel, "The live flight registry has no vessel with which to serialize the UI payload")
@@ -129,11 +129,11 @@
 /datum/unit_test/dq_live_flight_payload_attaches_carrier_craft/Run()
 	if(using_map?.name != "Southern Cross")
 		return
-	var/carrier_id = GLOB.flight_service.destination_id_named("Exploration Carrier")
+	var/carrier_id = SSflight.destination_id_named("Exploration Carrier")
 	TEST_ASSERT_NOTNULL(carrier_id, "The live flight registry omitted the carrier host destination")
 	var/datum/flight_vessel/viewing_vessel
-	for(var/id in GLOB.flight_service.vessels)
-		viewing_vessel = GLOB.flight_service.vessels[id]
+	for(var/id in SSflight.vessels)
+		viewing_vessel = SSflight.vessels[id]
 		if(viewing_vessel)
 			break
 	TEST_ASSERT_NOTNULL(viewing_vessel, "The live flight registry has no vessel with which to serialize the UI payload")
@@ -147,14 +147,14 @@
 		"echidna_dock",
 	)
 	var/list/expected_destination_ids = list()
-	for(var/id in GLOB.flight_service.vessels)
-		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[id]
+	for(var/id in SSflight.vessels)
+		var/datum/flight_vessel/vessel = SSflight.vessels[id]
 		if(!(vessel.shuttle()?.current_location()?.landmark_tag in carrier_dock_tags))
 			continue
-		var/datum/flight_destination/destination = GLOB.flight_service.destination_for_target(vessel.ship())
+		var/datum/flight_destination/destination = SSflight.destination_for_target(vessel.ship())
 		TEST_ASSERT_NOTNULL(destination, "Carrier craft [vessel.name] has no render destination")
 		expected_destination_ids[destination.id] = vessel.name
-		var/datum/flight_port/port = GLOB.flight_service.ports[vessel.docked_port_id]
+		var/datum/flight_port/port = SSflight.ports[vessel.docked_port_id]
 		TEST_ASSERT_NOTNULL(port, "Carrier craft [vessel.name] did not resolve its current landmark to a flight port")
 		TEST_ASSERT_EQUAL(port.host_destination_id, carrier_id, "Carrier craft [vessel.name] resolved to the wrong physical host")
 	TEST_ASSERT(length(expected_destination_ids) > 0, "No carrier-docked craft were found in the live registry")
@@ -176,15 +176,15 @@
 	if(using_map?.name != "Southern Cross")
 		return
 	var/datum/flight_destination/station
-	for(var/id in GLOB.flight_service.destinations)
-		var/datum/flight_destination/candidate = GLOB.flight_service.destinations[id]
+	for(var/id in SSflight.destinations)
+		var/datum/flight_destination/candidate = SSflight.destinations[id]
 		if(candidate.kind == FLIGHT_DEST_STATION && lowertext(candidate.name) == "southern cross")
 			station = candidate
 			break
 	TEST_ASSERT_NOTNULL(station, "Southern Cross is absent from the live flight registry")
 	var/datum/flight_vessel/vessel
-	for(var/id in GLOB.flight_service.vessels)
-		var/datum/flight_vessel/candidate = GLOB.flight_service.vessels[id]
+	for(var/id in SSflight.vessels)
+		var/datum/flight_vessel/candidate = SSflight.vessels[id]
 		if(candidate.shuttle())
 			vessel = candidate
 			break
@@ -216,8 +216,8 @@
 
 /datum/unit_test/dq_southern_cross_berth_fits_every_expedition_craft/Run()
 	var/tested_vessels = 0
-	for(var/id in GLOB.flight_service.vessels)
-		var/datum/flight_vessel/vessel = GLOB.flight_service.vessels[id]
+	for(var/id in SSflight.vessels)
+		var/datum/flight_vessel/vessel = SSflight.vessels[id]
 		if(!vessel.shuttle() || !(vessel.capabilities & FLIGHT_CAP_EXPEDITION))
 			continue
 		tested_vessels++

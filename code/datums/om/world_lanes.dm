@@ -160,22 +160,6 @@
 	else if(S.on_demand && !S.has_work())
 		om_park(E, src)
 
-/// Gas watch dispatch, the batched pump commit and the power step (was SSmachines, 2 s).
-/datum/om/behaviour/world/machines
-	name = "world: machines"
-	every = MACHINE_SERVICE_INTERVAL
-
-/datum/om/behaviour/world/machines/service()
-	return GLOB.machine_service
-
-/// Death reports and the two-minute Life profile (was SSmobs, 2 s).
-/datum/om/behaviour/world/mobs
-	name = "world: mobs"
-	every = 2 SECONDS
-
-/datum/om/behaviour/world/mobs/service()
-	return GLOB.mob_service
-
 // ---------------------------------------------------------------- fold wave F3 lanes
 
 /// Radiation pulse queue and the shielding flush to the Rust insulation layer (was SSradiation, 0.5 s).

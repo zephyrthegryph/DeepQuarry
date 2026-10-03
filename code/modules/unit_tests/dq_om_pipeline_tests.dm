@@ -553,7 +553,7 @@
 	TEST_ASSERT(om_watch_armed(C), "parking armed a gas-mixture watch")
 	C.air_contents.adjust_moles(/datum/gas/oxygen, 5)
 	for(var/gas_i in 1 to 4096)
-		GLOB.machine_service.wake_dirty_gas_subscribers()
+		SSmachines.wake_dirty_gas_subscribers()
 		if(!S.parked)
 			break
 	sched.run_pass(1e9)

@@ -186,12 +186,12 @@
 				break
 	if(!target || target == src)
 		return
-	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
-	var/datum/flight_destination/destination = GLOB.flight_service?.destination_for_target(target)
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+	var/datum/flight_destination/destination = SSflight?.destination_for_target(target)
 	if(vessel && destination)
-		var/datum/flight_port/port = GLOB.flight_service.port_for_landmark(into)
+		var/datum/flight_port/port = SSflight.port_for_landmark(into)
 		if(vessel.docked_port_id && vessel.docked_port_id != port?.id)
-			var/datum/flight_port/old_port = GLOB.flight_service.ports[vessel.docked_port_id]
+			var/datum/flight_port/old_port = SSflight.ports[vessel.docked_port_id]
 			if(old_port?.occupied_by() == vessel)
 				rel_clear(old_port, nameof(old_port.occupied_by))
 		vessel.docked_port_id = port?.id
@@ -199,13 +199,13 @@
 			rel_set(port, nameof(port.occupied_by), vessel)
 		// A delegated port inherits the physical host's celestial context, while
 		// the active flight plan retains the logical route destination.
-		var/datum/flight_destination/physical_host = GLOB.flight_service.destinations[port?.host_destination_id]
+		var/datum/flight_destination/physical_host = SSflight.destinations[port?.host_destination_id]
 		vessel.orbit_parent_id = physical_host?.orbit_parent_id || (destination.kind == FLIGHT_DEST_SURFACE ? destination.id : destination.orbit_parent_id)
 
 /obj/effect/overmap/visitable/ship/landable/proc/on_takeoff(obj/effect/shuttle_landmark/from, obj/effect/shuttle_landmark/into)
-	var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
+	var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
 	if(vessel)
-		var/datum/flight_port/port = GLOB.flight_service.ports[vessel.docked_port_id]
+		var/datum/flight_port/port = SSflight.ports[vessel.docked_port_id]
 		if(port?.occupied_by() == vessel)
 			rel_clear(port, nameof(port.occupied_by))
 		vessel.docked_port_id = null
@@ -213,15 +213,15 @@
 /obj/effect/overmap/visitable/ship/landable/get_landed_info()
 	switch(status)
 		if(SHIP_STATUS_LANDED)
-			var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
-			var/datum/flight_port/port = GLOB.flight_service?.ports[vessel?.docked_port_id]
-			var/datum/flight_destination/location = GLOB.flight_service?.destinations[port?.host_destination_id]
+			var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+			var/datum/flight_port/port = SSflight?.ports[vessel?.docked_port_id]
+			var/datum/flight_destination/location = SSflight?.destinations[port?.host_destination_id]
 			return location ? "Docked at [location.name], [port.name]." : "Landed at an unregistered port."
 		if(SHIP_STATUS_TRANSIT)
 			return "In local transfer."
 		if(SHIP_STATUS_OVERMAP)
-			var/datum/flight_vessel/vessel = GLOB.flight_service?.vessel_for_ship(src)
-			var/datum/flight_destination/orbit = GLOB.flight_service?.destinations[vessel?.orbit_parent_id]
+			var/datum/flight_vessel/vessel = SSflight?.vessel_for_ship(src)
+			var/datum/flight_destination/orbit = SSflight?.destinations[vessel?.orbit_parent_id]
 			return "In orbit of [orbit?.name || "an unregistered body"]."
 
 
