@@ -583,6 +583,7 @@
 #include "interim_event_queue_actor.dm"
 #include "interim_projectile_endings.dm"
 #include "interim_beaker_lid_transfer.dm"
+#include "interim_remote_button_emag.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
