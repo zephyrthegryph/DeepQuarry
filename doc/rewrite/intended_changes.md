@@ -143,6 +143,14 @@ Condiments, the cooking containers and solid food (`snacks`) are not converted; 
   after the sip (`On_Consume` follows the transfer); a drink finished by the sip still leaves its trash.
 * **"Open or close the lid" is gone from drinks** (a lid that is only a state): a can is opened by using it, a closed one is told it is shut.
 * **A cap on a tank the cup is filled from:** a drink fills only from a tank whose top is shut (the old drink filled from any tank).
+## Reagent containers: the rag
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_rag_behaviour.dm` (10 tests, green on the legacy code first, unchanged after the conversion).
+
+* **Using an empty rag in hand says it is dry** (it used to do nothing); wringing out is still five deciseconds a unit and wipes still take three seconds, now
+  as waits of the operation engine.
+* **Only a flame lights a rag by a click** (the old catch-all item entry ended the click for every other item; a bottle with a rag still lights it, through
+  `light_with()`).
 
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 

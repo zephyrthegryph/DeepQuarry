@@ -409,6 +409,17 @@
 /datum/capdef_decl/c_weld_shut/spec()
 	return list(CAP_WELD_SHUT, /datum/capability/lib/weld_shut, NONE, STACK, "weld_shut", "offered, starts")
 
+/// CAPABILITY_TYPE(wiper, CAP_WIPER) at code/library/reagents/wiper.dm:17
+/datum/capability/lib/wiper
+	var/soaks_from = null
+	var/burning = null
+	var/wipe_time = 30
+/proc/wiper(soaks_from, burning, wipe_time)
+	RETURN_TYPE(/datum/capability/lib/wiper)
+	return cap_construct(CAP_WIPER, /datum/capability/lib/wiper, list(soaks_from, burning, wipe_time), "soaks_from, burning, wipe_time")
+/datum/capdef_decl/c_wiper/spec()
+	return list(CAP_WIPER, /datum/capability/lib/wiper, NONE, STACK, "wiper", "soaks_from, burning, wipe_time")
+
 /// CAPABILITY_TYPE(wires, CAP_WIRES) at code/library/machine/wires.dm:21
 /datum/capability/lib/wires
 	var/kind = null
@@ -836,12 +847,28 @@
 	into += entry_line(22)
 	into += list(global.op("paint", global.at_target(/turf/simulated), global.answers(INTENT_ATTACK, INTENT_USE), global.priority(OP_PRIORITY_ATTACK), global.priority(global.above("reagent_container.splash")), global.when(req_reagents(5, more = TRUE)), global.label("Paint"), global.then(PROC_REF(painted))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/rag) at code/modules/detectivework/tools/rag.dm:35
+/// CAPABILITIES(/obj/item/reagent_containers/glass/rag) at code/modules/detectivework/tools/rag.dm:36
 /obj/item/reagent_containers/glass/rag/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
-	into += entry_line(36)
+	into += entry_block("code/modules/detectivework/tools/rag.dm", 36, /obj/item/reagent_containers/glass/rag)
+	into += entry_line(37)
 	into += list(global.without(CAP_GLASS_CONTAINER))
+	into += entry_line(38)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(44)
+	into += list(global.wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit)))
+	into += entry_line(45)
+	into += list(global.extend("wiper.soak", global.then(PROC_REF(name_refreshed))))
+	into += entry_line(46)
+	into += list(global.extend("wiper.wring_into", global.then(PROC_REF(name_refreshed))))
+	into += entry_line(47)
+	into += list(global.op("stamp_out", global.in_hand(), global.when(nameof(rag_lit)), global.label("Stamp it out"), global.then(PROC_REF(stamped_out))))
+	into += entry_line(48)
+	into += list(global.op("wring_out", global.in_hand(), global.when(global.cond_not(nameof(rag_lit))), global.label("Wring it out"), global.needs(req_reagents(1, because = MSG(wiper/dry))), global.begins(MSG(rag/begin_wring_floor)), global.wait(PROC_REF(wring_floor_time)), global.then(PROC_REF(wrung_out))))
+	into += entry_line(50)
+	into += list(global.op("light", global.item(/obj/item/flame), global.when(global.cond_not(nameof(rag_lit))), global.label("Light it"), global.then(PROC_REF(lit_by_flame))))
+	into += entry_line(51)
+	into += list(global.op("rub", global.at_target(/mob/living), global.priority(OP_PRIORITY_PART), global.label("Use on"), global.begins(PROC_REF(rub_begins)), global.wait(PROC_REF(rub_wait)), global.then(PROC_REF(rubbed))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/hypospray) at code/modules/reagents/reagent_containers/hypospray.dm:36
 /obj/item/reagent_containers/hypospray/declared_entries(list/into)

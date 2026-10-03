@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 		insert_rag(W, user)
 		return INTERACTION_HANDLED_PASS
 	if(rag && istype(W, /obj/item/flame))
-		rag.attackby(W, user)
+		rag.light_with(W, user)
 		return INTERACTION_HANDLED_PASS
 	return FALSE
 

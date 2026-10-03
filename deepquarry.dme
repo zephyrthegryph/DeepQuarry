@@ -5711,6 +5711,7 @@
 #include "code\library\reagents\dose.dm"
 #include "code\library\reagents\injector.dm"
 #include "code\library\reagents\synthesizer.dm"
+#include "code\library\reagents\wiper.dm"
 #include "code\library\containers\interior.dm"
 #include "code\library\containers\quickdraw.dm"
 #include "code\library\containers\storage.dm"

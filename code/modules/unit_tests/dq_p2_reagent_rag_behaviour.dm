@@ -154,7 +154,7 @@
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/glass/rag/R = rc_rag(10, REAGENT_ID_ETHANOL)
 	var/obj/item/flame/lighter/L = allocate(/obj/item/flame/lighter)
-	L.lit = TRUE
+	L.set_lit(TRUE)
 	rc_click(H, R, L)
 	TEST_ASSERT(rc_rag_lit(R), "a lit flame sets a spirit-soaked rag alight")
 	TEST_ASSERT_EQUAL(rc_rag_name(R), "burning rag", "and it is named so")
@@ -174,6 +174,6 @@
 	bottle.insert_rag(R, H)
 	TEST_ASSERT(bottle.rag == R, "the rag is in the bottle")
 	var/obj/item/flame/lighter/L = allocate(/obj/item/flame/lighter)
-	L.lit = TRUE
+	L.set_lit(TRUE)
 	rc_click(H, bottle, L)
 	TEST_ASSERT(rc_rag_lit(R), "the flame lit the rag in the bottle")
