@@ -10,6 +10,7 @@ analyze check [--lint NAME...] [--changed-only] [--no-cache] [--raw] [--ci]
 analyze baseline --update|--seed [--lint NAME...]
 analyze parity NAME... | --all [--bless] [--fixtures-only]
 analyze timing | selftest | list | frontend-diff
+analyze codemod list | NAME [--check|--apply|--revert] [--path PREFIX...] [--write-residue]
 ```
 
 Build: `cargo build --release --manifest-path tools/analyze/Cargo.toml` (set `RUSTC_WRAPPER=sccache`
@@ -34,6 +35,7 @@ when you can). Test: `cargo test --manifest-path tools/analyze/Cargo.toml`.
 | DM helpers | `src/dm/*.rs` | Shared scanners (`dx.rs` = `_dx_dm.py`, `sys.rs` = the sys_lint family) |
 | Lints | `src/lints/*.rs` | One file per lint, found by `build.rs` (no registry to edit) |
 | Semantic layer | `src/sem/`, `src/gens/` | Type/proc/var resolution on dreammaker, generated reads, key resolution, handler checks, generators (see "Semantic layer") |
+| Codemods | `src/codemod/`, `src/codemods/` | The phase 2.5 rewriter: call-node scanner, span edits, residue, key collisions, revert (see "Codemods") |
 
 ## Writing a lint
 
@@ -355,6 +357,54 @@ by `--check` and not looked for in `deepquarry.dme`). `ui_shape(var, ...)` lists
 text `schema_range_text()` returns at runtime (`/** num 0..MAX_PUMP_PRESSURE step 1 */`), so E0 proof 10 can compare the two; the TypeScript type
 of a numeric field stays `number`. `tools/build/lib/ui_types.ts` (the legacy UI-table dump) leaves a file with this generator's header alone.
 A `handlers/signature` note: the handler of an op with a `ui_act()` or `topic()` binding takes the op's declared `arg()`s after `A`.
+
+## Codemods (phase 2.5)
+
+`analyze codemod` rewrites the tree one legacy form at a time (doc/rewrite/final_api.html, section 19, phases 2.5 and 3). A codemod is
+one file in `src/codemods/` (build.rs finds it, like a lint) and a directory `tools/analyze/codemods/<name>/` with its fixtures and its
+committed `residue.json`.
+
+```
+analyze codemod list
+analyze codemod NAME [--check] [--path PREFIX...] [--write-residue] [--sites]    dry run on the tree
+analyze codemod NAME --apply [--path PREFIX...]                                   rewrite files, write data/codemod/NAME/revert.json
+analyze codemod NAME --revert                                                      undo the last --apply
+```
+
+**How it finds a site.** The dreammaker parse (`Sem`) reports every unscoped call of the codemod's callees with its line, column and
+argument count, so a name in a comment, a string, `PROC_REF(x)` or a method of the same name is never a site. `codemod/scan.rs` then
+finds the byte spans of the callee and each argument on the file's own text (on `strip::sanitize`, so a comma in a string or a comment is
+not structure); the parser's argument count has to agree with the scan or the site is residue. The codemod turns the node into `Edit`s:
+span replacements and insertions, never a re-print, so comments, line breaks, indentation and CRLF outside the touched tokens survive,
+and nested calls compose in one pass. `src/codemods/om_after.rs` (reorders arguments, adds `with = list(...)`) and `own_set.rs` (a rename)
+are the two shapes to copy.
+
+**What the gate checks** (`cargo test --test codemods`, per codemod): every `fixtures/<case>.in.dm` rewrites to `<case>.out.dm`; an
+`already_converted` case is a no-op; a second run on the output changes 0 lines (idempotent); two runs are byte-identical
+(deterministic); a CRLF copy of every fixture comes out CRLF; every edit has an exact inverse and no line is added or removed; the
+reason codes of the residue sites match `<case>.residue`; and every reason code the codemod declares has a negative fixture. Fixtures
+compile against `_stubs.dm` in the same directory (the legacy and new procs the cases call).
+
+**Residue.** A site the codemod will not rewrite carries a reason code (`Codemod::reasons()`, plus the framework's: `not_in_ast` for a
+legacy call the parser did not return as a call (a macro body, an inactive `#if`), `reference` for the name passed as a value,
+`scan_failed`, `arg_count_mismatch`, `edit_conflict`). `--write-residue` writes `residue.json` (the integer, the count per reason, one line
+per site: file, reason, normalized text; no line numbers, so edits elsewhere in a file do not churn it). `--check` exits 1 for a residue
+site not in the committed file, a missing file, or an unresolved key collision. Framework and test files (`FRAMEWORK_PREFIXES`, and what
+the codemod's `excluded()` adds) are counted as `excluded`, never as residue, as in the count method.
+
+**Keys.** A codemod that gives or keeps a key (`after(..., key =)`, later an op key) returns `KeyUse`s; `codemod/keys.rs` groups them by
+`(owner, key)` and reports every key that names two handlers. A collision between keys the old form already had is `preserved` (the
+conversion keeps today's behaviour); one involving a synthesized key is `unresolved` and fails the gate until the codemod resolves it
+(`extend()` when the old semantics appended, a macro-kind prefix when the entries were independent). `keys.json` is written beside
+`residue.json` when a codemod keys anything.
+
+**Revert.** `--apply` records, per changed file, the hash before and after and the inverse of every edit; `--revert` restores the files
+only if each is still exactly what the codemod wrote. After the step is a commit the recipe is `git revert <commit>`; with later steps
+stacked on it, re-run from `pre/<step>` (doc section 19, "Revert recipe").
+
+**Scope today.** `om_after` (also `after_slot`), `own_set`, `own_add`: the three highest-volume forms whose target is on master
+(`after()`, `rel_set()`, `rel_add()`). `om_ask` and `om_hook` convert to forms that exist (`open_request`, `observe`) but change the handler's
+signature, so they wait for a handler-rewriting pass; `INTERACT_*`, `UI_ACT`, `TOPIC_ACTION` need `op()`.
 
 ## Tooling gotchas
 
