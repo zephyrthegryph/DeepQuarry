@@ -639,45 +639,31 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 	id = "placeholder_id_do_not_use" //This has to be this way, otherwise it will control ALL doors if left blank.
 	var/tmp/obj/machinery/door/airlock/voidcraft/survival_pod/door
 
-/obj/machinery/button/remote/airlock/survival_pod/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/survival_pod_button_glass,
-	)
-	..()
+// A hand on it works the glass of the pod's door (it does not press the remote button: the airlocks it names are a placeholder).
+CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod, \
+	without("press_hand"), \
+	op("pod_use", hand(), label("Use"), wait(0), needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(pod_used))))
 
-/datum/interaction/machine_hand/survival_pod_button_glass
-	id = "survival_pod_button_glass"
-	name = "Use"
-	effect = /obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass
+/obj/machinery/button/remote/airlock/survival_pod/proc/pod_used(datum/act/op/A)
+	pod_glass()
+	return OP_OK
 
-/obj/machinery/button/remote/airlock/survival_pod/proc/interaction_glass(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/machinery/button/remote/airlock/survival_pod/proc/pod_glass()
 	if(!linked_door())
 		var/turf/dT = get_step(src,dir)
 		rel_set(src, nameof(src.door), locate_within(dT, /obj/machinery/door/airlock/voidcraft/survival_pod))
 	if(linked_door())
 		linked_door().glass = !linked_door().glass
 		linked_door().opacity = !linked_door().opacity
-	return TRUE
 
 //Subtype that actually bolts doors!
 /obj/machinery/button/remote/airlock/survival_pod/bolts
 	name = "shelter privacy control"
 	desc = "You can ensure some privacy with this."
 
-/obj/machinery/button/remote/airlock/survival_pod/bolts/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/survival_pod_button_bolts,
-	)
-	..()
-
-/// Old attack_hand chained ..() into the parent's glass toggle before doing its own bolt logic; reproduce that order explicitly.
-/datum/interaction/machine_hand/survival_pod_button_bolts
-	id = "survival_pod_button_bolts"
-	name = "Use"
-	effect = /obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts
-
-/obj/machinery/button/remote/airlock/survival_pod/bolts/proc/interaction_bolts(mob/user, obj/item/held, datum/interaction/interaction)
-	interaction_glass(user, held, interaction)
+/// The glass first, then the bolts.
+/obj/machinery/button/remote/airlock/survival_pod/bolts/pod_used(datum/act/op/A)
+	pod_glass()
 	if(linked_door())
 		if(is_bolted(linked_door()))
 			linked_door().unlock()
@@ -686,7 +672,7 @@ DECLARE_INTERACTIONS(/obj/item/survivalcapsule, INTERACT_USE("Deploy", PROC_REF(
 			linked_door().lock()
 			// Block light when bolted, since the door is effectively functioning like polarized glass
 			linked_door().start_blocking_light()
-	return TRUE
+	return OP_OK
 
 // Capsule-specific light switch
 // Turns off only one light in a given direction from its source turf.

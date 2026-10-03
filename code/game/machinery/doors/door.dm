@@ -275,24 +275,6 @@ CAPABILITIES(/obj/machinery/door, \
 	if(prob(20 / max(N.packet?.severity, 1)) && (istype(src, /obj/machinery/door/airlock) || istype(src, /obj/machinery/door/window)))
 		open()
 
-MSG_DEF_SELF(door/not_working, "It isn't working.")
-MSG_DEF_SELF(door/cant_reach, "You can't reach it like this.")
-MSG_DEF_SELF(door/no_dexterity, "You don't have the dexterity.")
-
-/// The hand needs what the machinery hand gate needs: power, posture and dexterity.
-/obj/machinery/door/proc/hand_ok(datum/act/op/A)
-	return isnull(hand_refusal(A))
-
-/obj/machinery/door/proc/hand_refusal(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!operable(MAINT))
-		return /datum/msg/door/not_working
-	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
-		return /datum/msg/door/cant_reach
-	if(!user?.IsAdvancedToolUser())
-		return /datum/msg/door/no_dexterity
-	return null
-
 // ---- strike: a weapon on a closed door (cards open it, plasteel reinforces it) ----
 
 /obj/machinery/door/proc/strike_with(datum/act/op/A)

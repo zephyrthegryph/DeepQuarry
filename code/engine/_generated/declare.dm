@@ -1987,21 +1987,64 @@
 	into += entry_line(9)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/spacecash, /obj/item/card, /obj/item/clothing/mask/smokable/cigarette/, /obj/item/flashlight/pen, /obj/item/tape, /obj/item/cartridge, /obj/item/encryptionkey, /obj/item/seeds, /obj/item/stack/medical, /obj/item/coin, /obj/item/dice, /obj/item/disk, /obj/item/implanter, /obj/item/flame/lighter, /obj/item/flame/match, /obj/item/forensics, /obj/item/glass_extra, /obj/item/haircomb, /obj/item/hand, /obj/item/key, /obj/item/lipstick, /obj/item/paper, /obj/item/pen, /obj/item/photo, /obj/item/reagent_containers/dropper, /obj/item/sample, /obj/item/tool/screwdriver, /obj/item/stamp, /obj/item/clothing/accessory/permit, /obj/item/clothing/accessory/badge, /obj/item/makeover, /obj/item/spacecasinocash, /obj/item/casino_platinum_chip, /obj/item/deck, /obj/item/book/codex/casino, /obj/item/storage/pill_bottle/dice, /obj/item/storage/pill_bottle/dice_nerd, /obj/item/storage/dicecup/loaded))))
 
-/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
+/// CAPABILITIES(/obj/machinery/button/remote) at code/game/machinery/door_control.dm:34
+/obj/machinery/button/remote/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/door_control.dm", 34, /obj/machinery/button/remote)
+	into += entry_line(35)
+	into += list(global.emag(global.then(PROC_REF(lock_scorched)), repeatable = TRUE))
+	into += entry_line(36)
+	into += list(global.extend("emag.use", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
+	into += entry_line(37)
+	into += list(global.extend("emag.subvert", global.needs(global.req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))))
+	into += entry_line(38)
+	into += list(global.op("press_hand", global.hand(), global.label("Toggle"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(40)
+	into += list(global.op("press_item", global.item(/obj/item), global.label("Toggle"), global.when(global.req(PROC_REF(item_presses))), global.priority(OP_PRIORITY_NORMAL + 1), global.wait(0), global.needs(global.req(PROC_REF(button_works), because = MSG(button/dead)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(42)
+	into += list(global.op("press_silicon", global.ai(), global.wait(0), global.needs(global.req(PROC_REF(has_network), because = MSG(button/no_route)), global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), global.req(PROC_REF(can_press), because = MSG(button/spent)), global.req(PROC_REF(may_press), because = MSG(button/denied))), global.then(PROC_REF(pressed))))
+	into += entry_line(44)
+	into += list(global.on_op("press_hand", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+	into += entry_line(45)
+	into += list(global.on_op("press_item", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+	into += entry_line(46)
+	into += list(global.on_op("press_silicon", global.then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+
+/// CAPABILITIES(/obj/machinery/button/remote/airlock/survival_pod) at code/modules/mining/shelter_atoms.dm:643
+/obj/machinery/button/remote/airlock/survival_pod/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/shelter_atoms.dm", 643, /obj/machinery/button/remote/airlock/survival_pod)
+	into += entry_line(644)
+	into += list(global.without("press_hand"))
+	into += entry_line(645)
+	into += list(global.op("pod_use", global.hand(), global.label("Use"), global.wait(0), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(pod_used))))
+
+/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:187
 /obj/machinery/button/remote/blast_door/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 176, /obj/machinery/button/remote/blast_door)
-	into += entry_line(177)
+	into += entry_block("code/game/machinery/door_control.dm", 187, /obj/machinery/button/remote/blast_door)
+	into += entry_line(188)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
 
-/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:227
+/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:238
 /obj/machinery/button/remote/driver/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/door_control.dm", 227, /obj/machinery/button/remote/driver)
-	into += entry_line(228)
+	into += entry_block("code/game/machinery/door_control.dm", 238, /obj/machinery/button/remote/driver)
+	into += entry_line(239)
 	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
-	into += entry_line(229)
+	into += entry_line(240)
 	into += list(global.ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
+	into += entry_line(241)
+	into += list(global.op("set_id", global.tool(TOOL_MULTITOOL), global.label("Set the id"), global.wait(0), global.asks(/datum/prompt/number, fields = list("question" = global.computed(PROC_REF(id_question)))), global.then(PROC_REF(id_entered))))
+
+/// CAPABILITIES(/obj/machinery/button/remote/noemag) at code/game/machinery/buttons.dm:124
+/obj/machinery/button/remote/noemag/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/buttons.dm", 124, /obj/machinery/button/remote/noemag)
+	into += entry_line(125)
+	into += list(global.without(CAP_EMAG))
+	into += entry_line(126)
+	into += list(global.op("emag_refused", global.item(/obj/item/card/emag), global.priority(OP_PRIORITY_SUBVERT), global.wait(0), global.needs(global.req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), global.then(PROC_REF(press_nothing))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
