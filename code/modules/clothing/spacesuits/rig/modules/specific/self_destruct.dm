@@ -24,7 +24,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect
 /obj/item/rig_module/self_destruct/activate(skip_engage = 0, mob/user)
 	return
 
-/obj/item/rig_module/self_destruct/deactivate()
+/obj/item/rig_module/self_destruct/deactivate(forced = FALSE, mob/user)
 	return
 
 /obj/item/rig_module/self_destruct/periodic_step()

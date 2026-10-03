@@ -21,7 +21,7 @@
 	if(!visor.active)
 		visor.activate(FALSE, user)
 	else
-		visor.deactivate()
+		visor.deactivate(FALSE, user)
 
 /// Old verb "Toggle Helmet" (offered while the suit has that piece).
 /obj/item/rig/proc/rig_toggle_helmet_verb(mob/user, obj/item/held, datum/interaction/interaction)
@@ -139,7 +139,7 @@
 
 	if(module.active)
 		to_chat(user, span_boldnotice("You attempt to deactivate \the [module.interface_name]."))
-		module.deactivate()
+		module.deactivate(FALSE, user)
 	else
 		to_chat(user, span_boldnotice("You attempt to activate \the [module.interface_name]."))
 		module.activate(FALSE, user)

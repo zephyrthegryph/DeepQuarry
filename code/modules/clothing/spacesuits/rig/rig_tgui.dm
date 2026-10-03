@@ -186,7 +186,7 @@ UI_ACT_PROC(/obj/item/rig, ui_act_interact_module)
 				. = TRUE
 			if("toggle")
 				if(module.active)
-					module.deactivate()
+					module.deactivate(FALSE, ui.user)
 				else
 					module.activate(FALSE, ui.user)
 				. = TRUE

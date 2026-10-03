@@ -31,7 +31,7 @@
 	dq_add_recursive_move(H)
 	om_hook(H, /datum/om/event/movable_attempted_move, src, PROC_REF(boop))
 
-/obj/item/rig_module/pat_module/deactivate()
+/obj/item/rig_module/pat_module/deactivate(forced = FALSE, mob/user)
 	if(!..())
 		return 0
 

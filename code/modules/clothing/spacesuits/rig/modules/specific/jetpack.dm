@@ -39,7 +39,7 @@
 		jets.jetpack_toggle_effect(holder?.wearer())
 	return 1
 
-/obj/item/rig_module/maneuvering_jets/deactivate()
+/obj/item/rig_module/maneuvering_jets/deactivate(forced = FALSE, mob/user)
 	if(!..())
 		return 0
 	if(jets.on)

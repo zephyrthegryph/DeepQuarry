@@ -233,7 +233,7 @@
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 
-/obj/item/rig_module/vision/deactivate()
+/obj/item/rig_module/vision/deactivate(forced = FALSE, mob/user)
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 

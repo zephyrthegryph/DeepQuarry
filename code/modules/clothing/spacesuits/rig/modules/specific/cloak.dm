@@ -36,7 +36,7 @@
 
 	act_message(H, null, others = "%U% vanishes into thin air!")
 
-/obj/item/rig_module/stealth_field/deactivate()
+/obj/item/rig_module/stealth_field/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return 0

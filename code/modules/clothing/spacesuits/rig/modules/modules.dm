@@ -193,7 +193,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return 1
 
 // Proc for toggling off active abilities.
-/obj/item/rig_module/proc/deactivate()
+/obj/item/rig_module/proc/deactivate(forced = FALSE, mob/user)
 
 	if(!active)
 		return 0
@@ -249,10 +249,10 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 			if("activate")
 				module.activate(FALSE, user)
 			if("deactivate")
-				module.deactivate()
+				module.deactivate(FALSE, user)
 			if("toggle")
 				if(module.active)
-					module.deactivate()
+					module.deactivate(FALSE, user)
 				else
 					module.activate(FALSE, user)
 			if("select_charge_type")

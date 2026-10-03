@@ -40,7 +40,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 	else
 		return 0
 
-/obj/item/rig_module/protean/syphon/deactivate(forced)
+/obj/item/rig_module/protean/syphon/deactivate(forced = FALSE, mob/user)
 	if(!..())
 		return 0
 	if(forced)
@@ -48,7 +48,7 @@ These should come standard with the Protean rigsuit, unless you want them to wor
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
-		to_chat(usr, span_boldnotice("You deactivate the suit's energy syphon."))
+		to_chat(user, span_boldnotice("You deactivate the suit's energy syphon."))
 		to_chat(H, span_warning("Your suit ceases from sapping your own energy."))
 		active = 0
 	else
@@ -129,8 +129,8 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	else
 		return 0
 
-/obj/item/rig_module/protean/armor/deactivate(forced)
-	if(!..(1))
+/obj/item/rig_module/protean/armor/deactivate(forced = FALSE, mob/user)
+	if(!..(1, user))
 		return 0
 	if(forced)
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
@@ -142,7 +142,7 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 		return
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(H)
-		to_chat(usr, span_boldnotice("You signal the suit to relax."))
+		to_chat(user, span_boldnotice("You signal the suit to relax."))
 		to_chat(H, span_warning("Your suit softens."))
 		holder.set_armor(dq_armor(list("melee" = 0, "bullet" = 0, "laser" = 0,"energy" = 0, "bomb" = 0, "bio" = 100, "rad" = 100)))
 		for(var/obj/item/piece in list(holder.gloves,holder.helmet,holder.boots,holder.chest))
@@ -194,13 +194,13 @@ TYPE_TABLE_DECLARE(/obj/item/rig_module/protean/armor, armor_types, list("melee"
 	active = 1
 	return 1
 
-/obj/item/rig_module/protean/healing/deactivate()
-	if(!..(1))
+/obj/item/rig_module/protean/healing/deactivate(forced = FALSE, mob/user)
+	if(!..(1, user))
 		return 0
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(!H)
 		return 0
-	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
+	to_chat(user, span_boldnotice("You deactivate the suit's restorative nanites."))
 	to_chat(H, span_warning("Your suit is no longer mending your injuries."))
 	active = 0
 	return 1

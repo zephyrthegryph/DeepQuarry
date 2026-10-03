@@ -31,7 +31,7 @@
 
 	holder.slowdown = initial(holder.slowdown) - sprint_speed
 
-/obj/item/rig_module/sprinter/deactivate()
+/obj/item/rig_module/sprinter/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return 0

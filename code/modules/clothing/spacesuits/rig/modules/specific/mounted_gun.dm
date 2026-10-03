@@ -98,14 +98,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
-		deactivate()
+		deactivate(FALSE, user)
 		return
 
 	var/obj/item/melee/energy/blade/blade = new(M)
 	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
-/obj/item/rig_module/mounted/energy_blade/deactivate()
+/obj/item/rig_module/mounted/energy_blade/deactivate(forced = FALSE, mob/user)
 
 	..()
 
@@ -155,14 +155,14 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	if(M.get_equipped_item(SLOT_ID_HAND_L) && M.get_equipped_item(SLOT_ID_HAND_R))
 		to_chat(M, span_danger("Your hands are full."))
-		deactivate()
+		deactivate(FALSE, user)
 		return
 
 	var/obj/item/mop_deploy/blade = new(M)
 	rel_set(blade, nameof(blade.creator), M)
 	M.put_in_hands(blade)
 
-/obj/item/rig_module/mounted/mop/deactivate()
+/obj/item/rig_module/mounted/mop/deactivate(forced = FALSE, mob/user)
 
 	..()
 

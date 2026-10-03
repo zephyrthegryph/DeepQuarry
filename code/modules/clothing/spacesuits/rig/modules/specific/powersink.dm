@@ -16,7 +16,7 @@
 	var/total_power_drained = 0
 	var/drain_loc
 
-/obj/item/rig_module/power_sink/deactivate()
+/obj/item/rig_module/power_sink/deactivate(forced = FALSE, mob/user)
 
 	if(interfaced_with())
 		if(holder && holder.wearer())

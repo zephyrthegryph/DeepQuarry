@@ -550,7 +550,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	if(mod && mod.disruptive)
 		for(var/obj/item/rig_module/module in (installed_modules - mod))
 			if(module.active && module.disruptable)
-				module.deactivate()
+				module.deactivate(FALSE, user)
 
 	draw_power(cost * 10 / CELLRATE, mod || user, partial = TRUE)
 	return 1

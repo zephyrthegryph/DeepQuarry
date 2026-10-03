@@ -21,7 +21,7 @@
 	var/mob/living/M = holder.wearer()
 	M.digitalcamo++
 
-/obj/item/rig_module/electrowarfare_suite/deactivate()
+/obj/item/rig_module/electrowarfare_suite/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return
