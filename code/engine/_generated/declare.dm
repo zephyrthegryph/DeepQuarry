@@ -265,7 +265,7 @@
 /datum/capdef_decl/c_quickdraw/spec()
 	return list(CAP_QUICKDRAW, /datum/capability/lib/quickdraw, NONE, STACK, "quickdraw", "starts")
 
-/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:39
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:40
 /datum/capability/lib/reagent_container
 	var/volume = 30
 	var/transfer = list(5, 10, 15, 30)
@@ -288,11 +288,13 @@
 	var/shows_contents = TRUE
 	var/sealed = FALSE
 	var/lid_visible = TRUE
-/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible)
+	var/splash = TRUE
+	var/ingest_hostile = FALSE
+/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile)
 	RETURN_TYPE(/datum/capability/lib/reagent_container)
-	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile")
 /datum/capdef_decl/c_reagent_container/spec()
-	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible, splash, ingest_hostile")
 
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
@@ -475,7 +477,7 @@
 /proc/panel_open(datum/holder, selector)
 	return cap_key_get(holder, PANEL_OPEN, selector)
 
-/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:40
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:41
 /datum/cap_keys_decl/k_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
 /// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
@@ -725,6 +727,42 @@
 	into += entry_block("code/game/objects/items/weapons/ecigs.dm", 169, /obj/item/reagent_containers/ecig_cartridge)
 	into += entry_line(170)
 	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks) at code/modules/food/food/drinks.dm:76
+/obj/item/reagent_containers/food/drinks/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/drinks.dm", 76, /obj/item/reagent_containers/food/drinks)
+	into += entry_line(77)
+	into += list(global.reagent_container( volume = nameof(volume), lid = TRUE, lid_visible = FALSE, starts_open = nameof(open_at_start), taps = list(/obj/structure/reagent_dispensers), rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, splash = FALSE, ingest_hostile = TRUE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount)))
+	into += entry_line(91)
+	into += list(global.op("open", global.in_hand(), global.when(global.cond_not(REAGENT_CONTAINER_LID_OPEN)), global.label("Open it"), global.then(PROC_REF(opened_in_hand))))
+	into += entry_line(92)
+	into += list(global.extend("reagent_container.drink", global.then(PROC_REF(sipped))))
+	into += entry_line(93)
+	into += list(global.extend("reagent_container.feed", global.begins(PROC_REF(feeding_begins)), global.then(PROC_REF(sipped))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle) at code/modules/food/food/drinks/bottle.dm:110
+/obj/item/reagent_containers/food/drinks/bottle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/drinks/bottle.dm", 110, /obj/item/reagent_containers/food/drinks/bottle)
+	into += entry_line(111)
+	into += list(global.without("open"))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/cans) at code/modules/food/food/cans.dm:19
+/obj/item/reagent_containers/food/drinks/cans/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/cans.dm", 19, /obj/item/reagent_containers/food/drinks/cans)
+	into += entry_line(20)
+	into += list(global.extend("open", global.stance(I_HELP, I_DISARM, I_GRAB), global.then(PROC_REF(maybe_unlucky))))
+	into += entry_line(21)
+	into += list(global.op("shake", global.in_hand(), global.stance(I_HURT), global.priority(OP_PRIORITY_NORMAL + 1), global.when(global.cond_not(REAGENT_CONTAINER_LID_OPEN)), global.label("Shake it"), global.then(PROC_REF(shaken_up))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2) at code/modules/food/drinkingglass/drinkingglass.dm:147
+/obj/item/reagent_containers/food/drinks/glass2/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/drinkingglass/drinkingglass.dm", 147, /obj/item/reagent_containers/food/drinks/glass2)
+	into += entry_line(148)
+	into += list(global.configure(global.reagent_container(splash = TRUE, ingest_hostile = FALSE)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass) at code/modules/reagents/reagent_containers/glass.dm:64
 /obj/item/reagent_containers/glass/declared_entries(list/into)

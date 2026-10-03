@@ -19,7 +19,6 @@
 	amount_per_transfer_from_this = 5
 	max_transfer_amount = 30
 	min_transfer_amount = 1
-	flags = OPENCONTAINER
 
 	material_template = /datum/material_template/container
 	material_total = 60
@@ -144,20 +143,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PR
 		else continue
 		side = "right"
 
-/obj/item/reagent_containers/food/drinks/glass2/afterattack(obj/target, mob/user, proximity, click_parameters, stance = I_HURT)
-	if(stance == I_HURT) //We only want splashing to be done in combat mode.
-		if(!is_open_container() || !proximity)
-			return TRUE
-		if(standard_splash_mob(user, target))
-			return TRUE
-		if(reagents && reagents.total_volume) //Combat mode, aka wanting to spill it.
-			to_chat(user, span_notice("You splash the solution onto [target]."))
-			reagents.splash(target, reagents.total_volume)
-			return TRUE
-	..()
-
-/// In combat mode the glass isn't fed to anyone: afterattack splashes it instead.
-/obj/item/reagent_containers/food/drinks/glass2/attack(mob/living/M, mob/living/user, target_zone, attack_modifier, stance = I_HURT)
-	if(stance == I_HURT && !(force && !(flags & NOBLUDGEON)))
-		return ITEM_INTERACT_FAILURE
-	return ..()
+// A glass is splashed in combat mode, and is not fed to anyone then.
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2, \
+	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE)))
