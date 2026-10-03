@@ -220,7 +220,7 @@ balanced parentheses (a marker may span lines; a marker in a comment is document
 | `SOURCE_DEF(name)` / `STAGE_DEF(group, name)` | `SRC_<NAME>` / `STAGE_<GROUP>_<NAME>` |
 | `CAPABILITY_DEF(name, CAP_X, ...)` / `CAPABILITY_TYPE(name, CAP_X, /type, ...)` | capability key `name`, id `CAP_X`; every `op("x", ...)` inside is op key `name.x` |
 | `cap_keys(CAP_X, OPEN = ..., ...)` | state ids `<NAME>_OPEN` for the capability whose id is `CAP_X` |
-| `CAPABILITIES(T, entries...)` | the holder type `T` of the handlers named inside; `op("x")` is op key `x` |
+| `CAPABILITIES(T)` + indented entries | the holder type `T` of the handlers named inside; `op("x")` is op key `x` |
 | `SYSTEM_ACCESSOR(system, name, nameof(var))` | the accessor proc `name()`; a call is a read of `var` on the system (`ReadKind::System`) |
 | `READS_AS(proc, KEY, via = nameof(relation))` | `proc` stands for producer key `KEY`; it is not followed. Its owner is the type whose definition sits next to the marker (or `/type/proc/name`) |
 | `READS_FROM(C, D)` | first line of a global helper: it is followed through the named args; `READS_FROM()` reads nothing |
@@ -335,13 +335,15 @@ hand-written `#define` already gives is left alone, so the contracts' hand ids k
 each `CAPABILITY_TYPE/DEF(name, CAP_X, [/datum/capability/x,] key =, stacks =, param = default, ...)` the datum's param vars with their
 defaults, the constructor `name(params)` (a real proc, so DM checks a call's named arguments) and the registration row the engine reads
 at boot; a registration row for each `cap_keys`, `STAGE_DEF`, `SOURCE_DEF` and `STATE_GRAPH`, with the `<cap>_<key>(holder)` accessor of
-each state key; and, for each `CAPABILITIES(T, entries...)`, `T/declared_entries(list/into)`: the entries copied as written (so
+each state key; and, for each `CAPABILITIES(T)` block, `T/declared_entries(list/into)`: the entries copied as written (so
 `nameof(var)` and `PROC_REF(x)` resolve against `T`), each preceded by `entry_line(n)` so the explain tools say where it came from. Two
 rewrites: `link(A::a, B::b)` (`link` is a BYOND keyword) becomes `entry_link("A::a", "B::b")`, and `configure(CAP_X, "selector", param =
 value)` becomes `configure(<constructor of CAP_X>("selector", param = value))`. Declarations in files under `code/tests/` go in an
 `#if defined(UNIT_TESTS)` block. A second `CAPABILITIES` list for one type is a diagnostic. DM cannot continue a macro call across lines,
-so a marker that spans lines ends each line but the last with a backslash (`DECLARE_LOOT` and `DECLARE_INTERACTIONS` already do); the
-generator drops the backslashes.
+so a block is a header whose entries are the indented statements under it (`CAPABILITIES(T)`, `STATE_GRAPH(graph)`; `CAPABILITY_DEF` and `BUNDLE`
+are read the same way): `decls` joins the entries with commas in place of the entry-ending newlines (same length, so lines stay right) and every
+reader sees one argument list. The legacy backslash list is still read, for the fixtures. `links(A::a, B::b)` is the block spelling of `link`
+(a BYOND reserved word).
 
 `stats.dm` (`analyze gen stats`, E3): for each `STAT(T, name, RULE, base =, reapply =, units =, formula = PROC_REF(x), reads = list(...), schema =,
 virtual = TRUE)` the stat's var on `T` with the rule's base as its default (not when `T` or an ancestor already declares a var of that name, when the

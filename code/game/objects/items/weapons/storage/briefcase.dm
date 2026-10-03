@@ -12,8 +12,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_BACKPACK
 
 
-CAPABILITIES(/obj/item/storage/briefcase, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/briefcase)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/briefcase/clutch
 	name = "clutch purse"
@@ -25,8 +25,8 @@ CAPABILITIES(/obj/item/storage/briefcase, \
 	max_storage_space = ITEMSIZE_COST_SMALL * 4
 
 
-CAPABILITIES(/obj/item/storage/briefcase/clutch, \
-	configure(storage(max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/briefcase/clutch)
+	configure(storage(max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/briefcase/bookbag
 	name = "bookbag"

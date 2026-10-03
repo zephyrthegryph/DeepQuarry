@@ -6,8 +6,8 @@
 	storage_slots = 14
 
 
-CAPABILITIES(/obj/item/storage/box/swabs, \
-	configure(storage(accepts = list(/obj/item/forensics/swab))))
+CAPABILITIES(/obj/item/storage/box/swabs)
+	configure(storage(accepts = list(/obj/item/forensics/swab)))
 
 /obj/item/storage/box/swabs/Initialize(mapload)
 	. = ..()
@@ -20,8 +20,8 @@ CAPABILITIES(/obj/item/storage/box/swabs, \
 	storage_slots = 7
 
 
-CAPABILITIES(/obj/item/storage/box/evidence, \
-	configure(storage(accepts = list(/obj/item/evidencebag))))
+CAPABILITIES(/obj/item/storage/box/evidence)
+	configure(storage(accepts = list(/obj/item/evidencebag)))
 
 /obj/item/storage/box/evidence/Initialize(mapload)
 	. = ..()
@@ -36,8 +36,8 @@ CAPABILITIES(/obj/item/storage/box/evidence, \
 	storage_slots = 14
 
 
-CAPABILITIES(/obj/item/storage/box/fingerprints, \
-	configure(storage(accepts = list(/obj/item/sample/print))))
+CAPABILITIES(/obj/item/storage/box/fingerprints)
+	configure(storage(accepts = list(/obj/item/sample/print)))
 
 /obj/item/storage/box/fingerprints/Initialize(mapload)
 	. = ..()

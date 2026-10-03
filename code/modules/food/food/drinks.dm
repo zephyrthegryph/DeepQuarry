@@ -54,24 +54,24 @@
 // A drink is a holder of its volume that is open or shut (a lid that is only a state: a can is opened by using it, once), that is sipped from by yourself and
 // fed to others in three seconds (in any stance unless it is a blow), poured from and into, and filled from a tank. What a sip tells and leaves behind is
 // sipped() and, a moment after the transfer, On_Consume().
-CAPABILITIES(/obj/item/reagent_containers/food/drinks, \
-	reagent_container( \
-		volume = nameof(volume), \
-		lid = TRUE, \
-		lid_visible = FALSE, \
-		starts_open = nameof(open_at_start), \
-		taps = list(/obj/structure/reagent_dispensers), \
-		rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, \
-		feed = TRUE, \
-		splash = FALSE, \
-		ingest_hostile = TRUE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		transfer_min = nameof(min_transfer_amount), \
-		transfer_max = nameof(max_transfer_amount)), \
-	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand))), \
-	extend("reagent_container.drink", then(PROC_REF(sipped))), \
-	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped))))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks)
+	reagent_container(
+		volume = nameof(volume),
+		lid = TRUE,
+		lid_visible = FALSE,
+		starts_open = nameof(open_at_start),
+		taps = list(/obj/structure/reagent_dispensers),
+		rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT,
+		feed = TRUE,
+		splash = FALSE,
+		ingest_hostile = TRUE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount))
+	op("open", in_hand(), when(cond_not(REAGENT_CONTAINER_LID_OPEN)), label("Open it"), then(PROC_REF(opened_in_hand)))
+	extend("reagent_container.drink", then(PROC_REF(sipped)))
+	extend("reagent_container.feed", begins(PROC_REF(feeding_begins)), then(PROC_REF(sipped)))
 
 /// Used in hand while it is shut: it is opened (or found to have no ring pull).
 /obj/item/reagent_containers/food/drinks/proc/opened_in_hand(datum/act/op/A)

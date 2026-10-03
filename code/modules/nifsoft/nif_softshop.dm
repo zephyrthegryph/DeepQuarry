@@ -23,7 +23,9 @@
 MSG_DEF(nifsoft_shop/shorted, "You short out %T%'s access lock & stock restrictions.", "%U% shorts out %T%'s access lock.")
 
 // These wires can't be hacked for contraband; an emag can (Yeees, YEEES! Give me that black market tech).
-CAPABILITIES(/obj/machinery/vending/nifsoft_shop, 	configure(CAP_WIRES, kind = /datum/wires/vending/no_contraband), 	configure(CAP_EMAG, parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
+CAPABILITIES(/obj/machinery/vending/nifsoft_shop)
+	configure(wires(kind = /datum/wires/vending/no_contraband))
+	configure(emag(parts = then(PROC_REF(on_emag)), say = MSG(nifsoft_shop/shorted)))
 
 /obj/machinery/vending/nifsoft_shop/ui_data(datum/act/eval/A)
 	. = ..()

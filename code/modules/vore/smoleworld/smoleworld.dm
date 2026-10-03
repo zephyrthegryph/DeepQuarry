@@ -64,8 +64,8 @@
 	/obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks, /obj/item/stack/material/smolebricks
 	)
 
-CAPABILITIES(/obj/item/storage/smolebrickcase, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/smolebrickcase)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Track code
 //defineing actions
@@ -411,5 +411,5 @@ DAMAGE_REACTION(/obj/structure/smoleruins, DAMAGE_PROJECTILE, PROC_REF(smoleruin
 	)
 
 
-CAPABILITIES(/obj/item/storage/bagoplanets, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bagoplanets)
+	configure(storage(max_size = ITEMSIZE_NORMAL))

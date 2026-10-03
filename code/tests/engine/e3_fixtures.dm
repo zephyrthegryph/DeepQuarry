@@ -40,19 +40,19 @@ STAT(/obj/e3_machine, e3_stun, MAX, base = 0, units = LIFE_CYCLE, reapply = REAP
 TRACKED(/obj/e3_machine, broken)
 TRACKED(/obj/e3_machine, e3_on)
 
-CAPABILITIES(/obj/e3_machine, \
-	contributes(STAT_E3_OPERABLE, cond_not(nameof(broken))), \
-	contributes(STAT_E3_DRAW, 2), \
-	when(nameof(e3_on), contributes(STAT_E3_DRAW, 10)), \
-	contributes(STAT_E3_CAN_RUN, STAT_E3_OPERABLE), \
-	immune_to(STATUS_E3_STUN, when = nameof(broken)))
+CAPABILITIES(/obj/e3_machine)
+	contributes(STAT_E3_OPERABLE, cond_not(nameof(broken)))
+	contributes(STAT_E3_DRAW, 2)
+	when(nameof(e3_on), contributes(STAT_E3_DRAW, 10))
+	contributes(STAT_E3_CAN_RUN, STAT_E3_OPERABLE)
+	immune_to(STATUS_E3_STUN, when = nameof(broken))
 
 /// An immune subtype: always.
 /obj/e3_machine/stoic
 	name = "e3 stoic machine"
 
-CAPABILITIES(/obj/e3_machine/stoic, \
-	immune_to(STATUS_E3_STUN))
+CAPABILITIES(/obj/e3_machine/stoic)
+	immune_to(STATUS_E3_STUN)
 
 /// A thing that is only a source of holds (a datum or an object, both work).
 /obj/e3_source
@@ -66,8 +66,8 @@ CAPABILITIES(/obj/e3_machine/stoic, \
 
 TRACKED(/obj/e3_apc, channel_on)
 
-CAPABILITIES(/obj/e3_apc, \
-	ref_many(nameof(loads), /obj/e3_load))
+CAPABILITIES(/obj/e3_apc)
+	ref_many(nameof(loads), /obj/e3_load)
 
 /obj/e3_load
 	name = "e3 load"
@@ -75,9 +75,9 @@ CAPABILITIES(/obj/e3_apc, \
 
 STAT(/obj/e3_load, e3_powered, ALL)
 
-CAPABILITIES(/obj/e3_load, \
-	ref_one(nameof(apc), /obj/e3_apc), \
-	contributes(STAT_E3_POWERED, PROC_REF(apc_channel), reads = list("apc.channel_on")))
+CAPABILITIES(/obj/e3_load)
+	ref_one(nameof(apc), /obj/e3_apc)
+	contributes(STAT_E3_POWERED, PROC_REF(apc_channel), reads = list("apc.channel_on"))
 
 /obj/e3_load/proc/apc_channel(datum/act/A)
 	return apc ? apc.channel_on : TRUE
@@ -90,9 +90,9 @@ CAPABILITIES(/obj/e3_load, \
 
 TRACKED(/obj/e3_wire, live)
 
-CAPABILITIES(/obj/e3_wire, \
-	ref_one(nameof(plugged), /obj/e3_machine), \
-	when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7)))
+CAPABILITIES(/obj/e3_wire)
+	ref_one(nameof(plugged), /obj/e3_machine)
+	when(nameof(live), contributes_to(nameof(plugged), STAT_E3_DRAW, 7))
 
 /// A real machine, for the base stats declared on /obj/machinery.
 /obj/machinery/e3_probe

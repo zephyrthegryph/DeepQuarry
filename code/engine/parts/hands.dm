@@ -45,10 +45,10 @@
 
 /// A carbon mob grants what its species declares while its species relation names it (the relation scope, scopes.dm): a species change is a write
 /// of the var and everything the old species gave goes in the same step.
-CAPABILITIES(/mob/living/carbon, \
-	rel_grants(nameof(species)))
+CAPABILITIES(/mob/living/carbon)
+	rel_grants(nameof(species))
 
 /// Every species has hands (has_working_hand() drops them when the body has lost them all). A species without hands overrides this list with
 /// without(); a mob with no species (a carp, a borg, the AI) declares its own providers.
-CAPABILITIES(/datum/species, \
-	hands())
+CAPABILITIES(/datum/species)
+	hands()

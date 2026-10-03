@@ -272,18 +272,18 @@ DECLARE_APPEARANCE_PROC(/obj/item/multitool, TYPE_PROC_REF(/atom, appearance_ove
 	w_class = ITEMSIZE_NORMAL
 	display_contents_with_number = 0
 
-CAPABILITIES(/obj/item/storage/bag/circuits, \
-	configure(storage(accepts = list( \
-		/obj/item/integrated_circuit, \
-		/obj/item/storage/bag/circuits/mini, \
-		/obj/item/electronic_assembly, \
-		/obj/item/integrated_electronics, \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/multitool, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/integrated_electronics/detailer))))
+CAPABILITIES(/obj/item/storage/bag/circuits)
+	configure(storage(accepts = list(
+		/obj/item/integrated_circuit,
+		/obj/item/storage/bag/circuits/mini,
+		/obj/item/electronic_assembly,
+		/obj/item/integrated_electronics,
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/multitool,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/integrated_electronics/detailer)))
 
 //Emp'ing this one bag causes a recursion loop of over 700 emp_act's,
 //Which is enough to trigger byond's recursion level protection
@@ -347,8 +347,8 @@ CAPABILITIES(/obj/item/storage/bag/circuits, \
 	var/spawn_flags_to_use = IC_SPAWN_DEFAULT
 
 
-CAPABILITIES(/obj/item/storage/bag/circuits/mini, \
-	configure(storage(accepts = list(/obj/item/integrated_circuit))))
+CAPABILITIES(/obj/item/storage/bag/circuits/mini)
+	configure(storage(accepts = list(/obj/item/integrated_circuit)))
 
 /obj/item/storage/bag/circuits/mini/arithmetic
 	name = "arithmetic circuit box"

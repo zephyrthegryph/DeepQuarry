@@ -119,16 +119,16 @@
 	use_to_pickup = TRUE
 
 
-CAPABILITIES(/obj/item/storage/excavation, \
-	configure(storage(accepts = list( \
-		/obj/item/pickaxe/brush, \
-		/obj/item/pickaxe/one_pick, \
-		/obj/item/pickaxe/two_pick, \
-		/obj/item/pickaxe/three_pick, \
-		/obj/item/pickaxe/four_pick, \
-		/obj/item/pickaxe/five_pick, \
-		/obj/item/pickaxe/six_pick, \
-		/obj/item/pickaxe/hand))))
+CAPABILITIES(/obj/item/storage/excavation)
+	configure(storage(accepts = list(
+		/obj/item/pickaxe/brush,
+		/obj/item/pickaxe/one_pick,
+		/obj/item/pickaxe/two_pick,
+		/obj/item/pickaxe/three_pick,
+		/obj/item/pickaxe/four_pick,
+		/obj/item/pickaxe/five_pick,
+		/obj/item/pickaxe/six_pick,
+		/obj/item/pickaxe/hand)))
 
 /obj/item/storage/excavation/Initialize(mapload)
 	. = ..()

@@ -33,22 +33,22 @@ DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "r
 // A rag is not a container that is poured and drunk from: it soaks up from a tank or a bucket, wrings out into an open container (or onto the floor), wipes
 // things and people, smothers somebody whose mouth is aimed at, and is set alight by a flame when it is soaked in spirits or fuel (wiper(), and the ops
 // below). It keeps the glass handling: a label, a dip, a hot thing over blood.
-CAPABILITIES(/obj/item/reagent_containers/glass/rag, \
-	without(CAP_GLASS_CONTAINER), \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit)), \
-	extend("wiper.soak", then(PROC_REF(name_refreshed))), \
-	extend("wiper.wring_into", then(PROC_REF(name_refreshed))), \
-	op("stamp_out", in_hand(), when(nameof(rag_lit)), label("Stamp it out"), then(PROC_REF(stamped_out))), \
-	op("wring_out", in_hand(), when(cond_not(nameof(rag_lit))), label("Wring it out"), \
-		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out))), \
-	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame))), \
-	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed))))
+CAPABILITIES(/obj/item/reagent_containers/glass/rag)
+	without(CAP_GLASS_CONTAINER)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	wiper(soaks_from = list(/obj/structure/reagent_dispensers, /obj/item/reagent_containers/glass/bucket, /obj/structure/mopbucket), burning = nameof(rag_lit))
+	extend("wiper.soak", then(PROC_REF(name_refreshed)))
+	extend("wiper.wring_into", then(PROC_REF(name_refreshed)))
+	op("stamp_out", in_hand(), when(nameof(rag_lit)), label("Stamp it out"), then(PROC_REF(stamped_out)))
+	op("wring_out", in_hand(), when(cond_not(nameof(rag_lit))), label("Wring it out"),
+		needs(req_reagents(1, because = MSG(wiper/dry))), begins(MSG(rag/begin_wring_floor)), wait(PROC_REF(wring_floor_time)), then(PROC_REF(wrung_out)))
+	op("light", item(/obj/item/flame), when(cond_not(nameof(rag_lit))), label("Light it"), then(PROC_REF(lit_by_flame)))
+	op("rub", at_target(/mob/living), priority(OP_PRIORITY_PART), label("Use on"), begins(PROC_REF(rub_begins)), wait(PROC_REF(rub_wait)), then(PROC_REF(rubbed)))
 
 MSG_DEF(rag/begin_wring_floor, "You begin to wring out %I% over the floor.", "%U% begins to wring out %I%.")
 

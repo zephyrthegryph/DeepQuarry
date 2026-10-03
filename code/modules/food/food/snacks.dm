@@ -5945,8 +5945,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/mint, null, list(REAGE
 	trash = /obj/item/trash/admints
 
 
-CAPABILITIES(/obj/item/storage/box/admints, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints))))
+CAPABILITIES(/obj/item/storage/box/admints)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints)))
 
 /obj/item/reagent_containers/food/snacks/candy
 	name = "\improper Grandma Ellen's Candy Bar"
@@ -7404,8 +7404,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/reishicup, null, list(
 /obj/item/storage/box/wings
 
 
-CAPABILITIES(/obj/item/storage/box/wings, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing))))
+CAPABILITIES(/obj/item/storage/box/wings)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing)))
 
 /obj/item/storage/box/wings/Initialize(mapload)
 	. = ..()
@@ -7773,10 +7773,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/cube/nutriment, null, 
 /obj/item/storage/box/wings/tray
 
 
-CAPABILITIES(/obj/item/storage/box/wings/tray, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/cube/protein, \
-		/obj/item/reagent_containers/food/snacks/cube/nutriment))))
+CAPABILITIES(/obj/item/storage/box/wings/tray)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/cube/protein,
+		/obj/item/reagent_containers/food/snacks/cube/nutriment)))
 
 /obj/item/reagent_containers/food/snacks/carpmeat/sif //Making fish meat non-toxic!  As advised by Ascian!
 	toxin_type = null
@@ -7860,8 +7860,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/onionsoup, null, list(
 	)
 
 
-CAPABILITIES(/obj/item/storage/box/wings/bucket, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub))))
+CAPABILITIES(/obj/item/storage/box/wings/bucket)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub)))
 
 /obj/item/reagent_containers/food/snacks/grub
 	name = "grub"
@@ -8179,8 +8179,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/ratsteak, null, list(R
 /obj/item/storage/box/jaffacake
 
 
-CAPABILITIES(/obj/item/storage/box/jaffacake, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
+CAPABILITIES(/obj/item/storage/box/jaffacake)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake)))
 
 /obj/item/reagent_containers/food/snacks/winegum
 	name = "wine gum"
@@ -8233,8 +8233,8 @@ CAPABILITIES(/obj/item/storage/box/jaffacake, \
 /obj/item/storage/box/winegum
 
 
-CAPABILITIES(/obj/item/storage/box/winegum, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum))))
+CAPABILITIES(/obj/item/storage/box/winegum)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum)))
 
 /obj/item/reagent_containers/food/snacks/packaged/pasty
 	name = "Terran Pasty"
@@ -8278,8 +8278,8 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/pasty, null, 
 /obj/item/storage/box/saucer
 
 
-CAPABILITIES(/obj/item/storage/box/saucer, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer))))
+CAPABILITIES(/obj/item/storage/box/saucer)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer)))
 
 /obj/item/reagent_containers/food/snacks/custardcream
 	name = "Custard Cream"
@@ -8306,8 +8306,8 @@ CAPABILITIES(/obj/item/storage/box/saucer, \
 /obj/item/storage/box/custardcream
 
 
-CAPABILITIES(/obj/item/storage/box/custardcream, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream))))
+CAPABILITIES(/obj/item/storage/box/custardcream)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream)))
 
 /obj/item/reagent_containers/food/snacks/bourbon
 	name = "Bourbon Biscuit"
@@ -8334,8 +8334,8 @@ CAPABILITIES(/obj/item/storage/box/custardcream, \
 /obj/item/storage/box/bourbon
 
 
-CAPABILITIES(/obj/item/storage/box/bourbon, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon))))
+CAPABILITIES(/obj/item/storage/box/bourbon)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon)))
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/bourbon, null, list(REAGENT_ID_COCO = 2))
 
@@ -8398,10 +8398,10 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/packaged/scotchegg, nu
 /obj/item/storage/box/shrimpsandbananas
 
 
-CAPABILITIES(/obj/item/storage/box/shrimpsandbananas, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/foam_banana, \
-		/obj/item/reagent_containers/food/snacks/foam_shrimp))))
+CAPABILITIES(/obj/item/storage/box/shrimpsandbananas)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/foam_banana,
+		/obj/item/reagent_containers/food/snacks/foam_shrimp)))
 
 /obj/item/reagent_containers/food/snacks/rhubarbcustard
 	name = "Rhubarb and Custard Sweet"
@@ -8434,8 +8434,8 @@ CAPABILITIES(/obj/item/storage/box/shrimpsandbananas, \
 /obj/item/storage/box/rhubarbcustard
 
 
-CAPABILITIES(/obj/item/storage/box/rhubarbcustard, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard))))
+CAPABILITIES(/obj/item/storage/box/rhubarbcustard)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard)))
 
 /obj/item/reagent_containers/food/snacks/packaged/porkpie
 	name = "Pork Pie"

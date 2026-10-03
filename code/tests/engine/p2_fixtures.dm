@@ -23,8 +23,8 @@
 /// An EMP is taken over by an instead.
 /obj/p2_hit/taker
 
-CAPABILITIES(/obj/p2_hit/taker, \
-	extend(/datum/act/hit/emp, instead(then(PROC_REF(take_over)))))
+CAPABILITIES(/obj/p2_hit/taker)
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(take_over))))
 
 /obj/p2_hit/taker/proc/take_over(datum/act/A)
 	took++
@@ -32,9 +32,9 @@ CAPABILITIES(/obj/p2_hit/taker, \
 /// Halves every hit through the generic hit, and refuses fire.
 /obj/p2_hit/halver
 
-CAPABILITIES(/obj/p2_hit/halver, \
-	extend(/datum/act/hit, adjusts(packet.amounts, scale = 0.5)), \
-	extend(/datum/act/hit/fire, needs(req(PROC_REF(never), because = MSG(p1/not_ready)))))
+CAPABILITIES(/obj/p2_hit/halver)
+	extend(/datum/act/hit, adjusts("packet.amounts", scale = 0.5))
+	extend(/datum/act/hit/fire, needs(req(PROC_REF(never), because = MSG(p1/not_ready))))
 
 /obj/p2_hit/halver/proc/never(datum/act/A)
 	return FALSE
@@ -42,8 +42,8 @@ CAPABILITIES(/obj/p2_hit/halver, \
 /// Hears a blob hit after it landed.
 /obj/p2_hit/listener
 
-CAPABILITIES(/obj/p2_hit/listener, \
-	on_notice(/datum/notice/hit/blob, then(PROC_REF(hear))))
+CAPABILITIES(/obj/p2_hit/listener)
+	on_notice(/datum/notice/hit/blob, then(PROC_REF(hear)))
 
 /obj/p2_hit/listener/proc/hear(datum/act/A)
 	heard++
@@ -63,8 +63,8 @@ DAMAGE_REACTION(/obj/p2_hit/legacy, DAMAGE_EMP, PROC_REF(legacy_emp))
 /obj/p2_hit/both
 	var/legacy_blocks = FALSE
 
-CAPABILITIES(/obj/p2_hit/both, \
-	extend(/datum/act/hit/emp, adjusts(packet.amounts, scale = 0.5)))
+CAPABILITIES(/obj/p2_hit/both)
+	extend(/datum/act/hit/emp, adjusts("packet.amounts", scale = 0.5))
 
 DAMAGE_REACTION(/obj/p2_hit/both, DAMAGE_EMP, PROC_REF(legacy_emp))
 
@@ -88,11 +88,11 @@ DAMAGE_REACTION(/obj/p2_hit/both, DAMAGE_EMP, PROC_REF(legacy_emp))
 /obj/item/p2_scrap
 	name = "p2 scrap"
 
-CAPABILITIES(/obj/p2_frame, \
-	construction(start(STAGE_DOOR_FRAME), \
-		stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5), undo = null), \
-		dismantle(tool(TOOL_CROWBAR), wait(0), becomes(/obj/item/p2_frame_item), \
-			ruined(TYPE_PROC_REF(/obj/p2_frame, frame_ruined), becomes(/obj/item/p2_scrap)))))
+CAPABILITIES(/obj/p2_frame)
+	construction(start(STAGE_DOOR_FRAME),
+		stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5), undo = null),
+		dismantle(tool(TOOL_CROWBAR), wait(0), becomes(/obj/item/p2_frame_item),
+			ruined(TYPE_PROC_REF(/obj/p2_frame, frame_ruined), becomes(/obj/item/p2_scrap))))
 
 // ---- the machine library: a box with a hatch (code/library/machine, code/library/access, code/engine/present) ----
 
@@ -126,7 +126,16 @@ MSG_DEF_SELF(p2/ui_forbidden, "That is not allowed.")
 
 TRACKED(/obj/machinery/p2_box, label_shown)
 
-CAPABILITIES(/obj/machinery/p2_box, 	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE), 	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start)), 	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL), 	cell_bay(nameof(cell), at = BAY_HATCH), 	interface("P2Box"), 	look_layer("p2-label", when = nameof(label_shown)), 	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown))), 	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed))), 	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), begins(PROC_REF(fit_begins)), then(PROC_REF(fitted_now))))
+CAPABILITIES(/obj/machinery/p2_box)
+	machine_basics(null, repair = NONE, frame = NONE, powered = FALSE)
+	maintenance_hatch( 		cover = cover(open = tool(TOOL_CROWBAR)), 		wires = /datum/wires/p2_box, 		emag = list(then(PROC_REF(emag_effect))), 		panel_needs_cover_closed = TRUE, 		starts_locked = nameof(lock_at_start))
+	owns_one(nameof(cell), /obj/item/cell, on_destroy = ON_DESTROY_SPILL)
+	cell_bay(nameof(cell), at = BAY_HATCH)
+	interface("P2Box")
+	look_layer("p2-label", when = nameof(label_shown))
+	examine_line(MSG(p2/ui_forbidden), when = cond_not(nameof(label_shown)))
+	op("press", ui_act(arg("n", int(0, 9))), then(PROC_REF(pressed)))
+	op("fit", tool(TOOL_WRENCH), wait(PROC_REF(fit_wait)), begins(PROC_REF(fit_begins)), then(PROC_REF(fitted_now)))
 
 /obj/machinery/p2_box/proc/emag_effect(datum/act/op/A)
 	emag_ran++
@@ -176,9 +185,9 @@ DECLARE_INTERACTIONS(/obj/p2_legacy_target, \
 	name = "p2 op item"
 	var/tapped = 0
 
-CAPABILITIES(/obj/item/p2_op_item, \
-	op("p2_idle", at_target(/obj/p2_legacy_target), when(PROC_REF(p2_never)), then(PROC_REF(p2_idle))), \
-	op("p2_turf", at_target(/turf), priority(OP_PRIORITY_PART), then(PROC_REF(p2_tapped))))
+CAPABILITIES(/obj/item/p2_op_item)
+	op("p2_idle", at_target(/obj/p2_legacy_target), when(PROC_REF(p2_never)), then(PROC_REF(p2_idle)))
+	op("p2_turf", at_target(/turf), priority(OP_PRIORITY_PART), then(PROC_REF(p2_tapped)))
 
 /obj/item/p2_op_item/proc/p2_tapped(datum/act/op/A)
 	tapped++
@@ -201,15 +210,15 @@ CAPABILITY_DEF(p2_bundle, CAP_P2_BUNDLE, key = NONE)
 /obj/p2_bundled
 	name = "p2 bundled"
 
-CAPABILITIES(/obj/p2_bundled, \
-	p2_bundle())
+CAPABILITIES(/obj/p2_bundled)
+	p2_bundle()
 
 /// The same, without the bundle: nothing it brought stays, the nested capability and its ops included.
 /obj/p2_bundled/stripped
 	name = "p2 stripped"
 
-CAPABILITIES(/obj/p2_bundled/stripped, \
-	without(CAP_P2_BUNDLE))
+CAPABILITIES(/obj/p2_bundled/stripped)
+	without(CAP_P2_BUNDLE)
 
 // ---- afterattack on a mob ----
 
@@ -233,7 +242,8 @@ CAPABILITIES(/obj/p2_bundled/stripped, \
 /obj/machinery/p2_box/slasher
 	var/slashed = 0
 
-CAPABILITIES(/obj/machinery/p2_box/slasher, on_notice(/datum/notice/slashed, then(PROC_REF(heard_slash))))
+CAPABILITIES(/obj/machinery/p2_box/slasher)
+	on_notice(/datum/notice/slashed, then(PROC_REF(heard_slash)))
 
 /obj/machinery/p2_box/slasher/proc/heard_slash(datum/act/A)
 	slashed++
@@ -249,7 +259,9 @@ CAPABILITIES(/obj/machinery/p2_box/slasher, on_notice(/datum/notice/slashed, the
 	/// The click parameters the last op ran under (dq_interaction_click_params of its actor).
 	var/seen_params
 
-CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_used))), 	op("drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(was_dragged))))
+CAPABILITIES(/obj/p2_dragtarget)
+	op("use", item(/obj/item), then(PROC_REF(was_used)))
+	op("drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(was_dragged)))
 
 /obj/p2_dragtarget/proc/was_used(datum/act/op/A)
 	used++
@@ -271,7 +283,8 @@ CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_u
 	var/ran = 0
 	var/asked_value = null
 
-CAPABILITIES(/obj/p2_asker, 	op("ask", ui_act(), asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), then(PROC_REF(asked_done))))
+CAPABILITIES(/obj/p2_asker)
+	op("ask", ui_act(), asks(/datum/prompt/number, when = PROC_REF(ask_wanted)), then(PROC_REF(asked_done)))
 
 /obj/p2_asker/proc/ask_wanted(datum/act/op/A)
 	return want // ALLOW(reads): a test fixture's plain flag, read when the step is reached
@@ -288,7 +301,9 @@ CAPABILITIES(/obj/p2_asker, 	op("ask", ui_act(), asks(/datum/prompt/number, when
 /obj/p2_windowed
 	name = "p2 windowed"
 
-CAPABILITIES(/obj/p2_windowed, 	interface("P2First"), 	op("p2_window_press", ui_act(), then(PROC_REF(window_pressed))))
+CAPABILITIES(/obj/p2_windowed)
+	interface("P2First")
+	op("p2_window_press", ui_act(), then(PROC_REF(window_pressed)))
 
 /obj/p2_windowed/proc/window_pressed(datum/act/op/A)
 	return OP_OK
@@ -297,6 +312,9 @@ CAPABILITIES(/obj/p2_windowed, 	interface("P2First"), 	op("p2_window_press", ui_
 /obj/p2_windowed/second
 	name = "p2 windowed second"
 
-CAPABILITIES(/obj/p2_windowed/second, 	without("ui_open"), 	interface("P2Second"), 	op("p2_window_press_second", ui_act(), then(PROC_REF(window_pressed))))
+CAPABILITIES(/obj/p2_windowed/second)
+	without("ui_open")
+	interface("P2Second")
+	op("p2_window_press_second", ui_act(), then(PROC_REF(window_pressed)))
 
 #endif

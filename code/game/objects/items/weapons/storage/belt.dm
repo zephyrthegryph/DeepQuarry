@@ -22,9 +22,9 @@ TRACKED(/obj/item/storage/belt, show_above_suit)
 
 MSG_DEF_SELF(belt/under_suit, "It cannot be worn above your suit.")
 
-CAPABILITIES(/obj/item/storage/belt, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)), \
-	op("layer", menu(), label("Switch Belt Layer"), needs(carried(), req(PROC_REF(can_switch_layer), because = MSG(belt/under_suit))), then(PROC_REF(toggle_layer_effect))))
+CAPABILITIES(/obj/item/storage/belt)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
+	op("layer", menu(), label("Switch Belt Layer"), needs(carried(), req(PROC_REF(can_switch_layer), because = MSG(belt/under_suit))), then(PROC_REF(toggle_layer_effect)))
 
 /// Some belts are only ever worn under the suit.
 /obj/item/storage/belt/proc/can_switch_layer(datum/act/op/A)
@@ -55,45 +55,45 @@ CAPABILITIES(/obj/item/storage/belt, \
 	icon_state = "utility"
 
 
-CAPABILITIES(/obj/item/storage/belt/utility, \
-	configure(storage(accepts = list( \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/weldingtool, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/tool/transforming/jawsoflife, \
-		/obj/item/multitool, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/t_scanner, \
-		/obj/item/analyzer, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/gloves, \
-		/obj/item/pda, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/radio/headset, \
-		/obj/item/robotanalyzer, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/tape_roll, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/pipe_dispenser, \
-		/obj/item/holosign_creator/combifan, \
-		/obj/item/rcd, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/shovel/spade, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/geiger, \
-		/obj/item/reagent_scanner, \
-		/obj/item/lightpainter, \
-		/obj/item/anomaly_releaser, \
-		/obj/item/anomaly_scanner))))
+CAPABILITIES(/obj/item/storage/belt/utility)
+	configure(storage(accepts = list(
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/weldingtool,
+		/obj/item/tool/wirecutters,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/tool/transforming/jawsoflife,
+		/obj/item/multitool,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/t_scanner,
+		/obj/item/analyzer,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/gloves,
+		/obj/item/pda,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/radio/headset,
+		/obj/item/robotanalyzer,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/extinguisher/mini,
+		/obj/item/tape_roll,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/pipe_dispenser,
+		/obj/item/holosign_creator/combifan,
+		/obj/item/rcd,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/shovel/spade,
+		/obj/item/stack/nanopaste,
+		/obj/item/geiger,
+		/obj/item/reagent_scanner,
+		/obj/item/lightpainter,
+		/obj/item/anomaly_releaser,
+		/obj/item/anomaly_scanner)))
 
 /obj/item/storage/belt/utility/full
 	starts_with = list(
@@ -145,44 +145,44 @@ CAPABILITIES(/obj/item/storage/belt/utility, \
 	storage_slots = 8	//If they get better everything-else, why not the belt too?
 
 
-CAPABILITIES(/obj/item/storage/belt/utility/chief, \
-	configure(storage(accepts = list( \
-		/obj/item/rcd, \
-		/obj/item/pipe_dispenser, \
-		/obj/item/holosign_creator/combifan, \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/weldingtool, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/tool/transforming/jawsoflife, \
-		/obj/item/multitool, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/t_scanner, \
-		/obj/item/analyzer, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/gloves, \
-		/obj/item/pda, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/radio/headset, \
-		/obj/item/robotanalyzer, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/tape_roll, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/shovel/spade, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/geiger, \
-		/obj/item/areaeditor/blueprints, \
-		/obj/item/wire_reader, \
-		/obj/item/holosign_creator/combifan))))
+CAPABILITIES(/obj/item/storage/belt/utility/chief)
+	configure(storage(accepts = list(
+		/obj/item/rcd,
+		/obj/item/pipe_dispenser,
+		/obj/item/holosign_creator/combifan,
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/weldingtool,
+		/obj/item/tool/wirecutters,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/tool/transforming/jawsoflife,
+		/obj/item/multitool,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/t_scanner,
+		/obj/item/analyzer,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/gloves,
+		/obj/item/pda,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/radio/headset,
+		/obj/item/robotanalyzer,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/extinguisher/mini,
+		/obj/item/tape_roll,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/shovel/spade,
+		/obj/item/stack/nanopaste,
+		/obj/item/geiger,
+		/obj/item/areaeditor/blueprints,
+		/obj/item/wire_reader,
+		/obj/item/holosign_creator/combifan)))
 
 /obj/item/storage/belt/utility/chief/full
 	starts_with = list(
@@ -204,49 +204,49 @@ CAPABILITIES(/obj/item/storage/belt/utility/chief, \
 
 
 
-CAPABILITIES(/obj/item/storage/belt/utility/holding, \
-	configure(storage(accepts = list( \
-		/obj/item/tool/crowbar, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/weldingtool, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/tool/transforming/jawsoflife, \
-		/obj/item/multitool, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/t_scanner, \
-		/obj/item/analyzer, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/gloves, \
-		/obj/item/pda, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/radio/headset, \
-		/obj/item/robotanalyzer, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/tape_roll, \
-		/obj/item/integrated_electronics/wirer, \
-		/obj/item/integrated_electronics/debugger, \
-		/obj/item/shovel/spade, \
-		/obj/item/stack/nanopaste, \
-		/obj/item/cell, \
-		/obj/item/pipe_dispenser, \
-		/obj/item/rcd, \
-		/obj/item/quantum_pad_booster, \
-		/obj/item/inducer, \
-		/obj/item/stack/material/steel, \
-		/obj/item/stack/material/glass, \
-		/obj/item/lightreplacer, \
-		/obj/item/pickaxe/plasmacutter, \
-		/obj/item/holosign_creator/combifan, \
-		/obj/item/reagent_scanner, \
-		/obj/item/lightpainter))))
+CAPABILITIES(/obj/item/storage/belt/utility/holding)
+	configure(storage(accepts = list(
+		/obj/item/tool/crowbar,
+		/obj/item/tool/screwdriver,
+		/obj/item/weldingtool,
+		/obj/item/tool/wirecutters,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/tool/transforming/jawsoflife,
+		/obj/item/multitool,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/stack/cable_coil,
+		/obj/item/t_scanner,
+		/obj/item/analyzer,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/gloves,
+		/obj/item/pda,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/radio/headset,
+		/obj/item/robotanalyzer,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/extinguisher/mini,
+		/obj/item/tape_roll,
+		/obj/item/integrated_electronics/wirer,
+		/obj/item/integrated_electronics/debugger,
+		/obj/item/shovel/spade,
+		/obj/item/stack/nanopaste,
+		/obj/item/cell,
+		/obj/item/pipe_dispenser,
+		/obj/item/rcd,
+		/obj/item/quantum_pad_booster,
+		/obj/item/inducer,
+		/obj/item/stack/material/steel,
+		/obj/item/stack/material/glass,
+		/obj/item/lightreplacer,
+		/obj/item/pickaxe/plasmacutter,
+		/obj/item/holosign_creator/combifan,
+		/obj/item/reagent_scanner,
+		/obj/item/lightpainter)))
 
 /obj/item/storage/belt/medical
 	name = "medical belt"
@@ -254,40 +254,40 @@ CAPABILITIES(/obj/item/storage/belt/utility/holding, \
 	icon_state = "medical"
 
 
-CAPABILITIES(/obj/item/storage/belt/medical, \
-	configure(storage(accepts = list( \
-		/obj/item/healthanalyzer, \
-		/obj/item/dnainjector, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/flame/lighter/zippo, \
-		/obj/item/storage/fancy/cigarettes, \
-		/obj/item/storage/pill_bottle, \
-		/obj/item/stack/medical, \
-		/obj/item/radio/headset, \
-		/obj/item/pda, \
-		/obj/item/taperoll, \
-		/obj/item/megaphone, \
-		/obj/item/clothing/mask/surgical, \
-		/obj/item/clothing/head/surgery, \
-		/obj/item/clothing/gloves, \
-		/obj/item/reagent_containers/hypospray, \
-		/obj/item/clothing/glasses, \
-		/obj/item/tool/crowbar, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/ammo_casing/macrobattery, \
-		/obj/item/sleevemate, \
-		/obj/item/mass_spectrometer, \
-		/obj/item/surgical, \
-		/obj/item/clothing/mask/chewable/candy/lolli, \
-		/obj/item/extrapolator, \
-		/obj/item/gene_scanner))))
+CAPABILITIES(/obj/item/storage/belt/medical)
+	configure(storage(accepts = list(
+		/obj/item/healthanalyzer,
+		/obj/item/dnainjector,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/pill,
+		/obj/item/reagent_containers/syringe,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/flame/lighter/zippo,
+		/obj/item/storage/fancy/cigarettes,
+		/obj/item/storage/pill_bottle,
+		/obj/item/stack/medical,
+		/obj/item/radio/headset,
+		/obj/item/pda,
+		/obj/item/taperoll,
+		/obj/item/megaphone,
+		/obj/item/clothing/mask/surgical,
+		/obj/item/clothing/head/surgery,
+		/obj/item/clothing/gloves,
+		/obj/item/reagent_containers/hypospray,
+		/obj/item/clothing/glasses,
+		/obj/item/tool/crowbar,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/extinguisher/mini,
+		/obj/item/ammo_casing/macrobattery,
+		/obj/item/sleevemate,
+		/obj/item/mass_spectrometer,
+		/obj/item/surgical,
+		/obj/item/clothing/mask/chewable/candy/lolli,
+		/obj/item/extrapolator,
+		/obj/item/gene_scanner)))
 
 /obj/item/storage/belt/medical/emt
 	name = "EMT utility belt"
@@ -307,40 +307,40 @@ CAPABILITIES(/obj/item/storage/belt/medical, \
 	icon_state = "security"
 
 
-CAPABILITIES(/obj/item/storage/belt/security, \
-	configure(storage(accepts = list( \
-		/obj/item/grenade, \
-		/obj/item/reagent_containers/spray/pepper, \
-		/obj/item/handcuffs, \
-		/obj/item/flash, \
-		/obj/item/clothing/glasses, \
-		/obj/item/ammo_casing/a12g, \
-		/obj/item/ammo_magazine, \
-		/obj/item/cell/device, \
-		/obj/item/reagent_containers/food/snacks/donut/, \
-		/obj/item/melee/baton, \
-		/obj/item/gun/energy/taser, \
-		/obj/item/gun/energy/stunrevolver, \
-		/obj/item/gun/energy/stunrevolver/vintage, \
-		/obj/item/gun/magnetic/railgun/heater/pistol, \
-		/obj/item/gun/energy/gun, \
-		/obj/item/flame/lighter, \
-		/obj/item/flashlight, \
-		/obj/item/taperecorder, \
-		/obj/item/rectape, \
-		/obj/item/pda, \
-		/obj/item/radio/headset, \
-		/obj/item/clothing/gloves, \
-		/obj/item/hailer, \
-		/obj/item/megaphone, \
-		/obj/item/melee, \
-		/obj/item/clothing/accessory/badge, \
-		/obj/item/gun/projectile/sec, \
-		/obj/item/gun/projectile/p92x, \
-		/obj/item/taperoll, \
-		/obj/item/gun/projectile/colt/detective, \
-		/obj/item/holowarrant, \
-		/obj/item/ticket_printer))))
+CAPABILITIES(/obj/item/storage/belt/security)
+	configure(storage(accepts = list(
+		/obj/item/grenade,
+		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/handcuffs,
+		/obj/item/flash,
+		/obj/item/clothing/glasses,
+		/obj/item/ammo_casing/a12g,
+		/obj/item/ammo_magazine,
+		/obj/item/cell/device,
+		/obj/item/reagent_containers/food/snacks/donut/,
+		/obj/item/melee/baton,
+		/obj/item/gun/energy/taser,
+		/obj/item/gun/energy/stunrevolver,
+		/obj/item/gun/energy/stunrevolver/vintage,
+		/obj/item/gun/magnetic/railgun/heater/pistol,
+		/obj/item/gun/energy/gun,
+		/obj/item/flame/lighter,
+		/obj/item/flashlight,
+		/obj/item/taperecorder,
+		/obj/item/rectape,
+		/obj/item/pda,
+		/obj/item/radio/headset,
+		/obj/item/clothing/gloves,
+		/obj/item/hailer,
+		/obj/item/megaphone,
+		/obj/item/melee,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/gun/projectile/sec,
+		/obj/item/gun/projectile/p92x,
+		/obj/item/taperoll,
+		/obj/item/gun/projectile/colt/detective,
+		/obj/item/holowarrant,
+		/obj/item/ticket_printer)))
 
 /obj/item/storage/belt/detective
 	name = "forensic utility belt"
@@ -349,43 +349,43 @@ CAPABILITIES(/obj/item/storage/belt/security, \
 	storage_slots = 7
 
 
-CAPABILITIES(/obj/item/storage/belt/detective, \
-	configure(storage(accepts = list( \
-		/obj/item/taperecorder, \
-		/obj/item/rectape, \
-		/obj/item/clothing/glasses, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/reagent_containers/spray/luminol, \
-		/obj/item/sample, \
-		/obj/item/forensics/sample_kit/powder, \
-		/obj/item/forensics/swab, \
-		/obj/item/uv_light, \
-		/obj/item/forensics/sample_kit, \
-		/obj/item/photo, \
-		/obj/item/camera_film, \
-		/obj/item/camera, \
-		/obj/item/autopsy_scanner, \
-		/obj/item/mass_spectrometer, \
-		/obj/item/clothing/accessory/badge, \
-		/obj/item/reagent_scanner, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/pda, \
-		/obj/item/hailer, \
-		/obj/item/megaphone, \
-		/obj/item/radio/headset, \
-		/obj/item/clothing/gloves, \
-		/obj/item/taperoll, \
-		/obj/item/reagent_containers/spray/pepper, \
-		/obj/item/handcuffs, \
-		/obj/item/flash, \
-		/obj/item/flame/lighter, \
-		/obj/item/reagent_containers/food/snacks/donut/, \
-		/obj/item/gun/energy/stunrevolver/detective, \
-		/obj/item/holowarrant, \
-		/obj/item/reagent_containers/food/drinks/flask, \
-		/obj/item/ticket_printer))))
+CAPABILITIES(/obj/item/storage/belt/detective)
+	configure(storage(accepts = list(
+		/obj/item/taperecorder,
+		/obj/item/rectape,
+		/obj/item/clothing/glasses,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/reagent_containers/spray/luminol,
+		/obj/item/sample,
+		/obj/item/forensics/sample_kit/powder,
+		/obj/item/forensics/swab,
+		/obj/item/uv_light,
+		/obj/item/forensics/sample_kit,
+		/obj/item/photo,
+		/obj/item/camera_film,
+		/obj/item/camera,
+		/obj/item/autopsy_scanner,
+		/obj/item/mass_spectrometer,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/reagent_scanner,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/reagent_containers/syringe,
+		/obj/item/pda,
+		/obj/item/hailer,
+		/obj/item/megaphone,
+		/obj/item/radio/headset,
+		/obj/item/clothing/gloves,
+		/obj/item/taperoll,
+		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/handcuffs,
+		/obj/item/flash,
+		/obj/item/flame/lighter,
+		/obj/item/reagent_containers/food/snacks/donut/,
+		/obj/item/gun/energy/stunrevolver/detective,
+		/obj/item/holowarrant,
+		/obj/item/reagent_containers/food/drinks/flask,
+		/obj/item/ticket_printer)))
 
 /obj/item/storage/belt/soulstone
 	name = "soul stone belt"
@@ -394,8 +394,8 @@ CAPABILITIES(/obj/item/storage/belt/detective, \
 	storage_slots = 6
 
 
-CAPABILITIES(/obj/item/storage/belt/soulstone, \
-	configure(storage(accepts = list(/obj/item/soulstone))))
+CAPABILITIES(/obj/item/storage/belt/soulstone)
+	configure(storage(accepts = list(/obj/item/soulstone)))
 
 /obj/item/storage/belt/soulstone/full
 	starts_with = list(/obj/item/soulstone = 6)
@@ -427,33 +427,33 @@ CAPABILITIES(/obj/item/storage/belt/soulstone, \
 	storage_slots = 8
 
 
-CAPABILITIES(/obj/item/storage/belt/medical/alien, \
-	configure(storage(accepts = list( \
-		/obj/item/healthanalyzer, \
-		/obj/item/dnainjector, \
-		/obj/item/reagent_containers/dropper, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/reagent_containers/syringe, \
-		/obj/item/flame/lighter/zippo, \
-		/obj/item/storage/fancy/cigarettes, \
-		/obj/item/storage/pill_bottle, \
-		/obj/item/stack/medical, \
-		/obj/item/radio/headset, \
-		/obj/item/pda, \
-		/obj/item/taperoll, \
-		/obj/item/megaphone, \
-		/obj/item/clothing/mask/surgical, \
-		/obj/item/clothing/head/surgery, \
-		/obj/item/clothing/gloves, \
-		/obj/item/reagent_containers/hypospray, \
-		/obj/item/clothing/glasses, \
-		/obj/item/tool/crowbar, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/surgical))))
+CAPABILITIES(/obj/item/storage/belt/medical/alien)
+	configure(storage(accepts = list(
+		/obj/item/healthanalyzer,
+		/obj/item/dnainjector,
+		/obj/item/reagent_containers/dropper,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/pill,
+		/obj/item/reagent_containers/syringe,
+		/obj/item/flame/lighter/zippo,
+		/obj/item/storage/fancy/cigarettes,
+		/obj/item/storage/pill_bottle,
+		/obj/item/stack/medical,
+		/obj/item/radio/headset,
+		/obj/item/pda,
+		/obj/item/taperoll,
+		/obj/item/megaphone,
+		/obj/item/clothing/mask/surgical,
+		/obj/item/clothing/head/surgery,
+		/obj/item/clothing/gloves,
+		/obj/item/reagent_containers/hypospray,
+		/obj/item/clothing/glasses,
+		/obj/item/tool/crowbar,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/extinguisher/mini,
+		/obj/item/surgical)))
 
 /obj/item/storage/belt/medical/alien
 	starts_with = list(
@@ -477,8 +477,8 @@ CAPABILITIES(/obj/item/storage/belt/medical/alien, \
 	// matched, so the belt has always refused everything. Kept as-is for P3's
 	// parity; list /obj/item/clothing/mask/luchador here to make it hold one.
 
-CAPABILITIES(/obj/item/storage/belt/champion, \
-	configure(storage(accepts = list())))
+CAPABILITIES(/obj/item/storage/belt/champion)
+	configure(storage(accepts = list()))
 
 /obj/item/storage/belt/security/tactical
 	name = "combat belt"
@@ -488,40 +488,40 @@ CAPABILITIES(/obj/item/storage/belt/champion, \
 	max_storage_space = ITEMSIZE_COST_NORMAL * 7
 
 
-CAPABILITIES(/obj/item/storage/belt/security/tactical, \
-	configure(storage(accepts = list( \
-		/obj/item/grenade, \
-		/obj/item/reagent_containers/spray/pepper, \
-		/obj/item/handcuffs, \
-		/obj/item/flash, \
-		/obj/item/clothing/glasses, \
-		/obj/item/ammo_casing/a12g, \
-		/obj/item/ammo_magazine, \
-		/obj/item/cell/device, \
-		/obj/item/reagent_containers/food/snacks/donut/, \
-		/obj/item/melee/baton, \
-		/obj/item/gun/energy/taser, \
-		/obj/item/gun/energy/stunrevolver, \
-		/obj/item/gun/energy/stunrevolver/vintage, \
-		/obj/item/gun/magnetic/railgun/heater/pistol, \
-		/obj/item/gun/energy/gun, \
-		/obj/item/flame/lighter, \
-		/obj/item/flashlight, \
-		/obj/item/taperecorder, \
-		/obj/item/rectape, \
-		/obj/item/pda, \
-		/obj/item/radio/headset, \
-		/obj/item/clothing/gloves, \
-		/obj/item/hailer, \
-		/obj/item/megaphone, \
-		/obj/item/melee, \
-		/obj/item/clothing/accessory/badge, \
-		/obj/item/gun/projectile/sec, \
-		/obj/item/gun/projectile/p92x, \
-		/obj/item/taperoll, \
-		/obj/item/gun/projectile/colt/detective, \
-		/obj/item/holowarrant, \
-		/obj/item/ticket_printer))))
+CAPABILITIES(/obj/item/storage/belt/security/tactical)
+	configure(storage(accepts = list(
+		/obj/item/grenade,
+		/obj/item/reagent_containers/spray/pepper,
+		/obj/item/handcuffs,
+		/obj/item/flash,
+		/obj/item/clothing/glasses,
+		/obj/item/ammo_casing/a12g,
+		/obj/item/ammo_magazine,
+		/obj/item/cell/device,
+		/obj/item/reagent_containers/food/snacks/donut/,
+		/obj/item/melee/baton,
+		/obj/item/gun/energy/taser,
+		/obj/item/gun/energy/stunrevolver,
+		/obj/item/gun/energy/stunrevolver/vintage,
+		/obj/item/gun/magnetic/railgun/heater/pistol,
+		/obj/item/gun/energy/gun,
+		/obj/item/flame/lighter,
+		/obj/item/flashlight,
+		/obj/item/taperecorder,
+		/obj/item/rectape,
+		/obj/item/pda,
+		/obj/item/radio/headset,
+		/obj/item/clothing/gloves,
+		/obj/item/hailer,
+		/obj/item/megaphone,
+		/obj/item/melee,
+		/obj/item/clothing/accessory/badge,
+		/obj/item/gun/projectile/sec,
+		/obj/item/gun/projectile/p92x,
+		/obj/item/taperoll,
+		/obj/item/gun/projectile/colt/detective,
+		/obj/item/holowarrant,
+		/obj/item/ticket_printer)))
 
 /obj/item/storage/belt/bandolier
 	name = "shotgun bandolier"
@@ -530,17 +530,17 @@ CAPABILITIES(/obj/item/storage/belt/security/tactical, \
 	storage_slots = 8
 
 
-CAPABILITIES(/obj/item/storage/belt/bandolier, \
-	configure(storage(accepts = list( \
-		/obj/item/ammo_casing/a12g, \
-		/obj/item/ammo_casing/a12g/pellet, \
-		/obj/item/ammo_casing/a12g/blank, \
-		/obj/item/ammo_casing/a12g/practice, \
-		/obj/item/ammo_casing/a12g/beanbag, \
-		/obj/item/ammo_casing/a12g/stunshell, \
-		/obj/item/ammo_casing/a12g/flash, \
-		/obj/item/ammo_casing/a12g/emp, \
-		/obj/item/ammo_casing/a12g/flechette), max_size = ITEMSIZE_TINY)))
+CAPABILITIES(/obj/item/storage/belt/bandolier)
+	configure(storage(accepts = list(
+		/obj/item/ammo_casing/a12g,
+		/obj/item/ammo_casing/a12g/pellet,
+		/obj/item/ammo_casing/a12g/blank,
+		/obj/item/ammo_casing/a12g/practice,
+		/obj/item/ammo_casing/a12g/beanbag,
+		/obj/item/ammo_casing/a12g/stunshell,
+		/obj/item/ammo_casing/a12g/flash,
+		/obj/item/ammo_casing/a12g/emp,
+		/obj/item/ammo_casing/a12g/flechette), max_size = ITEMSIZE_TINY))
 
 /obj/item/storage/belt/security/tactical/bandolier
 	name = "combat bandolier"
@@ -554,27 +554,27 @@ CAPABILITIES(/obj/item/storage/belt/bandolier, \
 	storage_slots = 7
 
 
-CAPABILITIES(/obj/item/storage/belt/janitor, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/glasses, \
-		/obj/item/flashlight, \
-		/obj/item/cell/device, \
-		/obj/item/grenade, \
-		/obj/item/pda, \
-		/obj/item/radio/headset, \
-		/obj/item/clothing/gloves, \
-		/obj/item/clothing/mask/surgical, \
-		/obj/item/assembly/mousetrap, \
-		/obj/item/light/bulb, \
-		/obj/item/light/tube, \
-		/obj/item/flame/lighter, \
-		/obj/item/megaphone, \
-		/obj/item/taperoll, \
-		/obj/item/reagent_containers/spray, \
-		/obj/item/soap, \
-		/obj/item/holosign_creator, \
-		/obj/item/lightreplacer, \
-		/obj/item/clothing/glasses/hud/janitor))))
+CAPABILITIES(/obj/item/storage/belt/janitor)
+	configure(storage(accepts = list(
+		/obj/item/clothing/glasses,
+		/obj/item/flashlight,
+		/obj/item/cell/device,
+		/obj/item/grenade,
+		/obj/item/pda,
+		/obj/item/radio/headset,
+		/obj/item/clothing/gloves,
+		/obj/item/clothing/mask/surgical,
+		/obj/item/assembly/mousetrap,
+		/obj/item/light/bulb,
+		/obj/item/light/tube,
+		/obj/item/flame/lighter,
+		/obj/item/megaphone,
+		/obj/item/taperoll,
+		/obj/item/reagent_containers/spray,
+		/obj/item/soap,
+		/obj/item/holosign_creator,
+		/obj/item/lightreplacer,
+		/obj/item/clothing/glasses/hud/janitor)))
 
 /obj/item/storage/belt/archaeology
 	name = "excavation gear-belt"
@@ -582,38 +582,38 @@ CAPABILITIES(/obj/item/storage/belt/janitor, \
 	icon_state = "gear"
 
 
-CAPABILITIES(/obj/item/storage/belt/archaeology, \
-	configure(storage(accepts = list( \
-		/obj/item/stack/marker_beacon, \
-		/obj/item/clothing/glasses, \
-		/obj/item/storage/box/samplebags, \
-		/obj/item/xenoarch_multi_tool, \
-		/obj/item/core_sampler, \
-		/obj/item/beacon_locator, \
-		/obj/item/radio/beacon, \
-		/obj/item/gps, \
-		/obj/item/measuring_tape, \
-		/obj/item/flashlight, \
-		/obj/item/depth_scanner, \
-		/obj/item/camera, \
-		/obj/item/ano_scanner, \
-		/obj/item/geiger, \
-		/obj/item/cell/device, \
-		/obj/item/pickaxe, \
-		/obj/item/paper, \
-		/obj/item/paper_bundle, \
-		/obj/item/photo, \
-		/obj/item/folder, \
-		/obj/item/pen, \
-		/obj/item/folder, \
-		/obj/item/clipboard, \
-		/obj/item/anodevice, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/multitool, \
-		/obj/item/storage/excavation, \
-		/obj/item/anobattery, \
-		/obj/item/pickaxe))))
+CAPABILITIES(/obj/item/storage/belt/archaeology)
+	configure(storage(accepts = list(
+		/obj/item/stack/marker_beacon,
+		/obj/item/clothing/glasses,
+		/obj/item/storage/box/samplebags,
+		/obj/item/xenoarch_multi_tool,
+		/obj/item/core_sampler,
+		/obj/item/beacon_locator,
+		/obj/item/radio/beacon,
+		/obj/item/gps,
+		/obj/item/measuring_tape,
+		/obj/item/flashlight,
+		/obj/item/depth_scanner,
+		/obj/item/camera,
+		/obj/item/ano_scanner,
+		/obj/item/geiger,
+		/obj/item/cell/device,
+		/obj/item/pickaxe,
+		/obj/item/paper,
+		/obj/item/paper_bundle,
+		/obj/item/photo,
+		/obj/item/folder,
+		/obj/item/pen,
+		/obj/item/folder,
+		/obj/item/clipboard,
+		/obj/item/anodevice,
+		/obj/item/tool/wrench,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/multitool,
+		/obj/item/storage/excavation,
+		/obj/item/anobattery,
+		/obj/item/pickaxe)))
 
 /obj/item/storage/belt/fannypack
 	name = "leather fannypack"
@@ -624,8 +624,8 @@ CAPABILITIES(/obj/item/storage/belt/archaeology, \
 	max_storage_space = ITEMSIZE_COST_NORMAL * 2
 
 
-CAPABILITIES(/obj/item/storage/belt/fannypack, \
-	configure(storage(max_size = ITEMSIZE_SMALL)))
+CAPABILITIES(/obj/item/storage/belt/fannypack)
+	configure(storage(max_size = ITEMSIZE_SMALL))
 
 /obj/item/storage/belt/fannypack/black
 	name = "black fannypack"
@@ -685,8 +685,8 @@ CAPABILITIES(/obj/item/storage/belt/fannypack, \
 	storage_slots = 8
 
 
-CAPABILITIES(/obj/item/storage/belt/dbandolier, \
-	configure(storage(accepts = list(/obj/item/ammo_casing/afoam_dart))))
+CAPABILITIES(/obj/item/storage/belt/dbandolier)
+	configure(storage(accepts = list(/obj/item/ammo_casing/afoam_dart)))
 
 /obj/item/storage/belt/explorer
 	name = "explorer's belt"
@@ -697,47 +697,47 @@ CAPABILITIES(/obj/item/storage/belt/dbandolier, \
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
 
-CAPABILITIES(/obj/item/storage/belt/explorer, \
-	configure(storage(accepts = list( \
-		/obj/item/grenade, \
-		/obj/item/tool, \
-		/obj/item/weldingtool, \
-		/obj/item/pickaxe, \
-		/obj/item/multitool, \
-		/obj/item/stack/cable_coil, \
-		/obj/item/analyzer, \
-		/obj/item/flashlight, \
-		/obj/item/cell, \
-		/obj/item/gun, \
-		/obj/item/material, \
-		/obj/item/melee, \
-		/obj/item/shield, \
-		/obj/item/ammo_casing, \
-		/obj/item/ammo_magazine, \
-		/obj/item/healthanalyzer, \
-		/obj/item/robotanalyzer, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/storage/pill_bottle, \
-		/obj/item/stack/medical, \
-		/obj/item/stack/marker_beacon, \
-		/obj/item/extinguisher/mini, \
-		/obj/item/storage/quickdraw/syringe_case, \
-		/obj/item/photo, \
-		/obj/item/camera_film, \
-		/obj/item/camera, \
-		/obj/item/taperecorder, \
-		/obj/item/tape, \
-		/obj/item/geiger, \
-		/obj/item/gps, \
-		/obj/item/ano_scanner, \
-		/obj/item/cataloguer, \
-		/obj/item/radio, \
-		/obj/item/mapping_unit, \
-		/obj/item/binoculars, \
-		/obj/item/kinetic_crusher, \
-		/obj/item/analyzer, \
-		/obj/item/storage/sample_container))))
+CAPABILITIES(/obj/item/storage/belt/explorer)
+	configure(storage(accepts = list(
+		/obj/item/grenade,
+		/obj/item/tool,
+		/obj/item/weldingtool,
+		/obj/item/pickaxe,
+		/obj/item/multitool,
+		/obj/item/stack/cable_coil,
+		/obj/item/analyzer,
+		/obj/item/flashlight,
+		/obj/item/cell,
+		/obj/item/gun,
+		/obj/item/material,
+		/obj/item/melee,
+		/obj/item/shield,
+		/obj/item/ammo_casing,
+		/obj/item/ammo_magazine,
+		/obj/item/healthanalyzer,
+		/obj/item/robotanalyzer,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/storage/pill_bottle,
+		/obj/item/stack/medical,
+		/obj/item/stack/marker_beacon,
+		/obj/item/extinguisher/mini,
+		/obj/item/storage/quickdraw/syringe_case,
+		/obj/item/photo,
+		/obj/item/camera_film,
+		/obj/item/camera,
+		/obj/item/taperecorder,
+		/obj/item/tape,
+		/obj/item/geiger,
+		/obj/item/gps,
+		/obj/item/ano_scanner,
+		/obj/item/cataloguer,
+		/obj/item/radio,
+		/obj/item/mapping_unit,
+		/obj/item/binoculars,
+		/obj/item/kinetic_crusher,
+		/obj/item/analyzer,
+		/obj/item/storage/sample_container)))
 
 /obj/item/storage/belt/explorer/pathfinder
 	name = "pathfinder's belt"
@@ -757,58 +757,58 @@ CAPABILITIES(/obj/item/storage/belt/explorer, \
 		//Pretty much, if it's in the mining vendor, they should be able to put it on the belt.
 
 
-CAPABILITIES(/obj/item/storage/belt/miner, \
-	configure(storage(accepts = list( \
-		/obj/item/fulton_core, \
-		/obj/item/extraction_pack, \
-		/obj/item/resonator, \
-		/obj/item/stack/marker_beacon, \
-		/obj/item/stack/flag, \
-		/obj/item/modular_computer/tablet, \
-		/obj/item/clothing/glasses, \
-		/obj/item/clothing/shoes/bhop, \
-		/obj/item/multitool, \
-		/obj/item/core_sampler, \
-		/obj/item/beacon_locator, \
-		/obj/item/radio, \
-		/obj/item/measuring_tape, \
-		/obj/item/flashlight, \
-		/obj/item/depth_scanner, \
-		/obj/item/camera, \
-		/obj/item/ano_scanner, \
-		/obj/item/xenoarch_multi_tool, \
-		/obj/item/geiger, \
-		/obj/item/gps, \
-		/obj/item/laser_pointer, \
-		/obj/item/survivalcapsule, \
-		/obj/item/perfect_tele/one_beacon, \
-		/obj/item/binoculars, \
-		/obj/item/storage/box/samplebags, \
-		/obj/item/cell/device, \
-		/obj/item/pickaxe, \
-		/obj/item/shovel, \
-		/obj/item/paper, \
-		/obj/item/paper_bundle, \
-		/obj/item/photo, \
-		/obj/item/folder, \
-		/obj/item/pen, \
-		/obj/item/folder, \
-		/obj/item/clipboard, \
-		/obj/item/anodevice, \
-		/obj/item/tool/wrench, \
-		/obj/item/tool/screwdriver, \
-		/obj/item/tool/transforming/powerdrill, \
-		/obj/item/storage/excavation, \
-		/obj/item/anobattery, \
-		/obj/item/reagent_containers/hypospray/autoinjector, \
-		/obj/item/plastique/seismic/locked, \
-		/obj/item/gun/magnetic/matfed/phoronbore, \
-		/obj/item/storage/bag/sheetsnatcher, \
-		/obj/item/melee, \
-		/obj/item/kinetic_crusher, \
-		/obj/item/mining_scanner, \
-		/obj/item/ore_bag, \
-		/obj/item/storage/sample_container), max_size = ITEMSIZE_LARGE)))
+CAPABILITIES(/obj/item/storage/belt/miner)
+	configure(storage(accepts = list(
+		/obj/item/fulton_core,
+		/obj/item/extraction_pack,
+		/obj/item/resonator,
+		/obj/item/stack/marker_beacon,
+		/obj/item/stack/flag,
+		/obj/item/modular_computer/tablet,
+		/obj/item/clothing/glasses,
+		/obj/item/clothing/shoes/bhop,
+		/obj/item/multitool,
+		/obj/item/core_sampler,
+		/obj/item/beacon_locator,
+		/obj/item/radio,
+		/obj/item/measuring_tape,
+		/obj/item/flashlight,
+		/obj/item/depth_scanner,
+		/obj/item/camera,
+		/obj/item/ano_scanner,
+		/obj/item/xenoarch_multi_tool,
+		/obj/item/geiger,
+		/obj/item/gps,
+		/obj/item/laser_pointer,
+		/obj/item/survivalcapsule,
+		/obj/item/perfect_tele/one_beacon,
+		/obj/item/binoculars,
+		/obj/item/storage/box/samplebags,
+		/obj/item/cell/device,
+		/obj/item/pickaxe,
+		/obj/item/shovel,
+		/obj/item/paper,
+		/obj/item/paper_bundle,
+		/obj/item/photo,
+		/obj/item/folder,
+		/obj/item/pen,
+		/obj/item/folder,
+		/obj/item/clipboard,
+		/obj/item/anodevice,
+		/obj/item/tool/wrench,
+		/obj/item/tool/screwdriver,
+		/obj/item/tool/transforming/powerdrill,
+		/obj/item/storage/excavation,
+		/obj/item/anobattery,
+		/obj/item/reagent_containers/hypospray/autoinjector,
+		/obj/item/plastique/seismic/locked,
+		/obj/item/gun/magnetic/matfed/phoronbore,
+		/obj/item/storage/bag/sheetsnatcher,
+		/obj/item/melee,
+		/obj/item/kinetic_crusher,
+		/obj/item/mining_scanner,
+		/obj/item/ore_bag,
+		/obj/item/storage/sample_container), max_size = ITEMSIZE_LARGE))
 
 /obj/item/storage/belt/archaeology
 
@@ -820,16 +820,16 @@ CAPABILITIES(/obj/item/storage/belt/miner, \
 	storage_slots = 5
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
-CAPABILITIES(/obj/item/storage/belt/hydro, \
-	configure(storage(accepts = list( \
-		/obj/item/analyzer/plant_analyzer, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/shovel/spade, \
-		/obj/item/tool/wirecutters, \
-		/obj/item/material/minihoe, \
-		/obj/item/material/knife/machete/hatchet, \
-		/obj/item/reagent_containers/spray/plantbgone, \
-		/obj/item/plantspray, \
-		/obj/item/gun/energy/floragun, \
-		/obj/item/seeds), max_size = ITEMSIZE_LARGE)))
+CAPABILITIES(/obj/item/storage/belt/hydro)
+	configure(storage(accepts = list(
+		/obj/item/analyzer/plant_analyzer,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/shovel/spade,
+		/obj/item/tool/wirecutters,
+		/obj/item/material/minihoe,
+		/obj/item/material/knife/machete/hatchet,
+		/obj/item/reagent_containers/spray/plantbgone,
+		/obj/item/plantspray,
+		/obj/item/gun/energy/floragun,
+		/obj/item/seeds), max_size = ITEMSIZE_LARGE))

@@ -23,9 +23,9 @@
 
 
 // Lifting the basket takes both hands.
-CAPABILITIES(/obj/item/storage/laundry_basket, \
-	configure(storage(max_size = ITEMSIZE_LARGE)), \
-	two_hands())
+CAPABILITIES(/obj/item/storage/laundry_basket)
+	configure(storage(max_size = ITEMSIZE_LARGE))
+	two_hands()
 
 /obj/item/storage/laundry_basket/pickup(mob/user)
 	var/obj/item/storage/laundry_basket/offhand/O = new(user)

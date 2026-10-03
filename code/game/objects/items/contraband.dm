@@ -18,8 +18,8 @@
 /obj/item/reagent_containers/glass/beaker/vial/random
 
 // A found vial is sealed.
-CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random, \
-	configure(reagent_container(starts_open = FALSE)))
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random)
+	configure(reagent_container(starts_open = FALSE))
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/glass/beaker/vial/random, random_vial_reagents, list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1))
 
@@ -82,17 +82,17 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 /// Snorting.
 
 // A powder is a sealed holder of its volume; a straw or a rolling paper used on it snorts a little (two units, into the blood of somebody who is flesh).
-CAPABILITIES(/obj/item/reagent_containers/powder, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		transfer_min = nameof(min_transfer_amount), \
-		transfer_max = nameof(max_transfer_amount)), \
-	op("snort", inputs(item(/obj/item/glass_extra/straw), item(/obj/item/reagent_containers/rollingpaper)), label("Snort it"), \
-		needs(req(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), then(PROC_REF(snorted))))
+CAPABILITIES(/obj/item/reagent_containers/powder)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount))
+	op("snort", inputs(item(/obj/item/glass_extra/straw), item(/obj/item/reagent_containers/rollingpaper)), label("Snort it"),
+		needs(req(PROC_REF(snorter_is_human), because = MSG(powder/not_flesh))), then(PROC_REF(snorted)))
 
 MSG_DEF_SELF(powder/not_flesh, "You have to be fleshy to snort the naughty drugs.")
 

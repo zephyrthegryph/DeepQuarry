@@ -42,17 +42,17 @@ MSG_DEF_SELF(secure/locked, "It is locked and cannot be opened!")
 // The keypad lock. While it is locked the safe takes nothing and does not open: only an energy blade does anything (it shorts the lock out), and so
 // does an emag. A screwdriver opens the service panel of a locked one, and a multitool in the open panel wipes the memory for a while. Its keypad is the
 // window "SecureSafe": a first code of five digits sets the lock, the same code unlocks it, R locks it again.
-CAPABILITIES(/obj/item/storage/secure, \
-	interface("SecureSafe"), \
-	emag(then(PROC_REF(on_emag))), \
-	extend("storage.put_in", when(cond_not(nameof(locked)))), \
-	extend("storage.refuse", when(cond_not(nameof(locked)))), \
-	op("slice", item(/obj/item/melee/energy/blade), priority(above("storage.put_in")), when(nameof(locked)), label("Slice open"), then(PROC_REF(slice_open)), passes()), \
-	op("locked_click", item(/obj/item), priority(below("storage.put_in")), when(nameof(locked)), label("Put in"), passes()), \
-	op("alt_open", hand(), answers(INTENT_TOGGLE), priority(above("storage.toggle_open")), label("Open"), then(PROC_REF(alt_open))), \
-	op("type", ui_act("type", arg("digit", schema_text(1))), then(PROC_REF(type_digit))), \
-	op("service_panel", tool(TOOL_SCREWDRIVER), when(nameof(locked)), label("Service panel"), then(PROC_REF(toggle_service_panel))), \
-	op("reset_memory", tool(TOOL_MULTITOOL), when(cond_all(nameof(locked), nameof(open))), wait(10 SECONDS), label("Reset memory"), then(PROC_REF(reset_memory))))
+CAPABILITIES(/obj/item/storage/secure)
+	interface("SecureSafe")
+	emag(then(PROC_REF(on_emag)))
+	extend("storage.put_in", when(cond_not(nameof(locked))))
+	extend("storage.refuse", when(cond_not(nameof(locked))))
+	op("slice", item(/obj/item/melee/energy/blade), priority(above("storage.put_in")), when(nameof(locked)), label("Slice open"), then(PROC_REF(slice_open)), passes())
+	op("locked_click", item(/obj/item), priority(below("storage.put_in")), when(nameof(locked)), label("Put in"), passes())
+	op("alt_open", hand(), answers(INTENT_TOGGLE), priority(above("storage.toggle_open")), label("Open"), then(PROC_REF(alt_open)))
+	op("type", ui_act("type", arg("digit", schema_text(1))), then(PROC_REF(type_digit)))
+	op("service_panel", tool(TOOL_SCREWDRIVER), when(nameof(locked)), label("Service panel"), then(PROC_REF(toggle_service_panel)))
+	op("reset_memory", tool(TOOL_MULTITOOL), when(cond_all(nameof(locked), nameof(open))), wait(10 SECONDS), label("Reset memory"), then(PROC_REF(reset_memory)))
 
 /obj/item/storage/secure/examine(mob/user)
 	. = ..()
@@ -186,9 +186,9 @@ CAPABILITIES(/obj/item/storage/secure, \
 	max_storage_space = ITEMSIZE_COST_NORMAL * 4
 
 // A briefcase's keypad is its use in hand.
-CAPABILITIES(/obj/item/storage/secure/briefcase, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)), \
-	extend("ui_open", inputs(in_hand(), remote())))
+CAPABILITIES(/obj/item/storage/secure/briefcase)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
+	extend("ui_open", inputs(in_hand(), remote()))
 
 // -----------------------------
 //        Secure Safe
@@ -213,5 +213,5 @@ CAPABILITIES(/obj/item/storage/secure/briefcase, \
 		/obj/item/pen
 	)
 
-CAPABILITIES(/obj/item/storage/secure/safe, \
-	configure(storage(refuses = list(/obj/item/storage/secure/briefcase), max_size = ITEMSIZE_LARGE)))
+CAPABILITIES(/obj/item/storage/secure/safe)
+	configure(storage(refuses = list(/obj/item/storage/secure/briefcase), max_size = ITEMSIZE_LARGE))

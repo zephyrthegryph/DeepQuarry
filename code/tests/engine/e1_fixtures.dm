@@ -58,12 +58,15 @@ GLOBAL_LIST_EMPTY(e1_log)
 /datum/e1_species/alpha
 	name = "alpha"
 
-CAPABILITIES(/datum/e1_species/alpha, e1_widget("species", power = 5), e1_beacon())
+CAPABILITIES(/datum/e1_species/alpha)
+	e1_widget("species", power = 5)
+	e1_beacon()
 
 /datum/e1_species/beta
 	name = "beta"
 
-CAPABILITIES(/datum/e1_species/beta, e1_solo())
+CAPABILITIES(/datum/e1_species/beta)
+	e1_solo()
 
 /obj/item/e1_part
 	name = "e1 part"
@@ -90,19 +93,19 @@ CAPABILITIES(/datum/e1_species/beta, e1_solo())
 	var/list/e1_notes
 	var/list/e1_tags
 
-CAPABILITIES(/obj/e1_fixture, \
-	e1_solo(), \
-	e1_widget("a", power = 2), \
-	ref_one(nameof(species), /datum/e1_species), \
-	rel_grants(nameof(species)), \
-	owns_one(nameof(gizmo), /obj/item/e1_part, starts = /obj/item/e1_part), \
-	owns_many(nameof(gizmos), /obj/item/e1_part), \
-	ref_many(nameof(watchers), /mob), \
-	link(/obj/e1_fixture::partner, /obj/e1_fixture::partner), \
-	slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1), \
-	while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER), \
-	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4)), \
-	entry_of("op", "toggle"))
+CAPABILITIES(/obj/e1_fixture)
+	e1_solo()
+	e1_widget("a", power = 2)
+	ref_one(nameof(species), /datum/e1_species)
+	rel_grants(nameof(species))
+	owns_one(nameof(gizmo), /obj/item/e1_part, starts = /obj/item/e1_part)
+	owns_many(nameof(gizmos), /obj/item/e1_part)
+	ref_many(nameof(watchers), /mob)
+	links(/obj/e1_fixture::partner, /obj/e1_fixture::partner)
+	slot("e1_slot", accepts = list(/obj/item/e1_part), capacity = 1)
+	while_slotted("e1_slot", e1_beacon(), on = ON_HOLDER)
+	when(nameof(e1_armed), entry_of("contributes", "armed_glow", stat = STAT_LIGHT_RANGE, value = 4))
+	entry_of("op", "toggle")
 
 LIST_STATE(/obj/e1_fixture, e1_notes)
 LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)
@@ -111,10 +114,10 @@ LIST_STATE(/obj/e1_fixture, e1_tags, kind = KIND_SET)
 /obj/e1_fixture/changed
 	name = "e1 changed fixture"
 
-CAPABILITIES(/obj/e1_fixture/changed, \
-	extend("toggle", entry_of("part", "needs")), \
-	configure(CAP_E1_WIDGET, "a", power = 9), \
-	without(CAP_E1_SOLO))
+CAPABILITIES(/obj/e1_fixture/changed)
+	extend("toggle", entry_of("part", "needs"))
+	configure(e1_widget("a", power = 9))
+	without(CAP_E1_SOLO)
 
 /// A subtype that adds nothing: it shares its parent's compiled table.
 /obj/e1_fixture/plain
@@ -140,13 +143,13 @@ CAPABILITIES(/obj/e1_fixture/changed, \
 	var/flag = TRUE
 	var/off_flag = FALSE
 
-CAPABILITIES(/obj/e1_starts, \
-	owns_one(nameof(picked), /obj/item/e1_part, starts = pick_one(list(/obj/item/e1_part/tarnished = 1))), \
-	owns_one(nameof(conditional), /obj/item/e1_part, starts = when(nameof(flag), /obj/item/e1_part/tarnished)), \
-	owns_one(nameof(skipped), /obj/item/e1_part, starts = when(nameof(off_flag), /obj/item/e1_part/tarnished)), \
-	owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2)), \
-	owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello")), \
-	owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed)))
+CAPABILITIES(/obj/e1_starts)
+	owns_one(nameof(picked), /obj/item/e1_part, starts = pick_one(list(/obj/item/e1_part/tarnished = 1)))
+	owns_one(nameof(conditional), /obj/item/e1_part, starts = when(nameof(flag), /obj/item/e1_part/tarnished))
+	owns_one(nameof(skipped), /obj/item/e1_part, starts = when(nameof(off_flag), /obj/item/e1_part/tarnished))
+	owns_many(nameof(counted), /obj/item/e1_part, starts = list(/obj/item/e1_part = 2))
+	owns_one(nameof(argy), /datum/e1_argy, starts = /datum/e1_argy, starts_args = list("hello"))
+	owns_one(nameof(computed), /obj/item/e1_part, starts = PROC_REF(make_computed))
 
 /obj/e1_starts/proc/make_computed(datum/act/A)
 	return /obj/item/e1_part/tarnished
@@ -176,24 +179,26 @@ SCHEMA(/obj/e1_schema, count, int(1, 9))
 
 // ---- the state graph of section 12 (proof 9): a door assembly with two paths to finished ----
 
-STATE_GRAPH(GRAPH_DOOR_ASSEMBLY, \
-	start(STAGE_DOOR_FRAME), \
-	stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5)), \
-	stage(STAGE_DOOR_BOARDED, item(/obj/item/e0_fixture/board), put_in(SLOT_CONSTRUCTION)), \
-	stage(STAGE_DOOR_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), from = STAGE_DOOR_BOARDED), \
-	stage(STAGE_DOOR_FINISHED, item(/obj/item/e0_fixture/door_kit), consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(tool(TOOL_CROWBAR), wait(0))), \
-	dismantle(tool(TOOL_WELDER)))
+STATE_GRAPH(GRAPH_DOOR_ASSEMBLY)
+	start(STAGE_DOOR_FRAME)
+	stage(STAGE_DOOR_WIRED, stack(/obj/item/stack/cable_coil, 5))
+	stage(STAGE_DOOR_BOARDED, item(/obj/item/e0_fixture/board), put_in(SLOT_CONSTRUCTION))
+	stage(STAGE_DOOR_FINISHED, tool(TOOL_SCREWDRIVER), wait(0), from = STAGE_DOOR_BOARDED)
+	stage(STAGE_DOOR_FINISHED, item(/obj/item/e0_fixture/door_kit), consumes(), from = STAGE_DOOR_WIRED, key = "kit", undo = list(tool(TOOL_CROWBAR), wait(0)))
+	dismantle(tool(TOOL_WELDER))
 
 /obj/e1_assembly
 	name = "e1 assembly"
 
-CAPABILITIES(/obj/e1_assembly, construction(GRAPH_DOOR_ASSEMBLY))
+CAPABILITIES(/obj/e1_assembly)
+	construction(GRAPH_DOOR_ASSEMBLY)
 
 /// Placed finished: two paths lead to that stage, so the type names the one it stands for.
 /obj/e1_assembly/finished
 	name = "e1 finished assembly"
 
-CAPABILITIES(/obj/e1_assembly/finished, configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
+CAPABILITIES(/obj/e1_assembly/finished)
+	configure(construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
 
 /// An entity with no graph, for the negative reads.
 /obj/e1_assembly/bare

@@ -144,5 +144,5 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2, TYPE_PR
 		side = "right"
 
 // A glass is splashed in combat mode, and is not fed to anyone then.
-CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2, \
-	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE)))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/glass2)
+	configure(reagent_container(splash = TRUE, ingest_hostile = FALSE))

@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "CAPABILITIES(T) and STATE_GRAPH(graph) are block headers: entries are indented statements the compiler and DreamChecker check"

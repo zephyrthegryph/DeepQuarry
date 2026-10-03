@@ -38,11 +38,11 @@ MSG_DEF_SELF(s1/not_the_steward, "Only the steward may do that.")
 	slot_id = "s1_side"
 	name = "side"
 
-CAPABILITIES(/obj/s1_fixture/rack, \
-	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts(amount, by = 4)), on = ON_CONTENTS), \
-	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded)))), \
-	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed))), \
-	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted))))
+CAPABILITIES(/obj/s1_fixture/rack)
+	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 4)), on = ON_CONTENTS)
+	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded))))
+	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
+	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
 TRACKED(/obj/s1_fixture/rack, welded)
 
@@ -71,12 +71,13 @@ TRACKED(/obj/s1_fixture/rack, welded)
 	capacity_model = SLOT_CAPACITY_COUNT
 	capacity = 1
 
-CAPABILITIES(/obj/s1_fixture/picky, 	ref_one(nameof(steward), /mob), \
-	extend(/datum/act/insert, needs(req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets)))), \
-	extend(/datum/act/insert, needs(req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward)))), \
-	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded)))), \
-	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed))), \
-	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted))))
+CAPABILITIES(/obj/s1_fixture/picky)
+	ref_one(nameof(steward), /mob)
+	extend(/datum/act/insert, needs(req(PROC_REF(takes_gizmos_only), because = MSG(s1/no_trinkets))))
+	extend(/datum/act/insert, needs(req(PROC_REF(actor_is_steward), because = MSG(s1/not_the_steward))))
+	extend(/datum/act/remove, needs(req(PROC_REF(not_welded), because = MSG(s1/welded))))
+	on_notice(/datum/notice/removed, then(PROC_REF(heard_removed)))
+	on_notice(/datum/notice/inserted, then(PROC_REF(heard_inserted)))
 
 TRACKED(/obj/s1_fixture/picky, welded)
 
@@ -107,8 +108,8 @@ TRACKED(/obj/s1_fixture/picky, welded)
 	name = "s1 gizmo"
 	slot_flags = SLOT_BELT
 
-CAPABILITIES(/obj/item/s1_fixture/gizmo, \
-	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts(amount, by = 1)), on = ON_HOLDER))
+CAPABILITIES(/obj/item/s1_fixture/gizmo)
+	while_slotted("s1_main", extend(/datum/act/e4_strike, adjusts("amount", by = 1)), on = ON_HOLDER)
 
 /// Not a gizmo.
 /obj/item/s1_fixture/trinket
@@ -119,21 +120,21 @@ CAPABILITIES(/obj/item/s1_fixture/gizmo, \
 	name = "s1 charm"
 	slot_flags = SLOT_BELT
 
-CAPABILITIES(/obj/item/s1_fixture/charm, \
-	while_slotted(SLOT_ANY_WORN, extend(/datum/act/e4_strike, adjusts(amount, by = 2)), on = ON_HOLDER))
+CAPABILITIES(/obj/item/s1_fixture/charm)
+	while_slotted(SLOT_ANY_WORN, extend(/datum/act/e4_strike, adjusts("amount", by = 2)), on = ON_HOLDER)
 
 /// Held gear: +3 on a strike to whoever holds it in a hand.
 /obj/item/s1_fixture/torch
 	name = "s1 torch"
 
-CAPABILITIES(/obj/item/s1_fixture/torch, \
-	while_slotted(SLOT_ANY_HELD, extend(/datum/act/e4_strike, adjusts(amount, by = 3)), on = ON_HOLDER))
+CAPABILITIES(/obj/item/s1_fixture/torch)
+	while_slotted(SLOT_ANY_HELD, extend(/datum/act/e4_strike, adjusts("amount", by = 3)), on = ON_HOLDER)
 
 /// A belly whose prey get +5 on a strike while they are inside it.
 /obj/belly/s1_test
 
-CAPABILITIES(/obj/belly/s1_test, \
-	while_slotted(BELLY_SLOT_INTERIOR, extend(/datum/act/e4_strike, adjusts(amount, by = 5)), on = ON_CONTENTS))
+CAPABILITIES(/obj/belly/s1_test)
+	while_slotted(BELLY_SLOT_INTERIOR, extend(/datum/act/e4_strike, adjusts("amount", by = 5)), on = ON_CONTENTS)
 
 // ---- providers ----
 
@@ -141,16 +142,16 @@ CAPABILITIES(/obj/belly/s1_test, \
 /obj/item/s1_fixture/spear
 	name = "s1 spear"
 
-CAPABILITIES(/obj/item/s1_fixture/spear, \
-	provides(AFF_ATTACK, reach = 2))
+CAPABILITIES(/obj/item/s1_fixture/spear)
+	provides(AFF_ATTACK, reach = 2)
 
 /// A worn gauntlet: its wearer manipulates one tile away for as long as it is worn.
 /obj/item/s1_fixture/gauntlet
 	name = "s1 gauntlet"
 	slot_flags = SLOT_BELT
 
-CAPABILITIES(/obj/item/s1_fixture/gauntlet, \
-	while_slotted(SLOT_ANY_WORN, provides(AFF_MANIPULATE, reach = 1), on = ON_HOLDER))
+CAPABILITIES(/obj/item/s1_fixture/gauntlet)
+	while_slotted(SLOT_ANY_WORN, provides(AFF_MANIPULATE, reach = 1), on = ON_HOLDER)
 
 // ---- species ----
 
@@ -162,9 +163,9 @@ CAPABILITIES(/obj/item/s1_fixture/gauntlet, \
 /datum/s1_species/brawler
 	name = "s1 brawler"
 
-CAPABILITIES(/datum/s1_species/brawler, \
-	hands(), \
-	extend(/datum/act/e4_strike, adjusts(amount, by = 6)))
+CAPABILITIES(/datum/s1_species/brawler)
+	hands()
+	extend(/datum/act/e4_strike, adjusts("amount", by = 6))
 
 /// Nothing at all.
 /datum/s1_species/blob
@@ -176,9 +177,9 @@ CAPABILITIES(/datum/s1_species/brawler, \
 	has_hands = TRUE
 	var/datum/s1_species/species
 
-CAPABILITIES(/mob/living/simple_mob/s1_fixture, \
-	ref_one(nameof(species), /datum/s1_species), \
-	rel_grants(nameof(species)))
+CAPABILITIES(/mob/living/simple_mob/s1_fixture)
+	ref_one(nameof(species), /datum/s1_species)
+	rel_grants(nameof(species))
 
 /// The same with a body that cannot hold anything: a species' hands() is gated by the body.
 /mob/living/simple_mob/s1_fixture_handless
@@ -186,9 +187,9 @@ CAPABILITIES(/mob/living/simple_mob/s1_fixture, \
 	has_hands = FALSE
 	var/datum/s1_species/species
 
-CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless, \
-	ref_one(nameof(species), /datum/s1_species), \
-	rel_grants(nameof(species)))
+CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless)
+	ref_one(nameof(species), /datum/s1_species)
+	rel_grants(nameof(species))
 
 // ---- type-level every() ----
 
@@ -199,9 +200,9 @@ CAPABILITIES(/mob/living/simple_mob/s1_fixture_handless, \
 	var/ticks = 0
 	var/slow_ticks = 0
 
-CAPABILITIES(/obj/s1_fixture/ticker, \
-	every(1 SECOND, then(PROC_REF(tick))), \
-	every(2 SECONDS, then(PROC_REF(slow_tick)), when = "powered"))
+CAPABILITIES(/obj/s1_fixture/ticker)
+	every(1 SECOND, then(PROC_REF(tick)))
+	every(2 SECONDS, then(PROC_REF(slow_tick)), when = "powered")
 
 /obj/s1_fixture/ticker/proc/tick(datum/act/timer/A)
 	ticks++
@@ -214,8 +215,8 @@ CAPABILITIES(/obj/s1_fixture/ticker, \
 	name = "s1 fast ticker"
 	var/fast_ticks = 0
 
-CAPABILITIES(/obj/s1_fixture/ticker/fast, \
-	every(5, then(PROC_REF(fast_tick))))
+CAPABILITIES(/obj/s1_fixture/ticker/fast)
+	every(5, then(PROC_REF(fast_tick)))
 
 /obj/s1_fixture/ticker/fast/proc/fast_tick(datum/act/timer/A)
 	fast_ticks++
@@ -236,9 +237,9 @@ TRACKED(/obj/s1_fixture/terminal, charge)
 	var/seen_charge
 	var/changes_seen = 0
 
-CAPABILITIES(/obj/s1_fixture/meter, \
-	ref_one(nameof(terminal), /obj/s1_fixture/terminal), \
-	on_change(nameof(terminal.charge), ANY, then(PROC_REF(charge_changed))))
+CAPABILITIES(/obj/s1_fixture/meter)
+	ref_one(nameof(terminal), /obj/s1_fixture/terminal)
+	on_change(nameof(terminal.charge), ANY, then(PROC_REF(charge_changed)))
 
 /obj/s1_fixture/meter/proc/charge_changed(datum/act/A)
 	changes_seen++
@@ -251,8 +252,8 @@ CAPABILITIES(/obj/s1_fixture/meter, \
 	var/seen_charge
 	var/changes_seen = 0
 
-CAPABILITIES(/obj/s1_fixture/bare_meter, \
-	ref_one(nameof(terminal), /obj/s1_fixture/terminal))
+CAPABILITIES(/obj/s1_fixture/bare_meter)
+	ref_one(nameof(terminal), /obj/s1_fixture/terminal)
 
 /obj/s1_fixture/bare_meter/proc/charge_changed(datum/act/A)
 	changes_seen++

@@ -21,8 +21,8 @@
 
 
 
-CAPABILITIES(/obj/item/storage/backpack, \
-	configure(storage(max_size = ITEMSIZE_LARGE)))
+CAPABILITIES(/obj/item/storage/backpack)
+	configure(storage(max_size = ITEMSIZE_LARGE))
 
 /obj/item/storage/backpack/equipped(mob/user, slot)
 	if (slot == SLOT_ID_BACK && src.use_sound)
@@ -72,8 +72,8 @@ CAPABILITIES(/obj/item/storage/backpack, \
 		icon_state = "[icon_state]_tilted" // ALLOW(decl): Initialize rolls a random pick per instance; a declaration has no random form
 		tilted = 1
 
-CAPABILITIES(/obj/item/storage/backpack/holding/duffle, \
-	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(PROC_REF(duffle_tilt_effect))))
+CAPABILITIES(/obj/item/storage/backpack/holding/duffle)
+	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried()), then(PROC_REF(duffle_tilt_effect)))
 
 /obj/item/storage/backpack/holding/duffle/proc/duffle_tilt_effect(datum/act/op/A)
 	var/mob/user = A.actor
@@ -91,9 +91,9 @@ CAPABILITIES(/obj/item/storage/backpack/holding/duffle, \
 	user.update_inv_back()
 	return OP_OK
 
-CAPABILITIES(/obj/item/storage/backpack/holding, \
-	configure(storage(refuses = list(/obj/item/storage/backpack/holding))), \
-	op("conflict", item(/obj/item/storage/backpack/holding), priority(above("storage.put_in")), label("Put in"), then(PROC_REF(bluespace_conflict))))
+CAPABILITIES(/obj/item/storage/backpack/holding)
+	configure(storage(refuses = list(/obj/item/storage/backpack/holding)))
+	op("conflict", item(/obj/item/storage/backpack/holding), priority(above("storage.put_in")), label("Put in"), then(PROC_REF(bluespace_conflict)))
 
 /// Two bags of holding destroy the one put in.
 /obj/item/storage/backpack/holding/proc/bluespace_conflict(datum/act/op/A)
@@ -189,8 +189,8 @@ CAPABILITIES(/obj/item/storage/backpack/holding, \
 
 MSG_DEF_SELF(backpack/cant_tilt, "It can't be adjusted like that.")
 
-CAPABILITIES(/obj/item/storage/backpack/dufflebag, \
-	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), then(PROC_REF(dufflebag_tilt_effect))))
+CAPABILITIES(/obj/item/storage/backpack/dufflebag)
+	op("tilt", menu(), label("Adjust Duffelbag Angle"), needs(carried(), req(PROC_REF(can_adjust_tilt), because = MSG(backpack/cant_tilt))), then(PROC_REF(dufflebag_tilt_effect)))
 
 /// Only some duffelbags tilt.
 /obj/item/storage/backpack/dufflebag/proc/can_adjust_tilt(datum/act/op/A)
@@ -488,8 +488,8 @@ CAPABILITIES(/obj/item/storage/backpack/dufflebag, \
 	w_class = ITEMSIZE_LARGE
 	max_storage_space = ITEMSIZE_COST_NORMAL * 5
 
-CAPABILITIES(/obj/item/storage/backpack/purse, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/backpack/purse)
+	configure(storage(max_size = ITEMSIZE_NORMAL))
 
 //Parachutes
 
@@ -520,13 +520,13 @@ MSG_DEF_SELF(parachute/worn, "How do you expect to work on it while it's on your
 MSG_DEF(parachute/packed, "You finish packing %T%!", "%U% finishes packing %T%!")
 MSG_DEF(parachute/unpacked, "You finish unpacking %T%!", "%U% finishes unpacking %T%!")
 
-CAPABILITIES(/obj/item/storage/backpack/parachute, \
-	op("pack", menu(), when(PROC_REF(is_unpacked)), label("Pack Parachute"), \
-		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(5 SECONDS), \
-		then(PROC_REF(pack_it)), says(MSG(parachute/packed), blind = span_infoplain("You hear the shuffling of cloth."))), \
-	op("unpack", menu(), when(PROC_REF(is_packed)), label("Unpack Parachute"), \
-		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(2.5 SECONDS), \
-		then(PROC_REF(unpack_it)), says(MSG(parachute/unpacked), blind = span_infoplain("You hear the shuffling of cloth."))))
+CAPABILITIES(/obj/item/storage/backpack/parachute)
+	op("pack", menu(), when(PROC_REF(is_unpacked)), label("Pack Parachute"),
+		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(5 SECONDS),
+		then(PROC_REF(pack_it)), says(MSG(parachute/packed), blind = span_infoplain("You hear the shuffling of cloth.")))
+	op("unpack", menu(), when(PROC_REF(is_packed)), label("Unpack Parachute"),
+		needs(carried(), req_not_worn(SLOT_ID_BACK, because = MSG(parachute/worn))), wait(2.5 SECONDS),
+		then(PROC_REF(unpack_it)), says(MSG(parachute/unpacked), blind = span_infoplain("You hear the shuffling of cloth.")))
 
 /obj/item/storage/backpack/parachute/proc/is_packed(datum/act/op/A)
 	return packed

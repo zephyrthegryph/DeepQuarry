@@ -139,16 +139,16 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/merc, borghypo_reagent_ids, lis
 
 // A cyborg hypospray makes the chosen reagent (or recipe) from its store and puts it into a person by a click (synthesizer(), code/library/reagents/synthesizer.dm);
 // a limb that is not there, or thick material over it, refuses it (unless it bypasses protection). Its store is filled again from its cyborg's cell.
-CAPABILITIES(/obj/item/reagent_containers/borghypo, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	synthesizer(), \
-	extend("synthesizer.inject", then(PROC_REF(injected))))
+CAPABILITIES(/obj/item/reagent_containers/borghypo)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	synthesizer()
+	extend("synthesizer.inject", then(PROC_REF(injected)))
 
 /// The click on a person (the old attack handler).
 /obj/item/reagent_containers/borghypo/proc/injected(datum/act/op/A)
@@ -421,9 +421,9 @@ TYPE_TABLE(/obj/item/reagent_containers/borghypo/service, borghypo_reagent_ids, 
 REAGENT_ID_WHISKEY))
 
 // The drink synthesizer puts drinks into open containers and never into a person.
-CAPABILITIES(/obj/item/reagent_containers/borghypo/service, \
-	configure(synthesizer(containers = TRUE)), \
-	extend("synthesizer.dispense", then(PROC_REF(dispensed))))
+CAPABILITIES(/obj/item/reagent_containers/borghypo/service)
+	configure(synthesizer(containers = TRUE))
+	extend("synthesizer.dispense", then(PROC_REF(dispensed)))
 
 /obj/item/reagent_containers/borghypo/service/injection_result(mob/living/M, mob/living/user)
 	return OP_REFUSED

@@ -48,18 +48,18 @@ TRACKED(/obj/machinery/door_timer, timing)
 
 MSG_DEF_SELF(door_timer/denied, "Access denied.")
 
-CAPABILITIES(/obj/machinery/door_timer, \
-	ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig), \
-	ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id)), \
-	ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id)), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(redraw)), when = nameof(timing)), \
-	interface("BrigTimer", title = "Door Timer"), \
-	op("time", ui_act("time", arg("time", int(0, MAX_TIMER))), then(PROC_REF(ui_time))), \
-	op("start", ui_act("start"), then(PROC_REF(ui_start))), \
-	op("stop", ui_act("stop"), then(PROC_REF(ui_stop))), \
-	op("flash", ui_act("flash"), then(PROC_REF(ui_flash))), \
-	op("preset", ui_act("preset", arg("preset", enum(list("short", "medium", "long")))), then(PROC_REF(ui_preset))), \
-	extend(TAG_UI, needs(req(PROC_REF(timer_access), because = MSG(door_timer/denied)))))
+CAPABILITIES(/obj/machinery/door_timer)
+	ref_many(nameof(targets), /obj/structure/closet/secure_closet/brig)
+	ref_many(nameof(brig_doors), /obj/machinery/door/window/brigdoor, by = nameof(id))
+	ref_many(nameof(brig_flashers), /obj/machinery/flasher, by = nameof(id))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(redraw)), when = nameof(timing))
+	interface("BrigTimer", title = "Door Timer")
+	op("time", ui_act("time", arg("time", int(0, MAX_TIMER))), then(PROC_REF(ui_time)))
+	op("start", ui_act("start"), then(PROC_REF(ui_start)))
+	op("stop", ui_act("stop"), then(PROC_REF(ui_stop)))
+	op("flash", ui_act("flash"), then(PROC_REF(ui_flash)))
+	op("preset", ui_act("preset", arg("preset", enum(list("short", "medium", "long")))), then(PROC_REF(ui_preset)))
+	extend(TAG_UI, needs(req(PROC_REF(timer_access), because = MSG(door_timer/denied))))
 
 /// Whoever has access works its window.
 /obj/machinery/door_timer/proc/timer_access(datum/act/op/A)

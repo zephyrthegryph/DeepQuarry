@@ -39,15 +39,15 @@
 
 // A cartridge is a capped holder of its volume: the cap is worked in hand, with it off it pours into an open container and fills from a tank by the
 // tank's own amount. It moves a large amount at a time (set from 50 to 500). Its label is set from the menu.
-CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge, \
-	reagent_container( \
-		volume = nameof(volume), \
-		lid = TRUE, \
-		transfer_default = nameof(amount_per_transfer_from_this), \
-		transfer_min = nameof(min_transfer_amount), \
-		transfer_max = nameof(max_transfer_amount), \
-		taps = list(/obj/structure/reagent_dispensers)), \
-	op("label", menu(), label("Set Cartridge Label"), asks(/datum/prompt/text, fields = list("question" = "Label for it:")), then(PROC_REF(label_set))))
+CAPABILITIES(/obj/item/reagent_containers/chem_disp_cartridge)
+	reagent_container(
+		volume = nameof(volume),
+		lid = TRUE,
+		transfer_default = nameof(amount_per_transfer_from_this),
+		transfer_min = nameof(min_transfer_amount),
+		transfer_max = nameof(max_transfer_amount),
+		taps = list(/obj/structure/reagent_dispensers))
+	op("label", menu(), label("Set Cartridge Label"), asks(/datum/prompt/text, fields = list("question" = "Label for it:")), then(PROC_REF(label_set)))
 
 /// The label the question was answered with.
 /obj/item/reagent_containers/chem_disp_cartridge/proc/label_set(datum/act/op/A)

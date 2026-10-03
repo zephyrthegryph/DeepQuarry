@@ -26,13 +26,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/cooking_container, "max_reagents",
 // A cooking container is a dish, basket or rack that holds the solid things on its list (up to the sum of their sizes) and, open to reagents, whatever is
 // poured in. A held thing on the list is put in, and an alt-click or the menu takes every solid thing out onto the floor. What it holds is listed in its
 // examine text, and a load of things is drawn on it.
-CAPABILITIES(/obj/item/reagent_containers/cooking_container, \
-	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"), \
-		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted))), \
-	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"), \
-		needs(req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), then(PROC_REF(emptied))), \
-	examine_line(PROC_REF(solids_line)), \
-	examine_line(PROC_REF(liquid_line)))
+CAPABILITIES(/obj/item/reagent_containers/cooking_container)
+	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"),
+		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted)))
+	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"),
+		needs(req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), then(PROC_REF(emptied)))
+	examine_line(PROC_REF(solids_line))
+	examine_line(PROC_REF(liquid_line))
 
 MSG_DEF_SELF(cooking_container/full, "There's no more space in it for that!")
 MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can remove!")

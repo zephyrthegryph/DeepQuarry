@@ -33,21 +33,21 @@ MSG_DEF_SELF(charger/no_area_power, "It blinks red as you try to insert the cell
 
 TRACKED(/obj/machinery/cell_charger, chargelevel)
 
-CAPABILITIES(/obj/machinery/cell_charger, \
-	machine_basics(repair = NONE), \
-	anchor(empty = nameof(charging)), \
-	part_replacement(), \
-	extend("part_replacement.replace", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable)))), \
-	owns_one(nameof(charging), /obj/item/cell), \
-	op("insert", item(/obj/item/cell), when(nameof(anchored)), \
-		needs(req(PROC_REF(can_insert), because = PROC_REF(insert_refusal))), \
-		put_in(nameof(charging)), says(MSG(charger/inserted))), \
-	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_cell))), \
-	examine_line(PROC_REF(examine_contents)), \
-	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed))), \
-	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed))), \
-	on_change(nameof(stat), ANY, then(PROC_REF(condition_changed))), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging)))
+CAPABILITIES(/obj/machinery/cell_charger)
+	machine_basics(repair = NONE)
+	anchor(empty = nameof(charging))
+	part_replacement()
+	extend("part_replacement.replace", needs(req_is(STAT_OPERABLE, because = MSG(machine/inoperable))))
+	owns_one(nameof(charging), /obj/item/cell)
+	op("insert", item(/obj/item/cell), when(nameof(anchored)),
+		needs(req(PROC_REF(can_insert), because = PROC_REF(insert_refusal))),
+		put_in(nameof(charging)), says(MSG(charger/inserted)))
+	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_cell)))
+	examine_line(PROC_REF(examine_contents))
+	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed)))
+	on_change(nameof(anchored), ANY, then(PROC_REF(condition_changed)))
+	on_change(nameof(stat), ANY, then(PROC_REF(condition_changed)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging))
 
 /obj/machinery/cell_charger/Initialize(mapload)
 	. = ..()

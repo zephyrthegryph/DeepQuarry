@@ -15,7 +15,15 @@
 // reads.dm and system_accessors.dm). SCHEMA is a real macro (code/__defines/engine/declare.dm): a tracked var's setter is DM code.
 
 /// One composition root per type: registers T's entry list with the table builder. `analyze gen declare` writes T's declared_entries().
-#define CAPABILITIES(T, entries...)
+/// A block: the marker line is a header (an override of /datum/proc/__capabilities() on T, which nothing calls) and the entries are its indented statements, one per line, no
+/// trailing commas and no backslashes; an entry may span lines inside its own parentheses. The entry names are the part and entry
+/// constructors (`op`, `extend`, `configure`, `needs`, `then`, ... in code/engine and code/library), so the compiler and DreamChecker check
+/// them like any call. `analyze` reads the block from source; nothing runs it.
+///
+///     CAPABILITIES(/obj/machinery/thing)
+///         op("press", hand(), then(PROC_REF(pressed)))
+///         extend("ui_open", needs(req_is(STAT_OPERABLE)))
+#define CAPABILITIES(T) ##T/__capabilities()
 /// A capability whose body returns entries: CAPABILITY_DEF(name, CAP_X, key =, stacks =, param = default, ...).
 #define CAPABILITY_DEF(name, cap_id, params...)
 /// A capability with code of its own: CAPABILITY_TYPE(name, CAP_X, /datum/capability/x, key =, stacks =, param = default, ...).
@@ -25,7 +33,8 @@
 /// A build stage id (section 12): STAGE_DEF(group, name) is STAGE_<GROUP>_<NAME>.
 #define STAGE_DEF(group, name)
 /// A named, reusable state graph of stages (section 12): STATE_GRAPH(GRAPH_X, start(STAGE_X), stage(...), dismantle(...)).
-#define STATE_GRAPH(graph, entries...)
+/// A block, like CAPABILITIES: the entries (`start(...)`, `stage(...)`, `dismantle(...)`) are the indented statements under the header.
+#define STATE_GRAPH(graph) /proc/__state_graph_##graph()
 /// A flyweight source (section 5): SOURCE_DEF(ai_control) is SRC_AI_CONTROL.
 #define SOURCE_DEF(name)
 /// A world action: generates /datum/act/<name>, act_<name>() and the past-tense notice (section 8).

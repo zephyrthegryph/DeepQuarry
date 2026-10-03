@@ -85,23 +85,23 @@ GLOBAL_LIST_INIT(recharger_battery_exempt, list(
 
 TRACKED(/obj/machinery/recharger, charge_phase)
 
-CAPABILITIES(/obj/machinery/recharger, \
-	machine_basics(repair = NONE), \
-	anchor(empty = nameof(charging)), \
-	part_replacement(), \
-	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL), \
-	op("insert", item(/obj/item), when(req(PROC_REF(takes_device))), \
-		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), \
-		then(PROC_REF(insert_device))), \
-	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req(PROC_REF(takes_device))), \
-		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))), \
-		then(PROC_REF(drag_in_device))), \
-	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_device))), \
-	examine_line(PROC_REF(examine_contents)), \
-	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed))), \
-	on_change(nameof(anchored), ANY, then(PROC_REF(charging_changed))), \
-	on_change(nameof(stat), ANY, then(PROC_REF(charging_changed))), \
-	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging)))
+CAPABILITIES(/obj/machinery/recharger)
+	machine_basics(repair = NONE)
+	anchor(empty = nameof(charging))
+	part_replacement()
+	owns_one(nameof(charging), /obj/item, on_destroy = ON_DESTROY_SPILL)
+	op("insert", item(/obj/item), when(req(PROC_REF(takes_device))),
+		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))),
+		then(PROC_REF(insert_device)))
+	op("insert_drag", item(/obj/item), gesture(GESTURE_DRAG), when(req(PROC_REF(takes_device))),
+		needs(req(PROC_REF(device_ok), because = PROC_REF(device_refusal))),
+		then(PROC_REF(drag_in_device)))
+	op("take", hand(), when(nameof(charging)), priority(OP_PRIORITY_NORMAL + 5), then(PROC_REF(take_device)))
+	examine_line(PROC_REF(examine_contents))
+	on_change(nameof(charging), ANY, then(PROC_REF(charging_changed)))
+	on_change(nameof(anchored), ANY, then(PROC_REF(charging_changed)))
+	on_change(nameof(stat), ANY, then(PROC_REF(charging_changed)))
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(charge_frame)), when = nameof(charging))
 
 /// A wall recharger is bolted to its wall: its wrench does nothing.
 /obj/machinery/recharger/wallcharger
@@ -121,8 +121,8 @@ CAPABILITIES(/obj/machinery/recharger, \
 	circuit = /obj/item/circuitboard/recharger/wrecharger
 	flags = WALL_ITEM
 
-CAPABILITIES(/obj/machinery/recharger/wallcharger, \
-	without(CAP_ANCHOR))
+CAPABILITIES(/obj/machinery/recharger/wallcharger)
+	without(CAP_ANCHOR)
 
 /obj/machinery/recharger/Initialize(mapload)
 	. = ..()

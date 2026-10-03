@@ -24,7 +24,8 @@
 /datum/tgui_alert/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_alert/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_alert/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_alert/prompt/set_choice(choice)
 	. = ..()
@@ -45,7 +46,8 @@ CAPABILITIES(/datum/tgui_alert/prompt, ref_one(nameof(prompt), /datum/prompt))
 /datum/tgui_list_input/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_list_input/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_list_input/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_list_input/prompt/set_choice(choice)
 	. = ..()
@@ -66,7 +68,8 @@ CAPABILITIES(/datum/tgui_list_input/prompt, ref_one(nameof(prompt), /datum/promp
 /datum/tgui_input_text/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_input_text/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_input_text/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_input_text/prompt/set_entry(entry)
 	. = ..()
@@ -87,7 +90,8 @@ CAPABILITIES(/datum/tgui_input_text/prompt, ref_one(nameof(prompt), /datum/promp
 /datum/tgui_input_number/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_input_number/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_input_number/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_input_number/prompt/set_entry(entry)
 	. = ..()
@@ -108,7 +112,8 @@ CAPABILITIES(/datum/tgui_input_number/prompt, ref_one(nameof(prompt), /datum/pro
 /datum/tgui_color_picker/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_color_picker/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_color_picker/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_color_picker/prompt/set_choice(choice)
 	. = ..()
@@ -129,7 +134,8 @@ CAPABILITIES(/datum/tgui_color_picker/prompt, ref_one(nameof(prompt), /datum/pro
 /datum/tgui_checkbox_input/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_checkbox_input/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_checkbox_input/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/tgui_checkbox_input/prompt/set_choices(list/selections)
 	. = ..()
@@ -150,7 +156,8 @@ CAPABILITIES(/datum/tgui_checkbox_input/prompt, ref_one(nameof(prompt), /datum/p
 /datum/tgui_bitfield_input/prompt
 	var/datum/prompt/prompt
 
-CAPABILITIES(/datum/tgui_bitfield_input/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/tgui_bitfield_input/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/prompt, ui_act_submit)
 	// Answer before the window closes: closing it means cancel.
@@ -176,7 +183,8 @@ UI_ACT_OVERRIDE(/datum/tgui_bitfield_input/prompt, ui_act_submit)
 	/// The key GLOB.radial_menus holds it under: asking again while it is open toggles it shut.
 	var/menu_id
 
-CAPABILITIES(/datum/radial_menu/prompt, ref_one(nameof(prompt), /datum/prompt))
+CAPABILITIES(/datum/radial_menu/prompt)
+	ref_one(nameof(prompt), /datum/prompt)
 
 /datum/radial_menu/prompt/element_chosen(choice_id, mob/user)
 	var/answer = LAZYACCESS(choices_values, choice_id)

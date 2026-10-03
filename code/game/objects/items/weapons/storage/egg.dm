@@ -16,8 +16,8 @@
 	var/egg_name = null
 
 
-CAPABILITIES(/obj/item/storage/vore_egg, \
-	configure(storage(max_size = 0)))
+CAPABILITIES(/obj/item/storage/vore_egg)
+	configure(storage(max_size = 0))
 
 /obj/item/storage/vore_egg/Initialize(mapload)
 	. = ..()

@@ -60,22 +60,22 @@ DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/syringe, PERIODIC_SLOW, "use
 // A syringe is a sealed container of its volume that draws from containers and tanks, puts into containers, takes blood, injects people and stabs them
 // (needle(), code/library/reagents/needle.dm). Its mode (capped, draw, inject, broken) is the `mode` var, changed in hand. The giant syringe and the
 // lethal injection syringe ask for more time and refuse blood and the stab.
-CAPABILITIES(/obj/item/reagent_containers/syringe, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	needle( \
-		modes = nameof(mode), \
-		needle_time = nameof(time), \
-		draws_from = list(/obj/structure/reagent_dispensers, /obj/item/slime_extract, /obj/item/reagent_containers/food, /obj/item/reagent_containers/blood), \
-		fills = TRUE), \
-	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"), \
-		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))), \
-		then(PROC_REF(stabbed))))
+CAPABILITIES(/obj/item/reagent_containers/syringe)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	needle(
+		modes = nameof(mode),
+		needle_time = nameof(time),
+		draws_from = list(/obj/structure/reagent_dispensers, /obj/item/slime_extract, /obj/item/reagent_containers/food, /obj/item/reagent_containers/blood),
+		fills = TRUE)
+	op("stab", at_target(/mob/living), hostile(), stance(I_HURT), label("Stab"),
+		needs(req_not(req_is(nameof(mode), NEEDLE_BROKEN), because = MSG(needle/broken)), req(PROC_REF(may_stab), because = MSG(syringe/too_big))),
+		then(PROC_REF(stabbed)))
 
 MSG_DEF_SELF(syringe/too_big, "This syringe is too big to stab someone with it.")
 MSG_DEF_SELF(syringe/no_blood, "This needle isn't designed for drawing blood.")
@@ -200,9 +200,9 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/syringe, INTERACT_HAND_DEFAULT(
 	time = 300
 
 // The lethal injection syringe draws no blood and does not stab.
-CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe, \
-	extend("needle.draw_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))), \
-	extend("needle.take_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood)))))
+CAPABILITIES(/obj/item/reagent_containers/syringe/ld50_syringe)
+	extend("needle.draw_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
+	extend("needle.take_blood", needs(req(PROC_REF(no_blood_draw), because = MSG(syringe/no_blood))))
 
 /obj/item/reagent_containers/syringe/ld50_syringe/proc/no_blood_draw(datum/act/op/A)
 	return FALSE

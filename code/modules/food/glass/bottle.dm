@@ -15,8 +15,8 @@
 	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 
 // A bottle is stoppered at first.
-CAPABILITIES(/obj/item/reagent_containers/glass/bottle, \
-	configure(reagent_container(starts_open = FALSE)))
+CAPABILITIES(/obj/item/reagent_containers/glass/bottle)
+	configure(reagent_container(starts_open = FALSE))
 
 /obj/item/reagent_containers/glass/bottle/Initialize(mapload)
 	. = ..()

@@ -494,10 +494,10 @@ MSG_DEF_SELF(medbot/empty_first, "You need to empty the first aid kit out first.
 
 // A robot arm (a part, or a robotic arm organ) on an empty kit starts a medibot; on a kit with things in it the kit is to be emptied first; anything
 // else goes on to the storage.
-CAPABILITIES(/obj/item/storage/firstaid, \
-	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), priority(above("storage.put_in")), \
-		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"), \
-		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm))))
+CAPABILITIES(/obj/item/storage/firstaid)
+	op("add_arm", inputs(item(/obj/item/robot_parts/l_arm), item(/obj/item/robot_parts/r_arm), item(/obj/item/organ/external/arm)), priority(above("storage.put_in")),
+		when(req(PROC_REF(arm_is_robotic))), label("Add robot arm"),
+		needs(req_storage_empty(because = MSG(medbot/empty_first))), then(PROC_REF(add_robot_arm)))
 
 /// A robot arm part, or an arm organ that is robotic.
 /obj/item/storage/firstaid/proc/arm_is_robotic(datum/act/op/A)

@@ -31,19 +31,19 @@ MSG_DEF_SELF(button/spent, "Nothing happens.")
 MSG_DEF_SELF(button/no_route, "Error, no route to host.")
 MSG_DEF_SELF(button/no_lock, "It has no lock to subvert.")
 
-CAPABILITIES(/obj/machinery/button/remote, \
-	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE), \
-	extend("emag.use", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))), \
-	extend("emag.subvert", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock)))), \
-	op("press_hand", hand(), label("Toggle"), wait(0), \
-		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
-	op("press_item", item(/obj/item), label("Toggle"), when(req(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0), \
-		needs(req(PROC_REF(button_works), because = MSG(button/dead)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
-	op("press_silicon", ai(), wait(0), \
-		needs(req(PROC_REF(has_network), because = MSG(button/no_route)), req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed))), \
-	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED), \
-	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED), \
-	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED))
+CAPABILITIES(/obj/machinery/button/remote)
+	emag(then(PROC_REF(lock_scorched)), repeatable = TRUE)
+	extend("emag.use", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
+	extend("emag.subvert", needs(req(PROC_REF(has_access_lock), because = MSG(button/no_lock))))
+	op("press_hand", hand(), label("Toggle"), wait(0),
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+	op("press_item", item(/obj/item), label("Toggle"), when(req(PROC_REF(item_presses))), priority(OP_PRIORITY_NORMAL + 1), wait(0),
+		needs(req(PROC_REF(button_works), because = MSG(button/dead)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+	op("press_silicon", ai(), wait(0),
+		needs(req(PROC_REF(has_network), because = MSG(button/no_route)), req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal)), req(PROC_REF(can_press), because = MSG(button/spent)), req(PROC_REF(may_press), because = MSG(button/denied))), then(PROC_REF(pressed)))
+	on_op("press_hand", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
+	on_op("press_item", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
+	on_op("press_silicon", then(PROC_REF(denied_flash)), outcome = ACT_REFUSED)
 
 DECLARE_INTERACTIONS(/obj/machinery/button/remote, INTERACT_SILICON("Toggle", PROC_REF(silicon_pressed)))
 
@@ -184,8 +184,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 
 /// Blast doors whose id matches ours (keyed).
 /obj/machinery/button/remote/blast_door/var/list/obj/machinery/door/blast/controlled_doors
-CAPABILITIES(/obj/machinery/button/remote/blast_door, \
-	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
+CAPABILITIES(/obj/machinery/button/remote/blast_door)
+	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id))
 
 /obj/machinery/button/remote/blast_door/trigger()
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
@@ -235,10 +235,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 /// Blast doors and mass drivers whose id matches ours (keyed).
 /obj/machinery/button/remote/driver/var/list/obj/machinery/door/blast/controlled_doors
 /obj/machinery/button/remote/driver/var/list/obj/machinery/mass_driver/controlled_drivers
-CAPABILITIES(/obj/machinery/button/remote/driver, \
-	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)), \
-	ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)), \
-	op("set_id", tool(TOOL_MULTITOOL), label("Set the id"), wait(0), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(id_question)))), then(PROC_REF(id_entered))))
+CAPABILITIES(/obj/machinery/button/remote/driver)
+	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id))
+	ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id))
+	op("set_id", tool(TOOL_MULTITOOL), label("Set the id"), wait(0), asks(/datum/prompt/number, fields = list("question" = computed(PROC_REF(id_question)))), then(PROC_REF(id_entered)))
 
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)

@@ -89,7 +89,8 @@ CAPABILITY_TYPE(e0_phased, CAP_PHASED, /datum/e0_cap/phased, key = NONE, prefix 
 /datum/e0_species/shifter
 	name = "e0 shifter"
 
-CAPABILITIES(/datum/e0_species/shifter, e0_phase_shift())
+CAPABILITIES(/datum/e0_species/shifter)
+	e0_phase_shift()
 
 /// SPECIES_CAPABILITIES(/datum/e0_species/plain, hands())
 /datum/e0_species/plain
@@ -109,10 +110,10 @@ CAPABILITIES(/datum/e0_species/shifter, e0_phase_shift())
 	/// Written by the reflect handler of the test-only mirror capability: the winning activation source.
 	var/last_reflect_source
 
-CAPABILITIES(/mob/living/simple_mob/e0_fixture, \
-	ref_one(nameof(species), /datum/e0_species), \
-	rel_grants(nameof(species)), \
-	hands())
+CAPABILITIES(/mob/living/simple_mob/e0_fixture)
+	ref_one(nameof(species), /datum/e0_species)
+	rel_grants(nameof(species))
+	hands()
 
 /// Delivers one beam hit to this mob as a world action: ACT_TRY(src, hit_projectile, packet), act_done(). Returns the act's
 /// outcome (null when the hit was refused or taken over). The mirror's reflect handler runs inside ACT_TRY.
@@ -157,9 +158,9 @@ cap_keys(CAP_E0_DOOR, OPEN = null)
 	density = TRUE
 
 /// density is a TOP stat: right the moment the door opens.
-CAPABILITIES(/obj/e0_fixture/door, \
-	e0_door(), \
-	when(E0_DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE)))
+CAPABILITIES(/obj/e0_fixture/door)
+	e0_door()
+	when(E0_DOOR_OPEN, contributes(STAT_DENSITY, FALSE, priority = PRIORITY_FORCE))
 
 // ---- Proof 4: the library terminal ----
 
@@ -174,10 +175,10 @@ TRACKED_SCHEMA(/obj/e0_fixture/library, selected_id, int(0), default = 0)
 
 MSG_DEF_SELF(library/nothing_selected, "Nothing is selected.")
 
-CAPABILITIES(/obj/e0_fixture/library, \
-	op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row))), \
-	op("print", ui_act(), needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))), \
-		confirms("Print the selected book?"), captures(nameof(selected_id)), then(PROC_REF(print_book)), logs(LOG_GAME)))
+CAPABILITIES(/obj/e0_fixture/library)
+	op("select", ui_act(arg("id", int(1))), then(PROC_REF(select_row)))
+	op("print", ui_act(), needs(req_is(nameof(selected_id), because = MSG(library/nothing_selected))),
+		confirms("Print the selected book?"), captures(nameof(selected_id)), then(PROC_REF(print_book)), logs(LOG_GAME))
 
 /obj/e0_fixture/library/proc/select_row(datum/act/op/A, id)
 	set_selected_id(id)
@@ -195,8 +196,8 @@ CAPABILITIES(/obj/e0_fixture/library, \
 /obj/e0_fixture/library/strict
 	name = "e0 strict library terminal"
 
-CAPABILITIES(/obj/e0_fixture/library/strict, \
-	extend("print", captures(nameof(selected_id), resume = CANCEL_IF_CHANGED)))
+CAPABILITIES(/obj/e0_fixture/library/strict)
+	extend("print", captures(nameof(selected_id), resume = CANCEL_IF_CHANGED))
 
 /// What the print op produces: carries the id the first actor confirmed.
 /obj/item/e0_fixture/book
@@ -213,10 +214,10 @@ CAPABILITIES(/obj/e0_fixture/library/strict, \
 
 MSG_DEF(fab/loaded, "You load the sheets.", "%U% loads the sheets.")
 
-CAPABILITIES(/obj/e0_fixture/hopper, \
-	slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY), \
-	op("load", stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), wait(2 SECONDS), put_in(SLOT_HOPPER), \
-		says(MSG(fab/loaded)), logs(LOG_GAME)))
+CAPABILITIES(/obj/e0_fixture/hopper)
+	slot(SLOT_HOPPER, accepts = list(/obj/item/e0_fixture/sheets), capacity = E0_HOPPER_CAPACITY)
+	op("load", stack(/obj/item/e0_fixture/sheets, E0_SHEETS_PER_LOAD), wait(2 SECONDS), put_in(SLOT_HOPPER),
+		says(MSG(fab/loaded)), logs(LOG_GAME))
 
 /// The containment ledger's slot of the hopper: one slot, sheets counted in units.
 /datum/om/relation/slot/e0_hopper
@@ -254,11 +255,11 @@ CAPABILITIES(/obj/e0_fixture/hopper, \
 	var/obj/item/e0_fixture/cell/cell
 	var/panel_open = FALSE
 
-CAPABILITIES(/obj/e0_fixture/cabinet, \
-	cover(open = hand(), starts_open = TRUE), \
-	compartment(BAY_CABINET, door = CAP_COVER), \
-	cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell), \
-	op("pry_panel", tool(TOOL_CROWBAR), priority(above("cell_bay.cell.take")), wait(5 SECONDS), toggles(nameof(panel_open))))
+CAPABILITIES(/obj/e0_fixture/cabinet)
+	cover(open = hand(), starts_open = TRUE)
+	compartment(BAY_CABINET, door = CAP_COVER)
+	cell_bay(nameof(cell), at = BAY_CABINET, accepts = /obj/item/e0_fixture/cell, starts = /obj/item/e0_fixture/cell)
+	op("pry_panel", tool(TOOL_CROWBAR), priority(above("cell_bay.cell.take")), wait(5 SECONDS), toggles(nameof(panel_open)))
 
 /obj/item/e0_fixture/cell
 	name = "e0 cell"
@@ -286,8 +287,8 @@ CAPABILITIES(/obj/e0_fixture/cabinet, \
 
 STAT(/obj/e0_fixture/lamp, e0_lamp_range, MAX)
 
-CAPABILITIES(/obj/e0_fixture/lamp, \
-	contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range)))
+CAPABILITIES(/obj/e0_fixture/lamp)
+	contributes(STAT_E0_LAMP_RANGE, PROC_REF(lit_range))
 
 /// What the lamp reads: the night range while the night system says night, the day range otherwise.
 /obj/e0_fixture/lamp/proc/lit_range(datum/act/A)
@@ -316,7 +317,8 @@ ACTION(e0_chain, hop, FIXED, notice = /datum/notice/e0_chain)
 /datum/e0_chain_node
 	var/length = 0
 
-CAPABILITIES(/datum/e0_chain_node, 	on_notice(/datum/notice/e0_chain, then(PROC_REF(hear))))
+CAPABILITIES(/datum/e0_chain_node)
+	on_notice(/datum/notice/e0_chain, then(PROC_REF(hear)))
 
 /datum/e0_chain_node/proc/hear(datum/act/A)
 	var/datum/notice/e0_chain/N = A
@@ -345,8 +347,8 @@ GLOBAL_VAR_INIT(e0_chain_handled, 0)
 /obj/e0_fixture/door_assembly
 	name = "e0 door assembly"
 
-CAPABILITIES(/obj/e0_fixture/door_assembly, \
-	construction(GRAPH_DOOR_ASSEMBLY))
+CAPABILITIES(/obj/e0_fixture/door_assembly)
+	construction(GRAPH_DOOR_ASSEMBLY)
 
 /// The slot the boarded stage puts the board in (SLOT_CONSTRUCTION).
 /datum/om/relation/slot/e0_construction
@@ -362,8 +364,8 @@ CAPABILITIES(/obj/e0_fixture/door_assembly, \
 /obj/e0_fixture/door_assembly/finished
 	name = "e0 finished door assembly"
 
-CAPABILITIES(/obj/e0_fixture/door_assembly/finished, \
-	configure(CAP_CONSTRUCTION, start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
+CAPABILITIES(/obj/e0_fixture/door_assembly/finished)
+	configure(construction_graph(start = STAGE_DOOR_FINISHED, via = list(STAGE_DOOR_WIRED, STAGE_DOOR_BOARDED)))
 
 /// The board the boarded stage takes: item(/obj/item/e0_fixture/board) with put_in(SLOT_CONSTRUCTION).
 /obj/item/e0_fixture/board
@@ -381,10 +383,10 @@ CAPABILITIES(/obj/e0_fixture/door_assembly/finished, \
 
 TRACKED_SCHEMA(/obj/e0_fixture/pump, target_pressure, num(0, MAX_PUMP_PRESSURE, step = 1), default = 101)
 
-CAPABILITIES(/obj/e0_fixture/pump, \
-	interface("E0Pump", title = "Gas Pump"), \
-	ui_shape(target_pressure), \
-	op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure))))
+CAPABILITIES(/obj/e0_fixture/pump)
+	interface("E0Pump", title = "Gas Pump")
+	ui_shape(target_pressure)
+	op("set_pressure", ui_act(arg("pressure", from = nameof(target_pressure))), then(PROC_REF(set_pressure)))
 
 /obj/e0_fixture/pump/proc/set_pressure(datum/act/op/A, pressure)
 	set_target_pressure(pressure)

@@ -51,8 +51,8 @@
 	resistance_flags = FLAMMABLE
 
 
-CAPABILITIES(/obj/item/storage/bag/trash, \
-	configure(storage(refuses = list(/obj/item/disk/nuclear))))
+CAPABILITIES(/obj/item/storage/bag/trash)
+	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 /obj/item/storage/bag/trash/draw(datum/look/look)
 	. = ..()
@@ -74,8 +74,8 @@ CAPABILITIES(/obj/item/storage/bag/trash, \
 	resistance_flags = FIRE_PROOF
 
 
-CAPABILITIES(/obj/item/storage/bag/trash/holding, \
-	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/trash/holding)
+	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL))
 
 APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
 
@@ -93,8 +93,8 @@ APPEARANCE_NONE(/obj/item/storage/bag/trash/holding)
 	w_class = ITEMSIZE_LARGE
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/plasticbag, \
-	configure(storage(refuses = list(/obj/item/disk/nuclear))))
+CAPABILITIES(/obj/item/storage/bag/plasticbag)
+	configure(storage(refuses = list(/obj/item/disk/nuclear)))
 
 // -----------------------------
 //          Plant bag
@@ -110,11 +110,11 @@ CAPABILITIES(/obj/item/storage/bag/plasticbag, \
 	resistance_flags = FLAMMABLE
 
 
-CAPABILITIES(/obj/item/storage/bag/plants, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks/grown, \
-		/obj/item/seeds, \
-		/obj/item/grown), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/plants)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks/grown,
+		/obj/item/seeds,
+		/obj/item/grown), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/plants/large
 	name = "large plant bag"
@@ -142,8 +142,8 @@ CAPABILITIES(/obj/item/storage/bag/plants, \
 	resistance_flags = FIRE_PROOF
 
 
-CAPABILITIES(/obj/item/storage/bag/sheetsnatcher, \
-	configure(storage(accepts = list(/obj/item/stack/material), max_size = null)))
+CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
+	configure(storage(accepts = list(/obj/item/stack/material), max_size = null))
 
 /// Sheets only, counted by the sheet rather than by size or slot.
 /datum/om/relation/slot/storage/sheets
@@ -266,11 +266,11 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/cash, \
-	configure(storage(accepts = list( \
-		/obj/item/coin, \
-		/obj/item/spacecash, \
-		/obj/item/spacecasinocash), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/cash)
+	configure(storage(accepts = list(
+		/obj/item/coin,
+		/obj/item/spacecash,
+		/obj/item/spacecasinocash), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //         Chemistry Bag
@@ -286,12 +286,12 @@ CAPABILITIES(/obj/item/storage/bag/cash, \
 	slowdown = 1 //you probably shouldn't be running with chemicals
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/chemistry, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/pill, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/reagent_containers/hypospray/autoinjector))))
+CAPABILITIES(/obj/item/storage/bag/chemistry)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/pill,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/reagent_containers/hypospray/autoinjector)))
 
 // -----------------------------
 //           Xeno Bag
@@ -306,11 +306,11 @@ CAPABILITIES(/obj/item/storage/bag/chemistry, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/xeno, \
-	configure(storage(accepts = list( \
-		/obj/item/slime_extract, \
-		/obj/item/slimepotion, \
-		/obj/item/reagent_containers/food/snacks/monkeycube), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/xeno)
+	configure(storage(accepts = list(
+		/obj/item/slime_extract,
+		/obj/item/slimepotion,
+		/obj/item/reagent_containers/food/snacks/monkeycube), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //         Virology Bag
@@ -325,8 +325,8 @@ CAPABILITIES(/obj/item/storage/bag/xeno, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/virology, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/virology)
+	configure(storage(accepts = list(/obj/item/reagent_containers/glass/beaker/vial), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //           Food Bag
@@ -341,10 +341,10 @@ CAPABILITIES(/obj/item/storage/bag/virology, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/food, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks, \
-		/obj/item/reagent_containers/food/condiment), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/food)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks,
+		/obj/item/reagent_containers/food/condiment), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //    Food Bag (Service Hound)
@@ -359,18 +359,18 @@ CAPABILITIES(/obj/item/storage/bag/food, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FIRE_PROOF
 
-CAPABILITIES(/obj/item/storage/bag/serviceborg, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/snacks, \
-		/obj/item/reagent_containers/food/condiment, \
-		/obj/item/reagent_containers/glass/beaker, \
-		/obj/item/reagent_containers/glass/bottle, \
-		/obj/item/coin, \
-		/obj/item/spacecash, \
-		/obj/item/reagent_containers/food/snacks/grown, \
-		/obj/item/seeds, \
-		/obj/item/grown, \
-		/obj/item/reagent_containers/pill), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/serviceborg)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/snacks,
+		/obj/item/reagent_containers/food/condiment,
+		/obj/item/reagent_containers/glass/beaker,
+		/obj/item/reagent_containers/glass/bottle,
+		/obj/item/coin,
+		/obj/item/spacecash,
+		/obj/item/reagent_containers/food/snacks/grown,
+		/obj/item/seeds,
+		/obj/item/grown,
+		/obj/item/reagent_containers/pill), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //           Evidence Bag
@@ -385,12 +385,12 @@ CAPABILITIES(/obj/item/storage/bag/serviceborg, \
 	w_class = ITEMSIZE_SMALL
 	resistance_flags = FLAMMABLE
 
-CAPABILITIES(/obj/item/storage/bag/detective, \
-	configure(storage(accepts = list( \
-		/obj/item/forensics/swab, \
-		/obj/item/sample/print, \
-		/obj/item/sample/fibers, \
-		/obj/item/evidencebag), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/detective)
+	configure(storage(accepts = list(
+		/obj/item/forensics/swab,
+		/obj/item/sample/print,
+		/obj/item/sample/fibers,
+		/obj/item/evidencebag), max_size = ITEMSIZE_NORMAL))
 
 // -----------------------------
 //          Santa bag
@@ -408,8 +408,8 @@ CAPABILITIES(/obj/item/storage/bag/detective, \
 	resistance_flags = FIRE_PROOF //ho ho ho
 
 
-CAPABILITIES(/obj/item/storage/bag/santabag, \
-	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/bag/santabag)
+	configure(storage(refuses = list(/obj/item/disk/nuclear), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/bag/santabag/draw(datum/look/look)
 	. = ..()

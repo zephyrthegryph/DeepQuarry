@@ -648,10 +648,10 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/khcrystal, INTERACT_SELF
 	w_class = ITEMSIZE_SMALL
 
 
-CAPABILITIES(/obj/item/storage/box/khcrystal, \
-	configure(storage(accepts = list( \
-		/obj/item/paper/khcrystal_manual, \
-		/obj/item/clothing/accessory/collar/khcrystal))))
+CAPABILITIES(/obj/item/storage/box/khcrystal)
+	configure(storage(accepts = list(
+		/obj/item/paper/khcrystal_manual,
+		/obj/item/clothing/accessory/collar/khcrystal)))
 
 /obj/item/storage/box/khcrystal/Initialize(mapload)
 	. = ..()
@@ -1050,8 +1050,8 @@ EXTEND_INTERACTIONS(/obj/item/melee/baton/fluff/stunstaff, INTERACT_SELF("Toggle
 	max_storage_space = 16
 
 
-CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff, \
-	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE)))
+CAPABILITIES(/obj/item/storage/backpack/fluff/stunstaff)
+	configure(storage(accepts = list(/obj/item/melee/baton/fluff/stunstaff), max_size = ITEMSIZE_HUGE))
 
 /obj/item/storage/backpack/fluff/stunstaff/Initialize(mapload)
 	. = ..()
@@ -1351,11 +1351,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/food/drinks/glass2/fluff/cl
 	starts_with = list(/obj/item/clothing/mask/smokable/cigarette = 7)
 
 
-CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte, \
-	configure(storage(accepts = list( \
-		/obj/item/clothing/mask/smokable/cigarette, \
-		/obj/item/flame/lighter, \
-		/obj/item/trash/cigbutt))))
+CAPABILITIES(/obj/item/storage/fancy/fluff/charlotte)
+	configure(storage(accepts = list(
+		/obj/item/clothing/mask/smokable/cigarette,
+		/obj/item/flame/lighter,
+		/obj/item/trash/cigbutt)))
 
 /obj/item/storage/fancy/fluff/charlotte/Initialize(mapload)
 	if(!open_state)

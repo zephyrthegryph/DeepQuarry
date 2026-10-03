@@ -409,11 +409,11 @@ OM_FIELD(/obj/item/dosimeter_film, state, 0, CHANGE_EXPLICIT)
 	w_class = ITEMSIZE_SMALL
 
 
-CAPABILITIES(/obj/item/storage/box/dosimeter, \
-	configure(storage(accepts = list( \
-		/obj/item/paper/dosimeter_manual, \
-		/obj/item/clothing/accessory/dosimeter, \
-		/obj/item/dosimeter_film))))
+CAPABILITIES(/obj/item/storage/box/dosimeter)
+	configure(storage(accepts = list(
+		/obj/item/paper/dosimeter_manual,
+		/obj/item/clothing/accessory/dosimeter,
+		/obj/item/dosimeter_film)))
 
 /obj/item/storage/box/dosimeter/Initialize(mapload)
 	. = ..()

@@ -39,10 +39,10 @@
 
 TRACKED(/obj/item/storage/box, trash)
 
-CAPABILITIES(/obj/item/storage/box, \
-	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up))), \
-	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it))), \
-	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up))))
+CAPABILITIES(/obj/item/storage/box)
+	op("fold", in_hand(), when(cond_all(PROC_REF(folds), req_storage_empty())), label("Fold"), then(PROC_REF(fold_up)))
+	op("crush", in_hand(), stance(I_HURT), priority(OP_PRIORITY_ATTACK), when(cond_all(PROC_REF(crumples), cond_not(req_storage_empty()))), label("Crush"), then(PROC_REF(crush_it)))
+	op("crumple", in_hand(), priority(below("fold")), when(cond_all(PROC_REF(crumples), cond_any(PROC_REF(cannot_fold), cond_not(req_storage_empty())))), label("Crumple"), then(PROC_REF(crumple_up)))
 
 /// Used in hand, a box that dumps its contents does that and nothing else.
 /obj/item/storage/box/proc/used_to_empty()
@@ -341,8 +341,8 @@ CAPABILITIES(/obj/item/storage/box, \
 	starts_with = list(/obj/item/reagent_containers/food/snacks/monkeycube/wrapped = 4)
 
 
-CAPABILITIES(/obj/item/storage/box/monkeycubes, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/monkeycube))))
+CAPABILITIES(/obj/item/storage/box/monkeycubes)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/monkeycube)))
 
 /obj/item/storage/box/monkeycubes/farwacubes
 	name = "farwa cube box"
@@ -448,8 +448,8 @@ CAPABILITIES(/obj/item/storage/box/monkeycubes, \
 	starts_with = list(/obj/item/toy/snappop = 8)
 
 
-CAPABILITIES(/obj/item/storage/box/snappops, \
-	configure(storage(accepts = list(/obj/item/toy/snappop))))
+CAPABILITIES(/obj/item/storage/box/snappops)
+	configure(storage(accepts = list(/obj/item/toy/snappop)))
 
 /obj/item/storage/box/matches
 	name = "matchbox"
@@ -463,9 +463,9 @@ CAPABILITIES(/obj/item/storage/box/snappops, \
 	pickup_sound =  SFX_ITEMS_PICKUP_MATCHBOX
 
 
-CAPABILITIES(/obj/item/storage/box/matches, \
-	configure(storage(accepts = list(/obj/item/flame/match))), \
-	op("strike", item(/obj/item/flame/match), priority(above("storage.put_in")), label("Strike"), then(PROC_REF(strike_match))))
+CAPABILITIES(/obj/item/storage/box/matches)
+	configure(storage(accepts = list(/obj/item/flame/match)))
+	op("strike", item(/obj/item/flame/match), priority(above("storage.put_in")), label("Strike"), then(PROC_REF(strike_match)))
 
 /// A match struck on the box: it never goes in, and it may light.
 /obj/item/storage/box/matches/proc/strike_match(datum/act/op/A)
@@ -496,8 +496,8 @@ CAPABILITIES(/obj/item/storage/box/matches, \
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
 
-CAPABILITIES(/obj/item/storage/box/lights, \
-	configure(storage(accepts = list(/obj/item/light/tube, /obj/item/light/bulb))))
+CAPABILITIES(/obj/item/storage/box/lights)
+	configure(storage(accepts = list(/obj/item/light/tube, /obj/item/light/bulb)))
 
 /obj/item/storage/box/lights/bulbs
 	starts_with = list(
@@ -534,12 +534,12 @@ CAPABILITIES(/obj/item/storage/box/lights, \
 	use_to_pickup = TRUE // for picking up broken bulbs, not that most people will try
 
 
-CAPABILITIES(/obj/item/storage/box/freezer, \
-	configure(storage(accepts = list( \
-		/obj/item/organ, \
-		/obj/item/reagent_containers/blood, \
-		/obj/item/reagent_containers/glass, \
-		/obj/item/reagent_containers/food), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/box/freezer)
+	configure(storage(accepts = list(
+		/obj/item/organ,
+		/obj/item/reagent_containers/blood,
+		/obj/item/reagent_containers/glass,
+		/obj/item/reagent_containers/food), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/box/freezer/red
 	icon_state = "portafreezer_red"
@@ -582,10 +582,10 @@ CAPABILITIES(/obj/item/storage/box/freezer, \
 		/obj/item/ammo_magazine/ammo_box/cap = 1
 	)
 
-CAPABILITIES(/obj/item/storage/box/capguntoy, \
-	configure(storage(accepts = list( \
-		/obj/item/gun/projectile/revolver/capgun, \
-		/obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/box/capguntoy)
+	configure(storage(accepts = list(
+		/obj/item/gun/projectile/revolver/capgun,
+		/obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL))
 
 //Donk-pockets
 
@@ -667,8 +667,8 @@ CAPABILITIES(/obj/item/storage/box/capguntoy, \
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax = 6)
 
 
-CAPABILITIES(/obj/item/storage/box/brainzsnax, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/canned))))
+CAPABILITIES(/obj/item/storage/box/brainzsnax)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/snacks/canned)))
 
 /obj/item/storage/box/brainzsnax/red
 	starts_with = list(/obj/item/reagent_containers/food/snacks/canned/brainzsnax/red = 6)

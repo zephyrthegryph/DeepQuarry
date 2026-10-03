@@ -98,27 +98,27 @@ TRACKED(/obj/machinery/power/smes, output_cut)
 TRACKED(/obj/machinery/power/smes, output_pulsed)
 TRACKED(/obj/machinery/power/smes, grid_check)
 
-CAPABILITIES(/obj/machinery/power/smes, \
-	machine_basics(repair = NONE, powered = FALSE), \
-	link(/obj/machinery/power/smes::terminals, /obj/machinery/power/terminal/smes_input::unit, a_many = TRUE), \
-	interface("Smes"), \
-	op("tryinput", ui_act("tryinput"), then(PROC_REF(ui_toggle_input))), \
-	op("tryoutput", ui_act("tryoutput"), then(PROC_REF(ui_toggle_output))), \
-	op("input", ui_act("input", arg("adjust"), arg("target")), then(PROC_REF(ui_set_input))), \
-	op("output", ui_act("output", arg("adjust"), arg("target")), then(PROC_REF(ui_set_output))), \
-	op("add_cable", stack(/obj/item/stack/cable_coil, 10), when(nameof(panel_open)), \
-		needs(req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))), \
-		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built))), \
-	op("cut_terminal", tool(TOOL_WIRECUTTER), when(nameof(panel_open)), \
-		needs(req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))), \
-		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut))), \
-	op("weld", tool(TOOL_WELDER), costs(RES_FUEL, 0), \
-		needs(req_is(nameof(panel_open), TRUE, because = MSG(smes/hatch_shut)), req(PROC_REF(welder_lit), because = MSG(smes/welder_off))), \
-		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired))), \
-	op("swallow", item(/obj/item), when(nameof(panel_open)), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(swallowed))), \
-	examine_line(PROC_REF(examine_state)), \
-	on_change(nameof(stat), ANY, then(PROC_REF(stat_changed))), \
-	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble))))
+CAPABILITIES(/obj/machinery/power/smes)
+	machine_basics(repair = NONE, powered = FALSE)
+	links(/obj/machinery/power/smes::terminals, /obj/machinery/power/terminal/smes_input::unit, a_many = TRUE)
+	interface("Smes")
+	op("tryinput", ui_act("tryinput"), then(PROC_REF(ui_toggle_input)))
+	op("tryoutput", ui_act("tryoutput"), then(PROC_REF(ui_toggle_output)))
+	op("input", ui_act("input", arg("adjust"), arg("target")), then(PROC_REF(ui_set_input)))
+	op("output", ui_act("output", arg("adjust"), arg("target")), then(PROC_REF(ui_set_output)))
+	op("add_cable", stack(/obj/item/stack/cable_coil, 10), when(nameof(panel_open)),
+		needs(req(PROC_REF(terminal_site_ok), because = PROC_REF(terminal_site_refusal))),
+		wait(5 SECONDS), then(PROC_REF(terminal_built)), says(MSG(smes/terminal_built)))
+	op("cut_terminal", tool(TOOL_WIRECUTTER), when(nameof(panel_open)),
+		needs(req(PROC_REF(terminal_cuttable), because = PROC_REF(terminal_cut_refusal))),
+		wait(5 SECONDS), then(PROC_REF(terminal_taken_down)), says(MSG(smes/terminal_cut)))
+	op("weld", tool(TOOL_WELDER), costs(RES_FUEL, 0),
+		needs(req_is(nameof(panel_open), TRUE, because = MSG(smes/hatch_shut)), req(PROC_REF(welder_lit), because = MSG(smes/welder_off))),
+		wait(PROC_REF(repair_time)), then(PROC_REF(casing_repaired)), says(MSG(smes/repaired)))
+	op("swallow", item(/obj/item), when(nameof(panel_open)), priority(OP_PRIORITY_DEFAULT), then(PROC_REF(swallowed)))
+	examine_line(PROC_REF(examine_state))
+	on_change(nameof(stat), ANY, then(PROC_REF(stat_changed)))
+	on_notice(/datum/notice/hit/emp, then(PROC_REF(emp_scramble)))
 
 /// A unit's input terminal (rust_architecture.md step 3): its own entity, on its own region, naming the SMES unit
 /// (verdigris/domains/power/src/components.rs's `SmesInputTerminal`) -- unlike the generic terminal, or an APC's own, this is a real network
@@ -613,7 +613,9 @@ REGISTRY_MEMBERSHIP(/obj/machinery/power/smes, REGISTRY_SMES)
 	var/overlay_icon = 'icons/obj/power_vr.dmi'
 
 // A hybrid unit's casing is full of alien technology: the wirecutters are not for its terminals, and it makes its own charge every frame.
-CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid, 	without("cut_terminal"), 	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(hybrid_charge))))
+CAPABILITIES(/obj/machinery/power/smes/buildable/hybrid)
+	without("cut_terminal")
+	every(MACHINE_SERVICE_INTERVAL, then(PROC_REF(hybrid_charge)))
 
 /// Hybrid units make their own charge every frame, never more than there is room for.
 /obj/machinery/power/smes/buildable/hybrid/proc/hybrid_charge(datum/act/timer/A)

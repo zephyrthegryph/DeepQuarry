@@ -351,11 +351,14 @@ fn qualify_globals(text: &str, names: &BTreeSet<String>) -> String {
 /// One entry of a CAPABILITIES list, as DM.
 fn entry_text(raw: &str, caps: &[Cap], globals: &BTreeSet<String>) -> String {
     let mut t = one_line(raw);
-    t = rewrite_calls(&t, "link", &|a| {
-        let mut parts = vec![quote(a.first().map(|s| s.as_str()).unwrap_or("")), quote(a.get(1).map(|s| s.as_str()).unwrap_or(""))];
-        parts.extend(a.iter().skip(2).cloned());
-        format!("entry_link({})", parts.join(", "))
-    });
+    // `link` (the legacy spelling) and `links` (the block form: `link` is a BYOND reserved word): both become entry_link() with the ends as text.
+    for call in ["link", "links"] {
+        t = rewrite_calls(&t, call, &|a| {
+            let mut parts = vec![quote(a.first().map(|s| s.as_str()).unwrap_or("")), quote(a.get(1).map(|s| s.as_str()).unwrap_or(""))];
+            parts.extend(a.iter().skip(2).cloned());
+            format!("entry_link({})", parts.join(", "))
+        });
+    }
     // adjusts(packet.amount, ...): the field path is text (DM has no value for `packet.amount` outside the action's own context).
     t = rewrite_calls(&t, "adjusts", &|a| {
         let Some(first) = a.first() else { return "adjusts()".to_string() };
@@ -643,6 +646,29 @@ CAPABILITIES(/obj/thing, \
         assert!(decl.contains("when(nameof(armed), contributes(STAT_OPERABLE, FALSE))"));
         assert!(decl.contains("into += entry_line(13)
 	into += list(entry_link("), "every entry keeps its own line: {}", decl);
+    }
+
+    #[test]
+    fn the_block_form_generates_what_the_legacy_list_does() {
+        let bs = char::from(92u8);
+        let legacy = format!("CAPABILITIES(/obj/thing, {bs}
+	wall(1, 2), {bs}
+	link(/obj/thing::partner, /obj/thing::partner), {bs}
+	on_change(nameof(terminal.charge), ANY,
+		then(PROC_REF(x))))
+");
+        let block = "CAPABILITIES(/obj/thing)
+	wall(1, 2)
+	links(/obj/thing::partner, /obj/thing::partner)
+	on_change(nameof(terminal.charge), ANY,
+		then(PROC_REF(x)))
+";
+        let (_, a, da) = gen(vec![("code/a.dm", legacy.as_str())]);
+        let (_, b, db) = gen(vec![("code/a.dm", block)]);
+        assert!(da.is_empty() && db.is_empty(), "{:?} {:?}", da, db);
+        assert_eq!(a, b, "the same entries, the same lines");
+        assert!(b.contains("entry_link(\"/obj/thing::partner\", \"/obj/thing::partner\")"), "{}", b);
+        assert!(b.contains("on_change(\"terminal.charge\", ANY"), "{}", b);
     }
 
     #[test]

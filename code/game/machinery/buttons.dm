@@ -121,10 +121,10 @@
 MSG_DEF_SELF(button/no_emag, "The cryptographic sequencer seems to do nothing.")
 
 // A button no sequencer works: it says so and the card keeps its use.
-CAPABILITIES(/obj/machinery/button/remote/noemag, \
-	without(CAP_EMAG), \
-	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0), \
-		needs(req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), then(PROC_REF(press_nothing))))
+CAPABILITIES(/obj/machinery/button/remote/noemag)
+	without(CAP_EMAG)
+	op("emag_refused", item(/obj/item/card/emag), priority(OP_PRIORITY_SUBVERT), wait(0),
+		needs(req(PROC_REF(sequencer_welcome), because = MSG(button/no_emag))), then(PROC_REF(press_nothing)))
 
 /obj/machinery/button/remote/noemag/proc/sequencer_welcome(datum/act/A)
 	return FALSE

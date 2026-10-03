@@ -289,5 +289,5 @@ EXTEND_INTERACTIONS(/obj/item/inflatable/door/torn, INTERACT_USE("Inflate", PROC
 	starts_with = list(/obj/item/inflatable/door = 3, /obj/item/inflatable = 4)
 
 
-CAPABILITIES(/obj/item/storage/briefcase/inflatable, \
-	configure(storage(accepts = list(/obj/item/inflatable))))
+CAPABILITIES(/obj/item/storage/briefcase/inflatable)
+	configure(storage(accepts = list(/obj/item/inflatable)))

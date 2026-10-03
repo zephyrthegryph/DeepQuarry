@@ -62,17 +62,17 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom,
 
 // A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
 // characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
-CAPABILITIES(/obj/item/reagent_containers/blood, \
-	reagent_container( \
-		volume = nameof(volume), \
-		needle = TRUE, \
-		sealed = TRUE, \
-		settable = FALSE, \
-		shows_contents = FALSE, \
-		transfer_default = nameof(amount_per_transfer_from_this)), \
-	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
-		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied))), \
-	op("drink", in_hand(), stance(I_HURT), label("Drink"), then(PROC_REF(drunk))))
+CAPABILITIES(/obj/item/reagent_containers/blood)
+	reagent_container(
+		volume = nameof(volume),
+		needle = TRUE,
+		sealed = TRUE,
+		settable = FALSE,
+		shows_contents = FALSE,
+		transfer_default = nameof(amount_per_transfer_from_this))
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"),
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied)))
+	op("drink", in_hand(), stance(I_HURT), label("Drink"), then(PROC_REF(drunk)))
 
 /// The label a pen wrote (the old rules: fifty characters at most, a long one is told so).
 /obj/item/reagent_containers/blood/proc/label_applied(datum/act/op/A)

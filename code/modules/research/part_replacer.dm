@@ -21,8 +21,8 @@
 							"Soulful" = "RPED_old")
 
 
-CAPABILITIES(/obj/item/storage/part_replacer, \
-	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL)))
+CAPABILITIES(/obj/item/storage/part_replacer)
+	configure(storage(accepts = list(/obj/item/stock_parts), max_size = ITEMSIZE_NORMAL))
 
 /obj/item/storage/part_replacer/proc/play_rped_sound()
 	//Plays the sound for RPED exhanging or installing parts.
@@ -94,10 +94,10 @@ EXTEND_INTERACTIONS(/obj/item/storage/part_replacer, INTERACT_ALT("Reskin", PROC
 	max_storage_space = 400
 
 
-CAPABILITIES(/obj/item/storage/part_replacer/adv, \
-	configure(storage(accepts = list( \
-		/obj/item/stock_parts, \
-		/obj/item/reagent_containers/glass/beaker))))
+CAPABILITIES(/obj/item/storage/part_replacer/adv)
+	configure(storage(accepts = list(
+		/obj/item/stock_parts,
+		/obj/item/reagent_containers/glass/beaker)))
 
 /obj/item/storage/part_replacer/adv/discount_bluespace
 	name = "prototype bluespace rapid part exchange device"

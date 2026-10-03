@@ -125,6 +125,17 @@
 	var/list/b = link_end(b_text)
 	return entry_make(ENTRY_LINK, key, list("a_type" = a[1], "a_var" = a[2], "b_type" = b[1], "b_var" = b[2], "hot" = hot, "a_many" = a_many, "b_many" = b_many))
 
+/// The base of the CAPABILITIES(T) block header (code/__defines/engine/markers.dm): each block is an override of this on T, so a subtype's block
+/// does not clash with its parent's. Nothing calls it; the statements of a block are read by `analyze` and compiled for their names and arguments.
+/datum/proc/__capabilities()
+	return
+
+/// links(/type::var, /type::var, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null): the block-form spelling of a paired relation (`link` is a
+/// BYOND reserved word). Only a declaration: `analyze gen declare` rewrites it to entry_link() with each end as text, so this proc is never
+/// called; it exists so the compiler and DreamChecker check the entry's name and named arguments inside a CAPABILITIES block.
+/proc/links(a_end, b_end, hot = FALSE, a_many = FALSE, b_many = FALSE, key = null)
+	CRASH("links() is a declaration entry read by analyze gen declare; it is never called")
+
 /// "/obj/machinery/power/apc::hacker" -> list(path, "hacker"). The one place a type path is parsed from text: the macro cannot
 /// hand over a path and a var name separately.
 /proc/link_end(end_text)

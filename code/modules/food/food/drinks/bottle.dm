@@ -107,8 +107,8 @@
 	to_chat(user, span_danger("You smash \the [src] on \the [choice]!"))
 
 // A bottle is opened (or its rag pulled out) by bottle_self(), the legacy entry below, and not by the drinks' own open op.
-CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle, \
-	without("open"))
+CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle)
+	without("open")
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks/bottle, \
 	INTERACT_SELF(null, PROC_REF(bottle_self)), \

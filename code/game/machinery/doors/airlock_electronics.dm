@@ -27,16 +27,16 @@ MSG_DEF(airlock_electronics/emagged, "You remove the access restrictions on %T%!
 
 // The device is its own window: held and used on itself it opens the programming interface; its buttons are ops.
 
-CAPABILITIES(/obj/item/airlock_electronics, \
-	interface("AirlockElectronics", title = "Airlock Electronics", input = in_hand()), \
-	emag(list(needs(req(PROC_REF(not_hardened), because = MSG(airlock_electronics/hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged)), \
-	op("login", ui_act("login"), then(PROC_REF(ui_login))), \
-	op("logout", ui_act("logout"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_logout))), \
-	op("one_access", ui_act("one_access"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_one_access))), \
-	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access_all))), \
-	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access))), \
-	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok), because = MSG(airlock_electronics/cant_use)))), \
-	extend("ui_open", when(req(PROC_REF(user_may_open)))))
+CAPABILITIES(/obj/item/airlock_electronics)
+	interface("AirlockElectronics", title = "Airlock Electronics", input = in_hand())
+	emag(list(needs(req(PROC_REF(not_hardened), because = MSG(airlock_electronics/hardened))), then(PROC_REF(emag_effect))), say = MSG(airlock_electronics/emagged))
+	op("login", ui_act("login"), then(PROC_REF(ui_login)))
+	op("logout", ui_act("logout"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_logout)))
+	op("one_access", ui_act("one_access"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_one_access)))
+	op("access_all", ui_act("access_all"), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access_all)))
+	op("access", ui_act("access", arg("access", int(0, 999))), needs(req(PROC_REF(logged_in), because = MSG(airlock_electronics/logged_out))), then(PROC_REF(ui_access)))
+	extend(TAG_UI, needs(req(PROC_REF(ui_user_ok), because = MSG(airlock_electronics/cant_use))))
+	extend("ui_open", when(req(PROC_REF(user_may_open))))
 
 /// Only a person or a cyborg takes the device in hand to program it.
 /obj/item/airlock_electronics/proc/user_may_open(datum/act/op/A)

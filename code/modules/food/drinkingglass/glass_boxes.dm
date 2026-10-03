@@ -16,21 +16,21 @@
 	)
 
 
-CAPABILITIES(/obj/item/storage/box/mixedglasses, \
-	configure(storage(accepts = list(/obj/item/reagent_containers/food/drinks/glass2))))
+CAPABILITIES(/obj/item/storage/box/mixedglasses)
+	configure(storage(accepts = list(/obj/item/reagent_containers/food/drinks/glass2)))
 
 /obj/item/storage/box/glasses
 	name = "box of glasses"
 	starts_with = list(/obj/item/reagent_containers/food/drinks/glass2 = 7)
 
 
-CAPABILITIES(/obj/item/storage/box/glasses, \
-	configure(storage(accepts = list( \
-		/obj/item/reagent_containers/food/drinks/glass2, \
-		/obj/item/reagent_containers/food/drinks/cup, \
-		/obj/item/reagent_containers/food/drinks/tall, \
-		/obj/item/reagent_containers/food/drinks/grande, \
-		/obj/item/reagent_containers/food/drinks/venti))))
+CAPABILITIES(/obj/item/storage/box/glasses)
+	configure(storage(accepts = list(
+		/obj/item/reagent_containers/food/drinks/glass2,
+		/obj/item/reagent_containers/food/drinks/cup,
+		/obj/item/reagent_containers/food/drinks/tall,
+		/obj/item/reagent_containers/food/drinks/grande,
+		/obj/item/reagent_containers/food/drinks/venti)))
 
 /obj/item/storage/box/glasses/square
 	name = "box of half-pint glasses"
@@ -78,8 +78,8 @@ CAPABILITIES(/obj/item/storage/box/glasses, \
 	starts_with = list(/obj/item/glass_extra = 14)
 
 
-CAPABILITIES(/obj/item/storage/box/glass_extras, \
-	configure(storage(accepts = list(/obj/item/glass_extra))))
+CAPABILITIES(/obj/item/storage/box/glass_extras)
+	configure(storage(accepts = list(/obj/item/glass_extra)))
 
 /obj/item/storage/box/glass_extras/straws
 	name = "box of straws"

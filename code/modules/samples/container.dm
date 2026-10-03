@@ -18,8 +18,8 @@
 
 
 
-CAPABILITIES(/obj/item/storage/sample_container, \
-	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY)))
+CAPABILITIES(/obj/item/storage/sample_container)
+	configure(storage(accepts = list(/obj/item/research_sample), max_size = ITEMSIZE_TINY))
 
 /obj/item/storage/sample_container/draw(datum/look/look)
 	. = ..()
