@@ -728,6 +728,7 @@
 #include "interim_trait_injector_constructor.dm"
 #include "interim_particle_parent_cleanup.dm"
 #include "interim_linen_bin_sticky_items.dm"
+#include "interim_coatrack_sticky_coat.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
