@@ -794,6 +794,7 @@
 #include "interim_camera_sticky_film.dm"
 #include "interim_holo_sword_holder_appearance.dm"
 #include "interim_orange_shoes_sticky_cuffs.dm"
+#include "interim_paper_bundle_sticky_sheet.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
