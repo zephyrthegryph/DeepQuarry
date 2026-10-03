@@ -239,3 +239,21 @@ Pinned by `code/modules/unit_tests/dq_p2_table_behaviour.dm` (written and green 
 * **A player's drag of an item onto something with ops reaches the op that answers a drag** (`/datum/input_adapter/proc/drag`, `code/modules/keybindings/adapters.dm`): until now only a driver-built drag did; the real mouse drag went to the old `MouseDrop_T`. When no op takes it, `MouseDrop_T` runs as before. Tests: `dq_p2_engine/a_players_drag_reaches_an_op`, `a_drag_onto_a_thing_without_ops_is_left_to_it`. (A drag of a mob is the engine-gaps branch's.)
 * `built_material()` is annotated `READS_FROM(E)` like `built()`, so a condition may read it.
 
+
+## Food containers: condiments and cooking containers
+
+Pinned by `code/modules/unit_tests/dq_p2_food_behaviour.dm` (written and green on the legacy code first; mutation-checked on the legacy code: a wrong room check (`>=` against `>`), a count that is not reset when emptied, a small shaker that is renamed, a wrong amount added to a food, a missing item on an oven dish's list, a carton level rounded to the wrong step and an emptying that ignores the distance are each caught by a test). Only the adapter block changed with the conversion.
+
+* **A condiment is a `reagent_container()`** (always open; it is sipped by yourself and fed to others in three seconds in every stance, poured into an open container, filled from a tank with its top shut, and set to a transfer amount from the menu and by alt-click). The feeding texts of the fed are the library's ("You feed ... from ..."); the swallow keeps the old words. A condiment added to a solid food says "You add some of the condiment to ..." (the old line named the units that moved) and a full or empty one says why it cannot.
+* **A hot thing held to a condiment bottle with a changeling's blood in it tests the blood**, as it does for a drink or a glass. The bottle's old item entry swallowed every held item before the test was reached.
+* **The bottle's name, description and picture follow what is in it from a table** (`looks_for()`); the small shakers, the packets, the spice bottle and the cartons keep their own (`looks_like_contents`). The old sugar entry set no picture and still does not (an empty bottle that is given sugar keeps its picture).
+* **A carton's fill is drawn by `draw()`** (a layer by quarters), redrawn when what it holds changes.
+* **A cooking container has no "Set transfer amount" entry** (it poured nothing, so the entry did nothing). Putting a thing in is an op (the same list, the same room rule, a gripper puts in what it holds); an alt-click or the menu empties it (one op; the old verb of the Object tab is the menu entry "Empty container"); its examine lines come from declared lines.
+* **A thing that is not on a cooking container's list is no longer swallowed by its item entry**: it falls to the held item's own use of it (a beaker pours into it, as before).
+
+## Food: what every food has
+
+* **"Rename food" is a menu entry** (the old verb of the Object tab); a blank answer puts the original name back, and a dead person or one without hands cannot.
+* **A micro in a holder is put into a food by an op** (`stuff`); a shut drink and a wrapped or sealed snack refuse with the library's words. The old per-type texts for the stuffer and the stuffed are kept for drinks ("You drop ... into ...") and snacks ("Stuffed ... into ..."). A micro climbing in by its own drag is still the old entry (a drag of a mob is the engine-gaps branch's); it now lives once on the base food.
+* **The food's own grid alignment on a table is gone.** It ran in `afterattack`, which a table's put-on op no longer lets run; tables align what is put on them (`auto_align()`, the same grid and the same centre of mass).
+* The raw nutrition pile of the vore code had a `standard_feed_mob()` override that nothing called (the pile has no attack of its own): it is gone.

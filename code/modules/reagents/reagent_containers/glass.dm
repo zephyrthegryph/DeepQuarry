@@ -36,8 +36,8 @@ CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING, key = NONE)
 			asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, label_applied))),
 		op("dip", item(/obj/item), stance(I_DISARM, I_GRAB, I_HURT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_fits)), label("Dip into it"), \
 			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, dip_applied))),
-		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(TYPE_PROC_REF(/obj/item/reagent_containers/glass, blood_test_fits)), label("Test the blood"), \
-			then(TYPE_PROC_REF(/obj/item/reagent_containers/glass, blood_tested))))
+		op("blood_test", item(/obj/item), priority(OP_PRIORITY_TAKE_OUT), when(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits)), label("Test the blood"), \
+			then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))))
 
 // A glass container is a reagent_container() whose settings are the vars of the type (volume, the amount a transfer moves and the range a person may
 // set it in, prefill); everything under /glass is one but the rag, which has its own rules. It starts with its lid off. It is poured into an open holder of liquid (not onto what it is put on: a table, a machine that
@@ -114,18 +114,6 @@ MSG_DEF_SELF(glass/venom_recently, "That creature had its venom expressed too re
 	var/obj/item/held = A.held
 	balloon_alert(A.actor, "[held] dipped into \the [src].")
 	reagents.touch_obj(held, reagents.total_volume, A.actor)
-	return OP_OK
-
-/// A hot thing held over an open container with blood in it.
-/obj/item/reagent_containers/glass/proc/blood_test_fits(datum/act/op/A)
-	var/obj/item/held = A.held
-	return !isnull(held) && is_open_container() && !!reagents.get_reagent(REAGENT_ID_BLOOD) && held.is_hot()
-
-/obj/item/reagent_containers/glass/proc/blood_tested(datum/act/op/A)
-	var/datum/reagent/blood/B = reagents.get_reagent(REAGENT_ID_BLOOD)
-	if(B)
-		balloon_alert(A.actor, "\The [A.held] burns the blood in \the [src].")
-		B.changling_blood_test(reagents)
 	return OP_OK
 
 // ---- venom ----

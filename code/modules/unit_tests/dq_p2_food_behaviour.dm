@@ -10,22 +10,23 @@
 
 /// The person sets the amount of a condiment from the context menu, giving `value` when asked.
 /proc/fd_set_amount_menu(mob/actor, obj/item/reagent_containers/C, value)
-	GLOB.om_rerun_answers["[REF(C)]:reagent_container_verb_set_transfer"] = list("a1" = value)
-	C.reagent_container_verb_set_transfer(actor, null, null)
-	GLOB.om_rerun_answers -= "[REF(C)]:reagent_container_verb_set_transfer"
+	rc_set_amount_menu(actor, C, value)
 
 /// The person sets the amount of a condiment by alt-clicking it, giving `value` when asked.
 /proc/fd_set_amount_alt(mob/actor, obj/item/reagent_containers/C, value)
-	GLOB.om_rerun_answers["[REF(C)]:transfer_amount_alt"] = list("a2" = value)
-	C.transfer_amount_alt(actor, null, null)
-	GLOB.om_rerun_answers -= "[REF(C)]:transfer_amount_alt"
+	actor.drop_item()
+	actor.set_use_stance(I_HELP)
+	actor.next_click = 0
+	input_submit(new /datum/input_event/click(actor, C, null, null, "left=1;alt=1"))
+	test_answer(actor, value)
+	test_time(10 SECONDS)
 
-/// The icon states of the overlays a condiment carton draws now, as plain text.
-/proc/fd_overlays(obj/item/reagent_containers/food/condiment/C)
+/// The icon states of the overlays an item draws now, as plain text.
+/proc/fd_overlays(obj/item/C)
 	. = list()
-	for(var/entry in C.appearance_overlays())
-		if(isicon(entry))
-			continue
+	var/datum/look/L = new
+	C.draw(L)
+	for(var/entry in L.overlays)
 		if(istext(entry))
 			. += entry
 		else
@@ -34,7 +35,8 @@
 
 /// The person empties a cooking container from the context menu.
 /proc/fd_empty_menu(mob/actor, obj/item/reagent_containers/cooking_container/C)
-	C.cooking_container_verb_empty(actor, null, null)
+	test_menu(actor, C, "empty")
+	test_time(10 SECONDS)
 
 /// The solid things in a cooking container.
 /proc/fd_solids(obj/item/reagent_containers/cooking_container/C)
@@ -42,17 +44,9 @@
 	for(var/obj/O in C.contents)
 		. += O
 
-/// The people-visible icon states of a cooking container's overlays.
+/// The icon states of a cooking container's overlays.
 /proc/fd_cooking_overlays(obj/item/reagent_containers/cooking_container/C)
-	. = list()
-	for(var/entry in C.appearance_overlays())
-		if(isicon(entry))
-			continue
-		if(istext(entry))
-			. += entry
-		else
-			var/image/I = entry
-			. += I.icon_state
+	return fd_overlays(C)
 
 /datum/unit_test/dq_p2_reagents/proc/fd_condiment(type = /obj/item/reagent_containers/food/condiment/ketchup, turf/T)
 	return allocate(type, T || run_loc_floor_bottom_left)
@@ -499,9 +493,9 @@
 
 /// The person renames a food from the menu, giving `value` when asked.
 /proc/fd_rename(mob/actor, obj/item/reagent_containers/food/F, value)
-	GLOB.om_rerun_answers["[REF(F)]:handle_name_change"] = list("k30" = value)
-	F.handle_name_change(actor)
-	GLOB.om_rerun_answers -= "[REF(F)]:handle_name_change"
+	test_menu(actor, F, "rename")
+	test_answer(actor, value)
+	test_time(10 SECONDS)
 
 /// A person can name a food, and a blank answer puts the name back.
 /datum/unit_test/dq_p2_reagents/food_is_renamed
@@ -529,8 +523,7 @@
 	fd_rename(H, food, "Nope")
 	TEST_ASSERT_EQUAL(food.name, original, "the name is unchanged")
 
-/// A hot thing held to an open drink with a changeling's blood in it makes the blood flee; ordinary blood, a cold thing and a shut can leave it. (A
-/// condiment bottle's own item interaction took the item first, so a hot thing on a bottle did nothing.)
+/// A hot thing held to an open drink with a changeling's blood in it makes the blood flee; ordinary blood, a cold thing and a shut can leave it.
 /datum/unit_test/dq_p2_reagents/hot_thing_tests_blood_in_food
 
 /datum/unit_test/dq_p2_reagents/hot_thing_tests_blood_in_food/run_gate()
@@ -557,14 +550,14 @@
 	var/obj/item/reagent_containers/food/condiment/bottle = fd_condiment(/obj/item/reagent_containers/food/condiment)
 	bottle.reagents.add_reagent(REAGENT_ID_BLOOD, 10, list("changeling" = TRUE, "blood_type" = "A+", "donor" = null))
 	rc_click(H, bottle, hot, I_HELP)
-	TEST_ASSERT_EQUAL(rc_units(bottle), 10, "a condiment bottle does not test it")
+	TEST_ASSERT_EQUAL(rc_units(bottle), 0, "a condiment bottle tests it too")
 
 /// A food put on a table by a click lands in the grid cell that was clicked (the item's centre of mass in the cell).
 /datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table
 
 /datum/unit_test/dq_p2_reagents/food_is_aligned_on_a_table/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
-	var/obj/structure/table/table = allocate(/obj/structure/table/standard, run_loc_floor_bottom_left)
+	var/obj/structure/table/table = allocate(/obj/structure/table/standard, get_step(run_loc_floor_bottom_left, NORTH))
 	var/obj/item/reagent_containers/food/snacks/aesirsalad/food = fd_thing(/obj/item/reagent_containers/food/snacks/aesirsalad)
 	H.drop_item()
 	H.put_in_active_hand(food)
