@@ -79,7 +79,6 @@
 	// Re-validate after the delay.
 	if(loc != user || E.owner != H || E.tourniquet || !user.Adjacent(H))
 		return
-	user.drop_from_inventory(src)
 	if(!E.apply_tourniquet(src, user))
 		user.put_in_hands(src)
 		return
@@ -133,8 +132,8 @@
 /obj/item/organ/external/proc/apply_tourniquet(obj/item/tourniquet/T, mob/user)
 	if(tourniquet || !istype(T))
 		return FALSE
-	T.forceMove(src)
-	own_move(T, src, nameof(tourniquet)) // from whatever holds it now (a kit, a scenario, a hand)
+	if(!own_set(src, nameof(tourniquet), T, user = user))
+		return FALSE
 	EXPIRY_STAMP(T, applied_at, CLOCK_WORLD)
 	afflict_ischemia_below()
 	update_damages()
