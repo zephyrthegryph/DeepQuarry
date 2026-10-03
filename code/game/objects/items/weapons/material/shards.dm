@@ -54,8 +54,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/material/shard, TYPE_PROC_REF(/atom, appearanc
 		return ..()
 	var/obj/item/weldingtool/WT = W.get_welder()
 	if(WT.remove_fuel(0, user))
-		material.place_sheet(loc, 1)
-		qdel(src)
+		var/atom/product_location = loc
+		var/datum/material/product_material = material
+		if(!consume(src, user))
+			return TRUE
+		product_material.place_sheet(product_location, 1)
 	return TRUE
 
 /obj/item/material/shard/afterattack(atom/target, mob/living/carbon/human/user as mob, proximity)
