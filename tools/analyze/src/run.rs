@@ -31,6 +31,12 @@ pub struct Options {
     pub scopes_from: Option<PathBuf>,
 }
 
+/// The first lint's start (`DQ_ANALYZE_TRACE_SPANS` prints each lint's span relative to it).
+static SPAN_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+
+/// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
+pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 #[derive(Clone, Debug, Default)]
 pub struct Timing {
     pub total: Duration,
@@ -116,6 +122,13 @@ impl Engine {
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: scopes+meta load {:.1?}, walk+hash {:.1?}, save {:.1?}", t_prior, t_tree - t_prior, t0.elapsed() - t_tree);
         }
+        let t_lines = Instant::now();
+        if let Some(dir) = crate::incr::dir() {
+            tree.load_line_cache(&dir.join("linetext.bin"), cache.stamp());
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: line cache load {:.1?}", t_lines.elapsed());
+        }
         let changed = if opts.changed_only { Some(changed_files(&opts.root)) } else { None };
         let load_time = t0.elapsed();
         let files_read = tree.files.len();
@@ -151,7 +164,9 @@ impl Engine {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let t_load = Instant::now();
         let mut lc = self.cache.load_lint(meta.name);
+        LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
         let mut timing = Timing::default();
         let mut sites = Vec::new();
         let mut notes = Vec::new();
@@ -228,7 +243,7 @@ impl Engine {
                     // Never from a rayon worker: the prewarm's own par_iter can steal a lint job that
                     // re-enters this call and waits on the cell this thread is initializing. run_all
                     // prewarms from the main thread (`prepare`) before it fans out.
-                    if rayon::current_thread_index().is_none() {
+                    if rayon::current_thread_index().is_none() && self.tree.fresh_count() > 64 {
                         self.tree.prewarm();
                     }
                     lint.scan_tree(&cx, &mut sink);
@@ -337,6 +352,16 @@ impl Engine {
 
     pub fn run_one(&self, lint: &dyn Lint) -> Outcome {
         let name = lint.meta().name.to_string();
+        let t_start = Instant::now();
+        let out = self.run_one_inner(lint, name);
+        if std::env::var("DQ_ANALYZE_TRACE_SPANS").is_ok() {
+            let t0 = *SPAN_ORIGIN.get_or_init(Instant::now);
+            eprintln!("span {:>7.0}..{:>7.0} ms  {}", t_start.saturating_duration_since(t0).as_secs_f64() * 1000.0, t0.elapsed().as_secs_f64() * 1000.0, out.name);
+        }
+        out
+    }
+
+    fn run_one_inner(&self, lint: &dyn Lint, name: String) -> Outcome {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let (run, allow_used, timing) = self.scan(lint);
             let (failed, text) = self.judge(lint, &run);
@@ -369,6 +394,7 @@ impl Engine {
     pub fn run_all(&self) -> Vec<Outcome> {
         let chosen = selected(&self.reg, &self.opts.lints);
         self.prepare(&chosen);
+        let _ = SPAN_ORIGIN.get_or_init(Instant::now);
         // Longest first: with ~50 lints on 16 cores the slowest whole-tree lints are the critical
         // path, so start them before the quick ones (durations remembered from the last real run).
         let durations = self.cache.load_durations();
@@ -385,34 +411,22 @@ impl Engine {
             }
         }
         self.cache.save_durations(&merged);
+        if let Some(dir) = crate::incr::dir() {
+            self.tree.save_line_cache(&dir.join("linetext.bin"), self.cache.stamp());
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
+        }
         outcomes
     }
 
-    /// On the main thread, before the parallel run: when some whole-tree lint will have to scan
-    /// (its memo missed), load every file once in parallel so the sequential lints don't each wait
-    /// on a single thread reading and stripping the tree.
+    /// On the main thread, before the parallel run: when many files are new or changed (a cold run,
+    /// a branch switch), load every file once in parallel so the sequential lints don't each wait on
+    /// a single thread reading and stripping the tree. After a small edit nothing is read up front:
+    /// the per-file caches answer for every unchanged file, and a lint that does need a file loads it.
     pub fn prepare(&self, lints: &[&dyn Lint]) {
-        let mut miss = false;
-        for lint in lints {
-            let meta = lint.meta();
-            if !matches!(meta.scan, ScanKind::Tree | ScanKind::Both) {
-                continue;
-            }
-            let scope = self.scopes.for_lint(meta.name, meta.group);
-            let cx = Cx { tree: &self.tree, meta, scope: &scope };
-            let lc = self.cache.load_lint(meta.name);
-            let mut h = blake3::Hasher::new();
-            h.update(meta.name.as_bytes());
-            for f in cx.all_files() {
-                h.update(&f.fkey.to_le_bytes());
-            }
-            let key = u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap());
-            if !matches!(&lc.tree, Some((k, _)) if *k == key) {
-                miss = true;
-                break;
-            }
-        }
-        if miss {
+        let wants_tree = lints.iter().any(|l| matches!(l.meta().scan, ScanKind::Tree | ScanKind::Both));
+        if wants_tree && self.tree.fresh_count() > 64 {
             self.tree.prewarm();
         }
     }

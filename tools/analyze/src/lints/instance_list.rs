@@ -22,13 +22,19 @@
 //! * `GLOBAL_DATUM_INIT` singletons are never found (see `dm::singletons`): only the two root prefixes
 //!   exempt a singleton.
 
-use crate::dm::singletons::{is_singleton, singleton_types};
+use std::collections::{BTreeSet, HashMap, HashSet};
+
+use serde::{Deserialize, Serialize};
+
+use crate::dm::ownership_index as oi;
+use crate::dm::singletons::is_singleton;
 use crate::dm::walk::walk_order;
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::incr;
+use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::Parity;
 use crate::pat::Pat;
 use crate::tree::{Select, SourceFile};
-use crate::pat_match;
+use crate::{pat, pat_match};
 use crate::util::{py_rstrip, py_strip};
 
 const BASELINE: &str = "tools/ci/instance_list_baseline.txt";
@@ -179,6 +185,38 @@ fn scan_decls(f: &SourceFile) -> Vec<(String, String, usize)> {
     found
 }
 
+/// One file's contribution: its per-instance list declarations and the `GLOBAL_DATUM_INIT` types
+/// it creates.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    decls: Vec<(String, String, u32)>,
+    globals: Vec<String>,
+}
+
+/// One file's declarations that survive the singleton and ALLOW questions.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Judged {
+    decls: Vec<(String, String, u32)>,
+    uses: Vec<AllowUse>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
+    let decls = scan_decls(f).into_iter().map(|(t, v, n)| (t, v, n as u32)).collect();
+    let mut globals: Vec<String> = Vec::new();
+    if f.rel.starts_with("code/") {
+        let text = f.raw().text.as_str();
+        if text.contains("GLOBAL_DATUM_INIT") {
+            // The trailing `\x08` is the Python's literal backspace (see `dm::singletons`).
+            for m in pat!(r"GLOBAL_DATUM_INIT\(\s*\w+\s*,\s*(/[\w/]+)\s*,\s*new\x08").captures_iter(text) {
+                globals.push(m.s(1).to_string());
+            }
+        }
+    }
+    globals.sort();
+    globals.dedup();
+    Facts { decls, globals }
+}
+
 struct InstanceList;
 
 impl Lint for InstanceList {
@@ -187,17 +225,47 @@ impl Lint for InstanceList {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let globals = singleton_types(cx.tree, &cx.all_files());
+        let all = cx.all_files();
+        let facts: Vec<Facts> = oi::sharded_facts("instance-list-facts", &all, facts_of);
+        // `singleton_types`: the exact types a `GLOBAL_DATUM_INIT(...)` creates anywhere under `code/`
+        // (never `/datum`); only the two root prefixes ever exempt one in practice (see its docs).
+        let mut globals: BTreeSet<String> = BTreeSet::new();
+        for x in &facts {
+            globals.extend(x.globals.iter().cloned());
+        }
+        globals.remove("/datum");
+        let globals: HashSet<String> = globals.into_iter().collect();
+        let mut sorted: Vec<&String> = globals.iter().collect();
+        sorted.sort();
+        let key = incr::ctx_key(&sorted);
+        let by_rel: HashMap<&str, &Facts> = all.iter().zip(facts.iter()).map(|(f, x)| (f.rel.as_str(), x)).collect();
         // `found.setdefault(f"{type_path}/{var_name}", f"{rel}:{number}")`, files in os.walk order.
-        let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
-        let mut found: Vec<(String, &str, usize)> = Vec::new();
-        for f in walk_order(&cx.files()) {
-            for (type_path, var_name, number) in scan_decls(f) {
-                if is_singleton(&type_path, &globals) || out.allowed(f, number, LINT) {
-                    continue;
+        let files = walk_order(&cx.files());
+        let judged: Vec<Judged> = oi::sharded_keyed("instance-list-judge", key, &files, |f| {
+            let mut sink = Sink::new();
+            let mut j = Judged::default();
+            if let Some(x) = by_rel.get(f.rel.as_str()) {
+                for (type_path, var_name, number) in &x.decls {
+                    if is_singleton(type_path, &globals) || sink.allowed(f, *number as usize, LINT) {
+                        continue;
+                    }
+                    j.decls.push((type_path.clone(), var_name.clone(), *number));
                 }
+            }
+            j.uses = sink.allow_used;
+            j
+        });
+        let mut seen: HashSet<String> = HashSet::new();
+        let mut found: Vec<(String, &str, usize)> = Vec::new();
+        for (f, j) in files.iter().zip(judged) {
+            for u in j.uses {
+                if !out.allow_used.contains(&u) {
+                    out.allow_used.push(u);
+                }
+            }
+            for (type_path, var_name, number) in j.decls {
                 if seen.insert(format!("{}/{}", type_path, var_name)) {
-                    found.push((format!("{}:{}", f.rel, number), f.rel.as_str(), number));
+                    found.push((format!("{}:{}", f.rel, number), f.rel.as_str(), number as usize));
                 }
             }
         }

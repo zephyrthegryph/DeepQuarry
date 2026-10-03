@@ -18,9 +18,12 @@
 
 use std::collections::BTreeSet;
 
-use rayon::prelude::*;
+use std::sync::OnceLock;
+
+use serde::{Deserialize, Serialize};
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::pat;
@@ -100,16 +103,13 @@ fn not_a_cooldown(rel: &str, line: &str, stamp: Option<&Pat>) -> bool {
 /// `cooldown_lint.timestamp_names()`: every `EXPIRY_DECLARE`d name in `code/`.
 fn timestamp_names(tree: &Tree) -> BTreeSet<String> {
     let files = tree.select(&CODE_DM);
-    let per: Vec<Vec<String>> = files
-        .par_iter()
-        .map(|f| {
-            let text = &f.raw().text;
-            if !text.contains("EXPIRY") {
-                return Vec::new();
-            }
-            pat!(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)").captures_iter(text).into_iter().map(|c| c.s(1).to_string()).collect()
-        })
-        .collect();
+    let per: Vec<Vec<String>> = incr::facts("sys-expiry-names", &files, |f| {
+        let text = &f.raw().text;
+        if !text.contains("EXPIRY") {
+            return Vec::new();
+        }
+        pat!(r"\b(?:STATIC_)?EXPIRY(?:_TMP)?_DECLARE\(\s*(\w+)\s*\)").captures_iter(text).into_iter().map(|c| c.s(1).to_string()).collect()
+    });
     let mut names: BTreeSet<String> = per.into_iter().flatten().collect();
     names.remove("name");
     names.remove("time"); // would match every `world.time`
@@ -146,6 +146,7 @@ fn pass_compares(f: &SourceFile, stamp: Option<&Pat>) -> Vec<usize> {
     out
 }
 
+#[derive(Serialize, Deserialize, Default, PartialEq)]
 struct Writes {
     declared: Vec<String>,
     writes: Vec<usize>,
@@ -229,19 +230,25 @@ fn pass_at_writes(f: &SourceFile) -> Vec<usize> {
 
 fn files_scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
     let names = timestamp_names(tree);
-    let stamp = if names.is_empty() {
-        None
-    } else {
-        Some(Pat::new(&format!(r"(?<![\w])(?:{})\b", names.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("|"))))
-    };
-    let stamp = stamp.as_ref();
-    let p1: Vec<Vec<usize>> = files.par_iter().map(|f| pass_compares(f, stamp)).collect();
-    let p2: Vec<Writes> = files.par_iter().map(|f| pass_writes(f)).collect();
-    let p3: Vec<Vec<usize>> = files.par_iter().map(|f| pass_at_writes(f)).collect();
+    let stamp: OnceLock<Option<Pat>> = OnceLock::new();
+    let p1: Vec<Vec<u32>> = incr::keyed("sys-expiry-compares", incr::ctx_key(&names), files, |f| {
+        let stamp = stamp
+            .get_or_init(|| {
+                if names.is_empty() {
+                    None
+                } else {
+                    Some(Pat::new(&format!(r"(?<![\w])(?:{})\b", names.iter().map(|s| s.as_str()).collect::<Vec<_>>().join("|"))))
+                }
+            })
+            .as_ref();
+        pass_compares(f, stamp).into_iter().map(|l| l as u32).collect()
+    });
+    let p2: Vec<Writes> = incr::facts("sys-expiry-writes", files, pass_writes);
+    let p3: Vec<Vec<u32>> = incr::facts("sys-expiry-at", files, |f| pass_at_writes(f).into_iter().map(|l| l as u32).collect());
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
     for (f, lines) in files.iter().zip(&p1) {
         for &l in lines {
-            out.push(("world_time_expiry", f.rel.clone(), l));
+            out.push(("world_time_expiry", f.rel.clone(), l as usize));
         }
     }
     let mut declared: BTreeSet<&str> = BTreeSet::new();
@@ -264,7 +271,7 @@ fn files_scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, 
     }
     for (f, lines) in files.iter().zip(&p3) {
         for &l in lines {
-            out.push(("world_time_write", f.rel.clone(), l));
+            out.push(("world_time_write", f.rel.clone(), l as usize));
         }
     }
     out

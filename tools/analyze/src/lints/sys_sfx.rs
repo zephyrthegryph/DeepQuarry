@@ -6,9 +6,10 @@
 
 use std::collections::HashSet;
 
-use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -164,53 +165,78 @@ fn scan_file(f: &SourceFile, fed: &HashSet<String>, named: &HashSet<String>, out
     }
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    // Names fed to a sound call as the sound.
-    let per_file: Vec<HashSet<String>> = files
-        .par_iter()
-        .map(|f| {
-            let mut set = HashSet::new();
-            for line in f.raw().lines() {
-                let code = code_of(line);
-                if !code.contains('(') || !(code.contains("playsound") || code.contains("play_sfx") || code.contains("get_sfx")) {
-                    continue;
-                }
-                for m in pat!(
-                    r"(?<![\w./])(?:playsound(?:_local)?|play_sfx)\s*\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*[,)]|(?<![\w./])get_sfx\s*\(\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*\)"
-                )
-                .captures_iter(code)
-                {
-                    let name = if m.matched(1) { m.s(1) } else { m.s(2) };
-                    set.insert(name.rsplit('.').next().unwrap_or("").to_string());
-                }
-            }
-            set
-        })
-        .collect();
-    let mut fed: HashSet<String> = per_file.into_iter().flatten().collect();
-    for n in NOT_FED {
-        fed.remove(*n);
-    }
-    let mut named: HashSet<String> = HashSet::new();
-    for f in files {
-        if f.rel == "code/__defines/sfx.dm" {
-            let text = f.raw().text.as_str();
-            let section = py_slice(text, char_find(text, "// Named sets"), char_find(text, "// File sets."));
-            named = pat!(r#"#define SFX_\w+ "(\w+)""#).captures_iter(&section).iter().map(|c| c.s(1).to_string()).collect();
+/// One file's contribution to the shared context: the names it feeds to a sound call, and (for
+/// `code/__defines/sfx.dm` only) the named-set ids.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    fed: Vec<String>,
+    named: Vec<String>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
+    let mut set: HashSet<String> = HashSet::new();
+    for line in f.raw().lines() {
+        let code = code_of(line);
+        if !code.contains('(') || !(code.contains("playsound") || code.contains("play_sfx") || code.contains("get_sfx")) {
+            continue;
+        }
+        for m in pat!(
+            r"(?<![\w./])(?:playsound(?:_local)?|play_sfx)\s*\(\s*[^,()]+(?:\([^()]*\))?\s*,\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*[,)]|(?<![\w./])get_sfx\s*\(\s*(?:pick\s*\(\s*)?([A-Za-z_][\w.]*)\s*\)?\s*\)"
+        )
+        .captures_iter(code)
+        {
+            let name = if m.matched(1) { m.s(1) } else { m.s(2) };
+            set.insert(name.rsplit('.').next().unwrap_or("").to_string());
         }
     }
-    let results: Vec<Vec<(&'static str, usize)>> = files
-        .par_iter()
-        .map(|f| {
-            let mut v = Vec::new();
-            scan_file(f, &fed, &named, &mut v);
-            v
-        })
-        .collect();
+    let mut fed: Vec<String> = set.into_iter().collect();
+    fed.sort();
+    let mut named: Vec<String> = Vec::new();
+    if f.rel == "code/__defines/sfx.dm" {
+        let text = f.raw().text.as_str();
+        let section = py_slice(text, char_find(text, "// Named sets"), char_find(text, "// File sets."));
+        named = pat!(r#"#define SFX_\w+ "(\w+)""#).captures_iter(&section).iter().map(|c| c.s(1).to_string()).collect();
+        named.sort();
+        named.dedup();
+    }
+    Facts { fed, named }
+}
+
+/// What the judge reads: the fed names (minus the ones that never name a sound) and the named sets.
+struct Context {
+    fed: HashSet<String>,
+    named: HashSet<String>,
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let (_ctx, results) = incr::two_phase(
+        "sys-sfx",
+        files,
+        facts_of,
+        |pairs| {
+            let mut fed: HashSet<String> = HashSet::new();
+            let mut named: HashSet<String> = HashSet::new();
+            for (f, facts) in pairs {
+                fed.extend(facts.fed.iter().cloned());
+                if f.rel == "code/__defines/sfx.dm" {
+                    named = facts.named.iter().cloned().collect();
+                }
+            }
+            for n in NOT_FED {
+                fed.remove(*n);
+            }
+            Context { fed, named }
+        },
+        |f, ctx| {
+            let mut v: Vec<(&'static str, usize)> = Vec::new();
+            scan_file(f, &ctx.fed, &ctx.named, &mut v);
+            v.into_iter().map(|(rule, line)| (RULES.iter().position(|r| r.name == rule).unwrap_or(0) as u8, line as u32)).collect::<Vec<(u8, u32)>>()
+        },
+    );
     let mut out = Vec::new();
     for (f, v) in files.iter().zip(results) {
         for (rule, line) in v {
-            out.push((rule, f.rel.clone(), line));
+            out.push((RULES[rule as usize].name, f.rel.clone(), line as usize));
         }
     }
     out

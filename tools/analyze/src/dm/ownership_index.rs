@@ -14,6 +14,11 @@
 use std::collections::HashMap;
 use std::sync::{Arc, LazyLock};
 
+use rayon::prelude::*;
+use serde::de::DeserializeOwned;
+use serde::{Deserialize, Serialize};
+
+use crate::incr;
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree, View};
 use crate::util::{is_py_space, py_rstrip, py_strip, under};
@@ -259,6 +264,145 @@ pub struct Index {
     pub registry: Vec<String>,
     /// var name -> [(type, vtype, is_list)] in declaration order
     pub name_decls: HashMap<String, Vec<(String, String, bool)>>,
+    /// Key of everything `members` / `name_decls` hold (what an accessor-usage scan reads).
+    pub key_members: u128,
+    /// Key of the whole structure minus where things are written (members, declaration kinds,
+    /// registry): what a per-file judgement reads. Declaration lines, files and option text are
+    /// not in it.
+    pub key_struct: u128,
+}
+
+/// How many stores a sharded cache is split into.
+const SHARDS: usize = 16;
+
+fn shard_of(rel: &str) -> usize {
+    let mut h: u32 = 0x811c_9dc5;
+    for b in rel.bytes() {
+        h = (h ^ b as u32).wrapping_mul(0x0100_0193);
+    }
+    h as usize % SHARDS
+}
+
+/// [`incr::keyed`] over [`SHARDS`] stores, by path hash. One edit rewrites one small store instead of
+/// the whole set, and the stores load in parallel. Results are in `files` order. ALLOW uses recorded
+/// through `sys::kept_recorded` are carried back to the calling thread.
+pub fn sharded_keyed<R>(name: &str, ctx: u128, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
+where
+    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
+{
+    let mut groups: Vec<Vec<usize>> = vec![Vec::new(); SHARDS];
+    for (i, file) in files.iter().enumerate() {
+        groups[shard_of(&file.rel)].push(i);
+    }
+    let outs: Vec<(Vec<R>, Vec<crate::lint::AllowUse>)> = groups
+        .par_iter()
+        .enumerate()
+        .map(|(s, idxs)| {
+            let part: Vec<&SourceFile> = idxs.iter().map(|&i| files[i]).collect();
+            let before = crate::dm::sys::take_recorded();
+            let r = incr::keyed(&format!("{}-{}", name, s), ctx, &part, &f);
+            let uses = crate::dm::sys::take_recorded();
+            crate::dm::sys::restore_recorded(before);
+            (r, uses)
+        })
+        .collect();
+    let mut slots: Vec<Option<R>> = Vec::with_capacity(files.len());
+    slots.resize_with(files.len(), || None);
+    let mut all_uses = Vec::new();
+    for (idxs, (rs, uses)) in groups.iter().zip(outs) {
+        for (&i, r) in idxs.iter().zip(rs) {
+            slots[i] = Some(r);
+        }
+        all_uses.extend(uses);
+    }
+    crate::dm::sys::replay_recorded(all_uses);
+    slots.into_iter().map(|r| r.unwrap_or_default()).collect()
+}
+
+/// [`incr::facts`], sharded (see [`sharded_keyed`]).
+pub fn sharded_facts<F>(name: &str, files: &[&SourceFile], f: impl Fn(&SourceFile) -> F + Sync) -> Vec<F>
+where
+    F: Serialize + DeserializeOwned + Default + PartialEq + Send,
+{
+    sharded_keyed(name, 0, files, f)
+}
+
+/// One file's index facts and the keys of what a judgement reads of them (0 when it has none).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct FileIdx {
+    events: Vec<IdxEv>,
+    h_members: u128,
+    h_struct: u128,
+}
+
+fn file_idx(f: &SourceFile) -> FileIdx {
+    let events = file_events(&f.rel, f.raw(), f.code());
+    if events.is_empty() {
+        return FileIdx::default();
+    }
+    // (kind, a, b, c, flag) with no lines, files or option text.
+    let mut members: Vec<(&str, &str, &str, bool)> = Vec::new();
+    let mut structure: Vec<(u8, &str, &str, &str, bool)> = Vec::new();
+    for ev in &events {
+        match ev {
+            IdxEv::Member { owner, vtype, is_list, name } => {
+                members.push((owner, name, vtype, *is_list));
+                structure.push((0, owner, name, vtype, *is_list));
+            }
+            IdxEv::Decl { owner, name, macro_name, .. } => structure.push((1, owner, name, macro_name, false)),
+            IdxEv::Registry(t) => structure.push((2, t, "", "", false)),
+        }
+    }
+    let (h_members, h_struct) = (incr::ctx_key(&members), incr::ctx_key(&structure));
+    FileIdx { events, h_members, h_struct }
+}
+
+/// One structural fact a file contributes to the [`Index`], in file order. Replaying every file's
+/// events in path order rebuilds the index exactly as walking the files did.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+pub enum IdxEv {
+    Member { owner: String, vtype: String, is_list: bool, name: String },
+    Decl { owner: String, name: String, macro_name: String, opts: String, rel: String, line: u32 },
+    Registry(String),
+}
+
+/// `(vtype, is_list)` of a member declared with the path segments `segs`.
+fn member_parts(segs: &str) -> (String, bool) {
+    let mut parts: Vec<&str> = segs.split('/').filter(|p| !p.is_empty() && !MODIFIERS.contains(p)).collect();
+    let is_list = !parts.is_empty() && parts[0] == "list";
+    if is_list {
+        parts.remove(0);
+    }
+    let vtype = if parts.is_empty() { String::new() } else { format!("/{}", parts.join("/")) };
+    (vtype, is_list)
+}
+
+/// The kind a declaration entry is recorded under (its old macro name).
+fn decl_macro(func: &str, opts: &str) -> String {
+    let own_private = pat_search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts);
+    if func == "owns" && own_private {
+        "PROTO".into()
+    } else if func == "owns" {
+        if opts.contains("policy_proc") {
+            "OWN_POLICY".into()
+        } else if opts.contains("if_var") {
+            "OWN_IF".into()
+        } else if pat_search(r"\bpolicy\s*=\s*OWN_NONE\b", opts) {
+            "ANNOTATE".into()
+        } else {
+            "OWN".into()
+        }
+    } else if func == "shares" {
+        "SHARED".into()
+    } else if func == "rel_one" || func == "rel_many" {
+        if pat_search(r"\bkind\s*=\s*RELK_OWNED\b", opts) {
+            if own_private { "PROTO".into() } else { "OWN".into() }
+        } else {
+            "REL".into()
+        }
+    } else {
+        func.to_uppercase()
+    }
 }
 
 impl Index {
@@ -278,106 +422,73 @@ impl Index {
     }
 
     pub fn build(files: &[&SourceFile]) -> Index {
+        let fs: Vec<FileIdx> = sharded_facts("ownership-index-facts", files, file_idx);
+        let mut members: Vec<u128> = Vec::new();
+        let mut structure: Vec<u128> = Vec::new();
+        for x in &fs {
+            if x.h_struct != 0 {
+                members.push(x.h_members);
+                structure.push(x.h_struct);
+            }
+        }
         let mut idx = Index::new();
-        for f in files {
-            idx.index_file(&f.rel, f.raw(), f.code());
+        idx.key_members = incr::mix(&members);
+        idx.key_struct = incr::mix(&structure);
+        for x in fs {
+            for ev in x.events {
+                idx.apply_owned(ev);
+            }
         }
         idx
     }
 
-    pub fn add_member(&mut self, owner: &str, segs: &str, name: &str) {
-        let mut parts: Vec<&str> = segs.split('/').filter(|p| !p.is_empty() && !MODIFIERS.contains(p)).collect();
-        let is_list = !parts.is_empty() && parts[0] == "list";
-        if is_list {
-            parts.remove(0);
+    /// Replays one recorded fact.
+    pub fn apply(&mut self, ev: &IdxEv) {
+        self.apply_owned(ev.clone());
+    }
+
+    fn apply_owned(&mut self, ev: IdxEv) {
+        match ev {
+            IdxEv::Member { owner, vtype, is_list, name } => {
+                match self.members.get_mut(&owner) {
+                    Some(m) => {
+                        m.insert(name.clone(), (vtype.clone(), is_list));
+                    }
+                    None => {
+                        let mut m = HashMap::new();
+                        m.insert(name.clone(), (vtype.clone(), is_list));
+                        self.members.insert(owner.clone(), m);
+                    }
+                }
+                match self.name_decls.get_mut(&name) {
+                    Some(v) => v.push((owner, vtype, is_list)),
+                    None => {
+                        self.name_decls.insert(name, vec![(owner, vtype, is_list)]);
+                    }
+                }
+            }
+            IdxEv::Decl { owner, name, macro_name, opts, rel, line } => {
+                let inner = self.decls.entry_or_insert_with(&owner, OrdMap::new);
+                inner.insert(&name, Decl { macro_name, opts, rel, line: line as usize });
+            }
+            IdxEv::Registry(t) => self.registry.push(t),
         }
-        let vtype = if parts.is_empty() { String::new() } else { format!("/{}", parts.join("/")) };
-        self.members.entry(owner.to_string()).or_default().insert(name.to_string(), (vtype.clone(), is_list));
-        self.name_decls.entry(name.to_string()).or_default().push((owner.to_string(), vtype, is_list));
+    }
+
+    pub fn add_member(&mut self, owner: &str, segs: &str, name: &str) {
+        let (vtype, is_list) = member_parts(segs);
+        self.apply(&IdxEv::Member { owner: owner.to_string(), vtype, is_list, name: name.to_string() });
     }
 
     /// One entry in `owner`'s ownership()/relations() list, recorded under the kind's old macro
     /// name. An `owns()` with no policy only annotates (`ANNOTATE`).
     pub fn add_decl(&mut self, owner: &str, func: &str, name: &str, opts: &str, rel: &str, no: usize) {
-        let own_private = pat_search(r"\bpolicy\s*=\s*OWN_PRIVATE_COPY\b", opts);
-        let macro_name: String = if func == "owns" && own_private {
-            "PROTO".into()
-        } else if func == "owns" {
-            if opts.contains("policy_proc") {
-                "OWN_POLICY".into()
-            } else if opts.contains("if_var") {
-                "OWN_IF".into()
-            } else if pat_search(r"\bpolicy\s*=\s*OWN_NONE\b", opts) {
-                "ANNOTATE".into()
-            } else {
-                "OWN".into()
-            }
-        } else if func == "shares" {
-            "SHARED".into()
-        } else if func == "rel_one" || func == "rel_many" {
-            if pat_search(r"\bkind\s*=\s*RELK_OWNED\b", opts) {
-                if own_private { "PROTO".into() } else { "OWN".into() }
-            } else {
-                "REL".into()
-            }
-        } else {
-            func.to_uppercase()
-        };
-        let inner = self.decls.entry_or_insert_with(owner, OrdMap::new);
-        inner.insert(name, Decl { macro_name, opts: opts.to_string(), rel: rel.to_string(), line: no });
+        self.apply(&decl_ev(owner, func, name, opts, rel, no));
     }
 
     pub fn index_file(&mut self, rel: &str, raw: &View, code: &View) {
-        let mut current: Option<String> = None;
-        let mut declaring: Option<String> = None;
-        for (no, line) in code.numbered() {
-            let first = line.chars().next();
-            if matches!(first, Some('"') | Some('\'')) {
-                continue; // the tail of a multi-line string, not a new top-level line
-            }
-            if declaring.is_some() && first.map(is_py_space).unwrap_or(false) {
-                if let Some(m) = DECLARE_CALL.captures(raw.line(no)) {
-                    let owner = declaring.clone().unwrap();
-                    self.add_decl(&owner, m.s(1), m.s(2), m.s(3), rel, no);
-                }
-                continue;
-            }
-            declaring = None;
-            if first.map(|c| !is_py_space(c)).unwrap_or(false) {
-                if let Some(m) = DECLARE_HEAD.captures(line) {
-                    declaring = Some(m.s(1).to_string());
-                    current = None;
-                    continue;
-                }
-                if let Some(m) = REGISTRY.captures(py_strip(raw.line(no))) {
-                    self.registry.push(m.s(1).to_string());
-                    continue;
-                }
-                if let Some(m) = ABS_MEMBER.captures(line) {
-                    self.add_member(m.s(1), m.s(2), m.s(3));
-                    current = None;
-                    continue;
-                }
-                if let Some(m) = OM_FIELD_DECL.captures(line) {
-                    // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
-                    let vt = if m.matched(2) && !m.s(2).is_empty() { format!("{}/", m.s(2).trim_matches('/')) } else { String::new() };
-                    let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
-                    self.add_member(owner, &vt, m.s(5));
-                    current = None;
-                    continue;
-                }
-                let m = TYPE_LINE.captures(py_rstrip(line));
-                current = match m {
-                    Some(m) if !line.contains('(') => Some(m.s(1).to_string()),
-                    _ => None,
-                };
-                continue;
-            }
-            if let Some(cur) = current.clone() {
-                if let Some(m) = MEMBER.captures(line) {
-                    self.add_member(&cur, m.s(1), m.s(2));
-                }
-            }
+        for ev in file_events(rel, raw, code) {
+            self.apply(&ev);
         }
     }
 
@@ -407,6 +518,79 @@ impl Index {
 
     pub fn is_entity(&self, vtype: &str) -> bool {
         under(vtype, ENTITY_ROOTS) && !self.is_registry(vtype)
+    }
+}
+
+/// Every structural fact `code`/`raw` (one file) contributes to the index, in order.
+pub fn file_events(rel: &str, raw: &View, code: &View) -> Vec<IdxEv> {
+    let mut ev: Vec<IdxEv> = Vec::new();
+    let mut current: Option<String> = None;
+    let mut declaring: Option<String> = None;
+    for (no, line) in code.numbered() {
+        let first = line.chars().next();
+        if matches!(first, Some('"') | Some('\'')) {
+            continue; // the tail of a multi-line string, not a new top-level line
+        }
+        if declaring.is_some() && first.map(is_py_space).unwrap_or(false) {
+            if let Some(m) = DECLARE_CALL.captures(raw.line(no)) {
+                let owner = declaring.clone().unwrap();
+                ev.push(decl_ev(&owner, m.s(1), m.s(2), m.s(3), rel, no));
+            }
+            continue;
+        }
+        declaring = None;
+        if first.map(|c| !is_py_space(c)).unwrap_or(false) {
+            if let Some(m) = DECLARE_HEAD.captures(line) {
+                declaring = Some(m.s(1).to_string());
+                current = None;
+                continue;
+            }
+            if let Some(m) = REGISTRY.captures(py_strip(raw.line(no))) {
+                ev.push(IdxEv::Registry(m.s(1).to_string()));
+                continue;
+            }
+            if let Some(m) = ABS_MEMBER.captures(line) {
+                ev.push(member_ev(m.s(1), m.s(2), m.s(3)));
+                current = None;
+                continue;
+            }
+            if let Some(m) = OM_FIELD_DECL.captures(line) {
+                // OM_FIELD(T, F, ...) / OM_FIELD_TYPED|_VIEW(T, VT, F, ...) declare T/var/F
+                let vt = if m.matched(2) && !m.s(2).is_empty() { format!("{}/", m.s(2).trim_matches('/')) } else { String::new() };
+                let owner = if !m.s(1).is_empty() { m.s(1) } else { m.s(3) };
+                ev.push(member_ev(owner, &vt, m.s(5)));
+                current = None;
+                continue;
+            }
+            let m = TYPE_LINE.captures(py_rstrip(line));
+            current = match m {
+                Some(m) if !line.contains('(') => Some(m.s(1).to_string()),
+                _ => None,
+            };
+            continue;
+        }
+        if let Some(cur) = current.clone() {
+            if let Some(m) = MEMBER.captures(line) {
+                ev.push(member_ev(&cur, m.s(1), m.s(2)));
+            }
+        }
+    }
+    ev
+}
+
+fn member_ev(owner: &str, segs: &str, name: &str) -> IdxEv {
+    let (vtype, is_list) = member_parts(segs);
+    IdxEv::Member { owner: owner.to_string(), vtype, is_list, name: name.to_string() }
+}
+
+fn decl_ev(owner: &str, func: &str, name: &str, opts: &str, rel: &str, no: usize) -> IdxEv {
+    IdxEv::Decl {
+        owner: owner.to_string(),
+        name: name.to_string(),
+        macro_name: decl_macro(func, opts),
+        opts: opts.to_string(),
+        rel: rel.to_string(),
+        line: no as u32,
     }
 }
 

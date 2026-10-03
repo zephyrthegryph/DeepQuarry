@@ -3,9 +3,12 @@
 //! `tgui_interact()` / `tgui_act()` / `tgui_data()` / `tgui_state()` overrides, hand-opened tgui
 //! windows, and every shape of raw `params` parsing in the tgui message path.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
+
+use serde::{Deserialize, Serialize};
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -185,35 +188,46 @@ fn arg_names(text: &str) -> Vec<String> {
     pat!(r#"UI_ARG_\w+\(\s*"([^"]+)""#).captures_iter(text).iter().map(|c| c.s(1).to_string()).collect()
 }
 
-/// `(type, handler) -> declared arg names`, from every UI_ACT row; indexed by handler here.
-fn declared_keys(files: &[&SourceFile]) -> HashMap<String, Vec<(String, BTreeSet<String>)>> {
-    let mut rows: HashMap<(String, String), BTreeSet<String>> = HashMap::new();
-    for f in files {
-        for line in f.raw().lines() {
-            let m = pat_match!(r#"UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#)
-                .captures(line)
-                .or_else(|| {
-                    pat_match!(r#"UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#).captures(line)
-                });
-            if let Some(m) = m {
-                rows.entry((m.s(1).to_string(), m.s(2).to_string())).or_default().extend(arg_names(m.s(3)));
-            } else if line.starts_with("#define") && line.contains("TYPE_PROC_REF(/datum,") {
-                // Row-generating macros (DECLARE_UI_MODAL): their handlers live on /datum.
-                for part in line.split("TYPE_PROC_REF(/datum,").skip(1) {
-                    let handler = py_strip(part.split(')').next().unwrap_or(""));
-                    rows.entry(("/datum".to_string(), handler.to_string())).or_default().extend(arg_names(part));
-                }
+/// One file's UI_ACT rows: `(type, handler, declared arg names)`, sorted by `(type, handler)`.
+fn declared_rows_of(f: &SourceFile) -> Vec<(String, String, BTreeSet<String>)> {
+    let mut rows: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
+    for line in f.raw().lines() {
+        let m = pat_match!(r#"UI_SUBACT\(\s*(/[\w/]+)\s*,\s*"[^"]*"\s*,\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#)
+            .captures(line)
+            .or_else(|| {
+                pat_match!(r#"UI_(?:ACT|SUBACT)\(\s*(/[\w/]+)\s*,(?:\s*"[^"]*"\s*,(?=\s*"))?\s*[^,]+,\s*(\w+)\s*(.*)\)\s*$"#).captures(line)
+            });
+        if let Some(m) = m {
+            rows.entry((m.s(1).to_string(), m.s(2).to_string())).or_default().extend(arg_names(m.s(3)));
+        } else if line.starts_with("#define") && line.contains("TYPE_PROC_REF(/datum,") {
+            // Row-generating macros (DECLARE_UI_MODAL): their handlers live on /datum.
+            for part in line.split("TYPE_PROC_REF(/datum,").skip(1) {
+                let handler = py_strip(part.split(')').next().unwrap_or(""));
+                rows.entry(("/datum".to_string(), handler.to_string())).or_default().extend(arg_names(part));
             }
         }
     }
-    let mut by_handler: HashMap<String, Vec<(String, BTreeSet<String>)>> = HashMap::new();
+    rows.into_iter().map(|((t, h), k)| (t, h, k)).collect()
+}
+
+type ByHandler = BTreeMap<String, Vec<(String, BTreeSet<String>)>>;
+
+/// `(type, handler) -> declared arg names`, from every UI_ACT row; indexed by handler here.
+fn declared_keys(per_file: &[&Vec<DeclRow>]) -> ByHandler {
+    let mut rows: BTreeMap<(String, String), BTreeSet<String>> = BTreeMap::new();
+    for rs in per_file {
+        for (t, h, k) in rs.iter() {
+            rows.entry((t.clone(), h.clone())).or_default().extend(k.iter().cloned());
+        }
+    }
+    let mut by_handler: ByHandler = BTreeMap::new();
     for ((ty, handler), keys) in rows {
         by_handler.entry(handler).or_default().push((ty, keys));
     }
     by_handler
 }
 
-fn keys_for(rows: &HashMap<String, Vec<(String, BTreeSet<String>)>>, owner: &str, handler: &str) -> BTreeSet<String> {
+fn keys_for(rows: &ByHandler, owner: &str, handler: &str) -> BTreeSet<String> {
     let mut out = BTreeSet::new();
     if let Some(list) = rows.get(handler) {
         for (row_type, keys) in list {
@@ -231,10 +245,10 @@ fn count(p: &Pat, text: &str) -> usize {
 
 /// Procs taking `list/params` that may receive a handler's typed params: name -> keys it reads
 /// (itself and the helpers it calls).
-fn typed_param_helpers(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String>> {
+fn helper_cands_of(f: &SourceFile) -> Vec<Cand> {
     let passthrough = ["act_ask", "om_act_ask", "rerun_ask", "list"];
-    let mut cands: HashMap<String, (BTreeSet<String>, BTreeSet<String>)> = HashMap::new();
-    for f in files {
+    let mut out: Vec<Cand> = Vec::new();
+    {
         let lines = f.raw().lines_vec();
         for b in bodies(&lines) {
             if b.kind != Kind::Proc || !pat!(r"(?:^|,)\s*(?:list/)?params\s*(?:,|$)").is_match(&b.args) {
@@ -274,8 +288,22 @@ fn typed_param_helpers(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String
                 }
             }
             if ok {
-                cands.insert(b.name.clone(), (keys, callees));
+                out.push((b.name.clone(), keys, callees));
             }
+        }
+    }
+    out
+}
+
+/// One proc taking `params`: name, keys it reads, helpers it forwards to.
+type Cand = (String, BTreeSet<String>, BTreeSet<String>);
+type DeclRow = (String, String, BTreeSet<String>);
+
+fn typed_param_helpers(per_file: &[&Vec<Cand>]) -> BTreeMap<String, BTreeSet<String>> {
+    let mut cands: BTreeMap<String, (BTreeSet<String>, BTreeSet<String>)> = BTreeMap::new();
+    for cs in per_file {
+        for (name, keys, callees) in cs.iter() {
+            cands.insert(name.clone(), (keys.clone(), callees.clone()));
         }
     }
     let mut changed = true;
@@ -290,7 +318,7 @@ fn typed_param_helpers(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String
             }
         }
     }
-    let mut out = HashMap::new();
+    let mut out = BTreeMap::new();
     for name in cands.keys() {
         let mut seen: BTreeSet<String> = BTreeSet::new();
         let mut todo = vec![name.clone()];
@@ -322,14 +350,12 @@ fn keyread_re() -> &'static Pat {
     pat!(r#"\bparams\s*\??\[\s*"([^"]+)"\s*\]"#)
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+fn judge(f: &SourceFile, rows: &ByHandler, helpers: &BTreeMap<String, BTreeSet<String>>) -> Vec<(&'static str, String, usize)> {
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let rows = declared_keys(files);
-    let helpers = typed_param_helpers(files);
-    for f in files {
+    {
         let rel = f.rel.as_str();
         if starts_any(rel, NOT_TGUI) {
-            continue;
+            return out;
         }
         let exempt_open = starts_any(rel, OPEN_EXEMPT);
         let lines = f.raw().lines_vec();
@@ -424,6 +450,39 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                     out.push(("text2num_params", rel.to_string(), *number));
                 }
             }
+        }
+    }
+    out
+}
+
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    rows: Vec<DeclRow>,
+    cands: Vec<Cand>,
+}
+
+#[derive(Serialize)]
+struct Merged {
+    rows: ByHandler,
+    helpers: BTreeMap<String, BTreeSet<String>>,
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let fs = incr::facts("sys-ui-facts", files, |f| Facts { rows: declared_rows_of(f), cands: helper_cands_of(f) });
+    let rows_of: Vec<&Vec<DeclRow>> = fs.iter().map(|x| &x.rows).collect();
+    let cands_of: Vec<&Vec<Cand>> = fs.iter().map(|x| &x.cands).collect();
+    let merged = Merged { rows: declared_keys(&rows_of), helpers: typed_param_helpers(&cands_of) };
+    let key = incr::ctx_key(&merged);
+    let results = incr::keyed("sys-ui-judge", key, files, |f| {
+        judge(f, &merged.rows, &merged.helpers)
+            .into_iter()
+            .map(|(rule, _, line)| (RULES.iter().position(|r| r.name == rule).unwrap_or(0) as u8, line as u32))
+            .collect::<Vec<(u8, u32)>>()
+    });
+    let mut out = Vec::new();
+    for (f, v) in files.iter().zip(results) {
+        for (rule, line) in v {
+            out.push((RULES[rule as usize].name, f.rel.clone(), line as usize));
         }
     }
     out

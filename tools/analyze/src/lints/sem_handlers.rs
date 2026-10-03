@@ -102,7 +102,11 @@ impl Lint for SemHandlers {
         };
 
         // ---- structural checks over the files that mention an action or a context ----
-        let cands: Vec<String> = cx.files().iter().filter(|f| candidate_re().is_match(&f.code().text)).map(|f| f.rel.clone()).collect();
+        let all_files = cx.files();
+        // Per-file facts (cached by content): does the file mention an action or a context, and is it an engine output base.
+        let cand_flags: Vec<bool> = crate::incr::facts("sem-handlers-cand", &all_files, |f| candidate_re().is_match(&f.code().text));
+        let base_flags: Vec<bool> = crate::incr::facts("sem-handlers-base", &all_files, |f| f.rel.starts_with("code/engine/") && engine_output_re().is_match(&f.code().text));
+        let cands: Vec<String> = all_files.iter().zip(&cand_flags).filter(|(_, c)| **c).map(|(f, _)| f.rel.clone()).collect();
         if !cands.is_empty() {
             let extra: Vec<&str> = cx.list("try_calls").iter().map(|s| s.as_str()).collect();
             // ACT_TRY(E, name, ...) expands to act_<name>(E, ...), generated for each non-FIXED ACTION(name, ...).
@@ -114,31 +118,49 @@ impl Lint for SemHandlers {
             let mut try_calls: Vec<&str> = DEFAULT_TRY_CALLS.to_vec();
             try_calls.extend(extra);
             try_calls.extend(generated.iter().map(|s| s.as_str()));
-            match Sem::build_partial(&cx.tree.root, cx.tree, &cands) {
-                Ok(sem) => {
-                    let set: BTreeSet<&str> = cands.iter().map(|s| s.as_str()).collect();
-                    for ty in sem.objtree.iter_types() {
-                        for (_name, tp) in ty.get().procs.iter() {
-                            for v in &tp.value {
-                                let rel = sem.rel(v.location);
-                                let (true, Some(code)) = (set.contains(rel), &v.code) else { continue };
-                                let (acts, locals) = act_idents(&v.parameters, code, &try_calls);
-                                let mut found: Vec<Found> = Vec::new();
-                                context_escape(code, &acts, &locals, &mut found);
-                                act_try_pairing(code, &try_calls, &mut found);
-                                for f in found {
-                                    put(out, f.rule, rel, f.line, f.msg);
+            // The sites of the structural pass, keyed by everything the partial parse reads: the
+            // candidates, the defines (macros), the call names. Unchanged inputs skip the parse.
+            let cand_keys: Vec<(&str, u128)> = all_files.iter().zip(&cand_flags).filter(|(_, c)| **c).map(|(f, _)| (f.rel.as_str(), f.fkey)).collect();
+            let defines: Vec<(&str, u128)> = cx.tree.select(&crate::tree::CODE_DM).iter().filter(|f| f.rel.starts_with("code/__defines/")).map(|f| (f.rel.as_str(), f.fkey)).collect();
+            let key = crate::incr::ctx_key(&(&cand_keys, &defines, &try_calls));
+            let found_all: Vec<(String, String, u32, String)> = crate::incr::cached("sem-handlers-structural", key, || {
+                let mut found_all: Vec<(String, String, u32, String)> = Vec::new();
+                match Sem::build_partial(&cx.tree.root, cx.tree, &cands) {
+                    Ok(sem) => {
+                        let set: BTreeSet<&str> = cands.iter().map(|s| s.as_str()).collect();
+                        for ty in sem.objtree.iter_types() {
+                            for (_name, tp) in ty.get().procs.iter() {
+                                for v in &tp.value {
+                                    let rel = sem.rel(v.location);
+                                    let (true, Some(code)) = (set.contains(rel), &v.code) else { continue };
+                                    let (acts, locals) = act_idents(&v.parameters, code, &try_calls);
+                                    let mut found: Vec<Found> = Vec::new();
+                                    context_escape(code, &acts, &locals, &mut found);
+                                    act_try_pairing(code, &try_calls, &mut found);
+                                    for f in found {
+                                        found_all.push((f.rule.to_string(), rel.to_string(), f.line, f.msg));
+                                    }
                                 }
                             }
                         }
                     }
+                    Err(e) => eprintln!("analyze: sem/handlers: {}", e),
                 }
-                Err(e) => eprintln!("analyze: sem/handlers: {}", e),
+                found_all
+            });
+            for (rule, rel, line, msg) in found_all {
+                let rule: &'static str = match rule.as_str() {
+                    "act_try_unpaired" => "act_try_unpaired",
+                    "context_escape" => "context_escape",
+                    "requirement_return" => "requirement_return",
+                    _ => "context_escape",
+                };
+                put(out, rule, &rel, line, msg);
             }
         }
 
         // ---- standard outputs declared under code/engine: overrides must match the base ----
-        let engine_bases = cx.files().iter().any(|f| f.rel.starts_with("code/engine/") && engine_output_re().is_match(&f.code().text));
+        let engine_bases = base_flags.iter().any(|b| *b);
         if engine_bases {
             if let Some(sem) = cx.sem() {
                 for name in STD_OUTPUTS {
@@ -171,7 +193,23 @@ impl Lint for SemHandlers {
         }
 
         // ---- declared handlers ----
+        // Unless a full model was needed above (an engine output base), the stored result stands when
+        // its inputs are unchanged.
+        if !engine_bases {
+            if let Some(rec) = crate::sem::incremental::lookup(cx.tree) {
+                if let Some(st) = rec.sinks.get("sem/handlers") {
+                    out.sites.extend(st.sites.iter().cloned());
+                    for u in &st.allow_used {
+                        if !out.allow_used.contains(u) {
+                            out.allow_used.push(u.clone());
+                        }
+                    }
+                    return;
+                }
+            }
+        }
         let Some(an) = handlers::analyzed(cx.tree) else { return };
+        let (sites_before, allow_before) = (out.sites.len(), out.allow_used.len());
         for a in &an.handlers {
             let h = &a.h;
             let who = format!("{}::{} ({}())", a.on, h.proc, h.form);
@@ -196,6 +234,12 @@ impl Lint for SemHandlers {
             for f in &a.returns {
                 put(out, f.rule, &drel, f.line, format!("{}: {}", who, f.msg));
             }
+        }
+        if !engine_bases {
+            let mut part = Sink::new();
+            part.sites = out.sites[sites_before..].to_vec();
+            part.allow_used = out.allow_used[allow_before..].to_vec();
+            crate::sem::incremental::store(cx.tree, "sem/handlers", &part);
         }
     }
 }

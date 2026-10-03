@@ -19,7 +19,6 @@ use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 use std::fmt::Write as _;
 use std::sync::Arc;
 
-use rayon::prelude::*;
 
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, Run, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
@@ -253,7 +252,7 @@ fn parse_vars(lines: &[&str], typed: &mut VarTable) -> VarTable {
     found
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 struct Proc {
     rel: String,
     owner: String,
@@ -272,6 +271,13 @@ fn helper_name(name: &str) -> bool {
 /// Whether a proc's body is read after parsing (the rest are kept without a body, to save memory).
 fn keeps_body(name: &str) -> bool {
     name == "derived" || name == "reactions" || proc_kind(name).is_some() || name.starts_with("derive_") || helper_name(name)
+}
+
+/// Whether any rule, generator or fix reads a proc of this name from the model: the reactive kinds,
+/// `derived` / `reactions` / `on_state_changed`, `derive_<x>` values and the reaction helpers. The
+/// other procs are dropped at parse time (they are most of them).
+fn keeps_model_proc(name: &str) -> bool {
+    keeps_body(name) || name == "on_state_changed"
 }
 
 /// `parse_procs`: every top-level proc of one file's `code_only` lines.
@@ -530,12 +536,130 @@ fn parse_file(f: &SourceFile) -> Parts {
         if proc.name == "derived" && proc.owner != "/" {
             entries.push((procs.len(), parse_entries(&proc)));
         }
+        if !keeps_model_proc(&proc.name) {
+            continue; // no rule or generator ever reads this proc
+        }
         if !keeps_body(&proc.name) {
             proc.body = Vec::new();
         }
         procs.push(proc);
     }
     Parts { vars, typed, tracked, relations, published, procs, entries }
+}
+
+/// An [`Entry`] in its cache form (`kind` as text, the set sorted).
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+struct StoredEntry {
+    rel: String,
+    line: usize,
+    kind: String,
+    name: Option<String>,
+    local: Vec<String>,
+    remote: Vec<(Option<String>, String)>,
+    hops: Vec<String>,
+}
+
+type StoredTable = Vec<(String, Vec<String>)>;
+
+/// One file's [`Parts`], cached by content: tables as sorted vectors, entries in their stored form.
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+struct StoredParts {
+    vars: StoredTable,
+    typed: StoredTable,
+    tracked: StoredTable,
+    relations: StoredTable,
+    published: Vec<(String, String, String)>,
+    procs: Vec<Proc>,
+    entries: Vec<(usize, Vec<StoredEntry>)>,
+}
+
+fn store_table(t: &VarTable) -> StoredTable {
+    let mut v: StoredTable = t
+        .iter()
+        .map(|(k, set)| {
+            let mut names: Vec<String> = set.iter().cloned().collect();
+            names.sort();
+            (k.clone(), names)
+        })
+        .collect();
+    v.sort();
+    v
+}
+
+fn load_table(t: StoredTable) -> VarTable {
+    t.into_iter().map(|(k, v)| (k, v.into_iter().collect())).collect()
+}
+
+fn intern_kind(kind: &str) -> &'static str {
+    match kind {
+        "runs" => "runs",
+        "drawn" => "drawn",
+        "ui" => "ui",
+        "push" => "push",
+        _ => "derive",
+    }
+}
+
+impl StoredParts {
+    fn from(p: Parts) -> StoredParts {
+        StoredParts {
+            vars: store_table(&p.vars),
+            typed: store_table(&p.typed),
+            tracked: store_table(&p.tracked),
+            relations: store_table(&p.relations),
+            published: p.published,
+            procs: p.procs,
+            entries: p
+                .entries
+                .into_iter()
+                .map(|(i, es)| {
+                    let es = es
+                        .into_iter()
+                        .map(|e| StoredEntry {
+                            rel: e.rel,
+                            line: e.line,
+                            kind: e.kind.to_string(),
+                            name: e.name,
+                            local: e.local.into_iter().collect(),
+                            remote: e.remote,
+                            hops: e.hops,
+                        })
+                        .collect();
+                    (i, es)
+                })
+                .collect(),
+        }
+    }
+
+    fn into_parts(self) -> Parts {
+        Parts {
+            vars: load_table(self.vars),
+            typed: load_table(self.typed),
+            tracked: load_table(self.tracked),
+            relations: load_table(self.relations),
+            published: self.published,
+            procs: self.procs,
+            entries: self
+                .entries
+                .into_iter()
+                .map(|(i, es)| {
+                    let es = es
+                        .into_iter()
+                        .map(|e| Entry {
+                            rel: e.rel,
+                            line: e.line,
+                            kind: intern_kind(&e.kind),
+                            name: e.name,
+                            local: e.local.into_iter().collect(),
+                            remote: e.remote,
+                            hops: e.hops,
+                        })
+                        .collect();
+                    (i, es)
+                })
+                .collect(),
+        }
+    }
 }
 
 fn merge(into: &mut VarTable, from: VarTable) {
@@ -561,7 +685,8 @@ struct Model {
 
 impl Model {
     fn build(files: &[&SourceFile]) -> Model {
-        let parts: Vec<Parts> = files.par_iter().filter(|f| f.rel != GENERATED_REL).map(|f| parse_file(f)).collect();
+        let kept: Vec<&SourceFile> = files.iter().copied().filter(|f| f.rel != GENERATED_REL).collect();
+        let parts: Vec<Parts> = crate::incr::facts("derived-reads-parts", &kept, |f| StoredParts::from(parse_file(f))).into_iter().map(StoredParts::into_parts).collect();
         let mut m = Model::default();
         for p in parts {
             let base = m.procs.len();

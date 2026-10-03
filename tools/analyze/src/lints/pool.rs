@@ -10,8 +10,11 @@
 //! `.release()` on that line); `current` (the enclosing type for `parent_type`) persists past any
 //! non-type line; `POOL_DECLARE` is searched on the raw line, comments included.
 
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
+use serde::{Deserialize, Serialize};
+
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
@@ -41,59 +44,96 @@ fn strip(line: &str) -> String {
     pat!(r#""[^"]*""#).replace_all(before_slashes(line), "\"\"")
 }
 
-fn check(files: &[&SourceFile], exempt_prefixes: &[String], out: &mut Sink) {
-    let mut pooled: HashSet<String> = HashSet::new();
-    for f in files {
-        let mut current: Option<String> = None;
-        for line in f.raw().lines() {
-            if let Some(m) = pat!(r"^(/datum/[A-Za-z0-9_/]+)\s*$").captures(line) {
-                current = Some(m.s(1).to_string());
-            }
-            if let Some(m) = pat!(r"^\s+parent_type\s*=\s*(/datum/pooled\b[A-Za-z0-9_/]*|/datum/[A-Za-z0-9_/]+)").captures(line) {
-                if let Some(cur) = &current {
-                    if m.s(1).starts_with("/datum/pooled") {
-                        pooled.insert(cur.clone());
-                    }
+const NEW_POOLED: u8 = 0;
+const TAKE_LEAK: u8 = 1;
+const RULE_NAMES: [&str; 2] = ["new_pooled", "take_leak"];
+
+/// One file's contribution to the pooled-type index: the types it declares pooled (sorted, unique).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    pooled: Vec<String>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
+    let mut pooled: BTreeSet<String> = BTreeSet::new();
+    let mut current: Option<String> = None;
+    for line in f.raw().lines() {
+        if let Some(m) = pat!(r"^(/datum/[A-Za-z0-9_/]+)\s*$").captures(line) {
+            current = Some(m.s(1).to_string());
+        }
+        if let Some(m) = pat!(r"^\s+parent_type\s*=\s*(/datum/pooled\b[A-Za-z0-9_/]*|/datum/[A-Za-z0-9_/]+)").captures(line) {
+            if let Some(cur) = &current {
+                if m.s(1).starts_with("/datum/pooled") {
+                    pooled.insert(cur.clone());
                 }
             }
-            for d in pat!(r"POOL_DECLARE\((/datum/[A-Za-z0-9_/]+)\)").captures_iter(line) {
-                pooled.insert(d.s(1).to_string());
+        }
+        for d in pat!(r"POOL_DECLARE\((/datum/[A-Za-z0-9_/]+)\)").captures_iter(line) {
+            pooled.insert(d.s(1).to_string());
+        }
+    }
+    Facts { pooled: pooled.into_iter().collect() }
+}
+
+/// The sites of one file given the pooled-type index: `(rule, line, message)` in emission order.
+fn judge(f: &SourceFile, pooled: &BTreeSet<String>, exempt_prefixes: &[String]) -> Vec<(u8, u32, String)> {
+    let mut out: Vec<(u8, u32, String)> = Vec::new();
+    let exempt = starts_with_any(&f.rel, exempt_prefixes);
+    let mut takes: Vec<(usize, String)> = Vec::new();
+    let mut releases = false;
+    for (number, raw) in f.raw().numbered() {
+        if raw.contains("ALLOW(pool)") {
+            continue;
+        }
+        let line = strip(raw);
+        if pat!(r"\.release\(\)|\bpool_release\(|\brelease\(\)").is_match(&line) {
+            releases = true;
+        }
+        for t in pat!(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
+            takes.push((number, t.s(1).to_string()));
+        }
+        if exempt {
+            continue;
+        }
+        for t in pat!(r"\bnew\s+(/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
+            let t = t.s(1);
+            if pooled.iter().any(|p| t == p || (t.starts_with(p.as_str()) && t.as_bytes().get(p.len()) == Some(&b'/'))) {
+                out.push((NEW_POOLED, number as u32, format!("new {}: a pooled type is taken with take(), not built", t)));
             }
         }
     }
+    if !takes.is_empty() && !releases && !exempt {
+        let (number, t) = &takes[0];
+        out.push((TAKE_LEAK, *number as u32, format!("take({}) but the file never releases: give it back with .release()", t)));
+    }
+    out
+}
+
+/// Uncached whole-tree check (the selftest's entry).
+fn check(files: &[&SourceFile], exempt_prefixes: &[String], out: &mut Sink) {
+    let mut pooled: BTreeSet<String> = BTreeSet::new();
     for f in files {
-        let exempt = starts_with_any(&f.rel, exempt_prefixes);
-        let mut takes: Vec<(usize, String)> = Vec::new();
-        let mut releases = false;
-        for (number, raw) in f.raw().numbered() {
-            if raw.contains("ALLOW(pool)") {
-                continue;
-            }
-            let line = strip(raw);
-            if pat!(r"\.release\(\)|\bpool_release\(|\brelease\(\)").is_match(&line) {
-                releases = true;
-            }
-            for t in pat!(r"\b(?:pool_take|take)\((/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
-                takes.push((number, t.s(1).to_string()));
-            }
-            if exempt {
-                continue;
-            }
-            for t in pat!(r"\bnew\s+(/datum/[A-Za-z0-9_/]+)").captures_iter(&line) {
-                let t = t.s(1);
-                if pooled.iter().any(|p| t == p || (t.starts_with(p.as_str()) && t.as_bytes().get(p.len()) == Some(&b'/'))) {
-                    out.site_in_msg("new_pooled", &f.rel, number, format!("new {}: a pooled type is taken with take(), not built", t));
-                }
-            }
+        pooled.extend(facts_of(f).pooled);
+    }
+    for f in files {
+        for (rule, line, msg) in judge(f, &pooled, exempt_prefixes) {
+            out.site_in_msg(RULE_NAMES[rule as usize], &f.rel, line as usize, msg);
         }
-        if !takes.is_empty() && !releases && !exempt {
-            let (number, t) = &takes[0];
-            out.site_in_msg(
-                "take_leak",
-                &f.rel,
-                *number,
-                format!("take({}) but the file never releases: give it back with .release()", t),
-            );
+    }
+}
+
+/// The same check through the per-file caches: facts by content, judgements by (content, index).
+fn check_incr(files: &[&SourceFile], exempt_prefixes: &[String], out: &mut Sink) {
+    let facts = incr::facts("pool-facts", files, facts_of);
+    let mut pooled: BTreeSet<String> = BTreeSet::new();
+    for fa in &facts {
+        pooled.extend(fa.pooled.iter().cloned());
+    }
+    let key = incr::ctx_key(&(&pooled, exempt_prefixes));
+    let results = incr::keyed("pool-judge", key, files, |f| judge(f, &pooled, exempt_prefixes));
+    for (f, res) in files.iter().zip(results) {
+        for (rule, line, msg) in res {
+            out.site_in_msg(RULE_NAMES[rule as usize], &f.rel, line as usize, msg);
         }
     }
 }
@@ -105,7 +145,7 @@ impl Lint for Pool {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let files = cx.files();
-        check(&files, cx.list("exempt_prefixes"), out);
+        check_incr(&files, cx.list("exempt_prefixes"), out);
         let n = out.sites.len();
         out.note(format!("pool_lint: {} problem(s)", n));
     }

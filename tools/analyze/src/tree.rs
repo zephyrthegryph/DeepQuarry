@@ -124,7 +124,15 @@ fn read_text(path: &Path) -> String {
 
 impl SourceFile {
     fn data(&self) -> &Data {
-        self.data.get_or_init(|| Data { raw: View::new(read_text(&self.abs)), code: OnceLock::new(), clean: OnceLock::new() })
+        self.data.get_or_init(|| {
+            if std::env::var("DQ_ANALYZE_TRACE_LOAD").is_ok() {
+                static N: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+                if N.fetch_add(1, std::sync::atomic::Ordering::Relaxed) == 300 {
+                    eprintln!("analyze: 300th lazy file load, from: {}", std::backtrace::Backtrace::force_capture());
+                }
+            }
+            Data { raw: View::new(read_text(&self.abs)), code: OnceLock::new(), clean: OnceLock::new() }
+        })
     }
 
     /// The file's text as the Python lints saw it (universal newlines).
@@ -224,6 +232,73 @@ pub struct FileMeta {
     pub hash: Hash,
 }
 
+/// Runs `f` where rayon calls cannot deadlock against the lint fan-out or against other inits (the
+/// latent hazard the README described): on a fresh OS thread, inside a rayon pool of its own. The
+/// calling thread blocks in a plain join, so it never steals a lint job while it holds a memo cell
+/// or a `OnceLock` init, and the pool holds only this call's own work, so a worker waiting inside
+/// `f` can never steal another init's closure (which could need the cell `f` is building).
+pub fn run_isolated<T: Send>(f: impl FnOnce() -> T + Send) -> T {
+    std::thread::scope(|s| {
+        let h = std::thread::Builder::new()
+            .stack_size(16 << 20)
+            .spawn_scoped(s, || {
+                let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(16);
+                let pool = rayon::ThreadPoolBuilder::new().num_threads(n).stack_size(16 << 20).build().expect("init pool");
+                pool.install(f)
+            })
+            .expect("spawn init thread");
+        match h.join() {
+            Ok(v) => v,
+            Err(e) => std::panic::resume_unwind(e),
+        }
+    })
+}
+
+fn memo_trace() -> bool {
+    static ON: OnceLock<bool> = OnceLock::new();
+    *ON.get_or_init(|| std::env::var("DQ_ANALYZE_TRACE").is_ok())
+}
+
+/// Debug aid (`DQ_ANALYZE_WATCHDOG=<seconds>`): when set, memo state is tracked and dumped if the run is still going
+/// after that long, then the process exits with status 99.
+static WATCH: OnceLock<Mutex<HashMap<String, Vec<&'static str>>>> = OnceLock::new();
+
+fn watch_set(key: &str, state: &'static str) {
+    if let Some(w) = WATCH.get() {
+        let mut g = w.lock().unwrap();
+        let e = g.entry(key.to_string()).or_default();
+        if state == "done" || state == "initializing" {
+            // one waiter fewer
+            if let Some(i) = e.iter().position(|s| *s == "waiting") {
+                e.remove(i);
+            }
+        }
+        if state == "done" {
+            e.retain(|s| *s != "initializing");
+        } else if state != "done" {
+            e.push(state);
+        }
+    }
+}
+
+/// Starts the watchdog when `DQ_ANALYZE_WATCHDOG` is set.
+pub fn start_watchdog() {
+    let Some(secs) = std::env::var("DQ_ANALYZE_WATCHDOG").ok().and_then(|s| s.parse::<u64>().ok()) else { return };
+    let _ = WATCH.set(Mutex::new(HashMap::new()));
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(secs));
+        if let Some(w) = WATCH.get() {
+            for (k, v) in w.lock().unwrap().iter() {
+                if !v.is_empty() {
+                    eprintln!("watchdog: memo {:?}: {:?}", k, v);
+                }
+            }
+        }
+        eprintln!("watchdog: still running after {}s", secs);
+        std::process::exit(99);
+    });
+}
+
 pub struct Tree {
     pub root: PathBuf,
     pub files: Vec<SourceFile>,
@@ -231,6 +306,10 @@ pub struct Tree {
     extra: Mutex<HashMap<String, Option<std::sync::Arc<String>>>>,
     memo_cells: Mutex<HashMap<String, std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>>>>,
     prewarm_once: OnceLock<()>,
+    /// `(file key, line)` -> the normalized line text a baseline fingerprint uses, persisted so a
+    /// warm run never has to load a file just to compare a baselined site.
+    line_cache: Mutex<HashMap<(Hash, u32), String>>,
+    line_cache_dirty: std::sync::atomic::AtomicBool,
 }
 
 fn mtime_ns(meta: &std::fs::Metadata) -> i128 {
@@ -256,18 +335,40 @@ impl Tree {
             by_dir.entry(dir.as_str()).or_default().push(ext.as_str());
         }
         let dirs: Vec<(&str, Vec<&str>)> = by_dir.into_iter().collect();
-        let found: Vec<Vec<(String, PathBuf, u64, i128)>> = dirs
+        // One job per (root, immediate subdirectory), so a big root like `code/` is walked by many threads.
+        // A file directly in a root is its own job's business: the root job lists those and the subdirectories.
+        struct Job<'a> {
+            base: PathBuf,
+            exts: &'a [&'a str],
+            shallow: bool,
+        }
+        let mut jobs: Vec<Job> = Vec::new();
+        for (dir, exts) in &dirs {
+            let base = if dir.is_empty() { root.to_path_buf() } else { root.join(dir) };
+            jobs.push(Job { base: base.clone(), exts, shallow: true });
+            if let Ok(rd) = std::fs::read_dir(&base) {
+                for e in rd.filter_map(|e| e.ok()) {
+                    if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                        jobs.push(Job { base: e.path(), exts, shallow: false });
+                    }
+                }
+            }
+        }
+        let found: Vec<Vec<(String, PathBuf, u64, i128)>> = jobs
             .par_iter()
-            .map(|(dir, exts)| {
-                let base = if dir.is_empty() { root.to_path_buf() } else { root.join(dir) };
+            .map(|job| {
                 let mut out = Vec::new();
-                for entry in WalkDir::new(&base).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+                let mut walker = WalkDir::new(&job.base).follow_links(false);
+                if job.shallow {
+                    walker = walker.max_depth(1);
+                }
+                for entry in walker.into_iter().filter_map(|e| e.ok()) {
                     if !entry.file_type().is_file() {
                         continue;
                     }
                     let path = entry.path();
                     let Some(ext) = path.extension().and_then(|e| e.to_str()) else { continue };
-                    if !exts.contains(&ext) {
+                    if !job.exts.contains(&ext) {
                         continue;
                     }
                     let Ok(meta) = entry.metadata() else { continue };
@@ -314,7 +415,7 @@ impl Tree {
             .collect();
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
         let meta = files.iter().map(|f| (f.rel.clone(), FileMeta { size: f.size, mtime_ns: f.mtime_ns, hash: f.hash })).collect();
-        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }, meta)
+        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }, meta)
     }
 
     /// A tree over in-memory files (tests and fixtures).
@@ -322,20 +423,43 @@ impl Tree {
         let mut files = files;
         files.sort_by(|a, b| a.rel.cmp(&b.rel));
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
-        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }
+        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }
     }
 
     /// A value built once per run and shared by every lint that asks for the same `key` (a parsed
     /// proc table, a type index, ...). `init` runs under the key's own lock, so concurrent lints
     /// wait for one build instead of racing to do it twice. The value must own its data (it is
     /// `'static`): refer to files by index or path and read them back through the tree.
-    pub fn memo<T: std::any::Any + Send + Sync>(&self, key: &str, init: impl FnOnce() -> T) -> std::sync::Arc<T> {
+    ///
+    /// `init` runs on its own thread against a private rayon pool ([`run_isolated`]), so it may use
+    /// `par_iter` freely: the waiting caller is blocked, not stealing, and the pool only ever holds
+    /// the work of inits (never a lint job that needs the cell being built).
+    pub fn memo<T: std::any::Any + Send + Sync>(&self, key: &str, init: impl FnOnce() -> T + Send) -> std::sync::Arc<T> {
         // Per-key once-cell, so building one value never blocks lookups of another.
         let cell: std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>> = {
             let mut g = self.memo_cells.lock().unwrap();
             g.entry(key.to_string()).or_default().clone()
         };
-        let any = cell.get_or_init(|| std::sync::Arc::new(init()) as std::sync::Arc<dyn std::any::Any + Send + Sync>).clone();
+        let tracing = WATCH.get().is_some();
+        if tracing {
+            watch_set(key, "waiting");
+        }
+        let any = cell
+            .get_or_init(|| {
+                if tracing {
+                    watch_set(key, "initializing");
+                }
+                let t0 = std::time::Instant::now();
+                let v = std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>;
+                if memo_trace() && t0.elapsed().as_millis() >= 5 {
+                    eprintln!("analyze: memo {:?} built in {:.0?}", if key.len() > 40 { &key[..40] } else { key }, t0.elapsed());
+                }
+                v
+            })
+            .clone();
+        if tracing {
+            watch_set(key, "done");
+        }
         any.downcast::<T>().expect("memo key reused with a different type")
     }
 
@@ -344,12 +468,49 @@ impl Tree {
     /// sanitize it on that one thread (seconds), while every other lint waited on the same cells.
     pub fn prewarm(&self) {
         self.prewarm_once.get_or_init(|| {
-            self.files.par_iter().for_each(|f| {
-                let _ = f.raw();
-                let _ = f.code();
-                let _ = f.clean();
-            });
+            run_isolated(|| {
+                self.files.par_iter().for_each(|f| {
+                    let _ = f.raw();
+                    let _ = f.code();
+                    let _ = f.clean();
+                })
+            })
         });
+    }
+
+    /// Loads the persisted line texts (entries of files that no longer exist or changed are simply never asked for).
+    pub fn load_line_cache(&self, path: &Path, stamp: &str) {
+        let Ok(bytes) = std::fs::read(path) else { return };
+        let Ok((st, map)) = crate::incr::de::<(String, Vec<((Hash, u32), String)>)>(&bytes) else { return };
+        if st == stamp {
+            *self.line_cache.lock().unwrap() = map.into_iter().collect();
+        }
+    }
+
+    /// Persists the line texts of the files this tree holds when any was added.
+    pub fn save_line_cache(&self, path: &Path, stamp: &str) {
+        if !self.line_cache_dirty.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
+        let live: std::collections::HashSet<Hash> = self.files.iter().map(|f| f.fkey).collect();
+        let g = self.line_cache.lock().unwrap();
+        let mut rows: Vec<((Hash, u32), String)> = g.iter().filter(|(k, _)| live.contains(&k.0)).map(|(k, v)| (*k, v.clone())).collect();
+        rows.sort();
+        if let Ok(bytes) = crate::incr::ser(&(stamp.to_string(), rows)) {
+            if let Some(dir) = path.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+            if std::fs::write(&tmp, &bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, path);
+            }
+        }
+    }
+
+    /// How many files were read at load time (new or changed since the last run): the cue for
+    /// whether reading the whole tree up front is worth it.
+    pub fn fresh_count(&self) -> usize {
+        self.files.iter().filter(|f| f.data.get().is_some()).count()
     }
 
     pub fn get(&self, rel: &str) -> Option<&SourceFile> {
@@ -380,8 +541,15 @@ impl Tree {
     /// text, `allow_annotations.site_text`).
     pub fn site_text(&self, rel: &str, n: usize) -> String {
         if let Some(f) = self.get(rel) {
+            let key = (f.fkey, n as u32);
+            if let Some(t) = self.line_cache.lock().unwrap().get(&key) {
+                return t.clone();
+            }
             let raw = f.raw();
-            return if n >= 1 && n <= raw.num_lines() { util::normalize_ws(raw.line(n)) } else { String::new() };
+            let t = if n >= 1 && n <= raw.num_lines() { util::normalize_ws(raw.line(n)) } else { String::new() };
+            self.line_cache.lock().unwrap().insert(key, t.clone());
+            self.line_cache_dirty.store(true, std::sync::atomic::Ordering::Relaxed);
+            return t;
         }
         match self.read_extra(rel) {
             Some(t) => {

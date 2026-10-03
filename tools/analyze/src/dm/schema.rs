@@ -16,6 +16,8 @@
 use std::collections::{BTreeSet, HashMap, HashSet};
 use std::sync::Arc;
 
+use serde::{Deserialize, Serialize};
+
 use crate::dm::ownership_index::{self as oi, Index};
 use crate::tree::{SourceFile, Tree, View};
 use crate::util::{py_lstrip, py_rstrip, py_strip, under};
@@ -235,6 +237,25 @@ pub fn registry_types(tree: &Tree) -> Vec<String> {
     found
 }
 
+/// One file's contribution to the [`Schema`] (cached per file by content).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct SchemaFacts {
+    /// `(owner, name, mods, vtype, is_list, line)` in the file's declaration order per owner
+    decls: Vec<(String, String, Vec<String>, String, bool, u32)>,
+    latent: Vec<(String, bool)>,
+    codecs: Vec<(String, Vec<String>)>,
+}
+
+/// One file's accessor usage and default-child declarations (`OwnershipKinds`).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct KindFacts {
+    /// `(var name, kind index into KIND_NAMES)`, sorted and distinct
+    usage: Vec<(String, u8)>,
+    default_children: Vec<(String, String)>,
+}
+
+const KIND_NAMES: [&str; 4] = ["OWN", "REL", "PROTO", "SHARED"];
+
 /// The whole parse, built once per run (`Schema::get`).
 #[derive(Debug, Default)]
 pub struct Schema {
@@ -260,10 +281,41 @@ impl Schema {
     }
 
     pub fn build(tree: &Tree, files: &[&SourceFile]) -> Schema {
+        let facts: Vec<SchemaFacts> = oi::sharded_facts("schema-facts", files, |f| {
+            let mut decls: HashMap<String, Vec<Var>> = HashMap::new();
+            let mut latent: HashMap<String, bool> = HashMap::new();
+            parse_file(&f.rel, f.code(), &mut decls, &mut latent);
+            let mut codecs: HashMap<String, HashSet<String>> = HashMap::new();
+            parse_codec_keys_file(f.raw().text.as_str(), &mut codecs);
+            let mut out = SchemaFacts::default();
+            let mut owners: Vec<&String> = decls.keys().collect();
+            owners.sort();
+            for o in owners {
+                for v in &decls[o] {
+                    out.decls.push((o.clone(), v.name.clone(), v.mods.iter().cloned().collect(), v.vtype.clone(), v.is_list, v.line as u32));
+                }
+            }
+            out.latent = latent.into_iter().collect();
+            out.latent.sort();
+            for (o, keys) in codecs {
+                let mut ks: Vec<String> = keys.into_iter().collect();
+                ks.sort();
+                out.codecs.push((o, ks));
+            }
+            out.codecs.sort();
+            out
+        });
         let mut s = Schema { registry: registry_types(tree), ..Schema::default() };
-        for f in files {
-            parse_file(&f.rel, f.code(), &mut s.decls, &mut s.latent);
-            parse_codec_keys_file(f.raw().text.as_str(), &mut s.codecs);
+        for (f, x) in files.iter().zip(facts) {
+            for (owner, name, mods, vtype, is_list, line) in x.decls {
+                push_var(&mut s.decls, &owner, (name, mods.into_iter().collect(), vtype, is_list), &f.rel, line as usize);
+            }
+            for (t, v) in x.latent {
+                s.latent.insert(t, v);
+            }
+            for (o, keys) in x.codecs {
+                s.codecs.entry(o).or_default().extend(keys);
+            }
         }
         s
     }
@@ -316,29 +368,38 @@ impl OwnershipKinds {
 
     pub fn build(tree: &Tree, files: &[&SourceFile]) -> OwnershipKinds {
         let idx = Index::get(tree, files);
-        let mut usage: HashMap<String, BTreeSet<&'static str>> = HashMap::new();
-        let mut default_children = HashSet::new();
-        let dc = pat_match!(r#"^DECLARE_DEFAULT_CHILD\(\s*(/[\w/]+)\s*,\s*"(\w+)""#);
-        for f in files {
+        let facts: Vec<KindFacts> = oi::sharded_facts("schema-kinds-facts", files, |f| {
             let raw = f.raw();
+            let dc = pat_match!(r#"^DECLARE_DEFAULT_CHILD\(\s*(/[\w/]+)\s*,\s*"(\w+)""#);
+            let mut usage: BTreeSet<(String, u8)> = BTreeSet::new();
+            let mut children: BTreeSet<(String, String)> = BTreeSet::new();
             for m in oi::ACCESSOR.captures_iter(&raw.text) {
                 let func = m.s(1);
                 let kind = if func.starts_with("own_") {
-                    "OWN"
+                    0
                 } else if func.starts_with("rel_") {
-                    "REL"
+                    1
                 } else if func.starts_with("proto_") {
-                    "PROTO"
+                    2
                 } else {
-                    "SHARED"
+                    3
                 };
-                usage.entry(m.s(3).to_string()).or_default().insert(kind);
+                usage.insert((m.s(3).to_string(), kind));
             }
             for line in raw.lines() {
                 if let Some(m) = dc.captures(line) {
-                    default_children.insert((m.s(1).to_string(), m.s(2).to_string()));
+                    children.insert((m.s(1).to_string(), m.s(2).to_string()));
                 }
             }
+            KindFacts { usage: usage.into_iter().collect(), default_children: children.into_iter().collect() }
+        });
+        let mut usage: HashMap<String, BTreeSet<&'static str>> = HashMap::new();
+        let mut default_children = HashSet::new();
+        for x in facts {
+            for (name, kind) in x.usage {
+                usage.entry(name).or_default().insert(KIND_NAMES[kind as usize]);
+            }
+            default_children.extend(x.default_children);
         }
         OwnershipKinds { idx, usage, default_children }
     }

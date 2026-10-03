@@ -81,6 +81,8 @@ pub struct Decls {
     pub bad_sources: Vec<(String, u32, String)>,
     /// The ops a capability datum declares in its own `entries()` (type path, op name): a CAPABILITY_TYPE marker carries no entries.
     pub entry_ops: Vec<(String, String)>,
+    /// A digest of everything above as read from the files (the cache key of results derived from it).
+    pub key: u128,
 }
 
 /// What a key literal names, by the call it sits in (doc/rewrite/final_api.html section 4,
@@ -110,9 +112,15 @@ pub const SOURCE_CALLS: &[&str] = &["hold", "hold_until", "hold_override", "gran
 impl Decls {
     pub fn get(tree: &Tree) -> Arc<Decls> {
         tree.memo("sem/decls", || {
+            let t_decls = std::time::Instant::now();
             let files = tree.select(&CODE_DM);
-            let parts: Vec<FileDecls> = super::par_map(&files, |f| scan_file(f));
-            let mut d = Decls::default();
+            // Per file, cached on disk by content: a one-file edit rescans one file.
+            let stored: Vec<Stored> = crate::incr::facts("sem-decls", &files, |f| Stored::from(scan_file(f)));
+            let default = Stored::default();
+            let nonempty: Vec<(&str, &Stored)> = files.iter().zip(stored.iter()).filter(|(_, s)| **s != default).map(|(f, s)| (f.rel.as_str(), s)).collect();
+            let key = crate::incr::ctx_key(&nonempty);
+            let parts: Vec<FileDecls> = stored.into_iter().map(FileDecls::from).collect();
+            let mut d = Decls { key, ..Decls::default() };
             for p in parts {
                 d.markers.extend(p.markers);
                 for (t, v) in p.relations {
@@ -149,6 +157,9 @@ impl Decls {
             for (t, v) in found {
                 d.relations.entry(t).or_default().insert(v);
             }
+            if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+                eprintln!("analyze: Decls built in {:.0?} ({} markers, {} defines)", t_decls.elapsed(), d.markers.len(), d.defines.len());
+            }
             d
         })
     }
@@ -159,6 +170,54 @@ impl Decls {
 
     pub fn is_relation(&self, ty: &str, var: &str) -> bool {
         self.relations.get(ty).map(|s| s.contains(var)).unwrap_or(false)
+    }
+}
+
+/// The on-disk form of a [`FileDecls`] (a marker's shared line table is stored once per file).
+#[derive(serde::Serialize, serde::Deserialize, Default, PartialEq)]
+struct Stored {
+    key_refs: Vec<(u8, String, String, String, u32)>,
+    bad_sources: Vec<(String, u32, String)>,
+    /// (name, rel, line, body, args, body_offset)
+    markers: Vec<(String, String, u32, String, Vec<String>, usize)>,
+    line_starts: Vec<u32>,
+    relations: Vec<(String, String)>,
+    tracked: Vec<(String, String)>,
+    defines: Vec<String>,
+    publishers: Vec<(String, (String, u32))>,
+    entry_ops: Vec<(String, String)>,
+}
+
+impl From<FileDecls> for Stored {
+    fn from(f: FileDecls) -> Stored {
+        let line_starts = f.markers.first().map(|m| m.line_starts.as_ref().clone()).unwrap_or_default();
+        Stored {
+            key_refs: f.key_refs.into_iter().map(|k| (matches!(k.kind, KeyKind::Capability) as u8, k.key, k.call, k.rel, k.line)).collect(),
+            bad_sources: f.bad_sources,
+            markers: f.markers.into_iter().map(|m| (m.name, m.rel, m.line, m.body, m.args, m.body_offset)).collect(),
+            line_starts,
+            relations: f.relations,
+            tracked: f.tracked,
+            defines: f.defines,
+            publishers: f.publishers,
+            entry_ops: f.entry_ops,
+        }
+    }
+}
+
+impl From<Stored> for FileDecls {
+    fn from(s: Stored) -> FileDecls {
+        let starts = Arc::new(s.line_starts);
+        FileDecls {
+            key_refs: s.key_refs.into_iter().map(|(k, key, call, rel, line)| KeyRef { kind: if k == 1 { KeyKind::Capability } else { KeyKind::Op }, key, call, rel, line }).collect(),
+            bad_sources: s.bad_sources,
+            markers: s.markers.into_iter().map(|(name, rel, line, body, args, body_offset)| Marker { name, rel, line, body, args, body_offset, line_starts: starts.clone() }).collect(),
+            relations: s.relations,
+            tracked: s.tracked,
+            defines: s.defines,
+            publishers: s.publishers,
+            entry_ops: s.entry_ops,
+        }
     }
 }
 

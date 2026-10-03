@@ -36,14 +36,15 @@
 use std::collections::{BTreeSet, HashMap};
 use std::sync::{Arc, RwLock};
 
-use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
-use crate::dm::ownership_index::{
+use crate::dm::ownership_index::{self as oi,
     creates_entity, proc_scopes, puts_object, receiver_type, related, Index, OrdMap, ACCESSOR, CALLBACK, CALLBACK_OK, CORE_DIRS, ENTITY_ROOTS, HANDLE_CALL,
     HANDLE_OK, HANDLE_VAR, OBJLIST_WRITES, OWN_FUNCS, PROTO_FUNCS, REL_FUNCS, REMOVED, STRING_NAME, TRANSFER_DEST, WRITE_ASSIGN, WRITE_INDEX,
     WRITE_MACRO, WRITE_METHOD,
 };
-use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
+use crate::incr;
+use crate::lint::{AllowUse, Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::{ParseKind, Parity};
 use crate::pat;
 use crate::tree::{SourceFile, CODE_DM};
@@ -120,13 +121,32 @@ struct Problem {
     msg: String,
 }
 
-/// What the accessor-usage pass finds in one file.
-#[derive(Default)]
+/// Check names a cached per-line result stores by index.
+const LINE_CHECKS: [&str; 3] = ["removed", "callback", "handle"];
+
+/// What the accessor-usage pass finds in one file (kinds: 0 OWN, 1 REL, 2 PROTO, 3 SHARED).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
 struct UsageScan {
-    /// `(var name, kind, receiver type or "", line)` in discovery order
-    events: Vec<(String, &'static str, String, usize)>,
+    /// `(var name, kind index, receiver type or "", line)` in discovery order
+    events: Vec<(String, u8, String, u32)>,
     /// `unknown_var` reports `(line, message)`
-    unknown: Vec<(usize, String)>,
+    unknown: Vec<(u32, String)>,
+}
+
+/// One file's index-independent per-line results (`string_name`, `removed`, `callback`, `handle`).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Content {
+    string_name: Vec<(u32, String)>,
+    /// `(LINE_CHECKS index, line, message)`
+    lines: Vec<(u8, u32, String)>,
+    uses: Vec<AllowUse>,
+}
+
+/// One file's `raw_write` results.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct RawOut {
+    lines: Vec<(u32, String)>,
+    uses: Vec<AllowUse>,
 }
 
 fn usage_scan(idx: &Index, f: &SourceFile) -> UsageScan {
@@ -142,32 +162,32 @@ fn usage_scan(idx: &Index, f: &SourceFile) -> UsageScan {
                 rtype = idx.member(owner, recv).map(|g| g.vtype);
             }
             let rtype = rtype.unwrap_or_default();
-            let kind = if OWN_FUNCS.contains(&func) {
-                "OWN"
+            let kind: u8 = if OWN_FUNCS.contains(&func) {
+                0
             } else if REL_FUNCS.contains(&func) {
-                "REL"
+                1
             } else if PROTO_FUNCS.contains(&func) {
-                "PROTO"
+                2
             } else {
-                "SHARED"
+                3
             };
-            sc.events.push((name.to_string(), kind, rtype.clone(), no));
+            sc.events.push((name.to_string(), kind, rtype.clone(), no as u32));
             // The var named by the string must exist: on the receiver's type when it is known, else
             // on some type (a string var name can't be checked by the compiler).
             if !rtype.is_empty() && under(&rtype, ENTITY_ROOTS) {
                 let prefix = format!("{}/", rtype);
                 let on_subtype = idx.name_decls.get(name).map(|v| v.iter().any(|(t, _, _)| t.starts_with(&prefix))).unwrap_or(false);
                 if idx.member(&rtype, name).is_none() && !on_subtype {
-                    sc.unknown.push((no, format!("{}({}, \"{}\"): {} has no var {}", func, recv, name, rtype, name)));
+                    sc.unknown.push((no as u32, format!("{}({}, \"{}\"): {} has no var {}", func, recv, name, rtype, name)));
                 }
             } else if idx.name_decls.get(name).map(|v| v.is_empty()).unwrap_or(true) {
-                sc.unknown.push((no, format!("{}({}, \"{}\"): no type declares a var {}", func, recv, name, name)));
+                sc.unknown.push((no as u32, format!("{}({}, \"{}\"): no type declares a var {}", func, recv, name, name)));
             }
         }
         for m in TRANSFER_DEST.captures_iter(rl) {
             let (recv, name) = (m.s(1), m.s(2));
             let rtype: String = if recv == "src" { owner.to_string() } else { local_types.get(recv).and_then(|t| t.clone()).unwrap_or_default() };
-            sc.events.push((name.to_string(), "OWN", rtype, no));
+            sc.events.push((name.to_string(), 0, rtype, no as u32));
         }
     });
     sc
@@ -254,18 +274,11 @@ impl Ctx {
     }
 }
 
-/// One file's results of the string-name and per-line checks.
-struct FileOut {
-    string_name: Vec<Problem>,
-    lines: Vec<Problem>,
-    sink: Sink,
-}
-
-fn file_checks(cx: &Ctx, f: &SourceFile) -> FileOut {
+/// The index-independent checks of one file (`string_name`, `removed`, `callback`, `handle`).
+fn content_checks(f: &SourceFile) -> Content {
     let mut sink = Sink::new();
     sink.cur = f.rel.clone();
-    let mut string_name = Vec::new();
-    let mut lines = Vec::new();
+    let mut res = Content::default();
     let raw = f.raw();
     let code = f.code();
     let rel = f.rel.as_str();
@@ -282,65 +295,52 @@ fn file_checks(cx: &Ctx, f: &SourceFile) -> FileOut {
         // backspace byte (0x08) where `\b` belongs, so it needs a U+0008 right before the name and
         // string_name fires only on a line that carries one (never, in the real tree).
         if line.contains(&format!("\u{8}{}(", name)) && !sink.allowed(f, no, LINT) {
-            string_name.push(Problem {
-                check: "string_name",
-                rel: rel.to_string(),
-                line: no,
-                msg: format!("{}(): name the var with nameof(), not a string", name),
-            });
+            res.string_name.push((no as u32, format!("{}(): name the var with nameof(), not a string", name)));
         }
     }
 
     // removed / callback / handle
-    let in_core = starts_with_any(rel, CORE_DIRS);
     for no in 1..=raw.num_lines() {
         let c = code.line(no);
         if let Some(m) = REMOVED.find(c) {
             if !rel.starts_with("tools/") && !sink.allowed(f, no, LINT) {
-                lines.push(Problem {
-                    check: "removed",
-                    rel: rel.to_string(),
-                    line: no,
-                    msg: format!("{} was removed (doc/rewrite/ownership.md)", m.as_str()),
-                });
+                res.lines.push((0, no as u32, format!("{} was removed (doc/rewrite/ownership.md)", m.as_str())));
             }
         }
         if CALLBACK.is_match(c) && !starts_with_any(rel, CALLBACK_OK) && !sink.allowed(f, no, LINT) {
-            lines.push(Problem {
-                check: "callback",
-                rel: rel.to_string(),
-                line: no,
-                msg: "CALLBACK outside the core: use om_after() (arguments held as handles)".to_string(),
-            });
+            res.lines.push((1, no as u32, "CALLBACK outside the core: use om_after() (arguments held as handles)".to_string()));
         }
         if !starts_with_any(rel, HANDLE_OK) {
             if let Some(m) = HANDLE_CALL.captures(c) {
                 if !sink.allowed(f, no, LINT) {
-                    lines.push(Problem {
-                        check: "handle",
-                        rel: rel.to_string(),
-                        line: no,
-                        msg: format!("om_{}() in content: a var naming an entity is a relation view (rel_set)", m.s(1)),
-                    });
+                    res.lines.push((2, no as u32, format!("om_{}() in content: a var naming an entity is a relation view (rel_set)", m.s(1))));
                 }
             }
             if let Some(hm) = HANDLE_VAR.captures(c) {
                 if !sink.allowed(f, no, LINT) {
                     let var = if hm.s(1).is_empty() { hm.s(3) } else { hm.s(1) };
-                    lines.push(Problem {
-                        check: "handle",
-                        rel: rel.to_string(),
-                        line: no,
-                        msg: format!("var {}: a content var naming an entity is a relation view, not a handle", var),
-                    });
+                    res.lines.push((2, no as u32, format!("var {}: a content var naming an entity is a relation view, not a handle", var)));
                 }
             }
         }
     }
-    if !in_core {
-        raw_writes(cx, f, &mut sink, &mut lines);
+    res.uses = sink.allow_used;
+    res
+}
+
+/// The `raw_write` check of one file (outside the core directories).
+fn raw_checks(cx: &Ctx, f: &SourceFile) -> RawOut {
+    let mut res = RawOut::default();
+    if starts_with_any(f.rel.as_str(), CORE_DIRS) {
+        return res;
     }
-    FileOut { string_name, lines, sink }
+    let mut sink = Sink::new();
+    sink.cur = f.rel.clone();
+    let mut problems: Vec<Problem> = Vec::new();
+    raw_writes(cx, f, &mut sink, &mut problems);
+    res.lines = problems.into_iter().map(|p| (p.line as u32, p.msg)).collect();
+    res.uses = sink.allow_used;
+    res
 }
 
 /// One candidate write found on a proc-body line: `(receiver chain, var, how, text after it)`.
@@ -464,189 +464,219 @@ impl Lint for Ownership {
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
         let all = cx.all_files();
-        let idx = Index::get(cx.tree, &all);
+        let files = cx.files();
         let mut problems: Vec<Problem> = Vec::new();
 
-        // ---- the assignment index: accessor usage per var name and receiver type
-        let scans: Vec<UsageScan> = all.par_iter().map(|f| usage_scan(&idx, f)).collect();
+        // ---- the index-independent per-line checks run beside the index and the usage scan
+        let (contents, (idx, scans)) = rayon::join(
+            || oi::sharded_facts("ownership-content", &files, content_checks),
+            || {
+                let idx = Index::get(cx.tree, &all);
+                // ---- the assignment index: accessor usage per var name and receiver type. A file's
+                // scan reads the members and name declarations only, so it is cached under their key.
+                let scans: Vec<UsageScan> = oi::sharded_keyed("ownership-usage", idx.key_members, &all, |f| usage_scan(&idx, f));
+                (idx, scans)
+            },
+        );
         let mut usage: OrdMap<UsageKinds> = OrdMap::new();
         let mut unknown: Vec<Problem> = Vec::new();
         for (f, sc) in all.iter().zip(scans) {
             for (name, kind, rtype, no) in sc.events {
                 let u = usage.entry_or_insert_with(&name, UsageKinds::default);
                 let set = match kind {
-                    "OWN" => &mut u.own,
-                    "REL" => &mut u.rel,
-                    "PROTO" => &mut u.proto,
+                    0 => &mut u.own,
+                    1 => &mut u.rel,
+                    2 => &mut u.proto,
                     _ => &mut u.shared,
                 };
-                set.insert((rtype, f.rel.clone(), no));
+                set.insert((rtype, f.rel.clone(), no as usize));
             }
             for (no, msg) in sc.unknown {
-                unknown.push(Problem { check: "unknown_var", rel: f.rel.clone(), line: no, msg });
+                unknown.push(Problem { check: "unknown_var", rel: f.rel.clone(), line: no as usize, msg });
             }
         }
         problems.extend(unknown);
+        // What a per-file raw_write judgement reads of the usage map: the receiver types only.
+        fn types_of(set: &BTreeSet<Loc>) -> Vec<&str> {
+            let mut v: Vec<&str> = set.iter().map(|(t, _, _)| t.as_str()).collect();
+            v.dedup();
+            v
+        }
+        let usage_types: Vec<(&str, [Vec<&str>; 3])> = usage.iter().map(|(name, u)| (name, [types_of(&u.own), types_of(&u.rel), types_of(&u.proto)])).collect();
+        let judge_key = incr::mix(&[idx.key_struct, incr::ctx_key(&usage_types)]);
         let cxt = Ctx { idx: idx.clone(), usage, vk_cache: RwLock::new(HashMap::new()), amb_cache: RwLock::new(HashMap::new()) };
 
-        // ---- string_name (first, as the Python's second loop), per-line checks collected for later
-        let files = cx.files();
-        let outs: Vec<FileOut> = files.par_iter().map(|f| file_checks(&cxt, f)).collect();
-        let mut line_problems: Vec<Problem> = Vec::new();
-        let mut sinks: Vec<Sink> = Vec::new();
-        for o in outs {
-            problems.extend(o.string_name);
-            line_problems.extend(o.lines);
-            sinks.push(o.sink);
-        }
-
-        // ---- kinds: one kind per var across the hierarchy
-        struct Entry {
-            t: String,
-            kind: &'static str,
-            rel: String,
-            line: usize,
-        }
-        let mut by_name: OrdMap<Vec<Entry>> = OrdMap::new();
-        for (t, vs) in idx.decls.iter() {
-            for (v, d) in vs.iter() {
-                if let Some(kind) = decl_kind_of(&d.macro_name) {
-                    by_name.entry_or_insert_with(v, Vec::new).push(Entry { t: t.to_string(), kind, rel: d.rel.clone(), line: d.line });
-                }
+        // ---- raw_write per file, beside the whole-tree checks (kinds, matrix, contradictions)
+        let (raws, global) = rayon::join(
+            || -> Vec<RawOut> { oi::sharded_keyed("ownership-raw", judge_key, &files, |f| raw_checks(&cxt, f)) },
+            || -> Vec<Problem> {
+                let mut problems: Vec<Problem> = Vec::new();
+            // ---- kinds: one kind per var across the hierarchy
+            struct Entry {
+                t: String,
+                kind: &'static str,
+                rel: String,
+                line: usize,
             }
-        }
-        for (v, entries) in by_name.iter() {
-            for (i, e1) in entries.iter().enumerate() {
-                for e2 in &entries[i + 1..] {
-                    if e1.kind != e2.kind && related(&e1.t, &e2.t) {
-                        problems.push(Problem {
-                            check: "kinds",
-                            rel: e2.rel.clone(),
-                            line: e2.line,
-                            msg: format!("{}.{} is {} here but {} on {} ({}:{}): one kind per var", e2.t, v, e2.kind, e1.kind, e1.t, e1.rel, e1.line),
-                        });
+            let mut by_name: OrdMap<Vec<Entry>> = OrdMap::new();
+            for (t, vs) in idx.decls.iter() {
+                for (v, d) in vs.iter() {
+                    if let Some(kind) = decl_kind_of(&d.macro_name) {
+                        by_name.entry_or_insert_with(v, Vec::new).push(Entry { t: t.to_string(), kind, rel: d.rel.clone(), line: d.line });
                     }
                 }
             }
-        }
-
-        // ---- matrix
-        for (t, vs) in idx.decls.iter() {
-            for (v, d) in vs.iter() {
-                let Some(got) = idx.member(t, v) else { continue };
-                let vtype = got.vtype.as_str();
-                let kind = decl_kind_of(&d.macro_name);
-                let a = d.opts.as_str();
-                if matches!(kind, Some("OWN") | Some("REL")) && idx.is_registry(vtype) {
-                    problems.push(Problem {
-                        check: "matrix",
-                        rel: d.rel.clone(),
-                        line: d.line,
-                        msg: format!("{}.{} is typed {}, a registry type: it is SHARED (a per-holder copy is PROTO)", t, v, vtype),
-                    });
-                }
-                if kind == Some("SHARED") && !vtype.is_empty() && under(vtype, ENTITY_ROOTS) && !idx.is_registry(vtype) {
-                    problems.push(Problem {
-                        check: "matrix",
-                        rel: d.rel.clone(),
-                        line: d.line,
-                        msg: format!("{}.{} is SHARED but typed {}, which is not a REGISTRY_TYPE", t, v, vtype),
-                    });
-                }
-                if d.macro_name == "OWN"
-                    && (a.contains("OWN_SPILL") || a.contains("OWN_CONTAINED"))
-                    && !vtype.is_empty()
-                    && !under(vtype, &["/atom/movable", "/obj", "/mob"])
-                {
-                    problems.push(Problem {
-                        check: "matrix",
-                        rel: d.rel.clone(),
-                        line: d.line,
-                        msg: format!("{}.{}: {} needs a movable var type (got {})", t, v, py_strip(a), vtype),
-                    });
-                }
-            }
-        }
-
-        // ---- contradictions (usage vs usage, usage vs declaration, resources)
-        for (name, kinds) in cxt.usage.iter() {
-            for (t1, r1, n1) in &kinds.own {
-                for (t2, r2, n2) in &kinds.rel {
-                    if !t1.is_empty() && !t2.is_empty() && related(t1, t2) {
-                        let m1 = idx.member(t1, name);
-                        if m1.is_some() && m1 == idx.member(t2, name) {
+            for (v, entries) in by_name.iter() {
+                for (i, e1) in entries.iter().enumerate() {
+                    for e2 in &entries[i + 1..] {
+                        if e1.kind != e2.kind && related(&e1.t, &e2.t) {
                             problems.push(Problem {
-                                check: "contradiction",
-                                rel: r2.clone(),
-                                line: *n2,
-                                msg: format!("{}.{} is written as a relation here and as owned at {}:{}", t2, name, r1, n1),
+                                check: "kinds",
+                                rel: e2.rel.clone(),
+                                line: e2.line,
+                                msg: format!("{}.{} is {} here but {} on {} ({}:{}): one kind per var", e2.t, v, e2.kind, e1.kind, e1.t, e1.rel, e1.line),
                             });
-                            break;
                         }
                     }
                 }
             }
-            for (t, r, n) in &kinds.rel {
-                if t.is_empty() {
-                    continue;
-                }
-                if let Some(got) = idx.member(t, name) {
-                    if got.vtype == "/datum/gas_mixture" {
-                        problems.push(Problem {
-                            check: "matrix",
-                            rel: r.clone(),
-                            line: *n,
-                            msg: format!("{}.{} holds a gas mixture: a holder owns its mixture (own_set), a network's is PROTO", t, name),
-                        });
-                    }
-                }
-                if let Some((_, d)) = idx.decl(t, name) {
-                    if !matches!(decl_kind_of(&d.macro_name), None | Some("REL")) {
-                        problems.push(Problem {
-                            check: "contradiction",
-                            rel: r.clone(),
-                            line: *n,
-                            msg: format!("{}.{} is declared {} but written with rel_*", t, name, d.macro_name),
-                        });
-                    }
-                }
-            }
-            for (t, r, n) in &kinds.own {
-                if t.is_empty() {
-                    continue;
-                }
-                let d = idx.decl(t, name);
-                if let Some((_, dd)) = &d {
-                    if !matches!(decl_kind_of(&dd.macro_name), None | Some("OWN")) {
-                        problems.push(Problem {
-                            check: "contradiction",
-                            rel: r.clone(),
-                            line: *n,
-                            msg: format!("{}.{} is declared {} but written with own_*", t, name, dd.macro_name),
-                        });
-                    }
-                }
-                if let Some(got) = idx.member(t, name) {
-                    let proto = matches!(&d, Some((_, dd)) if dd.macro_name == "PROTO");
-                    if idx.is_registry(&got.vtype) && !proto {
-                        problems.push(Problem {
-                            check: "matrix",
-                            rel: r.clone(),
-                            line: *n,
-                            msg: format!("{}.{} is typed {}, a registry type: it is SHARED, not owned", t, name, got.vtype),
-                        });
-                    }
-                }
-            }
-        }
 
+            // ---- matrix
+            for (t, vs) in idx.decls.iter() {
+                for (v, d) in vs.iter() {
+                    let Some(got) = idx.member(t, v) else { continue };
+                    let vtype = got.vtype.as_str();
+                    let kind = decl_kind_of(&d.macro_name);
+                    let a = d.opts.as_str();
+                    if matches!(kind, Some("OWN") | Some("REL")) && idx.is_registry(vtype) {
+                        problems.push(Problem {
+                            check: "matrix",
+                            rel: d.rel.clone(),
+                            line: d.line,
+                            msg: format!("{}.{} is typed {}, a registry type: it is SHARED (a per-holder copy is PROTO)", t, v, vtype),
+                        });
+                    }
+                    if kind == Some("SHARED") && !vtype.is_empty() && under(vtype, ENTITY_ROOTS) && !idx.is_registry(vtype) {
+                        problems.push(Problem {
+                            check: "matrix",
+                            rel: d.rel.clone(),
+                            line: d.line,
+                            msg: format!("{}.{} is SHARED but typed {}, which is not a REGISTRY_TYPE", t, v, vtype),
+                        });
+                    }
+                    if d.macro_name == "OWN"
+                        && (a.contains("OWN_SPILL") || a.contains("OWN_CONTAINED"))
+                        && !vtype.is_empty()
+                        && !under(vtype, &["/atom/movable", "/obj", "/mob"])
+                    {
+                        problems.push(Problem {
+                            check: "matrix",
+                            rel: d.rel.clone(),
+                            line: d.line,
+                            msg: format!("{}.{}: {} needs a movable var type (got {})", t, v, py_strip(a), vtype),
+                        });
+                    }
+                }
+            }
+
+            // ---- contradictions (usage vs usage, usage vs declaration, resources)
+            for (name, kinds) in cxt.usage.iter() {
+                for (t1, r1, n1) in &kinds.own {
+                    for (t2, r2, n2) in &kinds.rel {
+                        if !t1.is_empty() && !t2.is_empty() && related(t1, t2) {
+                            let m1 = idx.member(t1, name);
+                            if m1.is_some() && m1 == idx.member(t2, name) {
+                                problems.push(Problem {
+                                    check: "contradiction",
+                                    rel: r2.clone(),
+                                    line: *n2,
+                                    msg: format!("{}.{} is written as a relation here and as owned at {}:{}", t2, name, r1, n1),
+                                });
+                                break;
+                            }
+                        }
+                    }
+                }
+                for (t, r, n) in &kinds.rel {
+                    if t.is_empty() {
+                        continue;
+                    }
+                    if let Some(got) = idx.member(t, name) {
+                        if got.vtype == "/datum/gas_mixture" {
+                            problems.push(Problem {
+                                check: "matrix",
+                                rel: r.clone(),
+                                line: *n,
+                                msg: format!("{}.{} holds a gas mixture: a holder owns its mixture (own_set), a network's is PROTO", t, name),
+                            });
+                        }
+                    }
+                    if let Some((_, d)) = idx.decl(t, name) {
+                        if !matches!(decl_kind_of(&d.macro_name), None | Some("REL")) {
+                            problems.push(Problem {
+                                check: "contradiction",
+                                rel: r.clone(),
+                                line: *n,
+                                msg: format!("{}.{} is declared {} but written with rel_*", t, name, d.macro_name),
+                            });
+                        }
+                    }
+                }
+                for (t, r, n) in &kinds.own {
+                    if t.is_empty() {
+                        continue;
+                    }
+                    let d = idx.decl(t, name);
+                    if let Some((_, dd)) = &d {
+                        if !matches!(decl_kind_of(&dd.macro_name), None | Some("OWN")) {
+                            problems.push(Problem {
+                                check: "contradiction",
+                                rel: r.clone(),
+                                line: *n,
+                                msg: format!("{}.{} is declared {} but written with own_*", t, name, dd.macro_name),
+                            });
+                        }
+                    }
+                    if let Some(got) = idx.member(t, name) {
+                        let proto = matches!(&d, Some((_, dd)) if dd.macro_name == "PROTO");
+                        if idx.is_registry(&got.vtype) && !proto {
+                            problems.push(Problem {
+                                check: "matrix",
+                                rel: r.clone(),
+                                line: *n,
+                                msg: format!("{}.{} is typed {}, a registry type: it is SHARED, not owned", t, name, got.vtype),
+                            });
+                        }
+                    }
+                }
+            }
+
+                problems
+            },
+        );
+
+        // ---- string_name (first, as the Python's second loop), per-line checks collected for later
+        let mut line_problems: Vec<Problem> = Vec::new();
+        let mut uses: Vec<AllowUse> = Vec::new();
+        for ((f, c), r) in files.iter().zip(contents).zip(raws) {
+            for (no, msg) in c.string_name {
+                problems.push(Problem { check: "string_name", rel: f.rel.clone(), line: no as usize, msg });
+            }
+            for (check, no, msg) in c.lines {
+                line_problems.push(Problem { check: LINE_CHECKS[check as usize], rel: f.rel.clone(), line: no as usize, msg });
+            }
+            for (no, msg) in r.lines {
+                line_problems.push(Problem { check: "raw_write", rel: f.rel.clone(), line: no as usize, msg });
+            }
+            uses.extend(c.uses);
+            uses.extend(r.uses);
+        }
+        problems.extend(global);
         // ---- per-line checks (removed, callback, handle, raw_write), then the ALLOW usage
         problems.extend(line_problems);
-        for s in sinks {
-            for u in s.allow_used {
-                if !out.allow_used.contains(&u) {
-                    out.allow_used.push(u);
-                }
+        for u in uses {
+            if !out.allow_used.contains(&u) {
+                out.allow_used.push(u);
             }
         }
 

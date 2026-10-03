@@ -27,9 +27,12 @@
 
 use std::collections::HashMap;
 
-use crate::dm::pylines::{allowed_in, py_splitlines};
+use serde::{Deserialize, Serialize};
+
+use crate::dm::pylines::{allowed_in, allowed_in_recorded, py_splitlines, recorded_into};
 use crate::dm::sys::col0;
 use crate::dm::walk::walk_order;
+use crate::incr;
 use crate::lint::{Cx, Lint, Meta, Policy, Registry, RuleMeta, ScanKind, Sink};
 use crate::parity::Parity;
 use crate::pat_match;
@@ -67,6 +70,50 @@ static META: Meta = Meta {
     allow: &["init"],
     lists: &[],
 };
+
+/// One file's part of the table-init pass: its `init_from_table` flags `(type, on)` in file order,
+/// and its `Initialize()` / `LateInitialize()` headers `(line, type)` that no ALLOW(init) kept.
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct TableFacts {
+    flags: Vec<(String, bool)>,
+    headers: Vec<(u32, String)>,
+}
+
+fn table_facts(f: &SourceFile) -> TableFacts {
+    let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
+    let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
+    let type_block = pat_match!(r"^(/[\w/]+)\s*(//.*)?$");
+    let table_flag = pat_match!(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b");
+    let mut out = TableFacts::default();
+    let lines = py_splitlines(f.text());
+    let mut block: Option<String> = None;
+    for (i, line) in lines.iter().enumerate() {
+        let number = i + 1;
+        let line = *line;
+        if let Some(head) = type_block.captures(line) {
+            if !line.contains('(') {
+                block = Some(head.s(1).to_string());
+                continue;
+            }
+        }
+        if col0(line) {
+            block = None;
+        }
+        if let Some(flag) = table_flag.captures(line) {
+            if let Some(b) = &block {
+                out.flags.push((b.clone(), matches!(flag.s(1), "TRUE" | "1")));
+            }
+        }
+        let header = init_header.captures(line).or_else(|| late_header.captures(line));
+        if let Some(h) = header {
+            // Asked for every header, not only one that would count.
+            if !allowed_in_recorded(f, &lines, number, "init") {
+                out.headers.push((number as u32, h.s(1).to_string()));
+            }
+        }
+    }
+    out
+}
 
 struct Init;
 
@@ -119,56 +166,35 @@ impl Lint for Init {
         }
     }
 
-    /// `table_init_violations(files)` over every file, exempt ones included.
+    /// `table_init_violations(files)` over every file, exempt ones included. Per-file facts (the
+    /// `init_from_table` flags and the headers the ALLOW question did not keep) are cached by content;
+    /// the cross-file part (last flag in walk order wins, nearest flagged ancestor) is a cheap merge.
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
-        let init_header = pat_match!(r"^(/[\w/]+)/Initialize\s*\(");
-        let late_header = pat_match!(r"^(/[\w/]+)/LateInitialize\s*\(");
-        let type_block = pat_match!(r"^(/[\w/]+)\s*(//.*)?$");
-        let table_flag = pat_match!(r"^\s+init_from_table\s*=\s*(TRUE|FALSE|1|0)\b");
-
         let all = cx.all_files();
-        let mut flags: HashMap<String, bool> = HashMap::new();
-        let mut headers: Vec<(&str, usize, String)> = Vec::new();
-        for f in walk_order(&all) {
-            let lines = py_splitlines(f.text());
-            let mut block: Option<String> = None;
-            for (i, line) in lines.iter().enumerate() {
-                let number = i + 1;
-                let line = *line;
-                if let Some(head) = type_block.captures(line) {
-                    if !line.contains('(') {
-                        block = Some(head.s(1).to_string());
-                        continue;
-                    }
-                }
-                if col0(line) {
-                    block = None;
-                }
-                if let Some(flag) = table_flag.captures(line) {
-                    if let Some(b) = &block {
-                        flags.insert(b.clone(), matches!(flag.s(1), "TRUE" | "1"));
-                    }
-                }
-                let header = init_header.captures(line).or_else(|| late_header.captures(line));
-                if let Some(h) = header {
-                    // Asked for every header, not only one that would count.
-                    if !allowed_in(out, f, &lines, number, "init") {
-                        headers.push((f.rel.as_str(), number, h.s(1).to_string()));
-                    }
-                }
+        let facts = recorded_into(out, || incr::facts("init-table", &all, table_facts));
+        let with: Vec<(&SourceFile, &TableFacts)> = all.iter().copied().zip(facts.iter()).filter(|(_, fa)| !fa.flags.is_empty() || !fa.headers.is_empty()).collect();
+        let by_rel: HashMap<&str, &TableFacts> = with.iter().map(|(f, fa)| (f.rel.as_str(), *fa)).collect();
+        let sel: Vec<&SourceFile> = with.iter().map(|(f, _)| *f).collect();
+
+        let mut flags: HashMap<&str, bool> = HashMap::new();
+        for f in walk_order(&sel) {
+            for (ty, on) in &by_rel[f.rel.as_str()].flags {
+                flags.insert(ty.as_str(), *on);
             }
         }
-        for (rel, number, path) in headers {
-            let parts: Vec<&str> = path.split('/').collect();
-            for cut in (2..=parts.len()).rev() {
-                let ancestor = parts[..cut].join("/");
-                if let Some(&on) = flags.get(&ancestor) {
-                    // The type that turns the flag on keeps its Initialize() as the fallback
-                    // (a colour or extra New() args) and mirrors it in table_initialize().
-                    if on && cut != parts.len() {
-                        out.site_in("table_init_overrides", rel, number);
+        for f in walk_order(&sel) {
+            for (number, path) in &by_rel[f.rel.as_str()].headers {
+                let parts: Vec<&str> = path.split('/').collect();
+                for cut in (2..=parts.len()).rev() {
+                    let ancestor = parts[..cut].join("/");
+                    if let Some(&on) = flags.get(ancestor.as_str()) {
+                        // The type that turns the flag on keeps its Initialize() as the fallback
+                        // (a colour or extra New() args) and mirrors it in table_initialize().
+                        if on && cut != parts.len() {
+                            out.site_in("table_init_overrides", &f.rel, *number as usize);
+                        }
+                        break;
                     }
-                    break;
                 }
             }
         }

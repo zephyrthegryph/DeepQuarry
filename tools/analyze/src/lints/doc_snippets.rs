@@ -175,15 +175,22 @@ impl Names {
                 names.type_procs.entry(p.name.clone()).or_default().insert(p.path.clone());
             }
         }
-        for f in &dm {
-            if !f.text().contains("#define") {
-                continue;
-            }
-            for line in f.raw().lines() {
-                if let Some(m) = pat_match!(r"\s*#define\s+(\w+)").captures(line) {
-                    names.defines.insert(m.s(1).to_string());
+        // Per-file facts: the `#define` names a file declares (cached by content).
+        let defs: Vec<Vec<String>> = crate::incr::facts("doc-snippets-defines", &dm, |f| {
+            let mut v: Vec<String> = Vec::new();
+            if f.text().contains("#define") {
+                for line in f.raw().lines() {
+                    if let Some(m) = pat_match!(r"\s*#define\s+(\w+)").captures(line) {
+                        v.push(m.s(1).to_string());
+                    }
                 }
             }
+            v.sort();
+            v.dedup();
+            v
+        });
+        for d in defs {
+            names.defines.extend(d);
         }
         names
     }

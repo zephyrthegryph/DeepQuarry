@@ -2,10 +2,11 @@
 //! declared by state. Hand guards, self-re-arming timers, hand start/stop beside state writes, and
 //! hand `changed(src, ...)` raises of derived fields.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 use std::sync::LazyLock;
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -299,26 +300,23 @@ fn scan_toggle(name: &str, stmts: &[(usize, usize, String)], hits: &mut Vec<usiz
     }
 }
 
-/// type path -> input field names of the derived fields it declares ("" marks a hand-raisable type).
-fn derived_inputs(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String>> {
-    let mut out: HashMap<String, BTreeSet<String>> = HashMap::new();
-    for f in files {
-        for line in f.raw().lines() {
-            if let Some(m) = pat_match!(r"^OM_DERIVE_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(.*)\)\s*(?://.*)?$").captures(py_strip(line)) {
-                let names: BTreeSet<String> = pat!(r#""(\w+)""#).captures_iter(m.s(3)).iter().map(|c| c.s(1).to_string()).collect();
-                let entry = out.entry(m.s(1).to_string()).or_default();
-                let has_names = !names.is_empty();
-                entry.extend(names);
-                if has_names || m.s(3).contains("CHANGE_EXPLICIT") {
-                    entry.insert(String::new());
-                }
+/// One file's derived-field declarations: `(type path, input names)`; the input set holds `""`
+/// for a hand-raisable type.
+fn derived_of(f: &SourceFile) -> Vec<(String, Vec<String>)> {
+    let mut out: Vec<(String, Vec<String>)> = Vec::new();
+    for line in f.raw().lines() {
+        if let Some(m) = pat_match!(r"^OM_DERIVE_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,\s*(.*)\)\s*(?://.*)?$").captures(py_strip(line)) {
+            let mut names: BTreeSet<String> = pat!(r#""(\w+)""#).captures_iter(m.s(3)).iter().map(|c| c.s(1).to_string()).collect();
+            if !names.is_empty() || m.s(3).contains("CHANGE_EXPLICIT") {
+                names.insert(String::new());
             }
+            out.push((m.s(1).to_string(), names.into_iter().collect()));
         }
     }
     out
 }
 
-fn inputs_for(path: &str, derived: &HashMap<String, BTreeSet<String>>) -> BTreeSet<String> {
+fn inputs_for(path: &str, derived: &BTreeMap<String, BTreeSet<String>>) -> BTreeSet<String> {
     let mut names = BTreeSet::new();
     for (root, inputs) in derived {
         if path == root || path.starts_with(&format!("{}/", root)) {
@@ -329,7 +327,7 @@ fn inputs_for(path: &str, derived: &HashMap<String, BTreeSet<String>>) -> BTreeS
 }
 
 /// `changed(src, ...)` in a proc of a type with derived fields, when it is a hand refresh.
-fn scan_hand_raise(f: &SourceFile, derived: &HashMap<String, BTreeSet<String>>, hits: &mut Vec<usize>) {
+fn scan_hand_raise(f: &SourceFile, derived: &BTreeMap<String, BTreeSet<String>>, hits: &mut Vec<usize>) {
     let raw = f.raw();
     let nlines = raw.num_lines();
     let mut path: Option<String> = None;
@@ -378,47 +376,69 @@ fn scan_hand_raise(f: &SourceFile, derived: &HashMap<String, BTreeSet<String>>, 
     }
 }
 
+const R_GUARD: u8 = 0;
+const R_REARM: u8 = 1;
+const R_TOGGLE: u8 = 2;
+
+/// The sites that read only the file: guards, re-arms and hand start/stop, in rule order.
+fn pure_sites(f: &SourceFile) -> Vec<(u8, u32)> {
+    let mut out = Vec::new();
+    if SKIP.iter().any(|p| f.rel.starts_with(p)) {
+        return out;
+    }
+    let text = f.raw().text.as_str();
+    if !["PROCESS_KILL", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP"].iter().any(|k| text.contains(k)) {
+        return out;
+    }
+    let lines = f.raw().lines_vec();
+    let mut guard = Vec::new();
+    let mut rearm = Vec::new();
+    let mut toggle = Vec::new();
+    for p in procs(&lines) {
+        let stmts = stmts_of(&p.body);
+        let (mut g, mut r, mut t) = (Vec::new(), Vec::new(), Vec::new());
+        scan_guard(&p.name, &stmts, &mut g);
+        scan_rearm(&p.name, &p.params, &stmts, &mut r);
+        scan_toggle(&p.name, &stmts, &mut t);
+        guard.extend(g);
+        rearm.extend(r);
+        toggle.extend(t);
+    }
+    out.extend(guard.into_iter().map(|n| (R_GUARD, n as u32)));
+    out.extend(rearm.into_iter().map(|n| (R_REARM, n as u32)));
+    out.extend(toggle.into_iter().map(|n| (R_TOGGLE, n as u32)));
+    out
+}
+
 fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let derived = derived_inputs(files);
-    for f in files {
-        let rel = f.rel.as_str();
-        if SKIP.iter().any(|p| rel.starts_with(p)) {
-            continue;
+    let fd = incr::facts("sys-periodic-derived", files, derived_of);
+    let mut derived: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for (root, names) in fd.iter().flatten() {
+        derived.entry(root.clone()).or_default().extend(names.iter().cloned());
+    }
+    let raised: Vec<Vec<u32>> = incr::keyed("sys-periodic-raise", incr::ctx_key(&derived), files, |f| {
+        let mut hits = Vec::new();
+        if SKIP.iter().any(|p| f.rel.starts_with(p)) {
+            return Vec::new();
         }
-        let text = f.raw().text.as_str();
-        if text.contains("changed") && !derived.is_empty() {
-            let mut hits = Vec::new();
+        if f.raw().text.contains("changed") && !derived.is_empty() {
             scan_hand_raise(f, &derived, &mut hits);
-            for n in hits {
-                out.push(("derived_hand_raise", rel.to_string(), n));
-            }
         }
-        if !["PROCESS_KILL", "om_after", "om_task_periodic", "MACHINE_WAKE", "MACHINE_SLEEP"].iter().any(|k| text.contains(k)) {
-            continue;
+        hits.into_iter().map(|n| n as u32).collect()
+    });
+    let pure: Vec<Vec<(u8, u32)>> = incr::facts("sys-periodic-pure", files, pure_sites);
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    for ((f, r), p) in files.iter().zip(&raised).zip(&pure) {
+        for n in r {
+            out.push(("derived_hand_raise", f.rel.clone(), *n as usize));
         }
-        let lines = f.raw().lines_vec();
-        let mut guard = Vec::new();
-        let mut rearm = Vec::new();
-        let mut toggle = Vec::new();
-        for p in procs(&lines) {
-            let stmts = stmts_of(&p.body);
-            let (mut g, mut r, mut t) = (Vec::new(), Vec::new(), Vec::new());
-            scan_guard(&p.name, &stmts, &mut g);
-            scan_rearm(&p.name, &p.params, &stmts, &mut r);
-            scan_toggle(&p.name, &stmts, &mut t);
-            guard.extend(g);
-            rearm.extend(r);
-            toggle.extend(t);
-        }
-        for n in guard {
-            out.push(("periodic_guard", rel.to_string(), n));
-        }
-        for n in rearm {
-            out.push(("om_after_rearm", rel.to_string(), n));
-        }
-        for n in toggle {
-            out.push(("periodic_toggle", rel.to_string(), n));
+        for (rule, n) in p {
+            let name = match *rule {
+                R_GUARD => "periodic_guard",
+                R_REARM => "om_after_rearm",
+                _ => "periodic_toggle",
+            };
+            out.push((name, f.rel.clone(), *n as usize));
         }
     }
     out

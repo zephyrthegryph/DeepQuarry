@@ -25,7 +25,9 @@ when you can). Test: `cargo test --manifest-path tools/analyze/Cargo.toml`.
 | ALLOW | `src/allow.rs` | `// ALLOW(lint[/CODE], ...): reason`, same line or comment line above |
 | Baselines | `src/baseline.rs` | Fingerprint baselines (`rule<TAB>file<TAB>normalized line`) and count ceilings, in the exact old file format |
 | Scopes | `src/scopes.rs`, `tools/ci/lint_scopes.toml` | Path exemptions, named lists, per-rule ceilings, reason codes |
-| Cache | `src/cache.rs` | `data/analyze-cache/`: per-file results keyed `(path, content hash)`, tree memo keyed by the combined hash; stamped with the engine build hash |
+| Cache | `src/cache.rs` | `data/analyze-cache/` (or `$DQ_ANALYZE_CACHE`): per-file results keyed `(path, content hash)`, tree memo keyed by the combined hash; stamped with the engine build hash |
+| Incremental stores | `src/incr.rs` | per-file facts and per-file judgements for whole-tree lints, cached on disk (see "Incremental lints") |
+| Semantic record | `src/sem/incremental.rs` | what lets the semantic lints and the `reads` generator skip the 8 s parse after an edit (see "Backend and cost") |
 | Runner | `src/run.rs` | Parallel run, policy judgement (`Sites` / `Ceilings` / `Hard` / `Custom`), `--changed-only`, baseline rewrite |
 | Parity | `src/parity.rs` | Old script vs engine on the real tree and on `fixtures/` |
 | Frontend | `src/frontend/` | `Frontend` trait: `TextFrontend` (the line scanner) and `DreamMakerFrontend` (SpacemanDMM `dreammaker`, tag suite-1.11) |
@@ -89,6 +91,35 @@ core_dirs = ["code/datums/om/"]      # read with cx.list("core_dirs"); declare "
 spawn = 12
 ```
 `analyze baseline --update` lowers a ceiling, `--seed` sets it. A lint without a section has no exemptions.
+
+## Incremental lints (`src/incr.rs`)
+
+A whole-tree lint is a fold over per-file facts and a per-file judgement that reads the fold. Written the old way it re-reads
+every file after any edit (seconds). Written with `incr` it costs the edited file plus a merge:
+
+```rust
+// facts: f(file), cached on disk by content. Pure function of the one file.
+let facts: Vec<Facts> = incr::facts("my-lint-facts", &files, facts_of);
+// merge into the context, and key the context by the facts that matter
+let key = incr::ctx_key(&nonempty_facts);              // deterministic: sorted Vecs / BTreeMaps, never HashMap order
+let ctx = merge(&facts);
+// judge: f(file, ctx), cached by (file content, key): an edit that changes no fact re-judges one file
+let results: Vec<R> = incr::keyed("my-lint-judge", key, &files, |f| judge(f, &ctx));
+```
+
+`incr::two_phase` wires the three steps. Facts and results must round-trip through bincode (`Serialize + Deserialize + Default +
+PartialEq`; `Default` means "nothing found" and costs no space; store a rule index, not a `&'static str`). Allow-annotation
+uses recorded through `sys::kept_recorded` inside the closure are captured with the result and replayed on a hit. A store with
+1,024 files or more is split in 16 shards inside one file, so an edit re-encodes one shard. Values are encoded with bincode
+variable-length integers (`incr::ser`/`incr::de`). Worked examples: `sys_sfx.rs` (the smallest), `dm/ownership_index.rs`,
+`dm/dx.rs` (a shared index built from per-file facts), `sem/decls.rs`. Work that happens *outside* the cached scan
+(`post_judge`, `finish`, an index rebuilt in `judge`) is not cached: check a lint with `DQ_ANALYZE_TRACE=1` (a warm run should
+report about 0 files loaded, a one-file edit about 1). `Policy::Sites` fingerprints compare the normalized source line of each
+baselined site; those line texts are cached too (`linetext.bin`), so judging never loads a file only for that.
+
+Per-run fixed costs worth knowing: the selftests run once per engine build (a marker in the cache); `check_grep` compiles its
+regexes only when a scan really runs; the tree walk is parallel by directory; the whole-tree prewarm (read and strip every file)
+runs only when more than 64 files are new or changed.
 
 ## Fixtures and parity
 
@@ -160,10 +191,21 @@ nothing parses until a rule needs it, and rules ask for the cheapest model that 
 | partial | `Sem::build_partial(files)`: the named files plus `code/__defines/**` | ~0.15 s for 10 files | per-proc checks (ACT_TRY pairing, context escape) on the files that mention an action or a context |
 | full | `Sem::build` / `Cx::sem()` (memoized per run) | 7-8 s | reads, signatures, context fields, purity, the oracle; built only when a declaration names a handler |
 
-A tree whose declarations name no handler (the tree today, before content converts) pays a scan, never a parse:
-`handlers::analyzed()` returns `None` before building the model. The incremental compiler's analysis API replaces
-dreammaker by implementing `Sem`'s small surface (`ty`, `var_decl`, `proc_ref`, `proc_body`, `owner_candidates`,
-`def_at`); no rule names a dreammaker type outside `src/sem/`.
+A tree whose declarations name no handler pays a scan, never a parse: `handlers::analyzed()` returns `None` before
+building the model. The incremental compiler's analysis API replaces dreammaker by implementing `Sem`'s small surface
+(`ty`, `var_decl`, `proc_ref`, `proc_body`, `owner_candidates`, `def_at`); no rule names a dreammaker type outside `src/sem/`.
+
+**The semantic record** (`src/sem/incremental.rs`, `data/analyze-cache/sem-cache.bin`) keeps the parse off the one-file-edit
+path. A full run stores, beside the results of `sem/reads`, `sem/handlers` (the declared-handler part) and the `reads`
+generator: per included file its content hash, a digest of the structure it contributes (var declarations, proc
+definitions and parameter lists: no bodies, no line numbers), the var names its procs write, and a digest of its
+comment-stripped text; plus the **footprint** (every file whose definitions the analysis consulted, recorded by `Sem` as it
+answers: 18 files for 65 handlers) and each type's location. A later run reuses the results when (1) `deepquarry.dme`, the
+declaration text (`Decls::key`) and `code/__defines/**` are unchanged, (2) the included file set is unchanged, and (3) every
+changed file is outside the footprint, has no `#define`/`#undef`/`#include`, and either has the same comment-stripped text
+(a comment or blank-line edit: no parse at all) or, parsed alone with the defines (about 0.15 s), has the same structure
+digest and written names, a bare type header the old text did not have being a change. Any doubt is a miss, never a stale
+hit. A change inside the footprint, or to the structure, runs the full model (8 s) and refreshes the record.
 
 ### Declarations the analysis reads
 
@@ -217,7 +259,7 @@ edge is added), `reads_as_uncovered` (a `READS_AS` accessor reading untracked st
 Ranks (`sem/graph.rs`): 0 for a value that reads only base state, else one more than its deepest derived read; a handler's
 rank in `reads.dm` is one more than the deepest derived value it reads.
 
-**The spike (oracle).** `tools/analyze/oracle/spike.toml` pins 20 real handlers; `cargo test --test oracle` and `analyze sem
+**The spike (oracle).** `tools/analyze/oracle/spike.toml` pins 18 real handlers; `cargo test --test oracle` and `analyze sem
 oracle` check that the generated reads contain every read in their hand-written lists (`derived()` entries and the lists
 the legacy lint generated into `code/_generated/reads.dm`). Result: 20 of 20 contain every hand-written read and none needs a
 `READS_AS`; five atmos push lists also name `rust_device_rev`, an invalidation token bumped by setters, which is not a read
@@ -316,9 +358,15 @@ A `handlers/signature` note: the handler of an op with a `ui_act()` or `topic()`
 
 ## Tooling gotchas
 
-* A `Tree::memo` init must not use rayon (`par_iter`, `join`): the initializing worker steals another lint's task while it waits,
-  and a stolen task that needs the same cell blocks on the init this thread is running, a deadlock. Use `sem::par_map` (plain scoped
-  threads, which never steal engine work). A cold-cache run hung about one time in six before the semantic layer did this.
+* `Tree::memo` runs its init on a fresh OS thread inside a rayon pool of its own (`tree::run_isolated`), so an init may use
+  `par_iter` and `incr::facts`. The waiting caller is blocked in a plain join (it never steals a lint job while it holds the
+  cell), and the private pool holds only that init's work (a worker waiting inside one init can never steal another init's
+  closure, which could need the cell it is building). That removes the old deadlock (a rayon call under a memo init stole a lint
+  that asked for the same cell). The one rule left: a task running inside an init must not itself call `Tree::memo`. A memo
+  state dump for a hang: `DQ_ANALYZE_WATCHDOG=<seconds>` prints which memos are initializing/waiting and exits 99.
+* Debug aids: `DQ_ANALYZE_TRACE=1` (phase times, memo builds, files loaded, record misses), `DQ_ANALYZE_TRACE_SPANS=1` (each lint's
+  start..end), `DQ_ANALYZE_TRACE_INCR=1` (each incremental store's time), `DQ_ANALYZE_TRACE_LOAD=1` (backtrace of the 300th lazy file
+  load: finds a lint that reads the whole tree on a warm run).
 * Edit Rust with the Write/Edit tools. Shell heredocs and `python -` snippets through the Bash tool have
   been seen to halve backslashes (`'\\'` becomes `'\'`), which silently corrupts regexes.
 * Python text-mode writes CRLF on Windows; sources here are LF (`* text=auto`).

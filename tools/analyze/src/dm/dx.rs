@@ -82,8 +82,10 @@ pub fn param_names(params: &str) -> Vec<String> {
 
 /// A proc definition: `/T/proc/name(args)`, `/T/verb/name(args)`, `/T/name(args)` (an override)
 /// or `/proc/name(args)`. Bodies are line ranges into the file's sanitized view.
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Proc {
+    /// Set from the file after a facts load (not stored: the store is keyed by file).
+    #[serde(skip)]
     pub rel: String,
     /// 1-based line of the head.
     pub line: usize,
@@ -251,6 +253,62 @@ pub fn type_vars(files: &[&SourceFile]) -> HashMap<String, HashSet<String>> {
     table
 }
 
+/// One file's contribution to every [`DxIndex`]: its procs and its `{type: vars}` table. A pure
+/// function of the file, cached on disk by content.
+#[derive(Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct FileDx {
+    pub procs: Vec<Proc>,
+    /// `(type path, var names)`, sorted.
+    pub vars: Vec<(String, Vec<String>)>,
+}
+
+fn file_dx(f: &SourceFile) -> FileDx {
+    let mut vars: Vec<(String, Vec<String>)> = type_vars(&[f])
+        .into_iter()
+        .map(|(t, set)| {
+            let mut v: Vec<String> = set.into_iter().collect();
+            v.sort();
+            (t, v)
+        })
+        .collect();
+    vars.sort();
+    FileDx { procs: procs_in(f), vars }
+}
+
+/// The cached [`FileDx`] of every `.dm` file under `code/` and `maps/` (dot-files included), looked
+/// up by path. One superset store serves every file set a lint asks about, so a lint with
+/// different exemptions never evicts another's entries.
+pub struct DxFacts {
+    facts: Vec<FileDx>,
+    index: HashMap<String, usize>,
+}
+
+impl DxFacts {
+    /// The facts of the whole tree, built once per run.
+    pub fn all(tree: &Tree) -> Arc<DxFacts> {
+        tree.memo("dx-facts-all", || {
+            let sel = crate::tree::Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true };
+            let files = tree.select(&sel);
+            let mut facts = crate::incr::facts("dx-file-facts", &files, file_dx);
+            for (fd, f) in facts.iter_mut().zip(&files) {
+                for p in &mut fd.procs {
+                    p.rel.clone_from(&f.rel);
+                }
+            }
+            let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
+            DxFacts { facts, index }
+        })
+    }
+
+    /// The facts of `f`, from the store when it is in the tree's superset.
+    pub fn of(&self, f: &SourceFile) -> std::borrow::Cow<'_, FileDx> {
+        match self.index.get(&f.rel) {
+            Some(&i) => std::borrow::Cow::Borrowed(&self.facts[i]),
+            None => std::borrow::Cow::Owned(file_dx(f)),
+        }
+    }
+}
+
 /// One parse of a file set, shared by every rule that asks for the same set.
 pub struct DxIndex {
     pub procs: Vec<Proc>,
@@ -267,13 +325,22 @@ impl DxIndex {
             h.update(&f.fkey.to_le_bytes());
         }
         let key = h.finalize().to_hex().to_string();
+        let facts = DxFacts::all(tree);
         tree.memo(&key, || {
-            let procs: Vec<Proc> = files.iter().flat_map(|f| procs_in(f)).collect();
+            let mut procs: Vec<Proc> = Vec::new();
+            let mut table: HashMap<String, HashSet<String>> = HashMap::new();
+            for f in files {
+                let fd = facts.of(f);
+                procs.extend(fd.procs.iter().cloned());
+                for (t, vs) in &fd.vars {
+                    table.entry(t.clone()).or_default().extend(vs.iter().cloned());
+                }
+            }
             let mut by_name: HashMap<String, Vec<usize>> = HashMap::new();
             for (i, p) in procs.iter().enumerate() {
                 by_name.entry(p.name.clone()).or_default().push(i);
             }
-            DxIndex { type_vars: type_vars(files), procs, by_name }
+            DxIndex { type_vars: table, procs, by_name }
         })
     }
 

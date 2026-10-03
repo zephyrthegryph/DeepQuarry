@@ -2,9 +2,10 @@
 //! refusals lifted into requirements. A refusal written at the head of an interaction effect proc
 //! (instead of a REQ_* clause), and any `REFUSE_IF(...)`.
 
-use std::collections::{BTreeSet, HashMap};
+use std::collections::{BTreeMap, BTreeSet};
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -77,9 +78,9 @@ fn related(a: &str, b: &str) -> bool {
 }
 
 /// proc name -> set of declaring types.
-fn effect_procs(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String>> {
-    let mut found: HashMap<String, BTreeSet<String>> = HashMap::new();
-    for f in files {
+fn effects_of(f: &SourceFile) -> Vec<(String, String)> {
+    let mut found: BTreeSet<(String, String)> = BTreeSet::new();
+    {
         let mut decl: Option<String> = None;
         let mut datum = false;
         for line in f.raw().lines() {
@@ -90,7 +91,7 @@ fn effect_procs(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String>> {
                 if pat!(r"\bINTERACT_[A-Z_]+\(").is_match(line) || decl_re().is_match(line) {
                     for r in pat!(r"\b(?:PROC_REF|TYPE_PROC_REF\([^,]*,)\s*\(?\s*(\w+)\s*\)|\.proc/(\w+)").captures_iter(line) {
                         let name = if r.matched(1) && !r.s(1).is_empty() { r.s(1) } else { r.s(2) };
-                        found.entry(name.to_string()).or_default().insert(d.clone());
+                        found.insert((name.to_string(), d.clone()));
                     }
                 }
             }
@@ -102,12 +103,12 @@ fn effect_procs(files: &[&SourceFile]) -> HashMap<String, BTreeSet<String>> {
             }
             if datum {
                 if let Some(m) = pat_match!(r"^\s+effect\s*=\s*(/[\w/]+?)/(?:proc/)?(\w+)\s*(?://.*)?$").captures(line) {
-                    found.entry(m.s(2).to_string()).or_default().insert(m.s(1).to_string());
+                    found.insert((m.s(2).to_string(), m.s(1).to_string()));
                 }
             }
         }
     }
-    found
+    found.into_iter().collect()
 }
 
 type Stmt = Vec<(usize, String, usize)>;
@@ -195,10 +196,9 @@ fn guard_parts(stmt: &Stmt) -> Option<(String, Vec<String>)> {
     Some((cond, parts))
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+fn judge(f: &SourceFile, effects: &BTreeMap<String, BTreeSet<String>>) -> Vec<(&'static str, String, usize)> {
     let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let effects = effect_procs(files);
-    for f in files {
+    {
         let rel = f.rel.as_str();
         let lines = f.raw().lines_vec();
         for (idx, line) in lines.iter().enumerate() {
@@ -258,6 +258,25 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                 }
             }
             i = j;
+        }
+    }
+    out
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let fs = incr::facts("sys-requirements-facts", files, effects_of);
+    let mut effects: BTreeMap<String, BTreeSet<String>> = BTreeMap::new();
+    for pairs in &fs {
+        for (name, ty) in pairs {
+            effects.entry(name.clone()).or_default().insert(ty.clone());
+        }
+    }
+    let key = incr::ctx_key(&effects);
+    let results = incr::keyed("sys-requirements-judge", key, files, |f| judge(f, &effects).into_iter().map(|(_, _, line)| line as u32).collect::<Vec<u32>>());
+    let mut out = Vec::new();
+    for (f, v) in files.iter().zip(results) {
+        for line in v {
+            out.push(("inline_refusal", f.rel.clone(), line as usize));
         }
     }
     out

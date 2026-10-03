@@ -56,6 +56,16 @@ impl Lint for SemReads {
     }
 
     fn scan_tree(&self, cx: &Cx, out: &mut Sink) {
+        // The stored result of a run whose inputs are unchanged (or changed only where the model
+        // cannot tell): no parse.
+        if let Some(rec) = crate::sem::incremental::lookup(cx.tree) {
+            if let Some(s) = rec.sinks.get("sem/reads") {
+                out.sites.extend(s.sites.iter().cloned());
+                out.allow_used.extend(s.allow_used.iter().cloned());
+                out.notes.extend(s.notes.iter().cloned());
+                return;
+            }
+        }
         let Some(an) = handlers::analyzed(cx.tree) else { return };
         let allowed = |out: &mut Sink, rel: &str, line: u32| -> bool {
             match cx.tree.get(rel) {
@@ -111,6 +121,7 @@ impl Lint for SemReads {
                 format!("READS_AS({}, {}) on {} reads {} which are not tracked and nothing publishes {}", g.proc, g.key, g.ty, g.vars.join(", "), g.key),
             );
         }
+        crate::sem::incremental::store(cx.tree, "sem/reads", out);
     }
 }
 

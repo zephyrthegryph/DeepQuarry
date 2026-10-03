@@ -1,4 +1,4 @@
-# The E5 reads spike (doc/rewrite/final_api.html section 19): 20 real handlers whose hand-written
+# The E5 reads spike (doc/rewrite/final_api.html section 19): 18 real handlers whose hand-written
 # dependency lists (derived(): runs_while / drawn_from / ui_from / rust_push / derive, and the lists
 # the legacy lint generated into code/_generated/reads.dm) the generated reads must contain.
 # `cargo test` (tests/oracle.rs) and `analyze sem oracle` read this file.
@@ -6,15 +6,18 @@
 # Invalidation tokens: a hand-written list may name a var that is not a read but a counter that
 # setters bump so the list has something to subscribe to. Generated reads subscribe to the vars
 # the body reads, so a token is reported separately and never counted as a missing read.
+# The APC pins (ui, draw, push) were replaced: the APC is converted to the new design and no longer has
+# hand-written read lists. No other type still has a hand-written ui or draw list (every other
+# ui_from/drawn_from is a pinned one), so those two pins are dropped and the spike covers 18 handlers; the
+# APC push pin became the binary pump push.
 [tokens]
 "rust_device_rev"    # /obj/machinery/atmospherics: bumped by set_use_power(), power_change(), port binds
 
 # <type> <kind> [var]      kind = condition | draw | ui | push | derive (derive takes the var)
 [handlers]
-# 4 UI data procs (tgui_data): real windows, hand lists from reads.dm
+# 3 UI data procs (tgui_data): real windows, hand lists from reads.dm
 "/datum/round_status_panel ui"
 "/obj/machinery/computer/supplycomp ui"
-"/obj/machinery/power/apc ui"
 "/obj/machinery/vending ui"
 # 5 condition procs: area and light derive_*() (hand-written derived()), one should_run()
 "/area derive lights_nightshift"
@@ -22,21 +25,20 @@
 "/obj/machinery/light derive nightshift_enabled"
 "/obj/machinery/light derive area_emergency_off"
 "/obj/cap_fixture/dx_deps_laser condition"
-# 5 draw procs
+# 4 draw procs
 "/obj/machinery/door/airlock draw"
-"/obj/machinery/power/apc draw"
 "/obj/cap_fixture/dx_deps_laser draw"
 "/obj/cap_fixture/dx_deps_watcher draw"
 "/obj/cap_fixture/dx_deps_derive draw"
-# 6 Rust-push procs (push_to_rust): five atmos devices with the token, and the APC
+# 6 Rust-push procs (push_to_rust): five atmos devices with the token, and the binary pump
 "/obj/machinery/atmospherics/unary/vent_pump push"
 "/obj/machinery/atmospherics/unary/vent_scrubber push"
 "/obj/machinery/atmospherics/binary/passive_gate push"
 "/obj/machinery/atmospherics/binary/volume_pump push"
 "/obj/machinery/atmospherics/trinary/mixer push"
-"/obj/machinery/power/apc push"
+"/obj/machinery/atmospherics/binary/pump push"
 
-# Global procs the 20 handlers call without READS_FROM (the final design makes each an unannotated_global error
+# Global procs the 18 handlers call without READS_FROM (the final design makes each an unannotated_global error
 # carrying the READS_FROM hint). A ratchet: the set may only shrink, as helpers are annotated (READS_FROM(arg) or
 # READS_FROM() for a pure one) or replaced by generated cap_keys accessors. Classes: capability-state accessors
 # (cover_is_open, is_bolted, is_emagged, is_locked, is_welded, is_lit, cover_removed, has_access: E1's cap_keys

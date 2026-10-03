@@ -4,9 +4,10 @@
 //! out a global list), `const_list_alloc` (a constant `list(...)` rebuilt per call) and
 //! `not_worth_it_annotation`.
 
-use std::collections::HashSet;
+use std::collections::BTreeSet;
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -165,19 +166,22 @@ fn strip_block_comments(lines: &[String], text: &str) -> Vec<String> {
     out.split('\n').map(|s| s.to_string()).collect()
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let mut global_lists: HashSet<String> = HashSet::new();
-    for f in files {
-        for line in f.raw().lines() {
-            if line.contains("GLOBAL_LIST") {
-                for c in pat!(r"\bGLOBAL_LIST(?:_INIT|_EMPTY|_INIT_TYPED|_EMPTY_TYPED)?\(\s*(\w+)").captures_iter(line) {
-                    global_lists.insert(c.s(1).to_string());
-                }
+/// The `GLOBAL_LIST*` names a file declares (sorted, unique).
+fn global_lists_of(f: &SourceFile) -> Vec<String> {
+    let mut names: BTreeSet<String> = BTreeSet::new();
+    for line in f.raw().lines() {
+        if line.contains("GLOBAL_LIST") {
+            for c in pat!(r"\bGLOBAL_LIST(?:_INIT|_EMPTY|_INIT_TYPED|_EMPTY_TYPED)?\(\s*(\w+)").captures_iter(line) {
+                names.insert(c.s(1).to_string());
             }
         }
     }
-    for f in files {
+    names.into_iter().collect()
+}
+
+fn judge(f: &SourceFile, global_lists: &BTreeSet<String>) -> Vec<(u8, u32)> {
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    {
         let rel = f.rel.as_str();
         let orig: Vec<String> = f.raw().lines().map(|s| s.to_string()).collect();
         let lines = strip_block_comments(&orig, &f.raw().text);
@@ -246,6 +250,20 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
                     out.push(("const_list_alloc", rel.to_string(), number));
                 }
             }
+        }
+    }
+    out.into_iter().map(|(rule, _, line)| (RULES.iter().position(|r| r.name == rule).unwrap_or(0) as u8, line as u32)).collect()
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let fs = incr::facts("sys-tables-facts", files, global_lists_of);
+    let global_lists: BTreeSet<String> = fs.into_iter().flatten().collect();
+    let key = incr::ctx_key(&global_lists);
+    let results = incr::keyed("sys-tables-judge", key, files, |f| judge(f, &global_lists));
+    let mut out = Vec::new();
+    for (f, v) in files.iter().zip(results) {
+        for (rule, line) in v {
+            out.push((RULES[rule as usize].name, f.rel.clone(), line as usize));
         }
     }
     out

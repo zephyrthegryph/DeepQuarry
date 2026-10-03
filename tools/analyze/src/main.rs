@@ -109,6 +109,7 @@ fn options(args: &Args, root: &Path) -> Options {
 }
 
 fn main() -> ExitCode {
+    dq_analyze::tree::start_watchdog();
     let args = parse(std::env::args().collect());
     let root = find_root(args.root.clone());
     let has = |f: &str| args.flags.iter().any(|x| x == f);
@@ -148,15 +149,36 @@ fn main() -> ExitCode {
             }
             // Fixture selftests first: a lint whose own fixtures fail can't be trusted to ratchet.
             let mut failed: Vec<String> = Vec::new();
+            let t_self = Instant::now();
             if args.cmd == "check" && !has("--no-selftest") {
-                for lint in run::selected(&engine.reg, &engine.opts.lints) {
-                    if let Err(e) = lint.selftest() {
-                        println!("selftest FAILED: {}: {}", lint.meta().name, e);
-                        failed.push(format!("{} --selftest", lint.meta().name));
+                // A selftest is a function of the engine build alone: once every selected lint's passed for
+                // this build (and none was skipped), a marker in the cache says so.
+                let names: Vec<String> = run::selected(&engine.reg, &engine.opts.lints).iter().map(|l| l.meta().name.to_string()).collect();
+                let marker = dq_analyze::incr::dir().map(|d| d.join("selftest.ok"));
+                let stamp = format!("{}|{}", dq_analyze::cache::ENGINE_HASH, names.join(","));
+                let known = marker.as_ref().and_then(|m| std::fs::read_to_string(m).ok()).map(|t| t == stamp).unwrap_or(false);
+                if !known {
+                    dq_analyze::incr::suspend(true);
+                    for lint in run::selected(&engine.reg, &engine.opts.lints) {
+                        if let Err(e) = lint.selftest() {
+                            println!("selftest FAILED: {}: {}", lint.meta().name, e);
+                            failed.push(format!("{} --selftest", lint.meta().name));
+                        }
+                    }
+                    dq_analyze::incr::suspend(false);
+                    if failed.is_empty() {
+                        if let Some(m) = &marker {
+                            let _ = std::fs::create_dir_all(m.parent().unwrap());
+                            let _ = std::fs::write(m, &stamp);
+                        }
                     }
                 }
             }
+            let t_run = Instant::now();
             let outcomes = engine.run_all();
+            if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+                eprintln!("analyze: startup {:.0?}, selftests {:.0?}, lints {:.0?}, files loaded {}", t_self.duration_since(t0), t_run.duration_since(t_self), t_run.elapsed(), engine.tree.fresh_count());
+            }
             let (text, lint_failed) = run::render(&outcomes, engine.opts.ci);
             failed.extend(lint_failed);
             print!("{}", text);

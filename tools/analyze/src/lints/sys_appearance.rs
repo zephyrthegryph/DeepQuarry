@@ -14,12 +14,11 @@
 //!   * `ALLOW(sys_update_icon)` keeps only `update_icon_override` sites (not the other rules);
 //!   * when two declarations canonicalize to one type the later one wins (`_canon_decls`).
 
-use std::collections::{HashMap, HashSet};
-
-use rayon::prelude::*;
+use std::collections::{BTreeSet, HashMap, HashSet};
 
 use crate::dm::field_write::{canon, char_window, local_or_member, norm, proc_def, typed_names, FwlIndex, Locals};
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::pat;
@@ -104,37 +103,49 @@ struct Setters {
     order: Vec<String>,
 }
 
-fn registrations(files: &[&SourceFile]) -> Setters {
-    let mut s = Setters::default();
-    for f in files {
-        if f.rel == "code/__defines/om.dm" {
+/// One setter registration: `(setter name, owner, field, raises)`.
+type RegFact = (String, String, String, bool);
+
+/// The setter registrations of one file, in line order (one entry per generated setter name).
+fn registrations_of(f: &SourceFile) -> Vec<RegFact> {
+    let mut out = Vec::new();
+    if f.rel == "code/__defines/om.dm" {
+        return out;
+    }
+    for line in f.raw().lines() {
+        if !line.contains("OM_") {
             continue;
         }
-        for line in f.raw().lines() {
-            if !line.contains("OM_") {
-                continue;
+        let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|OM_DERIVE_FIELD)\((.*)$)").captures(line) else {
+            continue;
+        };
+        let (fi, ci, has_setter, flag) = shape(m.s(1));
+        let args = split_args(m.s(2));
+        if args.len() <= fi.max(ci) || !has_setter {
+            continue;
+        }
+        let (owner, field, channel) = (&args[0], &args[fi], &args[ci]);
+        let raises = !(channel == "0" || channel.is_empty());
+        let mut names = vec![format!("set_{}", field)];
+        if flag {
+            names.push(format!("{}_add", field));
+            names.push(format!("{}_remove", field));
+        }
+        for name in names {
+            out.push((name, owner.clone(), field.clone(), raises));
+        }
+    }
+    out
+}
+
+fn registrations(per_file: &[&Vec<RegFact>]) -> Setters {
+    let mut s = Setters::default();
+    for regs in per_file {
+        for (name, owner, field, raises) in regs.iter() {
+            if !s.map.contains_key(name) {
+                s.order.push(name.clone());
             }
-            let Some(m) = pat!(r"\A(?:\s*(OM_FIELD|OM_FIELD_TYPED|OM_FLAG_FIELD|OM_FLAG_FIELD_BITS|OM_FIELD_SETTER|OM_DERIVE_FIELD)\((.*)$)").captures(line) else {
-                continue;
-            };
-            let (fi, ci, has_setter, flag) = shape(m.s(1));
-            let args = split_args(m.s(2));
-            if args.len() <= fi.max(ci) || !has_setter {
-                continue;
-            }
-            let (owner, field, channel) = (&args[0], &args[fi], &args[ci]);
-            let raises = !(channel == "0" || channel.is_empty());
-            let mut names = vec![format!("set_{}", field)];
-            if flag {
-                names.push(format!("{}_add", field));
-                names.push(format!("{}_remove", field));
-            }
-            for name in names {
-                if !s.map.contains_key(&name) {
-                    s.order.push(name.clone());
-                }
-                s.map.entry(name).or_default().push(Reg { owner: owner.clone(), field: field.clone(), raises });
-            }
+            s.map.entry(name.clone()).or_default().push(Reg { owner: owner.clone(), field: field.clone(), raises: *raises });
         }
     }
     s
@@ -147,18 +158,29 @@ struct Decls {
     canon: HashMap<String, usize>,
 }
 
-fn watches(files: &[&SourceFile]) -> Decls {
+/// One appearance declaration line: `(kind, owner, text after the owner's comma)`.
+type WatchEvent = (String, String, String);
+
+fn watch_events_of(f: &SourceFile) -> Vec<WatchEvent> {
+    let mut out = Vec::new();
+    for line in f.raw().lines() {
+        if !line.contains("APPEARANCE") {
+            continue;
+        }
+        let Some(m) = pat!(r"\A(?:\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$)").captures(line) else {
+            continue;
+        };
+        out.push((m.s(1).to_string(), m.s(2).to_string(), m.s(3).to_string()));
+    }
+    out
+}
+
+fn watches(per_file: &[&Vec<WatchEvent>]) -> Decls {
     let mut entries: Vec<(String, bool, HashSet<String>)> = Vec::new();
     let mut at: HashMap<String, usize> = HashMap::new();
-    for f in files {
-        for line in f.raw().lines() {
-            if !line.contains("APPEARANCE") {
-                continue;
-            }
-            let Some(m) = pat!(r"\A(?:\s*(APPEARANCE_WATCH|APPEARANCE_TEMPLATE|APPEARANCE_LEVEL|APPEARANCE_EMISSIVE|DECLARE_APPEARANCE|APPEARANCE_NONE)\(\s*(/[\w/]+)\s*(?:,(.*))?$)").captures(line) else {
-                continue;
-            };
-            let (kind, owner, rest) = (m.s(1), m.s(2), m.s(3));
+    for events in per_file {
+        for (kind, owner, rest) in events.iter() {
+            let (kind, owner, rest) = (kind.as_str(), owner.as_str(), rest.as_str());
             let idx = *at.entry(owner.to_string()).or_insert_with(|| {
                 entries.push((owner.to_string(), false, HashSet::new()));
                 entries.len() - 1
@@ -377,10 +399,148 @@ fn after_setter(pats: &Pats, body: &[(usize, &str)], index: usize, recv: &str, s
     seen_nested
 }
 
+/// Everything pass 1 reads besides the file: the shared index and the merged registrations.
+struct Ctx<'a> {
+    index: &'a FwlIndex,
+    setters: Setters,
+    decls: Decls,
+    pats: Pats,
+}
+
+/// Pass 1 for one file: the watched-field writes per line, per proc.
+fn parse_file<'a>(cx: &Ctx, f: &'a SourceFile) -> Vec<Parsed<'a>> {
+    let (index, setters, decls, pats) = (cx.index, &cx.setters, &cx.decls, &cx.pats);
+    let mut out = Vec::new();
+    for p in procs(f) {
+        let mut locals = Locals::new();
+        for tm in typed_names(p.args) {
+            locals.insert(tm.name, Some(norm(&tm.ty)));
+        }
+        let mut setter_lines: HashMap<usize, HashSet<String>> = HashMap::new();
+        for &(no, line) in &p.body {
+            for tm in typed_names(line) {
+                if char_window(line, tm.start, 4, 4).contains("var/") {
+                    locals.insert(tm.name, Some(norm(&tm.ty)));
+                }
+            }
+            if let Some(sp) = &pats.setter {
+                if line.contains("set_") || line.contains("_add") || line.contains("_remove") {
+                    for c in setter_matches(sp, line) {
+                        if py_rstrip(&line[..c.start(2)]).ends_with("proc/") {
+                            continue;
+                        }
+                        let recv = norm_recv(c.get(1));
+                        let rt = receiver_type(index, &p.owner, &locals, &recv);
+                        if capable(setters, decls, c.s(2), rt.as_deref()) {
+                            setter_lines.entry(no).or_default().insert(recv);
+                        }
+                    }
+                }
+            }
+            if line.contains("om_set") {
+                for c in pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).captures_iter(line) {
+                    let recv = norm_recv(c.get(1));
+                    let rt = receiver_type(index, &p.owner, &locals, &recv);
+                    if capable(setters, decls, &format!("set_{}", c.s(2)), rt.as_deref()) {
+                        setter_lines.entry(no).or_default().insert(recv);
+                    }
+                }
+            }
+        }
+        let is_setter = setters.map.contains_key(&p.name) && capable(setters, decls, &p.name, Some(&p.owner));
+        out.push(Parsed { rel: f.rel.as_str(), proc: p, setter_lines, is_setter });
+    }
+    out
+}
+
+/// The `(canonical owner, proc)` pairs a file's procs contribute to the owning set.
+fn owning_of(parsed_file: &[Parsed]) -> Vec<(String, String)> {
+    let mut out = Vec::new();
+    for parsed in parsed_file {
+        let writes_src = parsed.setter_lines.values().any(|r| r.contains("src"));
+        if (writes_src || parsed.is_setter) && !LIFECYCLE.contains(&parsed.proc.name.as_str()) {
+            out.push((canon(&parsed.proc.owner), parsed.proc.name.clone()));
+        }
+    }
+    out
+}
+
+fn judge_parsed(pats: &Pats, owning: &HashSet<(String, String)>, parsed_file: &[Parsed]) -> Vec<(&'static str, String, usize)> {
+    let inherits = |owner: &str, name: &str| -> bool {
+        let mut path = canon(owner);
+        while path.matches('/').count() > 1 {
+            path = path.rsplit_once('/').unwrap().0.to_string();
+            if owning.contains(&(path.clone(), name.to_string())) {
+                return true;
+            }
+        }
+        false
+    };
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    for parsed in parsed_file {
+        let rel = parsed.rel;
+        let (owner, name) = (parsed.proc.owner.as_str(), parsed.proc.name.as_str());
+        if name == "update_icon" && !RUNTIME.contains(&rel) && owner != "/atom" {
+            // The sys_update_icon alias is applied by the module wrapper (allow_extra).
+            out.push(("update_icon_override", rel.to_string(), parsed.proc.start));
+        }
+        if name == "appearance_overlays" && !RUNTIME.contains(&rel) {
+            for &(no, line) in &parsed.proc.body {
+                if pat!(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()").is_match(line) {
+                    out.push(("appearance_proc_overlays", rel.to_string(), no));
+                }
+                if parsed.setter_lines.contains_key(&no) || pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).is_match(line) {
+                    out.push(("appearance_proc_state", rel.to_string(), no));
+                }
+            }
+        }
+        if RUNTIME.contains(&rel) || LIFECYCLE.contains(&name) {
+            continue;
+        }
+        // A setter-owning proc: a watched field's own setter, or an override that calls ..()
+        // into an ancestor's proc of the same name that writes one.
+        let inherited = inherits(owner, name);
+        let mut owns = parsed.is_setter;
+        for (index, &(no, line)) in parsed.proc.body.iter().enumerate() {
+            if inherited && pat!(r"\A(?:\s*(?:\.\s*=\s*\.\.\(|\.\.\(|if\s*\(\s*\(?\s*(?:\.\s*=\s*)?\.\.\())").is_match(line) {
+                owns = true;
+            }
+            if !line.contains("update_icon") && !line.contains("queue_icon_update") {
+                continue; // no call shape can match
+            }
+            let mut hits: Vec<String> = Vec::new();
+            for cm in pat!(r"(?:CALLBACK|INVOKE_ASYNC|om_after\w*|addtimer)\s*\(\s*(?:CALLBACK\s*\(\s*)?([\w.]+)\s*,[^\n]*?PROC_REF\s*\((?:[\w/]+\s*,\s*)?(?:update_icon|queue_icon_update)\s*\)").captures_iter(line) {
+                hits.push(norm_recv(cm.get(1)));
+            }
+            if hits.is_empty() {
+                for cm in pat!(CALL_DOTTED).captures_iter(line) {
+                    hits.push(norm_recv(cm.get(1)));
+                }
+                for cm in pat!(CALL_BARE).captures_iter(line) {
+                    if py_rstrip(&line[..cm.start(0)]).ends_with("proc/") {
+                        continue;
+                    }
+                    hits.push("src".to_string());
+                }
+            }
+            for recv in hits {
+                let in_line = parsed.setter_lines.get(&no).map(|s| s.contains(&recv)).unwrap_or(false);
+                if (recv == "src" && owns) || in_line || after_setter(pats, &parsed.proc.body, index, &recv, &parsed.setter_lines) {
+                    out.push(("update_icon_call", rel.to_string(), no));
+                    break;
+                }
+            }
+        }
+    }
+    out
+}
+
 fn files_scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
     let index = FwlIndex::get(tree);
-    let setters = registrations(files);
-    let decls = watches(files);
+    let regs = incr::facts("sys-appearance-regs", files, registrations_of);
+    let events = incr::facts("sys-appearance-watches", files, watch_events_of);
+    let setters = registrations(&regs.iter().collect::<Vec<_>>());
+    let decls = watches(&events.iter().collect::<Vec<_>>());
     let names: Vec<&String> = {
         let mut v: Vec<&String> = setters.order.iter().collect();
         v.sort_by(|a, b| b.chars().count().cmp(&a.chars().count()));
@@ -401,136 +561,27 @@ fn files_scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, 
             HARMLESS_CALLS.iter().map(|c| regex::escape(c)).collect::<Vec<_>>().join("|")
         )),
     };
+    // What pass 1 can read: every registration and declaration, the typed members and globals.
+    let key1 = incr::mix(&[incr::ctx_key(&(&regs, &events)), index.ctx_key(Some(&[]))]);
+    let cx = Ctx { index: &index, setters, decls, pats };
 
-    // Pass 1: the watched-field writes per line, and which (type, proc) write one on src.
-    let pass1: Vec<Vec<Parsed>> = files
-        .par_iter()
-        .map(|f| {
-            let mut out = Vec::new();
-            for p in procs(f) {
-                let mut locals = Locals::new();
-                for tm in typed_names(p.args) {
-                    locals.insert(tm.name, Some(norm(&tm.ty)));
-                }
-                let mut setter_lines: HashMap<usize, HashSet<String>> = HashMap::new();
-                for &(no, line) in &p.body {
-                    for tm in typed_names(line) {
-                        if char_window(line, tm.start, 4, 4).contains("var/") {
-                            locals.insert(tm.name, Some(norm(&tm.ty)));
-                        }
-                    }
-                    if let Some(sp) = &pats.setter {
-                        if line.contains("set_") || line.contains("_add") || line.contains("_remove") {
-                            for c in setter_matches(sp, line) {
-                                if py_rstrip(&line[..c.start(2)]).ends_with("proc/") {
-                                    continue;
-                                }
-                                let recv = norm_recv(c.get(1));
-                                let rt = receiver_type(&index, &p.owner, &locals, &recv);
-                                if capable(&setters, &decls, c.s(2), rt.as_deref()) {
-                                    setter_lines.entry(no).or_default().insert(recv);
-                                }
-                            }
-                        }
-                    }
-                    if line.contains("om_set") {
-                        for c in pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).captures_iter(line) {
-                            let recv = norm_recv(c.get(1));
-                            let rt = receiver_type(&index, &p.owner, &locals, &recv);
-                            if capable(&setters, &decls, &format!("set_{}", c.s(2)), rt.as_deref()) {
-                                setter_lines.entry(no).or_default().insert(recv);
-                            }
-                        }
-                    }
-                }
-                let is_setter = setters.map.contains_key(&p.name) && capable(&setters, &decls, &p.name, Some(&p.owner));
-                out.push(Parsed { rel: f.rel.as_str(), proc: p, setter_lines, is_setter });
-            }
-            out
-        })
-        .collect();
-
-    let mut owning: HashSet<(String, String)> = HashSet::new();
-    for parsed in pass1.iter().flatten() {
-        let writes_src = parsed.setter_lines.values().any(|r| r.contains("src"));
-        if (writes_src || parsed.is_setter) && !LIFECYCLE.contains(&parsed.proc.name.as_str()) {
-            owning.insert((canon(&parsed.proc.owner), parsed.proc.name.clone()));
+    // Pass 1 per file, reduced to the owning pairs each file contributes.
+    let owning_per: Vec<Vec<(String, String)>> = incr::keyed("sys-appearance-owning", key1, files, |f| owning_of(&parse_file(&cx, f)));
+    let owning: HashSet<(String, String)> = owning_per.into_iter().flatten().collect();
+    let key2 = incr::mix(&[key1, incr::ctx_key(&owning.iter().collect::<BTreeSet<_>>())]);
+    let results = incr::keyed("sys-appearance-judge", key2, files, |f| {
+        judge_parsed(&cx.pats, &owning, &parse_file(&cx, f))
+            .into_iter()
+            .map(|(rule, _, line)| (RULES.iter().position(|r| r.name == rule).unwrap_or(0) as u8, line as u32))
+            .collect::<Vec<(u8, u32)>>()
+    });
+    let mut out = Vec::new();
+    for (f, v) in files.iter().zip(results) {
+        for (rule, line) in v {
+            out.push((RULES[rule as usize].name, f.rel.clone(), line as usize));
         }
     }
-    let inherits = |owner: &str, name: &str| -> bool {
-        let mut path = canon(owner);
-        while path.matches('/').count() > 1 {
-            path = path.rsplit_once('/').unwrap().0.to_string();
-            if owning.contains(&(path.clone(), name.to_string())) {
-                return true;
-            }
-        }
-        false
-    };
-
-    let per_file: Vec<Vec<(&'static str, String, usize)>> = pass1
-        .par_iter()
-        .map(|parsed_file| {
-            let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-            for parsed in parsed_file {
-                let rel = parsed.rel;
-                let (owner, name) = (parsed.proc.owner.as_str(), parsed.proc.name.as_str());
-                if name == "update_icon" && !RUNTIME.contains(&rel) && owner != "/atom" {
-                    // The sys_update_icon alias is applied by the module wrapper (allow_extra).
-                    out.push(("update_icon_override", rel.to_string(), parsed.proc.start));
-                }
-                if name == "appearance_overlays" && !RUNTIME.contains(&rel) {
-                    for &(no, line) in &parsed.proc.body {
-                        if pat!(r"(?<![\w.])(?:src\.)?(?:add_overlay|cut_overlays?|copy_overlays)\s*\(|(?<![\w.])(?:src\.)?overlays\s*(?:[-+]?=(?!=)|\.Cut\()").is_match(line) {
-                            out.push(("appearance_proc_overlays", rel.to_string(), no));
-                        }
-                        if parsed.setter_lines.contains_key(&no) || pat!(r#"\bom_set\(\s*([\w.]+)\s*,\s*"(\w+)""#).is_match(line) {
-                            out.push(("appearance_proc_state", rel.to_string(), no));
-                        }
-                    }
-                }
-                if RUNTIME.contains(&rel) || LIFECYCLE.contains(&name) {
-                    continue;
-                }
-                // A setter-owning proc: a watched field's own setter, or an override that calls ..()
-                // into an ancestor's proc of the same name that writes one.
-                let inherited = inherits(owner, name);
-                let mut owns = parsed.is_setter;
-                for (index, &(no, line)) in parsed.proc.body.iter().enumerate() {
-                    if inherited && pat!(r"\A(?:\s*(?:\.\s*=\s*\.\.\(|\.\.\(|if\s*\(\s*\(?\s*(?:\.\s*=\s*)?\.\.\())").is_match(line) {
-                        owns = true;
-                    }
-                    if !line.contains("update_icon") && !line.contains("queue_icon_update") {
-                        continue; // no call shape can match
-                    }
-                    let mut hits: Vec<String> = Vec::new();
-                    for cm in pat!(r"(?:CALLBACK|INVOKE_ASYNC|om_after\w*|addtimer)\s*\(\s*(?:CALLBACK\s*\(\s*)?([\w.]+)\s*,[^\n]*?PROC_REF\s*\((?:[\w/]+\s*,\s*)?(?:update_icon|queue_icon_update)\s*\)").captures_iter(line) {
-                        hits.push(norm_recv(cm.get(1)));
-                    }
-                    if hits.is_empty() {
-                        for cm in pat!(CALL_DOTTED).captures_iter(line) {
-                            hits.push(norm_recv(cm.get(1)));
-                        }
-                        for cm in pat!(CALL_BARE).captures_iter(line) {
-                            if py_rstrip(&line[..cm.start(0)]).ends_with("proc/") {
-                                continue;
-                            }
-                            hits.push("src".to_string());
-                        }
-                    }
-                    for recv in hits {
-                        let in_line = parsed.setter_lines.get(&no).map(|s| s.contains(&recv)).unwrap_or(false);
-                        if (recv == "src" && owns) || in_line || after_setter(&pats, &parsed.proc.body, index, &recv, &parsed.setter_lines) {
-                            out.push(("update_icon_call", rel.to_string(), no));
-                            break;
-                        }
-                    }
-                }
-            }
-            out
-        })
-        .collect();
-    per_file.into_iter().flatten().collect()
+    out
 }
 
 /// `setter_re.finditer(line)` with its `(?<![\w])` before the name: a match with no receiver whose
