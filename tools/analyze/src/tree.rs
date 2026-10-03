@@ -293,6 +293,10 @@ pub struct Tree {
     extra: Mutex<HashMap<String, Option<std::sync::Arc<String>>>>,
     memo_cells: Mutex<HashMap<String, std::sync::Arc<OnceLock<std::sync::Arc<dyn std::any::Any + Send + Sync>>>>>,
     prewarm_once: OnceLock<()>,
+    /// `(file key, line)` -> the normalized line text a baseline fingerprint uses, persisted so a
+    /// warm run never has to load a file just to compare a baselined site.
+    line_cache: Mutex<HashMap<(Hash, u32), String>>,
+    line_cache_dirty: std::sync::atomic::AtomicBool,
 }
 
 fn mtime_ns(meta: &std::fs::Metadata) -> i128 {
@@ -376,7 +380,7 @@ impl Tree {
             .collect();
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
         let meta = files.iter().map(|f| (f.rel.clone(), FileMeta { size: f.size, mtime_ns: f.mtime_ns, hash: f.hash })).collect();
-        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }, meta)
+        (Tree { root: root.to_path_buf(), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }, meta)
     }
 
     /// A tree over in-memory files (tests and fixtures).
@@ -384,7 +388,7 @@ impl Tree {
         let mut files = files;
         files.sort_by(|a, b| a.rel.cmp(&b.rel));
         let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
-        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new() }
+        Tree { root: PathBuf::from("."), files, index, extra: Mutex::new(HashMap::new()), memo_cells: Mutex::new(HashMap::new()), prewarm_once: OnceLock::new(), line_cache: Mutex::new(HashMap::new()), line_cache_dirty: std::sync::atomic::AtomicBool::new(false) }
     }
 
     /// A value built once per run and shared by every lint that asks for the same `key` (a parsed
@@ -434,6 +438,35 @@ impl Tree {
         });
     }
 
+    /// Loads the persisted line texts (entries of files that no longer exist or changed are simply never asked for).
+    pub fn load_line_cache(&self, path: &Path, stamp: &str) {
+        let Ok(bytes) = std::fs::read(path) else { return };
+        let Ok((st, map)) = bincode::deserialize::<(String, Vec<((Hash, u32), String)>)>(&bytes) else { return };
+        if st == stamp {
+            *self.line_cache.lock().unwrap() = map.into_iter().collect();
+        }
+    }
+
+    /// Persists the line texts of the files this tree holds when any was added.
+    pub fn save_line_cache(&self, path: &Path, stamp: &str) {
+        if !self.line_cache_dirty.swap(false, std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
+        let live: std::collections::HashSet<Hash> = self.files.iter().map(|f| f.fkey).collect();
+        let g = self.line_cache.lock().unwrap();
+        let mut rows: Vec<((Hash, u32), String)> = g.iter().filter(|(k, _)| live.contains(&k.0)).map(|(k, v)| (*k, v.clone())).collect();
+        rows.sort();
+        if let Ok(bytes) = bincode::serialize(&(stamp.to_string(), rows)) {
+            if let Some(dir) = path.parent() {
+                let _ = std::fs::create_dir_all(dir);
+            }
+            let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+            if std::fs::write(&tmp, &bytes).is_ok() {
+                let _ = std::fs::rename(&tmp, path);
+            }
+        }
+    }
+
     /// How many files were read at load time (new or changed since the last run): the cue for
     /// whether reading the whole tree up front is worth it.
     pub fn fresh_count(&self) -> usize {
@@ -468,8 +501,15 @@ impl Tree {
     /// text, `allow_annotations.site_text`).
     pub fn site_text(&self, rel: &str, n: usize) -> String {
         if let Some(f) = self.get(rel) {
+            let key = (f.fkey, n as u32);
+            if let Some(t) = self.line_cache.lock().unwrap().get(&key) {
+                return t.clone();
+            }
             let raw = f.raw();
-            return if n >= 1 && n <= raw.num_lines() { util::normalize_ws(raw.line(n)) } else { String::new() };
+            let t = if n >= 1 && n <= raw.num_lines() { util::normalize_ws(raw.line(n)) } else { String::new() };
+            self.line_cache.lock().unwrap().insert(key, t.clone());
+            self.line_cache_dirty.store(true, std::sync::atomic::Ordering::Relaxed);
+            return t;
         }
         match self.read_extra(rel) {
             Some(t) => {

@@ -119,6 +119,9 @@ impl Engine {
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: scopes+meta load {:.1?}, walk+hash {:.1?}, save {:.1?}", t_prior, t_tree - t_prior, t0.elapsed() - t_tree);
         }
+        if let Some(dir) = crate::incr::dir() {
+            tree.load_line_cache(&dir.join("linetext.bin"), cache.stamp());
+        }
         let changed = if opts.changed_only { Some(changed_files(&opts.root)) } else { None };
         let load_time = t0.elapsed();
         let files_read = tree.files.len();
@@ -390,6 +393,9 @@ impl Engine {
             }
         }
         self.cache.save_durations(&merged);
+        if let Some(dir) = crate::incr::dir() {
+            self.tree.save_line_cache(&dir.join("linetext.bin"), self.cache.stamp());
+        }
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
         }
