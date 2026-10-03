@@ -19,7 +19,7 @@
 	frame.facing = secure_case ? "r" : "l"
 	frame.created_name = "Configured test windoor"
 	board.conf_access = list(ACCESS_SECURITY)
-	board.one_access = secure_case
+	board.set_one_access(secure_case)
 	var/frame_handle = om_handle(frame)
 	var/list/before = turf_contents_of_type(T, /obj/machinery/door/window)
 	frame.crowbar_act_tool_done(actor)
