@@ -799,6 +799,7 @@
 #include "interim_large_parcel_unwrap.dm"
 #include "interim_strangerock_welder_cleanup.dm"
 #include "interim_strangerock_mining_release.dm"
+#include "interim_contained_remains_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

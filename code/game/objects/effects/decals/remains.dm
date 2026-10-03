@@ -67,6 +67,8 @@ EXTEND_INTERACTIONS(/obj/effect/decal/remains, \
 
 /// Old attack_hand: the remains crumble away at a touch.
 /obj/effect/decal/remains/proc/interaction_crumble_remains(mob/user, obj/item/held, datum/interaction/interaction)
+	if(loc?.release_refusal(src, user))
+		return TRUE
 	to_chat(user, span_notice("[src] [crumble_message]."))
 	var/turf/simulated/floor/F = get_turf(src)
 	if(istype(F))
@@ -76,5 +78,5 @@ EXTEND_INTERACTIONS(/obj/effect/decal/remains, \
 		if(loc == F)
 			replace_with(src, debris)
 			return TRUE
-	qdel(src)
+	consume(src, user)
 	return TRUE
