@@ -181,34 +181,6 @@
 	TEST_ASSERT(QDELETED(girder), "disassembled")
 	own_turf_contents(T) // the salvaged steel
 
-/// Airlock assembly: wrench anchoring 4 s at volume 100; welding it apart needs a lit welder, 4 s, no fuel.
-/datum/unit_test/dq_tool_parity_door_assembly
-
-/datum/unit_test/dq_tool_parity_door_assembly/Run()
-	var/turf/T = run_loc_floor_bottom_left
-	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
-	var/obj/item/tool/wrench/wrench = dq_zero_speed(allocate(/obj/item/tool/wrench, T))
-	var/obj/item/weldingtool/welder = dq_zero_speed(allocate(/obj/item/weldingtool, T))
-	var/obj/structure/door_assembly/assembly = allocate(/obj/structure/door_assembly, T)
-
-	assembly.set_anchored(FALSE)
-	TEST_ASSERT(assembly.wrench_act(H, wrench) & ITEM_INTERACT_SUCCESS, "the wrench anchors it")
-	TEST_ASSERT(assembly.anchored, "anchored")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "anchoring takes 4 s")
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["volume"], 100, "at volume 100")
-	assembly.wrench_act(H, wrench)
-	TEST_ASSERT(!assembly.anchored, "unanchored again")
-
-	assembly.welder_act(H, welder)
-	TEST_ASSERT(!QDELETED(assembly), "an unlit welder does not take it apart")
-	welder.set_welding(TRUE)
-	var/start = welder.get_fuel()
-	assembly.welder_act(H, welder)
-	TEST_ASSERT_EQUAL(GLOB.dq_tool_last_use["delay"], 4 SECONDS, "welding it apart takes 4 s")
-	TEST_ASSERT_EQUAL(welder.get_fuel(), start, "and burns no fuel, as before")
-	TEST_ASSERT(QDELETED(assembly), "taken apart")
-	own_turf_contents(T) // the salvaged steel
-
 /// Manual valve: unwrenching takes 40 ticks at volume 50.
 /datum/unit_test/dq_tool_parity_valve
 

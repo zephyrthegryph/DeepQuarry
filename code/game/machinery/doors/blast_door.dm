@@ -200,7 +200,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 /obj/machinery/door/blast/proc/interaction_attackby(mob/user, obj/item/C, datum/interaction/interaction)
 	src.add_fingerprint(user)
 	var/harming = interaction.stance == I_HURT
-	if(istype(C, /obj/item)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob.
+	if(istype(C, /obj/item) && !(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob. Plasteel is not a weapon: it repairs (below).
 		if(C.pry == 1 && (!harming || (has_stat(BROKEN)))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
 			if(istype(C,/obj/item/material/twohanded/fireaxe)) // Fireaxes need to be in both hands to pry.
 				var/obj/item/material/twohanded/fireaxe/F = C
