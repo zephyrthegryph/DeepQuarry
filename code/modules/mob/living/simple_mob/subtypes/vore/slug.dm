@@ -234,7 +234,7 @@
 /obj/effect/slug_glue/wash(clean_types) // Needs proper scrubbing
 	. = ..()
 	if (. || (clean_types & CLEAN_SCRUB))
-		qdel(src)
-		return TRUE
+		if(consume(src))
+			return TRUE
 	return .
 

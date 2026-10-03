@@ -122,3 +122,5 @@ changes:
   - bugfix: "Ban removal preserves the selected administrator across confirmation, and automatic expiry works without a player actor."
   - bugfix: "Paper shredders and mining shield upgrades require consuming their original document or disk before granting output or stronger protection."
   - bugfix: "Completed shuttle console construction retains the correct builder in administrator logs."
+  - bugfix: "pAI power repairs and beehive assembly respect replacement parts and assemblies that cannot leave your hand."
+  - bugfix: "Material armor respects release rules before shattering and clears its equipment slot when it does break."
