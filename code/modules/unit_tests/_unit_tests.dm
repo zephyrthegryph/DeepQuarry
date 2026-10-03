@@ -805,6 +805,7 @@
 #include "interim_rsf_sticky_matter_refill.dm"
 #include "interim_contraband_sticky_unwrapping.dm"
 #include "interim_clamp_detach_actor.dm"
+#include "interim_resist_alert_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
