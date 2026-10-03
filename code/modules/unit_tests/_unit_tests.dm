@@ -472,6 +472,7 @@
 #include "dq_p2_reagent_pill_behaviour.dm"
 #include "dq_p2_reagent_hypo_behaviour.dm"
 #include "dq_p2_reagent_misc_behaviour.dm"
+#include "dq_eg2_gap_tests.dm"
 #include "dq_s1_slots_tests.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
