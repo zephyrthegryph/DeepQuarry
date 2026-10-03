@@ -126,6 +126,7 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 
 // Very filling food.
 /obj/item/reagent_containers/food/snacks/slime
+	bitesize = 5
 	name = "slimy clump"
 	desc = "A glob of slime that is thick as honey.  For the brave " + JOB_XENOBIOLOGIST + "."
 	icon_state = "honeycomb"
@@ -135,9 +136,6 @@ DECLARE_INTERACTIONS(/obj/item/slime_crystal, INTERACT_USE(null, PROC_REF(intera
 	nutriment_amt = 25 // Very filling.
 	nutriment_desc = list("slime" = 10, "sweetness" = 10, REAGENT_ID_BLISS = 5)
 
-/obj/item/reagent_containers/food/snacks/slime/Initialize(mapload)
-	. = ..()
-	bitesize = 5
 
 //Flashlight
 

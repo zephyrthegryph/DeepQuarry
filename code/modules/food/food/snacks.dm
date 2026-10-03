@@ -7161,9 +7161,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/plumpburger, null, lis
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito, null, list(REAGENT_ID_PROTEIN = 12, REAGENT_ID_NUTRIMENT = 15))
 
-/obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/Initialize(mapload)
-	. = ..()
-	bitesize = 6
 
 /obj/item/reagent_containers/food/snacks/sliceable/supremoburrito
 	name = "Supremo burrito"
@@ -7183,7 +7180,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/supremoburri
 	desc = "The BBB. An engorged burrito filled to the brim of what makes Mexico. Beans, cheese and meat that ooze by how stuffed it is"
 	icon = 'icons/obj/food_ch.dmi'
 	icon_state = "bigbeanburrito"
-	bitesize = 3
+	bitesize = 6
 	whole_path = /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito
 
 /obj/item/reagent_containers/food/snacks/slice/bigbeanburrito/filled
@@ -7549,15 +7546,13 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/pillbugempty, null, li
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/makaroni, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6))
 
 /obj/item/reagent_containers/food/snacks/lobster
+	bitesize = 0.1
 	name = "raw lobster"
 	desc = "A shifty lobster. You can try eating it, but its shell is extremely tough."
 	icon = 'icons/obj/food.dmi'
 	icon_state = "lobster_raw"
 	nutriment_amt = 5
 
-/obj/item/reagent_containers/food/snacks/lobster/Initialize(mapload)
-	. = ..()
-	bitesize = 0.1
 
 /obj/item/reagent_containers/food/snacks/lobstercooked
 	name = "cooked lobster"
@@ -7625,6 +7620,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishfillet, null, 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, list(REAGENT_ID_PROTEIN = 5))
 
 /obj/item/reagent_containers/food/snacks/sliceable/monkfishremains
+	bitesize = 0.01 //impossible to eat
 	name = "monkfish remains"
 	icon = 'icons/obj/food.dmi'
 	icon_state = "monkfish_remains"
@@ -7636,9 +7632,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/monkfishcooked, null, 
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains, null, list(REAGENT_ID_CARBON = 5))
 
-/obj/item/reagent_containers/food/snacks/sliceable/monkfishremains/Initialize(mapload)
-	. = ..()
-	bitesize = 0.01 //impossible to eat
 
 /obj/item/reagent_containers/food/snacks/sliceable/sharkchunk
 	name = "chunk of shark meat"

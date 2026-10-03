@@ -1,4 +1,5 @@
 /obj/item/reagent_containers/food/snacks/meat
+	bitesize = 1.5
 	name = "meat"
 	desc = "A slab of meat."
 	icon_state = "meat"
@@ -8,9 +9,6 @@
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_TRIGLYCERIDE = 2))
 
-/obj/item/reagent_containers/food/snacks/meat/Initialize(mapload)
-	. = ..()
-	src.bitesize = 1.5
 
 /obj/item/reagent_containers/food/snacks/meat/cook()
 
@@ -143,6 +141,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawturkey, null, list(
 	desc = "The fox doesn't say a goddamn thing, now."
 
 /obj/item/reagent_containers/food/snacks/meat/grubmeat
+	bitesize = 6
 	name = "grubmeat"
 	desc = "A slab of grub meat, it gives a gentle shock if you touch it"
 	icon = 'icons/obj/food.dmi'
@@ -152,9 +151,6 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/rawturkey, null, list(
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/grubmeat, null, list(REAGENT_ID_PROTEIN = 1, REAGENT_ID_SHOCKCHEM = 6))
 
-/obj/item/reagent_containers/food/snacks/meat/grubmeat/Initialize(mapload)
-	. = ..()
-	bitesize = 6
 
 GLOBAL_LIST_INIT(worm_meat_spawns, list (
 		/obj/random/junk = 30,
@@ -173,6 +169,7 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 ))
 
 /obj/item/reagent_containers/food/snacks/meat/worm
+	bitesize = 3
 	name = "weird meat"
 	desc = "A chunk of pulsating meat."
 	icon_state = "wormmeat"
@@ -182,9 +179,6 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/worm, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PHORON = 3, REAGENT_ID_MYELAMINE = 3))
 
-/obj/item/reagent_containers/food/snacks/meat/worm/Initialize(mapload)
-	. = ..()
-	src.bitesize = 3
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT_ITEM(null, PROC_REF(worm_meat_item)))
 

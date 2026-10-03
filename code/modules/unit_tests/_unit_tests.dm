@@ -625,6 +625,8 @@
 #include "interim_frame_unwire_component_refund.dm"
 #include "interim_storage_transfer_full_hud.dm"
 #include "interim_diagonal_inventory_actor.dm"
+#include "interim_food_bite_data.dm"
+#include "interim_slime_food_bite_data.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
