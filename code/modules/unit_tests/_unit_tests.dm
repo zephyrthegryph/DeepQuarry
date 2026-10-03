@@ -566,6 +566,7 @@
 #include "interim_lowwall_egg_recovery.dm"
 #include "interim_crate_opener_actor.dm"
 #include "interim_apc_cell_inventory.dm"
+#include "interim_flora_removal.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
