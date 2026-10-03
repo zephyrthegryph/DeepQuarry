@@ -41,6 +41,40 @@ Per-lint wall times of the old run (seconds): sys_lint 139, api_lints 61, owners
 lifecycle 33, scheduler 30, lifecycle_counts 23, containment 21, system_boundary 20, spatial 19,
 base_vars 18, dcs 18, tracked 18, qdel_src 17, and about 25 more between 1 and 15.
 
+## Incremental engine (2026-10)
+
+What ran: `analyze check` (every lint but nothing excluded) on a worktree of master after the semantic layer gained handlers (65
+declared handlers, so the full model parses on every cold run), Windows 11, Ryzen 7 5800X (8 cores, 16 threads), warm OS file
+cache, a game running on the same machine (read the spread, not the digit). Wall time of the whole process, `cpu` is process CPU.
+
+| Run | Before (master) | After |
+|---|---|---|
+| Cold (no cache directory) | 14.3 to 17.4 s wall, 69 to 72 s cpu | 17.0 to 18.1 s wall, 80 s cpu |
+| Warm (nothing changed) | 0.74 to 0.97 s wall, 4.1 s cpu | 0.19 to 0.21 s wall, 0.57 s cpu |
+| One `.dm` file edited, comment (20 runs, appended line each) | 15.1 to 17.0 s wall, 44 to 49 s cpu | average 0.73 s, median 0.73 s, range 0.57 to 1.20 s; 3.2 s cpu |
+| One `.dm` file edited, code (a proc body expression; a var's initial value; 16 runs) | about 16 s | 0.56 to 0.84 s |
+| A proc or var added or removed (declarations change) | about 16 s | 11.7 to 12.9 s (the full semantic model runs) |
+
+A run on a loaded machine shows outliers (1.4 to 5 s) that are disk stalls writing the cache (about 23 MB in 148 files per edit),
+not engine work. The cold run is about 20 % slower than before: it parses once, then also writes the per-file stores, the
+semantic record and the generator output. The `check_ratchets.sh` end to end is 5.6 s warm (the two Python generator checks take
+most of it) and 35 s cold; `analyze gen --check` is 3.5 s warm instead of 8 to 27 s.
+
+How a one-file edit is now answered: every whole-tree lint is facts (per file, cached by content) plus a merge plus a per-file
+judgement cached under the key of what was merged (`src/incr.rs`), so the edited file is re-read and re-judged and a lint whose
+facts did not change re-judges nothing else. The semantic lints reuse their stored results (and the `reads` generator its stored
+text) when the edited file is outside the 18-file footprint of the handler analysis and leaves the structure (declarations,
+parameter lists, written names) alone, or only changes comments (`src/sem/incremental.rs`: no parse), or is parsed alone with the
+defines (about 0.15 s). Details and the exact reuse rule are in `tools/analyze/README.md`.
+
+Not achieved: an edit that changes the structure (adds or removes a var or proc, renames a parameter), touches a footprint file, or
+changes a `#define` still runs the full 8 to 12 s model; the cold run is not faster; sem results are reused whole, not
+merged from per-file parse fragments (dreammaker's `ObjectTree` has no per-file form).
+
+Repeat it: `bash` with `tools/analyze/target/release/analyze.exe` built (`cargo build --release --manifest-path tools/analyze/Cargo.toml`):
+`rm -rf data/analyze-cache; analyze check` (cold), `analyze check` twice (warm), then `echo "// x" >> <a .dm file with no #define>; analyze check` repeatedly.
+`DQ_ANALYZE_TRACE=1` prints the phase times, `DQ_ANALYZE_TRACE_SPANS=1` each lint's span.
+
 ## Semantic layer (E5, 2026-10)
 
 What ran: `tools/analyze` with the E5 semantic layer (`src/sem/`, three `sem/*` lints, two generators) against the same

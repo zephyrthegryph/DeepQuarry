@@ -145,7 +145,7 @@ commit their last caller goes. Plan, phases and gates: doc §19.
 
 `tools/ci/check_ratchets.sh` runs the rewrite lints, all in one process: the `analyze` engine
 (`tools/analyze/`, see its README; `tools/ci/check_grep.sh` is its `check_grep` lint). It loads the
-tree once and caches per file: about 5 s cold, under a second warm. `analyze check --lint NAME`
+tree once and caches per file: about 17 s cold (the semantic model parse), 0.2 s warm, under a second after a one-file edit. `analyze check --lint NAME`
 runs one lint, `analyze check --changed-only` judges only the files you changed. A ratcheted lint's
 `tools/ci/*_baseline.txt` lists legacy sites as fingerprints (rule, file, normalized line text). A
 failure prints only **new** sites. After a sweep run `analyze baseline --update [--lint NAME]`: it
