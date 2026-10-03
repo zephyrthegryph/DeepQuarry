@@ -170,8 +170,9 @@ pub fn mix(keys: &[Hash]) -> Hash {
     u128::from_le_bytes(h.finalize().as_bytes()[..16].try_into().unwrap())
 }
 
-/// A store this large is split in [`SHARDS`] files by file-key hash: an edit rewrites one small shard,
-/// and the shards load in parallel.
+/// A store this large is split in [`SHARDS`] blobs inside one file, by file-key hash: an edit re-encodes one
+/// small shard (the others are written back as they were), and the shards decode in parallel. One file, not
+/// sixteen: opening files is the dear part of a warm run.
 const SHARDS: usize = 16;
 const SHARD_MIN_FILES: usize = 1024;
 
@@ -179,21 +180,63 @@ fn shard_of(k: Hash) -> usize {
     ((k ^ (k >> 64)) as usize) % SHARDS
 }
 
+/// What a keyed store holds on disk.
+#[derive(Serialize, Deserialize, Default)]
+struct Container {
+    stamp: String,
+    ctx: Hash,
+    /// One encoded [`Shard`] per shard (empty = nothing stored).
+    shards: Vec<Vec<u8>>,
+}
+
+#[derive(Serialize, Deserialize, Default)]
+struct Shard {
+    /// `fkey` -> bincode of `(R, allow uses)`.
+    map: HashMap<Hash, Vec<u8>>,
+    /// `fkey`s whose result is `R::default()` with no allow use.
+    clean: HashSet<Hash>,
+}
+
 /// `f(file)` for every file, cached per file under `ctx`. See the module docs.
 pub fn keyed<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
+where
+    R: Serialize + DeserializeOwned + Default + PartialEq + Send,
+{
+    let t_all = std::time::Instant::now();
+    let r = keyed_inner(name, ctx, files, f);
+    if trace_on() {
+        let ms = t_all.elapsed().as_secs_f64() * 1000.0;
+        if ms >= 4.0 {
+            eprintln!("incr {:<34} {:>7.1} ms (files {})", name, ms, files.len());
+        }
+    }
+    r
+}
+
+fn trace_on() -> bool {
+    static ON: OnceLock<bool> = OnceLock::new();
+    *ON.get_or_init(|| std::env::var("DQ_ANALYZE_TRACE_INCR").is_ok())
+}
+
+fn keyed_inner<R>(name: &str, ctx: Hash, files: &[&SourceFile], f: impl Fn(&SourceFile) -> R + Sync) -> Vec<R>
 where
     R: Serialize + DeserializeOwned + Default + PartialEq + Send,
 {
     let sharded = files.len() >= SHARD_MIN_FILES;
     let n = if sharded { SHARDS } else { 1 };
     let target = config();
-    let mut stores: Vec<StoreFile> = match &target {
-        None => (0..n).map(|_| StoreFile::default()).collect(),
-        Some((dir, stamp)) => (0..n)
-            .into_par_iter()
-            .map(|k| load_at(&store_path(dir, name, if sharded { Some(k) } else { None }), stamp, ctx))
-            .collect(),
+    let path = target.as_ref().map(|(dir, _)| store_path(dir, name, None));
+    let mut container: Container = match (&target, &path) {
+        (Some((_, stamp)), Some(p)) => {
+            let loaded = std::fs::read(p).ok().and_then(|b| de::<Container>(&b).ok());
+            match loaded {
+                Some(c) if c.stamp == *stamp && c.ctx == ctx && c.shards.len() == n => c,
+                _ => Container { stamp: stamp.clone(), ctx, shards: vec![Vec::new(); n] },
+            }
+        }
+        _ => Container { shards: vec![Vec::new(); n], ..Default::default() },
     };
+    let mut stores: Vec<Shard> = container.shards.par_iter().map(|b| if b.is_empty() { Shard::default() } else { de::<Shard>(b).unwrap_or_default() }).collect();
     let shard = |file: &SourceFile| if sharded { shard_of(file.fkey) } else { 0 };
     let mut uses: Vec<AllowUse> = Vec::new();
     let results: Vec<(R, bool, Vec<AllowUse>)> = files
@@ -236,17 +279,40 @@ where
         uses.extend(u);
         out.push(r);
     }
-    if let Some((dir, _)) = &target {
-        for k in 0..n {
-            if dirty[k] || maps[k].len() + cleans[k].len() != before[k] {
-                stores[k].map = std::mem::take(&mut maps[k]);
-                stores[k].clean = std::mem::take(&mut cleans[k]);
-                save(&store_path(dir, name, if sharded { Some(k) } else { None }), &stores[k]);
+    if let (Some(p), true) = (&path, (0..n).any(|k| dirty[k] || maps[k].len() + cleans[k].len() != before[k])) {
+        let encoded: Vec<Option<Vec<u8>>> = (0..n)
+            .into_par_iter()
+            .map(|k| {
+                if dirty[k] || maps[k].len() + cleans[k].len() != before[k] {
+                    ser(&Shard { map: maps[k].clone(), clean: cleans[k].clone() }).ok()
+                } else {
+                    None
+                }
+            })
+            .collect();
+        for (k, e) in encoded.into_iter().enumerate() {
+            if let Some(b) = e {
+                container.shards[k] = b;
             }
+        }
+        if let Ok(bytes) = ser(&container) {
+            write_atomic(p, &bytes);
         }
     }
     crate::dm::sys::replay_recorded(uses);
     out
+}
+
+fn write_atomic(path: &std::path::Path, bytes: &[u8]) {
+    if let Some(dir) = path.parent() {
+        let _ = std::fs::create_dir_all(dir);
+    }
+    let tmp = path.with_extension(format!("tmp{}", std::process::id()));
+    if std::fs::write(&tmp, bytes).is_ok() {
+        let _ = std::fs::rename(&tmp, path);
+    } else {
+        let _ = std::fs::remove_file(&tmp);
+    }
 }
 
 /// Per-file facts: `f(file)` cached by content alone.

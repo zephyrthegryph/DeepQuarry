@@ -84,6 +84,8 @@ pub fn param_names(params: &str) -> Vec<String> {
 /// or `/proc/name(args)`. Bodies are line ranges into the file's sanitized view.
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Proc {
+    /// Set from the file after a facts load (not stored: the store is keyed by file).
+    #[serde(skip)]
     pub rel: String,
     /// 1-based line of the head.
     pub line: usize,
@@ -287,7 +289,12 @@ impl DxFacts {
         tree.memo("dx-facts-all", || {
             let sel = crate::tree::Select { roots: &[("code", "dm"), ("maps", "dm")], hidden: true };
             let files = tree.select(&sel);
-            let facts = crate::incr::facts("dx-file-facts", &files, file_dx);
+            let mut facts = crate::incr::facts("dx-file-facts", &files, file_dx);
+            for (fd, f) in facts.iter_mut().zip(&files) {
+                for p in &mut fd.procs {
+                    p.rel.clone_from(&f.rel);
+                }
+            }
             let index = files.iter().enumerate().map(|(i, f)| (f.rel.clone(), i)).collect();
             DxFacts { facts, index }
         })

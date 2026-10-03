@@ -254,6 +254,11 @@ pub fn run_isolated<T: Send>(f: impl FnOnce() -> T + Send) -> T {
     })
 }
 
+fn memo_trace() -> bool {
+    static ON: OnceLock<bool> = OnceLock::new();
+    *ON.get_or_init(|| std::env::var("DQ_ANALYZE_TRACE").is_ok())
+}
+
 /// Debug aid (`DQ_ANALYZE_WATCHDOG=<seconds>`): when set, memo state is tracked and dumped if the run is still going
 /// after that long, then the process exits with status 99.
 static WATCH: OnceLock<Mutex<HashMap<String, Vec<&'static str>>>> = OnceLock::new();
@@ -444,7 +449,12 @@ impl Tree {
                 if tracing {
                     watch_set(key, "initializing");
                 }
-                std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>
+                let t0 = std::time::Instant::now();
+                let v = std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>;
+                if memo_trace() && t0.elapsed().as_millis() >= 5 {
+                    eprintln!("analyze: memo {:?} built in {:.0?}", if key.len() > 40 { &key[..40] } else { key }, t0.elapsed());
+                }
+                v
             })
             .clone();
         if tracing {

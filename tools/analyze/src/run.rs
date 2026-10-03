@@ -31,6 +31,9 @@ pub struct Options {
     pub scopes_from: Option<PathBuf>,
 }
 
+/// The first lint's start (`DQ_ANALYZE_TRACE_SPANS` prints each lint's span relative to it).
+static SPAN_ORIGIN: std::sync::OnceLock<Instant> = std::sync::OnceLock::new();
+
 /// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
 pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
@@ -349,6 +352,16 @@ impl Engine {
 
     pub fn run_one(&self, lint: &dyn Lint) -> Outcome {
         let name = lint.meta().name.to_string();
+        let t_start = Instant::now();
+        let out = self.run_one_inner(lint, name);
+        if std::env::var("DQ_ANALYZE_TRACE_SPANS").is_ok() {
+            let t0 = *SPAN_ORIGIN.get_or_init(Instant::now);
+            eprintln!("span {:>7.0}..{:>7.0} ms  {}", t_start.saturating_duration_since(t0).as_secs_f64() * 1000.0, t0.elapsed().as_secs_f64() * 1000.0, out.name);
+        }
+        out
+    }
+
+    fn run_one_inner(&self, lint: &dyn Lint, name: String) -> Outcome {
         let res = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
             let (run, allow_used, timing) = self.scan(lint);
             let (failed, text) = self.judge(lint, &run);
@@ -381,6 +394,7 @@ impl Engine {
     pub fn run_all(&self) -> Vec<Outcome> {
         let chosen = selected(&self.reg, &self.opts.lints);
         self.prepare(&chosen);
+        let _ = SPAN_ORIGIN.get_or_init(Instant::now);
         // Longest first: with ~50 lints on 16 cores the slowest whole-tree lints are the critical
         // path, so start them before the quick ones (durations remembered from the last real run).
         let durations = self.cache.load_durations();
