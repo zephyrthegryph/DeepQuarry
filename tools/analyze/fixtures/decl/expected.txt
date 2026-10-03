@@ -31,6 +31,8 @@ destroy_qdel_owned	code/modules/decl/destroy.dm	44
 destroy_qdel_owned	code/modules/decl/destroy.dm	45
 destroy_qdel_owned	code/modules/decl/destroy.dm	50
 destroy_qdel_owned	code/modules/decl/destroy.dm	51
+destroy_qdel_owned	code/modules/decl/rel.dm	9
+destroy_qdel_owned	code/modules/decl/rel.dm	11
 destroy_registry	code/modules/decl/destroy.dm	13
 destroy_registry	code/modules/decl/destroy.dm	14
 destroy_scheduling	code/modules/decl/destroy.dm	16
@@ -48,6 +50,8 @@ init_new_child	code/modules/decl/init.dm	32
 init_new_child	code/modules/decl/init.dm	33
 init_new_child	code/modules/decl/init.dm	34
 init_new_child	code/modules/decl/init.dm	35
+init_new_child	code/modules/decl/rel.dm	2
+init_new_child	code/modules/decl/rel.dm	3
 init_reagents	code/__defines/tgs.dm	2
 init_reagents	code/modules/decl/.dot.dm	4
 init_reagents	code/modules/decl/.hid/h.dm	4

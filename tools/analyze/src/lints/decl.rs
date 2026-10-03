@@ -116,12 +116,12 @@ impl Decl {
 /// (sorted, unique). The tree-wide set is the union over every file, exempt ones too.
 fn owned_vars_of(f: &SourceFile) -> Vec<String> {
     let own_write = crate::pat!(
-        r#"\bown_(?:set|add|put|transfer|move)\([^,]+,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#
+        r#"\b(?:own_(?:set|add|put|transfer|move)|rel_(?:set|add))\([^,]+,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))"#
     );
     let mut names: BTreeSet<String> = BTreeSet::new();
     for line in f.raw().lines() {
         // `\bown_...` needs the text `own_`: a prefilter with the same result.
-        if !line.contains("own_") {
+        if !line.contains("own_") && !line.contains("rel_") {
             continue;
         }
         for m in own_write.captures_iter(line) {
@@ -141,9 +141,9 @@ impl Decl {
     /// (the cache replays them).
     fn judge(&self, f: &SourceFile, refs: &BTreeSet<String>) -> Vec<(u8, u32)> {
         let header = pat_match!(r"^(/[\w/]+)/(Initialize|on_materialize|on_destroy)\s*\(");
-        let new_into = pat_match!(r#"^\s*own_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
+        let new_into = pat_match!(r#"^\s*(?:own|rel)_(?:set|add)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))\s*,\s*new\b"#);
         let qdel_var = crate::pat!(
-            r#"\bown_(?:clear|take|take_all)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
+            r#"\b(?:own_(?:clear|take|take_all)|rel_clear)\(\s*src\s*,\s*(?:"|nameof\((?:/[\w/]+::|\w+\.)?)(\w+)(?:"|\))|\bqdel\s*\(\s*(?:src\.)?(\w+)\s*\)"#
         );
         // MATERIALIZE_RULES: the INIT_RULES that also apply to on_materialize(), in INIT_RULES order.
         let materialize = ["init_registry", "init_service", "init_scheduling"];
