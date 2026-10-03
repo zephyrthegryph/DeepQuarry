@@ -209,7 +209,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 			if(loc)
 				Bump(loc)
 			if(!QDELETED(src))
-				qdel(src)
+				consume(src)
 			return	//Kill!
 		pixel_move(1, TRUE)
 
@@ -226,7 +226,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		trajectory.increment(trajectory_multiplier)
 		var/turf/T = trajectory.return_turf()
 		if(!istype(T))
-			qdel(src)
+			consume(src)
 			return
 		if(T.z != loc.z)
 			var/old = loc
@@ -364,7 +364,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 	if(isnull(Angle))	//Try to resolve through offsets if there's no angle set.
 		if(isnull(xo) || isnull(yo))
 			stack_trace("WARNING: Projectile [type] deleted due to being unable to resolve a target after angle was null!")
-			qdel(src)
+			consume(src)
 			return
 		var/turf/target = locate(CLAMP(starting.x + xo, 1, world.maxx), CLAMP(starting.y + yo, 1, world.maxy), starting.z)
 		setAngle(Get_Angle(src, target))
@@ -440,7 +440,7 @@ GLOBAL_VAR_INIT(projectile_iterations_per_move, 16)
 		setAngle(Get_Angle(src, targloc) + spread)
 	else
 		stack_trace("WARNING: Projectile [type] fired without either mouse parameters, or a target atom to aim at!")
-		qdel(src)
+		consume(src)
 
 /proc/calculate_projectile_angle_and_pixel_offsets(mob/user, params)
 	var/list/mouse_control = params2list(params)

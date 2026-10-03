@@ -116,12 +116,10 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		return
 	if(effect_type)
 		var/datum/artifact_effect/my_effect = new effect_type(src)
-		if(istype(holder(), my_effect.req_type))
-			own_add(src, nameof(my_effects), my_effect)
-
-		else
+		own_add(src, nameof(my_effects), my_effect)
+		if(!istype(holder(), my_effect.req_type))
 			to_chat(usr, span_filter_notice("This effect can not be applied to this atom type."))
-			qdel(my_effect)
+			own_remove(src, nameof(my_effects), my_effect)
 
 /datum/artifact_master/proc/remove_effect()
 	var/to_remove_effect = rerun_ask(usr, "k134", PROC_REF(remove_effect), args, /datum/om/prompt/choice, message = "What effect do you want to remove?", title = "Remove Effect", choices = my_effects)
@@ -140,8 +138,9 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 	if(LAZYLEN(make_effects))
 		for(var/path in make_effects)
 			var/datum/artifact_effect/new_effect = new path(src)
-			if(istype(holder(), new_effect.req_type))
-				own_add(src, nameof(my_effects), new_effect)
+			own_add(src, nameof(my_effects), new_effect)
+			if(!istype(holder(), new_effect.req_type))
+				own_remove(src, nameof(my_effects), new_effect)
 
 	else
 		generate_effects()
@@ -179,12 +178,12 @@ DECLARE_PERIODIC_WHILE(/datum/artifact_master, PERIODIC_SLOW, "holder")
 		var/chosen_path = pick(effect_registry)
 		if(effect_generation_chance >= 100)	// Unconditional pass: always adds an effect.
 			var/datum/artifact_effect/AE = new chosen_path(src)
+			own_add(src, nameof(my_effects), AE)
 			if(istype(holder(), AE.req_type))
-				own_add(src, nameof(my_effects), AE)
 				effect_generation_chance -= 30
 			else
 				rel_set(AE, nameof(AE.master), src)
-				qdel(AE)
+				own_remove(src, nameof(my_effects), AE)
 			continue
 
 		// Probabilistic pass: halve the chance, then roll.

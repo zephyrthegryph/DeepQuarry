@@ -7,3 +7,4 @@ changes:
   - bugfix: "Hardsuit modification kits provide only one refit of each component kind."
   - bugfix: "Mining drills require their power cell to deliver the full required charge."
   - bugfix: "Rig grenade launchers grant ammunition only after consuming the replacement grenade."
+  - bugfix: "Rejected configured artifact effects are disposed of instead of leaking."

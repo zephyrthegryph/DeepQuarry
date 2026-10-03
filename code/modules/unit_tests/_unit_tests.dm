@@ -893,6 +893,7 @@
 #include "round2_drill_cell_delivery.dm"
 #include "round2_technomancer_ability_actor.dm"
 #include "round2_rig_grenade_checked_load.dm"
+#include "interim2_caseless_chamber_disposal.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
@@ -913,6 +914,8 @@
 #ifdef REFERENCE_TRACKING_DEBUG //Don't try and parse this file if ref tracking isn't turned on. IE: don't parse ref tracking please mr linter
 #include "find_reference_sanity.dm"
 #endif
+
+#include "interim2_artifact_configured_effect_rejection.dm"
 
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL

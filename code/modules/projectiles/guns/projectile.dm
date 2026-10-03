@@ -102,7 +102,7 @@
 	switch(handle_casings)
 		if(EJECT_CASINGS) //eject casing onto ground.
 			if(chambered.caseless)
-				qdel(chambered)
+				consume(chambered)
 				return
 			else
 				chambered.forceMove(get_turf(src))
