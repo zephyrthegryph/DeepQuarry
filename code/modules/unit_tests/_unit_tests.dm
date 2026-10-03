@@ -797,6 +797,8 @@
 #include "interim_paper_bundle_sticky_sheet.dm"
 #include "interim_filing_cabinet_sticky_document.dm"
 #include "interim_large_parcel_unwrap.dm"
+#include "interim_strangerock_welder_cleanup.dm"
+#include "interim_strangerock_mining_release.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

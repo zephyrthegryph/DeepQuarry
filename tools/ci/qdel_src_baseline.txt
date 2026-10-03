@@ -534,6 +534,5 @@ qdel_src	code/modules/weapons/MadokaSpear.dm	qdel(src)
 qdel_src	code/modules/xenoarcheaology/artifacts/artifact.dm	qdel(src)
 qdel_src	code/modules/xenoarcheaology/effect_master.dm	qdel(src)
 qdel_src	code/modules/xenoarcheaology/effect_master.dm	qdel(src)
-qdel_src	code/modules/xenoarcheaology/finds/finds.dm	qdel(src)
 qdel_src	code/modules/xenoarcheaology/finds/special.dm	qdel(src) //Let's not just sit in nullspace forever, yeah?
 qdel_src	code/modules/xenobio/items/slime_objects.dm	qdel(src)
