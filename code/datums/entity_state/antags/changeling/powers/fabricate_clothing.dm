@@ -45,15 +45,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/under/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/head/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed head"
 	icon_state = "lingchameleon"
 	desc = "Our head is swelled with a large quanity of rapidly shifting skin cells.  We can reform our head to resemble various hats and \
 	helmets that biologicals are so fond of wearing."
 	canremove = FALSE
 
-/obj/item/clothing/head/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
 	INTERACT_VERB("Shred Helmet", PROC_REF(changeling_head_shred_verb), REQ_IN_INVENTORY), \
@@ -69,6 +67,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/suit/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitinous chest"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -79,9 +78,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/chameleon/changeling, \
 	desc = "The cells in our chest are rapidly shifting, ready to reform into material that can resemble most pieces of clothing."
 	canremove = FALSE
 
-/obj/item/clothing/suit/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
 	INTERACT_VERB("Shred Suit", PROC_REF(changeling_suit_shred_verb), REQ_IN_INVENTORY), \
@@ -97,6 +93,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/shoes/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed feet"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -107,9 +104,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/chameleon/changeling, \
 	desc = "Our feet are overlayed with another layer of flesh and bone on top.  We can reform our feet to resemble various boots and shoes."
 	canremove = FALSE
 
-/obj/item/clothing/shoes/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
 	INTERACT_VERB("Shred Shoes", PROC_REF(changeling_shoes_shred_verb), REQ_IN_INVENTORY), \
@@ -125,6 +119,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/storage/backpack/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "backpack"
 	icon_state = "backpack"
 	item_icons = list(
@@ -135,9 +130,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes/chameleon/changeling, \
 	desc = "A large pouch imbedded in our back, it can shift form to resemble many common backpacks that other biologicals are fond of using."
 	canremove = FALSE
 
-/obj/item/storage/backpack/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 	INTERACT_VERB("Shred Backpack", PROC_REF(changeling_backpack_shred_verb), REQ_IN_INVENTORY), \
@@ -156,6 +148,7 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/gloves/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "malformed hands"
 	icon_state = "ling"
 	item_icons = list(
@@ -167,9 +160,6 @@ EXTEND_INTERACTIONS(/obj/item/storage/backpack/chameleon/changeling, \
 	tend to wear on their hands.  Remember that these won't protect your hands from harm."
 	canremove = FALSE
 
-/obj/item/clothing/gloves/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
 	INTERACT_VERB("Shred Gloves", PROC_REF(changeling_gloves_shred_verb), REQ_IN_INVENTORY), \
@@ -185,6 +175,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/mask/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitin visor"
 	icon_state = "lingchameleon"
 	item_icons = list(
@@ -196,9 +187,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/gloves/chameleon/changeling, \
 	tanks.."
 	canremove = FALSE
 
-/obj/item/clothing/mask/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon/changeling, \
 	INTERACT_VERB("Shred Mask", PROC_REF(changeling_mask_shred_verb), REQ_IN_INVENTORY), \
@@ -214,15 +202,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/clothing/glasses/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "chitin goggles"
 	icon_state = "lingchameleon"
 	item_state = "glasses"
 	desc = "A transparent piece of eyewear made out of brittle chitin.  We can reform it to resemble various glasses and goggles."
 	canremove = FALSE
 
-/obj/item/clothing/glasses/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
 	INTERACT_VERB("Shred Glasses", PROC_REF(changeling_glasses_shred_verb), REQ_IN_INVENTORY), \
@@ -238,6 +224,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
 		qdel(src)
 
 /obj/item/storage/belt/chameleon/changeling
+	emp_protection_flags = EMP_PROTECT_SELF
 	name = "waist pouch"
 	desc = "We can store objects in this, as well as shift it's appearance, so that it resembles various common belts."
 	icon_state = "lingchameleon"
@@ -248,9 +235,6 @@ EXTEND_INTERACTIONS(/obj/item/clothing/glasses/chameleon/changeling, \
 	item_state = "utility"
 	canremove = FALSE
 
-/obj/item/storage/belt/chameleon/changeling/Initialize(mapload)
-	. = ..()
-	emp_protection_flags |= EMP_PROTECT_SELF
 
 EXTEND_INTERACTIONS(/obj/item/storage/belt/chameleon/changeling, \
 	INTERACT_VERB("Shred Belt", PROC_REF(changeling_belt_shred_verb), REQ_IN_INVENTORY), \
