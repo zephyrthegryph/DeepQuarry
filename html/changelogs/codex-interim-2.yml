@@ -14,3 +14,5 @@ changes:
   - bugfix: "Attaching an organ disposes of every incompatible carried affliction."
   - code_imp: "Camera circuit boards, handheld scanners, speech devices and printers use native controls."
   - code_imp: "Cosmetics and folding shields use native operations."
+  - code_imp: "Patient monitors, fabricator controls, AI module configuration, decorative cards, supply boards, Geiger controls and folding blades use native operations."
+  - bugfix: "Robot fabricators credit steel only after consuming it successfully, and cancel insertion when its source stack has been deleted."

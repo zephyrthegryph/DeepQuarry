@@ -1053,8 +1053,6 @@ initialize	code/modules/casino/casino.dm	/obj/structure/casino_table/Initialize(
 initialize	code/modules/casino/casino.dm	/obj/structure/casino_table/roulette_table/Initialize(mapload)
 initialize	code/modules/casino/casino_prize_vendor.dm	/obj/machinery/casino_prize_dispenser/Initialize(mapload)
 initialize	code/modules/client/preferences_save_service.dm	/datum/system/character_setup/Initialize()
-initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/choker/Initialize(mapload)
-initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/collar/Initialize(mapload)
 initialize	code/modules/clothing/accessories/accessory.dm	/obj/item/clothing/accessory/collar/shock/Initialize(mapload)
 initialize	code/modules/clothing/accessories/badges.dm	/obj/item/clothing/accessory/dosimeter/Initialize(mapload)
 initialize	code/modules/clothing/accessories/badges.dm	/obj/item/storage/box/dosimeter/Initialize(mapload)
