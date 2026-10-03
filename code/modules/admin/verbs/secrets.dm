@@ -422,9 +422,9 @@ UI_ACT_PROC(/datum/secrets_menu, ui_act_onlyone)
 		return
 	switch(response)
 		if("Instant!")
-			holder().only_one()
+			holder().only_one(FALSE, user)
 		if(HIGHLANDER_DELAY_TEXT)
-			holder().only_one_delayed()
+			holder().only_one_delayed(user)
 		else
 			return
 	if(holder())
