@@ -21,10 +21,6 @@
 		M.create_reagents(60)
 	return M
 
-/// An op by key, as an AI or a script would call it (origin ORIGIN_AI): perform_op() with a key the test names at the call.
-/datum/unit_test/dq_lib/proc/run_op(mob/actor, atom/target, op_key, obj/item/held)
-	return perform_op(actor, target, op_key, held)
-
 /// A container of `type` holding `amount` units of water.
 /datum/unit_test/dq_lib/proc/filled(type, amount)
 	var/atom/movable/C = allocate(type)
@@ -193,15 +189,15 @@
 	// splash: everything goes over the target and none of it is kept
 	var/obj/item/lib_fixture/flask/bucket = filled(/obj/item/lib_fixture/flask, 25)
 	var/obj/lib_fixture/dummy/target = allocate(/obj/lib_fixture/dummy)
-	var/datum/op_result/splash = run_op(M, target, "reagent_container.splash", bucket)
+	var/datum/op_result/splash = perform_op(M, target, "reagent_container.splash", bucket)
 	TEST_ASSERT_EQUAL(splash?.outcome, ACT_COMMITTED, "a splash commits")
 	TEST_ASSERT_EQUAL(bucket.reagents.total_volume, 0, "and throws everything")
 	// spray: one transfer at a time, and a sprayer does not pour
 	var/obj/item/lib_fixture/sprayer/sprayer = filled(/obj/item/lib_fixture/sprayer, 30)
-	var/datum/op_result/spray = run_op(M, target, "reagent_container.spray", sprayer)
+	var/datum/op_result/spray = perform_op(M, target, "reagent_container.spray", sprayer)
 	TEST_ASSERT_EQUAL(spray?.outcome, ACT_COMMITTED, "a spray commits")
 	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "using one transfer (5)")
-	var/datum/op_result/pour_with_sprayer = run_op(M, tank, "reagent_container.pour", sprayer)
+	var/datum/op_result/pour_with_sprayer = perform_op(M, tank, "reagent_container.pour", sprayer)
 	TEST_ASSERT(!pour_with_sprayer || pour_with_sprayer.outcome != ACT_COMMITTED, "a sprayer has no pour op")
 	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "and nothing left it")
 
@@ -373,7 +369,7 @@
 	var/mob/living/simple_mob/lib_fixture_biter/biter = allocate(/mob/living/simple_mob/lib_fixture_biter)
 	var/obj/lib_fixture/dummy/target = allocate(/obj/lib_fixture/dummy)
 	var/before = target.get_integrity()
-	var/datum/op_result/by_ai = run_op(biter, target, "natural_weapon.attack")
+	var/datum/op_result/by_ai = perform_op(biter, target, "natural_weapon.attack")
 	TEST_ASSERT_EQUAL(by_ai?.outcome, ACT_COMMITTED, "a mob with no hands bites through the op (AI origin)")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 10, "for exactly the declared damage")
 	var/datum/op_result/cooling = test_menu(biter, target, "natural_weapon.attack")
@@ -384,7 +380,7 @@
 	TEST_ASSERT_EQUAL(by_menu?.outcome, ACT_COMMITTED, "once the cooldown is over a player's menu pick bites too")
 	TEST_ASSERT_EQUAL(by_menu?.origin, ORIGIN_MENU, "with the menu's origin")
 	TEST_ASSERT_EQUAL(before - target.get_integrity(), 20, "the second bite landed")
-	var/datum/op_result/by_self = run_op(biter, biter, "natural_weapon.attack")
+	var/datum/op_result/by_self = perform_op(biter, biter, "natural_weapon.attack")
 	TEST_ASSERT(!by_self || by_self.outcome != ACT_COMMITTED, "it will not bite itself")
 	// no hand ops: the mob has no hands, so a hand op of a machine is refused for want of a provider
 	var/provider_kinds = 0
