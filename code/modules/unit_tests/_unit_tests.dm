@@ -604,6 +604,8 @@
 #include "interim_speech_image_capture.dm"
 #include "interim_legacy_item_screen_actor.dm"
 #include "interim_foam_wall_removal.dm"
+#include "interim_pouch_delayed_removal.dm"
+#include "interim_apc_cell_fit_refusals.dm"
 #include "interim_alien_acid_completion.dm"
 #include "interim_toy_sword_holder_appearance.dm"
 #include "interim_shoes_holder_appearance.dm"
