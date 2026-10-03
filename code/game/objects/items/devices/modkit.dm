@@ -39,6 +39,10 @@
 		to_chat(user, span_notice("[src] is unable to modify that."))
 		return
 
+	if((istype(I, /obj/item/clothing/head/helmet) && !(parts & MODKIT_HELMET)) || (istype(I, /obj/item/clothing/suit) && !(parts & MODKIT_SUIT)))
+		to_chat(user, span_warning("This kit has no parts for this modification left."))
+		return
+
 	var/list/bodytypes = dq_fit_bodytypes(I)
 	var/excluding = ("exclude" in bodytypes)
 	var/in_list = (target_species in bodytypes)

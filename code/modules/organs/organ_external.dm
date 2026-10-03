@@ -109,7 +109,7 @@
 	if(splinted && splinted.loc == src)
 		var/atom/movable/splint = splinted
 		splint.moveToNullspace()
-		qdel(splint)
+		consume(splint)
 
 	// The detach hook (body/parts/attach.dm) keeps the owner's organ caches; the
 	// implant site slot's own teardown (destroy transaction phase 5, before

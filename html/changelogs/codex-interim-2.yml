@@ -4,3 +4,6 @@ changes:
   - bugfix: "Space suit repairs clean up completed breaches and repair all breaches within the available budget."
   - bugfix: "pAI hardware repairs require successful consumption of their replacement part."
   - bugfix: "Empty macrobatteries dispose of unused projectiles."
+  - bugfix: "Hardsuit modification kits provide only one refit of each component kind."
+  - bugfix: "Mining drills require their power cell to deliver the full required charge."
+  - bugfix: "Rig grenade launchers grant ammunition only after consuming the replacement grenade."

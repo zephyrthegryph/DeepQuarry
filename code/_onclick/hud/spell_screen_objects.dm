@@ -214,10 +214,13 @@
 		overlays += "silence"
 
 /atom/movable/screen/spell/Click()
+	return cast_with_actor(usr) // ALLOW(sys_usr_outside_verb): Native spell button clicks supply the initiating mob to the unchanged casting path.
+
+/atom/movable/screen/spell/proc/cast_with_actor(mob/user)
 	var/datum/spell/spell = spell()
-	if(!usr || !spell)
+	if(!user || !spell)
 		qdel(src)
 		return
 
-	spell.perform(usr)
+	spell.perform(user)
 	update_charge(1)

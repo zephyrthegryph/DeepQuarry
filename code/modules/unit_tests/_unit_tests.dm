@@ -887,6 +887,12 @@
 #include "round2_paicard_hardware_repair.dm"
 #include "round2_changeling_id_click_actor.dm"
 #include "interim2_rig_owned_module_teardown.dm"
+#include "round2_modkit_piece_quota.dm"
+#include "round2_spell_button_actor.dm"
+#include "interim2_organ_splint_containment_teardown.dm"
+#include "round2_drill_cell_delivery.dm"
+#include "round2_technomancer_ability_actor.dm"
+#include "round2_rig_grenade_checked_load.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

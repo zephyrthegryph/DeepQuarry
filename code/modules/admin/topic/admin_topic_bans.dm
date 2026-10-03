@@ -147,7 +147,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 		return
 
 	if(M != user)																//we can jobban ourselves
-		if(M.client && M.client.holder && (check_rights_for(M.client, R_BAN)))		//they can ban too. So we can't ban them
+		if(admin_can(M.client, R_BAN))		//they can ban too. So we can't ban them
 			tgui_alert_async(user, "You cannot perform this action. You must be of a higher administrative rank!")
 			return
 
