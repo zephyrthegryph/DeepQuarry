@@ -568,6 +568,7 @@
 #include "interim_apc_cell_inventory.dm"
 #include "interim_flora_removal.dm"
 #include "interim_computer_program_actor.dm"
+#include "interim_frame_component_removal.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
