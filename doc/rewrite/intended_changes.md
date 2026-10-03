@@ -31,3 +31,35 @@ Pinned by `code/modules/unit_tests/dq_p2_chargers_behaviour.dm` (28 tests, writt
   longer clashes with the use op on the same item. Test: `dq_p2_engine/pinned_gesture_answers_its_own_intents`.
 * `anchor(tool =, empty =)` (`code/library/machine/anchor.dm`): op `anchor.toggle`, instant, refused while the named var holds something.
 * `part_replacement()` (`code/library/machine/parts.dm`): op `part_replacement.replace` for a part replacer; phase 4 replaces it with `components(slots)`.
+
+## Reagent containers: glass (beakers, buckets, kettles, mugs, bottles, vials, paint cans)
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_behaviour.dm` (written and green on the legacy code first; the converted code passes the same tests, only
+its adapter block changed). Rags are not converted yet: they inherit the label and dip handling and keep their own rules.
+
+* **A hostile click on a person with an open container still does nothing.** The old splash of a person (and of yourself) has been unreachable since the
+  interaction migration (the container's attack handler consumed the click before its afterattack ran); the tests pin that, and the converted container
+  keeps it (`splash_mobs = FALSE` in `glass_container()`). Letting a hostile click splash a person is that one param.
+* **A splash empties the container.** The old splash over a floor or an object sometimes left a random part of the contents behind (the splash spilled a
+  random share on the floor and then failed to move the rest); the commit spends exactly what it reserved.
+* **An empty label clears the label** (the name goes back to the bare name); the old code left the name as "beaker ()".
+* **Examine reads from the capability:** "It contains 37 of 60 units." / "It is empty. It holds 60 units." / "Its lid is closed." instead of "It contains 37 units
+  of liquid." / "It is empty." / "Airtight lid seals it completely." Still only within two tiles.
+* **One op answers a click.** Dipping a small thing into a container (in a hostile, disarm or grab stance), labelling it with a pen and testing its blood
+  with a hot thing are ops, and an op ends the click: the held item's own afterattack no longer also runs after a dip. A held reagent container is poured
+  rather than dipped. A hot item tests blood only while the container holds blood (the old test ran for every item and did nothing without blood).
+* **The context menu says "Open or close the lid" and "Set transfer amount"** (the old entries were "Toggle lid" and the verb of the same name); a lid is worked
+  in hand or from the menu, never by an empty hand (an empty hand on a container picks it up, pinned).
+* **Refusal, pour, feed and splash texts are the library's.** What is refused, and when, is unchanged. A refused feeding says why (a mask, a belly, no mouth).
+* **A drink goes to the stomach** (the ingested holder, with the taste) as before; the capability's own flow for it is new (`REAGENT_FLOW_INGEST`).
+* The old `pickup()` and `dropped()` redraws of the beaker and bottle are gone (the look follows the contents, the lid and the label); a change of colour with
+  no change of amount redraws through `on_reagent_change()`.
+
+## Engine and library pieces the glass containers added
+
+* `reagent_container()` settings may be var names (`volume = nameof(volume)`), plus `starts_open`, `transfer_default/min/max`, `starts`, `taps`, `rests_on`,
+  `feed`/`feed_wait`, `examine_range`, `splash_mobs` (engine_contracts.md, "Reagent containers"). Tests: `dq_lib/reagent_*`.
+* A legacy entry interaction answers the input its handler did (`op_legacy_fits()`): a held item is no longer offered the empty-hand touches of its target.
+  A turf is reachable as the target of an op (`reach_surface()`). Tests: `dq_p2_engine/legacy_entries_fit_the_input`, `an_op_at_a_turf_is_reached`.
+* `req_reagents(units, more =)`, `reagent_transfer_amount()`, `atom/legacy_transfer_amount()`; `atom/is_open_container()` follows the capability's lid.
+* The old `cap_reagent_container()` library, its test and the `CAP_LID_OPEN` bit are deleted (nothing used them).

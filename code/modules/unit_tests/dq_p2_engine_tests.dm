@@ -204,6 +204,7 @@
 	TEST_ASSERT_EQUAL(T.used, 1, "a click runs the use")
 	TEST_ASSERT_EQUAL(T.dragged, 1, "and not the drag")
 
+// ---------------------------------------------------------------------------------------------------------------------
 // A legacy entry interaction answers the shape of input its handler did: attack_hand an empty hand, attackby a held item used on something else.
 // ---------------------------------------------------------------------------------------------------------------------
 

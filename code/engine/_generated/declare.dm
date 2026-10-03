@@ -892,11 +892,11 @@
 	into += entry_line(115)
 	into += list(global.hands())
 
-/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:124
+/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:128
 /mob/living/simple_mob/lib_fixture_biter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 124, /mob/living/simple_mob/lib_fixture_biter)
-	into += entry_line(125)
+	into += entry_block("code/tests/library/fixtures.dm", 128, /mob/living/simple_mob/lib_fixture_biter)
+	into += entry_line(129)
 	into += list(global.natural_weapon(/datum/natural_weapon/bite, damage = 10))
 
 /// CAPABILITIES(/mob/living/simple_mob/s1_fixture) at code/tests/engine/s1_fixtures.dm:179
@@ -1339,11 +1339,11 @@
 	into += entry_line(28)
 	into += list(global.reagent_container(volume = 30, transfer = list(5, 10, 15, 30), taps = list(/obj/lib_fixture/tap)))
 
-/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:116
+/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:120
 /obj/item/lib_fixture/hazmat/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 116, /obj/item/lib_fixture/hazmat)
-	into += entry_line(117)
+	into += entry_block("code/tests/library/fixtures.dm", 120, /obj/item/lib_fixture/hazmat)
+	into += entry_line(121)
 	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = "A hazmat patch is sewn on."))
 
 /// CAPABILITIES(/obj/item/lib_fixture/jug) at code/tests/library/fixtures.dm:47
@@ -1353,18 +1353,18 @@
 	into += entry_line(48)
 	into += list(global.reagent_container(volume = nameof(capacity), transfer_default = nameof(per_transfer), transfer_min = nameof(least), transfer_max = nameof(most), starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1, splash_mobs = FALSE))
 
-/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:88
+/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:92
 /obj/item/lib_fixture/sheets/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 88, /obj/item/lib_fixture/sheets)
-	into += entry_line(89)
+	into += entry_block("code/tests/library/fixtures.dm", 92, /obj/item/lib_fixture/sheets)
+	into += entry_line(93)
 	into += list(global.stackable(max_amount = 10))
 
-/// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:62
+/// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:66
 /obj/item/lib_fixture/sprayer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 62, /obj/item/lib_fixture/sprayer)
-	into += entry_line(63)
+	into += entry_block("code/tests/library/fixtures.dm", 66, /obj/item/lib_fixture/sprayer)
+	into += entry_line(67)
 	into += list(global.reagent_container(volume = 30, transfer = list(5, 10), spray = TRUE))
 
 /// CAPABILITIES(/obj/item/lib_fixture/syringe) at code/tests/library/fixtures.dm:34
@@ -1429,54 +1429,54 @@
 	into += entry_line(130)
 	into += list(global.while_slotted(SLOT_ANY_HELD, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 3)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:140
+/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:144
 /obj/lib_fixture/glow_box/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 140, /obj/lib_fixture/glow_box)
-	into += entry_line(141)
-	into += list(global.examine_line("It is a box."))
-	into += entry_line(142)
-	into += list(global.examine_line(PROC_REF(note_line)))
-	into += entry_line(143)
-	into += list(global.examine_line("It glows.", when = nameof(lit)))
-	into += entry_line(144)
-	into += list(global.look_layer("glow", when = nameof(lit)))
+	into += entry_block("code/tests/library/fixtures.dm", 144, /obj/lib_fixture/glow_box)
 	into += entry_line(145)
+	into += list(global.examine_line("It is a box."))
+	into += entry_line(146)
+	into += list(global.examine_line(PROC_REF(note_line)))
+	into += entry_line(147)
+	into += list(global.examine_line("It glows.", when = nameof(lit)))
+	into += entry_line(148)
+	into += list(global.look_layer("glow", when = nameof(lit)))
+	into += entry_line(149)
 	into += list(global.look_layer("box"))
 
-/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:97
+/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:101
 /obj/lib_fixture/pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 97, /obj/lib_fixture/pod)
-	into += entry_line(98)
+	into += entry_block("code/tests/library/fixtures.dm", 101, /obj/lib_fixture/pod)
+	into += entry_line(102)
 	into += list(global.interior(escape_wait = 10 SECONDS, escape_chance = 100))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:109
+/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:113
 /obj/lib_fixture/pod/by_var/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 109, /obj/lib_fixture/pod/by_var)
-	into += entry_line(110)
+	into += entry_block("code/tests/library/fixtures.dm", 113, /obj/lib_fixture/pod/by_var)
+	into += entry_line(114)
 	into += list(global.configure(global.interior(escape_chance = nameof(chance_var))))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:103
+/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:107
 /obj/lib_fixture/pod/stubborn/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 103, /obj/lib_fixture/pod/stubborn)
-	into += entry_line(104)
+	into += entry_block("code/tests/library/fixtures.dm", 107, /obj/lib_fixture/pod/stubborn)
+	into += entry_line(108)
 	into += list(global.configure(global.interior(escape_chance = 0)))
 
-/// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:73
+/// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:77
 /obj/lib_fixture/tank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 73, /obj/lib_fixture/tank)
-	into += entry_line(73)
+	into += entry_block("code/tests/library/fixtures.dm", 77, /obj/lib_fixture/tank)
+	into += entry_line(77)
 	into += list(global.reagent_container(volume = 100, transfer = list(5, 10)))
 
-/// CAPABILITIES(/obj/lib_fixture/tap) at code/tests/library/fixtures.dm:79
+/// CAPABILITIES(/obj/lib_fixture/tap) at code/tests/library/fixtures.dm:83
 /obj/lib_fixture/tap/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 79, /obj/lib_fixture/tap)
-	into += entry_line(80)
+	into += entry_block("code/tests/library/fixtures.dm", 83, /obj/lib_fixture/tap)
+	into += entry_line(84)
 	into += list(global.reagent_container(volume = 100, transfer = list(10), lid = TRUE))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:128

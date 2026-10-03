@@ -42,18 +42,22 @@ CAPABILITIES(/obj/item/lib_fixture/syringe, \
 	var/per_transfer = 20
 	var/least = 2
 	var/most = 40
-	var/list/contents_at_start = list(REAGENT_ID_WATER = 30)
+	var/list/contents_at_start = null
 
 CAPABILITIES(/obj/item/lib_fixture/jug, \
 	reagent_container(volume = nameof(capacity), transfer_default = nameof(per_transfer), transfer_min = nameof(least), transfer_max = nameof(most), \
 		starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1, splash_mobs = FALSE))
 
-/// A smaller jug with another start: the settings are changed on the var lines.
+/// A jug that starts with 30 units of water.
+/obj/item/lib_fixture/jug/stocked
+	name = "lib stocked jug"
+	contents_at_start = list(REAGENT_ID_WATER = 30)
+
+/// A smaller jug: the settings are changed on the var lines.
 /obj/item/lib_fixture/jug/small
 	name = "lib small jug"
 	capacity = 25
 	per_transfer = 5
-	contents_at_start = null
 
 /// A sprayer: it sprays one transfer at a time and does not pour.
 /obj/item/lib_fixture/sprayer

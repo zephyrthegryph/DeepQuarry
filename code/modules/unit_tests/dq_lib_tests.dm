@@ -228,7 +228,7 @@
 
 /datum/unit_test/dq_lib/reagent_settings_are_vars_of_the_type/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
-	var/obj/item/lib_fixture/jug/jug = allocate(/obj/item/lib_fixture/jug)
+	var/obj/item/lib_fixture/jug/stocked/jug = allocate(/obj/item/lib_fixture/jug/stocked)
 	var/obj/item/lib_fixture/jug/small/small = allocate(/obj/item/lib_fixture/jug/small)
 	TEST_ASSERT_EQUAL(jug.reagents.maximum_volume, 80, "the volume is the var's")
 	TEST_ASSERT_EQUAL(jug.reagents.total_volume, 30, "what it starts with is the var's")
@@ -257,7 +257,7 @@
 /datum/unit_test/dq_lib/reagent_rests_on_things_and_feeds_after_a_wait/run_gate()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
 	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
-	var/obj/item/lib_fixture/jug/jug = allocate(/obj/item/lib_fixture/jug)
+	var/obj/item/lib_fixture/jug/stocked/jug = allocate(/obj/item/lib_fixture/jug/stocked)
 	var/obj/structure/table/table = allocate(/obj/structure/table)
 	var/datum/op_result/onto_table = test_click(H, table, jug)
 	TEST_ASSERT(!onto_table || !findtext(onto_table.key, "reagent_container."), "a click on a table is not a pour")
