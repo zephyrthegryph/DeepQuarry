@@ -591,6 +591,7 @@
 #include "interim_airlock_unpowered_motion.dm"
 #include "interim_surplus_redemption.dm"
 #include "interim_mine_endings.dm"
+#include "interim_apc_reboot_distribution.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
