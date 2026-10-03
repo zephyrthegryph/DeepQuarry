@@ -14,7 +14,7 @@
 	TEST_ASSERT(door.density && door.operating, "actual ordinary opening starts through its animation")
 	scheduler_advance((2 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!door.density && !door.opacity && !door.operating, "actual opening finishes with a passable idle airlock")
-	TEST_ASSERT_EQUAL(door.close_door_at, 0, "the actually opened airlock has no automatic closing deadline with its timing wire cut")
+	TEST_ASSERT(!door.autoclose_pending(), "the actually opened airlock has no automatic closing deadline with its timing wire cut")
 	scheduler_advance((2 SECONDS) / (1 SECOND))
 	TEST_ASSERT(!door.density && !door.operating, "the actual cut timing wire leaves the passage open as time advances")
 	wires.cut(WIRE_SPEED, null)
