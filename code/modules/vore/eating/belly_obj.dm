@@ -1204,15 +1204,6 @@ DECLARE_REAGENTS(/obj/belly, 300, null) // So we can have some liquids in bellie
 	w_class = ITEMSIZE_SMALL
 	var/stored_nutrition = 0
 
-/obj/item/reagent_containers/food/rawnutrition/standard_feed_mob(mob/user, mob/target)
-	if(isliving(target))
-		var/mob/living/L = target
-		L.adjust_nutrition(stored_nutrition)
-		stored_nutrition = 0
-		consume(src, user)
-		return
-	.=..()
-
 // Updates the belly_surrounding list variable. Called in bellymodes_vr.dm
 /obj/belly/proc/update_belly_surrounding()
 	if(!contents_count(src) && !LAZYLEN(owner.soulgem?.brainmobs))

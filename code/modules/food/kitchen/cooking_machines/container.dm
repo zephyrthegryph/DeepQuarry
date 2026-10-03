@@ -9,8 +9,6 @@
 	var/max_reagents = 80//Maximum units of reagents
 	var/food_items = 0 // Used for icon updates
 	flags = OPENCONTAINER | NOREACT
-	/// The old Set transfer amount entries did nothing here: a cooking container pours nothing.
-	transfer_amount_verb = FALSE
 	var/list/insertable = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 		/obj/item/reagent_containers/food/snacks,
 		/obj/item/holder,

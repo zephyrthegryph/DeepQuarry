@@ -22,6 +22,7 @@ CAPABILITIES(/obj/item/reagent_containers/food)
 	op("rename", menu(), label("Rename food"), needs(req(PROC_REF(can_cook), because = MSG(food/cannot_cook))),
 		asks(/datum/prompt/text, fields = list("question" = computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)),
 		then(PROC_REF(renamed)))
+	op("climb_in", item(/mob/living), gesture(GESTURE_DRAG), by(0), when(req(PROC_REF(small_self_drag))), label("Climb in"), then(PROC_REF(climbed_in)))
 	op("stuff", item(/obj/item/holder), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_micro))), label("Put in"),
 		needs(req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), then(PROC_REF(micro_stuffed)))
 
@@ -89,15 +90,14 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 		M.forceMove(get_turf(src))
 	to_chat(M, span_warning("You climb out of \the [src]."))
 
-// A tiny person climbs into the food by being dragged onto it (their own drag, not an item's: the engine's drag of a mob is not an op yet).
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-)
+/// A tiny person who drags themselves onto the food.
+/obj/item/reagent_containers/food/proc/small_self_drag(datum/act/op/A)
+	var/mob/living/user = A.actor
+	return istype(user) && A.held == user && food_can_insert_micro && user.get_effective_size(TRUE) <= 0.50
 
-/// Old MouseDrop_T: a micro climbs into the food.
-/obj/item/reagent_containers/food/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
-	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
-		to_chat(user, span_warning("You climb into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/// They climb in.
+/obj/item/reagent_containers/food/proc/climbed_in(datum/act/op/A)
+	var/mob/living/user = A.actor
+	own_add(src, nameof(src.food_inserted_micros), user, user = user, into = TRUE)
+	to_chat(user, span_warning("You climb into \the [src]."))
+	return OP_OK

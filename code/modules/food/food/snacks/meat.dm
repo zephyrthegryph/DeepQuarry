@@ -20,18 +20,11 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat, null, list(REAGE
 	if (name == initial(name))
 		name = "cooked [name]"
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat, INTERACT_ITEM(null, PROC_REF(meat_item)))
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat, \
+	op("cut_strips", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 1), label("Cut it into strips"), then(PROC_REF(cut_into_strips))))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/meat/proc/meat_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/knife))
-		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
-		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
-		new /obj/item/reagent_containers/food/snacks/rawcutlet(src)
-		to_chat(user, "You cut the meat into thin strips.")
-		consume(src, user)
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+/obj/item/reagent_containers/food/snacks/meat/proc/cut_into_strips(datum/act/op/A)
+	return turn_into(A, /obj/item/reagent_containers/food/snacks/rawcutlet, "You cut the meat into thin strips.", copies = 3)
 
 /obj/item/reagent_containers/food/snacks/meat/syntiflesh
 	name = "synthetic meat"
@@ -180,22 +173,18 @@ GLOBAL_LIST_INIT(worm_meat_spawns, list (
 DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/meat/worm, null, list(REAGENT_ID_PROTEIN = 6, REAGENT_ID_PHORON = 3, REAGENT_ID_MYELAMINE = 3))
 
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/meat/worm, INTERACT_ITEM(null, PROC_REF(worm_meat_item)))
+// A knife on it also frees what is inside, and then cuts it as any meat is cut.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/meat/worm, \
+	op("free_chunks", item(/obj/item/material/knife), priority(OP_PRIORITY_PART + 2), label("Cut the tissue"), then(PROC_REF(chunks_freed)), passes()))
 
-/// Old attackby: its own spawn, then always the meat handling (FALSE), as the old ..() did.
-/obj/item/reagent_containers/food/snacks/meat/worm/proc/worm_meat_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W,/obj/item/material/knife))
-		var/to_spawn = pickweight(GLOB.worm_meat_spawns)
-
-		new to_spawn(get_turf(src))
-
-		if(prob(20))
-			user.visible_message(span_alien("Something oozes out of \the [src] as it is cut."))
-
-		to_chat(user, span_alien("You cut the tissue holding the chunks together."))
-
-	return FALSE
-
+/obj/item/reagent_containers/food/snacks/meat/worm/proc/chunks_freed(datum/act/op/A)
+	var/mob/user = A.actor
+	var/to_spawn = pickweight(GLOB.worm_meat_spawns)
+	new to_spawn(get_turf(src))
+	if(prob(20))
+		user.visible_message(span_alien("Something oozes out of \the [src] as it is cut."))
+	to_chat(user, span_alien("You cut the tissue holding the chunks together."))
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/deathclawmeat
 	name = "Death claw Meat"

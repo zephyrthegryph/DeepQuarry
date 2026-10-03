@@ -19,8 +19,6 @@
 	drop_sound = SFX_ITEMS_DROP_BOTTLE
 	pickup_sound = SFX_ITEMS_PICKUP_BOTTLE
 	resistance_flags = ACID_PROOF
-	/// The old Set transfer amount menu entry is the capability's now.
-	transfer_amount_verb = FALSE
 
 	var/label_text = ""
 	/// Reagents to fill the container with at the start, formatted as "reagentID" = quantity

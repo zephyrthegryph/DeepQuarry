@@ -7,34 +7,42 @@
 
 	var/list/ingredients
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/csandwich, INTERACT_ITEM(null, PROC_REF(csandwich_item)))
+// A shard is hidden in it, and a food is layered on it until it would collapse.
+CAPABILITIES(/obj/item/reagent_containers/food/snacks/csandwich, \
+	op("hide_shard", item(/obj/item/material/shard), priority(OP_PRIORITY_PART + 1), label("Hide it inside"), then(PROC_REF(shard_hidden))), \
+	op("layer", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Layer it on"), \
+		needs(req(PROC_REF(not_collapsing), because = MSG(snack/collapses))), then(PROC_REF(layered))))
 
-/// Old attackby. FALSE falls to the snack handling, as the old ..() did.
-/obj/item/reagent_containers/food/snacks/csandwich/proc/csandwich_item(mob/user, obj/item/W, datum/interaction/interaction)
+MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to collapse.")
 
-	var/sandwich_limit = 4
+/// How many things it holds at most: the bread in it makes room.
+/obj/item/reagent_containers/food/snacks/csandwich/proc/sandwich_limit()
+	var/limit = 4
 	for(var/obj/item/O in ingredients)
 		if(istype(O,/obj/item/reagent_containers/food/snacks/slice/bread))
-			sandwich_limit += 4
+			limit += 4
+	return limit
 
-	if(istype(W,/obj/item/material/shard))
-		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
-			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_blue("You hide [W] in \the [src]."))
+/obj/item/reagent_containers/food/snacks/csandwich/proc/not_collapsing(datum/act/op/A)
+	return length(contents) <= sandwich_limit() // ALLOW(spatial,reads): what is in it is counted when a food is added; the click asks again
+
+/obj/item/reagent_containers/food/snacks/csandwich/proc/shard_hidden(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	to_chat(user, span_blue("You hide [W] in \the [src]."))
+	user.drop_item()
+	W.forceMove(src)
+	update()
+	return OP_OK
+
+/obj/item/reagent_containers/food/snacks/csandwich/proc/layered(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/reagent_containers/food/snacks/W = A.held
+	to_chat(user, span_blue("You layer [W] over \the [src]."))
+	W.reagents.trans_to_obj(src, W.reagents.total_volume)
+	if(own_add(src, nameof(src.ingredients), W, user = user))
 		update()
-		return INTERACTION_HANDLED_PASS
-	else if(istype(W,/obj/item/reagent_containers/food/snacks))
-		if(contents_count(src) > sandwich_limit)
-			to_chat(user, span_red("If you put anything else on \the [src] it's going to collapse."))
-			return INTERACTION_HANDLED_PASS
-		if(!own_add(src, nameof(src.ingredients), W, user = user))
-			return INTERACTION_HANDLED_PASS
-		to_chat(user, span_blue("You layer [W] over \the [src]."))
-		var/obj/item/reagent_containers/F = W
-		F.reagents.trans_to_obj(src, F.reagents.total_volume)
-		update()
-		return INTERACTION_HANDLED_PASS
-	return FALSE
+	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/update()
 	var/fullname = "" //We need to build this from the contents of the var.

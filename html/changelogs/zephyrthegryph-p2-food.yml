@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Condiments, cooking containers, solid food and pizza boxes use the final forms; the old feeding helpers and the old edible and drinkable libraries are gone"

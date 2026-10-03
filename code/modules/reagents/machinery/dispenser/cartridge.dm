@@ -14,8 +14,6 @@
 
 	var/spawn_reagent = null
 	var/label = ""
-	/// The old Set transfer amount entry is the capability's.
-	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/chem_disp_cartridge/Initialize(mapload)
 	. = ..()

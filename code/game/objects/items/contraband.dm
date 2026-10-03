@@ -58,8 +58,6 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 	min_transfer_amount = 1
 	w_class = ITEMSIZE_TINY
 	volume = 50
-	/// The old Set transfer amount entry is the capability's.
-	transfer_amount_verb = FALSE
 
 /obj/item/reagent_containers/powder/examine(mob/user)
 	if(reagents)

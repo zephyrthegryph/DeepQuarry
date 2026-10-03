@@ -19,7 +19,6 @@ MATERIAL_MIX(/obj/item/reagent_containers/spray, list(MAT_GLASS = 300, MAT_STEEL
 	var/spray_size = 3
 	var/static/list/spray_sizes = list(1,3)
 	volume = 250
-	transfer_amount_verb = FALSE
 
 // A spray bottle sprays one amount at what it is clicked on, near or far (a puff of it at the floor and at the air, a splash over a dense thing next to
 // the one who sprays), after a click cooldown. A closed tank fills it by the tank's own amount. It leaves alone what it is put on or in: a table, a
