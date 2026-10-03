@@ -195,10 +195,10 @@ DECLARE_APPEARANCE_PROC(/obj/item/toy/sword, TYPE_PROC_REF(/atom, appearance_ove
 	blade_overlay.color = lcolor
 	if(active)
 		. += blade_overlay
-	if(ishuman(usr))
-		var/mob/living/carbon/human/H = usr
-		H.update_inv_l_hand()
-		H.update_inv_r_hand()
+	var/mob/living/carbon/human/holder = loc
+	if(istype(holder))
+		holder.update_inv_l_hand()
+		holder.update_inv_r_hand()
 
 /// Requirement for recolouring the blade.
 /obj/item/toy/sword/proc/can_recolor(mob/living/user, atom/target, obj/item/held)

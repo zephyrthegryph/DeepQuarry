@@ -207,8 +207,6 @@ usr_outside_verb	code/game/objects/items/devices/flashlight.dm	src.add_fingerpri
 usr_outside_verb	code/game/objects/items/devices/personal_shield_generator.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/devices/radio/radiopack.dm	add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/ghost_hunting/weapons.dm	src.add_fingerprint(usr)
-usr_outside_verb	code/game/objects/items/toys/toys.dm	if(ishuman(usr))
-usr_outside_verb	code/game/objects/items/toys/toys.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/game/objects/items/toys/toys.dm	if((user == usr && (!( user.restrained() ) && (!( user.stat ) && (user.contents.Find(src) || in_range(src, user))))))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/circuitboards/computer/shuttle.dm	log_and_message_admins("built a [M] for [shuttle_tag] at [ADMIN_COORDJMP(M)]", usr)
@@ -420,8 +418,6 @@ usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr,
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/clothing/clothing.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/clothing/clothing.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/clothing/clothing.dm	if(ismob(usr))
-usr_outside_verb	code/modules/clothing/clothing.dm	var/mob/M = usr
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (over_object && (ishuman(usr) || issmall(usr)))
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (!(src.loc == usr))
 usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (( usr.restrained() ) || ( usr.stat ))

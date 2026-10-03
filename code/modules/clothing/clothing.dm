@@ -700,9 +700,9 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/shoes, TYPE_PROC_REF(/atom, appearanc
 	if(gurgled)
 		wash(CLEAN_ALL)
 		gurgle_contaminate()
-	if(ismob(usr))
-		var/mob/M = usr
-		M.update_inv_shoes()
+	var/mob/holder = loc
+	if(istype(holder))
+		holder.update_inv_shoes()
 
 /obj/item/clothing/shoes/wash()
 	. = ..()
