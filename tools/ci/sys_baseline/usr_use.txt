@@ -107,7 +107,6 @@ usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span
 usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon, "[name].dmi")
 usr_outside_verb	code/game/machinery/oxygen_pump.dm	var/mob/living/user = usr
-usr_outside_verb	code/game/mecha/micro/micro.dm	var/mob/living/carbon/C = usr
 usr_outside_verb	code/game/memory_profiler.dm	if(usr?.client)
 usr_outside_verb	code/game/memory_profiler.dm	om_ask_begin(null, usr, /datum/om/prompt/confirm/profile_memory, TYPE_PROC_REF(/client, profile_memory_confirmed), list(receiver = usr.client))
 usr_outside_verb	code/game/objects/effects/info.dm	to_chat(usr, info_text)

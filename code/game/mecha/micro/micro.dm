@@ -88,10 +88,11 @@ TOPIC_ACTION(/obj/mecha/micro, "close", PROC_REF(topic_close))
 	else
 		..()
 
-/obj/mecha/micro/move_inside_passenger()
-	var/mob/living/carbon/C = usr
-	if (C.get_effective_size(TRUE) >= 0.5)
-		to_chat(C, span_warning("You can't fit in this suit!"))
+/obj/mecha/micro/move_inside_passenger(mob/user, obj/item/held, datum/interaction/interaction)
+	if(!user)
+		return
+	if (user.get_effective_size(TRUE) >= 0.5)
+		to_chat(user, span_warning("You can't fit in this suit!"))
 		return
 	else
 		..()
