@@ -89,3 +89,7 @@ changes:
   - admin: "Note deletion retains the initiating actor and flushes saved notes safely."
   - bugfix: "Pipe recycling credits metal only after successful consumption."
   - bugfix: "Newscaster photo replacement preserves the current attachment when the new photo cannot be released."
+  - bugfix: "Gaiters respect mask release rules and return their previous mask during replacement."
+  - bugfix: "Cistern insertion respects held item release rules."
+  - bugfix: "Gift unwrapping preserves its present when the wrapper cannot be released."
+  - bugfix: "Technomancer cores equip and remove their ability buttons without cleanup failures."

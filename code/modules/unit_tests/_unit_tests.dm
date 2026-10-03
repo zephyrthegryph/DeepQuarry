@@ -700,7 +700,6 @@
 #include "interim_empty_content_init.dm"
 #include "interim_pipelayer_sticky_recycling.dm"
 #include "interim_newscaster_sticky_photo_replacement.dm"
-#include "interim_technomancer_core_first_equip.dm"
 #include "interim_target_zone_hud_actor.dm"
 #include "interim_hoist_detach_actor.dm"
 #include "interim_shield_armor_init.dm"
@@ -710,6 +709,8 @@
 #include "interim_toilet_cistern_sticky_item.dm"
 #include "interim_action_palette_actor.dm"
 #include "interim_gift_sticky_unwrapping.dm"
+#include "interim_warp_strike_init.dm"
+#include "interim_technomancer_core_first_equip.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
