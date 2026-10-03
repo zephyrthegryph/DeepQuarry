@@ -180,14 +180,6 @@ usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_finge
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	if (isliving(usr) || isobserver(usr))
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	usr.ClickOn(I)
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/structures/artstuff.dm	if(!check_rights_for(usr.client, R_HOLDER))
 usr_outside_verb	code/game/objects/structures/artstuff.dm	to_chat(usr, span_notice("The chosen painting is the following \n\n \
 usr_outside_verb	code/game/objects/structures/artstuff.dm	om_ask(usr, /datum/om/prompt/confirm/painting_lateload, PROC_REF(lateload_confirmed), which = which_painting)
@@ -399,14 +391,6 @@ usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_ob
 usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
-usr_outside_verb	code/modules/projectiles/gun.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
-usr_outside_verb	code/modules/projectiles/gun.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/modules/projectiles/gun.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/modules/projectiles/gun.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/modules/projectiles/gun.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/modules/projectiles/gun.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/modules/projectiles/gun.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/modules/projectiles/gun.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user = usr
