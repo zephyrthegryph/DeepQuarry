@@ -759,6 +759,7 @@
 #include "interim_native_tap_mixed_capacity_dose.dm"
 #include "interim_smart_magazine_emag_original_round.dm"
 #include "interim_monkey_rehydrator_sticky_cube.dm"
+#include "interim_microwave_sticky_produce.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

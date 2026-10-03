@@ -212,7 +212,8 @@ EXTEND_INTERACTIONS(/obj/machinery/microwave, \
 			St.forceMove(src)
 			act_message(user, src, MSG_SELF(span_notice("You add one [O] to %T%.")), MSG_OTHERS(span_notice(span_bold("%U%") + " has added one [O] to %T%.")))
 			return TRUE
-		user.drop_from_inventory(O, src)
+		if(!own_bring_in(src, nameof(contents), O, null, user, TRUE, null, FALSE))
+			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You add %I% to %T%.")), MSG_OTHERS(span_infoplain(span_bold("%U%") + " has added %I% to %T%.")), item = O)
 		return TRUE
 	if(istype(O, /obj/item/storage/bag/plants)) // There might be a better way about making plant bags dump their contents into a microwave, but it works.
