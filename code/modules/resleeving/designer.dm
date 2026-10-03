@@ -25,7 +25,7 @@
 
 /obj/machinery/computer/transhuman/designer/Initialize(mapload)
 	. = ..()
-	our_db_static = GLOB.transcore_service.db_by_key(db_key)
+	our_db_static = SStranscore.db_by_key(db_key)
 
 /obj/machinery/computer/transhuman/designer/ownership()
 	. = ..()

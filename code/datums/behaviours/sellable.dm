@@ -78,7 +78,7 @@
 		"quantity" = calculate_sell_quantity(source)
 	)
 	var/list/export_row = rows[rows.len]
-	GLOB.supply_service.apply_market_demand(source, EC, export_row)
+	SSsupply.apply_market_demand(source, EC, export_row)
 	EC.value += export_row["value"]
 	if(EC.sales_ledger_valid && source.economic_department == EC.sales_department)
 		EC.sales_eligible_value += export_row["value"]
@@ -107,7 +107,7 @@
 		"fact_id" = "export:[REF(source)]",
 		"fact_revision" = 1,
 		"fact_active" = TRUE,
-		"metrics" = list("value" = GLOB.supply_service.export_revenue(export_row["value"])),
+		"metrics" = list("value" = SSsupply.export_revenue(export_row["value"])),
 		"detail" = "Accepted export of [source.name]",
 	)
 	if(istype(source, /obj/item/stack/material/processed_alloy))
@@ -137,7 +137,7 @@
 /datum/sellable/manifest/calculate_sell_value(obj/source)
 	var/obj/item/paper/manifest/slip = source
 	if(!slip.is_copy && slip.stamped && slip.stamped.len) //yes, the clown stamp will work. clown is the highest authority on the station, it makes sense
-		return GLOB.supply_service.points_per_slip
+		return SSsupply.points_per_slip
 	return 0
 
 
@@ -157,7 +157,7 @@
 // Money
 /datum/sellable/spacecash/calculate_sell_value(obj/source)
 	var/obj/item/spacecash/cashmoney = source
-	return cashmoney.worth * GLOB.supply_service.points_per_money
+	return cashmoney.worth * SSsupply.points_per_money
 
 /datum/sellable/spacecash/calculate_sell_quantity(obj/source)
 	var/obj/item/spacecash/cashmoney = source

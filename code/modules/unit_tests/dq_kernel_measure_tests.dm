@@ -50,7 +50,7 @@
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/climbable/cliff), "object_behaviours", "datums/behaviours")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/internal/timers), "om_core", "the scheduler's own behaviours")
 	// Rule 3: the family fallback.
-	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/world/statpanels), "statpanels", "world/<x> is <x>")
+	TEST_ASSERT_EQUAL(km_system_key_for_path("/datum/om/behaviour/world/statpanels"), "statpanels", "world/<x> is <x> (as text: the lane is gone)")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/sleeper/status_display), "status_display", "sleeper/<x> is <x>")
 	TEST_ASSERT_EQUAL(km_system_key_for_path(/datum/om/behaviour/test/every_second), "test", "any other behaviour is its first segment")
 	// A row's prefix matches at a segment (or a family suffix), never in the middle of a name.

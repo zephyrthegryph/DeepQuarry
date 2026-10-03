@@ -8,13 +8,12 @@
 /proc/dq_system_work(datum/system/S, handler)
 	return kernel().work_by_key["[S.type]:[handler]"]
 
-/// Common checks for a ported system: singleton, booted, no world_service ancestry.
+/// Common checks for a ported system: singleton, booted.
 /datum/unit_test/proc/assert_system_ported(datum/system/S, path)
 	TEST_ASSERT_NOTNULL(S, "[path]: the SS accessor is unset")
 	TEST_ASSERT_EQUAL(system(path), S, "[path]: system(path) is not the SS accessor's datum")
 	TEST_ASSERT_EQUAL(S.type, path, "[path]: the accessor holds a different type")
 	TEST_ASSERT(S.initialized, "[path]: the system never booted")
-	TEST_ASSERT(!ispath(path, /datum/world_service), "[path]: still a world service")
 
 /// The work item of `S` for `handler`: declared, with its cadence and lane.
 /datum/unit_test/proc/assert_work_declared(datum/system/S, handler, interval, lane = null)

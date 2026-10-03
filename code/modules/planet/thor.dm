@@ -203,7 +203,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /*
 /datum/weather/thor/snow/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)
@@ -237,7 +237,7 @@ GLOBAL_DATUM(planet_thor, /datum/planet/thor)
 /*
 /datum/weather/thor/blizzard/process_effects()
 	..()
-	for(var/turf/simulated/floor/outdoors/snow/S as anything in GLOB.planet_service.new_outdoor_turfs) //This didn't make any sense before the planet service, either
+	for(var/turf/simulated/floor/outdoors/snow/S as anything in SSplanets.new_outdoor_turfs) //This didn't make any sense before the planet service, either
 		if(S.z in holder.our_planet.expected_z_levels)
 			for(var/dir_checked in cardinal)
 				var/turf/simulated/floor/T = get_step(S, dir_checked)

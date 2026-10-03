@@ -80,7 +80,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	var/list/data = ..()
 	var/list/shuttle_status = list()
 
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	if(shuttle)
 		if(shuttle.has_arrive_time())
 			shuttle_status["location"] = "In transit"
@@ -138,21 +138,21 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	// Organized in field-entry list for iterative display
 	// List is nested so both the list of orders, and the list of elements in each order, can be iterated over
 	var/list/orders = list()
-	for(var/datum/supply_order/S in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/S in SSsupply.order_history)
 		var/can_fund = S.personal_order ? (authorization & SUP_ACCEPT_ORDERS) : can_manage_budget(user, S.funding_department)
 		var/funding_label = S.market_contract_funded ? "Principal contract allowance" : (S.personal_order ? "Personal: [S.ordered_by]" : S.funding_department)
-		var/datum/cargo_market_counterparty/market_seller = GLOB.supply_service.market_counterparties?[S.market_counterparty_id]
+		var/datum/cargo_market_counterparty/market_seller = SSsupply.market_counterparties?[S.market_counterparty_id]
 		orders.Add(list(list(
 			"ref" = "\ref[S]",
 			"status" = S.status,
-			"cost" = GLOB.supply_service.order_price(S),
+			"cost" = SSsupply.order_price(S),
 			"can_approve" = can_fund,
 			"entries" = list(
 				list("field" = "Supply Pack", "entry" = S.name),
 				list("field" = "Funding Source", "entry" = funding_label),
 				list("field" = "Charged", "entry" = S.paid_amount ? "[S.paid_amount] Thalers" : "Unpaid"),
-				list("field" = "Cost", "entry" = "[GLOB.supply_service.order_price(S)] Thalers"),
-				list("field" = "Seller", "entry" = GLOB.supply_service.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
+				list("field" = "Cost", "entry" = "[SSsupply.order_price(S)] Thalers"),
+				list("field" = "Seller", "entry" = SSsupply.market_display_name(market_seller, user, S.market_cover_name) || "NanoTrasen catalog"),
 				list("field" = "Index", "entry" = S.index),
 				list("field" = "Reason", "entry" = S.comment),
 				list("field" = "Ordered by", "entry" = S.ordered_by),
@@ -164,8 +164,8 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 
 	// Compile exported crates
 	var/list/receipts = list()
-	for(var/datum/exported_crate/E in GLOB.supply_service.exported_crates)
-		var/datum/cargo_market_counterparty/market_buyer = GLOB.supply_service.market_counterparties?[E.market_counterparty_id]
+	for(var/datum/exported_crate/E in SSsupply.exported_crates)
+		var/datum/cargo_market_counterparty/market_buyer = SSsupply.market_counterparties?[E.market_counterparty_id]
 		receipts.Add(list(list(
 			"ref" = "\ref[E]",
 			"contents" = E.contents,
@@ -173,7 +173,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 			"title" = list(
 				list("field" = "Name", "entry" = E.name),
 				list("field" = "Value", "entry" = E.value),
-				list("field" = "Buyer", "entry" = GLOB.supply_service.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
+				list("field" = "Buyer", "entry" = SSsupply.market_display_name(market_buyer, user, E.market_cover_name) || "Spot market"),
 				list("field" = "Market premium", "entry" = E.market_premium)
 			)
 		)))
@@ -196,7 +196,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	data["receipts"] = receipts
 	data["contraband"] = can_order_contraband || (authorization & SUP_CONTRABAND)
 	data["market_auth"] = can_trade_market(user)
-	data["market"] = GLOB.supply_service.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
+	data["market"] = SSsupply.cargo_market_ui_data(user, can_order_contraband || (authorization & SUP_CONTRABAND), can_trade_market(user))
 	data["modal"] = tgui_modal_data(src)
 	return data
 
@@ -204,12 +204,12 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 	var/list/data = ..()
 
 	var/list/pack_list = list()
-	for(var/pack_name in GLOB.supply_service.supply_pack)
-		var/datum/supply_pack/P = GLOB.supply_service.supply_pack[pack_name]
+	for(var/pack_name in SSsupply.supply_pack)
+		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
 		var/list/pack = list(
 				"name" = P.name,
 				"desc" = P.desc,
-				"cost" = GLOB.supply_service.pack_price(P),
+				"cost" = SSsupply.pack_price(P),
 				"group" = P.group,
 				"contraband" = P.contraband,
 				"manifest" = uniqueList(P.manifest),
@@ -224,10 +224,10 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/computer/supplycomp, PROC_REF(on_emag), n
 
 
 /obj/machinery/computer/supplycomp/ui_allowed(mob/user, action)
-	if(!GLOB.supply_service)
-		log_runtime(EXCEPTION("## ERROR: The GLOB.supply_service datum is missing."))
+	if(!SSsupply)
+		log_runtime(EXCEPTION("## ERROR: The SSsupply datum is missing."))
 		return FALSE
-	if(!GLOB.supply_service.shuttle)
+	if(!SSsupply.shuttle)
 		log_runtime(EXCEPTION("## ERROR: The supply shuttle datum is missing."))
 		return FALSE
 	return TRUE
@@ -252,7 +252,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return "[src]'s monitor flashes, \"[DisplayTimeText(COOLDOWN_TIMELEFT(src, reqtime))] remaining until another requisition form may be printed.\""
 
 /obj/machinery/computer/supplycomp/proc/act_market_request(mob/user, contract, id, personal)
-	var/datum/cargo_market_listing/listing = GLOB.supply_service.market_listing(ui_text(id, 128))
+	var/datum/cargo_market_listing/listing = SSsupply.market_listing(ui_text(id, 128))
 	if(!listing)
 		return refuse(user, "That listing is gone.")
 	personal = !!personal
@@ -262,21 +262,21 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/reason = ask_text(user, "Procurement justification", "Why should the station purchase this market listing?", "External market procurement")
 	if(!reason)
 		return
-	if(!GLOB.supply_service.request_market_order(listing, user, reason, contraband_ok(), personal, contract))
+	if(!SSsupply.request_market_order(listing, user, reason, contraband_ok(), personal, contract))
 		return refuse(user, "The market listing is no longer available.")
 	to_chat(user, span_notice("The quoted market order was submitted[contract ? " against the contract allowance" : (personal ? " with personal funding" : " for departmental approval")]."))
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_market_route(mob/user, bid, crate)
 	bid = ui_text(bid, 128)
-	var/datum/cargo_market_bid/market_bid = GLOB.supply_service.market_bid(bid)
-	var/datum/cargo_market_counterparty/counterparty = GLOB.supply_service.market_counterparties?[market_bid?.counterparty_id]
+	var/datum/cargo_market_bid/market_bid = SSsupply.market_bid(bid)
+	var/datum/cargo_market_counterparty/counterparty = SSsupply.market_counterparties?[market_bid?.counterparty_id]
 	if(!can_trade_market(user) && !has_faction_market_access(user, counterparty?.faction_id))
 		return refuse(user, "You can't route crates to that buyer.")
 	var/obj/structure/closet/crate/routed = ui_ref(crate, null, /obj/structure/closet/crate)
 	if(!routed)
 		return refuse(user, "That crate is gone.")
-	if(!GLOB.supply_service.route_market_crate(routed, bid, user, contraband_ok()))
+	if(!SSsupply.route_market_crate(routed, bid, user, contraband_ok()))
 		return refuse(user, "That route is no longer valid for this crate.")
 	return TRUE
 
@@ -335,7 +335,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 /obj/machinery/computer/supplycomp/proc/request_crates(mob/user, datum/supply_pack/S, reason, amount, personal)
 	var/orders_created = 0
 	for(var/i in 1 to amount)
-		if(!GLOB.supply_service.create_order(S, user, reason, personal))
+		if(!SSsupply.create_order(S, user, reason, personal))
 			break
 		orders_created++
 	if(!orders_created)
@@ -357,7 +357,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/obj/item/paper/reqform = new /obj/item/paper(loc)
 	reqform.name = "Requisition Form - [S.name]"
 	reqform.info += "<h3>[station_name()] Supply Requisition Form</h3><hr>"
-	reqform.info += "INDEX: #[GLOB.supply_service.ordernum]<br>"
+	reqform.info += "INDEX: #[SSsupply.ordernum]<br>"
 	reqform.info += "REQUESTED BY: [idname]<br>"
 	reqform.info += "RANK: [idrank]<br>"
 	reqform.info += "REASON: [reason]<br>"
@@ -380,7 +380,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return FALSE
 
 /obj/machinery/computer/supplycomp/proc/act_edit_order_value(mob/user, default, edit, ref)
-	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
+	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
 	var/field = ui_choice(edit, list("Supply Pack", "Cost", "Index", "Reason", "Ordered by", "Ordered at", "Approved by", "Approved at"))
 	if(!O || !field || !accepts_orders(user))
 		return UI_REFUSED
@@ -407,37 +407,37 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_approve_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
+	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
 	if(!O)
 		return refuse(user, null)
 	if(O.personal_order ? !(authorization & SUP_ACCEPT_ORDERS) : !can_manage_budget(user, O.funding_department))
 		return refuse(user, "You can't approve orders from that budget.")
-	GLOB.supply_service.approve_order(O, user)
+	SSsupply.approve_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_deny_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
+	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
-	GLOB.supply_service.deny_order(O, user)
+	SSsupply.deny_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_delete_order(mob/user, ref)
-	var/datum/supply_order/O = ui_ref(ref, GLOB.supply_service.order_history, /datum/supply_order)
+	var/datum/supply_order/O = ui_ref(ref, SSsupply.order_history, /datum/supply_order)
 	if(!O || !accepts_orders(user))
 		return UI_REFUSED
-	GLOB.supply_service.delete_order(O, user)
+	SSsupply.delete_order(O, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_clear_all_requests(mob/user)
 	if(!accepts_orders(user))
 		return UI_REFUSED
-	GLOB.supply_service.deny_all_pending(user)
+	SSsupply.deny_all_pending(user)
 	return TRUE
 
 /// The exported crate `ref` names, if this console may edit exports.
 /obj/machinery/computer/supplycomp/proc/editable_export(mob/user, ref)
-	var/datum/exported_crate/E = ui_ref(ref, GLOB.supply_service.exported_crates, /datum/exported_crate)
+	var/datum/exported_crate/E = ui_ref(ref, SSsupply.exported_crates, /datum/exported_crate)
 	if(!E)
 		refuse(user, null)
 		return null
@@ -479,7 +479,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/datum/exported_crate/E = editable_export(user, ref)
 	if(!E)
 		return UI_REFUSED
-	GLOB.supply_service.add_export_item(E, user)
+	SSsupply.add_export_item(E, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_export_edit(mob/user, default, edit, ref)
@@ -501,13 +501,13 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 	var/datum/exported_crate/E = editable_export(user, ref)
 	if(!E)
 		return UI_REFUSED
-	GLOB.supply_service.delete_export(E, user)
+	SSsupply.delete_export(E, user)
 	return TRUE
 
 /obj/machinery/computer/supplycomp/proc/act_send_shuttle(mob/user, mode)
 	if(!(authorization & SUP_SEND_SHUTTLE))
 		return refuse(user, "This console can't control the shuttle.")
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	switch(ui_choice(mode, list("send_away", "send_to_station", "cancel_shuttle", "force_shuttle")))
 		if("send_away")
 			if(shuttle.forbidden_atoms_check())
@@ -516,7 +516,7 @@ TYPE_TABLE(/obj/machinery/computer/supplycomp, ui_logged_actions, list(
 			to_chat(user, span_notice("Initiating launch sequence."))
 		if("send_to_station")
 			shuttle.launch(src)
-			to_chat(user, span_notice("The supply shuttle has been called and will arrive in approximately [round(GLOB.supply_service.movetime / (1 MINUTES), 1)] minutes."))
+			to_chat(user, span_notice("The supply shuttle has been called and will arrive in approximately [round(SSsupply.movetime / (1 MINUTES), 1)] minutes."))
 		if("cancel_shuttle")
 			shuttle.cancel_launch(src)
 		if("force_shuttle")

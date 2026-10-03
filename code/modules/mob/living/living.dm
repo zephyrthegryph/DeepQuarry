@@ -1407,7 +1407,7 @@ GLOBAL_LIST_INIT(metainfo_fields, list(
 	set desc = "Sets your voice style!"
 	set category = VERB_CAT_OOC_GAME_SETTINGS
 
-	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = sound_service().talk_sound_map)
+	om_ask(src, /datum/om/prompt/choice/voice_type, PROC_REF(voice_type_chosen), choices = SSsounds.ready().talk_sound_sets())
 
 /// A cancel resets the voice to the default sounds.
 /datum/om/prompt/choice/voice_type

@@ -10,6 +10,6 @@
 /datum/system/instruments/proc/reserve_instrument_channel(datum/instrument/I)
 	if(current_instrument_channels > max_instrument_channels)
 		return
-	. = sound_service().reserve_sound_channel(I)
+	. = SSsounds.ready().reserve_sound_channel(I)
 	if(!isnull(.))
 		current_instrument_channels++

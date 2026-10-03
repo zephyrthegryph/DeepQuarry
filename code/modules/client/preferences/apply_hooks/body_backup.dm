@@ -38,7 +38,7 @@
 			var/datum/transhuman/body_record/BR = new()
 			BR.init_from_mob(target, TRUE, resleeve_lock_pref)
 		if(want_mind_save)
-			var/datum/transcore_db/our_db = GLOB.transcore_service.db_by_key(null)
+			var/datum/transcore_db/our_db = SStranscore.db_by_key(null)
 			if(our_db)
 				our_db.m_backup(target.mind, target.nif, one_time = TRUE)
 	if(resleeve_lock_pref)

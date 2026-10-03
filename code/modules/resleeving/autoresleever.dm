@@ -259,7 +259,7 @@ EXTEND_INTERACTIONS(/obj/machinery/transhuman/autoresleever, \
 	if(imp.handle_implant(new_character,new_character.zone_sel.selecting))
 		imp.post_implant(new_character)
 
-	var/datum/transcore_db/db = GLOB.transcore_service.db_by_mind_name(new_character.mind.name)
+	var/datum/transcore_db/db = SStranscore.db_by_mind_name(new_character.mind.name)
 	if(db)
 		var/datum/transhuman/mind_record/record = db.backed_up[new_character.mind.name]
 		if(ELAPSED(record, last_notification, CLOCK_WORLD) < 30 MINUTES)

@@ -8,7 +8,7 @@ SYSTEM_DEF(internal_wiki)
 	init_stage = INITSTAGE_MAIN
 	needs = list(
 		/datum/system/atoms
-		// Supply packs come from GLOB.supply_service, which boots after SSmapping (before atoms).
+		// Supply packs come from SSsupply, which boots after SSmapping (before atoms).
 	)
 
 	VAR_PRIVATE/list/pages = list()
@@ -402,8 +402,8 @@ SYSTEM_DEF(internal_wiki)
 		grind_list["material"] = display_reactions
 
 	display_reactions = list()
-	for(var/SN in GLOB.plant_service.seeds)
-		var/datum/seed/S = GLOB.plant_service.seeds[SN]
+	for(var/SN in SSplants.seeds)
+		var/datum/seed/S = SSplants.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				continue
@@ -551,8 +551,8 @@ SYSTEM_DEF(internal_wiki)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	PRIVATE_PROC(TRUE)
 	// seeds and plants
-	for(var/SN in GLOB.plant_service.seeds)
-		var/datum/seed/S = GLOB.plant_service.seeds[SN]
+	for(var/SN in SSplants.seeds)
+		var/datum/seed/S = SSplants.seeds[SN]
 		if(S && S.roundstart && !S.mysterious)
 			if(S.wiki_flag & WIKI_SPOILER)
 				spoiler_entries.Add(S.type)
@@ -894,7 +894,7 @@ SYSTEM_DEF(internal_wiki)
 	data["stack_size"] = initial(stack_path.max_amount) ? initial(stack_path.max_amount) : 0
 	var/supply_value = M.supply_conversion_value ? M.supply_conversion_value : 0
 	data["supply_points"] = supply_value
-	var/value = supply_value * GLOB.supply_service.points_per_money
+	var/value = supply_value * SSsupply.points_per_money
 	value = FLOOR(value * 100, 1) / 100 // Truncate decimals
 	data["market_price"] = value
 
@@ -1056,7 +1056,7 @@ SYSTEM_DEF(internal_wiki)
 	if(S.mutants && length(S.mutants) > 0)
 		var/list/mutations = list()
 		for(var/MS in S.mutants)
-			var/datum/seed/mut = GLOB.plant_service.seeds[MS]
+			var/datum/seed/mut = SSplants.seeds[MS]
 			if(mut)
 				mutations.Add(mut.display_name)
 		data["mutations"] = mutations
@@ -1185,7 +1185,7 @@ SYSTEM_DEF(internal_wiki)
 	data["industrial_use"] = R.industrial_use
 	data["supply_points"] = R.supply_conversion_value ? R.supply_conversion_value : 0
 	data["cooling_mod"] = R.coolant_modifier
-	var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * GLOB.supply_service.points_per_money
+	var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * SSsupply.points_per_money
 	value = FLOOR(value * 100,1) / 100 // Truncate decimals
 	data["market_price"] = value
 	data["sintering"] = SSinternal_wiki.assemble_sintering(GLOB.reagent_sheets[R.id])
@@ -1297,7 +1297,7 @@ SYSTEM_DEF(internal_wiki)
 	var/list/recipe_data = list()
 	var/value = recipe["Price"] ? recipe["Price"] : 0
 	recipe_data["supply_points"] = value
-	value *= GLOB.supply_service.points_per_money // convert to cash
+	value *= SSsupply.points_per_money // convert to cash
 	value = FLOOR(value * 100,1) / 100 // Truncate decimals
 	recipe_data["market_price"] = value
 	recipe_data["appliance"] = recipe["Appliance"]

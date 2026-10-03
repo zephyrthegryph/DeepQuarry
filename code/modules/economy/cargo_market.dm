@@ -336,7 +336,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/market_contract_key
 	var/market_contract_funded = FALSE
 
-/datum/world_service/supply
+/datum/system/supply
 	var/list/market_counterparties
 	var/list/market_listings
 	var/list/market_bids
@@ -345,7 +345,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	EXPIRY_DECLARE(next_market_refresh)
 	var/market_generation = 0
 
-/datum/world_service/supply/proc/initialize_cargo_market()
+/datum/system/supply/proc/initialize_cargo_market()
 	own_clear(src, nameof(market_counterparties), OWN_DELETE)
 	own_clear(src, nameof(market_listings), OWN_DELETE)
 	own_clear(src, nameof(market_bids), OWN_DELETE)
@@ -364,7 +364,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		own_put(src, nameof(market_counterparties), counterparty.id, counterparty)
 	refresh_cargo_market()
 
-/datum/world_service/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
+/datum/system/supply/proc/cargo_market_standing(datum/cargo_market_counterparty/counterparty)
 	if(!counterparty?.faction_id)
 		return REPUTATION_NEUTRAL
 	var/station_standing = get_station_faction_reputation(counterparty.faction_id)
@@ -373,19 +373,19 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		cargo_standing = station_standing
 	return round((station_standing + cargo_standing) / 2)
 
-/datum/world_service/supply/proc/cargo_market_seller_price(datum/cargo_market_counterparty/counterparty, datum/supply_pack/pack)
+/datum/system/supply/proc/cargo_market_seller_price(datum/cargo_market_counterparty/counterparty, datum/supply_pack/pack)
 	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
 	var/reputation_factor = 1 - (standing / 3000)
 	var/market_factor = rand(90, 115) / 100
 	return max(1, round(pack_price(pack) * counterparty.seller_price_multiplier * reputation_factor * market_factor))
 
-/datum/world_service/supply/proc/cargo_market_buyer_multiplier(datum/cargo_market_counterparty/counterparty, datum/cargo_market_profile/profile)
+/datum/system/supply/proc/cargo_market_buyer_multiplier(datum/cargo_market_counterparty/counterparty, datum/cargo_market_profile/profile)
 	var/standing = CLAMP(cargo_market_standing(counterparty), REPUTATION_HATED, REPUTATION_REVERED)
 	var/reputation_factor = 1 + (standing / 5000)
 	var/market_factor = rand(90, 115) / 100
 	return max(1.05, round(profile.base_price_multiplier * counterparty.buyer_price_multiplier * reputation_factor * market_factor, 0.01))
 
-/datum/world_service/supply/proc/refresh_cargo_market()
+/datum/system/supply/proc/refresh_cargo_market()
 	var/list/listing_ids = market_listings?.Copy()
 	for(var/listing_id in listing_ids)
 		var/datum/cargo_market_listing/existing_listing = market_listings?[listing_id]
@@ -434,30 +434,30 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			own_put(src, nameof(market_bids), bid.id, bid)
 	next_market_refresh = expiry
 
-/datum/world_service/supply/proc/process_cargo_market()
+/datum/system/supply/proc/process_cargo_market()
 	if(!BEFORE(src, next_market_refresh, CLOCK_WORLD))
 		refresh_cargo_market()
 
-/datum/world_service/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
+/datum/system/supply/proc/market_counterparty_visible(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
 	if(!counterparty?.covert)
 		return TRUE
 	return console_unlocked || has_faction_market_access(user, counterparty.faction_id)
 
-/datum/world_service/supply/proc/market_true_identity_visible(datum/cargo_market_counterparty/counterparty, mob/living/user)
+/datum/system/supply/proc/market_true_identity_visible(datum/cargo_market_counterparty/counterparty, mob/living/user)
 	if(!counterparty?.covert)
 		return TRUE
 	var/datum/money_account/account = contract_account_for_mob(user)
 	var/datum/faction_agent_record/record = account && GLOB.station_faction_relations.get_agent_record(account.account_number)
 	return record?.faction_id == counterparty.faction_id
 
-/datum/world_service/supply/proc/market_display_name(datum/cargo_market_counterparty/counterparty, mob/living/user, cover_name)
+/datum/system/supply/proc/market_display_name(datum/cargo_market_counterparty/counterparty, mob/living/user, cover_name)
 	if(!counterparty)
 		return "Spot market"
 	if(market_true_identity_visible(counterparty, user))
 		return counterparty.name
 	return cover_name || counterparty.active_cover_name || "Independent brokerage"
 
-/datum/world_service/supply/proc/market_reserved_access(reserved_account, mob/living/user, reservation_key)
+/datum/system/supply/proc/market_reserved_access(reserved_account, mob/living/user, reservation_key)
 	if(!reserved_account)
 		return TRUE
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -468,23 +468,23 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	var/datum/contract/faction_agent/contact_contract = SScontracts?.agent_contact_contract(account.account_number, null, reservation_key)
 	return contact_contract?.owner_account_number == reserved_account
 
-/datum/world_service/supply/proc/market_counterparty_access(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
+/datum/system/supply/proc/market_counterparty_access(datum/cargo_market_counterparty/counterparty, mob/living/user, console_unlocked = FALSE)
 	if(!counterparty)
 		return FALSE
 	if(counterparty.legal_class == CARGO_MARKET_LEGAL_COVERT)
 		return console_unlocked || has_faction_market_access(user, counterparty.faction_id)
 	return TRUE
 
-/datum/world_service/supply/proc/market_listing(listing_id) as /datum/cargo_market_listing
+/datum/system/supply/proc/market_listing(listing_id) as /datum/cargo_market_listing
 	return market_listings?[listing_id]
 
-/datum/world_service/supply/proc/market_bid(bid_id) as /datum/cargo_market_bid
+/datum/system/supply/proc/market_bid(bid_id) as /datum/cargo_market_bid
 	return market_bids?[bid_id]
 
-/datum/world_service/supply/proc/order_price(datum/supply_order/order)
+/datum/system/supply/proc/order_price(datum/supply_order/order)
 	return order?.quoted_price > 0 ? order.quoted_price : pack_price(order.supply_pack_of())
 
-/datum/world_service/supply/proc/market_contract_funding(reservation_key, mob/living/user, price) as /datum/contract/faction_agent
+/datum/system/supply/proc/market_contract_funding(reservation_key, mob/living/user, price) as /datum/contract/faction_agent
 	if(!reservation_key || !isnum(price) || price <= 0)
 		return null
 	var/datum/money_account/account = contract_account_for_mob(user)
@@ -495,7 +495,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			return contract
 	return null
 
-/datum/world_service/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
+/datum/system/supply/proc/request_market_order(datum/cargo_market_listing/listing, mob/living/user, reason, console_unlocked = FALSE, personal_funding = FALSE, contract_funding = FALSE)
 	var/datum/cargo_market_counterparty/counterparty = market_counterparties?[listing?.counterparty_id]
 	if(!listing || listing.retired || !counterparty || listing.stock <= 0 || !BEFORE(src, listing.expires_at, CLOCK_WORLD) || !market_counterparty_access(counterparty, user, console_unlocked) || !market_reserved_access(listing.reserved_account, user, listing.reservation_key))
 		return FALSE
@@ -538,7 +538,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			break
 	return order
 
-/datum/world_service/supply/proc/release_market_contract_funding(datum/supply_order/order)
+/datum/system/supply/proc/release_market_contract_funding(datum/supply_order/order)
 	if(!order?.market_contract_funded || !order.market_contract_key || order.paid_amount <= 0)
 		return FALSE
 	for(var/datum/contract/faction_agent/contract in SScontracts?.active_contracts + SScontracts?.grace_contracts)
@@ -549,7 +549,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	order.market_contract_funded = FALSE
 	return TRUE
 
-/datum/world_service/supply/proc/release_market_order_reservation(datum/supply_order/order)
+/datum/system/supply/proc/release_market_order_reservation(datum/supply_order/order)
 	if(!order?.market_stock_reserved)
 		return FALSE
 	var/datum/cargo_market_listing/listing = market_listing(order.market_listing_id)
@@ -558,7 +558,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	order.market_stock_reserved = FALSE
 	return TRUE
 
-/datum/world_service/supply/proc/complete_market_order(datum/supply_order/order)
+/datum/system/supply/proc/complete_market_order(datum/supply_order/order)
 	if(!order?.market_counterparty_id)
 		return FALSE
 	order.market_stock_reserved = FALSE
@@ -594,7 +594,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	), "market-purchase:[order.ordernum]")
 	return TRUE
 
-/datum/world_service/supply/proc/record_market_transaction(transaction_type, counterparty_id, description, value, account_number = 0, cover_name, reservation_key) as /datum/cargo_market_transaction
+/datum/system/supply/proc/record_market_transaction(transaction_type, counterparty_id, description, value, account_number = 0, cover_name, reservation_key) as /datum/cargo_market_transaction
 	var/datum/cargo_market_transaction/transaction = new
 	transaction.id = "MKT-T-[next_market_id++]"
 	transaction.transaction_type = transaction_type
@@ -620,7 +620,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		own_remove(src, nameof(market_transactions), oldest)
 	return transaction
 
-/datum/world_service/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
+/datum/system/supply/proc/apply_market_demand(obj/item, datum/exported_crate/export, list/export_row)
 	if(!istype(item) || !export?.market_bid_id || !islist(export_row))
 		return FALSE
 	var/datum/cargo_market_bid/bid = market_bid(export.market_bid_id)
@@ -683,13 +683,13 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			adjust_personal_faction_reputation(export.market_router_account, counterparty.faction_id, 8)
 	return TRUE
 
-/datum/world_service/supply/proc/crate_is_on_supply_shuttle(obj/structure/closet/crate/crate)
+/datum/system/supply/proc/crate_is_on_supply_shuttle(obj/structure/closet/crate/crate)
 	if(!crate || !shuttle)
 		return FALSE
 	var/area/crate_area = get_area(crate)
 	return crate_area && (crate_area in shuttle.shuttle_area)
 
-/datum/world_service/supply/proc/route_market_crate(obj/structure/closet/crate/crate, bid_id, mob/living/user, console_unlocked = FALSE)
+/datum/system/supply/proc/route_market_crate(obj/structure/closet/crate/crate, bid_id, mob/living/user, console_unlocked = FALSE)
 	if(!crate_is_on_supply_shuttle(crate))
 		return FALSE
 	if(!bid_id)
@@ -706,7 +706,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	crate.cargo_market_contract_key = bid.reservation_key
 	return TRUE
 
-/datum/world_service/supply/proc/cargo_market_profile_path(profile_id)
+/datum/system/supply/proc/cargo_market_profile_path(profile_id)
 	for(var/profile_path as anything in subtypesof(/datum/cargo_market_profile))
 		if(is_abstract(profile_path))
 			continue
@@ -717,7 +717,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		qdel(profile)
 	return /datum/cargo_market_profile/general_manufactured
 
-/datum/world_service/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
+/datum/system/supply/proc/create_reserved_market_listing(datum/cargo_market_counterparty/counterparty, reserved_account, reservation_key, expires_at, excluded_group)
 	var/list/eligible_packs = list()
 	var/list/groups = TYPE_TABLE_GET(counterparty, seller_groups)
 	for(var/pack_name in supply_pack)
@@ -741,7 +741,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	own_put(src, nameof(market_listings), listing.id, listing)
 	return listing
 
-/datum/world_service/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
+/datum/system/supply/proc/create_reserved_market_bid(datum/cargo_market_counterparty/counterparty, profile_id, reserved_account, reservation_key, expires_at, target_units = 12)
 	var/profile_path = cargo_market_profile_path(profile_id)
 	var/datum/cargo_market_profile/profile = new profile_path
 	var/datum/cargo_market_bid/bid = new
@@ -757,7 +757,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	own_put(src, nameof(market_bids), bid.id, bid)
 	return bid
 
-/datum/world_service/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)
+/datum/system/supply/proc/reserve_agent_contract_market(datum/contract/faction_agent/contract)
 	if(!contract?.offer_key || !contract.agent_faction)
 		return FALSE
 	var/datum/cargo_market_counterparty/counterparty
@@ -789,7 +789,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 			contract.market_reservation_ids += bid.id
 	return (!needs_purchase_route && !needs_export_route) || length(contract.market_reservation_ids)
 
-/datum/world_service/supply/proc/release_agent_contract_market(datum/contract/faction_agent/contract)
+/datum/system/supply/proc/release_agent_contract_market(datum/contract/faction_agent/contract)
 	if(!contract)
 		return FALSE
 	for(var/market_id in contract.market_reservation_ids)
@@ -810,13 +810,13 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 	contract.market_reservation_ids.Cut()
 	return TRUE
 
-/datum/world_service/supply/proc/market_security_auditor(mob/living/user)
+/datum/system/supply/proc/market_security_auditor(mob/living/user)
 	if(issilicon(user))
 		return TRUE
 	var/obj/item/card/id/id_card = user?.GetIdCard()
 	return id_card && ((ACCESS_SECURITY in id_card.access) || (ACCESS_HEADS in id_card.access))
 
-/datum/world_service/supply/proc/audit_market_transaction(transaction_id, mob/living/user)
+/datum/system/supply/proc/audit_market_transaction(transaction_id, mob/living/user)
 	if(!market_security_auditor(user))
 		return FALSE
 	var/datum/money_account/auditor = contract_account_for_mob(user)
@@ -862,7 +862,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 /// Re-publish already established forensic facts when an investigation is
 /// accepted. This makes offer timing irrelevant without making the auditor
 /// repeat an IC action or adding a polling requirement.
-/datum/world_service/supply/proc/replay_market_audit_evidence(datum/contract/covert_market_investigation/contract)
+/datum/system/supply/proc/replay_market_audit_evidence(datum/contract/covert_market_investigation/contract)
 	if(!contract?.suspect_account || contract.state != CONTRACT_ACTIVE)
 		return FALSE
 	var/replayed = 0
@@ -905,7 +905,7 @@ TYPE_TABLE(/datum/cargo_market_counterparty/veymed, buyer_profiles, list(/datum/
 		replayed++
 	return replayed > 0
 
-/datum/world_service/supply/proc/cargo_market_ui_data(mob/living/user, console_unlocked = FALSE, station_trade_authorized = FALSE)
+/datum/system/supply/proc/cargo_market_ui_data(mob/living/user, console_unlocked = FALSE, station_trade_authorized = FALSE)
 	var/list/parties = list()
 	var/list/listings = list()
 	var/list/bids = list()

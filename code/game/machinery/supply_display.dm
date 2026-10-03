@@ -7,7 +7,7 @@
 		message1 = "CARGO"
 		message2 = ""
 
-		var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+		var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 		if(!shuttle)
 			message2 = "Error"
 		else if(shuttle.has_arrive_time())
@@ -37,7 +37,7 @@
 /obj/machinery/status_display/supply_display/next_refresh_delay()
 	if(mode != STATUS_DISPLAY_CUSTOM)
 		return ..()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service?.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply?.shuttle
 	if(shuttle && (shuttle.has_arrive_time() || shuttle.is_launching()))
 		return 2 SECONDS
 	return 0

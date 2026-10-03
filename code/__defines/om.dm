@@ -422,11 +422,6 @@
 #define PERIODIC_REFLECTORS /datum/cadence/reflectors
 #define PERIODIC_LOOT_ICONS /datum/cadence/loot_icons
 
-/// A lazy (data-only) world service, initialized on first use (code/datums/om/world_lanes.dm).
-/// `NAME` is its GLOB var. Each lazy service has a typed accessor proc built on this, e.g.
-/// chemistry_service().chemical_reagents.
-#define LAZY_SERVICE(NAME) (GLOB.NAME.initialized ? GLOB.NAME : GLOB.NAME.ready())
-
 // ---------------------------------------------------------------- published facts as change channels
 // What S2's reactor keys were is now plain change channels on the entity the fact belongs to;
 // whatever waits on it om_watch()es those channels with its own behaviour.
@@ -452,7 +447,7 @@
 #define CHANGE_PIPE_LEAKS CHANGE_DATUM_A
 /// A meteor appeared or went away (on GLOB.meteor_watch).
 #define CHANGE_METEORS CHANGE_DATUM_A
-/// A shuttle's schedule changed (on SSemergency_shuttle for evac, GLOB.supply_service for supply).
+/// A shuttle's schedule changed (on SSemergency_shuttle for evac, SSsupply for supply).
 #define CHANGE_SHUTTLE_SCHEDULE CHANGE_DATUM_D
 	/// Which schedule a status display shows (shuttle_schedule_source()).
 	#define SHUTTLE_SCHEDULE_EVAC 1

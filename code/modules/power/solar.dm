@@ -165,7 +165,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 /obj/machinery/power/solar/proc/occlusion()
 	var/turf/our_t = get_turf(src)
 	var/datum/planet/our_planet
-	if(!our_t || our_t.z > length(GLOB.planet_service.z_to_planet) || !GLOB.planet_service.z_to_planet[our_t.z])
+	if(!our_t || our_t.z > length(SSplanets.z_to_planet) || !SSplanets.z_to_planet[our_t.z])
 		// If we are NOT on a planet, we check toward the edge of the map, otherwise we're going to assume the sun is above us on a planet
 		var/ax = x		// start at the solar panel
 		var/ay = y
@@ -185,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/power/solar, TYPE_PROC_REF(/atom, appeara
 				return
 	else
 		// If we are on a planet, get it for later so we can change the intensity of the light we recieve
-		our_planet = GLOB.planet_service.z_to_planet[our_t.z]
+		our_planet = SSplanets.z_to_planet[our_t.z]
 
 	obscured = 0		// if hit the edge or stepped 20 times, not obscured
 	update_solar_exposure()

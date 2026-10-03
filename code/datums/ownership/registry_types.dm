@@ -65,8 +65,8 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GLOB.ntnet_global
 
 /proc/registry_transcore_db(datum/transcore_db/D)
-	for(var/key in GLOB.transcore_service?.databases)
-		if(GLOB.transcore_service.databases[key] == D)
+	for(var/key in SStranscore?.databases)
+		if(SStranscore.databases[key] == D)
 			return D
 	return null
 
@@ -79,10 +79,10 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /// Only the round's techwebs (science, admin, autounlock) are registered; a disk's or a
 /// console's scratch web is owned by its holder.
 /proc/registry_techweb(datum/techweb/D)
-	return (D in GLOB.research_service?.techwebs) ? D : null
+	return (D in SSresearch?.techwebs) ? D : null
 
 /proc/registry_planet(datum/D)
-	return (D in GLOB.planet_service?.planets) ? D : null
+	return (D in SSplanets?.planets) ? D : null
 
 /proc/registry_asset(datum/D)
 	return GLOB.asset_datums[D.type]
@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GLOB.uplink?.items_assoc[D.type]
 
 /proc/registry_supply_pack(datum/supply_pack/D)
-	return GLOB.supply_service?.supply_pack[D.name]
+	return SSsupply?.supply_pack[D.name]
 
 /proc/registry_category_collection(datum/D)
 	return (D == GLOB.global_underwear || D == GLOB.catalogue_data) ? D : null
@@ -180,7 +180,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return SSchemistry.ready()?.chemical_reagents[D.id]
 
 /proc/registry_seed(datum/seed/D)
-	return GLOB.plant_service?.seeds[D.name]
+	return SSplants?.seeds[D.name]
 
 /proc/registry_robot_sprite(datum/D)
 	return (D in SSrobot_sprites?.all_cyborg_sprites) ? D : null

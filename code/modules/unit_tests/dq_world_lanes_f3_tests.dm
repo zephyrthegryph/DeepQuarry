@@ -13,21 +13,16 @@
 	TEST_ASSERT(length(SSchemistry.ready().chemical_reagents), "the chemistry service has no reagents")
 	TEST_ASSERT(length(SSchemistry.ready().chemical_reactions), "the chemistry service has no reactions")
 	TEST_ASSERT(SSchemistry.initialized, "SSchemistry.ready() did not mark the service initialized")
-	TEST_ASSERT(length(sound_service().talk_sound_map), "the sound service has no talk sounds")
-	TEST_ASSERT(sound_service().random_available_channel(), "the sound service handed out no channel")
+	TEST_ASSERT(length(SSsounds.ready().talk_sound_map), "the sound service has no talk sounds")
+	TEST_ASSERT(SSsounds.ready().random_available_channel(), "the sound service handed out no channel")
 	TEST_ASSERT(length(SScircuit.ready().all_components), "the circuit service has no components")
 	TEST_ASSERT(length(SSinstruments.ready().instrument_data), "the instrument service has no instruments")
 	TEST_ASSERT(length(SSinstruments.ready().synthesizer_instrument_ids), "the instrument service has no synthesizer ids")
 
-	// A fresh lazy service initializes exactly once, on the first ready().
-	var/datum/world_service/sounds/S = new
-	TEST_ASSERT(!S.initialized, "a new sound service is already initialized")
-	S.ready()
-	TEST_ASSERT(S.initialized, "ready() did not initialize the service")
-	var/list/channels = S.channel_list
-	S.ready()
-	TEST_ASSERT(S.channel_list == channels, "a second ready() initialized the service again")
-	qdel(S)
+	// A lazy system initializes exactly once: a second ready() leaves its tables alone.
+	var/list/channels = SSsounds.ready().channel_list
+	SSsounds.ready()
+	TEST_ASSERT(SSsounds.channel_list == channels, "a second ready() initialized the system again")
 
 /// The services SSatoms sets up once the map is loaded are initialized.
 /datum/unit_test/dq_world_lanes_f3_boot_services

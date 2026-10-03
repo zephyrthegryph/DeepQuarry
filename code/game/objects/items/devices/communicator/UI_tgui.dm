@@ -245,7 +245,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 		)))
 
 	//Weather reports.
-	for(var/datum/planet/planet in GLOB.planet_service.planets)
+	for(var/datum/planet/planet in SSplanets.planets)
 		if(planet.weather_holder && planet.weather_holder.current_weather)
 			var/list/W = list(
 				"Planet" = planet.name,

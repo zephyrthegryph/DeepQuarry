@@ -418,8 +418,8 @@
 	seed_noun = pick("spores","nodes","cuttings","seeds","pits")
 
 	set_trait(TRAIT_POTENCY,rand(5,30),200,0)
-	set_trait(TRAIT_PRODUCT_ICON,pick(GLOB.plant_service.accessible_product_sprites))
-	set_trait(TRAIT_PLANT_ICON,pick(GLOB.plant_service.accessible_plant_sprites))
+	set_trait(TRAIT_PRODUCT_ICON,pick(SSplants.accessible_product_sprites))
+	set_trait(TRAIT_PLANT_ICON,pick(SSplants.accessible_plant_sprites))
 	set_trait(TRAIT_PLANT_COLOUR,get_random_colour(0,75,190))
 	set_trait(TRAIT_PRODUCT_COLOUR,get_random_colour(0,75,190))
 	update_growth_stages()
@@ -793,8 +793,8 @@
 
 		//This may be a new line. Register a copy of it if it is (this private copy stays its holder's;
 		//it takes the line's name, so its products and packets find the registered line).
-		if(name == "new line" || !(name in GLOB.plant_service.seeds))
-			GLOB.plant_service.register_line(src)
+		if(name == "new line" || !(name in SSplants.seeds))
+			SSplants.register_line(src)
 
 		if(harvest_sample)
 			var/obj/item/seeds/seeds = new(get_turf(user))
@@ -923,7 +923,7 @@
 /proc/seed_shareable(datum/seed/S)
 	if(!S || is_registered(S))
 		return S
-	return GLOB.plant_service.register_line(S)
+	return SSplants.register_line(S)
 
 /// Points dest.dest_var (a PROTO seed var) at source.source_var's seed. A registered seed is shared; a
 /// private copy moves over (source is left empty), since a private copy has exactly one holder.
@@ -935,6 +935,6 @@
 
 /datum/seed/proc/update_growth_stages()
 	if(get_trait(TRAIT_PLANT_ICON))
-		growth_stages = GLOB.plant_service.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
+		growth_stages = SSplants.plant_sprites[get_trait(TRAIT_PLANT_ICON)]
 	else
 		growth_stages = 0

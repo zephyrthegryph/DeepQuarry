@@ -103,14 +103,14 @@ EXTEND_INTERACTIONS(/obj/item/gun/energy/floragun, INTERACT_VERB("Select Gene", 
 
 /// Old Select Gene verb.
 /obj/item/gun/energy/floragun/proc/floragun_verb_select_gene(mob/user, obj/item/held, datum/interaction/interaction)
-	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = GLOB.plant_service.plant_gene_datums)
+	var/genemask = rerun_ask(user, "k108", PROC_REF(floragun_verb_select_gene), args, /datum/om/prompt/choice, message = "Choose a gene to modify.", title = "Gene Choice", choices = SSplants.plant_gene_datums)
 	if(isnull(genemask))
 		return
 
 	if(!genemask)
 		return
 
-	gene_static = GLOB.plant_service.plant_gene_datums[genemask]
+	gene_static = SSplants.plant_gene_datums[genemask]
 
 	to_chat(user, span_info("You set the [src]'s targeted genetic area to [genemask]."))
 

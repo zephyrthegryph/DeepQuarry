@@ -253,7 +253,7 @@
 		B.set_active(1)
 		return allocate(type, T, A, B)
 	if(ispath(type, /obj/item/reagent_containers/food/snacks/grown))
-		var/list/seeds = GLOB.plant_service.seeds
+		var/list/seeds = SSplants.seeds
 		return allocate(type, T, length(seeds) ? seeds[1] : null) // produce needs a plant name
 	return allocate(type, T)
 

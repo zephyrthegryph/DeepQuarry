@@ -191,7 +191,7 @@
 				if(department_name != DEPARTMENT_PLANET && department_name != "Vendor")
 					available_departments++
 			var/minimum_allocation = max(1, contract.minimum_allocation)
-			var/funding_capacity = GLOB.supply_service.projected_station_budget_capacity()
+			var/funding_capacity = SSsupply.projected_station_budget_capacity()
 			var/fundable_departments = min(available_departments, FLOOR(funding_capacity / minimum_allocation, 1))
 			if(fundable_departments < 1)
 				if(user)

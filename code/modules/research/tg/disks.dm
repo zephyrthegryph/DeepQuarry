@@ -21,7 +21,7 @@ MATERIAL_MIX(/obj/item/disk/tech_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 	desc = "A debug item for research"
 
 /obj/item/disk/tech_disk/debug/Initialize(mapload)
-	proto_set(src, nameof(stored_research_static), locate_in_list(GLOB.research_service.techwebs, /datum/techweb/admin))
+	proto_set(src, nameof(stored_research_static), locate_in_list(SSresearch.techwebs, /datum/techweb/admin))
 	return ..()
 
 MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))

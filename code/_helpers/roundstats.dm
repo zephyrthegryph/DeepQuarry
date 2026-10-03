@@ -90,11 +90,11 @@ GLOBAL_LIST_EMPTY(refined_chems_sold)
 			points += GLOB.refined_chems_sold[D]["value"]
 
 			if(GLOB.refined_chems_sold[D]["units"] >= 1000) // Don't spam the list
-				var/dols = GLOB.refined_chems_sold[D]["value"] * GLOB.supply_service.points_per_money
+				var/dols = GLOB.refined_chems_sold[D]["value"] * SSsupply.points_per_money
 				dols = FLOOR(dols * 100,1) / 100 // Truncate decimals
 				valid_stats_list.Add("[GLOB.refined_chems_sold[D]["units"]]u of [D], for [GLOB.refined_chems_sold[D]["value"]] points! A total of [dols] [dols > 1 ? "thalers" : "thaler"]")
 
-		var/end_dols = points * GLOB.supply_service.points_per_money
+		var/end_dols = points * SSsupply.points_per_money
 		end_dols = FLOOR(end_dols * 100,1) / 100 // Truncate decimals
 		valid_stats_list.Add("For a total of: [points] points, or [end_dols] [end_dols > 1 ? "thalers" : "thaler"]!")
 

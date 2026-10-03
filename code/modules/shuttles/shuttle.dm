@@ -89,9 +89,9 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	if(shuttle_flags & SHUTTLE_FLAGS_PROCESS)
 		SSshuttles.process_shuttles += src
 	if(shuttle_flags & SHUTTLE_FLAGS_SUPPLY)
-		if(GLOB.supply_service.shuttle)
+		if(SSsupply.shuttle)
 			CRASH("A supply shuttle is already defined.")
-		GLOB.supply_service.shuttle = src
+		SSsupply.shuttle = src
 	// Starts DECLARE_PERIODIC_WHILE / DECLARE_REPEAT (a non-atom has no materialize). Only once
 	// registered: a shuttle that skipped registration above is dropped by its creator, and a
 	// started declaration would give it an OM record that keeps it alive (an ownership-audit
@@ -103,8 +103,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 	SSshuttles.shuttles -= src.name
 	SSshuttles.process_shuttles -= src
 	SSshuttles.shuttle_logs -= src
-	if(GLOB.supply_service.shuttle == src)
-		GLOB.supply_service.shuttle = null
+	if(SSsupply.shuttle == src)
+		SSsupply.shuttle = null
 	return ..()
 
 /// The process_state setter: om_set() writes it and raises its declared channel (CHANGE_DATUM_A),
@@ -493,8 +493,8 @@ DECLARE_PERIODIC_WHILE(/datum/shuttle, PERIODIC_SLOW, "shuttle_working")
 /datum/shuttle/proc/publish_schedule()
 	if(src == SSemergency_shuttle?.shuttle)
 		changed(SSemergency_shuttle, CHANGE_SHUTTLE_SCHEDULE)
-	else if(src == GLOB.supply_service?.shuttle)
-		changed(GLOB.supply_service, CHANGE_SHUTTLE_SCHEDULE)
+	else if(src == SSsupply?.shuttle)
+		changed(SSsupply, CHANGE_SHUTTLE_SCHEDULE)
 
 /// Set current_location_tag, not this: New() resolves the tag into the landmark.
 /datum/shuttle/proc/current_location() as /obj/effect/shuttle_landmark

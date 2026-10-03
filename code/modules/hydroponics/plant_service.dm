@@ -1,11 +1,8 @@
-/// The plant world service (fold wave F1; was SSplants): seed and gene data. It has no periodic work
-/// of its own: spreading plants grow on their own lane (PERIODIC_PLANTS, 7.5 s), started by
-/// add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS registry. GLOB.planet_service.Initialize()
-/// calls initialize(), where SSplants used to initialize.
-GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
-
-
-/datum/world_service/plants
+/// The plant system (was SSplants): seed and gene data. It has no periodic work of its own: spreading plants grow on
+/// their own lane (PERIODIC_PLANTS, 7.5 s), started by add_plant(), and the growing set is the REGISTRY_GROWING_PLANTS
+/// registry. It is a lazy system (outside the boot DAG): the planet system's initialize() calls SSplants.ready(), where
+/// SSplants used to initialize. The API is in plant_api.dm.
+SYSTEM_DEF(plants)
 	name = "Plants"
 	var/list/product_descs = list()					// Stores generated fruit descs.
 	var/list/seeds = list()							// All seed data stored here.
@@ -18,21 +15,24 @@ GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 	var/list/gene_masked_list = list()				// Stored gene masked list, rather than recreating it when needed.
 	var/list/plant_gene_datums = list()				// Stored datum versions of the gene masked list.
 
-/datum/world_service/plants/stat_line()
-	return "P:[REGISTRY_COUNT(REGISTRY_GROWING_PLANTS)]|S:[length(seeds)]"
+/datum/system/plants/stat_entry(msg)
+	return "[msg]P:[REGISTRY_COUNT(REGISTRY_GROWING_PLANTS)]|S:[length(seeds)]"
 
-/datum/world_service/plants/initialize()
+/datum/system/plants/boots_in_dag()
+	return FALSE
+
+/datum/system/plants/initialize()
 	if(initialized)
 		return
 	setup()
 	initialized = TRUE
-	log_world("Plant service initialized: [length(seeds)] seeds, [length(gene_tag_masks)] gene masks.")
+	log_world("Plant system initialized: [length(seeds)] seeds, [length(gene_tag_masks)] gene masks.")
 
 // Predefined/roundstart varieties use a string key to make it
 // easier to grab the new variety when mutating. Post-roundstart
 // and mutant varieties use their uid converted to a string instead.
 // Looks like shit but it's sort of necessary.
-/datum/world_service/plants/proc/setup()
+/datum/system/plants/proc/setup()
 	// Build the icon lists.
 	for(var/icostate in icon_states_fast('icons/obj/hydroponics_growing.dmi'))
 		var/split = findtext(icostate,"-")
@@ -96,59 +96,12 @@ GLOBAL_DATUM_INIT(plant_service, /datum/world_service/plants, new)
 		plant_gene_datums[gene_mask] = G
 		gene_masked_list.Add(list(list("tag" = gene_tag, "mask" = gene_mask)))
 
-/// Files a registered copy of the private seed S as a new line (a numbered uid) and returns it.
-/// S stays with its holder, renamed to the line, so later harvests don't file it again.
-/datum/world_service/plants/proc/register_line(datum/seed/S)
-	if(!S || is_registered(S))
-		return S
-	var/datum/seed/line = S.copy_line()
-	line.uid = length(seeds) + 1
-	line.name = "[line.uid]"
-	seeds[line.name] = line
-	S.uid = line.uid
-	S.name = line.name
-	return line
-
-// Proc for creating a random seed type.
-/datum/world_service/plants/proc/create_random_seed(survive_on_station)
-	var/datum/seed/seed = new()
-	seed.randomize()
-	seed.uid = length(seeds) + 1
-	seed.name = "[seed.uid]"
-	seeds[seed.name] = seed
-
-	if(survive_on_station)
-		if(seed.consume_gasses)
-			seed.consume_gasses[GAS_PHORON] = null
-			seed.consume_gasses[GAS_CH4] = null
-			seed.consume_gasses[GAS_CO2] = null
-		if(seed.chems && !isnull(seed.chems[REAGENT_ID_PACID]))
-			seed.chems[REAGENT_ID_PACID] = null // Eating through the hull will make these plants completely inviable, albeit very dangerous.
-			seed.chems -= null // Setting to null does not actually remove the entry, which is weird.
-		seed.set_trait(TRAIT_IDEAL_HEAT,293)
-		seed.set_trait(TRAIT_HEAT_TOLERANCE,20)
-		seed.set_trait(TRAIT_IDEAL_LIGHT,8)
-		seed.set_trait(TRAIT_LIGHT_TOLERANCE,5)
-		seed.set_trait(TRAIT_LOWKPA_TOLERANCE,25)
-		seed.set_trait(TRAIT_HIGHKPA_TOLERANCE,200)
-	return seed
-
-/datum/world_service/plants/proc/add_plant(obj/effect/plant/plant)
-	if(!QDELETED(plant))
-		registry_join(REGISTRY_GROWING_PLANTS, plant)
-		om_task_periodic(plant, PERIODIC_PLANTS)
-
-/datum/world_service/plants/proc/remove_plant(obj/effect/plant/plant)
-	registry_leave(REGISTRY_GROWING_PLANTS, plant)
-	om_task_periodic_stop(plant)
-
-
 // Debug for testing seed genes.
 ADMIN_VERB(show_plant_genes, R_DEBUG, "Show Plant Genes", "Prints the round's plant gene masks.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	if(!GLOB.plant_service.initialized)
+	if(!SSplants.initialized)
 		to_chat(user, "Gene masks not set.")
 		return
 
-	for(var/mask in GLOB.plant_service.gene_tag_masks)
-		to_chat(user, "[mask]: [GLOB.plant_service.gene_tag_masks[mask]]")
+	for(var/mask in SSplants.gene_tag_masks)
+		to_chat(user, "[mask]: [SSplants.gene_tag_masks[mask]]")
 

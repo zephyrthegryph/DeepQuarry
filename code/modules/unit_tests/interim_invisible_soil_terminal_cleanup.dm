@@ -6,7 +6,7 @@
 
 /datum/unit_test/interim_invisible_soil_terminal_cleanup/Run()
 	var/turf/T = test_floor()
-	var/datum/seed/seed = GLOB.plant_service.seeds[PLANT_GLOWSHROOM]
+	var/datum/seed/seed = SSplants.seeds[PLANT_GLOWSHROOM]
 	TEST_ASSERT_NOTNULL(seed, "The real plant service supplies its original registered glowshroom seed")
 	seed.update_growth_stages()
 	TEST_ASSERT(seed.growth_stages > 0 && seed.get_trait(TRAIT_ENDURANCE) > 0, "The actual registered seed has real constructor growth and endurance")

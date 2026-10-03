@@ -8,7 +8,7 @@
 	var/area/area_source = turf_source.loc
 
 	//allocate a channel if necessary now so its the same for everyone
-	channel = channel || sound_service().random_available_channel()
+	channel = channel || SSsounds.ready().random_available_channel()
 
 	var/maxdistance = (world.view + extrarange) * 2 // 3 to 2
 	var/source_z = turf_source.z
@@ -85,7 +85,7 @@
 		S = sound(get_sfx(soundin))
 
 	S.wait = 0 //No queue
-	S.channel = channel || sound_service().random_available_channel()
+	S.channel = channel || SSsounds.ready().random_available_channel()
 
 	// I'm not sure if you can modify S.volume, but I'd rather not try to find out what
 	// horrible things lurk in BYOND's internals, so we're just gonna do vol *=

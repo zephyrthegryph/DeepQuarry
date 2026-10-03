@@ -20,7 +20,7 @@
 	return name
 
 /// Reports this source's values for the sample. `dt` is the seconds since the last sample.
-/datum/metrics_source/proc/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/proc/collect(datum/system/server_metrics/M, dt)
 	return
 
 /// Rate of a cumulative counter: (total - last seen) / dt, remembering `total` under `key`.
@@ -46,7 +46,7 @@
 	/// every round's tick statistics; tick usage is reported from the second sample on.
 	var/first_sample = TRUE
 
-/datum/metrics_source/server/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/server/collect(datum/system/server_metrics/M, dt)
 	if(first_sample)
 		first_sample = FALSE
 	else if(Kernel)
@@ -67,22 +67,23 @@
 /// Each system's work cost (ms per run, smoothed).
 /datum/metrics_source/mc
 
-/datum/metrics_source/mc/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/mc/collect(datum/system/server_metrics/M, dt)
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		if(!system.times_fired)
 			continue
 		M.gauge("mc/[system.name]/cost_ms", system.fire_cost, METRICS_CAT_MC, system.name, "ms")
 
-// ---------------------------------------------------------------- world services
+// ---------------------------------------------------------------- systems
 
-/// Each world service's cost, in ms per second of real time.
+/// Each system's work cost (the kernel work items it owns), in ms per second of real time.
 /datum/metrics_source/services
 
-/datum/metrics_source/services/collect(datum/world_service/server_metrics/M, dt)
-	for(var/datum/world_service/service as anything in world_services())
-		var/ms_per_s = rate(service.name, service.total_ms, dt)
+/datum/metrics_source/services/collect(datum/system/server_metrics/M, dt)
+	for(var/datum/system/system as anything in kernel_pure_systems())
+		var/list/cost = kernel().work_cost_of(system.type)
+		var/ms_per_s = rate(system.name, cost["total_ms"], dt)
 		if(!isnull(ms_per_s))
-			M.gauge("service/[service.name]/ms_per_s", ms_per_s, METRICS_CAT_SERVICE, service.name, "ms/s")
+			M.gauge("service/[system.name]/ms_per_s", ms_per_s, METRICS_CAT_SERVICE, system.name, "ms/s")
 
 // ---------------------------------------------------------------- OM lanes and behaviours
 
@@ -95,7 +96,7 @@
 	/// Each behaviour's metric name, by behaviour id, built once.
 	var/list/behaviour_metric
 
-/datum/metrics_source/om/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/om/collect(datum/system/server_metrics/M, dt)
 	var/datum/om/scheduler/sched = GLOB.om_live_sched
 	var/datum/om/registry/reg = om_registry()
 	if(!sched || !reg)
@@ -145,7 +146,7 @@
 /// Connected players, staff on duty and open tickets.
 /datum/metrics_source/players
 
-/datum/metrics_source/players/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/players/collect(datum/system/server_metrics/M, dt)
 	M.gauge("players/online", length(GLOB.clients), METRICS_CAT_PLAYERS, "online", "players")
 	var/living = 0
 	for(var/mob/living/L in GLOB.registry_members[REGISTRY_PLAYERS])
@@ -165,7 +166,7 @@
 /// awake law items, so a change in om_native names the phase and the law that moved.
 /datum/metrics_source/native
 
-/datum/metrics_source/native/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/native/collect(datum/system/server_metrics/M, dt)
 	var/list/rust = verdigris_metrics_list()
 	for(var/name in rust)
 		if(findtext(name, "frame.us.") != 1 && findtext(name, "world.awake.") != 1 && findtext(name, "world.stepped.") != 1)

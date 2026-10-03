@@ -20,10 +20,10 @@
 
 /datum/techweb/admin/New()
 	. = ..()
-	for(var/i in GLOB.research_service.techweb_nodes)
-		var/datum/techweb_node/TN = GLOB.research_service.techweb_nodes[i]
+	for(var/i in SSresearch.techweb_nodes)
+		var/datum/techweb_node/TN = SSresearch.techweb_nodes[i]
 		research_node(TN, TRUE, TRUE, FALSE)
-	for(var/i in GLOB.research_service.point_types)
+	for(var/i in SSresearch.point_types)
 		LAZYSET(research_points, i, INFINITY)
 	hidden_nodes = list()
 
@@ -48,9 +48,9 @@ GLOBAL_LIST_EMPTY(autounlock_techwebs)
 /datum/techweb/autounlocking/New()
 	. = ..()
 	// One per type for the round (GLOB.autounlock_techwebs): a shared web, so it is registered.
-	GLOB.research_service.register_techweb(src)
-	for(var/id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[id]
+	SSresearch.register_techweb(src)
+	for(var/id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[id]
 		if(!(design.build_type & allowed_buildtypes))
 			continue
 		if(RND_CATEGORY_INITIAL in design.category)

@@ -30,8 +30,8 @@
 
 	// Check all circuits that are need has a techweb design
 	all_circuitboard_machines -= prepopulated_circuits
-	for(var/id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[id]
+	for(var/id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[id]
 		if(!(design.build_path in subtypesof(/obj/item/circuitboard)))
 			continue
 		all_circuitboard_machines -= design.build_path

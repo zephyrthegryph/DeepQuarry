@@ -202,7 +202,7 @@
 	var/list/atoms_cache = output_list()
 	var/sound/S = sound(get_sfx(soundfile))
 	if(direct)
-		S.channel = sound_service().random_available_channel()
+		S.channel = SSsounds.ready().random_available_channel()
 		S.volume = volume
 	for(var/i in 1 to atoms_cache?.len)
 		var/atom/thing = atoms_cache[i]

@@ -475,7 +475,7 @@ CAPABILITIES(/obj/item/storage/bag/mail, \
 		cargo_points = rand(5, 10)
 		to_chat(user, span_notice("Succesful delivery acknowledged! [cargo_points] points added to Supply."))
 		play_sfx(loc, SFX_ITEMS_MAIL_MAILAPPROVED)
-		GLOB.supply_service.adjust_budget(GLOB.supply_service.export_revenue(cargo_points), "Mail delivery proceeds")
+		SSsupply.adjust_budget(SSsupply.export_revenue(cargo_points), "Mail delivery proceeds")
 
 // JUNK MAIL STUFF
 

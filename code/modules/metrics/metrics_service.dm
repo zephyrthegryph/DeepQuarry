@@ -7,11 +7,11 @@
 // note_overrun() for the two hot paths), and a new kind of measurement is a new
 // /datum/metrics_source subtype (metrics_sources.dm), not an edit here.
 
-GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
-
-/datum/world_service/server_metrics
+SYSTEM_DEF(server_metrics)
 	name = "Metrics"
-	lane = /datum/om/behaviour/world/server_metrics
+	periodic_runlevels = RUNLEVELS_DEFAULT
+	/// TRUE while a sample or flush that ran out of budget waits to resume.
+	VAR_PRIVATE/resuming = FALSE
 	/// REALTIMEOFDAY when the world booted; sample and event times are seconds since then.
 	var/boot_realtime
 	/// Whether samples are being recorded (config flag, a round id and the database); refreshed
@@ -50,11 +50,15 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	/// What the last flush cost to build and send, ms; reported with the next sample.
 	var/last_flush_ms
 
-/datum/world_service/server_metrics/New()
-	. = ..()
+/datum/system/server_metrics/preinit()
 	boot_realtime = REALTIMEOFDAY
 
-/datum/world_service/server_metrics/initialize()
+/// One sample every METRICS_SAMPLE_INTERVAL on the background lane.
+/datum/system/server_metrics/reactions()
+	. = ..()
+	. += every(METRICS_SAMPLE_INTERVAL, PROC_REF(sample_step), when = PROC_REF(work_ready), lane = LANE_BACKGROUND)
+
+/datum/system/server_metrics/initialize()
 	initialized = TRUE
 	for(var/source_type in subtypesof(/datum/metrics_source))
 		var/datum/metrics_source/source_proto = source_type
@@ -63,121 +67,65 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		own_add(src, nameof(sources), new source_type)
 	return TRUE
 
-/// The server is going down (or rebooting): SSdbcore calls this from its Shutdown(), while the
-/// database is still connected (world services shut down after it). The I/O lane won't run again,
-/// so this one flush blocks.
-/datum/world_service/server_metrics/proc/final_flush()
-	if(!recording)
-		return
-	METRICS_EVENT(METRICS_EVENT_ROUND, "shutdown", "", "", "server shutdown", list("runtimes" = GLOB.total_runtimes))
-	flush(blocking = TRUE)
-
 /// One sample every METRICS_SAMPLE_INTERVAL and, every METRICS_SAMPLES_PER_FLUSH samples, a flush. Both are
 /// spread: the step yields between sources and between built statements when the tick is used up, so
 /// measuring the server never makes a tick of its own run over.
-/datum/world_service/server_metrics/service_step(resumed)
+/datum/system/server_metrics/proc/sample_step(dt)
+	var/resumed = resuming
+	resuming = FALSE
 	if(!resumed)
-		if(!initialized)
-			initialize()
 		recording = CONFIG_GET(flag/metrics_enabled) && !isnull(GLOB.round_id) && SSdbcore?.IsConnected()
 		if(!recording)
-			return TRUE
+			return STEP_DONE
 		begin_sample()
 	if(sample_index)
 		if(!continue_sample(TRUE))
-			return FALSE
+			resuming = TRUE
+			return STEP_YIELD
 		finish_sample()
 		maybe_profile_steady()
 		if(++samples_since_flush >= METRICS_SAMPLES_PER_FLUSH)
 			begin_flush()
 	if(flush_plan)
 		if(!continue_flush(TRUE))
-			return FALSE
+			resuming = TRUE
+			return STEP_YIELD
 		send_flush()
-	return TRUE
+	return STEP_DONE
 
-/datum/world_service/server_metrics/stat_line()
-	return "[recording ? "recording" : "idle"], [length(known_keys)] metrics, [length(pending_samples) / 3] samples / [length(pending_events)] events buffered"
+/datum/system/server_metrics/stat_entry(msg)
+	return "[msg][recording ? "recording" : "idle"], [length(known_keys)] metrics, [length(pending_samples) / 3] samples / [length(pending_events)] events buffered"
 
 /// Whether events should be buffered: recording, or enabled in config and waiting for the first sample.
 /// Cheap when recording; otherwise a config read (events are rare while metrics are off).
-/datum/world_service/server_metrics/proc/wants_recording()
+/datum/system/server_metrics/proc/wants_recording()
 	if(recording)
 		return TRUE
 	return config?.entries && CONFIG_GET(flag/metrics_enabled)
 
 /// Seconds since boot, the time axis of every sample and event.
-/datum/world_service/server_metrics/proc/now_t()
+/datum/system/server_metrics/proc/now_t()
 	return round((REALTIMEOFDAY - boot_realtime) / (1 SECONDS))
 
 // ---------------------------------------------------------------- recording API
 
 /// Records one value of metric `name` in the sample being collected. Called by sources.
-/datum/world_service/server_metrics/proc/gauge(name, value, category, subcategory = "", unit = "")
+/datum/system/server_metrics/proc/gauge(name, value, category, subcategory = "", unit = "")
 	if(!LAZYACCESS(known_keys, name))
 		LAZYSET(known_keys, name, TRUE)
 		LAZYADD(new_keys, list(list(name, category, subcategory, unit)))
 	LAZYINITLIST(pending_samples)
 	pending_samples.Add(name, sample_t, value)
 
-/// Records an event (use METRICS_EVENT()). `signature` groups repeats; `payload` is a list,
-/// stored as JSON.
-/datum/world_service/server_metrics/proc/event(kind, category = "", signature = "", ckey = "", message = "", list/payload)
-	if(!wants_recording())
-		return
-	if(length(pending_events) >= METRICS_EVENT_CAP)
-		events_dropped++
-		return
-	LAZYADD(pending_events, list(list(now_t(), kind, category || "", copytext("[signature]", 1, 64), ckey || "", copytext("[message]", 1, 512), payload ? json_encode(payload) : null)))
-
-/// A runtime (from /world/Error): counted by signature, written once per flush with its count. The first
-/// sighting in a flush keeps the proc and a trimmed call stack from the exception's desc.
-/// Must stay cheap and must not runtime.
-/datum/world_service/server_metrics/proc/note_runtime(exception/E, error_uid)
-	if(!wants_recording())
-		return
-	var/signature = md5("[error_uid]")
-	var/list/entry = LAZYACCESS(runtime_buffer, signature)
-	if(entry)
-		entry[1]++
-		return
-	var/proc_name = error_proc_name(E)
-	LAZYSET(runtime_buffer, signature, list(1, E.file ? "[E.file]:[E.line]" : proc_name, E.name, now_t(), proc_name, metrics_runtime_stack(E.desc)))
-
-/// An overrun tick (from the MC): counted, and kept in full if among the worst this flush.
-/datum/world_service/server_metrics/proc/note_overrun(list/tick_record)
-	if(!wants_recording())
-		return
-	overruns_since_sample++
-	var/usage = tick_record["usage"]
-	if(usage >= METRICS_SPIKE_USAGE)
-		spike_seen(tick_record)
-	var/count = length(overrun_buffer)
-	if(count >= METRICS_OVERRUNS_PER_FLUSH)
-		var/list/least = overrun_buffer[count]
-		if(usage <= least["usage"])
-			return
-		overrun_buffer.Cut(count)
-	var/list/record = tick_record.Copy()
-	record["t"] = now_t()
-	LAZYINITLIST(overrun_buffer)
-	for(var/i in 1 to length(overrun_buffer))
-		var/list/other = overrun_buffer[i]
-		if(usage > other["usage"])
-			overrun_buffer.Insert(i, null)
-			overrun_buffer[i] = record
-			return
-	overrun_buffer += list(record)
-
 // ---------------------------------------------------------------- sampling
 
 /// Takes a whole sample at once (tests; the lane spreads it with begin/continue/finish_sample()).
-/datum/world_service/server_metrics/proc/sample()
+/datum/system/server_metrics/proc/sample()
 	begin_sample()
 	continue_sample(FALSE)
 	finish_sample()
 
-/datum/world_service/server_metrics/proc/begin_sample()
+/datum/system/server_metrics/proc/begin_sample()
 	var/now = REALTIMEOFDAY
 	sample_dt = last_sample_realtime ? max((now - last_sample_realtime) / (1 SECONDS), 0.1) : METRICS_SAMPLE_INTERVAL / (1 SECONDS)
 	last_sample_realtime = now
@@ -186,19 +134,19 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 
 /// Runs the sources from sample_index on, timing each (finish_sample() reports what each cost). `budgeted`
 /// stops at the tick limit and returns FALSE; the next call carries on with the next source.
-/datum/world_service/server_metrics/proc/continue_sample(budgeted)
+/datum/system/server_metrics/proc/continue_sample(budgeted)
 	while(sample_index <= length(sources))
 		var/datum/metrics_source/source = sources[sample_index++]
 		var/started = TICK_USAGE
 		source.collect(src, sample_dt)
 		source.cost_ms += TICK_USAGE_TO_MS(started)
-		if(budgeted && sample_index <= length(sources) && TICK_CHECK)
+		if(budgeted && sample_index <= length(sources) && KERNEL_OVER_BUDGET)
 			return FALSE
 	return TRUE
 
 /// The service's own figures, after the sources: overruns, dropped events and what each source and the last
 /// flush cost (the metrics' own overhead, so it can be kept small).
-/datum/world_service/server_metrics/proc/finish_sample()
+/datum/system/server_metrics/proc/finish_sample()
 	sample_index = 0
 	gauge("server/overruns", overruns_since_sample, METRICS_CAT_SERVER, "tick", "ticks")
 	gauge("metrics/events_dropped", events_dropped, METRICS_CAT_IO, "metrics", "events")
@@ -223,14 +171,14 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 /// then events. Fire-and-forget through om_io (failures go to the SQL log), or, with `blocking`
 /// (server shutdown only), right away in order. All at once; the lane spreads it instead
 /// (begin_flush(), continue_flush(), send_flush()).
-/datum/world_service/server_metrics/proc/flush(blocking = FALSE)
+/datum/system/server_metrics/proc/flush(blocking = FALSE)
 	if(!begin_flush())
 		return
 	continue_flush(FALSE)
 	send_flush(blocking)
 
 /// Takes the buffers into a flush plan (flush_plan). FALSE when there is nowhere to write them.
-/datum/world_service/server_metrics/proc/begin_flush()
+/datum/system/server_metrics/proc/begin_flush()
 	samples_since_flush = 0
 	var/round_id = text2num(GLOB.round_id)
 	if(!round_id || !SSdbcore?.IsConnected())
@@ -255,7 +203,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 
 /// Builds the plan's sample statements, METRICS_ROWS_PER_STATEMENT rows each. `budgeted` stops at the tick
 /// limit between statements and returns FALSE; the next call carries on.
-/datum/world_service/server_metrics/proc/continue_flush(budgeted)
+/datum/system/server_metrics/proc/continue_flush(budgeted)
 	var/list/plan = flush_plan
 	var/started = TICK_USAGE
 	var/list/samples = plan["samples"]
@@ -265,14 +213,14 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		var/last = min(start + values_per_statement - 1, length(samples))
 		plan["next"] = last + 1
 		plan["sample_statements"] += list(sample_statement(samples, start, last, plan["round_id"], plan["flush_t"]))
-		if(budgeted && plan["next"] <= length(samples) && TICK_CHECK)
+		if(budgeted && plan["next"] <= length(samples) && KERNEL_OVER_BUDGET)
 			plan["ms"] += TICK_USAGE_TO_MS(started)
 			return FALSE
 	plan["ms"] += TICK_USAGE_TO_MS(started)
 	return TRUE
 
 /// Sends the built plan: the keys first (the samples join against them), then the samples and events.
-/datum/world_service/server_metrics/proc/send_flush(blocking = FALSE)
+/datum/system/server_metrics/proc/send_flush(blocking = FALSE)
 	var/list/plan = flush_plan
 	flush_plan = null
 	if(!plan)
@@ -302,7 +250,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	last_flush_ms = plan["ms"] + TICK_USAGE_TO_MS(started)
 
 /// Turns the runtime and overrun buffers into events.
-/datum/world_service/server_metrics/proc/collect_buffered_events()
+/datum/system/server_metrics/proc/collect_buffered_events()
 	for(var/signature in runtime_buffer)
 		var/list/entry = runtime_buffer[signature]
 		var/list/payload = list("count" = entry[1], "where" = entry[2], "proc" = entry[5])
@@ -314,7 +262,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		LAZYADD(pending_events, list(list(record["t"], METRICS_EVENT_OVERRUN, "[record["cause"] || record["top_subsystem"]]", "", "", "[round(record["usage"], 0.1)]% tick", json_encode(record))))
 	overrun_buffer = null
 
-/datum/world_service/server_metrics/proc/key_statement(list/keys)
+/datum/system/server_metrics/proc/key_statement(list/keys)
 	var/list/rows = list()
 	var/list/arguments = list()
 	var/i = 0
@@ -329,7 +277,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 
 /// One INSERT of samples[first..last] (flat triples). Names resolve to key ids by a join,
 /// and each row's timestamp is the flush time less its age.
-/datum/world_service/server_metrics/proc/sample_statement(list/samples, first, last, round_id, flush_t)
+/datum/system/server_metrics/proc/sample_statement(list/samples, first, last, round_id, flush_t)
 	var/list/rows = list()
 	var/list/arguments = list("round" = round_id, "now_t" = flush_t)
 	var/i = 0
@@ -345,7 +293,7 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 		ON DUPLICATE KEY UPDATE value = VALUES(value)"}
 	return list(sql, arguments)
 
-/datum/world_service/server_metrics/proc/event_statement(list/events, round_id, flush_t)
+/datum/system/server_metrics/proc/event_statement(list/events, round_id, flush_t)
 	var/list/rows = list()
 	var/list/arguments = list("round" = round_id, "now_t" = flush_t)
 	var/i = 0
@@ -379,14 +327,3 @@ GLOBAL_DATUM_INIT(metrics_service, /datum/world_service/server_metrics, new)
 	for(var/list/statement as anything in statements)
 		if(isnull(db_query_now(statement[1], statement[2])))
 			log_sql("metrics: shutdown flush failed: [SSdbcore.ErrorMsg()]")
-
-// ---------------------------------------------------------------- lane
-
-/datum/om/behaviour/world/server_metrics
-	name = "world: metrics"
-	every = METRICS_SAMPLE_INTERVAL
-	lane = LANE_BACKGROUND
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/server_metrics/service()
-	return GLOB.metrics_service

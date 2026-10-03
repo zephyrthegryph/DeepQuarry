@@ -114,12 +114,12 @@
 		"refunded" = state == SERVICE_INVOICE_REFUNDED,
 		"refund_time" = refund_time,
 		"refund_by" = refund_by,
-		"refundable" = state == SERVICE_INVOICE_PAID && !settled && accounting_period == GLOB.supply_service.service_accounting_period,
+		"refundable" = state == SERVICE_INVOICE_PAID && !settled && accounting_period == SSsupply.service_accounting_period,
 		"verified_amount" = verified_amount,
 		"verified_item_count" = verified_item_count,
 	)
 
-/datum/world_service/supply/proc/create_service_invoice(datum/money_account/customer, datum/money_account/provider, terminal_id, list/items, list/prices, list/result, staff_account_number, staff_name, customer_name_override, payment_method = "ID account", list/verified_sale_items)
+/datum/system/supply/proc/create_service_invoice(datum/money_account/customer, datum/money_account/provider, terminal_id, list/items, list/prices, list/result, staff_account_number, staff_name, customer_name_override, payment_method = "ID account", list/verified_sale_items)
 	if(!provider || !result || (!customer && !customer_name_override))
 		return
 	var/canonical_total = service_ticket_total(items, prices)
@@ -204,7 +204,7 @@
 		notify_service_invoice(invoice, "Service invoice #[invoice.id] was charged to your account.")
 	return invoice
 
-/datum/world_service/supply/proc/create_service_external_invoice(datum/money_account/provider, terminal_id, list/items, list/prices, customer_name, amount, payment_method, list/verified_sale_items)
+/datum/system/supply/proc/create_service_external_invoice(datum/money_account/provider, terminal_id, list/items, list/prices, customer_name, amount, payment_method, list/verified_sale_items)
 	var/list/result = list(
 		"total" = amount,
 		"subsidy" = 0,
@@ -215,7 +215,7 @@
 	)
 	return create_service_invoice(null, provider, terminal_id, items, prices, result, 0, null, customer_name, payment_method, verified_sale_items)
 
-/datum/world_service/supply/proc/service_invoice_rows(account_number = 0, provider_department)
+/datum/system/supply/proc/service_invoice_rows(account_number = 0, provider_department)
 	var/list/rows = list()
 	for(var/index = length(service_invoices), index >= 1, index--)
 		var/datum/service_invoice/invoice = service_invoices[index]
@@ -226,19 +226,19 @@
 		rows.Add(list(invoice.as_row()))
 	return rows
 
-/datum/world_service/supply/proc/get_service_invoice(invoice_id)
+/datum/system/supply/proc/get_service_invoice(invoice_id)
 	for(var/datum/service_invoice/invoice in service_invoices)
 		if(invoice.id == invoice_id)
 			return invoice
 
-/datum/world_service/supply/proc/notify_service_invoice(datum/service_invoice/invoice, message)
+/datum/system/supply/proc/notify_service_invoice(datum/service_invoice/invoice, message)
 	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
 		if(device.id?.associated_account_number != invoice.customer_account_number)
 			continue
 		var/datum/data/pda/app/service_receipts/app = device.find_program(/datum/data/pda/app/service_receipts)
 		app?.notify(message)
 
-/datum/world_service/supply/proc/refund_service_invoice(datum/service_invoice/invoice, datum/money_account/provider, machine_id, mob/user)
+/datum/system/supply/proc/refund_service_invoice(datum/service_invoice/invoice, datum/money_account/provider, machine_id, mob/user)
 	if(!invoice || invoice.state != SERVICE_INVOICE_PAID || invoice.settled || invoice.accounting_period != service_accounting_period || !provider || invoice.provider_account_number != provider.account_number || !service_refund_authorized(user, provider))
 		return FALSE
 	var/datum/money_account/customer = invoice.customer_account_number ? get_account(invoice.customer_account_number) : null
@@ -376,7 +376,7 @@
 		"detail" = active ? "[item.name] entered operational use in [customer_department]." : "[item.name]'s sale was reversed before settlement.",
 	), "equipment-adoption:[REF(item)]:[active ? 1 : 2]", item, user)
 
-/datum/world_service/supply/proc/service_invoice_summary(department, accounting_period = 0)
+/datum/system/supply/proc/service_invoice_summary(department, accounting_period = 0)
 	var/list/summary = list(
 		"invoice_count" = 0,
 		"refund_count" = 0,
@@ -419,7 +419,7 @@
 /// accounting period. Cash/E-wallet sales lack stable customer identity and do
 /// not count. Each invoice and customer is capped so a single fabricated price
 /// cannot satisfy a market-participation contract.
-/datum/world_service/supply/proc/service_contract_period_metrics(department, accounting_period, staff_account_number = 0)
+/datum/system/supply/proc/service_contract_period_metrics(department, accounting_period, staff_account_number = 0)
 	var/list/customer_sales = list()
 	var/list/customer_tips = list()
 	var/list/verified_types = list()
@@ -460,7 +460,7 @@
 		"verified_type_count" = length(verified_types),
 	)
 
-/datum/world_service/supply/proc/settle_service_contract_period(accounting_period)
+/datum/system/supply/proc/settle_service_contract_period(accounting_period)
 	var/list/departments = list()
 	var/list/staff_by_department = list()
 	for(var/datum/service_invoice/invoice in service_invoices)
@@ -547,7 +547,7 @@
 	var/datum/money_account/staff_account = get_account(staff_account_number)
 	var/staff_tip = 0
 	if(tip && staff_account && !staff_account.suspended && staff_account != customer)
-		staff_tip = round(tip * GLOB.supply_service.service_tip_staff_share)
+		staff_tip = round(tip * SSsupply.service_tip_staff_share)
 	var/service_tip = tip - staff_tip
 	if(tip && !customer.debit(tip, "Service gratuity", purpose, terminal_id, FALSE))
 		return
@@ -558,7 +558,7 @@
 	result["tip"] = tip
 	result["staff_tip"] = staff_tip
 	result["service_tip"] = service_tip
-	return GLOB.supply_service.create_service_invoice(customer, provider, terminal_id, items, prices, result, staff_account_number, staff_name, null, "ID account", verified_sale_items)
+	return SSsupply.create_service_invoice(customer, provider, terminal_id, items, prices, result, staff_account_number, staff_name, null, "ID account", verified_sale_items)
 
 #undef SERVICE_INVOICE_PAID
 #undef SERVICE_INVOICE_REFUNDED

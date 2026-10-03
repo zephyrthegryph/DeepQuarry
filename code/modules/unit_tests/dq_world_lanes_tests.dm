@@ -1,8 +1,7 @@
 // Fold wave F1 (doc/rewrite/completion_plan.md §3.6): SSmachines, SSmobs and SSplants are gone.
-// Their world-level work runs as cadence behaviours on the OM global owner
-// (code/datums/om/world_lanes.dm), their state lives on /datum/world_service singletons, and the
-// growing-plant list is a registry. These tests prove the lanes are attached, run on their
-// cadence, yield and resume, and that the per-object work still starts and parks.
+// Their world-level work runs as kernel work items of systems (SSmachines, SSmobs), and the
+// growing-plant list is a registry. These tests prove the steps finish, drain their queues, and
+// that the per-object work still starts and parks.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -32,22 +31,22 @@
 /datum/unit_test/dq_world_lanes_plants_registry
 
 /datum/unit_test/dq_world_lanes_plants_registry/Run()
-	TEST_ASSERT(GLOB.plant_service.initialized, "the plant service never initialized (SSplanets boot)")
-	TEST_ASSERT(length(GLOB.plant_service.seeds), "the plant service has no seeds")
+	TEST_ASSERT(SSplants.initialized, "the plant service never initialized (SSplanets boot)")
+	TEST_ASSERT(length(SSplants.seeds), "the plant service has no seeds")
 	// A seed with its growth stages resolved (a plant divides its health by them).
 	var/datum/seed/grow_seed
-	for(var/name in GLOB.plant_service.seeds)
-		var/datum/seed/S = GLOB.plant_service.seeds[name]
+	for(var/name in SSplants.seeds)
+		var/datum/seed/S = SSplants.seeds[name]
 		S.update_growth_stages()
 		if(S.growth_stages > 0 && S.get_trait(TRAIT_ENDURANCE) > 0)
 			grow_seed = S
 			break
 	TEST_ASSERT_NOTNULL(grow_seed, "no seed has growth stages")
 	var/obj/effect/plant/P = allocate(/obj/effect/plant, run_loc_floor_bottom_left, grow_seed)
-	GLOB.plant_service.add_plant(P)
+	SSplants.add_plant(P)
 	TEST_ASSERT(P in REGISTRY_MEMBERS(REGISTRY_GROWING_PLANTS), "add_plant() did not join the growing registry")
 	TEST_ASSERT(P.periodic_pipe == PERIODIC_PLANTS, "add_plant() did not start the plant lane")
-	GLOB.plant_service.remove_plant(P)
+	SSplants.remove_plant(P)
 	TEST_ASSERT(!(P in REGISTRY_MEMBERS(REGISTRY_GROWING_PLANTS)), "remove_plant() left the growing registry")
 	TEST_ASSERT_NULL(P.periodic_pipe, "remove_plant() did not stop the plant lane")
 

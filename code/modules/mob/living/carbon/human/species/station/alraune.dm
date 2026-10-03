@@ -240,7 +240,7 @@ DECLARE_REAGENTS(/obj/item/organ/internal/fruitgland, "usable_volume", null)
 			to_chat(src, span_notice("[pick(fruit_gland.empty_message)]"))
 			return
 
-		var/datum/seed/S = GLOB.plant_service.seeds["[fruit_gland.fruit_type]"]
+		var/datum/seed/S = SSplants.seeds["[fruit_gland.fruit_type]"]
 
 		if(fruit_gland.poison_reagent)
 			S.harvest(usr,0,0,1,fruit_gland.poison_reagent,10)

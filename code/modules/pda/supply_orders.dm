@@ -7,8 +7,8 @@
 	var/datum/money_account/account = pda().id ? get_account(pda().id.associated_account_number) : null
 	var/list/orders = list()
 	if(account)
-		for(var/index = length(GLOB.supply_service.order_history), index >= 1, index--)
-			var/datum/supply_order/order = GLOB.supply_service.order_history[index]
+		for(var/index = length(SSsupply.order_history), index >= 1, index--)
+			var/datum/supply_order/order = SSsupply.order_history[index]
 			if(!order.personal_order || order.funding_account_number != account.account_number)
 				continue
 			orders.Add(list(list(
@@ -16,7 +16,7 @@
 				"number" = order.ordernum,
 				"name" = order.name,
 				"status" = order.status,
-				"cost" = GLOB.supply_service.pack_price(order.supply_pack_of()),
+				"cost" = SSsupply.pack_price(order.supply_pack_of()),
 				"reason" = order.comment,
 				"ordered_at" = order.ordered_at,
 				"approved_by" = order.approved_by,
@@ -33,8 +33,8 @@ UI_ACT_PROC(/datum/data/pda/app/supply_orders, ui_act_cancel_personal_order)
 	var/datum/supply_order/order = params["ref"]
 	if(!order)
 		return FALSE
-	return GLOB.supply_service.cancel_personal_order(order, account, user)
+	return SSsupply.cancel_personal_order(order, account, user)
 
 /// The supply order history, for the UI's order refs.
 /datum/data/pda/app/supply_orders/proc/order_history()
-	return GLOB.supply_service.order_history
+	return SSsupply.order_history

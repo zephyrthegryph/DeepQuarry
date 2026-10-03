@@ -4,8 +4,8 @@
 
 /obj/item/disk/design_disk/rapid_construction/Initialize(mapload)
 	. = ..()
-	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rcd_loaded::id))
-	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rcd_ammo::id))
-	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rpd::id))
-	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rms::id))
-	LAZYADD(blueprints, GLOB.research_service.techweb_design_by_id(/datum/design_techweb/rsf::id)) // may as well
+	LAZYADD(blueprints, SSresearch.techweb_design_by_id(/datum/design_techweb/rcd_loaded::id))
+	LAZYADD(blueprints, SSresearch.techweb_design_by_id(/datum/design_techweb/rcd_ammo::id))
+	LAZYADD(blueprints, SSresearch.techweb_design_by_id(/datum/design_techweb/rpd::id))
+	LAZYADD(blueprints, SSresearch.techweb_design_by_id(/datum/design_techweb/rms::id))
+	LAZYADD(blueprints, SSresearch.techweb_design_by_id(/datum/design_techweb/rsf::id)) // may as well

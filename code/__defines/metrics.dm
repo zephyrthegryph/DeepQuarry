@@ -36,7 +36,7 @@
 #define CHURN_COUNT(kind, key) GLOB.churn_census.kind[key] += 1
 
 /// Records an event if metrics are running; safe to call from anywhere, at any point of boot.
-#define METRICS_EVENT(kind, category, signature, ckey, message, payload) GLOB?.metrics_service?.event(kind, category, signature, ckey, message, payload)
+#define METRICS_EVENT(kind, category, signature, ckey, message, payload) SSserver_metrics?.event(kind, category, signature, ckey, message, payload)
 
 // Names in an overrun tick's breakdown (Kernel.performance_tick_breakdown()) besides the subsystems.
 /// Work that ran this tick before the MC's iteration: resumed sleeping procs, verbs run on the spot,

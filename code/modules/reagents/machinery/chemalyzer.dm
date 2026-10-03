@@ -125,7 +125,7 @@ UI_DATA_REPLACE(/obj/machinery/chemical_analyzer, "merge:ui_data_obj_machinery_c
 			subdata["addictive"] = TRUE
 		subdata["industrial_use"] = R.industrial_use
 		subdata["supply_points"] = R.supply_conversion_value ? R.supply_conversion_value : 0
-		var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * GLOB.supply_service.points_per_money
+		var/value = R.supply_conversion_value * REAGENTS_PER_SHEET * SSsupply.points_per_money
 		value = FLOOR(value * 100,1) / 100 // Truncate decimals
 		subdata["market_price"] = value
 		subdata["sintering"] = SSinternal_wiki.assemble_sintering(GLOB.reagent_sheets[R.id])

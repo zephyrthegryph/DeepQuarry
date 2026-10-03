@@ -390,7 +390,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 55
 /obj/item/commcard/proc/get_supply_shuttle_status()
 	var/list/shuttle_status = list()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 
 	if(shuttle)
 		if(shuttle.has_arrive_time())
@@ -451,7 +451,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 130
 /obj/item/commcard/proc/get_supply_orders()
 	var/orders[0]
-	for(var/datum/supply_order/S in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/S in SSsupply.order_history)
 		orders[++orders.len] = list(
 				"ref" = "\ref[S]",
 				"status" = S.status,
@@ -474,7 +474,7 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_receipts()
 	var/receipts[0]
-	for(var/datum/exported_crate/E in GLOB.supply_service.exported_crates)
+	for(var/datum/exported_crate/E in SSsupply.exported_crates)
 		receipts[++receipts.len] = list(
 				"ref" = "\ref[E]",
 				"contents" = E.contents,
@@ -492,8 +492,8 @@
 // code\game\machinery\computer\supply.dm, starting at line 147
 /obj/item/commcard/proc/get_supply_pack_list()
 	var/supply_packs[0]
-	for(var/pack_name in GLOB.supply_service.supply_pack)
-		var/datum/supply_pack/P = GLOB.supply_service.supply_pack[pack_name]
+	for(var/pack_name in SSsupply.supply_pack)
+		var/datum/supply_pack/P = SSsupply.supply_pack[pack_name]
 		if(P.group == internal_data["supply_category"])
 			var/list/pack = list(
 					"name" = P.name,
@@ -518,7 +518,7 @@
 	return list(
 			"shuttle_auth" = (internal_data["supply_controls"] & SUP_SEND_SHUTTLE),
 			"order_auth" = (internal_data["supply_controls"] & SUP_ACCEPT_ORDERS),
-			"supply_points" = GLOB.supply_service.budget_balance(),
+			"supply_points" = SSsupply.budget_balance(),
 			"supply_categories" = GLOB.all_supply_groups
 		)
 

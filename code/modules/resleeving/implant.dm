@@ -233,5 +233,5 @@ EXTEND_INTERACTIONS(/obj/structure/backup_implanter_ch, \
 
 /// LC-refs: the transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/implant/backup/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 

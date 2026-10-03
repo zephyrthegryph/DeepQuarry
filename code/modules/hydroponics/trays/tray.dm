@@ -456,7 +456,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	if(seed)
 		previous_plant = seed.display_name
 		proto_set(src, nameof(seed), null)
-	proto_set(src, nameof(seed), GLOB.plant_service.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
+	proto_set(src, nameof(seed), SSplants.seeds[pick(list(PLANT_REISHI,PLANT_NETTLE,PLANT_AMANITA,PLANT_MUSHROOMS,PLANT_PLUMPHELMET,PLANT_TOWERCAP,PLANT_HAREBELLS,PLANT_WEEDS))])
 	if(!seed) return //Weed does not exist, someone fucked up.
 
 	dead = 0
@@ -487,7 +487,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 	// We need to make sure we're not modifying one of the global seed datums.
 	// If it's not in the global list, then no products of the line have been
 	// harvested yet and it's safe to assume it's restricted to this tray.
-	if(!isnull(GLOB.plant_service.seeds[seed.name]))
+	if(!isnull(SSplants.seeds[seed.name]))
 		var/datum/seed/mutant = seed.diverge()
 		if(!mutant) // TRAIT_IMMUTABLE
 			return
@@ -546,8 +546,8 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 
 	var/previous_plant = seed.display_name
 	var/newseed = seed.get_mutant_variant()
-	if(newseed in GLOB.plant_service.seeds)
-		proto_set(src, nameof(seed), GLOB.plant_service.seeds[newseed])
+	if(newseed in SSplants.seeds)
+		proto_set(src, nameof(seed), SSplants.seeds[newseed])
 	else
 		return
 

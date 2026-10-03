@@ -146,7 +146,7 @@ dx_raw_delay	code/modules/clothing/spacesuits/rig/rig.dm	COOLDOWN_START(src, wea
 dx_raw_delay	code/modules/combat_ai/ports/slime_state.dm	after(speaker, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(message))
 dx_raw_delay	code/modules/combat_ai/ports/voice_commands.dm	after(who, rand(5, 15), TYPE_PROC_REF(/mob, say), with = list(pick(options)))
 dx_raw_delay	code/modules/contracts/contract_requirement.dm	after(src, max(1, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
-dx_raw_delay	code/modules/contracts/faction_agent_contracts.dm	after(GLOB.supply_service, 1, TYPE_PROC_REF(/datum/world_service/supply, replay_market_audit_evidence), with = list(src))
+dx_raw_delay	code/modules/contracts/faction_agent_contracts.dm	after(SSsupply, 1, TYPE_PROC_REF(/datum/system/supply, replay_market_audit_evidence), with = list(src))
 dx_raw_delay	code/modules/detectivework/tools/scanner.dm	after(user, 15, /proc/detective_scanner_blood_report, with = list(user, target))
 dx_raw_delay	code/modules/events/money_spam.dm	COOLDOWN_START(src, spam_cooldown, 3000)
 dx_raw_delay	code/modules/events/money_spam.dm	COOLDOWN_START(src, spam_cooldown, 3000)

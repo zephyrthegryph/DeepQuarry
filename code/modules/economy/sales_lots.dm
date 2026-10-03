@@ -63,9 +63,9 @@
 
 /obj/item/retail_scanner/proc/freight_item_value(obj/item/item)
 	if(item.economic_export_value > 0)
-		return GLOB.supply_service.export_revenue(item.economic_export_value)
+		return SSsupply.export_revenue(item.economic_export_value)
 	var/value = item.scan_profit()
-	return isnum(value) ? max(0, GLOB.supply_service.export_revenue(value)) : 0
+	return isnum(value) ? max(0, SSsupply.export_revenue(value)) : 0
 
 /proc/storefront_department_authorized(mob/living/user, department)
 	if(!user || !department)
@@ -255,7 +255,7 @@
 
 /obj/machinery/department_storefront/proc/storefront_suggested_price(obj/item/item)
 	if(item.economic_export_value > 0)
-		return max(1, GLOB.supply_service.export_revenue(item.economic_export_value))
+		return max(1, SSsupply.export_revenue(item.economic_export_value))
 	return max(5, round(item.w_class * 5))
 
 DECLARE_UI(/obj/machinery/department_storefront, "DepartmentStorefront")
@@ -380,7 +380,7 @@ UI_ACT_PROC(/obj/machinery/department_storefront, ui_act_set_markup)
 	var/list/result = list()
 	if(!charge_department_service(customer, department_id, price, "Storefront purchase: [item.name]", machine_id, result))
 		return FALSE
-	var/datum/service_invoice/invoice = GLOB.supply_service.create_service_invoice(customer, provider, machine_id, items, prices, result, stock_stocker_accounts[item_ref], null, null, "ID account", verified)
+	var/datum/service_invoice/invoice = SSsupply.create_service_invoice(customer, provider, machine_id, items, prices, result, stock_stocker_accounts[item_ref], null, null, "ID account", verified)
 	if(!invoice)
 		// The charge was valid but evidence creation should never strand the item.
 		// Record it as an ordinary sale and deliver the purchased good.

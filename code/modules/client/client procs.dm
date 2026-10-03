@@ -890,7 +890,7 @@ TOPIC_ACTION(/client, "action=openLink", PROC_REF(topic_open_link), TOPIC_TEXT("
 			panel_tabs = list()
 		if("Set-Tab")
 			stat_tab = payload["tab"]
-			GLOB.statpanels_service.immediate_send_stat_data(src)
+			SSstatpanels.immediate_send_stat_data(src)
 
 // Mouse stuff
 /client/Click(atom/object, atom/location, control, params)

@@ -147,25 +147,6 @@ SYSTEM_DEF(profiler)
 /// The diagnostics readout of a missing subsystem or service (shared; only encoded).
 GLOBAL_LIST_INIT(profiler_missing_diagnostics, list("missing" = TRUE))
 
-/// A world service's cost readout (it runs on the OM scheduler, not as a subsystem).
-/datum/system/profiler/proc/world_service_diagnostics(datum/world_service/target)
-	if(!target)
-		return GLOB.profiler_missing_diagnostics
-	var/list/stat = null
-	var/datum/om/scheduler/sched = GLOB.om_live_sched
-	if(sched && target.lane)
-		var/datum/om/behaviour/B = om_registry().behaviour(target.lane)
-		stat = sched.stat_for(B.id)
-	return list(
-		"name" = target.name,
-		"active_ema_ms" = target.cost,
-		"total_ms" = target.total_ms,
-		"completed_runs" = target.steps,
-		"resuming" = target.resuming,
-		"om_lane_ms" = stat ? stat[OM_STAT_MS] : 0,
-		"status" = target.stat_line(),
-	)
-
 /// The readout of a system that runs periodic work (the counters the kernel keeps for it; the rest read 0).
 /datum/system/profiler/proc/system_diagnostics(datum/system/target)
 	if(!target)

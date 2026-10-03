@@ -4,7 +4,7 @@
 /datum/unit_test/dq_metrics_buffers_and_statements
 
 /datum/unit_test/dq_metrics_buffers_and_statements/Run()
-	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	var/datum/system/server_metrics/M = SSserver_metrics
 	for(var/buffer in list("known_keys", "new_keys", "pending_samples", "pending_events", "runtime_buffer", "overrun_buffer"))
 		set_var(M, buffer, null)
 	set_var(M, "recording", TRUE)
@@ -65,7 +65,7 @@
 /datum/unit_test/dq_metrics_sources_collect
 
 /datum/unit_test/dq_metrics_sources_collect/Run()
-	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	var/datum/system/server_metrics/M = SSserver_metrics
 	if(!M.initialized)
 		M.initialize()
 	for(var/buffer in list("known_keys", "new_keys", "pending_samples"))
@@ -88,7 +88,7 @@
 /datum/unit_test/dq_metrics_ticket_events
 
 /datum/unit_test/dq_metrics_ticket_events/Run()
-	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	var/datum/system/server_metrics/M = SSserver_metrics
 	set_var(M, "pending_events", null)
 	set_var(M, "recording", TRUE)
 	var/datum/ticket/T = own(new /datum/ticket/dq_metrics_fixture)
@@ -119,7 +119,7 @@
 	if(!SSdbcore.IsConnected() || isnull(GLOB.round_id))
 		TEST_NOTICE(src, "no database: the shutdown flush was not exercised")
 		return
-	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	var/datum/system/server_metrics/M = SSserver_metrics
 	for(var/buffer in list("known_keys", "new_keys", "pending_samples", "pending_events", "runtime_buffer", "overrun_buffer"))
 		set_var(M, buffer, null)
 	set_var(M, "recording", TRUE)

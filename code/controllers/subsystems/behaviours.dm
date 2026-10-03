@@ -21,8 +21,6 @@ SYSTEM_DEF(behaviours)
 /datum/system/behaviours/initialize()
 	om_registry()
 	om_scheduler()
-	// World services' periodic lanes on the global owner (machines, mobs; world_lanes.dm).
-	_om_start_world_lanes() // ALLOW(om_internal): SSbehaviours is the scheduler core that boots the world lanes
 
 /// The audit (pipelines and sequences, sched_items.dm audit_step()) runs in unit test and TESTING builds always; on
 /// servers only with the OM_PIPELINE_AUDIT config flag or the admin verb (it is a debugging aid, not a feature).

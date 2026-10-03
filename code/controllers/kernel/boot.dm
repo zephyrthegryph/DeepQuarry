@@ -61,17 +61,14 @@
 		S.kernel_members_ready()
 	kernel_start_periodic()
 
-/// The registered systems that are not world services (the converted subsystems and the other pure systems), in
-/// registry order. Systems already created only: nothing here instantiates.
+/// The registered systems, in registry order. Systems already created only: nothing here instantiates.
 /proc/kernel_pure_systems()
 	. = list()
 	var/list/table = system_table()
 	for(var/path in table)
-		if(ispath(path, /datum/world_service))
-			continue
 		. += table[path]
 
-/// Server shutdown for the pure systems: on_shutdown() of each one that booted, in reverse registry order.
+/// Server shutdown: on_shutdown() of each one that booted, in reverse registry order.
 /proc/kernel_shutdown_systems()
 	var/list/systems = kernel_pure_systems()
 	reverse_range(systems)
@@ -84,5 +81,5 @@
 /// (Kernel.preboot); creating a system twice is harmless, the registry keeps the first.
 /proc/kernel_create_systems()
 	for(var/path in subtypesof(/datum/system))
-		if(system_instantiable(path) && !ispath(path, /datum/world_service) && !system_lazy_only(path))
+		if(system_instantiable(path) && !system_lazy_only(path))
 			system(path)

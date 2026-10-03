@@ -6,13 +6,12 @@
 
 //Supply packs are in /code/datums/supplypacks
 //Computers are in /code/game/machinery/computer/supply.dm
-// The supply world service (was SSsupply): supply packs, orders, the cargo market and the station
-// economy ledger, with the market and payroll cycle run by /datum/om/behaviour/world/supply (20 s).
-GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
-
-/datum/world_service/supply
+// The supply system (was SSsupply): supply packs, orders, the cargo market and the station economy ledger, with the
+// market and payroll cycle run every 20 s. Its procs are spread over the economy files (cargo_market.dm,
+// service_invoices.dm, the contract fieldwork); other folders call them as SSsupply.<proc>().
+SYSTEM_DEF(supply)
 	name = "Supply"
-	lane = /datum/om/behaviour/world/supply
+	periodic_runlevels = RUNLEVELS_DEFAULT
 	// The old subsystem had no dependencies and initialized in the main stage. Its data (supply
 	// packs, the market) is read by map objects and by SSinternal_wiki, so boot it right after
 	// SSmapping, before the atoms initialize; SSinternal_wiki boots it explicitly as well.
@@ -55,14 +54,19 @@ GLOBAL_DATUM_INIT(supply_service, /datum/world_service/supply, new)
 	var/datum/shuttle/autodock/ferry/supply/shuttle
 
 /// The 15-minute payroll cycle runs once the first service step has started it.
-OM_FIELD(/datum/world_service/supply, payroll_running, FALSE, CHANGE_DATUM_A)
-DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "payroll_running")
+OM_FIELD(/datum/system/supply, payroll_running, FALSE, CHANGE_DATUM_A)
+DECLARE_REPEAT(/datum/system/supply, "payroll_delay", payroll_cycle, "payroll_running")
 
 /// Delay until the next payroll_cycle(): whatever is left of next_payroll.
-/datum/world_service/supply/proc/payroll_delay()
+/datum/system/supply/proc/payroll_delay()
 	return LEFT_UNTIL(src, next_payroll, CLOCK_WORLD)
 
-/datum/world_service/supply/initialize()
+/// The cargo market and department payroll (was SSsupply, 20 s).
+/datum/system/supply/reactions()
+	. = ..()
+	. += every(20 SECONDS, PROC_REF(supply_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/supply/initialize()
 	initialized = TRUE
 	// Starts the declarations (DECLARE_REPEAT above). Here rather than New(): the service is a
 	// GLOBAL_DATUM_INIT, created before the object model exists.
@@ -78,9 +82,9 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	initialize_cargo_market()
 
 	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
-	log_world("World service [name] initialized: [length(supply_pack)] supply packs.")
+	log_world("System [name] initialized: [length(supply_pack)] supply packs.")
 
-/datum/world_service/supply/proc/reset_shift_economy_tracking()
+/datum/system/supply/proc/reset_shift_economy_tracking()
 	own_clear(src, nameof(service_invoices), OWN_DELETE)
 	service_invoice_counter = 0
 	service_accounting_period = 1
@@ -93,14 +97,14 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	currency_sources.Cut()
 	currency_sinks.Cut()
 
-/datum/world_service/supply/service_step(resumed)
+/datum/system/supply/proc/supply_step(dt)
 	process_cargo_market()
 	set_payroll_running(TRUE)
-	return TRUE
+	return STEP_DONE
 
 /// Every 15 minutes while payroll_running (DECLARE_REPEAT): the department budget cycle and
 /// payroll. next_payroll is the time of the next cycle; payroll_delay() re-arms from it.
-/datum/world_service/supply/proc/payroll_cycle()
+/datum/system/supply/proc/payroll_cycle()
 	EXPIRY_SET(src, next_payroll, 15 MINUTES, CLOCK_WORLD)
 	var/completed_service_period = service_accounting_period
 	var/list/funded_allocations = run_department_budget_cycle()
@@ -108,7 +112,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	publish_budget_cycle_settlement(funded_allocations, completed_service_period)
 	settle_service_contract_period(completed_service_period)
 
-/datum/world_service/supply/proc/run_department_budget_cycle()
+/datum/system/supply/proc/run_department_budget_cycle()
 	var/list/funded_allocations = list()
 	GLOB.station_account.roll_accounting_period()
 	var/list/plan = department_budget_plan()
@@ -151,7 +155,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 /// Build the exact next-cycle allocation plan used by both execution and UI.
 /// Payroll portions are funded before operating allowances, and explicit
 /// department overrides do not disable automatic planning elsewhere.
-/datum/world_service/supply/proc/department_budget_plan()
+/datum/system/supply/proc/department_budget_plan()
 	var/projected_payroll = projected_station_payroll()
 	var/nt_grant = max(0, round(projected_payroll * nt_salary_support))
 	var/available = max(0, round((GLOB.station_account?.money || 0) + nt_grant))
@@ -251,7 +255,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 /// Divide a constrained station allocation pool proportionally. Whole-Thaler
 /// remainders are distributed one at a time without allowing list order to
 /// decide which departments receive their entire budgets and which get zero.
-/datum/world_service/supply/proc/proportional_department_allocations(list/requested, available)
+/datum/system/supply/proc/proportional_department_allocations(list/requested, available)
 	var/list/result = list()
 	if(!islist(requested) || !isnum(available) || available <= 0)
 		return result
@@ -288,12 +292,12 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 /// Funds which can authoritatively exist at the next budget cycle before any
 /// speculative player income. Contract acceptance uses this lower bound so it
 /// never promises an allocation the station cannot presently fund.
-/datum/world_service/supply/proc/projected_station_budget_capacity()
+/datum/system/supply/proc/projected_station_budget_capacity()
 	var/current_funds = max(0, GLOB.station_account?.money || 0)
 	var/payroll_grant = max(0, round(projected_station_payroll() * nt_salary_support))
 	return current_funds + payroll_grant
 
-/datum/world_service/supply/proc/publish_budget_cycle_settlement(list/funded_allocations, accounting_period)
+/datum/system/supply/proc/publish_budget_cycle_settlement(list/funded_allocations, accounting_period)
 	var/qualifying_total = 0
 	var/funded_department_count = 0
 	var/command_allocation = 0
@@ -331,7 +335,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 		"detail" = "Closed station budget and payroll cycle [accounting_period]",
 	), "budget-cycle:[accounting_period]:station")
 
-/datum/world_service/supply/proc/projected_department_payroll(department)
+/datum/system/supply/proc/projected_department_payroll(department)
 	var/datum/money_account/budget = GLOB.department_accounts[department]
 	if(!budget)
 		return 0
@@ -344,28 +348,28 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 			projected += max(1, round(50 * job.economic_modifier * budget.wage_multiplier))
 	return projected
 
-/datum/world_service/supply/proc/projected_station_payroll()
+/datum/system/supply/proc/projected_station_payroll()
 	var/projected = 0
 	for(var/department in GLOB.department_accounts)
 		if(department != "Vendor")
 			projected += projected_department_payroll(department)
 	return projected
 
-/datum/world_service/supply/proc/active_department_employee_count(department)
+/datum/system/supply/proc/active_department_employee_count(department)
 	var/count = 0
 	for(var/mob/living/carbon/human/employee in REGISTRY_MEMBERS(REGISTRY_PLAYERS))
 		if(!QDELETED(employee) && employee.stat != DEAD && employee.mind?.initial_account() && department_for_mob(employee) == department)
 			count++
 	return count
 
-/datum/world_service/supply/proc/active_station_employee_count()
+/datum/system/supply/proc/active_station_employee_count()
 	var/count = 0
 	for(var/department in GLOB.department_accounts)
 		if(department != "Vendor")
 			count += active_department_employee_count(department)
 	return count
 
-/datum/world_service/supply/proc/set_allocation_policy(policy, clear_overrides = FALSE)
+/datum/system/supply/proc/set_allocation_policy(policy, clear_overrides = FALSE)
 	if(!(policy in list(ALLOCATION_POLICY_EQUAL, ALLOCATION_POLICY_STAFFING, ALLOCATION_POLICY_PAYROLL)))
 		return FALSE
 	allocation_policy = policy
@@ -376,19 +380,19 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 				budget.allocation_configured = FALSE
 	return TRUE
 
-/datum/world_service/supply/proc/record_currency_created(amount, source)
+/datum/system/supply/proc/record_currency_created(amount, source)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_created += amount
 	currency_sources[source] = (currency_sources[source] || 0) + amount
 
-/datum/world_service/supply/proc/record_currency_destroyed(amount, sink)
+/datum/system/supply/proc/record_currency_destroyed(amount, sink)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_destroyed += amount
 	currency_sinks[sink] = (currency_sinks[sink] || 0) + amount
 
-/datum/world_service/supply/proc/record_currency_refund(amount, reverses_external_sink = FALSE)
+/datum/system/supply/proc/record_currency_refund(amount, reverses_external_sink = FALSE)
 	if(!isnum(amount) || amount <= 0)
 		return
 	currency_refunded += amount
@@ -397,7 +401,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	else
 		currency_internal_refunded += amount
 
-/datum/world_service/supply/proc/run_department_payroll()
+/datum/system/supply/proc/run_department_payroll()
 	for(var/department in GLOB.department_accounts)
 		if(department == "Vendor")
 			continue
@@ -444,21 +448,21 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 		budget.last_payroll_due = total_due
 		budget.last_payroll_paid = delivered
 
-/datum/world_service/supply/stat_line()
+/datum/system/supply/stat_entry(msg)
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
-	return "Cargo budget: [cargo?.money || 0] Thalers"
+	return "[msg]Cargo budget: [cargo?.money || 0] Thalers"
 
-/datum/world_service/supply/proc/pack_price(datum/supply_pack/pack)
+/datum/system/supply/proc/pack_price(datum/supply_pack/pack)
 	return max(1, round(pack.cost * SUPPLY_THALERS_PER_LEGACY_POINT))
 
-/datum/world_service/supply/proc/export_revenue(legacy_points)
+/datum/system/supply/proc/export_revenue(legacy_points)
 	return max(0, round(legacy_points * SUPPLY_THALERS_PER_LEGACY_POINT))
 
-/datum/world_service/supply/proc/credit_department(department, legacy_points, purpose)
+/datum/system/supply/proc/credit_department(department, legacy_points, purpose)
 	var/datum/money_account/account = GLOB.department_accounts[department]
 	return account?.credit(export_revenue(legacy_points), "External trade", purpose, "Supply shuttle")
 
-/datum/world_service/supply/proc/distribute_export_revenue(datum/exported_crate/export)
+/datum/system/supply/proc/distribute_export_revenue(datum/exported_crate/export)
 	if(!export || export.value <= 0)
 		return
 	var/tagged_value = export.sales_eligible_value
@@ -493,11 +497,11 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	if(export.value > tagged_value)
 		credit_department(DEPARTMENT_CARGO, export.value - tagged_value, "Exported goods: [export.name]")
 
-/datum/world_service/supply/proc/budget_balance()
+/datum/system/supply/proc/budget_balance()
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
 	return cargo?.money || 0
 
-/datum/world_service/supply/proc/adjust_budget(amount, purpose = "External market adjustment")
+/datum/system/supply/proc/adjust_budget(amount, purpose = "External market adjustment")
 	var/datum/money_account/cargo = GLOB.department_accounts[DEPARTMENT_CARGO]
 	if(!cargo || !amount)
 		return FALSE
@@ -506,7 +510,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	return cargo.debit(abs(amount), "External market", purpose, "Cargo market")
 
 //To stop things being sent to CentCom which should not be sent to centcomm. Recursively checks for these types.
-/datum/world_service/supply/proc/forbidden_atoms_check(atom/A)
+/datum/system/supply/proc/forbidden_atoms_check(atom/A)
 	if(isliving(A))
 		var/mob/living/living_content = A
 		// Living passengers must never be exported accidentally. Properly dead
@@ -532,7 +536,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 			return 1
 
 //Selling
-/datum/world_service/supply/proc/sell()
+/datum/system/supply/proc/sell()
 	// Loop over each area in the supply shuttle
 	OM_EMIT_WORLD(/datum/om/event/world_supply_shuttle_depart, shuttle.shuttle_area)
 	for(var/area/subarea in shuttle.shuttle_area)
@@ -598,7 +602,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 
 			qdel(MA)
 
-/datum/world_service/supply/proc/get_clear_turfs()
+/datum/system/supply/proc/get_clear_turfs()
 	var/list/clear_turfs = list()
 
 	for(var/area/subarea in shuttle.shuttle_area)
@@ -617,7 +621,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	return clear_turfs
 
 //Buying
-/datum/world_service/supply/proc/buy()
+/datum/system/supply/proc/buy()
 	var/list/shoppinglist = list()
 	for(var/datum/supply_order/SO in order_history)
 		if(SO.status == SUP_ORDER_APPROVED)
@@ -734,7 +738,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	return
 
 // Will attempt to purchase the specified order, returning TRUE on success, FALSE on failure
-/datum/world_service/supply/proc/approve_order(datum/supply_order/O, mob/user)
+/datum/system/supply/proc/approve_order(datum/supply_order/O, mob/user)
 	if(O.paid_amount > 0 && !O.personal_order)
 		return FALSE
 	var/price = order_price(O)
@@ -778,7 +782,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was approved.")
 	return TRUE
 
-/datum/world_service/supply/proc/notify_personal_order(datum/supply_order/O, message)
+/datum/system/supply/proc/notify_personal_order(datum/supply_order/O, message)
 	if(!O?.personal_order || !O.funding_account_number)
 		return
 	for(var/obj/item/pda/device in REGISTRY_MEMBERS(REGISTRY_PDAS))
@@ -787,7 +791,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 		var/datum/data/pda/app/supply_orders/app = device.find_program(/datum/data/pda/app/supply_orders)
 		app?.notify(message)
 
-/datum/world_service/supply/proc/refund_order(datum/supply_order/O, purpose)
+/datum/system/supply/proc/refund_order(datum/supply_order/O, purpose)
 	if(!O || O.paid_amount <= 0 || O.status == SUP_ORDER_SHIPPED)
 		return FALSE
 	if(O.market_contract_funded)
@@ -804,7 +808,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	return TRUE
 
 // Will deny the specified order. Only useful if the order is currently requested, but available at any status
-/datum/world_service/supply/proc/deny_order(datum/supply_order/O, mob/user)
+/datum/system/supply/proc/deny_order(datum/supply_order/O, mob/user)
 	// Based on the current model, there shouldn't be any entries in order_history, requestlist, or shoppinglist, that aren't matched in adm_order_history
 	var/datum/supply_order/adm_order
 	for(var/datum/supply_order/temp in adm_order_history)
@@ -835,20 +839,20 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 		notify_personal_order(O, "Personal Cargo order #[O.ordernum] ([O.name]) was cancelled and refunded.")
 	return
 
-/datum/world_service/supply/proc/cancel_personal_order(datum/supply_order/O, datum/money_account/requester, mob/user)
+/datum/system/supply/proc/cancel_personal_order(datum/supply_order/O, datum/money_account/requester, mob/user)
 	if(!O?.personal_order || O.status != SUP_ORDER_REQUESTED || !requester || O.funding_account_number != requester.account_number)
 		return FALSE
 	deny_order(O, user)
 	return TRUE
 
 // Will deny all requested orders
-/datum/world_service/supply/proc/deny_all_pending(mob/user)
+/datum/system/supply/proc/deny_all_pending(mob/user)
 	for(var/datum/supply_order/O in order_history)
 		if(O.status == SUP_ORDER_REQUESTED)
 			deny_order(O, user)
 
 // Will delete the specified order from the user-side list
-/datum/world_service/supply/proc/delete_order(datum/supply_order/O, mob/user)
+/datum/system/supply/proc/delete_order(datum/supply_order/O, mob/user)
 	// Making sure they know what they're doing
 	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_sure), message = "Are you sure you want to delete this record? Paid, unshipped orders will be refunded.", record = O)
 
@@ -858,10 +862,10 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	no_first = TRUE
 	var/datum/record
 
-/datum/world_service/supply/proc/delete_order_sure(datum/om/prompt/confirm/supply_delete_record/ask)
+/datum/system/supply/proc/delete_order_sure(datum/om/prompt/confirm/supply_delete_record/ask)
 	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_order_confirmed), message = "Are you really sure? There is no way to recover the order once deleted.", record = ask.record)
 
-/datum/world_service/supply/proc/delete_order_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
+/datum/system/supply/proc/delete_order_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
 	var/mob/user = ask.answerer
 	var/datum/supply_order/O = ask.record
 	if(!(O in order_history)) // deleted by someone else meanwhile
@@ -872,7 +876,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	own_take_member(src, nameof(order_history), O)
 
 // Will generate a new, requested order, for the given supply pack type
-/datum/world_service/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
+/datum/system/supply/proc/create_order(datum/supply_pack/S, mob/user, reason, personal_funding = FALSE, market_listing_id, market_counterparty_id, quoted_price = 0)
 	if(!S || supply_pack[S.name] != S)
 		return FALSE
 	var/datum/supply_order/new_order = new()
@@ -945,14 +949,14 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	return new_order
 
 // Will delete the specified export receipt from the user-side list
-/datum/world_service/supply/proc/delete_export(datum/exported_crate/E, mob/user)
+/datum/system/supply/proc/delete_export(datum/exported_crate/E, mob/user)
 	// Making sure they know what they're doing
 	om_ask(user, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_sure), message = "Are you sure you want to delete this record?", record = E)
 
-/datum/world_service/supply/proc/delete_export_sure(datum/om/prompt/confirm/supply_delete_record/ask)
+/datum/system/supply/proc/delete_export_sure(datum/om/prompt/confirm/supply_delete_record/ask)
 	om_ask(ask.answerer, /datum/om/prompt/confirm/supply_delete_record, PROC_REF(delete_export_confirmed), message = "Are you really sure? There is no way to recover the receipt once deleted.", record = ask.record)
 
-/datum/world_service/supply/proc/delete_export_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
+/datum/system/supply/proc/delete_export_confirmed(datum/om/prompt/confirm/supply_delete_record/ask)
 	var/mob/user = ask.answerer
 	var/datum/exported_crate/E = ask.record
 	if(!(E in exported_crates))
@@ -961,7 +965,7 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	own_take_member(src, nameof(exported_crates), E)
 
 // Will add an item entry to the specified export receipt on the user-side list
-/datum/world_service/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
+/datum/system/supply/proc/add_export_item(datum/exported_crate/E, mob/user)
 	om_flow_start(/datum/om/flow/supply_export_item, user, null, receipt = E)
 
 /// Adding an item line to an export receipt: its name, quantity and value.
@@ -982,9 +986,9 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 	om_ask(actor, /datum/om/prompt/number, PROC_REF(value_entered), title = "Value", message = "Please enter the value of the item.")
 
 /datum/om/flow/supply_export_item/proc/value_entered(datum/om/prompt/number/ask)
-	GLOB.supply_service.export_item_entered(receipt, item_name, quantity, ask.number)
+	SSsupply.export_item_entered(receipt, item_name, quantity, ask.number)
 
-/datum/world_service/supply/proc/export_item_entered(datum/exported_crate/E, new_name, new_quantity, new_value)
+/datum/system/supply/proc/export_item_entered(datum/exported_crate/E, new_name, new_quantity, new_value)
 	if(!(E in exported_crates) || !new_name || !new_quantity || !new_value)
 		return
 
@@ -1042,18 +1046,8 @@ DECLARE_REPEAT(/datum/world_service/supply, "payroll_delay", payroll_cycle, "pay
 /datum/supply_order/proc/supply_pack_of() as /datum/supply_pack
 	return supply_pack_static
 
-/// Cargo market and department payroll (was SSsupply, 20 s).
-/datum/om/behaviour/world/supply
-	name = "world: supply"
-	every = 20 SECONDS
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/supply/service()
-	return GLOB.supply_service
-
-
 /// The round's supply shuttle (a relation view: the shuttle datum sets it when it registers, and it
 /// clears by itself when that shuttle is deleted).
-/datum/world_service/supply/relations()
+/datum/system/supply/relations()
 	. = ..()
 	. += rel_one(nameof(shuttle))

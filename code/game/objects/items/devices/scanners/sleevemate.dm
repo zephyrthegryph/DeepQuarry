@@ -437,7 +437,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/sleevemate, PROC_REF(on_emag), null)
 
 /// The transcore database this uses, looked up by db_key (the databases are a registry).
 /obj/item/sleevemate/proc/our_db() as /datum/transcore_db
-	return GLOB.transcore_service.db_by_key(db_key)
+	return SStranscore.db_by_key(db_key)
 
 /// Relation view: stored mind (reads null once it is gone).
 /obj/item/sleevemate/proc/stored_mind() as /datum/mind

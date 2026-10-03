@@ -362,12 +362,12 @@ UI_DATA_REPLACE(/datum/experiment_handler, "merge:ui_data_datum_experiment_handl
 		"has_start_callback" = !isnull(start_experiment_spec),
 	)
 	.["techwebs"] = list()
-	for (var/datum/techweb/techwebs as anything in GLOB.research_service.techwebs)
+	for (var/datum/techweb/techwebs as anything in SSresearch.techwebs)
 		if(!length(techwebs.techweb_servers)) //no servers, we don't care
 			if(techwebs == linked_web()) //disconnect if OUR techweb lost their servers.
 				unlink_techweb()
 			continue
-		if(!length(GLOB.research_service.find_valid_servers(get_turf(owner), techwebs)))
+		if(!length(SSresearch.find_valid_servers(get_turf(owner), techwebs)))
 			continue
 		var/list/data = list(
 			web_id = techwebs.id,
