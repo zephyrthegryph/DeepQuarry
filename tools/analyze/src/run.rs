@@ -31,6 +31,9 @@ pub struct Options {
     pub scopes_from: Option<PathBuf>,
 }
 
+/// Total time spent reading lint caches (`DQ_ANALYZE_TRACE`).
+pub static LOAD_NS: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
 #[derive(Clone, Debug, Default)]
 pub struct Timing {
     pub total: Duration,
@@ -151,7 +154,9 @@ impl Engine {
         let meta = lint.meta();
         let scope = self.scopes.for_lint(meta.name, meta.group);
         let cx = Cx { tree: &self.tree, meta, scope: &scope };
+        let t_load = Instant::now();
         let mut lc = self.cache.load_lint(meta.name);
+        LOAD_NS.fetch_add(t_load.elapsed().as_nanos() as u64, std::sync::atomic::Ordering::Relaxed);
         let mut timing = Timing::default();
         let mut sites = Vec::new();
         let mut notes = Vec::new();
@@ -385,6 +390,9 @@ impl Engine {
             }
         }
         self.cache.save_durations(&merged);
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: lint cache loads {:.1}ms (summed over threads)", LOAD_NS.load(std::sync::atomic::Ordering::Relaxed) as f64 / 1e6);
+        }
         outcomes
     }
 

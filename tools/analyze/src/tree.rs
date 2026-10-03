@@ -224,31 +224,66 @@ pub struct FileMeta {
     pub hash: Hash,
 }
 
-/// The rayon pool that memo inits run on. Large on purpose: a worker blocked on a nested memo
-/// (an init that asks for another memoized value) must never starve the work it waits for.
-fn init_pool() -> &'static rayon::ThreadPool {
-    static POOL: OnceLock<rayon::ThreadPool> = OnceLock::new();
-    POOL.get_or_init(|| {
-        rayon::ThreadPoolBuilder::new()
-            .num_threads(64)
-            .stack_size(16 << 20)
-            .thread_name(|i| format!("analyze-init-{}", i))
-            .build()
-            .expect("init pool")
-    })
-}
-
-/// Runs `f` where rayon calls cannot deadlock against the lint fan-out (the latent hazard the
-/// README described): on a fresh OS thread, inside [`init_pool`]. The calling thread blocks in a
-/// plain join, so it never steals a lint job while it holds a memo cell or a `OnceLock` init.
+/// Runs `f` where rayon calls cannot deadlock against the lint fan-out or against other inits (the
+/// latent hazard the README described): on a fresh OS thread, inside a rayon pool of its own. The
+/// calling thread blocks in a plain join, so it never steals a lint job while it holds a memo cell
+/// or a `OnceLock` init, and the pool holds only this call's own work, so a worker waiting inside
+/// `f` can never steal another init's closure (which could need the cell `f` is building).
 pub fn run_isolated<T: Send>(f: impl FnOnce() -> T + Send) -> T {
     std::thread::scope(|s| {
-        let h = std::thread::Builder::new().stack_size(16 << 20).spawn_scoped(s, || init_pool().install(f)).expect("spawn init thread");
+        let h = std::thread::Builder::new()
+            .stack_size(16 << 20)
+            .spawn_scoped(s, || {
+                let n = std::thread::available_parallelism().map(|n| n.get()).unwrap_or(4).min(16);
+                let pool = rayon::ThreadPoolBuilder::new().num_threads(n).stack_size(16 << 20).build().expect("init pool");
+                pool.install(f)
+            })
+            .expect("spawn init thread");
         match h.join() {
             Ok(v) => v,
             Err(e) => std::panic::resume_unwind(e),
         }
     })
+}
+
+/// Debug aid (`DQ_ANALYZE_WATCHDOG=<seconds>`): when set, memo state is tracked and dumped if the run is still going
+/// after that long, then the process exits with status 99.
+static WATCH: OnceLock<Mutex<HashMap<String, Vec<&'static str>>>> = OnceLock::new();
+
+fn watch_set(key: &str, state: &'static str) {
+    if let Some(w) = WATCH.get() {
+        let mut g = w.lock().unwrap();
+        let e = g.entry(key.to_string()).or_default();
+        if state == "done" || state == "initializing" {
+            // one waiter fewer
+            if let Some(i) = e.iter().position(|s| *s == "waiting") {
+                e.remove(i);
+            }
+        }
+        if state == "done" {
+            e.retain(|s| *s != "initializing");
+        } else if state != "done" {
+            e.push(state);
+        }
+    }
+}
+
+/// Starts the watchdog when `DQ_ANALYZE_WATCHDOG` is set.
+pub fn start_watchdog() {
+    let Some(secs) = std::env::var("DQ_ANALYZE_WATCHDOG").ok().and_then(|s| s.parse::<u64>().ok()) else { return };
+    let _ = WATCH.set(Mutex::new(HashMap::new()));
+    std::thread::spawn(move || {
+        std::thread::sleep(std::time::Duration::from_secs(secs));
+        if let Some(w) = WATCH.get() {
+            for (k, v) in w.lock().unwrap().iter() {
+                if !v.is_empty() {
+                    eprintln!("watchdog: memo {:?}: {:?}", k, v);
+                }
+            }
+        }
+        eprintln!("watchdog: still running after {}s", secs);
+        std::process::exit(99);
+    });
 }
 
 pub struct Tree {
@@ -366,7 +401,21 @@ impl Tree {
             let mut g = self.memo_cells.lock().unwrap();
             g.entry(key.to_string()).or_default().clone()
         };
-        let any = cell.get_or_init(|| std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>).clone();
+        let tracing = WATCH.get().is_some();
+        if tracing {
+            watch_set(key, "waiting");
+        }
+        let any = cell
+            .get_or_init(|| {
+                if tracing {
+                    watch_set(key, "initializing");
+                }
+                std::sync::Arc::new(run_isolated(init)) as std::sync::Arc<dyn std::any::Any + Send + Sync>
+            })
+            .clone();
+        if tracing {
+            watch_set(key, "done");
+        }
         any.downcast::<T>().expect("memo key reused with a different type")
     }
 
