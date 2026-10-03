@@ -5715,6 +5715,7 @@
 #include "code\library\containers\interior.dm"
 #include "code\library\containers\quickdraw.dm"
 #include "code\library\containers\storage.dm"
+#include "code\library\items\held_verb.dm"
 #include "code\library\items\stackable.dm"
 #include "code\library\items\trait.dm"
 #include "code\library\items\two_hands.dm"

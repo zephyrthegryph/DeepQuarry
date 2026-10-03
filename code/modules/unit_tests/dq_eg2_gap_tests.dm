@@ -213,3 +213,27 @@
 	H.forceMove(get_step(H, EAST))
 	test_time(5 SECONDS)
 	TEST_ASSERT(second.loc != P, "walking away cancelled the insertion")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// held_verb()
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Proof site: a polychromic wallet has its recolour verb only while somebody carries it, and the verb runs the op.
+/datum/unit_test/dq_eg2/held_verb_follows_the_carrier
+/datum/unit_test/dq_eg2/held_verb_follows_the_carrier/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/storage/wallet/poly/W = allocate(/obj/item/storage/wallet/poly, run_loc_floor_bottom_left)
+	var/verb_path = /obj/item/storage/wallet/poly/proc/change_color
+	TEST_ASSERT(!(verb_path in W.verbs), "a wallet on the floor has no verb")
+	H.put_in_active_hand(W)
+	TEST_ASSERT(verb_path in W.verbs, "a carried one has it")
+	H.drop_item()
+	TEST_ASSERT(!(verb_path in W.verbs), "and loses it when dropped")
+	var/obj/item/clothing/under/color/grey/suit = allocate(/obj/item/clothing/under/color/grey, run_loc_floor_bottom_left)
+	TEST_ASSERT(H.equip_to_slot_if_possible(suit, SLOT_ID_UNIFORM, disable_warning = TRUE), "the uniform goes on")
+	TEST_ASSERT(H.equip_to_slot_if_possible(W, SLOT_ID_POCKET_L, disable_warning = TRUE), "the wallet goes in a pocket")
+	TEST_ASSERT(W in H.contents, "the wallet is in a pocket")
+	TEST_ASSERT(verb_path in W.verbs, "a pocket counts as carried")
+	TEST_ASSERT(slot_matches(SLOT_ANY_CARRIED, SLOT_ID_POCKET_L, H), "SLOT_ANY_CARRIED covers a pocket")
+	TEST_ASSERT(!slot_matches(SLOT_ANY_HELD, SLOT_ID_POCKET_L, H), "SLOT_ANY_HELD does not")
+	qdel(W)

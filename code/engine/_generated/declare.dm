@@ -364,6 +364,15 @@
 /datum/capdef_decl/c_two_hands/spec()
 	return list(CAP_TWO_HANDS, /datum/capability/lib/two_hands, NONE, STACK, "two_hands", "")
 
+/// CAPABILITY_TYPE(verb_grant, CAP_VERB_GRANT) at code/library/items/held_verb.dm:11
+/datum/capability/lib/verb_grant
+	var/verb_path = null
+/proc/verb_grant(verb_path)
+	RETURN_TYPE(/datum/capability/lib/verb_grant)
+	return cap_construct(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, list(verb_path), "verb_path")
+/datum/capdef_decl/c_verb_grant/spec()
+	return list(CAP_VERB_GRANT, /datum/capability/lib/verb_grant, "verb_path", STACK, "verb_grant", "verb_path")
+
 /// CAPABILITY_DEF(wall_machine, CAP_WALL_MACHINE) at code/library/machine/machine.dm:101
 /datum/capability/def/wall_machine
 	var/board = null
@@ -2061,6 +2070,8 @@
 	..(into)
 	into += entry_block("code/game/objects/items/weapons/storage/wallets.dm", 119, /obj/item/storage/wallet/poly)
 	into += entry_line(120)
+	into += list(held_verb(/obj/item/storage/wallet/poly/proc/change_color, SLOT_ANY_CARRIED))
+	into += entry_line(121)
 	into += list(global.op("recolor", global.menu(), global.needs(global.carried(), global.req_capable()), global.label("Change wallet color"), global.asks(/datum/prompt/color, fields = list("question" = "Pick a new color", "title" = "Wallet Color", "default" = nameof(color))), global.then(PROC_REF(recolored))))
 
 /// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
