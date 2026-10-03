@@ -7,7 +7,7 @@
 	var/paint_dir =    "precise"
 	var/paint_colour = "#FFFFFF"
 
-	var/list/decals = list( // ALLOW(instance_list): d: edited in place per instance (3 writers)
+	var/static/list/decals = list(
 		"quarter-turf" =      list("path" = /obj/effect/floor_decal/corner, "precise" = 1, "coloured" = 1),
 		"hazard stripes" =    list("path" = /obj/effect/floor_decal/industrial/warning),
 		"corner, hazard" =    list("path" = /obj/effect/floor_decal/industrial/warning/corner),
@@ -106,95 +106,125 @@
 
 	floor_decal_paint(F, painting_decal, painting_dir, painting_colour)
 
-DECLARE_INTERACTIONS(/obj/item/floor_painter, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/floor_painter, decal)
+TRACKED(/obj/item/floor_painter, paint_dir)
+TRACKED(/obj/item/floor_painter, paint_colour)
 
-/obj/item/floor_painter/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice/floor_painter/modify, PROC_REF(modify_chosen))
+CAPABILITIES(/obj/item/floor_painter)
+	held_verb(/obj/item/floor_painter/proc/choose_colour, SLOT_ANY_CARRIED)
+	held_verb(/obj/item/floor_painter/proc/choose_decal, SLOT_ANY_CARRIED)
+	held_verb(/obj/item/floor_painter/proc/choose_direction, SLOT_ANY_CARRIED)
+	op("configure", in_hand(), label("Configure paint sprayer"), needs(carried(), req_capable()),
+		asks(/datum/prompt/choice, step = "setting", fields = list("title" = "Modify What?", "question" = "Do you wish to change the decal type, paint direction, or paint colour?", "choices" = list("Decal", "Direction", "Colour", "Cancel"), "buttons" = TRUE, "timeout" = 0)),
+		asks(/datum/prompt/choice/floor_painter_decal, step = "decal", when = PROC_REF(changing_decal)),
+		asks(/datum/prompt/choice/floor_painter_direction, step = "direction", when = PROC_REF(changing_direction)),
+		asks(/datum/prompt/color/floor_painter, step = "colour", when = PROC_REF(changing_colour)), then(PROC_REF(setting_chosen)))
+	op("decal", menu(), label("Choose Decal"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_decal, step = "decal"), then(PROC_REF(decal_chosen)))
+	op("direction", menu(), label("Choose Direction"), needs(carried(), req_capable()), asks(/datum/prompt/choice/floor_painter_direction, step = "direction"), then(PROC_REF(direction_chosen)))
+	op("colour", menu(), label("Choose Colour"), needs(carried(), req_capable()), asks(/datum/prompt/color/floor_painter, step = "colour"), then(PROC_REF(colour_chosen)))
 
-/// Floor painter settings: re-checked on the answer, the painter is still carried.
-/datum/om/prompt/choice/floor_painter
-	ask_flags = ASK_CARRIED | ASK_CAPABLE
+/obj/item/floor_painter/proc/changing_decal(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("setting")
+	return R?.value == "Decal"
 
-/datum/om/prompt/choice/floor_painter/modify
-	title = "Modify What?"
-	message = "Do you wish to change the decal type, paint direction, or paint colour?"
-	choices = list("Decal","Direction","Colour","Cancel")
-	buttons = TRUE
+/obj/item/floor_painter/proc/changing_direction(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("setting")
+	return R?.value == "Direction"
 
-/datum/om/prompt/choice/floor_painter/decal
-	title = "Decal Choice"
-	message = "Select a decal:"
+/obj/item/floor_painter/proc/changing_colour(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("setting")
+	return R?.value == "Colour"
 
-/datum/om/prompt/choice/floor_painter/direction
-	title = "Direction Choice"
-	message = "Select a direction:"
-
-/// The pick must still be one of the painter's (decals and paint_dirs map names to data).
-/datum/om/prompt/choice/floor_painter/decal/valid()
-	return isnull(choices[choice]) ? "not a decal" : null
-
-/datum/om/prompt/choice/floor_painter/direction/valid()
-	return isnull(choices[choice]) ? "not a direction" : null
-
-/obj/item/floor_painter/proc/modify_chosen(datum/om/prompt/choice/floor_painter/modify/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/floor_painter/proc/setting_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("setting")
+	switch(R.value)
 		if("Decal")
-			ask_decal(user)
+			return decal_chosen(A)
 		if("Direction")
-			ask_direction(user)
+			return direction_chosen(A)
 		if("Colour")
-			ask_colour(user)
+			return colour_chosen(A)
+	return OP_OK
 
-/obj/item/floor_painter/proc/ask_decal(mob/user)
-	om_ask(user, /datum/om/prompt/choice/floor_painter/decal, PROC_REF(decal_chosen), choices = decals)
+/obj/item/floor_painter/proc/decal_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("decal")
+	set_decal(R.value)
+	to_chat(A.actor, span_notice("You set \the [src] decal to '[decal]'."))
+	return OP_OK
 
-/obj/item/floor_painter/proc/decal_chosen(datum/om/prompt/choice/floor_painter/decal/ask)
-	decal = ask.choice
-	to_chat(ask.answerer, span_notice("You set \the [src] decal to '[decal]'."))
+/obj/item/floor_painter/proc/direction_chosen(datum/act/op/A)
+	var/datum/prompt/choice/R = A.step_answer("direction")
+	set_paint_dir(R.value)
+	to_chat(A.actor, span_notice("You set \the [src] direction to '[paint_dir]'."))
+	return OP_OK
 
-/obj/item/floor_painter/proc/ask_direction(mob/user)
-	om_ask(user, /datum/om/prompt/choice/floor_painter/direction, PROC_REF(direction_chosen), choices = paint_dirs)
+/obj/item/floor_painter/proc/colour_chosen(datum/act/op/A)
+	var/datum/prompt/color/R = A.step_answer("colour")
+	if(R.value && R.value != paint_colour)
+		set_paint_colour(R.value)
+		to_chat(A.actor, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
+	return OP_OK
 
-/obj/item/floor_painter/proc/direction_chosen(datum/om/prompt/choice/floor_painter/direction/ask)
-	paint_dir = ask.choice
-	to_chat(ask.answerer, span_notice("You set \the [src] direction to '[paint_dir]'."))
+/datum/prompt/choice/floor_painter_decal
+	title = "Decal Choice"
+	question = "Select a decal:"
+	timeout = 0
 
-/obj/item/floor_painter/proc/ask_colour(mob/user)
-	om_ask(user, /datum/om/prompt/color, PROC_REF(colour_chosen), title = name, default = paint_colour, message = "Choose a colour.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+/datum/prompt/choice/floor_painter_decal/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/floor_painter/painter = asking.target
+		if(istype(painter))
+			choices = painter.decals
 
-/obj/item/floor_painter/proc/colour_chosen(datum/om/prompt/color/ask)
-	if(ask.picked_color && ask.picked_color != paint_colour)
-		paint_colour = ask.picked_color
-		to_chat(ask.answerer, span_notice("You set \the [src] to paint with <font color='[paint_colour]'>a new colour</font>."))
+/datum/prompt/choice/floor_painter_direction
+	title = "Direction Choice"
+	question = "Select a direction:"
+	timeout = 0
+
+/datum/prompt/choice/floor_painter_direction/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/floor_painter/painter = asking.target
+		if(istype(painter))
+			choices = painter.paint_dirs
+
+/datum/prompt/color/floor_painter
+	question = "Choose a colour."
+	timeout = 0
+
+/datum/prompt/color/floor_painter/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/floor_painter/painter = asking.target
+		if(istype(painter))
+			title = painter.name
+			default = painter.paint_colour
 
 /obj/item/floor_painter/examine(mob/user)
 	. = ..()
 	. += "It is configured to produce the '[decal]' decal with a direction of '[paint_dir]' using [paint_colour] paint."
 
-/obj/item/floor_painter/proc/choose_colour_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/floor_painter/proc/choose_colour()
+	set name = "Choose Colour"
+	set category = VERB_CAT_OBJECT
+	set src in usr
 
-	if(user.incapacitated())
-		return
-	ask_colour(user)
+	perform_op(usr, src, "colour", null, ORIGIN_VERB)
 
-/obj/item/floor_painter/proc/choose_decal_effect(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/floor_painter/proc/choose_decal()
+	set name = "Choose Decal"
+	set category = VERB_CAT_OBJECT
+	set src in usr
 
-	if(user.incapacitated())
-		return
+	perform_op(usr, src, "decal", null, ORIGIN_VERB)
 
-	ask_decal(user)
+/obj/item/floor_painter/proc/choose_direction()
+	set name = "Choose Direction"
+	set category = VERB_CAT_OBJECT
+	set src in usr
 
-/obj/item/floor_painter/proc/choose_direction_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
-	if(user.incapacitated())
-		return
-
-	ask_direction(user)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/floor_painter, \
-	INTERACT_VERB("Choose Colour", PROC_REF(choose_colour_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Choose Decal", PROC_REF(choose_decal_effect), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Choose Direction", PROC_REF(choose_direction_effect), REQ_IN_INVENTORY), \
-)
+	perform_op(usr, src, "direction", null, ORIGIN_VERB)

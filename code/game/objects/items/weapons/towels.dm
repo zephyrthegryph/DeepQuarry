@@ -21,15 +21,17 @@
 		if(SLOT_ID_BELT)
 			sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/belt/mob_teshari.dmi')
 
-DECLARE_INTERACTIONS(/obj/item/towel, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/towel)
+	op("wipe", in_hand(), label("Towel yourself off"), then(PROC_REF(toweled_off)))
 
-/// Old attack_self.
-/obj/item/towel/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
+/// The towel keeps the same wiping effect on its actual actor.
+/obj/item/towel/proc/toweled_off(datum/act/op/A)
+	var/mob/living/user = A.actor
 	act_message(user, src, others = span_notice("%U% uses %T% to towel themselves off."))
 	play_sfx(src, SFX_WEAPONS_TOWELWIPE)
 	if(user.fire_stacks > 0)
 		user.adjust_fire_stacks(-1.5)
-	return TRUE
+	return OP_OK
 
 /obj/item/towel/random/Initialize(mapload)
 	. = ..()
