@@ -36,7 +36,6 @@ dx_raw_delay	code/game/machinery/air_alarm.dm	om_after(src, 10, PROC_REF(send_si
 dx_raw_delay	code/game/machinery/biogenerator.dm	om_after(src, (S + 15) / eat_eff, PROC_REF(finish_processing))
 dx_raw_delay	code/game/machinery/cloning.dm	om_after(src, 30, PROC_REF(clear_eject_wait), BR, clonemind)
 dx_raw_delay	code/game/machinery/computer/arcade.dm	om_after(src, 3.6, PROC_REF(countdown), 3)
-dx_raw_delay	code/game/machinery/computer/specops_shuttle.dm	om_after(null, 5, /proc/specops_countdown, message_tracker, announcer, done_proc)
 dx_raw_delay	code/game/machinery/fire_alarm.dm	after_slot(src, "power_settle", rand(0,15), PROC_REF(power_change_settle))
 dx_raw_delay	code/game/machinery/floodlight.dm	om_after(src, 20, PROC_REF(flicker_restore))
 dx_raw_delay	code/game/machinery/gear_dispenser.dm	om_after(src, 10.5, PROC_REF(animate_dispensing_lit))

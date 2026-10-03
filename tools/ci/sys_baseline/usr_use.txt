@@ -157,7 +157,6 @@ usr_outside_verb	code/game/machinery/computer/camera.dm	act_message(usr, src, MS
 usr_outside_verb	code/game/machinery/computer/camera.dm	attack_hand(usr)
 usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/computer/prisonshuttle.dm	to_chat(usr, span_warning("The prison shuttle is unable to leave."))
-usr_outside_verb	code/game/machinery/computer/specops_shuttle.dm	to_chat(usr, span_warning("The Special Operations shuttle is unable to leave."))
 usr_outside_verb	code/game/machinery/doors/airlock_angled_bay.dm	usr << ftp(icon, "[name].dmi")
 usr_outside_verb	code/game/machinery/feeder.dm	if(!isliving(usr))
 usr_outside_verb	code/game/machinery/feeder.dm	if(in_range(src, usr) && ishuman(over_object) && get_dist(over_object, src) <= 1)
