@@ -12,10 +12,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/frost/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/electric/broodling
@@ -32,10 +32,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/electric/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling
@@ -49,10 +49,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/hunter/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling
@@ -66,10 +66,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/lurker/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling
@@ -83,10 +83,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/nurse/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling
@@ -100,10 +100,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/pepper/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling
@@ -120,10 +120,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/thermic/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling
@@ -137,10 +137,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/tunneler/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling
@@ -156,10 +156,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/webslinger/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 /mob/living/simple_mob/animal/giant_spider/broodling
@@ -178,10 +178,10 @@
 
 /// Vanishes instead of dying.
 /mob/living/simple_mob/animal/giant_spider/broodling/replace_death(gibbed)
-	new /obj/effect/decal/cleanable/spiderling_remains(src.loc)
+	var/obj/effect/decal/cleanable/spiderling_remains/remains = new(src.loc)
 
 	if(!QDELETED(src))
-		qdel(src)
+		replace_with(src, remains)
 	return TRUE
 
 DECLARE_START_TIMER(/mob/living/simple_mob/animal/giant_spider/frost/broodling, 2 MINUTES, PROC_REF(death))
