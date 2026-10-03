@@ -1,0 +1,6 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The area power controller is rebuilt on the capability engine: cover, wire panel, ID lock, emag, cell bay, window buttons and the build ladder are declared parts. Tool actions on it now take the tool's usual time."
+  - bugfix: "An EMP or blast that does no integrity damage now still reaches things listening for hits."
+  - bugfix: "A machine type that declares its own slots no longer loses them to a parent type's slot group."
