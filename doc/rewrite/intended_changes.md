@@ -101,6 +101,19 @@ conversion).
 * **The messages are the library's** (the limb is missing, it won't work on a robotic limb, it can't be applied through thick material); what is refused
   and when is the same.
 
+## Reagent containers: hyposprays and blood packs
+
+Pinned by `code/modules/unit_tests/dq_p2_reagent_hypo_behaviour.dm` (the hypospray, autoinjector, vial and blood pack tests green on the legacy code first
+and unchanged after the conversion; the vial test was red on master before this step, see below).
+
+* **A vial can be loaded into a vial hypospray again.** The glass container conversion (step 1) made a click with an open vial on the hypospray (an open
+  holder) a pour, and a pour into a hypospray with no volume refused, so the old load entry was never reached. The `load` op now sits above the pour.
+* **A spent autoinjector is shut by its lid state, not the old flag** (`open_at_start`, `REAGENT_CONTAINER_LID_OPEN`): unidentified injectors start shut
+  the same way. Nothing a player does differs.
+* **The thick hide of a species turns a hypospray away after the wait** (the same roll; before it, for an injection that waits). The injector's three
+  seconds and the one who begins an injection being seen to are the op engine's `begins()`; no progress bar.
+* **Blood packs:** the label question is the library's text prompt, and the label rules (fifty characters at most, ten shown in the name) are unchanged.
+
 ## SMES and power terminals (power storage unit, buildable, hybrid, the input terminal)
 
 Pinned by `code/modules/unit_tests/dq_p2_smes_behaviour.dm` (56 tests, written and green on the legacy code first; only its adapters changed).

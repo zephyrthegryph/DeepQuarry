@@ -138,6 +138,17 @@
 /datum/capdef_decl/c_glass_handling/spec()
 	return list(CAP_GLASS_HANDLING, /datum/capability/def/glass_handling, NONE, STACK, "glass_handling", "")
 
+/// CAPABILITY_TYPE(injector, CAP_INJECTOR) at code/library/reagents/injector.dm:20
+/datum/capability/lib/injector
+	var/slow = null
+	var/vial = null
+	var/resist_wait = 30
+/proc/injector(slow, vial, resist_wait)
+	RETURN_TYPE(/datum/capability/lib/injector)
+	return cap_construct(CAP_INJECTOR, /datum/capability/lib/injector, list(slow, vial, resist_wait), "slow, vial, resist_wait")
+/datum/capdef_decl/c_injector/spec()
+	return list(CAP_INJECTOR, /datum/capability/lib/injector, NONE, STACK, "injector", "slow, vial, resist_wait")
+
 /// CAPABILITY_TYPE(interior, CAP_INTERIOR) at code/library/containers/interior.dm:14
 /datum/capability/lib/interior
 	var/escape_wait = 30 SECONDS
@@ -254,7 +265,7 @@
 /datum/capdef_decl/c_quickdraw/spec()
 	return list(CAP_QUICKDRAW, /datum/capability/lib/quickdraw, NONE, STACK, "quickdraw", "starts")
 
-/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:37
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:39
 /datum/capability/lib/reagent_container
 	var/volume = 30
 	var/transfer = list(5, 10, 15, 30)
@@ -276,11 +287,12 @@
 	var/spray_cooldown = 4
 	var/shows_contents = TRUE
 	var/sealed = FALSE
-/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed)
+	var/lid_visible = TRUE
+/proc/reagent_container(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible)
 	RETURN_TYPE(/datum/capability/lib/reagent_container)
-	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed")
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible), "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
 /datum/capdef_decl/c_reagent_container/spec()
-	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed")
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, injects, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, settable, spray_cooldown, shows_contents, sealed, lid_visible")
 
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
@@ -445,7 +457,7 @@
 /proc/panel_open(datum/holder, selector)
 	return cap_key_get(holder, PANEL_OPEN, selector)
 
-/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:38
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:40
 /datum/cap_keys_decl/k_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
 /// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
@@ -555,6 +567,17 @@
 	into += entry_line(39)
 	into += list(global.extend("ui_open", global.when(global.req(PROC_REF(user_may_open)))))
 
+/// CAPABILITIES(/obj/item/reagent_containers/blood) at code/modules/reagents/reagent_containers/blood_pack.dm:65
+/obj/item/reagent_containers/blood/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/blood_pack.dm", 65, /obj/item/reagent_containers/blood)
+	into += entry_line(66)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(73)
+	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.label("Label it"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
+	into += entry_line(75)
+	into += list(global.op("drink", global.in_hand(), global.stance(I_HURT), global.label("Drink"), global.then(PROC_REF(drunk))))
+
 /// CAPABILITIES(/obj/item/reagent_containers/dropper) at code/modules/reagents/reagent_containers/dropper.dm:22
 /obj/item/reagent_containers/dropper/declared_entries(list/into)
 	..(into)
@@ -638,6 +661,30 @@
 	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
 	into += entry_line(36)
 	into += list(global.without(CAP_GLASS_CONTAINER))
+
+/// CAPABILITIES(/obj/item/reagent_containers/hypospray) at code/modules/reagents/reagent_containers/hypospray.dm:36
+/obj/item/reagent_containers/hypospray/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/hypospray.dm", 36, /obj/item/reagent_containers/hypospray)
+	into += entry_line(37)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, settable = FALSE, shows_contents = FALSE, lid = TRUE, lid_visible = FALSE, starts_open = nameof(open_at_start), transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(46)
+	into += list(global.injector(slow = nameof(prototype)))
+	into += entry_line(47)
+	into += list(global.extend("injector.inject", global.then(PROC_REF(injected))))
+	into += entry_line(48)
+	into += list(global.extend("injector.inject_slowly", global.then(PROC_REF(injected))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/hypospray/vial) at code/modules/reagents/reagent_containers/hypospray.dm:96
+/obj/item/reagent_containers/hypospray/vial/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/hypospray.dm", 96, /obj/item/reagent_containers/hypospray/vial)
+	into += entry_line(97)
+	into += list(global.configure(global.injector(slow = nameof(prototype), vial = nameof(loaded_vial))))
+	into += entry_line(98)
+	into += list(global.op("load", global.item(/obj/item/reagent_containers/glass/beaker/vial), global.priority(OP_PRIORITY_PART + 5), global.label("Load the vial"), global.needs(global.req_is(nameof(loaded_vial), FALSE, because = MSG(hypo/has_vial))), global.begins(MSG(hypo/begin_load)), global.wait(3 SECONDS), global.then(PROC_REF(vial_loaded))))
+	into += entry_line(101)
+	into += list(global.extend("injector.unload", global.then(PROC_REF(vial_unloaded))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/pill) at code/modules/reagents/reagent_containers/pill.dm:27
 /obj/item/reagent_containers/pill/declared_entries(list/into)

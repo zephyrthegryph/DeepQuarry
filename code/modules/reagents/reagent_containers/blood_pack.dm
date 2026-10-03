@@ -60,24 +60,36 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom,
 		icon_state = "full"
 		item_state = "bloodpack_full"
 
-/// Old attackby.
-/obj/item/reagent_containers/blood/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(istype(W, /obj/item/pen) || istype(W, /obj/item/flashlight/pen))
-		var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(interaction_item), args, /datum/om/prompt/text, message = "Enter a label for [name]", title = "Label", default = label_text, max_length = MAX_NAME_LEN, encode = FALSE)
-		if(isnull(_answer_a1))
-			return TRUE
-		var/tmp_label = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
-		if(length(tmp_label) > 50)
-			to_chat(user, span_notice("The label can be at most 50 characters long."))
-		else if(length(tmp_label) > 10)
-			to_chat(user, span_notice("You set the label."))
-			label_text = tmp_label
-			update_iv_label()
-		else
-			to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
-			label_text = tmp_label
-			update_iv_label()
-	return INTERACTION_HANDLED_PASS
+// A blood pack is a sealed holder of its volume (a syringe draws from it; an IV drip and a stand have their own ways in). A pen labels it (up to fifty
+// characters; the name shows ten); in a hostile stance, using it in hand drinks a tenth of it, a feeding for the one who lives on blood.
+CAPABILITIES(/obj/item/reagent_containers/blood, \
+	reagent_container( \
+		volume = nameof(volume), \
+		needle = TRUE, \
+		sealed = TRUE, \
+		settable = FALSE, \
+		shows_contents = FALSE, \
+		transfer_default = nameof(amount_per_transfer_from_this)), \
+	op("label", inputs(item(/obj/item/pen), item(/obj/item/flashlight/pen)), label("Label it"), \
+		asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), then(PROC_REF(label_applied))), \
+	op("drink", in_hand(), stance(I_HURT), label("Drink"), then(PROC_REF(drunk))))
+
+/// The label a pen wrote (the old rules: fifty characters at most, a long one is told so).
+/obj/item/reagent_containers/blood/proc/label_applied(datum/act/op/A)
+	var/datum/prompt/R = A.answer
+	var/mob/user = A.actor
+	var/tmp_label = sanitizeSafe(R?.value, MAX_NAME_LEN)
+	if(length(tmp_label) > 50)
+		to_chat(user, span_notice("The label can be at most 50 characters long."))
+	else if(length(tmp_label) > 10)
+		to_chat(user, span_notice("You set the label."))
+		label_text = tmp_label
+		update_iv_label()
+	else
+		to_chat(user, span_notice("You set the label to \"[tmp_label]\"."))
+		label_text = tmp_label
+		update_iv_label()
+	return OP_OK
 
 /obj/item/reagent_containers/blood/proc/update_iv_label()
 	if(label_text == "")
@@ -130,34 +142,24 @@ DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/blood, TYPE_PROC_REF(/atom,
 	. = ..()
 
 
-DECLARE_INTERACTIONS(/obj/item/reagent_containers/blood, \
-	INTERACT_USE_AS(I_HURT, "Drink", PROC_REF(interaction_self)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-)
-
-/// Old attack_self: drink from it in combat mode, else put the lid on or take it off.
-/obj/item/reagent_containers/blood/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(interaction.stance == I_HURT)
-		if(reagents.total_volume && volume)
-			var/remove_volume = volume* 0.1 //10% of what the bloodpack can hold.
-			var/reagent_to_remove = reagents.get_master_reagent_id()
-			switch(reagents.get_master_reagent_id())
-				if(REAGENT_ID_BLOOD)
-					user.show_message(span_warning("You sink your fangs into \the [src] and suck the blood out of it!"))
-					act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
-					user.adjust_nutrition(remove_volume*5)
-					reagents.remove_reagent(reagent_to_remove, remove_volume)
-					update_icon()
-					return TRUE
-				else
-					user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
-					return TRUE
-		else
-			user.show_message(span_warning("You take a look at \the [src] and notice it has nothing in it!"))
-			return TRUE
+/// Drunk from in a hostile stance: a tenth of it, if it is blood.
+/obj/item/reagent_containers/blood/proc/drunk(datum/act/op/A)
+	var/mob/living/user = A.actor
+	if(reagents.total_volume && volume)
+		var/remove_volume = volume * 0.1 //10% of what the bloodpack can hold.
+		var/reagent_to_remove = reagents.get_master_reagent_id()
+		switch(reagents.get_master_reagent_id())
+			if(REAGENT_ID_BLOOD)
+				user.show_message(span_warning("You sink your fangs into \the [src] and suck the blood out of it!"))
+				act_message(user, src, others = span_red("%U% sinks their fangs into %T% and drains it!"))
+				user.adjust_nutrition(remove_volume*5)
+				reagents.remove_reagent(reagent_to_remove, remove_volume)
+				update_icon()
+			else
+				user.show_message(span_warning("You take a look at \the [src] and notice that it is not filled with blood!"))
 	else
-		return TRUE
+		user.show_message(span_warning("You take a look at \the [src] and notice it has nothing in it!"))
+	return OP_OK
 
 /obj/item/reagent_containers/blood/prelabeled
 	name = "IV Pack"

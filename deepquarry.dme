@@ -5710,6 +5710,7 @@
 #include "code\library\reagents\reagent_container.dm"
 #include "code\library\reagents\needle.dm"
 #include "code\library\reagents\dose.dm"
+#include "code\library\reagents\injector.dm"
 #include "code\library\containers\interior.dm"
 #include "code\library\containers\quickdraw.dm"
 #include "code\library\containers\storage.dm"
