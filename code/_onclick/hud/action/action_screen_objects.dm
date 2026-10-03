@@ -103,10 +103,10 @@
 
 /atom/movable/screen/movable/action_button/MouseDrop(over_object)
 	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native action button drop supplies its viewer before unchanged conditional parent routing.
+	var/datum/hud/our_hud = user?.hud_used
 	if(drop_with_actor(user, over_object))
 		return
 	. = ..()
-	var/datum/hud/our_hud = user.hud_used
 	our_hud.position_action(src, screen_loc)
 	save_position()
 
