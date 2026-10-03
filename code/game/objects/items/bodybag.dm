@@ -138,11 +138,14 @@ EXTEND_INTERACTIONS(/obj/structure/closet/body_bag, INTERACT_ITEM(null, PROC_REF
 
 /obj/structure/closet/body_bag/MouseDrop(over_object, src_location, over_location)
 	..()
-	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-		if(!ishuman(usr))	return 0
+	return fold_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native body bag drag supplies the actor after unchanged parent input routing.
+
+/obj/structure/closet/body_bag/proc/fold_with_actor(mob/user, atom/over_object)
+	if((over_object == user && (in_range(src, user) || user.contents.Find(src))))
+		if(!ishuman(user))	return 0
 		if(opened)	return 0
 		if(contents_count(src) || has_latent())	return 0 // ALLOW(latent): latent entries checked
-		act_message(usr, src, others = "%U% folds up %T%")
+		act_message(user, src, others = "%U% folds up %T%")
 		var/folded = new item_path(get_turf(src))
 		expire(0)
 		return folded
@@ -237,8 +240,8 @@ DECLARE_APPEARANCE_PROC(/obj/structure/closet/body_bag/cryobag, TYPE_PROC_REF(/a
 	I.color = COLOR_LIME
 	. += I
 
-/obj/structure/closet/body_bag/cryobag/MouseDrop(over_object, src_location, over_location)
-	. = ..()
+/obj/structure/closet/body_bag/cryobag/fold_with_actor(mob/user, atom/over_object)
+	. = ..(user, over_object)
 	if(. && syringe)
 		var/obj/item/bodybag/cryobag/folded = .
 		own_transfer(src, nameof(syringe), folded, nameof(folded.syringe))

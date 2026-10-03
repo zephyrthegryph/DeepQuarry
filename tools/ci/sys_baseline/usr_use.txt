@@ -142,9 +142,6 @@ usr_outside_verb	code/game/objects/effects/info.dm	to_chat(usr, info_text)
 usr_outside_verb	code/game/objects/items.dm	if(usr?.read_preference(/datum/preference/toggle/inv_tooltips) && ((src in usr) || isstorage(loc))) // If in inventory or in storage we're looking at
 usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
-usr_outside_verb	code/game/objects/items/bodybag.dm	if((over_object == usr && (in_range(src, usr) || usr.contents.Find(src))))
-usr_outside_verb	code/game/objects/items/bodybag.dm	if(!ishuman(usr)) return 0
-usr_outside_verb	code/game/objects/items/bodybag.dm	act_message(usr, src, others = "%U% folds up %T%")
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
 usr_outside_verb	code/game/objects/items/devices/defib.dm	src.add_fingerprint(usr)
