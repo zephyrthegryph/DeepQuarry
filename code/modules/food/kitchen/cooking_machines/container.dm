@@ -9,6 +9,8 @@
 	var/max_reagents = 80//Maximum units of reagents
 	var/food_items = 0 // Used for icon updates
 	flags = OPENCONTAINER | NOREACT
+	/// The old Set transfer amount entries did nothing here: a cooking container pours nothing.
+	transfer_amount_verb = FALSE
 	var/list/insertable = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
 		/obj/item/reagent_containers/food/snacks,
 		/obj/item/holder,
@@ -21,56 +23,78 @@
 
 DECLARE_REAGENTS(/obj/item/reagent_containers/cooking_container, "max_reagents", null)
 
-/obj/item/reagent_containers/cooking_container/Initialize(mapload)
-	. = ..()
-	flags |= OPENCONTAINER | NOREACT
+// A cooking container is a dish, basket or rack that holds the solid things on its list (up to the sum of their sizes) and, open to reagents, whatever is
+// poured in. A held thing on the list is put in, and an alt-click or the menu takes every solid thing out onto the floor. What it holds is listed in its
+// examine text, and a load of things is drawn on it.
+CAPABILITIES(/obj/item/reagent_containers/cooking_container, \
+	op("insert", item(/obj/item), priority(OP_PRIORITY_PART), when(req(PROC_REF(takes_item))), label("Put in"), \
+		needs(req(PROC_REF(has_room), because = MSG(cooking_container/full))), then(PROC_REF(item_inserted))), \
+	op("empty", inputs(hand(), menu()), answers(INTENT_TOGGLE), label("Empty container"), \
+		needs(req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), then(PROC_REF(emptied))), \
+	examine_line(PROC_REF(solids_line)), \
+	examine_line(PROC_REF(liquid_line)))
 
+MSG_DEF_SELF(cooking_container/full, "There's no more space in it for that!")
+MSG_DEF_SELF(cooking_container/nothing_in_it, "There's nothing in it you can remove!")
 
-/obj/item/reagent_containers/cooking_container/examine(mob/user)
-	. = ..()
-	if (contents_count(src))
-		var/string = "It contains....</br>"
-		FOR_REAL_CONTENTS(var/atom/movable/A, src)
-			string += "[A.name] </br>"
-		. += span_notice("[string]")
-	if (reagents.total_volume)
-		. += span_notice("It contains [reagents.total_volume]u of reagents.")
+/// The thing a click would put in: the held thing, or what a gripper holds.
+/obj/item/reagent_containers/cooking_container/proc/held_thing(datum/act/op/A)
+	var/obj/item/held = A.held
+	if(istype(held, /obj/item/gripper))
+		var/obj/item/gripper/gripper = held
+		return gripper.get_wrapped_item()
+	return held
 
+/// The held thing is one of the kinds this container holds.
+/obj/item/reagent_containers/cooking_container/proc/takes_item(datum/act/op/A)
+	var/obj/item/thing = held_thing(A)
+	if(isnull(thing))
+		return FALSE
+	for(var/possible_type in insertable)
+		if(istype(thing, possible_type))
+			return TRUE
+	return FALSE
 
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
-	INTERACT_ITEM(null, PROC_REF(cooking_container_interaction_item)), \
-	INTERACT_ALT("Empty container", PROC_REF(cooking_container_interaction_empty)), \
-	INTERACT_VERB("Empty Container", PROC_REF(cooking_container_verb_empty)), \
-)
+/// There is room for the held thing.
+/obj/item/reagent_containers/cooking_container/proc/has_room(datum/act/op/A)
+	var/obj/item/thing = held_thing(A)
+	return !isnull(thing) && !!can_fit(thing)
 
-/// Old attackby.
-/obj/item/reagent_containers/cooking_container/proc/cooking_container_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(istype(I, /obj/item/gripper))
-		var/obj/item/gripper/GR = I
-		var/obj/item/wrapped = GR.get_wrapped_item()
-		if(wrapped)
-			attackby(wrapped, user)
-			return INTERACTION_HANDLED_PASS
+/// The held thing goes in.
+/obj/item/reagent_containers/cooking_container/proc/item_inserted(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/thing = held_thing(A)
+	if(!user.unEquip(thing) && !isturf(thing.loc))
+		return OP_REFUSED
+	thing.forceMove(src)
+	to_chat(user, span_notice("You put the [thing] into the [src]."))
+	food_items += 1
+	changed(src)
+	return OP_OK
 
-	for (var/possible_type in insertable)
-		if (istype(I, possible_type))
-			if (!can_fit(I))
-				to_chat(user, span_warning("There's no more space in the [src] for that!"))
-				return INTERACTION_HANDLED_PASS
+/// There is a solid thing in it to take out.
+/obj/item/reagent_containers/cooking_container/proc/holds_solids(datum/act/op/A)
+	return length(contents) > 0 // ALLOW(spatial,reads): a count of what is inside, read when it is emptied; the click asks again
 
-			if(!user.unEquip(I) && !isturf(I.loc))
-				return INTERACTION_HANDLED_PASS
-			I.forceMove(src)
-			to_chat(user, span_notice("You put the [I] into the [src]."))
-			food_items += 1
-			update_icon()
-			return INTERACTION_HANDLED_PASS
-	return INTERACTION_HANDLED_PASS
+/// Everything solid comes out.
+/obj/item/reagent_containers/cooking_container/proc/emptied(datum/act/op/A)
+	do_empty(A.actor)
+	return OP_OK
 
-/// Old Empty Container verb: removes items from the container, excluding reagents.
-/obj/item/reagent_containers/cooking_container/proc/cooking_container_verb_empty(mob/user, obj/item/held, datum/interaction/interaction)
-	do_empty(user)
-	return TRUE
+/// What is inside, one to a line.
+/obj/item/reagent_containers/cooking_container/proc/solids_line(datum/act/op/A)
+	if(!contents_count(src))
+		return null
+	var/string = "It contains....</br>"
+	FOR_REAL_CONTENTS(var/atom/movable/thing, src)
+		string += "[thing.name] </br>"
+	return span_notice("[string]")
+
+/// How much liquid is in it.
+/obj/item/reagent_containers/cooking_container/proc/liquid_line(datum/act/op/A)
+	if(!reagents.total_volume)
+		return null
+	return span_notice("It contains [reagents.total_volume]u of reagents.")
 
 /obj/item/reagent_containers/cooking_container/proc/do_empty(mob/user)
 	if (!isliving(user))
@@ -94,7 +118,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 
 	food_items = 0
 	to_chat(user, span_notice("You remove all the solid items from the [src]."))
-	update_icon()
+	changed(src)
 
 /obj/item/reagent_containers/cooking_container/proc/check_contents()
 	if (contents_count(src) == 0)
@@ -104,11 +128,6 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 		if (!reagents || reagents.total_volume == 0)
 			return 1//Contains only a single object which can be extracted alone
 	return 2//Contains multiple objects and/or reagents
-
-/// Old click_alt.
-/obj/item/reagent_containers/cooking_container/proc/cooking_container_interaction_empty(mob/user, obj/item/held, datum/interaction/interaction)
-	do_empty(user)
-	return TRUE
 
 //Deletes contents of container.
 //Used when food is burned, before replacing it with a burned mess
@@ -142,10 +161,10 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 
 /obj/item/reagent_containers/cooking_container/proc/can_fit(obj/item/I)
 	var/total = 0
-	for (var/obj/item/J in contents)
-		total += J.w_class
+	for (var/obj/item/J in contents) // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
+		total += J.w_class // ALLOW(reads): the sizes of what is inside are read when a thing is put in; the click asks again
 
-	if((max_space - total) >= I.w_class)
+	if((max_space - total) >= I.w_class) // ALLOW(reads): the room is read when a thing is put in; the click asks again
 		return 1
 
 
@@ -164,23 +183,25 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/cooking_container, \
 			if (weights[I])
 				holder.trans_to_obj(I, weights[I] / total)
 
-DECLARE_APPEARANCE_PROC(/obj/item/reagent_containers/cooking_container, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/reagent_containers/cooking_container/appearance_overlays()
-	. = list()
-
-	if(food_items)
-		var/image/filling = image('icons/obj/cooking_machines.dmi', src, "[icon_state]10")
-
-		var/percent = round((food_items / max_space) * 100)
-		switch(percent)
-			if(0 to 2)	        filling.icon_state = "[icon_state]"
-			if(3 to 24)         filling.icon_state = "[icon_state]1"
-			if(25 to 49)        filling.icon_state = "[icon_state]2"
-			if(50 to 74)        filling.icon_state = "[icon_state]3"
-			if(75 to 79)        filling.icon_state = "[icon_state]4"
-			if(80 to INFINITY)  filling.icon_state = "[icon_state]5"
-
-		. += filling
+/// The load drawn on it, by how much of its room the things in it fill.
+/obj/item/reagent_containers/cooking_container/draw(datum/look/look)
+	. = ..()
+	if(!food_items)
+		return
+	var/percent = round((food_items / max_space) * 100)
+	switch(percent)
+		if(0 to 2)
+			look.overlay("[icon_state]")
+		if(3 to 24)
+			look.overlay("[icon_state]1")
+		if(25 to 49)
+			look.overlay("[icon_state]2")
+		if(50 to 74)
+			look.overlay("[icon_state]3")
+		if(75 to 79)
+			look.overlay("[icon_state]4")
+		if(80 to INFINITY)
+			look.overlay("[icon_state]5")
 
 /obj/item/reagent_containers/cooking_container/oven
 	name = "oven dish"

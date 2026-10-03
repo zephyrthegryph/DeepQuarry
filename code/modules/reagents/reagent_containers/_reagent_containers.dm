@@ -171,12 +171,18 @@ DECLARE_REAGENTS(/obj/item/reagent_containers, "volume", null)
 	var/datum/reagent/blood/blood = reagents.get_reagent(REAGENT_ID_BLOOD)
 	EXTRAPOLATOR_ACT_ADD_DISEASES(., blood?.get_diseases())
 
-/obj/item/reagent_containers/proc/attempt_changeling_test(obj/item/W,mob/user)
-	if(is_open_container() && W.is_hot())
-		var/datum/reagent/blood/B = reagents.get_reagent("blood")
-		if(B)
-			balloon_alert(user, "\The [W] burns the blood in \the [src].")
-			B.changling_blood_test(reagents)
+/// A hot thing held over an open container with blood in it.
+/obj/item/reagent_containers/proc/blood_test_fits(datum/act/op/A)
+	var/obj/item/held = A.held
+	return !isnull(held) && is_open_container() && !!reagents.get_reagent(REAGENT_ID_BLOOD) && held.is_hot() // ALLOW(reads): the open lid and the blood in it are read when a hot thing is held to the container; the click asks again
+
+/// The heat shows a changeling's blood for what it is.
+/obj/item/reagent_containers/proc/blood_tested(datum/act/op/A)
+	var/datum/reagent/blood/B = reagents.get_reagent(REAGENT_ID_BLOOD)
+	if(B)
+		balloon_alert(A.actor, "\The [A.held] burns the blood in \the [src].")
+		B.changling_blood_test(reagents)
+	return OP_OK
 
 // EXTEND (not DECLARE) so the many subtypes that DECLARE their own specs keep this one.
 EXTEND_INTERACTIONS(/obj/item/reagent_containers, \

@@ -61,6 +61,14 @@
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
 
+/obj/item/reagent_containers/cooking_container/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(food_items), nameof(max_space))
+
+/obj/item/reagent_containers/food/condiment/carton/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(reagents))
+
 /obj/item/storage/box/fancy/chewables/tobacco/nico/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(closed_state), nameof(open), nameof(open_state))

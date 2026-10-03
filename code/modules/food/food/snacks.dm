@@ -378,27 +378,7 @@
 		return INTERACTION_HANDLED_PASS
 
 	if(food_can_insert_micro && istype(W, /obj/item/holder))
-		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
-
-		if(package || canned)
-			to_chat(user, span_warning("You cannot stuff anything into \the [src] without opening it first."))
-			balloon_alert(user, "open \the [src] first!")
-			return INTERACTION_HANDLED_PASS
-
-		var/obj/item/holder/holder = W
-
-
-		var/mob/living/living_mob = holder.held_mob
-
-		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, nameof(holder.held_mob))
-		consume(holder, user)
-
-		to_chat(user, "Stuffed [living_mob] into \the [src].")
-		balloon_alert(user, "stuffs [living_mob] into \the [src].")
-		to_chat(living_mob, span_warning("[user] stuffs you into \the [src]."))
-		return INTERACTION_HANDLED_PASS
+		return FALSE // a micro in a holder is stuffed in by the food's own op; any other holder is an item
 
 	if (is_sliceable())
 		//these are used to allow hiding edge items in food that is not on a table/tray
@@ -457,21 +437,15 @@
 	return
 
 EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
 	INTERACT_SELF(null, PROC_REF(snacks_self)), \
 	INTERACT_ITEM(null, PROC_REF(snacks_item)), \
 )
 
-/// Old MouseDrop_T.
-/obj/item/reagent_containers/food/snacks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
-	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-
-		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
-
-		to_chat(user, span_warning("You climb into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/// A snack that is still wrapped or sealed takes nobody.
+/obj/item/reagent_containers/food/snacks/stuffing_free(datum/act/op/A)
+	if(package || canned)
+		return FALSE
+	return ..()
 
 /obj/item/reagent_containers/food/snacks/proc/is_sliceable()
 	return (slices_num && slice_path && slices_num > 0)

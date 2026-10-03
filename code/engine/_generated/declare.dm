@@ -736,6 +736,19 @@
 	into += entry_line(50)
 	into += list(global.op("label", global.menu(), global.label("Set Cartridge Label"), global.asks(/datum/prompt/text, fields = list("question" = "Label for it:")), global.then(PROC_REF(label_set))))
 
+/// CAPABILITIES(/obj/item/reagent_containers/cooking_container) at code/modules/food/kitchen/cooking_machines/container.dm:29
+/obj/item/reagent_containers/cooking_container/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/kitchen/cooking_machines/container.dm", 29, /obj/item/reagent_containers/cooking_container)
+	into += entry_line(30)
+	into += list(global.op("insert", global.item(/obj/item), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(takes_item))), global.label("Put in"), global.needs(global.req(PROC_REF(has_room), because = MSG(cooking_container/full))), global.then(PROC_REF(item_inserted))))
+	into += entry_line(32)
+	into += list(global.op("empty", global.inputs(global.hand(), global.menu()), global.answers(INTENT_TOGGLE), global.label("Empty container"), global.needs(global.req(PROC_REF(holds_solids), because = MSG(cooking_container/nothing_in_it))), global.then(PROC_REF(emptied))))
+	into += entry_line(34)
+	into += list(global.examine_line(PROC_REF(solids_line)))
+	into += entry_line(35)
+	into += list(global.examine_line(PROC_REF(liquid_line)))
+
 /// CAPABILITIES(/obj/item/reagent_containers/dropper) at code/modules/reagents/reagent_containers/dropper.dm:22
 /obj/item/reagent_containers/dropper/declared_entries(list/into)
 	..(into)
@@ -754,17 +767,43 @@
 	into += entry_line(167)
 	into += list(global.reagent_container( volume = nameof(volume), settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
 
-/// CAPABILITIES(/obj/item/reagent_containers/food/drinks) at code/modules/food/food/drinks.dm:76
+/// CAPABILITIES(/obj/item/reagent_containers/food) at code/modules/food/food.dm:18
+/obj/item/reagent_containers/food/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food.dm", 18, /obj/item/reagent_containers/food)
+	into += entry_line(19)
+	into += list(global.owns_many(nameof(food_inserted_micros), on_destroy = ON_DESTROY_SPILL))
+	into += entry_line(20)
+	into += list(global.op("blood_test", global.item(/obj/item), global.priority(OP_PRIORITY_TAKE_OUT), global.when(global.req(TYPE_PROC_REF(/obj/item/reagent_containers, blood_test_fits))), global.label("Test the blood"), global.then(TYPE_PROC_REF(/obj/item/reagent_containers, blood_tested))))
+	into += entry_line(22)
+	into += list(global.op("rename", global.menu(), global.label("Rename food"), global.needs(global.req(PROC_REF(can_cook), because = MSG(food/cannot_cook))), global.asks(/datum/prompt/text, fields = list("question" = global.computed(PROC_REF(rename_question)), "title" = "Food Naming", "default" = global.computed(PROC_REF(rename_default)), "max_len" = MAX_NAME_LEN)), global.then(PROC_REF(renamed))))
+	into += entry_line(25)
+	into += list(global.op("stuff", global.item(/obj/item/holder), global.priority(OP_PRIORITY_PART), global.when(global.req(PROC_REF(takes_micro))), global.label("Put in"), global.needs(global.req(PROC_REF(stuffing_free), because = MSG(food/closed_to_micros))), global.then(PROC_REF(micro_stuffed))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/condiment) at code/modules/food/food/condiment.dm:26
+/obj/item/reagent_containers/food/condiment/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/food/condiment.dm", 26, /obj/item/reagent_containers/food/condiment)
+	into += entry_line(27)
+	into += list(global.reagent_container( volume = nameof(volume), taps = list(/obj/structure/reagent_dispensers), feed = TRUE, splash = FALSE, ingest_hostile = TRUE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount)))
+	into += entry_line(37)
+	into += list(global.op("season", global.at_target(/obj/item/reagent_containers/food/snacks), global.priority(OP_PRIORITY_PART), global.label("Add to it"), global.needs(req_reagents(1, because = MSG(condiment/none_left)), req_reagent_room(because = MSG(condiment/no_room))), global.costs(RES_REAGENTS, PROC_REF(season_amount)), global.says(MSG(condiment/season))))
+	into += entry_line(40)
+	into += list(global.extend("reagent_container.drink", global.says(MSG(condiment/swallow)), global.then(PROC_REF(swallowed))))
+	into += entry_line(41)
+	into += list(global.extend("reagent_container.feed", global.then(PROC_REF(swallowed))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/food/drinks) at code/modules/food/food/drinks.dm:57
 /obj/item/reagent_containers/food/drinks/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/drinks.dm", 76, /obj/item/reagent_containers/food/drinks)
-	into += entry_line(77)
+	into += entry_block("code/modules/food/food/drinks.dm", 57, /obj/item/reagent_containers/food/drinks)
+	into += entry_line(58)
 	into += list(global.reagent_container( volume = nameof(volume), lid = TRUE, lid_visible = FALSE, starts_open = nameof(open_at_start), taps = list(/obj/structure/reagent_dispensers), rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, splash = FALSE, ingest_hostile = TRUE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this), transfer_min = nameof(min_transfer_amount), transfer_max = nameof(max_transfer_amount)))
-	into += entry_line(91)
+	into += entry_line(72)
 	into += list(global.op("open", global.in_hand(), global.when(global.cond_not(REAGENT_CONTAINER_LID_OPEN)), global.label("Open it"), global.then(PROC_REF(opened_in_hand))))
-	into += entry_line(92)
+	into += entry_line(73)
 	into += list(global.extend("reagent_container.drink", global.then(PROC_REF(sipped))))
-	into += entry_line(93)
+	into += entry_line(74)
 	into += list(global.extend("reagent_container.feed", global.begins(PROC_REF(feeding_begins)), global.then(PROC_REF(sipped))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/food/drinks/bottle) at code/modules/food/food/drinks/bottle.dm:110
@@ -820,33 +859,33 @@
 	into += entry_line(10)
 	into += list(global.configure(global.reagent_container(starts_open = TRUE)))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket) at code/modules/reagents/reagent_containers/glass.dm:308
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket) at code/modules/reagents/reagent_containers/glass.dm:296
 /obj/item/reagent_containers/glass/bucket/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 308, /obj/item/reagent_containers/glass/bucket)
-	into += entry_line(309)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 296, /obj/item/reagent_containers/glass/bucket)
+	into += entry_line(297)
 	into += list(global.op("sensor", global.item(/obj/item/assembly/prox_sensor), global.priority(OP_PRIORITY_PART), global.label("Add the sensor"), global.then(PROC_REF(sensor_added))))
-	into += entry_line(310)
+	into += entry_line(298)
 	into += list(global.op("robot_frame", global.stack(/obj/item/stack/material/steel, 1), global.priority(OP_PRIORITY_PART), global.label("Arm the robot frame"), global.then(PROC_REF(frame_armed))))
-	into += entry_line(311)
+	into += entry_line(299)
 	into += list(global.op("wet", global.inputs(global.item(/obj/item/mop), global.item(/obj/item/soap)), global.priority(OP_PRIORITY_PART), global.label("Wet it"), global.needs(req_reagents(1, because = MSG(glass/bucket_empty))), global.then(PROC_REF(wetted))))
-	into += entry_line(313)
+	into += entry_line(301)
 	into += list(global.op("cut_helmet", global.tool(TOOL_WIRECUTTER), global.wait(0), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_helmet))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood) at code/modules/reagents/reagent_containers/glass.dm:373
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood) at code/modules/reagents/reagent_containers/glass.dm:361
 /obj/item/reagent_containers/glass/bucket/wood/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 373, /obj/item/reagent_containers/glass/bucket/wood)
-	into += entry_line(374)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 361, /obj/item/reagent_containers/glass/bucket/wood)
+	into += entry_line(362)
 	into += list(global.op("hatchet_helmet", global.item(/obj/item/material/knife/machete/hatchet), global.priority(OP_PRIORITY_PART), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_wood_helmet))))
-	into += entry_line(375)
+	into += entry_line(363)
 	into += list(global.extend("sensor", global.needs(global.req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics)))))
 
-/// CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle) at code/modules/reagents/reagent_containers/glass.dm:400
+/// CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle) at code/modules/reagents/reagent_containers/glass.dm:388
 /obj/item/reagent_containers/glass/cooler_bottle/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 400, /obj/item/reagent_containers/glass/cooler_bottle)
-	into += entry_line(401)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 388, /obj/item/reagent_containers/glass/cooler_bottle)
+	into += entry_line(389)
 	into += list(global.configure(global.reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
 
 /// CAPABILITIES(/obj/item/reagent_containers/glass/paint) at code/game/objects/items/weapons/paint.dm:21
@@ -1376,18 +1415,18 @@
 	into += entry_line(45)
 	into += list(global.op("crumple", global.in_hand(), global.priority(global.below("fold")), global.when(global.cond_all(PROC_REF(crumples), global.cond_any(PROC_REF(cannot_fold), global.cond_not(req_storage_empty())))), global.label("Crumple"), global.then(PROC_REF(crumple_up))))
 
-/// CAPABILITIES(/obj/item/storage/box/admints) at code/modules/food/food/snacks.dm:5974
+/// CAPABILITIES(/obj/item/storage/box/admints) at code/modules/food/food/snacks.dm:5948
 /obj/item/storage/box/admints/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 5974, /obj/item/storage/box/admints)
-	into += entry_line(5975)
+	into += entry_block("code/modules/food/food/snacks.dm", 5948, /obj/item/storage/box/admints)
+	into += entry_line(5949)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/mint/admints))))
 
-/// CAPABILITIES(/obj/item/storage/box/bourbon) at code/modules/food/food/snacks.dm:8363
+/// CAPABILITIES(/obj/item/storage/box/bourbon) at code/modules/food/food/snacks.dm:8337
 /obj/item/storage/box/bourbon/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8363, /obj/item/storage/box/bourbon)
-	into += entry_line(8364)
+	into += entry_block("code/modules/food/food/snacks.dm", 8337, /obj/item/storage/box/bourbon)
+	into += entry_line(8338)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/bourbon))))
 
 /// CAPABILITIES(/obj/item/storage/box/brainzsnax) at code/game/objects/items/weapons/storage/boxes.dm:670
@@ -1404,11 +1443,11 @@
 	into += entry_line(586)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/gun/projectile/revolver/capgun, /obj/item/ammo_magazine/ammo_box/cap), max_size = ITEMSIZE_NORMAL)))
 
-/// CAPABILITIES(/obj/item/storage/box/custardcream) at code/modules/food/food/snacks.dm:8335
+/// CAPABILITIES(/obj/item/storage/box/custardcream) at code/modules/food/food/snacks.dm:8309
 /obj/item/storage/box/custardcream/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8335, /obj/item/storage/box/custardcream)
-	into += entry_line(8336)
+	into += entry_block("code/modules/food/food/snacks.dm", 8309, /obj/item/storage/box/custardcream)
+	into += entry_line(8310)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/custardcream))))
 
 /// CAPABILITIES(/obj/item/storage/box/donut) at code/game/objects/items/weapons/storage/misc.dm:43
@@ -1488,11 +1527,11 @@
 	into += entry_line(2167)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/handcuffs/fake, /obj/item/handcuffs/legcuffs/fake))))
 
-/// CAPABILITIES(/obj/item/storage/box/jaffacake) at code/modules/food/food/snacks.dm:8208
+/// CAPABILITIES(/obj/item/storage/box/jaffacake) at code/modules/food/food/snacks.dm:8182
 /obj/item/storage/box/jaffacake/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8208, /obj/item/storage/box/jaffacake)
-	into += entry_line(8209)
+	into += entry_block("code/modules/food/food/snacks.dm", 8182, /obj/item/storage/box/jaffacake)
+	into += entry_line(8183)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/jaffacake))))
 
 /// CAPABILITIES(/obj/item/storage/box/khcrystal) at code/modules/vore/fluffstuff/custom_items.dm:651
@@ -1539,11 +1578,11 @@
 	into += entry_line(363)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/clothing/mask/chewable/candy/pocky))))
 
-/// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8463
+/// CAPABILITIES(/obj/item/storage/box/rhubarbcustard) at code/modules/food/food/snacks.dm:8437
 /obj/item/storage/box/rhubarbcustard/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8463, /obj/item/storage/box/rhubarbcustard)
-	into += entry_line(8464)
+	into += entry_block("code/modules/food/food/snacks.dm", 8437, /obj/item/storage/box/rhubarbcustard)
+	into += entry_line(8438)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/rhubarbcustard))))
 
 /// CAPABILITIES(/obj/item/storage/box/roulette_balls_cheat) at code/modules/casino/boxes_casino.dm:102
@@ -1567,18 +1606,18 @@
 	into += entry_line(64)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/roulette_ball))))
 
-/// CAPABILITIES(/obj/item/storage/box/saucer) at code/modules/food/food/snacks.dm:8307
+/// CAPABILITIES(/obj/item/storage/box/saucer) at code/modules/food/food/snacks.dm:8281
 /obj/item/storage/box/saucer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8307, /obj/item/storage/box/saucer)
-	into += entry_line(8308)
+	into += entry_block("code/modules/food/food/snacks.dm", 8281, /obj/item/storage/box/saucer)
+	into += entry_line(8282)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/saucer))))
 
-/// CAPABILITIES(/obj/item/storage/box/shrimpsandbananas) at code/modules/food/food/snacks.dm:8427
+/// CAPABILITIES(/obj/item/storage/box/shrimpsandbananas) at code/modules/food/food/snacks.dm:8401
 /obj/item/storage/box/shrimpsandbananas/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8427, /obj/item/storage/box/shrimpsandbananas)
-	into += entry_line(8428)
+	into += entry_block("code/modules/food/food/snacks.dm", 8401, /obj/item/storage/box/shrimpsandbananas)
+	into += entry_line(8402)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/foam_banana, /obj/item/reagent_containers/food/snacks/foam_shrimp))))
 
 /// CAPABILITIES(/obj/item/storage/box/snappops) at code/game/objects/items/weapons/storage/boxes.dm:451
@@ -1609,32 +1648,32 @@
 	into += entry_line(2576)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/toy/figure), max_size = ITEMSIZE_TINY)))
 
-/// CAPABILITIES(/obj/item/storage/box/winegum) at code/modules/food/food/snacks.dm:8262
+/// CAPABILITIES(/obj/item/storage/box/winegum) at code/modules/food/food/snacks.dm:8236
 /obj/item/storage/box/winegum/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 8262, /obj/item/storage/box/winegum)
-	into += entry_line(8263)
+	into += entry_block("code/modules/food/food/snacks.dm", 8236, /obj/item/storage/box/winegum)
+	into += entry_line(8237)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/winegum))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings) at code/modules/food/food/snacks.dm:7433
+/// CAPABILITIES(/obj/item/storage/box/wings) at code/modules/food/food/snacks.dm:7407
 /obj/item/storage/box/wings/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7433, /obj/item/storage/box/wings)
-	into += entry_line(7434)
+	into += entry_block("code/modules/food/food/snacks.dm", 7407, /obj/item/storage/box/wings)
+	into += entry_line(7408)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/chickenwing))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings/bucket) at code/modules/food/food/snacks.dm:7889
+/// CAPABILITIES(/obj/item/storage/box/wings/bucket) at code/modules/food/food/snacks.dm:7863
 /obj/item/storage/box/wings/bucket/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7889, /obj/item/storage/box/wings/bucket)
-	into += entry_line(7890)
+	into += entry_block("code/modules/food/food/snacks.dm", 7863, /obj/item/storage/box/wings/bucket)
+	into += entry_line(7864)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/grub))))
 
-/// CAPABILITIES(/obj/item/storage/box/wings/tray) at code/modules/food/food/snacks.dm:7802
+/// CAPABILITIES(/obj/item/storage/box/wings/tray) at code/modules/food/food/snacks.dm:7776
 /obj/item/storage/box/wings/tray/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/food/food/snacks.dm", 7802, /obj/item/storage/box/wings/tray)
-	into += entry_line(7803)
+	into += entry_block("code/modules/food/food/snacks.dm", 7776, /obj/item/storage/box/wings/tray)
+	into += entry_line(7777)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/reagent_containers/food/snacks/cube/protein, /obj/item/reagent_containers/food/snacks/cube/nutriment))))
 
 /// CAPABILITIES(/obj/item/storage/box/wormcan) at code/game/objects/items/weapons/storage/misc.dm:83

@@ -43,36 +43,17 @@
 			price_tag = null
 	return
 
-// micros inside drop out.
+/// A drink that is shut takes nobody.
+/obj/item/reagent_containers/food/drinks/stuffing_free(datum/act/op/A)
+	return is_open_container()
 
-/// Old attackby. FALSE falls to the food handling, as the old ..() did.
-/obj/item/reagent_containers/food/drinks/proc/drinks_item(mob/user, obj/item/W, datum/interaction/interaction)
-	if(food_can_insert_micro && istype(W, /obj/item/holder))
-		if(!(istype(W, /obj/item/holder/micro) || istype(W, /obj/item/holder/mouse)))
-			return FALSE
-
-		if(!is_open_container())
-			to_chat(user, span_warning("You cannot drop anything into \the [src] without opening it first."))
-			return INTERACTION_HANDLED_PASS
-
-		var/obj/item/holder/holder = W
-
-
-		var/mob/living/living_mob = holder.held_mob
-
-		own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
-		rel_clear(holder, nameof(holder.held_mob))
-		consume(holder, user)
-
-		to_chat(user, span_warning("You drop [living_mob] into \the [src]."))
-		to_chat(living_mob, span_warning("[user] drops you into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
+/obj/item/reagent_containers/food/drinks/micro_stuffed_messages(mob/user, mob/living/micro)
+	to_chat(user, span_warning("You drop [micro] into \the [src]."))
+	to_chat(micro, span_warning("[user] drops you into \the [src]."))
 
 // A drink is a holder of its volume that is open or shut (a lid that is only a state: a can is opened by using it, once), that is sipped from by yourself and
 // fed to others in three seconds (in any stance unless it is a blow), poured from and into, and filled from a tank. What a sip tells and leaves behind is
-// sipped() and, a moment after the transfer, On_Consume(). Micros dropped in or climbing in are legacy entries still (the drag and the item).
+// sipped() and, a moment after the transfer, On_Consume().
 CAPABILITIES(/obj/item/reagent_containers/food/drinks, \
 	reagent_container( \
 		volume = nameof(volume), \
@@ -120,22 +101,6 @@ CAPABILITIES(/obj/item/reagent_containers/food/drinks, \
 	if(QDELETED(src))
 		return
 	On_Consume(eater, feeder, reagents.total_volume != volume_before)
-
-EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/drinks, \
-	INTERACT_DRAG(null, PROC_REF(interaction_drag)), \
-	INTERACT_ITEM(null, PROC_REF(drinks_item)), \
-)
-
-/// Old MouseDrop_T.
-/obj/item/reagent_containers/food/drinks/proc/interaction_drag(mob/user, mob/living/M, datum/interaction/interaction)
-	if(!user.stat && istype(M) && (M == user) && Adjacent(M) && (M.get_effective_size(TRUE) <= 0.50) && food_can_insert_micro)
-
-		own_add(src, nameof(src.food_inserted_micros), M, user = user, into = TRUE)
-
-		to_chat(user, span_warning("You climb into \the [src]."))
-		return INTERACTION_HANDLED_PASS
-
-	return FALSE
 
 /obj/item/reagent_containers/food/drinks/proc/On_Consume(mob/living/eater, mob/feeder, changed = FALSE)
 	if(SScontracts && eater && changed)
