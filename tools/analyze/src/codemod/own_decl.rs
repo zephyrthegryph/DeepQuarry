@@ -203,7 +203,16 @@ pub fn declaration_edits(root: &Path, _tree: &Tree, sem: &Sem, prep: &(dyn Any +
                 let mut j = decl_idx + 1;
                 while j < lines.len() {
                     let l = lines[j].trim_end_matches('\r');
-                    if l.trim().is_empty() {
+                    // A block comment at column 0 (`/* ... */`) does not end the type's block either.
+                    if l.starts_with("/*") {
+                        while j < lines.len() && !lines[j].contains("*/") {
+                            j += 1;
+                        }
+                        j += 1;
+                        continue;
+                    }
+                    // A blank line, a comment or a preprocessor line at column 0 does not end the type's block: more vars may follow it.
+                    if l.trim().is_empty() || l.starts_with("//") || l.starts_with('#') {
                         j += 1;
                         continue;
                     }
