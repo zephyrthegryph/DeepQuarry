@@ -104,16 +104,16 @@
 
 /obj/structure/gravemarker/proc/wrench_act_tool_done(mob/user)
 	act_message(user, null, MSG_SELF("You take down \the [src.name]."), MSG_OTHERS("%U% takes down \the [src.name]."))
-	dismantle()
+	dismantle(user)
 
 /obj/structure/gravemarker/atom_destruction(damage_flag)
 	visible_message(span_danger("\The [src] falls apart!"))
 	dismantle()
 	return ..()
 
-/obj/structure/gravemarker/proc/dismantle()
+/obj/structure/gravemarker/proc/dismantle(mob/user)
 	material.place_dismantled_product(get_turf(src))
-	qdel(src)
+	consume(src, user)
 	return
 
 /obj/structure/gravemarker/ghosts_can_use_rotate_verbs()

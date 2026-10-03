@@ -550,6 +550,9 @@
 #include "interim_bed_lifecycle.dm"
 #include "interim_particle_wire_actor.dm"
 #include "interim_email_actor.dm"
+#include "interim_gravemarker_lifecycle.dm"
+#include "interim_barricade_dismantle.dm"
+#include "interim_floor_dismantle.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

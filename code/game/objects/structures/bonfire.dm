@@ -124,7 +124,7 @@ DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
 	for(var/i = 1 to 5)
 		material.place_dismantled_product(get_turf(src))
 	act_message(user, src, MSG_SELF("You dismantle %T%."), MSG_OTHERS("%U% dismantles down %T%."))
-	qdel(src)
+	consume(src, user)
 
 /obj/structure/bonfire/proc/get_fuel_amount()
 	var/F = 0
