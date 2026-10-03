@@ -491,9 +491,9 @@ DECLARE_INTERACTIONS(/obj/item/dogborg/pounce, INTERACT_USE(null, PROC_REF(inter
 	set_scan_time(0.5 SECONDS)
 	set_exact(TRUE)
 
-CAPABILITIES(/obj/item/mining_scanner/robot, \
-	op("set_range", hand(), gesture(GESTURE_ALT), label("Set Scanner Range"), when(nameof(exact)), needs(carried()), \
-		asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked))))
+CAPABILITIES(/obj/item/mining_scanner/robot)
+	op("set_range", hand(), gesture(GESTURE_ALT), label("Set Scanner Range"), when(nameof(exact)), needs(carried()),
+		asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
 /obj/item/mining_scanner/robot/proc/range_picked(datum/act/op/A)
 	var/datum/prompt/choice/picked = A.answer
@@ -502,7 +502,7 @@ CAPABILITIES(/obj/item/mining_scanner/robot, \
 	to_chat(A.actor, span_notice("Scanner will now look up to [range] tile(s) away."))
 	return OP_OK
 
-//CHOMPEnable Start
+
 /obj/item/robot_tongue/examine(user)
 	. = ..()
 	if(Adjacent(user))
@@ -510,6 +510,6 @@ CAPABILITIES(/obj/item/mining_scanner/robot, \
 			. += span_notice("[src] is wet. Just like it should be.")
 		if(water.energy < 5)
 			. += span_notice("[src] is dry.")
-// CHOMPEnable End
+
 
 // Matter synths belong to the robot module (the owned "synths" list); tools draw on them.

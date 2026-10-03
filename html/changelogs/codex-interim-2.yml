@@ -8,3 +8,4 @@ changes:
   - bugfix: "Mining drills require their power cell to deliver the full required charge."
   - bugfix: "Rig grenade launchers grant ammunition only after consuming the replacement grenade."
   - bugfix: "Rejected configured artifact effects are disposed of instead of leaking."
+  - code_imp: "Modkits, permits, optical devices and mining scanners use native operations."

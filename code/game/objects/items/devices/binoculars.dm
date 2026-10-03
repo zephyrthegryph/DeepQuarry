@@ -14,9 +14,9 @@
 
 MSG_DEF_SELF(binoculars/distracted, "You are too distracted to do that.")
 
-CAPABILITIES(/obj/item/binoculars, \
-	op("zoom", in_hand(), label("Zoom"), \
-		needs(req(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed))))
+CAPABILITIES(/obj/item/binoculars)
+	op("zoom", in_hand(), label("Zoom"),
+		needs(req(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed)))
 
 /obj/item/binoculars/proc/view_available(datum/act/op/A)
 	var/client/C = A.actor?.client // ALLOW(reads): native client view is queried immediately before instant zoom with no wait or prompt

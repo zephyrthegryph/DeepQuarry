@@ -15,10 +15,10 @@ TRACKED(/obj/item/mining_scanner, range)
 TRACKED(/obj/item/mining_scanner, scan_time)
 TRACKED(/obj/item/mining_scanner, exact)
 
-CAPABILITIES(/obj/item/mining_scanner, \
-	held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED), \
-	op("scan", in_hand(), label("Scan deposits"), then(PROC_REF(scan_started), early = TRUE), wait(PROC_REF(scan_delay)), then(PROC_REF(scanned))), \
-	op("toggle_sediment", menu(), label("Toggle Sediment Scan"), needs(carried()), then(PROC_REF(sediment_toggled))))
+CAPABILITIES(/obj/item/mining_scanner)
+	held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED)
+	op("scan", in_hand(), label("Scan deposits"), then(PROC_REF(scan_started), early = TRUE), wait(PROC_REF(scan_delay)), then(PROC_REF(scanned)))
+	op("toggle_sediment", menu(), label("Toggle Sediment Scan"), needs(carried()), then(PROC_REF(sediment_toggled)))
 
 /obj/item/mining_scanner/proc/scan_started(datum/act/op/A)
 	to_chat(A.actor, span_notice("You begin sweeping \the [src] about, scanning for metal deposits."))
@@ -126,11 +126,11 @@ CAPABILITIES(/obj/item/mining_scanner, \
 	scan_time = 0.5 SECONDS
 	exact = TRUE
 
-CAPABILITIES(/obj/item/mining_scanner/advanced, \
-	held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED), \
-	op("set_range", inputs(hand(), menu()), gesture(GESTURE_ALT), label("Set Scanner Range"), \
-		needs(req_adjacent(), req_on_origin(ORIGIN_VERB | ORIGIN_MENU, carried())), \
-		asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked))))
+CAPABILITIES(/obj/item/mining_scanner/advanced)
+	held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED)
+	op("set_range", inputs(hand(), menu()), gesture(GESTURE_ALT), label("Set Scanner Range"),
+		needs(req_adjacent(), req_on_origin(ORIGIN_VERB | ORIGIN_MENU, carried())),
+		asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), then(PROC_REF(range_picked)))
 
 /obj/item/mining_scanner/advanced/proc/set_scanner_range()
 	set name = "Set Scanner Range"
