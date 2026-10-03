@@ -34,6 +34,8 @@
 	/// or FALSE for "none". Null on almost every item.
 	var/list/constraint_overrides
 
+TRACKED(/obj/item, constraint_overrides)
+
 // Values are the compiled predicates interned by dq_predicate_for()'s cache (shared by key across
 // every item using the same spec), never owned or deleted by the item (an untyped list: no declaration).
 
@@ -66,11 +68,12 @@ TYPE_TABLE_DECLARE(/obj/item, equip_spec, null)
 /// The compiled constraint of `kind` for `I`: its instance override, else its
 /// type's declaration. Null when there is none.
 /proc/dq_constraint(obj/item/I, kind)
+	READS_FROM(I)
 	if(I.constraint_overrides)
 		var/override = I.constraint_overrides[kind]
 		if(!isnull(override))
 			return override || null
-	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null
+	return CACHED_KEY(item_constraint, "[kind]|[I.type]", I, kind) || null // ALLOW(reads): runtime item type is immutable and keys the permanent type constraint cache
 
 DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC_NEVER)
 
@@ -93,10 +96,12 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 	if(length(spec))
 		P = dq_predicate_for("override:[kind]:[key]", spec, "[type] [kind] ([key])")
 	LAZYSET(constraint_overrides, kind, P) // ALLOW(ownership): values are interned predicates from the shared dq_predicate_for cache (shared by key, never owned); state_exclude(d)
+	tracked_changed(src, nameof(constraint_overrides))
 
 /// Go back to the type's declared constraint of `kind`.
 /obj/item/proc/clear_constraint(kind)
 	LAZYREMOVE(constraint_overrides, kind)
+	tracked_changed(src, nameof(constraint_overrides))
 
 /// The type's declared spec for `kind` with some clauses dropped: those that
 /// constrain PROP_SIZE_CLASS (`drop_size`) and/or a HOLD_ONLY type list
@@ -133,6 +138,7 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 	var/datum/predicate/P = dq_constraint(source, kind)
 	if(P)
 		LAZYSET(constraint_overrides, kind, P) // ALLOW(ownership): the source item's interned predicate, shared by key from the dq_predicate_for cache
+		tracked_changed(src, nameof(constraint_overrides))
 
 /// Refit this item for `bodytypes` (the REQ_FITS_BODYTYPES list form), or
 /// null to fit anyone.
@@ -145,6 +151,7 @@ DECLARE_SHARED_CACHE(item_constraint, GLOBAL_PROC_REF(build_item_constraint), SC
 /// The body-type list `I`'s fit constraint was declared with, or null when it
 /// fits anyone. For refit tools and the worn-sprite test.
 /proc/dq_fit_bodytypes(obj/item/I)
+	READS_FROM(I)
 	var/datum/predicate/P = dq_constraint(I, CONSTRAINT_FIT)
 	if(!P)
 		return null

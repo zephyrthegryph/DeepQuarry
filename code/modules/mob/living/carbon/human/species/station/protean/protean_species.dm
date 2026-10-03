@@ -242,7 +242,7 @@
 	var/registring = "REGISTRANT: "
 
 /obj/item/clothing/accessory/permit/nanotech/set_name(new_name)
-	owner = 1
+	set_owner(TRUE)
 	if(new_name)
 		name += " ([new_name])"
 		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"

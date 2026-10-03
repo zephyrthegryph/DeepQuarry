@@ -696,6 +696,60 @@
 	into += entry_line(39)
 	into += list(global.extend("ui_open", global.when(global.req(PROC_REF(user_may_open)))))
 
+/// CAPABILITIES(/obj/item/binoculars) at code/game/objects/items/devices/binoculars.dm:17
+/obj/item/binoculars/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/binoculars.dm", 17, /obj/item/binoculars)
+	into += entry_line(18)
+	into += list(global.op("zoom", global.in_hand(), global.label("Zoom"), global.needs(global.req(PROC_REF(view_available), because = MSG(binoculars/distracted))), global.then(PROC_REF(zoomed))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/permit) at code/modules/clothing/accessories/permits.dm:18
+/obj/item/clothing/accessory/permit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/permits.dm", 18, /obj/item/clothing/accessory/permit)
+	into += entry_line(19)
+	into += list(global.op("register", global.in_hand(), global.label("Register"), global.needs(global.req(/mob/living, of = ON_ACTOR), global.req_is(nameof(owner), FALSE, because = MSG(permit/already_registered))), global.then(PROC_REF(registered))))
+	into += entry_line(21)
+	into += list(global.emag(global.then(PROC_REF(naming_reset)), say = MSG(permit/reset), repeatable = TRUE))
+
+/// CAPABILITIES(/obj/item/mining_scanner) at code/modules/mining/drilling/scanner.dm:18
+/obj/item/mining_scanner/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/drilling/scanner.dm", 18, /obj/item/mining_scanner)
+	into += entry_line(19)
+	into += list(held_verb(/obj/item/mining_scanner/proc/toggle_sediment_scan, SLOT_ANY_CARRIED))
+	into += entry_line(20)
+	into += list(global.op("scan", global.in_hand(), global.label("Scan deposits"), global.then(PROC_REF(scan_started), early = TRUE), global.wait(PROC_REF(scan_delay)), global.then(PROC_REF(scanned))))
+	into += entry_line(21)
+	into += list(global.op("toggle_sediment", global.menu(), global.label("Toggle Sediment Scan"), global.needs(global.carried()), global.then(PROC_REF(sediment_toggled))))
+
+/// CAPABILITIES(/obj/item/mining_scanner/advanced) at code/modules/mining/drilling/scanner.dm:129
+/obj/item/mining_scanner/advanced/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mining/drilling/scanner.dm", 129, /obj/item/mining_scanner/advanced)
+	into += entry_line(130)
+	into += list(held_verb(/obj/item/mining_scanner/advanced/proc/set_scanner_range, SLOT_ANY_CARRIED))
+	into += entry_line(131)
+	into += list(global.op("set_range", global.inputs(global.hand(), global.menu()), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.needs(global.req_adjacent(), global.req_on_origin(ORIGIN_VERB | ORIGIN_MENU, global.carried())), global.asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
+
+/// CAPABILITIES(/obj/item/mining_scanner/robot) at code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm:494
+/obj/item/mining_scanner/robot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/mob/living/silicon/robot/dogborg/dog_modules.dm", 494, /obj/item/mining_scanner/robot)
+	into += entry_line(495)
+	into += list(global.op("set_range", global.hand(), global.gesture(GESTURE_ALT), global.label("Set Scanner Range"), global.when(nameof(exact)), global.needs(global.carried()), global.asks(/datum/prompt/choice, fields = list("question" = "Scanner Range", "title" = "Pick a range to scan. ", "choices" = list(0,1,2,3,4,5,6,7))), global.then(PROC_REF(range_picked))))
+
+/// CAPABILITIES(/obj/item/modkit) at code/game/objects/items/devices/modkit.dm:22
+/obj/item/modkit/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/modkit.dm", 22, /obj/item/modkit)
+	into += entry_line(23)
+	into += list(global.examine_line(PROC_REF(refit_description)))
+	into += entry_line(24)
+	into += list(global.op("refit", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Refit hardsuit"), global.when(PROC_REF(has_refit_parts)), global.needs(global.req_adjacent(), global.req(PROC_REF(refit_allowed), because = PROC_REF(refit_refusal))), global.then(PROC_REF(refitted))))
+	into += entry_line(26)
+	into += list(global.op("discard_spent", global.at_target(), global.priority(OP_PRIORITY_PART), global.answers(INTENT_USE, INTENT_ATTACK), global.label("Discard spent kit"), global.when(global.cond_not(PROC_REF(has_refit_parts))), global.needs(global.req_adjacent()), global.then(PROC_REF(spent_discarded))))
+
 /// CAPABILITIES(/obj/item/reagent_containers/blood) at code/modules/reagents/reagent_containers/blood_pack.dm:65
 /obj/item/reagent_containers/blood/declared_entries(list/into)
 	..(into)

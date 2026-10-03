@@ -12,11 +12,26 @@
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
 
-DECLARE_INTERACTIONS(/obj/item/binoculars, INTERACT_USE(null, PROC_REF(interaction_zoom), REQ_ON(PRED_TARGET, /obj/item/proc/zoom_view_allowed, "You are too distracted to do that.")))
+MSG_DEF_SELF(binoculars/distracted, "You are too distracted to do that.")
 
-/// Interaction payload arguments do not occupy zoom offset and view-size parameters.
-/obj/item/binoculars/proc/interaction_zoom(mob/user, obj/item/held, datum/interaction/interaction)
-	zoom(user)
+CAPABILITIES(/obj/item/binoculars, \
+	op("zoom", in_hand(), label("Zoom"), \
+		needs(req(PROC_REF(view_available), because = MSG(binoculars/distracted))), then(PROC_REF(zoomed))))
+
+/obj/item/binoculars/proc/view_available(datum/act/op/A)
+	var/client/C = A.actor?.client // ALLOW(reads): native client view is queried immediately before instant zoom with no wait or prompt
+	if(!C || !C.mob || !C.eye)
+		return TRUE
+	if(isturf(C.mob.loc) && get_turf(C.eye) == get_turf(C.mob))
+		return TRUE
+	if(ismecha(C.mob.loc) && C.eye == C.mob.loc)
+		return TRUE
+	return C.eye == C.mob
+
+/// The op context does not occupy zoom's offset and view-size arguments.
+/obj/item/binoculars/proc/zoomed(datum/act/op/A)
+	zoom(A.actor)
+	return OP_OK
 
 /obj/item/binoculars/spyglass
 	name = "spyglass"
