@@ -721,6 +721,7 @@
 #include "interim_accelerator_sticky_modkit.dm"
 #include "interim_spray_bottle_mixed_dose.dm"
 #include "interim_weldingtool_drop_actor.dm"
+#include "interim_powered_melee_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

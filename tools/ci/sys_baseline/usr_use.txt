@@ -172,14 +172,6 @@ usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(it
 usr_outside_verb	code/game/objects/items/weapons/medigun/medigun_backpack.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	if(ishuman(usr))
 usr_outside_verb	code/game/objects/items/weapons/melee/energy.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/melee/shock_maul.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/shields.dm	if(ishuman(usr))
 usr_outside_verb	code/game/objects/items/weapons/shields.dm	var/mob/living/carbon/human/H = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
@@ -188,14 +180,6 @@ usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_finge
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	if (isliving(usr) || isobserver(usr))
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	var/mob/user = usr
 usr_outside_verb	code/game/objects/items/weapons/storage/storage.dm	usr.ClickOn(I)
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	if ((src.loc == usr) && !(istype(over_object, /atom/movable/screen)) && !usr.unEquip(src))
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/game/objects/items/weapons/stunbaton.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (ishuman(usr) || issmall(usr)) //so monkeys can take off their backpacks -- Urist
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech. why?
 usr_outside_verb	code/game/objects/items/weapons/weldbackpack.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
