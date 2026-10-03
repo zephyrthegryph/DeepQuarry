@@ -85,7 +85,7 @@ GLOBAL_PROTECT(AdminProcCallHandler)
 	handler.add_caller(user)
 	var/lastusr = usr
 	usr = handler
-	. = world.SDQL2_query(query_text, user, user)
+	. = world.SDQL2_query(query_text, user, user, handler)
 	usr = lastusr
 	handler.remove_caller(user)
 
