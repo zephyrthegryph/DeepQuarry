@@ -462,10 +462,9 @@ EXTEND_INTERACTIONS(/obj/machinery, INTERACT_ROBOT("Blocked", TYPE_PROC_REF(/ato
 
 	return ..()
 
-/// The parts changed: a machine with cap_parts() re-derives its part stats (library/parts.dm). Legacy machines still
-/// override it to recompute ratings by hand; a converted machine declares part_stat()s and overrides nothing.
+/// The parts changed: a machine recomputes what its parts rate (until the machine track turns this into components(slots)).
 /obj/machinery/proc/RefreshParts()
-	parts_refresh(src)
+	return
 
 /// Finalize the physical machine from its real installed parts. Individual
 /// machines still calculate functional ratings in RefreshParts(); this common

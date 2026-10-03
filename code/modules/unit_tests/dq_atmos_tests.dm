@@ -4711,6 +4711,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.unlock(TRUE)
 	TEST_ASSERT(A.autoclose_pending(), "unlocking an open airlock did not restore autoclose scheduling")
 
+/// An idle recharger draws only its idle power: an empty one, and one holding a full cell.
 /datum/unit_test/dq_idle_recharger_hibernates
 
 /datum/unit_test/dq_idle_recharger_hibernates/Run()
@@ -4719,11 +4720,13 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/recharger/R = new(T)
 	R.set_stat(0)
 	R.set_anchored(TRUE)
-	TEST_ASSERT(test_machine_idle(R), "empty recharger remained scheduled")
+	R.settle_power()
+	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "an empty recharger settles to idle draw")
 	var/obj/item/cell/C = new(R)
 	C.charge = C.maxcharge
-	R.set_charging(C)
-	TEST_ASSERT(test_machine_idle(R), "recharger holding a full cell remained scheduled")
+	varslot_set(R, "charging", C)
+	R.settle_power()
+	TEST_ASSERT_EQUAL(R.use_power, USE_POWER_IDLE, "a recharger holding a full cell settles to idle draw")
 	qdel(R)
 
 /// A recharger's OWN_SPILL "charging" drops the item on destroy and the spill
@@ -4742,7 +4745,7 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	TEST_ASSERT_NOTNULL(T, "no floor for recharger spill test")
 	var/obj/machinery/recharger/R = new(T)
 	var/obj/item/cell/dq_spill_probe/C = new(R)
-	R.set_charging(C)
+	varslot_set(R, "charging", C)
 	C.refreshed = FALSE
 	qdel(R)
 	TEST_ASSERT(!QDELETED(C), "the charging item was deleted with the recharger")
@@ -4799,7 +4802,8 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	var/obj/machinery/cell_charger/charger = new(T)
 	charger.set_stat(0)
 	charger.set_anchored(TRUE)
-	TEST_ASSERT(test_machine_idle(charger), "empty heavy cell charger remained scheduled")
+	charger.settle_power()
+	TEST_ASSERT_EQUAL(charger.use_power, USE_POWER_IDLE, "an empty heavy cell charger settles to idle draw")
 	var/obj/machinery/mech_recharger/mech_charger = new(T)
 	TEST_ASSERT(!sys_periodic_allows(mech_charger, MACHINE_PIPELINE), "empty mech charger may still step")
 	var/obj/machinery/space_heater/heater = new(T)

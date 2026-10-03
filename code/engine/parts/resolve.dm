@@ -137,6 +137,10 @@
 	switch(B.bind_kind)
 		if(BIND_MENU, BIND_UI, BIND_TOPIC, BIND_AI)
 			return list()
+	// An op that pins a gesture (a drag, an alt-click) answers the intents that gesture means: the pin alone is enough to be matched by it.
+	var/pinned = LAZYACCESS(P.selects, "gesture")
+	if(!isnull(pinned))
+		return op_intents_for(null, pinned)
 	var/list/implied = list(INTENT_USE)
 	if(P.toggles && B.bind_kind == BIND_HAND)
 		implied += INTENT_TOGGLE

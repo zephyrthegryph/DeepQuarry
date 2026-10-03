@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "The heavy-duty cell charger, the recharger and the wall recharger are declared with the machine library (wrench anchor, part replacer, one-item slot, charge loop on the machine frame) instead of interaction tables and machine pipeline stages"
+  - code_imp: "A drag op pins its gesture alone: gesture(GESTURE_DRAG) answers a drag and no longer clashes with the use op that takes the same item"
+  - qol: "Chargers say when they are unpowered or broken when examined"

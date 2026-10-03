@@ -154,4 +154,23 @@ CAPABILITIES(/obj/machinery/p2_box/slasher, on_notice(/datum/notice/slashed, the
 /obj/machinery/p2_box/slasher/proc/heard_slash(datum/act/A)
 	slashed++
 
+// ---- a pinned gesture ----
+
+/// Two ops on one input: an item used on it, and the same item dragged onto it. Both bind item(/obj/item); the drag one pins gesture(GESTURE_DRAG)
+/// and says nothing else, so the pin alone must make it answer the drag and keep it from clashing with the use.
+/obj/p2_dragtarget
+	name = "p2 drag target"
+	var/used = 0
+	var/dragged = 0
+
+CAPABILITIES(/obj/p2_dragtarget, 	op("use", item(/obj/item), then(PROC_REF(was_used))), 	op("drag", item(/obj/item), gesture(GESTURE_DRAG), then(PROC_REF(was_dragged))))
+
+/obj/p2_dragtarget/proc/was_used(datum/act/op/A)
+	used++
+	return OP_OK
+
+/obj/p2_dragtarget/proc/was_dragged(datum/act/op/A)
+	dragged++
+	return OP_OK
+
 #endif
