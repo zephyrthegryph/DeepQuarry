@@ -1,8 +1,7 @@
 // Fold wave F1 (doc/rewrite/completion_plan.md §3.6): SSmachines, SSmobs and SSplants are gone.
-// Their world-level work runs as cadence behaviours on the OM global owner
-// (code/datums/om/world_lanes.dm), their state lives on /datum/world_service singletons, and the
-// growing-plant list is a registry. These tests prove the lanes are attached, run on their
-// cadence, yield and resume, and that the per-object work still starts and parks.
+// Their world-level work runs as kernel work items of systems (SSmachines, SSmobs), and the
+// growing-plant list is a registry. These tests prove the steps finish, drain their queues, and
+// that the per-object work still starts and parks.
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 

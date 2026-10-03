@@ -59,8 +59,8 @@ other types of metals and chemistry for reagents).
 	var/lathe_time_factor = 1
 	/// Bitflags indicating what departmental lathes should be allowed to process this design.
 	var/departmental_flags = ALL
-	/// What techwebs nodes unlock this design. Constructed by GLOB.research_service
-	var/list/unlocked_by // Lazy list of node ids; built by GLOB.research_service
+	/// What techwebs nodes unlock this design. Constructed by SSresearch
+	var/list/unlocked_by // Lazy list of node ids; built by SSresearch
 	/// Override for the automatic icon generation used for the research console.
 	var/research_icon
 	/// Override for the automatic icon state generation used for the research console.
@@ -79,7 +79,7 @@ other types of metals and chemistry for reagents).
 /datum/design_techweb/New()
 	. = ..()
 
-// Designs are immutable global datums registered at startup via GLOB.research_service.
+// Designs are immutable global datums registered at startup via SSresearch.
 // Destroying one at runtime would corrupt every techweb that holds a reference to its ID,
 // so qdel() refuses (the error_design base instance may still be deleted).
 /datum/design_techweb/lifecycle_keep(force)
@@ -89,7 +89,7 @@ other types of metals and chemistry for reagents).
 	return TRUE
 
 /datum/design_techweb/lifecycle_dematerialize()
-	GLOB.research_service.techweb_designs -= id
+	SSresearch.techweb_designs -= id
 	..()
 
 /datum/design_techweb/proc/InitializeMaterials()
@@ -276,10 +276,10 @@ other types of metals and chemistry for reagents).
 
 // The techweb nodes that unlock this design: frozen definitions.
 
-/// Designs are immutable round definitions in GLOB.research_service.techweb_designs: shared.
+/// Designs are immutable round definitions in SSresearch.techweb_designs: shared.
 REGISTRY_TYPE(/datum/design_techweb, GLOBAL_PROC_REF(registry_design_techweb))
 
 /// The registered design D stands for (D itself when it is the table's entry for its id).
 /proc/registry_design_techweb(datum/design_techweb/D)
-	var/datum/design_techweb/entry = GLOB.research_service?.techweb_designs[D.id]
+	var/datum/design_techweb/entry = SSresearch?.techweb_designs[D.id]
 	return entry == D ? D : null

@@ -1,10 +1,8 @@
-// The research world service (was SSresearch): the techweb node/design tables and every techweb,
-// plus the per-second point income and research queue run by /datum/om/behaviour/world/research.
-GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
-
-/datum/world_service/research
+// The research system (was SSresearch): the techweb node/design tables and every techweb, plus the per-second point
+// income and research queue. The API is in research_api.dm.
+SYSTEM_DEF(research)
 	name = "Research"
-	lane = /datum/om/behaviour/world/research
+	periodic_runlevels = RUNLEVELS_DEFAULT
 	// The old subsystem depended on SSmapping; boot right after it, as before.
 	needs = list(/datum/system/mapping)
 	/// Income period; must match the lane's `every`.
@@ -136,7 +134,11 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	/// Lookup list for ordnance briefers.
 	var/list/ordnance_experiments = list()
 
-/datum/world_service/research/initialize()
+/datum/system/research/reactions()
+	. = ..()
+	. += every(1 SECOND, PROC_REF(income_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/research/initialize()
 	initialized = TRUE
 	initialize_all_techweb_designs()
 	initialize_all_techweb_nodes()
@@ -146,9 +148,9 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	autosort_categories()
 	proto_set(src, nameof(error_design), new /datum/design_techweb/error_design)
 	proto_set(src, nameof(error_node), new /datum/techweb_node/error_node)
-	log_world("World service [name] initialized: [length(techweb_nodes)] nodes, [length(techweb_designs)] designs, [length(techwebs)] techwebs.")
+	log_world("System [name] initialized: [length(techweb_nodes)] nodes, [length(techweb_designs)] designs, [length(techwebs)] techwebs.")
 
-/datum/world_service/research/service_step(resumed)
+/datum/system/research/proc/income_step(dt)
 	for(var/datum/techweb/techweb_list as anything in techwebs)
 		if(!techweb_list.should_generate_points)
 			continue
@@ -171,12 +173,12 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 			techweb_list.research_node_id(LAZYACCESS(techweb_list.research_queue_nodes, 1)) // Attempt to research the first node in queue if possible
 
 			for(var/node_id in techweb_list.research_queue_nodes)
-				var/datum/techweb_node/node = GLOB.research_service.techweb_node_by_id(node_id)
+				var/datum/techweb_node/node = SSresearch.techweb_node_by_id(node_id)
 				if(node.is_free(techweb_list)) // Automatically research all free nodes in queue if any
 					techweb_list.research_node(node)
-	return TRUE
+	return STEP_DONE
 
-/datum/world_service/research/proc/autosort_categories()
+/datum/system/research/proc/autosort_categories()
 	for(var/i in techweb_nodes)
 		var/datum/techweb_node/I = techweb_nodes[i]
 		if(techweb_categories[I.category])
@@ -184,28 +186,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		else
 			techweb_categories[I.category] = list(I.id = TRUE)
 
-/// Registers one of the round's techwebs (science, admin, an autounlock web): it becomes a shared
-/// registry instance (registry_techweb()). Scratch webs (disks) are never registered.
-/datum/world_service/research/proc/register_techweb(datum/techweb/web)
-	if(web && !(web in techwebs))
-		techwebs += web
-	return web
-
-/// The round's autounlock techweb of `path`, made and registered on first use.
-/datum/world_service/research/proc/autounlock_techweb(path)
-	var/datum/techweb/web = GLOB.autounlock_techwebs[path]
-	if(!web)
-		web = new path
-		GLOB.autounlock_techwebs[path] = web
-	return register_techweb(web)
-
-/datum/world_service/research/proc/techweb_node_by_id(id)
-	return techweb_nodes[id] || error_node
-
-/datum/world_service/research/proc/techweb_design_by_id(id)
-	return techweb_designs[id] || error_design
-
-/datum/world_service/research/proc/on_design_deletion(datum/design_techweb/D)
+/datum/system/research/proc/on_design_deletion(datum/design_techweb/D)
 	for(var/i in techweb_nodes)
 		var/datum/techweb_node/TN = techweb_nodes[i]
 		TN.on_design_deletion(D)
@@ -213,7 +194,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		var/datum/techweb/T = i
 		T.recalculate_nodes(TRUE)
 
-/datum/world_service/research/proc/on_node_deletion(datum/techweb_node/TN)
+/datum/system/research/proc/on_node_deletion(datum/techweb_node/TN)
 	for(var/i in techweb_nodes)
 		var/datum/techweb_node/TN2 = techweb_nodes[i]
 		TN2.on_node_deletion(TN)
@@ -221,7 +202,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		var/datum/techweb/T = i
 		T.recalculate_nodes(TRUE)
 
-/datum/world_service/research/proc/initialize_all_techweb_nodes(clearall = FALSE)
+/datum/system/research/proc/initialize_all_techweb_nodes(clearall = FALSE)
 	if(islist(techweb_nodes) && clearall)
 		QDEL_LIST(techweb_nodes)
 	if(islist(techweb_nodes_starting) && clearall)
@@ -260,7 +241,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	if(!verify_techweb_nodes()) //Verify nodes and designs have been crosslinked properly.
 		CRASH("Invalid techweb nodes detected after cross-linking")
 
-/datum/world_service/research/proc/initialize_all_techweb_designs(clearall = FALSE)
+/datum/system/research/proc/initialize_all_techweb_designs(clearall = FALSE)
 	if(islist(techweb_designs) && clearall)
 		item_to_design = list()
 		QDEL_LIST(techweb_designs)
@@ -296,7 +277,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 	techweb_designs = returned
 	verify_techweb_designs()
 
-/datum/world_service/research/proc/verify_techweb_nodes()
+/datum/system/research/proc/verify_techweb_nodes()
 	. = TRUE
 	for(var/n in techweb_nodes)
 		var/datum/techweb_node/N = techweb_nodes[n]
@@ -340,7 +321,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 				. = FALSE
 		CHECK_TICK
 
-/datum/world_service/research/proc/verify_techweb_designs()
+/datum/system/research/proc/verify_techweb_designs()
 	for(var/d in techweb_designs)
 		var/datum/design_techweb/D = techweb_designs[d]
 		if(!istype(D))
@@ -348,19 +329,19 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 			techweb_designs -= d
 		CHECK_TICK
 
-/datum/world_service/research/proc/research_node_id_error(id)
+/datum/system/research/proc/research_node_id_error(id)
 	if(invalid_node_ids[id])
 		invalid_node_ids[id]++
 	else
 		invalid_node_ids[id] = 1
 
-/datum/world_service/research/proc/design_id_error(id)
+/datum/system/research/proc/design_id_error(id)
 	if(invalid_design_ids[id])
 		invalid_design_ids[id]++
 	else
 		invalid_design_ids[id] = 1
 
-/datum/world_service/research/proc/calculate_techweb_nodes()
+/datum/system/research/proc/calculate_techweb_nodes()
 	// Clear all unlocked_by lists before recomputing — unlocked_by is a precomputed
 	// read-only cache derived from node.design_ids; it must not be mutated after this proc.
 	for(var/design_id in techweb_designs)
@@ -384,7 +365,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 		CHECK_TICK
 	generate_techweb_unlock_linking()
 
-/datum/world_service/research/proc/generate_techweb_unlock_linking()
+/datum/system/research/proc/generate_techweb_unlock_linking()
 	for(var/node_id in techweb_nodes) //Clear all unlock links to avoid duplication.
 		var/datum/techweb_node/node = techweb_nodes[node_id]
 		node.unlock_ids = null
@@ -394,7 +375,7 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
 			var/datum/techweb_node/prereq_node = techweb_node_by_id(prereq_id)
 			LAZYSET(prereq_node.unlock_ids, node.id, node)
 
-/datum/world_service/research/proc/calculate_techweb_item_unlocking_requirements()
+/datum/system/research/proc/calculate_techweb_item_unlocking_requirements()
 	for(var/node_id in techweb_nodes)
 		var/datum/techweb_node/node = techweb_nodes[node_id]
 		for(var/path in node.required_items_to_unlock)
@@ -410,42 +391,15 @@ GLOBAL_DATUM_INIT(research_service, /datum/world_service/research, new)
  * Goes through all techwebs and goes through their servers to find ones on a valid z-level
  * Returns the full list of all techweb servers.
  */
-/datum/world_service/research/proc/get_available_servers(turf/location)
-	var/list/local_servers = list()
-	if(!location)
-		return local_servers
-	for (var/datum/techweb/individual_techweb as anything in techwebs)
-		var/list/servers = find_valid_servers(location, individual_techweb)
-		if(length(servers))
-			local_servers += servers
-	return local_servers
-
 /**
  * Goes through an individual techweb's servers and finds one on a valid z-level
  * Returns a list of existing ones, or an empty list otherwise.
  * Args:
  * - checking_web - The techweb we're checking the servers of.
  */
-/datum/world_service/research/proc/find_valid_servers(turf/location, datum/techweb/checking_web)
-	var/list/valid_servers = list()
-	for(var/obj/machinery/rnd/server/server as anything in checking_web.techweb_servers)
-		if(!is_valid_z_level(get_turf(server), location))
-			continue
-		valid_servers += server
-	return valid_servers
-
-/// Techweb point income and research queue (was SSresearch, 1 s).
-/datum/om/behaviour/world/research
-	name = "world: research"
-	every = 1 SECOND
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/research/service()
-	return GLOB.research_service
-
 // Shared techwebs, scipaper partners and the two error placeholders live for the round.
 
-/datum/world_service/research/ownership()
+/datum/system/research/ownership()
 	. = ..()
 	. += rel_one(nameof(error_design), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 	. += rel_one(nameof(error_node), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

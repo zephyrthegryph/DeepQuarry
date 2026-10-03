@@ -268,8 +268,6 @@ SYSTEM_DEF(statpanels)
 #endif
 	for(var/datum/system/system as anything in kernel_pure_systems())
 		mc_data[++mc_data.len] = list("(system) [system.name]", system.stat_entry(""), "\ref[system]")
-	for(var/datum/world_service/service as anything in world_services())
-		mc_data[++mc_data.len] = list("(service) [service.name]", service.stat_line(), "\ref[service]")
 	mc_data[++mc_data.len] = list("Camera Net", "Cameras: [length(REGISTRY_MEMBERS(REGISTRY_CAMERAS))] | Chunks: [length(GLOB.cameranet.chunks)]", "\ref[GLOB.cameranet]")
 
 /// Stat panel window declaration

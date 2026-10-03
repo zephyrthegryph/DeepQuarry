@@ -21,7 +21,7 @@
 
 // ---------------------------------------------------------------- profile captures
 
-/datum/world_service/server_metrics
+/datum/system/server_metrics
 	/// The profile capture running: list("reason", "from_t", "spike" = the tick record that started it, or null).
 	var/list/profile_capture
 	/// REALTIMEOFDAY the last spike capture started, for METRICS_PROFILE_COOLDOWN.
@@ -32,7 +32,7 @@
 
 /// A tick went far over budget (note_overrun()): unless a capture is running or one ran recently, profile
 /// the next few seconds, so a recurring cause is stored with the procs behind it.
-/datum/world_service/server_metrics/proc/spike_seen(list/tick_record)
+/datum/system/server_metrics/proc/spike_seen(list/tick_record)
 	var/list/spike = tick_record.Copy()
 	spike["t"] = now_t()
 	if(profile_capture)
@@ -48,7 +48,7 @@
 
 /// The round has started: profile its first minute (METRICS_PROFILE_ROUND_START), when the post-setup work
 /// of the round start runs. A freeze in that window is stored with its procs (the capture keeps it).
-/datum/world_service/server_metrics/proc/profile_round_start()
+/datum/system/server_metrics/proc/profile_round_start()
 	var/seconds = CONFIG_GET(number/metrics_profile_round_start)
 	if(seconds)
 		start_profile_capture("round start", seconds SECONDS)
@@ -57,7 +57,7 @@
 /// Each sample: once the round has run METRICS_PROFILE_STEADY_FIRST, and then every metrics_profile_steady_every
 /// minutes, profile metrics_profile_steady seconds of ordinary play. Idle cost spread thinly over many procs never
 /// starts a spike capture; this stores it anyway. Waits for a running capture to finish.
-/datum/world_service/server_metrics/proc/maybe_profile_steady()
+/datum/system/server_metrics/proc/maybe_profile_steady()
 	if(!next_steady_profile || REALTIMEOFDAY < next_steady_profile || profile_capture)
 		return
 	var/seconds = CONFIG_GET(number/metrics_profile_steady)
@@ -69,7 +69,7 @@
 /// Clears and starts BYOND's proc profiler for `duration`, then finish_profile_capture() records the procs
 /// that took the most time as a METRICS_EVENT_PROFILE event. Does nothing while AUTO_PROFILE owns the
 /// profiler or another capture runs.
-/datum/world_service/server_metrics/proc/start_profile_capture(reason, duration, list/spike)
+/datum/system/server_metrics/proc/start_profile_capture(reason, duration, list/spike)
 	if(profile_capture || !wants_recording() || CONFIG_GET(flag/auto_profile))
 		return FALSE
 	if(Kernel?.init_stage_completed < INITSTAGE_MAX)
@@ -84,9 +84,9 @@
 	return TRUE
 
 /proc/metrics_finish_profile_capture()
-	GLOB.metrics_service?.finish_profile_capture()
+	SSserver_metrics?.finish_profile_capture()
 
-/datum/world_service/server_metrics/proc/finish_profile_capture()
+/datum/system/server_metrics/proc/finish_profile_capture()
 	if(!profile_capture)
 		return
 	var/list/capture = profile_capture
@@ -211,7 +211,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 	var/list/breakdown = list(list("name" = PERF_OUTSIDE_MC, "usage" = before + after))
 	if(Kernel?.perf_tick_end_time == world.time)
 		breakdown += list(list("name" = "MC", "usage" = max(usage - before - after, 0)))
-	GLOB.metrics_service?.note_overrun(list(
+	SSserver_metrics?.note_overrun(list(
 		"world_time" = world.time, // ALLOW(sys_world_time_write): reports the clock in a diagnostic record, not a stored expiry
 		"usage" = usage,
 		"overrun" = max(usage - 100, 0),
@@ -250,7 +250,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 /// callbacks are the parts of it that can be named, the rest is resumed sleeping procs and verbs.
 /datum/metrics_source/frame
 
-/datum/metrics_source/frame/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/frame/collect(datum/system/server_metrics/M, dt)
 	var/list/rates = GLOB.tick_frame.take_rates(dt)
 	for(var/part in list("pre_mc", "mc", "post_mc", "world_tick_callbacks", "topic", "maptick"))
 		M.gauge("frame/[part]/ms_per_s", rates[part], METRICS_CAT_SERVER, "frame", "ms/s")
@@ -271,7 +271,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 /// behaviour sources this includes om_core and om_native, which no behaviour owns.
 /datum/metrics_source/systems
 
-/datum/metrics_source/systems/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/systems/collect(datum/system/server_metrics/M, dt)
 	var/datum/km_stats_set/live = km_meter().live
 	if(!live)
 		return
@@ -288,7 +288,7 @@ GLOBAL_DATUM_INIT(tick_frame, /datum/tick_frame, new)
 /// (Read through rust-g: procfs files report size 0, which file2text() takes as empty.)
 /datum/metrics_source/host
 
-/datum/metrics_source/host/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/host/collect(datum/system/server_metrics/M, dt)
 	if(world.system_type != UNIX)
 		return
 	var/list/sched = splittext(trim(rustg_file_read("/proc/self/schedstat")), " ")

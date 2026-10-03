@@ -35,7 +35,7 @@ SYSTEM_DEF(dbcore)
 	//This is as close as we can get to the true round end before Disconnect() without changing where it's called, defeating the reason this is a subsystem
 	if(SSdbcore.Connect())
 		// Last metrics before the disconnect (world services shut down after the subsystems).
-		GLOB.metrics_service?.final_flush()
+		SSserver_metrics?.final_flush()
 		if(isnull(db_query_now(
 			"UPDATE [format_table_name("round")] SET shutdown_datetime = Now(), end_state = :end_state WHERE id = :round_id",
 			//list("end_state" = SSticker.end_state, "round_id" = GLOB.round_id),

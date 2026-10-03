@@ -118,7 +118,7 @@
 		if(SHUTTLE_SCHEDULE_EVAC)
 			return SSemergency_shuttle
 		if(SHUTTLE_SCHEDULE_SUPPLY)
-			return GLOB.supply_service
+			return SSsupply
 	return null
 
 /// A watched shuttle schedule changed.
@@ -326,7 +326,7 @@ DAMAGE_REACTION(/obj/machinery/status_display, DAMAGE_EMP, PROC_REF(status_displ
 	return "[add_zero(num2text((timeleft / 60) % 60),2)]:[add_zero(num2text(timeleft % 60), 2)]"
 
 /obj/machinery/status_display/proc/get_supply_shuttle_timer()
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	if(!shuttle)
 		return "Error"
 

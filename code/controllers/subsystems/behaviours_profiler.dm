@@ -101,30 +101,8 @@ UI_DATA_REPLACE(/datum/system/behaviours, "merge:ui_data_datum_controller_subsys
 				"us_per_call" = calls ? round(cost * 1000 / calls, 0.01) : 0,
 			))
 	data["stages"] = stages
-	// World services: the global state and world-level periodic work former subsystems held.
-	var/datum/om/global_owner/owner = om_global_owner()
-	var/list/services = list()
-	for(var/datum/world_service/WS as anything in world_services())
-		if(!WS)
-			continue
-		var/lane_parked = FALSE
-		if(WS.lane && owner?.om_rec)
-			var/i = owner.om_rec.att.Find(om_registry().behaviour(WS.lane))
-			lane_parked = i ? !!(owner.om_rec.att_state[i] & OM_ATT_PARKED) : FALSE
-		services += list(list(
-			"name" = WS.name,
-			"type" = "[WS.type]",
-			"initialized" = WS.initialized,
-			"on_demand" = WS.on_demand,
-			"parked" = lane_parked,
-			"resuming" = WS.resuming,
-			"steps" = WS.steps,
-			"ms" = round(WS.total_ms, 0.001),
-			"ms_per_s" = round(WS.total_ms / max(world.time / (1 SECONDS), 1), 0.001),
-			"avg_ms" = round(WS.cost, 0.001),
-			"status" = WS.stat_line(),
-		))
-	data["services"] = services
+	// The world services are systems now (their cost is in the systems section); the key stays for the panel.
+	data["services"] = list()
 	data["caches"] = shared_cache_stats()
 	if(world_diag)
 		data["world_step"] = list(

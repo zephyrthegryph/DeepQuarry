@@ -5,7 +5,7 @@
 /// replaces three hand-kept rosters:
 ///   - `/datum/system/members` + `member_index` (now member_list() / kernel_join() / kernel_leave() wrappers),
 ///   - the role index of the former capability systems (now members_of(key, role) / member_role()),
-///   - the `world_services()` hand list (now derived from the registry, world_services() in world_lanes.dm).
+///   - the `world_services()` hand list (gone: every service is a system in the registry).
 ///
 /// Joining twice from different sources is one membership held by two sources: it ends when the last
 /// source leaves (`join(system, E, source)` of the shared interface). Join and leave are O(1): the last

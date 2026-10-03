@@ -102,7 +102,7 @@ Nothing else in the console has ID requirements.
 	if(!stored_research || !LAZYACCESS(stored_research.available_nodes, id) || LAZYACCESS(stored_research.researched_nodes, id))
 		atom_say("Node unlock failed: Either no techweb is found, node is already researched or is not available!")
 		return FALSE
-	var/datum/techweb_node/TN = GLOB.research_service.techweb_node_by_id(id)
+	var/datum/techweb_node/TN = SSresearch.techweb_node_by_id(id)
 	if(!istype(TN))
 		atom_say("Node unlock failed: Unknown error.")
 		return FALSE
@@ -204,7 +204,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 
 	// Serialize all nodes to display
 	for(var/v in stored_research.tiers)
-		var/datum/techweb_node/n = GLOB.research_service.techweb_node_by_id(v)
+		var/datum/techweb_node/n = SSresearch.techweb_node_by_id(v)
 		var/enqueued_by_user = FALSE
 
 		if((v in stored_research.research_queue_nodes) && LAZYACCESS(stored_research.research_queue_nodes, v) == user)
@@ -255,7 +255,7 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 /obj/machinery/computer/rdconsole_tg/tgui_static_data(mob/user)
 	. = list(
 		"static_data" = list(),
-		"point_types_abbreviations" = GLOB.research_service.point_types,
+		"point_types_abbreviations" = SSresearch.point_types,
 	)
 
 	// Build node cache...
@@ -263,8 +263,8 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 	// by the greatest amount that we can, as larger JSON payloads result in
 	// hanging when the user opens the UI
 	var/node_cache = list()
-	for (var/node_id in GLOB.research_service.techweb_nodes)
-		var/datum/techweb_node/node = GLOB.research_service.techweb_nodes[node_id] || GLOB.research_service.error_node
+	for (var/node_id in SSresearch.techweb_nodes)
+		var/datum/techweb_node/node = SSresearch.techweb_nodes[node_id] || SSresearch.error_node
 		var/compressed_id = "[compress_id(node.id)]"
 		node_cache[compressed_id] = list(
 			"name" = node.display_name,
@@ -295,8 +295,8 @@ UI_DATA_REPLACE(/obj/machinery/computer/rdconsole_tg, "merge:ui_data_obj_machine
 	var/design_cache = list()
 	var/datum/asset/spritesheet_batched/research_designs/spritesheet = get_asset_datum(/datum/asset/spritesheet_batched/research_designs)
 	var/size32x32 = "[spritesheet.name]32x32"
-	for (var/design_id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id] || GLOB.research_service.error_design
+	for (var/design_id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id] || SSresearch.error_design
 		var/compressed_id = "[compress_id(design.id)]"
 		var/css_id = sanitize_css_class_name(design.id)
 		var/size = spritesheet.icon_size_id(css_id)

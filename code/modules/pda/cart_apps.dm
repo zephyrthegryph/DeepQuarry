@@ -231,14 +231,14 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 
 /datum/data/pda/app/supply/update_ui(mob/user, list/data)
 	var/supplyData[0]
-	var/datum/shuttle/autodock/ferry/supply/shuttle = GLOB.supply_service.shuttle
+	var/datum/shuttle/autodock/ferry/supply/shuttle = SSsupply.shuttle
 	if (shuttle)
 		supplyData["shuttle_moving"] = shuttle.has_arrive_time()
 		supplyData["shuttle_eta"] = shuttle.eta_minutes()
 		supplyData["shuttle_loc"] = shuttle.at_station() ? "Station" : "Dock"
 	var/supplyOrderCount = 0
 	var/supplyOrderData[0]
-	for(var/datum/supply_order/SO as anything in GLOB.supply_service.shoppinglist)
+	for(var/datum/supply_order/SO as anything in SSsupply.shoppinglist)
 
 		supplyOrderCount++
 		supplyOrderData[++supplyOrderData.len] = list("Number" = SO.ordernum, "Name" = html_encode(SO.supply_pack_of().name), "ApprovedBy" = SO.approved_by, "Comment" = html_encode(SO.comment))
@@ -248,7 +248,7 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
 
 	var/requestCount = 0
 	var/requestData[0]
-	for(var/datum/supply_order/SO as anything in GLOB.supply_service.order_history)
+	for(var/datum/supply_order/SO as anything in SSsupply.order_history)
 		if(SO.status != SUP_ORDER_REQUESTED)
 			continue
 

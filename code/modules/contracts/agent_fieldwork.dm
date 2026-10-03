@@ -296,7 +296,7 @@
 		if(!istype(contract) || !(contract.state in list(CONTRACT_ACTIVE, CONTRACT_GRACE)) || contract.contact_account_number != document.payload["contact_account"])
 			continue
 		for(var/market_id in contract.market_reservation_ids)
-			var/datum/cargo_market_bid/bid = GLOB.supply_service.market_bid(market_id)
+			var/datum/cargo_market_bid/bid = SSsupply.market_bid(market_id)
 			if(!bid || bid.completed_at || !BEFORE(null, bid.expires_at, CLOCK_WORLD))
 				continue
 			crate.cargo_market_bid_id = bid.id
@@ -310,10 +310,10 @@
 
 /// Security discovers agreements by physically finding and scanning them.
 /proc/process_agent_forensic_scan(atom/target, mob/living/user)
-	if(!GLOB.supply_service?.market_security_auditor(user))
+	if(!SSsupply?.market_security_auditor(user))
 		return FALSE
 	if(istype(target, /obj/machinery/computer/supplycomp))
-		return GLOB.supply_service.audit_next_market_transaction(user)
+		return SSsupply.audit_next_market_transaction(user)
 	var/obj/item/paper/paper = target
 	if(!istype(paper))
 		return FALSE
@@ -379,7 +379,7 @@
 	to_chat(user, span_warning("The document authenticates principal account [principal?.owner_name || contract.owner_account_number][contract.contact_account_number ? " and freight contact [contract.contact_name]" : ""]. Preserve the paper: it retains identifying fingerprints and may be used as evidence."))
 	return TRUE
 
-/datum/world_service/supply/proc/audit_next_market_transaction(mob/living/user)
+/datum/system/supply/proc/audit_next_market_transaction(mob/living/user)
 	var/datum/money_account/auditor = contract_account_for_mob(user)
 	var/auditor_key = "[auditor?.account_number || user.ckey]"
 	for(var/index = length(market_transactions), index >= 1, index--)

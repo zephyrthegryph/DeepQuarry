@@ -26,7 +26,7 @@ CAPABILITY(/obj/machinery/rnd/server, emp_disable(60 SECONDS))
 	//servers handle techwebs differently as we are expected to be there to connect
 	//every other machinery on-station.
 	if(!stored_research)
-		var/datum/techweb/science_web = locate_in_list(GLOB.research_service.techwebs, /datum/techweb/science)
+		var/datum/techweb/science_web = locate_in_list(SSresearch.techwebs, /datum/techweb/science)
 		connect_techweb(science_web)
 	rel_add(stored_research, nameof(stored_research.techweb_servers), src)
 	name += " [num2hex(rand(1,65535), -1)]" //gives us a random four-digit hex number as part of the name. Y'know, for fluff.

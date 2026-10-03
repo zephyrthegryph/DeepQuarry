@@ -208,6 +208,6 @@ SYSTEM_DEF(time_track)
 /// Time dilation for the server metrics (code/modules/metrics/): how far game time falls behind real time.
 /datum/metrics_source/time_dilation
 
-/datum/metrics_source/time_dilation/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/time_dilation/collect(datum/system/server_metrics/M, dt)
 	M.gauge("server/time_dilation/current", SStime_track.time_dilation_current, METRICS_CAT_SERVER, "time_dilation", "%")
 	M.gauge("server/time_dilation/avg", SStime_track.time_dilation_avg, METRICS_CAT_SERVER, "time_dilation", "%")

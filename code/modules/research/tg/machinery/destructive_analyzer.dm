@@ -212,7 +212,7 @@ UI_DATA_REPLACE(/obj/machinery/rnd/destructive_analyzer, "merge:ui_data_obj_mach
 
 		var/list/boostable_nodes = techweb_item_unlock_check(current_item)
 		for(var/id in boostable_nodes)
-			var/datum/techweb_node/unlockable_node = GLOB.research_service.techweb_node_by_id(id)
+			var/datum/techweb_node/unlockable_node = SSresearch.techweb_node_by_id(id)
 			var/list/node_data = list()
 			node_data["node_name"] = unlockable_node.display_name
 			node_data["node_id"] = unlockable_node.id
@@ -330,7 +330,7 @@ UI_ACT_PROC(/obj/machinery/rnd/destructive_analyzer, ui_act_deconstruct)
 			return FALSE
 		return TRUE
 
-	var/datum/techweb_node/node_to_discover = GLOB.research_service.techweb_node_by_id(id)
+	var/datum/techweb_node/node_to_discover = SSresearch.techweb_node_by_id(id)
 	if(!istype(node_to_discover))
 		return FALSE
 	if(!destroy_item())

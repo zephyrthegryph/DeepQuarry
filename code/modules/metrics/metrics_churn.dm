@@ -38,7 +38,7 @@ GLOBAL_DATUM_INIT(churn_census, /datum/churn_census, new)
 	/// timer), which is neither a rate nor cheap to rank.
 	var/started = FALSE
 
-/datum/metrics_source/churn/collect(datum/world_service/server_metrics/M, dt)
+/datum/metrics_source/churn/collect(datum/system/server_metrics/M, dt)
 	var/list/kinds = GLOB.churn_census.take()
 	if(!started)
 		started = TRUE

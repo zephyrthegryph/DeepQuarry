@@ -17,7 +17,7 @@
 		/datum/techweb_node/speedloaders::id
 	)
 	for(var/node_id in process_nodes)
-		var/datum/techweb_node/node = GLOB.research_service.techweb_node_by_id(node_id)
+		var/datum/techweb_node/node = SSresearch.techweb_node_by_id(node_id)
 		for(var/id in node.design_ids)
-			var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(id)
+			var/datum/design_techweb/design = SSresearch.techweb_design_by_id(id)
 			LAZYADD(blueprints, design)

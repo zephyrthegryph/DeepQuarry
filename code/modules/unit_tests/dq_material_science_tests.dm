@@ -33,7 +33,7 @@
 /datum/unit_test/dq_material_design_costs_every_role
 
 /datum/unit_test/dq_material_design_costs_every_role/Run()
-	var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id("basic_cell")
+	var/datum/design_techweb/design = SSresearch.techweb_design_by_id("basic_cell")
 	TEST_ASSERT(istype(design), "The ordinary cell design must receive a multipart blueprint")
 	var/list/choices = list(
 		MATERIAL_ROLE_CONDUCTOR = MAT_SILVER,
@@ -71,8 +71,8 @@
 /datum/unit_test/dq_material_blueprint_covers_catalogue/Run()
 	var/eligible = 0
 	var/covered = 0
-	for(var/design_id in GLOB.research_service.techweb_designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_designs[design_id]
+	for(var/design_id in SSresearch.techweb_designs)
+		var/datum/design_techweb/design = SSresearch.techweb_designs[design_id]
 		if(!length(design.standard_material_costs))
 			continue
 		eligible++
@@ -112,20 +112,20 @@
 
 /datum/unit_test/dq_material_duplicate_catalogue_removed/Run()
 	for(var/removed_id in list("material_knife", "material_power_cell", "material_pipe", "material_capacitor"))
-		TEST_ASSERT(!GLOB.research_service.techweb_designs[removed_id], "Duplicate special recipe [removed_id] must stay deleted")
+		TEST_ASSERT(!SSresearch.techweb_designs[removed_id], "Duplicate special recipe [removed_id] must stay deleted")
 	for(var/ordinary_id in list("basic_cell", "crowbar", "scalpel"))
-		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(ordinary_id)
+		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(ordinary_id)
 		TEST_ASSERT(design?.material_template, "Ordinary recipe [ordinary_id] must provide construction customization")
-	var/datum/design_techweb/capacitor = GLOB.research_service.techweb_design_by_id("basic_capacitor")
+	var/datum/design_techweb/capacitor = SSresearch.techweb_design_by_id("basic_capacitor")
 	TEST_ASSERT(material_template_singleton(capacitor.material_template).roles[MATERIAL_ROLE_DIELECTRIC], "A capacitor must expose a dielectric, not a generic machine component")
-	var/datum/design_techweb/magazine = GLOB.research_service.techweb_design_by_id("pistol_mag_9mm")
+	var/datum/design_techweb/magazine = SSresearch.techweb_design_by_id("pistol_mag_9mm")
 	TEST_ASSERT(material_template_singleton(magazine.material_template).roles[MATERIAL_ROLE_FEED] && material_template_singleton(magazine.material_template).roles[MATERIAL_ROLE_SPRING], "A magazine must expose its feed mechanism and spring, not projectile parts")
 	for(var/simple_id in list("kitchen_knife", "fork", "spoon", "plastic_knife", "plastic_fork", "plastic_spoon", "spring", "gear"))
-		var/datum/design_techweb/simple_design = GLOB.research_service.techweb_design_by_id(simple_id)
+		var/datum/design_techweb/simple_design = SSresearch.techweb_design_by_id(simple_id)
 		TEST_ASSERT_EQUAL(length(material_template_singleton(simple_design.material_template).roles), 1, "Simple formed product [simple_id] must have exactly one selectable material")
 		TEST_ASSERT(material_template_singleton(simple_design.material_template).roles[MATERIAL_ROLE_BODY], "Simple formed product [simple_id] must expose that choice as its material")
 	for(var/electronic_id in list("multitool", "atmosanalyzer", "medical_analyzer"))
-		var/datum/design_techweb/electronic = GLOB.research_service.techweb_design_by_id(electronic_id)
+		var/datum/design_techweb/electronic = SSresearch.techweb_design_by_id(electronic_id)
 		TEST_ASSERT_EQUAL(length(material_template_singleton(electronic.material_template).roles), 1, "Generic electronic [electronic_id] must expose only its casing")
 		TEST_ASSERT(material_template_singleton(electronic.material_template).roles[MATERIAL_ROLE_STRUCTURE], "Generic electronic [electronic_id] must label its choice as casing")
 

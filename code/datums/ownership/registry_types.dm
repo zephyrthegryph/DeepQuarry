@@ -79,7 +79,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 /// Only the round's techwebs (science, admin, autounlock) are registered; a disk's or a
 /// console's scratch web is owned by its holder.
 /proc/registry_techweb(datum/techweb/D)
-	return (D in GLOB.research_service?.techwebs) ? D : null
+	return (D in SSresearch?.techwebs) ? D : null
 
 /proc/registry_planet(datum/D)
 	return (D in SSplanets?.planets) ? D : null
@@ -153,7 +153,7 @@ GLOBAL_LIST_INIT(registry_enum_procs, list(
 	return GLOB.uplink?.items_assoc[D.type]
 
 /proc/registry_supply_pack(datum/supply_pack/D)
-	return GLOB.supply_service?.supply_pack[D.name]
+	return SSsupply?.supply_pack[D.name]
 
 /proc/registry_category_collection(datum/D)
 	return (D == GLOB.global_underwear || D == GLOB.catalogue_data) ? D : null

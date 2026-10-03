@@ -363,4 +363,50 @@
 	TEST_ASSERT_EQUAL(SSstatpanels.refresh_tabs(0), STEP_DONE, "a pass with no clients must finish")
 	TEST_ASSERT_EQUAL(SSstatpanels.num_fires, fires + 1, "the pass did not count itself")
 
+/// Research: boots after mapping, adds income and runs the research queue every second, serves nodes and designs by id (the
+/// error placeholder when unknown) and registers techwebs through the api.
+/datum/unit_test/dq_system_research
+
+/datum/unit_test/dq_system_research/Run()
+	assert_system_ported(SSresearch, /datum/system/research)
+	TEST_ASSERT(/datum/system/mapping in SSresearch.needs, "research boots after mapping")
+	assert_work_declared(SSresearch, nameof(/datum/system/research/proc/income_step), 1 SECOND, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSresearch.periodic_runlevels, RUNLEVELS_DEFAULT, "research income runs in the lobby")
+	TEST_ASSERT(length(SSresearch.techweb_nodes), "research has no nodes")
+	TEST_ASSERT(length(SSresearch.techweb_designs), "research has no designs")
+	var/node_id = SSresearch.techweb_nodes[1]
+	TEST_ASSERT_EQUAL(SSresearch.techweb_node_by_id(node_id), SSresearch.techweb_nodes[node_id], "techweb_node_by_id() did not answer the node")
+	TEST_ASSERT_EQUAL(SSresearch.techweb_node_by_id("dq_missing"), SSresearch.error_node, "an unknown node must answer the error node")
+	TEST_ASSERT_EQUAL(SSresearch.techweb_design_by_id("dq_missing"), SSresearch.error_design, "an unknown design must answer the error design")
+	var/datum/techweb/web = locate_in_list(SSresearch.techwebs, /datum/techweb/science)
+	TEST_ASSERT_NOTNULL(web, "the science techweb is not registered")
+	TEST_ASSERT_EQUAL(SSresearch.register_techweb(web), web, "register_techweb() must answer the web")
+	TEST_ASSERT_EQUAL(SSresearch.income_step(0), STEP_DONE, "an income step must finish")
+
+/// Supply: boots after mapping, one market and payroll pass every 20 s, packs built at boot, the price helpers answer.
+/datum/unit_test/dq_system_supply
+
+/datum/unit_test/dq_system_supply/Run()
+	assert_system_ported(SSsupply, /datum/system/supply)
+	TEST_ASSERT(/datum/system/mapping in SSsupply.needs, "supply boots after mapping")
+	assert_work_declared(SSsupply, nameof(/datum/system/supply/proc/supply_step), 20 SECONDS, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSsupply.periodic_runlevels, RUNLEVELS_DEFAULT, "the supply cycle runs in the lobby")
+	TEST_ASSERT(length(SSsupply.supply_pack), "supply has no packs")
+	var/pack_name = SSsupply.supply_pack[1]
+	var/datum/supply_pack/pack = SSsupply.supply_pack[pack_name]
+	TEST_ASSERT_EQUAL(SSsupply.pack_price(pack), max(1, round(pack.cost * 50)), "pack_price() lost its conversion")
+	TEST_ASSERT_EQUAL(SSsupply.export_revenue(4), 4 * 50, "export_revenue() lost its conversion")
+
+/// Server metrics: boots with no needs, samples every METRICS_SAMPLE_INTERVAL on the background lane, an idle sample step
+/// finishes, events are buffered through the api only while recording.
+/datum/unit_test/dq_system_server_metrics
+
+/datum/unit_test/dq_system_server_metrics/Run()
+	assert_system_ported(SSserver_metrics, /datum/system/server_metrics)
+	assert_work_declared(SSserver_metrics, nameof(/datum/system/server_metrics/proc/sample_step), METRICS_SAMPLE_INTERVAL, LANE_BACKGROUND)
+	TEST_ASSERT_EQUAL(SSserver_metrics.periodic_runlevels, RUNLEVELS_DEFAULT, "metrics sample in the lobby")
+	TEST_ASSERT(length(SSserver_metrics.sources), "metrics have no sources")
+	TEST_ASSERT(isnum(SSserver_metrics.boot_realtime), "the boot time was not taken in preinit()")
+	TEST_ASSERT_EQUAL(SSserver_metrics.sample_step(0), STEP_DONE, "an idle metrics step must finish")
+
 #endif

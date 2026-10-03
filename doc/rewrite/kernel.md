@@ -1330,17 +1330,7 @@ DECLARE_REPEAT(/obj/machinery/magnetic_module, "magnet_delay", magnetic_process,
 		om_attach(E, P)
 ```
 
-```dm
-// datums/om/world_lanes.dm:170-178 — a fifth: world lanes with on_demand park/unpark
-/datum/om/behaviour/world/tick(datum/E, dt)
-	var/datum/world_service/S = service()
-	if(!S || S.resuming) // a yielded step owns the next tick's deadline
-		return
-	if(!S.run_step())
-		om_deadline(E, world.tick_lag, src)
-	else if(S.on_demand && !S.has_work())
-		om_park(E, src)
-```
+(The world lanes of the survey, `datums/om/world_lanes.dm`, are gone: the world services are systems with `every()` work items, phase 1S.)
 
 ```dm
 // datums/behaviours/radiation_countdown.dm:22 — a sixth: a self re-arming timer

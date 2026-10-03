@@ -80,7 +80,7 @@ REGISTRY_MEMBERSHIP(/datum/event/supply_demand, REGISTRY_DEMAND_EVENTS)
 	// Check if the crew succeeded or failed!
 	if(length(required_items) == 0)
 		// Success!
-		GLOB.supply_service.adjust_budget(GLOB.supply_service.export_revenue(100 * severity), "Supply demand windfall")
+		SSsupply.adjust_budget(SSsupply.export_revenue(100 * severity), "Supply demand windfall")
 		var/msg = "Great work! With those items you delivered our inventory levels all match up. "
 		msg += "[capitalize(pick(GLOB.first_names_female))] from accounting will have nothing to complain about. "
 		msg += "I think you'll find a little something in your supply account."

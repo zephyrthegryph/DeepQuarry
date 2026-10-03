@@ -4,21 +4,8 @@
 
 // ---------------------------------------------------------------- rounds
 
-/// The round has started (SSticker): records the map, build and who is on.
-/datum/world_service/server_metrics/proc/round_started()
-	METRICS_EVENT(METRICS_EVENT_ROUND, "start", "", "", "round started", list(
-		"map" = using_map?.name,
-		"commit" = GLOB.revdata?.commit,
-		"players" = length(GLOB.clients),
-		"byond" = "[world.byond_version].[world.byond_build]",
-#ifdef UNIT_TESTS
-		"test" = TRUE,
-#endif
-	))
-	profile_round_start()
-
 /hook/roundend/proc/metrics_round_end()
-	var/datum/world_service/server_metrics/M = GLOB.metrics_service
+	var/datum/system/server_metrics/M = SSserver_metrics
 	if(M?.wants_recording())
 		METRICS_EVENT(METRICS_EVENT_ROUND, "end", "", "", "round ended", list(
 			"players" = length(GLOB.clients),

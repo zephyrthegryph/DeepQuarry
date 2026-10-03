@@ -1,6 +1,6 @@
 /// A system: one self-contained part of the game (doc/rewrite/kernel.md sec 2.1). Plain DM: configuration is
-/// type vars, behaviour is overrides. The kernel registers every non-abstract subtype once; a
-/// /datum/world_service is a system whose singleton the GLOB machinery creates, and it registers itself.
+/// type vars, behaviour is overrides. The kernel registers every non-abstract subtype once: a system registers itself
+/// in system_table() when created (SYSTEM_DEF, or system(path)).
 /datum/system
 	var/name = "system"
 	// A type whose abstract_type equals its own path (/datum abstract_type, is_abstract()) is never
@@ -101,8 +101,7 @@
 		. = new path
 	return .
 
-/// Every registered system, in registry order: the pure systems in subtypesof() order, then the
-/// world services that registered themselves. Pure systems are created here when missing.
+/// Every registered system, in registry order (subtypesof() order). Systems are created here when missing.
 /proc/kernel_systems()
 	. = list()
 	var/list/table = system_table()
@@ -111,22 +110,9 @@
 			continue
 		if(!table[path] && system_lazy_only(path))
 			continue
-		if(ispath(path, /datum/world_service))
-			continue
 		var/datum/system/S = system(path)
 		if(S)
 			. += S
-	// World services keep the hand roster's order (world_services()), then any others that registered.
-	var/list/seen = list()
-	for(var/datum/world_service/W as anything in world_services())
-		if(W && table[W.type] == W)
-			. += W
-			seen[W] = TRUE
-	for(var/path in table)
-		if(!ispath(path, /datum/world_service))
-			continue
-		if(!seen[table[path]])
-			. += table[path]
 	return .
 
 // ---- boot

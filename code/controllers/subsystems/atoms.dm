@@ -11,7 +11,7 @@ SYSTEM_DEF(atoms)
 		// Planets register their floors and walls as turfs initialize (fold wave F4; was SSplanets).
 		/datum/system/planets,
 		// Mapload R&D servers connect to the science techweb in Initialize() (the boot order no longer happens to put it first).
-		/datum/world_service/research,
+		/datum/system/research,
 	)
 
 	/// A stack of list(source, desired initialized state)

@@ -54,7 +54,7 @@
 
 	set_wires(new /datum/wires/autolathe(src))
 
-	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
+	stored_research_static = SSresearch.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 
 	default_apply_parts()
 	RefreshParts()
@@ -155,7 +155,7 @@ DECLARE_UI(/obj/machinery/autolathe, "Autolathe")
 	var/size32x32 = "[spritesheet.name]32x32"
 
 	for(var/design_id in designs)
-		var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
+		var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
 		if(design.make_reagent)
 			continue
 		if(!hacked && (RND_CATEGORY_HACKED in design.category))
@@ -236,7 +236,7 @@ UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
 	valid_design ||= LAZYACCESS(imported_designs, design_id)
 	if(!valid_design)
 		return
-	var/datum/design_techweb/design = GLOB.research_service.techweb_design_by_id(design_id)
+	var/datum/design_techweb/design = SSresearch.techweb_design_by_id(design_id)
 	if(isnull(design))
 		stack_trace("got passed an invalid design id: [design_id] and somehow made it past all checks")
 		return
@@ -525,7 +525,7 @@ UI_ACT_PROC(/obj/machinery/autolathe, ui_act_make)
 		var/obj/item/disk/tech_disk/disky = O
 		var/datum/techweb/disk_web = disky.stored_research()
 		for(var/design_id in disk_web.researched_designs)
-			var/datum/design_techweb/blueprint = GLOB.research_service.techweb_design_by_id(design_id)
+			var/datum/design_techweb/blueprint = SSresearch.techweb_design_by_id(design_id)
 			if(LAZYACCESS(imported_designs, blueprint.id) || LAZYACCESS(stored_research().researched_designs, blueprint.id))
 				continue
 			if(blueprint.build_type & AUTOLATHE)

@@ -123,7 +123,7 @@ GLOBAL_VAR_INIT(total_runtimes_skipped, 0)
 
 	error_last_seen[erroruid] = EXPIRY_AT(null, CLOCK_WORLD, 0)
 	error_cooldown[erroruid] = cooldown
-	GLOB.metrics_service?.note_runtime(E, erroruid)
+	SSserver_metrics?.note_runtime(E, erroruid)
 
 	var/list/usrinfo = null
 	var/locinfo
