@@ -745,6 +745,7 @@
 #include "interim_anodevice_sticky_battery.dm"
 #include "interim_moneybag_sticky_coin.dm"
 #include "interim_inflatable_timed_deflation_refund.dm"
+#include "interim_girder_timed_wall_plating.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
