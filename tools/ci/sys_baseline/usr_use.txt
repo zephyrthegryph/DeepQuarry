@@ -303,13 +303,6 @@ usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr,
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/clothing/clothing.dm	if(ishuman(usr))
 usr_outside_verb	code/modules/clothing/clothing.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (over_object && (ishuman(usr) || issmall(usr)))
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (!(src.loc == usr))
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (( usr.restrained() ) || ( usr.stat ))
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	if (!usr.unEquip(src))
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	usr.put_in_r_hand(src)
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	usr.put_in_l_hand(src)
-usr_outside_verb	code/modules/clothing/clothing_accessories.dm	src.add_fingerprint(usr)
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
 usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The suit is not initialized."))

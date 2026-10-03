@@ -730,6 +730,7 @@
 #include "interim_linen_bin_sticky_items.dm"
 #include "interim_coatrack_sticky_coat.dm"
 #include "interim_target_stake_sticky_target.dm"
+#include "interim_clothing_drop_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -56,23 +56,26 @@ EXTEND_INTERACTIONS(/obj/item/clothing, \
 	return FALSE
 
 /obj/item/clothing/MouseDrop(obj/over_object)
-	if (over_object && (ishuman(usr) || issmall(usr)))
+	return drop_with_actor(usr, over_object) // ALLOW(sys_usr_outside_verb): Native clothing drag supplies its actor without invoking parent input routing.
+
+/obj/item/clothing/proc/drop_with_actor(mob/user, obj/over_object)
+	if (over_object && (ishuman(user) || issmall(user)))
 		//makes sure that the clothing is equipped so that we can't drag it into our hand from miles away.
-		if (!(src.loc == usr))
+		if (!(src.loc == user))
 			return
 
-		if (( usr.restrained() ) || ( usr.stat ))
+		if (( user.restrained() ) || ( user.stat ))
 			return
 
-		if (!usr.unEquip(src))
+		if (!user.unEquip(src))
 			return
 
 		switch(over_object.name)
 			if("r_hand")
-				usr.put_in_r_hand(src)
+				user.put_in_r_hand(src)
 			if("l_hand")
-				usr.put_in_l_hand(src)
-		src.add_fingerprint(usr)
+				user.put_in_l_hand(src)
+		src.add_fingerprint(user)
 
 /obj/item/clothing/examine(mob/user)
 	. = ..(user)
