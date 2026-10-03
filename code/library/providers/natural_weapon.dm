@@ -3,9 +3,8 @@
 //   CAPABILITIES(/mob/living/simple_mob/animal/space/carp, natural_weapon(/datum/natural_weapon/bite, damage = 10))
 //
 // It gives the mob two things. A provider, provides(AFF_ATTACK, reach = 1), so the mob has something that strikes without being a hand (a carp has no
-// species and no hands: its bite is its whole provider set). And one op, "natural_weapon.attack" (menu, hotkey, AI): adjacent, performed by AFF_ATTACK,
-// hostile, with a cooldown; the effect is the target's generic attack at `damage`. The same op a player picks from the menu is what an AI behaviour
-// reaches with perform_intent(owner, target, INTENT_ATTACK) or perform_op(owner, target, "natural_weapon.attack"), so the requirements, the cooldown and the
+// species and no hands: its bite is its whole provider set). And one op, "natural_weapon.attack" (AI origin): adjacent, performed by AFF_ATTACK,
+// hostile, with a cooldown; the effect is the target's generic attack at `damage`. The op an AI behaviour reaches with perform_intent(owner, target, INTENT_ATTACK) or perform_op(owner, target, "natural_weapon.attack"), so the requirements, the cooldown and the
 // messages are shared. key = name: two weapons on one mob (bite and claw) are natural_weapon(.., name = "bite") and natural_weapon(.., name = "claw").
 
 CAPABILITY_TYPE(natural_weapon, CAP_NATURAL_WEAPON, /datum/capability/lib/natural_weapon, key = name, weapon = /datum/natural_weapon, damage = 10, name = null, recover = 2 SECONDS)
@@ -24,7 +23,7 @@ MSG_DEF(natural_weapon/attack, "You attack %T%!", "%U% attacks %T%!")
 /datum/capability/lib/natural_weapon/entries()
 	return list(
 		provides(AFF_ATTACK, reach = 1, authority = AUTH_PHYSICAL | AUTH_AI),
-		op("attack", inputs(menu(), ai()), reach(REACH_ADJACENT), by(AFF_ATTACK), hostile(), label("Attack"),
+		op("attack", inputs(ai()), reach(REACH_ADJACENT), by(AFF_ATTACK), hostile(), label("Attack"),
 			needs(req(CAP_PROC(not_self), because = MSG(natural_weapon/self))),
 			cooldown(recover), then(CAP_PROC(strike)), says(MSG(natural_weapon/attack)), logs(LOG_GAME)))
 
