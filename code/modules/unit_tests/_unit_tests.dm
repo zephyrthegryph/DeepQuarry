@@ -741,6 +741,7 @@
 #include "interim_outcrop_mining_cleanup.dm"
 #include "interim_env_message_cleanup.dm"
 #include "interim_foodcart_sticky_food.dm"
+#include "interim_safe_sticky_insertion_capacity_refund.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
