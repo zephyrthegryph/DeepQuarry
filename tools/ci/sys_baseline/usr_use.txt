@@ -79,12 +79,6 @@ usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr << get_sfx(SFX_BUTTON)
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	var/mob/user = usr
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	var/mob/living/carbon/brain/caught_soul/CS = usr
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	var/mob/living/carbon/brain/caught_soul/CS = usr
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	var/mob/living/carbon/brain/caught_soul/CS = usr
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	var/mob/living/carbon/brain/caught_soul/CS = usr
-usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	var/mob/living/carbon/brain/caught_soul/CS = usr
 usr_outside_verb	code/_onclick/hud/spell_screen_objects.dm	if(!usr || !spell)
 usr_outside_verb	code/_onclick/hud/spell_screen_objects.dm	spell.perform(usr)
 usr_outside_verb	code/controllers/admin.dm	if(!check_rights_for(usr.client, R_HOLDER) || !target)
