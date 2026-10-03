@@ -3821,7 +3821,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	boxes -= box
 	user.put_in_hands( box )
 	to_chat(user, span_warning("You remove the topmost [src] from your hand."))
-	box.box.update_icon()
+	box.update_icon()
 	update_icon()
 	return OP_OK
 
@@ -3850,7 +3850,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/pizzabox, TYPE_PROC_REF(/atom, appearance_over
 	box.forceMove(src)
 	box.boxes = list() // Clear the box boxes so we don't have boxes inside boxes. - Xzibit
 	src.boxes.Add( boxestoadd )
-	box.box.update_icon()
+	box.update_icon()
 	update_icon()
 	to_chat(user, span_warning("You put \the [box] ontop of \the [src]!"))
 	return OP_OK

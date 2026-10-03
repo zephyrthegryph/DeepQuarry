@@ -1,5 +1,6 @@
 /// Layering must not siphon a refused original ingredient's actual mixture.
 /datum/unit_test/interim_customizable_food_sticky_ingredient/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/reagent_containers/food/snacks/customizable/fullycustom/sandwich = allocate(/obj/item/reagent_containers/food/snacks/customizable/fullycustom, T)
@@ -12,7 +13,7 @@
 	TEST_ASSERT(user.put_in_active_hand(ingredient), "the actor holds the exact original ingredient")
 	add_trait(ingredient, TRAIT_NODROP, "interim_sandwich_sticky")
 	TEST_ASSERT(user.release_refusal(ingredient, user), "actual inventory refuses the sticky ingredient")
-	sandwich.customizable_item(user, ingredient, null)
+	interim_put_on(user, sandwich, ingredient)
 	TEST_ASSERT_EQUAL(user.get_active_hand(), ingredient, "refused layering preserves the original hand")
 	TEST_ASSERT_EQUAL(ingredient.loc, user, "refused layering preserves inventory containment")
 	TEST_ASSERT_EQUAL(LAZYLEN(sandwich.ingredients), 0, "refused layering records no ingredient")
@@ -20,7 +21,7 @@
 	TEST_ASSERT_EQUAL(ingredient.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 4, "refused layering preserves original nutriment")
 	TEST_ASSERT_EQUAL(ingredient.reagents.get_reagent_amount(REAGENT_ID_SUGAR), 2, "refused layering preserves original sugar")
 	remove_trait(ingredient, TRAIT_NODROP, "interim_sandwich_sticky")
-	sandwich.customizable_item(user, ingredient, null)
+	interim_put_on(user, sandwich, ingredient)
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed layering clears the actual source hand")
 	TEST_ASSERT_EQUAL(ingredient.loc, sandwich, "allowed layering physically contains the original ingredient")
 	TEST_ASSERT_EQUAL(LAZYLEN(sandwich.ingredients), 1, "allowed layering records exactly one original ingredient")
@@ -32,9 +33,10 @@
 	var/obj/item/reagent_containers/food/snacks/donut/extra = allocate(/obj/item/reagent_containers/food/snacks/donut, T)
 	TEST_ASSERT(user.put_in_active_hand(extra), "the actor holds a real second ingredient")
 	var/extra_volume = extra.reagents.total_volume
-	sandwich.customizable_item(user, extra, null)
+	interim_put_on(user, sandwich, extra)
 	TEST_ASSERT_EQUAL(user.get_active_hand(), extra, "the actual one-ingredient plate refuses an extra ingredient without dropping it")
 	TEST_ASSERT_EQUAL(extra.loc, user, "capacity refusal preserves second ingredient containment")
 	TEST_ASSERT_EQUAL(extra.reagents.total_volume, extra_volume, "capacity refusal preserves the original second mixture")
 	TEST_ASSERT_EQUAL(LAZYLEN(sandwich.ingredients), 1, "capacity refusal preserves exactly the first original ingredient")
 	TEST_ASSERT_EQUAL(sandwich.ingredients[1], ingredient, "capacity refusal preserves first original identity")
+	test_driver_end()

@@ -43,15 +43,15 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 	return (fullyCustom && SC.fullyCustom) ? /datum/msg/custom/slap : /datum/msg/custom/unique
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/ingredient_added(datum/act/op/A)
-	add_ingredient(A.actor, A.held)
-	return OP_OK
+	return add_ingredient(A.actor, A.held) ? OP_OK : OP_REFUSED
 
-/// A food goes into it: what it holds mixes in, and the picture and the name follow.
+/// A food goes into it (when it can be let go of): what it holds mixes in, and the picture and the name follow.
 /obj/item/reagent_containers/food/snacks/customizable/proc/add_ingredient(mob/user, obj/item/reagent_containers/food/snacks/S)
+	if(!own_add(src, nameof(ingredients), S, user = user, into = TRUE))
+		return FALSE
+
 	if(S.reagents)
 		S.reagents.trans_to_holder(reagents,S.reagents.total_volume)
-
-	own_add(src, nameof(ingredients), S, user = user, into = TRUE)
 
 	if(src.addTop)
 		cut_overlay(topping)
@@ -67,6 +67,7 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 
 	updateName()
 	to_chat(user, span_notice("You add the [S.name] to the [src.name]."))
+	return TRUE
 
 /obj/item/reagent_containers/food/snacks/customizable/proc/generateFilling(obj/item/reagent_containers/food/snacks/S, params)
 	var/image/I

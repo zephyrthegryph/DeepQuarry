@@ -1,5 +1,6 @@
 /// Layering must not siphon a refused original ingredient's actual mixture.
 /datum/unit_test/interim_custom_sandwich_sticky_ingredient/Run()
+	test_driver_begin()
 	var/turf/T = run_loc_floor_bottom_left
 	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
 	var/obj/item/reagent_containers/food/snacks/csandwich/sandwich = allocate(/obj/item/reagent_containers/food/snacks/csandwich, T)
@@ -12,7 +13,7 @@
 	TEST_ASSERT(user.put_in_active_hand(ingredient), "the actor holds the exact original ingredient")
 	add_trait(ingredient, TRAIT_NODROP, "interim_sandwich_sticky")
 	TEST_ASSERT(user.release_refusal(ingredient, user), "actual inventory refuses the sticky ingredient")
-	sandwich.csandwich_item(user, ingredient, null)
+	interim_put_on(user, sandwich, ingredient)
 	TEST_ASSERT_EQUAL(user.get_active_hand(), ingredient, "refused layering preserves the original hand")
 	TEST_ASSERT_EQUAL(ingredient.loc, user, "refused layering preserves inventory containment")
 	TEST_ASSERT_EQUAL(LAZYLEN(sandwich.ingredients), 0, "refused layering records no ingredient")
@@ -20,7 +21,7 @@
 	TEST_ASSERT_EQUAL(ingredient.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 4, "refused layering preserves original nutriment")
 	TEST_ASSERT_EQUAL(ingredient.reagents.get_reagent_amount(REAGENT_ID_SUGAR), 2, "refused layering preserves original sugar")
 	remove_trait(ingredient, TRAIT_NODROP, "interim_sandwich_sticky")
-	sandwich.csandwich_item(user, ingredient, null)
+	interim_put_on(user, sandwich, ingredient)
 	TEST_ASSERT_NULL(user.get_active_hand(), "allowed layering clears the actual source hand")
 	TEST_ASSERT_EQUAL(ingredient.loc, sandwich, "allowed layering physically contains the original ingredient")
 	TEST_ASSERT_EQUAL(LAZYLEN(sandwich.ingredients), 1, "allowed layering records exactly one original ingredient")
@@ -29,3 +30,4 @@
 	TEST_ASSERT_EQUAL(ingredient.reagents.total_volume, 0, "allowed layering empties the original mixture into the sandwich")
 	TEST_ASSERT_EQUAL(sandwich.reagents.get_reagent_amount(REAGENT_ID_NUTRIMENT), 4, "allowed layering transfers all actual nutriment")
 	TEST_ASSERT_EQUAL(sandwich.reagents.get_reagent_amount(REAGENT_ID_SUGAR), 2, "allowed layering transfers all actual sugar")
+	test_driver_end()

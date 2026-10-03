@@ -29,19 +29,20 @@ MSG_DEF_SELF(snack/collapses, "If you put anything else on it it's going to coll
 /obj/item/reagent_containers/food/snacks/csandwich/proc/shard_hidden(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/W = A.held
+	if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+		return OP_REFUSED
 	to_chat(user, span_blue("You hide [W] in \the [src]."))
-	user.drop_item()
-	W.forceMove(src)
 	update()
 	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/layered(datum/act/op/A)
 	var/mob/user = A.actor
 	var/obj/item/reagent_containers/food/snacks/W = A.held
+	if(!own_add(src, nameof(src.ingredients), W, user = user))
+		return OP_REFUSED
 	to_chat(user, span_blue("You layer [W] over \the [src]."))
 	W.reagents.trans_to_obj(src, W.reagents.total_volume)
-	if(own_add(src, nameof(src.ingredients), W, user = user))
-		update()
+	update()
 	return OP_OK
 
 /obj/item/reagent_containers/food/snacks/csandwich/proc/update()
