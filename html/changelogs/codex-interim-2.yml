@@ -1,0 +1,6 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Space suit repairs clean up completed breaches and repair all breaches within the available budget."
+  - bugfix: "pAI hardware repairs require successful consumption of their replacement part."
+  - bugfix: "Empty macrobatteries dispose of unused projectiles."

@@ -179,11 +179,10 @@
 
 /// Offline tick for afflictions riding a detached organ.
 /obj/item/organ/proc/tick_detached_afflictions()
-	for(var/datum/affliction/A as anything in detached_afflictions)
+	for(var/datum/affliction/A as anything in detached_afflictions?.Copy())
 		A.tick_offline()
 		if(A.severity <= 0 && !istype(A, /datum/affliction/load))
-			own_take_member(src, nameof(detached_afflictions), A)
-			qdel(A)
+			own_remove(src, nameof(detached_afflictions), A)
 
 /// Afflictions located on this organ, whether it's in a body or detached.
 /obj/item/organ/proc/afflictions_here()

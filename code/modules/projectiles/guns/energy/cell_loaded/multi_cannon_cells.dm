@@ -45,7 +45,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 				user?.hud_used?.update_ammo_hud(user, multi_cannon)
 		return
 	else
-		own_take(src, nameof(BB))
+		own_clear(src, nameof(BB), OWN_DELETE)
 		return null
 
 /obj/item/ammo_casing/macrobattery/proc/recharge()
@@ -71,7 +71,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one alleviates oxygen loss, disinfects and closes open wounds, \
 			salves burn wounds and stabilizes the patient's heartrate. Takes approximately three \
-			seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#3399ff"
 	projectile_type = /obj/item/projectile/beam/medical_cell/stabilize2
 
@@ -80,7 +80,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_uber"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one provides patients with a 15% resistance to incoming damage \
-			and reduces stun effect times by 15% for 20 seconds. Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			and reduces stun effect times by 15% for 20 seconds. Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#993300"
 	projectile_type = /obj/item/projectile/beam/medical_cell/resist
 
@@ -89,7 +89,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_purifier"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one removes toxins and radiation buildup from a patient. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#339933"
 	projectile_type = /obj/item/projectile/beam/medical_cell/detox
 
@@ -98,7 +98,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_ouchie"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one deals damage. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#cc3300"
 	projectile_type = /obj/item/projectile/beam/heavylaser/lessheavy
 
@@ -107,7 +107,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/ammo_casing/macrobattery, PERIODIC_SLOW, "charg
 	icon_state = "macrobat_inverseouchie"
 	desc = "A large nanite fabricator for a Curabitur cannon. Powered by a mix of precursor and modern tech, \
 			this fancy device recharges without an outside power source. This one alleviates burn and brute trauma. \
-			Takes approximately three seconds to charge one shot." // CHOMPedit: Clearer applied effects
+			Takes approximately three seconds to charge one shot." // Clearer applied effects
 	bat_colour = "#ff9966"
 	projectile_type = /obj/item/projectile/beam/medical_cell/phys_heal
 

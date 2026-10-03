@@ -123,9 +123,7 @@
 	own_take(R, nameof(R.cell))
 	own_take(R, nameof(R.air_supply))
 
-	for(var/obj/item/rig_module/module in R.installed_modules)
-		qdel(module)
-	// the installed_modules list itself is dropped with the rig
+	own_clear(R, nameof(R.installed_modules), OWN_DELETE)
 
 /*
  * proc/get_equippable_pieces()

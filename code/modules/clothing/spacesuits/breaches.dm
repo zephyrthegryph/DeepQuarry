@@ -58,8 +58,7 @@
 
 		if(B.class <= amount_left)
 			amount_left -= B.class
-			valid_breaches -= B
-			own_take_member(src, nameof(breaches), B)
+			own_remove(src, nameof(breaches), B)
 		else
 			B.class	-= amount_left
 			amount_left = 0
@@ -133,10 +132,9 @@
 		name = base_name
 		return 0
 
-	for(var/datum/breach/B in breaches)
+	for(var/datum/breach/B in breaches?.Copy())
 		if(!B.class)
-			own_take_member(src, nameof(breaches), B)
-			qdel(B)
+			own_remove(src, nameof(breaches), B)
 		else
 			damage += B.class
 			if(B.breach_type == BRUTE)

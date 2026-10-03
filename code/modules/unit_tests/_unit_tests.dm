@@ -880,6 +880,12 @@
 #include "interim_autopsy_snapshot_ownership.dm"
 #include "interim_living_inventory_drag_actor.dm"
 #include "interim_assembly_holder_sticky_disassembly.dm"
+#include "interim2_space_breach_owned_repair.dm"
+#include "interim2_detached_wound_owned_expiry.dm"
+#include "interim2_macrobattery_empty_projectile_disposal.dm"
+#include "round2_paicard_hardware_repair.dm"
+#include "round2_changeling_id_click_actor.dm"
+#include "interim2_rig_owned_module_teardown.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
