@@ -350,12 +350,15 @@ UI_ACT_PROC(/obj/machinery/photocopier/faxmachine, ui_act_dept)
 
 /obj/machinery/photocopier/faxmachine/proc/interaction_insert_toner_impl(mob/user, obj/item/held, datum/interaction/interaction)
 	if(toner <= 10) //allow replacing when low toner is affecting the print darkness
-		user.drop_item()
+		if(!istype(held, /obj/item/toner))
+			return TRUE
+		var/obj/item/toner/T = held
+		var/refill_amount = T.toner_amount
+		if(!consume(held, user))
+			return TRUE
 		to_chat(user, span_notice("You insert the toner cartridge into \the [src]."))
 		play_sfx(loc, SFX_MACHINES_CLICK)
-		var/obj/item/toner/T = held
-		toner += T.toner_amount
-		consume(held, user)
+		toner += refill_amount
 	else
 		to_chat(user, span_notice("This cartridge is not yet ready for replacement! Use up the rest of the toner."))
 		play_sfx(loc, SFX_MACHINES_BUZZ_TWO, 1.5, vary = TRUE)
