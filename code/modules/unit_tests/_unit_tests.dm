@@ -740,6 +740,7 @@
 #include "interim_infrared_beam_endpoints.dm"
 #include "interim_outcrop_mining_cleanup.dm"
 #include "interim_env_message_cleanup.dm"
+#include "interim_foodcart_sticky_food.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
