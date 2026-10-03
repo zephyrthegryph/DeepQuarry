@@ -803,6 +803,7 @@
 #include "interim_sdql_statclick_actor.dm"
 #include "interim_aiming_orphan_cleanup.dm"
 #include "interim_rsf_sticky_matter_refill.dm"
+#include "interim_contraband_sticky_unwrapping.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

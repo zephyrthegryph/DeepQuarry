@@ -112,3 +112,6 @@ changes:
   - bugfix: "Photocopiers and fax machines require consuming a toner cartridge before receiving its supply."
   - bugfix: "PDAs and clipboards respect pens and paper that cannot leave your hand."
   - bugfix: "Paper bins respect stuck sheets, and camera refills require consuming their film."
+  - bugfix: "Chained shoes, paper bundles and filing cabinets respect stuck items; strange rocks retain concealed finds when release is refused."
+  - bugfix: "Holographic swords redraw the hands of their actual holder."
+  - bugfix: "Service fabricator refills and contraband unwrapping require consuming their original cartridge or package."
