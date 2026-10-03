@@ -48,3 +48,22 @@
 	test_time(5 SECONDS)
 	TEST_ASSERT_EQUAL(W.done, 0, "the actor moved, so the timed action was cancelled")
 	TEST_ASSERT_NULL(op_pending_of(H), "and nothing is pending")
+
+/// on_interrupt() runs when the wait is broken (with the reason and the actor), and not when it completes.
+/datum/unit_test/dq_eg2_wait/on_interrupt_runs_when_the_wait_is_broken
+/datum/unit_test/dq_eg2_wait/on_interrupt_runs_when_the_wait_is_broken/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	H.enable_godmode()
+	var/obj/eg2_waiter/W = allocate(/obj/eg2_waiter, run_loc_floor_bottom_left)
+	test_menu(H, W, "careful")
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(W.done, 1, "a wait that completes runs the op")
+	TEST_ASSERT_EQUAL(W.broke, 0, "and does not call the interrupt back")
+	test_menu(H, W, "careful")
+	test_time(1 SECONDS)
+	H.forceMove(get_step(H, EAST))
+	test_time(5 SECONDS)
+	TEST_ASSERT_EQUAL(W.done, 1, "a broken wait ran nothing")
+	TEST_ASSERT_EQUAL(W.broke, 1, "the interrupt was called back once")
+	TEST_ASSERT_EQUAL(W.broke_actor_name, "[H]", "with the actor named")
+	TEST_ASSERT_NOTNULL(W.broke_reason, "and the reason it broke")

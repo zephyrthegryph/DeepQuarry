@@ -812,6 +812,10 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		active = FALSE
 		return
 	var/mob/M = actor
+	if(oplan.interrupted && resume_act())
+		A.reason = reason
+		op_call(A, oplan.interrupted)
+		suspend_act()
 	end_pending()
 	// the actor's relation may already be gone: the act's snapshot names carry the feedback
 	op_end(A, ACT_REFUSED, reason, M)

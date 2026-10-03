@@ -19,8 +19,10 @@
 	var/tmp/stall_passed = FALSE
 
 
+// A slow pouch takes what is put into it after a wait: the wait is this op's (a progress bar, and walking away cancels it), run by stall_insertion().
 CAPABILITIES(/obj/item/storage/pouch, \
-	configure(storage(max_size = ITEMSIZE_NORMAL)))
+	configure(storage(max_size = ITEMSIZE_NORMAL)), \
+	op("insert_delayed", ai(), wait(PROC_REF(insert_wait)), then(PROC_REF(stalled_insert))))
 
 /obj/item/storage/pouch/stall_insertion(obj/item/W, mob/user)
 	// No delay if you have the pouch in your hands
@@ -29,13 +31,18 @@ CAPABILITIES(/obj/item/storage/pouch, \
 
 	if(!insert_delay || stall_passed)
 		return TRUE //Now we're allowed to put the item in the pouch
-	om_task_timed(user, insert_delay, target = src, receiver = src, on_done = PROC_REF(stalled_insert), done_args = list(W, user))
+	perform_op(user, src, "insert_delayed", W, ORIGIN_AI, AUTH_AI | AUTH_PHYSICAL)
 	return FALSE // the delay runs first; stalled_insert() retries the move
 
-/obj/item/storage/pouch/proc/stalled_insert(obj/item/W, mob/user)
+/// How long the delayed insertion waits.
+/obj/item/storage/pouch/proc/insert_wait(datum/act/op/A)
+	return insert_delay
+
+/obj/item/storage/pouch/proc/stalled_insert(datum/act/op/A)
 	stall_passed = TRUE
-	insert_item(W, user)
+	insert_item(A.held, A.actor)
 	stall_passed = FALSE
+	return OP_OK
 
 /obj/item/storage/pouch/stall_removal(obj/item/W, mob/user, atom/new_location)
 	// No delay if you have the pouch in your hands

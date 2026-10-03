@@ -1787,67 +1787,69 @@
 	into += entry_line(143)
 	into += list(global.op("label", global.inputs(global.item(/obj/item/pen), global.item(/obj/item/flashlight/pen)), global.priority(global.above("storage.put_in")), global.label("Label"), global.asks(/datum/prompt/text, fields = list("question" = "Enter a label for it:")), global.then(PROC_REF(label_applied))))
 
-/// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:22
+/// CAPABILITIES(/obj/item/storage/pouch) at code/game/objects/items/weapons/storage/pouches.dm:23
 /obj/item/storage/pouch/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 22, /obj/item/storage/pouch)
-	into += entry_line(23)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 23, /obj/item/storage/pouch)
+	into += entry_line(24)
 	into += list(global.configure(global.storage(max_size = ITEMSIZE_NORMAL)))
+	into += entry_line(25)
+	into += list(global.op("insert_delayed", global.ai(), global.wait(PROC_REF(insert_wait)), global.then(PROC_REF(stalled_insert))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/ammo) at code/game/objects/items/weapons/storage/pouches.dm:91
+/// CAPABILITIES(/obj/item/storage/pouch/ammo) at code/game/objects/items/weapons/storage/pouches.dm:98
 /obj/item/storage/pouch/ammo/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 91, /obj/item/storage/pouch/ammo)
-	into += entry_line(92)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 98, /obj/item/storage/pouch/ammo)
+	into += entry_line(99)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/ammo_magazine, /obj/item/ammo_casing, /obj/item/cell/device, /obj/item/grenade, /obj/item/plastique))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/baton) at code/game/objects/items/weapons/storage/pouches.dm:263
+/// CAPABILITIES(/obj/item/storage/pouch/baton) at code/game/objects/items/weapons/storage/pouches.dm:270
 /obj/item/storage/pouch/baton/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 263, /obj/item/storage/pouch/baton)
-	into += entry_line(264)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 270, /obj/item/storage/pouch/baton)
+	into += entry_line(271)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/melee, /obj/item/material, /obj/item/tool/wrench))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_parts) at code/game/objects/items/weapons/storage/pouches.dm:170
+/// CAPABILITIES(/obj/item/storage/pouch/eng_parts) at code/game/objects/items/weapons/storage/pouches.dm:177
 /obj/item/storage/pouch/eng_parts/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 170, /obj/item/storage/pouch/eng_parts)
-	into += entry_line(171)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 177, /obj/item/storage/pouch/eng_parts)
+	into += entry_line(178)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/stock_parts, /obj/item/stack/cable_coil, /obj/item/circuitboard))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_supply) at code/game/objects/items/weapons/storage/pouches.dm:146
+/// CAPABILITIES(/obj/item/storage/pouch/eng_supply) at code/game/objects/items/weapons/storage/pouches.dm:153
 /obj/item/storage/pouch/eng_supply/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 146, /obj/item/storage/pouch/eng_supply)
-	into += entry_line(147)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 153, /obj/item/storage/pouch/eng_supply)
+	into += entry_line(154)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/taperoll, /obj/item/extinguisher, /obj/item/tape_roll, /obj/item/stack/material/steel, /obj/item/stack/material/glass, /obj/item/lightreplacer, /obj/item/cell))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/eng_tool) at code/game/objects/items/weapons/storage/pouches.dm:106
+/// CAPABILITIES(/obj/item/storage/pouch/eng_tool) at code/game/objects/items/weapons/storage/pouches.dm:113
 /obj/item/storage/pouch/eng_tool/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 106, /obj/item/storage/pouch/eng_tool)
-	into += entry_line(107)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 113, /obj/item/storage/pouch/eng_tool)
+	into += entry_line(114)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/tool/crowbar, /obj/item/tool/screwdriver, /obj/item/weldingtool, /obj/item/tool/wirecutters, /obj/item/tool/wrench, /obj/item/tool/transforming/powerdrill, /obj/item/tool/transforming/jawsoflife, /obj/item/multitool, /obj/item/flashlight, /obj/item/cell/device, /obj/item/stack/cable_coil, /obj/item/t_scanner, /obj/item/analyzer, /obj/item/clothing/glasses, /obj/item/clothing/gloves, /obj/item/pda, /obj/item/megaphone, /obj/item/taperoll, /obj/item/radio/headset, /obj/item/robotanalyzer, /obj/item/material/minihoe, /obj/item/material/knife/machete/hatchet, /obj/item/analyzer/plant_analyzer, /obj/item/extinguisher/mini, /obj/item/tape_roll, /obj/item/integrated_electronics/wirer, /obj/item/integrated_electronics/debugger, /obj/item/shovel/spade, /obj/item/stack/nanopaste, /obj/item/geiger))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/flares) at code/game/objects/items/weapons/storage/pouches.dm:224
+/// CAPABILITIES(/obj/item/storage/pouch/flares) at code/game/objects/items/weapons/storage/pouches.dm:231
 /obj/item/storage/pouch/flares/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 224, /obj/item/storage/pouch/flares)
-	into += entry_line(225)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 231, /obj/item/storage/pouch/flares)
+	into += entry_line(232)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/flashlight/flare, /obj/item/flashlight/glowstick))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/holster) at code/game/objects/items/weapons/storage/pouches.dm:244
+/// CAPABILITIES(/obj/item/storage/pouch/holster) at code/game/objects/items/weapons/storage/pouches.dm:251
 /obj/item/storage/pouch/holster/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 244, /obj/item/storage/pouch/holster)
-	into += entry_line(245)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 251, /obj/item/storage/pouch/holster)
+	into += entry_line(252)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/gun))))
 
-/// CAPABILITIES(/obj/item/storage/pouch/medical) at code/game/objects/items/weapons/storage/pouches.dm:190
+/// CAPABILITIES(/obj/item/storage/pouch/medical) at code/game/objects/items/weapons/storage/pouches.dm:197
 /obj/item/storage/pouch/medical/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 190, /obj/item/storage/pouch/medical)
-	into += entry_line(191)
+	into += entry_block("code/game/objects/items/weapons/storage/pouches.dm", 197, /obj/item/storage/pouch/medical)
+	into += entry_line(198)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/healthanalyzer, /obj/item/dnainjector, /obj/item/reagent_containers/dropper, /obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bottle, /obj/item/reagent_containers/pill, /obj/item/reagent_containers/syringe, /obj/item/storage/quickdraw/syringe_case, /obj/item/storage/pill_bottle, /obj/item/stack/medical, /obj/item/reagent_containers/hypospray, /obj/item/storage/quickdraw/syringe_case, /obj/item/syringe_cartridge, /obj/item/clothing/gloves/sterile, /obj/item/sleevemate, /obj/item/bodybag, /obj/item/clothing/mask/surgical, /obj/item/soap, /obj/item/stack/nanopaste, /obj/item/taperoll/medical, /obj/item/storage/box/freezer, /obj/item/clothing/mask/chewable/candy/lolli, /obj/item/extrapolator, /obj/item/gene_scanner))))
 
 /// CAPABILITIES(/obj/item/storage/quickdraw) at code/game/objects/items/weapons/storage/quickdraw.dm:17
@@ -3362,6 +3364,8 @@
 	into += list(global.op("slow", global.menu(), global.wait(3 SECONDS), global.then(PROC_REF(finished))))
 	into += entry_line(12)
 	into += list(global.op("hush", global.menu(), global.wait(3 SECONDS), global.silent_wait(), global.then(PROC_REF(finished))))
+	into += entry_line(12)
+	into += list(global.op("careful", global.menu(), global.wait(3 SECONDS), global.on_interrupt(PROC_REF(broken)), global.then(PROC_REF(finished))))
 
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)

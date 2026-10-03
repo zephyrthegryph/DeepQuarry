@@ -9,7 +9,17 @@
 
 CAPABILITIES(/obj/eg2_waiter, \
 	op("slow", menu(), wait(3 SECONDS), then(PROC_REF(finished))), \
-	op("hush", menu(), wait(3 SECONDS), silent_wait(), then(PROC_REF(finished))))
+	op("hush", menu(), wait(3 SECONDS), silent_wait(), then(PROC_REF(finished))), 	op("careful", menu(), wait(3 SECONDS), on_interrupt(PROC_REF(broken)), then(PROC_REF(finished))))
+
+/// How often a broken wait called back, and why the last one broke.
+/obj/eg2_waiter/var/broke = 0
+/obj/eg2_waiter/var/broke_reason
+/obj/eg2_waiter/var/broke_actor_name
+
+/obj/eg2_waiter/proc/broken(datum/act/op/A)
+	broke++
+	broke_reason = A.reason
+	broke_actor_name = "[A.actor]"
 
 /obj/eg2_waiter/proc/finished(datum/act/op/A)
 	done++

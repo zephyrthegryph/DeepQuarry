@@ -188,3 +188,28 @@
 	TEST_ASSERT_NOTNULL(asked, "a carried wallet asks for a colour")
 	test_answer(H, "#00ff00")
 	TEST_ASSERT_EQUAL(W.color, "#00ff00", "the answer is the wallet's colour")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Timed stall: a slow pouch takes what is put in after a wait
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// Proof site: a pouch with an insertion delay holds the item in the hand until the wait ends, and walking away cancels it.
+/datum/unit_test/dq_eg2/slow_pouch_takes_the_item_after_its_wait
+/datum/unit_test/dq_eg2/slow_pouch_takes_the_item_after_its_wait/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/storage/pouch/P = allocate(/obj/item/storage/pouch, run_loc_floor_bottom_left)
+	P.insert_delay = 2 SECONDS
+	var/obj/item/pen/pen = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	H.put_in_active_hand(pen)
+	H.set_use_stance(I_HELP)
+	test_click(H, P, pen)
+	TEST_ASSERT(pen.loc != P, "the item is not in the pouch before the wait is over")
+	test_time(5 SECONDS)
+	TEST_ASSERT(pen.loc == P, "it is when the wait ends")
+	var/obj/item/pen/second = allocate(/obj/item/pen, run_loc_floor_bottom_left)
+	H.put_in_active_hand(second)
+	test_click(H, P, second)
+	test_time(1 SECONDS)
+	H.forceMove(get_step(H, EAST))
+	test_time(5 SECONDS)
+	TEST_ASSERT(second.loc != P, "walking away cancelled the insertion")
