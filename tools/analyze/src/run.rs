@@ -119,8 +119,12 @@ impl Engine {
         if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
             eprintln!("analyze: scopes+meta load {:.1?}, walk+hash {:.1?}, save {:.1?}", t_prior, t_tree - t_prior, t0.elapsed() - t_tree);
         }
+        let t_lines = Instant::now();
         if let Some(dir) = crate::incr::dir() {
             tree.load_line_cache(&dir.join("linetext.bin"), cache.stamp());
+        }
+        if std::env::var("DQ_ANALYZE_TRACE").is_ok() {
+            eprintln!("analyze: line cache load {:.1?}", t_lines.elapsed());
         }
         let changed = if opts.changed_only { Some(changed_files(&opts.root)) } else { None };
         let load_time = t0.elapsed();

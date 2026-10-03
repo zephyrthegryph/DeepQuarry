@@ -62,7 +62,10 @@ pub fn all_parts() -> Vec<Part> {
 }
 
 struct CheckGrep {
-    compiled: Vec<Compiled>,
+    /// The checks, as data; compiled (about 100 ms of regexes) only when a scan really runs, so a run that
+    /// hits the cache never pays for them.
+    parts: Vec<Part>,
+    compiled: std::sync::OnceLock<Vec<Compiled>>,
     /// rule -> group (`a || b || c` alternatives)
     groups: BTreeMap<&'static str, &'static str>,
     /// `grep -R` over a single file operand prints no file name: parity only.
@@ -120,8 +123,11 @@ impl CheckGrep {
             allow: &["check_grep"],
             lists: Box::leak(keys.into_boxed_slice()),
         }));
-        let compiled = parts.iter().map(|p| p.compile()).collect();
-        CheckGrep { compiled, groups, single_file, meta }
+        CheckGrep { parts, compiled: std::sync::OnceLock::new(), groups, single_file, meta }
+    }
+
+    fn compiled(&self) -> &[Compiled] {
+        self.compiled.get_or_init(|| self.parts.iter().map(|p| p.compile()).collect())
     }
 }
 
@@ -270,7 +276,7 @@ impl Lint for CheckGrep {
     }
 
     fn scan_file(&self, cx: &Cx, f: &SourceFile, out: &mut Sink) {
-        for c in &self.compiled {
+        for c in self.compiled() {
             c.scan(cx, f, out);
         }
     }

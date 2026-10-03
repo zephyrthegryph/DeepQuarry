@@ -330,18 +330,40 @@ impl Tree {
             by_dir.entry(dir.as_str()).or_default().push(ext.as_str());
         }
         let dirs: Vec<(&str, Vec<&str>)> = by_dir.into_iter().collect();
-        let found: Vec<Vec<(String, PathBuf, u64, i128)>> = dirs
+        // One job per (root, immediate subdirectory), so a big root like `code/` is walked by many threads.
+        // A file directly in a root is its own job's business: the root job lists those and the subdirectories.
+        struct Job<'a> {
+            base: PathBuf,
+            exts: &'a [&'a str],
+            shallow: bool,
+        }
+        let mut jobs: Vec<Job> = Vec::new();
+        for (dir, exts) in &dirs {
+            let base = if dir.is_empty() { root.to_path_buf() } else { root.join(dir) };
+            jobs.push(Job { base: base.clone(), exts, shallow: true });
+            if let Ok(rd) = std::fs::read_dir(&base) {
+                for e in rd.filter_map(|e| e.ok()) {
+                    if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                        jobs.push(Job { base: e.path(), exts, shallow: false });
+                    }
+                }
+            }
+        }
+        let found: Vec<Vec<(String, PathBuf, u64, i128)>> = jobs
             .par_iter()
-            .map(|(dir, exts)| {
-                let base = if dir.is_empty() { root.to_path_buf() } else { root.join(dir) };
+            .map(|job| {
                 let mut out = Vec::new();
-                for entry in WalkDir::new(&base).follow_links(false).into_iter().filter_map(|e| e.ok()) {
+                let mut walker = WalkDir::new(&job.base).follow_links(false);
+                if job.shallow {
+                    walker = walker.max_depth(1);
+                }
+                for entry in walker.into_iter().filter_map(|e| e.ok()) {
                     if !entry.file_type().is_file() {
                         continue;
                     }
                     let path = entry.path();
                     let Some(ext) = path.extension().and_then(|e| e.to_str()) else { continue };
-                    if !exts.contains(&ext) {
+                    if !job.exts.contains(&ext) {
                         continue;
                     }
                     let Ok(meta) = entry.metadata() else { continue };
