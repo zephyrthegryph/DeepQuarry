@@ -649,6 +649,7 @@
 #include "interim_ghost_hud_actor.dm"
 #include "interim_pylon_pulverize.dm"
 #include "interim_airlock_id_wire_pulse.dm"
+#include "interim_nif_size_actor.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

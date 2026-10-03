@@ -481,7 +481,7 @@ APPEARANCE_TEMPLATE(/obj/item/nif, "nif_{appearance_nif_state}")
 //Uninstall a piece of software
 /obj/item/nif/proc/uninstall(datum/nifsoft/old_soft)
 	var/datum/nifsoft/NS
-	if(nifsofts)
+	if(nifsofts && old_soft.list_pos >= 1 && old_soft.list_pos <= length(nifsofts))
 		NS = nifsofts[old_soft.list_pos]
 
 	if(!NS || NS != old_soft)
