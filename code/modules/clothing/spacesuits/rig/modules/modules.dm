@@ -297,8 +297,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 /atom/movable/stat_rig_module/engage/CanUse()
 	return module.usable
 
-/atom/movable/stat_rig_module/select/Initialize(mapload)
-	. = ..()
+/atom/movable/stat_rig_module/select
 	name = "Select"
 	module_mode = "select"
 
@@ -308,8 +307,7 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 		return 1
 	return 0
 
-/atom/movable/stat_rig_module/charge/Initialize(mapload)
-	. = ..()
+/atom/movable/stat_rig_module/charge
 	name = "Change Charge"
 	module_mode = "select_charge_type"
 

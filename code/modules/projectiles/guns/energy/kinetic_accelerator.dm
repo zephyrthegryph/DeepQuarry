@@ -41,6 +41,7 @@
 		. = FALSE
 
 /obj/item/gun/energy/kinetic_accelerator
+	conflict_id = CONFLICT_ELEMENT_KA
 	name = "proto-kinetic accelerator"
 	desc = "A self recharging, ranged mining tool that does increased damage in low pressure."
 	icon_state = "kineticgun"
@@ -165,7 +166,6 @@
 	. = ..()
 	if(!holds_charge)
 		empty()
-	conflict_id = CONFLICT_ELEMENT_KA
 
 /obj/item/gun/energy/kinetic_accelerator/equipped(mob/user)
 	. = ..()
