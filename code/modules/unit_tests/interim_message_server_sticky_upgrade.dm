@@ -1,0 +1,23 @@
+/// A real upgrade spends its original board only after inventory permits consumption.
+/datum/unit_test/interim_message_server_sticky_upgrade/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/user = allocate(/mob/living/carbon/human, T)
+	var/obj/machinery/message_server/server = allocate(/obj/machinery/message_server, T)
+	var/obj/item/circuitboard/message_monitor/board = allocate(/obj/item/circuitboard/message_monitor, T)
+	server.set_stat(0)
+	TEST_ASSERT(server.can_upgrade(user, server, board), "the real initialized active server can accept its actual upgrade board")
+	var/original_limit = server.spamfilter_limit
+	TEST_ASSERT_EQUAL(original_limit, initial(server.spamfilter_limit), "the initialized server has its declared baseline filtering capacity")
+	TEST_ASSERT(user.put_in_active_hand(board), "the actor holds the original upgrade board")
+	add_trait(board, TRAIT_NODROP, "interim_server_sticky")
+	TEST_ASSERT(user.release_refusal(board, user), "actual inventory refuses consumption of the sticky board")
+	server.interaction_upgrade(user, board, null)
+	TEST_ASSERT_EQUAL(server.spamfilter_limit, original_limit, "refused consumption grants no filtering capacity")
+	TEST_ASSERT(!QDELETED(board), "refused consumption preserves the original board")
+	TEST_ASSERT_EQUAL(user.get_active_hand(), board, "refused consumption preserves the original hand")
+	TEST_ASSERT_EQUAL(board.loc, user, "refused consumption preserves inventory containment")
+	remove_trait(board, TRAIT_NODROP, "interim_server_sticky")
+	server.interaction_upgrade(user, board, null)
+	TEST_ASSERT(QDELETED(board), "allowed upgrade consumes the exact original board")
+	TEST_ASSERT_NULL(user.get_active_hand(), "allowed consumption clears the original source hand")
+	TEST_ASSERT_EQUAL(server.spamfilter_limit, original_limit + round(initial(server.spamfilter_limit) / 2), "one consumed board grants exactly one declared capacity increment")
