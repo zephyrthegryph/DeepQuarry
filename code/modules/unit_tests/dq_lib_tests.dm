@@ -129,6 +129,8 @@
 	TEST_ASSERT_EQUAL(reagent_container_lid_open(lidless), TRUE, "a lidless container is open from the start")
 	var/datum/op_result/no_lid_op = test_click(M, lidless, null)
 	TEST_ASSERT(!no_lid_op || no_lid_op.key != "reagent_container.lid", "and has no lid op")
+	for(var/obj/effect/temporary_effect/item_pickup_ghost/ghost in range(2, M))
+		qdel(ghost) // the pickup animation a plain hand click on an item leaves behind
 
 /datum/unit_test/dq_lib/reagent_transfer_amount_is_asked_and_checked
 
@@ -202,7 +204,7 @@
 		if(C.eff_key == "reagent_container.pour")
 			has_pour = TRUE
 	TEST_ASSERT(!has_pour, "a sprayer has no pour op")
-	var/datum/op_result/speculative = perform_op(M, tank, "reagent_container.pour", sprayer)
+	var/datum/op_result/speculative = perform_op(M, target, "reagent_container.pour", sprayer)
 	TEST_ASSERT_NOTNULL(speculative, "calling an op nobody here has returns a result, not an error")
 	TEST_ASSERT_EQUAL(speculative.outcome, ACT_REFUSED, "which is a refusal")
 	TEST_ASSERT_EQUAL(speculative.reason, /datum/msg/op/unknown, "with the reason 'no such op'")
@@ -305,11 +307,12 @@
 	TEST_ASSERT_EQUAL(done?.outcome, ACT_COMMITTED, "a count inside the stack splits it")
 	TEST_ASSERT_EQUAL(stack_item.amount, 5, "the stack kept the rest")
 	var/pieces = 0
-	for(var/obj/item/lib_fixture/sheets/other in get_turf(stack_item))
+	var/list/nearby = get_turf(stack_item).contents + M.contents
+	for(var/obj/item/lib_fixture/sheets/other in nearby)
 		if(other != stack_item)
 			pieces += other.amount
 	TEST_ASSERT_EQUAL(pieces, 3, "and exactly the split-off units are a new stack")
-	for(var/obj/item/lib_fixture/sheets/leftover in get_turf(stack_item))
+	for(var/obj/item/lib_fixture/sheets/leftover in nearby)
 		if(leftover != stack_item)
 			qdel(leftover)
 	test_menu(M, stack_item, "stackable.split")

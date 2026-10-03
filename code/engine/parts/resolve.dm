@@ -504,7 +504,9 @@
 	A.actor = actor
 	A.held = held
 	// An op with no target binding has A.target = A.holder (an actor's own op, a self ui_act()).
-	A.target = (C.side == CAND_ACTOR || isnull(target)) ? C.holder : target
+	// An actor-side op that declares a reach (a natural weapon's bite) is aimed at what the input addressed.
+	var/aimed = C.side == CAND_ACTOR && !isnull(target) && target != actor && !isnull(LAZYACCESS(C.oplan.selects, "reach"))
+	A.target = ((C.side == CAND_ACTOR && !aimed) || isnull(target)) ? C.holder : target
 	if(istype(A.target, /atom))
 		A.target_atom = A.target // ALLOW(ownership): a pooled transient: reset on release
 	A.origin = origin
