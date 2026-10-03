@@ -6,9 +6,11 @@
 //! the tree has none.
 
 use std::collections::HashMap;
+use std::sync::OnceLock;
 
 use crate::dm::dx::{call_arg_spans, DxIndex, Proc};
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -112,16 +114,23 @@ fn scan(tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)
     if accessors.is_empty() {
         accessors = fallback();
     }
-    let pattern = call_pattern(&accessors);
-    let mut out = Vec::new();
-    for f in files {
+    let mut keyed_view: Vec<(&String, &Vec<usize>)> = accessors.iter().collect();
+    keyed_view.sort();
+    let key = incr::ctx_key(&keyed_view);
+    // The regex is compiled on first use only: a fully cached run never needs it.
+    let pattern: OnceLock<Pat> = OnceLock::new();
+    let results = incr::keyed("sys-dx-string-names", key, files, |f| {
         let text = f.text();
         if !text.contains("own_") && !text.contains("rel_") && !text.contains("om_set") && !text.contains("time") {
-            continue;
+            return Vec::new();
         }
         let mut v = Vec::new();
-        scan_lines(f, &accessors, &pattern, &mut v);
-        out.extend(v.into_iter().map(|(r, n)| (r, f.rel.clone(), n)));
+        scan_lines(f, &accessors, pattern.get_or_init(|| call_pattern(&accessors)), &mut v);
+        v.into_iter().map(|(_, n)| n as u32).collect::<Vec<u32>>()
+    });
+    let mut out = Vec::new();
+    for (f, v) in files.iter().zip(results) {
+        out.extend(v.into_iter().map(|n| ("dx_string_names", f.rel.clone(), n as usize)));
     }
     out
 }

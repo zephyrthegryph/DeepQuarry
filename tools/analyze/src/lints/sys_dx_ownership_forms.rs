@@ -5,7 +5,10 @@
 
 use std::collections::HashMap;
 
+use serde::{Deserialize, Serialize};
+
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat;
 use crate::tree::{SourceFile, Tree};
@@ -29,7 +32,16 @@ fn related(a: &str, b: &str) -> bool {
     a == b || a.starts_with(&format!("{}/", b)) || b.starts_with(&format!("{}/", a))
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+/// One file's contribution: its own sites (rule index into `RULES`), the vars its capabilities()
+/// own (`(var, holder type)`) and the vars its ownership() owns (`(holder type, var, line)`).
+#[derive(Serialize, Deserialize, Default, PartialEq)]
+struct Facts {
+    sites: Vec<(u8, u32)>,
+    cap: Vec<(String, String)>,
+    typ: Vec<(String, String, u32)>,
+}
+
+fn facts_of(f: &SourceFile) -> Facts {
     let old_macro = pat!(
         r"(?<![\w#])(OWN|OWN_POLICY|OWN_IF|SHARED|PROTO|REL|REL_LIST|REL_PAIR|REL_PAIR_LIST|REL_SET|REL_KEYED|REL_KEYED_LIST|KEYED_TARGET|KEEP_AFTER_DESTROY|POOL_RESET|FORWARD_STATE)\s*\(|/declare_ownership\(|\b(own|shared|proto|rel)\(\s*decl\b"
     );
@@ -39,40 +51,53 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
     let cap_owns = pat!(r"\b(cap_slot|cap_cell_holder)\(\s*nameof\((\w+)\)");
     let type_owns = pat!(r"^\s*\.\s*\+=\s*owns\(\s*nameof\((\w+)\)");
 
-    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let mut cap_owned: HashMap<String, Vec<String>> = HashMap::new(); // var -> [holder type]
-    let mut type_owned: Vec<(String, String, String, usize)> = Vec::new(); // (holder type, var, rel, number)
-    for f in files {
-        let mut head: Option<(String, String)> = None;
-        for (number, line) in f.raw().numbered() {
-            let code = before_slashes(line);
-            if old_macro.is_match(code) {
-                out.push(("old_ownership_macro", f.rel.clone(), number));
+    let mut out = Facts::default();
+    let mut head: Option<(String, String)> = None;
+    for (number, line) in f.raw().numbered() {
+        let code = before_slashes(line);
+        if old_macro.is_match(code) {
+            out.sites.push((0, number as u32));
+        }
+        if old_destroy.is_match(code) {
+            out.sites.push((1, number as u32));
+        }
+        if string_accessor.is_match(code) {
+            out.sites.push((2, number as u32));
+        }
+        if line.chars().next().map(|c| !is_py_space(c)).unwrap_or(false) {
+            // `re.match` (anchored at the start): the pattern carries its own `^`.
+            head = proc_head.captures(line).map(|m| (m.s(1).to_string(), m.s(2).to_string()));
+            continue;
+        }
+        let Some((htype, hkind)) = &head else { continue };
+        if hkind == "capabilities" {
+            for m in cap_owns.captures_iter(code) {
+                out.cap.push((m.s(2).to_string(), htype.clone()));
             }
-            if old_destroy.is_match(code) {
-                out.push(("old_destroy_macro", f.rel.clone(), number));
-            }
-            if string_accessor.is_match(code) {
-                out.push(("string_accessor_var", f.rel.clone(), number));
-            }
-            if line.chars().next().map(|c| !is_py_space(c)).unwrap_or(false) {
-                // `re.match` (anchored at the start): the pattern carries its own `^`.
-                head = proc_head.captures(line).map(|m| (m.s(1).to_string(), m.s(2).to_string()));
-                continue;
-            }
-            let Some((htype, hkind)) = &head else { continue };
-            if hkind == "capabilities" {
-                for m in cap_owns.captures_iter(code) {
-                    cap_owned.entry(m.s(2).to_string()).or_default().push(htype.clone());
-                }
-            } else if let Some(m) = type_owns.captures(code) {
-                type_owned.push((htype.clone(), m.s(1).to_string(), f.rel.clone(), number));
-            }
+        } else if let Some(m) = type_owns.captures(code) {
+            out.typ.push((htype.clone(), m.s(1).to_string(), number as u32));
         }
     }
-    for (holder, var, rel, number) in type_owned {
-        if cap_owned.get(&var).map(|v| v.iter().any(|other| related(&holder, other))).unwrap_or(false) {
-            out.push(("owned_twice", rel, number));
+    out
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let fs = incr::facts("sys-dx-ownership-forms", files, facts_of);
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    let mut cap_owned: HashMap<&str, Vec<&str>> = HashMap::new(); // var -> [holder type]
+    for (f, x) in files.iter().zip(&fs) {
+        for (rule, number) in &x.sites {
+            out.push((RULES[*rule as usize].name, f.rel.clone(), *number as usize));
+        }
+        for (var, holder) in &x.cap {
+            cap_owned.entry(var.as_str()).or_default().push(holder.as_str());
+        }
+    }
+    for (f, x) in files.iter().zip(&fs) {
+        for (holder, var, number) in &x.typ {
+            if cap_owned.get(var.as_str()).map(|v| v.iter().any(|other| related(holder, other))).unwrap_or(false) {
+                out.push(("owned_twice", f.rel.clone(), *number as usize));
+            }
         }
     }
     out

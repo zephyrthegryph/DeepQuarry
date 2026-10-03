@@ -19,11 +19,12 @@
 //!   * the `bare`/`dotted` regexes use `(?!=)` after `=`; implemented as a plain regex plus a
 //!     post-check that is exactly equivalent (see [`write_matches`]).
 
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::sync::Arc;
 
-use rayon::prelude::*;
+use serde::{Deserialize, Serialize};
 
+use crate::incr;
 use crate::pat::{Caps, Pat};
 use crate::pat;
 use crate::tree::{SourceFile, Tree, CODE_DM};
@@ -208,11 +209,12 @@ pub struct FwlIndex {
     /// field name -> declaring types, names in first-seen order.
     pub fields: Vec<(String, Vec<String>)>,
     /// type path -> member var name -> declared type.
-    pub members: HashMap<String, HashMap<String, String>>,
+    pub members: BTreeMap<String, BTreeMap<String, String>>,
     /// `GLOB` var name -> declared type.
-    pub globals: HashMap<String, String>,
+    pub globals: BTreeMap<String, String>,
 }
 
+#[derive(Serialize, Deserialize, Default, PartialEq)]
 struct PerFile {
     fields: Vec<(String, String)>,
     members: Vec<(String, String, String)>,
@@ -254,36 +256,33 @@ fn scan_member_types(code: &str, out: &mut Vec<(String, String, String)>) {
 
 impl FwlIndex {
     pub fn build(files: &[&SourceFile]) -> FwlIndex {
-        let per: Vec<PerFile> = files
-            .par_iter()
-            .map(|f| {
-                let mut p = PerFile { fields: Vec::new(), members: Vec::new(), globals: Vec::new() };
-                let raw = f.raw();
-                for line in raw.lines() {
-                    if !line.starts_with("OM_") {
-                        continue;
-                    }
-                    let m = pat!(r"\A(?:OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line)
-                        .or_else(|| pat!(r"\A(?:OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,)").captures(line))
-                        .or_else(|| pat!(r"\A(?:OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line));
-                    if let Some(c) = m {
-                        p.fields.push((c.s(2).to_string(), c.s(1).to_string()));
-                    }
+        let per: Vec<PerFile> = incr::facts("fwl-facts", files, |f| {
+            let mut p = PerFile { fields: Vec::new(), members: Vec::new(), globals: Vec::new() };
+            let raw = f.raw();
+            for line in raw.lines() {
+                if !line.starts_with("OM_") {
+                    continue;
                 }
-                scan_member_types(&f.code().text, &mut p.members);
-                let text = &raw.text;
-                if text.contains("GLOBAL_DATUM") {
-                    for c in pat!(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)").captures_iter(text) {
-                        p.globals.push((c.s(1).to_string(), c.s(2).to_string()));
-                    }
+                let m = pat!(r"\A(?:OM_FIELD\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line)
+                    .or_else(|| pat!(r"\A(?:OM_FIELD_TYPED\(\s*(/[\w/]+)\s*,\s*[\w/]+\s*,\s*(\w+)\s*,)").captures(line))
+                    .or_else(|| pat!(r"\A(?:OM_(?:FLAG_FIELD(?:_BITS)?|FIELD_SETTER)\(\s*(/[\w/]+)\s*,\s*(\w+)\s*,)").captures(line));
+                if let Some(c) = m {
+                    p.fields.push((c.s(2).to_string(), c.s(1).to_string()));
                 }
-                p
-            })
-            .collect();
+            }
+            scan_member_types(&f.code().text, &mut p.members);
+            let text = &raw.text;
+            if text.contains("GLOBAL_DATUM") {
+                for c in pat!(r"GLOBAL_DATUM(?:_INIT)?\(\s*(\w+)\s*,\s*(/[\w/]+)").captures_iter(text) {
+                    p.globals.push((c.s(1).to_string(), c.s(2).to_string()));
+                }
+            }
+            p
+        });
         let mut fields: Vec<(String, Vec<String>)> = Vec::new();
         let mut at: HashMap<String, usize> = HashMap::new();
-        let mut members: HashMap<String, HashMap<String, String>> = HashMap::new();
-        let mut globals = HashMap::new();
+        let mut members: BTreeMap<String, BTreeMap<String, String>> = BTreeMap::new();
+        let mut globals = BTreeMap::new();
         for p in per {
             for (name, ty) in p.fields {
                 match at.get(&name) {
@@ -310,6 +309,13 @@ impl FwlIndex {
             let files = tree.select(&CODE_DM);
             FwlIndex::build(&files)
         })
+    }
+
+    /// A key of everything a judge can read from this index: the declared fields named in `only`
+    /// (all when `None`), the typed members and the `GLOBAL_DATUM` types. Deterministic.
+    pub fn ctx_key(&self, only: Option<&[&str]>) -> crate::tree::Hash {
+        let fields: Vec<&(String, Vec<String>)> = self.fields.iter().filter(|(n, _)| only.map(|o| o.contains(&n.as_str())).unwrap_or(true)).collect();
+        incr::ctx_key(&(fields, &self.members, &self.globals))
     }
 
     /// Every declared field (`index()`).

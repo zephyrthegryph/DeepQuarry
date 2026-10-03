@@ -5,9 +5,10 @@
 //! The deadline scan is `tools/ci/check_deadline_polling.py`'s (`scan_lines`, `strip_comment`,
 //! `DEADLINE`), which hygiene.py imports; it is ported here as private helpers.
 
-use std::collections::{BTreeSet, HashMap, HashSet};
+use std::collections::{BTreeSet, HashMap};
 
 use crate::dm::sys::{register_module, SysModule};
+use crate::incr;
 use crate::lint::{Registry, RuleMeta};
 use crate::pat::Pat;
 use crate::tree::{SourceFile, Tree};
@@ -198,37 +199,31 @@ fn cached_decls(lines: &[&str]) -> Vec<(usize, String)> {
     found
 }
 
-fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
-    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
-    let mut declared: HashSet<String> = HashSet::new();
-    // (file position in `files`, index, name), grouped by file in first-seen order
-    let mut by_file: Vec<(usize, Vec<(usize, String)>)> = Vec::new();
-    for (fi, f) in files.iter().enumerate() {
-        let rel = f.rel.as_str();
-        let lines = f.raw().lines_vec();
-        scan_boilerplate(rel, &lines, &mut out);
-        for line in &lines {
-            if line.contains("CACHE_ON_") {
-                for m in pat!(r#"\[\s*"(cached_\w+)"\s*\]\s*=\s*CACHE_ON_"#).captures_iter(line) {
-                    declared.insert(m.s(1).to_string());
-                }
+/// The `cached_*` names a file declares through `CACHE_ON_` (sorted, unique).
+fn declared_of(f: &SourceFile) -> Vec<String> {
+    let mut declared: BTreeSet<String> = BTreeSet::new();
+    for line in f.raw().lines() {
+        if line.contains("CACHE_ON_") {
+            for m in pat!(r#"\[\s*"(cached_\w+)"\s*\]\s*=\s*CACHE_ON_"#).captures_iter(line) {
+                declared.insert(m.s(1).to_string());
             }
         }
-        if VENDORED.iter().any(|p| rel.starts_with(p)) {
-            continue;
-        }
-        let decls = cached_decls(&lines);
-        if !decls.is_empty() {
-            by_file.push((fi, decls));
-        }
     }
+    declared.into_iter().collect()
+}
+
+/// One file's sites, in the original emission order within each phase: boilerplate (rule 0),
+/// cached_var (rule 1) and deadline_poll (rule 2).
+fn judge(f: &SourceFile, declared: &BTreeSet<String>) -> Vec<(u8, u32)> {
+    let mut out: Vec<(&'static str, String, usize)> = Vec::new();
+    let rel = f.rel.as_str();
+    let lines = f.raw().lines_vec();
+    scan_boilerplate(rel, &lines, &mut out);
     // cached_var: undeclared caches (declaration and every write), and manual invalidation of
     // declared ones. Writes are looked for in the declaring file (these vars are type-private).
-    for (fi, entries) in &by_file {
-        let f = files[*fi];
-        let rel = f.rel.as_str();
-        let lines = f.raw().lines_vec();
-        for (index, name) in entries {
+    if !VENDORED.iter().any(|p| rel.starts_with(p)) {
+        let decls = cached_decls(&lines);
+        for (index, name) in &decls {
             let write = Pat::cached(&format!(r"(?<![\w.])(?:src\.)?{}\s*(?:=(?!=)|\+=|-=|\|=)\s*(.*)$", regex::escape(name)));
             if !declared.contains(name) {
                 out.push(("cached_var", rel.to_string(), index + 1));
@@ -249,13 +244,8 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
         }
     }
     // deadline_poll: the poll, and the writes that store its deadline.
-    for f in files {
-        let rel = f.rel.as_str();
-        let lines = f.raw().lines_vec();
-        let hits = deadline_hits(&lines);
-        if hits.is_empty() {
-            continue;
-        }
+    let hits = deadline_hits(&lines);
+    if !hits.is_empty() {
         let mut idents: BTreeSet<String> = BTreeSet::new();
         for number in hits {
             if crate::dm::sys::kept_recorded(f, number, "sys_deadline_poll") {
@@ -278,6 +268,25 @@ fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize
             for (idx, line) in lines.iter().enumerate() {
                 if store.is_match(strip_comment(line)) {
                     out.push(("deadline_poll", rel.to_string(), idx + 1));
+                }
+            }
+        }
+    }
+    out.into_iter().map(|(rule, _, line)| (RULES.iter().position(|r| r.name == rule).unwrap_or(0) as u8, line as u32)).collect()
+}
+
+fn scan(_tree: &Tree, files: &[&SourceFile]) -> Vec<(&'static str, String, usize)> {
+    let fs = incr::facts("sys-hygiene-facts", files, declared_of);
+    let declared: BTreeSet<String> = fs.into_iter().flatten().collect();
+    let key = incr::ctx_key(&declared);
+    let results = incr::keyed("sys-hygiene-judge", key, files, |f| judge(f, &declared));
+    // The Python ran the three rules as phases over every file: boilerplate, cached_var, deadline.
+    let mut out = Vec::new();
+    for rule in 0..RULES.len() as u8 {
+        for (f, v) in files.iter().zip(&results) {
+            for (r, line) in v {
+                if *r == rule {
+                    out.push((RULES[rule as usize].name, f.rel.clone(), *line as usize));
                 }
             }
         }
