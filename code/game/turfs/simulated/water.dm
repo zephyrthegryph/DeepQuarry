@@ -54,7 +54,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water, \
 /turf/simulated/floor/water/proc/water_fill(mob/user, obj/item/O, datum/interaction/interaction)
 	var/obj/item/reagent_containers/RG = O
 	if (istype(RG) && RG.is_open_container())
-		RG.reagents.add_reagent(reagent_type, min(RG.volume - RG.reagents.total_volume, RG.amount_per_transfer_from_this))
+		RG.reagents.add_reagent(reagent_type, min(RG.reagents.get_free_space(), reagent_transfer_amount(RG)))
 		act_message(user, src, MSG_SELF(span_notice("You fill %I% using %T%.")), MSG_OTHERS(span_notice("%U% fills %I% using %T%.")), item = RG)
 		return TRUE
 

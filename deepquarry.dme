@@ -659,7 +659,6 @@
 #include "code\datums\capabilities\library\powered.dm"
 #include "code\datums\capabilities\library\powered_by.dm"
 #include "code\datums\capabilities\library\reach.dm"
-#include "code\datums\capabilities\library\reagent_container.dm"
 #include "code\datums\capabilities\library\reagents.dm"
 #include "code\datums\capabilities\library\rotate.dm"
 #include "code\datums\capabilities\library\sharp.dm"

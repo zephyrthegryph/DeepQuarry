@@ -10,6 +10,9 @@
 #define REAGENT_FLOW_TRANSFER 1
 /// Mode of a flow: the reagents are splashed over the target (a mob, a turf, an object): no capacity is reserved, and they touch what they land on.
 #define REAGENT_FLOW_SPLASH 2
+/// Mode of a flow: the reagents are swallowed by the target mob (what a drink or a feeding does): no capacity is reserved, and they go where a mouth
+/// sends them (the ingested holder, with the taste).
+#define REAGENT_FLOW_INGEST 3
 
 /// A reservation of reagents: the source side carries the sink's capacity reservation as its peer, so the one the engine tracks ends both.
 /datum/reservation/reagents
@@ -122,6 +125,11 @@
 				return OP_FAILED
 			reagent_flow_end(RR) // the capacity hold goes first: the move below is what takes the space
 			moved = source.reagents.trans_to_holder(sink.reagents, RR.amount)
+		if(REAGENT_FLOW_INGEST)
+			var/mob/eater = RR.sink
+			if(QDELETED(eater))
+				return OP_FAILED
+			moved = source.reagents.trans_to_mob(eater, RR.amount, CHEM_INGEST) || 0
 		if(REAGENT_FLOW_SPLASH)
 			var/atom/target = RR.sink
 			moved = min(RR.amount, source.reagents.total_volume)
@@ -142,3 +150,29 @@
 	if(P)
 		R.peer = null // ALLOW(ownership): a reservation lives until its op ends, then the engine drops it
 		reservation_forget(P)
+
+/// req_reagents(units, more =, because =, of =): the holder has at least `units` of reagents in it (`more` = TRUE: more than `units`). Read as a
+/// boolean it is a condition: a paint can paints while it has more than 5 units.
+/proc/req_reagents(units = 1, more = FALSE, because = null, of = ON_HOLDER, id = null)
+	return part_make(/datum/entry/part/req/reagents, list("units" = units, "more" = more, "because" = because, "of" = of, "id" = id))
+
+/datum/entry/part/req/reagents
+	part_name = "req_reagents"
+	default_reason = /datum/msg/reagent_container/empty
+
+/datum/entry/part/req/reagents/holds(datum/act/op/A)
+	var/atom/subject = op_subject(A, src.args["of"])
+	var/volume = subject?.reagents ? subject.reagents.total_volume : 0
+	return src.args["more"] ? volume > src.args["units"] : volume >= src.args["units"]
+
+/// How much one transfer from `thing` moves by its own say: what its reagent_container() says it was set to, else the setting of an old-style
+/// container or tank (atom/legacy_transfer_amount()); null when it has none.
+/proc/reagent_transfer_amount(atom/thing)
+	var/datum/capability/lib/reagent_container/C = cap_of(thing, CAP_REAGENT_CONTAINER)
+	if(C)
+		return C.chosen_amount(thing)
+	return thing?.legacy_transfer_amount()
+
+/// The amount one transfer from this moves, for a thing that has the setting as a var of its own (a tank, a container not yet converted).
+/atom/proc/legacy_transfer_amount()
+	return null

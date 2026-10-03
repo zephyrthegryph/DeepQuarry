@@ -16,7 +16,10 @@
 	starts_with = list(/obj/item/reagent_containers/pill/zoom = 7)
 
 /obj/item/reagent_containers/glass/beaker/vial/random
-	flags = NONE
+
+// A found vial is sealed.
+CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random, \
+	configure(reagent_container(starts_open = FALSE)))
 
 TYPE_TABLE_DECLARE(/obj/item/reagent_containers/glass/beaker/vial/random, random_vial_reagents, list(list(REAGENT_ID_WATER = 15) = 1, list(REAGENT_ID_CLEANER = 15) = 1))
 
@@ -30,9 +33,6 @@ TYPE_TABLE(/obj/item/reagent_containers/glass/beaker/vial/random/toxin, random_v
 
 /obj/item/reagent_containers/glass/beaker/vial/random/Initialize(mapload)
 	. = ..()
-	if(is_open_container())
-		flags ^= OPENCONTAINER
-
 	var/list/picked_reagents = pickweight(TYPE_TABLE_GET(src, random_vial_reagents))
 	for(var/reagent in picked_reagents)
 		reagents.add_reagent(reagent, picked_reagents[reagent]) // ALLOW(decl): weighted random pick

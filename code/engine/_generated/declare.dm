@@ -94,6 +94,20 @@
 /datum/capdef_decl/c_emag/spec()
 	return list(CAP_EMAG, /datum/capability/lib/emag, NONE, STACK, "emag", "parts, say, disables_for, repeatable")
 
+/// CAPABILITY_DEF(glass_container, CAP_GLASS_CONTAINER) at code/modules/reagents/reagent_containers/glass.dm:46
+/proc/glass_container()
+	RETURN_TYPE(/datum/capability/def/glass_container)
+	return cap_construct(CAP_GLASS_CONTAINER, /datum/capability/def/glass_container, list(), "")
+/datum/capdef_decl/c_glass_container/spec()
+	return list(CAP_GLASS_CONTAINER, /datum/capability/def/glass_container, NONE, STACK, "glass_container", "")
+
+/// CAPABILITY_DEF(glass_handling, CAP_GLASS_HANDLING) at code/modules/reagents/reagent_containers/glass.dm:31
+/proc/glass_handling()
+	RETURN_TYPE(/datum/capability/def/glass_handling)
+	return cap_construct(CAP_GLASS_HANDLING, /datum/capability/def/glass_handling, list(), "")
+/datum/capdef_decl/c_glass_handling/spec()
+	return list(CAP_GLASS_HANDLING, /datum/capability/def/glass_handling, NONE, STACK, "glass_handling", "")
+
 /// CAPABILITY_TYPE(interior, CAP_INTERIOR) at code/library/containers/interior.dm:14
 /datum/capability/lib/interior
 	var/escape_wait = 30 SECONDS
@@ -188,18 +202,29 @@
 /datum/capdef_decl/c_powered_by/spec()
 	return list(CAP_POWERED_BY, /datum/capability/lib/powered_by, "of_system", STACK, "powered_by", "of_system, role")
 
-/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:25
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:34
 /datum/capability/lib/reagent_container
 	var/volume = 30
 	var/transfer = list(5, 10, 15, 30)
 	var/lid = FALSE
 	var/needle = FALSE
 	var/spray = FALSE
-/proc/reagent_container(volume, transfer, lid, needle, spray)
+	var/starts_open = FALSE
+	var/transfer_default = null
+	var/transfer_min = null
+	var/transfer_max = null
+	var/starts = null
+	var/taps = null
+	var/rests_on = null
+	var/feed = FALSE
+	var/feed_wait = 30
+	var/examine_range = null
+	var/splash_mobs = TRUE
+/proc/reagent_container(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs)
 	RETURN_TYPE(/datum/capability/lib/reagent_container)
-	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, spray), "volume, transfer, lid, needle, spray")
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs), "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs")
 /datum/capdef_decl/c_reagent_container/spec()
-	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, spray")
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs")
 
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
@@ -301,7 +326,7 @@
 /proc/panel_open(datum/holder, selector)
 	return cap_key_get(holder, PANEL_OPEN, selector)
 
-/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:26
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:35
 /datum/cap_keys_decl/k_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
 /// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
@@ -377,6 +402,106 @@
 	into += entry_block("code/library/mob/hands.dm", 7, /mob/living/silicon/robot)
 	into += entry_line(7)
 	into += list(global.hands())
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass) at code/modules/reagents/reagent_containers/glass.dm:66
+/obj/item/reagent_containers/glass/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 66, /obj/item/reagent_containers/glass)
+	into += entry_line(67)
+	into += list(global.glass_handling())
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/beaker) at code/modules/reagents/reagent_containers/glass.dm:204
+/obj/item/reagent_containers/glass/beaker/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 204, /obj/item/reagent_containers/glass/beaker)
+	into += entry_line(205)
+	into += list(global.glass_container())
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/beaker/vial/random) at code/game/objects/items/contraband.dm:21
+/obj/item/reagent_containers/glass/beaker/vial/random/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/contraband.dm", 21, /obj/item/reagent_containers/glass/beaker/vial/random)
+	into += entry_line(22)
+	into += list(global.configure(global.reagent_container(starts_open = FALSE)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bottle) at code/modules/food/glass/bottle.dm:18
+/obj/item/reagent_containers/glass/bottle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/glass/bottle.dm", 18, /obj/item/reagent_containers/glass/bottle)
+	into += entry_line(19)
+	into += list(global.glass_container())
+	into += entry_line(20)
+	into += list(global.configure(global.reagent_container(starts_open = FALSE)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bottle/robot) at code/modules/food/glass/bottle/robot.dm:9
+/obj/item/reagent_containers/glass/bottle/robot/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/food/glass/bottle/robot.dm", 9, /obj/item/reagent_containers/glass/bottle/robot)
+	into += entry_line(10)
+	into += list(global.configure(global.reagent_container(starts_open = TRUE)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket) at code/modules/reagents/reagent_containers/glass.dm:312
+/obj/item/reagent_containers/glass/bucket/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 312, /obj/item/reagent_containers/glass/bucket)
+	into += entry_line(313)
+	into += list(global.glass_container())
+	into += entry_line(314)
+	into += list(global.op("sensor", global.item(/obj/item/assembly/prox_sensor), global.priority(OP_PRIORITY_PART), global.label("Add the sensor"), global.then(PROC_REF(sensor_added))))
+	into += entry_line(315)
+	into += list(global.op("robot_frame", global.stack(/obj/item/stack/material/steel, 1), global.priority(OP_PRIORITY_PART), global.label("Arm the robot frame"), global.then(PROC_REF(frame_armed))))
+	into += entry_line(316)
+	into += list(global.op("wet", global.inputs(global.item(/obj/item/mop), global.item(/obj/item/soap)), global.priority(OP_PRIORITY_PART), global.label("Wet it"), global.needs(req_reagents(1, because = MSG(glass/bucket_empty))), global.then(PROC_REF(wetted))))
+	into += entry_line(318)
+	into += list(global.op("cut_helmet", global.tool(TOOL_WIRECUTTER), global.wait(0), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_helmet))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/bucket/wood) at code/modules/reagents/reagent_containers/glass.dm:378
+/obj/item/reagent_containers/glass/bucket/wood/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 378, /obj/item/reagent_containers/glass/bucket/wood)
+	into += entry_line(379)
+	into += list(global.op("hatchet_helmet", global.item(/obj/item/material/knife/machete/hatchet), global.priority(OP_PRIORITY_PART), global.label("Cut a hole in it"), global.then(PROC_REF(cut_into_wood_helmet))))
+	into += entry_line(380)
+	into += list(global.extend("sensor", global.needs(global.req(PROC_REF(electronics_welcome), because = MSG(glass/no_electronics)))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/cooler_bottle) at code/modules/reagents/reagent_containers/glass.dm:405
+/obj/item/reagent_containers/glass/cooler_bottle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 405, /obj/item/reagent_containers/glass/cooler_bottle)
+	into += entry_line(406)
+	into += list(global.glass_container())
+	into += entry_line(407)
+	into += list(global.configure(global.reagent_container(rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_WATERCOOLER)))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/kettle) at code/modules/reagents/reagent_containers/glass.dm:438
+/obj/item/reagent_containers/glass/kettle/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 438, /obj/item/reagent_containers/glass/kettle)
+	into += entry_line(439)
+	into += list(global.glass_container())
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/paint) at code/game/objects/items/weapons/paint.dm:21
+/obj/item/reagent_containers/glass/paint/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/paint.dm", 21, /obj/item/reagent_containers/glass/paint)
+	into += entry_line(22)
+	into += list(global.glass_container())
+	into += entry_line(23)
+	into += list(global.op("paint", global.at_target(/turf/simulated), global.answers(INTENT_ATTACK, INTENT_USE), global.priority(OP_PRIORITY_ATTACK), global.priority(global.above("reagent_container.splash")), global.when(req_reagents(5, more = TRUE)), global.label("Paint"), global.then(PROC_REF(painted))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/pint_mug) at code/modules/reagents/reagent_containers/glass.dm:418
+/obj/item/reagent_containers/glass/pint_mug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/glass.dm", 418, /obj/item/reagent_containers/glass/pint_mug)
+	into += entry_line(419)
+	into += list(global.glass_container())
+
+/// CAPABILITIES(/obj/item/reagent_containers/glass/replenishing) at code/modules/xenoarcheaology/finds/special.dm:5
+/obj/item/reagent_containers/glass/replenishing/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/xenoarcheaology/finds/special.dm", 5, /obj/item/reagent_containers/glass/replenishing)
+	into += entry_line(6)
+	into += list(global.glass_container())
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
@@ -767,11 +892,11 @@
 	into += entry_line(115)
 	into += list(global.hands())
 
-/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:97
+/// CAPABILITIES(/mob/living/simple_mob/lib_fixture_biter) at code/tests/library/fixtures.dm:124
 /mob/living/simple_mob/lib_fixture_biter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 97, /mob/living/simple_mob/lib_fixture_biter)
-	into += entry_line(98)
+	into += entry_block("code/tests/library/fixtures.dm", 124, /mob/living/simple_mob/lib_fixture_biter)
+	into += entry_line(125)
 	into += list(global.natural_weapon(/datum/natural_weapon/bite, damage = 10))
 
 /// CAPABILITIES(/mob/living/simple_mob/s1_fixture) at code/tests/engine/s1_fixtures.dm:179
@@ -1212,27 +1337,34 @@
 	..(into)
 	into += entry_block("code/tests/library/fixtures.dm", 27, /obj/item/lib_fixture/flask)
 	into += entry_line(28)
-	into += list(global.reagent_container(volume = 30, transfer = list(5, 10, 15, 30)))
+	into += list(global.reagent_container(volume = 30, transfer = list(5, 10, 15, 30), taps = list(/obj/lib_fixture/tap)))
 
-/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:89
+/// CAPABILITIES(/obj/item/lib_fixture/hazmat) at code/tests/library/fixtures.dm:116
 /obj/item/lib_fixture/hazmat/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 89, /obj/item/lib_fixture/hazmat)
-	into += entry_line(90)
+	into += entry_block("code/tests/library/fixtures.dm", 116, /obj/item/lib_fixture/hazmat)
+	into += entry_line(117)
 	into += list(global.trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = "A hazmat patch is sewn on."))
 
-/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:61
+/// CAPABILITIES(/obj/item/lib_fixture/jug) at code/tests/library/fixtures.dm:47
+/obj/item/lib_fixture/jug/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 47, /obj/item/lib_fixture/jug)
+	into += entry_line(48)
+	into += list(global.reagent_container(volume = nameof(capacity), transfer_default = nameof(per_transfer), transfer_min = nameof(least), transfer_max = nameof(most), starts = nameof(contents_at_start), lid = TRUE, starts_open = TRUE, rests_on = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_DEFAULT, feed = TRUE, examine_range = 1, splash_mobs = FALSE))
+
+/// CAPABILITIES(/obj/item/lib_fixture/sheets) at code/tests/library/fixtures.dm:88
 /obj/item/lib_fixture/sheets/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 61, /obj/item/lib_fixture/sheets)
-	into += entry_line(62)
+	into += entry_block("code/tests/library/fixtures.dm", 88, /obj/item/lib_fixture/sheets)
+	into += entry_line(89)
 	into += list(global.stackable(max_amount = 10))
 
-/// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:42
+/// CAPABILITIES(/obj/item/lib_fixture/sprayer) at code/tests/library/fixtures.dm:62
 /obj/item/lib_fixture/sprayer/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 42, /obj/item/lib_fixture/sprayer)
-	into += entry_line(43)
+	into += entry_block("code/tests/library/fixtures.dm", 62, /obj/item/lib_fixture/sprayer)
+	into += entry_line(63)
 	into += list(global.reagent_container(volume = 30, transfer = list(5, 10), spray = TRUE))
 
 /// CAPABILITIES(/obj/item/lib_fixture/syringe) at code/tests/library/fixtures.dm:34
@@ -1252,6 +1384,15 @@
 	into += list(global.op("zap", global.hand(), global.cooldown(5 SECONDS), global.flash("p1"), global.says(MSG(p1/not_ready)), global.label("Zap")))
 	into += entry_line(91)
 	into += list(global.op("stash", global.item(/obj/item/e2_key), global.put_in("p1_slot"), global.menu()))
+
+/// CAPABILITIES(/obj/item/p2_op_item) at code/tests/engine/p2_fixtures.dm:173
+/obj/item/p2_op_item/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 173, /obj/item/p2_op_item)
+	into += entry_line(174)
+	into += list(global.op("p2_idle", global.at_target(/obj/p2_legacy_target), global.when(PROC_REF(p2_never)), global.then(PROC_REF(p2_idle))))
+	into += entry_line(175)
+	into += list(global.op("p2_turf", global.at_target(/turf), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(p2_tapped))))
 
 /// CAPABILITIES(/obj/item/s1_fixture/charm) at code/tests/engine/s1_fixtures.dm:122
 /obj/item/s1_fixture/charm/declared_entries(list/into)
@@ -1288,48 +1429,55 @@
 	into += entry_line(130)
 	into += list(global.while_slotted(SLOT_ANY_HELD, global.extend(/datum/act/e4_strike, global.adjusts("amount", by = 3)), on = ON_HOLDER))
 
-/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:113
+/// CAPABILITIES(/obj/lib_fixture/glow_box) at code/tests/library/fixtures.dm:140
 /obj/lib_fixture/glow_box/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 113, /obj/lib_fixture/glow_box)
-	into += entry_line(114)
+	into += entry_block("code/tests/library/fixtures.dm", 140, /obj/lib_fixture/glow_box)
+	into += entry_line(141)
 	into += list(global.examine_line("It is a box."))
-	into += entry_line(115)
+	into += entry_line(142)
 	into += list(global.examine_line(PROC_REF(note_line)))
-	into += entry_line(116)
+	into += entry_line(143)
 	into += list(global.examine_line("It glows.", when = nameof(lit)))
-	into += entry_line(117)
+	into += entry_line(144)
 	into += list(global.look_layer("glow", when = nameof(lit)))
-	into += entry_line(118)
+	into += entry_line(145)
 	into += list(global.look_layer("box"))
 
-/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:70
+/// CAPABILITIES(/obj/lib_fixture/pod) at code/tests/library/fixtures.dm:97
 /obj/lib_fixture/pod/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 70, /obj/lib_fixture/pod)
-	into += entry_line(71)
+	into += entry_block("code/tests/library/fixtures.dm", 97, /obj/lib_fixture/pod)
+	into += entry_line(98)
 	into += list(global.interior(escape_wait = 10 SECONDS, escape_chance = 100))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:82
+/// CAPABILITIES(/obj/lib_fixture/pod/by_var) at code/tests/library/fixtures.dm:109
 /obj/lib_fixture/pod/by_var/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 82, /obj/lib_fixture/pod/by_var)
-	into += entry_line(83)
+	into += entry_block("code/tests/library/fixtures.dm", 109, /obj/lib_fixture/pod/by_var)
+	into += entry_line(110)
 	into += list(global.configure(global.interior(escape_chance = nameof(chance_var))))
 
-/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:76
+/// CAPABILITIES(/obj/lib_fixture/pod/stubborn) at code/tests/library/fixtures.dm:103
 /obj/lib_fixture/pod/stubborn/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 76, /obj/lib_fixture/pod/stubborn)
-	into += entry_line(77)
+	into += entry_block("code/tests/library/fixtures.dm", 103, /obj/lib_fixture/pod/stubborn)
+	into += entry_line(104)
 	into += list(global.configure(global.interior(escape_chance = 0)))
 
-/// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:53
+/// CAPABILITIES(/obj/lib_fixture/tank) at code/tests/library/fixtures.dm:73
 /obj/lib_fixture/tank/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/library/fixtures.dm", 53, /obj/lib_fixture/tank)
-	into += entry_line(53)
+	into += entry_block("code/tests/library/fixtures.dm", 73, /obj/lib_fixture/tank)
+	into += entry_line(73)
 	into += list(global.reagent_container(volume = 100, transfer = list(5, 10)))
+
+/// CAPABILITIES(/obj/lib_fixture/tap) at code/tests/library/fixtures.dm:79
+/obj/lib_fixture/tap/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/library/fixtures.dm", 79, /obj/lib_fixture/tap)
+	into += entry_line(80)
+	into += list(global.reagent_container(volume = 100, transfer = list(10), lid = TRUE))
 
 /// CAPABILITIES(/obj/machinery/p2_box) at code/tests/engine/p2_fixtures.dm:128
 /obj/machinery/p2_box/declared_entries(list/into)
@@ -1354,20 +1502,20 @@
 	into += entry_line(128)
 	into += list(global.op("fit", global.tool(TOOL_WRENCH), global.wait(PROC_REF(fit_wait)), global.then(PROC_REF(fitted_now))))
 
-/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:152
+/// CAPABILITIES(/obj/machinery/p2_box/slasher) at code/tests/engine/p2_fixtures.dm:191
 /obj/machinery/p2_box/slasher/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 152, /obj/machinery/p2_box/slasher)
-	into += entry_line(152)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 191, /obj/machinery/p2_box/slasher)
+	into += entry_line(191)
 	into += list(global.on_notice(/datum/notice/slashed, global.then(PROC_REF(heard_slash))))
 
-/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:166
+/// CAPABILITIES(/obj/p2_dragtarget) at code/tests/engine/p2_fixtures.dm:205
 /obj/p2_dragtarget/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/tests/engine/p2_fixtures.dm", 166, /obj/p2_dragtarget)
-	into += entry_line(166)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 205, /obj/p2_dragtarget)
+	into += entry_line(205)
 	into += list(global.op("use", global.item(/obj/item), global.then(PROC_REF(was_used))))
-	into += entry_line(166)
+	into += entry_line(205)
 	into += list(global.op("drag", global.item(/obj/item), global.gesture(GESTURE_DRAG), global.then(PROC_REF(was_dragged))))
 
 /// CAPABILITIES(/obj/p2_frame) at code/tests/engine/p2_fixtures.dm:91

@@ -119,16 +119,18 @@
 	TEST_ASSERT_EQUAL(closed?.outcome, ACT_REFUSED, "pouring from it is refused")
 	TEST_ASSERT_EQUAL(closed?.reason, MSG(reagent_container/lid_closed), "because the lid is closed")
 	TEST_ASSERT_EQUAL(B.reagents.total_volume, 40, "nothing moved")
-	var/datum/op_result/opened = test_click(M, B, null)
-	TEST_ASSERT_EQUAL(opened?.key, "reagent_container.lid", "an empty hand on it works the lid")
+	var/datum/op_result/opened = test_click(M, B, B)
+	TEST_ASSERT_EQUAL(opened?.key, "reagent_container.lid", "used in hand it works the lid")
 	TEST_ASSERT_EQUAL(reagent_container_lid_open(B), TRUE, "which is now open")
 	var/datum/op_result/poured = test_click(M, F, B)
 	TEST_ASSERT_EQUAL(poured?.outcome, ACT_COMMITTED, "and the same pour commits")
 	TEST_ASSERT_EQUAL(F.reagents.total_volume, 5, "moving the default amount")
 	var/obj/item/lib_fixture/flask/lidless = filled(/obj/item/lib_fixture/flask, 0)
 	TEST_ASSERT_EQUAL(reagent_container_lid_open(lidless), TRUE, "a lidless container is open from the start")
-	var/datum/op_result/no_lid_op = test_click(M, lidless, null)
+	var/datum/op_result/no_lid_op = test_click(M, lidless, lidless)
 	TEST_ASSERT(!no_lid_op || no_lid_op.key != "reagent_container.lid", "and has no lid op")
+	var/datum/op_result/bare_hand = test_click(M, B, null)
+	TEST_ASSERT(!bare_hand || bare_hand.key != "reagent_container.lid", "an empty hand on a container does not work its lid: it picks it up, as any item")
 	for(var/obj/effect/temporary_effect/item_pickup_ghost/ghost in range(2, M))
 		qdel(ghost) // the pickup animation a plain hand click on an item leaves behind
 
@@ -174,19 +176,30 @@
 
 /datum/unit_test/dq_lib/reagent_other_flows/run_gate()
 	var/mob/living/simple_mob/e0_fixture/M = actor()
-	// fill: an empty flask takes from an open tank
-	var/obj/lib_fixture/tank/tank = allocate(/obj/lib_fixture/tank)
-	tank.reagents.add_reagent(REAGENT_ID_WATER, 50)
+	// fill: a flask draws from a tap, a closed tank of a declared type, by the tap's own amount (not its own)
+	var/obj/lib_fixture/tap/tap = allocate(/obj/lib_fixture/tap)
+	tap.reagents.add_reagent(REAGENT_ID_WATER, 50)
 	var/obj/item/lib_fixture/flask/empty = filled(/obj/item/lib_fixture/flask, 0)
-	var/datum/op_result/fill = test_click(M, tank, empty)
-	TEST_ASSERT_EQUAL(fill?.key, "reagent_container.fill", "an empty held container on a tank is the fill op")
-	TEST_ASSERT_EQUAL(empty.reagents.total_volume, 5, "it took one transfer")
-	TEST_ASSERT_EQUAL(tank.reagents.total_volume, 45, "from the tank")
-	// drink: a held container on yourself
+	var/datum/op_result/fill = test_click(M, tap, empty)
+	TEST_ASSERT_EQUAL(fill?.key, "reagent_container.fill", "a held container on a tap is the fill op")
+	TEST_ASSERT_EQUAL(empty.reagents.total_volume, 10, "it took the tap's amount")
+	TEST_ASSERT_EQUAL(tap.reagents.total_volume, 40, "from the tap")
+	var/obj/item/lib_fixture/flask/half = filled(/obj/item/lib_fixture/flask, 25)
+	test_click(M, tap, half)
+	TEST_ASSERT_EQUAL(half.reagents.total_volume, 30, "a flask with something in it draws only what fits")
+	TEST_ASSERT_EQUAL(tap.reagents.total_volume, 35, "and the tap loses only that")
+	// pour: an open tank of the same kind is poured into, not drawn from
+	var/obj/lib_fixture/tank/tank = allocate(/obj/lib_fixture/tank)
+	var/obj/item/lib_fixture/flask/pourer = filled(/obj/item/lib_fixture/flask, 20)
+	var/datum/op_result/pour = test_click(M, tank, pourer)
+	TEST_ASSERT_EQUAL(pour?.key, "reagent_container.pour", "a held container on an open tank is the pour op")
+	// drink: a held container on yourself (a person with a mouth: it is swallowed)
+	var/mob/living/carbon/human/drinker = allocate(/mob/living/carbon/human)
 	var/obj/item/lib_fixture/flask/cup = filled(/obj/item/lib_fixture/flask, 12)
-	var/datum/op_result/drink = test_click(M, M, cup, GESTURE_SELF)
+	var/before = drinker.ingested.total_volume
+	var/datum/op_result/drink = test_click(drinker, drinker, cup, GESTURE_SELF)
 	TEST_ASSERT_EQUAL(drink?.key, "reagent_container.drink", "a container with something in it clicked on yourself is drink")
-	TEST_ASSERT_EQUAL(M.reagents.total_volume, 5, "the drinker has one transfer")
+	TEST_ASSERT_EQUAL(drinker.ingested.total_volume - before, 5, "the drinker has swallowed one transfer")
 	TEST_ASSERT_EQUAL(cup.reagents.total_volume, 7, "from the cup")
 	// splash: everything goes over the target and none of it is kept
 	var/obj/item/lib_fixture/flask/bucket = filled(/obj/item/lib_fixture/flask, 25)
@@ -209,6 +222,62 @@
 	TEST_ASSERT_EQUAL(speculative.outcome, ACT_REFUSED, "which is a refusal")
 	TEST_ASSERT_EQUAL(speculative.reason, /datum/msg/op/unknown, "with the reason 'no such op'")
 	TEST_ASSERT_EQUAL(sprayer.reagents.total_volume, 25, "and nothing was spent")
+
+/// A setting that is the name of a var is read from the var: the volume, what it starts with, the lid it starts without, the amount and its range.
+/datum/unit_test/dq_lib/reagent_settings_are_vars_of_the_type
+
+/datum/unit_test/dq_lib/reagent_settings_are_vars_of_the_type/run_gate()
+	var/mob/living/simple_mob/e0_fixture/M = actor()
+	var/obj/item/lib_fixture/jug/jug = allocate(/obj/item/lib_fixture/jug)
+	var/obj/item/lib_fixture/jug/small/small = allocate(/obj/item/lib_fixture/jug/small)
+	TEST_ASSERT_EQUAL(jug.reagents.maximum_volume, 80, "the volume is the var's")
+	TEST_ASSERT_EQUAL(jug.reagents.total_volume, 30, "what it starts with is the var's")
+	TEST_ASSERT_EQUAL(reagent_container_lid_open(jug), TRUE, "a lidded container that starts open is open")
+	TEST_ASSERT_EQUAL(small.reagents.maximum_volume, 25, "a subtype changes the volume on its var line")
+	TEST_ASSERT_EQUAL(small.reagents.total_volume, 0, "and what it starts with")
+	TEST_ASSERT_EQUAL(reagent_transfer_amount(jug), 20, "the amount a transfer moves starts at the var's")
+	TEST_ASSERT_EQUAL(reagent_transfer_amount(small), 5, "and a subtype's")
+	var/obj/item/lib_fixture/flask/sink = filled(/obj/item/lib_fixture/flask, 0)
+	test_click(M, sink, jug)
+	TEST_ASSERT_EQUAL(sink.reagents.total_volume, 20, "a click pours that much")
+	// the range a person may choose: a whole number from the least to the most
+	var/list/values = list(41, 1, 2, 40, 0)
+	var/list/accepted = list(FALSE, FALSE, TRUE, TRUE, FALSE)
+	for(var/i in 1 to length(values))
+		var/value = values[i]
+		var/wanted = accepted[i]
+		test_menu(M, jug, "reagent_container.set_amount")
+		var/datum/op_result/answered = test_answer(M, value)
+		var/took = answered?.outcome == ACT_COMMITTED
+		TEST_ASSERT_EQUAL(took, wanted, "an answer of [value] is accepted: [wanted]")
+
+/// A container does not pour into or splash over what it is put on, and not over a mob; a click on a mob feeds it after the wait.
+/datum/unit_test/dq_lib/reagent_rests_on_things_and_feeds_after_a_wait
+
+/datum/unit_test/dq_lib/reagent_rests_on_things_and_feeds_after_a_wait/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/mob/living/carbon/human/patient = allocate(/mob/living/carbon/human)
+	var/obj/item/lib_fixture/jug/jug = allocate(/obj/item/lib_fixture/jug)
+	var/obj/structure/table/table = allocate(/obj/structure/table)
+	var/datum/op_result/onto_table = test_click(H, table, jug)
+	TEST_ASSERT(!onto_table || !findtext(onto_table.key, "reagent_container."), "a click on a table is not a pour")
+	TEST_ASSERT_EQUAL(jug.reagents.total_volume, 30, "and nothing left the jug")
+	H.set_use_stance(I_HURT)
+	var/datum/op_result/hostile_table = test_click(H, table, jug)
+	TEST_ASSERT(!hostile_table || !findtext(hostile_table.key, "reagent_container."), "nor is a hostile one a splash")
+	var/datum/op_result/hostile_person = test_click(H, patient, jug)
+	TEST_ASSERT(!hostile_person || !findtext(hostile_person.key, "reagent_container."), "a hostile click on a person is not a splash when the container says splash_mobs = FALSE")
+	H.set_use_stance(I_HELP)
+	var/before = patient.ingested.total_volume
+	var/datum/op_result/feeding = test_click(H, patient, jug)
+	TEST_ASSERT_EQUAL(feeding?.key, "reagent_container.feed", "a click on another person feeds them")
+	TEST_ASSERT_NULL(feeding?.outcome, "after a wait")
+	TEST_ASSERT_EQUAL(patient.ingested.total_volume, before, "nothing is swallowed while it waits")
+	test_time(3.5 SECONDS)
+	TEST_ASSERT_EQUAL(feeding?.outcome, ACT_COMMITTED, "the wait ends and the feeding commits")
+	TEST_ASSERT_EQUAL(patient.ingested.total_volume - before, 20, "the patient has swallowed one transfer")
+	TEST_ASSERT_EQUAL(jug.reagents.total_volume, 10, "from the jug")
+	own_turf_contents(get_turf(table))
 
 // ---------------------------------------------------------------------------------------------------------------------
 // interior: the escape.

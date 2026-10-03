@@ -2,9 +2,12 @@
 /obj/item/reagent_containers/glass/bottle/robot
 	amount_per_transfer_from_this = 10
 	max_transfer_amount = 60
-	flags = OPENCONTAINER
 	volume = 60
 	var/reagent = ""
+
+// The robot's internal bottle is open.
+CAPABILITIES(/obj/item/reagent_containers/glass/bottle/robot, \
+	configure(reagent_container(starts_open = TRUE)))
 
 
 /obj/item/reagent_containers/glass/bottle/robot/inaprovaline

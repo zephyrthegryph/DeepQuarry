@@ -21,6 +21,10 @@ DECLARE_INTERACTIONS(/obj/structure/reagent_dispensers, \
 	INTERACT_VERB("Set transfer amount", PROC_REF(reagent_dispenser_set_aptft), REQ_ON(PRED_TARGET, /obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts, null)), \
 )
 
+/// What one transfer from the tank moves: its own setting (a container with a tap draws that much).
+/obj/structure/reagent_dispensers/legacy_transfer_amount()
+	return amount_per_transfer_from_this
+
 /// Requirement: the dispenser offers transfer amounts (the old Initialize dropped the set_APTFT verb without them).
 /obj/structure/reagent_dispensers/proc/pred_dispenser_has_transfer_amounts(mob/actor, atom/target, obj/item/held)
 	return !!possible_transfer_amounts

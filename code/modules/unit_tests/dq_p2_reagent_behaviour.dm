@@ -19,7 +19,7 @@
 
 /// The amount one transfer moves now.
 /proc/rc_amount(obj/item/reagent_containers/C)
-	return C.amount_per_transfer_from_this
+	return reagent_transfer_amount(C)
 
 /// The smallest and largest amount a person can set.
 /proc/rc_amount_range(obj/item/reagent_containers/C)
@@ -36,37 +36,19 @@
 /// The icon states of the overlays the container draws now (the fill gauge, the lid, the label), as plain text.
 /proc/rc_overlays(obj/item/reagent_containers/glass/C)
 	. = list()
-	for(var/entry in C.appearance_overlays())
-		if(isicon(entry))
-			continue
+	var/datum/look/L = new
+	C.draw(L)
+	for(var/entry in L.overlays)
 		if(istext(entry))
 			. += entry
 		else
 			var/image/I = entry
 			. += I.icon_state
 
-/// The label a person is asked for: the answer is given by the adapter when it is asked (a re-run answer today).
-/proc/rc_seed_answer(datum/asker, proc_name, key, value)
-	GLOB.om_rerun_answers["[REF(asker)]:[proc_name]"] = list("[key]" = value)
-
-/proc/rc_clear_answers(datum/asker, proc_name)
-	GLOB.om_rerun_answers -= "[REF(asker)]:[proc_name]"
-
 /// The person sets the amount from the context menu, giving `value` when asked.
 /proc/rc_set_amount_menu(mob/actor, obj/item/reagent_containers/C, value)
-	rc_seed_answer(C, "reagent_container_verb_set_transfer", "a1", value)
-	C.reagent_container_verb_set_transfer(actor, null, null)
-	rc_clear_answers(C, "reagent_container_verb_set_transfer")
-
-/// The person sets the amount by alt-clicking the container, giving `value` when asked.
-/proc/rc_set_amount_alt(mob/actor, obj/item/reagent_containers/C, value)
-	rc_seed_answer(C, "transfer_amount_alt", "a2", value)
-	C.transfer_amount_alt(actor, null, null)
-	rc_clear_answers(C, "transfer_amount_alt")
-
-/// The person labels the container with a pen, writing `text` when asked: the pen is used on the container.
-/proc/rc_label_with_pen(mob/actor, obj/item/reagent_containers/glass/C, text)
-	rc_seed_answer(C, "glass_item", "a1", text)
+	test_menu(actor, C, "reagent_container.set_amount")
+	test_answer(actor, value)
 
 /// The mob's venom was expressed long ago (its cooldown has run out).
 /proc/rc_milk_cooldown_over(mob/living/L)
@@ -144,6 +126,23 @@
 	H.set_use_stance(I_HELP)
 	H.next_click = 0
 	input_submit(new /datum/input_event/click(H, target, null, null, "left=1;alt=1"))
+	rc_settle()
+
+/// The person labels the container: a pen is used on it and the label is written when it is asked for.
+/datum/unit_test/dq_p2_reagents/proc/rc_label_with_pen(mob/living/carbon/human/H, obj/item/reagent_containers/glass/C, obj/item/pen/pen, text)
+	rc_click(H, C, pen, I_HELP, FALSE)
+	test_answer(H, text)
+	rc_settle()
+
+/// The person alt-clicks `target` with `held` in hand and gives `value` when asked the amount.
+/datum/unit_test/dq_p2_reagents/proc/rc_alt_set_amount(mob/living/carbon/human/H, atom/target, obj/item/held, value)
+	H.drop_item()
+	if(held)
+		H.put_in_active_hand(held)
+	H.set_use_stance(I_HELP)
+	H.next_click = 0
+	input_submit(new /datum/input_event/click(H, target, null, null, "left=1;alt=1"))
+	test_answer(H, value)
 	rc_settle()
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -540,9 +539,9 @@
 	rc_set_amount_menu(H, A, 40)
 	TEST_ASSERT_EQUAL(rc_amount(A), 40, "the menu sets the amount")
 	TEST_ASSERT_EQUAL(rc_amount(B), 10, "and another beaker keeps its own")
-	rc_set_amount_alt(H, A, 1)
+	rc_alt_set_amount(H, A, null, 1)
 	TEST_ASSERT_EQUAL(rc_amount(A), 1, "the alt-click sets the smallest amount")
-	rc_set_amount_alt(H, A, 120)
+	rc_alt_set_amount(H, A, null, 120)
 	TEST_ASSERT_EQUAL(rc_amount(A), 120, "and the largest")
 	var/obj/item/reagent_containers/bucket = rc_filled(/obj/item/reagent_containers/glass/bucket, 0)
 	rc_set_amount_menu(H, bucket, 33)
@@ -554,9 +553,7 @@
 /datum/unit_test/dq_p2_reagents/alt_click_in_hand_asks_for_the_amount/run_gate()
 	var/mob/living/carbon/human/H = rc_actor()
 	var/obj/item/reagent_containers/C = rc_filled(/obj/item/reagent_containers/glass/beaker, 0)
-	rc_seed_answer(C, "transfer_amount_alt", "a2", 22)
-	rc_alt_click(H, C, C)
-	rc_clear_answers(C, "transfer_amount_alt")
+	rc_alt_set_amount(H, C, C, 22)
 	TEST_ASSERT_EQUAL(rc_amount(C), 22, "the alt-click on the beaker in hand sets what was answered")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -594,23 +591,15 @@
 	var/obj/item/reagent_containers/glass/beaker/C = allocate(/obj/item/reagent_containers/glass/beaker)
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
 	var/base = C.name
-	rc_label_with_pen(H, C, "acid")
-	rc_click(H, C, pen)
-	rc_clear_answers(C, "glass_item")
+	rc_label_with_pen(H, C, pen, "acid")
 	TEST_ASSERT_EQUAL(rc_label(C), "acid", "the label is what was written")
 	TEST_ASSERT_EQUAL(C.name, "[base] (acid)", "the name carries it")
 	TEST_ASSERT(findtext(C.desc, "acid"), "and so does the description")
-	rc_label_with_pen(H, C, "a label that is longer than twenty letters")
-	rc_click(H, C, pen)
-	rc_clear_answers(C, "glass_item")
+	rc_label_with_pen(H, C, pen, "a label that is longer than twenty letters")
 	TEST_ASSERT_EQUAL(C.name, "[base] (a label that is long...)", "a long label is cut to twenty letters in the name")
-	rc_label_with_pen(H, C, "x" + repeat_string_p2("y", 60))
-	rc_click(H, C, pen)
-	rc_clear_answers(C, "glass_item")
+	rc_label_with_pen(H, C, pen, "x" + repeat_string_p2("y", 60))
 	TEST_ASSERT_EQUAL(C.name, "[base] (a label that is long...)", "a label over fifty letters is refused and the old one stays")
-	rc_label_with_pen(H, C, "")
-	rc_click(H, C, pen)
-	rc_clear_answers(C, "glass_item")
+	rc_label_with_pen(H, C, pen, "")
 	TEST_ASSERT(!length(rc_label(C)), "an empty label clears the label")
 
 /proc/repeat_string_p2(text, n)
@@ -655,9 +644,7 @@
 	rc_use(H, C)
 	TEST_ASSERT(!("lid_beaker" in rc_overlays(C)), "and not once it is off")
 	var/obj/item/pen/pen = allocate(/obj/item/pen)
-	rc_label_with_pen(H, C, "acid")
-	rc_click(H, C, pen)
-	rc_clear_answers(C, "glass_item")
+	rc_label_with_pen(H, C, pen, "acid")
 	TEST_ASSERT(("label_beaker" in rc_overlays(C)), "a label is drawn")
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -771,6 +758,27 @@
 	rc_click(H, bucket, dry)
 	TEST_ASSERT_EQUAL(dry.reagents.total_volume, dry.reagents.maximum_volume, "a dry rag put to a bucket soaks it full")
 	TEST_ASSERT_EQUAL(bucket.reagents.total_volume, 50 - dry.reagents.maximum_volume, "from the bucket")
+
+/// A rag says what it holds when it is looked at from close by.
+/datum/unit_test/dq_p2_reagents/rag_examine_says_what_is_in_it
+
+/datum/unit_test/dq_p2_reagents/rag_examine_says_what_is_in_it/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	var/obj/item/reagent_containers/glass/rag/rag = allocate(/obj/item/reagent_containers/glass/rag)
+	TEST_ASSERT(findtext(jointext(rag.examine(H), "\n"), "empty"), "a dry rag says it is empty")
+	rag.reagents.add_reagent(REAGENT_ID_WATER, 4)
+	TEST_ASSERT(findtext(jointext(rag.examine(H), "\n"), "4"), "a damp one says how much it holds")
+
+/// An empty hand clicking a container on the floor picks it up.
+/datum/unit_test/dq_p2_reagents/an_empty_hand_picks_a_container_up
+
+/datum/unit_test/dq_p2_reagents/an_empty_hand_picks_a_container_up/run_gate()
+	var/mob/living/carbon/human/H = rc_actor()
+	for(var/path in list(/obj/item/reagent_containers/glass/beaker, /obj/item/reagent_containers/glass/bucket, /obj/item/reagent_containers/glass/bottle))
+		var/obj/item/reagent_containers/C = rc_filled(path, 20)
+		rc_click(H, C, null)
+		TEST_ASSERT_EQUAL(H.get_active_hand(), C, "[path]: an empty hand picks it up")
+		TEST_ASSERT_EQUAL(C.reagents.total_volume, 20, "[path]: and what is in it stays")
 
 /// A bottle is a glass container with a lid that keeps its name and look.
 /datum/unit_test/dq_p2_reagents/bottle_is_a_container

@@ -21,13 +21,11 @@
 	max_transfer_amount = 5
 	volume = 10
 	flags = OPENCONTAINER | NOBLUDGEON
-	container_can_be_placed_into = REAGENT_CONTAINER_CAN_BE_PLACED_INTO_NONE
 	unacidable = FALSE
 	drop_sound = SFX_ITEMS_DROP_CLOTH
 	pickup_sound = SFX_ITEMS_PICKUP_CLOTH
 
 	var/burn_time = 20 //if the rag burns for too long it turns to ashes
-	special_handling = TRUE
 
 OM_FIELD(/obj/item/reagent_containers/glass/rag, rag_lit, FALSE, CHANGE_EXPLICIT)
 DECLARE_PERIODIC_WHILE(/obj/item/reagent_containers/glass/rag, PERIODIC_SLOW, "rag_lit")
@@ -44,6 +42,15 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 	INTERACT_ITEM_AS(I_HURT, "Dip into it", PROC_REF(rag_item)), \
 )
 
+/// What a person reads when they look from two tiles: what is in it (a glass container says it through its capability; a rag is not one).
+/obj/item/reagent_containers/glass/rag/examine(mob/user)
+	. = ..()
+	if(get_dist(user, src) <= 2)
+		if(reagents && reagents.reagent_list.len)
+			. += span_notice("It contains [reagents.total_volume] units of liquid.")
+		else
+			. += span_notice("It is empty.")
+
 /// Old attack_self.
 /obj/item/reagent_containers/glass/rag/proc/rag_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(rag_lit)
@@ -54,7 +61,7 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 		remove_contents(user)
 	return TRUE
 
-/// Old attackby: its own lighting, then the glass handling (the old ..()), then the name update.
+/// Old attackby: its own lighting, then the name update. A pen, a dip or a hot thing over blood is the glass handling's (its ops come first).
 /obj/item/reagent_containers/glass/rag/proc/rag_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!rag_lit && istype(W, /obj/item/flame))
 		var/obj/item/flame/F = W
@@ -65,11 +72,8 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/glass/rag, \
 			else
 				to_chat(user, span_warning("You manage to singe [src], but fail to light it."))
 
-	. = glass_item(user, W, interaction)
 	update_name()
-	// The glass handling already ran here; don't let its candidate run it again.
-	if(!.)
-		return INTERACTION_HANDLED_PASS
+	return INTERACTION_HANDLED_PASS
 
 /obj/item/reagent_containers/glass/rag/proc/update_name()
 	if(rag_lit)

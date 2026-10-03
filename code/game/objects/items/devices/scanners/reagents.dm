@@ -23,7 +23,7 @@ MATERIAL_MIX(/obj/item/reagent_scanner, list(MAT_STEEL = 30,MAT_GLASS = 20))
 		return
 
 	if(!isnull(O.reagents))
-		if(!(O.flags & OPENCONTAINER) && !istype(O,/obj/machinery/reagent_refinery)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
+		if(!O.is_open_container() && !istype(O,/obj/machinery/reagent_refinery)) // The idea is that the scanner has to touch the reagents somehow. This is done to prevent cheesing unidentified autoinjectors. Reagent refinery has ports for convenient testing!
 			to_chat(user, span_warning("\The [O] is sealed, and cannot be scanned by \the [src] until unsealed."))
 			return
 

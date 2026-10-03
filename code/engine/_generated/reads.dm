@@ -68,6 +68,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/e3_load::apc_channel" = list(0,
 		list(1, 0, 5),
 		list(1, 0, 6, 5)),
+	"/obj/item/p2_op_item::p2_never" = list(0),
+	"/obj/item/reagent_containers/glass/bucket/wood::electronics_welcome" = list(0),
 	"/obj/machinery/cell_charger::can_insert" = list(0,
 		list(1, 0, 7),
 		list(1, 0, 8),
