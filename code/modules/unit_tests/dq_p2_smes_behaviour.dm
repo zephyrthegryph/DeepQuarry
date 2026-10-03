@@ -1366,3 +1366,27 @@
 	open_panel(H, S)
 	var/open = jointext(S.examine(H), " ")
 	TEST_ASSERT(findtext(open, "open") && !findtext(open, "closed"), "open: the examine says open")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// The battery rack (a unit that keeps its legacy forms and shares the SMES's base): it still works beside the declared unit
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A cell goes into the rack, its capacity follows the cells, the rack draws its own look (none of the SMES status overlays) and sends its own window
+/// data (none of the SMES's).
+/datum/unit_test/dq_p2_smes/battery_rack_takes_cells_and_keeps_its_own_look_and_window
+
+/datum/unit_test/dq_p2_smes/battery_rack_takes_cells_and_keeps_its_own_look_and_window/run_gate()
+	var/obj/machinery/power/smes/batteryrack/R = allocate(/obj/machinery/power/smes/batteryrack, p2_smes_spot())
+	LAZYADD(p2_smeses, R)
+	var/mob/living/carbon/human/H = p2_actor()
+	p2_settle()
+	TEST_ASSERT_EQUAL(R.capacity, 0, "an empty rack stores nothing")
+	var/obj/item/cell/cell = allocate(/obj/item/cell/high, p2_side_spot())
+	touch(H, R, cell)
+	TEST_ASSERT(cell in R.internal_cells, "the cell is in the rack")
+	TEST_ASSERT(R.capacity > 0, "and the rack's capacity follows it")
+	var/list/keys = p2_smes_overlay_keys(R)
+	TEST_ASSERT(keys[1] == "" && keys[2] == "" && keys[3] == "0", "a rack draws none of the SMES status overlays")
+	var/list/data = list()
+	present_tgui_data(R, H, data)
+	TEST_ASSERT(!("capacityPercent" in data), "and sends none of the SMES window data")
