@@ -664,6 +664,7 @@
 #include "interim_player_notes_filter_actor.dm"
 #include "interim_airlock_timing_wire_repair.dm"
 #include "interim_toolbox_size_refusal.dm"
+#include "interim_girder_timed_securing.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
