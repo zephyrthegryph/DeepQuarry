@@ -234,7 +234,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 	return
 
 /obj/machinery/door/window/holowindoor/shatter(display_message = 1)
@@ -242,7 +242,7 @@ EXTEND_INTERACTIONS(/obj/structure/window/reinforced/holowindow, INTERACT_ITEM(n
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
 		visible_message("[src] fades away as it shatters!")
-	qdel(src)
+	consume(src)
 
 /obj/structure/bed/chair/holochair/wrench_act(mob/user, obj/item/tool)
 	to_chat(user, span_notice("It's a holochair, you can't dismantle it!"))

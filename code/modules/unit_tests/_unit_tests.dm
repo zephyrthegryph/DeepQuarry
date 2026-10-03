@@ -660,6 +660,7 @@
 #include "interim_airlock_bolt_wire_recovery.dm"
 #include "interim_reagent_fractional_depletion.dm"
 #include "interim_countdown_orphan_cleanup.dm"
+#include "interim_holographic_glass_cleanup.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
