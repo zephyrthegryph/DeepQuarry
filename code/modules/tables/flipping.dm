@@ -6,10 +6,10 @@
 		return 0
 	var/obj/structure/table/T
 	for(var/angle in list(-90,90))
-		T = locate_within(get_step(src.loc,turn(direction,angle)), /obj/structure/table) // ALLOW(reads): the neighbouring tables are read when a flip is tried; a cached menu entry is advisory, the click asks again
+		T = locate_within(get_step(src,turn(direction,angle)), /obj/structure/table)
 		if(T && T.flipped == 0 && T.material() && T.material().name == material().name)
 			return 0
-	T = locate_within(get_step(src.loc,direction), /obj/structure/table) // ALLOW(reads): the neighbouring tables are read when a flip is tried; a cached menu entry is advisory, the click asks again
+	T = locate_within(get_step(src,direction), /obj/structure/table)
 	if (!T || T.flipped == 1 || T.material() != material())
 		return 1
 	return T.straight_table_check(direction)
@@ -36,13 +36,13 @@
 		return FALSE
 	return !isAI(user)
 
-/// Flipping asks the same, and a mob nobody wants flipping tables (an ambient pest) cannot.
+/// Flipping asks the same (a mob nobody wants flipping tables, an ambient pest, is turned away by the effect).
 /obj/structure/table/proc/actor_can_flip(datum/act/op/A)
-	return actor_can_touch(A) && !has_trait(A.actor, TRAIT_AMBIENT_PEST_MOB) // ALLOW(reads): an actor trait is fixed for the touch that asks; the click asks again before anything runs
+	return actor_can_touch(A)
 
 /// Flip's own precondition: a straight run of unflipped tables, toward the user's side.
 /obj/structure/table/proc/can_flip_away(datum/act/op/A)
-	var/direction = get_cardinal_dir(A.actor, src) // ALLOW(reads): the side a person stands on is geometry read when the flip is tried; the click asks again
+	var/direction = get_cardinal_dir(A.actor, src)
 	return straight_table_check(turn(direction, 90)) && straight_table_check(turn(direction, -90))
 
 /// Put back's precondition: nothing is in the way of the flipped table (and the flipped tables in line with it) standing up.
@@ -54,6 +54,8 @@
 
 /// The Flip table entry: flips a table away from the person, and shakes off whoever was climbing it.
 /obj/structure/table/proc/flip_over(datum/act/op/A)
+	if(has_trait(A.actor, TRAIT_AMBIENT_PEST_MOB))
+		return OP_REFUSED
 	if(!flip(get_cardinal_dir(A.actor, src)))
 		return OP_FAILED
 	om_emit(src, new /datum/om/event/climb_shake(A.actor))
@@ -70,7 +72,7 @@
 	for(var/mob/M in oview(src,0))
 		return "it won't budge"
 
-	var/obj/occupied = can_climb_turf(src) // ALLOW(reads): what stands on the tile is read when a put back is tried; a cached menu entry is advisory
+	var/obj/occupied = can_climb_turf(src)
 	if(occupied)
 		return "there's \a [occupied] in the way"
 
@@ -81,7 +83,7 @@
 		L.Add(turn(src.dir,-90)) // ALLOW(reads): the way a flipped table faces is read when a put back is tried; the click asks again
 		L.Add(turn(src.dir,90))
 	for(var/new_dir in L)
-		var/obj/structure/table/T = locate_within(get_step(src.loc,new_dir), /obj/structure/table) // ALLOW(reads): the neighbouring tables are read when a flip is tried; a cached menu entry is advisory, the click asks again
+		var/obj/structure/table/T = locate_within(get_step(src,new_dir), /obj/structure/table)
 		if(T && T.material() && T.material().name == material().name)
 			if(T.flipped == 1 && T.dir == src.dir && T.unflipping_check(new_dir) != TRUE)
 				return T.unflipping_check(new_dir)
@@ -118,7 +120,7 @@
 	set_flipped(0)
 	flags &= ~ON_BORDER
 	for(var/D in list(turn(dir, 90), turn(dir, -90)))
-		var/obj/structure/table/T = locate_within(get_step(src.loc,D), /obj/structure/table)
+		var/obj/structure/table/T = locate_within(get_step(src,D), /obj/structure/table)
 		if(T && T.flipped == 1 && T.dir == src.dir && material() && T.material()&& T.material().name == material().name)
 			T.unflip()
 

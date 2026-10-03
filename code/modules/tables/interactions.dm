@@ -142,7 +142,7 @@
 
 /// A grab that can put its person on the table: nothing in the way (the person must also be at the grabber's side: the effect asks).
 /obj/structure/table/proc/person_can_go_on(datum/act/op/A)
-	return !can_climb_turf(src) // ALLOW(reads): what stands on the tile is read when a grab is used; a cached menu entry is advisory
+	return !can_climb_turf(src)
 
 /obj/structure/table/proc/person_refusal(datum/act/op/A)
 	return can_climb_turf(src) ? /datum/msg/table/in_the_way : /datum/msg/table/better_grip
@@ -168,7 +168,7 @@
 	var/mob/living/M = G?.grab_target()
 	if(get_dist(src, A.actor) >= 2 || G.state >= 2) // ALLOW(reads): how firm a grab is is read when it is used; the click asks again
 		return FALSE
-	return isliving(M) && !can_climb_turf(src) // ALLOW(reads): what stands on the tile is read when a grab is used; a cached menu entry is advisory
+	return isliving(M) && !can_climb_turf(src)
 
 /// A loosely grabbed person's face is slammed against the table (combat mode only).
 /obj/structure/table/proc/slam_face(datum/act/op/A)

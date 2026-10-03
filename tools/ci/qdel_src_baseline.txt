@@ -166,7 +166,6 @@ qdel_src	code/game/machinery/computer/arcade.dm	qdel(src)
 qdel_src	code/game/machinery/deployable.dm	qdel(src)
 qdel_src	code/game/machinery/deployable.dm	qdel(src) //Laaaazy. Technically heals it too. Must be held together with all that paint.
 qdel_src	code/game/machinery/doors/airlock.dm	qdel(src)
-qdel_src	code/game/machinery/doors/firedoor_assembly.dm	qdel(src)
 qdel_src	code/game/machinery/doors/windowdoor.dm	qdel(src)
 qdel_src	code/game/machinery/doors/windowdoor.dm	qdel(src)
 qdel_src	code/game/machinery/feeder.dm	qdel(src)
