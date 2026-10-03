@@ -100,6 +100,18 @@
 /datum/capdef_decl/c_doors/spec()
 	return list(CAP_DOORS, /datum/capability/lib/doors, NONE, STACK, "doors", "open, close")
 
+/// CAPABILITY_TYPE(dose, CAP_DOSE) at code/library/reagents/dose.dm:22
+/datum/capability/lib/dose
+	var/route = CHEM_INGEST
+	var/dose_wait = 30
+	var/pierces = null
+	var/cuts_into = null
+/proc/dose(route, dose_wait, pierces, cuts_into)
+	RETURN_TYPE(/datum/capability/lib/dose)
+	return cap_construct(CAP_DOSE, /datum/capability/lib/dose, list(route, dose_wait, pierces, cuts_into), "route, dose_wait, pierces, cuts_into")
+/datum/capdef_decl/c_dose/spec()
+	return list(CAP_DOSE, /datum/capability/lib/dose, NONE, STACK, "dose", "route, dose_wait, pierces, cuts_into")
+
 /// CAPABILITY_TYPE(emag, CAP_EMAG) at code/library/access/emag.dm:20
 /datum/capability/lib/emag
 	var/parts = null
@@ -626,6 +638,22 @@
 	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
 	into += entry_line(36)
 	into += list(global.without(CAP_GLASS_CONTAINER))
+
+/// CAPABILITIES(/obj/item/reagent_containers/pill) at code/modules/reagents/reagent_containers/pill.dm:27
+/obj/item/reagent_containers/pill/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/pill.dm", 27, /obj/item/reagent_containers/pill)
+	into += entry_line(28)
+	into += list(global.reagent_container( volume = nameof(volume), needle = TRUE, sealed = TRUE, settable = FALSE, shows_contents = FALSE, transfer_default = nameof(amount_per_transfer_from_this)))
+	into += entry_line(35)
+	into += list(global.dose(route = CHEM_INGEST, cuts_into = /obj/item/reagent_containers/powder))
+
+/// CAPABILITIES(/obj/item/reagent_containers/pill/patch) at code/modules/reagents/reagent_containers/patch.dm:24
+/obj/item/reagent_containers/pill/patch/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/patch.dm", 24, /obj/item/reagent_containers/pill/patch)
+	into += entry_line(25)
+	into += list(global.configure(global.dose(route = CHEM_TOUCH, pierces = nameof(pierce_material))))
 
 /// CAPABILITIES(/obj/item/reagent_containers/spray) at code/modules/reagents/reagent_containers/spray.dm:27
 /obj/item/reagent_containers/spray/declared_entries(list/into)
