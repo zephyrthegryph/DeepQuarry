@@ -620,6 +620,7 @@
 #include "interim_girder_strut_removal_refund.dm"
 #include "interim_rig_stat_control_data.dm"
 #include "interim_mining_conflict_data.dm"
+#include "interim_fixed_manual_data.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

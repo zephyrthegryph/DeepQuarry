@@ -1876,9 +1876,6 @@
 	icon = 'icons/obj/library.dmi'
 	author = "Ali Big"
 	title = "Food for Dummies 2"
-
-/obj/item/book/manual/cook_guide/Initialize(mapload)
-	. = ..()
 	dat = {"
 		<html>
 				<html>
@@ -1960,9 +1957,6 @@
 	icon = 'icons/obj/library.dmi'
 	author = "Ali Big"
 	title = "How to Alcohol (And other Drinks)"
-
-/obj/item/book/manual/bar_guide/Initialize(mapload)
-	. = ..()
 	dat = {"
 			<html>
 				<head>
@@ -2173,9 +2167,6 @@
 	item_state = "book15"
 	author = "Engineering Encyclopedia"
 	title = "Rotary Electric Generator Manual"
-
-/obj/item/book/manual/rotary_electric_generator/Initialize(mapload)
-	. = ..()
 	dat = {"<html>
 				<head>
 				<style>
@@ -2270,9 +2261,6 @@
 	icon_state = "evabook"
 	author = "Pontifex Publishing"
 	title = "Synthetics"
-
-/obj/item/book/manual/synthetic_life/Initialize(mapload)
-	. = ..()
 	dat = {"
 <html lang="en">
 	<head>
