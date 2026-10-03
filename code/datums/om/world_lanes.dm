@@ -162,15 +162,6 @@
 
 // ---------------------------------------------------------------- fold wave F3 lanes
 
-/// Radiation pulse queue and the shielding flush to the Rust insulation layer (was SSradiation, 0.5 s).
-/datum/om/behaviour/world/radiation
-	name = "world: radiation"
-	every = 0.5 SECONDS
-	runlevels = RUNLEVELS_DEFAULT
-
-/datum/om/behaviour/world/radiation/service()
-	return GLOB.radiation_service
-
 // ---------------------------------------------------------------- fold wave F4 lanes
 
 /// Planet sunlight and wall temperatures the planets queued (was SSplanets, 2 s). On demand.
@@ -181,12 +172,4 @@
 
 /datum/om/behaviour/world/planets/service()
 	return GLOB.planet_service
-
-/// A spreading turf conversion (was SSturf_cascade, 0.2 s). On demand.
-/datum/om/behaviour/world/turf_cascade
-	name = "world: turf cascade"
-	every = 2
-
-/datum/om/behaviour/world/turf_cascade/service()
-	return GLOB.turf_cascade_service
 

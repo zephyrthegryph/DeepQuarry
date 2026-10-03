@@ -6,7 +6,7 @@
 
 /datum/shuttle/autodock/ferry/emergency/New()
 	..()
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, null))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, null))
 	if(SSemergency_shuttle.shuttle)
 		CRASH("An emergency shuttle has already been defined.")
 	rel_set(SSemergency_shuttle, nameof(/datum/flight_vessel::shuttle), src)

@@ -1,7 +1,7 @@
 /*
 	HOW IT WORKS
 
-	The radio service (GLOB.radio_service) is a global object maintaining all radio transmissions, think about it as about "ether".
+	The radio service (SSradio) is a global object maintaining all radio transmissions, think about it as about "ether".
 	Note that walkie-talkie, intercoms and headsets handle transmission using nonstandard way.
 	procs:
 
@@ -61,58 +61,21 @@
 
 */
 
-// The radio world service (fold wave F4; was GLOB.radio_service). Data only: devices join frequencies as they
-// initialize; SSatoms initializes it after the map (the global announcer).
-GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
-
-/datum/world_service/radio
+// The radio system (was SSradio). Data only: devices join frequencies as they initialize; it boots after
+// SSatoms (the global announcer). The API is in radio_api.dm.
+SYSTEM_DEF(radio)
 	name = "Radio"
 	needs = list(/datum/system/atoms)
 	var/list/datum/radio_frequency/frequencies = list()
 
-/// The service owns its frequencies (keyed by frequency text).
+/// The system owns its frequencies (keyed by frequency text).
 
-/datum/world_service/radio/initialize()
+/datum/system/radio/initialize()
 	if(initialized)
 		return
 	initialized = TRUE
 	GLOB.autospeaker = new (null, FALSE, null, null, TRUE) //Set up Global Announcer
-	log_world("World service [name] initialized: [length(frequencies)] frequencies in use.")
-
-/datum/world_service/radio/proc/add_object(obj/device as obj, new_frequency as num, radio_filter = null as text|null)
-	var/f_text = num2text(new_frequency)
-	var/datum/radio_frequency/frequency = frequencies[f_text]
-
-	if(!frequency)
-		frequency = new
-		frequency.frequency = new_frequency
-		own_put(src, nameof(frequencies), f_text, frequency)
-
-	frequency.add_listener(device, radio_filter)
-	return frequency
-
-/datum/world_service/radio/proc/remove_object(obj/device, old_frequency)
-	var/f_text = num2text(old_frequency)
-	var/datum/radio_frequency/frequency = frequencies[f_text]
-
-	if(frequency)
-		frequency.remove_listener(device)
-
-		if(!length(frequency.devices))
-			own_put(src, nameof(frequencies), f_text, null) // disposes of (deletes) the emptied frequency
-
-	return 1
-
-/datum/world_service/radio/proc/return_frequency(new_frequency as num)
-	var/f_text = num2text(new_frequency)
-	var/datum/radio_frequency/frequency = frequencies[f_text]
-
-	if(!frequency)
-		frequency = new
-		frequency.frequency = new_frequency
-		own_put(src, nameof(frequencies), f_text, frequency)
-
-	return frequency
+	log_world("System [name] initialized: [length(frequencies)] frequencies in use.")
 
 //Frequency channels
 
@@ -167,7 +130,7 @@ GLOBAL_DATUM_INIT(radio_service, /datum/world_service/radio, new)
 
 /datum/radio_frequency/proc/on_listener_deleted(obj/device, datum/om/event/qdeleting/event)
 	EVENT_HANDLER
-	GLOB.radio_service.remove_object(device, frequency)
+	SSradio.remove_object(device, frequency)
 
 /datum/radio_frequency/proc/remove_listener(obj/device)
 	om_unhook(device, /datum/om/event/qdeleting, src)

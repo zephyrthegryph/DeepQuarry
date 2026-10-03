@@ -1109,7 +1109,7 @@
 	industrial_use = REFINERYEXPORT_REASON_BIOHAZARD
 
 /datum/reagent/irradiated_nanites/affect_blood(mob/living/carbon/M, alien, removed)
-	//GLOB.radiation_service.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
+	//SSradiation.radiate(get_turf(M), 20)	// Irradiate people around you. //TODO
 	M.add_radiation(5 * removed)	// Irradiate you. Because it's inside you.
 
 /datum/reagent/neurophage_nanites

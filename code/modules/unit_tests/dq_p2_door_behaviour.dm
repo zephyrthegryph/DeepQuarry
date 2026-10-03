@@ -2268,7 +2268,7 @@
 /// A listener on the airlock frequency, next to where a sensor or a button is put at (2, 2).
 /datum/unit_test/dq_p2_door/proc/radio_listener()
 	var/obj/p2_radio_listener/L = allocate(/obj/p2_radio_listener, tile(1, 2))
-	GLOB.radio_service.add_object(L, AIRLOCK_FREQ, RADIO_AIRLOCK)
+	SSradio.add_object(L, AIRLOCK_FREQ, RADIO_AIRLOCK)
 	return L
 
 /datum/unit_test/dq_p2_door/access_button_sends_its_command_to_whoever_has_access
@@ -2288,7 +2288,7 @@
 	var/list/signal = L.heard[1]
 	TEST_ASSERT_EQUAL(signal["tag"], "p2_controller", "to its controller")
 	TEST_ASSERT_EQUAL(signal["command"], "cycle_interior", "with its command")
-	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+	SSradio.remove_object(L, AIRLOCK_FREQ)
 
 /datum/unit_test/dq_p2_door/access_button_takes_a_swiped_id
 
@@ -2302,7 +2302,7 @@
 	card.access = list(ACCESS_ENGINE)
 	click(H, button, card)
 	TEST_ASSERT_EQUAL(LAZYLEN(L.heard), 1, "an ID swiped on it presses it")
-	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+	SSradio.remove_object(L, AIRLOCK_FREQ)
 
 /datum/unit_test/dq_p2_door/airlock_sensor_cycles_by_hand_and_reports_pressure
 
@@ -2325,7 +2325,7 @@
 			reported = TRUE
 	TEST_ASSERT(cycled, "a hand on it asks the controller to cycle")
 	TEST_ASSERT(reported, "and it reports the pressure under its id tag")
-	GLOB.radio_service.remove_object(L, AIRLOCK_FREQ)
+	SSradio.remove_object(L, AIRLOCK_FREQ)
 
 /datum/unit_test/dq_p2_door/access_button_is_set_with_a_multitool
 

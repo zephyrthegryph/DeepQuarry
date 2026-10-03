@@ -382,7 +382,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_add_channel)
 		target().radio.syndie = 1
 	target().module.channels += list("[selected_radio_channel]" = 1)
 	target().radio.channels[selected_radio_channel] = target().module.channels[selected_radio_channel]
-	target().radio.secure_radio_connections[selected_radio_channel] = GLOB.radio_service.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
+	target().radio.secure_radio_connections[selected_radio_channel] = SSradio.add_object(target().radio, GLOB.radiochannels[selected_radio_channel],  RADIO_CHAT)
 	return TRUE
 
 UI_ACT(/datum/eventkit/modify_robot, "rem_channel", ui_act_rem_channel, UI_ARG_VALUE("channel"))
@@ -398,7 +398,7 @@ UI_ACT_PROC(/datum/eventkit/modify_robot, ui_act_rem_channel)
 	target().radio.channels = list()
 	for(var/n_chan in target().module.channels)
 		target().radio.channels[n_chan] = target().module.channels[n_chan]
-	GLOB.radio_service.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
+	SSradio.remove_object(target().radio, GLOB.radiochannels[selected_radio_channel])
 	target().radio.secure_radio_connections -= selected_radio_channel
 	return TRUE
 

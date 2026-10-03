@@ -214,10 +214,10 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/atmospherics/valve/digital, TYPE_PROC_REF
 		icon_state = "valve[open]nopower"
 
 /obj/machinery/atmospherics/valve/digital/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_ATMOSIA))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_ATMOSIA))
 
 /obj/machinery/atmospherics/valve/digital/Initialize(mapload)
 	. = ..()

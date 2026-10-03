@@ -53,7 +53,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	var/animate_start = 0
 	/// Our animation lifespan, how long this message will last
 	var/animate_lifespan = 0
-	/// Callback to finish_image_generation passed to GLOB.runechat_service
+	/// Callback to finish_image_generation passed to SSrunechat
 	var/list/finish_callback // om_callable() spec queued on the runechat service
 
 /**
@@ -77,7 +77,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 	generate_image(text, target, owner, extra_classes, lifespan)
 
 /// Phase 1: a message leaves its client's images and seen list (keyed by the loc), and
-/// GLOB.runechat_service's queue, while its image and callback (owned, dropped in phase 4) still exist.
+/// SSrunechat's queue, while its image and callback (owned, dropped in phase 4) still exist.
 /datum/chatmessage/lifecycle_unbind()
 	var/client/owner = owned_by()
 	if(owner)
@@ -85,7 +85,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 			LAZYREMOVEASSOC(owner.seen_messages, message_loc, src)
 		owner.images.Remove(message)
 	if (finish_callback)
-		GLOB.runechat_service.message_queue -= list(finish_callback)
+		SSrunechat.dequeue(finish_callback)
 
 
 /**
@@ -195,8 +195,7 @@ GLOBAL_LIST_EMPTY(runechat_image_cache) // ALLOW(cache): fixed startup-filled re
 		return finish_image_generation(msgwidth, mheight, target, owner, complete_text, lifespan)
 
 	finish_callback = om_callable(src, PROC_REF(finish_image_generation), msgwidth, mheight, target, owner, complete_text, lifespan)
-	GLOB.runechat_service.message_queue += list(finish_callback)
-	GLOB.runechat_service.demand()
+	SSrunechat.enqueue(finish_callback)
 
 /datum/chatmessage/proc/finish_image_generation(msgwidth, mheight, atom/target, mob/owner, complete_text, lifespan)
 	finish_callback = null

@@ -31,7 +31,7 @@
 	minimum_exposure_time = 0,
 	strength = 100
 )
-	if(!GLOB.radiation_service.enabled)
+	if(!SSradiation.is_enabled())
 		return
 
 	var/datum/radiation_pulse_information/pulse_information = new
@@ -43,7 +43,7 @@
 	pulse_information.strength = strength
 	// Targets (living mobs and the collector, geiger and radiovoltaic registries)
 	// are collected and traced in one Rust call when the pulse first processes.
-	own_add(GLOB.radiation_service, nameof(/datum/world_service/radiation::processing), pulse_information)
+	SSradiation.queue_pulse(pulse_information)
 
 	return TRUE
 

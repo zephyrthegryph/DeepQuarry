@@ -1,12 +1,9 @@
-// The radiation world service (fold wave F3; was SSradiation). radiation_pulse() queues pulses here;
-// /datum/om/behaviour/world/radiation (code/datums/om/world_lanes.dm) flushes changed shielding to
-// the Rust insulation layer and applies the queue every 0.5 s, yielding to the next tick when over
-// budget.
-GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
-
-/datum/world_service/radiation
+// The radiation system (was SSradiation). radiation_pulse() queues pulses here; the system flushes changed shielding
+// to the Rust insulation layer and applies the queue every 0.5 s, yielding to the next tick when over budget. The API is
+// in radiation_api.dm.
+SYSTEM_DEF(radiation)
 	name = "Radiation"
-	lane = /datum/om/behaviour/world/radiation
+	periodic_runlevels = RUNLEVELS_DEFAULT
 	/// FALSE stops radiation_pulse() queueing new pulses (was the subsystem's can_fire).
 	var/enabled = TRUE
 
@@ -35,10 +32,14 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 	var/list/profile_source_cost_ms = list()
 	var/list/profile_source_targets = list()
 
-/datum/world_service/radiation/service_step(resumed)
+/datum/system/radiation/reactions()
+	. = ..()
+	. += every(0.5 SECONDS, PROC_REF(radiation_step), when = PROC_REF(work_ready), lane = LANE_SIMULATION)
+
+/datum/system/radiation/proc/radiation_step(dt)
 	// The first flush after a map load carries every insulating turf; it goes over several ticks.
 	if(!flush_shielding(budgeted = TRUE))
-		return FALSE
+		return STEP_YIELD
 	profile_max_queue = max(profile_max_queue, length(processing))
 	while (length(processing))
 		var/datum/radiation_pulse_information/pulse_information = processing[1]
@@ -66,36 +67,20 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 			profile_pulses_completed++
 			own_remove(src, nameof(processing), pulse_information)
 
-		if (length(processing) && TICK_CHECK)
+		if(length(processing) && KERNEL_OVER_BUDGET)
 			profile_yields++
-			return FALSE
-	return TRUE
+			return STEP_YIELD
+	return STEP_DONE
 
-/datum/world_service/radiation/proc/performance_diagnostics()
-	var/current_targets = 0
-	if(length(processing))
-		var/datum/radiation_pulse_information/current = processing[1]
-		current_targets = current?.remaining_targets()
-	var/list/source_costs = profile_source_cost_ms.Copy()
-	sortTim(source_costs, /proc/cmp_numeric_desc, TRUE)
-	if(length(source_costs) > 10)
-		source_costs.Cut(11)
-	return list(
-		"queue" = list("pulses" = length(processing), "current_targets" = current_targets, "max_pulses" = profile_max_queue, "max_targets" = profile_max_targets_remaining),
-		"work" = list("pulse_invocations" = profile_pulse_invocations, "pulses_completed" = profile_pulses_completed, "dropped_sources" = profile_dropped_sources, "targets" = profile_targets_processed, "shielding_flushes" = profile_shielding_flushes, "shielding_cells" = profile_shielding_cells, "signals" = profile_signal_dispatches, "irradiations" = profile_irradiations, "yields" = profile_yields),
-		"top_source_cost_ms" = source_costs,
-		"source_targets" = profile_source_targets.Copy(),
-	)
-
-/datum/world_service/radiation/stat_line()
-	return "Pulses:[length(processing)]"
+/datum/system/radiation/stat_entry(msg)
+	return "[msg]Pulses:[length(processing)]"
 
 /// Sends every dirty turf's combined transmission (the turf's rad_insulation
 /// times that of everything directly on it) to the Rust insulation layer.
 /// Sends the dirty turfs' shielding to the Rust insulation layer. `budgeted` stops at the tick limit and returns
-/// FALSE with the rest still dirty (the lane carries on next tick); TRUE once nothing is left. A pulse's trace()
+/// FALSE with the rest still dirty (the step carries on next tick); TRUE once nothing is left. A pulse's trace()
 /// flushes everything first, unbudgeted.
-/datum/world_service/radiation/proc/flush_shielding(budgeted = FALSE)
+/datum/system/radiation/proc/flush_shielding(budgeted = FALSE)
 	if(!length(dirty_turfs) && synced_maxz == world.maxz)
 		return TRUE
 	var/list/cells = list()
@@ -110,7 +95,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		cells += T.y
 		cells += T.z
 		cells += transmission
-		if(budgeted && done < length(turfs) && TICK_CHECK)
+		if(budgeted && done < length(turfs) && KERNEL_OVER_BUDGET)
 			break
 	// Turfs marked while this ran are past `done` and stay dirty with the unsent rest.
 	dirty_turfs = done < length(turfs) ? turfs.Copy(done + 1) : list()
@@ -122,7 +107,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /// Collects the pulse's targets on the source's z-level and computes the
 /// shielding to all of them in one Rust call (rays through the insulation layer).
-/datum/world_service/radiation/proc/trace(atom/source, datum/radiation_pulse_information/pulse_information)
+/datum/system/radiation/proc/trace(atom/source, datum/radiation_pulse_information/pulse_information)
 	flush_shielding()
 	var/list/targets = list()
 	var/list/coords = list()
@@ -145,7 +130,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		pulse_information.transmissions = list()
 
 /// Applies a traced pulse to its targets, yielding between them.
-/datum/world_service/radiation/proc/pulse(atom/source, datum/radiation_pulse_information/pulse_information)
+/datum/system/radiation/proc/pulse(atom/source, datum/radiation_pulse_information/pulse_information)
 	var/list/targets = pulse_information.targets
 	var/list/transmissions = pulse_information.transmissions
 	var/pulse_strength = pulse_information.strength
@@ -196,18 +181,10 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 		if(prob(perceived_chance) && irradiate_after_basic_checks(target, target_pulse_strength))
 			profile_irradiations++
 			target.investigate_log("was irradiated by [source].", INVESTIGATE_RADIATION)
-		if(TICK_CHECK)
+		if(KERNEL_OVER_BUDGET)
 			return
 
-/// Will attempt to irradiate the given target, limited through IC means, such as radiation protected clothing.
-/datum/world_service/radiation/proc/irradiate(atom/target, strength)
-	if (!can_irradiate_basic(target))
-		return FALSE
-
-	irradiate_after_basic_checks(target, strength)
-	return TRUE
-
-/datum/world_service/radiation/proc/irradiate_after_basic_checks(mob/living/target, strength)
+/datum/system/radiation/proc/irradiate_after_basic_checks(mob/living/target, strength)
 	PRIVATE_PROC(TRUE)
 
 	if(!ishuman(target))
@@ -226,7 +203,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /// Returns whether or not the target can be irradiated by any means.
 /// Does not check for clothing.
-/datum/world_service/radiation/proc/can_irradiate_basic(atom/target)
+/datum/system/radiation/proc/can_irradiate_basic(atom/target)
 	if (!CAN_IRRADIATE(target))
 		return FALSE
 
@@ -240,7 +217,7 @@ GLOBAL_DATUM_INIT(radiation_service, /datum/world_service/radiation, new)
 
 /// Retruns a value from 1 (full protection) to 0 (no protection)
 /// If we have 4 limbs and 3 are protected, we would expect to have 0.75 returned.
-/datum/world_service/radiation/proc/wearing_rad_protected_clothing(mob/living/carbon/human/human)
+/datum/system/radiation/proc/wearing_rad_protected_clothing(mob/living/carbon/human/human)
 	///Check how many limbs we have.
 	var/limb_count = 0
 	///Check how many of our limbs are protected.

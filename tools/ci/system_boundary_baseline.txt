@@ -3,11 +3,10 @@
 B1:code/ATMOSPHERICS/SSair.dm:SSmapping 9
 B1:code/ATMOSPHERICS/gasmixtures/gas_types.dm:SSmapping 1
 B1:code/__defines/machinery.dm:SSair 3
-B1:code/__defines/radiation.dm:GLOB.radiation_service 1
+B1:code/__defines/radiation.dm:SSradiation 1
 B1:code/__defines/research.dm:GLOB.research_service 1
 B1:code/__defines/subsystems.dm:SSatoms 3
 B1:code/_helpers/icons.dm:SSassets 8
-B1:code/_helpers/radiation.dm:GLOB.radiation_service 1
 B1:code/_helpers/roundend.dm:SSemergency_shuttle 2
 B1:code/_helpers/roundstats.dm:GLOB.supply_service 2
 B1:code/_helpers/roundstats.dm:SSnerdle 2
@@ -118,8 +117,8 @@ B1:code/modules/admin/verbs/atmosdebug.dm:SSmachines 1
 B1:code/modules/admin/verbs/debug.dm:GLOB.planet_service 3
 B1:code/modules/admin/verbs/debug.dm:SSgarbage 3
 B1:code/modules/admin/verbs/debug.dm:SSoverlays 1
-B1:code/modules/admin/verbs/diagnostics.dm:GLOB.radio_service 2
 B1:code/modules/admin/verbs/diagnostics.dm:SSair 1
+B1:code/modules/admin/verbs/diagnostics.dm:SSradio 2
 B1:code/modules/admin/verbs/lightning_strike.dm:GLOB.planet_service 1
 B1:code/modules/admin/verbs/map_template_loadverb.dm:SSmapping 7
 B1:code/modules/admin/verbs/randomverbs.dm:SSemergency_shuttle 3
@@ -153,10 +152,10 @@ B1:code/modules/benchmarks/boot_profile.dm:SSexplosions 1
 B1:code/modules/benchmarks/boot_profile.dm:SSgarbage 4
 B1:code/modules/benchmarks/boot_profile.dm:SSlighting 5
 B1:code/modules/benchmarks/life_sweep_adapter.dm:SSbehaviours 1
-B1:code/modules/benchmarks/scenarios.dm:GLOB.radiation_service 7
 B1:code/modules/benchmarks/scenarios.dm:SSair 10
 B1:code/modules/benchmarks/scenarios.dm:SSexpedition 2
 B1:code/modules/benchmarks/scenarios.dm:SSexplosions 1
+B1:code/modules/benchmarks/scenarios.dm:SSradiation 7
 B1:code/modules/client/client%20procs.dm:SSassets 2
 B1:code/modules/client/preferences/editors/occupation.dm:SSjob 3
 B1:code/modules/client/preferences/editors/robot_chassis.dm:SSrobot_sprites 1

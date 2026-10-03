@@ -45,12 +45,12 @@
 /datum/cogbar/lifecycle_unbind()
 	var/mob/user = user()
 	if(user)
-		GLOB.vis_overlays_service.remove_vis_overlay(user, user.managed_vis_overlays)
+		SSvis_overlays.remove_vis_overlay(user, user.managed_vis_overlays)
 		user_client()?.images -= blank
 
 /// Adds the cog to the user, visible by other players
 /datum/cogbar/proc/add_cog_to_user()
-	var/obj/effect/overlay/vis/cog = GLOB.vis_overlays_service.add_vis_overlay(user(),
+	var/obj/effect/overlay/vis/cog = SSvis_overlays.add_vis_overlay(user(),
 		icon = cogicon,
 		iconstate = cogiconstate,
 		plane = ABOVE_PLANE,
@@ -98,6 +98,6 @@
 /datum/cogbar/proc/user_client() as /client
 	return user_client
 
-/// The cog vis overlay (GLOB.vis_overlays_service owns it) (a relation view).
+/// The cog vis overlay (SSvis_overlays owns it) (a relation view).
 /datum/cogbar/proc/cog() as /obj/effect/overlay/vis
 	return cog

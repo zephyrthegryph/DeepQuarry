@@ -36,7 +36,7 @@
 	var/obj/item/radio/integrated/signal/interim_actor_probe/sender = allocate(/obj/item/radio/integrated/signal/interim_actor_probe, T)
 	var/obj/interim_pda_signal_receiver/receiver = allocate(/obj/interim_pda_signal_receiver, T)
 	sender.set_frequency(INTERIM_PDA_SIGNAL_FREQUENCY)
-	GLOB.radio_service.add_object(receiver, INTERIM_PDA_SIGNAL_FREQUENCY)
+	SSradio.add_object(receiver, INTERIM_PDA_SIGNAL_FREQUENCY)
 	var/before_logs = length(GLOB.lastsignalers)
 	var/datum/data/pda/app/signaller/interim_actor_probe/app = allocate(/datum/data/pda/app/signaller/interim_actor_probe)
 	rel_set(app, nameof(app.test_radio), sender)

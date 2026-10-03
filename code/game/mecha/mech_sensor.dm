@@ -64,10 +64,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/mech_sensor, "airlock_sensor_{enabled?standby
 
 /obj/machinery/mech_sensor/proc/set_frequency(new_frequency)
 	if(radio_connection())
-		GLOB.radio_service.remove_object(src, frequency)
+		SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	if(frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency))
 
 /obj/machinery/mech_sensor/receive_signal(datum/signal/signal)
 	if(has_stat(NOPOWER))

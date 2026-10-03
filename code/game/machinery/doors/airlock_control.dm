@@ -152,13 +152,13 @@ TRACKED_BRIDGED(/obj/machinery/door/airlock, cur_command, CHANGE_MACHINE_SETTING
 
 /obj/machinery/door/airlock/proc/set_frequency(new_frequency)
 	rel_clear(src, nameof(radio_connection))
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
 	last_reported_density = -1
 	last_reported_locked = -1
 
 	if(new_frequency)
-		rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, new_frequency, RADIO_AIRLOCK))
+		rel_set(src, nameof(radio_connection), SSradio.add_object(src, new_frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor
 	maintenance_flags = MACHINE_MAINT_STANDARD
@@ -263,9 +263,9 @@ DECLARE_APPEARANCE(/obj/machinery/airlock_sensor, "panel_open", list("1" = list(
 	return alert ? "alert" : "standby"
 
 /obj/machinery/airlock_sensor/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/airlock_sensor/Initialize(mapload)
 	. = ..()
@@ -369,9 +369,9 @@ DECLARE_APPEARANCE(/obj/machinery/access_button, "panel_open", list("1" = list(A
 	return proximity_flag
 
 /obj/machinery/access_button/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_AIRLOCK))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_AIRLOCK))
 
 /obj/machinery/access_button/Initialize(mapload)
 	. = ..()

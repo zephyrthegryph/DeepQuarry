@@ -25,7 +25,7 @@
 /obj/item/radio/headset/Initialize(mapload)
 	. = ..()
 	internal_channels.Cut()
-	// Compute channels but don't register with GLOB.radio_service yet (C5): on_materialize()
+	// Compute channels but don't register with SSradio yet (C5): on_materialize()
 	// (inherited from /obj/item/radio) does that, from the channels computed here.
 	recalculateChannels(TRUE, register = FALSE)
 
@@ -108,7 +108,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 		to_chat(user, span_notice("This headset doesn't have any encryption keys! How useless..."))
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
-		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	var/turf/T = get_turf(user)
 	if(keyslot1)
@@ -168,16 +168,16 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
 	if(register)
-		if(!GLOB.radio_service && initial_run)
+		if(!SSradio && initial_run)
 			// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the headset broken); it waits on the global radio service, not on state of this headset.
 			after(src, 3 SECONDS, PROC_REF(handle_finalize_recalculatechannels), with = list(setDescription, FALSE))
 			return
-		if(!GLOB.radio_service && !initial_run)
+		if(!SSradio && !initial_run)
 			name = "broken radio headset"
 			return
 
 		for (var/ch_name in channels)
-			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 	if(setDescription)
 		setupRadioDescription()
@@ -652,7 +652,7 @@ EXTEND_INTERACTIONS(/obj/item/radio/headset, INTERACT_INSERT(/obj/item/encryptio
 
 /obj/item/radio/headset/raider/Initialize(mapload)
 	. = ..()
-	// Just the data; on_materialize() (C5) registers it with GLOB.radio_service.
+	// Just the data; on_materialize() (C5) registers it with SSradio.
 	frequency = RAID_FREQ
 
 /obj/item/radio/headset/binary

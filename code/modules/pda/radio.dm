@@ -29,7 +29,7 @@
 
 /obj/item/radio/integrated/proc/post_signal(freq, key, value, key2, value2, key3, value3, s_filter)
 
-	var/datum/radio_frequency/frequency = GLOB.radio_service.return_frequency(freq)
+	var/datum/radio_frequency/frequency = SSradio.return_frequency(freq)
 
 	if(!frequency)
 		return
@@ -55,8 +55,8 @@
 			botstatus = b.Copy()
 
 /obj/item/radio/integrated/proc/add_to_radio(bot_filter) //Master filter control for bots. Must be placed in the bot's local Initialize(mapload) to support map spawned bots.
-	if(GLOB.radio_service)
-		GLOB.radio_service.add_object(src, control_freq, radio_filter = bot_filter)
+	if(SSradio)
+		SSradio.add_object(src, control_freq, radio_filter = bot_filter)
 
 /*
  *	Radio Cartridge, essentially a signaler.
@@ -67,14 +67,14 @@
 
 /obj/item/radio/integrated/signal/Initialize(mapload)
 	. = ..()
-	// Just the data; on_materialize() (C5) registers it with GLOB.radio_service.
+	// Just the data; on_materialize() (C5) registers it with SSradio.
 	if(src.frequency < PUBLIC_LOW_FREQ || src.frequency > PUBLIC_HIGH_FREQ)
 		src.frequency = sanitize_frequency(src.frequency)
 
 /obj/item/radio/integrated/signal/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency))
 
 /obj/item/radio/integrated/signal/proc/send_signal(message="ACTIVATE", mob/user)
 	if(!COOLDOWN_FINISHED(src, transmission_cooldown))

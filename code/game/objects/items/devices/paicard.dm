@@ -917,7 +917,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 		if(has_channel_access(card.pai, internal_chan))
 			channels += ch_name
 			channels[ch_name] = 1
-			own_put(src, nameof(secure_radio_connections), ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
+			own_put(src, nameof(secure_radio_connections), ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT))
 
 /obj/item/paicard/typeb
 	name = "personal AI device"

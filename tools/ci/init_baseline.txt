@@ -2358,21 +2358,13 @@ world_reads	code/game/machinery/atm_ret_field.dm	for(var/direction in GLOB.cardi
 world_reads	code/game/machinery/autolathe.dm	stored_research_static = GLOB.research_service.autounlock_techweb(/datum/techweb/autounlocking/autolathe)
 world_reads	code/game/machinery/camera/camera.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/machinery/computer/atmos_alert.dm	GLOB.atmosphere_alarm.register_alarm(src, /atom/proc/update_icon)
-world_reads	code/game/machinery/doors/alarmlock.dm	GLOB.radio_service.remove_object(src, air_frequency)
-world_reads	code/game/machinery/doors/alarmlock.dm	rel_set(src, nameof(air_connection), GLOB.radio_service.add_object(src, air_frequency, RADIO_TO_AIRALARM))
 world_reads	code/game/machinery/doors/firedoor.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/fire_alarm.dm	set_security_level(GLOB.security_level ? get_security_level() : "green")
 world_reads	code/game/machinery/gear_dispenser.dm	if(!GLOB.gear_distributed_to["[type]"] && (dispenser_flags & GD_NOGREED))
 world_reads	code/game/machinery/gear_dispenser.dm	GLOB.gear_distributed_to["[type]"] = list()
-world_reads	code/game/machinery/magnet.dm	if(GLOB.radio_service)
-world_reads	code/game/machinery/magnet.dm	GLOB.radio_service.add_object(src, freq, RADIO_MAGNETS)
-world_reads	code/game/machinery/magnet.dm	if(GLOB.radio_service)
-world_reads	code/game/machinery/magnet.dm	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_MAGNETS))
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_assistance |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_supplies |= department
 world_reads	code/game/machinery/requests_console.dm	GLOB.req_console_information |= department
-world_reads	code/game/machinery/status_display.dm	if(GLOB.radio_service)
-world_reads	code/game/machinery/status_display.dm	GLOB.radio_service.add_object(src, frequency)
 world_reads	code/game/machinery/supplybeacon.dm	if(!drop_type) drop_type = pick(GLOB.supply_drop)
 world_reads	code/game/machinery/teleporter.dm	for(var/direction in GLOB.cardinal)
 world_reads	code/game/machinery/teleporter.dm	for(direction in GLOB.cardinal)
@@ -2383,7 +2375,6 @@ world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome1 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdome2 += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeadmin += loc
 world_reads	code/game/objects/effects/landmarks.dm	GLOB.tdomeobserve += loc
-world_reads	code/game/objects/items/devices/communicator/cartridge.dm	GLOB.radio_service.add_object(src, 1435)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.whitense)
 world_reads	code/game/objects/items/devices/communicator/communicator.dm	LAZYOR(client_huds, GLOB.global_hud.darkMask)
 world_reads	code/game/objects/items/devices/e_beacon.dm	levels_for_distress[i] = GLOB.map_templates_loaded[current]
@@ -2429,7 +2420,6 @@ world_reads	code/modules/admin/callproc/callproc.dm	GLOB.AdminProcCallHandler = 
 world_reads	code/modules/asset_cache/transports/asset_transport.dm	for(var/client/C in GLOB.clients)
 world_reads	code/modules/blob2/blobs/base_blob.dm	set_dir(pick(GLOB.cardinal))
 world_reads	code/modules/blob2/overmind/overmind.dm	languages |= GLOB.all_languages[L]
-world_reads	code/modules/clothing/accessories/accessory.dm	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT)) // Makes it so you don't need to change the frequency off of default for it to work.
 world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_jumpsuit_choices)
 world_reads	code/modules/clothing/chameleon.dm	GLOB.chamelion_jumpsuit_choices = generate_chameleon_choices(/obj/item/clothing/under, blocked)
 world_reads	code/modules/clothing/chameleon.dm	if(!GLOB.chamelion_head_choices)

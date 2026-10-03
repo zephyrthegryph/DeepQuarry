@@ -51,9 +51,9 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	var/uplink = FALSE
 
 /obj/item/radio/proc/set_frequency(new_frequency)
-	GLOB.radio_service.remove_object(src, frequency)
+	SSradio.remove_object(src, frequency)
 	frequency = new_frequency
-	rel_set(src, nameof(radio_connection), GLOB.radio_service.add_object(src, frequency, RADIO_CHAT))
+	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 /obj/item/radio/Initialize(mapload)
 	. = ..()
@@ -66,7 +66,7 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	if(bluespace_radio && (bs_tx_preload_id || bs_rx_preload_id))
 		return INITIALIZE_HINT_LATELOAD
 
-// radio_connection/secure_radio_connections are GLOB.radio_service's live subscriptions,
+// radio_connection/secure_radio_connections are SSradio's live subscriptions,
 // rebuilt by on_materialize() from frequency/channels (C5). The bluespace
 // links are relations (BS_TX_TARGET, BS_RX_SOURCE), not state.
 /obj/item/radio/state_exclude()
@@ -77,13 +77,13 @@ MATERIAL_MIX(/obj/item/radio, list(MAT_GLASS = 25,MAT_STEEL = 75))
 	. = ..()
 	set_frequency(frequency)
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/on_dematerialize()
-	if(GLOB.radio_service)
-		GLOB.radio_service.remove_object(src, frequency)
+	if(SSradio)
+		SSradio.remove_object(src, frequency)
 		for (var/ch_name in channels)
-			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	rel_clear(src, nameof(radio_connection))
 	return ..()
 
@@ -676,7 +676,7 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 		to_chat(user, "This radio doesn't have any encryption keys!")
 		return ITEM_INTERACT_BLOCKING
 	for(var/ch_name in channels)
-		GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+		SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 		LAZYREMOVE(secure_radio_connections, ch_name) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	keyslot.forceMove(get_turf(user))
 	own_take(src, nameof(keyslot))
@@ -712,25 +712,25 @@ DAMAGE_REACTION(/obj/item/radio, DAMAGE_EMP, PROC_REF(radio_emp))
 /obj/item/radio/borg/proc/controller_check(initial_run = FALSE)
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	if(!GLOB.radio_service && initial_run)
+	if(!SSradio && initial_run)
 		// ALLOW(sys_om_after_rearm): not a loop - one retry with initial_run = FALSE, which never re-arms (the retry marks the radio broken); it waits on the global radio service, not on state of this radio.
 		after(src, 3 SECONDS, PROC_REF(controller_check), with = list(FALSE))
 		return
-	if(!GLOB.radio_service && !initial_run)
+	if(!SSradio && !initial_run)
 		name = "broken radio headset"
 		return
 	for (var/ch_name in channels)
-		LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+		LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 
 /obj/item/radio/proc/config(op)
-	if(GLOB.radio_service)
+	if(SSradio)
 		for (var/ch_name in channels)
-			GLOB.radio_service.remove_object(src, GLOB.radiochannels[ch_name])
+			SSradio.remove_object(src, GLOB.radiochannels[ch_name])
 	secure_radio_connections = null // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	channels = op
-	if(GLOB.radio_service)
+	if(SSradio)
 		for (var/ch_name in op)
-			LAZYSET(secure_radio_connections, ch_name, GLOB.radio_service.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
+			LAZYSET(secure_radio_connections, ch_name, SSradio.add_object(src, GLOB.radiochannels[ch_name],  RADIO_CHAT)) // ALLOW(ownership): channel name -> the radio service's shared frequency datum (the service owns it; keyed by name, so not a relation list)
 	return
 
 /obj/item/radio/off

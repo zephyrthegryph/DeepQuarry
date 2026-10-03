@@ -175,4 +175,104 @@
 	TEST_ASSERT_NOTNULL(sky, "get_skybox() built nothing for the test z-level")
 	TEST_ASSERT_EQUAL(SSskybox.get_skybox(z), sky, "get_skybox() did not cache the skybox")
 
+/// A callable a test can queue as a runechat message: counts its runs.
+/datum/dq_runechat_probe
+	var/runs = 0
+
+/datum/dq_runechat_probe/proc/finish()
+	runs++
+
+/// Runechat: delivered every tick during the game, parked while the queue is empty, woken by a queued message, and a
+/// message that went away first is dropped.
+/datum/unit_test/dq_system_runechat
+
+/datum/unit_test/dq_system_runechat/Run()
+	assert_system_ported(SSrunechat, /datum/system/runechat)
+	var/datum/work_item/W = assert_work_declared(SSrunechat, nameof(/datum/system/runechat/proc/deliver_messages), 1, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSrunechat.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "runechat delivers outside the game")
+	TEST_ASSERT_EQUAL(SSrunechat.deliver_messages(0), STEP_PARK, "an empty runechat queue must park")
+	var/datum/dq_runechat_probe/probe = new
+	var/list/message = om_callable(probe, TYPE_PROC_REF(/datum/dq_runechat_probe, finish))
+	W.parked = TRUE
+	SSrunechat.enqueue(message)
+	TEST_ASSERT(!W.parked, "enqueue() did not wake the parked item")
+	SSrunechat.dequeue(message)
+	TEST_ASSERT_EQUAL(length(SSrunechat.vars["message_queue"]), 0, "dequeue() left the message queued")
+	SSrunechat.enqueue(message)
+	var/result = SSrunechat.deliver_messages(0)
+	for(var/i in 1 to 20)
+		if(result != STEP_YIELD)
+			break
+		result = SSrunechat.deliver_messages(0)
+	TEST_ASSERT_EQUAL(result, STEP_PARK, "a drained queue must park the item")
+	TEST_ASSERT_EQUAL(probe.runs, 1, "the queued message was not delivered once")
+	W.parked = FALSE
+	qdel(probe)
+
+/// The vis overlay cache: expires unused overlays every minute on the background lane; add and remove go through the api.
+/datum/unit_test/dq_system_vis_overlays
+
+/datum/unit_test/dq_system_vis_overlays/Run()
+	assert_system_ported(SSvis_overlays, /datum/system/vis_overlays)
+	assert_work_declared(SSvis_overlays, nameof(/datum/system/vis_overlays/proc/expire_overlays), 1 MINUTE, LANE_BACKGROUND)
+	TEST_ASSERT_EQUAL(SSvis_overlays.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "overlay expiry runs outside the game")
+	var/obj/item/thing = allocate(/obj/item)
+	var/obj/effect/overlay/vis/first = thing.add_vis_overlay("dq_probe", layer = 1, plane = 1, dir = 2)
+	TEST_ASSERT_NOTNULL(first, "add_vis_overlay() made no overlay")
+	TEST_ASSERT(first in thing.vis_contents, "the overlay was not added to the thing's vis contents")
+	var/obj/effect/overlay/vis/second = thing.add_vis_overlay("dq_probe", layer = 1, plane = 1, dir = 2)
+	TEST_ASSERT_EQUAL(second, first, "an identical overlay must come from the cache")
+	thing.remove_vis_overlay(first)
+	TEST_ASSERT(!(first in thing.vis_contents), "remove_vis_overlay() left the overlay in the vis contents")
+	TEST_ASSERT_EQUAL(SSvis_overlays.expire_overlays(0), STEP_DONE, "an expiry sweep must finish")
+
+/// Turf cascade: parked until start_cascade(), which wakes it; only one cascade at a time; stopping resets it.
+/datum/unit_test/dq_system_turf_cascade
+
+/datum/unit_test/dq_system_turf_cascade/Run()
+	assert_system_ported(SSturf_cascade, /datum/system/turf_cascade)
+	var/datum/work_item/W = assert_work_declared(SSturf_cascade, nameof(/datum/system/turf_cascade/proc/grow_cascade), 2, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSturf_cascade.periodic_runlevels, RUNLEVEL_GAME | RUNLEVEL_POSTGAME, "the cascade grows outside the game")
+	TEST_ASSERT_EQUAL(SSturf_cascade.grow_cascade(0), STEP_PARK, "an idle cascade must park")
+	W.parked = TRUE
+	SSturf_cascade.start_cascade(run_loc_floor_bottom_left, /turf/simulated/floor/plating)
+	TEST_ASSERT(!W.parked, "start_cascade() did not wake the parked item")
+	TEST_ASSERT(SSturf_cascade.has_work(), "a started cascade has work")
+	SSturf_cascade.start_cascade(run_loc_floor_top_right, /turf/simulated/wall)
+	TEST_ASSERT_EQUAL(length(SSturf_cascade.vars["remaining_turf"]), 1, "a second cascade started while one was running")
+	SSturf_cascade.stop_cascade()
+	TEST_ASSERT(!SSturf_cascade.has_work(), "stop_cascade() left the cascade running")
+	TEST_ASSERT_EQUAL(SSturf_cascade.grow_cascade(0), STEP_PARK, "a stopped cascade must park")
+	W.parked = FALSE
+
+/// Radio: boots after atoms, owns the frequencies; devices join and leave through the api and an emptied frequency goes.
+/datum/unit_test/dq_system_radio
+
+/datum/unit_test/dq_system_radio/Run()
+	assert_system_ported(SSradio, /datum/system/radio)
+	TEST_ASSERT(/datum/system/atoms in SSradio.needs, "the radio system boots after atoms")
+	TEST_ASSERT_NOTNULL(GLOB.autospeaker, "the global announcer was not set up at boot")
+	var/frequency = 1337
+	var/obj/item/device = allocate(/obj/item)
+	var/datum/radio_frequency/joined = SSradio.add_object(device, frequency, RADIO_CHAT)
+	TEST_ASSERT_NOTNULL(joined, "add_object() answered no frequency")
+	TEST_ASSERT_EQUAL(SSradio.return_frequency(frequency), joined, "return_frequency() answered a different datum")
+	TEST_ASSERT(device in joined.devices[RADIO_CHAT], "the device did not join its filter")
+	SSradio.remove_object(device, frequency)
+	TEST_ASSERT_NULL(SSradio.frequencies["[frequency]"], "an emptied frequency was kept")
+
+/// Radiation: pulses are queued through the api, a step drains them, a disabled system queues none, and a step goes in the
+/// game and the postgame.
+/datum/unit_test/dq_system_radiation
+
+/datum/unit_test/dq_system_radiation/Run()
+	assert_system_ported(SSradiation, /datum/system/radiation)
+	assert_work_declared(SSradiation, nameof(/datum/system/radiation/proc/radiation_step), 0.5 SECONDS, LANE_SIMULATION)
+	TEST_ASSERT_EQUAL(SSradiation.periodic_runlevels, RUNLEVELS_DEFAULT, "radiation runs in the lobby")
+	TEST_ASSERT(SSradiation.is_enabled(), "radiation is disabled")
+	TEST_ASSERT(islist(SSradiation.performance_diagnostics()), "performance_diagnostics() must answer a list")
+	TEST_ASSERT_EQUAL(SSradiation.radiation_step(0), STEP_DONE, "an idle radiation step must finish")
+	var/mob/living/carbon/human/target = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	TEST_ASSERT(SSradiation.irradiate(target, 0), "irradiate() refused a plain target")
+
 #endif
