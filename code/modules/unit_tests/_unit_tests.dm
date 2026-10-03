@@ -769,6 +769,8 @@
 #include "interim_hailer_mask_recovery.dm"
 #include "interim_action_button_drop_actor.dm"
 #include "interim_atm_sticky_cash_deposit.dm"
+#include "interim_custom_sandwich_sticky_ingredient.dm"
+#include "interim_custom_sandwich_sticky_shard.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
