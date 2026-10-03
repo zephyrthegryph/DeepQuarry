@@ -191,6 +191,8 @@
 
 /datum/entry/part/effect/graph_advance/run_effect(datum/act/op/A)
 	var/datum/E = A.holder
+	if(QDELETED(E))
+		return OP_OK // the edge's own effect replaced the instance (the finished stage stands the real thing in its place): there is nothing left to move
 	if(!graph_advance(E, src.args["into"], src.args["key"], graph_ledger_of(A), src.args["cap"]))
 		return OP_FAILED
 	return OP_OK

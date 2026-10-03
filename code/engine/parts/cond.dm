@@ -13,6 +13,7 @@
 
 MSG_DEF_SELF(op/no_binding, "You can't do that that way.")
 MSG_DEF_SELF(op/busy, "You're already busy doing something.")
+MSG_DEF_SELF(op/claimed, "Someone is already working on that.")
 MSG_DEF_SELF(op/stopped, "You stop what you were doing.")
 MSG_DEF_SELF(op/cancelled, "You stop.")
 MSG_DEF_SELF(op/target_gone, "It's gone.")

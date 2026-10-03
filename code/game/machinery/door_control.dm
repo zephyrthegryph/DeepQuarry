@@ -173,9 +173,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote, "doorctrl{appearance_powered?0
 
 /// Blast doors whose id matches ours (keyed).
 /obj/machinery/button/remote/blast_door/var/list/obj/machinery/door/blast/controlled_doors
-/obj/machinery/button/remote/blast_door/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
+CAPABILITIES(/obj/machinery/button/remote/blast_door, \
+	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
 
 /obj/machinery/button/remote/blast_door/trigger()
 	for(var/obj/machinery/door/blast/M as anything in controlled_doors)
@@ -225,10 +224,9 @@ APPEARANCE_TEMPLATE(/obj/machinery/button/remote/blast_door/bear, "stuffedbear")
 /// Blast doors and mass drivers whose id matches ours (keyed).
 /obj/machinery/button/remote/driver/var/list/obj/machinery/door/blast/controlled_doors
 /obj/machinery/button/remote/driver/var/list/obj/machinery/mass_driver/controlled_drivers
-/obj/machinery/button/remote/driver/relations()
-	. = ..()
-	. += rel_many(nameof(controlled_doors), keyed = nameof(id), keyed_target = /obj/machinery/door/blast)
-	. += rel_many(nameof(controlled_drivers), keyed = nameof(id), keyed_target = /obj/machinery/mass_driver)
+CAPABILITIES(/obj/machinery/button/remote/driver, \
+	ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)), \
+	ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
 
 /obj/machinery/button/remote/driver/trigger(mob/user)
 	if(active)

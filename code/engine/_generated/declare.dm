@@ -392,6 +392,12 @@
 	return list(STAGE_DOOR_BOARDED, "door", "boarded")
 /datum/stage_def/door_finished/spec()
 	return list(STAGE_DOOR_FINISHED, "door", "finished")
+/datum/stage_def/firedoor_assembly_frame/spec()
+	return list(STAGE_FIREDOOR_ASSEMBLY_FRAME, "firedoor_assembly", "frame")
+/datum/stage_def/firedoor_assembly_wired/spec()
+	return list(STAGE_FIREDOOR_ASSEMBLY_WIRED, "firedoor_assembly", "wired")
+/datum/stage_def/firedoor_assembly_finished/spec()
+	return list(STAGE_FIREDOOR_ASSEMBLY_FINISHED, "firedoor_assembly", "finished")
 /datum/stage_def/door_assembly_frame/spec()
 	return list(STAGE_DOOR_ASSEMBLY_FRAME, "door_assembly", "frame")
 /datum/stage_def/door_assembly_secured/spec()
@@ -423,17 +429,17 @@
 /datum/source_def/power_failure/spec()
 	return list(SRC_POWER_FAILURE, "power_failure")
 
-/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:312
+/// CAPABILITIES(/datum/pending_op) at code/engine/parts/run.dm:316
 /datum/pending_op/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/engine/parts/run.dm", 312, /datum/pending_op)
-	into += entry_line(313)
+	into += entry_block("code/engine/parts/run.dm", 316, /datum/pending_op)
+	into += entry_line(317)
 	into += list(global.ref_one(nameof(holder), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(314)
+	into += entry_line(318)
 	into += list(global.ref_one(nameof(target), /datum, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(315)
+	into += entry_line(319)
 	into += list(global.ref_one(nameof(actor), /mob, on_other_deleted = OTHER_DELETE_ME))
-	into += entry_line(316)
+	into += entry_line(320)
 	into += list(global.ref_one(nameof(held), /obj/item, on_other_deleted = OTHER_DELETE_ME))
 
 /// CAPABILITIES(/datum/species) at code/engine/parts/hands.dm:53
@@ -618,6 +624,22 @@
 	into += entry_line(297)
 	into += list(global.configure(global.reagent_container(starts = list(REAGENT_ID_SILICATE = 80))))
 
+/// CAPABILITIES(/obj/machinery/button/remote/blast_door) at code/game/machinery/door_control.dm:176
+/obj/machinery/button/remote/blast_door/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/door_control.dm", 176, /obj/machinery/button/remote/blast_door)
+	into += entry_line(177)
+	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
+
+/// CAPABILITIES(/obj/machinery/button/remote/driver) at code/game/machinery/door_control.dm:227
+/obj/machinery/button/remote/driver/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/door_control.dm", 227, /obj/machinery/button/remote/driver)
+	into += entry_line(228)
+	into += list(global.ref_many(nameof(controlled_doors), /obj/machinery/door/blast, by = nameof(id)))
+	into += entry_line(229)
+	into += list(global.ref_many(nameof(controlled_drivers), /obj/machinery/mass_driver, by = nameof(id)))
+
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)
 	..(into)
@@ -711,7 +733,7 @@
 	into += entry_line(468)
 	into += list(global.op("hold_open", global.menu(), global.stance(I_GRAB), global.label("Hold the door open"), global.wait(0), global.then(PROC_REF(hold_door_open))))
 	into += entry_line(469)
-	into += list(global.op("break_in", global.wait(10 SECONDS), global.then(PROC_REF(break_in_done))))
+	into += list(global.op("break_in", global.ai(), global.wait(10 SECONDS), global.then(PROC_REF(break_in_done))))
 	into += entry_line(470)
 	into += list(global.op("deice", global.item(/obj/item), global.label("Clear the ice"), global.when(frozen), global.priority(OP_PRIORITY_SUBVERT), global.wait(PROC_REF(deice_wait)), global.then(PROC_REF(deice_done))))
 	into += entry_line(471)
@@ -823,32 +845,80 @@
 	into += entry_line(133)
 	into += list(global.every(15 SECONDS, global.then(PROC_REF(check_for_freeze)), when = PROC_REF(can_freeze)))
 
-/// CAPABILITIES(/obj/machinery/door/blast) at code/game/machinery/doors/door_legacy_bridge.dm:10
+/// CAPABILITIES(/obj/machinery/door/blast) at code/game/machinery/doors/blast_door.dm:83
 /obj/machinery/door/blast/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 10, /obj/machinery/door/blast)
-	into += entry_line(10)
-	into += list(legacy_door_ops())
+	into += entry_block("code/game/machinery/doors/blast_door.dm", 83, /obj/machinery/door/blast)
+	into += entry_line(84)
+	into += list(global.without(CAP_EMAG))
+	into += entry_line(85)
+	into += list(global.without("reinforce"))
+	into += entry_line(86)
+	into += list(global.without("weld_plasteel"))
+	into += entry_line(87)
+	into += list(global.without("unreinforce"))
+	into += entry_line(88)
+	into += list(global.emag(global.then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged)))
+	into += entry_line(89)
+	into += list(global.op("swallow", global.item(/obj/item), global.priority(OP_PRIORITY_NORMAL + 1), global.wait(0), global.then(PROC_REF(item_swallowed))))
+	into += entry_line(90)
+	into += list(global.op("force_xeno", global.hand(), global.label("Force"), global.when(global.req(PROC_REF(claws_force))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(claws_wait)), global.needs(global.req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), global.then(PROC_REF(claws_forced))))
+	into += entry_line(92)
+	into += list(global.op("force_generic", global.ai(), global.wait(PROC_REF(generic_wait)), global.then(PROC_REF(generic_forced))))
+	into += entry_line(93)
+	into += list(global.op("pry", global.item(/obj/item), global.stance(I_HELP, I_DISARM, I_GRAB), global.when(global.req(PROC_REF(prying_item))), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
+	into += entry_line(95)
+	into += list(global.op("pry_broken", global.item(/obj/item), global.stance(I_HURT), global.when(global.req(PROC_REF(prying_item))), global.when(PROC_REF(wrecked)), global.priority(OP_PRIORITY_CLAW), global.wait(0), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), global.req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), global.then(PROC_REF(pry_forced))))
+	into += entry_line(97)
+	into += list(global.op("mend", global.item(/obj/item/stack/material/plasteel), global.label("Repair"), global.priority(OP_PRIORITY_PART), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired)), global.req(PROC_REF(enough_sheets), because = MSG(blast_door/more_sheets))), global.then(PROC_REF(mended)), global.says(MSG(blast_door/repaired))))
 
-/// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/door_legacy_bridge.dm:9
+/// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/firedoor.dm:149
 /obj/machinery/door/firedoor/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 9, /obj/machinery/door/firedoor)
-	into += entry_line(9)
-	into += list(legacy_door_ops())
+	into += entry_block("code/game/machinery/doors/firedoor.dm", 149, /obj/machinery/door/firedoor)
+	into += entry_line(150)
+	into += list(global.ref_one(nameof(turbolift_floor), /datum/turbolift_floor))
+	into += entry_line(151)
+	into += list(global.every(MACHINE_SERVICE_INTERVAL, global.then(PROC_REF(air_check)), when = nameof(density)))
+	into += entry_line(152)
+	into += list(global.op("busy", global.inputs(global.hand(), global.item(/obj/item)), global.priority(OP_PRIORITY_CLAW + 8), global.when(nameof(operating)), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(153)
+	into += list(global.op("use", global.hand(), global.label("Use"), global.priority(OP_PRIORITY_PART), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
+	into += entry_line(157)
+	into += list(global.op("remote_use", global.ai(), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_solid)), global.req_capable(), global.req(PROC_REF(can_work), because = MSG(firedoor/dead)), global.req(PROC_REF(not_locked_out), because = MSG(firedoor/locked_out))), global.asks(/datum/prompt/yes_no, fields = list("question" = global.computed(PROC_REF(use_question)))), global.then(PROC_REF(used))))
+	into += entry_line(161)
+	into += list(global.op("force_claws", global.hand(), global.label("Force"), global.when(global.req(PROC_REF(claws_force))), global.priority(OP_PRIORITY_TAKE_OUT), global.wait(PROC_REF(claws_wait)), global.then(PROC_REF(claws_forced))))
+	into += entry_line(162)
+	into += list(global.op("force_generic", global.ai(), global.wait(PROC_REF(generic_wait)), global.then(PROC_REF(generic_forced))))
+	into += entry_line(163)
+	into += list(global.op("tape", global.item(/obj/item/taperoll), global.priority(OP_PRIORITY_CLAW + 5), global.wait(0), global.then(PROC_REF(nothing_done))))
+	into += entry_line(164)
+	into += list(global.op("welded", global.item(/obj/item), global.priority(OP_PRIORITY_CLAW + 4), global.when(nameof(blocked)), global.wait(0), global.needs(global.req_is(nameof(blocked), FALSE, because = MSG(firedoor/welded_shut))), global.then(PROC_REF(nothing_done))))
+	into += entry_line(166)
+	into += list(global.op("pry", global.item(/obj/item), global.label("Force"), global.when(global.req(PROC_REF(prying_item))), global.priority(OP_PRIORITY_CLAW + 3), global.wait(3 SECONDS), global.claims(), global.needs(global.req(PROC_REF(wielded_if_axe), because = MSG(firedoor/need_wield))), global.then(PROC_REF(item_forced))))
+	into += entry_line(168)
+	into += list(global.op("weld", global.tool(TOOL_WELDER), global.label("Weld"), global.when(global.cond_not(PROC_REF(repairable))), global.priority(OP_PRIORITY_CLAW + 6), global.wait(0), global.costs(RES_FUEL, 0), global.needs(global.req_unclaimed(because = MSG(firedoor/busy_prying))), global.then(PROC_REF(weld_toggled))))
+	into += entry_line(170)
+	into += list(global.op("hatch", global.tool(TOOL_SCREWDRIVER), global.label("Maintenance hatch"), global.when(nameof(density)), global.priority(OP_PRIORITY_CLAW + 6), global.wait(0), global.then(PROC_REF(hatch_toggled))))
+	into += entry_line(171)
+	into += list(global.op("remove_electronics", global.tool(TOOL_CROWBAR), global.label("Remove electronics"), global.when(nameof(blocked)), global.priority(OP_PRIORITY_CLAW + 6), global.wait(3 SECONDS), global.needs(global.req(PROC_REF(hatch_reachable), because = MSG(firedoor/hatch_first))), global.then(PROC_REF(electronics_out))))
+	into += entry_line(173)
+	into += list(global.op("pry_tool", global.tool(TOOL_CROWBAR), global.label("Force"), global.when(global.cond_not(nameof(blocked))), global.priority(OP_PRIORITY_CLAW + 6), global.wait(3 SECONDS), global.claims(), global.needs(global.req(PROC_REF(pry_free), because = MSG(firedoor/motors_resist))), global.then(PROC_REF(tool_forced))))
 
-/// CAPABILITIES(/obj/machinery/door/unpowered) at code/game/machinery/doors/door_legacy_bridge.dm:12
+/// CAPABILITIES(/obj/machinery/door/unpowered) at code/game/machinery/doors/unpowered.dm:12
 /obj/machinery/door/unpowered/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 12, /obj/machinery/door/unpowered)
-	into += entry_line(12)
-	into += list(legacy_door_ops())
+	into += entry_block("code/game/machinery/doors/unpowered.dm", 12, /obj/machinery/door/unpowered)
+	into += entry_line(13)
+	into += list(global.without(CAP_EMAG))
+	into += entry_line(14)
+	into += list(global.op("block", global.item(/obj/item), global.when(global.req(PROC_REF(item_blocked))), global.priority(OP_PRIORITY_SUBVERT), global.then(PROC_REF(item_swallowed))))
 
-/// CAPABILITIES(/obj/machinery/door/window) at code/game/machinery/doors/door_legacy_bridge.dm:11
+/// CAPABILITIES(/obj/machinery/door/window) at code/game/machinery/doors/door_legacy_bridge.dm:9
 /obj/machinery/door/window/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 11, /obj/machinery/door/window)
-	into += entry_line(11)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 9, /obj/machinery/door/window)
+	into += entry_line(9)
 	into += list(legacy_door_ops())
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166
@@ -1076,6 +1146,21 @@
 	into += list(global.op("unplate", global.tool(TOOL_WELDER), global.label("Take the plating off"), global.when(PROC_REF(plated)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(plating_off))))
 	into += entry_line(190)
 	into += list(global.extend("construction.dismantle", global.needs(global.req_not(global.req_built(STAGE_DOOR_ASSEMBLY_SECURED, because = MSG(door_assembly/bolted_down)), because = MSG(door_assembly/bolted_down)))))
+
+/// CAPABILITIES(/obj/structure/firedoor_assembly) at code/game/machinery/doors/firedoor_assembly.dm:34
+/obj/structure/firedoor_assembly/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/firedoor_assembly.dm", 34, /obj/structure/firedoor_assembly)
+	into += entry_line(35)
+	into += list(global.construction(global.start(STAGE_FIREDOOR_ASSEMBLY_FRAME), global.stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, global.stack(/obj/item/stack/cable_coil, 1), global.wait(4 SECONDS), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), global.then(PROC_REF(wired_up)), global.undone(PROC_REF(unwired)), undo = list(global.tool(TOOL_WIRECUTTER), global.wait(4 SECONDS))), global.stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, global.item(/obj/item/circuitboard/airalarm), global.wait(0), global.needs(global.req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), global.then(PROC_REF(finish_firedoor)), undo = null), global.dismantle(global.tool(TOOL_WELDER), global.wait(4 SECONDS), global.then(PROC_REF(disassembled)))))
+	into += entry_line(39)
+	into += list(global.op("anchor", global.tool(TOOL_WRENCH), global.label("Bolt or unbolt"), global.wait(0), global.then(PROC_REF(anchor_toggled))))
+	into += entry_line(40)
+	into += list(global.op("plate_glass", global.item(/obj/item/stack/material), global.label("Install windows"), global.when(global.req(PROC_REF(holding_rglass))), global.when(PROC_REF(unglazed)), global.wait(4 SECONDS), global.then(PROC_REF(glass_in))))
+	into += entry_line(41)
+	into += list(global.op("unglaze", global.tool(TOOL_WELDER), global.label("Take the glass out"), global.when(nameof(glass)), global.priority(global.above("construction.dismantle")), global.wait(4 SECONDS), global.then(PROC_REF(glass_out))))
+	into += entry_line(42)
+	into += list(global.extend("construction.dismantle", global.needs(global.req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
 
 #if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)
 
@@ -1980,3 +2065,9 @@
 	into += list(global.every(5, global.then(PROC_REF(fast_tick))))
 
 #endif
+/// declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.
+/proc/declared_keyed_targets()
+	. = list()
+	.[/obj/machinery/door/blast] = "id"
+	.[/obj/machinery/mass_driver] = "id"
+

@@ -171,8 +171,21 @@ GLOBAL_LIST_EMPTY(keyed_targets) // target type -> the id var holders key on
 /proc/keyed_target_register(type, id_var)
 	GLOB.keyed_targets[type] = id_var
 
+/// The keyed targets every CAPABILITIES list declares (generated: declared_keyed_targets()), read once. A target type is keyed whichever side builds its
+/// table first (a door placed on the map before its button), so a table asks this list, not only the holders' tables built so far. A static, not a
+/// global: tables are built while the globals are still being made.
+/proc/keyed_targets_declared()
+	var/static/list/declared
+	if(isnull(declared))
+		declared = declared_keyed_targets()
+	return declared
+
 /// The link ends and keyed-target declaration that apply to D's type: what build_own_table() adds after the type's own entries.
 /proc/link_entries_for(datum/own_decls/decl, datum/D, datum/own_table/T)
+	var/list/declared = keyed_targets_declared()
+	for(var/target_type in declared)
+		if(istype(D, target_type) && !decl.keyed_key)
+			decl.keyed_key = declared[target_type]
 	for(var/sig in GLOB.link_decls)
 		link_patch_table(T, GLOB.link_decls[sig])
 	for(var/target_type in GLOB.keyed_targets)

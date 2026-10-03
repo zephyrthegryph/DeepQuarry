@@ -197,7 +197,7 @@
 				AL.unbolt_unweld() //The spirits of the damned care not for your locks, or your welding tools.
 			else if(istype(door, /obj/machinery/door/firedoor))
 				var/obj/machinery/door/firedoor/FD = door
-				FD.blocked = 0
+				FD.set_blocked(0)
 			door.open(1)
 	return
 

@@ -70,7 +70,11 @@
 
 /// Welds the firedoor shut or frees it, as the welder does.
 /proc/p2_firedoor_set_welded(obj/machinery/door/firedoor/D, on)
-	D.blocked = on
+	D.set_blocked(on)
+
+/// Whether a firedoor assembly is wired.
+/proc/p2_firedoor_assembly_wired(obj/structure/firedoor_assembly/F)
+	return built(F, STAGE_FIREDOOR_ASSEMBLY_WIRED)
 
 /// Whether the firedoor's maintenance hatch is open.
 /proc/p2_firedoor_hatch_open(obj/machinery/door/firedoor/D)
@@ -871,6 +875,22 @@
 	click(H, D, crowbar)
 	TEST_ASSERT(D.density, "a powered airlock cannot be pried open")
 
+/datum/unit_test/dq_p2_door/airlock_strong_animal_breaks_into_a_bolted_dead_one
+
+/datum/unit_test/dq_p2_door/airlock_strong_animal_breaks_into_a_bolted_dead_one/run_gate()
+	var/obj/machinery/door/airlock/D = make_door()
+	p2_door_set_power(D, FALSE)
+	p2_door_set_bolts(D, TRUE)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, tile(3, 2))
+	D.attack_generic(M, 1)
+	test_time(11 SECONDS)
+	TEST_ASSERT(D.density, "a weak animal strains for nothing")
+	D.attack_generic(M, 50)
+	test_time(11 SECONDS)
+	TEST_ASSERT(!D.density, "a strong one breaks in")
+	TEST_ASSERT(!p2_door_bolted(D), "through the bolts")
+	tidy(tile(2, 2))
+
 /datum/unit_test/dq_p2_door/airlock_unpowered_door_pries_open_and_shut
 
 /datum/unit_test/dq_p2_door/airlock_unpowered_door_pries_open_and_shut/run_gate()
@@ -1614,9 +1634,83 @@
 	var/obj/structure/firedoor_assembly/F = locate(/obj/structure/firedoor_assembly) in tile(2, 2)
 	TEST_ASSERT_NOTNULL(F, "an assembly stands in its place")
 	own(F)
-	TEST_ASSERT(F.anchored && F.wired, "bolted and wired")
+	TEST_ASSERT(F.anchored && p2_firedoor_assembly_wired(F), "bolted and wired")
 	TEST_ASSERT_NOTNULL(locate(/obj/item/circuitboard) in tile(2, 2), "the circuit board lies on the floor")
 	tidy(tile(2, 2))
+
+/datum/unit_test/dq_p2_door/firedoor_prompt_says_what_it_would_do
+
+/datum/unit_test/dq_p2_door/firedoor_prompt_says_what_it_would_do/run_gate()
+	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
+	var/mob/living/carbon/human/H = make_person(null)
+	var/area/A = get_area(D)
+	defer_cleanup(A, TYPE_PROC_REF(/area, fire_reset))
+	p2_door_click(H, D, null)
+	var/datum/prompt/P = SSrequests.open_for(H)
+	TEST_ASSERT_NOTNULL(P, "using it asks")
+	TEST_ASSERT(findtext(P.question, "close"), "an open firedoor asks about closing")
+	TEST_ASSERT(!findtext(P.question, "accountable"), "and says nothing of blame")
+	p2_door_answer(H, null, TRUE)
+	p2_area_fire(A, TRUE)
+	settle()
+	TEST_ASSERT(D.density, "closed by the alarm")
+	p2_door_click(H, D, null)
+	P = SSrequests.open_for(H)
+	TEST_ASSERT_NOTNULL(P, "using it asks again")
+	TEST_ASSERT(findtext(P.question, "open"), "a shut firedoor asks about opening")
+	TEST_ASSERT(findtext(P.question, "accountable"), "and in an alarm, who is to blame for it")
+	p2_door_answer(H, null, TRUE)
+
+/datum/unit_test/dq_p2_door/firedoor_silicon_uses_it_through_the_prompt
+
+/datum/unit_test/dq_p2_door/firedoor_silicon_uses_it_through_the_prompt/run_gate()
+	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
+	var/mob/living/silicon/ai/AI = make_ai()
+	D.attack_hand(AI)
+	p2_door_answer(AI, TRUE)
+	settle()
+	TEST_ASSERT(D.density, "an AI closes a firedoor through the same question")
+
+/datum/unit_test/dq_p2_door/firedoor_second_prier_is_refused_while_the_first_works
+
+/datum/unit_test/dq_p2_door/firedoor_second_prier_is_refused_while_the_first_works/run_gate()
+	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
+	var/mob/living/carbon/human/H = make_person(null)
+	var/mob/living/carbon/human/other = make_person(null, tile(3, 3))
+	var/area/A = get_area(D)
+	defer_cleanup(A, TYPE_PROC_REF(/area, fire_reset))
+	p2_area_fire(A, TRUE)
+	settle()
+	p2_door_set_power(D, FALSE)
+	var/obj/item/crowbar = give_tool(H, /obj/item/tool/crowbar)
+	crowbar.toolspeed = 1
+	var/obj/item/second = give_tool(other, /obj/item/tool/crowbar)
+	second.toolspeed = 1
+	p2_door_click(H, D, crowbar)
+	TEST_ASSERT(op_claimed(D), "a crowbar at work claims the door")
+	p2_door_click(other, D, second)
+	test_time(1 SECOND)
+	TEST_ASSERT(D.density, "nothing has given yet")
+	test_time(5 SECONDS)
+	TEST_ASSERT(!D.density, "the first one forced it")
+	TEST_ASSERT(!op_claimed(D), "and the claim ended with the work")
+
+/datum/unit_test/dq_p2_door/firedoor_strong_animal_forces_a_dead_one
+
+/datum/unit_test/dq_p2_door/firedoor_strong_animal_forces_a_dead_one/run_gate()
+	var/obj/machinery/door/firedoor/D = make_door(/obj/machinery/door/firedoor)
+	var/area/A = get_area(D)
+	defer_cleanup(A, TYPE_PROC_REF(/area, fire_reset))
+	p2_area_fire(A, TRUE)
+	settle()
+	p2_door_set_power(D, FALSE)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, tile(3, 2))
+	D.attack_generic(M, 1)
+	test_time(3 SECONDS)
+	TEST_ASSERT(D.density, "a weak animal strains for nothing")
+	D.attack_generic(M, 50)
+	test_time(3 SECONDS)
+	TEST_ASSERT(!D.density, "a strong one forces it open")
 
 /datum/unit_test/dq_p2_door/firedoor_assembly_builds_a_firedoor
 
@@ -1626,11 +1720,11 @@
 	var/obj/item/circuitboard/airalarm/board = allocate(/obj/item/circuitboard/airalarm, H.loc)
 	var/obj/item/stack/cable_coil/cable = give_item(H, /obj/item/stack/cable_coil, 5)
 	click(H, F, cable)
-	TEST_ASSERT(!F.wired, "a loose assembly cannot be wired")
+	TEST_ASSERT(!p2_firedoor_assembly_wired(F), "a loose assembly cannot be wired")
 	click(H, F, give_tool(H, /obj/item/tool/wrench))
 	TEST_ASSERT(F.anchored, "a wrench bolts it down")
 	click(H, F, cable)
-	TEST_ASSERT(F.wired, "now cable wires it")
+	TEST_ASSERT(p2_firedoor_assembly_wired(F), "now cable wires it")
 	click(H, F, hold(H, board))
 	TEST_ASSERT(QDELETED(F), "the circuit board finishes it")
 	var/obj/machinery/door/firedoor/D = locate(/obj/machinery/door/firedoor) in tile(2, 2)
@@ -1662,9 +1756,9 @@
 	var/mob/living/carbon/human/H = make_person(null)
 	click(H, F, give_tool(H, /obj/item/tool/wrench))
 	click(H, F, give_item(H, /obj/item/stack/cable_coil, 5))
-	TEST_ASSERT(F.wired, "wired")
+	TEST_ASSERT(p2_firedoor_assembly_wired(F), "wired")
 	click(H, F, give_tool(H, /obj/item/tool/wirecutters))
-	TEST_ASSERT(!F.wired, "wirecutters strip it")
+	TEST_ASSERT(!p2_firedoor_assembly_wired(F), "wirecutters strip it")
 	click(H, F, give_item(H, /obj/item/stack/material/glass/reinforced, 2))
 	TEST_ASSERT(F.glass, "glazed")
 	click(H, F, give_welder(H))
@@ -1757,6 +1851,8 @@
 	click(H, B, bar)
 	TEST_ASSERT(B.get_integrity() < before, "a hard one damages it")
 
+/datum/unit_test/dq_p2_door/blast_door_plasteel_repairs_it
+
 /datum/unit_test/dq_p2_door/blast_door_plasteel_repairs_it/run_gate()
 	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular)
 	var/mob/living/carbon/human/H = make_person(null)
@@ -1769,6 +1865,8 @@
 	TEST_ASSERT_EQUAL(B.get_integrity(), B.max_integrity, "plasteel repairs it fully")
 	TEST_ASSERT(sheets.get_amount() < 5, "using sheets")
 
+/datum/unit_test/dq_p2_door/blast_door_repair_needs_enough_sheets
+
 /datum/unit_test/dq_p2_door/blast_door_repair_needs_enough_sheets/run_gate()
 	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular)
 	var/mob/living/carbon/human/H = make_person(null)
@@ -1779,6 +1877,30 @@
 	TEST_ASSERT_EQUAL(B.get_integrity(), before, "one sheet is not enough for a wrecked door")
 	TEST_ASSERT_EQUAL(sheets.get_amount(), 1, "and it is not used")
 	tidy(tile(2, 2))
+
+/datum/unit_test/dq_p2_door/blast_door_strong_animal_forces_a_dead_one
+
+/datum/unit_test/dq_p2_door/blast_door_strong_animal_forces_a_dead_one/run_gate()
+	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular)
+	p2_door_set_power(B, FALSE)
+	var/mob/living/simple_mob/animal/passive/mouse/M = allocate(/mob/living/simple_mob/animal/passive/mouse, tile(3, 2))
+	B.attack_generic(M, 1)
+	test_time(6 SECONDS)
+	TEST_ASSERT(B.density, "a weak animal strains for nothing")
+	B.attack_generic(M, 50)
+	test_time(6 SECONDS)
+	TEST_ASSERT(!B.density, "a strong one forces it open")
+
+/datum/unit_test/dq_p2_door/blast_door_swallows_a_held_thing
+
+/datum/unit_test/dq_p2_door/blast_door_swallows_a_held_thing/run_gate()
+	var/obj/machinery/door/blast/B = make_door(/obj/machinery/door/blast/regular)
+	var/mob/living/carbon/human/H = make_person(list(ACCESS_CAPTAIN))
+	var/obj/item/pen = give_item(H, /obj/item/pen)
+	var/before = B.get_integrity()
+	click(H, B, pen)
+	TEST_ASSERT(B.density, "a pen does not open a blast door")
+	TEST_ASSERT_EQUAL(B.get_integrity(), before, "and does not hurt it")
 
 /datum/unit_test/dq_p2_door/blast_door_emag_doubles_its_throw
 

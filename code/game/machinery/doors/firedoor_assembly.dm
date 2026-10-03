@@ -6,96 +6,93 @@
 	anchored = FALSE
 	opacity = 0
 	density = TRUE
-	var/wired = 0
 	var/glass = FALSE
+
+TRACKED(/obj/structure/firedoor_assembly, glass)
 
 DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "glass", list("1" = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazardGlass.dmi'), APPEARANCE_ANY = list(APPEARANCE_ICON = 'icons/obj/doors/DoorHazard.dmi')))
 DECLARE_APPEARANCE(/obj/structure/firedoor_assembly, "anchored", list("1" = list(APPEARANCE_ICON_STATE = "door_anchored"), APPEARANCE_ANY = list(APPEARANCE_ICON_STATE = "door_construction")))
 
-DECLARE_INTERACTIONS(/obj/structure/firedoor_assembly, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+// ---- what a firedoor assembly is, declared ----
+//
+// A loose frame, bolted down or loose by a wrench at any time. Wired (a length of cable, once it is bolted down; wirecutters take it back) and then
+// finished with the circuit board of an air alarm, which stands the firedoor in its place. Reinforced glass makes it a glass shutter and a welder
+// takes the glass back out; from a loose bare frame the same welder takes the whole assembly down into steel.
 
-/// Old attackby.
-/obj/structure/firedoor_assembly/proc/interaction_item(mob/user, obj/item/C, datum/interaction/interaction)
-	if(istype(C, /obj/item/stack/cable_coil) && !wired && anchored)
-		var/obj/item/stack/cable_coil/cable = C
-		if (cable.get_amount() < 1)
-			to_chat(user, span_warning("You need one length of coil to wire \the [src]."))
-			return INTERACTION_HANDLED_PASS
-		act_message(user, src, MSG_SELF("You start to wire %T%."), MSG_OTHERS("%U% wires %T%."))
-		om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done), done_args = list(user, cable))
+STAGE_DEF(firedoor_assembly, frame)
+STAGE_DEF(firedoor_assembly, wired)
+STAGE_DEF(firedoor_assembly, finished)
 
-	else if(istype(C, /obj/item/circuitboard/airalarm) && wired)
-		if(anchored)
-			play_sfx(src, SFX_ITEMS_DECONSTRUCT)
-			act_message(user, src, MSG_SELF("You have inserted the circuit into %T%!"), MSG_OTHERS(span_warning("%U% has inserted a circuit into %T%!")))
-			if(glass)
-				new /obj/machinery/door/firedoor/glass(loc)
-			else
-				new /obj/machinery/door/firedoor(loc)
-			consume(C, user)
-			qdel(src)
-		else
-			to_chat(user, span_warning("You must secure \the [src] first!"))
-	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_RGLASS && !glass)
-		var/obj/item/stack/S = C
-		if (S.get_amount() >= 1)
-			play_sfx(src, SFX_ITEMS_CROWBAR, 2)
-			act_message(user, src, MSG_SELF(span_notice("You start to install [S.name] into %T%.")), MSG_OTHERS(span_info("%U% adds [S.name] to %T%.")))
-			om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(attackby_timed_done2), done_args = list(user, S))
+MSG_DEF_SELF(stage/firedoor_assembly/frame, "It is a bare frame.")
+MSG_DEF_SELF(stage/firedoor_assembly/wired, "It is wired.")
+MSG_DEF_SELF(stage/firedoor_assembly/finished, "It is finished.")
 
-	else
-		return FALSE
-	return INTERACTION_HANDLED_PASS
+MSG_DEF_SELF(firedoor_assembly/bolt_first, "You must secure it first!")
+MSG_DEF_SELF(firedoor_assembly/bolted_down, "Unbolt it from the floor first.")
+MSG_DEF_SELF(firedoor_assembly/glazed, "Take the glass out first.")
 
-/obj/structure/firedoor_assembly/proc/attackby_timed_done(mob/user, obj/item/stack/cable_coil/cable)
-	if(!(!wired && anchored))
-		return
-	if (cable.use(1))
-		wired = 1
-		to_chat(user, span_notice("You wire \the [src]."))
-/obj/structure/firedoor_assembly/proc/attackby_timed_done2(mob/user, obj/item/stack/S)
-	if(!(!glass && S.use(1)))
-		return
-	to_chat(user, span_notice("You installed reinforced glass windows into \the [src]."))
-	glass = TRUE
-	update_icon()
+CAPABILITIES(/obj/structure/firedoor_assembly, \
+	construction(start(STAGE_FIREDOOR_ASSEMBLY_FRAME), \
+		stage(STAGE_FIREDOOR_ASSEMBLY_WIRED, stack(/obj/item/stack/cable_coil, 1), wait(4 SECONDS), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), then(PROC_REF(wired_up)), undone(PROC_REF(unwired)), undo = list(tool(TOOL_WIRECUTTER), wait(4 SECONDS))), \
+		stage(STAGE_FIREDOOR_ASSEMBLY_FINISHED, item(/obj/item/circuitboard/airalarm), wait(0), needs(req_is(nameof(anchored), TRUE, because = MSG(firedoor_assembly/bolt_first))), then(PROC_REF(finish_firedoor)), undo = null), \
+		dismantle(tool(TOOL_WELDER), wait(4 SECONDS), then(PROC_REF(disassembled)))), \
+	op("anchor", tool(TOOL_WRENCH), label("Bolt or unbolt"), wait(0), then(PROC_REF(anchor_toggled))), \
+	op("plate_glass", item(/obj/item/stack/material), label("Install windows"), when(req(PROC_REF(holding_rglass))), when(PROC_REF(unglazed)), wait(4 SECONDS), then(PROC_REF(glass_in))), \
+	op("unglaze", tool(TOOL_WELDER), label("Take the glass out"), when(nameof(glass)), priority(above("construction.dismantle")), wait(4 SECONDS), then(PROC_REF(glass_out))), \
+	extend("construction.dismantle", needs(req_is(nameof(anchored), FALSE, because = MSG(firedoor_assembly/bolted_down)))))
 
-/obj/structure/firedoor_assembly/wirecutter_act(mob/user, obj/item/tool)
-	if(!wired)
-		return FALSE
-	playsound(src, tool.usesound, 100, TRUE)
-	act_message(user, src, MSG_SELF("You start to cut the wires from %T%."), MSG_OTHERS("%U% cuts the wires from %T%."))
-	om_task_timed(user, 4 SECONDS, target = src, receiver = src, on_done = PROC_REF(wirecutter_act_timed_done), done_args = list(user))
-	return TRUE
+/// A sheet of reinforced glass in hand.
+/obj/structure/firedoor_assembly/proc/holding_rglass(datum/act/op/A)
+	var/obj/item/stack/material/S = A.held
+	return istype(S) && S.get_material_name() == MAT_RGLASS && S.get_amount() >= 1
 
-/obj/structure/firedoor_assembly/proc/wirecutter_act_timed_done(mob/user)
-	if(!(!QDELETED(src) && wired))
-		return
-	to_chat(user, span_notice("You cut the wires!"))
-	new /obj/item/stack/cable_coil(loc, 1)
-	wired = FALSE
+/// No glass is fitted.
+/obj/structure/firedoor_assembly/proc/unglazed(datum/act/A)
+	return !glass
 
-/obj/structure/firedoor_assembly/wrench_act(mob/user, obj/item/tool)
+/// A wrench bolts the frame down or frees it.
+/obj/structure/firedoor_assembly/proc/anchor_toggled(datum/act/op/A)
 	set_anchored(!anchored)
-	playsound(src, tool.usesound, 50, TRUE)
-	act_message(user, src, MSG_SELF("You have [anchored ? "" : "un"]secured %T%!"), MSG_OTHERS(span_warning("%U% has [anchored ? "" : "un"]secured %T%!")))
+	playsound(src, A.held.usesound, 50, TRUE)
+	act_message(A.actor, src, MSG_SELF("You have [anchored ? "" : "un"]secured %T%!"), MSG_OTHERS(span_warning("%U% has [anchored ? "" : "un"]secured %T%!")))
 	update_icon()
-	return TRUE
+	return OP_OK
 
-/obj/structure/firedoor_assembly/welder_act(mob/user, obj/item/tool)
-	if(!glass && anchored)
-		return FALSE
-	if(glass)
-		use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to weld the glass panel out of \the [src].", start_others = "[user] welds the glass panel out of \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done), done_args = list(user))
-		return TRUE
-	use_tool(user, tool, src, delay = 4 SECONDS, quality = TOOL_WELDER, volume = 50, amount = 0, start_self = "You start to disassemble \the [src].", start_others = "[user] disassembles \the [src].", receiver = src, on_done = PROC_REF(welder_act_tool_done2), done_args = list(user))
-	return TRUE
+/obj/structure/firedoor_assembly/proc/wired_up(datum/act/op/A)
+	to_chat(A.actor, span_notice("You wire \the [src]."))
+	return OP_OK
 
-/obj/structure/firedoor_assembly/proc/welder_act_tool_done(mob/user)
-	to_chat(user, span_notice("You welded the glass panel out!"))
-	new /obj/item/stack/material/glass/reinforced(drop_location())
-	glass = FALSE
-	update_icon()
-/obj/structure/firedoor_assembly/proc/welder_act_tool_done2(mob/user)
-	act_message(user, src, MSG_SELF("You have disassembled %T%."), MSG_OTHERS(span_warning("%U% has disassembled %T%.")))
+/obj/structure/firedoor_assembly/proc/unwired(datum/act/op/A)
+	to_chat(A.actor, span_notice("You cut the wires!"))
+	new /obj/item/stack/cable_coil(loc, 1)
+	return OP_OK
+
+/// The finished assembly stands the firedoor in its place, and the board goes into it.
+/obj/structure/firedoor_assembly/proc/finish_firedoor(datum/act/op/A)
+	play_sfx(src, SFX_ITEMS_DECONSTRUCT)
+	act_message(A.actor, src, MSG_SELF("You have inserted the circuit into %T%!"), MSG_OTHERS(span_warning("%U% has inserted a circuit into %T%!")))
+	consume(A.held, A.actor)
+	replace_with(src, glass ? /obj/machinery/door/firedoor/glass : /obj/machinery/door/firedoor)
+	return OP_OK
+
+/// A loose bare frame comes apart into two sheets of steel.
+/obj/structure/firedoor_assembly/proc/disassembled(datum/act/op/A)
+	act_message(A.actor, src, MSG_SELF("You have disassembled %T%."), MSG_OTHERS(span_warning("%U% has disassembled %T%.")))
 	replace_with(src, /obj/item/stack/material/steel, 2)
+	return OP_OK
+
+/obj/structure/firedoor_assembly/proc/glass_in(datum/act/op/A)
+	var/obj/item/stack/S = A.held
+	if(glass || !S?.use(1))
+		return OP_REFUSED
+	to_chat(A.actor, span_notice("You installed reinforced glass windows into \the [src]."))
+	set_glass(TRUE)
+	update_icon()
+	return OP_OK
+
+/obj/structure/firedoor_assembly/proc/glass_out(datum/act/op/A)
+	to_chat(A.actor, span_notice("You welded the glass panel out!"))
+	new /obj/item/stack/material/glass/reinforced(drop_location())
+	set_glass(FALSE)
+	update_icon()
+	return OP_OK

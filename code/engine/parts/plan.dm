@@ -63,6 +63,8 @@
 	var/log_type
 	var/list/delayed
 	var/quiet = FALSE
+	/// claims(): the target is claimed while the op waits.
+	var/claims = FALSE
 	var/passes = FALSE
 	var/label
 	/// An explicit OP_PRIORITY_X, or null.
@@ -446,6 +448,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 
 /datum/entry/part/quiet/compile(datum/op_plan/P, level)
 	P.quiet = TRUE
+
+/datum/entry/part/claims/compile(datum/op_plan/P, level)
+	P.claims = TRUE
 
 /datum/entry/part/label/compile(datum/op_plan/P, level)
 	P.label = src.args["text"]

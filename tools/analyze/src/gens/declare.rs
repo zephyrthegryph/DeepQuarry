@@ -426,10 +426,49 @@ impl Generator for Declare {
             out.blank();
             out.line("#endif");
         }
+        keyed_targets(cx, out);
         for d in std::mem::take(&mut tests.diags) {
             out.diag(&d.rel, d.line, d.msg);
         }
     }
+}
+
+/// The keyed relations the CAPABILITIES lists declare (`ref_one(nameof(v), /type, by = nameof(id))`): the type the holder finds and the id var both
+/// sides carry. A type is a keyed target whichever side builds its table first, so the table of a target built before any holder's (a door
+/// placed before its button) must already know its key: the engine reads this list once, ahead of the first table.
+fn keyed_targets(cx: &GenCx, out: &mut GenOut) {
+    use std::cell::RefCell;
+    let rows: RefCell<BTreeMap<String, (String, bool)>> = RefCell::new(BTreeMap::new());
+    for m in cx.markers("CAPABILITIES") {
+        let test_only = m.rel.starts_with("code/tests/");
+        for a in m.args.iter().skip(1) {
+            for name in ["ref_one", "ref_many"] {
+                rewrite_calls(a, name, &|args| {
+                    let ty = args.get(1).filter(|t| split_opt(t).is_none()).cloned();
+                    let by = args.iter().filter_map(|x| split_opt(x)).find(|(k, _)| k == "by").map(|(_, v)| v);
+                    if let (Some(ty), Some(by)) = (ty, by) {
+                        let var = by.trim().strip_prefix("nameof(").and_then(|s| s.strip_suffix(')')).unwrap_or(by.trim()).trim().to_string();
+                        rows.borrow_mut().insert(ty.trim().to_string(), (var, test_only));
+                    }
+                    String::new()
+                });
+            }
+        }
+    }
+    let rows = rows.into_inner();
+    out.doc("declared_keyed_targets(): target type -> the id var a keyed relation (by =) matches it on, read once before the first ownership table.");
+    out.line("/proc/declared_keyed_targets()");
+    out.line("	. = list()");
+    for (ty, (var, test_only)) in &rows {
+        if *test_only {
+            out.line("#if defined(UNIT_TESTS) || defined(SPACEMAN_DMM)");
+        }
+        out.line(format!("	.[{}] = {}", ty, quote(var)));
+        if *test_only {
+            out.line("#endif");
+        }
+    }
+    out.blank();
 }
 
 /// The declarations of the files in one half of the tree: the engine and the game (`test_only` false), or the test fixtures.

@@ -6,10 +6,7 @@
 /proc/legacy_door_ops()
 	return list(without(CAP_DOORS), without(CAP_EMAG), without("strike"), without("reinforce"), without("weld_plasteel"), without("unreinforce"), without("repair"))
 
-CAPABILITIES(/obj/machinery/door/firedoor, legacy_door_ops())
-CAPABILITIES(/obj/machinery/door/blast, legacy_door_ops())
 CAPABILITIES(/obj/machinery/door/window, legacy_door_ops())
-CAPABILITIES(/obj/machinery/door/unpowered, legacy_door_ops())
 
 /obj/machinery/door/declare_interactions(list/into)
 	if(!legacy_door_ops)
@@ -174,10 +171,7 @@ CAPABILITIES(/obj/machinery/door/unpowered, legacy_door_ops())
 
 	return FALSE
 
-DECLARE_EMAG_REPEATABLE(/obj/machinery/door/firedoor, PROC_REF(on_emag), null)
-DECLARE_EMAG_REPEATABLE(/obj/machinery/door/blast, PROC_REF(on_emag), null)
 DECLARE_EMAG_REPEATABLE(/obj/machinery/door/window, PROC_REF(on_emag), null)
-DECLARE_EMAG_REPEATABLE(/obj/machinery/door/unpowered, PROC_REF(on_emag), null)
 /obj/machinery/door/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if(density && operable())
 		do_animate("spark")

@@ -191,6 +191,8 @@
 	var/why = op_require_reason(A, C.oplan, C.binding)
 	if(why)
 		return op_end(A, ACT_REFUSED, why)
+	if(C.oplan.claims && length(C.oplan.steps) && op_claimed(A.target))
+		return op_end(A, ACT_REFUSED, /datum/msg/op/claimed)
 	A.started = TRUE
 	if(length(C.oplan.steps))
 		return op_wait_begin(A, C)
@@ -301,6 +303,8 @@
 	/// The request the current asks() opened.
 	var/datum/request/request
 	var/started_at = 0
+	/// REF text of the target a claims() op holds while it waits.
+	var/claim_ref
 	/// The first suspension happened: captured fields are snapshotted.
 	var/captured_taken = FALSE
 	var/list/args_saved
@@ -325,6 +329,16 @@ CAPABILITIES(/datum/pending_op, \
 GLOBAL_LIST_EMPTY(op_pending_by_actor)
 /// REF(pending op) -> every pending op that is waiting, the system-origin ones too ("List Pending Ops").
 GLOBAL_LIST_EMPTY(op_pending_all)
+
+/// REF(atom) -> the waiting claiming op (claims()) that holds it.
+GLOBAL_LIST_EMPTY(op_claims)
+
+/// Is `target` claimed by an op that is waiting on it (claims())?
+/proc/op_claimed(datum/target)
+	if(!target)
+		return FALSE
+	var/datum/pending_op/P = GLOB.op_claims["[REF(target)]"]
+	return !!P && P.active && !QDELETED(P)
 
 /proc/op_pending_of(mob/actor)
 	RETURN_TYPE(/datum/pending_op)
@@ -359,6 +373,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(A.actor && A.origin != ORIGIN_SYSTEM)
 		GLOB.op_pending_by_actor["[REF(A.actor)]"] = P
 	GLOB.op_pending_all["[REF(P)]"] = P
+	if(A.oplan.claims && A.target)
+		P.claim_target(A.target)
 	P.watch_begin(A)
 	P.suspend_act()
 	P.advance()
@@ -539,7 +555,9 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	var/list/declared = Q.args["fields"]
 	for(var/field in declared)
 		var/value = declared[field]
-		if(istext(value) && A.holder && (value in A.holder.vars))
+		if(islist(value) && length(value) == 2 && value[1] == "computed")
+			value = op_call(A, value[2])
+		else if(istext(value) && A.holder && (value in A.holder.vars))
 			value = A.captured_values?[value]
 		out[field] = value
 	out["answerer"] = A.actor
@@ -688,11 +706,35 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(!QDELETED(src))
 		qdel(src) // ALLOW(lifecycle): the pending op is a plain record that ends with its op: it holds nothing the op still needs
 
+/// The target is claimed for the length of the wait: a claim is in the registry under the target's ref, and the target is told it changed.
+/datum/pending_op/proc/claim_target(datum/claimed)
+	claim_ref = "[REF(claimed)]"
+	GLOB.op_claims[claim_ref] = src
+	op_changed(claimed)
+	var/atom/A = claimed
+	if(istype(A))
+		A.update_icon()
+
+/// The claim ends with the wait.
+/datum/pending_op/proc/release_claim()
+	if(!claim_ref)
+		return
+	var/datum/claimed = locate(claim_ref)
+	if(GLOB.op_claims[claim_ref] == src)
+		GLOB.op_claims -= claim_ref
+	claim_ref = null
+	if(claimed)
+		op_changed(claimed)
+		var/atom/A = claimed
+		if(istype(A) && !QDELETED(A))
+			A.update_icon()
+
 /// The pending record is done: it leaves the actor's slot, its timers go, the request is closed.
 /datum/pending_op/proc/end_pending()
 	if(!active)
 		return
 	active = FALSE
+	release_claim()
 	var/datum/act/op/A = act
 	if(A)
 		A.pending = null // ALLOW(ownership): a pooled transient: reset on release
@@ -738,6 +780,7 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 	if(active)
 		var/datum/act/op/A = act
 		active = FALSE
+		release_claim()
 		if(actor && GLOB.op_pending_by_actor["[REF(actor)]"] == src)
 			GLOB.op_pending_by_actor -= "[REF(actor)]"
 		GLOB.op_pending_all -= "[REF(src)]"

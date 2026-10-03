@@ -17,7 +17,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/hydraulic_clamp/proc/pry_firedoor(obj/machinery/door/firedoor/FD, unblock)
 	play_sfx(FD, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
 	if(unblock)
-		FD.blocked = 0
+		FD.set_blocked(0)
 		FD.update_icon()
 		FD.force_open_by(chassis?.slot_item(MECHA_SLOT_PILOT))
 		FD.visible_message(span_warning("\The [chassis] tears \the [FD] open!"))

@@ -86,7 +86,7 @@
 		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
 			if(bolts_bolted(src) || weld_shut_welded(src))
 				act_message(user, src, others = span_danger("%U% begins breaking into %T% internals!"))
-				perform_op(user, src, "break_in")
+				perform_op(user, src, "break_in", origin = ORIGIN_SYSTEM)
 			else if(density)
 				act_message(user, src, others = span_danger("%U% forces %T% open!"))
 				open(TRUE)
@@ -466,7 +466,7 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 	op("pry_weapon", item(/obj/item), when(req(PROC_REF(prying_weapon))), priority(OP_PRIORITY_PART), wait(0), then(PROC_REF(pry_weapon_forced))), \
 	op("hammer", menu(), stance(I_HURT), label("Hammer on the door"), wait(0), then(PROC_REF(hammer_on_door))), \
 	op("hold_open", menu(), stance(I_GRAB), label("Hold the door open"), wait(0), then(PROC_REF(hold_door_open))), \
-	op("break_in", wait(10 SECONDS), then(PROC_REF(break_in_done))), \
+	op("break_in", ai(), wait(10 SECONDS), then(PROC_REF(break_in_done))), \
 	op("deice", item(/obj/item), label("Clear the ice"), when(frozen), priority(OP_PRIORITY_SUBVERT), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done))), \
 	op("deice_tool", any_of_tools(TOOL_CROWBAR, TOOL_SCREWDRIVER, TOOL_WIRECUTTER, TOOL_MULTITOOL, TOOL_WELDER), label("Clear the ice"), when(frozen), \
 		priority(OP_PRIORITY_SUBVERT + 1), wait(PROC_REF(deice_wait)), then(PROC_REF(deice_done))), \
@@ -576,9 +576,6 @@ CAPABILITIES(/obj/machinery/door/airlock, \
 
 // ---- the touch ----
 
-MSG_DEF_SELF(airlock/not_working, "It isn't working.")
-MSG_DEF_SELF(airlock/cant_reach, "You can't reach it like this.")
-MSG_DEF_SELF(airlock/no_dexterity, "You don't have the dexterity.")
 
 /// An electrified door shocks whoever touches it before the touch does anything: silicons are spared, a bare hand takes the full shock and a held
 /// thing a smaller one. The shock ends the touch.
@@ -611,20 +608,6 @@ MSG_DEF_SELF(airlock/no_dexterity, "You don't have the dexterity.")
 	if(A.held && A.actor)
 		touched_with(A.actor, A.held)
 	return OP_OK
-
-/// The hand needs what the machinery hand gate needs: power, posture and dexterity.
-/obj/machinery/door/airlock/proc/hand_ok(datum/act/op/A)
-	return isnull(hand_refusal(A))
-
-/obj/machinery/door/airlock/proc/hand_refusal(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!operable(MAINT))
-		return /datum/msg/airlock/not_working
-	if(user?.lying || user?.stat) // ALLOW(reads): posture is read when the touch is tried; a cached menu entry is advisory
-		return /datum/msg/airlock/cant_reach
-	if(!user?.IsAdvancedToolUser())
-		return /datum/msg/airlock/no_dexterity
-	return null
 
 /obj/machinery/door/airlock/proc/show_wires(datum/act/op/A)
 	wire_set_of(src)?.Interact(A.actor)

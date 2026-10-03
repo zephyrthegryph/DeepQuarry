@@ -344,6 +344,11 @@
 	part_name = "asks"
 	stages = PART_STAGE_WAIT
 
+/// computed(PROC_REF(x)): a field value of an asks() read from the holder when the question is opened: x(datum/act/A) returns it (the question text
+/// of a door that says what it would do now). A plain text field is a literal, and one naming a var of the holder reads that var.
+/proc/computed(handler)
+	return list("computed", handler)
+
 /// confirms("text"): asks(/datum/prompt/yes_no, question = "text"); a "no" ends the op and nothing is spent.
 /proc/confirms(text, keeps = WAIT_KEEPS_DEFAULT)
 	return part_make(/datum/entry/part/asks, list("type" = /datum/prompt/yes_no, "fields" = list("question" = text), "step" = "confirm", "resume" = CAPTURE, "keeps" = keeps, "confirms" = TRUE))
@@ -568,6 +573,27 @@
 /datum/entry/part/quiet
 	part_name = "quiet"
 	stages = PART_STAGE_DO
+
+/// claims(): while the op waits (a wait() step), its target is claimed: a second claiming op on the same target is refused (/datum/msg/op/claimed)
+/// instead of starting, and op_claimed(target) answers TRUE so the target can draw the work (a door being pried shows its prying sprite).
+/// The claim ends with the wait, however it ends.
+/proc/claims()
+	return part_make(/datum/entry/part/claims)
+
+/datum/entry/part/claims
+	part_name = "claims"
+	stages = PART_STAGE_WAIT
+
+/// req_unclaimed(because =): no claiming op is waiting on the holder (an op without claims() of its own that must not run over one that does).
+/proc/req_unclaimed(because = null)
+	return part_make(/datum/entry/part/req/unclaimed, list("because" = because))
+
+/datum/entry/part/req/unclaimed
+	part_name = "req_unclaimed"
+	default_reason = /datum/msg/op/claimed
+
+/datum/entry/part/req/unclaimed/holds(datum/act/op/A)
+	return !op_claimed(A.holder)
 
 // ---- metadata ----
 

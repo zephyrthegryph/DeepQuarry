@@ -14,7 +14,6 @@
 #define SHUTTER_CRUSH_DAMAGE 5 // Shutter damage 5.
 
 /obj/machinery/door/blast
-	legacy_door_ops = TRUE
 	name = "Blast Door"
 	desc = "That looks like it doesn't open easily."
 	icon = 'icons/obj/doors/rapid_pdoor.dmi'
@@ -63,21 +62,159 @@
 // Description: Updates icon of this object. Uses icon state variables.
 APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@icon_state_open}")
 
-// Proc: on_emag()
-// Description: Emag action to allow blast doors to double their yeet distance and speed.
-/obj/machinery/door/blast/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	if(!emagged)
-		set_emagged(1)
-		multiplier = 2 // Haha emag go yeet
-		return 1
-
 // Blast doors are triggered remotely, so nobody is allowed to physically influence it.
 /obj/machinery/door/blast/allowed(mob/M)
 	return FALSE
 
-// Proc: force_open()
-// Parameters: None
-// Description: Opens the door. No checks are done inside this proc.
+// ---- what a blast door is, declared ----
+//
+// A door that answers a button, not a hand or a card: the base door's touch ops are refused for want of access (a held thing is swallowed, a hand
+// flashes the denial), and the plasteel fitting is not offered (it is plasteel already). What is the blast door's own: a crowbar or an axe forcing
+// one that has lost its power or broke, a weapon's blow (a slow one: it takes a while to dent), plasteel to mend it, a claw forcing it, an
+// emag that doubles how far it throws whoever it shuts on.
+
+MSG_DEF_SELF(blast_door/motors_resist, "Its motors resist your effort.")
+MSG_DEF_SELF(blast_door/need_wield, "You need to be wielding that to do that.")
+MSG_DEF_SELF(blast_door/already_repaired, "It is already fully repaired.")
+MSG_DEF_SELF(blast_door/more_sheets, "You don't have enough sheets to repair this!")
+MSG_DEF(blast_door/repaired, "You have repaired %T%.", "%U% repairs %T%.")
+MSG_DEF(blast_door/emagged, "You subvert %T%'s motors with %I%.", "")
+
+CAPABILITIES(/obj/machinery/door/blast, \
+	without(CAP_EMAG), \
+	without("reinforce"), \
+	without("weld_plasteel"), \
+	without("unreinforce"), \
+	emag(then(PROC_REF(blast_emag)), say = MSG(blast_door/emagged)), \
+	op("swallow", item(/obj/item), priority(OP_PRIORITY_NORMAL + 1), wait(0), then(PROC_REF(item_swallowed))), \
+	op("force_xeno", hand(), label("Force"), when(req(PROC_REF(claws_force))), priority(OP_PRIORITY_TAKE_OUT), wait(PROC_REF(claws_wait)), \
+		needs(req(PROC_REF(hand_ok), because = PROC_REF(hand_refusal))), then(PROC_REF(claws_forced))), \
+	op("force_generic", ai(), wait(PROC_REF(generic_wait)), then(PROC_REF(generic_forced))), \
+	op("pry", item(/obj/item), stance(I_HELP, I_DISARM, I_GRAB), when(req(PROC_REF(prying_item))), priority(OP_PRIORITY_PART), wait(0), \
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced))), \
+	op("pry_broken", item(/obj/item), stance(I_HURT), when(req(PROC_REF(prying_item))), when(PROC_REF(wrecked)), priority(OP_PRIORITY_CLAW), wait(0), \
+		needs(req(PROC_REF(wielded_if_axe), because = MSG(blast_door/need_wield)), req(PROC_REF(pry_free), because = MSG(blast_door/motors_resist))), then(PROC_REF(pry_forced))), \
+	op("mend", item(/obj/item/stack/material/plasteel), label("Repair"), priority(OP_PRIORITY_PART), wait(3 SECONDS), \
+		needs(req(PROC_REF(needs_mending), because = MSG(blast_door/already_repaired)), req(PROC_REF(enough_sheets), because = MSG(blast_door/more_sheets))), \
+		then(PROC_REF(mended)), says(MSG(blast_door/repaired))))
+
+/// Emag: the motors are subverted and the door throws twice as hard.
+/obj/machinery/door/blast/proc/blast_emag(datum/act/op/A)
+	set_emagged(1)
+	multiplier = 2 // Haha emag go yeet
+	return OP_OK
+
+/// A held thing does nothing to a blast door (it is not for hands or cards).
+/obj/machinery/door/blast/proc/item_swallowed(datum/act/op/A)
+	return OP_OK
+
+/// A xeno's claws are on the hand.
+/obj/machinery/door/blast/proc/claws_force(datum/act/op/A)
+	var/mob/living/carbon/human/X = A.actor
+	return !A.held && istype(X) && istype(X.species, /datum/species/xenos) // ALLOW(reads): a body's species is fixed for the touch's life; the click re-evaluates it
+
+/// Claws force a shut door open slowly (15 seconds) and an open one shut quicker (5).
+/obj/machinery/door/blast/proc/claws_wait(datum/act/A)
+	return density ? 15 SECONDS : 5 SECONDS
+
+/obj/machinery/door/blast/proc/claws_forced(datum/act/op/A)
+	var/mob/user = A.actor
+	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
+	if(density)
+		act_message(user, src, others = span_danger("%U% forces %T% open!"))
+		force_open()
+	else
+		act_message(user, src, others = span_danger("%U% forces %T% closed!"))
+		force_close()
+	return OP_OK
+
+/// A simple mob smashing at a blast door that has lost its power: a strong one forces it (5 seconds open, 2 shut), a weak one strains for nothing.
+/// A door that works takes the smash as damage.
+/obj/machinery/door/blast/attack_generic(mob/living/user, damage)
+	if(!operable())
+		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
+			act_message(user, src, others = span_danger("%U% starts forcing %T% [density ? "open" : "closed"]!"))
+			perform_op(user, src, "force_generic", origin = ORIGIN_SYSTEM)
+		else
+			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
+		return
+	..()
+
+/obj/machinery/door/blast/proc/generic_wait(datum/act/A)
+	return density ? 5 SECONDS : 2 SECONDS
+
+/obj/machinery/door/blast/proc/generic_forced(datum/act/op/A)
+	var/mob/user = A.actor
+	if(density)
+		act_message(user, src, others = span_danger("%U% forces %T% open!"))
+		force_open()
+	else
+		act_message(user, src, others = span_danger("%U% forces %T% closed!"))
+		force_close()
+	return OP_OK
+
+/// A thing in hand that pries (a crowbar, a fireaxe, a blade).
+/obj/machinery/door/blast/proc/prying_item(datum/act/op/A)
+	var/obj/item/held = A.held
+	return istype(held) && held.pry == 1 // ALLOW(reads): an item's pry is fixed for its life
+
+/// Broken (a hostile hand with a prying tool still pries a broken door).
+/obj/machinery/door/blast/proc/wrecked(datum/act/A)
+	return has_stat(BROKEN)
+
+/// A fireaxe must be held in both hands to pry; anything else does not care.
+/obj/machinery/door/blast/proc/wielded_if_axe(datum/act/op/A)
+	var/obj/item/material/twohanded/fireaxe/F = A.held
+	return !istype(F) || F.wielded // ALLOW(reads): whether an axe is wielded is read when the pry is tried
+
+/// The motors have given out (no power or broken) and the door is still.
+/obj/machinery/door/blast/proc/pry_free(datum/act/A)
+	return (has_stat(NOPOWER) || has_stat(BROKEN)) && !operating
+
+/obj/machinery/door/blast/proc/pry_forced(datum/act/op/A)
+	add_fingerprint(A.actor)
+	force_toggle(1, A.actor)
+	return OP_OK
+
+/// A weapon's blow dents a blast door slowly: a prying weapon takes off a third of its force, anything else a seventh.
+/obj/machinery/door/blast/strike_with(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/W = A.held
+	add_fingerprint(user)
+	user.setClickCooldown(user.get_attack_speed(W))
+	if(W.obj_damage_type())
+		user.do_attack_animation(src)
+		if(W.force < min_force)
+			act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
+		else
+			act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
+			playsound(src, hitsound, 100, 1)
+			receive_weapon_hit(W, user, W.force * (W.pry == 1 ? 0.35 : 0.15), silent = FALSE)
+	return OP_OK
+
+/// Sheets of plasteel it would take to mend it fully (one per 150 points).
+/obj/machinery/door/blast/proc/sheets_to_mend()
+	return CEILING((max_integrity - get_integrity()) / 150, 1) // ALLOW(reads): a door's max_integrity is its type's constant
+
+/obj/machinery/door/blast/proc/needs_mending(datum/act/A)
+	return sheets_to_mend() > 0
+
+/obj/machinery/door/blast/proc/enough_sheets(datum/act/op/A)
+	var/obj/item/stack/P = A.held
+	return istype(P) && P.get_amount() >= sheets_to_mend()
+
+/obj/machinery/door/blast/proc/mended(datum/act/op/A)
+	var/obj/item/stack/P = A.held
+	if(!P?.use(sheets_to_mend()))
+		to_chat(A.actor, span_warning("You don't have enough sheets to repair this! You need at least [sheets_to_mend()] sheets."))
+		return OP_REFUSED
+	repair()
+	return OP_OK
+
+// ---- the mechanism ----
+
+/// Proc: force_open()
+/// Description: Opens the door. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_open()
 	set_operating(TRUE)
 	playsound(src, open_sound, 100, 1)
@@ -87,22 +224,22 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 	update_icon()
 	set_opacity(0)
 	set_rad_insulation(RAD_NO_INSULATION)
-	om_after_unique(src, 1.5 SECONDS, PROC_REF(complete_force_open))
+	after(src, 1.5 SECONDS, PROC_REF(complete_force_open), key = "swing_open", clock = CLOCK_WORLD)
 
 /obj/machinery/door/blast/proc/complete_force_open()
 	PRIVATE_PROC(TRUE)
 	layer = open_layer
 	set_operating(FALSE)
 
-// Proc: force_close()
-// Parameters: None
-// Description: Closes the door. No checks are done inside this proc.
+/// Proc: force_close()
+/// Description: Closes the door. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_close()
 	// Blast door turf checks. We do this before the door closes to prevent it from failing after the door is closed, because obv a closed door will block any adjacency checks.
 	var/turf/T = get_turf(src)
 	var/list/yeet_turfs = T.CardinalTurfs(TRUE)
 
 	set_operating(TRUE)
+	autoclose_cancel()
 	playsound(src, close_sound, 100, 1)
 	layer = closed_layer
 	flick(icon_state_closing, src)
@@ -114,7 +251,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 		set_opacity(0)
 	else
 		set_opacity(1)
-	om_after_unique(src, 1.5 SECONDS, PROC_REF(complete_force_close), yeet_turfs)
+	after(src, 1.5 SECONDS, PROC_REF(complete_force_close), with = list(yeet_turfs), key = "swing_close", clock = CLOCK_WORLD)
 
 /obj/machinery/door/blast/proc/complete_force_close(list/yeet_turfs)
 	PRIVATE_PROC(TRUE)
@@ -128,9 +265,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 					AM.throw_at(get_edge_target_turf(src, get_dir(src, pick(yeet_turfs))), (rand(1,3) * multiplier), (rand(2,4) * multiplier)) // YEET.
 				take_damage(damage*0.2, BRUTE, MELEE)
 
-// Proc: force_toggle()
-// Parameters: None
-// Description: Opens or closes the door, depending on current state. No checks are done inside this proc.
+/// Proc: force_toggle()
+/// Description: Opens or closes the door, depending on current state. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_toggle(forced = 0, mob/user as mob)
 	if (forced)
 		play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
@@ -140,191 +276,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 	else
 		src.force_close()
 
-/obj/machinery/door/blast/declare_interactions(list/into)
-	into += list(
-		/datum/interaction/machine_hand/blast_door_alien,
-		/datum/interaction/machine_item/blast_door_attack/help,
-		/datum/interaction/machine_item/blast_door_attack/disarm,
-		/datum/interaction/machine_item/blast_door_attack/grab,
-		/datum/interaction/machine_item/blast_door_attack/harm,
-	)
-	..()
-
-/// Old attack_hand: only to allow xenos to force it, everything else falls to the base.
-/datum/interaction/machine_hand/blast_door_alien
-	id = "blast_door_alien"
-	name = "Force"
-	offered_when = list(REQ_ON(PRED_ACTOR, /obj/machinery/door/blast/proc/actor_is_xenos, null))
-	effect = /obj/machinery/door/blast/proc/interaction_alien
-
-/obj/machinery/door/blast/proc/actor_is_xenos(mob/actor, atom/target, obj/item/held)
-	if(!ishuman(actor))
-		return FALSE
-	var/mob/living/carbon/human/human_actor = actor
-	return istype(human_actor.species, /datum/species/xenos)
-
-/obj/machinery/door/blast/proc/interaction_alien(mob/user, obj/item/held, datum/interaction/interaction)
-	attack_alien(user)
-	return TRUE
-
-// Proc: attackby()
-// Parameters: 2 (C - Item this object was clicked with, user - Mob which clicked this object)
-// Description: If we are clicked with crowbar, wielded fire axe, or armblade, try to manually open the door.
-// This only works on broken doors or doors without power. Also allows repair with Plasteel.
-/// Abstract: one per stance. Outside combat mode a prying tool forces the door; in combat mode items strike it.
-/datum/interaction/machine_item/blast_door_attack
-	category = INTERACTION_CAT_ATTACK
-	held_type = /obj/item
-	effect = /obj/machinery/door/blast/proc/interaction_attackby
-
-/datum/interaction/machine_item/blast_door_attack/help
-	id = "blast_door_attack_help"
-	name = "Pry open"
-	stance = I_HELP
-
-/datum/interaction/machine_item/blast_door_attack/disarm
-	id = "blast_door_attack_disarm"
-	name = "Pry open"
-	stance = I_DISARM
-
-/datum/interaction/machine_item/blast_door_attack/grab
-	id = "blast_door_attack_grab"
-	name = "Pry open"
-	stance = I_GRAB
-
-/datum/interaction/machine_item/blast_door_attack/harm
-	id = "blast_door_attack_harm"
-	name = "Strike"
-	stance = I_HURT
-
-/obj/machinery/door/blast/proc/interaction_attackby(mob/user, obj/item/C, datum/interaction/interaction)
-	src.add_fingerprint(user)
-	var/harming = interaction.stance == I_HURT
-	if(istype(C, /obj/item)) // For reasons unknown, sometimes C is actually not what it is advertised as, like a mob.
-		if(C.pry == 1 && (!harming || (has_stat(BROKEN)))) // Can we pry it open with something, like a crowbar/fireaxe/lingblade?
-			if(istype(C,/obj/item/material/twohanded/fireaxe)) // Fireaxes need to be in both hands to pry.
-				var/obj/item/material/twohanded/fireaxe/F = C
-				if(!F.wielded)
-					to_chat(user, span_warning("You need to be wielding \the [F] to do that."))
-					return TRUE
-
-			// If we're at this point, it's a fireaxe in both hands or something else that doesn't care for twohanding.
-			if(((has_stat(NOPOWER)) || (has_stat(BROKEN))) && !( src.operating ))
-				force_toggle(1, user)
-
-			else
-				to_chat(user, span_notice("[src]'s motors resist your effort."))
-			return TRUE
-
-		else if(src.density && harming) //If we can't pry it open and it's a weapon, let's hit it.
-			var/obj/item/W = C
-			user.setClickCooldown(user.get_attack_speed(W))
-			if(W.obj_damage_type())
-				user.do_attack_animation(src)
-				if(W.force < min_force)
-					act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
-				else
-					act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
-					playsound(src, hitsound, 100, 1)
-					receive_weapon_hit(W, user, W.force * 0.35, silent = FALSE) //it's a blast door, it should take a while. -Luke
-				return TRUE
-
-	else if(istype(C, /obj/item/stack/material) && C.get_material_name() == MAT_PLASTEEL) // Repairing.
-		var/amt = CEILING((max_integrity - get_integrity())/150, 1)
-		if(!amt)
-			to_chat(user, span_notice("\The [src] is already fully repaired."))
-			return TRUE
-		var/obj/item/stack/P = C
-		if(P.get_amount() < amt)
-			to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-			return TRUE
-		to_chat(user, span_notice("You begin repairing [src]..."))
-		om_task_start(/datum/om/task/timed/blast_interaction_attackby, user, src, receiver = src, amt = amt, P = P)
-
-	else if(src.density && harming) //If we can't pry it open and it's not a weapon.... Eh, let's attack it anyway.
-		var/obj/item/W = C
-		user.setClickCooldown(user.get_attack_speed(W))
-		if(istype(W) && (W.obj_damage_type()))
-			user.do_attack_animation(src)
-			if(W.force < min_force) //No actual non-weapon item shouls have a force greater than the min_force, but let's include this just in case.
-				act_message(user, src, others = span_danger("%U% hits %T% with %I% with no visible effect."), item = W)
-			else
-				act_message(user, src, others = span_danger("%U% forcefully strikes %T% with %I%!"), item = W)
-				playsound(src, hitsound, 100, 1)
-				receive_weapon_hit(W, user, W.force * 0.15, silent = FALSE) //If the item isn't a weapon, let's make this take longer than usual to break it down.
-			return TRUE
-	return TRUE
-
-/datum/om/task/timed/blast_interaction_attackby
-	duration = 3 SECONDS
-	complete_proc = /obj/machinery/door/blast/proc/interaction_attackby_timed_done
-	var/amt
-	var/obj/item/stack/P
-
-/obj/machinery/door/blast/proc/interaction_attackby_timed_done(datum/om/task/timed/blast_interaction_attackby/task)
-	var/mob/user = task.actor
-	var/amt = task.amt
-	var/obj/item/stack/P = task.P
-	if(P.use(amt))
-		to_chat(user, span_notice("You have repaired \The [src]"))
-		src.repair()
-	else
-		to_chat(user, span_warning("You don't have enough sheets to repair this! You need at least [amt] sheets."))
-
-// Proc: attack_alien()
-// Parameters: Attacking Xeno mob.
-// Description: Forces open the door after a delay.
-/obj/machinery/door/blast/attack_alien(mob/user) //Familiar, right? Doors.
-	if(ishuman(user))
-		var/mob/living/carbon/human/X = user
-		if(istype(X.species, /datum/species/xenos))
-			if(src.density)
-				act_message(user, src, others = span_alium("%U% begins forcing %T% open!"))
-				om_task_timed(user, 15 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done), done_args = list(user), busy = user)
-			else
-				act_message(user, src, others = span_alium("%U% begins forcing %T% closed!"))
-				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_alien_timed_done2), done_args = list(user), busy = user)
-		else
-			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-			return
-	..()
-
-/obj/machinery/door/blast/proc/attack_alien_timed_done(mob/user)
-	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
-	act_message(user, src, others = span_danger("%U% forces %T% open!"))
-	force_open(1)
-/obj/machinery/door/blast/proc/attack_alien_timed_done2(mob/user)
-	play_sfx(src, SFX_MACHINES_DOOR_AIRLOCK_CREAKING)
-	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
-	force_close(1)
-
-// Proc: attack_generic()
-// Parameters: Attacking simple mob, incoming damage.
-// Description: Checks the power or integrity of the blast door, if either have failed, chekcs the damage to determine if the creature would be able to open the door by force. Otherwise, super.
-/obj/machinery/door/blast/attack_generic(mob/living/user, damage)
-	if(!operable())
-		if(damage >= STRUCTURE_MIN_DAMAGE_THRESHOLD)
-			if(src.density)
-				act_message(user, src, others = span_danger("%U% starts forcing %T% open!"))
-				om_task_timed(user, 5 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done), done_args = list(user), busy = user)
-			else
-				act_message(user, src, others = span_danger("%U% starts forcing %T% closed!"))
-				om_task_timed(user, 2 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_generic_timed_done2), done_args = list(user), busy = user)
-		else
-			act_message(user, src, others = span_notice("%U% strains fruitlessly to force %T% [density ? "open" : "closed"]."))
-		return
-	..()
-
-/obj/machinery/door/blast/proc/attack_generic_timed_done(mob/living/user)
-	act_message(user, src, others = span_danger("%U% forces %T% open!"))
-	force_open(1)
-/obj/machinery/door/blast/proc/attack_generic_timed_done2(mob/living/user)
-	act_message(user, src, others = span_danger("%U% forces %T% closed!"))
-	force_close(1)
-
-// Proc: open()
-// Parameters: None
-// Description: Opens the door. Does necessary checks. Automatically closes if autoclose is true
+/// Proc: open()
+/// Description: Opens the door. Does necessary checks. Closes itself fifteen seconds later if it autocloses.
 /obj/machinery/door/blast/open(forced = 0)
 	if(forced)
 		force_open()
@@ -335,12 +288,11 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 		force_open()
 
 	if(autoclose && src.operating && !(has_stat(BROKEN) || has_stat(NOPOWER)))
-		om_after(src, 15 SECONDS, PROC_REF(close))
+		after(src, 15 SECONDS, PROC_REF(close), key = "autoclose", clock = CLOCK_WORLD)
 	return 1
 
-// Proc: close()
-// Parameters: None
-// Description: Closes the door. Does necessary checks.
+/// Proc: close()
+/// Description: Closes the door. Does necessary checks.
 /obj/machinery/door/blast/close()
 
 	if (src.operating || (has_stat(BROKEN) || has_stat(NOPOWER)))
@@ -349,9 +301,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 	force_close()
 	return 1
 
-// Proc: repair()
-// Parameters: None
-// Description: Fully repairs the blast door.
+/// Proc: repair()
+/// Description: Fully repairs the blast door.
 /obj/machinery/door/blast/proc/repair()
 	repair_damage(max_integrity)
 	atom_fix()
@@ -567,8 +518,3 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 /// Shielding while shut: its plasteel slab, or RAD_EXTREME_INSULATION without one.
 /obj/machinery/door/blast/proc/closed_rad_insulation()
 	return material_rad_insulation(implicit_material?.name, RAD_BLAST_DOOR_THICKNESS_MM, RAD_EXTREME_INSULATION)
-
-// Buttons and consoles find blast doors by id (REL_KEYED sources).
-/obj/machinery/door/blast/relations()
-	. = ..()
-	. += rel_key(nameof(id))
