@@ -186,6 +186,9 @@ Windows is the supported dev OS. Entry points in `bin/`: `build.cmd` (DM + TGUI)
 orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
 
 - **Icon repack** (`tools/dq_icons/`): `png` + `dmi.toml` into `icons/gen/`, dirty-checked.
+  A fresh worktree seeds `icons/gen/` from the main checkout's copy (or `DQ_ICON_SEED`), so only
+  changed icons repack. The repack pool is 4 workers (`DQ_ICON_WORKERS`), and the repack exits with
+  its workers when the build that started it dies.
   Runtime DMI reads resolve the `icons/gen/` copy automatically.
 - **verdigris** (`VerdigrisTarget`): builds `verdigris.dll` / `libverdigris.so` when source is
   stale; or run `verdigris/build-windows.sh` / `build-linux.sh`. It is a gitignored

@@ -157,7 +157,11 @@ export const IconRepackTarget = new Juke.Target({
       '-m', 'tools.dq_icons.build_step',
       '--output', 'icons/gen',
       'icons', 'maps',
-    ]);
+    ], {
+      // The repack watches this pid and exits (with its worker pool) when the build
+      // dies; Windows does not kill child processes with their parent.
+      env: { ...process.env, DQ_BUILD_PID: String(process.pid) },
+    });
   },
 });
 
