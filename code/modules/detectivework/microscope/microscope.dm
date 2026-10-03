@@ -144,10 +144,14 @@
 	update_icon()
 
 /obj/machinery/microscope/MouseDrop(atom/other)
-	if(usr == other)
-		remove_sample(usr)
-	else
+	if(!handle_sample_drop(usr, other)) // ALLOW(sys_usr_outside_verb): Native microscope drag supplies the actor before selecting the unchanged parent routing branch.
 		return ..()
+
+/obj/machinery/microscope/proc/handle_sample_drop(mob/user, atom/other)
+	if(user != other)
+		return FALSE
+	remove_sample(user)
+	return TRUE
 
 APPEARANCE_TEMPLATE(/obj/machinery/microscope, "microscope{sample?slide:}")
 
