@@ -666,6 +666,7 @@
 #include "interim_toolbox_size_refusal.dm"
 #include "interim_girder_timed_securing.dm"
 #include "interim_mine_payload_cleanup.dm"
+#include "interim_toolbox_bulk_gather_empty.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
