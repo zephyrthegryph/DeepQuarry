@@ -40,7 +40,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::dm::ownership_index::{self as oi,
     creates_entity, proc_scopes, puts_object, receiver_type, related, Index, OrdMap, ACCESSOR, CALLBACK, CALLBACK_OK, CORE_DIRS, ENTITY_ROOTS, HANDLE_CALL,
-    HANDLE_OK, HANDLE_VAR, OBJLIST_WRITES, OWN_FUNCS, PROTO_FUNCS, REL_FUNCS, REMOVED, STRING_NAME, TRANSFER_DEST, WRITE_ASSIGN, WRITE_INDEX,
+    HANDLE_OK, HANDLE_VAR, OBJLIST_WRITES, OWN_FUNCS, PROTO_FUNCS, REL_FUNCS, REL_WRITERS, REMOVED, STRING_NAME, TRANSFER_DEST, WRITE_ASSIGN, WRITE_INDEX,
     WRITE_MACRO, WRITE_METHOD,
 };
 use crate::incr;
@@ -109,7 +109,11 @@ type Loc = (String, String, usize);
 #[derive(Default)]
 struct UsageKinds {
     own: BTreeSet<Loc>,
+    /// `rel_link` / `rel_unlink`: a true relation write.
     rel: BTreeSet<Loc>,
+    /// `rel_set` / `rel_add` / `rel_remove` / `rel_clear`: the writers that replace `own_*`. They count as
+    /// an owner's write (no contradiction with `own_*`, no gas-mixture matrix hit) and are also accepted on a REL var.
+    relw: BTreeSet<Loc>,
     proto: BTreeSet<Loc>,
     shared: BTreeSet<Loc>,
 }
@@ -124,7 +128,7 @@ struct Problem {
 /// Check names a cached per-line result stores by index.
 const LINE_CHECKS: [&str; 3] = ["removed", "callback", "handle"];
 
-/// What the accessor-usage pass finds in one file (kinds: 0 OWN, 1 REL, 2 PROTO, 3 SHARED).
+/// What the accessor-usage pass finds in one file (kinds: 0 OWN, 1 REL link, 2 PROTO, 3 SHARED, 4 REL writer).
 #[derive(Serialize, Deserialize, Default, PartialEq)]
 struct UsageScan {
     /// `(var name, kind index, receiver type or "", line)` in discovery order
@@ -165,7 +169,11 @@ fn usage_scan(idx: &Index, f: &SourceFile) -> UsageScan {
             let kind: u8 = if OWN_FUNCS.contains(&func) {
                 0
             } else if REL_FUNCS.contains(&func) {
-                1
+                if REL_WRITERS.contains(&func) {
+                    4
+                } else {
+                    1
+                }
             } else if PROTO_FUNCS.contains(&func) {
                 2
             } else {
@@ -233,7 +241,7 @@ impl Ctx {
             return (Some(if is_list || vtype.is_empty() { Vk::List } else { Vk::Entity }), Some(dtype));
         }
         if let Some(used) = self.usage.get(name) {
-            for set in [&used.own, &used.rel, &used.proto] {
+            for set in [&used.own, &used.rel, &used.relw, &used.proto] {
                 for (t, _, _) in set {
                     // The usage must name this same var: its receiver resolves the member to the same
                     // declaring type (not merely a related type with a same-named var).
@@ -487,6 +495,7 @@ impl Lint for Ownership {
                     0 => &mut u.own,
                     1 => &mut u.rel,
                     2 => &mut u.proto,
+                    4 => &mut u.relw,
                     _ => &mut u.shared,
                 };
                 set.insert((rtype, f.rel.clone(), no as usize));
@@ -502,7 +511,8 @@ impl Lint for Ownership {
             v.dedup();
             v
         }
-        let usage_types: Vec<(&str, [Vec<&str>; 3])> = usage.iter().map(|(name, u)| (name, [types_of(&u.own), types_of(&u.rel), types_of(&u.proto)])).collect();
+        let usage_types: Vec<(&str, [Vec<&str>; 4])> =
+            usage.iter().map(|(name, u)| (name, [types_of(&u.own), types_of(&u.rel), types_of(&u.relw), types_of(&u.proto)])).collect();
         let judge_key = incr::mix(&[idx.key_struct, incr::ctx_key(&usage_types)]);
         let cxt = Ctx { idx: idx.clone(), usage, vk_cache: RwLock::new(HashMap::new()), amb_cache: RwLock::new(HashMap::new()) };
 
@@ -622,24 +632,27 @@ impl Lint for Ownership {
                         }
                     }
                 }
-                for (t, r, n) in &kinds.own {
+                for (t, r, n) in kinds.own.iter().chain(kinds.relw.iter()) {
                     if t.is_empty() {
                         continue;
                     }
+                    let is_relw = kinds.relw.contains(&(t.clone(), r.clone(), *n));
                     let d = idx.decl(t, name);
                     if let Some((_, dd)) = &d {
-                        if !matches!(decl_kind_of(&dd.macro_name), None | Some("OWN")) {
+                        let ok = matches!(decl_kind_of(&dd.macro_name), None | Some("OWN")) || (is_relw && decl_kind_of(&dd.macro_name) == Some("REL"));
+                        if !ok {
                             problems.push(Problem {
                                 check: "contradiction",
                                 rel: r.clone(),
                                 line: *n,
-                                msg: format!("{}.{} is declared {} but written with own_*", t, name, dd.macro_name),
+                                msg: format!("{}.{} is declared {} but written with {}", t, name, dd.macro_name, if is_relw { "rel_*" } else { "own_*" }),
                             });
                         }
                     }
                     if let Some(got) = idx.member(t, name) {
                         let proto = matches!(&d, Some((_, dd)) if dd.macro_name == "PROTO");
-                        if idx.is_registry(&got.vtype) && !proto {
+                        // A rel_* writer of a registry-typed var is a view of the shared entry, not an owner (as before).
+                        if idx.is_registry(&got.vtype) && !proto && !is_relw {
                             problems.push(Problem {
                                 check: "matrix",
                                 rel: r.clone(),
