@@ -169,8 +169,8 @@
 			return side == CAND_TARGET
 		if(BIND_HAND, BIND_REMOTE)
 			return side == CAND_TARGET
-		if(BIND_MENU)
-			return TRUE
+		if(BIND_MENU, BIND_AI)
+			return TRUE // chosen by key: the actor's own op (an ability, a natural weapon) is reached from either side
 	return side == CAND_TARGET
 
 // ---- the candidate index: rows interned by (origin, authority, gesture, intents, side, held type) ----
