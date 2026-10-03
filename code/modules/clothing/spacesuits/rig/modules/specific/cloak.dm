@@ -22,7 +22,7 @@
 	suit_overlay_active =   "stealth_active"
 	suit_overlay_inactive = "stealth_inactive"
 
-/obj/item/rig_module/stealth_field/activate()
+/obj/item/rig_module/stealth_field/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return 0

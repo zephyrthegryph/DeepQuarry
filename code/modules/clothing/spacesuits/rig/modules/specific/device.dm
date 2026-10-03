@@ -14,7 +14,7 @@
 	if(device_type)
 		own_set(src, nameof(device), new device_type(src))
 
-/obj/item/rig_module/device/engage(atom/target)
+/obj/item/rig_module/device/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
 		return 0
 
@@ -127,7 +127,7 @@
 	selectable = 0
 	device_type = /obj/item/paper_bin
 
-/obj/item/rig_module/device/paperdispenser/engage(atom/target)
+/obj/item/rig_module/device/paperdispenser/engage(atom/target, notify_ai, mob/user)
 
 	if(!..() || !device)
 		return 0
@@ -166,7 +166,7 @@
 	own_set(src, nameof(device), new /obj/item/stamp/internalaffairs(src))
 	own_set(src, nameof(spare_stamp), new /obj/item/stamp/denied(src))
 
-/obj/item/rig_module/device/stamp/engage(atom/target)
+/obj/item/rig_module/device/stamp/engage(atom/target, notify_ai, mob/user)
 	if(!..() || !device)
 		return 0
 

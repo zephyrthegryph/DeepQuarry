@@ -22,8 +22,8 @@
 	interface_name = "PAT system"
 	interface_desc = "For opening doors ahead of you, in advance. Override notifies command staff."
 
-/obj/item/rig_module/pat_module/activate()
-	if(!..(TRUE)) //Skip the engage() call, that's for the override and is 'spensive.
+/obj/item/rig_module/pat_module/activate(skip_engage = 0, mob/user)
+	if(!..(TRUE, user)) //Skip the engage() call, that's for the override and is 'spensive.
 		return 0
 
 	var/mob/living/carbon/human/H = holder.wearer()
@@ -64,7 +64,7 @@
 	if(A.density)
 		A.open()
 
-/obj/item/rig_module/pat_module/engage()
+/obj/item/rig_module/pat_module/engage(atom/target, notify_ai, mob/user)
 	var/mob/living/carbon/human/H = holder.wearer()
 	if(!istype(H))
 		return 0

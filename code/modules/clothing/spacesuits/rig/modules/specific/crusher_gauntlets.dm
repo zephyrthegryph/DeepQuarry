@@ -23,7 +23,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/gauntlets, "stored_gauntlets", /obj/i
 	. = ..()
 	rel_set(stored_gauntlets, nameof(stored_gauntlets.storing_module), src)
 
-/obj/item/rig_module/gauntlets/activate()
+/obj/item/rig_module/gauntlets/activate(skip_engage = 0, mob/user)
 	if(!..())
 		return
 	var/mob/living/M = holder.wearer()

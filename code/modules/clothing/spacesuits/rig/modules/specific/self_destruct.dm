@@ -21,7 +21,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect
 	smoke.attach(src)
 
 
-/obj/item/rig_module/self_destruct/activate()
+/obj/item/rig_module/self_destruct/activate(skip_engage = 0, mob/user)
 	return
 
 /obj/item/rig_module/self_destruct/deactivate()
@@ -37,11 +37,11 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/self_destruct, "smoke", /datum/effect
 	if(holder.wearer().stat == 2)
 		engage(1)
 
-/obj/item/rig_module/self_destruct/engage(skip_check)
-	var/_answer_a1 = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
+/obj/item/rig_module/self_destruct/engage(skip_check, notify_ai = FALSE, mob/user)
+	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
 	if(isnull(_answer_a1))
 		return
-	if(!skip_check && usr && _answer_a1 != "Yes")
+	if(!skip_check && user && _answer_a1 != "Yes")
 		return
 	if(holder && holder.wearer())
 		smoke.set_up(10, 0, holder.loc)

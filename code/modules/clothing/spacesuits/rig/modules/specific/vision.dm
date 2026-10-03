@@ -208,7 +208,7 @@
 	rel_set(holder, nameof(holder.visor), src)
 
 
-/obj/item/rig_module/vision/engage()
+/obj/item/rig_module/vision/engage(atom/target, notify_ai, mob/user)
 
 	if(!..() || !vision_modes)
 		return FALSE
@@ -229,7 +229,7 @@
 		to_chat(holder.wearer(), span_blue("Your sensors only have one mode."))
 	return TRUE
 
-/obj/item/rig_module/vision/activate()
+/obj/item/rig_module/vision/activate(skip_engage = 0, mob/user)
 	if((. = ..()) && holder.wearer())
 		holder.wearer().recalculate_vis()
 

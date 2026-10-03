@@ -21,7 +21,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 	. = ..()
 	gun.mounted_gun = TRUE
 
-/obj/item/rig_module/mounted/engage(atom/target)
+/obj/item/rig_module/mounted/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0
@@ -90,7 +90,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	return ..()
 
-/obj/item/rig_module/mounted/energy_blade/activate()
+/obj/item/rig_module/mounted/energy_blade/activate(skip_engage = 0, mob/user)
 
 	..()
 
@@ -147,7 +147,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/rig_module/mounted, "gun", "gun_type")
 
 	return ..()
 
-/obj/item/rig_module/mounted/mop/activate()
+/obj/item/rig_module/mounted/mop/activate(skip_engage = 0, mob/user)
 
 	..()
 

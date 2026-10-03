@@ -23,7 +23,7 @@
 	interface_desc = "Provides passive protection against radiation, at the cost of power."
 	var/stored_rad_armor = 0
 
-/obj/item/rig_module/rad_shield/activate()
+/obj/item/rig_module/rad_shield/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return FALSE
@@ -124,7 +124,7 @@
 	var/stored_max_pressure = 0
 	var/stored_max_temp = 0
 
-/obj/item/rig_module/atmos_shield/activate()
+/obj/item/rig_module/atmos_shield/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return FALSE
@@ -220,7 +220,7 @@
 	var/stored_siemens_coefficient = 0
 	var/stored_gloves_siemens_coefficient = 0
 
-/obj/item/rig_module/faraday_shield/activate()
+/obj/item/rig_module/faraday_shield/activate(skip_engage = 0, mob/user)
 	if(!..())
 		return FALSE
 

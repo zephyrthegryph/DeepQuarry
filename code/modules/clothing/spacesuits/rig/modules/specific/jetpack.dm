@@ -20,13 +20,13 @@
 
 	var/obj/item/tank/jetpack/rig/jets
 
-/obj/item/rig_module/maneuvering_jets/engage()
+/obj/item/rig_module/maneuvering_jets/engage(atom/target, notify_ai, mob/user)
 	if(!..())
 		return 0
 	jets.toggle_rockets_effect(holder?.wearer())
 	return 1
 
-/obj/item/rig_module/maneuvering_jets/activate()
+/obj/item/rig_module/maneuvering_jets/activate(skip_engage = 0, mob/user)
 
 	if(active)
 		return 0

@@ -12,7 +12,7 @@
 	interface_name = "electrowarfare system"
 	interface_desc = "An active counter-electronic warfare suite that disrupts AI tracking."
 
-/obj/item/rig_module/electrowarfare_suite/activate()
+/obj/item/rig_module/electrowarfare_suite/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return

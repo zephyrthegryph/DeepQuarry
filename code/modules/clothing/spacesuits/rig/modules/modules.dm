@@ -143,33 +143,36 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return
 
 //Proc for one-use abilities like teleport.
-/obj/item/rig_module/proc/engage()
+/obj/item/rig_module/proc/engage(atom/target, notify_ai, mob/user)
+
+	if(!user)
+		return 0
 
 	if(damage >= 2)
-		to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
+		to_chat(user, span_warning("The [interface_name] is damaged beyond use!"))
 		return 0
 
 	if(!COOLDOWN_FINISHED(src, next_use))
-		to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
+		to_chat(user, span_warning("You cannot use the [interface_name] again so soon."))
 		return 0
 
 	if(!holder || holder.canremove)
-		to_chat(usr, span_warning("The suit is not initialized."))
+		to_chat(user, span_warning("The suit is not initialized."))
 		return 0
 
-	if(usr.lying || usr.stat || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_WEAKENED))
-		to_chat(usr, span_warning("You cannot use the suit in this state."))
+	if(user.lying || user.stat || user.has_status(EFFECT_STUNNED) || user.has_status(EFFECT_PARALYZED) || user.has_status(EFFECT_WEAKENED))
+		to_chat(user, span_warning("You cannot use the suit in this state."))
 		return 0
 
 	if(holder.wearer() && holder.wearer().lying)
-		to_chat(usr, span_warning("The suit cannot function while the wearer is prone."))
+		to_chat(user, span_warning("The suit cannot function while the wearer is prone."))
 		return 0
 
-	if(holder.security_check_enabled && !holder.check_suit_access(usr))
-		to_chat(usr, span_danger("Access denied."))
+	if(holder.security_check_enabled && !holder.check_suit_access(user))
+		to_chat(user, span_danger("Access denied."))
 		return 0
 
-	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon) ? 1 : 0) ) )
+	if(!holder.check_power_cost(user, use_power_cost, 0, src, (istype(user,/mob/living/silicon) ? 1 : 0) ) )
 		return 0
 
 	COOLDOWN_START(src, next_use, module_cooldown)
@@ -177,11 +180,11 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return 1
 
 // Proc for toggling on active abilities.
-/obj/item/rig_module/proc/activate(skip_engage = 0) // Allow us to skip the engage call.
+/obj/item/rig_module/proc/activate(skip_engage = 0, mob/user) // Allow us to skip the engage call.
 	// Allow us to skip the engage call
 	if(active)
 		return 0
-	if(!skip_engage && !engage())
+	if(!skip_engage && !engage(null, FALSE, user))
 		return 0
 	active = 1
 
@@ -236,21 +239,22 @@ DECLARE_INTERACTIONS(/obj/item/rig_module, INTERACT_ITEM(null, PROC_REF(interact
 	return 0
 
 /atom/movable/stat_rig_module/Click()
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): native stat-panel Click supplies the initiating rig-module actor
 	if(CanUse())
 		switch(module_mode)
 			if("select")
 				rel_set(module.holder, nameof(/datum/tgui_module/robot_ui_module::selected_module), module)
 			if("engage")
-				module.engage()
+				module.engage(null, FALSE, user)
 			if("activate")
-				module.activate()
+				module.activate(FALSE, user)
 			if("deactivate")
 				module.deactivate()
 			if("toggle")
 				if(module.active)
 					module.deactivate()
 				else
-					module.activate()
+					module.activate(FALSE, user)
 			if("select_charge_type")
 				var/charge_index = module.charges.Find(module.charge_selected)
 				charge_index = charge_index == module.charges.len ? 1 : charge_index + 1
