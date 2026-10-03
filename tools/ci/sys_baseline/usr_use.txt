@@ -495,10 +495,6 @@ usr_outside_verb	code/modules/research/tg/machinery/_production.dm	var/mob/user 
 usr_outside_verb	code/modules/research/tg/machinery/mech_fabricator.dm	var/mob/user = usr
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
-usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No notes found.")
-usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	to_chat(usr, "No keys found.")
-usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	dq_admin_report_html(usr, "Admin Playernotes", dat, src)
-usr_outside_verb	code/modules/tgui/modules/admin/player_notes.dm	dq_admin_report_html(usr, "Info on [key]", dat, src)
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr

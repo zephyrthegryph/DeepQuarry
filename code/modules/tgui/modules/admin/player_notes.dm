@@ -16,12 +16,12 @@
 	if(!QDELETED(src))
 		qdel(src)
 
-/datum/tgui_module/player_notes/proc/filter_ckeys(page, filter)
+/datum/tgui_module/player_notes/proc/filter_ckeys(page, filter, mob/user)
 	var/savefile/S=new("data/player_notes.sav")
 	var/list/note_keys
 	S >> note_keys
 	if(!note_keys)
-		to_chat(usr, "No notes found.")
+		to_chat(user, "No notes found.")
 	else
 		note_keys = sortList(note_keys)
 
@@ -41,7 +41,7 @@
 		var/page_index = page - 1
 
 		if(page_index < 0 || page_index >= number_pages)
-			to_chat(usr, "No keys found.")
+			to_chat(user, "No keys found.")
 		else
 			var/lower_bound = page_index * PLAYER_NOTES_ENTRIES_PER_PAGE + 1
 			var/upper_bound = (page_index + 1) * PLAYER_NOTES_ENTRIES_PER_PAGE
@@ -54,7 +54,7 @@
 
 /datum/tgui_module/player_notes/proc/open_legacy(mob/user)
 	var/datum/admins/A = GLOB.admin_datums[user.ckey]
-	A.PlayerNotesLegacy()
+	A.PlayerNotesLegacy(user)
 
 DECLARE_UI_STATE(/datum/tgui_module/player_notes, ADMIN_STATE(R_ADMIN|R_MOD|R_EVENT|R_DEBUG))
 
@@ -96,7 +96,7 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes, "filter=current_filter:text", "
 /datum/tgui_module/player_notes/proc/ui_data_datum_tgui_module_player_notes(mob/user, datum/tgui/ui, datum/tgui_state/state)
 	var/list/data = list()
 
-	filter_ckeys(current_page, current_filter)
+	filter_ckeys(current_page, current_filter, user)
 	data["ckeys"] = list()
 	data["pages"] = number_pages + 1
 
@@ -198,16 +198,16 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes_info, "ckey=key:text", "merge:ui
 
 // ==== LEGACY UI ====
 
-/datum/admins/proc/PlayerNotesLegacy()
-	PlayerNotesPageLegacy(1)
+/datum/admins/proc/PlayerNotesLegacy(mob/user)
+	PlayerNotesPageLegacy(1, null, user)
 
-/datum/admins/proc/PlayerNotesFilterLegacy()
-	var/filter = rerun_ask(owner(), "a1", PROC_REF(PlayerNotesFilterLegacy), args, /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
+/datum/admins/proc/PlayerNotesFilterLegacy(mob/user)
+	var/filter = rerun_ask(user, "a1", PROC_REF(PlayerNotesFilterLegacy), args, /datum/om/prompt/text, message = "Filter string (case-insensitive regex)", title = "Player notes filter")
 	if(isnull(filter))
 		return
-	PlayerNotesPageLegacy(1, filter)
+	PlayerNotesPageLegacy(1, filter, user)
 
-/datum/admins/proc/PlayerNotesPageLegacy(page, filter)
+/datum/admins/proc/PlayerNotesPageLegacy(page, filter, mob/user)
 	var/dat = span_bold("Player notes") + " - <a href='byond://?src=\ref[src];[HrefToken()];notes_legacy=filter'>Apply Filter</a><HR>"
 	var/savefile/S=new("data/player_notes.sav")
 	var/list/note_keys
@@ -252,7 +252,7 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes_info, "ckey=key:text", "merge:ui
 				dat = span_bold(dat)
 
 	// structured TGUI AdminReport.
-	dq_admin_report_html(usr, "Admin Playernotes", dat, src)
+	dq_admin_report_html(user, "Admin Playernotes", dat, src)
 
 /datum/admins/proc/player_has_info_legacy(key as text)
 	var/savefile/info = new("data/player_saves/[copytext(key, 1, 2)]/[key]/info.sav")
@@ -297,7 +297,7 @@ UI_DATA_REPLACE(/datum/tgui_module/player_notes_info, "ckey=key:text", "merge:ui
 	dat += "<A href='byond://?src=\ref[src];[HrefToken()];add_player_info_legacy=[key]'>Add Comment</A><br>"
 
 	// structured TGUI AdminReport.
-	dq_admin_report_html(usr, "Info on [key]", dat, src)
+	dq_admin_report_html(user, "Info on [key]", dat, src)
 
 TOPIC_ACTION(/datum/admins, "add_player_info_legacy", PROC_REF(topic_add_player_info_legacy), TOPIC_TEXT("add_player_info_legacy", 64), TOPIC_RIGHTS(R_ADMIN|R_MOD))
 TOPIC_ACTION(/datum/admins, "remove_player_info_legacy", PROC_REF(topic_remove_player_info_legacy), TOPIC_TEXT("remove_player_info_legacy", 64), TOPIC_NUM("remove_index"), TOPIC_RIGHTS(R_ADMIN|R_MOD))
@@ -334,11 +334,11 @@ TOPIC_ACTION(/datum/admins, "notes_legacy=filter", PROC_REF(topic_notes_legacy_f
 	var/filter
 	if(args["filter"] && args["filter"] != "0")
 		filter = url_decode(args["filter"])
-	PlayerNotesPageLegacy(args["index"], filter)
+	PlayerNotesPageLegacy(args["index"], filter, user)
 	return TRUE
 
 /datum/admins/proc/topic_notes_legacy_filter(mob/user, list/args)
-	PlayerNotesFilterLegacy()
+	PlayerNotesFilterLegacy(user)
 	return TRUE
 
 #undef PLAYER_NOTES_ENTRIES_PER_PAGE
