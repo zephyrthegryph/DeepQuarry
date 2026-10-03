@@ -10,6 +10,9 @@
 #define REAGENT_FLOW_TRANSFER 1
 /// Mode of a flow: the reagents are splashed over the target (a mob, a turf, an object): no capacity is reserved, and they touch what they land on.
 #define REAGENT_FLOW_SPLASH 2
+/// Mode of a flow: the reagents are sprayed at the target: the source's holder says what becomes of them (atom/reagent_spray_at(): a puff, a splash).
+/// No capacity is reserved.
+#define REAGENT_FLOW_SPRAY 4
 /// Mode of a flow: the reagents are swallowed by the target mob (what a drink or a feeding does): no capacity is reserved, and they go where a mouth
 /// sends them (the ingested holder, with the taste).
 #define REAGENT_FLOW_INGEST 3
@@ -131,15 +134,29 @@
 				return OP_FAILED
 			moved = source.reagents.trans_to_mob(eater, RR.amount, CHEM_INGEST) || 0
 		if(REAGENT_FLOW_SPLASH)
-			var/atom/target = RR.sink
-			moved = min(RR.amount, source.reagents.total_volume)
-			var/volume_before = source.reagents.total_volume
-			source.reagents.splash(target, moved)
-			// splash() may leave part of what it was given in the source: the amount spent is what was reserved, exactly
-			var/left_over = source.reagents.total_volume - (volume_before - moved)
-			if(left_over > 0)
-				source.reagents.remove_any(left_over)
+			moved = reagent_splash_exactly(source, RR.sink, RR.amount)
+		if(REAGENT_FLOW_SPRAY)
+			var/atom/aim = RR.sink
+			var/mob/sprayer = RR.actor
+			var/before = source.reagents.total_volume
+			moved = min(RR.amount, before)
+			source.reagent_spray_at(aim, sprayer, moved)
+			moved = before - source.reagents.total_volume
 	return moved > 0 ? OP_OK : OP_FAILED
+
+/// Splashes `amount` of `source`'s reagents over `target` and spends exactly that: splash() may leave part of what it was given in the source.
+/proc/reagent_splash_exactly(atom/source, atom/target, amount)
+	var/moved = min(amount, source.reagents.total_volume)
+	var/volume_before = source.reagents.total_volume
+	source.reagents.splash(target, moved)
+	var/left_over = source.reagents.total_volume - (volume_before - moved)
+	if(left_over > 0)
+		source.reagents.remove_any(left_over)
+	return moved
+
+/// What a sprayer does with `amount` of its reagents at `target`. Base: splash them over it. A type that makes a puff of them overrides this.
+/atom/proc/reagent_spray_at(atom/target, mob/user, amount)
+	reagent_splash_exactly(src, target, amount)
 
 /datum/resource/reagents/release(datum/reservation/R)
 	reagent_flow_end(R)

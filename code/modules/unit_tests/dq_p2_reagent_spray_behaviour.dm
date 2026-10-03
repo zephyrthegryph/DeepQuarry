@@ -6,18 +6,10 @@
 // Adapters
 // ---------------------------------------------------------------------------------------------------------------------
 
-/// A question a proc asks of its user is answered by the adapter when it is asked (a re-run answer today).
-/proc/rc_seed_answer(datum/asker, proc_name, key, value)
-	GLOB.om_rerun_answers["[REF(asker)]:[proc_name]"] = list("[key]" = value)
-
-/proc/rc_clear_answers(datum/asker, proc_name)
-	GLOB.om_rerun_answers -= "[REF(asker)]:[proc_name]"
-
-/// The person empties the spray bottle (the menu verb), answering yes to the question.
+/// The person empties the spray bottle (the menu entry), answering yes to the question.
 /proc/rc_empty_spray(mob/actor, obj/item/reagent_containers/spray/S)
-	rc_seed_answer(S, "spray_verb_empty", "a1", "Yes")
-	S.spray_verb_empty(actor, null, null)
-	rc_clear_answers(S, "spray_verb_empty")
+	test_menu(actor, S, "empty")
+	test_answer(actor, TRUE)
 
 /// The person turns the hose nozzle's dial (an alt-click on it).
 /datum/unit_test/dq_p2_reagents/proc/rc_dial(mob/living/carbon/human/H, obj/item/reagent_containers/spray/chemsprayer/hosed/S)

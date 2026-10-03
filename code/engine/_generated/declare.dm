@@ -202,7 +202,7 @@
 /datum/capdef_decl/c_powered_by/spec()
 	return list(CAP_POWERED_BY, /datum/capability/lib/powered_by, "of_system", STACK, "powered_by", "of_system, role")
 
-/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:34
+/// CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:36
 /datum/capability/lib/reagent_container
 	var/volume = 30
 	var/transfer = list(5, 10, 15, 30)
@@ -220,11 +220,15 @@
 	var/feed_wait = 30
 	var/examine_range = null
 	var/splash_mobs = TRUE
-/proc/reagent_container(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs)
+	var/settable = TRUE
+	var/spray_cooldown = 4
+	var/shows_contents = TRUE
+	var/spray_mobs = TRUE
+/proc/reagent_container(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs, settable, spray_cooldown, shows_contents, spray_mobs)
 	RETURN_TYPE(/datum/capability/lib/reagent_container)
-	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs), "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs")
+	return cap_construct(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, list(volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs, settable, spray_cooldown, shows_contents, spray_mobs), "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs, settable, spray_cooldown, shows_contents, spray_mobs")
 /datum/capdef_decl/c_reagent_container/spec()
-	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs")
+	return list(CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, NONE, STACK, "reagent_container", "volume, transfer, lid, needle, spray, starts_open, transfer_default, transfer_min, transfer_max, starts, taps, rests_on, feed, feed_wait, examine_range, splash_mobs, settable, spray_cooldown, shows_contents, spray_mobs")
 
 /// CAPABILITY_TYPE(stackable, CAP_STACKABLE) at code/library/items/stackable.dm:12
 /datum/capability/lib/stackable
@@ -326,7 +330,7 @@
 /proc/panel_open(datum/holder, selector)
 	return cap_key_get(holder, PANEL_OPEN, selector)
 
-/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:35
+/// cap_keys(CAP_REAGENT_CONTAINER) at code/library/reagents/reagent_container.dm:37
 /datum/cap_keys_decl/k_reagent_container/spec()
 	return list(CAP_REAGENT_CONTAINER, list(LID_OPEN = MSG(reagent_container/lid_closed)))
 /// The state key LID_OPEN of reagent_container, read on a holder (a granted capability with several selectors names the selector).
@@ -475,6 +479,64 @@
 	into += entry_block("code/modules/detectivework/tools/rag.dm", 35, /obj/item/reagent_containers/glass/rag)
 	into += entry_line(36)
 	into += list(global.without(CAP_GLASS_CONTAINER))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray) at code/modules/reagents/reagent_containers/spray.dm:27
+/obj/item/reagent_containers/spray/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 27, /obj/item/reagent_containers/spray)
+	into += entry_line(28)
+	into += list(global.reagent_container( volume = nameof(volume), spray = TRUE, settable = FALSE, shows_contents = FALSE, spray_mobs = FALSE, transfer_default = nameof(amount_per_transfer_from_this), taps = list(/obj/structure/reagent_dispensers), rests_on = list(/obj/item/storage, /obj/structure/table, /obj/structure/closet, /obj/item/reagent_containers, /obj/structure/sink, /obj/structure/janitorialcart)))
+	into += entry_line(37)
+	into += list(global.op("empty", global.menu(), global.label("Empty Spray Bottle"), global.confirms("Are you sure you want to empty that?"), global.then(PROC_REF(emptied))))
+	into += entry_line(38)
+	into += list(global.examine_line(PROC_REF(units_left)))
+	into += entry_line(39)
+	into += list(global.extend("reagent_container.spray", global.reach(REACH_ANY)))
+	into += entry_line(40)
+	into += list(global.extend("reagent_container.spray", global.then(PROC_REF(spray_logged))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray/chemsprayer/hosed) at code/modules/reagents/reagent_containers/spray.dm:228
+/obj/item/reagent_containers/spray/chemsprayer/hosed/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 228, /obj/item/reagent_containers/spray/chemsprayer/hosed)
+	into += entry_line(229)
+	into += list(global.op("dial", global.hand(), global.answers(INTENT_TOGGLE), global.label("Turn dial"), global.then(PROC_REF(dial_turned))))
+	into += entry_line(230)
+	into += list(global.op("heavy", global.in_hand(), global.gesture(GESTURE_CTRL), global.label("Switch the spray"), global.then(PROC_REF(spray_switched))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray/pepper) at code/modules/reagents/reagent_containers/spray.dm:118
+/obj/item/reagent_containers/spray/pepper/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 118, /obj/item/reagent_containers/spray/pepper)
+	into += entry_line(119)
+	into += list(global.configure(global.reagent_container(starts = list(REAGENT_ID_CONDENSEDCAPSAICIN = 40))))
+	into += entry_line(120)
+	into += list(global.op("safety", global.in_hand(), global.label("Toggle safety"), global.toggles(nameof(safety)), global.then(PROC_REF(safety_toggled))))
+	into += entry_line(121)
+	into += list(global.examine_line(PROC_REF(safety_text)))
+	into += entry_line(122)
+	into += list(global.extend("reagent_container.spray", global.needs(global.req_is(nameof(safety), FALSE, because = MSG(spray/safety_on)))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray/plantbgone) at code/modules/reagents/reagent_containers/spray.dm:191
+/obj/item/reagent_containers/spray/plantbgone/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 191, /obj/item/reagent_containers/spray/plantbgone)
+	into += entry_line(192)
+	into += list(global.configure(global.reagent_container(starts = list(REAGENT_ID_PLANTBGONE = 100))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray/waterflower) at code/modules/reagents/reagent_containers/spray.dm:146
+/obj/item/reagent_containers/spray/waterflower/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 146, /obj/item/reagent_containers/spray/waterflower)
+	into += entry_line(147)
+	into += list(global.configure(global.reagent_container(starts = list(REAGENT_ID_WATER = 10))))
+
+/// CAPABILITIES(/obj/item/reagent_containers/spray/windowsealant) at code/modules/reagents/reagent_containers/spray.dm:297
+/obj/item/reagent_containers/spray/windowsealant/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/reagents/reagent_containers/spray.dm", 297, /obj/item/reagent_containers/spray/windowsealant)
+	into += entry_line(298)
+	into += list(global.configure(global.reagent_container(starts = list(REAGENT_ID_SILICATE = 80))))
 
 /// CAPABILITIES(/obj/machinery/cell_charger) at code/game/machinery/cell_charger.dm:36
 /obj/machinery/cell_charger/declared_entries(list/into)

@@ -19,7 +19,9 @@
 //   drink        a click on yourself in a stance that is not hostile: one transfer, swallowed (ingested); half of it for a small mob
 //   feed         (feed = TRUE) the same click on somebody else, after `feed_wait`: the mouth, a gag, a mask or a belly can refuse
 //   inject       (needle = TRUE) the held container into another mob
-//   spray        (spray = TRUE) the amount of one transfer is sprayed over the target; such a container does not pour
+//   spray        (spray = TRUE) the amount of one transfer is sprayed at the target (atom/reagent_spray_at(): a puff, a splash, what the holder's type
+//                makes of it), after a click cooldown of `spray_cooldown`; a click on what the container rests on is left alone. A sprayer and a needle
+//                container (`needle`) are not plain containers: they do not pour, splash, drink or feed. `settable` = FALSE leaves out set_amount.
 //
 // A pour, a fill, a drink and an injection are one RES_REAGENTS transaction: the source's volume and the sink's capacity are set aside together and
 // committed together (reagent_flow.dm), so a sink that is full refuses with its reason before anything leaves the source. Requirements say why: a
@@ -31,7 +33,7 @@
 // follows it). Look: the lid layer while closed, and "fill0".."fill4" by how full it is. Examine: what it holds, and a closed lid, to `examine_range`
 // tiles. The reagent holder is made at init with `volume`, and `starts` is put into it.
 
-CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, splash_mobs = TRUE)
+CAPABILITY_TYPE(reagent_container, CAP_REAGENT_CONTAINER, /datum/capability/lib/reagent_container, key = NONE, volume = 30, transfer = list(5, 10, 15, 30), lid = FALSE, needle = FALSE, spray = FALSE, starts_open = FALSE, transfer_default = null, transfer_min = null, transfer_max = null, starts = null, taps = null, rests_on = null, feed = FALSE, feed_wait = 30, examine_range = null, splash_mobs = TRUE, settable = TRUE, spray_cooldown = 4, shows_contents = TRUE, spray_mobs = TRUE)
 cap_keys(CAP_REAGENT_CONTAINER, LID_OPEN = MSG(reagent_container/lid_closed))
 
 MSG_DEF_SELF(reagent_container/lid_closed, "The lid is closed.")
@@ -66,9 +68,9 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /datum/capability/lib/reagent_container/entries()
 	return list(
 		lid ? op("lid", inputs(in_hand(), menu()), label("Open or close the lid"), toggles(REAGENT_CONTAINER_LID_OPEN), says(MSG(reagent_container/lid))) : null,
-		op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), label("Set transfer amount"),
-			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))),
-		spray ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
+		settable ? op("set_amount", inputs(menu(), hand()), answers(INTENT_TOGGLE), label("Set transfer amount"),
+			asks(/datum/prompt/number, fields = list("question" = "Amount per transfer:")), then(CAP_PROC(apply_amount))) : null,
+		(spray || needle) ? null : op("pour", at_target(), when(CAP_PROC(target_pourable)), priority(OP_PRIORITY_PART), label("Pour"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/pour))),
@@ -76,15 +78,15 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			needs(req(CAP_PROC(sink_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/fill))) : null,
-		op("splash", at_target(), hostile(), stance(I_HURT), when(CAP_PROC(target_splashable)), label("Splash"),
+		(spray || needle) ? null : op("splash", at_target(), hostile(), stance(I_HURT), when(CAP_PROC(target_splashable)), label("Splash"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/splash))),
-		op("drink", at_target(/mob/living), when(CAP_PROC(targets_self)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Drink"),
+		(spray || needle) ? null : op("drink", at_target(/mob/living), when(CAP_PROC(targets_self)), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Drink"),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
 				req(CAP_PROC(mouth_free), because = MSG(reagent_container/mouth_blocked))),
 			then(CAP_PROC(fed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/drink))),
-		feed ? op("feed", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Feed"),
+		(feed && !spray && !needle) ? op("feed", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), stance(I_HELP, I_DISARM, I_GRAB), priority(OP_PRIORITY_PART), label("Feed"),
 			wait(feed_wait),
 			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)),
 				req(CAP_PROC(can_be_fed), because = MSG(reagent_container/cannot_feed)), req(CAP_PROC(belly_free), because = MSG(reagent_container/from_belly)),
@@ -93,9 +95,9 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 		needle ? op("inject", at_target(/mob/living), when(cond_not(CAP_PROC(targets_self))), priority(OP_PRIORITY_PART), label("Inject"),
 			needs(req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty)), req(CAP_PROC(sink_has_room), because = MSG(reagent_container/full))),
 			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/inject))) : null,
-		spray ? op("spray", at_target(), when(CAP_PROC(held_has_reagents)), label("Spray"),
-			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_reagents), because = MSG(reagent_container/empty))),
-			costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
+		spray ? op("spray", at_target(), when(CAP_PROC(target_sprayable)), priority(OP_PRIORITY_PART), priority(above("reagent_container.fill")), label("Spray"),
+			needs(req(CAP_PROC(source_open), because = MSG(reagent_container/lid_closed)), req(CAP_PROC(source_has_amount), because = MSG(reagent_container/empty))),
+			then(CAP_PROC(sprayed)), costs(RES_REAGENTS, CAP_PROC(transfer_amount)), says(MSG(reagent_container/spray))) : null,
 		lid ? look_layer(LOOK_LID, when = cond_not(REAGENT_CONTAINER_LID_OPEN)) : null,
 		look_layer(CAP_PROC(fill_layer)),
 		examine_line(CAP_PROC(volume_text)),
@@ -172,8 +174,10 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 	switch(op_name(A))
 		if("fill")
 			return list(A.target, A.holder, REAGENT_FLOW_TRANSFER)
-		if("splash", "spray")
+		if("splash")
 			return list(A.holder, A.target, REAGENT_FLOW_SPLASH)
+		if("spray")
+			return list(A.holder, A.target, REAGENT_FLOW_SPRAY)
 		if("drink", "feed")
 			return list(A.holder, A.target, REAGENT_FLOW_INGEST)
 	return list(A.holder, A.target, REAGENT_FLOW_TRANSFER)
@@ -217,6 +221,12 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 			return TRUE
 	return FALSE
 
+/// The clicked thing is sprayed at: not what the container rests on, and not a tap with its top shut (which fills it).
+/datum/capability/lib/reagent_container/proc/target_sprayable(datum/act/op/A)
+	if(!spray_mobs && ismob(A.target) && A.actor?.Adjacent(A.target))
+		return FALSE // `spray_mobs` = FALSE: a person next to the sprayer is not sprayed by a click on them (a person at a distance is)
+	return !rests_on_target(A.target) && !target_is_tap(A)
+
 /// The clicked thing can be splashed: it is not poured into, not drawn from, and not something this container is put on.
 /datum/capability/lib/reagent_container/proc/target_splashable(datum/act/op/A)
 	return (splash_mobs || !ismob(A.target)) && !target_pourable(A) && !target_is_tap(A) && !rests_on_target(A.target)
@@ -225,7 +235,8 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /datum/capability/lib/reagent_container/proc/rests_on_target(atom/target)
 	if(isnull(rests_on))
 		return FALSE
-	for(var/rest_type in GLOB.reagent_containers_can_be_placed_into[rests_on])
+	var/list/types = islist(rests_on) ? rests_on : GLOB.reagent_containers_can_be_placed_into[rests_on]
+	for(var/rest_type in types)
 		if(istype(target, rest_type))
 			return TRUE
 	return FALSE
@@ -250,6 +261,17 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /datum/capability/lib/reagent_container/proc/source_has_reagents(datum/act/op/A)
 	var/list/flow = flow_of(A)
 	return reagents_giveable(flow[1]) > 0
+
+/// A whole amount is left to spray: a sprayer with less than one amount sprays nothing.
+/datum/capability/lib/reagent_container/proc/source_has_amount(datum/act/op/A)
+	var/list/flow = flow_of(A)
+	return reagents_giveable(flow[1]) >= chosen_amount(A.holder)
+
+/// The spray: the click costs time, and the holder's type makes of the amount what it does (a puff of it, a splash over a dense thing).
+/datum/capability/lib/reagent_container/proc/sprayed(datum/act/op/A)
+	var/mob/user = A.actor
+	user?.setClickCooldown(spray_cooldown)
+	return OP_OK
 
 /datum/capability/lib/reagent_container/proc/sink_has_room(datum/act/op/A)
 	var/list/flow = flow_of(A)
@@ -306,7 +328,7 @@ MSG_DEF_SELF(reagent_container/lid_examine, "Its lid is closed.")
 /datum/capability/lib/reagent_container/proc/volume_text(datum/act/op/A)
 	var/atom/holder = A.holder
 	var/datum/reagents/R = holder.reagents
-	if(!R || !near_enough(A))
+	if(!R || !shows_contents || !near_enough(A))
 		return null
 	return R.total_volume ? "It contains [R.total_volume] of [R.maximum_volume] units." : "It is empty. It holds [R.maximum_volume] units."
 
