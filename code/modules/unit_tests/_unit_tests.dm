@@ -771,6 +771,7 @@
 #include "interim_atm_sticky_cash_deposit.dm"
 #include "interim_custom_sandwich_sticky_ingredient.dm"
 #include "interim_custom_sandwich_sticky_shard.dm"
+#include "interim_customizable_food_sticky_ingredient.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

@@ -39,16 +39,11 @@ EXTEND_INTERACTIONS(/obj/item/reagent_containers/food/snacks/customizable, INTER
 		if(istype(I, /obj/item/reagent_containers/food/snacks/customizable))
 			to_chat(user, span_warning("As uniquely original as that idea is, you can't figure out how to perform it."))
 			return INTERACTION_HANDLED_PASS
-		/*if(!user.drop_item())
-			to_chat(user, span_warning("\The [I] is stuck to your hands!"))
-			return*/
-		user.drop_item()
-		I.forceMove(src)
+		if(!own_add(src, nameof(ingredients), S, user = user))
+			return INTERACTION_HANDLED_PASS
 
 		if(S.reagents)
 			S.reagents.trans_to_holder(reagents,S.reagents.total_volume)
-
-		own_add(src, nameof(ingredients), S)
 
 		if(src.addTop)
 			cut_overlay(topping)
