@@ -24,12 +24,13 @@ DECLARE_INTERACTIONS(/obj/item/slime_extract, INTERACT_ITEM(null, PROC_REF(inter
 		if(enhanced)
 			to_chat(user, span_warning("You cannot enhance this extract further!"))
 			return FALSE
+		if(!consume(O, user))
+			return FALSE
 		to_chat(user, span_notice("You apply the enhancer to the slime extract. It may now be reused one more time."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		uses += 2
 		enhanced = TRUE
 		name = initial(name) // To remove the 'inert' part of the name.
-		consume(O, user)
 	else if(istype(O, /obj/item/slimepotion/reinvigoration))
 		to_chat(user, span_notice("You apply the reinvigorator to the slime extract. It rapidly expands, creating a brand new slime!"))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
