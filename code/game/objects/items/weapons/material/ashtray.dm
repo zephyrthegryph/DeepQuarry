@@ -52,8 +52,8 @@ EXTEND_INTERACTIONS(/obj/item/material/ashtray, INTERACT_ITEM(null, PROC_REF(ash
 		if (contents_count(src) >= max_butts)
 			to_chat(user, "\The [src] is full.")
 			return INTERACTION_HANDLED_PASS
-		user.remove_from_mob(W)
-		W.forceMove(src)
+		if(!own_bring_in(src, nameof(contents), W, null, user, TRUE, null, FALSE))
+			return INTERACTION_HANDLED_PASS
 
 		if (istype(W,/obj/item/clothing/mask/smokable/cigarette))
 			var/obj/item/clothing/mask/smokable/cigarette/cig = W
