@@ -1323,3 +1323,25 @@
 			TEST_ASSERT_EQUAL(event.entity, original, "a transfer row is about the cell")
 			TEST_ASSERT(!findtext("[event.key]", ":"), "its slot is a plain name, not an op key: [event.key]")
 	TEST_ASSERT_EQUAL(test_events_count(events, TEST_EVENT_SPILL), 0, "nothing spilled")
+
+/datum/unit_test/dq_p2_apc/zdebug_a
+	var/n = 1
+
+/datum/unit_test/dq_p2_apc/zdebug_a/run_gate()
+	var/obj/machinery/power/apc/A = p2_apc()
+	var/mob/living/carbon/human/H = p2_actor()
+	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
+	A.coverlocked = FALSE
+	touch(H, A, bar)
+	if(n >= 2)
+		touch(H, A, null)
+	if(n >= 3)
+		touch(H, A, bar)
+
+/datum/unit_test/dq_p2_apc/zdebug_b
+	parent_type = /datum/unit_test/dq_p2_apc/zdebug_a
+	n = 2
+
+/datum/unit_test/dq_p2_apc/zdebug_c
+	parent_type = /datum/unit_test/dq_p2_apc/zdebug_a
+	n = 3
