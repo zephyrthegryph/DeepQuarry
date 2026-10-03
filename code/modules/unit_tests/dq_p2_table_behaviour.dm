@@ -1059,3 +1059,46 @@
 	TEST_ASSERT(findtext(reinforced.desc, get_material_by_name(MAT_STEEL).display_name), "it names the steel")
 	TEST_ASSERT(!findtext(plain.desc, "reinforced"), "a plain one does not say reinforced")
 	TEST_ASSERT_EQUAL(plain.name, "[get_material_by_name(MAT_STEEL).display_name] table", "named for its plating")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Combat mode
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// In combat mode a weapon clicked on a table is still put on it: the placing is the click's use, and nothing else takes the click (pinned).
+/datum/unit_test/dq_p2_table/a_weapon_in_combat_mode_is_put_on_the_table
+
+/datum/unit_test/dq_p2_table/a_weapon_in_combat_mode_is_put_on_the_table/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/table/T = allocate(/obj/structure/table/steel, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	dq_give_zone_sel(H)
+	H.combat_mode_key("on")
+	var/obj/item/material/twohanded/fireaxe/axe = allocate(/obj/item/material/twohanded/fireaxe, H.loc)
+	var/before = T.get_integrity()
+	touch(H, T, axe)
+	TEST_ASSERT_EQUAL(axe.loc, at, "the axe is on the table")
+	TEST_ASSERT_EQUAL(T.get_integrity(), before, "the table was not hit")
+
+/// Out of combat mode the same click puts the weapon on the table.
+/datum/unit_test/dq_p2_table/a_weapon_out_of_combat_mode_is_put_on_the_table
+
+/datum/unit_test/dq_p2_table/a_weapon_out_of_combat_mode_is_put_on_the_table/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/table/T = allocate(/obj/structure/table/steel, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/obj/item/material/twohanded/fireaxe/axe = allocate(/obj/item/material/twohanded/fireaxe, H.loc)
+	var/before = T.get_integrity()
+	touch(H, T, axe)
+	TEST_ASSERT_EQUAL(axe.loc, at, "the axe is on the table")
+	TEST_ASSERT_EQUAL(T.get_integrity(), before, "the table was not hit")
+
+/// A tool with no job on the table (a crowbar on an uncarpeted one) is put on it only if the old click allowed it: pinned where the tool ends up.
+/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_ends_up_somewhere
+
+/datum/unit_test/dq_p2_table/a_crowbar_with_no_job_ends_up_somewhere/run_gate()
+	var/turf/at = floor_at(1, 1)
+	var/obj/structure/table/T = allocate(/obj/structure/table/steel, at)
+	var/mob/living/carbon/human/H = actor(floor_at(1, 0))
+	var/obj/item/tool/crowbar/bar = tool(/obj/item/tool/crowbar)
+	touch(H, T, bar)
+	TEST_ASSERT_EQUAL(bar.loc, H, "PINNED: a tool nobody has a job for stays in the hand")
