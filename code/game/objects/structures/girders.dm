@@ -147,6 +147,8 @@ DAMAGE_REACTION(/obj/structure/girder, DAMAGE_BLOB, PROC_REF(girder_blob))
 	name = "[girder_material.display_name] [initial(name)]"
 	set_anchored(TRUE)
 	cover = initial(cover)
+	// Rebuild the frame allowance before applying the reinforcement still present.
+	max_integrity = round(girder_material.integrity)
 	repair_damage(max_integrity)
 	state = 0
 	icon_state = initial(icon_state)

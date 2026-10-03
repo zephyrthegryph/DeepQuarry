@@ -616,6 +616,8 @@
 #include "interim_floor_decal_cleanup.dm"
 #include "interim_sdql_parser_actor.dm"
 #include "interim_sdql_query_actor_context.dm"
+#include "interim_girder_reinforcement_integrity.dm"
+#include "interim_girder_strut_removal_refund.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
