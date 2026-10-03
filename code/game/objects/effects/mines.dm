@@ -160,7 +160,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 		M.status_at_least(EFFECT_STUNNED, 30)
 	visible_message("\The [src.name] flashes violently before disintegrating!")
 	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/n2o
 	mineitemtype = /obj/item/mine/n2o
@@ -239,7 +239,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 	new src.mineitemtype(get_turf(src))
 	for(var/wire_color in wires.colors)
 		wires.detach_assembly(wire_color) //Kick all the signallers off!
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/emp
 	mineitemtype = /obj/item/mine/emp
@@ -285,7 +285,7 @@ DAMAGE_REACTION(/obj/effect/mine, DAMAGE_EXPLOSION, PROC_REF(mine_blast))
 			M.drop_from_inventory(content_item)
 	visible_message("\The [src.name] explodes, stripping [M]!")
 	GLOB.motiontracker_service.ping(src,100)
-	qdel(src)
+	consume(src)
 
 /obj/effect/mine/gadget
 	mineitemtype = /obj/item/mine/gadget
