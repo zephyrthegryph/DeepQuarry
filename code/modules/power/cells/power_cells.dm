@@ -251,14 +251,17 @@ EXTEND_INTERACTIONS(/obj/item/cell/void, INTERACT_USE(null, PROC_REF(interaction
 
 /// Old attack_self.
 /obj/item/cell/void/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	user.remove_from_mob(src)
-	to_chat(user, span_notice("You swap [src] to 'device cell' mode."))
-	var/obj/item/cell/newcell = new swaps_to(null)
-	user.put_in_active_hand(newcell)
+	var/cell_name = "[src]"
 	var/percentage = charge/maxcharge
+	var/original_persist_storable = persist_storable
+	var/replacement_type = swaps_to
+	if(!consume(src, user))
+		return TRUE
+	to_chat(user, span_notice("You swap [cell_name] to 'device cell' mode."))
+	var/obj/item/cell/newcell = new replacement_type(null)
+	user.put_in_active_hand(newcell)
 	newcell.charge = newcell.maxcharge * percentage
-	newcell.persist_storable = persist_storable
-	consume(src, user)
+	newcell.persist_storable = original_persist_storable
 	return TRUE
 
 /obj/item/cell/void/hybrid

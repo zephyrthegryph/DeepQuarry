@@ -810,6 +810,7 @@
 #include "interim_cockroach_death_cleanup.dm"
 #include "interim_metroid_evolution_cleanup.dm"
 #include "interim_floorlayer_sticky_distinct_tile.dm"
+#include "interim_void_cell_sticky_mode_swap.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
