@@ -16,16 +16,6 @@ usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(u
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/alert.dm	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
 usr_outside_verb	code/_onclick/hud/alert.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/alert.dm	var/mob/living/carbon/human/M = usr
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client) return
-usr_outside_verb	code/_onclick/hud/alert.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/alert.dm	if(isliving(usr))
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client) return
-usr_outside_verb	code/_onclick/hud/alert.dm	rel_set(TC, nameof(TC.T), usr.client.current_ticket())
-usr_outside_verb	code/_onclick/hud/alert.dm	TC.tgui_interact(usr.client.mob)
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client)
-usr_outside_verb	code/_onclick/hud/alert.dm	to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
-usr_outside_verb	code/_onclick/hud/alert.dm	return usr.client.Click(master, location, control, params)
 usr_outside_verb	code/_onclick/hud/ghost.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/ghost.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/radial.dm	openToolTip(usr, src, params, title = name)
@@ -103,7 +93,6 @@ usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
-usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
@@ -183,9 +172,6 @@ usr_outside_verb	code/modules/client/client procs.dm	if(!hsrc && topic_dispatch(
 usr_outside_verb	code/modules/client/client procs.dm	OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You deactivate the suit's energy syphon."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You signal the suit to relax."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
 usr_outside_verb	code/modules/clothing/suits/storage.dm	if (pockets.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/emotes/custom_emote.dm	if((check_stat && (src && stat)) || is_paralyzed() || (!use_me && usr == src))
 usr_outside_verb	code/modules/emotes/emote_mob.dm	if(usr == src) //client-called emote

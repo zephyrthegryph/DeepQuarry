@@ -9,3 +9,6 @@ changes:
   - bugfix: "Rig grenade launchers grant ammunition only after consuming the replacement grenade."
   - bugfix: "Rejected configured artifact effects are disposed of instead of leaking."
   - code_imp: "Modkits, permits, optical devices and mining scanners use native operations."
+  - code_imp: "Resonators, shovels, translators and folding equipment use native operations."
+  - bugfix: "Unsupported translator language choices leave its selected language unchanged."
+  - bugfix: "Attaching an organ disposes of every incompatible carried affliction."
