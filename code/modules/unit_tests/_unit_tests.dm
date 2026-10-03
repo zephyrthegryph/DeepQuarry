@@ -610,6 +610,8 @@
 #include "interim_toy_sword_holder_appearance.dm"
 #include "interim_shoes_holder_appearance.dm"
 #include "interim_filter_editor_actor.dm"
+#include "interim_hypospray_vial_transfer.dm"
+#include "interim_airlock_emag_capability.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"
