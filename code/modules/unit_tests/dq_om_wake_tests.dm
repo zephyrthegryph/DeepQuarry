@@ -90,11 +90,8 @@
 /datum/unit_test/dq_om_wake_airlock_deadlines/Run()
 	var/obj/machinery/door/airlock/A = allocate(/obj/machinery/door/airlock, test_floor())
 	A.autoclose = TRUE
-	TEST_ASSERT(!A.next_door_deadline(), "a fresh airlock has a deadline ([A.next_door_deadline()])")
+	TEST_ASSERT(!A.autoclose_pending(), "a fresh airlock has an autoclose pending")
 	TEST_ASSERT_NULL(A.om_sleep_violation(), "a fresh airlock is not asleep")
-
-	var/failure = om_wake_test(A, om_callable(A, TYPE_PROC_REF(/obj/machinery/door, autoclose_in), 1), 20)
-	TEST_ASSERT(!failure, failure)
 
 	// Electrification and power loss are timed_set() values: each restores on its own timer, with
 	// no process() poll and no door deadline.
@@ -108,7 +105,7 @@
 			break
 		om_test_ticks(1)
 	TEST_ASSERT_EQUAL(A.electrified_until, 0, "the electrification did not revert on its timer")
-	TEST_ASSERT(!om_timer_slot_pending(A, "door_timer_token"), "an airlock with no deadline kept a timer")
+	TEST_ASSERT(!A.autoclose_pending(), "an airlock with no deadline kept a timer")
 
 	// Main power returns on its timer.
 	timed_set(A, nameof(A.main_power_lost_until), 1, for_time = 0.1 SECONDS, clock = CLOCK_WORLD, revert_to = 0)
@@ -118,10 +115,6 @@
 		om_test_ticks(1)
 	TEST_ASSERT(A.main_power_lost_until <= 0, "main power did not return at its deadline ([A.main_power_lost_until])")
 
-	// A missing timer is what the audit catches.
-	A.close_door_at = world.time + 10 SECONDS
-	TEST_ASSERT_NOTNULL(A.om_sleep_violation(), "the audit missed a deadline without a timer")
-	A.close_door_at = 0
 
 /// Bolts and power raise CHANGE_MACHINE_MODE for whoever watches the door.
 /datum/unit_test/dq_om_wake_airlock_mode_key

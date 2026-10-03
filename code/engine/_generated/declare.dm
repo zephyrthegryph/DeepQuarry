@@ -62,6 +62,16 @@
 /datum/capdef_decl/c_deployment_graph/spec()
 	return list(CAP_DEPLOYMENT, /datum/capability/construction/deployment, NONE, STACK, "deployment", "start, via")
 
+/// CAPABILITY_TYPE(doors, CAP_DOORS) at code/library/machine/doors.dm:19
+/datum/capability/lib/doors
+	var/open = "open"
+	var/close = "close"
+/proc/doors(open, close)
+	RETURN_TYPE(/datum/capability/lib/doors)
+	return cap_construct(CAP_DOORS, /datum/capability/lib/doors, list(open, close), "open, close")
+/datum/capdef_decl/c_doors/spec()
+	return list(CAP_DOORS, /datum/capability/lib/doors, NONE, STACK, "doors", "open, close")
+
 /// CAPABILITY_TYPE(emag, CAP_EMAG) at code/library/access/emag.dm:20
 /datum/capability/lib/emag
 	var/parts = null
@@ -350,6 +360,66 @@
 	into += entry_block("code/library/mob/hands.dm", 7, /mob/living/silicon/robot)
 	into += entry_line(7)
 	into += list(global.hands())
+
+/// CAPABILITIES(/obj/machinery/door) at code/game/machinery/doors/door.dm:70
+/obj/machinery/door/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door.dm", 70, /obj/machinery/door)
+	into += entry_line(71)
+	into += list(global.machine_basics(null, repair = NONE, frame = NONE))
+	into += entry_line(72)
+	into += list(global.doors())
+	into += entry_line(73)
+	into += list(global.emag(list(global.needs(global.req_is(nameof(density), because = MSG(door/close_first)), global.req_is(STAT_OPERABLE, because = MSG(machine/inoperable))), global.then(PROC_REF(door_emag))), repeatable = TRUE))
+	into += entry_line(74)
+	into += list(global.op("strike", global.item(/obj/item), global.hostile(), global.when(nameof(density)), global.when(global.cond_not(global.req(/obj/item/card))), global.when(global.cond_not(global.req(/obj/item/stack/material/plasteel))), global.then(PROC_REF(strike_with))))
+	into += entry_line(75)
+	into += list(global.op("reinforce", global.item(/obj/item/stack/material/plasteel), global.priority(OP_PRIORITY_PART), global.then(PROC_REF(add_plasteel)), global.needs(global.req_is(nameof(heat_proof), FALSE, because = MSG(door/already_reinforced)), global.req(PROC_REF(not_damaged), because = MSG(door/repair_first)), global.req_is(nameof(density), because = MSG(door/close_first)))))
+	into += entry_line(77)
+	into += list(global.op("weld_plasteel", global.tool(TOOL_WELDER), global.when(nameof(reinforcing)), global.priority(OP_PRIORITY_PART + 2), global.wait(1 SECOND), global.costs(RES_FUEL, 0), global.needs(global.req_is(nameof(density), because = MSG(door/close_first)), global.req_at_least(nameof(reinforcing), 2, because = MSG(door/need_more_plasteel))), global.then(PROC_REF(plasteel_welded)), global.says(MSG(door/reinforced))))
+	into += entry_line(80)
+	into += list(global.op("unreinforce", global.tool(TOOL_CROWBAR), global.when(nameof(reinforcing)), global.priority(OP_PRIORITY_PART + 2), global.wait(0), global.then(PROC_REF(remove_plasteel))))
+	into += entry_line(81)
+	into += list(global.op("repair", global.tool(TOOL_WELDER), global.when(PROC_REF(repairable)), global.priority(OP_PRIORITY_PART), global.wait(PROC_REF(repair_time)), global.needs(global.req_is(nameof(density), because = MSG(door/close_first))), global.fixes(), global.says(MSG(door/repaired))))
+	into += entry_line(83)
+	into += list(global.on_notice(/datum/notice/hit, global.then(PROC_REF(door_thrown_at))))
+	into += entry_line(84)
+	into += list(global.on_notice(/datum/notice/hit/emp, global.then(PROC_REF(door_emp))))
+
+/// CAPABILITIES(/obj/machinery/door/airlock) at code/game/machinery/doors/door_legacy_bridge.dm:9
+/obj/machinery/door/airlock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 9, /obj/machinery/door/airlock)
+	into += entry_line(9)
+	into += list(legacy_door_ops())
+
+/// CAPABILITIES(/obj/machinery/door/blast) at code/game/machinery/doors/door_legacy_bridge.dm:11
+/obj/machinery/door/blast/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 11, /obj/machinery/door/blast)
+	into += entry_line(11)
+	into += list(legacy_door_ops())
+
+/// CAPABILITIES(/obj/machinery/door/firedoor) at code/game/machinery/doors/door_legacy_bridge.dm:10
+/obj/machinery/door/firedoor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 10, /obj/machinery/door/firedoor)
+	into += entry_line(10)
+	into += list(legacy_door_ops())
+
+/// CAPABILITIES(/obj/machinery/door/unpowered) at code/game/machinery/doors/door_legacy_bridge.dm:13
+/obj/machinery/door/unpowered/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 13, /obj/machinery/door/unpowered)
+	into += entry_line(13)
+	into += list(legacy_door_ops())
+
+/// CAPABILITIES(/obj/machinery/door/window) at code/game/machinery/doors/door_legacy_bridge.dm:12
+/obj/machinery/door/window/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/machinery/doors/door_legacy_bridge.dm", 12, /obj/machinery/door/window)
+	into += entry_line(12)
+	into += list(legacy_door_ops())
 
 /// CAPABILITIES(/obj/machinery/power/apc) at code/modules/power/apc.dm:166
 /obj/machinery/power/apc/declared_entries(list/into)

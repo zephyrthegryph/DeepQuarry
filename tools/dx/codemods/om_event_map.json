@@ -2342,7 +2342,6 @@
    "code/engine/_generated/event_twins.dm",
    "code/game/machinery/Beacon.dm",
    "code/game/machinery/camera/motion.dm",
-   "code/game/machinery/doors/door.dm",
    "code/game/objects/effects/countdown.dm",
    "code/game/objects/effects/particle_holder.dm",
    "code/game/objects/items/leash.dm",
@@ -2361,7 +2360,6 @@
   "reads_result": false,
   "target": "/datum/notice/moved",
   "tests": [
-   "code/modules/unit_tests/dq_atmos_tests.dm",
    "code/modules/unit_tests/dx_reactions_work_tests.dm"
   ]
  },
@@ -2570,7 +2568,6 @@
    "code/game/machinery/Beacon.dm",
    "code/game/machinery/atmoalter/meter.dm",
    "code/game/machinery/camera/motion.dm",
-   "code/game/machinery/doors/door.dm",
    "code/game/objects/effects/particle_holder.dm",
    "code/game/objects/items.dm",
    "code/game/objects/items/devices/radio/radio_service.dm",

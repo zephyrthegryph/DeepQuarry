@@ -1,0 +1,5 @@
+author: "claude"
+delete-after: true
+changes:
+  - refactor: "The door base is rebuilt on the capability engine: touch, access, plasteel, repair, emag, hit reactions and the autoclose timer are declared parts. Airlocks, firedoors, blast doors and windoors keep their own for now."
+  - bugfix: "A click that a legacy door entry wins now runs the full legacy click (the tool's own action first), exactly as before a type declared an op."

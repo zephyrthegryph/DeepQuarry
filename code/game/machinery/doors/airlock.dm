@@ -11,6 +11,7 @@
 #define AIRLOCK_ENTRY_CTRL "airlock_ctrl"
 
 /obj/machinery/door/airlock
+	legacy_door_ops = TRUE
 	name = "Airlock"
 	icon = 'icons/obj/doors/doorint.dmi'
 	icon_state = "door_closed"
@@ -142,10 +143,10 @@
 	return get_material_by_name(MAT_STEEL)
 
 // Power loss and electrification are timed_set() values (they restore themselves through their
-// setters); the door's own deadline timer only keeps autoclose.
-/obj/machinery/door/airlock/door_deadlines_due()
-	if(close_door_at && !density && !operating && (is_bolted(src) || is_welded(src) || !arePowerSystemsOn() || wire_cut(WIRE_OPEN_DOOR)))
-		close_door_at = 0
+// setters); the door's autoclose timer only keeps autoclose. An open door that cannot close drops it.
+/obj/machinery/door/airlock/autoclose_due()
+	if(!density && !operating && (is_bolted(src) || is_welded(src) || !arePowerSystemsOn() || wire_cut(WIRE_OPEN_DOOR)))
+		return
 	return ..()
 
 /// Raises CHANGE_MACHINE_MODE for whatever watches this door (bolts, power, electrification).
@@ -764,7 +765,7 @@ APPEARANCE_NONE(/obj/machinery/door/airlock)
 
 	if(operating == -1 || (has_stat(BROKEN)))
 		new /obj/item/circuitboard/broken(get_turf(src))
-		operating = 0
+		set_operating(0)
 	else
 		if (!electronics) create_electronics()
 
@@ -1161,9 +1162,8 @@ TYPE_TABLE(/obj/machinery/door/airlock, emag_decl, null)
 	for(var/mob/M in range(1,src))
 		M.show_message("You hear a click from the bottom of the door.", 2)
 	// A bolted open door cannot autoclose: drop the deadline instead of waking to find that out.
-	if(close_door_at && !density)
-		close_door_at = 0
-		schedule_door_timer()
+	if(!density)
+		autoclose_cancel()
 	publish_door_mode()
 	return TRUE
 

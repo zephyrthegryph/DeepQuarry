@@ -1,4 +1,5 @@
 /obj/machinery/door/unpowered
+	legacy_door_ops = TRUE
 	autoclose = 0
 	locked = 0
 

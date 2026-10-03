@@ -7,6 +7,7 @@
 // Not used #define FIREDOOR_ALERT_LOWPRESS 4
 
 /obj/machinery/door/firedoor
+	legacy_door_ops = TRUE
 	/// Optional generated-turbolift owner; ordinary mapped firedoors leave null.
 	var/datum/turbolift_floor/turbolift_floor
 	name = "\improper Emergency Shutter"

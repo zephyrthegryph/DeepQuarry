@@ -101,7 +101,7 @@
 
 /// Returns the atom's current integrity. Use this instead of reading atom_integrity (which is private).
 /atom/proc/get_integrity()
-	return atom_integrity
+	return atom_integrity // ALLOW(reads): a menu entry that reads integrity is advisory; the click re-evaluates its condition before anything runs
 
 /// How much integrity the atom is missing (0 when intact).
 /atom/proc/get_integrity_damage()

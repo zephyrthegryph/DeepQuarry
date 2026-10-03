@@ -2,6 +2,7 @@
 #define WINDOOR_ENTRY_WELD "windoor_weld"
 
 /obj/machinery/door/window
+	legacy_door_ops = TRUE
 	name = "interior door"
 	desc = "A strong door."
 	icon = 'icons/obj/doors/windoor.dmi'
@@ -46,7 +47,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		ae.forceMove(src.loc)
 	if(operating == -1)
 		ae.icon_state = "door_electronics_smoked"
-		operating = 0
+		set_operating(0)
 	set_density(FALSE)
 	play_sfx(src, SFX_SHATTER)
 	if(display_message)
@@ -106,7 +107,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	if (!SSticker)
 		return 0
 	if (!operating) //in case of emag
-		operating = 1
+		set_operating(1)
 	flick(text("[src.base_state]opening"), src)
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 	om_after(src, 1 SECONDS, PROC_REF(finish_open))
@@ -119,13 +120,13 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 	update_nearby_tiles()
 
 	if(operating == 1) //emag again
-		operating = 0
+		set_operating(0)
 	return 1
 
 /obj/machinery/door/window/close()
 	if(operating || density)
 		return FALSE
-	operating = TRUE
+	set_operating(TRUE)
 	flick(text("[]closing", src.base_state), src)
 	play_sfx(src, SFX_MACHINES_DOOR_WINDOWDOOR)
 
@@ -137,7 +138,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 /obj/machinery/door/window/proc/finish_close()
 	PRIVATE_PROC(TRUE)
 	SHOULD_NOT_OVERRIDE(TRUE)
-	operating = FALSE
+	set_operating(FALSE)
 	return TRUE
 
 // Window doors shatter outright at zero integrity rather than persisting broken.
@@ -206,7 +207,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 
 /obj/machinery/door/window/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	if (density && operable())
-		operating = -1
+		set_operating(-1)
 		flick("[src.base_state]spark", src)
 		om_after(src, 6, PROC_REF(open))
 		return 1
@@ -349,7 +350,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/window, "{base_state}{density?:open}")
 		var/obj/item/airlock_electronics/door_electronics = electronics
 		door_electronics.forceMove(assembly)
 		own_move(door_electronics, assembly, nameof(assembly.electronics)) // from the door to the assembly
-	operating = 0
+	set_operating(0)
 	qdel(src)
 	return TRUE
 

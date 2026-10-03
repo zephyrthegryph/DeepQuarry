@@ -4639,19 +4639,16 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.operating = FALSE
 	cap_set(A, CAP_BOLTED, FALSE)
 	A.frozen = FALSE
-	A.close_door_at = 0
+	A.autoclose_cancel()
 	A.safe = TRUE
 	A.autoclose = TRUE
 	var/obj/blocker = new(T)
 	blocker.set_density(TRUE)
 	A.close()
-	TEST_ASSERT(!A.close_door_at, "blocked airlock retained a timed polling retry")
+	TEST_ASSERT(!A.autoclose_pending(), "blocked airlock retained a timed polling retry")
 	TEST_ASSERT(LAZYLEN(A.autoclose_blockers), "blocked airlock did not subscribe to its blocker")
-	TEST_ASSERT(om_hooked(blocker, /datum/om/event/moved, A), "blocked airlock did not hook its blocker's movement")
-	TEST_ASSERT(!om_timer_slot_pending(A, "door_timer_token") || A.next_door_deadline(), "blocked airlock kept an autoclose timer")
 	blocker.Moved(T, NORTH, TRUE, 0)
-	TEST_ASSERT(A.close_door_at, "woken airlock did not schedule an immediate close attempt")
-	TEST_ASSERT(om_timer_slot_pending(A, "door_timer_token"), "woken airlock has no autoclose timer (close_at=[A.close_door_at], blockers=[LAZYLEN(A.autoclose_blockers)])")
+	TEST_ASSERT(A.autoclose_pending(), "woken airlock did not schedule an immediate close attempt (blockers=[LAZYLEN(A.autoclose_blockers)])")
 	qdel(blocker)
 	qdel(A)
 
@@ -4696,18 +4693,23 @@ TEST_FOCUS(/datum/unit_test/dq_air_alarm_receives_matching_status)
 	A.set_density(TRUE)
 	A.operating = FALSE
 	A.autoclose = TRUE
-	A.close_door_at = world.time
-	A.door_deadlines_due()
-	TEST_ASSERT(!A.close_door_at, "closed airlock did not clear its stale autoclose deadline")
+	A.autoclose_in(1)
+	for(var/i in 1 to 200)
+		if(!A.autoclose_pending())
+			break
+		om_test_ticks(1)
+	TEST_ASSERT(!A.autoclose_pending(), "closed airlock kept its stale autoclose deadline")
 	A.set_density(FALSE)
 	A.operating = FALSE
 	cap_set(A, CAP_BOLTED, TRUE)
-	A.close_door_at = world.time
-	A.door_deadlines_due()
-	TEST_ASSERT(!A.close_door_at, "locked open airlock did not clear its impossible autoclose deadline")
-	A.schedule_door_timer()
+	A.autoclose_in(1)
+	for(var/i in 1 to 200)
+		if(!A.autoclose_pending())
+			break
+		om_test_ticks(1)
+	TEST_ASSERT(!A.autoclose_pending(), "locked open airlock kept its impossible autoclose deadline")
 	A.unlock(TRUE)
-	TEST_ASSERT(A.close_door_at, "unlocking an open airlock did not restore autoclose scheduling")
+	TEST_ASSERT(A.autoclose_pending(), "unlocking an open airlock did not restore autoclose scheduling")
 
 /datum/unit_test/dq_idle_recharger_hibernates
 

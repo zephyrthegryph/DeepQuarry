@@ -14,6 +14,7 @@
 #define SHUTTER_CRUSH_DAMAGE 5 // Shutter damage 5.
 
 /obj/machinery/door/blast
+	legacy_door_ops = TRUE
 	name = "Blast Door"
 	desc = "That looks like it doesn't open easily."
 	icon = 'icons/obj/doors/rapid_pdoor.dmi'
@@ -78,7 +79,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 // Parameters: None
 // Description: Opens the door. No checks are done inside this proc.
 /obj/machinery/door/blast/proc/force_open()
-	operating = TRUE
+	set_operating(TRUE)
 	playsound(src, open_sound, 100, 1)
 	flick(icon_state_opening, src)
 	set_density(FALSE)
@@ -91,7 +92,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 /obj/machinery/door/blast/proc/complete_force_open()
 	PRIVATE_PROC(TRUE)
 	layer = open_layer
-	operating = FALSE
+	set_operating(FALSE)
 
 // Proc: force_close()
 // Parameters: None
@@ -101,7 +102,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 	var/turf/T = get_turf(src)
 	var/list/yeet_turfs = T.CardinalTurfs(TRUE)
 
-	operating = TRUE
+	set_operating(TRUE)
 	playsound(src, close_sound, 100, 1)
 	layer = closed_layer
 	flick(icon_state_closing, src)
@@ -117,7 +118,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/door/blast, "{density?@icon_state_closed:@ico
 
 /obj/machinery/door/blast/proc/complete_force_close(list/yeet_turfs)
 	PRIVATE_PROC(TRUE)
-	operating = FALSE
+	set_operating(FALSE)
 
 	// Blast door crushing.
 	for(var/turf/turf in locs)

@@ -35,14 +35,16 @@
 	var/gesture = op_gesture_of_params(E.params)
 	var/obj/item/held = actor?.get_active_hand()
 	if(!isnull(gesture) && target && (op_has_ops(target) || op_has_ops(held)))
-		var/datum/op_result/result = op_resolve_click(actor, target, held, gesture, ORIGIN_CLICK, TRUE)
+		var/datum/op_result/result = op_resolve_click(actor, target, held, gesture, ORIGIN_CLICK, TRUE, TRUE)
 		if(result)
 			return result
 	E.actor.ClickOn(E.target, E.params)
 	return null
 
 /// Resolves a click among the candidates and runs the winner. Returns its /datum/op_result, or null when nothing resolved (and `quiet`: nothing was said).
-/proc/op_resolve_click(mob/actor, atom/target, obj/item/held, gesture, origin, quiet = FALSE)
+/// `defer_legacy`: when a legacy interaction entry wins, nothing runs here and the result is null: the mob's own click handling runs the legacy chain
+/// (the tool's own act first, then the entries) exactly as it did before the type declared an op. A player's click takes it; a driver-built one does not.
+/proc/op_resolve_click(mob/actor, atom/target, obj/item/held, gesture, origin, quiet = FALSE, defer_legacy = FALSE)
 	RETURN_TYPE(/datum/op_result)
 	var/datum/op_resolution/R = op_resolve(actor, target, held, origin, AUTH_PHYSICAL, gesture, null, TRUE)
 	var/datum/op_cand/winner = op_resolution_winner(R)
@@ -51,6 +53,8 @@
 			// nothing survived: show the best near-miss's reason (rate limited), so a click never just does nothing
 			var/why = op_resolution_refusal(R)
 			op_gate_feedback(actor, why)
+		return null
+	if(defer_legacy && winner.legacy)
 		return null
 	return op_begin(winner, R, null, FALSE)
 
