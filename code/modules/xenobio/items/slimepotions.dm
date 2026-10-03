@@ -318,17 +318,17 @@
 	return ITEM_INTERACT_SUCCESS
 
 
-// === merged from slimepotions_vr.dm during hard-fork de-suffix (verified no override-order change) ===
 DECLARE_INTERACTIONS(/obj/item/slimepotion, INTERACT_ITEM(null, PROC_REF(interaction_item)))
 
 /// Old attackby.
 /obj/item/slimepotion/proc/interaction_item(mob/user, obj/item/O, datum/interaction/interaction)
 	if(istype(O, /obj/item/slimepotion/mimic))
+		if(!consume(O, user))
+			return FALSE
 		to_chat(user, span_notice("You apply the mimic to the slime potion as it copies it's effects."))
 		play_sfx(src, SFX_EFFECTS_BUBBLES)
 		var/newtype = src.type
 		new newtype(get_turf(src))
-		consume(O, user)
 	return FALSE
 
 
