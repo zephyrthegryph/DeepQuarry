@@ -85,10 +85,13 @@
 	screen_loc = "NORTH,WEST+1"
 
 /obj/effect/bmode/buildhelp/Click()
+	return show_help_with_actor(usr) // ALLOW(sys_usr_outside_verb): native buildmode help Click supplies its initiating actor without parent routing
+
+/obj/effect/bmode/buildhelp/proc/show_help_with_actor(mob/user)
 	switch(master().cl().buildmode)
 
 		if(BUILDMODE_BASIC)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button        = Construct / Upgrade<br>\
 							Right Mouse Button       = Deconstruct / Delete / Downgrade<br>\
 							Left Mouse Button + ctrl = R-Window<br>\
@@ -98,7 +101,7 @@
 							***********************************************************"))
 
 		if(BUILDMODE_ADVANCED)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Set object type<br>\
 							Middle Mouse Button on buildmode button= On/Off object type saying<br>\
 							Middle Mouse Button on turf/obj        = Capture object type<br>\
@@ -112,46 +115,46 @@
 							***********************************************************"))
 
 		if(BUILDMODE_EDIT)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Select var(type) & value<br>\
 							Left Mouse Button on turf/obj/mob      = Set var(type) & value<br>\
 							Right Mouse Button on turf/obj/mob     = Reset var's value<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_THROW)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Select<br>\
 							Right Mouse Button on turf/obj/mob     = Throw<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_ROOM)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf              = Select as point A<br>\
 							Right Mouse Button on turf             = Select as point B<br>\
 							Right Mouse Button on buildmode button = Change floor/wall type/area name<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_LADDER)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf              = Set as upper ladder loc<br>\
 							Right Mouse Button on turf             = Set as lower ladder loc<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_CONTENTS)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Select<br>\
 							Right Mouse Button on turf/obj/mob     = Move into selection<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_LIGHTS)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button on turf/obj/mob      = Make it glow<br>\
 							Right Mouse Button on turf/obj/mob     = Reset glowing<br>\
 							Right Mouse Button on buildmode button = Change glow properties<br>\
 							***********************************************************"))
 
 		if(BUILDMODE_AI)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Left Mouse Button drag box             = Select only mobs in box<br>\
 							Left Mouse Button drag box + shift     = Select additional mobs in area<br>\
 							Left Mouse Button on non-mob           = Deselect all mobs<br>\
@@ -173,7 +176,7 @@
 							***********************************************************"))
 
 		if(BUILDMODE_DROP)
-			to_chat(usr, span_notice("***********************************************************<br>\
+			to_chat(user, span_notice("***********************************************************<br>\
 							Right Mouse Button on buildmode button = Set object type<br>\
 							Middle Mouse Button on buildmode button= On/Off object type saying<br>\
 							Middle Mouse Button on turf/obj        = Capture object type<br>\
@@ -263,6 +266,9 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 	var/new_light_intensity = 3
 
 /obj/effect/bmode/buildmode/Click(location, control, params)
+	return configure_with_actor(usr, params) // ALLOW(sys_usr_outside_verb): native buildmode configuration Click supplies its initiating actor and unchanged mouse parameters
+
+/obj/effect/bmode/buildmode/proc/configure_with_actor(mob/user, params)
 	var/list/pa = params2list(params)
 
 	if(pa.Find("middle"))
@@ -283,18 +289,18 @@ REGISTRY_MEMBERSHIP(/obj/effect/bmode/buildholder, REGISTRY_BUILDMODE_HOLDERS)
 
 				return 1
 			if(BUILDMODE_ADVANCED)
-				ask_path(usr, "objholder")
+				ask_path(user, "objholder")
 
 			if(BUILDMODE_EDIT)
-				om_ask(usr, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
+				om_ask(user, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
 
 			if(BUILDMODE_ROOM)
-				om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
+				om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
 
 			if(BUILDMODE_LIGHTS)
-				om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
+				om_ask(user, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
 			if(BUILDMODE_DROP)
-				ask_path(usr, "objholder")
+				ask_path(user, "objholder")
 	return 1
 
 /proc/build_click(mob/user, buildmode, params, obj/object)

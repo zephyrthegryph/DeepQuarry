@@ -27,7 +27,7 @@
 		if(src in C.screen)
 			C.screen -= src
 
-/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params)
+/atom/movable/screen/proc/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	return
 
 /atom/movable/screen/text
@@ -740,7 +740,7 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/inventory/hand, TYPE_PROC_REF(/atom
 
 /atom/movable/screen/component_button/Click(params)
 	if(parent())
-		parent().component_click(src, params)
+		parent().component_click(src, params, usr) // ALLOW(sys_usr_outside_verb): native HUD component Click supplies the initiating actor to its parent callback
 
 // Character setup stuff
 /atom/movable/screen/setup_preview

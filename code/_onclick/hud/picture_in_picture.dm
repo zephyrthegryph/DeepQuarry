@@ -28,16 +28,16 @@
 		unshow_to(C)
 	..()
 
-/atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params)
+/atom/movable/screen/movable/pic_in_pic/component_click(atom/movable/screen/component_button/component, params, mob/user)
 	if(component == button_x)
-		usr.client?.close_popup("camera-[REF(src)]")
+		user?.client?.close_popup("camera-[REF(src)]")
 		qdel(src)
 	else if(component == button_expand)
 		set_view_size(width+1, height+1)
 	else if(component == button_shrink)
 		set_view_size(width-1, height-1)
 	else if(component == button_pop)
-		pop_to_screen()
+		pop_to_screen(user)
 
 /atom/movable/screen/movable/pic_in_pic/proc/make_backgrounds()
 	standard_background = new /mutable_appearance()
@@ -168,12 +168,14 @@
 		LAZYREMOVE(shown_to, C)
 		C.screen -= src
 
-/atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen()
-	if(usr.client.screen_maps["camera-[REF(src)]_map"])
+/atom/movable/screen/movable/pic_in_pic/proc/pop_to_screen(mob/user)
+	if(!user?.client)
 		return
-	usr.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
-	popup_screen.display_to(usr)
-	om_hook(usr, /datum/om/event/popup_cleared, src, PROC_REF(on_popup_clear))
+	if(user.client.screen_maps["camera-[REF(src)]_map"])
+		return
+	user.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
+	popup_screen.display_to(user)
+	om_hook(user, /datum/om/event/popup_cleared, src, PROC_REF(on_popup_clear))
 
 /atom/movable/screen/movable/pic_in_pic/proc/on_popup_clear(mob/source, datum/om/event/popup_cleared/event)
 	EVENT_HANDLER
