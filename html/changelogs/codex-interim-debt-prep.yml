@@ -102,3 +102,5 @@ changes:
   - bugfix: "Energy shields redraw the hands of their actual holder."
   - bugfix: "Food carts, safes, anomaly utilizers and money bags respect held-item release rules."
   - bugfix: "Safe retrieval refunds the removed item's occupied capacity."
+  - bugfix: "Energy melee weapons redraw their actual holder's hands."
+  - bugfix: "Artifact harvesters respect held-battery release rules."
