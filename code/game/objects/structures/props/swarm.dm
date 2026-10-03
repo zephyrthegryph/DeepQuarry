@@ -22,10 +22,6 @@
 			return TRUE
 	return ..()
 
-/obj/structure/cult/pylon/swarm/Initialize(mapload)
-	. = ..()
-
-
 /obj/structure/cult/pylon/swarm/pylonhit(damage)
 	if(!isbroken)
 		if(prob(1 + damage * 3))
@@ -54,7 +50,7 @@
 	else
 		if(prob(damage * 2))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)
@@ -128,7 +124,7 @@
 	else
 		if(prob(damage * 3))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)

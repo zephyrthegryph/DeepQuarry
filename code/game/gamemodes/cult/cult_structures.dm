@@ -87,7 +87,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	else
 		if(prob(damage * 2))
 			to_chat(user, "You pulverize what was left of \the [src]!")
-			qdel(src)
+			consume(src, user)
 		else
 			to_chat(user, "You hit \the [src]!")
 		playsound(src,impact_sound, 75, 1)

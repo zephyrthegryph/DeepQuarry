@@ -647,6 +647,7 @@
 #include "interim_dare_jackpot.dm"
 #include "interim_computer_frame_glass_material.dm"
 #include "interim_ghost_hud_actor.dm"
+#include "interim_pylon_pulverize.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

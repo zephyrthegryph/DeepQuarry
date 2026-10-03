@@ -868,7 +868,6 @@ initialize	code/game/objects/structures/props/machines.dm	/obj/structure/prop/ma
 initialize	code/game/objects/structures/props/nest.dm	/obj/structure/prop/nest/Initialize(mapload)
 initialize	code/game/objects/structures/props/puzzledoor.dm	/obj/machinery/door/blast/puzzle/Initialize(mapload)
 initialize	code/game/objects/structures/props/statue.dm	/obj/structure/prop/statue/phoron/Initialize(mapload)
-initialize	code/game/objects/structures/props/swarm.dm	/obj/structure/cult/pylon/swarm/Initialize(mapload)
 initialize	code/game/objects/structures/props/transmitter.dm	/obj/structure/prop/transmitter/Initialize(mapload)
 initialize	code/game/objects/structures/railing.dm	/obj/structure/railing/Initialize(mapload, constructed = 0)
 initialize	code/game/objects/structures/reflectors.dm	/obj/structure/reflector/Initialize(mapload)
