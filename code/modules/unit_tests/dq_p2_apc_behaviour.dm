@@ -1307,11 +1307,12 @@
 	touch(H, A, original)
 	TEST_ASSERT_EQUAL(A.cell, original, "the cell is back in")
 	var/list/events = test_recorded()
-	var/transfers = test_events_count(events, TEST_EVENT_TRANSFER)
+	// The cell's own moves record under the bay's slot name; the hand it passes through records its own rows (hand_r), which are not the bay's.
+	var/transfers = test_events_count(events, TEST_EVENT_TRANSFER, "cell")
 	var/list/dump = list()
 	for(var/datum/test_event/event in events)
 		dump += "[event.kind]:[event.key]"
-	TEST_ASSERT(transfers == 0 || transfers == 2, "a take and an insert make two transfer rows or none: [jointext(dump, " ")]")
+	TEST_ASSERT(transfers == 0 || transfers == 2, "a take and an insert make two bay transfer rows or none: [jointext(dump, " ")]")
 	var/committed = 0
 	for(var/datum/test_event/event in events)
 		if(event.kind == TEST_EVENT_OUTCOME)

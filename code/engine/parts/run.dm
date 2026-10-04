@@ -1288,7 +1288,8 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(!varslot_insert(holder, slot_id, thing, A.actor))
 			A.reason = /datum/msg/op/failed
 			return OP_REFUSED
-		TEST_REC_TRANSFER(thing, var_from, holder, slot_id)
+		if(rel_kind(holder, slot_id) != OWNK_OWN) // a declared owned var moved through move_into(), which recorded the row already
+			TEST_REC_TRANSFER(thing, var_from, holder, slot_id)
 		return OP_OK
 	// Under a stack(T, n) binding the put splits off exactly the reserved units and moves that split.
 	var/atom/movable/moving = thing
