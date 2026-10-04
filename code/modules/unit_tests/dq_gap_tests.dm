@@ -162,3 +162,15 @@
 	revoke(M, gap_verb_cap(), source)
 	TEST_ASSERT(!(path in M.verbs), "and took it away")
 	qdel(source)
+
+/// interface() carries the window's tgui state: a state global by name, ADMIN_STATE of a rights mask, or the default (none).
+/datum/unit_test/dq_gap/interface_carries_its_state
+/datum/unit_test/dq_gap/interface_carries_its_state/run_gap()
+	var/obj/gap_window_base/state/by_name = allocate(/obj/gap_window_base/state, run_loc_floor_bottom_left)
+	var/obj/gap_window_base/rights/by_rights = allocate(/obj/gap_window_base/rights, run_loc_floor_bottom_left)
+	var/obj/gap_window_base/plain/plain = allocate(/obj/gap_window_base/plain, run_loc_floor_bottom_left)
+	TEST_ASSERT_EQUAL(interface_state(by_name), GLOB.tgui_always_state, "a state named by its global")
+	TEST_ASSERT_EQUAL(interface_state(by_rights), ADMIN_STATE(R_ADMIN | R_EVENT), "rights with no state is the admin state of those rights")
+	TEST_ASSERT_NULL(interface_state(plain), "neither: the default")
+	plain.tgui_window_state = GLOB.tgui_physical_state
+	TEST_ASSERT_NULL(interface_state(plain), "the host's own tgui_window_state is read by ui_open() after it, not shadowed")

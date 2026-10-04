@@ -13850,6 +13850,33 @@
 	into += entry_line(65)
 	into += list(global.every(1 SECOND, global.then(PROC_REF(tick)), when = PROC_REF(is_on)))
 
+/// CAPABILITIES(/obj/gap_window_base/plain) at code/tests/engine/gap_fixtures.dm:136
+/obj/gap_window_base/plain/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 136, /obj/gap_window_base/plain)
+	into += entry_line(137)
+	into += list(global.interface("GapWindow"))
+	into += entry_line(138)
+	into += list(global.op("noop", global.ui_act("noop"), global.then(PROC_REF(noop))))
+
+/// CAPABILITIES(/obj/gap_window_base/rights) at code/tests/engine/gap_fixtures.dm:129
+/obj/gap_window_base/rights/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 129, /obj/gap_window_base/rights)
+	into += entry_line(130)
+	into += list(global.interface("GapWindow", rights = R_ADMIN | R_EVENT))
+	into += entry_line(131)
+	into += list(global.op("noop", global.ui_act("noop"), global.then(PROC_REF(noop))))
+
+/// CAPABILITIES(/obj/gap_window_base/state) at code/tests/engine/gap_fixtures.dm:122
+/obj/gap_window_base/state/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/gap_fixtures.dm", 122, /obj/gap_window_base/state)
+	into += entry_line(123)
+	into += list(global.interface("GapWindow", state = nameof(GLOB.tgui_always_state)))
+	into += entry_line(124)
+	into += list(global.op("noop", global.ui_act("noop"), global.then(PROC_REF(noop))))
+
 /// CAPABILITIES(/obj/item/e2_cloth) at code/tests/engine/e2_fixtures.dm:28
 /obj/item/e2_cloth/declared_entries(list/into)
 	..(into)
