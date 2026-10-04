@@ -135,7 +135,7 @@
 
 /datum/interaction/construction/frame/insert_board/on_traverse(atom/target, mob/actor, obj/item/held, before, after)
 	var/obj/structure/frame/frame = target
-	if(!own_set(frame, nameof(frame.circuit), held, user = actor))
+	if(!move_into(frame, nameof(frame.circuit), held, actor))
 		return FALSE
 	play_sfx(frame, SFX_ITEMS_DECONSTRUCT)
 	to_chat(actor, span_notice("You place the circuit board inside the frame."))
@@ -415,13 +415,13 @@
 	// RefreshParts() and get_part_rating() see them straight away.
 	for(var/obj/O in own_take_all(src, nameof(components)))
 		if(circuit.contain_parts)
-			O.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
+			move_into(new_machine, CONTAINER_SLOT_INTERNALS, O)
 		else
 			O.moveToNullspace()
 		rel_add(new_machine, nameof(new_machine.component_parts), O)
 
 	circuit.moveToNullspace()
-	circuit.move_into(new_machine, CONTAINER_SLOT_INTERNALS)
+	move_into(new_machine, CONTAINER_SLOT_INTERNALS, circuit)
 	own_transfer(src, nameof(circuit), new_machine, nameof(new_machine.circuit))
 
 	new_machine.RefreshParts()

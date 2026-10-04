@@ -501,7 +501,7 @@ DECLARE_INTERACTIONS(/obj/item/paint_palette, INTERACT_ITEM(null, PROC_REF(inter
 	if(!allowed(user))
 		to_chat(user, span_notice("Access lock prevents you from putting a painting into this frame. Ask [curator] for help!"))
 		return
-	if(own_set(src, nameof(src.current_canvas), new_canvas, user = user))
+	if(move_into(src, nameof(src.current_canvas), new_canvas, user))
 		if(!current_canvas.finalized)
 			current_canvas.finalize(user)
 		to_chat(user,span_notice("You frame [current_canvas]."))

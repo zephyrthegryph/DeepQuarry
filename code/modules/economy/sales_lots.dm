@@ -163,7 +163,7 @@
 	crate.void_shipping_ledger("superseded by scanner certification")
 	var/obj/item/paper/ledger = freight_form_paper[length(freight_form_paper)]
 	rel_remove(src, nameof(src.freight_form_paper), ledger)
-	own_set(crate, nameof(crate.shipping_ledger), ledger, into = TRUE, force = TRUE) // printed into the crate, full or not
+	move_into(crate, nameof(crate.shipping_ledger), ledger, force = TRUE) // printed into the crate, full or not
 	var/ledger_id = "FL-[stationtime2text()]-[rand(1000, 9999)]"
 	ledger.shipping_ledger_data = list("id" = ledger_id, "valid" = TRUE, "department" = department, "destination" = destination, "department_percent" = department_percent, "cargo_percent" = 20, "producer_percentages" = producer_percentages.Copy(), "sealed_by" = user.real_name, "scanner" = machine_id)
 	ledger.set_content("FREIGHT LEDGER [ledger_id]\n\nConsignor: [department]\nConsignee: [destination]\nCertified by: [user.real_name]\nScanner: [machine_id]\nEstimated eligible value: [eligible_value] Th\n\nRevenue: [department_percent]% [department], 20% Cargo[length(producer_rows) ? ", [jointext(producer_rows, "; ")]" : ""].\n\nOpening or changing the certified crate voids this document.", "freight ledger [ledger_id]")

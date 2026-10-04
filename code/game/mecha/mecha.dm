@@ -490,7 +490,7 @@ DECLARE_PERIODIC_WHILE(/obj/mecha, PERIODIC_SLOW, "cabin_active")
 
 /obj/mecha/proc/add_cell(obj/item/cell/C=null)
 	if(C)
-		own_set(src, nameof(src.cell), C, into = TRUE)
+		move_into(src, nameof(src.cell), C)
 		return
 	rel_set(src, nameof(cell), new /obj/item/cell/mech(src))
 
@@ -1252,7 +1252,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		if(state==MECHA_CELL_OUT)
 			if(!src.cell)
 				to_chat(user, "You install the powercell")
-				if(!own_set(src, nameof(src.cell), W, user = user))
+				if(!move_into(src, nameof(src.cell), W, user))
 					return TRUE
 				src.mecha_log_message("Powercell installed")
 			else
@@ -1325,7 +1325,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 		var/mob/brainmob = mmi_occupant
 		// Through the pilot slot (C8 step 2), so it gets the automatic
 		// om_link (occupant, etc.) the same way a human pilot does.
-		if(!brainmob.move_into(src, MECHA_SLOT_PILOT))
+		if(!move_into(src, MECHA_SLOT_PILOT, brainmob))
 			return 0
 		brainmob.canmove = 1 //should allow relaymove
 		mmi_as_oc.forceMove(src)
@@ -1643,7 +1643,7 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 	var/mob/living/carbon/occupant = src?.slot_item(MECHA_SLOT_PILOT)
 	if(H && H.client && (H in range(1)))
 		H.stop_pulling()
-		if(!H.move_into(src, MECHA_SLOT_PILOT))
+		if(!move_into(src, MECHA_SLOT_PILOT, H))
 			return
 		src.add_fingerprint(H)
 		src.log_append_to_last("[H] moved in as pilot.")

@@ -153,7 +153,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/pump, TYPE_PROC_REF(/atom, appearance_ove
  */
 /obj/machinery/pump/proc/interaction_insert_cell(mob/user, obj/item/cell/W, datum/interaction/interaction)
 	materialize_parts()
-	if(!own_add(src, nameof(component_parts), W, user = user, slot = CONTAINER_SLOT_INTERNALS))
+	if(!move_into(src, nameof(component_parts), W, user, ledger_slot = CONTAINER_SLOT_INTERNALS))
 		return TRUE
 	to_chat(user, span_notice("You insert the power cell."))
 	RefreshParts() // Handles cell assignment

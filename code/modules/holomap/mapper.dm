@@ -169,7 +169,7 @@ DECLARE_INTERACTIONS(/obj/item/mapping_unit, \
 /// Old attackby.
 /obj/item/mapping_unit/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !cell)
-		if(!own_set(src, nameof(src.cell), W, user = user))
+		if(!move_into(src, nameof(src.cell), W, user))
 			return INTERACTION_HANDLED_PASS
 		cell.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [cell] into \the [src]."))

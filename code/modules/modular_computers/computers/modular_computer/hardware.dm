@@ -24,7 +24,7 @@
 	found = 1
 
 	if(found)
-		if(!own_set(src, slot, H, user = user))
+		if(!move_into(src, slot, H, user))
 			return
 		to_chat(user, "You install \the [H] into \the [src]")
 		rel_set(H, nameof(H.holder2), src)

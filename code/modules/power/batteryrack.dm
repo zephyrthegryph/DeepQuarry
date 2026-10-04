@@ -260,7 +260,7 @@ CAPABILITIES(/obj/machinery/power/smes/batteryrack)
 	if(length(internal_cells) >= max_cells)
 		return 0
 
-	if(!own_add(src, nameof(src.internal_cells), C, user = user, into = TRUE))
+	if(!move_into(src, nameof(src.internal_cells), C, user))
 		return 0
 	RefreshParts()
 	update_maxcharge()

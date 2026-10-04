@@ -33,6 +33,9 @@
 	var/list/currently_held_objects //List of objects currently in the toilet, used for flushing.
 	COOLDOWN_DECLARE(panic_flush)
 
+CAPABILITIES(/obj/structure/toilet)
+	owns_one(nameof(bin), /obj/item/stock_parts/matter_bin)
+
 /obj/structure/toilet/Initialize(mapload)
 	. = ..()
 	open = round(rand(0, 1))
@@ -234,7 +237,7 @@ APPEARANCE_TEMPLATE(/obj/structure/toilet, "{initial(icon_state)}{open}{cistern}
 /obj/structure/toilet/proc/attackby_timed_done3(obj/item/I, mob/living/user)
 	to_chat(user, span_notice("You replace \the [bin] with \the [I]."))
 	bin.forceMove(src.loc) //Remove the old bin.
-	if(!own_set(src, nameof(src.bin), I, user = user))
+	if(!move_into(src, nameof(src.bin), I, user))
 		return
 	return
 
@@ -1301,7 +1304,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 		return
 	if(muffin_mode)
 		if(muffinmonster())
-			thing.move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR)
+			move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, thing)
 		else
 			muffin_mode = FALSE
 
@@ -1335,7 +1338,7 @@ EXTEND_INTERACTIONS(/obj/item/bikehorn/rubberducky/galaxy, INTERACT_USE("Squeeze
 				for(var/atom/movable/C in contents)
 					if(C == muffinmonster())
 						continue
-					C.move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR)
+					move_into(muffinmonster().vore_selected, BELLY_SLOT_INTERIOR, C)
 			else
 				muffinmonster().name = "Activate Muffin Monster"
 				muffinmonster().release_vore_contents(include_absorbed = TRUE, silent = TRUE)

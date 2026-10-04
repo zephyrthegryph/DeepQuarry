@@ -115,32 +115,32 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			to_chat(user, span_warning("You need one sheet of metal to arm the robot frame."))
 	if(istype(W, /obj/item/robot_parts/l_leg))
 		if(src.l_leg)	return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.l_leg), W, user = user))
+		if(!move_into(src, nameof(src.l_leg), W, user))
 			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_leg))
 		if(src.r_leg)	return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.r_leg), W, user = user))
+		if(!move_into(src, nameof(src.r_leg), W, user))
 			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/l_arm))
 		if(src.l_arm)	return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.l_arm), W, user = user))
+		if(!move_into(src, nameof(src.l_arm), W, user))
 			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/r_arm))
 		if(src.r_arm)	return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.r_arm), W, user = user))
+		if(!move_into(src, nameof(src.r_arm), W, user))
 			return INTERACTION_HANDLED_PASS
 		src.update_icon()
 
 	if(istype(W, /obj/item/robot_parts/chest))
 		if(src.chest)	return INTERACTION_HANDLED_PASS
 		if(W:wires_const && W:cell)
-			if(!own_set(src, nameof(src.chest), W, user = user))
+			if(!move_into(src, nameof(src.chest), W, user))
 				return INTERACTION_HANDLED_PASS
 			src.update_icon()
 		else if(!W:wires_const)
@@ -151,7 +151,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 	if(istype(W, /obj/item/robot_parts/head))
 		if(src.head)	return INTERACTION_HANDLED_PASS
 		if(W:flash2 && W:flash1)
-			if(!own_set(src, nameof(src.head), W, user = user))
+			if(!move_into(src, nameof(src.head), W, user))
 				return INTERACTION_HANDLED_PASS
 			src.update_icon()
 		else
@@ -194,7 +194,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/robot_suit, INTERACT_ITEM(null, PROC_
 			var/mob/living/silicon/robot/O = new /mob/living/silicon/robot(get_turf(loc), FALSE, TRUE)
 			if(!O)	return INTERACTION_HANDLED_PASS
 
-			if(!own_set(O, nameof(O.mmi), W, user = user))
+			if(!move_into(O, nameof(O.mmi), W, user))
 				return INTERACTION_HANDLED_PASS
 			O.post_mmi_setup()
 			O.invisibility = INVISIBILITY_NONE
@@ -233,7 +233,7 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 			to_chat(user, span_warning("You have already inserted a cell!"))
 			return INTERACTION_HANDLED_PASS
 		else
-			if(!own_set(src, nameof(src.cell), W, user = user))
+			if(!move_into(src, nameof(src.cell), W, user))
 				return INTERACTION_HANDLED_PASS
 			to_chat(user, span_notice("You insert the cell!"))
 	if(istype(W, /obj/item/stack/cable_coil))
@@ -262,11 +262,11 @@ DECLARE_INTERACTIONS(/obj/item/robot_parts/chest, INTERACT_ITEM(null, PROC_REF(i
 		to_chat(user, span_notice("You have already inserted the eyes!"))
 		return
 	else if(src.flash1)
-		if(!own_set(src, nameof(src.flash2), W, user = user))
+		if(!move_into(src, nameof(src.flash2), W, user))
 			return
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 	else
-		if(!own_set(src, nameof(src.flash1), W, user = user))
+		if(!move_into(src, nameof(src.flash1), W, user))
 			return
 		to_chat(user, span_notice("You insert the flash into the eye socket!"))
 

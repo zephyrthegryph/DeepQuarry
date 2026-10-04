@@ -874,7 +874,7 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	if(!card.pai)
 		to_chat(user, span_notice("This card does not currently have a personality!"))
 		return
-	if(!own_set(src, nameof(src.paicard), card, user = user))
+	if(!move_into(src, nameof(src.paicard), card, user))
 		return
 	AI.reset_perspective(src) // focus this machine
 	to_chat(AI, span_notice("Your location is [card.loc].")) // DEBUG. TODO: Make unfolding the chassis trigger an eject.

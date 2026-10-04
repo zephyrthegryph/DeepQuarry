@@ -18,6 +18,9 @@
 	idle_power_usage = 10
 	active_power_usage = 120 // No idea what the realistic amount would be.
 
+CAPABILITIES(/obj/machinery/oxygen_pump)
+	owns_one(nameof(tank), /obj/item/tank)
+
 /// Who wears the mask (a relation view), or null.
 OM_FIELD_VIEW(/obj/machinery/oxygen_pump, mob/living/carbon, breather, CHANGE_MACHINE_OCCUPANT)
 /// Keeps the mask and internals right while a mask is on someone.
@@ -160,7 +163,7 @@ EXTEND_INTERACTIONS(/obj/machinery/oxygen_pump, \
 		if(tank)
 			to_chat(user, span_warning("\The [src] already has a tank installed!"))
 		else
-			if(!own_set(src, nameof(src.tank), W, user = user))
+			if(!move_into(src, nameof(src.tank), W, user))
 				return TRUE
 			act_message(user, src, MSG_SELF(span_notice("You install %I% into %T%.")), \
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " installs %I% into %T%.")), \

@@ -19,6 +19,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/defib_kit)
+	owns_one(nameof(bcell), /obj/item/cell)
+
 /obj/item/defib_kit/get_cell()
 	return bcell
 
@@ -88,7 +91,7 @@ DECLARE_INTERACTIONS(/obj/item/defib_kit, \
 		if(bcell)
 			to_chat(user, span_notice("\The [src] already has a cell."))
 		else
-			if(!own_set(src, nameof(src.bcell), W, user = user))
+			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			to_chat(user, span_notice("You install a cell in \the [src]."))
 			update_icon()

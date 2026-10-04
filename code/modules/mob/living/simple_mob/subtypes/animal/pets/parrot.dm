@@ -76,7 +76,7 @@ EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/bird/parrot, \
 		to_chat(user, span_warning("\The [src] is already wearing \a [my_headset]."))
 		return
 	else
-		if(!own_set(src, nameof(src.my_headset), new_headset, user = user))
+		if(!move_into(src, nameof(src.my_headset), new_headset, user))
 			return
 		to_chat(user, span_warning("You place \a [new_headset] on \the [src]. You monster."))
 		to_chat(src, span_notice("\The [user] gives you \a [new_headset]. You should put it to good use immediately."))

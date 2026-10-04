@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "One transfer verb, move_into(holder, slot_id, item, actor): the old per-call transfer arguments of own_set/own_add/own_put and the movable move_into proc are converted onto it"

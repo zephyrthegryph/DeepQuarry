@@ -350,7 +350,7 @@
 	act_message(src, T, others = span_boldwarning("%U%") + " seizes %T% aggressively!")
 
 	var/obj/item/grab/G = new(src,T)
-	if(!G.move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, src))
+	if(!move_into(src, use_hand == "left" ? SLOT_ID_HAND_L : SLOT_ID_HAND_R, G, src))
 		qdel(G)
 		return
 

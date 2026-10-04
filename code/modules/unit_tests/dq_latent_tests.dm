@@ -167,7 +167,7 @@
 /datum/unit_test/dq_latent_slot_round_trip/Run()
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box)
 	var/obj/item/dq_containment_test/wood/sharp = allocate(/obj/item/dq_containment_test/wood, test_floor())
-	TEST_ASSERT(sharp.move_into(box, "main"), "into the main slot")
+	TEST_ASSERT(move_into(box, "main", sharp), "into the main slot")
 	allocate(/obj/item/dq_containment_test, box) // default slot: pocket
 	var/list/errors = list()
 	var/list/blob = state_serialize(box, STATE_FULL, errors)
@@ -207,7 +207,7 @@
 	// Nested in another latent holder, spilled entries stay data.
 	var/obj/structure/closet/outer = new(T)
 	var/obj/structure/closet/dq_latent_test/inner = new(T)
-	TEST_ASSERT(inner.move_into(outer), "a closet fits in a closet")
+	TEST_ASSERT(move_into(outer, null, inner), "a closet fits in a closet")
 	var/real_items = length(outer.contents)
 	qdel(inner)
 	TEST_ASSERT_EQUAL(outer.latent_count(), 3, "entries moved into the outer closet as data")

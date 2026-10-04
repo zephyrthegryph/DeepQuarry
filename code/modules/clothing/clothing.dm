@@ -637,6 +637,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/head, TYPE_PROC_REF(/atom, appearance
 CAPABILITIES(/obj/item/clothing/shoes)
 	owns_one(nameof(shoes), /obj/item/clothing/shoes)
 	owns_one(nameof(squeak), /datum/squeak)
+	owns_one(nameof(holding), /obj/item)
 
 TYPE_TABLE(/obj/item/clothing/shoes, fit_spec, list(REQ_FITS_BODYTYPES(list("exclude",SPECIES_TESHARI, SPECIES_VOX))))
 
@@ -1524,7 +1525,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/shoes, \
 		if(holding)
 			to_chat(user, span_warning("\The [src] is already holding \a [holding]."))
 			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.holding), I, user = user))
+		if(!move_into(src, nameof(src.holding), I, user))
 			return INTERACTION_HANDLED_PASS
 		act_message(user, src, others = span_infoplain(span_bold("%U%") + " shoves %I% into %T%."), item = I)
 		update_icon()

@@ -37,6 +37,7 @@ CAPABILITIES(/obj)
 	owns_one(nameof(disposal_connection), /datum/disposal_system_connection)
 	owns_one(nameof(reactive_icon), /datum/reactive_icon_update)
 	owns_one(nameof(talking_atom), /datum/talking_atom)
+	owns_one(nameof(attached_assembly), /obj/item/assembly)
 
 
 /// TRUE while this object burns.

@@ -31,6 +31,11 @@
 	var/obj/item/tank/phoron/ptank = null
 	var/volume_per_max_burn = 20 // gets divided by the intended burn ratio
 
+CAPABILITIES(/obj/item/flamethrower)
+	owns_one(nameof(igniter), /obj/item/assembly/igniter)
+	owns_one(nameof(ptank), /obj/item/tank/phoron)
+	owns_one(nameof(weldtool), /obj/item/weldingtool)
+
 /obj/item/flamethrower/Initialize(mapload)
 	. = ..()
 	weldtool.status = 0 // for disassembly
@@ -117,7 +122,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		var/obj/item/assembly/igniter/I = W
 		if(I.secured)	return INTERACTION_HANDLED_PASS
 		if(igniter)		return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.igniter), I, user = user))
+		if(!move_into(src, nameof(src.igniter), I, user))
 			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS
@@ -126,7 +131,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/flamethrower, TYPE_PROC_REF(/atom, appearance_
 		if(ptank)
 			to_chat(user, span_notice("There appears to already be a phoron tank loaded in [src]!"))
 			return INTERACTION_HANDLED_PASS
-		if(!own_set(src, nameof(src.ptank), W, user = user))
+		if(!move_into(src, nameof(src.ptank), W, user))
 			return INTERACTION_HANDLED_PASS
 		update_icon()
 		return INTERACTION_HANDLED_PASS

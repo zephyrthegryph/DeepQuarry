@@ -1,6 +1,6 @@
 // The transaction API (doc/rewrite/containment.md §2, invariant 2).
 //
-//   thing.move_into(holder, slot_id, actor)          insert (slot_id null: the default slot)
+//   move_into(holder, slot_id, thing, actor)          insert (slot_id null: the default slot)
 //   holder.slot_remove(thing, destination, actor, flags)     take out, to a place that has no slots
 //   holder.slot_transfer(thing, new_holder, slot_id, actor)   from one slot to another
 //   holder.slot_empty(slot_id, destination, actor)    remove everything in a slot
@@ -110,13 +110,6 @@
 	var/list/entry = dest.entries?[thing]
 	return entry && entry[LEDGER_E_SLOT] == id
 
-/// Insert into `holder`'s slot `slot_id` (null: its default slot). Returns
-/// TRUE on success; on failure nothing moved, and dq_ledger_refusal() says why.
-/atom/movable/proc/move_into(atom/holder, slot_id, mob/actor)
-	if(dq_ledger_refusal(src, holder, slot_id, actor))
-		return FALSE
-	return dq_ledger_commit(src, holder, slot_id)
-
 /// Take `thing` out of this holder's slots to `destination`. A destination
 /// with slots makes this a transfer into its default slot. `flags` may carry
 /// LEDGER_MOVE_FORCED (J2): both refusals and pre signals are skipped, but
@@ -128,8 +121,10 @@
 		return FALSE
 	if(flags & LEDGER_MOVE_FORCED)
 		return dq_ledger_force_move(thing, destination, flags)
-	if(dq_slot_defs_for(destination))
-		return thing.move_into(destination, null, actor)
+	if(dq_slot_defs_for(destination)) // the ledger's own checked commit: the place releases through here, so it can't go through move_into()
+		if(dq_ledger_refusal(thing, destination, null, actor))
+			return FALSE
+		return dq_ledger_commit(thing, destination, null)
 	for(var/atom/A = destination; A; A = A.loc)
 		if(A == thing)
 			return FALSE

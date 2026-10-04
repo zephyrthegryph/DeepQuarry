@@ -132,7 +132,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	if(S.seed() && S.seed().get_trait(TRAIT_IMMUTABLE) > 0)
 		to_chat(user, span_filter_notice("That seed is not compatible with our genetics technology."))
 	else
-		if(!own_set(src, nameof(src.seed), W, user = user))
+		if(!move_into(src, nameof(src.seed), W, user))
 			return TRUE
 		to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE
@@ -173,7 +173,7 @@ DECLARE_INTERACTIONS(/obj/item/disk/botany, INTERACT_USE(null, PROC_REF(interact
 	return TRUE
 
 /obj/machinery/botany/proc/interaction_load_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.loaded_disk), W, user = user))
+	if(!move_into(src, nameof(src.loaded_disk), W, user))
 		return TRUE
 	to_chat(user, span_filter_notice("You load [W] into [src]."))
 	return TRUE

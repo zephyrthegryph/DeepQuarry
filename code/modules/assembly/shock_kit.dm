@@ -8,6 +8,10 @@
 	w_class = ITEMSIZE_HUGE
 	special_handling = TRUE
 
+CAPABILITIES(/obj/item/assembly/shock_kit)
+	owns_one(nameof(part1), /obj/item/clothing/head/helmet)
+	owns_one(nameof(part2), /obj/item/radio/electropack)
+
 
 /obj/item/assembly/shock_kit/wrench_act(mob/user, obj/item/tool)
 	if(!status)

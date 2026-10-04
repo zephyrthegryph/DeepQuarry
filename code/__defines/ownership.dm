@@ -87,3 +87,13 @@
 
 /// Reports an ownership violation (a runtime, so a test fails; captured in tests of the checks).
 #define OWN_REPORT(msg) dq_lifecycle_report("OWN: [msg]")
+
+// ---- the shape move_into() writes (engine/declare/transfer.dm) ----
+/// The place is a ledger slot of the holder: the item is placed there, no var is written.
+#define MOVE_SHAPE_LEDGER 0
+/// An owns_one var: set.
+#define MOVE_SHAPE_ONE 1
+/// An owns_many list var: add.
+#define MOVE_SHAPE_MANY 2
+/// An associative owns_many: put under the call's key.
+#define MOVE_SHAPE_KEYED 3

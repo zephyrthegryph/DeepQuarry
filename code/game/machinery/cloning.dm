@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	// (machine_internals) rather than its occupant slot -- move it to the
 	// right one now. set_occupant() itself now happens through the slot's
 	// own on_link() (OM relations step 3).
-	H.move_into(src, OCCUPANT_SLOT_CLONEPOD)
+	move_into(src, OCCUPANT_SLOT_CLONEPOD, H)
 	update_icon()
 	attempting = 0
 
@@ -278,7 +278,7 @@ EXTEND_INTERACTIONS(/obj/machinery/clonepod, \
 	if(LAZYLEN(containers) >= container_limit)
 		to_chat(user, span_warning("\The [src] has too many containers loaded!"))
 		return
-	if(!own_add(src, nameof(containers), W, user = user))
+	if(!move_into(src, nameof(containers), W, user))
 		return
 	act_message(user, src, MSG_SELF("You load %I% into %T%."), MSG_OTHERS("%U% has loaded %I% into %T%."), item = W)
 

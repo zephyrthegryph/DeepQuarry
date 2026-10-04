@@ -252,7 +252,7 @@ MSG_DEF(edible/eat, "You take a bite of %I%.", "%U% takes a bite of %I%.")
 	user.setClickCooldown(user.get_attack_speed(holder))
 	add_attack_logs(user, eater, "Whole-fed with [holder.name] containing [holder.reagents ? holder.reagents.get_reagents() : "nothing"] into [belly_target]", admin_notify = FALSE)
 	user.drop_item()
-	if(!holder.move_into(belly_target, BELLY_SLOT_INTERIOR, user))
+	if(!move_into(belly_target, BELLY_SLOT_INTERIOR, holder, user))
 		holder.forceMove(get_turf(user))
 	return OP_OK
 

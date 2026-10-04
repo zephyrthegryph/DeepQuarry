@@ -300,6 +300,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Fl
 /// The loaded film (set at init by DECLARE_DEFAULT_CHILD).
 OM_FIELD_VIEW(/obj/item/clothing/accessory/dosimeter, obj/item/dosimeter_film, current_film, CHANGE_EXPLICIT)
 
+CAPABILITIES(/obj/item/clothing/accessory/dosimeter)
+	owns_one(nameof(current_film), /obj/item/dosimeter_film)
+
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/accessory/dosimeter, "current_film", /obj/item/dosimeter_film)
 
 /// A film that can still darken is loaded: it reads the wearer's radiation.
@@ -336,7 +339,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/dosimeter, \
 /// Old attackby: insert a film.
 /obj/item/clothing/accessory/dosimeter/proc/dosimeter_insert_film(mob/user, obj/item/I, datum/interaction/interaction)
 	if(!current_film)
-		if(!own_set(src, nameof(src.current_film), I, user = user))
+		if(!move_into(src, nameof(src.current_film), I, user))
 			return INTERACTION_HANDLED_PASS
 		update_state(current_film.state)
 

@@ -6,6 +6,9 @@
 	var/photos_taken = 0
 	var/list/obj/item/photo/aipictures
 
+CAPABILITIES(/obj/item/camera/siliconcam)
+	owns_many(nameof(aipictures), /obj/item/photo)
+
 /obj/item/camera/siliconcam/ai_camera //camera AI can take pictures with
 	name = "AI photo camera"
 
@@ -17,7 +20,7 @@
 
 
 /obj/item/camera/siliconcam/proc/injectaialbum(obj/item/photo/p, sufix = "") //stores image information to a list similar to that of the datacore
-	own_add(src, nameof(src.aipictures), p, into = TRUE)
+	move_into(src, nameof(src.aipictures), p)
 	photos_taken++
 	p.name = "Image [photos_taken][sufix]"
 

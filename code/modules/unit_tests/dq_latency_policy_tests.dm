@@ -189,7 +189,7 @@
 	var/obj/item/dq_latency_test_machine/machine = new(floor)
 	var/obj/item/dq_latency_test_item/part = new(machine)
 	var/obj/item/dq_latency_test_item/product = new(floor)
-	TEST_ASSERT(product.move_into(machine, CONTAINER_SLOT_STOCK), "the product should move into the stock slot")
+	TEST_ASSERT(move_into(machine, CONTAINER_SLOT_STOCK, product), "the product should move into the stock slot")
 	dq_ledger(machine)
 	part.latent_touched_at = world.time - (machine.latent_idle_delay * 2)
 	product.latent_touched_at = world.time - (machine.latent_idle_delay * 2)

@@ -138,7 +138,7 @@ UI_ACT_PROC(/obj/machinery/suspension_gen, ui_act_lock)
 		if(cell)
 			to_chat(user, span_warning("There is a power cell already installed."))
 		else
-			if(!own_set(src, nameof(src.cell), W, user = user))
+			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, span_info("You insert the power cell."))
 			icon_state = "suspension"

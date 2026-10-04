@@ -33,6 +33,7 @@ OM_FIELD_VIEW(/obj/item/gun/magnetic, obj/item/stock_parts/capacitor, capacitor,
 CAPABILITIES(/obj/item/gun/magnetic)
 	owns_one(nameof(capacitor), /obj/item/stock_parts/capacitor)
 	owns_one(nameof(loaded), /obj/item)
+	owns_one(nameof(cell), /obj/item/cell)
 
 /// The capacitor still has somewhere to go: charging from the cell, or bleeding without one.
 /// Swapping parts goes through own_set()/own_take() (and a destroyed part is cleared by the
@@ -173,7 +174,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(cell)
 				to_chat(user, span_warning("\The [src] already has \a [cell] installed."))
 				return
-			if(!own_set(src, nameof(src.cell), thing, user = user))
+			if(!move_into(src, nameof(src.cell), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			act_message(user, src, others = span_infoplain(span_bold("%U%") + " slots %I% into %T%."), item = cell)
@@ -184,7 +185,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 			if(capacitor)
 				to_chat(user, span_warning("\The [src] already has \a [capacitor] installed."))
 				return
-			if(!own_set(src, nameof(src.capacitor), thing, user = user))
+			if(!move_into(src, nameof(src.capacitor), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			power_per_tick = (power_cost*0.15) * capacitor.rating
@@ -202,7 +203,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/magnetic, TYPE_PROC_REF(/atom, appearance_
 		// specific ammo types may exist down the track.
 		var/obj/item/stack/ammo = thing
 		if(!istype(ammo))
-			if(!own_set(src, nameof(src.loaded), thing, user = user))
+			if(!move_into(src, nameof(src.loaded), thing, user))
 				return
 		else
 			rel_set(src, nameof(loaded), new load_type(src, 1))

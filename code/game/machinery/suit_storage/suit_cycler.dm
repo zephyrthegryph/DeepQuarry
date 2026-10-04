@@ -230,7 +230,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 	if(!G || !G?.grab_target())
 		return TRUE
 	var/mob/M = G?.grab_target()
-	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_CYCLER))
+	if(!move_into(src, OCCUPANT_SLOT_SUIT_CYCLER, M))
 		return TRUE
 
 	add_fingerprint(user)
@@ -251,7 +251,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 			return TRUE
 
 	to_chat(user, "You fit \the [IH] into the suit cycler.")
-	if(!own_set(src, nameof(src.helmet), IH, user = user))
+	if(!move_into(src, nameof(src.helmet), IH, user))
 		return TRUE
 
 	update_icon()
@@ -271,7 +271,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/suit_cycler, MACHINE_PIPELINE, "cycler_has
 			return TRUE
 
 	to_chat(user, "You fit \the [IS] into the suit cycler.")
-	if(!own_set(src, nameof(src.suit), IS, user = user))
+	if(!move_into(src, nameof(src.suit), IS, user))
 		return TRUE
 
 	update_icon()

@@ -182,7 +182,7 @@ CAPABILITIES(/obj/item/storage/bag/sheetsnatcher)
 			return TRUE
 	if(amount < S.get_amount())
 		var/obj/item/stack/F = S.split(amount)
-		if(!F?.move_into(src, CONTAINER_SLOT_STORAGE, user))
+		if(!move_into(src, CONTAINER_SLOT_STORAGE, F, user))
 			return FALSE
 		update_icon()
 		return TRUE

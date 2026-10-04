@@ -27,6 +27,9 @@
 	var/static/list/field_edit_questions
 	var/static/list/field_edit_choices
 
+CAPABILITIES(/obj/machinery/computer/med_data)
+	owns_one(nameof(scan), /obj/item/card/id)
+
 /obj/machinery/computer/med_data/Initialize(mapload)
 	. = ..()
 	field_edit_questions = list(
@@ -191,7 +194,7 @@ UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_scan)
 	else
 		var/obj/item/I = ui.user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
-			own_set(src, nameof(src.scan), I, user = ui.user)
+			move_into(src, nameof(src.scan), I, ui.user)
 
 UI_ACT(/obj/machinery/computer/med_data, "login", ui_act_login, UI_ARG_NUM("login_type"))
 UI_ACT_PROC(/obj/machinery/computer/med_data, ui_act_login)

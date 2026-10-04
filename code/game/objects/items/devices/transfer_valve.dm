@@ -23,11 +23,11 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 			return TRUE
 
 		if(!tank_one)
-			if(!own_set(src, nameof(src.tank_one), item, user = user))
+			if(!move_into(src, nameof(src.tank_one), item, user))
 				return TRUE
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 		else if(!tank_two)
-			if(!own_set(src, nameof(src.tank_two), item, user = user))
+			if(!move_into(src, nameof(src.tank_two), item, user))
 				return TRUE
 			to_chat(user, span_notice("You attach the tank to the transfer valve."))
 			message_admins("[key_name_admin(user)] attached both tanks to a transfer valve. [ADMIN_JMP(location)]")
@@ -44,7 +44,7 @@ DECLARE_INTERACTIONS(/obj/item/transfer_valve, \
 		if(attached_device)
 			to_chat(user, span_warning("There is already an device attached to the valve, remove it first."))
 			return TRUE
-		if(!own_set(src, nameof(src.attached_device), A, user = user))
+		if(!move_into(src, nameof(src.attached_device), A, user))
 			return TRUE
 		to_chat(user, span_notice("You attach the [item] to the valve controls and secure it."))
 		rel_set(A, nameof(A.holder), src)

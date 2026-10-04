@@ -41,7 +41,7 @@
 	H.caliber = a.caliber
 	H.name = "handful of [a.caliber] rounds"
 	for(var/obj/item/ammo_casing/C in list(a, b))
-		own_add(H, nameof(H.stored_ammo), C, user = user, into = TRUE)
+		move_into(H, nameof(H.stored_ammo), C, user)
 	H.update_icon()
 	return H
 

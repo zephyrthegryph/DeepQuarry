@@ -109,7 +109,7 @@ CAPABILITIES(/obj/machinery/implantchair)
 		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, user))
+	if(!move_into(src, OCCUPANT_SLOT_IMPLANT_CHAIR, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
 	src.add_fingerprint(user)

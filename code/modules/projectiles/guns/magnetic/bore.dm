@@ -9,6 +9,9 @@
 	var/rating_modifier = 0 // rating of installed capacitor + manipulator
 	var/loading = FALSE
 
+CAPABILITIES(/obj/item/gun/magnetic/matfed)
+	owns_one(nameof(manipulator), /obj/item/stock_parts/manipulator)
+
 /obj/item/gun/magnetic/matfed/proc/update_rating_mod()
 	if(capacitor && manipulator)
 		rating_modifier = capacitor.get_rating() + manipulator.get_rating()
@@ -138,7 +141,7 @@ EXTEND_INTERACTIONS(/obj/item/gun/magnetic/matfed, INTERACT_HAND(null, PROC_REF(
 			if(manipulator)
 				to_chat(user, span_warning("\The [src] already has \a [manipulator] installed."))
 				return
-			if(!own_set(src, nameof(src.manipulator), thing, user = user))
+			if(!move_into(src, nameof(src.manipulator), thing, user))
 				return
 			play_sfx(src, SFX_MACHINES_CLICK, 0.2)
 			mat_cost = initial(mat_cost) / (2*manipulator.rating)

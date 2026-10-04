@@ -85,7 +85,7 @@
 		to_chat(user, "\The [O] is not suitable for blending.")
 		return TRUE
 
-	if(!own_add(src, nameof(src.holdingitems), O, user = user))
+	if(!move_into(src, nameof(src.holdingitems), O, user))
 		return TRUE
 	update_icon()
 	return TRUE
@@ -141,7 +141,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/reagent_refinery/grinder, TYPE_PROC_REF(/
 		return FALSE
 	if(!GLOB.sheet_reagents[AM.type] && !GLOB.ore_reagents[AM.type] && (!AM.reagents || !AM.reagents.total_volume))
 		return FALSE
-	own_add(src, nameof(src.holdingitems), AM, into = TRUE)
+	move_into(src, nameof(src.holdingitems), AM)
 	return TRUE
 
 /obj/machinery/reagent_refinery/grinder/examine(mob/user, infix, suffix)

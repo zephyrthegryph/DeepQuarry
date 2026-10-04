@@ -30,7 +30,7 @@
 	. = INTERACTION_HANDLED_PASS
 	if(istype(I, /obj/item/ammo_casing/rocket))
 		if(length(rockets) < max_rockets)
-			if(!own_add(src, nameof(src.rockets), I, user = user))
+			if(!move_into(src, nameof(src.rockets), I, user))
 				return
 			to_chat(user, span_blue("You put the rocket in [src]."))
 			to_chat(user, span_blue("[length(rockets)] / [max_rockets] rockets."))

@@ -26,6 +26,9 @@ MATERIAL_MIX(/obj/item/suit_cooling_unit, list(MAT_STEEL = 15000, MAT_GLASS = 35
 
 	//TODO: make it heat up the surroundings when not in space
 
+CAPABILITIES(/obj/item/suit_cooling_unit)
+	owns_one(nameof(cell), /obj/item/cell)
+
 /obj/item/suit_cooling_unit/ui_action_click(mob/user, actiontype)
 	toggle(user)
 
@@ -151,7 +154,7 @@ DECLARE_INTERACTIONS(/obj/item/suit_cooling_unit, \
 		if(cell)
 			to_chat(user, "There is a [cell] already installed here.")
 		else
-			if(!own_set(src, nameof(src.cell), W, user = user))
+			if(!move_into(src, nameof(src.cell), W, user))
 				return TRUE
 			to_chat(user, "You insert the [cell].")
 	update_icon()

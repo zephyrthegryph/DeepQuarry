@@ -25,7 +25,7 @@ TYPE_TABLE(/obj/item/clothing/accessory/holster, hold_spec, list(REQ_BECAUSE(REQ
 
 	if(istype(user))
 		user.stop_aiming(no_message=1)
-	if(!own_set(src, nameof(src.holstered), I, user = user))
+	if(!move_into(src, nameof(src.holstered), I, user))
 		return
 	holstered.add_fingerprint(user)
 	w_class = max(w_class, holstered.w_class)

@@ -204,7 +204,7 @@
 				return TRUE
 			var/atom/before = T.loc
 			var/why = dq_ledger_refusal(T, H, slot)
-			var/moved = (op == "transfer") ? before.slot_transfer(T, H, slot) : T.move_into(H, slot)
+			var/moved = (op == "transfer") ? before.slot_transfer(T, H, slot) : move_into(H, slot, T)
 			if(moved)
 				moves_done++
 			else
@@ -341,7 +341,7 @@
 	// Delete: a folder takes its pages with it.
 	var/obj/item/folder/folder = allocate(/obj/item/folder, T)
 	var/obj/item/paper/page = allocate(/obj/item/paper, T)
-	TEST_ASSERT(page.move_into(folder), "paper goes in a folder")
+	TEST_ASSERT(move_into(folder, null, page), "paper goes in a folder")
 	qdel(folder)
 	TEST_ASSERT(QDELETED(page), "delete: the page went with the folder")
 
@@ -351,9 +351,9 @@
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
 	var/obj/item/dq_containment_test/pocketed = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(knife.move_into(box, "main"), "sharp thing into main")
-	TEST_ASSERT(pocketed.move_into(box, "pocket"), "anything into the pocket")
-	TEST_ASSERT(box.move_into(outer), "box into closet")
+	TEST_ASSERT(move_into(box, "main", knife), "sharp thing into main")
+	TEST_ASSERT(move_into(box, "pocket", pocketed), "anything into the pocket")
+	TEST_ASSERT(move_into(outer, null, box), "box into closet")
 	qdel(box)
 	TEST_ASSERT(!QDELETED(pocketed) && pocketed.loc == outer, "transfer: the pocket went into the closet")
 	TEST_ASSERT(!QDELETED(knife) && knife.loc == outer, "spill: the main slot dropped into the closet")
@@ -362,7 +362,7 @@
 	// Transfer with nowhere to transfer to spills.
 	var/obj/item/dq_containment_box/loose_box = allocate(/obj/item/dq_containment_box, T)
 	var/obj/item/dq_containment_test/c = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(c.move_into(loose_box, "pocket"), "into the pocket")
+	TEST_ASSERT(move_into(loose_box, "pocket", c), "into the pocket")
 	qdel(loose_box)
 	TEST_ASSERT(!QDELETED(c) && c.loc == T, "transfer with no holder around falls back to spilling")
 
@@ -382,10 +382,10 @@
 
 	// The predicate decides, with its reason.
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(item, folder), "only paper, photos and bundles fit", "folder refuses a non-paper item")
-	TEST_ASSERT(!item.move_into(folder), "the refused move fails")
+	TEST_ASSERT(!move_into(folder, null, item), "the refused move fails")
 	TEST_ASSERT_EQUAL(item.loc, T, "a refused move changes nothing")
 	TEST_ASSERT_NULL(dq_ledger_refusal(page, folder), "paper fits")
-	TEST_ASSERT(page.move_into(folder), "paper goes in")
+	TEST_ASSERT(move_into(folder, null, page), "paper goes in")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(page, folder), "it is already there", "no double insert")
 
 	// Closets refuse what is fastened down.
@@ -397,7 +397,7 @@
 	var/obj/item/dq_containment_test/one = allocate(/obj/item/dq_containment_test, T)
 	var/obj/item/dq_containment_test/two = allocate(/obj/item/dq_containment_test, T)
 	var/obj/item/dq_containment_test/three = allocate(/obj/item/dq_containment_test, T)
-	TEST_ASSERT(one.move_into(crate) && two.move_into(crate), "two fit")
+	TEST_ASSERT(move_into(crate, null, one) && move_into(crate, null, two), "two fit")
 	TEST_ASSERT_EQUAL(crate.slot_used(), 2, "two units used")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(three, crate), "there's no room for it", "the third doesn't")
 	TEST_ASSERT_EQUAL(three.loc, T, "and stays put")
@@ -409,15 +409,15 @@
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(item, box, "lid"), "[box] has no lid", "unknown slot")
 
 	// Nothing goes inside itself.
-	TEST_ASSERT(box.move_into(closet), "box into closet")
+	TEST_ASSERT(move_into(closet, null, box), "box into closet")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(closet, box), "it can't go inside itself", "closet into the box it holds")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(closet, closet), "it can't go inside itself", "closet into itself")
 
 	// Moving between two slots of one holder.
 	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
-	TEST_ASSERT(knife.move_into(box, "pocket"), "knife into the pocket")
+	TEST_ASSERT(move_into(box, "pocket", knife), "knife into the pocket")
 	var/pocket_id = box.slot_entry_id(knife)
-	TEST_ASSERT(knife.move_into(box, "main"), "knife from pocket to main")
+	TEST_ASSERT(move_into(box, "main", knife), "knife from pocket to main")
 	TEST_ASSERT_EQUAL(knife.loc, box, "still in the box")
 	var/list/main = box.slot_contents("main")
 	TEST_ASSERT(length(main) == 1 && main[1] == knife, "listed in main")
@@ -436,9 +436,9 @@
 	TEST_ASSERT(crate.slot_remove(one, T), "unblocked removal")
 	listener.block_insert = TRUE
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(three, crate), "it won't go in", "a blocked insert")
-	TEST_ASSERT(!three.move_into(crate), "and the move fails")
+	TEST_ASSERT(!move_into(crate, null, three), "and the move fails")
 	listener.block_insert = FALSE
-	TEST_ASSERT(three.move_into(crate), "room again")
+	TEST_ASSERT(move_into(crate, null, three), "room again")
 	TEST_ASSERT_EQUAL(jointext(listener.events || list(), ","), "out:[CONTAINER_SLOT_INTERIOR],in:[CONTAINER_SLOT_INTERIOR]", "inserted and removed signals")
 
 	// Legacy moves are still accounted for, in the default slot.
@@ -476,14 +476,14 @@
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 
 	TEST_ASSERT_NULL(closet.contents_property(PROP_MASS), "empty: no mass")
-	TEST_ASSERT(steel.move_into(closet), "steel in")
+	TEST_ASSERT(move_into(closet, null, steel), "steel in")
 	TEST_ASSERT_EQUAL(closet.contents_property(PROP_MASS), PROPERTY(steel, PROP_MASS), "mass is the item's")
 	TEST_ASSERT_NOTNULL(closet.contents_property(PROP_HEAT_CAPACITY), "heat capacity from steel")
 	TEST_ASSERT(!closet.contents_has_tag(TAG_SHARP), "nothing sharp yet")
 
 	// Nested: wood goes in a box, the box in the closet. The closet sees both.
-	TEST_ASSERT(box.move_into(closet), "box in")
-	TEST_ASSERT(wood.move_into(box, "main"), "wood into the box inside the closet")
+	TEST_ASSERT(move_into(closet, null, box), "box in")
+	TEST_ASSERT(move_into(box, "main", wood), "wood into the box inside the closet")
 	var/expected_mass = PROPERTY(steel, PROP_MASS) + PROPERTY(wood, PROP_MASS)
 	TEST_ASSERT(abs(closet.contents_property(PROP_MASS) - expected_mass) < 1e-6, "nested mass rolls up: [closet.contents_property(PROP_MASS)] vs [expected_mass]")
 	TEST_ASSERT(closet.contents_has_tag(TAG_SHARP), "a sharp thing in a nested box counts")
@@ -510,7 +510,7 @@
 	TEST_ASSERT_NOTNULL(id, "steel has an entry id")
 	TEST_ASSERT_EQUAL(closet.slot_find_entry(id), steel, "the id finds it")
 	TEST_ASSERT(closet.slot_remove(steel, T), "steel out")
-	TEST_ASSERT(steel.move_into(closet), "and back in")
+	TEST_ASSERT(move_into(closet, null, steel), "and back in")
 	TEST_ASSERT_NULL(closet.slot_find_entry(id), "the old id is stale")
 	TEST_ASSERT_NOTEQUAL(closet.slot_entry_id(steel), id, "a new id")
 
@@ -529,7 +529,7 @@
 	var/obj/structure/closet/closet = allocate(/obj/structure/closet, T)
 	var/obj/item/dq_containment_test/steel = allocate(/obj/item/dq_containment_test, T)
 	closet.open()
-	TEST_ASSERT(steel.move_into(closet), "steel in")
+	TEST_ASSERT(move_into(closet, null, steel), "steel in")
 	closet.close()
 
 	// A blocked pre-remove would normally refuse the move; the forced spill
@@ -549,10 +549,10 @@
 	var/turf/T = dq_containment_floor()
 	var/obj/item/dq_containment_box/outer = allocate(/obj/item/dq_containment_box, T)
 	var/obj/item/dq_containment_box/inner = allocate(/obj/item/dq_containment_box, T)
-	TEST_ASSERT(inner.move_into(outer, "pocket"), "the inner box into the outer one's pocket")
+	TEST_ASSERT(move_into(outer, "pocket", inner), "the inner box into the outer one's pocket")
 	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
 	// "pocket" is the slot with SLOT_DROP_TRANSFER; "main" spills instead.
-	TEST_ASSERT(knife.move_into(inner, "pocket"), "knife into the inner box's transferring slot")
+	TEST_ASSERT(move_into(inner, "pocket", knife), "knife into the inner box's transferring slot")
 	TEST_ASSERT_EQUAL(inner.loc, outer, "the inner box is inside the outer one")
 	qdel(inner)
 	TEST_ASSERT_EQUAL(knife.loc, outer, "SLOT_DROP_TRANSFER moved the knife into the outer box's default slot")
@@ -589,11 +589,11 @@
 	var/obj/item/dq_containment_test/keyed/blue = allocate(/obj/item/dq_containment_test/keyed, T)
 	blue.name = "blue key"
 
-	TEST_ASSERT(red.move_into(ring), "the first red key goes in")
+	TEST_ASSERT(move_into(ring, null, red), "the first red key goes in")
 	TEST_ASSERT_EQUAL(ring.slot_lookup("keyed", "red key"), red, "O(1) lookup finds it by key")
 	TEST_ASSERT_EQUAL(dq_ledger_refusal(red2, ring), "[red] already has that", "a duplicate key is refused")
-	TEST_ASSERT(!red2.move_into(ring), "and the move fails")
-	TEST_ASSERT(blue.move_into(ring), "an unrelated key still goes in")
+	TEST_ASSERT(!move_into(ring, null, red2), "and the move fails")
+	TEST_ASSERT(move_into(ring, null, blue), "an unrelated key still goes in")
 	dq_verify_ledger(ring, "with two distinct keys")
 
 	// Rekeying: renaming red frees its old key and claims the new one.
@@ -601,7 +601,7 @@
 	red.ledger_rekey()
 	TEST_ASSERT_NULL(ring.slot_lookup("keyed", "red key"), "the old key is gone")
 	TEST_ASSERT_EQUAL(ring.slot_lookup("keyed", "renamed key"), red, "the new key resolves")
-	TEST_ASSERT(red2.move_into(ring), "the freed key can be reused by another thing")
+	TEST_ASSERT(move_into(ring, null, red2), "the freed key can be reused by another thing")
 	dq_verify_ledger(ring, "after a rekey")
 
 	// Leaving frees the key.
@@ -631,11 +631,11 @@
 	var/obj/item/dq_containment_test/hooked/thing = allocate(/obj/item/dq_containment_test/hooked, T)
 	var/obj/item/dq_containment_test/plain = allocate(/obj/item/dq_containment_test, T)
 
-	TEST_ASSERT(thing.move_into(box, "pocket"), "into the pocket")
+	TEST_ASSERT(move_into(box, "pocket", thing), "into the pocket")
 	TEST_ASSERT_EQUAL(jointext(thing.log || list(), ","), "on:[box]:pocket", "on_slotted fires on insert")
 
 	LAZYCLEARLIST(thing.log)
-	TEST_ASSERT(thing.move_into(box, "main"), "reslot from pocket to the sharp-only main slot")
+	TEST_ASSERT(move_into(box, "main", thing), "reslot from pocket to the sharp-only main slot")
 	TEST_ASSERT_EQUAL(jointext(thing.log || list(), ","), "off:[box]:pocket,on:[box]:main", "reslot fires leave-then-enter, on the same move")
 
 	LAZYCLEARLIST(thing.log)
@@ -644,7 +644,7 @@
 
 	// A type that never overrides the hooks (has_slot_hooks stays FALSE)
 	// pays no proc call: nothing to observe, but this must not runtime.
-	TEST_ASSERT(plain.move_into(box, "pocket"), "an unhooked item moves normally")
+	TEST_ASSERT(move_into(box, "pocket", plain), "an unhooked item moves normally")
 	TEST_ASSERT(box.slot_remove(plain, T), "and leaves normally")
 
 // ---- J8: slot_item ----
@@ -656,10 +656,10 @@
 	var/obj/item/dq_containment_box/box = allocate(/obj/item/dq_containment_box, T)
 	TEST_ASSERT_NULL(box.slot_item("pocket"), "empty slot: null")
 	var/obj/item/dq_containment_test/wood/knife = allocate(/obj/item/dq_containment_test/wood, T)
-	TEST_ASSERT(knife.move_into(box, "main"), "knife into main")
+	TEST_ASSERT(move_into(box, "main", knife), "knife into main")
 	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item returns the one thing in it")
 	var/obj/item/dq_containment_test/wood/knife2 = allocate(/obj/item/dq_containment_test/wood, T)
-	TEST_ASSERT(knife2.move_into(box, "main"), "a second sharp item into main")
+	TEST_ASSERT(move_into(box, "main", knife2), "a second sharp item into main")
 	TEST_ASSERT_EQUAL(box.slot_item("main"), knife, "slot_item still returns the first (insertion order)")
 	TEST_ASSERT_NULL(box.slot_item("lid"), "an unknown slot: null, not a runtime")
 

@@ -114,7 +114,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/partslathe, TYPE_PROC_REF(/atom, appearan
 		if(copy_board)
 			to_chat(user, span_warning("There is already a board inserted in \the [src]."))
 			return TRUE
-		if(!own_set(src, nameof(src.copy_board), O, user = user))
+		if(!move_into(src, nameof(src.copy_board), O, user))
 			return TRUE
 		act_message(user, src, MSG_SELF(span_notice("You insert [O] into %T%'s circuit reader.")), MSG_OTHERS("%U% inserts [O] into %T%'s circuit reader."))
 		return TRUE

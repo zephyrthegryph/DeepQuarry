@@ -19,6 +19,9 @@
 	stasis_level = /datum/body_effect/stasis/light	// Lower than the normal cryobag, because it's not made for meat that dies. It's made for robots and is freezing.
 	var/obj/item/clothing/accessory/badge/corptag	// The tag on the bag.
 
+CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
+	owns_one(nameof(corptag), /obj/item/clothing/accessory/badge)
+
 /obj/structure/closet/body_bag/cryobag/robobag/examine(mob/user)
 	. = ..()
 	if(corptag && Adjacent(user))
@@ -103,15 +106,13 @@ CAPABILITIES(/obj/structure/closet/body_bag/cryobag/robobag)
 		if(!user.unEquip(W))
 			return OP_REFUSED
 		W.moveToNullspace()
-		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-		own_set(src, nameof(src.corptag), W, into = FALSE)
+		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You swap \the [old_tag] for \the [corptag]."))
 	else
 		if(!user.unEquip(W))
 			return OP_REFUSED
 		W.moveToNullspace()
-		// ALLOW(sys_manual_transfer): the tag is kept in nullspace, not in the bag's interior
-		own_set(src, nameof(src.corptag), W, into = FALSE)
+		rel_set(src, nameof(src.corptag), W)
 		to_chat(user, span_notice("You attach \the [corptag] to \the [src]."))
 	update_icon()
 	return OP_OK

@@ -51,7 +51,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/mecha_parts/mecha_equipment/tool/sleeper, PERIO
 		if(occupant)
 			occupant_message(span_boldwarning("The sleeper is already occupied!"))
 			return
-		if(!target.move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER))
+		if(!move_into(src, OCCUPANT_SLOT_MECHA_SLEEPER, target))
 			return
 		occupant.set_stasis(/datum/body_effect/stasis/moderate, src)
 		set_ready_state(FALSE)

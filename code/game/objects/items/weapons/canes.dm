@@ -48,7 +48,7 @@ DECLARE_INTERACTIONS(/obj/item/cane/concealed, \
 	if(!src.concealed_blade && istype(W))
 		act_message(user, src, MSG_SELF("You sheathe \the [W] into %T%."), MSG_OTHERS(span_warning("%U% has sheathed \a [W] into %THEIR% %T%!")))
 		play_sfx(src, SFX_WEAPONS_HOLSTER_SHEATHIN)
-		if(!own_set(src, nameof(src.concealed_blade), W, user = user))
+		if(!move_into(src, nameof(src.concealed_blade), W, user))
 			return FALSE
 		update_icon()
 	else

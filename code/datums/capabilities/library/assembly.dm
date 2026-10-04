@@ -84,7 +84,7 @@
 		return FALSE
 	// One call takes A out of the hand (or wherever it is), moves it in and adopts it. No `user`:
 	// the calling handler refuses with its own message and is already recorded by its dispatch.
-	if(!own_set(O, nameof(/obj::attached_assembly), A, into = TRUE))
+	if(!move_into(O, nameof(/obj::attached_assembly), A))
 		return FALSE
 	if(!A.secured)
 		A.toggle_secure()

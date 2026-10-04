@@ -787,7 +787,7 @@ DECLARE_INTERACTIONS(/obj/structure/plushie, \
 
 		if(!(I.w_class > w_class))
 			to_chat(user, "You place [I] inside [src].")
-			if(!own_set(src, nameof(src.stored_item), I, user = user))
+			if(!move_into(src, nameof(src.stored_item), I, user))
 				return INTERACTION_HANDLED_PASS
 			return INTERACTION_HANDLED_PASS
 		else
@@ -953,7 +953,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/plushie, \
 			return INTERACTION_HANDLED_PASS
 
 		to_chat(user, "You place [I] inside [src].")
-		if(!own_set(src, nameof(src.stored_item), I, user = user))
+		if(!move_into(src, nameof(src.stored_item), I, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, "You placed [I] into [src].")
 		return INTERACTION_HANDLED_PASS
@@ -2211,6 +2211,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 	COOLDOWN_DECLARE(cooldown)
 	var/obj/stored_minature = null // owned: the miniature held by the toy gibber, kept in its contents
 
+CAPABILITIES(/obj/item/toy/minigibber)
+	owns_one(nameof(stored_minature), /obj)
+
 
 DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 	INTERACT_USE(null, PROC_REF(interaction_self)), \
@@ -2252,7 +2255,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 		to_chat(user, span_warning("\The [O] is too far away to feed into \the [src]!"))
 	else
 		act_message(user, src, MSG_SELF(span_notice("You feed \the [O] into %T%!")), MSG_OTHERS(span_notice("%U% feeds \the [O] into %T%!")))
-		own_set(src, nameof(src.stored_minature), O, user = user)
+		move_into(src, nameof(src.stored_minature), O, user)
 
 /obj/item/toy/minigibber/proc/attackby_timed_failed(datum/om/task/timed/minigibber_attackby/task)
 	var/obj/O = task.O

@@ -47,7 +47,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/designer, \
 
 /// Old attackby.
 /obj/machinery/computer/transhuman/designer/proc/body_designer_interaction_insert_disk(mob/user, obj/item/W, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.disk), W, user = user))
+	if(!move_into(src, nameof(src.disk), W, user))
 		return INTERACTION_HANDLED_PASS
 	to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	SStgui.update_uis(src)

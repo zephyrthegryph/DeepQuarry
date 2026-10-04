@@ -244,7 +244,7 @@ CAPABILITIES(/obj/structure/door_assembly)
 	var/obj/item/W = A.held
 	to_chat(A.actor, span_notice("You installed the airlock electronics!"))
 	playsound(src, W.usesound, 100, 1)
-	own_set(src, nameof(electronics), W, user = A.actor)
+	move_into(src, nameof(electronics), W, A.actor)
 	update_state()
 	return OP_OK
 

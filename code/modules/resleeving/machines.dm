@@ -551,7 +551,7 @@ UI_DATA_REPLACE(/obj/machinery/transhuman/resleever, "merge:ui_data_obj_machiner
 		to_chat(user, span_warning("\The [src] is already occupied!"))
 		return
 	M.stop_pulling()
-	if(!M.move_into(src, OCCUPANT_SLOT_RESLEEVER, user))
+	if(!move_into(src, OCCUPANT_SLOT_RESLEEVER, M, user))
 		to_chat(user, span_warning("\The [src] won't take [M]!"))
 		return
 	set_occupant(M)

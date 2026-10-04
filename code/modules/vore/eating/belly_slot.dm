@@ -136,7 +136,7 @@
 /obj/belly/proc/belly_insert(atom/movable/thing, mob/actor)
 	if(thing.loc == src)
 		return TRUE
-	return thing.move_into(src, BELLY_SLOT_INTERIOR, actor)
+	return move_into(src, BELLY_SLOT_INTERIOR, thing, actor)
 
 /// Takes `thing` out of this belly to `destination`. A release always succeeds:
 /// when the destination's own slots refuse it (a full closet), it lands on the turf.

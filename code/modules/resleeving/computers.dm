@@ -87,7 +87,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/transhuman/resleeving, \
 /// Old attackby.
 /obj/machinery/computer/transhuman/resleeving/proc/resleeving_console_interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(istype(W, /obj/item/disk/transcore) && !our_db().core_dumped)
-		if(!own_set(src, nameof(src.disk), W, user = user))
+		if(!move_into(src, nameof(src.disk), W, user))
 			return INTERACTION_HANDLED_PASS
 		to_chat(user, span_notice("You insert \the [W] into \the [src]."))
 	if(istype(W, /obj/item/disk/body_record))

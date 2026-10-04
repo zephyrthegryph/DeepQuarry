@@ -229,7 +229,7 @@
 	var/obj/item/organ/external/head = H.get_organ(BP_HEAD)
 	var/list/held_organs = chest.held_organs()
 	for(var/obj/item/organ/O as anything in held_organs)
-		O.move_into(head, SLOT_ID_PART_ORGANS)
+		move_into(head, SLOT_ID_PART_ORGANS, O)
 	TEST_ASSERT(!length(chest.held_organs()), "the chest's organs should have moved to the head")
 	H.injure(INJURY_BLUNT, chest.max_damage * (DQ_VITAL_PART_LETHAL_MULT - 0.5), BP_TORSO, flags = DQ_TEST_INJURE)
 	var/fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
@@ -239,7 +239,7 @@
 	fraction = (chest.get_trauma() + chest.get_burn()) / chest.max_damage
 	for(var/obj/item/organ/O as anything in held_organs)
 		if(!QDELETED(O) && !QDELETED(chest))
-			O.move_into(chest, SLOT_ID_PART_ORGANS)
+			move_into(chest, SLOT_ID_PART_ORGANS, O)
 	TEST_ASSERT(fraction >= DQ_VITAL_PART_LETHAL_MULT, "the chest should reach its lethal multiple (got [fraction]x)")
 	TEST_ASSERT_EQUAL(H.stat, DEAD, "a destroyed vital body part should kill ([fraction]x integrity)")
 

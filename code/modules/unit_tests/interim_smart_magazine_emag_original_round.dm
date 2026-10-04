@@ -8,7 +8,7 @@
 	TEST_ASSERT_EQUAL(magazine.ammo_count(), 0, "the actual smart magazine begins without ammunition")
 	TEST_ASSERT(!magazine.emagged && !magazine.can_remove_ammo, "the actual intact smart magazine prohibits round removal")
 	// Start with one actual owned round; this fixture covers removal permission, not the separate powered production process.
-	TEST_ASSERT(own_add(magazine, nameof(magazine.stored_ammo), round, into = TRUE), "the actual owned-ammunition accessor installs the original real round")
+	TEST_ASSERT(move_into(magazine, nameof(magazine.stored_ammo), round), "the actual owned-ammunition accessor installs the original real round")
 	TEST_ASSERT_EQUAL(owner_of(round), magazine, "the original real round belongs to the magazine's actual ammunition list")
 	TEST_ASSERT(user.put_in_inactive_hand(magazine), "the actor holds the real smart magazine in the removal hand")
 	TEST_ASSERT(!magazine.magazine_interaction_hand(user, null, null), "actual hand removal refuses while the smart magazine's safety is intact")

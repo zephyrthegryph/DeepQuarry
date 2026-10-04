@@ -73,7 +73,7 @@ TYPE_TABLE(/obj/mecha/combat/gygax, mecha_starting_components, list( \
 
 /obj/mecha/combat/gygax/dark/add_cell(obj/item/cell/C=null)
 	if(C)
-		own_set(src, nameof(src.cell), C, into = TRUE)
+		move_into(src, nameof(src.cell), C)
 		return
 	rel_set(src, nameof(cell), new /obj/item/cell/hyper(src))
 
@@ -113,7 +113,7 @@ DECLARE_DEFAULT_CHILD(/obj/mecha/combat/gygax/serenity, "hud", /obj/item/clothin
 	if(..())
 		if(H.get_equipped_item(SLOT_ID_EYES))
 			occupant_message(span_red("[H.get_equipped_item(SLOT_ID_EYES)] prevent you from using [src] [hud]!"))
-		else if(hud.move_into(H, SLOT_ID_EYES, H))
+		else if(move_into(H, SLOT_ID_EYES, hud, H))
 			H.recalculate_vis()
 		return 1
 	else

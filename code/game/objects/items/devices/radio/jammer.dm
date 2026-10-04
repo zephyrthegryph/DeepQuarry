@@ -31,6 +31,9 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/radio_jammer)
+	owns_one(nameof(power_source), /obj/item/cell/device/weapon)
+
 OM_FIELD(/obj/item/radio_jammer, on, FALSE, CHANGE_EXPLICIT)
 /// Drains its cell while switched on.
 DECLARE_PERIODIC_WHILE(/obj/item/radio_jammer, PERIODIC_SLOW, "on")
@@ -103,7 +106,7 @@ DECLARE_INTERACTIONS(/obj/item/radio_jammer, \
 
 /obj/item/radio_jammer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!power_source)
-		if(!own_set(src, nameof(src.power_source), W, user = user))
+		if(!move_into(src, nameof(src.power_source), W, user))
 			return TRUE
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		update_icon()

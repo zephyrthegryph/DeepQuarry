@@ -162,7 +162,7 @@ DECLARE_EMAG_REPEATABLE(/obj/machinery/gibber, PROC_REF(on_emag), null)
 /obj/machinery/gibber/proc/stuff_done(mob/user, mob/living/victim)
 	if(!victim.Adjacent(src) || !user.Adjacent(src) || !victim.Adjacent(user) || src?.slot_item(OCCUPANT_SLOT_GIBBER))
 		return
-	if(!victim.move_into(src, OCCUPANT_SLOT_GIBBER, user))
+	if(!move_into(src, OCCUPANT_SLOT_GIBBER, victim, user))
 		return
 	act_message(user, victim, others = span_danger("%U% stuffs %T% into the gibber!"))
 	update_icon()

@@ -39,6 +39,9 @@ MATERIAL_MIX(/obj/item/flashlight, list(MAT_STEEL = 50,MAT_GLASS = 20))
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
+CAPABILITIES(/obj/item/flashlight)
+	owns_one(nameof(cell), /obj/item/cell)
+
 /obj/item/flashlight/Initialize(mapload)
 	. = ..()
 	update_brightness()
@@ -223,7 +226,7 @@ DECLARE_INTERACTIONS(/obj/item/flashlight, \
 	if(istype(W, /obj/item/cell))
 		if(istype(W, /obj/item/cell/device))
 			if(!cell)
-				if(!own_set(src, nameof(src.cell), W, user = user))
+				if(!move_into(src, nameof(src.cell), W, user))
 					return FALSE
 				to_chat(user, span_notice("You install a cell in \the [src]."))
 				play_sfx(src, SFX_MACHINES_BUTTON)

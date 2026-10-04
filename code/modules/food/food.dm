@@ -68,7 +68,7 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 	var/mob/user = A.actor
 	var/obj/item/holder/holder = A.held
 	var/mob/living/living_mob = holder.held_mob
-	own_add(src, nameof(src.food_inserted_micros), living_mob, user = user, into = TRUE) // out of the holder
+	move_into(src, nameof(src.food_inserted_micros), living_mob, user) // out of the holder
 	rel_clear(holder, nameof(holder.held_mob))
 	consume(holder, user)
 	micro_stuffed_messages(user, living_mob)
@@ -98,6 +98,6 @@ MSG_DEF_SELF(food/closed_to_micros, "You cannot stuff anything into it without o
 /// They climb in.
 /obj/item/reagent_containers/food/proc/climbed_in(datum/act/op/A)
 	var/mob/living/user = A.actor
-	own_add(src, nameof(src.food_inserted_micros), user, user = user, into = TRUE)
+	move_into(src, nameof(src.food_inserted_micros), user, user)
 	to_chat(user, span_warning("You climb into \the [src]."))
 	return OP_OK

@@ -200,7 +200,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	if(user.stat != CONSCIOUS)
 		return
 	user.stop_pulling()
-	if(!user.move_into(src, OCCUPANT_SLOT_DNA_SCANNER, user))
+	if(!move_into(src, OCCUPANT_SLOT_DNA_SCANNER, user, user))
 		to_chat(user, span_warning("\The [src] won't take you!"))
 		return
 	set_occupant(user)
@@ -215,7 +215,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 			to_chat(user, span_warning("A beaker is already loaded into the machine."))
 			return TRUE
 
-		if(!own_set(src, nameof(src.beaker), item, user = user))
+		if(!move_into(src, nameof(src.beaker), item, user))
 			return TRUE
 		act_message(user, src, MSG_SELF("You add \a [item] to %T%!"), MSG_OTHERS("%U% adds \a [item] to %T%!"))
 		SStgui.update_uis(src)
@@ -276,7 +276,7 @@ EXTEND_INTERACTIONS(/obj/machinery/dna_scannernew, \
 	. = ..()
 
 /obj/machinery/dna_scannernew/proc/put_in(mob/M)
-	if(!M.move_into(src, OCCUPANT_SLOT_DNA_SCANNER))
+	if(!move_into(src, OCCUPANT_SLOT_DNA_SCANNER, M))
 		return
 	set_occupant(M)
 	icon_state = "scanner_1"
@@ -354,7 +354,7 @@ EXTEND_INTERACTIONS(/obj/machinery/computer/scan_consolenew, \
 		return FALSE
 	if(connected())
 		if(!disk)
-			if(!own_set(src, nameof(src.disk), I, user = user))
+			if(!move_into(src, nameof(src.disk), I, user))
 				return FALSE
 			to_chat(user, "You insert [I].")
 			SStgui.update_uis(src) // update all UIs attached to src

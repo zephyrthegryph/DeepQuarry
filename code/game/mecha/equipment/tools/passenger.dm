@@ -46,7 +46,7 @@
 /obj/item/mecha_parts/mecha_equipment/tool/passenger/proc/boarded(datum/om/task/timed/passenger_boarded/task)
 	var/mob/user = task.actor
 	if(!src?.slot_item(MECHA_SLOT_PILOT))
-		if(!user.move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER))
+		if(!move_into(src, OCCUPANT_SLOT_MECHA_PASSENGER, user))
 			return
 		src.mecha_log_message("[user] boarded.")
 		occupant_message("[user] boarded.")

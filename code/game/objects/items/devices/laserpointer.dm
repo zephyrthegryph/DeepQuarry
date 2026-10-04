@@ -52,7 +52,7 @@ DECLARE_INTERACTIONS(/obj/item/laser_pointer, INTERACT_INSERT(/obj/item/stock_pa
 
 /obj/item/laser_pointer/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!diode)
-		if(!own_set(src, nameof(src.diode), W, user = user))
+		if(!move_into(src, nameof(src.diode), W, user))
 			return TRUE
 		to_chat(user, span_notice("You install a [diode.name] in [src]."))
 	else

@@ -30,6 +30,9 @@
 	var/list/saved_recipes
 	var/import_job = JOB_CHEMIST
 
+CAPABILITIES(/obj/machinery/chemical_dispenser)
+	owns_many(nameof(cartridges), /obj/item/reagent_containers/chem_disp_cartridge)
+
 /obj/machinery/chemical_dispenser/Initialize(mapload)
 	. = ..()
 	if(spawn_cartridges)
@@ -62,7 +65,7 @@
 			to_chat(user, span_warning("\The [src] already contains a cartridge with that label!"))
 		return
 
-	if(!own_put(src, nameof(src.cartridges), C.label, C, user = user, into = TRUE))
+	if(!move_into(src, nameof(src.cartridges), C, user, key = C.label))
 		return
 	if(user)
 		to_chat(user, span_notice("You add \the [C] to \the [src]."))
@@ -115,7 +118,7 @@
 	return TRUE
 
 /obj/machinery/chemical_dispenser/proc/interaction_set_container(mob/user, obj/item/reagent_containers/RC, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.container), RC, user = user))
+	if(!move_into(src, nameof(src.container), RC, user))
 		return TRUE
 	to_chat(user, span_notice("You set \the [RC] on \the [src]."))
 	return TRUE

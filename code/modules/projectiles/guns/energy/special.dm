@@ -81,7 +81,7 @@ DECLARE_DEFAULT_CHILD(/obj/item/gun/energy/floragun, "emitter", /obj/item/stock_
 	. = INTERACTION_HANDLED_PASS
 	if(istype(W, /obj/item/stock_parts/micro_laser))
 		if(!emitter)
-			if(!own_set(src, nameof(src.emitter), W, user = user))
+			if(!move_into(src, nameof(src.emitter), W, user))
 				return
 			to_chat(user, span_notice("You install a [emitter.name] in [src]."))
 		else

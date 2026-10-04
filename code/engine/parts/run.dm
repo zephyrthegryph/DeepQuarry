@@ -1287,24 +1287,14 @@ GLOBAL_LIST_EMPTY(op_pending_all)
 		if(moving != thing)
 			op_merge_units(thing, moving)
 		return OP_REFUSED
-	// The insert is a world action: its hooks may refuse it or take it over, and its notice goes out when it lands.
-	var/datum/act/insert/F = ACT_TRY(holder, insert, moving, slot_id)
-	if(isnull(F))
+	// The insert is a world action: its hooks may refuse it or take it over, and its notice goes out when it lands. move_into() runs it.
+	if(!move_into(holder, slot_id, moving, A.actor))
 		if(moving != thing)
 			op_merge_units(thing, moving)
 		A.reason = GLOB.act_last_reason || /datum/msg/op/not_available
 		return (GLOB.act_last_outcome & ACT_REPLACED) ? OP_REPLACED : OP_REFUSED
-	var/atom/from = moving.loc
-	if(!moving.move_into(holder, slot_id, A.actor))
-		act_cancel(F)
-		if(moving != thing)
-			op_merge_units(thing, moving)
-		A.reason = /datum/msg/op/failed
-		return OP_REFUSED
-	TEST_REC_TRANSFER(moving, from, holder, slot_id)
 	if(stack_units)
 		stack_units.moved = TRUE
-	act_done(F)
 	return OP_OK
 
 /datum/entry/part/effect/take_out/precheck(datum/act/op/A)

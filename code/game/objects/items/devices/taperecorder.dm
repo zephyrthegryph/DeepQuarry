@@ -20,6 +20,9 @@ MATERIAL_MIX(/obj/item/taperecorder, list(MAT_STEEL = 60,MAT_GLASS = 30))
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
+CAPABILITIES(/obj/item/taperecorder)
+	owns_one(nameof(mytape), /obj/item/rectape)
+
 /obj/item/taperecorder/Initialize(mapload)
 	. = ..()
 	if(mytape)
@@ -118,7 +121,7 @@ DECLARE_INTERACTIONS(/obj/item/taperecorder, \
 	return TRUE
 
 /obj/item/taperecorder/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	if(!own_set(src, nameof(src.mytape), I, user = user))
+	if(!move_into(src, nameof(src.mytape), I, user))
 		return TRUE
 	to_chat(user, span_notice("You insert [I] into [src]."))
 	update_icon()

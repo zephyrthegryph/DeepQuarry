@@ -223,7 +223,7 @@ READS_AS(/obj/item/storage/proc/held_things, STORAGE_CONTENTS_KEY)
 		if(W.loc != src)
 			return FALSE
 		W.dropped(wearer)
-	else if(!W.move_into(src, CONTAINER_SLOT_STORAGE, user))
+	else if(!move_into(src, CONTAINER_SLOT_STORAGE, W, user))
 		return FALSE
 
 	W.on_enter_storage(src)

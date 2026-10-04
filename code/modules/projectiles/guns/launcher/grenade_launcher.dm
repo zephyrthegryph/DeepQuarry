@@ -55,7 +55,7 @@
 		if(length(grenades) >= max_grenades)
 			to_chat(user, span_warning("[src] is full."))
 			return
-		if(!own_add(src, nameof(src.grenades), G, user = user))
+		if(!move_into(src, nameof(src.grenades), G, user))
 			return
 		moveElement(grenades, length(grenades), 1) //to the head of the list, so that it is loaded on the next pump
 		act_message(user, src, MSG_SELF(span_notice("You insert \a [G] into %T%.")), MSG_OTHERS("%U% inserts \a [G] into %T%."))

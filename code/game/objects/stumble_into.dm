@@ -112,7 +112,7 @@
 		return ..()
 	play_sfx(src, SFX_EFFECTS_CLANG)
 	visible_message(span_warning("[M] [pick("tripped", "stumbled")] into \the [src]!"))
-	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE))
+	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, M))
 		return ..()
 	isopen = 0
 	update_icon()

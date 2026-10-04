@@ -41,7 +41,7 @@
 		return TRUE
 	if(istype(O, /obj/item/extinguisher))
 		if(!has_extinguisher && opened)
-			if(!own_set(src, nameof(src.has_extinguisher), O, user = user))
+			if(!move_into(src, nameof(src.has_extinguisher), O, user))
 				return TRUE
 			observe(has_extinguisher, /datum/notice/qdeleting, src, then(PROC_REF(on_extinguisher_deleted)))
 			to_chat(user, span_notice("You place [O] in [src]."))

@@ -25,6 +25,11 @@
 	var/safetieson = 1
 	var/cycletime_left = 0
 
+CAPABILITIES(/obj/machinery/suit_storage_unit)
+	owns_one(nameof(HELMET), /obj/item/clothing/head/helmet/space)
+	owns_one(nameof(MASK), /obj/item/clothing/mask)
+	owns_one(nameof(SUIT), /obj/item/clothing/suit/space)
+
 DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "SUIT", "suit_type")
 DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "HELMET", "helmet_type")
 DECLARE_DEFAULT_CHILD(/obj/machinery/suit_storage_unit, "MASK", "mask_type")
@@ -410,7 +415,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 
 /obj/machinery/suit_storage_unit/proc/interaction_move_inside_timed_done(mob/user)
 	user.stop_pulling()
-	if(!user.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user, user))
 		return TRUE
 	isopen = 0 //Close the thing after the guy gets inside
 	update_icon()
@@ -454,7 +459,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 			to_chat(user, span_notice("The unit already contains a suit."))
 			return TRUE
 		to_chat(user, span_info("You load the [S.name] into the storage compartment."))
-		if(!own_set(src, nameof(src.SUIT), S, user = user))
+		if(!move_into(src, nameof(src.SUIT), S, user))
 			return TRUE
 		update_icon()
 		return TRUE
@@ -466,7 +471,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 			to_chat(user, span_notice("The unit already contains a helmet."))
 			return TRUE
 		to_chat(user, span_info("You load the [H.name] into the storage compartment."))
-		if(!own_set(src, nameof(src.HELMET), H, user = user))
+		if(!move_into(src, nameof(src.HELMET), H, user))
 			return TRUE
 		update_icon()
 		return TRUE
@@ -478,7 +483,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 			to_chat(user, span_notice("The unit already contains a mask."))
 			return TRUE
 		to_chat(user, span_info("You load the [M.name] into the storage compartment."))
-		if(!own_set(src, nameof(src.MASK), M, user = user))
+		if(!move_into(src, nameof(src.MASK), M, user))
 			return TRUE
 		update_icon()
 		return TRUE
@@ -488,7 +493,7 @@ UI_ACT_PROC(/obj/machinery/suit_storage_unit, ui_act_togglesafeties)
 /obj/machinery/suit_storage_unit/proc/interaction_use_item_timed_done(mob/user, obj/item/grab/G)
 	if(!G || !G?.grab_target()) return TRUE //derpcheck
 	var/mob/M = G?.grab_target()
-	if(!M.move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, user))
+	if(!move_into(src, OCCUPANT_SLOT_SUIT_STORAGE, M, user))
 		return TRUE
 	isopen = 0 //close ittt
 

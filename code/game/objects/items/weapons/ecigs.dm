@@ -16,6 +16,9 @@
 	var/icon_empty
 	var/ecig_colors = list(null, COLOR_DARK_GRAY, COLOR_RED_GRAY, COLOR_BLUE_GRAY, COLOR_GREEN_GRAY, COLOR_PURPLE_GRAY)
 
+CAPABILITIES(/obj/item/clothing/mask/smokable/ecig)
+	owns_one(nameof(ec_cartridge), /obj/item/reagent_containers/ecig_cartridge)
+
 DECLARE_DEFAULT_CHILD(/obj/item/clothing/mask/smokable/ecig, "ec_cartridge", "cartridge_type")
 
 /// Vapes (periodic_step) every 2 s while switched on (replaces the smokable's "lit").
@@ -119,7 +122,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/mask/smokable/ecig, \
 		if (ec_cartridge)//can't add second one
 			to_chat(user, span_notice("A cartridge has already been installed."))
 		else//fits in new one
-			if(!own_set(src, nameof(src.ec_cartridge), I, user = user))
+			if(!move_into(src, nameof(src.ec_cartridge), I, user))
 				return INTERACTION_HANDLED_PASS
 			update_icon()
 			to_chat(user, span_notice("You insert [I] into [src]."))

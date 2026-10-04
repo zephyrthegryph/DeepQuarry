@@ -24,7 +24,7 @@
 	TEST_ASSERT(!light.on, "the real actor cooldown refuses another legacy item action")
 	COOLDOWN_RESET(actor, next_click)
 	var/obj/item/handcuffs/cuffs = allocate(/obj/item/handcuffs, T)
-	TEST_ASSERT(cuffs.move_into(actor, SLOT_ID_HANDCUFFED), "the actual actor wears real restraints")
+	TEST_ASSERT(move_into(actor, SLOT_ID_HANDCUFFED, cuffs), "the actual actor wears real restraints")
 	TEST_ASSERT(actor.restrained(), "the actual actor is restrained before the item-action refusal")
 	button.click_with_actor(actor, null, null, null)
 	TEST_ASSERT(!light.on, "the actual restraint guard refuses the legacy item action")

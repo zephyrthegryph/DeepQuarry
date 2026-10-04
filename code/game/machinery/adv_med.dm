@@ -100,7 +100,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	var/mob/M = H?.grab_target()
 	if(!ismob(M))
 		return FALSE
-	if(!M.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
+	if(!move_into(src, OCCUPANT_SLOT_BODY_SCANNER, M))
 		return TRUE
 	update_icon()
 	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3
@@ -140,7 +140,7 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 	else
 		act_message(user, O, others = "%U% puts %T% into the body scanner.")
 
-	if(!O.move_into(src, OCCUPANT_SLOT_BODY_SCANNER))
+	if(!move_into(src, OCCUPANT_SLOT_BODY_SCANNER, O))
 		return TRUE
 	update_icon()
 	play_sfx(src, SFX_MACHINES_MEDBAYSCANNER1, vary = FALSE) // Beepboop you're being scanned. <3

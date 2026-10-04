@@ -241,7 +241,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	//TG calls attempt_insert -> transferItemToLoc -> doUnEquip -> has_unequipped. This is where we do it instead since we don't have storage datums.
 	// An item worn over another (gloves over a ring, magboots over shoes) takes it in here.
 	has_unequipped(W, TRUE, slot)
-	if(QDELETED(W) || !W.move_into(src, id, src))
+	if(QDELETED(W) || !move_into(src, id, W, src))
 		return FALSE
 	if(old_id && old_id != id)
 		slot_vacated(old_id, W)
@@ -265,7 +265,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(W.loc == src && !remove_from_mob(W, B))
 		return FALSE
 	// The backpack's own rules were checked by the SLOT_ID_IN_BACKPACK predicate.
-	if(W.loc != B && !W.move_into(B, null, src))
+	if(W.loc != B && !move_into(B, null, W, src))
 		W.forceMove(B)
 	if(W.loc != B)
 		return FALSE
@@ -334,7 +334,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(get_equipped_item(id))
 		return FALSE
 	var/old_id = inventory_slot_id(W)
-	if(!W.move_into(src, id, src))
+	if(!move_into(src, id, W, src))
 		return FALSE
 	if(old_id && old_id != id)
 		slot_vacated(old_id, W)
@@ -427,7 +427,7 @@ GLOBAL_LIST_INIT(slot_ids_worn_clothing, list(SLOT_ID_BACK, SLOT_ID_MASK, SLOT_I
 	if(!force && !canUnEquip(I))
 		return FALSE
 	// From its equip slot to the interior: still ours, no longer worn or held.
-	if(!I.move_into(src, SLOT_ID_BODY, src))
+	if(!move_into(src, SLOT_ID_BODY, I, src))
 		return FALSE
 	if(client)
 		client.screen -= I

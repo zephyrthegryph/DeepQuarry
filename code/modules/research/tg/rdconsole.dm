@@ -70,13 +70,13 @@ Nothing else in the console has ID requirements.
 		if(t_disk)
 			to_chat(user, span_warning("A technology disk is already loaded!"))
 			return TRUE
-		if(!own_set(src, nameof(src.t_disk), D, user = user)) // the user is told why
+		if(!move_into(src, nameof(src.t_disk), D, user)) // the user is told why
 			return TRUE
 	else if (istype(D, /obj/item/disk/design_disk))
 		if(d_disk)
 			to_chat(user, span_warning("A design disk is already loaded!"))
 			return TRUE
-		if(!own_set(src, nameof(src.d_disk), D, user = user)) // the user is told why
+		if(!move_into(src, nameof(src.d_disk), D, user)) // the user is told why
 			return TRUE
 	else
 		to_chat(user, span_warning("Machine cannot accept disks in that format."))

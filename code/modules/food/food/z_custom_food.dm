@@ -25,6 +25,7 @@ DECLARE_REAGENTS(/obj/item/reagent_containers/food/snacks/customizable, null, li
 CAPABILITIES(/obj/item/reagent_containers/food/snacks/customizable)
 	op("add", item(/obj/item/reagent_containers/food/snacks), priority(OP_PRIORITY_PART), label("Add it"),
 		needs(req(PROC_REF(has_room_for), because = MSG(custom/stuffed)), req(PROC_REF(not_custom_itself), because = PROC_REF(custom_refusal))), then(PROC_REF(ingredient_added)))
+	owns_many(nameof(ingredients))
 
 MSG_DEF_SELF(custom/stuffed, "That's already looking pretty stuffed.")
 MSG_DEF_SELF(custom/slap, "You slap yourself on the back of the head for thinking that stacking plates is an interesting dish.")
@@ -47,7 +48,7 @@ MSG_DEF_SELF(custom/recursive, "Sorry, no recursive food.")
 
 /// A food goes into it (when it can be let go of): what it holds mixes in, and the picture and the name follow.
 /obj/item/reagent_containers/food/snacks/customizable/proc/add_ingredient(mob/user, obj/item/reagent_containers/food/snacks/S)
-	if(!own_add(src, nameof(ingredients), S, user = user, into = TRUE))
+	if(!move_into(src, nameof(ingredients), S, user))
 		return FALSE
 
 	if(S.reagents)

@@ -129,7 +129,7 @@ APPEARANCE_TEMPLATE(/obj/item/reagent_containers/hypospray/vial, "{initial(icon_
 		return OP_REFUSED
 	if(W.is_open_container())
 		cap_key_set(W, REAGENT_CONTAINER_LID_OPEN, FALSE)
-	if(!own_set(src, nameof(src.loaded_vial), W, user = user))
+	if(!move_into(src, nameof(src.loaded_vial), W, user))
 		return OP_REFUSED
 	reagents.maximum_volume = loaded_vial.reagents.maximum_volume
 	loaded_vial.reagents.trans_to_holder(reagents,volume)

@@ -39,6 +39,7 @@
 
 CAPABILITIES(/obj/item/personal_shield_generator)
 	owns_one(nameof(active_weapon), /obj/item/gun/energy/gun/generator)
+	owns_one(nameof(bcell), /obj/item/cell/device)
 
 /obj/item/personal_shield_generator/get_cell()
 	return bcell
@@ -148,7 +149,7 @@ DECLARE_INTERACTIONS(/obj/item/personal_shield_generator, \
 		else if(!istype(W, /obj/item/cell/device/weapon)) //Weapon cells only!
 			to_chat(user, span_notice("This cell will not fit in the device."))
 		else
-			if(!own_set(src, nameof(src.bcell), W, user = user))
+			if(!move_into(src, nameof(src.bcell), W, user))
 				return TRUE
 			if(active_weapon)
 				rel_set(active_weapon, nameof(active_weapon.power_supply), bcell)

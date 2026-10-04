@@ -96,6 +96,7 @@
 CAPABILITIES(/obj/machinery/mining/drill)
 	owns_one(nameof(faultreporter), /obj/item/radio/intercom)
 	climb()
+	owns_one(nameof(cell), /obj/item/cell)
 
 /obj/machinery/mining/drill/examine(mob/user) //Let's inform people about stuff. Let people KNOW how it works.
 	. = ..()
@@ -260,7 +261,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/mining/drill, MACHINE_PIPELINE, "active")
 		if(cell)
 			balloon_alert(user, "the drill already has a cell installed.")
 		else
-			if(!own_set(src, nameof(src.cell), O, user = user))
+			if(!move_into(src, nameof(src.cell), O, user))
 				return TRUE
 			materialize_parts()
 			// The cell var owns it; it is not also a component part (one owner per entity).

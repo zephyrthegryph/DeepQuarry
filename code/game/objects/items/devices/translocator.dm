@@ -201,7 +201,7 @@ This device records all warnings given and teleport events for admin review in c
 
 /obj/item/perfect_tele/proc/interaction_item(mob/user, obj/W, datum/interaction/interaction)
 	if(istype(W,cell_type) && !power_source)
-		if(!own_set(src, nameof(src.power_source), W, user = user))
+		if(!move_into(src, nameof(src.power_source), W, user))
 			return
 		power_source.update_icon() //Why doesn't a cell do this already? :|
 		to_chat(user,span_notice("You insert \the [power_source] into \the [src]."))
