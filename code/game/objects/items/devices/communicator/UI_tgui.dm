@@ -319,19 +319,23 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 /datum/om/prompt/text/communicator
 	requires = PROMPT_USABLE
 
-/datum/om/prompt/text/communicator/name
+/datum/prompt/text/communicator
+	usable_state = "default"
+	timeout = 0
+
+/datum/prompt/text/communicator/name
 	name_text = TRUE
 	title = "Communicator"
-	message = "Please enter your name."
+	question = "Please enter your name."
 	encode = FALSE
 
-/datum/om/prompt/text/communicator/ringtone
+/datum/prompt/text/communicator/ringtone
 	title = "Ringer"
-	message = "Set Ringer Tone"
+	question = "Set Ringer Tone"
 
-/datum/om/prompt/text/communicator/text_message
+/datum/prompt/text/communicator/text_message
 	title = "Text Message"
-	message = "Enter your message."
+	question = "Enter your message."
 	encode = FALSE
 	var/address
 
@@ -341,14 +345,18 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 	multiline = TRUE
 	cancel_answer = ""
 
-/obj/item/communicator/proc/name_entered(datum/om/prompt/text/communicator/name/ask)
-	var/new_name = sanitizeSafe(ask.text)
+/obj/item/communicator/proc/name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = sanitizeSafe(A.answer.answer_value)
 	if(new_name)
 		register_device(new_name)
 
-/obj/item/communicator/proc/ringtone_entered(datum/om/prompt/text/communicator/ringtone/ask)
-	if(ask.text)
-		ttone = ask.text
+/obj/item/communicator/proc/ringtone_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		ttone = A.answer.answer_value
 
 /obj/item/communicator/proc/note_entered(datum/om/prompt/text/communicator/note/ask)
 	var/n = sanitizeSafe(ask.text, extra = 0)
@@ -360,10 +368,13 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 		note = ""
 		notehtml = note
 
-/obj/item/communicator/proc/text_message_entered(datum/om/prompt/text/communicator/text_message/ask)
-	var/mob/user = ask.answerer
-	var/their_address = ask.address
-	var/text = sanitizeSafe(ask.text)
+/obj/item/communicator/proc/text_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/communicator/text_message/prompt = A.answer
+	var/mob/user = A.request.answerer
+	var/their_address = prompt.address
+	var/text = sanitizeSafe(A.answer.answer_value)
 	if(!text || !get_connection_to_tcomms())
 		return
 	exonet.send_message(their_address, "text", text)
@@ -388,7 +399,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 UI_ACT(/obj/item/communicator, "rename", ui_act_rename)
 UI_ACT_PROC(/obj/item/communicator, ui_act_rename)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/name, PROC_REF(name_entered), default = ui.user.name)
+	open_request(src, /datum/prompt/text/communicator/name, PROC_REF(name_entered), answerer = ui.user, default = ui.user.name)
 
 UI_ACT(/obj/item/communicator, "toggle_visibility", ui_act_toggle_visibility)
 UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_visibility)
@@ -411,7 +422,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_toggle_ringer)
 UI_ACT(/obj/item/communicator, "set_ringer_tone", ui_act_set_ringer_tone)
 UI_ACT_PROC(/obj/item/communicator, ui_act_set_ringer_tone)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered))
+	open_request(src, /datum/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered), answerer = ui.user)
 
 UI_ACT(/obj/item/communicator, "selfie_mode", ui_act_selfie_mode)
 UI_ACT_PROC(/obj/item/communicator, ui_act_selfie_mode)
@@ -456,7 +467,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_message)
 	if(!get_connection_to_tcomms())
 		to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
 		return FALSE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/text_message, PROC_REF(text_message_entered), address = params["message"])
+	open_request(src, /datum/prompt/text/communicator/text_message, PROC_REF(text_message_entered), answerer = ui.user, address = params["message"])
 
 UI_ACT(/obj/item/communicator, "disconnect", ui_act_disconnect, UI_ARG_TEXT("disconnect"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_disconnect)
