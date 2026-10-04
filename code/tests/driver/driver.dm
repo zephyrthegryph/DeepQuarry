@@ -239,6 +239,10 @@ GLOBAL_DATUM_INIT(test_driver, /datum/test_driver, new)
 
 #endif
 
+/// TRUE when an op driven through the dispatcher (perform_op(), op_ui_act(), test_click(), test_menu(), test_ui()) committed.
+/proc/test_op_committed(datum/op_result/R)
+	return R?.outcome == ACT_COMMITTED
+
 /// Calls an op handler directly, as the engine would: x(datum/act/op/A, args...) with the actor, the holder (also the target) and the held item set.
 /// For a test of what the handler itself does; a click is test_click().
 /proc/test_op_handler(datum/holder, proc_name, mob/actor, obj/item/held = null, ...)

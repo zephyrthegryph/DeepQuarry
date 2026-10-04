@@ -13,7 +13,7 @@
 	TEST_ASSERT(bystander.incapacitated(), "the unrelated native answer delivery actor really fails the drag requirement")
 	var/obj/structure/medical_stand/stand = allocate(/obj/structure/medical_stand, T)
 	var/obj/item/reagent_containers/glass/beaker/beaker = allocate(/obj/item/reagent_containers/glass/beaker, T)
-	TEST_ASSERT(stand.medical_stand_interaction_item(actor, beaker, null), "actual item interaction installs the reagent vessel")
+	TEST_ASSERT(test_op_handler(stand, "medical_stand_interaction_item", actor, beaker), "actual item interaction installs the reagent vessel")
 	TEST_ASSERT_EQUAL(stand.beaker, beaker, "the stand owns the exact installed vessel")
 	TEST_ASSERT(stand.CanMouseDrop(patient, actor), "the explicit initiating actor satisfies the real patient drag requirement")
 	TEST_ASSERT(!stand.CanMouseDrop(patient, bystander), "the unrelated native actor cannot satisfy that same requirement")
