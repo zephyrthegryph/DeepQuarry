@@ -7459,11 +7459,11 @@
 	into += entry_line(34)
 	into += list(global.climb())
 
-/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:521
+/// CAPABILITIES(/obj/machinery/shower) at code/game/objects/structures/watercloset.dm:524
 /obj/machinery/shower/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/watercloset.dm", 521, /obj/machinery/shower)
-	into += entry_line(522)
+	into += entry_block("code/game/objects/structures/watercloset.dm", 524, /obj/machinery/shower)
+	into += entry_line(525)
 	into += list(global.owns_one(nameof(soundloop), /datum/looping_sound/showering))
 
 /// CAPABILITIES(/obj/machinery/slot_machine) at code/modules/casino/slots.dm:34
@@ -8066,23 +8066,23 @@
 	into += entry_line(36)
 	into += list(global.op("reset_lock", global.menu(), global.label("Reset Lock"), global.needs(global.req_capable(), global.req(PROC_REF(can_reset), because = PROC_REF(reset_refusal))), global.then(PROC_REF(lock_reset))))
 
-/// CAPABILITIES(/obj/structure/closet/statue) at code/game/objects/structures/crates_lockers/closets/statue.dm:113
+/// CAPABILITIES(/obj/structure/closet/statue) at code/game/objects/structures/crates_lockers/closets/statue.dm:112
 /obj/structure/closet/statue/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/structures/crates_lockers/closets/statue.dm", 113, /obj/structure/closet/statue)
-	into += entry_line(114)
+	into += entry_block("code/game/objects/structures/crates_lockers/closets/statue.dm", 112, /obj/structure/closet/statue)
+	into += entry_line(113)
 	into += list(global.without("door"))
-	into += entry_line(115)
+	into += entry_line(114)
 	into += list(global.without("stuff"))
-	into += entry_line(116)
+	into += entry_line(115)
 	into += list(global.without("stuff_grab"))
-	into += entry_line(117)
+	into += entry_line(116)
 	into += list(global.without("set_down"))
-	into += entry_line(118)
+	into += entry_line(117)
 	into += list(global.without("empty_basket"))
-	into += entry_line(119)
+	into += entry_line(118)
 	into += list(global.without("strike"))
-	into += entry_line(120)
+	into += entry_line(119)
 	into += list(global.op("statue_strike", global.item(/obj/item), global.label("Strike"), global.priority(OP_PRIORITY_PART + 20), global.then(PROC_REF(statue_struck))))
 
 /// CAPABILITIES(/obj/structure/closet/walllocker/emerglocker) at code/game/objects/structures/crates_lockers/closets/walllocker.dm:30

@@ -1,0 +1,8 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "om_hook, om_unhook and om_hooked are gone: the 41 remaining sites observe a world action with instead() or adjusts_with(), or a notice"
+  - code_imp: "A range observer is one entry in a bucket grid, not a hook on every turf in range"
+  - bugfix: "Observers of qdeleting, and of what a dying entity spills, hear it again"
+  - bugfix: "Item use, hand touches, tool use and pre-attacks publish their notices, so artifacts and material responses react to them"
+  - bugfix: "uplink_random_selection no longer reports an ownership runtime at boot"

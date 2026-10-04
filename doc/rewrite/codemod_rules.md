@@ -53,6 +53,54 @@ Residue: `argc`, `event_not_literal`, `event_unmapped` (a `before/` guard, `revi
 (`PROC_REF` names a proc of the listener), `handler_expr`, `handler_blocked` (another caller, a hook of it that does not convert, an unexpected signature,
 the event used whole or by a field the notice lacks, a local named `A`), `unhook_unpaired`, `unhook_all`.
 
+## om_hook residue (by hand: the veto form)
+
+`om_hook`, `om_unhook`, `om_unhook_all` and `om_hooked` are deleted. The sites the codemod left (a `before/` guard, a result reader) were converted by hand to the
+runtime form of `extend()`: `observe(source, /datum/act/x, listener, parts...)`. The parts are the hook forms of doc section 10 and run on the listener (`A.holder` is the
+listener for the hook, `A.target` the observed entity); the hook ends with `unobserve()`, with `unobserve_all(listener)`, or with either end's deletion, through the activation machinery.
+
+| What the old handler did | The form | The caller |
+|---|---|---|
+| returned a veto flag (`COMPONENT_*` bit 0) | `instead(when(PROC_REF(g)))` for a pure gate, `instead(then(PROC_REF(h)))` when the handler acts; `instead()` for an unconditional takeover | `var/datum/act/x/F = ACT_TRY(E, x, ...)`; `if(!F) return` (refused or taken over); `act_done(F)` when the action goes on, `act_cancel(F)` for a question that only asks |
+| returned a veto flag only when it applied | the `then` handler returns `HOOK_DECLINE` when it does not apply; any other value takes the action over and is the reply | the same |
+| returned a value with the veto (an `ITEM_INTERACT_*` result, a name, `TRUE` to say handled) | the handler returns the value; the caller reads `ACT_REPLY` after `if(!F)` and `ACT_TAKEN_OVER` says it was taken over rather than refused | `if(!F) return ACT_TAKEN_OVER ? ACT_REPLY : ITEM_INTERACT_BLOCKING` |
+| ORed flags into `event.result` or changed a payload list in place (several listeners may) | `adjusts_with(PROC_REF(h))`: `h(datum/act/A)` writes the act's typed fields (`A.protection \|= ...`); it never takes the action over and every one runs, in order | `x = ACT_FINAL(F, field, local)` after the `ACT_TRY` |
+| only watched (an after-fact event) | `observe(source, /datum/notice/x, listener, then(PROC_REF(h)))`, the existing form | none |
+
+`om_wants(E, event)` on a hot path becomes `act_wanted(E, /datum/act/x)`. A pure question (`draw_hud`, `body_status`, `geiger_scan`, `relay_movement`, the names) ends `act_cancel(F)` when
+nothing took it over: it never publishes a committed notice for an action that did not happen; an action that does go on (`injure`, `attackby`, `attack_hand`, `explode`, `shoot`, `emp`,
+`play_cinematic`, `pre_attack`) ends `act_done(F)` once the gates passed, so its notice (`/datum/notice/attacked_by`, `hand_attacked`, `pre_attacked`, ...) is what an observer hears.
+A before/ event that behaviours still handle (`attackby`, `attack_hand`) is still emitted after the action's gate; the other 17 are deleted.
+
+Per site (the choice and why; stat and `contributes` are not used because none of these values is a fact that holds while a state lasts: each is read at the moment of the question from
+what the listener holds then):
+
+| Site | Event | Form | Why |
+|---|---|---|---|
+| statue (stasis) | `before/living_injure` | `instead(when())` on `/datum/act/injure` | a pure refusal |
+| protean rig (soaks the wearer's injury) | `before/living_injure` | `adjusts_with` on `injure` | it reads kind, zone, flags and amount and acts; it neither refuses nor changes the amount |
+| nanoform core dormancy | `before/living_body_status`, `atom_tool_act`, `attackby` | `instead()` on `body_status` (a held-alive question), `instead(then())` on `tool_act` and `attackby` | the first is a veto; the others answer a result (`ITEM_INTERACT_SUCCESS`, `TRUE`) or decline |
+| material container, remote materials, material diagnostics | `before/attackby`, `atom_tool_act` | `instead(then())`, `HOOK_DECLINE` when the item is not theirs | the handler does the insert and says whether it did |
+| shadekin voice, alt name, visible name | `human_get_voice`, `human_get_alt_name`, `human_get_visible_name` | `instead(then())` on `name_voice`, `name_alt`, `name_visible`; the reply is the name | a veto with a payload: a name replaces the others, it is not composed |
+| remote view | `mob_relay_movement`, `mob_handle_hud`, `mob_handle_hud_health_icon` | `instead(then())` on `relay_movement`, `draw_hud`, `draw_health_icon` | the settings object answers whether it handled it |
+| radiation effects | `handle_radiation`, `living_irradiate_effect`, `geiger_counter_scan` | `instead(then())` on `live_radiation`, `irradiate`, `geiger_scan` | the handler acts (purges, reports) and answers whether it blocked |
+| disposal connection | `disposal_flush`, `disposal_send` | `instead(then())` on `flush_disposal`, `send_disposal` | takes the packet over, declines when no trunk is linked |
+| cinematic | `world_play_cinematic` | `instead(then())` on `play_cinematic` of `OM_WORLD` | a playing cinematic blocks the next one, or yields to a global one |
+| EMP: robot cell shield, material response | `atom_pre_emp_act` | `adjusts_with` on `emp` | a flag word several listeners OR into; the material's depends on its temperature when the pulse arrives, so a held stat would be stale |
+| protean blob hiding | `movable_pre_move` | `instead()` on `pre_move` | an unconditional refusal while hiding |
+| artifacts | `atom_ex_act`, `atom_bullet_act` | `instead(then())` on `explode`, `shoot` | triggered artifacts cancel the blast and the shot |
+| experiment handler (handheld scanner) | `item_pre_attack` | `instead(then())` on `pre_attack` | cancels the swing when it ran the experiment |
+| tests: containment | `before/slot_pre_insert`, `slot_pre_remove` | `instead(when())` on `check_insert`, `check_remove` | the refusal questions of `dq_ledger_refusal()` |
+
+The after-fact events only unit tests watched (`machinery_broken`, `living_injury_explained`, `slot_inserted`, ...) got a notice twin through `TEST_WATCHED` in `tools/dx/gen_om_notices.py`.
+The `living_status_stun` veto test was deleted: nothing but a test vetoed it.
+
+## range observers
+
+`connect_range` (the proximity monitor's range connector) is one entry per observer in a grid of 8x8-turf buckets (`code/datums/range_watch.dm`), not a hook per turf: a turf that something
+enters, leaves or is created on reads its own bucket (`RANGE_WATCH()`, behind one read of `GLOB.range_watch_count`) and each watcher in it checks the square. Its listener procs take
+`(turf, thing, other)` for `RANGE_ENTERED`, `RANGE_EXITED`, `RANGE_INITIALIZED`.
+
 ## om_ask -> open_request (generic prompts)
 
 | Old | New |
