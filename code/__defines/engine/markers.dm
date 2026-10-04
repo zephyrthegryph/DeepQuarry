@@ -45,8 +45,10 @@
 #define SYSTEM_ACCESSOR(system, name, key)
 /// A resource and its adapter (section 9, X2).
 #define RESOURCE_DEF(res, params...)
-/// A list of entries or parts under a name, kept in its own file (section 11).
-#define BUNDLE(name, entries...)
+/// A named list of entries (section 11): a block like CAPABILITIES, the entries its indented statements. `analyze gen declare` writes /proc/name()
+/// returning them, so a CAPABILITIES block names it as `name()`. A bundle has no type: handlers are TYPE_PROC_REF(/type, x), vars nameof(/type::v).
+/// The header is a global proc nothing calls (the compiler checks the entries like any call).
+#define BUNDLE(name) /proc/__bundle_##name()
 
 /// An accessor proc that stands for a producer key rather than a var: READS_AS(proc, KEY) or, through a relation,
 /// READS_AS(pad_occupied, OCCUPANTS_KEY, via = nameof(pad)). Generated reads do not follow the proc; readers subscribe to KEY

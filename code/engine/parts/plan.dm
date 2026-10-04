@@ -76,6 +76,8 @@
 	var/priority_tier
 	/// list("above"|"below", key), or null.
 	var/list/priority_rel
+	/// What a canonical click_order() puts this op above: list(list(input, key pattern, ...), ...), nearest first; or null.
+	var/list/click_below
 	var/list/tags
 	/// The window action a ui_act() binding is reached by, and the arg() parts it declares.
 	var/ui_action
@@ -128,7 +130,75 @@
 		for(var/datum/entry/part/bind/B as anything in clicked.bindings)
 			if(B.bind_kind == BIND_CLICKS)
 				index.has_clicks = TRUE
+	var/list/chains = list()
+	for(var/datum/centry/C as anything in items)
+		var/datum/entry/E = C.item
+		if(istype(E) && E.kind == ENTRY_CLICK_ORDER)
+			chains += E
+	if(length(chains))
+		for(var/datum/op_plan/P as anything in index.ordered)
+			op_plan_take_click_orders(P, chains)
 	return index
+
+// ---- canonical click orders ----
+
+/// click_order(input, keys...): the order ops answering one input sit in, highest first, declared ONCE by the bundle that composes them (the
+/// maintenance hatch orders the construction steps, the panel, the wires, the subversion reset and the window), so a type that has them needs no
+/// priority(above(...)) per op. `input` is a tool quality (TOOL_X) or BIND_HAND; only ops with a binding for that input take part. A key ending in
+/// "*" names every op whose key starts with the rest ("construction.undo:*"); a list of keys is one rank (its ops are not ordered among
+/// themselves). Each op sits just above the nearest lower rank the holder has. Keys the type does not have are skipped, so one order serves every
+/// type the bundle is on. An op's own priority(above/below(...)) still wins over it.
+/proc/click_order(input, k1, k2, k3, k4, k5, k6)
+	var/list/keys = list()
+	for(var/k in list(k1, k2, k3, k4, k5, k6))
+		if(!isnull(k))
+			keys += list(k)
+	return entry_make(ENTRY_CLICK_ORDER, null, list("input" = input, "keys" = keys))
+
+/// Does `key` match a click_order() pattern (exact, a prefix ending in "*", or a list of those: one rank)?
+/proc/op_key_matches(key, pattern)
+	if(islist(pattern))
+		for(var/one in pattern)
+			if(op_key_matches(key, one))
+				return TRUE
+		return FALSE
+	if(copytext(pattern, -1) == "*")
+		return findtext(key, copytext(pattern, 1, -1)) == 1
+	return key == pattern
+
+/// Does the op answer the click_order() input (a tool quality, or BIND_HAND)?
+/proc/op_plan_takes_input(datum/op_plan/P, input)
+	for(var/datum/entry/part/bind/B as anything in P.bindings)
+		if(input == BIND_HAND)
+			if(B.bind_kind == BIND_HAND)
+				return TRUE
+		else if(B.bind_kind == BIND_TOOL && (input in B.args["quality"]))
+			return TRUE
+	return FALSE
+
+/// Records on P what each click order puts it above: the ranks after the first one P matches.
+/proc/op_plan_take_click_orders(datum/op_plan/P, list/chains)
+	for(var/datum/entry/E as anything in chains)
+		var/input = E.args["input"]
+		if(!op_plan_takes_input(P, input))
+			continue
+		var/list/keys = E.args["keys"]
+		for(var/i in 1 to length(keys))
+			if(!op_key_matches(P.key, keys[i]))
+				continue
+			if(i < length(keys))
+				LAZYADD(P.click_below, list(list(input) + keys.Copy(i + 1)))
+			break
+
+/// Does a click order of A put A above B?
+/proc/op_plans_click_ordered(datum/op_plan/A, datum/op_plan/B)
+	for(var/list/chain as anything in A.click_below)
+		if(!op_plan_takes_input(B, chain[1]))
+			continue
+		for(var/i in 2 to length(chain))
+			if(op_key_matches(B.key, chain[i]))
+				return TRUE
+	return FALSE
 
 /// The compiled ops of a type table.
 /proc/op_index_of_table(datum/type_table/T)
@@ -544,7 +614,7 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 			var/datum/op_plan/B = plans[j]
 			var/clash = op_plans_clash(A, B)
 			if(clash)
-				table_error(T, B.origin, declare_rule(RULE_OP_CLASH), "ops \"[A.key]\" ([A.origin]) and \"[B.key]\" take the same input ([clash]) at the same tier ([op_tier_name(A.tier)])", "give one a different input, a different tier, priority(above(\"[A.key]\")), or passes() on the first; or make their when() parts mutually exclusive")
+				table_error(T, B.origin, declare_rule(RULE_OP_CLASH), "ops \"[A.key]\" ([A.origin]) and \"[B.key]\" take the same input ([clash]) at the same tier ([op_tier_name(A.tier)])", "give one a different input, a different tier, or passes() on the first; order them in the composing bundle's click_order(), or with priority(above(\"[A.key]\")); or make their when() parts mutually exclusive")
 
 /// The shared input text of two ops that would answer the same input at the same tier and intent, or null.
 /proc/op_plans_clash(datum/op_plan/A, datum/op_plan/B)
@@ -552,6 +622,9 @@ GLOBAL_LIST_INIT(OP_LEGACY_REQ_FORMS, list(/datum/req/empty_hand, /datum/req/sel
 		return null
 	// priority(above(key)) / priority(below(key)) orders two ops: the hint of the build error, so it must also silence it
 	if((A.priority_rel && A.priority_rel[2] == B.key) || (B.priority_rel && B.priority_rel[2] == A.key))
+		return null
+	// so does a canonical click_order() that names both
+	if(op_plans_click_ordered(A, B) || op_plans_click_ordered(B, A))
 		return null
 	if(op_conds_exclusive(A, B))
 		return null

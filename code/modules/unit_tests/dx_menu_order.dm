@@ -130,7 +130,7 @@
 	var/seq = 0
 	for(var/datum/op_plan/P as anything in index.ordered)
 		var/key = P.key
-		if(findtext(key, "construction.") == 1 || findtext(key, "panel.") == 1 || findtext(key, "wires.") == 1 || key == "open_wires" || key == "storage.put_in" || length(P.priority_rel))
+		if(findtext(key, "construction.") == 1 || findtext(key, "panel.") == 1 || findtext(key, "wires.") == 1 || key == "storage.put_in" || length(P.priority_rel))
 			interesting = TRUE
 		for(var/datum/entry/part/bind/B as anything in P.bindings)
 			var/datum/op_cand/C = new
@@ -167,3 +167,52 @@
 			if(key in want)
 				kept += key
 		TEST_ASSERT_EQUAL(jointext(kept, ","), golden[name], "[name]: the order of its ops is the one captured before the default precedence")
+
+// ---- the maintenance hatch's canonical click order, on an APC ----
+
+/// An APC with no cell, so an empty hand on the open bay meets the build ladder and not the cell bay.
+/obj/machinery/power/apc/dx_click_order
+	cell_type = null
+
+/// maintenance_hatch() declares once which op a tool picks when several could (click_order(), code/engine/parts/plan.dm), and a construction placed
+/// at(BAY_HATCH) offers its undo steps only with the hatch open: the APC writes no priority(above(...)) or when(COVER_OPEN) of its own.
+///   screwdriver: a construction step, then the panel; wirecutters: the construction undo, then the wires; multitool: the subversion reset, then
+///   the wires; empty hand: the construction undo, then the wires window, then the APC's own window.
+/datum/unit_test/dx_apc_click_order
+
+/datum/unit_test/dx_apc_click_order/Run()
+	var/turf/T = run_loc_floor_bottom_left
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, T)
+	H.set_use_stance(I_HELP)
+	var/obj/machinery/power/apc/A = allocate(/obj/machinery/power/apc/dx_click_order, T)
+	var/obj/item/screwdriver = allocate(/obj/item/tool/screwdriver, T)
+	var/obj/item/wirecutters = allocate(/obj/item/tool/wirecutters, T)
+	var/obj/item/multitool = allocate(/obj/item/multitool, T)
+	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_SECURED, "a finished APC")
+	// shut up: the hatch's tools work the panel, the hand opens the window
+	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "panel.open"), "shut: a screwdriver works the panel, not the build ladder behind the cover")
+	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "ui_open"), "shut: an empty hand opens the window")
+	// the panel open (the cover shut): the wires
+	cap_key_set(A, PANEL_OPEN, TRUE, null)
+	TEST_ASSERT(assert_resolves(H, A, wirecutters, GESTURE_CLICK, "wires.cut"), "panel open: wirecutters go to the wires")
+	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "wires.pulse"), "panel open: a multitool goes to the wires")
+	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "panel open: an empty hand opens the wires before the window")
+	A.set_emagged(TRUE)
+	TEST_ASSERT(assert_resolves(H, A, multitool, GESTURE_CLICK, "subversion_reset.use"), "subverted: the multitool resets it before it pulses a wire")
+	A.set_emagged(FALSE)
+	// the cover open: the build ladder's steps come first
+	cap_key_set(A, COVER_OPEN, TRUE, null)
+	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "construction.undo:apc_secured"), "cover open: the screwdriver unfastens the electronics before the panel")
+	graph_undo(A)
+	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_WIRED, "back at the wired stage")
+	TEST_ASSERT(assert_resolves(H, A, wirecutters, GESTURE_CLICK, "construction.undo:apc_wired"), "wired: wirecutters take the cable out before cutting a wire")
+	TEST_ASSERT(assert_resolves(H, A, screwdriver, GESTURE_CLICK, "construction.build:apc_secured"), "wired: the screwdriver fastens the electronics before the panel")
+	graph_undo(A)
+	TEST_ASSERT_EQUAL(graph_current(A), STAGE_APC_BOARD, "back at the board stage")
+	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "construction.undo:apc_board"), "board: an empty hand takes the board out before the wires window")
+	// the cover shut again: no step back is offered, the tools fall through to the hatch
+	cap_key_set(A, COVER_OPEN, FALSE, null)
+	TEST_ASSERT(assert_resolves(H, A, null, GESTURE_CLICK, "wires.open"), "shut at the board stage: the undo is not offered, the hand reaches the wires")
+	if(A.terminal)
+		qdel(A.terminal) // made when the APC initialized; graph_undo() steps back without the ladder's own effects
+

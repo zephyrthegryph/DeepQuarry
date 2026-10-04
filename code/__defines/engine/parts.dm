@@ -7,6 +7,8 @@
 #define ENTRY_OP_PART "op_part"
 /// What a capability or an item declares it can do for an actor: provides(AFF_X, reach =, line_of_sight =, authority =, accepts =).
 #define ENTRY_PROVIDES "provides"
+/// A canonical click order of a bundle: click_order(input, keys...) (plan.dm). Keys it names that a type lacks are skipped.
+#define ENTRY_CLICK_ORDER "click_order"
 
 // ---- Stages a part acts in (section 9). ----
 #define PART_STAGE_NONE 0

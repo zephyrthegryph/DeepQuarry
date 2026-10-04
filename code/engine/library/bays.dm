@@ -57,6 +57,22 @@ CAPABILITY_TYPE(compartment, CAP_COMPARTMENT, /datum/capability/lib/compartment,
 /atom/bay_reason(bay, authority)
 	return compartment_reason(src, bay, authority)
 
+/// What the bay's doors read (their state keys), for a condition on the bay being open.
+/atom/bay_read_keys(bay)
+	. = list()
+	for(var/datum/centry/C as anything in compiled_entries(table_of(src), ENTRY_COMPARTMENT))
+		var/datum/entry/E = C.item
+		if(E.args["bay"] != bay || isnull(E.args["door"]))
+			continue
+		var/datum/capability/door = cap_of(src, E.args["door"])
+		for(var/key in door?.bay_door_keys(src))
+			for(var/read_key in change_read_keys(src, key))
+				. += list(list(src, read_key))
+
+/// The state keys a door capability's bay_exposed() reads on `holder`.
+/datum/capability/proc/bay_door_keys(datum/holder)
+	return list()
+
 /// The reason a thing inside this container is not reachable through its bay now (a closed cover), or null: the bay whose slot holds it, asked.
 /atom/bay_blocked(atom/inside, authority)
 	for(var/datum/centry/C as anything in compiled_entries(table_of(src), ENTRY_BAY_SLOT))

@@ -289,6 +289,12 @@ fn global_constructors(cx: &GenCx, caps: &[Cap]) -> BTreeSet<String> {
     let mut set: BTreeSet<String> = caps.iter().map(|c| c.name.clone()).collect();
     // `every` keeps its legacy body in code/datums/reactions (the system form) and dispatches a capability's every(interval, then(...)) to the engine.
     set.insert("every".to_string());
+    // A named bundle (BUNDLE(name) and its entries) is a global proc the generator writes.
+    for m in cx.markers("BUNDLE") {
+        if let Some(n) = m.args.first() {
+            set.insert(n.trim().to_string());
+        }
+    }
     for f in cx.tree.select(&crate::tree::CODE_DM) {
         if !f.rel.starts_with("code/engine/") {
             continue;
@@ -531,6 +537,16 @@ fn section(cx: &GenCx, out: &mut GenOut, caps: &[Cap], globals: &BTreeSet<String
                 out.line(format!("/datum/source_def/{}/spec()", n));
                 out.line(format!("\treturn list(SRC_{}, {})", up(n), quote(n)));
             }
+        }
+        // BUNDLE(name) with its entries: /proc/name() returning them, copied as a CAPABILITIES entry is. A bundle has no type, so its
+        // handlers are TYPE_PROC_REF(/type, x) and its vars nameof(/type::v).
+        for m in cx.markers("BUNDLE").filter(|m| in_half(&m.rel)) {
+            let Some(name) = m.args.first() else { continue };
+            let entries: Vec<String> = m.args.iter().skip(1).map(|a| entry_text(a, caps, globals)).collect();
+            out.doc(format!("BUNDLE({}) at {}:{}", name.trim(), m.rel, m.line));
+            out.line(format!("/proc/{}()", name.trim()));
+            out.line(format!("\treturn list({})", entries.join(", ")));
+            out.blank();
         }
         for m in cx.markers("STATE_GRAPH").filter(|m| in_half(&m.rel)) {
             let Some(g) = m.args.first() else { continue };
