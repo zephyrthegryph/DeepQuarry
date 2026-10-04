@@ -18,8 +18,10 @@
 	var/heating_power = 80000
 	resistance_flags = FIRE_PROOF
 
-OM_FIELD(/obj/structure/bonfire, burning, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/bonfire, PERIODIC_SLOW, "burning")
+/obj/structure/bonfire/var/burning = FALSE
+TRACKED(/obj/structure/bonfire, burning)
+CAPABILITIES(/obj/structure/bonfire)
+	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 
 /obj/structure/bonfire/Initialize(mapload, material_name)
 	. = ..()
@@ -258,7 +260,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 		. += grille_image
 
 
-/obj/structure/bonfire/periodic_step()
+/obj/structure/bonfire/proc/bonfire_step(datum/act/timer/A)
 	if(!check_oxygen())
 		extinguish()
 		return
@@ -323,8 +325,10 @@ DECLARE_APPEARANCE_PROC(/obj/structure/bonfire, TYPE_PROC_REF(/atom, appearance_
 	var/heating_power = 40000
 	resistance_flags = FIRE_PROOF
 
-OM_FIELD(/obj/structure/fireplace, burning, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/fireplace, PERIODIC_SLOW, "burning")
+/obj/structure/fireplace/var/burning = FALSE
+TRACKED(/obj/structure/fireplace, burning)
+CAPABILITIES(/obj/structure/fireplace)
+	every(2 SECONDS, then(PROC_REF(fireplace_step)), when = nameof(burning))
 
 /obj/structure/fireplace/declare_interactions(list/into)
 	into += list(
@@ -464,7 +468,7 @@ DECLARE_APPEARANCE_PROC(/obj/structure/fireplace, TYPE_PROC_REF(/atom, appearanc
 	else
 		set_light(0)
 
-/obj/structure/fireplace/periodic_step()
+/obj/structure/fireplace/proc/fireplace_step(datum/act/timer/A)
 	if(!check_oxygen())
 		extinguish()
 		return
