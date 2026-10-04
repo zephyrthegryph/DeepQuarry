@@ -511,42 +511,92 @@ ADMIN_VERB(check_ai_laws, R_ADMIN|R_FUN|R_EVENT, "Check AI Laws", "Display the c
 	user.holder.output_ai_laws(user.mob)
 
 ADMIN_VERB(rename_silicon, R_ADMIN|R_FUN|R_EVENT, "Rename Silicon", "Rename a silicon mob.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/silicon_target = verb_ask(user, "a11", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Rename Silicon.", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
-	if(isnull(silicon_target))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!silicon_target)
-		return
+	open_request(src, /datum/prompt/choice/admin_silicon_rename, PROC_REF(silicon_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 
-	var/_answer_a12 = verb_ask(user, "a12", args, /datum/om/prompt/text, message = "Enter new name. Leave blank or as is to cancel.", title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, encode = FALSE)
-	if(isnull(_answer_a12))
+/datum/admin_verb/rename_silicon/proc/silicon_selected(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(ask_silicon_name), A)
+	if(!result.ok)
+		stack_trace("om flow rename_silicon answer silicon_selected: [result.error]")
+
+/datum/admin_verb/rename_silicon/proc/ask_silicon_name(datum/act/request/A)
+	var/mob/living/silicon/silicon_target = A.request.answer_value
+	open_request(src, /datum/prompt/text/admin_silicon_name, PROC_REF(silicon_named), answerer = A.request.answerer, title = "[silicon_target.real_name] - Enter new silicon name", default = silicon_target.real_name, target = silicon_target)
+
+/datum/admin_verb/rename_silicon/proc/silicon_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(rename_answered), A)
+	if(!result.ok)
+		stack_trace("om flow rename_silicon answer silicon_named: [result.error]")
+
+/datum/admin_verb/rename_silicon/proc/rename_answered(datum/act/request/A)
+	var/datum/prompt/text/admin_silicon_name/ask = A.request
+	var/mob/living/silicon/silicon_target = ask.target
+	var/client/user = ask.answerer.client
+	var/_answer_a12 = ask.answer_value
 	var/new_name = sanitizeSafe(_answer_a12)
 	if(new_name && new_name != silicon_target.real_name)
-		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'")
+		log_and_message_admins("has renamed the silicon '[silicon_target.real_name]' to '[new_name]'", user)
 		silicon_target.SetName(new_name)
 	feedback_add_details("admin_verb","RAI") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(manage_silicon_laws, R_ADMIN|R_EVENT, "Manage Silicon Laws", "Allows to modify silicon laws.", ADMIN_CATEGORY_SILICON)
-	var/mob/living/silicon/selected_silicon = verb_ask(user, "a13", args, /datum/om/prompt/choice, message = "Select silicon.", title = "Manage Silicon Laws", choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
-	if(isnull(selected_silicon))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!selected_silicon)
-		return
+	open_request(src, /datum/prompt/choice/admin_law_target, PROC_REF(law_target_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_SILICONS))
 
+/datum/admin_verb/manage_silicon_laws/proc/law_target_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_law_manager), A)
+	if(!result.ok)
+		stack_trace("om flow manage_silicon_laws answer law_target_selected: [result.error]")
+
+/datum/admin_verb/manage_silicon_laws/proc/open_law_manager(datum/act/request/A)
+	var/mob/living/silicon/selected_silicon = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	var/datum/tgui_module/law_manager/admin/law_interface = new(selected_silicon)
 	law_interface.tgui_interact(user.mob)
-	log_and_message_admins("has opened [selected_silicon]'s law manager.")
+	log_and_message_admins("has opened [selected_silicon]'s law manager.", user)
 	feedback_add_details("admin_verb","MSL") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(change_security_level, R_ADMIN|R_EVENT, "Set security level", "Sets the station security level.", ADMIN_CATEGORY_EVENTS)
-	var/sec_level = verb_ask(user, "a14", args, /datum/om/prompt/choice, message = "It's currently code [get_security_level()].", title = "Select Security Level", choices = (list("green","yellow","violet","orange","blue","red","delta")-get_security_level()))
-	if(isnull(sec_level))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_security_level, PROC_REF(level_selected), answerer = answerer, question = "It's currently code [get_security_level()].", title = "Select Security Level", choices = (list("green", "yellow", "violet", "orange", "blue", "red", "delta") - get_security_level()))
+
+/datum/admin_verb/change_security_level/proc/level_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(confirm_level), A)
+	if(!result.ok)
+		stack_trace("om flow change_security_level answer level_selected: [result.error]")
+
+/datum/admin_verb/change_security_level/proc/confirm_level(datum/act/request/A)
+	var/sec_level = A.request.answer_value
 	if(!sec_level)
 		return
-	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "Switch from code [get_security_level()] to code [sec_level]?", title = "Change security level?", choices = list("Yes","No"))
-	if(isnull(_answer_a15))
+	open_request(src, /datum/prompt/choice/admin_security_level/confirmation, PROC_REF(level_confirmed), answerer = A.request.answerer, question = "Switch from code [get_security_level()] to code [sec_level]?", selected_level = sec_level)
+
+/datum/admin_verb/change_security_level/proc/level_confirmed(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_level), A)
+	if(!result.ok)
+		stack_trace("om flow change_security_level answer level_confirmed: [result.error]")
+
+/datum/admin_verb/change_security_level/proc/apply_level(datum/act/request/A)
+	var/datum/prompt/choice/admin_security_level/confirmation/ask = A.request
+	var/client/user = ask.answerer.client
+	var/sec_level = ask.selected_level
+	var/_answer_a15 = ask.answer_value
 	if(_answer_a15 == "Yes")
 		set_security_level(sec_level)
 		log_admin("[key_name(user)] changed the security level to code [sec_level].")
@@ -1043,3 +1093,86 @@ CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation)
 		request_end(src, REQ_CANCELLED, null)
 		return
 	return ..()
+/datum/prompt/choice/admin_silicon_rename
+	rights = R_ADMIN|R_FUN|R_EVENT
+	timeout = 0
+	question = "Select silicon."
+	title = "Rename Silicon."
+
+/datum/prompt/choice/admin_silicon_rename/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/silicon/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_silicon_rename/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_silicon_name
+	rights = R_ADMIN|R_FUN|R_EVENT
+	timeout = 0
+	question = "Enter new name. Leave blank or as is to cancel."
+	encode = FALSE
+	var/mob/living/silicon/target
+
+CAPABILITIES(/datum/prompt/text/admin_silicon_name)
+	ref_one(nameof(target), /mob/living/silicon)
+
+/datum/prompt/text/admin_silicon_name/prepare(datum/act/A)
+	. = ..()
+	var/mob/living/silicon/captured = target
+	rel_clear(src, nameof(target))
+	rel_set(src, nameof(target), captured)
+
+/datum/prompt/text/admin_silicon_name/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(target) ? "target is gone" : null
+
+/datum/prompt/text/admin_silicon_name/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_law_target
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+	question = "Select silicon."
+	title = "Manage Silicon Laws"
+
+/datum/prompt/choice/admin_law_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/living/silicon/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_law_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_security_level
+	rights = R_ADMIN|R_EVENT
+	timeout = 0
+
+/datum/prompt/choice/admin_security_level/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/admin_security_level/confirmation
+	title = "Change security level?"
+	buttons = TRUE
+	choices = list("Yes", "No")
+	var/selected_level

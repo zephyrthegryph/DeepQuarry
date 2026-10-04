@@ -9,33 +9,57 @@
 /// Old attack_ghost: staff also get the size settings, then the portal's own ghost use.
 /obj/structure/portal_event/resize/portal_event_ghost_use(mob/observer/dead/user, obj/item/held, datum/interaction/interaction)
 	if(!target && check_rights_for(user?.client, R_HOLDER))
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_size_mode), title = "Change portal size settings", message = "Would you like to adjust the portal's size settings?", no_first = TRUE, requires = PROMPT_ADMIN(R_HOLDER))
+		open_request(src, /datum/prompt/choice, PROC_REF(ask_size_mode), answerer = user, title = "Change portal size settings", question = "Would you like to adjust the portal's size settings?", choices = list("No", "Yes"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
 	return ..()
 
-/datum/om/prompt/number/portal_size_limit
+/datum/prompt/number/portal_size_limit
 	title = "Pick a Size"
 	default = 1
-	round_entry = FALSE
-	requires = PROMPT_ADMIN(R_HOLDER)
+	step = null
+	min_value = 0
+	max_value = INFINITY
+	timeout = 0
+	rights = R_HOLDER
 	var/shrinking = TRUE
 
-/datum/om/prompt/number/portal_size_limit/prepare()
-	message = shrinking ? "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)" : "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
-	return TRUE
+/datum/prompt/number/portal_size_limit/prepare(datum/act/A)
+	. = ..()
+	question = shrinking ? "What should the size limit be? Anyone over this limit will be shrunk to this size. (1 = 100%, etc)" : "What should the size limit be? Anyone under this limit will be grown to this size. (1 = 100%, etc)"
 
-/obj/structure/portal_event/resize/proc/ask_size_mode(datum/om/prompt/confirm/ask)
-	open_request(src, /datum/prompt/choice, PROC_REF(ask_size_limit), answerer = ask.answerer, title = "Change portal size settings", question = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
+/datum/prompt/number/portal_size_limit/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, max_value, min_value, timeout, FALSE, GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
+
+/obj/structure/portal_event/resize/proc/ask_size_mode(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	var/datum/result/result = safe_call(PROC_REF(open_size_mode), A.request.answerer)
+	if(!result.ok)
+		stack_trace("Portal size mode request: [result.error]")
+	return result.value
+
+/obj/structure/portal_event/resize/proc/open_size_mode(mob/user)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_size_limit), answerer = user, title = "Change portal size settings", question = "Should this portal shrink people who are over the limit, or grow people who are under the limit?", choices = list("Shrink","Grow"), buttons = TRUE, rights = R_HOLDER, timeout = 0)
 
 /obj/structure/portal_event/resize/proc/ask_size_limit(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_ask(A.request.answerer, /datum/om/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), shrinking = (A.answer.answer_value == "Shrink"))
+	open_request(src, /datum/prompt/number/portal_size_limit, PROC_REF(size_settings_chosen), answerer = A.request.answerer, shrinking = (A.answer.answer_value == "Shrink"))
 
-/obj/structure/portal_event/resize/proc/size_settings_chosen(datum/om/prompt/number/portal_size_limit/ask)
-	if(isnull(ask.number))
+/obj/structure/portal_event/resize/proc/size_settings_chosen(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(apply_size_settings), A)
+	if(!result.ok)
+		stack_trace("Portal size limit request: [result.error]")
+	return result.value
+
+/obj/structure/portal_event/resize/proc/apply_size_settings(datum/act/request/A)
+	var/datum/prompt/number/portal_size_limit/ask = A.request
 	shrinking = ask.shrinking
-	size_limit = ask.number
+	size_limit = A.answer.answer_value
 
 /obj/structure/portal_event/resize/teleport(atom/movable/M as mob|obj)
 	if(!isliving(M))

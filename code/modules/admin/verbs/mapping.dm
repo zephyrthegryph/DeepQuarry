@@ -123,9 +123,27 @@ ADMIN_VERB(intercom_view, R_DEBUG, "Intercom Range Display", "Displays the inter
 
 ADMIN_VERB_VISIBILITY(count_objects_on_z_level, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts all objects on a Z level (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
-	var/level = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Which z-level?", title = "Level?")
-	if(isnull(level))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/text/admin_count_level, PROC_REF(level_answered), answerer = answerer)
+
+/datum/admin_verb/count_objects_on_z_level/proc/level_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(count_level), A.request.answerer.client, A.request.answer_value)
+	if(!result.ok)
+		stack_trace("om flow count_objects_on_z_level answer level_answered: [result.error]")
+
+/datum/admin_verb/count_objects_on_z_level/proc/path_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/admin_count_level/type_path/ask = A.request
+	var/datum/result/result = safe_call(PROC_REF(count_level), ask.answerer.client, ask.level, ask.answer_value, TRUE)
+	if(!result.ok)
+		stack_trace("om flow count_objects_on_z_level answer path_answered: [result.error]")
+
+/datum/admin_verb/count_objects_on_z_level/proc/count_level(client/user, level, type_text = null, answered = FALSE)
 	if(!level)
 		return
 	var/num_level = text2num(level)
@@ -134,8 +152,11 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 	if(!isnum(num_level))
 		return
 
-	var/type_text = verb_ask(user, "a2", args, /datum/om/prompt/text, message = "Which type path?", title = "Path?")
-	if(isnull(type_text))
+	if(!answered)
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
+			return
+		open_request(src, /datum/prompt/text/admin_count_level/type_path, PROC_REF(path_answered), answerer = answerer, level = level)
 		return
 	if(!type_text)
 		return
@@ -165,9 +186,20 @@ ADMIN_VERB(count_objects_on_z_level, R_DEBUG, "Count Objects On Level", "Counts 
 
 ADMIN_VERB_VISIBILITY(count_objects_all, ADMIN_VERB_VISIBLITY_FLAG_LOCALHOST)
 ADMIN_VERB(count_objects_all, R_DEBUG, "Count Objects All", "Count all objects by type (Only use on a test server).", ADMIN_CATEGORY_MAPPING)
-	var/type_text = verb_ask(user, "a3", args, /datum/om/prompt/text, message = "Which type path?")
-	if(isnull(type_text))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/text/admin_count_type, PROC_REF(count_type_answered), answerer = answerer)
+
+/datum/admin_verb/count_objects_all/proc/count_type_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(count_selected_type), A)
+	if(!result.ok)
+		stack_trace("om flow count_objects_all answer count_type_answered: [result.error]")
+
+/datum/admin_verb/count_objects_all/proc/count_selected_type(datum/act/request/answer)
+	var/type_text = answer.request.answer_value
 	if(!type_text)
 		return
 	var/type_path = text2path(type_text)
@@ -190,3 +222,31 @@ ADMIN_VERB(enable_mapping_verbs, R_DEBUG, "Enable Mapping Verbs", "Enable all ma
 ADMIN_VERB_VISIBILITY(disable_mapping_verbs, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG)
 ADMIN_VERB(disable_mapping_verbs, R_DEBUG, "Disable Mapping Verbs", "Disable all mapping verbs.", ADMIN_CATEGORY_MAPPING)
 	SSadmin_verbs.update_visibility_flag(user, ADMIN_VERB_VISIBLITY_FLAG_MAPPING_DEBUG, FALSE)
+
+/datum/prompt/text/admin_count_type
+	rights = R_DEBUG
+	timeout = 0
+	question = "Which type path?"
+
+/datum/prompt/text/admin_count_type/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_count_level
+	rights = R_DEBUG
+	timeout = 0
+	question = "Which z-level?"
+	title = "Level?"
+
+/datum/prompt/text/admin_count_level/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/admin_count_level/type_path
+	question = "Which type path?"
+	title = "Path?"
+	var/level

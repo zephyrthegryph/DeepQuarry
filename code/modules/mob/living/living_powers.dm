@@ -126,20 +126,37 @@
 		to_chat(src, span_warning("There is nobody next to you."))
 		return
 
-	om_ask(src, /datum/om/prompt/choice/rainbow_target, PROC_REF(rainbow_target_chosen), choices = targets)
+	open_request(src, /datum/prompt/choice/rainbow_target, PROC_REF(rainbow_target_chosen), answerer = src, choices = targets)
 	return TRUE
 
 /// Re-checked on the answer: still conscious, and next to the one picked.
-/datum/om/prompt/choice/rainbow_target
+/datum/prompt/choice/rainbow_target
 	title = "Rainbow"
-	message = "Who do you wish to shoot rainbows at?"
+	question = "Who do you wish to shoot rainbows at?"
+	timeout = 0
 	ask_flags = ASK_CONSCIOUS
 
-/datum/om/prompt/choice/rainbow_target/valid()
-	return answerer.Adjacent(choice) ? null : "too far away"
+/datum/prompt/choice/rainbow_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(isnull(answer_value))
+		return null
+	var/mob/living/carbon/human/selected = answer_value
+	if(!istype(selected) || QDELETED(selected) || QDELETED(answerer))
+		return "gone"
+	return answerer.Adjacent(selected) ? null : "too far away"
 
-/mob/living/proc/rainbow_target_chosen(datum/om/prompt/choice/rainbow_target/ask)
-	var/mob/living/carbon/human/chosen_target = ask.choice
+/mob/living/proc/rainbow_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(apply_rainbow_target_chosen), A)
+	if(!result.ok)
+		stack_trace("Living request: [result.error]")
+	return result.value
+
+/mob/living/proc/apply_rainbow_target_chosen(datum/act/request/A)
+	var/mob/living/carbon/human/chosen_target = A.answer.answer_value
 
 	act_message(src, null, others = span_warning("%U% begins chargin' their lazor!"))
 	om_task_timed(src, 5 SECONDS, target = chosen_target, receiver = src, on_done = PROC_REF(healing_rainbows_living_done), done_args = list(chosen_target))

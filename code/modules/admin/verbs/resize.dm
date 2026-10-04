@@ -2,15 +2,35 @@ ADMIN_VERB_ONLY_CONTEXT_MENU(resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize", mob/li
 	user.do_resize(living_target)
 
 ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any living mob without any restrictions on size.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/mob/target_mob = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Select target to resize.", title = "Resize Target", choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
-	if(isnull(target_mob))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(!target_mob)
+	open_request(src, /datum/prompt/choice/admin_resize_target, PROC_REF(resize_target_selected), answerer = answerer, choices = REGISTRY_MEMBERS(REGISTRY_MOBS))
+
+/datum/admin_verb/mob_resize/proc/resize_target_selected(datum/act/request/A)
+	if(!A.answer)
 		return
+	var/datum/result/result = safe_call(PROC_REF(open_target_resize), A)
+	if(!result.ok)
+		stack_trace("om flow mob_resize answer resize_target_selected: [result.error]")
+
+/datum/admin_verb/mob_resize/proc/open_target_resize(datum/act/request/A)
+	var/mob/target_mob = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	user.do_resize(target_mob)
 
-/client/proc/do_resize(mob/living/living_target)
-	var/size_multiplier = client_ask("a1", PROC_REF(do_resize), args, (R_ADMIN|R_FUN|R_VAREDIT), /datum/om/prompt/number, message = "Input size multiplier.", title = "Resize", default = 1, round_entry = FALSE)
+/client/proc/do_resize(mob/living/living_target, size_multiplier = null, answered = FALSE)
+	if(!answered)
+		var/mob/answerer = mob
+		if(QDELETED(answerer))
+			return
+		var/datum/admin_resize_review/review = new
+		rel_set(review, nameof(review.actor), answerer)
+		rel_set(review, nameof(review.target), living_target)
+		review.target_expected = !isnull(living_target)
+		review.client_ckey = ckey
+		open_request(review, /datum/prompt/number/admin_resize_amount, TYPE_PROC_REF(/datum/admin_resize_review, answered), answerer = answerer)
+		return
 	if(isnull(size_multiplier))
 		return
 	if(!size_multiplier)
@@ -29,3 +49,82 @@ ADMIN_VERB(mob_resize, (R_ADMIN|R_FUN|R_VAREDIT), "Resize Mob", "Resizes any liv
 
 	log_and_message_admins("has changed [key_name(living_target)]'s size multiplier to [size_multiplier].", src)
 	feedback_add_details("admin_verb","RESIZE")
+
+/datum/prompt/choice/admin_resize_target
+	rights = R_ADMIN|R_FUN|R_VAREDIT
+	timeout = 0
+	question = "Select target to resize."
+	title = "Resize Target"
+
+/datum/prompt/choice/admin_resize_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/picked = answer_value
+		return QDELETED(picked) ? "target is gone" : null
+
+/datum/prompt/choice/admin_resize_target/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/admin_resize_review
+	var/mob/actor
+	var/mob/target
+	var/target_expected = FALSE
+	var/client_ckey
+
+CAPABILITIES(/datum/admin_resize_review)
+	ref_one(nameof(actor), /mob)
+	ref_one(nameof(target), /mob)
+
+/datum/admin_resize_review/proc/refusal()
+	if(QDELETED(actor) || !GLOB.directory[client_ckey])
+		return "participant is gone"
+	return target_expected && QDELETED(target) ? "target is gone" : null
+
+/datum/admin_resize_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/admin_resize_review/proc/answered(datum/act/request/A)
+	var/datum/result/result = safe_call(PROC_REF(finish), A)
+	if(!result.ok)
+		stack_trace("om flow do_resize answer finish: [result.error]")
+	retire()
+
+/datum/admin_resize_review/proc/finish(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = GLOB.directory[client_ckey]
+	user.do_resize(target, A.request.answer_value, TRUE)
+
+/datum/prompt/number/admin_resize_amount
+	rights = R_ADMIN|R_FUN|R_VAREDIT
+	timeout = 0
+	question = "Input size multiplier."
+	title = "Resize"
+	default = 1
+	min_value = 0
+	max_value = INFINITY
+	step = null
+
+/datum/prompt/number/admin_resize_amount/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_resize_review/review = owner
+	return review.refusal()
+
+/datum/prompt/number/admin_resize_amount/begin()
+	if(request_recheck(src))
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/number/admin_resize_amount/present(mob/user)
+	var/datum/tgui_input_number/prompt/box = new(user, question, title || "Number Input", default, isnull(max_value) ? INFINITY : max_value, isnull(min_value) ? 0 : min_value, timeout, !isnull(step), GLOB.tgui_always_state)
+	rel_set(box, nameof(box.prompt), src)
+	box.tgui_interact(user)
+	return box
