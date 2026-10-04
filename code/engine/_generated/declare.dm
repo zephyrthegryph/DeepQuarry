@@ -8470,11 +8470,11 @@
 	into += entry_line(29)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
-/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:525
+/// CAPABILITIES(/obj/item/integrated_circuit/input/EPv2) at code/modules/integrated_electronics/subtypes/input.dm:553
 /obj/item/integrated_circuit/input/EPv2/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 525, /obj/item/integrated_circuit/input/EPv2)
-	into += entry_line(526)
+	into += entry_block("code/modules/integrated_electronics/subtypes/input.dm", 553, /obj/item/integrated_circuit/input/EPv2)
+	into += entry_line(554)
 	into += list(global.owns_one(nameof(exonet), starts = /datum/exonet_protocol))
 
 /// CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input) at code/modules/integrated_electronics/subtypes/camera.dm:167
