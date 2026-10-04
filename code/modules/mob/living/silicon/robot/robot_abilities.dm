@@ -35,11 +35,11 @@
 
 /mob/living/silicon/robot/proc/dq_do_pick_name(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	// A cancel answers "": the default name.
-	om_ask(src, /datum/om/prompt/text, PROC_REF(robot_name_entered), title = "Name change", message = "You are a robot. Enter a name, or leave blank for the default name.", max_length = MAX_NAME_LEN, encode = FALSE, cancel_answer = "")
+	open_request(src, /datum/prompt/text, PROC_REF(robot_name_entered), answerer = src, title = "Name change", question = "You are a robot. Enter a name, or leave blank for the default name.", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
 	return TRUE
 
-/mob/living/silicon/robot/proc/robot_name_entered(datum/om/prompt/text/ask)
-	var/newname = sanitizeSafe(ask.text, MAX_NAME_LEN)
+/mob/living/silicon/robot/proc/robot_name_entered(datum/act/request/A)
+	var/newname = sanitizeSafe(A.answer ? A.answer.answer_value : "", MAX_NAME_LEN)
 	if (newname && !custom_name)
 		custom_name = newname
 		sprite_name = newname

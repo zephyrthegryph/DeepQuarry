@@ -12,11 +12,11 @@
 /// Tag yourself for delivery through the disposals system.
 /mob/living/silicon/robot/drone/proc/dq_do_set_mail_tag(mob/actor, obj/item/held, datum/interaction/ability/interaction)
 	// A cancel answers "": the tag is cleared.
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(mail_tag_chosen), title = "Set Mail Tag", message = "Select the desired destination.", choices = GLOB.tagger_locations, cancel_answer = "")
+	open_request(src, /datum/prompt/choice, PROC_REF(mail_tag_chosen), answerer = src, title = "Set Mail Tag", question = "Select the desired destination.", choices = GLOB.tagger_locations, timeout = 0)
 	return TRUE
 
-/mob/living/silicon/robot/drone/proc/mail_tag_chosen(datum/om/prompt/choice/ask)
-	var/new_tag = ask.choice
+/mob/living/silicon/robot/drone/proc/mail_tag_chosen(datum/act/request/A)
+	var/new_tag = A.answer ? A.answer.answer_value : ""
 	if(!new_tag)
 		mail_destination = ""
 		return

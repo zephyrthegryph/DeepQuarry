@@ -140,11 +140,13 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 
 /// Old attack_self.
 /obj/item/pen/robopen/proc/interaction_robopen(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(robopen_choice_made), title = "Change What?", message = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(robopen_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Change What?", question = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, timeout = 0)
 
-/obj/item/pen/robopen/proc/robopen_choice_made(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/pen/robopen/proc/robopen_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(choice == "Cancel")
 		return
 
@@ -152,7 +154,7 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 
 	switch(choice)
 		if("Colour")
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(robopen_colour_chosen), title = "Color Choice", message = "Which colour would you like to use?", choices = list("black", "blue", "red", "green", "yellow"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(robopen_colour_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Color Choice", question = "Which colour would you like to use?", choices = list("black", "blue", "red", "green", "yellow"), timeout = 0)
 
 		if("Mode")
 			if (mode == 1)
@@ -161,8 +163,10 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 				mode = 1
 			to_chat(user, span_filter_notice("Changed printing mode to '[mode == 2 ? "Rename Paper" : "Write Paper"]'"))
 
-/obj/item/pen/robopen/proc/robopen_colour_chosen(datum/om/prompt/choice/ask)
-	colour = ask.choice
+/obj/item/pen/robopen/proc/robopen_colour_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	colour = A.answer.answer_value
 
 // Copied over from paper's rename verb
 // see code\modules\paperwork\paper.dm line 62
@@ -170,12 +174,16 @@ EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode",
 /obj/item/pen/robopen/proc/RenamePaper(mob/user, obj/item/paper/paper)
 	if ( !user || !paper )
 		return
-	om_ask(user, /datum/om/prompt/text, PROC_REF(paper_label_entered), title = "Paper Labelling", message = "What would you like to label the paper?", max_length = 32, encode = FALSE, subject = paper, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/text, PROC_REF(paper_label_entered), answerer = user, subject = paper, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, title = "Paper Labelling", question = "What would you like to label the paper?", max_len = 32, encode = FALSE, name_text = TRUE, timeout = 0)
 
-/obj/item/pen/robopen/proc/paper_label_entered(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/paper/paper = ask.subject
-	var/n_name = sanitizeSafe(ask.text, 32)
+/obj/item/pen/robopen/proc/paper_label_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/paper/paper = A.request.subject
+	if(QDELETED(paper))
+		return
+	var/n_name = sanitizeSafe(A.answer.answer_value, 32)
 	paper.name = "paper[(n_name ? text("- '[n_name]'") : null)]"
 	paper.last_modified_ckey = user.ckey
 	add_fingerprint(user)
@@ -213,30 +221,37 @@ CAPABILITIES(/obj/item/form_printer)
 	return TRUE
 
 /obj/item/form_printer/proc/deploy_paper(mob/user)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(deploy_choice_made), title = "Dispense", message = "Would you like dispense and empty page or print a form?", choices = list("Paper", "Form"), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(deploy_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Dispense", question = "Would you like dispense and empty page or print a form?", choices = list("Paper", "Form"), buttons = TRUE, timeout = 0)
 
-/obj/item/form_printer/proc/deploy_choice_made(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	switch(ask.choice)
+/obj/item/form_printer/proc/deploy_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("Paper")
 			flick("doc_printer_mod_ejecting", src)
 			after(src, 22, PROC_REF(dispense_paper))
 		if ("Form")
-			om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_form), title = "Department", message = "What kind of form do you want to print?", choices = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice, PROC_REF(ask_form), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Department", question = "What kind of form do you want to print?", choices = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary"), timeout = 0)
 
-/obj/item/form_printer/proc/ask_form(datum/om/prompt/choice/ask)
-	var/department = ask.choice
+/obj/item/form_printer/proc/ask_form(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/department = A.answer.answer_value
 	if(department == "Empty")
 		print_form(list("", "Empty form"))
 		return
 	var/list/forms = department_forms(department)
 	if(!length(forms))
-		to_chat(ask.answerer, span_warning("No form for this category found in central network. Central is advising employees to upload new forms whenever possible."))
+		to_chat(user, span_warning("No form for this category found in central network. Central is advising employees to upload new forms whenever possible."))
 		return
-	om_ask(ask.answerer, /datum/om/prompt/choice, PROC_REF(form_chosen), title = "Form", message = "What kind of [lowertext(department)] form do you want to print?", choices = forms, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(form_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Form", question = "What kind of [lowertext(department)] form do you want to print?", choices = forms, timeout = 0)
 
-/obj/item/form_printer/proc/form_chosen(datum/om/prompt/choice/ask)
-	print_form(splittext(ask.choice, ": "))
+/obj/item/form_printer/proc/form_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	print_form(splittext(A.answer.answer_value, ": "))
 
 /// Prints list(form code, form name).
 /obj/item/form_printer/proc/print_form(list/split)
@@ -501,10 +516,12 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 
 /// Old Set shield level verb.
 /obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(shield_level_chosen), title = "Shield Level", message = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
 
-/obj/item/borg/combat/shield/proc/shield_level_chosen(datum/om/prompt/choice/ask)
-	shield_level = text2num(ask.choice)/100
+/obj/item/borg/combat/shield/proc/shield_level_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	shield_level = text2num(A.answer.answer_value)/100
 
 /obj/item/borg/combat/mobility
 	name = "mobility module"
@@ -641,14 +658,16 @@ CAPABILITIES(/obj/item/robo_dice)
 		"roll d20"			= image(icon = DI, icon_state = "d2020"),
 		"roll d100"			= image(icon = DI, icon_state = "d10010"),
 	)
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(die_chosen), choices = dice_options, anchor = user, radius = 70)
+	open_request(src, /datum/prompt/choice, PROC_REF(die_chosen), answerer = user, radial = TRUE, choices = dice_options, anchor = user, radius = 70, autopick_single_option = TRUE, timeout = 0)
 	return TRUE
 
 /// Dice radial answer.
-/obj/item/robo_dice/proc/die_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
+/obj/item/robo_dice/proc/die_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
 	var/sides = 0
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("roll d4")
 			sides = 4
 		if("roll d6")
@@ -664,13 +683,15 @@ CAPABILITIES(/obj/item/robo_dice)
 		if("roll d100")
 			sides = 100
 		if("roll a custom die")
-			om_ask(user, /datum/om/prompt/number, PROC_REF(custom_die_entered), title = "Custom Dice Roll", message = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", default = 6, max = 1000, min = 0, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+			open_request(src, /datum/prompt/number, PROC_REF(custom_die_entered), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Custom Dice Roll", question = "Enter how many faces you want your virtual dice to have, (no more than 1000 sides):", default = 6, max_value = 1000, min_value = 0, timeout = 0)
 			return TRUE
 	roll_die(user, sides)
 	return TRUE
 
-/obj/item/robo_dice/proc/custom_die_entered(datum/om/prompt/number/ask)
-	roll_die(ask.answerer, ask.number)
+/obj/item/robo_dice/proc/custom_die_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	roll_die(A.request.answerer, A.answer.answer_value)
 
 /obj/item/robo_dice/proc/roll_die(mob/user, sides)
 	if(sides <= 0)

@@ -388,18 +388,20 @@ CAPABILITIES(/obj/item/dogborg/pounce)
 			choices += M
 	choices -= src
 
-	om_ask(src, /datum/om/prompt/choice/robot_leap, PROC_REF(leap_target_chosen), choices = choices, bluespace = bluespace)
+	open_request(src, /datum/prompt/choice/robot_leap, PROC_REF(leap_target_chosen), answerer = src, ask_flags = ASK_CONSCIOUS, title = "Target Choice", question = "Who do you wish to leap at?", choices = choices, bluespace = bluespace, timeout = 0)
 
 /// A borg's leap target. `bluespace`: the longer, costlier bluespace leap.
-/datum/om/prompt/choice/robot_leap
-	title = "Target Choice"
-	message = "Who do you wish to leap at?"
-	ask_flags = ASK_CONSCIOUS
+/datum/prompt/choice/robot_leap
 	var/bluespace = FALSE
 
-/mob/living/silicon/robot/proc/leap_target_chosen(datum/om/prompt/choice/robot_leap/ask)
-	var/mob/living/T = ask.choice
-	var/bluespace = ask.bluespace
+/mob/living/silicon/robot/proc/leap_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/robot_leap/leap_question = A.request
+	var/mob/living/T = A.answer.answer_value
+	if(QDELETED(T))
+		return
+	var/bluespace = leap_question.bluespace
 	var/power_cost = bluespace ? 1000 : 750
 	var/minimum_power = bluespace ? 2500 : 1000
 	var/leap_distance = bluespace ? 5 : 3
@@ -506,11 +508,13 @@ EXTEND_INTERACTIONS(/obj/item/mining_scanner/robot, INTERACT_ALT(null, PROC_REF(
 /obj/item/mining_scanner/robot/proc/change_size(mob/user)
 	if(!exact)
 		return
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(range_chosen), title = "Pick a range to scan. ", message = "Scanner Range", choices = list(0,1,2,3,4,5,6,7), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(range_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Pick a range to scan. ", question = "Scanner Range", choices = list(0,1,2,3,4,5,6,7), timeout = 0)
 
-/obj/item/mining_scanner/robot/proc/range_chosen(datum/om/prompt/choice/ask)
-	range = ask.choice
-	to_chat(ask.answerer, span_notice("Scanner will now look up to [range] tile(s) away."))
+/obj/item/mining_scanner/robot/proc/range_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	range = A.answer.answer_value
+	to_chat(A.request.answerer, span_notice("Scanner will now look up to [range] tile(s) away."))
 
 //CHOMPEnable Start
 /obj/item/robot_tongue/examine(user)

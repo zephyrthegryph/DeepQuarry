@@ -30,21 +30,18 @@
 	set src in usr
 
 	// A cancel answers "": the default colour.
-	om_ask(usr, /datum/om/prompt/color/platform_pupil, PROC_REF(pupil_color_chosen), cancel_answer = "")
+	open_request(src, /datum/prompt/color, PROC_REF(pupil_color_chosen), answerer = usr, ask_flags = ASK_CAPABLE, valid = PROC_REF(pupil_color_askable), title = "Pupil Colour Selection", question = "Select a pupil colour.", timeout = 0)
 
-/// Re-checked on the answer: able, and the module is still in the platform.
-/datum/om/prompt/color/platform_pupil
-	title = "Pupil Colour Selection"
-	message = "Select a pupil colour."
-	ask_flags = ASK_CAPABLE
+/// Re-checked on the answer: the module is still in the platform.
+/obj/item/robot_module/robot/platform/proc/pupil_color_askable(datum/request/R)
+	return loc == R.answerer
 
-/datum/om/prompt/color/platform_pupil/valid()
-	var/obj/item/module = subject
-	return module.loc == answerer ? null : "not installed"
-
-/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/om/prompt/color/platform_pupil/ask)
-	pupil_color = ask.picked_color || initial(pupil_color)
-	ask.answerer.update_icon()
+/obj/item/robot_module/robot/platform/proc/pupil_color_chosen(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(QDELETED(user))
+		return
+	pupil_color = (A.answer ? A.answer.answer_value : null) || initial(pupil_color)
+	user.update_icon()
 
 /obj/item/robot_module/robot/platform/explorer
 	armor_color = "#528052"
