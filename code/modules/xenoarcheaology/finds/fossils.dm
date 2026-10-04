@@ -108,6 +108,7 @@ DECLARE_INTERACTIONS(/obj/skeleton, INTERACT_ITEM(null, PROC_REF(interaction_ske
 /datum/prompt/text/skeleton_plaque
 	title = "Skeleton plaque"
 	question = "What would you like to write on the plaque:"
+	timeout = 0
 	var/obj/item/pen
 	var/datum/interaction/interaction_context
 	var/expected_interaction = FALSE
@@ -116,7 +117,8 @@ CAPABILITIES(/datum/prompt/text/skeleton_plaque)
 	ref_one(nameof(pen), /obj/item)
 	ref_one(nameof(interaction_context), /datum/interaction)
 
-/datum/prompt/text/skeleton_plaque/prepare()
+/datum/prompt/text/skeleton_plaque/prepare(datum/act/A)
+	. = ..()
 	var/obj/item/captured_pen = pen
 	var/datum/interaction/captured_interaction = interaction_context
 	expected_interaction = !isnull(captured_interaction)
