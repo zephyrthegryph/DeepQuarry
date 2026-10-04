@@ -3648,11 +3648,11 @@
 	into += entry_line(328)
 	into += list(global.ref_one(nameof(recipient), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:987
+/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:1000
 /datum/prompt/choice/admin_man_up/confirmation/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 987, /datum/prompt/choice/admin_man_up/confirmation)
-	into += entry_line(988)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 1000, /datum/prompt/choice/admin_man_up/confirmation)
+	into += entry_line(1001)
 	into += list(global.ref_one(nameof(target), /mob/living))
 
 /// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1140
@@ -3944,11 +3944,11 @@
 	into += entry_line(86)
 	into += list(global.ref_one(nameof(inquirer), /mob))
 
-/// CAPABILITIES(/datum/prompt/choice/petrify_consent) at code/game/machinery/petrification.dm:240
+/// CAPABILITIES(/datum/prompt/choice/petrify_consent) at code/game/machinery/petrification.dm:248
 /datum/prompt/choice/petrify_consent/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/machinery/petrification.dm", 240, /datum/prompt/choice/petrify_consent)
-	into += entry_line(241)
+	into += entry_block("code/game/machinery/petrification.dm", 248, /datum/prompt/choice/petrify_consent)
+	into += entry_line(249)
 	into += list(global.ref_one(nameof(operator), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/platform_paint) at code/modules/mob/living/silicon/robot/subtypes/thinktank/thinktank_icon.dm:83
@@ -4200,11 +4200,11 @@
 	into += entry_line(97)
 	into += list(global.ref_one(nameof(subject), /mob))
 
-/// CAPABILITIES(/datum/prompt/text/admin_silicon_name) at code/modules/admin/admin_verbs.dm:1041
+/// CAPABILITIES(/datum/prompt/text/admin_silicon_name) at code/modules/admin/admin_verbs.dm:1054
 /datum/prompt/text/admin_silicon_name/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 1041, /datum/prompt/text/admin_silicon_name)
-	into += entry_line(1042)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 1054, /datum/prompt/text/admin_silicon_name)
+	into += entry_line(1055)
 	into += list(global.ref_one(nameof(target), /mob/living/silicon))
 
 /// CAPABILITIES(/datum/prompt/text/air_control_sensor_name) at code/game/machinery/atmo_control.dm:308
