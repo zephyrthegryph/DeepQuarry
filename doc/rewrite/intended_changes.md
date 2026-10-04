@@ -391,3 +391,11 @@ Pinned by `dq_hc_items_behaviour.dm` (green on the legacy code first) and the in
 * **Implant pad.** The window answers only a conscious actor (a requirement on every UI op, with the reason "You can't do that right now."); the `ui_act_allowed()` override is gone. An empty hand takes the case out of a pad that is carried anywhere on the actor (`carried()`), where the old check was a hand; a pad lying or inside another's bag is picked up as any item.
 * **Contraband package, telecrystal.** Plain ops; a package whose release is refused stays whole (pinned).
 * **Residue of this batch:** `code/game/objects/items/weapons/wiki_manuals.dm` (its parent `/obj/item/book` in code/modules/library declares a UI of its own), the stack family (`stacks/*`: `/obj/item/stack` is a hub for dozens of types and its `INTERACT_SELF` entry, UI and state convert as one step), and every `OM_FIELD` that feeds a `DECLARE_PERIODIC_WHILE` (the periodic declaration resolves its fields from the `OM_FIELD` registry, so the field and the periodic form convert together).
+
+
+## hc-mobs silicon
+
+Pinned by `code/modules/unit_tests/dq_hc_silicon_behaviour.dm` (written on the legacy code first, except where noted).
+
+* **"Are you sure?" confirmations show Yes first.** The store-core and pAI wipe confirmations used `no_first = TRUE` (No on the left); `/datum/prompt/yes_no` has no button order, so Yes is first. The answer is unchanged.
+* **A hud-less pAI can finish a download.** `refresh_software_status()` read `hud_used.other` and crashed for a pAI with no HUD (nobody playing it); it now skips the buttons.

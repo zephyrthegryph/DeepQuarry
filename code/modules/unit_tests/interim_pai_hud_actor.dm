@@ -20,12 +20,11 @@
 	TEST_ASSERT(!bystander.software[translator.id], "the other pAI starts without translator software")
 	var/original_ram = actor.ram
 	km_synthetic_click(actor, button)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 1, "the actual native pAI click opens a real download confirmation")
-	var/datum/om/prompt/confirm/pai_download/ask = sched.test_prompts[1]
-	made += ask
-	TEST_ASSERT_EQUAL(ask.peek("answerer"), actor, "the real native download prompt retains its exact pAI actor")
+	var/datum/prompt/yes_no/pai_download/ask = SSrequests.open_for(actor)
+	TEST_ASSERT_NOTNULL(ask, "the actual native pAI click opens a real download confirmation")
+	TEST_ASSERT_EQUAL(ask.answerer, actor, "the real native download prompt retains its exact pAI actor")
 	TEST_ASSERT_EQUAL(ask.software_key, translator.id, "the actual prompt requests precisely translator software")
-	TEST_ASSERT_NULL(om_prompt_answer(ask, ask.yes_text), "the real typed confirmation accepts its actual Yes label")
+	test_answer(actor, TRUE)
 	TEST_ASSERT(actor.software[translator.id], "the actual answer installs the requested software")
 	TEST_ASSERT_EQUAL(actor.ram, original_ram - translator.ram_cost, "the actual download charges the exact software cost once")
 	TEST_ASSERT(!actor.translator_on, "downloading preserves the initial translator-off state")
@@ -41,11 +40,10 @@
 	TEST_ASSERT(!(GLOB.all_languages[LANGUAGE_UNATHI] in actor.languages), "the actual off toggle removes its real language grant")
 	TEST_ASSERT_EQUAL(button.icon_state, "[button.base_state]_o", "the actual off toggle restores its real HUD icon")
 	button.click_with_actor(bystander, null, null, null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 2, "a different explicit pAI opens its own real download prompt")
-	var/datum/om/prompt/confirm/pai_download/other_ask = sched.test_prompts[2]
-	made += other_ask
-	TEST_ASSERT_EQUAL(other_ask.peek("answerer"), bystander, "the direct helper preserves the explicit other actor")
-	TEST_ASSERT_EQUAL(om_prompt_answer(other_ask, null, TRUE), "no answer", "the real other download can be cancelled")
+	var/datum/prompt/yes_no/pai_download/other_ask = SSrequests.open_for(bystander)
+	TEST_ASSERT_NOTNULL(other_ask, "a different explicit pAI opens its own real download prompt")
+	TEST_ASSERT_EQUAL(other_ask.answerer, bystander, "the direct helper preserves the explicit other actor")
+	test_answer(bystander, null, REQ_CANCELLED)
 	TEST_ASSERT(!bystander.software[translator.id], "actual cancellation installs no software for the other pAI")
 	actor.set_stat(UNCONSCIOUS)
 	button.click_with_actor(actor, null, null, null)
@@ -54,6 +52,7 @@
 	var/mob/living/carbon/human/unsupported = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	button.click_with_actor(unsupported, null, null, null)
 	button.click_with_actor(null, null, null, null)
-	TEST_ASSERT_EQUAL(length(sched.test_prompts), 2, "unsupported and null actors open no additional software prompt")
+	TEST_ASSERT_NULL(SSrequests.open_for(unsupported), "unsupported and null actors open no additional software prompt")
+	TEST_ASSERT_NULL(SSrequests.open_for(actor), "the refused click opened no prompt for the pAI either")
 	TEST_ASSERT(!actor.translator_on && !bystander.translator_on, "refused actors preserve both actual translator states")
 	TEST_ASSERT_EQUAL(actor.ram, original_ram - translator.ram_cost, "toggles/refusals charge no additional RAM")

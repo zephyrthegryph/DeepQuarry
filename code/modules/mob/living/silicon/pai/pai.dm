@@ -314,7 +314,9 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	var/obj/item/card/id/ID = W.GetID()
 	if(ID)
 		if (idaccessible == 1)
-			om_ask(user, /datum/om/prompt/choice/pai_access, PROC_REF(access_modify_chosen), card = W)
+			var/datum/prompt/choice/pai_access/access_question = open_request(src, /datum/prompt/choice/pai_access, PROC_REF(access_modify_chosen), answerer = user, valid = PROC_REF(access_modify_askable), title = "Access Modify", question = "Do you wish to add access to [src] or remove access from [src]?", choices = list("Add Access", "Remove Access", "Cancel"), buttons = TRUE, timeout = 0)
+			if(access_question)
+				rel_set(access_question, nameof(access_question.card), W)
 			return TRUE
 		else if (istype(W, /obj/item/card/id) && idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifcations at this time."))
@@ -327,30 +329,32 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 	after(src, 1, PROC_REF(close_up_unless_dead))
 	return TRUE
 
-/// Swiping an ID over a pAI. Re-checked on the answer: next to the pAI and able, it still
-/// accepts access changes, and the card (still an ID) is still held.
-/datum/om/prompt/choice/pai_access
-	title = "Access Modify"
-	buttons = TRUE
-	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+/// Swiping an ID over a pAI: the card whose access is copied or cleared.
+/datum/prompt/choice/pai_access
 	var/obj/item/card
 
-/datum/om/prompt/choice/pai_access/prepare()
-	message = "Do you wish to add access to [subject] or remove access from [subject]?"
-	choices = list("Add Access", "Remove Access", "Cancel")
-	return TRUE
+CAPABILITIES(/datum/prompt/choice/pai_access)
+	ref_one(nameof(card), /obj/item)
 
-/datum/om/prompt/choice/pai_access/valid()
-	var/mob/living/silicon/pai/P = subject
-	if(!card.GetID() || P.idaccessible != 1 || !(card in answerer.get_all_held_items()))
-		return "can't modify access"
-	return null
+/// Re-checked on the answer: next to the pAI and able, it still accepts access changes, and the card (still an ID) is still held.
+/mob/living/silicon/pai/proc/access_modify_askable(datum/request/R)
+	var/datum/prompt/choice/pai_access/access_question = R
+	var/obj/item/W = access_question.card
+	if(!W || !answerer_holds(R, ANSWER_NEAR_SUBJECT | ANSWER_CAPABLE, src))
+		return FALSE
+	var/mob/user = R.answerer
+	return W.GetID() && idaccessible == 1 && (W in user.get_all_held_items())
 
-/mob/living/silicon/pai/proc/access_modify_chosen(datum/om/prompt/choice/pai_access/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/W = ask.card
+/mob/living/silicon/pai/proc/access_modify_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/pai_access/access_question = A.request
+	var/mob/user = A.request.answerer
+	var/obj/item/W = access_question.card
+	if(!W)
+		return
 	var/obj/item/card/id/ID = W.GetID()
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("Add Access")
 			idcard.access |= ID.GetAccess()
 			to_chat(user, span_notice("You add the access from the [W] to [src]."))

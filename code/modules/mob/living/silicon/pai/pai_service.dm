@@ -74,28 +74,34 @@ CAPABILITIES(/datum/system/pai)
 			return TRUE
 	return FALSE
 
-/// A ghost is asked to play a pAI. Re-checked on the answer: still that ghost, with a client.
-/datum/om/prompt/choice/pai_invite
-	title = "pAI Request"
-	buttons = TRUE
-	choices = list("Yes", "No", "Never for this round")
+/// A ghost is asked to play a pAI.
+/datum/prompt/choice/pai_invite
+	/// The card that would house the pAI.
+	var/obj/item/paicard/card
 	var/mob/inquirer
 	var/ghost_ref
 
-/datum/om/prompt/choice/pai_invite/prepare()
-	message = "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?"
+CAPABILITIES(/datum/prompt/choice/pai_invite)
+	ref_one(nameof(card), /obj/item/paicard)
+	ref_one(nameof(inquirer), /mob)
+
+/// Re-checked on the answer: still that ghost, with a client.
+/datum/system/pai/proc/pai_invite_askable(datum/request/R)
+	var/datum/prompt/choice/pai_invite/invite = R
+	var/mob/observer/ghost = R.answerer
+	if(!ghost.client || !isobserver(ghost) || SSpai.get_ghost_from_ref(invite.ghost_ref) != ghost)
+		return FALSE // Nice try smartass
 	return TRUE
 
-/datum/om/prompt/choice/pai_invite/valid()
-	var/mob/observer/ghost = answerer
-	if(!ghost.client || !isobserver(ghost) || SSpai.get_ghost_from_ref(ghost_ref) != ghost)
-		return "not that ghost" // Nice try smartass
-	return null
-
 /// The ghost's answer to a pAI invite.
-/datum/system/pai/proc/pai_invite_answered(datum/om/prompt/choice/pai_invite/ask)
-	var/mob/observer/ghost = ask.answerer
-	pai_invite_answer(ask.inquirer, ghost, ask.subject, ask.choice, ghost.client)
+/datum/system/pai/proc/pai_invite_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/pai_invite/invite = A.request
+	var/mob/observer/ghost = A.request.answerer
+	if(!invite.card || !invite.inquirer)
+		return
+	pai_invite_answer(invite.inquirer, ghost, invite.card, A.answer.answer_value, ghost.client)
 
 /datum/system/pai/proc/pai_invite_answer(mob/inquirer, mob/observer/ghost, obj/item/paicard/card, response, client/target)
 	if(check_is_already_pai(target.ckey))

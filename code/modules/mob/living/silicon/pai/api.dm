@@ -63,7 +63,10 @@
 
 	// Send it!
 	to_chat(inquirer, span_info("A request has been sent!"))
-	om_ask(ghost, /datum/om/prompt/choice/pai_invite, PROC_REF(pai_invite_answered), subject = card, inquirer = inquirer, ghost_ref = ghost_ref)
+	var/datum/prompt/choice/pai_invite/invite = open_request(src, /datum/prompt/choice/pai_invite, PROC_REF(pai_invite_answered), answerer = ghost, valid = PROC_REF(pai_invite_askable), title = "pAI Request", question = "[inquirer] is requesting a pAI personality. Would you like to play as a personal AI?", choices = list("Yes", "No", "Never for this round"), buttons = TRUE, ghost_ref = ghost_ref, timeout = 0)
+	if(invite)
+		rel_set(invite, nameof(invite.card), card)
+		rel_set(invite, nameof(invite.inquirer), inquirer)
 
 /datum/system/pai/proc/get_invite_list_data()
 	RETURN_TYPE(/list)
