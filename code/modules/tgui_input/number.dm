@@ -16,8 +16,6 @@
  * * round_value - whether the inputted number is rounded down into an integer.
  */
 /proc/tgui_input_number(mob/user, message, title = "Number Input", default = 0, max_value = INFINITY, min_value = 0, timeout = 0, round_value = TRUE, ui_state = GLOB.tgui_always_state)
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user

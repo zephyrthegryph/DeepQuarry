@@ -290,18 +290,11 @@ usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] a
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/bitfield.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/checkboxes.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/color.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/keycombo.dm	/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
-usr_outside_verb	code/modules/tgui_input/list.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/matrix.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/number.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] entered in a null payload to the chat window.")
 usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] has entered more characters than allowed into a TGUI-Say")
-usr_outside_verb	code/modules/tgui_input/text.dm	user = usr
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return
 usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(!Adjacent(usr)) return

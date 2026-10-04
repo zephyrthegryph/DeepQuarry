@@ -17,8 +17,6 @@
 	if (istext(user))
 		stack_trace("tgui_alert() received text for user instead of list")
 		return
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user
@@ -152,8 +150,6 @@ UI_ACT_PROC(/datum/tgui_alert, ui_act_cancel)
 	if (istext(user))
 		stack_trace("tgui_alert() received text for user instead of list")
 		return
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user
