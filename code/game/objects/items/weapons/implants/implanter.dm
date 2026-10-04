@@ -12,21 +12,24 @@ MATERIAL_MIX(/obj/item/implanter, list(MAT_STEEL = 1000, MAT_GLASS = 1000))
 	///Var for attack_self chain
 	var/special_handling = FALSE
 
-DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(implanter_self)))
+CAPABILITIES(/obj/item/implanter)
+	op("toggle", in_hand(), label("Toggle"), then(PROC_REF(implanter_self)))
+	op("remove_implant", menu(), label("Remove Implant"), needs(carried()), then(PROC_REF(remove_implant_effect)))
 
-/// Old attack_self: toggle the implanter. Subtypes with special_handling fall through.
-/obj/item/implanter/proc/implanter_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// Toggle the implanter. Subtypes with special_handling fall through.
+/obj/item/implanter/proc/implanter_self(datum/act/op/A)
+	var/mob/user = A.actor
 	if(special_handling)
-		return FALSE
+		return OP_DECLINE
 	active = !active
 	to_chat(user, span_notice("You [active ? "" : "de"]activate \the [src]."))
 	update()
-	return TRUE
+	return OP_OK
 
-/obj/item/implanter/proc/remove_implant_effect(mob/user, obj/item/held, datum/interaction/interaction)
-
+/obj/item/implanter/proc/remove_implant_effect(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!imp)
-		return
+		return OP_OK
 	if(istype(user, /mob))
 		var/mob/M = user
 		imp.forceMove(get_turf(src))
@@ -38,7 +41,7 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 
 	update()
 
-	return
+	return OP_OK
 
 /obj/item/implanter/proc/update()
 	if (src.imp)
@@ -205,8 +208,3 @@ DECLARE_INTERACTIONS(/obj/item/implanter, INTERACT_SELF("Toggle", PROC_REF(impla
 /obj/item/implanter/ownership()
 	. = ..()
 	. += owns(nameof(imp), policy = OWN_CONTAINED)
-
-/// Old object verbs.
-EXTEND_INTERACTIONS(/obj/item/implanter, \
-	INTERACT_VERB("Remove Implant", PROC_REF(remove_implant_effect), REQ_IN_INVENTORY), \
-)

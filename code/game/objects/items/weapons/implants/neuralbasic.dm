@@ -11,6 +11,7 @@
 TRACKED(/obj/item/implant/neural, monitoring_brain)
 CAPABILITIES(/obj/item/implant/neural)
 	every(2 SECONDS, then(PROC_REF(neural_step)), when = nameof(monitoring_brain))
+	extend(/datum/act/hit/emp, instead(then(PROC_REF(neural_implant_emp))))
 
 /obj/item/implant/neural/post_implant(mob/source)
 	if(ishuman(source))
@@ -54,11 +55,11 @@ circuitry. Resulting faults can cause damage to the host's brain.<HR>
 Implant Specifics:<BR>"}
 	return dat
 
-DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_emp))
 /// An EMP makes the implant malfunction and hurt the brain it sits in.
-/obj/item/implant/neural/proc/neural_implant_emp(datum/damage_packet/packet)
+/obj/item/implant/neural/proc/neural_implant_emp(datum/act/hit/emp/A)
+	var/datum/damage_packet/packet = A.packet
 	if(!my_brain() || malfunction)
-		return
+		return HOOK_DECLINE
 	malfunction = MALFUNCTION_TEMPORARY
 
 	var/delay = 10 //Don't let it just get emped twice in a second to kill someone.
@@ -93,6 +94,7 @@ DAMAGE_REACTION(/obj/item/implant/neural, DAMAGE_EMP, PROC_REF(neural_implant_em
 					to_chat(L, span_warning("Your [brain_location] aches."))
 
 	after(src, delay, PROC_REF(malfunction_recover))
+	return HOOK_DECLINE
 
 /obj/item/implant/neural/meltdown()
 	..()

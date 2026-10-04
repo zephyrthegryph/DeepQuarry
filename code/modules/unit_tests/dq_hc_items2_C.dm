@@ -9,11 +9,11 @@
 
 /// Adapter: takes the implant out of an implanter the way its verb does (the verb is a menu entry: only its handler is reachable here).
 /proc/hcic_remove_implant(mob/user, obj/item/implanter/I)
-	I.remove_implant_effect(user, null, null)
+	test_op_handler(I, "remove_implant_effect", user)
 
 /// Adapter: one step of the generator's periodic work.
 /proc/hcic_generator_step(obj/item/implant/reagent_generator/G)
-	G.periodic_step()
+	G.reagent_step(null)
 
 /datum/unit_test/dq_hc_items/c_implanter_in_hand_toggles_and_compliance_asks_laws
 
@@ -149,3 +149,16 @@
 	hcic_generator_step(G)
 	TEST_ASSERT_EQUAL(G.reagents.total_volume, 2, "a step makes two units of egg while hosted")
 	TEST_ASSERT_EQUAL(H.nutrition, 399.5, "and costs half a unit of nutrition")
+
+/datum/unit_test/dq_hc_items/c_reagent_implant_every_runs_while_hosted
+
+/datum/unit_test/dq_hc_items/c_reagent_implant_every_runs_while_hosted/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/implant/reagent_generator/egg/G = allocate(/obj/item/implant/reagent_generator/egg, tile(2, 2))
+	TEST_ASSERT(G.handle_implant(H), "embedded")
+	test_time(7 SECONDS)
+	TEST_ASSERT_EQUAL(G.reagents.total_volume, 0, "an implant that was never post-implanted makes nothing")
+	G.post_implant(H)
+	H.nutrition = 400
+	test_time(7 SECONDS)
+	TEST_ASSERT(G.reagents.total_volume > 0, "once implanted the generator makes reagents on its own clock")

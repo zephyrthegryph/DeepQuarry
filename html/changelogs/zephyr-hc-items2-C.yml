@@ -1,0 +1,4 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Items group C, implants: implant, implanter, case, circuit and neural implant clicks are ops, EMP effects are hit hooks, their questions are requests, the reagent implant is an every()"

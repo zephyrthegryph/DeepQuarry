@@ -3130,6 +3130,13 @@
 	into += entry_line(162)
 	into += list(global.ref_one(nameof(tool), /obj/item))
 
+/// CAPABILITIES(/datum/prompt/choice/augment_location) at code/game/objects/items/weapons/implants/implantaugment.dm:74
+/datum/prompt/choice/augment_location/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implantaugment.dm", 74, /datum/prompt/choice/augment_location)
+	into += entry_line(75)
+	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
+
 /// CAPABILITIES(/datum/prompt/choice/camera_direction) at code/game/machinery/camera/camera_assembly.dm:157
 /datum/prompt/choice/camera_direction/declared_entries(list/into)
 	..(into)
@@ -3137,12 +3144,26 @@
 	into += entry_line(158)
 	into += list(global.ref_one(nameof(camera), /obj/machinery/camera))
 
+/// CAPABILITIES(/datum/prompt/choice/explosive_implant_level) at code/game/objects/items/weapons/implants/implant.dm:302
+/datum/prompt/choice/explosive_implant_level/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 302, /datum/prompt/choice/explosive_implant_level)
+	into += entry_line(303)
+	into += list(global.ref_one(nameof(source), /mob))
+
 /// CAPABILITIES(/datum/prompt/choice/frame_type_wall) at code/game/machinery/wall_frames.dm:46
 /datum/prompt/choice/frame_type_wall/declared_entries(list/into)
 	..(into)
 	into += entry_block("code/game/machinery/wall_frames.dm", 46, /datum/prompt/choice/frame_type_wall)
 	into += entry_line(47)
 	into += list(global.ref_one(nameof(wall_turf), /turf))
+
+/// CAPABILITIES(/datum/prompt/choice/implant_emote) at code/game/objects/items/weapons/implants/implant.dm:665
+/datum/prompt/choice/implant_emote/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 665, /datum/prompt/choice/implant_emote)
+	into += entry_line(666)
+	into += list(global.ref_one(nameof(source), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/medical_stand_attach) at code/game/objects/structures/medical_stand.dm:123
 /datum/prompt/choice/medical_stand_attach/declared_entries(list/into)
@@ -3215,6 +3236,20 @@
 	into += entry_block("code/game/machinery/atmo_control.dm", 168, /datum/prompt/text/air_sensor_tag)
 	into += entry_line(169)
 	into += list(global.ref_one(nameof(tool), /obj/item/multitool))
+
+/// CAPABILITIES(/datum/prompt/text/compliance_laws) at code/game/objects/items/weapons/implants/implant.dm:842
+/datum/prompt/text/compliance_laws/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 842, /datum/prompt/text/compliance_laws)
+	into += entry_line(843)
+	into += list(global.ref_one(nameof(implant), /obj/item/implant/compliance))
+
+/// CAPABILITIES(/datum/prompt/text/explosive_implant_phrase) at code/game/objects/items/weapons/implants/implant.dm:309
+/datum/prompt/text/explosive_implant_phrase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 309, /datum/prompt/text/explosive_implant_phrase)
+	into += entry_line(310)
+	into += list(global.ref_one(nameof(source), /mob))
 
 /// CAPABILITIES(/datum/prompt/text/grave_carving) at code/game/objects/structures/gravemarker.dm:23
 /datum/prompt/text/grave_carving/declared_entries(list/into)
@@ -8354,12 +8389,35 @@
 	into += entry_line(49)
 	into += list(global.op("self", global.in_hand(), global.then(PROC_REF(interaction_self))))
 
-/// CAPABILITIES(/obj/item/implant/death_alarm) at code/game/objects/items/weapons/implants/implant.dm:536
+/// CAPABILITIES(/obj/item/implant) at code/game/objects/items/weapons/implants/implant.dm:80
+/obj/item/implant/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 80, /obj/item/implant)
+	into += entry_line(81)
+	into += list(global.op("load_implanter", global.item(/obj/item/implanter), global.passes(), global.label("Load implanter"), global.then(PROC_REF(load_implanter))))
+
+/// CAPABILITIES(/obj/item/implant/chem) at code/game/objects/items/weapons/implants/implant.dm:427
+/obj/item/implant/chem/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 427, /obj/item/implant/chem)
+	into += entry_line(428)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(chem_implant_emp)))))
+
+/// CAPABILITIES(/obj/item/implant/death_alarm) at code/game/objects/items/weapons/implants/implant.dm:552
 /obj/item/implant/death_alarm/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 536, /obj/item/implant/death_alarm)
-	into += entry_line(537)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 552, /obj/item/implant/death_alarm)
+	into += entry_line(553)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(death_alarm_step)), when = nameof(alarm_armed)))
+	into += entry_line(554)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(death_alarm_emp)))))
+
+/// CAPABILITIES(/obj/item/implant/explosive) at code/game/objects/items/weapons/implants/implant.dm:331
+/obj/item/implant/explosive/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 331, /obj/item/implant/explosive)
+	into += entry_line(332)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(explosive_implant_emp)))))
 
 /// CAPABILITIES(/obj/item/implant/integrated_circuit) at code/game/objects/items/weapons/implants/implantcircuits.dm:15
 /obj/item/implant/integrated_circuit/declared_entries(list/into)
@@ -8367,6 +8425,16 @@
 	into += entry_block("code/game/objects/items/weapons/implants/implantcircuits.dm", 15, /obj/item/implant/integrated_circuit)
 	into += entry_line(16)
 	into += list(global.owns_one(nameof(IC), starts = /obj/item/electronic_assembly/implant))
+	into += entry_line(17)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(circuit_implant_emp)))))
+	into += entry_line(18)
+	into += list(global.op("use", global.in_hand(), global.label("Use"), global.then(PROC_REF(circuit_use))))
+	into += entry_line(19)
+	into += list(global.op("add_electronics", global.item(/obj/item/integrated_electronics), global.passes(), global.label("Add"), global.then(PROC_REF(circuit_attacked))))
+	into += entry_line(20)
+	into += list(global.op("add_circuit", global.item(/obj/item/integrated_circuit), global.passes(), global.label("Add"), global.then(PROC_REF(circuit_attacked))))
+	into += entry_line(21)
+	into += list(global.op("add_cell", global.item(/obj/item/cell/device), global.passes(), global.label("Add"), global.then(PROC_REF(circuit_attacked))))
 
 /// CAPABILITIES(/obj/item/implant/neural) at code/game/objects/items/weapons/implants/neuralbasic.dm:12
 /obj/item/implant/neural/declared_entries(list/into)
@@ -8374,19 +8442,59 @@
 	into += entry_block("code/game/objects/items/weapons/implants/neuralbasic.dm", 12, /obj/item/implant/neural)
 	into += entry_line(13)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(neural_step)), when = nameof(monitoring_brain)))
+	into += entry_line(14)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(neural_implant_emp)))))
 
-/// CAPABILITIES(/obj/item/implant/tracking) at code/game/objects/items/weapons/implants/implant.dm:117
+/// CAPABILITIES(/obj/item/implant/reagent_generator) at code/game/objects/items/weapons/implants/implantreagent.dm:181
+/obj/item/implant/reagent_generator/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implantreagent.dm", 181, /obj/item/implant/reagent_generator)
+	into += entry_line(182)
+	into += list(global.every(2 SECONDS, global.then(PROC_REF(reagent_step)), when = nameof(generating)))
+
+/// CAPABILITIES(/obj/item/implant/sizecontrol) at code/game/objects/items/weapons/implants/implant.dm:795
+/obj/item/implant/sizecontrol/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 795, /obj/item/implant/sizecontrol)
+	into += entry_line(796)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(sizecontrol_emp)))))
+
+/// CAPABILITIES(/obj/item/implant/tracking) at code/game/objects/items/weapons/implants/implant.dm:116
 /obj/item/implant/tracking/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 117, /obj/item/implant/tracking)
-	into += entry_line(118)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 116, /obj/item/implant/tracking)
+	into += entry_line(117)
 	into += list(global.every(2 SECONDS, global.then(PROC_REF(tracking_step)), when = nameof(tracking_active)))
+	into += entry_line(118)
+	into += list(global.extend(/datum/act/hit/emp, global.instead(global.then(PROC_REF(tracking_implant_emp)))))
 
-/// CAPABILITIES(/obj/item/implanter/compliance) at code/game/objects/items/weapons/implants/implant.dm:833
+/// CAPABILITIES(/obj/item/implantcase) at code/game/objects/items/weapons/implants/implantcase.dm:35
+/obj/item/implantcase/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implantcase.dm", 35, /obj/item/implantcase)
+	into += entry_line(36)
+	into += list(global.op("label", global.item(/obj/item/pen), global.passes(), global.label("Label"), global.then(PROC_REF(label_asked))))
+	into += entry_line(37)
+	into += list(global.op("fill_from_syringe", global.item(/obj/item/reagent_containers/syringe), global.passes(), global.label("Fill"), global.then(PROC_REF(syringe_used))))
+	into += entry_line(38)
+	into += list(global.op("swap_implant", global.item(/obj/item/implanter), global.passes(), global.label("Swap implant"), global.then(PROC_REF(implanter_used))))
+
+/// CAPABILITIES(/obj/item/implanter) at code/game/objects/items/weapons/implants/implanter.dm:15
+/obj/item/implanter/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/implants/implanter.dm", 15, /obj/item/implanter)
+	into += entry_line(16)
+	into += list(global.op("toggle", global.in_hand(), global.label("Toggle"), global.then(PROC_REF(implanter_self))))
+	into += entry_line(17)
+	into += list(global.op("remove_implant", global.menu(), global.label("Remove Implant"), global.needs(global.carried()), global.then(PROC_REF(remove_implant_effect))))
+
+/// CAPABILITIES(/obj/item/implanter/compliance) at code/game/objects/items/weapons/implants/implant.dm:860
 /obj/item/implanter/compliance/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 833, /obj/item/implanter/compliance)
-	into += entry_line(834)
+	into += entry_block("code/game/objects/items/weapons/implants/implant.dm", 860, /obj/item/implanter/compliance)
+	into += entry_line(861)
+	into += list(global.without("toggle"))
+	into += entry_line(862)
 	into += list(global.op("compliance_implanter_self", global.in_hand(), global.label("Set laws"), global.then(PROC_REF(compliance_implanter_self))))
 
 /// CAPABILITIES(/obj/item/implantpad) at code/game/objects/items/weapons/implants/implantpad.dm:23
