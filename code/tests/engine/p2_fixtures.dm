@@ -337,3 +337,24 @@ CAPABILITIES(/obj/p2_pulse)
 	pulses++
 
 #endif
+
+// ---- a silent requirement ----
+
+MSG_DEF_SELF(p2_silent/closed, "It is closed.")
+
+/// A holder whose button is refused by a requirement that tells nobody (an old ui_act_allowed returning FALSE).
+/obj/p2_silent
+	name = "p2 silent"
+	var/open = FALSE
+	var/pressed = 0
+
+CAPABILITIES(/obj/p2_silent)
+	op("press", ui_act(), needs(req(PROC_REF(is_open), silent = TRUE)), then(PROC_REF(was_pressed)))
+	op("press_loud", ui_act(), needs(req(PROC_REF(is_open), because = MSG(p2_silent/closed))), then(PROC_REF(was_pressed)))
+
+/obj/p2_silent/proc/is_open(datum/act/op/A)
+	return open // ALLOW(reads): a test fixture's plain flag, read when the press arrives
+
+/obj/p2_silent/proc/was_pressed(datum/act/op/A)
+	pressed++
+	return OP_OK

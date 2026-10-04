@@ -12911,6 +12911,15 @@
 	into += entry_line(330)
 	into += list(global.every(PROC_REF(next_gap), global.then(PROC_REF(pulse))))
 
+/// CAPABILITIES(/obj/p2_silent) at code/tests/engine/p2_fixtures.dm:351
+/obj/p2_silent/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/tests/engine/p2_fixtures.dm", 351, /obj/p2_silent)
+	into += entry_line(352)
+	into += list(global.op("press", global.ui_act(), global.needs(global.req(PROC_REF(is_open), silent = TRUE)), global.then(PROC_REF(was_pressed))))
+	into += entry_line(353)
+	into += list(global.op("press_loud", global.ui_act(), global.needs(global.req(PROC_REF(is_open), because = MSG(p2_silent/closed))), global.then(PROC_REF(was_pressed))))
+
 /// CAPABILITIES(/obj/p2_windowed) at code/tests/engine/p2_fixtures.dm:304
 /obj/p2_windowed/declared_entries(list/into)
 	..(into)

@@ -641,6 +641,8 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 	"/obj/p2_asker::ask_wanted" = list(0,
 		list(1, 0, 140)),
 	"/obj/p2_hit/halver::never" = list(0),
+	"/obj/p2_silent::is_open" = list(0,
+		list(1, 0, 21)),
 	"/obj/p2s_chain_refused::never" = list(0),
 	"/obj/s1_fixture/picky::actor_is_steward" = list(0,
 		list(1, 0, 141)),

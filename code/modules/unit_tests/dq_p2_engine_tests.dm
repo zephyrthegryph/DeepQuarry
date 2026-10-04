@@ -382,3 +382,24 @@
 	// gaps 2, 4, 2, 4: runs at 2, 6, 8 and 12
 	TEST_ASSERT_EQUAL(P.pulses, 4, "four runs in twelve deciseconds")
 	TEST_ASSERT(P.gaps_asked >= 4, "the gap is asked again before each run")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// req(silent = TRUE): refuses like any requirement but tells the actor nothing.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_p2_engine/a_silent_requirement_refuses_without_a_message
+
+/datum/unit_test/dq_p2_engine/a_silent_requirement_refuses_without_a_message/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
+	var/obj/p2_silent/T = allocate(/obj/p2_silent)
+	var/datum/op_result/quiet = test_ui(H, T, "press")
+	TEST_ASSERT_EQUAL(quiet?.outcome, ACT_REFUSED, "the press is refused while the guard fails")
+	TEST_ASSERT_EQUAL(quiet?.reason, /datum/msg/req_silent, "with the silent reason")
+	TEST_ASSERT(!reason_text(quiet?.reason), "which has no text to tell the actor")
+	var/datum/op_result/loud = test_ui(H, T, "press_loud")
+	TEST_ASSERT_EQUAL(loud?.outcome, ACT_REFUSED, "the same guard without silent is refused too")
+	TEST_ASSERT(!!reason_text(loud?.reason), "and says why")
+	TEST_ASSERT_EQUAL(T.pressed, 0, "neither ran the handler")
+	T.open = TRUE
+	test_ui(H, T, "press")
+	TEST_ASSERT_EQUAL(T.pressed, 1, "once the guard holds the press runs")

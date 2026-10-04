@@ -157,7 +157,10 @@ MSG_DEF_SELF(op/not_a_slot, "There is nowhere to put that.")
 	return part_make(req_type, named)
 
 /// req(T, of = ON_HELD): the participant is of type T. req(PROC_REF(x), because = ...): x(datum/act/A) returns TRUE or FALSE.
-/proc/req(what, of = ON_HELD, because = null, id = null)
+/// silent = TRUE refuses without telling the actor anything (a guard the old code refused with a bare return FALSE): the reason is the empty message.
+/proc/req(what, of = ON_HELD, because = null, id = null, silent = FALSE)
+	if(silent && isnull(because))
+		because = /datum/msg/req_silent
 	return part_make(/datum/entry/part/req/generic, list("what" = what, "of" = of, "because" = because, "id" = id))
 
 /datum/entry/part/req/generic
