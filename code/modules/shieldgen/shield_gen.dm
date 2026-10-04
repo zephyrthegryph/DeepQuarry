@@ -40,7 +40,6 @@ CAPABILITIES(/obj/machinery/shield_gen)
 // Capacitors feeding this generator (two-sided with each capacitor's owned_gen).
 /obj/machinery/shield_gen/relations()
 	. = ..()
-	. += rel_many(nameof(capacitors), back = nameof(/obj/machinery/shield_capacitor::owned_gen))
 	// Remote shield buttons find generators by id (REL_KEYED sources).
 	. += rel_key(nameof(id))
 
