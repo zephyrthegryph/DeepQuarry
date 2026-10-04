@@ -69,9 +69,6 @@
 	. = ..()
 	. += owns(nameof(beakers), policy = OWN_CONTAINED, is_list = TRUE)
 
-/obj/item/gun/projectile/dartgun/relations()
-	. = ..()
-	. += rel_many(nameof(mixing))
 
 /obj/item/gun/projectile/dartgun/Initialize(mapload)
 	. = ..()

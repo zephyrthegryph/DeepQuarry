@@ -479,6 +479,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/mining/drill, "{appearance_state}")
 		. += span_notice("The internals of the brace look resilient enough to support a drill by itself.")
 
 CAPABILITIES(/obj/machinery/mining/brace)
+	links(/obj/machinery/mining/brace::connected, /obj/machinery/mining/drill::supports, b_many = TRUE)
 	climb()
 
 /obj/machinery/mining/brace/Initialize(mapload)
@@ -570,10 +571,3 @@ CAPABILITIES(/obj/machinery/mining/brace)
 /// Accessor for the connected var.
 /obj/machinery/mining/brace/proc/connected() as /obj/machinery/mining/drill
 	return connected
-
-/obj/machinery/mining/brace/relations()
-	. = ..()
-	. += rel_one(nameof(connected), back = nameof(/obj/machinery/mining/drill::supports))
-/obj/machinery/mining/drill/relations()
-	. = ..()
-	. += rel_many(nameof(supports), back = nameof(/obj/machinery/mining/brace::connected))

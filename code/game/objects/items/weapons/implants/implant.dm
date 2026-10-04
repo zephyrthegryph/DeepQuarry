@@ -372,7 +372,7 @@ CAPABILITIES(/obj/item/implant/explosive)
 	if (ishuman(imp_in()) && part)
 		imp_in().visible_message(span_warning("Something beeps inside [imp_in()][part ? "'s [part.name]" : ""]!"))
 		play_sfx(src, SFX_ITEMS_COUNTDOWN)
-		after(src, 25, PROC_REF(small_boom_goes))
+		after(src, 2.5 SECONDS, PROC_REF(small_boom_goes))
 
 //////////////////////////////
 //	Chemical Implant

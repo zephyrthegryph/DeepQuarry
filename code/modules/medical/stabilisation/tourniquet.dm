@@ -92,9 +92,6 @@
 	var/obj/item/tourniquet/tourniquet
 
 // Owned: a cinched tourniquet sits in the limb and is deleted with it.
-/obj/item/organ/external/ownership()
-	. = ..()
-	. += owns(nameof(tourniquet), policy = OWN_DELETE)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).

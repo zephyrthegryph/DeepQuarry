@@ -24,6 +24,7 @@
 CAPABILITIES(/obj/item/analyzer/plant_analyzer)
 	op("print", ui_act(), then(PROC_REF(ui_act_print)))
 	op("close", ui_act(), then(PROC_REF(ui_act_close)))
+	owns_one(nameof(last_seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 
 /obj/item/analyzer/plant_analyzer
 	name = "plant analyzer"
@@ -304,7 +305,3 @@ UI_DATA(/obj/item/analyzer/plant_analyzer, "reagents=last_reagents:list", "merge
 			data["trait_info"] += "It will consume [amount][GLOB.gas_data.name[gas]] from the environment."
 
 	return data
-
-/obj/item/analyzer/plant_analyzer/ownership()
-	. = ..()
-	. += rel_one(nameof(last_seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

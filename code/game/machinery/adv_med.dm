@@ -28,9 +28,11 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-/obj/machinery/bodyscanner/relations()
-	. = ..()
-	. += rel_one(nameof(console), back = nameof(/obj/machinery/body_scanconsole::scanner))
+CAPABILITIES(/obj/machinery/bodyscanner)
+	links(/obj/machinery/bodyscanner::console, /obj/machinery/body_scanconsole::scanner)
+	interface("BodyScanner", title = "Body Scanner")
+	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
+	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -178,11 +180,6 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return src
 	return console ? console : src
 
-CAPABILITIES(/obj/machinery/bodyscanner)
-	interface("BodyScanner", title = "Body Scanner")
-	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
-	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
-
 /obj/machinery/bodyscanner/ui_data(datum/act/eval/A)
 	// qualitative scanner output. The old block dumped exact
 	// damage numbers and every affliction's name; the new builder
@@ -316,9 +313,6 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	. = ..()
 	findscanner()
 
-/obj/machinery/body_scanconsole/relations()
-	. = ..()
-	. += rel_one(nameof(scanner), back = nameof(/obj/machinery/bodyscanner::console))
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \

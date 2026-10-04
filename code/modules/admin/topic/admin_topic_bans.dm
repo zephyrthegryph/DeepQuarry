@@ -319,7 +319,7 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/reason = topic_ask(user, args, "a18", /datum/om/prompt/text, message = "Reason?", title = "reason", default = "Griefer")
 			if(!reason)
 				return
-			AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins)
+			AddBan(M.ckey, M.computer_id, reason, user.ckey, 1, mins, user = user)
 			ban_unban_log_save("[user.client.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.")
 			notes_add(M.ckey,"[user.client.ckey] has banned [M.ckey]. - Reason: [reason] - This will be removed in [mins] minutes.",user)
 			to_chat(M, span_filter_system(span_critical("You have been banned by [user.client.ckey].\nReason: [reason].")))
@@ -346,9 +346,9 @@ TOPIC_ACTION(/datum/admins, "mute", PROC_REF(topic_mute), TOPIC_RIGHTS(R_MOD|R_A
 			var/ip_answer = topic_ask(user, args, "a20", /datum/om/prompt/choice/alert, message = "IP ban?", title = "IP Ban", choices = list("Yes","No","Cancel"))
 			switch(ip_answer)
 				if("Yes")
-					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP)
+					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, M.lastKnownIP, user)
 				if("No")
-					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0)
+					AddBan(M.ckey, M.computer_id, reason, user.ckey, 0, 0, user = user)
 				else
 					return
 			to_chat(M, span_filter_system(span_critical("You have been banned by [user.client.ckey].\nReason: [reason].")))

@@ -153,6 +153,6 @@
 
 		GLOB.command_announcement.Announce(lines.Join("\n"), "Hazardous Biomass - URGENT!", new_sound = ANNOUNCER_MSG_BIOHAZARD_FIVE)
 
-/datum/event2/event/blob/relations()
-	. = ..()
-	. += rel_many(nameof(blobs))
+
+CAPABILITIES(/datum/event2/event/blob)
+	ref_many(nameof(blobs))

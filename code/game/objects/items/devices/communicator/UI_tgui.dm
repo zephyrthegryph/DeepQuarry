@@ -10,12 +10,7 @@
 	var/atom/movable/screen/skybox/local_skybox
 
 CAPABILITIES(/obj/item/communicator)
-	op("toggle_visibility", ui_act(), then(PROC_REF(ui_act_toggle_visibility)))
-	op("toggle_ringer", ui_act(), then(PROC_REF(ui_act_toggle_ringer)))
-	op("selfie_mode", ui_act(), then(PROC_REF(ui_act_selfie_mode)))
-	op("clear_target_address", ui_act(), then(PROC_REF(ui_act_clear_target_address)))
-	op("endvideo", ui_act(), then(PROC_REF(ui_act_endvideo)))
-	op("hang_up", ui_act(), then(PROC_REF(ui_act_hang_up)))
+	owns_one(nameof(id), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(cam_background), /atom/movable/screen/background)
 	owns_one(nameof(cam_screen), /atom/movable/screen/map_view)
 	owns_one(nameof(exonet), /datum/exonet_protocol)
@@ -324,39 +319,55 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 /datum/om/prompt/text/communicator
 	requires = PROMPT_USABLE
 
-/datum/om/prompt/text/communicator/name
+/datum/prompt/text/communicator
+	usable_state = "default"
+	timeout = 0
+
+/datum/prompt/text/communicator/name
 	name_text = TRUE
 	title = "Communicator"
-	message = "Please enter your name."
+	question = "Please enter your name."
 	encode = FALSE
 
-/datum/om/prompt/text/communicator/ringtone
+/datum/prompt/text/communicator/ringtone
 	title = "Ringer"
-	message = "Set Ringer Tone"
+	question = "Set Ringer Tone"
 
-/datum/om/prompt/text/communicator/text_message
+/datum/prompt/text/communicator/text_message
 	title = "Text Message"
-	message = "Enter your message."
+	question = "Enter your message."
 	encode = FALSE
 	var/address
 
 /// A cancel clears the note.
-/datum/om/prompt/text/communicator/note
-	message = "Please enter message"
+/datum/prompt/text/communicator/note
+	question = "Please enter message"
 	multiline = TRUE
-	cancel_answer = ""
 
-/obj/item/communicator/proc/name_entered(datum/om/prompt/text/communicator/name/ask)
-	var/new_name = sanitizeSafe(ask.text)
+/obj/item/communicator/proc/name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_name = sanitizeSafe(A.answer.answer_value)
 	if(new_name)
 		register_device(new_name)
 
-/obj/item/communicator/proc/ringtone_entered(datum/om/prompt/text/communicator/ringtone/ask)
-	if(ask.text)
-		ttone = ask.text
+/obj/item/communicator/proc/ringtone_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		ttone = A.answer.answer_value
 
-/obj/item/communicator/proc/note_entered(datum/om/prompt/text/communicator/note/ask)
-	var/n = sanitizeSafe(ask.text, extra = 0)
+/obj/item/communicator/proc/note_entered(datum/act/request/A)
+	var/text
+	if(A.answer)
+		text = A.answer.answer_value
+	else
+		// An accepted answer rejected by the usability recheck keeps its original value.
+		// An explicit cancel has none, including after an earlier refused submission.
+		if(A.request.outcome != REQ_CANCELLED || !isnull(A.request.answer_value) || QDELETED(A.request.answerer))
+			return
+		text = ""
+	var/n = sanitizeSafe(text, extra = 0)
 	if(n)
 		note = html_decode(n)
 		notehtml = note
@@ -365,10 +376,13 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 		note = ""
 		notehtml = note
 
-/obj/item/communicator/proc/text_message_entered(datum/om/prompt/text/communicator/text_message/ask)
-	var/mob/user = ask.answerer
-	var/their_address = ask.address
-	var/text = sanitizeSafe(ask.text)
+/obj/item/communicator/proc/text_message_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/communicator/text_message/prompt = A.answer
+	var/mob/user = A.request.answerer
+	var/their_address = prompt.address
+	var/text = sanitizeSafe(A.answer.answer_value)
 	if(!text || !get_connection_to_tcomms())
 		return
 	exonet.send_message(their_address, "text", text)
@@ -393,7 +407,7 @@ UI_DATA_REPLACE(/obj/item/communicator, "visible=network_visibility:num", "targe
 UI_ACT(/obj/item/communicator, "rename", ui_act_rename)
 UI_ACT_PROC(/obj/item/communicator, ui_act_rename)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/name, PROC_REF(name_entered), default = ui.user.name)
+	open_request(src, /datum/prompt/text/communicator/name, PROC_REF(name_entered), answerer = ui.user, default = ui.user.name)
 
 /obj/item/communicator/proc/ui_act_toggle_visibility(datum/act/op/A)
 	add_fingerprint(A.actor)
@@ -416,7 +430,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_rename)
 UI_ACT(/obj/item/communicator, "set_ringer_tone", ui_act_set_ringer_tone)
 UI_ACT_PROC(/obj/item/communicator, ui_act_set_ringer_tone)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered))
+	open_request(src, /datum/prompt/text/communicator/ringtone, PROC_REF(ringtone_entered), answerer = ui.user)
 
 /obj/item/communicator/proc/ui_act_selfie_mode(datum/act/op/A)
 	add_fingerprint(A.actor)
@@ -461,7 +475,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_message)
 	if(!get_connection_to_tcomms())
 		to_chat(ui.user, span_danger("Error: Cannot connect to Exonet node."))
 		return FALSE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/text_message, PROC_REF(text_message_entered), address = params["message"])
+	open_request(src, /datum/prompt/text/communicator/text_message, PROC_REF(text_message_entered), answerer = ui.user, address = params["message"])
 
 UI_ACT(/obj/item/communicator, "disconnect", ui_act_disconnect, UI_ARG_TEXT("disconnect"))
 UI_ACT_PROC(/obj/item/communicator, ui_act_disconnect)
@@ -513,7 +527,7 @@ UI_ACT_PROC(/obj/item/communicator, ui_act_switch_tab)
 UI_ACT(/obj/item/communicator, "edit", ui_act_edit)
 UI_ACT_PROC(/obj/item/communicator, ui_act_edit)
 	. = TRUE
-	om_ask(ui.user, /datum/om/prompt/text/communicator/note, PROC_REF(note_entered), title = name, default = notehtml)
+	open_request(src, /datum/prompt/text/communicator/note, PROC_REF(note_entered), answerer = ui.user, title = name, default = notehtml)
 
 UI_ACT(/obj/item/communicator, "Light", ui_act_light)
 UI_ACT_PROC(/obj/item/communicator, ui_act_light)

@@ -23,11 +23,13 @@ CAPABILITIES(/obj/item/selectable_item)
 /obj/item/selectable_item/proc/preface_confirmed(datum/act/request/A)
 	if(!A.answer || !A.answer.answer_value)
 		return
-	om_ask(A.request.answerer, /datum/om/prompt/choice, PROC_REF(item_selected), title = selection_title, message = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(item_selected), answerer = A.request.answerer, title = selection_title, question = selection_string, choices = TYPE_TABLE_GET(src, selectable_item_options), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/selectable_item/proc/item_selected(datum/om/prompt/choice/ask)
-	var/mob/user = ask.answerer
-	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[ask.choice]
+/obj/item/selectable_item/proc/item_selected(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/chosen_item = TYPE_TABLE_GET(src, selectable_item_options)[A.answer.answer_value]
 	if(chosen_item)
 		if(!consume(src, user))
 			return

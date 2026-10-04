@@ -1,6 +1,7 @@
 /obj/item/organ/external/var/datum/nail_polish/nail_polish
 
 CAPABILITIES(/obj/item/organ/external)
+	owns_one(nameof(tourniquet))
 	owns_one(nameof(nail_polish), /datum/nail_polish)
 
 /obj/item/nailpolish

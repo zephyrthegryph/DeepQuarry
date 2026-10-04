@@ -78,9 +78,6 @@ EXTEND_INTERACTIONS(/turf/simulated/wall/solidrock, INTERACT_ITEM("Nothing", TYP
 	desc = "An old, yet impressively durably rock wall."
 	var/mossyrock_side = "mossyrock_side"
 
-/turf/simulated/wall/solidrock/mossyrockpoi/Initialize(mapload)
-	. = ..(mapload, "mossyrock")
-
 DECLARE_APPEARANCE_PROC(/turf/simulated/wall/solidrock/mossyrockpoi, TYPE_PROC_REF(/atom, appearance_overlays), list(CHANGE_NEIGHBOURS))
 /turf/simulated/wall/solidrock/mossyrockpoi/appearance_overlays()
 	. = list()

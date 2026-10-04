@@ -14,9 +14,8 @@
 	if(new_partner)
 		pair(new_partner)
 
-/obj/effect/overmap/bluespace_rift/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/obj/effect/overmap/bluespace_rift::partner))
+CAPABILITIES(/obj/effect/overmap/bluespace_rift)
+	links(/obj/effect/overmap/bluespace_rift::partner, /obj/effect/overmap/bluespace_rift::partner)
 
 /obj/effect/overmap/bluespace_rift/proc/pair(obj/effect/overmap/bluespace_rift/new_partner)
 	if(istype(new_partner))

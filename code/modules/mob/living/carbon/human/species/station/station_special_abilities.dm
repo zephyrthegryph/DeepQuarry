@@ -692,7 +692,7 @@
 		C.adjust_nutrition(-25)
 		update_floating()
 		to_chat(C, span_notice("You hover in place."))
-		after(C, 6, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
+		after(C, 0.6 SECONDS, TYPE_PROC_REF(/atom/movable, set_anchored), with = list(FALSE)) //.6 seconds.
 	else
 		return
 
@@ -1137,7 +1137,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/gun/energy/gun/tongue, TYPE_PROC_REF(/atom, ap
 	visible_message(span_critical("\The [src] leaps at \the [target]!"))
 	throw_at(get_step(target, get_turf(src)), 7, 1, src)
 	playsound(src, leap_sound, 75, 1)
-	after(src, 5, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
+	after(src, 0.5 SECONDS, PROC_REF(target_lunge_land), with = list(target)) // For the throw to complete.
 
 /mob/living/proc/target_lunge_land(mob/living/target)
 	if(status_flags & LEAPING)

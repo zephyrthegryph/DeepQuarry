@@ -31,10 +31,8 @@
 				break
 	update_icon()
 
-/obj/structure/ladder/relations()
-	. = ..()
-	. += rel_one(nameof(target_down), back = nameof(/obj/structure/ladder::target_up))
-	. += rel_one(nameof(target_up), back = nameof(/obj/structure/ladder::target_down))
+CAPABILITIES(/obj/structure/ladder)
+	links(/obj/structure/ladder::target_down, /obj/structure/ladder::target_up)
 
 /obj/structure/ladder/attack_generic(mob/user)
 	//Simple Animal

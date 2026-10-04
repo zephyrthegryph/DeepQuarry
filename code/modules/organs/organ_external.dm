@@ -1150,7 +1150,7 @@ Note that amputating the affected organ does in fact remove the infection from t
 			stump.update_damages()
 		victim?.body?.on_status_changed()
 
-	after(victim, 1, /proc/droplimb_refresh_icons, with = list(victim))
+	after(victim, 0.1 SECONDS, /proc/droplimb_refresh_icons, with = list(victim))
 	dir = 2
 
 	var/atom/droploc = victim.drop_location()

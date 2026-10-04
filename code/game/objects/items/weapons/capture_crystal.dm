@@ -280,14 +280,16 @@ DECLARE_INTERACTIONS(/obj/item/capture_crystal, INTERACT_USE(null, PROC_REF(inte
 			to_chat(user, span_notice("\The [src] emits an unpleasant tone... It does not activate for you."))
 			play_sfx(src, SFX_EFFECTS_CAPTURE_CRYSTAL_NEGATIVE)
 			return TRUE
-		om_ask(user, /datum/om/prompt/confirm, PROC_REF(claim_answered), title = "Claim ownership", message = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", no_first = TRUE, answer_on_no = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/choice, PROC_REF(claim_answered), answerer = user, title = "Claim ownership", question = "\The [src] hasn't got an owner. It has \the [bound_mob] registered to it. Would you like to claim this as yours?", buttons = TRUE, choices = list("No", "Yes"), ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return TRUE
 	use_crystal(user)
 	return TRUE
 
-/obj/item/capture_crystal/proc/claim_answered(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
-	if(ask.yes && !owner && bound_mob && bound_mob != user)
+/obj/item/capture_crystal/proc/claim_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	if(A.answer.answer_value == "Yes" && !owner && bound_mob && bound_mob != user)
 		rel_set(src, nameof(owner), user)
 	use_crystal(user)
 

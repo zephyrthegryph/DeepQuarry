@@ -93,22 +93,25 @@ CAPABILITIES(/obj/item/paicard)
 		to_chat(user, span_danger("You have no pai name set."))
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm/pai_inhabit, PROC_REF(inhabit_confirmed), message = "Do you want to inhabit this pAI using \"[pai_name]\"?")
+	open_request(src, /datum/prompt/choice/pai_inhabit, PROC_REF(inhabit_confirmed), answerer = user, question = "Do you want to inhabit this pAI using \"[pai_name]\"?")
 	return TRUE
 
 /// A ghost loading into an empty card. Re-checked on the answer: still has a client, the card is still empty.
-/datum/om/prompt/confirm/pai_inhabit
+/datum/prompt/choice/pai_inhabit
 	title = "Load pAI"
-	yes_text = "Load pAI Data"
-	no_text = "Cancel"
-	requires = list(/datum/om/check/has_client)
+	choices = list("Load pAI Data", "Cancel")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/pai_inhabit/valid()
-	var/obj/item/paicard/card = subject
+/datum/prompt/choice/pai_inhabit/recheck_extra()
+	if(!istype(answerer, /mob) || !answerer.client)
+		return "nobody is playing it"
+	var/obj/item/paicard/card = owner
 	return card.pai ? "already inhabited" : null
 
-/obj/item/paicard/proc/inhabit_confirmed(datum/om/prompt/confirm/pai_inhabit/ask)
-	ghost_inhabit(ask.answerer)
+/obj/item/paicard/proc/inhabit_confirmed(datum/act/request/A)
+	if(A.answer?.answer_value == "Load pAI Data")
+		ghost_inhabit(A.request.answerer)
 
 /obj/item/paicard/proc/ghost_inhabit(mob/user)
 	RETURN_TYPE(/mob/living/silicon/pai)
@@ -527,7 +530,7 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	var/obj/item/card/id/ID = I.GetID()
 	if(ID && pai)
 		if (pai.idaccessible == 1)
-			om_ask(user, /datum/om/prompt/choice/pai_id_access, PROC_REF(id_access_chosen), message = "Do you wish to add access to [src] or remove access from [src]?", subject = I, card = src)
+			open_request(src, /datum/prompt/choice/pai_id_access, PROC_REF(id_access_chosen), answerer = user, question = "Do you wish to add access to [src] or remove access from [src]?", subject = I)
 			return TRUE
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
@@ -687,23 +690,26 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.answer_value))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
-/datum/om/prompt/choice/pai_id_access
+/datum/prompt/choice/pai_id_access
 	buttons = TRUE
 	choices = list("Add Access", "Remove Access", "Cancel")
 	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/paicard/card
+	timeout = 0
 
-/datum/om/prompt/choice/pai_id_access/valid()
+/datum/prompt/choice/pai_id_access/recheck_extra()
 	var/obj/item/I = subject
+	var/obj/item/paicard/card = owner
 	if(!I.GetID() || !card.pai || card.pai.idaccessible != 1)
 		return "no access to change"
 	return null
 
-/obj/item/paicard/proc/id_access_chosen(datum/om/prompt/choice/pai_id_access/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/I = ask.subject
+/obj/item/paicard/proc/id_access_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/I = A.request.subject
 	var/obj/item/card/id/ID = I.GetID()
-	switch(ask.choice)
+	switch(A.answer.answer_value)
 		if("Add Access")
 			pai.idcard.access |= ID.access
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))

@@ -3,6 +3,7 @@
 DECLARE_UI_STATE(/obj/item/gun/projectile/dartgun, GLOB.tgui_default_state)
 
 CAPABILITIES(/obj/item/gun/projectile/dartgun)
+	ref_many(nameof(mixing))
 	interface("Dartgun")
 	op("toggle_mix", ui_act("toggle_mix", arg("index", num())), then(PROC_REF(ui_act_toggle_mix)))
 	op("eject_beaker", ui_act("eject_beaker", arg("index", num())), then(PROC_REF(ui_act_eject_beaker)))

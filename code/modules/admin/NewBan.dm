@@ -98,7 +98,7 @@ GLOBAL_DATUM(banlist, /savefile)
 	return 1
 
 
-/proc/AddBan(ckey, computerid, reason, bannedby, temp, minutes, address)
+/proc/AddBan(ckey, computerid, reason, bannedby, temp, minutes, address, mob/user)
 
 	var/bantimestamp
 
@@ -108,7 +108,7 @@ GLOBAL_DATUM(banlist, /savefile)
 
 	GLOB.banlist.cd = "/base"
 	if ( GLOB.banlist.dir.Find("[ckey][computerid]") )
-		to_chat(usr, span_filter_adminlog(span_warning("Ban already exists.")))
+		to_chat(user, span_filter_adminlog(span_warning("Ban already exists.")))
 		return 0
 	else
 		GLOB.banlist.dir.Add("[ckey][computerid]")

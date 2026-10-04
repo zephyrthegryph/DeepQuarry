@@ -1,5 +1,5 @@
 
-/datum/tgui_say/proc/handle_packets(id, total_packets, packet)
+/datum/tgui_say/proc/handle_packets(id, total_packets, packet, mob/user)
 	id = text2num(id)
 
 	var/total = text2num(total_packets)

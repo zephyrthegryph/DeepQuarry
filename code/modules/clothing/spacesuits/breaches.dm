@@ -22,6 +22,7 @@
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 CAPABILITIES(/obj/item/clothing/suit/space)
+	ref_many(nameof(supporting_limbs))
 	owns_many(nameof(breaches))
 
 /obj/item/clothing/suit/space/Initialize(mapload)

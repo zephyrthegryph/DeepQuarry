@@ -187,6 +187,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/remote_scene_tool, TYPE_PROC_REF(/atom, appear
 	return null
 
 CAPABILITIES(/obj/item/remote_scene_tool)
+	links(/obj/item/remote_scene_tool::linked, /obj/item/remote_scene_tool::linked)
 	op("remote_scene_tool_verb_summon", menu(), label("Summon Counterpart"), needs(carried()), then(PROC_REF(remote_scene_tool_verb_summon)))
 
 /// Old Summon Counterpart verb: Forcibly moves the linked object over to you - or, if it doesn't exist, spawn a new one.
@@ -218,7 +219,3 @@ CAPABILITIES(/obj/item/remote_scene_tool)
 /// Accessor for the worn_mob var.
 /obj/item/remote_scene_tool/proc/worn_mob() as /mob
 	return worn_mob
-
-/obj/item/remote_scene_tool/relations()
-	. = ..()
-	. += rel_one(nameof(linked), back = nameof(/obj/item/remote_scene_tool::linked))

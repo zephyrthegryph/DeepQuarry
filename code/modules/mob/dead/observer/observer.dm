@@ -425,12 +425,15 @@ This is the proc mobs get to turn into a ghost. Forked from ghostize due to comp
 
 	if(!mobname)
 		var/list/possible_mobs = jumpable_mobs()
-		om_ask(src, /datum/om/prompt/choice, PROC_REF(follow_target_chosen), title = "Ghost Follow", message = "Select a mob:", choices = possible_mobs)
+		open_request(src, /datum/prompt/choice, PROC_REF(follow_target_chosen), answerer = src, title = "Ghost Follow", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 		return
 	follow_mob(jumpable_mobs()[mobname])
 
-/mob/observer/dead/proc/follow_target_chosen(datum/om/prompt/choice/ask)
-	follow_mob(ask.choices[ask.choice])
+/mob/observer/dead/proc/follow_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
+	follow_mob(prompt.choices[A.answer.answer_value])
 
 /mob/observer/dead/proc/follow_mob(mob/M)
 	if(!M)
@@ -587,13 +590,16 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		return
 
 	var/list/possible_mobs = jumpable_mobs()
-	om_ask(src, /datum/om/prompt/choice, PROC_REF(jump_target_chosen), title = "Ghost Jump", message = "Select a mob:", choices = possible_mobs)
+	open_request(src, /datum/prompt/choice, PROC_REF(jump_target_chosen), answerer = src, title = "Ghost Jump", question = "Select a mob:", choices = possible_mobs, timeout = 0)
 
-/mob/observer/dead/proc/jump_target_chosen(datum/om/prompt/choice/ask)
+/mob/observer/dead/proc/jump_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
 	if(!isobserver(src)) //Make sure they're an observer!
 		return
 
-	var/target = ask.choices[ask.choice]
+	var/target = prompt.choices[A.answer.answer_value]
 	if (!target)//Make sure we actually have a target
 		return
 	else
@@ -665,9 +671,10 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 //This is called when a ghost is drag clicked to something.
 /mob/observer/dead/MouseDrop(atom/over)
-	if(!usr || !over) return
-	if (isobserver(usr) && usr.client && check_rights_for(usr.client, R_HOLDER) && isliving(over))
-		if (usr.client.holder.cmd_ghost_drag(src,over))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): Native drag delivery supplies the initiating mob; pass that actor to the confirmation helper.
+	if(!user || !over) return
+	if (isobserver(user) && user.client && check_rights_for(user.client, R_HOLDER) && isliving(over))
+		if (user.client.holder.cmd_ghost_drag(src, over, user))
 			return
 
 	return ..()
@@ -980,43 +987,44 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 
 /// Picks a sprite (shown at once), then asks to keep it; a no picks again, a cancel puts the old one back.
 /mob/observer/dead/proc/ask_ghost_sprite(previous_state)
-	om_ask(src, /datum/om/prompt/choice/ghost_sprite, PROC_REF(ghost_sprite_chosen), previous = previous_state)
+	open_request(src, /datum/prompt/choice/ghost_sprite, PROC_REF(ghost_sprite_chosen), answerer = src, choices = GLOB.possible_ghost_sprites, previous = previous_state)
 
-/datum/om/prompt/choice/ghost_sprite
+/datum/prompt/choice/ghost_sprite
 	title = "Ghost Sprite"
-	message = "What would you like to use for your ghost sprite?"
+	question = "What would you like to use for your ghost sprite?"
+	timeout = 0
 	/// The icon_state before the first pick.
 	var/previous
 
-/datum/om/prompt/choice/ghost_sprite/New()
-	..()
-	choices = GLOB.possible_ghost_sprites
-
-/datum/om/prompt/confirm/ghost_sprite
+/datum/prompt/choice/ghost_sprite_confirm
 	title = "Ghost Sprite"
-	message = "Look at your sprite. Is this what you wish to use?"
-	no_first = TRUE
-	answer_on_no = TRUE
+	question = "Look at your sprite. Is this what you wish to use?"
+	buttons = TRUE
+	choices = list("No", "Yes")
+	timeout = 0
 	var/previous
 	var/picked_sprite
 
-/datum/om/prompt/confirm/ghost_sprite/cancelled()
-	var/mob/observer/dead/ghost = answerer
-	if(istype(ghost))
-		ghost.icon_state = previous
-
-/mob/observer/dead/proc/ghost_sprite_chosen(datum/om/prompt/choice/ghost_sprite/ask)
+/mob/observer/dead/proc/ghost_sprite_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/ghost_sprite/prompt = A.answer
 	icon = 'icons/mob/ghost.dmi'
 	cut_overlays()
-	icon_state = GLOB.possible_ghost_sprites[ask.choice]
-	om_ask(src, /datum/om/prompt/confirm/ghost_sprite, PROC_REF(ghost_sprite_confirmed), previous = ask.previous, picked_sprite = ask.choice)
+	icon_state = GLOB.possible_ghost_sprites[A.answer.answer_value]
+	open_request(src, /datum/prompt/choice/ghost_sprite_confirm, PROC_REF(ghost_sprite_confirmed), answerer = src, previous = prompt.previous, picked_sprite = A.answer.answer_value)
 
-/mob/observer/dead/proc/ghost_sprite_confirmed(datum/om/prompt/confirm/ghost_sprite/ask)
-	if(!ask.yes)
-		icon_state = ask.previous
-		ask_ghost_sprite(ask.previous)
+/mob/observer/dead/proc/ghost_sprite_confirmed(datum/act/request/A)
+	var/datum/prompt/choice/ghost_sprite_confirm/prompt = A.request
+	if(!A.answer)
+		if(A.request.outcome == REQ_CANCELLED && isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			icon_state = prompt.previous
 		return
-	ghost_sprite = GLOB.possible_ghost_sprites[ask.picked_sprite]
+	if(A.answer.answer_value == "No")
+		icon_state = prompt.previous
+		ask_ghost_sprite(prompt.previous)
+		return
+	ghost_sprite = GLOB.possible_ghost_sprites[prompt.picked_sprite]
 	if(ghost_sprite == "blank")
 		log_and_message_admins("[key_name(src)] has set their ghost sprite to invisible.", src)
 
@@ -1046,9 +1054,11 @@ REGISTRY_MEMBERSHIP(/mob/observer/dead, REGISTRY_OBSERVERS)
 		to_chat(src,span_warning("You have 'Be pAI' disabled in your character prefs."))
 		return
 
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(pai_alert_confirmed), title = "Confirmation", message = "Would you like to submit yourself to the recruitment list too?", no_first = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(pai_alert_confirmed), answerer = src, title = "Confirmation", question = "Would you like to submit yourself to the recruitment list too?", choices = list("No", "Yes"), buttons = TRUE, timeout = 0)
 
-/mob/observer/dead/proc/pai_alert_confirmed(datum/om/prompt/confirm/ask)
+/mob/observer/dead/proc/pai_alert_confirmed(datum/act/request/A)
+	if(A.answer?.answer_value != "Yes")
+		return
 
 	to_chat(src,span_notice("Flashing the displays of [pai_card_ping()] unoccupied PAIs."))
 

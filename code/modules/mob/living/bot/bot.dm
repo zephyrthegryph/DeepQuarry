@@ -625,6 +625,8 @@ DECLARE_EMAG_REPEATABLE(/mob/living/bot, PROC_REF(on_emag), null)
 	can_be_drop_pred = FALSE
 
 CAPABILITIES(/mob/living/bot)
+	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
+	ref_many(nameof(ignore_list))
 	owns_one(nameof(botcard), starts = /obj/item/card/id)
 	owns_one(nameof(access_scanner), starts = /obj)
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint)))
@@ -633,10 +635,6 @@ CAPABILITIES(/mob/living/bot)
 	. = ..()
 	. += owns(nameof(paicard), policy = OWN_CONTAINED)
 
-/mob/living/bot/relations()
-	. = ..()
-	/// Things the bot gave up on: AI memory, re-learned as it patrols. The bot owns none of them.
-	. += rel_many(nameof(ignore_list))
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob/living/bot, on)

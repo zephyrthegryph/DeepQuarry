@@ -491,7 +491,7 @@ CAPABILITIES(/datum/contract_requirement/staged_sustained_event)
 	var/token = event.id
 	pending_tokens[stage_key] = token
 	pending_stage_indices[stage_key] = stage_index
-	after(src, max(1, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
+	after(src, max(0.1 SECONDS, stage["duration"]), PROC_REF(complete_stage), key = "pending:[stage_key]", with = list(stage_key, stage_index, token, event.actor_account, event.value("detail")))
 	changed = TRUE
 	return changed
 

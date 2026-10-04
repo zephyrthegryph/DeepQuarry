@@ -358,11 +358,13 @@ DECLARE_APPEARANCE_PROC(/obj/item/melee/robotic/blade, TYPE_PROC_REF(/atom, appe
 	if(isnull(_answer_k349))
 		return TRUE
 	if(_answer_k349 == "Yes")
-		om_ask(user, /datum/om/prompt/color, PROC_REF(blade_color_picked), default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE)
+		open_request(src, /datum/prompt/color, PROC_REF(blade_color_picked), answerer = user, default = lcolor, title = "Choose Energy Color", ask_flags = ASK_CAPABLE, timeout = 0)
 
-/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/om/prompt/color/ask)
-	if(ask.picked_color)
-		lcolor = sanitize_hexcolor(ask.picked_color)
+/obj/item/melee/robotic/blade/proc/blade_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		lcolor = sanitize_hexcolor(A.answer.answer_value)
 	update_icon()
 	return TRUE
 

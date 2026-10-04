@@ -59,6 +59,7 @@ REGISTRY_MEMBERSHIP(/obj/effect/plant, REGISTRY_GROWING_PLANTS)
 	var/obj/machinery/portable_atmospherics/hydroponics/soil/invisible/plant
 
 CAPABILITIES(/obj/effect/plant)
+	owns_one(nameof(seed_static), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(plant), /obj/machinery/portable_atmospherics/hydroponics/soil/invisible)
 
 // neighbouring plants resume spreading.
@@ -360,7 +361,3 @@ DAMAGE_REACTION(/obj/effect/plant, DAMAGE_EXPLOSION, PROC_REF(plant_blast_die_of
 /// The seed (PROTO): a registered line, or this holder's own private copy.
 /obj/effect/plant/proc/seed() as /datum/seed
 	return seed_static
-
-/obj/effect/plant/ownership()
-	. = ..()
-	. += rel_one(nameof(seed_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

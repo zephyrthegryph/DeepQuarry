@@ -249,6 +249,5 @@
 /datum/looping_sound/proc/remove_output(atom/thing)
 	rel_remove(src, nameof(output_atoms), thing)
 
-/datum/looping_sound/relations()
-	. = ..()
-	. += rel_many(nameof(output_atoms))
+CAPABILITIES(/datum/looping_sound)
+	ref_many(nameof(output_atoms))

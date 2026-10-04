@@ -202,7 +202,7 @@ CAPABILITIES(/obj/machinery/field_generator)
 
 /obj/machinery/field_generator/proc/turn_off()
 	set_active(0)
-	after(src, 1, PROC_REF(finish_turn_off))
+	after(src, 0.1 SECONDS, PROC_REF(finish_turn_off))
 	update_icon()
 
 /obj/machinery/field_generator/proc/finish_turn_off()
@@ -273,10 +273,10 @@ CAPABILITIES(/obj/machinery/field_generator)
 	if(src.state != 2 || !anchored)
 		turn_off()
 		return
-	after(src, 1, PROC_REF(setup_field), with = list(1))
-	after(src, 2, PROC_REF(setup_field), with = list(2))
-	after(src, 3, PROC_REF(setup_field), with = list(4))
-	after(src, 4, PROC_REF(setup_field), with = list(8))
+	after(src, 0.1 SECONDS, PROC_REF(setup_field), with = list(1))
+	after(src, 0.2 SECONDS, PROC_REF(setup_field), with = list(2))
+	after(src, 0.3 SECONDS, PROC_REF(setup_field), with = list(4))
+	after(src, 0.4 SECONDS, PROC_REF(setup_field), with = list(8))
 	set_active(2)
 
 /obj/machinery/field_generator/proc/setup_field(NSEW)

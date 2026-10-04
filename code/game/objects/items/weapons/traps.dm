@@ -254,7 +254,7 @@ CAPABILITIES(/obj/item/material/barbedwire)
 		MSG_OTHERS(span_danger("%U% has deployed %T%.")), \
 		MSG_BLIND("You hear the rustling of [material.name]."))
 	play_sfx(src, SFX_ITEMS_WIRECUTTER, 0.7)
-	after(src, 2, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
+	after(src, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/items/Wirecutter.ogg', 40, 1))
 	user.drop_from_inventory(src)
 	forceMove(get_turf(src))
 	set_anchored(TRUE)

@@ -320,7 +320,7 @@ ADMIN_VERB(toggleooc, R_ADMIN, "Toggle Player OOC", "Globally Toggles OOC.", ADM
 		to_chat(world, span_world("The OOC channel has been globally enabled!"))
 	else
 		to_chat(world, span_world("The OOC channel has been globally disabled!"))
-	log_and_message_admins("toggled OOC.")
+	log_and_message_admins("toggled OOC.", user.mob)
 	feedback_add_details("admin_verb","TOOC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(togglelooc, R_ADMIN, "Toggle Player LOOC", "Globally Toggles LOOC.", ADMIN_CATEGORY_SERVER_CHAT)
@@ -329,7 +329,7 @@ ADMIN_VERB(togglelooc, R_ADMIN, "Toggle Player LOOC", "Globally Toggles LOOC.", 
 		to_chat(world, span_world("The LOOC channel has been globally enabled!"))
 	else
 		to_chat(world, span_world("The LOOC channel has been globally disabled!"))
-	log_and_message_admins("toggled LOOC.")
+	log_and_message_admins("toggled LOOC.", user.mob)
 	feedback_add_details("admin_verb","TLOOC") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(toggledsay, R_ADMIN, "Toggle DSAY", "Globally Toggles DSAY.", ADMIN_CATEGORY_SERVER_CHAT)
@@ -376,7 +376,7 @@ ADMIN_VERB(startnow, R_SERVER|R_EVENT, "Start Now", "Start the round ASAP.", ADM
 		return
 	SSticker.start_immediately = FALSE
 	to_chat(world, span_filter_system(span_blue("Immediate game start canceled. Normal startup resumed.")))
-	log_and_message_admins("cancelled immediate game start.")
+	log_and_message_admins("cancelled immediate game start.", user.mob)
 
 ADMIN_VERB(toggleenter, R_SERVER|R_ADMIN, "Toggle Entering", "Toggle if people can join the round.", ADMIN_CATEGORY_SERVER_GAME)
 	CONFIG_SET(flag/enter_allowed, !CONFIG_GET(flag/enter_allowed))
@@ -715,7 +715,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 
 //Returns 1 to let the dragdrop code know we are trapping this event
 //Returns 0 if we don't plan to trap the event
-/datum/admins/proc/cmd_ghost_drag(mob/observer/dead/frommob, mob/living/tomob)
+/datum/admins/proc/cmd_ghost_drag(mob/observer/dead/frommob, mob/living/tomob, mob/user)
 	if(!istype(frommob))
 		return //Extra sanity check to make sure only observers are shoved into things
 
@@ -728,7 +728,7 @@ ADMIN_VERB(toggleguests, R_HOST, "Toggle guests", "Guests can't enter.", ADMIN_C
 	if (tomob.ckey)
 		question = "This mob already has a user ([tomob.key]) in control of it! "
 	question += "Are you sure you want to place [frommob.name]([frommob.key]) in control of [tomob.name]?"
-	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
+	om_ask(user, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 	return 1
 
 /// Re-checked: the ghost still has a player.
@@ -780,7 +780,7 @@ ADMIN_VERB(force_mode_latespawn, R_ADMIN|R_EVENT|R_FUN, "Force Mode Spawn", "For
 		to_chat(user, span_warning("Mode has not started."))
 		return
 
-	log_and_message_admins("attempting to force mode autospawn.")
+	log_and_message_admins("attempting to force mode autospawn.", user.mob)
 	SSticker.mode.try_latespawn()
 
 ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyze", "Paralyzes a player. Or unparalyses them.", ADMIN_CATEGORY_EVENTS, mob/living/living_target in REGISTRY_MEMBERS(REGISTRY_MOBS))
@@ -788,7 +788,7 @@ ADMIN_VERB_AND_CONTEXT_MENU(paralyze_mob, R_ADMIN|R_MOD|R_EVENT, "Toggle Paralyz
 	if (!living_target.has_status(EFFECT_PARALYZED))
 		living_target.status_set(EFFECT_PARALYZED, 8000)
 		msg = "has paralyzed [key_name(living_target)]."
-		log_and_message_admins(msg)
+		log_and_message_admins(msg, user.mob)
 		return
 	var/_answer_a15 = verb_ask(user, "a15", args, /datum/om/prompt/choice/alert, message = "[key_name(living_target)] is paralyzed, would you like to unparalyze them?", title = "Paralyze Mob", choices = list("Yes","No"))
 	if(isnull(_answer_a15))

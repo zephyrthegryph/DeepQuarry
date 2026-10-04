@@ -449,7 +449,6 @@
 	return myshuttle_landmark
 
 
-/datum/rogue/zonemaster/relations()
-	. = ..()
-	. += rel_many(nameof(rockspawns))
-	. += rel_many(nameof(mobspawns))
+CAPABILITIES(/datum/rogue/zonemaster)
+	ref_many(nameof(rockspawns))
+	ref_many(nameof(mobspawns))

@@ -139,6 +139,7 @@
 	)
 
 CAPABILITIES(/obj/machinery/portable_atmospherics/hydroponics)
+	owns_one(nameof(seed), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(temp_chem_holder), /obj)
 
 /obj/machinery/portable_atmospherics/hydroponics/declare_interactions(list/into)
@@ -239,7 +240,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 /obj/machinery/portable_atmospherics/hydroponics/proc/schedule_growth_wake()
 	if(om_timer_slot_pending(src, "growth_timer") || frozen == 1)
 		return
-	after(src, max(1, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth), key = "growth_timer")
+	after(src, max(0.1 SECONDS, lastcycle + cycledelay - world.time), PROC_REF(wake_for_growth), key = "growth_timer")
 
 /obj/machinery/portable_atmospherics/hydroponics/proc/wake_for_growth()
 	MACHINE_WAKE(src)
@@ -798,6 +799,3 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/portable_atmospherics/hydroponics, MACHINE
 #undef AGE_MOD_MAX
 
 /// The planted seed: a registered line, or the tray's own private (mutated / modified) copy.
-/obj/machinery/portable_atmospherics/hydroponics/ownership()
-	. = ..()
-	. += rel_one(nameof(seed), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)

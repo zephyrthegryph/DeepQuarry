@@ -31,6 +31,8 @@
 	var/moon_phase = null // Set if above is defined.
 
 CAPABILITIES(/datum/planet)
+	ref_many(nameof(planet_floors))
+	ref_many(nameof(planet_walls))
 	owns_one(nameof(current_time), /datum/time)
 	owns_one(nameof(sun_holder), /datum/sun_holder)
 	owns_one(nameof(weather_holder), /datum/weather_holder)
@@ -91,7 +93,3 @@ CAPABILITIES(/datum/planet)
 // Turfs are never deleted.
 
 // The planet's turfs are relation lists: a released z-level (om_drop_z) clears them.
-/datum/planet/relations()
-	. = ..()
-	. += rel_many(nameof(planet_floors))
-	. += rel_many(nameof(planet_walls))

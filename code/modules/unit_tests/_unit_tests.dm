@@ -937,6 +937,11 @@
 #include "interim_stamp_choice_metadata.dm"
 #include "interim_admin_reload_request_lifetime.dm"
 
+#include "interim_native_reference_lifetime.dm"
+#include "interim_robot_reclassification_request.dm"
+#include "interim_implantcase_native_label_request.dm"
+#include "interim_observer_native_sprite_chain.dm"
+#include "interim_bluespace_crystal_sticky_self.dm"
 // END_INCLUDE
 #if defined(BENCHMARK) || defined(SPACEMAN_DMM)
 #include "../benchmarks/_benchmark.dm"

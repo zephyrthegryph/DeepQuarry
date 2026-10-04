@@ -326,6 +326,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 20)),
 	"/obj/item/binoculars::view_available" = list(0,
 		list(2, 0, 21)),
+	"/obj/item/bluespace_crystal::crystal_releasable" = list(0),
 	"/obj/item/bodybag::can_unfold" = list(0,
 		list(1, 0, 22)),
 	"/obj/item/canvas::canvas_open" = list(0,

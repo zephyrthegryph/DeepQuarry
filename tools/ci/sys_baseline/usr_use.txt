@@ -80,7 +80,6 @@ usr_outside_verb	code/game/objects/items.dm	if(usr?.read_preference(/datum/prefe
 usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
-usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
@@ -93,8 +92,6 @@ usr_outside_verb	code/game/world.dm	if (usr)
 usr_outside_verb	code/game/world.dm	log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
 usr_outside_verb	code/game/world.dm	message_admins("[key_name_admin(usr)] Has requested an immediate world restart via client side debugging tools")
 usr_outside_verb	code/game/world.dm	to_chat(world, span_boldannounce("[key_name_admin(usr)] has requested an immediate world restart via client side debugging tools"))
-usr_outside_verb	code/modules/admin/NewBan.dm	to_chat(usr, span_filter_adminlog(span_warning("Ban already exists.")))
-usr_outside_verb	code/modules/admin/admin.dm	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 usr_outside_verb	code/modules/admin/admin_attack_log.dm	/proc/log_and_message_admins(message as text, mob/user = usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
@@ -166,11 +163,6 @@ usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
 usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if(!usr || !over) return
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (isobserver(usr) && usr.client && check_rights_for(usr.client, R_HOLDER) && isliving(over))
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (usr.client.holder.cmd_ghost_drag(src,over))
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	if(isAI(usr))
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/AI = usr
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
@@ -191,20 +183,9 @@ usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ?
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/bitfield.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/checkboxes.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/color.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/keycombo.dm	/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
-usr_outside_verb	code/modules/tgui_input/list.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/matrix.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/number.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/text.dm	user = usr
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(!Adjacent(usr)) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	Bumped(usr)
 usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))

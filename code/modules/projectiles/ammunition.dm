@@ -251,7 +251,7 @@ DECLARE_INTERACTIONS(/obj/item/ammo_magazine, \
 			return
 		to_chat(user, span_notice("You empty [src]."))
 		play_sfx(src, SFX_CASING_SOUND)
-		after(src, 7, TYPE_PROC_REF(/atom, om_playsound), with = list("casing_sound", 50, 1))
+		after(src, 0.7 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list("casing_sound", 50, 1))
 		after(src, 1 SECOND, TYPE_PROC_REF(/atom, om_playsound), with = list("casing_sound", 50, 1))
 		for(var/obj/item/ammo_casing/C in stored_ammo)
 			C.forceMove(user.loc)

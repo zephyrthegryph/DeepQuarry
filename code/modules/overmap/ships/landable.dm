@@ -123,9 +123,6 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 
 // core_landmark is a one-sided view; visitors lists only the landmarks with a shuttle stationed
 // (not a pair: a visitor landmark exists long before anything docks there).
-/obj/effect/shuttle_landmark/ship/relations()
-	. = ..()
-	. += rel_many(nameof(visitors))
 
 /obj/effect/shuttle_landmark/visiting_shuttle/is_valid(datum/shuttle/shuttle)
 	. = ..()
@@ -239,3 +236,6 @@ CAPABILITIES(/obj/effect/overmap/visitable/ship/landable)
 	if(var_name == "landmark")
 		remove_landmark(child, shuttle)
 	return ..()
+
+CAPABILITIES(/obj/effect/shuttle_landmark/ship)
+	ref_many(nameof(visitors))

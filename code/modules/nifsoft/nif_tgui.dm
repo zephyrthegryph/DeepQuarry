@@ -20,6 +20,7 @@
 
 CAPABILITIES(/obj/item/nif)
 	owns_one(nameof(comm), on_destroy = ON_DESTROY_DELETE)
+	links(/obj/item/nif::human, /mob/living/carbon/human::nif)
 	owns_many(nameof(nifsofts), /datum/nifsoft)
 	owns_one(nameof(menu_ref), /datum/nif_menu)
 

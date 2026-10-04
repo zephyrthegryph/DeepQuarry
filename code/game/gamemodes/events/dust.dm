@@ -1,4 +1,3 @@
-//This file was auto-corrected by findeclaration.exe on 25.5.2012 20:42:31
 
 /*
 Space dust
@@ -84,7 +83,7 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 	life = 40
 
 /obj/effect/space_dust/touch_map_edge()
-	qdel(src)
+	consume(src)
 
 /obj/effect/space_dust/Bump(atom/A)
 	if(prob(50))
@@ -102,7 +101,7 @@ The "dust" will damage the hull of the station causin minor hull breaches.
 		life--
 		if(life <= 0)
 			walk(src,0)
-			qdel(src)
+			consume(src)
 			return
 	return
 

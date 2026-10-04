@@ -30,12 +30,8 @@
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
-/obj/structure/prop/prism/relations()
-	. = ..()
-	. += rel_one(nameof(remote_dial), back = nameof(/obj/structure/prop/prismcontrol::my_turrets))
-/obj/structure/prop/prismcontrol/relations()
-	. = ..()
-	. += rel_many(nameof(my_turrets), back = nameof(/obj/structure/prop/prism::remote_dial))
+CAPABILITIES(/obj/structure/prop/prism)
+	links(/obj/structure/prop/prism::remote_dial, /obj/structure/prop/prismcontrol::my_turrets, b_many = TRUE)
 
 /obj/structure/prop/prism/proc/reset_rotation()
 	var/degrees_to_rotate = -1 * degrees_from_north

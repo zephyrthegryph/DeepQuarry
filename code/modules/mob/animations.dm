@@ -94,7 +94,7 @@
 		default_pixel_y = mob.default_pixel_y
 
 	animate(src, alpha = 0, pixel_x = pixel_x + pixel_x_diff, pixel_y = pixel_y + pixel_y_diff, pixel_z = pixel_z + pixel_z_diff, time = time)
-	after(src, time + 1, PROC_REF(fade_towards_reset), with = list(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha))
+	after(src, time + 0.1 SECONDS, PROC_REF(fade_towards_reset), with = list(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha))
 
 /atom/movable/proc/fade_towards_reset(default_pixel_x, default_pixel_y, default_pixel_z, initial_alpha)
 	pixel_x = default_pixel_x

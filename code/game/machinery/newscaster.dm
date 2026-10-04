@@ -697,7 +697,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/newscaster, TYPE_PROC_REF(/atom, appearan
 			photo_data.photo().forceMove(src.loc)
 			if(!issilicon(user))
 				user.put_in_inactive_hand(photo_data.photo())
-		qdel(photo_data)
+		own_clear(src, nameof(photo_data), OWN_DELETE)
 
 	if(incoming)
 		rel_set(src, nameof(photo_data), new /datum/news_photo(incoming, 0))

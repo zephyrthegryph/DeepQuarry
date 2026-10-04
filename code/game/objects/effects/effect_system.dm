@@ -438,7 +438,7 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 			flick("ion_fade", I)
 			I.icon_state = "blank"
 			I.expire(20)
-	after(src, 2, PROC_REF(reschedule_trail))
+	after(src, 0.2 SECONDS, PROC_REF(reschedule_trail))
 
 /datum/effect/effect/system/ion_trail_follow/proc/reschedule_trail()
 	if(src.on)
@@ -477,8 +477,8 @@ DECLARE_PERIODIC(/obj/effect/effect/smoke/elemental, PERIODIC_SLOW)
 		src.number++
 		rel_set(src, nameof(oldposition), get_turf(holder))
 		I.set_dir(src.holder.dir)
-		after(src, 10, PROC_REF(expire_steam_trail), with = list(I))
-	after(src, 2, PROC_REF(reschedule_steam))
+		after(src, 1 SECOND, PROC_REF(expire_steam_trail), with = list(I))
+	after(src, 0.2 SECONDS, PROC_REF(reschedule_steam))
 
 /datum/effect/effect/system/steam_trail_follow/proc/expire_steam_trail(obj/effect/effect/steam/I)
 	consume(I)

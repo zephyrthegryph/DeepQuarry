@@ -46,15 +46,17 @@ CAPABILITIES(/obj/item/rig_module/voice)
 	var/obj/item/rig_module/voice/module = subject
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
-/datum/om/prompt/text/rig_voice_name
+/datum/prompt/text/rig_voice_name
 	title = "Change name"
-	message = "Please enter a new name."
-	max_length = MAX_NAME_LEN
+	question = "Please enter a new name."
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	ask_flags = ASK_CONSCIOUS
+	timeout = 0
 
-/datum/om/prompt/text/rig_voice_name/valid()
-	var/obj/item/rig_module/voice/module = subject
-	if(!text)
+/datum/prompt/text/rig_voice_name/recheck_extra()
+	var/obj/item/rig_module/voice/module = owner
+	if(!answer_value)
 		return "no name"
 	return (module.holder && module.holder.wearer() == answerer) ? null : "not wearing the suit"
 
@@ -70,10 +72,12 @@ CAPABILITIES(/obj/item/rig_module/voice)
 			voice_holder.active = 0
 			to_chat(user, span_blue("You disable the speech synthesiser."))
 		if("Set Name")
-			om_ask(user, /datum/om/prompt/text/rig_voice_name, PROC_REF(voice_name_entered), default = voice_holder.voice)
+			open_request(src, /datum/prompt/text/rig_voice_name, PROC_REF(voice_name_entered), answerer = user, default = voice_holder.voice)
 
-/obj/item/rig_module/voice/proc/voice_name_entered(datum/om/prompt/text/rig_voice_name/ask)
-	var/mob/user = ask.answerer
-	voice_holder.voice = ask.text
+/obj/item/rig_module/voice/proc/voice_name_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	voice_holder.voice = A.answer.answer_value
 	to_chat(user, span_blue("You are now mimicking <B>[voice_holder.voice]</B>."))
 

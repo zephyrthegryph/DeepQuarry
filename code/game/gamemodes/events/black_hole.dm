@@ -13,12 +13,12 @@ DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 
 /obj/effect/bhole/proc/controller()
 	if(!isturf(loc))
-		qdel(src)
+		consume(src)
 		return
 
 	if(prob(5))
 		visible_message(span_warning("\The [src] fizzles out and collapses."))
-		qdel(src)
+		consume(src)
 		return
 
 	//DESTROYING STUFF AT THE EPICENTER
@@ -79,7 +79,7 @@ DECLARE_START_TIMER(/obj/effect/bhole, 0.4 SECONDS, PROC_REF(controller))
 
 /obj/effect/bhole/proc/grav(r, ex_act_force, pull_chance, turf_removal_chance)
 	if(!isturf(loc))	//blackhole cannot be contained inside anything. Weird stuff might happen
-		qdel(src)
+		consume(src)
 		return
 	for(var/t = -r, t < r, t++)
 		affect_coord(x+t, y-r, ex_act_force, pull_chance, turf_removal_chance)

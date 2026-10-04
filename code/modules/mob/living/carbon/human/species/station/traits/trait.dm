@@ -227,6 +227,5 @@ TYPE_TABLE_DECLARE(/datum/trait, granted_verb_list, null)
 /datum/trait/proc/environment_effects(mob/living/carbon/human/H)
 	return
 
-/datum/trait/relations()
-	. = ..()
-	. += rel_one(nameof(linked_gene), back = nameof(/datum/gene/trait::linked_trait))
+CAPABILITIES(/datum/trait)
+	links(/datum/trait::linked_gene, /datum/gene/trait::linked_trait)

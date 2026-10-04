@@ -86,6 +86,12 @@
 	generateHeader(ask.choice)
 	tgui_interact(ask.answerer)
 
+CAPABILITIES(/obj/item/paper/admin)
+	op("penmode", ui_act("penmode"), then(PROC_REF(admin_paper_penmode)))
+	op("clear", ui_act("clear"), then(PROC_REF(admin_paper_clear)))
+	op("toggleheader", ui_act("toggleheader"), then(PROC_REF(admin_paper_toggleheader)))
+	op("togglefooter", ui_act("togglefooter"), then(PROC_REF(admin_paper_togglefooter)))
+
 DECLARE_UI(/obj/item/paper/admin, "AdminPaper")
 
 UI_DATA_REPLACE(/obj/item/paper/admin, "title=name:text", "merge:ui_data_obj_item_paper_admin{segments:unknown,stamps:bool,header_html:bool,footer_html:bool,header_on:bool,footer_on:bool,is_crayon:bool}")
@@ -125,10 +131,9 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_confirm)
 			admindatum().faxCallback(src, destination())
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "penmode", ui_act_penmode)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_penmode)
+/obj/item/paper/admin/proc/admin_paper_penmode(datum/act/op/A)
 	isCrayon = !isCrayon
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/paper/admin, "cancel", ui_act_cancel)
 UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
@@ -136,20 +141,17 @@ UI_ACT_PROC(/obj/item/paper/admin, ui_act_cancel)
 	qdel(src)
 	return TRUE
 
-UI_ACT(/obj/item/paper/admin, "clear", ui_act_clear)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_clear)
+/obj/item/paper/admin/proc/admin_paper_clear(datum/act/op/A)
 	clearpaper()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "toggleheader", ui_act_toggleheader)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_toggleheader)
+/obj/item/paper/admin/proc/admin_paper_toggleheader(datum/act/op/A)
 	headerOn = !headerOn
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paper/admin, "togglefooter", ui_act_togglefooter)
-UI_ACT_PROC(/obj/item/paper/admin, ui_act_togglefooter)
+/obj/item/paper/admin/proc/admin_paper_togglefooter(datum/act/op/A)
 	footerOn = !footerOn
-	return TRUE
+	return OP_OK
 
 // Admin variant uses no pen/range checks (admins fax from anywhere) and
 // always pencode-parses with the chosen crayon flag.

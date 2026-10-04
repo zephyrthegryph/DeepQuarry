@@ -232,10 +232,11 @@ DECLARE_APPEARANCE_PROC(/atom/movable/screen/ability, TYPE_PROC_REF(/atom, appea
 /atom/movable/screen/ability/verb_based
 	var/verb_to_call = null
 	var/object_used = null
-	var/arguments_to_use = list()
+	var/arguments_to_use
 
 /atom/movable/screen/ability/verb_based/activate()
 	if(object_used && verb_to_call)
+		LAZYINITLIST(arguments_to_use)
 		call(object_used,verb_to_call)(arguments_to_use)
 
 /atom/movable/screen/movable/ability_master/proc/add_verb_ability(object_given, verb_given, name_given, ability_icon_given, arguments)
