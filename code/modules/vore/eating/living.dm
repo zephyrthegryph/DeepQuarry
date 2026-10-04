@@ -1,6 +1,5 @@
 ///////////////////// Mob Living /////////////////////
 /mob/living
-	var/showvoreprefs = TRUE			// Determines if the mechanical vore preferences button will be displayed on the mob or not.
 	var/list/temp_language_sources	//Absorbs add languages to the pred. Lazy.
 	var/list/temp_languages		// Absorbs add languages to the pred. Lazy.
 	var/prey_controlled = FALSE			// If the mob is currently controlled by their prey.

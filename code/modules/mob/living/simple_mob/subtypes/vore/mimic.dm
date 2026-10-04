@@ -120,7 +120,6 @@ CAPABILITIES(/obj/structure/closet/crate/mimic)
 
 	var/knockdown_chance = 10 //Stubbing your toe on furniture hurts.
 
-	showvoreprefs = 0 //Hides mechanical vore prefs for mimics. You can't see their gaping maws when they're just sitting idle.
 
 /mob/living/simple_mob/vore/aggressive/mimic
 	tt_desc = "Mimus vorare"
