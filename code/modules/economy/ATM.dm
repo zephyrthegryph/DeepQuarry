@@ -204,30 +204,32 @@ UI_DATA(/obj/machinery/atm, "locked_down=ticks_left_locked_down:num", "merge:ui_
 
 	return data
 
-UI_ACT(/obj/machinery/atm, "insert_card", ui_act_insert_card)
-UI_ACT_PROC(/obj/machinery/atm, ui_act_insert_card)
+CAPABILITIES(/obj/machinery/atm)
+	op("insert_card", ui_act(), then(PROC_REF(native_ui_act_insert_card)))
+	op("logout", ui_act(), then(PROC_REF(native_ui_act_logout)))
+
+/obj/machinery/atm/proc/native_ui_act_insert_card(datum/act/op/A)
 	if(held_card())
-		release_held_id(ui.user)
+		release_held_id(A.actor)
 	else
 		if(emagged > 0)
-			to_chat(ui.user, span_boldwarning("[icon2html(src, ui.user.client)] The ATM card reader rejected your ID because this machine has been sabotaged!"))
+			to_chat(A.actor, span_boldwarning("[icon2html(src, A.actor.client)] The ATM card reader rejected your ID because this machine has been sabotaged!"))
 		else
-			var/obj/item/I = ui.user.get_active_hand()
+			var/obj/item/I = A.actor.get_active_hand()
 			if(istype(I, /obj/item/card/id))
-				ui.user.drop_item(src)
+				A.actor.drop_item(src)
 				rel_set(src, nameof(/obj/machinery/account_database::held_card), I)
-	. = TRUE
+	. = OP_OK
 	if(.)
 		if(ticks_left_timeout > 0 || ticks_left_locked_down > 0)
 			MACHINE_WAKE(src)
 		play_sfx(src, SFX_KEYBOARD, 1.25, vary = TRUE)
 
-UI_ACT(/obj/machinery/atm, "logout", ui_act_logout)
-UI_ACT_PROC(/obj/machinery/atm, ui_act_logout)
+/obj/machinery/atm/proc/native_ui_act_logout(datum/act/op/A)
 	if(held_card())
-		release_held_id(ui.user)
+		release_held_id(A.actor)
 	rel_clear(src, nameof(/obj/machinery/atm::authenticated_account))
-	. = TRUE
+	. = OP_OK
 
 	// Balance statement
 	if(.)

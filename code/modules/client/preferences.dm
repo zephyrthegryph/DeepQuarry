@@ -124,6 +124,10 @@ GLOBAL_LIST_EMPTY(preferences_datums)
 	var/dq_last_preview_render_ms = 0
 
 CAPABILITIES(/datum/preferences)
+	op("save", ui_act(), then(PROC_REF(native_ui_act_save)))
+	op("reload", ui_act(), then(PROC_REF(native_ui_act_reload)))
+	op("game_prefs", ui_act(), then(PROC_REF(native_ui_act_game_prefs)))
+	op("cycle_background", ui_act(), then(PROC_REF(native_ui_act_cycle_background)))
 	owns_one(nameof(savefile), /datum/json_savefile)
 	owns_many(nameof(middleware), /datum/preference_middleware)
 

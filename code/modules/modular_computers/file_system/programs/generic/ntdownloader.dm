@@ -30,6 +30,7 @@
 	var/tmp/obj/item/modular_computer/my_computer
 
 CAPABILITIES(/datum/computer_file/program/ntnetdownload)
+	op("PRG_reseterror", ui_act(), then(PROC_REF(native_ui_act_prg_reseterror)))
 	owns_one(nameof(downloaded_file), /datum/computer_file/program)
 
 /datum/computer_file/program/ntnetdownload/kill_program()
@@ -128,14 +129,13 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_removequeued)
 	LAZYREMOVE(downloads_queue, params["filename"])
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetdownload, "PRG_reseterror", ui_act_prg_reseterror)
-UI_ACT_PROC(/datum/computer_file/program/ntnetdownload, ui_act_prg_reseterror)
+/datum/computer_file/program/ntnetdownload/proc/native_ui_act_prg_reseterror(datum/act/op/A)
 	if(downloaderror)
 		download_completion = 0
 		download_netspeed = 0
 		own_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), OWN_DELETE) // null already when store_file() took it
 		downloaderror = ""
-	return TRUE
+	return OP_OK
 
 UI_DATA_REPLACE(/datum/computer_file/program/ntnetdownload, "merge:ui_data_datum_computer_file_program_ntnetdownload{downloading:bool,error:bool,downloadname:text,downloaddesc:text,downloadsize:num,downloadspeed:num,downloadcompletion:num,disk_size:num,disk_used:num,hackedavailable:bool,hacked_programs:list,downloadable_programs:list,downloads_queue:bool}")
 

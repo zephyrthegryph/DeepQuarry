@@ -16,6 +16,10 @@
 	usage_flags = PROGRAM_ALL
 	category = PROG_UTIL
 
+CAPABILITIES(/datum/computer_file/program/filemanager)
+	op("PRG_closefile", ui_act(), then(PROC_REF(native_ui_act_prg_closefile)))
+	op("PRG_clearerror", ui_act(), then(PROC_REF(native_ui_act_prg_clearerror)))
+
 UI_ACT(/datum/computer_file/program/filemanager, "PRG_openfile", ui_act_prg_openfile, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_openfile)
 	open_file = params["uid"]
@@ -39,10 +43,9 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_newtextfile)
 	HDD.store_file(F)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_closefile", ui_act_prg_closefile)
-UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_closefile)
+/datum/computer_file/program/filemanager/proc/native_ui_act_prg_closefile(datum/act/op/A)
 	open_file = null
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/filemanager, "PRG_clone", ui_act_prg_clone, UI_ARG_NUM("uid"))
 UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clone)
@@ -180,10 +183,9 @@ UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_copyfromusb)
 	HDD.store_file(C)
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/filemanager, "PRG_clearerror", ui_act_prg_clearerror)
-UI_ACT_PROC(/datum/computer_file/program/filemanager, ui_act_prg_clearerror)
+/datum/computer_file/program/filemanager/proc/native_ui_act_prg_clearerror(datum/act/op/A)
 	error = null
-	return TRUE
+	return OP_OK
 
 UI_DATA_REPLACE(/datum/computer_file/program/filemanager, "merge:ui_data_datum_computer_file_program_filemanager{error:text,filedata:unknown,filename:text,files:list,usbconnected:bool,usbfiles:list}")
 

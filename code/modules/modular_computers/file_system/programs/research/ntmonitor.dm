@@ -42,17 +42,20 @@ UI_DATA_REPLACE(/datum/computer_file/program/ntnetmonitor, "merge:ui_data_datum_
 
 	return data
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "resetIDS", ui_act_resetids)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_resetids)
+CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
+	op("resetIDS", ui_act(), then(PROC_REF(native_ui_act_resetids)))
+	op("toggleIDS", ui_act(), then(PROC_REF(native_ui_act_toggleids)))
+	op("purgelogs", ui_act(), then(PROC_REF(native_ui_act_purgelogs)))
+
+/datum/computer_file/program/ntnetmonitor/proc/native_ui_act_resetids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.resetIDS()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "toggleIDS", ui_act_toggleids)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_toggleids)
+/datum/computer_file/program/ntnetmonitor/proc/native_ui_act_toggleids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.toggleIDS()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/ntnetmonitor, "toggleWireless", ui_act_togglewireless)
 UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_togglewireless)
@@ -71,11 +74,10 @@ UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_togglewireless)
 		GLOB.ntnet_global.setting_disabled = TRUE
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/ntnetmonitor, "purgelogs", ui_act_purgelogs)
-UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_purgelogs)
+/datum/computer_file/program/ntnetmonitor/proc/native_ui_act_purgelogs(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.purge_logs()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/ntnetmonitor, "updatemaxlogs", ui_act_updatemaxlogs, UI_ARG_NUM("new_number"))
 UI_ACT_PROC(/datum/computer_file/program/ntnetmonitor, ui_act_updatemaxlogs)

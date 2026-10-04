@@ -24,17 +24,15 @@ UI_ACT_PROC(/obj/item/tvcamera, ui_act_set_channel)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/tvcamera, "toggle_video", ui_act_toggle_video)
-UI_ACT_PROC(/obj/item/tvcamera, ui_act_toggle_video)
-	camera_toggle_video(ui.user)
+/obj/item/tvcamera/proc/native_ui_act_toggle_video(datum/act/op/A)
+	camera_toggle_video(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/tvcamera, "toggle_audio", ui_act_toggle_audio)
-UI_ACT_PROC(/obj/item/tvcamera, ui_act_toggle_audio)
-	camera_toggle_audio(ui.user)
+/obj/item/tvcamera/proc/native_ui_act_toggle_audio(datum/act/op/A)
+	camera_toggle_audio(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /obj/item/tvcamera/proc/show_ui(mob/user)
 	tgui_interact(user)
@@ -63,17 +61,19 @@ UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_set_channel)
 	SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/clothing/accessory/bodycam, "toggle_video", ui_act_toggle_video)
-UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_toggle_video)
-	camera_toggle_video(ui.user)
-	SStgui.update_uis(src)
-	return TRUE
+CAPABILITIES(/obj/item/clothing/accessory/bodycam)
+	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
 
-UI_ACT(/obj/item/clothing/accessory/bodycam, "toggle_audio", ui_act_toggle_audio)
-UI_ACT_PROC(/obj/item/clothing/accessory/bodycam, ui_act_toggle_audio)
-	camera_toggle_audio(ui.user)
+/obj/item/clothing/accessory/bodycam/proc/native_ui_act_toggle_video(datum/act/op/A)
+	camera_toggle_video(A.actor)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
+
+/obj/item/clothing/accessory/bodycam/proc/native_ui_act_toggle_audio(datum/act/op/A)
+	camera_toggle_audio(A.actor)
+	SStgui.update_uis(src)
+	return OP_OK
 
 /obj/item/clothing/accessory/bodycam/proc/show_bodycam_ui(mob/user)
 	tgui_interact(user)

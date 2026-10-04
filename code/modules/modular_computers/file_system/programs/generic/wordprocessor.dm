@@ -72,15 +72,21 @@
 	if(HDD.store_file(F))
 		return F
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_txtrpeview", ui_act_prg_txtrpeview)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_txtrpeview)
-	// structured TGUI AdminReport.
-	dq_admin_report_html(ui.user, open_file, "[pencode2html(loaded_data)]")
-	return TRUE
+CAPABILITIES(/datum/computer_file/program/wordprocessor)
+	op("PRG_txtrpeview", ui_act(), then(PROC_REF(native_ui_act_prg_txtrpeview)))
+	op("PRG_taghelp", ui_act(), then(PROC_REF(native_ui_act_prg_taghelp)))
+	op("PRG_closebrowser", ui_act(), then(PROC_REF(native_ui_act_prg_closebrowser)))
+	op("PRG_backtomenu", ui_act(), then(PROC_REF(native_ui_act_prg_backtomenu)))
+	op("PRG_loadmenu", ui_act(), then(PROC_REF(native_ui_act_prg_loadmenu)))
+	op("PRG_printfile", ui_act(), then(PROC_REF(native_ui_act_prg_printfile)))
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_taghelp", ui_act_prg_taghelp)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_taghelp)
-	to_chat(ui.user, span_notice("The hologram of a googly-eyed paper clip helpfully tells you:"))
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_txtrpeview(datum/act/op/A)
+	// structured TGUI AdminReport.
+	dq_admin_report_html(A.actor, open_file, "[pencode2html(loaded_data)]")
+	return OP_OK
+
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_taghelp(datum/act/op/A)
+	to_chat(A.actor, span_notice("The hologram of a googly-eyed paper clip helpfully tells you:"))
 	var/help = {"
 	\[br\] : Creates a linebreak.
 	\[center\] - \[/center\] : Centers the text.
@@ -107,23 +113,20 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_taghelp)
 	\[redlogo\] - Inserts red NT logo image.
 	\[sglogo\] - Inserts Solgov insignia image."}
 
-	to_chat(ui.user, help)
-	return TRUE
+	to_chat(A.actor, help)
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_closebrowser", ui_act_prg_closebrowser)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_closebrowser)
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_closebrowser(datum/act/op/A)
 	browsing = 0
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_backtomenu", ui_act_prg_backtomenu)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_backtomenu)
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_backtomenu(datum/act/op/A)
 	error = null
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_loadmenu", ui_act_prg_loadmenu)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_loadmenu)
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_loadmenu(datum/act/op/A)
 	browsing = 1
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_openfile", ui_act_prg_openfile, UI_ARG_TEXT("PRG_openfile"))
 UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_openfile)
@@ -203,15 +206,14 @@ UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_editfile)
 	is_edited = 1
 	return TRUE
 
-UI_ACT(/datum/computer_file/program/wordprocessor, "PRG_printfile", ui_act_prg_printfile)
-UI_ACT_PROC(/datum/computer_file/program/wordprocessor, ui_act_prg_printfile)
+/datum/computer_file/program/wordprocessor/proc/native_ui_act_prg_printfile(datum/act/op/A)
 	if(!computer().nano_printer)
 		error = "Missing Hardware: Your computer does not have the required hardware to complete this operation."
-		return TRUE
+		return OP_OK
 	if(!computer().nano_printer.print_text(pencode2html(loaded_data)))
 		error = "Hardware error: Printer was unable to print the file. It may be out of paper."
-		return TRUE
-	return TRUE
+		return OP_OK
+	return OP_OK
 
 UI_DATA_REPLACE(/datum/computer_file/program/wordprocessor, "merge:ui_data_datum_computer_file_program_wordprocessor{error:text,browsing:num,files:list,usbconnected:num,usbfiles:list,filedata:unknown,filename:unknown}")
 

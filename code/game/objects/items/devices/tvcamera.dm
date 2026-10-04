@@ -40,6 +40,8 @@ DECLARE_REGISTRY(/obj/item/tvcamera, REGISTRY_LISTENING_OBJECTS)
 	. = ..()
 
 CAPABILITIES(/obj/item/tvcamera)
+	op("toggle_video", ui_act(), then(PROC_REF(native_ui_act_toggle_video)))
+	op("toggle_audio", ui_act(), then(PROC_REF(native_ui_act_toggle_audio)))
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
 
 /obj/item/tvcamera/proc/interaction_self(datum/act/op/A)

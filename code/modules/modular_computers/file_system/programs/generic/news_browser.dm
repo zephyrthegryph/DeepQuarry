@@ -19,6 +19,9 @@
 	var/show_archived = FALSE
 
 CAPABILITIES(/datum/computer_file/program/newsbrowser)
+	op("PRG_reset", ui_act(), then(PROC_REF(native_ui_act_prg_reset)))
+	op("PRG_clearmessage", ui_act(), then(PROC_REF(native_ui_act_prg_clearmessage)))
+	op("PRG_toggle_archived", ui_act(), then(PROC_REF(native_ui_act_prg_toggle_archived)))
 	owns_one(nameof(loaded_article), /datum/computer_file/data/news_article)
 
 /datum/computer_file/program/newsbrowser/process_tick()
@@ -94,18 +97,18 @@ UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_openarticle)
 			downloading = 1
 			break
 
-UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_reset", ui_act_prg_reset)
-UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_reset)
-	. = TRUE
+/datum/computer_file/program/newsbrowser/proc/native_ui_act_prg_reset(datum/act/op/A)
+
 	downloading = 0
 	download_progress = 0
 	requires_ntnet = 1
 	own_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), OWN_DELETE)
+	return OP_OK
 
-UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_clearmessage", ui_act_prg_clearmessage)
-UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_clearmessage)
-	. = TRUE
+/datum/computer_file/program/newsbrowser/proc/native_ui_act_prg_clearmessage(datum/act/op/A)
+
 	message = ""
+	return OP_OK
 
 UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_savearticle", ui_act_prg_savearticle)
 UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_savearticle)
@@ -125,8 +128,7 @@ UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_savearticle)
 	N.filename = savename
 	HDD.store_file(N)
 
-UI_ACT(/datum/computer_file/program/newsbrowser, "PRG_toggle_archived", ui_act_prg_toggle_archived)
-UI_ACT_PROC(/datum/computer_file/program/newsbrowser, ui_act_prg_toggle_archived)
-	. = TRUE
-	show_archived = !show_archived
+/datum/computer_file/program/newsbrowser/proc/native_ui_act_prg_toggle_archived(datum/act/op/A)
 
+	show_archived = !show_archived
+	return OP_OK

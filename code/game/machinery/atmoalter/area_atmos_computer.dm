@@ -17,6 +17,9 @@
 	var/zone = "This computer is working on a wireless range, the range is currently limited to "
 
 CAPABILITIES(/obj/machinery/computer/area_atmos)
+	op("allon", ui_act(), then(PROC_REF(native_ui_act_allon)))
+	op("alloff", ui_act(), then(PROC_REF(native_ui_act_alloff)))
+	op("scan", ui_act(), then(PROC_REF(native_ui_act_scan)))
 	ref_many(nameof(connectedscrubbers))
 
 /// The connected scrubber with this id, or null.
@@ -71,23 +74,20 @@ UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_toggle)
 	. = TRUE
 	add_fingerprint(ui.user)
 
-UI_ACT(/obj/machinery/computer/area_atmos, "allon", ui_act_allon)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_allon)
+/obj/machinery/computer/area_atmos/proc/native_ui_act_allon(datum/act/op/A)
 	toggle_all(TRUE)
-	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/area_atmos, "alloff", ui_act_alloff)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_alloff)
+/obj/machinery/computer/area_atmos/proc/native_ui_act_alloff(datum/act/op/A)
 	toggle_all(FALSE)
-	. = TRUE
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
-UI_ACT(/obj/machinery/computer/area_atmos, "scan", ui_act_scan)
-UI_ACT_PROC(/obj/machinery/computer/area_atmos, ui_act_scan)
-	scanscrubbers_user(ui.user)
-	. = TRUE
-	add_fingerprint(ui.user)
+/obj/machinery/computer/area_atmos/proc/native_ui_act_scan(datum/act/op/A)
+	scanscrubbers_user(A.actor)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 /obj/machinery/computer/area_atmos/proc/toggle_all(on)
 	for(var/obj/machinery/portable_atmospherics/powered/scrubber/huge/S as anything in connectedscrubbers)

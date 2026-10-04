@@ -91,20 +91,18 @@ UI_ACT_PROC(/datum/preferences, ui_act_load)
 		open_load_dialog(ui.user)
 	return TRUE
 
-UI_ACT(/datum/preferences, "save", ui_act_save)
-UI_ACT_PROC(/datum/preferences, ui_act_save)
+/datum/preferences/proc/native_ui_act_save(datum/act/op/A)
 	save_character()
 	save_preferences()
 	COOLDOWN_START(src, saved_notification, 1 SECONDS)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/datum/preferences, "reload", ui_act_reload)
-UI_ACT_PROC(/datum/preferences, ui_act_reload)
+/datum/preferences/proc/native_ui_act_reload(datum/act/op/A)
 	load_preferences(TRUE)
 	load_character()
 	client().prefs_vr.load_vore()
 	sanitize_preferences()
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/preferences, "resetslot", ui_act_resetslot)
 UI_ACT_PROC(/datum/preferences, ui_act_resetslot)
@@ -134,10 +132,9 @@ UI_ACT_PROC(/datum/preferences, ui_act_copy)
 		open_copy_dialog(ui.user)
 	return TRUE
 
-UI_ACT(/datum/preferences, "game_prefs", ui_act_game_prefs)
-UI_ACT_PROC(/datum/preferences, ui_act_game_prefs)
-	ui.user.client.game_options()
-	return TRUE
+/datum/preferences/proc/native_ui_act_game_prefs(datum/act/op/A)
+	A.actor.client.game_options()
+	return OP_OK
 
 UI_ACT(/datum/preferences, "refresh_character_preview", ui_act_refresh_character_preview)
 UI_ACT_PROC(/datum/preferences, ui_act_refresh_character_preview)
@@ -150,8 +147,7 @@ UI_ACT_PROC(/datum/preferences, ui_act_refresh_character_preview)
 // Cycle Background flips bgstate to the next choice and re-renders the
 // preview assets so the new BG shows up immediately via the next static_data push.
 
-UI_ACT(/datum/preferences, "cycle_background", ui_act_cycle_background)
-UI_ACT_PROC(/datum/preferences, ui_act_cycle_background)
+/datum/preferences/proc/native_ui_act_cycle_background(datum/act/op/A)
 	var/datum/preference/text/human/bgstate/bg = GLOB.preference_entries[/datum/preference/text/human/bgstate]
 	if(bg && length(bg.bgstate_choices))
 		var/current = read_preference(/datum/preference/text/human/bgstate) || bg.bgstate_choices[1]
@@ -159,8 +155,8 @@ UI_ACT_PROC(/datum/preferences, ui_act_cycle_background)
 		idx = (idx % bg.bgstate_choices.len) + 1
 		update_preference_by_type(/datum/preference/text/human/bgstate, bg.bgstate_choices[idx])
 		update_preview_icon()
-		update_tgui_static_data(ui.user)
-	return TRUE
+		update_tgui_static_data(A.actor)
+	return OP_OK
 
 // Pref-value actions
 
