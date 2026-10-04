@@ -124,6 +124,8 @@ DECLARE_UI(/obj/item/communicator, "Communicator")
 	return TRUE
 
 /obj/item/communicator/ui_opening(mob/user, datum/tgui/ui)
+	if(!user.client)
+		return
 	// Register map objects
 	user.client.register_map_obj(cam_screen)
 	for(var/plane in cam_plane_masters)
