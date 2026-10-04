@@ -261,8 +261,6 @@ usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
 usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)
 usr_outside_verb	code/modules/mob/combat_mode.dm	usr.set_combat_mode(!usr.combat_mode)
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	if(isAI(usr))
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/AI = usr
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
