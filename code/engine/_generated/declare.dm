@@ -14214,7 +14214,7 @@
 	into += entry_line(98)
 	into += list(global.climb())
 	into += entry_line(99)
-	into += list(global.op("label", global.tool(TOOL_MULTITOOL), global.label("Assign ID number"), global.needs(global.req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), global.then(PROC_REF(label_tool_used))))
+	into += list(global.op("label", global.tool(TOOL_MULTITOOL), global.wait(0), global.label("Assign ID number"), global.needs(global.req(PROC_REF(label_available), because = MSG(op/not_available), silent = TRUE)), global.then(PROC_REF(label_tool_used))))
 	into += entry_line(100)
 	into += list(global.owns_one(nameof(cell), /obj/item/cell, starts = nameof(cell)))
 
