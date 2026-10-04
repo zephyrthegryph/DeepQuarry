@@ -9,6 +9,9 @@
 	var/datum/gas_mixture/GM = new()
 	var/current_temp = 0
 
+CAPABILITIES(/obj/distilling_tester)
+	owns_one(nameof(GM), /datum/gas_mixture)
+
 DECLARE_REAGENTS_TYPED(/obj/distilling_tester, 5000, null, /datum/reagents/distilling)
 
 /obj/distilling_tester/return_air()

@@ -40,6 +40,9 @@
 	// A DECLARE_PERIODIC_WHILE on this cadence whose state doesn't hold refuses (code/datums/sys/periodic.dm).
 	if(!sys_periodic_allows(E, P))
 		return FALSE
+	// So does a type whose periodic work is a gated type-level every(when = ...) none of whose gates holds.
+	if(!sys_every_allows(E))
+		return FALSE
 	// Moving to another cadence leaves the first one.
 	if(E.periodic_pipe)
 		member_leave(E.periodic_pipe, E, PERIODIC_SOURCE)

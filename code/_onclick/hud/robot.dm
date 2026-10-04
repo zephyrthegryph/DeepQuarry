@@ -8,8 +8,9 @@
 		HUD.ui_style = 'icons/mob/screen1_robot.dmi'
 
 	// HUD.adding / HUD.other own their screen elements; named vars pointing at listed elements
-	// (inv1-3, move_intent, autowhisper_display) are relations back. The mob-owned singles
-	// (healths, hands, throw_icon, pullin) and HUD.combat_mode_button go on screen explicitly below.
+	// (inv1-3, move_intent, autowhisper_display, throw_icon, pullin; the last two owned by
+	// HUD.extra_screens) are relations back. The mob-owned singles (healths, hands) and
+	// HUD.combat_mode_button go on screen explicitly below.
 
 	var/atom/movable/screen/using
 	var/atom/movable/screen/robot_inventory
@@ -152,7 +153,7 @@
 	rel_add(HUD, nameof(HUD.adding), using)
 
 //Store
-	rel_set(src, nameof(throw_icon), new /atom/movable/screen())
+	rel_set(src, nameof(throw_icon), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	throw_icon.icon = HUD.ui_style
 	throw_icon.icon_state = "store"
 	throw_icon.alpha = HUD.ui_alpha
@@ -170,7 +171,7 @@
 	robot_inventory.screen_loc = ui_borg_inventory
 	rel_add(HUD, nameof(HUD.other), robot_inventory)
 
-	rel_set(src, nameof(pullin), new /atom/movable/screen())
+	rel_set(src, nameof(pullin), rel_add(HUD, nameof(HUD.extra_screens), new /atom/movable/screen()))
 	pullin.icon = HUD.ui_style
 	pullin.icon_state = "pull0"
 	pullin.alpha = HUD.ui_alpha

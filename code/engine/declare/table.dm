@@ -121,6 +121,10 @@ GLOBAL_VAR(declare_report_capture)
 		T = built
 	if(!T)
 		T = table_compile(D.type, null, null, null)
+	else if(T.owner_type != D.type && stat_type_needs_own_table(D.type, T.owner_type))
+		// A type that declares nothing shares its ancestor's table, but a FORMULA stat it declares (STAT lines are not table entries) must be
+		// computed at init: it gets its own table, whose hooks say so.
+		T = table_compile(D.type, T, null, null)
 	type_table_cache()[D.type] = T
 	return T
 
@@ -149,7 +153,7 @@ GLOBAL_VAR(declare_report_capture)
 		if(istype(item, /datum/entry/line))
 			var/datum/entry/line/L = item
 			if(file)
-				origin_now = "[file]:[L.line]"
+				origin_now = entry_origin_text(file, L.line, L.section_name)
 			continue
 		table_apply(T, item, origin_now, null, null)
 	table_validate(T)

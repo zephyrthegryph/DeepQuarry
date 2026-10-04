@@ -99,7 +99,7 @@
 	computer.run_program(program.filename, actor)
 	TEST_ASSERT_EQUAL(computer.active_program(), program, "the actual executable is running before module quit")
 	var/datum/tgui_module/module = allocate(/datum/tgui_module, computer)
-	TEST_ASSERT(module.ui_act_pc_exit(actor, list(), null, null, "PC_exit"), "the actual module header accepts quit")
+	TEST_ASSERT(test_op_committed(op_ui_act(actor, module, "PC_exit")), "the actual module header accepts quit")
 	TEST_ASSERT_EQUAL(program.program_state, PROGRAM_STATE_KILLED, "the module header kills the actual foreground executable")
 	TEST_ASSERT_NULL(computer.active_program(), "the module header clears the actual foreground relation")
 	test_time(0.2 SECONDS)

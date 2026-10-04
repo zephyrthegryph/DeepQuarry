@@ -3,7 +3,7 @@
 //! "Every proc the engine calls to run a part or a trigger is `x(datum/act/A)`: effects,
 //! requirements, conditions, hook handlers, every() and sequence work, outputs, then(),
 //! because = PROC_REF, CAP_PROC" (doc/rewrite/final_api.html section 7). A declaration is a marker
-//! (`CAPABILITIES(T, ...)`, `CAPABILITY_DEF/TYPE`, `STAT`, `BUNDLE`); a hook form inside it
+//! (`CAPABILITIES(T, ...)`, `CAPABILITY_DEF/TYPE`, `STAT`, and the entry procs a block names); a hook form inside it
 //! (`needs(...)`, `when(...)`, `contributes(...)`, `every(...)`, `then(...)`, ...) takes handlers as
 //! `PROC_REF(x)`, `TYPE_PROC_REF(/type, x)` or `CAP_PROC(x)`. The hook form decides which context
 //! type the handler is called with, and so which fields it may read (section 8, "Contexts").
@@ -171,7 +171,7 @@ fn hook_ranges(body: &str) -> Vec<(usize, usize, usize)> {
 pub fn discover(decls: &Decls) -> Vec<HandlerRef> {
     let mut out = Vec::new();
     for m in &decls.markers {
-        if !matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" | "BUNDLE") {
+        if !matches!(m.name.as_str(), "CAPABILITIES" | "CAPABILITY_DEF" | "CAPABILITY_TYPE" | "STAT" | crate::sem::decls::ENTRY_PROC) {
             continue;
         }
         marker_handlers(m, &mut out);

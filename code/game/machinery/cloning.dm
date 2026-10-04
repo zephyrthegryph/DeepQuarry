@@ -120,6 +120,7 @@ DECLARE_PERIODIC_WHILE(/obj/machinery/clonepod, MACHINE_PIPELINE, "clonepod_occu
 
 CAPABILITIES(/obj/machinery/clonepod)
 	owns_many(nameof(containers), on_destroy = ON_DESTROY_SPILL)
+	owns_one(nameof(growing_record), /datum/transhuman/body_record)
 	op("clonepod_interaction_hand", hand(), then(PROC_REF(clonepod_interaction_hand)))
 	op("clonepod_interaction_item", item(/obj/item), then(PROC_REF(clonepod_interaction_item)))
 	op("clonepod_eject", menu(), label("Eject Cloner"), then(PROC_REF(clonepod_eject)))

@@ -5,11 +5,12 @@
 // the rows of GLOB.event_twin_notice (code/engine/_generated/event_twins.dm, `analyze gen event_twins`, from tools/dx/codemods/om_event_map.json)
 // and each row names the notice's fields in the order of the event's New() arguments. The last event deletes the map (step A7).
 //
-// A bridged delivery sets GLOB.twin_in_flight, so the twin does not bounce back. Nothing is built unless the other side has a listener: the
+// A bridged delivery marks its pair in GLOB.twin_in_flight (event type -> depth), so that twin does not bounce back. Only the pair in flight
+// is held: a listener of one twin may emit a different event (a body change raising a medical-issues change) and that one crosses normally. Nothing is built unless the other side has a listener: the
 // wants checks (event_twin_wanted(), notice_twin_wanted()) are what om_wants() and notice_wanted() ask.
 
-/// True while a twin is being delivered across the bridge.
-GLOBAL_VAR_INIT(twin_in_flight, FALSE)
+/// Event type -> count, for each twin pair being delivered across the bridge right now.
+GLOBAL_LIST_EMPTY(twin_in_flight)
 /// notice type -> list(event type, fields...), built from event_twin_notice on first use.
 GLOBAL_LIST_EMPTY(notice_twin_event)
 GLOBAL_VAR_INIT(notice_twin_built, FALSE)
@@ -24,21 +25,21 @@ GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 
 /// Does the notice side of event `event_type` have a listener on E? (om_wants() asks this when the event itself has none.)
 /proc/event_twin_wanted(datum/E, event_type)
-	if(GLOB.twin_in_flight)
+	if(GLOB.twin_in_flight?[event_type])
 		return FALSE
 	var/list/row = GLOB.event_twin_notice[event_type]
 	return row && notice_wanted_native(E, row[1], ACT_COMMITTED)
 
 /// Does the event side of notice `notice_type` have an om listener on E?
 /proc/notice_twin_wanted(datum/E, notice_type)
-	if(GLOB.twin_in_flight)
-		return FALSE
 	var/list/row = notice_twin_row(notice_type)
+	if(row && GLOB.twin_in_flight?[row[1]])
+		return FALSE
 	return row && om_wants_direct(E, row[1])
 
 /// OM_EMIT of `event` on E: its twin notice is published to the on_notice listeners.
 /proc/event_to_notice_twin(datum/E, datum/om/event/event)
-	if(GLOB.twin_in_flight)
+	if(GLOB.twin_in_flight?[event.type])
 		return
 	var/list/row = GLOB.event_twin_notice[event.type]
 	if(!row || !notice_wanted_native(E, row[1], ACT_COMMITTED))
@@ -48,15 +49,19 @@ GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 		var/field = row[i]
 		var/source_field = copytext(field, -1) == "_" && !(field in event.vars) ? copytext(field, 1, -1) : field
 		N.vars[field] = event.vars[source_field] // ALLOW(api): the twin copies the event's payload into the notice by the field names of the generated map
-	GLOB.twin_in_flight = TRUE
-	notice_publish(E, N, ACT_COMMITTED)
-	GLOB.twin_in_flight = FALSE
+	twin_flight_enter(event.type)
+	try
+		notice_publish(E, N, ACT_COMMITTED)
+	catch(var/exception/fault)
+		twin_flight_leave(event.type)
+		throw fault
+	twin_flight_leave(event.type)
 
 /// A committed notice delivered on holder: its twin event is emitted to the event listeners.
 /proc/notice_to_event_twin(datum/holder, datum/notice/N)
-	if(GLOB.twin_in_flight)
-		return
 	var/list/row = notice_twin_row(N.type)
+	if(row && GLOB.twin_in_flight?[row[1]])
+		return
 	if(!row || !om_wants_direct(holder, row[1]))
 		return
 	var/event_type = row[1]
@@ -64,6 +69,24 @@ GLOBAL_VAR_INIT(notice_twin_built, FALSE)
 	for(var/i in 2 to length(row))
 		values += list(N.vars[row[i]])
 	var/datum/om/event/event = new event_type(arglist(values))
-	GLOB.twin_in_flight = TRUE
-	om_emit(holder, event)
-	GLOB.twin_in_flight = FALSE
+	twin_flight_enter(event_type)
+	try
+		om_emit(holder, event)
+	catch(var/exception/fault)
+		twin_flight_leave(event_type)
+		throw fault
+	twin_flight_leave(event_type)
+
+/proc/twin_flight_enter(event_type)
+	if(!GLOB.twin_in_flight)
+		GLOB.twin_in_flight = list()
+	GLOB.twin_in_flight[event_type] = (GLOB.twin_in_flight[event_type] || 0) + 1
+
+/proc/twin_flight_leave(event_type)
+	if(!GLOB.twin_in_flight)
+		return
+	var/depth = (GLOB.twin_in_flight[event_type] || 1) - 1
+	if(depth > 0)
+		GLOB.twin_in_flight[event_type] = depth
+	else
+		GLOB.twin_in_flight -= event_type

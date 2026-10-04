@@ -33,6 +33,10 @@ examples, section 17 and `doc/rewrite/api_mapping.tsv` map old forms to new ones
    1. vars and tracked state: `TRACKED`, `STAT`, `SOURCE_DEF`, `STAGE_DEF`; one `var/x` per fact, defaults on the var line;
    2. the `CAPABILITIES(T)` block: bundles first (`wall_machine`, `maintenance_hatch`, `cell_bay`, `powered_by`), then links and relations
       (`owns_one`, `links`), then `interface()`, then ops, then `extend`s, then hooks (`on_notice`, `on_change`, `extend(/datum/act/hit/x, ...)`);
+      a long block groups the rest under `section(name, "doc")` lines at its end (a window's buttons, the hatch's rules): a section's
+      entries are the type's own, so they use `PROC_REF(x)` and `nameof(v)`, and Explain prints `file:line section name` for each. There is
+      no `BUNDLE`: what several types share is a library capability, or a plain `/proc/name()` returning `list(entries)` for a small
+      parameterless snippet;
    3. each old interaction becomes an op, each old condition a requirement, each old effect `then(PROC_REF(x))` with `x(datum/act/op/A, args...)`;
    4. timers become `after(src, delay, PROC_REF(x), key = "k", with = list(...))`, holds become `hold`/`release` with a `SOURCE_DEF`;
    5. presentation: `look_layer()` and `examine_line()` for plain layers and lines, `draw(look)` for computed ones, `ui_data(A)` for the window;

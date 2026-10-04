@@ -13,7 +13,7 @@
 		if(route == "item")
 			bomb.interaction_insert_disk(user, disk, null)
 		else
-			bomb.ui_act_auth(user, list(), null, null, "auth")
+			op_ui_act(user, bomb, "auth")
 		TEST_ASSERT_NULL(bomb.auth(), "refused [route] release records no authentication relation")
 		TEST_ASSERT_EQUAL(disk.loc, user, "refused [route] release preserves actual inventory containment")
 		TEST_ASSERT_EQUAL(user.get_active_hand(), disk, "refused [route] release preserves the exact hand")
@@ -21,13 +21,13 @@
 		if(route == "item")
 			bomb.interaction_insert_disk(user, disk, null)
 		else
-			bomb.ui_act_auth(user, list(), null, null, "auth")
+			op_ui_act(user, bomb, "auth")
 		TEST_ASSERT_EQUAL(bomb.auth(), disk, "allowed [route] insertion records the original disk")
 		TEST_ASSERT_EQUAL(disk.loc, bomb, "allowed [route] insertion physically contains the original disk")
 		TEST_ASSERT_NULL(user.get_active_hand(), "allowed [route] insertion clears the source hand")
 		TEST_ASSERT_NULL(owner_of(disk), "the authentication relation does not invent disk ownership")
 		bomb.yes_code = TRUE
-		bomb.ui_act_auth(user, list(), null, null, "auth")
+		op_ui_act(user, bomb, "auth")
 		TEST_ASSERT_NULL(bomb.auth(), "actual UI ejection clears the authentication relation")
 		TEST_ASSERT_EQUAL(disk.loc, T, "actual UI ejection returns the original disk to the floor")
 		TEST_ASSERT(!bomb.yes_code, "actual UI ejection invalidates the entered code")

@@ -261,12 +261,7 @@
 	COOLDOWN_DECLARE(slip_protect)
 
 CAPABILITIES(/mob)
-	ref_one(nameof(control_object)) // the object an admin possesses
-	ref_many(nameof(spell_list))
-	ref_many(nameof(actions))
-	links(/mob::exploit_addons, /obj/item::exploit_for, a_many = TRUE)
 	owns_one(nameof(ability_master), /atom/movable/screen/movable/ability_master, starts = /atom/movable/screen/movable/ability_master)
-	owns_one(nameof(autowhisper_display), /atom/movable/screen)
 	owns_one(nameof(belly_overlay_tgui), /datum/belly_overlay_tgui)
 	owns_one(nameof(borer_chem_display), /atom/movable/screen/borer/chems)
 	owns_one(nameof(dna), /datum/dna)
@@ -282,11 +277,9 @@ CAPABILITIES(/mob)
 	owns_one(nameof(machine_shim), /datum/using_machine_shim)
 	owns_one(nameof(pain), /atom/movable/screen)
 	owns_one(nameof(plane_holder), /datum/plane_holder)
-	owns_one(nameof(pullin), /atom/movable/screen)
 	owns_one(nameof(radio_use_icon), /atom/movable/screen/gun/radio)
 	owns_one(nameof(remote_view), /datum/remote_view)
 	owns_one(nameof(shadekin_display), /atom/movable/screen/shadekin)
-	owns_one(nameof(throw_icon), /atom/movable/screen)
 	owns_one(nameof(vorePanel), /datum/vore_look)
 	owns_one(nameof(wiz_energy_display), /atom/movable/screen/wizard/energy)
 	owns_one(nameof(wiz_instability_display), /atom/movable/screen/wizard/instability)
@@ -312,7 +305,20 @@ CAPABILITIES(/mob)
 	var/accumulated_rads = 0 	// For radiation stuff.
 	var/faction_bump_vore = FALSE	// Don't bump nom mobs of the same faction
 
-
+/mob/relations()
+	. = ..()
+	. += rel_one(nameof(control_object)) // the object an admin possesses
+	// HUD screens the mob points at but its /datum/hud owns (hotkeybuttons/adding/other/extra_screens):
+	// owning them here too made the hud's rel_add and the mob's rel_set a double ownership.
+	. += rel_one(nameof(autowhisper_display))
+	. += rel_one(nameof(pullin))
+	. += rel_one(nameof(throw_icon))
+	. += rel_many(nameof(spell_list))
+	. += rel_many(nameof(actions))
+	. += rel_many(nameof(exploit_addons), back = nameof(/obj/item::exploit_for))
+/obj/item/relations()
+	. = ..()
+	. += rel_one(nameof(exploit_for), back = nameof(/mob::exploit_addons))
 
 // Tracked inputs of the Life presentation reactions (HUD, sight, canmove; living_systems.dm): their setters publish.
 TRACKED(/mob, blinded)

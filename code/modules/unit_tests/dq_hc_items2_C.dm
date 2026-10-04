@@ -145,7 +145,7 @@
 	var/obj/item/implant/reagent_generator/egg/G = allocate(/obj/item/implant/reagent_generator/egg, tile(2, 2))
 	TEST_ASSERT(G.handle_implant(H), "embedded")
 	G.post_implant(H)
-	H.nutrition = 400
+	H.set_nutrition(400)
 	hcic_generator_step(G)
 	TEST_ASSERT_EQUAL(G.reagents.total_volume, 2, "a step makes two units of egg while hosted")
 	TEST_ASSERT_EQUAL(H.nutrition, 399.5, "and costs half a unit of nutrition")
@@ -159,6 +159,6 @@
 	test_time(7 SECONDS)
 	TEST_ASSERT_EQUAL(G.reagents.total_volume, 0, "an implant that was never post-implanted makes nothing")
 	G.post_implant(H)
-	H.nutrition = 400
+	H.set_nutrition(400)
 	test_time(7 SECONDS)
 	TEST_ASSERT(G.reagents.total_volume > 0, "once implanted the generator makes reagents on its own clock")

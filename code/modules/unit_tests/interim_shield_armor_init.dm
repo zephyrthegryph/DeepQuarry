@@ -25,7 +25,7 @@
 	TEST_ASSERT_EQUAL(projectile.damage, damage_before, "actual inactive shield leaves projectile damage unchanged")
 	TEST_ASSERT_EQUAL(projectile.agony, 20, "actual inactive shield leaves projectile agony unchanged")
 	TEST_ASSERT_EQUAL(core.energy, 10000, "actual inactive shield spends no core energy")
-	shield.shield_armor_toggle_self(user, shield, null)
+	test_op_handler(shield, "shield_armor_toggle_self", user, shield) // worn, not held: the handler runs as the engine would
 	TEST_ASSERT(shield.active, "actual toggle activates the worn shield")
 	var/result = shield.handle_shield(user, 20, projectile)
 	own_turf_contents(T)

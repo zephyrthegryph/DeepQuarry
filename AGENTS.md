@@ -70,7 +70,7 @@ yet; write the legacy form in the last column until it does.
 | Need | Target form | Doc | On master | Write today |
 |---|---|---|---|---|
 | Declare a type | One inheriting block: `CAPABILITIES(T)` and indented entries | §1 | **new** | `capabilities()`/`reactions()`/`relations()` table procs |
-| Reusable behaviour | A capability (`cover()`, `powered()`, bundles) | §11 | **new** | library capabilities in `code/datums/capabilities/` |
+| Reusable behaviour | A capability (`cover()`, `powered()`) or a plain proc returning entries; one type groups its own entries with `section(name, "doc")` in its block (no `BUNDLE`) | §11 | **new** | library capabilities in `code/datums/capabilities/` |
 | Player/AI/admin choice | `op(key, name, parts...)`: input, select, `needs()`, `wait()`, `then()` | §9 | **new** | `DECLARE_INTERACTIONS`, `DECLARE_UI`/`UI_ACT`, `om_ask` |
 | Refusals | A requirement returns null to allow or a reason; never a boolean, never side effects | §9 | **new** | `REQ_*`, `needs = PROC_REF(x)` |
 | Typed world events | `/datum/act` contexts from `ACTION()`; `intercept()` | §8, §10 | **new** | `DAMAGE_REACTION`, `OM_EMIT` |
@@ -196,9 +196,14 @@ orchestrates; `tools/build/build.sh <target>` is the POSIX front end.
   (`code/__defines/verdigris/_bindings.dm`, regenerate with
   `tools/build/build.sh verdigris-bindings`). If `cargo` is absent the build warns and skips
   it, and atmospherics and cave-gen then fail at runtime.
-- **Worktrees and DM-only work:** set `DQ_PREBUILT_VERDIGRIS=1` to reuse an existing
-  `verdigris.dll` instead of rebuilding Rust per worktree. Rust work should set
-  `RUSTC_WRAPPER=sccache`; `CARGO_TARGET_DIR` is honoured.
+- **Worktrees:** build verdigris inside each worktree (`verdigris/build-windows.sh`, or let
+  the build's VerdigrisTarget do it). Do not copy the main tree's `verdigris.dll` with
+  `DQ_PREBUILT_VERDIGRIS=1`: the test runner checks `VERDIGRIS_ABI` against the worktree's
+  bindings and refuses a DLL built from other sources, losing every shard. A prebuilt DLL is
+  only safe when it was built from this exact `verdigris/` source (same commit). Each
+  worktree's Rust target is about 1.3 GB, so check free disk first and delete your own
+  `verdigris/target` when you remove the worktree. A shared `CARGO_TARGET_DIR` plus
+  `RUSTC_WRAPPER=sccache` cuts rebuild time and disk.
 - Heed every DreamChecker warning. If another agent's unfinished work breaks the build,
   `DQ_WIP_TREE=1` lets test and bench builds skip dangling includes.
 

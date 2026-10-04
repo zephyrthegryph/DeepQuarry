@@ -669,9 +669,9 @@
 /datum/unit_test/dq_medical_trial_cohort_protocols
 
 /datum/unit_test/dq_medical_trial_cohort_protocols/Run()
-	var/mob/living/carbon/human/healthy = new(run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/healthy_two = new(run_loc_floor_bottom_left)
-	var/mob/living/carbon/human/affected = new(run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/healthy = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/healthy_two = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
+	var/mob/living/carbon/human/affected = allocate(/mob/living/carbon/human, run_loc_floor_bottom_left)
 	var/obj/item/organ/lungs = affected.organ_in(O_LUNGS)
 	var/datum/affliction/pulmonary_contusion/illness = affected.body.afflict(/datum/affliction/pulmonary_contusion, lungs, 30)
 	var/list/available_indications = medical_trial_qualifying_indications(list(healthy, affected), FALSE)

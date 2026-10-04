@@ -33,7 +33,7 @@
 
 /// Straps a shield generator with `cell` (costing 1 charge per point absorbed) to `H`'s back and
 /// raises shield `effect_type`. Returns the generator.
-/datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/cell)
+/datum/unit_test/proc/dq_equip_shield(mob/living/carbon/human/H, effect_type, obj/item/cell/device/cell)
 	var/obj/item/personal_shield_generator/G = allocate(/obj/item/personal_shield_generator)
 	rel_set(G, nameof(G.bcell), cell)
 	G.damage_cost = 1
@@ -309,7 +309,7 @@
 
 /datum/unit_test/dq_body_factor_energy_shield/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human)
-	var/obj/item/cell/C = allocate(/obj/item/cell/high)
+	var/obj/item/cell/C = allocate(/obj/item/cell/device/weapon) // the generator takes device cells only
 	dq_equip_shield(H, /datum/body_effect/shield_projection/bruteburn, C)
 	TEST_ASSERT_EQUAL(H.injure(INJURY_BLUNT, 5, BP_TORSO, flags = INJURE_SILENT), 0, "a fully charged brute shield should absorb everything")
 	TEST_ASSERT(C.charge < C.maxcharge, "absorbing should drain the cell")
