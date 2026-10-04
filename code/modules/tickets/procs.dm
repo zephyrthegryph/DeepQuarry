@@ -145,12 +145,35 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 	if(!admin_require(src, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "ticket.panel"))
 		return
 
-	var/browse_to
-
-	var/_answer_k133 = client_ask("k133", PROC_REF(cmd_admin_ticket_panel), args, 0, /datum/om/prompt/choice, message = "Display which ticket list?", title = "List Choice", choices = list("Active Tickets", "Closed Tickets", "Resolved Tickets"))
-	if(isnull(_answer_k133))
+	if(QDELETED(mob))
 		return
-	switch(_answer_k133)
+	var/datum/admin_ticket_panel_review/review = new
+	review.client_ckey = ckey
+	rel_set(review, nameof(review.actor), mob)
+	open_request(review, /datum/prompt/choice/admin_ticket_panel_list, TYPE_PROC_REF(/datum/admin_ticket_panel_review, answered), answerer = mob)
+
+/datum/admin_ticket_panel_review
+	var/tmp/mob/actor
+	var/client_ckey
+
+CAPABILITIES(/datum/admin_ticket_panel_review)
+	ref_one(nameof(actor), /mob)
+
+/datum/admin_ticket_panel_review/proc/answered(datum/act/request/context)
+	if(context.answer)
+		var/datum/result/result = safe_call(PROC_REF(apply_choice), context.request.answer_value)
+		if(!result.ok)
+			stack_trace("Admin ticket panel prompt continuation: [result.error]")
+	retire()
+
+/datum/admin_ticket_panel_review/proc/apply_choice(choice)
+	var/client/requester = GLOB.directory[client_ckey]
+	if(!requester || QDELETED(actor))
+		return
+	if(!admin_require(requester, R_ADMIN|R_MOD|R_DEBUG|R_EVENT, "ticket.panel"))
+		return
+	var/browse_to
+	switch(choice)
 		if("Active Tickets")
 			browse_to = AHELP_ACTIVE
 		if("Closed Tickets")
@@ -160,8 +183,25 @@ ADMIN_VERB(cmd_mentor_ticket_panel, (R_ADMIN|R_SERVER|R_MOD|R_MENTOR), "Mentor T
 		else
 			return
 
-	GLOB.tickets.BrowseTickets(browse_to, mob)
+	GLOB.tickets.BrowseTickets(browse_to, requester.mob)
 
+
+/datum/admin_ticket_panel_review/proc/retire()
+	qdel(src) // ALLOW(lifecycle): Finished nonspatial request state has no inventory release contract.
+
+/datum/prompt/choice/admin_ticket_panel_list
+	title = "List Choice"
+	question = "Display which ticket list?"
+	choices = list("Active Tickets", "Closed Tickets", "Resolved Tickets")
+	timeout = 0
+
+/datum/prompt/choice/admin_ticket_panel_list/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/datum/admin_ticket_panel_review/review = owner
+	if(QDELETED(review.actor) || !GLOB.directory[review.client_ckey])
+		return "The original administrator is no longer available."
 
 /datum/ticket/proc/send2adminchatwebhook()
 	if(!CONFIG_GET(string/chat_webhook_url))
