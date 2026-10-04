@@ -326,28 +326,47 @@ CAPABILITIES(/obj/mecha/combat/fighter/gunpod)
 	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
 		return OP_DECLINE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_stripe_color), subject = W, title = "Paint Zone", message = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_stripe_color), answerer = user, subject = W, timeout = 0, title = "Paint Zone", question = "Please select a target zone.", choices = list("Fore Stripe", "Aft Stripe", "CANCEL"), ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 
-/datum/om/prompt/color/mech_paint
+/datum/prompt/color/mech_paint
 	title = "Paint Color"
-	message = "Please select a paint color."
+	question = "Please select a paint color."
+	timeout = 0
 	ask_flags = ASK_HELD | ASK_CAPABLE
 	var/zone
 
-/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/om/prompt/choice/ask)
-	if(ask.choice != "CANCEL")
-		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(stripe_painted), subject = ask.subject, zone = ask.choice)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(ask_stripe_color_apply), context)
+	if(!result.ok)
+		stack_trace("ask_stripe_color: [result.error]")
+	return result.value
 
-/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/om/prompt/color/mech_paint/ask)
+/obj/mecha/combat/fighter/gunpod/proc/ask_stripe_color_apply(datum/act/request/context)
+	var/datum/prompt/choice/ask = context.answer
+	if(ask.answer_value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(stripe_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.answer_value)
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/result/result = safe_call(PROC_REF(stripe_painted_apply), context)
+	if(!result.ok)
+		stack_trace("stripe_painted: [result.error]")
+	return result.value
+
+/obj/mecha/combat/fighter/gunpod/proc/stripe_painted_apply(datum/act/request/context)
+	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.picked_color)
+	if(ask.answer_value)
 		switch(ask.zone)
 			if("Fore Stripe")
-				stripe1_color = ask.picked_color
+				stripe1_color = ask.answer_value
 			if("Aft Stripe")
-				stripe2_color = ask.picked_color
+				stripe2_color = ask.answer_value
 	update_icon()
 
 /obj/effect/decal/mecha_wreckage/gunpod
