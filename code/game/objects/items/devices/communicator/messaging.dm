@@ -86,7 +86,7 @@
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *[ttone]*"))
 
-	alert_called = 1
+	set_alert_called(TRUE)
 	update_icon()
 
 	//Search for holder of the device.
@@ -98,16 +98,20 @@
 		to_chat(L, span_notice("[icon2html(src,L.client)] Message from [who]: <b>\"[text]\"</b> (<a href='byond://?src=\ref[src];action=Reply;target=\ref[candidate]'>Reply</a>)"))
 
 // This is the only Topic the communicators really uses
-/datum/om/prompt/text/communicator/reply
-	title = "Reply"
-	message = "Enter your message below."
+/datum/prompt/text/communicator_reply
 	var/obj/item/communicator/comm
 
-/obj/item/communicator/proc/reply_entered(datum/om/prompt/text/communicator/reply/ask)
-	var/mob/user = ask.answerer
-	var/message = ask.text
-	var/obj/item/communicator/comm = ask.comm
-	if(!message || !comm.exonet)
+CAPABILITIES(/datum/prompt/text/communicator_reply)
+	ref_one(nameof(comm), /obj/item/communicator)
+
+/obj/item/communicator/proc/reply_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/communicator_reply/reply_question = A.request
+	var/mob/user = reply_question.answerer
+	var/message = A.answer.answer_value
+	var/obj/item/communicator/comm = reply_question.comm
+	if(!message || !comm?.exonet)
 		return
 	exonet.send_message(comm.exonet.address, "text", message)
 	LAZYADD(im_list, list(list("address" = exonet.address, "to_address" = comm.exonet.address, "im" = message)))
@@ -124,7 +128,9 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 	var/obj/item/communicator/comm = args["target"]
 	if(!comm?.exonet)
 		return
-	om_ask(user, /datum/om/prompt/text/communicator/reply, PROC_REF(reply_entered), comm = comm)
+	var/datum/prompt/text/communicator_reply/reply_question = open_request(src, /datum/prompt/text/communicator_reply, PROC_REF(reply_entered), answerer = user, title = "Reply", question = "Enter your message below.", usable_state = "default", timeout = 0)
+	if(reply_question)
+		rel_set(reply_question, nameof(reply_question.comm), comm)
 	return TRUE
 
 // Verb: text_communicator()
@@ -168,22 +174,27 @@ TOPIC_ACTION(/obj/item/communicator, "action=Reply", PROC_REF(topic_reply), TOPI
 
 	open_request(src, /datum/prompt/choice, PROC_REF(ghost_text_recipient_chosen), answerer = src, title = "Recipient Choice", question = "Send a text message to whom?", choices = choices, timeout = 0)
 
-/datum/om/prompt/text/ghost_text
-	message = "What do you want the message to say?"
-	encode = FALSE
-	multiline = TRUE
+/datum/prompt/text/ghost_text
 	var/obj/item/communicator/recipient
+
+CAPABILITIES(/datum/prompt/text/ghost_text)
+	ref_one(nameof(recipient), /obj/item/communicator)
 
 /mob/observer/dead/proc/ghost_text_recipient_chosen(datum/act/request/A)
 	if(!A.answer)
 		return
-	om_ask(src, /datum/om/prompt/text/ghost_text, PROC_REF(ghost_text_written), recipient = A.answer.answer_value)
+	var/datum/prompt/text/ghost_text/text_question = open_request(src, /datum/prompt/text/ghost_text, PROC_REF(ghost_text_written), answerer = src, question = "What do you want the message to say?", encode = FALSE, multiline = TRUE, timeout = 0)
+	if(text_question)
+		rel_set(text_question, nameof(text_question.recipient), A.answer.answer_value)
 
-/mob/observer/dead/proc/ghost_text_written(datum/om/prompt/text/ghost_text/ask)
-	var/obj/item/communicator/chosen_communicator = ask.recipient
+/mob/observer/dead/proc/ghost_text_written(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/ghost_text/text_question = A.request
+	var/obj/item/communicator/chosen_communicator = text_question.recipient
 	var/mob/observer/dead/O = src
-	var/text_message = sanitize(ask.text, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
-	if(text_message && O.exonet && chosen_communicator.exonet)
+	var/text_message = sanitize(A.answer.answer_value, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+	if(text_message && O.exonet && chosen_communicator?.exonet)
 		O.exonet.send_message(chosen_communicator.exonet.address, "text", text_message)
 
 		to_chat(src, span_notice("You have sent '[text_message]' to [chosen_communicator]."))

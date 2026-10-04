@@ -5,12 +5,15 @@ MATERIAL_MIX(/obj/item/paicard/sleevecard, list(MAT_STEEL = 4000, MAT_GLASS = 40
 	catalogue_data = list(/datum/category_item/catalogue/technology/resleeving)
 	show_messages = 0
 	has_emag_toolkit = FALSE // sleevecards don't have multitools or signalers,  you can just change their laws
-	special_handling = TRUE
 
 EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	INTERACT_OBSERVER(null, TYPE_PROC_REF(/atom, interaction_swallow)), \
-	INTERACT_ITEM(null, PROC_REF(sleevecard_interaction_item)), \
 )
+
+CAPABILITIES(/obj/item/paicard/sleevecard)
+	without("item")
+	op("sleeve_item", item(/obj/item), passes(), when(req(PROC_REF(held_is_another))), then(PROC_REF(sleevecard_item_used)))
+	op("sleeve_use", in_hand(), priority(OP_PRIORITY_PART), then(PROC_REF(sleevecard_used)))
 
 /datum/om/task/timed/sleevecard_upload_mind
 	duration = 8 SECONDS
@@ -30,9 +33,10 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 	sleeveInto(record)
 	S.clear_mind()
 
-/// Old attackby (never reached paicard's own item handling).
-/obj/item/paicard/sleevecard/proc/sleevecard_interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
-	. = INTERACTION_HANDLED_PASS
+/// Old attackby (never reached paicard's own item handling): a sleevemate uploads a mind, a sequencer subverts it, anything else goes on.
+/obj/item/paicard/sleevecard/proc/sleevecard_item_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(istype(I,/obj/item/sleevemate))
 		var/obj/item/sleevemate/S = I
 		if(S.stored_mind() && !pai)
@@ -53,6 +57,7 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 				var/mob/living/silicon/pai/infomorph/our_infomorph = pai
 				our_infomorph.emagged = TRUE
 				to_chat(our_infomorph, span_warning("You can feel the restricting binds of your card's directives taking hold of your mind as \the [user] swipes their [E] over you. You must serve your master."))
+	return OP_OK
 
 /obj/item/paicard/sleevecard/proc/sleeveInto(datum/transhuman/mind_record/MR, db_key)
 	var/mob/living/silicon/pai/infomorph/infomorph = new(src,MR.mindname,db_key)
@@ -77,15 +82,18 @@ EXTEND_INTERACTIONS(/obj/item/paicard/sleevecard, \
 
 	return 0
 
-/obj/item/paicard/sleevecard/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/// The in-hand use: a plain sleevecard only says what it holds; a subverted one with a mind goes on to the card's own use (its window, its parts).
+/obj/item/paicard/sleevecard/proc/sleevecard_used(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 
 	if(!pai)
 		to_chat(user,span_warning("\The [src] does not have a mind in it!"))
-	else
-		if(!emagged)
-			to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
-		else ..(user, TRUE)
+		return OP_OK
+	if(!emagged)
+		to_chat(user,span_notice("\The [src] displays the name '[pai]'."))
+		return OP_OK
+	return OP_DECLINE
 
 /mob/living/silicon/pai/infomorph
 	name = "sleevecard" //Has the same name as the card for consistency, but this is the MOB in the card.

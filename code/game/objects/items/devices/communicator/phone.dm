@@ -182,7 +182,7 @@
 		for (var/mob/O in hearers(2, loc))
 			O.show_message(text("[icon2html(src,O.client)] *beep*"))
 
-	alert_called = 1
+	set_alert_called(TRUE)
 	update_icon()
 
 	//Search for holder of the device.
@@ -302,14 +302,16 @@
 		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
-	om_ask(src, /datum/om/prompt/confirm/join_as_voice, PROC_REF(join_as_voice_confirmed), message = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
+	open_request(src, /datum/prompt/yes_no/join_as_voice, PROC_REF(join_as_voice_confirmed), answerer = src, title = "Join as Voice?", question = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name, timeout = 0)
 
-/datum/om/prompt/confirm/join_as_voice
-	title = "Join as Voice?"
+/datum/prompt/yes_no/join_as_voice
 	var/prefs_name
 
-/mob/observer/dead/proc/join_as_voice_confirmed(datum/om/prompt/confirm/join_as_voice/ask)
-	var/prefs_name = ask.prefs_name
+/mob/observer/dead/proc/join_as_voice_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/yes_no/join_as_voice/join_question = A.request
+	var/prefs_name = join_question.prefs_name
 
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD == 1)
 		to_chat(src, span_danger("You have used the antagHUD and cannot respawn or use communicators!"))

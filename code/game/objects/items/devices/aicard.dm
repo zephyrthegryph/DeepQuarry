@@ -12,6 +12,14 @@
 	var/flush = null
 
 	var/mob/living/silicon/ai/carded_ai
+	/// What the card shows of its AI (kept by sync_ai_look()): whether it holds one, whether the AI's wireless interface is up, and whether the AI is down.
+	var/ai_present = FALSE
+	var/ai_wireless = FALSE
+	var/ai_dead = FALSE
+
+TRACKED(/obj/item/aicard, ai_present)
+TRACKED(/obj/item/aicard, ai_wireless)
+TRACKED(/obj/item/aicard, ai_dead)
 
 /obj/item/aicard/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(!istype(M, /mob/living/silicon/decoy))
@@ -23,22 +31,17 @@
 		return ITEM_INTERACT_SUCCESS
 
 CAPABILITIES(/obj/item/aicard)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	ref_one(nameof(carded_ai), /mob/living/silicon/ai)
+	interface("AICard", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("wipe", ui_act("wipe"), needs(req(PROC_REF(has_ai), silent = TRUE)), then(PROC_REF(ui_act_wipe)))
+	op("radio", ui_act("radio"), needs(req(PROC_REF(has_ai), silent = TRUE)), then(PROC_REF(ui_act_radio)))
+	op("wireless", ui_act("wireless"), needs(req(PROC_REF(has_ai), silent = TRUE)), then(PROC_REF(ui_act_wireless)))
 
-/// tgui_interact()'s own signature doesn't match the (actor, held, interaction) effect
-/// contract (its 2nd/3rd args are the UI and its state), so this stays a thin wrapper.
-/obj/item/aicard/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
+/// The window buttons work only while the card holds an AI.
+/obj/item/aicard/proc/has_ai(datum/act/op/A)
+	return !!carded_ai()
 
-DECLARE_UI(/obj/item/aicard, "AICard")
-
-DECLARE_UI_STATE(/obj/item/aicard, GLOB.tgui_inventory_state)
-
-UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,name:text,integrity:unknown,backup_capacitor:unknown,radio:bool,wireless:bool,operational:bool,flushing:unknown,laws:list,has_laws:num}")
-
-/// The computed part of /obj/item/aicard's window data (declared on its UI_DATA row).
-/obj/item/aicard/proc/ui_data_obj_item_aicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/aicard/ui_data(datum/act/eval/A)
 	var/list/data = list()
 
 	data["has_ai"] = carded_ai() != null
@@ -62,49 +65,47 @@ UI_DATA_REPLACE(/obj/item/aicard, "merge:ui_data_obj_item_aicard{has_ai:bool,nam
 
 	return data
 
-/obj/item/aicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(!carded_ai())
-		return FALSE
-	return TRUE
-
-UI_ACT(/obj/item/aicard, "wipe", ui_act_wipe)
-UI_ACT_PROC(/obj/item/aicard, ui_act_wipe)
-	msg_admin_attack("[key_name_admin(ui.user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
-	add_attack_logs(ui.user,carded_ai(),"Purged from AI Card")
+/obj/item/aicard/proc/ui_act_wipe(datum/act/op/A)
+	var/mob/user = A.actor
+	msg_admin_attack("[key_name_admin(user)] wiped [key_name_admin(AI_DEPT)] with \the [src].")
+	add_attack_logs(user, carded_ai(), "Purged from AI Card")
 	wipe_ai()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/aicard, "radio", ui_act_radio)
-UI_ACT_PROC(/obj/item/aicard, ui_act_radio)
+/obj/item/aicard/proc/ui_act_radio(datum/act/op/A)
+	var/mob/user = A.actor
 	carded_ai().aiRadio.disabledAi = !carded_ai().aiRadio.disabledAi
 	to_chat(carded_ai(), span_warning("Your Subspace Transceiver has been [carded_ai().aiRadio.disabledAi ? "disabled" : "enabled"]!"))
-	to_chat(ui.user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
-	return TRUE
+	to_chat(user, span_notice("You [carded_ai().aiRadio.disabledAi ? "disable" : "enable"] the AI's Subspace Transceiver."))
+	return OP_OK
 
-UI_ACT(/obj/item/aicard, "wireless", ui_act_wireless)
-UI_ACT_PROC(/obj/item/aicard, ui_act_wireless)
+/obj/item/aicard/proc/ui_act_wireless(datum/act/op/A)
+	var/mob/user = A.actor
 	carded_ai().control_disabled = !carded_ai().control_disabled
 	to_chat(carded_ai(), span_warning("Your wireless interface has been [carded_ai().control_disabled ? "disabled" : "enabled"]!"))
-	to_chat(ui.user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
+	to_chat(user, span_notice("You [carded_ai().control_disabled ? "disable" : "enable"] the AI's wireless interface."))
 	if(carded_ai().control_disabled && carded_ai().deployed_shell)
 		carded_ai().disconnect_shell("Disconnecting from remote shell due to [src] wireless access interface being disabled.")
-	update_icon()
-	return TRUE
+	sync_ai_look()
+	return OP_OK
 
-DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overlays), list())
-/obj/item/aicard/appearance_overlays()
-	. = list()
-	if(carded_ai())
-		if (!carded_ai().control_disabled)
-			. += "aicard-on"
-		if(carded_ai().stat)
-			icon_state = "aicard-404"
-		else
-			icon_state = "aicard-full"
-	else
-		icon_state = "aicard"
+/// Takes what the card shows of its AI from the AI: its wireless interface and whether it is down. Called wherever either changes (the AI dying too).
+/obj/item/aicard/proc/sync_ai_look()
+	var/mob/living/silicon/ai/ai = carded_ai()
+	set_ai_present(!!ai)
+	set_ai_wireless(!!(ai && !ai.control_disabled))
+	set_ai_dead(!!(ai && ai.stat))
+	update_icon()
+
+/// A card with an AI shows its state and whether the AI's wireless interface is up.
+/obj/item/aicard/draw(datum/look/look)
+	..()
+	if(!ai_present)
+		look.state("aicard")
+		return
+	if(ai_wireless)
+		look.overlay("aicard-on")
+	look.state(ai_dead ? "aicard-404" : "aicard-full")
 
 /obj/item/aicard/proc/grab_ai(mob/living/silicon/ai/ai, mob/living/user)
 	if(!ai.client && !ai.deployed_shell)
@@ -151,7 +152,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		to_chat(ai, span_notice(span_bold("Transfer successful:")) + " [ai.name] extracted from current device and placed within mobile core.")
 
 	ai.canmove = 1
-	update_icon()
+	sync_ai_look()
 
 /obj/item/aicard/proc/clear()
 	if(carded_ai() && istype(carded_ai().loc, /turf))
@@ -159,7 +160,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/aicard, TYPE_PROC_REF(/atom, appearance_overla
 		carded_ai().carded = 0
 	name = initial(name)
 	rel_clear(src, nameof(carded_ai))
-	update_icon()
+	sync_ai_look()
 
 /obj/item/aicard/see_emote(mob/living/M, text)
 	if(carded_ai() && carded_ai().client)

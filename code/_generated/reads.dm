@@ -56,9 +56,17 @@
 	. = ..()
 	. += reaction_reads(PROC_REF(life_canmove_changed), nameof(is_shifting))
 
+/obj/item/aicard/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(ai_dead), nameof(ai_present), nameof(ai_wireless))
+
 /obj/item/camerabug/generated_reads()
 	. = ..()
 	. += drawn_from(nameof(anchored))
+
+/obj/item/gps/generated_reads()
+	. = ..()
+	. += drawn_from(nameof(emp_busted), nameof(tracking))
 
 /obj/item/light/generated_reads()
 	. = ..()

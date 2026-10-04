@@ -8,6 +8,13 @@
 	test_time(t)
 	scheduler_advance(t / (1 SECOND))
 
+/// Opens or closes a card's panel the way the card does it (through its setter once it has one).
+/proc/a1_set_panel(obj/item/paicard/card, open)
+	if(hascall(card, "set_panel_open"))
+		call(card, "set_panel_open")(open)
+	else
+		card.panel_open = open
+
 /// Has `actor` an open question (an engine request, or a prompt the old way collected)?
 /proc/a1_asked(mob/actor)
 	for(var/datum/request/R as anything in SSrequests.open)
@@ -187,6 +194,31 @@
 	TEST_ASSERT(found_other, "another running unit is listed")
 	TEST_ASSERT(!found_hidden, "a hiding unit is not")
 
+// The periodic lanes of the old object model are not driven by the test clock; this one is written for the every() form.
+/datum/unit_test/dq_hc_items/gps_carried_unit_forgets_destroyed_tracks
+
+/datum/unit_test/dq_hc_items/gps_carried_unit_forgets_destroyed_tracks/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/gps/G = allocate(/obj/item/gps, tile(2, 2))
+	var/obj/item/gps/other = allocate(/obj/item/gps/on, tile(3, 3))
+	var/ref = "\ref[other]"
+	H.put_in_active_hand(G)
+	hci_ui(H, G, "power")
+	TEST_ASSERT(G.tracking, "the carried unit is running")
+	hci_ui(H, G, "startTrack", list("ref" = ref))
+	TEST_ASSERT(LAZYACCESS(G.tracking_devices, ref), "the unit follows the other")
+	a1_pass(10 SECONDS)
+	qdel(other)
+	a1_pass(10 SECONDS)
+	TEST_ASSERT(!LAZYACCESS(G.tracking_devices, ref), "a carried running unit drops a track whose unit is gone")
+	var/obj/item/gps/idle = allocate(/obj/item/gps/on, tile(2, 2))
+	var/obj/item/gps/third = allocate(/obj/item/gps/on, tile(3, 3))
+	var/third_ref = "\ref[third]"
+	hci_ui(H, idle, "startTrack", list("ref" = third_ref))
+	qdel(third)
+	a1_pass(10 SECONDS)
+	TEST_ASSERT(LAZYACCESS(idle.tracking_devices, third_ref), "a unit nobody carries does not refresh its tracks")
+
 // ---------------------------------------------------------------------------------------------------------------------
 // Uplink
 // ---------------------------------------------------------------------------------------------------------------------
@@ -300,7 +332,7 @@
 	hci_answer(H, "cell")
 	settle()
 	TEST_ASSERT_EQUAL(card.cell, PP_FUNCTIONAL, "a closed card asks nothing: it opens its window")
-	card.panel_open = TRUE
+	a1_set_panel(card, TRUE)
 	hci_click(H, card, card)
 	settle()
 	hci_answer(H, "cell")
@@ -334,7 +366,7 @@
 	var/obj/item/paicard/card = allocate(/obj/item/paicard, tile(2, 2))
 	var/obj/item/paiparts/cell/part = allocate(/obj/item/paiparts/cell, tile(2, 2))
 	card.cell = PP_MISSING
-	card.panel_open = TRUE
+	a1_set_panel(card, TRUE)
 	hci_click(H, card, part)
 	TEST_ASSERT_EQUAL(card.cell, PP_MISSING, "the part is not in at once")
 	settle()
@@ -437,11 +469,11 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/paicard/sleevecard/S = allocate(/obj/item/paicard/sleevecard, tile(2, 2))
 	var/obj/item/tool/screwdriver/D = allocate(/obj/item/tool/screwdriver, tile(2, 2))
-	S.panel_open = TRUE
+	a1_set_panel(S, TRUE)
 	hci_click(H, S, D)
 	settle()
 	TEST_ASSERT(S.panel_open, "an item the sleevecard does not know never reaches the card's own item handling")
-	S.panel_open = TRUE
+	a1_set_panel(S, TRUE)
 	hci_click(H, S, S)
 	settle()
 	hci_answer(H, "cell")
@@ -581,12 +613,20 @@
 	first.name = "Alpha"
 	second.name = "Beta"
 	hci_ui(H, C, "disconnect", list("disconnect" = "Alpha"))
-	settle()
 	TEST_ASSERT(QDELETED(first), "the disconnect button drops the voice it names")
 	TEST_ASSERT(!QDELETED(second), "and keeps the other")
 	hci_ui(H, C, "hang_up")
-	settle()
 	TEST_ASSERT(QDELETED(second), "the hang up button drops them all")
+
+// Like the GPS step above: the old watchdog lane does not run on the test clock, the every() does.
+/datum/unit_test/dq_hc_items/comm_watchdog_drops_calls_without_a_node
+
+/datum/unit_test/dq_hc_items/comm_watchdog_drops_calls_without_a_node/run_gate()
+	var/obj/item/communicator/C = allocate(/obj/item/communicator, tile(2, 2))
+	var/mob/living/voice/V = a1_voice(C)
+	TEST_ASSERT(!QDELETED(V), "the voice is on the line")
+	a1_pass(30 SECONDS)
+	TEST_ASSERT(QDELETED(V), "a line with no exonet link times out")
 
 /datum/unit_test/dq_hc_items/comm_emp_drops_the_call
 
@@ -606,8 +646,64 @@
 	TEST_ASSERT_EQUAL(C.icon_state, "communicator", "idle shows the plain state")
 	var/mob/living/voice/V = a1_voice(C)
 	C.update_icon()
-	settle()
+	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(C.icon_state, "communicator-active", "a line shows the active state")
 	C.close_connection(null, V, "hung up")
-	settle()
+	test_time(2 SECONDS)
 	TEST_ASSERT_EQUAL(C.icon_state, "communicator", "and the state goes with it")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Communicator: the answers of its questions, the reply link and the ghost side (handlers called as the engine calls them)
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_items/comm_answers_set_name_tone_and_note
+
+/datum/unit_test/dq_hc_items/comm_answers_set_name_tone_and_note/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/communicator/C = allocate(/obj/item/communicator, tile(2, 2))
+	test_request_handler(C, "name_entered", H, "Zed", /datum/prompt/text)
+	TEST_ASSERT_EQUAL(C.owner, "Zed", "a name registers the device")
+	TEST_ASSERT_EQUAL(C.name, "Zed's communicator", "and names it")
+	test_request_handler(C, "ringtone_entered", H, "bell", /datum/prompt/text)
+	TEST_ASSERT_EQUAL(C.ttone, "bell", "a tone sets the ringtone")
+	test_request_handler(C, "note_entered", H, "remember the milk", /datum/prompt/text)
+	TEST_ASSERT_EQUAL(C.note, "remember the milk", "a note is kept")
+	test_request_handler(C, "note_entered", H, "", /datum/prompt/text)
+	TEST_ASSERT_EQUAL(C.note, "", "an empty note clears it")
+
+/datum/unit_test/dq_hc_items/comm_reply_link_asks_for_the_message
+
+/datum/unit_test/dq_hc_items/comm_reply_link_asks_for_the_message/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/mob/living/carbon/human/other_person = person(tile(4, 4))
+	var/obj/item/communicator/C = allocate(/obj/item/communicator, tile(2, 2))
+	var/obj/item/communicator/other = allocate(/obj/item/communicator, tile(4, 4))
+	C.initialize_exonet(H)
+	other.initialize_exonet(other_person)
+	TEST_ASSERT(!topic_dispatch(C, H, list("action" = "Reply", "target" = "[REF(other)]")), "a reply link from someone who does not carry it does nothing")
+	TEST_ASSERT(!a1_asked(H), "and asks nothing")
+	H.put_in_active_hand(C)
+	topic_dispatch(C, H, list("action" = "Reply", "target" = "[REF(other)]"))
+	TEST_ASSERT(a1_asked(H), "a carried communicator's reply link asks for the message")
+	hci_answer(H, null, TRUE)
+
+/datum/unit_test/dq_hc_items/comm_decline_removes_a_request
+
+/datum/unit_test/dq_hc_items/comm_decline_removes_a_request/run_gate()
+	var/mob/living/carbon/human/H = person()
+	var/obj/item/communicator/C = allocate(/obj/item/communicator, tile(2, 2))
+	var/obj/item/communicator/other = allocate(/obj/item/communicator, tile(3, 3))
+	LAZYOR(C.voice_requests, other)
+	hci_ui(H, C, "decline", list("decline" = "[REF(other)]"))
+	TEST_ASSERT(!(other in C.voice_requests), "the decline button drops the request")
+
+/datum/unit_test/dq_hc_items/comm_ghost_side_questions_run
+
+/datum/unit_test/dq_hc_items/comm_ghost_side_questions_run/run_gate()
+	var/mob/observer/dead/ghost = allocate(/mob/observer/dead, tile(2, 2))
+	var/obj/item/communicator/C = allocate(/obj/item/communicator, tile(3, 3))
+	test_request_handler(ghost, "join_as_voice_confirmed", ghost, TRUE, /datum/prompt/yes_no/join_as_voice)
+	test_request_handler(ghost, "ghost_text_recipient_chosen", ghost, C, /datum/prompt/choice)
+	TEST_ASSERT(a1_asked(ghost), "a ghost that picked a communicator is asked what to say")
+	hci_answer(ghost, null, TRUE)
+	test_request_handler(ghost, "ghost_text_written", ghost, "hello", /datum/prompt/text/ghost_text)

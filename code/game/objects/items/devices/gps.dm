@@ -16,6 +16,13 @@
 	var/hide_signal = FALSE		// If true, signal is not visible to other GPS devices.
 	var/can_hide_signal = FALSE	// If it can toggle the above var.
 
+	/// Will not show other signals or emit its own signal if false.
+	var/tracking = FALSE
+	/// The mob carrying it (a relation view).
+	var/mob/holder = null
+	/// An EMP has it down (its look follows; the expiry itself is emp_until).
+	var/emp_busted = FALSE
+
 	var/list/tracking_devices
 	var/list/showing_tracked_names
 	var/obj/compass_holder/compass
@@ -23,16 +30,25 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-	///Var for attack_self chain
-	var/special_handling = FALSE
-
 REGISTRY_MEMBERSHIP(/obj/item/gps, REGISTRY_GPS)
-/// Will not show other signals or emit its own signal if false.
-OM_FIELD(/obj/item/gps, tracking, FALSE, CHANGE_EXPLICIT)
-/// The mob carrying it (a relation view).
-OM_FIELD_VIEW(/obj/item/gps, mob, holder, CHANGE_EXPLICIT)
-// The compass refreshes while a carried GPS is tracking.
-DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holder"))
+TRACKED(/obj/item/gps, tracking)
+TRACKED(/obj/item/gps, emp_busted)
+
+CAPABILITIES(/obj/item/gps)
+	owns_one(nameof(compass), starts = /obj/compass_holder)
+	ref_one(nameof(holder), /mob)
+	interface("Gps", state = nameof(GLOB.tgui_inventory_state), input = in_hand())
+	op("toggle_power", hand(), gesture(GESTURE_ALT), label("Toggle power"), then(PROC_REF(alt_toggled)))
+	op("power", ui_act("power"), then(PROC_REF(ui_act_power)))
+	op("rename", ui_act("rename", arg("value", schema_text(4096))), then(PROC_REF(ui_act_rename)))
+	op("localMode", ui_act("localMode"), then(PROC_REF(ui_act_localmode)))
+	op("hideSignal", ui_act("hideSignal"), then(PROC_REF(ui_act_hidesignal)))
+	op("trackLabel", ui_act("trackLabel", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_tracklabel)))
+	op("stopTrack", ui_act("stopTrack", arg("ref", schema_text(4096))), then(PROC_REF(ui_act_stoptrack)))
+	op("startTrack", ui_act("startTrack", arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_starttrack)))
+	op("trackColor", ui_act("trackColor", arg("color", schema_text(4096)), arg("ref", schema_ref(/obj/item/gps))), then(PROC_REF(ui_act_trackcolor)))
+	// The compass refreshes while a carried GPS is tracking.
+	every(2 SECONDS, then(PROC_REF(gps_step)), when = cond_all(nameof(tracking), nameof(holder)))
 
 /obj/item/gps/Initialize(mapload)
 	. = ..()
@@ -81,13 +97,10 @@ DECLARE_PERIODIC_WHILE_ALL(/obj/item/gps, PERIODIC_SLOW, list("tracking", "holde
 	. = ..()
 	update_holder()
 
-/obj/item/gps/periodic_step()
+/obj/item/gps/proc/gps_step(datum/act/timer/A)
 	update_holder()
 	if(holder_ref())
 		update_compass(src, TRUE)
-
-CAPABILITIES(/obj/item/gps)
-	owns_one(nameof(compass), starts = /obj/compass_holder)
 
 // the GPS leaves its holder's tracking.
 /obj/item/gps/on_destroy(force)
@@ -110,7 +123,6 @@ CAPABILITIES(/obj/item/gps)
 
 /// Hooked on the holder's movement.
 /obj/item/gps/proc/on_holder_moved(datum/act/notice/A)
-	EVENT_HANDLER
 	var/atom/movable/source = A.target
 	update_compass(source)
 
@@ -134,9 +146,11 @@ CAPABILITIES(/obj/item/gps)
 			compass.show_waypoint("\ref[gps]")
 	compass.rebuild_overlay_lists(update_compass_icon)
 
-/obj/item/gps/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)
+/// The empty-hand alt-click: switch the unit on or off.
+/obj/item/gps/proc/alt_toggled(datum/act/op/A)
+	var/mob/user = A.actor
 	toggletracking(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/gps/proc/toggletracking(mob/living/user)
 	if(!istype(user))
@@ -164,36 +178,17 @@ CAPABILITY(/obj/item/gps, emp_disable(5 MINUTES))
 
 /obj/item/gps/emp_disable_changed(disabled)
 	..()
-	update_icon()
+	set_emp_busted(disabled)
 	if(!disabled)
 		visible_message("\The [src] appears to be functional again.")
 
-/obj/item/gps/proc/appearance_gps_state()
-	if(EXPIRY_ACTIVE(src, emp_until, CLOCK_WORLD))
-		return "emp"
-	if(tracking)
-		return "working"
-	return ""
-
-DECLARE_APPEARANCE(/obj/item/gps, "appearance_gps_state", list( \
-	"emp" = list(APPEARANCE_OVERLAYS = list("emp")), \
-	"working" = list(APPEARANCE_OVERLAYS = list("working")) \
-))
-
-DECLARE_INTERACTIONS(/obj/item/gps, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
-)
-
-/obj/item/gps/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
-
-	tgui_interact(user)
-
-DECLARE_UI_STATE(/obj/item/gps, GLOB.tgui_inventory_state)
-
-DECLARE_UI(/obj/item/gps, "Gps")
+/// A busted unit shows it; a running one shows its light.
+/obj/item/gps/draw(datum/look/look)
+	..()
+	if(emp_busted)
+		look.overlay("emp")
+	else if(tracking)
+		look.overlay("working")
 
 /obj/item/gps/tgui_static_data(mob/user)
 	. = ..()
@@ -205,11 +200,7 @@ DECLARE_UI(/obj/item/gps, "Gps")
 
 // Compiles all the data not available directly from the GPS
 // Like the positions and directions to all other GPS units
-UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,power:num,tag:text,localMode:unknown,currentCoords:text,currentZName:unknown,canHide:unknown,isHidden:unknown,signals:list}")
-
-/// The computed part of /obj/item/gps's window data (declared on its UI_DATA row).
-/obj/item/gps/proc/ui_data_obj_item_gps(mob/user, datum/tgui/ui, datum/tgui_state/state)
-
+/obj/item/gps/ui_data(datum/act/eval/A)
 	var/turf/curr = get_turf(src)
 	var/area/my_area = get_area(src)
 
@@ -262,78 +253,70 @@ UI_DATA_REPLACE(/obj/item/gps, "merge:ui_data_obj_item_gps{currentArea:unknown,p
 
 	return data
 
-UI_ACT(/obj/item/gps, "power", ui_act_power)
-UI_ACT_PROC(/obj/item/gps, ui_act_power)
+/obj/item/gps/proc/ui_act_power(datum/act/op/A)
 	toggle_tracking()
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "rename", ui_act_rename, UI_ARG_TEXT("value"))
-UI_ACT_PROC(/obj/item/gps, ui_act_rename)
-	var/new_name = sanitize(params["value"], 11)
+/obj/item/gps/proc/ui_act_rename(datum/act/op/A, value)
+	var/new_name = sanitize(value, 11)
 	if(!new_name)
-		return FALSE
+		return OP_DECLINE
 	gps_tag = uppertext(new_name)
 	name = "global positioning system ([gps_tag])"
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "localMode", ui_act_localmode)
-UI_ACT_PROC(/obj/item/gps, ui_act_localmode)
+/obj/item/gps/proc/ui_act_localmode(datum/act/op/A)
 	local_mode = !local_mode
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "hideSignal", ui_act_hidesignal)
-UI_ACT_PROC(/obj/item/gps, ui_act_hidesignal)
+/obj/item/gps/proc/ui_act_hidesignal(datum/act/op/A)
 	if(!can_hide_signal)
-		return FALSE
+		return OP_DECLINE
 	hide_signal = !hide_signal
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "trackLabel", ui_act_tracklabel, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/gps, ui_act_tracklabel)
-	var/gps_ref = params["ref"]
+/obj/item/gps/proc/ui_act_tracklabel(datum/act/op/A, ref)
+	var/gps_ref = ref
 	if(!gps_ref)
-		return FALSE
+		return OP_DECLINE
 	// Only a tracked device's label can be shown.
 	if(LAZYACCESS(tracking_devices, gps_ref) && !LAZYACCESS(showing_tracked_names, gps_ref))
 		LAZYSET(showing_tracked_names, gps_ref, TRUE)
 	else
 		LAZYREMOVE(showing_tracked_names, gps_ref)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "stopTrack", ui_act_stoptrack, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/gps, ui_act_stoptrack)
-	var/gps_ref = params["ref"]
+/obj/item/gps/proc/ui_act_stoptrack(datum/act/op/A, ref)
+	var/gps_ref = ref
 	if(!gps_ref)
-		return FALSE
+		return OP_DECLINE
 	compass.clear_waypoint(gps_ref)
 	LAZYREMOVE(tracking_devices, gps_ref)
 	LAZYREMOVE(showing_tracked_names, gps_ref)
 	update_compass(src, TRUE)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "startTrack", ui_act_starttrack, UI_ARG_REF("ref", null, /obj/item/gps))
-UI_ACT_PROC(/obj/item/gps, ui_act_starttrack)
-	var/obj/item/gps/gps = params["ref"]
+/obj/item/gps/proc/ui_act_starttrack(datum/act/op/A, obj/item/gps/ref)
+	var/obj/item/gps/gps = ref
 	if(!gps)
-		return FALSE
+		return OP_DECLINE
 	var/gps_ref = REF(gps)
 	LAZYSET(tracking_devices, gps_ref, "#00ffff")
 	LAZYSET(showing_tracked_names, gps_ref, TRUE)
 	update_compass(src, TRUE)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/gps, "trackColor", ui_act_trackcolor, UI_ARG_TEXT("color"), UI_ARG_REF("ref", null, /obj/item/gps))
-UI_ACT_PROC(/obj/item/gps, ui_act_trackcolor)
-	var/obj/item/gps/gps = params["ref"]
+/obj/item/gps/proc/ui_act_trackcolor(datum/act/op/A, color, obj/item/gps/ref)
+	var/obj/item/gps/gps = ref
 	if(!gps)
-		return FALSE
+		return OP_DECLINE
 	var/gps_ref = REF(gps)
-	var/new_colour = sanitize_hexcolor(params["color"])
+	var/new_colour = sanitize_hexcolor(color)
 	if(!new_colour)
-		return FALSE
+		return OP_DECLINE
 	LAZYSET(tracking_devices, gps_ref, new_colour)
 	update_compass(src, TRUE)
-	return TRUE
+	return OP_OK
 
 /obj/item/gps/on // Defaults to off to avoid polluting the signal list with a bunch of GPSes without owners. If you need to spawn active ones, use these.
 	tracking = TRUE

@@ -20,7 +20,7 @@
 
 	if (istype(loc, /obj/item/aicard))
 		var/obj/item/aicard/card = loc
-		card.update_icon()
+		card.sync_ai_look()
 
 	set_density(TRUE)
 

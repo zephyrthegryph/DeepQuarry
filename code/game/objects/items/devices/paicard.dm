@@ -28,8 +28,6 @@
 	var/emitter = PP_FUNCTIONAL				//non-critical- affects unfolding
 	var/speech_synthesizer = PP_FUNCTIONAL	//non-critical- affects speech
 
-	///Var for attack_self chain
-	var/special_handling = FALSE
 	var/selected_pai
 
 	// Special modules
@@ -42,10 +40,26 @@
 	var/static/list/systems_list = list("pAI","MultiTool","Emag","Signaler")
 	var/selected_system = "pAI"
 
+TRACKED(/obj/item/paicard, panel_open)
+
 CAPABILITIES(/obj/item/paicard)
 	owns_one(nameof(multitool), /obj/item/multitool)
 	owns_one(nameof(radio), /obj/item/radio/borg/pai)
 	owns_one(nameof(signaler), /obj/item/assembly/signaler)
+	interface("PAICard", title = "Personal AI Device", input = in_hand())
+	emag(then(PROC_REF(on_emag)), repeatable = TRUE)
+	op("remove_part", in_hand(), when(req_is(nameof(panel_open))), label("Remove part"), then(PROC_REF(part_removal_asked)))
+	op("item", item(/obj/item), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_used)))
+	op("preview", ui_act("preview", arg("ref", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_preview)))
+	op("clear_preview", ui_act("clear_preview"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_clear_preview)))
+	op("setdna", ui_act("setdna"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_setdna)))
+	op("cleardna", ui_act("cleardna"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_cleardna)))
+	op("wires", ui_act("wires", arg("wires", num())), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_wires)))
+	op("setlaws", ui_act("setlaws", arg("directive", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_setlaws)))
+	op("clearlaws", ui_act("clearlaws"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_clearlaws)))
+	op("select_pai", ui_act("select_pai", arg("ref", schema_text(4096))), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_select_pai)))
+	op("select_tool", ui_act("select_tool", arg("tool")), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_select_tool)))
+	op("activate_tool", ui_act("activate_tool"), needs(req(PROC_REF(ui_gate), silent = TRUE)), then(PROC_REF(ui_act_activate_tool)))
 
 /obj/item/paicard/relaymove(mob/user, direction)
 	if(user.stat || user.has_status(EFFECT_STUNNED))
@@ -93,22 +107,17 @@ CAPABILITIES(/obj/item/paicard)
 		to_chat(user, span_danger("You have no pai name set."))
 		return TRUE
 
-	om_ask(user, /datum/om/prompt/confirm/pai_inhabit, PROC_REF(inhabit_confirmed), message = "Do you want to inhabit this pAI using \"[pai_name]\"?")
+	open_request(src, /datum/prompt/yes_no, PROC_REF(inhabit_confirmed), answerer = user, valid = PROC_REF(inhabit_askable), title = "Load pAI", question = "Do you want to inhabit this pAI using \"[pai_name]\"?", timeout = 0)
 	return TRUE
 
 /// A ghost loading into an empty card. Re-checked on the answer: still has a client, the card is still empty.
-/datum/om/prompt/confirm/pai_inhabit
-	title = "Load pAI"
-	yes_text = "Load pAI Data"
-	no_text = "Cancel"
-	requires = list(/datum/om/check/has_client)
+/obj/item/paicard/proc/inhabit_askable(datum/request/R)
+	return R.answerer?.client && !pai
 
-/datum/om/prompt/confirm/pai_inhabit/valid()
-	var/obj/item/paicard/card = subject
-	return card.pai ? "already inhabited" : null
-
-/obj/item/paicard/proc/inhabit_confirmed(datum/om/prompt/confirm/pai_inhabit/ask)
-	ghost_inhabit(ask.answerer)
+/obj/item/paicard/proc/inhabit_confirmed(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	ghost_inhabit(A.request.answerer)
 
 /obj/item/paicard/proc/ghost_inhabit(mob/user)
 	RETURN_TYPE(/mob/living/silicon/pai)
@@ -124,8 +133,6 @@ CAPABILITIES(/obj/item/paicard)
 	new_pai.apply_preferences(new_pai.client)
 	return new_pai
 
-DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
-
 /obj/item/paicard/ui_prepare(mob/user, datum/tgui/ui)
 	if(is_damage_critical())
 		to_chat(user, span_warning("WARNING: CRITICAL HARDWARE FAILURE, SERVICE DEVICE IMMEDIATELY"))
@@ -138,10 +145,7 @@ DECLARE_UI(/obj/item/paicard, "PAICard", UI_TITLE("Personal AI Device"))
 		get_asset_datum(/datum/asset/spritesheet_batched/pai_icons),
 	)
 
-UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_data:unknown,selected_pai_data:unknown,available_pais:unknown,waiting_for_response:num,emag_systems:unknown}")
-
-/// The computed part of /obj/item/paicard's window data (declared on its UI_DATA row).
-/obj/item/paicard/proc/ui_data_obj_item_paicard(mob/user, datum/tgui/ui, datum/tgui_state/state)
+/obj/item/paicard/ui_data(datum/act/eval/A)
 	var/list/data = list(
 		"active_pai_data" = null,
 		"selected_pai_data" = null,
@@ -194,43 +198,38 @@ UI_DATA_REPLACE(/obj/item/paicard, "merge:ui_data_obj_item_paicard{active_pai_da
 		"emag_data" = emag_data,
 	)
 
-/obj/item/paicard/ui_act_allowed(mob/user, action, datum/tgui/ui, datum/tgui_state/state)
-	if(!..())
-		return FALSE
-	if(is_damage_critical())
-		return FALSE
-	add_fingerprint(ui.user)
-	return TRUE
+/// The window buttons work while no critical part is broken.
+/obj/item/paicard/proc/ui_gate(datum/act/op/A)
+	return !is_damage_critical()
 
-UI_ACT(/obj/item/paicard, "preview", ui_act_preview, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_preview)
+/obj/item/paicard/proc/ui_act_preview(datum/act/op/A, ref)
+	add_fingerprint(A.actor)
 	if(pai)
-		return FALSE
+		return OP_DECLINE
 	if(in_use)
-		return FALSE
-	var/new_selection = params["ref"]
-	if(!istext(new_selection))
-		return FALSE
-	selected_pai = new_selection
-	return TRUE
+		return OP_DECLINE
+	if(!istext(ref))
+		return OP_DECLINE
+	selected_pai = ref
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "clear_preview", ui_act_clear_preview)
-UI_ACT_PROC(/obj/item/paicard, ui_act_clear_preview)
+/obj/item/paicard/proc/ui_act_clear_preview(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(pai)
-		return FALSE
+		return OP_DECLINE
 	if(in_use)
-		return FALSE
+		return OP_DECLINE
 	selected_pai = null
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "setdna", ui_act_setdna)
-UI_ACT_PROC(/obj/item/paicard, ui_act_setdna)
+/obj/item/paicard/proc/ui_act_setdna(datum/act/op/A)
+	var/mob/M = A.actor
+	add_fingerprint(M)
 	if(!pai)
-		return FALSE
+		return OP_DECLINE
 	if(pai.master_dna)
-		return FALSE
+		return OP_DECLINE
 
-	var/mob/M = ui.user
 	var/has_dna = FALSE
 	if(istype(M, /mob/living/carbon))
 		var/mob/living/carbon/carby = M
@@ -244,84 +243,85 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_setdna)
 		pai.master = M.real_name
 		pai.master_dna = dna.unique_enzymes
 		to_chat(pai, span_warning(span_large("You have been bound to a new master.")))
-		return TRUE
-	to_chat(ui.user, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
-	return FALSE
+		return OP_OK
+	to_chat(M, span_notice("You don't have any DNA, or your DNA is incompatible with this device."))
+	return OP_DECLINE
 
-UI_ACT(/obj/item/paicard, "cleardna", ui_act_cleardna)
-UI_ACT_PROC(/obj/item/paicard, ui_act_cleardna)
+/obj/item/paicard/proc/ui_act_cleardna(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(!pai)
-		return FALSE
+		return OP_DECLINE
 	pai.master = null
 	pai.master_dna = null
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "wires", ui_act_wires, UI_ARG_NUM("wires"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_wires)
+/obj/item/paicard/proc/ui_act_wires(datum/act/op/A, wires)
+	add_fingerprint(A.actor)
 	if(!pai)
-		return FALSE
-	switch(params["wires"])
+		return OP_DECLINE
+	switch(wires)
 		if(4)
 			radio.ToggleBroadcast()
-			return TRUE
+			return OP_OK
 		if(2)
 			radio.ToggleReception()
-			return TRUE
-	return FALSE
+			return OP_OK
+	return OP_DECLINE
 
-UI_ACT(/obj/item/paicard, "setlaws", ui_act_setlaws, UI_ARG_TEXT("directive"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_setlaws)
+/obj/item/paicard/proc/ui_act_setlaws(datum/act/op/A, directive)
+	add_fingerprint(A.actor)
 	if(!pai)
-		return FALSE
+		return OP_DECLINE
 	if(in_use)
-		return FALSE
-	var/newlaws = sanitize(params["directive"], MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
+		return OP_DECLINE
+	var/newlaws = sanitize(directive, MAX_MESSAGE_LEN, FALSE, FALSE, TRUE)
 	if(newlaws)
 		pai.pai_laws = newlaws
 		show_laws(TRUE)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "clearlaws", ui_act_clearlaws)
-UI_ACT_PROC(/obj/item/paicard, ui_act_clearlaws)
+/obj/item/paicard/proc/ui_act_clearlaws(datum/act/op/A)
+	add_fingerprint(A.actor)
 	if(!pai)
-		return FALSE
+		return OP_DECLINE
 	pai.pai_laws = null
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "select_pai", ui_act_select_pai, UI_ARG_TEXT("ref"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_select_pai)
+/obj/item/paicard/proc/ui_act_select_pai(datum/act/op/A, ref)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	if(pai)
-		return FALSE
+		return OP_DECLINE
 	if(in_use)
-		return FALSE
+		return OP_DECLINE
 	in_use = TRUE
-	SSpai.invite_ghost(ui.user, params["ref"], src)
+	SSpai.invite_ghost(user, ref, src)
 	in_use = FALSE
 	selected_pai = null
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "select_tool", ui_act_select_tool, UI_ARG_VALUE("tool"))
-UI_ACT_PROC(/obj/item/paicard, ui_act_select_tool)
+/obj/item/paicard/proc/ui_act_select_tool(datum/act/op/A, tool)
+	add_fingerprint(A.actor)
 	if(!emagged || !has_emag_toolkit)
-		return FALSE
-	var/new_tool = params["tool"]
-	if(!(new_tool in systems_list))
-		return FALSE
-	selected_system = new_tool
-	return TRUE
+		return OP_DECLINE
+	if(!(tool in systems_list))
+		return OP_DECLINE
+	selected_system = tool
+	return OP_OK
 
-UI_ACT(/obj/item/paicard, "activate_tool", ui_act_activate_tool)
-UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
+/obj/item/paicard/proc/ui_act_activate_tool(datum/act/op/A)
+	var/mob/user = A.actor
+	add_fingerprint(user)
 	if(!emagged || !has_emag_toolkit || !selected_system)
-		return FALSE
+		return OP_DECLINE
 	switch(selected_system)
 		if("MultiTool")
-			multitool.attack_self(ui.user)
-			return TRUE
+			multitool.attack_self(user)
+			return OP_OK
 		if("Signaler")
-			signaler.attack_self(ui.user)
-			return TRUE
-	return FALSE
+			signaler.attack_self(user)
+			return OP_OK
+	return OP_DECLINE
 
 /obj/item/paicard/pre_attack(atom/A, mob/user, params)
 	if(emagged && has_emag_toolkit)
@@ -406,10 +406,17 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 		return
 	setEmotion(16)
 
-/obj/item/paicard/proc/interaction_item(mob/user, obj/item/I, datum/interaction/interaction)
+/// The card clicked with itself in hand is the in-hand use, not an item used on it.
+/obj/item/paicard/proc/held_is_another(datum/act/op/A)
+	return A.held != src
+
+/// Any item used on the card: the panel, an analyser, a multitool, the parts, an ID. Always taken, whatever the item.
+/obj/item/paicard/proc/item_used(datum/act/op/A)
+	var/mob/user = A.actor
+	var/obj/item/I = A.held
 	if(I.has_tool_quality(TOOL_SCREWDRIVER))
 		if(panel_open)
-			panel_open = FALSE
+			set_panel_open(FALSE)
 			act_message(user, src, others = span_notice("%U% secured %T%'s maintenance panel."))
 			play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 		else if(pai)
@@ -527,12 +534,12 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	var/obj/item/card/id/ID = I.GetID()
 	if(ID && pai)
 		if (pai.idaccessible == 1)
-			om_ask(user, /datum/om/prompt/choice/pai_id_access, PROC_REF(id_access_chosen), message = "Do you wish to add access to [src] or remove access from [src]?", subject = I, card = src)
-			return TRUE
+			open_request(src, /datum/prompt/choice, PROC_REF(id_access_chosen), answerer = user, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, valid = PROC_REF(id_access_askable), question = "Do you wish to add access to [src] or remove access from [src]?", choices = list("Add Access", "Remove Access", "Cancel"), buttons = TRUE, timeout = 0)
+			return OP_OK
 		else if (pai.idaccessible == 0)
 			to_chat(user, span_notice("[src] is not accepting access modifications at this time."))
-			return TRUE
-	return TRUE
+			return OP_OK
+	return OP_OK
 
 /obj/item/paicard/proc/check_part(datum/act/request/A)
 	if(!A.answer)
@@ -598,7 +605,7 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 
 
 /obj/item/paicard/proc/attackby_timed_done(mob/user)
-	panel_open = TRUE
+	set_panel_open(TRUE)
 	act_message(user, src, others = span_warning("%U% opened %T%'s maintenance panel."))
 	play_sfx(src, SFX_ITEMS_SCREWDRIVER)
 /obj/item/paicard/proc/attackby_timed_done2(obj/item/I, mob/user)
@@ -633,19 +640,12 @@ UI_ACT_PROC(/obj/item/paicard, ui_act_activate_tool)
 	consume(I, user)
 
 DECLARE_INTERACTIONS(/obj/item/paicard, \
-	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_OBSERVER("Inhabit", PROC_REF(paicard_observer_inhabit), REQ_TARGET_STATE(/obj/item/paicard/proc/can_inhabit)), \
 )
 
-/// `held` is unused by paicard's own dispatch (always null through the resolver) - repurposed
-/// as the old `callback` bypass arg, so sleevecard.dm's direct ..(user, TRUE) call still works.
-/obj/item/paicard/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling && !held)
-		return FALSE
-	if(!panel_open)
-		tgui_interact(user)
-		return
+/// The in-hand use of a card with its panel open: which part comes out.
+/obj/item/paicard/proc/part_removal_asked(datum/act/op/A)
+	var/mob/user = A.actor
 	var/list/parts = list()
 	if(cell != PP_MISSING)
 		parts |= "cell"
@@ -663,7 +663,7 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 		parts |= "speech synthesizer"
 
 	open_request(src, /datum/prompt/choice, PROC_REF(part_to_remove_chosen), answerer = user, title = "Remove part", question = "Which part would you like to remove?", choices = parts, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
-	return TRUE
+	return OP_OK
 
 /obj/item/paicard/proc/part_to_remove_chosen(datum/act/request/A)
 	if(!A.answer)
@@ -675,23 +675,19 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 	om_task_timed(user, 3 SECONDS, target = src, receiver = src, on_done = PROC_REF(attack_self_timed_done), done_args = list(user, A.answer.answer_value))
 
 /// Adding or removing an ID's access. Re-checked on the answer: the ID is still in hand, the pAI still accepts it.
-/datum/om/prompt/choice/pai_id_access
-	buttons = TRUE
-	choices = list("Add Access", "Remove Access", "Cancel")
-	ask_flags = ASK_HELD | ASK_CAPABLE
-	var/obj/item/paicard/card
+/obj/item/paicard/proc/id_access_askable(datum/request/R)
+	var/obj/item/I = R.subject
+	return I && I.GetID() && pai && pai.idaccessible == 1
 
-/datum/om/prompt/choice/pai_id_access/valid()
-	var/obj/item/I = subject
-	if(!I.GetID() || !card.pai || card.pai.idaccessible != 1)
-		return "no access to change"
-	return null
-
-/obj/item/paicard/proc/id_access_chosen(datum/om/prompt/choice/pai_id_access/ask)
-	var/mob/user = ask.answerer
-	var/obj/item/I = ask.subject
-	var/obj/item/card/id/ID = I.GetID()
-	switch(ask.choice)
+/obj/item/paicard/proc/id_access_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/obj/item/I = A.request.subject
+	var/obj/item/card/id/ID = I?.GetID()
+	if(!ID || !pai)
+		return
+	switch(A.answer.answer_value)
 		if("Add Access")
 			pai.idcard.access |= ID.access
 			to_chat(user, span_notice("You add the access from the [I] to [src]."))
@@ -788,27 +784,28 @@ DECLARE_INTERACTIONS(/obj/item/paicard, \
 				capacitor = PP_BROKEN
 
 /obj/item/paicard/proc/is_damage_critical()
-	if(cell != PP_FUNCTIONAL || processor != PP_FUNCTIONAL || board != PP_FUNCTIONAL || capacitor != PP_FUNCTIONAL)
+	if(cell != PP_FUNCTIONAL || processor != PP_FUNCTIONAL || board != PP_FUNCTIONAL || capacitor != PP_FUNCTIONAL) // ALLOW(reads): the part states are plain vars of the card, read when a button is pressed or the card offered
 		return TRUE
 	return FALSE
 
-DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
-/obj/item/paicard/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)
-	. = EMAG_DECLINED
+/// A cryptographic sequencer: a card with a pAI is subverted and grows its tools. An empty or already subverted card declines (no use spent).
+/obj/item/paicard/proc/on_emag(datum/act/op/A)
+	var/mob/user = A.actor
 	if(!pai)
 		if(!emagged)
 			to_chat(user, span_warning("Without a pAI inhabiting \the [src] nothing happens."))
-		return
-	if(!emagged)
-		if(user)
-			to_chat(user, span_notice("\The [src] buzzes and beeps."))
-			play_sfx(src, SFX_MACHINES_BUZZBEEP)
-		emagged = TRUE
-		// Add tools
-		if(has_emag_toolkit)
-			rel_set(src, nameof(multitool), new /obj/item/multitool(src))
-			rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
-		return 1
+		return OP_DECLINE
+	if(emagged)
+		return OP_DECLINE
+	if(user)
+		to_chat(user, span_notice("\The [src] buzzes and beeps."))
+		play_sfx(src, SFX_MACHINES_BUZZBEEP)
+	emagged = TRUE
+	// Add tools
+	if(has_emag_toolkit)
+		rel_set(src, nameof(multitool), new /obj/item/multitool(src))
+		rel_set(src, nameof(signaler), new /obj/item/assembly/signaler(src))
+	return OP_OK
 
 ///////////////////////////////
 //////////pAI Parts  //////////
@@ -908,11 +905,14 @@ DECLARE_EMAG_REPEATABLE(/obj/item/paicard, PROC_REF(on_emag), null)
 	loudspeaker = FALSE
 
 /// Old attackby was an empty stub, replacing radio/borg's own (no ..() chain): always swallowed, no action.
-/obj/item/radio/borg/pai/declare_interactions(list/into)
-	into += dq_interaction_from_spec(type, INTERACT_ITEM(null, PROC_REF(interaction_item)))
+CAPABILITIES(/obj/item/radio/borg/pai)
+	op("swallow", item(/obj/item), when(req(PROC_REF(held_is_another))), then(PROC_REF(item_swallowed)))
 
-/obj/item/radio/borg/pai/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
-	return TRUE
+/obj/item/radio/borg/pai/proc/held_is_another(datum/act/op/A)
+	return A.held != src
+
+/obj/item/radio/borg/pai/proc/item_swallowed(datum/act/op/A)
+	return OP_OK
 
 /obj/item/radio/borg/pai/recalculateChannels()
 	if(!istype(loc,/obj/item/paicard))

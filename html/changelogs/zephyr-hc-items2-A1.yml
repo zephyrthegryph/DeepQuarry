@@ -1,0 +1,6 @@
+author: "zephyrthegryph"
+delete-after: true
+changes:
+  - refactor: "Converted the AI card, the uplink and GPS (windows, clicks, periodic work, look) to the final op, request and look forms."
+  - refactor: "Converted the pAI card (and the sleevecard) to the final op, request, emag and window forms."
+  - refactor: "Converted the communicator family (window buttons, questions, EMP, watchdog, look) to the final forms."
