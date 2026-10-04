@@ -3116,11 +3116,25 @@
 	into += entry_line(385)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:677
+/// CAPABILITIES(/datum/prompt/choice/admin_man_up/confirmation) at code/modules/admin/admin_verbs.dm:991
+/datum/prompt/choice/admin_man_up/confirmation/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 991, /datum/prompt/choice/admin_man_up/confirmation)
+	into += entry_line(992)
+	into += list(global.ref_one(nameof(target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_paralyze_confirm) at code/modules/admin/admin.dm:1029
+/datum/prompt/choice/admin_paralyze_confirm/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/admin/admin.dm", 1029, /datum/prompt/choice/admin_paralyze_confirm)
+	into += entry_line(1030)
+	into += list(global.ref_one(nameof(target), /mob/living))
+
+/// CAPABILITIES(/datum/prompt/choice/admin_spell) at code/modules/admin/admin_verbs.dm:701
 /datum/prompt/choice/admin_spell/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin_verbs.dm", 677, /datum/prompt/choice/admin_spell)
-	into += entry_line(678)
+	into += entry_block("code/modules/admin/admin_verbs.dm", 701, /datum/prompt/choice/admin_spell)
+	into += entry_line(702)
 	into += list(global.ref_one(nameof(target_mob), /mob))
 
 /// CAPABILITIES(/datum/prompt/choice/air_control_menu) at code/game/machinery/atmo_control.dm:285
@@ -3202,6 +3216,15 @@
 	into += entry_line(124)
 	into += list(global.ref_one(nameof(patient), /mob/living/carbon/human))
 
+/// CAPABILITIES(/datum/prompt/choice/organ_extraction) at code/modules/organs/organ_external.dm:1734
+/datum/prompt/choice/organ_extraction/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/organs/organ_external.dm", 1734, /datum/prompt/choice/organ_extraction)
+	into += entry_line(1735)
+	into += list(global.ref_one(nameof(captured_item), /obj/item))
+	into += entry_line(1736)
+	into += list(global.ref_one(nameof(captured_interaction), /datum/interaction))
+
 /// CAPABILITIES(/datum/prompt/choice/pai_access) at code/modules/mob/living/silicon/pai/pai.dm:340
 /datum/prompt/choice/pai_access/declared_entries(list/into)
 	..(into)
@@ -3264,11 +3287,11 @@
 	into += entry_line(417)
 	into += list(global.ref_one(nameof(living_target), /mob/living))
 
-/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:978
+/// CAPABILITIES(/datum/prompt/number/admin_telecrystals) at code/modules/admin/admin.dm:994
 /datum/prompt/number/admin_telecrystals/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/admin/admin.dm", 978, /datum/prompt/number/admin_telecrystals)
-	into += entry_line(979)
+	into += entry_block("code/modules/admin/admin.dm", 994, /datum/prompt/number/admin_telecrystals)
+	into += entry_line(995)
 	into += list(global.ref_one(nameof(human_target), /mob/living/carbon/human))
 
 /// CAPABILITIES(/datum/prompt/number/cablelayer_cut) at code/game/machinery/CableLayer.dm:76
@@ -7534,11 +7557,11 @@
 	into += entry_line(331)
 	into += list(global.owns_one(nameof(special_attack), starts = nameof(special_attack_type)))
 
-/// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1893
+/// CAPABILITIES(/obj/item/clothing/gloves/bluespace/deluxe) at code/modules/clothing/under/miscellaneous.dm:1887
 /obj/item/clothing/gloves/bluespace/deluxe/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1893, /obj/item/clothing/gloves/bluespace/deluxe)
-	into += entry_line(1894)
+	into += entry_block("code/modules/clothing/under/miscellaneous.dm", 1887, /obj/item/clothing/gloves/bluespace/deluxe)
+	into += entry_line(1888)
 	into += list(global.op("deluxe_turn_dial_verb", global.menu(), global.label("Adjust Bluespace Dial"), global.needs(global.carried()), global.then(PROC_REF(deluxe_turn_dial_verb))))
 
 /// CAPABILITIES(/obj/item/clothing/gloves/chameleon/changeling) at code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm:159
