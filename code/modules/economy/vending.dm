@@ -141,8 +141,8 @@ CAPABILITIES(/obj/machinery/vending)
 	op("refill", item(/obj/item/refill_cartridge),
 		needs(req_panel_closed(), req_operable(), req(PROC_REF(refill_port), because = MSG(vending/no_refill_port)), req(PROC_REF(refill_secured), because = MSG(vending/unsecured)), req(PROC_REF(cartridge_fits), because = MSG(vending/wrong_cartridge))),
 		then(PROC_REF(refilled)), consumes())
-	op("stock", item(/obj/item), priority(OP_PRIORITY_PART - 1), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
-	op("open_with_item", item(/obj/item), priority(OP_PRIORITY_PART - 1), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
+	op("stock", item(/obj/item), when(PROC_REF(stockable)), then(PROC_REF(stocked)))
+	op("open_with_item", item(/obj/item), priority(above("stock")), when(PROC_REF(item_opens_window)), needs(req_operable()), opens_ui())
 	op("check_logs", hand(), when(PROC_REF(bare_touch)), label("Check vending logs"), priority(below("ui_open")), then(PROC_REF(check_logs_op)))
 	extend("ui_open", when(PROC_REF(bare_touch)), needs(req_on_authority(AUTH_PHYSICAL), req_operable()), then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
 	extend("open_with_item", then(PROC_REF(shock_guard), early = TRUE), then(PROC_REF(open_wires_beside_the_window)))
