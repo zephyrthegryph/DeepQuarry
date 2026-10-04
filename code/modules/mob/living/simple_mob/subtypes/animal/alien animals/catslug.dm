@@ -110,10 +110,7 @@ CAPABILITIES(/mob/living/simple_mob/vore/alienanimals/catslug)
 	verb_entry(/mob/living/proc/ventcrawl)
 	verb_entry(/mob/living/proc/hide)
 	verb_entry(/mob/living/simple_mob/vore/alienanimals/catslug/proc/catslug_color)
-
-/mob/living/simple_mob/vore/alienanimals/catslug/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/vore/alienanimals/catslug, \
 	INTERACT_ITEM(null, PROC_REF(catslug_interaction_item)), \

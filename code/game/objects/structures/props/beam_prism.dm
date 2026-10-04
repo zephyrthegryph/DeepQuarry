@@ -15,7 +15,7 @@
 	var/free_rotate = 1			// Does the prism rotate in any direction, or only in the eight standard compass directions?
 	var/external_control_lock = 0	// Does the prism only rotate from the controls of an external switch?
 	var/degrees_from_north = 0	// How far is it rotated clockwise?
-	var/compass_directions = list("North" = 0, "South" = 180, "East" = 90, "West" = 270, "Northwest" = 315, "Northeast" = 45, "Southeast" = 135, "Southwest" = 225)
+	var/static/list/compass_directions = list("North" = 0, "South" = 180, "East" = 90, "West" = 270, "Northwest" = 315, "Northeast" = 45, "Southeast" = 135, "Southwest" = 225)
 	var/interaction_sound = SFX_MECHA_MECHMOVE04
 
 	var/redirect_type = /obj/item/projectile/beam
@@ -30,12 +30,8 @@
 	if(degrees_from_north)
 		animate(src, transform = turn(NORTH, degrees_from_north), time = 3)
 
-/obj/structure/prop/prism/relations()
-	. = ..()
-	. += rel_one(nameof(remote_dial), back = nameof(/obj/structure/prop/prismcontrol::my_turrets))
-/obj/structure/prop/prismcontrol/relations()
-	. = ..()
-	. += rel_many(nameof(my_turrets), back = nameof(/obj/structure/prop/prism::remote_dial))
+CAPABILITIES(/obj/structure/prop/prism)
+	links(/obj/structure/prop/prism::remote_dial, /obj/structure/prop/prismcontrol::my_turrets, b_many = TRUE)
 
 /obj/structure/prop/prism/proc/reset_rotation()
 	var/degrees_to_rotate = -1 * degrees_from_north
@@ -118,7 +114,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
+		after(src, 0.3 SECONDS, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6) //Can't update transform because it will reset the angle.
 	return TRUE
@@ -146,7 +142,7 @@
 	playsound(src, interaction_sound, 50, 1)
 	if(two_stage)
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 3)
-		after(src, 3, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
+		after(src, 0.3 SECONDS, PROC_REF(rotate_second_stage), with = list(rotate_degrees))
 	else
 		animate(src, transform = turn(src.transform, rotate_degrees), time = 6)
 

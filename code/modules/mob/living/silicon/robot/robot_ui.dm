@@ -79,7 +79,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 	data["max_health"] = 100
 	data["light_color"] = R.robot_light_col
 
-	data["weapon_lock"] = !!om_timer_slot_pending(R, "weapon_lock")
+	data["weapon_lock"] = !!after_pending(R, "weapon_lock")
 
 	var/list/modules = list()
 	for(var/obj/item/I as anything in R.module.modules)
@@ -154,7 +154,7 @@ CAPABILITIES(/datum/tgui_module/robot_ui)
 /datum/tgui_module/robot_ui/proc/ui_act_toggle_module(datum/act/op/A, ref)
 	var/mob/user = A.actor
 	var/mob/living/silicon/robot/R = host()
-	if(om_timer_slot_pending(R, "weapon_lock"))
+	if(after_pending(R, "weapon_lock"))
 		to_chat(user, span_danger("Error: Modules locked."))
 		return
 	var/obj/item/module = ref

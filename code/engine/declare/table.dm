@@ -121,6 +121,10 @@ GLOBAL_VAR(declare_report_capture)
 		T = built
 	if(!T)
 		T = table_compile(D.type, null, null, null)
+	else if(T.owner_type != D.type && stat_type_needs_own_table(D.type, T.owner_type))
+		// A type that declares nothing shares its ancestor's table, but a FORMULA stat it declares (STAT lines are not table entries) must be
+		// computed at init: it gets its own table, whose hooks say so.
+		T = table_compile(D.type, T, null, null)
 	type_table_cache()[D.type] = T
 	return T
 

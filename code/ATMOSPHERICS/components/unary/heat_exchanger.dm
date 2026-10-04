@@ -19,6 +19,7 @@
 
 CAPABILITIES(/obj/machinery/atmospherics/unary/heat_exchanger)
 	climb()
+	links(/obj/machinery/atmospherics/unary/heat_exchanger::partner, /obj/machinery/atmospherics/unary/heat_exchanger::partner)
 
 APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?intact:exposed}")
 
@@ -110,7 +111,3 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/unary/heat_exchanger, "{node?int
 		MSG_OTHERS(span_infoplain(span_bold("%U%") + " unfastens %T%.")), \
 		MSG_BLIND("You hear a ratchet."))
 	atom_deconstruct()
-
-/obj/machinery/atmospherics/unary/heat_exchanger/relations()
-	. = ..()
-	. += rel_one(nameof(partner), back = nameof(/obj/machinery/atmospherics/unary/heat_exchanger::partner))

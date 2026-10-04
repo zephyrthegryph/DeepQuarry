@@ -167,7 +167,7 @@ CAPABILITIES(/mob/living/silicon/pai)
 /mob/living/silicon/pai/Login()
 	. = ..()
 	if(!holo_icon_south)
-		COOLDOWN_START(src, last_special, 100) //Let's give get_character_icon time to work
+		COOLDOWN_START(src, last_special, 10 SECONDS) //Let's give get_character_icon time to work
 		get_character_icon()
 
 	// Meta Info for pAI
@@ -330,7 +330,7 @@ EXTEND_INTERACTIONS(/mob/living/silicon/pai, \
 		receive_weapon_hit(W, user, silent = FALSE)
 	else
 		act_message(src, null, others = span_warning("[user.name] bonks %U% harmlessly with [W]."))
-	after(src, 1, PROC_REF(close_up_unless_dead))
+	after(src, 0.1 SECONDS, PROC_REF(close_up_unless_dead))
 	return TRUE
 
 /// Swiping an ID over a pAI: the card whose access is copied or cleared.
@@ -696,3 +696,4 @@ DECLARE_APPEARANCE_PROC(/mob/living/silicon/pai, TYPE_PROC_REF(/atom, appearance
 /mob/living/silicon/pai/proc/close_up_unless_dead()
 	if(stat != DEAD)
 		close_up()
+

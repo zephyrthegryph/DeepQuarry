@@ -16,20 +16,23 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/outdoors/newdirt, INTERACT_HAND_UNGATE
 		to_chat(user, span_notice("The [name] isn't clear."))
 		return TRUE
 	else
-		om_ask(user, /datum/om/prompt/confirm/build_growplot, PROC_REF(growplot_answered))
+		open_request(src, /datum/prompt/yes_no/build_growplot, PROC_REF(growplot_answered), answerer = user)
 	return TRUE
 
 /// Re-checked: next to the dirt, and it's still clear.
-/datum/om/prompt/confirm/build_growplot
+/datum/prompt/yes_no/build_growplot
 	title = "Build growplot?"
-	message = "Do you want to build a growplot out of the dirt?"
+	question = "Do you want to build a growplot out of the dirt?"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/confirm/build_growplot/valid()
-	return locate_on(subject, /obj) ? "not clear" : null
+/datum/prompt/yes_no/build_growplot/recheck_extra()
+	return locate_on(owner, /obj) ? "not clear" : null
 
-/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/om/prompt/confirm/build_growplot/ask)
-	var/mob/user = ask.answerer
+/turf/simulated/floor/outdoors/newdirt/proc/growplot_answered(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/mob/user = A.request.answerer
 	act_message(user, src, MSG_SELF("You start piling up %T%..."), MSG_OTHERS("%U% starts piling up %T%..."))
 	om_task_timed(user, 5 SECONDS, src, src, PROC_REF(pile_done))
 

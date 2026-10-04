@@ -7,21 +7,19 @@
 	slot_flags = SLOT_BELT
 	w_class = ITEMSIZE_SMALL
 
-// Always face the user when put on a table
-/obj/item/gene_scanner/afterattack(atom/movable/AM, mob/user, proximity)
-	if(!proximity)
-		return
-	if(!ismob(AM) && !istype(AM,/obj/item/organ) && !istype(AM,/obj/item/dnainjector))
-		return
+CAPABILITIES(/obj/item/gene_scanner)
+	op("scan_genes", inputs(at_target(/mob), at_target(/obj/item/organ), at_target(/obj/item/dnainjector)), priority(OP_PRIORITY_PART), answers(INTENT_USE, INTENT_ATTACK), label("Scan genetic traits"),
+		needs(req_adjacent()), then(PROC_REF(scan_started), early = TRUE), wait(6 SECONDS), then(PROC_REF(genes_scanned)))
 
-	to_chat(user,span_boldnotice("You assesses \the [AM]'s genetic traits."))
+/obj/item/gene_scanner/proc/scan_started(datum/act/op/A)
+	to_chat(A.actor, span_boldnotice("You assesses \the [A.target]'s genetic traits."))
 	play_sfx(src, SFX_MISC_BLOOP)
 	flick("health2", src)
+	return OP_OK
 
-	om_task_timed(user, 6 SECONDS, target = AM, receiver = src, on_done = PROC_REF(afterattack_timed_done), done_args = list(AM, user))
-
-/obj/item/gene_scanner/proc/afterattack_timed_done(atom/movable/AM, mob/user)
-	scan_genes(AM,user)
+/obj/item/gene_scanner/proc/genes_scanned(datum/act/op/A)
+	scan_genes(A.target, A.actor)
+	return OP_OK
 
 /obj/item/gene_scanner/proc/scan_genes(atom/movable/AM,mob/user)
 	var/obj/item/organ/O = AM

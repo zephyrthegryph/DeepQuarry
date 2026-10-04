@@ -92,7 +92,7 @@
 	throw_at(get_step(get_turf(A), get_turf(src)), special_attack_max_range+1, 1, src)
 	playsound(src, leap_sound, 75, 1)
 
-	after(src, 5, PROC_REF(do_special_attack_2))
+	after(src, 0.5 SECONDS, PROC_REF(do_special_attack_2))
 
 /mob/living/simple_mob/vore/otie/syndicate/proc/do_special_attack_2()
 

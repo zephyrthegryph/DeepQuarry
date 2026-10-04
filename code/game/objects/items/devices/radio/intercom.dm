@@ -17,12 +17,31 @@
 	var/number = 0
 	var/wiresexposed = FALSE
 
+TYPE_TABLE_DECLARE(/obj/item/radio/intercom, intercom_channel_setup, null)
+
 /obj/item/radio/intercom/Initialize(mapload)
 	. = ..()
 	var/area/A = get_area(src)
 	if(A)
 		observe(A, /datum/notice/observer_apc, src, then(PROC_REF(on_observer_apc)))
 	update_icon()
+	switch(TYPE_TABLE_GET(src, intercom_channel_setup))
+		if(/obj/item/radio/intercom/department/medbay)
+			internal_channels = GLOB.default_medbay_channels.Copy()
+		if(/obj/item/radio/intercom/department/security)
+			internal_channels = list(
+				num2text(PUB_FREQ) = list(),
+				num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
+			)
+		if(/obj/item/radio/intercom/entertainment)
+			internal_channels = list(
+				num2text(PUB_FREQ) = list(),
+				num2text(ENT_FREQ) = list()
+			)
+		if(/obj/item/radio/intercom/syndicate)
+			internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
+		if(/obj/item/radio/intercom/raider)
+			internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
 
 /obj/item/radio/intercom/proc/on_observer_apc(datum/act/notice/A)
 	EVENT_HANDLER
@@ -87,23 +106,11 @@ CAPABILITIES(/obj/item/radio/intercom)
 	channels = GLOB.radiochannels.Copy()
 	return ..()
 
-/obj/item/radio/intercom/department/medbay/Initialize(mapload)
-	. = ..()
-	internal_channels = GLOB.default_medbay_channels.Copy()
+TYPE_TABLE(/obj/item/radio/intercom/department/medbay, intercom_channel_setup, /obj/item/radio/intercom/department/medbay)
 
-/obj/item/radio/intercom/department/security/Initialize(mapload)
-	. = ..()
-	internal_channels = list(
-		num2text(PUB_FREQ) = list(),
-		num2text(SEC_I_FREQ) = list(ACCESS_SECURITY)
-	)
+TYPE_TABLE(/obj/item/radio/intercom/department/security, intercom_channel_setup, /obj/item/radio/intercom/department/security)
 
-/obj/item/radio/intercom/entertainment/Initialize(mapload)
-	. = ..()
-	internal_channels = list(
-		num2text(PUB_FREQ) = list(),
-		num2text(ENT_FREQ) = list()
-	)
+TYPE_TABLE(/obj/item/radio/intercom/entertainment, intercom_channel_setup, /obj/item/radio/intercom/entertainment)
 
 /obj/item/radio/intercom/syndicate
 	name = "illicit intercom"
@@ -112,9 +119,7 @@ CAPABILITIES(/obj/item/radio/intercom)
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-/obj/item/radio/intercom/syndicate/Initialize(mapload)
-	. = ..()
-	internal_channels[num2text(SYND_FREQ)] = list(ACCESS_SYNDICATE)
+TYPE_TABLE(/obj/item/radio/intercom/syndicate, intercom_channel_setup, /obj/item/radio/intercom/syndicate)
 
 /obj/item/radio/intercom/raider
 	name = "illicit intercom"
@@ -123,9 +128,7 @@ CAPABILITIES(/obj/item/radio/intercom)
 	subspace_transmission = TRUE
 	syndie = TRUE
 
-/obj/item/radio/intercom/raider/Initialize(mapload)
-	. = ..()
-	internal_channels[num2text(RAID_FREQ)] = list(ACCESS_SYNDICATE)
+TYPE_TABLE(/obj/item/radio/intercom/raider, intercom_channel_setup, /obj/item/radio/intercom/raider)
 
 // Extends the radio's own Use (the radio UI; interaction_self declines for packs/beacons).
 EXTEND_INTERACTIONS(/obj/item/radio/intercom, \

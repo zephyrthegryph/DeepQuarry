@@ -217,7 +217,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 /// every part is transparent: list(key, whole icon transparent). Also recounts prosthetic limbs
 /// and applies the tail's sprite offset.
 /mob/living/carbon/human/proc/body_icon_key()
-	robolimb_count = 0
 	robobody_count = 0
 
 	var/g = (gender == MALE ? "male" : "female")
@@ -249,7 +248,6 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 		wholeicontransparent &&= part.transparent
 		icon_key += body_part_icon_key(part)
 		if(part.is_robotic())
-			robolimb_count++
 			if((part.robotic == ORGAN_ROBOT || part.robotic == ORGAN_LIFELIKE) && (part.organ_tag == BP_HEAD || part.organ_tag == BP_TORSO || part.organ_tag == BP_GROIN))
 				robobody_count++
 
@@ -1400,7 +1398,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(!struggle_anim_stomach)
 		struggle_anim_stomach = TRUE
 		update_vore_belly_sprite()
-		after(src, 12, PROC_REF(end_belly_struggle_anim))
+		after(src, 1.2 SECONDS, PROC_REF(end_belly_struggle_anim))
 
 /mob/living/carbon/human/proc/update_vore_tail_sprite()
 	if(QDESTROYING(src))
@@ -1435,7 +1433,7 @@ GLOBAL_LIST_EMPTY(damage_icon_parts) //see UpdateDamageIcon()
 	if(tail_style.struggle_anim && !struggle_anim_taur)
 		struggle_anim_taur = TRUE
 		update_vore_tail_sprite()
-		after(src, 12, PROC_REF(end_tail_struggle_anim))
+		after(src, 1.2 SECONDS, PROC_REF(end_tail_struggle_anim))
 
 /mob/living/carbon/human/proc/GetAppearanceFromPrefs(flavourtext, oocnotes)
 	/* Jank code that effectively creates the client's mob from save, then copies its appearance to our current mob.

@@ -112,14 +112,19 @@ CAPABILITIES(/datum/eventkit/player_effects)
 
 	return data
 
-/datum/om/prompt/text/admin_popup
+DECLARE_UI_STATE(/datum/eventkit/player_effects, ADMIN_STATE(R_ADMIN|R_EVENT|R_DEBUG))
+
+/datum/prompt/text/admin_popup
 	title = "Reply"
+	timeout = 0
 	/// key_name() of the sending admin.
 	var/admin_name
 
-/datum/eventkit/player_effects/proc/popup_replied(datum/om/prompt/text/admin_popup/ask)
-	if(ask.text)
-		log_and_message_admins("replied to [ask.admin_name]'s message: [ask.text].", ask.answerer)
+/datum/eventkit/player_effects/proc/popup_replied(datum/act/request/A)
+	if(!A.answer || !A.answer.answer_value)
+		return
+	var/datum/prompt/text/admin_popup/request = A.request
+	log_and_message_admins("replied to [request.admin_name]'s message: [A.answer.answer_value].", request.answerer)
 
 /// Only somebody with the spawn right works a button, and every effect is logged once, as it is pressed.
 /datum/eventkit/player_effects/proc/ui_log_use(datum/act/op/A)
@@ -1032,7 +1037,7 @@ MSG_DEF_SELF(player_effects/ai_player, "This cannot be used on player mobs!")
 		return
 	log_admin("[key_name(user)] sent message to [target()]: [message]")
 	// The player answers in their own time; the reply doesn't need this panel open.
-	om_ask(target(), /datum/om/prompt/text/admin_popup, PROC_REF(popup_replied), message = "An admin has sent you a message: [message]", admin_name = key_name(user))
+	open_request(src, /datum/prompt/text/admin_popup, PROC_REF(popup_replied), answerer = target(), question = "An admin has sent you a message: [message]", admin_name = key_name(user))
 
 /datum/eventkit/player_effects/proc/ui_act_stop_orbits(datum/act/op/A)
 	target().stop_orbiters()

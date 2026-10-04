@@ -139,7 +139,7 @@
 
 	H.injure(INJURY_CUT, 3, O, src)
 
-	COOLDOWN_START(src, chew_cooldown, 26)
+	COOLDOWN_START(src, chew_cooldown, 2.6 SECONDS)
 
 /obj/item/handcuffs/fuzzy
 	name = "fuzzy cuffs"

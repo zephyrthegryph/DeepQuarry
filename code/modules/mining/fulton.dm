@@ -27,19 +27,77 @@ DECLARE_INTERACTIONS(/obj/item/extraction_pack, INTERACT_USE(null, PROC_REF(inte
 		to_chat(user, "There are no extraction beacons in existence!")
 		return TRUE
 
-	else
-		var/A
-
-		var/_answer_k33 = rerun_ask(user, "k33", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Select a beacon to connect to", title = "Balloon Extraction Pack", choices = possible_beacons)
-		if(isnull(_answer_k33))
-			return TRUE
-		A = _answer_k33
-
-		if(!A)
-			return TRUE
-		rel_set(src, nameof(beacon), A)
-		to_chat(user, "You link the extraction pack to the beacon system.")
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return TRUE
+	open_request(src, /datum/prompt/choice/extraction_beacon, PROC_REF(beacon_selected), answerer = user, choices = possible_beacons, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey)
 	return TRUE
+
+/obj/item/extraction_pack/proc/beacon_selected(datum/act/request/A)
+	var/datum/prompt/choice/extraction_beacon/request = A.request
+	if(!A.answer || request.captures_gone())
+		return
+	apply_beacon_selection(A)
+	SStgui.update_uis(src)
+
+/obj/item/extraction_pack/proc/apply_beacon_selection(datum/act/request/A)
+	var/datum/prompt/choice/extraction_beacon/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	var/list/possible_beacons = list()
+	for(var/obj/structure/extraction_point/EP as anything in REGISTRY_MEMBERS(REGISTRY_EXTRACTION_BEACONS))
+		if(EP.beacon_network in beacon_networks)
+			possible_beacons += EP
+	if(!possible_beacons.len)
+		to_chat(user, "There are no extraction beacons in existence!")
+		return TRUE
+	var/obj/structure/extraction_point/selected = A.answer.answer_value
+	if(!istype(selected) || QDELETED(selected))
+		return TRUE
+	rel_set(src, nameof(beacon), selected)
+	to_chat(user, "You link the extraction pack to the beacon system.")
+	return TRUE
+
+/datum/prompt/choice/extraction_beacon
+	question = "Select a beacon to connect to"
+	title = "Balloon Extraction Pack"
+	timeout = 0
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/extraction_beacon)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/extraction_beacon/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/extraction_beacon/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/extraction_beacon/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	if(!isnull(answer_value))
+		var/obj/structure/extraction_point/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "the extraction beacon is gone"
+	return null
 
 /obj/item/extraction_pack/afterattack(atom/movable/A, mob/living/carbon/human/user, flag, params)
 	if(!beacon())

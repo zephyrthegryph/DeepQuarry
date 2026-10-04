@@ -71,6 +71,8 @@
 	var/tmp/list/react_sleep_tokens
 
 CAPABILITIES(/datum/ai_brain)
+	ref_many(nameof(behavior_sources))
+	ref_many(nameof(personal_mobs))
 	owns_one(nameof(model), /datum/world_model)
 
 /datum/ai_brain/New(mob/living/owner)
@@ -650,8 +652,3 @@ CAPABILITIES(/datum/ai_brain)
 /// for guard / return_home behaviors (a relation view: null once it is deleted).
 /datum/ai_brain/proc/home_turf() as /turf
 	return home_turf
-
-/datum/ai_brain/relations()
-	. = ..()
-	. += rel_many(nameof(behavior_sources))
-	. += rel_many(nameof(personal_mobs))

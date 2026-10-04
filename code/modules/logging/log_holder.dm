@@ -93,11 +93,13 @@ UI_DATA_REPLACE(/datum/log_holder, "merge:ui_data_datum_log_holder{}")
 	LAZYSET(data_cache, "categories", category_map)
 	LAZYSET(data_cache, "last_data_update", last_data_update)
 
-UI_ACT(/datum/log_holder, "refresh", ui_act_refresh)
-UI_ACT_PROC(/datum/log_holder, ui_act_refresh)
+CAPABILITIES(/datum/log_holder)
+	op("refresh", ui_act(), then(PROC_REF(ui_act_log_refresh)))
+
+/datum/log_holder/proc/ui_act_log_refresh(datum/act/op/A)
 	cache_ui_data()
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 /// Assembles basic information for logging, creating the log category datums and checking for config flags as required
 /datum/log_holder/proc/init_logging()

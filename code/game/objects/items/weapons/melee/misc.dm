@@ -39,16 +39,18 @@
 	. = ..()
 	update_icon()
 
-CAPABILITIES(/obj/item/melee/umbrella)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+TRACKED(/obj/item/melee/umbrella, open)
 
-/// Old attack_self.
-/obj/item/melee/umbrella/proc/interaction_self(datum/act/op/A)
+CAPABILITIES(/obj/item/melee/umbrella)
+	op("toggle", in_hand(), label("Open or close umbrella"), then(PROC_REF(umbrella_toggled)))
+
+/// The native held-item activation preserves the complete equipment change.
+/obj/item/melee/umbrella/proc/umbrella_toggled(datum/act/op/A)
 	toggle_umbrella()
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/umbrella/proc/toggle_umbrella()
-	open = !open
+	set_open(!open)
 	icon_state = "umbrella_[open ? "open" : "closed"]"
 	addblends = icon_state + "_a"
 	item_state = icon_state

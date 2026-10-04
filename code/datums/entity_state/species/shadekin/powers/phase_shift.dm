@@ -242,7 +242,7 @@
 	//Affect nearby lights
 	for(var/obj/machinery/light/L in range(SK.flicker_distance, src))
 		if(prob(SK.flicker_break_chance))
-			after(L, rand(5,25), TYPE_PROC_REF(/obj/machinery/light, broken))
+			after(L, rand(0.5 SECONDS, 2.5 SECONDS), TYPE_PROC_REF(/obj/machinery/light, broken))
 		else
 			if(SK.flicker_color)
 				L.flicker(SK.flicker_time, SK.flicker_color)

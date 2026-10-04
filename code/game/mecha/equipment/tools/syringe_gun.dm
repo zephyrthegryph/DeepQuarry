@@ -15,6 +15,9 @@
 	equip_cooldown = 10
 	required_type = list(/obj/mecha/medical)
 
+CAPABILITIES(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun)
+	owns_many(nameof(syringes), /obj/item/reagent_containers/syringe)
+
 DECLARE_REAGENTS(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, "max_volume", null)
 /// Reagent ids selected for synthesis. Replaced whole (never mutated in place) so the setter raises.
 OM_FIELD_TYPED(/obj/item/mecha_parts/mecha_equipment/tool/syringe_gun, list, processed_reagents, null, CHANGE_EXPLICIT)
@@ -539,5 +542,5 @@ TYPE_TABLE(/obj/item/mecha_parts/mecha_equipment/crisis_drone/rad, drone_treatme
 		icon = initial(icon)
 		update_icon()
 		return
-	after(src, 1, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
+	after(src, 0.1 SECONDS, PROC_REF(mech_syringe_flight), with = list(trg, steps_left - 1))
 

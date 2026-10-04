@@ -49,7 +49,8 @@ TYPE_TABLE_DECLARE(/atom, emag_decl, null)
 /obj/machinery/mark_emagged()
 	set_emagged(TRUE)
 
-/// The Emag interaction target offers, or null when it declares no emag.
+/// The legacy Emag interaction a DECLARE_EMAG target offers, or null when it declares none. A type that declares the emag capability
+/// (emag(...) in its CAPABILITIES) has no interaction: its card op is "emag.use" (perform_op(user, target, "emag.use", card)).
 /proc/emag_interaction_for(atom/target)
 	var/list/decl = EMAG_DECL(target)
 	if(!decl)

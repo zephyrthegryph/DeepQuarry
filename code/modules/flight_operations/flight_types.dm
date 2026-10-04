@@ -269,6 +269,5 @@ CAPABILITIES(/datum/flight_vessel)
 	return active_expedition
 
 
-/datum/flight_destination/relations()
-	. = ..()
-	. += rel_many(nameof(active_plans))
+CAPABILITIES(/datum/flight_destination)
+	ref_many(nameof(active_plans))

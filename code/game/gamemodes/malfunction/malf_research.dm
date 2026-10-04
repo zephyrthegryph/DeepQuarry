@@ -10,6 +10,7 @@
 
 CAPABILITIES(/datum/malf_research)
 	owns_many(nameof(available_abilities))
+	owns_many(nameof(unlocked_abilities))
 
 /datum/malf_research/New()
 	setup_abilities()

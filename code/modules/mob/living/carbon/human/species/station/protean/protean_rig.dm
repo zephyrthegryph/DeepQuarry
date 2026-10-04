@@ -49,7 +49,7 @@
 /obj/item/rig/protean/proc/host_click(mob/living/carbon/human/user, atom/A)
 	if(offline || !selected_module || !ai_can_move_suit(user))
 		return FALSE
-	selected_module.engage(A, FALSE)
+	selected_module.engage(A, FALSE, user)
 	if(ismob(A))
 		user.setClickCooldown(user.get_attack_speed())
 	return TRUE
@@ -101,7 +101,7 @@
 	rel_set(F, nameof(F.rig), src)
 	rel_set(src, nameof(myprotean), P)
 	if(P.get_equipped_item(SLOT_ID_BACK))
-		after(src, 3, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
+		after(src, 0.3 SECONDS, PROC_REF(AssimilateBag), with = list(P, 1, P.get_equipped_item(SLOT_ID_BACK))) // ALLOW(decl): conditional, extra args
 	else
 		to_chat(P, span_notice("You should have spawned with a backpack to assimilate into your RIG. Try clicking it with a backpack."))
 
@@ -395,22 +395,31 @@ TYPE_TABLE(/obj/item/clothing/suit/space/rig/protean, suit_storage_spec, list(HO
 			to_chat(user, "There are no installed modules to remove.")
 			return ITEM_INTERACT_BLOCKING
 
-		om_ask(user, /datum/om/prompt/choice/protean_rig_module, PROC_REF(module_removal_chosen), choices = possible_removals)
+		open_request(src, /datum/prompt/choice/protean_rig_module, PROC_REF(module_removal_chosen), answerer = user, choices = possible_removals)
 		return ITEM_INTERACT_SUCCESS
 
 /// Re-checked on the answer: next to the rig, able to act, and the module is still installed.
-/datum/om/prompt/choice/protean_rig_module
+/datum/prompt/choice/protean_rig_module
 	title = "Removal Choice"
-	message = "Which module would you like to remove?"
+	question = "Which module would you like to remove?"
+	timeout = 0
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 
-/datum/om/prompt/choice/protean_rig_module/valid()
-	var/obj/item/rig/protean/rig = subject
-	return (choices[choice] in rig.installed_modules) ? null : "not installed"
+/datum/prompt/choice/protean_rig_module/recheck_extra()
+	if(isnull(answer_value))
+		return
+	var/obj/item/rig/protean/rig = owner
+	return (choices[answer_value] in rig.installed_modules) ? null : "not installed"
 
-/obj/item/rig/protean/proc/module_removal_chosen(datum/om/prompt/choice/protean_rig_module/ask)
+/obj/item/rig/protean/proc/module_removal_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return module_removal_apply(A)
+
+/obj/item/rig/protean/proc/module_removal_apply(datum/act/request/A)
+	var/datum/prompt/choice/protean_rig_module/ask = A.answer
 	var/mob/living/user = ask.answerer
-	var/obj/item/rig_module/removed = ask.choices[ask.choice]
+	var/obj/item/rig_module/removed = ask.choices[ask.answer_value]
 	to_chat(user, "You detach \the [removed] from \the [src].")
 	removed.forceMove(get_turf(src))
 	removed.removed() // pair: installed_modules loses it

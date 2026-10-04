@@ -131,7 +131,7 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/rig, \
 
 	for(var/obj/item/rig_module/module in suit.installed_modules)
 		if(module.active && module.activates_on_touch)
-			if(module.engage(A))
+			if(module.engage(A, FALSE, user))
 				return 1
 
 	return 0

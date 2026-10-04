@@ -94,3 +94,5 @@
 		play_sfx(A, SFX_MACHINES_CHIME)
 		apcs_emagged++
 
+CAPABILITIES(/datum/event2/event/electrical_fault)
+	ref_many(nameof(valid_apcs))

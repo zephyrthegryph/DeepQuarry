@@ -120,7 +120,7 @@ CAPABILITIES(/obj/item/rig_module/ai_container)
 
 	return 0
 
-/obj/item/rig_module/ai_container/engage(atom/target)
+/obj/item/rig_module/ai_container/engage(atom/target, notify_ai, mob/user)
 
 	if(!..())
 		return 0

@@ -18,14 +18,14 @@
 	var/list/cardboard_before = turf_contents_of_type(T, /obj/item/stack/material/cardboard)
 	add_trait(box, TRAIT_NODROP, "interim_cat_box_cleanup")
 	TEST_ASSERT(box.loc.release_refusal(box, actor), "The actual sticky held cat box genuinely refuses release")
-	TEST_ASSERT_EQUAL(box.interaction_self(actor, box, null), TRUE, "Actual sticky box refusal preserves the original handled result")
+	test_op_handler(box, "interaction_self", actor, box) // the box sits in the inactive hand, then on the floor: the handler is called as the engine would
 	TEST_ASSERT(!QDELETED(box) && box.loc == actor, "Actual sticky box refusal preserves the exact original held source")
 	TEST_ASSERT_EQUAL(actor.get_inactive_hand(), box, "Actual sticky box refusal preserves the exact original source slot")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /mob/living/simple_mob/animal/passive/cat) - cats_before), 0, "Actual sticky refusal creates no cat")
 	TEST_ASSERT_EQUAL(length(turf_contents_of_type(T, /obj/item/stack/material/cardboard) - cardboard_before), 0, "Actual sticky refusal creates no cardboard")
 	remove_trait(box, TRAIT_NODROP, "interim_cat_box_cleanup")
 	TEST_ASSERT(actor.drop_from_inventory(box, T), "The actual unblocked cat box returns to its original floor")
-	TEST_ASSERT_EQUAL(box.interaction_self(actor, box, null), TRUE, "Actual floor opening preserves the original handled result")
+	TEST_ASSERT(test_op_handler(box, "interaction_self", actor, box), "Actual floor opening preserves the original handled result")
 	own_turf_contents(T)
 	TEST_ASSERT(QDELETED(box), "Actual opening consumes the exact original cat box")
 	var/list/cats = turf_contents_of_type(T, /mob/living/simple_mob/animal/passive/cat) - cats_before

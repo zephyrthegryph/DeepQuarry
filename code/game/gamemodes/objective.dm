@@ -838,7 +838,6 @@ REGISTRY_MEMBERSHIP(/datum/objective, REGISTRY_OBJECTIVES)
 	return rval
 
 // The mind owns its objectives (mind.objectives, OWN); owner is the one-sided back view.
-/datum/objective/relations()
-	. = ..()
-	. += rel_one(nameof(owner))
+CAPABILITIES(/datum/objective)
+	ref_one(nameof(owner))
 // Minds live for the round; the objective only reads its target.

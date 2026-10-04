@@ -158,6 +158,7 @@ CAPABILITIES(/datum/newscaster_panel)
 /datum/newscaster_panel/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
 	return TRUE
+
 // Main menu / channel actions.
 
 /datum/newscaster_panel/proc/ui_act_view_wanted(datum/act/op/A)
@@ -207,6 +208,7 @@ CAPABILITIES(/datum/newscaster_panel)
 	forward_topic(user, "ac_set_signature=1")
 	SStgui.update_uis(src)
 	return TRUE
+
 // Channel selection.
 
 /datum/newscaster_panel/proc/ui_act_show_channel(datum/act/op/A, ref_arg)
@@ -248,6 +250,7 @@ CAPABILITIES(/datum/newscaster_panel)
 	forward_topic(user, "ac_submit_new_channel=1")
 	SStgui.update_uis(src)
 	return TRUE
+
 // Story create form.
 
 /datum/newscaster_panel/proc/ui_act_set_channel_receiving(datum/act/op/A)
@@ -267,6 +270,7 @@ CAPABILITIES(/datum/newscaster_panel)
 	forward_topic(user, "ac_submit_new_message=1")
 	SStgui.update_uis(src)
 	return TRUE
+
 // Censorship.
 
 /datum/newscaster_panel/proc/ui_act_censor_channel_author(datum/act/op/A, ref_arg)

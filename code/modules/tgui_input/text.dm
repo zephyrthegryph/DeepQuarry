@@ -22,8 +22,6 @@
 	return text
 
 /proc/tgui_input_text(mob/user, message = "", title = "Text Input", default, max_length = MAX_TGUI_INPUT, multiline = FALSE, encode = TRUE, timeout = 0, prevent_enter = FALSE, ui_state = GLOB.tgui_always_state) // 130k limit due to chunking limit... if we need longer that needs fixing
-	if (!user)
-		user = usr
 	if (!istype(user))
 		if (istype(user, /client))
 			var/client/client = user

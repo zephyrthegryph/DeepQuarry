@@ -58,9 +58,7 @@
 	var/explosion_delay_lower	= 1 SECOND	// Lower bound for explosion delay.
 	var/explosion_delay_upper	= 2 SECONDS	// Upper bound.
 
-/mob/living/simple_mob/animal/giant_spider/phorogenic/Initialize(mapload)
-	adjust_scale(1.25)
-	return ..()
+TYPE_TABLE(/mob/living/simple_mob/animal/giant_spider/phorogenic, spider_preparent_scale, 1.25)
 
 /mob/living/simple_mob/animal/giant_spider/phorogenic/proc/explode()
 	if(src && !exploded)

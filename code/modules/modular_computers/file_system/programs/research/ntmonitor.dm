@@ -52,12 +52,12 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_resetids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.resetIDS()
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_toggleids(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.toggleIDS()
-	return TRUE
+	return OP_OK
 
 /// Disabling the network is confirmed; enabling it is not.
 /datum/computer_file/program/ntnetmonitor/proc/wireless_enabled(datum/act/op/A)
@@ -80,7 +80,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetmonitor)
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_purgelogs(datum/act/op/A)
 	if(GLOB.ntnet_global)
 		GLOB.ntnet_global.purge_logs()
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/ntnetmonitor/proc/ui_act_updatemaxlogs(datum/act/op/A, new_number)
 	var/logcount = new_number

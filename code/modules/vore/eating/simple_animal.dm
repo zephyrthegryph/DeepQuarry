@@ -51,6 +51,9 @@
 	return toggle_digestion_for(usr)
 
 /mob/living/simple_mob/proc/toggle_digestion_for(mob/living/carbon/human/user)
+	return toggle_digestion_stage(user, null, null)
+
+/mob/living/simple_mob/proc/toggle_digestion_stage(mob/living/carbon/human/user, enable_answer, disable_answer)
 	if(!istype(user) || user.stat) return
 
 	if(!vore_selected)
@@ -58,17 +61,17 @@
 		return
 
 	if(vore_selected.digest_mode == DM_HOLD)
-		var/confirm = rerun_ask(user, "a1", PROC_REF(toggle_digestion_for), args, /datum/om/prompt/choice/alert, message = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", choices = list("Enable", "Cancel"))
-		if(isnull(confirm))
+		if(isnull(enable_answer))
+			open_request(src, /datum/prompt/choice/animal_digestion/enable, PROC_REF(animal_digestion_answered), answerer = user, question = "Enabling digestion on [name] will cause it to digest all stomach contents. Using this to break OOC prefs is against the rules. Digestion will reset after 20 minutes.", title = "Enabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
-		if(confirm == "Enable")
+		if(enable_answer == "Enable")
 			vore_selected.digest_mode = DM_DIGEST
 			after(vore_selected, 20 MINUTES, TYPE_PROC_REF(/obj/belly, reset_digest_mode), with = list(vore_default_mode))
 	else
-		var/confirm = rerun_ask(user, "a2", PROC_REF(toggle_digestion_for), args, /datum/om/prompt/choice/alert, message = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", choices = list("Disable", "Cancel"))
-		if(isnull(confirm))
+		if(isnull(disable_answer))
+			open_request(src, /datum/prompt/choice/animal_digestion/disable, PROC_REF(animal_digestion_answered), answerer = user, question = "This mob is currently set to process all stomach contents. Do you want to disable this?", title = "Disabling [name]'s Digestion", enable_answer = enable_answer, disable_answer = disable_answer)
 			return
-		if(confirm == "Disable")
+		if(disable_answer == "Disable")
 			vore_selected.digest_mode = DM_HOLD
 
 // Added as a verb in /mob/living/simple_mob/init_vore() if vore is enabled for this mob.
@@ -122,12 +125,15 @@
 	set category = VERB_CAT_ABILITIES_MOB
 	set desc = "Slowly regenerate health using nutrition."
 
+	return nutrition_heal_stage(null)
+
+/mob/living/simple_mob/proc/nutrition_heal_stage(heal_amount)
 	if(nutrition < 10)
 		to_chat(src, span_warning("You are too hungry to regenerate health."))
 		return
 	var/endurance_now = get_endurance()
-	var/heal_amount = rerun_ask(src, "a3", PROC_REF(nutrition_heal), args, /datum/om/prompt/number, message = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]", title = "Regenerate health.", default = 1, min = 1)
 	if(isnull(heal_amount))
+		open_request(src, /datum/prompt/number/animal_nutrition_heal, PROC_REF(animal_nutrition_heal_answered), answerer = src, question = "Input the amount of health to regenerate at the rate of 10 nutrition per second per hitpoint. Current health: [round(vitality() * endurance_now)] / [endurance_now]")
 		return
 	if(!heal_amount)
 		return
@@ -148,3 +154,49 @@
 /mob/living/simple_mob/relations()
 	. = ..()
 	. += rel_many(nameof(prey_excludes))
+
+/// Both cached branch answers survive a mode change while a digestion question is pending.
+/datum/prompt/choice/animal_digestion
+	timeout = 0
+	buttons = TRUE
+	var/enable_answer
+	var/disable_answer
+	var/enabling = FALSE
+
+/datum/prompt/choice/animal_digestion/enable
+	choices = list("Enable", "Cancel")
+	enabling = TRUE
+
+/datum/prompt/choice/animal_digestion/disable
+	choices = list("Disable", "Cancel")
+
+/mob/living/simple_mob/proc/animal_digestion_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = animal_digestion_apply(A)
+	SStgui.update_uis(src)
+	return .
+
+/mob/living/simple_mob/proc/animal_digestion_apply(datum/act/request/A)
+	var/datum/prompt/choice/animal_digestion/ask = A.answer
+	var/enable_answer = ask.enable_answer
+	var/disable_answer = ask.disable_answer
+	if(ask.enabling)
+		enable_answer = ask.answer_value
+	else
+		disable_answer = ask.answer_value
+	return toggle_digestion_stage(ask.answerer, enable_answer, disable_answer)
+
+/datum/prompt/number/animal_nutrition_heal
+	title = "Regenerate health."
+	timeout = 0
+	default = 1
+	min_value = 1
+	max_value = INFINITY
+
+/mob/living/simple_mob/proc/animal_nutrition_heal_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = nutrition_heal_stage(A.answer.answer_value)
+	SStgui.update_uis(src)
+	return .

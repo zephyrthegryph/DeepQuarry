@@ -42,7 +42,7 @@
 		B.leave_host()
 		move_player(prev_owner, B, "borer organ removed from [prev_owner]")
 
-	om_qdel_after(src, 0)
+	expire(0)
 
 //VOX ORGANS.
 /obj/item/organ/internal/stack

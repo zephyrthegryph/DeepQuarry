@@ -74,6 +74,8 @@ MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
 			return GLOB.vinestart
 	return null
 
+TYPE_TABLE_DECLARE(/obj/effect/landmark, landmark_tag_setup, null)
+
 /obj/effect/landmark/Initialize(mapload)
 	. = ..()
 	tag = text("landmark*[]", name)
@@ -99,6 +101,11 @@ MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
 		if("tdomeobserve")
 			GLOB.tdomeobserve += loc
 	registry_join(REGISTRY_LANDMARKS, src)
+	switch(TYPE_TABLE_GET(src, landmark_tag_setup))
+		if(/obj/effect/landmark/start)
+			tag = "start*[name]"
+		if(/obj/effect/landmark/virtual_reality)
+			tag = "virtual_reality*[name]"
 
 // Landmarks survive deletion unless flagged delete_me or forced.
 /obj/effect/landmark/lifecycle_keep(force)
@@ -110,9 +117,7 @@ MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
 	icon_state = "x"
 	anchored = TRUE
 
-/obj/effect/landmark/start/Initialize(mapload)
-	. = ..()
-	tag = "start*[name]"
+TYPE_TABLE(/obj/effect/landmark/start, landmark_tag_setup, /obj/effect/landmark/start)
 
 /obj/effect/landmark/virtual_reality
 	name = "virtual_reality"
@@ -120,9 +125,7 @@ MAP_RESOLVER(/obj/effect/landmark, GLOBAL_PROC_REF(resolve_landmark))
 	icon_state = "x"
 	anchored = TRUE
 
-/obj/effect/landmark/virtual_reality/Initialize(mapload)
-	. = ..()
-	tag = "virtual_reality*[name]"
+TYPE_TABLE(/obj/effect/landmark/virtual_reality, landmark_tag_setup, /obj/effect/landmark/virtual_reality)
 
 /obj/effect/landmark/costume
 

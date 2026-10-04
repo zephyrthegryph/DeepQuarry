@@ -311,7 +311,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/turretid, TYPE_PROC_REF(/atom, appearance
 		enabled = FALSE
 		updateTurrets()
 
-		after(src, rand(60, 600), PROC_REF(emp_reenable))
+		after(src, rand(6 SECONDS, 60 SECONDS), PROC_REF(emp_reenable))
 	return HOOK_DECLINE
 
 /obj/machinery/turretid/proc/emp_reenable()

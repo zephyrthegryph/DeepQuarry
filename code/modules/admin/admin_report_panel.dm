@@ -71,7 +71,7 @@ CAPABILITIES(/datum/admin_report)
 /datum/admin_report/proc/ui_act_close(datum/act/op/A)
 	SStgui.close_uis(src)
 	qdel(src)
-	return TRUE
+	return OP_OK
 
 /// Show a report with a list of preformatted lines.
 /proc/dq_admin_report_lines(mob/user, title, list/lines, intro_html = "", datum/host = null)

@@ -95,7 +95,6 @@
 	var/max_universal_equip = 2
 	var/max_special_equip = 1
 
-	var/list/starting_equipment = null	// List containing starting tools.
 
 // Mech Components, similar to Cyborg, but Bigger.
 	var/list/internal_components = list( // ALLOW(instance_list): d: edited in place per instance (2 writers)
@@ -174,26 +173,29 @@
 	var/list/micro_weapon_equipment
 
 CAPABILITIES(/obj/mecha)
+	owns_one(nameof(cabin_air), on_destroy = ON_DESTROY_PRIVATE_COPY)
 	owns_one(nameof(cell), /obj/item/cell)
 	owns_one(nameof(internal_tank), /obj/item/tank)
 	owns_one(nameof(minihud), /datum/mini_hud/mech)
 	owns_many(nameof(internal_components))
 	owns_one(nameof(radio), /obj/item/radio)
-	owns_one(nameof(eject_action), starts = /datum/action/innate/mecha/mech_eject)
-	owns_one(nameof(internals_action), starts = /datum/action/innate/mecha/mech_toggle_internals)
-	owns_one(nameof(lights_action), starts = /datum/action/innate/mecha/mech_toggle_lights)
-	owns_one(nameof(stats_action), starts = /datum/action/innate/mecha/mech_view_stats)
-	owns_one(nameof(strafing_action), starts = /datum/action/innate/mecha/strafe)
-	owns_one(nameof(defence_action), starts = /datum/action/innate/mecha/mech_defence_mode)
-	owns_one(nameof(overload_action), starts = /datum/action/innate/mecha/mech_overload_mode)
-	owns_one(nameof(smoke_action), starts = /datum/action/innate/mecha/mech_smoke)
-	owns_one(nameof(zoom_action), starts = /datum/action/innate/mecha/mech_zoom)
-	owns_one(nameof(thrusters_action), starts = /datum/action/innate/mecha/mech_toggle_thrusters)
-	owns_one(nameof(cycle_action), starts = /datum/action/innate/mecha/mech_cycle_equip)
-	owns_one(nameof(switch_damtype_action), starts = /datum/action/innate/mecha/mech_switch_damtype)
-	owns_one(nameof(phasing_action), starts = /datum/action/innate/mecha/mech_toggle_phasing)
-	owns_one(nameof(cloak_action), starts = /datum/action/innate/mecha/mech_toggle_cloaking)
-	owns_one(nameof(smoke_system), starts = /datum/effect/effect/system/smoke_spread)
+	owns_one(nameof(eject_action), /datum/action/innate/mecha/mech_eject, starts = /datum/action/innate/mecha/mech_eject)
+	owns_one(nameof(internals_action), /datum/action/innate/mecha/mech_toggle_internals, starts = /datum/action/innate/mecha/mech_toggle_internals)
+	owns_one(nameof(lights_action), /datum/action/innate/mecha/mech_toggle_lights, starts = /datum/action/innate/mecha/mech_toggle_lights)
+	owns_one(nameof(stats_action), /datum/action/innate/mecha/mech_view_stats, starts = /datum/action/innate/mecha/mech_view_stats)
+	owns_one(nameof(strafing_action), /datum/action/innate/mecha/strafe, starts = /datum/action/innate/mecha/strafe)
+	owns_one(nameof(defence_action), /datum/action/innate/mecha/mech_defence_mode, starts = /datum/action/innate/mecha/mech_defence_mode)
+	owns_one(nameof(overload_action), /datum/action/innate/mecha/mech_overload_mode, starts = /datum/action/innate/mecha/mech_overload_mode)
+	owns_one(nameof(smoke_action), /datum/action/innate/mecha/mech_smoke, starts = /datum/action/innate/mecha/mech_smoke)
+	owns_one(nameof(zoom_action), /datum/action/innate/mecha/mech_zoom, starts = /datum/action/innate/mecha/mech_zoom)
+	owns_one(nameof(thrusters_action), /datum/action/innate/mecha/mech_toggle_thrusters, starts = /datum/action/innate/mecha/mech_toggle_thrusters)
+	owns_one(nameof(cycle_action), /datum/action/innate/mecha/mech_cycle_equip, starts = /datum/action/innate/mecha/mech_cycle_equip)
+	owns_one(nameof(switch_damtype_action), /datum/action/innate/mecha/mech_switch_damtype, starts = /datum/action/innate/mecha/mech_switch_damtype)
+	owns_one(nameof(phasing_action), /datum/action/innate/mecha/mech_toggle_phasing, starts = /datum/action/innate/mecha/mech_toggle_phasing)
+	owns_one(nameof(cloak_action), /datum/action/innate/mecha/mech_toggle_cloaking, starts = /datum/action/innate/mecha/mech_toggle_cloaking)
+	owns_one(nameof(smoke_system), /datum/effect/effect/system/smoke_spread, starts = /datum/effect/effect/system/smoke_spread)
+
+TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_equipment, null)
 
 TYPE_TABLE_DECLARE(/obj/mecha, mecha_starting_components, list( \
 		/obj/item/mecha_parts/component/hull, \
@@ -215,8 +217,9 @@ REGISTRY_MEMBERSHIP(/obj/mecha, REGISTRY_MECHAS)
 		var/obj/item/mecha_parts/component/C = new path(src)
 		C.attach(src)
 
-	if(starting_equipment && LAZYLEN(starting_equipment))
-		for(var/path in starting_equipment)
+	var/list/starting_equipment_types = TYPE_TABLE_GET(src, mecha_starting_equipment)
+	if(starting_equipment_types && LAZYLEN(starting_equipment_types))
+		for(var/path in starting_equipment_types)
 			var/obj/item/mecha_parts/mecha_equipment/ME = new path(src)
 			ME.attach(src)
 
@@ -1656,7 +1659,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 
 		// The *_possible capability vars gate the pilot's Menu entries (pred_mecha_can_* in mecha_actions.dm).
 
-		occupant.in_enclosed_vehicle = 1	//Useful for when you need to know if someone is in a mecho.
 		update_cell_alerts()
 		update_damage_alerts()
 		set_dir(dir_in)
@@ -1743,7 +1745,6 @@ DAMAGE_REACTION(/obj/mecha, DAMAGE_EMP, PROC_REF(mecha_emp))
 			occupant.canmove = 0
 		occupant.clear_alert("charge")
 		occupant.clear_alert("mech damage")
-		occupant.in_enclosed_vehicle = 0
 		update_icon()
 		set_dir(dir_in)
 
@@ -2192,7 +2193,7 @@ UI_ACT_PROC(/obj/mecha, ui_act_maint_remove_passenger)
 			output += "Universal Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in special_equipment)
 			output += "Special Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
-		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // VOREstation Edit -  Adds micro equipent to the menu
+		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_utility_equipment) // Adds micro equipent to the menu
 			output += "Micro Utility Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
 		for(var/obj/item/mecha_parts/mecha_equipment/W in micro_weapon_equipment)
 			output += "Micro Weapon Module: [W.name] <a href='byond://?src=\ref[W];detach=1'>Detach</a><br>"
@@ -2708,7 +2709,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 
 	return TRUE
 
-// === merged from mecha_vr.dm during hard-fork de-suffix (manually verified: no middle override of the affected member) ===
 /obj/mecha
 	damage_minimum = 5				//Incoming damage lower than this won't actually deal damage. Scrapes shouldn't be a real thing.
 	minimum_penetration = 10		//Incoming damage won't be fully applied if you don't have at least 20. Almost all AP clears this.
@@ -2775,9 +2775,6 @@ TOPIC_ACTION(/obj/mecha, "drop_from_cargo", PROC_REF(topic_drop_from_cargo), TOP
 // cell and internal_tank are implicit owns(policy = OWN_DELETE): a wreck takes them as salvage in Destroy()
 // (own_take); otherwise the ownership policy deletes them with the mech.
 // cabin_air may be rebound to a connected port's network mixture (set_port_network_air()): PROTO.
-/obj/mecha/ownership()
-	. = ..()
-	. += rel_one(nameof(cabin_air), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
 
 /// Detaches the component in `slot` (returned unowned; the caller moves or deletes it) and keeps
 /// the empty slot key, since `internal_components` keys double as the mech's slot layout.

@@ -220,11 +220,23 @@
 	set name = "Adjust Mass"
 	set category = VERB_CAT_ABILITIES_GENERAL //Seeing as prometheans have an IC reason to be changing mass.
 
-	var/nagmessage = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
-	var/default = size_multiplier * 100
-	var/new_size = rerun_ask(src, "a1", PROC_REF(set_size), args, /datum/om/prompt/number, message = nagmessage, title = "Pick a Size", default = default, max = 600, min = 1)
-	if(isnull(new_size))
+	open_request(src, /datum/prompt/number/personal_mass, PROC_REF(personal_mass_answered), answerer = src, default = size_multiplier * 100)
+
+/datum/prompt/number/personal_mass
+	question = "Adjust your mass to be a size between 25 to 200% (or 1% to 600% in dormitories). (DO NOT ABUSE)"
+	title = "Pick a Size"
+	timeout = 0
+	min_value = 1
+	max_value = 600
+
+/mob/living/proc/personal_mass_answered(datum/act/request/A)
+	if(!A.answer)
 		return
+	. = personal_mass_apply(A.answer.answer_value)
+	SStgui.update_uis(src)
+	return .
+
+/mob/living/proc/personal_mass_apply(new_size)
 	if(size_range_check(new_size))
 		resize(new_size/100, uncapped = has_large_resize_bounds(), ignore_prefs = TRUE)
 

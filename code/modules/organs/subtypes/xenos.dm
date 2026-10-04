@@ -14,9 +14,7 @@
 /obj/item/organ/internal/xenos/eggsac/grey
 	icon_state = "sac_grey"
 
-/obj/item/organ/internal/xenos/eggsac/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/xenos/eggsac/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/xenos/eggsac/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now
@@ -58,9 +56,7 @@
 	icon_state = "plasma_grey"
 	stored_plasma = 200
 
-/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/xenos/plasmavessel/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/xenos/plasmavessel/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now
@@ -96,9 +92,7 @@
 /obj/item/organ/internal/xenos/acidgland/grey
 	icon_state = "acidgland_grey"
 
-/obj/item/organ/internal/xenos/acidgland/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/xenos/acidgland/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/xenos/acidgland/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now
@@ -124,9 +118,7 @@
 /obj/item/organ/internal/xenos/hivenode/grey
 	icon_state = "xenode_grey"
 
-/obj/item/organ/internal/xenos/hivenode/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/xenos/hivenode/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/xenos/hivenode/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now
@@ -147,9 +139,7 @@
 /obj/item/organ/internal/xenos/resinspinner/grey
 	icon_state = "xenode_grey"
 
-/obj/item/organ/internal/xenos/resinspinner/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/xenos/resinspinner/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/xenos/resinspinner/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now

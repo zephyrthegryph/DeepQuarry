@@ -37,6 +37,7 @@
 	var/special_handling = FALSE
 
 CAPABILITIES(/obj/item/perfect_tele)
+	ref_many(nameof(beacons))
 	owns_one(nameof(power_source), /obj/item/cell, starts = nameof(cell_type))
 
 /obj/item/perfect_tele/Initialize(mapload)
@@ -49,9 +50,6 @@ CAPABILITIES(/obj/item/perfect_tele)
 
 // Relation list view of beacons (a premade beacon may be listed by several translocators, so
 // no pair); each beacon names its maker one-sided (tele_hand), cleared when the maker dies.
-/obj/item/perfect_tele/relations()
-	. = ..()
-	. += rel_many(nameof(beacons))
 
 /// The beacon in `beacons` named `name`, or null.
 /obj/item/perfect_tele/proc/find_beacon(name)
@@ -149,11 +147,13 @@ This device can be easily used to break ERP preferences due to the nature of tel
 Make sure you carefully examine someone's OOC prefs before teleporting them if you are going to use this device for ERP purposes.
 This device records all warnings given and teleport events for admin review in case of pref-breaking, so just don't do it.
 "},"OOC Warning")
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(beacon_chosen), choices = radial_images, anchor = radial_menu_anchor, require_near = TRUE, tooltips = TRUE)
+	open_request(src, /datum/prompt/choice, PROC_REF(beacon_chosen), answerer = user, choices = radial_images, radial = TRUE, anchor = radial_menu_anchor || src, require_near = TRUE, tooltips = TRUE, autopick_single_option = TRUE, timeout = 0)
 
-/obj/item/perfect_tele/proc/beacon_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/user = ask.answerer
-	var/choice = ask.choice
+/obj/item/perfect_tele/proc/beacon_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/choice = A.answer.answer_value
 	if(!choice || !check_menu(user))
 		return
 
@@ -162,16 +162,18 @@ This device records all warnings given and teleport events for admin review in c
 			to_chat(user, span_warning("The translocator can't support any more beacons!"))
 			return
 
-		om_ask(user, /datum/om/prompt/text, PROC_REF(beacon_named), title = "[src]", message = "New beacon's name (2-20 char):", max_length = 20, ask_flags = ASK_CARRIED | ASK_CAPABLE)
+		open_request(src, /datum/prompt/text, PROC_REF(beacon_named), answerer = user, title = "[src]", question = "New beacon's name (2-20 char):", max_len = 20, name_text = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 		return
 
 	else
 		rel_set(src, nameof(destination), find_beacon(choice))
 		rebuild_radial_images()
 
-/obj/item/perfect_tele/proc/beacon_named(datum/om/prompt/text/ask)
-	var/mob/user = ask.answerer
-	var/new_name = ask.text
+/obj/item/perfect_tele/proc/beacon_named(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/user = A.request.answerer
+	var/new_name = A.answer.answer_value
 	if(!check_menu(user))
 		return
 	if(beacons_left <= 0)
@@ -418,7 +420,7 @@ This device records all warnings given and teleport events for admin review in c
 	var/tele_name
 	var/obj/item/perfect_tele/tele_hand
 	var/creator
-	var/warned_users = list()
+	var/list/warned_users
 	var/tele_network = null
 	flags = NOBLUDGEON
 
@@ -429,7 +431,7 @@ DECLARE_INTERACTIONS(/obj/item/perfect_tele_beacon, \
 
 /obj/item/perfect_tele_beacon/proc/interaction_hand(mob/user, obj/item/held, datum/interaction/interaction)
 	if((user.ckey != creator) && !(user.ckey in warned_users))
-		warned_users |= user.ckey
+		LAZYOR(warned_users, user.ckey)
 		om_ask(user, /datum/om/prompt/confirm/tele_beacon_warning, PROC_REF(warning_answered))
 		return TRUE
 	return FALSE
@@ -461,10 +463,12 @@ REGISTRY_MEMBERSHIP(/obj/item/perfect_tele_beacon/stationary, REGISTRY_TELE_BEAC
 /obj/item/perfect_tele_beacon/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(!isliving(user))
 		return
-	om_ask(user, /datum/om/prompt/confirm, PROC_REF(ask_belly), title = "Eat beacon?", message = "You COULD eat the beacon...", yes_text = "Eat it!", no_text = "No, thanks.", ask_flags = ASK_CARRIED | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_belly), answerer = user, title = "Eat beacon?", question = "You COULD eat the beacon...", choices = list("Eat it!", "No, thanks."), buttons = TRUE, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
-/obj/item/perfect_tele_beacon/proc/ask_belly(datum/om/prompt/confirm/ask)
-	var/mob/living/user = ask.answerer
+/obj/item/perfect_tele_beacon/proc/ask_belly(datum/act/request/A)
+	if(A.answer?.answer_value != "Eat it!")
+		return
+	var/mob/living/user = A.request.answerer
 	open_request(src, /datum/prompt/choice, PROC_REF(belly_chosen), answerer = user, title = "Select A Belly", question = "Which belly?", choices = user.vore_organs, ask_flags = ASK_CARRIED | ASK_CAPABLE, timeout = 0)
 
 /obj/item/perfect_tele_beacon/proc/belly_chosen(datum/act/request/A)

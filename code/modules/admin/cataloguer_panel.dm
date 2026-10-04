@@ -46,10 +46,15 @@ UI_DATA_REPLACE(/obj/item/cataloguer, "points_stored:num", "merge:ui_data_obj_it
 		data["groups"] = groups
 	return data
 
-UI_ACT(/obj/item/cataloguer, "pulse_scan", ui_act_pulse_scan)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_pulse_scan)
-	pulse_scan(ui.user)
-	return TRUE
+CAPABILITIES(/obj/item/cataloguer)
+	op("pulse_scan", ui_act(), then(PROC_REF(ui_act_pulse_scan)))
+	op("back_to_list", ui_act(), then(PROC_REF(ui_act_back_to_list)))
+	op("refresh", ui_act(), then(PROC_REF(ui_act_refresh)))
+	op("controls", in_hand(), label("Open cataloguer"), then(PROC_REF(cataloguer_controls_opened)))
+
+/obj/item/cataloguer/proc/ui_act_pulse_scan(datum/act/op/A)
+	pulse_scan(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/item/cataloguer, "show_data", ui_act_show_data, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
 UI_ACT_PROC(/obj/item/cataloguer, ui_act_show_data)
@@ -59,16 +64,14 @@ UI_ACT_PROC(/obj/item/cataloguer, ui_act_show_data)
 		SStgui.update_uis(src)
 	return TRUE
 
-UI_ACT(/obj/item/cataloguer, "back_to_list", ui_act_back_to_list)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_back_to_list)
+/obj/item/cataloguer/proc/ui_act_back_to_list(datum/act/op/A)
 	displayed_data = null
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/item/cataloguer, "refresh", ui_act_refresh)
-UI_ACT_PROC(/obj/item/cataloguer, ui_act_refresh)
+/obj/item/cataloguer/proc/ui_act_refresh(datum/act/op/A)
 	SStgui.update_uis(src)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/item/cataloguer, "debug_unlock", ui_act_debug_unlock, UI_ARG_REF("ref", null, /datum/category_item/catalogue))
 UI_ACT_PROC(/obj/item/cataloguer, ui_act_debug_unlock)

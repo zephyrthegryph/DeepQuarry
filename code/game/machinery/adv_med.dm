@@ -28,9 +28,11 @@
 	for(var/obj/item/stock_parts/scanning_module/P in component_parts)
 		scan_level += max(0, (P.rating - 2)) //We require T3 parts or higher to actually increase our scan level.
 
-/obj/machinery/bodyscanner/relations()
-	. = ..()
-	. += rel_one(nameof(console), back = nameof(/obj/machinery/body_scanconsole::scanner))
+CAPABILITIES(/obj/machinery/bodyscanner)
+	links(/obj/machinery/bodyscanner::console, /obj/machinery/body_scanconsole::scanner)
+	interface("BodyScanner", title = "Body Scanner")
+	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
+	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
 
 /// Sealed occupant slot (C8, containment.md §10, OM relations step 3).
 /datum/om/relation/slot/occupant/body_scanner
@@ -178,11 +180,6 @@ EXTEND_INTERACTIONS(/obj/machinery/bodyscanner, \
 		return src
 	return console ? console : src
 
-CAPABILITIES(/obj/machinery/bodyscanner)
-	interface("BodyScanner", title = "Body Scanner")
-	op("ejectify", ui_act("ejectify"), then(PROC_REF(ui_act_ejectify)))
-	op("print_p", ui_act("print_p"), then(PROC_REF(ui_act_print_p)))
-
 /obj/machinery/bodyscanner/ui_data(datum/act/eval/A)
 	// qualitative scanner output. The old block dumped exact
 	// damage numbers and every affliction's name; the new builder
@@ -191,13 +188,10 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	return dq_build_tgui_data()
 
 /obj/machinery/bodyscanner/proc/ui_act_ejectify(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
-	bodyscanner_eject(user)
+	bodyscanner_eject(A.actor)
+	return OP_OK
 
 /obj/machinery/bodyscanner/proc/ui_act_print_p(datum/act/op/A)
-	var/mob/user = A.actor
-	. = TRUE
 	var/mob/living/carbon/human/occupant = src?.slot_item(OCCUPANT_SLOT_BODY_SCANNER)
 	var/atom/target = console ? console : src
 	visible_message(span_notice("[target] rattles and prints out a sheet of paper."))
@@ -213,7 +207,7 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	P.info += "<br><br>" + span_bold("Notes:") + "<br>"
 	P.name = "Body Scan - [name] ([stationtime2text()])"
 	if(istype(scanned_human))
-		var/datum/money_account/operator_account = medical_trial_account_for_mob(user)
+		var/datum/money_account/operator_account = medical_trial_account_for_mob(A.actor)
 		var/datum/contract_subject_identity/identity = SScontracts.subject_identity(scanned_human)
 		P.medical_scan_evidence = list(
 			"subject_ref" = identity.id,
@@ -234,7 +228,8 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 			"evidence_ids" = list(evidence_id),
 			"scan_time" = EXPIRY_AT(src, CLOCK_WORLD, 0),
 			"detail" = "Authenticated body scan printed",
-		), "medical-scan:[evidence_id]", src, user, scanned_human)
+		), "medical-scan:[evidence_id]", src, A.actor, scanned_human)
+	return OP_OK
 
 /// The printed report: the body scanner diagnosis (paper renderer) plus the
 /// patient details a printout carries (species, reagents, allergens, implants).
@@ -318,9 +313,6 @@ CAPABILITIES(/obj/machinery/bodyscanner)
 	. = ..()
 	findscanner()
 
-/obj/machinery/body_scanconsole/relations()
-	. = ..()
-	. += rel_one(nameof(scanner), back = nameof(/obj/machinery/bodyscanner::console))
 
 EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	INTERACT_ITEM(null, TYPE_PROC_REF(/atom, interaction_as_touch)), \
@@ -345,7 +337,7 @@ EXTEND_INTERACTIONS(/obj/machinery/body_scanconsole, \
 	update_icon()
 
 /obj/machinery/body_scanconsole/proc/findscanner()
-	after(src, 5, PROC_REF(findscanner_now))
+	after(src, 0.5 SECONDS, PROC_REF(findscanner_now))
 
 /// Old attack_ghost: a ghost gets the hand's view (and no examine).
 /obj/machinery/body_scanconsole/proc/body_scanconsole_observer(mob/user, obj/item/held, datum/interaction/interaction)

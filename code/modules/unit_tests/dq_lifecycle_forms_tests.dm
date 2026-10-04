@@ -288,12 +288,15 @@ CAPABILITY(/obj/item/dq_forms_flask/replaced/topped, refine(CAP_REAGENTS, add = 
 	var/obj/item/broken_gun/wreck = allocate(/obj/item/broken_gun, dq_containment_floor())
 	TEST_ASSERT_EQUAL(length(rx_after_inits_of(wreck)), 1, "the worked conversion: a broken gun arms its self-check")
 
-/// cap_trait(): the DECLARE_BEHAVIOUR conversion of radiation clothing.
+/// Native traits preserve radiation protection and its examine output.
 /datum/unit_test/dq_forms_type_trait/Run()
 	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, dq_containment_floor())
 	var/obj/item/clothing/suit/radiation/S = allocate(/obj/item/clothing/suit/radiation, dq_containment_floor())
 	TEST_ASSERT(has_trait(S, TRAIT_RADIATION_PROTECTED_CLOTHING), "the trait is there from init")
-	TEST_ASSERT(span_notice(RADIATION_CLOTHING_EXAMINE) in caps_examine(S, H), "and its examine line")
+	TEST_ASSERT(span_notice(RADIATION_CLOTHING_EXAMINE) in examine_collect(S, H), "and its examine line")
+	var/obj/item/clothing/head/radiation/hood = allocate(/obj/item/clothing/head/radiation, dq_containment_floor())
+	TEST_ASSERT(has_trait(hood, TRAIT_RADIATION_PROTECTED_CLOTHING), "the actual hood also starts protected")
+	TEST_ASSERT(span_notice(RADIATION_CLOTHING_EXAMINE) in examine_collect(hood, H), "the hood retains its examine line")
 
 // ---- G12 ----
 

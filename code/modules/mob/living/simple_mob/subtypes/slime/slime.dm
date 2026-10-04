@@ -95,6 +95,7 @@ GLOBAL_LIST_INIT(slime_default_emotes, list(
 
 CAPABILITIES(/mob/living/simple_mob/slime)
 	verb_entry(/mob/living/proc/ventcrawl)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
 
 /mob/living/simple_mob/slime/Initialize(mapload)
 	update_mood()
@@ -102,10 +103,6 @@ CAPABILITIES(/mob/living/simple_mob/slime)
 	refresh_glow()
 	update_icon()
 	return ..()
-
-/mob/living/simple_mob/slime/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
 
 // Slime unique items
 TYPE_TABLE(/mob/living/simple_mob/slime, ventcrawl_get_item_whitelist, list( \

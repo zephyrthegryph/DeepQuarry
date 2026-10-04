@@ -5,6 +5,9 @@
 	var/use_map_edge_with_landmarks = TRUE // Use both landmarks and spawning from the "edge" of the map. Otherise uses landmarks over map edge.
 	var/landmark_name = "carpspawn" // Which landmark to use for spawning.
 
+CAPABILITIES(/datum/event2/event/mob_spawning)
+	ref_many(nameof(spawned_mobs))
+
 // Spawns a specific mob from the "edge" of the map, and makes them go towards the station.
 // Can also use landmarks, if desired.
 /datum/event2/event/mob_spawning/proc/spawn_mobs_in_space(mob_type, number_of_groups, min_size_of_group, max_size_of_group, dir)

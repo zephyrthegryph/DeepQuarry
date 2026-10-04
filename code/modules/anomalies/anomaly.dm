@@ -147,16 +147,36 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	use_external_power = 1
 
 /// Old attack_self (the gun self-use chain: /obj/item/gun/proc/gun_self()): pick a particle, then the gun's own self-use.
-/obj/item/gun/energy/anomaly/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback)
-	var/chosen_particle = rerun_ask(user, "k147", PROC_REF(gun_self), args, /datum/om/prompt/choice, message = "Select particle type", title = "Particle Selection", choices = ANOMALY_PARTICLE_ALL)
+/obj/item/gun/energy/anomaly/gun_self(mob/user, obj/item/held, datum/interaction/interaction, callback, chosen_particle)
 	if(isnull(chosen_particle))
+		var/original_client_ckey
+		if(istype(user, /client))
+			var/client/C = user
+			original_client_ckey = C.ckey
+			user = C.mob
+		if(!ismob(user) || QDELETED(user))
+			return TRUE
+		open_request(src, /datum/prompt/choice/research_anomaly, PROC_REF(particle_selected), answerer = user, choices = ANOMALY_PARTICLE_ALL, question = "Select particle type", title = "Particle Selection", captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey, callback_value = isdatum(callback) ? null : callback, captured_callback = isdatum(callback) ? callback : null, callback_expected = isdatum(callback))
 		return TRUE
 	if(!chosen_particle)
 		return FALSE
 
 	particle = chosen_particle
 	balloon_alert_visible("changed to [chosen_particle]")
-	return ..()
+	return ..(user, held, interaction, callback)
+
+/obj/item/gun/energy/anomaly/proc/particle_selected(datum/act/request/A)
+	var/datum/prompt/choice/research_anomaly/request = A.request
+	if(!A.answer || request.captures_gone())
+		return
+	resume_particle_selection(A)
+	SStgui.update_uis(src)
+
+/obj/item/gun/energy/anomaly/proc/resume_particle_selection(datum/act/request/A)
+	var/datum/prompt/choice/research_anomaly/request = A.request
+	var/mob/user = request.user_value()
+	var/callback = request.callback_expected ? request.captured_callback : request.callback_value
+	gun_self(user, request.captured_item, request.captured_interaction, callback, A.answer.answer_value)
 
 /obj/item/gun/energy/anomaly/consume_next_projectile()
 	var/obj/item/cell/battery = power_supply
@@ -197,8 +217,8 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 	anomaly_type = /obj/effect/anomaly/flux // Default
 
 /// Old attack_self (the assembly self-use chain: /obj/item/assembly/proc/interaction_self()).
-/obj/item/assembly/signaler/anomaly/choice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	. = ..()
+/obj/item/assembly/signaler/anomaly/choice/interaction_self(mob/user, obj/item/held, datum/interaction/interaction, selected_core)
+	. = ..(user, held, interaction)
 	if(.)
 		return TRUE
 
@@ -215,11 +235,72 @@ UI_DATA_REPLACE(/obj/item/anomaly_scanner, "merge:ui_data_obj_item_anomaly_scann
 			choices[capitalize(anom.name)] = type
 			qdel(anom) // only the type is kept; don't leak the sample object
 
-	var/choice = rerun_ask(user, "k211", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "Choose an anomaly core.", title = "Anomaly Core Selection", choices = choices)
-	if(isnull(choice))
+	if(isnull(selected_core))
+		var/original_client_ckey
+		if(istype(user, /client))
+			var/client/C = user
+			original_client_ckey = C.ckey
+			user = C.mob
+		if(!ismob(user) || QDELETED(user))
+			return TRUE
+		open_request(src, /datum/prompt/choice/research_anomaly, PROC_REF(core_selected), answerer = user, choices = choices, question = "Choose an anomaly core.", title = "Anomaly Core Selection", captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey)
 		return TRUE
+	var/choice = selected_core
 
 	if(choice && !picked)
 		anomaly_type = choices[choice]
 		picked = TRUE
 
+
+/obj/item/assembly/signaler/anomaly/choice/proc/core_selected(datum/act/request/A)
+	var/datum/prompt/choice/research_anomaly/request = A.request
+	if(!A.answer || request.captures_gone())
+		return
+	resume_core_selection(A)
+	SStgui.update_uis(src)
+
+/obj/item/assembly/signaler/anomaly/choice/proc/resume_core_selection(datum/act/request/A)
+	var/datum/prompt/choice/research_anomaly/request = A.request
+	interaction_self(request.user_value(), request.captured_item, request.captured_interaction, A.answer.answer_value)
+
+/datum/prompt/choice/research_anomaly
+	timeout = 0
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/datum/captured_callback
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+	var/callback_expected = FALSE
+	var/callback_value
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/research_anomaly)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+	ref_one(nameof(captured_callback), /datum)
+
+/datum/prompt/choice/research_anomaly/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	var/datum/callback = captured_callback
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_clear(src, nameof(captured_callback))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+	rel_set(src, nameof(captured_callback), callback)
+
+/datum/prompt/choice/research_anomaly/proc/user_value()
+	return original_client_ckey ? GLOB.directory[original_client_ckey] : answerer
+
+/datum/prompt/choice/research_anomaly/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction)) || (callback_expected && QDELETED(captured_callback)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/research_anomaly/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

@@ -1,10 +1,18 @@
 // verb for admins to set custom event
 ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Change Custom Event", "Change custom event message.", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/input = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Enter the description of the custom event. Be descriptive. To cancel the event, make this blank or hit cancel.", title = "Custom Event", default = GLOB.custom_event_msg, max_length = MAX_PAPER_MESSAGE_LEN, multiline = TRUE)
-	if(isnull(input))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
-	if(isnull(input))
+	open_request(src, /datum/prompt/text/admin_custom_event, PROC_REF(event_description_answered), answerer = answerer, default = GLOB.custom_event_msg)
+
+/datum/admin_verb/cmd_admin_change_custom_event/proc/event_description_answered(datum/act/request/context)
+	if(!context.answer)
 		return
+	apply_event_description(context)
+
+/datum/admin_verb/cmd_admin_change_custom_event/proc/apply_event_description(datum/act/request/context)
+	var/client/user = context.request.answerer.client
+	var/input = context.request.answer_value
 	if(input == "")
 		GLOB.custom_event_msg = null
 		log_and_message_admins("has cleared the custom event text.", user)
@@ -32,3 +40,13 @@ ADMIN_VERB(cmd_admin_change_custom_event, R_ADMIN|R_FUN|R_SERVER|R_EVENT, "Chang
 	to_chat(src, "<h1>[span_filter_notice(span_alert("Custom Event"))]</h1>")
 	to_chat(src, "<h2>[span_filter_notice(span_alert("A custom event is taking place. OOC Info:"))]</h2>")
 	to_chat(src, span_filter_notice(span_alert("[GLOB.custom_event_msg]<br>")))
+
+/datum/prompt/text/admin_custom_event
+	rights = R_ADMIN|R_FUN|R_SERVER|R_EVENT
+	timeout = 0
+	question = "Enter the description of the custom event. Be descriptive. To cancel the event, make this blank or hit cancel."
+	title = "Custom Event"
+	max_len = MAX_PAPER_MESSAGE_LEN
+	multiline = TRUE
+	recheck_on_open = TRUE
+

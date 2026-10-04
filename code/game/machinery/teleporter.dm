@@ -14,7 +14,7 @@
 	var/datum/tgui_module/teleport_control/teleport_control
 
 CAPABILITIES(/obj/machinery/computer/teleporter)
-	owns_one(nameof(teleport_control), starts = /datum/tgui_module/teleport_control)
+	owns_one(nameof(teleport_control), /datum/tgui_module/teleport_control, starts = /datum/tgui_module/teleport_control)
 
 /obj/machinery/computer/teleporter/Initialize(mapload)
 	id = "[rand(1000, 9999)]"

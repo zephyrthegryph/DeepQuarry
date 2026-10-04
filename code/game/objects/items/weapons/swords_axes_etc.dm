@@ -55,13 +55,15 @@
 	pickup_sound = SFX_ITEMS_PICKUP_CROWBAR
 	var/on = 0
 
-CAPABILITIES(/obj/item/melee/telebaton)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+TRACKED(/obj/item/melee/telebaton, on)
 
-/// Old attack_self.
-/obj/item/melee/telebaton/proc/interaction_self(datum/act/op/A)
+CAPABILITIES(/obj/item/melee/telebaton)
+	op("toggle", in_hand(), label("Extend or collapse baton"), then(PROC_REF(baton_toggled)))
+
+/// The native held-item activation preserves the complete equipment change.
+/obj/item/melee/telebaton/proc/baton_toggled(datum/act/op/A)
 	var/mob/user = A.actor
-	on = !on
+	set_on(!on)
 	if(on)
 		act_message(user, null, MSG_SELF(span_warning("You extend the baton.")), \
 			MSG_OTHERS(span_warning("With a flick of their wrist, %U% extends their telescopic baton.")), \
@@ -99,7 +101,7 @@ CAPABILITIES(/obj/item/melee/telebaton)
 
 		add_overlay(blood_overlay)
 
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/telebaton/attack(mob/living/target, mob/living/user, target_zone, attack_modifier)
 	if(on)

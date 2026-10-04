@@ -23,8 +23,15 @@ TRACKED(/obj/structure/bonfire, burning)
 CAPABILITIES(/obj/structure/bonfire)
 	every(2 SECONDS, then(PROC_REF(bonfire_step)), when = nameof(burning))
 
+TYPE_TABLE_DECLARE(/obj/structure/bonfire, forced_bonfire_material, null)
+
 /obj/structure/bonfire/Initialize(mapload, material_name)
-	. = ..()
+	var/forced_material = TYPE_TABLE_GET(src, forced_bonfire_material)
+	if(forced_material)
+		material_name = forced_material
+		. = ..(mapload, material_name)
+	else
+		. = ..()
 	if(!material_name)
 		material_name = MAT_WOOD
 	material = get_material_by_name("[material_name]")
@@ -34,15 +41,13 @@ CAPABILITIES(/obj/structure/bonfire)
 	color = material.icon_colour
 
 // Blue wood.
-/obj/structure/bonfire/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/structure/bonfire/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
 /obj/structure/bonfire/permanent/Initialize(mapload, material_name)
 	. = ..()
 	ignite()
 
-/obj/structure/bonfire/permanent/sifwood/Initialize(mapload, material_name)
-	. = ..(mapload, MAT_SIFWOOD)
+TYPE_TABLE(/obj/structure/bonfire/permanent/sifwood, forced_bonfire_material, MAT_SIFWOOD)
 
 // ition Start
 /obj/structure/bonfire/examine(mob/user)

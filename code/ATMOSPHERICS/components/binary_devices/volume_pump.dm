@@ -241,12 +241,13 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/volume_pump, "merge:ui_data_o
 	tgui_interact(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_power)
+CAPABILITIES(/obj/machinery/atmospherics/binary/volume_pump)
+	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+
+/obj/machinery/atmospherics/binary/volume_pump/proc/power_switched(datum/act/op/A)
 	set_use_power(!use_power)
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/binary/volume_pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/volume_pump, ui_act_set_press)

@@ -42,7 +42,9 @@
 	var/spinup_delay      = 20
 	var/spinup_counter    = 0
 
+// Segments currently down and regenerating (they leave the list when they die).
 CAPABILITIES(/obj/machinery/power/shield_generator)
+	ref_many(nameof(damaged_segments))
 	owns_many(nameof(field_segments))
 	owns_many(nameof(mode_list))
 
@@ -758,7 +760,3 @@ UI_ACT_PROC(/obj/machinery/power/shield_generator, ui_act_switch_idle)
 	power_coefficient = 0.2
 	hacked = TRUE
 
-// Segments currently down and regenerating (they leave the list when they die).
-/obj/machinery/power/shield_generator/relations()
-	. = ..()
-	. += rel_many(nameof(damaged_segments))

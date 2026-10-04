@@ -34,13 +34,24 @@
 		log_and_message_admins("has summoned \a [L] at [T.x],[T.y],[T.z].")
 		user.adjust_instability(instability_cost)
 
+/// Item spell and device selections recheck the original carried/capable policy.
+/datum/prompt/choice/technomancer_carried
+	timeout = 0
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+
 /obj/item/spell/summon/on_use_cast(mob/living/user)
 	if(length(summon_options))
-		om_ask(user, /datum/om/prompt/choice/carried_item, PROC_REF(summon_choice_made), title = "Summon", message = "Choose a creature to kidnap from somewhere!", choices = summon_options)
+		open_request(src, /datum/prompt/choice/technomancer_carried, PROC_REF(summon_choice_made), answerer = user, subject = src, title = "Summon", question = "Choose a creature to kidnap from somewhere!", choices = summon_options)
 
-/obj/item/spell/summon/proc/summon_choice_made(datum/om/prompt/choice/carried_item/ask)
-	if(ask.choice)
-		summoned_mob_type = LAZYACCESS(summon_options, ask.choice)
+/obj/item/spell/summon/proc/summon_choice_made(datum/act/request/A)
+	if(!A.answer)
+		return
+	return summon_choice_made_apply(A)
+
+/obj/item/spell/summon/proc/summon_choice_made_apply(datum/act/request/A)
+	var/datum/prompt/choice/technomancer_carried/ask = A.answer
+	if(ask.answer_value)
+		summoned_mob_type = LAZYACCESS(summon_options, ask.answer_value)
 
 // Called when a new mob is summoned, override for special behaviour.
 /obj/item/spell/summon/proc/on_summon(mob/living/summoned)

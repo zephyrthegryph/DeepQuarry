@@ -3,6 +3,9 @@
 	template = "pda_main_menu"
 	hidden = 1
 
+CAPABILITIES(/datum/data/pda/app/main_menu)
+	op("UpdateInfo", ui_act(), then(PROC_REF(ui_act_updateinfo)))
+
 /datum/data/pda/app/main_menu/update_ui(mob/user, list/data)
 	title = pda().name
 
@@ -17,12 +20,11 @@
 		notifying["\ref[P]"] = 1
 	data["notifying"] = notifying
 
-UI_ACT(/datum/data/pda/app/main_menu, "UpdateInfo", ui_act_updateinfo)
-UI_ACT_PROC(/datum/data/pda/app/main_menu, ui_act_updateinfo)
+/datum/data/pda/app/main_menu/proc/ui_act_updateinfo(datum/act/op/A)
 	pda().ownjob = pda().id.assignment
 	pda().ownrank = pda().id.rank
 	pda().name = "PDA-[pda().owner] ([pda().ownjob])"
-	return TRUE
+	return OP_OK
 
 UI_ACT(/datum/data/pda/app/main_menu, "pai", ui_act_pai, UI_ARG_NUM("option"))
 UI_ACT_PROC(/datum/data/pda/app/main_menu, ui_act_pai)
@@ -52,6 +54,20 @@ UI_ACT_PROC(/datum/data/pda/app/main_menu, ui_act_pai)
 	var/list/storedtitles = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
 	var/list/storednotes = list("","","","","","","","","","","","") // ALLOW(instance_list): d: edited in place per instance (2 writers)
 	var/notehtml = ""
+
+CAPABILITIES(/datum/data/pda/app/notekeeper)
+	op("Note1", ui_act(), then(PROC_REF(ui_act_note1)))
+	op("Note2", ui_act(), then(PROC_REF(ui_act_note2)))
+	op("Note3", ui_act(), then(PROC_REF(ui_act_note3)))
+	op("Note4", ui_act(), then(PROC_REF(ui_act_note4)))
+	op("Note5", ui_act(), then(PROC_REF(ui_act_note5)))
+	op("Note6", ui_act(), then(PROC_REF(ui_act_note6)))
+	op("Note7", ui_act(), then(PROC_REF(ui_act_note7)))
+	op("Note8", ui_act(), then(PROC_REF(ui_act_note8)))
+	op("Note9", ui_act(), then(PROC_REF(ui_act_note9)))
+	op("Note10", ui_act(), then(PROC_REF(ui_act_note10)))
+	op("Note11", ui_act(), then(PROC_REF(ui_act_note11)))
+	op("Note12", ui_act(), then(PROC_REF(ui_act_note12)))
 
 /datum/data/pda/app/notekeeper/start()
 	. = ..()
@@ -99,101 +115,89 @@ UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_print)
 	return TRUE
 // dumb way to do this, but i don't know how to easily parse this without a lot of silly code outside the switch!
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note1", ui_act_note1)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note1)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note1(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(1)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note2", ui_act_note2)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note2)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note2(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(2)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note3", ui_act_note3)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note3)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note3(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(3)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note4", ui_act_note4)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note4)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note4(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(4)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note5", ui_act_note5)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note5)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note5(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(5)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note6", ui_act_note6)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note6)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note6(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(6)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note7", ui_act_note7)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note7)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note7(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(7)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note8", ui_act_note8)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note8)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note8(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(8)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note9", ui_act_note9)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note9)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note9(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(9)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note10", ui_act_note10)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note10)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note10(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(10)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note11", ui_act_note11)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note11)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note11(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(11)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
-UI_ACT(/datum/data/pda/app/notekeeper, "Note12", ui_act_note12)
-UI_ACT_PROC(/datum/data/pda/app/notekeeper, ui_act_note12)
-	if(pda().loc == ui.user)
+/datum/data/pda/app/notekeeper/proc/ui_act_note12(datum/act/op/A)
+	if(pda().loc == A.actor)
 		changetonote(12)
 	else
-		pda().close(ui.user)
-	return TRUE
+		pda().close(A.actor)
+	return OP_OK
 
 /datum/data/pda/app/notekeeper/proc/printnote(mob/user)
 	// get active hand of person holding PDA, and print the page to the paper in it
@@ -340,6 +344,7 @@ UI_ACT_PROC(/datum/data/pda/app/news, ui_act_newsfeed)
 	var/obj/item/radio/intercom/announce
 
 CAPABILITIES(/datum/data/pda/app/timeclock)
+	op("switch-to-offduty", ui_act(), then(PROC_REF(ui_act_switch_to_offduty)))
 	owns_one(nameof(announce), /obj/item/radio/intercom)
 
 /datum/data/pda/app/timeclock/start()
@@ -388,12 +393,11 @@ UI_ACT_PROC(/datum/data/pda/app/timeclock, ui_act_switch_to_onduty_rank)
 			makeOnDuty(ui.user, params["switch-to-onduty-rank"], params["switch-to-onduty-assignment"])
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/timeclock, "switch-to-offduty", ui_act_switch_to_offduty)
-UI_ACT_PROC(/datum/data/pda/app/timeclock, ui_act_switch_to_offduty)
-	if(checkFace(ui.user))
-		if(checkCardCooldown(ui.user))
-			makeOffDuty(ui.user)
-	return TRUE
+/datum/data/pda/app/timeclock/proc/ui_act_switch_to_offduty(datum/act/op/A)
+	if(checkFace(A.actor))
+		if(checkCardCooldown(A.actor))
+			makeOffDuty(A.actor)
+	return OP_OK
 
 /datum/data/pda/app/timeclock/proc/getOpenOnDutyJobs(mob/user, department)
 	var/list/available_jobs = list()

@@ -9,7 +9,7 @@
 		return prompt_flow(src, PROC_REF(vv_topic), args)
 	if(!href_list || !check_rights_for(src, R_VAREDIT))
 		return
-	if(!trusted && !holder.CheckAdminHref(null, href_list))
+	if(!trusted && !holder.CheckAdminHref(null, href_list, mob))
 		return
 	return topic_dispatch_vv(src, href_list)
 

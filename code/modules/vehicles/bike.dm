@@ -59,15 +59,16 @@ EXTEND_INTERACTIONS(/obj/vehicle/bike, \
 
 /// A vehicle's paint colour (multitool, panel open). Re-checked on the answer: the painter is
 /// still next to it and able. Shared by the bike, the quad and its trailer.
-/datum/om/prompt/color/vehicle_paint
+/datum/prompt/color/vehicle_paint
 	title = "Paint Color"
-	message = "Please select paint color."
+	question = "Please select paint color."
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
+	timeout = 0
 
-/obj/vehicle/proc/vehicle_paint_picked(datum/om/prompt/color/vehicle_paint/ask)
-	if(!ask.picked_color)
+/obj/vehicle/proc/vehicle_paint_picked(datum/act/request/A)
+	if(!A.answer)
 		return
-	paint_color = ask.picked_color
+	paint_color = A.answer.answer_value
 	update_icon()
 
 /obj/vehicle/bike/click_ctrl(mob/user)

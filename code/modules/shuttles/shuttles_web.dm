@@ -24,6 +24,7 @@
 	var/list/obj/item/clothing/head/pilot/helmets
 
 CAPABILITIES(/datum/shuttle/autodock/web_shuttle)
+	ref_many(nameof(helmets))
 	owns_one(nameof(web_master), /datum/shuttle_web_master)
 
 /datum/shuttle/autodock/web_shuttle/New()
@@ -507,10 +508,7 @@ UI_ACT_PROC(/obj/machinery/computer/shuttle_control/web, ui_act_traverse)
 	if(aircontents)
 		return aircontents
 
-/datum/shuttle/autodock/web_shuttle/relations()
-	. = ..()
-	. += rel_many(nameof(helmets))
-/obj/machinery/computer/shuttle_control/web/relations()
-	. = ..()
-	. += rel_many(nameof(linked_doors))
-	. += rel_many(nameof(linked_sensors))
+
+CAPABILITIES(/obj/machinery/computer/shuttle_control/web)
+	ref_many(nameof(linked_doors))
+	ref_many(nameof(linked_sensors))

@@ -5,7 +5,7 @@ export type EyeBuddyData = {
 };
 
 export type EyeBuddyActions = {
-  set_channel: Record<string, never>;
   toggle_video: Record<string, never>;
   toggle_audio: Record<string, never>;
+  set_channel: Record<string, never>;
 };

@@ -18,7 +18,7 @@
 	animation.icon = 'icons/mob/mob.dmi'
 	rel_set(animation, nameof(animation.master), src)
 	flick("h2monkey", animation)
-	after(src, 48, PROC_REF(monkeyize_1), with = list(animation))
+	after(src, 4.8 SECONDS, PROC_REF(monkeyize_1), with = list(animation))
 
 
 /mob/living/carbon/human/proc/monkeyize_1(atom/movable/overlay/animation)

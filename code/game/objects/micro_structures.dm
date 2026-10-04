@@ -124,7 +124,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 
 	if(!can_enter(user))
 		if(may_choose_to_enter(user))
-			om_ask(user, /datum/om/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen))
+			open_request(src, /datum/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), answerer = user)
 			return
 		tunnel_reach(user)
 		return
@@ -141,22 +141,26 @@ REGISTRY_MEMBERSHIP(/obj/structure/micro_tunnel, REGISTRY_MICRO_TUNNELS)
 	om_task_timed(user, 10 SECONDS, target = src, receiver = src, on_done = PROC_REF(tunnel_interact_timed_done2), done_args = list(user), on_fail = PROC_REF(tunnel_interact_timed_failed2), fail_args = list(user))
 
 /// A big mob picks between squeezing into the tunnel and reaching in.
-/datum/om/prompt/choice/tunnel_enter_or_reach
+/datum/prompt/choice/tunnel_enter_or_reach
+	timeout = 0
 	title = "Enter or reach"
-	message = "Would you like to enter the tunnel, or reach inside it?"
+	question = "Would you like to enter the tunnel, or reach inside it?"
 	choices = list("Enter","Reach")
 	buttons = TRUE
 	ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE
 	/// Asked from a mouse drop: only entering does anything.
 	var/dropped = FALSE
 
-/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(datum/om/prompt/choice/tunnel_enter_or_reach/ask)
-	var/mob/living/user = ask.answerer
-	if(ask.dropped)
-		if(ask.choice == "Enter")
+/obj/structure/micro_tunnel/proc/enter_or_reach_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/tunnel_enter_or_reach/request = A.request
+	var/mob/living/user = request.answerer
+	if(request.dropped)
+		if(A.answer.answer_value == "Enter")
 			mouse_drop_climb(user)
 		return
-	if(ask.choice == "Enter")
+	if(A.answer.answer_value == "Enter")
 		tunnel_climb(user)
 	else
 		tunnel_reach(user)
@@ -288,7 +292,7 @@ DECLARE_INTERACTIONS(/obj/structure/micro_tunnel, \
 
 	if(!can_enter(user))
 		if(may_choose_to_enter(user))
-			om_ask(user, /datum/om/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), dropped = TRUE)
+			open_request(src, /datum/prompt/choice/tunnel_enter_or_reach, PROC_REF(enter_or_reach_chosen), answerer = user, dropped = TRUE)
 		return INTERACTION_HANDLED_PASS
 
 	mouse_drop_climb(M)

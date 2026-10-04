@@ -100,6 +100,5 @@ OM_FIELD(/obj/machinery/rnd, busy, FALSE, CHANGE_MACHINE_SETTINGS)
 		our_item.forceMove(drop_location())
 	. = ..()
 
-/obj/machinery/rnd/ownership()
-	. = ..()
-	. += owns(nameof(loaded_item), policy = OWN_SPILL)
+CAPABILITIES(/obj/machinery/rnd)
+	owns_one(nameof(loaded_item), on_destroy = ON_DESTROY_SPILL)

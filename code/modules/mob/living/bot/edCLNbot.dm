@@ -78,23 +78,28 @@ UI_DATA(/mob/living/bot/cleanbot/edCLN, "red_switch:num", "green_switch:num", "b
 	data["rgbpanel"] = TRUE
 	return data
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "red_switch", ui_act_red_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_red_switch)
+CAPABILITIES(/mob/living/bot/cleanbot/edCLN)
+	op("red_switch", ui_act(), then(PROC_REF(ui_act_red_switch)))
+	op("green_switch", ui_act(), then(PROC_REF(ui_act_green_switch)))
+	op("blue_switch", ui_act(), then(PROC_REF(ui_act_blue_switch)))
+
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_red_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	red_switch = !red_switch
-	to_chat(ui.user, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the red switch [red_switch ? "on" : "off"]."))
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "green_switch", ui_act_green_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_green_switch)
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_green_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	green_switch = !green_switch
-	to_chat(ui.user, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the green switch [green_switch ? "on" : "off"]."))
+	return OP_OK
 
-UI_ACT(/mob/living/bot/cleanbot/edCLN, "blue_switch", ui_act_blue_switch)
-UI_ACT_PROC(/mob/living/bot/cleanbot/edCLN, ui_act_blue_switch)
+/mob/living/bot/cleanbot/edCLN/proc/ui_act_blue_switch(datum/act/op/A)
+	add_fingerprint(A.actor)
 	blue_switch = !blue_switch
-	to_chat(ui.user, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
-	. = TRUE
+	to_chat(A.actor, span_notice("You flip the blue switch [blue_switch ? "on" : "off"]."))
+	return OP_OK
 
 /mob/living/bot/cleanbot/edCLN/on_emag(remaining_charges, mob/user, obj/item/emag_source)
 	. = ..()

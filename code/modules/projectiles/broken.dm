@@ -14,8 +14,15 @@
 	. = ..()
 	. += after_init(30 SECONDS, PROC_REF(validate_gun_type))
 
+TYPE_TABLE_DECLARE(/obj/item/broken_gun, broken_gun_forced_type, null)
+
 /obj/item/broken_gun/Initialize(mapload, path)
-	. = ..()
+	var/forced_type = TYPE_TABLE_GET(src, broken_gun_forced_type)
+	if(forced_type)
+		. = ..(mapload, forced_type)
+		path = forced_type
+	else
+		. = ..()
 	if(path)
 		if(!setup_gun(path))
 			return INITIALIZE_HINT_QDEL

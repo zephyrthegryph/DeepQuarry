@@ -32,7 +32,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/holoposter, REGISTRY_HOLOPOSTERS)
 
 /// The next random poster, 30 to 35 minutes out, on the machine clock.
 /obj/machinery/holoposter/proc/schedule_rotation()
-	om_after_replace(src, 30 MINUTES + rand(0, 5 MINUTES), PROC_REF(rotate_sprite))
+	after(src, 30 MINUTES + rand(0, 5 MINUTES), PROC_REF(rotate_sprite), key = "holoposter_rotation")
 
 /obj/machinery/holoposter/proc/rotate_sprite()
 	if(icon_forced)
@@ -104,7 +104,7 @@ DECLARE_APPEARANCE_PROC(/obj/machinery/holoposter, TYPE_PROC_REF(/atom, appearan
 		set_rand_sprite()
 		return ITEM_INTERACT_SUCCESS
 	icon_forced = TRUE
-	om_cancel_calls(src, PROC_REF(rotate_sprite))
+	cancel_after(src, "holoposter_rotation")
 	atom_fix()
 	update_icon()
 	return ITEM_INTERACT_SUCCESS

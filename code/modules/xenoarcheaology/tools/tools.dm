@@ -47,13 +47,11 @@ MATERIAL_MIX(/obj/item/ano_scanner, list(MAT_STEEL = 10000,MAT_GLASS = 5000))
 	var/repopulation_delay = 600 //Anti spam.
 
 CAPABILITIES(/obj/item/ano_scanner)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("scan_anomalies", in_hand(), then(PROC_REF(scan_requested)))
 
-/// Old attack_self.
-/obj/item/ano_scanner/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	interact(user)
-	return TRUE
+/obj/item/ano_scanner/proc/scan_requested(datum/act/op/A)
+	interact(A.actor)
+	return OP_OK
 
 /obj/item/ano_scanner/interact(mob/user)
 	if(ELAPSED(src, last_scan_time, CLOCK_WORLD) >= scan_delay)
@@ -116,7 +114,7 @@ MATERIAL_MIX(/obj/item/depth_scanner, list(MAT_STEEL = 1000,MAT_GLASS = 1000))
 
 CAPABILITIES(/obj/item/depth_scanner)
 	owns_many(nameof(positive_locations))
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("view_depth_scans", in_hand(), opens_ui())
 
 /datum/depth_scan
 	var/time = ""
@@ -164,12 +162,6 @@ CAPABILITIES(/obj/item/depth_scanner)
 			rel_add(src, nameof(positive_locations), D)
 
 			to_chat(user, span_notice("[icon2html(src, user.client)] [src] pings [pick("madly","wildly","excitedly","crazily")]!"))
-
-/// Old attack_self.
-/obj/item/depth_scanner/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-	return TRUE
 
 DECLARE_UI_STATE(/obj/item/depth_scanner, GLOB.tgui_deep_inventory_state)
 
@@ -352,29 +344,44 @@ MATERIAL_MIX(/obj/item/xenoarch_multi_tool, list(MAT_STEEL = 10000,MAT_GLASS = 5
 CAPABILITIES(/obj/item/xenoarch_multi_tool)
 	owns_one(nameof(anomaly_scanner), starts = /obj/item/ano_scanner)
 	owns_one(nameof(depth_scanner), starts = /obj/item/depth_scanner)
+	held_verb(/obj/item/xenoarch_multi_tool/proc/swap_functionality, SLOT_ANY_CARRIED)
+	held_verb(/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies, SLOT_ANY_CARRIED)
+	op("view_depth_scans", in_hand(), then(PROC_REF(depth_requested)))
+	op("swap_functionality", menu(), label("Swap Functionality"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(functionality_swapped)))
+	op("scan_anomalies", menu(), label("Scan for Anomalies"), needs(carried(), req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))), then(PROC_REF(anomalies_requested)))
 
-DECLARE_INTERACTIONS(/obj/item/xenoarch_multi_tool, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Swap Functionality", PROC_REF(xenoarch_multi_tool_verb_swap), REQ_IN_INVENTORY), \
-	INTERACT_VERB("Scan for Anomalies", PROC_REF(xenoarch_multi_tool_verb_scan), REQ_IN_INVENTORY), \
-)
+TRACKED(/obj/item/xenoarch_multi_tool, mode)
 
-/// Old attack_self.
-/obj/item/xenoarch_multi_tool/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	depth_scanner.tgui_interact(user)
-	return TRUE
+/obj/item/xenoarch_multi_tool/proc/swap_functionality()
+	set name = "Swap Functionality"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "swap_functionality", null, ORIGIN_VERB)
 
-/// Old Swap Functionality verb: Swap between the scanning and measuring functionality..
-/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_swap(mob/user, obj/item/held, datum/interaction/interaction)
-	mode = !mode
+/obj/item/xenoarch_multi_tool/proc/scan_for_anomalies()
+	set name = "Scan for Anomalies"
+	set category = VERB_CAT_OBJECT
+	set src in usr
+	perform_op(usr, src, "scan_anomalies", null, ORIGIN_VERB)
+
+/obj/item/xenoarch_multi_tool/proc/operator_living(datum/act/op/A)
+	return isliving(A.actor)
+
+/obj/item/xenoarch_multi_tool/proc/depth_requested(datum/act/op/A)
+	depth_scanner.tgui_interact(A.actor)
+	return OP_OK
+
+/obj/item/xenoarch_multi_tool/proc/functionality_swapped(datum/act/op/A)
+	set_mode(!mode)
 	if(mode)
-		to_chat(user, "The device will now scan for artifacts.")
+		to_chat(A.actor, "The device will now scan for artifacts.")
 	else
-		to_chat(user, "The device will now measure depth dug.")
+		to_chat(A.actor, "The device will now measure depth dug.")
+	return OP_OK
 
-/// Old Scan for Anomalies verb: Scan for artifacts and anomalies within your vicinity.
-/obj/item/xenoarch_multi_tool/proc/xenoarch_multi_tool_verb_scan(mob/user, obj/item/held, datum/interaction/interaction)
-	anomaly_scanner.interact(user)
+/obj/item/xenoarch_multi_tool/proc/anomalies_requested(datum/act/op/A)
+	anomaly_scanner.interact(A.actor)
+	return OP_OK
 
 
 /// Accessor for the target_radio var.

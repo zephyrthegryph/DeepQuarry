@@ -224,7 +224,14 @@
 	TEST_ASSERT_EQUAL(second, first, "an identical overlay must come from the cache")
 	thing.remove_vis_overlay(first)
 	TEST_ASSERT(!(first in thing.vis_contents), "remove_vis_overlay() left the overlay in the vis contents")
-	TEST_ASSERT_EQUAL(SSvis_overlays.expire_overlays(0), STEP_DONE, "an expiry sweep must finish")
+	// Called outside a kernel tick, the sweep may find the budget already spent and yield after each
+	// item (KERNEL_OVER_BUDGET); it resumes where it left off, so it must finish within one call per entry.
+	var/result = SSvis_overlays.expire_overlays(0)
+	var/calls = 1
+	while(result == STEP_YIELD && calls < 100000)
+		result = SSvis_overlays.expire_overlays(0)
+		calls++
+	TEST_ASSERT_EQUAL(result, STEP_DONE, "an expiry sweep must finish (after [calls] call(s))")
 
 /// Turf cascade: parked until start_cascade(), which wakes it; only one cascade at a time; stopping resets it.
 /datum/unit_test/dq_system_turf_cascade

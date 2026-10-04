@@ -59,28 +59,66 @@
 	religion_prompts(H, B, I)
 
 /datum/job/chaplain/proc/religion_prompts(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I)
-	om_flow_start(/datum/om/flow/chaplain_religion, H, null, bible = B, id = I)
+	if(QDELETED(H) || (!isnull(B) && QDELETED(B)) || (!isnull(I) && QDELETED(I)))
+		return
+	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(religion_entered), answerer = H, bible = B, id = I, question = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", default = "Unitarianism", title = "Name change")
 
 /// The chaplain's religion, deity and title, asked in turn, then applied to their bible and ID.
-/datum/om/flow/chaplain_religion
+/datum/prompt/text/chaplain_religion
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	timeout = 0
 	var/obj/item/storage/bible/bible
 	var/obj/item/card/id/id
+	var/bible_required = FALSE
+	var/id_required = FALSE
 	var/religion
 	var/deity
 
-/datum/om/flow/chaplain_religion/start()
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(religion_entered), message = "You are the crew services officer. Would you like to change your religion? Default is Unitarianism", default = "Unitarianism", title = "Name change", max_length = MAX_NAME_LEN)
+CAPABILITIES(/datum/prompt/text/chaplain_religion)
+	ref_one(nameof(bible), /obj/item/storage/bible)
+	ref_one(nameof(id), /obj/item/card/id)
 
-/datum/om/flow/chaplain_religion/proc/religion_entered(datum/om/prompt/text/ask)
-	religion = ask.text
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(deity_entered), message = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change", max_length = MAX_NAME_LEN)
+/datum/prompt/text/chaplain_religion/prepare(datum/act/A)
+	..()
+	var/obj/item/storage/bible/captured_bible = bible
+	var/obj/item/card/id/captured_id = id
+	bible_required = !isnull(captured_bible)
+	id_required = !isnull(captured_id)
+	rel_clear(src, nameof(bible))
+	rel_clear(src, nameof(id))
+	rel_set(src, nameof(bible), captured_bible)
+	rel_set(src, nameof(id), captured_id)
 
-/datum/om/flow/chaplain_religion/proc/deity_entered(datum/om/prompt/text/ask)
-	deity = ask.text
-	om_ask(actor, /datum/om/prompt/text, PROC_REF(title_entered), title = "Title Change", message = "Would you like to change your title?", default = id.assignment, max_length = MAX_NAME_LEN)
+/datum/prompt/text/chaplain_religion/recheck_extra()
+	return (bible_required && QDELETED(bible)) || (id_required && QDELETED(id)) ? "gone" : null
 
-/datum/om/flow/chaplain_religion/proc/title_entered(datum/om/prompt/text/ask)
-	chaplain_religion_chosen(actor, bible, id, religion, deity, ask.text)
+/datum/job/chaplain/proc/religion_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/chaplain_religion/ask = A.answer
+	var/mob/living/carbon/human/H = ask.answerer
+	if(!istype(H) || QDELETED(H))
+		return
+	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(deity_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.answer_value, question = "Would you like to change your deity? Default is Hashem", default = "Hashem", title = "Name change")
+
+/datum/job/chaplain/proc/deity_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/chaplain_religion/ask = A.answer
+	var/mob/living/carbon/human/H = ask.answerer
+	if(!istype(H) || QDELETED(H))
+		return
+	open_request(src, /datum/prompt/text/chaplain_religion, PROC_REF(title_entered), answerer = H, bible = ask.bible, id = ask.id, religion = ask.religion, deity = ask.answer_value, title = "Title Change", question = "Would you like to change your title?", default = ask.id.assignment)
+
+/datum/job/chaplain/proc/title_entered(datum/act/request/A)
+	if(!A.answer || isnull(A.answer.answer_value))
+		return
+	var/datum/prompt/text/chaplain_religion/ask = A.answer
+	var/mob/living/carbon/human/H = ask.answerer
+	if(!istype(H) || QDELETED(H))
+		return
+	chaplain_religion_chosen(H, ask.bible, ask.id, ask.religion, ask.deity, ask.answer_value)
 
 /proc/chaplain_religion_chosen(mob/living/carbon/human/H, obj/item/storage/bible/B, obj/item/card/id/I, new_religion, new_deity, new_title)
 	var/religion_name = "Unitarianism"

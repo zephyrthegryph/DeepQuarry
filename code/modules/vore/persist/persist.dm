@@ -272,6 +272,6 @@
 
 	// If they still have the same character loaded, invalidate the NIF cache so the next read pulls from disk.
 	if(H?.client?.prefs?.default_slot == slot)
-		H.client.prefs.value_cache -= /datum/preference/nif_path
-		H.client.prefs.value_cache -= /datum/preference/numeric/nif_durability
-		H.client.prefs.value_cache -= /datum/preference/nif_savedata
+		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/nif_path)
+		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/numeric/nif_durability)
+		LAZYREMOVE(H.client.prefs.value_cache, /datum/preference/nif_savedata)

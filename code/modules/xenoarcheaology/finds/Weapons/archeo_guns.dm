@@ -14,13 +14,12 @@
 	return list(initial(P.hud_state), initial(P.hud_state_empty))
 
 /obj/item/gun/projectile/artifact/unload_ammo(mob/user, allow_dump=0) //No taking the bullets out!
-	if(loaded.len)
-		var/obj/item/ammo_casing/C = loaded[loaded.len]
-		loaded.len--
+	if(length(loaded))
+		var/obj/item/ammo_casing/C = own_take_member(src, nameof(loaded), loaded[length(loaded)])
 		act_message(user, src, MSG_SELF(span_notice("You remove \a casing from %T%, the casing fizzling in the air before evaporating into dust")), \
 			MSG_OTHERS("%U% removes \a casing from %T%, the casing fizzling in the air before evaporating into dust."))
 		C.moveToNullspace() //Into the void!
-		qdel(C) //And begone!
+		consume(C) //And begone!
 		play_sfx(src, SFX_WEAPONS_EMPTY)
 		new /obj/effect/effect/sparks(src)
 		user.hud_used.update_ammo_hud(user, src)

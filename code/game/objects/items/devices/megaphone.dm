@@ -64,7 +64,7 @@ TYPE_TABLE_DECLARE(/obj/item/megaphone, megaphone_insults, list("FUCK EVERYONE!"
 	if(!can_broadcast(user))
 		return
 
-	COOLDOWN_START(src, spamcheck, 20)
+	COOLDOWN_START(src, spamcheck, 2 SECONDS)
 	do_broadcast(user, message)
 
 DECLARE_EMAG(/obj/item/megaphone, PROC_REF(on_emag), null, null)
@@ -111,25 +111,31 @@ TYPE_TABLE(/obj/item/megaphone/super, megaphone_insults, list("HONK?!", "HONK!",
 		return 1
 
 /obj/item/megaphone/super/proc/adjust_volume(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(volume_chosen), choices = volume_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(volume_chosen), answerer = user, choices = volume_options, title = "Set Volume", question = "Set Volume", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/megaphone/super/proc/volume_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice)
-		broadcast_size = ask.choice
+/obj/item/megaphone/super/proc/volume_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		broadcast_size = A.answer.answer_value
 
 /obj/item/megaphone/super/proc/adjust_font(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(font_chosen), choices = font_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(font_chosen), answerer = user, choices = font_options, title = "Set Volume", question = "Set Volume", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/megaphone/super/proc/font_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice)
-		broadcast_font = ask.choice
+/obj/item/megaphone/super/proc/font_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		broadcast_font = A.answer.answer_value
 
 /obj/item/megaphone/super/proc/adjust_color(mob/living/user)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(color_chosen), choices = color_options, title = "Set Volume", message = "Set Volume", requires = PROMPT_ADJACENT)
+	open_request(src, /datum/prompt/choice, PROC_REF(color_chosen), answerer = user, choices = color_options, title = "Set Volume", question = "Set Volume", ask_flags = ASK_ADJACENT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/megaphone/super/proc/color_chosen(datum/om/prompt/choice/ask)
-	if(ask.choice)
-		broadcast_color = ask.choice
+/obj/item/megaphone/super/proc/color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	if(A.answer.answer_value)
+		broadcast_color = A.answer.answer_value
 
 /obj/item/megaphone/super/do_broadcast(mob/living/user, message)
 	if(emagged)

@@ -108,10 +108,10 @@
 				clong.ex_act(2)
 
 		else
-			qdel(src)
+			consume(src)
 
 	if(despawn_loc() != null && (src.x == despawn_loc().x && src.y == despawn_loc().y))
-		qdel(src)
+		consume(src)
 		return
 
 	if(prob(10) && !has_hunted_unlucky)

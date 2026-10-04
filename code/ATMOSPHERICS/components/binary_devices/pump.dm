@@ -178,10 +178,10 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 		set_target_pressure(between(0, text2num(signal.data["set_output_pressure"]), ONE_ATMOSPHERE*50))
 
 	if(signal.data["status"])
-		after(src, 2, PROC_REF(broadcast_status))
+		after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	after(src, 2, PROC_REF(broadcast_status))
+	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 	update_icon()
 	return
 
@@ -218,13 +218,14 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/pump, "merge:ui_data_obj_mach
 	add_fingerprint(user)
 	return TRUE
 
-UI_ACT(/obj/machinery/atmospherics/binary/pump, "power", ui_act_power)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_power)
+CAPABILITIES(/obj/machinery/atmospherics/binary/pump)
+	op("power", ui_act("power"), then(PROC_REF(power_switched)))
+
+/obj/machinery/atmospherics/binary/pump/proc/power_switched(datum/act/op/A)
 	set_use_power(!use_power)
 	set_on(!!use_power)
-	. = TRUE
-	add_fingerprint(ui.user)
-	update_icon()
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/binary/pump, "set_press", ui_act_set_press, UI_ARG_TEXT("press"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/pump, ui_act_set_press)

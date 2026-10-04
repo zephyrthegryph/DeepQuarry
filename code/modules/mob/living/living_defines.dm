@@ -15,10 +15,6 @@
 	var/last_special = 0 //Used by the resist verb, likely used to prevent players from bypassing next_move by logging in/out.
 	var/base_attack_cooldown = DEFAULT_ATTACK_COOLDOWN
 
-	var/t_phoron = null
-	var/t_oxygen = null
-	var/t_sl_gas = null
-	var/t_n2 = null
 
 	var/now_pushing = null
 	var/mob_bump_flag = 0
@@ -30,7 +26,6 @@
 	var/tod = null // Time of death
 	/// TRUE only inside return_from_death(): the one place set_stat() may leave DEAD.
 	var/tmp/revival_in_progress = FALSE
-	var/update_slimes = 1
 
 	/// Helper vars for quick access to firestacks, these should be updated every time firestacks are adjusted
 	var/on_fire = 0
@@ -52,8 +47,6 @@
 	var/last_glow_color = null
 
 	// Edge-detection cache for status alerts so throw_alert/clear_alert only fire on state transition.
-	var/alert_state_drugged = FALSE
-	var/alert_state_confused = FALSE
 
 	var/see_invisible_default = SEE_INVISIBLE_LIVING
 
@@ -133,10 +126,7 @@
 	/// Lazy list (null when empty) of custom cold-discomfort messages. Null-safe reads only.
 	var/list/custom_cold
 
-//YW Add Start
 /mob
-	var/wingdings = 0
-//Yw Add End
 	var/can_climb = FALSE //Checked by turfs when using climb_wall(). Defined here for silicons and simple mobs
 	var/climbing_delay = 1.5 //By default, mobs climb at quarter speed. To be overriden by specific simple mobs or species speed
 	var/eggs = 0

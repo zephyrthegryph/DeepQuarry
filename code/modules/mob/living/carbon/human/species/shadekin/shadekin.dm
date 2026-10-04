@@ -107,7 +107,7 @@
 	H.dq_do_clear_dark_maws(H, null, null) //clear dark maws on death or similar
 	var/datum/shadekin/SK = H.get_shadekin_state()
 	if(!special_handling || (SK && SK.no_retreat))
-		after(H, 1, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
+		after(H, 0.1 SECONDS, TYPE_PROC_REF(/mob/living/carbon/human, species_death_vanish))
 	else
 		if(!SK)
 			return

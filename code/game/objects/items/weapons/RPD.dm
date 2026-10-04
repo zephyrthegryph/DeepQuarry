@@ -52,14 +52,12 @@ MATERIAL_MIX(/obj/item/pipe_dispenser, list(MAT_STEEL = 50000, MAT_GLASS = 25000
 
 // RPDs have wrenches inside of them, so that they can wrench down spawned pipes without being used as superior wrenches themselves.
 CAPABILITIES(/obj/item/pipe_dispenser)
-	owns_one(nameof(tool), starts = /obj/item/tool/wrench/cyborg)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	owns_one(nameof(tool), /obj/item/tool/wrench/cyborg, starts = /obj/item/tool/wrench/cyborg)
+	op("controls", in_hand(), label("Open pipe controls"), then(PROC_REF(rpd_controls_opened)))
 
-/// Old attack_self.
-/obj/item/pipe_dispenser/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	tgui_interact(user)
-	return TRUE
+/obj/item/pipe_dispenser/proc/rpd_controls_opened(datum/act/op/A)
+	tgui_interact(A.actor)
+	return OP_OK
 
 /obj/item/pipe_dispenser/ui_assets(mob/user)
 	return list(
@@ -318,7 +316,7 @@ UI_ACT_PROC(/obj/item/pipe_dispenser, ui_act_mode)
 
 	if(!C.can_place())
 		to_chat(user, span_warning("There's not enough room to build that here!"))
-		qdel(C)
+		consume(C)
 		return
 
 	activate()

@@ -114,6 +114,7 @@
 	/// filter curve EQ w/ telephone preset
 
 CAPABILITIES(/obj/machinery/maint_recycler)
+	owns_one(nameof(inserted_item), on_destroy = ON_DESTROY_SPILL)
 	owns_one(nameof(hatch), /obj/effect/overlay/recycler)
 	owns_one(nameof(item_overlay), /obj/effect/overlay/recycler)
 	owns_one(nameof(monitor_screen), /obj/effect/overlay/recycler)
@@ -121,9 +122,6 @@ CAPABILITIES(/obj/machinery/maint_recycler)
 /obj/machinery/maint_recycler/dismantle()
 	return FALSE //we don't want something as important as this to be able to be disassembled. it's a scene tool, technically.
 
-/obj/machinery/maint_recycler/ownership()
-	. = ..()
-	. += owns(nameof(inserted_item), policy = OWN_SPILL)
 
 /obj/machinery/maint_recycler/Initialize(mapload)
 	. = ..()

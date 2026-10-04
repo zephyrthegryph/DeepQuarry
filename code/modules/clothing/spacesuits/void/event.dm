@@ -370,9 +370,25 @@ EXTEND_INTERACTIONS(/obj/item/clothing/head/helmet/space/void/aether, \
 
 /// Old verb "Helmet Color".
 /obj/item/clothing/head/helmet/space/void/aether/proc/aether_select_color_verb(mob/user, obj/item/held, datum/interaction/interaction)
-	var/choice = rerun_ask(user, "a1", PROC_REF(aether_select_color_verb), list(user), /datum/om/prompt/choice, message = "Select a new color:", title = "[src] Color", choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green"))
-	if(isnull(choice))
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
 		return
+	open_request(src, /datum/prompt/choice/aether_helmet_color, PROC_REF(aether_color_chosen), answerer = user, title = "[src] Color", original_client_ckey = original_client_ckey)
+
+/obj/item/clothing/head/helmet/space/void/aether/proc/aether_color_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_aether_color(A)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/head/helmet/space/void/aether/proc/apply_aether_color(datum/act/request/A)
+	var/datum/prompt/choice/aether_helmet_color/request = A.request
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	var/choice = A.answer.answer_value
 	if(!choice)
 		return
 	icon_state = "moebiushelm_[choice]"
@@ -436,3 +452,17 @@ TYPE_TABLE(/obj/item/clothing/suit/space/void/salvagecorp_shipbreaker, suit_stor
 	icon_state = "breaker_helmet"
 
 	armor_spec = "melee=50;bullet=15;laser=15;energy=25;bomb=45;bio=100;rad=80;cold=60"
+
+/datum/prompt/choice/aether_helmet_color
+	question = "Select a new color:"
+	timeout = 0
+	choices = list("White", "Blue", "Purple", "Yellow", "Red", "Green")
+	var/original_client_ckey
+
+/datum/prompt/choice/aether_helmet_color/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(original_client_ckey && !GLOB.directory[original_client_ckey])
+		return "gone"
+	return null

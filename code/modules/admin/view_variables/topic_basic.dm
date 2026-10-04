@@ -65,7 +65,7 @@ VV_ADMIN_TOPIC_ACTION(VV_HK_CALLPROC, PROC_REF(vv_topic_call_proc), VV_BASIC_TAR
 	message_admins("[key_name_admin(user)] Showed [key_name_admin(C)] a <a href='byond://?_src_=vars;[HrefToken(TRUE)];Vars=[REF(target)]'>VV window</a>")
 	log_admin("Admin [key_name(user)] Showed [key_name(C)] a VV window of a [target]")
 	to_chat(C, "[holder.fakekey ? "an Administrator" : "[key]"] has granted you access to view a View Variables window", confidential = TRUE)
-	C.debug_variables(target)
+	C.debug_variables(target, user)
 	return TRUE
 
 /client/proc/vv_topic_delete(mob/user, list/args)

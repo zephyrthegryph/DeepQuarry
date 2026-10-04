@@ -3,7 +3,7 @@
 relative_priority 27
 unordered_clash:/obj/item/reagent_containers/glass 1
 unordered_clash:/obj/machinery/door/airlock 9
-unordered_clash:/obj/machinery/vending 14
 unordered_clash:/obj/machinery/door/blast 1
 unordered_clash:/obj/machinery/recharger 2
+unordered_clash:/obj/machinery/vending 14
 unordered_clash:/obj/structure/dirtybed 2

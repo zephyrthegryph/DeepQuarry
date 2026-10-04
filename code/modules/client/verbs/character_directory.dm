@@ -280,7 +280,7 @@ UI_ACT(/datum/character_directory, "setEventTag", ui_act_directory_setting, UI_A
 UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 	return check_for_mind_or_prefs(user, action, params["overwrite_prefs"])
 
-/datum/character_directory/proc/check_for_mind_or_prefs(mob/user, action, overwrite_prefs)
+/datum/character_directory/proc/check_for_mind_or_prefs(mob/user, action, overwrite_prefs, selected_value = null)
 	if (!user.client)
 		return
 	var/can_set_prefs = overwrite_prefs && !!user.client.prefs
@@ -291,14 +291,20 @@ UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 		return
 	switch(action)
 		if ("setTag")
-			var/list/new_tag = rerun_ask(user, "k292", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/choice, message = "Pick a new Vore tag for the character directory", title = "Character Tag", choices = GLOB.char_directory_tags)
+			if(isnull(selected_value))
+				open_directory_choice(user, action, overwrite_prefs, "Pick a new Vore tag for the character directory", "Character Tag", GLOB.char_directory_tags, null)
+				return
+			var/list/new_tag = selected_value
 			if(isnull(new_tag))
 				return
 			if(!new_tag)
 				return
 			return set_for_mind_or_prefs(user, action, new_tag, can_set_prefs, can_set_mind)
 		if ("setErpTag")
-			var/list/new_erptag = rerun_ask(user, "k297", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/choice, message = "Pick a new ERP tag for the character directory", title = "Character ERP Tag", choices = GLOB.char_directory_erptags)
+			if(isnull(selected_value))
+				open_directory_choice(user, action, overwrite_prefs, "Pick a new ERP tag for the character directory", "Character ERP Tag", GLOB.char_directory_erptags, null)
+				return
+			var/list/new_erptag = selected_value
 			if(isnull(new_erptag))
 				return
 			if(!new_erptag)
@@ -314,21 +320,30 @@ UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 			return set_for_mind_or_prefs(user, action, !visible, can_set_prefs, can_set_mind)
 		if ("editAd")
 			var/current_ad = (can_set_mind ? user.mind.directory_ad : null) || (can_set_prefs ? user.client.prefs.read_preference(/datum/preference/text/human/directory_ad) : null) // directory_ad migrated
-			var/new_ad = rerun_ask(user, "k311", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/text, message = "Change your character ad", title = "Character Ad", default = current_ad, multiline = TRUE)
+			if(isnull(selected_value))
+				open_request(src, /datum/prompt/text/directory_ad, PROC_REF(directory_ad_entered), answerer = user, default = current_ad, directory_action = action, overwrite_prefs = overwrite_prefs)
+				return
+			var/new_ad = selected_value
 			if(isnull(new_ad))
 				return
 			if(isnull(new_ad))
 				return
 			return set_for_mind_or_prefs(user, action, new_ad, can_set_prefs, can_set_mind)
 		if("setGenderTag")
-			var/list/new_gendertag = rerun_ask(user, "k316", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/choice, message = "Pick a new Gender tag for the character directory. This is YOUR gender, not what you prefer.", title = "Character Gender Tag", choices = GLOB.char_directory_gendertags)
+			if(isnull(selected_value))
+				open_directory_choice(user, action, overwrite_prefs, "Pick a new Gender tag for the character directory. This is YOUR gender, not what you prefer.", "Character Gender Tag", GLOB.char_directory_gendertags, null)
+				return
+			var/list/new_gendertag = selected_value
 			if(isnull(new_gendertag))
 				return
 			if(!new_gendertag)
 				return
 			return set_for_mind_or_prefs(user, action, new_gendertag, can_set_prefs, can_set_mind)
 		if("setSexualityTag")
-			var/list/new_sexualitytag = rerun_ask(user, "k321", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/choice, message = "Pick a new Sexuality/Orientation tag for the character directory", title = "Character Sexuality/Orientation Tag", choices = GLOB.char_directory_sexualitytags)
+			if(isnull(selected_value))
+				open_directory_choice(user, action, overwrite_prefs, "Pick a new Sexuality/Orientation tag for the character directory", "Character Sexuality/Orientation Tag", GLOB.char_directory_sexualitytags, null)
+				return
+			var/list/new_sexualitytag = selected_value
 			if(isnull(new_sexualitytag))
 				return
 			if(!new_sexualitytag)
@@ -338,7 +353,10 @@ UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 			var/list/names_list = list()
 			for(var/C in GLOB.vantag_choices_list)
 				names_list[GLOB.vantag_choices_list[C]] = C
-			var/_answer_k329 = rerun_ask(user, "k329", PROC_REF(check_for_mind_or_prefs), args, /datum/om/prompt/choice, message = "Pick your preference for event involvement", title = "Event Preference Tag", choices = names_list, default = user?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference))
+			if(isnull(selected_value))
+				open_directory_choice(user, action, overwrite_prefs, "Pick your preference for event involvement", "Event Preference Tag", names_list, user?.client?.prefs?.read_preference(/datum/preference/choiced/human/vantag_preference))
+				return
+			var/_answer_k329 = selected_value
 			if(isnull(_answer_k329))
 				return
 			var/list/new_eventtag = _answer_k329 // migrated pref
@@ -395,3 +413,57 @@ UI_ACT_PROC(/datum/character_directory, ui_act_directory_setting)
 				user.client.prefs.update_preference_by_type(/datum/preference/choiced/human/directory_sexualitytag, new_value)
 			if (can_set_mind)
 				user.mind.directory_sexualitytag = new_value
+
+/datum/character_directory/proc/open_directory_choice(mob/user, action, overwrite_prefs, question, title, list/choices, default_value)
+	open_request(src, /datum/prompt/choice/directory_setting, PROC_REF(directory_choice_entered), answerer = user, directory_action = action, overwrite_prefs = overwrite_prefs, question = question, title = title, choices = choices, default = default_value)
+
+/datum/character_directory/proc/directory_choice_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/directory_setting/request = A.request
+	finish_directory_answer(A, request.directory_action, request.overwrite_prefs)
+
+/datum/character_directory/proc/directory_ad_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/text/directory_ad/request = A.request
+	finish_directory_answer(A, request.directory_action, request.overwrite_prefs)
+
+/datum/character_directory/proc/finish_directory_answer(datum/act/request/A, action, overwrite_prefs)
+	apply_directory_answer(A.request.answerer, action, overwrite_prefs, A.answer.answer_value)
+	SStgui.update_uis(src)
+
+/datum/character_directory/proc/apply_directory_answer(mob/user, action, overwrite_prefs, selected_value)
+	return check_for_mind_or_prefs(user, action, overwrite_prefs, selected_value)
+
+/datum/prompt/choice/directory_setting
+	timeout = 0
+	var/directory_action
+	var/overwrite_prefs
+
+/datum/prompt/text/directory_ad
+	question = "Change your character ad"
+	title = "Character Ad"
+	timeout = 0
+	max_len = MAX_MESSAGE_LEN
+	multiline = TRUE
+	encode = TRUE
+	name_text = FALSE
+	var/directory_action
+	var/overwrite_prefs
+
+/datum/prompt/choice/directory_setting/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(answerer))
+		return "gone"
+	return null
+
+/datum/prompt/text/directory_ad/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(QDELETED(answerer))
+		return "gone"
+	return null

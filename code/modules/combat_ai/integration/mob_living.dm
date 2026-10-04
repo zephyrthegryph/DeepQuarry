@@ -19,6 +19,9 @@
 	var/use_modern_ai = FALSE
 
 CAPABILITIES(/mob/living)
+	ref_many(nameof(shared_soul_links))
+	// Equipped or pump-supplied breathing tank; custody belongs to its actual slot.
+	ref_one(nameof(internal))
 	owns_one(nameof(ai_brain), /datum/ai_brain)
 	owns_one(nameof(aiming), /obj/aiming_overlay)
 	owns_one(nameof(body), /datum/body)
@@ -105,4 +108,3 @@ TYPE_TABLE_DECLARE(/mob/living, get_ai_target_selectors, null)
 		rel_set(src, nameof(say_list), new say_list_type(src))
 	if(!ai_brain)
 		initialize_ai_brain()
-

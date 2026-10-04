@@ -55,11 +55,7 @@ Pipelines + Other Objects -> Pipe network
 TRACKED(/obj/machinery/atmospherics, icon_connect_type)
 TRACKED(/obj/machinery/atmospherics, pipe_color)
 
-/obj/machinery/atmospherics/relations()
-	. = ..()
-	. += rel_one(nameof(node1))
-	. += rel_one(nameof(node2))
-	. += rel_many(nameof(network_memberships), back = nameof(/datum/pipe_network::normal_members))
+
 
 /// Phase 1 (unbind): the pipe topology leaves Rust, every node neighbour
 /// (get_neighbor_nodes_for_init(), each type's topology declaration)

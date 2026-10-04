@@ -443,7 +443,7 @@
 	for(var/turf/T in affected)
 		for(var/obj/structure/flora/AM in contents_of(T))
 			++deleted_atoms
-			qdel(AM)
+			consume(AM)
 	admin_notice(span_danger("Annihilated [deleted_atoms] plants."), R_DEBUG)
 
 /// A deployed shelter finished loading around (x, y, z): its lighting is built.

@@ -119,9 +119,10 @@
 	emote_see = list("sniffs","looks around", "rubs its hands")
 	emote_hear = list("chitters", "clicks")
 
-/mob/living/simple_mob/animal/sif/sakimm/ownership()
-	. = ..()
-	. += owns(nameof(hat), policy = OWN_SPILL)
+CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
+	owns_one(nameof(hat), on_destroy = ON_DESTROY_SPILL)
+	verb_entry(/mob/living/proc/ventcrawl)
+	verb_entry(/mob/living/proc/hide)
 
 DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /mob/living/simple_mob/animal/sif/sakimm/appearance_overlays()
@@ -133,10 +134,6 @@ DECLARE_APPEARANCE_PROC(/mob/living/simple_mob/animal/sif/sakimm, TYPE_PROC_REF(
 		I.pixel_y = -15 // Sakimm are tiny!
 		I.appearance_flags = RESET_COLOR
 		. += I
-
-CAPABILITIES(/mob/living/simple_mob/animal/sif/sakimm)
-	verb_entry(/mob/living/proc/ventcrawl)
-	verb_entry(/mob/living/proc/hide)
 
 /mob/living/simple_mob/animal/sif/sakimm/Initialize(mapload)
 	. = ..()

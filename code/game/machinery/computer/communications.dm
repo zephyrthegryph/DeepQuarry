@@ -13,7 +13,7 @@
 	var/datum/tgui_module/communications/communications
 
 CAPABILITIES(/obj/machinery/computer/communications)
-	owns_one(nameof(communications), starts = /datum/tgui_module/communications)
+	owns_one(nameof(communications), /datum/tgui_module/communications, starts = /datum/tgui_module/communications)
 
 DECLARE_EMAG(/obj/machinery/computer/communications, PROC_REF(on_emag), null, null)
 /obj/machinery/computer/communications/proc/on_emag(remaining_charges, mob/user, obj/item/emag_source)

@@ -91,7 +91,7 @@ DECLARE_PERIODIC(/obj/effect/decal/cleanable/greenglow, PERIODIC_SLOW)
 				if(!(alreadythere.flags & ATOM_INITIALIZED))
 					delete_me = TRUE
 				else
-					qdel(alreadythere)
+					consume(alreadythere)
 				continue
 			alreadyfound = TRUE
 			alreadythere.alpha = calcalpha //don't need to constantly recalc for all of them in it because it'll just max if a non-persistent dirt overlay gets added, and then the new dirt overlay will be deleted

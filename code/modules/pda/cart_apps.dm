@@ -121,6 +121,7 @@ UI_ACT_PROC(/datum/data/pda/app/signaller, ui_act_reset)
 	var/datum/tgui_module/power_monitor/power_monitor
 
 CAPABILITIES(/datum/data/pda/app/power)
+	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
 	owns_one(nameof(power_monitor), /datum/tgui_module/power_monitor)
 
 /datum/data/pda/app/power/New()
@@ -131,10 +132,9 @@ CAPABILITIES(/datum/data/pda/app/power)
 /datum/data/pda/app/power/update_ui(mob/user, list/data)
 	data.Add(power_monitor.tgui_data(user))
 
-UI_ACT(/datum/data/pda/app/power, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/power, ui_act_back)
+/datum/data/pda/app/power/proc/ui_act_back(datum/act/op/A)
 	power_monitor.active_sensor = null
-	return TRUE
+	return OP_OK
 
 /// Every other action is the embedded power monitor's.
 UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
@@ -159,6 +159,9 @@ UI_ACT_FORWARD(/datum/data/pda/app/power, ui_forward_to_monitor)
 		data["records"] = null
 		return null
 
+CAPABILITIES(/datum/data/pda/app/crew_records)
+	op("Back", ui_act(), then(PROC_REF(ui_act_back)))
+
 UI_ACT(/datum/data/pda/app/crew_records, "Records", ui_act_records, UI_ARG_REF("target", null, /datum/data/record))
 UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
 	var/datum/data/record/R = params["target"]
@@ -166,11 +169,10 @@ UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_records)
 		load_records(R)
 	return TRUE
 
-UI_ACT(/datum/data/pda/app/crew_records, "Back", ui_act_back)
-UI_ACT_PROC(/datum/data/pda/app/crew_records, ui_act_back)
+/datum/data/pda/app/crew_records/proc/ui_act_back(datum/act/op/A)
 	rel_clear(src, nameof(/datum/data/pda/app/crew_records::general_records))
 	has_back = 0
-	return TRUE
+	return OP_OK
 
 /datum/data/pda/app/crew_records/proc/load_records(datum/data/record/R)
 	rel_set(src, nameof(general_records), R)

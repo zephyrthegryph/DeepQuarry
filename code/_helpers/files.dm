@@ -24,28 +24,35 @@
 	if(path != state["root"])
 		choices.Insert(1,"/")
 	choices = sortList(choices) + "Download Folder"
-	om_ask(src, /datum/om/prompt/choice/browse_files, PROC_REF(browse_files_chosen), choices = choices, state = state)
+	var/mob/answerer = mob
+	if(QDELETED(answerer))
+		return
+	open_request(src, /datum/prompt/choice/browse_files, PROC_REF(browse_files_chosen), answerer = answerer, choices = choices, state = state)
 
 /// One folder level of browse_files(). `state` carries the walk (root, path, steps left, extensions, on_chosen).
-/datum/om/prompt/choice/browse_files
+/datum/prompt/choice/browse_files
 	title = "Download"
-	message = "Choose a file to access:"
+	question = "Choose a file to access:"
+	timeout = 0
 	var/list/state
 
 /// "Download every file in this folder?"; a no goes back to the folder.
-/datum/om/prompt/confirm/browse_files_folder
+/datum/prompt/yes_no/browse_files_folder
 	title = "Confirmation"
-	answer_on_no = TRUE
+	timeout = 0
 	var/list/state
 
-/datum/om/prompt/confirm/browse_files_folder/prepare()
+/datum/prompt/yes_no/browse_files_folder/prepare(datum/act/A)
+	..()
 	var/count = length(flist(state["path"]))
-	message = "Are you SURE you want to download all the files in this folder? (This will open [count] prompt[count == 1 ? "" : "s"])"
-	return TRUE
+	question = "Are you SURE you want to download all the files in this folder? (This will open [count] prompt[count == 1 ? "" : "s"])"
 
-/client/proc/browse_files_chosen(datum/om/prompt/choice/browse_files/ask)
+/client/proc/browse_files_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/browse_files/ask = A.answer
 	var/list/state = ask.state.Copy()
-	var/choice = ask.choice
+	var/choice = ask.answer_value
 	var/path = state["path"]
 	state["left"] -= 1
 	switch(choice)
@@ -54,7 +61,10 @@
 			browse_files_ask(state)
 			return
 		if("Download Folder")
-			om_ask(src, /datum/om/prompt/confirm/browse_files_folder, PROC_REF(browse_files_folder_confirmed), state = state)
+			var/mob/answerer = mob
+			if(QDELETED(answerer))
+				return
+			open_request(src, /datum/prompt/yes_no/browse_files_folder, PROC_REF(browse_files_folder_confirmed), answerer = answerer, state = state)
 			return
 	path += choice
 	if(copytext_char(path, -1) == "/") //chose a directory: go into it
@@ -72,9 +82,12 @@
 		return
 	call(src, state["on_chosen"])(path)
 
-/client/proc/browse_files_folder_confirmed(datum/om/prompt/confirm/browse_files_folder/ask)
+/client/proc/browse_files_folder_confirmed(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/yes_no/browse_files_folder/ask = A.answer
 	var/list/state = ask.state.Copy()
-	if(!ask.yes)
+	if(!ask.answer_value)
 		browse_files_ask(state)
 		return
 	for(var/file in flist(state["path"]))

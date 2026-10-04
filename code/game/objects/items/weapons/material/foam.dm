@@ -1,5 +1,4 @@
-/obj/item/material/twohanded/baseballbat/foam/Initialize(mapload)
-	. = ..(mapload, MAT_FOAM)
+TYPE_TABLE(/obj/item/material/twohanded/baseballbat/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/sword/foam
 	attack_verb = list("bonked","whacked")
@@ -14,8 +13,7 @@
 	unbreakable = 1
 	injury_kind = INJURY_PAIN
 
-/obj/item/material/sword/foam/Initialize(mapload)
-	. = ..(mapload, MAT_FOAM)
+TYPE_TABLE(/obj/item/material/sword/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/twohanded/spear/foam
 	attack_verb = list("bonked","whacked")
@@ -27,8 +25,7 @@
 	icon_state = "spear_mask0"
 	unbreakable = 1
 
-/obj/item/material/twohanded/spear/foam/Initialize(mapload)
-	. = ..(mapload, MAT_FOAM)
+TYPE_TABLE(/obj/item/material/twohanded/spear/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/twohanded/fireaxe/foam
 	attack_verb = list("bonked","whacked")
@@ -40,8 +37,7 @@
 	icon_state = "fireaxe_mask0"
 	unbreakable = 1
 
-/obj/item/material/twohanded/fireaxe/foam/Initialize(mapload)
-	. = ..(mapload, MAT_FOAM)
+TYPE_TABLE(/obj/item/material/twohanded/fireaxe/foam, weapon_forced_material, MAT_FOAM)
 
 /obj/item/material/twohanded/fireaxe/foam/afterattack()
 	return

@@ -25,9 +25,7 @@
 /obj/item/organ/internal/eyes/grey
 	icon_state = "eyes_grey"
 
-/obj/item/organ/internal/eyes/grey/colormatch/Initialize(mapload, internal)
-	..()
-	return INITIALIZE_HINT_LATELOAD
+TYPE_TABLE(/obj/item/organ/internal/eyes/grey/colormatch, internal_late_initialize, TRUE)
 
 /obj/item/organ/internal/eyes/grey/colormatch/LateInitialize()
 	if(ishuman(owner)) // placed in its limb by now
@@ -42,20 +40,26 @@
 
 	if(!owner)
 		return
-	om_ask(owner, /datum/om/prompt/color/eye_color, PROC_REF(eye_color_picked), default = eye_rgb())
+	open_request(src, /datum/prompt/color/eye_color, PROC_REF(eye_color_picked), answerer = owner, default = eye_rgb())
 
-/datum/om/prompt/color/eye_color
+/datum/prompt/color/eye_color
+	timeout = 0
 	title = "Eye Color"
-	message = "Pick a new color for your eyes."
+	question = "Pick a new color for your eyes."
 
-/datum/om/prompt/color/eye_color/valid()
-	var/obj/item/organ/internal/eyes/E = receiver
+/datum/prompt/color/eye_color/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	var/obj/item/organ/internal/eyes/E = owner
 	if(!istype(E) || E.owner != answerer)
 		return "no longer your eyes"
 	return null
 
-/obj/item/organ/internal/eyes/proc/eye_color_picked(datum/om/prompt/color/eye_color/ask)
-	var/new_color = ask.picked_color
+/obj/item/organ/internal/eyes/proc/eye_color_picked(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/new_color = A.answer.answer_value
 	if(new_color && owner)
 		// input() supplies us with a hex color, which we can't use, so we convert it to rbg values.
 		var/list/new_color_rgb_list = hex2rgb(new_color)

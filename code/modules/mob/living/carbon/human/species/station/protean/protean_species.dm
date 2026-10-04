@@ -178,7 +178,7 @@
 		H.equip_to_slot_or_del(permit, SLOT_ID_IN_BACKPACK)
 		H.equip_to_slot_or_del(metal_stack, SLOT_ID_IN_BACKPACK)
 
-	after(src, 1, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
+	after(src, 0.1 SECONDS, PROC_REF(finish_survival_gear), with = list(H)) //Let their real nif load if they have one
 
 /datum/species/protean/proc/finish_survival_gear(mob/living/carbon/human/H)
 	if(QDELETED(H)) //Observing, mannequins, etc. can delete the human first.
@@ -242,7 +242,7 @@
 	var/registring = "REGISTRANT: "
 
 /obj/item/clothing/accessory/permit/nanotech/set_name(new_name)
-	owner = 1
+	set_owner(TRUE)
 	if(new_name)
 		name += " ([new_name])"
 		validstring += "[time2text(world.timeofday, "Month") +" "+ num2text(text2num(time2text(world.timeofday, "YYYY"))+544)]"

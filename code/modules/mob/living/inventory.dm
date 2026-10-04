@@ -61,7 +61,7 @@
 		. = drop_r_hand(Target)
 
 	if (istype(item_dropped) && !QDELETED(item_dropped) && check_sound_preference(/datum/preference/toggle/drop_sounds))
-		after(src, 1, PROC_REF(make_item_drop_sound), with = list(item_dropped))
+		after(src, 0.1 SECONDS, PROC_REF(make_item_drop_sound), with = list(item_dropped))
 
 /mob/proc/make_item_drop_sound(obj/item/I)
 	if(QDELETED(I))
@@ -80,6 +80,9 @@
 
 /mob/living/proc/hands_are_full()
 	return (get_right_hand() && get_left_hand())
+
+/// Hand membership follows ledger reslots as well as physical enter/exit moves.
+READS_AS(/mob/living/proc/item_is_in_hands, OP_KEEP_HAND)
 
 /mob/living/proc/item_is_in_hands(obj/item/I)
 	var/id = inventory_slot_id(I)
@@ -106,6 +109,8 @@
 
 /mob/living/inventory_slot_changed(slot_id, atom/movable/thing, inserted)
 	..()
+	// Reslotting can change hand membership without changing the item's loc.
+	op_keep_poke(src, OP_KEEP_HAND)
 	// A hand emptied: the other hand's item may stop being two-handed.
 	if(!inserted && (slot_id == SLOT_ID_HAND_L || slot_id == SLOT_ID_HAND_R))
 		var/obj/item/other = get_equipped_item(slot_id == SLOT_ID_HAND_L ? SLOT_ID_HAND_R : SLOT_ID_HAND_L)
@@ -360,7 +365,3 @@ UI_DATA_REPLACE(/datum/inventory_panel/human, "merge:ui_data_datum_inventory_pan
 		data["accessory"] = TRUE
 
 	return data
-
-/mob/living/relations()
-	. = ..()
-	. += rel_one(nameof(internal)) // the equipped (or pump-supplied) tank we breathe from; the slot owns it

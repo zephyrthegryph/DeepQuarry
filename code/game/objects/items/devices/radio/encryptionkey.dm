@@ -12,11 +12,11 @@
 	var/list/channels = list() // ALLOW(instance_list): d: every key defines its channels
 
 CAPABILITIES(/obj/item/encryptionkey)
-	op("item", item(/obj/item), then(PROC_REF(interaction_item)))
+	op("use_item", item(/obj/item), needs(req_adjacent()), then(PROC_REF(item_ignored)))
 
 /// Old attackby was an empty stub: it always swallowed the click with no action, no fallthrough.
-/obj/item/encryptionkey/proc/interaction_item(datum/act/op/A)
-	return TRUE
+/obj/item/encryptionkey/proc/item_ignored(datum/act/op/A)
+	return OP_OK
 
 /obj/item/encryptionkey/syndicate
 	icon_state = "syn_cypherkey"

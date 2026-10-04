@@ -334,10 +334,15 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	set src in usr
 	if(usr != src)
 		to_chat(src, "No.")
-	om_ask(src, /datum/om/prompt/text, PROC_REF(flavor_text_entered), title = "Flavor Text", message = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_length = MAX_MESSAGE_LEN, multiline = TRUE)
+	open_request(src, /datum/prompt/text, PROC_REF(flavor_text_entered), answerer = src, timeout = 0, title = "Flavor Text", question = "Set the flavor text in your 'examine' verb.", default = html_decode(flavor_text), max_len = MAX_MESSAGE_LEN, multiline = TRUE)
 
-/mob/proc/flavor_text_entered(datum/om/prompt/text/ask)
-	flavor_text = ask.text
+/mob/proc/flavor_text_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return flavor_text_apply(A.answer.answer_value)
+
+/mob/proc/flavor_text_apply(new_text)
+	flavor_text = new_text
 
 /mob/proc/warn_flavor_changed()
 	if(flavor_text && flavor_text != "") // don't spam people that don't use it!
@@ -399,38 +404,39 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 
 	// Final chance to abort "respawning"
 	if(mind && timeofdeath) // They had spawned before
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob, PROC_REF(abandon_mob_confirmed))
+		open_request(src, /datum/prompt/choice/abandon_mob, PROC_REF(abandon_mob_confirmed), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
 /// Leaving for the lobby: only while still dead.
-/datum/om/prompt/confirm/abandon_mob
+/datum/prompt/choice/abandon_mob
 	title = "Confirmation"
-	message = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
-	yes_text = "Yes, leave"
-	no_text = "No, wait"
-	no_first = TRUE
+	question = "Returning to the menu will prevent your character from being revived in-round. Are you sure?"
+	choices = list("No, wait", "Yes, leave")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/abandon_mob/valid()
+/datum/prompt/choice/abandon_mob/recheck_extra()
 	return answerer.stat == DEAD ? null : "not dead"
 
 /// Quitting the round on the way out; no still returns to the lobby.
-/datum/om/prompt/confirm/abandon_mob/quit_round
+/datum/prompt/choice/abandon_mob/quit_round
 	title = "Quit This Round"
-	message = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
-	yes_text = "Quit Round"
-	no_text = "No"
-	no_first = FALSE
-	answer_on_no = TRUE
+	question = "Do you want to Quit This Round before you return to lobby? This will properly remove you from manifest, as well as prevent resleeving. BEWARE: Pressing 'NO' will STILL return you to lobby!"
+	choices = list("Quit Round", "No")
 
-/mob/proc/abandon_mob_confirmed(datum/om/prompt/confirm/abandon_mob/ask)
+/mob/proc/abandon_mob_confirmed(datum/act/request/A)
+	if(A.answer?.answer_value != "Yes, leave")
+		return
 	if(mind?.assigned_role)
-		om_ask(src, /datum/om/prompt/confirm/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered))
+		open_request(src, /datum/prompt/choice/abandon_mob/quit_round, PROC_REF(abandon_mob_quit_answered), answerer = src)
 		return
 	abandon_mob_finish(FALSE)
 
-/mob/proc/abandon_mob_quit_answered(datum/om/prompt/confirm/abandon_mob/quit_round/ask)
-	abandon_mob_finish(ask.yes)
+/mob/proc/abandon_mob_quit_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	abandon_mob_finish(A.answer.answer_value == "Quit Round")
 
 /// Leaves the body for the lobby; `quit_round` also frees the job and removes the records.
 /mob/proc/abandon_mob_finish(quit_round)
@@ -537,15 +543,22 @@ REGISTRY_MEMBERSHIP(/mob/living, REGISTRY_FORCED_AMBIANCE)
 	client.perspective = EYE_PERSPECTIVE
 
 	var/ok = "[is_admin ? "Admin Observe" : "Observe"]"
-	om_ask(src, /datum/om/prompt/choice/observe_target, PROC_REF(observe_target_chosen), message = "Select something to [ok]:", choices = targets, is_admin = is_admin)
+	open_request(src, /datum/prompt/choice/observe_target, PROC_REF(observe_target_chosen), answerer = src, question = "Select something to [ok]:", choices = targets, is_admin = is_admin)
 
-/datum/om/prompt/choice/observe_target
+/datum/prompt/choice/observe_target
 	title = "Select Target"
+	timeout = 0
 	var/is_admin = FALSE
 
-/mob/proc/observe_target_chosen(datum/om/prompt/choice/observe_target/ask)
+/mob/proc/observe_target_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return observe_target_apply(A)
+
+/mob/proc/observe_target_apply(datum/act/request/A)
+	var/datum/prompt/choice/observe_target/ask = A.answer
 	var/is_admin = ask.is_admin
-	var/mob/mob_eye = ask.choices[ask.choice]
+	var/mob/mob_eye = ask.choices[ask.answer_value]
 
 	if(client && mob_eye)
 		begin_remote_view(/datum/remote_view, mob_eye)
@@ -944,18 +957,31 @@ TOPIC_ACTION(/mob, "flavor_change", PROC_REF(topic_flavor_change))
 			to_chat(U, span_filter_notice("[src] has nothing stuck in their wounds that is large enough to remove."))
 		return
 
-	om_ask(U, /datum/om/prompt/choice/yank_object, PROC_REF(yank_object_chosen), choices = valid_objects, self = self)
+	open_request(src, /datum/prompt/choice/yank_object, PROC_REF(yank_object_chosen), answerer = U, choices = valid_objects, self = self)
 
 /// Which embedded object to pull out: the answerer must still be next to the body.
-/datum/om/prompt/choice/yank_object
+/datum/prompt/choice/yank_object
 	title = "Embedded objects"
-	message = "What do you want to yank out?"
-	requires = PROMPT_ADJACENT
+	question = "What do you want to yank out?"
+	timeout = 0
+	ask_flags = ASK_ADJACENT | ASK_CAPABLE
 	var/self
 
-/mob/proc/yank_object_chosen(datum/om/prompt/choice/yank_object/ask)
+/datum/prompt/choice/yank_object/recheck_extra()
+	if(!isnull(answer_value))
+		var/obj/item/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+
+/mob/proc/yank_object_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return yank_object_apply(A)
+
+/mob/proc/yank_object_apply(datum/act/request/A)
+	var/datum/prompt/choice/yank_object/ask = A.answer
 	var/mob/U = ask.answerer
-	var/obj/item/selection = ask.choice
+	var/obj/item/selection = ask.answer_value
 	var/self = ask.self
 	var/mob/S = src
 	if(!(selection in get_visible_implants(0)))
@@ -1233,10 +1259,14 @@ OM_FIELD_SETTER(/mob, stat, CHANGE_MOB_STAT)
 	return TRUE
 
 /mob/MouseEntered(location, control, params)
-	if(usr != src && will_show_tooltip())
-		if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
-			openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
+	var/mob/user = usr // ALLOW(sys_usr_outside_verb): BYOND supplies the hovering player only through usr at this native mouse entry.
+	show_mob_hover_tip(user, params)
 	. = ..()
+
+/mob/proc/show_mob_hover_tip(mob/user, params)
+	if(user != src && will_show_tooltip())
+		if(user?.read_preference(/datum/preference/toggle/mob_tooltips))
+			openToolTip(user, src, params, title = get_nametag_name(user), content = get_nametag_desc(user))
 
 /mob/MouseDown()
 	closeToolTip(usr, src) //No reason not to, really
@@ -1338,71 +1368,125 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	VV_DROPDOWN_OPTION(VV_HK_DIRECT_CONTROL, "Assume Direct Control")
 
 /// A variable-edit choice needing +SPAWN.
-/datum/om/prompt/choice/vv_spawn
-	requires = PROMPT_ADMIN(R_SPAWN)
+/datum/prompt/choice/vv_spawn
+	timeout = 0
+	rights = R_SPAWN
+
+/datum/prompt/choice/vv_spawn/recheck_extra()
+	if(isdatum(answer_value))
+		var/datum/selected = answer_value
+		if(QDELETED(selected))
+			return "gone"
 
 /// A variable-edit choice needing +DEBUG.
-/datum/om/prompt/choice/vv_debug
-	requires = PROMPT_ADMIN(R_DEBUG)
+/datum/prompt/choice/vv_debug
+	timeout = 0
+	rights = R_DEBUG
 
-/datum/om/prompt/text/vv_ai_faction
-	key = "faction"
+/datum/prompt/text/vv_ai_faction
 	title = "AI faction"
-	message = "Please input AI faction"
+	question = "Please input AI faction"
 	default = "neutral"
+	timeout = 0
+	rights = R_HOLDER
+	recheck_on_open = TRUE
 
-/datum/om/prompt/choice/vv_ai_stance
-	key = "stance"
+/datum/prompt/choice/vv_ai_stance
 	title = "AI combat mode"
-	message = "Please choose AI combat mode"
+	question = "Please choose AI combat mode"
 	choices = list(I_HURT, I_HELP)
+	timeout = 0
+	rights = R_HOLDER
+	var/faction
+	recheck_on_open = TRUE
 
-/datum/om/prompt/confirm/vv_ai_wake
-	key = "wake"
+/datum/prompt/choice/vv_ai_wake
 	title = "Wake mob?"
-	message = "Make mob wake up? This is needed for carbon mobs."
-	answer_on_no = TRUE
+	question = "Make mob wake up? This is needed for carbon mobs."
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+	rights = R_HOLDER
+	var/faction
+	var/stance
+	recheck_on_open = TRUE
 
-/mob/proc/vv_language_added(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_language_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_language_added_apply(A)
+
+/mob/proc/vv_language_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_language = ask.choice
+	var/new_language = ask.answer_value
 	if(add_language(new_language))
 		to_chat(user, "Added [new_language] to [src].")
 		return
 	to_chat(user, "Mob already knows that language.")
 
-/mob/proc/vv_language_removed(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_language_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_language_removed_apply(A)
+
+/mob/proc/vv_language_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/datum/language/rem_language = ask.choice
+	var/datum/language/rem_language = ask.answer_value
 	if(remove_language(rem_language.name))
 		to_chat(user, "Removed [rem_language] from [src].")
 		return
 	to_chat(user, "Mob doesn't know that language.")
 
-/mob/proc/vv_verb_added(datum/om/prompt/choice/vv_debug/ask)
-	var/verb = ask.choice
+/mob/proc/vv_verb_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_verb_added_apply(A)
+
+/mob/proc/vv_verb_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_debug/ask = A.answer
+	var/verb = ask.answer_value
 	if(verb != "Cancel")
 		// An admin's hand edit: lifts that admin hand's hide, grants from the admin source.
 		om_revoke(src, GRANT_VERB_HIDE, verb, verb_source(VERB_SOURCE_ADMIN))
 		grant(src, granted_verb(verb), verb_source(VERB_SOURCE_ADMIN))
 
-/mob/proc/vv_verb_removed(datum/om/prompt/choice/vv_debug/ask)
-	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
-	revoke(src, granted_verb(ask.choice), verb_source(VERB_SOURCE_ADMIN))
-	om_grant(src, GRANT_VERB_HIDE, ask.choice, verb_source(VERB_SOURCE_ADMIN))
+/mob/proc/vv_verb_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_verb_removed_apply(A)
 
-/mob/proc/vv_organ_added(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_verb_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_debug/ask = A.answer
+	// Hidden, not revoked: the verb goes whatever grants it (the type, other sources).
+	revoke(src, granted_verb(ask.answer_value), verb_source(VERB_SOURCE_ADMIN))
+	om_grant(src, GRANT_VERB_HIDE, ask.answer_value, verb_source(VERB_SOURCE_ADMIN))
+
+/mob/proc/vv_organ_added(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_organ_added_apply(A)
+
+/mob/proc/vv_organ_added_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/new_organ = ask.choice
+	var/new_organ = ask.answer_value
 	var/mob/living/carbon/M = src
 	if(locate_in_list(M.internal_organ_list(), new_organ))
 		to_chat(user, "Mob already has that organ.")
 		return
 	new new_organ(M)
 
-/mob/proc/vv_organ_removed(datum/om/prompt/choice/vv_spawn/ask)
+/mob/proc/vv_organ_removed(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_organ_removed_apply(A)
+
+/mob/proc/vv_organ_removed_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_spawn/ask = A.answer
 	var/mob/user = ask.answerer
-	var/obj/item/organ/rem_organ = ask.choice
+	var/obj/item/organ/rem_organ = ask.answer_value
 	var/mob/living/carbon/M = src
 	if(!(locate_in_list(M.internal_organ_list(), rem_organ)))
 		to_chat(user, "Mob does not have that organ.")
@@ -1411,20 +1495,38 @@ GLOBAL_LIST_EMPTY_TYPED(living_players_by_zlevel, /list)
 	rem_organ.removed()
 	qdel(rem_organ)
 
-/// A VV AI brain setup: the answers of the vv_ai_* prompts.
-/datum/om/flow/ask_sequence/vv_ai_setup
-	var/faction
-	var/stance
-	var/wake
+/// A VV AI brain setup: captured scalar answers advance only after each live admin re-check.
+/mob/proc/vv_ai_faction_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_ai_faction_apply(A)
 
-/mob/proc/vv_ai_configured(datum/om/flow/ask_sequence/vv_ai_setup/seq)
+/mob/proc/vv_ai_faction_apply(datum/act/request/A)
+	open_request(src, /datum/prompt/choice/vv_ai_stance, PROC_REF(vv_ai_stance_chosen), answerer = A.answer.answerer, faction = A.answer.answer_value)
+
+/mob/proc/vv_ai_stance_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_ai_stance_apply(A)
+
+/mob/proc/vv_ai_stance_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_ai_stance/ask = A.answer
+	open_request(src, /datum/prompt/choice/vv_ai_wake, PROC_REF(vv_ai_configured), answerer = ask.answerer, faction = ask.faction, stance = ask.answer_value)
+
+/mob/proc/vv_ai_configured(datum/act/request/A)
+	if(!A.answer)
+		return
+	return vv_ai_configure_apply(A)
+
+/mob/proc/vv_ai_configure_apply(datum/act/request/A)
+	var/datum/prompt/choice/vv_ai_wake/ask = A.answer
 	var/mob/living/L = src
 	if(!istype(L) || !L.ai_brain)
 		return
-	L.faction = seq.faction
-	if(seq.stance)
-		L.set_use_stance(seq.stance)
-	if(seq.wake)
+	L.faction = ask.faction
+	if(ask.stance)
+		L.set_use_stance(ask.stance)
+	if(ask.answer_value == "Yes")
 		L.status_adjust(EFFECT_SLEEPING, -100)
 
 VV_TOPIC_ACTION(/mob, VV_HK_REGEN_ICONS, PROC_REF(vv_topic_regen_icons))
@@ -1463,18 +1565,18 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	return TRUE
 
 /mob/proc/vv_topic_add_language(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_added), title = "Language", message = "Please choose a language to add.", choices = GLOB.all_languages)
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_added), answerer = user, title = "Language", question = "Please choose a language to add.", choices = GLOB.all_languages)
 	return TRUE
 
 /mob/proc/vv_topic_remove_language(mob/user, list/args)
 	if(!languages.len)
 		to_chat(user, "This mob knows no languages.")
 		return
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), title = "Language", message = "Please choose a language to remove.", choices = languages)
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_language_removed), answerer = user, title = "Language", question = "Please choose a language to remove.", choices = languages)
 	return TRUE
 
 /mob/proc/vv_topic_add_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_added), title = "Verbs", message = "Select a verb!", choices = vv_addable_verbs(src))
+	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_added), answerer = user, title = "Verbs", question = "Select a verb!", choices = vv_addable_verbs(src))
 	return TRUE
 
 /// The verbs VV can add to `H` (a global proc: typesof(/mob/proc) inside a /mob proc is a cross-reference loop).
@@ -1500,15 +1602,15 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	return possibleverbs
 
 /mob/proc/vv_topic_remove_verb(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), title = "Verbs", message = "Please choose a verb to remove.", choices = verbs)
+	open_request(src, /datum/prompt/choice/vv_debug, PROC_REF(vv_verb_removed), answerer = user, title = "Verbs", question = "Please choose a verb to remove.", choices = verbs)
 	return TRUE
 
 /mob/living/carbon/proc/vv_topic_add_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), title = "Organ", message = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_added), answerer = user, title = "Organ", question = "Please choose an organ to add.", choices = subtypesof(/obj/item/organ))
 	return TRUE
 
 /mob/living/carbon/proc/vv_topic_remove_organ(mob/user, list/args)
-	om_ask(user, /datum/om/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), title = "Organ", message = "Please choose an organ to remove.", choices = internal_organ_list())
+	open_request(src, /datum/prompt/choice/vv_spawn, PROC_REF(vv_organ_removed), answerer = user, title = "Organ", question = "Please choose an organ to remove.", choices = internal_organ_list())
 	return TRUE
 
 /mob/living/proc/vv_topic_give_ai(mob/user, list/args)
@@ -1519,7 +1621,7 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	if(ai_brain)	//Cleaning up the original ai
 		own_clear(src, nameof(ai_brain), OWN_DELETE)
 	initialize_ai_brain()
-	om_ask_sequence(/datum/om/flow/ask_sequence/vv_ai_setup, user, null, steps = list(/datum/om/prompt/text/vv_ai_faction, /datum/om/prompt/choice/vv_ai_stance, /datum/om/prompt/confirm/vv_ai_wake), on_done = PROC_REF(vv_ai_configured), requires = PROMPT_ADMIN(R_HOLDER))
+	open_request(src, /datum/prompt/text/vv_ai_faction, PROC_REF(vv_ai_faction_chosen), answerer = user)
 	return TRUE
 
 /mob/proc/vv_topic_give_spell(mob/user, list/args)
@@ -1554,9 +1656,6 @@ VV_TOPIC_ACTION(/mob, VV_HK_DIRECT_CONTROL, PROC_REF(vv_topic_direct_control))
 	//		return debug_variable(var_name, logging, 0, src, FALSE)
 	. = ..()
 
-// === merged from items_chomp.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item
 	var/tmp/user_vars_to_edit //fun times :3 - pretty much just grabbed from tg immabehonest - list(variable_name = variable_value) eg list("name" = "Wizardly Wizard", "real_name" = "Wizardly Wizard")
 	var/tmp/user_vars_remembered //not needed for manual editing, just stores the original vars from the above list to make sure they go back to normal later

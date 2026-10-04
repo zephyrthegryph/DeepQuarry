@@ -107,14 +107,25 @@ CAPABILITIES(/obj/item/organ/internal/augment)
 		var/obj/item/organ/internal/augment/iconsource = present_augs[augname]
 		options[augname] = iconsource.my_radial_icon
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(augment_chosen), choices = options, anchor = src, subject = present_augs)
+	if(length(options) && user && !QDELETED(user))
+		open_request(src, /datum/prompt/choice/augment_activation, PROC_REF(augment_chosen), answerer = user, choices = options, anchor = src, present_augs = present_augs)
 
-/// Answer to enable_augments(): activate the picked augment. ask.subject is the name -> augment map.
-/mob/living/carbon/human/proc/augment_chosen(datum/om/prompt/choice/radial/ask)
-	var/list/present_augs = ask.subject
-	if(isnull(ask.choice) || !islist(present_augs))
+/// The name -> augment snapshot is a list, as in the original radial request.
+/datum/prompt/choice/augment_activation
+	timeout = 0
+	radial = TRUE
+	autopick_single_option = TRUE
+	var/list/present_augs
+
+/// Answer to enable_augments(): activate the picked augment.
+/mob/living/carbon/human/proc/augment_chosen(datum/act/request/context)
+	if(!context.answer)
 		return
-	var/obj/item/organ/internal/augment/A = present_augs[ask.choice]
+	var/datum/prompt/choice/augment_activation/ask = context.request
+	var/list/present_augs = ask.present_augs
+	if(isnull(ask.value) || !islist(present_augs))
+		return
+	var/obj/item/organ/internal/augment/A = present_augs[ask.value]
 	if(!istype(A) || QDELETED(A) || A.owner != src || A.is_broken())
 		return
 	A.augment_action(ask.answerer)

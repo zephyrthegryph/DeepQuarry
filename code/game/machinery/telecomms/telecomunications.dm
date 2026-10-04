@@ -52,10 +52,12 @@
 	/// keeping every network node in the two-second machinery roster.
 	EXPIRY_DECLARE(last_thermal_check)
 
+// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
+// machine leaves every partner's list (the framework clears both sides).
 CAPABILITIES(/obj/machinery/telecomms)
+	links(/obj/machinery/telecomms::links, /obj/machinery/telecomms::links, a_many = TRUE, b_many = TRUE)
 	owns_one(nameof(soundloop), /datum/looping_sound/tcomms)
 	interface("TelecommsMultitoolMenu")
-	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
 	op("id", ui_act("id"), then(PROC_REF(ui_act_id)))
 	op("network", ui_act("network"), then(PROC_REF(ui_act_network)))
 	op("freq", ui_act("freq"), then(PROC_REF(ui_act_freq)))
@@ -64,8 +66,9 @@ CAPABILITIES(/obj/machinery/telecomms)
 	op("link", ui_act("link"), then(PROC_REF(ui_act_link)))
 	op("buffer", ui_act("buffer"), then(PROC_REF(ui_act_buffer)))
 	op("flush", ui_act("flush"), then(PROC_REF(ui_act_flush)))
-	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 	extend(TAG_UI, then(PROC_REF(ui_fingerprint), early = TRUE))
+	op("toggle", ui_act("toggle"), then(PROC_REF(ui_act_toggle)))
+	op("cleartemp", ui_act("cleartemp"), then(PROC_REF(ui_act_cleartemp)))
 
 /obj/machinery/telecomms/proc/relay_information(datum/signal/signal, filter, copysig, amount = 20)
 	// relay signal to all linked machinery that are of type [filter]. If signal has been sent [amount] times, stop sending
@@ -180,11 +183,6 @@ REGISTRY_MEMBERSHIP(/obj/machinery/telecomms, REGISTRY_TELECOMMS)
 	soundloop.start()
 
 
-// Links are symmetric membership: linking A to B lists each in the other's links, and a dying
-// machine leaves every partner's list (the framework clears both sides).
-/obj/machinery/telecomms/relations()
-	. = ..()
-	. += rel_many(nameof(links), back = nameof(/obj/machinery/telecomms::links))
 
 // Used in auto linking
 /obj/machinery/telecomms/proc/add_link(obj/machinery/telecomms/T)
@@ -220,8 +218,8 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	return was_on != on
 
 /obj/machinery/telecomms/machine_step()
-	if(om_timer_slot_pending(src, "thermal_timer"))
-		om_cancel_timer_slot(src, "thermal_timer")
+	if(after_pending(src, "thermal_timer"))
+		cancel_after(src, "thermal_timer")
 	var/power_changed = update_power()
 
 	var/elapsed_cycles = last_thermal_check ? max(round((world.time - last_thermal_check) / max(MACHINE_SERVICE_INTERVAL, 1)), 1) : 1
@@ -240,7 +238,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/telecomms, "{appearance_state}")
 	return PROCESS_KILL
 
 /obj/machinery/telecomms/proc/schedule_thermal_check()
-	if(om_timer_slot_pending(src, "thermal_timer") || QDELETED(src))
+	if(after_pending(src, "thermal_timer") || QDELETED(src))
 		return
 	after(src, max((initial(delay) + 1) * MACHINE_SERVICE_INTERVAL, 1), PROC_REF(thermal_check_due), key = "thermal_timer")
 

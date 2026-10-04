@@ -131,7 +131,7 @@ DECLARE_INTERACTIONS(/obj/vehicle, INTERACT_ITEM(null, PROC_REF(interaction_vehi
 /obj/vehicle/proc/interaction_vehicle_paint(mob/user, obj/item/W, datum/interaction/interaction)
 	if(!W.has_tool_quality(TOOL_MULTITOOL) || !open)
 		return FALSE
-	om_ask(user, /datum/om/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), default = paint_color)
+	open_request(src, /datum/prompt/color/vehicle_paint, PROC_REF(vehicle_paint_picked), answerer = user, default = paint_color)
 	return TRUE
 
 /obj/vehicle/screwdriver_act(mob/user, obj/item/tool)

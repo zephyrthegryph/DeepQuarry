@@ -200,6 +200,5 @@ APPEARANCE_TEMPLATE(/obj/item/spell/energy_siphon, "energy_siphon{siphoning?_dra
 /obj/item/spell/energy_siphon/proc/siphoning() as /atom/movable
 	return siphoning
 
-/obj/item/spell/energy_siphon/relations()
-	. = ..()
-	. += rel_many(nameof(things_to_siphon))
+CAPABILITIES(/obj/item/spell/energy_siphon)
+	ref_many(nameof(things_to_siphon))

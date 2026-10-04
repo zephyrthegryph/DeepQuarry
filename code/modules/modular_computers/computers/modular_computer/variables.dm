@@ -77,6 +77,7 @@
 	return stored_pen
 
 CAPABILITIES(/obj/item/modular_computer)
+	ref_many(nameof(paired_uavs))
 	owns_one(nameof(processor_unit), /obj/item/computer_hardware/processor_unit)
 	owns_one(nameof(network_card), /obj/item/computer_hardware/network_card)
 	owns_one(nameof(hard_drive), /obj/item/computer_hardware/hard_drive)

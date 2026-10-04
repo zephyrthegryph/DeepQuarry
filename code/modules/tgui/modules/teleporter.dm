@@ -82,7 +82,7 @@ CAPABILITIES(/datum/tgui_module/teleport_control)
 
 /datum/tgui_module/teleport_control/proc/ui_act_test_fire(datum/act/op/A)
 	station()?.testfire()
-	return TRUE
+	return OP_OK
 
 /datum/tgui_module/teleport_control/proc/ui_act_toggle_on(datum/act/op/A)
 	var/mob/user = A.actor

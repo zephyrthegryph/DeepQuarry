@@ -24,16 +24,18 @@
 	var/tmp/datum/computer_file/data/email_message/current_message
 
 CAPABILITIES(/datum/tgui_module/email_client)
-	owns_one(nameof(downloading), /datum/computer_file)
-	owns_one(nameof(msg_attachment), /datum/computer_file)
-	interface("NtosEmailClient")
-	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("login", ui_act("login"), then(PROC_REF(ui_act_login)))
 	op("logout", ui_act("logout"), then(PROC_REF(ui_act_logout)))
 	op("reset", ui_act("reset"), then(PROC_REF(ui_act_reset)))
 	op("new_message", ui_act("new_message"), then(PROC_REF(ui_act_new_message)))
 	op("cancel", ui_act("cancel"), then(PROC_REF(ui_act_cancel)))
 	op("addressbook", ui_act("addressbook"), then(PROC_REF(ui_act_addressbook)))
+	op("canceldownload", ui_act("canceldownload"), then(PROC_REF(ui_act_canceldownload)))
+	op("remove_attachment", ui_act("remove_attachment"), then(PROC_REF(ui_act_remove_attachment)))
+	owns_one(nameof(downloading), /datum/computer_file)
+	owns_one(nameof(msg_attachment), /datum/computer_file)
+	interface("NtosEmailClient")
+	extend(TAG_UI, then(PROC_REF(ui_typed), early = TRUE))
 	op("set_recipient", ui_act("set_recipient", arg("set_recipient", schema_text(4096))), then(PROC_REF(ui_act_set_recipient)))
 	op("edit_title", ui_act("edit_title", arg("val", schema_text(4096))), then(PROC_REF(ui_act_edit_title)))
 	op("edit_body", ui_act("edit_body"), asks(/datum/prompt/text, fields = list("title" = "Message Editor", "question" = "Enter your message. You may use most tags from paper formatting", "default" = computed(PROC_REF(body_default)), "max_len" = 20000, "multiline" = TRUE)), then(PROC_REF(ui_act_edit_body)))
@@ -49,8 +51,6 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	op("save", ui_act("save", arg("save", num())), asks(/datum/prompt/text, fields = list("title" = "Message export", "question" = "Please specify file name:", "max_len" = 100), when = PROC_REF(drive_ok)), then(PROC_REF(ui_act_save)))
 	op("addattachment", ui_act("addattachment"), asks(/datum/prompt/choice, fields = list("title" = "Select Attachment", "question" = "Please pick a file to send as attachment (max 32GQ)", "choices" = computed(PROC_REF(attachable_files))), when = PROC_REF(drive_ok)), then(PROC_REF(ui_act_addattachment)))
 	op("downloadattachment", ui_act("downloadattachment"), then(PROC_REF(ui_act_downloadattachment)))
-	op("canceldownload", ui_act("canceldownload"), then(PROC_REF(ui_act_canceldownload)))
-	op("remove_attachment", ui_act("remove_attachment"), then(PROC_REF(ui_act_remove_attachment)))
 
 /datum/tgui_module/email_client/proc/log_in()
 	for(var/datum/computer_file/data/email_account/account in GLOB.ntnet_global.email_accounts)
@@ -282,31 +282,37 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	return filenames
 
 /datum/tgui_module/email_client/proc/ui_act_login(datum/act/op/A)
+	check_for_new_messages(1)
 	log_in()
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_logout(datum/act/op/A)
+	check_for_new_messages(1)
 	log_out()
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_reset(datum/act/op/A)
+	check_for_new_messages(1)
 	error = ""
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_new_message(datum/act/op/A)
+	check_for_new_messages(1)
 	new_message = TRUE
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_cancel(datum/act/op/A)
+	check_for_new_messages(1)
 	if(addressbook)
 		addressbook = FALSE
 	else
 		clear_message()
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_addressbook(datum/act/op/A)
+	check_for_new_messages(1)
 	addressbook = TRUE
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_set_recipient(datum/act/op/A, set_recipient)
 	msg_recipient = sanitize(set_recipient)
@@ -508,13 +514,15 @@ CAPABILITIES(/datum/tgui_module/email_client)
 	return 1
 
 /datum/tgui_module/email_client/proc/ui_act_canceldownload(datum/act/op/A)
+	check_for_new_messages(1)
 	own_take(src, nameof(/datum/tgui_module/email_client::downloading))
 	download_progress = 0
-	return 1
+	return OP_OK
 
 /datum/tgui_module/email_client/proc/ui_act_remove_attachment(datum/act/op/A)
+	check_for_new_messages(1)
 	own_take(src, nameof(/datum/tgui_module/email_client::msg_attachment))
-	return 1
+	return OP_OK
 
 /// The current_account this refers to (a relation view: null once that is deleted).
 /datum/tgui_module/email_client/proc/current_account() as /datum/computer_file/data/email_account

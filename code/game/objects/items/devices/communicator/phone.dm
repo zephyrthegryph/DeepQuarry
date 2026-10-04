@@ -302,13 +302,22 @@
 		return //something is terribly wrong
 
 	var/prefs_name = src.client.prefs.read_preference(/datum/preference/name/real_name)
-	om_ask(src, /datum/om/prompt/confirm/join_as_voice, PROC_REF(join_as_voice_confirmed), message = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
+	open_request(src, /datum/prompt/choice/join_as_voice, PROC_REF(join_as_voice_confirmed), answerer = src, question = "Would you like to talk as [prefs_name], over a communicator? This will reset your respawn timer, if someone answers.", prefs_name = prefs_name)
 
-/datum/om/prompt/confirm/join_as_voice
+/datum/prompt/choice/join_as_voice
 	title = "Join as Voice?"
+	timeout = 0
+	buttons = TRUE
+	choices = list("Yes", "No")
 	var/prefs_name
 
-/mob/observer/dead/proc/join_as_voice_confirmed(datum/om/prompt/confirm/join_as_voice/ask)
+/mob/observer/dead/proc/join_as_voice_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	return join_as_voice_apply(A)
+
+/mob/observer/dead/proc/join_as_voice_apply(datum/act/request/A)
+	var/datum/prompt/choice/join_as_voice/ask = A.answer
 	var/prefs_name = ask.prefs_name
 
 	if(CONFIG_GET(flag/antag_hud_restricted) && has_enabled_antagHUD == 1)

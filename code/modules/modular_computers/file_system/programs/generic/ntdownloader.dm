@@ -29,11 +29,11 @@
 	var/tmp/obj/item/modular_computer/my_computer
 
 CAPABILITIES(/datum/computer_file/program/ntnetdownload)
+	op("PRG_reseterror", ui_act("PRG_reseterror"), then(PROC_REF(ui_act_prg_reseterror)))
 	owns_one(nameof(downloaded_file), /datum/computer_file/program)
 	interface("NtosNetDownloader")
 	op("PRG_downloadfile", ui_act("PRG_downloadfile", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_downloadfile)))
 	op("PRG_removequeued", ui_act("PRG_removequeued", arg("filename", schema_text(4096))), then(PROC_REF(ui_act_prg_removequeued)))
-	op("PRG_reseterror", ui_act("PRG_reseterror"), then(PROC_REF(ui_act_prg_reseterror)))
 
 /datum/computer_file/program/ntnetdownload/kill_program()
 	..()
@@ -135,7 +135,7 @@ CAPABILITIES(/datum/computer_file/program/ntnetdownload)
 		download_netspeed = 0
 		own_clear(src, nameof(/datum/computer_file/program/ntnetdownload::downloaded_file), OWN_DELETE) // null already when store_file() took it
 		downloaderror = ""
-	return TRUE
+	return OP_OK
 
 /datum/computer_file/program/ntnetdownload/ui_data(datum/act/eval/A)
 	var/mob/user = A.actor

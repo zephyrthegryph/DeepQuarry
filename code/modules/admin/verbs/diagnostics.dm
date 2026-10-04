@@ -59,7 +59,7 @@ ADMIN_VERB(radio_report, R_DEBUG, "Radio report", "Displays a radio report.", AD
 
 ADMIN_VERB(reload_admins, R_SERVER, "Reload Admins", "Reloads admins from the file or database.", ADMIN_CATEGORY_DEBUG_SERVER)
 	message_admins("[user] manually reloaded admins")
-	reload_admins_async()
+	reload_admins_async(user = user)
 	feedback_add_details("admin_verb","RLDA") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 ADMIN_VERB(print_jobban_old, R_ADMIN|R_MOD, "Print Jobban Log", "This spams all the active jobban entries for the current round to standard output.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
@@ -68,9 +68,19 @@ ADMIN_VERB(print_jobban_old, R_ADMIN|R_MOD, "Print Jobban Log", "This spams all 
 		to_chat(user, span_debug_info("[t]"))
 
 ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This searches all the active jobban entries for the current round and outputs the results to standard output.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	var/job_filter = verb_ask(user, "a1", args, /datum/om/prompt/text, message = "Contains what?", title = "Job Filter")
-	if(isnull(job_filter))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/text/admin_jobban_filter, PROC_REF(filter_answered), answerer = answerer)
+
+/datum/admin_verb/print_jobban_old_filter/proc/filter_answered(datum/act/request/A)
+	if(!A.answer)
+		return
+	show_filtered_jobbans(A)
+
+/datum/admin_verb/print_jobban_old_filter/proc/show_filtered_jobbans(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/job_filter = A.request.answer_value
 	if(!job_filter)
 		return
 
@@ -78,3 +88,11 @@ ADMIN_VERB(print_jobban_old_filter, R_ADMIN|R_MOD, "Search Jobban Log", "This se
 	for(var/t in GLOB.jobban_keylist)
 		if(findtext(t, job_filter))
 			to_chat(user, span_debug_info("[t]"))
+
+/datum/prompt/text/admin_jobban_filter
+	rights = R_ADMIN|R_MOD
+	timeout = 0
+	question = "Contains what?"
+	title = "Job Filter"
+	recheck_on_open = TRUE
+

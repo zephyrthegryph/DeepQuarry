@@ -1,6 +1,6 @@
 /obj/item/holder/dropped(mob/user, equipping, slot)
 	..()
-	after(src, 1, PROC_REF(delete_if_dropped))
+	after(src, 0.1 SECONDS, PROC_REF(delete_if_dropped))
 
 EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(holder_pick_up)))
 
@@ -56,7 +56,7 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 	else if (old_loc == user)
 		dropInto(user.drop_location())
 		dropped(user)
-	// EDIT START. This handles possessed items.
+	// This handles possessed items.
 	if(src.possessed_voice && src.possessed_voice.len > 1 && !(user.ckey in warned_of_possession)) // Is this item possessed?
 		warned_of_possession |= user.ckey
 		tgui_alert_async(user,{"
@@ -64,7 +64,6 @@ EXTEND_INTERACTIONS(/obj/item/holder, INTERACT_HAND_DEFAULT("Pick up", PROC_REF(
 		If this is not something you wish to partake in, it is highly suggested you place the item back down.
 		If this is fine to you, ensure that the other player is fine with you doing things to them beforehand!
 		"},"OOC Warning")
-	// EDIT END.
 	return
 
 /obj/item/holder/proc/delete_if_dropped()

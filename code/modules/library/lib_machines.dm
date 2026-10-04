@@ -20,6 +20,10 @@
 /*
  * Library Public Computer
  */
+CAPABILITIES(/obj/machinery/librarypubliccomp)
+	op("search", ui_act(), then(PROC_REF(ui_act_search)))
+	op("back", ui_act(), then(PROC_REF(ui_act_back)))
+
 /obj/machinery/librarypubliccomp
 	name = "visitor computer"
 	icon = 'icons/obj/library.dmi'
@@ -96,8 +100,8 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_setauthor)
 		author = newauthor
 	return TRUE
 
-UI_ACT(/obj/machinery/librarypubliccomp, "search", ui_act_search)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_search)
+/obj/machinery/librarypubliccomp/proc/ui_act_search(datum/act/op/A)
+	var/mob/user = A.actor
 	last_results = list()
 	if(SSdbcore.IsConnected())
 		// category == "Any" means no category filter; both branches use
@@ -118,12 +122,11 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_search)
 	SQLquery = null // cleared after search — no longer holds interpolated SQL
 	screenstate = 1
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarypubliccomp, "back", ui_act_back)
-UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
+/obj/machinery/librarypubliccomp/proc/ui_act_back(datum/act/op/A)
 	screenstate = 0
-	return TRUE
+	return OP_OK
 
 
 /obj/machinery/librarypubliccomp/proc/sql_rows_arrived(list/result, error, key)
@@ -178,6 +181,11 @@ UI_ACT_PROC(/obj/machinery/librarypubliccomp, ui_act_back)
 
 CAPABILITIES(/obj/machinery/librarycomp)
 	owns_many(nameof(checkouts))
+	op("print_bible", ui_act(), then(PROC_REF(ui_act_print_bible)))
+	op("arccheckout", ui_act(), then(PROC_REF(ui_act_arccheckout)))
+	op("increasetime", ui_act(), then(PROC_REF(ui_act_increasetime)))
+	op("decreasetime", ui_act(), then(PROC_REF(ui_act_decreasetime)))
+	op("checkout", ui_act(), then(PROC_REF(ui_act_checkout)))
 
 /obj/machinery/librarycomp/Initialize(mapload)
 	. = ..()
@@ -359,18 +367,17 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_switchscreen)
 		refresh_external()
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "print_bible", ui_act_print_bible)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_print_bible)
+/obj/machinery/librarycomp/proc/ui_act_print_bible(datum/act/op/A)
 	if(COOLDOWN_FINISHED(src, print_cooldown))
 		new /obj/item/storage/bible(src.loc)
 		COOLDOWN_START(src, print_cooldown, 6 SECONDS)
 	else
 		for(var/mob/V in hearers(src))
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Bible printer currently unavailable, please wait a moment.\""))
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "arccheckout", ui_act_arccheckout)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_arccheckout)
+/obj/machinery/librarycomp/proc/ui_act_arccheckout(datum/act/op/A)
+	var/mob/user = A.actor
 	if(emagged)
 		arcanecheckout = 1
 		if(arcanecheckout)
@@ -380,19 +387,17 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_arccheckout)
 				MSG_OTHERS(span_infoplain(span_bold("%U%") + " stares at the blank screen for a few moments, %THEIR% expression frozen in fear. When %THEY% finally awaken from it, %THEY% look a lot older.")))
 			arcanecheckout = 0
 	screenstate = 0
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "increasetime", ui_act_increasetime)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_increasetime)
+/obj/machinery/librarycomp/proc/ui_act_increasetime(datum/act/op/A)
 	checkoutperiod += 1
-	return TRUE
+	return OP_OK
 
-UI_ACT(/obj/machinery/librarycomp, "decreasetime", ui_act_decreasetime)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_decreasetime)
+/obj/machinery/librarycomp/proc/ui_act_decreasetime(datum/act/op/A)
 	checkoutperiod -= 1
 	if(checkoutperiod < 1)
 		checkoutperiod = 1
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/librarycomp, "editbook", ui_act_editbook)
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editbook)
@@ -410,15 +415,14 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_editmob)
 	buffer_mob = _answer_k360
 	return TRUE
 
-UI_ACT(/obj/machinery/librarycomp, "checkout", ui_act_checkout)
-UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkout)
+/obj/machinery/librarycomp/proc/ui_act_checkout(datum/act/op/A)
 	var/datum/borrowbook/b = new
 	b.bookname = sanitizeSafe(buffer_book)
 	b.mobname = sanitize(buffer_mob)
 	EXPIRY_STAMP(b, getdate, CLOCK_WORLD)
 	EXPIRY_SET(b, duedate, (checkoutperiod * 600), CLOCK_WORLD)
 	rel_add(src, nameof(/obj/machinery/librarycomp::checkouts), b)
-	return TRUE
+	return OP_OK
 
 UI_ACT(/obj/machinery/librarycomp, "checkin", ui_act_checkin, UI_ARG_REF("ref", null, /datum/borrowbook))
 UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_checkin)
@@ -487,7 +491,7 @@ UI_ACT_PROC(/obj/machinery/librarycomp, ui_act_targetid)
 		for(var/mob/V in hearers(src))
 			V.show_message(span_infoplain(span_bold("[src]") + "'s monitor flashes, \"Printer unavailable. Please allow a short time before attempting to print.\""))
 		return TRUE
-	COOLDOWN_START(src, print_cooldown, 6)
+	COOLDOWN_START(src, print_cooldown, 0.6 SECONDS)
 	om_io(src, /datum/om/io/sql,
 		"SELECT id, author, title, content FROM library WHERE id = :id",
 		list("id" = numeric_id),
@@ -695,13 +699,13 @@ CAPABILITIES(/obj/machinery/bookbinder)
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		after(src, rand(200,400), PROC_REF(bind_paper), with = list(held))
+		after(src, rand(20 SECONDS, 40 SECONDS), PROC_REF(bind_paper), with = list(held))
 	else
 		user.drop_item()
 		held.forceMove(src)
 		act_message(user, src, MSG_SELF("You load some paper into %T%."), MSG_OTHERS("%U% loads some paper into %T%."))
 		src.visible_message("[src] begins to hum as it warms up its printing drums.")
-		after(src, rand(300,500), PROC_REF(bind_bundle), with = list(held))
+		after(src, rand(30 SECONDS, 50 SECONDS), PROC_REF(bind_bundle), with = list(held))
 	return TRUE
 
 /obj/machinery/bookbinder/proc/bind_paper(obj/item/paper/source_paper)

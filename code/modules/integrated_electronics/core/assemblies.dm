@@ -293,9 +293,26 @@ UI_ACT_PROC(/obj/item/electronic_assembly, ui_act_update_component_position)
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k272 = rerun_ask(user, "k272", PROC_REF(electronic_assembly_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name this?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k272))
+	if(!ismob(M) || QDELETED(M))
 		return
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "What do you want to name this?", default = name)
+
+/obj/item/electronic_assembly/proc/rename_entered(datum/act/request/A)
+	var/datum/prompt/text/electronics_rename/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			SStgui.update_uis(src)
+		return
+	apply_rename(A)
+	SStgui.update_uis(src)
+
+/obj/item/electronic_assembly/proc/apply_rename(datum/act/request/A)
+	var/mob/M = A.request.answerer
+	if(!check_interactivity(M))
+		return
+	var/_answer_k272 = A.answer.answer_value
 	var/input = sanitizeSafe(_answer_k272, MAX_NAME_LEN)
 	if(src && input)
 		to_chat(M, span_notice("The machine now has a label reading '[input]'."))
@@ -505,6 +522,13 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 	if(opened)
 		tgui_interact(user)
 
+	if(!ismob(user) || QDELETED(user))
+		return TRUE
+	var/list/options = input_prompt_options()
+	open_request(src, /datum/prompt/choice/electronics_input, PROC_REF(input_selected), answerer = user, choices = options[1], captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction))
+	return TRUE
+
+/obj/item/electronic_assembly/proc/input_prompt_options()
 	var/list/input_selection = list()
 	var/list/available_inputs = list()
 	for(var/obj/item/integrated_circuit/input/input in contents)
@@ -519,18 +543,65 @@ DECLARE_INTERACTIONS(/obj/item/electronic_assembly, \
 				disp_name += " ([i+1])"
 			input_selection.Add(disp_name)
 
-	var/obj/item/integrated_circuit/input/choice
-	if(available_inputs)
-		var/selection = rerun_ask(user, "k490", PROC_REF(interaction_self), args, /datum/om/prompt/choice, message = "What do you want to interact with?", title = "Interaction", choices = input_selection)
-		if(isnull(selection))
-			return TRUE
-		if(selection)
-			var/index = input_selection.Find(selection)
-			choice = available_inputs[index]
+	return list(input_selection, available_inputs)
 
+/obj/item/electronic_assembly/proc/input_selected(datum/act/request/A)
+	var/datum/prompt/choice/electronics_input/request = A.request
+	if(!A.answer || request.captures_gone())
+		return
+	apply_input_selection(A)
+	SStgui.update_uis(src)
+
+/obj/item/electronic_assembly/proc/apply_input_selection(datum/act/request/A)
+	var/mob/user = A.request.answerer
+	if(!check_interactivity(user))
+		return TRUE
+	if(opened)
+		tgui_interact(user)
+	var/list/options = input_prompt_options()
+	var/list/input_selection = options[1]
+	var/list/available_inputs = options[2]
+	var/selection = A.answer.answer_value
+	var/obj/item/integrated_circuit/input/choice
+	if(selection)
+		var/index = input_selection.Find(selection)
+		choice = available_inputs[index]
 	if(choice)
 		choice.ask_for_input(user)
 	return TRUE
+
+/datum/prompt/choice/electronics_input
+	question = "What do you want to interact with?"
+	title = "Interaction"
+	timeout = 0
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/electronics_input)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/choice/electronics_input/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/choice/electronics_input/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/choice/electronics_input/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
 
 /// Old attack_robot: an adjacent cyborg uses it in hand; otherwise the default.
 /obj/item/electronic_assembly/proc/assembly_robot_use(mob/user, obj/item/held, datum/interaction/interaction)

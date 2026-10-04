@@ -343,6 +343,7 @@ UI_ACT(/datum/permissions_panel, "nav_housekeeping", ui_act_nav_housekeeping)
 UI_ACT_PROC(/datum/permissions_panel, ui_act_nav_housekeeping)
 	forward_topic("editrightsbrowserhousekeep=1")
 	return TRUE
+
 // Permissions page row actions.
 
 UI_ACT(/datum/permissions_panel, "admin_add", ui_act_admin_add)

@@ -16,6 +16,7 @@
 	var/delay_to_try_again = 0 // How long to wait if first attempt fails.  Set to 0 to never try again.
 
 CAPABILITIES(/obj/structure/ghost_pod)
+	ref_one(nameof(opening_actor))
 	owns_one(nameof(Q), /datum/ghost_query)
 
 // Call this to get a ghost volunteer.
@@ -276,8 +277,3 @@ REGISTRY_MEMBERSHIP(/obj/structure/ghost_pod, REGISTRY_GHOST_PODS)
 
 /obj/structure/ghost_pod/ghost_activated/LateInitialize()
 	ghostpod_startup(spawn_active)
-
-
-/obj/structure/ghost_pod/relations()
-	. = ..()
-	. += rel_one(nameof(opening_actor))

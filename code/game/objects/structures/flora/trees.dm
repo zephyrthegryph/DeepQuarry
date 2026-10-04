@@ -14,10 +14,14 @@
 	var/is_stump = FALSE // If true, suspends damage tracking and most other effects.
 	var/indestructable = FALSE // If true, the tree cannot die.
 
+TYPE_TABLE_DECLARE(/obj/structure/flora/tree, winter_icon_suffix, FALSE)
+
 /obj/structure/flora/tree/Initialize(mapload)
 	icon_state = choose_icon_state()
 
-	return ..()
+	. = ..()
+	if(TYPE_TABLE_GET(src, winter_icon_suffix))
+		icon_state = "[base_state][rand(1, 6)]"
 
 /obj/structure/flora/tree/update_transform()
 	var/matrix/M = matrix()
@@ -306,9 +310,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/winter/Initialize(mapload)
-	. = ..()
-	icon_state = "[base_state][rand(1, 6)]"
+TYPE_TABLE(/obj/structure/flora/tree/winter, winter_icon_suffix, TRUE)
 
 
 /obj/structure/flora/tree/winter1
@@ -322,9 +324,7 @@ CAPABILITIES(/obj/structure/flora/tree)
 	pixel_y = -16
 	shake_animation_degrees = 2
 
-/obj/structure/flora/tree/winter1/Initialize(mapload)
-	. = ..()
-	icon_state = "[base_state][rand(1, 6)]"
+TYPE_TABLE(/obj/structure/flora/tree/winter1, winter_icon_suffix, TRUE)
 
 // Sif trees
 

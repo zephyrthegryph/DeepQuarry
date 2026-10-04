@@ -132,12 +132,9 @@ CAPABILITIES(/obj/item/material/ashtray)
 		return ..()
 	shatter()
 
-/obj/item/material/ashtray/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/material/ashtray/plastic, weapon_forced_material, MAT_PLASTIC)
 
-/obj/item/material/ashtray/bronze/Initialize(mapload)
-	. = ..(mapload, MAT_BRONZE)
+TYPE_TABLE(/obj/item/material/ashtray/bronze, weapon_forced_material, MAT_BRONZE)
 
-/obj/item/material/ashtray/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/material/ashtray/glass, weapon_forced_material, MAT_GLASS)
 

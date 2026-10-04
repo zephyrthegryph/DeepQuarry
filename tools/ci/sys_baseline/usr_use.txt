@@ -7,33 +7,16 @@ usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return om_pathfinder().
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	return graph_astar(get_turf(usr), target, TYPE_PROC_REF(/turf, CardinalTurfsWithAccess), TYPE_PROC_REF(/turf, Distance), 0, 128, 1)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_all(turf/start = get_turf(usr), turf/goal)
 usr_outside_verb	code/_helpers/pathfinding/pathfinder.dm	/proc/pathfinding_run_benchmark(times = 1000, turf/source = get_turf(usr))
-usr_outside_verb	code/_onclick/hud/ability_screen_objects.dm	if(!usr)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc, theme = actiontooltipstyle)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	if(!can_use(usr))
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/action/action_screen_objects.dm	closeToolTip(usr, src)
 usr_outside_verb	code/_onclick/hud/alert.dm	openToolTip(usr, src, params, title = name, content = desc, theme = alerttooltipstyle)
 usr_outside_verb	code/_onclick/hud/alert.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/alert.dm	if(isliving(usr))
-usr_outside_verb	code/_onclick/hud/alert.dm	var/mob/living/carbon/human/M = usr
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client) return
-usr_outside_verb	code/_onclick/hud/alert.dm	var/mob/observer/dead/G = usr
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client) return
-usr_outside_verb	code/_onclick/hud/alert.dm	rel_set(TC, nameof(TC.T), usr.client.current_ticket())
-usr_outside_verb	code/_onclick/hud/alert.dm	TC.tgui_interact(usr.client.mob)
-usr_outside_verb	code/_onclick/hud/alert.dm	if(!usr || !usr.client)
-usr_outside_verb	code/_onclick/hud/alert.dm	to_chat(usr,span_boldnotice(name) + " - " + span_info(desc))
-usr_outside_verb	code/_onclick/hud/alert.dm	return usr.client.Click(master, location, control, params)
 usr_outside_verb	code/_onclick/hud/ghost.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/ghost.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	usr.client?.close_popup("camera-[REF(src)]")
-usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	if(usr.client.screen_maps["camera-[REF(src)]_map"])
-usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	usr.client.setup_popup("camera-[REF(src)]", width, height, 2, "1984")
-usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	popup_screen.display_to(usr)
-usr_outside_verb	code/_onclick/hud/picture_in_picture.dm	observe(usr, /datum/notice/popup_cleared, src, then(PROC_REF(on_popup_clear)))
 usr_outside_verb	code/_onclick/hud/radial.dm	openToolTip(usr, src, params, title = name)
 usr_outside_verb	code/_onclick/hud/radial.dm	if (click_on_hover && !isnull(usr) && !isnull(parent()))
 usr_outside_verb	code/_onclick/hud/radial.dm	closeToolTip(usr, src)
@@ -48,27 +31,14 @@ usr_outside_verb	code/_onclick/hud/screen_objects.dm	var/obj/item/I = usr.get_ac
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr.ClickOn(master)
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(isobserver(usr))
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!isobserver(usr) && hovering_choice)
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!usr.checkClickCooldown())
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr << get_sfx(SFX_BUTTON)
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(!usr.checkClickCooldown())
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(usr.stat || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_WEAKENED))
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
-usr_outside_verb	code/_onclick/hud/screen_objects.dm	usr << get_sfx(SFX_BUTTON)
 usr_outside_verb	code/_onclick/hud/screen_objects.dm	var/mob/user = usr
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	openToolTip(usr, src, params, title = name, content = desc)
 usr_outside_verb	code/_onclick/hud/soulcatcher_guest.dm	closeToolTip(usr, src)
-usr_outside_verb	code/_onclick/hud/spell_screen_objects.dm	if(!usr || !spell)
-usr_outside_verb	code/_onclick/hud/spell_screen_objects.dm	spell.perform(usr)
 usr_outside_verb	code/controllers/admin.dm	if(!check_rights_for(usr.client, R_HOLDER) || !target)
 usr_outside_verb	code/controllers/admin.dm	usr.client.debug_variables(target)
 usr_outside_verb	code/controllers/admin.dm	message_admins("Admin [key_name_admin(usr)] is debugging the [target] [class].")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to reset locked config entry [type] to its default")
 usr_outside_verb	code/controllers/configuration/config_entry.dm	log_admin("[key_name(usr)] attempted to set locked config entry [type] to '[str_val]'")
-usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-usr_outside_verb	code/controllers/configuration/configuration.dm	message_admins("[key_name_admin(usr)] has forcefully reloaded the configuration from disk.")
-usr_outside_verb	code/controllers/configuration/configuration.dm	to_chat(usr, span_warning("Another user is already reloading the config!"))
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config access of [entry_type] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/configuration/configuration.dm	log_admin("Config rewrite of [entry_type] to [new_val] attempted by [key_name(usr)]")
 usr_outside_verb	code/controllers/measure/synthetic.dm	var/mob/saved_user = usr
@@ -85,8 +55,6 @@ usr_outside_verb	code/datums/callback.dm	if(!usr)
 usr_outside_verb	code/datums/callback.dm	var/temp = usr
 usr_outside_verb	code/datums/callback.dm	usr = M
 usr_outside_verb	code/datums/callback.dm	usr = temp
-usr_outside_verb	code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm	rel_set(src, nameof(registered_user), usr)
-usr_outside_verb	code/datums/entity_state/antags/changeling/powers/fabricate_clothing.dm	usr.set_id_info(src)
 usr_outside_verb	code/datums/om/flow_io.dm	var/user_ckey = usr?.ckey
 usr_outside_verb	code/datums/om/flow_io.dm	usr = user // Flow entries are verbs, panels and topics, and read usr as they did first.
 usr_outside_verb	code/datums/om/prompt_helpers.dm	usr = actor
@@ -111,9 +79,7 @@ usr_outside_verb	code/game/objects/items.dm	if(usr?.read_preference(/datum/prefe
 usr_outside_verb	code/game/objects/items.dm	var/user = usr
 usr_outside_verb	code/game/objects/items.dm	closeToolTip(usr, src)
 usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	var/mob/M = usr
-usr_outside_verb	code/game/objects/items/devices/communicator/communicator.dm	if (!(src.loc == usr) || (src.loc && src.loc.loc == usr))
 usr_outside_verb	code/game/objects/items/weapons/cigs_lighters.dm	/obj/item/clothing/mask/smokable/proc/light(flavor_text = "[usr] lights the [name].")
-usr_outside_verb	code/game/objects/items/weapons/implants/implantuplink.dm	if(item_hidden_uplink(src) && usr == source) // Let's not have another people activate our uplink
 usr_outside_verb	code/game/objects/items/weapons/storage/laundry_basket.dm	if(over_object == usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/ore_bag.dm	W.dropped(usr)
 usr_outside_verb	code/game/objects/items/weapons/storage/secure.dm	src.add_fingerprint(usr)
@@ -125,29 +91,10 @@ usr_outside_verb	code/game/world.dm	if (usr)
 usr_outside_verb	code/game/world.dm	log_admin("[key_name(usr)] Has requested an immediate world restart via client side debugging tools")
 usr_outside_verb	code/game/world.dm	message_admins("[key_name_admin(usr)] Has requested an immediate world restart via client side debugging tools")
 usr_outside_verb	code/game/world.dm	to_chat(world, span_boldannounce("[key_name_admin(usr)] has requested an immediate world restart via client side debugging tools"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	var/datum/om/prompt/confirm/unseen_ban/ask = om_ask(usr, /datum/om/prompt/confirm/unseen_ban, PROC_REF(unseen_ban_confirmed), ban_args = list(bantype, null, duration, reason, job, rounds, banned_mob ? banned_mob.ckey : banckey, banned_mob?.client ? banned_mob.client.address : banip, banned_mob?.client ? banned_mob.client.computer_id : bancid))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_blue("Ban saved to database.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	message_admins("[key_name_admin(usr)] has added a [bantype_str] for [ckey] [(job)?"([job])":""] [(duration > 0)?"([duration] minutes)":""] with the reason: \"[reason]\" to the ban database.")
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to no bans fitting the search criteria. If this is not a legacy ban you should contact the database admin.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans fitting the search criteria. Note down the ckey, job and current time and contact the database admin.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to a ban ID mismatch. Contact the database admin.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	usr = admin // DB_ban_record() reads usr for the banning admin, as when it asked.
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	usr = admin // DB_ban_edit() reads usr for the editing admin.
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to a ban id not being present in the database.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	to_chat(usr, span_filter_adminlog("[span_red("Database update failed due to multiple bans having the same ID. Contact the database admin.")]"))
-usr_outside_verb	code/modules/admin/DB ban/functions.dm	message_admins("[key_name_admin(usr)] has lifted [pckey]'s ban.")
-usr_outside_verb	code/modules/admin/NewBan.dm	to_chat(usr, span_filter_adminlog(span_warning("Ban already exists.")))
-usr_outside_verb	code/modules/admin/admin.dm	om_ask(usr, /datum/om/prompt/confirm/ghost_drag, PROC_REF(ghost_drag_confirmed), message = question, frommob = frommob, tomob = tomob)
 usr_outside_verb	code/modules/admin/admin_attack_log.dm	/proc/log_and_message_admins(message as text, mob/user = usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/admin_ranks.dm	alert_to_permissions_elevation_attempt(usr)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin Reload blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
-usr_outside_verb	code/modules/admin/admin_ranks.dm	to_chat(usr, span_adminprefix("Admin rank DB Sync blocked: Advanced ProcCall detected."))
-usr_outside_verb	code/modules/admin/admin_verbs.dm	to_chat(usr, span_warning("Error: warn(): You can't warn admins."))
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/lastusr = usr
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = handler
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	usr = lastusr
@@ -161,7 +108,6 @@ usr_outside_verb	code/modules/admin/callproc/callproc.dm	var/is_remote_handler =
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	to_chat(usr, span_adminnotice("Another set of admin called procs are still running. Try again later."), confidential = TRUE)
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	log_admin("[key_name(usr)] attempted to call world/proc/[procname] with arguments: [english_list(arguments)]")
 usr_outside_verb	code/modules/admin/callproc/callproc.dm	return (GLOB.AdminProcCaller && GLOB.AdminProcCaller == usr?.client?.ckey) || (GLOB.AdminProcCallHandler && usr == GLOB.AdminProcCallHandler)
-usr_outside_verb	code/modules/admin/functions/modify_traits.dm	om_ask(usr, /datum/om/prompt/choice/modify_trait, PROC_REF(ask_trait), message = "Remove/Add?", choices = list("Add","Remove"), target = D)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
 usr_outside_verb	code/modules/admin/holder2.dm	alert_to_permissions_elevation_attempt(usr)
@@ -175,8 +121,6 @@ usr_outside_verb	code/modules/admin/holder2.dm	if(check_rights_for(usr.client, R
 usr_outside_verb	code/modules/admin/holder2.dm	return usr.client.holder.check_if_greater_rights_than_holder(other.holder)
 usr_outside_verb	code/modules/admin/holder2.dm	if(!forceGlobal && usr)
 usr_outside_verb	code/modules/admin/holder2.dm	var/client/C = usr.client
-usr_outside_verb	code/modules/admin/topic.dm	message_admins("[key_name_admin(usr)] clicked an href with [msg] authorization key!")
-usr_outside_verb	code/modules/admin/topic.dm	log_admin("[key_name(usr)] clicked an href with [msg] authorization key! [href]")
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2.dm	usr.client.debug_variables(REGISTRY_MEMBERS(REGISTRY_SDQL2_QUERIES))
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_hearers(Depth = world.view, Center = usr)
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_ohearers(Dist, Center = usr)
@@ -184,58 +128,14 @@ usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_orange
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_oview(Dist, Center = usr)
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_oviewers(Dist, Center = usr)
 usr_outside_verb	code/modules/admin/verbs/SDQL2/SDQL_2_wrappers.dm	/proc/_range(Dist, Center = usr)
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	to_chat(usr, span_notice("***********************************************************<br>\
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/text/buildmode, PROC_REF(ask_edit_type), title = "Name", message = "Enter variable name:", default = "name")
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/confirm, PROC_REF(ask_area_name), title = "Room Builder", message = "Would you like to generate a new area as well?", no_first = TRUE, answer_on_no = TRUE, requires = PROMPT_ADMIN(R_BUILDMODE))
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	om_ask(usr, /datum/om/prompt/choice/buildmode, PROC_REF(ask_light_value), title = "Light Maker", message = "Change the new light range, power, or color?", choices = list("Range", "Power", "Color"), buttons = TRUE)
-usr_outside_verb	code/modules/admin/verbs/buildmode.dm	ask_path(usr, "objholder")
 usr_outside_verb	code/modules/admin/view_variables/debug_variables.dm	usr << browse_rsc(icon_value, rname)
-usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	.["value"] = input(usr, "Pick file:", "File") as null|file // ALLOW(scheduler): file uploads need the BYOND file dialog
-usr_outside_verb	code/modules/admin/view_variables/get_variables.dm	tgui_alert_async(usr,"Invalid ref!")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(usr?.client)
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(rerun_ask(usr, "sure", PROC_REF(find_references), args, /datum/om/prompt/choice/alert, message = "Running this will lock everything up for about 5 minutes. Would you like to begin the search?", title = "Find References", choices = list("Yes", "No")) != "Yes")
 usr_outside_verb	code/modules/admin/view_variables/reference_tracking.dm	if(!usr?.client && !dq_refsearch_allowed(src))
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	if(!usr.client || !check_rights_for(usr.client, R_HOLDER))
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	to_chat(usr, span_danger("You need to be an administrator to access this."), confidential = TRUE)
-usr_outside_verb	code/modules/admin/view_variables_panel.dm	dq_vv_panel.tgui_interact(usr)
 usr_outside_verb	code/modules/client/client procs.dm	if(!usr || usr != mob) //stops us calling Topic for somebody else's client. Also helps prevent usr=null
-usr_outside_verb	code/modules/client/client procs.dm	message_admins("[ADMIN_LOOKUPFLW(usr)] [ADMIN_KICK(usr)] Has hit the per-minute topic limit of [mtl] topic calls in a given game minute")
-usr_outside_verb	code/modules/client/client procs.dm	log_href("[src] (usr:[usr]\[[COORD(usr)]\]) : [hsrc ? "[hsrc] " : ""][href]")
-usr_outside_verb	code/modules/client/client procs.dm	if(!hsrc && topic_dispatch(src, usr, href_list))
 usr_outside_verb	code/modules/client/client procs.dm	OM_EMIT(mob, /datum/om/event/client_click, object, location, control, params, usr)
 usr_outside_verb	code/modules/clothing/accessories/rings.dm	add_attack_logs(usr, H, "Injected with [name] containing [contained] transferred [trans] units")
 usr_outside_verb	code/modules/clothing/accessories/storage.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The [interface_name] is damaged beyond use!"))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("You cannot use the [interface_name] again so soon."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The suit is not initialized."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	if(usr.lying || usr.stat || usr.has_status(EFFECT_STUNNED) || usr.has_status(EFFECT_PARALYZED) || usr.has_status(EFFECT_WEAKENED))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("You cannot use the suit in this state."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_warning("The suit cannot function while the wearer is prone."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	if(holder.security_check_enabled && !holder.check_suit_access(usr))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	to_chat(usr, span_danger("Access denied."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/modules.dm	if(!holder.check_power_cost(usr, use_power_cost, 0, src, (istype(usr,/mob/living/silicon) ? 1 : 0) ) )
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You activate the suit's energy syphon."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You deactivate the suit's energy syphon."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	var/armor_chosen = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice, message = "Which armor to adjust?", title = "Protean Armor", choices = TYPE_TABLE_GET(src, armor_types))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	var/armorvalue = rerun_ask(usr, "a2", PROC_REF(engage), args, /datum/om/prompt/number, message = "Set armour reduction value (Max of 60%)", title = "Protean Armor", default = 0, max = 60)
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_bolddanger("Armor module non-functional while a RIG is assimilated."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You signal the suit to harden."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You signal the suit to relax."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You activate the suit's restorative nanites."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/protean.dm	to_chat(usr, span_boldnotice("You deactivate the suit's restorative nanites."))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm	var/_answer_a1 = rerun_ask(usr, "a1", PROC_REF(engage), args, /datum/om/prompt/choice/alert, message = "Are you sure you want to push that button?", title = "Self-destruct", choices = list("No", "Yes"))
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/self_destruct.dm	if(!skip_check && usr && _answer_a1 != "Yes")
-usr_outside_verb	code/modules/clothing/spacesuits/rig/modules/specific/voice.dm	om_ask(usr, /datum/om/prompt/choice/rig_voice, PROC_REF(voice_choice_made))
 usr_outside_verb	code/modules/clothing/suits/storage.dm	if (pockets.handle_mousedrop(usr, over_object))
 usr_outside_verb	code/modules/emotes/custom_emote.dm	if((check_stat && (src && stat)) || is_paralyzed() || (!use_me && usr == src))
 usr_outside_verb	code/modules/emotes/emote_mob.dm	if(usr == src) //client-called emote
@@ -253,56 +153,29 @@ usr_outside_verb	code/modules/error_handler/error_viewer.dm	usr_ref = "[REF(usr)
 usr_outside_verb	code/modules/error_handler/error_viewer.dm	rel_set(src, nameof(usr_loc), get_turf(usr))
 usr_outside_verb	code/modules/examine/examine.dm	return "[icon2html(GLOB.description_icons[icon_state], usr)]&emsp;"
 usr_outside_verb	code/modules/food/food/snacks.dm	if(istype(user) && user == usr)
-usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	wirer.wire(pin, usr)
-usr_outside_verb	code/modules/integrated_electronics/core/helpers.dm	debugger.write_data(pin, usr)
 usr_outside_verb	code/modules/keybindings/hover.dm	usr?.client?.note_hover(src)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.DblClickOn(src, params)
 usr_outside_verb	code/modules/keybindings/router.dm	usr.MouseWheelOn(src, delta_x, delta_y, params)
 usr_outside_verb	code/modules/keybindings/router.dm	GLOB.input_router.route_drag(usr, src, over, src_location, over_location, src_control, over_control, params)
-usr_outside_verb	code/modules/mob/combat_mode.dm	usr.set_combat_mode(!usr.combat_mode)
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if(!usr || !over) return
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (isobserver(usr) && usr.client && check_rights_for(usr.client, R_HOLDER) && isliving(over))
-usr_outside_verb	code/modules/mob/dead/observer/observer.dm	if (usr.client.holder.cmd_ghost_drag(src,over))
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	if(isAI(usr))
-usr_outside_verb	code/modules/mob/freelook/ai/eye.dm	var/mob/living/silicon/ai/AI = usr
 usr_outside_verb	code/modules/mob/holder.dm	get_scooped(H, (usr == src))
 usr_outside_verb	code/modules/mob/living/carbon/human/species/outsider/event.dm	om_ask(usr, /datum/om/prompt/choice, PROC_REF(limbset_chosen), message = "Choose limb set to use for future spawns.", title = "Limb types.", choices = limb_sets)
 usr_outside_verb	code/modules/mob/living/carbon/human/species/station/protean/protean_powers.dm	var/mob/living/carbon/human/H = usr
-usr_outside_verb	code/modules/mob/mob.dm	if(usr != src && will_show_tooltip())
-usr_outside_verb	code/modules/mob/mob.dm	if(usr?.read_preference(/datum/preference/toggle/mob_tooltips))
-usr_outside_verb	code/modules/mob/mob.dm	openToolTip(usr, src, params, title = get_nametag_name(usr), content = get_nametag_desc(usr))
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/mob/mob.dm	closeToolTip(usr, src) //No reason not to, really
-usr_outside_verb	code/modules/mob/new_player/new_player.dm	if (src != usr)
 usr_outside_verb	code/modules/mob/say.dm	if(stat || !use_me && usr == src)
 usr_outside_verb	code/modules/overmap/sectors.dm	openToolTip(user = usr, tip_src = src, params = params, title = name)
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/overmap/sectors.dm	closeToolTip(usr, src) //No reason not to, really
 usr_outside_verb	code/modules/pda/cart.dm	if (hold.handle_mousedrop(usr, over_object))
-usr_outside_verb	code/modules/pda/messenger.dm	to_chat(usr, "Turn on your receiver in order to send messages.")
 usr_outside_verb	code/modules/pda/pda.dm	var/mob/M = usr
 usr_outside_verb	code/modules/pda/pda.dm	if((!istype(over_object, /atom/movable/screen)) && can_use(usr))
 usr_outside_verb	code/modules/reagents/Chemistry-Logging.dm	var/logstr = "[usr ? key_name(usr) : "EVENT"] mixed [R.name] ([R.result]) (x[multiplier]) in \the [A] at [T ? "[T.x],[T.y],[T.z]" : "*null*"]"
 usr_outside_verb	code/modules/reagents/holder/holder.dm	stack_trace("[my_atom] attempted to add a reagent called '[id]' which doesn't exist. ([usr])")
 usr_outside_verb	code/modules/stockmarket/articles.dm	to_chat(usr, "[A]: [length(GLOB.FrozenAccounts[A])] borrows")
-usr_outside_verb	code/modules/tgui/helpers.dm	log_tgui(usr, "Error: Invalid JSON")
 usr_outside_verb	code/modules/tgui/modules/overmap.dm	CRASH("Warning, [new_linked] is not an overmap ship! Something went horribly wrong for [usr]!")
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/alert.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/bitfield.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/checkboxes.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/color.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/keycombo.dm	/proc/tgui_input_keycombo(mob/user = usr, message, title = "Key Input", default = 0, timeout = 0, ui_state = GLOB.tgui_always_state)
-usr_outside_verb	code/modules/tgui_input/list.dm	user = usr
 usr_outside_verb	code/modules/tgui_input/matrix.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/number.dm	user = usr
-usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] entered in a null payload to the chat window.")
-usr_outside_verb	code/modules/tgui_input/say_modal/speech.dm	CRASH("[usr] has entered more characters than allowed into a TGUI-Say")
-usr_outside_verb	code/modules/tgui_input/text.dm	user = usr
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(M != usr) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(usr == src) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	if(!Adjacent(usr)) return
-usr_outside_verb	code/modules/vore/resizing/holder_micro.dm	O.show_inventory_panel(usr, state = GLOB.tgui_deep_inventory_state)
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	if(!QDELETED(src) && isturf(loc) && is_anomalous() && Adjacent(over_object) && CanMouseDrop(over_object, usr))
 usr_outside_verb	code/modules/xenoarcheaology/anomaly_container.dm	Bumped(usr)
 usr_outside_verb	code/modules/xenoarcheaology/effect_master.dm	var/effect_type = rerun_ask(usr, "k123", PROC_REF(add_effect), args, /datum/om/prompt/choice, message = "What type do you want?", title = "Effect Type", choices = subtypesof(/datum/artifact_effect))

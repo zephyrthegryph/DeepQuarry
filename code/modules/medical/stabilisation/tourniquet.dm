@@ -92,9 +92,6 @@
 	var/obj/item/tourniquet/tourniquet
 
 // Owned: a cinched tourniquet sits in the limb and is deleted with it.
-/obj/item/organ/external/ownership()
-	. = ..()
-	. += owns(nameof(tourniquet), policy = OWN_DELETE)
 
 /// A cinched tourniquet that leaves the limb by any path (moved, deleted, stripped by
 /// a raw forceMove) stops occluding it (audit D15a).
@@ -190,9 +187,49 @@
 	if(!length(cinched))
 		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
 		return
-	var/_answer_k142 = rerun_ask(user, "k142", VERB_REF(loosen_tourniquet), args, /datum/om/prompt/choice, message = "Loosen which tourniquet?", title = "Tourniquet", choices = cinched)
-	if(isnull(_answer_k142))
+	open_request(src, /datum/prompt/choice/loosen_tourniquet, PROC_REF(loosen_tourniquet_chosen), answerer = user, choices = cinched)
+
+/datum/prompt/choice/loosen_tourniquet
+	question = "Loosen which tourniquet?"
+	title = "Tourniquet"
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/loosen_tourniquet/recheck_extra()
+	. = ..()
+	if(.)
 		return
+	var/mob/living/user = answerer
+	var/mob/living/carbon/human/patient = owner
+	if(!istype(user) || user.incapacitated() || !user.Adjacent(patient))
+		return "cannot reach the tourniquet"
+	if(!isnull(answer_value))
+		var/list/cinched = list()
+		for(var/obj/item/organ/external/limb as anything in patient.organs)
+			if(limb.tourniquet)
+				cinched[limb.name] = limb
+		if(length(cinched) > 1 && !(answer_value in cinched))
+			return "the selected tourniquet is no longer there"
+	return null
+
+/mob/living/carbon/human/proc/loosen_tourniquet_chosen(datum/act/request/A)
+	if(!A.answer)
+		if(!isnull(A.request.answer_value) && !QDELETED(A.request.answerer))
+			SStgui.update_uis(src)
+		return
+	apply_tourniquet_choice(A)
+	SStgui.update_uis(src)
+
+/mob/living/carbon/human/proc/apply_tourniquet_choice(datum/act/request/A)
+	var/mob/living/user = A.request.answerer
+	var/list/cinched = list()
+	for(var/obj/item/organ/external/limb as anything in organs)
+		if(limb.tourniquet)
+			cinched[limb.name] = limb
+	if(!length(cinched))
+		to_chat(user, span_warning("[src == user ? "You have" : "[src] has"] no tourniquet on."))
+		return
+	var/_answer_k142 = A.request.answer_value
 	var/choice = length(cinched) == 1 ? cinched[1] : _answer_k142
 	if(!choice)
 		return

@@ -134,7 +134,7 @@ UI_ACT(/datum/edit_memory_panel, "obj_delete", ui_act_obj_delete, UI_ARG_REF("re
 UI_ACT_PROC(/datum/edit_memory_panel, ui_act_obj_delete)
 	var/datum/objective/O = params["ref"]
 	if(istype(O))
-		qdel(O) // it leaves the mind's objectives as it goes
+		own_remove(target_mind, nameof(target_mind.objectives), O)
 	SStgui.update_uis(src)
 	return TRUE
 

@@ -33,6 +33,7 @@
 	return
 
 /datum/unit_test/dq_hc_items/proc/tile(dx, dy)
+	RETURN_TYPE(/turf)
 	return locate(run_loc_floor_bottom_left.x + dx, run_loc_floor_bottom_left.y + dy, run_loc_floor_bottom_left.z)
 
 /datum/unit_test/dq_hc_items/proc/settle()
@@ -239,7 +240,8 @@
 	var/mob/living/carbon/human/H = person()
 	var/obj/item/target/X = allocate(/obj/item/target, tile(2, 3))
 	var/obj/structure/target_stake/S = allocate(/obj/structure/target_stake, tile(2, 3))
-	tile(2, 3).luminosity = 3 // view() sees only lit turfs
+	var/turf/lit = tile(2, 3)
+	lit.luminosity = 3 // view() sees only lit turfs
 	rel_set(S, nameof(S.pinned_target), X)
 	S.set_density(FALSE)
 	hci_click(H, X, null)

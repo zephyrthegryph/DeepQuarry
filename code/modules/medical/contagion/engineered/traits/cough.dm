@@ -85,4 +85,4 @@ BONUS
 				after(M, 3 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 				after(M, 6 SECONDS, TYPE_PROC_REF(/mob, emote), with = list("cough"))
 			if(infective && !(A.spread_flags & DISEASE_SPREAD_FALTERED) && prob(50))
-				after(A, 20, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(2))
+				after(A, 2 SECONDS, TYPE_PROC_REF(/datum/affliction/contagion, spread), with = list(2))

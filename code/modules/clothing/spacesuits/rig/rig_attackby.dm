@@ -138,7 +138,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	to_chat(user, "You detach and remove \the [removed_tank].")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/rig/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/rig/screwdriver_act(mob/user, obj/item/tool, answered_mount = null, answered_module = null)
 	if(!open)
 		return ITEM_INTERACT_BLOCKING
 	var/list/current_mounts = list()
@@ -146,7 +146,10 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 		current_mounts += "cell"
 	if(length(installed_modules))
 		current_mounts += "system module"
-	var/to_remove = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which would you like to modify?", title = "Removal Choice", choices = current_mounts)
+	if(isnull(answered_mount))
+		open_maintenance_request(user, tool, "Which would you like to modify?", current_mounts)
+		return ITEM_INTERACT_BLOCKING
+	var/to_remove = answered_mount
 	if(isnull(to_remove))
 		return ITEM_INTERACT_BLOCKING
 	if(!to_remove)
@@ -159,7 +162,7 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(to_remove == "cell")
 		to_chat(user, "You detach \the [cell] from \the [src]'s battery mount.")
 		for(var/obj/item/rig_module/module in installed_modules)
-			module.deactivate()
+			module.deactivate(FALSE, user)
 		user.put_in_hands(cell)
 		own_take(src, nameof(cell))
 		return ITEM_INTERACT_SUCCESS
@@ -170,7 +173,10 @@ EXTEND_INTERACTIONS(/obj/item/rig, \
 	if(!length(possible_removals))
 		to_chat(user, "There are no installed modules to remove.")
 		return ITEM_INTERACT_BLOCKING
-	var/removal_choice = rerun_ask(user, "a2", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "Which module would you like to remove?", title = "Removal Choice", choices = possible_removals)
+	if(isnull(answered_module))
+		open_maintenance_request(user, tool, "Which module would you like to remove?", possible_removals, to_remove)
+		return ITEM_INTERACT_BLOCKING
+	var/removal_choice = answered_module
 	if(isnull(removal_choice))
 		return ITEM_INTERACT_BLOCKING
 	var/obj/item/rig_module/removed = possible_removals[removal_choice]
@@ -200,3 +206,56 @@ DECLARE_EMAG_REPEATABLE(/obj/item/rig, PROC_REF(on_emag), null)
 		subverted = 1
 		to_chat(user, span_danger("You short out the access protocol for the suit."))
 		return 1
+
+/obj/item/rig/proc/open_maintenance_request(mob/user, obj/item/tool, question, list/choices, mount_choice = null)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/choice/rig_maintenance, PROC_REF(maintenance_chosen), answerer = user, captured_tool = tool, tool_expected = !isnull(tool), question = question, choices = choices, mount_choice = mount_choice, original_client_ckey = original_client_ckey)
+
+/obj/item/rig/proc/maintenance_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_maintenance_answer(A)
+	SStgui.update_uis(src)
+
+/obj/item/rig/proc/apply_maintenance_answer(datum/act/request/A)
+	var/datum/prompt/choice/rig_maintenance/request = A.request
+	if(request.captures_gone())
+		return
+	var/mob/user = request.original_client_ckey ? GLOB.directory[request.original_client_ckey] : request.answerer
+	if(isnull(request.mount_choice))
+		return screwdriver_act(user, request.captured_tool, A.answer.answer_value)
+	return screwdriver_act(user, request.captured_tool, request.mount_choice, A.answer.answer_value)
+
+/datum/prompt/choice/rig_maintenance
+	title = "Removal Choice"
+	timeout = 0
+	var/obj/item/captured_tool
+	var/tool_expected = FALSE
+	var/mount_choice
+	var/original_client_ckey
+
+CAPABILITIES(/datum/prompt/choice/rig_maintenance)
+	ref_one(nameof(captured_tool), /obj/item)
+
+/datum/prompt/choice/rig_maintenance/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/tool = captured_tool
+	rel_clear(src, nameof(captured_tool))
+	rel_set(src, nameof(captured_tool), tool)
+
+/datum/prompt/choice/rig_maintenance/proc/captures_gone()
+	return QDELETED(answerer) || (tool_expected && QDELETED(captured_tool)) || (original_client_ckey && !GLOB.directory[original_client_ckey])
+
+/datum/prompt/choice/rig_maintenance/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null

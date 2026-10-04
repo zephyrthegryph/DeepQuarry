@@ -5,10 +5,10 @@ Frontend path: tgui\packages\tgui\interfaces\TraitTutorial.tsx
 
 /datum/tgui_module/trait_tutorial_tgui
 	name = "Explain Custom Traits"
-	var/trait_names = list()
-	var/trait_category = list() // name:category
-	var/trait_desc = list() // name:desc
-	var/trait_tutorial = list() //name:tutorial
+	var/list/trait_names
+	var/list/trait_category // name:category
+	var/list/trait_desc // name:desc
+	var/list/trait_tutorial //name:tutorial
 	var/trait_selected = ""
 
 /datum/tgui_module/trait_tutorial_tgui/proc/set_vars(list/names, list/categories, list/descriptions, list/tutorials)
@@ -23,10 +23,10 @@ CAPABILITIES(/datum/tgui_module/trait_tutorial_tgui)
 
 /datum/tgui_module/trait_tutorial_tgui/ui_data(datum/act/eval/A)
 	var/list/data = list()
-	data["names"] = trait_names
-	data["descriptions"] = trait_desc
-	data["categories"] = trait_category
-	data["tutorials"] = trait_tutorial
+	data["names"] = trait_names || list()
+	data["descriptions"] = trait_desc || list()
+	data["categories"] = trait_category || list()
+	data["tutorials"] = trait_tutorial || list()
 	data["selection"] = trait_selected
 	return data
 

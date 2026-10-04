@@ -40,6 +40,7 @@ REGISTRY_MEMBERSHIP(/obj/machinery/pointdefense, REGISTRY_POINTDEFENSE_TURRETS)
 CAPABILITIES(/obj/machinery/pointdefense_control)
 	interface("PointDefenseControl")
 	op("toggle_active", ui_act("toggle_active", arg("target")), then(PROC_REF(ui_act_toggle_active)))
+	ref_many(nameof(targets))
 
 /obj/machinery/pointdefense_control/declare_interactions(list/into)
 	into += list(
@@ -184,10 +185,6 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 			return FALSE
 	return TRUE
 
-/obj/machinery/pointdefense_control/relations()
-	. = ..()
-	. += rel_many(nameof(targets))
-
 /obj/machinery/pointdefense/proc/Shoot(obj/effect/meteor/M)
 	if(!istype(M))
 		rel_clear(src, nameof(engaging))
@@ -216,7 +213,7 @@ APPEARANCE_TEMPLATE(/obj/machinery/pointdefense, "{initial(icon_state)}{appearan
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)
 	use_power_oneoff(idle_power_usage * 10)
 	coil.launch_projectile(target = M.loc, user = src)
-	after(src, 10, PROC_REF(fire_sound_delayed))
+	after(src, 1 SECONDS, PROC_REF(fire_sound_delayed))
 
 /obj/machinery/pointdefense/proc/fire_sound_delayed()
 	playsound(src, fire_sounds, 75, 1, 40, pressure_affected = FALSE, ignore_walls = TRUE)

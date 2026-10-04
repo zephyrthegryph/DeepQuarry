@@ -20,7 +20,7 @@
 	interface_name = "sprint system"
 	interface_desc = "Increases power to the suit's actuators, allowing faster movement."
 
-/obj/item/rig_module/sprinter/activate()
+/obj/item/rig_module/sprinter/activate(skip_engage = 0, mob/user)
 
 	if(!..())
 		return 0
@@ -31,7 +31,7 @@
 
 	holder.slowdown = initial(holder.slowdown) - sprint_speed
 
-/obj/item/rig_module/sprinter/deactivate()
+/obj/item/rig_module/sprinter/deactivate(forced = FALSE, mob/user)
 
 	if(!..())
 		return 0

@@ -232,7 +232,7 @@ CAPABILITIES(/obj/item/form_printer)
 	switch(A.answer.answer_value)
 		if("Paper")
 			flick("doc_printer_mod_ejecting", src)
-			after(src, 22, PROC_REF(dispense_paper))
+			after(src, 2.2 SECONDS, PROC_REF(dispense_paper))
 		if ("Form")
 			open_request(src, /datum/prompt/choice, PROC_REF(ask_form), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Department", question = "What kind of form do you want to print?", choices = list("Empty", "Command", "Security", "Supply", "Science", "Medical", "Engineering", "Service", "Exploration", "Event", "Other", "Mercenary"), timeout = 0)
 
@@ -260,7 +260,7 @@ CAPABILITIES(/obj/item/form_printer)
 	if(length(split) < 2)
 		return
 	flick("doc_printer_mod_printing", src)
-	after(src, 22, PROC_REF(dispense_form), with = list(list(select_form(split[1], split[2]), split[1] + ": " + split[2])))
+	after(src, 2.2 SECONDS, PROC_REF(dispense_form), with = list(list(select_form(split[1], split[2]), split[1] + ": " + split[2])))
 
 /// The forms the printer knows for a department.
 /obj/item/form_printer/proc/department_forms(department)

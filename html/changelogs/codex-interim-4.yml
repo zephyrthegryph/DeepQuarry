@@ -1,0 +1,5 @@
+author: "Codex"
+delete-after: true
+changes:
+  - bugfix: "Prevent stuck bluespace crystals from teleporting their holder without being consumed."
+  - code_imp: "Migrated content references and cleanup to native declarations."

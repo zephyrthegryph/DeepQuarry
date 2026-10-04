@@ -1637,11 +1637,8 @@
 	P.flagtype = type
 	consume(src, user)
 
-/obj/structure/sign/flag/relations()
-	. = ..()
-	. += rel_one(nameof(linked_flag), back = nameof(/obj/structure/sign/flag::linked_flag))
-
 CAPABILITIES(/obj/structure/sign/flag)
+	links(/obj/structure/sign/flag::linked_flag, /obj/structure/sign/flag::linked_flag)
 	on_notice(/datum/notice/hit/explosion, then(PROC_REF(flag_blast)))
 
 /// A flag that survives a blast is torn.

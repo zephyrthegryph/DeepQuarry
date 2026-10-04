@@ -43,6 +43,7 @@
 
 CAPABILITIES(/obj/machinery/account_database)
 	climb()
+	op("insert_card", ui_act(), then(PROC_REF(ui_act_insert_card)))
 
 /obj/machinery/account_database/Initialize(mapload)
 	machine_id = "[station_name()] Acc. DB #[GLOB.num_financial_terminals++]"
@@ -205,21 +206,21 @@ UI_ACT_PROC(/obj/machinery/account_database, ui_act_finalise_create_account)
 	creating_new_account = 0
 	return TRUE
 
-UI_ACT(/obj/machinery/account_database, "insert_card", ui_act_insert_card)
-UI_ACT_PROC(/obj/machinery/account_database, ui_act_insert_card)
+/obj/machinery/account_database/proc/ui_act_insert_card(datum/act/op/A)
+	var/mob/user = A.actor
 	if(held_card)
 		held_card.forceMove(src.loc)
 
-		if(ishuman(ui.user) && !ui.user.get_active_hand())
-			ui.user.put_in_hands(held_card)
+		if(ishuman(user) && !user.get_active_hand())
+			user.put_in_hands(held_card)
 		own_take(src, nameof(/obj/machinery/account_database::held_card))
 
 	else
-		var/obj/item/I = ui.user.get_active_hand()
+		var/obj/item/I = user.get_active_hand()
 		if(istype(I, /obj/item/card/id))
 			var/obj/item/card/id/C = I
-			move_into(src, nameof(src.held_card), C, ui.user)
-	return TRUE
+			move_into(src, nameof(src.held_card), C, user)
+	return OP_OK
 
 UI_ACT(/obj/machinery/account_database, "view_account_detail", ui_act_view_account_detail, UI_ARG_NUM("account_index"))
 UI_ACT_PROC(/obj/machinery/account_database, ui_act_view_account_detail)

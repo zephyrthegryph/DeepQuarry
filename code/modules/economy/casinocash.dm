@@ -5,8 +5,8 @@
 /obj/machinery/chipmachine
 	name = "Casino Chip Exchange"
 	desc = "Converts thalers to casino chips at a ratio of 5 thalers to 1 chip! It can also convert chips back to thalers at the same rate."
-	icon = 'icons/obj/casino_ch.dmi' //CHOMNPEdit
-	icon_state ="casino_atm" //CHOMNPEdit
+	icon = 'icons/obj/casino_ch.dmi'
+	icon_state ="casino_atm"
 	anchored = 1
 
 // Cap the worth used in the *5 / /5 conversion so the result stays within BYOND's
@@ -72,8 +72,7 @@
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
 
 /// Old attackby.
@@ -233,10 +232,9 @@ DECLARE_INTERACTIONS(/obj/item/spacecasinocash, \
 	w_class = ITEMSIZE_SMALL
 
 CAPABILITIES(/obj/item/casino_platinum_chip)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("flip", in_hand(), label("Flip chip"), then(PROC_REF(platinum_chip_flip_requested)))
 
-/// Old attack_self.
-/obj/item/casino_platinum_chip/proc/interaction_self(datum/act/op/A)
+/obj/item/casino_platinum_chip/proc/platinum_chip_flip_requested(datum/act/op/A)
 	var/mob/user = A.actor
 	var/result = rand(1, sides)
 	var/comment = ""
@@ -246,7 +244,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 		comment = "Joker"
 	act_message(user, src, MSG_SELF(span_notice("You throw %T%. It lands on [comment]! ")), \
 		MSG_OTHERS(span_notice("%U% has thrown %T%. It lands on [comment]! ")))
-	return TRUE
+	return OP_OK
 
 
 //Fake casino chips that can be ordered at any time
@@ -265,8 +263,7 @@ CAPABILITIES(/obj/item/casino_platinum_chip)
 	throw_speed = 1
 	throw_range = 2
 	w_class = ITEMSIZE_SMALL
-	var/access = list()
-	access = ACCESS_CRATE_CASH
+	var/access = ACCESS_CRATE_CASH
 	var/worth = 0
 
 /// Old attackby.

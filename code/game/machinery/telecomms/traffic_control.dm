@@ -176,6 +176,7 @@ DECLARE_REPEAT(/obj/machinery/computer/telecomms/traffic, 0.5 SECONDS, update_id
 
 CAPABILITIES(/obj/machinery/computer/telecomms/traffic)
 	emag(then(PROC_REF(on_emag)))
+	op("clear_temp", ui_act(), then(PROC_REF(ui_act_clear_temp)))
 
 /obj/machinery/computer/telecomms/traffic/proc/on_emag(datum/act/op/A)
 	var/mob/user = A.actor

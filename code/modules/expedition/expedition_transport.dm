@@ -82,15 +82,7 @@ GLOBAL_LIST_INIT(expedition_mission_types, list(
 
 // The site owns its landing waypoint and overmap sector (implicit OWN); their site vars are plain
 // one-sided views. The console and the site name each other (a true two-sided pair).
-/obj/effect/overmap/visitable/sector/expedition/relations()
-	. = ..()
-	. += rel_one(nameof(site))
-/obj/effect/shuttle_landmark/automatic/clearing/expedition/relations()
-	. = ..()
-	. += rel_one(nameof(site))
-/datum/expedition_site/relations()
-	. = ..()
-	. += rel_one(nameof(origin_console), back = nameof(/obj/machinery/computer/shuttle_control/explore::active_expedition))
-/obj/machinery/computer/shuttle_control/explore/relations()
-	. = ..()
-	. += rel_one(nameof(active_expedition), back = nameof(/datum/expedition_site::origin_console))
+CAPABILITIES(/obj/effect/overmap/visitable/sector/expedition)
+	ref_one(nameof(site))
+CAPABILITIES(/obj/effect/shuttle_landmark/automatic/clearing/expedition)
+	ref_one(nameof(site))

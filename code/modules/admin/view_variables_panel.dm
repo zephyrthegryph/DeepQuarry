@@ -162,7 +162,7 @@ UI_ACT(/datum/view_variables_panel, "refresh", ui_act_refresh)
 UI_ACT_PROC(/datum/view_variables_panel, ui_act_refresh)
 	var/datum/refresh_target = thing
 	if(refresh_target && !QDELETED(refresh_target))
-		owner().debug_variables(refresh_target)
+		owner().debug_variables(refresh_target, user)
 	SStgui.update_uis(src)
 	return TRUE
 
@@ -186,9 +186,10 @@ UI_ACT_PROC(/datum/view_variables_panel, ui_act_dropdown_select)
 		SStgui.update_uis(src)
 	return TRUE
 
-/client/proc/debug_variables(datum/thing in world)
-	if(!usr.client || !check_rights_for(usr.client, R_HOLDER))
-		to_chat(usr, span_danger("You need to be an administrator to access this."), confidential = TRUE)
+/client/proc/debug_variables(datum/thing in world, mob/requester)
+	requester = requester || mob
+	if(!requester?.client || !check_rights_for(requester.client, R_HOLDER))
+		to_chat(requester, span_danger("You need to be an administrator to access this."), confidential = TRUE)
 		return
 	if(!thing)
 		return
@@ -201,7 +202,7 @@ UI_ACT_PROC(/datum/view_variables_panel, ui_act_dropdown_select)
 		dq_vv_panel = new /datum/view_variables_panel(src) // ALLOW(ownership): /client is not a datum and is the one owner of this by design
 	dq_vv_panel.thing = thing
 	dq_vv_panel.refid = REF(thing)
-	dq_vv_panel.tgui_interact(usr)
+	dq_vv_panel.tgui_interact(requester)
 	SStgui.update_uis(dq_vv_panel)
 
 /client/proc/vv_update_display(datum/thing, span, content)

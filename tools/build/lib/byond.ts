@@ -338,9 +338,10 @@ function runDreamDaemonWithWatchdog(
 ): Promise<DDResult> {
   const watchdogFile = options.watchdogFile as string;
   const graceMs = options.watchdogGraceMs ?? 30_000;
-  // The full unit-test suite runs close to 20 minutes on a busy, contended
-  // machine (many concurrent DreamDaemons across worktrees/shards), so the
-  // backstop sits well above that; DQ_DD_WATCHDOG_MINUTES overrides it, and
+  // The full normal tier is about 6700 s of summed DreamDaemon CPU (2026-10-04),
+  // so one unsharded world can need well over an hour on a busy, contended
+  // machine (many concurrent DreamDaemons across worktrees/shards); the
+  // backstop sits at 120 minutes; DQ_DD_WATCHDOG_MINUTES overrides it, and
   // callers that know their own expected duration (the sharded runner, sized
   // per shard) can pass watchdogTimeoutMs explicitly, which wins over both.
   // DQ_DD_WATCHDOG_MINUTES is a manual override and wins over everything,
@@ -348,7 +349,7 @@ function runDreamDaemonWithWatchdog(
   // runner's per-shard estimate) -- it exists for exactly the case where
   // that estimate is wrong for someone's machine/run.
   const envMinutes = Number(process.env.DQ_DD_WATCHDOG_MINUTES);
-  const hardTimeoutMs = envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 45 * 60 * 1000);
+  const hardTimeoutMs = envMinutes > 0 ? envMinutes * 60 * 1000 : (options.watchdogTimeoutMs ?? 120 * 60 * 1000);
   return new Promise((resolve) => {
     const child = spawn(exe, args, {
       stdio: 'inherit',

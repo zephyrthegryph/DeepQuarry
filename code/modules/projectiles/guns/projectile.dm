@@ -39,7 +39,11 @@
 	var/special_weapon_handling = FALSE
 
 CAPABILITIES(/obj/item/gun/projectile)
+	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
+	ref_one(nameof(chambered))
 	owns_many(nameof(loaded))
+
+TYPE_TABLE_DECLARE(/obj/item/gun/projectile, projectile_initial_transform, FALSE)
 
 /obj/item/gun/projectile/Initialize(mapload, starts_loaded = 1)
 	. = ..()
@@ -61,6 +65,8 @@ CAPABILITIES(/obj/item/gun/projectile)
 					own_remove(ammo_magazine, nameof(ammo_magazine.stored_ammo), ammo_magazine.stored_ammo[1])
 
 	update_icon()
+	if(TYPE_TABLE_GET(src, projectile_initial_transform))
+		update_transform()
 
 /obj/item/gun/projectile/consume_next_projectile()
 	if(!manual_chamber) // Manual Chambering
@@ -105,7 +111,7 @@ CAPABILITIES(/obj/item/gun/projectile)
 	switch(handle_casings)
 		if(EJECT_CASINGS) //eject casing onto ground.
 			if(chambered.caseless)
-				qdel(chambered)
+				consume(chambered)
 				return
 			else
 				chambered.forceMove(get_turf(src))
@@ -732,9 +738,3 @@ EXTEND_INTERACTIONS(/obj/item/gun/projectile, INTERACT_HAND_UNGATED("Unload", PR
 /obj/item/gun/projectile/ownership()
 	. = ..()
 	. += owns(nameof(ammo_magazine), policy = OWN_CONTAINED)
-
-/obj/item/gun/projectile/relations()
-	. = ..()
-	// chambered names a casing in the gun (loaded) or its magazine (stored_ammo): a relation view.
-	. += rel_one(nameof(chambered))
-

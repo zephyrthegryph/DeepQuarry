@@ -53,6 +53,5 @@ MATERIAL_MIX(/obj/item/disk/design_disk, list(MAT_STEEL = 30, MAT_GLASS = 10))
 /obj/item/disk/tech_disk/proc/stored_research() as /datum/techweb
 	return stored_research_static
 
-/obj/item/disk/tech_disk/ownership()
-	. = ..()
-	. += rel_one(nameof(stored_research_static), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/item/disk/tech_disk)
+	owns_one(nameof(stored_research_static), on_destroy = ON_DESTROY_PRIVATE_COPY)

@@ -126,16 +126,24 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_animalize, R_ADMIN|R_EVENT|R_DEBUG, "Make 
 	after(target_mob, 1 SECOND, TYPE_PROC_REF(/mob, Animalize))
 
 ADMIN_VERB(makepAI, R_ADMIN|R_EVENT|R_DEBUG, "Make pAI", "Spawn someone in as a pAI!", ADMIN_CATEGORY_FUN_EVENT_KIT)
-	var/turf/target_turf = get_turf(user.mob)
-
 	var/list/available = list()
 	for(var/mob/current_client in REGISTRY_MEMBERS(REGISTRY_MOBS))
 		if(current_client.key && isobserver(current_client))
 			available += current_client
-	var/mob/choice = verb_ask(user, "player", args, /datum/om/prompt/choice, message = "Choose a player to play the pAI", title = "Spawn pAI", choices = available)
-	if(!choice || !choice.key)
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_pai_player, PROC_REF(pai_player_chosen), answerer = answerer, choices = available)
 
+/datum/admin_verb/makepAI/proc/pai_player_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	make_chosen_pai(A)
+
+/datum/admin_verb/makepAI/proc/make_chosen_pai(datum/act/request/A)
+	var/mob/choice = A.request.answer_value
+	var/client/user = A.request.answerer.client
+	var/turf/target_turf = get_turf(user.mob)
 	var/obj/item/paicard/typeb/card = new(target_turf)
 	var/mob/living/silicon/pai/pai = new(card)
 	pai.real_name = pai.name
@@ -183,9 +191,19 @@ ADMIN_VERB_AND_CONTEXT_MENU(cmd_admin_alienize, R_ADMIN|R_EVENT|R_DEBUG, "Make A
 ADMIN_VERB(cmd_debug_del_all, R_SERVER, "Del-All", "DANGER: Deletes all instances of a type.", ADMIN_CATEGORY_DEBUG_DANGEROUS)
 	// to prevent REALLY stupid deletions
 	var/blocked = list(/obj, /mob, /mob/living, /mob/living/carbon, /mob/living/carbon/human, /mob/observer/dead, /mob/living/silicon, /mob/living/silicon/robot, /mob/living/silicon/ai)
-	var/hsbitem = verb_ask(user, "a1", args, /datum/om/prompt/choice, message = "Choose an object to delete.", title = "Delete:", choices = typesof(/obj) + typesof(/mob) - blocked)
-	if(isnull(hsbitem))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_delete_type, PROC_REF(delete_type_chosen), answerer = answerer, choices = typesof(/obj) + typesof(/mob) - blocked)
+
+/datum/admin_verb/cmd_debug_del_all/proc/delete_type_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	delete_type_answered(A)
+
+/datum/admin_verb/cmd_debug_del_all/proc/delete_type_answered(datum/act/request/A)
+	var/hsbitem = A.request.answer_value
+	var/client/user = A.request.answerer.client
 	if(hsbitem)
 		for(var/atom/O in world)
 			if(istype(O, hsbitem))
@@ -280,11 +298,26 @@ ADMIN_VERB(cmd_admin_grantfullaccess, (R_ADMIN|R_EVENT), "Grant Full Access", "G
 
 ADMIN_VERB(cmd_assume_direct_control, (R_DEBUG|R_ADMIN|R_EVENT), "Assume Direct Control", "Assume direct control of a mob.", ADMIN_CATEGORY_GAME, mob/M)
 	if(M.ckey)
-		var/_answer_a2 = verb_ask(user, "a2", args, /datum/om/prompt/choice/alert, message = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.", title = "Confirmation", choices = list("Yes","No"))
-		if(isnull(_answer_a2))
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
 			return
-		if(_answer_a2 != "Yes")
-			return
+		open_request(src, /datum/prompt/choice/admin_control_target, PROC_REF(control_confirmed), answerer = answerer, controlled_mob = M, question = "This mob is being controlled by [M.ckey]. Are you sure you wish to assume control of it? [M.ckey] will be made a ghost.")
+		return
+	apply_control(user, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/control_confirmed(datum/act/request/context)
+	if(!context.answer)
+		return
+	finish_control(context)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/finish_control(datum/act/request/context)
+	var/datum/prompt/choice/admin_control_target/request = context.request
+	var/mob/M = request.controlled_mob
+	if(M.ckey && request.answer_value != "Yes")
+		return
+	apply_control(request.answerer.client, M)
+
+/datum/admin_verb/cmd_assume_direct_control/proc/apply_control(client/user, mob/M)
 	if(!M || QDELETED(M))
 		to_chat(user, span_warning("The target mob no longer exists."))
 		return
@@ -391,36 +424,57 @@ ADMIN_VERB(cmd_admin_areatest, R_DEBUG, "Test areas", "Manually tests all areas 
 
 ADMIN_VERB(cmd_admin_dress, R_FUN, "elect equipment", "Select equipment for a mob.", ADMIN_CATEGORY_FUN_EVENT_KIT, input)
 	if(!input)
-		var/_answer_a3 = verb_ask(user, "a3", args, /datum/om/prompt/choice, message = "Pick Target", title = "Select the target to dress.", choices = getmobs())
-		if(isnull(_answer_a3))
+		var/mob/answerer = user.mob
+		if(QDELETED(answerer))
 			return
-		input = _answer_a3
-		if(!input)
-			return
+		open_request(src, /datum/prompt/choice/admin_dress_target, PROC_REF(dress_target_selected), answerer = answerer, choices = getmobs())
+		return
+	ask_outfit(user, input)
 
+/datum/admin_verb/cmd_admin_dress/proc/dress_target_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	open_selected_outfit(context)
+
+/datum/admin_verb/cmd_admin_dress/proc/open_selected_outfit(datum/act/request/context)
+	var/input = context.request.answer_value
+	if(!input)
+		return
+	ask_outfit(context.request.answerer.client, input)
+
+/datum/admin_verb/cmd_admin_dress/proc/ask_outfit(client/user, input)
 	var/target = getmobs()[input]
-
 	if(!ishuman(target))
 		return
-
-	var/mob/living/carbon/human/target_human = target
-
-	var/datum/decl/hierarchy/outfit/outfit = verb_ask(user, "a4", args, /datum/om/prompt/choice, message = "Select outfit.", title = "Select equipment.", choices = GLOB.outfits_decls)
-	if(isnull(outfit))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_dress_outfit, PROC_REF(outfit_selected), answerer = answerer, choices = GLOB.outfits_decls, target_label = input)
+
+/datum/admin_verb/cmd_admin_dress/proc/outfit_selected(datum/act/request/context)
+	if(!context.answer)
+		return
+	dress_selected_outfit(context)
+
+/datum/admin_verb/cmd_admin_dress/proc/dress_selected_outfit(datum/act/request/context)
+	var/datum/prompt/choice/admin_dress_outfit/request = context.request
+	var/target = getmobs()[request.target_label]
+	if(!ishuman(target))
+		return
+	var/mob/living/carbon/human/target_human = target
+	var/datum/decl/hierarchy/outfit/outfit = request.answer_value
 	if(!outfit)
 		return
-
 	feedback_add_details("admin_verb","SEQ")
-	dressup_human(target_human, outfit, 1)
+	dressup_human(target_human, outfit, request.answerer)
 
-/proc/dressup_human(mob/living/carbon/human/H, datum/decl/hierarchy/outfit/outfit)
+/proc/dressup_human(mob/living/carbon/human/H, datum/decl/hierarchy/outfit/outfit, mob/user)
 	if(!H || !outfit)
 		return
 	if(outfit.undress)
 		H.delete_inventory()
 	outfit.equip(H)
-	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].")
+	log_and_message_admins("changed the equipment of [key_name(H)] to [outfit.name].", user)
 
 /// "Setup supermatter" brings the crystal up to a working power shortly after the rest of the engine room is set.
 /proc/admin_boost_supermatter(obj/machinery/power/supermatter/SM)
@@ -517,9 +571,19 @@ ADMIN_VERB(setup_supermatter_engine, R_DEBUG|R_ADMIN, "Setup supermatter", "Sets
 
 
 ADMIN_VERB(cmd_debug_mob_lists, R_DEBUG, "Debug Mob Lists", "For when you just gotta know.", ADMIN_CATEGORY_DEBUG_INVESTIGATE)
-	var/_answer_a7 = verb_ask(user, "a7", args, /datum/om/prompt/choice, message = "Which list?", title = "List Choice", choices = list("Players","Admins","Mobs","Living Mobs","Dead Mobs", "Clients"))
-	if(isnull(_answer_a7))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/admin_mob_list, PROC_REF(list_chosen), answerer = answerer)
+
+/datum/admin_verb/cmd_debug_mob_lists/proc/list_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	show_chosen_list(A)
+
+/datum/admin_verb/cmd_debug_mob_lists/proc/show_chosen_list(datum/act/request/A)
+	var/client/user = A.request.answerer.client
+	var/_answer_a7 = A.request.answer_value
 	switch(_answer_a7)
 		if("Players")
 			to_chat(user, span_filter_debuglogs(jointext(REGISTRY_MEMBERS(REGISTRY_PLAYERS),",")))
@@ -708,7 +772,7 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 		return
 	if(_answer_a16 != "Yes")
 		return
-	config.admin_reload()
+	config.admin_reload(user)
 
 
 /datum/admins/proc/quick_authentic_nif()
@@ -745,3 +809,82 @@ ADMIN_VERB(reload_configuration, R_DEBUG, "Reload Configuration", "Reloads the c
 
 	log_and_message_admins("[key_name(src)] Quick Authentic NIF'd [H.real_name].")
 	feedback_add_details("admin_verb","QANIF") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+
+/datum/prompt/choice/admin_delete_type
+	rights = R_SERVER
+	timeout = 0
+	question = "Choose an object to delete."
+	title = "Delete:"
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_mob_list
+	rights = R_DEBUG
+	timeout = 0
+	question = "Which list?"
+	title = "List Choice"
+	choices = list("Players", "Admins", "Mobs", "Living Mobs", "Dead Mobs", "Clients")
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_pai_player
+	rights = R_ADMIN|R_EVENT|R_DEBUG
+	timeout = 0
+	question = "Choose a player to play the pAI"
+	title = "Spawn pAI"
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_pai_player/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/mob/picked = answer_value
+		if(QDELETED(picked) || !picked.key)
+			return "chosen player is gone"
+
+/datum/prompt/choice/admin_control_target
+	rights = R_DEBUG|R_ADMIN|R_EVENT
+	timeout = 0
+	title = "Confirmation"
+	choices = list("Yes", "No")
+	buttons = TRUE
+	var/mob/controlled_mob
+	recheck_on_open = TRUE
+
+CAPABILITIES(/datum/prompt/choice/admin_control_target)
+	ref_one(nameof(controlled_mob), /mob)
+
+/datum/prompt/choice/admin_control_target/prepare(datum/act/context)
+	. = ..()
+	var/mob/captured = controlled_mob
+	rel_clear(src, nameof(controlled_mob))
+	rel_set(src, nameof(controlled_mob), captured)
+
+/datum/prompt/choice/admin_control_target/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(controlled_mob) ? "target is gone" : null
+
+/datum/prompt/choice/admin_dress_target
+	rights = R_FUN
+	timeout = 0
+	title = "Select the target to dress."
+	question = "Pick Target"
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_dress_outfit
+	rights = R_FUN
+	timeout = 0
+	title = "Select equipment."
+	question = "Select outfit."
+	var/target_label
+	recheck_on_open = TRUE
+
+/datum/prompt/choice/admin_dress_outfit/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!isnull(answer_value))
+		var/datum/decl/hierarchy/outfit/picked = answer_value
+		return QDELETED(picked) ? "outfit is gone" : null
+

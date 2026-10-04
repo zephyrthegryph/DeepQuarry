@@ -10,6 +10,8 @@
 	requires_power = FALSE
 
 /datum/unit_test/interim_blueprint_actor/Run()
+	test_driver_begin()
+	defer_cleanup(null, GLOBAL_PROC_REF(test_driver_end))
 	var/turf/T = run_loc_floor_bottom_left
 	var/area/original_room = get_area(T)
 	var/area/original_lookup = GLOB.areas_by_type[original_room.type]
@@ -31,12 +33,12 @@
 	var/page = blueprint.areaeditor_text(user, null, null)
 	TEST_ASSERT(length(page), "the actor can generate the actual editing page without an ambient caller")
 	TEST_ASSERT(findtext(page, "create_area=1"), "the actor's editing page offers the actual creation action")
-	var/datum/om/prompt/text/blueprint_rename_area/ask = allocate(/datum/om/prompt/text/blueprint_rename_area)
-	rel_set(ask, nameof(ask.answerer), user)
-	rel_set(ask, nameof(ask.area_to_rename), isolated)
-	ask.text = "Interim blueprint renamed area"
-	TEST_ASSERT(blueprint.area_renamed(ask), "the real rename callback succeeds")
-	TEST_ASSERT_EQUAL(isolated.name, ask.text, "the callback changes the actual area name")
+	TEST_ASSERT(user.put_in_r_hand(blueprint), "the actor holds the real blueprint for its rename request")
+	var/renamed = "Interim blueprint renamed area"
+	open_request(blueprint, /datum/prompt/text/blueprint_rename_area, TYPE_PROC_REF(/obj/item/areaeditor, area_renamed), answerer = user, area_to_rename = isolated)
+	TEST_ASSERT(!isnull(SSrequests.open_for(user)), "the real rename request opens")
+	test_answer(user, renamed)
+	TEST_ASSERT_EQUAL(isolated.name, renamed, "the callback changes the actual area name")
 	TEST_ASSERT_EQUAL(blueprint.last_actor, user, "the callback refreshes the explicit actor's interaction")
 	qdel(isolated)
 	TEST_ASSERT(!QDELETED(original_room), "deleting the private area preserves the actual test room")

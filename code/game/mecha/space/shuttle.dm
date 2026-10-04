@@ -75,25 +75,37 @@ CAPABILITIES(/obj/mecha/working/hoverpod/shuttlecraft)
 	var/obj/item/W = A.held
 	if(!istype(W,/obj/item/multitool) || state != 1)
 		return OP_DECLINE
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(ask_paint_color), subject = W, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", message = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(ask_paint_color), answerer = user, subject = W, timeout = 0, choices = list("Central", "Engine", "Base", "Front", "CANCEL"), title = "Paint Zone", question = "Please select a target zone.", ask_flags = ASK_HELD | ASK_CAPABLE)
 	return TRUE
 
-/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/om/prompt/choice/ask)
-	if(ask.choice != "CANCEL")
-		om_ask(ask.answerer, /datum/om/prompt/color/mech_paint, PROC_REF(hull_painted), subject = ask.subject, zone = ask.choice)
+/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color(datum/act/request/context)
+	if(!context.answer)
+		return
+	return ask_paint_color_apply(context)
 
-/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/om/prompt/color/mech_paint/ask)
+/obj/mecha/working/hoverpod/shuttlecraft/proc/ask_paint_color_apply(datum/act/request/context)
+	var/datum/prompt/choice/ask = context.answer
+	if(ask.answer_value != "CANCEL")
+		open_request(src, /datum/prompt/color/mech_paint, PROC_REF(hull_painted), answerer = ask.answerer, subject = ask.subject, zone = ask.answer_value)
+
+/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted(datum/act/request/context)
+	if(!context.answer)
+		return
+	return hull_painted_apply(context)
+
+/obj/mecha/working/hoverpod/shuttlecraft/proc/hull_painted_apply(datum/act/request/context)
+	var/datum/prompt/color/mech_paint/ask = context.answer
 	if(state != 1)
 		return
-	if(ask.picked_color)
+	if(ask.answer_value)
 		switch(ask.zone)
 			if("Central")
-				central_paint = ask.picked_color
+				central_paint = ask.answer_value
 			if("Engine")
-				engine_paint = ask.picked_color
+				engine_paint = ask.answer_value
 			if("Front")
-				front_paint = ask.picked_color
+				front_paint = ask.answer_value
 			if("Base")
-				base_paint = ask.picked_color
+				base_paint = ask.answer_value
 	update_icon()
 

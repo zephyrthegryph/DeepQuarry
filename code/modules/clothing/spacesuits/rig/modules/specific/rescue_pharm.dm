@@ -44,7 +44,7 @@
 		if (!did_work)
 			deactivate() //All done
 
-/obj/item/rig_module/rescue_pharm/engage(atom/target)
+/obj/item/rig_module/rescue_pharm/engage(atom/target, notify_ai, mob/user)
 	if(!target)
 		return 1 //You're just toggling the module on, not clicking someone.
 

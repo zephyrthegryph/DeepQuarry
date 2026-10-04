@@ -34,8 +34,6 @@
 	var/list/research_logs
 	/// Current per-second production, used for display only.
 	var/list/last_bitcoins
-	/// Mutations discovered by genetics, this way they are shared and cant be destroyed by destroying a single console
-	var/list/discovered_mutations
 	/// Assoc list, id = number, 1 is available, 2 is all reqs are 1, so on
 	var/list/tiers
 	/// When >0, update_node_status() defers tier recomputation instead of running a
@@ -83,6 +81,8 @@
 	var/list/research_queue_nodes
 
 CAPABILITIES(/datum/techweb)
+	ref_many(nameof(consoles_accessing))
+	ref_many(nameof(techweb_servers))
 	owns_many(nameof(available_experiments), /datum/experiment)
 	owns_many(nameof(completed_experiments), /datum/experiment)
 
@@ -581,8 +581,3 @@ CAPABILITIES(/datum/techweb)
 // 	for (var/datum/experiment/experiment as anything in available_experiments)
 // 		if(experiment.type != paper_to_add.experiment_path)
 // 			continue
-
-/datum/techweb/relations()
-	. = ..()
-	. += rel_many(nameof(consoles_accessing))
-	. += rel_many(nameof(techweb_servers))

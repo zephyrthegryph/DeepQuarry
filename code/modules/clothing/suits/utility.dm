@@ -94,9 +94,8 @@ TYPE_TABLE(/obj/item/clothing/suit/bomb_suit/security, suit_storage_spec, list(H
 	body_parts_covered = HEAD|FACE|EYES
 	armor_spec = "bio=60;rad=100"
 
-/obj/item/clothing/head/radiation/capabilities()
-	. = ..()
-	. += cap_trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
+CAPABILITIES(/obj/item/clothing/head/radiation)
+	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
 
 /obj/item/clothing/suit/radiation
 	name = "Radiation suit"
@@ -113,9 +112,8 @@ TYPE_TABLE(/obj/item/clothing/suit/bomb_suit/security, suit_storage_spec, list(H
 
 TYPE_TABLE(/obj/item/clothing/suit/radiation, suit_storage_spec, list(HOLD_ONLY(list(POCKET_GENERIC, POCKET_EMERGENCY, /obj/item/clothing/head/radiation))))
 
-/obj/item/clothing/suit/radiation/capabilities()
-	. = ..()
-	. += cap_trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
+CAPABILITIES(/obj/item/clothing/suit/radiation)
+	trait(TRAIT_RADIATION_PROTECTED_CLOTHING, examine = RADIATION_CLOTHING_EXAMINE)
 
 /obj/item/clothing/suit/radiation/teshari
 	name = "Small radiation suit"

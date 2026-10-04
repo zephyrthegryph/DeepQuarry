@@ -212,14 +212,13 @@
 	dummy.real_name = "Scenario Patient #[rand(1000, 9999)]"
 	dummy.name = dummy.real_name
 	dummy.status_at_least(EFFECT_SLEEPING, 60 SECONDS)
-	var/datum/dq_medical_scenario/S = new scenario_path()
+	var/datum/dq_medical_scenario/S = dq_proto(scenario_path)
 	S.apply(dummy)
 	if(silent)
 		to_chat(admin_mob, span_notice("Spawned [dummy] with a random scenario — diagnose the patient yourself."))
 	else
 		to_chat(admin_mob, span_notice("Spawned [dummy] with scenario: <b>[S.name]</b> — [S.description]"))
 	log_admin("[key_name(admin_mob)] ran medical scenario '[S.name]' on [dummy] at [T].")
-	qdel(S)
 
 
 ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a test patient pre-loaded with a curated cascading-condition scenario.", ADMIN_CATEGORY_DEBUG)
@@ -227,9 +226,29 @@ ADMIN_VERB(dq_run_medical_scenario, R_DEBUG, "DQ Run Medical Scenario", "Spawn a
 	if(!length(options))
 		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
 		return
-	var/picked_key = verb_ask(user.mob, "k230", args, /datum/om/prompt/choice, message = "Which scenario?", title = "DQ Medical Scenario", choices = options)
-	if(isnull(picked_key))
+	var/mob/answerer = user.mob
+	if(QDELETED(answerer))
 		return
+	open_request(src, /datum/prompt/choice/medical_debug_scenario, PROC_REF(scenario_chosen), answerer = answerer, choices = options)
+
+/datum/prompt/choice/medical_debug_scenario
+	question = "Which scenario?"
+	title = "DQ Medical Scenario"
+	rights = R_DEBUG
+	timeout = 0
+	recheck_on_open = TRUE
+
+/datum/admin_verb/dq_run_medical_scenario/proc/scenario_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/client/user = A.request.answerer?.client
+	if(!user)
+		return
+	var/list/options = _dq_list_medical_scenarios()
+	if(!length(options))
+		to_chat(user.mob, span_warning("No /datum/dq_medical_scenario subtypes defined."))
+		return
+	var/picked_key = A.request.answer_value
 	if(!picked_key)
 		return
 	var/scenario_type = options[picked_key]

@@ -165,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/integrated_circuit/output/video_camera, INTERACT_
 	var/datum/tgui_module/camera/intcircuit/camera_module
 
 CAPABILITIES(/obj/item/integrated_circuit/input/video_camera_input)
-	owns_one(nameof(camera_module), starts = /datum/tgui_module/camera/intcircuit)
+	owns_one(nameof(camera_module), /datum/tgui_module/camera/intcircuit, starts = /datum/tgui_module/camera/intcircuit)
 
 
 /obj/item/integrated_circuit/input/video_camera_input/ask_for_input(mob/user)

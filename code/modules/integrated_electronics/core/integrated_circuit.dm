@@ -62,13 +62,66 @@ EXTEND_INTERACTIONS(/obj/item/integrated_circuit, INTERACT_VERB("Rename Circuit"
 	if(!check_interactivity(M))
 		return
 
-	var/_answer_k80 = rerun_ask(M, "k80", PROC_REF(integrated_circuit_verb_rename), args, /datum/om/prompt/text, message = "What do you want to name the circuit?", title = "Rename", default = src.name, max_length = MAX_NAME_LEN, encode = FALSE)
-	if(isnull(_answer_k80))
+	if(!ismob(M) || QDELETED(M))
 		return
+	open_request(src, /datum/prompt/text/electronics_rename, PROC_REF(rename_entered), answerer = M, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), question = "What do you want to name the circuit?", default = name)
+
+/obj/item/integrated_circuit/proc/rename_entered(datum/act/request/A)
+	var/datum/prompt/text/electronics_rename/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			SStgui.update_uis(src)
+		return
+	apply_rename(A)
+	SStgui.update_uis(src)
+
+/obj/item/integrated_circuit/proc/apply_rename(datum/act/request/A)
+	var/mob/M = A.request.answerer
+	if(!check_interactivity(M))
+		return
+	var/_answer_k80 = A.answer.answer_value
 	var/input = sanitizeSafe(_answer_k80, MAX_NAME_LEN)
 	if(src && input && assembly().check_interactivity(M))
 		to_chat(M, span_notice("The circuit '[src.name]' is now labeled '[input]'."))
 		displayed_name = input
+
+/datum/prompt/text/electronics_rename
+	title = "Rename"
+	timeout = 0
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	encode = FALSE
+	multiline = FALSE
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/electronics_rename)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/text/electronics_rename/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/text/electronics_rename/proc/captures_gone()
+	return QDELETED(answerer) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/text/electronics_rename/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	return null
 
 DECLARE_UI_STATE(/obj/item/integrated_circuit, GLOB.tgui_physical_state)
 

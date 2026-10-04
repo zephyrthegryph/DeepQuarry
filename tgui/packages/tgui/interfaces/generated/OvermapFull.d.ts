@@ -5,6 +5,12 @@ export type OvermapFullData = {
 };
 
 export type OvermapFullActions = {
+  reset: Record<string, never>;
+  brake: Record<string, never>;
+  apilot: Record<string, never>;
+  apilot_lock: Record<string, never>;
+  global_toggle: Record<string, never>;
+  toggle_sensor: Record<string, never>;
   add: {
     /** text max 4096 */
     add: string;
@@ -25,18 +31,13 @@ export type OvermapFullActions = {
     /** num */
     y: number;
   };
-  reset: Record<string, never>;
   speedlimit: Record<string, never>;
   accellimit: Record<string, never>;
   move: {
     /** num */
     dir: number;
   };
-  brake: Record<string, never>;
-  apilot: Record<string, never>;
-  apilot_lock: Record<string, never>;
   manual: Record<string, never>;
-  global_toggle: Record<string, never>;
   set_global_limit: Record<string, never>;
   global_limit: {
     /** num */
@@ -57,6 +58,5 @@ export type OvermapFullActions = {
     engine: string;
   };
   range: Record<string, never>;
-  toggle_sensor: Record<string, never>;
   viewing: Record<string, never>;
 };

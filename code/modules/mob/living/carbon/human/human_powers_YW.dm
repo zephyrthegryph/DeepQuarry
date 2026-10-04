@@ -3,16 +3,39 @@
 	set desc = "Talk telepathically to someone over a distance."
 	set category = VERB_CAT_ABILITIES_GENERAL
 
-	om_ask(src, /datum/om/prompt/text/telepathy, PROC_REF(telepathy_entered), title = "Project mind", target = M)
+	open_request(src, /datum/prompt/text/telepathy, PROC_REF(telepathy_entered), answerer = src, title = "Project mind", recipient = M, recipient_expected = !isnull(M))
 
 /// A telepathic message; carries who it's sent to.
-/datum/om/prompt/text/telepathy
-	message = "Message:"
-	var/mob/target
+/datum/prompt/text/telepathy
+	question = "Message:"
+	timeout = 0
+	var/mob/recipient
+	var/recipient_expected = FALSE
 
-/mob/living/carbon/human/proc/telepathy_entered(datum/om/prompt/text/telepathy/ask)
-	var/mob/M = ask.target
-	var/msg = ask.text
+CAPABILITIES(/datum/prompt/text/telepathy)
+	ref_one(nameof(recipient), /mob)
+
+/datum/prompt/text/telepathy/prepare(datum/act/A)
+	. = ..()
+	var/mob/captured = recipient
+	rel_clear(src, nameof(recipient))
+	rel_set(src, nameof(recipient), captured)
+
+/datum/prompt/text/telepathy/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return recipient_expected && QDELETED(recipient) ? "gone" : null
+
+/mob/living/carbon/human/proc/telepathy_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_telepathy_entered(A)
+
+/mob/living/carbon/human/proc/apply_telepathy_entered(datum/act/request/A)
+	var/datum/prompt/text/telepathy/ask = A.request
+	var/mob/M = ask.recipient
+	var/msg = A.answer.answer_value
 	if(msg)
 		var/mob/living/carbon/human/H = M
 		log_say("(GreyTP to [key_name(M)]) [msg]", src)

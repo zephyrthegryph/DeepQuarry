@@ -48,14 +48,14 @@ CAPABILITIES(/obj/item/antag_spawner)
 	ghost_query_type = /datum/ghost_query/apprentice
 
 CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("activate", in_hand(), then(PROC_REF(activated)))
 
-/// Old attack_self.
-/obj/item/antag_spawner/technomancer_apprentice/proc/interaction_self(datum/act/op/A)
+/// The original held activation feedback and its downstream behavior.
+/obj/item/antag_spawner/technomancer_apprentice/proc/activated(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to your apprentice."))
 	request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/antag_spawner/technomancer_apprentice/request_player()
 	icon_state = "oldshieldon"
@@ -99,14 +99,14 @@ CAPABILITIES(/obj/item/antag_spawner/technomancer_apprentice)
 	var/drone_type = null
 
 CAPABILITIES(/obj/item/antag_spawner/syndicate_drone)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("activate", in_hand(), then(PROC_REF(activated)))
 
-/// Old attack_self.
-/obj/item/antag_spawner/syndicate_drone/proc/interaction_self(datum/act/op/A)
+/// The original held activation feedback and its downstream behavior.
+/obj/item/antag_spawner/syndicate_drone/proc/activated(datum/act/op/A)
 	var/mob/user = A.actor
 	to_chat(user, span_notice("Teleporter attempting to lock on to an available unit."))
 	request_player()
-	return TRUE
+	return OP_OK
 
 /obj/item/antag_spawner/syndicate_drone/request_player()
 	icon_state = "oldshieldon"

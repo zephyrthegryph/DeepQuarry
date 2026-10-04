@@ -369,19 +369,36 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 
 /obj/item/areaeditor/proc/edit_area(mob/user)
 	var/area/A = get_area(user)
-	om_ask(user, /datum/om/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), area_to_rename = A)
+	open_request(src, /datum/prompt/text/blueprint_rename_area, PROC_REF(area_renamed), answerer = user, area_to_rename = A)
 
 /// Re-checked on the answer: the blueprint is still in hand.
-/datum/om/prompt/text/blueprint_rename_area
+/datum/prompt/text/blueprint_rename_area
 	title = "Area Creation"
-	message = "New area name"
-	max_length = MAX_NAME_LEN
-	requires = PROMPT_IN_HAND
+	question = "New area name"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	ask_flags = ASK_HELD | ASK_CAPABLE
+	timeout = 0
 	var/area/area_to_rename
 
-/obj/item/areaeditor/proc/area_renamed(datum/om/prompt/text/blueprint_rename_area/ask)
+CAPABILITIES(/datum/prompt/text/blueprint_rename_area)
+	ref_one(nameof(area_to_rename), /area)
+
+/datum/prompt/text/blueprint_rename_area/prepare(datum/act/A)
+	..()
+	var/area/captured_area = area_to_rename
+	rel_clear(src, nameof(area_to_rename))
+	rel_set(src, nameof(area_to_rename), captured_area)
+
+/datum/prompt/text/blueprint_rename_area/recheck_extra()
+	return QDELETED(area_to_rename) ? "gone" : null
+
+/obj/item/areaeditor/proc/area_renamed(datum/act/request/context)
+	if(!context.answer)
+		return
+	var/datum/prompt/text/blueprint_rename_area/ask = context.answer
 	var/mob/user = ask.answerer
-	var/str = ask.text
+	var/str = ask.answer_value
 	var/area/A = ask.area_to_rename
 	var/prevname = "[A.name]"
 	if(!str || !length(str) || str==prevname) //cancel
@@ -494,38 +511,33 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			continue // No expanding powerless rooms etc
 		areas[place.name] = place
 
-	om_ask_begin(null, creator, /datum/om/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), list(receiver = AO, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs))
+	open_request(AO, /datum/prompt/choice/blueprint_expand, TYPE_PROC_REF(/obj/item/areaeditor, create_area_chosen), answerer = creator, subject = get_turf(creator), choices = areas, editor = AO, turfs = turfs)
 
-/// Blueprint area prompts: the subject is the creator's turf, and they stay on it (BLUEPRINT_PROMPT_REQUIRES).
-/datum/om/prompt/choice/blueprint_expand
-	title = "Area Expansion"
-	message = "Choose an area to expand or make a new area"
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/obj/item/areaeditor/editor
-	var/list/turfs
+/obj/item/areaeditor/proc/create_area_chosen(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_expand/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.answer_value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No choice selected. No adjustments made."))
+		return
+	create_area_chosen_apply(context)
 
-/datum/om/prompt/choice/blueprint_expand/cancelled()
-	to_chat(answerer, span_warning("No choice selected. No adjustments made."))
-
-/// Naming the new area a blueprint makes (the expansion and the whole-room editor).
-/datum/om/prompt/text/blueprint_area_name
-	title = "Blueprint Editing"
-	message = "New area name"
-	max_length = MAX_NAME_LEN
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/obj/item/areaeditor/editor
-	var/list/turfs
-
-/obj/item/areaeditor/proc/create_area_chosen(datum/om/prompt/choice/blueprint_expand/ask)
-	var/area_choice = ask.choices[ask.choice]
+/obj/item/areaeditor/proc/create_area_chosen_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_expand/ask = context.request
+	var/area_choice = ask.choices[ask.answer_value]
 	if(isarea(area_choice))
 		create_area_commit(ask.answerer, src, ask.turfs, area_choice)
 		return
-	om_ask(ask.answerer, /datum/om/prompt/text/blueprint_area_name, PROC_REF(create_area_named), subject = ask.subject, editor = src, turfs = ask.turfs)
+	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(create_area_named), answerer = ask.answerer, subject = ask.subject, editor = src, turfs = ask.turfs)
 
-/obj/item/areaeditor/proc/create_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+/obj/item/areaeditor/proc/create_area_named(datum/act/request/context)
+	if(!context.answer)
+		return
+	create_area_named_apply(context)
+
+/obj/item/areaeditor/proc/create_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.text
+	var/str = ask.answer_value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -622,48 +634,38 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		areas[place.name] = place
 
 	//They can select an area they want to turn their current area into.
-	om_ask(creator, /datum/om/prompt/choice/blueprint_whole_area, PROC_REF(whole_area_chosen), subject = get_turf(creator), choices = areas, turfs = turfs, can_make_new_area = can_make_new_area)
+	open_request(src, /datum/prompt/choice/blueprint_whole_area, PROC_REF(whole_area_chosen), answerer = creator, subject = get_turf(creator), choices = areas, turfs = turfs, can_make_new_area = can_make_new_area)
 
-/datum/om/prompt/choice/blueprint_whole_area
-	title = "Area Expansion"
-	message = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?"
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/list/turfs
-	var/can_make_new_area
+/obj/item/areaeditor/proc/whole_area_chosen(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.answer_value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No changes made."))
+		return
+	whole_area_chosen_apply(context)
 
-/datum/om/prompt/choice/blueprint_whole_area/cancelled()
-	to_chat(answerer, span_warning("No changes made."))
-
-/// The last "are you sure?" before the whole room changes area. No, or a cancel, says so.
-/datum/om/prompt/confirm/blueprint_whole_area
-	title = "READ CAREFULLY"
-	no_first = TRUE
-	requires = BLUEPRINT_PROMPT_REQUIRES
-	var/list/turfs
-	var/area/chosen_area
-	var/new_name
-
-/datum/om/prompt/confirm/blueprint_whole_area/cancelled()
-	to_chat(answerer, span_warning("No changes made."))
-
-/datum/om/prompt/confirm/blueprint_whole_area/declined()
-	to_chat(answerer, span_warning("No changes made."))
-
-/obj/item/areaeditor/proc/whole_area_chosen(datum/om/prompt/choice/blueprint_whole_area/ask)
+/obj/item/areaeditor/proc/whole_area_chosen_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_area/ask = context.request
 	var/mob/creator = ask.answerer
-	var/area_choice = ask.choices[ask.choice]
+	var/area_choice = ask.choices[ask.answer_value]
 	var/area/oldA = get_area(get_turf(creator))
 	if(isarea(area_choice))
-		om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
+		open_request(src, /datum/prompt/choice/blueprint_whole_confirm, PROC_REF(whole_area_confirmed), answerer = creator, subject = ask.subject, question = "Are you sure you want to change [oldA.name] into [area_choice]?", turfs = ask.turfs, chosen_area = area_choice)
 		return
 	if(!ask.can_make_new_area && !can_override)
 		to_chat(creator, span_warning("Making a new area here would be meaningless. Renaming it would be a better option."))
 		return
-	om_ask(creator, /datum/om/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), subject = ask.subject, turfs = ask.turfs)
+	open_request(src, /datum/prompt/text/blueprint_area_name, PROC_REF(whole_area_named), answerer = creator, subject = ask.subject, turfs = ask.turfs)
 
-/obj/item/areaeditor/proc/whole_area_named(datum/om/prompt/text/blueprint_area_name/ask)
+/obj/item/areaeditor/proc/whole_area_named(datum/act/request/context)
+	if(!context.answer)
+		return
+	whole_area_named_apply(context)
+
+/obj/item/areaeditor/proc/whole_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_area_name/ask = context.request
 	var/mob/creator = ask.answerer
-	var/str = ask.text
+	var/str = ask.answer_value
 	if(!length(str)) //cancel
 		return
 	if(length(str) > 50)
@@ -674,9 +676,18 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 			to_chat(creator, span_warning("An area in the world alreay has this name."))
 			return
 	var/area/oldA = get_area(get_turf(creator))
-	om_ask(creator, /datum/om/prompt/confirm/blueprint_whole_area, PROC_REF(whole_area_confirmed), subject = ask.subject, message = "Are you sure you want to change [oldA.name] into a new area named [str]?", turfs = ask.turfs, new_name = str)
+	open_request(src, /datum/prompt/choice/blueprint_whole_confirm, PROC_REF(whole_area_confirmed), answerer = creator, subject = ask.subject, question = "Are you sure you want to change [oldA.name] into a new area named [str]?", turfs = ask.turfs, new_name = str)
 
-/obj/item/areaeditor/proc/whole_area_confirmed(datum/om/prompt/confirm/blueprint_whole_area/ask)
+/obj/item/areaeditor/proc/whole_area_confirmed(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
+	if(!context.answer || ask.answer_value != "Yes")
+		if((isnull(ask.answer_value) || ask.answer_value == "No") && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No changes made."))
+		return
+	whole_area_confirmed_apply(context)
+
+/obj/item/areaeditor/proc/whole_area_confirmed_apply(datum/act/request/context)
+	var/datum/prompt/choice/blueprint_whole_confirm/ask = context.request
 	var/mob/creator = ask.answerer
 	var/list/turf/turfs = ask.turfs
 	var/area/oldA = get_area(get_turf(creator))
@@ -706,7 +717,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	log_game("[key_name(creator, creator.client)] just made a new area called [newA.name]")
 	charges -= 5
 
-	after(src, 5, "interact")
+	after(src, 0.5 SECONDS, "interact")
 	return
 
 /proc/move_turfs_to_area(list/turf/turfs, area/A)
@@ -819,7 +830,7 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 	return TRUE
 
 /obj/item/paper/proc/create_area_effect(mob/user, obj/item/held, datum/interaction/interaction)
-	COOLDOWN_START(src, area_cooldown, 600) //Anti spam.
+	COOLDOWN_START(src, area_cooldown, 60 SECONDS) //Anti spam.
 
 	create_new_area(user)
 	add_fingerprint(user)
@@ -913,22 +924,45 @@ TOPIC_ACTION(/obj/item/areaeditor/blueprints, "view_wireset", PROC_REF(topic_vie
 		to_chat(creator, span_warning("The room you're in is too big. It can only be 70 tiles in size, excluding walls."))
 		return
 
-	om_ask_begin(null, creator, /datum/om/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), list(receiver = creator, subject = get_turf(creator), turfs = turfs))
+	open_request(creator, /datum/prompt/text/blueprint_new_area, TYPE_PROC_REF(/mob, create_new_area_named), answerer = creator, subject = get_turf(creator), turfs = turfs)
 
-/datum/om/prompt/text/blueprint_new_area
+/datum/prompt/text/blueprint_new_area
 	title = "Area Name"
-	message = "What would you like to name the area?"
-	max_length = MAX_NAME_LEN
+	question = "What would you like to name the area?"
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
 	encode = FALSE
-	requires = BLUEPRINT_PROMPT_REQUIRES
+	timeout = 0
 	var/list/turfs
 
-/datum/om/prompt/text/blueprint_new_area/cancelled()
-	to_chat(answerer, span_warning("No new area made. Cancelling."))
+/datum/prompt/text/blueprint_new_area/proc/captures_live()
+	return !QDELETED(answerer) && !QDELETED(subject)
 
-/mob/proc/create_new_area_named(datum/om/prompt/text/blueprint_new_area/ask)
+/datum/prompt/text/blueprint_new_area/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/mob/proc/create_new_area_named(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
+	if(!context.answer)
+		if(isnull(ask.answer_value) && ask.captures_live())
+			to_chat(ask.answerer, span_warning("No new area made. Cancelling."))
+		return
+	create_new_area_named_apply(context)
+
+/mob/proc/create_new_area_named_apply(datum/act/request/context)
+	var/datum/prompt/text/blueprint_new_area/ask = context.request
 	var/mob/creator = src
-	var/str = sanitizeSafe(ask.text, MAX_NAME_LEN)
+	var/str = sanitizeSafe(ask.answer_value, MAX_NAME_LEN)
 	if(!str || !length(str)) //sanity
 		to_chat(creator, span_warning("No new area made. Cancelling."))
 		return
@@ -980,3 +1014,171 @@ EXTEND_INTERACTIONS(/obj/item/areaeditor, \
 EXTEND_INTERACTIONS(/obj/item/paper, \
 	INTERACT_VERB("Create Area", PROC_REF(create_area_effect), REQ_IN_INVENTORY, REQ_TARGET_STATE(/obj/item/paper/proc/can_create_area)), \
 )
+
+/datum/prompt/choice/blueprint_expand
+	title = "Area Expansion"
+	question = "Choose an area to expand or make a new area"
+	timeout = 0
+	var/list/turfs
+	var/tmp/obj/item/areaeditor/editor
+	var/editor_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/blueprint_expand)
+	ref_one(nameof(editor), /obj/item/areaeditor)
+
+/datum/prompt/choice/blueprint_expand/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/areaeditor/captured_editor = editor
+	editor_expected = !isnull(captured_editor)
+	rel_clear(src, nameof(editor))
+	rel_set(src, nameof(editor), captured_editor)
+
+/datum/prompt/choice/blueprint_expand/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(editor_expected && QDELETED(editor))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_expand/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/text/blueprint_area_name
+	title = "Blueprint Editing"
+	question = "New area name"
+	timeout = 0
+	var/list/turfs
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	var/tmp/obj/item/areaeditor/editor
+	var/editor_expected = FALSE
+
+CAPABILITIES(/datum/prompt/text/blueprint_area_name)
+	ref_one(nameof(editor), /obj/item/areaeditor)
+
+/datum/prompt/text/blueprint_area_name/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/areaeditor/captured_editor = editor
+	editor_expected = !isnull(captured_editor)
+	rel_clear(src, nameof(editor))
+	rel_set(src, nameof(editor), captured_editor)
+
+/datum/prompt/text/blueprint_area_name/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(editor_expected && QDELETED(editor))
+		return FALSE
+	return TRUE
+
+/datum/prompt/text/blueprint_area_name/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_whole_area
+	title = "Area Expansion"
+	question = "What area do you want to turn the area YOU ARE CURRENTLY STANDING IN to? Or do you want to make a new area?"
+	timeout = 0
+	var/list/turfs
+	var/can_make_new_area
+
+/datum/prompt/choice/blueprint_whole_area/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_whole_area/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_whole_confirm
+	title = "READ CAREFULLY"
+	question = ""
+	timeout = 0
+	var/list/turfs
+	choices = list("No", "Yes")
+	buttons = TRUE
+	var/new_name
+	var/tmp/area/chosen_area
+	var/chosen_area_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/blueprint_whole_confirm)
+	ref_one(nameof(chosen_area), /area)
+
+/datum/prompt/choice/blueprint_whole_confirm/prepare(datum/act/A)
+	. = ..()
+	var/area/captured_chosen_area = chosen_area
+	chosen_area_expected = !isnull(captured_chosen_area)
+	rel_clear(src, nameof(chosen_area))
+	rel_set(src, nameof(chosen_area), captured_chosen_area)
+
+/datum/prompt/choice/blueprint_whole_confirm/proc/captures_live()
+	if(QDELETED(answerer) || QDELETED(subject))
+		return FALSE
+	if(chosen_area_expected && QDELETED(chosen_area))
+		return FALSE
+	return TRUE
+
+/datum/prompt/choice/blueprint_whole_confirm/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(!captures_live())
+		return "gone"
+	var/turf/at = get_turf(answerer)
+	var/turf/tt = get_turf(subject)
+	if(!at || !tt || at.z != tt.z || get_dist(at, tt) > 0)
+		return "too far away"
+	if(answerer.incapacitated())
+		return "not able to"
+
+/datum/prompt/choice/blueprint_expand/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/text/blueprint_area_name/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/blueprint_whole_area/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()
+
+/datum/prompt/choice/blueprint_whole_confirm/begin()
+	if(!captures_live())
+		request_end(src, REQ_CANCELLED, null)
+		return
+	return ..()

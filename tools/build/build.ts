@@ -961,7 +961,7 @@ function linkOrCopy(from: string, to: string): void {
   }
 }
 
-/** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 45 minutes. */
+/** Default hard timeout for a focused run; the full suite keeps lib/byond.ts's 120 minutes. */
 const FOCUSED_TIMEOUT_MINUTES = Number(process.env.DQ_FOCUS_TIMEOUT_MINUTES) || 15;
 
 type IsolatedRun = WorldRun & { logDir: string };
@@ -1600,6 +1600,19 @@ type ShardRun = WorldRun & { index: number; logDir: string };
  * (lib/dd_slot.ts) is also taken when DQ_DD_SLOT_BASE configures a shared
  * DreamDaemon budget; without one, the dd-slot fallback is per-worktree with
  * only two non-priority slots, which would serialize a 4-shard run. */
+/** The per-shard DreamDaemon watchdog backstop, in minutes. Each shard does
+ * roughly 1/shardCount of the work (sweeps self-divide via sweep_types(),
+ * other tests are bin-packed), so the backstop scales down with shard count --
+ * sqrt rather than linear, since boot overhead and a still-heavy slice don't
+ * shrink that fast. A whole-tier run (no --focus/--select/--affected) gets a
+ * much larger base: the normal tier on 4 shards took up to 34 min per shard on
+ * a contended machine (2026-10-04), past the old 23 min default. Floored at 12
+ * minutes; DQ_DD_WATCHDOG_MINUTES (lib/byond.ts) overrides it. */
+function shardWatchdogMinutes(shardCount: number, wholeTier: boolean): number {
+  const base = wholeTier ? 120 : 45;
+  return Math.max(base / Math.sqrt(shardCount), 12);
+}
+
 async function runShardWorld(
   dmbFile: string,
   dmVersion: string | null,
@@ -1609,17 +1622,13 @@ async function runShardWorld(
   priority: boolean,
   worldParams: Record<string, string>,
   linkFrom: string,
+  wholeTier: boolean,
 ): Promise<ShardRun> {
   const tag = `shard${shardIndex}`;
   fs.mkdirSync('data/bench', { recursive: true });
   const sampler = new ProcessSampler(`data/bench/process-${tag}.json`);
   const ddSlot = process.env.DQ_DD_SLOT_BASE ? await acquireDdSlot(priority) : null;
-  // Each shard does roughly 1/shardCount of the suite's work (sweeps
-  // self-divide via sweep_types(), other tests are bin-packed), so its
-  // watchdog backstop scales down with shard count too -- sqrt rather than
-  // linear, since boot overhead and a still-heavy slice don't shrink that
-  // fast. Floored at 12 minutes; DQ_DD_WATCHDOG_MINUTES (lib/byond.ts) overrides it.
-  const shardWatchdogMs = Math.max(Math.round((45 / Math.sqrt(shardCount)) * 60 * 1000), 12 * 60 * 1000);
+  const shardWatchdogMs = Math.round(shardWatchdogMinutes(shardCount, wholeTier) * 60 * 1000);
   try {
     const run = await runIsolatedTestWorld(
       dmbFile,
@@ -1733,7 +1742,8 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
       + `${assignment.map((a, i) => `shard ${i}: ${a.length} test(s)`).join(', ')}, `
       + `plus every sweep test in the tier in each shard${selection ? ' that matches the selection' : ''}.`,
   );
-  const shardWatchdogMinutes = Math.max(45 / Math.sqrt(shardCount), 12);
+  const wholeTier = !selection;
+  const watchdogMinutes = shardWatchdogMinutes(shardCount, wholeTier);
   const started = Date.now();
   // One private copy of the build for this run (a concurrent recompile in this
   // worktree must not swap the binary under running worlds), which every
@@ -1755,6 +1765,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
           priority,
           worldParams,
           privateBase,
+          wholeTier,
         )),
     );
   } finally {
@@ -1766,7 +1777,7 @@ async function runSharded(shardCount: number, get: any): Promise<void> {
     if (run.killedByWatchdog) {
       Juke.logger.error(
         `Shard ${run.index}: the DreamDaemon watchdog force-killed this world for running past its `
-          + `${Math.round(shardWatchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
+          + `${Math.round(watchdogMinutes)}min hard timeout (DQ_DD_WATCHDOG_MINUTES to raise it). `
           + `${run.results ? 'Partial' : 'No'} results were captured.`,
       );
     }

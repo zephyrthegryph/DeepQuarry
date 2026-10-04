@@ -46,6 +46,10 @@ CAPABILITIES(/obj/machinery/camera)
 	owns_one(nameof(assembly), /obj/item/camera_assembly)
 	extend(/datum/act/hit/emp, instead(then(PROC_REF(camera_emp))))
 
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_emp_proof, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_xray, FALSE)
+TYPE_TABLE_DECLARE(/obj/machinery/camera, camera_initial_motion, FALSE)
+
 /obj/machinery/camera/Initialize(mapload)
 	if(invuln)
 		resistance_flags |= BOMB_PROOF
@@ -73,6 +77,13 @@ CAPABILITIES(/obj/machinery/camera)
 
 	if (dir == NORTH)
 		layer = ABOVE_MOB_LAYER
+
+	if(TYPE_TABLE_GET(src, camera_initial_emp_proof))
+		upgradeEmpProof()
+	if(TYPE_TABLE_GET(src, camera_initial_xray))
+		upgradeXRay()
+	if(TYPE_TABLE_GET(src, camera_initial_motion))
+		upgradeMotion()
 
 /// Cameras with the same network set share one list. Shared lists are
 /// read-only: camera procs replace `network` rather than mutate it.
@@ -111,10 +122,10 @@ CAPABILITIES(/obj/machinery/camera)
 
 /obj/machinery/camera/proc/schedule_camera_timer()
 	var/deadline = next_camera_deadline()
-	if(deadline == camera_timer_at && (om_timer_slot_pending(src, "camera_timer_token") || !deadline))
+	if(deadline == camera_timer_at && (after_pending(src, "camera_timer_token") || !deadline))
 		return
-	if(om_timer_slot_pending(src, "camera_timer_token"))
-		om_cancel_timer_slot(src, "camera_timer_token")
+	if(after_pending(src, "camera_timer_token"))
+		cancel_after(src, "camera_timer_token")
 	camera_timer_at = deadline
 	if(deadline)
 		om_attach(src, /datum/om/behaviour/sleeper/timed)
@@ -132,7 +143,7 @@ CAPABILITIES(/obj/machinery/camera)
 
 /obj/machinery/camera/om_sleep_violation()
 	var/deadline = next_camera_deadline()
-	if(deadline && (!om_timer_slot_pending(src, "camera_timer_token") || camera_timer_at > deadline))
+	if(deadline && (!after_pending(src, "camera_timer_token") || camera_timer_at > deadline))
 		return "deadline [deadline] (now [world.time]) has no timer"
 	return null
 

@@ -391,14 +391,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 
 	return FALSE
 
-/obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/clothing/suit/space/void/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
 	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(hood || boots || tank)
-		var/choice = rerun_ask(user, "a1", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(hood,boots,tank,cooler))
+		if(isnull(answered_component))
+			open_component_request(user, tool, list(hood,boots,tank,cooler))
+			return ITEM_INTERACT_BLOCKING
+		var/choice = answered_component
 		if(isnull(choice))
 			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS
@@ -426,14 +429,17 @@ EXTEND_INTERACTIONS(/obj/item/clothing/suit/space/void/autolok, INTERACT_ITEM(nu
 		to_chat(user, "\The [src] does not have anything installed.")
 	return ITEM_INTERACT_SUCCESS
 
-/obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool)
+/obj/item/clothing/suit/space/void/autolok/screwdriver_act(mob/user, obj/item/tool, obj/item/answered_component = null)
 	if(!isliving(user))
 		return ITEM_INTERACT_BLOCKING
 	if(user.inventory_slot_id(src) == SLOT_ID_SUIT)
 		to_chat(user, span_warning("You cannot modify \the [src] while it is being worn."))
 		return ITEM_INTERACT_SUCCESS
 	if(boots || tank || cooler)
-		var/choice = rerun_ask(user, "a2", TYPE_PROC_REF(/atom, screwdriver_act), args, /datum/om/prompt/choice, message = "What component would you like to remove?", title = "Remove Component", choices = list(boots,tank,cooler))
+		if(isnull(answered_component))
+			open_component_request(user, tool, list(boots,tank,cooler))
+			return ITEM_INTERACT_BLOCKING
+		var/choice = answered_component
 		if(isnull(choice))
 			return ITEM_INTERACT_BLOCKING
 		if(!choice) return ITEM_INTERACT_SUCCESS
@@ -474,9 +480,6 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 /obj/item/clothing/suit/space/void
 
 
-// === merged from spacesuits_chomp.dm during hard-fork de-suffix. Placed in this file because it
-// is the highest-positioned definer in the override chain for the members it
-// sets, so every override stays after its base definition (resolution preserved). ===
 /obj/item/clothing/suit/space
 	armor_spec = "cold=60"
 
@@ -493,3 +496,52 @@ TYPE_TABLE(/obj/item/clothing/head/helmet/space/void/autolok, fit_spec, list(REQ
 	. += owns(nameof(boots), policy = OWN_CONTAINED, starts = nameof(boots))
 	. += owns(nameof(tank), policy = OWN_CONTAINED, starts = nameof(tank))
 	. += owns(nameof(cooler), policy = OWN_CONTAINED)
+
+/obj/item/clothing/suit/space/void/proc/open_component_request(mob/user, obj/item/tool, list/choices)
+	open_request(src, /datum/prompt/choice/voidsuit_component, PROC_REF(component_chosen), answerer = user, captured_tool = tool, tool_expected = !isnull(tool), choices = choices)
+
+/obj/item/clothing/suit/space/void/proc/component_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	apply_component_answer(A)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/suit/space/void/proc/apply_component_answer(datum/act/request/A)
+	var/datum/prompt/choice/voidsuit_component/request = A.request
+	if(request.captures_gone())
+		return
+	var/obj/item/selected = A.answer.answer_value
+	if(QDELETED(selected))
+		return
+	return screwdriver_act(request.answerer, request.captured_tool, selected)
+
+/datum/prompt/choice/voidsuit_component
+	question = "What component would you like to remove?"
+	title = "Remove Component"
+	timeout = 0
+	var/obj/item/captured_tool
+	var/tool_expected = FALSE
+
+CAPABILITIES(/datum/prompt/choice/voidsuit_component)
+	ref_one(nameof(captured_tool), /obj/item)
+
+/datum/prompt/choice/voidsuit_component/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/tool = captured_tool
+	rel_clear(src, nameof(captured_tool))
+	rel_set(src, nameof(captured_tool), tool)
+
+/datum/prompt/choice/voidsuit_component/proc/captures_gone()
+	return QDELETED(answerer) || (tool_expected && QDELETED(captured_tool))
+
+/datum/prompt/choice/voidsuit_component/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	if(!isnull(answer_value))
+		var/obj/item/selected = answer_value
+		if(!istype(selected) || QDELETED(selected))
+			return "gone"
+	return null

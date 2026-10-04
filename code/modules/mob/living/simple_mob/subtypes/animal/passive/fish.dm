@@ -342,7 +342,7 @@ DECLARE_REAGENTS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, 60, l
 		return
 	Move(T)
 	if(steps > 1)
-		after(src, 3, PROC_REF(koi_flee), with = list(M, steps - 1))
+		after(src, 0.3 SECONDS, PROC_REF(koi_flee), with = list(M, steps - 1))
 
 EXTEND_INTERACTIONS(/mob/living/simple_mob/animal/passive/fish/koi/poisonous, \
 	INTERACT_HAND_AS(I_HELP, "Pet", PROC_REF(koi_poisonous_interaction_hand)), \

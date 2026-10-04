@@ -202,6 +202,6 @@
 		return TRUE
 	return FALSE
 
-/datum/reactive_icon_update/relations()
-	. = ..()
-	. += rel_many(nameof(watched_containers))
+
+CAPABILITIES(/datum/reactive_icon_update)
+	ref_many(nameof(watched_containers))

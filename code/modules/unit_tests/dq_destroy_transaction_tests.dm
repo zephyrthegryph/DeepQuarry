@@ -28,6 +28,9 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	w_class = ITEMSIZE_NORMAL
 	var/datum/dq_destroy_transaction_owned_child/child
 
+CAPABILITIES(/obj/item/dq_destroy_transaction_phase_probe)
+	owns_one(nameof(child), /datum/dq_destroy_transaction_owned_child)
+
 /obj/item/dq_destroy_transaction_phase_probe/Initialize(mapload)
 	. = ..()
 	observe(src, /datum/notice/qdeleting, src, then(PROC_REF(on_qdeleting)))
@@ -74,7 +77,7 @@ GLOBAL_LIST_EMPTY(dq_destroy_transaction_log)
 	saw_destroying_flag = (flags & LEDGER_MOVE_DESTROYING) ? TRUE : FALSE
 	loc_when_unslotted = loc // doMove() already committed `loc =` before note_exit/on_unslotted runs
 
-/// An owned child (implicit OWN): its own Destroy() logs "links" (phase 4 deletes it).
+/// An owned child (declared owns_one on the probe): its own Destroy() logs "links" (phase 4 deletes it).
 /datum/dq_destroy_transaction_owned_child
 
 /datum/dq_destroy_transaction_owned_child/on_destroy(force)

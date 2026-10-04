@@ -1,4 +1,4 @@
-#define DRYING_TIME 5 * 60*10                        //for 1 unit of depth in puddle (amount var)
+#define DRYING_TIME 5 MINUTES                        //for 1 unit of depth in puddle (amount var)
 
 /obj/effect/decal/cleanable/blood
 	name = "blood"
@@ -51,7 +51,7 @@
 					if(!(B.flags & ATOM_INITIALIZED))
 						B.delete_me = TRUE
 					else
-						qdel(B)
+						consume(B)
 
 DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood, TYPE_PROC_REF(/atom, appearance_overlays), list())
 /obj/effect/decal/cleanable/blood/appearance_overlays()
@@ -237,7 +237,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	streak_async(directions)
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_async(list/directions)
-	after(src, 3, PROC_REF(streak_step), with = list(pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4)))
+	after(src, 0.3 SECONDS, PROC_REF(streak_step), with = list(pick(directions), 0, pick(1, 200; 2, 150; 3, 50; 4)))
 
 /// One streak step every 0.3 s: splatter behind (after the first), slide on.
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_step(direction, i, steps)
@@ -246,7 +246,7 @@ DECLARE_APPEARANCE_PROC(/obj/effect/decal/cleanable/blood/gibs, TYPE_PROC_REF(/a
 	if (step_to(src, get_step(src, direction), 0))
 		return
 	if (i + 1 < steps)
-		after(src, 3, PROC_REF(streak_step), with = list(direction, i + 1, steps))
+		after(src, 0.3 SECONDS, PROC_REF(streak_step), with = list(direction, i + 1, steps))
 
 /obj/effect/decal/cleanable/blood/gibs/proc/streak_splat()
 	var/obj/effect/decal/cleanable/blood/b = new /obj/effect/decal/cleanable/blood/splatter(src.loc)

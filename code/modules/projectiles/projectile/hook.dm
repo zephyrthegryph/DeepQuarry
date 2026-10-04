@@ -17,7 +17,6 @@
 	fire_sound = SFX_EFFECTS_ZZZT
 
 	var/target_distance = null	// Shamelessly stolen from arcing projectiles.
-	var/my_tracking_beam = null	// Beam made by the launcher. Tracked here to destroy it in time with the impact.
 	var/launcher_intent = null	// The stance the firer pulled the trigger in (receive_firer_stance()).
 
 	var/disarm_chance = 60		// Chance for a successful disarm hit. The inverse is a throw away from the firer.
@@ -152,7 +151,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 						return
 					T = pick(possible_targets)
 
-				after(target, 2, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 40, 1))
+				after(target, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 40, 1))
 				visible_message(span_notice("\The [T] is snatched by \the [src]!"))
 				T.throw_at(get_turf(firer), 7, 1, src)
 				success = TRUE
@@ -163,7 +162,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 				if(I_HELP)
 					var/message = pick(help_messages)
 					if(message == "slaps")
-						after(src, 1, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 50, 1))
+						after(src, 0.1 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list('sound/effects/snap.ogg', 50, 1))
 					visible_message(span_notice("\The [src] [message] [target]."))
 					done_mob_unique = TRUE
 					success = TRUE
@@ -183,7 +182,7 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 					success = TRUE
 				if(I_GRAB)
 					var/turf/STurf = get_turf(L)
-					after(STurf, 2, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 60, 1))
+					after(STurf, 0.2 SECONDS, TYPE_PROC_REF(/atom, om_playsound), with = list(crack_sound, 60, 1))
 					act_message(src, L, others = span_critical("%U% rips %T% towards \the [firer]!"))
 					L.throw_at(get_turf(get_step(firer,get_dir(firer,L))), 6, 1, src)
 					done_mob_unique = TRUE
@@ -193,7 +192,6 @@ CAPABILITIES(/obj/item/projectile/energy/hook)
 		if(!S.anchored)
 			S.throw_at(get_turf(get_step(firer,get_dir(firer,S))), 4, 1, src)
 			success = TRUE
-	qdel(my_tracking_beam)
 	return success
 
 /*

@@ -45,11 +45,14 @@
 	options["Moon Gem"] = "moon"
 	options["Tajaran Figure"] = "catrobe"
 
-	om_ask(M, /datum/om/prompt/choice, PROC_REF(figure_chosen), title = "Customize Figure", message = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(figure_chosen), answerer = M, title = "Customize Figure", question = "Choose your icon!", choices = options, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE, timeout = 0)
 
-/obj/item/godfig/proc/figure_chosen(datum/om/prompt/choice/ask)
-	var/list/options = ask.choices
-	var/choice = ask.choice
+/obj/item/godfig/proc/figure_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/datum/prompt/choice/prompt = A.answer
+	var/list/options = prompt.choices
+	var/choice = A.answer.answer_value
 	icon_state = options[choice]
 	if(options[choice] == "frobe")
 		desc = "A painted holy figure of a plain looking human woman in a robe."
@@ -110,7 +113,7 @@
 	else if(options[choice] == "catrobe")
 		desc = "A painted holy figure of a plain looking Tajaran in a robe."
 
-	to_chat(ask.answerer, "The religious icon is now a [choice]. All hail!")
+	to_chat(A.request.answerer, "The religious icon is now a [choice]. All hail!")
 	return 1
 
 

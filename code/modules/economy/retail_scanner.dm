@@ -61,15 +61,17 @@ REGISTRY_MEMBERSHIP(/obj/item/retail_scanner, REGISTRY_TRANSACTION_DEVICES)
 	src.pixel_y = 0
 
 DECLARE_INTERACTIONS(/obj/item/retail_scanner, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt)), \
 )
 
-/// Old attack_self.
-/obj/item/retail_scanner/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+CAPABILITIES(/obj/item/retail_scanner)
+	op("controls", in_hand(), label("Open retail scanner"), then(PROC_REF(retail_scanner_controls_opened)))
+
+/obj/item/retail_scanner/proc/retail_scanner_controls_opened(datum/act/op/A)
+	var/mob/user = A.actor
 	tgui_interact(user)
-	return TRUE
+	return OP_OK
 
 /// Old click_alt.
 /obj/item/retail_scanner/proc/interaction_alt(mob/user, obj/item/held, datum/interaction/interaction)

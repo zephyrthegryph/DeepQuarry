@@ -108,7 +108,7 @@ UI_ACT_PROC(/mob/new_player, ui_act_observe)
 	if(!SSticker || SSticker.current_state == GAME_STATE_STARTUP)
 		to_chat(src, span_warning("The game is still setting up, please try again later."))
 		return TRUE
-	om_ask(src, /datum/om/prompt/confirm, PROC_REF(observe_confirmed), title = "Observe Round?", message = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.")
+	open_request(src, /datum/prompt/choice/lobby_observe, PROC_REF(observe_confirmed), answerer = src, title = "Observe Round?", question = "Are you sure you wish to observe? If you do, make sure to not use any knowledge gained from observing if you decide to join later.")
 	return TRUE
 
 UI_ACT(/mob/new_player, "give_feedback", ui_act_give_feedback)
@@ -147,7 +147,17 @@ UI_ACT_PROC(/mob/new_player, ui_act_start_immediately)
 	if(SSticker.current_state == GAME_STATE_STARTUP)
 		to_chat(user, span_admin("The server is still setting up, but the round will be started as soon as possible."))
 
-/mob/new_player/proc/observe_confirmed(datum/om/prompt/confirm/ask)
+/datum/prompt/choice/lobby_observe
+	choices = list("Yes", "No")
+	buttons = TRUE
+	timeout = 0
+
+/mob/new_player/proc/observe_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	return observe_apply()
+
+/mob/new_player/proc/observe_apply()
 	if(!spawning)
 		if(QDELETED(src) || !client)
 			return TRUE

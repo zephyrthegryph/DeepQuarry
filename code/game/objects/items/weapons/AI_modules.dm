@@ -157,14 +157,41 @@ CAPABILITIES(/obj/item/aiModule)
 	var/targetName = ""
 	desc = "A 'safeguard' AI module: 'Safeguard <name>. Anyone threatening or attempting to harm <name> is no longer to be considered a crew member, and is a threat which must be neutralized.'"
 
-CAPABILITIES(/obj/item/aiModule/safeguard)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+TRACKED(/obj/item/aiModule/safeguard, targetName)
 
-/// Old attack_self.
-/obj/item/aiModule/safeguard/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Safeguard who?", message = "Please enter the name of the person to safeguard.", default = user.name)
-	return TRUE
+CAPABILITIES(/obj/item/aiModule/safeguard)
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/safeguard, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
+
+/// Native text configuration; the operation rechecks the original actor's carried module on answer.
+/datum/prompt/text/ai_module
+	title = "Freeform Law Entry"
+	default = ""
+
+/datum/prompt/text/ai_module/safeguard
+	title = "Safeguard who?"
+	question = "Please enter the name of the person to safeguard."
+
+/datum/prompt/text/ai_module/safeguard/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		default = asking.actor?.name
+
+/datum/prompt/text/ai_module/oneHuman
+	title = "Who?"
+	question = "Please enter the name of the person who is the only crew member."
+
+/datum/prompt/text/ai_module/oneHuman/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		default = asking.actor?.real_name
+
+/datum/prompt/text/ai_module/freeformcore
+	question = "Please enter a new core law for the AI."
+
+/datum/prompt/text/ai_module/syndicate
+	question = "Please enter a new law for the AI."
 
 /// Text written onto an AI law module (a law, or a name in one). Re-checked on the answer: the module is still carried.
 /datum/om/prompt/text/ai_law
@@ -172,9 +199,11 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 	default = ""
 	ask_flags = ASK_CARRIED | ASK_CAPABLE
 
-/obj/item/aiModule/safeguard/proc/target_named(datum/om/prompt/text/ai_law/ask)
-	targetName = ask.text
+/obj/item/aiModule/safeguard/proc/target_named(datum/act/op/A)
+	var/datum/prompt/text/R = A.answer
+	set_targetName(R.value)
 	desc = text("A 'safeguard' AI module: 'Safeguard []. Anyone threatening or attempting to harm [] is no longer to be considered a crew member, and is a threat which must be neutralized.'", targetName, targetName)
+	return OP_OK
 
 /obj/item/aiModule/safeguard/install(obj/machinery/computer/C, mob/living/user)
 	if(!targetName)
@@ -195,18 +224,16 @@ CAPABILITIES(/obj/item/aiModule/safeguard)
 	var/targetName = ""
 	desc = "A 'one crew member' AI module: 'Only <name> is a crew member.'"
 
+TRACKED(/obj/item/aiModule/oneHuman, targetName)
+
 CAPABILITIES(/obj/item/aiModule/oneHuman)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/oneHuman, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(target_named)))
 
-/// Old attack_self.
-/obj/item/aiModule/oneHuman/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(target_named), title = "Who?", message = "Please enter the name of the person who is the only crew member.", default = user.real_name)
-	return TRUE
-
-/obj/item/aiModule/oneHuman/proc/target_named(datum/om/prompt/text/ai_law/ask)
-	targetName = ask.text
+/obj/item/aiModule/oneHuman/proc/target_named(datum/act/op/A)
+	var/datum/prompt/text/R = A.answer
+	set_targetName(R.value)
 	desc = text("A 'one crew member' AI module: 'Only [] is a crew member.'", targetName)
+	return OP_OK
 
 /obj/item/aiModule/oneHuman/install(obj/machinery/computer/C, mob/living/user)
 	if(!targetName)
@@ -292,10 +319,19 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	if(A.answer.answer_value < MIN_SUPPLIED_LAW_NUMBER)
 		return
 	lawpos = min(A.answer.answer_value, MAX_SUPPLIED_LAW_NUMBER)
-	om_ask(A.request.answerer, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
+	open_request(src, /datum/prompt/text/ai_law_freeform, PROC_REF(law_entered), answerer = A.request.answerer, question = "Please enter a new law for the AI.")
 
-/obj/item/aiModule/freeform/proc/law_entered(datum/om/prompt/text/ai_law/ask)
-	newFreeFormLaw = ask.text
+/// Freeform law text: the existing numeric stage and this stage use the same carried/capable rechecks.
+/datum/prompt/text/ai_law_freeform
+	title = "Freeform Law Entry"
+	default = ""
+	ask_flags = ASK_CARRIED | ASK_CAPABLE
+	timeout = 0
+
+/obj/item/aiModule/freeform/proc/law_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	newFreeFormLaw = A.answer.answer_value
 	desc = "A 'freeform' AI module: ([lawpos]) '[newFreeFormLaw]'"
 
 /obj/item/aiModule/freeform/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
@@ -318,7 +354,7 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	var/targetName = "name"
 	desc = "A 'reset' AI module: 'Clears all, except the inherent, laws.'"
 
-// VOREstation edit: use map default laws
+// Use map default laws.
 /obj/item/aiModule/reset/Initialize(mapload)
 	. = ..()
 	rel_set(src, nameof(laws), new using_map.default_law_type) // ALLOW(decl): type read from the loaded map at runtime. Pull from loaded map
@@ -400,18 +436,16 @@ CAPABILITIES(/obj/item/aiModule/freeform)
 	var/newFreeFormLaw = ""
 	desc = "A 'freeform' Core AI module: '<freeform>'"
 
+TRACKED(/obj/item/aiModule/freeformcore, newFreeFormLaw)
+
 CAPABILITIES(/obj/item/aiModule/freeformcore)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/freeformcore, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))
 
-/// Old attack_self.
-/obj/item/aiModule/freeformcore/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new core law for the AI.")
-	return TRUE
-
-/obj/item/aiModule/freeformcore/proc/law_entered(datum/om/prompt/text/ai_law/ask)
-	newFreeFormLaw = ask.text
+/obj/item/aiModule/freeformcore/proc/law_entered(datum/act/op/A)
+	var/datum/prompt/text/R = A.answer
+	set_newFreeFormLaw(R.value)
 	desc = "A 'freeform' Core AI module:  '[newFreeFormLaw]'"
+	return OP_OK
 
 /obj/item/aiModule/freeformcore/addAdditionalLaws(mob/living/silicon/ai/target, mob/sender)
 	var/law = "[newFreeFormLaw]"
@@ -429,18 +463,16 @@ CAPABILITIES(/obj/item/aiModule/freeformcore)
 	var/newFreeFormLaw = ""
 	desc = "A hacked AI law module: '<freeform>'"
 
+TRACKED(/obj/item/aiModule/syndicate, newFreeFormLaw)
+
 CAPABILITIES(/obj/item/aiModule/syndicate)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("configure", in_hand(), label("Configure law module"), needs(carried(), req_capable()), asks(/datum/prompt/text/ai_module/syndicate, fields = list("timeout" = 0), keeps = 0), then(PROC_REF(law_entered)))
 
-/// Old attack_self.
-/obj/item/aiModule/syndicate/proc/interaction_self(datum/act/op/A)
-	var/mob/user = A.actor
-	om_ask(user, /datum/om/prompt/text/ai_law, PROC_REF(law_entered), message = "Please enter a new law for the AI.")
-	return TRUE
-
-/obj/item/aiModule/syndicate/proc/law_entered(datum/om/prompt/text/ai_law/ask)
-	newFreeFormLaw = ask.text
+/obj/item/aiModule/syndicate/proc/law_entered(datum/act/op/A)
+	var/datum/prompt/text/R = A.answer
+	set_newFreeFormLaw(R.value)
 	desc = "A hacked AI law module:  '[newFreeFormLaw]'"
+	return OP_OK
 
 /obj/item/aiModule/syndicate/transmitInstructions(mob/living/silicon/ai/target, mob/sender)
 	//	..()    //We don't want this module reporting to the AI who dun it. --NEO

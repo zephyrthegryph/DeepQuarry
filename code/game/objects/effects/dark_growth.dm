@@ -118,19 +118,15 @@ DECLARE_PERIODIC(/obj/structure/prop/dark_node, PERIODIC_SLOW)
 		dark_tile.unlinked()
 	..()
 
-/obj/effect/dark/relations()
-	. = ..()
-	. += rel_one(nameof(linked_node), back = nameof(/obj/structure/prop/dark_node::children_effects))
-/obj/structure/prop/dark_node/relations()
-	. = ..()
-	. += rel_many(nameof(children_effects), back = nameof(/obj/effect/dark::linked_node))
+CAPABILITIES(/obj/effect/dark)
+	links(/obj/effect/dark::linked_node, /obj/structure/prop/dark_node::children_effects, b_many = TRUE)
 
 /obj/effect/dark/proc/do_process()
 	//set background = 1
 	var/turf/U = get_turf(src)
 
 	if(isspace(U))
-		qdel(src)
+		consume(src)
 		return
 
 	if(!linked_node)

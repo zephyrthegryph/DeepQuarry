@@ -1,7 +1,7 @@
 /obj/item/material/butterfly
 	name = "butterfly knife"
 	desc = "A basic metal blade concealed in a lightweight plasteel grip. Small enough when folded to fit in a pocket."
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
+	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	icon_state = "butterflyknife"
 	item_state = null
 	hitsound = null
@@ -44,13 +44,15 @@
 	force_divisor = 0.1 // 6 when wielded with hardness 60 (steel)
 	thrown_force_divisor = 0.2 // 4 when thrown with weight 20 (steel)
 
-CAPABILITIES(/obj/item/material/butterfly)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+TRACKED(/obj/item/material/butterfly, active)
 
-/// Old attack_self.
-/obj/item/material/butterfly/proc/interaction_self(datum/act/op/A)
+CAPABILITIES(/obj/item/material/butterfly)
+	op("flip", in_hand(), label("Open or conceal blade"), then(PROC_REF(blade_flipped)))
+
+/// Preserve the blade subtype's complete force and equipment update.
+/obj/item/material/butterfly/proc/blade_flipped(datum/act/op/A)
 	var/mob/user = A.actor
-	active = !active
+	set_active(!active)
 	update_force()
 
 	if(user)
@@ -60,7 +62,7 @@ CAPABILITIES(/obj/item/material/butterfly)
 		else
 			to_chat(user, span_notice("\The [src] can now be concealed."))
 		add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /*
  * Kitchen knives
@@ -70,7 +72,7 @@ CAPABILITIES(/obj/item/material/butterfly)
 	icon = 'icons/obj/kitchen.dmi'
 	icon_state = "knife"
 	desc = "A general purpose " + JOB_CHEF + "'s Knife made by SpaceCook Incorporated. Guaranteed to stay sharp for years to come."
-	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave. //CHOMP Remove
+	//description_fluff = "This could be used to engrave messages on suitable surfaces if you really put your mind to it! Alt-click a floor or wall to engrave with it." //This way it's not a completely hidden, arcane art to engrave.
 	sharp = TRUE
 	edge = TRUE
 	injury_kind = INJURY_CUT

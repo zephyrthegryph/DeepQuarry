@@ -56,43 +56,69 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 			return FALSE
 		var/mob/living/carbon/human/checker = user
 		if(checker.nif)//Proteans have NIFS
-			om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
+			open_request(src, /datum/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), answerer = user, subject = src, ask_flags = ASK_NEAR_SUBJECT | ASK_CAPABLE)
 	return FALSE
 
 /// Interfacing with nanite goop: on or off, then (on) what it recycles. A person must stay next
 /// to it (ask_flags set at the call); an AI answers from anywhere (`from_ai`).
-/datum/om/prompt/choice/nanite_state
+/datum/prompt/choice/nanite_state
 	title = "Desired state"
+	timeout = 0
 	choices = list("On", "Off")
 	var/from_ai = FALSE
 
-/datum/om/prompt/choice/nanite_state/prepare()
-	message = "Do you wish interface with \the [subject]"
-	return TRUE
+/datum/prompt/choice/nanite_state/prepare(datum/act/A)
+	. = ..()
+	question = "Do you wish interface with \the [subject]"
 
-/datum/om/prompt/choice/nanite_targets
+/datum/prompt/choice/nanite_targets
 	title = "Desired targets"
+	timeout = 0
 	choices = list("None", "All", "Organics and Cyborgs", "Organics and Synthetics", "Only Organics")
 	var/from_ai = FALSE
 
-/datum/om/prompt/choice/nanite_targets/prepare()
-	message = "Which entities do you wish for \the [subject] to recycle?"
-	return TRUE
+/datum/prompt/choice/nanite_targets/prepare(datum/act/A)
+	. = ..()
+	question = "Which entities do you wish for \the [subject] to recycle?"
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/om/prompt/choice/nanite_state/ask)
-	if(ask.choice == "On")
-		om_ask(ask.answerer, /datum/om/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), ask_flags = ask.ask_flags, from_ai = ask.from_ai)
+/datum/prompt/choice/nanite_state/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(answerer) ? "gone" : null
+
+/datum/prompt/choice/nanite_targets/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	return QDELETED(answerer) ? "gone" : null
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_state_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_nanite_state_chosen(A)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_state_chosen(datum/act/request/A)
+	var/datum/prompt/choice/nanite_state/ask = A.request
+	if(A.answer.answer_value == "On")
+		open_request(src, /datum/prompt/choice/nanite_targets, PROC_REF(nanite_targets_chosen), answerer = ask.answerer, subject = src, ask_flags = ask.ask_flags, from_ai = ask.from_ai)
 		return
 	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, ask.choice)
+		nanite_ai_interface_chosen(ask.answerer, A.answer.answer_value)
 	else
-		nanite_interface_chosen(ask.answerer, ask.choice)
+		nanite_interface_chosen(ask.answerer, A.answer.answer_value)
 
-/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/om/prompt/choice/nanite_targets/ask)
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_targets_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	return apply_nanite_targets_chosen(A)
+
+/turf/simulated/floor/water/digestive_enzymes/nanites/proc/apply_nanite_targets_chosen(datum/act/request/A)
+	var/datum/prompt/choice/nanite_targets/ask = A.request
 	if(ask.from_ai)
-		nanite_ai_interface_chosen(ask.answerer, "On", ask.choice)
+		nanite_ai_interface_chosen(ask.answerer, "On", A.answer.answer_value)
 	else
-		nanite_interface_chosen(ask.answerer, "On", ask.choice)
+		nanite_interface_chosen(ask.answerer, "On", A.answer.answer_value)
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_interface_chosen(mob/living/carbon/human/checker, state, targets)
 	switch(state)
@@ -139,7 +165,7 @@ EXTEND_INTERACTIONS(/turf/simulated/floor/water/digestive_enzymes/nanites, \
 		if(isAI(nutrienttarget) && user != nutrienttarget)//first come first serve, for AI
 			if(!locate_in_list(range(1, src), user))// AI can always control adjacent nanite tiles
 				return FALSE
-	om_ask(user, /datum/om/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), from_ai = TRUE)
+	open_request(src, /datum/prompt/choice/nanite_state, PROC_REF(nanite_state_chosen), answerer = user, subject = src, from_ai = TRUE)
 	return TRUE
 
 /turf/simulated/floor/water/digestive_enzymes/nanites/proc/nanite_ai_interface_chosen(mob/user, state, choice2)

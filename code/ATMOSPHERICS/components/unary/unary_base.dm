@@ -169,8 +169,7 @@ OM_FIELD_VIEW(/obj/machinery/atmospherics/unary, obj/machinery/atmospherics, nod
 	register_gas_dependencies()
 
 
-/obj/machinery/atmospherics/unary/ownership()
-	. = ..()
-	. += rel_one(nameof(air_contents), kind = RELK_OWNED, policy = OWN_PRIVATE_COPY)
+CAPABILITIES(/obj/machinery/atmospherics/unary)
+	owns_one(nameof(air_contents), on_destroy = ON_DESTROY_PRIVATE_COPY)
 
 TRACKED_BRIDGED(/obj/machinery/atmospherics/unary, welded, CHANGE_MACHINE_SETTINGS)

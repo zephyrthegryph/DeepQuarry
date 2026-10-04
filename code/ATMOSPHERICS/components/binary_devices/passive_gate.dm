@@ -149,10 +149,10 @@ APPEARANCE_TEMPLATE(/obj/machinery/atmospherics/binary/passive_gate, "{appearanc
 		set_set_flow_rate(between(0, text2num(signal.data["set_flow_rate"]), air1.return_volume()))
 
 	if("status" in signal.data)
-		after(src, 2, PROC_REF(broadcast_status))
+		after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 		return //do not update_icon
 
-	after(src, 2, PROC_REF(broadcast_status))
+	after(src, 0.2 SECONDS, PROC_REF(broadcast_status))
 	update_icon()
 	return
 
@@ -204,12 +204,14 @@ UI_DATA_REPLACE(/obj/machinery/atmospherics/binary/passive_gate, "merge:ui_data_
 
 	return data
 
-UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "toggle_valve", ui_act_toggle_valve)
-UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_toggle_valve)
-	. = TRUE
+CAPABILITIES(/obj/machinery/atmospherics/binary/passive_gate)
+	op("toggle_valve", ui_act("toggle_valve"), then(PROC_REF(valve_switched)))
+
+/obj/machinery/atmospherics/binary/passive_gate/proc/valve_switched(datum/act/op/A)
 	set_unlocked(!unlocked)
 	update_icon()
-	add_fingerprint(ui.user)
+	add_fingerprint(A.actor)
+	return OP_OK
 
 UI_ACT(/obj/machinery/atmospherics/binary/passive_gate, "regulate_mode", ui_act_regulate_mode, UI_ARG_TEXT("mode"))
 UI_ACT_PROC(/obj/machinery/atmospherics/binary/passive_gate, ui_act_regulate_mode)

@@ -18,13 +18,13 @@
 	var/show_archived = FALSE
 
 CAPABILITIES(/datum/computer_file/program/newsbrowser)
+	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
+	op("PRG_clearmessage", ui_act("PRG_clearmessage"), then(PROC_REF(ui_act_prg_clearmessage)))
+	op("PRG_toggle_archived", ui_act("PRG_toggle_archived"), then(PROC_REF(ui_act_prg_toggle_archived)))
 	owns_one(nameof(loaded_article), /datum/computer_file/data/news_article)
 	interface("NtosNewsBrowser")
 	op("PRG_openarticle", ui_act("PRG_openarticle", arg("uid", num())), then(PROC_REF(ui_act_prg_openarticle)))
-	op("PRG_reset", ui_act("PRG_reset"), then(PROC_REF(ui_act_prg_reset)))
-	op("PRG_clearmessage", ui_act("PRG_clearmessage"), then(PROC_REF(ui_act_prg_clearmessage)))
 	op("PRG_savearticle", ui_act("PRG_savearticle"), asks(/datum/prompt/text, fields = list("title" = "Save article", "question" = "Enter file name or leave blank to cancel:", "default" = computed(PROC_REF(article_default_name)))), then(PROC_REF(ui_act_prg_savearticle)))
-	op("PRG_toggle_archived", ui_act("PRG_toggle_archived"), then(PROC_REF(ui_act_prg_toggle_archived)))
 
 /datum/computer_file/program/newsbrowser/process_tick()
 	if(!downloading)
@@ -98,15 +98,17 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 			break
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_reset(datum/act/op/A)
-	. = TRUE
+
 	downloading = 0
 	download_progress = 0
 	requires_ntnet = 1
 	own_clear(src, nameof(/datum/computer_file/program/newsbrowser::loaded_article), OWN_DELETE)
+	return OP_OK
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_clearmessage(datum/act/op/A)
-	. = TRUE
+
 	message = ""
+	return OP_OK
 
 /datum/computer_file/program/newsbrowser/proc/article_default_name(datum/act/op/A)
 	return loaded_article?.filename
@@ -128,5 +130,6 @@ CAPABILITIES(/datum/computer_file/program/newsbrowser)
 	HDD.store_file(N)
 
 /datum/computer_file/program/newsbrowser/proc/ui_act_prg_toggle_archived(datum/act/op/A)
-	. = TRUE
+
 	show_archived = !show_archived
+	return OP_OK

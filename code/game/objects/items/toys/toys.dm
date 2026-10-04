@@ -1981,12 +1981,14 @@ DECLARE_INTERACTIONS(/obj/item/toy/rock, INTERACT_INSERT(/obj/item/pen, PROC_REF
 
 /// Old attackby.
 /obj/item/toy/rock/proc/interaction_draw_face(mob/living/user, obj/item/I, datum/interaction/interaction)
-	om_ask(user, /datum/om/prompt/choice, PROC_REF(face_chosen), title = "Faces", message = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE)
+	open_request(src, /datum/prompt/choice, PROC_REF(face_chosen), answerer = user, title = "Faces", question = "Choose what you'd like to draw.", choices = list("fred","roxie","rock","Cancel"), buttons = TRUE, subject = I, ask_flags = ASK_HELD | ASK_CAPABLE, timeout = 0)
 	return INTERACTION_HANDLED_PASS
 
-/obj/item/toy/rock/proc/face_chosen(datum/om/prompt/choice/ask)
-	var/mob/living/user = ask.answerer
-	switch(ask.choice)
+/obj/item/toy/rock/proc/face_chosen(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/living/user = A.request.answerer
+	switch(A.answer.answer_value)
 		if("fred")
 			src.icon_state = "fred"
 			to_chat(user, "You draw a face on the rock.")
@@ -2074,7 +2076,7 @@ CAPABILITIES(/obj/item/toy/chewtoy)
 		flick("[initial(icon_state)]2", src)
 		act_message(user, M, others = span_disarm("%U% doesn't blind %T% with the toy flash!"))
 		cooldown = 1
-		after(src, 50, PROC_REF(cooldownreset))
+		after(src, 5 SECONDS, PROC_REF(cooldownreset))
 		return ..()
 
 /obj/item/toy/flash/proc/cooldownreset()
@@ -2098,7 +2100,7 @@ CAPABILITIES(/obj/item/toy/redbutton)
 /obj/item/toy/redbutton/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
-		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
+		COOLDOWN_START(src, cooldown, 30 SECONDS) // Sets cooldown at 30 seconds
 		act_message(user, null, MSG_SELF(span_notice("You press the button, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses the big red button.")), MSG_BLIND(span_notice("The button clicks loudly.")))
 		play_sfx(src, SFX_EFFECTS_EXPLOSIONFAR)
 		for(var/mob/M in range(10, src)) // Checks range
@@ -2146,7 +2148,7 @@ CAPABILITIES(/obj/item/toy/AI)
 
 	var/random_player = "The " + JOB_SITE_MANAGER
 	if(COOLDOWN_FINISHED(src, cooldown))
-		COOLDOWN_START(src, cooldown, 300) // Sets cooldown at 30 seconds
+		COOLDOWN_START(src, cooldown, 30 SECONDS) // Sets cooldown at 30 seconds
 		if(players.len)
 			random_player = pick(players)
 
@@ -2204,9 +2206,9 @@ DECLARE_INTERACTIONS(/obj/item/toy/nuke, \
 /// Old attack_self.
 /obj/item/toy/nuke/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
 	if(COOLDOWN_FINISHED(src, cooldown))
-		COOLDOWN_START(src, cooldown, 1800) //3 minutes
+		COOLDOWN_START(src, cooldown, 180 SECONDS) //3 minutes
 		act_message(user, src, MSG_SELF(span_notice("You activate %T%, it plays a loud noise!")), MSG_OTHERS(span_warning("%U% presses a button on %T%")), MSG_BLIND(span_notice("You hear the click of a button.")))
-		after(src, 5, PROC_REF(alarm_sequence)) //gia said so
+		after(src, 0.5 SECONDS, PROC_REF(alarm_sequence)) //gia said so
 	else
 		var/timeleft = (cooldown - world.time)
 		to_chat(user, span_warning("Nothing happens, and") + " '[round(timeleft/10)]' " + span_warning("appears on a small display."))
@@ -2295,7 +2297,7 @@ DECLARE_INTERACTIONS(/obj/item/toy/minigibber, \
 /obj/item/toy/toy_xeno/proc/hiss()
 	atom_say("Hiss!")
 	play_sfx(get_turf(src), SFX_HISS, volume = 50, vary = TRUE)
-	after(src, 45, PROC_REF(hiss_rewound))
+	after(src, 4.5 SECONDS, PROC_REF(hiss_rewound))
 
 /obj/item/toy/toy_xeno/proc/hiss_rewound()
 	icon_state = "[initial(icon_state)]"
@@ -2307,10 +2309,10 @@ CAPABILITIES(/obj/item/toy/toy_xeno)
 /obj/item/toy/toy_xeno/proc/interaction_self(datum/act/op/A)
 	var/mob/user = A.actor
 	if(COOLDOWN_FINISHED(src, cooldown))
-		COOLDOWN_START(src, cooldown, 50) //5 second cooldown
+		COOLDOWN_START(src, cooldown, 5 SECONDS) //5 second cooldown
 		act_message(user, src, others = span_notice("%U% pulls back the string on %T%."))
 		icon_state = "[initial(icon_state)]cool"
-		after(src, 5, PROC_REF(hiss))
+		after(src, 0.5 SECONDS, PROC_REF(hiss))
 	else
 		to_chat(user, span_warning("The string on [src] hasn't rewound all the way!"))
 		return TRUE
@@ -2422,7 +2424,7 @@ CAPABILITIES(/obj/item/toy/russian_revolver)
 	s.set_up(5, 1, src)
 	s.start()
 	icon_state = "shoot"
-	after(src, 5, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
+	after(src, 0.5 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list(initial(icon_state)))
 
 /*
  * Toy chainsaw
@@ -2448,7 +2450,7 @@ CAPABILITIES(/obj/item/toy/chainsaw)
 	if(!cooldown)
 		play_sfx(user, SFX_WEAPONS_CHAINSAW_STARTUP)
 		cooldown = 1
-		after(src, 50, PROC_REF(cooldownreset))
+		after(src, 5 SECONDS, PROC_REF(cooldownreset))
 	return TRUE
 
 /obj/item/toy/chainsaw/proc/cooldownreset()
@@ -3026,8 +3028,8 @@ CAPABILITIES(/obj/item/toy/plushie/dragon)
 /obj/item/toy/nuke/proc/alarm_sequence()
 	icon_state = "nuketoy"
 	play_sfx(src, SFX_MACHINES_ALARM)
-	after(src, 135, TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoycool"))
-	after(src, 135 + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoyidle"))
+	after(src, 13.5 SECONDS, TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoycool"))
+	after(src, 13.5 SECONDS + (cooldown - world.time), TYPE_PROC_REF(/atom, set_icon_state), with = list("nuketoyidle"))
 
 /obj/structure/plushie/ownership()
 	. = ..()

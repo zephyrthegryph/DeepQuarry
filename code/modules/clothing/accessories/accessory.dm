@@ -613,9 +613,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	var/icon_previous_override
 
 //Forces different sprite sheet on equip
-/obj/item/clothing/accessory/choker/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/choker/on_materialize()
 	icon_previous_override = icon_override
+	. = ..()
 
 /obj/item/clothing/accessory/choker/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
@@ -651,9 +651,9 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/gaiter, \
 	default_worn_icon = INV_ACCESSORIES_DEF_ICON
 
 //Forces different sprite sheet on equip
-/obj/item/clothing/accessory/collar/Initialize(mapload)
-	. = ..()
+/obj/item/clothing/accessory/collar/on_materialize()
 	icon_previous_override = icon_override
+	. = ..()
 
 /obj/item/clothing/accessory/collar/equipped() //Solution for race-specific sprites for an accessory which is also a suit. Suit icons break if you don't use icon override which then also overrides race-specific sprites.
 	..()
@@ -713,7 +713,7 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 		user.audible_message("[user] jingles the [src]'s bell.", runemessage = "jingle")
 		play_sfx(src, SFX_ITEMS_PICKUP_RING)
 		jingled = 1
-		after(src, 50, PROC_REF(jingledreset))
+		after(src, 5 SECONDS, PROC_REF(jingledreset))
 	return
 
 /obj/item/clothing/accessory/collar/bell/proc/jingledreset()
@@ -741,14 +741,13 @@ CAPABILITIES(/obj/item/clothing/accessory/collar/bell)
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
 CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
-	op("shock_collar_ui_self", in_hand(), then(PROC_REF(shock_collar_ui_self)))
+	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
 
-/// Old attack_self: open the collar's interface.
-/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(datum/act/op/A)
-	var/mob/user = A.actor
-	if(!ishuman(user))
-		return
-	tgui_interact(user)
+/obj/item/clothing/accessory/collar/shock/proc/shock_collar_controls_opened(datum/act/op/A)
+	if(!ishuman(A.actor))
+		return OP_OK
+	tgui_interact(A.actor)
+	return OP_OK
 
 DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 
@@ -877,9 +876,47 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			return FALSE
 		to_chat(user,span_notice("You adjust the [name]'s tag."))
 
-	var/_answer_a1 = rerun_ask(user, "a1", PROC_REF(collar_tag_self), args, /datum/om/prompt/text, message = "Tag text?", title = "Set tag", max_length = MAX_NAME_LEN)
-	if(isnull(_answer_a1))
-		return TRUE
+	open_collar_tag(user, held, interaction)
+	return TRUE
+
+/obj/item/clothing/accessory/collar/proc/open_collar_tag(mob/user, obj/item/held, datum/interaction/interaction, tool_edit = FALSE, erasemethod, erasing, writemethod)
+	var/original_client_ckey
+	if(istype(user, /client))
+		var/client/C = user
+		original_client_ckey = C.ckey
+		user = C.mob
+	if(!ismob(user) || QDELETED(user))
+		return
+	open_request(src, /datum/prompt/text/collar_tag, PROC_REF(collar_tag_entered), answerer = user, captured_item = held, captured_interaction = interaction, item_expected = !isnull(held), interaction_expected = !isnull(interaction), original_client_ckey = original_client_ckey, tool_edit = tool_edit, erasemethod = erasemethod, erasing = erasing, writemethod = writemethod)
+
+/obj/item/clothing/accessory/collar/proc/collar_tag_entered(datum/act/request/A)
+	var/datum/prompt/text/collar_tag/request = A.request
+	if(request.captures_gone())
+		return
+	if(!A.answer)
+		if(request.outcome == REQ_CANCELLED && !isnull(request.answer_value))
+			if(!request.tool_edit && !special_collar && !istype(src, /obj/item/clothing/accessory/collar/holo) && writtenon)
+				to_chat(request.user_value(), span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
+			SStgui.update_uis(src)
+		return
+	var/datum/result/result = safe_call(request.tool_edit ? PROC_REF(apply_tool_tag) : PROC_REF(apply_self_tag), A)
+	if(!result.ok)
+		stack_trace("Collar tag request: [result.error]")
+	SStgui.update_uis(src)
+
+/obj/item/clothing/accessory/collar/proc/apply_self_tag(datum/act/request/A)
+	var/datum/prompt/text/collar_tag/request = A.request
+	var/mob/user = request.user_value()
+	if(special_collar)
+		return FALSE
+	if(istype(src, /obj/item/clothing/accessory/collar/holo))
+		to_chat(user, span_notice("[name]'s interface is projected onto your hand."))
+	else
+		if(writtenon)
+			to_chat(user, span_notice("You need a pen or a screwdriver to edit the tag on this collar."))
+			return FALSE
+		to_chat(user, span_notice("You adjust the [name]'s tag."))
+	var/_answer_a1 = A.answer.answer_value
 	var/str = copytext(reject_bad_text(_answer_a1),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))
@@ -920,9 +957,18 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || (user.stat))
 		return
 
-	var/_answer_a2 = rerun_ask(user, "a2", PROC_REF(update_collartag), args, /datum/om/prompt/text, message = "Tag text?", title = "Set tag", max_length = MAX_NAME_LEN)
-	if(isnull(_answer_a2))
+	open_collar_tag(user, I, null, TRUE, erasemethod, erasing, writemethod)
+
+/obj/item/clothing/accessory/collar/proc/apply_tool_tag(datum/act/request/A)
+	var/datum/prompt/text/collar_tag/request = A.request
+	var/mob/user = request.user_value()
+	var/obj/item/I = request.captured_item
+	var/erasemethod = request.erasemethod
+	var/erasing = request.erasing
+	var/writemethod = request.writemethod
+	if(!(istype(user.get_active_hand(),I)) || !(istype(user.get_inactive_hand(),src)) || user.stat)
 		return
+	var/_answer_a2 = A.answer.answer_value
 	var/str = copytext(reject_bad_text(_answer_a2),1,MAX_NAME_LEN)
 
 	if(!str || !length(str))
@@ -942,6 +988,58 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar, \
 			to_chat(user,span_notice("You [erasing] the words on the tag with the [I], and write '[str]'."))
 			name = initial(name) + " ([str])"
 			desc = initial(desc) + " Something has been [erasemethod] on the tag, and it now has \"[str]\" [writemethod] on it."
+
+/datum/prompt/text/collar_tag
+	question = "Tag text?"
+	title = "Set tag"
+	timeout = 0
+	max_len = MAX_NAME_LEN
+	name_text = TRUE
+	encode = TRUE
+	multiline = FALSE
+	var/obj/item/captured_item
+	var/datum/interaction/captured_interaction
+	var/item_expected = FALSE
+	var/interaction_expected = FALSE
+	var/original_client_ckey
+	var/tool_edit = FALSE
+	var/erasemethod
+	var/erasing
+	var/writemethod
+
+CAPABILITIES(/datum/prompt/text/collar_tag)
+	ref_one(nameof(captured_item), /obj/item)
+	ref_one(nameof(captured_interaction), /datum/interaction)
+
+/datum/prompt/text/collar_tag/prepare(datum/act/A)
+	. = ..()
+	var/obj/item/item = captured_item
+	var/datum/interaction/interaction = captured_interaction
+	rel_clear(src, nameof(captured_item))
+	rel_clear(src, nameof(captured_interaction))
+	rel_set(src, nameof(captured_item), item)
+	rel_set(src, nameof(captured_interaction), interaction)
+
+/datum/prompt/text/collar_tag/proc/user_value()
+	return original_client_ckey ? GLOB.directory[original_client_ckey] : answerer
+
+/datum/prompt/text/collar_tag/proc/captures_gone()
+	return QDELETED(answerer) || (original_client_ckey && !GLOB.directory[original_client_ckey]) || (item_expected && QDELETED(captured_item)) || (interaction_expected && QDELETED(captured_interaction))
+
+/datum/prompt/text/collar_tag/recheck_extra()
+	. = ..()
+	if(.)
+		return
+	if(captures_gone())
+		return "gone"
+	var/obj/item/clothing/accessory/collar/collar = owner
+	if(tool_edit)
+		var/mob/user = user_value()
+		if(!(istype(user.get_active_hand(), captured_item)) || !(istype(user.get_inactive_hand(), collar)) || user.stat)
+			return "the collar and writing tool must stay in the same hands"
+	else if(collar.special_collar || (!istype(collar, /obj/item/clothing/accessory/collar/holo) && collar.writtenon))
+		return "the collar tag cannot be edited by hand"
+	return null
 
 //Size collar remote
 
@@ -1465,11 +1563,7 @@ CAPABILITIES(/obj/item/clothing/accessory/poncho/roles/neo_ranger)
 	overlay_state = "casinoslave"
 	sprite_sheets = list(SPECIES_TESHARI = 'icons/inventory/accessory/mob_ch_teshari.dmi')
 
-	var/slavename = null	//Name for system to put on collar description
 	var/ownername = null	//Name for system to put on collar description
-	var/slaveckey = null	//Ckey for system to check who is the person and ensure no abuse of system or errors
-	var/slaveflavor = null	//Description to show on the SPASM
-	var/slaveooc = null		//OOC text to show on the SPASM
 	special_collar = TRUE
 
 /obj/item/clothing/accessory/collar/holo/casinoslave_fake

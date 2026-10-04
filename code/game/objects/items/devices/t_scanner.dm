@@ -24,12 +24,13 @@ TRACKED(/obj/item/t_scanner, on)
 APPEARANCE_TEMPLATE(/obj/item/t_scanner, "t-ray{on}")
 
 CAPABILITIES(/obj/item/t_scanner)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
 	// Scans underfloor objects while switched on.
 	every(2 SECONDS, then(PROC_REF(t_scanner_step)), when = nameof(on))
+	op("power", in_hand(), label("Toggle T-ray scanner"), then(PROC_REF(scanner_power_requested)))
 
-/obj/item/t_scanner/proc/interaction_self(datum/act/op/A)
+/obj/item/t_scanner/proc/scanner_power_requested(datum/act/op/A)
 	set_active(!on)
+	return OP_OK
 
 /obj/item/t_scanner/proc/set_active(active)
 	set_on(active)

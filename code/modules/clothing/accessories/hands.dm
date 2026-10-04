@@ -43,7 +43,21 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	if(!M.mind)
 		return 0
 
-	var/_answer_a1 = rerun_ask(M, "a1", PROC_REF(friendship_dedicate_bracelet_verb), list(user), /datum/om/prompt/text, message = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_length = MAX_NAME_LEN, encode = FALSE)
+	open_request(src, /datum/prompt/text, PROC_REF(friendship_dedication_entered), answerer = M, question = "Who do you want to dedicate the bracelet to?", title = "Friendship Bracelet", max_len = MAX_NAME_LEN, encode = FALSE, name_text = TRUE, timeout = 0)
+
+/obj/item/clothing/accessory/bracelet/friendship/proc/friendship_dedication_entered(datum/act/request/A)
+	if(!A.answer)
+		return
+	. = apply_friendship_dedication(A)
+	SStgui.update_uis(src)
+
+/obj/item/clothing/accessory/bracelet/friendship/proc/apply_friendship_dedication(datum/act/request/A)
+	if(!A.answer)
+		return
+	var/mob/M = A.request.answerer
+	if(!M.mind)
+		return 0
+	var/_answer_a1 = A.answer.answer_value
 	if(isnull(_answer_a1))
 		return
 	var/input = sanitizeSafe(_answer_a1, MAX_NAME_LEN)
@@ -59,8 +73,15 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 	material_slowdown_multiplier = 0
 	slowdown = 0
 
+TYPE_TABLE_DECLARE(/obj/item/clothing/accessory/bracelet/material, bracelet_forced_material, null)
+
 /obj/item/clothing/accessory/bracelet/material/Initialize(mapload, new_material)
-	. = ..()
+	var/forced_material = TYPE_TABLE_GET(src, bracelet_forced_material)
+	if(forced_material)
+		. = ..(mapload, forced_material)
+		new_material = forced_material
+	else
+		. = ..()
 	if(!new_material)
 		new_material = MAT_STEEL
 	material = get_material_by_name(new_material)
@@ -73,32 +94,23 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bracelet/friendship, \
 /obj/item/clothing/accessory/bracelet/material/get_material()
 	return material
 
-/obj/item/clothing/accessory/bracelet/material/wood/Initialize(mapload)
-	. = ..(mapload, MAT_WOOD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/wood, bracelet_forced_material, MAT_WOOD)
 
-/obj/item/clothing/accessory/bracelet/material/plastic/Initialize(mapload)
-	. = ..(mapload, MAT_PLASTIC)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/plastic, bracelet_forced_material, MAT_PLASTIC)
 
-/obj/item/clothing/accessory/bracelet/material/iron/Initialize(mapload)
-	. = ..(mapload, MAT_IRON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/iron, bracelet_forced_material, MAT_IRON)
 
-/obj/item/clothing/accessory/bracelet/material/steel/Initialize(mapload)
-	. = ..(mapload, MAT_STEEL)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/steel, bracelet_forced_material, MAT_STEEL)
 
-/obj/item/clothing/accessory/bracelet/material/silver/Initialize(mapload)
-	. = ..(mapload, MAT_SILVER)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/silver, bracelet_forced_material, MAT_SILVER)
 
-/obj/item/clothing/accessory/bracelet/material/gold/Initialize(mapload)
-	. = ..(mapload, MAT_GOLD)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/gold, bracelet_forced_material, MAT_GOLD)
 
-/obj/item/clothing/accessory/bracelet/material/platinum/Initialize(mapload)
-	. = ..(mapload, MAT_PLATINUM)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/platinum, bracelet_forced_material, MAT_PLATINUM)
 
-/obj/item/clothing/accessory/bracelet/material/phoron/Initialize(mapload)
-	. = ..(mapload, MAT_PHORON)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/phoron, bracelet_forced_material, MAT_PHORON)
 
-/obj/item/clothing/accessory/bracelet/material/glass/Initialize(mapload)
-	. = ..(mapload, MAT_GLASS)
+TYPE_TABLE(/obj/item/clothing/accessory/bracelet/material/glass, bracelet_forced_material, MAT_GLASS)
 
 //wristbands
 

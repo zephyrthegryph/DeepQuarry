@@ -27,8 +27,15 @@
 	var/drops_debris = 1
 	var/named_from_material = 1 // Does it prepend the material's name to it's name?
 
+TYPE_TABLE_DECLARE(/obj/item/material, weapon_forced_material, null)
+
 /obj/item/material/Initialize(mapload, material_key)
-	. = ..()
+	var/forced_material = TYPE_TABLE_GET(src, weapon_forced_material)
+	if(forced_material)
+		. = ..(mapload, forced_material)
+		material_key = forced_material
+	else
+		. = ..()
 	if(!material_key)
 		material_key = default_material
 	set_material(material_key)

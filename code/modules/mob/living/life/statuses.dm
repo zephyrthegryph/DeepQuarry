@@ -130,21 +130,33 @@
 	set category = VERB_CAT_IC_GAME
 	var/asleep = sleeping_voluntarily()
 	if(!asleep)
-		om_ask(src, /datum/om/prompt/confirm/voluntary_sleep, PROC_REF(sleep_confirmed))
+		open_request(src, /datum/prompt/choice/voluntary_sleep, PROC_REF(sleep_confirmed), answerer = src)
 		return
 	toggle_voluntary_sleep()
 
 /// Re-checked on the answer: not already sleeping by choice.
-/datum/om/prompt/confirm/voluntary_sleep
+/datum/prompt/choice/voluntary_sleep
 	title = "Sleepy Time"
-	message = "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again."
-	no_first = TRUE
+	question = "Are you sure you wish to go to sleep? You will snooze until you use the Sleep verb again."
+	choices = list("No", "Yes")
+	buttons = TRUE
+	timeout = 0
 
-/datum/om/prompt/confirm/voluntary_sleep/valid()
+/datum/prompt/choice/voluntary_sleep/recheck_extra()
+	. = ..()
+	if(.)
+		return
 	var/mob/living/L = answerer
+	if(!istype(L) || QDELETED(L))
+		return "gone"
 	return L.sleeping_voluntarily() ? "already asleep" : null
 
-/mob/living/proc/sleep_confirmed(datum/om/prompt/confirm/voluntary_sleep/ask)
+/mob/living/proc/sleep_confirmed(datum/act/request/A)
+	if(!A.answer || A.answer.answer_value != "Yes")
+		return
+	return apply_sleep_confirmed(A)
+
+/mob/living/proc/apply_sleep_confirmed(datum/act/request/A)
 	toggle_voluntary_sleep()
 
 /mob/living/proc/toggle_voluntary_sleep()

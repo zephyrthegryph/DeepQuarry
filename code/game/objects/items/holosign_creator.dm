@@ -46,16 +46,16 @@
 			to_chat(user, span_notice("[src] is projecting at max capacity!"))
 
 CAPABILITIES(/obj/item/holosign_creator)
-	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	op("clear_holograms", in_hand(), then(PROC_REF(clear_holograms)))
 
-/// Old attack_self.
-/obj/item/holosign_creator/proc/interaction_self(datum/act/op/A)
+/// Clear only this projector's current signs through their existing checked consumption path.
+/obj/item/holosign_creator/proc/clear_holograms(datum/act/op/A)
 	var/mob/user = A.actor
 	if(length(signs))
 		for(var/obj/structure/holosign/H as anything in signs.Copy())
 			consume(H, user)
 		to_chat(user, span_notice("You clear all active holograms."))
-	return TRUE
+	return OP_OK
 
 /obj/item/holosign_creator/combifan
 	name = "ATMOS holo-combifan projector"

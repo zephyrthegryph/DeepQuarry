@@ -323,8 +323,3 @@ CAPABILITIES(/obj/machinery/atmospherics/pipe)
 	if(istype(loc, /turf/simulated))
 		invisibility = i ? INVISIBILITY_ABSTRACT : INVISIBILITY_NONE
 	update_icon()
-
-/obj/machinery/atmospherics/pipe/relations()
-	. = ..()
-	. += rel_one(nameof(parent), back = nameof(/datum/pipeline::members))
-	. += rel_many(nameof(edge_pipelines), back = nameof(/datum/pipeline::edges))

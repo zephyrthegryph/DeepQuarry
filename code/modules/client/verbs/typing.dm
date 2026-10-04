@@ -58,7 +58,7 @@
 		if(!prefs?.read_preference(/datum/preference/toggle/show_typing_indicator_subtle))
 			return FALSE
 	client_mob.create_typing_indicator()
-	om_after_replace(src, 5 SECONDS, PROC_REF(stop_typing), channel)
+	after(src, 5 SECONDS, PROC_REF(stop_typing), key = "typing_stop:[json_encode(list(channel))]", with = list(channel))
 
 /**
  * Callback to remove the typing indicator after a brief period of inactivity.
