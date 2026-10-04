@@ -7,7 +7,7 @@ import sys
 import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-CODEMODS = ["ui_declare", "interact_declare"]
+CODEMODS = ["ui_declare", "interact_declare", "periodic_while"]
 
 
 def run(cwd, name, script):

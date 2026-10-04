@@ -233,6 +233,12 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	if(E.kind == ENTRY_ON_CHANGE)
 		. += hook_make(HOOK_CHANGE, null, E, E, C, A, serial)
 		return
+	if(E.kind == ENTRY_EVERY)
+		// A type-level every() held by its own when = parks while the condition is false; this hook wakes it (every.dm).
+		if(!A && !isnull(E.args["when"]) && !length(C.whens))
+			var/datum/entry/wake = type_every_wake_entry(E)
+			. += hook_make(HOOK_CHANGE, null, wake, wake, C, A, serial)
+		return
 	if(E.kind == ENTRY_ON_NOTICE)
 		var/datum/hook/H = hook_make(HOOK_NOTICE, E.args["notice"], E, E, C, A, serial)
 		H.outcomes = E.args["outcome"] || ACT_COMMITTED
@@ -266,7 +272,7 @@ GLOBAL_VAR_INIT(hook_serial, 0)
 	var/list/hooks = list()
 	for(var/datum/centry/C as anything in T.items)
 		var/datum/entry/E = C.item
-		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE))
+		if(!istype(E) || (E.kind != ENTRY_EXTEND && E.kind != ENTRY_ON_NOTICE && E.kind != ENTRY_ON_CHANGE && E.kind != ENTRY_EVERY))
 			continue
 		hooks += hooks_from_entry(E, C, null)
 	GLOB.hook_tables[T] = hooks

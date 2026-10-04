@@ -23,8 +23,6 @@
 	// 0: Standard body scan
 	// 1: The "Best" scan available
 	var/scan_mode = 1
-	/// Scans on its own while a tier three scanner has someone in it.
-	var/autoprocess = 0
 
 	light_color = "#315ab4"
 
@@ -60,7 +58,7 @@ CAPABILITIES(/obj/machinery/computer/cloning)
 	set_scan_temp("Scanner ready.", "good")
 	updatemodules()
 
-TRACKED_BRIDGED(/obj/machinery/computer/cloning, autoprocess, CHANGE_MACHINE_SETTINGS)
+OM_FIELD(/obj/machinery/computer/cloning, autoprocess, 0, CHANGE_MACHINE_SETTINGS)
 DECLARE_PERIODIC_WHILE(/obj/machinery/computer/cloning, MACHINE_PIPELINE, "autoprocess")
 
 // its linked cloners are released.

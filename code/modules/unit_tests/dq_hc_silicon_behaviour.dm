@@ -351,7 +351,7 @@
 	var/mob/living/silicon/robot/R = make_borg()
 	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
 	shield.forceMove(R)
-	shield.borg_shield_verb_set_level(R, null, null)
+	hcs_menu(R, shield, "set_level", "borg_shield_verb_set_level")
 	hci_answer(R, "75")
 	settle()
 	TEST_ASSERT_EQUAL(shield.shield_level, 0.75, "the chosen level is the shield's")
@@ -500,3 +500,89 @@
 	hci_answer(H, "Eyes")
 	settle()
 	TEST_ASSERT_EQUAL(tank_module.eye_color, "#123456", "the painter's colour is the eyes'")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// Click and menu entries of cyborg gear
+// ---------------------------------------------------------------------------------------------------------------------
+
+/// A pick from `target`'s menu by op key.
+/proc/hcs_menu(mob/actor, atom/target, op_key, legacy_proc)
+	return test_menu(actor, target, op_key)
+
+/datum/unit_test/dq_hc_silicon/shield_in_hand_asks_the_level
+
+/datum/unit_test/dq_hc_silicon/shield_in_hand_asks_the_level/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
+	hci_click(H, shield, shield)
+	settle()
+	hci_answer(H, "25")
+	settle()
+	TEST_ASSERT_EQUAL(shield.shield_level, 0.25, "using the shield in hand asks its level")
+
+/datum/unit_test/dq_hc_silicon/shield_menu_asks_the_level
+
+/datum/unit_test/dq_hc_silicon/shield_menu_asks_the_level/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/borg/combat/shield/shield = allocate(/obj/item/borg/combat/shield, test_floor())
+	shield.forceMove(R)
+	hcs_menu(R, shield, "set_level", "borg_shield_verb_set_level")
+	settle()
+	hci_answer(R, "10")
+	settle()
+	TEST_ASSERT_EQUAL(shield.shield_level, 0.1, "the menu entry asks the level")
+
+/datum/unit_test/dq_hc_silicon/cloak_menu_toggles_and_asks_strength
+
+/datum/unit_test/dq_hc_silicon/cloak_menu_toggles_and_asks_strength/run_gate()
+	var/mob/living/silicon/robot/R = make_borg()
+	var/obj/item/borg/cloak/cloak = allocate(/obj/item/borg/cloak, test_floor())
+	cloak.forceMove(R)
+	var/was_active = cloak.active
+	hcs_menu(R, cloak, "toggle", "cloak_verb_toggle")
+	TEST_ASSERT_NOTEQUAL(cloak.active, was_active, "the toggle entry flips the cloak")
+	hcs_menu(R, cloak, "strength", "cloak_verb_set_level")
+	settle()
+	hci_answer(R, 20)
+	settle()
+	TEST_ASSERT_EQUAL(cloak.cloak_strength, 0.2, "the strength entry asks the level")
+
+/datum/unit_test/dq_hc_silicon/robot_analyzer_alt_click_flips_mode
+
+/datum/unit_test/dq_hc_silicon/robot_analyzer_alt_click_flips_mode/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/robotanalyzer/analyzer = allocate(/obj/item/robotanalyzer, test_floor())
+	var/mode = analyzer.mode
+	hci_click(H, analyzer, null, I_HELP, "alt=1")
+	settle()
+	TEST_ASSERT_NOTEQUAL(analyzer.mode, mode, "an alt-click with an empty hand flips the mode")
+	mode = analyzer.mode
+	hci_click(H, analyzer, analyzer, I_HELP, "alt=1")
+	settle()
+	TEST_ASSERT_NOTEQUAL(analyzer.mode, mode, "an alt-click with the analyzer in hand flips the mode")
+
+/datum/unit_test/dq_hc_silicon/mining_scanner_alt_click_asks_range
+
+/datum/unit_test/dq_hc_silicon/mining_scanner_alt_click_asks_range/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/obj/item/mining_scanner/robot/scanner = allocate(/obj/item/mining_scanner/robot, test_floor())
+	scanner.upgrade(H)
+	hci_click(H, scanner, scanner, I_HELP, "alt=1")
+	settle()
+	hci_answer(H, 6)
+	settle()
+	TEST_ASSERT_EQUAL(scanner.range, 6, "an alt-click on the upgraded scanner asks its range")
+
+/datum/unit_test/dq_hc_silicon/drone_takes_a_hat_in_help_stance
+
+/datum/unit_test/dq_hc_silicon/drone_takes_a_hat_in_help_stance/run_gate()
+	var/mob/living/carbon/human/H = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/silicon/robot/drone/D = allocate(/mob/living/silicon/robot/drone, get_step(H, EAST))
+	var/obj/item/clothing/head/beret/hat = allocate(/obj/item/clothing/head/beret, test_floor())
+	hci_click(H, D, hat, I_HELP)
+	settle()
+	TEST_ASSERT_EQUAL(D.hat, hat, "the hat goes on the drone")
+	var/obj/item/clothing/head/beret/second = allocate(/obj/item/clothing/head/beret, test_floor())
+	hci_click(H, D, second, I_HELP)
+	settle()
+	TEST_ASSERT_EQUAL(D.hat, hat, "a drone that wears a hat does not take another")

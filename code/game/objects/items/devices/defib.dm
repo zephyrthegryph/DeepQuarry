@@ -623,8 +623,10 @@ DAMAGE_REACTION(/obj/item/shockpaddles, DAMAGE_EMP, PROC_REF(paddles_emp))
 	var/active = null
 
 /// Reactor overload ticks left after an EMP; it irradiates the area while nonzero.
-OM_FIELD(/obj/item/shockpaddles/standalone, fail_counter, 0, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_counter")
+/obj/item/shockpaddles/standalone/var/fail_counter = 0
+TRACKED(/obj/item/shockpaddles/standalone, fail_counter)
+CAPABILITIES(/obj/item/shockpaddles/standalone)
+	every(2 SECONDS, then(PROC_REF(standalone_step)), when = nameof(fail_counter))
 
 /obj/item/shockpaddles/standalone/check_charge(charge_amt)
 	return 1
@@ -639,7 +641,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/shockpaddles/standalone, PERIODIC_SLOW, "fail_c
 	)
 	return 1
 
-/obj/item/shockpaddles/standalone/periodic_step()
+/obj/item/shockpaddles/standalone/proc/standalone_step(datum/act/timer/A)
 	radiation_pulse(
 		src,
 		max_range = 5,

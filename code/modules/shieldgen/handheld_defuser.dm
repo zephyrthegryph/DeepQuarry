@@ -8,17 +8,18 @@
 	icon_state = "hdiffuser_off"
 	var/obj/item/cell/device/cell
 
-OM_FIELD(/obj/item/shield_diffuser, enabled, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/shield_diffuser, PERIODIC_SLOW, "enabled")
+/obj/item/shield_diffuser/var/enabled = FALSE
+TRACKED(/obj/item/shield_diffuser, enabled)
 CAPABILITIES(/obj/item/shield_diffuser)
 	owns_one(nameof(cell), starts = /obj/item/cell/device)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	every(2 SECONDS, then(PROC_REF(shield_diffuser_step)), when = nameof(enabled))
 
 
 /obj/item/shield_diffuser/get_cell()
 	return cell
 
-/obj/item/shield_diffuser/periodic_step()
+/obj/item/shield_diffuser/proc/shield_diffuser_step(datum/act/timer/A)
 	for(var/direction in GLOB.cardinal)
 		var/turf/simulated/shielded_tile = get_step(get_turf(src), direction)
 		for(var/obj/effect/shield/S in turf_contents_of_type(shielded_tile, /obj/effect/shield))

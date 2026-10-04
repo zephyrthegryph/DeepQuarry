@@ -50,8 +50,10 @@
 	var/current_step = 0 //current step for icon states
 
 /// Are we waiting for the timer to get negatives? periodic_step() works the recipe while set (DECLARE_PERIODIC_WHILE).
-OM_FIELD(/obj/structure/event_collector, awaiting_next_recipe, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/structure/event_collector, PERIODIC_SLOW, "awaiting_next_recipe")
+/obj/structure/event_collector/var/awaiting_next_recipe = FALSE
+TRACKED(/obj/structure/event_collector, awaiting_next_recipe)
+CAPABILITIES(/obj/structure/event_collector)
+	every(2 SECONDS, then(PROC_REF(event_collector_step)), when = nameof(awaiting_next_recipe))
 
 //list of items that can make up a recipe.
 TYPE_TABLE_DECLARE(/obj/structure/event_collector, event_collector_ingredients, list( \
@@ -123,7 +125,7 @@ REGISTRY_MEMBERSHIP(/obj/structure/event_collector, REGISTRY_EVENT_COLLECTORS)
 		message_admins("\[EVENT\] Event Collection object [src] has started a recipe! If it's in sequence, the next one is [next_item] ")
 
 /// Works on its recipe every 2 s while one is running (start_recipe_process()); otherwise it sleeps.
-/obj/structure/event_collector/periodic_step()
+/obj/structure/event_collector/proc/event_collector_step(datum/act/timer/A)
 	var/blockers = get_blockers()
 	if(blockers < 10)
 		if( recipe_process_sounds && prob(recipe_process_sound_chance) )

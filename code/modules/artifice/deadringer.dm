@@ -11,12 +11,14 @@
 	var/tmp/mob/living/carbon/human/watchowner
 
 /// Armed: watching the holder for injury.
-OM_FIELD(/obj/item/deadringer, activated, FALSE, CHANGE_EXPLICIT)
+/obj/item/deadringer/var/activated = FALSE
+TRACKED(/obj/item/deadringer, activated)
 /// Cooldown steps left after triggering.
-OM_FIELD(/obj/item/deadringer, timer, 0, CHANGE_EXPLICIT)
+/obj/item/deadringer/var/timer = 0
+TRACKED(/obj/item/deadringer, timer)
 /// Armed or cooling down: periodic_step() runs (DECLARE_PERIODIC_WHILE).
-OM_DERIVE_FIELD(/obj/item/deadringer, ringer_busy, list("activated", "timer"))
-DECLARE_PERIODIC_WHILE(/obj/item/deadringer, PERIODIC_SLOW, "ringer_busy")
+CAPABILITIES(/obj/item/deadringer)
+	every(2 SECONDS, then(PROC_REF(deadringer_step)), when = cond_any(nameof(activated), nameof(timer)))
 
 /obj/item/deadringer/proc/ringer_busy()
 	return activated || timer
@@ -163,7 +165,7 @@ DECLARE_INTERACTIONS(/obj/item/deadringer, INTERACT_USE(null, PROC_REF(interacti
 
 // === merged from deadringer_chomp.dm during hard-fork de-suffix (verified no override-order change) ===
 /// Watches its holder while armed and counts its cooldown; idle, it sleeps.
-/obj/item/deadringer/periodic_step()
+/obj/item/deadringer/proc/deadringer_step(datum/act/timer/A)
 	if(activated)
 		if (ismob(src.loc))
 			var/mob/living/carbon/human/H = src.loc

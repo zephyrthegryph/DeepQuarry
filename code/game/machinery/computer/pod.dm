@@ -78,7 +78,6 @@ CAPABILITIES(/obj/machinery/computer/pod)
 /obj/machinery/computer/pod/ui_title(mob/user)
 	return title
 
-/// The computed part of /obj/machinery/computer/pod's window data (declared on its UI_DATA row).
 /obj/machinery/computer/pod/ui_data(datum/act/eval/A)
 
 	return list(

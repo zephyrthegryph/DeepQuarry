@@ -35,4 +35,39 @@ CAPABILITIES(/obj/gap_decline_alone)
 	first++
 	return OP_DECLINE
 
+/// A type-level every() held by a tracked var: it parks while the var is false and wakes when it is set.
+/obj/gap_every
+	name = "gap every target"
+	var/active = FALSE
+	var/ticks = 0
+
+TRACKED(/obj/gap_every, active)
+
+CAPABILITIES(/obj/gap_every)
+	every(1 SECOND, then(PROC_REF(tick)), when = nameof(active))
+
+/obj/gap_every/proc/tick(datum/act/timer/A)
+	ticks++
+
+/// The same, running from creation.
+/obj/gap_every/running
+	active = TRUE
+
+/// A gate that is a proc (its reads may be incomplete): the every() keeps polling instead of parking.
+/obj/gap_every_proc
+	name = "gap every proc target"
+	var/on = FALSE
+	var/ticks = 0
+
+TRACKED(/obj/gap_every_proc, on)
+
+CAPABILITIES(/obj/gap_every_proc)
+	every(1 SECOND, then(PROC_REF(tick)), when = PROC_REF(is_on))
+
+/obj/gap_every_proc/proc/is_on(datum/act/A)
+	return on
+
+/obj/gap_every_proc/proc/tick(datum/act/timer/A)
+	ticks++
+
 #endif

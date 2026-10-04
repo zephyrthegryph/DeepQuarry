@@ -1272,8 +1272,10 @@ CAPABILITIES(/obj/effect/dog_teleporter)
 	var/mobstuff = TRUE		//if false, we don't care about dogs, and that's terrible
 
 /// Something on it is still being digested. A field: it digests every 2 s while set.
-OM_FIELD(/turf/simulated/floor/water/digestive_enzymes, we_process, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_SLOW, "we_process")
+/turf/simulated/floor/water/digestive_enzymes/var/we_process = FALSE
+TRACKED(/turf/simulated/floor/water/digestive_enzymes, we_process)
+CAPABILITIES(/turf/simulated/floor/water/digestive_enzymes)
+	every(2 SECONDS, then(PROC_REF(digestive_enzymes_step)), when = nameof(we_process))
 
 /turf/simulated/floor/water/digestive_enzymes/Entered(atom/movable/source)
 	if(digest_stuff(source))
@@ -1283,7 +1285,7 @@ DECLARE_PERIODIC_WHILE(/turf/simulated/floor/water/digestive_enzymes, PERIODIC_S
 	if(digest_stuff(source))
 		set_we_process(TRUE)
 
-/turf/simulated/floor/water/digestive_enzymes/periodic_step()
+/turf/simulated/floor/water/digestive_enzymes/proc/digestive_enzymes_step(datum/act/timer/A)
 	if(!digest_stuff())
 		set_we_process(FALSE)
 

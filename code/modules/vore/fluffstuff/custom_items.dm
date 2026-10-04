@@ -728,8 +728,10 @@ CAPABILITIES(/obj/item/storage/box/khcrystal)
 	var/ambulance_state = FALSE
 	EXPIRY_DECLARE(ambulance_last_switch)
 
-OM_FIELD(/obj/item/storage/backpack/saddlebag/tempest, ambulance, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SLOW, "ambulance")
+/obj/item/storage/backpack/saddlebag/tempest/var/ambulance = FALSE
+TRACKED(/obj/item/storage/backpack/saddlebag/tempest, ambulance)
+CAPABILITIES(/obj/item/storage/backpack/saddlebag/tempest)
+	every(2 SECONDS, then(PROC_REF(tempest_step)), when = nameof(ambulance))
 
 /obj/item/storage/backpack/saddlebag/tempest/Initialize(mapload)
 	soundloop = new(list(src), FALSE)
@@ -756,7 +758,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/storage/backpack/saddlebag/tempest, PERIODIC_SL
 		set_light(0)
 		soundloop.stop()
 
-/obj/item/storage/backpack/saddlebag/tempest/periodic_step()
+/obj/item/storage/backpack/saddlebag/tempest/proc/tempest_step(datum/act/timer/A)
 	if(ELAPSED(src, ambulance_last_switch, CLOCK_WORLD) > 1.5 SECONDS)
 		ambulance_state = !(ambulance_state)
 		var/newlight = "#FF0000"

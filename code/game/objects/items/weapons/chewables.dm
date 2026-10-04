@@ -14,8 +14,10 @@
 DECLARE_REAGENTS(/obj/item/clothing/mask/chewable, "chem_volume", null)
 
 /// TRUE while worn in the mask slot by a mob with a mouth.
-OM_FIELD(/obj/item/clothing/mask/chewable, chewing, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/clothing/mask/chewable, PERIODIC_SECOND, "chewing")
+/obj/item/clothing/mask/chewable/var/chewing = FALSE
+TRACKED(/obj/item/clothing/mask/chewable, chewing)
+CAPABILITIES(/obj/item/clothing/mask/chewable)
+	every(1 SECOND, then(PROC_REF(chewable_step)), when = nameof(chewing))
 
 EXTEND_INTERACTIONS(/obj/item/clothing/mask/chewable, INTERACT_SELF("Unwrap", PROC_REF(chewable_self)))
 
@@ -64,7 +66,7 @@ DECLARE_APPEARANCE_PROC(/obj/item/clothing/mask/chewable, TYPE_PROC_REF(/atom, a
 		else
 			set_chewing(FALSE)
 
-/obj/item/clothing/mask/chewable/periodic_step()
+/obj/item/clothing/mask/chewable/proc/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		spitout()
@@ -264,7 +266,7 @@ CAPABILITIES(/obj/item/storage/box/gum)
 	wrapped = TRUE
 	var/list/victims = null
 
-/obj/item/clothing/mask/chewable/candy/lolli/periodic_step()
+/obj/item/clothing/mask/chewable/candy/lolli/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		spitout(0)
@@ -371,7 +373,7 @@ CAPABILITIES(/obj/item/storage/box/pocky)
 
 DECLARE_REAGENTS(/obj/item/clothing/mask/chewable/candy/pocky, null, list(REAGENT_ID_CHOCOLATE = 5))
 
-/obj/item/clothing/mask/chewable/candy/pocky/periodic_step()
+/obj/item/clothing/mask/chewable/candy/pocky/chewable_step(datum/act/timer/A)
 	chew()
 	if(chewtime < 1)
 		if(ismob(loc))

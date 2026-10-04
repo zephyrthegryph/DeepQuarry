@@ -85,8 +85,9 @@ CAPABILITIES(/obj/item/modular_computer)
 	owns_one(nameof(nano_printer), /obj/item/computer_hardware/nano_printer)
 	owns_one(nameof(portable_drive), /obj/item/computer_hardware/hard_drive/portable)
 	owns_one(nameof(tesla_link), /obj/item/computer_hardware/tesla_link)
+	every(2 SECONDS, then(PROC_REF(modular_computer_step)), when = nameof(enabled))
 
 
 /// Whether the computer is turned on. periodic_step() runs its programs while it is (DECLARE_PERIODIC_WHILE).
-OM_FIELD(/obj/item/modular_computer, enabled, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/modular_computer, PERIODIC_SLOW, "enabled")
+/obj/item/modular_computer/var/enabled = FALSE
+TRACKED(/obj/item/modular_computer, enabled)

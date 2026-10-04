@@ -22,8 +22,10 @@ REGISTRY_MEMBERSHIP(/obj, REGISTRY_TECHNOMANCER_BELONGINGS)
 	var/atom/movable/tracked // The thing to point towards (a relation view).
 
 /// If set, points towards tracked (every half second).
-OM_FIELD(/obj/item/spell/track, tracking, FALSE, CHANGE_EXPLICIT)
-DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
+/obj/item/spell/track/var/tracking = FALSE
+TRACKED(/obj/item/spell/track, tracking)
+CAPABILITIES(/obj/item/spell/track)
+	every(0.5 SECONDS, then(PROC_REF(track)), when = nameof(tracking))
 
 /obj/item/spell/track/on_use_cast(mob/user)
 	if(tracking)
@@ -53,7 +55,7 @@ DECLARE_REPEAT(/obj/item/spell/track, 0.5 SECONDS, track, "tracking")
 		track()
 
 /// DECLARE_REPEAT while tracking: point towards the tracked thing.
-/obj/item/spell/track/proc/track()
+/obj/item/spell/track/proc/track(datum/act/timer/A)
 	if(!tracked())
 		icon_state = "track_unknown"
 

@@ -31,9 +31,11 @@
 	var/activation_cooldown = 30 SECONDS
 	COOLDOWN_DECLARE(activation_cooldown_until)
 
-OM_FIELD(/obj/structure/cult/pylon, isbroken, FALSE, CHANGE_EXPLICIT)
-/// Surges near players while intact; a broken pylon does nothing until repaired.
-DECLARE_PERIODIC_WHILE(/obj/structure/cult/pylon, PERIODIC_SLOW, "!isbroken")
+/obj/structure/cult/pylon/var/isbroken = FALSE
+TRACKED(/obj/structure/cult/pylon, isbroken)
+CAPABILITIES(/obj/structure/cult/pylon)
+	/// Surges near players while intact; a broken pylon does nothing until repaired.
+	every(2 SECONDS, then(PROC_REF(pylon_step)), when = cond_not(nameof(isbroken)))
 
 DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	INTERACT_HAND_UNGATED(null, PROC_REF(interaction_hand)), \
@@ -106,7 +108,7 @@ DECLARE_INTERACTIONS(/obj/structure/cult/pylon, \
 	return 0
 
 /// Acts only while a player is near; otherwise it sleeps until one comes near.
-/obj/structure/cult/pylon/periodic_step()
+/obj/structure/cult/pylon/proc/pylon_step(datum/act/timer/A)
 	if(!mob_near(world.view, TRUE))
 		return sleep_until_mob_near(world.view, TRUE)
 	if(COOLDOWN_FINISHED(src, activation_cooldown_until) && pylon_unique())

@@ -116,6 +116,8 @@ CAPABILITIES(/obj/item/rig)
 	owns_one(nameof(minihud), /datum/mini_hud/rig)
 	owns_one(nameof(power_system), starts = /datum/rig_power_system)
 	owns_one(nameof(component_registry), starts = /datum/rig_component_registry)
+	// We only care about processing when we're on a mob
+	every(2 SECONDS, then(PROC_REF(rig_step)), when = nameof(carried_by_mob))
 
 /obj/item/rig/Initialize(mapload)
 	. = ..()
@@ -170,9 +172,8 @@ CAPABILITIES(/obj/item/rig)
 			. += "It's equipped with [english_list(installed_modules)]."
 
 /// TRUE while it is on a mob; set by Moved().
-OM_FIELD(/obj/item/rig, carried_by_mob, FALSE, CHANGE_EXPLICIT)
-// We only care about processing when we're on a mob
-DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
+/obj/item/rig/var/carried_by_mob = FALSE
+TRACKED(/obj/item/rig, carried_by_mob)
 
 /obj/item/rig/Moved(old_loc, direction, forced)
 	set_carried_by_mob(ismob(loc) ? TRUE : FALSE)
@@ -494,7 +495,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/rig, PERIODIC_SLOW, "carried_by_mob")
 	var/mob/living/carbon/human/H = loc
 	power_system.run_cooling(H)
 
-/obj/item/rig/periodic_step()
+/obj/item/rig/proc/rig_step(datum/act/timer/A)
 	// Run through cooling.
 	coolingProcess()
 

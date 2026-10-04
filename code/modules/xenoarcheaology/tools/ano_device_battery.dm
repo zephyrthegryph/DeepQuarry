@@ -64,9 +64,11 @@
 	rel_set(src, nameof(last_user_touched), user)
 	..()
 
-OM_FIELD(/obj/item/anodevice, activated, FALSE, CHANGE_EXPLICIT)
-/// Runs its battery effect while activated.
-DECLARE_PERIODIC_WHILE(/obj/item/anodevice, PERIODIC_SLOW, "activated")
+/obj/item/anodevice/var/activated = FALSE
+TRACKED(/obj/item/anodevice, activated)
+CAPABILITIES(/obj/item/anodevice)
+	/// Runs its battery effect while activated.
+	every(2 SECONDS, then(PROC_REF(anodevice_step)), when = nameof(activated))
 
 DECLARE_INTERACTIONS(/obj/item/anodevice, \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
@@ -161,7 +163,7 @@ UI_ACT_PROC(/obj/item/anodevice, ui_act_ejectbattery)
 	return TRUE
 
 /// Runs its battery effect every 2 s; declared: while activated (its "startup" sets it).
-/obj/item/anodevice/periodic_step()
+/obj/item/anodevice/proc/anodevice_step(datum/act/timer/A)
 	if(activated)
 		if(inserted_battery() && inserted_battery().battery_effect && (inserted_battery().stored_charge > 0) )
 			//make sure the effect is active

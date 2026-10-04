@@ -18,8 +18,10 @@
 	pickup_sound = SFX_ITEMS_PICKUP_DEVICE
 	drop_sound = SFX_ITEMS_DROP_DEVICE
 
-OM_FIELD(/obj/item/pinpointer, active, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/pinpointer, PERIODIC_SLOW, "active")
+/obj/item/pinpointer/var/active = FALSE
+TRACKED(/obj/item/pinpointer, active)
+CAPABILITIES(/obj/item/pinpointer)
+	every(2 SECONDS, then(PROC_REF(pinpointer_step)), when = nameof(active))
 
 DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(interaction_self)))
 
@@ -35,7 +37,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer"))
 
-/obj/item/pinpointer/periodic_step()
+/obj/item/pinpointer/proc/pinpointer_step(datum/act/timer/A)
 	if(!the_disk())
 		rel_set(src, nameof(the_disk), locate(/obj/item/disk/nuclear))
 		if(!the_disk())
@@ -68,7 +70,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer, INTERACT_USE("Toggle", PROC_REF(inter
 	var/turf/location
 	var/obj/target
 
-/obj/item/pinpointer/advpinpointer/periodic_step()
+/obj/item/pinpointer/advpinpointer/pinpointer_step(datum/act/timer/A)
 	if(mode == 0)
 		..()
 	if(mode == 1)
@@ -216,7 +218,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/nukeop, INTERACT_USE("Toggle", PROC_RE
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/nukeop/periodic_step()
+/obj/item/pinpointer/nukeop/pinpointer_step(datum/act/timer/A)
 	switch(mode)
 		if(0)
 			workdisk()
@@ -296,7 +298,7 @@ DECLARE_INTERACTIONS(/obj/item/pinpointer/shuttle, INTERACT_USE("Toggle", PROC_R
 		icon_state = "pinoff"
 		to_chat(user, span_notice("You deactivate the pinpointer."))
 
-/obj/item/pinpointer/shuttle/periodic_step()
+/obj/item/pinpointer/shuttle/pinpointer_step(datum/act/timer/A)
 	if(!our_shuttle())
 		for(var/obj/machinery/computer/shuttle_control/S in REGISTRY_MEMBERS(REGISTRY_MACHINES))
 			if(S.shuttle_tag == shuttle_comp_id) // Shuttle tags are used so that it will work if the computer path changes, as it does on the southern cross map.

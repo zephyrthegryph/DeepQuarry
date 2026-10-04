@@ -136,10 +136,12 @@ CAPABILITIES(/obj/item/card/robot)
 	var/mode = 1
 	special_handling = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/pen/robopen, INTERACT_USE("Change colour or mode", PROC_REF(interaction_robopen)))
+CAPABILITIES(/obj/item/pen/robopen)
+	op("robopen", in_hand(), label("Change colour or mode"), then(PROC_REF(interaction_robopen)))
 
 /// Old attack_self.
-/obj/item/pen/robopen/proc/interaction_robopen(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/pen/robopen/proc/interaction_robopen(datum/act/op/A)
+	var/mob/user = A.actor
 	open_request(src, /datum/prompt/choice, PROC_REF(robopen_choice_made), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Change What?", question = "Would you like to change colour or mode?", choices = list("Colour", "Mode", "Cancel"), buttons = TRUE, timeout = 0)
 
 /obj/item/pen/robopen/proc/robopen_choice_made(datum/act/request/A)
@@ -462,29 +464,23 @@ CAPABILITIES(/obj/item/form_printer)
 	COOLDOWN_DECLARE(flash_refresh_cooldown)	//When the flash count clears after the last flash
 
 /// If the shield is on (off while it recovers from an overload).
-OM_FIELD(/obj/item/borg/combat/shield, active, TRUE, CHANGE_EXPLICIT)
+/obj/item/borg/combat/shield/var/active = TRUE
+TRACKED(/obj/item/borg/combat/shield, active)
 /// Counter for how many times the shield has been flashed.
-OM_FIELD(/obj/item/borg/combat/shield, flash_count, 0, CHANGE_EXPLICIT)
-/// Derived field: an overload or a flash count is pending recovery.
-OM_DERIVE_FIELD(/obj/item/borg/combat/shield, recovering, list("active", "flash_count"))
-DECLARE_PERIODIC_WHILE(/obj/item/borg/combat/shield, PERIODIC_SLOW, "recovering")
-
+/obj/item/borg/combat/shield/var/flash_count = 0
+TRACKED(/obj/item/borg/combat/shield, flash_count)
 /obj/item/borg/combat/shield/proc/recovering()
 	return !active || flash_count
 
-DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
-	INTERACT_VERB("Set shield level", PROC_REF(borg_shield_verb_set_level), REQ_IN_INVENTORY), \
-)
-
-/// Old attack_self.
-/obj/item/borg/combat/shield/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	borg_shield_verb_set_level(user)
-	return TRUE
+CAPABILITIES(/obj/item/borg/combat/shield)
+	op("level", in_hand(), then(PROC_REF(shield_ask_level)))
+	op("set_level", menu(), label("Set shield level"), needs(carried()), then(PROC_REF(shield_ask_level)))
+	/// Cools its flash count or recovers from an overload while either is pending (an overload or a flash count is pending recovery).
+	every(2 SECONDS, then(PROC_REF(shield_step)), when = cond_any(cond_not(nameof(active)), nameof(flash_count)))
 
 /// Cools its flash count or recovers from an overload every 2 s while either is pending (a flash
 /// or an overload starts it); otherwise it sleeps.
-/obj/item/borg/combat/shield/periodic_step()
+/obj/item/borg/combat/shield/proc/shield_step(datum/act/timer/A)
 	if(active)
 		if(flash_count && COOLDOWN_FINISHED(src, flash_refresh_cooldown))
 			set_flash_count(0)
@@ -514,9 +510,9 @@ DECLARE_INTERACTIONS(/obj/item/borg/combat/shield, \
 	user.update_icon()
 	COOLDOWN_START(src, overload_cooldown, shield_refresh)
 
-/// Old Set shield level verb.
-/obj/item/borg/combat/shield/proc/borg_shield_verb_set_level(mob/user, obj/item/held, datum/interaction/interaction)
-	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = user, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
+/// Using the shield in hand, or its menu entry: ask the level.
+/obj/item/borg/combat/shield/proc/shield_ask_level(datum/act/op/A)
+	open_request(src, /datum/prompt/choice, PROC_REF(shield_level_chosen), answerer = A.actor, ask_flags = ASK_CARRIED | ASK_CAPABLE, title = "Shield Level", question = "How much damage should the shield absorb?", choices = list("5", "10", "25", "50", "75", "100"), timeout = 0)
 
 /obj/item/borg/combat/shield/proc/shield_level_chosen(datum/act/request/A)
 	if(!A.answer)

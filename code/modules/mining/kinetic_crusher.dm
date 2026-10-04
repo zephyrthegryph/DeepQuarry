@@ -228,10 +228,11 @@ DECLARE_APPEARANCE_PROC(/obj/item/kinetic_crusher, TYPE_PROC_REF(/atom, appearan
 CAPABILITIES(/obj/item/kinetic_crusher/machete/gauntlets)
 	owns_one(nameof(offhand), /obj/item/offhand/crushergauntlets)
 	op("self", in_hand(), then(PROC_REF(interaction_self)))
+	every(1 SECOND, then(PROC_REF(gauntlets_step)), when = nameof(gauntlets_worn))
 
 /// TRUE from equipped() until dropped(): while worn it checks its offhand still exists.
-OM_FIELD(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn, FALSE, CHANGE_EXPLICIT)
-DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SECOND, "gauntlets_worn")
+/obj/item/kinetic_crusher/machete/gauntlets/var/gauntlets_worn = FALSE
+TRACKED(/obj/item/kinetic_crusher/machete/gauntlets, gauntlets_worn)
 
 /obj/item/kinetic_crusher/machete/gauntlets/equipped()
 	. = ..()
@@ -247,7 +248,7 @@ DECLARE_PERIODIC_WHILE(/obj/item/kinetic_crusher/machete/gauntlets, PERIODIC_SEC
 	ready_toggle()
 	return TRUE
 
-/obj/item/kinetic_crusher/machete/gauntlets/periodic_step()
+/obj/item/kinetic_crusher/machete/gauntlets/proc/gauntlets_step(datum/act/timer/A)
 	if(wielded) // are we supposed to be wielded
 		if(!offhand) // does our offhand exist
 			ready_toggle(TRUE) // no? well, shit
