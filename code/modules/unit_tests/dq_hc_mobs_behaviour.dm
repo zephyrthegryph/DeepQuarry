@@ -133,3 +133,32 @@
 	rel_set(P, nameof(P.starting), test_floor())
 	spider.bullet_act(P, BP_TORSO)
 	TEST_ASSERT(!dq_get_cloaked(spider), "a hit breaks the cloak")
+
+// ---------------------------------------------------------------------------------------------------------------------
+// answerer_holds(): the conditions a question re-checks when its answer arrives.
+// ---------------------------------------------------------------------------------------------------------------------
+
+/datum/unit_test/dq_hc_mobs/answerer_holds_conditions
+/datum/unit_test/dq_hc_mobs/answerer_holds_conditions/Run()
+	var/mob/living/carbon/human/asker = allocate(/mob/living/carbon/human, test_floor())
+	var/mob/living/carbon/human/other = allocate(/mob/living/carbon/human, get_step(test_floor(), EAST))
+	var/obj/item/pen/pen = allocate(/obj/item/pen, test_floor())
+	var/datum/request/R = open_request(asker, /datum/prompt/yes_no, null, answerer = asker, timeout = 0)
+	TEST_ASSERT(answerer_holds(R, NONE), "no condition always holds")
+	TEST_ASSERT(answerer_holds(R, ANSWER_ALIVE | ANSWER_CONSCIOUS | ANSWER_CAPABLE | ANSWER_UNRESTRAINED), "an awake, free person passes the state conditions")
+	TEST_ASSERT(!answerer_holds(R, ANSWER_HELD, pen), "a pen on the floor is not held")
+	TEST_ASSERT(!answerer_holds(R, ANSWER_CARRIED, pen), "nor carried")
+	asker.put_in_hands(pen)
+	TEST_ASSERT(answerer_holds(R, ANSWER_HELD, pen), "a pen in a hand is held")
+	TEST_ASSERT(answerer_holds(R, ANSWER_CARRIED, pen), "and carried")
+	TEST_ASSERT(answerer_holds(R, ANSWER_NEAR_SUBJECT, pen), "and next to the answerer")
+	TEST_ASSERT(answerer_holds(R, ANSWER_ADJACENT, other), "a person on the next tile is adjacent")
+	asker.forceMove(locate(test_floor().x + 5, test_floor().y, test_floor().z))
+	TEST_ASSERT(!answerer_holds(R, ANSWER_ADJACENT, other), "far away is not adjacent")
+	asker.set_stat(UNCONSCIOUS)
+	TEST_ASSERT(!answerer_holds(R, ANSWER_CONSCIOUS), "an unconscious answerer fails")
+	TEST_ASSERT(answerer_holds(R, ANSWER_ALIVE), "but is alive")
+	TEST_ASSERT(!answerer_holds(R, ANSWER_HELD, null), "a missing subject is never held")
+	asker.death()
+	TEST_ASSERT(!answerer_holds(R, ANSWER_ALIVE), "a dead one is not alive")
+	request_end(R, REQ_CANCELLED, null)
