@@ -367,6 +367,7 @@ GLOBAL_LIST_INIT(generated_reads_table, list(
 		list(1, 0, 65),
 		list(1, 0, 66),
 		list(4, 0, 29)),
+	"/obj/item/rms::operator_living" = list(0),
 	"/obj/item/roller::rack_is_empty" = list(0,
 		list(3, 0, 67)),
 	"/obj/item/stool::can_be_padded" = list(0,

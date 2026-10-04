@@ -108,14 +108,15 @@
 	if(colorable)
 		. += span_notice("Alt-click to recolor it.")
 
-/// Old attack_self. FALSE (special handling) moves on to the next self-use.
-/obj/item/melee/energy/proc/interaction_self(mob/living/user, obj/item/held, datum/interaction/interaction)
-	if(special_handling)
-		return FALSE
+CAPABILITIES(/obj/item/melee/energy)
+	op("power", in_hand(), when(cond_not(nameof(special_handling))), label("Toggle energy weapon"), then(PROC_REF(energy_power_requested)))
+
+/obj/item/melee/energy/proc/energy_power_requested(datum/act/op/A)
+	var/mob/living/user = A.actor
 	if(use_cell)
 		if((!bcell || bcell.charge < hitcost) && !active)
 			to_chat(user, span_notice("\The [src] does not seem to have power."))
-			return TRUE
+			return OP_OK
 
 	if (active)
 		if (CLUMSY_HARM_CHANCE(user))
@@ -133,7 +134,7 @@
 		H.update_inv_r_hand()
 
 	add_fingerprint(user)
-	return TRUE
+	return OP_OK
 
 /obj/item/melee/energy/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	if(active && use_cell)
@@ -144,7 +145,6 @@
 	return ..()
 
 DECLARE_INTERACTIONS(/obj/item/melee/energy, \
-	INTERACT_SELF("Toggle", PROC_REF(interaction_self)), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
 	INTERACT_ALT(null, PROC_REF(interaction_alt), REQ_TARGET_STATE(/obj/item/melee/energy/proc/can_recolor)), \
 )

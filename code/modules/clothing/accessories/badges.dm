@@ -211,12 +211,13 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/holo, INTERACT_ITEM(null,
 	special_handling = TRUE
 	sheriff_badge = TRUE
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/badge/sheriff, INTERACT_USE("Flash badge", PROC_REF(sheriff_badge_self)))
+CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff)
+	op("display", in_hand(), label("Flash sheriff badge"), then(PROC_REF(sheriff_badge_displayed)))
 
-/// Old attack_self.
-/obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_self(mob/user, obj/item/held, datum/interaction/interaction)
-	act_message(user, null, MSG_SELF("You flash the sheriff badge to everyone around you!"), \
+/obj/item/clothing/accessory/badge/sheriff/proc/sheriff_badge_displayed(datum/act/op/A)
+	act_message(A.actor, null, MSG_SELF("You flash the sheriff badge to everyone around you!"), \
 		MSG_OTHERS("%U% shows their sheriff badge. There's a new sheriff in town!"))
+	return OP_OK
 
 /obj/item/clothing/accessory/badge/sheriff/attack(mob/living/M, mob/living/user, target_zone, attack_modifier)
 	act_message(user, M, MSG_SELF(span_danger("You invade %T%'s personal space, thrusting the sheriff badge into their face insistently.")), \

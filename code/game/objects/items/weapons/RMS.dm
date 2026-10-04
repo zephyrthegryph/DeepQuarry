@@ -239,13 +239,6 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		consume_resources(stored_charge)
 	return final_product
 
-/obj/item/rms/proc/check_menu(mob/living/user)
-	if(!istype(user))
-		return FALSE
-	if(user.incapacitated() || !user.Adjacent(src))
-		return FALSE
-	return TRUE
-
 //Start of attack functions
 
 /obj/item/rms/afterattack(atom/target, mob/user, proximity)
@@ -261,51 +254,65 @@ DECLARE_APPEARANCE_PROC(/obj/item/rms, TYPE_PROC_REF(/atom, appearance_overlays)
 		to_chat(user, span_notice("Invalid target for the device."))
 		return
 
-DECLARE_INTERACTIONS(/obj/item/rms, INTERACT_USE(null, PROC_REF(interaction_self)))
+TRACKED(/obj/item/rms, mode_index)
+TRACKED(/obj/item/rms, charge_cost)
 
-/// Old attack_self.
-/obj/item/rms/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	var/list/choices = list(
-		"Steel" = radial_image_steel,
-		"Glass" = radial_image_glass,
-		"Cloth" = radial_image_cloth,
-		"Plastic" = radial_image_plastic,
-		"Stone" = radial_image_stone,
-		"Random" = radial_image_random
-	)
+CAPABILITIES(/obj/item/rms)
+	op("choose_material", in_hand(), label("Choose material"), needs(req_adjacent(), req_capable(), req(PROC_REF(operator_living), because = MSG(op/not_available))),
+		asks(/datum/prompt/choice/rms_material, keeps = 0), then(PROC_REF(material_chosen)))
 
-	om_ask(user, /datum/om/prompt/choice/radial, PROC_REF(mode_chosen), choices = choices, anchor = src, require_near = TRUE, tooltips = TRUE)
-	return TRUE
+/obj/item/rms/proc/operator_living(datum/act/op/A)
+	return isliving(A.actor)
 
-/obj/item/rms/proc/mode_chosen(datum/om/prompt/choice/radial/ask)
-	var/mob/living/user = ask.answerer
-	var/choice = ask.choice
-	if(!check_menu(user))
-		return
+/datum/prompt/choice/rms_material
+	radial = TRUE
+	tooltips = TRUE
+	timeout = 0
+
+/datum/prompt/choice/rms_material/prepare(datum/act/A)
+	. = ..()
+	if(istype(A, /datum/act/op))
+		var/datum/act/op/asking = A
+		var/obj/item/rms/synthesizer = asking.target
+		if(istype(synthesizer))
+			rel_set(src, nameof(anchor), synthesizer)
+			choices = list(
+				"Steel" = synthesizer.radial_image_steel,
+				"Glass" = synthesizer.radial_image_glass,
+				"Cloth" = synthesizer.radial_image_cloth,
+				"Plastic" = synthesizer.radial_image_plastic,
+				"Stone" = synthesizer.radial_image_stone,
+				"Random" = synthesizer.radial_image_random
+			)
+
+/obj/item/rms/proc/material_chosen(datum/act/op/A)
+	var/datum/prompt/choice/chosen = A.answer
+	var/choice = chosen.value
 	switch(choice)
 		if("Steel")
-			mode_index = modes.Find(RMS_STEEL)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_STEEL))
+			set_charge_cost(charge_cost_basic)
 		if("Glass")
-			mode_index = modes.Find(RMS_GLASS)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_GLASS))
+			set_charge_cost(charge_cost_basic)
 		if("Cloth")
-			mode_index = modes.Find(RMS_CLOTH)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_CLOTH))
+			set_charge_cost(charge_cost_basic)
 		if("Plastic")
-			mode_index = modes.Find(RMS_PLASTIC)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_PLASTIC))
+			set_charge_cost(charge_cost_basic)
 		if("Stone")
-			mode_index = modes.Find(RMS_STONE)
-			charge_cost = charge_cost_basic
+			set_mode_index(modes.Find(RMS_STONE))
+			set_charge_cost(charge_cost_basic)
 		if("Random")
-			mode_index = modes.Find(RMS_RAND)
-			charge_cost = charge_cost_random
+			set_mode_index(modes.Find(RMS_RAND))
+			set_charge_cost(charge_cost_random)
 		else
-			return
+			return OP_FAILED
 
-	to_chat(user, span_notice("Changed mode to '[choice]'."))
+	to_chat(A.actor, span_notice("Changed mode to '[choice]'."))
 	play_sfx(src.loc, SFX_EFFECTS_POP)
+	return OP_OK
 
 /obj/item/rms/multitool_act(mob/user, obj/item/tool)
 	overcharge = !overcharge

@@ -166,11 +166,14 @@ DECLARE_REGISTRY(/obj/item/clothing/accessory/bodycam, REGISTRY_LISTENING_OBJECT
 	bradio.hear_talk(M, message_pieces, verb)
 	. = ..()
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/bodycam, INTERACT_USE(null, PROC_REF(interaction_self)))
+CAPABILITIES(/obj/item/clothing/accessory/bodycam)
+	op("configure_bodycam", in_hand(), then(PROC_REF(configure_bodycam)))
 
-/obj/item/clothing/accessory/bodycam/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/clothing/accessory/bodycam/proc/configure_bodycam(datum/act/op/A)
+	var/mob/user = A.actor
 	add_fingerprint(user)
 	show_bodycam_ui(user)
+	return OP_OK
 
 // show_bodycam_ui body moved to code/modules/tvcamera_panel.dm (structured TGUI).
 

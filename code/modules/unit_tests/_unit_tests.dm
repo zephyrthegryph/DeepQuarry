@@ -938,6 +938,8 @@
 
 #include "round2_eyepatch_native_controls.dm"
 
+#include "round2_rms_material_choice_native.dm"
+
 #undef TEST_ASSERT
 #undef TEST_ASSERT_EQUAL
 #undef TEST_ASSERT_NOTEQUAL

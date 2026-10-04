@@ -3275,6 +3275,20 @@
 	into += entry_line(34)
 	into += list(global.op("read_reference", global.in_hand(), global.label("Read"), global.opens_ui()))
 
+/// CAPABILITIES(/obj/item/bork_medigun/linked) at code/game/objects/items/weapons/medigun/linked_medigun.dm:31
+/obj/item/bork_medigun/linked/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/medigun/linked_medigun.dm", 31, /obj/item/bork_medigun/linked)
+	into += entry_line(32)
+	into += list(global.op("cancel_healing", global.in_hand(), global.then(PROC_REF(healing_cancelled))))
+
+/// CAPABILITIES(/obj/item/bug_monitor) at code/game/objects/items/devices/spy_bug.dm:178
+/obj/item/bug_monitor/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/spy_bug.dm", 178, /obj/item/bug_monitor)
+	into += entry_line(179)
+	into += list(global.op("view", global.in_hand(), global.label("View paired cameras"), global.then(PROC_REF(bug_monitor_controls_opened))))
+
 /// CAPABILITIES(/obj/item/camera_assembly) at code/game/machinery/camera/camera_assembly.dm:25
 /obj/item/camera_assembly/declared_entries(list/into)
 	..(into)
@@ -3288,6 +3302,8 @@
 	into += entry_block("code/game/objects/items/devices/spy_bug.dm", 21, /obj/item/camerabug)
 	into += entry_line(22)
 	into += list(global.owns_one(nameof(camera), /obj/machinery/camera/bug))
+	into += entry_line(23)
+	into += list(global.op("crush", global.in_hand(), global.stance(I_HURT), global.label("Crush camera pod"), global.then(PROC_REF(camerabug_crushed))))
 
 /// CAPABILITIES(/obj/item/cane/concealed) at code/game/objects/items/weapons/canes.dm:26
 /obj/item/cane/concealed/declared_entries(list/into)
@@ -3358,6 +3374,27 @@
 	into += list(global.owns_one(nameof(IC), /obj/item/electronic_assembly/clothing))
 	into += entry_line(47)
 	into += list(global.owns_many(nameof(accessories)))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/badge/sheriff) at code/modules/clothing/accessories/badges.dm:214
+/obj/item/clothing/accessory/badge/sheriff/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 214, /obj/item/clothing/accessory/badge/sheriff)
+	into += entry_line(215)
+	into += list(global.op("display", global.in_hand(), global.label("Flash sheriff badge"), global.then(PROC_REF(sheriff_badge_displayed))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/bodycam) at code/game/objects/items/devices/tvcamera.dm:169
+/obj/item/clothing/accessory/bodycam/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/devices/tvcamera.dm", 169, /obj/item/clothing/accessory/bodycam)
+	into += entry_line(170)
+	into += list(global.op("configure_bodycam", global.in_hand(), global.then(PROC_REF(configure_bodycam))))
+
+/// CAPABILITIES(/obj/item/clothing/accessory/collar/shock) at code/modules/clothing/accessories/accessory.dm:742
+/obj/item/clothing/accessory/collar/shock/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/modules/clothing/accessories/accessory.dm", 742, /obj/item/clothing/accessory/collar/shock)
+	into += entry_line(743)
+	into += list(global.op("controls", global.in_hand(), global.label("Open shock collar controls"), global.then(PROC_REF(shock_collar_controls_opened))))
 
 /// CAPABILITIES(/obj/item/clothing/accessory/permit) at code/modules/clothing/accessories/permits.dm:18
 /obj/item/clothing/accessory/permit/declared_entries(list/into)
@@ -3641,11 +3678,11 @@
 	into += entry_line(86)
 	into += list(global.op("reset", global.inputs(global.hand(), global.in_hand()), global.answers(INTENT_TOGGLE), global.label("Reset"), global.needs(global.req_adjacent(), global.req_is(nameof(scanning), TRUE, because = MSG(geiger/off))), global.then(PROC_REF(counter_reset))))
 
-/// CAPABILITIES(/obj/item/geiger/wall) at code/game/objects/items/devices/geiger.dm:203
+/// CAPABILITIES(/obj/item/geiger/wall) at code/game/objects/items/devices/geiger.dm:204
 /obj/item/geiger/wall/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/game/objects/items/devices/geiger.dm", 203, /obj/item/geiger/wall)
-	into += entry_line(204)
+	into += entry_block("code/game/objects/items/devices/geiger.dm", 204, /obj/item/geiger/wall)
+	into += entry_line(205)
 	into += list(global.op("toggle_mounted", global.inputs(global.hand(), global.ai()), global.label("Toggle counter"), global.then(PROC_REF(mounted_toggled))))
 
 /// CAPABILITIES(/obj/item/gene_scanner) at code/game/objects/items/devices/scanners/gene.dm:10
@@ -4047,6 +4084,13 @@
 	into += entry_block("code/game/objects/items/weapons/melee/misc.dm", 84, /obj/item/melee/cursedblade)
 	into += entry_line(85)
 	into += list(global.owns_many(nameof(voice_mobs)))
+
+/// CAPABILITIES(/obj/item/melee/energy) at code/game/objects/items/weapons/melee/energy.dm:111
+/obj/item/melee/energy/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/melee/energy.dm", 111, /obj/item/melee/energy)
+	into += entry_line(112)
+	into += list(global.op("power", global.in_hand(), global.when(global.cond_not(nameof(special_handling))), global.label("Toggle energy weapon"), global.then(PROC_REF(energy_power_requested))))
 
 /// CAPABILITIES(/obj/item/melee/energy/blade) at code/game/objects/items/weapons/melee/energy.dm:458
 /obj/item/melee/energy/blade/declared_entries(list/into)
@@ -4939,6 +4983,13 @@
 	into += entry_line(89)
 	into += list(global.owns_many(nameof(vision_modes)))
 
+/// CAPABILITIES(/obj/item/rms) at code/game/objects/items/weapons/RMS.dm:260
+/obj/item/rms/declared_entries(list/into)
+	..(into)
+	into += entry_block("code/game/objects/items/weapons/RMS.dm", 260, /obj/item/rms)
+	into += entry_line(261)
+	into += list(global.op("choose_material", global.in_hand(), global.label("Choose material"), global.needs(global.req_adjacent(), global.req_capable(), global.req(PROC_REF(operator_living), because = MSG(op/not_available))), global.asks(/datum/prompt/choice/rms_material, keeps = 0), global.then(PROC_REF(material_chosen))))
+
 /// CAPABILITIES(/obj/item/robot_module) at code/modules/mob/living/silicon/robot/robot_modules/station.dm:51
 /obj/item/robot_module/declared_entries(list/into)
 	..(into)
@@ -5470,11 +5521,11 @@
 	into += entry_line(44)
 	into += list(global.configure(global.storage(accepts = list(/obj/item/reagent_containers/food/snacks/donut))))
 
-/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:412
+/// CAPABILITIES(/obj/item/storage/box/dosimeter) at code/modules/clothing/accessories/badges.dm:413
 /obj/item/storage/box/dosimeter/declared_entries(list/into)
 	..(into)
-	into += entry_block("code/modules/clothing/accessories/badges.dm", 412, /obj/item/storage/box/dosimeter)
-	into += entry_line(413)
+	into += entry_block("code/modules/clothing/accessories/badges.dm", 413, /obj/item/storage/box/dosimeter)
+	into += entry_line(414)
 	into += list(global.configure(global.storage(accepts = list( /obj/item/paper/dosimeter_manual, /obj/item/clothing/accessory/dosimeter, /obj/item/dosimeter_film))))
 
 /// CAPABILITIES(/obj/item/storage/box/evidence) at code/modules/detectivework/tools/storage.dm:23

@@ -739,13 +739,14 @@ EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/bell, \
 	frequency = new_frequency
 	rel_set(src, nameof(radio_connection), SSradio.add_object(src, frequency, RADIO_CHAT))
 
-EXTEND_INTERACTIONS(/obj/item/clothing/accessory/collar/shock, INTERACT_USE(null, PROC_REF(shock_collar_ui_self)))
+CAPABILITIES(/obj/item/clothing/accessory/collar/shock)
+	op("controls", in_hand(), label("Open shock collar controls"), then(PROC_REF(shock_collar_controls_opened)))
 
-/// Old attack_self: open the collar's interface.
-/obj/item/clothing/accessory/collar/shock/proc/shock_collar_ui_self(mob/user, obj/item/held, datum/interaction/interaction)
-	if(!ishuman(user))
-		return
-	tgui_interact(user)
+/obj/item/clothing/accessory/collar/shock/proc/shock_collar_controls_opened(datum/act/op/A)
+	if(!ishuman(A.actor))
+		return OP_OK
+	tgui_interact(A.actor)
+	return OP_OK
 
 DECLARE_UI(/obj/item/clothing/accessory/collar/shock, "ShockCollar")
 

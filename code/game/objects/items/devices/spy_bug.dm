@@ -20,12 +20,15 @@
 
 CAPABILITIES(/obj/item/camerabug)
 	owns_one(nameof(camera), /obj/machinery/camera/bug)
+	op("crush", in_hand(), stance(I_HURT), label("Crush camera pod"), then(PROC_REF(camerabug_crushed)))
 
 
-/obj/item/camerabug/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
+/obj/item/camerabug/proc/camerabug_crushed(datum/act/op/A)
+	var/mob/user = A.actor
 	act_message(user, src, MSG_SELF(span_notice("You crush %T% under your foot, breaking it.")), \
 		MSG_OTHERS(span_notice("%U% crushes %T% under %THEIR% foot, breaking it!")))
 	replace_with(src, brokentype)
+	return OP_OK
 
 /obj/item/camerabug/proc/camerabug_reset_effect(mob/user, obj/item/held, datum/interaction/interaction)
 	if(linkedmonitor())
@@ -96,7 +99,6 @@ DECLARE_INTERACTIONS(/obj/item/camerabug, \
 	INTERACT_ITEM_AS(I_DISARM, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
 	INTERACT_ITEM_AS(I_GRAB, "Secure or unsecure", PROC_REF(interaction_wrench), REQ_TOOL(TOOL_WRENCH), REQ_ON(PRED_TARGET, /obj/item/camerabug/proc/lies_on_turf, "it must be on the floor")), \
 	INTERACT_ITEM(null, PROC_REF(interaction_item)), \
-	INTERACT_USE_AS(I_HURT, "Crush", PROC_REF(interaction_self)), \
 )
 
 /obj/item/camerabug/proc/interaction_pair(mob/user, obj/item/bug_monitor/SM, datum/interaction/interaction)
@@ -170,12 +172,15 @@ DAMAGE_REACTION(/obj/item/camerabug, DAMAGE_PROJECTILE, PROC_REF(camerabug_shot)
 	radio = new(src)
 */
 DECLARE_INTERACTIONS(/obj/item/bug_monitor, \
-	INTERACT_USE(null, PROC_REF(interaction_self)), \
 	INTERACT_INSERT(/obj/item/camerabug, PROC_REF(interaction_item), null), \
 )
 
-/obj/item/bug_monitor/proc/interaction_self(mob/user, obj/item/held, datum/interaction/interaction)
-	view_cameras(user)
+CAPABILITIES(/obj/item/bug_monitor)
+	op("view", in_hand(), label("View paired cameras"), then(PROC_REF(bug_monitor_controls_opened)))
+
+/obj/item/bug_monitor/proc/bug_monitor_controls_opened(datum/act/op/A)
+	view_cameras(A.actor)
+	return OP_OK
 
 /obj/item/bug_monitor/proc/interaction_item(mob/user, obj/item/W, datum/interaction/interaction)
 	W.attackby(src, user)
