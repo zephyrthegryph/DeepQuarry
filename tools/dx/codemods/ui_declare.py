@@ -278,6 +278,9 @@ def main():
         if len({a["action"] for a in acts}) != len(acts) or len({a["proc"] for a in acts}) != len(acts):
             residue[t] = "proc_shared"
             continue
+        if not acts:
+            residue[t] = "no_ops"  # a window with no buttons has nothing to type (ui_types) and nothing to gain
+            continue
         data_rows = [r for r in rs if r[0] in ("UI_DATA", "UI_DATA_REPLACE")]
         data = None
         if len(data_rows) > 1:
@@ -348,7 +351,7 @@ def main():
             if occ != 0:
                 bad = "proc_shared"
                 break
-            for w in ("ui", "state", "action"):
+            for w in ("ui", "state", "action", "update_icon"):
                 if words_in(body, w):
                     bad = "body_uses"
                     break
